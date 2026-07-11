@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--
+  Viewport locked to device size, no user scaling. This is mandatory for
+  playable ads: the creative must fill the ad container and never scroll/zoom.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Merge Tiles</title>
+
+<!-- =====================================================================
+     STYLES  (vanilla CSS, inlined)
+     Keep everything inline so the whole creative is one self-contained file.
+     ===================================================================== -->
+<style>
+  /* ---- Reset & root ---- */
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #14101f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    touch-action: none;                 /* we handle all gestures ourselves */
+  }
+
+  /* ---- Stage: the square-ish play area, centered, orientation-agnostic ---- */
+  #stage {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #game { display: block; touch-action: none; }
+
+  /* ---- Screens (state machine overlays) ---- */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: #fff; padding: 24px;
+    transition: opacity .25s ease; z-index: 10;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  .title { font-size: clamp(22px, 7vw, 44px); font-weight: 800; letter-spacing: .5px; }
+  .subtitle { margin-top: 10px; font-size: clamp(14px, 4vw, 20px); opacity: .85; }
+
+  /* ---- Buttons / Call To Action ---- */
+  .btn {
+    margin-top: 22px; padding: 16px 34px; border: none; border-radius: 999px;
+    font-size: clamp(16px, 5vw, 22px); font-weight: 800; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, #f7b733, #e0862a);
+    box-shadow: 0 8px 24px rgba(224,134,42,.45);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .btn:active { transform: scale(.96); }
+  @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
+
+  /* ---- Persistent CTA banner (visible during gameplay, common in playables) ---- */
+  #cta-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 12px; background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
+  }
+  #cta-bar.hidden { display: none; }
+
+  /* ---- HUD (score, best) ---- */
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 15;
+    display: flex; justify-content: space-between; padding: 14px 18px;
+    color: #fff; font-weight: 800; font-size: clamp(15px, 4.5vw, 22px);
+    pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+  #hud.hidden { display: none; }
+
+  /* ---- Loading spinner ---- */
+  .spinner {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 5px solid rgba(255,255,255,.2); border-top-color: #fff;
+    animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     MARKUP  (structure of the creative)
+     - #stage/#game : the canvas the game renders into.
+     - #hud         : in-game score / best.
+     - .screen      : one overlay per game state (intro, end).
+     - #cta-bar     : always-available install button.
+     ===================================================================== -->
+<div id="stage">
+  <canvas id="game"></canvas>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="hud-left">Score: <span id="score">0</span></div>
+  <div id="hud-right">Best: <span id="time">0</span></div>
+</div>
+
+<!-- Loading screen: shown until assets + ad container are ready -->
+<div id="screen-loading" class="screen">
+  <div class="spinner"></div>
+  <div class="subtitle" style="margin-top:18px">Loading…</div>
+</div>
+
+<!-- Intro screen: title + start button -->
+<div id="screen-intro" class="screen hidden">
+  <div class="title">GAME TITLE</div>
+  <div class="subtitle">Swipe to slide tiles. Merge equal numbers to reach 128!</div>
+  <button class="btn" id="btn-start">TAP TO PLAY</button>
+</div>
+
+<!-- End screen: result + primary CTA to the store -->
+<div id="screen-end" class="screen hidden">
+  <div class="title" id="end-title">Nice!</div>
+  <div class="subtitle" id="end-subtitle">You scored <span id="end-score">0</span></div>
+  <button class="btn" id="btn-install">PLAY THE FULL GAME</button>
+</div>
+
+<!-- Persistent CTA (hidden until gameplay begins) -->
+<div id="cta-bar" class="hidden">
+  <button class="btn" id="btn-cta" style="margin-top:0; padding:12px 28px;">INSTALL NOW</button>
+</div>
+
+<!-- =====================================================================
+     SCRIPT  (vanilla JS, inlined)
+     Organized top-to-bottom in clearly labeled sections so a new game can
+     be produced by editing mostly the CONFIG + GAME sections and leaving
+     the ENGINE / AD glue untouched.
+     ===================================================================== -->
+<script>
+"use strict";
+(function () {
+
+  /* ===================================================================
+     1. CONFIG
+     The knobs a new game changes first. Copy of business/creative params.
+     =================================================================== */
+  var CONFIG = {
+    title: "MERGE TILES",
+    gameSeconds: 0,                // move-based game, not timed; 0 = endless
+    // Store links used by the CTA. The correct one is chosen at runtime.
+    storeUrl: {
+      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
+      android: "https://play.google.com/store/apps/details?id=com.example.game",
+      fallback:"https://52-entertainment.com/our-games/"
+    },
+    // Design resolution — the game logic is authored against this virtual
+    // size, then the canvas is scaled to fit any screen (see fitCanvas()).
+    designWidth: 720,
+    designHeight: 1280,
+    bg: "#14101f",
+
+    // --- Merge Tiles specific tunables ---
+    gridSize: 4,                   // 4x4 board, classic 2048 layout
+    // Winning tile value. 128 is reachable in roughly 20-40 swipes on a 4x4
+    // board, which keeps a full round short enough for a playable ad while
+    // still delivering a couple of satisfying merge chains and a clear win.
+    targetValue: 128,
+    startTiles: 2,                 // tiles placed on the board at round start
+    fourChance: 0.1,                // probability a spawned tile is a 4 instead of a 2
+    swipeThreshold: 24,             // min drag distance (design px) to count as a swipe
+    popDuration: 0.22               // seconds for the spawn/merge pop animation
+  };
+
+  /* ===================================================================
+     2. ASSETS  (embedded, no network requests)
+     Register every asset as a data URI so the file stays self-contained.
+     Use tools/embed-asset.mjs to generate these strings.
+     Prefer CSS/canvas drawing & WebAudio synth over binary assets to stay
+     well under the 5 MB budget; only embed images/sounds you truly need.
+     =================================================================== */
+  var ASSETS = {
+    images: {
+      // (none — everything is drawn on canvas)
+    },
+    sounds: {
+      // (none — Sound.beep synthesizes all SFX)
+    }
+  };
+
+  /* ===================================================================
+     3. ENGINE  (reusable helpers — shared by every game, rarely edited)
+     =================================================================== */
+
+  // --- tiny DOM helper ---
+  function $(id) { return document.getElementById(id); }
+
+  // --- Canvas & responsive scaling ---------------------------------
+  // We render at CONFIG.designWidth x designHeight and letterbox-fit the
+  // canvas to the viewport using CSS, accounting for devicePixelRatio so
+  // drawing stays crisp on retina screens.
+  var canvas = $("game");
+  var ctx = canvas.getContext("2d");
+  var view = { w: CONFIG.designWidth, h: CONFIG.designHeight, scale: 1 };
+
+  function fitCanvas() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap DPR for perf
+    var scale = Math.min(vw / view.w, vh / view.h);
+    view.scale = scale;
+    // Backing store size (crisp), CSS size (fit).
+    canvas.width  = Math.round(view.w * dpr);
+    canvas.height = Math.round(view.h * dpr);
+    canvas.style.width  = Math.round(view.w * scale) + "px";
+    canvas.style.height = Math.round(view.h * scale) + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in design coordinates
+  }
+  window.addEventListener("resize", fitCanvas);
+  window.addEventListener("orientationchange", fitCanvas);
+
+  // --- Input: unified pointer events, mapped to design coordinates ---
+  // Handles mouse + touch. Coordinates are converted from screen pixels to
+  // the virtual design space so game logic never worries about scaling.
+  var Input = (function () {
+    var listeners = { down: [], move: [], up: [] };
+    function toDesign(clientX, clientY) {
+      var r = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - r.left) / r.width  * view.w,
+        y: (clientY - r.top)  / r.height * view.h
+      };
+    }
+    function emit(type, e) {
+      var t = e.touches && e.touches[0] ? e.touches[0]
+            : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+      var p = toDesign(t.clientX, t.clientY);
+      listeners[type].forEach(function (fn) { fn(p, e); });
+    }
+    canvas.addEventListener("mousedown",  function (e){ emit("down", e); });
+    canvas.addEventListener("mousemove",  function (e){ emit("move", e); });
+    window.addEventListener("mouseup",    function (e){ emit("up",   e); });
+    canvas.addEventListener("touchstart", function (e){ e.preventDefault(); emit("down", e); }, {passive:false});
+    canvas.addEventListener("touchmove",  function (e){ e.preventDefault(); emit("move", e); }, {passive:false});
+    canvas.addEventListener("touchend",   function (e){ e.preventDefault(); emit("up",   e); }, {passive:false});
+    return {
+      on: function (type, fn) { listeners[type].push(fn); },
+      off: function () { listeners = { down: [], move: [], up: [] }; }
+    };
+  })();
+
+  // --- Game loop: fixed-ish dt via requestAnimationFrame -------------
+  var Loop = (function () {
+    var running = false, last = 0, update = null, render = null;
+    function frame(now) {
+      if (!running) return;
+      var dt = Math.min((now - last) / 1000, 0.05); // clamp big gaps (tab switch)
+      last = now;
+      if (update) update(dt);
+      if (render) render();
+      requestAnimationFrame(frame);
+    }
+    return {
+      start: function (u, r) {
+        update = u; render = r; running = true; last = performance.now();
+        requestAnimationFrame(frame);
+      },
+      stop: function () { running = false; }
+    };
+  })();
+
+  // --- Audio: WebAudio synth (zero-asset SFX) ------------------------
+  // Generates simple tones so you get sound without embedding audio files.
+  // For richer sound, put base64 clips in ASSETS.sounds and play via Audio.clip.
+  var Sound = (function () {
+    var actx = null;
+    function ensure() {
+      if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+      // iOS requires resume() inside a user gesture.
+      if (actx && actx.state === "suspended") actx.resume();
+      return actx;
+    }
+    function beep(freq, dur, type) {
+      var a = ensure(); if (!a) return;
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = type || "sine"; o.frequency.value = freq || 440;
+      g.gain.setValueAtTime(0.001, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.3, a.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + (dur || 0.15));
+      o.connect(g); g.connect(a.destination);
+      o.start(); o.stop(a.currentTime + (dur || 0.15));
+    }
+    var clips = {};
+    function clip(name) {
+      if (!ASSETS.sounds[name]) return;
+      if (!clips[name]) { clips[name] = new Audio(ASSETS.sounds[name]); }
+      try { clips[name].currentTime = 0; clips[name].play(); } catch (e) {}
+    }
+    return { unlock: ensure, beep: beep, clip: clip };
+  })();
+
+  // --- Storage: safe localStorage (sandboxed ad frames may block it) --
+  var Store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  // --- Random helpers ------------------------------------------------
+  var Rand = {
+    range: function (min, max) { return min + Math.random() * (max - min); },
+    int:   function (min, max) { return Math.floor(Rand.range(min, max + 1)); },
+    pick:  function (arr)      { return arr[Math.floor(Math.random() * arr.length)]; }
+  };
+
+  // --- Image asset preloader ----------------------------------------
+  var Images = {};
+  function preloadImages(done) {
+    var keys = Object.keys(ASSETS.images), left = keys.length;
+    if (left === 0) return done();
+    keys.forEach(function (k) {
+      var img = new Image();
+      img.onload = img.onerror = function () { if (--left === 0) done(); };
+      img.src = ASSETS.images[k];
+      Images[k] = img;
+    });
+  }
+
+  /* ===================================================================
+     4. AD NETWORK GLUE  (MRAID + CTA + tracking — rarely edited)
+     Playable ads run inside a network's iframe. We must:
+       - wait for the ad container ("mraid") to be ready before starting,
+       - route the install button through the network's open() when present,
+       - report standard lifecycle events for analytics/QA.
+     =================================================================== */
+  var Ad = (function () {
+    function platform() {
+      var ua = navigator.userAgent || "";
+      if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+      if (/android/i.test(ua)) return "android";
+      return "fallback";
+    }
+    function targetUrl() { return CONFIG.storeUrl[platform()] || CONFIG.storeUrl.fallback; }
+
+    // Resolve when the creative may start drawing/interacting.
+    function whenReady(cb) {
+      if (!window.mraid) return cb();                 // running standalone
+      if (mraid.getState && mraid.getState() === "loading") {
+        mraid.addEventListener("ready", cb);
+      } else { cb(); }
+    }
+
+    // The single entry point for "user wants the app". Order matters:
+    // MRAID first, then common network globals, then a plain window.open.
+    function openStore() {
+      track("cta_click");
+      var url = targetUrl();
+      try { if (window.mraid && typeof mraid.open === "function") { mraid.open(url); return; } } catch (e) {}
+      try { if (typeof window.install === "function") { window.install(); return; } } catch (e) {}       // ironSource / generic
+      try { if (window.ExitApi && typeof ExitApi.exit === "function") { ExitApi.exit(); return; } } catch (e) {} // Google Ads
+      try { if (typeof window.mintegral_playable_exit === "function") { window.mintegral_playable_exit(); return; } } catch (e) {}
+      window.open(url, "_blank");
+    }
+
+    // Lightweight event hook. Swap console.log for a network SDK call if needed.
+    function track(event, data) {
+      try { console.log("[playable]", event, data || ""); } catch (e) {}
+    }
+
+    return { whenReady: whenReady, openStore: openStore, track: track };
+  })();
+
+  /* ===================================================================
+     5. STATE MACHINE  (screens + flow — light edits per game)
+     States: loading -> intro -> playing -> end. UI.show() toggles overlays.
+     =================================================================== */
+  var UI = {
+    show: function (name) {
+      ["loading", "intro", "end"].forEach(function (s) {
+        $("screen-" + s).classList.toggle("hidden", s !== name);
+      });
+      // HUD + CTA bar are only visible during play.
+      $("hud").classList.toggle("hidden", name !== "playing");
+      $("cta-bar").classList.toggle("hidden", name !== "playing");
+    },
+    setScore: function (v) { $("score").textContent = v; },
+    setTime:  function (v) { $("time").textContent = v; }, // reused for "Best"
+    setEnd:   function (title, score) { $("end-title").textContent = title; $("end-score").textContent = score; }
+  };
+
+  var State = "loading";
+  function setState(s) { State = s; Ad.track("state", s); UI.show(s === "playing" ? "playing" : s); }
+
+  /* ===================================================================
+     6. GAME  (the part a new prompt mostly rewrites)
+     Everything above is reusable plumbing. A concrete game implements:
+       Game.reset()            -> initialize round state
+       Game.onDown(p)          -> pointer input (design coords)
+       Game.update(dt)         -> advance simulation (seconds)
+       Game.render()           -> draw a frame (design coords)
+       Game.onEnd()            -> compute result before end screen
+     "Merge Tiles" — a simplified, correct 2048: swipe to slide a 4x4 grid
+     of numbered tiles, equal tiles merge into double value, reach the
+     target tile to win, get stuck with a full board to lose.
+     =================================================================== */
+  var Game = (function () {
+    var N = CONFIG.gridSize;
+    var grid;        // grid[row][col] = 0 (empty) or a power-of-two value
+    var pop;          // pop[row][col] = 0..1 pop-scale animation amount
+    var score, best;
+    var reachedTarget;
+
+    // --- Board layout (design-space geometry, computed once) ----------
+    var BOARD = { size: 600, gap: 14 };
+    BOARD.x = (view.w - BOARD.size) / 2;
+    BOARD.y = 340;
+    BOARD.cell = (BOARD.size - BOARD.gap * (N + 1)) / N;
+
+    function cellRect(r, c) {
+      return {
+        x: BOARD.x + BOARD.gap + c * (BOARD.cell + BOARD.gap),
+        y: BOARD.y + BOARD.gap + r * (BOARD.cell + BOARD.gap),
+        w: BOARD.cell,
+        h: BOARD.cell
+      };
+    }
+
+    function emptyCells() {
+      var out = [];
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          if (grid[r][c] === 0) out.push({ r: r, c: c });
+        }
+      }
+      return out;
+    }
+
+    // Places one new tile (2 with high probability, 4 otherwise) on a
+    // random empty cell and flags it for the spawn-pop animation.
+    function spawnTile() {
+      var cells = emptyCells();
+      if (cells.length === 0) return false;
+      var cell = Rand.pick(cells);
+      grid[cell.r][cell.c] = Math.random() < CONFIG.fourChance ? 4 : 2;
+      pop[cell.r][cell.c] = 1;
+      return true;
+    }
+
+    // Slides + merges a single line (array of 4 values, 0 = empty) toward
+    // index 0. Each tile merges at most once per move: after combining
+    // filtered[i] with filtered[i+1] we advance the scan by two so the
+    // freshly created value is never re-merged with the next tile in the
+    // same pass (the classic 2048 off-by-one/double-merge trap).
+    function slideLine(line) {
+      var filtered = [];
+      for (var i = 0; i < line.length; i++) if (line[i] !== 0) filtered.push(line[i]);
+
+      var result = [], mergedFlags = [], scoreGained = 0;
+      var i = 0;
+      while (i < filtered.length) {
+        if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
+          var v = filtered[i] * 2;
+          result.push(v); mergedFlags.push(true);
+          scoreGained += v;
+          i += 2; // skip both tiles that just merged
+        } else {
+          result.push(filtered[i]); mergedFlags.push(false);
+          i += 1;
+        }
+      }
+      while (result.length < line.length) { result.push(0); mergedFlags.push(false); }
+
+      var moved = false;
+      for (var k = 0; k < line.length; k++) { if (result[k] !== line[k]) { moved = true; break; } }
+
+      return { line: result, mergedFlags: mergedFlags, score: scoreGained, moved: moved };
+    }
+
+    // Applies a swipe direction to the whole board. Left/right operate on
+    // rows; up/down operate on columns (built by reading grid transposed).
+    // Right/down reverse the line before sliding (so the "far" side is
+    // index 0 during the slide) and reverse the result back afterwards.
+    function move(dir) {
+      var moved = false, scoreGained = 0;
+      var mergePositions = [];
+
+      for (var i = 0; i < N; i++) {
+        var line;
+        if (dir === "left" || dir === "right") {
+          line = grid[i].slice();
+        } else {
+          line = [];
+          for (var r = 0; r < N; r++) line.push(grid[r][i]);
+        }
+
+        var reversed = (dir === "right" || dir === "down");
+        if (reversed) line.reverse();
+
+        var res = slideLine(line);
+        if (res.moved) moved = true;
+        scoreGained += res.score;
+
+        var newLine = res.line.slice();
+        var newMerged = res.mergedFlags.slice();
+        if (reversed) { newLine.reverse(); newMerged.reverse(); }
+
+        if (dir === "left" || dir === "right") {
+          grid[i] = newLine;
+          for (var c = 0; c < N; c++) if (newMerged[c]) mergePositions.push({ r: i, c: c });
+        } else {
+          for (var k = 0; k < N; k++) grid[k][i] = newLine[k];
+          for (var k2 = 0; k2 < N; k2++) if (newMerged[k2]) mergePositions.push({ r: k2, c: i });
+        }
+      }
+
+      return { moved: moved, score: scoreGained, mergePositions: mergePositions };
+    }
+
+    // Any empty cell, or any pair of horizontally/vertically adjacent
+    // equal tiles, means at least one more move is possible.
+    function hasMoves() {
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          if (grid[r][c] === 0) return true;
+          if (c + 1 < N && grid[r][c] === grid[r][c + 1]) return true;
+          if (r + 1 < N && grid[r][c] === grid[r + 1][c]) return true;
+        }
+      }
+      return false;
+    }
+
+    function hasTarget() {
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          if (grid[r][c] >= CONFIG.targetValue) return true;
+        }
+      }
+      return false;
+    }
+
+    function reset() {
+      grid = []; pop = [];
+      for (var r = 0; r < N; r++) {
+        var gr = [], pr = [];
+        for (var c = 0; c < N; c++) { gr.push(0); pr.push(0); }
+        grid.push(gr); pop.push(pr);
+      }
+      score = 0;
+      best = Store.get("mergeTilesBest", 0);
+      reachedTarget = false;
+
+      for (var t = 0; t < CONFIG.startTiles; t++) spawnTile();
+
+      UI.setScore(0);
+      UI.setTime(best);
+    }
+
+    // onDown is part of the standard Game interface but this game is
+    // swipe-driven; onSwipe (below) does the actual work. Kept as a
+    // harmless no-op so the module still matches the shared contract.
+    function onDown(p) {}
+
+    // Called by the bootstrap once a completed drag crosses the swipe
+    // threshold and resolves to one of "left"/"right"/"up"/"down".
+    function onSwipe(dir) {
+      var res = move(dir);
+      if (!res.moved) return; // swipe didn't change the board, ignore it
+
+      if (res.score > 0) {
+        score += res.score;
+        UI.setScore(score);
+        // Slightly higher pitch for bigger merges — cheap but juicy.
+        Sound.beep(520 + Math.min(res.score, 800) * 0.4, 0.12, "triangle");
+      }
+      for (var m = 0; m < res.mergePositions.length; m++) {
+        pop[res.mergePositions[m].r][res.mergePositions[m].c] = 1;
+      }
+
+      spawnTile();
+
+      if (hasTarget()) {
+        reachedTarget = true;
+        return end();
+      }
+      if (!hasMoves()) {
+        return end();
+      }
+    }
+
+    function update(dt) {
+      // Decay the pop-scale animation on every tile toward 0.
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          if (pop[r][c] > 0) pop[r][c] = Math.max(0, pop[r][c] - dt / CONFIG.popDuration);
+        }
+      }
+    }
+
+    function drawRoundedRect(x, y, w, h, radius, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    var TILE_COLORS = {
+      2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563",
+      32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcc61",
+      512: "#edc850", 1024: "#edc53f", 2048: "#edc22e"
+    };
+    function tileColor(v) { return TILE_COLORS[v] || "#3c3a32"; }
+    function tileTextColor(v) { return (v === 2 || v === 4) ? "#5b5347" : "#f7f2ea"; }
+    function tileFontSize(v) {
+      if (v >= 1000) return 42;
+      if (v >= 100) return 50;
+      return 58;
+    }
+
+    function render() {
+      ctx.fillStyle = CONFIG.bg;
+      ctx.fillRect(0, 0, view.w, view.h);
+
+      // Title + target hint above the board.
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#f7f2ea";
+      ctx.font = "800 46px -apple-system, sans-serif";
+      ctx.fillText("MERGE TILES", view.w / 2, 190);
+      ctx.font = "600 24px -apple-system, sans-serif";
+      ctx.fillStyle = "#c9bfe0";
+      ctx.fillText("Reach " + CONFIG.targetValue + " to win!", view.w / 2, 232);
+
+      // Board backdrop.
+      drawRoundedRect(BOARD.x, BOARD.y, BOARD.size, BOARD.size, 18, "#2c2640");
+
+      // Empty cell slots + tiles.
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          var rect = cellRect(r, c);
+          drawRoundedRect(rect.x, rect.y, rect.w, rect.h, 10, "#3a3350");
+
+          var v = grid[r][c];
+          if (v === 0) continue;
+
+          var scale = 1 + pop[r][c] * 0.35;
+          var cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(scale, scale);
+          drawRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 10, tileColor(v));
+          ctx.fillStyle = tileTextColor(v);
+          ctx.font = "800 " + tileFontSize(v) + "px -apple-system, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(v), 0, 4);
+          ctx.restore();
+        }
+      }
+
+      // Hint under the board.
+      ctx.fillStyle = "#8f84ab";
+      ctx.font = "600 22px -apple-system, sans-serif";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("Swipe to slide the tiles", view.w / 2, BOARD.y + BOARD.size + 56);
+    }
+
+    function end() {
+      Loop.stop();
+      best = Math.max(score, best);
+      Store.set("mergeTilesBest", best);
+      UI.setEnd(reachedTarget ? "You win!" : "Game Over", score);
+      var subtitle = reachedTarget
+        ? "You reached " + CONFIG.targetValue + "!"
+        : "No more moves left.";
+      $("end-subtitle").innerHTML = subtitle + " You scored <span id=\"end-score\">" + score + "</span>";
+      setState("end");
+      Ad.track("game_end", { score: score, won: reachedTarget });
+    }
+
+    return {
+      reset: reset,
+      onDown: onDown,
+      onSwipe: onSwipe,
+      update: update,
+      render: render
+    };
+  })();
+
+  /* ===================================================================
+     7. BOOTSTRAP  (wire everything together — rarely edited)
+     =================================================================== */
+
+  // Swipe detection: reuse the engine's existing down/up Input events.
+  // On "down" we record the start point; on "up" we look at the dominant
+  // axis of the drag and, if it clears the threshold, resolve it to one
+  // of the four directions.
+  var swipeStart = null;
+  function resolveSwipe(p) {
+    if (!swipeStart) return;
+    var dx = p.x - swipeStart.x, dy = p.y - swipeStart.y;
+    swipeStart = null;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+    if (Math.max(adx, ady) < CONFIG.swipeThreshold) return; // too short, ignore
+    var dir;
+    if (adx > ady) { dir = dx > 0 ? "right" : "left"; }
+    else { dir = dy > 0 ? "down" : "up"; }
+    Game.onSwipe(dir);
+  }
+
+  function startGame() {
+    Sound.unlock();                 // must happen in a user gesture (iOS)
+    Game.reset();
+    setState("playing");
+    Ad.track("game_start");
+    Loop.start(Game.update, Game.render);
+  }
+
+  function init() {
+    fitCanvas();
+    $("screen-intro").querySelector(".title").textContent = CONFIG.title;
+
+    // Route all inputs to the current game.
+    Input.on("down", function (p) { if (State === "playing") { swipeStart = p; Game.onDown(p); } });
+    Input.on("up",   function (p) { if (State === "playing") resolveSwipe(p); });
+
+    // Button wiring.
+    $("btn-start").addEventListener("click", startGame);
+    $("btn-install").addEventListener("click", Ad.openStore);
+    $("btn-cta").addEventListener("click", Ad.openStore);
+
+    // Preload embedded images, then reveal the intro once the ad is ready.
+    preloadImages(function () {
+      Ad.whenReady(function () {
+        setState("intro");
+        Ad.track("loaded");
+      });
+    });
+  }
+
+  // Kick off after DOM is parsed.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else { init(); }
+
+})();
+</script>
+</body>
+</html>
