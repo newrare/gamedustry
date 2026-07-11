@@ -165,7 +165,8 @@
     spawnEvery: 0.60,      // seconds between spawn attempts
     maxRings: 8,           // hard cap on concurrent rings
     minGap: 95,            // minimum radial spacing so rings never stick together
-    doomSpeed: 265         // closing speed of the spiked game-over ring
+    doomSpeed: 265,        // closing speed of the spiked game-over ring
+    chainEvery: 5          // combo interval that fires a chain-reaction celebration
   };
 
   /* ---------- 2. ASSETS (none — everything drawn on canvas) ---------- */
@@ -212,7 +213,10 @@
       g.gain.setValueAtTime(0.001,a.currentTime); g.gain.exponentialRampToValueAtTime(0.3,a.currentTime+0.01);
       g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+(dur||0.15));
       o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+(dur||0.15)); }
-    return { unlock:ensure, beep:beep };
+    // Play a quick ascending run of notes — used for combo-milestone celebrations.
+    function arp(freqs,step,dur,type){ for(var i=0;i<freqs.length;i++){ (function(f,d){
+      setTimeout(function(){ beep(f,dur||0.12,type||"triangle"); }, d); })(freqs[i], i*(step||55)); } }
+    return { unlock:ensure, beep:beep, arp:arp };
   })();
 
   var Store={ get:function(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
@@ -290,6 +294,7 @@
     var MAXWIN=TIERS[TIERS.length-1].win;
 
     var C, ball, bounds, rings, particles, trail, spawnTimer, colorIdx, bgGrad, doom;
+    var shockwaves, rays, ballPop, edgeGlow, banner, hitFx;
     var score, scoreShown, combo, bestCombo, timeLeft, tAnim, shake, flash, popup, bumpT, stats;
 
     function reset(){
@@ -298,6 +303,7 @@
       // Start near centre with a sideways kick, then let gravity take over.
       ball={ x:C.x, y:C.y-120, vx:(Math.random()<0.5?-1:1)*Rand.range(230,320), vy:0 };
       rings=[]; particles=[]; trail=[]; colorIdx=0; bgGrad=null; doom=null;
+      shockwaves=[]; rays=[]; ballPop=0; edgeGlow=0; banner=null; hitFx=0;
       score=0; scoreShown=0; combo=0; bestCombo=0; timeLeft=CONFIG.gameSeconds;
       stats={ perfect:0, good:0, ok:0, close:0, miss:0 };
       tAnim=0; shake=0; flash=0; popup=null;
@@ -307,7 +313,7 @@
       $("score").textContent="0"; $("score").style.color=""; UI.setTime(timeLeft);
     }
 
-    function spawnRing(radius){ rings.push({ r:radius, color:PALETTE[colorIdx++ % PALETTE.length] }); }
+    function spawnRing(radius){ rings.push({ r:radius, color:PALETTE[colorIdx++ % PALETTE.length], pulse:0 }); }
 
     // When the timer runs out, a spiked "game-over" ring closes in from outside.
     // It can't be tapped away — when it reaches the ball, the run is over.
@@ -342,6 +348,19 @@
         particles.push({ x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:Rand.range(0.3,0.65), color:color, size:Rand.range(3,7) }); }
     }
 
+    // A ring of energy that expands from the centre. As it sweeps past each
+    // ring it lights that ring up — so a single tap ripples outward through
+    // the whole stack. This is the "chain reaction" that grows with the combo.
+    function spawnShock(startR, color, power){
+      shockwaves.push({ r:Math.max(0,startR), color:color, power:power||1,
+        speed:640+ (power||1)*260, life:0, maxLife:0.55+ (power||1)*0.15, hit:{} });
+    }
+    // Radial light rays fired from a point — pure celebration at milestones.
+    function spawnRays(x,y,color,n){
+      for(var i=0;i<n;i++){ var a=(i/n)*Math.PI*2 + Rand.range(-0.1,0.1);
+        rays.push({ x:x, y:y, a:a, len:Rand.range(120,260), life:0, maxLife:0.45, color:color }); }
+    }
+
     // Animated score counter: eases toward the real score and pulses on gain.
     function addScore(amount, color){
       score+=amount;
@@ -359,13 +378,39 @@
 
     function popRing(idx, tier, gained){
       var ring=rings[idx];
-      burst(ball.x, ball.y, ring.color, tier.parts);
-      if(tier.name==="PERFECT") burst(ball.x, ball.y, "#ffffff", 5);
+      // Juice scales with the combo: the deeper the chain, the bigger the bang.
+      var cf=Math.min(2.4, 1+combo*0.14);
+      burst(ball.x, ball.y, ring.color, Math.round(tier.parts*cf));
+      if(tier.name==="PERFECT") burst(ball.x, ball.y, "#ffffff", Math.round(5*cf));
       rings.splice(idx,1); trySpawn(); repelBall();
       addScore(gained, tier.color);
+      // Every hit fires a shockwave from the centre that ripples through the
+      // remaining rings — power grows with the combo.
+      spawnShock(ballDist(), tier.color, Math.min(2.2, 0.6+combo*0.12));
+      ballPop=1; hitFx=Math.min(1, 0.5+combo*0.06);
       popup={ t:0, dur:0.7, text:tier.name+"  x"+combo, gained:gained, color:tier.color, big:tier.name==="PERFECT", x:ball.x, y:ball.y };
-      flash=Math.max(flash,tier.flash); shake=Math.max(shake,tier.shake);
-      Sound.beep(tier.freq+combo*12, 0.10, "triangle");
+      flash=Math.max(flash, tier.flash*cf); shake=Math.max(shake, tier.shake*Math.min(1.9,cf));
+      // Pitch climbs with the chain for a rising, satisfying "ladder" of hits.
+      Sound.beep(tier.freq+combo*26, 0.10, "triangle");
+    }
+
+    // Fired every `chainEvery` hits: a full chain-reaction celebration —
+    // stacked shockwaves, radial rays, a screen-edge pulse, a bonus and a
+    // rising arpeggio. The bigger the milestone, the louder everything gets.
+    function triggerChain(){
+      var lvl=Math.floor(combo/CONFIG.chainEvery);           // 1,2,3,…
+      var col=ballColor(), bd=ballDist();
+      spawnShock(bd, "#ffffff", 2.2);
+      spawnShock(bd, col, 1.7);
+      spawnShock(Math.max(0,bd-60), col, 1.3);
+      spawnRays(ball.x, ball.y, col, 12);
+      burst(ball.x, ball.y, "#ffffff", 22);
+      burst(ball.x, ball.y, col, 26);
+      var bonus=combo*20;
+      addScore(bonus, col);
+      flash=Math.max(flash, 0.7); shake=Math.max(shake, 16); edgeGlow=1;
+      banner={ t:0, dur:1.0, text:"CHAIN x"+combo, sub:"+"+bonus, color:col };
+      Sound.arp([523,659,784,1046,1318], 55, 0.14, "triangle");
     }
 
     // Tap: grade the ring nearest to contact and score it, else break the chain.
@@ -381,6 +426,7 @@
         stats[tier.name.toLowerCase()]++;
         var gained=Math.round(10*combo*tier.mult);
         popRing(best, tier, gained);
+        if(combo % CONFIG.chainEvery === 0) triggerChain();   // chain-reaction payoff
       } else {
         // Mistimed tap: break the chain (no score penalty, no sound — forgiving).
         combo=0; stats.miss++;
@@ -440,6 +486,29 @@
       for(var j=particles.length-1;j>=0;j--){ var p=particles[j];
         p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.9; p.vy*=0.9; p.life-=dt; if(p.life<=0) particles.splice(j,1); }
 
+      // Shockwaves: expand outward and light up each ring the front passes
+      // through — this is what makes a single tap cascade across the stack.
+      for(var s=shockwaves.length-1;s>=0;s--){ var sw=shockwaves[s];
+        sw.life+=dt; sw.r+=sw.speed*dt;
+        for(var ri=0;ri<rings.length;ri++){
+          if(!sw.hit[ri] && Math.abs(rings[ri].r-sw.r)<26){ sw.hit[ri]=1;
+            rings[ri].pulse=Math.min(1.4, rings[ri].pulse+sw.power);      // flare it up
+            burst(C.x+(rings[ri].r)* (ball.x-C.x)/(ballDist()||1),
+                  C.y+(rings[ri].r)* (ball.y-C.y)/(ballDist()||1), rings[ri].color, 3);
+          }
+        }
+        if(sw.life>=sw.maxLife) shockwaves.splice(s,1);
+      }
+      // Ring pulses decay.
+      for(var rp=0;rp<rings.length;rp++) if(rings[rp].pulse>0) rings[rp].pulse=Math.max(0,rings[rp].pulse-dt*3.2);
+      // Rays fade.
+      for(var ry=rays.length-1;ry>=0;ry--){ rays[ry].life+=dt; if(rays[ry].life>=rays[ry].maxLife) rays.splice(ry,1); }
+      // Ball pop + edge glow + hit shimmer relax back to rest.
+      if(ballPop>0) ballPop=Math.max(0,ballPop-dt*4);
+      if(edgeGlow>0) edgeGlow=Math.max(0,edgeGlow-dt*1.4);
+      if(hitFx>0) hitFx=Math.max(0,hitFx-dt*2.5);
+      if(banner){ banner.t+=dt; if(banner.t>=banner.dur) banner=null; }
+
       if(popup){ popup.t+=dt; if(popup.t>=popup.dur) popup=null; }
       if(shake>0) shake=Math.max(0,shake-dt*40);
       if(flash>0) flash=Math.max(0,flash-dt*1.6);
@@ -461,11 +530,24 @@
       // window reads as "hot" via a translucent wider stroke behind it.
       for(var i=0;i<rings.length;i++){
         var ring=rings[i], gap=Math.abs(ring.r-bd), hot=gap<=MAXWIN, rr=Math.max(1,ring.r);
+        var pl=ring.pulse||0;
+        // Chain-reaction flare: a ring lit by a passing shockwave gets a wide
+        // translucent halo and a fatter, brighter stroke.
+        if(pl>0){ ctx.globalAlpha=Math.min(0.5,pl*0.4); ctx.strokeStyle="#ffffff"; ctx.lineWidth=18+pl*16;
+          ctx.beginPath(); ctx.arc(C.x,C.y,rr,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1; }
         if(hot){ ctx.globalAlpha=0.22; ctx.strokeStyle=ring.color; ctx.lineWidth=20;
           ctx.beginPath(); ctx.arc(C.x,C.y,rr,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1; }
-        ctx.strokeStyle=ring.color; ctx.lineWidth=hot?11:7;
+        ctx.strokeStyle=pl>0?"#ffffff":ring.color; ctx.lineWidth=(hot?11:7)+pl*6;
         ctx.beginPath(); ctx.arc(C.x,C.y,rr,0,Math.PI*2); ctx.stroke();
       }
+
+      // Shockwave fronts — expanding rings that fade as they travel.
+      for(var sw=0;sw<shockwaves.length;sw++){ var w=shockwaves[sw], wp=1-w.life/w.maxLife;
+        if(wp<=0) continue;
+        ctx.globalAlpha=wp*0.85; ctx.strokeStyle=w.color; ctx.lineWidth=2+w.power*4;
+        ctx.beginPath(); ctx.arc(C.x,C.y,Math.max(1,w.r),0,Math.PI*2); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
 
       // Game-over ring — a red spiked circle closing in (spikes point inward).
       if(doom){
@@ -485,7 +567,7 @@
 
       // Ball trail — one simple stroked streak of the recent path.
       if(trail.length>1){
-        ctx.globalAlpha=0.5; ctx.strokeStyle=bc; ctx.lineWidth=CONFIG.ballR*0.8;
+        ctx.globalAlpha=Math.min(0.85,0.5+combo*0.03); ctx.strokeStyle=bc; ctx.lineWidth=CONFIG.ballR*(0.8+Math.min(0.6,combo*0.05));
         ctx.lineJoin="round"; ctx.lineCap="round";
         ctx.beginPath(); ctx.moveTo(trail[0].x,trail[0].y);
         for(var t=1;t<trail.length;t++) ctx.lineTo(trail[t].x,trail[t].y);
@@ -498,10 +580,19 @@
         ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); }
       ctx.globalAlpha=1;
 
+      // Milestone rays shooting out of the ball.
+      for(var r2=0;r2<rays.length;r2++){ var ry=rays[r2], rp=1-ry.life/ry.maxLife; if(rp<=0) continue;
+        var l=ry.len*(0.4+0.6*(1-rp)); ctx.globalAlpha=rp*0.8; ctx.strokeStyle=ry.color; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(ry.x+Math.cos(ry.a)*18, ry.y+Math.sin(ry.a)*18);
+        ctx.lineTo(ry.x+Math.cos(ry.a)*(18+l), ry.y+Math.sin(ry.a)*(18+l)); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
       // Ball — cheap "glow" using concentric circles: soft halo + body + core.
-      ctx.globalAlpha=0.3; ctx.fillStyle=bc; ctx.beginPath(); ctx.arc(ball.x,ball.y,CONFIG.ballR*1.7,0,Math.PI*2); ctx.fill();
-      ctx.globalAlpha=1; ctx.fillStyle=bc; ctx.beginPath(); ctx.arc(ball.x,ball.y,CONFIG.ballR,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle="#ffffff"; ctx.beginPath(); ctx.arc(ball.x,ball.y,CONFIG.ballR*0.5,0,Math.PI*2); ctx.fill();
+      // Pops bigger on each hit and shimmers brighter deep into a combo.
+      var br=CONFIG.ballR*(1+ballPop*0.5);
+      ctx.globalAlpha=0.3+hitFx*0.4; ctx.fillStyle=bc; ctx.beginPath(); ctx.arc(ball.x,ball.y,br*(1.7+ballPop*0.6),0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1; ctx.fillStyle=bc; ctx.beginPath(); ctx.arc(ball.x,ball.y,br,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#ffffff"; ctx.beginPath(); ctx.arc(ball.x,ball.y,br*(0.5+ballPop*0.25),0,Math.PI*2); ctx.fill();
 
       ctx.restore();
 
@@ -524,7 +615,41 @@
         ctx.fillText("COMBO x"+combo, C.x, bounds.B+52); ctx.textAlign="left"; }
 
       // Success flash overlay (stronger for higher grades).
-      if(flash>0){ ctx.fillStyle="rgba(255,255,255,"+flash+")"; ctx.fillRect(0,0,view.w,view.h); }
+      if(flash>0){ ctx.fillStyle="rgba(255,255,255,"+Math.min(0.85,flash)+")"; ctx.fillRect(0,0,view.w,view.h); }
+
+      // Screen-edge glow that pulses on a chain milestone (drawn as an inset
+      // rectangular gradient — cheap, no blur).
+      if(edgeGlow>0){ var eg=edgeGlow, band=90;
+        var col=ballColor();
+        var g1=ctx.createLinearGradient(0,0,0,band); g1.addColorStop(0,tintRGBA(col,0.5*eg)); g1.addColorStop(1,tintRGBA(col,0));
+        ctx.fillStyle=g1; ctx.fillRect(0,0,view.w,band);
+        var g2=ctx.createLinearGradient(0,view.h,0,view.h-band); g2.addColorStop(0,tintRGBA(col,0.5*eg)); g2.addColorStop(1,tintRGBA(col,0));
+        ctx.fillStyle=g2; ctx.fillRect(0,view.h-band,view.w,band);
+        var g3=ctx.createLinearGradient(0,0,band,0); g3.addColorStop(0,tintRGBA(col,0.5*eg)); g3.addColorStop(1,tintRGBA(col,0));
+        ctx.fillStyle=g3; ctx.fillRect(0,0,band,view.h);
+        var g4=ctx.createLinearGradient(view.w,0,view.w-band,0); g4.addColorStop(0,tintRGBA(col,0.5*eg)); g4.addColorStop(1,tintRGBA(col,0));
+        ctx.fillStyle=g4; ctx.fillRect(view.w-band,0,band,view.h);
+      }
+
+      // Chain-milestone banner: punches in, holds, then fades out.
+      if(banner){ var be=banner.t/banner.dur;
+        var bs=be<0.2 ? 0.5+2.5*be : (be>0.75 ? 1-(be-0.75)*4*0.15 : 1);
+        var balpha=be>0.75 ? 1-(be-0.75)*4 : 1;
+        ctx.globalAlpha=Math.max(0,balpha); ctx.textAlign="center";
+        ctx.fillStyle=banner.color;
+        ctx.font="900 "+Math.round(64*bs)+"px -apple-system,Segoe UI,Roboto,sans-serif";
+        ctx.fillText(banner.text, view.w/2, view.h*0.42);
+        ctx.fillStyle="#ffffff";
+        ctx.font="900 "+Math.round(34*bs)+"px -apple-system,Segoe UI,Roboto,sans-serif";
+        ctx.fillText(banner.sub, view.w/2, view.h*0.42+46);
+        ctx.globalAlpha=1; ctx.textAlign="left";
+      }
+    }
+
+    // Convert a #rrggbb colour into an rgba() string at the given alpha.
+    function tintRGBA(hex, a){
+      var h=hex.replace("#",""); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      var n=parseInt(h,16); return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";
     }
 
     function end(){
