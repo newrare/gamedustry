@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Tap the Target</title>
+<!--
+  EXAMPLE GAME 1 — "Tap the Target"
+  Mechanic: targets pop up at random positions and shrink. Tap them before
+  they vanish. Fast taps build a combo multiplier; letting one expire breaks it.
+  Built from template/game-template.html — see docs/CREATING_A_GAME.md.
+-->
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#12163a;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-user-select:none; user-select:none; touch-action:none; }
+  #stage { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  #game { display:block; touch-action:none; }
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; color:#fff; padding:24px; transition:opacity .25s ease; z-index:10; }
+  .screen.hidden { opacity:0; pointer-events:none; }
+  .title { font-size:clamp(24px,8vw,48px); font-weight:800; text-shadow:0 3px 0 rgba(0,0,0,.25); }
+  .subtitle { margin-top:12px; font-size:clamp(14px,4vw,20px); opacity:.9; }
+  .btn { margin-top:24px; padding:16px 36px; border:none; border-radius:999px;
+    font-size:clamp(16px,5vw,22px); font-weight:800; color:#fff; cursor:pointer;
+    background:linear-gradient(180deg,#ffd23f,#ff8c00); box-shadow:0 8px 24px rgba(255,140,0,.5);
+    animation:pulse 1.4s ease-in-out infinite; }
+  .btn:active { transform:scale(.96); }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+  #hud { position:absolute; top:0; left:0; right:0; z-index:15; display:flex; justify-content:space-between;
+    padding:14px 20px; color:#fff; font-weight:800; font-size:clamp(15px,4.5vw,22px);
+    pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.4); }
+  #hud.hidden { display:none; }
+  #combo { position:absolute; top:52px; left:0; right:0; text-align:center; z-index:15;
+    color:#ffd23f; font-weight:900; font-size:clamp(18px,6vw,30px); pointer-events:none;
+    text-shadow:0 2px 8px rgba(0,0,0,.5); opacity:0; transition:opacity .2s; }
+  #cta-bar { position:absolute; left:0; right:0; bottom:0; z-index:20; display:flex; align-items:center;
+    justify-content:center; padding:12px; background:rgba(0,0,0,.35); backdrop-filter:blur(4px); }
+  #cta-bar.hidden { display:none; }
+  .spinner { width:46px; height:46px; border-radius:50%; border:5px solid rgba(255,255,255,.2);
+    border-top-color:#fff; animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="stage"><canvas id="game"></canvas></div>
+
+<div id="hud" class="hidden">
+  <div>Score: <span id="score">0</span></div>
+  <div>Time: <span id="time">0</span></div>
+</div>
+<div id="combo"></div>
+
+<div id="screen-loading" class="screen">
+  <div class="spinner"></div><div class="subtitle" style="margin-top:18px">Loading…</div>
+</div>
+
+<div id="screen-intro" class="screen hidden">
+  <div class="title">TAP THE TARGET</div>
+  <div class="subtitle">Tap the circles before they vanish.<br>Chain taps for a combo!</div>
+  <button class="btn" id="btn-start">TAP TO PLAY</button>
+</div>
+
+<div id="screen-end" class="screen hidden">
+  <div class="title" id="end-title">Great job!</div>
+  <div class="subtitle">You scored <span id="end-score">0</span></div>
+  <button class="btn" id="btn-install">PLAY THE FULL GAME</button>
+</div>
+
+<div id="cta-bar" class="hidden">
+  <button class="btn" id="btn-cta" style="margin-top:0; padding:12px 28px;">INSTALL NOW</button>
+</div>
+
+<script>
+"use strict";
+(function () {
+
+  /* ---------- 1. CONFIG ---------- */
+  var CONFIG = {
+    title: "TAP THE TARGET",
+    gameSeconds: 20,
+    storeUrl: {
+      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
+      android: "https://play.google.com/store/apps/details?id=com.example.game",
+      fallback:"https://52-entertainment.com/our-games/"
+    },
+    designWidth: 720, designHeight: 1280, bg: "#12163a",
+    spawnEvery: 0.75,     // seconds between target spawns (speeds up over time)
+    targetLife: 1.6,      // seconds a target stays alive
+    maxTargets: 4
+  };
+
+  /* ---------- 2. ASSETS (none — everything drawn on canvas) ---------- */
+  var ASSETS = { images: {}, sounds: {} };
+
+  /* ---------- 3. ENGINE (shared plumbing) ---------- */
+  function $(id){ return document.getElementById(id); }
+  var canvas=$("game"), ctx=canvas.getContext("2d");
+  var view={ w:CONFIG.designWidth, h:CONFIG.designHeight, scale:1 };
+  function fitCanvas(){
+    var vw=window.innerWidth, vh=window.innerHeight, dpr=Math.min(window.devicePixelRatio||1,2);
+    var scale=Math.min(vw/view.w, vh/view.h); view.scale=scale;
+    canvas.width=Math.round(view.w*dpr); canvas.height=Math.round(view.h*dpr);
+    canvas.style.width=Math.round(view.w*scale)+"px"; canvas.style.height=Math.round(view.h*scale)+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", fitCanvas);
+  window.addEventListener("orientationchange", fitCanvas);
+
+  var Input=(function(){
+    var L={down:[]};
+    function toDesign(cx,cy){ var r=canvas.getBoundingClientRect();
+      return { x:(cx-r.left)/r.width*view.w, y:(cy-r.top)/r.height*view.h }; }
+    function emit(e){ var t=e.touches&&e.touches[0]?e.touches[0]:(e.changedTouches&&e.changedTouches[0]?e.changedTouches[0]:e);
+      var p=toDesign(t.clientX,t.clientY); L.down.forEach(function(fn){ fn(p); }); }
+    canvas.addEventListener("mousedown", emit);
+    canvas.addEventListener("touchstart", function(e){ e.preventDefault(); emit(e); }, {passive:false});
+    return { on:function(fn){ L.down.push(fn); } };
+  })();
+
+  var Loop=(function(){
+    var running=false,last=0,u=null,r=null;
+    function frame(now){ if(!running)return; var dt=Math.min((now-last)/1000,0.05); last=now; if(u)u(dt); if(r)r(); requestAnimationFrame(frame); }
+    return { start:function(uu,rr){ u=uu;r=rr;running=true;last=performance.now();requestAnimationFrame(frame); },
+             stop:function(){ running=false; } };
+  })();
+
+  var Sound=(function(){
+    var actx=null;
+    function ensure(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+      if(actx&&actx.state==="suspended")actx.resume(); return actx; }
+    function beep(freq,dur,type){ var a=ensure(); if(!a)return;
+      var o=a.createOscillator(),g=a.createGain(); o.type=type||"sine"; o.frequency.value=freq||440;
+      g.gain.setValueAtTime(0.001,a.currentTime); g.gain.exponentialRampToValueAtTime(0.3,a.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+(dur||0.15));
+      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+(dur||0.15)); }
+    return { unlock:ensure, beep:beep };
+  })();
+
+  var Store={ get:function(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+              set:function(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
+  var Rand={ range:function(a,b){ return a+Math.random()*(b-a); }, pick:function(arr){ return arr[Math.floor(Math.random()*arr.length)]; } };
+
+  /* ---------- 4. AD NETWORK GLUE ---------- */
+  var Ad=(function(){
+    function platform(){ var ua=navigator.userAgent||""; if(/iPad|iPhone|iPod/.test(ua))return "ios"; if(/android/i.test(ua))return "android"; return "fallback"; }
+    function targetUrl(){ return CONFIG.storeUrl[platform()]||CONFIG.storeUrl.fallback; }
+    function whenReady(cb){ if(!window.mraid)return cb();
+      if(mraid.getState&&mraid.getState()==="loading"){ mraid.addEventListener("ready",cb); } else cb(); }
+    function openStore(){ track("cta_click"); var url=targetUrl();
+      try{ if(window.mraid&&typeof mraid.open==="function"){ mraid.open(url); return; } }catch(e){}
+      try{ if(typeof window.install==="function"){ window.install(); return; } }catch(e){}
+      try{ if(window.ExitApi&&typeof ExitApi.exit==="function"){ ExitApi.exit(); return; } }catch(e){}
+      try{ if(typeof window.mintegral_playable_exit==="function"){ window.mintegral_playable_exit(); return; } }catch(e){}
+      window.open(url,"_blank"); }
+    function track(ev,data){ try{ console.log("[playable]",ev,data||""); }catch(e){} }
+    return { whenReady:whenReady, openStore:openStore, track:track };
+  })();
+
+  /* ---------- 5. STATE MACHINE ---------- */
+  var UI={ show:function(name){ ["loading","intro","end"].forEach(function(s){ $("screen-"+s).classList.toggle("hidden",s!==name); });
+      $("hud").classList.toggle("hidden",name!=="playing"); $("cta-bar").classList.toggle("hidden",name!=="playing"); },
+    setScore:function(v){ $("score").textContent=v; }, setTime:function(v){ $("time").textContent=v; },
+    setEnd:function(title,score){ $("end-title").textContent=title; $("end-score").textContent=score; },
+    combo:function(n){ var el=$("combo"); if(n>=2){ el.textContent="COMBO x"+n; el.style.opacity=1; } else el.style.opacity=0; } };
+  var State="loading";
+  function setState(s){ State=s; Ad.track("state",s); UI.show(s); }
+
+  /* ---------- 6. GAME ---------- */
+  var Game=(function(){
+    var score, timeLeft, targets, spawnTimer, combo, spawnEvery;
+    var COLORS=["#ff5c8a","#4ade80","#4dabf7","#ffd23f","#b388ff"];
+
+    function reset(){
+      score=0; timeLeft=CONFIG.gameSeconds; targets=[]; combo=0;
+      spawnEvery=CONFIG.spawnEvery; spawnTimer=0.3;
+      UI.setScore(0); UI.setTime(timeLeft); UI.combo(0);
+    }
+
+    function spawn(){
+      if(targets.length>=CONFIG.maxTargets) return;
+      var r=Rand.range(55,90);
+      targets.push({
+        x:Rand.range(r+20, view.w-r-20), y:Rand.range(160, view.h-200),
+        r:r, life:CONFIG.targetLife, maxLife:CONFIG.targetLife, color:Rand.pick(COLORS), pop:0
+      });
+    }
+
+    function onDown(p){
+      // Check topmost (last drawn) first.
+      for(var i=targets.length-1;i>=0;i--){
+        var t=targets[i], dx=p.x-t.x, dy=p.y-t.y;
+        if(dx*dx+dy*dy <= t.r*t.r){
+          combo++;
+          var pts=10*Math.max(1,combo);
+          score+=pts; UI.setScore(score); UI.combo(combo);
+          Sound.beep(500+combo*40,0.09,"triangle");
+          targets.splice(i,1);
+          return;
+        }
+      }
+    }
+
+    function update(dt){
+      timeLeft-=dt; UI.setTime(Math.max(0,Math.ceil(timeLeft)));
+      if(timeLeft<=0) return end();
+
+      // Difficulty ramp: spawn faster as the round progresses.
+      spawnEvery=Math.max(0.35, CONFIG.spawnEvery - (CONFIG.gameSeconds-timeLeft)*0.02);
+      spawnTimer-=dt; if(spawnTimer<=0){ spawn(); spawnTimer=spawnEvery; }
+
+      for(var i=targets.length-1;i>=0;i--){
+        var t=targets[i]; t.life-=dt; t.pop=Math.min(1,t.pop+dt*6);
+        if(t.life<=0){ targets.splice(i,1); combo=0; UI.combo(0); } // miss breaks combo
+      }
+    }
+
+    function render(){
+      ctx.fillStyle=CONFIG.bg; ctx.fillRect(0,0,view.w,view.h);
+      for(var i=0;i<targets.length;i++){
+        var t=targets[i];
+        var grow=t.pop, shrink=t.life/t.maxLife;
+        var r=t.r*grow*(0.55+0.45*shrink);
+        // outer ring shows remaining life
+        ctx.strokeStyle="rgba(255,255,255,.35)"; ctx.lineWidth=6;
+        ctx.beginPath(); ctx.arc(t.x,t.y,t.r*grow,0,Math.PI*2*shrink); ctx.stroke();
+        // body
+        ctx.fillStyle=t.color;
+        ctx.beginPath(); ctx.arc(t.x,t.y,r,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.9)";
+        ctx.beginPath(); ctx.arc(t.x-r*0.25,t.y-r*0.25,r*0.22,0,Math.PI*2); ctx.fill();
+      }
+    }
+
+    function end(){
+      Loop.stop();
+      Store.set("bestScore", Math.max(score, Store.get("bestScore",0)));
+      UI.setEnd(score>=150?"Amazing!":"Nice run!", score);
+      setState("end"); Ad.track("game_end",{score:score});
+    }
+
+    return { reset:reset, onDown:onDown, update:update, render:render };
+  })();
+
+  /* ---------- 7. BOOTSTRAP ---------- */
+  function startGame(){ Sound.unlock(); Game.reset(); setState("playing"); Ad.track("game_start"); Loop.start(Game.update, Game.render); }
+  function init(){
+    fitCanvas();
+    Input.on(function(p){ if(State==="playing") Game.onDown(p); });
+    $("btn-start").addEventListener("click", startGame);
+    $("btn-install").addEventListener("click", Ad.openStore);
+    $("btn-cta").addEventListener("click", Ad.openStore);
+    Ad.whenReady(function(){ setState("intro"); Ad.track("loaded"); });
+  }
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded", init); } else { init(); }
+
+})();
+</script>
+</body>
+</html>
