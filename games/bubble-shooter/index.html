@@ -8,7 +8,7 @@
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Bubble Shooter</title>
+<title>Bubble Rescue</title>
 
 <!-- =====================================================================
      STYLES  (vanilla CSS, inlined)
@@ -107,8 +107,8 @@
 
 <!-- Intro screen: title + start button -->
 <div id="screen-intro" class="screen hidden">
-  <div class="title">BUBBLE SHOOTER</div>
-  <div class="subtitle">Aim, shoot, match 3+ same-color bubbles to pop them!</div>
+  <div class="title">BUBBLE RESCUE</div>
+  <div class="subtitle">Dig up through the bubbles to free Buddy!<br>Match 3, and pop ⚡ bubbles for huge chain combos.</div>
   <button class="btn" id="btn-start">TAP TO PLAY</button>
 </div>
 
@@ -116,6 +116,7 @@
 <div id="screen-end" class="screen hidden">
   <div class="title" id="end-title">Nice!</div>
   <div class="subtitle" id="end-subtitle">You scored <span id="end-score">0</span></div>
+  <div class="subtitle" id="end-note" style="margin-top:4px;font-size:clamp(12px,3.5vw,16px);opacity:.7"></div>
   <button class="btn" id="btn-install">PLAY THE FULL GAME</button>
 </div>
 
@@ -139,8 +140,8 @@
      The knobs a new game changes first. Copy of business/creative params.
      =================================================================== */
   var CONFIG = {
-    title: "BUBBLE SHOOTER",
-    gameSeconds: 40,               // round length; 0 = endless
+    title: "BUBBLE RESCUE",
+    gameSeconds: 45,               // round length; 0 = endless
     // Store links used by the CTA. The correct one is chosen at runtime.
     storeUrl: {
       ios:     "https://apps.apple.com/app/idXXXXXXXXX",
@@ -153,19 +154,26 @@
     designHeight: 1280,
     bg: "#141733",
 
-    // --- Bubble Shooter specific tunables ---
+    // --- Bubble Rescue specific tunables ---
     cell: 60,                      // grid cell size (square grid, 4-neighbor flood fill)
     cols: 12,                      // 12 * 60 = 720 = designWidth (exact fit)
     rows: 14,                      // total grid rows available
-    gridTop: 90,                   // y of the grid's top-left corner
-    initialRows: 5,                // rows pre-filled with random bubbles at start
-    dangerRow: 11,                 // placing a bubble at/after this row ends the round
+    gridTop: 150,                  // y of the grid's top-left corner (leaves room for the caged mascot above)
+    initialRows: 8,                // thick wall of bubbles the player must dig through
+    dangerRow: 12,                 // if the wall grows down to this row, the round is lost
     colors: ["#ff5964", "#ffd23f", "#3bceac", "#5390d9", "#c86bfa"],
     ballRadius: 26,
-    ballSpeed: 900,                // px/sec
+    ballSpeed: 950,                // px/sec
     launcherX: 360,
     launcherY: 1080,
-    maxAimDeg: 75                  // clamp aim so you can't shoot sideways/down
+    maxAimDeg: 78,                 // clamp aim so you can't shoot sideways/down
+
+    // --- Rescue objective + electric-chain twist ---
+    electricChance: 0.20,          // chance a launched bubble is an electric power bubble
+    wallElectricChance: 0.10,      // chance a wall bubble starts electric (fuels chain reactions)
+    electricRadius: 2,             // blast radius (in cells) of an electric detonation
+    rescueRemaining: 16,           // free the mascot once this few bubbles remain
+    comboColor: "#ffd23f"
   };
 
   /* ===================================================================
@@ -387,47 +395,69 @@
 
   /* ===================================================================
      6. GAME  (the part a new prompt mostly rewrites)
-     Everything above is reusable plumbing. This game implements a simple,
-     robust bubble shooter:
-       - A fixed square grid (4-neighbor flood fill, not hex) fills the top
-         rows with random colored bubbles.
+     -------------------------------------------------------------------
+     BUBBLE RESCUE — a bubble shooter with a "dig-to-rescue" objective
+     and an electric chain-reaction twist:
+
+       - A THICK WALL of bubbles fills the top rows. A caged mascot
+         ("Buddy") sits above the wall. The goal is to DIG UPWARD through
+         the wall until few enough bubbles remain, which frees the mascot.
        - A launcher at the bottom center holds a "current" bubble and shows
-         a "next" one. Aim follows the pointer (move) and is clamped to the
-         upper half so you can never shoot sideways or downward.
-       - Firing (down) shoots the current bubble in a straight line; it
-         bounces off the side walls and stops when it reaches the top wall
-         or touches an existing bubble, snapping to the nearest empty grid
-         cell (found via a short BFS so it always terminates).
-       - After snapping, we flood-fill same-color 4-neighbors from the new
-         bubble; groups of size >= 3 pop (score + particles + beep).
-       - END CONDITION (documented, pick-one-and-be-clear):
-           (a) 40s timer runs out  -> "Time's Up!"
-           (b) grid fully cleared -> "Cleared!" (win)
-           (c) a bubble snaps at/after CONFIG.dangerRow (too close to the
-               launcher) -> "Stack Too High!"
-         Whichever happens first ends the round and shows the end screen.
+         a "next" one. Aim follows the pointer and is clamped to the upper
+         half so you can never shoot sideways or downward.
+       - Firing shoots the current bubble in a straight line; it bounces off
+         the side walls and stops when it reaches the top or touches an
+         existing bubble, snapping to the nearest empty grid cell (BFS).
+       - MATCH: after snapping a normal bubble, we flood-fill same-color
+         4-neighbors; groups of size >= 3 pop.
+       - ELECTRIC (the twist): ~1 in 5 launched bubbles (and some wall
+         bubbles) are electric. An electric bubble DETONATES on contact,
+         clearing a radius of bubbles regardless of color and CHAINING to
+         any other electric bubble caught in the blast — which detonates in
+         turn. Big chains = big combos, drawn as lightning arcs.
+       - DETACH: any bubble no longer connected to the ceiling (row 0) after
+         a pop/detonation falls off-screen (and scores) — so one good chain
+         can collapse a huge chunk of the wall.
+       - COMBO: every bubble cleared by a single shot is tallied; the flashy
+         "MEGA CHAIN xN" callout + a running streak multiplier reward chains.
+       - END CONDITIONS:
+           (a) rescue: bubbles remaining <= CONFIG.rescueRemaining -> WIN
+           (b) 45s timer runs out -> "Time's Up!"
+           (c) the wall grows down to CONFIG.dangerRow -> "Wall Too Low!"
      =================================================================== */
   var Game = (function () {
     var CELL = CONFIG.cell, COLS = CONFIG.cols, ROWS = CONFIG.rows,
         GRID_TOP = CONFIG.gridTop, COLORS = CONFIG.colors,
         BALL_R = CONFIG.ballRadius, BALL_SPEED = CONFIG.ballSpeed,
         LX = CONFIG.launcherX, LY = CONFIG.launcherY,
-        MAX_AIM = CONFIG.maxAimDeg * Math.PI / 180;
+        MAX_AIM = CONFIG.maxAimDeg * Math.PI / 180,
+        E_RADIUS = CONFIG.electricRadius;
 
     var COLLIDE_DIST = CELL * 0.92; // distance threshold to treat two bubbles as touching
+    var PI2 = Math.PI * 2;
+    var MASCOT_X = 360, MASCOT_BASE_Y = 72, MASCOT_R = 38;
 
-    var grid;           // grid[row][col] = color index or null
+    var grid;            // grid[row][col] = color index or null
+    var elec;            // elec[row][col] = true if that bubble is electric
     var score, timeLeft;
-    var ball;           // { x, y, vx, vy, color, r, flying }
-    var nextColor;
+    var ball;            // { x, y, vx, vy, color, r, flying, electric }
+    var nextColor, nextElectric;
     var aimAngle;        // radians, 0 = straight up, clamped to +/- MAX_AIM
-    var particles;
-    var ended;
+    var particles;       // pop dust
+    var fallers;         // detached bubbles falling off-screen
+    var arcs;            // lightning arcs (visual only)
+    var comboText;       // floating combo callout { text, life, maxLife, big }
+    var streak;          // consecutive clearing shots (score multiplier)
+    var maxChain;        // biggest single-shot clear (shown on end screen)
+    var initialCount;    // bubbles at start (for the rescue progress bar)
+    var ended, rescued, rescueT;
+    var mascotY;         // animated mascot y (rises when freed)
 
     // --- grid helpers -------------------------------------------------
     function cellX(col) { return col * CELL + CELL / 2; }
     function cellY(row) { return GRID_TOP + row * CELL + CELL / 2; }
-    function clampInt(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function key(r, c) { return r + "_" + c; }
 
     function makeGrid() {
       var g = [];
@@ -438,29 +468,39 @@
       }
       return g;
     }
+    function makeElec() {
+      var g = [];
+      for (var r = 0; r < ROWS; r++) {
+        var row = [];
+        for (var c = 0; c < COLS; c++) row.push(false);
+        g.push(row);
+      }
+      return g;
+    }
 
     function fillInitialRows() {
       for (var r = 0; r < CONFIG.initialRows; r++) {
         for (var c = 0; c < COLS; c++) {
           grid[r][c] = Rand.int(0, COLORS.length - 1);
+          elec[r][c] = Math.random() < CONFIG.wallElectricChance;
         }
       }
     }
 
-    function isEmptyOnBoard() {
+    function bubbleCount() {
+      var n = 0;
       for (var r = 0; r < ROWS; r++) {
-        for (var c = 0; c < COLS; c++) if (grid[r][c] !== null) return false;
+        for (var c = 0; c < COLS; c++) if (grid[r][c] !== null) n++;
       }
-      return true;
+      return n;
     }
 
     // BFS outward from (row,col) to find the nearest empty cell (4-neighbor).
     // Always terminates: the grid is finite and every visited cell is queued once.
     function findNearestEmpty(row, col) {
-      row = clampInt(row, 0, ROWS - 1);
-      col = clampInt(col, 0, COLS - 1);
+      row = clamp(row, 0, ROWS - 1);
+      col = clamp(col, 0, COLS - 1);
       var visited = {};
-      var key = function (r, c) { return r + "_" + c; };
       var queue = [{ r: row, c: col }];
       visited[key(row, col)] = true;
       while (queue.length > 0) {
@@ -486,7 +526,6 @@
     function floodFillGroup(row, col) {
       var color = grid[row][col];
       var visited = {};
-      var key = function (r, c) { return r + "_" + c; };
       var queue = [{ r: row, c: col }];
       visited[key(row, col)] = true;
       var group = [];
@@ -521,10 +560,92 @@
       return false;
     }
 
+    // Remove a matched group; returns nothing (grid mutated in place).
+    function popGroup(group) {
+      for (var i = 0; i < group.length; i++) {
+        var g = group[i];
+        spawnParticles(cellX(g.c), cellY(g.r), COLORS[grid[g.r][g.c]], 8);
+        grid[g.r][g.c] = null;
+        elec[g.r][g.c] = false;
+      }
+    }
+
+    // Electric chain reaction: detonate a radius blast from each seed cell,
+    // hopping to any other electric bubble caught in the blast. Returns the
+    // number of bubbles removed. Terminates (each electric cell queued once).
+    function detonateElectric(seeds) {
+      var queue = seeds.slice();
+      var queued = {};
+      for (var s = 0; s < seeds.length; s++) queued[key(seeds[s].r, seeds[s].c)] = true;
+      var removed = 0;
+      while (queue.length > 0) {
+        var e = queue.shift();
+        var ex = cellX(e.c), ey = cellY(e.r);
+        for (var r = e.r - E_RADIUS; r <= e.r + E_RADIUS; r++) {
+          for (var c = e.c - E_RADIUS; c <= e.c + E_RADIUS; c++) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+            if (grid[r][c] === null) continue;
+            var dr = r - e.r, dc = c - e.c;
+            if (dr * dr + dc * dc > E_RADIUS * E_RADIUS + 0.5) continue; // roughly circular
+            // Chain to other electric bubbles before we clear them.
+            if (elec[r][c] && !queued[key(r, c)]) { queued[key(r, c)] = true; queue.push({ r: r, c: c }); }
+            arcs.push({ x1: ex, y1: ey, x2: cellX(c), y2: cellY(r), life: 0.22, maxLife: 0.22 });
+            spawnParticles(cellX(c), cellY(r), COLORS[grid[r][c]], 6);
+            grid[r][c] = null;
+            elec[r][c] = false;
+            removed++;
+          }
+        }
+      }
+      return removed;
+    }
+
+    // Remove bubbles no longer connected to the ceiling (row 0). They fall.
+    // Returns the number of bubbles that dropped.
+    function dropFloating() {
+      var anchored = {};
+      var queue = [];
+      for (var c = 0; c < COLS; c++) {
+        if (grid[0][c] !== null) { anchored[key(0, c)] = true; queue.push({ r: 0, c: c }); }
+      }
+      while (queue.length > 0) {
+        var cur = queue.shift();
+        var neighbors = [
+          { r: cur.r - 1, c: cur.c }, { r: cur.r + 1, c: cur.c },
+          { r: cur.r, c: cur.c - 1 }, { r: cur.r, c: cur.c + 1 }
+        ];
+        for (var i = 0; i < neighbors.length; i++) {
+          var n = neighbors[i];
+          if (n.r < 0 || n.r >= ROWS || n.c < 0 || n.c >= COLS) continue;
+          if (grid[n.r][n.c] === null) continue;
+          var k = key(n.r, n.c);
+          if (anchored[k]) continue;
+          anchored[k] = true;
+          queue.push(n);
+        }
+      }
+      var count = 0;
+      for (var r = 0; r < ROWS; r++) {
+        for (var cc = 0; cc < COLS; cc++) {
+          if (grid[r][cc] === null) continue;
+          if (anchored[key(r, cc)]) continue;
+          fallers.push({
+            x: cellX(cc), y: cellY(r),
+            vx: Rand.range(-40, 40), vy: Rand.range(0, 90),
+            color: COLORS[grid[r][cc]], electric: elec[r][cc], r: BALL_R
+          });
+          grid[r][cc] = null;
+          elec[r][cc] = false;
+          count++;
+        }
+      }
+      return count;
+    }
+
     // --- particles ------------------------------------------------------
     function spawnParticles(x, y, color, count) {
       for (var i = 0; i < count; i++) {
-        var ang = Rand.range(0, Math.PI * 2);
+        var ang = Rand.range(0, PI2);
         var spd = Rand.range(60, 240);
         particles.push({
           x: x, y: y,
@@ -535,23 +656,24 @@
     }
 
     // --- launcher / ball --------------------------------------------------
-    function newBall(colorIndex) {
-      return { x: LX, y: LY, vx: 0, vy: 0, color: colorIndex, r: BALL_R, flying: false };
+    function rollElectric() { return Math.random() < CONFIG.electricChance; }
+    function newBall(colorIndex, isElectric) {
+      return { x: LX, y: LY, vx: 0, vy: 0, color: colorIndex, r: BALL_R, flying: false, electric: !!isElectric };
     }
 
     function updateAimFromPoint(p) {
       var dx = p.x - LX, dy = p.y - LY;
       var raw = Math.atan2(dx, -dy); // 0 = straight up
-      aimAngle = clampInt(raw, -MAX_AIM, MAX_AIM);
+      aimAngle = clamp(raw, -MAX_AIM, MAX_AIM);
     }
 
     function fire() {
-      if (ball.flying || ended) return;
+      if (ball.flying || ended || rescued) return;
       var dirX = Math.sin(aimAngle), dirY = -Math.cos(aimAngle);
       ball.vx = dirX * BALL_SPEED;
       ball.vy = dirY * BALL_SPEED;
       ball.flying = true;
-      Sound.beep(320, 0.06, "square");
+      Sound.beep(ball.electric ? 260 : 320, 0.06, "square");
     }
 
     function snapBall() {
@@ -561,62 +683,121 @@
       if (!cell) { endRound("Board Full!"); return; }
 
       grid[cell.r][cell.c] = ball.color;
+      elec[cell.r][cell.c] = ball.electric;
       ball.flying = false;
 
-      // Resolve matches (>=3 same-color connected group pops).
-      var group = floodFillGroup(cell.r, cell.c);
-      if (group.length >= 3) {
-        for (var i = 0; i < group.length; i++) {
-          var g = group[i];
-          spawnParticles(cellX(g.c), cellY(g.r), COLORS[grid[g.r][g.c]], 8);
-          grid[g.r][g.c] = null;
+      var cleared = 0;
+
+      if (ball.electric) {
+        // Power bubble: detonate on contact and chain through the wall.
+        cleared += detonateElectric([{ r: cell.r, c: cell.c }]);
+        Sound.beep(190, 0.16, "sawtooth");
+        Sound.beep(90, 0.24, "square");
+      } else {
+        // Normal bubble: resolve a >=3 same-color match.
+        var group = floodFillGroup(cell.r, cell.c);
+        if (group.length >= 3) {
+          // Capture electric bubbles in the group before we clear it.
+          var seeds = [];
+          for (var i = 0; i < group.length; i++) {
+            if (elec[group[i].r][group[i].c]) seeds.push({ r: group[i].r, c: group[i].c });
+          }
+          popGroup(group);
+          cleared += group.length;
+          Sound.beep(500 + group.length * 40, 0.16, "triangle");
+          if (seeds.length) { cleared += detonateElectric(seeds); Sound.beep(190, 0.16, "sawtooth"); }
         }
-        score += group.length * 10;
-        UI.setScore(score);
-        Sound.beep(500 + group.length * 40, 0.16, "triangle");
       }
 
-      // End conditions triggered by this placement.
-      if (isEmptyOnBoard()) { endRound("Cleared!"); return; }
-      if (cell.r >= CONFIG.dangerRow) { endRound("Stack Too High!"); return; }
+      // Bubbles cut off from the ceiling drop away (and score).
+      var fell = dropFloating();
+      cleared += fell;
+
+      // Combo + scoring.
+      if (cleared > 0) {
+        streak++;
+        score += cleared * 10 * streak;
+        if (cleared > maxChain) maxChain = cleared;
+        UI.setScore(score);
+        showCombo(streak, cleared);
+        if (fell > 0) Sound.beep(300 + Math.min(fell, 20) * 15, 0.2, "triangle");
+      } else {
+        streak = 0;
+      }
+
+      // Win / lose checks triggered by this placement.
+      var remaining = bubbleCount();
+      if (remaining <= CONFIG.rescueRemaining) { freeMascot(); return; }
+      if (cell.r >= CONFIG.dangerRow) { endRound("Wall Too Low!"); return; }
 
       // Prepare the next shot.
-      ball = newBall(nextColor);
+      ball = newBall(nextColor, nextElectric);
       nextColor = Rand.int(0, COLORS.length - 1);
+      nextElectric = rollElectric();
+    }
+
+    function showCombo(mult, cleared) {
+      var big = cleared >= 6;
+      var txt = big ? ("MEGA CHAIN x" + cleared + "!")
+                    : (mult > 1 ? ("COMBO x" + mult) : ("+" + cleared));
+      comboText = { text: txt, life: 1.0, maxLife: 1.0, big: big };
+    }
+
+    // Rescue succeeded: play a short celebration, then show the end screen.
+    function freeMascot() {
+      if (rescued || ended) return;
+      rescued = true;
+      rescueT = 1.1;
+      spawnParticles(MASCOT_X, MASCOT_BASE_Y, "#ffd23f", 30);
+      Sound.beep(660, 0.12, "triangle");
+      Sound.beep(880, 0.16, "triangle");
     }
 
     // --- lifecycle --------------------------------------------------------
     function reset() {
       grid = makeGrid();
+      elec = makeElec();
       fillInitialRows();
       score = 0;
       timeLeft = CONFIG.gameSeconds;
       aimAngle = 0;
-      particles = [];
-      ended = false;
-      ball = newBall(Rand.int(0, COLORS.length - 1));
+      particles = []; fallers = []; arcs = []; comboText = null;
+      streak = 0; maxChain = 0;
+      ended = false; rescued = false; rescueT = 0;
+      mascotY = MASCOT_BASE_Y;
+      initialCount = bubbleCount();
+      ball = newBall(Rand.int(0, COLORS.length - 1), rollElectric());
       nextColor = Rand.int(0, COLORS.length - 1);
+      nextElectric = rollElectric();
       UI.setScore(0);
       UI.setTime(timeLeft);
     }
 
     // onMove: continuously aim toward the pointer (desktop drag-to-aim).
     function onMove(p) {
-      if (ended || ball.flying) return;
+      if (ended || rescued || ball.flying) return;
       updateAimFromPoint(p);
     }
 
-    // onDown: also snaps the aim to the tap point first, so a single tap
-    // works intuitively on touch devices (which fire "down" before any
-    // "move"), then fires the current bubble along that aim.
+    // onDown: snap the aim to the tap point first (touch fires "down" before
+    // any "move"), then fire the current bubble along that aim.
     function onDown(p) {
-      if (ended || ball.flying) return;
+      if (ended || rescued || ball.flying) return;
       updateAimFromPoint(p);
       fire();
     }
 
     function update(dt) {
       if (ended) return;
+
+      // Victory celebration: mascot rises, cage fades, then end screen.
+      if (rescued) {
+        rescueT -= dt;
+        mascotY -= dt * 170;
+        updateFx(dt);
+        if (rescueT <= 0) endRound("Buddy Freed!");
+        return;
+      }
 
       if (CONFIG.gameSeconds > 0) {
         timeLeft -= dt;
@@ -643,7 +824,11 @@
         }
       }
 
-      // Particles
+      updateFx(dt);
+    }
+
+    // Advance all visual-only effects (particles, fallers, arcs, combo text).
+    function updateFx(dt) {
       for (var i = particles.length - 1; i >= 0; i--) {
         var pt = particles[i];
         pt.x += pt.vx * dt; pt.y += pt.vy * dt;
@@ -651,13 +836,27 @@
         pt.life -= dt;
         if (pt.life <= 0) particles.splice(i, 1);
       }
+      for (var j = fallers.length - 1; j >= 0; j--) {
+        var f = fallers[j];
+        f.x += f.vx * dt; f.y += f.vy * dt;
+        f.vy += 1400 * dt; // heavier gravity so they drop away quickly
+        if (f.y - f.r > view.h) fallers.splice(j, 1);
+      }
+      for (var a = arcs.length - 1; a >= 0; a--) {
+        arcs[a].life -= dt;
+        if (arcs[a].life <= 0) arcs.splice(a, 1);
+      }
+      if (comboText) { comboText.life -= dt; if (comboText.life <= 0) comboText = null; }
     }
 
     function render() {
       ctx.fillStyle = CONFIG.bg;
       ctx.fillRect(0, 0, view.w, view.h);
 
-      // Danger line hint.
+      drawMascot();
+      drawRescueBar();
+
+      // Danger line hint (wall must not reach here).
       var dangerY = GRID_TOP + CONFIG.dangerRow * CELL;
       ctx.save();
       ctx.strokeStyle = "rgba(255,89,100,.45)";
@@ -673,21 +872,29 @@
         for (var c = 0; c < COLS; c++) {
           var ci = grid[r][c];
           if (ci === null) continue;
-          drawBubble(cellX(c), cellY(r), BALL_R, COLORS[ci]);
+          drawBubble(cellX(c), cellY(r), BALL_R, COLORS[ci], elec[r][c]);
         }
       }
 
-      // Particles.
+      // Falling (detached) bubbles.
+      for (var f = 0; f < fallers.length; f++) {
+        drawBubble(fallers[f].x, fallers[f].y, fallers[f].r, fallers[f].color, fallers[f].electric);
+      }
+
+      // Pop particles.
       for (var i = 0; i < particles.length; i++) {
         var pt = particles[i];
         ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
         ctx.fillStyle = pt.color;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, PI2); ctx.fill();
       }
       ctx.globalAlpha = 1;
 
+      // Lightning arcs from electric chains.
+      drawArcs();
+
       // Aim line (only while the current ball waits at the launcher).
-      if (!ball.flying && !ended) {
+      if (!ball.flying && !ended && !rescued) {
         var dirX = Math.sin(aimAngle), dirY = -Math.cos(aimAngle);
         ctx.save();
         ctx.strokeStyle = "rgba(255,255,255,.5)";
@@ -702,10 +909,10 @@
 
       // Launcher pad.
       ctx.fillStyle = "rgba(255,255,255,.08)";
-      ctx.beginPath(); ctx.arc(LX, LY, BALL_R + 14, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(LX, LY, BALL_R + 14, 0, PI2); ctx.fill();
 
       // Current ball.
-      drawBubble(ball.x, ball.y, BALL_R, COLORS[ball.color]);
+      if (!rescued) drawBubble(ball.x, ball.y, BALL_R, COLORS[ball.color], ball.electric);
 
       // Next-bubble preview.
       var nx = LX + 130, ny = LY;
@@ -713,22 +920,177 @@
       ctx.font = "bold 16px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("NEXT", nx, ny - BALL_R * 0.62 - 10);
-      drawBubble(nx, ny, BALL_R * 0.62, COLORS[nextColor]);
+      drawBubble(nx, ny, BALL_R * 0.62, COLORS[nextColor], nextElectric);
+
+      // Combo callout.
+      drawCombo();
     }
 
-    function drawBubble(x, y, r, color) {
+    function drawBubble(x, y, r, color, electric) {
       ctx.save();
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.shadowColor = "rgba(0,0,0,.35)";
-      ctx.shadowBlur = 4;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, PI2);
+      if (electric) {
+        var g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.2, x, y, r);
+        g.addColorStop(0, "#eafcff");
+        g.addColorStop(0.5, "#5ad7ff");
+        g.addColorStop(1, "#2a6df4");
+        ctx.fillStyle = g;
+        ctx.shadowColor = "#5ad7ff";
+        ctx.shadowBlur = 12;
+      } else {
+        ctx.fillStyle = color;
+        ctx.shadowColor = "rgba(0,0,0,.35)";
+        ctx.shadowBlur = 4;
+      }
       ctx.fill();
       ctx.restore();
+
       // Simple shine to make it read as glossy/juicy.
       ctx.beginPath();
-      ctx.arc(x - r * 0.32, y - r * 0.32, r * 0.32, 0, Math.PI * 2);
+      ctx.arc(x - r * 0.32, y - r * 0.32, r * 0.32, 0, PI2);
       ctx.fillStyle = "rgba(255,255,255,.35)";
       ctx.fill();
+
+      // Lightning bolt glyph on electric bubbles.
+      if (electric) {
+        ctx.save();
+        ctx.strokeStyle = "#fffde0";
+        ctx.lineWidth = Math.max(2, r * 0.09);
+        ctx.lineJoin = "round"; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(x + r * 0.10, y - r * 0.5);
+        ctx.lineTo(x - r * 0.18, y + r * 0.06);
+        ctx.lineTo(x + r * 0.06, y + r * 0.06);
+        ctx.lineTo(x - r * 0.12, y + r * 0.5);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawArcs() {
+      for (var i = 0; i < arcs.length; i++) {
+        var a = arcs[i], t = a.life / a.maxLife;
+        ctx.save();
+        ctx.globalAlpha = t;
+        ctx.strokeStyle = "#bfefff";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "#5ad7ff";
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(a.x1, a.y1);
+        var seg = 4;
+        for (var s = 1; s < seg; s++) {
+          var fr = s / seg;
+          var mx = a.x1 + (a.x2 - a.x1) * fr + (Math.random() - 0.5) * 14;
+          var my = a.y1 + (a.y2 - a.y1) * fr + (Math.random() - 0.5) * 14;
+          ctx.lineTo(mx, my);
+        }
+        ctx.lineTo(a.x2, a.y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // The caged mascot the player is digging up to rescue.
+    function drawMascot() {
+      var x = MASCOT_X, y = mascotY, r = MASCOT_R;
+
+      // Body.
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x, y, r, 0, PI2);
+      var g = ctx.createRadialGradient(x - 10, y - 12, 6, x, y, r);
+      g.addColorStop(0, "#fff2a8");
+      g.addColorStop(1, "#ffcf3f");
+      ctx.fillStyle = g;
+      ctx.shadowColor = "rgba(0,0,0,.35)";
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.restore();
+
+      // Eyes.
+      ctx.fillStyle = "#2a2140";
+      ctx.beginPath(); ctx.arc(x - 11, y - 4, 5, 0, PI2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 11, y - 4, 5, 0, PI2); ctx.fill();
+      // Eye sparkle.
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(x - 13, y - 6, 1.6, 0, PI2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 9, y - 6, 1.6, 0, PI2); ctx.fill();
+
+      // Beak.
+      ctx.fillStyle = "#ff8a3d";
+      ctx.beginPath();
+      ctx.moveTo(x - 7, y + 8); ctx.lineTo(x + 7, y + 8); ctx.lineTo(x, y + 18);
+      ctx.closePath(); ctx.fill();
+
+      // Cage bars — fade out as the mascot is freed.
+      var cageA = rescued ? Math.max(0, rescueT / 1.1) : 1;
+      if (cageA > 0) {
+        ctx.save();
+        ctx.globalAlpha = cageA;
+        ctx.strokeStyle = "rgba(205,214,235,.9)";
+        ctx.lineWidth = 5; ctx.lineCap = "round";
+        for (var i = -2; i <= 2; i++) {
+          var bx = MASCOT_X + i * 18;
+          ctx.beginPath();
+          ctx.moveTo(bx, MASCOT_BASE_Y - r - 12);
+          ctx.lineTo(bx, MASCOT_BASE_Y + r + 12);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(MASCOT_X - r - 6, MASCOT_BASE_Y - r - 12);
+        ctx.lineTo(MASCOT_X + r + 6, MASCOT_BASE_Y - r - 12);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Progress toward the rescue, drawn just above the wall.
+    function drawRescueBar() {
+      var remaining = bubbleCount();
+      var denom = Math.max(1, initialCount - CONFIG.rescueRemaining);
+      var prog = clamp((initialCount - remaining) / denom, 0, 1);
+      var bw = view.w * 0.6, bh = 14, bx = (view.w - bw) / 2, by = GRID_TOP - 26;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,.12)";
+      roundRectPath(bx, by, bw, bh, 7); ctx.fill();
+      ctx.fillStyle = "#ffd23f";
+      roundRectPath(bx, by, bw * prog, bh, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("RESCUE " + Math.round(prog * 100) + "%", view.w / 2, by - 6);
+      ctx.restore();
+    }
+
+    function drawCombo() {
+      if (!comboText) return;
+      var t = comboText.life / comboText.maxLife;
+      var scale = comboText.big ? (1.2 + (1 - t) * 0.3) : (1 + (1 - t) * 0.15);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, t * 1.5);
+      ctx.translate(view.w / 2, LY - 170);
+      ctx.scale(scale, scale);
+      ctx.textAlign = "center";
+      ctx.font = "bold " + (comboText.big ? 40 : 30) + "px sans-serif";
+      ctx.fillStyle = comboText.big ? "#5ad7ff" : CONFIG.comboColor;
+      ctx.shadowColor = "rgba(0,0,0,.5)";
+      ctx.shadowBlur = 6;
+      ctx.fillText(comboText.text, 0, 0);
+      ctx.restore();
+    }
+
+    // Rounded-rect path (older WebViews lack ctx.roundRect).
+    function roundRectPath(x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
     }
 
     function endRound(title) {
@@ -737,8 +1099,10 @@
       Loop.stop();
       Store.set("bestScore", Math.max(score, Store.get("bestScore", 0)));
       UI.setEnd(title, score);
+      var note = $("end-note");
+      if (note) note.textContent = "Best chain: " + maxChain + " bubble" + (maxChain === 1 ? "" : "s");
       setState("end");
-      Ad.track("game_end", { score: score, reason: title });
+      Ad.track("game_end", { score: score, reason: title, maxChain: maxChain });
     }
 
     return { reset: reset, onDown: onDown, onMove: onMove, update: update, render: render };
