@@ -1524,7 +1524,7 @@
       Loop.stop();
       var best = Math.max(score, Store.get("bestScore", 0));
       Store.set("bestScore", best);
-      var stars = score >= 1200 ? 3 : score >= 500 ? 2 : score >= 100 ? 1 : 0;
+      var stars = score >= 3000 ? 3 : score >= 2000 ? 2 : 1;
       runEndSequence(title, score, totalCleared, maxCombo, best, stars);
       setState("end");
       Ad.track("game_end", { score: score, reason: title, maxCombo: maxCombo });
