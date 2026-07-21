@@ -54,6 +54,13 @@
   .thumb { height:118px; display:flex; align-items:center; justify-content:center; font-size:52px;
     position:relative; }
   .thumb::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 55%); }
+  /* "NEW" badge for freshly added games */
+  .badge { position:absolute; top:10px; right:10px; z-index:2;
+    font-size:11px; font-weight:900; letter-spacing:.8px; color:#08130c;
+    background:var(--accent); border-radius:999px; padding:4px 10px;
+    box-shadow:0 4px 12px rgba(0,0,0,.35);
+    animation:badgePulse 1.6s ease-in-out infinite; }
+  @keyframes badgePulse { 0%,100% { transform:scale(1);} 50% { transform:scale(1.09);} }
   .body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .name { font-size:19px; font-weight:800; }
   .desc { color:var(--muted); font-size:14px; line-height:1.45; flex:1; }
@@ -149,7 +156,19 @@ var GAMES = [
     tags:["Swipe","Timed"], accent:["#ffd23f","#5f3dc4"] },
   { slug:"ring-combo", name:"Ring Combo", icon:"🎯",
     desc:"Tap the instant a closing ring hits the bouncing ball. Chain combos for a huge multiplier.",
-    tags:["Timing","Timed"], accent:["#7c9dff","#4263eb"] }
+    tags:["Timing","Timed"], accent:["#7c9dff","#4263eb"] },
+  { slug:"bubbly", name:"Bubbly", icon:"🫧",
+    desc:"Tap the instant a cluster touches the shooter bubble to pop it — timing is everything.",
+    tags:["Timing","Tap"], accent:["#4dd0ff","#7048e8"] },
+  { slug:"perfect-landing", name:"Perfect Landing", icon:"🚀", isNew:true,
+    desc:"Tap to cut the engines and drop the rocket the instant it lines up over the sliding pad.",
+    tags:["Timing","Lives"], accent:["#4dd0ff","#1d6fe0"] },
+  { slug:"rhythm-tap", name:"Rhythm Tap", icon:"🎵", isNew:true,
+    desc:"Tap the instant each note hits the glowing line. Chain perfects for a combo multiplier.",
+    tags:["Timing","Timed"], accent:["#ff6ec7","#b5179e"] },
+  { slug:"speed-shift", name:"Speed Shift", icon:"🏎️", isNew:true,
+    desc:"Tap to shift the moment the needle hits the green. Perfect shifts win the race.",
+    tags:["Timing","Timed"], accent:["#ffb03a","#f7531f"] }
 ];
 
 var PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
@@ -160,7 +179,8 @@ GAMES.forEach(function (g) {
   a.className = "card";
   a.href = "games/" + g.slug + "/index.html";
   a.innerHTML =
-    '<div class="thumb" style="background:linear-gradient(135deg,' + g.accent[0] + ',' + g.accent[1] + ')">' + g.icon + '</div>' +
+    '<div class="thumb" style="background:linear-gradient(135deg,' + g.accent[0] + ',' + g.accent[1] + ')">' +
+      (g.isNew ? '<span class="badge">NEW</span>' : '') + g.icon + '</div>' +
     '<div class="body">' +
       '<div class="name">' + g.name + '</div>' +
       '<div class="desc">' + g.desc + '</div>' +

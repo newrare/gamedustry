@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--
+  Viewport locked to device size, no user scaling. This is mandatory for
+  playable ads: the creative must fill the ad container and never scroll/zoom.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Perfect Landing</title>
+
+<!-- =====================================================================
+     STYLES  (vanilla CSS, inlined)
+     ===================================================================== -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #05060f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    touch-action: none;
+  }
+  #stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #game { display: block; touch-action: none; }
+
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: #fff; padding: 24px;
+    transition: opacity .25s ease; z-index: 10;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+  .title { font-size: clamp(22px, 7vw, 44px); font-weight: 800; letter-spacing: .5px; }
+  .subtitle { margin-top: 10px; font-size: clamp(14px, 4vw, 20px); opacity: .85; }
+
+  .btn {
+    margin-top: 22px; padding: 16px 34px; border: none; border-radius: 999px;
+    font-size: clamp(16px, 5vw, 22px); font-weight: 800; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, #4dd0ff, #1d6fe0);
+    box-shadow: 0 8px 24px rgba(29,111,224,.45);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .btn:active { transform: scale(.96); }
+  @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
+
+  #cta-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 12px; background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
+  }
+  #cta-bar.hidden { display: none; }
+
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 15;
+    display: flex; justify-content: space-between; padding: 14px 18px;
+    color: #fff; font-weight: 800; font-size: clamp(15px, 4.5vw, 22px);
+    pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+  #hud.hidden { display: none; }
+
+  .spinner {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 5px solid rgba(255,255,255,.2); border-top-color: #fff;
+    animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     MARKUP
+     ===================================================================== -->
+<div id="stage">
+  <canvas id="game"></canvas>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="hud-left">Landings: <span id="score">0</span></div>
+  <div id="hud-right">Fuel: <span id="time">3</span></div>
+</div>
+
+<div id="screen-loading" class="screen">
+  <div class="spinner"></div>
+  <div class="subtitle" style="margin-top:18px">Loading…</div>
+</div>
+
+<div id="screen-intro" class="screen hidden">
+  <div class="title">Perfect Landing</div>
+  <div class="subtitle">Tap the instant the rocket is lined up over the pad.</div>
+  <button class="btn" id="btn-start">TAP TO PLAY</button>
+</div>
+
+<div id="screen-end" class="screen hidden">
+  <div class="title" id="end-title">Nice flying!</div>
+  <div class="subtitle" id="end-subtitle">Perfect landings: <span id="end-score">0</span></div>
+  <button class="btn" id="btn-install">PLAY THE FULL GAME</button>
+</div>
+
+<div id="cta-bar" class="hidden">
+  <button class="btn" id="btn-cta" style="margin-top:0; padding:12px 28px;">INSTALL NOW</button>
+</div>
+
+<!-- =====================================================================
+     SCRIPT  (vanilla JS, inlined) — 7-section structure
+     ===================================================================== -->
+<script>
+"use strict";
+(function () {
+
+  /* ===================================================================
+     1. CONFIG
+     =================================================================== */
+  var CONFIG = {
+    title: "Perfect Landing",
+    gameSeconds: 0,                // endless: the round ends when fuel runs out
+    startFuel: 3,                  // a failed landing burns one fuel cell
+    storeUrl: {
+      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
+      android: "https://play.google.com/store/apps/details?id=com.example.game",
+      fallback:"https://52-entertainment.com/our-games/"
+    },
+    designWidth: 720,
+    designHeight: 1280,
+    bg: "#05060f"
+  };
+
+  /* ===================================================================
+     2. ASSETS  (embedded, no network requests)
+     =================================================================== */
+  var ASSETS = { images: {}, sounds: {} };
+
+  /* ===================================================================
+     3. ENGINE  (reusable helpers — shared by every game, rarely edited)
+     =================================================================== */
+  function $(id) { return document.getElementById(id); }
+
+  var canvas = $("game");
+  var ctx = canvas.getContext("2d");
+  var view = { w: CONFIG.designWidth, h: CONFIG.designHeight, scale: 1 };
+
+  function fitCanvas() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var scale = Math.min(vw / view.w, vh / view.h);
+    view.scale = scale;
+    canvas.width  = Math.round(view.w * dpr);
+    canvas.height = Math.round(view.h * dpr);
+    canvas.style.width  = Math.round(view.w * scale) + "px";
+    canvas.style.height = Math.round(view.h * scale) + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", fitCanvas);
+  window.addEventListener("orientationchange", fitCanvas);
+
+  var Input = (function () {
+    var listeners = { down: [], move: [], up: [] };
+    function toDesign(clientX, clientY) {
+      var r = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - r.left) / r.width  * view.w,
+        y: (clientY - r.top)  / r.height * view.h
+      };
+    }
+    function emit(type, e) {
+      var t = e.touches && e.touches[0] ? e.touches[0]
+            : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+      var p = toDesign(t.clientX, t.clientY);
+      listeners[type].forEach(function (fn) { fn(p, e); });
+    }
+    canvas.addEventListener("mousedown",  function (e){ emit("down", e); });
+    canvas.addEventListener("mousemove",  function (e){ emit("move", e); });
+    window.addEventListener("mouseup",    function (e){ emit("up",   e); });
+    canvas.addEventListener("touchstart", function (e){ e.preventDefault(); emit("down", e); }, {passive:false});
+    canvas.addEventListener("touchmove",  function (e){ e.preventDefault(); emit("move", e); }, {passive:false});
+    canvas.addEventListener("touchend",   function (e){ e.preventDefault(); emit("up",   e); }, {passive:false});
+    return {
+      on: function (type, fn) { listeners[type].push(fn); },
+      off: function () { listeners = { down: [], move: [], up: [] }; }
+    };
+  })();
+
+  var Loop = (function () {
+    var running = false, last = 0, update = null, render = null;
+    function frame(now) {
+      if (!running) return;
+      var dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      if (update) update(dt);
+      if (render) render();
+      requestAnimationFrame(frame);
+    }
+    return {
+      start: function (u, r) {
+        update = u; render = r; running = true; last = performance.now();
+        requestAnimationFrame(frame);
+      },
+      stop: function () { running = false; }
+    };
+  })();
+
+  var Sound = (function () {
+    var actx = null;
+    function ensure() {
+      if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+      if (actx && actx.state === "suspended") actx.resume();
+      return actx;
+    }
+    function beep(freq, dur, type) {
+      var a = ensure(); if (!a) return;
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = type || "sine"; o.frequency.value = freq || 440;
+      g.gain.setValueAtTime(0.001, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.3, a.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + (dur || 0.15));
+      o.connect(g); g.connect(a.destination);
+      o.start(); o.stop(a.currentTime + (dur || 0.15));
+    }
+    var clips = {};
+    function clip(name) {
+      if (!ASSETS.sounds[name]) return;
+      if (!clips[name]) { clips[name] = new Audio(ASSETS.sounds[name]); }
+      try { clips[name].currentTime = 0; clips[name].play(); } catch (e) {}
+    }
+    return { unlock: ensure, beep: beep, clip: clip };
+  })();
+
+  var Store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var Rand = {
+    range: function (min, max) { return min + Math.random() * (max - min); },
+    int:   function (min, max) { return Math.floor(Rand.range(min, max + 1)); },
+    pick:  function (arr)      { return arr[Math.floor(Math.random() * arr.length)]; }
+  };
+
+  var Images = {};
+  function preloadImages(done) {
+    var keys = Object.keys(ASSETS.images), left = keys.length;
+    if (left === 0) return done();
+    keys.forEach(function (k) {
+      var img = new Image();
+      img.onload = img.onerror = function () { if (--left === 0) done(); };
+      img.src = ASSETS.images[k];
+      Images[k] = img;
+    });
+  }
+
+  /* ===================================================================
+     4. AD NETWORK GLUE
+     =================================================================== */
+  var Ad = (function () {
+    function platform() {
+      var ua = navigator.userAgent || "";
+      if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+      if (/android/i.test(ua)) return "android";
+      return "fallback";
+    }
+    function targetUrl() { return CONFIG.storeUrl[platform()] || CONFIG.storeUrl.fallback; }
+    function whenReady(cb) {
+      if (!window.mraid) return cb();
+      if (mraid.getState && mraid.getState() === "loading") {
+        mraid.addEventListener("ready", cb);
+      } else { cb(); }
+    }
+    function openStore() {
+      track("cta_click");
+      var url = targetUrl();
+      try { if (window.mraid && typeof mraid.open === "function") { mraid.open(url); return; } } catch (e) {}
+      try { if (typeof window.install === "function") { window.install(); return; } } catch (e) {}
+      try { if (window.ExitApi && typeof ExitApi.exit === "function") { ExitApi.exit(); return; } } catch (e) {}
+      try { if (typeof window.mintegral_playable_exit === "function") { window.mintegral_playable_exit(); return; } } catch (e) {}
+      window.open(url, "_blank");
+    }
+    function track(event, data) {
+      try { console.log("[playable]", event, data || ""); } catch (e) {}
+    }
+    return { whenReady: whenReady, openStore: openStore, track: track };
+  })();
+
+  /* ===================================================================
+     5. STATE MACHINE
+     =================================================================== */
+  var UI = {
+    show: function (name) {
+      ["loading", "intro", "end"].forEach(function (s) {
+        $("screen-" + s).classList.toggle("hidden", s !== name);
+      });
+      $("hud").classList.toggle("hidden", name !== "playing");
+      $("cta-bar").classList.toggle("hidden", name !== "playing");
+    },
+    setScore: function (v) { $("score").textContent = v; },
+    setTime:  function (v) { $("time").textContent = v; },
+    setEnd:   function (title, score) { $("end-title").textContent = title; $("end-score").textContent = score; }
+  };
+
+  var State = "loading";
+  function setState(s) { State = s; Ad.track("state", s); UI.show(s === "playing" ? "playing" : s); }
+
+  /* ===================================================================
+     6. GAME — Perfect Landing
+     A rocket sits fixed at the top-center. A landing pad slides left/right
+     across the ground. Tap to cut the engines: the rocket drops straight
+     down. Time it so the pad is under the rocket when it touches down.
+     Each success speeds up and narrows the pad; a miss burns a fuel cell.
+     =================================================================== */
+  var Game = (function () {
+    var score, fuel, rocket, pad, flashes, banner, stars, shake;
+
+    var GROUND_Y = view.h - 210;   // top of the ground strip (above CTA bar)
+    var ROCKET_TOP = 210;          // resting y of the rocket nose
+
+    function reset() {
+      score = 0; fuel = CONFIG.startFuel;
+      rocket = { x: view.w / 2, y: ROCKET_TOP, w: 64, h: 108, dropping: false, vy: 0 };
+      pad = { w: 260, x: view.w / 2, dir: 1, speed: 300, y: GROUND_Y - 18 };
+      flashes = []; banner = null; shake = 0;
+      // Static starfield for the backdrop.
+      stars = [];
+      for (var i = 0; i < 60; i++) {
+        stars.push({ x: Rand.range(0, view.w), y: Rand.range(0, GROUND_Y), r: Rand.range(1, 2.6), a: Rand.range(.3, 1) });
+      }
+      UI.setScore(0); UI.setTime(fuel);
+    }
+
+    function onDown() {
+      if (rocket.dropping) return;   // one descent at a time
+      rocket.dropping = true;
+      rocket.vy = 720;
+      Sound.beep(220, 0.12, "sawtooth");
+    }
+
+    function say(text, color) {
+      banner = { text: text, color: color, t: 0 };
+    }
+
+    function land() {
+      var padLeft = pad.x - pad.w / 2, padRight = pad.x + pad.w / 2;
+      var offset = Math.abs(rocket.x - pad.x);
+      if (rocket.x > padLeft && rocket.x < padRight) {
+        // Success — grade the precision for a bit of extra juice.
+        score++;
+        var perfect = offset < pad.w * 0.18;
+        say(perfect ? "PERFECT!" : "LANDED!", perfect ? "#4dd0ff" : "#7cf2a0");
+        Sound.beep(perfect ? 880 : 660, 0.16, "triangle");
+        burst(rocket.x, pad.y, perfect ? "#4dd0ff" : "#7cf2a0");
+        // Escalate difficulty.
+        pad.speed = Math.min(pad.speed * 1.09, 900);
+        pad.w = Math.max(pad.w * 0.93, 120);
+      } else {
+        // Missed the pad — crash and burn a fuel cell.
+        fuel--;
+        UI.setTime(fuel);
+        say("CRASH!", "#ff6b6b");
+        Sound.beep(120, 0.35, "square");
+        burst(rocket.x, GROUND_Y, "#ff6b6b");
+        shake = 16;
+      }
+      UI.setScore(score);
+      rocket.dropping = false;
+      rocket.y = ROCKET_TOP;
+      rocket.vy = 0;
+      if (fuel <= 0) end();
+    }
+
+    function burst(x, y, color) {
+      for (var i = 0; i < 14; i++) {
+        var a = Rand.range(0, Math.PI * 2), sp = Rand.range(120, 380);
+        flashes.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120,
+                       life: 0.6, t: 0, color: color });
+      }
+    }
+
+    function update(dt) {
+      // Slide the pad and bounce it off the walls.
+      pad.x += pad.dir * pad.speed * dt;
+      if (pad.x - pad.w / 2 < 40) { pad.x = 40 + pad.w / 2; pad.dir = 1; }
+      if (pad.x + pad.w / 2 > view.w - 40) { pad.x = view.w - 40 - pad.w / 2; pad.dir = -1; }
+
+      // Drop the rocket if engines were cut.
+      if (rocket.dropping) {
+        rocket.y += rocket.vy * dt;
+        if (rocket.y + rocket.h >= pad.y) { rocket.y = pad.y - rocket.h; land(); }
+      }
+
+      // Particles + banner + screen shake decay.
+      for (var i = flashes.length - 1; i >= 0; i--) {
+        var f = flashes[i];
+        f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 900 * dt;
+        if (f.t >= f.life) flashes.splice(i, 1);
+      }
+      if (banner) { banner.t += dt; if (banner.t > 0.9) banner = null; }
+      if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+    }
+
+    function render() {
+      ctx.save();
+      if (shake > 0) ctx.translate(Rand.range(-shake, shake), Rand.range(-shake, shake));
+
+      // Sky.
+      var sky = ctx.createLinearGradient(0, 0, 0, view.h);
+      sky.addColorStop(0, "#0a1030"); sky.addColorStop(1, "#05060f");
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, view.w, view.h);
+
+      // Stars.
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        ctx.globalAlpha = s.a; ctx.fillStyle = "#cfe3ff";
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Alignment guide (helps read the timing).
+      ctx.strokeStyle = "rgba(120,190,255,.18)"; ctx.lineWidth = 2;
+      ctx.setLineDash([10, 14]);
+      ctx.beginPath(); ctx.moveTo(rocket.x, rocket.y + rocket.h); ctx.lineTo(rocket.x, pad.y); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Ground.
+      var g = ctx.createLinearGradient(0, GROUND_Y, 0, view.h);
+      g.addColorStop(0, "#1a2350"); g.addColorStop(1, "#0c1130");
+      ctx.fillStyle = g; ctx.fillRect(0, GROUND_Y, view.w, view.h - GROUND_Y);
+
+      // Landing pad with a highlighted sweet spot.
+      drawPad();
+
+      // Rocket.
+      drawRocket();
+
+      // Particles.
+      for (i = 0; i < flashes.length; i++) {
+        var f = flashes[i];
+        ctx.globalAlpha = Math.max(0, 1 - f.t / f.life);
+        ctx.fillStyle = f.color;
+        ctx.beginPath(); ctx.arc(f.x, f.y, 5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Banner text.
+      if (banner) {
+        ctx.globalAlpha = Math.max(0, 1 - banner.t / 0.9);
+        ctx.fillStyle = banner.color;
+        ctx.font = "800 62px -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(banner.text, view.w / 2, view.h / 2 - 40);
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+    }
+
+    function drawPad() {
+      var left = pad.x - pad.w / 2;
+      // Base slab.
+      ctx.fillStyle = "#2b3a7a";
+      roundRect(left, pad.y, pad.w, 26, 8); ctx.fill();
+      // Sweet spot.
+      var sweet = pad.w * 0.36;
+      ctx.fillStyle = "#4dd0ff";
+      roundRect(pad.x - sweet / 2, pad.y, sweet, 10, 5); ctx.fill();
+      // Edge lights.
+      ctx.fillStyle = "#ffd23f";
+      ctx.beginPath(); ctx.arc(left + 8, pad.y + 4, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(left + pad.w - 8, pad.y + 4, 5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawRocket() {
+      var x = rocket.x, y = rocket.y, w = rocket.w, h = rocket.h;
+      // Exhaust flame while dropping.
+      if (rocket.dropping) {
+        ctx.fillStyle = "#ffb03a";
+        ctx.beginPath();
+        ctx.moveTo(x - 14, y + h);
+        ctx.lineTo(x + 14, y + h);
+        ctx.lineTo(x, y + h + Rand.range(26, 46));
+        ctx.closePath(); ctx.fill();
+      }
+      // Body.
+      ctx.fillStyle = "#eef2ff";
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + w / 2, y + h * 0.28, x + w / 2, y + h * 0.7);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.lineTo(x - w / 2, y + h);
+      ctx.lineTo(x - w / 2, y + h * 0.7);
+      ctx.quadraticCurveTo(x - w / 2, y + h * 0.28, x, y);
+      ctx.closePath(); ctx.fill();
+      // Window.
+      ctx.fillStyle = "#4dd0ff";
+      ctx.beginPath(); ctx.arc(x, y + h * 0.42, 15, 0, Math.PI * 2); ctx.fill();
+      // Fins.
+      ctx.fillStyle = "#ff6b6b";
+      ctx.beginPath(); ctx.moveTo(x - w / 2, y + h * 0.7); ctx.lineTo(x - w / 2 - 18, y + h); ctx.lineTo(x - w / 2, y + h); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x + w / 2, y + h * 0.7); ctx.lineTo(x + w / 2 + 18, y + h); ctx.lineTo(x + w / 2, y + h); ctx.closePath(); ctx.fill();
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function end() {
+      Loop.stop();
+      Store.set("bestLandings", Math.max(score, Store.get("bestLandings", 0)));
+      var title = score >= 8 ? "Ace pilot!" : score >= 4 ? "Smooth landings!" : "Nice flying!";
+      UI.setEnd(title, score);
+      setState("end");
+      Ad.track("game_end", { score: score });
+    }
+
+    return { reset: reset, onDown: onDown, update: update, render: render };
+  })();
+
+  /* ===================================================================
+     7. BOOTSTRAP
+     =================================================================== */
+  function startGame() {
+    Sound.unlock();
+    Game.reset();
+    setState("playing");
+    Ad.track("game_start");
+    Loop.start(Game.update, Game.render);
+  }
+
+  function init() {
+    fitCanvas();
+    $("screen-intro").querySelector(".title").textContent = CONFIG.title;
+    Input.on("down", function (p) { if (State === "playing") Game.onDown(p); });
+    $("btn-start").addEventListener("click", startGame);
+    $("btn-install").addEventListener("click", Ad.openStore);
+    $("btn-cta").addEventListener("click", Ad.openStore);
+    preloadImages(function () {
+      Ad.whenReady(function () {
+        setState("intro");
+        Ad.track("loaded");
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else { init(); }
+
+})();
+</script>
+</body>
+</html>
