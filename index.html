@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Playable Ads — Game Gallery</title>
+<title>Playable Ads — Motor &amp; Games</title>
 <!--
-  Project landing page. Lists every game in games/ with a Play button that
-  opens its self-contained index.html. Games are declared in the GAMES array
-  below — add a new entry when you add a game (see docs/CREATING_A_GAME.md).
+  Project landing page. Lists every game in games/ with a Play button that opens
+  its self-contained index.html, and documents the shared motor every game is
+  built on. Games are declared in the GAMES array below — add an entry when you
+  add a game (see docs/CREATING_A_GAME.md).
   Self-contained: vanilla HTML/CSS/JS, no external requests.
 -->
 <style>
   :root {
     --bg:#0b0e1a; --bg2:#11152a; --card:#171c33; --card2:#1d2340;
     --text:#eef1ff; --muted:#9aa3c7; --line:rgba(255,255,255,.08);
-    --accent:#4ade80;
+    --accent:#4bf5ff; --accent-ink:#04121a;
   }
   @media (prefers-color-scheme: light) {
     :root { --bg:#eef1f8; --bg2:#ffffff; --card:#ffffff; --card2:#f5f7fd;
-      --text:#141a2e; --muted:#5a627e; --line:rgba(0,0,0,.08); }
+      --text:#141a2e; --muted:#5a627e; --line:rgba(0,0,0,.08); --accent:#0aa3c2; --accent-ink:#ffffff; }
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -27,58 +28,61 @@
     background:radial-gradient(1200px 600px at 50% -10%, var(--bg2), var(--bg));
     -webkit-font-smoothing:antialiased;
   }
-  .wrap { max-width:1180px; margin:0 auto; padding:48px 22px 72px; }
+  .wrap { max-width:1080px; margin:0 auto; padding:48px 22px 72px; }
 
-  /* Header */
-  header { text-align:center; margin-bottom:38px; }
+  header { text-align:center; margin-bottom:40px; }
   .kicker { display:inline-block; font-size:12px; letter-spacing:2px; text-transform:uppercase;
     color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 14px; margin-bottom:18px; }
   h1 { font-size:clamp(30px,6vw,54px); font-weight:850; letter-spacing:-.5px; line-height:1.05; }
-  .lead { margin:14px auto 0; max-width:640px; color:var(--muted); font-size:clamp(15px,2.4vw,18px); line-height:1.5; }
+  .lead { margin:14px auto 0; max-width:660px; color:var(--muted); font-size:clamp(15px,2.4vw,18px); line-height:1.55; }
   .stats { margin-top:20px; display:flex; gap:26px; justify-content:center; flex-wrap:wrap; color:var(--muted); font-size:14px; }
   .stats b { color:var(--text); }
 
-  /* Grid */
-  .grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); }
+  h2 { font-size:22px; font-weight:800; margin:0 0 6px; }
+  .section { margin-top:46px; }
+  .section > p.sub { color:var(--muted); font-size:15px; line-height:1.6; margin-bottom:20px; }
 
-  /* Card */
-  .card {
-    position:relative; display:flex; flex-direction:column;
+  /* Game cards */
+  .grid { display:grid; gap:20px; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); }
+  .card { position:relative; display:flex; flex-direction:column;
     background:linear-gradient(180deg,var(--card),var(--card2));
-    border:1px solid var(--line); border-radius:18px; overflow:hidden;
+    border:1px solid var(--line); border-radius:20px; overflow:hidden;
     text-decoration:none; color:inherit;
-    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   .card:hover { transform:translateY(-4px); border-color:rgba(255,255,255,.18);
     box-shadow:0 18px 40px rgba(0,0,0,.35); }
-  .thumb { height:118px; display:flex; align-items:center; justify-content:center; font-size:52px;
-    position:relative; }
-  .thumb::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 55%); }
-  /* "NEW" badge for freshly added games */
-  .badge { position:absolute; top:10px; right:10px; z-index:2;
-    font-size:11px; font-weight:900; letter-spacing:.8px; color:#08130c;
-    background:var(--accent); border-radius:999px; padding:4px 10px;
-    box-shadow:0 4px 12px rgba(0,0,0,.35);
-    animation:badgePulse 1.6s ease-in-out infinite; }
-  @keyframes badgePulse { 0%,100% { transform:scale(1);} 50% { transform:scale(1.09);} }
-  .body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
-  .name { font-size:19px; font-weight:800; }
-  .desc { color:var(--muted); font-size:14px; line-height:1.45; flex:1; }
+  .thumb { height:140px; display:flex; align-items:center; justify-content:center;
+    font-size:58px; position:relative; }
+  .thumb::after { content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 55%); }
+  .body { padding:18px 20px 20px; display:flex; flex-direction:column; gap:11px; flex:1; }
+  .name { font-size:20px; font-weight:800; }
+  .desc { color:var(--muted); font-size:14.5px; line-height:1.5; flex:1; }
   .tags { display:flex; flex-wrap:wrap; gap:6px; }
   .tag { font-size:11px; font-weight:700; letter-spacing:.3px; color:var(--muted);
     background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:999px; padding:4px 9px; }
   @media (prefers-color-scheme: light) { .tag { background:rgba(0,0,0,.04); } }
-  .play {
-    margin-top:4px; align-self:flex-start; display:inline-flex; align-items:center; gap:8px;
-    padding:11px 20px; border-radius:999px; font-weight:800; font-size:15px; color:#08130c;
-    background:var(--accent); box-shadow:0 6px 18px rgba(0,0,0,.25);
-    transition:filter .15s ease, transform .1s ease;
-  }
+  .play { margin-top:4px; align-self:flex-start; display:inline-flex; align-items:center; gap:8px;
+    padding:11px 22px; border-radius:999px; font-weight:800; font-size:15px;
+    color:var(--accent-ink); background:var(--accent); box-shadow:0 6px 18px rgba(0,0,0,.25);
+    transition:filter .15s ease, transform .1s ease; }
   .card:hover .play { filter:brightness(1.08); }
-  .play:active { transform:scale(.97); }
   .play svg { width:15px; height:15px; }
 
-  footer { margin-top:52px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
+  /* Motor description */
+  .motor { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); }
+  .brick { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+  .brick h3 { font-size:15px; font-weight:800; margin-bottom:6px; }
+  .brick p { color:var(--muted); font-size:13.5px; line-height:1.55; }
+  .brick code { font-size:12.5px; background:rgba(255,255,255,.07); padding:1px 6px; border-radius:5px; }
+  @media (prefers-color-scheme: light) { .brick code { background:rgba(0,0,0,.05); } }
+
+  .docs { margin-top:22px; display:flex; flex-wrap:wrap; gap:10px; }
+  .docs a { font-size:13.5px; font-weight:700; text-decoration:none; color:var(--text);
+    border:1px solid var(--line); border-radius:999px; padding:9px 16px; background:var(--card); }
+  .docs a:hover { border-color:var(--accent); color:var(--accent); }
+
+  footer { margin-top:56px; text-align:center; color:var(--muted); font-size:13px; line-height:1.8; }
   footer code { background:rgba(255,255,255,.06); padding:2px 7px; border-radius:6px; font-size:12px; }
   @media (prefers-color-scheme: light) { footer code { background:rgba(0,0,0,.05); } }
   footer a { color:var(--accent); text-decoration:none; }
@@ -88,23 +92,69 @@
 <div class="wrap">
   <header>
     <span class="kicker">52 Entertainment · Playable Ads</span>
-    <h1>Game Gallery</h1>
-    <p class="lead">A collection of single-file playable ad prototypes. Each game is a
-      self-contained HTML page under&nbsp;5&nbsp;MB. Pick one and press&nbsp;Play.</p>
+    <h1>Playable Motor</h1>
+    <p class="lead">One shared shell — portrait frame, animated intro, HUD, overlay, persistent CTA
+      and a cinematic end screen — and one game module per creative. Every game below is a single
+      self-contained HTML file under&nbsp;5&nbsp;MB with zero external requests.</p>
     <div class="stats">
       <span><b id="count">0</b> games</span>
+      <span>720 × 1280 portrait</span>
       <span>Vanilla JS &amp; CSS</span>
-      <span>&lt; 5 MB each</span>
-      <span>No external requests</span>
+      <span>No build step</span>
     </div>
   </header>
 
-  <main class="grid" id="grid"></main>
+  <main class="section">
+    <h2>Games</h2>
+    <p class="sub">Open any card to play the creative exactly as an ad network receives it.</p>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <section class="section">
+    <h2>What the motor gives every game</h2>
+    <p class="sub">Only <code>CONFIG</code>, <code>ASSETS</code> and the <code>Game</code> module change
+      per creative. Everything here is shared, identical code.</p>
+    <div class="motor">
+      <div class="brick"><h3>Portrait design space</h3>
+        <p>Canvas <em>and</em> DOM overlays are authored in 720×1280 units and scaled as one block —
+          no <code>vw</code>, no <code>clamp()</code>, one coordinate system.</p></div>
+      <div class="brick"><h3>Notch-safe layout</h3>
+        <p><code>Layout</code> exposes the rectangle gameplay may use: below the HUD, above the CTA bar
+          and clear of the notch and home indicator.</p></div>
+      <div class="brick"><h3>Animated intro</h3>
+        <p>Logo, title, one-line pitch and a CSS how-to-play demo — <code>tap</code>, <code>hold</code>,
+          <code>drag</code>, <code>swipe</code> or <code>aim</code>.</p></div>
+      <div class="brick"><h3>HUD + overlay</h3>
+        <p>Big eased score with punch animation, timer, free slots — plus toasts, combo banners,
+          reward badges and a dramatic edge glow.</p></div>
+      <div class="brick"><h3>Fx juice layer</h3>
+        <p>Particles, rings, floating text, screen shake, colour flash and hit-stop, wired into the
+          frame so a game only draws its world.</p></div>
+      <div class="brick"><h3>Cinematic end screen</h3>
+        <p>Title, score count-up with confetti, star rating, cascading stat rows, the big install CTA
+          and a discreet replay link.</p></div>
+      <div class="brick"><h3>Ad-network glue</h3>
+        <p>MRAID readiness, pause when not viewable, and a single <code>Ad.openStore()</code> for every
+          CTA with fallbacks per network.</p></div>
+      <div class="brick"><h3>One round contract</h3>
+        <p>A game implements <code>reset / update / render</code> (+ pointer hooks) and calls
+          <code>endRound({...})</code>. That is the whole API.</p></div>
+    </div>
+    <div class="docs">
+      <a href="docs/ENGINE.md">docs/ENGINE.md — motor reference</a>
+      <a href="docs/CREATING_A_GAME.md">docs/CREATING_A_GAME.md — recipe</a>
+      <a href="docs/ARCHITECTURE.md">docs/ARCHITECTURE.md — file layout</a>
+      <a href="docs/AD_NETWORKS.md">docs/AD_NETWORKS.md — MRAID &amp; QA</a>
+      <a href="docs/ASSETS.md">docs/ASSETS.md — embedding assets</a>
+      <a href="template/game-template.html">template/game-template.html — start here</a>
+    </div>
+  </section>
 
   <footer>
-    Open any game directly, or serve the folder with <code>python3 -m http.server 8000</code>.<br>
-    New game? Copy <code>template/game-template.html</code> and add an entry to the
-    <code>GAMES</code> array in this file. See <a href="docs/CREATING_A_GAME.md">docs/CREATING_A_GAME.md</a>.
+    Open a game directly, or serve the folder with <code>python3 -m http.server 8000</code>.<br>
+    New game? Copy <code>template/game-template.html</code> to <code>games/&lt;slug&gt;/index.html</code>,
+    rewrite the <code>Game</code> module, then add an entry to the <code>GAMES</code> array in this file.<br>
+    Verify with <code>node tools/check-size.mjs</code> and <code>node tools/check-motor.mjs</code>.
   </footer>
 </div>
 
@@ -112,63 +162,15 @@
 "use strict";
 // One entry per game. `accent` is the thumbnail gradient; `icon` is an emoji.
 var GAMES = [
-  { slug:"tap-the-target", name:"Tap the Target", icon:"🎯",
-    desc:"Tap the circles before they vanish. Chain taps for a combo multiplier.",
-    tags:["Tap","Timed"], accent:["#ff8c00","#ff5c8a"] },
-  { slug:"stack-blocks", name:"Stack Blocks", icon:"🧱",
-    desc:"Tap to drop the sliding block. Stack the tower as high as you can.",
-    tags:["Tap","Endless"], accent:["#42e6c8","#0aa385"] },
-  { slug:"whack-a-mole", name:"Whack-a-Mole", icon:"🔨",
-    desc:"Whack the moles popping from a 3×3 grid — but dodge the bombs.",
-    tags:["Tap","Timed"], accent:["#4ade80","#16a34a"] },
-  { slug:"fruit-slice", name:"Fruit Slice", icon:"🍉",
-    desc:"Swipe your blade to slice flying fruit. Slice a bomb and it's over.",
-    tags:["Swipe","Timed"], accent:["#ff5c8a","#b0184b"] },
-  { slug:"flappy-flyer", name:"Flappy Flyer", icon:"🐤",
-    desc:"Tap to flap through the pipe gaps. How far can you fly?",
-    tags:["Tap","Endless"], accent:["#4dabf7","#1864ab"] },
-  { slug:"brick-breaker", name:"Brick Breaker", icon:"🧊",
-    desc:"Drag the paddle, bounce the ball and smash every brick.",
-    tags:["Drag","Lives"], accent:["#b388ff","#6741d9"] },
-  { slug:"catch-it", name:"Catch It", icon:"🧺",
-    desc:"Drag the basket to catch coins and gems while dodging bombs.",
-    tags:["Drag","Timed"], accent:["#ffd23f","#f08c00"] },
-  { slug:"snake", name:"Snake", icon:"🐍",
-    desc:"Swipe to steer the snake. Eat, grow, and don't bite yourself.",
-    tags:["Swipe","Endless"], accent:["#69db7c","#2b8a3e"] },
-  { slug:"bubble-shooter", name:"Bubble Shooter", icon:"🫧",
-    desc:"Aim and fire to match 3+ bubbles of the same color and pop them.",
-    tags:["Aim","Timed"], accent:["#4dabf7","#7048e8"] },
-  { slug:"endless-runner", name:"Endless Runner", icon:"🏃",
-    desc:"Tap to jump — double-jump too — over the incoming obstacles.",
-    tags:["Tap","Endless"], accent:["#ff922b","#e8590c"] },
-  { slug:"memory-match", name:"Memory Match", icon:"🃏",
-    desc:"Flip cards to find every matching pair before time runs out.",
-    tags:["Tap","Timed"], accent:["#748ffc","#4263eb"] },
-  { slug:"merge-tiles", name:"Merge Tiles", icon:"🔢",
-    desc:"Swipe to slide and merge equal tiles — 2048 style — to the target.",
-    tags:["Swipe","Target"], accent:["#ffc078","#f76707"] },
-  { slug:"maze-runner", name:"Maze Runner", icon:"🌀",
-    desc:"Auto-run a generated maze. Swipe to steer, grab coins, reach the exit.",
-    tags:["Swipe","Timed"], accent:["#41ead4","#0aa38a"] },
-  { slug:"dark-maze", name:"Dark Maze", icon:"🔦",
-    desc:"Navigate a maze by torchlight. Follow the beacon to the glowing exit.",
-    tags:["Swipe","Timed"], accent:["#ffd23f","#5f3dc4"] },
-  { slug:"ring-combo", name:"Ring Combo", icon:"🎯",
-    desc:"Tap the instant a closing ring hits the bouncing ball. Chain combos for a huge multiplier.",
-    tags:["Timing","Timed"], accent:["#7c9dff","#4263eb"] },
-  { slug:"bubbly", name:"Bubbly", icon:"🫧",
-    desc:"Tap the instant a cluster touches the shooter bubble to pop it — timing is everything.",
-    tags:["Timing","Tap"], accent:["#4dd0ff","#7048e8"] },
-  { slug:"perfect-landing", name:"Perfect Landing", icon:"🚀", isNew:true,
-    desc:"Tap to cut the engines and drop the rocket the instant it lines up over the sliding pad.",
-    tags:["Timing","Lives"], accent:["#4dd0ff","#1d6fe0"] },
-  { slug:"rhythm-tap", name:"Rhythm Tap", icon:"🎵", isNew:true,
-    desc:"Tap the instant each note hits the glowing line. Chain perfects for a combo multiplier.",
-    tags:["Timing","Timed"], accent:["#ff6ec7","#b5179e"] },
-  { slug:"speed-shift", name:"Speed Shift", icon:"🏎️", isNew:true,
-    desc:"Tap to shift the moment the needle hits the green. Perfect shifts win the race.",
-    tags:["Timing","Timed"], accent:["#ffb03a","#f7531f"] }
+  { slug:"ring-combo", name:"Chainring", icon:"⭕",
+    desc:"Tap the instant a closing ring hits the bouncing ball. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
+    tags:["Timing tap","30 s","Sudden death"], accent:["#4bf5ff","#4263eb"] },
+  { slug:"bubble-shooter", name:"Bubble Blight", icon:"🫧",
+    desc:"Drag to aim, release to fire and match 3 bubbles to pop them. Rainbow supers chain-detonate; the spreading blight only falls if you cut it off.",
+    tags:["Aim & shoot","60 s","Danger line"], accent:["#ff8fab","#7048e8"] },
+  { slug:"orbinity", name:"Orbinity", icon:"🪐",
+    desc:"A ribbon snake orbits a mini planet. Tap to snap gravity and fling it along the tangent — the planet explodes, a new one spawns, and the next well catches you. Walls bounce and break the chain.",
+    tags:["Timing tap","30 s","Combo chain"], accent:["#7cf5ff","#6d5cff"] }
 ];
 
 var PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
@@ -180,7 +182,7 @@ GAMES.forEach(function (g) {
   a.href = "games/" + g.slug + "/index.html";
   a.innerHTML =
     '<div class="thumb" style="background:linear-gradient(135deg,' + g.accent[0] + ',' + g.accent[1] + ')">' +
-      (g.isNew ? '<span class="badge">NEW</span>' : '') + g.icon + '</div>' +
+      g.icon + '</div>' +
     '<div class="body">' +
       '<div class="name">' + g.name + '</div>' +
       '<div class="desc">' + g.desc + '</div>' +

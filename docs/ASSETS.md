@@ -53,16 +53,27 @@ ctx.drawImage(Images.logo, x, y, w, h);
 ### Using embedded sounds
 
 ```js
-Sound.clip("pop");   // plays ASSETS.sounds.pop
+Sound.clip("pop");             // plays ASSETS.sounds.pop
+Sound.clip("pop", 0.6);        // …at 60% volume
+Sound.clip("pop", 0.6, 1.35);  // …and pitched up 35% (rate 0.5–4)
 ```
+
+Clips are decoded into WebAudio buffers inside `Sound.unlock()` — i.e. in the
+start gesture, which is what iOS requires. Each call plays its own buffer
+source, so rapid repeats overlap instead of cutting each other off, and `rate`
+is the cheap way to make one sample climb with a combo. Until a buffer is ready
+the call falls back to an `<audio>` element, so no cue is ever dropped.
+
+Orbinity is the reference: seven mp3s (launch, boom, grab, wall, lost,
+milestone, evolve) re-encoded mono 32 kHz, ~80 KB total.
 
 ## Size budget
 
-| Concern | Guidance |
-|---------|----------|
-| Hard limit | Keep the whole `index.html` **< 5 MB**. Some networks cap at 2–3 MB — check the target. |
-| base64 overhead | Encoding inflates binary size by ~**33%**. A 3 MB image becomes ~4 MB of text. |
-| Verify | `node tools/check-size.mjs` (add `--limit 2` for a 2 MB budget). |
+| Concern         | Guidance                                                                                |
+| --------------- | --------------------------------------------------------------------------------------- |
+| Hard limit      | Keep the whole `index.html` **< 5 MB**. Some networks cap at 2–3 MB — check the target. |
+| base64 overhead | Encoding inflates binary size by ~**33%**. A 3 MB image becomes ~4 MB of text.          |
+| Verify          | `node tools/check-size.mjs` (add `--limit 2` for a 2 MB budget).                        |
 
 ### Keeping assets small
 
