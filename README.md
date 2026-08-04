@@ -1,34 +1,54 @@
-# Playable Ads Template
+# Playable Ads — the Motor
 
-A minimal, prompt-friendly template for building **playable ads** — small
+A prompt-friendly **motor** (shared shell) for building **playable ads** — small
 interactive game demos that run inside ad networks (AppLovin, ironSource, Unity
 Ads, Google Ads, Vungle, Mintegral, Facebook…).
 
-Each game is a **single, self-contained `index.html`**:
+Every playable has the same skeleton, so the skeleton is written once:
+
+- **Portrait design space** — 720 × 1280, letterbox-scaled; canvas *and* DOM
+  overlays share the same coordinates.
+- **Animated intro** — logo, title, one-line pitch and a CSS how-to-play demo
+  (`tap` / `hold` / `drag` / `swipe` / `aim`).
+- **HUD** — big eased score, timer, two free slots, kept clear of notches and
+  camera cut-outs.
+- **Game-view overlay** — toasts, combo banners, reward badges, dramatic edge
+  glow.
+- **Persistent CTA bar** — install button on screen for the whole round, lifted
+  above the home indicator.
+- **Fx layer** — particles, rings, floating text, screen shake, flash, hit-stop.
+- **Cinematic end screen** — score count-up with confetti, star rating,
+  cascading stat rows, a big install CTA and a small replay link.
+
+**A new game only writes `CONFIG`, `ASSETS` and its `Game` module.**
+
+Each creative ships as a **single, self-contained `index.html`**:
 
 - One HTML file, **under 5 MB** (many networks cap at 2–5 MB).
-- **Vanilla JavaScript and vanilla CSS, inlined** — no build step, no bundler,
-  no external requests. What you see is what the ad network gets.
+- **Vanilla JavaScript and CSS, inlined** — no build step, no bundler, no
+  external requests. What you see is what the ad network gets.
 - **Assets embedded** as base64 data URIs (see [docs/ASSETS.md](docs/ASSETS.md)).
-- Consistent structure so a **new game can be created from a single prompt**.
 
 ## Repository layout
 
 ```
-playableads/
-├── index.html                ← game gallery landing page (open this first)
+playables/
+├── index.html                ← gallery + motor overview (open this first)
 ├── README.md                 ← you are here
 ├── CLAUDE.md                 ← instructions for AI-assisted game creation
 ├── template/
-│   └── game-template.html    ← the canonical starting point (copy this)
-├── games/                    ← 12 example games (see catalog below)
-│   ├── tap-the-target/index.html
-│   ├── stack-blocks/index.html
-│   └── … (10 more)
+│   └── game-template.html    ← THE MOTOR — copy this for every new game
+├── games/
+│   ├── ring-combo/index.html      ← Chainring (timing tap)
+│   ├── bubble-shooter/index.html  ← Bubble Blight (aim & shoot)
+│   └── orbinity/index.html        ← Orbinity (gravity slingshot)
+├── assets/                   ← source art & audio (not shipped; embed instead)
 ├── tools/
 │   ├── embed-asset.mjs       ← encode an image/sound into a data URI
-│   └── check-size.mjs        ← verify files stay under the size budget
+│   ├── check-size.mjs        ← verify files stay under the size budget
+│   └── check-motor.mjs       ← verify (or --fix) that games share the motor
 └── docs/
+    ├── ENGINE.md             ← the motor: layout, APIs, contract  ← START HERE
     ├── ARCHITECTURE.md       ← how a game file is structured (the 7 sections)
     ├── CREATING_A_GAME.md    ← step-by-step recipe + prompt patterns
     ├── ASSETS.md             ← embedding images/sounds, staying under 5 MB
@@ -37,85 +57,71 @@ playableads/
 
 ## Quick start
 
-**Browse all games** — open the gallery landing page:
+**Browse** — open the landing page:
 
 ```bash
-open index.html                              # macOS — lists every game with a Play button
+open index.html                              # macOS
 ```
 
-**Run a game directly** — just open the file in a browser:
+**Run a game directly**:
 
 ```bash
-open games/stack-blocks/index.html          # macOS
+open games/ring-combo/index.html
 # or serve the folder if your browser blocks file:// features:
-python3 -m http.server 8000                  # then visit localhost:8000/games/...
+python3 -m http.server 8000                  # then visit localhost:8000/games/…
 ```
 
-**Create a new game:**
+**Create a new game**:
 
-1. Copy the template into a new folder:
+1. Copy the motor:
    ```bash
    cp template/game-template.html games/my-game/index.html
    ```
-2. Follow [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md) — you mostly edit
-   the `CONFIG` and `Game` sections and leave the engine/ad glue untouched.
-3. Check the size budget:
+1. Follow [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md) — you edit `CONFIG`,
+   the theme tokens and the `Game` module, and leave the engine/shell/ad glue
+   untouched.
+1. Verify the budget and that the shared motor is still shared:
    ```bash
    node tools/check-size.mjs
+   node tools/check-motor.mjs      # --fix pushes template changes into games
    ```
 
 ## Game catalog
 
-Twelve self-contained example games, each demonstrating a different input style
-and mechanic — a broad reference for what the template can produce. Open any
-`games/<slug>/index.html` in a browser to play.
+| Game                             | Mechanic                                                                                                      | Input       | Round               |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------- | ------------------- |
+| `ring-combo` (Chainring)         | Tap as closing rings hit the bouncing ball; chain a combo multiplier, then survive a spiked sudden-death ring | Timing tap  | 30 s + sudden death |
+| `bubble-shooter` (Bubble Blight) | Aim & shoot to match 3+ bubbles; rainbow supers chain-detonate, a spreading blight must be cut off            | Drag to aim | 60 s / danger line  |
+| `orbinity` (Orbinity)            | A ribbon snake orbits a mini planet; tap to snap gravity and fling it along the tangent into the next well    | Timing tap  | 30 s / combo chain  |
 
-| Game | Mechanic | Input | Round |
-|------|----------|-------|-------|
-| `tap-the-target` | Tap circles before they vanish; chain combos | Tap a point | Timed |
-| `stack-blocks` | Drop a sliding block to build a tower | Tap anywhere | Endless |
-| `whack-a-mole` | Whack moles on a 3×3 grid, dodge bombs | Tap a point | Timed |
-| `fruit-slice` | Swipe to slice flying fruit, avoid bombs | Blade swipe | Timed |
-| `flappy-flyer` | Tap to flap through pipe gaps | Tap anywhere | Endless |
-| `brick-breaker` | Bounce a ball to break bricks | Drag paddle | Lives |
-| `catch-it` | Catch good items in a basket, dodge bombs | Drag | Timed |
-| `snake` | Steer a growing snake to eat, avoid self/walls | Swipe direction | Endless |
-| `bubble-shooter` | Aim & shoot to match 3+ same-color bubbles | Aim + tap | Timed/clear |
-| `endless-runner` | Tap to jump (double-jump) over obstacles | Tap anywhere | Endless |
-| `memory-match` | Flip cards to find matching pairs | Tap a point | Timed |
-| `merge-tiles` | Swipe to slide & merge numbered tiles (2048) | Swipe direction | Target/stuck |
-| `maze-runner` | Auto-run a generated maze; steer to grab coins & exit | Swipe direction | Timed |
-| `dark-maze` | Navigate a maze by torchlight to the glowing exit | Swipe direction | Timed |
-| `ring-combo` | Tap as closing rings hit the bouncing ball; chain a combo multiplier | Timing tap | Timed |
-
-Between them they cover tap-a-point, tap-anywhere, drag/track, blade swipe,
-swipe-direction, and aim inputs; timed, endless, lives-based, and
-target/clear win conditions.
+All of them are built on the same motor: sections 3, 4, 5 and 7 of their scripts
+are byte-identical. Diff them to see exactly how little a game owns.
 
 ## How a game file is organized
 
-Every file follows the same top-to-bottom sections so code is easy to read and
-reusable helpers stay in the same place. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-| # | Section        | Edit per game?      | Purpose |
-|---|----------------|---------------------|---------|
-| 1 | `CONFIG`       | **Yes**             | Title, timing, store URLs, design resolution |
-| 2 | `ASSETS`       | Sometimes           | Embedded base64 images/sounds |
-| 3 | `ENGINE`       | Rarely              | Canvas fit, input, loop, audio, storage, RNG |
-| 4 | `AD GLUE`      | Rarely              | MRAID readiness, CTA / store open, tracking |
-| 5 | `STATE MACHINE`| Light               | loading → intro → playing → end screens |
-| 6 | `GAME`         | **Yes (mostly)**    | `reset / onDown / update / render / end` |
-| 7 | `BOOTSTRAP`    | Rarely              | Wires buttons + input, starts the flow |
+| #   | Section     | Edit per game? | Purpose                                                            |
+| --- | ----------- | -------------- | ------------------------------------------------------------------ |
+| 1   | `CONFIG`    | **Yes**        | Title, copy, clock, store URLs, layout bands, intro demo, tunables |
+| 2   | `ASSETS`    | Sometimes      | Embedded base64 images/sounds                                      |
+| 3   | `ENGINE`    | No             | Frame/Layout, input, loop, audio, storage, RNG, Fx, confetti       |
+| 4   | `AD GLUE`   | No             | MRAID readiness, visibility, store open, tracking                  |
+| 5   | `SHELL`     | No             | States, HUD, overlay, intro, end screen, round clock               |
+| 6   | `GAME`      | **Yes**        | `reset / update / render` + optional hooks                         |
+| 7   | `BOOTSTRAP` | No             | Frame pipeline and wiring                                          |
 
 ## Design principles
 
+- **One motor, many games.** The shell is shared code, not a starting point to
+  be rewritten. Fix it once, copy it everywhere.
 - **Self-contained**: no network calls, no external files. One HTML in, one out.
-- **Standalone-runnable**: works both inside a network iframe *and* when opened
+- **Standalone-runnable**: works inside a network iframe *and* when opened
   directly in a browser, so you can develop and QA fast.
-- **Portrait-first, responsive**: authored at a virtual `720×1280` design
-  resolution and letterbox-scaled to any screen (see `fitCanvas`).
-- **Clear CTA**: an always-available install button plus an end-screen CTA, both
+- **Portrait-first, safe-area aware**: authored at `720×1280`; the HUD and CTA
+  never sit under a notch, a camera cut-out or the home indicator.
+- **Clear CTA**: an install button during play plus the end-screen CTA, both
   routed through the ad network's `open()` when present.
 - **English code & docs**; prompts may be in any language.
 
-See [CLAUDE.md](CLAUDE.md) for how to drive this template with prompts.
+See [CLAUDE.md](CLAUDE.md) for how to drive this repo with prompts.

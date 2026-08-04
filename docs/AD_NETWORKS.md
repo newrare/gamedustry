@@ -7,9 +7,9 @@ call-to-action works, and per-network notes for packaging and QA.
 ## The container lifecycle
 
 1. The network loads your HTML into its frame.
-2. It may inject **`mraid.js`** (Mobile Rich-media Ad Interface Definitions) — a
+1. It may inject **`mraid.js`** (Mobile Rich-media Ad Interface Definitions) — a
    standard API for playables. It might not be `ready` immediately.
-3. Your creative should wait for readiness before starting, then let the user
+1. Your creative should wait for readiness before starting, then let the user
    play, then send them to the store via the network's redirect API.
 
 The template handles all three via the `Ad` module so games don't have to.
@@ -35,11 +35,11 @@ function whenReady(cb) {
 Every install/CTA button routes through this. It tries, in order:
 
 1. **MRAID** — `mraid.open(url)` (the standard, works across most networks).
-2. **Network globals** — common non-MRAID hooks:
+1. **Network globals** — common non-MRAID hooks:
    - `window.install()` — ironSource / generic playable API.
    - `ExitApi.exit()` — Google Ads playables.
    - `mintegral_playable_exit()` — Mintegral.
-3. **Fallback** — `window.open(url, "_blank")`.
+1. **Fallback** — `window.open(url, "_blank")`.
 
 The destination is chosen by platform (`ios` / `android` / `fallback`) from
 `CONFIG.storeUrl`. **Set these URLs per campaign.** Never hard-code a redirect
@@ -60,15 +60,15 @@ analytics/telemetry call if a campaign requires event reporting.
 These change over time — always confirm against the network's current playable
 spec before delivery.
 
-| Network | Redirect API | Packaging | Notes |
-|---------|--------------|-----------|-------|
-| **AppLovin** | MRAID `open()` | Single HTML | Supports MRAID; standard flow works. |
-| **ironSource** | `window.install()` | Single HTML | Non-MRAID global; `openStore` covers it. |
-| **Unity Ads** | MRAID `open()` | Single HTML | MRAID-based. |
-| **Google Ads (AdMob)** | `ExitApi.exit()` | Single HTML, ≤ 5 MB, `<meta name="ad.size">` may be required | Uses ExitApi, not MRAID `open`. Store URL set in dashboard. |
-| **Vungle / Liftoff** | MRAID `open()` | Single HTML | MRAID. |
-| **Mintegral** | `mintegral_playable_exit()` | Single HTML | Custom global. |
-| **Facebook / Meta** | `FbPlayableAd.onCTAClick()` | Single HTML, ≤ 5 MB, no external requests, no autoplay before interaction | Add this call if delivering to Meta (see below). |
+| Network                | Redirect API                | Packaging                                                                 | Notes                                                       |
+| ---------------------- | --------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **AppLovin**           | MRAID `open()`              | Single HTML                                                               | Supports MRAID; standard flow works.                        |
+| **ironSource**         | `window.install()`          | Single HTML                                                               | Non-MRAID global; `openStore` covers it.                    |
+| **Unity Ads**          | MRAID `open()`              | Single HTML                                                               | MRAID-based.                                                |
+| **Google Ads (AdMob)** | `ExitApi.exit()`            | Single HTML, ≤ 5 MB, `<meta name="ad.size">` may be required              | Uses ExitApi, not MRAID `open`. Store URL set in dashboard. |
+| **Vungle / Liftoff**   | MRAID `open()`              | Single HTML                                                               | MRAID.                                                      |
+| **Mintegral**          | `mintegral_playable_exit()` | Single HTML                                                               | Custom global.                                              |
+| **Facebook / Meta**    | `FbPlayableAd.onCTAClick()` | Single HTML, ≤ 5 MB, no external requests, no autoplay before interaction | Add this call if delivering to Meta (see below).            |
 
 ### Adding Meta (Facebook) support
 
@@ -92,7 +92,7 @@ Add it near the top of the try-chain (before the MRAID/`window.open` fallbacks).
 ## QA checklist
 
 - [ ] Plays start-to-finish opened directly in a browser (`file://` or a local
-      server) — desktop and a mobile viewport.
+  server) — desktop and a mobile viewport.
 - [ ] Intro appears only after `Ad.whenReady` resolves.
 - [ ] Audio starts only after the first tap (autoplay policies + iOS unlock).
 - [ ] Every CTA button triggers `Ad.openStore()` (check the console log).
@@ -100,4 +100,4 @@ Add it near the top of the try-chain (before the MRAID/`window.open` fallbacks).
 - [ ] Network tab empty (no external calls); under the size budget.
 - [ ] No scroll/zoom/selection; fills the frame in portrait.
 - [ ] Test inside the target network's **playable preview/validator** tool
-      before shipping (most provide one).
+  before shipping (most provide one).

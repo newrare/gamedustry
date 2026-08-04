@@ -3,297 +3,745 @@
 <head>
 <meta charset="UTF-8">
 <!--
-  Viewport locked to device size, no user scaling. This is mandatory for
-  playable ads: the creative must fill the ad container and never scroll/zoom.
+  Viewport locked to the device size, no user scaling. Mandatory for playable
+  ads: the creative must fill the ad container and never scroll or zoom.
+  `viewport-fit=cover` is what makes env(safe-area-inset-*) report real values,
+  which the engine uses to keep the HUD clear of notches and home indicators.
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Playable Template</title>
 
-<!-- =====================================================================
-     STYLES  (vanilla CSS, inlined)
-     Keep everything inline so the whole creative is one self-contained file.
-     ===================================================================== -->
+<!--
+  ============================================================================
+  PLAYABLE MOTOR — the shared shell every game in this repo is built on.
+  ============================================================================
+  A playable always has the same skeleton, so it lives here once:
+
+    portrait frame  →  a fixed 720x1280 design space, letterbox-scaled to any
+                       screen. Canvas AND DOM overlays share those coordinates.
+    intro           →  logo, title, one-line pitch, an ANIMATED how-to-play
+                       demo, and the start button.
+    playing         →  canvas world + HUD (top, notch-safe) + free-form
+                       overlay (toasts / banners / rewards) + CTA bar (bottom).
+    end             →  cinematic score reveal, stars, stat rows, a big install
+                       CTA and a small replay link.
+
+  Only sections 1 (CONFIG), 2 (ASSETS) and 6 (GAME) change per game.
+  Full reference: docs/ENGINE.md — recipe: docs/CREATING_A_GAME.md
+  ============================================================================
+-->
+
 <style>
-  /* ---- Reset & root ---- */
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* =========================================================================
+     THEME TOKENS — reskin a game by editing these, not the rules below.
+     ========================================================================= */
+  :root {
+    --bg:        #0a0a1c;   /* page / letterbox background            */
+    --text:      #eafcff;   /* primary text                          */
+    --muted:     #9fb0e0;   /* labels, secondary text                */
+    --accent:    #00e5ff;   /* glow / highlight colour               */
+    --cta-a:     #4bf5ff;   /* CTA gradient top                      */
+    --cta-b:     #00d0ff;   /* CTA gradient bottom                   */
+    --cta-text:  #04040c;   /* CTA label                             */
+    --danger:    #ff2d55;   /* game over, warnings                   */
+    --gold:      #ffd43b;   /* stars, best score                     */
+    --good:      #69db7c;
+    --panel:     rgba(255,255,255,.05);
+    --panel-line:rgba(255,255,255,.09);
+
+    /* Written by the engine at runtime (all in DESIGN pixels). */
+    --scale: 1;             /* design px -> screen px factor          */
+    --hud-h: 150px;         /* band reserved at the top (CONFIG)      */
+    --cta-h: 112px;         /* band reserved at the bottom (CONFIG)   */
+    --inset-top: 0px;       /* notch / status bar, in design px       */
+    --inset-bottom: 0px;    /* home indicator, in design px           */
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body {
-    width: 100%; height: 100%; overflow: hidden;
-    background: #0e1020;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-user-select: none; user-select: none;
-    touch-action: none;                 /* we handle all gestures ourselves */
+    width:100%; height:100%; overflow:hidden; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--text); -webkit-user-select:none; user-select:none;
+    touch-action:none;                    /* every gesture is ours */
   }
 
-  /* ---- Stage: the square-ish play area, centered, orientation-agnostic ---- */
-  #stage {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
+  /* Invisible probe: the only reliable way to read env(safe-area-inset-*)
+     from JS is to apply it as padding somewhere and measure it. */
+  #safe-probe {
+    position:fixed; top:0; left:0; width:0; height:0; visibility:hidden; pointer-events:none;
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
   }
-  #game { display: block; touch-action: none; }
 
-  /* ---- Screens (state machine overlays) ---- */
-  .screen {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; color: #fff; padding: 24px;
-    transition: opacity .25s ease; z-index: 10;
+  /* =========================================================================
+     FRAME — the whole creative is authored at 720x1280 and scaled as one
+     block, so DOM overlays and canvas drawings share a single coordinate
+     system. Never use vw/vh/clamp() inside the frame: use design px.
+     ========================================================================= */
+  #backdrop { position:fixed; inset:0; z-index:1; background:rgba(4,5,14,.9);
+    opacity:0; pointer-events:none; transition:opacity .3s ease; }
+  #backdrop.on { opacity:1; }
+  #stage { position:fixed; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; }
+  #frame {
+    position:relative; flex:0 0 auto; width:720px; height:1280px; overflow:hidden;
+    transform:scale(var(--scale)); transform-origin:center center;
   }
-  .screen.hidden { opacity: 0; pointer-events: none; }
+  #game { display:block; width:720px; height:1280px; touch-action:none; }
 
-  .title { font-size: clamp(22px, 7vw, 44px); font-weight: 800; letter-spacing: .5px; }
-  .subtitle { margin-top: 10px; font-size: clamp(14px, 4vw, 20px); opacity: .85; }
-
-  /* ---- Buttons / Call To Action ---- */
-  .btn {
-    margin-top: 22px; padding: 16px 34px; border: none; border-radius: 999px;
-    font-size: clamp(16px, 5vw, 22px); font-weight: 800; color: #fff; cursor: pointer;
-    background: linear-gradient(180deg, #4ade80, #16a34a);
-    box-shadow: 0 8px 24px rgba(22,163,74,.45);
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-  .btn:active { transform: scale(.96); }
-  @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
-
-  /* ---- Persistent CTA banner (visible during gameplay, common in playables) ---- */
-  #cta-bar {
-    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    padding: 12px; background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
-  }
-  #cta-bar.hidden { display: none; }
-
-  /* ---- HUD (score, timer) ---- */
+  /* =========================================================================
+     HUD — top band. Sits below the notch thanks to --inset-top, and gets a
+     scrim so it stays readable over a busy game world.
+     ========================================================================= */
   #hud {
-    position: absolute; top: 0; left: 0; right: 0; z-index: 15;
-    display: flex; justify-content: space-between; padding: 14px 18px;
-    color: #fff; font-weight: 800; font-size: clamp(15px, 4.5vw, 22px);
-    pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,.4);
+    position:absolute; left:0; right:0; top:0; z-index:15; pointer-events:none;
+    height:calc(var(--inset-top) + var(--hud-h));
+    padding:calc(var(--inset-top) + 18px) 26px 0;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+    transition:opacity .2s ease;
   }
-  #hud.hidden { display: none; }
+  #hud.hidden { opacity:0; }
+  #hud::before {
+    content:""; position:absolute; left:0; right:0; top:0; bottom:0; z-index:-1;
+    background:linear-gradient(180deg, rgba(4,5,16,.62), rgba(4,5,16,0));
+  }
+  /* Centre column: the big animated score (the number a playable sells on). */
+  #hud-center { position:absolute; left:0; right:0; top:calc(var(--inset-top) + 12px); text-align:center; }
+  #hud-score {
+    display:inline-block; transform-origin:center bottom; font-size:78px; font-weight:900;
+    line-height:1; color:var(--text); text-shadow:0 0 14px rgba(0,229,255,.55);
+    transition:color .25s ease; font-variant-numeric:tabular-nums;
+  }
+  #hud-score.bump { animation:scorebump .4s cubic-bezier(.2,1.5,.4,1); }
+  @keyframes scorebump { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
+  #hud-score-lbl { margin-top:2px; font-size:15px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
+  #hud-left, #hud-right { position:relative; z-index:1; min-width:120px; }
+  #hud-right { text-align:right; }
+  .hud-pill {
+    display:inline-block; padding:9px 18px; border-radius:18px;
+    background:rgba(0,0,0,.42); border:1px solid var(--panel-line);
+    font-size:28px; font-weight:900; text-shadow:0 2px 6px rgba(0,0,0,.5);
+    font-variant-numeric:tabular-nums;
+  }
+  .hud-pill .lbl { display:block; font-size:14px; font-weight:800; letter-spacing:2px; opacity:.65; }
+  .hud-pill.warn { color:var(--danger); border-color:rgba(255,45,85,.5); }
+  #hud-left:empty, #hud-right:empty { display:none; }
 
-  /* ---- Loading spinner ---- */
-  .spinner {
-    width: 46px; height: 46px; border-radius: 50%;
-    border: 5px solid rgba(255,255,255,.2); border-top-color: #fff;
-    animation: spin .9s linear infinite;
+  /* =========================================================================
+     OVERLAY — the game-view notification layer: score toasts, combo banners,
+     rewards, dramatic edge glow. Screen-space and pointer-transparent.
+     World-space juice (particles, floating "+120") belongs to Fx on canvas.
+     ========================================================================= */
+  #overlay { position:absolute; inset:0; z-index:16; pointer-events:none; overflow:hidden; }
+
+  #ov-toasts {
+    position:absolute; left:0; right:0; top:calc(var(--inset-top) + var(--hud-h) + 10px);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .ov-toast {
+    padding:12px 26px; border-radius:999px; font-size:28px; font-weight:900; letter-spacing:.5px;
+    background:rgba(8,10,24,.78); border:1px solid var(--panel-line);
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    animation:toastIn .28s cubic-bezier(.2,1.7,.4,1);
+  }
+  .ov-toast.out { animation:toastOut .3s ease forwards; }
+  @keyframes toastIn  { from{opacity:0; transform:translateY(-18px) scale(.9);} to{opacity:1; transform:none;} }
+  @keyframes toastOut { to{opacity:0; transform:translateY(-14px) scale(.95);} }
+
+  #ov-banner { position:absolute; left:0; right:0; top:42%; text-align:center; opacity:0; }
+  #ov-banner.show { animation:bannerPunch var(--ov-banner-dur, 1s) cubic-bezier(.2,1.6,.4,1) forwards; }
+  @keyframes bannerPunch {
+    0%   { opacity:0; transform:scale(.5); }
+    18%  { opacity:1; transform:scale(1.08); }
+    30%  { transform:scale(1); }
+    76%  { opacity:1; transform:scale(1); }
+    100% { opacity:0; transform:scale(1.12); }
+  }
+  #ov-banner-main { font-size:74px; font-weight:900; letter-spacing:2px; text-shadow:0 0 26px rgba(0,0,0,.55); }
+  #ov-banner-sub  { margin-top:6px; font-size:36px; font-weight:900; color:#fff; text-shadow:0 0 18px rgba(0,0,0,.6); }
+
+  /* Reward badge: the "you earned something" moment (combo chest, bonus…). */
+  #ov-reward {
+    position:absolute; left:50%; top:34%; transform:translate(-50%,-50%) scale(.4);
+    padding:20px 34px; border-radius:26px; opacity:0;
+    background:linear-gradient(180deg, rgba(255,232,150,.22), rgba(255,175,40,.16));
+    border:1px solid rgba(255,215,110,.6); box-shadow:0 0 34px rgba(255,200,60,.35);
+    font-size:40px; font-weight:900; color:#ffe58a; text-shadow:0 0 14px rgba(255,205,70,.7);
+  }
+  #ov-reward.show { animation:rewardPop 1.7s cubic-bezier(.2,1.7,.4,1) forwards; }
+  @keyframes rewardPop {
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.4);}
+    14%{opacity:1; transform:translate(-50%,-50%) scale(1.1);}
+    24%{transform:translate(-50%,-50%) scale(1);}
+    78%{opacity:1;}
+    100%{opacity:0; transform:translate(-50%,-70%) scale(1.02);}
+  }
+
+  /* Dramatic edge glow — pulse it on a milestone or a near-death moment. */
+  #ov-vignette { position:absolute; inset:0; opacity:0; transition:opacity .5s ease;
+    box-shadow:inset 0 0 130px 34px var(--accent); }
+
+  /* =========================================================================
+     CTA BAR — always reachable while playing. Lifted above the home indicator.
+     ========================================================================= */
+  #cta-bar {
+    position:absolute; left:0; right:0; bottom:0; z-index:20;
+    min-height:calc(var(--cta-h) + var(--inset-bottom));
+    padding:16px 22px calc(16px + var(--inset-bottom));
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, rgba(6,8,20,0), rgba(6,8,20,.85) 42%);
+    transition:opacity .2s ease;
+  }
+  #cta-bar.hidden { opacity:0; pointer-events:none; }
+
+  /* =========================================================================
+     BUTTONS
+     ========================================================================= */
+  .btn {
+    border:2px solid rgba(255,255,255,.8); border-radius:999px; cursor:pointer;
+    font-family:inherit; font-weight:900; letter-spacing:.5px; color:var(--cta-text);
+    background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
+    box-shadow:0 0 20px rgba(0,229,255,.6);
+    padding:22px 52px; font-size:34px;
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  .btn:active { transform:scale(.96); }
+  .btn.sm { padding:14px 36px; font-size:30px; }
+  .btn.lg { padding:26px 62px; font-size:38px; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+  .link {
+    margin-top:22px; background:none; border:none; cursor:pointer; font-family:inherit;
+    color:var(--muted); font-size:26px; font-weight:700; text-decoration:underline;
+    text-underline-offset:5px; padding:10px 16px;
+  }
+  .link:active { opacity:.6; }
+
+  /* =========================================================================
+     SCREENS — loading / intro / end
+     ========================================================================= */
+  .screen {
+    position:absolute; inset:0; z-index:30; padding:70px 48px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    transition:opacity .25s ease;
+  }
+  .screen.hidden { opacity:0; pointer-events:none; }
+
+  .spinner { width:76px; height:76px; border-radius:50%;
+    border:8px solid rgba(255,255,255,.15); border-top-color:var(--accent);
+    animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-lbl { margin-top:26px; font-size:28px; color:var(--muted); }
+
+  /* ---- Intro ---- */
+  #app-icon {
+    width:230px; height:auto; border-radius:44px; margin-bottom:14px;
+    box-shadow:0 14px 44px rgba(0,0,0,.55), 0 0 44px rgba(0,229,255,.34);
+    animation:iconfloat 3s ease-in-out infinite;
+  }
+  @keyframes iconfloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);} }
+  #intro-title { font-size:76px; font-weight:900; letter-spacing:1px; line-height:1.05;
+    text-shadow:0 0 22px rgba(0,229,255,.7); }
+  #intro-tagline { margin-top:16px; font-size:32px; line-height:1.4; color:#c9d6ff; }
+
+  /* ---- Animated how-to-play demo -------------------------------------------
+     One markup block, five variants (tap / hold / drag / swipe / aim) picked
+     by CONFIG.intro.demo. Pure CSS so it costs nothing and never blocks. */
+  #intro-demo { margin-top:34px; }
+  #screen-intro #btn-start { margin-top:40px; }
+  .demo-stage {
+    position:relative; width:380px; height:210px; margin:0 auto; overflow:hidden;
+    border-radius:28px; background:var(--panel); border:1px solid var(--panel-line);
+  }
+  .demo-caption { margin-top:18px; font-size:26px; font-weight:800; letter-spacing:1px; color:var(--muted); }
+
+  /* pieces — hidden by default, each variant opts in */
+  .demo-target, .demo-hand, .demo-track, .demo-arrow, .demo-beam { display:none; position:absolute; }
+
+  .demo-target { left:50%; top:28px; width:96px; height:96px; margin-left:-48px;
+    border:5px solid var(--accent); border-radius:50%; box-shadow:0 0 22px rgba(0,229,255,.5); }
+  .demo-ripple { position:absolute; inset:-6px; border:4px solid var(--accent); border-radius:50%;
+    opacity:0; animation:rip 1.6s ease-out infinite; }
+  .demo-ripple.d2 { animation-delay:.18s; }
+  @keyframes rip { 0%,36%{transform:scale(.4); opacity:0;} 42%{opacity:.8;} 100%{transform:scale(2.1); opacity:0;} }
+
+  /* a fingertip coming from the bottom of the frame */
+  .demo-hand { left:50%; bottom:20px; width:46px; height:74px; margin-left:-23px;
+    border-radius:23px 23px 16px 16px; background:linear-gradient(180deg,#ffffff,#c3cfff);
+    box-shadow:0 8px 20px rgba(0,0,0,.45); }
+
+  .demo-track { left:60px; right:60px; bottom:52px; height:0;
+    border-top:5px dashed rgba(255,255,255,.28); }
+  .demo-arrow { left:50%; top:50%; margin:-16px 0 0 40px; width:0; height:0;
+    border:18px solid transparent; border-left-color:var(--accent);
+    animation:arrowPush 1.4s ease-in-out infinite; }
+  @keyframes arrowPush { 0%,100%{opacity:.15; transform:translateX(0);} 50%{opacity:1; transform:translateX(22px);} }
+  /* pivoting dotted aim line, anchored at the fingertip */
+  .demo-beam { left:50%; bottom:78px; width:6px; height:118px; margin-left:-3px;
+    transform-origin:50% 100%;
+    background:repeating-linear-gradient(180deg, var(--accent) 0 12px, transparent 12px 24px);
+    animation:beamSweep 2.6s ease-in-out infinite; }
+  @keyframes beamSweep { 0%,100%{transform:rotate(-34deg);} 50%{transform:rotate(34deg);} }
+
+  /* variant: TAP — finger taps a pulsing target */
+  .demo-tap  .demo-target, .demo-tap  .demo-hand { display:block; }
+  .demo-tap  .demo-hand { animation:handTap 1.6s ease-in-out infinite; }
+  @keyframes handTap { 0%,30%{transform:translateY(0);} 40%{transform:translateY(-26px);} 52%{transform:translateY(0);} }
+
+  /* variant: HOLD — finger stays pressed, target charges up */
+  .demo-hold .demo-target, .demo-hold .demo-hand { display:block; }
+  .demo-hold .demo-target { animation:holdCharge 1.8s ease-in-out infinite; }
+  .demo-hold .demo-ripple { animation-duration:1.8s; }
+  .demo-hold .demo-hand { transform:translateY(-24px); }
+  @keyframes holdCharge { 0%,100%{transform:scale(.9); opacity:.7;} 60%{transform:scale(1.12); opacity:1;} }
+
+  /* variant: DRAG — finger slides along a dashed track */
+  .demo-drag .demo-track, .demo-drag .demo-hand { display:block; }
+  .demo-drag .demo-hand { animation:handSlide 2.4s ease-in-out infinite; }
+  @keyframes handSlide { 0%,100%{transform:translateX(-108px);} 50%{transform:translateX(108px);} }
+
+  /* variant: SWIPE — finger flicks across, an arrow shows the direction */
+  .demo-swipe .demo-hand, .demo-swipe .demo-arrow { display:block; }
+  .demo-swipe .demo-hand { animation:handFlick 1.6s ease-in-out infinite; }
+  @keyframes handFlick {
+    0%,20%   { transform:translateX(-96px); opacity:0; }
+    30%      { opacity:1; }
+    70%      { transform:translateX(96px); opacity:1; }
+    85%,100% { transform:translateX(96px); opacity:0; }
+  }
+
+  /* variant: AIM — finger drags at the bottom, a dotted line sweeps a target */
+  .demo-aim .demo-hand, .demo-aim .demo-beam, .demo-aim .demo-target { display:block; }
+  .demo-aim .demo-target { top:22px; width:70px; height:70px; margin-left:-35px; }
+  .demo-aim .demo-hand { animation:handSweep 2.6s ease-in-out infinite; }
+  @keyframes handSweep { 0%,100%{transform:translateX(-56px);} 50%{transform:translateX(56px);} }
+
+  /* ---- End screen: staggered cinematic reveal ---- */
+  #screen-end { justify-content:center; background:rgba(6,7,18,.86); }
+  /* Confetti sits above the dark tint but below every piece of end-screen text. */
+  #confetti { position:absolute; inset:0; width:720px; height:1280px; pointer-events:none; z-index:0; }
+  #screen-end > *:not(#confetti) { position:relative; z-index:1; }
+
+  .eo-title {
+    font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);
+    text-shadow:0 0 24px rgba(255,45,85,.85), 0 0 52px rgba(255,45,85,.45);
+    opacity:0; transform:scale(.55);
+    transition:opacity .4s ease, transform .45s cubic-bezier(.2,1.7,.4,1);
+  }
+  .eo-title.show { opacity:1; transform:scale(1); }
+  /* A great run gets a brighter, celebratory title instead of the red one. */
+  .eo-title.win { color:var(--good); text-shadow:0 0 24px rgba(105,219,124,.8), 0 0 52px rgba(105,219,124,.4); }
+  .eo-title.perfect { color:#5cf0ff; animation:perfectglow 1.6s ease-in-out infinite; }
+  @keyframes perfectglow {
+    0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
+    50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
+  }
+  .eo-scorelbl { margin-top:24px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
+    opacity:0; transition:opacity .4s ease; }
+  .eo-scorelbl.show { opacity:1; }
+  .eo-score {
+    font-size:150px; font-weight:900; line-height:1; color:var(--text);
+    text-shadow:0 0 22px rgba(0,229,255,.65); font-variant-numeric:tabular-nums;
+    opacity:0; transform:scale(.7); transition:opacity .35s ease, transform .35s ease;
+  }
+  .eo-score.show { opacity:1; transform:scale(1); }
+  .eo-score.pop { animation:eopop .45s ease; }
+  @keyframes eopop { 0%{transform:scale(1);} 40%{transform:scale(1.2);} 100%{transform:scale(1);} }
+
+  .eo-stars { margin-top:24px; display:flex; gap:22px; justify-content:center; align-items:center; }
+  .eo-stars.hidden { display:none; }
+  .star { font-size:98px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
+    transition:opacity .2s ease; }
+  .star.dim { opacity:1; transform:scale(.82); color:rgba(255,255,255,.12); }
+  .star.on {
+    opacity:1; color:var(--gold);
+    background:linear-gradient(180deg,#fff6bf 0%,#ffd43b 55%,#ff9f1c 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    animation:starslam .6s cubic-bezier(.2,1.8,.35,1), starglow 1.9s ease-in-out .6s infinite;
+  }
+  @keyframes starslam { 0%{transform:scale(2.6);} 55%{transform:scale(.86);} 100%{transform:scale(1);} }
+  @keyframes starglow { 0%,100%{filter:drop-shadow(0 0 10px rgba(255,200,60,.7));}
+    50%{filter:drop-shadow(0 0 24px rgba(255,225,130,1));} }
+
+  .eo-stats { margin-top:28px; width:520px; display:flex; flex-direction:column; gap:12px; }
+  .eo-row {
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:14px 22px; border-radius:16px;
+    background:var(--panel); border:1px solid var(--panel-line);
+    font-size:30px; font-weight:800;
+    opacity:0; transform:translateX(-22px); transition:opacity .3s ease, transform .3s ease;
+  }
+  .eo-row.show { opacity:1; transform:translateX(0); }
+  .eo-val { font-variant-numeric:tabular-nums; }
+  /* grades: accent / good / warn / bad / gold (gold gets the trophy treatment) */
+  .eo-row.accent { color:var(--accent); background:rgba(0,229,255,.09); border-color:rgba(0,229,255,.3); }
+  .eo-row.good   { color:var(--good); }
+  .eo-row.warn   { color:#ffa94d; }
+  .eo-row.bad    { color:#ff6b6b; }
+  .eo-row.gold {
+    position:relative; overflow:hidden; color:#fff3b0;
+    background:linear-gradient(90deg, rgba(255,175,40,.16), rgba(255,220,130,.26), rgba(255,175,40,.16));
+    border-color:rgba(255,215,110,.6);
+    box-shadow:0 0 20px rgba(255,200,60,.3), inset 0 0 16px rgba(255,215,130,.18);
+  }
+  .eo-row.gold .eo-val { color:#ffe58a; text-shadow:0 0 12px rgba(255,205,70,.7); }
+  .eo-row.gold::after {
+    content:""; position:absolute; top:0; left:-60%; width:45%; height:100%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+    transform:skewX(-20deg); animation:shine 2.8s ease-in-out infinite;
+  }
+  @keyframes shine { 0%{left:-60%;} 55%,100%{left:130%;} }
+  .eo-row .spark { display:inline-block; color:var(--gold); filter:drop-shadow(0 0 8px rgba(255,205,80,.9));
+    animation:twinkle 1.8s ease-in-out infinite; }
+  .eo-row .spark:last-child { animation-delay:.9s; }
+  @keyframes twinkle { 0%,100%{opacity:.65; transform:scale(.85) rotate(0deg);}
+    50%{opacity:1; transform:scale(1.15) rotate(20deg);} }
+
+  /* The install CTA and the replay link arrive last, together. */
+  #screen-end #btn-install, #screen-end #btn-replay { opacity:0; pointer-events:none; transition:opacity .5s ease; }
+  #screen-end #btn-install { margin-top:34px; }
+  #screen-end #btn-install.show, #screen-end #btn-replay.show { opacity:1; pointer-events:auto; }
 </style>
 </head>
 <body>
 
-<!-- =====================================================================
-     MARKUP  (structure of the creative)
-     - #stage/#game : the canvas the game renders into.
-     - #hud         : in-game score / timer.
-     - .screen      : one overlay per game state (intro, end).
-     - #cta-bar     : always-available install button.
-     ===================================================================== -->
+<div id="safe-probe"></div>
+<div id="backdrop"></div>
+
+<!-- ==========================================================================
+     MARKUP — one frame, four layers: canvas world, overlay, HUD/CTA, screens.
+     Everything below is positioned in 720x1280 design pixels.
+     ========================================================================== -->
 <div id="stage">
-  <canvas id="game"></canvas>
+  <div id="frame">
+
+    <canvas id="game" width="720" height="1280"></canvas>
+
+    <!-- game-view overlay: toasts, banners, rewards, dramatic glow -->
+    <div id="overlay">
+      <div id="ov-toasts"></div>
+      <div id="ov-banner"><div id="ov-banner-main"></div><div id="ov-banner-sub"></div></div>
+      <div id="ov-reward"></div>
+      <div id="ov-vignette"></div>
+    </div>
+
+    <!-- HUD: left slot / big centre score / right slot (timer by default) -->
+    <div id="hud" class="hidden">
+      <div id="hud-left"></div>
+      <div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl">SCORE</div></div>
+      <div id="hud-right"></div>
+    </div>
+
+    <!-- persistent install CTA, visible during play -->
+    <div id="cta-bar" class="hidden">
+      <button class="btn sm" id="btn-cta">INSTALL NOW</button>
+    </div>
+
+    <!-- loading -->
+    <div id="screen-loading" class="screen">
+      <div class="spinner"></div>
+      <div class="loading-lbl">Loading…</div>
+    </div>
+
+    <!-- intro: logo + title + pitch + animated how-to-play + start -->
+    <div id="screen-intro" class="screen hidden">
+      <img id="app-icon" alt="">
+      <div id="intro-title">GAME TITLE</div>
+      <div id="intro-tagline">One line that teaches the core mechanic.</div>
+      <div id="intro-demo">
+        <div class="demo-stage">
+          <div class="demo-track"></div>
+          <div class="demo-beam"></div>
+          <div class="demo-target"><span class="demo-ripple"></span><span class="demo-ripple d2"></span></div>
+          <div class="demo-hand"></div>
+          <div class="demo-arrow"></div>
+        </div>
+        <div class="demo-caption" id="demo-caption"></div>
+      </div>
+      <button class="btn lg" id="btn-start">TAP TO PLAY</button>
+    </div>
+
+    <!-- end: cinematic score reveal + stars + stats + CTA + replay link -->
+    <div id="screen-end" class="screen hidden">
+      <canvas id="confetti" width="720" height="1280"></canvas>
+      <div class="eo-title" id="eo-title">GAME OVER</div>
+      <div class="eo-scorelbl" id="eo-scorelbl">FINAL SCORE</div>
+      <div class="eo-score" id="eo-score">0</div>
+      <div class="eo-stars" id="eo-stars">
+        <span class="star" id="star-1">★</span>
+        <span class="star" id="star-2">★</span>
+        <span class="star" id="star-3">★</span>
+      </div>
+      <div class="eo-stats" id="eo-stats"></div>
+      <button class="btn lg" id="btn-install">PLAY THE FULL GAME</button>
+      <button class="link" id="btn-replay">Replay the demo</button>
+    </div>
+
+  </div>
 </div>
 
-<div id="hud" class="hidden">
-  <div id="hud-left">Score: <span id="score">0</span></div>
-  <div id="hud-right">Time: <span id="time">0</span></div>
-</div>
-
-<!-- Loading screen: shown until assets + ad container are ready -->
-<div id="screen-loading" class="screen">
-  <div class="spinner"></div>
-  <div class="subtitle" style="margin-top:18px">Loading…</div>
-</div>
-
-<!-- Intro screen: title + start button -->
-<div id="screen-intro" class="screen hidden">
-  <div class="title">GAME TITLE</div>
-  <div class="subtitle">One line that teaches the core mechanic.</div>
-  <button class="btn" id="btn-start">TAP TO PLAY</button>
-</div>
-
-<!-- End screen: result + primary CTA to the store -->
-<div id="screen-end" class="screen hidden">
-  <div class="title" id="end-title">Nice!</div>
-  <div class="subtitle" id="end-subtitle">You scored <span id="end-score">0</span></div>
-  <button class="btn" id="btn-install">PLAY THE FULL GAME</button>
-</div>
-
-<!-- Persistent CTA (hidden until gameplay begins) -->
-<div id="cta-bar" class="hidden">
-  <button class="btn" id="btn-cta" style="margin-top:0; padding:12px 28px;">INSTALL NOW</button>
-</div>
-
-<!-- =====================================================================
-     SCRIPT  (vanilla JS, inlined)
-     Organized top-to-bottom in clearly labeled sections so a new game can
-     be produced by editing mostly the CONFIG + GAME sections and leaving
-     the ENGINE / AD glue untouched.
-     ===================================================================== -->
 <script>
 "use strict";
 (function () {
 
   /* ===================================================================
-     1. CONFIG
-     The knobs a new game changes first. Copy of business/creative params.
+     1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title: "GAME TITLE",
-    gameSeconds: 20,               // round length; 0 = endless
-    // Store links used by the CTA. The correct one is chosen at runtime.
+    title:   "GAME TITLE",
+    tagline: "One line that teaches the core mechanic.",
+    gameSeconds: 20,                 // round length in seconds; 0 = endless
+
+    // Store links used by every CTA. The right one is picked at runtime.
     storeUrl: {
       ios:     "https://apps.apple.com/app/idXXXXXXXXX",
       android: "https://play.google.com/store/apps/details?id=com.example.game",
       fallback:"https://52-entertainment.com/our-games/"
     },
-    // Design resolution — the game logic is authored against this virtual
-    // size, then the canvas is scaled to fit any screen (see fitCanvas()).
+
+    // Design resolution — all game logic and all DOM overlays use these units.
     designWidth: 720,
     designHeight: 1280,
-    bg: "#0e1020"
+    bg: "#0a0a1c",
+
+    // Bands the engine reserves (design px). Layout.top / Layout.bottom are
+    // derived from them plus the device safe-area insets: keep gameplay there.
+    layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
+
+    // Intro: logo is a key in ASSETS.images (omit for a text-only intro).
+    // demo is the animated how-to-play: tap | hold | drag | swipe | aim.
+    intro: { logo: null, demo: "tap", caption: "TAP to hit the target" },
+
+    // HUD slots: the centre score is always there; the timer fills the right.
+    hud: { score: true, timer: true },
+
+    // All user-facing copy in one place.
+    copy: {
+      start:      "TAP TO PLAY",
+      ctaBar:     "INSTALL NOW",
+      ctaEnd:     "PLAY THE FULL GAME",
+      replay:     "Replay the demo",
+      scoreLabel: "SCORE",
+      timeLabel:  "TIME",
+      endScore:   "FINAL SCORE",
+      gameOver:   "GAME OVER",
+      timeUp:     "TIME'S UP!"
+    }
   };
 
   /* ===================================================================
-     2. ASSETS  (embedded, no network requests)
-     Register every asset as a data URI so the file stays self-contained.
-     Use tools/embed-asset.mjs to generate these strings.
-     Prefer CSS/canvas drawing & WebAudio synth over binary assets to stay
-     well under the 5 MB budget; only embed images/sounds you truly need.
+     2. ASSETS — embedded base64 data URIs only (no network requests ever).
+     Generate entries with tools/embed-asset.mjs. Prefer canvas drawing and
+     WebAudio synth: every embedded byte counts against the 5 MB budget.
      =================================================================== */
   var ASSETS = {
     images: {
-      // logo: "data:image/png;base64,iVBORw0KGgo..."
+      // logo: "data:image/png;base64,iVBORw0KGgo…"
     },
     sounds: {
-      // pop: "data:audio/mp3;base64,SUQzBAAAAAA..."
+      // pop: "data:audio/mpeg;base64,SUQzBAAAAAA…"
     }
   };
 
   /* ===================================================================
-     3. ENGINE  (reusable helpers — shared by every game, rarely edited)
+     3. ENGINE — reusable plumbing shared by every game. Extend, don't fork.
      =================================================================== */
 
-  // --- tiny DOM helper ---
   function $(id) { return document.getElementById(id); }
+  function cssVar(name, value) { document.documentElement.style.setProperty(name, value); }
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
-  // --- Canvas & responsive scaling ---------------------------------
-  // We render at CONFIG.designWidth x designHeight and letterbox-fit the
-  // canvas to the viewport using CSS, accounting for devicePixelRatio so
-  // drawing stays crisp on retina screens.
-  var canvas = $("game");
-  var ctx = canvas.getContext("2d");
-  var view = { w: CONFIG.designWidth, h: CONFIG.designHeight, scale: 1 };
+  // --- Canvas, design-space scaling and the notch-safe layout -------------
+  var canvas = $("game"), ctx = canvas.getContext("2d");
+
+  // The virtual screen every coordinate refers to.
+  var view = {
+    w: CONFIG.designWidth, h: CONFIG.designHeight,
+    scale: 1,          // design px -> screen px
+    insetTop: 0,       // design px eaten by the notch / status bar
+    insetBottom: 0     // design px eaten by the home indicator
+  };
+
+  // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
+  // and clear of the device insets. Recomputed on every resize.
+  var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
+
+  // env(safe-area-inset-*) is only observable through a probe element.
+  function safeInsets() {
+    var cs = window.getComputedStyle($("safe-probe"));
+    return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  }
 
   function fitCanvas() {
     var vw = window.innerWidth, vh = window.innerHeight;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap DPR for perf
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);   // cap DPR for perf
     var scale = Math.min(vw / view.w, vh / view.h);
     view.scale = scale;
-    // Backing store size (crisp), CSS size (fit).
+
+    // Backing store at design size x DPR; the frame transform does the rest.
     canvas.width  = Math.round(view.w * dpr);
     canvas.height = Math.round(view.h * dpr);
-    canvas.style.width  = Math.round(view.w * scale) + "px";
-    canvas.style.height = Math.round(view.h * scale) + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in design coordinates
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);                // draw in design px
+    cssVar("--scale", scale);
+
+    // Letterbox bars already push the frame away from the notch: only the
+    // remaining overlap has to be padded, converted to design px.
+    var ins = safeInsets(), bar = Math.max(0, (vh - view.h * scale) / 2);
+    view.insetTop    = Math.max(0, (ins.top - bar) / scale);
+    view.insetBottom = Math.max(0, (ins.bottom - bar) / scale);
+    cssVar("--inset-top", view.insetTop.toFixed(1) + "px");
+    cssVar("--inset-bottom", view.insetBottom.toFixed(1) + "px");
+
+    relayout();
   }
+
+  function relayout() {
+    var m = CONFIG.layout;
+    Layout.top    = view.insetTop + m.hudHeight;
+    Layout.bottom = view.h - view.insetBottom - m.ctaHeight;
+    Layout.left   = m.sideMargin;
+    Layout.right  = view.w - m.sideMargin;
+    Layout.w = Layout.right - Layout.left;
+    Layout.h = Layout.bottom - Layout.top;
+    Layout.cx = (Layout.left + Layout.right) / 2;
+    Layout.cy = (Layout.top + Layout.bottom) / 2;
+    if (typeof Game !== "undefined" && Game && Game.onResize) Game.onResize();
+  }
+
   window.addEventListener("resize", fitCanvas);
   window.addEventListener("orientationchange", fitCanvas);
 
-  // --- Input: unified pointer events, mapped to design coordinates ---
-  // Handles mouse + touch. Coordinates are converted from screen pixels to
-  // the virtual design space so game logic never worries about scaling.
+  // --- Input: mouse + touch unified, mapped into design coordinates -------
   var Input = (function () {
-    var listeners = { down: [], move: [], up: [] };
-    function toDesign(clientX, clientY) {
-      var r = canvas.getBoundingClientRect();
-      return {
-        x: (clientX - r.left) / r.width  * view.w,
-        y: (clientY - r.top)  / r.height * view.h
-      };
+    var L = { down: [], move: [], up: [] };
+    function toDesign(cx, cy) {
+      var r = canvas.getBoundingClientRect();          // accounts for the scale
+      return { x: (cx - r.left) / r.width * view.w, y: (cy - r.top) / r.height * view.h };
     }
     function emit(type, e) {
-      var t = e.touches && e.touches[0] ? e.touches[0]
-            : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+      var t = (e.touches && e.touches[0]) ? e.touches[0]
+            : ((e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : e);
       var p = toDesign(t.clientX, t.clientY);
-      listeners[type].forEach(function (fn) { fn(p, e); });
+      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
     }
-    canvas.addEventListener("mousedown",  function (e){ emit("down", e); });
-    canvas.addEventListener("mousemove",  function (e){ emit("move", e); });
-    window.addEventListener("mouseup",    function (e){ emit("up",   e); });
-    canvas.addEventListener("touchstart", function (e){ e.preventDefault(); emit("down", e); }, {passive:false});
-    canvas.addEventListener("touchmove",  function (e){ e.preventDefault(); emit("move", e); }, {passive:false});
-    canvas.addEventListener("touchend",   function (e){ e.preventDefault(); emit("up",   e); }, {passive:false});
-    return {
-      on: function (type, fn) { listeners[type].push(fn); },
-      off: function () { listeners = { down: [], move: [], up: [] }; }
-    };
+    canvas.addEventListener("mousedown", function (e) { emit("down", e); });
+    canvas.addEventListener("mousemove", function (e) { emit("move", e); });
+    window.addEventListener("mouseup",   function (e) { emit("up",   e); });
+    canvas.addEventListener("touchstart",  function (e) { e.preventDefault(); emit("down", e); }, { passive: false });
+    canvas.addEventListener("touchmove",   function (e) { e.preventDefault(); emit("move", e); }, { passive: false });
+    canvas.addEventListener("touchend",    function (e) { e.preventDefault(); emit("up",   e); }, { passive: false });
+    canvas.addEventListener("touchcancel", function (e) { emit("up", e); });
+    return { on: function (type, fn) { L[type].push(fn); } };
   })();
 
-  // --- Game loop: fixed-ish dt via requestAnimationFrame -------------
+  // --- Loop: rAF with clamped dt, pausable when the ad is not visible -----
   var Loop = (function () {
-    var running = false, last = 0, update = null, render = null;
+    var running = false, paused = false, last = 0, u = null, r = null;
     function frame(now) {
       if (!running) return;
-      var dt = Math.min((now - last) / 1000, 0.05); // clamp big gaps (tab switch)
+      var dt = Math.min((now - last) / 1000, 0.05);   // clamp tab-switch gaps
       last = now;
-      if (update) update(dt);
-      if (render) render();
+      if (!paused) { if (u) u(dt); if (r) r(); }
       requestAnimationFrame(frame);
     }
     return {
-      start: function (u, r) {
-        update = u; render = r; running = true; last = performance.now();
-        requestAnimationFrame(frame);
-      },
-      stop: function () { running = false; }
+      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; last = performance.now(); requestAnimationFrame(frame); },
+      stop:  function () { running = false; },
+      pause: function () { paused = true; },
+      resume:function () { paused = false; last = performance.now(); },
+      isRunning: function () { return running; }
     };
   })();
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) Loop.pause(); else Loop.resume();
+  });
 
-  // --- Audio: WebAudio synth (zero-asset SFX) ------------------------
-  // Generates simple tones so you get sound without embedding audio files.
-  // For richer sound, put base64 clips in ASSETS.sounds and play via Audio.clip.
+  // --- Sound: WebAudio synth (zero assets) + optional embedded clips ------
   var Sound = (function () {
     var actx = null;
     function ensure() {
       if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-      // iOS requires resume() inside a user gesture.
-      if (actx && actx.state === "suspended") actx.resume();
+      if (actx && actx.state === "suspended") actx.resume();   // iOS: user gesture
       return actx;
     }
-    function beep(freq, dur, type) {
+    function beep(freq, dur, type, vol) {
       var a = ensure(); if (!a) return;
-      var o = a.createOscillator(), g = a.createGain();
+      var o = a.createOscillator(), g = a.createGain(), v = (vol == null ? 0.3 : vol);
       o.type = type || "sine"; o.frequency.value = freq || 440;
       g.gain.setValueAtTime(0.001, a.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.3, a.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(v, a.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + (dur || 0.15));
       o.connect(g); g.connect(a.destination);
       o.start(); o.stop(a.currentTime + (dur || 0.15));
     }
-    var clips = {};
-    function clip(name) {
-      if (!ASSETS.sounds[name]) return;
-      if (!clips[name]) { clips[name] = new Audio(ASSETS.sounds[name]); }
-      try { clips[name].currentTime = 0; clips[name].play(); } catch (e) {}
+    // Rising run of notes — the cheapest "you did something great" cue.
+    function arp(freqs, step, dur, type, vol) {
+      for (var i = 0; i < freqs.length; i++) {
+        (function (f, d) { setTimeout(function () { beep(f, dur || 0.12, type || "triangle", vol); }, d); })(freqs[i], i * (step || 55));
+      }
     }
-    return { unlock: ensure, beep: beep, clip: clip };
+    /* --- Embedded clips ---------------------------------------------------
+       Played through WebAudio rather than <audio> elements: a buffer source
+       per shot means rapid repeats overlap instead of cutting each other off,
+       and `rate` can pitch a sample up as a combo grows. Decoding happens once
+       inside unlock() (i.e. in the start gesture, which iOS requires); until a
+       buffer is ready the call falls back to an <audio> element so no cue is
+       ever silently dropped.                                                */
+    var buffers = {}, pending = {}, tags = {};
+
+    function dataToBytes(uri) {
+      var b64 = uri.slice(uri.indexOf(",") + 1);
+      var bin = atob(b64), n = bin.length, bytes = new Uint8Array(n);
+      for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes.buffer;
+    }
+    function decodeAll() {
+      var a = actx; if (!a || !a.decodeAudioData) return;
+      Object.keys(ASSETS.sounds).forEach(function (k) {
+        if (buffers[k] || pending[k]) return;
+        pending[k] = true;
+        try {
+          a.decodeAudioData(dataToBytes(ASSETS.sounds[k]),
+            function (buf) { buffers[k] = buf; pending[k] = false; },
+            function () { pending[k] = false; });
+        } catch (e) { pending[k] = false; }
+      });
+    }
+    function clip(name, vol, rate) {
+      var src = ASSETS.sounds[name]; if (!src) return;
+      var a = ensure(), buf = buffers[name];
+      if (a && buf) {
+        var node = a.createBufferSource(), g = a.createGain();
+        node.buffer = buf;
+        node.playbackRate.value = rate == null ? 1 : clamp(rate, 0.5, 4);
+        g.gain.value = vol == null ? 1 : clamp(vol, 0, 1);
+        node.connect(g); g.connect(a.destination);
+        node.start();
+        return;
+      }
+      if (!tags[name]) tags[name] = new Audio(src);            // not decoded yet
+      try {
+        tags[name].volume = vol == null ? 1 : clamp(vol, 0, 1);
+        tags[name].playbackRate = rate == null ? 1 : clamp(rate, 0.5, 4);
+        tags[name].currentTime = 0; tags[name].play();
+      } catch (e) {}
+    }
+    function unlock() { var a = ensure(); decodeAll(); return a; }
+    return { unlock: unlock, beep: beep, arp: arp, clip: clip };
   })();
 
-  // --- Storage: safe localStorage (sandboxed ad frames may block it) --
+  // --- Storage / random ---------------------------------------------------
   var Store = {
     get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   };
-
-  // --- Random helpers ------------------------------------------------
   var Rand = {
-    range: function (min, max) { return min + Math.random() * (max - min); },
-    int:   function (min, max) { return Math.floor(Rand.range(min, max + 1)); },
-    pick:  function (arr)      { return arr[Math.floor(Math.random() * arr.length)]; }
+    range: function (a, b) { return a + Math.random() * (b - a); },
+    int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },
+    pick:  function (arr)  { return arr[Math.floor(Math.random() * arr.length)]; },
+    chance:function (p)    { return Math.random() < p; }
   };
 
-  // --- Image asset preloader ----------------------------------------
+  // --- Image preloader ----------------------------------------------------
   var Images = {};
   function preloadImages(done) {
     var keys = Object.keys(ASSETS.images), left = keys.length;
@@ -306,12 +754,218 @@
     });
   }
 
+  // --- Colour helper: "#rrggbb" -> "rgba(r,g,b,a)" ------------------------
+  function rgba(hex, a) {
+    var h = String(hex).replace("#", "");
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+
+  /* --- Fx: the shared canvas juice layer --------------------------------
+     Particles, expanding rings, floating world-space text, screen shake,
+     colour flash and hit-stop — the things every playable needs and no game
+     should re-implement. The engine drives it:
+        update: Fx.update(dt)
+        render: Fx.begin() -> Game.render() -> Fx.render() -> Fx.end() -> Fx.post()
+     so a game only draws its world and calls the spawners.
+     -------------------------------------------------------------------- */
+  var Fx = (function () {
+    var MAX_PARTICLES = 260;
+    var parts = [], rings = [], texts = [];
+    var shakeMag = 0, shakeT = 0, shakeDur = 1;
+    var flashCol = "#ffffff", flashA = 0, flashDecay = 1.8;
+    var freezeT = 0;
+
+    function reset() {
+      parts.length = 0; rings.length = 0; texts.length = 0;
+      shakeMag = 0; shakeT = 0; flashA = 0; freezeT = 0;
+    }
+
+    // A burst of dots. opt: {color, count, speed, size, life, grav, spread}
+    function burst(x, y, opt) {
+      opt = opt || {};
+      var n = opt.count || 10;
+      if (parts.length + n > MAX_PARTICLES) n = Math.max(0, MAX_PARTICLES - parts.length);
+      var color = opt.color || "#ffffff", sp = opt.speed || 320, grav = opt.grav == null ? 0 : opt.grav;
+      var base = opt.angle == null ? null : opt.angle, spread = opt.spread == null ? Math.PI * 2 : opt.spread;
+      for (var i = 0; i < n; i++) {
+        var a = base == null ? Rand.range(0, Math.PI * 2) : base + Rand.range(-spread / 2, spread / 2);
+        var s = sp * Rand.range(0.45, 1.15);
+        parts.push({
+          x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, grav: grav,
+          life: (opt.life || 0.5) * Rand.range(0.7, 1.2), max: (opt.life || 0.5) * 1.2,
+          r: (opt.size || 5) * Rand.range(0.6, 1.2),
+          color: color instanceof Array ? Rand.pick(color) : color
+        });
+      }
+    }
+
+    // An expanding ring. opt: {from, to, color, width, life}
+    function ring(x, y, opt) {
+      opt = opt || {};
+      rings.push({ x: x, y: y, r: opt.from || 10, max: opt.to || 140,
+        color: opt.color || "#ffffff", width: opt.width || 4,
+        life: opt.life || 0.4, maxLife: opt.life || 0.4 });
+    }
+
+    // Floating world-space text. tier 0..3 escalates the outline/glow/gradient.
+    function text(x, y, str, opt) {
+      opt = opt || {};
+      texts.push({ x: x, y: y, text: str, color: opt.color || "#ffffff",
+        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
+        life: opt.life || 0.9, maxLife: opt.life || 0.9 });
+    }
+
+    function shake(mag, dur) {
+      var cur = shakeT > 0 ? shakeMag * (shakeT / shakeDur) : 0;
+      if (mag > cur) { shakeMag = mag; shakeT = dur || 0.3; shakeDur = dur || 0.3; }
+    }
+    function flash(color, a, decay) {
+      flashCol = color || "#ffffff";
+      flashA = Math.max(flashA, a == null ? 0.3 : a);
+      flashDecay = decay || 1.8;
+    }
+    // Hit-stop: freeze the simulation for a beat so an impact lands harder.
+    function freeze(t) { freezeT = Math.max(freezeT, t); }
+    function frozen(dt) { if (freezeT > 0) { freezeT -= dt; return true; } return false; }
+
+    function update(dt) {
+      var i;
+      for (i = parts.length - 1; i >= 0; i--) {
+        var p = parts[i];
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.grav * dt;
+        p.vx *= 0.98; p.life -= dt;
+        if (p.life <= 0) parts.splice(i, 1);
+      }
+      for (i = rings.length - 1; i >= 0; i--) { rings[i].life -= dt; if (rings[i].life <= 0) rings.splice(i, 1); }
+      for (i = texts.length - 1; i >= 0; i--) {
+        var t = texts[i];
+        t.y += t.vy * dt; t.vy *= 0.9; t.life -= dt;
+        if (t.life <= 0) texts.splice(i, 1);
+      }
+      if (shakeT > 0) shakeT -= dt;
+      if (flashA > 0) flashA = Math.max(0, flashA - dt * flashDecay);
+    }
+
+    function begin() {
+      ctx.save();
+      if (shakeT > 0) {
+        var s = shakeMag * (shakeT / shakeDur);
+        ctx.translate(Rand.range(-s, s), Rand.range(-s, s));
+      }
+    }
+    function end() { ctx.restore(); }
+
+    function render() {
+      var i;
+      // rings
+      for (i = 0; i < rings.length; i++) {
+        var rg = rings[i], t = rg.life / rg.maxLife;
+        ctx.globalAlpha = t * 0.75;
+        ctx.strokeStyle = rg.color; ctx.lineWidth = rg.width * t;
+        ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.r + (rg.max - rg.r) * (1 - t), 0, Math.PI * 2); ctx.stroke();
+      }
+      // particles
+      for (i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      // floating text
+      for (i = 0; i < texts.length; i++) drawText(texts[i]);
+    }
+
+    function drawText(fl) {
+      var t = fl.life / fl.maxLife;
+      var pop = t > 0.85 ? (1 - t) / 0.15 : 1;                 // quick pop-in
+      var scale = 1 + (1 - t) * (fl.tier >= 2 ? 0.45 : fl.tier >= 1 ? 0.25 : 0.12);
+      ctx.save();
+      ctx.globalAlpha = clamp(Math.min(1, t * 2.2) * pop, 0, 1);
+      ctx.translate(fl.x, fl.y); ctx.scale(scale, scale);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "900 " + fl.size + "px -apple-system,Segoe UI,Roboto,sans-serif";
+      if (fl.tier >= 3)      { ctx.shadowColor = "#ff44ff"; ctx.shadowBlur = 22; }
+      else if (fl.tier >= 2) { ctx.shadowColor = "#ffaa00"; ctx.shadowBlur = 16; }
+      else if (fl.tier >= 1) { ctx.shadowColor = "#22ccff"; ctx.shadowBlur = 12; }
+      else                   { ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 4; }
+      ctx.lineWidth = Math.max(4, fl.size * 0.17);
+      ctx.strokeStyle = fl.tier >= 3 ? "rgba(80,0,80,.8)" : "rgba(0,0,0,.75)";
+      ctx.strokeText(fl.text, 0, 0);
+      ctx.shadowBlur = 0;
+      if (fl.tier >= 1) {
+        var g = ctx.createLinearGradient(0, -fl.size * 0.5, 0, fl.size * 0.5);
+        if (fl.tier >= 3)      { g.addColorStop(0, "#ffffff"); g.addColorStop(.3, "#ff88ff"); g.addColorStop(.7, "#ff00cc"); g.addColorStop(1, "#ffbb00"); }
+        else if (fl.tier >= 2) { g.addColorStop(0, "#ffffff"); g.addColorStop(.4, "#ffe060"); g.addColorStop(1, "#ff7700"); }
+        else                   { g.addColorStop(0, "#e8f8ff"); g.addColorStop(1, fl.color); }
+        ctx.fillStyle = g;
+      } else { ctx.fillStyle = fl.color; }
+      ctx.fillText(fl.text, 0, 0);
+      ctx.restore();
+    }
+
+    // Full-frame flash, drawn outside the shake transform.
+    function post() {
+      if (flashA <= 0) return;
+      ctx.globalAlpha = clamp(flashA, 0, 0.85);
+      ctx.fillStyle = flashCol;
+      ctx.fillRect(0, 0, view.w, view.h);
+      ctx.globalAlpha = 1;
+    }
+
+    return { reset: reset, burst: burst, ring: ring, text: text, shake: shake,
+             flash: flash, freeze: freeze, frozen: frozen,
+             update: update, begin: begin, end: end, render: render, post: post };
+  })();
+
+  // --- Confetti: end-screen celebration on its own canvas ----------------
+  var Confetti = (function () {
+    var cvs = null, cx = null, parts = [], running = false, last = 0;
+    var COLORS = ["#00e5ff", "#ff2d95", "#ffd43b", "#39ff14", "#c86bff", "#ff6b35", "#ffffff"];
+    function ensure() {
+      if (cvs) return true;
+      cvs = $("confetti"); if (!cvs) return false;
+      cx = cvs.getContext("2d");
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cvs.width = Math.round(view.w * dpr); cvs.height = Math.round(view.h * dpr);
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
+    }
+    function frame(now) {
+      var dt = Math.min((now - last) / 1000, 0.05); last = now;
+      cx.clearRect(0, 0, view.w, view.h);
+      for (var i = parts.length - 1; i >= 0; i--) {
+        var p = parts[i];
+        p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt;
+        if (p.life <= 0 || p.y > view.h + 40) { parts.splice(i, 1); continue; }
+        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
+        cx.globalAlpha = clamp(p.life, 0, 1); cx.fillStyle = p.color;
+        cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+      }
+      if (parts.length) requestAnimationFrame(frame);
+      else { running = false; cx.clearRect(0, 0, view.w, view.h); }
+    }
+    function burst(n) {
+      if (!ensure()) return;
+      for (var i = 0; i < n; i++) {
+        parts.push({
+          x: view.w * Rand.range(0.15, 0.85), y: view.h * Rand.range(0.26, 0.4),
+          vx: Rand.range(-560, 560), vy: Rand.range(-900, -280),
+          rot: Rand.range(0, 6.28), vr: Rand.range(-6, 6),
+          w: Rand.range(10, 22), h: Rand.range(14, 34),
+          color: Rand.pick(COLORS), life: Rand.range(1.8, 3.2)
+        });
+      }
+      if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+    }
+    function clear() { parts.length = 0; if (cx) cx.clearRect(0, 0, view.w, view.h); }
+    return { burst: burst, clear: clear };
+  })();
+
   /* ===================================================================
-     4. AD NETWORK GLUE  (MRAID + CTA + tracking — rarely edited)
-     Playable ads run inside a network's iframe. We must:
-       - wait for the ad container ("mraid") to be ready before starting,
-       - route the install button through the network's open() when present,
-       - report standard lifecycle events for analytics/QA.
+     4. AD NETWORK GLUE — MRAID + CTA + tracking. Do not remove.
      =================================================================== */
   var Ad = (function () {
     function platform() {
@@ -322,150 +976,476 @@
     }
     function targetUrl() { return CONFIG.storeUrl[platform()] || CONFIG.storeUrl.fallback; }
 
-    // Resolve when the creative may start drawing/interacting.
+    // Start only once the ad container says it is ready (instant standalone).
     function whenReady(cb) {
-      if (!window.mraid) return cb();                 // running standalone
-      if (mraid.getState && mraid.getState() === "loading") {
-        mraid.addEventListener("ready", cb);
-      } else { cb(); }
+      if (!window.mraid) return cb();
+      if (mraid.getState && mraid.getState() === "loading") mraid.addEventListener("ready", cb);
+      else cb();
     }
-
-    // The single entry point for "user wants the app". Order matters:
-    // MRAID first, then common network globals, then a plain window.open.
+    // Pause the game while the ad is off-screen, where the network reports it.
+    function watchVisibility() {
+      try {
+        if (window.mraid && mraid.addEventListener) {
+          mraid.addEventListener("viewableChange", function (viewable) {
+            if (viewable) Loop.resume(); else Loop.pause();
+          });
+        }
+      } catch (e) {}
+    }
+    // The ONLY way out of the creative. Order matters: MRAID, then the common
+    // network globals, then a plain window.open.
     function openStore() {
       track("cta_click");
       var url = targetUrl();
       try { if (window.mraid && typeof mraid.open === "function") { mraid.open(url); return; } } catch (e) {}
-      try { if (typeof window.install === "function") { window.install(); return; } } catch (e) {}       // ironSource / generic
-      try { if (window.ExitApi && typeof ExitApi.exit === "function") { ExitApi.exit(); return; } } catch (e) {} // Google Ads
+      try { if (typeof window.install === "function") { window.install(); return; } } catch (e) {}
+      try { if (window.ExitApi && typeof ExitApi.exit === "function") { ExitApi.exit(); return; } } catch (e) {}
       try { if (typeof window.mintegral_playable_exit === "function") { window.mintegral_playable_exit(); return; } } catch (e) {}
       window.open(url, "_blank");
     }
-
-    // Lightweight event hook. Swap console.log for a network SDK call if needed.
-    function track(event, data) {
-      try { console.log("[playable]", event, data || ""); } catch (e) {}
-    }
-
-    return { whenReady: whenReady, openStore: openStore, track: track };
+    function track(event, data) { try { console.log("[playable]", event, data || ""); } catch (e) {} }
+    return { whenReady: whenReady, watchVisibility: watchVisibility, openStore: openStore, track: track };
   })();
 
   /* ===================================================================
-     5. STATE MACHINE  (screens + flow — light edits per game)
-     States: loading -> intro -> playing -> end. UI.show() toggles overlays.
+     5. SHELL — state machine, HUD, overlay, intro, end screen.
+     The parts of a playable that never change shape between games.
      =================================================================== */
-  var UI = {
-    show: function (name) {
-      ["loading", "intro", "end"].forEach(function (s) {
-        $("screen-" + s).classList.toggle("hidden", s !== name);
-      });
-      // HUD + CTA bar are only visible during play.
-      $("hud").classList.toggle("hidden", name !== "playing");
-      $("cta-bar").classList.toggle("hidden", name !== "playing");
-    },
-    setScore: function (v) { $("score").textContent = v; },
-    setTime:  function (v) { $("time").textContent = v; },
-    setEnd:   function (title, score) { $("end-title").textContent = title; $("end-score").textContent = score; }
-  };
 
-  var State = "loading";
-  function setState(s) { State = s; Ad.track("state", s); UI.show(s === "playing" ? "playing" : s); }
+  var State = "loading";   // loading | intro | playing | end
+
+  function setState(s) {
+    State = s;
+    ["loading", "intro", "end"].forEach(function (n) {
+      $("screen-" + n).classList.toggle("hidden", n !== s);
+    });
+    $("hud").classList.toggle("hidden", s !== "playing");
+    $("cta-bar").classList.toggle("hidden", s !== "playing");
+    $("backdrop").classList.toggle("on", s === "end");
+    if (s !== "playing") Overlay.clear();
+    Ad.track("state", s);
+  }
+
+  // --- HUD ---------------------------------------------------------------
+  var HUD = (function () {
+    var target = 0, shown = 0, colorT = null;
+    function write(v) { $("hud-score").textContent = v; }
+    // Set the score target; the displayed number eases toward it (see tick).
+    function setScore(v) { target = v; }
+    function setScoreNow(v) { target = shown = v; write(Math.round(v)); }
+    function tick(dt) {
+      if (shown === target) return;
+      shown += (target - shown) * Math.min(1, dt * 14);
+      if (Math.abs(target - shown) < 0.5) shown = target;
+      write(Math.round(shown));
+    }
+    // Punch the score on a gain — the single most useful piece of HUD juice.
+    function punch(color) {
+      var el = $("hud-score");
+      el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+      if (color) {
+        el.style.color = color;
+        clearTimeout(colorT);
+        colorT = setTimeout(function () { el.style.color = ""; }, 320);
+      }
+    }
+    function pill(text, label, cls) {
+      return '<div class="hud-pill' + (cls ? " " + cls : "") + '">' +
+             (label ? '<span class="lbl">' + label + "</span>" : "") + text + "</div>";
+    }
+    function setLeft(text, label, cls)  { $("hud-left").innerHTML  = text == null ? "" : pill(text, label, cls); }
+    function setRight(text, label, cls) { $("hud-right").innerHTML = text == null ? "" : pill(text, label, cls); }
+    function setTime(sec) {
+      if (!CONFIG.hud.timer) return;
+      var s = Math.max(0, Math.ceil(sec));
+      setRight(s, CONFIG.copy.timeLabel, s <= 5 ? "warn" : "");
+    }
+    return { setScore: setScore, setScoreNow: setScoreNow, tick: tick, punch: punch,
+             setLeft: setLeft, setRight: setRight, setTime: setTime,
+             score: function () { return target; } };
+  })();
+
+  // --- Overlay: screen-space notifications over the game view -------------
+  var Overlay = (function () {
+    var timers = [];
+    function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+    // A short pill sliding in below the HUD ("+1 LIFE", "2 SHOTS LEFT"…).
+    function toast(text, opt) {
+      opt = opt || {};
+      var el = document.createElement("div");
+      el.className = "ov-toast";
+      el.textContent = text;
+      if (opt.color) el.style.color = opt.color;
+      $("ov-toasts").appendChild(el);
+      var dur = opt.dur || 1400;
+      later(function () { el.classList.add("out"); }, dur);
+      later(function () { if (el.parentNode) el.parentNode.removeChild(el); }, dur + 400);
+    }
+
+    // The big dramatic mid-screen callout ("COMBO x8", "LAST CHANCE").
+    function banner(main, sub, opt) {
+      opt = opt || {};
+      var box = $("ov-banner");
+      $("ov-banner-main").textContent = main;
+      $("ov-banner-main").style.color = opt.color || "var(--accent)";
+      $("ov-banner-sub").textContent = sub || "";
+      box.style.setProperty("--ov-banner-dur", (opt.dur || 1000) + "ms");
+      box.classList.remove("show"); void box.offsetWidth; box.classList.add("show");
+    }
+
+    // A reward badge that pops and floats away (combo chest, bonus coins…).
+    function reward(text, opt) {
+      opt = opt || {};
+      var el = $("ov-reward");
+      el.textContent = text;
+      if (opt.color) el.style.color = opt.color;
+      el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+    }
+
+    // Edge glow — hold it on during danger, or pulse it on a milestone.
+    function vignette(color, alpha, ms) {
+      var el = $("ov-vignette");
+      if (color) el.style.boxShadow = "inset 0 0 130px 34px " + color;
+      el.style.opacity = alpha == null ? 1 : alpha;
+      if (ms) later(function () { el.style.opacity = 0; }, ms);
+    }
+
+    function clear() {
+      timers.forEach(clearTimeout); timers = [];
+      $("ov-toasts").innerHTML = "";
+      $("ov-banner").classList.remove("show");
+      $("ov-reward").classList.remove("show");
+      $("ov-vignette").style.opacity = 0;
+    }
+    return { toast: toast, banner: banner, reward: reward, vignette: vignette, clear: clear };
+  })();
+
+  // --- Intro: logo, copy and the animated how-to-play demo ----------------
+  function buildIntro() {
+    var logo = CONFIG.intro.logo && ASSETS.images[CONFIG.intro.logo];
+    var img = $("app-icon");
+    if (logo) { img.src = logo; img.alt = CONFIG.title; } else { img.style.display = "none"; }
+    $("intro-title").textContent = CONFIG.title;
+    $("intro-tagline").innerHTML = CONFIG.tagline;
+    $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
+    $("demo-caption").textContent = CONFIG.intro.caption || "";
+    $("btn-start").textContent = CONFIG.copy.start;
+    $("btn-cta").textContent = CONFIG.copy.ctaBar;
+    $("btn-install").textContent = CONFIG.copy.ctaEnd;
+    $("btn-replay").textContent = CONFIG.copy.replay;
+    $("hud-score-lbl").textContent = CONFIG.copy.scoreLabel;
+    $("eo-scorelbl").textContent = CONFIG.copy.endScore;
+  }
+
+  // --- End screen: the cinematic reveal ----------------------------------
+  // Beats: title -> score count-up (+confetti) -> stars -> stat rows -> CTA.
+  var EndScreen = (function () {
+    var timers = [];
+    var T_TITLE = 120, T_SCORE = 560, T_STARS = 1950, STAR_GAP = 440,
+        ROW_GAP = 250, T_CTA_AFTER = 1500;
+    var STAR_FREQ = [660, 880, 1180];
+
+    function countUp(el, target, dur, cb) {
+      var start = performance.now();
+      function step(now) {
+        var p = clamp((now - start) / dur, 0, 1), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(e * target);
+        if (p < 1) requestAnimationFrame(step);
+        else { el.textContent = target; if (cb) cb(); }
+      }
+      requestAnimationFrame(step);
+    }
+
+    // result: { title, variant:""|"win"|"perfect", score, stars:0..3|null,
+    //           rows:[{label, value, grade}] }
+    function show(result) {
+      timers.forEach(clearTimeout); timers = [];
+      Confetti.clear();
+      function T(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+      var title = $("eo-title");
+      title.textContent = result.title || CONFIG.copy.gameOver;
+      title.className = "eo-title" + (result.variant ? " " + result.variant : "");
+      ["eo-title", "eo-scorelbl", "eo-score"].forEach(function (id) { $(id).classList.remove("show", "pop"); });
+      $("eo-score").textContent = "0";
+      $("btn-install").classList.remove("show");
+      $("btn-replay").classList.remove("show");
+
+      // Stars (pass null / undefined to hide the row entirely).
+      var stars = result.stars;
+      var hasStars = stars != null;
+      $("eo-stars").classList.toggle("hidden", !hasStars);
+      for (var i = 1; i <= 3; i++) $("star-" + i).className = "star";
+
+      // Stat rows are rebuilt every round so a replay starts clean.
+      var rows = result.rows || [];
+      var box = $("eo-stats"), html = "";
+      rows.forEach(function (r, i) {
+        var label = r.grade === "gold"
+          ? '<span class="spark">✦</span> ' + r.label + ' <span class="spark">✦</span>'
+          : r.label;
+        html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
+                '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
+      });
+      box.innerHTML = html;
+
+      // 1) Title slams in.
+      T(function () { title.classList.add("show"); }, T_TITLE);
+
+      // 2) Final score counts up, greeted by confetti.
+      T(function () {
+        $("eo-scorelbl").classList.add("show");
+        $("eo-score").classList.add("show");
+        Confetti.burst(70);
+        countUp($("eo-score"), result.score || 0, 1100, function () {
+          $("eo-score").classList.add("pop");
+          Sound.beep(900, 0.14, "triangle");
+          Confetti.burst(90);
+        });
+      }, T_SCORE);
+
+      // 3) Stars slam in one by one, each with a rising chime.
+      var afterStars = T_SCORE + 900;
+      if (hasStars) {
+        T(function () { for (var s = 1; s <= 3; s++) $("star-" + s).classList.add("dim"); }, T_STARS - 160);
+        for (var si = 0; si < stars; si++) {
+          (function (idx) {
+            T(function () {
+              var el = $("star-" + (idx + 1));
+              el.classList.remove("dim"); el.classList.add("on");
+              Sound.beep(STAR_FREQ[idx] || 1180, 0.16, "triangle");
+              Confetti.burst(30);
+            }, T_STARS + idx * STAR_GAP);
+          })(si);
+        }
+        afterStars = T_STARS + Math.max(stars, 1) * STAR_GAP + 350;
+      }
+
+      // 4) Stat rows cascade in, counters animating.
+      rows.forEach(function (r, i) {
+        T(function () {
+          $("eo-row-" + i).classList.add("show");
+          var el = $("eo-val-" + i);
+          if (typeof r.value === "number") countUp(el, r.value, 450);
+          else el.textContent = r.value;
+          Sound.beep(480 + i * 70, 0.05, "triangle");
+        }, afterStars + i * ROW_GAP);
+      });
+
+      // 5) Install CTA, then the discreet replay link.
+      var ctaAt = afterStars + rows.length * ROW_GAP + T_CTA_AFTER;
+      T(function () { $("btn-install").classList.add("show"); }, ctaAt);
+      T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
+    }
+    return { show: show };
+  })();
+
+  // --- Round clock -------------------------------------------------------
+  var Round = (function () {
+    var left = 0, running = false, fired = false;
+    function reset() {
+      left = CONFIG.gameSeconds; running = true; fired = false;
+      if (CONFIG.gameSeconds > 0) HUD.setTime(left);
+    }
+    function tick(dt) {
+      if (!running || CONFIG.gameSeconds <= 0) return;
+      left = Math.max(0, left - dt);
+      HUD.setTime(left);
+      if (left <= 0 && !fired) {
+        fired = true;
+        // The game decides what "time up" means (end now, sudden death…).
+        if (Game.onTimeUp) Game.onTimeUp();
+        else endRound({ title: CONFIG.copy.timeUp });
+      }
+    }
+    return {
+      reset: reset, tick: tick, stop: function () { running = false; },
+      left: function () { return left; },
+      elapsed: function () { return CONFIG.gameSeconds - left; }
+    };
+  })();
+
+  // --- The single way a round ends ---------------------------------------
+  // result: { title, variant, score, stars, rows, track }
+  function endRound(result) {
+    if (State === "end") return;
+    result = result || {};
+    Loop.stop(); Round.stop();
+    var score = result.score == null ? Math.round(HUD.score()) : result.score;
+    var best = Math.max(score, Store.get("bestScore", 0));
+    Store.set("bestScore", best);
+    setState("end");
+    EndScreen.show({
+      title: result.title || CONFIG.copy.gameOver,
+      variant: result.variant || "",
+      score: score,
+      stars: result.stars,
+      rows: result.rows || []
+    });
+    Ad.track("game_end", result.track || { score: score, best: best });
+  }
 
   /* ===================================================================
-     6. GAME  (the part a new prompt mostly rewrites)
-     Everything above is reusable plumbing. A concrete game implements:
-       Game.reset()            -> initialize round state
-       Game.onDown(p)          -> pointer input (design coords)
-       Game.update(dt)         -> advance simulation (seconds)
-       Game.render()           -> draw a frame (design coords)
-       Game.onEnd()            -> compute result before end screen
-     This template ships a trivial placeholder: tap the moving dot.
+     6. GAME — the only section a new concept rewrites.
+     Contract (see docs/ENGINE.md):
+        reset()            required — build a fresh round
+        update(dt)         required — advance the simulation (seconds)
+        render()           required — draw the world in design coordinates
+        onDown/onMove/onUp optional — pointer, in design coordinates
+        onTimeUp()         optional — the round clock hit zero
+        onResize()         optional — Layout changed
+     Call endRound({...}) when the run is over.
+
+     This placeholder is a working demo of the whole engine: tap the drifting
+     target inside Layout, chain hits for a combo, HUD/Overlay/Fx feedback.
      =================================================================== */
   var Game = (function () {
-    var score, timeLeft, dot;
+    var score, combo, hits, best, dot;
 
     function reset() {
-      score = 0; timeLeft = CONFIG.gameSeconds;
-      dot = { x: view.w / 2, y: view.h / 2, r: 70, vx: 260, vy: 200 };
-      UI.setScore(0); UI.setTime(timeLeft);
+      score = 0; combo = 0; hits = 0;
+      best = Store.get("bestScore", 0);
+      dot = { x: Layout.cx, y: Layout.cy, r: 78, vx: Rand.pick([-1, 1]) * 280, vy: 220 };
+      HUD.setScoreNow(0);
+      HUD.setLeft(best, "BEST");
+      Fx.reset();
     }
 
     function onDown(p) {
       var dx = p.x - dot.x, dy = p.y - dot.y;
-      if (dx * dx + dy * dy <= dot.r * dot.r) {
-        score++; UI.setScore(score); Sound.beep(660, 0.1, "triangle");
-        dot.x = Rand.range(dot.r, view.w - dot.r);
-        dot.y = Rand.range(dot.r, view.h - dot.r);
+      if (dx * dx + dy * dy > dot.r * dot.r) {           // miss: break the chain
+        combo = 0;
+        Fx.shake(4, 0.15);
+        Fx.text(p.x, p.y, "MISS", { color: "#ff6b6b", size: 34 });
+        return;
       }
+      combo++; hits++;
+      var gained = 10 * combo;
+      score += gained;
+      HUD.setScore(score);
+      HUD.punch(combo >= 5 ? "#ffd43b" : "#4bf5ff");
+
+      // World-space juice on the impact point.
+      Fx.burst(dot.x, dot.y, { color: ["#4bf5ff", "#ffffff"], count: 14, speed: 380, life: .5, grav: 300 });
+      Fx.ring(dot.x, dot.y, { from: dot.r * .6, to: dot.r * 2.6, color: "#4bf5ff", width: 6, life: .4 });
+      Fx.text(dot.x, dot.y - dot.r, "+" + gained, { color: "#ffffff", size: 40, tier: combo >= 5 ? 2 : combo >= 3 ? 1 : 0 });
+      Fx.shake(6 + combo, 0.22);
+      Sound.beep(620 + combo * 30, 0.09, "triangle");
+
+      // Screen-space feedback: milestones get the dramatic treatment.
+      if (combo > 0 && combo % 5 === 0) {
+        Overlay.banner("COMBO x" + combo, "+" + combo * 20, { color: "#ffd43b" });
+        Overlay.vignette("#ffd43b", 1, 500);
+        Fx.flash("#ffffff", 0.35);
+        Sound.arp([523, 659, 784, 1046], 55, 0.14, "triangle");
+        score += combo * 20; HUD.setScore(score);
+      } else if (combo === 3) {
+        Overlay.toast("NICE CHAIN!", { color: "#4bf5ff" });
+      }
+
+      // Teleport + speed up.
+      dot.x = Rand.range(Layout.left + dot.r, Layout.right - dot.r);
+      dot.y = Rand.range(Layout.top + dot.r, Layout.bottom - dot.r);
+      dot.vx *= 1.04; dot.vy *= 1.04;
     }
 
     function update(dt) {
-      // Timer
-      if (CONFIG.gameSeconds > 0) {
-        timeLeft -= dt;
-        UI.setTime(Math.max(0, Math.ceil(timeLeft)));
-        if (timeLeft <= 0) return end();
-      }
-      // Bounce the dot
       dot.x += dot.vx * dt; dot.y += dot.vy * dt;
-      if (dot.x < dot.r || dot.x > view.w - dot.r) dot.vx *= -1;
-      if (dot.y < dot.r || dot.y > view.h - dot.r) dot.vy *= -1;
+      if (dot.x < Layout.left + dot.r)   { dot.x = Layout.left + dot.r;   dot.vx = Math.abs(dot.vx); }
+      if (dot.x > Layout.right - dot.r)  { dot.x = Layout.right - dot.r;  dot.vx = -Math.abs(dot.vx); }
+      if (dot.y < Layout.top + dot.r)    { dot.y = Layout.top + dot.r;    dot.vy = Math.abs(dot.vy); }
+      if (dot.y > Layout.bottom - dot.r) { dot.y = Layout.bottom - dot.r; dot.vy = -Math.abs(dot.vy); }
     }
 
     function render() {
       ctx.fillStyle = CONFIG.bg;
       ctx.fillRect(0, 0, view.w, view.h);
-      ctx.fillStyle = "#4ade80";
+      // The playable area, so it is obvious what Layout reserves.
+      ctx.strokeStyle = "rgba(255,255,255,.07)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(Layout.left, Layout.top, Layout.w, Layout.h);
+      // Target.
+      ctx.fillStyle = rgba("#4bf5ff", 0.25);
+      ctx.beginPath(); ctx.arc(dot.x, dot.y, dot.r * 1.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#4bf5ff";
       ctx.beginPath(); ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(dot.x, dot.y, dot.r * 0.42, 0, Math.PI * 2); ctx.fill();
     }
 
-    function end() {
-      Loop.stop();
-      Store.set("bestScore", Math.max(score, Store.get("bestScore", 0)));
-      UI.setEnd("Time's up!", score);
-      setState("end");
-      Ad.track("game_end", { score: score });
+    // Timer out -> wrap up with a graded result.
+    function onTimeUp() {
+      var stars = score >= 900 ? 3 : score >= 450 ? 2 : score > 0 ? 1 : 0;
+      endRound({
+        title: stars === 3 ? "PERFECT!" : CONFIG.copy.timeUp,
+        variant: stars === 3 ? "perfect" : "",
+        score: score,
+        stars: stars,
+        rows: [
+          { label: "HITS", value: hits },
+          { label: "BEST CHAIN", value: combo, grade: "accent" },
+          { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+        ]
+      });
     }
 
-    return { reset: reset, onDown: onDown, update: update, render: render };
+    return { reset: reset, onDown: onDown, update: update, render: render, onTimeUp: onTimeUp };
   })();
 
   /* ===================================================================
-     7. BOOTSTRAP  (wire everything together — rarely edited)
+     7. BOOTSTRAP — wiring. Rarely edited.
      =================================================================== */
+  function frameUpdate(dt) {
+    if (Fx.frozen(dt)) { Fx.update(dt); return; }   // hit-stop: only fx advance
+    Round.tick(dt);
+    if (State !== "playing") return;                // a game may have ended us
+    Game.update(dt);
+    Fx.update(dt);
+    HUD.tick(dt);
+  }
+  function frameRender() {
+    Fx.begin();      // shake transform
+    Game.render();   // the world
+    Fx.render();     // particles / rings / floating text above it
+    Fx.end();
+    Fx.post();       // full-frame flash, unshaken
+  }
+
   function startGame() {
-    Sound.unlock();                 // must happen in a user gesture (iOS)
+    Sound.unlock();                       // must run inside a user gesture (iOS)
+    Fx.reset(); Overlay.clear(); Confetti.clear();
     Game.reset();
+    Round.reset();
     setState("playing");
     Ad.track("game_start");
-    Loop.start(Game.update, Game.render);
+    Loop.start(frameUpdate, frameRender);
   }
 
   function init() {
+    buildIntro();
+    cssVar("--hud-h", CONFIG.layout.hudHeight + "px");
+    cssVar("--cta-h", CONFIG.layout.ctaHeight + "px");
     fitCanvas();
-    $("screen-intro").querySelector(".title").textContent = CONFIG.title;
 
-    // Route all inputs to the current game.
-    Input.on("down", function (p) { if (State === "playing") Game.onDown(p); });
+    // Route pointer input to the game only while it is playing.
+    Input.on("down", function (p) { if (State === "playing" && Game.onDown) Game.onDown(p); });
+    Input.on("move", function (p) { if (State === "playing" && Game.onMove) Game.onMove(p); });
+    Input.on("up",   function (p) { if (State === "playing" && Game.onUp)   Game.onUp(p); });
 
-    // Button wiring.
     $("btn-start").addEventListener("click", startGame);
+    $("btn-replay").addEventListener("click", startGame);
     $("btn-install").addEventListener("click", Ad.openStore);
     $("btn-cta").addEventListener("click", Ad.openStore);
 
-    // Preload embedded images, then reveal the intro once the ad is ready.
+    Ad.watchVisibility();
     preloadImages(function () {
-      Ad.whenReady(function () {
-        setState("intro");
-        Ad.track("loaded");
-      });
+      Ad.whenReady(function () { setState("intro"); Ad.track("loaded"); });
     });
   }
 
-  // Kick off after DOM is parsed.
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else { init(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 
 })();
 </script>
