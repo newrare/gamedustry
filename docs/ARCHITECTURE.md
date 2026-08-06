@@ -38,15 +38,15 @@ Inside the frame, sizes are written in design pixels — no `vw`, `vh` or
 
 ## The 7 script sections
 
-| #   | Section     | Edit per game? | Purpose                                                                |
-| --- | ----------- | -------------- | ---------------------------------------------------------------------- |
-| 1   | `CONFIG`    | **Yes**        | Title, copy, clock, store URLs, layout bands, intro demo, tunables     |
-| 2   | `ASSETS`    | Sometimes      | Embedded base64 images/sounds                                          |
-| 3   | `ENGINE`    | No             | Frame/Layout, Input, Loop, Sound, Store, Rand, images, Fx, Confetti    |
-| 4   | `AD GLUE`   | No             | MRAID readiness, visibility, store open, tracking                      |
-| 5   | `SHELL`     | No             | State machine, HUD, Overlay, intro build, EndScreen, Round, `endRound` |
-| 6   | `GAME`      | **Yes**        | `reset / update / render` + optional pointer & lifecycle hooks         |
-| 7   | `BOOTSTRAP` | No             | Frame pipeline, `startGame`, wiring                                    |
+| #   | Section     | Edit per game? | Purpose                                                                     |
+| --- | ----------- | -------------- | --------------------------------------------------------------------------- |
+| 1   | `CONFIG`    | **Yes**        | Title, copy, clock, store URLs, layout bands, intro demo, tunables          |
+| 2   | `ASSETS`    | Sometimes      | Embedded base64 images/sounds                                               |
+| 3   | `ENGINE`    | No             | Frame/Layout, Input, Loop, Sound, Music, Store, Rand, images, Fx, Confetti  |
+| 4   | `AD GLUE`   | No             | MRAID readiness, visibility, store open, tracking                           |
+| 5   | `SHELL`     | No             | State machine, HUD, Overlay, Pop, intro build, EndScreen, Round, `endRound` |
+| 6   | `GAME`      | **Yes**        | `reset / update / render` + optional pointer & lifecycle hooks              |
+| 7   | `BOOTSTRAP` | No             | Frame pipeline, `startGame`, wiring                                         |
 
 Sections 3, 4, 5 and 7 are **identical byte-for-byte between games**, and so is
 the stylesheet above each game's `SKIN —` block. `node tools/check-motor.mjs`
@@ -73,9 +73,10 @@ Reusable, game-agnostic helpers:
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fitCanvas()` / `view`     | Sizes the canvas at 720×1280 design units, scales the frame to the viewport, caps devicePixelRatio, and converts the safe-area insets into design pixels. |
 | `Layout`                   | The rectangle gameplay may use: below the HUD, above the CTA bar, clear of notch and home indicator. Recomputed on resize.                                |
-| `Input`                    | Normalizes mouse + touch into `down/move/up`, in design coordinates.                                                                                      |
+| `Input`                    | Normalizes mouse + touch into `down/move/up`, in design coordinates. `Input.at()` fakes one for the desktop SPACE key.                                    |
 | `Loop`                     | rAF loop with clamped `dt`, plus `pause`/`resume` (tab hidden, ad not viewable).                                                                          |
 | `Sound`                    | WebAudio synth (`beep`, `arp`) needing no assets, plus `clip()` for embedded audio. `unlock()` must run inside a user gesture.                            |
+| `Music`                    | The looping background bed from `ASSETS.sounds.music`: own master gain at `CONFIG.music.volume`, crossfaded seam, ducked by the end screen.               |
 | `Store`                    | `try/catch`-wrapped `localStorage` (sandboxed iframes may throw).                                                                                         |
 | `Rand`                     | `range / int / pick / chance`.                                                                                                                            |
 | `preloadImages` / `Images` | Decodes embedded images before the intro shows.                                                                                                           |
@@ -100,6 +101,7 @@ Everything that makes a playable a playable, minus the game:
 - `setState(name)` — `loading → intro → playing → end`, toggling HUD/CTA/screens.
 - `HUD` — eased score, punch animation, timer, two free slots.
 - `Overlay` — toasts, banners, reward badges, edge glow.
+- `Pop` — comic / manga callouts for score gains, combos and hero beats.
 - `buildIntro()` — writes the logo, copy and picks the animated how-to-play demo.
 - `EndScreen` — the staggered reveal (title → score count-up + confetti → stars
   → stat rows → install CTA → replay link).
@@ -136,7 +138,7 @@ DOMContentLoaded → init()
     buildIntro · fitCanvas · bind inputs & buttons · Ad.watchVisibility
     → preloadImages → Ad.whenReady → setState("intro")
 [user taps PLAY] → startGame()
-    Sound.unlock · Fx.reset · Game.reset · Round.reset · setState("playing") · Loop.start
+    Sound.unlock · Music.start · Fx.reset · Game.reset · Round.reset · setState("playing") · Loop.start
 [each frame] frameUpdate(dt) → Round.tick · Game.update · Fx.update · HUD.tick
              frameRender()   → Fx.begin · Game.render · Fx.render · Fx.end · Fx.post
 [round over] endRound({…}) → Loop.stop · setState("end") · EndScreen.show
