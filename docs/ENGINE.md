@@ -13,6 +13,7 @@ A playable always needs the same things, so the motor owns them:
 | **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                      |
 | **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                   |
 | **Overlay**    | Screen-space notification layer over the game view: toasts, combo banners, reward badges, dramatic edge glow.                     |
+| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats. The loud half of the notification layer.    |
 | **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                             |
 | **Fx**         | Canvas juice: particles, rings, floating text, screen shake, colour flash, hit-stop.                                              |
 | **End screen** | Cinematic reveal: title, score count-up with confetti, star rating, cascading stat rows, big install CTA and a small replay link. |
@@ -79,6 +80,32 @@ loading ──► intro ──► playing ──► end ──┐
   It is bound to both the intro button and the end-screen replay link.
 - `endRound(result)` is the single exit from a round (see below).
 
+### Playing with the keyboard
+
+Playables ship to phones, but they are authored and reviewed on a desktop. The
+motor therefore maps the keyboard onto the two gestures it can fake:
+
+| State     | SPACE does                                                          | ← / → (or A / D) do                      |
+| --------- | ------------------------------------------------------------------- | ---------------------------------------- |
+| `intro`   | `startGame()`                                                       | nothing                                  |
+| `playing` | `Input.at("down"/"up", Layout.cx, Layout.cy)` — a tap at the centre | `Input.swipe(-1 / +1)` — a lateral flick |
+| `end`     | replays, once the replay link has appeared                          | nothing                                  |
+
+Each fallback is wired for the mechanic it fits, read off `CONFIG.intro.demo`:
+
+- **SPACE as a tap** — `tap` and `hold` games. A game that reads the pointer
+  position (`aim`, `drag`, `swipe`) still gets start and replay, but no
+  synthetic tap, because a fixed point would be meaningless.
+- **Arrows as a swipe** — `swipe` games. `Input.swipe(dir, dist)` fires a whole
+  `down` → `move` → `up` gesture from `Layout.cx/cy`, `dist` design px to the
+  side (150 by default), so the game reads the keyboard through the very same
+  handlers as a finger and never grows a second input path. Auto-repeat is
+  ignored: one press is one flick.
+
+`CONFIG.keyboard = false` turns both off. Keys are consumed with
+`preventDefault()`, so they never scroll the host page nor re-click a focused
+button.
+
 ## CONFIG reference
 
 ```js
@@ -100,7 +127,14 @@ var CONFIG = {
   // caption: one short line under the demo
   intro: { logo: "logo", demo: "tap", caption: "TAP to hit the target" },
 
+  // Desktop SPACE + arrow keys — see "Playing with the keyboard".
+  keyboard: true,
+
   hud: { score: true, timer: true },
+
+  // Background bed. bpm / beatOffset / loopBeats are only needed by a game
+  // played on the beat — see `Music` and `Beat`.
+  music: { volume: 0.10, fade: 2.0 },
 
   // Every piece of user-facing copy, in one place.
   copy: {
@@ -157,6 +191,12 @@ case it is written as-is instead of counted up.
 plays the reveal. It is idempotent — calling it twice does nothing the second
 time.
 
+The reveal scores itself through `Sound.cue`, on three keys the games embed in
+`ASSETS.sounds`: `uiScore` (the count-up landing), `uiStar` (one chime per star,
+pitched up by `STAR_RATE`) and `uiRow` (the stat-row tick). Drop the keys and
+the same beats play as synthesized beeps — a new game sounds finished before it
+has an sfx pack, and re-themes just by swapping the three clips.
+
 ### If the clock should not end the round
 
 Implement `onTimeUp()` and do something else. Chainring releases a spiked
@@ -174,7 +214,8 @@ The bootstrap drives every frame, so a game only draws its own world:
 
 ```js
 frameUpdate(dt):
-  if (Fx.frozen(dt)) { Fx.update(dt); return; }   // hit-stop
+  Beat.update(dt)                                  // musical clock — music
+  if (Fx.frozen(dt)) { Fx.update(dt); return; }    // does not hit-stop
   Round.tick(dt)                                   // clock + HUD timer
   Game.update(dt)
   Fx.update(dt)
@@ -218,6 +259,122 @@ Overlay.clear();                                           // wipe everything
 Use `Overlay` for UI-level feedback and `Fx.text` for anything anchored to a
 world position.
 
+### `Pop` — comic callouts
+
+The loud half of the overlay. **Prefer it over `Overlay.banner` / `Overlay.toast`
+and over `Fx.text` for anything that celebrates a player action** — score gains,
+combo milestones, tier-ups, hero beats. Designed and previewed in
+[`lab/overlay-comic.html`](../lab/overlay-comic.html).
+
+```js
+Pop.show("score", { word:"+250", at:{ x:ball.x, y:ball.y - 50 } });   // impact point
+Pop.show("combo", { word:"COMBO x5", sub:"+120" });                   // milestone
+Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });                  // hero beat
+var h = Pop.show("danger", { word:"SUDDEN DEATH", hold:-1 });         // stays…
+h.close();                                                            // …until closed
+Pop.clear();                                                          // wipe (Overlay.clear does it too)
+```
+
+Styles, from quiet to loud:
+
+| style      | what it is                                         | default anchor |
+| ---------- | -------------------------------------------------- | -------------- |
+| `score`    | the small `+250` rising off the impact point       | caller-set     |
+| `alert`    | a mistake: chain lost, wall hit. Compact, no decor | `hudUnder`     |
+| `streak`   | chain staying alive, chevrons pushing sideways     | `left`         |
+| `bonus`    | reward sticker on halftone dots                    | `lower`        |
+| `ribbon`   | comic banner sweeping across                       | `upper`        |
+| `combo`    | milestone sticker on a jagged burst                | `upperRight`   |
+| `perfect`  | gold + sparkles + rays, the "you nailed it" beat   | `upper`        |
+| `boom`     | raw impact splash                                  | `right`        |
+| `manifest` | poster announcement (level up, unlock)             | `center`       |
+| `danger`   | hazard tape, blinking for the whole hold           | `top`          |
+| `record`   | end-of-run peak: band, rays, sparkles, confetti    | `center`       |
+| `ultra`    | the hero moment: rays, chroma, maximum size        | `center`       |
+| `vert`     | vertical manga column hugging one edge             | `edgeRight`    |
+
+Per-call options: `word`, `sub`, `at` (anchor name or `{x,y}` in design px),
+`rot`, `cls` (an extra class, to retint one call from the SKIN block), `hold`
+(ms fully readable, `-1` = until `close()`), `enter` / `exit` (ms), `silent`
+(build the callout without its full-frame impact — no shake, flash, edge glow or
+confetti; used by the intro prewarm pass).
+
+Anchors are fractions of `Layout`, so a callout is always clear of the HUD, the
+CTA bar and the device insets: a 3×5 grid (`topLeft` … `bottomRight`) plus
+`hudUnder`, `ctaAbove`, `edgeLeft`, `edgeRight`. An anchor is the **centre** of
+the callout, so the top row already leaves room for a word plus its sub-line. An
+over-long word is scaled down and pulled back inside the frame automatically, and
+so is the **burst** behind it — `#ov-pops` clips, and a burst is far wider than
+the word it sits under, so an off-centre anchor would otherwise slice its outer
+spikes off. Size a burst from its SKIN block (`--bw` / `--bh`) together with
+`--sz`: shrink one without the other and the word grows out of the spikes. The
+soft decors (band, dots, rays, chevrons, stripes) are drawn wider than the frame
+on purpose and keep bleeding off both edges.
+
+Retheme a style from the game's SKIN block by overriding its tokens — never edit
+the machinery:
+
+```css
+.pop-combo { --burst:#8a5cff; --ink:#12042e;
+  --fill:linear-gradient(180deg,#ffffff,#7c5cff); --glow:rgba(150,110,255,.85); }
+```
+
+A style's full-frame impact (`shake`, `flash`, `vignette`, `confetti`) is
+delegated to `Fx` and `Overlay`, so there is never a second shake system. Sound
+stays with the caller: play your own sample on the same beat.
+
+#### The overlay must never cost the gameplay a frame
+
+A callout lands on the exact frame the player earned something — the worst
+possible frame to drop. These rules are what keep it free, and they were all
+measured (frame times recorded in a running round, not guessed):
+
+- **`Pop.prewarm()` runs on the intro.** A style's first rasterization costs
+  50–80 ms (gradient text clipped to glyphs, clip-paths, masks). The motor builds
+  every style once, hidden, one per animation frame, while the intro is up. Do
+  not remove the call in `init()`, and do not "optimize" it to
+  `visibility:hidden` — an invisible layer is never rasterized, so it warms
+  nothing.
+- **The word is one layer.** Per-glyph nodes only exist for `letters` (staggered
+  drop-in) and `vertical` styles; every other style paints the whole word as a
+  single layer. Splitting a word into 9 gradient-clipped glyph layers costs ~8×
+  the raster.
+- **`will-change` on `.pop-word` / `.pop-anim` / `.pop-out`.** Without it the
+  text is re-rasterized the instant the entry animation ends — a 40–50 ms frame,
+  every single callout.
+- **No CSS `filter` on a callout layer, ever.** A filter puts the node on its own
+  offscreen render surface, which the compositor rasterizes at the *largest*
+  scale of the entry animation — `slam` starts at `scale(3.1)`, so a 20 px glow
+  costs ~9× the pixels of the word, in one blocking pass, on the exact frame the
+  player earned. Measured (390×844 @3, software raster, CPU ×4): a `combo`
+  callout stalled the frame train **50 ms** with `filter: drop-shadow`, **9 ms**
+  with the same glow expressed as a `text-shadow` on `.pop-ltr`. A blurred
+  text-shadow is cheap where a filter is not — Skia blurs the glyph mask into
+  tiles the page already rasterizes, spread over the raster threads.
+- **No full-screen decor layers.** Flashes go through `Fx.flash` (drawn on the
+  canvas we already paint). The ray disc is sized to its **mask**, not to the
+  frame: everything past 62 % of the radius is transparent, so the box is 560 px
+  with the mask stops rescaled by the same factor — identical circle, 23 % less
+  stalled frame time than the 760 px version. It is also **static**: rotating a
+  masked conic gradient repaints it every frame and costs ~40 % of the frame
+  budget for as long as the callout is up.
+- **`flash` is for rare beats.** A full-screen white veil on a callout the player
+  earns every few seconds reads as the game hitching, not as a reward. `combo`
+  therefore carries none; `boom` and `ultra` keep theirs.
+- **Timings are short on purpose** (0.9–1.4 s end to end). Lengthen `hold` per
+  call when a beat needs it; never raise the defaults.
+- **At most 4 callouts live at once.** Over the cap the oldest is dropped. A
+  player mashing the screen would otherwise stack a dozen layers — measured at
+  18 taps/s that was 134 dropped frames in 9 s, and 0 with the cap. Games never
+  have to rate-limit their own feedback.
+
+If you add a style, measure it — and measure the **frame gap** it causes, not the
+total raster it does. The two disagree: a `filter` does *less* total raster work
+than the text-shadow that replaces it, but does it in one blocking pass, which is
+what the player feels. On the reference profile above, every style except `ultra`
+(its ray disc) and `manifest` (per-glyph nodes) now costs **zero** dropped
+frames.
+
 ### `Fx` — canvas juice
 
 ```js
@@ -247,11 +404,18 @@ Round.stop()
 ```js
 view, Layout, ctx, canvas          // see above
 Input.on("down"|"move"|"up", fn)   // design-space pointer events
+Input.at(type, x, y)               // synthesize one (used by the SPACE key)
+Input.swipe(dir, dist)             // synthesize a whole flick (the arrow keys)
 Loop.start(u, r) / stop() / pause() / resume()
 Sound.unlock()                             // must run in a user gesture (iOS)
-Sound.beep(freq, dur, type, vol)
+Sound.clip(name, vol, rate)                // embedded ASSETS.sounds — the default
+Sound.beep(freq, dur, type, vol)           // synth fallback, for an event with no clip
 Sound.arp([freqs], stepMs, dur, type, vol) // rising celebration run
-Sound.clip(name, vol, rate)                // embedded ASSETS.sounds (WebAudio)
+Sound.cue(name, vol, rate, freq, dur, type) // clip if embedded, else a beep
+Music.start() / stop(fade)                 // background bed (see below)
+Music.duck(factor, secs) / unduck(secs)    // dip under a foreground moment
+Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
+Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // safe localStorage
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
@@ -259,6 +423,112 @@ Confetti.burst(n) / clear()
 rgba("#rrggbb", alpha) → "rgba(…)"
 clamp(v, lo, hi)
 ```
+
+Every sound effect is a clip picked from the shared **`assets/sfx/`** library and
+embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx).
+One sample per event, pitched with `rate` instead of duplicated.
+
+### `Music` — the background bed
+
+A game gets looping music by embedding **one** clip under the reserved key
+`music` and tuning `CONFIG.music`:
+
+```js
+CONFIG.music = { volume: 0.10, fade: 2.0 };   // discreet, 2 s fades
+ASSETS.sounds.music = "data:audio/mpeg;base64,…";
+```
+
+A game played *on* the music adds the track's tempo to the same block and drives
+its action with [`Beat`](#beat--the-musical-clock):
+
+```js
+CONFIG.music = { volume: 0.10, fade: 2.0,     // …plus the grid
+                 bpm: 128, beatOffset: 0.43, loopBeats: 64 };
+```
+
+Nothing else to wire: `startGame()` calls `Music.start()`, which is a no-op
+when the game ships no `music` clip.
+
+Two things the module takes care of:
+
+- **Volume.** The bed hangs off its own master gain at `CONFIG.music.volume`
+  (default `0.12`). Keep it around `0.10` — it must never fight the sfx or the
+  callouts. `endRound()` ducks it to 55 % so the end-screen cues cut through,
+  and the next `startGame()` lifts it back.
+- **A pleasant loop.** The track is *not* required to be a seamless loop. The
+  same decoded buffer is re-scheduled every `duration - fade` seconds and each
+  pass fades in and out over `fade`, so the tail of one pass crossfades into
+  the head of the next: no click at the seam, and the first pass fades in
+  instead of slamming on. Passes are queued a few seconds ahead against the
+  WebAudio clock, so the seam stays sample-accurate even while the rAF loop is
+  paused. With `bpm` + `loopBeats` set, the wrap is `loopBeats` beats instead of
+  `duration - fade`, so the pulse crosses the seam without shifting — and the
+  crossfade is whatever is left of the buffer past that point.
+
+`Music.pause()` / `Music.resume()` are already wired to
+`visibilitychange` and to MRAID's `viewableChange`: they ramp the bed down and
+suspend the audio context, which freezes its clock so the loop resumes exactly
+where it stopped.
+
+Encode small — the bed plays under everything, so mono 64 kbps is plenty:
+
+```bash
+ffmpeg -i track.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3   # ~30 s ≈ 240 KB
+node tools/embed-asset.mjs music.mp3 --key music
+```
+
+### `Beat` — the musical clock
+
+For a game whose action is written on the music: rings that land on the kick,
+obstacles that arrive on the bar, a jump you time to the snare. Declare the
+track's grid in `CONFIG.music` and the engine hands the game a clock in **beats**
+that is locked to the audio actually playing:
+
+| field        | what it is                                                |
+| ------------ | --------------------------------------------------------- |
+| `bpm`        | tempo of the track                                        |
+| `beatOffset` | seconds from the start of the file to its first beat      |
+| `loopBeats`  | beats of the file the loop keeps (a whole number of bars) |
+
+```js
+Beat.on()             // is a tempo configured
+Beat.beats()          // musical time in beats since the track's beat 0
+Beat.period()         // seconds per beat
+Beat.seconds(beats)   // beats -> seconds (timing windows, durations)
+Beat.next(div)        // next grid line; div slots per beat (1 = beat, 4 = 16th)
+Beat.pulse(div)       // 1 on the grid line, falling to 0 before the next one
+Beat.locked()         // riding the audio clock rather than its own dt clock
+```
+
+The pattern is: schedule on the grid, then interpolate. Give an entity the beat
+it must arrive on and derive its position from `Beat.beats()` every frame —
+never accumulate its own timer, or it drifts off the music within a few bars.
+
+```js
+// launch everything that must arrive one flight from now
+while (nextSlot - FLIGHT <= Beat.beats()) { spawn(nextSlot); nextSlot += 1; }
+// …and place it: p reaches 1 exactly on its beat
+var p = clamp((Beat.beats() - e.born) / e.span, 0, 1);
+```
+
+Grade the player in beats too (`Math.abs(e.hit - Beat.beats())`), so a timing
+window means the same thing at any tempo: `0.19` of a beat is 89 ms at 128 BPM.
+
+Two details make it usable in an ad:
+
+- **It never waits for the music.** The clock runs off `dt` from the first frame,
+  so the game is on-beat even when the track never decodes — or when the creative
+  is muted, which is the common case.
+- **It corrects instead of snapping.** The phase error against the WebAudio clock
+  is folded to the nearest beat and walked out at half a beat per second, so
+  locking on (and coming back from a backgrounded tab) stays invisible and
+  nothing in flight jumps.
+
+Measuring a track: run a beat tracker, or find the first kick's attack on the
+waveform (`beatOffset`) and count the bars the loop should keep. Check that
+`loopBeats * 60 / bpm` is a shade **shorter** than the file — the remainder is
+the crossfade. `games/chainring` is the reference implementation: 128 BPM,
+`beatOffset` 0.43 s, 64 beats of a 30.77 s file.
 
 ### `Ad`
 
@@ -285,6 +555,12 @@ fingertip inside a small stage:
 Add a variant by adding a `.demo-<name>` block to the stylesheet — the markup
 already carries every piece (`.demo-target`, `.demo-hand`, `.demo-track`,
 `.demo-arrow`, `.demo-beam`).
+
+`.demo-hand` is `assets/svg/finger.svg`, turned 180° so the index finger points
+up and inlined in the motor stylesheet as a `data:image/svg+xml` background.
+Every game shares it — never replace it with a hand of your own. Its fingertip
+sits at the **top edge** of the box, so a variant that has to reach a target
+moves the whole element (`transform: translate…`) rather than resizing it.
 
 ## Theming — the SKIN block
 
@@ -333,7 +609,7 @@ template behind a `CONFIG` flag and re-run `--fix`.
 - **Never hard-code a y coordinate** for the play area — derive it from
   `Layout`.
 - **No `shadowBlur` in per-frame canvas drawing.** Pre-render sprites once
-  (see Bubble Blight's cached bubbles) or fake glow with concentric circles
+  (see Blight's cached bubbles) or fake glow with concentric circles
   (see Chainring's ball).
 - **All timing in seconds** (`dt`), never frames.
 - **Every CTA goes through `Ad.openStore()`.**
@@ -342,9 +618,9 @@ template behind a `CONFIG` flag and re-run `--fix`.
 
 ## Reference implementations
 
-- [`games/ring-combo/`](../games/ring-combo/index.html) — timing tap, combo
+- [`games/chainring/`](../games/chainring/index.html) — timing tap, combo
   multiplier, chain-reaction payoff, `onTimeUp` sudden death, 6 stat rows.
-- [`games/bubble-shooter/`](../games/bubble-shooter/index.html) — drag-to-aim
+- [`games/blight/`](../games/blight/index.html) — drag-to-aim
   with a trajectory preview, hex grid, cached sprites, an embedded background,
   pressure rows and a danger line.
 - [`games/orbinity/`](../games/orbinity/index.html) — orbital slingshot: a

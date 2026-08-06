@@ -5,18 +5,54 @@ requests**, so every asset must be embedded directly in the file as a base64
 `data:` URI. This doc covers how to embed assets and how to stay under the
 **5 MB** budget (aim for < 2 MB).
 
-## Rule #1: prefer drawing over embedding
-
-Most playables need **zero binary assets**. Both example games ship with
-`ASSETS = { images: {}, sounds: {} }` and look and sound complete:
+## Rule #1: draw the graphics, embed the sound
 
 - **Graphics** → draw with the Canvas 2D API (`ctx.fillRect`, `arc`, gradients,
-  paths). Vector-style art is tiny and scales perfectly.
-- **Sound** → synthesize with WebAudio via `Sound.beep(freq, dur, type)`. No
-  files, works offline, instant.
+  paths). Vector-style art is tiny and scales perfectly. Reach for an embedded
+  image only when the creative genuinely needs a specific logo or character art.
+- **Sound** → take the clips from **`assets/sfx/`** (next section). A playable
+  lives or dies on how it *feels*, and a real sample beats a synthesized beep
+  every time; the whole library re-encodes to a few KB per event.
 
-Reach for embedded assets only when the creative genuinely needs a specific
-logo, character art, or a recorded sound.
+`Sound.beep` / `Sound.arp` are still there, as the fallback for an event that has
+no clip yet (and as what `Sound.cue` degrades to). They are not the target.
+
+## Sound effects always come from `assets/sfx/`
+
+`assets/sfx/` is the shared sfx library of the repo (~125 clips, ZapSplat
+licence in the folder). Every game picks from it, so the whole catalogue sounds
+like one product instead of one synth per game.
+
+The recipe per event:
+
+1. **Pick a clip.** The file names describe the sound (`..._alert_ping_chime_…`,
+   `..._game_sound_mallets_negative_error_…`, `..._ui_percussive_clicks_…`).
+   Check the useful length first — most clips are mostly tail:
+   ```bash
+   ffprobe -v error -show_entries format=duration -of csv=p=0 assets/sfx/<clip>.mp3
+   ffmpeg -i assets/sfx/<clip>.mp3 -af "silencedetect=noise=-42dB:d=0.04" -f null -
+   ```
+1. **Trim and re-encode small.** Mono, 32 kHz, 64 kbps, with a short fade so the
+   cut does not click. An sfx costs ~8 KB per second at that setting:
+   ```bash
+   ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -af "afade=t=out:st=0.33:d=0.07" \
+          -ac 1 -ar 32000 -b:a 64k gem.mp3
+   ```
+1. **Embed it** under a short game-side key, and keep a comment naming the
+   source clip so the choice can be revisited:
+   ```bash
+   node tools/embed-asset.mjs gem.mp3 --key gem
+   ```
+1. **Pitch, don't duplicate.** One sample covers a whole family of events
+   through `rate` — a rising chain, a direction, a weaker variant:
+   ```js
+   Sound.clip("gem", 0.6, 1 + Math.min(chain, 14) * 0.045);  // climbs with the chain
+   Sound.clip("swipe", 0.6, dir > 0 ? 1.08 : 0.93);          // left / right
+   Sound.clip("crash", 0.5, 1.45);                           // shrugged off by a shield
+   ```
+
+Triverse is the reference: eight events (gem, mega, chain, loop, power, swipe,
+void, crash) for ~58 KB of mp3.
 
 ## Embedding an asset
 
@@ -64,8 +100,40 @@ source, so rapid repeats overlap instead of cutting each other off, and `rate`
 is the cheap way to make one sample climb with a combo. Until a buffer is ready
 the call falls back to an `<audio>` element, so no cue is ever dropped.
 
-Orbinity is the reference: seven mp3s (launch, boom, grab, wall, lost,
+Orbinity is a second reference: seven mp3s (launch, boom, grab, wall, lost,
 milestone, evolve) re-encoded mono 32 kHz, ~80 KB total.
+
+### Background music: the reserved `music` key
+
+One clip under the key `music` turns into a looping background bed, driven by
+the engine's `Music` module (see [ENGINE.md](ENGINE.md)):
+
+```js
+CONFIG.music = { volume: 0.10, fade: 2.0 };   // discreet, 2 s fades
+ASSETS.sounds.music = "data:audio/mpeg;base64,…";
+```
+
+`startGame()` starts it, `endRound()` ducks it, `visibilitychange` and MRAID
+pause it. The track does **not** need to be a seamless loop: every pass fades in
+and out over `CONFIG.music.fade` and overlaps the next one, so the seam is a
+crossfade instead of a click.
+
+Music is the single heaviest thing a playable embeds, so encode it small — the
+bed sits far under the sfx, mono 64 kbps is plenty:
+
+```bash
+ffmpeg -i track.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3   # ~30 s ≈ 240 KB
+node tools/embed-asset.mjs music.mp3 --key music
+```
+
+Orbinity and Chainring both ship a ~30 s bed at 321 KB as a data URI.
+
+### The three end-screen keys
+
+The template already ships `uiScore`, `uiStar` and `uiRow` (~22 KB) — the shared
+end-screen reveal plays them through `Sound.cue`, so keep the keys and swap the
+clips to re-theme it. Removing them is safe: `Sound.cue` falls back to the
+synthesized beeps.
 
 ## Size budget
 

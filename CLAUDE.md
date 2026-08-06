@@ -45,6 +45,13 @@ prompt describes a new game, do not design a new page structure — copy
 1. Edit **`CONFIG`** (section 1): `title`, `tagline`, `gameSeconds`, store URLs,
    `bg`, `layout` bands, `intro.demo` (`tap | hold | drag | swipe | aim`),
    `copy`, then your own tunables.
+1. Write the intro to the house rules: **one sentence** in `tagline` (never two,
+   and `intro.caption` stays `""`), its two or three key words wrapped in
+   `<b class="w-…">` so they read in colour, and a demo stage that illustrates
+   *this* game — keep the motor's shared finger (`assets/svg/finger.svg`, already
+   inlined in `.demo-hand`; never draw another hand) and re-dress the target /
+   track / beam and the stage's `::before` / `::after` from the SKIN.
+   `games/vipera` and `games/orbinity` are the reference.
 1. Retheme by appending a single `SKIN — <GAME>` block at the end of the
    stylesheet: `:root` token overrides (`--bg`, `--accent`, `--cta-a/b`,
    `--danger`, `--gold`…) plus any game-specific rules. Never edit the motor CSS
@@ -60,8 +67,17 @@ prompt describes a new game, do not design a new page structure — copy
    - call `endRound({ title, variant, score, stars, rows })` when the run is
      over → plays the cinematic end screen.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
-   `Fx.burst/ring/text/shake/flash/freeze`,
-   `Overlay.toast/banner/reward/vignette`, `Sound.beep/arp`.
+   `Fx.burst/ring/text/shake/flash/freeze`, `Pop.show` for the score and combo
+   callouts, `Overlay.toast/vignette`, `Sound.clip`.
+1. Give every event a sound **picked from `assets/sfx/`**, trimmed and embedded
+   in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Never invent a synth
+   voice for a game: `Sound.beep/arp` is only the fallback for an event with no
+   clip.
+1. **Never create the app icon.** The artwork (`assets/icon/<slug>.png` and its
+   `thumb/` cut, embedded as `ASSETS.images.logo` on the intro) is added later
+   by the user. Leave `ASSETS.images` without a `logo` key and keep
+   `CONFIG.intro.logo` at `null` — the intro simply hides `#app-icon`. Never
+   generate, draw or embed a placeholder icon.
 1. Update `#intro-title` / `#intro-tagline` in the markup to match `CONFIG`, and
    add an entry to the `GAMES` array in the root `index.html`.
 1. Run `node tools/check-size.mjs` and open the file in a browser to test.
@@ -77,9 +93,28 @@ Frame & input (section 3):
 - `Layout` — `top / bottom / left / right / w / h / cx / cy`: the band gameplay
   may use, already clear of the HUD, the CTA bar and the device insets.
 - `Input.on("down"|"move"|"up", fn)` — unified mouse+touch in design space.
+- `Input.swipe(dir, dist)` / `Input.at(type, x, y)` — synthesize a gesture. This
+  is what the desktop keyboard rides on: SPACE starts, replays and — for
+  `tap` / `hold` games — taps at `Layout.cx/cy`; **← / → (or A / D) fire a whole
+  left/right flick for `swipe` games**, so a swipe mechanic needs no keyboard
+  code of its own. Opt out with `CONFIG.keyboard = false`.
 - `Loop.start/stop/pause/resume` — rAF loop with clamped `dt`.
-- `Sound.unlock()` (in a user gesture), `Sound.beep(f,dur,type,vol)`,
-  `Sound.arp(freqs,step,dur,type)`, `Sound.clip(name,vol,rate)`.
+- `Sound.unlock()` (in a user gesture), `Sound.clip(name,vol,rate)` — the way a
+  game plays sound: one clip from `assets/sfx/` per event, pitched with `rate`
+  rather than duplicated. `Sound.cue(name,vol,rate,freq,dur,type)` plays the clip
+  when the game ships one under `name` and a synthesized beep otherwise;
+  `Sound.beep(f,dur,type,vol)` / `Sound.arp(freqs,step,dur,type)` are that
+  fallback.
+- `Music.start/stop/duck/unduck` — the looping background bed. A game only
+  embeds `ASSETS.sounds.music` and sets `CONFIG.music = { volume, fade }`; the
+  shell starts it, ducks it on the end screen and pauses it off-screen, and the
+  loop seam is crossfaded so the track need not be seamless.
+- `Beat.beats/next/pulse/period/seconds` — the musical clock, for a game played
+  on the beat. Add `bpm`, `beatOffset` and `loopBeats` to `CONFIG.music`, then
+  schedule on the grid and interpolate toward it (never accumulate your own
+  timer, it drifts). It runs off `dt` when the track is missing or muted and
+  phase-corrects onto the audio clock without snapping. Reference:
+  `games/chainring`.
 - `Store.get/set` — safe localStorage. `Rand.range/int/pick/chance`.
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Fx.burst/ring/text/shake/flash/freeze` — the canvas juice layer; the frame
@@ -89,6 +124,10 @@ Frame & input (section 3):
 Shell (section 5):
 
 - `HUD.setScore/setScoreNow/punch/setLeft/setRight` — the top band.
+- `Pop.show(style, {word, sub, at, rot, cls, hold})` — the comic / manga callout
+  layer. **Use it for score gains, combos and every beat that celebrates a
+  player action**, in preference to `Overlay.banner/toast` and `Fx.text`.
+  Styles: `score alert streak bonus ribbon combo perfect boom manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-comic.html`.
 - `Overlay.toast/banner/reward/vignette/clear` — screen-space notifications,
   combo callouts, rewards, dramatic glow.
 - `Round.left()/elapsed()` — the clock.
@@ -122,8 +161,9 @@ See [docs/AD_NETWORKS.md](docs/AD_NETWORKS.md) for MRAID and per-network detail.
 
 - [ ] Opens and plays in a desktop browser and a mobile viewport.
 - [ ] Core loop is fun within ~5–20 seconds (playables are short).
-- [ ] Intro explains the mechanic in one line **and** shows it with an animated
-  demo.
+- [ ] Intro explains the mechanic in **one sentence** with its key words in
+  colour, **and** shows it with an animated demo of the game itself, acted out
+  by the shared finger.
 - [ ] HUD readable and nothing important under a notch or the CTA bar (test a
   viewport with a Dynamic Island).
 - [ ] End screen shows score, stars and stat rows, then the install CTA and the

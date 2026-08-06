@@ -24,13 +24,13 @@ Identity, copy, clock, layout bands and the intro demo — then your own tunable
 ```js
 var CONFIG = {
   title:   "MERGE FRUIT",
-  tagline: "Drag two fruits together to merge them!",
+  tagline: "<b class=\"w-drag\">Drag</b> two <b class=\"w-fruit\">fruits</b> together to merge",
   gameSeconds: 30,                       // 0 = endless (ends on a fail state)
   storeUrl: { ios:"…", android:"…", fallback:"https://52-entertainment.com/our-games/" },
   designWidth: 720, designHeight: 1280,
   bg: "#101820",
   layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
-  intro: { logo: "logo", demo: "drag", caption: "DRAG a fruit onto another" },
+  intro: { logo: "logo", demo: "drag", caption: "" },
   hud: { score: true, timer: true },
   copy: { /* every user-facing string */ },
   // …your tunables: gravity, spawnEvery, mergeScore, palette…
@@ -39,6 +39,22 @@ var CONFIG = {
 
 Pick `intro.demo` from `tap | hold | drag | swipe | aim` so the intro *shows* the
 mechanic instead of describing it.
+
+**The intro screen obeys three rules, and every game in `games/` follows them:**
+
+1. **One sentence**, never two, and no `caption`. The `tagline` names the
+   gesture and what it does — the stage below it does the rest of the teaching.
+   `.demo-caption` collapses on its own when `intro.caption` is `""`.
+1. **The keywords are in colour.** Wrap the two or three words that carry the
+   mechanic in `<b class="w-…">`. They glow in `--accent` by default; retint
+   each class from the SKIN (`#intro-tagline .w-fruit { color:… }`).
+1. **The stage illustrates the game, not a generic gesture.** Keep the shared
+   finger from the motor (`assets/svg/finger.svg`, already inlined in
+   `.demo-hand` — never draw your own hand) and re-dress the other nodes from
+   the SKIN: the target becomes the character, the track becomes the world, the
+   beam becomes the tap shockwave, the stage's `::before` / `::after` become
+   whatever else the picture needs. `games/vipera` and `games/orbinity` are the
+   reference.
 
 ### 3. Theme it (the SKIN block)
 
@@ -100,23 +116,49 @@ install rate:
 ```js
 HUD.setScore(score); HUD.punch("#ffd43b");            // score reacts
 Fx.burst(x, y, { color:"#4bf5ff", count:14, speed:380 });
-Fx.text(x, y, "+" + gained, { size:40, tier:1 });
 Fx.shake(8, .22); Fx.flash("#ffffff", .3); Fx.freeze(.05);
-Overlay.banner("COMBO x8", "+160", { color:"#ffd43b" });
-Overlay.toast("NICE CHAIN!"); Overlay.reward("BONUS!");
-Sound.beep(660, .1, "triangle"); Sound.arp([523,659,784,1046], 55);
+Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
+Pop.show("combo", { word:"COMBO x8", sub:"+160" });              // milestone
+Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });             // hero beat
+Overlay.toast("NICE CHAIN!"); Overlay.vignette("#ffd43b", 1, 520);
+Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
+Sound.clip("chain", .85);                                // the milestone
 ```
+
+`Pop` is the comic callout layer (see [ENGINE.md](ENGINE.md) and the live
+catalogue in [`lab/overlay-comic.html`](../lab/overlay-comic.html)). Use it for
+anything that celebrates a player action — it sells harder than `Overlay.banner`
+or `Fx.text`. Retint a style from the SKIN block, never inline.
 
 ### 5. Update the intro markup
 
 `#intro-title` and `#intro-tagline` in the markup mirror `CONFIG.title` /
 `CONFIG.tagline` (the engine overwrites them at boot — keep them in sync so the
-file reads correctly).
+file reads correctly), `<b class="w-…">` markers included.
 
-### 6. Add assets only if needed
+### 6. Sound, and the assets you truly need
 
-Draw with canvas and synthesize audio first. A logo for the intro is usually the
-only embedded asset — see [ASSETS.md](ASSETS.md). Keep the file under 5 MB.
+**Every sound effect comes from the shared `assets/sfx/` library** — pick a clip
+per event, trim it, re-encode it mono 32 kHz / 64 kbps and embed it in
+`ASSETS.sounds` under a short key. The full recipe (and the ffmpeg one-liners) is
+in [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx):
+
+```bash
+ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
+node tools/embed-asset.mjs gem.mp3 --key gem
+```
+
+Then play it with `Sound.clip(name, vol, rate)` and pitch one sample instead of
+embedding variations. `Sound.beep` / `Sound.arp` are only the fallback for an
+event that has no clip.
+
+Graphics are the opposite: draw them on canvas. A logo for the intro is usually
+the only embedded image. Keep the file under 5 MB.
+
+For a background bed, embed the track under the reserved key `music` and set
+`CONFIG.music = { volume: 0.10, fade: 2.0 }`. The engine loops it with a
+crossfaded seam, keeps it far under the sfx and ducks it on the end screen —
+nothing to wire in the game module.
 
 ### 7. Test & verify
 
@@ -148,7 +190,7 @@ notch (Safari → responsive design mode → iPhone with Dynamic Island).
 - **Forgiving.** Bias toward the player succeeding — wide timing windows, no
   harsh penalties. A good first impression drives installs.
 - **Juicy.** Every input needs an answer: a pop, a shake, a rising pitch, a
-  number flying up. The `Fx` and `Overlay` layers exist for this.
+  number flying up. The `Fx`, `Pop` and `Overlay` layers exist for this.
 - **Always show the CTA.** The install button is on screen during and after
   play; every CTA calls `Ad.openStore()`.
 - **Respect the bands.** Gameplay lives inside `Layout`; nothing important under
@@ -166,9 +208,10 @@ fail/win condition and the feel; the assistant fills in `CONFIG` + `Game`.
 
 > Add `games/ball-jump/`: a ball auto-bounces, tap to jump to the next platform,
 > missing one ends the run (endless). Camera follows upward. Use `Fx` for the
-> landing juice and `Overlay.banner` on every 10th platform. Stars from height.
+> landing juice and `Pop.show("combo", …)` on every 10th platform. Stars from
+> height.
 
-> Reskin `games/ring-combo/` with a warm sunset palette: edit the `:root` tokens
+> Reskin `games/chainring/` with a warm sunset palette: edit the `:root` tokens
 > and the CTA copy only, nothing else.
 
 Good prompts say "built on the motor" and "keep sections 3/4/5/7 untouched" —
@@ -176,8 +219,12 @@ that is the whole convention.
 
 ## Reference implementations
 
-- [`games/ring-combo/`](../games/ring-combo/index.html) — timing tap, combo
+- [`games/chainring/`](../games/chainring/index.html) — timing tap, combo
   multiplier, chain-reaction payoff, sudden death via `onTimeUp`, 6 stat rows.
-- [`games/bubble-shooter/`](../games/bubble-shooter/index.html) — drag-to-aim
+- [`games/triverse/`](../games/triverse/index.html) — endless swipe-between-lanes
+  runner: procedural paths (including real self-crossing loops) evaluated as
+  closed-form functions of a progress coordinate, keyboard arrows through
+  `Input.swipe`, eight `assets/sfx` clips.
+- [`games/blight/`](../games/blight/index.html) — drag-to-aim
   with a trajectory preview, hex grid, cached sprites, an embedded background,
   pressure rows and a danger line.

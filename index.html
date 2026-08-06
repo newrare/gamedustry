@@ -51,10 +51,19 @@
     transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   .card:hover { transform:translateY(-4px); border-color:rgba(255,255,255,.18);
     box-shadow:0 18px 40px rgba(0,0,0,.35); }
-  .thumb { height:140px; display:flex; align-items:center; justify-content:center;
-    font-size:58px; position:relative; }
-  .thumb::after { content:""; position:absolute; inset:0;
-    background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 55%); }
+  /* Thumbnail: the app icon, crisp and centred, over a blurred blow-up of
+     itself so each card carries its own game's colours. The accent gradient
+     stays underneath as the colour while the images decode. */
+  .thumb { height:170px; position:relative; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; }
+  .thumb-bg { position:absolute; inset:-30%; width:160%; height:160%; object-fit:cover;
+    filter:blur(26px) saturate(1.5) brightness(1.15); opacity:.95; transform:scale(1.1); }
+  .thumb-icon { position:relative; width:106px; height:106px; border-radius:24px; display:block;
+    box-shadow:0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12) inset;
+    transition:transform .18s ease; }
+  .card:hover .thumb-icon { transform:scale(1.06) rotate(-2deg); }
+  .thumb::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 55%,rgba(0,0,0,.28)); }
   .body { padding:18px 20px 20px; display:flex; flex-direction:column; gap:11px; flex:1; }
   .name { font-size:20px; font-weight:800; }
   .desc { color:var(--muted); font-size:14.5px; line-height:1.5; flex:1; }
@@ -160,17 +169,28 @@
 
 <script>
 "use strict";
-// One entry per game. `accent` is the thumbnail gradient; `icon` is an emoji.
+// One entry per game. `accent` tints the thumbnail while the icon decodes;
+// `icon` is the app icon under assets/icon/thumb/ (320 px cut of the source
+// artwork in assets/icon/, which every game also embeds on its intro screen).
 var GAMES = [
-  { slug:"ring-combo", name:"Chainring", icon:"⭕",
-    desc:"Tap the instant a closing ring hits the bouncing ball. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
-    tags:["Timing tap","30 s","Sudden death"], accent:["#4bf5ff","#4263eb"] },
-  { slug:"bubble-shooter", name:"Bubble Blight", icon:"🫧",
+  { slug:"chainring", name:"Chainring", icon:"chainring",
+    desc:"Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
+    tags:["Rhythm tap","30 s","Sudden death"], accent:["#4bf5ff","#4263eb"] },
+  { slug:"bouncetry", name:"Bouncetry", icon:"bouncetry",
+    desc:"Tap to stop the wheel and win 2 to 10 balls, then take your single shot: the whole volley leaves the cannon at once, banks off the walls and the ceiling, and only the pit takes it back. Thread the gap in the wall and the chain never stops.",
+    tags:["Aim once","One shot","Ricochet chain"], accent:["#4bf5ff","#ff8a1a"] },
+  { slug:"blight", name:"Blight", icon:"blight",
     desc:"Drag to aim, release to fire and match 3 bubbles to pop them. Rainbow supers chain-detonate; the spreading blight only falls if you cut it off.",
     tags:["Aim & shoot","60 s","Danger line"], accent:["#ff8fab","#7048e8"] },
-  { slug:"orbinity", name:"Orbinity", icon:"🪐",
+  { slug:"orbinity", name:"Orbinity", icon:"orbinity",
     desc:"A ribbon snake orbits a mini planet. Tap to snap gravity and fling it along the tangent — the planet explodes, a new one spawns, and the next well catches you. Walls bounce and break the chain.",
-    tags:["Timing tap","30 s","Combo chain"], accent:["#7cf5ff","#6d5cff"] }
+    tags:["Timing tap","30 s","Combo chain"], accent:["#7cf5ff","#6d5cff"] },
+  { slug:"triverse", name:"Triverse", icon:"triverse",
+    desc:"Three ropes of light run up the void, curling into loops and crossing each other. Swipe to hop the arrow from one to the next: gems and power-ups pay, mines and voids cost, and the run only ends when the third life does.",
+    tags:["Swipe lanes","Endless","3 lives"], accent:["#3ce0ff","#ff5ad4"] },
+  { slug:"vipera", name:"Vipera", icon:"vipera",
+    desc:"A viper races up an endless burrow. Every tap flips the side it carves toward, so a rhythm of taps weaves it through the thorns. Gems grow the body — and the longer it gets, the higher its head rides and the less time there is to read what comes next.",
+    tags:["Tap to swerve","Endless","Grow & dodge"], accent:["#4dff9b","#12b86a"] }
 ];
 
 var PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
@@ -180,9 +200,12 @@ GAMES.forEach(function (g) {
   var a = document.createElement("a");
   a.className = "card";
   a.href = "games/" + g.slug + "/index.html";
+  var src = "assets/icon/thumb/" + g.icon + ".png";
   a.innerHTML =
     '<div class="thumb" style="background:linear-gradient(135deg,' + g.accent[0] + ',' + g.accent[1] + ')">' +
-      g.icon + '</div>' +
+      '<img class="thumb-bg" src="' + src + '" alt="" aria-hidden="true" loading="lazy">' +
+      '<img class="thumb-icon" src="' + src + '" alt="" loading="lazy">' +
+    '</div>' +
     '<div class="body">' +
       '<div class="name">' + g.name + '</div>' +
       '<div class="desc">' + g.desc + '</div>' +
