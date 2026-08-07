@@ -39,12 +39,14 @@ playables/
 ├── template/
 │   └── game-template.html    ← THE MOTOR — copy this for every new game
 ├── games/
+│   ├── spinshock/index.html       ← Spinshock (tap on the impact, shockwave)
 │   ├── chainring/index.html       ← Chainring (timing tap)
 │   ├── blight/index.html          ← Blight (aim & shoot)
 │   ├── bouncetry/index.html       ← Bouncetry (spin, aim once, ricochet)
 │   ├── orbinity/index.html        ← Orbinity (gravity slingshot)
 │   ├── triverse/index.html        ← Triverse (swipe between lanes)
-│   └── vipera/index.html          ← Vipera (tap to swerve, grow, dodge)
+│   ├── vipera/index.html          ← Vipera (tap to swerve, grow, dodge)
+│   └── arcider/index.html         ← Arcider (hold a side, lean, keep charged)
 ├── assets/                   ← source art & audio (not shipped; embed instead)
 │   └── icon/                 ← one app icon per game, embedded on its intro
 │       └── thumb/            ← 320 px cuts, the only assets the gallery loads
@@ -93,14 +95,16 @@ python3 -m http.server 8000                  # then visit localhost:8000/games/�
 
 ## Game catalog
 
-| Game                    | Mechanic                                                                                                            | Input         | Round               |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------- |
-| `chainring` (Chainring) | Tap as closing rings hit the bouncing ball; chain a combo multiplier, then survive a spiked sudden-death ring       | Timing tap    | 30 s + sudden death |
-| `blight` (Blight)       | Aim & shoot to match 3+ bubbles; rainbow supers chain-detonate, a spreading blight must be cut off                  | Drag to aim   | 60 s / danger line  |
-| `bouncetry` (Bouncetry) | Stop the wheel for 2 to 10 balls, then fire the whole volley on one aim; walls and ceiling bounce, the pit does not | Drag to aim   | One shot / chain    |
-| `orbinity` (Orbinity)   | A ribbon snake orbits a mini planet; tap to snap gravity and fling it along the tangent into the next well          | Timing tap    | 30 s / combo chain  |
-| `triverse` (Triverse)   | Three ropes of light run up the void; swipe to hop the arrow between them, banking gems and dodging mines           | Swipe lanes   | Endless / 3 lives   |
-| `vipera` (Vipera)       | A viper carves up an endless burrow; every tap flips the side it swerves toward, and gems grow the body             | Tap to swerve | Endless / grow      |
+| Game                    | Mechanic                                                                                                                                                      | Input         | Round                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------- |
+| `spinshock` (Spinshock) | A top spins in a dish; tap on each impact to shockwave the rivals into the walls — they take 3 to 5 slams and keep coming back, the top's colour is the gauge | Timing tap    | Endless / physics dish |
+| `chainring` (Chainring) | Tap as closing rings hit the bouncing ball; chain a combo multiplier, then survive a spiked sudden-death ring                                                 | Timing tap    | 30 s + sudden death    |
+| `blight` (Blight)       | Aim & shoot to match 3+ bubbles; rainbow supers chain-detonate, a spreading blight must be cut off                                                            | Drag to aim   | 60 s / danger line     |
+| `bouncetry` (Bouncetry) | Stop the wheel for 2 to 10 balls, then fire the whole volley on one aim; walls and ceiling bounce, the pit does not                                           | Drag to aim   | One shot / chain       |
+| `orbinity` (Orbinity)   | A ribbon snake orbits a mini planet; tap to snap gravity and fling it along the tangent into the next well                                                    | Timing tap    | 30 s / combo chain     |
+| `triverse` (Triverse)   | Three ropes of light run up the void; swipe to hop the arrow between them, banking gems and dodging mines                                                     | Swipe lanes   | Endless / 3 lives      |
+| `vipera` (Vipera)       | A viper carves up an endless burrow; every tap flips the side it swerves toward, and gems grow the body                                                       | Tap to swerve | Endless / grow         |
+| `arcider` (Arcider)     | An arc bike rides a bending neon highway; hold a side to lean, jump the walls off ramps and keep the battery alive                                            | Hold a side   | Endless / battery      |
 
 All of them are built on the same motor: sections 3, 4, 5 and 7 of their scripts
 are byte-identical. Diff them to see exactly how little a game owns.

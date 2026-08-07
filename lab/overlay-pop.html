@@ -189,10 +189,6 @@ body{
           mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
 }
 
-/* jagged explosion star — clip-path is generated in JS */
-.d-burst{ width:var(--bw,880px); height:var(--bh,620px); background:var(--burst,#ff9500); }
-.d-burst.ink{ width:calc(var(--bw,880px) + 34px); height:calc(var(--bh,620px) + 34px); background:var(--ink); }
-
 /* the comic banner the word sits on */
 .d-band{
   width:1400px; height:var(--band-h,190px); background:var(--band);
@@ -238,6 +234,26 @@ body{
   animation:a-twinkle 1.1s ease-in-out infinite;
 }
 
+/* --- cheap impact primitives, used by the `combo` chip -------------------
+   Everything here is a solid colour on a rounded box animated with nothing
+   but `transform` + `opacity`: no clip-path, no mask, no gradient, no blur,
+   so the compositor animates them without ever re-rasterizing. */
+
+/* shockwave: one hollow ellipse expanding once and fading out. Wider than tall
+   so it clears the chip it sits behind instead of showing as two arcs. */
+.d-ring{
+  width:var(--ring-w,430px); height:var(--ring-h,250px); border-radius:50%;
+  border:var(--ring-s,7px) solid var(--chip-line,#ffb02e);
+  opacity:0; animation:a-ring .42s cubic-bezier(.15,.8,.3,1) forwards;
+}
+/* four ticks flicked diagonally off the chip's corners */
+.d-dash{
+  position:absolute; left:50%; top:50%; z-index:1;
+  width:var(--dw,44px); height:8px; border-radius:4px;
+  background:var(--chip-line,#ffb02e);
+  opacity:0; animation:a-dash .38s cubic-bezier(.2,.75,.3,1) forwards;
+}
+
 /* ===========================================================================
    ANIMATIONS
    =========================================================================== */
@@ -253,6 +269,17 @@ body{
 @keyframes a-tape{ to{ background-position:85px 0; } }
 @keyframes a-flash{ 0%{opacity:.95; transform:translate(-50%,-50%) scale(.3);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1.15);} }
 @keyframes a-twinkle{ 0%,100%{opacity:.25; transform:scale(.6) rotate(0);} 50%{opacity:1; transform:scale(1.15) rotate(45deg);} }
+/* Both start where the chip's own plate stops hiding them (the plate is opaque
+   and sits on top), so the whole animation is actually seen. */
+@keyframes a-ring{
+  0%  { opacity:.9; transform:translate(-50%,-50%) scale(.62); }
+  100%{ opacity:0;  transform:translate(-50%,-50%) scale(1.06); }
+}
+@keyframes a-dash{
+  0%  { opacity:0; transform:translate(-50%,-50%) translate(calc(var(--tx) * .8), calc(var(--ty) * .8)) rotate(var(--rd)) scaleX(.5); }
+  22% { opacity:1; }
+  100%{ opacity:0; transform:translate(-50%,-50%) translate(var(--tx), var(--ty)) rotate(var(--rd)) scaleX(1); }
+}
 
 /* Entry / exit pairs. Every `in-*` ends on the neutral state and every
    `out-*` starts from it, so the hold in between can last any duration.
@@ -303,6 +330,18 @@ body{
 }
 @keyframes out-punch{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(1.08) translateY(-30px); } }
 
+/* CHIP — the cheapest entry in the catalogue, for the callout a good run
+   fires over and over. A composited layer is rasterized at the LARGEST scale
+   of its animation, so `slam` (scale 3.1) pays for ~9x the pixels it ever
+   shows — that is the hitch. This one never leaves 0.86..1.06, i.e. the
+   raster is the callout's own size, and it only moves and fades. */
+@keyframes in-chip{
+  0%  { opacity:0; transform:translateY(24px) scale(.86); }
+  55% { opacity:1; transform:translateY(0) scale(1.06); }
+  100%{ opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes out-chip{ from{ opacity:1; transform:translateY(0) scale(1); } to{ opacity:0; transform:translateY(-30px) scale(.97); } }
+
 /* ALARM — hard cut in, then .pop-body pulses for the whole hold. */
 @keyframes in-alarm{ from{ opacity:0; transform:scale(1.25); } to{ opacity:1; transform:scale(1); } }
 @keyframes out-alarm{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(.94); } }
@@ -335,13 +374,41 @@ body{
    STYLES — one class per callout. Only tokens + a couple of specifics.
    =========================================================================== */
 
-/* COMBO x2 — sticker on a jagged burst, off to one side. */
+/* COMBO x2 — a compact chip that hugs its own word.
+   Rewritten from scratch: the old version was a 600x430 jagged star (two
+   32-point clip-paths) plus a 1300px radial flash, slammed in from scale(3.1)
+   with a drop-shadow filter on the text. That is four separate reasons for the
+   raster thread to stall, and it covered a third of the screen for a beat that
+   fires several times per run. The chip costs one rounded box, one hollow
+   circle and four solid bars — no clip-path, no mask, no filter, no
+   full-screen layer — and it is the size of the text it carries. */
 .s-combo{
-  --sz:96px; --ink:#2a1000; --ink2:rgba(120,40,0,.5); --stroke:15px;
-  --fill:linear-gradient(180deg,#fffbe6 0%,#ffd400 40%,#ff9a00 70%,#ff5e00 100%);
-  --glow:rgba(255,175,40,.8); --burst:#ff8a00; --bw:560px; --bh:400px;
+  --sz:58px; --track:3px; --ink:#20100a; --ink2:rgba(80,30,0,.4); --stroke:0px;
+  --fill:linear-gradient(180deg,#fff6d8 0%,#ffd257 52%,#ff9f1c 100%);
+  --glow:rgba(255,170,50,.5);
+  --chip:#1a1024;                 /* plate behind the word                  */
+  --chip-line:#ffb02e;            /* border, shockwave ring and speed dashes */
+  --ring-w:430px; --ring-h:250px; --ring-s:7px;
 }
-.s-combo .pop-sub{ background:#ff5e00; border-color:#2a1000; }
+/* The plate is a background on .pop-body, not a decor node: it inherits the
+   body's rotation for free and it is exactly as wide as the copy inside. */
+.s-combo .pop-body{
+  padding:13px 26px 15px; border-radius:18px;
+  background:var(--chip); border:4px solid var(--chip-line);
+  box-shadow:0 7px 0 rgba(0,0,0,.4), inset 0 3px 0 rgba(255,255,255,.09);
+}
+/* No `filter` on the word: a filter forces its own offscreen surface, which is
+   re-rasterized at the entry animation's largest scale. A flat text-shadow
+   reads the same on a chip this small and Skia draws it in place. */
+.s-combo .pop-word{ filter:none; }
+.s-combo .pop-ltr{
+  text-shadow:0 3px 0 rgba(0,0,0,.5);
+  animation:none;                 /* the chip animates as one block */
+}
+.s-combo .pop-sub{
+  margin-top:2px; padding:0; border:0; box-shadow:none; background:none;
+  color:var(--chip-line); font-size:calc(var(--sz) * .44); letter-spacing:2px;
+}
 
 /* INCROYABLE — comic banner sweeping across the play area. */
 .s-ribbon{
@@ -394,13 +461,6 @@ body{
   --glow:rgba(255,205,80,.85); --ray:rgba(255,220,120,.28);
 }
 .s-gold .pop-sub{ background:#3a2200; border-color:#ffe27a; color:#ffe27a; }
-
-/* BOOM ! — raw impact splash, deliberately off-centre and tilted. */
-.s-impact{
-  --sz:130px; --track:0; --ink:#240300; --ink2:rgba(120,20,0,.5); --stroke:18px;
-  --fill:linear-gradient(180deg,#fff3c4 0%,#ff9d00 45%,#ff2d00 100%);
-  --glow:rgba(255,90,0,.85); --burst:#ff3b00; --bw:620px; --bh:440px;
-}
 
 /* MEGA BONUS — sticker slapped on the bottom band. */
 .s-sticker{
@@ -649,20 +709,6 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     edgeRight:   { x: 592, y: 640 }   // vertical manga column, right edge
   };
 
-  /* A jagged comic explosion outline, deterministic so it never flickers.
-     `inner` / `outer` are percentages of the half-box, i.e. the spikes reach the
-     edge of the decor node at 100. */
-  function burstClip(spikes, inner, outer, seed) {
-    var pts = [], i, a, r, w;
-    for (i = 0; i < spikes * 2; i++) {
-      a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
-      w = Math.sin((i + seed) * 12.9898) * .5 + .5;          // pseudo-random 0..1
-      r = (i % 2 ? inner : outer) * (.86 + w * .28) * .5;
-      pts.push((50 + Math.cos(a) * r).toFixed(2) + "% " + (50 + Math.sin(a) * r).toFixed(2) + "%");
-    }
-    return "polygon(" + pts.join(",") + ")";
-  }
-
   /* -----------------------------------------------------------------------
      Pop — the callout module. This is the part meant to move into the motor.
 
@@ -675,11 +721,22 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     var timers = [], seed = 0;
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
-    // Split a word into per-letter spans so letters can stagger in.
-    function buildWord(text, vertical) {
+    /* Build the word. Every glyph layer is expensive to rasterize — gradient
+       face clipped to the text, thick stroke, extrusion — so a style can ask
+       for ONE layer with `letters:false` instead of one node per letter. */
+    function buildWord(text, st) {
       var w = document.createElement("div");
+      var vertical = !!st.vertical;
       w.className = "pop-word" + (vertical ? " vert" : "");
       var i, ch, el;
+      if (st.letters === false && !vertical) {
+        el = document.createElement("span");
+        el.className = "pop-ltr";
+        el.setAttribute("data-t", text);
+        el.textContent = text;
+        w.appendChild(el);
+        return w;
+      }
       for (i = 0; i < text.length; i++) {
         ch = text.charAt(i);
         if (ch === " ") { el = document.createElement("span"); el.className = "pop-sp"; }
@@ -698,7 +755,6 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     function decorNode(kind) {
       var d = document.createElement("div");
       d.className = "d d-" + kind;
-      if (kind === "burst") d.style.clipPath = burstClip(16, 58, 100, seed);
       return d;
     }
 
@@ -742,11 +798,10 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
       anim.style.animation = "in-" + st.anim + " " + enter + "ms cubic-bezier(.2,.9,.3,1) forwards";
 
       // decor behind the word
-      var i, ink, decor = st.decor || [];
+      var i, decor = st.decor || [];
       for (i = 0; i < decor.length; i++) {
         if (decor[i] === "sparks") { addSparks(anim); continue; }
-        // a burst gets an oversized ink copy behind it, for the comic outline
-        if (decor[i] === "burst") { ink = decorNode("burst"); ink.classList.add("ink"); anim.appendChild(ink); }
+        if (decor[i] === "dashes") { addDashes(anim); continue; }
         anim.appendChild(decorNode(decor[i]));
       }
 
@@ -754,7 +809,7 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
       body.className = "pop-body" + (st.pulse ? " pulse" : "");
       var rot = opt.rot != null ? opt.rot : (st.rot || 0);
       body.style.setProperty("--rot", rot + "deg");
-      body.appendChild(buildWord(word, !!st.vertical));
+      body.appendChild(buildWord(word, st));
       if (sub) {
         var s = document.createElement("div");
         s.className = "pop-sub"; s.textContent = sub;
@@ -792,6 +847,31 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
         close: function () { close(0); },   // dismiss a hold:-1 callout
         remove: remove
       };
+    }
+
+    /* Four ticks flicked diagonally off the chip's corners. Deterministic and
+       mirrored, so repeats read as the same effect; four solid bars are cheaper
+       than one masked gradient, and they stay inside the shockwave's footprint
+       so the callout never grows past the ring. */
+    var DASHES = [
+      { tx: -215, ty: -86, rd: -28, dw: 46 },
+      { tx:  215, ty: -86, rd:  28, dw: 46 },
+      { tx: -203, ty:  90, rd:  30, dw: 38 },
+      { tx:  203, ty:  90, rd: -30, dw: 38 }
+    ];
+    function addDashes(parent) {
+      var i, d, s;
+      for (i = 0; i < DASHES.length; i++) {
+        s = DASHES[i];
+        d = document.createElement("div");
+        d.className = "d-dash";
+        d.style.setProperty("--tx", s.tx + "px");
+        d.style.setProperty("--ty", s.ty + "px");
+        d.style.setProperty("--rd", s.rd + "deg");
+        d.style.setProperty("--dw", s.dw + "px");
+        d.style.animationDelay = (i % 2 ? 40 : 0) + "ms";
+        parent.appendChild(d);
+      }
     }
 
     function addSparks(parent) {
@@ -871,9 +951,9 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
   var STYLES = {
     combo: {
       label: "COMBO x2", word: "COMBO x2", sub: "+40", cls: "s-combo",
-      anim: "slam", enter: 380, hold: 800, exit: 320,
-      decor: ["burst", "flash"], at: "topRight", rot: -11,
-      shake: 6, sfx: "hit"
+      anim: "chip", enter: 260, hold: 520, exit: 220,
+      decor: ["ring", "dashes"], at: "upperRight", rot: -7,
+      letters: false, shake: 4, sfx: "hit"
     },
     incredible: {
       label: "INCROYABLE", word: "INCROYABLE", cls: "s-ribbon",
@@ -904,12 +984,6 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
       anim: "punch", enter: 460, hold: 1100, exit: 340,
       decor: ["rays", "sparks"], at: "upper", rot: -3,
       tint: "rgba(255,190,60,.8)", sfx: "sparkle"
-    },
-    boom: {
-      label: "BOOM !", word: "BOOM !", cls: "s-impact",
-      anim: "slam", enter: 340, hold: 620, exit: 300,
-      decor: ["burst", "flash"], at: "right", rot: 9,
-      shake: 14, sfx: "hit"
     },
     bonus: {
       label: "MEGA BONUS", word: "MEGA BONUS", sub: "+1000", cls: "s-sticker",
@@ -1056,7 +1130,6 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     [420,  "score",      { at: { x: 430, y: 640 }, word: "+200" }],
     [900,  "combo",      {}],
     [2100, "streak",     {}],
-    [3300, "boom",       {}],
     [4400, "incredible", {}],
     [6000, "perfect",    {}],
     [7700, "ultra",      {}],
