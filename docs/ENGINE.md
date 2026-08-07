@@ -264,7 +264,7 @@ world position.
 The loud half of the overlay. **Prefer it over `Overlay.banner` / `Overlay.toast`
 and over `Fx.text` for anything that celebrates a player action** — score gains,
 combo milestones, tier-ups, hero beats. Designed and previewed in
-[`lab/overlay-comic.html`](../lab/overlay-comic.html).
+[`lab/overlay-pop.html`](../lab/overlay-pop.html).
 
 ```js
 Pop.show("score", { word:"+250", at:{ x:ball.x, y:ball.y - 50 } });   // impact point
@@ -284,9 +284,8 @@ Styles, from quiet to loud:
 | `streak`   | chain staying alive, chevrons pushing sideways     | `left`         |
 | `bonus`    | reward sticker on halftone dots                    | `lower`        |
 | `ribbon`   | comic banner sweeping across                       | `upper`        |
-| `combo`    | milestone sticker on a jagged burst                | `upperRight`   |
+| `combo`    | milestone chip on a shockwave                      | `upperRight`   |
 | `perfect`  | gold + sparkles + rays, the "you nailed it" beat   | `upper`        |
-| `boom`     | raw impact splash                                  | `right`        |
 | `manifest` | poster announcement (level up, unlock)             | `center`       |
 | `danger`   | hazard tape, blinking for the whole hold           | `top`          |
 | `record`   | end-of-run peak: band, rays, sparkles, confetti    | `center`       |
@@ -304,20 +303,27 @@ CTA bar and the device insets: a 3×5 grid (`topLeft` … `bottomRight`) plus
 `hudUnder`, `ctaAbove`, `edgeLeft`, `edgeRight`. An anchor is the **centre** of
 the callout, so the top row already leaves room for a word plus its sub-line. An
 over-long word is scaled down and pulled back inside the frame automatically, and
-so is the **burst** behind it — `#ov-pops` clips, and a burst is far wider than
-the word it sits under, so an off-centre anchor would otherwise slice its outer
-spikes off. Size a burst from its SKIN block (`--bw` / `--bh`) together with
-`--sz`: shrink one without the other and the word grows out of the spikes. The
-soft decors (band, dots, rays, chevrons, stripes) are drawn wider than the frame
-on purpose and keep bleeding off both edges.
+so are the two things that can be wider than it — the plate a style may put
+around the word (`combo`) and the shockwave ring behind it — because `#ov-pops`
+clips and an off-centre anchor would otherwise slice them off. The soft decors
+(band, dots, rays, chevrons, stripes) are drawn wider than the frame on purpose
+and keep bleeding off both edges.
 
 Retheme a style from the game's SKIN block by overriding its tokens — never edit
 the machinery:
 
 ```css
-.pop-combo { --burst:#8a5cff; --ink:#12042e;
-  --fill:linear-gradient(180deg,#ffffff,#7c5cff); --glow:rgba(150,110,255,.85); }
+.pop-combo { --chip:#12042e; --chip-line:#c9b4ff;
+  --fill:linear-gradient(180deg,#ffffff,#7c5cff); }
 ```
+
+`combo` is the one callout a good run fires over and over, so it is built as the
+cheapest thing in the catalogue: a chip that hugs its own word (the plate is a
+`background` on `.pop-body`, not a decor node), a hollow ellipse for the
+shockwave and four solid bars for the corner ticks — no `clip-path`, no mask, no
+`filter`, no full-frame layer. Its entry (`chip`) never scales past 1.06, so the
+compositor rasterizes it at the callout's own size. Retint it, leave the geometry
+alone.
 
 A style's full-frame impact (`shake`, `flash`, `vignette`, `confetti`) is
 delegated to `Fx` and `Overlay`, so there is never a second shake system. Sound
@@ -360,7 +366,15 @@ measured (frame times recorded in a running round, not guessed):
   budget for as long as the callout is up.
 - **`flash` is for rare beats.** A full-screen white veil on a callout the player
   earns every few seconds reads as the game hitching, not as a reward. `combo`
-  therefore carries none; `boom` and `ultra` keep theirs.
+  therefore carries none; `ultra` keeps its own.
+- **A frequent callout is sized to its own text and entered from close by.** The
+  compositor rasterizes an animated layer at the *largest* scale of its
+  animation, so an entry that starts at `scale(3.1)` (`slam`) pays for ~9× the
+  pixels it ever shows. `combo` used to slam a 600×430 jagged star built from two
+  32-point `clip-path`s and hitch for a second doing it; the `chip` entry stays
+  inside 0.86–1.06 and its decor is solid colour on rounded boxes animated with
+  `transform` and `opacity` only, which the compositor plays without
+  re-rasterizing anything.
 - **Timings are short on purpose** (0.9–1.4 s end to end). Lengthen `hold` per
   call when a beat needs it; never raise the defaults.
 - **At most 4 callouts live at once.** Over the cap the oldest is dropped. A

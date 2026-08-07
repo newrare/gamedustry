@@ -127,7 +127,7 @@ Shell (section 5):
 - `Pop.show(style, {word, sub, at, rot, cls, hold})` — the comic / manga callout
   layer. **Use it for score gains, combos and every beat that celebrates a
   player action**, in preference to `Overlay.banner/toast` and `Fx.text`.
-  Styles: `score alert streak bonus ribbon combo perfect boom manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-comic.html`.
+  Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`.
 - `Overlay.toast/banner/reward/vignette/clear` — screen-space notifications,
   combo callouts, rewards, dramatic glow.
 - `Round.left()/elapsed()` — the clock.

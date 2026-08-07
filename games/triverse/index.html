@@ -316,9 +316,25 @@
     -webkit-mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
             mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
   }
-  /* jagged explosion star — the clip-path is generated in JS */
-  .pop-d-burst { width:var(--bw,880px); height:var(--bh,620px); background:var(--burst); }
-  .pop-d-burst.ink { width:calc(var(--bw,880px) + 34px); height:calc(var(--bh,620px) + 34px); background:var(--ink); }
+  /* The two impact primitives a frequent callout may use. Both are a solid
+     colour on a rounded box animated with nothing but `transform` and
+     `opacity`, so the compositor plays them without ever re-rasterizing —
+     which is the whole point: they replaced a pair of 32-point `clip-path`
+     stars that had to be re-rasterized at the entry animation's largest scale.
+     Shockwave: one hollow ellipse expanding once. Wider than tall so it clears
+     the chip it sits behind instead of reading as two arcs. */
+  .pop-d-ring {
+    width:var(--ring-w,430px); height:var(--ring-h,250px); border-radius:50%;
+    border:var(--ring-s,7px) solid var(--chip-line,#ffb02e);
+    opacity:0; animation:pop-ring .42s cubic-bezier(.15,.8,.3,1) forwards;
+  }
+  /* Four ticks flicked diagonally off the callout's corners. */
+  .pop-d-dash {
+    position:absolute; left:50%; top:50%; z-index:1;
+    width:var(--dw,44px); height:8px; border-radius:4px;
+    background:var(--chip-line,#ffb02e);
+    opacity:0; animation:pop-dash .38s cubic-bezier(.2,.75,.3,1) forwards;
+  }
   /* the comic banner the word sits on */
   .pop-d-band {
     width:1400px; height:var(--band-h,190px); background:var(--band);
@@ -372,6 +388,17 @@
   @keyframes pop-tape { to { background-position:85px 0; } }
   @keyframes pop-twinkle { 0%,100%{opacity:.25; transform:scale(.6) rotate(0);} 50%{opacity:1; transform:scale(1.15) rotate(45deg);} }
   @keyframes pop-pulse { 0%,49%{ opacity:1; } 50%,100%{ opacity:.32; } }
+  /* Both start where the callout's own plate stops hiding them (the plate is
+     opaque and sits on top), so the whole animation is actually seen. */
+  @keyframes pop-ring {
+    0%  { opacity:.9; transform:translate(-50%,-50%) scale(.62); }
+    100%{ opacity:0;  transform:translate(-50%,-50%) scale(1.06); }
+  }
+  @keyframes pop-dash {
+    0%  { opacity:0; transform:translate(-50%,-50%) translate(calc(var(--tx) * .8), calc(var(--ty) * .8)) rotate(var(--rd)) scaleX(.5); }
+    22% { opacity:1; }
+    100%{ opacity:0; transform:translate(-50%,-50%) translate(var(--tx), var(--ty)) rotate(var(--rd)) scaleX(1); }
+  }
 
   /* Entry / exit pairs. Every `pop-in-*` ends on the neutral state and every
      `pop-out-*` starts from it, so the hold in between can last any duration.
@@ -422,6 +449,19 @@
   }
   @keyframes pop-out-punch { from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(1.08) translateY(-30px); } }
 
+  /* CHIP — the cheapest entry in the catalogue, for the callout a good run
+     fires over and over. A composited layer is rasterized at the LARGEST scale
+     of its animation, so `slam` (scale 3.1) pays for ~9x the pixels it ever
+     shows — that was the hitch every combo used to cost. This one never leaves
+     0.86..1.06, i.e. the raster is the callout's own size, and it only moves
+     and fades. */
+  @keyframes pop-in-chip {
+    0%  { opacity:0; transform:translateY(24px) scale(.86); }
+    55% { opacity:1; transform:translateY(0) scale(1.06); }
+    100%{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes pop-out-chip { from{ opacity:1; transform:translateY(0) scale(1); } to{ opacity:0; transform:translateY(-30px) scale(.97); } }
+
   /* ALARM — hard cut in, then .pop-body pulses for the whole hold. */
   @keyframes pop-in-alarm { from{ opacity:0; transform:scale(1.25); } to{ opacity:1; transform:scale(1); } }
   @keyframes pop-out-alarm { from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(.94); } }
@@ -455,13 +495,32 @@
   }
   .pop-alert .pop-sub { background:#2a000c; border-color:#ff9fb0; color:#ffd6de; letter-spacing:4px; }
 
-  /* COMBO x2 — sticker on a jagged burst, off to one side. */
+  /* COMBO x2 — a compact chip that hugs its own word.
+     This is the one callout a good run fires over and over, so it is the one
+     that must cost nothing: no clip-path, no mask, no filter, no full-frame
+     layer, and an entry that never scales past 1.06. A game retints it with
+     --chip / --chip-line and leaves the geometry alone. */
   .pop-combo {
-    --sz:88px; --ink:#2a1000; --ink2:rgba(120,40,0,.5); --stroke:15px;
-    --fill:linear-gradient(180deg,#fffbe6 0%,#ffd400 40%,#ff9a00 70%,#ff5e00 100%);
-    --glow:rgba(255,175,40,.8); --burst:#ff8a00; --bw:560px; --bh:400px;
+    --sz:58px; --track:3px; --ink:#20100a; --ink2:rgba(80,30,0,.4); --stroke:0px;
+    --fill:linear-gradient(180deg,#fff6d8 0%,#ffd257 52%,#ff9f1c 100%);
+    --glow:rgba(255,170,50,.5);
+    --chip:#1a1024;                  /* plate behind the word                  */
+    --chip-line:#ffb02e;             /* border, shockwave ring and corner ticks */
+    --ring-w:430px; --ring-h:250px; --ring-s:7px;
   }
-  .pop-combo .pop-sub { background:#ff5e00; border-color:#2a1000; }
+  /* The plate is a background on .pop-body, not a decor node: it inherits the
+     body's rotation for free and it is exactly as wide as the copy inside. */
+  .pop-combo .pop-body {
+    padding:13px 26px 15px; border-radius:18px;
+    background:var(--chip); border:4px solid var(--chip-line);
+    box-shadow:0 7px 0 rgba(0,0,0,.4), inset 0 3px 0 rgba(255,255,255,.09);
+  }
+  /* On a chip this small the extrusion and the glow only muddy the word. */
+  .pop-combo .pop-ltr { text-shadow:0 3px 0 rgba(0,0,0,.5); animation:none; }
+  .pop-combo .pop-sub {
+    margin-top:2px; padding:0; border:0; box-shadow:none; background:none;
+    color:var(--chip-line); font-size:calc(var(--sz) * .44); letter-spacing:2px;
+  }
   /* STREAK — chevrons pushing the eye sideways. */
   .pop-streak {
     --sz:84px; --ink:#1a0018; --stroke:13px;
@@ -497,12 +556,6 @@
     --glow:rgba(255,205,80,.85); --ray:rgba(255,220,120,.28);
   }
   .pop-perfect .pop-sub { background:#3a2200; border-color:#ffe27a; color:#ffe27a; }
-  /* BOOM — raw impact splash, deliberately tilted. */
-  .pop-boom {
-    --sz:112px; --track:0; --ink:#240300; --ink2:rgba(120,20,0,.5); --stroke:18px;
-    --fill:linear-gradient(180deg,#fff3c4 0%,#ff9d00 45%,#ff2d00 100%);
-    --glow:rgba(255,90,0,.85); --burst:#ff3b00; --bw:620px; --bh:440px;
-  }
   /* ULTRA — the hero moment: rays, chroma, maximum size. */
   .pop-ultra {
     --sz:132px; --track:5px; --ink:#0b0020; --ink2:rgba(80,0,140,.55); --stroke:16px;
@@ -919,10 +972,8 @@
   .pop-score.pop-l2 { --fill:linear-gradient(180deg,#ffffff 0%,#a6ff3d 100%); --glow:rgba(166,255,61,.75); --ink:#152a00; }
   /* the score malus, and the crash */
   .pop-alert.pop-drain { --fill:linear-gradient(180deg,#f3e2ff 0%,#a24bff 100%); --glow:rgba(162,75,255,.7); --ink:#1b0030; }
-  .pop-combo { --burst:#2f9cff; --ink:#02182e; --ink2:rgba(0,50,140,.5);
-    --fill:linear-gradient(180deg,#ffffff 0%,#b4e8ff 42%,#3ce0ff 72%,#ff5ad4 100%);
-    --glow:rgba(60,224,255,.85); }
-  .pop-combo .pop-sub { background:#02182e; border-color:#b4e8ff; }
+  .pop-combo { --chip:#02182e; --chip-line:#3ce0ff;
+    --fill:linear-gradient(180deg,#ffffff 0%,#b4e8ff 42%,#3ce0ff 72%,#ff5ad4 100%); }
   .pop-streak { --burst:#ff5ad4; --ink:#2a0022;
     --fill:linear-gradient(180deg,#ffffff 0%,#ffd6f6 50%,#ff5ad4 100%);
     --glow:rgba(255,90,212,.75); }
@@ -939,7 +990,6 @@
      — and no larger: half the area of the first pass, which kept covering the
      ropes on the right of the play area. Shrink --sz with it or the word grows
      out of the spikes. */
-  .pop-combo  { --sz:48px; --bw:305px; --bh:220px; }
   .pop-bonus  { --sz:58px; }
   .pop-perfect{ --sz:82px; }
   .pop-ultra  { --sz:104px; }
@@ -2023,7 +2073,7 @@
      Design reference and live catalogue: lab/overlay-comic.html
      -------------------------------------------------------------------- */
   var Pop = (function () {
-    var timers = [], seed = 0;
+    var timers = [];
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
     /* Callouts currently on screen, oldest first, and a hard cap on them. Each
@@ -2060,21 +2110,6 @@
       return { x: Layout.left + a[0] * Layout.w, y: Layout.top + a[1] * Layout.h };
     }
 
-    /* A jagged comic explosion outline, deterministic so it never flickers.
-       `inner` / `outer` are percentages of the half-box, i.e. the spikes reach
-       the edge of the decor node at 100. */
-    function burstClip(spikes, inner, outer, s) {
-      var pts = [], i, a, r, w;
-      for (i = 0; i < spikes * 2; i++) {
-        a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
-        w = Math.sin((i + s) * 12.9898) * 0.5 + 0.5;             // pseudo-random 0..1
-        r = (i % 2 ? inner : outer) * (0.86 + w * 0.28);
-        pts.push((50 + Math.cos(a) * r * 0.5).toFixed(2) + "% " +
-                 (50 + Math.sin(a) * r * 0.5).toFixed(2) + "%");
-      }
-      return "polygon(" + pts.join(",") + ")";
-    }
-
     /* Build the word. Every glyph layer is expensive to rasterize — gradient
        face clipped to the text, thick stroke, extrusion — so the word is ONE
        layer unless the style actually needs per-letter nodes: `letters` for a
@@ -2108,8 +2143,32 @@
     function decorNode(kind) {
       var d = document.createElement("div");
       d.className = "pop-d pop-d-" + kind;
-      if (kind === "burst") d.style.clipPath = burstClip(16, 58, 100, seed);
       return d;
+    }
+
+    /* Four ticks flicked diagonally off the callout's corners. Deterministic
+       and mirrored, so repeats read as the same effect; four solid bars are
+       cheaper than one masked gradient, and they stay inside the shockwave's
+       footprint so the callout never grows past its ring. */
+    var DASHES = [
+      { tx: -215, ty: -86, rd: -28, dw: 46 },
+      { tx:  215, ty: -86, rd:  28, dw: 46 },
+      { tx: -203, ty:  90, rd:  30, dw: 38 },
+      { tx:  203, ty:  90, rd: -30, dw: 38 }
+    ];
+    function addDashes(parent) {
+      var i, d, s;
+      for (i = 0; i < DASHES.length; i++) {
+        s = DASHES[i];
+        d = document.createElement("div");
+        d.className = "pop-d-dash";
+        d.style.setProperty("--tx", s.tx + "px");
+        d.style.setProperty("--ty", s.ty + "px");
+        d.style.setProperty("--rd", s.rd + "deg");
+        d.style.setProperty("--dw", s.dw + "px");
+        d.style.animationDelay = (i % 2 ? 40 : 0) + "ms";
+        parent.appendChild(d);
+      }
     }
 
     // Sparkles orbiting the word, for the celebratory styles.
@@ -2131,7 +2190,6 @@
     function show(name, opt) {
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
-      seed++;
 
       var word = opt.word != null ? opt.word : st.word;
       if (word == null) return null;
@@ -2155,11 +2213,10 @@
       anim.style.animation = "pop-in-" + st.anim + " " + enter + "ms cubic-bezier(.2,.9,.3,1) forwards";
 
       // decor behind the word
-      var i, ink, decor = st.decor || [];
+      var i, decor = st.decor || [];
       for (i = 0; i < decor.length; i++) {
         if (decor[i] === "sparks") { addSparks(anim); continue; }
-        // a burst gets an oversized ink copy behind it, for the comic outline
-        if (decor[i] === "burst") { ink = decorNode("burst"); ink.classList.add("ink"); anim.appendChild(ink); }
+        if (decor[i] === "dashes") { addDashes(anim); continue; }
         anim.appendChild(decorNode(decor[i]));
       }
 
@@ -2183,14 +2240,15 @@
       var wordEl = body.querySelector(".pop-word");
       var wordW = wordEl.offsetWidth, maxW = st.vertical ? Layout.w * 0.4 : Layout.w;
       if (wordW > maxW) { body.style.setProperty("--fit", (maxW / wordW).toFixed(3)); wordW = maxW; }
-      // The word is not the widest thing in the callout: a burst sticker is
-      // roughly half again as wide as the text it sits behind, and #ov-pops
-      // clips, so an off-centre anchor slices its outer spikes off. Fold it into
-      // the clamp. Only the burst: the soft decors (band, dots, rays, chevrons,
-      // stripes) are drawn wider than the frame ON PURPOSE and must keep
-      // bleeding off both edges.
-      var burstEl = anim.querySelector(".pop-d-burst.ink") || anim.querySelector(".pop-d-burst");
-      var half = Math.min(Math.max(wordW / 2 + 8, burstEl ? burstEl.offsetWidth / 2 : 0), view.w / 2);
+      // The word is not always the widest thing in the callout: a style may put
+      // a plate around it (`combo`) or a shockwave behind it, and #ov-pops
+      // clips, so an off-centre anchor would slice those off. Measure the body
+      // and the ring and fold them into the clamp. Only those two: the soft
+      // decors (band, dots, rays, chevrons, stripes) are drawn wider than the
+      // frame ON PURPOSE and must keep bleeding off both edges.
+      var ringEl = anim.querySelector(".pop-d-ring");
+      var bodyW = Math.min(Math.max(body.offsetWidth, wordW), Layout.w);
+      var half = Math.min(Math.max(bodyW / 2 + 8, ringEl ? ringEl.offsetWidth / 2 : 0), view.w / 2);
       pop.style.left = clamp(px, half, view.w - half) + "px";
 
       // Full-frame impact, borrowed from the layers that own it. `opt.silent`
@@ -2243,14 +2301,13 @@
       // a mistake: chain lost, wall hit. Sits where a toast would, but styled
       // like the rest of the callouts instead of looking like a leftover pill.
       alert:    { anim:"punch", enter:220, hold:320, exit:220, decor:[], at:"hudUnder", rot:-2 },
-      // a scoring milestone: sticker on a jagged burst, off to one side. It sits
-      // on the second row so the burst never buries the HUD. No `flash`: this is
-      // the one callout a good run fires over and over, and a full-screen white
-      // veil that often reads as the game hitching rather than as a reward. The
-      // shake and the burst carry the beat; `boom` and `ultra` keep the flash
-      // for the moments that really are rare.
-      combo:    { anim:"slam", enter:300, hold:520, exit:260, decor:["burst"],
-                  at:"upperRight", rot:-11, shake:6 },
+      // a scoring milestone: a compact chip with a shockwave, off to one side.
+      // This is the one callout a good run fires over and over, so it is built
+      // to cost nothing (see .pop-combo and pop-in-chip): no full-frame veil,
+      // no clip-path, and a footprint the size of its own text. `ultra` keeps
+      // the flash for the moment that really is rare.
+      combo:    { anim:"chip", enter:260, hold:520, exit:220, decor:["ring","dashes"],
+                  at:"upperRight", rot:-7, shake:4 },
       // a chain staying alive: chevrons pushing the eye sideways
       streak:   { anim:"punch", enter:300, hold:480, exit:240, decor:["chevrons"],
                   at:"left", rot:-7, shake:4 },
@@ -2264,9 +2321,6 @@
       // "you nailed it": gold, sparkles, gentle rays
       perfect:  { anim:"punch", enter:360, hold:620, exit:280, decor:["sparks"],
                   at:"upper", rot:-3, vignette:"rgba(255,190,60,.8)" },
-      // raw impact splash
-      boom:     { anim:"slam", enter:280, hold:440, exit:240, decor:["burst"],
-                  at:"right", rot:9, shake:14, flash:0.42 },
       // the hero moment: rays, chroma, maximum size
       ultra:    { anim:"zoom", enter:440, hold:640, exit:320, decor:["rays"],
                   at:"center", shake:16, flash:0.5, vignette:"rgba(120,70,255,.85)" },

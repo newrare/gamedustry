@@ -126,7 +126,7 @@ Sound.clip("chain", .85);                                // the milestone
 ```
 
 `Pop` is the comic callout layer (see [ENGINE.md](ENGINE.md) and the live
-catalogue in [`lab/overlay-comic.html`](../lab/overlay-comic.html)). Use it for
+catalogue in [`lab/overlay-pop.html`](../lab/overlay-pop.html)). Use it for
 anything that celebrates a player action — it sells harder than `Overlay.banner`
 or `Fx.text`. Retint a style from the SKIN block, never inline.
 
