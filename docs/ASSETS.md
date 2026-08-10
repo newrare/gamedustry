@@ -54,6 +54,28 @@ The recipe per event:
 Triverse is the reference: eight events (gem, mega, chain, loop, power, swipe,
 void, crash) for ~58 KB of mp3.
 
+## Icons come from `assets/lucide/`
+
+Pictograms — a bomb, a double arrow, a spark — are the one case where drawing
+by hand is worse than embedding: a Lucide glyph is a few hundred bytes of SVG
+and reads better than a path improvised in canvas. The repo keeps a curated
+slice of the pack in `assets/lucide/` (ISC licence in the folder):
+
+```bash
+ls assets/lucide                                   # browse the pack
+node tools/embed-icon.mjs bomb --key icoBomb       # encode one
+node tools/embed-icon.mjs arrow-left-right --key icoRow --stroke 2.6
+```
+
+Paste the printed line into `ASSETS.images`, then draw it through the motor's
+`Icon` helper, which tints and caches it:
+
+```js
+Icon.draw(ctx, "icoBomb", cx, cy, 26, "#2a1400");
+```
+
+Details and the reason icons are stored white: [assets/lucide/README.md](../assets/lucide/README.md).
+
 ## Embedding an asset
 
 Use the helper to convert a file into a data URI:

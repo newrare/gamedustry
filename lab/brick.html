@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Brick Lab — brick materials</title>
+<style>
+/* ===========================================================================
+   BRICK LAB — twenty-three ways a brick can look before it looks like a brick.
+
+   This is a design lab, not a shipped playable. Pick a material here, then
+   port ONLY the chosen draw function into the game (games/bouncetry, the
+   `face()` sprite factory in section 6) and rebuild the sprite cache.
+
+   Everything is drawn with the Canvas 2D API, in the motor's 720x1280 design
+   space, with the motor's rules: no shadowBlur in a per-frame path, one
+   pre-rendered sprite per look whenever the material allows it. Each card
+   says whether its material is a static SPRITE (rasterize once, blit for
+   free) or LIVE (something moves inside it, so it costs a draw per frame).
+   =========================================================================== */
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:#07060e; color:#e9e7f6; min-height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; gap:26px; padding:22px; align-items:flex-start;
+}
+
+/* --- the stage: one board, in the material currently selected ------------ */
+#stage{ position:sticky; top:22px; flex:0 0 auto; width:400px; }
+#board{
+  width:400px; height:600px; display:block; border-radius:24px;
+  background:#05040c; box-shadow:0 26px 70px rgba(0,0,0,.6);
+}
+#meta{ margin-top:16px; }
+#meta h1{ font-size:26px; font-weight:900; letter-spacing:.5px; }
+#meta p{ margin-top:6px; font-size:14px; line-height:1.5; color:#a8a5c4; }
+#tags{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.tag{
+  padding:5px 11px; border-radius:999px; font-size:11px; font-weight:800;
+  letter-spacing:1.4px; text-transform:uppercase;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#c9c6e4;
+}
+.tag.sprite{ color:#7ef9ff; border-color:rgba(126,249,255,.4); background:rgba(126,249,255,.08); }
+.tag.live{ color:#ffb44f; border-color:rgba(255,180,79,.4); background:rgba(255,180,79,.08); }
+#types{ margin-top:18px; }
+#types canvas{ width:400px; height:170px; display:block; }
+.hint{ margin-top:10px; font-size:12px; color:#6f6c8d; line-height:1.5; }
+
+/* --- the gallery -------------------------------------------------------- */
+#gallery{ flex:1 1 auto; min-width:0; }
+#gallery header{ margin-bottom:16px; }
+#gallery h2{ font-size:20px; font-weight:900; letter-spacing:.4px; }
+#gallery .sub{ margin-top:6px; font-size:13px; color:#8a87a8; line-height:1.5; max-width:720px; }
+#cards{
+  margin-top:18px; display:grid; gap:14px;
+  grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+}
+.card{
+  border:1px solid rgba(255,255,255,.1); border-radius:16px; overflow:hidden;
+  background:#0d0b1a; cursor:pointer; transition:border-color .15s ease, transform .15s ease;
+}
+.card:hover{ border-color:rgba(255,255,255,.3); transform:translateY(-2px); }
+.card.on{ border-color:#7ef9ff; box-shadow:0 0 0 1px #7ef9ff inset, 0 12px 30px rgba(126,249,255,.14); }
+.card canvas{ width:100%; height:auto; display:block; }
+.card .name{
+  padding:11px 14px 13px; display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+}
+.card .name b{ font-size:15px; font-weight:900; letter-spacing:.3px; }
+.card .name span{ font-size:10px; font-weight:800; letter-spacing:1.4px; color:#6f6c8d; text-transform:uppercase; }
+.card .name span.live{ color:#ffb44f; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="board" width="800" height="1200"></canvas>
+  <div id="meta">
+    <h1 id="m-name">—</h1>
+    <p id="m-pitch"></p>
+    <div id="tags"></div>
+  </div>
+  <div id="types"><canvas id="typesheet" width="800" height="340"></canvas></div>
+  <p class="hint">The seven brick types of Bouncetry, in the selected material.
+     A material is only shippable if its type icons stay readable at 76x42 design px.</p>
+</div>
+
+<div id="gallery">
+  <header>
+    <h2>Brick materials</h2>
+    <p class="sub">Twenty-three takes on what a brick is made of — shape, surface and light,
+      not just hue. The row colours are kept identical across every material so the five
+      score bands still read. Click a card to see it on a whole board.</p>
+  </header>
+  <div id="cards"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var TAU = Math.PI * 2;
+
+  /* ==================================================================
+     PALETTES — identical to the game, so a material can be judged on
+     material alone.
+     ================================================================== */
+  var ROWS = [
+    { light: "#c9f7ff", core: "#4bf5ff", edge: "#12a8c8" },
+    { light: "#e3d0ff", core: "#b06bff", edge: "#6a2ecf" },
+    { light: "#ffd6e8", core: "#ff5fb0", edge: "#c81e6e" },
+    { light: "#ffe6b8", core: "#ffb44f", edge: "#d17a10" },
+    { light: "#d8ffce", core: "#8bf06a", edge: "#3f9e28" }
+  ];
+  var KINDS = {
+    gold:  { light: "#fff6cf", core: "#ffd43b", edge: "#c07c00" },
+    bomb:  { light: "#ffd9a8", core: "#ff8a1a", edge: "#a33c00" },
+    row:   { light: "#c4f9ff", core: "#22d3ee", edge: "#0b6f8c" },
+    col:   { light: "#e6d4ff", core: "#a855f7", edge: "#5b21b6" },
+    plus:  { light: "#d9ffd0", core: "#4ade80", edge: "#177f3d" },
+    steel: { light: "#eef4ff", core: "#93a5c4", edge: "#3d4c6b" }
+  };
+  var TYPES = ["none", "gold", "bomb", "row", "col", "plus", "steel"];
+  var TYPE_LBL = { none: "PLAIN", gold: "GOLD", bomb: "BOMB", row: "ROW",
+                   col: "COLUMN", plus: "+1 BALL", steel: "STEEL" };
+
+  /* ==================================================================
+     SMALL HELPERS
+     ================================================================== */
+  function rr(x, px, py, w, h, r) {
+    var k = Math.min(r, w / 2, h / 2);
+    x.beginPath();
+    x.moveTo(px + k, py);
+    x.lineTo(px + w - k, py); x.quadraticCurveTo(px + w, py, px + w, py + k);
+    x.lineTo(px + w, py + h - k); x.quadraticCurveTo(px + w, py + h, px + w - k, py + h);
+    x.lineTo(px + k, py + h); x.quadraticCurveTo(px, py + h, px, py + h - k);
+    x.lineTo(px, py + k); x.quadraticCurveTo(px, py, px + k, py);
+    x.closePath();
+  }
+  function hex2rgb(h) {
+    var v = parseInt(h.slice(1), 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+  function rgba(h, a) {
+    var c = hex2rgb(h);
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+  }
+  /* k > 0 mixes toward white, k < 0 toward black. */
+  function shade(h, k) {
+    var c = hex2rgb(h), i, t = k > 0 ? 255 : 0, a = Math.abs(k);
+    for (i = 0; i < 3; i++) c[i] = Math.round(c[i] + (t - c[i]) * a);
+    return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")";
+  }
+  /* A seeded generator: speckles, cracks and grain must be identical on
+     every redraw, or the brick boils. */
+  function rnd(seed) {
+    var s = seed % 2147483647; if (s <= 0) s += 2147483646;
+    return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  }
+  function ellipse(x, cx, cy, rx, ry) {
+    x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, TAU); x.fill();
+  }
+
+  /* ------------------------------------------------------------------
+     ICONS — one pictogram per special type, so a material is judged with
+     its symbols on. `col` paints them, `w` scales the stroke.
+     ------------------------------------------------------------------ */
+  function icon(x, type, cx, cy, s, col, lw) {
+    if (!type || type === "none") return;
+    var i, a, r;
+    x.save();
+    x.strokeStyle = col; x.fillStyle = col;
+    x.lineWidth = lw || 4; x.lineCap = "round"; x.lineJoin = "round";
+    if (type === "gold") {
+      x.beginPath();
+      x.moveTo(cx, cy - s);
+      x.quadraticCurveTo(cx + s * 0.22, cy - s * 0.22, cx + s, cy);
+      x.quadraticCurveTo(cx + s * 0.22, cy + s * 0.22, cx, cy + s);
+      x.quadraticCurveTo(cx - s * 0.22, cy + s * 0.22, cx - s, cy);
+      x.quadraticCurveTo(cx - s * 0.22, cy - s * 0.22, cx, cy - s);
+      x.fill();
+    } else if (type === "bomb") {
+      x.beginPath();
+      for (i = 0; i < 16; i++) {
+        a = i * TAU / 16; r = (i % 2) ? s * 0.44 : s;
+        if (i) x.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        else   x.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+      }
+      x.closePath(); x.fill();
+      x.globalCompositeOperation = "destination-out";
+      x.beginPath(); x.arc(cx, cy, s * 0.3, 0, TAU); x.fill();
+      x.globalCompositeOperation = "source-over";
+    } else if (type === "row" || type === "col") {
+      x.save(); x.translate(cx, cy);
+      if (type === "col") x.rotate(Math.PI / 2);
+      x.beginPath(); x.moveTo(-s * 0.9, 0); x.lineTo(s * 0.9, 0); x.stroke();
+      x.beginPath(); x.moveTo(s, 0); x.lineTo(s - 10, -9); x.lineTo(s - 10, 9); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(-s, 0); x.lineTo(-s + 10, -9); x.lineTo(-s + 10, 9); x.closePath(); x.fill();
+      x.restore();
+    } else if (type === "plus") {
+      x.beginPath(); x.arc(cx - s * 0.46, cy, s * 0.44, 0, TAU); x.fill();
+      x.beginPath();
+      x.moveTo(cx + s * 0.5, cy - s * 0.5); x.lineTo(cx + s * 0.5, cy + s * 0.5);
+      x.moveTo(cx + s * 0.1, cy);           x.lineTo(cx + s * 0.9, cy);
+      x.stroke();
+    } else if (type === "steel") {
+      x.lineWidth = (lw || 4) + 1;
+      x.beginPath(); x.moveTo(cx - s * 0.62, cy); x.lineTo(cx + s * 0.62, cy); x.stroke();
+      for (i = 0; i < 4; i++) {
+        a = Math.PI / 4 + i * Math.PI / 2;
+        x.beginPath();
+        x.arc(cx + Math.cos(a) * s * 0.9, cy + Math.sin(a) * s * 0.6, 3.4, 0, TAU);
+        x.fill();
+      }
+    }
+    x.restore();
+  }
+  // The palette a type paints itself with (plain bricks keep their row band).
+  function palFor(type, row) { return type && type !== "none" ? KINDS[type] : ROWS[row % ROWS.length]; }
+
+  /* ==================================================================
+     THE MATERIALS
+     Each draw(x, w, h, p, type, t) paints ONE brick with its top-left at
+     (0,0). `p` is the palette, `type` the special (or "none"), `t` a clock
+     in seconds — only the LIVE materials read it.
+     ================================================================== */
+  var MAT = [];
+  function mat(key, name, live, pitch, draw) {
+    MAT.push({ key: key, name: name, live: live, pitch: pitch, draw: draw });
+  }
+
+  /* ---------------------------------------------------------- 01 classic */
+  mat("classic", "Classic candy plastic", false,
+      "The look shipping today: rounded plastic slab, vertical gradient, white rim and a gloss bar. Here as the reference every other material is meant to beat.",
+      function (x, w, h, p, type) {
+    var g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, p.light); g.addColorStop(0.52, p.core); g.addColorStop(1, p.edge);
+    rr(x, 1, 1, w - 2, h - 2, 10); x.fillStyle = g; x.fill();
+    x.strokeStyle = "rgba(255,255,255,.55)"; x.lineWidth = 2; x.stroke();
+    rr(x, 7, 6, w - 14, h * 0.28, 6); x.fillStyle = "rgba(255,255,255,.3)"; x.fill();
+    icon(x, type, w / 2, h / 2, h * 0.32, "rgba(255,255,255,.95)");
+  });
+
+  /* ------------------------------------------------------------ 02 glass */
+  mat("glass", "Tempered glass", false,
+      "Barely tinted, so the board reads THROUGH the wall of bricks. A hard inner bevel, one diagonal refraction band and a chipped top corner do all the work.",
+      function (x, w, h, p, type) {
+    rr(x, 1, 1, w - 2, h - 2, 12); x.fillStyle = rgba(p.core, 0.24); x.fill();
+    x.save(); rr(x, 1, 1, w - 2, h - 2, 12); x.clip();
+    var g = x.createLinearGradient(0, h, w * 0.75, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0.42, "rgba(255,255,255,.34)");
+    g.addColorStop(0.5, "rgba(255,255,255,.06)");
+    g.addColorStop(0.62, "rgba(255,255,255,.22)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = "rgba(255,255,255,.42)";                 // the chipped corner
+    x.beginPath(); x.moveTo(w - 20, 0); x.lineTo(w, 0); x.lineTo(w, 15); x.closePath(); x.fill();
+    x.restore();
+    rr(x, 3.5, 3.5, w - 7, h - 7, 10);                     // inner bevel
+    x.strokeStyle = rgba(p.light, 0.5); x.lineWidth = 3; x.stroke();
+    rr(x, 1.5, 1.5, w - 3, h - 3, 12);
+    x.strokeStyle = rgba(p.light, 0.95); x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.32, rgba(p.light, 0.95));
+  });
+
+  /* ------------------------------------------------------------ 03 slime */
+  mat("slime", "Slime blob", true,
+      "No straight edge anywhere: the silhouette sags, the bottom lip wobbles and three drops hang off it. Translucent, with one fat gloss oval on top.",
+      function (x, w, h, p, type, t) {
+    var wob = Math.sin(t * 2.1) * 2.5, wob2 = Math.sin(t * 1.4 + 1) * 2;
+    var g = x.createLinearGradient(0, 0, 0, h + 10);
+    g.addColorStop(0, rgba(p.light, 0.95)); g.addColorStop(0.55, rgba(p.core, 0.92));
+    g.addColorStop(1, rgba(p.edge, 0.95));
+    x.beginPath();
+    x.moveTo(11, 3);
+    x.lineTo(w - 11, 3);
+    x.quadraticCurveTo(w + 3, h * 0.22, w - 7, h * 0.62);
+    x.quadraticCurveTo(w - 16 + wob, h + 9, w * 0.63, h - 3);
+    x.quadraticCurveTo(w * 0.5, h + 11 + wob2, w * 0.37, h - 3);
+    x.quadraticCurveTo(13 - wob, h + 7, 7, h * 0.62);
+    x.quadraticCurveTo(-3, h * 0.22, 11, 3);
+    x.closePath();
+    x.fillStyle = g; x.fill();
+    x.strokeStyle = rgba(p.edge, 0.6); x.lineWidth = 2; x.stroke();
+    x.fillStyle = rgba(p.core, 0.9);                       // the drops
+    x.beginPath(); x.arc(w * 0.24, h + 5 + Math.sin(t * 3) * 2.5, 4.5, 0, TAU); x.fill();
+    x.beginPath(); x.arc(w * 0.78, h + 8 + Math.sin(t * 2.4 + 2) * 3, 3.5, 0, TAU); x.fill();
+    x.fillStyle = "rgba(255,255,255,.55)";                 // gloss
+    ellipse(x, w * 0.32, h * 0.3, w * 0.2, h * 0.15);
+    x.fillStyle = "rgba(255,255,255,.3)";
+    ellipse(x, w * 0.68, h * 0.26, w * 0.07, h * 0.08);
+    icon(x, type, w / 2, h * 0.56, h * 0.28, "rgba(255,255,255,.92)");
+  });
+
+  /* ------------------------------------------------------------ 04 metal */
+  mat("metal", "Brushed steel plate", false,
+      "An industrial plate: brushed streaks, a hard bevel, four rivets and a painted colour band that carries the row hue. Icons are stencilled, not drawn.",
+      function (x, w, h, p, type) {
+    var g = x.createLinearGradient(0, 0, 0, h), i, r;
+    g.addColorStop(0, "#f0f4fb"); g.addColorStop(0.16, "#c0cde2");
+    g.addColorStop(0.49, "#8a99b5"); g.addColorStop(0.52, "#6d7d9a");
+    g.addColorStop(1, "#3c4a66");
+    rr(x, 0, 0, w, h, 6); x.fillStyle = g; x.fill();
+    x.save(); rr(x, 0, 0, w, h, 6); x.clip();
+    for (i = 0; i < 22; i++) {                             // brushed grain
+      x.fillStyle = "rgba(255,255,255," + (0.015 + (i % 4) * 0.018) + ")";
+      x.fillRect(0, i * h / 22, w, 1.2);
+    }
+    x.fillStyle = rgba(p.core, 0.7);                       // the painted band
+    x.fillRect(0, h * 0.6, w, h * 0.2);
+    x.fillStyle = rgba(p.light, 0.35); x.fillRect(0, h * 0.6, w, 2);
+    x.restore();
+    rr(x, 2, 2, w - 4, h - 4, 5); x.strokeStyle = "rgba(255,255,255,.4)"; x.lineWidth = 2; x.stroke();
+    rr(x, 0.5, 0.5, w - 1, h - 1, 6); x.strokeStyle = "rgba(10,14,26,.8)"; x.lineWidth = 1.5; x.stroke();
+    for (i = 0; i < 4; i++) {                              // rivets
+      r = { x: i % 2 ? w - 9 : 9, y: i < 2 ? 9 : h - 9 };
+      x.fillStyle = "#2b3752"; x.beginPath(); x.arc(r.x, r.y, 4, 0, TAU); x.fill();
+      x.fillStyle = "rgba(255,255,255,.55)"; x.beginPath(); x.arc(r.x - 1, r.y - 1.2, 2, 0, TAU); x.fill();
+    }
+    icon(x, type, w / 2, h * 0.42, h * 0.26, "rgba(20,26,44,.85)", 4);
+  });
+
+  /* ----------------------------------------------------------- 05 mirror */
+  mat("mirror", "Mirror chrome", true,
+      "Each brick reflects a fake world: sky above, horizon, ground below, tinted by its row colour — and a glint slides across the whole wall.",
+      function (x, w, h, p, type, t) {
+    var g, gx;
+    x.save(); rr(x, 0, 0, w, h, 8); x.clip();
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#f2f6ff"); g.addColorStop(0.34, shade(p.light, 0.08));
+    g.addColorStop(0.46, "#3c486b"); g.addColorStop(0.48, p.core);
+    g.addColorStop(0.78, shade(p.edge, -0.15)); g.addColorStop(1, "#16203a");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    gx = ((t * 0.5) % 2 - 0.5) * (w * 1.6);                // the travelling glint
+    g = x.createLinearGradient(gx - 26, 0, gx + 26, h);
+    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0.5, "rgba(255,255,255,.55)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.restore();
+    rr(x, 1, 1, w - 2, h - 2, 8); x.strokeStyle = "rgba(255,255,255,.75)"; x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.3, "rgba(255,255,255,.9)");
+  });
+
+  /* ----------------------------------------------------------- 06 bubble */
+  mat("bubble", "Soap bubble", true,
+      "A pill of nothing: the fill is almost invisible and the whole read comes from an iridescent rim that shifts hue, plus one hard specular dot.",
+      function (x, w, h, p, type, t) {
+    var r = h / 2, sh = Math.sin(t * 1.3) * 0.5 + 0.5, g;
+    rr(x, 2, 2, w - 4, h - 4, r); x.fillStyle = rgba(p.core, 0.13); x.fill();
+    x.save(); rr(x, 2, 2, w - 4, h - 4, r); x.clip();      // the film swirl
+    g = x.createRadialGradient(w * 0.35, h * 0.2, 2, w * 0.5, h * 0.5, w * 0.7);
+    g.addColorStop(0, "rgba(255,255,255,.34)");
+    g.addColorStop(0.45, rgba("#7af6ff", 0.16));
+    g.addColorStop(1, rgba("#ff7ad9", 0.14));
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.restore();
+    x.strokeStyle = rgba("#ff7ad9", 0.4 + sh * 0.3); x.lineWidth = 5;
+    rr(x, 3, 3, w - 6, h - 6, r); x.stroke();
+    x.strokeStyle = rgba("#7af6ff", 0.5 + (1 - sh) * 0.3); x.lineWidth = 3.5;
+    rr(x, 4.5, 4.5, w - 9, h - 9, r - 2); x.stroke();
+    x.strokeStyle = "rgba(255,255,255,.85)"; x.lineWidth = 1.6;
+    rr(x, 2.2, 2.2, w - 4.4, h - 4.4, r); x.stroke();
+    x.fillStyle = "rgba(255,255,255,.92)";
+    ellipse(x, w * 0.26, h * 0.3, w * 0.09, h * 0.13);
+    icon(x, type, w / 2, h / 2, h * 0.28, "rgba(255,255,255,.9)", 3.4);
+  });
+
+  /* ------------------------------------------------------------ 07 cloud */
+  mat("cloud", "Cloud puff", false,
+      "Five overlapping discs and a flat bottom: no rectangle left at all. Soft, edgeless and lit from above — the wall reads as weather, not masonry.",
+      function (x, w, h, p, type) {
+    var g = x.createLinearGradient(0, -h * 0.3, 0, h);
+    g.addColorStop(0, "#ffffff"); g.addColorStop(0.55, shade(p.light, 0.35)); g.addColorStop(1, p.core);
+    x.beginPath();
+    x.arc(w * 0.21, h * 0.55, h * 0.42, 0, TAU);
+    x.arc(w * 0.41, h * 0.38, h * 0.5, 0, TAU);
+    x.arc(w * 0.63, h * 0.42, h * 0.46, 0, TAU);
+    x.arc(w * 0.82, h * 0.56, h * 0.36, 0, TAU);
+    x.rect(w * 0.15, h * 0.5, w * 0.72, h * 0.45);
+    x.fillStyle = g; x.fill();
+    x.save(); x.clip();                                    // the shaded underside
+    g = x.createLinearGradient(0, h * 0.5, 0, h);
+    g.addColorStop(0, rgba(p.core, 0)); g.addColorStop(1, rgba(p.edge, 0.5));
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = "rgba(255,255,255,.5)";
+    ellipse(x, w * 0.42, h * 0.24, w * 0.24, h * 0.13);
+    x.restore();
+    icon(x, type, w / 2, h * 0.56, h * 0.28, rgba(p.edge, 0.85));
+  });
+
+  /* ------------------------------------------------------------- 08 neon */
+  mat("neon", "Neon tube", true,
+      "Outline only: a dark core the board shows through, wrapped in four passes of glow down to a white-hot filament. The icons are bent tubes too.",
+      function (x, w, h, p, type, t) {
+    var f = 0.88 + 0.12 * Math.sin(t * 9 + w), i;
+    rr(x, 4, 4, w - 8, h - 8, 10); x.fillStyle = "rgba(6,10,26,.5)"; x.fill();
+    for (i = 3; i >= 1; i--) {
+      rr(x, 4, 4, w - 8, h - 8, 10);
+      x.strokeStyle = rgba(p.core, 0.14 * i * f); x.lineWidth = 3 + i * 5; x.stroke();
+    }
+    rr(x, 4, 4, w - 8, h - 8, 10);
+    x.strokeStyle = rgba(p.light, 0.9 * f); x.lineWidth = 4; x.stroke();
+    rr(x, 4, 4, w - 8, h - 8, 10);
+    x.strokeStyle = "rgba(255,255,255," + (0.92 * f) + ")"; x.lineWidth = 1.8; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, rgba(p.core, 0.55 * f), 9);
+    icon(x, type, w / 2, h / 2, h * 0.28, "rgba(255,255,255," + (0.95 * f) + ")", 3);
+  });
+
+  /* ---------------------------------------------------------- 09 crystal */
+  mat("crystal", "Cut crystal", false,
+      "An eight-sided gem: hard facets, no gradient inside a facet. Light comes from one corner, so the whole wall shares a single cut.",
+      function (x, w, h, p, type) {
+    var m = w * 0.09, mid = h * 0.44;
+    function body() {
+      x.beginPath();
+      x.moveTo(m, 0); x.lineTo(w - m, 0); x.lineTo(w, mid); x.lineTo(w - m * 1.5, h);
+      x.lineTo(m * 1.5, h); x.lineTo(0, mid); x.closePath();
+    }
+    body(); x.fillStyle = p.core; x.fill();
+    x.beginPath();                                          // top-left facet
+    x.moveTo(m, 0); x.lineTo(w * 0.5, mid * 0.75); x.lineTo(0, mid); x.closePath();
+    x.fillStyle = shade(p.light, 0.25); x.fill();
+    x.beginPath();                                          // top-right facet
+    x.moveTo(w - m, 0); x.lineTo(w, mid); x.lineTo(w * 0.5, mid * 0.75); x.closePath();
+    x.fillStyle = p.light; x.fill();
+    x.beginPath();                                          // bottom facet
+    x.moveTo(0, mid); x.lineTo(w * 0.5, mid * 0.75); x.lineTo(w, mid);
+    x.lineTo(w - m * 1.5, h); x.lineTo(m * 1.5, h); x.closePath();
+    x.fillStyle = shade(p.edge, 0.08); x.fill();
+    x.beginPath();                                          // the glare
+    x.moveTo(m + 4, 3); x.lineTo(w * 0.4, 3); x.lineTo(w * 0.22, mid * 0.7); x.closePath();
+    x.fillStyle = "rgba(255,255,255,.55)"; x.fill();
+    body(); x.strokeStyle = rgba(p.light, 0.85); x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h * 0.55, h * 0.26, "rgba(255,255,255,.9)");
+  });
+
+  /* ------------------------------------------------------------- 10 wood */
+  mat("wood", "Crate plank", false,
+      "Two planks, an end batten and four nails. The row colour comes back as a painted wash on the wood, so the bands read without killing the grain.",
+      function (x, w, h, p, type) {
+    var g = x.createLinearGradient(0, 0, 0, h), R = rnd(7), i, y;
+    g.addColorStop(0, "#a9743f"); g.addColorStop(0.5, "#8b5a2b"); g.addColorStop(1, "#6b421d");
+    rr(x, 0, 0, w, h, 4); x.fillStyle = g; x.fill();
+    x.save(); rr(x, 0, 0, w, h, 4); x.clip();
+    x.fillStyle = rgba(p.core, 0.34); x.fillRect(0, 0, w, h);   // the paint wash
+    x.strokeStyle = "rgba(60,34,12,.45)"; x.lineWidth = 1.4;    // the grain
+    for (i = 0; i < 7; i++) {
+      y = 4 + R() * (h - 8);
+      x.beginPath(); x.moveTo(0, y);
+      x.bezierCurveTo(w * 0.3, y + (R() - 0.5) * 5, w * 0.7, y + (R() - 0.5) * 5, w, y);
+      x.stroke();
+    }
+    x.fillStyle = "rgba(50,28,10,.55)"; x.fillRect(0, h * 0.5 - 1, w, 2.5);  // the joint
+    x.fillStyle = "rgba(255,255,255,.14)"; x.fillRect(0, h * 0.5 + 1.5, w, 1.2);
+    x.fillStyle = "rgba(40,22,8,.35)";                                        // battens
+    x.fillRect(0, 0, 8, h); x.fillRect(w - 8, 0, 8, h);
+    x.restore();
+    for (i = 0; i < 4; i++) {                                                 // nails
+      x.fillStyle = "#2f2a26";
+      x.beginPath(); x.arc(i % 2 ? w - 5 : 5, i < 2 ? 7 : h - 7, 2.6, 0, TAU); x.fill();
+    }
+    rr(x, 0.5, 0.5, w - 1, h - 1, 4); x.strokeStyle = "rgba(38,20,6,.7)"; x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, "rgba(255,244,224,.9)");
+  });
+
+  /* ------------------------------------------------------------ 11 gummy */
+  mat("gummy", "Gummy candy", false,
+      "Fat, squishy and sugar-coated: a thick translucent body, a bright inner core floating inside it and a crust of sugar grains around the rim.",
+      function (x, w, h, p, type) {
+    var g = x.createLinearGradient(0, 0, 0, h), R = rnd(21), i, a, rx, ry;
+    g.addColorStop(0, rgba(p.light, 0.95)); g.addColorStop(0.5, rgba(p.core, 0.85));
+    g.addColorStop(1, rgba(p.edge, 0.9));
+    rr(x, 2, 2, w - 4, h - 4, 15); x.fillStyle = g; x.fill();
+    x.save(); rr(x, 2, 2, w - 4, h - 4, 15); x.clip();
+    x.fillStyle = rgba(p.light, 0.45);                     // the inner core
+    ellipse(x, w * 0.5, h * 0.55, w * 0.33, h * 0.26);
+    x.fillStyle = "rgba(255,255,255,.5)";                  // the gloss
+    rr(x, 9, 5, w - 18, h * 0.3, 9); x.fill();
+    x.restore();
+    for (i = 0; i < 46; i++) {                             // sugar
+      a = R() * TAU; rx = w / 2 + Math.cos(a) * (w / 2 - 3.5); ry = h / 2 + Math.sin(a) * (h / 2 - 3.5);
+      x.fillStyle = "rgba(255,255,255," + (0.25 + R() * 0.5) + ")";
+      x.beginPath(); x.arc(rx, ry, 0.9 + R() * 1.5, 0, TAU); x.fill();
+    }
+    icon(x, type, w / 2, h * 0.55, h * 0.27, "rgba(255,255,255,.95)");
+  });
+
+  /* ---------------------------------------------------------- 12 circuit */
+  mat("circuit", "Circuit board", true,
+      "A powered-down PCB: dark substrate, etched traces, solder pads, and a scanline that sweeps the whole wall to say the board is live.",
+      function (x, w, h, p, type, t) {
+    var i, y;
+    rr(x, 0, 0, w, h, 5); x.fillStyle = "#0a1a1e"; x.fill();
+    x.save(); rr(x, 0, 0, w, h, 5); x.clip();
+    x.strokeStyle = rgba(p.core, 0.7); x.lineWidth = 2; x.lineJoin = "miter";
+    x.beginPath();                                          // the traces
+    x.moveTo(-2, h * 0.28); x.lineTo(w * 0.28, h * 0.28); x.lineTo(w * 0.38, h * 0.5);
+    x.lineTo(w * 0.72, h * 0.5); x.lineTo(w * 0.82, h * 0.24); x.lineTo(w + 2, h * 0.24);
+    x.moveTo(-2, h * 0.74); x.lineTo(w * 0.34, h * 0.74); x.lineTo(w * 0.46, h * 0.9);
+    x.lineTo(w + 2, h * 0.9);
+    x.stroke();
+    x.fillStyle = rgba(p.light, 0.9);                       // the pads
+    x.fillRect(w * 0.26, h * 0.24, 8, 8);
+    x.fillRect(w * 0.7, h * 0.46, 8, 8);
+    x.fillRect(w * 0.32, h * 0.7, 8, 8);
+    y = ((t * 0.45) % 1) * h;                               // the scanline
+    var g = x.createLinearGradient(0, y - 12, 0, y + 12);
+    g.addColorStop(0, rgba(p.core, 0)); g.addColorStop(0.5, rgba(p.light, 0.4));
+    g.addColorStop(1, rgba(p.core, 0));
+    x.fillStyle = g; x.fillRect(0, y - 12, w, 24);
+    x.restore();
+    rr(x, 1, 1, w - 2, h - 2, 5); x.strokeStyle = rgba(p.core, 0.9); x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, rgba(p.light, 0.95), 3.4);
+  });
+
+  /* ------------------------------------------------------------- 13 rune */
+  mat("rune", "Carved rune stone", false,
+      "Chiselled rock with a jagged silhouette, speckled and worn — and the type icon cut INTO it, a dark groove with light pooling in the bottom.",
+      function (x, w, h, p, type) {
+    var R = rnd(33), i, g;
+    x.beginPath();                                          // a slab, never square
+    x.moveTo(3 + R() * 3, 2 + R() * 3);
+    x.lineTo(w * 0.5, R() * 3); x.lineTo(w - 3 - R() * 3, 2 + R() * 4);
+    x.lineTo(w - R() * 3, h * 0.5); x.lineTo(w - 4 - R() * 3, h - 2 - R() * 3);
+    x.lineTo(w * 0.45, h - R() * 3); x.lineTo(4 + R() * 3, h - 3 - R() * 3);
+    x.lineTo(R() * 3, h * 0.45);
+    x.closePath();
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#7c8496"); g.addColorStop(0.5, "#59606f"); g.addColorStop(1, "#3a404c");
+    x.fillStyle = g; x.fill();
+    x.save(); x.clip();
+    for (i = 0; i < 70; i++) {                              // speckle
+      x.fillStyle = R() > 0.5 ? "rgba(255,255,255,.16)" : "rgba(0,0,0,.22)";
+      x.beginPath(); x.arc(R() * w, R() * h, 0.6 + R() * 1.6, 0, TAU); x.fill();
+    }
+    x.fillStyle = rgba(p.core, 0.42); x.fillRect(0, 0, w, h);  // the moss of its band
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "rgba(255,255,255,.18)"); g.addColorStop(1, "rgba(0,0,0,.3)");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.restore();
+    x.strokeStyle = "rgba(255,255,255,.22)"; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(6, 4); x.lineTo(w - 8, 3); x.stroke();
+    if (type && type !== "none") {                          // the carving
+      icon(x, type, w / 2 + 1.5, h / 2 + 1.5, h * 0.28, "rgba(0,0,0,.55)");
+      icon(x, type, w / 2, h / 2, h * 0.28, rgba(p.light, 0.95));
+    }
+  });
+
+  /* -------------------------------------------------------------- 14 ice */
+  mat("ice", "Frozen block", false,
+      "A block of ice: milky, cold-tinted, cracked from the inside, with frost creeping in from the corners. Reads as fragile before it is ever hit.",
+      function (x, w, h, p, type) {
+    var R = rnd(11), i, j, cx, cy, g;
+    rr(x, 1, 1, w - 2, h - 2, 6); x.fillStyle = rgba(p.core, 0.55); x.fill();
+    x.save(); rr(x, 1, 1, w - 2, h - 2, 6); x.clip();
+    g = x.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, "rgba(255,255,255,.62)"); g.addColorStop(0.5, "rgba(223,246,255,.12)");
+    g.addColorStop(1, "rgba(255,255,255,.34)");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.strokeStyle = "rgba(255,255,255,.75)"; x.lineWidth = 1.6;   // the cracks
+    for (i = 0; i < 4; i++) {
+      cx = R() * w; cy = R() * h;
+      x.beginPath(); x.moveTo(cx, cy);
+      for (j = 0; j < 3; j++) { cx += (R() - 0.5) * w * 0.45; cy += (R() - 0.5) * h * 0.7; x.lineTo(cx, cy); }
+      x.stroke();
+    }
+    x.fillStyle = "rgba(255,255,255,.5)";                         // frost in the corners
+    for (i = 0; i < 4; i++) {
+      ellipse(x, i % 2 ? w : 0, i < 2 ? 0 : h, w * 0.22, h * 0.4);
+    }
+    x.restore();
+    rr(x, 1.5, 1.5, w - 3, h - 3, 6); x.strokeStyle = "rgba(255,255,255,.9)"; x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.3, rgba(p.edge, 0.9));
+  });
+
+  /* ------------------------------------------------------------ 15 magma */
+  mat("magma", "Cooled magma", true,
+      "Black basalt crust with molten cracks breathing underneath — the row colour is what glows in the fissures. Made for a board hung over lava.",
+      function (x, w, h, p, type, t) {
+    var R = rnd(41), i, j, cx, cy, pts, pulse = 0.55 + 0.45 * Math.sin(t * 2 + w * 0.1), g;
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#3a2a2c"); g.addColorStop(0.5, "#221718"); g.addColorStop(1, "#120c0d");
+    rr(x, 0, 0, w, h, 7); x.fillStyle = g; x.fill();
+    x.save(); rr(x, 0, 0, w, h, 7); x.clip();
+    for (i = 0; i < 3; i++) {                               // the fissures
+      cx = R() * w * 0.3; cy = R() * h; pts = [[cx, cy]];
+      for (j = 0; j < 4; j++) { cx += w * 0.24 + (R() - 0.5) * 10; cy += (R() - 0.5) * h * 0.6; pts.push([cx, cy]); }
+      x.lineCap = "round"; x.lineJoin = "round";
+      x.strokeStyle = rgba(p.edge, 0.55 * pulse); x.lineWidth = 9;
+      strokePts(x, pts);
+      x.strokeStyle = rgba(p.core, 0.85 * pulse); x.lineWidth = 4;
+      strokePts(x, pts);
+      x.strokeStyle = rgba(p.light, 0.95 * pulse); x.lineWidth = 1.6;
+      strokePts(x, pts);
+    }
+    for (i = 0; i < 40; i++) {                              // the porous crust
+      x.fillStyle = "rgba(0,0,0,.35)";
+      x.beginPath(); x.arc(R() * w, R() * h, 0.8 + R() * 1.8, 0, TAU); x.fill();
+    }
+    x.restore();
+    rr(x, 0.5, 0.5, w - 1, h - 1, 7); x.strokeStyle = "rgba(255,255,255,.12)"; x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, rgba(p.light, 0.85 * pulse + 0.15));
+  });
+  function strokePts(x, pts) {
+    var i;
+    x.beginPath(); x.moveTo(pts[0][0], pts[0][1]);
+    for (i = 1; i < pts.length; i++) x.lineTo(pts[i][0], pts[i][1]);
+    x.stroke();
+  }
+
+  /* --------------------------------------------------------- 16 origami */
+  mat("origami", "Folded paper", false,
+      "Flat colour, no gradient, no gloss: a sheet folded once across the diagonal and dog-eared at the corner. The only depth is the fold's own shadow.",
+      function (x, w, h, p, type) {
+    x.beginPath(); x.moveTo(0, 0); x.lineTo(w, 0); x.lineTo(w, h); x.lineTo(0, h); x.closePath();
+    x.fillStyle = p.light; x.fill();
+    x.beginPath(); x.moveTo(0, 0); x.lineTo(w, 0); x.lineTo(0, h); x.closePath();
+    x.fillStyle = p.core; x.fill();
+    x.strokeStyle = "rgba(255,255,255,.7)"; x.lineWidth = 1.4;     // the crease
+    x.beginPath(); x.moveTo(w, 0); x.lineTo(0, h); x.stroke();
+    x.beginPath();                                                  // the dog-ear
+    x.moveTo(w - 20, h); x.lineTo(w, h - 20); x.lineTo(w, h); x.closePath();
+    x.fillStyle = shade(p.edge, -0.15); x.fill();
+    x.beginPath(); x.moveTo(w - 20, h); x.lineTo(w, h - 20); x.stroke();
+    x.strokeStyle = rgba(p.edge, 0.8); x.lineWidth = 2;
+    x.strokeRect(1, 1, w - 2, h - 2);
+    icon(x, type, w * 0.46, h * 0.52, h * 0.26, "rgba(255,255,255,.95)");
+  });
+
+  /* --------------------------------------------------------- 17 honeycomb */
+  mat("honeycomb", "Honeycomb cell", true,
+      "A hexagon, not a rectangle: a thick wax rim around a translucent cell full of honey, with a drop about to fall off the bottom edge.",
+      function (x, w, h, p, type, t) {
+    var m = h * 0.5, g;
+    function cell(inset) {
+      var i = inset || 0;
+      x.beginPath();
+      x.moveTo(m + i, i); x.lineTo(w - m - i, i); x.lineTo(w - i, h / 2);
+      x.lineTo(w - m - i, h - i); x.lineTo(m + i, h - i); x.lineTo(i, h / 2);
+      x.closePath();
+    }
+    cell(0);
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#ffd76a"); g.addColorStop(0.5, "#f0a91f"); g.addColorStop(1, "#a96806");
+    x.fillStyle = g; x.fill();
+    cell(6);
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, rgba(p.light, 0.9)); g.addColorStop(1, rgba(p.core, 0.75));
+    x.fillStyle = g; x.fill();
+    x.strokeStyle = "rgba(255,255,255,.5)"; x.lineWidth = 2; cell(6); x.stroke();
+    x.fillStyle = "rgba(255,255,255,.4)";
+    x.beginPath(); x.moveTo(m + 8, 8); x.lineTo(w * 0.55, 8); x.lineTo(w * 0.4, h * 0.36); x.closePath(); x.fill();
+    x.fillStyle = "#f0a91f";                                       // the honey drop
+    x.beginPath(); x.arc(w * 0.5, h + 4 + Math.sin(t * 2.2) * 3, 4.5, 0, TAU); x.fill();
+    icon(x, type, w / 2, h / 2, h * 0.26, "rgba(80,42,0,.85)", 4);
+  });
+
+  /* ------------------------------------------------------------ 18 pixel */
+  mat("pixel", "8-bit pixels", false,
+      "Sharp corners, four tones, a checker dither on the shading edge and a hard black outline: the whole board becomes a sprite sheet from 1989.",
+      function (x, w, h, p, type) {
+    var cols = 10, rows = 5, cw = w / cols, ch = h / rows, i, j, tone;
+    for (j = 0; j < rows; j++) for (i = 0; i < cols; i++) {
+      if (j === 0) tone = p.light;
+      else if (j === 1) tone = p.core;
+      else if (j === 2) tone = ((i + j) % 2) ? p.core : p.edge;    // the dither
+      else tone = p.edge;
+      if ((i === 0 || i === cols - 1) && (j === 0 || j === rows - 1)) continue;
+      x.fillStyle = tone;
+      x.fillRect(Math.floor(i * cw), Math.floor(j * ch), Math.ceil(cw), Math.ceil(ch));
+    }
+    x.fillStyle = "rgba(255,255,255,.85)";                          // the specular pixel
+    x.fillRect(Math.floor(cw), Math.floor(ch * 0.15), Math.ceil(cw * 1.6), Math.ceil(ch * 0.7));
+    x.strokeStyle = "#0b0a14"; x.lineWidth = 3;
+    x.beginPath();
+    x.moveTo(cw, 1.5); x.lineTo(w - cw, 1.5); x.lineTo(w - 1.5, ch);
+    x.lineTo(w - 1.5, h - ch); x.lineTo(w - cw, h - 1.5); x.lineTo(cw, h - 1.5);
+    x.lineTo(1.5, h - ch); x.lineTo(1.5, ch); x.closePath(); x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, "#0b0a14", 5);
+  });
+
+  /* ------------------------------------------------------------ 19 plush */
+  mat("plush", "Stitched plush", false,
+      "A little cushion: soft body, a fuzz of fibres escaping the outline, a dashed seam running around it and two thread dimples pulling the middle in.",
+      function (x, w, h, p, type) {
+    var R = rnd(5), i, a, rx, ry, g;
+    for (i = 0; i < 90; i++) {                                      // the fuzz
+      a = R() * TAU;
+      rx = w / 2 + Math.cos(a) * (w / 2 - 4 + R() * 5);
+      ry = h / 2 + Math.sin(a) * (h / 2 - 4 + R() * 5);
+      x.strokeStyle = rgba(p.light, 0.25 + R() * 0.3); x.lineWidth = 1.2;
+      x.beginPath(); x.moveTo(w / 2 + Math.cos(a) * (w / 2 - 6), h / 2 + Math.sin(a) * (h / 2 - 6));
+      x.lineTo(rx, ry); x.stroke();
+    }
+    g = x.createRadialGradient(w * 0.4, h * 0.32, 3, w * 0.5, h * 0.5, w * 0.6);
+    g.addColorStop(0, shade(p.light, 0.25)); g.addColorStop(0.6, p.core); g.addColorStop(1, p.edge);
+    rr(x, 3, 3, w - 6, h - 6, 17); x.fillStyle = g; x.fill();
+    x.save();
+    x.setLineDash([7, 6]); x.strokeStyle = "rgba(255,255,255,.75)"; x.lineWidth = 2;
+    rr(x, 9, 8, w - 18, h - 16, 12); x.stroke();
+    x.restore();
+    x.fillStyle = rgba(p.edge, 0.55);                               // the dimples
+    ellipse(x, w * 0.3, h * 0.62, 3.5, 2.4);
+    ellipse(x, w * 0.7, h * 0.62, 3.5, 2.4);
+    icon(x, type, w / 2, h * 0.45, h * 0.24, "rgba(255,255,255,.9)");
+  });
+
+  /* --------------------------------------------------------- 20 balloon */
+  mat("balloon", "Inflated balloon", false,
+      "Over-inflated latex: a bulging capsule, a long specular streak, a rubber knot pinched at the bottom. Every brick looks one hit from popping.",
+      function (x, w, h, p, type) {
+    var g = x.createRadialGradient(w * 0.34, h * 0.26, 2, w * 0.5, h * 0.55, w * 0.62);
+    g.addColorStop(0, shade(p.light, 0.3)); g.addColorStop(0.45, p.core); g.addColorStop(1, p.edge);
+    x.beginPath();
+    x.moveTo(w * 0.5, h);                                            // the knot
+    x.lineTo(w * 0.44, h + 7); x.lineTo(w * 0.56, h + 7); x.closePath();
+    x.fillStyle = p.edge; x.fill();
+    rr(x, 0, 0, w, h, h / 2); x.fillStyle = g; x.fill();
+    x.fillStyle = "rgba(255,255,255,.7)";                            // the streak
+    x.save(); x.translate(w * 0.26, h * 0.34); x.rotate(-0.5);
+    rr(x, -3, -h * 0.2, 7, h * 0.4, 4); x.fill();
+    x.restore();
+    x.fillStyle = "rgba(255,255,255,.5)";
+    ellipse(x, w * 0.36, h * 0.28, w * 0.05, h * 0.07);
+    rr(x, 1, 1, w - 2, h - 2, h / 2);                                // the taut rim
+    x.strokeStyle = rgba(p.light, 0.5); x.lineWidth = 1.6; x.stroke();
+    icon(x, type, w * 0.58, h * 0.55, h * 0.26, "rgba(255,255,255,.92)");
+  });
+
+  /* ---------------------------------------------------------- 21 potion */
+  mat("potion", "Potion vial", true,
+      "Each brick is a sealed glass tube holding coloured fluid: the surface tilts as the board shakes and bubbles climb through it. Half full, half air.",
+      function (x, w, h, p, type, t) {
+    var lvl = h * 0.34 + Math.sin(t * 1.6 + w * 0.05) * 3, i, bx, by, g;
+    rr(x, 2, 2, w - 4, h - 4, 12); x.fillStyle = "rgba(255,255,255,.07)"; x.fill();
+    x.save(); rr(x, 3, 3, w - 6, h - 6, 11); x.clip();
+    g = x.createLinearGradient(0, lvl, 0, h);
+    g.addColorStop(0, rgba(p.light, 0.95)); g.addColorStop(0.35, rgba(p.core, 0.9));
+    g.addColorStop(1, rgba(p.edge, 0.95));
+    x.fillStyle = g;
+    x.beginPath();
+    x.moveTo(0, lvl + 3); x.quadraticCurveTo(w * 0.5, lvl - 5, w, lvl + 3);
+    x.lineTo(w, h); x.lineTo(0, h); x.closePath(); x.fill();
+    x.strokeStyle = "rgba(255,255,255,.75)"; x.lineWidth = 2;        // the meniscus
+    x.beginPath(); x.moveTo(0, lvl + 3); x.quadraticCurveTo(w * 0.5, lvl - 5, w, lvl + 3); x.stroke();
+    for (i = 0; i < 3; i++) {                                        // the bubbles
+      bx = w * (0.24 + i * 0.26);
+      by = h - ((t * (24 + i * 9) + i * 30) % (h - lvl - 6));
+      x.fillStyle = "rgba(255,255,255,.6)";
+      x.beginPath(); x.arc(bx, by, 2 + i * 0.7, 0, TAU); x.fill();
+    }
+    x.fillStyle = "rgba(255,255,255,.35)"; x.fillRect(w * 0.12, 4, 4, h - 8);   // the glass
+    x.restore();
+    rr(x, 2, 2, w - 4, h - 4, 12); x.strokeStyle = "rgba(255,255,255,.7)"; x.lineWidth = 2; x.stroke();
+    x.fillStyle = "rgba(255,255,255,.25)"; rr(x, w * 0.3, 0, w * 0.4, 6, 3); x.fill();  // the cap
+    icon(x, type, w / 2, h * 0.62, h * 0.24, "rgba(255,255,255,.95)", 3.4);
+  });
+
+  /* ------------------------------------------------------------ 22 holo */
+  mat("holo", "Holographic foil", true,
+      "A foil trading card: a rainbow sheen sweeps across the wall at an angle, and the row colour survives underneath it as the card stock.",
+      function (x, w, h, p, type, t) {
+    var g, k = (t * 0.25) % 1, i, off;
+    rr(x, 1, 1, w - 2, h - 2, 7); x.fillStyle = shade(p.edge, -0.25); x.fill();
+    x.save(); rr(x, 2, 2, w - 4, h - 4, 6); x.clip();
+    g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, p.light); g.addColorStop(0.55, p.core); g.addColorStop(1, p.edge);
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    // the sheen: five hue bands riding a diagonal, wrapped so it never ends
+    g = x.createLinearGradient(-w * 0.4 + k * w * 2.4, 0, w * 0.5 + k * w * 2.4, h);
+    g.addColorStop(0, "rgba(255,255,255,0)");
+    g.addColorStop(0.2, rgba("#ff5fb0", 0.26));
+    g.addColorStop(0.4, rgba("#ffd43b", 0.26));
+    g.addColorStop(0.55, rgba("#8bf06a", 0.26));
+    g.addColorStop(0.72, rgba("#4bf5ff", 0.3));
+    g.addColorStop(0.88, rgba("#b06bff", 0.26));
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    for (i = 0; i < 6; i++) {                              // the foil's ribbing
+      off = (i + 1) * h / 7;
+      x.fillStyle = "rgba(255,255,255,.07)";
+      x.fillRect(0, off, w, 1.5);
+    }
+    x.restore();
+    rr(x, 1.5, 1.5, w - 3, h - 3, 7);
+    x.strokeStyle = "rgba(255,255,255,.8)"; x.lineWidth = 2; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, "rgba(255,255,255,.95)");
+  });
+
+  /* ----------------------------------------------------------- 23 wicker */
+  mat("wicker", "Woven wicker", false,
+      "Strips of cane crossing over and under: the brick is a weave, so the wall reads as basketwork and every hit should snap a strand.",
+      function (x, w, h, p, type) {
+    var i, j, sw = w / 5, sh = h / 3, g;
+    rr(x, 0, 0, w, h, 5); x.fillStyle = shade(p.edge, -0.35); x.fill();
+    x.save(); rr(x, 0, 0, w, h, 5); x.clip();
+    for (j = 0; j < 3; j++) for (i = 0; i < 5; i++) {
+      // over-under: the parity decides which strip is on top of the cross
+      g = x.createLinearGradient(0, j * sh, 0, (j + 1) * sh);
+      g.addColorStop(0, shade(p.light, 0.1)); g.addColorStop(1, p.core);
+      x.fillStyle = ((i + j) % 2) ? g : shade(p.core, -0.18);
+      if ((i + j) % 2) rr(x, i * sw + 1, j * sh + 2, sw - 2, sh - 4, 4);
+      else             rr(x, i * sw + 2, j * sh + 1, sw - 4, sh - 2, 4);
+      x.fill();
+      x.strokeStyle = "rgba(0,0,0,.3)"; x.lineWidth = 1.2; x.stroke();
+    }
+    x.fillStyle = "rgba(0,0,0,.22)"; x.fillRect(0, h - 4, w, 4);
+    x.restore();
+    rr(x, 0.5, 0.5, w - 1, h - 1, 5);
+    x.strokeStyle = shade(p.edge, -0.2); x.lineWidth = 2.5; x.stroke();
+    icon(x, type, w / 2, h / 2, h * 0.28, "rgba(255,255,255,.95)");
+  });
+
+  /* ==================================================================
+     RENDERING — every canvas is backed at 2x, authored at 1x.
+     ================================================================== */
+  function ctxOf(cv) {
+    var x = cv.getContext("2d");
+    x.setTransform(2, 0, 0, 2, 0, 0);
+    return x;
+  }
+  function brick(x, m, px, py, w, h, p, type, t) {
+    x.save(); x.translate(px, py);
+    m.draw(x, w, h, p, type, t || 0);
+    x.restore();
+  }
+
+  /* ---- the board: the material on a real Bouncetry layout -------------- */
+  // One of the shipped blueprints, so the tiling is judged on the real thing.
+  var PLAN = [
+    ".######.",
+    ".##R###.",
+    "........",
+    ".######.",
+    ".#....#.",
+    ".#.SS.#.",
+    ".#G..B#.",
+    ".#C..C#.",
+    ".###.##.",
+    "..#..#..",
+    ".#.PP.#."
+  ];
+  var CH2TYPE = { "#": "none", "S": "steel", "G": "gold", "B": "bomb",
+                  "R": "row", "C": "col", "P": "plus" };
+  var boardCv = document.getElementById("board"), boardX = ctxOf(boardCv);
+  var typeCv = document.getElementById("typesheet"), typeX = ctxOf(typeCv);
+  var W = 400, H = 600;                       // the stage, in CSS px
+
+  function drawBoard(m, t) {
+    var cols = 8, cw = (W - 40) / cols, ch = 26, pad = 2.5;
+    var x0 = 20, y0 = 44, r, c, type, g;
+    var floor = y0 + PLAN.length * ch + 150;
+
+    g = boardX.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#1b246c"); g.addColorStop(0.42, "#131a4c");
+    g.addColorStop(0.78, "#0c1136"); g.addColorStop(1, "#1a0d24");
+    boardX.fillStyle = g; boardX.fillRect(0, 0, W, H);
+
+    for (r = 0; r < PLAN.length; r++) for (c = 0; c < cols; c++) {
+      type = CH2TYPE[PLAN[r].charAt(c)];
+      if (!type) continue;
+      brick(boardX, m, x0 + c * cw + pad, y0 + r * ch + pad,
+            cw - pad * 2, ch - pad * 2, palFor(type, (r / 2) | 0), type, t);
+    }
+    // the lava, so the material is judged against the light it sits over
+    g = boardX.createLinearGradient(0, floor, 0, H);
+    g.addColorStop(0, "#ffd36b"); g.addColorStop(0.16, "#ff8a1a");
+    g.addColorStop(0.55, "#e03400"); g.addColorStop(1, "#540900");
+    boardX.fillStyle = g; boardX.fillRect(0, floor, W, H - floor);
+    boardX.fillStyle = "rgba(255,106,0,.1)"; boardX.fillRect(0, floor - 40, W, 40);
+  }
+
+  /* ---- the type sheet: the seven bricks, big ---------------------------- */
+  function drawTypes(m, t) {
+    var i, bw = 108, bh = 56, gap = 14, perRow = 3;
+    var col, row, px, py;
+    typeX.clearRect(0, 0, 400, 170);
+    for (i = 0; i < TYPES.length; i++) {
+      col = i % perRow; row = (i / perRow) | 0;
+      px = 14 + col * (bw + gap); py = 10 + row * (bh + 30);
+      brick(typeX, m, px, py, bw, bh, palFor(TYPES[i], i), TYPES[i], t);
+      typeX.fillStyle = "#6f6c8d";
+      typeX.font = "800 10px -apple-system,Segoe UI,Roboto,sans-serif";
+      typeX.textAlign = "center";
+      typeX.fillText(TYPE_LBL[TYPES[i]], px + bw / 2, py + bh + 16);
+    }
+  }
+
+  /* ---- the gallery cards ------------------------------------------------ */
+  var cards = document.getElementById("cards"), nodes = [], current = 0;
+
+  function drawCard(x, m) {
+    var bw = 88, bh = 44, i, g;
+    g = x.createLinearGradient(0, 0, 0, 130);
+    g.addColorStop(0, "#151b46"); g.addColorStop(1, "#0b0d24");
+    x.fillStyle = g; x.fillRect(0, 0, 300, 130);
+    for (i = 0; i < 3; i++) brick(x, m, 12 + i * (bw + 6), 14, bw, bh, ROWS[i], "none", 0.6);
+    brick(x, m, 12, 72, bw, bh, KINDS.gold, "gold", 0.6);
+    brick(x, m, 12 + bw + 6, 72, bw, bh, KINDS.bomb, "bomb", 0.6);
+    brick(x, m, 12 + (bw + 6) * 2, 72, bw, bh, KINDS.row, "row", 0.6);
+  }
+
+  MAT.forEach(function (m, i) {
+    var card = document.createElement("div");
+    card.className = "card";
+    var cv = document.createElement("canvas");
+    cv.width = 600; cv.height = 260; cv.style.aspectRatio = "300 / 130";
+    card.appendChild(cv);
+    var name = document.createElement("div");
+    name.className = "name";
+    name.innerHTML = "<b></b><span class=\"" + (m.live ? "live" : "") + "\"></span>";
+    name.querySelector("b").textContent = (i + 1) + ". " + m.name;
+    name.querySelector("span").textContent = m.live ? "live" : "sprite";
+    card.appendChild(name);
+    card.onclick = function () { select(i); };
+    cards.appendChild(card);
+    nodes.push(card);
+    drawCard(ctxOf(cv), m);
+  });
+
+  function select(i) {
+    current = i;
+    nodes.forEach(function (n, j) { n.classList.toggle("on", j === i); });
+    var m = MAT[i];
+    document.getElementById("m-name").textContent = m.name;
+    document.getElementById("m-pitch").textContent = m.pitch;
+    var tags = document.getElementById("tags");
+    tags.innerHTML = "";
+    [[m.live ? "live — one draw per frame" : "sprite — rasterize once", m.live ? "live" : "sprite"],
+     ["no shadowBlur", ""], ["720x1280 design px", ""]].forEach(function (t) {
+      var e = document.createElement("span");
+      e.className = "tag " + t[1]; e.textContent = t[0];
+      tags.appendChild(e);
+    });
+  }
+
+  var t0 = Date.now();
+  function frame() {
+    var t = (Date.now() - t0) / 1000;
+    drawBoard(MAT[current], t);
+    drawTypes(MAT[current], t);
+    requestAnimationFrame(frame);
+  }
+  select(0);
+  frame();
+})();
+</script>
+</body>
+</html>

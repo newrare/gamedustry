@@ -1596,6 +1596,43 @@
     });
   }
 
+  /* --- Icons: embedded SVGs, tinted and cached --------------------------
+     Pictograms come from the repo's Lucide pack (assets/lucide/), encoded per
+     game with tools/embed-icon.mjs and listed in ASSETS.images under an "ico"
+     key. They are authored white, because an <img> has no `currentColor` to
+     resolve, so every draw goes through here: the icon is rasterized once per
+     size+colour into an offscreen canvas (a "source-in" fill turns the white
+     artwork into a mask) and blitted afterwards. Never drawImage the raw SVG.
+
+       Icon.draw(ctx, "icoBomb", cx, cy, 26, "#2a1400");   // centred + tinted
+       var cv = Icon.get("icoBomb", 26, "#ffffff");        // the canvas itself
+
+     Icons load with the rest of ASSETS.images, i.e. before the intro shows, so
+     a sprite built in Game.reset() always finds them decoded. */
+  var Icon = (function () {
+    var cache = {};
+    function get(key, size, color) {
+      var id = key + "|" + size + "|" + color, img = Images[key], cv, x;
+      if (cache[id]) return cache[id];
+      if (!img || !img.complete || !img.naturalWidth) return null;
+      cv = document.createElement("canvas");
+      cv.width = cv.height = Math.max(1, Math.round(size));
+      x = cv.getContext("2d");
+      x.drawImage(img, 0, 0, cv.width, cv.height);
+      x.globalCompositeOperation = "source-in";       // keep the artwork's alpha
+      x.fillStyle = color || "#ffffff";
+      x.fillRect(0, 0, cv.width, cv.height);
+      cache[id] = cv;
+      return cv;
+    }
+    function draw(c, key, cx, cy, size, color) {
+      var cv = get(key, size, color);
+      if (cv) c.drawImage(cv, cx - size / 2, cy - size / 2, size, size);
+      return !!cv;
+    }
+    return { get: get, draw: draw, clear: function () { cache = {}; } };
+  })();
+
   // --- Colour helper: "#rrggbb" -> "rgba(r,g,b,a)" ------------------------
   function rgba(hex, a) {
     var h = String(hex).replace("#", "");
