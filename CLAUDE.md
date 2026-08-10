@@ -117,6 +117,9 @@ Frame & input (section 3):
   `games/chainring`.
 - `Store.get/set` — safe localStorage. `Rand.range/int/pick/chance`.
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
+- `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
+  the shared `assets/lucide/` pack, encoded with `node tools/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
+  white, so never `drawImage` the raw SVG.
 - `Fx.burst/ring/text/shake/flash/freeze` — the canvas juice layer; the frame
   pipeline updates and draws it for you.
 - `Confetti.burst(n)`.

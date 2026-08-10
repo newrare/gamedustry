@@ -433,6 +433,8 @@ Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // safe localStorage
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
+Icon.draw(ctx, key, cx, cy, size, colour)  // an embedded SVG icon, tinted
+Icon.get(key, size, colour) → canvas       // …or the tinted canvas itself
 Confetti.burst(n) / clear()
 rgba("#rrggbb", alpha) → "rgba(…)"
 clamp(v, lo, hi)
@@ -441,6 +443,13 @@ clamp(v, lo, hi)
 Every sound effect is a clip picked from the shared **`assets/sfx/`** library and
 embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx).
 One sample per event, pitched with `rate` instead of duplicated.
+
+Pictograms work the same way: pick one from the shared **`assets/lucide/`** pack,
+encode it with `node tools/embed-icon.mjs <name> --key icoThing`, paste it into
+`ASSETS.images`, and draw it with `Icon.draw`. Icons are authored white — an
+`<img>` has no `currentColor` to resolve — so `Icon` tints them through a
+`source-in` fill and caches one canvas per key+size+colour. Never `drawImage`
+the raw SVG. See [assets/lucide/README.md](../assets/lucide/README.md).
 
 ### `Music` — the background bed
 
