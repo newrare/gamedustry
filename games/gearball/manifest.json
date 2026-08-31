@@ -1,0 +1,31 @@
+{
+  "slug": "gearball",
+  "title": "Gearball",
+  "tagline": "Drop a ball in an empty slot, chain them to fill the loop",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#7ef9ff",
+    "accent2": "#ffb44f"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "gearball",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.gearball",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

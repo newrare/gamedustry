@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#05060c">
+  <meta name="description"
+    content="Newrare builds short, sharp mobile games. A collection of playables you can start in one tap, right in the browser.">
+  <meta property="og:title" content="Newrare — Game Studio">
+  <meta property="og:description" content="Playable games, one tap away. No install, no account.">
+  <meta property="og:type" content="website">
+  <title>Newrare — Game Studio</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/x-icon" href="./image/favicon.ico">
+  <link rel="apple-touch-icon" href="./image/logo.png">
+</head>
+
+<body>
+  <a class="skip" href="#playables" data-fr="Aller aux jeux" data-en="Skip to the games"></a>
+
+  <!-- ───────────────────────────── NAV ───────────────────────────── -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#top" class="brand">
+        <img src="./image/logo.png" alt="" class="brand-mark" width="34" height="34">
+        <span class="brand-name">Newrare</span>
+      </a>
+
+      <nav class="nav-links" id="navLinks" aria-label="Main">
+        <a href="#playables" data-fr="Jeux" data-en="Games"></a>
+        <a href="#apps" data-fr="Applis" data-en="Apps"></a>
+        <a href="#studio" data-fr="Studio" data-en="Studio"></a>
+        <a href="#contact" data-fr="Contact" data-en="Contact"></a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="lang" id="langToggle" type="button" aria-label="Change language">EN</button>
+        <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false"
+          aria-controls="navLinks">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ───────────────────────────── HERO ──────────────────────────── -->
+  <main id="top">
+    <section class="hero">
+      <div class="hero-fx" aria-hidden="true">
+        <div class="hero-grid"></div>
+        <div class="hero-glow hero-glow-a"></div>
+        <div class="hero-glow hero-glow-b"></div>
+      </div>
+
+      <div class="wrap hero-inner">
+        <p class="eyebrow" data-fr="Studio de jeux indépendant" data-en="Independent game studio"></p>
+        <h1>
+          <span data-fr="On fabrique des jeux qui" data-en="We build games that"></span>
+          <span class="grad" data-fr="démarrent en un tap" data-en="start in one tap"></span>
+        </h1>
+        <p class="lead"
+          data-fr="Des boucles courtes, nerveuses, pensées pour le mobile. Toute notre collection se lance ici même, dans le navigateur : pas d’installation, pas de compte."
+          data-en="Short, sharp loops built for mobile. The whole collection runs right here in your browser: no install, no account."></p>
+
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#playables">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            <span data-fr="Jouer maintenant" data-en="Play now"></span>
+          </a>
+          <a class="btn btn-ghost" href="https://play.google.com/store/apps/developer?id=Newrare" target="_blank"
+            rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
+            </svg>
+            <span data-fr="Nos applis sur Google Play" data-en="Our apps on Google Play"></span>
+          </a>
+        </div>
+
+        <ul class="hero-stats">
+          <li><b id="statGames">12</b><span data-fr="jeux jouables" data-en="playable games"></span></li>
+          <li><b>0</b><span data-fr="installation requise" data-en="installs required"></span></li>
+          <li><b>~30 s</b><span data-fr="par partie" data-en="per run"></span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ────────────────────────── PLAYABLES ─────────────────────── -->
+    <section class="section" id="playables">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 data-fr="Jouables tout de suite" data-en="Playable right now"></h2>
+          <p class="sub"
+            data-fr="Chaque jeu tient dans un seul fichier et tourne dans le navigateur, sur téléphone comme sur ordinateur. Clique sur Jouer, la partie démarre."
+            data-en="Every game fits in a single file and runs in the browser, on phone and desktop alike. Hit Play and the run starts."></p>
+        </header>
+
+        <div class="games" id="gamesGrid"></div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────── APPS ────────────────────────── -->
+    <section class="section section-alt" id="apps">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 data-fr="Sur les stores" data-en="On the stores"></h2>
+          <p class="sub"
+            data-fr="Nos jeux publiés, avec progression, classements et contenu à débloquer."
+            data-en="Our published games, with progression, leaderboards and content to unlock."></p>
+        </header>
+
+        <div class="apps-grid">
+          <!-- Magic Shield Brick — shipped on Google Play -->
+          <article class="app-card">
+            <img class="app-icon" src="./image/magic-shield-brick/icon.png" alt="Magic Shield Brick" width="96"
+              height="96">
+            <div class="app-body">
+              <h3>Magic Shield Brick</h3>
+              <p data-fr="Un casse-brique circulaire : collecte les bonus, gère plusieurs balles à la fois et défends ton bouclier magique."
+                data-en="A circular brick breaker: collect bonuses, juggle several balls at once and defend your magic shield."></p>
+              <div class="app-actions">
+                <a class="btn btn-primary btn-sm"
+                  href="https://play.google.com/store/apps/details?id=com.newrare.magicshieldbrick" target="_blank"
+                  rel="noopener">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
+                  </svg>
+                  Google Play
+                </a>
+                <button class="btn btn-ghost btn-sm" type="button" data-shots="msb">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1 2v9l4-4 3 3 4-5 3 4V7H5z" />
+                  </svg>
+                  <span data-fr="Captures" data-en="Screens"></span>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Fusion Mania — in production, no store link yet, so no CTA -->
+          <article class="app-card">
+            <img class="app-icon" src="./image/fusion-mania/icon.png" alt="Fusion Mania" width="96" height="96">
+            <div class="app-body">
+              <h3>Fusion Mania</h3>
+              <p data-fr="Un puzzle façon 2048 avec des pouvoirs et des ennemis : fusionne les tuiles, ramasse les bonus et tiens tête à des adversaires qui jouent contre toi."
+                data-en="A 2048-style puzzle with powers and enemies: merge the tiles, grab the bonuses and hold off opponents that play against you."></p>
+              <div class="app-actions">
+                <span class="chip chip-soon" data-fr="En production" data-en="In production"></span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── STUDIO ───────────────────────── -->
+    <section class="section" id="studio">
+      <div class="wrap studio">
+        <header class="section-head">
+          <h2 data-fr="Le studio" data-en="The studio"></h2>
+        </header>
+        <div class="studio-grid">
+          <p class="studio-lead"
+            data-fr="Newrare est un studio indépendant dédié au jeu mobile. On conçoit des boucles de jeu courtes et lisibles, on les prototype vite, et on ne garde que celles qui restent amusantes après cent parties."
+            data-en="Newrare is an independent studio dedicated to mobile games. We design short, readable loops, prototype them fast, and keep only the ones that are still fun after a hundred runs."></p>
+          <ul class="studio-points">
+            <li>
+              <b data-fr="Prototype d’abord" data-en="Prototype first"></b>
+              <span data-fr="Une idée devient jouable en quelques heures. Si elle n’accroche pas, elle ne va pas plus loin."
+                data-en="An idea becomes playable in a few hours. If it does not catch, it goes no further."></span>
+            </li>
+            <li>
+              <b data-fr="Un moteur maison" data-en="An in-house engine"></b>
+              <span data-fr="Tous nos jeux partagent le même moteur : même feeling, même finition, du prototype au store."
+                data-en="Every game shares the same engine: the same feel and finish, from prototype to store."></span>
+            </li>
+            <li>
+              <b data-fr="Jouable partout" data-en="Playable everywhere"></b>
+              <span data-fr="Navigateur, mobile, boutiques d’applications. Un jeu, plusieurs sorties."
+                data-en="Browser, mobile, app stores. One game, several outlets."></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── CONTACT ──────────────────────── -->
+    <section class="section section-alt" id="contact">
+      <div class="wrap contact">
+        <h2 data-fr="Une idée, un projet, une question ?" data-en="An idea, a project, a question?"></h2>
+        <p class="sub" data-fr="Écrivez-nous, on répond." data-en="Write to us, we answer."></p>
+        <a class="btn btn-primary" href="mailto:jurienu@gmail.com">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" />
+          </svg>
+          jurienu@gmail.com
+        </a>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────── LEGAL ───────────────────────── -->
+    <section class="section legal" id="legal">
+      <div class="wrap">
+        <details class="terms">
+          <summary>
+            <span data-fr="Conditions d’utilisation" data-en="Terms of use"></span>
+          </summary>
+          <div class="terms-body">
+            <h3 data-fr="1. Acceptation des conditions" data-en="1. Acceptance of terms"></h3>
+            <p data-fr="En utilisant nos jeux, en ligne ou téléchargés depuis une boutique d’applications, vous acceptez les présentes conditions. Si vous ne les acceptez pas, n’utilisez pas nos jeux."
+              data-en="By using our games, online or downloaded from an app store, you accept these terms. If you do not accept them, do not use our games."></p>
+
+            <h3 data-fr="2. Licence d’utilisation" data-en="2. License to use"></h3>
+            <p data-fr="Nous vous accordons une licence limitée, non exclusive et révocable pour utiliser nos jeux à des fins personnelles et non commerciales."
+              data-en="We grant you a limited, non-exclusive and revocable license to use our games for personal, non-commercial purposes."></p>
+
+            <h3 data-fr="3. Données" data-en="3. Data"></h3>
+            <p data-fr="Les jeux jouables sur ce site enregistrent vos scores dans le stockage local de votre navigateur. Ces données ne quittent pas votre appareil. Nos applications mobiles peuvent collecter :"
+              data-en="The games playable on this site store your scores in your browser’s local storage. That data never leaves your device. Our mobile applications may collect:"></p>
+            <ul>
+              <li data-fr="des données d’utilisation anonymes, à des fins de mesure"
+                data-en="anonymous usage data, for measurement purposes"></li>
+              <li data-fr="des informations techniques (modèle d’appareil, version du système)"
+                data-en="technical information (device model, system version)"></li>
+              <li data-fr="des données de performance, pour corriger et améliorer les jeux"
+                data-en="performance data, to fix and improve the games"></li>
+            </ul>
+
+            <h3 data-fr="4. Achats intégrés" data-en="4. In-app purchases"></h3>
+            <p data-fr="Certains contenus de nos applications mobiles peuvent nécessiter un achat. Les prix sont affichés en devise locale et les paiements sont traités par la boutique d’applications, jamais par nous."
+              data-en="Some content in our mobile applications may require a purchase. Prices are shown in local currency and payments are handled by the app store, never by us."></p>
+
+            <h3 data-fr="5. Limitation de responsabilité" data-en="5. Limitation of liability"></h3>
+            <p data-fr="Nos jeux sont fournis « en l’état ». Nous ne garantissons pas une absence totale d’erreurs ni une disponibilité ininterrompue, et ne sommes pas responsables des dommages résultant de leur utilisation."
+              data-en="Our games are provided “as is”. We do not guarantee they are free of errors or uninterrupted, and we are not liable for damages arising from their use."></p>
+
+            <h3 data-fr="6. Modifications" data-en="6. Changes"></h3>
+            <p data-fr="Ces conditions peuvent être modifiées à tout moment. Les modifications prennent effet dès leur publication sur cette page."
+              data-en="These terms may change at any time. Changes take effect as soon as they are published on this page."></p>
+
+            <h3 data-fr="7. Contact" data-en="7. Contact"></h3>
+            <p data-fr="Pour toute question sur ces conditions : jurienu@gmail.com"
+              data-en="For any question about these terms: jurienu@gmail.com"></p>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- ─────────────────────────── FOOTER ───────────────────────── -->
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-brand">
+        <img src="./image/logo.png" alt="" width="30" height="30">
+        <div>
+          <b>Newrare</b>
+          <span data-fr="Studio de jeux mobiles" data-en="Mobile game studio"></span>
+        </div>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#playables" data-fr="Jeux" data-en="Games"></a>
+        <a href="#apps" data-fr="Applis" data-en="Apps"></a>
+        <a href="#studio" data-fr="Studio" data-en="Studio"></a>
+        <a href="#contact" data-fr="Contact" data-en="Contact"></a>
+        <a href="#legal" data-fr="Mentions légales" data-en="Legal"></a>
+      </nav>
+      <a class="btn btn-ghost btn-sm" href="https://play.google.com/store/apps/developer?id=Newrare" target="_blank"
+        rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
+        </svg>
+        Google Play
+      </a>
+    </div>
+    <p class="foot-bottom">
+      &copy; <span id="year"></span> Newrare.
+      <span data-fr="Tous droits réservés." data-en="All rights reserved."></span>
+    </p>
+  </footer>
+
+  <!-- ──────────────────── PLAYER (portrait iframe) ─────────────── -->
+  <div class="modal" id="player" hidden role="dialog" aria-modal="true" aria-labelledby="playerTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="player-box">
+      <header class="player-bar">
+        <h3 id="playerTitle"></h3>
+        <div class="player-tools">
+          <a class="icon-btn" id="playerOpen" href="#" target="_blank" rel="noopener" title="Open in a new tab"
+            aria-label="Open in a new tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14V3zM5 5h5v2H7v10h10v-3h2v5H5V5z" />
+            </svg>
+          </a>
+          <button class="icon-btn" type="button" data-close title="Close" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L12 14.8l-6.3 6.3-1.4-1.4L10.6 12 4.3 5.7 5.7 4.3 12 10.6l6.3-6.3z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <div class="player-stage">
+        <iframe id="playerFrame" title="Game" allow="autoplay; fullscreen" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────── LIGHTBOX (screens) ───────────────── -->
+  <div class="modal" id="shots" hidden role="dialog" aria-modal="true" aria-label="Screenshots">
+    <div class="modal-backdrop" data-close></div>
+    <div class="shots-box">
+      <button class="icon-btn shots-close" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L12 14.8l-6.3 6.3-1.4-1.4L10.6 12 4.3 5.7 5.7 4.3 12 10.6l6.3-6.3z" />
+        </svg>
+      </button>
+      <button class="shots-nav prev" type="button" id="shotsPrev" aria-label="Previous">❮</button>
+      <img id="shotsImg" alt="">
+      <button class="shots-nav next" type="button" id="shotsNext" aria-label="Next">❯</button>
+      <p class="shots-count" id="shotsCount"></p>
+    </div>
+  </div>
+
+  <script src="games.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+{
+  "slug": "spinshock",
+  "title": "Spinshock",
+  "tagline": "Tap on the impact to blast the rival tops away",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#40ecff",
+    "accent2": "#ff4fbe"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "spinshock",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.spinshock",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

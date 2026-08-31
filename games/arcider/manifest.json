@@ -1,0 +1,31 @@
+{
+  "slug": "arcider",
+  "title": "Arcider",
+  "tagline": "Press left or right to lean, take places off nineteen rivals and never break your shield",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#35e8ff",
+    "accent2": "#7a4dff"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "arcider",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.arcider",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

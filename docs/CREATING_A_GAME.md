@@ -9,13 +9,19 @@ end screen already exist.
 
 ## The recipe
 
-### 1. Copy the template
+### 1. Copy the template's sources
 
 ```bash
-cp template/game-template.html games/<slug>/index.html
+mkdir -p games/<slug>
+cp template/page.html template/skin.css template/game.js games/<slug>/
 ```
 
 Use a short kebab-case `<slug>` (e.g. `merge-fruit`, `slice-rope`).
+
+`games/<slug>/index.html` is **generated** from those three files plus the motor
+in `packages/`. Build it with `node tools/build.mjs --game=<slug>` and never edit
+it by hand — `node tools/build.mjs --check` will catch you. Also write
+`games/<slug>/manifest.json`; copy a neighbour's and change the values.
 
 ### 2. Fill in CONFIG (section 1)
 

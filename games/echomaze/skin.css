@@ -1,0 +1,278 @@
+
+  /* =========================================================================
+     SKIN — ECHOMAZE. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few overrides below.
+     ========================================================================= */
+  :root {
+    --bg:#04060f; --accent:#7ef9ff;
+    --cta-a:#ff9ae8; --cta-b:#c026d3; --cta-text:#2b0033;
+    --danger:#ff2d78; --gold:#ffd43b; --good:#4ade80;
+    /* the arc the whole game is drawn in, shared by the intro stage */
+    --arc:#7ef9ff;
+    --exit:#4ade80;
+  }
+  html, body { background:radial-gradient(820px 900px at 50% 30%, #101a4a 0%, #080d28 48%, #04060f 100%); }
+  .btn { box-shadow:0 10px 30px rgba(192,38,211,.5), inset 0 2px 6px rgba(255,255,255,.35); }
+  #intro-title {
+    background:linear-gradient(180deg,#ffffff,#7ef9ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 30px rgba(126,249,255,.42);
+  }
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 44px rgba(126,249,255,.34); }
+  #hud-score { text-shadow:0 0 14px rgba(126,249,255,.6), 0 3px 10px rgba(4,6,20,.9); }
+  .hud-pill { background:rgba(5,8,24,.66); }
+  /* The exit gate sits right under the HUD, so the scrim stays: it is what
+     keeps the score legible over a lit gate. */
+  #hud::before { background:linear-gradient(180deg, rgba(4,6,16,.78), rgba(4,6,16,0)); }
+  /* Every screen-space message lands in the launch bay, under the maze — the
+     maze itself is what the player is reading. */
+  #ov-toasts {
+    top:auto; bottom:calc(var(--inset-bottom) + var(--cta-h) + 18px);
+    flex-direction:column-reverse;
+  }
+  .eo-score { text-shadow:0 0 22px rgba(126,249,255,.75); }
+  #cta-bar { border-top:1px solid rgba(192,38,211,.26); }
+
+  /* ---- intro: one short sentence, and a mini maze the pulse bounces through
+     "Bounce through the dark maze to the exit" — the stage plays exactly that,
+     at the speed the game runs at: the maze lights up for a beat, the lights
+     drop as the shot leaves, and the pulse banks off three walls (each contact
+     echoing the layout back for an instant) before it slips through the gap in
+     the ceiling and the gate flares. No slow motion: every leg of the flight
+     runs at the same constant speed.
+
+     The motor's nodes are all recycled: the stage's ::before is the whole mini
+     maze (twelve flat rectangles), ::after is the exit gate over the gap in the
+     ceiling, the track is the launch bay floor, the arrow is the cannon, the
+     beam is the aim line, the target is the pulse and its two ripples are the
+     echo rings — the first one fires twice, for the first and third contact.
+     The finger stays the shared one.
+
+     Geometry, in the 420x290 stage: the maze box is 332x184 at (44,30) with
+     8 px walls, its ceiling opens at x 188..250 and its floor at x 188..244,
+     and three bounce stubs stand at x=250 (y 165..214), x=162 (y 105..165) and
+     x=254 (y 38..100). The cannon pivots on (148,276), so at 45 degrees its
+     muzzle is exactly the pulse's start point (179,245); from there the pulse
+     banks at (240,184), (180,124) and (244,60), crosses the gate at (198,14)
+     and leaves the stage at the top. Because every leg is a 45 degree diagonal,
+     the shot's keyframes sit at their real distance along the path, so linear
+     timing gives one constant speed for the whole flight.
+
+     Timeline over 3.6 s: 0-18% the maze is lit and the finger aims, 20% lights
+     out and the shot leaves, 30/40/51% the three echoes, 59% the gate flares,
+     66% the pulse is gone, and the maze powers back up at 88% for the next
+     pass. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:35px; font-weight:700; color:#ffffff; }
+  #intro-tagline .w-maze { color:#a9b8ff; text-shadow:0 0 18px rgba(169,184,255,.8); }
+  #intro-tagline .w-echo { color:#7ef9ff; text-shadow:0 0 18px rgba(126,249,255,.85); }
+  #intro-tagline .w-exit { color:#4ade80; text-shadow:0 0 18px rgba(74,222,128,.85); }
+  #intro-demo { margin-top:26px; }
+
+  .demo-stage {
+    width:420px; height:290px; overflow:hidden;
+    background:radial-gradient(300px 240px at 50% 34%, rgba(30,44,120,.5), rgba(4,6,20,0) 76%), #070b1e;
+    box-shadow:inset 0 0 0 3px rgba(126,249,255,.18);
+  }
+
+  /* THE MINI MAZE. Fourteen flat rectangles, one background layer each, drawn
+     in stage coordinates (the layer spans the whole 420x290 stage, so every
+     background-position is the wall's real x/y):
+       1-3    the three bounce stubs the pulse banks off
+       4-8    five dead ends, there to make it read as a labyrinth
+       9-10   the ceiling, in two pieces — the gap between them is the way out
+       11-12  the floor, in two pieces — the gap between them is the mouth
+       13-14  the two side walls
+     Only its opacity animates, which is what makes the reveal / blackout /
+     echo cycle cost nothing. */
+  .demo-stage::before {
+    content:""; position:absolute; left:0; top:0; width:420px; height:290px; z-index:0;
+    --w:rgba(126,249,255,.9);
+    background-image:
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w)),
+      linear-gradient(var(--w),var(--w));
+    background-size:
+      8px 62px, 8px 60px, 8px 49px,
+      78px 8px, 62px 8px, 50px 8px, 8px 48px, 8px 44px,
+      144px 8px, 126px 8px,
+      144px 8px, 132px 8px,
+      8px 184px, 8px 184px;
+    background-position:
+      254px 38px, 162px 105px, 250px 165px,
+      52px 150px, 306px 120px, 94px 70px, 312px 158px, 298px 76px,
+      44px 30px, 250px 30px,
+      44px 206px, 244px 206px,
+      44px 30px, 368px 30px;
+    background-repeat:no-repeat;
+    filter:drop-shadow(0 0 9px rgba(126,249,255,.6));
+    animation:emMaze 3.6s linear infinite;
+  }
+  /* lit -> out -> one echo per bounce -> out -> powered back up */
+  @keyframes emMaze {
+    0%,18%   { opacity:1; }
+    20%,28%  { opacity:.18; }
+    30.4%    { opacity:.85; }
+    36%      { opacity:.18; }
+    40.5%    { opacity:.85; }
+    46%      { opacity:.18; }
+    51.4%    { opacity:.85; }
+    58%,76%  { opacity:.16; }
+    88%,100% { opacity:1; }
+  }
+
+  /* THE EXIT GATE — straddling the gap in the ceiling, lit the whole time, and
+     it flares the instant the pulse clears it. */
+  .demo-stage::after {
+    content:""; position:absolute; left:188px; top:10px; width:62px; height:9px; z-index:1;
+    border-radius:5px; background:linear-gradient(180deg,#eaffee,#4ade80);
+    animation:emGate 3.6s ease-in-out infinite;
+  }
+  @keyframes emGate {
+    0%,54%   { box-shadow:0 0 16px rgba(74,222,128,.7); transform:scaleX(1); }
+    61%      { box-shadow:0 0 44px rgba(230,255,238,1), 0 14px 40px rgba(74,222,128,.9); transform:scaleX(1.12); }
+    74%,100% { box-shadow:0 0 16px rgba(74,222,128,.7); transform:scaleX(1); }
+  }
+
+  /* the launch bay floor the cannon stands on */
+  .demo-aim .demo-track {
+    display:block; left:0; right:0; bottom:0; top:auto; height:9px; border:0;
+    background:linear-gradient(180deg, rgba(126,249,255,.95), rgba(30,90,140,.5));
+    box-shadow:0 -10px 26px rgba(126,249,255,.3);
+  }
+
+  /* the cannon: the motor's arrow, turned into a barrel that swings with the
+     aim and then holds the angle it fired at. It pivots on (148,276), so at
+     45 degrees its muzzle sits exactly on the pulse's start point (179,245). */
+  .demo-aim .demo-arrow {
+    display:block; left:141px; bottom:14px; top:auto; margin:0;
+    width:14px; height:44px; border:0; border-radius:7px;
+    background:linear-gradient(180deg,#eaffff,#4f7ba8);
+    transform-origin:50% 100%;
+    filter:drop-shadow(0 0 10px rgba(126,249,255,.65));
+    animation:emCannon 3.6s ease-in-out infinite;
+  }
+  .demo-aim .demo-arrow::after {
+    content:""; position:absolute; left:50%; bottom:-13px; width:34px; height:34px;
+    margin-left:-17px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #cfe0ff 0 18%, #35547f 62%, #101a33 100%);
+    box-shadow:0 0 0 3px rgba(126,249,255,.3);
+  }
+  @keyframes emCannon {
+    0%      { transform:rotate(16deg); }
+    18%,92% { transform:rotate(45deg); }
+    100%    { transform:rotate(16deg); }
+  }
+
+  /* the aim line — short on purpose, exactly like in the game: it stops at the
+     mouths, it never solves a bounce inside the maze */
+  .demo-aim .demo-beam {
+    left:148px; bottom:14px; margin-left:-3px; width:6px; height:70px;
+    transform-origin:50% 100%;
+    background:repeating-linear-gradient(180deg, #7ef9ff 0 9px, transparent 9px 20px);
+    animation:emBeam 3.6s ease-in-out infinite;
+  }
+  @keyframes emBeam {
+    0%       { transform:rotate(16deg); opacity:0; }
+    5%       { transform:rotate(20deg); opacity:.95; }
+    18%      { transform:rotate(45deg); opacity:.95; }
+    20%,100% { transform:rotate(45deg); opacity:0; }
+  }
+
+  /* THE PULSE — one shot, three bounces, out through the gate. Its base is the
+     muzzle (179,245); every keyframe below is an offset from it, placed at the
+     percentage matching its real distance along the path, so `linear` timing
+     runs the whole flight at one speed. */
+  .demo-aim .demo-target {
+    z-index:2; left:169px; top:235px; width:20px; height:20px; margin-left:0;
+    border:0; border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #ffffff 0 26%, #7ef9ff 60%, #0d3f6b 100%);
+    box-shadow:0 0 18px rgba(126,249,255,.9);
+    animation:emShot 3.6s linear infinite;
+  }
+  @keyframes emShot {
+    0%,19.9%   { transform:translate(0,0) scale(.3); opacity:0; }
+    20%        { transform:translate(0,0) scale(1); opacity:1; }
+    30.4%      { transform:translate(61px,-61px) scale(1); opacity:1; }    /* bounce 1 */
+    40.5%      { transform:translate(1px,-121px) scale(1); opacity:1; }    /* bounce 2 */
+    51.4%      { transform:translate(65px,-185px) scale(1); opacity:1; }   /* bounce 3 */
+    66%        { transform:translate(-21px,-271px) scale(1); opacity:1; }  /* gone */
+    66.1%,100% { transform:translate(-21px,-271px) scale(1); opacity:0; }
+  }
+  /* NO TRAIL: the ripples are the echo rings, one per contact — the first one
+     fires twice, for bounces 1 and 3, the second one for bounce 2. */
+  .demo-aim .demo-ripple {
+    inset:-8px; width:auto; height:auto; border:3px solid #ffffff; border-radius:50%;
+    background:none; box-shadow:none; opacity:0;
+    animation:emEcho1 3.6s linear infinite;
+  }
+  .demo-aim .demo-ripple.d2 { animation:emEcho2 3.6s linear infinite; animation-delay:0s; }
+  @keyframes emEcho1 {
+    0%,30.3%   { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    30.4%      { transform:scale(.75); opacity:1; border-color:#ffffff; }
+    38%        { transform:scale(2.4); opacity:0; border-color:#7ef9ff; }
+    51.3%      { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    51.4%      { transform:scale(.75); opacity:1; border-color:#ffffff; }
+    59%,100%   { transform:scale(2.4); opacity:0; border-color:#7ef9ff; }
+  }
+  @keyframes emEcho2 {
+    0%,40.4% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    40.5%    { transform:scale(.75); opacity:1; border-color:#ffffff; }
+    48%,100% { transform:scale(2.4); opacity:0; border-color:#7ef9ff; }
+  }
+
+  /* the finger: drags the aim to the right of the cannon — never over it — lets
+     go at 20%, and stays out of the way for the whole flight */
+  .demo-aim .demo-hand {
+    left:230px; bottom:-34px; margin-left:0; z-index:3;
+    animation:emHand 3.6s ease-in-out infinite;
+  }
+  @keyframes emHand {
+    0%,3%    { transform:translate(-26px,0); opacity:1; }
+    18%      { transform:translate(24px,0); opacity:1; }
+    24%      { transform:translate(24px,44px); opacity:0; }
+    80%      { transform:translate(-26px,44px); opacity:0; }
+    88%,100% { transform:translate(-26px,0); opacity:1; }
+  }
+
+  /* ---- comic callouts -----------------------------------------------------
+     The shared Pop styles, retinted to the arc palette. */
+  .pop-score {
+    --fill:linear-gradient(180deg,#ffffff 0%,#7ef9ff 100%);
+    --glow:rgba(126,249,255,.8); --ink:#031b2c;
+  }
+  /* a fresh wall on the map */
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#cfe8ff 42%,#5ab8ff 100%);
+    --chip:#071433; --chip-line:#5ab8ff;
+  }
+  /* a new row climbed — the exit's green */
+  .pop-bonus {
+    --fill:linear-gradient(180deg,#f2fff6 0%,#8ef0b0 55%,#22c55e 100%);
+    --glow:rgba(74,222,128,.75); --dot:rgba(0,50,25,.45); --ink:#062112;
+  }
+  .pop-bonus .pop-sub { background:#062112; border-color:#8ef0b0; color:#8ef0b0; }
+  /* a mouth slamming shut */
+  .pop-alert {
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffd9e4 45%,#ff2d78 100%);
+    --glow:rgba(255,45,120,.75); --ink:#2c0016;
+  }
+  /* ESCAPED — the only hero moment in the run */
+  .pop-ultra {
+    --fill:linear-gradient(180deg,#ffffff 0%,#a9f6ff 32%,#4ade80 68%,#ffe27a 100%);
+    --glow:rgba(74,222,128,.85); --ray:rgba(150,255,200,.28);
+    --ink:#031f12; --ink2:rgba(0,70,35,.55);
+  }
+  .pop-ultra .pop-sub { background:#031f12; border-color:#8ef0b0; color:#8ef0b0; }
+  .pop-record .pop-sub, .pop-perfect .pop-sub { letter-spacing:4px; }

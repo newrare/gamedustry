@@ -4,19 +4,31 @@ Guidance for AI assistants (and humans) creating playable ads in this repo.
 
 ## What this project is
 
-A **motor** (shared shell) for **playable ads**: single-file HTML mini-games
-shipped to ad networks. Read [README.md](README.md) for the layout and
-[docs/ENGINE.md](docs/ENGINE.md) for the motor itself.
+A **game factory**. Open tasks live in [TODO.md](TODO.md) — read it before
+proposing next steps, and update it when something lands. One source per game, several outlets: the **playable ad**
+(single-file HTML for ad networks) is the only one built today; the **web** target
+(the newrare site and itch.io), a **proto** target and an **android** target are
+planned in [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), which is the
+plan of record — read it before proposing anything about builds, targets or
+deployment.
+
+Read [README.md](README.md) for the layout and [docs/ENGINE.md](docs/ENGINE.md)
+for the motor itself.
 
 **Default assumption: every new game concept is built on the motor.** When a
 prompt describes a new game, do not design a new page structure — copy
 `template/game-template.html` and write only `CONFIG`, the theme tokens and the
 `Game` module. The intro, HUD, overlay, CTA, juice and end screen already exist.
 
+**The hard constraints below govern `games/` and `template/` only.** `site/` is a
+normal static website: it may use several files, load its own images and be as
+large as a website is. It must not, however, pull in a framework, a CDN script or
+a web font — same discipline, different reason (see [The site](#the-site)).
+
 ## Hard constraints — never break these
 
 1. **One self-contained HTML file per game.** All JS and CSS are inlined in the
-   `index.html`. No external `<script src>`, `<link href>`, `fetch`, `import`,
+   `index.html`, which is now **generated** — see [The build](#the-build). No external `<script src>`, `<link href>`, `fetch`, `import`,
    web fonts, or CDN links. The file must work with `file://` and inside a
    sandboxed ad iframe.
 1. **Under 5 MB.** Target < 2 MB when possible. Verify with
@@ -25,24 +37,31 @@ prompt describes a new game, do not design a new page structure — copy
    (see [docs/ASSETS.md](docs/ASSETS.md)).
 1. **Vanilla only.** No frameworks, no TypeScript, no build step. Plain ES5-ish
    JS that runs in mobile WebViews (`var`, `function`, no arrow functions, no
-   template literals).
+   template literals). The tooling around the games (`tools/`) is modern Node ESM
+   and may do as it likes; the games themselves never gain a build step.
 1. **English** for all code, comments, identifiers, and docs. Prompts may be in
    any language.
 1. **Keep the 7-section structure** (see
    [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Sections 3 (`ENGINE`),
-   4 (`AD GLUE`), 5 (`SHELL`) and 7 (`BOOTSTRAP`) must stay **byte-identical
-   across games**, and so must the stylesheet above the game's `SKIN —` block.
-   Verify with `node tools/check-motor.mjs` (`--fix` pushes template changes
-   into every game). Put new reusable helpers in the engine and carry them back
-   into the template; put game logic in section 6.
+   4 (`AD GLUE`), 5 (`SHELL`) and 7 (`BOOTSTRAP`) plus the motor stylesheet now
+   live in `packages/` and are shared by construction — a game cannot fork them.
+   Put new reusable helpers there; put game logic in section 6 of
+   `games/<slug>/game.js`. Verify with `node tools/build.mjs --check`.
 1. **Portrait only**, authored in the `720×1280` design space. Never read
    `window.innerWidth` in game code, never hard-code the top/bottom of the play
    area — use `view` and `Layout`.
 
 ## How to create a new game
 
-1. Copy `template/game-template.html` to `games/<slug>/index.html`.
-1. Edit **`CONFIG`** (section 1): `title`, `tagline`, `gameSeconds`, store URLs,
+1. Copy the template's three sources into `games/<slug>/`:
+   ```bash
+   mkdir -p games/<slug>
+   cp template/page.html template/skin.css template/game.js games/<slug>/
+   ```
+   Then write `games/<slug>/manifest.json` and build with
+   `node tools/build.mjs --game=<slug>`. **Never create or edit
+   `games/<slug>/index.html` by hand** — it is the build output.
+1. Edit **`CONFIG`** (section 1 of `game.js`): `title`, `tagline`, `gameSeconds`, store URLs,
    `bg`, `layout` bands, `intro.demo` (`tap | hold | drag | swipe | aim`),
    `copy`, then your own tunables.
 1. Write the intro to the house rules: **one sentence** in `tagline` (never two,
@@ -52,11 +71,12 @@ prompt describes a new game, do not design a new page structure — copy
    inlined in `.demo-hand`; never draw another hand) and re-dress the target /
    track / beam and the stage's `::before` / `::after` from the SKIN.
    `games/vipera` and `games/orbinity` are the reference.
-1. Retheme by appending a single `SKIN — <GAME>` block at the end of the
-   stylesheet: `:root` token overrides (`--bg`, `--accent`, `--cta-a/b`,
-   `--danger`, `--gold`…) plus any game-specific rules. Never edit the motor CSS
-   above it.
-1. Rewrite the **`Game`** module (section 6):
+1. Retheme in `games/<slug>/skin.css`, which is the `SKIN — <GAME>` block and
+   nothing else: `:root` token overrides (`--bg`, `--accent`, `--cta-a/b`,
+   `--danger`, `--gold`…) plus any game-specific rules. The motor stylesheet is
+   `packages/shell/motor.css`: a change there reaches every game, which is the
+   point — never copy a motor rule into a skin to tweak it.
+1. Rewrite the **`Game`** module (section 6 of `games/<slug>/game.js`):
    - `reset()` — initialize a fresh round (position entities inside `Layout`).
    - `update(dt)` — advance the simulation; `dt` is seconds.
    - `render()` — draw the world with `ctx` in design coordinates.
@@ -78,12 +98,47 @@ prompt describes a new game, do not design a new page structure — copy
    by the user. Leave `ASSETS.images` without a `logo` key and keep
    `CONFIG.intro.logo` at `null` — the intro simply hides `#app-icon`. Never
    generate, draw or embed a placeholder icon.
-1. Update `#intro-title` / `#intro-tagline` in the markup to match `CONFIG`, and
-   add an entry to the `GAMES` array in the root `index.html`.
-1. Run `node tools/check-size.mjs` and open the file in a browser to test.
+1. Update `#intro-title` / `#intro-tagline` in the markup to match `CONFIG`, then
+   register the game in **two** catalogues: the `GAMES` array in the root
+   `index.html` (the dev gallery, English, long description) and `site/games.js`
+   (the public site, one short FR **and** EN tagline plus three tags per game).
+   A game with no `assets/icon/thumb/<slug>.png` is skipped by the site build.
+1. Run `node tools/build.mjs --game=<slug>` then `node tools/check-size.mjs`, and
+   open `games/<slug>/index.html` in a browser to test.
 
 The full recipe with prompt patterns is in
 [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md).
+
+## The build
+
+`games/<slug>/index.html` is a **build output**, not a source. The motor lives
+once in `packages/`, and each game owns four files:
+
+| file            | what it is                                                      |
+| --------------- | --------------------------------------------------------------- |
+| `page.html`     | head + markup, with `{{MOTOR_CSS}}` `{{SKIN_CSS}}` `{{SCRIPT}}` |
+| `skin.css`      | the `SKIN — <GAME>` block, nothing else                         |
+| `game.js`       | sections 1 (`CONFIG`), 2 (`ASSETS`) and 6 (`GAME`)              |
+| `manifest.json` | title, tagline, targets, theme, itch and android config         |
+
+```bash
+node tools/build.mjs                     # every game + the template
+node tools/build.mjs --game=vipera
+node tools/build.mjs --check             # assert the artifacts match the sources
+```
+
+`--check` rebuilds in memory and compares byte for byte. A DIFF means someone
+edited an `index.html` directly, or a source changed without a rebuild; it is the
+CI gate. The template is a build unit too, so `template/game-template.html` never
+holds a second copy of the motor.
+
+The builder splits `game.js` at the section 6 banner and injects the motor
+between the two halves, so **the banner comment lines are structural** — do not
+reword `6. GAME`, and do not reorder the sections.
+
+`node tools/extract.mjs` is the one-shot that created this layout from the old
+single-file games. It only needs re-running if a game's `index.html` becomes the
+source of truth again, which should not happen.
 
 ## Motor APIs — use these instead of reinventing them
 
@@ -148,6 +203,40 @@ Shell (section 5):
 
 See [docs/AD_NETWORKS.md](docs/AD_NETWORKS.md) for MRAID and per-network detail.
 
+## The site
+
+`site/` is the public newrare site — a studio page listing the playables, the
+store apps, the studio and the legal terms. Static HTML, CSS and JS, no build of
+its own, deployed by Vercel from this repo.
+
+- **Four files own it**: `index.html`, `style.css`, `script.js` and `games.js`
+  (the playable catalogue). `image/` holds the site art and the store-app
+  screenshots.
+- **Bilingual FR/EN through one attribute pair.** Any text node carrying
+  `data-fr` and `data-en` is filled by `applyLang()`; the choice is remembered in
+  `localStorage` and defaults to the browser language. Never hard-code a visible
+  string in the markup, and never add a third mechanism.
+- **Game copy lives in `games.js`**, one short tagline and three tags per
+  language. Long developer descriptions stay in the root `index.html` gallery.
+- **`node tools/build-site.mjs`** assembles `dist/site/`: it copies `site/`, then
+  each playable's self-contained `index.html`, then each game's icon and
+  screenshots out of `assets/` renumbered `01.jpg`, `02.jpg`… and finally rewrites
+  `games.js` with what it actually found. The page therefore never links a
+  missing image. `site/newrare-website/` is the previous site: excluded from the
+  build, kept for reference.
+- **No dead CTA.** A button ships only when its destination exists. A game or app
+  without a link gets a state chip (`chip-soon`), not a `href="#"`.
+- **A game in construction carries `draft: true`** in `site/games.js`: its copy
+  stays written and ready, the build holds it back, and deleting the flag
+  publishes it. A game with no icon is dropped and *reported* — that is a missing
+  asset, not a decision.
+- **Same anti-dependency discipline as the games**, for a different reason: no
+  framework, no CDN, no web font. The site must stay a folder of files anyone can
+  open, and it must stay fast on a phone.
+- **The games are played in an iframe** inside a 9:16 modal (`#player`), which is
+  how a portrait creative is shown on a desktop screen. Closing it removes the
+  `src` so the loop and the audio stop.
+
 ## Conventions
 
 - Design resolution is `720×1280` (portrait). **Both canvas and DOM** are
@@ -173,6 +262,8 @@ See [docs/AD_NETWORKS.md](docs/AD_NETWORKS.md) for MRAID and per-network detail.
   replay link.
 - [ ] Every CTA calls `Ad.openStore()`.
 - [ ] `node tools/check-size.mjs` passes (< 5 MB).
-- [ ] `node tools/check-motor.mjs` passes (no drift from the template).
+- [ ] `node tools/build.mjs --check` passes (the artifact matches its sources).
+- [ ] `node tools/build-site.mjs` lists the game (not "skipped") and its card
+  reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).
 - [ ] Code and comments in English.

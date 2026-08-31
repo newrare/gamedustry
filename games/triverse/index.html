@@ -1089,11 +1089,14 @@
     tagline: "<b class=\"w-swipe\">Swipe</b> to jump from <b class=\"w-path\">path</b> to <b class=\"w-path\">path</b>",
     gameSeconds: 0,                  // endless: the run ends when the lives do
 
-    // Store links used by every CTA. The right one is picked at runtime.
+    // Store links used by every CTA. The right one is picked at runtime from the
+    // user agent. Until this game has a real listing all three point at the
+    // newrare site, where the game can actually be played — never leave a
+    // placeholder store URL here, it ships as a 404 on the device.
     storeUrl: {
-      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
-      android: "https://play.google.com/store/apps/details?id=com.example.triverse",
-      fallback:"https://52-entertainment.com/our-games/"
+      ios:     "https://newrare-website.vercel.app/#playables",
+      android: "https://newrare-website.vercel.app/#playables",
+      fallback:"https://newrare-website.vercel.app/#playables"
     },
 
     // Design resolution — all game logic and all DOM overlays use these units.
@@ -1135,22 +1138,33 @@
     play: {
       colors:   ["#3ce0ff", "#ff5ad4", "#a6ff3d"],  // one per rope, order = SKIN --p0/1/2
 
-      speedMin: 330,          // scroll speed at the first frame (px/s)
-      speedMax: 900,          // ...and once the ramp is over
-      ramp:     55,           // seconds to reach top speed (danger ramps on distance)
+      /* SPEED. A run lasts twenty to forty seconds, so the ramp has to be over
+         inside that: a slope tuned for a minute-long game just reads as a slow
+         game. `speedMin` is set by how long a hazard stays readable — the arrow
+         sees ~1000 design px of rope above it, which is 1.9s of warning at the
+         opening speed and just under 1s flat out. */
+      speedMin: 540,          // scroll speed at the first frame (px/s)
+      speedMax: 1040,         // ...and once the ramp is over
+      ramp:     18,           // seconds to reach top speed (danger ramps on distance)
 
       ahead:    1250,         // progress generated ahead of the camera
-      edge:     78,           // keep every rope this far inside Layout
+      edge:     84,           // keep the outer columns this far inside Layout
       dot:      27,           // rope dot spacing on a straight segment
       loopR:    88,           // radius of a loop segment
+      loopClear: 76,          // room a loop lobe leaves between its far side and
+                              // the rope it bulges towards
+      sway:     26,           // how far the whole three-column grid may drift
+                              // sideways, band to band (the gap never changes)
+      calmP:    900,          // progress of plain rails and ribbons at the start
+                              // of a run, before the figures kick in
       anchorUp: 170,          // the arrow's line, above Layout.bottom
 
-      switchTime: 0.14,       // seconds of the lateral hop
+      switchTime: 0.13,       // seconds of the lateral hop
       switchLock: 0.07,       // ...and the cooldown after it
       swipeMin:   26,         // design px of travel that count as a swipe
 
       pxPerM:   42,           // progress pixels per displayed metre
-      mileStep: 350,          // metres between milestone callouts
+      mileStep: 240,          // metres between milestone callouts
 
       lives:    3,
       invTime:  1.15,         // invulnerability after a crash
@@ -1158,19 +1172,21 @@
 
       // Difficulty is read off the DISTANCE travelled — the number the player
       // watches climb — and drives the mines: how often, how close together,
-      // and how often they come two abreast.
-      diffFull:  700,         // metres to full difficulty
+      // and how often they come two abreast. The gaps are PROGRESS, so they buy
+      // less and less time as the scroll speeds up: they are set from the second
+      // the player gets, not from the pixel count.
+      diffFull:  440,         // metres to full difficulty
       hazardMin: 0.34,        // share of spawn slots that are hazards, at the
       hazardMax: 0.78,        // start of the run / at full difficulty
-      gapFar:    330,         // progress between two hazards at the start...
-      gapNear:   205,         // ...and at full difficulty, all ropes together:
+      gapFar:    420,         // progress between two hazards at the start...
+      gapNear:   260,         // ...and at full difficulty, all ropes together:
                               // there is always a way through
       pairFrom:  0.16,        // difficulty at which mine pairs start showing up
       pairMax:   0.5,         // ...and their share of hazard slots at the top
-      pairEvery: 1800,        // progress: never go longer than this without one
+      pairEvery: 2600,        // progress: never go longer than this without one
       pairAfter: 1.7,         // the calm after a pair, as a multiple of the gap
       hazardClear: 130,       // progress window a hazard keeps clear of a crossing
-      hazardApart: 96         // ...and the x distance that counts as "not crossing"
+      hazardApart: 118        // ...and the x distance that counts as "not crossing"
     }
   };
 
@@ -2577,12 +2593,12 @@
   /* ===================================================================
      6. GAME — TRIVERSE: ride one of three living ropes and stay alive.
 
-     Three dotted ropes of light run up the screen, generated forever out of
-     four kinds of segment. The arrow rides one of them on a fixed line near
-     the bottom; the world scrolls past it, and a swipe (or a tap on either
-     side of the arrow) hops it onto the neighbouring rope. Gems and power-ups
-     pay, mines and voids cost — and the ropes cross, so the rope that looked
-     safe a second ago may not be. The run ends when the third life goes.
+     Three dotted ropes of light run up the screen, generated forever. The
+     arrow rides one of them on a fixed line near the bottom; the world scrolls
+     past it, and a swipe (or a tap on either side of the arrow) hops it onto
+     the neighbouring rope. Gems and power-ups pay, mines and voids cost — and
+     the ropes cross, so the rope that looked safe a second ago may not be. The
+     run ends when the third life goes.
 
      COORDINATES. Every curve is a closed-form function of the PROGRESS
      coordinate `p` (world pixels travelled). A segment answers { x, y } with
@@ -2590,8 +2606,8 @@
      loop double back on itself without breaking the scroll:
 
        straight  x = x0
-       curve     x = smoothstep(x0 -> x1)          flat tangent at both ends
-       sine      x = x0 + amp * sin(2pi (p-p0)/wl) whole periods only
+       curve     x = smoothstep(x0 -> x1)              flat tangent at both ends
+       sine      x = c + amp * sin(2pi (p-p0)/wl + ph) whole periods only
        loop      x = x0 + dir*r*(1 - cos th)
                  y = p + r*sin th,   th = 2pi (p-p0)/span
 
@@ -2599,6 +2615,28 @@
      it chains onto anything, and it genuinely crosses itself as long as
      span < 2pi*r. Its y wanders +/- r around p: that is the arrow dipping
      down the screen and coming back while it flies the curl.
+
+     THE GRID AND THE FIGURES. The three ropes are NOT generated independently:
+     that is what used to leave two of them running a hair apart, which reads as
+     a mess and cannot be played. Instead the world is built one BAND at a time
+     — a progress interval that emits exactly one segment per rope — and every
+     band starts and ends with the three ropes parked on a three-column grid,
+     `slotHalf()` apart. The gap is therefore a constant of the level, not a
+     lottery, and a figure is free to braid through it because the player has
+     seen where the ropes will land.
+
+     A band is one of: rails (three straights), ribbon / coil (in-phase sines,
+     wide or zigzag-tight — the gap never moves), braid (two ropes half a turn
+     apart around a shared centre: the DNA weave), helix (all three a third of a
+     turn apart: the full vrille), breath (the trio squeezing in and opening
+     back out), shift (the columns re-dealt, ropes crossing on the way), and the
+     loop family — one curl, a figure eight (two lobes, opposite ways) or a
+     spiral (two or three lobes the same way).
+
+     Phase is the whole trick: a sine that starts a quarter turn in leaves its
+     rope at the edge of its swing rather than at the centre, so two ropes can
+     share a centre and still begin `2*amp` apart. Whole periods only, so a
+     figure always hands the ropes back to the grid it borrowed them from.
 
      SCREEN. sy(y) = anchorY - (y - camP). The camera IS the arrow's progress,
      so the arrow sits exactly on anchorY at all times except inside a loop.
@@ -2621,6 +2659,13 @@
     var gates;                 // mine pairs, and the rope each one leaves open
     var arrowX, arrowY, arrowAng;
 
+    // --- the band generator ------------------------------------------------
+    var genP = 0;                     // progress the three ropes are built to
+    var curX = [0, 0, 0];             // each rope's x at genP
+    var slotRope = [0, 1, 2];         // slotRope[column] = the rope parked there
+    var sway = 0;                     // lateral drift of the whole grid
+    var onGrid = true;                // false right after a helix
+
     // --- cached per layout / per skin --------------------------------------
     var anchorY = 0, pMin = 0, pMax = 0, bgGrad = null, sparks = [];
     var dotDim = [], dotHot = [];     // pre-rendered rope dots, one per colour
@@ -2637,7 +2682,7 @@
        THE ROPES — generation and evaluation
        ==================================================================== */
 
-    // Kinds: 0 straight, 1 curve, 2 sine, 3 loop.
+    // Kinds: 0 straight, 1 curve, 2 sine (phased), 3 loop.
     function segEval(s, p, out) {
       var t, u, th;
       if (s.k === 0) { out.x = s.x; out.y = p; }
@@ -2646,7 +2691,7 @@
         u = ease(t);
         out.x = s.x0 + (s.x1 - s.x0) * u; out.y = p;
       } else if (s.k === 2) {
-        out.x = s.x + s.amp * Math.sin(TAU * (p - s.p0) / s.wl); out.y = p;
+        out.x = s.x + s.amp * Math.sin(TAU * (p - s.p0) / s.wl + s.ph); out.y = p;
       } else {
         th = TAU * (p - s.p0) / (s.p1 - s.p0);
         out.x = s.x + s.dir * s.r * (1 - Math.cos(th));
@@ -2673,73 +2718,214 @@
       return T.dot;
     }
 
-    /* Aim a lane change at a spot the other two ropes are not sitting on, so
-       the three stay tellable apart even though they are free to cross. */
-    function pickTarget(path, lo, hi) {
-      var bx = 0, bd = -1, i, j, cand, d;
-      for (i = 0; i < 3; i++) {
-        cand = Rand.range(lo, hi); d = 1e9;
-        for (j = 0; j < 3; j++) if (paths[j] !== path) d = Math.min(d, Math.abs(cand - paths[j].endX));
-        if (d > bd) { bd = d; bx = cand; }
-      }
-      return bx;
+    /* --- the grid ---------------------------------------------------------
+       Three columns, `slotHalf()` apart, the whole set drifting sideways by
+       `sway` so it never looks ruled. Bands hand the ropes back to it, which is
+       what makes the gap between two ropes a property of the level instead of a
+       coincidence of two independent random walks. */
+    function slotHalf() { return Layout.w * 0.5 - T.edge; }
+    function slotX(s) { return Layout.cx + sway + (s - 1) * slotHalf(); }
+
+    // Free space on one side of x before the play area runs out.
+    function wallRoom(x, dir) {
+      return dir > 0 ? (Layout.right - 26) - x : x - (Layout.left + 26);
     }
 
-    function pushSeg(path) {
-      var lo = Layout.left + T.edge, hi = Layout.right - T.edge;
-      var p0 = path.head, x = path.endX;
-      var roomL = x - lo, roomR = hi - x, room = Math.max(roomL, roomR);
-      var kinds, kind, s, len, amp, wl, n, r, dir, span, k, x1;
+    // --- segment emitters. Each keeps curX[i] honest for the next band. -----
+    function emitStraight(i, p0, p1) {
+      paths[i].segs.push({ k: 0, p0: p0, p1: p1, x: curX[i], step: T.dot });
+    }
+    function emitCurve(i, p0, p1, x1) {
+      paths[i].segs.push({ k: 1, p0: p0, p1: p1, x0: curX[i], x1: x1, step: T.dot * 0.86 });
+      curX[i] = x1;
+    }
+    /* A phased sine — the figure engine. `ph` decides where on the swing the
+       rope enters, so a caller can put two ropes on the SAME centre and still
+       start them `2*amp` apart (they then weave through each other), or fan
+       three of them a third of a turn apart. `n` whole periods, so x comes back
+       to where it started and curX needs no update. */
+    function emitSine(i, p0, wl, n, center, amp, ph) {
+      paths[i].segs.push({ k: 2, p0: p0, p1: p0 + wl * n, x: center, amp: amp, wl: wl,
+                           ph: ph, step: dotStep(2, Math.abs(amp), wl) });
+    }
+    /* One lobe. `tag` is set on the last lobe of a figure only — that is the
+       one checkLoop pays out, so a figure eight scores once, not twice. */
+    function emitLoop(i, p0, span, r, dir, n, tag) {
+      paths[i].segs.push({ k: 3, p0: p0, p1: p0 + span, x: curX[i], r: r, dir: dir,
+                           step: dotStep(3, r, span / TAU), n: n, tag: tag });
+    }
 
-      // weights: 1 straight, 3 curves, 2 sines, 1 coil, and 2 loops when there
-      // is room sideways for the lobe
-      kinds = ["straight", "curve", "curve", "curve", "sine", "sine", "coil"];
-      if (room > 130) { kinds.push("loop"); kinds.push("loop"); }
-      // ease the player in: the first stretch of every rope stays readable
-      kind = p0 < 900 ? Rand.pick(["straight", "curve", "curve"]) : Rand.pick(kinds);
+    /* Move the trio onto the columns, `perm[column]` naming the rope that lands
+       on each. The band is long enough that the widest move still eases in and
+       out flat, so a swap reads as a lane change rather than a jolt. */
+    function ferryTo(perm) {
+      var i, len = 0;
+      for (i = 0; i < 3; i++) len = Math.max(len, Math.abs(slotX(i) - curX[perm[i]]));
+      len = clamp(250 + len * 1.05, 280, 660);
+      for (i = 0; i < 3; i++) emitCurve(perm[i], genP, genP + len, slotX(i));
+      slotRope = perm; onGrid = true; genP += len;
+    }
+    /* Fan back onto the grid the short way: leftmost rope to the left column,
+       so nobody crosses anybody on a band that is only housekeeping. */
+    function ferryHome() {
+      var ord = [0, 1, 2];
+      ord.sort(function (u, v) { return curX[u] - curX[v]; });
+      ferryTo(ord);
+    }
 
-      if (kind === "straight") {
-        len = Rand.range(150, 300);
-        s = { k: 0, p0: p0, p1: p0 + len, x: x, step: T.dot };
+    /* The catalogue, as weights. Braids are the signature figure, the helix and
+       the big loop tricks are rare enough to stay events. */
+    var FIGURES = ["rails", "rails", "ribbon", "ribbon", "coil", "coil",
+                   "braid", "braid", "braid", "breath", "breath", "helix",
+                   "shift", "shift", "shift", "loop", "loop", "eight", "spring"];
+    // Re-dealings of the three columns, identity excluded: a shift must move.
+    var SHIFTS = [[1, 0, 2], [0, 2, 1], [2, 1, 0], [1, 2, 0], [2, 0, 1]];
 
-      } else if (kind === "curve") {
-        x1 = pickTarget(path, lo, hi);
-        len = clamp(210 + Math.abs(x1 - x) * 1.15, 230, 640);
-        s = { k: 1, p0: p0, p1: p0 + len, x0: x, x1: x1, step: T.dot * 0.86 };
-        path.endX = x1;
+    function pushRails(p0) {
+      var len = Rand.range(190, 330), i;
+      for (i = 0; i < 3; i++) emitStraight(i, p0, p0 + len);
+      genP = p0 + len;
+    }
 
-      } else if (kind === "sine" || kind === "coil") {
-        var tight = kind === "coil";
-        amp = Math.min(tight ? Rand.range(34, 60) : Rand.range(66, 132), Math.min(roomL, roomR));
-        wl  = tight ? Rand.range(155, 215) : Rand.range(300, 460);
-        n   = tight ? Rand.int(3, 4) : Rand.int(1, 2);
-        if (amp < 26) {                                  // pinned to an edge
-          x1 = pickTarget(path, lo, hi);
-          s = { k: 1, p0: p0, p1: p0 + clamp(210 + Math.abs(x1 - x) * 1.15, 230, 640),
-                x0: x, x1: x1, step: T.dot * 0.86 };
-          path.endX = x1;
-        } else {
-          s = { k: 2, p0: p0, p1: p0 + wl * n, x: x, amp: amp, wl: wl,
-                step: dotStep(2, amp, wl) };
+    function pushBand() {
+      var p0 = genP, kind, i, a, b, ia, ib, ic, center, amp, wl, n, ph, xs, len,
+          off, mid, li, gapL, gapR, r, dir, spans, total, q;
+
+      // A helix parks the ropes off the grid: spend the next band fanning them
+      // back onto it, and nothing else.
+      if (!onGrid) { ferryHome(); return; }
+
+      kind = p0 < T.calmP ? Rand.pick(["rails", "ribbon", "shift"]) : Rand.pick(FIGURES);
+
+      if (kind === "rails") { pushRails(p0); return; }
+
+      if (kind === "shift") {
+        // the grid itself slides a little, then the columns are re-dealt: the
+        // ropes cross once, cleanly, in plain sight
+        sway = clamp(sway + Rand.range(-T.sway, T.sway), -T.sway, T.sway);
+        a = Rand.pick(SHIFTS);
+        ferryTo([slotRope[a[0]], slotRope[a[1]], slotRope[a[2]]]);
+        return;
+      }
+
+      if (kind === "ribbon" || kind === "coil") {
+        // in phase: the three swing together, so a tight zigzag is exactly as
+        // readable as a straight — the gap simply travels with them
+        amp = Math.min(kind === "coil" ? 42 : 58,
+                       Math.min(wallRoom(slotX(0), -1), wallRoom(slotX(2), 1)));
+        if (amp < 22) { pushRails(p0); return; }          // pinned to the walls
+        wl = kind === "coil" ? Rand.range(160, 220) : Rand.range(320, 460);
+        n  = kind === "coil" ? Rand.int(3, 4) : Rand.int(1, 2);
+        for (i = 0; i < 3; i++) emitSine(i, p0, wl, n, curX[i], amp, 0);
+        genP = p0 + wl * n;
+        return;
+      }
+
+      if (kind === "braid") {
+        // THE DNA WEAVE. Two neighbours share a centre half a turn apart, so
+        // each one starts on the other's column and they trade twice a period.
+        a = Rand.chance(0.5) ? 0 : 1; b = a + 1;
+        ia = slotRope[a]; ib = slotRope[b]; ic = slotRope[3 - a - b];
+        center = (slotX(a) + slotX(b)) * 0.5;
+        amp = (slotX(b) - slotX(a)) * 0.5;
+        wl = Rand.range(320, 440); n = Rand.int(1, 2);
+        emitSine(ia, p0, wl, n, center, amp, -Math.PI / 2);   // enters on column a
+        emitSine(ib, p0, wl, n, center, amp,  Math.PI / 2);   // ...and on column b
+        // the odd rope holds its column: a weave needs something still to read
+        // against, and it is where a cautious player will sit it out
+        emitStraight(ic, p0, p0 + wl * n);
+        genP = p0 + wl * n;
+        return;
+      }
+
+      if (kind === "helix") {
+        // THE VRILLE. All three around one centre, a third of a turn apart.
+        // sin(-2pi/3) < sin(0) < sin(2pi/3), so handing the phases out left to
+        // right means the run-in never tangles.
+        center = Layout.cx + sway;
+        amp = slotHalf() * 0.68;
+        ph = [-TAU / 3, 0, TAU / 3];
+        xs = []; len = 0;
+        for (i = 0; i < 3; i++) xs.push(center + amp * Math.sin(ph[i]));
+        for (i = 0; i < 3; i++) len = Math.max(len, Math.abs(xs[i] - curX[slotRope[i]]));
+        len = clamp(240 + len * 1.05, 270, 620);
+        for (i = 0; i < 3; i++) emitCurve(slotRope[i], p0, p0 + len, xs[i]);
+        genP = p0 + len;
+        wl = Rand.range(330, 450); n = Rand.int(1, 2);
+        for (i = 0; i < 3; i++) emitSine(slotRope[i], genP, wl, n, center, amp, ph[i]);
+        genP += wl * n;
+        onGrid = false;                    // ends off the grid, by construction
+        return;
+      }
+
+      if (kind === "breath") {
+        /* The trio squeezes towards the middle and opens back out, in step.
+           x_i = centre + off_i * f, f = mid + (1-mid) cos th, so f is 1 at both
+           ends (the columns) and never dips under 2*mid-1 ~ 0.6 of the spread —
+           it breathes, it does not collapse. */
+        center = Layout.cx + sway;
+        mid = Rand.range(0.80, 0.88);
+        wl = Rand.range(320, 440); n = Rand.int(1, 2);
+        for (i = 0; i < 3; i++) {
+          off = slotX(i) - center;
+          if (Math.abs(off) < 4) emitStraight(slotRope[i], p0, p0 + wl * n);
+          else emitSine(slotRope[i], p0, wl, n, center + off * mid,
+                        off * (1 - mid), Math.PI / 2);
         }
-
-      } else {
-        dir = roomR >= roomL ? 1 : -1;
-        r = Math.min(T.loopR, room * 0.5);
-        span = r * Rand.range(2.2, 2.9);                  // span < 2pi*r -> a real loop
-        k = span / TAU;
-        s = { k: 3, p0: p0, p1: p0 + span, x: x, r: r, dir: dir, step: dotStep(3, r, k) };
+        genP = p0 + wl * n;
+        return;
       }
 
-      path.segs.push(s);
-      path.head = s.p1;
+      /* THE LOOP FAMILY — one rope curls while the other two hold their column.
+         A lobe reaches 2r sideways, so the radius is capped by the room between
+         the rope and whatever it bulges towards, minus `loopClear`: the curl may
+         come close to a neighbour, never touch it. An eight needs room on both
+         sides, so it is always flown from the middle column. */
+      li = kind === "loop" ? slotRope[Rand.int(0, 2)] : slotRope[1];
+      gapL = wallRoom(curX[li], -1); gapR = wallRoom(curX[li], 1);
+      for (i = 0; i < 3; i++) {
+        if (i === li) continue;
+        if (curX[i] < curX[li]) gapL = Math.min(gapL, curX[li] - curX[i]);
+        else                    gapR = Math.min(gapR, curX[i] - curX[li]);
+      }
+      if (kind === "eight") {
+        dir = Rand.chance(0.5) ? 1 : -1;
+        r = Math.min(T.loopR, (Math.min(gapL, gapR) - T.loopClear) * 0.5);
+      } else {
+        dir = gapR >= gapL ? 1 : -1;
+        r = Math.min(T.loopR, (Math.max(gapL, gapR) - T.loopClear) * 0.5);
+      }
+      if (r < 44) { pushRails(p0); return; }              // no room for a lobe
+      n = kind === "loop" ? 1 : kind === "eight" ? 2 : Rand.int(2, 3);
+
+      spans = []; total = 0;
+      for (i = 0; i < n; i++) {
+        // span < 2pi*r is what makes it a real loop; low in that range reads as
+        // a round curl, high as a lazy S
+        q = r * Rand.range(1.8, 2.7);
+        spans.push(q); total += q;
+      }
+      for (i = 0; i < 3; i++) if (i !== li) emitStraight(i, p0, p0 + total);
+      q = p0;
+      for (i = 0; i < n; i++) {
+        emitLoop(li, q, spans[i], r, kind === "eight" && (i % 2) ? -dir : dir, n,
+                 i === n - 1 ? (n === 1 ? "LOOP!" : kind === "eight" ? "FIGURE 8!" : "SPIRAL!")
+                             : null);
+        q += spans[i];
+      }
+      genP = p0 + total;
     }
 
-    function build(path, horizon) {
-      while (path.head < horizon) pushSeg(path);
-      while (path.segs.length > 1 && path.segs[0].p1 < camP - 700) path.segs.shift();
+    /* Generate up to `horizon` and drop what the camera has left behind. Bands
+       always advance genP, so this cannot spin. */
+    function buildAll(horizon) {
+      var i, segs;
+      while (genP < horizon) pushBand();
+      for (i = 0; i < 3; i++) {
+        segs = paths[i].segs;
+        while (segs.length > 1 && segs[0].p1 < camP - 700) segs.shift();
+      }
     }
-    function buildAll(horizon) { var i; for (i = 0; i < 3; i++) build(paths[i], horizon); }
 
     /* ====================================================================
        PICKUPS — gems pay, mines and voids cost
@@ -2775,9 +2961,9 @@
     function hazardSpot(p) {
       var tries, i, order;
       for (tries = 0; tries < 5; tries++) {
-        // The test has to read the real ropes: past `head` a segment lookup
+        // The test has to read the real ropes: past `genP` a segment lookup
         // extrapolates the last curve, which is not the shape the generator will
-        // actually commit. Growing them first costs nothing — they are built
+        // actually commit. Growing them first costs nothing — bands are built
         // forward only, and never re-rolled.
         buildAll(p + T.hazardClear + 60);
         order = Rand.chance(0.55) ? [lane, (lane + 1) % 3, (lane + 2) % 3]
@@ -2987,22 +3173,26 @@
     }
 
     /* ====================================================================
-       LOOPS — flying a whole curl is the run's showpiece
+       LOOPS — flying a whole figure is the run's showpiece
        ==================================================================== */
+    /* A figure eight and a spiral are several lobes chained on one rope, and only
+       the last one carries a `tag`: that is how a two-lobe figure pays once, for
+       the whole trick, instead of twice for half of it. Leaving the rope part way
+       drops the figure with no reward — flying it is the point. */
     function checkLoop() {
-      var s = pathSeg(paths[lane], camP);
+      var s = pathSeg(paths[lane], camP), g;
       if (s.k === 3 && camP > s.p0 + 6 && camP < s.p1) { loopSeg = s; return; }
       if (!loopSeg) return;
-      if (camP >= loopSeg.p1) {
-        var g = 150 * mult;
-        loops++; gainScore(g);
-        Pop.show("perfect", { word: "LOOP!", sub: "+" + g });
+      if (camP >= loopSeg.p1 && loopSeg.tag) {
+        g = 150 * loopSeg.n * mult;
+        loops += loopSeg.n; gainScore(g);
+        Pop.show("perfect", { word: loopSeg.tag, sub: "+" + g });
         Fx.ring(arrowX, arrowY, { from: 20, to: 200, color: "#ffd43b", width: 7, life: 0.45 });
         Fx.burst(arrowX, arrowY, { color: ["#ffd43b", "#ffffff"], count: 22, speed: 400, life: 0.5 });
         HUD.punch("#ffd43b");
-        Sound.clip("loop", 0.85);
+        Sound.clip("loop", 0.85, loopSeg.n > 1 ? 0.9 : 1);
       }
-      loopSeg = null;                                     // cleared, or bailed out
+      loopSeg = null;                                     // paid, or bailed out
     }
 
     /* ====================================================================
@@ -3054,7 +3244,7 @@
        FRAME
        ==================================================================== */
     function reset() {
-      var lo, hi, x0, i;
+      var i;
       best = Store.get("bestScore", 0);
       metrics();
       buildDots();
@@ -3066,20 +3256,23 @@
       lane = 1; prevLane = 1; switchT = 1; switchDir = 0; switchLock = 0;
       loopSeg = null; gest = null; lastPop = -1;
       items = []; trail = []; gates = [];
-      nextItemP = 560; lastHazardP = 0; lastPairP = 0; nextMile = T.mileStep;
+      // the opening second stays empty: at this speed an item at 560 would be on
+      // the arrow before the player has read the three ropes
+      nextItemP = 760; lastHazardP = 0; lastPairP = 0; nextMile = T.mileStep;
 
-      lo = Layout.left + T.edge; hi = Layout.right - T.edge;
-      x0 = [lo + (hi - lo) * 0.17, (lo + hi) * 0.5, hi - (hi - lo) * 0.17];
+      // the run opens with the three ropes parked on the grid, dead straight, so
+      // the first second says "three lanes, pick one" and nothing else
+      sway = 0; onGrid = true; slotRope = [0, 1, 2]; genP = 340;
+      curX = [slotX(0), slotX(1), slotX(2)];
       paths = [];
       for (i = 0; i < 3; i++) {
-        // every rope opens on a calm straight so the first second reads clearly
-        paths.push({ idx: i, color: T.colors[i], endX: x0[i], head: 340,
-                     segs: [{ k: 0, p0: -800, p1: 340, x: x0[i], step: T.dot }] });
+        paths.push({ idx: i, color: T.colors[i],
+                     segs: [{ k: 0, p0: -800, p1: 340, x: curX[i], step: T.dot }] });
       }
-      for (i = 0; i < 3; i++) build(paths[i], T.ahead);
+      buildAll(T.ahead);
       pMin = anchorY - view.h - 220; pMax = anchorY + 220;
 
-      arrowX = x0[1]; arrowY = anchorY; arrowAng = -Math.PI / 2;
+      arrowX = curX[1]; arrowY = anchorY; arrowAng = -Math.PI / 2;
       HUD.setScoreNow(0);
       HUD.setLeft("0 M", "DIST");
       drawLives();
@@ -3113,7 +3306,7 @@
     }
 
     function update(dt) {
-      var i, m;
+      var m;
       runT += dt;
       speed = T.speedMin + (T.speedMax - T.speedMin) * Math.min(1, runT / T.ramp);
       prevP = camP;
@@ -3123,7 +3316,7 @@
       pMin = camP + anchorY - view.h - 220;
       pMax = camP + anchorY + 220;
 
-      for (i = 0; i < 3; i++) build(paths[i], camP + T.ahead);
+      buildAll(camP + T.ahead);
       spawnItems(camP + T.ahead - 120);
 
       if (switchT < 1) switchT = Math.min(1, switchT + dt / T.switchTime);
@@ -3157,7 +3350,9 @@
 
     function die() {
       var d = Math.floor(dist), sc = pick + d;
-      var st = sc >= 3200 ? 3 : sc >= 1500 ? 2 : 1;
+      // Scaled with the scroll speed: the same run earns the same stars it used
+      // to, it just gets there sooner.
+      var st = sc >= 4700 ? 3 : sc >= 2200 ? 2 : 1;
       endRound({
         title: st === 3 ? "LEGEND RUN!" : st === 2 ? "GREAT RUN!" : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
@@ -3306,14 +3501,10 @@
       ctx.restore();
     }
 
-    /* A hazard also wears a thin ring in the colour of the rope it sits on: the
-       placement rule keeps it off crossings, this makes the ownership explicit
-       even when another rope passes somewhere in the frame. */
-    function ownerRing(x, y, r, col) {
-      ctx.lineWidth = 3.5; ctx.strokeStyle = rgba(col, 0.75);
-      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
-    }
-
+    /* Hazards wear NO rope colour. Which rope a mine sits on is told by the grid
+       — the columns are a wide, fixed distance apart and the placement rule keeps
+       hazards off crossings — so a friendly hue on a mine would buy nothing and
+       cost the one thing the item must say instantly: stay away. */
     function drawItem(it, x, y, col) {
       var pu;
       if (it.type === "gem") {
@@ -3326,20 +3517,22 @@
         diamond(x, y, 31 * pu, -runT * 1.2, "#fffbe8", "#ffd43b", "#ff9f1c", "#2b1a00");
 
       } else if (it.type === "mine") {
-        // a hazard has to be the loudest thing on the rope: it is the only item
-        // the player MUST read in time
+        // The loudest thing on screen, and red all the way through: long spikes
+        // on a near-black body, turning around a hot core. It is the only item
+        // the player MUST read in time, so it is built as a silhouette — seven
+        // deep points, so the shape says "do not touch" before the colour does.
         pu = 1 + Math.sin(runT * 7 + it.seed) * 0.09;
-        halo(x, y, 62 * pu, "#ff2d55");
-        ownerRing(x, y, 44, col);
-        spiked(x, y, 9, 42 * pu, 23, "#22040f", "#ff2d55", runT * 1.1 + it.seed);
+        halo(x, y, 66 * pu, "#ff2d55");
+        spiked(x, y, 7, 47 * pu, 18, "#2b0410", "#ff2d55", it.seed - runT * 0.85);
         ctx.fillStyle = "#ff2d55";
-        ctx.beginPath(); ctx.arc(x, y, 15, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, TAU); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.8)";
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, TAU); ctx.stroke();
         ctx.fillStyle = "#ffe3ea";
-        ctx.beginPath(); ctx.arc(x, y, 6, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 6.5, 0, TAU); ctx.fill();
 
       } else if (it.type === "void") {
         halo(x, y, 54, "#a24bff");
-        ownerRing(x, y, 40, col);
         ctx.fillStyle = "#160a24";
         ctx.beginPath(); ctx.arc(x, y, 31, 0, TAU); ctx.fill();
         ctx.lineWidth = 6; ctx.strokeStyle = "#c07bff";

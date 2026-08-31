@@ -1,0 +1,212 @@
+
+  /* =========================================================================
+     SKIN — GEARBALL. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few overrides below.
+     ========================================================================= */
+  :root {
+    --bg:#0a0718; --text:#f0f4ff; --muted:#a99cc6;
+    --accent:#7ef9ff;
+    --cta-a:#ff9a44; --cta-b:#e0362c; --cta-text:#2c0900;
+    --danger:#ff3d6e; --gold:#ffd43b; --good:#42e8b0;
+    --panel:rgba(110,135,200,.07); --panel-line:rgba(143,166,216,.16);
+    /* the machine is cold steel, so the balls own every warm colour on screen */
+    --arc:#8fa6d8;
+    --ball:#ffb44f;   /* a ball on the track */
+    --slot:#7ef9ff;   /* an empty seat waiting for one */
+  }
+  html, body { background:radial-gradient(880px 940px at 50% 26%, #2a2058 0%, #140e2e 52%, #05040e 100%); }
+  .btn { box-shadow:0 10px 30px rgba(224,54,44,.45), inset 0 2px 6px rgba(255,255,255,.35); }
+  #intro-title {
+    background:linear-gradient(180deg,#ffffff,#8fa6d8);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 28px rgba(143,166,216,.45);
+  }
+  #hud-score { text-shadow:0 0 14px rgba(255,180,79,.5), 0 3px 10px rgba(4,5,14,.9); }
+  .hud-pill { background:rgba(8,10,24,.66); }
+  /* left pill: the lives, as the balls the shift can still afford to lose */
+  #hud-left .hud-pill { letter-spacing:4px; color:#ffc9d4; }
+  #hud-left .hud-pill.warn { color:#ffd7de; background:rgba(200,30,70,.4);
+    box-shadow:0 0 18px rgba(255,61,110,.5); }
+  .hud-pill.warn { color:#ffd7de; background:rgba(200,30,70,.4);
+    box-shadow:0 0 18px rgba(255,61,110,.5); }
+  .eo-score { text-shadow:0 0 22px rgba(126,249,255,.7); }
+  #cta-bar { border-top:1px solid rgba(255,154,68,.24); }
+  /* the ring sits low in the frame, so a toast belongs just under the HUD */
+  .pop-score { --chip:#1d1405; --chip-line:#ffd9a2;
+    --fill:linear-gradient(180deg,#fff4e0,#ffb44f); }
+  .pop-combo { --chip:#04202a; --chip-line:#bff6ff;
+    --fill:linear-gradient(180deg,#ffffff,#7ef9ff); }
+  .pop-danger { --fill:linear-gradient(180deg,#ffe2e8,#ff3d6e); }
+
+  /* ---- intro: the loop turns, a gap arrives, the finger fills it ---------
+     "Drop a ball in an empty slot, fill the loop" — and the stage plays that
+     literally, once every 4 s. A ring of six cogs is painted into the stage's
+     own background; the slot chain rides their outer rims as two nodes turning
+     together — the BEAM carries the balls already seated, the TRACK carries
+     the hollow seats on top of them, and one ball is missing from the beam, so
+     a single GAP travels round the ring. It reaches the top at exactly the
+     halfway point of the cycle, which is when the finger's tap lands and the
+     ball falls into it.
+
+     The motor's nodes are all recycled: the target is the falling ball (its
+     ripples are the landing flash), the beam and the track are the two halves
+     of the slot chain, the stage's ::before is the hopper and its ::after the
+     entry funnel. The finger stays the SHARED one, moved out to the left so it
+     clears the ring.
+
+     Geometry, in a 420x300 stage: the ring is centred on (210,186); six cogs
+     of radius 28 sit on a circle of radius 60, so their rims all reach radius
+     88 — which is where the twelve slots ride, and the ring's top lands at
+     y 98. The two chain nodes are 200x200 boxes centred on the ring, and both
+     run the same -180deg -> 180deg turn, so the gap (the slot missing from the
+     beam, at the node's own 12 o'clock) is dead centre at the top when the
+     rotation passes zero, at 50 %.
+
+     The ball's box is centred on the ring too, so ONE transform chain covers
+     the whole cycle: `rotate(A) translate(0,-Dpx)`. With A held at 0 it falls
+     straight down the drop line as D runs 152 (the hopper mouth) to 88 (the
+     seat); once seated it simply follows A round with the chain. */
+  .demo-caption { display:none; }
+  /* 42 characters have to sit on ONE line inside the 624 px the screen's
+     padding leaves, which 29 px does with room to spare. */
+  #intro-tagline { margin-top:18px; font-size:29px; font-weight:700; color:#ffffff; }
+  #intro-tagline .w-drop { color:var(--ball); text-shadow:0 0 18px rgba(255,180,79,.9); }
+  #intro-tagline .w-slot { color:var(--slot); text-shadow:0 0 18px rgba(126,249,255,.85); }
+  #intro-tagline .w-fill { color:var(--good); text-shadow:0 0 18px rgba(66,232,176,.85); }
+  #intro-demo { margin-top:24px; }
+
+  /* the stage, with the six cogs and the drop line painted into its own
+     background: a rim and a hub each, in the machine's wire colour, exactly
+     where the slot chain rides them */
+  .demo-stage {
+    width:420px; height:300px; overflow:hidden;
+    background:
+      /* the drop line, from the hopper down to the entry */
+      repeating-linear-gradient(180deg, rgba(126,249,255,.34) 0 5px, transparent 5px 13px),
+      /* six cogs: rim + hub, at 60deg steps on a circle of radius 60 */
+      radial-gradient(circle 30px at 210px 126px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 210px 126px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(circle 30px at 262px 156px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 262px 156px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(circle 30px at 262px 216px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 262px 216px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(circle 30px at 210px 246px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 210px 246px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(circle 30px at 158px 216px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 158px 216px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(circle 30px at 158px 156px, transparent 0 25px, rgba(143,166,216,.72) 25px 28px, transparent 28px),
+      radial-gradient(circle 10px at 158px 156px, transparent 0 5px, rgba(143,166,216,.34) 5px 7px, transparent 7px),
+      radial-gradient(300px 250px at 50% 40%, rgba(78,56,140,.5), rgba(10,7,24,0) 74%),
+      #0c0820;
+    background-repeat:no-repeat;
+    background-size:3px 58px, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto;
+    background-position:208px 36px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+    box-shadow:inset 0 0 0 3px rgba(143,166,216,.16);
+  }
+
+  /* THE HOPPER — the stage's ::before, a chute at the top with the next ball
+     sitting in it. */
+  .demo-stage::before {
+    content:""; position:absolute; left:186px; top:8px; width:48px; height:26px;
+    z-index:2; border:3px solid rgba(143,166,216,.75); border-top:0;
+    border-radius:0 0 16px 16px;
+    box-shadow:0 0 14px rgba(143,166,216,.3);
+  }
+  /* THE ENTRY — the ::after, the funnel the ball drops through. */
+  .demo-stage::after {
+    content:""; position:absolute; left:194px; top:74px; width:32px; height:16px;
+    z-index:2; border-left:3px solid rgba(126,249,255,.6);
+    border-right:3px solid rgba(126,249,255,.6);
+    transform:perspective(40px) rotateX(28deg);
+  }
+
+  /* THE SLOT CHAIN, in two layers that turn as one.
+     Twelve seats on a circle of radius 88, centred in a 200x200 box: the BEAM
+     paints the balls already on the track — eleven of them, because the slot
+     at 12 o'clock is the GAP — and the TRACK paints all twelve hollow seats on
+     top, so a seated ball reads as a ball INSIDE its seat. */
+  .demo-tap .demo-beam, .demo-tap .demo-track {
+    display:block; left:110px; top:86px; width:200px; height:200px;
+    margin:0; border:0; background-color:transparent;
+    /* the motor pivots the beam on its base for the aim demo — here both
+       layers have to turn on the ring's own centre */
+    transform-origin:50% 50%;
+    animation:glTurn 4s linear infinite;
+  }
+  @keyframes glTurn { from { transform:rotate(-180deg); } to { transform:rotate(180deg); } }
+
+  /* the balls — every seat but the one at the top of the box */
+  .demo-tap .demo-beam {
+    z-index:1;
+    background-image:
+      radial-gradient(circle 9px at 144px 24px,   var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 176px 56px,   var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 188px 100px,  var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 176px 144px,  var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 144px 176px,  var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 100px 188px,  var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 56px 176px,   var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 24px 144px,   var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 12px 100px,   var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 24px 56px,    var(--ball) 0 7px, transparent 8px),
+      radial-gradient(circle 9px at 56px 24px,    var(--ball) 0 7px, transparent 8px);
+    filter:drop-shadow(0 0 6px rgba(255,180,79,.75));
+  }
+  /* the seats — all twelve, the gap included */
+  .demo-tap .demo-track {
+    z-index:2; border-top:0;
+    background-image:
+      radial-gradient(circle 10px at 100px 12px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 144px 24px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 176px 56px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 188px 100px, transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 176px 144px, transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 144px 176px, transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 100px 188px, transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 56px 176px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 24px 144px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 12px 100px,  transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 24px 56px,   transparent 0 7px, var(--slot) 7px 9px, transparent 10px),
+      radial-gradient(circle 10px at 56px 24px,   transparent 0 7px, var(--slot) 7px 9px, transparent 10px);
+    opacity:.85;
+  }
+
+  /* THE BALL — it waits in the hopper, drops when the gap arrives underneath,
+     then rides round with the chain it just joined. Its box is centred on the
+     ring, so one transform chain does both moves. */
+  .demo-tap .demo-target {
+    display:block; left:200px; top:176px; width:20px; height:20px;
+    margin:0; border:0; border-radius:50%; z-index:3;
+    background:radial-gradient(circle at 34% 30%, #ffffff 0 16%, var(--ball) 44%, #8a4a00 100%);
+    box-shadow:0 0 16px rgba(255,180,79,.9);
+    animation:glBall 4s linear infinite;
+  }
+  .demo-tap .demo-ripple { inset:-9px; border-width:3px; border-color:#d6fbff;
+    animation:glFlash 4s ease-out infinite; }
+  .demo-tap .demo-ripple.d2 { animation-delay:.12s; }
+  @keyframes glBall {
+    0%,14%   { transform:rotate(0deg) translate(0,-152px); opacity:0; }
+    18%      { transform:rotate(0deg) translate(0,-152px); opacity:1; }  /* in the hopper */
+    38%      { transform:rotate(0deg) translate(0,-152px); opacity:1; }  /* the tap */
+    50%      { transform:rotate(0deg) translate(0,-88px);  opacity:1; }  /* seated */
+    75%      { transform:rotate(90deg) translate(0,-88px); opacity:1; }  /* riding */
+    86%,100% { transform:rotate(130deg) translate(0,-88px); opacity:0; }
+  }
+  @keyframes glFlash {
+    0%,48%   { transform:scale(.5); opacity:0; }
+    52%      { opacity:.9; }
+    66%,100% { transform:scale(3); opacity:0; }
+  }
+
+  /* THE SHARED FINGER — one tap, out on the left where it clears the ring. */
+  .demo-tap .demo-hand {
+    width:48px; height:62px; margin-left:-24px; left:50%; bottom:14px;
+    animation:glTap 4s ease-in-out infinite;
+  }
+  @keyframes glTap {
+    0%,28%   { transform:translate(-132px,-6px);  opacity:0; }
+    33%      { transform:translate(-132px,-22px); opacity:1; }
+    38%      { transform:translate(-132px,-40px); opacity:1; }   /* the tap */
+    44%      { transform:translate(-132px,-22px); opacity:1; }
+    52%,100% { transform:translate(-132px,-6px);  opacity:0; }
+  }

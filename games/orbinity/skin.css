@@ -1,0 +1,150 @@
+
+
+  /* =========================================================================
+     SKIN — ORBINITY. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  :root {
+    --bg:#05061a; --text:#eaf6ff; --muted:#a9b3e8;
+    --accent:#7cf5ff; --cta-a:#b39bff; --cta-b:#6d5cff; --cta-text:#0b0620;
+    --danger:#ff4d6d; --gold:#ffd43b;
+  }
+  html, body { background:radial-gradient(1000px 820px at 50% 34%, #1d1a4a 0%, #0a0824 56%, #04030f 100%); }
+  /* the intro keeps the plain nebula gradient of the shell — like every other
+     game — so it stays clearly separate from the round's painted background */
+  #app-icon {
+    width:236px; border-radius:23%;   /* the art is a rounded square already */
+    box-shadow:0 18px 46px rgba(0,0,0,.62), 0 0 44px rgba(124,245,255,.22);
+  }
+
+  /* ---- intro: one sentence, and a stage that plays the whole orbit --------
+     "Tap to fling the comet from planet to planet" — so the stage shows the
+     comet coiled around one planet, the finger tapping, and the comet flying
+     off on the tangent it had and reaching the next planet. The motor's target
+     ring is recycled into the comet itself: the nucleus is the element, the
+     tail is a row of tapering, fading box-shadow beads behind it. Its beam
+     becomes the tap shockwave, and the ripples are dropped.
+
+     Geometry, in the 420 x 290 stage: planet A at (108, 186) r 28, the comet
+     orbiting it at r 62, released at 255.9 deg — where the tangent points
+     (0.97, -0.24) — then flying 200 px along it to (287, 77), right onto the
+     shell of planet B at (330, 66) r 30. The whole transform is
+     `rotate(angle) translate(62px, travel)`: after the rotation the local +Y
+     axis IS the direction of travel, which is why the same transform can both
+     orbit and fly, and why the tail beads trail at negative Y. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:36px; font-weight:800; color:#e2e9ff; }
+  #intro-tagline .w-comet  { color:var(--accent); text-shadow:0 0 18px rgba(124,245,255,.8); }
+  #intro-tagline .w-planet { color:#ffc46b; text-shadow:0 0 18px rgba(255,196,107,.75); }
+
+  .demo-stage {
+    width:420px; height:290px; overflow:hidden;
+    background:radial-gradient(300px 250px at 40% 62%, rgba(60,48,140,.5), rgba(8,6,28,0) 74%),
+               rgba(255,255,255,.04);
+    border-color:rgba(179,155,255,.22);
+  }
+
+  /* planet A — the host the comet is coiled around */
+  .demo-stage::before {
+    content:""; position:absolute; z-index:0; left:50%; top:186px;
+    width:56px; height:56px; margin:-28px 0 0 -130px; border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #ffd479 0 26%, #e8621f 68%, #7d2c05 100%);
+    box-shadow:0 0 26px rgba(255,196,107,.45);
+  }
+  /* planet B — the one it is flung to; it flares when the comet arrives */
+  .demo-stage::after {
+    content:""; position:absolute; z-index:0; left:50%; top:66px;
+    width:60px; height:60px; margin:-30px 0 0 90px; border-radius:50%;
+    background:radial-gradient(circle at 36% 28%, #cbb8ff 0 26%, #5b34d6 68%, #26105e 100%);
+    animation:demoCatch 2.4s infinite;
+  }
+  @keyframes demoCatch {
+    0%,62%   { box-shadow:0 0 24px rgba(179,155,255,.4); }
+    70%      { box-shadow:0 0 46px rgba(179,155,255,1), 0 0 92px rgba(124,245,255,.5); }
+    86%,100% { box-shadow:0 0 24px rgba(179,155,255,.4); }
+  }
+
+  /* the comet: icy nucleus + six tapering tail beads, all one element */
+  .demo-tap .demo-target {
+    z-index:1; left:50%; top:186px; width:26px; height:26px;
+    margin:-13px 0 0 -116px; border:0; border-radius:50%;
+    background:radial-gradient(circle at 40% 34%, #ffffff 0 34%, #c9f8ff 58%, #7cf5ff 100%);
+    /* the tail: six beads packed close enough to read as one plume, each a step
+       smaller, a step deeper in the tier-0 gradient and a step more transparent,
+       so the dust dissipates instead of ending on a hard bead */
+    box-shadow:
+      0 0 20px rgba(180,248,255,.95),
+      0 -11px 0 -2px rgba(141,248,255,.85),
+      0 -21px 0 -4px rgba(75,217,255,.68),
+      0 -30px 0 -6px rgba(47,157,255,.52),
+      0 -38px 0 -8px rgba(43,124,255,.38),
+      0 -45px 0 -10px rgba(90,79,230,.24),
+      0 -51px 0 -12px rgba(107,69,224,.12);
+    animation:demoComet 2.4s infinite;
+  }
+  .demo-tap .demo-ripple { display:none; }
+  @keyframes demoComet {
+    0%   { transform:rotate(-44.1deg) translate(62px,0); opacity:1;
+           animation-timing-function:linear; }
+    40%  { transform:rotate(255.9deg) translate(62px,0); opacity:1;
+           animation-timing-function:cubic-bezier(.18,.72,.4,1); }
+    68%  { transform:rotate(255.9deg) translate(62px,200px); opacity:1; }
+    78%  { transform:rotate(255.9deg) translate(62px,208px); opacity:0; }
+    90%  { transform:rotate(-44.1deg) translate(62px,0);   opacity:0; }
+    100% { transform:rotate(-44.1deg) translate(62px,0);   opacity:1; }
+  }
+
+  /* the finger: the shared assets/svg/finger.svg from the motor, tapping on
+     the frame the comet lets go. Its shockwave rides the motor's beam. */
+  .demo-tap .demo-hand {
+    left:263px; margin-left:0; bottom:8px; z-index:2;
+    animation:handTap 2.4s ease-in-out infinite;
+  }
+  .demo-tap .demo-beam {
+    display:block; z-index:1; left:270px; top:134px; bottom:auto;
+    width:60px; height:60px; margin-left:0; border-radius:50%;
+    background:none; border:3px solid var(--accent);
+    transform-origin:50% 50%;
+    animation:demoTapWave 2.4s ease-out infinite;
+  }
+  @keyframes demoTapWave {
+    0%,34%   { transform:scale(.3); opacity:0; }
+    42%      { opacity:.85; }
+    54%,100% { transform:scale(1.45); opacity:0; }
+  }
+  #intro-title {
+    font-size:82px; letter-spacing:4px;
+    background:linear-gradient(180deg,#ffffff 0%,#a8e8ff 46%,#b39bff 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #intro-tagline { color:#cdd6ff; }
+  #cta-bar { border-top:1px solid rgba(179,155,255,.18); }
+  #hud-score { text-shadow:0 0 16px rgba(124,245,255,.55); }
+  /* the combo pill follows the comet's tier: gold, then blazing pink */
+  .hud-pill.hot { color:var(--gold); border-color:rgba(255,212,59,.55); background:rgba(60,40,0,.42); }
+  .hud-pill.blaze { color:#ff9ae6; border-color:rgba(255,45,149,.6); background:rgba(60,0,40,.45); }
+  .btn { box-shadow:0 0 22px rgba(140,120,255,.55); }
+
+  /* ---- comic callouts (Pop) -------------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned here so a
+     callout always burns in the colour of the comet that earned it. */
+  /* score pops: one tint per chain tier, matching TIERS[].halo */
+  .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#7cf5ff 100%); --glow:rgba(124,245,255,.75); --ink:#041a2a; }
+  .pop-score.pop-t1 { --fill:linear-gradient(180deg,#ffffff 0%,#6cffd4 100%); --glow:rgba(108,255,212,.75); --ink:#01231b; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#fffbe6 0%,#ffd43b 100%); --glow:rgba(255,212,59,.8);  --ink:#2a1a00; }
+  .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#ff9ae6 60%,#ff2d95 100%); --glow:rgba(255,45,149,.8); --ink:#28001a; }
+  /* the chain eulogy */
+  .pop-score.pop-lost { --sz:56px; --fill:linear-gradient(180deg,#ffd6de 0%,#ff4d6d 100%); --glow:rgba(255,77,109,.7); --ink:#2a0009; }
+  /* the milestone sticker leans violet, like the CTA and the nebula */
+  .pop-combo { --chip:#12042e; --chip-line:#c9b4ff;
+    --fill:linear-gradient(180deg,#ffffff 0%,#c9b4ff 42%,#7c5cff 72%,#ff5ecb 100%); }
+  /* OVERTIME rides the same compact chip: the clock runs out WHILE the player
+     is still flying, so this callout has to stay out of the way of the field it
+     is announcing — hence the sticker rather than the hero style. Iced cyan so
+     it never reads as a scoring milestone. */
+  .pop-combo.pop-ot { --chip:#050a2c; --chip-line:#8be6ff; --glow:rgba(124,245,255,.5);
+    --fill:linear-gradient(180deg,#ffffff 0%,#a6e9ff 52%,#6d8cff 100%); }
+  .pop-streak { --burst:#7cf5ff; --ink:#04182a;
+    --fill:linear-gradient(180deg,#ffffff 0%,#c6f7ff 50%,#4bd9ff 100%);
+    --glow:rgba(124,245,255,.75); }
+  .pop-danger { --band-h:150px; }

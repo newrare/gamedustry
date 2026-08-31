@@ -1,0 +1,31 @@
+{
+  "slug": "triverse",
+  "title": "Triverse",
+  "tagline": "Swipe to jump from path to path",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#3ce0ff",
+    "accent2": "#ff5ad4"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "triverse",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.triverse",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

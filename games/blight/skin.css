@@ -1,0 +1,139 @@
+
+
+  /* =========================================================================
+     SKIN — BLIGHT. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few overrides below.
+     ========================================================================= */
+  :root {
+    --bg:#0a0e24; --accent:#3aa0ff;
+    --cta-a:#ff8fab; --cta-b:#ff3d6b; --cta-text:#ffffff;
+    --danger:#ff4d6d;
+  }
+  html, body { background:radial-gradient(900px 900px at 50% 22%, #16224e 0%, #0a0e24 60%, #05070f 100%); }
+  .btn { box-shadow:0 10px 30px rgba(255,61,107,.5), inset 0 2px 6px rgba(255,255,255,.35); }
+  #intro-title {
+    background:linear-gradient(180deg,#ffffff,#9fd0ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 30px rgba(90,150,255,.45);
+  }
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.55), 0 0 44px rgba(58,160,255,.4); }
+  #hud-score { text-shadow:0 0 14px rgba(58,160,255,.6); }
+  .eo-score { text-shadow:0 0 22px rgba(58,160,255,.8); }
+  #cta-bar { border-top:1px solid rgba(255,61,107,.22); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole shot ---------
+     "Drag to aim, release to shoot and match 3 bubbles" — so the stage shows
+     exactly that, in a single 2.4 s loop: the finger drags and the aim line
+     swings onto the cluster, the finger lifts off, the bubble travels the line
+     it was aiming along, and the three bubbles pop together. The motor's blue
+     target ring and its ripples mean nothing here, so they are recycled: the
+     ring becomes the bubble in flight and the ripples are dropped.
+
+     Geometry, in the 420x280 stage: the launcher sits at (160, 214), the two
+     wall bubbles at (271, 43) and (315, 43) with r = 22, and the shot lands at
+     (293, 81) — 133 px right and 133 px up, i.e. dead along the 45 deg aim
+     line, and touching both of them. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#d9e6ff; }
+  #intro-tagline .w-aim  { color:var(--accent); text-shadow:0 0 18px rgba(58,160,255,.75); }
+  #intro-tagline .w-fire { color:#ff4d6d; text-shadow:0 0 18px rgba(255,77,109,.75); }
+  #intro-demo { margin-top:30px; }
+
+  .demo-stage {
+    width:420px; height:280px; overflow:hidden;
+    background:radial-gradient(300px 240px at 62% 26%, rgba(30,54,120,.55), rgba(10,14,36,0) 72%), var(--panel);
+  }
+
+  /* the two wall bubbles the shot completes into a match of three */
+  .demo-stage::before, .demo-stage::after {
+    content:""; position:absolute; z-index:0; top:21px;
+    width:44px; height:44px; border-radius:50%;
+    background:radial-gradient(circle at 34% 26%, #ffd3dc 0 15%, #ff4d6d 54%, #c11e46 100%);
+    box-shadow:0 0 16px rgba(255,77,109,.6), inset -5px -7px 12px rgba(0,0,0,.3);
+  }
+  .demo-stage::before { left:249px; animation:demoBubblePop 2.4s linear infinite; }
+  .demo-stage::after  { left:293px; animation:demoBubblePop 2.4s linear infinite; }
+
+  /* the aim line: anchored at the launcher, swinging onto the cluster while
+     the finger drags, gone the instant the finger lets go */
+  .demo-aim .demo-beam {
+    left:160px; bottom:66px; margin-left:-3px; width:6px; height:172px;
+    transform-origin:50% 100%;
+    background:repeating-linear-gradient(180deg, var(--accent) 0 11px, transparent 11px 22px);
+    animation:demoAimBeam 2.4s ease-in-out infinite;
+  }
+  /* the line pivots on the launcher, which never moves — the finger only
+     steers it, exactly like the drag-anywhere aim in the game */
+  @keyframes demoAimBeam {
+    0%       { transform:rotate(19deg); opacity:0; }
+    8%       { opacity:.95; }
+    40%      { transform:rotate(45deg); opacity:.95; }
+    47%,100% { transform:rotate(45deg); opacity:0; }
+  }
+
+  /* the shot: the motor's target ring, restyled into the bubble that leaves */
+  .demo-aim .demo-target {
+    z-index:1; left:138px; top:192px; width:44px; height:44px; margin-left:0;
+    border:0; border-radius:50%;
+    background:radial-gradient(circle at 34% 26%, #ffd3dc 0 15%, #ff4d6d 54%, #c11e46 100%);
+    box-shadow:0 0 20px rgba(255,77,109,.8), inset -5px -7px 12px rgba(0,0,0,.3);
+    animation:demoShot 2.4s linear infinite;
+  }
+  .demo-aim .demo-ripple { display:none; }
+  @keyframes demoShot {
+    0%,40%   { transform:translate(0,0) scale(.84); opacity:.85; }
+    44%      { transform:translate(0,0) scale(1); opacity:1; }
+    70%      { transform:translate(133px,-133px) scale(1); opacity:1; }
+    82%      { transform:translate(133px,-133px) scale(1.4); opacity:0; }
+    100%     { transform:translate(133px,-133px) scale(1.4); opacity:0; }
+  }
+  @keyframes demoBubblePop {
+    0%,70%   { transform:scale(1); opacity:1; }
+    82%      { transform:scale(1.4); opacity:0; }
+    93%      { transform:scale(.8); opacity:0; }
+    100%     { transform:scale(1); opacity:1; }
+  }
+
+  /* the finger: drags the aim across, then lets go and drops out of frame */
+  .demo-aim .demo-hand {
+    left:123px; bottom:-26px; margin-left:0; z-index:2;
+    animation:demoAimHand 2.4s ease-in-out infinite;
+  }
+  @keyframes demoAimHand {
+    0%,6%    { transform:translateX(-30px); opacity:1; }
+    40%      { transform:translate(0,0); opacity:1; }
+    52%      { transform:translate(0,34px); opacity:0; }
+    88%      { transform:translate(-30px,34px); opacity:0; }
+    96%,100% { transform:translateX(-30px); opacity:1; }
+  }
+
+  /* ---- comic callouts -----------------------------------------------------
+     The shared Pop styles, retinted to the three bubble colours plus the
+     violet of the blight. The score pop climbs the same ladder as the combo
+     tiers, so its colour alone tells the player how big the clear was. */
+  .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#3aa0ff 100%); --glow:rgba(58,160,255,.75); --ink:#04162e; }
+  .pop-score.pop-t1 { --fill:linear-gradient(180deg,#fff1bd 0%,#ffc93c 100%); --glow:rgba(255,201,60,.8);  --ink:#2a1a00; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#ffd3dc 0%,#ff4d6d 100%); --glow:rgba(255,77,109,.8);  --ink:#2a0009; }
+  .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#c9a6ff 55%,#8200ff 100%); --glow:rgba(130,0,255,.85); --ink:#16002e; }
+
+  /* GREAT! — the first tier, in the launcher blue */
+  .pop-streak {
+    --fill:linear-gradient(180deg,#ffffff 0%,#cfe6ff 50%,#3aa0ff 100%);
+    --glow:rgba(58,160,255,.75); --burst:#1663d6; --ink:#04162e;
+  }
+  /* AWESOME! — the pink bubble */
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffd3dc 40%,#ff4d6d 100%);
+    --chip:#2a0009; --chip-line:#ff4d6d;
+  }
+  /* SUPER BLAST — the gold chip, the only clear that detonates the board */
+  .pop-combo.pop-blast {
+    --fill:linear-gradient(180deg,#fff8dd 0%,#ffc93c 45%,#dc8a00 100%);
+    --chip:#2a1a00; --chip-line:#ffc93c;
+  }
+  /* UNREAL! — the blight violet turned into the hero colour */
+  .pop-ultra {
+    --fill:linear-gradient(180deg,#ffffff 0%,#cfe6ff 34%,#a06bff 70%,#8200ff 100%);
+    --glow:rgba(130,0,255,.85); --ray:rgba(170,120,255,.30); --ink:#16002e; --ink2:rgba(70,0,140,.55);
+  }
+  .pop-ultra .pop-sub { background:#16002e; border-color:#cfe6ff; color:#cfe6ff; }

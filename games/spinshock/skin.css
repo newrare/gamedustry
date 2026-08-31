@@ -1,0 +1,144 @@
+
+
+  /* =========================================================================
+     SKIN — SPINSHOCK. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  :root {
+    --bg:        #08081c;
+    --text:      #eafcff;
+    --muted:     #a3b2e6;
+    --accent:    #40ecff;
+    --cta-a:     #7ef4ff;
+    --cta-b:     #00bfff;
+    --cta-text:  #02121c;
+    --danger:    #ff2f6d;
+    --gold:      #ffd43b;
+  }
+  html, body { background:radial-gradient(1000px 900px at 50% 40%, #221c5e 0%, #0b0a26 56%, #05040f 100%); }
+  #cta-bar { border-top:1px solid rgba(126,244,255,.18); }
+  .btn { box-shadow:0 0 22px rgba(64,236,255,.6); }
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(255,79,190,.34); }
+  #hud-score { text-shadow:0 0 16px rgba(126,244,255,.6); }
+
+  /* ---- comic callouts (Pop) -------------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned. The score
+     callout wears one class per shock tier (Game passes pop-t0 / t1 / t2), so
+     how well the tap landed is readable from colour and size alone. */
+  .pop-score.pop-t2 {                                    /* PERFECT */
+    --sz:78px; --stroke:12px; --ink:#3a2200; --ink2:rgba(90,50,0,.55);
+    --fill:linear-gradient(180deg,#fffdf0 0%,#ffe27a 36%,#f5b400 66%,#fff3b0 100%);
+    --glow:rgba(255,205,80,.9);
+  }
+  .pop-score.pop-t2 .pop-sub { background:#3a2200; border-color:#ffe27a; color:#ffe27a; }
+  .pop-score.pop-t1 {                                    /* GREAT */
+    --sz:66px; --stroke:10px; --ink:#03222e;
+    --fill:linear-gradient(180deg,#ffffff 0%,#bff6ff 52%,#40ecff 100%);
+    --glow:rgba(64,236,255,.8);
+  }
+  .pop-score.pop-t1 .pop-sub { background:#03222e; border-color:#bff6ff; color:#bff6ff; }
+  .pop-score.pop-t0 {                                    /* OK */
+    --sz:56px; --ink:#1a0f30;
+    --fill:linear-gradient(180deg,#ffffff 0%,#e0d4ff 55%,#a78bfa 100%);
+    --glow:rgba(167,139,250,.7);
+  }
+  .pop-score.pop-t0 .pop-sub { background:#1a0f30; border-color:#e0d4ff; color:#e0d4ff; }
+  /* the multi-hit sticker and the combo milestone ride the magenta blade */
+  .pop-bonus {
+    --sz:60px; --stroke:10px; --ink:#2a0020; --ink2:rgba(120,0,90,.5);
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffc2ec 45%,#ff4fbe 100%);
+    --glow:rgba(255,79,190,.75); --dot:rgba(90,0,70,.45);
+  }
+  .pop-bonus .pop-sub { background:#2a0020; border-color:#ffc2ec; color:#ffc2ec; }
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#bff6ff 34%,#ff4fbe 78%,#ff2f6d 100%);
+    --chip:#1a0024; --chip-line:#ff4fbe;
+  }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic ------
+     Everything the player has to understand is "tap when a rival top reaches
+     yours", so the intro says it once and shows it. The stage is a dish seen
+     from above: the player's top spins in the middle, a magenta rival charges
+     in from the right and, on the frame the two shells touch, the finger taps —
+     a shockwave leaves the player's top and the rival is thrown back out.
+     Every animation below shares the same 1.8 s loop, with the impact at 42%. */
+  .demo-caption { display:none; }
+  #intro-title {
+    font-size:86px; letter-spacing:6px;
+    background:linear-gradient(180deg,#ffffff 0%,#bff6ff 40%,#40ecff 72%,#ff4fbe 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #intro-tagline { margin-top:16px; font-size:32px; font-weight:800; color:#e6ecff; }
+  #intro-tagline .w-tap { color:var(--accent); text-shadow:0 0 18px rgba(64,236,255,.85); }
+  #intro-tagline .w-hit { color:#ff4fbe; text-shadow:0 0 18px rgba(255,79,190,.85); }
+  #intro-demo { margin-top:30px; }
+
+  /* the dish */
+  .demo-stage {
+    width:420px; height:250px; border-color:rgba(126,244,255,.28);
+    background:
+      radial-gradient(240px 200px at 50% 50%, rgba(64,42,140,.75), rgba(10,9,32,.9) 76%),
+      var(--panel);
+    box-shadow:inset 0 0 40px rgba(64,236,255,.14);
+  }
+
+  /* the player's top: a toothed rim (repeating conic), a dark plate and a hot
+     core, spinning fast and flaring on the shock */
+  .demo-stage::before {
+    content:""; position:absolute; z-index:3; left:50%; top:125px;
+    width:92px; height:92px; margin:-46px 0 0 -46px; border-radius:50%;
+    background:
+      radial-gradient(circle, #ffffff 0 11%, #bff6ff 17%, rgba(191,246,255,0) 32%),
+      radial-gradient(circle, #241f5e 0 45%, rgba(0,0,0,0) 46%),
+      repeating-conic-gradient(from 0deg, #7ef4ff 0 7deg, #0d4f74 7deg 14deg);
+    box-shadow:0 0 22px rgba(64,236,255,.6), inset 0 0 14px rgba(0,0,0,.6);
+    animation:demoSpin .42s linear infinite, demoBoost 1.8s ease-out infinite;
+  }
+  /* the rival: charges in, gets thrown back the instant the wave fires */
+  .demo-stage::after {
+    content:""; position:absolute; z-index:2; left:50%; top:125px;
+    width:62px; height:62px; margin:-31px 0 0 -31px; border-radius:50%;
+    background:
+      radial-gradient(circle, #ffe3f3 0 12%, rgba(255,227,243,0) 30%),
+      radial-gradient(circle, #2b0a1d 0 45%, rgba(0,0,0,0) 46%),
+      repeating-conic-gradient(from 0deg, #ff7ab8 0 9deg, #7c0f45 9deg 18deg);
+    box-shadow:0 0 18px rgba(255,79,190,.55);
+    animation:demoCharge 1.8s linear infinite;
+  }
+  @keyframes demoSpin { to { transform:rotate(360deg); } }
+  @keyframes demoBoost {
+    0%,40%   { box-shadow:0 0 22px rgba(64,236,255,.6), inset 0 0 14px rgba(0,0,0,.6); }
+    44%      { box-shadow:0 0 46px rgba(126,244,255,1), inset 0 0 14px rgba(0,0,0,.6); }
+    70%,100% { box-shadow:0 0 22px rgba(64,236,255,.6), inset 0 0 14px rgba(0,0,0,.6); }
+  }
+  /* 77 px between the centres is exactly shell-to-shell contact (46 + 31) */
+  @keyframes demoCharge {
+    0%   { transform:translateX(200px) rotate(0deg); opacity:0; }
+    10%  { opacity:1; }
+    42%  { transform:translateX(77px) rotate(220deg); opacity:1;
+           animation-timing-function:cubic-bezier(.1,.9,.3,1); }
+    72%  { transform:translateX(250px) rotate(430deg); opacity:1; }
+    82%,100% { transform:translateX(250px) rotate(470deg); opacity:0; }
+  }
+
+  /* the shockwave: the motor's target node keeps only its ripples */
+  .demo-tap .demo-target {
+    z-index:1; left:50%; top:125px; width:118px; height:118px; margin:-59px 0 0 -59px;
+    border-color:transparent; box-shadow:none;
+  }
+  .demo-ripple { border-color:#7ef4ff; animation:demoWave 1.8s ease-out infinite; }
+  .demo-ripple.d2 { animation-delay:.1s; }
+  @keyframes demoWave {
+    0%,40% { transform:scale(.3); opacity:0; }
+    44%    { opacity:1; }
+    100%   { transform:scale(2.3); opacity:0; }
+  }
+
+  /* the finger taps the floor, off to the side: the tap is a beat, not a target */
+  .demo-tap .demo-hand { left:54px; margin-left:0; bottom:6px; z-index:4;
+    animation:demoTap 1.8s ease-in-out infinite; }
+  @keyframes demoTap {
+    0%,30%   { transform:translateY(0); }
+    42%      { transform:translateY(-24px); }
+    58%,100% { transform:translateY(0); }
+  }

@@ -1,0 +1,31 @@
+{
+  "slug": "radiam",
+  "title": "Radiam",
+  "tagline": "Turn a ring, line up three on one ray",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#35e0ff",
+    "accent2": "#8b6cff"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "radiam",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.radiam",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

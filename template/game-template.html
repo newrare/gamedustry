@@ -929,11 +929,14 @@
     tagline: "<b class=\"w-verb\">Tap</b> to hit the <b class=\"w-target\">target</b>",
     gameSeconds: 20,                 // round length in seconds; 0 = endless
 
-    // Store links used by every CTA. The right one is picked at runtime.
+    // Store links used by every CTA. The right one is picked at runtime from the
+    // user agent. Until this game has a real listing all three point at the
+    // newrare site, where the game can actually be played — never leave a
+    // placeholder store URL here, it ships as a 404 on the device.
     storeUrl: {
-      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
-      android: "https://play.google.com/store/apps/details?id=com.example.game",
-      fallback:"https://52-entertainment.com/our-games/"
+      ios:     "https://newrare-website.vercel.app/#playables",
+      android: "https://newrare-website.vercel.app/#playables",
+      fallback:"https://newrare-website.vercel.app/#playables"
     },
 
     // Design resolution — all game logic and all DOM overlays use these units.

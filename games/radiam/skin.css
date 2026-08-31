@@ -1,0 +1,203 @@
+
+
+  /* =========================================================================
+     SKIN — RADIAM. Everything above is the shared motor stylesheet; the theme
+     lives in these tokens and the few overrides below.
+     ========================================================================= */
+  :root {
+    --bg:#070512; --text:#f4f0ff; --muted:#a293cf;
+    --accent:#35e0ff;
+    --cta-a:#ffcf4d; --cta-b:#ff8a1f; --cta-text:#2a1400;
+    --danger:#ff3d6e; --gold:#ffd43b; --good:#3ff0a0;
+    --panel:rgba(140,112,236,.07); --panel-line:rgba(168,142,255,.18);
+    /* the dial is drawn in one cold wire colour so the beads own every hue */
+    --wire:#6f5ea8;
+    /* the five bead colours, in the order the game hands them out */
+    --c1:#ff4d6d; --c2:#ffc23d; --c3:#35e0ff; --c4:#8b6cff; --c5:#3ff0a0;
+  }
+  html, body { background:radial-gradient(820px 900px at 50% 42%, #1a1440 0%, #0c0824 54%, #050310 100%); }
+  .btn { box-shadow:0 10px 30px rgba(255,138,31,.42), inset 0 2px 6px rgba(255,255,255,.4); }
+  #intro-title {
+    background:linear-gradient(180deg,#ffffff,#8b6cff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 30px rgba(139,108,255,.5);
+  }
+  #hud-score { text-shadow:0 0 14px rgba(53,224,255,.5), 0 3px 10px rgba(5,3,16,.9); }
+  .hud-pill { background:rgba(10,7,26,.66); }
+  .hud-pill.warn { color:#ffd7e2; background:rgba(200,26,80,.4);
+    box-shadow:0 0 18px rgba(255,61,110,.5); }
+  .eo-score { text-shadow:0 0 22px rgba(53,224,255,.7); }
+  #cta-bar { border-top:1px solid rgba(255,207,77,.22); }
+  .pop-combo { --chip:#150c33; --chip-line:#c3b0ff;
+    --fill:linear-gradient(180deg,#ffffff,#8b6cff); }
+  /* the same cheap chip, in the supers' gold — RING BLAST rides it */
+  .pop-combo.blast { --chip:#2a1a02; --chip-line:#ffd98a;
+    --fill:linear-gradient(180deg,#fff6cf,#ffb020); }
+  .pop-bonus { --fill:linear-gradient(180deg,#fff3cf,#ffc23d); }
+  .pop-score { --fill:linear-gradient(180deg,#ffffff,#35e0ff); }
+
+  /* ---- intro: the dial, and the ray that pays ---------------------------
+     "Turn a ring, line up three on one ray" — the stage plays exactly that,
+     once every 3.4 s: the finger rests on the toothed outer rim, rocks it one
+     slot clockwise, and the amber bead it carries slides onto the ray the
+     middle and inner ambers already sit on. The ray flares, two rings pop out
+     of it, and the finger rocks the rim back for the next hunt.
+
+     Every motor node is recycled as one part of the dial, so the stage is the
+     game seen from the front:
+       .demo-track  -> the OUTER ring: teeth, track, and the six beads it turns
+       .demo-beam   -> the MIDDLE ring, holding still
+       .demo-arrow  -> the INNER ring, holding still
+       .demo-target -> the ray, flaring when the three ambers land on it
+       .demo-ripple -> the pop rings leaving that ray
+       .demo-hand   -> the shared finger, never replaced
+
+     Geometry, in the 420x300 stage: the dial is centred on (210,148); bead
+     orbits are 87.5 / 57.5 / 30 px and the toothed rim runs 105 to 118. The
+     three ambers the demo is about sit at 12 o'clock, which is why the ray is
+     the vertical bar from y=41 to y=132. Every bead below is "centre + orbit,
+     at 60 deg steps" resolved to a pixel, so the alignment is exact by
+     construction. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:30px; font-weight:700; color:#ffffff; }
+  #intro-tagline .w-turn  { color:#35e0ff; text-shadow:0 0 18px rgba(53,224,255,.85); }
+  #intro-tagline .w-three { color:#ffc23d; text-shadow:0 0 18px rgba(255,194,61,.85); }
+  #intro-tagline .w-ray   { color:#8b6cff; text-shadow:0 0 18px rgba(139,108,255,.95); }
+  #intro-demo { margin-top:22px; }
+
+  .demo-stage {
+    width:420px; height:300px; overflow:hidden;
+    background:
+      radial-gradient(circle 190px at 210px 148px, rgba(111,94,168,.20) 0 108px, rgba(111,94,168,0) 168px),
+      radial-gradient(330px 290px at 50% 49%, rgba(52,34,110,.55), rgba(7,5,18,0) 76%),
+      #0a0720;
+    box-shadow:inset 0 0 0 3px rgba(111,94,168,.16);
+  }
+  /* the two inner plates hold still, so the drag is the only motion on stage */
+  .demo-drag .demo-beam, .demo-drag .demo-arrow, .demo-drag .demo-target { display:block; }
+
+  /* THE OUTER RING — the one you turn. Teeth on the rim, a track under the
+     beads, and its six beads painted straight into its own background so they
+     turn with it and the alignment can never drift. Each bead is the same HARD
+     ENAMEL the canvas sprite uses, in two hard-edged layers: the gloss cap on
+     top, then a flat body inside a dark wall. Every stop is a pair, never a
+     fade — a soft stop here is what made the dial look out of focus. */
+  .demo-drag .demo-track {
+    display:block; left:100px; top:38px; right:auto; bottom:auto;
+    width:220px; height:220px; border:0; border-radius:50%;
+    background-image:
+      radial-gradient(circle 5px at 110px 16px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 5px at 186px 59px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 5px at 186px 147px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 5px at 110px 191px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 5px at 34px 147px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 5px at 34px 59px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 15px at 110px 23px, var(--c2) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 15px at 186px 66px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 15px at 186px 154px, var(--c1) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 15px at 110px 198px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 15px at 34px 154px, var(--c4) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 15px at 34px 66px, var(--c1) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle at 50% 50%, transparent 0 70px, rgba(111,94,168,.16) 70px 105px, rgba(111,94,168,.5) 105px 108px, transparent 108px);
+    animation:radRim 3.4s ease-in-out infinite;
+  }
+  /* the teeth: a repeating conic wedge masked down to the rim annulus is the
+     cheapest cog CSS can draw, and it turns with the ring that carries it.
+     closest-side, not the default farthest-CORNER: the mask has to measure the
+     same 118 px the box does, or the annulus lands outside the element. */
+  .demo-drag .demo-track::before {
+    content:""; position:absolute; inset:-8px; border-radius:50%;
+    background:repeating-conic-gradient(from 0deg,
+      rgba(111,94,168,.85) 0 6deg, transparent 6deg 15deg);
+    -webkit-mask:radial-gradient(circle closest-side, transparent 0 89%, #000 89% 100%);
+    mask:radial-gradient(circle closest-side, transparent 0 89%, #000 89% 100%);
+  }
+
+  /* THE MIDDLE RING — same recipe, holding still. */
+  .demo-drag .demo-beam {
+    left:135px; top:73px; bottom:auto; margin:0; width:150px; height:150px;
+    border-radius:50%; transform:none; animation:none;
+    background-image:
+      radial-gradient(circle 4px at 75px 13px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 4px at 125px 41px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 4px at 125px 99px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 4px at 75px 128px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 4px at 25px 99px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 4px at 25px 41px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 12px at 75px 18px, var(--c2) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 12px at 125px 46px, var(--c4) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 12px at 125px 104px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 12px at 75px 133px, var(--c1) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 12px at 25px 104px, var(--c4) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 12px at 25px 46px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle at 50% 50%, transparent 0 44px, rgba(111,94,168,.16) 44px 71px, transparent 71px);
+  }
+
+  /* THE INNER RING — the smallest plate, holding still. */
+  .demo-drag .demo-arrow {
+    left:165px; top:103px; margin:0; width:90px; height:90px;
+    border:0; border-radius:50%; animation:none;
+    background-image:
+      radial-gradient(circle 3px at 45px 10px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 3px at 71px 26px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 3px at 71px 56px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 3px at 45px 70px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 3px at 19px 56px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 3px at 19px 26px, rgba(255,255,255,.5) 0 100%, transparent 100%),
+      radial-gradient(circle 10px at 45px 15px, var(--c2) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 10px at 71px 30px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 10px at 71px 60px, var(--c1) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 10px at 45px 75px, var(--c4) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 10px at 19px 60px, var(--c3) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle 10px at 19px 30px, var(--c1) 0 87%, rgba(10,6,26,.92) 87% 100%, transparent 100%),
+      radial-gradient(circle at 50% 50%, transparent 0 18px, rgba(111,94,168,.16) 18px 42px, transparent 42px);
+  }
+  /* the hub the three plates turn on */
+  .demo-drag .demo-arrow::after {
+    content:""; position:absolute; left:30px; top:30px; width:30px; height:30px;
+    border-radius:50%; background:#120c2c; box-shadow:inset 0 0 0 2px rgba(111,94,168,.6);
+  }
+
+  /* THE RAY — the 12 o'clock spoke, dark until the three ambers land on it. */
+  .demo-drag .demo-target {
+    left:190px; top:41px; width:40px; height:91px; margin:0;
+    border:0; border-radius:20px; opacity:0;
+    background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,194,61,.26));
+    box-shadow:0 0 26px rgba(255,194,61,.85), 0 0 62px rgba(255,194,61,.5);
+    mix-blend-mode:screen;
+    animation:radRay 3.4s ease-out infinite;
+  }
+  .demo-drag .demo-ripple {
+    inset:auto; left:20px; top:45px; width:56px; height:56px; margin:-28px 0 0 -28px;
+    border:3px solid #ffe6a8; border-radius:50%; opacity:0;
+    animation:radPop 3.4s ease-out infinite;
+  }
+  .demo-drag .demo-ripple.d2 { animation-delay:.16s; }
+
+  /* THE FINGER — parked on the rim at 5 o'clock, rocking the ring around the
+     dial's centre. Its transform-origin IS that centre, expressed from the
+     finger's own box, so finger and ring share one rotation and can never
+     disagree about where the beads are. */
+  .demo-drag .demo-hand {
+    left:263px; top:227px; bottom:auto; width:52px; height:66px; margin:0;
+    transform-origin:-53px -79px;
+    animation:radRim 3.4s ease-in-out infinite;
+  }
+
+  @keyframes radRim {
+    0%,10%   { transform:rotate(-60deg); }
+    46%,62%  { transform:rotate(0deg); }
+    96%,100% { transform:rotate(-60deg); }
+  }
+  @keyframes radRay {
+    0%,44%   { opacity:0; }
+    48%      { opacity:1; }
+    64%      { opacity:.75; }
+    76%,100% { opacity:0; }
+  }
+  @keyframes radPop {
+    0%,45%  { transform:scale(.25); opacity:0; }
+    50%     { opacity:.95; }
+    80%     { transform:scale(2.9); opacity:0; }
+    100%    { transform:scale(2.9); opacity:0; }
+  }
