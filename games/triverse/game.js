@@ -111,7 +111,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs. Prefer canvas drawing and
+     Generate entries with tools/lab/embed-asset.mjs. Prefer canvas drawing and
      WebAudio synth: every embedded byte counts against the 5 MB budget.
      =================================================================== */
   var ASSETS = {

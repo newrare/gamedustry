@@ -141,7 +141,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs.
+     Generate entries with tools/lab/embed-asset.mjs.
      =================================================================== */
   var ASSETS = {
     images: {

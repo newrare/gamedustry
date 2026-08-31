@@ -2,6 +2,8 @@
   "slug": "vipera",
   "title": "Vipera",
   "tagline": "Tap to swerve the viper and eat to grow",
+  "order": 80,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#4dff9b",
     "accent2": "#12b86a"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Une vipère taille sa galerie sans fin. Chaque tap change le côté qu’elle creuse, chaque gemme l’allonge.",
+      "tags": [
+        "Tap pour dévier",
+        "Sans fin",
+        "Armure"
+      ]
+    },
+    "en": {
+      "tagline": "A viper carves its endless burrow. Every tap flips the side it digs toward, every gem makes it longer.",
+      "tags": [
+        "Tap to swerve",
+        "Endless",
+        "Armour"
+      ]
+    }
+  },
+  "description": "A viper races up an endless burrow. Every tap flips the side it carves toward, so a rhythm of taps weaves it through the thorns. Gems grow the body — and the longer it gets, the higher its head rides and the less time there is to read what comes next. Eat all the way to full length and the scales plate over: the armour eats the next bite for free. Unarmoured, a thorn strips the body back to a stump and costs one of only three lives — the whole ladder has to be eaten again, at the speed the run has already reached.",
   "itch": {
     "user": "newrare",
     "project": "vipera",

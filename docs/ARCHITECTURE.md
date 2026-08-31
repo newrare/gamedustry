@@ -12,7 +12,7 @@ For what the motor actually gives you (APIs, layout, end screen, juice), read
 in exactly this order in the built `games/<slug>/index.html`, but they are stored
 apart: sections 3, 4, 5, 7 and the motor stylesheet in `packages/`, sections 1, 2
 and 6 in `games/<slug>/game.js`, the skin in `games/<slug>/skin.css`, and the head
-and markup in `games/<slug>/page.html`. `node tools/build.mjs` puts them back
+and markup in `games/<slug>/page.html`. `node tools/build/build.mjs` puts them back
 together; `--check` proves the result is byte-identical. Read this page as the
 anatomy of the *output*.
 
@@ -57,7 +57,7 @@ Inside the frame, sizes are written in design pixels — no `vw`, `vh` or
 | 7   | `BOOTSTRAP` | No             | Frame pipeline, `startGame`, wiring                                         |
 
 Sections 3, 4, 5 and 7 are **identical byte-for-byte between games**, and so is
-the stylesheet above each game's `SKIN —` block. `node tools/check-motor.mjs`
+the stylesheet above each game's `SKIN —` block. `node tools/build/build.mjs --check`
 verifies it and `--fix` restores it from the template, so a motor fix reaches
 every creative.
 

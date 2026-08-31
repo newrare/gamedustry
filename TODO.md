@@ -29,42 +29,54 @@ All settled; recorded in the `Decisions` table of the industrialization doc.
 
 - [x] CODE — `packages/engine`, `packages/platform`, `packages/shell`
 - [x] CODE — `tools/lib/parts.mjs`, the single definition of the file's regions
-- [x] CODE — `tools/extract.mjs`, the one-shot split
-- [x] CODE — `tools/build.mjs --target=playable [--game=…] [--check]`
+- [x] CODE — `tools/build/extract.mjs`, the one-shot split
+- [x] CODE — `tools/build/build.mjs --target=playable [--game=…] [--check]`
 - [x] AUTO — null-diff verified on 13 units (12 games + the template)
 - [x] CODE — per-game `manifest.json` generated from CONFIG + the site catalogue
 - [x] AUTO — CTA store URLs point at the newrare site in all 12 games + template
-- [x] AUTO — `assets/` untracked from `.gitignore`
-- [ ] MAIN — **commit everything** (nothing above is in git yet)
-- [ ] CODE — reorganize `tools/` into `lab/`, `build/`, `publish/`, and fix the
+- [x] AUTO — `assets/` removed from `.gitignore` (324 files still to `git add`)
+- [x] MAIN — commit the extraction (done: `e3ea9d9`)
+- [ ] MAIN — commit the tools split, the catalogue generator and the proto target
+- [x] CODE — reorganize `tools/` into `lab/`, `build/`, `publish/`, and fix the
   paths quoted in [CLAUDE.md](CLAUDE.md), [README.md](README.md) and
   [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md)
-- [ ] CODE — retire `tools/check-motor.mjs`: `build.mjs --check` supersedes it
-- [ ] CODE — generate the two catalogues from the manifests, so a new game is
+- [x] CODE — retire `tools/check-motor.mjs`: `build.mjs --check` supersedes it
+- [x] CODE — generate the two catalogues from the manifests, so a new game is
   registered once instead of in `site/games.js` **and** the root `index.html`
-- [ ] CODE — teach `build.mjs` to read `manifest.json` (today it only assembles
+- [x] CODE — teach `build.mjs` to read `manifest.json` (today it only assembles
   files; the manifest is written but not yet consumed)
 
 ## Phase 2 — the `proto` target
 
-- [ ] CODE — `--target=proto`: no intro, no CTA, no end screen; `R` resets,
+- [x] CODE — `--target=proto`: no intro, no CTA, no end screen; `R` resets,
   `SPACE` pauses and steps a frame
-- [ ] CODE — `packages/devtools/`: fps and `dt`, entity count, hitboxes, the
-  `Layout` band drawn over the canvas
-- [ ] CODE — live tunables: a slider per number in `CONFIG`
-- [ ] CODE — reproducible runs: `?seed=42&speed=3` overrides the RNG and any
+- [x] CODE — `packages/devtools/`: fps and `dt`, state, run counter, the `Layout`
+  band, the device insets, the pointer, and opt-in hitboxes through
+  `Game.debugShapes()`
+- [x] CODE — live tunables: a slider per number in `CONFIG`
+- [x] CODE — reproducible runs: `?seed=42&speed=3` overrides the RNG and any
   tunable from the URL
-- [ ] CODE — `tools/lab/serve.mjs`: static server + SSE reload on save
-- [ ] CODE — promotion path documented: proto → full game adds manifest, skin,
+- [x] CODE — `tools/lab/serve.mjs`: static server + SSE reload on save
+- [x] CODE — promotion path documented: proto → full game adds manifest, skin,
   intro and sounds, and touches no gameplay code
+
+### Left over from phases 1–2
+
+- [x] CODE — counters in the devtools panel, opt-in through `Game.debugCounts()`,
+  plus a free count of the shapes `Game.debugShapes()` returns
+- [x] CODE — the proto's `?<config.path>=` override is typed off the value already
+  in `CONFIG`, so it reaches strings and booleans too
+
+Nothing else is left in phases 1 and 2. The CI wiring that would enforce them is
+in phase 4, with the rest of the CI.
 
 ## Phase 3 — the site, deployed
 
 - [x] CODE — the site itself (`site/`), bilingual FR/EN, responsive
-- [x] CODE — `tools/build-site.mjs` → `dist/site/`
+- [x] CODE — `tools/build/build-site.mjs` → `dist/site/`
 - [x] CODE — the `draft: true` flag, so a game in construction stays off the site
 - [ ] MAIN — create the Vercel project: this repo, branch `main`, build
-  `node tools/build-site.mjs`, output `dist/site`, framework "Other"
+  `node tools/build/build-site.mjs`, output `dist/site`, framework "Other"
 - [ ] CODE — `vercel.json`, so those settings live in the repo and not in a
   dashboard
 - [ ] MAIN — verify the preview URL of a pull request on a real phone
@@ -88,7 +100,9 @@ All settled; recorded in the `Decisions` table of the industrialization doc.
 - [ ] CODE — `tools/publish/store-meta.mjs`: page copy from the manifest
 - [ ] MAIN — `butler login` locally, `BUTLER_API_KEY` as a CI secret
 - [ ] MAIN — create the itch page for `vipera` by hand (no public API exists)
-- [ ] AUTO — GitHub Actions: `build --check` + `check-size` on every PR
+- [ ] AUTO — GitHub Actions on every PR: `build.mjs --check`,
+  `gen-catalogues.mjs --check`, `check-size` — so a hand-edited artifact or a
+  stale catalogue fails the build
 - [ ] AUTO — GitHub Actions: `butler push` to `html5-dev` on merge, `html5` on tag
 
 ## Phase 5 — the meta layer
@@ -135,7 +149,7 @@ ______________________________________________________________________
 
 - [ ] MAIN — `assets/icon/slipdeck.png` + its `thumb/` cut; slipdeck is
   `draft: true` in `site/games.js` until then
-- [x] AUTO — radiam screenshots (`node tools/shoot-screens.mjs radiam`)
+- [x] AUTO — radiam screenshots (`node tools/lab/shoot-screens.mjs radiam`)
 - [ ] MAIN — finish `slipdeck` itself; it is the only game still in construction
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
   listing (all three currently point at the site, which is correct for now)

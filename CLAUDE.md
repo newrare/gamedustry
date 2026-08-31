@@ -32,7 +32,7 @@ a web font — same discipline, different reason (see [The site](#the-site)).
    web fonts, or CDN links. The file must work with `file://` and inside a
    sandboxed ad iframe.
 1. **Under 5 MB.** Target < 2 MB when possible. Verify with
-   `node tools/check-size.mjs`. Prefer canvas/CSS drawing and WebAudio synth
+   `node tools/build/check-size.mjs`. Prefer canvas/CSS drawing and WebAudio synth
    over embedded binaries. Embed assets only as base64 data URIs
    (see [docs/ASSETS.md](docs/ASSETS.md)).
 1. **Vanilla only.** No frameworks, no TypeScript, no build step. Plain ES5-ish
@@ -46,7 +46,7 @@ a web font — same discipline, different reason (see [The site](#the-site)).
    4 (`AD GLUE`), 5 (`SHELL`) and 7 (`BOOTSTRAP`) plus the motor stylesheet now
    live in `packages/` and are shared by construction — a game cannot fork them.
    Put new reusable helpers there; put game logic in section 6 of
-   `games/<slug>/game.js`. Verify with `node tools/build.mjs --check`.
+   `games/<slug>/game.js`. Verify with `node tools/build/build.mjs --check`.
 1. **Portrait only**, authored in the `720×1280` design space. Never read
    `window.innerWidth` in game code, never hard-code the top/bottom of the play
    area — use `view` and `Layout`.
@@ -59,7 +59,7 @@ a web font — same discipline, different reason (see [The site](#the-site)).
    cp template/page.html template/skin.css template/game.js games/<slug>/
    ```
    Then write `games/<slug>/manifest.json` and build with
-   `node tools/build.mjs --game=<slug>`. **Never create or edit
+   `node tools/build/build.mjs --game=<slug>`. **Never create or edit
    `games/<slug>/index.html` by hand** — it is the build output.
 1. Edit **`CONFIG`** (section 1 of `game.js`): `title`, `tagline`, `gameSeconds`, store URLs,
    `bg`, `layout` bands, `intro.demo` (`tap | hold | drag | swipe | aim`),
@@ -98,12 +98,14 @@ a web font — same discipline, different reason (see [The site](#the-site)).
    by the user. Leave `ASSETS.images` without a `logo` key and keep
    `CONFIG.intro.logo` at `null` — the intro simply hides `#app-icon`. Never
    generate, draw or embed a placeholder icon.
-1. Update `#intro-title` / `#intro-tagline` in the markup to match `CONFIG`, then
-   register the game in **two** catalogues: the `GAMES` array in the root
-   `index.html` (the dev gallery, English, long description) and `site/games.js`
-   (the public site, one short FR **and** EN tagline plus three tags per game).
-   A game with no `assets/icon/thumb/<slug>.png` is skipped by the site build.
-1. Run `node tools/build.mjs --game=<slug>` then `node tools/check-size.mjs`, and
+1. Update `#intro-title` / `#intro-tagline` in `page.html` to match `CONFIG`, then
+   describe the game **once**, in `games/<slug>/manifest.json`: `title`, `order`,
+   `draft`, `targets`, `theme`, `copy.fr` / `copy.en` (one tagline and three tags
+   each) and `description` (the long English write-up). Run
+   `node tools/build/gen-catalogues.mjs` to regenerate `site/games.js` and the
+   `GAMES` block of the root `index.html` — never edit those two by hand. A game
+   with no `assets/icon/thumb/<slug>.png` is skipped by the site build.
+1. Run `node tools/build/build.mjs --game=<slug>` then `node tools/build/check-size.mjs`, and
    open `games/<slug>/index.html` in a browser to test.
 
 The full recipe with prompt patterns is in
@@ -122,10 +124,20 @@ once in `packages/`, and each game owns four files:
 | `manifest.json` | title, tagline, targets, theme, itch and android config         |
 
 ```bash
-node tools/build.mjs                     # every game + the template
-node tools/build.mjs --game=vipera
-node tools/build.mjs --check             # assert the artifacts match the sources
+node tools/build/build.mjs                     # every game + the template
+node tools/build/build.mjs --game=vipera
+node tools/build/build.mjs --check             # assert the artifacts match the sources
+node tools/build/build.mjs --target=proto      # → dist/proto/<slug>/, never committed
 ```
+
+A game's `manifest.json` lists the distribution `targets` it is meant for; a
+build for a target it does not list is skipped and reported. `proto` is a
+development target and is always available.
+
+`packages/devtools/` is added by the proto target only — see
+[Prototyping](#prototyping--start-every-concept-here). The playable build never
+sees it, and the motor knows nothing about it: the proto build injects a
+`window.__PROTO__` handle into the bootstrap and the devtools read that.
 
 `--check` rebuilds in memory and compares byte for byte. A DIFF means someone
 edited an `index.html` directly, or a source changed without a rebuild; it is the
@@ -136,9 +148,74 @@ The builder splits `game.js` at the section 6 banner and injects the motor
 between the two halves, so **the banner comment lines are structural** — do not
 reword `6. GAME`, and do not reorder the sections.
 
-`node tools/extract.mjs` is the one-shot that created this layout from the old
+`node tools/build/extract.mjs` is the one-shot that created this layout from the old
 single-file games. It only needs re-running if a game's `index.html` becomes the
 source of truth again, which should not happen.
+
+## Prototyping — start every concept here
+
+A new concept is a `proto` before it is a game. Same engine, same `Game`
+contract, none of the ceremony:
+
+```bash
+node tools/lab/serve.mjs my-game        # http://localhost:8080/my-game/
+```
+
+The round starts by itself — no intro to click, no CTA, no end screen (it
+restarts instead). Saving any file under `packages/` or `games/<slug>/` rebuilds
+and reloads the page.
+
+| key     | what it does                            |
+| ------- | --------------------------------------- |
+| `R`     | restart the round                       |
+| `SPACE` | pause; press again to advance one frame |
+| `T`     | a tap at the centre of `Layout`         |
+| `[` `]` | slow down / speed up                    |
+| `` ` `` | fold the panel                          |
+
+The URL is the control surface:
+
+| query               | effect                                           |
+| ------------------- | ------------------------------------------------ |
+| `?seed=42`          | seeds `Math.random`, so the run is reproducible  |
+| `?speed=2`          | time scale                                       |
+| `?loop=0`           | keep the end screen instead of restarting        |
+| `?dev=0`            | hide the panel, for a clean look at the game     |
+| `?play.gapWide=200` | overrides any number in `CONFIG`, by dotted path |
+
+The panel lists **every number in `CONFIG`** as a slider — that is what the
+prototype is for. Values are written back live; anything read at `reset()` needs
+an `R` to take effect.
+
+**Two opt-in debug hooks.** A `Game` module may return either; nothing else in
+the motor calls them, so a playable build pays nothing for them.
+
+| hook            | what the proto does with it                                                              |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `debugShapes()` | draws `{x,y,r}` circles and `{x,y,w,h}` rects in design coords, and counts them          |
+| `debugCounts()` | prints `{label: number}` in the panel header — how many things the game thinks are alive |
+
+An entity count cannot be generic: only the game knows what an entity is. When
+you are tuning a mechanic, **add a counter to the event you believe is
+happening** before touching the numbers that shape it — that is what settles a
+question in one run instead of a dozen.
+
+### Promoting a proto to a game
+
+The point of `proto` being a build target and not a scratch folder: **promotion
+adds, it never rewrites.** A validated prototype already implements
+`reset / update / render / onDown`, so becoming a game is:
+
+1. write the intro — one sentence in `CONFIG.tagline`, its key words in
+   `<b class="w-…">`, and a demo stage that acts out *this* mechanic;
+1. fill `games/<slug>/skin.css` with the theme tokens;
+1. give every event a clip from `assets/sfx/`, embedded in `ASSETS.sounds`;
+1. add the icon artwork (the user's job, never generated);
+1. extend `targets` in `manifest.json` and write the FR/EN `copy`;
+1. `node tools/build/build.mjs --game=<slug>` and
+   `node tools/build/gen-catalogues.mjs`.
+
+Gameplay code does not move. If it has to, the prototype was not finished.
 
 ## Motor APIs — use these instead of reinventing them
 
@@ -173,7 +250,7 @@ Frame & input (section 3):
 - `Store.get/set` — safe localStorage. `Rand.range/int/pick/chance`.
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
-  the shared `assets/lucide/` pack, encoded with `node tools/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
+  the shared `assets/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
   white, so never `drawImage` the raw SVG.
 - `Fx.burst/ring/text/shake/flash/freeze` — the canvas juice layer; the frame
   pipeline updates and draws it for you.
@@ -218,7 +295,7 @@ its own, deployed by Vercel from this repo.
   string in the markup, and never add a third mechanism.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
-- **`node tools/build-site.mjs`** assembles `dist/site/`: it copies `site/`, then
+- **`node tools/build/build-site.mjs`** assembles `dist/site/`: it copies `site/`, then
   each playable's self-contained `index.html`, then each game's icon and
   screenshots out of `assets/` renumbered `01.jpg`, `02.jpg`… and finally rewrites
   `games.js` with what it actually found. The page therefore never links a
@@ -261,9 +338,9 @@ its own, deployed by Vercel from this repo.
 - [ ] End screen shows score, stars and stat rows, then the install CTA and the
   replay link.
 - [ ] Every CTA calls `Ad.openStore()`.
-- [ ] `node tools/check-size.mjs` passes (< 5 MB).
-- [ ] `node tools/build.mjs --check` passes (the artifact matches its sources).
-- [ ] `node tools/build-site.mjs` lists the game (not "skipped") and its card
+- [ ] `node tools/build/check-size.mjs` passes (< 5 MB).
+- [ ] `node tools/build/build.mjs --check` passes (the artifact matches its sources).
+- [ ] `node tools/build/build-site.mjs` lists the game (not "skipped") and its card
   reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).
 - [ ] Code and comments in English.

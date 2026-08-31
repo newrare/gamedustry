@@ -2,6 +2,8 @@
   "slug": "spinshock",
   "title": "Spinshock",
   "tagline": "Tap on the impact to blast the rival tops away",
+  "order": 10,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#40ecff",
     "accent2": "#ff4fbe"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Toupie contre toupie. Tape pile à l’impact pour souffler tes rivaux et regagner de la vitesse.",
+      "tags": [
+        "Tap rythmé",
+        "Sans fin",
+        "Physique"
+      ]
+    },
+    "en": {
+      "tagline": "Top against top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      "tags": [
+        "Timing tap",
+        "Endless",
+        "Physics"
+      ]
+    }
+  },
+  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that launches them into the walls and winds your spin back up. They carry 3 to 5 shell points, so a top you blast away ricochets and comes back for more. The top's colour is the only gauge — the run ends when it blows apart.",
   "itch": {
     "user": "newrare",
     "project": "spinshock",

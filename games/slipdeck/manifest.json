@@ -2,13 +2,35 @@
   "slug": "slipdeck",
   "title": "Slipdeck",
   "tagline": "Bin it or keep it to finish the poker hand you are dealt",
+  "order": 120,
+  "draft": true,
   "targets": [
-    "proto"
+    "playable",
+    "web"
   ],
   "theme": {
     "accent": "#f5c451",
     "accent2": "#3ddc97"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Une carte à la fois : à la poubelle ou dans la main. Cinq gardes forment une main de poker.",
+      "tags": [
+        "Swipe pour trier",
+        "30 s",
+        "Mains de poker"
+      ]
+    },
+    "en": {
+      "tagline": "One card at a time: bin it or keep it. Five keeps make a poker hand, paid on the spot.",
+      "tags": [
+        "Swipe to sort",
+        "30 s",
+        "Poker hands"
+      ]
+    }
+  },
+  "description": "A shoe deals one card at a time onto the felt. Flick it left and it drops down the chute; flick it right and it slides into the hand waiting at the bottom of the table. Five keeps fill that hand and it is paid as poker there and then — a pair or better cashes, and the chain multiplier climbs for as long as you keep cashing, so a run of clean hands is worth far more than the cards in them. Neither answer is free. Keeping a card that helps nothing drags the hand toward HIGH CARD, which busts it and costs a life; binning eats one of only three discards you get per hand, and the flick that overflows the chute costs a life too. So the squeeze comes from both sides: five slots to fill, eight cards to fill them with. On top of it every card burns on a fuse that gets shorter as the round runs, and a card left unsorted is a life gone. The table tells you the truth while you decide — the chip under the card names what keeping it would make, down to FLUSH DRAW, DEAD CARD or BUST.",
   "itch": {
     "user": "newrare",
     "project": "slipdeck",

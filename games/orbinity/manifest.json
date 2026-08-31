@@ -2,6 +2,8 @@
   "slug": "orbinity",
   "title": "Orbinity",
   "tagline": "Tap to fling the comet from planet to planet",
+  "order": 50,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#7cf5ff",
     "accent2": "#6d5cff"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
+      "tags": [
+        "Tap rythmé",
+        "30 s",
+        "Chaîne de combos"
+      ]
+    },
+    "en": {
+      "tagline": "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
+      "tags": [
+        "Timing tap",
+        "30 s",
+        "Combo chain"
+      ]
+    }
+  },
+  "description": "A comet orbits a mini planet, dust tail trailing. Tap to snap gravity and fling it along the tangent — the planet explodes, a new one spawns, and the next well catches you. Walls bounce and break the chain.",
   "itch": {
     "user": "newrare",
     "project": "orbinity",

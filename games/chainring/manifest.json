@@ -2,6 +2,8 @@
   "slug": "chainring",
   "title": "Chainring",
   "tagline": "Tap the instant a ball hits a ring",
+  "order": 20,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#4bf5ff",
     "accent2": "#4263eb"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Tape à l’instant où l’anneau se referme sur la balle. Chaque anneau tombe sur un temps de la musique.",
+      "tags": [
+        "Tap rythmé",
+        "30 s",
+        "Mort subite"
+      ]
+    },
+    "en": {
+      "tagline": "Tap the instant the closing ring hits the ball. Every ring lands on a beat of the track.",
+      "tags": [
+        "Rhythm tap",
+        "30 s",
+        "Sudden death"
+      ]
+    }
+  },
+  "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
   "itch": {
     "user": "newrare",
     "project": "chainring",
