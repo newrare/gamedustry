@@ -19,8 +19,8 @@ cp template/page.html template/skin.css template/game.js games/<slug>/
 Use a short kebab-case `<slug>` (e.g. `merge-fruit`, `slice-rope`).
 
 `games/<slug>/index.html` is **generated** from those three files plus the motor
-in `packages/`. Build it with `node tools/build.mjs --game=<slug>` and never edit
-it by hand — `node tools/build.mjs --check` will catch you. Also write
+in `packages/`. Build it with `node tools/build/build.mjs --game=<slug>` and never edit
+it by hand — `node tools/build/build.mjs --check` will catch you. Also write
 `games/<slug>/manifest.json`; copy a neighbour's and change the values.
 
 ### 2. Fill in CONFIG (section 1)
@@ -75,7 +75,7 @@ starting with a `SKIN — ` comment header:
   html, body { background:radial-gradient(900px 900px at 50% 20%, #1d2b1a, #0a1208); }
 ```
 
-That marker is how `node tools/check-motor.mjs` separates your CSS from the
+That marker is how the build separates your CSS from the
 motor's.
 
 ### 4. Rewrite the Game module (section 6)
@@ -151,7 +151,7 @@ in [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx):
 
 ```bash
 ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
-node tools/embed-asset.mjs gem.mp3 --key gem
+node tools/lab/embed-asset.mjs gem.mp3 --key gem
 ```
 
 Then play it with `Sound.clip(name, vol, rate)` and pitch one sample instead of
@@ -170,8 +170,8 @@ nothing to wire in the game module.
 
 ```bash
 open games/<slug>/index.html          # play it
-node tools/check-size.mjs             # size budget
-node tools/check-motor.mjs            # the shared sections are still shared
+node tools/build/check-size.mjs             # size budget
+node tools/build/build.mjs --check    # the artifact matches its sources
 ```
 
 Also: dev tools **Network** tab empty (no external requests), test in a

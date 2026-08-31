@@ -1462,7 +1462,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs. Every graphic in this game —
+     Generate entries with tools/lab/embed-asset.mjs. Every graphic in this game —
      the road, the bike, the traffic — is drawn on canvas, so the only bytes
      here are the app icon and the audio.
      =================================================================== */
@@ -1969,7 +1969,7 @@
 
   /* --- Icons: embedded SVGs, tinted and cached --------------------------
      Pictograms come from the repo's Lucide pack (assets/lucide/), encoded per
-     game with tools/embed-icon.mjs and listed in ASSETS.images under an "ico"
+     game with tools/lab/embed-icon.mjs and listed in ASSETS.images under an "ico"
      key. They are authored white, because an <img> has no `currentColor` to
      resolve, so every draw goes through here: the icon is rasterized once per
      size+colour into an offscreen canvas (a "source-in" fill turns the white

@@ -1,4 +1,7 @@
-assets/
+# Source art and audio ARE tracked (phase 0 decision, ~52 MB / 324 files,
+# no LFS): CI has to be able to re-embed a sound, regenerate an icon and
+# shoot store screenshots. See docs/INDUSTRIALIZATION.md.
+
 .DS_Store
 .vscode/
 dist/

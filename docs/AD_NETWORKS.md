@@ -85,7 +85,7 @@ Add it near the top of the try-chain (before the MRAID/`window.open` fallbacks).
 - Deliver the **single `index.html`**. If a network wants a `.zip`, zip just
   that file (plus any network-required manifest).
 - Confirm **no external requests** — the file must be fully offline.
-- Meet the network's **size limit** (`node tools/check-size.mjs`).
+- Meet the network's **size limit** (`node tools/build/check-size.mjs`).
 - Some networks require a specific `<meta>` (e.g. `ad.size`) or an
   orientation declaration — add per their current spec.
 

@@ -2,6 +2,8 @@
   "slug": "triverse",
   "title": "Triverse",
   "tagline": "Swipe to jump from path to path",
+  "order": 60,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#3ce0ff",
     "accent2": "#ff5ad4"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Trois cordes de lumière montent dans le vide. Swipe pour sauter de l’une à l’autre, gemmes contre mines.",
+      "tags": [
+        "Swipe",
+        "Sans fin",
+        "3 vies"
+      ]
+    },
+    "en": {
+      "tagline": "Three ropes of light run up the void. Swipe to hop between them, gems against mines.",
+      "tags": [
+        "Swipe lanes",
+        "Endless",
+        "3 lives"
+      ]
+    }
+  },
+  "description": "Three ropes of light run up the void, curling into loops and crossing each other. Swipe to hop the arrow from one to the next: gems and power-ups pay, mines and voids cost, and the run only ends when the third life does.",
   "itch": {
     "user": "newrare",
     "project": "triverse",

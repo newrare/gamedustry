@@ -463,7 +463,7 @@
 
   /* --- Icons: embedded SVGs, tinted and cached --------------------------
      Pictograms come from the repo's Lucide pack (assets/lucide/), encoded per
-     game with tools/embed-icon.mjs and listed in ASSETS.images under an "ico"
+     game with tools/lab/embed-icon.mjs and listed in ASSETS.images under an "ico"
      key. They are authored white, because an <img> has no `currentColor` to
      resolve, so every draw goes through here: the icon is rasterized once per
      size+colour into an offscreen canvas (a "source-in" fill turns the white

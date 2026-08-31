@@ -445,7 +445,7 @@ embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-c
 One sample per event, pitched with `rate` instead of duplicated.
 
 Pictograms work the same way: pick one from the shared **`assets/lucide/`** pack,
-encode it with `node tools/embed-icon.mjs <name> --key icoThing`, paste it into
+encode it with `node tools/lab/embed-icon.mjs <name> --key icoThing`, paste it into
 `ASSETS.images`, and draw it with `Icon.draw`. Icons are authored white — an
 `<img>` has no `currentColor` to resolve — so `Icon` tints them through a
 `source-in` fill and caches one canvas per key+size+colour. Never `drawImage`
@@ -497,7 +497,7 @@ Encode small — the bed plays under everything, so mono 64 kbps is plenty:
 
 ```bash
 ffmpeg -i track.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3   # ~30 s ≈ 240 KB
-node tools/embed-asset.mjs music.mp3 --key music
+node tools/lab/embed-asset.mjs music.mp3 --key music
 ```
 
 ### `Beat` — the musical clock
@@ -607,13 +607,13 @@ Tokens available: `--bg`, `--text`, `--muted`, `--accent`, `--cta-a`, `--cta-b`,
 by the engine at runtime; never set them by hand.
 
 Keep the block header starting with `SKIN — ` : that marker is what
-`tools/check-motor.mjs` uses to tell your CSS from the motor's.
+the build uses to tell your CSS from the motor's.
 
 ## Keeping the motor shared
 
 ```bash
-node tools/check-motor.mjs        # report any game that drifted from the template
-node tools/check-motor.mjs --fix  # rewrite the shared parts from the template
+node tools/build/build.mjs           # reassemble every game from packages/
+node tools/build/build.mjs --check   # assert the artifacts match their sources
 ```
 
 It compares, byte for byte, script sections 3/4/5 and 7 plus the whole
@@ -637,7 +637,7 @@ template behind a `CONFIG` flag and re-run `--fix`.
 - **All timing in seconds** (`dt`), never frames.
 - **Every CTA goes through `Ad.openStore()`.**
 - One self-contained HTML file, no external requests, under 5 MB
-  (`node tools/check-size.mjs`).
+  (`node tools/build/check-size.mjs`).
 
 ## Reference implementations
 

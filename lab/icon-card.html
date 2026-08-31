@@ -8,7 +8,7 @@
 /* ===========================================================================
    ICON LAB — the app icon of every playable, drawn in CSS.
 
-   `node tools/shoot-icon.mjs` loads this file in headless Chrome with
+   `node tools/lab/shoot-icon.mjs` loads this file in headless Chrome with
    `?slug=<game>&shoot=1` and screenshots the card over a transparent viewport,
    writing assets/icon/auto/<slug>.png (320 px, rounded corners at alpha 0).
    Opened by hand with no query string it shows every icon side by side on a
@@ -259,7 +259,7 @@ body.shoot .tile .card { transform:none; }
   <h1>Icon Lab</h1>
   <p class="hint">
     The shell — silhouette, rim, gloss — is shared; only the interior changes per game.
-    Shoot them all with <code>node tools/shoot-icon.mjs</code>, or open one alone with
+    Shoot them all with <code>node tools/lab/shoot-icon.mjs</code>, or open one alone with
     <code>?slug=vipera&amp;shoot=1</code>.
   </p>
 </header>

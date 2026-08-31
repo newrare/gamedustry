@@ -2,6 +2,8 @@
   "slug": "echomaze",
   "title": "Echomaze",
   "tagline": "Bounce through the dark maze to the exit",
+  "order": 90,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#7ef9ff",
     "accent2": "#4ade80"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Deux secondes pour voir le labyrinthe, puis le noir total. Tire des impulsions pour l’écholocaliser.",
+      "tags": [
+        "Vise et tire",
+        "Écholocation",
+        "1 sortie sur 6"
+      ]
+    },
+    "en": {
+      "tagline": "Two seconds to see the labyrinth, then total darkness. Fire pulses to echolocate it.",
+      "tags": [
+        "Aim & fire",
+        "Echolocation",
+        "1 way out of 6"
+      ]
+    }
+  },
+  "description": "An electric labyrinth is powered up for two seconds — the only look you ever get at it. Then everything goes out: the maze, the six mouths along its floor, even the walls of the arena. Fire pulses up into a mouth and the board exists only where one just hit it, arcing white and dying out over a couple of seconds, so you are echolocating a maze you can no longer see. Each mouth is a one-way flap — a pulse pushes through and it drops shut behind — and of the six, one leads to the gate at the top and five are dead ends.",
   "itch": {
     "user": "newrare",
     "project": "echomaze",

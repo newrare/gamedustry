@@ -317,7 +317,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs. Every graphic in this game —
+     Generate entries with tools/lab/embed-asset.mjs. Every graphic in this game —
      the road, the bike, the traffic — is drawn on canvas, so the only bytes
      here are the app icon and the audio.
      =================================================================== */

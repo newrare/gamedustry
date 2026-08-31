@@ -2,6 +2,8 @@
   "slug": "gearball",
   "title": "Gearball",
   "tagline": "Drop a ball in an empty slot, chain them to fill the loop",
+  "order": 100,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#7ef9ff",
     "accent2": "#ffb44f"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Huit engrenages, une piste continue, une bille qui tombe. Anticipe la rotation et soude la chaîne.",
+      "tags": [
+        "Tap pour lâcher",
+        "45 s",
+        "Boucle à remplir"
+      ]
+    },
+    "en": {
+      "tagline": "Eight cogs, one continuous track, one falling ball. Lead the rotation and weld the chain.",
+      "tags": [
+        "Tap to drop",
+        "45 s",
+        "Fill the loop"
+      ]
+    }
+  },
+  "description": "Every round packs a new closed circuit: eight cogs of wildly different sizes, each tangent to the next, and their rims form one continuous track cut into slots. The whole chain rides the machine at a single rim speed, and a hopper hangs above the highest point of it. Tap and a ball falls — into a free slot it seats, scores and climbs the combo; into a taken one it is destroyed and the shift loses a life. The catch is the lead: the fall lasts a third of a second, in which the machine turns nearly two slots, so the gap to aim at is never the one under the hopper when the finger goes down. Where it lands matters as much as when: a ball that seats next to balls already on the track WELDS to them and the whole run pays, the chain lights up as one girder, and the multiplier only climbs while the player keeps welding — bridge two runs and it is a splice. Every few seconds the magazine loads something other than stock: a WILD that cannot jam and hunts out the nearest free seat, a SPLIT that pulls a second ball into the gap beside it, a CHARGE that cashes in the whole chain it joins. Fill every slot and the circuit is closed: that wins the shift there and then, worth more the more clock is left.",
   "itch": {
     "user": "newrare",
     "project": "gearball",

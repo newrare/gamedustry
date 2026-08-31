@@ -2,6 +2,8 @@
   "slug": "blight",
   "title": "Blight",
   "tagline": "Drag to aim, release to shoot and match 3 bubbles",
+  "order": 40,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#ff8fab",
     "accent2": "#7048e8"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Vise, tire, aligne trois bulles. La moisissure ne redescend que si tu lui coupes la route.",
+      "tags": [
+        "Vise et tire",
+        "60 s",
+        "Ligne de danger"
+      ]
+    },
+    "en": {
+      "tagline": "Aim, shoot, match three bubbles. The spreading blight only falls if you cut it off.",
+      "tags": [
+        "Aim & shoot",
+        "60 s",
+        "Danger line"
+      ]
+    }
+  },
+  "description": "Drag to aim, release to fire and match 3 bubbles to pop them. Rainbow supers chain-detonate; the spreading blight only falls if you cut it off.",
   "itch": {
     "user": "newrare",
     "project": "blight",

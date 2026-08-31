@@ -68,7 +68,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs. Draw the graphics on canvas:
+     Generate entries with tools/lab/embed-asset.mjs. Draw the graphics on canvas:
      every embedded byte counts against the 5 MB budget.
 
      SOUND EFFECTS ALWAYS COME FROM assets/sfx/ — that shared library is the
@@ -77,7 +77,7 @@
      then embed it under a short game-side key:
 
        ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
-       node tools/embed-asset.mjs gem.mp3 --key gem
+       node tools/lab/embed-asset.mjs gem.mp3 --key gem
 
      Keep a comment naming the source clip next to every key (below), and pitch
      a single sample with Sound.clip(name, vol, rate) instead of embedding
@@ -94,7 +94,7 @@
       // music: the background bed, looped and crossfaded by Music (see
       // CONFIG.music). Encode it small — mono 64 kbps is plenty under sfx:
       //   ffmpeg -i track.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
-      //   node tools/embed-asset.mjs music.mp3 --key music
+      //   node tools/lab/embed-asset.mjs music.mp3 --key music
       // End-screen cues, shared by every game (played through Sound.cue, so a
       // game that drops them falls back to the synthesized beeps).
       // uiScore: alert_ping_chime_correct_answer_check_positive_009

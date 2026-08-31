@@ -2,6 +2,8 @@
   "slug": "arcider",
   "title": "Arcider",
   "tagline": "Press left or right to lean, take places off nineteen rivals and never break your shield",
+  "order": 70,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#35e8ff",
     "accent2": "#7a4dff"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Vingt pilotes, une autoroute néon, trois arrivants. Penche-toi pour doubler : ton bouclier ne se recharge jamais.",
+      "tags": [
+        "Maintiens pour incliner",
+        "Battle royale",
+        "1020 m"
+      ]
+    },
+    "en": {
+      "tagline": "Twenty pilots, one neon highway, three finishers. Lean to overtake, because your shield never refills.",
+      "tags": [
+        "Hold to lean",
+        "Battle royale",
+        "1020 m"
+      ]
+    }
+  },
+  "description": "Twenty pilots launch onto a bending neon highway and three of them finish. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. Four gates span the road ahead, green while you are inside the rank they ask for and red while you are not; clear one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
   "itch": {
     "user": "newrare",
     "project": "arcider",

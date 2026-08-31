@@ -41,7 +41,7 @@ The recipe per event:
 1. **Embed it** under a short game-side key, and keep a comment naming the
    source clip so the choice can be revisited:
    ```bash
-   node tools/embed-asset.mjs gem.mp3 --key gem
+   node tools/lab/embed-asset.mjs gem.mp3 --key gem
    ```
 1. **Pitch, don't duplicate.** One sample covers a whole family of events
    through `rate` — a rising chain, a direction, a weaker variant:
@@ -63,8 +63,8 @@ slice of the pack in `assets/lucide/` (ISC licence in the folder):
 
 ```bash
 ls assets/lucide                                   # browse the pack
-node tools/embed-icon.mjs bomb --key icoBomb       # encode one
-node tools/embed-icon.mjs arrow-left-right --key icoRow --stroke 2.6
+node tools/lab/embed-icon.mjs bomb --key icoBomb       # encode one
+node tools/lab/embed-icon.mjs arrow-left-right --key icoRow --stroke 2.6
 ```
 
 Paste the printed line into `ASSETS.images`, then draw it through the motor's
@@ -81,8 +81,8 @@ Details and the reason icons are stored white: [assets/lucide/README.md](../asse
 Use the helper to convert a file into a data URI:
 
 ```bash
-node tools/embed-asset.mjs path/to/logo.png
-node tools/embed-asset.mjs path/to/pop.mp3 --key pop
+node tools/lab/embed-asset.mjs path/to/logo.png
+node tools/lab/embed-asset.mjs path/to/pop.mp3 --key pop
 ```
 
 It prints a line to paste into the `ASSETS` registry (section 2 of the game):
@@ -145,7 +145,7 @@ bed sits far under the sfx, mono 64 kbps is plenty:
 
 ```bash
 ffmpeg -i track.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3   # ~30 s ≈ 240 KB
-node tools/embed-asset.mjs music.mp3 --key music
+node tools/lab/embed-asset.mjs music.mp3 --key music
 ```
 
 Orbinity and Chainring both ship a ~30 s bed at 321 KB as a data URI.
@@ -163,7 +163,7 @@ synthesized beeps.
 | --------------- | --------------------------------------------------------------------------------------- |
 | Hard limit      | Keep the whole `index.html` **< 5 MB**. Some networks cap at 2–3 MB — check the target. |
 | base64 overhead | Encoding inflates binary size by ~**33%**. A 3 MB image becomes ~4 MB of text.          |
-| Verify          | `node tools/check-size.mjs` (add `--limit 2` for a 2 MB budget).                        |
+| Verify          | `node tools/build/check-size.mjs` (add `--limit 2` for a 2 MB budget).                  |
 
 ### Keeping assets small
 
@@ -180,7 +180,7 @@ synthesized beeps.
 
 ## Checklist before shipping
 
-- [ ] `node tools/check-size.mjs` passes.
+- [ ] `node tools/build/check-size.mjs` passes.
 - [ ] Browser **Network** tab is empty when the game runs (no external fetches).
 - [ ] No `http(s)://` asset URLs remain in the file (only `data:` URIs).
 - [ ] Images are sized for display; audio is short and low-bitrate.

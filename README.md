@@ -7,7 +7,7 @@ per game, several outlets.
 | ------------ | ----------------------------------------------- | ---------------------- |
 | **playable** | one self-contained HTML for ad networks (MRAID) | built from `packages/` |
 | **web**      | the newrare site and itch.io                    | site in `site/`        |
-| **proto**    | a stripped shell for validating a concept fast  | planned                |
+| **proto**    | a stripped shell for validating a concept fast  | `--target=proto`       |
 | **android**  | a Capacitor build for Google Play               | planned                |
 
 The plan of record for the other three targets — extraction, build, deploy — is
@@ -85,15 +85,20 @@ playables/
 │   │   └── auto/             ← 320 px icons drawn in CSS by lab/icon-card.html
 │   └── screen/               ← 10 gameplay screenshots per game, for store pages
 ├── tools/
-│   ├── build.mjs             ← assemble a game: --target=playable, --check
-│   ├── extract.mjs           ← the one-shot that split the motor out of the games
 │   ├── lib/parts.mjs         ← the single definition of the file's regions
-│   ├── build-site.mjs        ← assemble site/ + the playables into dist/site/
-│   ├── embed-asset.mjs       ← encode an image/sound into a data URI
-│   ├── check-size.mjs        ← verify files stay under the size budget
-│   ├── check-motor.mjs       ← verify (or --fix) that games share the motor
-│   ├── shoot-screens.mjs     ← replay each game headless and shoot assets/screen/
-│   └── shoot-icon.mjs        ← shoot lab/icon-card.html into assets/icon/auto/
+│   ├── build/                ← assemble
+│   │   ├── build.mjs         ← a game: --target=playable|proto, --check
+│   │   ├── build-site.mjs    ← site/ + the playables into dist/site/
+│   │   ├── gen-catalogues.mjs← the two catalogues, from the manifests
+│   │   ├── extract.mjs       ← the one-shot that split the motor out of the games
+│   │   └── check-size.mjs    ← verify files stay under the size budget
+│   ├── lab/                  ← author and inspect
+│   │   ├── serve.mjs         ← proto server with reload on save
+│   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
+│   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
+│   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
+│   │   └── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
+│   └── publish/              ← deploy (empty until phase 4)
 └── docs/
     ├── ENGINE.md             ← the motor: layout, APIs, contract  ← START HERE
     ├── ARCHITECTURE.md       ← how a game file is structured (the 7 sections)
@@ -117,10 +122,21 @@ open index.html                              # macOS
 any source:
 
 ```bash
-node tools/build.mjs                         # every game + the template
-node tools/build.mjs --game=chainring
-node tools/build.mjs --check                 # assert artifacts match sources
+node tools/build/build.mjs                   # every game + the template
+node tools/build/build.mjs --game=chainring
+node tools/build/build.mjs --check           # assert artifacts match sources
+node tools/build/gen-catalogues.mjs          # the two catalogues, from the manifests
 ```
+
+**Prototype a concept** — the round starts by itself, sliders for every number in
+`CONFIG`, reload on save:
+
+```bash
+node tools/lab/serve.mjs chainring           # http://localhost:8080/chainring/
+```
+
+`R` restarts · `SPACE` pauses and steps · `T` taps · `[` `]` change speed ·
+`?seed=42` makes a run reproducible.
 
 **Run a game directly**:
 
@@ -134,7 +150,7 @@ python3 -m http.server 8000                  # then visit localhost:8000/games/�
 `dist/site/`, copying each game's icon and screenshots out of `assets/`:
 
 ```bash
-node tools/build-site.mjs
+node tools/build/build-site.mjs
 open dist/site/index.html                    # the built site, games included
 ```
 
@@ -155,21 +171,21 @@ the Vercel build command — see
    untouched.
 1. Build it, then verify the budget and the round trip:
    ```bash
-   node tools/build.mjs --game=my-game
-   node tools/check-size.mjs
-   node tools/build.mjs --check    # artifacts match their sources
+   node tools/build/build.mjs --game=my-game
+   node tools/build/check-size.mjs
+   node tools/build/build.mjs --check    # artifacts match their sources
    ```
 1. Shoot the store screenshots — a scripted pilot plays every game in headless
    Chrome and writes ten frames per game to `assets/screen/<slug>-NN.jpg`:
    ```bash
-   node tools/shoot-screens.mjs            # all games; add a slug to redo one
+   node tools/lab/shoot-screens.mjs            # all games; add a slug to redo one
    ```
 1. Draw the app icon — the artwork is a CSS recipe in `lab/icon-card.html`
    (shared silhouette and frame, one interior per game), shot over a
    transparent viewport into `assets/icon/auto/<slug>.png`:
    ```bash
    open lab/icon-card.html                 # the whole series on a checkerboard
-   node tools/shoot-icon.mjs               # all icons; add a slug to redo one
+   node tools/lab/shoot-icon.mjs               # all icons; add a slug to redo one
    ```
 
 ## Game catalog

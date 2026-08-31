@@ -132,7 +132,7 @@
 
   /* ===================================================================
      2. ASSETS — embedded base64 data URIs only (no network requests ever).
-     Generate entries with tools/embed-asset.mjs. Every graphic in this game is
+     Generate entries with tools/lab/embed-asset.mjs. Every graphic in this game is
      drawn on canvas, so the only bytes here are audio.
      =================================================================== */
   var ASSETS = {

@@ -2,6 +2,8 @@
   "slug": "radiam",
   "title": "Radiam",
   "tagline": "Turn a ring, line up three on one ray",
+  "order": 110,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#35e0ff",
     "accent2": "#8b6cff"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Trois couronnes de perles sur douze rayons. Fais tourner une seule couronne : la mise ne tombe qu’à l’arrêt.",
+      "tags": [
+        "Glisse un anneau",
+        "40 s",
+        "Charges et novas"
+      ]
+    },
+    "en": {
+      "tagline": "Three rings of beads over twelve rays. Turn one ring at a time; the dial only pays once it stops.",
+      "tags": [
+        "Drag a ring",
+        "40 s",
+        "Charges & novas"
+      ]
+    }
+  },
+  "description": "Three plates turn on one hub — teeth on the outer one — each carrying twelve coloured beads in its housings, over the twelve rays drawn between the hub and the rim. Drag a plate and it turns alone; the other two hold. Rays that would pay light up under the beads while you turn, so a plate is never moved blind, and the dial only cashes them once it comes to rest — hold the alignment under your thumb and it pays there, keep sweeping and it pays nothing. A paid ray is re-fed from outside the rim, and the beads that fly in can land on a ray of their own, so one move can keep paying long after you let go. Every four rays the hub's meter buys a super, and two rays in one move or a chain at x8 buys a bigger one: a CHARGE unzips the whole plate it sits on, a NOVA is wild and takes its colour off the entire dial — and either one, reached by another's wave, goes off in turn.",
   "itch": {
     "user": "newrare",
     "project": "radiam",

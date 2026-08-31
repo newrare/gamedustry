@@ -2,6 +2,8 @@
   "slug": "bouncetry",
   "title": "Bouncetry",
   "tagline": "Every wall repaints the ball and one tap flips every brick",
+  "order": 30,
+  "draft": false,
   "targets": [
     "playable",
     "web"
@@ -10,6 +12,25 @@
     "accent": "#ff3b57",
     "accent2": "#2f86ff"
   },
+  "copy": {
+    "fr": {
+      "tagline": "Un mur de verre rouge et bleu au-dessus de la lave. Tape pour inverser toutes les couleurs en plein vol.",
+      "tags": [
+        "Tap inverseur",
+        "Casse-brique",
+        "Sol de lave"
+      ]
+    },
+    "en": {
+      "tagline": "A wall of red and blue glass over a lake of lava. Tap to flip every colour while the ball is mid-air.",
+      "tags": [
+        "Tap to swap",
+        "Breakout",
+        "Lava floor"
+      ]
+    }
+  },
+  "description": "A wall of red and blue glass over a lake of lava. A ball only breaks its own colour, every wall it touches repaints it, and a tap swaps the whole wall — as often as you like while the ball is in the air. The dotted sight solves five bounces, and their colours, ahead.",
   "itch": {
     "user": "newrare",
     "project": "bouncetry",

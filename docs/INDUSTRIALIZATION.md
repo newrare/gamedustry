@@ -20,11 +20,11 @@ and the prerequisite decisions are settled — see [Decisions](#decisions).
 Three pieces exist already:
 
 - **The extraction.** The motor lives once in `packages/`; every game owns only
-  `page.html`, `skin.css`, `game.js` and `manifest.json`. `node tools/build.mjs`
+  `page.html`, `skin.css`, `game.js` and `manifest.json`. `node tools/build/build.mjs`
   assembles them and `--check` proves all 13 units (12 games + the template)
   rebuild **byte-identically**.
 - **The `playable` target**, which is what that build produces.
-- **The public site**, in `site/`, assembled by `node tools/build-site.mjs`.
+- **The public site**, in `site/`, assembled by `node tools/build/build-site.mjs`.
 
 Everything else below is still to build.
 
@@ -99,17 +99,16 @@ newrare-arcade/
 ```
 
 **Still no bundler for the games.** `tools/build/build.mjs` is a plain Node script
-concatenating text files, the same way `tools/check-motor.mjs` already slices
-them. The `no build step` rule in [CLAUDE.md](../CLAUDE.md) now means: *the
+concatenating text files, the way `tools/build/build.mjs` already does. The `no build step` rule in [CLAUDE.md](../CLAUDE.md) now means: *the
 games* have no build step — the factory around them may. Real dependencies appear
 only at the `android` target, where Capacitor and fastlane are unavoidable.
 
 **The playable's invariant holds.** `--target=playable` regenerates every
 `games/<slug>/index.html` with a **null diff**, verified by
-`node tools/build.mjs --check`. That is the
+`node tools/build/build.mjs --check`. That is the
 acceptance test for the whole extraction: if the diff is not empty, the
-extraction is wrong. `tools/check-motor.mjs` stops being a drift checker and
-becomes a build assertion.
+extraction is wrong. The old `check-motor.mjs` drift checker is gone: it has been
+replaced by that assertion.
 
 ## Per-game manifest
 
@@ -198,7 +197,7 @@ exists: a studio page carrying the playables, the two store apps, the studio cop
 and the legal terms, bilingual FR/EN, with the games played in a 9:16 modal and
 their screenshots in a lightbox.
 
-`node tools/build-site.mjs` already assembles it into `dist/site/` — it copies
+`node tools/build/build-site.mjs` already assembles it into `dist/site/` — it copies
 `site/`, then each playable's self-contained `index.html`, then each game's icon
 and screenshots out of `assets/`, and rewrites the catalogue with what it found on
 disk. **This is the deployable site today**, before any of the extraction below:
@@ -305,9 +304,8 @@ Three families, by what they are for.
 
 | family           | tools                                                                                                                |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
-| exists today     | `tools/build-site.mjs` — site + playables → `dist/site/`                                                             |
 | `tools/lab/`     | `serve.mjs` (proto + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-screens`, headless canvas bench |
-| `tools/build/`   | `build.mjs --target=… --game=…`, `check-size`, `check-motor`                                                         |
+| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                           |
 | `tools/publish/` | `deploy-web`, `deploy-itch` (butler), `gen-native`, `store-meta`                                                     |
 
 The HTML workbenches in [lab/](../lab/) — `overlay-pop`, `icon-card`, `bubble` —
@@ -343,7 +341,7 @@ butler push dist/itch/vipera newrare/vipera:html5
 ## CI — two systems, two jobs
 
 **Vercel owns the web.** The project points at this repo, production branch
-`main`, build command `node tools/build-site.mjs`, output directory `dist/site`.
+`main`, build command `node tools/build/build-site.mjs`, output directory `dist/site`.
 No install step, no dependency, no framework preset — it is one Node script over
 the repo's own files.
 
@@ -356,11 +354,11 @@ the repo's own files.
 
 **GitHub Actions owns everything Vercel cannot run**: `butler`, Gradle, fastlane.
 
-| trigger         | action                                                    |
-| --------------- | --------------------------------------------------------- |
-| PR / push       | `check-size`, `check-motor`, playable null-diff assertion |
-| merge on `main` | `butler push` to `html5-dev`                              |
-| git tag         | `butler push` to `html5`, and/or fastlane                 |
+| trigger         | action                                    |
+| --------------- | ----------------------------------------- |
+| PR / push       | `build.mjs --check`, `check-size`         |
+| merge on `main` | `butler push` to `html5-dev`              |
+| git tag         | `butler push` to `html5`, and/or fastlane |
 
 **Prerequisite, resolved**: `.gitignore` ignores `assets/` today, which would stop
 CI from ever re-embedding a sound, regenerating an icon or shooting a screenshot.
@@ -451,7 +449,7 @@ root of the developer domain declared in the listing.
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `assets/` in git    | tracked, no LFS (52 MB / 324 files)                                                                                                                   |
 | site stack          | static HTML/CSS, no build of its own                                                                                                                  |
-| site location       | **monorepo** — `site/` in this repo, built by `tools/build-site.mjs`, deployed by Vercel                                                              |
+| site location       | **monorepo** — `site/` in this repo, built by `tools/build/build-site.mjs`, deployed by Vercel                                                        |
 | hosting             | Vercel, games under `/games/<slug>` of the site                                                                                                       |
 | domain              | deferred — the site stays on `newrare-website.vercel.app` until the android phase, which is the first thing that actually requires a developer domain |
 | itch account        | `newrare`, personal                                                                                                                                   |
@@ -497,18 +495,21 @@ building tools that cannot exist.
 ## Phasing
 
 1. ~~**Extract** `engine` / `shell` / `platform`~~ — **done.** `packages/` holds
-   the motor, `tools/build.mjs --check` asserts the null diff on 13 units, the CTA
+   the motor, `tools/build/build.mjs --check` asserts the null diff on 13 units, the CTA
    URLs point at the newrare site, and `assets/` is untracked from `.gitignore`.
    What remains of this phase: reorganize `tools/` into `lab/ build/ publish/`,
-   retire `check-motor.mjs` (superseded by `build --check`), and make the
-   generated `manifest.json` files the source of the two catalogues instead of
-   `site/games.js` and the root `index.html`.
-1. **`proto`** — the target, `packages/devtools/`, `tools/lab/serve.mjs`. Two
-   days, and every phase after it is faster. It also proves the extraction: an
-   engine that can run outside the playable shell is an engine that was really
-   extracted.
+   retire `check-motor.mjs`, and make the manifests the source of the two
+   catalogues — **all done.** `tools/` is split into `lab/ build/ publish/`,
+   `check-motor.mjs` is gone, and `tools/build/gen-catalogues.mjs` writes
+   `site/games.js` and the root gallery from `games/<slug>/manifest.json`.
+1. ~~**`proto`** — the target, `packages/devtools/`, `tools/lab/serve.mjs`~~ —
+   **done.** `--target=proto` writes `dist/proto/<slug>/`, the devtools panel
+   exposes every `CONFIG` number as a slider, `?seed=` makes a run reproducible,
+   and the server rebuilds and reloads on save. It also proved the extraction: the
+   engine runs outside the playable shell with no fork, reached through a single
+   `window.__PROTO__` handle the proto build injects.
 1. **The site, in this repo, deployed by Vercel** — the page and
-   `tools/build-site.mjs` are **done**; what remains is the Vercel project (repo,
+   `tools/build/build-site.mjs` are **done**; what remains is the Vercel project (repo,
    branch, build command, output directory), the custom domain, and generating the
    catalogue from the manifests instead of `site/games.js`. Push-to-deploy and
    preview URLs from here on.
