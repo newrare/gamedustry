@@ -1071,15 +1071,16 @@
     tagline: "<b class=\"w-tap\">Tap</b> on the <b class=\"w-hit\">impact</b> to blast the rival tops away",
     gameSeconds: 0,                  // endless: the round ends when the top falls
     storeUrl: {
-      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
-      android: "https://play.google.com/store/apps/details?id=com.example.game",
-      fallback:"https://52-entertainment.com/our-games/"
+      ios:     "https://newrare-website.vercel.app/#playables",
+      android: "https://newrare-website.vercel.app/#playables",
+      fallback:"https://newrare-website.vercel.app/#playables"
     },
     designWidth: 720, designHeight: 1280, bg: "#08081c",
     layout: { hudHeight: 160, ctaHeight: 118, sideMargin: 26 },
     intro: { logo: "logo", demo: "tap", caption: "" },
-    /* No clock: the right-hand slot carries the spin gauge instead, which is the
-       only number that can end the run. */
+    /* No clock: the right-hand slot carries the spin percentage instead, which is
+       the only number that can end the run — and the tall segmented bar drawn
+       down the right edge of the play area is the same reading, in colour. */
     hud: { score: true, timer: false },
     /* The bed sits well under the metal-on-metal: a round is a stream of clanks
        and shockwaves, and those are what the player plays on. */
@@ -1142,7 +1143,8 @@
 
     /* Wear: the top cannot hold as much spin as the round goes on, so even
        flawless play runs the dish down in the end. This is what bounds an
-       endless run, and it reads on the gauge as a dead red arc. */
+       endless run, and it reads on the gauge as a dead red band eating the top
+       of the bar. */
     wear: 0.90,            // share of the gauge lost by the end of the wear...
     wearSeconds: 120,      // ...which takes this long
 
@@ -2628,6 +2630,13 @@
     var arena = { x:0, y:0, w:0, h:0, cx:0, cy:0 };
     var floorCv = null, topCvs = null, foeCv = {};
     var bumpT = 0;                     // throttle on the metal-on-metal clank
+    /* The gauge's own state: the ghost head that trails the real value, the
+       punch a scored change leaves on the rail, a clock that keeps the low-spin
+       flash alive through the wreck, and the jitter of the two electric arcs it
+       is drawn with — rolled on a fixed step in `update`, never in `render`, so
+       the crackle has a readable rhythm instead of strobing at frame rate. */
+    var spinLag, gaugePunch, gaugeCol, gaugeT, sparkT;
+    var arcSeg = [], boltSeg = [];
 
     /* ------------------------------------------------------------ pre-render */
     /* Cached canvases are authored in design px like everything else, but their
@@ -2707,12 +2716,13 @@
     }
 
     /* THE TOP'S COLOUR IS THE SPIN GAUGE ------------------------------------
-       There is no bar: the top itself cools from ice-cyan through mint and gold
-       to a dying red as the spin runs down, the way the viper in games/vipera
-       reads its length off its body. One sprite is pre-rendered per tier and
-       two neighbours are cross-faded, so the shift is continuous rather than a
-       set of steps. Ordered from a full gauge to an empty one, evenly spread:
-       tier i covers a spin of about 1 - i / (N - 1). */
+       The top itself cools from ice-cyan through mint and gold to a dying red as
+       the spin runs down, the way the viper in games/vipera reads its length off
+       its body — and the bar on the right edge burns the very same ramp, so the
+       two always agree. One sprite is pre-rendered per tier and two neighbours
+       are cross-faded, so the shift is continuous rather than a set of steps.
+       Ordered from a full gauge to an empty one, evenly spread: tier i covers a
+       spin of about 1 - i / (N - 1). */
     var SPIN_TIERS = [
       { rim:["#dffcff","#0a6d94"], arm:"#ff4fbe", core:"#e8feff", glow:"#7ef4ff" },
       { rim:["#9dffcd","#0d7a52"], arm:"#d6ff6b", core:"#eaffef", glow:"#4dff9b" },
@@ -2757,10 +2767,25 @@
       g.fillStyle = grd; g.fillRect(0, 0, view.w, view.h);
     }
 
+    /* THE SPIN BAR ----------------------------------------------------------
+       The right edge of the play area is not part of the dish: it carries a tall
+       segmented bar that IS the spin gauge, sitting right under the HUD's own
+       "SPIN %" pill so the number and the picture read as one instrument. The
+       dish is narrowed by the whole band, so no top ever plays behind it. */
+    var GAUGE_W = 36;        // width of the rail
+    var GAUGE_GAP = 16;      // air between the rail and the dish wall
+    var GAUGE_BAND = GAUGE_W + GAUGE_GAP;
+    var GAUGE_SEGS = 20;     // one cell per 5% of spin
+    var GAUGE_PAD = 3;       // air between two cells
+    var gauge = { x:0, y:0, w:0, h:0 };
+
     function build() {
       arena.x = Layout.left + 6; arena.y = Layout.top + 6;
-      arena.w = Layout.w - 12;   arena.h = Layout.h - 12;
+      arena.w = Layout.w - 12 - GAUGE_BAND;
+      arena.h = Layout.h - 12;
       arena.cx = arena.x + arena.w / 2; arena.cy = arena.y + arena.h / 2;
+      gauge.w = GAUGE_W;     gauge.x = Layout.right - GAUGE_W;
+      gauge.y = Layout.top + 8; gauge.h = Layout.h - 16;
       buildFloor();
       var i, t;
       topCvs = [];
@@ -2805,7 +2830,63 @@
     }
     // The matching glow, for the aura and the strike perimeter.
     function tierGlow() { return SPIN_TIERS[Math.round(tierPos())].glow; }
-    function pushSpin(v) { spin = clamp(spin + v, 0, spinCap()); }
+    /* The same colour, but mixed between the two neighbouring tiers exactly the
+       way the top's two sprites are cross-faded. The gauge burns this one: half a
+       tier of disagreement between the bar and the metal is instantly visible. */
+    function tierMix() {
+      var pos = tierPos(), lo = Math.floor(pos), t = pos - lo;
+      return mixHex(SPIN_TIERS[lo].glow,
+                    SPIN_TIERS[Math.min(lo + 1, SPIN_TIERS.length - 1)].glow, t);
+    }
+    function mixHex(a, b, t) {
+      var x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), i, ch = 0;
+      for (i = 0; i < 3; i++) {
+        var sh = i * 8, ca = (x >> sh) & 255, cb = (y >> sh) & 255;
+        ch |= Math.round(ca + (cb - ca) * t) << sh;
+      }
+      return "#" + ("000000" + ch.toString(16)).slice(-6);
+    }
+    /* Every change of spin goes through here, so this is where the gauge is told
+       something happened. The friction drain is a fraction of a percent per
+       frame and must never strobe the bar, hence the threshold: only a scored
+       gain or a real hit punches it. */
+    function pushSpin(v) {
+      spin = clamp(spin + v, 0, spinCap());
+      if (Math.abs(v) >= 0.02) {
+        gaugePunch = 1;
+        gaugeCol = v > 0 ? tierMix() : "#ff2f6d";
+      }
+    }
+
+    /* The ghost head trails the real value instead of snapping to it, and the
+       band between the two is painted as "just won" (white) or "just lost" (red)
+       for a few tenths of a second. Both speeds are well clear of the friction
+       drain, so a quiet run shows no ghost at all. */
+    function trackGauge(dt) {
+      if (gaugePunch > 0) gaugePunch = Math.max(0, gaugePunch - dt * 3.2);
+      // The crackle is re-rolled a few times a second, faster while it is being
+      // discharged by a hit or a boost.
+      sparkT -= dt;
+      if (sparkT <= 0) { sparkT = gaugePunch > 0 ? 0.03 : 0.07; rollSparks(); }
+      if (spinLag > spin) {
+        spinLag = Math.max(spin, spinLag - dt * (0.45 + (spinLag - spin) * 3));
+      } else if (spinLag < spin) {
+        spinLag = Math.min(spin, spinLag + dt * (0.60 + (spin - spinLag) * 6));
+      }
+    }
+
+    /* Fresh jitter for the head arc and the filament. Raw (-1..1) and pinned at
+       both ends: the spatial envelope is applied at draw time, like the arena's
+       own zaps. */
+    function rollSparks() {
+      var i;
+      arcSeg.length = 0;
+      for (i = 0; i <= 8; i++) arcSeg.push(Rand.range(-1, 1));
+      arcSeg[0] = 0; arcSeg[8] = 0;
+      boltSeg.length = 0;
+      for (i = 0; i <= 16; i++) boltSeg.push(Rand.range(-1, 1));
+      boltSeg[0] = 0; boltSeg[16] = 0;
+    }
 
     function setSpinPill() {
       var pct = Math.round(spin * 100);
@@ -2985,8 +3066,8 @@
       if (phase === "spin") {
         var ko = f.type.score * CONFIG.koScore;
         score += ko; HUD.setScore(score);
-        Fx.text(clamp(f.x, Layout.left + 90, Layout.right - 90), f.y - f.type.r,
-          "KO +" + ko, { color: col, size: 40, tier: 1 });
+        Fx.text(clamp(f.x, Layout.left + 90, Layout.right - 90 - GAUGE_BAND),
+          f.y - f.type.r, "KO +" + ko, { color: col, size: 40, tier: 1 });
       }
     }
 
@@ -3075,6 +3156,8 @@
       score = 0; combo = 0; bestCombo = 0; shocks = 0; perfects = 0; crashes = 0;
       bestWave = 0;
       spin = CONFIG.spinStart; spinAngle = 0; elapsed = 0; cooldown = 0;
+      spinLag = CONFIG.spinStart; gaugePunch = 0; gaugeCol = "#7ef4ff"; gaugeT = 0;
+      sparkT = 0; rollSparks();
       shownPct = -1; warnArmed = true; lowSpin = false; wornSaid = false;
       phase = "spin"; phaseT = 0; wreckStep = 0;
       spawnT = 0.9;
@@ -3179,7 +3262,8 @@
         if (avoidY != null) d = Math.min(d, Math.abs(y - avoidY) * 0.8);
         if (d > bestD) { bestD = d; bestY = y; }
       }
-      return { x: Layout.cx, y: bestY };
+      // Centred on the DISH, not on the frame: the gauge owns the right band.
+      return { x: arena.cx, y: bestY };
     }
 
     /* A point just outside the strike zone, in the direction of `f`, kept inside
@@ -3188,7 +3272,8 @@
       var dx = f.x - player.x, dy = f.y - player.y, d = Math.hypot(dx, dy) || 1;
       var out = CONFIG.playerR + CONFIG.reach + 100;
       var p = {
-        x: clamp(player.x + dx / d * out, Layout.left + 130, Layout.right - 130),
+        x: clamp(player.x + dx / d * out, Layout.left + 130,
+                 Layout.right - 130 - GAUGE_BAND),
         y: clamp(player.y + dy / d * out, Layout.top + 120, Layout.bottom - 120)
       };
       // The clamp drags the callout straight back onto the top whenever the top
@@ -3500,6 +3585,8 @@
     /* --------------------------------------------------------------- update */
     function update(dt) {
       spinAngle += spinRate() * dt;
+      gaugeT += dt;                     // the bar keeps flashing through the wreck
+      trackGauge(dt);
       if (bumpT > 0) bumpT -= dt;
       updateZaps(dt);                   // the fence keeps fading in every phase
       for (var w = waves.length - 1; w >= 0; w--) {
@@ -3673,6 +3760,244 @@
       drawPlayer();
       drawWaves();
       drawCombo();
+      drawGauge();                      // last, so no top ever draws over it
+    }
+
+    /* THE SPIN BAR ----------------------------------------------------------
+       One glance, one number: how much spin is left, how fast it is going, and
+       how much of the rail the worn bearings have already taken away.
+
+       - twenty cells, filled bottom-up, the whole lit column burning the colour
+         the top is burning right now: the bar cools from ice-cyan to a dying red
+         with the top itself, so the two readings can never disagree and a run
+         going bad turns the entire right edge of the screen red;
+       - the band between the value and its trailing ghost flashes white on a
+         shockwave and red on a hit, which is what makes a gain or a loss
+         legible at a glance instead of a silent slide;
+       - the worn head of the rail is hatched dead red (see CONFIG.wear): the
+         player watches the ceiling itself come down over the run;
+       - the alarm threshold is a red tick on the rail, and under it the whole
+         rail pulses.
+
+       It is a piece of the dish, not a widget bolted on top of it: the rail is
+       smoked glass the painted floor still shows through, every alpha is kept
+       well under 1, and what marks the value is not a flat bar but an ARC — the
+       same crackle the arena wall answers a slam with (see `zap`). The lit
+       column carries a filament of current running up it, and a scored change
+       discharges the whole rail.
+       Drawn with flat fills and concentric strokes only — no shadowBlur in the
+       frame loop. */
+    function drawGauge() {
+      var x = gauge.x, y = gauge.y, w = gauge.w, h = gauge.h;
+      var cap = spinCap(), warn = CONFIG.warnAt * cap;
+      var i, k, lo, cellY, cellH, f, g, a, b;
+      var col = tierMix();              // one colour for the column: the top's own
+      // The alarm pulse survives the wreck, where spin is pinned at zero.
+      var low = phase === "fall" || (phase === "spin" && spin <= warn);
+      var pulse = low ? 0.5 + 0.5 * Math.sin(gaugeT * 11) : 0;
+
+      ctx.save();
+
+      // the rail: smoked glass, so the painted dish reads straight through it
+      barPath(x, y, w, h, w / 2);
+      ctx.fillStyle = "rgba(4,4,20,.20)";
+      ctx.fill();
+      // a soft inner light down the left flank, which is what sells the glass
+      var gl = ctx.createLinearGradient(x, 0, x + w, 0);
+      gl.addColorStop(0, "rgba(255,255,255,.05)");
+      gl.addColorStop(0.35, "rgba(255,255,255,.01)");
+      gl.addColorStop(1, "rgba(0,0,0,.07)");
+      ctx.fillStyle = gl;
+      barPath(x, y, w, h, w / 2); ctx.fill();
+
+      // worn capacity: the head of the rail the bearings can no longer reach
+      if (cap < 0.999) {
+        var deadH = h * (1 - cap);
+        ctx.save();
+        barPath(x, y, w, h, w / 2); ctx.clip();
+        ctx.beginPath(); ctx.rect(x, y, w, deadH); ctx.clip();
+        ctx.fillStyle = "rgba(255,47,109,.07)";
+        ctx.fillRect(x, y, w, deadH);
+        ctx.strokeStyle = "rgba(255,47,109,.12)"; ctx.lineWidth = 3;
+        for (b = y - w; b < y + deadH; b += 13) {
+          ctx.beginPath(); ctx.moveTo(x, b + w); ctx.lineTo(x + w, b); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // the cells, kept inside the rounded rail so the two ends stay clean
+      ctx.save();
+      barPath(x, y, w, h, w / 2); ctx.clip();
+      cellH = (h - GAUGE_PAD * (GAUGE_SEGS - 1)) / GAUGE_SEGS;
+      for (i = 0; i < GAUGE_SEGS; i++) {
+        lo = i / GAUGE_SEGS;
+        cellY = y + h - (i + 1) * cellH - i * GAUGE_PAD;
+        f = clamp((spin - lo) * GAUGE_SEGS, 0, 1);       // the real value...
+        g = clamp((spinLag - lo) * GAUGE_SEGS, 0, 1);    // ...and its ghost
+        a = Math.min(f, g); b = Math.max(f, g);
+        // the dead cell, so an empty rail still reads as a scale — skipped when
+        // something covers it whole, which is the common case
+        if (b < 0.999) {
+          barPath(x + 4, cellY, w - 8, cellH, 4);
+          ctx.fillStyle = lo >= cap ? "rgba(255,255,255,.018)" : "rgba(255,255,255,.035)";
+          ctx.fill();
+        }
+        if (b <= 0) continue;
+        /* The lit part of the cell, grown from its own bottom edge and brighter
+           toward the head, so the column reads as a direction and not a block.
+           A cell filled to the brim is painted as its own rounded path; only the
+           one cell the head sits in pays for a clip. */
+        if (f > 0) {
+          k = spin > 0.001 ? clamp((lo + 0.5 / GAUGE_SEGS) / spin, 0, 1) : 0;
+          ctx.fillStyle = rgba(col, 0.19 + 0.44 * k * k);
+          if (f >= 0.999) {
+            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+          } else {
+            ctx.save();
+            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
+            ctx.fillRect(x + 4, cellY + cellH * (1 - f), w - 8, cellH * f);
+            ctx.restore();
+          }
+        }
+        // the delta band: white for spin just won, red for spin just lost
+        if (b - a > 0.01) {
+          ctx.fillStyle = spin > spinLag ? "rgba(255,255,255,.58)"
+                                        : "rgba(255,47,109,.48)";
+          if (a <= 0.001 && b >= 0.999) {
+            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+          } else {
+            ctx.save();
+            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
+            ctx.fillRect(x + 4, cellY + cellH * (1 - b), w - 8, cellH * (b - a));
+            ctx.restore();
+          }
+        }
+      }
+
+      /* The current running up the lit column, inside the same clip: one thin
+         crackling filament, jittered on the gauge's own clock. It is what turns
+         a coloured bar into something plugged into the dish, and a scored change
+         discharges it white for a beat. */
+      var hy = y + h * (1 - clamp(spin, 0, 1));
+      if (spin > 0.02) {
+        drawFilament(x + w / 2, y + h - 6, hy, col,
+                     0.13 + 0.28 * gaugePunch + 0.09 * pulse);
+      }
+      ctx.restore();
+
+      /* The head: an ARC across the rail, the way the arena wall answers a slam,
+         plus a chevron pointing at it. It marks the REAL value, never the ghost —
+         the ghost's job is to show what was just lost above it, and a head that
+         lagged behind would be lying about how much spin is left. */
+      if (spin > 0.001) {
+        drawHeadArc(x, w, hy, col, 0.55 + 0.45 * gaugePunch);
+        ctx.fillStyle = rgba(col, 0.72);
+        ctx.beginPath();
+        ctx.moveTo(x - 8, hy);
+        ctx.lineTo(x - 21, hy - 10);
+        ctx.lineTo(x - 21, hy + 10);
+        ctx.closePath(); ctx.fill();
+      }
+
+      // the alarm threshold, and the ceiling the wear has left
+      var wy = y + h * (1 - warn);
+      ctx.fillStyle = "rgba(255,47,109,.5)";
+      ctx.fillRect(x + 3, wy - 1, w - 6, 2);
+      if (cap < 0.999) {
+        ctx.fillStyle = "rgba(255,212,59,.4)";
+        ctx.fillRect(x + 3, y + h * (1 - cap) - 1, w - 6, 2);
+      }
+
+      // the rim: a hairline, pulsing in the red and discharged by a scored change
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(255,255,255,.08)";
+      barPath(x, y, w, h, w / 2); ctx.stroke();
+      if (pulse > 0) {
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = rgba("#ff2f6d", 0.14 + 0.4 * pulse);
+        barPath(x, y, w, h, w / 2); ctx.stroke();
+      }
+      if (gaugePunch > 0) {
+        // concentric strokes stand in for a glow, which shadowBlur cannot pay for
+        for (i = 0; i < 3; i++) {
+          ctx.lineWidth = 3 + i * 5;
+          ctx.strokeStyle = rgba(gaugeCol, gaugePunch * (0.22 - i * 0.07));
+          barPath(x - i * 2, y - i * 2, w + i * 4, h + i * 4, w / 2 + i * 2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    /* THE ARC AT THE HEAD ---------------------------------------------------
+       Three passes on one jittered polyline — a wide dim halo down to a white
+       core — pinned to both flanks of the rail and overshooting them a little,
+       so the value reads as a discharge jumping the gap rather than a drawn
+       line. Same recipe as the arena wall, at a tenth of the length. */
+    var HEAD_PASSES = [[16, 0.08], [8, 0.19], [3.4, 0.82]];
+
+    function drawHeadArc(x, w, hy, col, power) {
+      var over = 9, n = arcSeg.length - 1, q, i, u, px, py;
+      var amp = 4 + 4 * power;
+      ctx.save();
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (q = 0; q < HEAD_PASSES.length; q++) {
+        ctx.strokeStyle = rgba(q === HEAD_PASSES.length - 1 ? "#ffffff" : col,
+                               HEAD_PASSES[q][1] * (0.55 + 0.45 * power));
+        ctx.lineWidth = HEAD_PASSES[q][0] * (0.72 + 0.28 * power);
+        ctx.beginPath();
+        for (i = 0; i <= n; i++) {
+          u = i / n;
+          px = x - over + (w + over * 2) * u;
+          // sin envelope: the arc leaves the flanks flat and bellies out mid-rail
+          py = hy + arcSeg[i] * amp * Math.sin(Math.PI * u);
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      // the node the discharge is anchored on, mid-rail
+      ctx.fillStyle = rgba(col, 0.24);
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 9, 0, TAU); ctx.fill();
+      ctx.fillStyle = rgba("#ffffff", 0.78);
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 3.4, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+
+    /* THE FILAMENT ----------------------------------------------------------
+       The current in the column: one polyline from the foot of the rail to the
+       head, wandering a few px either side of the centre line. Two passes only —
+       this runs every frame, and the arc above is what the eye actually reads. */
+    function drawFilament(cx, y0, y1, col, alpha) {
+      var n = boltSeg.length - 1, i, u, px, py, q;
+      var span = y1 - y0;                          // negative: it climbs
+      ctx.save();
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (q = 0; q < 2; q++) {
+        ctx.strokeStyle = rgba(q ? "#ffffff" : col, alpha * (q ? 0.55 : 1));
+        ctx.lineWidth = q ? 1.4 : 4;
+        ctx.beginPath();
+        for (i = 0; i <= n; i++) {
+          u = i / n;
+          py = y0 + span * u;
+          px = cx + boltSeg[i] * 6 * Math.sin(Math.PI * u);
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* A rounded rectangle, laid down as a path. Written out rather than left to
+       ctx.roundRect, which is far too young for the WebViews a creative runs in. */
+    function barPath(x, y, w, h, r) {
+      var rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
     }
 
     /* ONE STRUCK BOARD ------------------------------------------------------

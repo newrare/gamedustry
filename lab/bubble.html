@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bubble Lab — bead materials for Radiam</title>
+<style>
+/* ===========================================================================
+   BUBBLE LAB — fourteen ways a Radiam bead can look.
+
+   This is a design lab, not a shipped playable. Pick a look here, then port
+   ONLY the chosen draw function into the game (games/radiam, the
+   `ballSprite()` factory in section 6) and rebuild the sprite cache.
+
+   Why this lab exists: the shipping bead reads BLURRY. Three things cause it,
+   all inside ballSprite():
+     1. a 34%-of-radius alpha halo painted as three flat discs, so every bead
+        has a fuzzy skirt and the whole dial looks fogged;
+     2. a radial gradient whose pure-white core covers the inner 26% and whose
+        outer stop fades to a dark rim — no hard edge anywhere;
+     3. a translucent white rim arc at r*0.9 on top of that.
+   Every style below is judged on ONE question first: does the silhouette have
+   a hard edge? The tag says so.
+
+   Everything is Canvas 2D, in the motor's 720x1280 design space, with the
+   motor's rules: no shadowBlur, and a look is only shippable as a SPRITE if
+   it rasterizes once per (colour, ring radius) — 15 sprites total, then the
+   board is 36 drawImage calls. LIVE styles cost one draw per bead per frame.
+   =========================================================================== */
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:#07060e; color:#e9e7f6; min-height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; gap:26px; padding:22px; align-items:flex-start;
+}
+
+/* --- the stage: the Radiam dial, in the look currently selected ---------- */
+#stage{ position:sticky; top:22px; flex:0 0 auto; width:420px; }
+#board{
+  width:420px; height:420px; display:block; border-radius:26px;
+  box-shadow:0 26px 70px rgba(0,0,0,.6);
+}
+#meta{ margin-top:16px; }
+#meta h1{ font-size:25px; font-weight:900; letter-spacing:.4px; }
+#meta p{ margin-top:6px; font-size:14px; line-height:1.55; color:#a8a5c4; }
+#tags{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.tag{
+  padding:5px 11px; border-radius:999px; font-size:11px; font-weight:800;
+  letter-spacing:1.3px; text-transform:uppercase;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#c9c6e4;
+}
+.tag.sprite{ color:#7ef9ff; border-color:rgba(126,249,255,.4); background:rgba(126,249,255,.08); }
+.tag.live{ color:#ffb44f; border-color:rgba(255,180,79,.4); background:rgba(255,180,79,.08); }
+.tag.hard{ color:#3ff0a0; border-color:rgba(63,240,160,.4); background:rgba(63,240,160,.08); }
+.tag.soft{ color:#ff6f91; border-color:rgba(255,111,145,.4); background:rgba(255,111,145,.08); }
+#sizes{ margin-top:16px; }
+#sizes canvas{ width:420px; height:auto; display:block; }
+.hint{ margin-top:10px; font-size:12px; color:#6f6c8d; line-height:1.55; }
+.hint b{ color:#9c98bf; font-weight:800; }
+
+/* --- the gallery -------------------------------------------------------- */
+#gallery{ flex:1 1 auto; min-width:0; }
+#gallery header{ margin-bottom:16px; }
+#gallery h2{ font-size:20px; font-weight:900; letter-spacing:.4px; }
+#gallery .sub{ margin-top:6px; font-size:13px; color:#8a87a8; line-height:1.6; max-width:760px; }
+#gallery .sub b{ color:#cfc9ee; }
+#cards{
+  margin-top:18px; display:grid; gap:14px;
+  grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+}
+.card{
+  border:1px solid rgba(255,255,255,.1); border-radius:16px; overflow:hidden;
+  background:#0d0b1a; cursor:pointer; transition:border-color .15s ease, transform .15s ease;
+}
+.card:hover{ border-color:rgba(255,255,255,.3); transform:translateY(-2px); }
+.card.on{ border-color:#35e0ff; box-shadow:0 0 0 1px #35e0ff inset, 0 12px 30px rgba(53,224,255,.14); }
+.card canvas{ width:100%; height:auto; display:block; }
+.card .name{
+  padding:11px 14px 13px; display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+}
+.card .name b{ font-size:15px; font-weight:900; letter-spacing:.3px; }
+.card .name span{ font-size:10px; font-weight:800; letter-spacing:1.3px; color:#6f6c8d; text-transform:uppercase; }
+.card .name span.live{ color:#ffb44f; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="board" width="720" height="720"></canvas>
+  <div id="meta">
+    <h1 id="m-name">—</h1>
+    <p id="m-pitch"></p>
+    <div id="tags"></div>
+  </div>
+  <div id="sizes"><canvas id="sizesheet" width="840" height="440"></canvas></div>
+  <p class="hint">Top row: the three ring radii Radiam actually ships
+    (<b>22 / 32 / 41</b> design px at unit 330) plus the white NOVA bead.
+    Bottom: one bead at 3x, and a pair touching — a look fails if two neighbours
+    on the outer plate melt into one blob.</p>
+</div>
+
+<div id="gallery">
+  <header>
+    <h2>Bead looks</h2>
+    <p class="sub">Fourteen art directions for the Radiam bead — silhouette, surface and
+      light, not hue. The five game colours are identical in every card, so a look is
+      judged on the look alone. <b>The blur comes from the halo</b>: card 1 is the
+      shipping bead, kept as the reference everything else has to beat.
+      Click a card to put it on the whole dial. Arrow keys move through the list.</p>
+  </header>
+  <div id="cards"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var TAU = Math.PI * 2;
+
+  /* ==================================================================
+     PALETTE + GEOMETRY — copied from games/radiam so a look can be
+     judged exactly where it will ship.
+     ================================================================== */
+  var COLOURS = ["#ff4d6d", "#ffc23d", "#35e0ff", "#8b6cff", "#3ff0a0"];
+  var NOVA    = "#f2f7ff";
+  var SKY     = ["#241a52", "#0d0827", "#050310"];
+  var WIRE    = "#6f5ea8";
+  var PLATE   = "#3d2c85";
+  var HUB     = "#120c2c";
+
+  var S = 720, CX = 360, CY = 360;         // the lab stage, in design px
+  var UNIT = 330;                          // dial rim, the game's cap
+  var SLOTS = 12;
+  var ORBITS = [0.305, 0.555, 0.800];
+  var BALLR  = [0.068, 0.098, 0.125];      // -> 22.4 / 32.3 / 41.3 px
+  var RAYS = 36;
+
+  /* ==================================================================
+     SMALL HELPERS
+     ================================================================== */
+  function hex2rgb(h) {
+    var v = parseInt(h.slice(1), 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+  function rgba(h, a) {
+    var c = hex2rgb(h);
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+  }
+  /* k > 0 mixes toward white, k < 0 toward black. Returns a hex string so
+     the result can be fed back into rgba(). */
+  function mix(h, k) {
+    var c = hex2rgb(h), i, t = k > 0 ? 255 : 0, a = Math.abs(k), o = "#";
+    for (i = 0; i < 3; i++) {
+      var v = Math.round(c[i] + (t - c[i]) * a);
+      o += (v < 16 ? "0" : "") + v.toString(16);
+    }
+    return o;
+  }
+  /* The hue of a game colour, so a look can shift AROUND it instead of
+     replacing it — colour identity is the one thing a match-3 cannot lose. */
+  function hueOf(h) {
+    var c = hex2rgb(h), r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, u = 0;
+    if (!d) return 0;
+    if (mx === r) u = ((g - b) / d) % 6;
+    else if (mx === g) u = (b - r) / d + 2;
+    else u = (r - g) / d + 4;
+    return (u * 60 + 360) % 360;
+  }
+  /* Seeded generator: speckles, cracks and facets must be identical on every
+     redraw, or the bead boils. The seed comes from (colour, radius) only —
+     the same thing that keys the sprite cache in the game. */
+  function rnd(seed) {
+    var s = Math.floor(seed) % 2147483647; if (s <= 0) s += 2147483646;
+    return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  }
+  function seedOf(hex, r) {
+    var s = 7, i;
+    for (i = 1; i < hex.length; i++) s = (s * 31 + hex.charCodeAt(i)) % 100003;
+    return s * 131 + Math.round(r * 10);
+  }
+  function disc(x, cx, cy, r) { x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill(); }
+  function ring(x, cx, cy, r, w, col) {
+    x.strokeStyle = col; x.lineWidth = w;
+    x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.stroke();
+  }
+  /* A hard-edged crescent: the cheapest way to fake a lit sphere without a
+     single gradient. Two arcs, the second reversed, one fill. */
+  function crescent(x, cx, cy, r, ox, oy, ir, col) {
+    x.fillStyle = col;
+    x.beginPath();
+    x.arc(cx, cy, r, 0, TAU);
+    x.arc(cx + ox, cy + oy, ir, 0, TAU, true);
+    x.fill();
+  }
+  function poly(x, cx, cy, pts) {
+    var i;
+    x.beginPath();
+    for (i = 0; i < pts.length; i++) {
+      if (i) x.lineTo(cx + pts[i][0], cy + pts[i][1]);
+      else   x.moveTo(cx + pts[i][0], cy + pts[i][1]);
+    }
+    x.closePath();
+  }
+
+  /* ------------------------------------------------------------------
+     GLYPHS — one per colour. Only the engraved look uses them, but they
+     are the answer to "can a colour-blind player read this dial": the
+     shape carries the match, the hue only decorates it.
+     ------------------------------------------------------------------ */
+  function glyph(x, sym, cx, cy, s, col, lw) {
+    var i, a;
+    x.save();
+    x.strokeStyle = col; x.fillStyle = col;
+    x.lineWidth = lw; x.lineCap = "round"; x.lineJoin = "round";
+    if (sym === 0) {                                   // triangle
+      x.beginPath();
+      x.moveTo(cx, cy - s); x.lineTo(cx + s * 0.92, cy + s * 0.7);
+      x.lineTo(cx - s * 0.92, cy + s * 0.7); x.closePath(); x.stroke();
+    } else if (sym === 1) {                            // diamond
+      x.beginPath();
+      x.moveTo(cx, cy - s); x.lineTo(cx + s, cy); x.lineTo(cx, cy + s);
+      x.lineTo(cx - s, cy); x.closePath(); x.stroke();
+    } else if (sym === 2) {                            // ring
+      x.beginPath(); x.arc(cx, cy, s * 0.8, 0, TAU); x.stroke();
+    } else if (sym === 3) {                            // cross
+      x.beginPath();
+      x.moveTo(cx - s * 0.75, cy - s * 0.75); x.lineTo(cx + s * 0.75, cy + s * 0.75);
+      x.moveTo(cx + s * 0.75, cy - s * 0.75); x.lineTo(cx - s * 0.75, cy + s * 0.75);
+      x.stroke();
+    } else if (sym === 4) {                            // double chevron
+      x.beginPath();
+      x.moveTo(cx - s * 0.8, cy + s * 0.1); x.lineTo(cx, cy - s * 0.7);
+      x.lineTo(cx + s * 0.8, cy + s * 0.1);
+      x.moveTo(cx - s * 0.8, cy + s * 0.85); x.lineTo(cx, cy + s * 0.05);
+      x.lineTo(cx + s * 0.8, cy + s * 0.85);
+      x.stroke();
+    } else {                                           // star — the NOVA
+      x.beginPath();
+      for (i = 0; i < 8; i++) {
+        a = i * TAU / 8 - Math.PI / 2;
+        var rr = (i % 2) ? s * 0.42 : s;
+        if (i) x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        else   x.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+      }
+      x.closePath(); x.fill();
+    }
+    x.restore();
+  }
+
+  /* ==================================================================
+     THE LOOKS
+     Each draw(x, cx, cy, r, hex, t, seed, sym) paints ONE bead centred on
+     (cx,cy) with radius r. `t` is a clock in seconds — only LIVE looks read
+     it. `seed` is stable per (colour, radius). `sym` is the colour index,
+     0..4, or 5 for the NOVA.
+
+       live  — true if something inside moves, so it costs a draw per frame.
+       hard  — true if the silhouette ends on a hard edge (no alpha skirt).
+     ================================================================== */
+  var LOOK = [];
+  function look(key, name, live, hard, pitch, draw) {
+    LOOK.push({ key: key, name: name, live: live, hard: hard, pitch: pitch, draw: draw });
+  }
+
+  /* -------------------------------------------------------- 01 shipping */
+  look("classic", "Classic glass bead", false, false,
+    "The bead shipping today, kept as the reference. A 34% alpha halo, a radial gradient with a white core and a translucent rim arc: three soft edges stacked, which is exactly the fog you are seeing. Every look below removes at least one of them.",
+    function (x, cx, cy, r, hex) {
+      var pad = Math.max(4, r * 0.34), k;
+      for (k = 3; k >= 1; k--) {
+        x.fillStyle = rgba(hex, 0.055 * k);
+        disc(x, cx, cy, r + pad * (k / 3));
+      }
+      var g = x.createRadialGradient(cx - r * 0.34, cy - r * 0.38, r * 0.1, cx, cy, r);
+      g.addColorStop(0, "#ffffff");
+      g.addColorStop(0.26, hex);
+      g.addColorStop(0.84, hex);
+      g.addColorStop(1, mix(hex, -0.6));
+      x.fillStyle = g; disc(x, cx, cy, r);
+      x.strokeStyle = rgba("#ffffff", 0.42);
+      x.lineWidth = Math.max(1.5, r * 0.10);
+      x.beginPath(); x.arc(cx, cy, r * 0.9, 0.55, 2.25); x.stroke();
+      x.fillStyle = rgba("#ffffff", 0.85);
+      disc(x, cx - r * 0.31, cy - r * 0.35, r * 0.16);
+    });
+
+  /* ----------------------------------------------------------- 02 enamel */
+  look("enamel", "Hard enamel", false, true,
+    "The same sphere with every soft edge deleted: a dark enamel wall, one flat body colour, one hard shadow crescent and a cut gloss cap. No halo, no gradient, no blur — and it is the cheapest sprite in the list. The safe answer if the goal is only to sharpen what ships — and the one games/radiam now ships, canvas sprite and intro demo alike.",
+    function (x, cx, cy, r, hex) {
+      x.fillStyle = mix(hex, -0.62); disc(x, cx, cy, r);            // wall
+      x.fillStyle = hex; disc(x, cx, cy, r * 0.87);                 // body
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.87, 0, TAU); x.clip();
+      x.fillStyle = mix(hex, -0.3);                                 // shade side
+      disc(x, cx + r * 0.42, cy + r * 0.5, r * 0.95);
+      x.fillStyle = rgba("#ffffff", 0.5);                           // gloss cap
+      disc(x, cx - r * 0.06, cy - r * 0.66, r * 0.62);
+      x.restore();
+      x.fillStyle = "#ffffff";
+      disc(x, cx - r * 0.3, cy - r * 0.36, r * 0.13);               // spark
+    });
+
+  /* ------------------------------------------------------------- 03 soap */
+  look("soap", "Soap bubble", false, true,
+    "Hollow, not solid: the dial reads THROUGH the bead, and all the colour lives in a thin iridescent film at the rim. The film is a flat ring of the game colour with 44 short arc segments swinging 38 degrees of hue over it — the swing has to stay small or the five hues stop being five hues, which is the whole risk of this direction. Fragile on a busy background — the faint dark disc behind it is what keeps it readable.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var h = hueOf(hex), i, a, w = r * 0.15;
+      x.fillStyle = "rgba(8,6,26,.18)"; disc(x, cx, cy, r * 0.98);  // grounding
+      x.fillStyle = rgba(hex, 0.16); disc(x, cx, cy, r * 0.94);     // faint tint
+      x.lineCap = "butt";
+      ring(x, cx, cy, r * 0.9, w, rgba(hex, 0.5));                   // the hue floor
+      for (i = 0; i < 44; i++) {                                     // thin film
+        a = i / 44 * TAU;
+        var sh = h + Math.sin(a * 2 + 0.8) * 38 + Math.sin(a * 3) * 14;
+        var lum = 62 + Math.sin(a * 2 + 2.1) * 14;
+        var al = 0.22 + 0.46 * Math.pow(Math.max(0, Math.sin(a + 2.4)), 2);
+        x.strokeStyle = "hsla(" + sh + ",100%," + lum + "%," + al + ")";
+        x.lineWidth = w;
+        x.beginPath(); x.arc(cx, cy, r * 0.9, a, a + TAU / 44 + 0.02); x.stroke();
+      }
+      ring(x, cx, cy, r * 0.97, Math.max(1, r * 0.05), rgba("#ffffff", 0.55));
+      x.fillStyle = rgba("#ffffff", 0.92);                           // hard spark
+      x.beginPath();
+      x.ellipse(cx - r * 0.36, cy - r * 0.42, r * 0.17, r * 0.1, -0.7, 0, TAU);
+      x.fill();
+      x.strokeStyle = rgba("#ffffff", 0.3);                          // bounce light
+      x.lineWidth = Math.max(1, r * 0.07);
+      x.beginPath(); x.arc(cx, cy, r * 0.66, 0.75, 2.1); x.stroke();
+    });
+
+  /* ------------------------------------------------------------ 04 magma */
+  look("magma", "Magma pebble", false, true,
+    "A cooled crust with the heat still inside. The silhouette is an irregular 22-point blob, so no two colours share an outline; five cracks split it and the hot core only glows INSIDE the clip, which is what keeps it from fogging its neighbours. Reads as dangerous — good for a game whose supers are shockwaves.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var rr = rnd(seed), i, k, a, pts = [];
+      for (i = 0; i < 22; i++) {
+        a = i / 22 * TAU;
+        var rad = r * (0.9 + rr() * 0.1);
+        pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+      }
+      poly(x, cx, cy, pts);
+      x.fillStyle = mix(hex, -0.78); x.fill();                       // basalt crust
+      x.save(); poly(x, cx, cy, pts); x.clip();
+      var g = x.createRadialGradient(cx, cy, r * 0.05, cx, cy, r);   // contained heat
+      g.addColorStop(0, mix(hex, 0.7));
+      g.addColorStop(0.4, rgba(hex, 0.55));
+      g.addColorStop(1, rgba(hex, 0));
+      x.fillStyle = g; disc(x, cx, cy, r);
+      x.lineCap = "round"; x.lineJoin = "round";
+      for (i = 0; i < 5; i++) {                                      // cracks
+        a = rr() * TAU;
+        var px = cx, py = cy;
+        x.strokeStyle = rgba(hex, 0.85); x.lineWidth = r * 0.13;
+        x.beginPath(); x.moveTo(px, py);
+        for (k = 1; k <= 4; k++) {
+          a += (rr() - 0.5) * 0.9;
+          px += Math.cos(a) * r * 0.3; py += Math.sin(a) * r * 0.3;
+          x.lineTo(px, py);
+        }
+        x.stroke();
+        x.strokeStyle = mix(hex, 0.75); x.lineWidth = r * 0.05; x.stroke();
+      }
+      for (i = 0; i < 7; i++) {                                      // embers
+        a = rr() * TAU;
+        var d = r * (0.3 + rr() * 0.6);
+        x.fillStyle = rgba(mix(hex, 0.6), 0.5 + rr() * 0.5);
+        disc(x, cx + Math.cos(a) * d, cy + Math.sin(a) * d, r * 0.05);
+      }
+      x.restore();
+      x.strokeStyle = rgba(mix(hex, 0.5), 0.5);                      // heat at the rim
+      x.lineWidth = Math.max(1, r * 0.06);
+      x.beginPath(); x.arc(cx, cy, r * 0.9, 0.5, 2.4); x.stroke();
+    });
+
+  /* ---------------------------------------------------------- 05 plasma */
+  look("plasma", "Plasma orb", true, true,
+    "A dark glass shell with three arcs snapping between the core and the rim. The arcs are re-seeded 14 times a second, not every frame, so they crackle instead of boiling — and it is 18 line segments per bead, no gradient, no blur. The most alive look here, and the only one that costs real per-frame time on 36 beads.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var step = Math.floor(t * 14), rr = rnd(seed * 17 + step * 977), i, k;
+      x.fillStyle = "rgba(8,5,24,.88)"; disc(x, cx, cy, r);
+      x.fillStyle = rgba(hex, 0.14); disc(x, cx, cy, r * 0.92);
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.93, 0, TAU); x.clip();
+      x.lineCap = "round"; x.lineJoin = "round";
+      for (i = 0; i < 3; i++) {                                       // the arcs
+        var a = rr() * TAU, px = cx, py = cy, path = [[px, py]];
+        for (k = 1; k <= 6; k++) {
+          var d = r * 0.16 * k;
+          var j = (rr() - 0.5) * r * 0.34;
+          px = cx + Math.cos(a) * d - Math.sin(a) * j;
+          py = cy + Math.sin(a) * d + Math.cos(a) * j;
+          path.push([px, py]);
+        }
+        x.beginPath(); x.moveTo(path[0][0], path[0][1]);
+        for (k = 1; k < path.length; k++) x.lineTo(path[k][0], path[k][1]);
+        x.strokeStyle = rgba(hex, 0.75); x.lineWidth = r * 0.14; x.stroke();
+        x.strokeStyle = rgba("#ffffff", 0.9); x.lineWidth = r * 0.045; x.stroke();
+      }
+      x.restore();
+      x.fillStyle = rgba("#ffffff", 0.95); disc(x, cx, cy, r * 0.15); // core
+      x.fillStyle = rgba(hex, 0.55); disc(x, cx, cy, r * 0.26);
+      ring(x, cx, cy, r * 0.95, Math.max(1.2, r * 0.09), rgba(hex, 0.8));
+      ring(x, cx, cy, r * 0.99, Math.max(1, r * 0.03), rgba("#ffffff", 0.35));
+    });
+
+  /* ------------------------------------------------------------- 06 neon */
+  look("neon", "Neon tube", false, true,
+    "Not a ball at all: a bent glass tube seen head-on, with a dark hole in the middle and a break in the loop like a real neon sign. Three concentric strokes fake the bloom without shadowBlur. The hole is the point — 36 empty centres let the dial's rays show through and the board stops looking crowded.",
+    function (x, cx, cy, r, hex) {
+      var g0 = 0.19, g1 = TAU - 0.19;                                 // the tube break
+      x.fillStyle = "rgba(7,5,20,.72)"; disc(x, cx, cy, r * 0.99);
+      x.lineCap = "round";
+      var mk = function (w, col) {
+        x.strokeStyle = col; x.lineWidth = w;
+        x.beginPath(); x.arc(cx, cy, r * 0.71, g0, g1); x.stroke();
+      };
+      mk(r * 0.62, rgba(hex, 0.16));                                  // faked bloom
+      mk(r * 0.4, rgba(hex, 0.34));
+      mk(r * 0.26, hex);                                              // the tube
+      mk(r * 0.09, mix(hex, 0.75));                                   // hot filament
+      x.fillStyle = mix(hex, 0.55);                                   // electrodes
+      disc(x, cx + Math.cos(g0) * r * 0.71, cy + Math.sin(g0) * r * 0.71, r * 0.07);
+      disc(x, cx + Math.cos(g1) * r * 0.71, cy + Math.sin(g1) * r * 0.71, r * 0.07);
+    });
+
+  /* -------------------------------------------------------------- 07 gem */
+  look("gem", "Cut gem", false, true,
+    "A seven-sided brilliant: flat facets, a table in the middle, one glint. Nothing is smooth, so nothing can look soft — and the polygon silhouette is instantly different from the sphere everyone ships. Each colour gets its own facet rotation from the seed, so a ray of three matching gems still shows three distinct stones.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var n = 7, rr = rnd(seed), rot = rr() * TAU, i, pts = [], inner = [];
+      var lightA = -2.2;
+      for (i = 0; i < n; i++) {
+        var a = rot + i / n * TAU;
+        pts.push([Math.cos(a) * r, Math.sin(a) * r]);
+        inner.push([Math.cos(a + 0.22) * r * 0.42, Math.sin(a + 0.22) * r * 0.42]);
+      }
+      for (i = 0; i < n; i++) {                                       // crown facets
+        var b = (i + 1) % n;
+        var ma = rot + (i + 0.5) / n * TAU;
+        var lit = Math.cos(ma - lightA);
+        x.beginPath();
+        x.moveTo(cx + inner[i][0], cy + inner[i][1]);
+        x.lineTo(cx + pts[i][0], cy + pts[i][1]);
+        x.lineTo(cx + pts[b][0], cy + pts[b][1]);
+        x.lineTo(cx + inner[b][0], cy + inner[b][1]);
+        x.closePath();
+        x.fillStyle = mix(hex, lit * 0.42 - 0.14);
+        x.fill();
+      }
+      poly(x, cx, cy, inner);                                         // the table
+      x.fillStyle = mix(hex, 0.34); x.fill();
+      x.strokeStyle = mix(hex, -0.5); x.lineWidth = Math.max(1, r * 0.05);
+      x.stroke();
+      poly(x, cx, cy, pts);                                           // girdle
+      x.strokeStyle = mix(hex, -0.55); x.lineWidth = Math.max(1, r * 0.07); x.stroke();
+      x.beginPath();                                                  // one glint
+      x.moveTo(cx + inner[0][0], cy + inner[0][1]);
+      x.lineTo(cx + pts[0][0] * 0.96, cy + pts[0][1] * 0.96);
+      x.lineTo(cx + inner[1][0], cy + inner[1][1]);
+      x.closePath();
+      x.fillStyle = rgba("#ffffff", 0.55); x.fill();
+    });
+
+  /* ------------------------------------------------------------ 08 pixel */
+  look("pixel", "Pixel bead", false, true,
+    "The disc quantized onto a 9x9 grid with four shades and a dark outline: an 8-bit dial, and the one look where blur is structurally impossible. Costs nothing, survives any scale, and gives the whole game a second identity — but it fights the smooth vector HUD, so it is an all-or-nothing direction.",
+    function (x, cx, cy, r, hex) {
+      var n = 9, cell = r * 2 / n, gx, gy, i;
+      var ramp = [mix(hex, 0.62), mix(hex, 0.24), hex, mix(hex, -0.42)];
+      var edge = mix(hex, -0.8);
+      for (gy = 0; gy < n; gy++) for (gx = 0; gx < n; gx++) {
+        var dx = (gx - (n - 1) / 2) * cell, dy = (gy - (n - 1) / 2) * cell;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d > r * 0.98) continue;
+        var lum = (-dx - dy) / (r * 2) + 0.5 - d / r * 0.35;
+        i = d > r * 0.74 ? 3 : (lum > 0.62 ? 0 : lum > 0.44 ? 1 : 2);
+        x.fillStyle = d > r * 0.86 ? edge : ramp[i];
+        x.fillRect(Math.round(cx + dx - cell / 2), Math.round(cy + dy - cell / 2),
+                   Math.ceil(cell), Math.ceil(cell));
+      }
+      x.fillStyle = "#ffffff";                                        // the 2-px spark
+      x.fillRect(Math.round(cx - cell * 2.5), Math.round(cy - cell * 2.5),
+                 Math.ceil(cell), Math.ceil(cell));
+    });
+
+  /* ---------------------------------------------------------- 09 sticker */
+  look("sticker", "Die-cut sticker", false, true,
+    "Flat colour, a thick white kiss-cut border and one hard offset shadow — the bead as a vinyl sticker laid on the dial. The white border is doing the real work: it separates a bead from its neighbour and from the background at any size, which is why sticker art survives being shrunk to 22 px.",
+    function (x, cx, cy, r, hex) {
+      x.fillStyle = "rgba(4,2,14,.5)"; disc(x, cx + r * 0.1, cy + r * 0.15, r * 0.97);
+      x.fillStyle = "#ffffff"; disc(x, cx, cy, r * 0.97);             // kiss cut
+      x.fillStyle = hex; disc(x, cx, cy, r * 0.79);
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.79, 0, TAU); x.clip();
+      x.fillStyle = mix(hex, -0.22);                                  // flat shade
+      disc(x, cx + r * 0.5, cy + r * 0.62, r * 0.85);
+      crescent(x, cx, cy, r * 0.66, r * 0.26, r * 0.3, r * 0.62, rgba("#ffffff", 0.8));
+      x.restore();
+    });
+
+  /* -------------------------------------------------------------- 10 ink */
+  look("ink", "Brush ink", false, true,
+    "One loaded brush stroke around a flat wash: the outline wobbles, the width breathes, the ink pools at the bottom of the circle and the top-right runs dry. Hand-made where every other playable is vector-perfect, and still a plain sprite — the wobble is baked from the seed, not animated.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var rr = rnd(seed), i, a, pts = [], n = 40;
+      var wob = [];
+      for (i = 0; i < n; i++) wob.push(0.74 + rr() * 0.26);
+      for (i = 0; i < n; i++) {
+        a = i / n * TAU;
+        var w = (wob[i] * 2 + wob[(i + 1) % n] + wob[(i + n - 1) % n]) / 4;
+        w *= 1 + 0.07 * Math.sin(a * 3 + 1.2);        // the wrist, not the compass
+        pts.push([cx + Math.cos(a) * r * w, cy + Math.sin(a) * r * w]);
+      }
+      x.beginPath(); x.moveTo(pts[0][0], pts[0][1]);
+      for (i = 1; i < n; i++) x.lineTo(pts[i][0], pts[i][1]);
+      x.closePath();
+      x.fillStyle = rgba(hex, 0.8); x.fill();                          // the wash
+      x.lineCap = "round";
+      for (i = 0; i < n; i++) {                                        // the stroke
+        var b = (i + 1) % n;
+        a = i / n * TAU;
+        var press = 0.05 + 0.2 * Math.max(0, Math.sin(a - 0.6));
+        var dry = a > 4.6 && a < 5.6 ? 0.25 : 1;
+        x.strokeStyle = rgba(mix(hex, -0.4), 0.9 * dry);
+        x.lineWidth = r * press;
+        x.beginPath(); x.moveTo(pts[i][0], pts[i][1]); x.lineTo(pts[b][0], pts[b][1]);
+        x.stroke();
+      }
+      x.save();                                                        // ink pooling
+      x.beginPath(); x.moveTo(pts[0][0], pts[0][1]);
+      for (i = 1; i < n; i++) x.lineTo(pts[i][0], pts[i][1]);
+      x.closePath(); x.clip();
+      x.fillStyle = rgba(mix(hex, -0.45), 0.5);
+      disc(x, cx + r * 0.1, cy + r * 0.75, r * 0.5);
+      x.fillStyle = rgba("#ffffff", 0.5);                              // paper reserve
+      x.beginPath();
+      x.ellipse(cx - r * 0.3, cy - r * 0.34, r * 0.26, r * 0.13, -0.6, 0, TAU);
+      x.fill();
+      x.restore();
+    });
+
+  /* --------------------------------------------------------- 11 hologram */
+  look("holo", "Hologram wire", true, true,
+    "No surface at all: a rim, a rotating equator, two meridians and three scanlines, doubled by a one-pixel cyan fringe. It is the lightest look here in pixels pushed and the heaviest in personality — a dial made of projections. Watch the small ring: at 22 px the meridians can collapse, so it needs a minimum radius.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var sp = t * 0.9 + seed * 0.001, lw = Math.max(1, r * 0.055), i;
+      x.fillStyle = "rgba(6,14,26,.42)"; disc(x, cx, cy, r * 0.96);
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.94, 0, TAU); x.clip();
+      x.strokeStyle = rgba(hex, 0.75); x.lineWidth = lw;
+      for (i = 0; i < 2; i++) {                                        // meridians
+        var rx = Math.abs(Math.cos(sp + i * 1.05)) * r * 0.86;
+        x.beginPath(); x.ellipse(cx, cy, Math.max(0.6, rx), r * 0.86, 0, 0, TAU);
+        x.stroke();
+      }
+      x.beginPath();                                                   // equator
+      x.ellipse(cx, cy, r * 0.86, r * 0.86 * Math.abs(Math.sin(sp * 0.6)) + r * 0.06,
+                0, 0, TAU);
+      x.stroke();
+      x.strokeStyle = rgba("#8ef6ff", 0.3); x.lineWidth = Math.max(1, r * 0.03);
+      for (i = 0; i < 3; i++) {                                        // scanlines
+        var yy = cy - r + ((t * 0.35 + i / 3) % 1) * r * 2;
+        x.beginPath(); x.moveTo(cx - r, yy); x.lineTo(cx + r, yy); x.stroke();
+      }
+      x.restore();
+      ring(x, cx, cy, r * 0.94, lw, rgba(hex, 0.95));                  // rim
+      ring(x, cx + Math.max(1, r * 0.035), cy, r * 0.94,
+           Math.max(1, r * 0.03), "rgba(120,240,255,.35)");            // fringe
+      x.fillStyle = rgba(hex, 0.9); disc(x, cx, cy, Math.max(1.5, r * 0.1));
+    });
+
+  /* -------------------------------------------------------- 12 mercury */
+  look("mercury", "Liquid chrome", false, true,
+    "A tinted metal droplet: no gradient anywhere, just three hard bands — a bright sky cap, a white horizon line and a warm ground bounce — clipped inside the disc. Hard-edged reflections are what make a surface read as METAL, and the same three bands work in every hue.",
+    function (x, cx, cy, r, hex) {
+      x.fillStyle = mix(hex, -0.62); disc(x, cx, cy, r);
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.98, 0, TAU); x.clip();
+      x.fillStyle = mix(hex, 0.05);                                    // ground bounce
+      disc(x, cx, cy + r * 1.25, r * 1.7);
+      x.fillStyle = mix(hex, 0.6);                                     // sky cap
+      disc(x, cx, cy - r * 1.3, r * 1.85);
+      x.strokeStyle = "#ffffff"; x.lineWidth = Math.max(1.4, r * 0.12); // horizon
+      x.beginPath(); x.arc(cx, cy - r * 1.3, r * 1.85, 0, TAU); x.stroke();
+      x.fillStyle = mix(hex, 0.9);                                     // specular
+      x.beginPath();
+      x.ellipse(cx - r * 0.34, cy - r * 0.5, r * 0.24, r * 0.12, -0.5, 0, TAU);
+      x.fill();
+      ring(x, cx, cy, r * 0.9, r * 0.2, rgba(mix(hex, -0.7), 0.55));   // rim darkening
+      x.restore();
+      ring(x, cx, cy, r * 0.97, Math.max(1, r * 0.05), mix(hex, -0.75));
+    });
+
+  /* ----------------------------------------------------------- 13 spore */
+  look("spore", "Bioluminescent spore", true, true,
+    "A translucent membrane with a lit nucleus and five granules drifting around it. The whole thing is discs and one ring — no gradient, no blur — and the drift is one cosine per granule, so it stays cheap even on 36 beads. Organic where the dial is machined, which is the contrast that sells it.",
+    function (x, cx, cy, r, hex, t, seed) {
+      var i, a, ph = seed * 0.017;
+      x.fillStyle = "rgba(5,10,18,.5)"; disc(x, cx, cy, r * 0.98);
+      x.fillStyle = rgba(hex, 0.2); disc(x, cx, cy, r * 0.95);         // cytoplasm
+      ring(x, cx, cy, r * 0.9, Math.max(1.4, r * 0.11), rgba(hex, 0.85));
+      ring(x, cx, cy, r * 0.78, Math.max(1, r * 0.03), rgba("#ffffff", 0.22));
+      for (i = 0; i < 5; i++) {                                        // granules
+        a = t * 0.5 + ph + i * TAU / 5;
+        var d = r * (0.5 + 0.12 * Math.cos(a * 1.7 + i));
+        x.fillStyle = rgba(mix(hex, 0.55), 0.85);
+        disc(x, cx + Math.cos(a) * d, cy + Math.sin(a) * d, r * 0.09);
+      }
+      x.fillStyle = rgba(hex, 0.55); disc(x, cx, cy, r * 0.34);        // nucleus
+      x.fillStyle = mix(hex, 0.8); disc(x, cx, cy, r * 0.2);
+      x.fillStyle = rgba("#ffffff", 0.9); disc(x, cx, cy, r * 0.09);
+    });
+
+  /* -------------------------------------------------------- 14 engraved */
+  look("rune", "Engraved rune", false, true,
+    "A matte stone disc with the colour cut INTO it as a glyph — triangle, diamond, ring, cross, chevron, and the star for a NOVA. Two players out of a hundred cannot tell the red bead from the green one; this look is the only one here that matches on shape as well as hue, and it costs one extra stroke.",
+    function (x, cx, cy, r, hex, t, seed, sym) {
+      x.fillStyle = mix(hex, -0.72); disc(x, cx, cy, r);              // stone
+      x.fillStyle = mix(hex, -0.6); disc(x, cx, cy, r * 0.88);
+      x.save();
+      x.beginPath(); x.arc(cx, cy, r * 0.88, 0, TAU); x.clip();
+      x.fillStyle = rgba("#ffffff", 0.09);                            // bevel
+      disc(x, cx - r * 0.2, cy - r * 0.34, r * 0.85);
+      x.restore();
+      var lw = Math.max(1.6, r * 0.14);
+      glyph(x, sym, cx, cy + r * 0.03, r * 0.46, rgba("#000000", 0.45), lw); // cut
+      glyph(x, sym, cx, cy, r * 0.46, mix(hex, 0.3), lw);             // lit fill
+      ring(x, cx, cy, r * 0.96, Math.max(1, r * 0.06), mix(hex, -0.85));
+    });
+
+  /* ==================================================================
+     THE HARNESS — sprite cache, dial, size sheet, gallery.
+     ================================================================== */
+  var cache = {};
+  function sprite(lk, hex, r, sym) {
+    var key = lk.key + "|" + hex + "|" + Math.round(r * 10) + "|" + sym;
+    if (cache[key]) return cache[key];
+    var pad = Math.ceil(r * 0.55) + 6, s = Math.ceil((r + pad) * 2);
+    var c = document.createElement("canvas");
+    c.width = s; c.height = s;
+    lk.draw(c.getContext("2d"), s / 2, s / 2, r, hex, 0, seedOf(hex, r), sym);
+    cache[key] = { cv: c, m: s / 2 };
+    return cache[key];
+  }
+  /* The one entry point: a sprite blit for the static looks, a direct draw
+     for the live ones — exactly the two costs the tags advertise. */
+  function bead(x, lk, bx, by, r, hex, sym, t, i) {
+    if (lk.live) {
+      lk.draw(x, bx, by, r, hex, t, seedOf(hex, r) + i * 7919, sym);
+      return;
+    }
+    var sp = sprite(lk, hex, r, sym);
+    x.drawImage(sp.cv, bx - sp.m, by - sp.m);
+  }
+
+  /* --- the board Radiam actually deals ----------------------------------- */
+  var BOARD = (function () {
+    var rr = rnd(20260829), b = [], i, k, row;
+    for (i = 0; i < 3; i++) {
+      row = [];
+      for (k = 0; k < SLOTS; k++) row.push(Math.floor(rr() * COLOURS.length));
+      b.push(row);
+    }
+    b[1][3] = 5;                                   // one NOVA, to judge the white
+    b[2][7] = b[2][8] = b[2][9] = 2;               // a lined-up ray, to judge matching
+    return b;
+  })();
+
+  var boardX = document.getElementById("board").getContext("2d");
+  var sizeX = document.getElementById("sizesheet").getContext("2d");
+
+  function bx(a, rad) { return CX + Math.sin(a) * rad; }
+  function by(a, rad) { return CY - Math.cos(a) * rad; }
+
+  var sky = null;
+  function drawDial(lk, t) {
+    var i, k, a, r;
+    if (!sky) {                                    // the background, painted once
+      sky = document.createElement("canvas");
+      sky.width = S; sky.height = S;
+      var g = sky.getContext("2d");
+      var sg = g.createRadialGradient(CX, CY, UNIT * 0.15, CX, CY, S * 0.78);
+      sg.addColorStop(0, SKY[0]); sg.addColorStop(0.55, SKY[1]); sg.addColorStop(1, SKY[2]);
+      g.fillStyle = sg; g.fillRect(0, 0, S, S);
+      g.save(); g.translate(CX, CY);
+      for (i = 0; i < RAYS; i++) {
+        g.rotate(TAU / RAYS);
+        var rg = g.createLinearGradient(0, -UNIT, 0, -UNIT * 2.7);
+        rg.addColorStop(0, rgba(WIRE, i % 3 === 0 ? 0.26 : 0.13));
+        rg.addColorStop(1, rgba(WIRE, 0));
+        g.fillStyle = rg;
+        g.beginPath();
+        g.moveTo(-2.5, -UNIT); g.lineTo(2.5, -UNIT);
+        g.lineTo(10, -UNIT * 2.7); g.lineTo(-10, -UNIT * 2.7);
+        g.closePath(); g.fill();
+      }
+      g.restore();
+      for (i = 0; i < 3; i++) {                    // the housing tracks
+        r = UNIT * ORBITS[i];
+        ring(g, CX, CY, r, UNIT * BALLR[i] * 2 + UNIT * 0.035, rgba(PLATE, 0.55));
+        ring(g, CX, CY, r, 1, rgba(WIRE, 0.35));
+      }
+      ring(g, CX, CY, UNIT, 4, rgba(WIRE, 0.7));
+      g.fillStyle = HUB; disc(g, CX, CY, UNIT * 0.175);
+      ring(g, CX, CY, UNIT * 0.175, 2, rgba(WIRE, 0.8));
+    }
+    boardX.drawImage(sky, 0, 0);
+    for (i = 0; i < 3; i++) {
+      r = UNIT * BALLR[i];
+      for (k = 0; k < SLOTS; k++) {
+        a = k * TAU / SLOTS + i * 0.09;
+        var sym = BOARD[i][k];
+        bead(boardX, lk, bx(a, UNIT * ORBITS[i]), by(a, UNIT * ORBITS[i]),
+             r, sym === 5 ? NOVA : COLOURS[sym], sym, t, i * SLOTS + k);
+      }
+    }
+  }
+
+  /* --- the size sheet: the three shipped radii, then a 3x blow-up -------- */
+  function drawSizes(lk, t) {
+    var i, j, r, x0;
+    sizeX.clearRect(0, 0, 840, 440);
+    sizeX.fillStyle = "#0c0a1c"; sizeX.fillRect(0, 0, 840, 440);
+    sizeX.font = "800 15px -apple-system,Segoe UI,Roboto,sans-serif";
+    sizeX.textAlign = "center";
+    for (i = 0; i < 3; i++) {                       // one bead per shipped radius
+      r = UNIT * BALLR[i];
+      x0 = 96 + i * 150;
+      bead(sizeX, lk, x0, 92, r, COLOURS[i], i, t, i);
+      sizeX.fillStyle = "#6f6c8d";
+      sizeX.fillText(Math.round(r) + " px", x0, 168);
+    }
+    bead(sizeX, lk, 636, 92, UNIT * BALLR[2], NOVA, 5, t, 90);
+    sizeX.fillStyle = "#6f6c8d"; sizeX.fillText("NOVA", 636, 168);
+    for (i = 0; i < 5; i++) {                       // the five hues, side by side
+      bead(sizeX, lk, 96 + i * 68, 224, 26, COLOURS[i], i, t, 20 + i);
+    }
+    sizeX.fillStyle = "#6f6c8d"; sizeX.fillText("the five hues at 26 px", 232, 268);
+    bead(sizeX, lk, 700, 246, 88, COLOURS[3], 3, t, 31);   // the 3x blow-up
+    r = UNIT * BALLR[2];                                   // two touching neighbours
+    bead(sizeX, lk, 150, 372, r, COLOURS[0], 0, t, 41);
+    bead(sizeX, lk, 150 + r * 2.05, 372, r, COLOURS[4], 4, t, 42);
+    sizeX.fillStyle = "#6f6c8d"; sizeX.fillText("touching", 192, 428);
+  }
+
+  /* --- the gallery cards -------------------------------------------------- */
+  var cards = document.getElementById("cards"), nodes = [], current = 0;
+  var cardCtx = [];
+
+  function drawCard(x, lk, t) {
+    var i, g = x.createLinearGradient(0, 0, 0, 260);
+    g.addColorStop(0, "#1b1446"); g.addColorStop(1, "#0a0722");
+    x.fillStyle = g; x.fillRect(0, 0, 600, 260);
+    ring(x, 300, 300, 250, 66, rgba(PLATE, 0.5));
+    for (i = 0; i < 5; i++) {
+      bead(x, lk, 84 + i * 108, 110, 41, COLOURS[i], i, t, i);
+    }
+    bead(x, lk, 300, 206, 30, NOVA, 5, t, 9);
+  }
+
+  LOOK.forEach(function (lk, i) {
+    var card = document.createElement("div");
+    card.className = "card";
+    var cv = document.createElement("canvas");
+    cv.width = 600; cv.height = 260; cv.style.aspectRatio = "600 / 260";
+    card.appendChild(cv);
+    var name = document.createElement("div");
+    name.className = "name";
+    name.innerHTML = "<b></b><span></span>";
+    name.querySelector("b").textContent = (i + 1) + ". " + lk.name;
+    var s = name.querySelector("span");
+    s.textContent = lk.live ? "live" : "sprite";
+    if (lk.live) s.className = "live";
+    card.appendChild(name);
+    card.onclick = function () { select(i); };
+    cards.appendChild(card);
+    nodes.push(card);
+    cardCtx.push(cv.getContext("2d"));
+    drawCard(cv.getContext("2d"), lk, 0);
+  });
+
+  function select(i) {
+    current = (i + LOOK.length) % LOOK.length;
+    nodes.forEach(function (n, j) { n.classList.toggle("on", j === current); });
+    var lk = LOOK[current];
+    document.getElementById("m-name").textContent = lk.name;
+    document.getElementById("m-pitch").textContent = lk.pitch;
+    var tags = document.getElementById("tags");
+    tags.innerHTML = "";
+    [[lk.live ? "live — one draw per bead per frame" : "sprite — 15 rasterized once",
+      lk.live ? "live" : "sprite"],
+     [lk.hard ? "hard edge" : "soft edge — the blur", lk.hard ? "hard" : "soft"],
+     ["no shadowBlur", ""]].forEach(function (t) {
+      var e = document.createElement("span");
+      e.className = "tag " + t[1]; e.textContent = t[0];
+      tags.appendChild(e);
+    });
+    nodes[current].scrollIntoView({ block: "nearest" });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { select(current + 1); e.preventDefault(); }
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") { select(current - 1); e.preventDefault(); }
+  });
+
+  var t0 = Date.now();
+  function frame() {
+    var t = (Date.now() - t0) / 1000, lk = LOOK[current];
+    drawDial(lk, t);
+    drawSizes(lk, t);
+    // only the live looks need their card repainted; the rest were baked once
+    LOOK.forEach(function (l, i) { if (l.live) drawCard(cardCtx[i], l, t); });
+    requestAnimationFrame(frame);
+  }
+  select(0);
+  frame();
+})();
+</script>
+</body>
+</html>

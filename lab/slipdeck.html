@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Slipdeck Lab — the swipe-to-sort deck prototype</title>
+<style>
+/* ===========================================================================
+   SLIPDECK LAB — a prototype for a card-deck playable, not a shipped game.
+
+   THE MECHANIC UNDER TEST
+   A shoe deals ONE card at a time to the middle of the screen. The player
+   swipes it:
+     - LEFT  -> the card is discarded and drops into the chute;
+     - RIGHT -> the card is kept and slides into the HAND at the bottom.
+   When the hand reaches its size it is scored as a poker hand: a pair or
+   better pays, HIGH CARD busts and costs a life. So "keep" is not free — a
+   fifth junk card burns the whole hand.
+
+   And "discard" is not free either. Every discard pushes a pip into the CHUTE
+   meter, every keep pulls one back out; overflow the chute and the run pays a
+   life. That is the only thing stopping the player from waiting for a perfect
+   hand forever, and it is the number most likely to be wrong.
+
+   On top of it a per-card FUSE: the card has to be sorted before it burns out,
+   and the fuse gets shorter as the round runs.
+
+   WHY A LAB AND NOT THE GAME
+   Six numbers decide whether this is a game: the hand size, the fuse, how fast
+   the fuse shortens, the chute depth, how much the shoe cheats in the player's
+   favour, and the swipe distance. They are all sliders here. Nothing on this
+   page is motor code: when the feel is settled, only section 6 of the game
+   file gets written from it.
+
+   Canvas 2D, in the motor's 720x1280 design space, under the motor's rules:
+   ES5-ish JS, no shadowBlur in a per-frame path, everything drawn with paths.
+   =========================================================================== */
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:#07060e; color:#e9e7f6; min-height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; gap:26px; padding:22px; align-items:flex-start;
+}
+
+/* --- the stage ----------------------------------------------------------- */
+#stage{ position:sticky; top:22px; flex:0 0 auto; width:400px; }
+#board{
+  width:400px; height:711px; display:block; border-radius:22px;
+  background:#0a0714; box-shadow:0 26px 70px rgba(0,0,0,.6);
+  cursor:grab; touch-action:none; user-select:none;
+}
+#board:active{ cursor:grabbing; }
+#stage .hint{ margin-top:12px; font-size:12px; line-height:1.6; color:#6f6c8d; }
+#stage .hint b{ color:#a8a5c4; font-weight:700; }
+
+/* --- the panel ----------------------------------------------------------- */
+#panel{ flex:1 1 auto; min-width:0; max-width:760px; }
+#panel h1{ font-size:24px; font-weight:900; letter-spacing:.4px; }
+#panel .sub{ margin-top:8px; font-size:13px; line-height:1.6; color:#8a87a8; }
+
+.block{
+  margin-top:18px; padding:16px 18px; border-radius:16px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08);
+}
+.block h2{
+  font-size:11px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:#ffbf5a; margin-bottom:12px;
+}
+
+#stats{ display:grid; gap:10px 14px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
+.stat .k{ font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#6f6c8d; }
+.stat .v{ font-size:19px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
+.stat.good .v{ color:#42e8b0; }
+.stat.bad .v{ color:#ff4a5e; }
+.stat.warm .v{ color:#ffb44f; }
+
+#knobs{ display:grid; gap:12px 20px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+.knob label{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:12px; color:#c9c6e4; font-weight:600;
+}
+.knob label i{ font-style:normal; color:#ffbf5a; font-variant-numeric:tabular-nums; font-weight:800; }
+.knob .why{ font-size:11px; color:#6f6c8d; line-height:1.45; margin-top:3px; }
+.knob input[type=range]{ width:100%; margin-top:6px; accent-color:#ffbf5a; }
+
+#toggles{ display:flex; gap:8px 18px; flex-wrap:wrap; margin-top:14px; }
+#toggles label{ display:flex; align-items:center; gap:7px; font-size:12px; color:#c9c6e4; font-weight:600; }
+#toggles input{ accent-color:#ffbf5a; width:15px; height:15px; }
+#buttons{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+button{
+  font:inherit; font-size:12px; font-weight:800; letter-spacing:.6px;
+  padding:9px 15px; border-radius:10px; cursor:pointer;
+  background:rgba(255,191,90,.1); border:1px solid rgba(255,191,90,.38); color:#ffbf5a;
+}
+button:hover{ background:rgba(255,191,90,.2); }
+button.plain{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16); color:#c9c6e4; }
+#seedbox{
+  font:inherit; font-size:12px; font-weight:700; width:110px; padding:9px 11px;
+  border-radius:10px; background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.14); color:#e9e7f6;
+}
+
+#paytable{ width:100%; border-collapse:collapse; font-size:12px; }
+#paytable th{ text-align:left; font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:#6f6c8d; padding:0 10px 7px 0; font-weight:700; }
+#paytable td{ padding:4px 10px 4px 0; color:#c9c6e4; font-variant-numeric:tabular-nums; }
+#paytable td.n{ color:#ffbf5a; font-weight:800; }
+#paytable td.off{ color:#4d4a66; }
+#paytable tr.dead td{ color:#4d4a66; }
+
+#notes p{ font-size:12.5px; line-height:1.65; color:#9c99b8; }
+#notes p + p{ margin-top:9px; }
+#notes b{ color:#e9e7f6; font-weight:700; }
+#notes code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
+  color:#ffbf5a; background:rgba(255,191,90,.08); padding:1px 5px; border-radius:5px;
+}
+#notes ul{ margin:8px 0 0 18px; }
+#notes li{ font-size:12.5px; line-height:1.6; color:#9c99b8; margin-top:5px; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="board"></canvas>
+  <div class="hint">
+    <b>Drag the card</b> or press <b>&larr;</b> / <b>&rarr;</b> (A / D) to sort &nbsp;·&nbsp;
+    <b>R</b> new run &nbsp;·&nbsp; <b>P</b> pause
+  </div>
+</div>
+
+<div id="panel">
+  <h1>Slipdeck — gameplay prototype</h1>
+  <p class="sub">
+    One card at a time. Swipe left to bin it, right to keep it. Fill the hand
+    and it is scored as poker: a pair or better pays, high card busts. Discards
+    fill the chute, keeps empty it, and every card burns on a fuse.
+  </p>
+
+  <div class="block">
+    <h2>Run</h2>
+    <div id="stats"></div>
+  </div>
+
+  <div class="block">
+    <h2>Knobs</h2>
+    <div id="knobs"></div>
+    <div id="toggles"></div>
+    <div id="buttons">
+      <button id="b-reset">New run</button>
+      <button id="b-pause" class="plain">Pause</button>
+      <input id="seedbox" type="text" value="" spellcheck="false" aria-label="seed">
+      <button id="b-goseed" class="plain">Load seed</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h2>Paytable</h2>
+    <table id="paytable"></table>
+  </div>
+
+  <div class="block" id="notes">
+    <h2>What to judge</h2>
+    <p>
+      <b>Is the chute the right cost?</b> This is the whole design. With
+      <code>chute depth</code> high the player never has to keep a bad card and
+      the game is a slow, safe grind; at 2 they are shoved into junk hands every
+      few seconds. Watch the <b>keep %</b> counter — a run that settles around
+      <b>45–60%</b> means the player is really choosing. Pinned above 70% means
+      the chute is too tight, below 35% means it costs nothing.
+    </p>
+    <p>
+      <b>Does the hand size fit a playable?</b> Five cards is real poker but a
+      hand takes ~8&nbsp;s to fill, so a 30&nbsp;s round is three hands and one
+      bust ruins it. Drop to <b>3</b> and the payouts come every 4&nbsp;s — far
+      more playable-shaped, and the paytable switches with it. Judge on
+      <b>hands/min</b>, not on score.
+    </p>
+    <p>
+      <b>Does the shoe need to cheat?</b> <code>shoe bias</code> is the chance
+      that a deal is picked to keep the hand's line alive instead of coming off
+      the top. At 0 the run is honest and mostly junk; push it up until the
+      hands feel lucky rather than random. Ad players get 20&nbsp;seconds — they
+      are supposed to feel good, not tested.
+    </p>
+    <p>
+      <b>What a scripted pilot already found</b> (9 seeds, a pilot with a
+      tunable THINK time per card): the keep rate settles at <b>52-55%</b> at
+      every setting &mdash; but that reading was <b>wrong</b>, and the shipped build
+      caught it: the pilot treated a one-card hand as being on no line, so it
+      binned the first card of every hand on principle. Fix that and the keep
+      rate jumps to <b>76-90%</b>: at five cards, keeping is almost always
+      right, the bin gesture is nearly vestigial and the chute never bites.
+      Read any keep rate here with that in mind. The chute <b>never overflows for
+      a player who watches it</b> — it forces them to keep a card they did not
+      want first, which is the point — but a pilot that bins every unhelpful
+      card without looking is <b>dead in 21&nbsp;s on three overflows</b>, so the
+      pips have to be impossible to miss. Deepening it to 5 makes the game
+      <i>worse</i> (keep drops to 44%, hands fall by a third) because
+      binning freely burns the cards a hand needs. <b>3 is the floor and the
+      ceiling.</b>
+    </p>
+    <p>
+      <b>The fuse is invisible until you are slow.</b> A pilot at 0.35 or
+      0.9&nbsp;s per card plays an identical run at 2.6, 3.6 or 4.6&nbsp;s of
+      fuse. But at <b>2.6&nbsp;s of thinking the 2.6&nbsp;s fuse kills the run in
+      8.6&nbsp;s</b> — three burnouts, nothing seen. At 3.6&nbsp;s the same
+      player survives the full 30&nbsp;s, and 4.6&nbsp;s buys nothing more.
+      That is why the fuse sits at 3.6: it costs a quick player nothing and
+      stops the deliberate one from being executed for thinking.
+    </p>
+    <p>
+      <b>The real cost of five cards is tempo.</b> A hand needs five keeps, so
+      at a ~54% keep rate it eats ~9 cards. A deliberate player (0.9&nbsp;s per
+      card) completes <b>2.8 hands in a 30&nbsp;s run</b> — a payoff every
+      ~10&nbsp;s — against 5.6 for a machine-fast one. <code>shoe bias</code> is
+      the only knob that moves it: 0.45 gives 2.1 hands, <b>0.70 gives 2.8</b>,
+      0.90 gives 2.9, so 0.70 is the knee and the default. If two or three
+      payoffs per run is too thin for the campaign, the honest fix is a longer
+      <code>round</code>, not a tighter chute.
+    </p>
+    <p>
+      <b>Is the fuse pressure or noise?</b> Turn the <b>fuse</b> toggle off and
+      play a run untimed. If the game is better without it, the pressure belongs
+      in the round clock alone and the card should simply wait.
+    </p>
+    <ul>
+      <li><b>Bust</b> = the hand filled up with nothing better than high card.
+        It costs a life and clears the hand.</li>
+      <li><b>Chute overflow</b> = a discard with the meter already full. Costs a
+        life and empties the chute.</li>
+      <li>Every paying hand adds <code>time bonus</code> seconds to the clock,
+        so a good player extends their own run.</li>
+      <li>The <b>keep preview</b> under the card is the honesty knob: it tells
+        the player what the card would make. Turn it off to see whether the
+        hand is readable on its own.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   1. THE STAGE — the motor's 720x1280 design space, on its own tiny shell.
+   =========================================================================== */
+
+var DW = 720, DH = 1280;
+var PI2 = Math.PI * 2;
+
+var board = document.getElementById("board");
+var ctx = board.getContext("2d");
+
+function sizeBoard() {
+  var cssW = board.clientWidth || 400, cssH = Math.round(cssW * DH / DW);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  board.style.height = cssH + "px";
+  board.width = Math.round(cssW * dpr);
+  board.height = Math.round(cssH * dpr);
+  var s = board.width / DW;
+  ctx.setTransform(s, 0, 0, s, 0, 0);
+}
+
+/* Fixed furniture of the screen, all in design px. The motor would hand these
+   over as Layout; here they are spelled out so the proportions are visible. */
+var CARD = { w: 296, h: 414, cx: 360, cy: 566 };     // the live card, at rest
+var FUSE = { x: 212, y: 806, w: 296, h: 13 };        // the per-card timer
+var GATE = { top: 336, bot: 796, w: 84, pad: 10 };   // the two chutes, L and R
+var SLOT = { w: 112, h: 157, gap: 14, y: 1002 };     // the hand, at the bottom
+
+/* ===========================================================================
+   2. KNOBS — everything this prototype exists to answer.
+   =========================================================================== */
+
+var K = {
+  handSize:     5,      // cards that fill a hand before it is scored
+  cardTime:     3.6,    // seconds of fuse on a fresh card
+  rampPct:      10,     // % the fuse shortens every 10 s of play
+  roundSeconds: 30,     // clock of one run
+  timeBonus:    1,      // seconds a paying hand puts back on the clock
+  lives:        3,      // busts + overflows + burnouts the run survives
+  chuteDepth:   3,      // discards the chute holds before it overflows
+  shoeBias:     0.70,   // chance a deal is picked to keep the hand's line alive
+  swipeDist:    92,     // design px a drag must cross to commit
+  dealIn:       0.16    // seconds the next card takes to slide up
+};
+
+var T = { preview: true, fuse: true, gates: true, endless: false };
+
+/* ===========================================================================
+   3. SEEDED RANDOM — a run is only worth discussing if it can be replayed.
+   =========================================================================== */
+
+var seed = 1, rngState = 1;
+function srand(s) { seed = (s >>> 0) || 1; rngState = seed; }
+function rnd() {
+  rngState = (rngState * 1664525 + 1013904223) >>> 0;
+  return rngState / 4294967296;
+}
+function rint(n) { return Math.floor(rnd() * n); }
+
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rgba(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+}
+function ease(t) { return t < 0 ? 0 : t > 1 ? 1 : 1 - (1 - t) * (1 - t) * (1 - t); }
+
+/* ===========================================================================
+   4. CARDS AND THE SHOE
+
+   A card is { r, s }: rank 0..12 as A,2..10,J,Q,K and suit 0..3 as
+   spade, heart, diamond, club. The shoe is a shuffled 52-card array dealt from
+   the top and rebuilt when it runs dry — with one twist, `shoeBias`, that lets
+   the deal reach a few cards down for one that keeps the hand alive.
+   =========================================================================== */
+
+var RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+var SUITS = ["♠", "♥", "♦", "♣"];
+var SUIT_RED = [false, true, true, false];
+
+var shoe = [];
+
+function buildShoe() {
+  shoe = [];
+  for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) shoe.push({ r: r, s: s });
+  for (var i = shoe.length - 1; i > 0; i--) {     // Fisher-Yates on the seeded rng
+    var j = rint(i + 1), t = shoe[i]; shoe[i] = shoe[j]; shoe[j] = t;
+  }
+}
+
+/* Which line is this hand still on? A hand with no category yet is not
+   "nothing": it is a flush draw, or a straight draw, or a dead pile — and that
+   is the only thing the player needs to read to decide. */
+function lineOf(cards) {
+  var n = cards.length, i, lo = 99, hi = -1, sameSuit = true;
+  if (n < 2) return "";                     /* one card is on every line */
+  for (i = 0; i < n; i++) {
+    if (cards[i].s !== cards[0].s) sameSuit = false;
+    if (cards[i].r < lo) lo = cards[i].r;
+    if (cards[i].r > hi) hi = cards[i].r;
+  }
+  if (sameSuit && n < K.handSize) return "FLUSH DRAW";
+  if ((hi - lo) <= K.handSize - 1 && n < K.handSize) return "STRAIGHT DRAW";
+  return "";
+}
+
+/* Would this card keep the hand on a line worth finishing? Three lines matter:
+   a rank already held (pairs and up), a shared suit (flush), and a tight rank
+   spread (straight). Anything else is a card the biased shoe skips over. */
+function helps(card) {
+  if (!hand.length) return true;
+  var i;
+  for (i = 0; i < hand.length; i++) if (hand[i].r === card.r) return true;
+  return lineOf(hand.concat([card])) !== "";
+}
+
+function deal() {
+  if (shoe.length < 8) buildShoe();
+  var idx = 0;
+  if (K.shoeBias > 0 && rnd() < K.shoeBias) {
+    var depth = Math.min(shoe.length, 10);
+    for (var i = 0; i < depth; i++) { if (helps(shoe[i])) { idx = i; break; } }
+  }
+  return shoe.splice(idx, 1)[0];
+}
+
+/* ===========================================================================
+   5. HAND EVALUATION
+
+   One generic evaluator for every hand size: count ranks, count suits, look for
+   a run. The category order below is poker's, and the paytable per hand size
+   simply leaves out what that size cannot make.
+   =========================================================================== */
+
+var CAT_ORDER = {
+  high: 0, pair: 1, twoPair: 2, trips: 3, straight: 4,
+  flush: 5, fullHouse: 6, quads: 7, straightFlush: 8
+};
+var CAT_NAME = {
+  high: "HIGH CARD", pair: "PAIR", twoPair: "TWO PAIR", trips: "THREE OF A KIND",
+  straight: "STRAIGHT", flush: "FLUSH", fullHouse: "FULL HOUSE",
+  quads: "FOUR OF A KIND", straightFlush: "STRAIGHT FLUSH"
+};
+
+/* Payouts. Bigger hands are rarer, so the same category pays more when it takes
+   more cards to make; a category a size cannot reach is simply absent. */
+var PAYOUT = {
+  3: { pair: 120, straight: 320, flush: 380, trips: 900, straightFlush: 1600 },
+  4: { pair: 100, twoPair: 300, trips: 450, straight: 560, flush: 680, quads: 2600, straightFlush: 3400 },
+  5: { pair: 100, twoPair: 250, trips: 400, straight: 620, flush: 820, fullHouse: 1250, quads: 2200, straightFlush: 4200 }
+};
+var CAT_LIST = ["pair", "twoPair", "trips", "straight", "flush", "fullHouse", "quads", "straightFlush"];
+
+function numAsc(a, b) { return a - b; }
+function isRun(v) {
+  for (var i = 1; i < v.length; i++) if (v[i] !== v[i - 1] + 1) return false;
+  return true;
+}
+
+function evalHand(cards) {
+  var n = cards.length;
+  if (!n) return { cat: "high", name: "—", pay: 0 };
+
+  var rc = {}, sc = {}, i, k;
+  for (i = 0; i < n; i++) {
+    rc[cards[i].r] = (rc[cards[i].r] || 0) + 1;
+    sc[cards[i].s] = (sc[cards[i].s] || 0) + 1;
+  }
+  var maxR = 0, pairs = 0, maxS = 0;
+  for (k in rc) { if (rc[k] > maxR) maxR = rc[k]; if (rc[k] === 2) pairs++; }
+  for (k in sc) if (sc[k] > maxS) maxS = sc[k];
+
+  var flush = (n >= 3 && maxS === n);
+  var straight = false;
+  if (n >= 3 && maxR === 1) {
+    var lowA = [], hiA = [];                 // the ace plays both ends of a run
+    for (i = 0; i < n; i++) { lowA.push(cards[i].r + 1); hiA.push(cards[i].r === 0 ? 14 : cards[i].r + 1); }
+    lowA.sort(numAsc); hiA.sort(numAsc);
+    straight = isRun(lowA) || isRun(hiA);
+  }
+
+  var cat = "high";
+  if (straight && flush)            cat = "straightFlush";
+  else if (maxR === 4)              cat = "quads";
+  else if (maxR === 3 && pairs >= 1) cat = "fullHouse";
+  else if (flush)                   cat = "flush";
+  else if (straight)                cat = "straight";
+  else if (maxR === 3)              cat = "trips";
+  else if (pairs >= 2)              cat = "twoPair";
+  else if (pairs === 1)             cat = "pair";
+
+  var table = PAYOUT[K.handSize] || PAYOUT[5];
+  return { cat: cat, name: CAT_NAME[cat], pay: table[cat] || 0 };
+}
+
+/* ===========================================================================
+   6. RUN STATE
+   =========================================================================== */
+
+var hand = [];            // the kept cards, left to right
+var cur = null;           // the live card: { card, x, y, rot, t, in }
+var flying = [];          // cards on their way out: { card, x, y, vx, vy, rot, spin, a }
+var landing = [];         // cards flying into a hand slot: { card, from, slot, t }
+var chute = 0;            // discards sitting in the chute
+var score = 0, combo = 0, bestCombo = 0, lives = 0;
+var timeLeft = 0, runT = 0;
+var kept = 0, binned = 0, hands = 0, busts = 0, burns = 0, overflows = 0;
+var bestPay = 0, bestName = "—";
+var paused = false, over = false, overWhy = "";
+var dealWait = 0;
+
+/* juice */
+var pops = [], parts = [], flash = 0, flashCol = "#ff4a5e", shake = 0;
+var handGlow = 0, chuteGlow = 0;
+
+function resetRun() {
+  buildShoe();
+  hand = []; cur = null; flying = []; landing = [];
+  chute = 0; score = 0; combo = 0; bestCombo = 0;
+  lives = K.lives;
+  timeLeft = K.roundSeconds; runT = 0;
+  kept = 0; binned = 0; hands = 0; busts = 0; burns = 0; overflows = 0;
+  bestPay = 0; bestName = "—";
+  over = false; overWhy = ""; dealWait = 0;
+  pops = []; parts = []; flash = 0; shake = 0; handGlow = 0; chuteGlow = 0;
+  document.getElementById("seedbox").value = seed;
+  nextCard();
+}
+
+function nextCard() {
+  cur = { card: deal(), x: 0, y: 0, rot: 0, t: 0, in: 0 };
+}
+
+/* The fuse shortens as the run goes on, but never below a floor a human can
+   still act inside. */
+function fuseNow() {
+  var f = K.cardTime * Math.pow(1 - K.rampPct / 100, runT / 10);
+  return Math.max(0.55, f);
+}
+
+function loseLife(why, col) {
+  lives--;
+  combo = 0;
+  flash = 1; flashCol = col || "#ff4a5e"; shake = 12;
+  pop(why, col || "#ff4a5e", 360, 640, 46);
+  if (lives <= 0) endRun(why);
+}
+
+function endRun(why) { over = true; overWhy = why; cur = null; }
+
+/* --- the two decisions --------------------------------------------------- */
+
+function decide(dir) {                                   // -1 bin, +1 keep
+  if (!cur || over || cur.in < 1) return;
+  var c = cur.card, restX = CARD.cx + cur.x, restY = CARD.cy + cur.y;
+  cur = null;
+  dealWait = 0.07;
+
+  if (dir < 0) {
+    binned++;
+    flying.push({ card: c, x: restX, y: restY, vx: -1500, vy: -140, rot: -0.3, spin: -3.4, a: 1 });
+    chuteGlow = 1;
+    chute++;
+    if (chute > K.chuteDepth) { chute = 0; overflows++; loseLife("CHUTE FULL", "#ff4a5e"); }
+    return;
+  }
+
+  kept++;
+  if (chute > 0) chute--;
+  landing.push({ card: c, fx: restX, fy: restY, slot: hand.length, t: 0 });
+  hand.push(c);
+  handGlow = 1;
+  if (hand.length >= K.handSize) resolveHand();
+}
+
+function resolveHand() {
+  var ev = evalHand(hand), i;
+  if (ev.pay > 0) {
+    combo++;
+    if (combo > bestCombo) bestCombo = combo;
+    var gain = Math.round(ev.pay * (1 + 0.5 * (combo - 1)));
+    score += gain;
+    hands++;
+    if (ev.pay > bestPay) { bestPay = ev.pay; bestName = ev.name; }
+    timeLeft += K.timeBonus;
+    pop(ev.name, "#ffd166", 360, 690, 40);
+    pop("+" + gain, "#42e8b0", 360, 620, 56);
+    if (combo > 1) pop("x" + combo, "#7ef9ff", 360, 760, 34);
+    for (i = 0; i < 26; i++) burst(360, SLOT.y, "#ffd166");
+    shake = 7;
+  } else {
+    busts++;
+    loseLife("BUST", "#ff4a5e");
+  }
+  /* The kept cards leave the hand outwards, so the next hand starts clean. */
+  for (i = 0; i < hand.length; i++) {
+    flying.push({
+      card: hand[i], x: slotX(i), y: SLOT.y,
+      vx: (i - (hand.length - 1) / 2) * 240, vy: ev.pay > 0 ? -900 : 620,
+      rot: 0, spin: (rnd() - 0.5) * 6, a: 1
+    });
+  }
+  hand = [];
+}
+
+function burnout() {
+  burns++;
+  var c = cur.card;
+  flying.push({ card: c, x: CARD.cx, y: CARD.cy, vx: 0, vy: 700, rot: 0, spin: 2.2, a: 1 });
+  cur = null; dealWait = 0.16;
+  loseLife("TOO SLOW", "#ff8a3c");
+}
+
+/* --- juice --------------------------------------------------------------- */
+
+function pop(txt, col, x, y, size) {
+  pops.push({ txt: txt, col: col, x: x, y: y, size: size || 40, t: 0, life: 0.95 });
+}
+function burst(x, y, col) {
+  var a = rnd() * PI2, sp = 180 + rnd() * 420;
+  parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 160, t: 0, life: 0.5 + rnd() * 0.4, col: col, r: 3 + rnd() * 4 });
+}
+
+/* ===========================================================================
+   7. INPUT — a drag in design space, and the keyboard flick the motor rides on.
+   =========================================================================== */
+
+var drag = { on: false, sx: 0, cx0: 0 };
+
+function toDesign(e) {
+  var r = board.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * DW / r.width, y: (e.clientY - r.top) * DH / r.height };
+}
+
+board.addEventListener("pointerdown", function (e) {
+  if (over || paused || !cur || cur.in < 1) return;
+  board.setPointerCapture(e.pointerId);
+  drag.on = true; drag.sx = toDesign(e).x; drag.cx0 = cur.x;
+});
+board.addEventListener("pointermove", function (e) {
+  if (!drag.on || !cur) return;
+  cur.x = drag.cx0 + (toDesign(e).x - drag.sx);
+  cur.y = -Math.abs(cur.x) * 0.06;
+  cur.rot = clamp(cur.x / 620, -0.42, 0.42);
+});
+function release() {
+  if (!drag.on) return;
+  drag.on = false;
+  if (!cur) return;
+  if (Math.abs(cur.x) >= K.swipeDist) decide(cur.x > 0 ? 1 : -1);
+}
+board.addEventListener("pointerup", release);
+board.addEventListener("pointercancel", release);
+
+window.addEventListener("keydown", function (e) {
+  var k = e.key.toLowerCase();
+  if (k === "arrowleft" || k === "a") { e.preventDefault(); flick(-1); }
+  else if (k === "arrowright" || k === "d") { e.preventDefault(); flick(1); }
+  else if (k === "r") { resetRun(); }
+  else if (k === "p") { setPaused(!paused); }
+});
+/* The keyboard does not teleport the card: it throws it, so the read is the
+   same as a thumb flick. */
+function flick(dir) {
+  if (over) { resetRun(); return; }
+  if (paused || !cur || cur.in < 1) return;
+  cur.x = dir * K.swipeDist * 1.05;
+  cur.rot = clamp(cur.x / 620, -0.42, 0.42);
+  decide(dir);
+}
+
+/* ===========================================================================
+   8. UPDATE
+   =========================================================================== */
+
+function update(dt) {
+  var i;
+
+  /* juice keeps running even when the run is over, so the last beat lands */
+  for (i = pops.length - 1; i >= 0; i--) {
+    var p = pops[i]; p.t += dt; p.y -= dt * 62;
+    if (p.t >= p.life) pops.splice(i, 1);
+  }
+  for (i = parts.length - 1; i >= 0; i--) {
+    var q = parts[i]; q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 1500 * dt;
+    if (q.t >= q.life) parts.splice(i, 1);
+  }
+  for (i = flying.length - 1; i >= 0; i--) {
+    var f = flying[i];
+    f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 1700 * dt; f.rot += f.spin * dt; f.a -= dt * 1.3;
+    if (f.a <= 0 || f.y > DH + 400) flying.splice(i, 1);
+  }
+  for (i = landing.length - 1; i >= 0; i--) {
+    landing[i].t += dt / 0.18;
+    if (landing[i].t >= 1) landing.splice(i, 1);
+  }
+  flash = Math.max(0, flash - dt * 3.2);
+  shake = Math.max(0, shake - dt * 40);
+  handGlow = Math.max(0, handGlow - dt * 2.4);
+  chuteGlow = Math.max(0, chuteGlow - dt * 2.4);
+
+  if (paused || over) return;
+
+  runT += dt;
+  if (!T.endless) {
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; endRun("TIME UP"); return; }
+  }
+
+  if (!cur) {
+    dealWait -= dt;
+    if (dealWait <= 0) nextCard();
+    return;
+  }
+
+  if (cur.in < 1) {
+    cur.in = Math.min(1, cur.in + dt / Math.max(0.01, K.dealIn));
+    return;
+  }
+
+  if (T.fuse && !drag.on) {
+    cur.t += dt;
+    if (cur.t >= fuseNow()) { burnout(); return; }
+  }
+  if (!drag.on) {                                  // spring back to the middle
+    var k = Math.min(1, dt * 15);
+    cur.x = lerp(cur.x, 0, k);
+    cur.y = lerp(cur.y, 0, k);
+    cur.rot = lerp(cur.rot, 0, k);
+  }
+}
+
+/* ===========================================================================
+   9. RENDER
+   =========================================================================== */
+
+function f(size, weight) {
+  return (weight || 800) + " " + size + 'px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function slotX(i) {
+  var n = K.handSize, total = n * SLOT.w + (n - 1) * SLOT.gap;
+  return (DW - total) / 2 + i * (SLOT.w + SLOT.gap) + SLOT.w / 2;
+}
+
+/* --- one card face ------------------------------------------------------- */
+function drawCard(c, x, y, w, h, rot, alpha, tint) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  var r = w * 0.085;
+
+  roundRect(-w / 2, -h / 2, w, h, r);
+  ctx.fillStyle = "#f7f4ea"; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(20,14,40,.22)"; ctx.stroke();
+
+  var col = SUIT_RED[c.s] ? "#d5263c" : "#1c1830";
+  var small = Math.round(w * 0.155), big = Math.round(w * 0.5);
+
+  ctx.fillStyle = col;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = f(big, 700);
+  ctx.fillText(SUITS[c.s], 0, h * 0.02);
+
+  /* the two corners, the second one upside down like a real card */
+  var pad = w * 0.115;
+  ctx.textAlign = "center";
+  ctx.font = f(small, 900);
+  ctx.fillText(RANKS[c.r], -w / 2 + pad, -h / 2 + pad * 0.95);
+  ctx.font = f(Math.round(small * 0.85), 700);
+  ctx.fillText(SUITS[c.s], -w / 2 + pad, -h / 2 + pad * 2.05);
+  ctx.save();
+  ctx.rotate(Math.PI);
+  ctx.font = f(small, 900);
+  ctx.fillText(RANKS[c.r], -w / 2 + pad, -h / 2 + pad * 0.95);
+  ctx.font = f(Math.round(small * 0.85), 700);
+  ctx.fillText(SUITS[c.s], -w / 2 + pad, -h / 2 + pad * 2.05);
+  ctx.restore();
+
+  if (tint) {
+    roundRect(-w / 2, -h / 2, w, h, r);
+    ctx.fillStyle = tint; ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* --- the shoe, a stack of backs behind the live card --------------------- */
+function drawBack(x, y, w, h, rot, alpha) {
+  ctx.save();
+  ctx.translate(x, y); if (rot) ctx.rotate(rot);
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  var r = w * 0.085;
+  roundRect(-w / 2, -h / 2, w, h, r);
+  ctx.fillStyle = "#231c4e"; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.stroke();
+  ctx.save();
+  roundRect(-w / 2 + 12, -h / 2 + 12, w - 24, h - 24, r * 0.7);
+  ctx.clip();
+  ctx.strokeStyle = "rgba(255,191,90,.18)"; ctx.lineWidth = 3;
+  for (var i = -h; i < w + h; i += 20) {
+    ctx.beginPath();
+    ctx.moveTo(-w / 2 + i, -h / 2);
+    ctx.lineTo(-w / 2 + i - h, h / 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawHUD() {
+  ctx.textBaseline = "alphabetic";
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
+  ctx.fillText("SCORE", 44, 74);
+  ctx.fillStyle = "#f4f1ff"; ctx.font = f(50, 900);
+  ctx.fillText(String(score), 44, 126);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
+  ctx.fillText(T.endless ? "ELAPSED" : "TIME", 360, 74);
+  var tv = T.endless ? runT : timeLeft;
+  ctx.fillStyle = (!T.endless && timeLeft < 6) ? "#ff8a3c" : "#f4f1ff";
+  ctx.font = f(50, 900);
+  ctx.fillText(tv.toFixed(1), 360, 126);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
+  ctx.fillText("LIVES", 676, 74);
+  for (var i = 0; i < K.lives; i++) {
+    var x = 676 - i * 34, alive = (K.lives - i) <= lives;
+    ctx.beginPath(); ctx.arc(x - 9, 110, 11, 0, PI2);
+    ctx.fillStyle = alive ? "#ff4a5e" : "rgba(255,255,255,.12)";
+    ctx.fill();
+  }
+
+  /* the chute meter: what a discard costs */
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6f6c8d"; ctx.font = f(17, 800);
+  ctx.fillText("CHUTE", 44, 176);
+  for (var j = 0; j < K.chuteDepth; j++) {
+    var px = 128 + j * 26, full = j < chute;
+    roundRect(px, 160, 18, 18, 5);
+    ctx.fillStyle = full
+      ? (chute >= K.chuteDepth ? "#ff4a5e" : "#ff8a3c")
+      : "rgba(255,255,255,.11)";
+    ctx.fill();
+  }
+  if (chuteGlow > 0) {
+    ctx.globalAlpha = chuteGlow * 0.5;
+    roundRect(122, 154, K.chuteDepth * 26 + 12, 30, 9);
+    ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  if (combo > 1) {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#7ef9ff"; ctx.font = f(30, 900);
+    ctx.fillText("x" + combo + " COMBO", 676, 178);
+  }
+}
+
+function drawGates() {
+  if (!T.gates) return;
+  var pull = cur ? clamp(Math.abs(cur.x) / K.swipeDist, 0, 1) : 0;
+  var left = cur && cur.x < 0 ? pull : 0, right = cur && cur.x > 0 ? pull : 0;
+
+  drawGate(GATE.pad, "#ff4a5e", "BIN", left);
+  drawGate(DW - GATE.pad - GATE.w, "#42e8b0", "KEEP", right);
+}
+function drawGate(x, col, label, lit) {
+  roundRect(x, GATE.top, GATE.w, GATE.bot - GATE.top, 22);
+  ctx.fillStyle = rgba(col, 0.05 + lit * 0.28); ctx.fill();
+  ctx.lineWidth = 2 + lit * 3;
+  ctx.strokeStyle = rgba(col, 0.2 + lit * 0.75); ctx.stroke();
+
+  ctx.save();
+  ctx.translate(x + GATE.w / 2, (GATE.top + GATE.bot) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = rgba(col, 0.42 + lit * 0.58);
+  ctx.font = f(30, 900);
+  ctx.fillText(label, 0, 0);
+  ctx.restore();
+}
+
+function drawFuse() {
+  if (!T.fuse || !cur || cur.in < 1) return;
+  var frac = clamp(1 - cur.t / fuseNow(), 0, 1);
+  roundRect(FUSE.x, FUSE.y, FUSE.w, FUSE.h, FUSE.h / 2);
+  ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fill();
+  if (frac > 0) {
+    roundRect(FUSE.x, FUSE.y, FUSE.w * frac, FUSE.h, FUSE.h / 2);
+    ctx.fillStyle = frac > 0.45 ? "#42e8b0" : frac > 0.2 ? "#ffbf5a" : "#ff4a5e";
+    ctx.fill();
+  }
+}
+
+/* What the live card would do to the hand — the honesty knob. */
+function drawPreview() {
+  if (!T.preview || !cur || cur.in < 1) return;
+  var next = hand.concat([cur.card]);
+  var ev = evalHand(next);
+  var full = next.length >= K.handSize;
+  var txt, col;
+  if (full) {
+    txt = ev.pay > 0 ? "KEEP → " + ev.name : "KEEP → BUST";
+    col = ev.pay > 0 ? "#42e8b0" : "#ff4a5e";
+  } else if (ev.cat !== "high") {
+    txt = "KEEP → " + ev.name; col = "#ffd166";
+  } else if (!hand.length) {
+    txt = "KEEP → OPENS THE HAND"; col = "#7ef9ff";
+  } else {
+    var ln = lineOf(next);
+    txt = "KEEP → " + (ln || "DEAD CARD");
+    col = ln ? "#7ef9ff" : "#6f6c8d";
+  }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = f(26, 900);
+  var w = ctx.measureText(txt).width + 40;
+  roundRect(360 - w / 2, 838, w, 44, 22);
+  ctx.fillStyle = rgba(col, 0.13); ctx.fill();
+  ctx.strokeStyle = rgba(col, 0.45); ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.fillText(txt, 360, 861);
+}
+
+function drawHand() {
+  var i, n = K.handSize;
+  for (i = 0; i < n; i++) {
+    var x = slotX(i);
+    roundRect(x - SLOT.w / 2, SLOT.y - SLOT.h / 2, SLOT.w, SLOT.h, SLOT.w * 0.085);
+    ctx.fillStyle = "rgba(255,255,255,.03)"; ctx.fill();
+    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = "rgba(255,255,255,.13)"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  for (i = 0; i < hand.length; i++) {
+    var landingNow = false, j;
+    for (j = 0; j < landing.length; j++) if (landing[j].slot === i) landingNow = true;
+    if (!landingNow) drawCard(hand[i], slotX(i), SLOT.y, SLOT.w, SLOT.h, 0, 1, null);
+  }
+  for (i = 0; i < landing.length; i++) {
+    var L = landing[i], t = ease(L.t), tx = slotX(L.slot);
+    drawCard(L.card,
+      lerp(L.fx, tx, t), lerp(L.fy, SLOT.y, t),
+      lerp(CARD.w, SLOT.w, t), lerp(CARD.h, SLOT.h, t),
+      lerp(0, 0, t), 1, null);
+  }
+
+  /* what the hand is worth so far */
+  var ev = evalHand(hand);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = f(28, 900);
+  ctx.fillStyle = hand.length === 0 ? "#4d4a66"
+                : ev.cat !== "high" ? "#ffd166"
+                : lineOf(hand) ? "#7ef9ff" : "#8a87a8";
+  var label = hand.length === 0 ? "EMPTY HAND"
+            : (ev.cat !== "high" ? ev.name : (lineOf(hand) || "NOTHING YET"));
+  ctx.fillText(label + "   " + hand.length + "/" + K.handSize, 360, SLOT.y + SLOT.h / 2 + 44);
+}
+
+function render() {
+  ctx.save();
+  if (shake > 0) ctx.translate((rnd() - 0.5) * shake, (rnd() - 0.5) * shake);
+
+  ctx.fillStyle = "#0a0714";
+  ctx.fillRect(-40, -40, DW + 80, DH + 80);
+
+  /* a soft table felt behind the play area */
+  var g = ctx.createRadialGradient(360, 600, 60, 360, 600, 620);
+  g.addColorStop(0, "rgba(90,60,190,.20)");
+  g.addColorStop(1, "rgba(90,60,190,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, 200, DW, 900);
+
+  drawHUD();
+  drawGates();
+
+  /* the shoe: two backs peeking behind the live card */
+  drawBack(CARD.cx + 16, CARD.cy + 22, CARD.w, CARD.h, 0.045, 0.5);
+  drawBack(CARD.cx + 8, CARD.cy + 11, CARD.w, CARD.h, 0.022, 0.75);
+
+  var i;
+  for (i = 0; i < flying.length; i++) {
+    var fl = flying[i];
+    drawCard(fl.card, fl.x, fl.y, CARD.w * 0.8, CARD.h * 0.8, fl.rot, clamp(fl.a, 0, 1), null);
+  }
+
+  drawHand();
+
+  if (cur) {
+    var t = ease(cur.in);
+    var x = CARD.cx + cur.x, y = lerp(CARD.cy + 90, CARD.cy + cur.y, t);
+    var sc = lerp(0.9, 1, t);
+    var pull = clamp(Math.abs(cur.x) / K.swipeDist, 0, 1);
+    var tint = null;
+    if (cur.x < -4) tint = rgba("#ff4a5e", 0.05 + pull * 0.17);
+    else if (cur.x > 4) tint = rgba("#42e8b0", 0.05 + pull * 0.17);
+    drawCard(cur.card, x, y, CARD.w * sc, CARD.h * sc, cur.rot, t, tint);
+  }
+
+  drawFuse();
+  drawPreview();
+
+  for (i = 0; i < parts.length; i++) {
+    var q = parts[i], a = 1 - q.t / q.life;
+    ctx.globalAlpha = a;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, PI2);
+    ctx.fillStyle = q.col; ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (i = 0; i < pops.length; i++) {
+    var p = pops[i], k = p.t / p.life;
+    ctx.globalAlpha = k < 0.15 ? k / 0.15 : 1 - Math.max(0, (k - 0.6) / 0.4);
+    ctx.font = f(Math.round(p.size * (1 + (1 - k) * 0.18)), 900);
+    ctx.lineWidth = 8; ctx.strokeStyle = "rgba(8,5,18,.75)";
+    ctx.strokeText(p.txt, p.x, p.y);
+    ctx.fillStyle = p.col; ctx.fillText(p.txt, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+
+  if (flash > 0) {
+    ctx.fillStyle = rgba(flashCol, flash * 0.3);
+    ctx.fillRect(0, 0, DW, DH);
+  }
+
+  if (over) drawEnd();
+  else if (paused) {
+    ctx.fillStyle = "rgba(6,4,14,.7)"; ctx.fillRect(0, 0, DW, DH);
+    ctx.fillStyle = "#f4f1ff"; ctx.font = f(56, 900);
+    ctx.fillText("PAUSED", 360, 640);
+  }
+
+  ctx.restore();
+}
+
+function drawEnd() {
+  ctx.fillStyle = "rgba(6,4,14,.82)"; ctx.fillRect(0, 0, DW, DH);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ff8a3c"; ctx.font = f(34, 900);
+  ctx.fillText(overWhy, 360, 470);
+  ctx.fillStyle = "#f4f1ff"; ctx.font = f(96, 900);
+  ctx.fillText(String(score), 360, 560);
+  ctx.fillStyle = "#8a87a8"; ctx.font = f(26, 800);
+  ctx.fillText(hands + " hands  ·  best " + bestName, 360, 640);
+  ctx.fillText("x" + bestCombo + " best combo  ·  " + busts + " busts", 360, 682);
+  ctx.fillStyle = "#ffbf5a"; ctx.font = f(28, 900);
+  ctx.fillText("PRESS R OR ← → TO REPLAY", 360, 780);
+}
+
+/* ===========================================================================
+   10. THE PANEL
+   =========================================================================== */
+
+var KNOBS = [
+  { k: "handSize", lab: "hand size", min: 3, max: 5, step: 1, fix: 0, act: "run",
+    why: "Cards that fill a hand. 3 pays every few seconds, 5 is real poker but slow." },
+  { k: "cardTime", lab: "fuse (s)", min: 1, max: 6, step: 0.1, fix: 1,
+    why: "Seconds to sort a fresh card before it burns and costs a life." },
+  { k: "rampPct", lab: "fuse ramp (%/10s)", min: 0, max: 30, step: 1, fix: 0,
+    why: "How much shorter the fuse gets every 10 s. 0 = flat difficulty." },
+  { k: "chuteDepth", lab: "chute depth", min: 1, max: 8, step: 1, fix: 0, act: "run",
+    why: "Discards held before the chute overflows. THE knob: it is the price of saying no." },
+  { k: "shoeBias", lab: "shoe bias", min: 0, max: 1, step: 0.05, fix: 2,
+    why: "Chance a deal is picked to keep the hand's line alive instead of coming off the top." },
+  { k: "swipeDist", lab: "swipe distance", min: 40, max: 200, step: 4, fix: 0,
+    why: "Design px a drag must cross to commit. Too short and the card leaves by accident." },
+  { k: "roundSeconds", lab: "round (s)", min: 10, max: 90, step: 5, fix: 0, act: "run",
+    why: "Length of a run. A playable is 20-30 s." },
+  { k: "timeBonus", lab: "time bonus (s)", min: 0, max: 5, step: 0.5, fix: 1,
+    why: "Seconds a paying hand puts back on the clock, so a good player runs longer." },
+  { k: "lives", lab: "lives", min: 1, max: 6, step: 1, fix: 0, act: "run",
+    why: "Busts, overflows and burnouts the run survives." },
+  { k: "dealIn", lab: "deal-in (s)", min: 0.05, max: 0.5, step: 0.01, fix: 2,
+    why: "How long the next card takes to reach the middle. Dead time between decisions." }
+];
+
+var TOGGLES = [
+  { k: "preview", lab: "keep preview" },
+  { k: "fuse", lab: "fuse" },
+  { k: "gates", lab: "gates" },
+  { k: "endless", lab: "endless (no clock)", act: "run" }
+];
+
+function pct(a, b) { return b ? Math.round(a / b * 100) + "%" : "—"; }
+
+var STATS = [
+  { lab: "score", fn: function () { return score; } },
+  { lab: "hands", fn: function () { return hands; }, cls: "good" },
+  { lab: "hands / min", fn: function () { return runT > 1 ? (hands / runT * 60).toFixed(1) : "—"; }, cls: "good" },
+  { lab: "keep %", fn: function () { return pct(kept, kept + binned); },
+    cls: function () {
+      var r = (kept + binned) ? kept / (kept + binned) : 0.5;
+      return (r > 0.7 || r < 0.35) ? "bad" : "good";
+    } },
+  { lab: "best hand", fn: function () { return bestName; }, cls: "warm" },
+  { lab: "best combo", fn: function () { return "x" + bestCombo; }, cls: "warm" },
+  { lab: "busts", fn: function () { return busts; }, cls: "bad" },
+  { lab: "overflows", fn: function () { return overflows; }, cls: "bad" },
+  { lab: "burnouts", fn: function () { return burns; }, cls: "bad" },
+  { lab: "fuse now", fn: function () { return fuseNow().toFixed(2) + "s"; } },
+  { lab: "shoe left", fn: function () { return shoe.length; } },
+  { lab: "seed", fn: function () { return seed; } }
+];
+
+function buildPanel() {
+  var html = "", i;
+  for (i = 0; i < KNOBS.length; i++) {
+    var n = KNOBS[i];
+    html += '<div class="knob"><label for="s-' + n.k + '">' + n.lab +
+            ' <i id="v-' + n.k + '"></i></label>' +
+            '<input id="s-' + n.k + '" type="range" min="' + n.min + '" max="' + n.max +
+            '" step="' + n.step + '" value="' + K[n.k] + '">' +
+            '<div class="why">' + n.why + '</div></div>';
+  }
+  document.getElementById("knobs").innerHTML = html;
+
+  html = "";
+  for (i = 0; i < TOGGLES.length; i++) {
+    html += '<label><input id="t-' + TOGGLES[i].k + '" type="checkbox"' +
+            (T[TOGGLES[i].k] ? " checked" : "") + '>' + TOGGLES[i].lab + '</label>';
+  }
+  document.getElementById("toggles").innerHTML = html;
+
+  html = "";
+  for (i = 0; i < STATS.length; i++) {
+    html += '<div class="stat" id="st-' + i + '"><div class="k">' + STATS[i].lab +
+            '</div><div class="v">-</div></div>';
+  }
+  document.getElementById("stats").innerHTML = html;
+
+  for (i = 0; i < KNOBS.length; i++) wireKnob(KNOBS[i]);
+  for (i = 0; i < TOGGLES.length; i++) wireToggle(TOGGLES[i]);
+  buildPaytable();
+}
+
+function wireKnob(n) {
+  var el = document.getElementById("s-" + n.k), out = document.getElementById("v-" + n.k);
+  function show() { out.textContent = Number(K[n.k]).toFixed(n.fix); }
+  show();
+  el.addEventListener("input", function () {
+    K[n.k] = parseFloat(el.value);
+    show();
+    if (n.k === "handSize") buildPaytable();
+    if (n.act === "run") resetRun();
+  });
+}
+function wireToggle(t) {
+  var el = document.getElementById("t-" + t.k);
+  el.addEventListener("change", function () {
+    T[t.k] = el.checked;
+    if (t.act === "run") resetRun();
+  });
+}
+
+/* The paytable is a knob's consequence, so it is redrawn with the hand size. */
+function buildPaytable() {
+  var table = PAYOUT[K.handSize] || PAYOUT[5];
+  var html = "<tr><th>hand</th><th>pays</th></tr>";
+  for (var i = CAT_LIST.length - 1; i >= 0; i--) {
+    var c = CAT_LIST[i], v = table[c];
+    html += '<tr' + (v ? "" : ' class="dead"') + '><td>' + CAT_NAME[c] + "</td>" +
+            '<td class="' + (v ? "n" : "off") + '">' + (v ? v : "impossible") + "</td></tr>";
+  }
+  html += '<tr class="dead"><td>HIGH CARD</td><td class="off">bust — costs a life</td></tr>';
+  document.getElementById("paytable").innerHTML = html;
+}
+
+function setPaused(v) {
+  paused = v;
+  document.getElementById("b-pause").textContent = paused ? "Resume" : "Pause";
+}
+
+document.getElementById("b-reset").addEventListener("click", function () {
+  srand(Math.floor(Math.random() * 4294967295)); resetRun();
+});
+document.getElementById("b-pause").addEventListener("click", function () { setPaused(!paused); });
+document.getElementById("b-goseed").addEventListener("click", function () {
+  var v = parseInt(document.getElementById("seedbox").value, 10);
+  if (!isNaN(v)) { srand(v); resetRun(); }
+});
+
+var statTick = 0;
+function refreshStats() {
+  for (var i = 0; i < STATS.length; i++) {
+    var s = STATS[i], el = document.getElementById("st-" + i);
+    el.lastChild.textContent = s.fn();
+    el.className = "stat " + (typeof s.cls === "function" ? s.cls() : (s.cls || ""));
+  }
+}
+
+/* ===========================================================================
+   11. BOOT
+   =========================================================================== */
+
+var last = 0;
+function frame(t) {
+  var dt = last ? Math.min((t - last) / 1000, 0.05) : 0;
+  last = t;
+  update(dt);
+  render();
+  if (++statTick % 5 === 0) refreshStats();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener("resize", sizeBoard);
+
+sizeBoard();
+buildPanel();
+srand(Math.floor(Math.random() * 4294967295));
+resetRun();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

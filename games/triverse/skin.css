@@ -1,0 +1,164 @@
+
+
+  /* =========================================================================
+     SKIN — TRIVERSE. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  :root {
+    --bg:#04050f; --text:#eaf4ff; --muted:#93a4d8;
+    --accent:#3ce0ff; --cta-a:#8ffff2; --cta-b:#2f9cff; --cta-text:#01121d;
+    --danger:#ff2d55; --gold:#ffd43b; --good:#a6ff3d;
+    /* the three ropes — same order as CONFIG.play.colors */
+    --p0:#3ce0ff; --p1:#ff5ad4; --p2:#a6ff3d;
+  }
+  html, body { background:radial-gradient(980px 900px at 50% 30%, #141a44 0%, #070a20 56%, #03040c 100%); }
+
+  /* App icon: same rounded-square silhouette as the store listing, lit by the
+     two rope colours instead of the motor's default cyan. */
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(60,224,255,.34), 0 0 68px rgba(255,90,212,.24); }
+
+  #intro-title {
+    font-size:88px; letter-spacing:7px;
+    background:linear-gradient(180deg,#ffffff 0%,#8ff0ff 42%,#ff8ae8 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #intro-tagline { margin-top:20px; color:#c8d6ff; }
+  #cta-bar { border-top:1px solid rgba(60,224,255,.16); }
+  #hud-score { text-shadow:0 0 16px rgba(60,224,255,.55); }
+  .btn { box-shadow:0 0 22px rgba(60,224,255,.5); }
+  /* the lives pill, and its last-life state */
+  #hud-right .hud-pill { letter-spacing:3px; color:#ff8fb0; }
+  #hud-right .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
+     The motor's "swipe" variant lends its flicking hand; the track is
+     repurposed into the three dotted ropes and the target into the arrow that
+     rides them. One 3.6 s loop, four beats of 0.9 s: swipe RIGHT, swipe RIGHT,
+     swipe LEFT, swipe LEFT — two hops out to the far rope, then back, so the
+     loop shows both directions and still closes on itself.
+
+     Hand and arrow share the beat grid: the hand crosses its midpoint and the
+     arrow is mid-hop on the very same keyframe (13 / 38 / 63 / 88 %), which is
+     the whole point — the gesture and its result read as one move. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:20px; font-size:36px; font-weight:800; color:#dbe6ff; }
+  #intro-tagline .w-swipe { color:var(--accent); text-shadow:0 0 18px rgba(60,224,255,.8); }
+  #intro-tagline .w-path  { color:var(--p1); text-shadow:0 0 18px rgba(255,90,212,.75); }
+
+  .demo-stage {
+    width:420px; height:270px; overflow:hidden;
+    background:rgba(255,255,255,.04); border-color:rgba(60,224,255,.2);
+  }
+  /* the three ropes, at 25 / 50 / 75 % of the stage — x = 105 / 210 / 315 */
+  .demo-swipe .demo-track {
+    display:block; left:0; right:0; top:0; bottom:0; height:auto; border:0;
+    background-image:
+      repeating-linear-gradient(180deg, var(--p0) 0 9px, transparent 9px 21px),
+      repeating-linear-gradient(180deg, var(--p1) 0 9px, transparent 9px 21px),
+      repeating-linear-gradient(180deg, var(--p2) 0 9px, transparent 9px 21px);
+    background-size:5px 100%;
+    background-position:25% 0, 50% 0, 75% 0;
+    background-repeat:repeat-y;
+    opacity:.8;
+    animation:demoFlow 1.4s linear infinite;
+  }
+  @keyframes demoFlow { to { background-position:25% 21px, 50% 21px, 75% 21px; } }
+
+  /* the arrow: parked on the first rope, hopping one rope per beat. Its glow
+     takes the colour of the rope it lands on. */
+  .demo-swipe .demo-target {
+    display:block; z-index:2; left:105px; margin-left:-18px; top:auto; bottom:120px;
+    width:36px; height:42px; border:0; border-radius:0; box-shadow:none;
+    background:linear-gradient(180deg,#ffffff 0%,var(--p0) 62%,#ffffff 100%);
+    clip-path:polygon(50% 0, 100% 100%, 50% 82%, 0 100%);
+    animation:demoHop 3.6s cubic-bezier(.3,1.35,.4,1) infinite,
+              demoGlow 3.6s linear infinite;
+  }
+  .demo-swipe .demo-ripple, .demo-swipe .demo-arrow { display:none; }
+  @keyframes demoHop {
+    0%,8%    { transform:translateX(0)     rotate(0deg); }
+    13%      { transform:translateX(52px)  rotate(13deg); }
+    18%,33%  { transform:translateX(105px) rotate(0deg); }
+    38%      { transform:translateX(157px) rotate(13deg); }
+    43%,58%  { transform:translateX(210px) rotate(0deg); }
+    63%      { transform:translateX(157px) rotate(-13deg); }
+    68%,83%  { transform:translateX(105px) rotate(0deg); }
+    88%      { transform:translateX(52px)  rotate(-13deg); }
+    93%,100% { transform:translateX(0)     rotate(0deg); }
+  }
+  /* Both the fill and the halo take the colour of the rope the arrow lands on;
+     the gradients share a structure, so they interpolate on the hop. */
+  @keyframes demoGlow {
+    0%,10%   { background:linear-gradient(180deg,#ffffff 0%,#3ce0ff 62%,#ffffff 100%);
+               filter:drop-shadow(0 0 7px rgba(60,224,255,1)) drop-shadow(0 0 22px rgba(60,224,255,.85)); }
+    18%,35%  { background:linear-gradient(180deg,#ffffff 0%,#ff5ad4 62%,#ffffff 100%);
+               filter:drop-shadow(0 0 7px rgba(255,90,212,1)) drop-shadow(0 0 22px rgba(255,90,212,.85)); }
+    43%,60%  { background:linear-gradient(180deg,#ffffff 0%,#a6ff3d 62%,#ffffff 100%);
+               filter:drop-shadow(0 0 7px rgba(166,255,61,1)) drop-shadow(0 0 22px rgba(166,255,61,.85)); }
+    68%,85%  { background:linear-gradient(180deg,#ffffff 0%,#ff5ad4 62%,#ffffff 100%);
+               filter:drop-shadow(0 0 7px rgba(255,90,212,1)) drop-shadow(0 0 22px rgba(255,90,212,.85)); }
+    93%,100% { background:linear-gradient(180deg,#ffffff 0%,#3ce0ff 62%,#ffffff 100%);
+               filter:drop-shadow(0 0 7px rgba(60,224,255,1)) drop-shadow(0 0 22px rgba(60,224,255,.85)); }
+  }
+
+  /* the finger: one flick per beat, crossing its midpoint exactly when the
+     arrow is mid-hop. Right for the first two beats, left for the last two;
+     it is invisible while it resets to the other side of the swipe. */
+  .demo-swipe .demo-hand { left:173px; margin-left:0; bottom:10px; z-index:1;
+    animation:demoFlick 3.6s ease-in-out infinite; }
+  @keyframes demoFlick {
+    0%       { transform:translateX(-46px); opacity:0; }
+    6%       { opacity:1; }
+    13%      { transform:translateX(0);     opacity:1; }
+    20%      { transform:translateX(46px);  opacity:1; }
+    24%      { transform:translateX(46px);  opacity:0; }
+
+    25%      { transform:translateX(-46px); opacity:0; }
+    31%      { opacity:1; }
+    38%      { transform:translateX(0);     opacity:1; }
+    45%      { transform:translateX(46px);  opacity:1; }
+    49%      { transform:translateX(46px);  opacity:0; }
+
+    50%      { transform:translateX(46px);  opacity:0; }
+    56%      { opacity:1; }
+    63%      { transform:translateX(0);     opacity:1; }
+    70%      { transform:translateX(-46px); opacity:1; }
+    74%      { transform:translateX(-46px); opacity:0; }
+
+    75%      { transform:translateX(46px);  opacity:0; }
+    81%      { opacity:1; }
+    88%      { transform:translateX(0);     opacity:1; }
+    95%      { transform:translateX(-46px); opacity:1; }
+    99%,100% { transform:translateX(-46px); opacity:0; }
+  }
+
+  /* ---- comic callouts (Pop) -------------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned here so a
+     callout burns in the colour of the rope that earned it. */
+  .pop-score.pop-l0 { --fill:linear-gradient(180deg,#ffffff 0%,#3ce0ff 100%); --glow:rgba(60,224,255,.75); --ink:#02202e; }
+  .pop-score.pop-l1 { --fill:linear-gradient(180deg,#ffffff 0%,#ff5ad4 100%); --glow:rgba(255,90,212,.75); --ink:#2a0022; }
+  .pop-score.pop-l2 { --fill:linear-gradient(180deg,#ffffff 0%,#a6ff3d 100%); --glow:rgba(166,255,61,.75); --ink:#152a00; }
+  /* the score malus, and the crash */
+  .pop-alert.pop-drain { --fill:linear-gradient(180deg,#f3e2ff 0%,#a24bff 100%); --glow:rgba(162,75,255,.7); --ink:#1b0030; }
+  .pop-combo { --chip:#02182e; --chip-line:#3ce0ff;
+    --fill:linear-gradient(180deg,#ffffff 0%,#b4e8ff 42%,#3ce0ff 72%,#ff5ad4 100%); }
+  .pop-streak { --burst:#ff5ad4; --ink:#2a0022;
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffd6f6 50%,#ff5ad4 100%);
+    --glow:rgba(255,90,212,.75); }
+  .pop-ribbon { --band:#0a1030; --band-line:var(--accent); }
+  .pop-bonus { --dot:rgba(0,50,40,.45);
+    --fill:linear-gradient(180deg,#f4fff9 0%,#a6ff3d 55%,#00d58a 100%);
+    --glow:rgba(166,255,61,.7); }
+  .pop-danger { --band-h:150px; --sz:56px; }
+  /* Callouts are deliberately smaller than the motor defaults: this game is
+     read through the ropes, and a full-width burst hides the path the player is
+     steering along. */
+  /* The burst is the one sticker that repeats all run long, so it is sized to
+     the longest word it can carry — `CHAIN x18`, since `ultra` takes over at 24
+     — and no larger: half the area of the first pass, which kept covering the
+     ropes on the right of the play area. Shrink --sz with it or the word grows
+     out of the spikes. */
+  .pop-bonus  { --sz:58px; }
+  .pop-perfect{ --sz:82px; }
+  .pop-ultra  { --sz:104px; }
+  .pop-ribbon { --sz:70px; --band-h:170px; }

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--
+  Viewport locked to the device size, no user scaling. Mandatory for playable
+  ads: the creative must fill the ad container and never scroll or zoom.
+  `viewport-fit=cover` is what makes env(safe-area-inset-*) report real values,
+  which the engine uses to keep the HUD clear of notches and home indicators.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Gearball</title>
+
+<!--
+  ============================================================================
+  PLAYABLE MOTOR — the shared shell every game in this repo is built on.
+  ============================================================================
+  A playable always has the same skeleton, so it lives here once:
+
+    portrait frame  →  a fixed 720x1280 design space, letterbox-scaled to any
+                       screen. Canvas AND DOM overlays share those coordinates.
+    intro           →  logo, title, one-line pitch, an ANIMATED how-to-play
+                       demo, and the start button.
+    playing         →  canvas world + HUD (top, notch-safe) + free-form
+                       overlay (toasts / banners / rewards) + CTA bar (bottom).
+    end             →  cinematic score reveal, stars, stat rows, a big install
+                       CTA and a small replay link.
+
+  Only sections 1 (CONFIG), 2 (ASSETS) and 6 (GAME) change per game.
+  Full reference: docs/ENGINE.md — recipe: docs/CREATING_A_GAME.md
+  ============================================================================
+-->
+
+<style>{{MOTOR_CSS}}{{SKIN_CSS}}</style>
+</head>
+<body>
+
+<div id="safe-probe"></div>
+<div id="backdrop"></div>
+
+<!-- ==========================================================================
+     MARKUP — one frame, four layers: canvas world, overlay, HUD/CTA, screens.
+     Everything below is positioned in 720x1280 design pixels.
+     ========================================================================== -->
+<div id="stage">
+  <div id="frame">
+
+    <canvas id="game" width="720" height="1280"></canvas>
+
+    <!-- game-view overlay: toasts, banners, rewards, comic pops, glow -->
+    <div id="overlay">
+      <div id="ov-toasts"></div>
+      <div id="ov-banner"><div id="ov-banner-main"></div><div id="ov-banner-sub"></div></div>
+      <div id="ov-reward"></div>
+      <div id="ov-vignette"></div>
+      <!-- comic callouts sit last: they are the loudest layer of the overlay -->
+      <div id="ov-pops"></div>
+    </div>
+
+    <!-- HUD: left slot / big centre score / right slot (timer by default) -->
+    <div id="hud" class="hidden">
+      <div id="hud-left"></div>
+      <div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl">SCORE</div></div>
+      <div id="hud-right"></div>
+    </div>
+
+    <!-- persistent install CTA, visible during play -->
+    <div id="cta-bar" class="hidden">
+      <button class="btn sm" id="btn-cta">INSTALL NOW</button>
+    </div>
+
+    <!-- loading -->
+    <div id="screen-loading" class="screen">
+      <div class="spinner"></div>
+      <div class="loading-lbl">Loading…</div>
+    </div>
+
+    <!-- intro: logo + title + ONE-sentence pitch + animated how-to-play + start
+         (both strings are rewritten from CONFIG at boot; keep them in sync) -->
+    <div id="screen-intro" class="screen hidden">
+      <img id="app-icon" alt="">
+      <div id="intro-title">GEARBALL</div>
+      <div id="intro-tagline"><b class="w-drop">Drop</b> a ball in an <b class="w-slot">empty slot</b>, <b class="w-fill">chain them to fill the loop</b></div>
+      <div id="intro-demo">
+        <div class="demo-stage">
+          <div class="demo-track"></div>
+          <div class="demo-beam"></div>
+          <div class="demo-target"><span class="demo-ripple"></span><span class="demo-ripple d2"></span></div>
+          <div class="demo-hand"></div>
+          <div class="demo-arrow"></div>
+        </div>
+        <div class="demo-caption" id="demo-caption"></div>
+      </div>
+      <button class="btn lg" id="btn-start">TAP TO PLAY</button>
+    </div>
+
+    <!-- end: cinematic score reveal + stars + stats + CTA + replay link -->
+    <div id="screen-end" class="screen hidden">
+      <canvas id="confetti" width="720" height="1280"></canvas>
+      <div class="eo-title" id="eo-title">GAME OVER</div>
+      <div class="eo-scorelbl" id="eo-scorelbl">FINAL SCORE</div>
+      <div class="eo-score" id="eo-score">0</div>
+      <div class="eo-stars" id="eo-stars">
+        <span class="star" id="star-1">★</span>
+        <span class="star" id="star-2">★</span>
+        <span class="star" id="star-3">★</span>
+      </div>
+      <div class="eo-stats" id="eo-stats"></div>
+      <button class="btn lg" id="btn-install">PLAY THE FULL GAME</button>
+      <button class="link" id="btn-replay">Replay the demo</button>
+    </div>
+
+  </div>
+</div>
+
+{{SCRIPT}}

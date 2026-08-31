@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Icon Lab — app icons for the playables</title>
+<style>
+/* ===========================================================================
+   ICON LAB — the app icon of every playable, drawn in CSS.
+
+   `node tools/shoot-icon.mjs` loads this file in headless Chrome with
+   `?slug=<game>&shoot=1` and screenshots the card over a transparent viewport,
+   writing assets/icon/auto/<slug>.png (320 px, rounded corners at alpha 0).
+   Opened by hand with no query string it shows every icon side by side on a
+   checkerboard, which is the way to judge the series.
+
+   Two halves, and the split is the whole point of the file:
+
+     THE SHELL   — the silhouette, the frame and a small drawing kit. Identical
+                   for every game. Never fork it per game: the family look is
+                   the one thing the icons must agree on.
+     THE RECIPES — one <style> block + one <template> per game, holding only
+                   what happens INSIDE the silhouette. The palette is copied
+                   from the game's `SKIN — <GAME>` :root block, so an icon and
+                   its playable stay the same colour.
+
+   Authored in a 1024x1024 design space (the store master size), like an iOS
+   icon. Geometry goes inline in the template, so a card reads as a list of
+   shapes and can be nudged without hunting through the stylesheet. Every shape
+   takes its fill AND its glow from `color`, so one declaration dresses it.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+/* ---------------------------------------------------------------------------
+   PAGE CHROME — gallery mode only. `body.shoot` strips all of it so the card
+   is alone at the top-left corner of a transparent viewport.
+   --------------------------------------------------------------------------- */
+body {
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:28px;
+}
+h1 { font-size:20px; letter-spacing:.5px; }
+p.hint { color:#8b8ba7; margin:6px 0 26px; font-weight:500; }
+p.hint code { color:#c9c9e6; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+#gallery { display:flex; flex-wrap:wrap; gap:26px; }
+
+/* Each tile reserves the scaled-down footprint of a 1024 card, so the flex row
+   lays out in real pixels while the card keeps its design coordinates. */
+.tile { flex:0 0 auto; }
+.tile .fit { width:280px; height:280px; }
+.tile .card { transform:scale(.2734); transform-origin:top left; }
+.tile .name {
+  margin-top:10px; text-align:center; letter-spacing:2px; text-transform:uppercase;
+  font-size:12px; color:#9c9cba;
+}
+/* The checkerboard is what makes a bad corner obvious: any leftover background
+   inside the rounded corner reads instantly against it. */
+.tile .fit {
+  background:
+    conic-gradient(#ffffff26 0 25%, #0000 0 50%, #ffffff26 0 75%, #0000 0)
+    0 0 / 22px 22px;
+  border-radius:6px;
+}
+
+/* ===========================================================================
+   THE SHELL — shared by every game. Shape, frame, drawing kit.
+   =========================================================================== */
+
+.card {
+  position:relative;
+  width:1024px; height:1024px;
+  /* The one number that makes the series a series. 22.37% of the side is the
+     iOS icon-mask ratio; the hand-painted icons in assets/icon/ drift between
+     20.6% and 25.6%, which is exactly the inconsistency this file removes. */
+  border-radius:229px;
+  overflow:hidden;
+  /* a stacking context of its own, so a recipe's glows cannot escape the card */
+  isolation:isolate;
+}
+
+/* Layer 1 — the backdrop. A recipe overrides the two stops. */
+.card .bg {
+  position:absolute; inset:0;
+  background:
+    radial-gradient(78% 66% at 50% 32%, var(--bg1,#243) 0%, var(--bg2,#0a1512) 62%, var(--bg3,#04090a) 100%);
+}
+
+/* Layer 2 — the subject. Everything a recipe draws lives here. */
+.card .art { position:absolute; inset:0; }
+
+/* The drawing kit. Each shape is centred on its own left/top, so a template
+   places things by their middle — the way you think about a composition. */
+.card .art > * {
+  position:absolute;
+  transform:translate(-50%,-50%);
+  background:currentColor;                    /* `color` fills it… */
+  box-shadow:0 0 var(--glow,0) currentColor;  /* …and lights it */
+}
+.card .art .dot  { border-radius:50%; }
+.card .art .bar  { border-radius:999px; }
+.card .art .dia  { transform:translate(-50%,-50%) rotate(45deg); }
+.card .art .ring {
+  border-radius:50%;
+  background:none;
+  border:var(--w,14px) solid currentColor;
+  box-shadow:0 0 var(--glow,0) currentColor, inset 0 0 var(--glow,0) currentColor;
+}
+/* A dashed sight line: the "aim" of every aiming game, drawn as a gradient so
+   it needs no extra nodes. `.dash` runs along x, `.vdash` along y — the dashes
+   must march down the long side, so the two directions are two classes. */
+.card .art .dash {
+  background:repeating-linear-gradient(90deg, currentColor 0 16px, #0000 16px 34px);
+  border-radius:0;
+}
+.card .art .vdash {
+  background:repeating-linear-gradient(180deg, currentColor 0 16px, #0000 16px 34px);
+  border-radius:0;
+}
+
+/* Layer 3 — the frame. Rim, gloss and floor shadow, identical everywhere: it
+   is what makes nine different interiors read as one shelf of apps. The rim
+   rides `box-shadow: inset`, which follows the border-radius exactly, so it
+   traces the silhouette without a second masked node. */
+.card .frame {
+  position:absolute; inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:
+    /* specular sweep across the top third */
+    linear-gradient(176deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.05) 24%, rgba(255,255,255,0) 44%),
+    /* the floor: weight at the bottom so the icon does not float. Kept low on
+       purpose — anything heavier greys out the interior, and these palettes
+       have to stay as saturated as the game they belong to. */
+    radial-gradient(120% 58% at 50% 130%, rgba(0,0,0,.30) 0%, rgba(0,0,0,0) 60%);
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.14),   /* the rim */
+    inset 0 5px 0 rgba(255,255,255,.20),     /* lit from above */
+    inset 0 -6px 18px rgba(0,0,0,.28);       /* seated in its own shadow */
+}
+
+/* Shoot mode: nothing but the card, on nothing. The transparent viewport is
+   the shooter's job (Emulation.setDefaultBackgroundColorOverride); here we only
+   make sure no chrome and no page background can paint into the corners. */
+body.shoot { background:transparent; padding:0; }
+body.shoot header, body.shoot .name { display:none; }
+body.shoot #gallery { display:block; }
+body.shoot .tile .fit { width:1024px; height:1024px; background:none; border-radius:0; }
+body.shoot .tile .card { transform:none; }
+
+/* ===========================================================================
+   THE RECIPES — inside of the silhouette, one block per game.
+   Palettes are copied from each game's `SKIN — <GAME>` :root block.
+   =========================================================================== */
+
+/* --- spinshock — a top spins in a dish, a tap shockwaves the rivals out ---- */
+.card[data-slug=spinshock] .bg { --bg1:#26379c; --bg2:#101a52; --bg3:#070c2c; }
+.card[data-slug=spinshock] .art .plate {           /* the dish, seen from above */
+  background:radial-gradient(circle at 50% 40%, #2e40a0 0%, #18215e 58%, #0b1136 100%);
+  border-radius:50%; box-shadow:inset 0 0 70px rgba(0,0,0,.5);
+}
+.card[data-slug=spinshock] .art .blade {           /* the top's spin, as a sweep */
+  border-radius:50%;
+  background:conic-gradient(from 188deg,
+    rgba(64,236,255,.85) 0deg, rgba(64,236,255,.30) 78deg,
+    rgba(64,236,255,0) 168deg, rgba(64,236,255,0) 360deg);
+  box-shadow:none;
+}
+
+/* --- chainring — tap the instant a ball hits a closing ring ---------------- */
+.card[data-slug=chainring] .bg { --bg1:#12588f; --bg2:#08213f; --bg3:#020a18; }
+
+/* --- blight — drag to aim, release to match 3 bubbles ---------------------- */
+.card[data-slug=blight] .bg { --bg1:#2b3f9e; --bg2:#131b4f; --bg3:#070a26; }
+.card[data-slug=blight] .art .bubble {             /* a lit sphere, not a disc */
+  border-radius:50%;
+  box-shadow:0 0 40px currentColor, inset 26px 26px 40px rgba(255,255,255,.42),
+             inset -18px -22px 34px rgba(0,0,0,.34);
+}
+
+/* --- bouncetry — every wall repaints the ball, a tap flips the bricks ------ */
+.card[data-slug=bouncetry] .bg { --bg1:#1f3f9e; --bg2:#0e1748; --bg3:#050825; }
+.card[data-slug=bouncetry] .art .brick { border-radius:14px; }
+.card[data-slug=bouncetry] .art .streak {          /* the ball's trail, fading out */
+  background:linear-gradient(118deg, rgba(255,192,97,0) 0%,
+    rgba(255,176,60,.38) 46%, rgba(255,210,124,.95) 100%);
+  box-shadow:none;
+}
+
+/* --- orbinity — tap to fling the comet from planet to planet --------------- */
+.card[data-slug=orbinity] .bg { --bg1:#40269e; --bg2:#180e4c; --bg3:#07071f; }
+.card[data-slug=orbinity] .art .planet {
+  border-radius:50%;
+  background:radial-gradient(circle at 36% 30%, #c9a6ff 0%, #8a5cff 42%, #4a2ea8 78%, #2a1a66 100%);
+  box-shadow:0 0 70px rgba(138,92,255,.55), inset -30px -30px 60px rgba(0,0,0,.45);
+}
+.card[data-slug=orbinity] .art .halo {             /* the ring, seen almost edge-on */
+  border-radius:50%;
+  border:12px solid #7cf5ff;
+  background:none;
+  transform:translate(-50%,-50%) rotate(-18deg) scaleY(.3);
+  box-shadow:0 0 34px #7cf5ff;
+}
+.card[data-slug=orbinity] .art .trail {            /* the comet's arc */
+  border-radius:50%;
+  background:none;
+  border:16px solid transparent;
+  border-top-color:#7cf5ff; border-right-color:#7cf5ff;
+  transform:translate(-50%,-50%) rotate(28deg);
+  box-shadow:0 0 40px rgba(124,245,255,.5);
+}
+
+/* --- triverse — swipe to jump from rope to rope ---------------------------- */
+.card[data-slug=triverse] .bg { --bg1:#124a91; --bg2:#08123a; --bg3:#020514; }
+.card[data-slug=triverse] .art .rope {             /* a rope fading into the void */
+  border-radius:999px;
+  background:linear-gradient(180deg, rgba(255,255,255,0) 0%, currentColor 26%, currentColor 74%, rgba(255,255,255,0) 100%);
+}
+.card[data-slug=triverse] .art .hop {              /* the hop, trailing behind */
+  background:linear-gradient(102deg, rgba(143,255,242,0) 0%, rgba(143,255,242,.85) 100%);
+  box-shadow:none;
+}
+
+/* --- vipera — tap to swerve the viper, eat to grow ------------------------- */
+.card[data-slug=vipera] .bg { --bg1:#1a7a4c; --bg2:#093825; --bg3:#03150d; }
+
+/* --- arcider — hold a side to lean, take places, keep the shield ----------- */
+.card[data-slug=arcider] .bg { --bg1:#3a25a8; --bg2:#130f52; --bg3:#050526; }
+.card[data-slug=arcider] .art .road {              /* the highway, in perspective */
+  background:linear-gradient(180deg, rgba(138,92,255,.10) 0%, rgba(138,92,255,.42) 100%);
+  clip-path:polygon(38% 0%, 62% 0%, 100% 100%, 0% 100%);
+  border-radius:0; box-shadow:none;
+}
+.card[data-slug=arcider] .art .lane {              /* the centre line, receding */
+  background:linear-gradient(180deg, rgba(124,249,255,0) 0%, #7cf9ff 100%);
+  clip-path:polygon(46% 0%, 54% 0%, 62% 100%, 38% 100%);
+  border-radius:0;
+}
+.card[data-slug=arcider] .art .shield {            /* the arc the rider must keep */
+  border-radius:50%;
+  background:none;
+  border:14px solid transparent;
+  border-top-color:#5cffb0;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 36px rgba(92,255,176,.6);
+}
+
+/* --- echomaze — one look, then echolocate to the exit --------------------- */
+.card[data-slug=echomaze] .bg { --bg1:#0f4a86; --bg2:#04162c; --bg3:#010710; }
+.card[data-slug=echomaze] .art .wall { border-radius:6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Icon Lab</h1>
+  <p class="hint">
+    The shell — silhouette, rim, gloss — is shared; only the interior changes per game.
+    Shoot them all with <code>node tools/shoot-icon.mjs</code>, or open one alone with
+    <code>?slug=vipera&amp;shoot=1</code>.
+  </p>
+</header>
+
+<main id="gallery"></main>
+
+<!-- =========================================================================
+     RECIPE MARKUP — the interior of each card, in 1024x1024 coordinates.
+     Every shape is centred on its left/top; `color` sets fill and glow.
+     ========================================================================= -->
+
+<template data-slug="spinshock">
+  <!-- the dish, the spinning top, and three rivals thrown at the wall -->
+  <i class="dot plate" style="left:512px;top:534px;width:820px;height:820px"></i>
+  <i class="ring" style="left:512px;top:534px;width:770px;height:770px;--w:8px;--glow:30px;color:#1f2f6e"></i>
+  <i class="ring" style="left:512px;top:520px;width:520px;height:520px;--w:10px;--glow:60px;color:#40ecff;opacity:.55"></i>
+  <i class="dot blade" style="left:512px;top:512px;width:320px;height:320px"></i>
+  <i class="dot" style="left:512px;top:512px;width:210px;height:210px;--glow:70px;color:#7ef4ff"></i>
+  <i class="dot" style="left:512px;top:512px;width:96px;height:96px;color:#ffffff;--glow:60px"></i>
+  <i class="dia" style="left:236px;top:330px;width:104px;height:104px;--glow:44px;color:#ff2f6d"></i>
+  <i class="dia" style="left:806px;top:404px;width:86px;height:86px;--glow:38px;color:#ff2f6d;opacity:.85"></i>
+  <i class="dia" style="left:744px;top:806px;width:74px;height:74px;--glow:32px;color:#ff2f6d;opacity:.7"></i>
+</template>
+
+<template data-slug="chainring">
+  <!-- three rings closing on the ball, and the spark of a tap landing on time -->
+  <i class="ring" style="left:512px;top:512px;width:840px;height:840px;--w:10px;--glow:26px;color:#7ef4ff;opacity:.22"></i>
+  <i class="ring" style="left:512px;top:512px;width:640px;height:640px;--w:14px;--glow:40px;color:#7ef4ff;opacity:.45"></i>
+  <i class="ring" style="left:512px;top:512px;width:440px;height:440px;--w:20px;--glow:70px;color:#8ffcff"></i>
+  <!-- the tap landed on the beat: the flash sits where ball meets ring -->
+  <i class="ring" style="left:512px;top:292px;width:310px;height:310px;--w:8px;--glow:44px;color:#ffd43b;opacity:.45"></i>
+  <i class="ring" style="left:512px;top:292px;width:212px;height:212px;--w:12px;--glow:60px;color:#ffd43b;opacity:.85"></i>
+  <i class="dot" style="left:512px;top:292px;width:150px;height:150px;--glow:90px;color:#ffffff"></i>
+  <i class="dot" style="left:512px;top:292px;width:86px;height:86px;color:#8ffcff;--glow:40px"></i>
+</template>
+
+<template data-slug="blight">
+  <!-- the cluster overhead, the shooter below, the shot lined up on a match -->
+  <i class="dot bubble" style="left:330px;top:300px;width:232px;height:232px;color:#ff3d6b"></i>
+  <i class="dot bubble" style="left:604px;top:266px;width:206px;height:206px;color:#3aa0ff"></i>
+  <i class="dot bubble" style="left:772px;top:452px;width:190px;height:190px;color:#ff8fab"></i>
+  <i class="dot bubble" style="left:492px;top:498px;width:212px;height:212px;color:#3aa0ff"></i>
+  <i class="vdash" style="left:512px;top:688px;width:24px;height:244px;--glow:26px;color:#ff8fab"></i>
+  <i class="dot bubble" style="left:512px;top:872px;width:176px;height:176px;color:#3aa0ff"></i>
+  <i class="bar" style="left:512px;top:958px;width:310px;height:50px;--glow:30px;color:#2b3f9e"></i>
+</template>
+
+<template data-slug="bouncetry">
+  <!-- glass bricks, and the ball that only breaks its own colour -->
+  <i class="bar brick" style="left:302px;top:250px;width:300px;height:96px;--glow:34px;color:#4bf5ff;opacity:.8"></i>
+  <i class="bar brick" style="left:686px;top:250px;width:250px;height:96px;--glow:30px;color:#ff8a1a;opacity:.75"></i>
+  <i class="bar brick" style="left:376px;top:376px;width:250px;height:96px;--glow:30px;color:#ff8a1a;opacity:.85"></i>
+  <i class="bar brick" style="left:712px;top:376px;width:196px;height:96px;--glow:34px;color:#4bf5ff;opacity:.7"></i>
+  <i class="bar streak" style="left:436px;top:684px;width:34px;height:350px;transform:translate(-50%,-50%) rotate(38deg)"></i>
+  <i class="dot" style="left:604px;top:800px;width:172px;height:172px;--glow:90px;color:#ff8a1a"></i>
+  <i class="dot" style="left:604px;top:800px;width:78px;height:78px;color:#fff3d6;--glow:40px"></i>
+</template>
+
+<template data-slug="orbinity">
+  <!-- the planet, its ring, and the comet coming round the arc -->
+  <i class="dot" style="left:838px;top:206px;width:22px;height:22px;color:#ffffff;--glow:20px"></i>
+  <i class="dot" style="left:200px;top:266px;width:16px;height:16px;color:#b39bff;--glow:16px"></i>
+  <i class="dot" style="left:300px;top:824px;width:14px;height:14px;color:#ffffff;--glow:14px"></i>
+  <i class="dot trail" style="left:512px;top:512px;width:820px;height:820px"></i>
+  <i class="dot planet" style="left:470px;top:486px;width:470px;height:470px"></i>
+  <i class="dot halo" style="left:470px;top:500px;width:700px;height:700px"></i>
+  <i class="dot" style="left:196px;top:812px;width:132px;height:132px;--glow:80px;color:#7cf5ff"></i>
+  <i class="dot" style="left:196px;top:812px;width:60px;height:60px;color:#ffffff;--glow:36px"></i>
+</template>
+
+<template data-slug="triverse">
+  <!-- three ropes of light, and the arrow mid-hop with a gem to bank -->
+  <i class="bar rope" style="left:236px;top:512px;width:26px;height:1024px;--glow:40px;color:#3ce0ff"></i>
+  <i class="bar rope" style="left:512px;top:512px;width:26px;height:1024px;--glow:40px;color:#ff5ad4"></i>
+  <i class="bar rope" style="left:788px;top:512px;width:26px;height:1024px;--glow:40px;color:#a6ff3d"></i>
+  <i class="dia" style="left:788px;top:296px;width:104px;height:104px;--glow:50px;color:#a6ff3d"></i>
+  <i class="bar hop" style="left:374px;top:640px;width:300px;height:26px;transform:translate(-50%,-50%) rotate(-16deg)"></i>
+  <i class="dia" style="left:512px;top:600px;width:180px;height:180px;--glow:90px;color:#8ffff2"></i>
+  <i class="dia" style="left:512px;top:600px;width:96px;height:96px;color:#ffffff;--glow:40px"></i>
+</template>
+
+<template data-slug="vipera">
+  <!-- the plated body carving up the burrow, and the gem it is going to eat.
+       Beads are spaced closer than the sum of their radii, so the chain reads
+       as one continuous body instead of a string of pearls. -->
+  <i class="dia" style="left:790px;top:262px;width:132px;height:132px;--glow:70px;color:#ff5ecb"></i>
+  <i class="dot" style="left:296px;top:904px;width:124px;height:124px;--glow:24px;color:#12b86a"></i>
+  <i class="dot" style="left:352px;top:808px;width:140px;height:140px;--glow:26px;color:#2ad07f"></i>
+  <i class="dot" style="left:368px;top:690px;width:156px;height:156px;--glow:30px;color:#4dff9b"></i>
+  <i class="dot" style="left:430px;top:576px;width:172px;height:172px;--glow:34px;color:#4dff9b"></i>
+  <i class="dot" style="left:536px;top:486px;width:188px;height:188px;--glow:40px;color:#7dff8f"></i>
+  <i class="dot" style="left:660px;top:420px;width:210px;height:210px;--glow:80px;color:#b6ff5a"></i>
+  <i class="dot" style="left:712px;top:398px;width:44px;height:44px;color:#04220f;box-shadow:none"></i>
+  <i class="dot" style="left:640px;top:372px;width:44px;height:44px;color:#04220f;box-shadow:none"></i>
+</template>
+
+<template data-slug="arcider">
+  <!-- the neon highway, the pack ahead, the leader under a full shield -->
+  <i class="dot road" style="left:512px;top:512px;width:1024px;height:1024px"></i>
+  <i class="dot lane" style="left:512px;top:512px;width:1024px;height:1024px;opacity:.5"></i>
+  <i class="bar" style="left:404px;top:326px;width:70px;height:26px;--glow:24px;color:#8a5cff;opacity:.7"></i>
+  <i class="bar" style="left:596px;top:300px;width:60px;height:24px;--glow:22px;color:#8a5cff;opacity:.55"></i>
+  <i class="dot shield" style="left:512px;top:716px;width:390px;height:390px"></i>
+  <i class="dia" style="left:512px;top:720px;width:190px;height:190px;--glow:80px;color:#35e8ff"></i>
+  <i class="dia" style="left:512px;top:720px;width:104px;height:104px;color:#ffffff;--glow:40px"></i>
+</template>
+
+<template data-slug="echomaze">
+  <!-- the maze the player only saw once, the ball, and the echo finding the exit.
+       Seven segments: enough corridor to read as a maze, few enough to survive
+       the 320 px cut. -->
+  <i class="bar wall" style="left:206px;top:452px;width:20px;height:420px;--glow:26px;color:#7ef9ff;opacity:.72"></i>
+  <i class="bar wall" style="left:206px;top:236px;width:20px;height:230px;--glow:26px;color:#7ef9ff;opacity:.5"></i>
+  <i class="bar wall" style="left:400px;top:226px;width:376px;height:20px;--glow:26px;color:#7ef9ff;opacity:.72"></i>
+  <i class="bar wall" style="left:578px;top:362px;width:20px;height:300px;--glow:26px;color:#7ef9ff;opacity:.6"></i>
+  <i class="bar wall" style="left:722px;top:520px;width:308px;height:20px;--glow:26px;color:#7ef9ff;opacity:.55"></i>
+  <i class="bar wall" style="left:356px;top:742px;width:308px;height:20px;--glow:26px;color:#7ef9ff;opacity:.5"></i>
+  <i class="bar wall" style="left:806px;top:706px;width:20px;height:190px;--glow:26px;color:#7ef9ff;opacity:.42"></i>
+  <i class="ring" style="left:400px;top:540px;width:330px;height:330px;--w:8px;--glow:30px;color:#7ef9ff;opacity:.3"></i>
+  <i class="ring" style="left:400px;top:540px;width:200px;height:200px;--w:10px;--glow:40px;color:#7ef9ff;opacity:.6"></i>
+  <i class="dot" style="left:400px;top:540px;width:118px;height:118px;--glow:90px;color:#ffffff"></i>
+  <i class="dash" style="left:610px;top:698px;width:470px;height:16px;--glow:24px;color:#4ade80;transform:translate(-50%,-50%) rotate(36deg)"></i>
+  <i class="bar" style="left:836px;top:872px;width:156px;height:46px;--glow:70px;color:#4ade80"></i>
+</template>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Build the cards from the templates. Gallery mode renders every game in
+   document order; `?slug=` renders one, and `&shoot=1` strips the chrome so
+   the shooter can capture the card alone on a transparent viewport.
+   --------------------------------------------------------------------------- */
+(function () {
+  var q = new URLSearchParams(location.search);
+  var only = q.get("slug");
+  var shoot = q.get("shoot") === "1";
+  var gallery = document.getElementById("gallery");
+
+  if (shoot) document.body.className = "shoot";
+
+  var templates = document.querySelectorAll("template[data-slug]");
+  var found = 0;
+
+  for (var i = 0; i < templates.length; i++) {
+    var slug = templates[i].getAttribute("data-slug");
+    if (only && slug !== only) continue;
+    found++;
+
+    var tile = document.createElement("div");
+    tile.className = "tile";
+
+    var fit = document.createElement("div");
+    fit.className = "fit";
+
+    var card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("data-slug", slug);
+
+    var bg = document.createElement("div");
+    bg.className = "bg";
+
+    var art = document.createElement("div");
+    art.className = "art";
+    art.appendChild(templates[i].content.cloneNode(true));
+
+    var frame = document.createElement("div");
+    frame.className = "frame";
+
+    card.appendChild(bg);
+    card.appendChild(art);
+    card.appendChild(frame);
+    fit.appendChild(card);
+    tile.appendChild(fit);
+
+    var name = document.createElement("div");
+    name.className = "name";
+    name.textContent = slug;
+    tile.appendChild(name);
+
+    gallery.appendChild(tile);
+  }
+
+  /* The shooter waits on this flag rather than on a timeout: it says the card
+     exists and the recipe was found, so a typo in a slug fails loudly instead
+     of shipping an empty icon. */
+  window.__iconReady = found;
+  if (only && !found) {
+    document.title = "Icon Lab — no recipe for " + only;
+  }
+})();
+</script>
+</body>
+</html>

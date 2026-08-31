@@ -1,0 +1,31 @@
+{
+  "slug": "chainring",
+  "title": "Chainring",
+  "tagline": "Tap the instant a ball hits a ring",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#4bf5ff",
+    "accent2": "#4263eb"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "chainring",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.chainring",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

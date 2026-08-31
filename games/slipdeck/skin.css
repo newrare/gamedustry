@@ -1,0 +1,127 @@
+
+
+  /* =========================================================================
+     SKIN — SLIPDECK. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     A card table: green felt, gold leaf, and the two gates the whole game is
+     played between — red on the left, green on the right.
+     ========================================================================= */
+  :root {
+    --bg:#050d0a; --text:#f3fbf6; --muted:#8fb8a4;
+    --accent:#f5c451; --cta-a:#ffe08a; --cta-b:#f0b429; --cta-text:#241703;
+    --danger:#ff4a5e; --gold:#ffd43b; --good:#3ddc97;
+    /* the two gates, shared by the DOM intro and the canvas */
+    --bin:#ff4a5e; --keep:#3ddc97;
+  }
+  html, body { background:radial-gradient(900px 860px at 50% 36%, #17402f 0%, #0b2419 56%, #040b08 100%); }
+
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(245,196,81,.32); }
+
+  #intro-title {
+    font-size:92px; letter-spacing:8px;
+    background:linear-gradient(180deg,#ffffff 0%,#ffe9a8 46%,#e0a52a 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:none; filter:drop-shadow(0 6px 18px rgba(0,0,0,.55));
+  }
+  #cta-bar { border-top:1px solid rgba(245,196,81,.18); }
+  #hud-score { text-shadow:0 0 16px rgba(245,196,81,.5); }
+  .btn { box-shadow:0 0 22px rgba(245,196,81,.42); }
+  /* the lives pill, and its last-life state */
+  #hud-left .hud-pill { letter-spacing:2px; color:#ff9aad; }
+  #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
+     The motor's "swipe" variant lends its flicking hand; the target becomes
+     the card, the track becomes the five empty slots of the hand, and the
+     stage's ::before / ::after become the two gates.
+
+     One 3.4 s loop, two beats of 1.7 s: flick RIGHT (the card is kept and
+     leaves toward the green gate), then flick LEFT (the next card is binned
+     toward the red one). Hand and card share the beat grid — the finger
+     crosses its midpoint on the very keyframe the card starts to travel — so
+     the gesture and its result read as a single move. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#d6ece0; }
+  #intro-tagline .w-bin  { color:var(--bin);  text-shadow:0 0 18px rgba(255,74,94,.75); }
+  #intro-tagline .w-keep { color:var(--keep); text-shadow:0 0 18px rgba(61,220,151,.75); }
+  #intro-tagline .w-hand { color:var(--accent); text-shadow:0 0 18px rgba(245,196,81,.8); }
+
+  .demo-stage {
+    width:420px; height:270px; overflow:hidden;
+    background:radial-gradient(300px 260px at 50% 40%, rgba(38,92,68,.55), rgba(8,26,18,.5));
+    border-color:rgba(245,196,81,.22);
+  }
+  /* the two gates, lit on the beat the card travels their way */
+  .demo-stage::before, .demo-stage::after {
+    content:""; position:absolute; top:16px; bottom:16px; width:34px; border-radius:14px;
+  }
+  .demo-stage::before { left:12px;  background:rgba(255,74,94,.10);  border:2px solid rgba(255,74,94,.30);
+    animation:demoLitBin 3.4s ease-in-out infinite; }
+  .demo-stage::after  { right:12px; background:rgba(61,220,151,.10); border:2px solid rgba(61,220,151,.30);
+    animation:demoLitKeep 3.4s ease-in-out infinite; }
+  @keyframes demoLitKeep {
+    0%,10%,34%,100% { background:rgba(61,220,151,.10); box-shadow:none; }
+    16%,26%         { background:rgba(61,220,151,.38); box-shadow:0 0 22px rgba(61,220,151,.6); }
+  }
+  @keyframes demoLitBin {
+    0%,60%,84%,100% { background:rgba(255,74,94,.10); box-shadow:none; }
+    66%,76%         { background:rgba(255,74,94,.38); box-shadow:0 0 22px rgba(255,74,94,.6); }
+  }
+
+  /* the hand: five empty slots waiting at the bottom of the table */
+  .demo-swipe .demo-track {
+    display:block; left:56px; right:56px; bottom:18px; top:auto; height:46px; border:0;
+    /* first layer: the anchor card the hand is dealt, already in slot one;
+       second layer: the four slots still waiting */
+    background-image:
+      linear-gradient(#f7f4ea, #f7f4ea),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 48px, transparent 48px 61.6px);
+    background-size:48px 100%, auto;
+    background-position:0 0, 0 0;
+    background-repeat:no-repeat, repeat-x;
+    border-radius:7px;
+  }
+
+  /* the card: dealt at the centre, flicked out one way then the other */
+  .demo-swipe .demo-target {
+    display:block; z-index:2; left:50%; top:54px; margin-left:-37px;
+    width:74px; height:104px; border:0; border-radius:11px;
+    background:#f7f4ea; box-shadow:0 8px 20px rgba(0,0,0,.5);
+    animation:demoSlip 3.4s cubic-bezier(.3,.9,.3,1) infinite;
+  }
+  /* the motor's ripple span, re-dressed as the card's single red pip */
+  .demo-swipe .demo-ripple {
+    inset:auto; left:50%; top:50%; width:28px; height:28px; margin:-14px 0 0 -14px;
+    border:0; border-radius:4px; background:#d5263c; opacity:1;
+    transform:rotate(45deg); animation:none; box-shadow:none;
+  }
+  .demo-swipe .demo-ripple.d2, .demo-swipe .demo-arrow, .demo-swipe .demo-beam { display:none; }
+  @keyframes demoSlip {
+    0%,10%   { transform:translateX(0)      rotate(0deg);   opacity:1; }
+    22%      { transform:translateX(142px)  rotate(15deg);  opacity:1; }
+    29%      { transform:translateX(196px)  rotate(21deg);  opacity:0; }
+    30%,37%  { transform:translateX(0)      rotate(0deg);   opacity:0; }
+    44%,60%  { transform:translateX(0)      rotate(0deg);   opacity:1; }
+    72%      { transform:translateX(-142px) rotate(-15deg); opacity:1; }
+    79%      { transform:translateX(-196px) rotate(-21deg); opacity:0; }
+    80%,87%  { transform:translateX(0)      rotate(0deg);   opacity:0; }
+    94%,100% { transform:translateX(0)      rotate(0deg);   opacity:1; }
+  }
+
+  /* the finger: one flick per beat, right then left, invisible while it
+     travels back to the start of the next swipe */
+  .demo-swipe .demo-hand { bottom:74px; z-index:3; animation:demoFlick 3.4s ease-in-out infinite; }
+  @keyframes demoFlick {
+    0%       { transform:translateX(-44px); opacity:0; }
+    7%       { opacity:1; }
+    14%      { transform:translateX(0);     opacity:1; }
+    24%      { transform:translateX(44px);  opacity:1; }
+    29%      { transform:translateX(44px);  opacity:0; }
+
+    50%      { transform:translateX(44px);  opacity:0; }
+    57%      { opacity:1; }
+    64%      { transform:translateX(0);     opacity:1; }
+    74%      { transform:translateX(-44px); opacity:1; }
+    79%      { transform:translateX(-44px); opacity:0; }
+    100%     { transform:translateX(-44px); opacity:0; }
+  }

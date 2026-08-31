@@ -9,9 +9,11 @@
   CHAINRING — built on the PLAYABLE MOTOR (template/game-template.html).
   Sections 3/4/5/7 are the shared engine: do not fork them, extend them.
 
-  Mechanic: a ball falls and bounces under gravity inside Layout (the band the
-  engine keeps clear of the HUD, the CTA bar and the device insets). Concentric
-  rings close in from outside; TAP the instant one reaches the ball. Timing is
+  Mechanic: a ball falls and bounces under gravity inside an invisible bowl at
+  the centre of Layout (the band the engine keeps clear of the HUD, the CTA bar
+  and the device insets), sized so the rings around it always fit the frame.
+  Concentric rings close in from outside; TAP the instant one reaches the ball.
+  A round opens on a short hold so the music is audible first. Timing is
   graded MISS / CLOSE / OK / GOOD / PERFECT, consecutive hits build a combo
   multiplier, and every 5th hit fires a chain-reaction celebration. When the
   round clock runs out a spiked game-over ring is released instead of ending
@@ -1021,9 +1023,9 @@
     tagline: "Tap the instant a <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">ring</b>",
     gameSeconds: 30,
     storeUrl: {
-      ios:     "https://apps.apple.com/app/idXXXXXXXXX",
-      android: "https://play.google.com/store/apps/details?id=com.example.game",
-      fallback:"https://52-entertainment.com/our-games/"
+      ios:     "https://newrare-website.vercel.app/#playables",
+      android: "https://newrare-website.vercel.app/#playables",
+      fallback:"https://newrare-website.vercel.app/#playables"
     },
     designWidth: 720, designHeight: 1280, bg: "#0a0a18",
     layout: { hudHeight: 168, ctaHeight: 120, sideMargin: 30 },
@@ -1042,56 +1044,68 @@
       endScore:"FINAL SCORE", gameOver:"GAME OVER", timeUp:"TIME'S UP!"
     },
 
+    /* --- lead-in ---
+       The bed is a data URI that has to be decoded before its first kick is
+       audible, so a round used to open on a second or so of silence — with the
+       rings already closing in, on a game that is nothing but the pulse. A run
+       now starts on a hold: the ball floats at the centre, nothing is launched,
+       and play begins only once the music is really running (`Beat.locked()`),
+       plus `leadInBeats` of audible pulse so the tempo is set before the first
+       ring. The clock is held at full during the hold, so every run still gets
+       its whole `gameSeconds`. `leadInMax` is the bail-out for a track that is
+       muted, missing or refused by the WebView's decoder.                     */
+    leadInBeats: 4,        // beats of music alone before the first launch (1 bar)
+    leadInMax: 2.5,        // seconds: stop waiting for the bed and start anyway
+
     /* --- game tunables --- */
     ballR: 26,
-    gravity: 1250,         // px/s^2 downward — natural falling motion
-    wallBounce: 0.9,       // energy kept when hitting the invisible play edges
-    minSpeed: 320,         // speed floor so the ball never dies out
-    maxSpeed: 940,         // per-frame speed cap
-    ringImpulse: 470,      // inward kick given to the ball when a ring dies
-    /* Rings spawn well outside the frame: their radius is interpolated down to
-       the ball's shell, and that shell wanders with the ball (up to ~575 px out
-       in a corner), so the run-up has to be long enough that the stack never
-       bunches up against the view edge. */
+    gravity: 1250,         // px/s^2 the solved flights fall under
+
+    /* --- the bowl ---
+       A ring is a circle around the arena centre, so the further out the ball
+       is the wider the ring that reaches it: pinned in a corner of the play
+       band the ring was wider than the frame and the landing read as two corner
+       arcs instead of a ring meeting the ball. So the ball lives inside a bowl
+       — the widest disc centred on the arena whose rim still leaves a ring
+       inside the frame with `arenaMargin` to spare. Every ring closes onto that
+       rim and nowhere else, which is what makes them all readable, keeps the
+       ball off the edges of the screen, and lets the rings be the thing the
+       ball bounces on.                                                        */
+    arenaMargin: 34,       // px kept between the rim and the frame edge
+    // Rings spawn well outside the frame and shrink onto the rim, so the run-up
+    // has to start beyond the corners of the view.
     spawnR: 860,
 
-    /* --- generosity at the edges ---
-       A ring is a circle around the arena centre closing onto the ball, so the
-       further out the ball has bounced the wider the ring: pinned against the
-       play area its sides fall outside the frame and the landing reads as two
-       corner arcs instead of a ring hitting the ball. Fencing the ball into a
-       smaller arena fixed the picture and flattened the physics, so instead the
-       player simply gets the benefit of the doubt there — a tap while the ball
-       is in the edge band scores the nearest ring as a PERFECT, over a window
-       wider than the strictest one. It stays a skill check: there has to be a
-       ring on (or right around) that beat, so empty beats are still empty.    */
-    edgeBand: 70,          // px from the play-area edge where the rescue applies
-    edgeWindow: 0.66,      // beats: how far off the ring may be for a rescue
-
-    /* --- rhythm ---
-       Rings are not spawned on a timer and they do not close at a fixed speed:
-       each one is handed the beat it must reach the ball on, and its radius is
-       interpolated so it gets there exactly then, wherever the ball has bounced
-       to. `stepBeats` is the gap between two landings — one per beat, straight
-       on the kick — and `travelBeats` the flight, i.e. the reaction time the
-       player gets, which is what tightens as the round runs out. The player
-       therefore taps the music itself, and the timing windows in TIERS are
-       fractions of a beat.                                                   */
-    stepBeats: 1,          // beats between two landings (1 = one ring per beat)
+    /* --- rhythm: the ball bounces on the rings ---
+       There is no invisible wall. Every bounce happens on a ring, and every
+       ring lands on a beat — so the ball's flight is not simulated, it is
+       solved: leaving the rim at P on one beat and aiming at Q on the rim
+       `beats` later (T seconds), exactly one parabola connects the two under
+       gravity, v = (Q - P - g T^2 / 2) / T. The ball is then placed along that
+       parabola from the musical clock itself, so it arrives at Q at the very
+       instant the ring for that beat closes onto the rim. The chain of bounces
+       is planned a full ring flight ahead, and each planned bounce launches the
+       ring that will make it happen.
+       Empty beats are not sprinkled in any more: they are the beats a two- or
+       three-beat flight passes over, which is why they are readable — the arc
+       of the ball says when the next ring lands. Long flights therefore *are*
+       the difficulty, and they get likelier as the round runs out.
+       `speedMin/Max` is the band a solved flight has to fall in, at both ends
+       of the arc: it is what rejects a limp dribble along the rim and a shot
+       too fast to read.                                                       */
     travelBeats: 6,        // beats a ring spends closing in, at the start...
     travelBeatsEnd: 4,     // ...and by the last second of the round
-    maxRings: 8,           // hard cap on concurrent rings
-
-    /* Holes in the grid. A ring on every single beat makes a metronome out of
-       the player: tap the pulse and the combo climbs on its own. So some beats
-       are deliberately left empty and a tap on one of them breaks the chain —
-       the player has to read which beat actually carries a ring. Two rules keep
-       it musical rather than random: the downbeat of every bar always lands, and
-       there are never two holes in a row.                                     */
-    holeChance: 0.12,      // odds a beat is left empty, early in the round...
-    holeChanceEnd: 0.38,   // ...and at the end of it
-    holeFrom: 4,           // seconds of unbroken pulse first, to set the tempo
-    doomSpeed: 265,        // closing speed of the spiked game-over ring
+    steadyFor: 5,          // seconds of unbroken one-beat pulse first, to set the tempo
+    breakAfter: 3,         // bounces up top before the ball is forced back down
+    gapChance: 0.08,       // weight of a flight longer than one beat, after that...
+    gapChanceEnd: 0.60,    // ...and at the end of the round
+    speedMin: 340,         // px/s: slowest launch a flight may be solved with
+    /* The ceiling is what decides whether the ball can climb at all: reaching
+       the top of the bowl from its floor costs sqrt(2 g h) ~= 1225 px/s, so a
+       lower cap quietly pinned the ball to the bottom and every bounce came out
+       of the same corner of the arena. */
+    speedMax: 1300,        // px/s: fastest a flight may be launched or arrive
+    doomSpeed: 320,        // closing speed of the spiked game-over ring
     chainEvery: 5          // combo interval that fires a chain-reaction payoff
   };
 
@@ -2517,117 +2531,316 @@
       { name:"CLOSE",   win:0.46, mult:1,   color:"#ffa94d", parts:6,  flash:0.14, shake:4,  rate:0.86, fxTier:0, pop:"pop-p0" }
     ];
     var MAXWIN = TIERS[TIERS.length - 1].win;
+    // Shortest hop the solver may pick, as an angle along the rim (~330 px of
+    // chord in a 600 px bowl). Below it the ball skims the rim instead of
+    // crossing the arena, and the bounce stops reading as a bounce.
+    var MINARC = 1.2;
 
-    var C, ball, rings, trail, nextSlot, holeAt, colorIdx, bgGrad, doom;
+    var C, arenaR, ball, segs, rings, trail, colorIdx, bgGrad, doom;
     var shockwaves, rays, ballPop, hitFx, tAnim;
+    var held, heldT, startAt, readyPop;   // the lead-in hold, see CONFIG
+    var lastA, prevA, lastBeats;          // the last two bounces, for variety
+    var lastStyle, sinceLow;              // bounce shape, and time since the last fall
     var score, combo, bestCombo, stats;
     var maxScore, idealCombo;   // running "perfect play" reference for the stars
 
     function ballColor() { return BALL_COLORS[Math.min(combo, BALL_COLORS.length - 1)]; }
+    function period() { return Beat.period() || 0.5; }
+    function ballDist() {
+      return Math.sqrt((ball.x - C.x) * (ball.x - C.x) + (ball.y - C.y) * (ball.y - C.y));
+    }
 
     function reset() {
-      C = { x: Layout.cx, y: Layout.cy };
-      // Start near the centre with a sideways kick, then let gravity take over.
-      ball = { x: C.x, y: C.y - 120, vx: Rand.pick([-1, 1]) * Rand.range(230, 320), vy: 0 };
-      rings = []; trail = []; colorIdx = 0; bgGrad = null; doom = null;
+      onResize();                          // C and the bowl, before anything reads them
+      // The round opens held: the ball floats at the centre until the bed is
+      // audible (see CONFIG --- lead-in ---), then release() launches the chain.
+      held = true; heldT = 0; startAt = null; readyPop = false;
+      ball = { x: C.x, y: C.y - 90, vx: 0, vy: 0 };
+      segs = []; rings = []; trail = []; colorIdx = 0; bgGrad = null; doom = null;
+      lastA = null; prevA = null; lastBeats = 0; lastStyle = null; sinceLow = 0;
       shockwaves = []; rays = []; ballPop = 0; hitFx = 0; tAnim = 0;
       score = 0; combo = 0; bestCombo = 0;
       maxScore = 0; idealCombo = 0;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
-      // First landing two beats away, then one every `stepBeats`. The scheduler
-      // fills the arena on the first frame: the rings for the slots that are
-      // already inside their flight window are launched late on purpose, so they
-      // appear spread across the arena instead of stacked at the outer edge.
-      nextSlot = Math.ceil(Beat.beats()) + 2;
-      holeAt = null;                       // beat of the last hole, for the no-two-in-a-row rule
       HUD.setScoreNow(0);
       HUD.setLeft("x0", "COMBO");
     }
 
-    function onResize() { C = { x: Layout.cx, y: Layout.cy }; bgGrad = null; }
+    function onResize() {
+      C = { x: Layout.cx, y: Layout.cy }; bgGrad = null;
+      // The bowl: the widest disc centred on the arena whose rim still leaves a
+      // ring inside the frame, and never wider than the band gameplay owns.
+      arenaR = Math.min(view.w / 2, Layout.h / 2) - CONFIG.arenaMargin;
+    }
 
-    /* Difficulty. The landing grid never changes — one ring per beat, all round
-       long, because that is the point. What ramps is the flight: it shortens
-       from travelBeats to travelBeatsEnd, so the same rhythm arrives with less
-       and less run-up to read.                                                */
+    /* Difficulty. The rings always land on the beat — what ramps is the flight,
+       which shortens from travelBeats to travelBeatsEnd, so the same rhythm
+       arrives with less and less run-up to read.                              */
     function travelBeats() {
       var k = clamp(Round.elapsed() / Math.max(1, CONFIG.gameSeconds), 0, 1);
       return CONFIG.travelBeats + (CONFIG.travelBeatsEnd - CONFIG.travelBeats) * k;
     }
 
-    // Launch a ring that must reach the ball on beat `slot`. `born` is the beat
-    // it should have left at — behind "now" when the slot is already inside its
-    // flight window, which simply starts the ring part-way in.
-    function spawnRing(slot) {
-      var span = travelBeats();
-      rings.push({ hit: slot, born: slot - span, span: span, r: CONFIG.spawnR,
-                   color: PALETTE[colorIdx++ % PALETTE.length], pulse: 0 });
-    }
+    /* =====================================================================
+       Ballistics — the ball's flight is solved, not simulated.
+       ===================================================================== */
 
-    /* Is this beat one of the empty ones? Decided once, when the slot is
-       launched — a flight ahead of the beat itself, so the hole is on screen
-       (as an absence) long before the player has to not-tap it.
-       `slot` counts beats from the track's beat 0, so `slot % 4` is the position
-       in the bar and 0 is the downbeat: leaving that one alone keeps the pattern
-       readable, and refusing two holes in a row keeps the arena populated.     */
-    function isHole(slot) {
-      if (Round.elapsed() < CONFIG.holeFrom) return false;
-      if (slot % 4 === 0) return false;                     // the bar's downbeat
-      if (holeAt !== null && slot - holeAt <= CONFIG.stepBeats) return false;
-      var k = clamp(Round.elapsed() / Math.max(1, CONFIG.gameSeconds), 0, 1);
-      if (!Rand.chance(CONFIG.holeChance + (CONFIG.holeChanceEnd - CONFIG.holeChance) * k)) return false;
-      holeAt = slot;
+    // The one parabola that leaves P and reaches Q exactly T seconds later.
+    function solve(px, py, qx, qy, T) {
+      return { vx: (qx - px) / T,
+               vy: (qy - py - 0.5 * CONFIG.gravity * T * T) / T };
+    }
+    // Does that parabola stay inside the bowl for the whole flight? Sampled:
+    // an arc that bulged through the rim would bounce off nothing.
+    function fits(px, py, v, T, lim) {
+      for (var i = 1; i < 16; i++) {
+        var u = T * i / 16;
+        var x = px + v.vx * u - C.x;
+        var y = py + v.vy * u + 0.5 * CONFIG.gravity * u * u - C.y;
+        if (x * x + y * y > lim * lim) return false;
+      }
       return true;
     }
 
-    // Keep the landing grid one flight ahead of the clock. A slot is skipped
-    // (never delayed) when it is a hole, when the arena is full or when the
-    // spiked ring is out, so the rings that do come stay on the music.
-    function schedule(now) {
-      while (nextSlot - travelBeats() <= now) {
-        if (!doom && rings.length < CONFIG.maxRings && !isHole(nextSlot)) spawnRing(nextSlot);
-        nextSlot += CONFIG.stepBeats;
+    /* Bounce archetypes. Drawing the landing spot at random spread the ball
+       around the rim but every *arc* still came out the same shape: a wide
+       sweep at mid height, over and over. So each bounce is cast as one of a
+       handful of shapes instead, biased against repeating the last one — and
+       whenever the ball has stayed up in the top half for too long the next
+       bounce is forced to be a fall. That fall is the break in the pattern:
+       the ball drops back to the floor of the bowl and a new cycle starts.
+         at     where on the rim it wants to land (bottom / flank / top / any)
+         arc    how wide a spread around that it will accept, in radians
+         rise   how high above its start the arc wants to climb, in px
+         force  how hard it wants to be hit, 0 = speedMin .. 1 = speedMax
+         span   nudge on how many beats the flight is allowed to take         */
+    var STYLES = [
+      { at:"bottom", arc:0.9, rise: 40,  force:0.15, span:0.6, weight:1.0 },  // straight back down
+      { at:"bottom", arc:1.7, rise:210,  force:0.35, span:1.0, weight:1.0 },  // sweep along the floor
+      { at:"flank",  arc:1.4, rise:180,  force:0.50, span:1.2, weight:1.2 },  // out to a side
+      { at:"top",    arc:1.1, rise:420,  force:0.85, span:1.5, weight:0.9 },  // climb to the ceiling
+      { at:"any",    arc:2.4, rise:340,  force:0.70, span:1.7, weight:0.8 }   // high lob, anywhere
+    ];
+    function styleAngle(s) {
+      if (s.at === "bottom") return Math.PI * 0.5;                 // +y is down
+      if (s.at === "top")    return -Math.PI * 0.5;
+      if (s.at === "flank")  return Rand.chance(0.5) ? 0 : Math.PI;
+      return Rand.range(-Math.PI, Math.PI);
+    }
+    function pickStyle(overdue) {
+      // Overdue for a break: come back down whatever else was in the running.
+      if (overdue) return STYLES[Rand.chance(0.6) ? 0 : 1];
+      var w = [], tot = 0, i;
+      for (i = 0; i < STYLES.length; i++) {
+        w[i] = STYLES[i].weight * (STYLES[i] === lastStyle ? 0.25 : 1);
+        tot += w[i];
       }
+      var p = Rand.range(0, tot);
+      for (i = 0; i < STYLES.length; i++) { p -= w[i]; if (p <= 0) return STYLES[i]; }
+      return STYLES[0];
+    }
+
+    // Shortest angle between two directions, in radians.
+    function angDist(a, b) {
+      var d = Math.abs(a - b) % (Math.PI * 2);
+      return d > Math.PI ? Math.PI * 2 - d : d;
+    }
+    // 0 right on top of `ref`, 1 a good way away from it. Everything is far
+    // from a landing that has not happened yet.
+    function awayFrom(a, ref) {
+      return ref === null ? 1 : clamp(angDist(a, ref) / 1.5, 0, 1);
+    }
+
+    /* Plan one bounce: from where the ball leaves the rim, choose how many beats
+       it flies and where on the rim it comes back down.
+
+       Every candidate here is an exact solution, so the choice is never about
+       whether the ball can make it — it is only about which arc reads best, and
+       "best" is deliberately different on every bounce. Picking the single
+       highest-scoring arc gave the ball one habit and it kept it: the widest
+       arc is the one across the middle, so it settled into a left-right
+       metronome. So each call now draws its own character — how hard this
+       bounce is hit and roughly where it is aimed — weights every candidate
+       against that, pushes back on anything landing near the last two spots or
+       repeating the last flight length, and then picks at *random* among what
+       is left. Short snaps, high lobs and long crossings all stay on the table. */
+    function planFlight(px, py) {
+      var lim = arenaR - CONFIG.ballR, per = period();
+      var prog = clamp(Round.elapsed() / Math.max(1, CONFIG.gameSeconds), 0, 1);
+      // A flight longer than one beat is what leaves the beats it passes over
+      // empty — that, and nothing else, is where the reading difficulty lives,
+      // so long flights are worth more and more as the round runs out. The
+      // opening is an unbroken pulse whatever else happens: the player needs a
+      // metronome before they can be asked to read a gap in it.
+      var wLong = Round.elapsed() < CONFIG.steadyFor ? 0.02
+                : CONFIG.gapChance + (CONFIG.gapChanceEnd - CONFIG.gapChance) * prog;
+      // What shape this bounce wants to be, and how hard it wants to be hit.
+      // Once the ball is overdue for a fall the shape is not a preference any
+      // more: anything that does not come back down is all but ruled out below.
+      var overdue = sinceLow >= CONFIG.breakAfter;
+      var st = pickStyle(overdue);
+      var spanW = [0, 1, wLong * 1.6 * st.span, wLong * 0.5 * st.span];
+      var wantA = styleAngle(st) + Rand.range(-0.35, 0.35);
+      var wantRise = st.rise * Rand.range(0.7, 1.3);
+      var wantSpeed = CONFIG.speedMin + (CONFIG.speedMax - CONFIG.speedMin)
+                    * clamp(st.force + Rand.range(-0.15, 0.15), 0, 1);
+      var a0 = Math.atan2(py - C.y, px - C.x);
+      // `sum` is what keeps `spanW` honest: a two-beat flight can reach far more
+      // of the rim than a one-beat snap, so without normalising per length the
+      // sheer number of long candidates would decide the tempo on its own.
+      var cands = [], sum = [0, 0, 0, 0], loose = null, looseW = -1;
+      for (var beats = 1; beats <= 3; beats++) {
+        var T = beats * per;
+        for (var i = 1; i < 28; i++) {
+          var off = Math.PI * 2 * i / 28;
+          if (off < MINARC || off > Math.PI * 2 - MINARC) continue;   // no skim
+          var a1 = a0 + off;
+          var qx = C.x + Math.cos(a1) * lim, qy = C.y + Math.sin(a1) * lim;
+          var v = solve(px, py, qx, qy, T);
+          if (!fits(px, py, v, T, lim)) continue;
+          var launch = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
+          var vy1 = v.vy + CONFIG.gravity * T;
+          var land = Math.sqrt(v.vx * v.vx + vy1 * vy1);
+          /* How far the arc climbs above the point it left. This is what tells
+             a flat skim from a lob, and leaving it unweighted was what made
+             every bounce come out the same shape.                            */
+          var ua = clamp(-v.vy / CONFIG.gravity, 0, T);         // time of the apex
+          var rise = -(v.vy * ua + 0.5 * CONFIG.gravity * ua * ua);
+          var w = 260 / (260 + Math.abs(land - wantSpeed));     // the force drawn
+          w *= st.arc / (st.arc + angDist(a1, wantA));          // where it lands
+          w *= 200 / (200 + Math.abs(rise - wantRise));         // how high it goes
+          w *= 0.12 + 0.88 * awayFrom(a1, lastA);               // not there again
+          w *= 0.45 + 0.55 * awayFrom(a1, prevA);
+          if (beats === lastBeats) w *= 0.6;                    // nor that length
+          if (overdue && qy < C.y + lim * 0.34) w *= 0.02;       // the break is due
+          var cand = { v: v, x1: qx, y1: qy, a1: a1, beats: beats, T: T, w: w };
+          if (launch < CONFIG.speedMin || launch > CONFIG.speedMax || land > CONFIG.speedMax) {
+            if (w > looseW) { looseW = w; loose = cand; }       // exact, just harsh
+            continue;
+          }
+          cands.push(cand); sum[beats] += w;
+        }
+      }
+      // Nothing inside the comfort band: take the likeliest exact solution
+      // anyway. It is still a real parabola onto a real ring, only harsher.
+      var chosen = null;
+      if (!cands.length) chosen = loose;
+      else {
+        var total = 0, n;
+        for (n = 0; n < cands.length; n++) {
+          cands[n].w *= spanW[cands[n].beats] / sum[cands[n].beats];
+          total += cands[n].w;
+        }
+        var pick = Rand.range(0, total);
+        for (n = 0; n < cands.length; n++) { pick -= cands[n].w; if (pick <= 0) { chosen = cands[n]; break; } }
+        if (!chosen) chosen = cands[cands.length - 1];
+      }
+      lastStyle = st;
+      // A landing in the lower third of the bowl resets the break counter: that
+      // is the ball touching the floor, which is what the pattern is built on.
+      sinceLow = chosen && chosen.y1 > C.y + lim * 0.34 ? 0 : sinceLow + 1;
+      return chosen;
+    }
+
+    // A ring is launched for every planned bounce: it is the surface the ball
+    // will turn around on, and it closes onto the rim exactly on that beat.
+    function spawnRing(slot) {
+      var span = travelBeats();
+      var ring = { hit: slot, born: slot - span, span: span, r: CONFIG.spawnR,
+                   color: PALETTE[colorIdx++ % PALETTE.length], pulse: 0, struck: false };
+      rings.push(ring);
+      return ring;
+    }
+
+    function addSeg(px, py, b0) {
+      var f = planFlight(px, py);
+      // Remember what this bounce did, so the next two are pushed elsewhere.
+      prevA = lastA; lastA = f.a1; lastBeats = f.beats;
+      var seg = { b0: b0, b1: b0 + f.beats, T: f.T, x0: px, y0: py,
+                  vx: f.v.vx, vy: f.v.vy, x1: f.x1, y1: f.y1 };
+      seg.ring = spawnRing(seg.b1);
+      seg.color = seg.ring.color;
+      segs.push(seg);
+      return seg;
+    }
+
+    // Keep the chain of bounces planned a full ring flight ahead, so every ring
+    // gets its whole run-up before the ball needs it.
+    function planAhead(now) {
+      var guard = 0, horizon = now + travelBeats() + 1;
+      while (segs.length && segs[segs.length - 1].b1 < horizon && guard++ < 16) {
+        var last = segs[segs.length - 1];
+        addSeg(last.x1, last.y1, last.b1);
+      }
+    }
+
+    // Place the ball on its current parabola, straight off the musical clock —
+    // no integration, so it cannot drift away from the ring waiting for it.
+    function placeBall(now) {
+      var s = segs[0], u = (now - s.b0) * period();
+      ball.x = s.x0 + s.vx * u;
+      ball.y = s.y0 + s.vy * u + 0.5 * CONFIG.gravity * u * u;
+      ball.vx = s.vx; ball.vy = s.vy + CONFIG.gravity * u;
+    }
+
+    // The ball reaches the rim and the ring turns it around. The impact is worth
+    // its own kick of juice whether or not the player tapped it.
+    function bounce(seg) {
+      Fx.burst(seg.x1, seg.y1, { color: seg.color, count: 6, speed: 280, size: 5, life: 0.35 });
+      spawnShock(arenaR, seg.color, 0.5);
+    }
+
+    /* =====================================================================
+       Lead-in — hold the round until the bed is actually playing.
+       `Beat.locked()` turns true as soon as the music has a grid to lock onto;
+       when there is no track at all (muted, or a decode the WebView refused)
+       `leadInMax` lets the round go anyway and the clock falls back to dt.
+       ===================================================================== */
+    function hold(dt) {
+      heldT += dt;
+      // Hold the clock at full: waiting for the bed must not eat into the run.
+      Round.reset();
+      if (!readyPop) {
+        readyPop = true;
+        Pop.show("alert", { word: "GET READY", sub: "FEEL THE BEAT", hold: 700 });
+      }
+      if (startAt === null && (Beat.locked() || heldT >= CONFIG.leadInMax)) {
+        startAt = Beat.on() ? Beat.next(1) + CONFIG.leadInBeats : Beat.beats();
+        /* Arm the whole chain now, not on the drop. The first bounce is only a
+           beat or two after the ball leaves the centre, but its ring needs a
+           full flight of run-up — planning here is what buys it: the rings fly
+           in *during* the lead-in, over the music, and the arena is already
+           populated by the time the ball starts falling. Nothing lands before
+           `startAt`, so none of them can be missed while the round is held.  */
+        addSeg(C.x, C.y - 90, startAt);
+        planAhead(startAt);
+      }
+      /* Float the ball on the spot, easing the bob out as the drop approaches
+         so it is exactly on the launch point when the flight takes over. The
+         rim behind it flares on every beat, so the tempo is readable before the
+         first ring even gets close.                                          */
+      var settle = startAt === null ? 1 : clamp((startAt - Beat.beats()) / CONFIG.leadInBeats, 0, 1);
+      ball.x = C.x;
+      ball.y = C.y - 90 + Math.sin(tAnim * 2.4) * 24 * settle;
+      ball.vx = 0; ball.vy = 0;
+      trail.length = 0;
+    }
+
+    function release() {
+      held = false;
+      Fx.flash("#ffffff", 0.18);
+      Pop.show("alert", { word: "GO!", hold: 200 });
     }
 
     // Timer out: a spiked ring is released. It cannot be tapped away — when it
     // reaches the ball the run is over. Keeps the last seconds tense.
     function spawnDoom() {
-      // Just past the corners of the frame (~713 px out), not at spawnR: this
-      // one closes at a fixed speed and must not take a beat longer than it did
-      // before the rings moved their start line outward.
+      // Just past the corners of the frame, not at spawnR: this one closes at a
+      // fixed speed and must not take a beat longer than the rings do.
       doom = { r: 750 };
       Sound.clip("doom", 0.85);                           // warm mallet taps, at pitch
       Pop.show("danger", { word: "SUDDEN DEATH", sub: "DODGE THE SPIKES", hold: 1200 });
       Overlay.vignette("#ff2d55", 1);                     // stays on until the end
-    }
-
-    function ballDist() {
-      return Math.sqrt((ball.x - C.x) * (ball.x - C.x) + (ball.y - C.y) * (ball.y - C.y));
-    }
-
-    /* Is the ball sitting in the band along an edge of the play area — i.e. is
-       the ring closing on it too wide for the frame? Measured from the walls the
-       ball bounces on, so it covers the whole approach, the bounce itself and
-       the way back out, not just the single frame of contact.                  */
-    function ballAtEdge() {
-      var m = CONFIG.ballR + CONFIG.edgeBand;
-      return ball.x - Layout.left < m || Layout.right - ball.x < m ||
-             ball.y - Layout.top  < m || Layout.bottom - ball.y < m;
-    }
-
-    // A destroyed ring kicks the ball back inward with a speed boost so it
-    // keeps roaming instead of settling.
-    function repelBall() {
-      var dx = ball.x - C.x, dy = ball.y - C.y, bd = Math.sqrt(dx * dx + dy * dy);
-      var nx, ny;
-      if (bd < 1) { nx = 0; ny = -1; } else { nx = dx / bd; ny = dy / bd; }
-      var vr = ball.vx * nx + ball.vy * ny;                        // outward part
-      if (vr > 0) { ball.vx -= 1.4 * vr * nx; ball.vy -= 1.4 * vr * ny; }
-      ball.vx -= nx * CONFIG.ringImpulse; ball.vy -= ny * CONFIG.ringImpulse;
-      var sp = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy) || 1;
-      var boosted = Math.min(CONFIG.maxSpeed, Math.max(CONFIG.minSpeed, sp * 1.18));
-      ball.vx = ball.vx / sp * boosted; ball.vy = ball.vy / sp * boosted;
     }
 
     // A ring of energy expanding from the centre. As it sweeps past each ring
@@ -2649,24 +2862,26 @@
       HUD.punch(color);
     }
 
-    // Every ring that leaves play (tapped OR auto-destroyed) is one scoring
-    // chance. We tally what a flawless chain would have scored for the exact
-    // same set of chances: that is the 100% reference the stars measure against.
+    // Every ring that leaves play (tapped OR missed) is one scoring chance. We
+    // tally what a flawless chain would have scored for the exact same set of
+    // chances: that is the 100% reference the stars measure against.
     function chance() {
       idealCombo++;
       maxScore += Math.round(10 * idealCombo * 2);                            // a solid GOOD
       if (idealCombo % CONFIG.chainEvery === 0) maxScore += idealCombo * 20;   // ideal chain bonus
     }
 
-    function popRing(idx, tier, gained) {
-      var ring = rings[idx];
+    function popRing(ring, tier, gained) {
       // Juice scales with the combo: the deeper the chain, the bigger the bang.
       var cf = Math.min(2.4, 1 + combo * 0.14);
       Fx.burst(ball.x, ball.y, { color: ring.color, count: Math.round(tier.parts * cf), speed: 420, size: 6, life: 0.5 });
       if (tier.name === "PERFECT") Fx.burst(ball.x, ball.y, { color: "#ffffff", count: Math.round(5 * cf), speed: 500, size: 5, life: 0.45 });
-      rings.splice(idx, 1); repelBall();
+      // The ring is not removed here: it is the surface the ball is about to
+      // bounce on. It is marked spent, drawn as a ghost, and cleared the instant
+      // the ball actually reaches it (see the ring pass in update).
+      ring.struck = true;
       addScore(gained, tier.color);
-      spawnShock(ballDist(), tier.color, Math.min(2.2, 0.6 + combo * 0.12));
+      spawnShock(arenaR, tier.color, Math.min(2.2, 0.6 + combo * 0.12));
       ballPop = 1; hitFx = Math.min(1, 0.5 + combo * 0.06);
       // The grade and the gain ride out of the impact point as one comic pop,
       // tinted (and sized) by the timing tier — see the SKIN block. Kept under
@@ -2690,10 +2905,10 @@
     // Fired every `chainEvery` hits: stacked shockwaves, radial rays, an edge
     // pulse, a bonus and a rising arpeggio — the payoff for a clean chain.
     function triggerChain() {
-      var col = ballColor(), bd = ballDist();
-      spawnShock(bd, "#ffffff", 2.2);
-      spawnShock(bd, col, 1.7);
-      spawnShock(Math.max(0, bd - 60), col, 1.3);
+      var col = ballColor();
+      spawnShock(arenaR, "#ffffff", 2.2);
+      spawnShock(arenaR, col, 1.7);
+      spawnShock(Math.max(0, arenaR - 60), col, 1.3);
       spawnRays(ball.x, ball.y, col, 12);
       Fx.burst(ball.x, ball.y, { color: "#ffffff", count: 22, speed: 520, size: 6, life: 0.55 });
       Fx.burst(ball.x, ball.y, { color: col, count: 26, speed: 460, size: 7, life: 0.6 });
@@ -2710,31 +2925,21 @@
       Sound.clip("chain", 0.8, 1 + Math.min(combo, 20) * 0.012);   // ascending run
     }
 
-    // Tap: grade the ring nearest to contact and score it, else break the chain.
-    // "Nearest" is measured in beats, not pixels — the ring lands on its beat
-    // whatever the ball is doing, so the gap that matters is the timing one, and
-    // it is symmetric: a landed ring lingers on the ball for one CLOSE window,
-    // so a slightly late tap is graded against it and not counted a miss.
+    // Tap: grade the ring nearest to its landing and score it, else break the
+    // chain. "Nearest" is measured in beats, not pixels — the ring lands on the
+    // ball on its beat, so the gap that matters is the timing one.
     function onDown() {
-      if (rings.length === 0) return;
-      var now = Beat.beats(), best = -1, bestGap = 1e9;
+      if (held) return;                     // the lead-in is not part of the run
+      var now = Beat.beats(), best = null, bestGap = 1e9;
       for (var i = 0; i < rings.length; i++) {
+        if (rings[i].struck) continue;      // already scored, waiting for the ball
         var gap = Math.abs(rings[i].hit - now);
-        if (gap < bestGap) { bestGap = gap; best = i; }
+        if (gap < bestGap) { bestGap = gap; best = rings[i]; }
       }
-      if (best < 0) return;
-      /* Give the player the benefit of the doubt against the edges: the ring
-         closing on a ball pinned there is wider than the frame, so its landing
-         is genuinely hard to read (see CONFIG --- generosity at the edges ---).
-         A tap in that band is graded PERFECT over a wider window instead of
-         being measured — never a MISS. A ring still has to be on that beat, so
-         the empty beats stay a read and the rescue cannot be farmed by
-         tap-spamming in a corner.                                             */
-      var rescue = bestGap <= CONFIG.edgeWindow && ballAtEdge();
-      if (bestGap <= MAXWIN || rescue) {
-        var tier = TIERS[0];
-        // An edge rescue is a PERFECT by definition; otherwise grade the timing.
-        if (!rescue) { for (var t = 0; t < TIERS.length; t++) { if (bestGap <= TIERS[t].win) { tier = TIERS[t]; break; } } }
+      if (!best) return;
+      if (bestGap <= MAXWIN) {
+        var tier = TIERS[TIERS.length - 1];
+        for (var t = 0; t < TIERS.length; t++) { if (bestGap <= TIERS[t].win) { tier = TIERS[t]; break; } }
         combo++;
         if (combo > bestCombo) bestCombo = combo;
         stats[tier.name.toLowerCase()]++;
@@ -2745,8 +2950,8 @@
         if (combo % CONFIG.chainEvery === 0) triggerChain();
       } else {
         // Mistimed tap: break the chain (no score penalty — stay forgiving).
-        // No ring within 0.7 of a beat means there is none on this beat at all:
-        // name it, because reading the empty beats is the whole skill.
+        // No ring within 0.7 of a beat means the ball is mid-flight over a beat
+        // no ring lands on: name it, because reading the arc is the whole skill.
         combo = 0; stats.miss++;
         HUD.setLeft("x0", "COMBO");
         Pop.show("score", { word: bestGap > 0.7 ? "EMPTY BEAT" : "MISS", cls: "pop-miss", hold: 180,
@@ -2760,43 +2965,37 @@
       tAnim += dt;
       var now = Beat.beats();
 
-      // Natural physics: gravity pulls the ball down. There is no visible
-      // container — the ball roams Layout and bounces off its invisible edges.
-      ball.vy += CONFIG.gravity * dt;
-      ball.x += ball.vx * dt; ball.y += ball.vy * dt;
-      var L = Layout.left + CONFIG.ballR, R = Layout.right - CONFIG.ballR;
-      var T = Layout.top + CONFIG.ballR, B = Layout.bottom - CONFIG.ballR;
-      if (ball.x < L) { ball.x = L; ball.vx = Math.abs(ball.vx) * CONFIG.wallBounce; }
-      else if (ball.x > R) { ball.x = R; ball.vx = -Math.abs(ball.vx) * CONFIG.wallBounce; }
-      if (ball.y < T) { ball.y = T; ball.vy = Math.abs(ball.vy) * CONFIG.wallBounce; }
-      else if (ball.y > B) { ball.y = B; ball.vy = -Math.abs(ball.vy) * CONFIG.wallBounce; }
-      var csp = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy) || 1;
-      if (csp > CONFIG.maxSpeed) { ball.vx = ball.vx / csp * CONFIG.maxSpeed; ball.vy = ball.vy / csp * CONFIG.maxSpeed; }
-
-      trail.push({ x: ball.x, y: ball.y });
-      if (trail.length > 16) trail.shift();
-
-      // Launch the rings whose flight window has opened.
-      schedule(now);
+      // Music first: the ball stays put until the bed is audible. The rings are
+      // already on their way in by then — hold() arms the chain, not release().
+      if (held) {
+        hold(dt);
+        if (startAt !== null && now >= startAt) release();
+      }
+      if (!held) {
+        // Walk the plan forward: every segment that has run out is a bounce, and
+        // the segment that follows was solved from its landing point.
+        planAhead(now);
+        while (segs.length > 1 && now >= segs[0].b1) { bounce(segs[0]); segs.shift(); }
+        placeBall(now);
+        trail.push({ x: ball.x, y: ball.y });
+        if (trail.length > 16) trail.shift();
+      }
 
       /* Close the rings in. A ring's radius is a straight interpolation from
-         spawnR to the ball's shell over its flight, so it touches the ball on
-         its beat no matter where the ball has bounced to — the further along it
-         is, the more it follows the ball, which reads as the ring locking on.
-         Past its beat it stays on the shell for one CLOSE window (still
-         tappable, see onDown) and is then a miss — for as long as the ball is
-         against an edge that grace is widened to CONFIG.edgeWindow, so the late
-         tap the clipped ring cost the player still lands on the ring it was
-         aimed at instead of finding it already gone.                          */
-      var bd = ballDist(), shell = bd + CONFIG.ballR * 0.5;
-      var grace = ballAtEdge() ? Math.max(MAXWIN, CONFIG.edgeWindow) : MAXWIN;
+         spawnR down to the rim over its flight, so it lands on the rim — and on
+         the ball, which the plan has arriving there at the same instant — on
+         its beat. A struck ring hangs on as a ghost until the ball reaches it,
+         an untapped one for one CLOSE window past the bounce (still tappable,
+         see onDown) and is then a miss.                                       */
       for (var i = rings.length - 1; i >= 0; i--) {
         var ring = rings[i];
         var p = clamp((now - ring.born) / ring.span, 0, 1);
-        ring.r = CONFIG.spawnR + (shell - CONFIG.spawnR) * p;
-        if (now > ring.hit + grace) {
+        ring.r = CONFIG.spawnR + (arenaR - CONFIG.spawnR) * p;
+        if (ring.struck) {
+          if (now >= ring.hit) rings.splice(i, 1);        // the ball has hit it
+        } else if (now > ring.hit + MAXWIN) {
           Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
-          rings.splice(i, 1); repelBall();
+          rings.splice(i, 1);
           combo = 0; chance();                 // missed the beat (still a chance faced)
           HUD.setLeft("x0", "COMBO");
           Sound.clip("miss", 0.45, 1.15);                 // quiet: the tap was never made
@@ -2847,25 +3046,28 @@
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, view.w, view.h);
 
-      var bd = ballDist(), bc = ballColor();
+      var bc = ballColor();
       var now = Beat.beats(), beat = Beat.pulse(1);
 
-      /* The shell the rings die on, flaring on every beat: the metronome made
-         visible, so the rhythm to tap on is readable before the first ring even
-         gets close. It sits under everything else and costs one stroke.       */
-      ctx.globalAlpha = 0.08 + beat * beat * 0.20;
-      ctx.strokeStyle = bc; ctx.lineWidth = 2 + beat * 5;
-      ctx.beginPath(); ctx.arc(C.x, C.y, Math.max(1, bd + CONFIG.ballR * 0.5), 0, Math.PI * 2); ctx.stroke();
-      ctx.globalAlpha = 1;
+      /* The rim (where every ring lands and where the ball turns around), the
+         dotted guide along the ball's flight and the marker on its landing spot
+         are all deliberately NOT drawn: the closing rings and the ball itself
+         carry the read, and the arena stays clean.                            */
 
       // Rings — plain solid strokes (no shadowBlur: it wrecks the frame rate).
       // The ring inside the timing window reads "hot" via a wider translucent
       // stroke behind it. Hot means tappable, so the window it lights up over is
-      // the one onDown grades against — widened while the ball is at an edge.
-      var hotWin = ballAtEdge() ? Math.max(MAXWIN, CONFIG.edgeWindow) : MAXWIN;
+      // exactly the one onDown grades against. A struck ring is a pale ghost:
+      // already scored, still there for the ball to bounce off.
       for (var i = 0; i < rings.length; i++) {
-        var ring = rings[i], hot = Math.abs(ring.hit - now) <= hotWin, rr = Math.max(1, ring.r);
-        var pl = ring.pulse || 0;
+        var ring = rings[i], hot = !ring.struck && Math.abs(ring.hit - now) <= MAXWIN;
+        var rr = Math.max(1, ring.r), pl = ring.pulse || 0;
+        if (ring.struck) {
+          ctx.globalAlpha = 0.3; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 1;
+          continue;
+        }
         if (pl > 0) {
           ctx.globalAlpha = Math.min(0.5, pl * 0.4); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 18 + pl * 16;
           ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;

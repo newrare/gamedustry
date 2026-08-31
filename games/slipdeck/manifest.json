@@ -1,0 +1,30 @@
+{
+  "slug": "slipdeck",
+  "title": "Slipdeck",
+  "tagline": "Bin it or keep it to finish the poker hand you are dealt",
+  "targets": [
+    "proto"
+  ],
+  "theme": {
+    "accent": "#f5c451",
+    "accent2": "#3ddc97"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "slipdeck",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.slipdeck",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

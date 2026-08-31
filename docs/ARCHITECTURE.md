@@ -8,6 +8,14 @@ game-specific logic so a new game touches predictable places.
 For what the motor actually gives you (APIs, layout, end screen, juice), read
 [ENGINE.md](ENGINE.md). This page is about where things live in the file.
 
+**The single file is now assembled, not authored.** The seven sections still exist
+in exactly this order in the built `games/<slug>/index.html`, but they are stored
+apart: sections 3, 4, 5, 7 and the motor stylesheet in `packages/`, sections 1, 2
+and 6 in `games/<slug>/game.js`, the skin in `games/<slug>/skin.css`, and the head
+and markup in `games/<slug>/page.html`. `node tools/build.mjs` puts them back
+together; `--check` proves the result is byte-identical. Read this page as the
+anatomy of the *output*.
+
 ## File layout
 
 ```

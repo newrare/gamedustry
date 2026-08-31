@@ -1,0 +1,31 @@
+{
+  "slug": "orbinity",
+  "title": "Orbinity",
+  "tagline": "Tap to fling the comet from planet to planet",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#7cf5ff",
+    "accent2": "#6d5cff"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "orbinity",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.orbinity",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

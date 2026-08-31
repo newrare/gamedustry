@@ -1,0 +1,350 @@
+
+
+  /* =========================================================================
+     SKIN — BOUNCETRY. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few overrides below.
+     ========================================================================= */
+  :root {
+    --bg:#070a1e; --accent:#4bf5ff;
+    --cta-a:#ffc061; --cta-b:#ff8a1a; --cta-text:#2a1400;
+    --danger:#ff2d78; --gold:#ffd43b;
+  }
+  html, body { background:radial-gradient(880px 900px at 50% 16%, #202a72 0%, #101643 46%, #070a1e 100%); }
+  .btn { box-shadow:0 10px 30px rgba(255,138,26,.45), inset 0 2px 6px rgba(255,255,255,.4); }
+  #intro-title {
+    background:linear-gradient(180deg,#ffffff,#7ef9ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 30px rgba(75,245,255,.4);
+  }
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.55), 0 0 44px rgba(75,245,255,.36); }
+  /* The board runs all the way up to the ceiling, so the HUD floats on it
+     without its dark plate: only the pills and the score carry their own ink. */
+  #hud::before { display:none; }
+  #hud-score { text-shadow:0 0 14px rgba(75,245,255,.6), 0 3px 10px rgba(4,6,20,.9); }
+  .hud-pill { background:rgba(6,9,26,.62); }
+  /* Every screen-space message lands in the band between the turret and the
+     CTA — never over the bricks the player is reading. */
+  #ov-toasts {
+    top:auto; bottom:calc(var(--inset-bottom) + var(--cta-h) + 18px);
+    flex-direction:column-reverse;
+  }
+  .eo-score { text-shadow:0 0 22px rgba(75,245,255,.75); }
+  #cta-bar { border-top:1px solid rgba(255,138,26,.22); }
+
+  /* ---- intro: one sentence, and a stage that plays the two rules ----------
+     "Every wall repaints the ball and one tap flips every brick", so the stage
+     plays exactly those two beats and slows down on each of them, because a
+     colour change is over in one frame and would otherwise never be read.
+
+     The motor's nodes are all recycled: the arrow becomes the barrel, the beam
+     becomes the dotted sight, the track becomes the lava, the target becomes
+     the ball, its two ripples become the two impact rings (never a trail) and
+     the stage's ::before / ::after become the two brick rows.
+
+     Geometry, in the 420x280 stage: the turret pivots on (210, 246) and holds
+     66 deg, so the muzzle sits at (252, 227). The ball climbs to the right
+     edge at (409, 158), banks off it and comes back down-left onto the lower
+     row at (278, 104). The rows carry FIVE bricks each — 60 px wide on a 68 px
+     pitch, from x=44 — and the shot lands on the fourth of the lower row, the
+     only one that ever breaks.
+
+     Timeline over 5.2 s: 0-19% aim, 19% the shot leaves, 37.5% the wall hit —
+     held in slow motion to 60% while the ball turns blue, 64% the tap — held
+     to 76% while both rows flip end over end, 85.6% ONE brick blows out. */
+  .demo-caption { display:none; }
+  /* white sentence, and only the two nouns the rules hang on are in colour */
+  #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#ffffff; }
+  #intro-tagline .w-wall { color:#7ef9ff; text-shadow:0 0 18px rgba(126,249,255,.8); }
+  #intro-tagline .w-tap  { color:#ffd43b; text-shadow:0 0 18px rgba(255,212,59,.8); }
+  #intro-demo { margin-top:28px; }
+
+  /* the stage, and the right wall that lights up when the ball strikes it */
+  .demo-stage {
+    width:420px; height:280px; overflow:hidden;
+    background:radial-gradient(320px 260px at 50% 24%, rgba(46,60,150,.5), rgba(7,10,30,0) 74%), var(--panel);
+    animation:demoWall 5.2s linear infinite;
+  }
+  @keyframes demoWall {
+    0%,37.4% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
+    37.5%    { box-shadow:inset -30px 0 40px -8px rgba(255,255,255,.95); }
+    44%      { box-shadow:inset -26px 0 36px -8px rgba(47,134,255,.85); }
+    58%,100% { box-shadow:inset 0 0 0 0 rgba(47,134,255,0); }
+  }
+
+  /* The two brick rows, five panes each. A gradient does not interpolate, so
+     every state is spelled out and the change lands on back-to-back keyframes
+     — always while the row is edge-on, mid-flip. */
+  .demo-stage::before, .demo-stage::after {
+    content:""; position:absolute; left:44px; width:332px; height:26px; z-index:0;
+    transform-origin:50% 50%;
+  }
+  .demo-stage::before {
+    top:40px;
+    background-image:linear-gradient(90deg,
+      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+      rgba(47,134,255,.62) 272px 332px);
+    border-top:2px solid rgba(212,233,255,.7);
+    box-shadow:0 0 18px rgba(47,134,255,.3);
+    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
+  }
+  .demo-stage::after {
+    top:74px;
+    background-image:linear-gradient(90deg,
+      rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+      rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+      rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+      rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+      rgba(255,59,87,.62) 272px 332px);
+    border-top:2px solid rgba(255,217,221,.7);
+    box-shadow:0 0 18px rgba(255,59,87,.3);
+    animation:demoRowBot 5.2s linear infinite, demoFlipBot 5.2s ease-in-out infinite;
+  }
+  /* THE TAP, at 64%: every pane turns end over end onto the other colour. The
+     lower row is a breath behind the upper one, so the swap reads as a wave
+     instead of a single blink. */
+  @keyframes demoFlipTop {
+    0%,60.6%   { transform:perspective(460px) rotateX(0deg); }
+    64%        { transform:perspective(460px) rotateX(90deg); }
+    67.5%      { transform:perspective(460px) rotateX(-16deg); }
+    70%,100%   { transform:perspective(460px) rotateX(0deg); }
+  }
+  @keyframes demoFlipBot {
+    0%,62.3%   { transform:perspective(460px) rotateX(0deg); }
+    65.7%      { transform:perspective(460px) rotateX(90deg); }
+    69.2%      { transform:perspective(460px) rotateX(-16deg); }
+    71.7%,100% { transform:perspective(460px) rotateX(0deg); }
+  }
+  @keyframes demoRowTop {
+    0%,63.9% { background-image:linear-gradient(90deg,
+                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                 rgba(47,134,255,.62) 272px 332px);
+               border-top-color:rgba(212,233,255,.7);
+               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+    64%      { background-image:linear-gradient(90deg,
+                 rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                 rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                 rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+                 rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+                 rgba(255,59,87,.62) 272px 332px);
+               border-top-color:#ffffff;
+               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    70%,100% { background-image:linear-gradient(90deg,
+                 rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                 rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                 rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+                 rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+                 rgba(255,59,87,.62) 272px 332px);
+               border-top-color:rgba(255,217,221,.7);
+               box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
+  }
+  /* the lower row also loses its FOURTH pane at 85.6% — one brick, the one the
+     ball actually reaches, and the hole stays open until the loop restarts */
+  @keyframes demoRowBot {
+    0%,65.6%    { background-image:linear-gradient(90deg,
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+                    rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
+                  border-top-color:rgba(255,217,221,.7);
+                  box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
+    65.7%       { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:#ffffff;
+                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    71.7%,85.5% { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:rgba(212,233,255,.7);
+                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+    85.6%       { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:#ffffff;
+                  box-shadow:0 0 34px rgba(255,255,255,.8); filter:brightness(2.4); }
+    89%,100%    { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:rgba(212,233,255,.7);
+                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+  }
+
+  /* the lava: the floor, and the only thing that destroys a ball */
+  .demo-aim .demo-track {
+    display:block; left:0; right:0; bottom:0; top:auto; height:30px; border:0;
+    background:linear-gradient(180deg,#ffd36b 0 4px,#ff8a1a 4px 11px,#e03400 11px 22px,#540900 100%);
+    box-shadow:0 -12px 30px rgba(255,106,0,.55);
+    animation:demoLava 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes demoLava {
+    0%   { filter:brightness(.85); transform:translateY(2px); }
+    100% { filter:brightness(1.3);  transform:translateY(0); }
+  }
+
+  /* the turret: the motor's arrow, turned into a barrel that swings with the
+     aim and then holds the angle it fired at */
+  .demo-aim .demo-arrow {
+    display:block; left:203px; bottom:34px; top:auto; margin:0;
+    width:14px; height:46px; border:0; border-radius:7px;
+    background:linear-gradient(180deg, #d4e2ff, #6f86b8);
+    box-shadow:0 0 0 4px rgba(255,59,87,.25);
+    transform-origin:50% 100%;
+    filter:drop-shadow(0 0 10px rgba(255,180,79,.6));
+    animation:demoCannon 5.2s ease-in-out infinite;
+  }
+  /* the pivot the barrel swings on — a circle, so the rotation never shows */
+  .demo-aim .demo-arrow::after {
+    content:""; position:absolute; left:50%; bottom:-13px; width:34px; height:34px;
+    margin-left:-17px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #cfe0ff 0 18%, #4a5b88 62%, #1b2340 100%);
+    box-shadow:0 0 0 3px rgba(126,249,255,.3);
+  }
+  @keyframes demoCannon {
+    0%        { transform:rotate(34deg); }
+    19.2%,94% { transform:rotate(66deg); }
+    100%      { transform:rotate(34deg); }
+  }
+
+  /* the aim line, anchored on the cannon pivot and gone the instant it fires */
+  .demo-aim .demo-beam {
+    left:210px; bottom:34px; margin-left:-3px; width:6px; height:150px;
+    transform-origin:50% 100%;
+    background:repeating-linear-gradient(180deg, #ff3b57 0 10px, transparent 10px 22px);
+    animation:demoBeam 5.2s ease-in-out infinite;
+  }
+  @keyframes demoBeam {
+    0%       { transform:rotate(34deg); opacity:0; }
+    5%       { transform:rotate(38deg); opacity:.95; }
+    19.2%    { transform:rotate(66deg); opacity:.95; }
+    21%,100% { transform:rotate(66deg); opacity:0; }
+  }
+
+  /* THE SHOT — one ball, and it only ever breaks one brick. It leaves the
+     muzzle red, crawls off the right wall repainted blue, hangs in the air
+     while the tap flips the board, and lands on the pane that just turned its
+     own colour. */
+  .demo-aim .demo-target {
+    z-index:1; left:241px; top:216px; width:22px; height:22px; margin-left:0;
+    border:0; border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
+    box-shadow:0 0 16px rgba(255,59,87,.85);
+    animation:demoShot 5.2s linear infinite, demoBallSide 5.2s linear infinite;
+  }
+  /* THE WALL REPAINTS THE BALL: red out of the muzzle, blue from the instant
+     it touches the right edge at 37.5% */
+  @keyframes demoBallSide {
+    0%,37.4%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
+                 box-shadow:0 0 16px rgba(255,59,87,.85); }
+    37.5%      { background:radial-gradient(circle at 34% 28%, #ffffff 0 60%, #ffffff 100%);
+                 box-shadow:0 0 30px rgba(255,255,255,.95); }
+    41%,100%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #2f86ff 62%, #0b3f8c 100%);
+                 box-shadow:0 0 18px rgba(47,134,255,.9); }
+  }
+  /* the hit and the tap are both held: between 37.5% and 60% the ball barely
+     drifts off the wall, and between 60% and 76% it barely moves at all */
+  @keyframes demoShot {
+    0%,19.1% { transform:translate(0,0) scale(.35); opacity:0; }
+    19.2%    { transform:translate(0,0) scale(1); opacity:1; }
+    37.5%    { transform:translate(157px,-69px) scale(1.3); opacity:1; }
+    40.5%    { transform:translate(154px,-70px) scale(1); opacity:1; }
+    49%      { transform:translate(149px,-72px) scale(1); opacity:1; }
+    60.6%    { transform:translate(85px,-99px) scale(1); opacity:1; }
+    75.9%    { transform:translate(78px,-102px) scale(1); opacity:1; }
+    85.6%    { transform:translate(26px,-123px) scale(1); opacity:1; }
+    88%      { transform:translate(26px,-123px) scale(1.3); opacity:1; }
+    94%,100% { transform:translate(26px,-123px) scale(1.5); opacity:0; }
+  }
+  /* NO TRAIL: the two ripples are the two impact rings instead — the wall one
+     bleeds from white to blue, which is the repaint itself */
+  .demo-aim .demo-ripple {
+    inset:-9px; width:auto; height:auto; border:3px solid #ffffff; border-radius:50%;
+    background:none; box-shadow:none; opacity:0;
+    animation:demoRingWall 5.2s linear infinite;
+  }
+  .demo-aim .demo-ripple.d2 { animation:demoRingHit 5.2s linear infinite; animation-delay:0s; }
+  @keyframes demoRingWall {
+    0%,37.4% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    37.5%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
+    45%      { transform:scale(2.2); opacity:.55; border-color:#8ec6ff; }
+    52%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+  }
+  @keyframes demoRingHit {
+    0%,85.5% { transform:scale(.5); opacity:0; border-color:#d4e9ff; }
+    85.6%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
+    93%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+  }
+
+  /* the finger: drags the aim across, lets go — then comes back mid-flight and
+     TAPS at 64%, which is what flips both rows */
+  .demo-aim .demo-hand {
+    left:138px; bottom:-34px; margin-left:0; z-index:2;
+    animation:demoAimHand 5.2s ease-in-out infinite;
+  }
+  @keyframes demoAimHand {
+    0%,3%    { transform:translate(-34px,0) scale(1); opacity:1; }
+    19.2%    { transform:translate(26px,0) scale(1); opacity:1; }
+    26%      { transform:translate(26px,46px) scale(1); opacity:0; }
+    54%      { transform:translate(0,46px) scale(1); opacity:0; }
+    60%      { transform:translate(0,-6px) scale(1); opacity:1; }
+    64%      { transform:translate(0,10px) scale(.86); opacity:1; }
+    69%      { transform:translate(0,-6px) scale(1); opacity:1; }
+    78%,94%  { transform:translate(0,46px) scale(1); opacity:0; }
+    96%,100% { transform:translate(-34px,0) scale(1); opacity:1; }
+  }
+
+  /* ---- comic callouts -----------------------------------------------------
+     The shared Pop styles, retinted to the brick palette. The score pop climbs
+     the same ladder as the chain, so its colour alone says how long the
+     ricochet has been running. */
+  .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#4bf5ff 100%); --glow:rgba(75,245,255,.75); --ink:#00203a; }
+  .pop-score.pop-t1 { --fill:linear-gradient(180deg,#ffffff 0%,#b06bff 100%); --glow:rgba(176,107,255,.8);  --ink:#170036; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#fff1bd 0%,#ffb44f 100%); --glow:rgba(255,180,79,.85);  --ink:#2a1400; }
+  .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#ffd6e8 45%,#ff2d78 100%); --glow:rgba(255,45,120,.85); --ink:#2c0016; }
+
+  /* HOT! — the first chain tier, in the ball cyan */
+  .pop-streak {
+    --fill:linear-gradient(180deg,#ffffff 0%,#c9f7ff 50%,#4bf5ff 100%);
+    --glow:rgba(75,245,255,.8); --burst:#1690d6; --ink:#00203a;
+  }
+  /* CHAIN x10 — the violet brick row */
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#e3d0ff 40%,#b06bff 100%);
+    --chip:#170036; --chip-line:#b06bff;
+  }
+  /* SMASH! / BOOM! — the same chip in the bomb's orange */
+  .pop-combo.pop-blast {
+    --fill:linear-gradient(180deg,#fff6dd 0%,#ffb44f 45%,#ff6a00 100%);
+    --chip:#2a1400; --chip-line:#ffb44f;
+  }
+  /* BOOM — the bomb brick, in the cannon's orange */
+  /* the wheel's jackpot and the huge chains */
+  .pop-ultra {
+    --fill:linear-gradient(180deg,#ffffff 0%,#a9f6ff 34%,#8a5cff 70%,#ff2d78 100%);
+    --glow:rgba(138,92,255,.85); --ray:rgba(150,200,255,.28); --ink:#0a0230; --ink2:rgba(50,0,120,.55);
+  }
+  .pop-ultra .pop-sub { background:#0a0230; border-color:#a9f6ff; color:#a9f6ff; }
+  /* the wheel's small prizes */
+  .pop-bonus {
+    --fill:linear-gradient(180deg,#f2fbff 0%,#8ef0ff 55%,#00b8e6 100%);
+    --glow:rgba(0,200,255,.7); --dot:rgba(0,40,70,.45); --ink:#001a2a;
+  }
+  .pop-bonus .pop-sub { background:#001a2a; border-color:#8ef0ff; color:#8ef0ff; }
+  /* PERFECT CLEAR — gold, the run of the day */
+  .pop-record .pop-sub, .pop-perfect .pop-sub { letter-spacing:4px; }

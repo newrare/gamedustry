@@ -1,0 +1,31 @@
+{
+  "slug": "blight",
+  "title": "Blight",
+  "tagline": "Drag to aim, release to shoot and match 3 bubbles",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#ff8fab",
+    "accent2": "#7048e8"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "blight",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.blight",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

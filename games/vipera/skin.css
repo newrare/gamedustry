@@ -1,0 +1,202 @@
+
+
+  /* =========================================================================
+     SKIN — VIPERA. Everything above is the shared motor stylesheet; the theme
+     lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  :root {
+    --bg:#03110c; --text:#eafff2; --muted:#8dc4a8;
+    --accent:#4dff9b; --cta-a:#c6ff6b; --cta-b:#12b86a; --cta-text:#04220f;
+    --danger:#ff2d55; --gold:#ffd43b; --good:#a6ff3d;
+    /* the four body tiers — same order as TIERS in the game module */
+    --t0:#4dff9b; --t1:#b6ff5a; --t2:#ffd43b; --t3:#ff5ecb;
+  }
+  html, body { background:radial-gradient(920px 900px at 50% 24%, #0f3d2c 0%, #072318 54%, #020c08 100%); }
+
+  /* App icon: same rounded-square silhouette as the store listing, lit green
+     instead of the motor's default cyan. */
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(77,255,155,.4); }
+
+  #intro-title {
+    font-size:96px; letter-spacing:11px;
+    background:linear-gradient(180deg,#ffffff 0%,#a9ffcf 44%,#12b86a 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  /* One sentence, three coloured words: the gesture, the character, the food —
+     exactly the three things the stage below acts out. */
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#c2ffdf; }
+  #intro-tagline .w-tap   { color:#b6ff5a; }
+  #intro-tagline .w-viper { color:var(--accent); }
+  #intro-tagline .w-eat   { color:#4bf0ff; }
+  #cta-bar { border-top:1px solid rgba(77,255,155,.16); }
+  #hud-score { text-shadow:0 0 16px rgba(77,255,155,.55); }
+  .btn { box-shadow:0 0 22px rgba(77,255,155,.45); }
+  /* left pill: the body length, the stat the whole game is about */
+  #hud-left .hud-pill { color:#b6ffd6; letter-spacing:1px; }
+  /* right pill: the lives, with the armour glyph in front of them — lit while
+     the plates hold, red on the last life */
+  #hud-right .hud-pill { letter-spacing:3px; color:#ffb3c4; }
+  #hud-right .hud-pill.on { color:#d8fff0; border-color:rgba(141,255,191,.6); background:rgba(4,58,38,.5); }
+  #hud-right .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+
+  /* ---- how-to-play demo: one tap, one swerve -----------------------------
+     The whole game is "a tap flips the side the viper carves toward", so the
+     stage plays exactly that, twice per loop: the head leans RIGHT, eats the
+     gem waiting there, the finger taps — and it leans LEFT into the next one.
+
+     Nothing new is added to the markup. The motor's target becomes the viper
+     (head plus three body blocks, all box-shadows on the one node), its track
+     becomes the burrow rushing past, its beam becomes the tap shockwave, and
+     the hand stays the SHARED finger from the motor — only moved and retimed.
+     The two gems are the stage's own ::before / ::after.
+
+     The beat, in a 420 x 270 stage: the viper weaves on a 2.4 s cycle and
+     turns at 0 % and 50 %; the finger presses on a 1.2 s cycle pulled back by
+     its own 40 % press peak (-.48 s), so a press lands on every turn; each gem
+     runs the same 2.4 s bite and the left one is offset half a cycle. */
+  .demo-stage {
+    width:420px; height:270px;
+    background:radial-gradient(300px 240px at 50% 30%, rgba(18,184,106,.20), rgba(3,17,12,0) 72%),
+               rgba(255,255,255,.04);
+    border-color:rgba(77,255,155,.2);
+  }
+
+  /* the burrow: two textured walls and a faint centre lane, scrolling DOWN
+     because the viper is climbing */
+  .demo-tap .demo-track {
+    display:block; z-index:0; left:0; right:0; top:0; bottom:0; height:auto; border:0;
+    background-image:
+      repeating-linear-gradient(180deg, rgba(77,255,155,.46) 0 11px, transparent 11px 34px),
+      repeating-linear-gradient(180deg, rgba(77,255,155,.46) 0 11px, transparent 11px 34px),
+      repeating-linear-gradient(180deg, rgba(77,255,155,.14) 0 8px,  transparent 8px 40px);
+    background-size:5px 100%, 5px 100%, 3px 100%;
+    background-position:30px 0, calc(100% - 30px) 0, 50% 0;
+    background-repeat:repeat-y;
+    animation:demoFlow 1.1s linear infinite;
+  }
+  @keyframes demoFlow {
+    to { background-position:30px 45px, calc(100% - 30px) 45px, 50% 45px; }
+  }
+
+  /* the food: cyan gems, the same colour the burrow never is, sitting on the
+     two points the viper turns at */
+  .demo-stage::before, .demo-stage::after {
+    content:""; position:absolute; z-index:1; top:75px; width:30px; height:30px;
+    border-radius:7px;
+    background:linear-gradient(135deg, #ffffff 0%, #7df2ff 42%, #12b8d8 100%);
+    box-shadow:0 0 22px rgba(75,240,255,.75);
+    animation:demoBite 2.4s ease-out infinite;
+  }
+  .demo-stage::before { left:129px; animation-delay:-1.2s; }   /* eaten at 0 %  */
+  .demo-stage::after  { left:261px; }                          /* eaten at 50 % */
+  @keyframes demoBite {
+    0%,42%   { transform:rotate(45deg) scale(1);    opacity:1; }
+    50%      { transform:rotate(45deg) scale(1.75); opacity:.85; }
+    57%      { transform:rotate(45deg) scale(2.3);  opacity:0; }
+    58%      { transform:rotate(45deg) scale(.25);  opacity:0; }
+    74%,100% { transform:rotate(45deg) scale(1);    opacity:1; }
+  }
+
+  /* the viper: one node, four body blocks behind it as stacked shadows. They
+     OVERLAP — a chain of separated beads is the one thing that makes a snake
+     read as a worm, in the demo exactly as on the canvas. The head is a wedge
+     rather than a sphere for the same reason. The turn is the fast part of the
+     keyframe — 7 % of the cycle to flip the lean, then the whole carve across
+     the burrow. */
+  .demo-tap .demo-target {
+    z-index:2; top:64px; bottom:auto; width:52px; height:52px; margin-left:-26px;
+    border:0; border-radius:52% 52% 44% 44% / 60% 60% 40% 40%;
+    /* banded, like the scutes on the canvas head */
+    background:
+      repeating-linear-gradient(180deg, rgba(2,20,14,.22) 0 2px, transparent 2px 9px),
+      radial-gradient(circle at 38% 30%, #d8fff0 0%, #7dffbb 40%, #12b86a 100%);
+    /* Each body block is TWO shadows: the plate, then a slightly larger dark one
+       painted behind it. That rim is the imbrication the canvas body draws with
+       real scutes — without it the chain reads as a caterpillar. */
+    box-shadow:
+      0 0 20px rgba(77,255,155,.6),
+      0 17px 0 -2px  #2ad182, 0 17px 0 0     rgba(3,17,12,.55),
+      0 32px 0 -5px  #17c273, 0 32px 0 -3px  rgba(3,17,12,.55),
+      0 45px 0 -9px  #0f9558, 0 45px 0 -7px  rgba(3,17,12,.55),
+      0 56px 0 -13px #0a6d4a, 0 56px 0 -11px rgba(3,17,12,.55);
+    animation:demoWeave 2.4s ease-in-out infinite;
+  }
+  /* The head needs a face, or a 16 deg lean reads as nothing. The two ripples are
+     recycled into it: the first is the pair of amber eyes — the same eyes the
+     canvas skull wears — and the second is the smile under them, so the intro
+     promises the same friendly viper the canvas draws. Both ride the rotation
+     with the head. */
+  .demo-tap .demo-ripple { display:none; }
+  .demo-tap .demo-ripple:first-child {
+    display:block; inset:auto; left:12px; top:13px; width:8px; height:8px;
+    border:2px solid #0b0600; border-radius:50%; background:#ffd43b;
+    opacity:1; animation:none;
+    box-shadow:17px 0 0 #ffd43b, 17px 0 0 2px #0b0600;
+  }
+  .demo-tap .demo-ripple.d2 {
+    display:block; inset:auto; left:17px; top:25px; width:18px; height:9px;
+    border:0; border-bottom:3px solid #0b0600; border-radius:0 0 70% 70%;
+    background:none; opacity:.9; animation:none;
+  }
+  @keyframes demoWeave {
+    0%   { transform:translateX(-66px) rotate(-16deg); }
+    7%   { transform:translateX(-64px) rotate(16deg); }   /* tap: lean right */
+    50%  { transform:translateX(66px)  rotate(16deg); }
+    57%  { transform:translateX(64px)  rotate(-16deg); }  /* tap: lean left  */
+    100% { transform:translateX(-66px) rotate(-16deg); }
+  }
+
+  /* the finger: the motor's shared assets/svg/finger.svg, parked in the bottom
+     right so it never crosses the body, pressing once per turn */
+  .demo-tap .demo-hand {
+    z-index:3; left:318px; margin-left:0; bottom:4px;
+    animation:handTap 1.2s ease-in-out -.48s infinite;
+  }
+  /* its shockwave rides the motor's beam, centred on the fingertip */
+  .demo-tap .demo-beam {
+    display:block; z-index:2; left:327px; top:120px; bottom:auto;
+    width:56px; height:56px; margin-left:0; border-radius:50%;
+    background:none; border:4px solid var(--accent);
+    box-shadow:0 0 18px rgba(77,255,155,.55);
+    transform-origin:50% 50%;
+    animation:demoTapWave 1.2s ease-out infinite;
+  }
+  @keyframes demoTapWave {
+    0%       { transform:scale(.4);  opacity:1; }
+    30%      { opacity:.85; }
+    72%,100% { transform:scale(1.6); opacity:0; }
+  }
+
+  /* ---- comic callouts (Pop) -------------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned here so a
+     callout burns in the colour of the body that earned it. */
+  .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#4dff9b 100%); --glow:rgba(77,255,155,.75); --ink:#04261a; }
+  .pop-score.pop-t1 { --fill:linear-gradient(180deg,#ffffff 0%,#b6ff5a 100%); --glow:rgba(182,255,90,.75); --ink:#1b2a00; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#fffbe6 0%,#ffd43b 100%); --glow:rgba(255,212,59,.8);  --ink:#2a1a00; }
+  .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#ff9ae6 60%,#ff2d95 100%); --glow:rgba(255,45,149,.8); --ink:#28001a; }
+  /* The gold egg rides the same quick `score` callout as an ordinary gem, so it
+     is told apart by colour alone: a hot amber that no tier palette reaches —
+     t2 is a flat gold, this one burns down into orange. */
+  .pop-score.pop-egg { --fill:linear-gradient(180deg,#fffdf0 0%,#ffe066 38%,#ff9f1c 100%); --glow:rgba(255,159,28,.9); --ink:#2a1400; }
+  /* the bite that tears blocks off the body */
+  .pop-danger.pop-bite { --fill:linear-gradient(180deg,#ffd9e2 0%,#ff2d55 100%); --glow:rgba(255,45,85,.7); --ink:#2a0009; }
+  .pop-combo { --chip:#04261a; --chip-line:#4dff9b;
+    --fill:linear-gradient(180deg,#ffffff 0%,#c9ffdf 42%,#4dff9b 72%,#b6ff5a 100%); }
+  .pop-streak { --burst:#b6ff5a; --ink:#1b2a00;
+    --fill:linear-gradient(180deg,#ffffff 0%,#eaffc9 50%,#b6ff5a 100%);
+    --glow:rgba(182,255,90,.75); }
+  /* THE EVOLUTION POSTER. It rides `bonus` and not `manifest`: both `manifest`
+     and `ribbon` are band styles, so on screen the tier-up and the distance
+     milestone were the same sticker with different words. `bonus` drops in over
+     dots instead of a band, which no other callout in this game does. */
+  .pop-bonus { --dot:rgba(0,60,36,.45); --ink:#04261a; --ink2:rgba(0,70,40,.55);
+    --fill:linear-gradient(180deg,#ffffff 0%,#dfffc9 55%,#b6ff5a 100%);
+    --glow:rgba(120,255,170,.8); }
+  .pop-ribbon { --band:#04261a; --band-line:var(--accent); }
+  .pop-danger { --band-h:150px; --sz:56px; }
+  /* Deliberately smaller than the motor defaults: the burrow is read through
+     the thorns, and a full-width burst hides the gate the player is aiming at. */
+  .pop-bonus   { --sz:74px; }
+  .pop-perfect { --sz:82px; }
+  .pop-ultra   { --sz:104px; }
+  .pop-ribbon  { --sz:70px; --band-h:170px; }

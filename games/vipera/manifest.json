@@ -1,0 +1,31 @@
+{
+  "slug": "vipera",
+  "title": "Vipera",
+  "tagline": "Tap to swerve the viper and eat to grow",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#4dff9b",
+    "accent2": "#12b86a"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "vipera",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.vipera",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

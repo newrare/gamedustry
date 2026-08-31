@@ -1,0 +1,120 @@
+
+
+  /* =========================================================================
+     SKIN — CHAINRING. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  html, body { background:radial-gradient(1100px 900px at 50% 42%, #191748 0%, #0a0a1c 58%, #04040c 100%); }
+  #cta-bar { border-top:1px solid rgba(0,229,255,.16); }
+  .hud-pill.hot { color:var(--gold); border-color:rgba(255,212,59,.5); }
+
+  /* ---- comic callouts (Pop) -------------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned here. The
+     timing callout wears one class per tier (TIERS[].pop), so how good the tap
+     was is readable from the colour and the size alone. */
+  .pop-score.pop-p3 {                                    /* PERFECT */
+    --sz:76px; --stroke:12px; --ink:#3a2200; --ink2:rgba(90,50,0,.55);
+    --fill:linear-gradient(180deg,#fffdf0 0%,#ffe27a 36%,#f5b400 66%,#fff3b0 100%);
+    --glow:rgba(255,205,80,.9);
+  }
+  .pop-score.pop-p3 .pop-sub { background:#3a2200; border-color:#ffe27a; color:#ffe27a; }
+  .pop-score.pop-p2 {                                    /* GOOD */
+    --sz:66px; --stroke:10px; --ink:#02240f;
+    --fill:linear-gradient(180deg,#f4fff9 0%,#a9ffc0 50%,#39d353 100%);
+    --glow:rgba(105,219,124,.8);
+  }
+  .pop-score.pop-p1 {                                    /* OK */
+    --sz:58px; --ink:#04182e;
+    --fill:linear-gradient(180deg,#ffffff 0%,#bfe4ff 55%,#4dabf7 100%);
+    --glow:rgba(77,171,247,.75);
+  }
+  .pop-score.pop-p0 {                                    /* CLOSE */
+    --sz:52px; --ink:#2a1400;
+    --fill:linear-gradient(180deg,#fff6e8 0%,#ffd9a8 55%,#ffa94d 100%);
+    --glow:rgba(255,169,77,.7);
+  }
+  .pop-score.pop-miss {                                  /* mistimed tap */
+    --sz:58px; --ink:#2a000c;
+    --fill:linear-gradient(180deg,#ffd6de 0%,#ff3b6b 100%);
+    --glow:rgba(255,59,107,.7);
+  }
+  /* the chain payoff rides the ring palette: cyan into magenta. Smaller than
+     the motor default — it fires often, so it stays a sticker, not a hero. */
+  .pop-bonus { --sz:56px; --stroke:9px; --ink:#001a2e; --ink2:rgba(0,60,120,.5);
+    --fill:linear-gradient(180deg,#ffffff 0%,#9df6ff 45%,#00e5ff 100%);
+    --glow:rgba(0,229,255,.7); --dot:rgba(0,80,140,.4); }
+  .pop-bonus .pop-sub { background:#001a2e; border-color:#9df6ff; color:#9df6ff; }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic ------
+     Everything the player has to understand is "tap when the ball reaches the
+     ring", so the intro says exactly that once and shows it. Only the demo
+     caption is dropped — the stage speaks for itself.
+
+     The stage is deliberately still: one fixed ring, one ball travelling
+     inside it, and a 1.6 s loop where three things land on the same frame —
+     the ball touches the ring, the ring flashes, the finger taps. */
+  .demo-caption { display:none; }
+  #intro-title {
+    font-size:88px; letter-spacing:7px;
+    background:linear-gradient(180deg,#ffffff 0%,#9df6ff 44%,#00e5ff 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #intro-tagline { margin-top:16px; font-size:34px; font-weight:800; color:#e6ecff; }
+  #intro-tagline .w-ball { color:var(--accent); text-shadow:0 0 18px rgba(0,229,255,.8); }
+  #intro-tagline .w-ring { color:#ff2d95; text-shadow:0 0 18px rgba(255,45,149,.8); }
+  #intro-demo { margin-top:30px; }
+
+  .demo-stage {
+    width:420px; height:260px; overflow:hidden;
+    background:radial-gradient(280px 220px at 52% 30%, rgba(52,44,128,.55), rgba(10,10,26,0) 72%), var(--panel);
+  }
+
+  /* The ball: starts near the middle of the ring, runs down-right and kisses
+     the inner wall on the beat, then rebounds to where it started. Its rest
+     centre is (215, 82) and it travels (+63, +58), so the contact centre lands
+     49.7 px from the ring centre — the 69 px inner radius minus its own 19 px.
+     Beware the offsets: `left:50%` puts the *edge* at 210, so a centre at X
+     needs `margin-left: X - 210 - halfWidth`. */
+  .demo-stage::before {
+    content:""; position:absolute; z-index:1; left:50%; top:82px;
+    width:38px; height:38px; margin:-19px 0 0 -14px; border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #ffffff 0 16%, #7cf2ff 38%, #00e5ff 62%, #0079a0 100%);
+    box-shadow:0 0 20px rgba(0,229,255,.85);
+    animation:demoBallRun 1.6s infinite;
+  }
+  /* The ring: fixed, centred at (240, 108), outer radius 74 px. It never
+     moves — only its glow answers the hit. */
+  .demo-stage::after {
+    content:""; position:absolute; z-index:0; left:50%; top:108px;
+    box-sizing:border-box; width:148px; height:148px; margin:-74px 0 0 -44px;
+    border-radius:50%; border:5px solid #ff2d95;
+    animation:demoRingHit 1.6s infinite;
+  }
+  @keyframes demoBallRun {
+    0%   { transform:translate(0,0) scale(1);
+           animation-timing-function:cubic-bezier(.4,0,.85,.6); }
+    40%  { transform:translate(63px,58px) scale(1); }
+    46%  { transform:translate(63px,58px) scale(1.24);
+           animation-timing-function:cubic-bezier(.2,.85,.45,1); }
+    100% { transform:translate(0,0) scale(1); }
+  }
+  @keyframes demoRingHit {
+    0%,36%   { border-color:#ff2d95; box-shadow:0 0 20px rgba(255,45,149,.35); }
+    44%      { border-color:#ffdcea;
+               box-shadow:0 0 42px rgba(255,45,149,.95), inset 0 0 26px rgba(255,45,149,.45); }
+    70%,100% { border-color:#ff2d95; box-shadow:0 0 20px rgba(255,45,149,.35); }
+  }
+
+  /* The finger taps the screen away from the ball — the tap is a beat, not a
+     target. Only its shockwave survives from the motor's target ring. */
+  .demo-hand { left:63px; margin-left:0; bottom:16px; z-index:2; }
+  .demo-tap .demo-target {
+    z-index:1; left:61px; margin-left:0; top:87px; width:78px; height:78px;
+    border-color:transparent; box-shadow:none;
+  }
+  .demo-ripple { animation-name:demoTapWave; }
+  @keyframes demoTapWave {
+    0%,36% { transform:scale(.26); opacity:0; }
+    44%    { opacity:.95; }
+    100%   { transform:scale(1.35); opacity:0; }
+  }

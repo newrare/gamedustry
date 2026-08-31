@@ -1,0 +1,31 @@
+{
+  "slug": "bouncetry",
+  "title": "Bouncetry",
+  "tagline": "Every wall repaints the ball and one tap flips every brick",
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#ff3b57",
+    "accent2": "#2f86ff"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "bouncetry",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.bouncetry",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}
