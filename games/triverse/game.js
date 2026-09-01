@@ -94,14 +94,14 @@
       // and how often they come two abreast. The gaps are PROGRESS, so they buy
       // less and less time as the scroll speeds up: they are set from the second
       // the player gets, not from the pixel count.
-      diffFull:  440,         // metres to full difficulty
+      diffFull:  560,         // metres to full difficulty
       hazardMin: 0.34,        // share of spawn slots that are hazards, at the
-      hazardMax: 0.78,        // start of the run / at full difficulty
+      hazardMax: 0.70,        // start of the run / at full difficulty
       gapFar:    420,         // progress between two hazards at the start...
-      gapNear:   260,         // ...and at full difficulty, all ropes together:
+      gapNear:   300,         // ...and at full difficulty, all ropes together:
                               // there is always a way through
       pairFrom:  0.16,        // difficulty at which mine pairs start showing up
-      pairMax:   0.5,         // ...and their share of hazard slots at the top
+      pairMax:   0.42,        // ...and their share of hazard slots at the top
       pairEvery: 2600,        // progress: never go longer than this without one
       pairAfter: 1.7,         // the calm after a pair, as a multiple of the gap
       hazardClear: 130,       // progress window a hazard keeps clear of a crossing

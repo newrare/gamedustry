@@ -1,14 +1,20 @@
 # Industrialization — the game factory
 
 This repo started as a template for playable ads. It is becoming a **factory**:
-one source per game, four build targets, and the tooling to author, build and
+one source per game, three build targets, and the tooling to author, build and
 publish them.
 
 ```
-concept ──▶ proto ──▶ web (site + itch) ──▶ measure ──┬─▶ portals
-                                                      ├─▶ playable
-                                                      └─▶ android
+idea ──▶ prototype ──▶ game on the motor ──▶ web (site + itch) ──▶ measure ──┬─▶ portals
+         (raw page)                                                          ├─▶ playable
+                                                                             └─▶ android
 ```
+
+The first arrow is deliberately outside the factory: a **prototype** is one raw
+HTML page in `prototype/`, written from scratch, with no motor, no manifest and
+no build step. It answers "is this fun?" and nothing else. Only a validated idea
+is converted into a game on the motor, and from there every target below is a
+build of that one source. See CLAUDE.md, *Three kinds of request*.
 
 A game is written **once**. `games/<slug>/game.js` is the only game-owned code;
 what changes between targets is the shell the builder wraps around it. The
@@ -28,20 +34,20 @@ Three pieces exist already:
 
 Everything else below is still to build.
 
-## The four targets
+## The three targets
 
-|              | proto           | web (site + itch)  | playable        | android        |
-| ------------ | --------------- | ------------------ | --------------- | -------------- |
-| output       | `dist/proto/`   | `dist/web/`        | 1 inlined HTML  | `.aab`         |
-| adapter      | none            | web / portal SDK   | MRAID           | Capacitor      |
-| build adds   | devtools        | meta layer, frame  | MRAID, CTA      | AdMob, consent |
-| build drops  | intro, CTA, end | 5 MB cap, base64   | meta, backend   | store CTA      |
-| size cap     | none            | free, shared cache | < 5 MB          | free           |
-| meta layer   | no              | yes, + backend     | no              | yes            |
-| storage      | localStorage    | first-party, safe  | localStorage    | native         |
-| deploy       | local only      | Vercel + `butler`  | manual delivery | fastlane       |
-| review delay | none            | none               | none            | days to weeks  |
-| audience     | you             | players            | ad networks     | Play           |
+|              | web (site + itch)  | playable        | android        |
+| ------------ | ------------------ | --------------- | -------------- |
+| output       | `dist/web/`        | 1 inlined HTML  | `.aab`         |
+| adapter      | web / portal SDK   | MRAID           | Capacitor      |
+| build adds   | meta layer, frame  | MRAID, CTA      | AdMob, consent |
+| build drops  | 5 MB cap, base64   | meta, backend   | store CTA      |
+| size cap     | free, shared cache | < 5 MB          | free           |
+| meta layer   | yes, + backend     | no              | yes            |
+| storage      | first-party, safe  | localStorage    | native         |
+| deploy       | Vercel + `butler`  | manual delivery | fastlane       |
+| review delay | none               | none            | days to weeks  |
+| audience     | players            | ad networks     | Play           |
 
 `web` covers three destinations — the newrare site, itch, and later the portals —
 because they are one adapter with different configuration. The code cost is paid
@@ -81,7 +87,6 @@ newrare-arcade/
 │   │   ├── poki.js
 │   │   ├── crazygames.js
 │   │   └── capacitor.js
-│   ├── devtools/          ← the proto overlay: fps, hitboxes, tunables, seed
 │   ├── frame-web/         ← desktop letterbox dressing (see Delta 1)
 │   └── meta/              ← start screen, options, i18n, progression, leaderboard
 ├── games/<slug>/
@@ -89,11 +94,12 @@ newrare-arcade/
 │   ├── skin.css           ← the SKIN block
 │   ├── manifest.json      ← per-game target config
 │   └── assets/            ← sounds and images in source form, not base64
-├── targets/               ← one builder per target: proto, web, playable, android
+├── targets/               ← one builder per target: web, playable, android
 ├── tools/
 │   ├── lab/               ← author and inspect
 │   ├── build/             ← build.mjs and the checks, now build assertions
-│   └── publish/           ← deploy-web, deploy-itch, gen-native, store-meta
+│   └── publish/           ← deploy-itch, store-meta, gen-native (phase 8)
+├── prototype/             ← one raw HTML page per idea: no motor, no build
 ├── lab/                   ← the HTML workbenches (overlay-pop, icon-card…)
 └── dist/                  ← gitignored build output
 ```
@@ -117,7 +123,7 @@ replaced by that assertion.
   "slug": "vipera",
   "title": "Vipera",
   "tagline": "Tap to swerve, grow, dodge.",
-  "targets": ["proto", "web", "playable", "android"],
+  "targets": ["web", "playable", "android"],
   "theme": { "bg": "#0a0a1c", "accent": "#5ef2a0" },
   "itch": {
     "user": "newrare",
@@ -137,8 +143,9 @@ replaced by that assertion.
 
 The manifest is the single source of truth. `CONFIG` in the built file, the hub
 card, the Capacitor config, the itch push arguments and the store copy are all
-derived from it — never edited in two places. `targets` is also how a prototype
-declares it is still a prototype: `["proto"]` until it earns more.
+derived from it — never edited in two places. `targets` is also how a game in
+construction holds itself back: an empty list ships nowhere, and the outlets are
+added one at a time as the game earns them.
 
 ## The platform adapter
 
@@ -161,34 +168,44 @@ Platform = {
 }
 ```
 
-`ads` is the one genuinely new abstraction. On `proto`, `playable` and `itch`
+`ads` is the one genuinely new abstraction. On `playable` and `itch`
 every method is a no-op that calls back immediately; on portals it maps to their
 SDK; on `android` it maps to AdMob.
 
-## proto — the validation loop
+## prototype — the validation loop, outside the motor
 
-The point of the factory: try a concept in an evening and throw it away without
-guilt, then promote it without rewriting it. A prototype is a **real game module**
-— it implements `reset / update / render / onDown` — running in a stripped shell.
+The point of the factory is to try a concept in an evening and throw it away
+without guilt. That step used to be a build target (`--target=proto`, a devtools
+panel, `tools/lab/serve.mjs`): a prototype was a real `Game` module running in a
+stripped shell, so promotion was additive and no gameplay code moved.
 
-`--target=proto` gives it:
+**It was removed.** The capability was real — a slider on every `CONFIG` number,
+`?seed=` for a reproducible run, pause and frame-step — but nobody used it: no
+game ever implemented the `debugShapes` / `debugCounts` hooks the panel read, and
+iteration happens on the web build (`node tools/lab/serve-site.mjs`, a full
+rebuild in ~0.3 s with reload on save). What it cost was worse than the dead
+weight: calling that build a "proto" made *prototype* mean "a game on the motor",
+so a request to test an idea quickly produced a full game — four sources, an
+intro, a manifest and a catalogue entry — instead of a page.
 
-- **Instant start.** No intro to click, no CTA, no end-screen ceremony. `R`
-  resets, `SPACE` pauses and steps one frame.
-- **A debug overlay** (`packages/devtools/`): fps and `dt`, entity count, hitboxes,
-  the `Layout` band drawn over the canvas.
-- **Live tunables.** Every number in `CONFIG` gets a slider. You tune gravity by
-  dragging, not by reloading.
-- **Reproducible runs.** `?seed=42&speed=3` overrides the RNG seed and any tunable
-  from the URL, so a bug can be replayed exactly.
-- **Reload on save**, from `node tools/lab/serve.mjs` — a static server with an SSE
-  reload channel, about forty lines and no dependencies.
-- **No constraints.** No size cap, no ad SDK, no store, no dressing.
+So a prototype is now a **raw HTML page** in `prototype/`, and it owes the motor
+nothing:
 
-Promotion to a full game is additive: write the manifest, the skin, the intro
-sentence and the sounds. The gameplay code does not move. That property is the
-whole reason `proto` is a build target and not a separate folder of throwaway
-pages.
+- **one file, no build, no server** — opening it over `file://` is the loop;
+- **no motor, no template, no manifest, nothing under `games/`** — a canvas, a
+  rAF loop and a pointer handler;
+- **no ceremony** — no intro, no CTA, no end screen, no sfx, no icon, no FR/EN
+  copy, no catalogue entry;
+- **it may be ugly** — what has to be right is the mechanic under a finger.
+
+Converting a validated prototype into a game is a separate step and it follows
+the full recipe: the four sources, the SKIN, the one-sentence intro with its
+animated demo, the sfx, the manifest, the catalogues. Only the gameplay
+functions travel; the prototype's own loop and canvas plumbing are what the
+motor already owns. The page stays in `prototype/` as the record of the idea.
+
+If the live tunables are ever missed, the cheap way back is a `?dev=1` layer on
+the web build — not a fourth target.
 
 ## web — the newrare site and itch
 
@@ -197,25 +214,46 @@ exists: a studio page carrying the playables, the two store apps, the studio cop
 and the legal terms, bilingual FR/EN, with the games played in a 9:16 modal and
 their screenshots in a lightbox.
 
-`node tools/build/build-site.mjs` already assembles it into `dist/site/` — it copies
-`site/`, then each playable's self-contained `index.html`, then each game's icon
-and screenshots out of `assets/`, and rewrites the catalogue with what it found on
-disk. **This is the deployable site today**, before any of the extraction below:
-the playables are single self-contained files, so shipping them is a copy.
+`node tools/build/build-site.mjs` already assembles it into `dist/site/` — it runs
+`build.mjs --target=web`, copies `site/`, then each game's self-contained web
+`index.html`, then each game's icon and screenshots out of `assets/`, and
+rewrites the catalogue with what it found on disk. **This is the deployable site
+today**: a web build is a single self-contained file, so shipping it is a copy.
+`node tools/lab/serve-site.mjs` runs that same build and serves it with reload on
+save — there is deliberately no second way to assemble the site.
 
-What the `--target=web` builder adds later is the shared engine, assets as files
-instead of base64, and the meta layer. The page itself does not change shape.
+The `web` target exists and delivers Delta 3 (see below): section 4 becomes
+`packages/platform/web.js` — no MRAID, no store link, no CTA band — and
+`packages/webshell/` turns the intro into a menu (PLAY / LEADERBOARD / OPTIONS /
+HELP) with the how-to-play demo inside the Help panel. It reads a
+`window.__WEB__` handle injected into the bootstrap, so the motor stays unaware
+of it and the playable artifacts
+rebuild byte-identically.
+
+The builder now ships that in two shapes, chosen with `--dest`. `--dest=site`
+(the default) writes the split build below; `--dest=itch` writes one
+self-contained `dist/itch/<slug>/index.html`, because an itch project is
+uploaded alone and has nobody to share a cache with. What is left for this
+target is the meta layer (phase 5). The page itself does not change shape.
 
 ```
 dist/web/
-├── index.html              ← the hub, generated from the manifests
-├── engine.<hash>.js        ← shared by every game, cached once
-├── engine.<hash>.css
+├── engine.<hash>.js        ← sections 3+4+5, shared by every game, cached once
+├── boot.<hash>.js          ← section 7 + the web handle + the menu, shared
+├── engine.<hash>.css       ← the motor stylesheet + the desktop dressing
+├── menu.<hash>.css
 └── <slug>/
-    ├── index.html          ← thin page, loads the shared engine + its game.js
-    ├── game.<hash>.js
+    ├── index.html          ← thin page: the shared files, then its own two
+    ├── config.<hash>.js    ← sections 1+2 — CONFIG and ASSETS as file paths
+    ├── game.<hash>.js      ← section 6
     └── assets/…            ← sounds and images as files, no longer base64
 ```
+
+There is no hub: the site is the hub. The four scripts are the same sections in
+the same order the single file concatenates — they run at global scope instead
+of inside one IIFE, which is the whole difference and the reason a game needs
+no change to be split. Every name is content-hashed, so `vercel.json` serves
+them `immutable`.
 
 Three things this target gets that no other web destination does:
 
@@ -255,17 +293,28 @@ Everything else already works: the keyboard is wired (`SPACE`, arrows through
 `Input.swipe`), `Sound.unlock()` already handles the required user gesture, and
 there are zero external requests — so the itch sandbox needs no adaptation.
 
-### Delta 1 — portrait on desktop
+### Delta 1 — portrait on desktop — **done**
 
 The motor letterboxes 720×1280. On a 16:9 desktop screen that means two huge
-black bands. `packages/frame-web/` dresses the space around the canvas: a
-background derived from `manifest.theme`, optionally a device bezel.
+black bands. `packages/frame-web/frame.css` dresses them: a background and a
+halo built from the theme tokens the SKIN already defines — so it reskins itself
+with the game and reads no manifest — plus a device bezel on `#frame`, which
+rides the frame's own transform and therefore keeps its proportions at every
+window size.
+
+It is one media query wide (`min-aspect-ratio: 62/100`, `min-height: 480px`) and
+inert everywhere else, so the site's 9:16 modal and every phone are exactly as
+they were. The one thing CSS could not do is leave room for the bezel — the
+motor scales the frame to the full window — so the engine grew
+`CONFIG.layout.framePad`, screen pixels reserved before the scale is computed:
+0 for a playable, and an accessor on the web target (`packages/platform/web.js`)
+because the answer changes with the window.
 
 On the itch page side, set the embed window to portrait (~450×800), enable the
 fullscreen button, and tick **mobile friendly** — on a phone the game fills the
 screen and the dressing disappears.
 
-### Delta 2 — `Store` has no memory fallback
+### Delta 2 — `Store` has no memory fallback — **done**
 
 This one only bites on itch and the portals — on your own origin `localStorage`
 works normally. itch serves the game from a sandboxed iframe on
@@ -286,27 +335,33 @@ But `set` swallowing the error means the value is lost immediately — not even
 within the session, because the next `get` also throws and returns the default.
 Best score and progression vanish silently for those players.
 
-Fix: back both accessors with an in-memory map used whenever `localStorage` is
-unavailable. Session-scoped persistence instead of none. **This must land before
-any retention measurement**, otherwise the numbers are false.
+Fixed: both accessors are backed by an in-memory map. `set` always writes to it
+and then tries `localStorage`; `get` reads `localStorage` first and falls back
+to the map. On our own origin the map is only a mirror; in a sandboxed iframe it
+is session-scoped persistence instead of none. It had to land before any
+retention measurement, otherwise the numbers would be false.
 
-### Delta 3 — `openStore()` has no store
+### Delta 3 — `openStore()` has no store — **done**
 
 Per destination: on the site it points back at the hub or at the game's page (and
 later at the real store listing once the app exists); on itch, at the itch page;
-on a portal, nowhere — outbound links are usually forbidden. The motor's
-persistent CTA bar therefore becomes optional: `cta: false` in the target config
-removes it, and the space it occupied goes back to `Layout`.
+on a portal, nowhere — outbound links are usually forbidden.
+
+Settled the simplest way: the CTA has no destination on the web, so it does not
+ship. `packages/platform/web.js` zeroes `CONFIG.layout.ctaHeight` before the
+first layout, so the band goes back to `Layout`; the webshell hides the bar and
+rewires the end screen's install button to PLAY AGAIN and its replay link to
+MENU. Nothing in the motor branches on a target.
 
 ## Tooling
 
 Three families, by what they are for.
 
-| family           | tools                                                                                                                |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `tools/lab/`     | `serve.mjs` (proto + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-screens`, headless canvas bench |
-| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                           |
-| `tools/publish/` | `deploy-web`, `deploy-itch` (butler), `gen-native`, `store-meta`                                                     |
+| family           | tools                                                                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-screens`, headless canvas bench                               |
+| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                 |
+| `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8) |
 
 The HTML workbenches in [lab/](../lab/) — `overlay-pop`, `icon-card`, `bubble` —
 stay where they are: they are visual ateliers, not scripts.
@@ -325,8 +380,14 @@ what changed, zips the directory itself, and is idempotent.
 
 ```bash
 node tools/build/build.mjs --target=web --dest=itch --game=vipera
-butler push dist/itch/vipera newrare/vipera:html5
+node tools/publish/deploy-itch.mjs --game=vipera            # builds, then pushes
+node tools/publish/deploy-itch.mjs --game=vipera --channel=html5 --dry-run
 ```
+
+`deploy-itch.mjs` is the wrapper: it reads `itch.user` / `itch.project` from the
+manifest, defaults to the `html5-dev` channel (pushing the public one is a
+decision, so it has to be typed), stamps the build with the commit it was made
+from, and refuses to push what it has not built.
 
 - **Auth**: `butler login` once locally (credentials in `~/.config/itch`), or
   `BUTLER_API_KEY` as an environment variable in CI.
@@ -503,11 +564,12 @@ building tools that cannot exist.
    `check-motor.mjs` is gone, and `tools/build/gen-catalogues.mjs` writes
    `site/games.js` and the root gallery from `games/<slug>/manifest.json`.
 1. ~~**`proto`** — the target, `packages/devtools/`, `tools/lab/serve.mjs`~~ —
-   **done.** `--target=proto` writes `dist/proto/<slug>/`, the devtools panel
-   exposes every `CONFIG` number as a slider, `?seed=` makes a run reproducible,
-   and the server rebuilds and reloads on save. It also proved the extraction: the
-   engine runs outside the playable shell with no fork, reached through a single
-   `window.__PROTO__` handle the proto build injects.
+   **built, then removed.** It did prove the extraction (the engine ran outside
+   the playable shell with no fork, through one `window.__PROTO__` handle), but
+   nobody used the panel and the word "proto" made *prototype* mean "a game on
+   the motor". A prototype is now a raw page in `prototype/` — see
+   [prototype](#prototype--the-validation-loop-outside-the-motor). Iteration on a
+   game happens on the web build, `node tools/lab/serve-site.mjs`.
 1. **The site, in this repo, deployed by Vercel** — the page and
    `tools/build/build-site.mjs` are **done**; what remains is the Vercel project (repo,
    branch, build command, output directory), the custom domain, and generating the
@@ -531,10 +593,10 @@ have already proven something.
 
 ## Shipping a new game, once all of this exists
 
-1. `games/<slug>/game.js` + `manifest.json` with `"targets": ["proto"]`.
-   `node tools/lab/serve.mjs <slug>` — play it, tune it, decide.
-1. If it is worth keeping: add `skin.css`, the intro sentence, the sounds and the
-   icon artwork; extend `targets`.
+1. `prototype/<slug>.html` — a raw page, no motor. Play it and decide.
+1. If the idea holds: the four sources in `games/<slug>/`, `manifest.json` with
+   `"targets": []`, then the SKIN, the intro sentence, the sounds and the icon
+   artwork; extend `targets` as the game earns each outlet.
 1. Open the PR — the checks run and Vercel posts a preview URL. Play it on a
    phone.
 1. Merge — site and games redeploy; the `html5-dev` itch channel updates. The hub

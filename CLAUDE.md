@@ -7,7 +7,7 @@ Guidance for AI assistants (and humans) creating playable ads in this repo.
 A **game factory**. Open tasks live in [TODO.md](TODO.md) — read it before
 proposing next steps, and update it when something lands. One source per game, several outlets: the **playable ad**
 (single-file HTML for ad networks) is the only one built today; the **web** target
-(the newrare site and itch.io), a **proto** target and an **android** target are
+(the newrare site and itch.io) and an **android** target are
 planned in [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), which is the
 plan of record — read it before proposing anything about builds, targets or
 deployment.
@@ -15,15 +15,33 @@ deployment.
 Read [README.md](README.md) for the layout and [docs/ENGINE.md](docs/ENGINE.md)
 for the motor itself.
 
-**Default assumption: every new game concept is built on the motor.** When a
-prompt describes a new game, do not design a new page structure — copy
-`template/game-template.html` and write only `CONFIG`, the theme tokens and the
-`Game` module. The intro, HUD, overlay, CTA, juice and end screen already exist.
+## Three kinds of request — settle this before writing anything
 
-**The hard constraints below govern `games/` and `template/` only.** `site/` is a
-normal static website: it may use several files, load its own images and be as
-large as a website is. It must not, however, pull in a framework, a CDN script or
-a web font — same discipline, different reason (see [The site](#the-site)).
+What the prompt asks for decides which rules apply. They do not mix.
+
+| the prompt asks for                                | what you make                                | rules                                                                                                               |
+| -------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **a prototype** — "test this idea", "is this fun?" | ONE raw HTML file, `prototype/<slug>.html`   | almost none — no motor, no template, no manifest, no build. [Prototypes](#prototypes--a-raw-page-outside-the-motor) |
+| **a game**                                         | `games/<slug>/`, four sources, built         | everything in this file                                                                                             |
+| **a lab tool**                                     | `lab/<name>.html`, from `lab/_template.html` | a standalone page. [The lab](#the-lab)                                                                              |
+
+A prototype is **not** a small game. It is a page that answers one question
+about a mechanic, it is allowed to be ugly, and turning it into a game is a
+separate request that comes later — only once you have said the idea is worth
+it.
+
+**When the request is a game, it is built on the motor.** Do not design a new
+page structure — copy the template's three sources into `games/<slug>/` and
+write only `CONFIG`, the theme tokens and the `Game` module. The intro, HUD,
+overlay, CTA, juice and end screen already exist. When the request is a
+prototype, none of that applies.
+
+**The hard constraints below govern `games/` and `template/` only** — not
+`prototype/`, not `lab/`, not `site/`. `site/` is a normal static website: it may
+use several files, load its own images and be as large as a website is. It must
+not, however, pull in a framework, a CDN script or a web font — same discipline,
+different reason (see [The site](#the-site)). `prototype/` and `lab/` are
+development pages and answer only to the short rules in their own sections.
 
 ## Hard constraints — never break these
 
@@ -127,17 +145,49 @@ once in `packages/`, and each game owns four files:
 node tools/build/build.mjs                     # every game + the template
 node tools/build/build.mjs --game=vipera
 node tools/build/build.mjs --check             # assert the artifacts match the sources
-node tools/build/build.mjs --target=proto      # → dist/proto/<slug>/, never committed
+node tools/build/build.mjs --target=web        # → dist/web/, never committed
+node tools/build/build.mjs --target=web --dest=itch   # → dist/itch/<slug>/
 ```
 
-A game's `manifest.json` lists the distribution `targets` it is meant for; a
-build for a target it does not list is skipped and reported. `proto` is a
-development target and is always available.
+A game's `manifest.json` lists the `targets` it is meant for; a build for a
+target it does not list is skipped and reported.
 
-`packages/devtools/` is added by the proto target only — see
-[Prototyping](#prototyping--start-every-concept-here). The playable build never
-sees it, and the motor knows nothing about it: the proto build injects a
-`window.__PROTO__` handle into the bootstrap and the devtools read that.
+**There is no separate game server.** To iterate on a game, run the site loop —
+`node tools/lab/serve-site.mjs` rebuilds in ~0.3 s and reloads on save (see
+[The site](#the-site)). What you play is the web build the site ships.
+
+`packages/webshell/` is the layer the **web** target adds, and section 4 is
+the one region chosen by the target rather than shared: `packages/platform/web.js`
+replaces `packages/platform/mraid.js`, so there is no MRAID and no store link,
+and `CONFIG.layout.ctaHeight` is zeroed before the first layout — the CTA bar's
+band goes back to `Layout`. On top of that the webshell turns the intro into a
+menu (**PLAY / LEADERBOARD / OPTIONS / HELP**), moves the how-to-play demo into
+the Help panel (the motor's own node, moved not copied, so a SKIN's dressing
+follows it), and rewires the end screen to **PLAY AGAIN** / **MENU**. It reads
+`window.__WEB__`; the motor knows nothing about it. Leaderboard and Options are
+placeholders on purpose — the real ones are `packages/meta` (phase 5).
+
+The web menu is **bilingual FR/EN**: the strings live in `packages/webshell/menu.js`
+and the language is `?lang=` (the site passes its own choice to the iframe), then
+`CONFIG.web.lang`, then the browser. A game overrides any string — its tagline
+included — from a `web.copy` block in its `manifest.json`, which the builder
+injects as `CONFIG.web`; there is no second place to write game copy.
+
+`packages/frame-web/frame.css` is the third web-only layer: on a window wider
+than the portrait frame it dresses the empty bands and draws a device bezel,
+from the theme tokens the SKIN already defines. It is inert below `62/100`, so
+the site's 9:16 modal and every phone are untouched. The margin it needs comes
+from `CONFIG.layout.framePad`, which `packages/platform/web.js` defines as an
+accessor — the only knob the motor grew for it, and it is 0 everywhere else.
+
+**The web target has two destinations.** `--dest=site` (the default) writes the
+split build: `engine.<hash>.js`, `boot.<hash>.js` and two stylesheets shared by
+every game, then `<slug>/{index.html, config.<hash>.js, game.<hash>.js, assets/…}`. The four scripts are the same sections in the same order as the
+single file — they simply run at global scope instead of inside one IIFE, which
+is why a game needs no change to be split — and the assets are files, not base64
+(~33% smaller, and cached). `--dest=itch` writes one self-contained
+`dist/itch/<slug>/index.html` instead: an itch project is uploaded alone, so it
+has nobody to share a cache with.
 
 `--check` rebuilds in memory and compares byte for byte. A DIFF means someone
 edited an `index.html` directly, or a source changed without a rebuild; it is the
@@ -152,70 +202,56 @@ reword `6. GAME`, and do not reorder the sections.
 single-file games. It only needs re-running if a game's `index.html` becomes the
 source of truth again, which should not happen.
 
-## Prototyping — start every concept here
+## Prototypes — a raw page, outside the motor
 
-A new concept is a `proto` before it is a game. Same engine, same `Game`
-contract, none of the ceremony:
+A prototype answers one question: *is this mechanic fun?* It is one
+self-contained HTML file, written from scratch:
 
 ```bash
-node tools/lab/serve.mjs my-game        # http://localhost:8080/my-game/
+prototype/wheel-of-fortune.html      # open it in a browser — that is the loop
 ```
 
-The round starts by itself — no intro to click, no CTA, no end screen (it
-restarts instead). Saving any file under `packages/` or `games/<slug>/` rebuilds
-and reloads the page.
+The rules, all of them:
 
-| key     | what it does                            |
-| ------- | --------------------------------------- |
-| `R`     | restart the round                       |
-| `SPACE` | pause; press again to advance one frame |
-| `T`     | a tap at the centre of `Layout`         |
-| `[` `]` | slow down / speed up                    |
-| `` ` `` | fold the panel                          |
+- **One file, no build, no server.** Opening it over `file://` must be enough.
+- **No motor.** Do not copy `template/`, do not read anything out of
+  `packages/`, do not write a `manifest.json`, do not create anything under
+  `games/`. A `<canvas>`, a `requestAnimationFrame` loop and a pointer handler
+  are the whole scaffolding.
+- **No ceremony.** No intro screen, no CTA, no end screen, no sfx, no icon, no
+  FR/EN copy, no catalogue entry, no `TODO.md` line. Keep the numbers as plain
+  `var`s at the top of the file so they are quick to change, and print debug
+  text straight onto the canvas rather than building a panel.
+- **It may be ugly.** Placeholder colours, no juice. What has to be right is the
+  mechanic and how it feels under a finger.
+- **Portrait if the idea is portrait**, but nothing here enforces 720x1280.
+- **English in the file**, like everywhere else in the repo.
 
-The URL is the control surface:
+Hand back the path to open, and stop there. Tuning, balancing and benchmarking
+are separate requests: a prototype that answers its question has done its job.
 
-| query               | effect                                           |
-| ------------------- | ------------------------------------------------ |
-| `?seed=42`          | seeds `Math.random`, so the run is reproducible  |
-| `?speed=2`          | time scale                                       |
-| `?loop=0`           | keep the end screen instead of restarting        |
-| `?dev=0`            | hide the panel, for a clean look at the game     |
-| `?play.gapWide=200` | overrides any number in `CONFIG`, by dotted path |
+### When a prototype is validated
 
-The panel lists **every number in `CONFIG`** as a slider — that is what the
-prototype is for. Values are written back live; anything read at `reset()` needs
-an `R` to take effect.
+Converting it into a game is a **new request**, and it runs
+[How to create a new game](#how-to-create-a-new-game) from the top — the four
+sources, `CONFIG`, the SKIN, the one-sentence intro with its animated demo, the
+sfx, the manifest, the catalogues. Only the gameplay travels: port the update /
+render / input functions into the `Game` module and drop the prototype's own
+loop, canvas sizing and scaffolding, which the motor already owns.
 
-**Two opt-in debug hooks.** A `Game` module may return either; nothing else in
-the motor calls them, so a playable build pays nothing for them.
+The prototype file stays in `prototype/` afterwards, as the record of where the
+idea came from.
 
-| hook            | what the proto does with it                                                              |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `debugShapes()` | draws `{x,y,r}` circles and `{x,y,w,h}` rects in design coords, and counts them          |
-| `debugCounts()` | prints `{label: number}` in the panel header — how many things the game thinks are alive |
+## The lab
 
-An entity count cannot be generic: only the game knows what an entity is. When
-you are tuning a mechanic, **add a counter to the event you believe is
-happening** before touching the numbers that shape it — that is what settles a
-question in one run instead of a dozen.
+`lab/` holds standalone HTML tools: a design catalogue or a bench for one piece
+of the motor — `overlay-pop.html` is the `Pop` callout catalogue,
+`icon-card.html` composes an icon. They never ship, and they are the one place
+in the repo allowed to load a file out of `assets/` by relative path.
 
-### Promoting a proto to a game
-
-The point of `proto` being a build target and not a scratch folder: **promotion
-adds, it never rewrites.** A validated prototype already implements
-`reset / update / render / onDown`, so becoming a game is:
-
-1. write the intro — one sentence in `CONFIG.tagline`, its key words in
-   `<b class="w-…">`, and a demo stage that acts out *this* mechanic;
-1. fill `games/<slug>/skin.css` with the theme tokens;
-1. give every event a clip from `assets/sfx/`, embedded in `ASSETS.sounds`;
-1. add the icon artwork (the user's job, never generated);
-1. extend `targets` in `manifest.json` and write the FR/EN `copy`;
-1. `node tools/build/build.mjs --game=<slug>` and
-   `node tools/build/gen-catalogues.mjs`.
-
-Gameplay code does not move. If it has to, the prototype was not finished.
+Start a new one from **`lab/_template.html`**: a single page, inline CSS and JS,
+a control panel on one side and the thing being tried on the other. Same
+anti-dependency rule as everywhere else — no framework, no CDN, no web font.
 
 ## Motor APIs — use these instead of reinventing them
 
@@ -247,7 +283,9 @@ Frame & input (section 3):
   timer, it drifts). It runs off `dt` when the track is missing or muted and
   phase-corrects onto the audio clock without snapping. Reference:
   `games/chainring`.
-- `Store.get/set` — safe localStorage. `Rand.range/int/pick/chance`.
+- `Store.get/set` — localStorage with an in-memory fallback, so a best score
+  survives the session even where a sandboxed iframe makes localStorage throw
+  (itch, a portal). `Rand.range/int/pick/chance`.
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
   the shared `assets/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
@@ -286,21 +324,37 @@ See [docs/AD_NETWORKS.md](docs/AD_NETWORKS.md) for MRAID and per-network detail.
 store apps, the studio and the legal terms. Static HTML, CSS and JS, no build of
 its own, deployed by Vercel from this repo.
 
-- **Four files own it**: `index.html`, `style.css`, `script.js` and `games.js`
-  (the playable catalogue). `image/` holds the site art and the store-app
-  screenshots.
+- **Six files own it**: `index.html`, `privacy.html`, `style.css`, `script.js`,
+  `analytics.js` and `games.js` (the playable catalogue). `image/` holds the site
+  art and the store-app screenshots, and `app-ads.txt` sits at the root because
+  AdMob reads it there.
+- **Every page loads the same `script.js`**, so each `init…()` returns quietly
+  when its markup is absent. Add a page, not a second behaviour file.
 - **Bilingual FR/EN through one attribute pair.** Any text node carrying
   `data-fr` and `data-en` is filled by `applyLang()`; the choice is remembered in
   `localStorage` and defaults to the browser language. Never hard-code a visible
   string in the markup, and never add a third mechanism.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
-- **`node tools/build/build-site.mjs`** assembles `dist/site/`: it copies `site/`, then
-  each playable's self-contained `index.html`, then each game's icon and
-  screenshots out of `assets/` renumbered `01.jpg`, `02.jpg`… and finally rewrites
-  `games.js` with what it actually found. The page therefore never links a
-  missing image. `site/newrare-website/` is the previous site: excluded from the
-  build, kept for reference.
+- **`node tools/build/build-site.mjs`** assembles `dist/site/`: it runs
+  `build.mjs --target=web` first, copies `site/`, then each game's web build to
+  `games/<slug>/` and the motor they share to `games/`, then each game's icon and
+  screenshots out of `assets/` renumbered `01.jpg`, `02.jpg`… and finally
+  rewrites `games.js` with what it actually found. The page therefore never links a missing image, and it
+  never ships a playable's install CTA, which from the site would point at the
+  site. `site/newrare-website/` is the previous site: excluded from the build,
+  kept for reference.
+- **`node tools/lab/serve-site.mjs`** is the loop for working on it: it runs that
+  same build and serves `dist/site` with reload on save, so what you look at
+  locally is what Vercel would publish. Never add a second way to assemble the
+  site.
+- **The legal texts are two `<details>` panels** in the `#legal` section,
+  `#terms` and `#privacy`. Any link to one — the footer, or a pasted URL — is
+  opened by `initLegal()` in `script.js`, which then scrolls to it itself; a
+  legal link must therefore point at a panel id, never at a closed summary.
+  `privacy.html` carries the same privacy text as a standing page because that
+  URL is what goes into the store listings, so **the two copies are edited
+  together**.
 - **No dead CTA.** A button ships only when its destination exists. A game or app
   without a link gets a state chip (`chip-soon`), not a `href="#"`.
 - **A game in construction carries `draft: true`** in `site/games.js`: its copy
@@ -310,9 +364,20 @@ its own, deployed by Vercel from this repo.
 - **Same anti-dependency discipline as the games**, for a different reason: no
   framework, no CDN, no web font. The site must stay a folder of files anyone can
   open, and it must stay fast on a phone.
+- **Analytics is Vercel Web Analytics and nothing else.** `analytics.js` injects
+  the collector from the deployment's own origin (`/_vercel/insights/script.js`),
+  so there is still one host on the network tab, and it loads nothing at all off
+  the deployed site — a local copy and a `localhost` run never touch the numbers.
+  Report an event with `track(name, data)`; it is a no-op when the collector was
+  never loaded, so no caller checks anything. The games stay clean: nothing is
+  injected into them, and what they report (phase 4) they will `postMessage` to
+  the page.
+- **`vercel.json` owns the deploy**: build command, output directory, headers.
+  Change it there, never in the dashboard.
 - **The games are played in an iframe** inside a 9:16 modal (`#player`), which is
-  how a portrait creative is shown on a desktop screen. Closing it removes the
-  `src` so the loop and the audio stop.
+  how a portrait creative is shown on a desktop screen. The page's own language
+  rides along as `?lang=`, so the game's menu is never in the other language.
+  Closing it removes the `src` so the loop and the audio stop.
 
 ## Conventions
 

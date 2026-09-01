@@ -102,7 +102,7 @@ function manifestFor(slug, jsConfig, cat) {
       .replace(/\s+/g, ' ')
       .replace(/\s+([,.;:!?])/g, '$1')
       .trim(),
-    targets: entry && entry.draft ? ['proto'] : ['playable', 'web'],
+    targets: entry && entry.draft ? [] : ['playable', 'web'],
     theme: {
       accent: entry ? entry.accent[0] : '#4bf5ff',
       accent2: entry ? entry.accent[1] : '#7a5cff'

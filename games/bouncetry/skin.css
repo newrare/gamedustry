@@ -31,10 +31,10 @@
   .eo-score { text-shadow:0 0 22px rgba(75,245,255,.75); }
   #cta-bar { border-top:1px solid rgba(255,138,26,.22); }
 
-  /* ---- intro: one sentence, and a stage that plays the two rules ----------
-     "Every wall repaints the ball and one tap flips every brick", so the stage
-     plays exactly those two beats and slows down on each of them, because a
-     colour change is over in one frame and would otherwise never be read.
+  /* ---- intro: one sentence, and a stage that plays the rule ---------------
+     "A ball only breaks its own colour and one tap flips every brick", so the
+     stage plays exactly that and slows down on the tap, because a colour
+     change is over in one frame and would otherwise never be read.
 
      The motor's nodes are all recycled: the arrow becomes the barrel, the beam
      becomes the dotted sight, the track becomes the lava, the target becomes
@@ -67,8 +67,8 @@
   @keyframes demoWall {
     0%,37.4% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
     37.5%    { box-shadow:inset -30px 0 40px -8px rgba(255,255,255,.95); }
-    44%      { box-shadow:inset -26px 0 36px -8px rgba(47,134,255,.85); }
-    58%,100% { box-shadow:inset 0 0 0 0 rgba(47,134,255,0); }
+    44%      { box-shadow:inset -26px 0 36px -8px rgba(126,249,255,.85); }
+    58%,100% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
   }
 
   /* The two brick rows, five panes each. A gradient does not interpolate, so
@@ -81,18 +81,6 @@
   .demo-stage::before {
     top:40px;
     background-image:linear-gradient(90deg,
-      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-      rgba(47,134,255,.62) 272px 332px);
-    border-top:2px solid rgba(212,233,255,.7);
-    box-shadow:0 0 18px rgba(47,134,255,.3);
-    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
-  }
-  .demo-stage::after {
-    top:74px;
-    background-image:linear-gradient(90deg,
       rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
       rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
       rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -100,6 +88,18 @@
       rgba(255,59,87,.62) 272px 332px);
     border-top:2px solid rgba(255,217,221,.7);
     box-shadow:0 0 18px rgba(255,59,87,.3);
+    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
+  }
+  .demo-stage::after {
+    top:74px;
+    background-image:linear-gradient(90deg,
+      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+      rgba(47,134,255,.62) 272px 332px);
+    border-top:2px solid rgba(212,233,255,.7);
+    box-shadow:0 0 18px rgba(47,134,255,.3);
     animation:demoRowBot 5.2s linear infinite, demoFlipBot 5.2s ease-in-out infinite;
   }
   /* THE TAP, at 64%: every pane turns end over end onto the other colour. The
@@ -119,22 +119,6 @@
   }
   @keyframes demoRowTop {
     0%,63.9% { background-image:linear-gradient(90deg,
-                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                 rgba(47,134,255,.62) 272px 332px);
-               border-top-color:rgba(212,233,255,.7);
-               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
-    64%      { background-image:linear-gradient(90deg,
-                 rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                 rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                 rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-                 rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-                 rgba(255,59,87,.62) 272px 332px);
-               border-top-color:#ffffff;
-               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    70%,100% { background-image:linear-gradient(90deg,
                  rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
                  rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
                  rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -142,11 +126,43 @@
                  rgba(255,59,87,.62) 272px 332px);
                border-top-color:rgba(255,217,221,.7);
                box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
+    64%      { background-image:linear-gradient(90deg,
+                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                 rgba(47,134,255,.62) 272px 332px);
+               border-top-color:#ffffff;
+               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    70%,100% { background-image:linear-gradient(90deg,
+                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                 rgba(47,134,255,.62) 272px 332px);
+               border-top-color:rgba(212,233,255,.7);
+               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
   }
   /* the lower row also loses its FOURTH pane at 85.6% — one brick, the one the
      ball actually reaches, and the hole stays open until the loop restarts */
   @keyframes demoRowBot {
     0%,65.6%    { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:rgba(212,233,255,.7);
+                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+    65.7%       { background-image:linear-gradient(90deg,
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+                    rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
+                  border-top-color:#ffffff;
+                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    71.7%,85.5% { background-image:linear-gradient(90deg,
                     rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
                     rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
                     rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -154,36 +170,20 @@
                     rgba(255,59,87,.62) 272px 332px);
                   border-top-color:rgba(255,217,221,.7);
                   box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
-    65.7%       { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:#ffffff;
-                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    71.7%,85.5% { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:rgba(212,233,255,.7);
-                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
     85.6%       { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
                   border-top-color:#ffffff;
                   box-shadow:0 0 34px rgba(255,255,255,.8); filter:brightness(2.4); }
     89%,100%    { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:rgba(212,233,255,.7);
-                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
+                  border-top-color:rgba(255,217,221,.7);
+                  box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
   }
 
   /* the lava: the floor, and the only thing that destroys a ball */
@@ -237,25 +237,22 @@
   }
 
   /* THE SHOT — one ball, and it only ever breaks one brick. It leaves the
-     muzzle red, crawls off the right wall repainted blue, hangs in the air
-     while the tap flips the board, and lands on the pane that just turned its
-     own colour. */
+     muzzle red and stays red: it crawls off the right wall untouched, hangs in
+     the air while the tap flips the board, and lands on the pane that the tap
+     just turned red for it. */
   .demo-aim .demo-target {
     z-index:1; left:241px; top:216px; width:22px; height:22px; margin-left:0;
     border:0; border-radius:50%;
     background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
     box-shadow:0 0 16px rgba(255,59,87,.85);
-    animation:demoShot 5.2s linear infinite, demoBallSide 5.2s linear infinite;
+    animation:demoShot 5.2s linear infinite, demoBallFlash 5.2s linear infinite;
   }
-  /* THE WALL REPAINTS THE BALL: red out of the muzzle, blue from the instant
-     it touches the right edge at 37.5% */
-  @keyframes demoBallSide {
-    0%,37.4%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
-                 box-shadow:0 0 16px rgba(255,59,87,.85); }
-    37.5%      { background:radial-gradient(circle at 34% 28%, #ffffff 0 60%, #ffffff 100%);
-                 box-shadow:0 0 30px rgba(255,255,255,.95); }
-    41%,100%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #2f86ff 62%, #0b3f8c 100%);
-                 box-shadow:0 0 18px rgba(47,134,255,.9); }
+  /* THE BALL KEEPS ITS COLOUR: red out of the muzzle, red into the brick. The
+     wall only whitens it for a frame — that is the impact, not a repaint. */
+  @keyframes demoBallFlash {
+    0%,37.4%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
+    37.5%      { box-shadow:0 0 30px rgba(255,255,255,.95); filter:brightness(1.9); }
+    41%,100%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
   }
   /* the hit and the tap are both held: between 37.5% and 60% the ball barely
      drifts off the wall, and between 60% and 76% it barely moves at all */
@@ -271,8 +268,8 @@
     88%      { transform:translate(26px,-123px) scale(1.3); opacity:1; }
     94%,100% { transform:translate(26px,-123px) scale(1.5); opacity:0; }
   }
-  /* NO TRAIL: the two ripples are the two impact rings instead — the wall one
-     bleeds from white to blue, which is the repaint itself */
+  /* NO TRAIL: the two ripples are the two impact rings instead — both bleed
+     from white back to the ball's own red, because nothing repaints it */
   .demo-aim .demo-ripple {
     inset:-9px; width:auto; height:auto; border:3px solid #ffffff; border-radius:50%;
     background:none; box-shadow:none; opacity:0;
@@ -282,13 +279,13 @@
   @keyframes demoRingWall {
     0%,37.4% { transform:scale(.5); opacity:0; border-color:#ffffff; }
     37.5%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    45%      { transform:scale(2.2); opacity:.55; border-color:#8ec6ff; }
-    52%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+    45%      { transform:scale(2.2); opacity:.55; border-color:#7ef9ff; }
+    52%,100% { transform:scale(3); opacity:0; border-color:#7ef9ff; }
   }
   @keyframes demoRingHit {
-    0%,85.5% { transform:scale(.5); opacity:0; border-color:#d4e9ff; }
+    0%,85.5% { transform:scale(.5); opacity:0; border-color:#ffd9dd; }
     85.6%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    93%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+    93%,100% { transform:scale(3); opacity:0; border-color:#ff3b57; }
   }
 
   /* the finger: drags the aim across, lets go — then comes back mid-flight and

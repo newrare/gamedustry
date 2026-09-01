@@ -1,0 +1,42 @@
+  /* =========================================================================
+     FRAME-WEB — Delta 1: what fills the space around a portrait game on a
+     desktop screen.
+
+     The motor letterboxes 720x1280 into whatever window it is given. On a
+     phone that is the whole screen; on a 16:9 monitor it is a tall strip
+     between two huge empty bands, which is the one thing that makes a web
+     build look like a leftover ad. This file dresses those bands and gives
+     the strip a device bezel, using nothing but the theme tokens the SKIN
+     already defines — no markup, no script, no per-game rule.
+
+     Added by `tools/build/build.mjs --target=web` only, after the motor
+     stylesheet and before the SKIN, so a playable never carries it and a
+     game can still override any of it.
+
+     It is deliberately inert wherever there is no band to dress: the site
+     plays its games in a 9:16 modal (ratio .5625) and a phone is narrower
+     still, so the query below leaves both exactly as they are today.
+     ========================================================================= */
+  @media (min-aspect-ratio: 62/100) and (min-height: 480px) {
+    /* The accent at the bottom reads as the screen's own light spilling out;
+       it is a theme token, so the dressing reskins itself with the game. */
+    body {
+      background:
+        radial-gradient(120% 80% at 50% -20%, rgba(255,255,255,.07), transparent 62%),
+        radial-gradient(60% 42% at 50% 112%, var(--accent), transparent 72%),
+        var(--bg);
+      background-attachment: fixed;
+    }
+
+    /* The bezel rides #frame's own transform, so the device keeps its
+       proportions at every window size. A box-shadow is painted outside the
+       element, i.e. it is not eaten by #frame's overflow:hidden. */
+    #frame {
+      border-radius: 44px;
+      box-shadow:
+        0 0 0 10px #05060e,
+        0 0 0 12px rgba(255,255,255,.07),
+        0 60px 140px rgba(0,0,0,.65),
+        0 0 120px -10px var(--accent);
+    }
+  }

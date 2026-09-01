@@ -8,96 +8,60 @@ left*. One line per task, grouped by phase, each tagged with who does it:
 - **AUTO** — a command or a CI job; no code to write.
 - **CODE** — something to develop.
 
-Keep this file honest: tick a box only when the thing is verifiably done, and add
-new tasks here rather than leaving them in a conversation.
+Keep this file honest: a task is **removed** once it is verifiably done — the
+record of what shipped lives in git and in the industrialization doc, not here.
+Add new tasks here rather than leaving them in a conversation.
 
 ______________________________________________________________________
 
 ## Phase 0 — decisions
 
-All settled; recorded in the `Decisions` table of the industrialization doc.
-
-- [x] MAIN — track `assets/` in git, no LFS (52 MB / 324 files)
-- [x] MAIN — site stack: static HTML/CSS, monorepo under `site/`
-- [x] MAIN — hosting: Vercel, games under `/games/<slug>`
-- [x] MAIN — itch account `newrare`, one project per game
-- [x] MAIN — Play account `newrare`, personal → 12 testers / 14 days applies
-- [x] MAIN — bundle id namespace `com.newrare.<slug>`
-- [x] MAIN — custom domain deferred until the android phase
+Settled and closed; recorded in the `Decisions` table of the industrialization
+doc.
 
 ## Phase 1 — extract the motor
 
-- [x] CODE — `packages/engine`, `packages/platform`, `packages/shell`
-- [x] CODE — `tools/lib/parts.mjs`, the single definition of the file's regions
-- [x] CODE — `tools/build/extract.mjs`, the one-shot split
-- [x] CODE — `tools/build/build.mjs --target=playable [--game=…] [--check]`
-- [x] AUTO — null-diff verified on 13 units (12 games + the template)
-- [x] CODE — per-game `manifest.json` generated from CONFIG + the site catalogue
-- [x] AUTO — CTA store URLs point at the newrare site in all 12 games + template
-- [x] AUTO — `assets/` removed from `.gitignore` (324 files still to `git add`)
-- [x] MAIN — commit the extraction (done: `e3ea9d9`)
-- [ ] MAIN — commit the tools split, the catalogue generator and the proto target
-- [x] CODE — reorganize `tools/` into `lab/`, `build/`, `publish/`, and fix the
-  paths quoted in [CLAUDE.md](CLAUDE.md), [README.md](README.md) and
-  [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md)
-- [x] CODE — retire `tools/check-motor.mjs`: `build.mjs --check` supersedes it
-- [x] CODE — generate the two catalogues from the manifests, so a new game is
-  registered once instead of in `site/games.js` **and** the root `index.html`
-- [x] CODE — teach `build.mjs` to read `manifest.json` (today it only assembles
-  files; the manifest is written but not yet consumed)
+The motor lives in `packages/`, the builder consumes the manifests, the tools are
+split into `lab/` / `build/` / `publish/`, and the two catalogues are generated.
+One thing left:
 
-## Phase 2 — the `proto` target
+- [ ] MAIN — commit the tools split and the catalogue generator
 
-- [x] CODE — `--target=proto`: no intro, no CTA, no end screen; `R` resets,
-  `SPACE` pauses and steps a frame
-- [x] CODE — `packages/devtools/`: fps and `dt`, state, run counter, the `Layout`
-  band, the device insets, the pointer, and opt-in hitboxes through
-  `Game.debugShapes()`
-- [x] CODE — live tunables: a slider per number in `CONFIG`
-- [x] CODE — reproducible runs: `?seed=42&speed=3` overrides the RNG and any
-  tunable from the URL
-- [x] CODE — `tools/lab/serve.mjs`: static server + SSE reload on save
-- [x] CODE — promotion path documented: proto → full game adds manifest, skin,
-  intro and sounds, and touches no gameplay code
+## Phase 2 — prototyping
 
-### Left over from phases 1–2
+Closed, and reversed: `--target=proto`, `packages/devtools/` and
+`tools/lab/serve.mjs` were built, then **removed** — nobody used the tuning
+panel, iteration happens on the web build, and the word "proto" made a request
+for a quick prototype produce a whole game. A prototype is now one raw HTML page
+in `prototype/`, outside the motor; see CLAUDE.md, *Three kinds of request*.
 
-- [x] CODE — counters in the devtools panel, opt-in through `Game.debugCounts()`,
-  plus a free count of the shapes `Game.debugShapes()` returns
-- [x] CODE — the proto's `?<config.path>=` override is typed off the value already
-  in `CONFIG`, so it reaches strings and booleans too
-
-Nothing else is left in phases 1 and 2. The CI wiring that would enforce them is
-in phase 4, with the rest of the CI.
+- [ ] MAIN — commit the removal of the proto target and the new prototype rules
 
 ## Phase 3 — the site, deployed
 
-- [x] CODE — the site itself (`site/`), bilingual FR/EN, responsive
-- [x] CODE — `tools/build/build-site.mjs` → `dist/site/`
-- [x] CODE — the `draft: true` flag, so a game in construction stays off the site
+The site, `build-site.mjs`, `serve-site.mjs`, `vercel.json`, the `draft` flag, the
+privacy page, `app-ads.txt` and `analytics.js` are in. What is left is account
+work:
+
 - [ ] MAIN — create the Vercel project: this repo, branch `main`, build
   `node tools/build/build-site.mjs`, output `dist/site`, framework "Other"
-- [ ] CODE — `vercel.json`, so those settings live in the repo and not in a
-  dashboard
+- [ ] MAIN — turn Web Analytics on in the Vercel project, or `analytics.js` loads
+  a collector that answers 404
 - [ ] MAIN — verify the preview URL of a pull request on a real phone
-- [ ] MAIN — remove `site/newrare-website/` once the new site is approved
-- [ ] MAIN — a support e-mail on the newrare domain (currently a personal Gmail)
-- [ ] CODE — a privacy policy page and `app-ads.txt` on the site
-- [ ] CODE — analytics, so phase 6's retention numbers exist
+- [ ] MAIN — a support e-mail on the newrare domain (currently a personal Gmail);
+  it is quoted in `site/privacy.html` and `site/index.html`, both to update
+- [ ] MAIN — fill `site/app-ads.txt` with the AdMob publisher record, once the
+  AdMob account exists (phase 8)
 
 ## Phase 4 — the web adapter (site + itch share one build)
 
-- [ ] CODE — **Delta 2 first**: back `Store.get/set` with an in-memory map, or
-  every retention number measured on itch is false
-- [ ] CODE — `packages/platform/web.js`
-- [ ] CODE — `packages/frame-web/`: desktop dressing around the portrait canvas
-  (Delta 1)
-- [ ] CODE — `cta: false`, giving the CTA bar's space back to `Layout` (Delta 3)
-- [ ] CODE — `--target=web`: shared hashed engine, assets as files instead of
-  base64
-- [ ] CODE — `--target=web --dest=itch` → `dist/itch/<slug>/`
-- [ ] CODE — `tools/publish/deploy-itch.mjs`, wrapping `butler`
-- [ ] CODE — `tools/publish/store-meta.mjs`: page copy from the manifest
+The code is in: `--target=web` with its two destinations (`--dest=site` splits
+the motor into shared hashed files and ships the assets as files, `--dest=itch`
+keeps one self-contained document), `packages/frame-web/` (Delta 1),
+`Store`'s memory fallback (Delta 2), the bilingual web menu with `CONFIG.web`
+fed from the manifest, and the two publishing scripts. What is left needs an
+account or a CI runner:
+
 - [ ] MAIN — `butler login` locally, `BUTLER_API_KEY` as a CI secret
 - [ ] MAIN — create the itch page for `vipera` by hand (no public API exists)
 - [ ] AUTO — GitHub Actions on every PR: `build.mjs --check`,
@@ -107,8 +71,16 @@ in phase 4, with the rest of the CI.
 
 ## Phase 5 — the meta layer
 
+The web menu already has the two entries: `packages/webshell/menu.js` opens a
+LEADERBOARD panel showing the real local best score and an OPTIONS panel that
+says "soon". Filling them is this phase, and it lands in `packages/meta` so the
+android build gets the same screens.
+
 - [ ] CODE — `packages/meta/`: start screen, options, i18n, progression
-- [ ] CODE — a local leaderboard behind the interface a server will later fill
+- [ ] CODE — OPTIONS, and first a mute the motor does not have: `Sound`/`Music`
+  need a master switch before the panel can offer one
+- [ ] CODE — a local leaderboard behind the interface a server will later fill,
+  replacing the webshell's single best-score placeholder
 - [ ] MAIN — decide whether progression is per game or account-wide
 
 ## Phase 6 — all games public, then measure
@@ -149,7 +121,6 @@ ______________________________________________________________________
 
 - [ ] MAIN — `assets/icon/slipdeck.png` + its `thumb/` cut; slipdeck is
   `draft: true` in `site/games.js` until then
-- [x] AUTO — radiam screenshots (`node tools/lab/shoot-screens.mjs radiam`)
 - [ ] MAIN — finish `slipdeck` itself; it is the only game still in construction
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
   listing (all three currently point at the site, which is correct for now)

@@ -2,7 +2,8 @@
    Newrare — game studio site
    Vanilla CSS, no framework, no web font. Dark by design.
    Sections: tokens · base · nav · hero · buttons · sections · games ·
-             apps · studio · contact · legal · footer · modals · responsive
+             apps · studio · contact · legal · doc · footer · modals ·
+             responsive
    ========================================================================== */
 
 /* ─────────────────────────────── tokens ─────────────────────────────── */
@@ -40,8 +41,14 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--nav-h) + 12px);
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
 }
+
+/* Belt and braces with scroll-padding-top: a section landed on by an anchor
+   keeps its own clearance under the sticky nav, whatever scrolls the page. */
+section[id],
+main[id] { scroll-margin-top: calc(var(--nav-h) + 12px); }
 
 body {
   background: var(--ink);
@@ -50,7 +57,7 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body.locked { overflow: hidden; }
@@ -102,17 +109,42 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
   top: 0;
   z-index: 100;
   height: var(--nav-h);
-  background: rgba(5, 6, 12, .72);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  border-bottom: 1px solid transparent;
-  transition: border-color .25s ease, background .25s ease;
+  background: transparent;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: background .3s ease, backdrop-filter .3s ease, box-shadow .3s ease;
 }
 
+/* Glass only once the page has moved: over the hero the bar is invisible and
+   the artwork runs to the top of the screen. */
 .nav.scrolled {
-  border-bottom-color: var(--line);
-  background: rgba(5, 6, 12, .9);
+  background: linear-gradient(180deg, rgba(6, 8, 18, .82), rgba(6, 8, 18, .58));
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow: 0 12px 30px -22px #000;
 }
+
+/* The hairline is an accent gradient rather than a flat rule — it is the one
+   piece of chrome the whole site is seen through. */
+.nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(75, 245, 255, .35) 22%,
+      rgba(122, 92, 255, .45) 50%,
+      rgba(255, 79, 190, .3) 78%,
+      transparent);
+  opacity: 0;
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+
+.nav.scrolled::after { opacity: 1; }
 
 .nav-inner {
   height: 100%;
@@ -130,9 +162,18 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
   gap: 10px;
   font-weight: 800;
   letter-spacing: -.2px;
+  transition: transform .18s ease;
 }
 
-.brand-mark { border-radius: 8px; }
+.brand:hover { transform: translateY(-1px); }
+
+.brand-mark {
+  border-radius: 9px;
+  box-shadow: 0 6px 18px -8px var(--a2);
+  transition: box-shadow .2s ease;
+}
+
+.brand:hover .brand-mark { box-shadow: 0 8px 22px -6px var(--a1); }
 
 .brand-name { font-size: 18px; }
 
@@ -153,6 +194,13 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
 }
 
 .nav-links a:hover { color: var(--text); background: rgba(255, 255, 255, .06); }
+
+/* Scroll spy: which section the reader is in, marked in the bar. */
+.nav-links a.active {
+  color: var(--text);
+  background: rgba(122, 92, 255, .16);
+  box-shadow: inset 0 0 0 1px rgba(122, 92, 255, .35);
+}
 
 .nav-actions { display: flex; align-items: center; gap: 10px; }
 
@@ -187,27 +235,66 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
 .burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* ──────────────────────────────── hero ───────────────────────────── */
+/* The nav is transparent until the page moves, so the hero starts under it and
+   pays the bar's height back in padding. */
 .hero {
   position: relative;
-  padding: clamp(64px, 12vh, 130px) 0 clamp(56px, 10vh, 110px);
+  margin-top: calc(var(--nav-h) * -1);
+  padding: calc(var(--nav-h) + clamp(48px, 9vh, 104px)) 0 clamp(56px, 10vh, 110px);
   overflow: hidden;
   isolation: isolate;
 }
 
 .hero-fx { position: absolute; inset: 0; z-index: -1; }
 
+/* An arcade floor: a perspective grid running toward the reader. The scroll is
+   on background-position, which the compositor animates for free. */
 .hero-grid {
   position: absolute;
-  inset: -40% -10% 0;
+  inset: -30% -20% -10%;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, .05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, .05) 1px, transparent 1px);
-  background-size: 56px 56px;
-  transform: perspective(600px) rotateX(58deg);
+    linear-gradient(to right, rgba(122, 92, 255, .26) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(75, 245, 255, .18) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(560px) rotateX(60deg);
   transform-origin: top center;
-  mask-image: radial-gradient(120% 70% at 50% 20%, #000 20%, transparent 70%);
-  -webkit-mask-image: radial-gradient(120% 70% at 50% 20%, #000 20%, transparent 70%);
-  opacity: .8;
+  /* The vanishing point sits above the viewport, so the near floor is at the
+     bottom: the mask keeps it and dissolves the distance, which leaves the
+     headline on a clean ground. */
+  mask-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, .35) 42%, #000 96%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, .35) 42%, #000 96%);
+  opacity: .9;
+  animation: floor 6s linear infinite;
+}
+
+@keyframes floor {
+  from { background-position: 0 0; }
+  to { background-position: 0 60px; }
+}
+
+/* CRT scanlines, just visible enough to read as a screen. */
+.hero-scan {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, .035) 0 1px,
+      transparent 1px 4px);
+  mask-image: linear-gradient(180deg, #000 30%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent);
+  pointer-events: none;
+}
+
+/* A horizon line where the floor meets the sky. */
+.hero-fx::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--a1), var(--a2), transparent);
+  opacity: .5;
 }
 
 .hero-glow {
@@ -249,9 +336,11 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
 .hero-inner { position: relative; text-align: center; }
 
 .eyebrow {
-  display: inline-block;
-  padding: 6px 15px;
-  margin-bottom: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 16px;
+  margin-bottom: 24px;
   border: 1px solid var(--line-2);
   border-radius: 999px;
   font-size: 12px;
@@ -259,19 +348,38 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: var(--muted);
+  background: rgba(255, 255, 255, .03);
+}
+
+/* A live dot: the chip says a studio that is currently shipping. */
+.eyebrow::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--a1);
+  box-shadow: 0 0 0 0 rgba(75, 245, 255, .55);
+  animation: pulse 2.4s ease-out infinite;
+  flex: none;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(75, 245, 255, .55); }
+  70%, 100% { box-shadow: 0 0 0 9px rgba(75, 245, 255, 0); }
 }
 
 h1 {
-  font-size: clamp(34px, 7.4vw, 68px);
-  line-height: 1.03;
+  font-size: clamp(36px, 7.8vw, 72px);
+  line-height: 1.02;
   font-weight: 850;
-  letter-spacing: -1.6px;
+  letter-spacing: -1.8px;
+  text-wrap: balance;
 }
 
 h1 span { display: block; }
 
 .lead {
-  max-width: 620px;
+  max-width: 640px;
   margin: 22px auto 0;
   color: var(--muted);
   font-size: clamp(15px, 2.2vw, 18px);
@@ -287,17 +395,22 @@ h1 span { display: block; }
 
 .hero-stats {
   margin: 46px auto 0;
-  padding-top: 26px;
-  border-top: 1px solid var(--line);
   max-width: 620px;
   list-style: none;
-  display: flex;
-  justify-content: space-around;
-  gap: 18px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-.hero-stats li { display: flex; flex-direction: column; }
+.hero-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .025);
+}
 
 .hero-stats b {
   font-size: clamp(22px, 4vw, 30px);
@@ -317,31 +430,44 @@ h1 span { display: block; }
 }
 
 /* ─────────────────────────────── buttons ─────────────────────────── */
+/* A button never carries a real border. A 1px transparent border under a
+   gradient background leaves the page showing through exactly where a pill's
+   curve is tightest — the hairline on the left and right edges that reads as a
+   cropped radius. The outline is an inset shadow instead, which paints inside
+   the radius, and every variant keeps the same geometry. */
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 9px;
-  padding: 13px 22px;
+  padding: 14px 23px;
+  border: 0;
   border-radius: 999px;
   font-size: 15px;
   font-weight: 700;
-  border: 1px solid transparent;
-  transition: transform .16s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
+  transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
 }
 
-.btn-sm { padding: 9px 16px; font-size: 14px; }
+.btn-sm { padding: 10px 17px; font-size: 14px; }
 
 .btn-primary {
-  background: linear-gradient(100deg, var(--a1), var(--a2));
+  background-image: linear-gradient(100deg, var(--a1), var(--a2));
   color: #05060c;
   box-shadow: 0 10px 30px -12px var(--a2);
 }
 
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -12px var(--a2); }
 
-.btn-ghost { border-color: var(--line-2); color: var(--text); }
+.btn-ghost {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
 
-.btn-ghost:hover { border-color: var(--a1); color: var(--a1); background: rgba(75, 245, 255, .07); }
+.btn-ghost:hover {
+  color: var(--a1);
+  background-color: rgba(75, 245, 255, .07);
+  box-shadow: inset 0 0 0 1px var(--a1);
+}
 
 .btn:active { transform: translateY(0) scale(.98); }
 
@@ -546,6 +672,12 @@ h1 span { display: block; }
   background: var(--ink-2);
 }
 
+.terms + .terms { margin-top: 12px; }
+
+/* Landing on a panel from a footer link should be obvious. */
+.terms:target,
+.terms[open] { border-color: var(--line-2); }
+
 .terms > summary {
   padding: 18px 22px;
   font-weight: 700;
@@ -569,6 +701,8 @@ h1 span { display: block; }
 
 .terms[open] > summary::after { content: "−"; }
 
+.terms[open] > summary { color: var(--text); }
+
 .terms > summary:hover { color: var(--text); }
 
 .terms-body { padding: 0 22px 24px; max-width: 780px; }
@@ -584,6 +718,60 @@ h1 span { display: block; }
 .terms-body li { color: var(--muted); font-size: 14.5px; }
 
 .terms-body ul { margin: 8px 0 0 20px; }
+
+.legal-links {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+.legal-links a { border-bottom: 1px solid var(--line-2); }
+
+.legal-links a:hover { color: var(--a1); border-color: var(--a1); }
+
+/* ──────────────────────────────── doc ────────────────────────────── */
+/* A standing legal page — privacy.html today. One column of prose under the
+   nav, no hero: the URL is meant to be pasted into a store listing, so it has
+   to open on the text. */
+.doc { padding-top: calc(var(--nav-h) + clamp(32px, 6vw, 64px)); }
+
+.doc h1 {
+  margin-top: 10px;
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+.doc-meta { margin-top: 10px; color: var(--dim); font-size: 14px; }
+
+.doc-body {
+  max-width: 760px;
+  margin-top: clamp(26px, 4vw, 38px);
+  padding: var(--pad);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--ink-2);
+}
+
+.doc-lead { color: var(--text); font-size: clamp(15px, 2vw, 17px); }
+
+.doc-body h2 {
+  margin-top: 30px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.doc-body p,
+.doc-body li { margin-top: 10px; color: var(--muted); font-size: 14.5px; }
+
+.doc-body ul { margin: 8px 0 0 20px; }
+
+.doc-back { margin-top: 28px; }
 
 /* ─────────────────────────────── footer ──────────────────────────── */
 .foot {
@@ -779,7 +967,9 @@ h1 span { display: block; }
     align-items: stretch;
     gap: 2px;
     padding: 14px var(--pad) 22px;
-    background: rgba(5, 6, 12, .97);
+    background: rgba(6, 8, 18, .92);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
     border-bottom: 1px solid var(--line);
     transform: translateY(-8px);
     opacity: 0;
@@ -824,7 +1014,9 @@ h1 span { display: block; }
   .shots-count { bottom: 12px; }
   #shotsImg { max-height: 78vh; }
 
-  .hero-stats { gap: 22px; }
+  .hero-stats { gap: 8px; }
+  .hero-stats li { padding: 12px 6px; }
+  .hero-stats span { font-size: 10.5px; letter-spacing: .4px; }
 }
 
 /* Motion is decoration here: strip it when the visitor asked for that. */

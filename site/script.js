@@ -1,12 +1,32 @@
 /* ==========================================================================
    Newrare — site behaviour
-   Vanilla JS, no dependency. Four concerns:
+   Vanilla JS, no dependency. Six concerns:
      1. language     FR / EN, remembered in localStorage
-     2. navigation   sticky state and the mobile sheet
+     2. navigation   sticky state, the mobile sheet, the scroll spy
      3. playables    the grid, and the portrait player
      4. screenshots  the lightbox, shared by games and store apps
+     5. legal        the <details> panels of the legal section
+     6. analytics    what a page reports, when analytics.js is loaded
+
+   Every page of the site loads this one file, so each init() returns quietly
+   when its markup is absent — privacy.html has the nav and the footer, and
+   neither the grid nor the modals.
    ========================================================================== */
 'use strict';
+
+/* ───────────────────────────── 0. analytics ──────────────────────────── */
+
+/* analytics.js is optional and inert off the deployed site, so callers never
+   check anything: this is the whole interface the page uses. */
+function track(name, data) {
+  if (window.Analytics) window.Analytics.track(name, data);
+}
+
+/* Scrolling this page is decoration too: a visitor who asked for no motion
+   gets the jump, exactly as the stylesheet gives them no transition. */
+function prefersMotion() {
+  return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
 
 /* ───────────────────────────── 1. language ───────────────────────────── */
 
@@ -44,6 +64,7 @@ function toggleLang() {
   lang = lang === 'fr' ? 'en' : 'fr';
   saveLang(lang);
   applyLang();
+  track('lang', { lang: lang });
 }
 
 /* ──────────────────────────── 2. navigation ─────────────────────────── */
@@ -52,6 +73,7 @@ function initNav() {
   var nav = document.getElementById('nav');
   var burger = document.getElementById('burger');
   var links = document.getElementById('navLinks');
+  if (!nav || !burger || !links) return;
 
   window.addEventListener('scroll', function () {
     nav.classList.toggle('scrolled', window.pageYOffset > 8);
@@ -74,6 +96,54 @@ function initNav() {
   window.addEventListener('resize', function () {
     if (window.innerWidth > 780) closeSheet();
   });
+
+  /* The logo goes back to the top of the page, not to the #top anchor: the
+     anchor lands under the sticky bar and leaves a hash behind that makes the
+     next reload skip the hero. */
+  var brand = document.getElementById('brand');
+  if (brand) {
+    brand.addEventListener('click', function (e) {
+      e.preventDefault();
+      closeSheet();
+      window.scrollTo({ top: 0, behavior: prefersMotion() ? 'smooth' : 'auto' });
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    });
+  }
+
+  initSpy(links.querySelectorAll('a[href^="#"]'));
+}
+
+/* Which section the reader is in, marked in the bar. The band is the middle of
+   the viewport, so the mark changes when the eye has actually moved on. */
+function initSpy(anchors) {
+  if (!anchors.length || !window.IntersectionObserver) return;
+
+  var byId = {};
+  var sections = [];
+  for (var i = 0; i < anchors.length; i++) {
+    var id = (anchors[i].getAttribute('href') || '').slice(1);
+    var section = id && document.getElementById(id);
+    if (!section) continue;
+    byId[id] = anchors[i];
+    sections.push(section);
+  }
+  if (!sections.length) return;
+
+  var visible = {};
+  var spy = new IntersectionObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      visible[entries[i].target.id] = entries[i].isIntersecting;
+    }
+    var active = '';
+    for (var j = 0; j < sections.length; j++) {
+      if (visible[sections[j].id]) { active = sections[j].id; break; }
+    }
+    for (var id in byId) {
+      if (byId.hasOwnProperty(id)) byId[id].classList.toggle('active', id === active);
+    }
+  }, { rootMargin: '-45% 0px -50% 0px' });
+
+  for (var s = 0; s < sections.length; s++) spy.observe(sections[s]);
 }
 
 /* ──────────────────────────── 3. playables ──────────────────────────── */
@@ -148,28 +218,42 @@ var player = {
   frame: null,
   title: null,
   open: null,
-  opener: null
+  opener: null,
+  slug: '',
+  since: 0
 };
 
 function initPlayer() {
   player.root = document.getElementById('player');
+  if (!player.root) return;
   player.frame = document.getElementById('playerFrame');
   player.title = document.getElementById('playerTitle');
   player.open = document.getElementById('playerOpen');
+
+  player.open.addEventListener('click', function () {
+    track('play_tab', { game: player.slug });
+  });
 }
 
 function openPlayer(slug, trigger) {
+  if (!player.root) return;
   var g = gameBySlug(slug);
   if (!g) return;
 
-  var url = 'games/' + slug + '/index.html';
+  /* The game reads ?lang= and dresses its own menu with it (see
+     packages/webshell/menu.js), so the page and the game it embeds are never
+     in two different languages. */
+  var url = 'games/' + slug + '/index.html?lang=' + lang;
   player.title.textContent = g.name;
   player.open.href = url;
   player.frame.src = url;
   player.frame.title = g.name;
   player.opener = trigger || null;
+  player.slug = slug;
+  player.since = Date.now();
 
   showModal(player.root);
+  track('play', { game: slug });
 }
 
 function closePlayer() {
@@ -177,6 +261,10 @@ function closePlayer() {
   player.frame.removeAttribute('src'); // stops the loop and the audio
   if (player.opener) player.opener.focus();
   player.opener = null;
+
+  // How long a game held someone is the number phase 6 reads.
+  track('play_end', { game: player.slug, seconds: Math.round((Date.now() - player.since) / 1000) });
+  player.slug = '';
 }
 
 /* ─────────────────────────── 4. screenshots ─────────────────────────── */
@@ -203,6 +291,7 @@ var shots = {
 
 function initShots() {
   shots.root = document.getElementById('shots');
+  if (!shots.root) return;
   shots.img = document.getElementById('shotsImg');
   shots.count = document.getElementById('shotsCount');
 
@@ -221,6 +310,7 @@ function initShots() {
 }
 
 function openShots(key, trigger) {
+  if (!shots.root) return;
   var set = SHOT_SETS[key];
   var dir, count, label;
 
@@ -246,6 +336,7 @@ function openShots(key, trigger) {
 
   paintShot();
   showModal(shots.root);
+  track('screens', { game: key });
 }
 
 function stepShot(delta) {
@@ -269,6 +360,54 @@ function closeShots() {
 
 function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
+/* ─────────────────────────────── 5. legal ───────────────────────────── */
+
+/* The legal texts are <details> panels on the home page. A link to one — from
+   the footer, or a URL someone pasted — has to open it, otherwise the reader
+   lands on a closed summary and reads nothing. */
+function legalPanel(hash) {
+  var id = String(hash || '').replace(/^#/, '');
+  if (!id) return null;
+  var el = document.getElementById(id);
+  if (!el) return null;
+
+  // Only the legal block answers to this: #top must not open a panel.
+  if (el.tagName === 'DETAILS') return el;
+  if (el.classList.contains('legal')) return el.querySelector('details');
+  return null;
+}
+
+function initLegal() {
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest ? e.target.closest('a[href*="#"]') : null;
+    if (!link) return;
+
+    var href = link.getAttribute('href') || '';
+    var cut = href.indexOf('#');
+    var path = href.slice(0, cut);
+    // A link that names another file is that browser's business, not ours.
+    if (path && path !== location.pathname.split('/').pop()) return;
+
+    var panel = legalPanel(href.slice(cut));
+    if (!panel) return;
+
+    // Opening the panel changes the layout, so we scroll ourselves, once the
+    // frame that grew it has been laid out.
+    e.preventDefault();
+    panel.open = true;
+    history.replaceState(null, '', href.slice(cut));
+    requestAnimationFrame(function () {
+      panel.scrollIntoView({ behavior: prefersMotion() ? 'smooth' : 'auto', block: 'start' });
+    });
+  });
+
+  var landed = legalPanel(location.hash);
+  if (landed) {
+    landed.open = true;
+    requestAnimationFrame(function () { landed.scrollIntoView({ block: 'start' }); });
+  }
+}
+
 /* ───────────────────────────── modal plumbing ───────────────────────── */
 
 function showModal(root) {
@@ -280,14 +419,14 @@ function showModal(root) {
 
 function hideModal(root) {
   root.hidden = true;
-  if (player.root.hidden && shots.root.hidden) {
+  if ((!player.root || player.root.hidden) && (!shots.root || shots.root.hidden)) {
     document.body.classList.remove('locked');
   }
 }
 
 function closeTopModal() {
-  if (!shots.root.hidden) closeShots();
-  else if (!player.root.hidden) closePlayer();
+  if (shots.root && !shots.root.hidden) closeShots();
+  else if (player.root && !player.root.hidden) closePlayer();
 }
 
 /* ──────────────────────────────── wiring ────────────────────────────── */
@@ -298,9 +437,11 @@ document.addEventListener('DOMContentLoaded', function () {
   initNav();
   initPlayer();
   initShots();
+  initLegal();
   applyLang();
 
-  document.getElementById('langToggle').addEventListener('click', toggleLang);
+  var toggle = document.getElementById('langToggle');
+  if (toggle) toggle.addEventListener('click', toggleLang);
 
   var year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
@@ -313,12 +454,19 @@ document.addEventListener('DOMContentLoaded', function () {
     var shot = e.target.closest ? e.target.closest('[data-shots]') : null;
     if (shot) { openShots(shot.getAttribute('data-shots'), shot); return; }
 
-    if (e.target.closest && e.target.closest('[data-close]')) { closeTopModal(); }
+    if (e.target.closest && e.target.closest('[data-close]')) { closeTopModal(); return; }
+
+    // Where the site sends people: the two stores and the mailbox.
+    var link = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!link) return;
+    var href = link.getAttribute('href') || '';
+    if (href.indexOf('play.google.com') > -1) track('store', { store: 'play', href: href });
+    else if (href.indexOf('mailto:') === 0) track('contact', {});
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeTopModal(); return; }
-    if (!shots.root.hidden) {
+    if (shots.root && !shots.root.hidden) {
       if (e.key === 'ArrowLeft') stepShot(-1);
       if (e.key === 'ArrowRight') stepShot(1);
     }
