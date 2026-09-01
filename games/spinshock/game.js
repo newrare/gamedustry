@@ -352,7 +352,7 @@
        segmented bar that IS the spin gauge, sitting right under the HUD's own
        "SPIN %" pill so the number and the picture read as one instrument. The
        dish is narrowed by the whole band, so no top ever plays behind it. */
-    var GAUGE_W = 36;        // width of the rail
+    var GAUGE_W = 25;        // width of the rail
     var GAUGE_GAP = 16;      // air between the rail and the dish wall
     var GAUGE_BAND = GAUGE_W + GAUGE_GAP;
     var GAUGE_SEGS = 20;     // one cell per 5% of spin
@@ -1418,7 +1418,7 @@
         // the dead cell, so an empty rail still reads as a scale — skipped when
         // something covers it whole, which is the common case
         if (b < 0.999) {
-          barPath(x + 4, cellY, w - 8, cellH, 4);
+          barPath(x + 3, cellY, w - 6, cellH, 3);
           ctx.fillStyle = lo >= cap ? "rgba(255,255,255,.018)" : "rgba(255,255,255,.035)";
           ctx.fill();
         }
@@ -1431,11 +1431,11 @@
           k = spin > 0.001 ? clamp((lo + 0.5 / GAUGE_SEGS) / spin, 0, 1) : 0;
           ctx.fillStyle = rgba(col, 0.19 + 0.44 * k * k);
           if (f >= 0.999) {
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.fill();
           } else {
             ctx.save();
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
-            ctx.fillRect(x + 4, cellY + cellH * (1 - f), w - 8, cellH * f);
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.clip();
+            ctx.fillRect(x + 3, cellY + cellH * (1 - f), w - 6, cellH * f);
             ctx.restore();
           }
         }
@@ -1444,11 +1444,11 @@
           ctx.fillStyle = spin > spinLag ? "rgba(255,255,255,.58)"
                                         : "rgba(255,47,109,.48)";
           if (a <= 0.001 && b >= 0.999) {
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.fill();
           } else {
             ctx.save();
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
-            ctx.fillRect(x + 4, cellY + cellH * (1 - b), w - 8, cellH * (b - a));
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.clip();
+            ctx.fillRect(x + 3, cellY + cellH * (1 - b), w - 6, cellH * (b - a));
             ctx.restore();
           }
         }
@@ -1537,9 +1537,9 @@
       }
       // the node the discharge is anchored on, mid-rail
       ctx.fillStyle = rgba(col, 0.24);
-      ctx.beginPath(); ctx.arc(x + w / 2, hy, 9, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 7, 0, TAU); ctx.fill();
       ctx.fillStyle = rgba("#ffffff", 0.78);
-      ctx.beginPath(); ctx.arc(x + w / 2, hy, 3.4, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 2.6, 0, TAU); ctx.fill();
       ctx.restore();
     }
 

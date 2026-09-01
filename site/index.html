@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#05060c">
   <meta name="description"
-    content="Newrare builds short, sharp mobile games. A collection of playables you can start in one tap, right in the browser.">
+    content="Newrare makes games that are satisfying, fun and fast. The whole collection plays in the browser, one tap away.">
   <meta property="og:title" content="Newrare — Game Studio">
-  <meta property="og:description" content="Playable games, one tap away. No install, no account.">
+  <meta property="og:description" content="Satisfying, fun and fast. One tap away, no install, no account.">
   <meta property="og:type" content="website">
   <title>Newrare — Game Studio</title>
   <link rel="stylesheet" href="style.css">
@@ -22,7 +22,7 @@
   <!-- ───────────────────────────── NAV ───────────────────────────── -->
   <header class="nav" id="nav">
     <div class="nav-inner">
-      <a href="#top" class="brand">
+      <a href="#top" class="brand" id="brand" aria-label="Newrare — back to top">
         <img src="./image/logo.png" alt="" class="brand-mark" width="34" height="34">
         <span class="brand-name">Newrare</span>
       </a>
@@ -51,17 +51,19 @@
         <div class="hero-grid"></div>
         <div class="hero-glow hero-glow-a"></div>
         <div class="hero-glow hero-glow-b"></div>
+        <div class="hero-scan"></div>
       </div>
 
       <div class="wrap hero-inner">
         <p class="eyebrow" data-fr="Studio de jeux indépendant" data-en="Independent game studio"></p>
         <h1>
-          <span data-fr="On fabrique des jeux qui" data-en="We build games that"></span>
-          <span class="grad" data-fr="démarrent en un tap" data-en="start in one tap"></span>
+          <span data-fr="On crée des jeux" data-en="We make games"></span>
+          <span class="grad" data-fr="satisfaisants, fun et rapides."
+            data-en="satisfying, fun and fast."></span>
         </h1>
         <p class="lead"
-          data-fr="Des boucles courtes, nerveuses, pensées pour le mobile. Toute notre collection se lance ici même, dans le navigateur : pas d’installation, pas de compte."
-          data-en="Short, sharp loops built for mobile. The whole collection runs right here in your browser: no install, no account."></p>
+          data-fr="Une règle qui tient en une phrase, une partie qui tient en trente secondes. Toute la collection se lance ici même, dans le navigateur : pas d’installation, pas de compte."
+          data-en="One sentence of rules, thirty seconds of play. The whole collection starts right here in your browser: no install, no account."></p>
 
         <div class="hero-cta">
           <a class="btn btn-primary" href="#playables">
@@ -205,7 +207,7 @@
     <!-- ──────────────────────────── LEGAL ───────────────────────── -->
     <section class="section legal" id="legal">
       <div class="wrap">
-        <details class="terms">
+        <details class="terms" id="terms">
           <summary>
             <span data-fr="Conditions d’utilisation" data-en="Terms of use"></span>
           </summary>
@@ -247,6 +249,103 @@
               data-en="For any question about these terms: jurienu@gmail.com"></p>
           </div>
         </details>
+
+        <!-- The privacy text is duplicated from privacy.html on purpose: that
+             page is the URL pasted into the store listings and has to stand on
+             its own, this panel is the one the site reader opens. Edit both. -->
+        <details class="terms" id="privacy">
+          <summary>
+            <span data-fr="Politique de confidentialité" data-en="Privacy policy"></span>
+          </summary>
+          <div class="terms-body">
+            <p class="doc-meta"
+              data-fr="Dernière mise à jour : 31 août 2026" data-en="Last updated: 31 August 2026"></p>
+            <p
+              data-fr="Newrare fabrique de petits jeux. Cette page dit exactement quelles données nos jeux touchent, pourquoi, et comment nous joindre. Elle couvre ce site, les jeux jouables dans le navigateur, et nos applications mobiles."
+              data-en="Newrare makes small games. This page states exactly what data our games touch, why, and how to reach us. It covers this site, the games playable in the browser, and our mobile applications."></p>
+
+            <h3 data-fr="1. Qui est responsable" data-en="1. Who is responsible"></h3>
+            <p data-fr="Newrare est le responsable du traitement des données décrites ici. Pour toute question ou toute demande concernant vos données, écrivez à jurienu@gmail.com."
+              data-en="Newrare is the controller of the data described here. For any question or request about your data, write to jurienu@gmail.com."></p>
+
+            <h3 data-fr="2. Les jeux de ce site" data-en="2. The games on this site"></h3>
+            <p data-fr="Les jeux jouables sur newrare tiennent dans un seul fichier et tournent entièrement dans votre navigateur. Ils ne demandent aucun compte, n’envoient rien à un serveur et ne font aucune requête vers un service tiers."
+              data-en="The games playable on newrare fit in a single file and run entirely in your browser. They ask for no account, send nothing to a server, and make no request to any third-party service."></p>
+            <p data-fr="Ils écrivent une seule chose sur votre appareil : vos meilleurs scores et vos réglages, dans le stockage local du navigateur. Ces données restent sur votre appareil, nous ne pouvons pas les lire, et vider les données du site les efface définitivement."
+              data-en="They write a single thing to your device: your best scores and your settings, in the browser’s local storage. That data stays on your device, we cannot read it, and clearing the site’s data erases it for good."></p>
+
+            <h3 data-fr="3. La mesure d’audience du site" data-en="3. Site measurement"></h3>
+            <p data-fr="Nous mesurons la fréquentation du site avec Vercel Web Analytics, servi depuis notre propre domaine. Cet outil ne pose aucun cookie, n’utilise aucun identifiant publicitaire et ne suit personne d’un site à l’autre."
+              data-en="We measure site traffic with Vercel Web Analytics, served from our own domain. It sets no cookie, uses no advertising identifier, and follows nobody from one site to another."></p>
+            <p data-fr="Il enregistre des données agrégées et non nominatives : page consultée, page de provenance, pays, type d’appareil et de navigateur, et le jeu lancé. Nous nous en servons pour savoir quels jeux méritent d’être poursuivis — rien de plus."
+              data-en="It records aggregated, non-identifying data: page viewed, referring page, country, device and browser type, and which game was started. We use it to know which games deserve to be taken further — nothing more."></p>
+            <p data-fr="Nous n’utilisons aucun cookie publicitaire ni aucun traceur tiers sur ce site."
+              data-en="We use no advertising cookie and no third-party tracker on this site."></p>
+
+            <h3 data-fr="4. Nos applications mobiles" data-en="4. Our mobile applications"></h3>
+            <p data-fr="Nos applications publiées sur Google Play peuvent traiter, selon les fonctionnalités activées :"
+              data-en="Our applications published on Google Play may process, depending on the features enabled:"></p>
+            <ul>
+              <li data-fr="des données d’utilisation anonymes (parties jouées, progression), à des fins de mesure"
+                data-en="anonymous usage data (runs played, progression), for measurement purposes"></li>
+              <li data-fr="des informations techniques : modèle d’appareil, version du système, langue"
+                data-en="technical information: device model, system version, language"></li>
+              <li data-fr="des données de plantage et de performance, pour corriger les jeux"
+                data-en="crash and performance data, to fix the games"></li>
+              <li data-fr="lorsqu’une application affiche de la publicité, un identifiant publicitaire fourni par le système, utilisé par la régie pour choisir et compter les annonces"
+                data-en="when an application displays advertising, an advertising identifier provided by the system, used by the ad network to select and count ads"></li>
+            </ul>
+            <p data-fr="Nous ne demandons jamais votre nom, votre adresse ni votre position, et nous ne vendons aucune donnée."
+              data-en="We never ask for your name, your address or your location, and we sell no data."></p>
+
+            <h3 data-fr="5. Publicité" data-en="5. Advertising"></h3>
+            <p data-fr="Aucune publicité n’est affichée sur ce site ni dans les jeux jouables en ligne. Si une application mobile en affiche, elle passe par Google AdMob, dont la politique de confidentialité s’applique en complément de celle-ci."
+              data-en="No advertising is shown on this site or in the games playable online. If a mobile application shows any, it goes through Google AdMob, whose privacy policy applies in addition to this one."></p>
+            <p data-fr="Dans l’Espace économique européen, au Royaume-Uni et en Suisse, votre consentement est demandé avant toute publicité personnalisée, via une plateforme de gestion du consentement. Vous pouvez le modifier ou le retirer à tout moment depuis les réglages de l’application, et limiter le suivi publicitaire dans les réglages de votre appareil."
+              data-en="In the European Economic Area, the United Kingdom and Switzerland, your consent is requested before any personalized advertising, through a consent management platform. You can change or withdraw it at any time from the application’s settings, and limit ad tracking in your device settings."></p>
+
+            <h3 data-fr="6. Prestataires" data-en="6. Service providers"></h3>
+            <p data-fr="Nous nous appuyons sur un petit nombre de prestataires, chacun pour une seule chose :"
+              data-en="We rely on a small number of providers, each for a single thing:"></p>
+            <ul>
+              <li data-fr="Vercel — hébergement du site et mesure d’audience"
+                data-en="Vercel — site hosting and audience measurement"></li>
+              <li data-fr="Google Play — distribution des applications Android"
+                data-en="Google Play — distribution of the Android applications"></li>
+              <li data-fr="Google AdMob — publicité dans les applications qui en affichent"
+                data-en="Google AdMob — advertising in the applications that display any"></li>
+              <li data-fr="itch.io — hébergement de certains jeux jouables en ligne"
+                data-en="itch.io — hosting of some of the games playable online"></li>
+            </ul>
+            <p data-fr="Ces prestataires peuvent traiter des données hors de l’Union européenne, sous les garanties prévues par leurs propres engagements contractuels."
+              data-en="These providers may process data outside the European Union, under the safeguards set out in their own contractual commitments."></p>
+
+            <h3 data-fr="7. Base légale et conservation" data-en="7. Legal basis and retention"></h3>
+            <p data-fr="La mesure d’audience agrégée repose sur notre intérêt légitime à comprendre l’usage de nos jeux ; la publicité personnalisée repose sur votre consentement. Les statistiques agrégées sont conservées au maximum 24 mois ; les données stockées par un jeu restent sur votre appareil jusqu’à ce que vous les effaciez."
+              data-en="Aggregated measurement rests on our legitimate interest in understanding how our games are used; personalized advertising rests on your consent. Aggregated statistics are kept for at most 24 months; the data a game stores stays on your device until you erase it."></p>
+
+            <h3 data-fr="8. Enfants" data-en="8. Children"></h3>
+            <p data-fr="Nos jeux ne visent pas les enfants de moins de 13 ans et nous ne collectons pas sciemment leurs données. Si vous pensez qu’un enfant nous a transmis des données, écrivez-nous : nous les supprimerons."
+              data-en="Our games are not directed at children under 13 and we do not knowingly collect their data. If you believe a child has sent us data, write to us and we will delete it."></p>
+
+            <h3 data-fr="9. Vos droits" data-en="9. Your rights"></h3>
+            <p data-fr="Vous disposez d’un droit d’accès, de rectification, d’effacement, d’opposition et de portabilité sur vos données, ainsi que du droit d’introduire une réclamation auprès d’une autorité de contrôle (en France, la CNIL). Comme nous ne collectons aucune donnée nominative, la plupart de ces demandes se règlent en effaçant les données du site dans votre navigateur ou en désinstallant l’application ; pour tout le reste, écrivez-nous."
+              data-en="You have a right of access, rectification, erasure, objection and portability over your data, as well as the right to lodge a complaint with a supervisory authority (in France, the CNIL). Since we collect no identifying data, most such requests are settled by clearing the site’s data in your browser or uninstalling the application; for anything else, write to us."></p>
+
+            <h3 data-fr="10. Modifications" data-en="10. Changes"></h3>
+            <p data-fr="Cette politique peut être modifiée. Toute modification prend effet dès sa publication sur cette page, et la date de mise à jour en haut de page change avec elle."
+              data-en="This policy may change. Any change takes effect as soon as it is published on this page, and the update date at the top of the page changes with it."></p>
+
+            <h3 data-fr="11. Contact" data-en="11. Contact"></h3>
+            <p data-fr="Pour toute question sur cette politique ou sur vos données : jurienu@gmail.com"
+              data-en="For any question about this policy or about your data: jurienu@gmail.com"></p>
+
+            <p class="legal-links">
+              <a href="privacy.html" data-fr="Ouvrir la page complète"
+                data-en="Open the full page"></a>
+            </p>
+          </div>
+        </details>
       </div>
     </section>
   </main>
@@ -266,7 +365,8 @@
         <a href="#apps" data-fr="Applis" data-en="Apps"></a>
         <a href="#studio" data-fr="Studio" data-en="Studio"></a>
         <a href="#contact" data-fr="Contact" data-en="Contact"></a>
-        <a href="#legal" data-fr="Mentions légales" data-en="Legal"></a>
+        <a href="#terms" data-fr="Mentions légales" data-en="Legal"></a>
+        <a href="#privacy" data-fr="Confidentialité" data-en="Privacy"></a>
       </nav>
       <a class="btn btn-ghost btn-sm" href="https://play.google.com/store/apps/developer?id=Newrare" target="_blank"
         rel="noopener">
@@ -326,6 +426,7 @@
   </div>
 
   <script src="games.js"></script>
+  <script src="analytics.js"></script>
   <script src="script.js"></script>
 </body>
 

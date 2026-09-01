@@ -1274,7 +1274,16 @@
   }
 
   function fitCanvas() {
-    var vw = window.innerWidth, vh = window.innerHeight;
+    var winW = window.innerWidth, winH = window.innerHeight;
+
+    /* CONFIG.layout.framePad reserves a margin of SCREEN pixels around the
+       frame before the scale is computed. A playable leaves it at 0 — an ad
+       fills its container, always — while the web target sets it on a desktop
+       window so the dressing of packages/frame-web is not cut off by the edge
+       of the screen. It may be an accessor (see packages/platform/web.js), so
+       it is read on every fit rather than cached. */
+    var pad = CONFIG.layout.framePad || 0;
+    var vw = Math.max(1, winW - pad * 2), vh = Math.max(1, winH - pad * 2);
     var dpr = Math.min(window.devicePixelRatio || 1, 2);   // cap DPR for perf
     var scale = Math.min(vw / view.w, vh / view.h);
     view.scale = scale;
@@ -1287,7 +1296,7 @@
 
     // Letterbox bars already push the frame away from the notch: only the
     // remaining overlap has to be padded, converted to design px.
-    var ins = safeInsets(), bar = Math.max(0, (vh - view.h * scale) / 2);
+    var ins = safeInsets(), bar = Math.max(0, (winH - view.h * scale) / 2);
     view.insetTop    = Math.max(0, (ins.top - bar) / scale);
     view.insetBottom = Math.max(0, (ins.bottom - bar) / scale);
     cssVar("--inset-top", view.insetTop.toFixed(1) + "px");
@@ -1416,16 +1425,34 @@
       for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
       return bytes.buffer;
     }
+    /* A clip is either an embedded data URI (the playable, where the file has
+       to be one document) or a URL (the web build, where the same bytes ship
+       as a file — a data URI is ~33% bigger and cannot be cached). Both end up
+       as the same ArrayBuffer, so nothing below this line knows the difference. */
+    function fetchBytes(src, ok, fail) {
+      if (src.slice(0, 5) === "data:") {
+        try { ok(dataToBytes(src)); } catch (e) { fail(); }
+        return;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", src, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload = function () { if (xhr.response) ok(xhr.response); else fail(); };
+      xhr.onerror = fail;
+      try { xhr.send(); } catch (e) { fail(); }
+    }
     function decodeAll() {
       var a = actx; if (!a || !a.decodeAudioData) return;
       Object.keys(ASSETS.sounds).forEach(function (k) {
         if (buffers[k] || pending[k]) return;
         pending[k] = true;
-        try {
-          a.decodeAudioData(dataToBytes(ASSETS.sounds[k]),
-            function (buf) { buffers[k] = buf; pending[k] = false; },
-            function () { pending[k] = false; });
-        } catch (e) { pending[k] = false; }
+        fetchBytes(ASSETS.sounds[k], function (bytes) {
+          try {
+            a.decodeAudioData(bytes,
+              function (buf) { buffers[k] = buf; pending[k] = false; },
+              function () { pending[k] = false; });
+          } catch (e) { pending[k] = false; }
+        }, function () { pending[k] = false; });
       });
     }
     function clip(name, vol, rate) {
@@ -1682,11 +1709,29 @@
     };
   })();
 
-  // --- Storage / random ---------------------------------------------------
-  var Store = {
-    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  };
+  /* --- Storage / random ---------------------------------------------------
+     Store is localStorage with an in-memory map behind it. On our own origin
+     the map is only a mirror; inside a sandboxed iframe (itch, a portal) a
+     browser that blocks third-party storage makes localStorage *throw*, and
+     without the map `set` would swallow the error and the very next `get`
+     would hand back the default — a best score would not survive even the
+     current session, and every retention number measured there would be
+     false. The map turns that into session-scoped persistence. */
+  var Store = (function () {
+    var mem = {};
+    function get(k, d) {
+      try {
+        var v = localStorage.getItem(k);
+        if (v !== null) return JSON.parse(v);
+      } catch (e) {}
+      return mem.hasOwnProperty(k) ? mem[k] : d;
+    }
+    function set(k, v) {
+      mem[k] = v;                                   // always, so a blocked write still holds
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    }
+    return { get: get, set: set };
+  })();
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },
@@ -2772,7 +2817,7 @@
        segmented bar that IS the spin gauge, sitting right under the HUD's own
        "SPIN %" pill so the number and the picture read as one instrument. The
        dish is narrowed by the whole band, so no top ever plays behind it. */
-    var GAUGE_W = 36;        // width of the rail
+    var GAUGE_W = 25;        // width of the rail
     var GAUGE_GAP = 16;      // air between the rail and the dish wall
     var GAUGE_BAND = GAUGE_W + GAUGE_GAP;
     var GAUGE_SEGS = 20;     // one cell per 5% of spin
@@ -3838,7 +3883,7 @@
         // the dead cell, so an empty rail still reads as a scale — skipped when
         // something covers it whole, which is the common case
         if (b < 0.999) {
-          barPath(x + 4, cellY, w - 8, cellH, 4);
+          barPath(x + 3, cellY, w - 6, cellH, 3);
           ctx.fillStyle = lo >= cap ? "rgba(255,255,255,.018)" : "rgba(255,255,255,.035)";
           ctx.fill();
         }
@@ -3851,11 +3896,11 @@
           k = spin > 0.001 ? clamp((lo + 0.5 / GAUGE_SEGS) / spin, 0, 1) : 0;
           ctx.fillStyle = rgba(col, 0.19 + 0.44 * k * k);
           if (f >= 0.999) {
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.fill();
           } else {
             ctx.save();
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
-            ctx.fillRect(x + 4, cellY + cellH * (1 - f), w - 8, cellH * f);
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.clip();
+            ctx.fillRect(x + 3, cellY + cellH * (1 - f), w - 6, cellH * f);
             ctx.restore();
           }
         }
@@ -3864,11 +3909,11 @@
           ctx.fillStyle = spin > spinLag ? "rgba(255,255,255,.58)"
                                         : "rgba(255,47,109,.48)";
           if (a <= 0.001 && b >= 0.999) {
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.fill();
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.fill();
           } else {
             ctx.save();
-            barPath(x + 4, cellY, w - 8, cellH, 4); ctx.clip();
-            ctx.fillRect(x + 4, cellY + cellH * (1 - b), w - 8, cellH * (b - a));
+            barPath(x + 3, cellY, w - 6, cellH, 3); ctx.clip();
+            ctx.fillRect(x + 3, cellY + cellH * (1 - b), w - 6, cellH * (b - a));
             ctx.restore();
           }
         }
@@ -3957,9 +4002,9 @@
       }
       // the node the discharge is anchored on, mid-rail
       ctx.fillStyle = rgba(col, 0.24);
-      ctx.beginPath(); ctx.arc(x + w / 2, hy, 9, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 7, 0, TAU); ctx.fill();
       ctx.fillStyle = rgba("#ffffff", 0.78);
-      ctx.beginPath(); ctx.arc(x + w / 2, hy, 3.4, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + w / 2, hy, 2.6, 0, TAU); ctx.fill();
       ctx.restore();
     }
 

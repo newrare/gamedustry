@@ -1,0 +1,68 @@
+/*
+  webshell stylesheet — the front end the `web` target adds on top of the motor.
+
+  Unlike packages/devtools/devtools.css, this is NOT developer chrome: it is
+  part of the game as a player sees it, so it lives inside the 720x1280 design
+  space and obeys the same rule as the motor — design pixels only, never vw/vh,
+  and every colour comes from the theme tokens a SKIN already overrides.
+*/
+
+/* The CTA bar is what a playable sells with; a web build has nowhere to send
+   the player, so it never shows. Its band is given back to Layout in
+   packages/platform/web.js. */
+#cta-bar { display:none !important; }
+
+/* ---- the intro turns into a menu ------------------------------------- */
+/* The demo stage moves into the Help panel, so the menu itself stays short:
+   icon, title, one sentence, PLAY, and three quiet entries under it. */
+#screen-intro #intro-demo { margin-top:0; }
+#screen-intro #btn-start { margin-top:44px; }
+
+#web-menu {
+  margin-top:30px; display:flex; align-items:center; justify-content:center;
+  gap:14px; flex-wrap:wrap;
+}
+.web-menu-btn {
+  border:2px solid var(--panel-line); border-radius:999px; cursor:pointer;
+  font-family:inherit; font-weight:800; letter-spacing:1px; font-size:26px;
+  color:var(--muted); background:var(--panel); padding:16px 30px;
+  transition:color .18s ease, border-color .18s ease;
+}
+.web-menu-btn:active { transform:scale(.96); }
+.web-menu-btn:hover { color:var(--text); border-color:var(--accent); }
+
+/* ---- panels: leaderboard / options / help ---------------------------- */
+/* Above .screen (z-index 30) so a panel covers the menu it was opened from. */
+#web-panel {
+  position:absolute; inset:0; z-index:40; padding:70px 48px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+  /* Opaque, and tinted with the game's own background: a panel that lets the
+     menu show through reads as a bug, and a flat black one reads as foreign. */
+  background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.5)), var(--bg);
+  transition:opacity .2s ease;
+}
+#web-panel.hidden { opacity:0; pointer-events:none; }
+#web-panel-title {
+  font-size:52px; font-weight:900; letter-spacing:2px; color:var(--accent);
+  text-shadow:0 0 20px currentColor; margin-bottom:34px;
+}
+#web-panel-body { width:100%; }
+#web-panel-close { margin-top:44px; }
+
+/* The Help panel re-hosts the motor's own demo stage, so a SKIN that
+   re-dressed .demo-* for the intro keeps working here with no extra rule. */
+.web-help-line { font-size:32px; line-height:1.4; color:#c9d6ff; margin-bottom:30px; }
+.web-help-line b { font-weight:900; color:var(--accent); text-shadow:0 0 16px currentColor; }
+.web-keys { margin-top:34px; display:flex; align-items:center; justify-content:center; gap:14px; }
+.web-key {
+  border:2px solid var(--panel-line); border-radius:14px; background:var(--panel);
+  padding:12px 24px; font-size:28px; font-weight:800; letter-spacing:1px; color:var(--text);
+}
+.web-keys-lbl { font-size:24px; letter-spacing:3px; color:var(--muted); margin-top:6px; }
+
+/* One score today, a table when the meta layer lands (phase 5). */
+.web-best-lbl { font-size:28px; letter-spacing:2px; color:var(--muted); }
+.web-best { font-size:130px; font-weight:900; line-height:1; color:var(--gold);
+  text-shadow:0 0 28px rgba(255,212,59,.5); font-variant-numeric:tabular-nums; }
+.web-soon { margin-top:34px; font-size:26px; line-height:1.5; color:var(--muted); }

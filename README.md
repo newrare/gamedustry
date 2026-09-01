@@ -6,13 +6,12 @@ per game, several outlets.
 | target       | what it is                                      | status                 |
 | ------------ | ----------------------------------------------- | ---------------------- |
 | **playable** | one self-contained HTML for ad networks (MRAID) | built from `packages/` |
-| **web**      | the newrare site and itch.io                    | site in `site/`        |
-| **proto**    | a stripped shell for validating a concept fast  | `--target=proto`       |
+| **web**      | the newrare site (and later itch.io)            | `--target=web`         |
 | **android**  | a Capacitor build for Google Play               | planned                |
 
-The plan of record for the other three targets — extraction, build, deploy — is
+The plan of record for the deploy side of each target is
 [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md). Everything below
-describes what exists now: the motor and the playable it produces.
+describes what exists now: the motor, the playable and the web build.
 
 Every playable has the same skeleton, so the skeleton is written once:
 
@@ -46,10 +45,14 @@ playables/
 ├── index.html                ← gallery + motor overview (open this first)
 ├── README.md                 ← you are here
 ├── CLAUDE.md                 ← instructions for AI-assisted game creation
+├── vercel.json               ← the deploy settings, in the repo and not a dashboard
 ├── site/                     ← the public newrare site (static, deployed by Vercel)
 │   ├── index.html            ← studio page: playables, store apps, studio, legal
+│   ├── privacy.html          ← the privacy policy, a store prerequisite
 │   ├── style.css  script.js  ← no framework, no web font, FR/EN in one toggle
+│   ├── analytics.js          ← Vercel Web Analytics, inert off the deployed site
 │   ├── games.js              ← the playable catalogue the page renders
+│   ├── app-ads.txt           ← authorized ad sellers; empty until AdMob ships
 │   ├── image/                ← site art + store-app screenshots
 │   └── newrare-website/      ← the previous site, kept for reference, not published
 ├── packages/                 ← THE MOTOR, stored once, shared by construction
@@ -57,11 +60,14 @@ playables/
 │   │   ├── engine.js         ← section 3: frame, input, loop, audio, RNG, Fx
 │   │   └── bootstrap.js      ← section 7: the frame pipeline and wiring
 │   ├── platform/
-│   │   └── mraid.js          ← section 4: MRAID, CTA, visibility, tracking
-│   └── shell/
-│       ├── motor.css         ← the shared stylesheet
-│       ├── shell.js          ← section 5: states, HUD, overlay, intro, end
-│       └── script-open.js    ← the IIFE open and close
+│   │   ├── mraid.js          ← section 4: MRAID, CTA, visibility, tracking
+│   │   └── web.js            ← section 4 for the web target: no MRAID, no store
+│   ├── shell/
+│   │   ├── motor.css         ← the shared stylesheet
+│   │   ├── shell.js          ← section 5: states, HUD, overlay, intro, end
+│   │   └── script-open.js    ← the IIFE open and close
+│   ├── webshell/             ← web only: the menu, the panels, the end screen
+│   └── frame-web/            ← web only: the desktop dressing around the frame
 ├── template/                 ← the skeleton, itself a build unit
 │   ├── page.html  skin.css  game.js
 │   └── game-template.html    ← GENERATED, for reading the whole thing at once
@@ -79,6 +85,8 @@ playables/
 │   ├── gearball/index.html        ← Gearball (tap to drop, fill the loop)
 │   ├── radiam/index.html          ← Radiam (turn a ring, line up three)
 │   └── slipdeck/index.html        ← Slipdeck (swipe to sort, poker hands)
+├── prototype/                ← one raw HTML page per idea: no motor, no build
+├── lab/                      ← standalone tools; a new one starts from _template
 ├── assets/                   ← source art & audio (not shipped; embed instead)
 │   ├── icon/                 ← one app icon per game, embedded on its intro
 │   │   ├── thumb/            ← 320 px cuts, the only assets the gallery loads
@@ -87,13 +95,16 @@ playables/
 ├── tools/
 │   ├── lib/parts.mjs         ← the single definition of the file's regions
 │   ├── build/                ← assemble
-│   │   ├── build.mjs         ← a game: --target=playable|proto, --check
-│   │   ├── build-site.mjs    ← site/ + the playables into dist/site/
+│   │   ├── build.mjs         ← a game: --target=playable|web, --check
+│   │   ├── build-site.mjs    ← site/ + the web builds into dist/site/
 │   │   ├── gen-catalogues.mjs← the two catalogues, from the manifests
 │   │   ├── extract.mjs       ← the one-shot that split the motor out of the games
 │   │   └── check-size.mjs    ← verify files stay under the size budget
+│   ├── publish/              ← ship it
+│   │   ├── deploy-itch.mjs   ← butler push, target read from the manifest
+│   │   └── store-meta.mjs    ← the itch page copy, generated from the manifest
 │   ├── lab/                  ← author and inspect
-│   │   ├── serve.mjs         ← proto server with reload on save
+│   │   ├── serve-site.mjs    ← the site, locally, rebuilt on save
 │   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
@@ -128,15 +139,39 @@ node tools/build/build.mjs --check           # assert artifacts match sources
 node tools/build/gen-catalogues.mjs          # the two catalogues, from the manifests
 ```
 
-**Prototype a concept** — the round starts by itself, sliders for every number in
-`CONFIG`, reload on save:
+**Build a game for the web** — same motor, same game, no ad glue: the intro
+becomes a menu (PLAY / LEADERBOARD / OPTIONS / HELP), the how-to-play demo moves
+into the Help panel, and the install CTA is gone, so its band goes back to the
+play area:
 
 ```bash
-node tools/lab/serve.mjs chainring           # http://localhost:8080/chainring/
+node tools/build/build.mjs --target=web                  # → dist/web/
+node tools/build/build.mjs --target=web --dest=itch      # → dist/itch/<slug>/
 ```
 
-`R` restarts · `SPACE` pauses and steps · `T` taps · `[` `]` change speed ·
-`?seed=42` makes a run reproducible.
+The two destinations differ in shape, not in content. `dist/web/` is the split
+build the site ships: the motor is one hashed file every game links, and the
+assets are files instead of base64, so opening a second game re-downloads
+neither. `dist/itch/<slug>/` is one self-contained document again — an itch
+project is uploaded alone, so it has no one to share a cache with.
+
+**Publish to itch** — butler pushes the build; the page copy is generated and
+pasted by hand, because itch has no public API for a page:
+
+```bash
+node tools/publish/deploy-itch.mjs --game=vipera --dry-run
+node tools/publish/store-meta.mjs --game=vipera
+```
+
+**Prototype an idea** — one raw HTML page, no motor and no build; opening it is
+the whole loop:
+
+```bash
+open prototype/<slug>.html
+```
+
+It becomes a game only once the idea is validated, and that conversion is a
+separate step — see `CLAUDE.md`, *Three kinds of request*.
 
 **Run a game directly**:
 
@@ -146,12 +181,19 @@ open games/chainring/index.html
 python3 -m http.server 8000                  # then visit localhost:8000/games/…
 ```
 
-**Build the public site** — assembles `site/` and every playable into
-`dist/site/`, copying each game's icon and screenshots out of `assets/`:
+**Build the public site** — runs the web build, then assembles `site/` and every
+game into `dist/site/`, copying each game's icon and screenshots out of
+`assets/`:
 
 ```bash
 node tools/build/build-site.mjs
 open dist/site/index.html                    # the built site, games included
+```
+
+**Work on the site** — the same build, served, rebuilt and reloaded on save:
+
+```bash
+node tools/lab/serve-site.mjs                # http://localhost:8090/
 ```
 
 A game appears on the site as soon as it has `assets/icon/thumb/<slug>.png` and

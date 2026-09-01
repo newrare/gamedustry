@@ -863,10 +863,10 @@
   .eo-score { text-shadow:0 0 22px rgba(75,245,255,.75); }
   #cta-bar { border-top:1px solid rgba(255,138,26,.22); }
 
-  /* ---- intro: one sentence, and a stage that plays the two rules ----------
-     "Every wall repaints the ball and one tap flips every brick", so the stage
-     plays exactly those two beats and slows down on each of them, because a
-     colour change is over in one frame and would otherwise never be read.
+  /* ---- intro: one sentence, and a stage that plays the rule ---------------
+     "A ball only breaks its own colour and one tap flips every brick", so the
+     stage plays exactly that and slows down on the tap, because a colour
+     change is over in one frame and would otherwise never be read.
 
      The motor's nodes are all recycled: the arrow becomes the barrel, the beam
      becomes the dotted sight, the track becomes the lava, the target becomes
@@ -899,8 +899,8 @@
   @keyframes demoWall {
     0%,37.4% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
     37.5%    { box-shadow:inset -30px 0 40px -8px rgba(255,255,255,.95); }
-    44%      { box-shadow:inset -26px 0 36px -8px rgba(47,134,255,.85); }
-    58%,100% { box-shadow:inset 0 0 0 0 rgba(47,134,255,0); }
+    44%      { box-shadow:inset -26px 0 36px -8px rgba(126,249,255,.85); }
+    58%,100% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
   }
 
   /* The two brick rows, five panes each. A gradient does not interpolate, so
@@ -913,18 +913,6 @@
   .demo-stage::before {
     top:40px;
     background-image:linear-gradient(90deg,
-      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-      rgba(47,134,255,.62) 272px 332px);
-    border-top:2px solid rgba(212,233,255,.7);
-    box-shadow:0 0 18px rgba(47,134,255,.3);
-    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
-  }
-  .demo-stage::after {
-    top:74px;
-    background-image:linear-gradient(90deg,
       rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
       rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
       rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -932,6 +920,18 @@
       rgba(255,59,87,.62) 272px 332px);
     border-top:2px solid rgba(255,217,221,.7);
     box-shadow:0 0 18px rgba(255,59,87,.3);
+    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
+  }
+  .demo-stage::after {
+    top:74px;
+    background-image:linear-gradient(90deg,
+      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+      rgba(47,134,255,.62) 272px 332px);
+    border-top:2px solid rgba(212,233,255,.7);
+    box-shadow:0 0 18px rgba(47,134,255,.3);
     animation:demoRowBot 5.2s linear infinite, demoFlipBot 5.2s ease-in-out infinite;
   }
   /* THE TAP, at 64%: every pane turns end over end onto the other colour. The
@@ -951,22 +951,6 @@
   }
   @keyframes demoRowTop {
     0%,63.9% { background-image:linear-gradient(90deg,
-                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                 rgba(47,134,255,.62) 272px 332px);
-               border-top-color:rgba(212,233,255,.7);
-               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
-    64%      { background-image:linear-gradient(90deg,
-                 rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                 rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                 rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-                 rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-                 rgba(255,59,87,.62) 272px 332px);
-               border-top-color:#ffffff;
-               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    70%,100% { background-image:linear-gradient(90deg,
                  rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
                  rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
                  rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -974,11 +958,43 @@
                  rgba(255,59,87,.62) 272px 332px);
                border-top-color:rgba(255,217,221,.7);
                box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
+    64%      { background-image:linear-gradient(90deg,
+                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                 rgba(47,134,255,.62) 272px 332px);
+               border-top-color:#ffffff;
+               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    70%,100% { background-image:linear-gradient(90deg,
+                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                 rgba(47,134,255,.62) 272px 332px);
+               border-top-color:rgba(212,233,255,.7);
+               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
   }
   /* the lower row also loses its FOURTH pane at 85.6% — one brick, the one the
      ball actually reaches, and the hole stays open until the loop restarts */
   @keyframes demoRowBot {
     0%,65.6%    { background-image:linear-gradient(90deg,
+                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
+                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
+                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
+                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
+                    rgba(47,134,255,.62) 272px 332px);
+                  border-top-color:rgba(212,233,255,.7);
+                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+    65.7%       { background-image:linear-gradient(90deg,
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
+                    rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
+                  border-top-color:#ffffff;
+                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
+    71.7%,85.5% { background-image:linear-gradient(90deg,
                     rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
                     rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
                     rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
@@ -986,36 +1002,20 @@
                     rgba(255,59,87,.62) 272px 332px);
                   border-top-color:rgba(255,217,221,.7);
                   box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
-    65.7%       { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:#ffffff;
-                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    71.7%,85.5% { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:rgba(212,233,255,.7);
-                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
     85.6%       { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
                   border-top-color:#ffffff;
                   box-shadow:0 0 34px rgba(255,255,255,.8); filter:brightness(2.4); }
     89%,100%    { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:rgba(212,233,255,.7);
-                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
+                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
+                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
+                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
+                    rgba(255,59,87,.62) 272px 332px);
+                  border-top-color:rgba(255,217,221,.7);
+                  box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
   }
 
   /* the lava: the floor, and the only thing that destroys a ball */
@@ -1069,25 +1069,22 @@
   }
 
   /* THE SHOT — one ball, and it only ever breaks one brick. It leaves the
-     muzzle red, crawls off the right wall repainted blue, hangs in the air
-     while the tap flips the board, and lands on the pane that just turned its
-     own colour. */
+     muzzle red and stays red: it crawls off the right wall untouched, hangs in
+     the air while the tap flips the board, and lands on the pane that the tap
+     just turned red for it. */
   .demo-aim .demo-target {
     z-index:1; left:241px; top:216px; width:22px; height:22px; margin-left:0;
     border:0; border-radius:50%;
     background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
     box-shadow:0 0 16px rgba(255,59,87,.85);
-    animation:demoShot 5.2s linear infinite, demoBallSide 5.2s linear infinite;
+    animation:demoShot 5.2s linear infinite, demoBallFlash 5.2s linear infinite;
   }
-  /* THE WALL REPAINTS THE BALL: red out of the muzzle, blue from the instant
-     it touches the right edge at 37.5% */
-  @keyframes demoBallSide {
-    0%,37.4%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
-                 box-shadow:0 0 16px rgba(255,59,87,.85); }
-    37.5%      { background:radial-gradient(circle at 34% 28%, #ffffff 0 60%, #ffffff 100%);
-                 box-shadow:0 0 30px rgba(255,255,255,.95); }
-    41%,100%   { background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #2f86ff 62%, #0b3f8c 100%);
-                 box-shadow:0 0 18px rgba(47,134,255,.9); }
+  /* THE BALL KEEPS ITS COLOUR: red out of the muzzle, red into the brick. The
+     wall only whitens it for a frame — that is the impact, not a repaint. */
+  @keyframes demoBallFlash {
+    0%,37.4%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
+    37.5%      { box-shadow:0 0 30px rgba(255,255,255,.95); filter:brightness(1.9); }
+    41%,100%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
   }
   /* the hit and the tap are both held: between 37.5% and 60% the ball barely
      drifts off the wall, and between 60% and 76% it barely moves at all */
@@ -1103,8 +1100,8 @@
     88%      { transform:translate(26px,-123px) scale(1.3); opacity:1; }
     94%,100% { transform:translate(26px,-123px) scale(1.5); opacity:0; }
   }
-  /* NO TRAIL: the two ripples are the two impact rings instead — the wall one
-     bleeds from white to blue, which is the repaint itself */
+  /* NO TRAIL: the two ripples are the two impact rings instead — both bleed
+     from white back to the ball's own red, because nothing repaints it */
   .demo-aim .demo-ripple {
     inset:-9px; width:auto; height:auto; border:3px solid #ffffff; border-radius:50%;
     background:none; box-shadow:none; opacity:0;
@@ -1114,13 +1111,13 @@
   @keyframes demoRingWall {
     0%,37.4% { transform:scale(.5); opacity:0; border-color:#ffffff; }
     37.5%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    45%      { transform:scale(2.2); opacity:.55; border-color:#8ec6ff; }
-    52%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+    45%      { transform:scale(2.2); opacity:.55; border-color:#7ef9ff; }
+    52%,100% { transform:scale(3); opacity:0; border-color:#7ef9ff; }
   }
   @keyframes demoRingHit {
-    0%,85.5% { transform:scale(.5); opacity:0; border-color:#d4e9ff; }
+    0%,85.5% { transform:scale(.5); opacity:0; border-color:#ffd9dd; }
     85.6%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    93%,100% { transform:scale(3); opacity:0; border-color:#2f86ff; }
+    93%,100% { transform:scale(3); opacity:0; border-color:#ff3b57; }
   }
 
   /* the finger: drags the aim across, lets go — then comes back mid-flight and
@@ -1229,7 +1226,7 @@
     <div id="screen-intro" class="screen hidden">
       <img id="app-icon" alt="">
       <div id="intro-title">BOUNCETRY</div>
-      <div id="intro-tagline">Every <b class="w-wall">wall</b> repaints the ball and one <b class="w-tap">tap</b> flips every brick</div>
+      <div id="intro-tagline">A ball only breaks its <b class="w-wall">own colour</b> and one <b class="w-tap">tap</b> flips every brick</div>
       <div id="intro-demo">
         <div class="demo-stage">
           <div class="demo-track"></div>
@@ -1271,10 +1268,10 @@
      =================================================================== */
   var CONFIG = {
     title:   "BOUNCETRY",
-    /* One sentence, and nothing else — the two rules of the game and nothing
-       around them. The stage below plays exactly that: the wall repaints the
-       ball, the tap flips the whole wall of glass. */
-    tagline: "Every <b class=\"w-wall\">wall</b> repaints the ball and one <b class=\"w-tap\">tap</b> flips every brick",
+    /* One sentence, and nothing else — the one rule of the game and nothing
+       around them. The stage below plays exactly that: the ball keeps its
+       colour, the tap flips the whole wall of glass. */
+    tagline: "A ball only breaks its <b class=\"w-wall\">own colour</b> and one <b class=\"w-tap\">tap</b> flips every brick",
     gameSeconds: 0,                  // no clock: the run ends when the balls do
 
     storeUrl: {
@@ -1431,7 +1428,16 @@
   }
 
   function fitCanvas() {
-    var vw = window.innerWidth, vh = window.innerHeight;
+    var winW = window.innerWidth, winH = window.innerHeight;
+
+    /* CONFIG.layout.framePad reserves a margin of SCREEN pixels around the
+       frame before the scale is computed. A playable leaves it at 0 — an ad
+       fills its container, always — while the web target sets it on a desktop
+       window so the dressing of packages/frame-web is not cut off by the edge
+       of the screen. It may be an accessor (see packages/platform/web.js), so
+       it is read on every fit rather than cached. */
+    var pad = CONFIG.layout.framePad || 0;
+    var vw = Math.max(1, winW - pad * 2), vh = Math.max(1, winH - pad * 2);
     var dpr = Math.min(window.devicePixelRatio || 1, 2);   // cap DPR for perf
     var scale = Math.min(vw / view.w, vh / view.h);
     view.scale = scale;
@@ -1444,7 +1450,7 @@
 
     // Letterbox bars already push the frame away from the notch: only the
     // remaining overlap has to be padded, converted to design px.
-    var ins = safeInsets(), bar = Math.max(0, (vh - view.h * scale) / 2);
+    var ins = safeInsets(), bar = Math.max(0, (winH - view.h * scale) / 2);
     view.insetTop    = Math.max(0, (ins.top - bar) / scale);
     view.insetBottom = Math.max(0, (ins.bottom - bar) / scale);
     cssVar("--inset-top", view.insetTop.toFixed(1) + "px");
@@ -1573,16 +1579,34 @@
       for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
       return bytes.buffer;
     }
+    /* A clip is either an embedded data URI (the playable, where the file has
+       to be one document) or a URL (the web build, where the same bytes ship
+       as a file — a data URI is ~33% bigger and cannot be cached). Both end up
+       as the same ArrayBuffer, so nothing below this line knows the difference. */
+    function fetchBytes(src, ok, fail) {
+      if (src.slice(0, 5) === "data:") {
+        try { ok(dataToBytes(src)); } catch (e) { fail(); }
+        return;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", src, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload = function () { if (xhr.response) ok(xhr.response); else fail(); };
+      xhr.onerror = fail;
+      try { xhr.send(); } catch (e) { fail(); }
+    }
     function decodeAll() {
       var a = actx; if (!a || !a.decodeAudioData) return;
       Object.keys(ASSETS.sounds).forEach(function (k) {
         if (buffers[k] || pending[k]) return;
         pending[k] = true;
-        try {
-          a.decodeAudioData(dataToBytes(ASSETS.sounds[k]),
-            function (buf) { buffers[k] = buf; pending[k] = false; },
-            function () { pending[k] = false; });
-        } catch (e) { pending[k] = false; }
+        fetchBytes(ASSETS.sounds[k], function (bytes) {
+          try {
+            a.decodeAudioData(bytes,
+              function (buf) { buffers[k] = buf; pending[k] = false; },
+              function () { pending[k] = false; });
+          } catch (e) { pending[k] = false; }
+        }, function () { pending[k] = false; });
       });
     }
     function clip(name, vol, rate) {
@@ -1839,11 +1863,29 @@
     };
   })();
 
-  // --- Storage / random ---------------------------------------------------
-  var Store = {
-    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  };
+  /* --- Storage / random ---------------------------------------------------
+     Store is localStorage with an in-memory map behind it. On our own origin
+     the map is only a mirror; inside a sandboxed iframe (itch, a portal) a
+     browser that blocks third-party storage makes localStorage *throw*, and
+     without the map `set` would swallow the error and the very next `get`
+     would hand back the default — a best score would not survive even the
+     current session, and every retention number measured there would be
+     false. The map turns that into session-scoped persistence. */
+  var Store = (function () {
+    var mem = {};
+    function get(k, d) {
+      try {
+        var v = localStorage.getItem(k);
+        if (v !== null) return JSON.parse(v);
+      } catch (e) {}
+      return mem.hasOwnProperty(k) ? mem[k] : d;
+    }
+    function set(k, v) {
+      mem[k] = v;                                   // always, so a blocked write still holds
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    }
+    return { get: get, set: set };
+  })();
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },
@@ -2780,10 +2822,8 @@
      THE COLOUR RULE is the whole game. Bricks are red or blue, laid out in
      two-by-two blocks, and a ball only breaks its OWN colour. The other
      colour is a wall — it ricochets, which is exactly what a chain needs.
-     Two rules keep the colours moving:
-       the walls repaint the ball. Every bounce off the frame — left, right
-       or ceiling — hands the ball the other colour, so one shot alternates
-       red, blue, red... and the sight solves that alternation ahead.
+     A ball NEVER changes colour on its own: the frame bounces it without
+     touching it, and the only thing that moves the colours is the player.
        the tap swaps the wall. A tap anywhere turns every red pane blue and
        every blue pane red, as often as the player likes while a ball is in
        the air. It is the only control left once the shot is gone, and it
@@ -3363,11 +3403,10 @@
       traceShot();
     }
     /* The sight solves the next five bounces — walls AND bricks — for the
-       ball ABOUT TO BE FIRED, and it solves the COLOUR with them: a wall flips
-       the previewed ball exactly like it will in flight, so the dots change
-       colour along the path. A brick of the ball's colour at that point is
-       taken out of the way once the preview has broken it, a brick of the
-       other colour stays and keeps bouncing. */
+       ball ABOUT TO BE FIRED. The ball keeps the colour it leaves with, so the
+       whole path is drawn in that one colour. A brick of the ball's colour at
+       that point is taken out of the way once the preview has broken it, a
+       brick of the other colour stays and keeps bouncing. */
     function traceShot() {
       var R = C.ballR, step = 7, n = 0, bounces = 0, skip = {}, k, push;
       var side = queue.length ? queue[0] : RED;
@@ -3381,8 +3420,8 @@
         if (o.x - R < field.left)       { o.x = field.left + R;  reflect(o,  1, 0); push = true; }
         else if (o.x + R > field.right) { o.x = field.right - R; reflect(o, -1, 0); push = true; }
         if (o.y - R < field.top)        { o.y = field.top + R;   reflect(o, 0,  1); push = true; }
-        if (push) {                                // the wall repaints the ball
-          side ^= 1; bounces++;
+        if (push) {                                // the frame only ricochets
+          bounces++;
           traceMarks.push({ x: o.x, y: o.y, side: side });
         }
         trace.push(o.x, o.y); traceSide.push(side);
@@ -3448,14 +3487,12 @@
       Fx.ring(mx, my, { from: 10, to: 84, color: p.core, width: 6, life: 0.28 });
     }
 
-    /* THE WALL REPAINTS THE BALL: every bounce off the frame hands it the
-       other colour, so a single shot alternates red, blue, red... The arc, the
-       spark and the pitch of the bounce are all in the NEW colour, so the flip
-       is read the instant it happens. */
+    /* THE FRAME ONLY RICOCHETS: a bounce off the left, right or top wall
+       never touches the ball's colour — the tap is the one and only thing that
+       moves the colours. The arc, the spark and the pitch stay in the ball's
+       own colour, so a bounce reads as a bounce and nothing more. */
     function wallHit(b, side, v) {
-      var p;
-      b.side ^= 1;
-      p = SIDE[b.side];
+      var p = SIDE[b.side];
       if (clock - lastWall > 0.05) {
         Sound.clip("wall", 0.25, b.side === RED ? 0.95 : 1.14);
         lastWall = clock;

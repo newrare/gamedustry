@@ -3,10 +3,10 @@
      =================================================================== */
   var CONFIG = {
     title:   "BOUNCETRY",
-    /* One sentence, and nothing else — the two rules of the game and nothing
-       around them. The stage below plays exactly that: the wall repaints the
-       ball, the tap flips the whole wall of glass. */
-    tagline: "Every <b class=\"w-wall\">wall</b> repaints the ball and one <b class=\"w-tap\">tap</b> flips every brick",
+    /* One sentence, and nothing else — the one rule of the game and nothing
+       around them. The stage below plays exactly that: the ball keeps its
+       colour, the tap flips the whole wall of glass. */
+    tagline: "A ball only breaks its <b class=\"w-wall\">own colour</b> and one <b class=\"w-tap\">tap</b> flips every brick",
     gameSeconds: 0,                  // no clock: the run ends when the balls do
 
     storeUrl: {
@@ -154,10 +154,8 @@
      THE COLOUR RULE is the whole game. Bricks are red or blue, laid out in
      two-by-two blocks, and a ball only breaks its OWN colour. The other
      colour is a wall — it ricochets, which is exactly what a chain needs.
-     Two rules keep the colours moving:
-       the walls repaint the ball. Every bounce off the frame — left, right
-       or ceiling — hands the ball the other colour, so one shot alternates
-       red, blue, red... and the sight solves that alternation ahead.
+     A ball NEVER changes colour on its own: the frame bounces it without
+     touching it, and the only thing that moves the colours is the player.
        the tap swaps the wall. A tap anywhere turns every red pane blue and
        every blue pane red, as often as the player likes while a ball is in
        the air. It is the only control left once the shot is gone, and it
@@ -737,11 +735,10 @@
       traceShot();
     }
     /* The sight solves the next five bounces — walls AND bricks — for the
-       ball ABOUT TO BE FIRED, and it solves the COLOUR with them: a wall flips
-       the previewed ball exactly like it will in flight, so the dots change
-       colour along the path. A brick of the ball's colour at that point is
-       taken out of the way once the preview has broken it, a brick of the
-       other colour stays and keeps bouncing. */
+       ball ABOUT TO BE FIRED. The ball keeps the colour it leaves with, so the
+       whole path is drawn in that one colour. A brick of the ball's colour at
+       that point is taken out of the way once the preview has broken it, a
+       brick of the other colour stays and keeps bouncing. */
     function traceShot() {
       var R = C.ballR, step = 7, n = 0, bounces = 0, skip = {}, k, push;
       var side = queue.length ? queue[0] : RED;
@@ -755,8 +752,8 @@
         if (o.x - R < field.left)       { o.x = field.left + R;  reflect(o,  1, 0); push = true; }
         else if (o.x + R > field.right) { o.x = field.right - R; reflect(o, -1, 0); push = true; }
         if (o.y - R < field.top)        { o.y = field.top + R;   reflect(o, 0,  1); push = true; }
-        if (push) {                                // the wall repaints the ball
-          side ^= 1; bounces++;
+        if (push) {                                // the frame only ricochets
+          bounces++;
           traceMarks.push({ x: o.x, y: o.y, side: side });
         }
         trace.push(o.x, o.y); traceSide.push(side);
@@ -822,14 +819,12 @@
       Fx.ring(mx, my, { from: 10, to: 84, color: p.core, width: 6, life: 0.28 });
     }
 
-    /* THE WALL REPAINTS THE BALL: every bounce off the frame hands it the
-       other colour, so a single shot alternates red, blue, red... The arc, the
-       spark and the pitch of the bounce are all in the NEW colour, so the flip
-       is read the instant it happens. */
+    /* THE FRAME ONLY RICOCHETS: a bounce off the left, right or top wall
+       never touches the ball's colour — the tap is the one and only thing that
+       moves the colours. The arc, the spark and the pitch stay in the ball's
+       own colour, so a bounce reads as a bounce and nothing more. */
     function wallHit(b, side, v) {
-      var p;
-      b.side ^= 1;
-      p = SIDE[b.side];
+      var p = SIDE[b.side];
       if (clock - lastWall > 0.05) {
         Sound.clip("wall", 0.25, b.side === RED ? 0.95 : 1.14);
         lastWall = clock;

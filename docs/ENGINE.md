@@ -430,7 +430,7 @@ Music.start() / stop(fade)                 // background bed (see below)
 Music.duck(factor, secs) / unduck(secs)    // dip under a foreground moment
 Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
 Beat.period() / seconds(beats) / locked()
-Store.get(key, def) / Store.set(key, value)          // safe localStorage
+Store.get(key, def) / Store.set(key, value)          // localStorage + memory fallback
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
 Icon.draw(ctx, key, cx, cy, size, colour)  // an embedded SVG icon, tinted

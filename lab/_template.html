@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — <what this page is for></title>
+<style>
+/* ===========================================================================
+   LAB TEMPLATE — the starting point for a new page in lab/.
+
+   A lab page is a standalone tool: a design catalogue, a bench for one piece of
+   the motor, a place to try a look before it goes into a SKIN. Copy this file,
+   rename it, and delete what you do not need — nothing here is precious.
+
+   What a lab page IS:
+     - one self-contained HTML file, inline CSS and JS;
+     - a control panel on the left, the thing being tried on the right;
+     - allowed to load a file out of ../assets/ by relative path, which nothing
+       else in the repo may do (it never ships, so it costs no bytes).
+
+   What it is NOT:
+     - not a game (that is games/<slug>/, on the motor);
+     - not a prototype of a mechanic (that is prototype/<slug>.html);
+     - never a dependency of a build. No target reads lab/, and `tools/lab/`
+       scripts that drive a lab page in headless Chrome name it explicitly.
+
+   Same anti-dependency rule as everywhere else: no framework, no CDN, no web
+   font. It has to open on any machine, forever.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — the controls. One row per knob: a label, an input, a live value.
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 280px;
+  padding:22px 20px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 22px; font-weight:500; font-size:12px; color:#8b8ba7; }
+
+.row { margin-bottom:16px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select, .row input[type=text] {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit;
+}
+button {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+
+/* ---------------------------------------------------------------------------
+   STAGE — what is being tried. Replace the canvas with whatever the page needs
+   (a grid of cards, a DOM sample, an <img>…).
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:28px;
+  /* the checkerboard makes a wrong edge or a leftover background obvious */
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+canvas { border-radius:12px; background:#0a0718; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Lab</h1>
+  <p class="hint">What this page answers, in one line.</p>
+
+  <div class="row">
+    <label for="size">size <b id="size-v">240</b></label>
+    <input id="size" type="range" min="40" max="400" value="240">
+  </div>
+
+  <div class="row">
+    <label for="speed">speed <b id="speed-v">1.0</b></label>
+    <input id="speed" type="range" min="0" max="30" value="10">
+  </div>
+
+  <div class="row">
+    <button id="shot">Freeze / resume</button>
+  </div>
+</div>
+
+<div id="stage">
+  <canvas id="view" width="720" height="720"></canvas>
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code. Plain ES6 is fine here — a lab page runs in YOUR
+   browser, not in a mobile WebView, so the ES5 rule that governs games/ does
+   not apply. Keep it short: a lab page that needs a build has outgrown lab/.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const cv = document.getElementById("view");
+  const ctx = cv.getContext("2d");
+
+  /* Every knob in one object, so the panel wiring below is a loop and adding a
+     control is one line here plus one row in the markup. */
+  const P = { size: 240, speed: 1.0 };
+  let running = true, t = 0;
+
+  function bind(id, key, scale, digits) {
+    const el = document.getElementById(id), out = document.getElementById(id + "-v");
+    const write = () => {
+      P[key] = el.value * scale;
+      out.textContent = digits ? P[key].toFixed(digits) : P[key];
+    };
+    el.addEventListener("input", write);
+    write();
+  }
+  bind("size", "size", 1, 0);
+  bind("speed", "speed", 0.1, 1);
+
+  document.getElementById("shot").addEventListener("click", () => { running = !running; });
+
+  // ---- draw ---------------------------------------------------------------
+  function render() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const cx = cv.width / 2, cy = cv.height / 2;
+
+    ctx.strokeStyle = "#7ea6ff";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(cx, cy, P.size / 2, t, t + Math.PI * 1.5);
+    ctx.stroke();
+
+    ctx.fillStyle = "#e8e6f5";
+    ctx.font = "700 20px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("replace me", cx, cy + 6);
+  }
+
+  (function frame() {
+    if (running) t += 0.016 * P.speed;
+    render();
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

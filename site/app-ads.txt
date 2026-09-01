@@ -1,0 +1,19 @@
+# app-ads.txt — Newrare
+#
+# Authorized sellers of digital advertising inventory for the Newrare mobile
+# applications (IAB Tech Lab app-ads.txt v1.0).
+#
+# This file must be served from the root of the developer domain declared on the
+# Google Play listing, over HTTPS, as text/plain:
+#     https://<developer-domain>/app-ads.txt
+#
+# It is deliberately empty of records: no ad SDK ships in any Newrare app yet
+# (AdMob arrives in phase 8, see docs/INDUSTRIALIZATION.md). An empty file is
+# valid and tells crawlers that nobody is authorized to sell our inventory,
+# which is exactly true today.
+#
+# When AdMob is wired in, add one record per authorized seller, e.g.
+#     google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+# where pub-… is the AdMob publisher ID, and f08c47… is Google's TAG ID.
+# Nothing here is a placeholder to leave in place: a wrong publisher ID is worse
+# than no file at all.
