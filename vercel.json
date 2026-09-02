@@ -4,8 +4,11 @@
   "installCommand": "",
   "buildCommand": "node tools/build/build-site.mjs",
   "outputDirectory": "dist/site",
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/privacy", "destination": "/privacy.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
