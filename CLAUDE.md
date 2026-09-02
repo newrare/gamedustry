@@ -348,15 +348,24 @@ its own, deployed by Vercel from this repo.
   same build and serves `dist/site` with reload on save, so what you look at
   locally is what Vercel would publish. Never add a second way to assemble the
   site.
+- **Every in-page anchor is scrolled by `initLegal()`** in `script.js`, never by
+  the browser: a link whose hash is already in the URL makes the browser do
+  nothing at all, and a click landing during a smooth scroll moves the hash
+  without moving the page — both read as "the menu needs several clicks". The
+  handler preventDefaults, opens a legal panel when the target is one, sets the
+  hash with `replaceState` and calls `scrollIntoView` itself. Clearance under
+  the sticky nav comes from `scroll-padding-top` on `html` and from nothing
+  else: a `scroll-margin-top` on the sections would *add* to it, not replace it.
 - **The legal texts are two `<details>` panels** in the `#legal` section,
-  `#terms` and `#privacy`. Any link to one — the footer, or a pasted URL — is
-  opened by `initLegal()` in `script.js`, which then scrolls to it itself; a
-  legal link must therefore point at a panel id, never at a closed summary.
-  `privacy.html` carries the same privacy text as a standing page because that
-  URL is what goes into the store listings, so **the two copies are edited
-  together**.
-- **No dead CTA.** A button ships only when its destination exists. A game or app
-  without a link gets a state chip (`chip-soon`), not a `href="#"`.
+  `#terms` and `#privacy`; a legal link must point at a panel id, never at a
+  closed summary. `privacy.html` carries the same privacy text as a standing
+  page because that URL is what goes into the store listings, so **the two
+  copies are edited together**.
+- **No dead CTA.** A button never points at nowhere — no `href="#"`. An app whose
+  store page does not exist yet keeps the same CTA row as a shipped one, written
+  as a real disabled `<button>`: same geometry, no colour, inert and announced as
+  disabled. Two cards side by side then read as one row of buttons instead of a
+  button facing a status pill, which is what the old `chip-soon` did.
 - **A game in construction carries `draft: true`** in `site/games.js`: its copy
   stays written and ready, the build holds it back, and deleting the flag
   publishes it. A game with no icon is dropped and *reported* — that is a missing

@@ -34,11 +34,11 @@ window.GAMES = [
     accent: ["#4bf5ff", "#4263eb"],
     fr: {
       tagline: "Tape à l’instant où l’anneau se referme sur la balle. Chaque anneau tombe sur un temps de la musique.",
-      tags: ["Tap rythmé", "30 s", "Mort subite"]
+      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
     },
     en: {
       tagline: "Tap the instant the closing ring hits the ball. Every ring lands on a beat of the track.",
-      tags: ["Rhythm tap", "30 s", "Sudden death"]
+      tags: ["Rhythm tap", "On the beat", "Sudden death"]
     }
   },
   {
@@ -60,11 +60,11 @@ window.GAMES = [
     accent: ["#ff8fab", "#7048e8"],
     fr: {
       tagline: "Vise, tire, aligne trois bulles. La moisissure ne redescend que si tu lui coupes la route.",
-      tags: ["Vise et tire", "60 s", "Ligne de danger"]
+      tags: ["Vise et tire", "Trois d’affilée", "Ligne de danger"]
     },
     en: {
       tagline: "Aim, shoot, match three bubbles. The spreading blight only falls if you cut it off.",
-      tags: ["Aim & shoot", "60 s", "Danger line"]
+      tags: ["Aim & shoot", "Match three", "Danger line"]
     }
   },
   {
@@ -73,11 +73,11 @@ window.GAMES = [
     accent: ["#7cf5ff", "#6d5cff"],
     fr: {
       tagline: "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
-      tags: ["Tap rythmé", "30 s", "Chaîne de combos"]
+      tags: ["Tap rythmé", "Gravité coupée", "Chaîne de combos"]
     },
     en: {
       tagline: "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
-      tags: ["Timing tap", "30 s", "Combo chain"]
+      tags: ["Timing tap", "Snap gravity", "Combo chain"]
     }
   },
   {
@@ -138,11 +138,11 @@ window.GAMES = [
     accent: ["#7ef9ff", "#ffb44f"],
     fr: {
       tagline: "Huit engrenages, une piste continue, une bille qui tombe. Anticipe la rotation et soude la chaîne.",
-      tags: ["Tap pour lâcher", "45 s", "Boucle à remplir"]
+      tags: ["Tap pour lâcher", "Anticipe la roue", "Boucle à remplir"]
     },
     en: {
       tagline: "Eight cogs, one continuous track, one falling ball. Lead the rotation and weld the chain.",
-      tags: ["Tap to drop", "45 s", "Fill the loop"]
+      tags: ["Tap to drop", "Lead the cog", "Fill the loop"]
     }
   },
   {
@@ -151,11 +151,11 @@ window.GAMES = [
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
       tagline: "Trois couronnes de perles sur douze rayons. Fais tourner une seule couronne : la mise ne tombe qu’à l’arrêt.",
-      tags: ["Glisse un anneau", "40 s", "Charges et novas"]
+      tags: ["Glisse un anneau", "Trois par rayon", "Charges et novas"]
     },
     en: {
       tagline: "Three rings of beads over twelve rays. Turn one ring at a time; the dial only pays once it stops.",
-      tags: ["Drag a ring", "40 s", "Charges & novas"]
+      tags: ["Drag a ring", "Three per ray", "Charges & novas"]
     }
   },
   {
@@ -165,11 +165,11 @@ window.GAMES = [
     draft: true,
     fr: {
       tagline: "Une carte à la fois : à la poubelle ou dans la main. Cinq gardes forment une main de poker.",
-      tags: ["Swipe pour trier", "30 s", "Mains de poker"]
+      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
     },
     en: {
       tagline: "One card at a time: bin it or keep it. Five keeps make a poker hand, paid on the spot.",
-      tags: ["Swipe to sort", "30 s", "Poker hands"]
+      tags: ["Swipe to sort", "Three discards", "Poker hands"]
     }
   }
 ];

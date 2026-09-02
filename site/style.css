@@ -45,10 +45,10 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Belt and braces with scroll-padding-top: a section landed on by an anchor
-   keeps its own clearance under the sticky nav, whatever scrolls the page. */
-section[id],
-main[id] { scroll-margin-top: calc(var(--nav-h) + 12px); }
+/* No scroll-margin-top on the sections to go with it: the two ADD UP, and a
+   section landed on by an anchor was clearing the sticky nav twice — 152px of
+   gap where 76 was meant. scroll-padding-top alone covers every target,
+   including the legal <details> panels. */
 
 body {
   background: var(--ink);
@@ -398,7 +398,7 @@ h1 span { display: block; }
   max-width: 620px;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -427,6 +427,15 @@ h1 span { display: block; }
   letter-spacing: .8px;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+/* A tile whose label is a sentence rather than a unit: uppercase tracking is
+   for two words, not for a list of titles. */
+.hero-stats .stat-wide span {
+  text-transform: none;
+  letter-spacing: .1px;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
 /* ─────────────────────────────── buttons ─────────────────────────── */
@@ -471,20 +480,27 @@ h1 span { display: block; }
 
 .btn:active { transform: translateY(0) scale(.98); }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .3px;
-  color: var(--muted);
-  background: rgba(255, 255, 255, .03);
+/* A CTA whose destination does not exist yet keeps the exact geometry of the
+   live one and loses its colour: two cards side by side then read as one row
+   of buttons instead of a button facing a status chip. It is a real disabled
+   <button>, so it is inert and announced as such — never a link to nowhere. */
+.btn[disabled] {
+  cursor: not-allowed;
+  color: var(--dim);
+  background-image: none;
+  background-color: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
-.chip-soon { border-color: rgba(245, 196, 81, .4); color: #f5c451; background: rgba(245, 196, 81, .08); }
+.btn[disabled] svg { opacity: .55; }
+
+.btn[disabled]:hover,
+.btn[disabled]:active {
+  transform: none;
+  color: var(--dim);
+  background-color: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
 
 /* ─────────────────────────────── sections ────────────────────────── */
 .section { padding: clamp(56px, 9vw, 96px) 0; }
@@ -505,10 +521,13 @@ h1 span { display: block; }
 .sub { margin-top: 12px; color: var(--muted); font-size: clamp(14px, 2vw, 17px); }
 
 /* ──────────────────────────────── games ──────────────────────────── */
+/* Flex rather than grid: a grid leaves the last row hanging on the left when
+   the game count does not divide the column count, and this list is centred. */
 .games {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 18px;
-  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
 }
 
 .game {
@@ -517,6 +536,8 @@ h1 span { display: block; }
   position: relative;
   display: flex;
   flex-direction: column;
+  flex: 1 1 288px;
+  max-width: 380px;
   padding: 20px;
   background: linear-gradient(180deg, var(--surface), var(--surface-2));
   border: 1px solid var(--line);
@@ -544,7 +565,13 @@ h1 span { display: block; }
 
 .game:hover::before { opacity: .3; }
 
-.game-top { position: relative; display: flex; align-items: center; gap: 14px; }
+.game-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 66px;
+}
 
 .game-icon {
   width: 66px;
@@ -560,22 +587,31 @@ h1 span { display: block; }
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .game-tags {
-  margin-top: 6px;
+  margin-top: 12px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 5px;
   list-style: none;
+  overflow: hidden;
 }
 
 .game-tags li {
-  padding: 3px 9px;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--g1);
   background: color-mix(in srgb, var(--g1) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--g1) 26%, transparent);
@@ -583,10 +619,16 @@ h1 span { display: block; }
 
 .game-desc {
   position: relative;
-  margin: 14px 0 18px;
+  margin: 12px 0 18px;
   color: var(--muted);
   font-size: 14.5px;
-  flex: 1;
+  line-height: 1.5;
+  height: calc(4 * 1.5 * 14.5px);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: none;
 }
 
 .game-actions { position: relative; display: flex; gap: 8px; }
@@ -608,6 +650,7 @@ h1 span { display: block; }
 .app-card {
   display: flex;
   gap: 18px;
+  min-height: 208px;
   padding: 22px;
   background: linear-gradient(180deg, var(--surface), var(--surface-2));
   border: 1px solid var(--line);
@@ -624,11 +667,21 @@ h1 span { display: block; }
   flex: none;
 }
 
+/* The body owns the free space so the actions can be pinned to the bottom:
+   the CTA row then sits at the same height whatever the blurb is worth. */
+.app-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+
 .app-body h3 { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
 
 .app-body p { margin: 8px 0 16px; color: var(--muted); font-size: 14.5px; }
 
-.app-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.app-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+}
 
 /* ─────────────────────────────── studio ──────────────────────────── */
 .studio-grid {

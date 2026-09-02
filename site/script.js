@@ -180,9 +180,9 @@ function renderGames() {
           '<img class="game-icon" src="image/games/' + g.slug + '/icon.png" alt="" width="66" height="66" loading="lazy">' +
           '<div class="game-id">' +
             '<h3>' + escapeHtml(g.name) + '</h3>' +
-            '<ul class="game-tags">' + tags + '</ul>' +
           '</div>' +
         '</div>' +
+        '<ul class="game-tags">' + tags + '</ul>' +
         '<p class="game-desc">' + escapeHtml(copy.tagline) + '</p>' +
         '<div class="game-actions">' +
           '<button class="btn btn-primary btn-sm" type="button" data-play="' + g.slug + '">' +
@@ -377,10 +377,28 @@ function legalPanel(hash) {
   return null;
 }
 
+/* Every same-page link is scrolled by this handler rather than by the browser,
+   because the browser gets two cases wrong and both read as "the menu needs
+   several clicks":
+
+     - a link whose hash is already in the URL does nothing at all, so a
+       visitor who clicked Studio, scrolled away with the wheel and clicked
+       Studio again stayed exactly where they were;
+     - a click that lands while a previous smooth scroll is still running
+       updates the hash without moving, so the page ends on the previous
+       section while the URL claims the new one — and the next click on that
+       link is then the no-op above.
+
+   Scrolling ourselves also lets a legal panel open before we measure where it
+   starts, which is what this handler was originally written for. */
 function initLegal() {
   document.addEventListener('click', function (e) {
+    // The brand link handles #top itself, and clears the hash on purpose.
+    if (e.defaultPrevented) return;
+    if (e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
     var link = e.target.closest ? e.target.closest('a[href*="#"]') : null;
-    if (!link) return;
+    if (!link || link.target === '_blank') return;
 
     var href = link.getAttribute('href') || '';
     var cut = href.indexOf('#');
@@ -388,18 +406,32 @@ function initLegal() {
     // A link that names another file is that browser's business, not ours.
     if (path && path !== location.pathname.split('/').pop()) return;
 
-    var panel = legalPanel(href.slice(cut));
-    if (!panel) return;
+    var hash = href.slice(cut);
+    var target = hash.length > 1 ? document.getElementById(hash.slice(1)) : null;
+    if (!target) return;
 
-    // Opening the panel changes the layout, so we scroll ourselves, once the
-    // frame that grew it has been laid out.
     e.preventDefault();
-    panel.open = true;
-    history.replaceState(null, '', href.slice(cut));
+
+    // A legal panel has to be open before we can know where it starts.
+    var panel = legalPanel(hash);
+    if (panel) panel.open = true;
+
+    var to = panel || target;
     requestAnimationFrame(function () {
-      panel.scrollIntoView({ behavior: prefersMotion() ? 'smooth' : 'auto', block: 'start' });
+      to.scrollIntoView({ behavior: prefersMotion() ? 'smooth' : 'auto', block: 'start' });
     });
+
+    // The hash is written once the move is over, never before it. A browser
+    // that restores the scroll position saved on a history entry replays it
+    // when the entry changes, on top of the scroll we have just started: the
+    // page sets off toward the section, then snaps straight back where it
+    // was. replaceState, not a real fragment navigation, so the section stays
+    // linkable by URL without filling the back button with menu clicks.
+    setTimeout(function () { history.replaceState(null, '', hash); }, 800);
   });
+
+  // Same reason: the page places itself, so the browser must not place it.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
   var landed = legalPanel(location.hash);
   if (landed) {
