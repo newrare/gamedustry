@@ -415,8 +415,29 @@ function prepare(slug, tmpDir) {
 
 /* ---------- run ---------------------------------------------------------- */
 
+/* Chrome must die whatever happens next. SIGTERM is not enough — a headless
+   browser survives it here — and an exception thrown mid-run used to skip the
+   cleanup entirely, which is how a laptop ended up with thirty of these
+   looping a game at 40% CPU each. So: SIGKILL, once, from a handler that runs
+   on a normal exit, on a throw and on Ctrl-C alike. */
+function reap(child) {
+  var done = false;
+  const kill = () => {
+    if (done) return;
+    done = true;
+    try { child.kill("SIGKILL"); } catch (e) {}
+  };
+  process.on("exit", kill);
+  process.on("SIGINT", () => { kill(); process.exit(130); });
+  process.on("SIGTERM", () => { kill(); process.exit(143); });
+  process.on("uncaughtException", (e) => { kill(); console.error(e); process.exit(1); });
+  process.on("unhandledRejection", (e) => { kill(); console.error(e); process.exit(1); });
+  return kill;
+}
+
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-pop-"));
 const chrome = await launchChrome(path.join(tmpDir, "profile"));
+reap(chrome.child);
 const client = await cdp(chrome.port);
 const sid = await openPage(client);
 const file = prepare(slug, tmpDir);
@@ -445,7 +466,7 @@ if (SHOT) {
       console.log(f);
     }
   }
-  client.close(); chrome.child.kill(); await sleep(300); process.exit(0);
+  client.close(); chrome.child.kill("SIGKILL"); process.exit(0);
 }
 
 console.log(`${slug} — ${VW}x${VH} @DPR${DPR}, CPU x${CPU}, ${MS}ms per run, one callout every ${EVERY}ms`);
@@ -464,7 +485,7 @@ if (DPRS) {
       (r.shown + " (" + r.shownMpx + " Mpx)").padEnd(25) +
       Math.round(r.mpx / r.shownMpx * 100) + "%");
   }
-  client.close(); chrome.child.kill(); await sleep(300); process.exit(0);
+  client.close(); chrome.child.kill("SIGKILL"); process.exit(0);
 }
 
 for (const v of VARIANTS) {
@@ -486,5 +507,5 @@ for (const v of VARIANTS) {
 fs.writeFileSync(path.join(tmpDir, "rows.json"), JSON.stringify(rows, null, 2));
 console.log("\nrows: " + path.join(tmpDir, "rows.json"));
 client.close();
-chrome.child.kill();
+chrome.child.kill("SIGKILL");
 await sleep(400);
