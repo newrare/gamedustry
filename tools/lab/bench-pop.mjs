@@ -23,6 +23,7 @@
  *   node tools/lab/bench-pop.mjs orbinity --styles=none,combo,ultra
  *   node tools/lab/bench-pop.mjs --styles=ribbon,ribbon --variants=base,flat
  *   node tools/lab/bench-pop.mjs --shot=ribbon --out=/tmp   # eyeball one
+ *   node tools/lab/bench-pop.mjs --dprs=1,2,3               # the canvas sizing
  *
  * A style name may be repeated: the run-to-run spread is real (first-time
  * raster of a layer, font caches), so a finding worth acting on is one that
@@ -56,6 +57,14 @@ const MS = parseInt(opt("ms", "2600"), 10);
 const EVERY = parseInt(opt("every", "650"), 10);
 const DPR = parseFloat(opt("dpr", "3"));
 const VW = parseInt(opt("vw", "390"), 10);
+/* --dprs reports the canvas backing store the motor would allocate on a device
+   with each of those pixel ratios, next to what such a screen can actually
+   show. It deliberately reports SIZES and not timings: canvas 2D commands are
+   recorded and rasterized later, so timing frameRender() in the page measures
+   nothing, and the trace's raster figure for a canvas is too noisy in this
+   harness to conclude anything from. The sizes are the point anyway — pixels
+   drawn beyond what the display shows are waste whatever they cost. */
+const DPRS = opt("dprs", null);
 const VH = parseInt(opt("vh", "844"), 10);
 
 const CSS = {
@@ -88,6 +97,7 @@ const SEED_JS = `<script>(function(){var s=1013904223;Math.random=function(){s=s
 const HOOK_JS = `
   window.__H = { startGame: startGame, Loop: Loop, Input: Input, Layout: Layout,
     CONFIG: CONFIG, Beat: Beat, Pop: Pop, Overlay: Overlay, Fx: Fx,
+    HUD: HUD, Sound: Sound, ASSETS: ASSETS,
     endRound: endRound, state: function () { return State; } };
 `;
 
@@ -140,9 +150,27 @@ const BENCH_JS = `<script>
   }
   setInterval(pilot, 1000 / 60);
 
+  /* The pieces a game runs on a single pickup, one at a time, then together:
+     that is the beat the player says feels heavy. */
   function fire(kind) {
     var H = window.__H;
     if (kind === "none") return;
+    if (kind === "hudpunch") { H.HUD.punch("#ffffff"); return; }
+    if (kind === "hudpill") { H.HUD.setLeft(String(n % 99), "LENGTH"); return; }
+    if (kind === "hudscore") { H.HUD.setScore(n * 7); return; }
+    if (kind === "sfx") {
+      var keys = Object.keys(H.ASSETS.sounds || {});
+      for (var i = 0; i < keys.length; i++) if (keys[i] !== "music") { H.Sound.clip(keys[i], .6, 1); return; }
+      return;
+    }
+    if (kind === "event") {                       // the whole pickup beat
+      var ks = Object.keys(H.ASSETS.sounds || {});
+      for (var j = 0; j < ks.length; j++) if (ks[j] !== "music") { H.Sound.clip(ks[j], .6, 1); break; }
+      H.HUD.setScore(n * 7); H.HUD.punch("#ffffff"); H.HUD.setLeft(String(n % 99), "LENGTH");
+      H.Fx.burst(H.Layout.cx, H.Layout.cy, 10, "#ffffff");
+      H.Pop.show("score", { word: "+" + (n * 7), at: { x: H.Layout.cx, y: H.Layout.cy - 60 } });
+      return;
+    }
     if (kind === "toast") { H.Overlay.toast("+120", 900); return; }
     if (kind === "vignette") { H.Overlay.vignette(n % 2 ? "rgba(255,60,60,.85)" : "rgba(60,140,255,.85)", 1, 420); return; }
     if (kind === "shake") { H.Fx.shake(12, 0.3); return; }
@@ -163,6 +191,19 @@ const BENCH_JS = `<script>
   window.__bench = {
     ready: function () { return !!window.__H && window.__H.state() === "playing"; },
     start: function () { var H = window.__H; if (H.state() !== "playing") H.startGame(); },
+    dpr: function (v) {
+      var _ = v;
+      try { Object.defineProperty(window, "devicePixelRatio", { value: v, configurable: true }); } catch (e) {}
+      window.dispatchEvent(new Event("resize"));
+      var c = document.getElementById("game");
+      /* What the display shows is the canvas's CSS box (the frame is scaled
+         and letterboxed, so it is NOT the viewport) times the device ratio. */
+      var r = c.getBoundingClientRect();
+      return JSON.stringify({ store: c.width + "x" + c.height,
+        mpx: Math.round(c.width * c.height / 1e4) / 100,
+        shown: Math.round(r.width * v) + "x" + Math.round(r.height * v),
+        shownMpx: Math.round(r.width * v * r.height * v / 1e4) / 100 });
+    },
     css: function (text) {
       var el = document.getElementById("bench-css");
       if (!el) { el = document.createElement("style"); el.id = "bench-css"; document.head.appendChild(el); }
@@ -408,11 +449,24 @@ if (SHOT) {
 }
 
 console.log(`${slug} — ${VW}x${VH} @DPR${DPR}, CPU x${CPU}, ${MS}ms per run, one callout every ${EVERY}ms`);
-console.log("ms of CPU time over the run — raster is off the main thread, the other three are on it\n");
-console.log("variant   style      raster   paint   style  layout");
+if (!DPRS) console.log("ms of CPU time over the run — raster is off the main thread, the other three are on it\n");
+if (!DPRS) console.log("variant   style      raster   paint   style  layout");
 
 const rows = [];
 const n = (v) => String(Math.round(v)).padStart(7);
+
+if (DPRS) {
+  console.log(`canvas backing store on a ${VW}x${VH} viewport, by device pixel ratio\n`);
+  console.log("dpr    backing store          shown by the screen      drawn / shown");
+  for (const d of DPRS.split(",")) {
+    const r = JSON.parse(await evaluate(client, sid, `window.__bench.dpr(${d})`));
+    console.log(String(d).padEnd(7) + (r.store + " (" + r.mpx + " Mpx)").padEnd(23) +
+      (r.shown + " (" + r.shownMpx + " Mpx)").padEnd(25) +
+      Math.round(r.mpx / r.shownMpx * 100) + "%");
+  }
+  client.close(); chrome.child.kill(); await sleep(300); process.exit(0);
+}
+
 for (const v of VARIANTS) {
   if (CSS[v] == null) throw new Error("unknown variant: " + v);
   await evaluate(client, sid, `window.__bench.css(${JSON.stringify(CSS[v])})`);

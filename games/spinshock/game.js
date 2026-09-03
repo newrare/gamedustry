@@ -223,9 +223,9 @@
        backing store is scaled by the device ratio (capped like the engine caps
        it) so a pre-rendered top stays crisp on a retina screen. `_w` / `_h` keep
        the logical size for the blit. */
-    var SPR = Math.min(window.devicePixelRatio || 1, 2);
     function makeCanvas(w, h) {
       var c = document.createElement("canvas");
+      var SPR = view.dpr;                        // the motor's rule, read per build
       c.width = Math.round(w * SPR); c.height = Math.round(h * SPR);
       c._w = w; c._h = h;
       c.getContext("2d").setTransform(SPR, 0, 0, SPR, 0, 0);

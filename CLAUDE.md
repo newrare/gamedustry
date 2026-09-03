@@ -257,7 +257,9 @@ anti-dependency rule as everywhere else — no framework, no CDN, no web font.
 
 Frame & input (section 3):
 
-- `view` — `w`, `h`, `scale`, `insetTop`, `insetBottom` (design px).
+- `view` — `w`, `h`, `scale`, `dpr`, `insetTop`, `insetBottom` (design px).
+  `view.dpr` is the design→device pixel ratio: size every cached canvas with it
+  and never read `window.devicePixelRatio` in a game.
 - `Layout` — `top / bottom / left / right / w / h / cx / cy`: the band gameplay
   may use, already clear of the HUD, the CTA bar and the device insets.
 - `Input.on("down"|"move"|"up", fn)` — unified mouse+touch in design space.
@@ -304,6 +306,9 @@ Shell (section 5):
 - `Overlay.toast/banner/reward/vignette/clear` — screen-space notifications,
   combo callouts, rewards, dramatic glow.
 - `Round.left()/elapsed()` — the clock.
+- **`?perf=1`** on a game's URL — the on-device readout: fps, worst frame, and
+  how much of it the main thread owned, so a stutter is attributed to script or
+  to paint/raster instead of guessed at. Off, and inert, without the flag.
 - `endRound(result)` — the single way a round ends.
 
 ## Ad-network glue (section 4) — do not remove

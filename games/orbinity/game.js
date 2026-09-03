@@ -201,7 +201,7 @@
   var Game = (function () {
     var P = CONFIG.planet, S = CONFIG.comet, C = CONFIG.combo, W = CONFIG.walls;
     var OT = CONFIG.overtime;
-    var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
 
     // Planet palettes: [body highlight, body shadow, ring / gravity well].
     var SKINS = [
@@ -282,6 +282,7 @@
     }
     function offscreen(w, h) {
       var c = document.createElement("canvas");
+      var DPR = view.dpr;                        // the motor's rule, read per build
       c.width = Math.ceil(w * DPR); c.height = Math.ceil(h * DPR);
       var g = c.getContext("2d");
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
