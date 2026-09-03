@@ -2876,10 +2876,16 @@
 
          vig     Overlay.vignette — a full-frame repaint, because the colour is
                  assigned per call, blurred over the whole frame
-         decor   the layers behind a callout's word (band, dots, rays, ring…)
-         word    the word's own three glyph layers (stroke, extrusion, glow)
-         pops    every callout, outright
          fx      the canvas juice: bursts, rings, the full-frame flash, shake
+         pops    every callout, outright
+       and, once `pops` has been shown to be the one, inside a callout:
+         decor   the layers behind the word (band, dots, rays, ring, chevrons)
+         word    the word's glyph layers, all of them
+         glow    just the two BLURRED text-shadows
+         shadow  the whole text-shadow stack, blurred and solid
+         stroke  just the 14px path stroke around the glyphs
+         face    just the gradient face (a second glyph pass, clipped)
+         sub     the sub-line under the word
 
        Canvas drawing is rasterized off the main thread too, so `fx` and `pops`
        together separate the two halves of a pickup: if `off=fx` flattens the
@@ -2900,12 +2906,26 @@
     if (off.fx) {
       Fx.burst = noop; Fx.ring = noop; Fx.flash = noop; Fx.shake = noop; Fx.text = noop;
     }
-    if (off.decor || off.word) {
+    /* Inside a callout, the word is rendered several times over: a 14px path
+       stroke, three solid extrusion copies, two blurred ones, and a second
+       glyph pass used as the mask for the gradient face. Each of these takes
+       one of them out, so a reading names the layer instead of the module. */
+    var OFF_CSS = {
+      decor:  ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}",
+      shadow: ".pop-ltr{text-shadow:none!important}",
+      glow:   ".pop-ltr{text-shadow:0 5px 0 var(--ink),0 10px 0 var(--ink)," +
+              "0 15px 0 var(--ink2)!important}",              // the two blurs only
+      stroke: ".pop-ltr{-webkit-text-stroke-width:0!important}",
+      face:   ".pop-ltr::before{display:none!important}",
+      sub:    ".pop-sub{display:none!important}",
+      word:   ".pop-ltr{text-shadow:none!important;-webkit-text-stroke-width:0!important}" +
+              ".pop-ltr::before{display:none!important}"
+    };
+    var rules = "", key;
+    for (key in OFF_CSS) if (off[key]) rules += OFF_CSS[key];
+    if (rules) {
       var css = document.createElement("style");
-      css.textContent =
-        (off.decor ? ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}" : "") +
-        (off.word ? ".pop-ltr{text-shadow:none!important;-webkit-text-stroke-width:0!important}" +
-                    ".pop-ltr::before{display:none!important}" : "");
+      css.textContent = rules;
       document.head.appendChild(css);
     }
     var offList = Object.keys(off).join(",");
