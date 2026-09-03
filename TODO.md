@@ -21,11 +21,9 @@ doc.
 
 ## Phase 1 — extract the motor
 
-The motor lives in `packages/`, the builder consumes the manifests, the tools are
-split into `lab/` / `build/` / `publish/`, and the two catalogues are generated.
-One thing left:
-
-- [ ] MAIN — commit the tools split and the catalogue generator
+Closed. The motor lives in `packages/`, the builder consumes the manifests, the
+tools are split into `lab/` / `build/` / `publish/`, the two catalogues are
+generated, and all 13 units rebuild byte-identically (`build.mjs --check`).
 
 ## Phase 2 — prototyping
 
@@ -35,19 +33,13 @@ panel, iteration happens on the web build, and the word "proto" made a request
 for a quick prototype produce a whole game. A prototype is now one raw HTML page
 in `prototype/`, outside the motor; see CLAUDE.md, *Three kinds of request*.
 
-- [ ] MAIN — commit the removal of the proto target and the new prototype rules
-
 ## Phase 3 — the site, deployed
 
-The site, `build-site.mjs`, `serve-site.mjs`, `vercel.json`, the `draft` flag, the
-privacy page, `app-ads.txt` and `analytics.js` are in. What is left is account
-work:
+**Closed.** The site is live on Vercel with Web Analytics on, serving the 11
+published games from `dist/site`; `slipdeck` is held back by its `draft` flag.
+Verified on a phone: layout and games both hold up. Two pieces of content are
+still owed, and they belong to the phases that need them:
 
-- [ ] MAIN — create the Vercel project: this repo, branch `main`, build
-  `node tools/build/build-site.mjs`, output `dist/site`, framework "Other"
-- [ ] MAIN — turn Web Analytics on in the Vercel project, or `analytics.js` loads
-  a collector that answers 404
-- [ ] MAIN — verify the preview URL of a pull request on a real phone
 - [ ] MAIN — a support e-mail on the newrare domain (currently a personal Gmail);
   it is quoted in `site/privacy.html` and `site/index.html`, both to update
 - [ ] MAIN — fill `site/app-ads.txt` with the AdMob publisher record, once the
@@ -62,11 +54,20 @@ keeps one self-contained document), `packages/frame-web/` (Delta 1),
 fed from the manifest, and the two publishing scripts. What is left needs an
 account or a CI runner:
 
-- [ ] MAIN — `butler login` locally, `BUTLER_API_KEY` as a CI secret
-- [ ] MAIN — create the itch page for `vipera` by hand (no public API exists)
+- [ ] MAIN — install `butler` (it is not on this machine) and `butler login`;
+  then `BUTLER_API_KEY` as a CI secret
+- [ ] MAIN — create the itch page for `vipera` by hand, from
+  `node tools/publish/store-meta.mjs --game=vipera` (no public API exists); it is
+  the pilot page whose form choices the other ten copy
+- [ ] CODE — `store-meta.mjs` says nothing about the page's images, which itch
+  asks for: add a section naming the cover (630×500), the screenshots to upload
+  out of `assets/screen/<slug>-NN.jpg` and the icon
+- [ ] CODE — nothing produces an itch cover: no `assets/cover/` exists and the
+  icons are square. A lab page or a `tools/lab/shoot-cover.mjs` should compose
+  630×500 from the icon and a screenshot
 - [ ] AUTO — GitHub Actions on every PR: `build.mjs --check`,
   `gen-catalogues.mjs --check`, `check-size` — so a hand-edited artifact or a
-  stale catalogue fails the build
+  stale catalogue fails the build. There is no `.github/workflows/` yet
 - [ ] AUTO — GitHub Actions: `butler push` to `html5-dev` on merge, `html5` on tag
 
 ## Phase 5 — the meta layer
@@ -86,7 +87,9 @@ android build gets the same screens.
 ## Phase 6 — all games public, then measure
 
 - [ ] AUTO — build and publish every game to the site and to itch
-- [ ] MAIN — create the remaining itch pages, one per game
+  (`deploy-itch.mjs --all`)
+- [ ] MAIN — create the ten remaining itch pages, one per game, and a collection
+  that holds them
 - [ ] MAIN — read retention and replay rate, and decide which games go further
 - [ ] MAIN — do not wire ads into the site before this measurement exists
 
@@ -123,15 +126,30 @@ ______________________________________________________________________
   `draft: true` in `site/games.js` until then
 - [ ] MAIN — finish `slipdeck` itself; it is the only game still in construction
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
-  listing (all three currently point at the site, which is correct for now)
+  listing (they all point at the site today, which is correct for now)
 - [ ] MAIN — decide which languages the games themselves are localized into
 
 ## Known drift and small debts
 
+- [ ] CODE — `lab/overlay-pop.html` carries its own fork of the pop CSS,
+  predating the extraction: it still has a `filter` on `.pop-word` and it did
+  not get the composited-slide fix. The catalogue therefore no longer previews
+  what the motor draws. Point it at `packages/shell/motor.css` instead
+
+- [ ] CODE — the end screen animates two paint properties for as long as it is
+  up: `starglow` animates `filter: drop-shadow` on every star and
+  `.eo-row .shine` animates `left`, i.e. a layout pass per frame per stat row.
+  `tools/lab/bench-pop.mjs --styles=end` measures them at 16 ms of raster over
+  3 s, so this is a latent cost and not the mobile stall that was fixed — but
+  both break the "transform and opacity only" rule and should follow the decors
+
 - [ ] CODE — the games' `page.html` files carry per-game comment drift in the
   markup (edited comments, shortened blocks). Harmless, but it means the markup
   is not shared. Normalize it and reduce `page.html` to three tokens.
+
 - [ ] CODE — `CONFIG.title` is all caps in most games while `manifest.json`
   carries the proper name; pick one and derive the other
+
 - [ ] CODE — the root `index.html` gallery duplicates the site's catalogue
+
 - [ ] MAIN — rename the repo: `playables` no longer describes what it holds
