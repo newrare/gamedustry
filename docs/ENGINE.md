@@ -320,6 +320,33 @@ profiler shows. The box prints that verdict itself.
 Without the flag not a line of it runs, and `Perf.frame()` in the bootstrap is
 an empty function.
 
+**`?perf=bench` makes the device measure itself.** One URL, one tap, about a
+minute: the motor fires the same callout sixteen times per variant, back to
+back in one session, and prints the table on screen.
+
+```
+callout: bonus  x16
+
+variant   p95  worst  slow/s
+base       28    91     2.4
+glow       21    47     0.8
+decor      24    68     1.6
+```
+
+Same hardware, same thermal state, same everything but the layer under test —
+so the **order of the rows** is the finding. Read that, not the milliseconds.
+
+**Why the sweep runs there and not on a laptop.** It was tried both ways and
+they disagreed. A software rasterizer put a callout's halftone decor at 92% of
+its cost and the blurred text shadows at nothing; the phone said the opposite,
+because a GPU fills area almost for free and pays for blur passes and draw
+calls instead. Reading the desktop GPU's own work does not rescue it: GPU work
+is asynchronous, the process's task totals double-count nested tasks, and
+Chrome exposes no per-layer GPU timing. `node tools/lab/bench-raster.mjs` is
+still useful for area-bound work and as a regression guard — a change that
+makes a 120 fps desktop drop a frame is catastrophic on a device — but the
+number that transfers is measured on the device.
+
 **`&off=…` bisects it on the same device.** The verdict says which half of the
 pipeline is at fault, never which layer, so switch one suspect off and play the
 same beat again:

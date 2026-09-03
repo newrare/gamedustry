@@ -109,7 +109,10 @@ playables/
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
 │   │   ├── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
-│   │   └── bench-pop.mjs     ← what a callout costs, on an emulated phone
+│   │   ├── bench-pop.mjs     ← what a callout costs, on an emulated phone
+│   │   ├── bench-raster.mjs  ← layer raster cost; and why it can't stand in
+│   │   │                       for a phone (use ?perf=bench for that)
+│   │   └── bench-audio.mjs   ← does the audio graph grow while a game plays
 │   └── publish/              ← deploy (empty until phase 4)
 └── docs/
     ├── ENGINE.md             ← the motor: layout, APIs, contract  ← START HERE

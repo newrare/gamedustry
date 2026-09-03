@@ -2776,7 +2776,9 @@
      anything once a round is running.                                       */
   var Perf = (function () {
     var on = false;
-    try { on = /(^|[?&#])perf=1\b/.test(location.search + location.hash); } catch (e) {}
+    /* `perf=1` is the live readout, `perf=bench` the self-measuring sweep
+       further down. Anything else, and not a line of this module runs. */
+    try { on = /[?&#]perf=(1|bench)\b/.test(location.search + location.hash); } catch (e) {}
     if (!on) return { frame: function () {} };
 
     /* `?perf=1&off=vig,decor` switches a suspect off ON THE DEVICE. The probe
@@ -2832,7 +2834,7 @@
       word:   ".pop-ltr{text-shadow:none!important;-webkit-text-stroke-width:0!important}" +
               ".pop-ltr::before{display:none!important}"
     };
-    var rules = "", key;
+    var rules = "", key;   /* OFF_CSS is also what the ?perf=bench sweep applies */
     for (key in OFF_CSS) if (off[key]) rules += OFF_CSS[key];
     if (rules) {
       var css = document.createElement("style");
@@ -2840,6 +2842,22 @@
       document.head.appendChild(css);
     }
     var offList = Object.keys(off).join(",");
+
+    /* `?perf=bench` — the device measures itself.
+       A laptop cannot stand in for a phone here, and it was tried: a software
+       rasterizer says a callout's halftone decor is 92% of its cost and the
+       blurred shadows nothing, while this phone said the opposite, because a
+       GPU fills area almost for free and pays for blur passes instead. And the
+       GPU's own work cannot be read back — it is asynchronous and Chrome
+       exposes no per-layer timing (see tools/lab/bench-raster.mjs, which says
+       the same at more length).
+       So the sweep runs here. It fires the same callout over and over, once
+       per variant, back to back in one session on one device, and prints a
+       table: same hardware, same thermal state, same everything but the layer
+       under test. Read the ORDER of the rows, not the milliseconds.
+       Start a round, put the phone down, wait — it takes about a minute. */
+    var bench = false;
+    try { bench = /[?&]perf=bench\b/.test(location.search + location.hash); } catch (e) {}
 
     var box = null, prev = 0, frames = 0, worst = 0, over = 0, since = 0;
     var mainWorst = 0, mainKnown = false;
@@ -2883,7 +2901,10 @@
         frames++; since += dt;
         if (dt > worst) worst = dt;
         if (dt > 32) over++;
-        if (since >= 1000) {
+        /* In sweep mode the box belongs to the sweep's table: the live
+           readout would overwrite it once a second. */
+        if (since >= 1000 && bench) { frames = 0; since = 0; worst = 0; over = 0; mainWorst = 0; }
+        else if (since >= 1000) {
           var fps = Math.round(frames * 1000 / since);
           var main = mainKnown ? Math.round(mainWorst) + "ms" : "n/a";
           var verdict = worst < 32 ? "ok"
@@ -2899,7 +2920,87 @@
       }
       prev = t;
     }
-    return { frame: frame };
+
+    /* --- the device sweep ------------------------------------------------
+       Each pass: apply one variant's CSS, fire N callouts on a fixed cadence,
+       and keep the frame intervals. Nothing here touches the game's own state
+       beyond showing callouts, so the round keeps playing under it. */
+    var PASSES = ["base", "glow", "shadow", "face", "decor", "word", "sub"];
+    var SWEEP_STYLE = "bonus";        // the callout a pickup fires
+    var SWEEP_N = 16, SWEEP_GAP = 260;
+
+    function benchRun() {
+      var css = document.createElement("style");
+      document.head.appendChild(css);
+      var results = [], pass = 0;
+
+      function report(done) {
+        var lines = ["callout: " + SWEEP_STYLE + "  x" + SWEEP_N, ""], i, r;
+        lines.push("variant   p95  worst  slow/s");
+        for (i = 0; i < results.length; i++) {
+          r = results[i];
+          lines.push(pad(r.name, 9) + pad(Math.round(r.p95), 5) + pad(Math.round(r.worst), 7) +
+            (Math.round(r.rate * 10) / 10));
+        }
+        if (!done) lines.push("…" + PASSES[pass]);
+        ensure().textContent = lines.join("\n");
+      }
+      function pad(v, n) { v = String(v); while (v.length < n) v += " "; return v; }
+
+      function next() {
+        if (pass >= PASSES.length) { report(true); return; }
+        var name = PASSES[pass];
+        css.textContent = name === "base" ? "" : (OFF_CSS[name] || "");
+        report(false);
+        var stamps = [], fired = 0;
+        var running = true;
+        function tick(t) { if (!running) return; stamps.push(t); requestAnimationFrame(tick); }
+        requestAnimationFrame(tick);
+        var iv = setInterval(function () {
+          if (fired++ >= SWEEP_N) {
+            clearInterval(iv);
+            setTimeout(function () {
+              running = false;
+              var d = [], i;
+              for (i = 1; i < stamps.length; i++) d.push(stamps[i] - stamps[i - 1]);
+              d.sort(function (a, b) { return a - b; });
+              var over = 0;
+              for (i = 0; i < d.length; i++) if (d[i] > 32) over++;
+              /* Frames over 32 ms per SECOND, not per pass: a pass that ran a
+                 little longer would otherwise look worse than one that did
+                 not. p95 and worst are already durations. */
+              var secs = 0, j;
+              for (j = 0; j < d.length; j++) secs += d[j];
+              secs = secs / 1000 || 1;
+              results.push({
+                name: name,
+                p95: d.length ? d[Math.min(d.length - 1, Math.floor(d.length * 0.95))] : 0,
+                worst: d.length ? d[d.length - 1] : 0,
+                rate: over / secs
+              });
+              pass++;
+              Pop.clear();
+              next();
+            }, 500);
+            return;
+          }
+          Pop.show(SWEEP_STYLE, { word: "COMBO X5", sub: "+120", silent: true });
+        }, SWEEP_GAP);
+      }
+      next();
+    }
+
+    /* The sweep needs a round underway: a callout over the menu measures the
+       menu. It starts itself on the first frame the game actually renders. */
+    var benchStarted = false;
+    function maybeBench() {
+      if (!bench || benchStarted) return;
+      benchStarted = true;
+      ensure().textContent = "bench: starting…";
+      setTimeout(benchRun, 1200);
+    }
+
+    return { frame: function () { maybeBench(); frame(); } };
   })();
 
   // --- Round clock -------------------------------------------------------

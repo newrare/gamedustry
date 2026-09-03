@@ -310,7 +310,11 @@ Shell (section 5):
   how much of it the main thread owned, so a stutter is attributed to script or
   to paint/raster instead of guessed at. Off, and inert, without the flag.
   `&off=vig,decor,word,pops,fx` switches a suspect off on the device, which is
-  how a spike is attributed to a layer rather than argued about.
+  how a spike is attributed to a layer rather than argued about, and
+  **`?perf=bench` runs the whole variant sweep on the device itself** and prints
+  the table — the only measurement whose ordering transfers, because a laptop's
+  rasterizer and a phone's GPU disagree about what is expensive (see
+  docs/ENGINE.md and tools/lab/bench-raster.mjs).
 - `endRound(result)` — the single way a round ends.
 
 ## Ad-network glue (section 4) — do not remove
