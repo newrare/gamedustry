@@ -46,11 +46,12 @@ A playable always needs the same things, so the motor owns them:
 
 ### `view`
 
-| Field                           | Meaning                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `view.w`, `view.h`              | Design size (720 × 1280).                                                                               |
-| `view.scale`                    | design px → screen px factor.                                                                           |
-| `view.insetTop` / `insetBottom` | Design pixels eaten by the notch / home indicator, **after** the letterbox bars are taken into account. |
+| Field                           | Meaning                                                                                                                                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `view.w`, `view.h`              | Design size (720 × 1280).                                                                                                                                                                                                |
+| `view.scale`                    | design px → screen px factor.                                                                                                                                                                                            |
+| `view.dpr`                      | design px → **device** px: what a canvas backing store must be sized in, `scale × devicePixelRatio` clamped to [1, 2]. Use it for a cached canvas instead of reading `devicePixelRatio`, which over-renders (see below). |
+| `view.insetTop` / `insetBottom` | Design pixels eaten by the notch / home indicator, **after** the letterbox bars are taken into account.                                                                                                                  |
 
 ### `Layout`
 
@@ -258,6 +259,66 @@ Overlay.clear();                                           // wipe everything
 
 Use `Overlay` for UI-level feedback and `Fx.text` for anything anchored to a
 world position.
+
+### Canvas resolution — `view.dpr`, and why it is not `devicePixelRatio`
+
+A backing store must hold the pixels the display will actually show, and not
+one more. The frame is scaled to fit the screen, so that number is
+`view.scale × devicePixelRatio` per design pixel — which is what `view.dpr` is,
+clamped to `[1, 2]`.
+
+The motor used to size it `min(devicePixelRatio, 2)`, ignoring the scale, and
+the difference is not small. On a 390×844 phone the canvas is displayed 390×693
+CSS px, so:
+
+| device                | drawn (before) | displayed | drawn / displayed |
+| --------------------- | -------------- | --------- | ----------------- |
+| phone, DPR 2          | 3.69 Mpx       | 1.08 Mpx  | **342%**          |
+| phone, DPR 3          | 3.69 Mpx       | 2.43 Mpx  | **152%**          |
+| desktop window, DPR 1 | 0.92 Mpx       | 0.27 Mpx  | 341% (kept)       |
+
+Every frame, a phone drew between 1.5 and 3.4 times the pixels it could show,
+and a desktop at DPR 1 drew 0.92 Mpx against the phone's 3.69 — four times
+less. That is the shape of "it is smooth on my desktop and it stutters on my
+phone", and it applies to every game at once because it is the canvas itself,
+not anything a game does. `view.dpr` now lands on 100% of the displayed pixels
+on both phone rows: the same picture, at 1:1, for a third to a quarter of the
+fill.
+
+The `[1, 2]` clamp is deliberate on both ends. The floor keeps a low-DPR screen
+supersampled (that 341% row is today's behaviour, unchanged, and it is what
+gives a DPR-1 display its anti-aliasing); the ceiling keeps a DPR-4 phone from
+allocating 4.3 Mpx. Check what a device would get with
+`node tools/lab/bench-pop.mjs --dprs=1,2,3`.
+
+A game that pre-renders into its own canvas must use `view.dpr` too — read it
+where the canvas is built, not once at load, so a resize is followed. Nothing
+in a game should ever read `window.devicePixelRatio`.
+
+### `?perf=1` — the readout on the device
+
+A phone that stutters cannot be diagnosed on a laptop: the desktop absorbs
+costs the phone cannot. Append `?perf=1` to a game's URL — the built file, the
+web build, the site's iframe — and a small box reports, once a second, while a
+round is running:
+
+```
+fps 41   worst 78ms
+main 12ms   >32ms 9/s
+paint/raster
+```
+
+`worst` is the real frame interval, everything included. `main` is how much of
+it the main thread owned, taken from the browser's own long-animation-frame
+report (Chromium only; Firefox shows `n/a`). **The gap between the two is the
+diagnosis**: a long frame with a long `main` is script, style or layout, and a
+profiler will find it; a long frame with a short `main` is paint, raster or
+compositing — the main thread was idle and the frame still missed, which is
+what an animated paint property or an oversized layer does, and what no JS
+profiler shows. The box prints that verdict itself.
+
+Without the flag not a line of it runs, and `Perf.frame()` in the bootstrap is
+an empty function.
 
 ### `Pop` — comic callouts
 

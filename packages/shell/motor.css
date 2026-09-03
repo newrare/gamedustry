@@ -78,8 +78,13 @@
     line-height:1; color:var(--text); text-shadow:0 0 14px rgba(0,229,255,.55);
     transition:color .25s ease; font-variant-numeric:tabular-nums;
   }
-  #hud-score.bump { animation:scorebump .4s cubic-bezier(.2,1.5,.4,1); }
-  @keyframes scorebump { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
+  /* Two names for one animation: HUD.punch alternates them so a repeat
+     restarts without the forced synchronous layout that `void offsetWidth`
+     costs. Keep them identical. */
+  #hud-score.bump  { animation:scorebump  .4s cubic-bezier(.2,1.5,.4,1); }
+  #hud-score.bump2 { animation:scorebump2 .4s cubic-bezier(.2,1.5,.4,1); }
+  @keyframes scorebump  { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
+  @keyframes scorebump2 { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
   #hud-score-lbl { margin-top:2px; font-size:15px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
   #hud-left, #hud-right { position:relative; z-index:1; min-width:120px; }
   #hud-right { text-align:right; }

@@ -16,6 +16,7 @@
     Fx.render();     // particles / rings / floating text above it
     Fx.end();
     Fx.post();       // full-frame flash, unshaken
+    Perf.frame();    // no-op unless the URL carries ?perf=1
   }
 
   function startGame() {

@@ -136,6 +136,16 @@ ______________________________________________________________________
   not get the composited-slide fix. The catalogue therefore no longer previews
   what the motor draws. Point it at `packages/shell/motor.css` instead
 
+- [ ] MAIN — the mobile stutter: deploy the pending fixes, then measure on the
+  device with `?perf=1` and report `worst` / `main` / the verdict per game. What
+  has been ruled out by measurement: the sfx path (the audio graph is reclaimed
+  either way, render capacity 0.2%) and the scrolling decors (fixed in 912f62a,
+  already in production, and the stutter outlived it). What is pending: the
+  canvas backing store, which was drawing 342% of the displayed pixels on a
+  DPR-2 phone and 152% on a DPR-3 one against a desktop's 0.92 Mpx (`view.dpr`,
+  see docs/ENGINE.md), plus the HUD's per-frame `innerHTML` and the forced
+  layout in `HUD.punch`. None of the three has been seen on a real phone yet
+
 - [ ] CODE — the end screen animates two paint properties for as long as it is
   up: `starglow` animates `filter: drop-shadow` on every star and
   `.eo-row .shine` animates `left`, i.e. a layout pass per frame per stat row.

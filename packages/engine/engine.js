@@ -13,6 +13,7 @@
   var view = {
     w: CONFIG.designWidth, h: CONFIG.designHeight,
     scale: 1,          // design px -> screen px
+    dpr: 1,            // design px -> DEVICE px: what a backing store is sized in
     insetTop: 0,       // design px eaten by the notch / status bar
     insetBottom: 0     // design px eaten by the home indicator
   };
@@ -27,6 +28,29 @@
     return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
   }
 
+  /* How many device pixels one design pixel is worth — which is what a canvas
+     backing store must be sized in, and the single biggest cost a game pays
+     per frame.
+
+     NOT `min(devicePixelRatio, 2)`, which is what this used to be. The frame is
+     scaled to fit the screen (`view.scale`), so the pixels the display will
+     actually show are `scale * devicePixelRatio` per design pixel; anything
+     above that is drawn and then thrown away by the downscale. On a 390x844
+     phone at DPR 3 the old rule sized the canvas 1440x2560 = 3.69 Mpx while the
+     screen shows 1170x2080 = 2.43 Mpx, and every frame paid the difference.
+
+     Measured with `node tools/lab/bench-fill.mjs`, one render of vipera:
+     3.35 ms at 0.92 Mpx, 11.99 ms at 2.43 Mpx, 17.57 ms at 3.69 Mpx — against
+     a 16.7 ms budget at 60 fps. A desktop at DPR 1 was already at 0.92 Mpx and
+     a phone at 3.69, which is the whole reason one stuttered and the other
+     never did, on every game at once.
+
+     Clamped to [1, 2]: never under the design resolution, never over the old
+     ceiling, so a desktop keeps exactly the pixels it had. */
+  function pixelRatio(scale) {
+    return clamp(scale * (window.devicePixelRatio || 1), 1, 2);
+  }
+
   function fitCanvas() {
     var winW = window.innerWidth, winH = window.innerHeight;
 
@@ -38,9 +62,9 @@
        it is read on every fit rather than cached. */
     var pad = CONFIG.layout.framePad || 0;
     var vw = Math.max(1, winW - pad * 2), vh = Math.max(1, winH - pad * 2);
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);   // cap DPR for perf
     var scale = Math.min(vw / view.w, vh / view.h);
     view.scale = scale;
+    var dpr = view.dpr = pixelRatio(scale);
 
     // Backing store at design size x DPR; the frame transform does the rest.
     canvas.width  = Math.round(view.w * dpr);
@@ -156,7 +180,21 @@
       g.gain.exponentialRampToValueAtTime(v, a.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + (dur || 0.15));
       o.connect(g); g.connect(a.destination);
+      o.onended = release(o, g);
       o.start(); o.stop(a.currentTime + (dur || 0.15));
+    }
+    /* Pull a voice back out of the graph the moment it is done, instead of
+       leaving the GainNode wired to the destination until something collects
+       it. Do NOT read more into this than it is: measured with
+       tools/lab/bench-audio.mjs (which counts the nodes Chrome itself reports,
+       and whose --leak flag replays the version without these three lines),
+       Chrome reclaims a finished voice at the next GC either way — 64 of 78
+       nodes with the release, 54 of 64 without, and the audio thread's render
+       capacity is the same 0.2% in both. So this is hygiene, not the fix for
+       anything: it makes the release immediate and independent of an engine's
+       GC rather than trusting every mobile browser to do what Chrome does. */
+    function release(node, g) {
+      return function () { try { node.disconnect(); g.disconnect(); } catch (e) {} };
     }
     // Rising run of notes — the cheapest "you did something great" cue.
     function arp(freqs, step, dur, type, vol) {
@@ -218,6 +256,7 @@
         node.playbackRate.value = rate == null ? 1 : clamp(rate, 0.5, 4);
         g.gain.value = vol == null ? 1 : clamp(vol, 0, 1);
         node.connect(g); g.connect(a.destination);
+        node.onended = release(node, g);
         node.start();
         return;
       }
@@ -301,6 +340,7 @@
         g.gain.setValueAtTime(1, at + dur - f);
         g.gain.linearRampToValueAtTime(0.0001, at + dur);
         src.connect(g); g.connect(master);
+        src.onended = function () { try { src.disconnect(); g.disconnect(); } catch (e) {} };
         src.start(at);
         src.stop(at + dur + 0.1);
         voices.push(src);
@@ -717,7 +757,7 @@
       if (cvs) return true;
       cvs = $("confetti"); if (!cvs) return false;
       cx = cvs.getContext("2d");
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var dpr = pixelRatio(view.scale);          // same rule as the game canvas
       cvs.width = Math.round(view.w * dpr); cvs.height = Math.round(view.h * dpr);
       cx.setTransform(dpr, 0, 0, dpr, 0, 0);
       return true;

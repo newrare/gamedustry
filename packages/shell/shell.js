@@ -30,10 +30,18 @@
       if (Math.abs(target - shown) < 0.5) shown = target;
       write(Math.round(shown));
     }
-    // Punch the score on a gain — the single most useful piece of HUD juice.
+    /* Punch the score on a gain — the single most useful piece of HUD juice.
+       The animation is restarted by swapping between two identical ones rather
+       than with the classic `remove class; void offsetWidth; add class`:
+       reading offsetWidth forces a synchronous layout of the whole frame, and
+       it happens on the exact frame a pickup already costs the most (a sound, a
+       callout, a particle burst). Two animation names restart on their own. */
+    var alt = false;
     function punch(color) {
       var el = $("hud-score");
-      el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+      el.classList.remove(alt ? "bump" : "bump2");
+      el.classList.add(alt ? "bump2" : "bump");
+      alt = !alt;
       if (color) {
         el.style.color = color;
         clearTimeout(colorT);
@@ -44,8 +52,26 @@
       return '<div class="hud-pill' + (cls ? " " + cls : "") + '">' +
              (label ? '<span class="lbl">' + label + "</span>" : "") + text + "</div>";
     }
-    function setLeft(text, label, cls)  { $("hud-left").innerHTML  = text == null ? "" : pill(text, label, cls); }
-    function setRight(text, label, cls) { $("hud-right").innerHTML = text == null ? "" : pill(text, label, cls); }
+    /* Both pills are written from the frame loop — `setTime` below runs on
+       every tick, and a game is free to call these with an unchanged value —
+       so the string is compared before it is assigned. An `innerHTML` write
+       reparses the markup, throws away the two nodes, rebuilds them and pulls a
+       style pass, a layout and a repaint behind it. Doing that 60 times a
+       second for a timer that changes once a second is most of what a timed
+       game spent on its HUD: measured with tools/lab/bench-pop.mjs on the
+       gameplay window alone (no callouts), orbinity went from 22 ms of style
+       and 19 ms of layout per 3 s to vipera's numbers, which has no timer. */
+    var shownL = null, shownR = null;
+    function setLeft(text, label, cls) {
+      var html = text == null ? "" : pill(text, label, cls);
+      if (html === shownL) return;
+      shownL = html; $("hud-left").innerHTML = html;
+    }
+    function setRight(text, label, cls) {
+      var html = text == null ? "" : pill(text, label, cls);
+      if (html === shownR) return;
+      shownR = html; $("hud-right").innerHTML = html;
+    }
     function setTime(sec) {
       if (!CONFIG.hud.timer) return;
       var s = Math.max(0, Math.ceil(sec));
@@ -554,6 +580,93 @@
       T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
     }
     return { show: show };
+  })();
+
+  /* --- Perf: a readout on the device itself ------------------------------
+     Add `?perf=1` to a game's URL and this box appears; without it not a line
+     of it runs. It exists because the two machines disagree: a desktop absorbs
+     costs a phone cannot, and no bench on a laptop reproduces the phone that
+     is actually stuttering.
+
+     What it shows, and why that split is the whole point:
+
+       fps / worst     the real frame interval, which includes everything —
+                       script, style, layout, paint, raster, composite.
+       main            how much of the worst frame the MAIN THREAD owned, read
+                       from the browser's own long-animation-frame report
+                       (Chromium; Firefox has no equivalent and shows "n/a").
+       verdict         `main` says which half to look at. A long frame with a
+                       long `main` is JavaScript, style or layout — profile the
+                       game code. A long frame with a SHORT `main` is paint,
+                       raster or compositing: the main thread was idle and the
+                       frame still missed, which is what an animated paint
+                       property or an oversized layer does, and it is the one
+                       failure a JS profiler cannot see.
+
+     Read it while playing, not on the menu: the callouts and the HUD only cost
+     anything once a round is running.                                       */
+  var Perf = (function () {
+    var on = false;
+    try { on = /(^|[?&#])perf=1\b/.test(location.search + location.hash); } catch (e) {}
+    if (!on) return { frame: function () {} };
+
+    var box = null, prev = 0, frames = 0, worst = 0, over = 0, since = 0;
+    var mainWorst = 0, mainKnown = false;
+    /* Ask whether the browser CAN report a long main-thread frame, rather than
+       waiting for one to arrive. It is the case that matters: a long frame with
+       no report is the verdict, so "no report yet" and "cannot report" must not
+       look the same. */
+    try {
+      mainKnown = !!(window.PerformanceObserver && PerformanceObserver.supportedEntryTypes &&
+        PerformanceObserver.supportedEntryTypes.indexOf("long-animation-frame") >= 0);
+    } catch (e) {}
+
+    /* The browser reports a long animation frame with the main thread's share
+       of it already broken down. Only the total is used here: the interesting
+       question on a phone is not which main-thread phase was slow, it is
+       whether the main thread was involved at all. */
+    try {
+      new PerformanceObserver(function (list) {
+        var e = list.getEntries();
+        for (var i = 0; i < e.length; i++) if (e[i].duration > mainWorst) mainWorst = e[i].duration;
+      }).observe({ type: "long-animation-frame", buffered: false });
+    } catch (e) {}
+
+    function ensure() {
+      if (box) return box;
+      box = document.createElement("div");
+      /* Inline styles, outside the frame: a probe must not need a rule in the
+         motor stylesheet, and it must not ride the frame's scale transform. */
+      box.style.cssText = "position:fixed;left:6px;top:6px;z-index:9999;" +
+        "padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.72);color:#eafcff;" +
+        "font:700 11px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre;" +
+        "pointer-events:none;text-align:left";
+      document.body.appendChild(box);
+      return box;
+    }
+
+    function frame() {
+      var t = (window.performance && performance.now) ? performance.now() : Date.now();
+      if (prev) {
+        var dt = t - prev;
+        frames++; since += dt;
+        if (dt > worst) worst = dt;
+        if (dt > 32) over++;
+        if (since >= 1000) {
+          var fps = Math.round(frames * 1000 / since);
+          var main = mainKnown ? Math.round(mainWorst) + "ms" : "n/a";
+          var verdict = worst < 32 ? "ok"
+            : !mainKnown ? "slow — no main-thread report here"
+            : mainWorst > worst * 0.6 ? "main thread" : "paint/raster";
+          ensure().textContent =
+            "fps " + fps + "   worst " + Math.round(worst) + "ms\n" +
+            "main " + main + "   >32ms " + over + "/s" + (verdict ? "\n" + verdict : "");
+          frames = 0; since = 0; worst = 0; over = 0; mainWorst = 0;
+        }
+      }
+      prev = t;
+    }
+    return { frame: frame };
   })();
 
   // --- Round clock -------------------------------------------------------
