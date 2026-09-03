@@ -279,13 +279,18 @@
     -webkit-mask-image:radial-gradient(circle, #000 13.6%, rgba(0,0,0,.5) 46%, transparent 84%);
             mask-image:radial-gradient(circle, #000 13.6%, rgba(0,0,0,.5) 46%, transparent 84%);
   }
-  /* comic ben-day halftone dots */
+  /* Comic ben-day halftone dots. Sized to the MASK and not to the ambition,
+     for the reason spelled out above the rays: past the mask's 72% stop every
+     pixel is fully transparent, so a 1100x520 box spent 48% of its raster on
+     nothing. 792x375 with the stops rescaled by the same factor paints the
+     identical ellipse. This is the decor `bonus` carries, i.e. the one a game
+     fires on a pickup, so it is the one that must not be paid twice. */
   .pop-d-dots {
-    width:1100px; height:520px;
+    width:792px; height:375px;
     background-image:radial-gradient(circle, var(--dot) 2px, transparent 2.4px);
     background-size:14px 14px;
-    -webkit-mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
-            mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
+    -webkit-mask-image:radial-gradient(ellipse at center, #000 27.8%, transparent 100%);
+            mask-image:radial-gradient(ellipse at center, #000 27.8%, transparent 100%);
   }
   /* The two impact primitives a frequent callout may use. Both are a solid
      colour on a rounded box animated with nothing but `transform` and

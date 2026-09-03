@@ -75,9 +75,19 @@ const CSS = {
   nowc: ".pop-out,.pop-anim,.pop-word{will-change:auto!important}",
   nodecor: ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}",
   novig: "#ov-vignette{box-shadow:none!important}",
+  /* Candidate replacements for the vignette's blurred inset shadow, which is
+     repainted on every call because the colour is assigned per call. */
+  viggrad: "#ov-vignette{box-shadow:none!important;" +
+    "background:radial-gradient(ellipse at center,transparent 42%,var(--vig,rgba(0,229,255,.85)) 130%)!important}",
+  vigsmall: "#ov-vignette{box-shadow:inset 0 0 60px 18px var(--vig,rgba(0,229,255,.85))!important}",
   nowc: ".pop-out,.pop-anim,.pop-word{will-change:auto!important}",
   nodecor: ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}",
   novig: "#ov-vignette{box-shadow:none!important}",
+  /* Candidate replacements for the vignette's blurred inset shadow, which is
+     repainted on every call because the colour is assigned per call. */
+  viggrad: "#ov-vignette{box-shadow:none!important;" +
+    "background:radial-gradient(ellipse at center,transparent 42%,var(--vig,rgba(0,229,255,.85)) 130%)!important}",
+  vigsmall: "#ov-vignette{box-shadow:inset 0 0 60px 18px var(--vig,rgba(0,229,255,.85))!important}",
   oldlook: ".pop-d-lines::before,.pop-d-stripes::before,.pop-d-chevrons::before{display:none!important}" +
     ".pop-d-lines{background:repeating-linear-gradient(90deg,rgba(255,255,255,.20) 0 5px,transparent 5px 17px)!important}" +
     ".pop-d-stripes{background:repeating-linear-gradient(-45deg,#ffd400 0 30px,#141020 30px 60px)!important}" +
@@ -172,7 +182,21 @@ const BENCH_JS = `<script>
       return;
     }
     if (kind === "toast") { H.Overlay.toast("+120", 900); return; }
-    if (kind === "vignette") { H.Overlay.vignette(n % 2 ? "rgba(255,60,60,.85)" : "rgba(60,140,255,.85)", 1, 420); return; }
+    if (kind === "vignette") {
+      var col = n % 2 ? "rgba(255,60,60,.85)" : "rgba(60,140,255,.85)";
+      document.documentElement.style.setProperty("--vig", col);   // for the variants
+      H.Overlay.vignette(col, 1, 420); return;
+    }
+    if (kind === "pickup") {                      // vipera's own tier-up beat
+      var c = n % 2 ? "rgba(141,255,191,.9)" : "rgba(255,212,59,.9)";
+      document.documentElement.style.setProperty("--vig", c);
+      H.Pop.show("bonus", { word: "ADDER", sub: "EVOLVED" });
+      H.Overlay.vignette(c, 1, 620);
+      H.Fx.flash(c, 0.22);
+      H.Fx.ring(H.Layout.cx, H.Layout.cy, { from: 24, to: 210, color: c, width: 8, life: 0.5 });
+      H.Fx.burst(H.Layout.cx, H.Layout.cy, { color: [c, "#ffffff"], count: 24, speed: 420, life: 0.55, size: 6 });
+      return;
+    }
     if (kind === "shake") { H.Fx.shake(12, 0.3); return; }
     if (kind === "flash") { H.Fx.flash("#ffffff", 0.5); return; }
     if (kind === "end") {

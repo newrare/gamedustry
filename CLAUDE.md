@@ -309,6 +309,8 @@ Shell (section 5):
 - **`?perf=1`** on a game's URL — the on-device readout: fps, worst frame, and
   how much of it the main thread owned, so a stutter is attributed to script or
   to paint/raster instead of guessed at. Off, and inert, without the flag.
+  `&off=vig,decor,word,pops,fx` switches a suspect off on the device, which is
+  how a spike is attributed to a layer rather than argued about.
 - `endRound(result)` — the single way a round ends.
 
 ## Ad-network glue (section 4) — do not remove
