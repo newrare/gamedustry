@@ -128,8 +128,29 @@ async function cdp(port) {
     set on(fn) { onEvent = fn; }, close: () => ws.close() };
 }
 
+/* Chrome must die whatever happens next. SIGTERM is not enough — a headless
+   browser survives it here — and an exception thrown mid-run used to skip the
+   cleanup entirely, which is how a laptop ended up with thirty of these
+   looping a game at 40% CPU each. So: SIGKILL, once, from a handler that runs
+   on a normal exit, on a throw and on Ctrl-C alike. */
+function reap(child) {
+  var done = false;
+  const kill = () => {
+    if (done) return;
+    done = true;
+    try { child.kill("SIGKILL"); } catch (e) {}
+  };
+  process.on("exit", kill);
+  process.on("SIGINT", () => { kill(); process.exit(130); });
+  process.on("SIGTERM", () => { kill(); process.exit(143); });
+  process.on("uncaughtException", (e) => { kill(); console.error(e); process.exit(1); });
+  process.on("unhandledRejection", (e) => { kill(); console.error(e); process.exit(1); });
+  return kill;
+}
+
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-audio-"));
 const chrome = await launchChrome(path.join(tmpDir, "profile"));
+reap(chrome.child);
 const client = await cdp(chrome.port);
 const t = await client.send("Target.createTarget", { url: "about:blank" });
 const a = await client.send("Target.attachToTarget", { targetId: t.targetId, flatten: true });
@@ -185,4 +206,4 @@ try {
   const rt = await client.send("WebAudio.getRealtimeData", { contextId: ctxId }, sid);
   console.log("audio thread: " + JSON.stringify(rt.realtimeData));
 } catch (e) { console.log("audio thread: unavailable (" + e.message + ")"); }
-client.close(); chrome.child.kill(); await sleep(300);
+client.close(); chrome.child.kill("SIGKILL");
