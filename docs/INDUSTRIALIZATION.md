@@ -357,11 +357,11 @@ MENU. Nothing in the motor branches on a target.
 
 Three families, by what they are for.
 
-| family           | tools                                                                                                                                                      |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-screens`, headless canvas bench                               |
-| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                 |
-| `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8) |
+| family           | tools                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-screens`, `bench-pop` (what a callout costs on an emulated phone) |
+| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                     |
+| `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8)     |
 
 The HTML workbenches in [lab/](../lab/) — `overlay-pop`, `icon-card`, `bubble` —
 stay where they are: they are visual ateliers, not scripts.

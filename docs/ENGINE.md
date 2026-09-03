@@ -329,6 +329,27 @@ A style's full-frame impact (`shake`, `flash`, `vignette`, `confetti`) is
 delegated to `Fx` and `Overlay`, so there is never a second shake system. Sound
 stays with the caller: play your own sample on the same beat.
 
+**A decor may animate `transform` and `opacity`, and nothing else.** The three
+scrolling decors (the ribbon's speed lines, the hazard tape, the chevrons) used
+to slide their gradient with `background-position`, which is a paint property:
+the browser repainted the whole masked layer on every frame the callout was up.
+On a phone that is the stall; a desktop absorbs it, which is why it went
+unnoticed. Measured with `node tools/lab/bench-pop.mjs` on an emulated phone at
+DPR 3, raster time over a 3 s window:
+
+| callout  | before  | after |
+| -------- | ------- | ----- |
+| `ribbon` | 2575 ms | 85 ms |
+| `danger` | 818 ms  | 34 ms |
+| `streak` | 390 ms  | 43 ms |
+
+The gradient now rides a `::before` one tile wider than its box and slides with
+`transform`, which the compositor plays without a repaint — same picture, same
+motion. `background-position`, `box-shadow`, `filter`, `left` / `top` and
+`width` / `height` are all paint or layout properties: none of them belongs in
+an animation that runs while a game does. Run the bench before adding a decor
+that moves.
+
 #### The overlay must never cost the gameplay a frame
 
 A callout lands on the exact frame the player earned something — the worst

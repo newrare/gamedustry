@@ -108,7 +108,8 @@ playables/
 │   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
-│   │   └── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
+│   │   ├── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
+│   │   └── bench-pop.mjs     ← what a callout costs, on an emulated phone
 │   └── publish/              ← deploy (empty until phase 4)
 └── docs/
     ├── ENGINE.md             ← the motor: layout, APIs, contract  ← START HERE
