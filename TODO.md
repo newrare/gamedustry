@@ -136,13 +136,17 @@ ______________________________________________________________________
   not get the composited-slide fix. The catalogue therefore no longer previews
   what the motor draws. Point it at `packages/shell/motor.css` instead
 
-- [ ] MAIN — the mobile stutter, on the device with `?perf=1`: **gearball reads
-  clean** (55-60 fps, worst 20-30 ms, no paint/raster) and **vipera still spikes
-  to ~90 ms on a bonus pickup, verdict paint/raster**. Bisect it with
-  `?perf=1&off=vig`, then `off=fx`, then `off=pops` — that separates the
-  vignette, the canvas juice and the callouts. Two fixes for that beat are
-  pending deployment (the vignette repaints once per colour instead of once per
-  call, the halftone-dot decor lost 48% of its raster area). What
+- [ ] MAIN — the mobile stutter: **bisected on the device and answered — it is
+  the callout layer**, in every game. `off=pops` was fluid; `off=vig` and
+  `off=fx` changed nothing. Inside a callout, `off=glow` took the worst frame
+  of a pickup from 90 ms to 50, `off=decor` to 70, `off=face` to 80, and
+  `off=stroke` to 90 (i.e. the 14px stroke is free). Fixed accordingly and
+  pending deployment: the default glyph stack has no blur left, `record` keeps
+  it, and a single-span word no longer runs the per-glyph animation that
+  rasterized the layer at 1.6x. **Re-measure after deploying**: 50 ms was the
+  floor `off=glow` alone reached, so if `worst` is still over ~35 ms the next
+  levers are `face` (the gradient face) and `decor`, and both change the look —
+  that is a design call, not a perf one. What
   has been ruled out by measurement: the sfx path (the audio graph is reclaimed
   either way, render capacity 0.2%) and the scrolling decors (fixed in 912f62a,
   already in production, and the stutter outlived it). What is pending: the

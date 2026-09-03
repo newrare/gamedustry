@@ -395,6 +395,21 @@ the machinery:
   --fill:linear-gradient(180deg,#ffffff,#7c5cff); }
 ```
 
+**No callout's word is blurred any more, and `--glow` is read by `record`
+alone.** The default glyph stack was three solid extrusion copies, a blurred
+ground shadow and a blurred coloured glow; bisected on a phone with
+`?perf=1&off=…`, those two blurs were the single biggest cost in the whole
+callout layer — the worst frame of a pickup went from 90 ms to 50 ms with them
+off, while removing the 14px stroke changed nothing at all and the gradient
+face bought 10 ms. Every shadow layer follows the painted shape, so each blur
+convolves the whole stroked glyph run, at ~1.6× device scale, on a layer
+created on that very frame. The stack is now solid-only; `record`, which fires
+once at the end of a run, keeps the full treatment and is the only place a
+SKIN's `--glow` still shows. Set it anyway — it costs nothing and it is what
+the end-of-run peak reads. And a single-span word no longer runs the per-glyph
+`pop-ltr` animation, which multiplied that layer's raster scale by 1.6 on top
+of the entry's own peak; the staggered styles (`letters`, `vertical`) still do.
+
 `combo` is the one callout a good run fires over and over, so it is built as the
 cheapest thing in the catalogue: a chip that hugs its own word (the plate is a
 `background` on `.pop-body`, not a decor node), a hollow ellipse for the

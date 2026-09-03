@@ -210,7 +210,8 @@
     --ink:#0b0a1e;                             /* outline + extrusion colour */
     --ink2:rgba(0,0,0,.45);
     --fill:linear-gradient(180deg,#ffffff,#cfd6ff);
-    --glow:rgba(120,180,255,.6);
+    --glow:rgba(120,180,255,.6);               /* read by `record` ONLY — see
+                                                  the text-shadow note below  */
     --stroke:14px;
     --ray:rgba(255,255,255,.22);
     --dot:rgba(0,0,0,.4);
@@ -266,15 +267,30 @@
     position:relative; display:inline-block;
     color:var(--ink); -webkit-text-fill-color:var(--ink);
     -webkit-text-stroke:var(--stroke) var(--ink);
-    /* Extrusion, ground shadow, then the coloured glow the style asks for —
-       cast by the stroked glyph, so it reads outside the ink outline exactly
-       like the drop-shadow filter this replaces, without its render surface.
-       These blurs are cheap where a `filter` is not: Skia blurs the glyph mask
-       into the tiles the page already rasterizes, spread over the raster
-       threads, instead of forcing one blocking pass over a private surface. */
+    /* Extrusion and a hard ground shadow — and NOTHING BLURRED. This stack
+       used to end with `0 22px 26px rgba(0,0,0,.55), 0 0 16px var(--glow)`,
+       and the comment here used to argue those two blurs were cheap because
+       Skia blurs the glyph mask in place rather than over a private surface,
+       the way a `filter` would. On a phone that argument is wrong, and the
+       phone was asked: bisected on the device with `?perf=1&off=…` (see the
+       Perf module in packages/shell/shell.js), the worst frame of a pickup went
+
+         baseline        90 ms      off=glow (the two blurs)   50 ms
+         off=decor       70 ms      off=face                   80 ms
+         off=stroke      90 ms  ← the 14px stroke costs nothing
+
+       so the two convolutions were the callout's single biggest cost, and the
+       stroke everyone would have blamed costs nothing at all. Every shadow
+       layer follows the painted shape, so each blur convolves the whole
+       stroked glyph run, at ~1.6x device scale, on a layer created that very
+       frame — the frame the game is celebrating something on.
+       `.pop-combo` had already been cut down to one solid shadow for the same
+       reason; this is that decision applied to the other eleven styles. The
+       blur is bought back below, once, by `record` — the end-of-run peak, which
+       fires once a run and is where a glow is worth a convolution. */
     text-shadow:
       0 5px 0 var(--ink), 0 10px 0 var(--ink), 0 15px 0 var(--ink2),
-      0 22px 26px rgba(0,0,0,.55), 0 0 16px var(--glow);
+      0 22px 0 rgba(0,0,0,.45);
     animation:pop-ltr .3s cubic-bezier(.2,1.9,.4,1) backwards;
     animation-delay:calc(var(--i,0) * var(--stagger, 0ms));
   }
@@ -285,6 +301,15 @@
     -webkit-text-fill-color:transparent; color:transparent;
     text-shadow:none;
   }
+  /* A word that is ONE span already flies in with the callout's own entry, and
+     its `pop-ltr` animation multiplied that layer's raster scale by 1.6 on top
+     of it: with `drop` peaking at 1.35, the word and every shadow layer under
+     it were rasterized at 2.2x the size they ever show — 4.7x the pixels, on
+     the frame of the event. The per-glyph animation is what the staggered
+     styles are for, so it now applies only when the word is actually split
+     into glyphs (`letters`, `vertical`). Same reasoning as `pop-in-chip`
+     below, applied one level down. */
+  .pop-ltr:only-child { animation:none; }
   .pop-sp { display:inline-block; width:.28em; }
 
   /* --- the sub-line (score, context) ------------------------------------- */
@@ -627,6 +652,15 @@
     --fill:linear-gradient(180deg,#fffbe8 0%,#ffd977 40%,#ffab00 72%,#fff1b8 100%);
     --glow:rgba(255,200,70,.8); --ray:rgba(255,215,120,.26);
     --band:#1b1330; --band-line:#ffd977; --band-h:200px; --band-skew:-2deg;
+  }
+  /* The one callout that still pays for a blur: it fires once, on the last
+     frame of a run, and it is the moment the whole screen is celebrating. It
+     is also the only place `--glow` is read, so a SKIN's glow colour still
+     means something. */
+  .pop-record .pop-ltr {
+    text-shadow:
+      0 5px 0 var(--ink), 0 10px 0 var(--ink), 0 15px 0 var(--ink2),
+      0 22px 26px rgba(0,0,0,.55), 0 0 16px var(--glow);
   }
   .pop-record .pop-sub { background:#1b1330; border-color:#ffd977; color:#ffd977; }
   /* VERT — vertical manga column hugging one edge. */
