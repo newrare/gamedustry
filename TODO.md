@@ -146,7 +146,10 @@ ______________________________________________________________________
   rasterized the layer at 1.6x. **Re-measure after deploying**: 50 ms was the
   floor `off=glow` alone reached, so if `worst` is still over ~35 ms the next
   levers are `face` (the gradient face) and `decor`, and both change the look —
-  that is a design call, not a perf one. What
+  that is a design call, not a perf one. **Measure it with `?perf=bench`**,
+  which runs the whole variant sweep on the device and prints the table: a
+  laptop cannot rank these (a software rasterizer put the decor at 92% of a
+  callout and the blurs at nothing, the exact opposite of what the phone said). What
   has been ruled out by measurement: the sfx path (the audio graph is reclaimed
   either way, render capacity 0.2%) and the scrolling decors (fixed in 912f62a,
   already in production, and the stutter outlived it). What is pending: the
