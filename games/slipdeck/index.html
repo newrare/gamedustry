@@ -313,13 +313,18 @@
     -webkit-mask-image:radial-gradient(circle, #000 13.6%, rgba(0,0,0,.5) 46%, transparent 84%);
             mask-image:radial-gradient(circle, #000 13.6%, rgba(0,0,0,.5) 46%, transparent 84%);
   }
-  /* comic ben-day halftone dots */
+  /* Comic ben-day halftone dots. Sized to the MASK and not to the ambition,
+     for the reason spelled out above the rays: past the mask's 72% stop every
+     pixel is fully transparent, so a 1100x520 box spent 48% of its raster on
+     nothing. 792x375 with the stops rescaled by the same factor paints the
+     identical ellipse. This is the decor `bonus` carries, i.e. the one a game
+     fires on a pickup, so it is the one that must not be paid twice. */
   .pop-d-dots {
-    width:1100px; height:520px;
+    width:792px; height:375px;
     background-image:radial-gradient(circle, var(--dot) 2px, transparent 2.4px);
     background-size:14px 14px;
-    -webkit-mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
-            mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
+    -webkit-mask-image:radial-gradient(ellipse at center, #000 27.8%, transparent 100%);
+            mask-image:radial-gradient(ellipse at center, #000 27.8%, transparent 100%);
   }
   /* The two impact primitives a frequent callout may use. Both are a solid
      colour on a rounded box animated with nothing but `transform` and
@@ -2151,9 +2156,22 @@
     }
 
     // Edge glow — hold it on during danger, or pulse it on a milestone.
+    /* The edge glow is a blurred inset shadow over the WHOLE frame, so writing
+       it repaints and re-rasterizes every pixel of the frame — at a phone's
+       raster scale, 2.4 Mpx convolved with a 200-odd-pixel blur, off the main
+       thread, on whichever frame the game happened to celebrate something.
+       Opacity alone is composited and free, so the paint is written only when
+       the colour actually changes. A game that pulses the same colour on every
+       pickup — which is what a game does — now pays for it once a round.
+       If a beat still costs too much here, `?perf=1&off=vig` on the URL takes
+       the whole layer out of the picture on the device (see Perf below). */
+    var vigColor = null;
     function vignette(color, alpha, ms) {
       var el = $("ov-vignette");
-      if (color) el.style.boxShadow = "inset 0 0 130px 34px " + color;
+      if (color && color !== vigColor) {
+        vigColor = color;
+        el.style.boxShadow = "inset 0 0 130px 34px " + color;
+      }
       el.style.opacity = alpha == null ? 1 : alpha;
       if (ms) later(function () { el.style.opacity = 0; }, ms);
     }
@@ -2640,6 +2658,48 @@
     try { on = /(^|[?&#])perf=1\b/.test(location.search + location.hash); } catch (e) {}
     if (!on) return { frame: function () {} };
 
+    /* `?perf=1&off=vig,decor` switches a suspect off ON THE DEVICE. The probe
+       above says whether a stutter is main-thread or paint/raster; it cannot
+       say WHICH layer, and no bench on a laptop reproduces a phone's raster.
+       So the bisect moves here: turn one thing off, play the same beat, watch
+       `worst`. What is available, from the cheapest guess to the broadest:
+
+         vig     Overlay.vignette — a full-frame repaint, because the colour is
+                 assigned per call, blurred over the whole frame
+         decor   the layers behind a callout's word (band, dots, rays, ring…)
+         word    the word's own three glyph layers (stroke, extrusion, glow)
+         pops    every callout, outright
+         fx      the canvas juice: bursts, rings, the full-frame flash, shake
+
+       Canvas drawing is rasterized off the main thread too, so `fx` and `pops`
+       together separate the two halves of a pickup: if `off=fx` flattens the
+       spike it is the canvas, if `off=pops` does it is the DOM. The box lists
+       what is currently off, so a reading is never misattributed. */
+    var off = {};
+    try {
+      var m = /[?&]off=([a-z,]+)/.exec(location.search + location.hash);
+      if (m) {
+        var names = m[1].split(",");
+        for (var k = 0; k < names.length; k++) off[names[k]] = true;
+      }
+    } catch (e) {}
+
+    function noop() {}
+    if (off.vig)  Overlay.vignette = noop;
+    if (off.pops) Pop.show = function () { return null; };
+    if (off.fx) {
+      Fx.burst = noop; Fx.ring = noop; Fx.flash = noop; Fx.shake = noop; Fx.text = noop;
+    }
+    if (off.decor || off.word) {
+      var css = document.createElement("style");
+      css.textContent =
+        (off.decor ? ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}" : "") +
+        (off.word ? ".pop-ltr{text-shadow:none!important;-webkit-text-stroke-width:0!important}" +
+                    ".pop-ltr::before{display:none!important}" : "");
+      document.head.appendChild(css);
+    }
+    var offList = Object.keys(off).join(",");
+
     var box = null, prev = 0, frames = 0, worst = 0, over = 0, since = 0;
     var mainWorst = 0, mainKnown = false;
     /* Ask whether the browser CAN report a long main-thread frame, rather than
@@ -2690,7 +2750,9 @@
             : mainWorst > worst * 0.6 ? "main thread" : "paint/raster";
           ensure().textContent =
             "fps " + fps + "   worst " + Math.round(worst) + "ms\n" +
-            "main " + main + "   >32ms " + over + "/s" + (verdict ? "\n" + verdict : "");
+            "main " + main + "   >32ms " + over + "/s" +
+            (verdict ? "\n" + verdict : "") +
+            (offList ? "\noff: " + offList : "");
           frames = 0; since = 0; worst = 0; over = 0; mainWorst = 0;
         }
       }

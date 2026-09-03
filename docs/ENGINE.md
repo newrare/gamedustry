@@ -320,6 +320,23 @@ profiler shows. The box prints that verdict itself.
 Without the flag not a line of it runs, and `Perf.frame()` in the bootstrap is
 an empty function.
 
+**`&off=…` bisects it on the same device.** The verdict says which half of the
+pipeline is at fault, never which layer, so switch one suspect off and play the
+same beat again:
+
+| `off=`  | what it takes out                                            |
+| ------- | ------------------------------------------------------------ |
+| `vig`   | `Overlay.vignette` — a blurred repaint of the whole frame    |
+| `decor` | the layers behind a callout's word (band, dots, rays, ring…) |
+| `word`  | the word's own glyph layers (stroke, extrusion, glow)        |
+| `pops`  | every callout, outright                                      |
+| `fx`    | the canvas juice: bursts, rings, the full-frame flash, shake |
+
+Several at once, comma separated: `?perf=1&off=vig,decor`. Canvas drawing is
+rasterized off the main thread too, so `off=fx` against `off=pops` is what
+separates the two halves of a pickup — the canvas or the DOM. The box lists
+what is currently off, so a reading can never be misattributed.
+
 ### `Pop` — comic callouts
 
 The loud half of the overlay. **Prefer it over `Overlay.banner` / `Overlay.toast`

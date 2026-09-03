@@ -244,6 +244,11 @@ function openPlayer(slug, trigger) {
      packages/webshell/menu.js), so the page and the game it embeds are never
      in two different languages. */
   var url = 'games/' + slug + '/index.html?lang=' + lang;
+  /* ?perf=1 on the page is forwarded to the game. The probe that reports the
+     frame cost lives in the motor (docs/ENGINE.md), so the flag has to reach
+     the iframe: on the page itself it would do nothing, which is exactly the
+     mistake it is worth saving. Nothing else is forwarded. */
+  if (/(^|[?&])perf=1\b/.test(location.search)) url += '&perf=1';
   player.title.textContent = g.name;
   player.open.href = url;
   player.frame.src = url;
