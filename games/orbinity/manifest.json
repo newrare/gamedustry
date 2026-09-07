@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b>"
+      }
+    },
+    "font": "exo2"
   }
 }

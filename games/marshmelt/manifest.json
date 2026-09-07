@@ -1,0 +1,60 @@
+{
+  "slug": "marshmelt",
+  "title": "Marshmelt",
+  "tagline": "Tap to fling a sticky marshmallow from rock to rock over the lava",
+  "order": 130,
+  "draft": true,
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#ff9d2e",
+    "accent2": "#ff7a1a"
+  },
+  "copy": {
+    "fr": {
+      "tagline": "Un marshmallow collant survit au-dessus d’un lac de lave. Chaque tap l’envoie sur le rocher visé, et tout ce qui tombe finit par fondre.",
+      "tags": [
+        "Tap pour sauter",
+        "Sans fin",
+        "Lave"
+      ]
+    },
+    "en": {
+      "tagline": "A sticky marshmallow survives above a lava lake. Every tap flings it at the rock you aimed at, and everything falling ends up melting.",
+      "tags": [
+        "Tap to jump",
+        "Endless",
+        "Lava"
+      ]
+    }
+  },
+  "description": "A marshmallow hangs over a lava lake, stuck to the only thing keeping it up: a falling rock. A tap flings it along the line to your finger at one fixed speed — no drag, no charge — and it sticks to the first thing it touches, then rides that rock down. Rocks melt when they reach the lava, so a landing is never a rest: the only way to stay alive is to keep climbing the ones still falling. Land high and the score pays more, chain fresh rocks and the multiplier grows. Fireballs can be grabbed too, but they only lend their back for a beat before shrugging the body off — one shade browner each time. The lava rises the whole run, and it is the only clock.",
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-tap\">Tape</b> pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>"
+      }
+    },
+    "font": "baloo2"
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "marshmelt",
+    "channel": "html5",
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.marshmelt",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  }
+}

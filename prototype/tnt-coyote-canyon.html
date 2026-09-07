@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>TNT Coyote Launch — prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;overflow:hidden;
+            -webkit-user-select:none;user-select:none;touch-action:none}
+  body{display:flex;align-items:center;justify-content:center}
+  canvas{max-width:100%;max-height:100%;aspect-ratio:720/1280;display:block;
+         background:#000;image-rendering:auto}
+</style>
+</head>
+<body>
+<canvas id="c" width="720" height="1280"></canvas>
+<script>
+/* ------------------------------------------------------------------ *
+ * TNT COYOTE LAUNCH — prototype
+ * Question: is it fun to AIM a rocket, light its fuse on a moving
+ * gauge, and thread the coyote through a random field of floating TNT
+ * that keeps kicking him higher?
+ *
+ *   - pick an angle by dragging, then hold the bar: a cursor runs up
+ *     and down the gauge and the release point is the power;
+ *   - the rocket burns for half a second along that angle;
+ *   - every floating crate he reaches blows and throws him again — on
+ *     the way up AND when he falls back onto one. A blast that catches
+ *     him already moving that way is worth more (capped).
+ * ------------------------------------------------------------------ */
+
+/* --- tunables ----------------------------------------------------- */
+var W = 720, H = 1280;        // design space, portrait
+var PPM = 40;                 // pixels per metre
+var GRAVITY = -22;            // m/s^2
+var DRAG = 0.05;              // air drag, 1/s
+var TRIGGER_R = 2.4;          // m, a floating crate blows when he gets this close
+                              // (wide on purpose: it is what makes a stronger
+                              // launch reliably better instead of a lottery)
+var BLAST_RADIUS = 3.4;       // m, nothing outside is touched
+var BLAST_POWER = 13;         // m/s of impulse at the blast centre
+var BOOST_MATCH = 0.030;      // extra impulse per m/s already going that way
+var BOOST_MAX = 1.45;         // ...capped, or the boosts compound exponentially
+var BLAST_FALLOFF = 1.3;      // exponent of (1 - d/R)
+var BLAST_UPBIAS = 0.30;      // pushes the direction upward
+var SIDE_DAMP = 0.40;         // the coyote flies like a rocket: little sideways
+var CRATE_MASS = 1.20;        // crates are thrown, but never out of his reach
+var CRATE_SIZE = 1.1;         // m
+var COYOTE_R = 0.62;          // m
+var GROUND_REFLECT = 0.55;    // downward blast bounced off the floor
+var BOUNCE = 0.32, FRICTION = 0.72;
+var WALL_L = 0.6, WALL_R = 17.4;
+var SETTLE_TIME = 0.6;        // s at rest before the run is scored
+var WALL_BOUNCE = 0.62;       // the canyon walls are elastic, he ricochets
+
+/* the launch */
+var AIM_MAX = 42 * Math.PI / 180;   // rad off vertical, either side
+var THRUST = 62;              // m/s^2 along the rocket axis at full power
+var POWER_FLOOR = 0.77;       // a fumbled release still leaves the ground
+var BURN_T = 0.55;            // s of burn before the rocket lets go
+var GAUGE_SPEED = 1.15;       // full up-down sweeps per second
+var PERFECT = 0.94;           // gauge fraction that counts as a perfect light
+var PERFECT_BONUS = 1.18;
+
+/* the field */
+var FIELD_N = 11;             // floating crates per run
+var FIELD_LOW = 5, FIELD_HIGH = 21;   // stays clear of the HUD bands
+var FIELD_EDGE = 2.2;         // m kept clear of the canyon walls
+var FIELD_GAP = 3.4;          // m minimum between two crates
+var GROUND_PAD = 5;           // m of sand kept under the ground line
+var CAM_ANCHOR = 14;          // m above the view bottom where the coyote sits
+var CAM_LERP = 9;
+
+/* --- setup -------------------------------------------------------- */
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var VIEW_M = H / PPM;                       // 32 m of world in one screen
+var BAR = { x: 0, y: H - 96, w: W, h: 96 };
+var GAUGE = { x: W - 50, y: 300, w: 40, h: 660 };
+
+var S = null, fx = [], drag = null, fps = 0, blastCount = 0;
+
+function reset() {
+  S = {
+    phase: 'aim',                            // aim | charge | fly | done
+    crates: [], rocket: null,
+    coyote: { x: 9, y: COYOTE_R, vx: 0, vy: 0, rot: 0, vrot: 0 },
+    angle: 0,                                // rad off vertical, + is right
+    gauge: 0, gaugeDir: 1, power: 0, perfect: false, burn: 0,
+    t: 0, maxH: 0, hits: 0, pops: 0, settle: 0,
+    camX: 9, camY: -GROUND_PAD, prevX: 9, prevY: 0
+  };
+  fx.length = 0;
+  blastCount = 0;
+  buildField();
+}
+
+function addCrate(x, y) {
+  S.crates.push({ x: x, y: y, vx: 0, vy: 0, rot: 0, vrot: 0, live: true,
+                  moving: false, bob: Math.random() * 6.28, y0: y });
+  return S.crates[S.crates.length - 1];
+}
+
+/* a fresh scatter every run — reading it is the game */
+function buildField() {
+  var tries = 0;
+  while (S.crates.length < FIELD_N && tries++ < 500) {
+    var x = FIELD_EDGE + Math.random() * (18 - 2 * FIELD_EDGE);
+    var y = FIELD_LOW + Math.random() * (FIELD_HIGH - FIELD_LOW);
+    var ok = true;
+    for (var i = 0; i < S.crates.length; i++)
+      if (Math.hypot(S.crates[i].x - x, S.crates[i].y - y) < FIELD_GAP) { ok = false; break; }
+    if (ok) addCrate(x, y);
+  }
+}
+
+function fire(g) {
+  S.power = POWER_FLOOR + (1 - POWER_FLOOR) * g;
+  S.perfect = g >= PERFECT;
+  if (S.perfect) S.power *= PERFECT_BONUS;
+  S.burn = BURN_T;
+  S.phase = 'fly';
+  S.t = 0;
+  S.rocket = { on: true, x: S.coyote.x, y: S.coyote.y, rot: S.angle, vx: 0, vy: 0 };
+  if (S.perfect) {
+    fx.push({ k: 'flash', x: S.coyote.x, y: S.coyote.y, t: 0, life: 0.25 });
+    for (var i = 0; i < 14; i++) {
+      var a = Math.random() * 6.28, sp = 3 + Math.random() * 7;
+      fx.push({ k: 'p', x: S.coyote.x, y: S.coyote.y, vx: Math.cos(a) * sp,
+                vy: Math.sin(a) * sp, t: 0, life: 0.5, sz: 3 + Math.random() * 4,
+                col: '#9dff9d' });
+    }
+  }
+}
+
+/* --- physics ------------------------------------------------------ */
+function integrate(b, dt, radius, bouncy) {
+  b.vy += GRAVITY * dt;
+  var d = 1 - DRAG * dt;
+  b.vx *= d; b.vy *= d;
+  b.x += b.vx * dt; b.y += b.vy * dt;
+  b.rot += (b.vrot || 0) * dt;
+  if (b.x < WALL_L + radius) { b.x = WALL_L + radius; b.vx = -b.vx * WALL_BOUNCE; }
+  if (b.x > WALL_R - radius) { b.x = WALL_R - radius; b.vx = -b.vx * WALL_BOUNCE; }
+  if (b.y < radius) {
+    b.y = radius;
+    if (b.vy < 0) b.vy = -b.vy * (bouncy ? BOUNCE : 0.28);
+    if (Math.abs(b.vy) < 1.2) b.vy = 0;
+    b.vx *= FRICTION;
+    b.vrot = (b.vrot || 0) * 0.6;
+  }
+  return b.y <= radius + 0.02 && Math.abs(b.vy) < 0.4 && Math.abs(b.vx) < 0.4;
+}
+
+/* one blast: throws the coyote, throws the other crates */
+function explode(c) {
+  c.live = false;
+  blastCount++;
+  S.pops++;
+  boom(c.x, c.y);
+
+  push(S.coyote, c.x, c.y, 1, true);
+  for (var i = 0; i < S.crates.length; i++) {
+    var o = S.crates[i];
+    if (!o.live) continue;
+    var before = o.vx + o.vy;
+    push(o, c.x, c.y, CRATE_MASS, false);
+    if (o.vx + o.vy !== before) o.moving = true;
+  }
+}
+
+function push(b, bx, by, mass, isCoyote) {
+  var dx = b.x - bx, dy = b.y - by;
+  var d = Math.hypot(dx, dy);
+  if (d > BLAST_RADIUS) return;
+  // very close in, a blast is a lift, never a slam: normalising a 5 cm offset
+  // would otherwise point the impulse straight down
+  if (d < 0.7) { dx *= 0.15; dy = Math.max(dy, 0.25); }
+  var nd = Math.hypot(dx, dy) || 1;
+  var nx = dx / nd, ny = dy / nd + BLAST_UPBIAS;
+  var nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
+  var f = Math.pow(1 - d / BLAST_RADIUS, BLAST_FALLOFF);
+  // a blast is worth more when it catches a body already moving that way:
+  // this is what makes a chained crate fired mid-flight beat three crates
+  // dumped under the coyote's feet.
+  var along = Math.max(0, b.vx * nx + b.vy * ny);
+  var boost = Math.min(BOOST_MAX, 1 + BOOST_MATCH * along);
+  var imp = BLAST_POWER * f / mass * boost;
+  var ivx = nx * imp * (isCoyote ? SIDE_DAMP : 1), ivy = ny * imp;
+  // a blast that pushes a grounded body down is reflected by the floor
+  if (ivy < 0 && b.y <= (isCoyote ? COYOTE_R : CRATE_SIZE * 0.5) + 0.15)
+    ivy = -ivy * GROUND_REFLECT;
+  b.vx += ivx; b.vy += ivy;
+  b.vrot = (b.vrot || 0) + (Math.random() - 0.5) * 14 - nx * 4;
+  if (isCoyote && f > 0.05) S.hits++;
+}
+
+function segDist(ax, ay, bx, by, px, py) {
+  var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  var t = l2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+
+/* --- fx ----------------------------------------------------------- */
+function boom(x, y) {
+  fx.push({ k: 'ring', x: x, y: y, r: 0.3, max: BLAST_RADIUS, t: 0, life: 0.45 });
+  fx.push({ k: 'flash', x: x, y: y, t: 0, life: 0.12 });
+  var n = 26;
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, s = 4 + Math.random() * 16;
+    fx.push({ k: 'p', x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s + 4,
+              t: 0, life: 0.5 + Math.random() * 0.7, sz: 3 + Math.random() * 7,
+              col: ['#fff3c4', '#ffd24a', '#ff8b2a', '#ff4d2a'][i & 3] });
+  }
+  for (var j = 0; j < 10; j++)
+    fx.push({ k: 's', x: x + (Math.random() - 0.5) * 2, y: y + (Math.random() - 0.5) * 2,
+              vx: (Math.random() - 0.5) * 3, vy: 1 + Math.random() * 3,
+              t: 0, life: 0.9 + Math.random(), sz: 6 + Math.random() * 10 });
+}
+
+function updateFx(dt) {
+  for (var i = fx.length - 1; i >= 0; i--) {
+    var f = fx[i];
+    f.t += dt;
+    if (f.k === 'p') { f.vy += GRAVITY * 0.5 * dt; f.x += f.vx * dt; f.y += f.vy * dt; }
+    if (f.k === 's') { f.x += f.vx * dt; f.y += f.vy * dt; f.sz += 14 * dt; }
+    if (f.t >= f.life) fx.splice(i, 1);
+  }
+}
+
+/* --- loop --------------------------------------------------------- */
+function update(dt) {
+  updateFx(dt);
+
+  if (S.phase === 'charge') {                 // the cursor runs while he holds
+    S.gauge += S.gaugeDir * GAUGE_SPEED * 2 * dt;
+    if (S.gauge > 1) { S.gauge = 1; S.gaugeDir = -1; }
+    if (S.gauge < 0) { S.gauge = 0; S.gaugeDir = 1; }
+    return;
+  }
+  if (S.phase !== 'fly') return;
+  S.t += dt;
+
+  for (var i = 0; i < S.crates.length; i++) {
+    var c = S.crates[i];
+    if (!c.live) continue;
+    // the field hangs in the air until a blast expels a crate
+    if (c.moving) integrate(c, dt, CRATE_SIZE * 0.5, true);
+    else c.y = c.y0 + Math.sin(S.t * 1.6 + c.bob) * 0.14;
+  }
+
+  var co = S.coyote;
+  S.prevX = co.x; S.prevY = co.y;
+  if (S.burn > 0) {                           // the rocket pushes along its axis
+    S.burn -= dt;
+    var a = THRUST * S.power * dt;
+    co.vx += Math.sin(S.angle) * a;
+    co.vy += Math.cos(S.angle) * a;
+    co.rot = -S.angle;
+    co.vrot = 0;
+    if (S.burn <= 0) dropRocket();
+  }
+  var rest = integrate(co, dt, COYOTE_R, false);
+  if (S.burn <= 0) co.vrot = co.vrot * (1 - 1.2 * dt);
+  if (S.rocket && !S.rocket.on) {
+    S.rocket.vy += GRAVITY * dt;
+    S.rocket.x += S.rocket.vx * dt; S.rocket.y += S.rocket.vy * dt;
+    S.rocket.rot += 6 * dt;
+    if (S.rocket.y < 0) S.rocket = null;
+  }
+
+  // a crate is swept against his whole step, or he tunnels straight through it
+  // at 60 m/s. It only fires once he is level with it or past it, so the blast
+  // throws him up whether he was climbing through the field or falling onto it.
+  for (var g = 0; g < S.crates.length; g++) {
+    var gc = S.crates[g];
+    if (gc.live && co.y >= gc.y &&
+        segDist(S.prevX, S.prevY, co.x, co.y, gc.x, gc.y) < TRIGGER_R)
+      explode(gc);
+  }
+
+  if (co.y > S.maxH + COYOTE_R) S.maxH = co.y - COYOTE_R;
+
+  if (rest && S.burn <= 0) {
+    S.settle += dt; if (S.settle > SETTLE_TIME) S.phase = 'done';
+  } else S.settle = 0;
+  if (S.t > 30) S.phase = 'done';
+}
+
+function dropRocket() {
+  var co = S.coyote;
+  S.rocket.on = false;
+  S.rocket.x = co.x - Math.sin(S.angle) * 0.8;
+  S.rocket.y = co.y - Math.cos(S.angle) * 0.8;
+  S.rocket.vx = co.vx * 0.25 - Math.sin(S.angle) * 3;
+  S.rocket.vy = co.vy * 0.25 - Math.cos(S.angle) * 3;
+  co.vrot = (Math.random() - 0.5) * 6;
+  for (var i = 0; i < 10; i++)
+    fx.push({ k: 's', x: S.rocket.x, y: S.rocket.y,
+              vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 3,
+              t: 0, life: 0.7 + Math.random(), sz: 5 + Math.random() * 8 });
+}
+
+function camera(dt) {
+  var target = -GROUND_PAD;
+  if (S.phase === 'fly' || S.phase === 'done')
+    target = Math.max(-GROUND_PAD, S.coyote.y - CAM_ANCHOR);
+  S.camY += (target - S.camY) * Math.min(1, dt * CAM_LERP);
+}
+
+/* --- projection --------------------------------------------------- */
+function sx(wx) { return wx * PPM; }
+function sy(wy) { return H - (wy - S.camY) * PPM; }
+
+/* --- drawing ------------------------------------------------------ */
+/* the sky is keyed to ALTITUDE, not to the screen: climbing has to look like
+   climbing, or 70 m reads exactly like 5 m */
+var SKY = [[0, 231, 154, 77], [8, 201, 102, 58], [20, 138, 74, 92],
+           [38, 74, 58, 99], [70, 34, 38, 71], [130, 8, 10, 26]];
+function skyAt(m) {
+  var i = 0;
+  while (i < SKY.length - 2 && m > SKY[i + 1][0]) i++;
+  var a = SKY[i], b = SKY[i + 1];
+  var t = Math.max(0, Math.min(1, (m - a[0]) / (b[0] - a[0])));
+  return 'rgb(' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' +
+                  Math.round(a[2] + (b[2] - a[2]) * t) + ',' +
+                  Math.round(a[3] + (b[3] - a[3]) * t) + ')';
+}
+
+var STARS = [];
+for (var _i = 0; _i < 70; _i++)
+  STARS.push({ x: (_i * 149 % 719), y: (_i * 313 % 1279), r: 0.6 + (_i % 3) * 0.5 });
+
+function drawBackground() {
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  for (var k = 0; k <= 5; k++)
+    g.addColorStop(k / 5, skyAt(S.camY + VIEW_M * (1 - k / 5)));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  var starA = Math.max(0, Math.min(0.85, (S.camY - 12) / 45));
+  if (starA > 0) {
+    for (var t = 0; t < STARS.length; t++) {
+      var st = STARS[t];
+      ctx.fillStyle = 'rgba(255,255,235,' + starA * (0.4 + st.r * 0.4) + ')';
+      ctx.beginPath();
+      ctx.arc(st.x, (st.y + S.camY * 6) % 1280, st.r, 0, 6.3); ctx.fill();
+    }
+  }
+
+  // mesas stand on the ground plane but lag 30% behind the climb, so the
+  // horizon still gives a sense of scale once the sand has left the screen
+  var gy = sy(0), rise = Math.max(0, S.camY);
+  var mb = gy - 40 + rise * PPM * 0.7;
+  ctx.fillStyle = '#6b3a34';
+  mesa(90, mb, 220, 150); mesa(430, mb, 300, 210);
+  ctx.fillStyle = '#552c2a';
+  mesa(280, mb, 180, 110); mesa(660, mb, 200, 130);
+
+  ctx.fillStyle = '#d8a05c'; ctx.fillRect(0, gy, W, H - gy + 400);
+  ctx.fillStyle = '#b8813f'; ctx.fillRect(0, gy, W, 8);
+
+  // the canyon he ricochets off — the walls are what keeps a flat shot in play
+  var wl = sx(WALL_L), wr = sx(WALL_R);
+  ctx.fillStyle = '#4a2622';
+  ctx.fillRect(0, 0, wl, H); ctx.fillRect(wr, 0, W - wr, H);
+  ctx.fillStyle = '#603028';
+  for (var n = -1; n < 22; n++) {
+    var yy = ((n * 70 - S.camY * PPM * 0.35) % (H + 140)) - 70;
+    ctx.fillRect(0, yy, wl - 4 + (n % 3) * 3, 34);
+    ctx.fillRect(wr + 4 - (n % 3) * 3, yy + 24, W - wr, 34);
+  }
+}
+function mesa(cx, base, w, h) {
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, base);
+  ctx.lineTo(cx - w / 2 + 22, base - h);
+  ctx.lineTo(cx + w / 2 - 22, base - h);
+  ctx.lineTo(cx + w / 2, base);
+  ctx.closePath(); ctx.fill();
+}
+
+function drawRuler() {
+  var m0 = Math.floor(S.camY), m1 = Math.ceil(S.camY + VIEW_M);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (var m = m0; m <= m1; m++) {
+    if (m < 0) continue;
+    var y = sy(m), big = m % 5 === 0;
+    ctx.fillStyle = big ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.14)';
+    ctx.fillRect(0, y, big ? 30 : 16, big ? 3 : 2);
+    if (big && m > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,.45)';
+      ctx.font = '600 20px system-ui,sans-serif';
+      ctx.fillText(m + 'm', 36, y);
+    }
+  }
+  if (S.maxH > 0.5) {
+    var my = sy(S.maxH);
+    ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 2; ctx.setLineDash([12, 10]);
+    ctx.beginPath(); ctx.moveTo(0, my); ctx.lineTo(W, my); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ffe27a'; ctx.font = '700 22px system-ui,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('BEST ' + S.maxH.toFixed(1) + ' m', W - 16, my - 16);
+  }
+}
+
+function drawCrate(c) {
+  var x = sx(c.x), y = sy(c.y), s = CRATE_SIZE * PPM;
+  // it hangs in the air: a soft halo sells that, and the trigger ring is shown
+  // while aiming so the field can actually be read before firing
+  ctx.fillStyle = 'rgba(255,190,120,.07)';
+  ctx.beginPath(); ctx.arc(x, y, s * 1.15, 0, 6.3); ctx.fill();
+  if (S.phase === 'aim' || S.phase === 'charge') {
+    ctx.fillStyle = 'rgba(255,226,122,.055)';
+    ctx.beginPath(); ctx.arc(x, y, TRIGGER_R * PPM, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,226,122,.20)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, TRIGGER_R * PPM, 0, 6.3); ctx.stroke();
+  }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-c.rot);
+  ctx.fillStyle = '#a8412c'; ctx.fillRect(-s / 2, -s / 2, s, s);
+  ctx.fillStyle = '#7d2c1c'; ctx.fillRect(-s / 2, -s / 2, s, 6);
+  ctx.strokeStyle = '#3a140d'; ctx.lineWidth = 3;
+  ctx.strokeRect(-s / 2, -s / 2, s, s);
+  ctx.fillStyle = '#ffe9c9'; ctx.font = '700 15px system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('TNT', 0, 2);
+  ctx.strokeStyle = '#e9d7a8'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, -s / 2);
+  ctx.quadraticCurveTo(8, -s / 2 - 12, 0, -s / 2 - 20);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* the rocket, strapped on while aiming and burning, tumbling away after */
+function drawRocket() {
+  var r = S.rocket, u = PPM * 1.25;
+  var attached = !r || r.on;
+  var x, y, rot;
+  if (attached) {
+    // strapped on his back: along the axis a little, and a good half metre
+    // behind him, so the nose clears his head instead of hiding inside him
+    var ax = -Math.sin(S.angle), ay = Math.cos(S.angle);
+    x = sx(S.coyote.x + ax * 0.35 - Math.cos(S.angle) * 0.55);
+    y = sy(S.coyote.y + ay * 0.35 + Math.sin(S.angle) * 0.55);
+    rot = S.angle;
+  } else {
+    x = sx(r.x); y = sy(r.y); rot = r.rot;
+  }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  if (attached && S.burn > 0) {                     // flame
+    var fl = (1.2 + Math.random() * 1.1) * u * S.power;
+    ctx.fillStyle = '#ffd24a';
+    ctx.beginPath();
+    ctx.moveTo(-0.30 * u, 1.05 * u); ctx.lineTo(0.30 * u, 1.05 * u);
+    ctx.lineTo(0, 1.05 * u + fl); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff6a2a';
+    ctx.beginPath();
+    ctx.moveTo(-0.18 * u, 1.05 * u); ctx.lineTo(0.18 * u, 1.05 * u);
+    ctx.lineTo(0, 1.05 * u + fl * 0.6); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = '#3a140d';                        // fins
+  ctx.beginPath();
+  ctx.moveTo(-0.33 * u, 0.55 * u); ctx.lineTo(-0.70 * u, 1.10 * u);
+  ctx.lineTo(-0.33 * u, 1.05 * u); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0.33 * u, 0.55 * u); ctx.lineTo(0.70 * u, 1.10 * u);
+  ctx.lineTo(0.33 * u, 1.05 * u); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#d1372a';                        // body
+  ctx.fillRect(-0.33 * u, -0.60 * u, 0.66 * u, 1.65 * u);
+  ctx.fillStyle = '#e8e2d8';
+  ctx.fillRect(-0.33 * u, 0.20 * u, 0.66 * u, 0.16 * u);
+  ctx.fillRect(-0.33 * u, -0.30 * u, 0.66 * u, 0.10 * u);
+  ctx.fillStyle = '#8e2a20';                        // nose
+  ctx.beginPath();
+  ctx.moveTo(-0.33 * u, -0.60 * u); ctx.lineTo(0.33 * u, -0.60 * u);
+  ctx.lineTo(0, -1.45 * u); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#3a140d'; ctx.lineWidth = 2;
+  ctx.strokeRect(-0.33 * u, -0.60 * u, 0.66 * u, 1.65 * u);
+  ctx.restore();
+}
+
+function drawCoyote(co) {
+  var x = sx(co.x), y = sy(co.y), u = COYOTE_R * PPM / 3.0;
+  var flying = S.phase === 'fly' && co.y > COYOTE_R + 0.2;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-co.rot * 0.4);
+  ctx.scale(1, -1);                       // local frame is y-up, like the world
+  var grey = '#8a90a0';
+  // tail
+  ctx.strokeStyle = grey; ctx.lineWidth = 1.1 * u; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-2.2 * u, 0.2 * u);
+  ctx.quadraticCurveTo(-4.2 * u, flying ? -1.4 * u : 0.6 * u,
+                       -5.0 * u, flying ? -3.0 * u : 1.4 * u);
+  ctx.stroke();
+  // legs, trailing when he is airborne
+  ctx.lineWidth = 0.62 * u;
+  var kick = flying ? 1.5 : 0;
+  [[-1.5, -0.9], [-0.9, -0.3], [1.2, 0.6], [1.8, 1.2]].forEach(function (l) {
+    ctx.beginPath(); ctx.moveTo(l[0] * u, -1.0 * u);
+    ctx.lineTo(l[1] * u - kick * u * 0.4, -3.0 * u + kick * u * 0.5);
+    ctx.stroke();
+  });
+  // body
+  ctx.fillStyle = grey;
+  ctx.beginPath(); ctx.ellipse(0, 0, 2.6 * u, 1.7 * u, 0, 0, 6.3); ctx.fill();
+  // head, ears, snout
+  ctx.beginPath(); ctx.arc(2.1 * u, 1.3 * u, 1.35 * u, 0, 6.3); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(1.5 * u, 2.3 * u); ctx.lineTo(1.2 * u, 3.9 * u); ctx.lineTo(2.5 * u, 2.5 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(2.6 * u, 2.4 * u); ctx.lineTo(3.0 * u, 3.8 * u); ctx.lineTo(3.4 * u, 2.2 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9aa0b0';
+  ctx.beginPath(); ctx.ellipse(3.5 * u, 0.9 * u, 1.2 * u, 0.62 * u, 0, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#2a2f3a';
+  ctx.beginPath(); ctx.arc(4.5 * u, 0.9 * u, 0.36 * u, 0, 6.3); ctx.fill();
+  // eye, wide open in flight
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(2.6 * u, 1.6 * u, (flying ? 0.66 : 0.44) * u, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(2.8 * u, 1.6 * u, 0.22 * u, 0, 6.3); ctx.fill();
+  ctx.restore();
+}
+
+function drawFx() {
+  for (var i = 0; i < fx.length; i++) {
+    var f = fx[i], k = f.t / f.life, x = sx(f.x), y = sy(f.y);
+    if (f.k === 'ring') {
+      var r = (0.3 + (f.max - 0.3) * k) * PPM;
+      ctx.strokeStyle = 'rgba(255,214,120,' + (1 - k) + ')';
+      ctx.lineWidth = 10 * (1 - k) + 2;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.stroke();
+    } else if (f.k === 'flash') {
+      ctx.fillStyle = 'rgba(255,246,205,' + (1 - k) * 0.55 + ')';
+      ctx.beginPath(); ctx.arc(x, y, (0.5 + k * 0.9) * PPM, 0, 6.3); ctx.fill();
+    } else if (f.k === 'p') {
+      ctx.globalAlpha = 1 - k; ctx.fillStyle = f.col;
+      ctx.fillRect(x - f.sz / 2, y - f.sz / 2, f.sz, f.sz); ctx.globalAlpha = 1;
+    } else {
+      ctx.fillStyle = 'rgba(96,86,82,' + (1 - k) * 0.22 + ')';
+      ctx.beginPath(); ctx.arc(x, y, f.sz, 0, 6.3); ctx.fill();
+    }
+  }
+}
+
+function drawAim() {
+  var co = S.coyote, x = sx(co.x), y = sy(co.y);
+  var dx = Math.sin(S.angle), dy = Math.cos(S.angle);
+  ctx.setLineDash([10, 12]); ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255,255,255,.45)';
+  ctx.beginPath(); ctx.moveTo(x, y);
+  ctx.lineTo(x + dx * 7 * PPM, y - dy * 7 * PPM); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 4.6 * PPM, -Math.PI / 2 - AIM_MAX, -Math.PI / 2 + AIM_MAX);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '700 24px system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText((S.angle * 180 / Math.PI).toFixed(0) + '\u00b0',
+               x + dx * 5.4 * PPM, y - dy * 5.4 * PPM - 8);
+}
+
+function drawGauge() {
+  var g = GAUGE;
+  ctx.fillStyle = 'rgba(10,8,12,.65)';
+  roundRect(g.x, g.y, g.w, g.h, 14); ctx.fill();
+  // the sweet band at the top: releasing there is the whole skill
+  var ph = g.h * (1 - PERFECT);
+  ctx.fillStyle = 'rgba(120,255,150,.30)';
+  roundRect(g.x + 4, g.y + 4, g.w - 8, ph, 10); ctx.fill();
+  ctx.fillStyle = 'rgba(140,255,170,.9)';
+  ctx.fillRect(g.x + 4, g.y + ph, g.w - 8, 3);
+  var cy = g.y + g.h * (1 - S.gauge);
+  ctx.fillStyle = S.gauge >= PERFECT ? '#9dff9d' : '#ffe27a';
+  ctx.fillRect(g.x - 6, cy - 7, g.w + 12, 14);
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = '600 18px system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('PWR', g.x + g.w / 2, g.y - 26);
+}
+
+function drawHud() {
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, 128);
+  ctx.fillStyle = '#fff'; ctx.font = '800 62px system-ui,sans-serif';
+  ctx.fillText(S.maxH.toFixed(1) + ' m', 24, 26);
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
+  ctx.fillText('MAX HEIGHT', 26, 96);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
+  ctx.fillText('TNT ' + S.pops + '/' + S.crates.length, W - 24, 34);
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
+  ctx.fillText(S.phase === 'fly' ? 'alt ' + Math.max(0, S.coyote.y - COYOTE_R).toFixed(1) + ' m'
+                                 : 'angle ' + (S.angle * 180 / Math.PI).toFixed(0) + '\u00b0',
+               W - 24, 80);
+
+  if (S.phase === 'aim' || S.phase === 'charge') {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 128, W, 92);
+    ctx.fillStyle = '#ffe9c9'; ctx.font = '600 25px system-ui,sans-serif';
+    ctx.fillText('Drag to aim the rocket.', W / 2, 142);
+    ctx.fillText('Hold the bar, release the cursor at the top.', W / 2, 180);
+    drawGauge();
+    var hot = S.phase === 'charge';
+    ctx.fillStyle = hot ? '#e8412c' : '#c2361f';
+    ctx.fillRect(BAR.x, BAR.y, BAR.w, BAR.h);
+    ctx.fillStyle = '#fff'; ctx.font = '800 40px system-ui,sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(hot ? 'RELEASE!' : 'HOLD TO LIGHT THE FUSE',
+                 BAR.x + BAR.w / 2, BAR.y + BAR.h / 2 + 2);
+  }
+
+  if (S.phase === 'fly' && S.perfect && S.t < 1.2) {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = Math.max(0, 1 - S.t / 1.2);
+    ctx.fillStyle = '#9dff9d'; ctx.font = '800 64px system-ui,sans-serif';
+    ctx.fillText('PERFECT LIGHT', W / 2, 320);
+    ctx.globalAlpha = 1;
+  }
+
+  if (S.phase === 'done') {
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, H / 2 - 190, W, 380);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffe27a'; ctx.font = '800 110px system-ui,sans-serif';
+    ctx.fillText(S.maxH.toFixed(1) + ' m', W / 2, H / 2 - 60);
+    ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
+    ctx.fillText('crates hit: ' + S.pops + '/' + S.crates.length + '   ·   power ' +
+                 (S.power * 100).toFixed(0) + '%   ·   ' + S.t.toFixed(1) + ' s',
+                 W / 2, H / 2 + 40);
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = '600 28px system-ui,sans-serif';
+    ctx.fillText('tap or press R for a new field', W / 2, H / 2 + 110);
+  }
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+function drawDebug() {
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(0, H - 192, 430, 96);
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '500 19px ui-monospace,monospace';
+  ctx.fillText('fps ' + fps.toFixed(0) + '  phase ' + S.phase + '  t ' + S.t.toFixed(2) +
+               '  cam ' + S.camY.toFixed(1), 12, H - 162);
+  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  R ' + BLAST_RADIUS +
+               '  fall ' + BLAST_FALLOFF + '  match ' + BOOST_MATCH + 'x' + BOOST_MAX,
+               12, H - 136);
+  ctx.fillText('thrust ' + THRUST + '  burn ' + BURN_T + '  power ' +
+               S.power.toFixed(2) + '  gauge ' + S.gauge.toFixed(2) + '  trig ' +
+               TRIGGER_R, 12, H - 110);
+}
+
+function render() {
+  drawBackground();
+  drawRuler();
+  for (var i = 0; i < S.crates.length; i++) if (S.crates[i].live) drawCrate(S.crates[i]);
+  if (S.phase === 'aim' || S.phase === 'charge') drawAim();
+  if (S.rocket || S.phase === 'aim' || S.phase === 'charge') drawRocket();
+  drawCoyote(S.coyote);
+  drawFx();
+  drawHud();
+  drawDebug();
+}
+
+/* --- input -------------------------------------------------------- */
+function point(e) {
+  var r = canvas.getBoundingClientRect();
+  var px = (e.clientX - r.left) / r.width * W;
+  var py = (e.clientY - r.top) / r.height * H;
+  return { px: px, py: py, x: px / PPM, y: (H - py) / PPM + S.camY };
+}
+function aimAt(p) {
+  var co = S.coyote;
+  var dx = p.x - co.x, dy = Math.max(0.5, p.y - co.y);
+  S.angle = Math.max(-AIM_MAX, Math.min(AIM_MAX, Math.atan2(dx, dy)));
+}
+
+function down(e) {
+  e.preventDefault();
+  var p = point(e);
+  if (S.phase === 'done') { reset(); return; }
+  if (S.phase !== 'aim') return;
+  if (p.py > BAR.y) {                       // the bar lights the fuse
+    S.phase = 'charge';
+    S.gauge = 0; S.gaugeDir = 1;
+    return;
+  }
+  drag = true;
+  aimAt(p);
+}
+function move(e) {
+  if (!drag || S.phase !== 'aim') return;
+  e.preventDefault();
+  aimAt(point(e));
+}
+function up() {
+  drag = false;
+  if (S.phase === 'charge') fire(S.gauge);
+}
+
+canvas.addEventListener('pointerdown', down);
+canvas.addEventListener('pointermove', move);
+window.addEventListener('pointerup', up);
+window.addEventListener('keydown', function (e) {
+  if (e.code === 'Space' && !e.repeat) {
+    e.preventDefault();
+    if (S.phase === 'aim') { S.phase = 'charge'; S.gauge = 0; S.gaugeDir = 1; }
+    else if (S.phase === 'done') reset();
+  }
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA')
+    S.angle = Math.max(-AIM_MAX, S.angle - 0.05);
+  if (e.code === 'ArrowRight' || e.code === 'KeyD')
+    S.angle = Math.min(AIM_MAX, S.angle + 0.05);
+  if (e.code === 'KeyR') reset();
+});
+window.addEventListener('keyup', function (e) {
+  if (e.code === 'Space' && S.phase === 'charge') fire(S.gauge);
+});
+
+/* --- run ---------------------------------------------------------- */
+var last = performance.now();
+function frame(now) {
+  var dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
+  fps = fps * 0.9 + (1 / Math.max(dt, 0.0001)) * 0.1;
+  update(dt);
+  camera(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

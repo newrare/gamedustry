@@ -224,11 +224,17 @@ save — there is deliberately no second way to assemble the site.
 
 The `web` target exists and delivers Delta 3 (see below): section 4 becomes
 `packages/platform/web.js` — no MRAID, no store link, no CTA band — and
-`packages/webshell/` turns the intro into a menu (PLAY / LEADERBOARD / OPTIONS /
-HELP) with the how-to-play demo inside the Help panel. It reads a
-`window.__WEB__` handle injected into the bootstrap, so the motor stays unaware
-of it and the playable artifacts
-rebuild byte-identically.
+`packages/webshell/` replaces the intro with the menu of a finished game: the
+game's own painted backdrop behind it (`assets/image/`, or its SKIN's gradient
+when it has no art), its own typeface out of the OFL pack in `assets/font/`, the
+SKIN's title breathing above it, PLAY / LEADERBOARD / OPTIONS / HELP stacked
+against the right edge, and three panels that open in that same band without
+leaving the screen — the how-to-play demo among them. OPTIONS is the local-only
+first slice of the meta layer: music, sfx and callout switches
+(`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), FR/EN live, and a
+best-score reset, all persisted through `Store`. It reads a `window.__WEB__`
+handle injected into the bootstrap, so the motor stays unaware of it and the
+playable artifacts rebuild byte-identically.
 
 The builder now ships that in two shapes, chosen with `--dest`. `--dest=site`
 (the default) writes the split build below; `--dest=itch` writes one
@@ -579,8 +585,11 @@ building tools that cannot exist.
    itch. `frame-web`, the `Store` memory fallback, `cta: false`, `butler push` in
    Actions. One code cost, two destinations, and the whole deployment loop is
    bought.
-1. **`packages/meta`** — start screen, options, i18n, progression, leaderboard —
-   designed and iterated on the site, where every fix is live in a minute.
+1. **`packages/meta`** — the rest of the meta layer: progression, an online
+   leaderboard, accounts. The start screen, the options and the FR/EN switch
+   already ship in `packages/webshell` (local-only), and OPTIONS is the panel a
+   backend plugs into — designed and iterated on the site, where every fix is
+   live in a minute.
 1. **All nine games public**, on the site and on itch. This is the measurement:
    real retention and replay rate, for free, before committing any investment.
 1. **Portals** — Newgrounds to shake down the adapter, then CrazyGames for

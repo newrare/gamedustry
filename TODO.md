@@ -124,12 +124,36 @@ ______________________________________________________________________
 
 - [ ] MAIN — `assets/icon/slipdeck.png` + its `thumb/` cut; slipdeck is
   `draft: true` in `site/games.js` until then
-- [ ] MAIN — finish `slipdeck` itself; it is the only game still in construction
+- [ ] MAIN — `assets/icon/marshmelt.png` + its `thumb/` cut, and
+  `assets/sound/marshmelt.mp3` for the music bed; marshmelt is `draft: true`
+  until the icon exists
+- [ ] MAIN — finish `slipdeck` itself; it and marshmelt are the two games still
+  in construction
+- [ ] MAIN — playtest `marshmelt` on a phone: the recovery shot (`airShots`),
+  `flingSpeed`, the two fall lanes (`fastChance`, `fastMin/fastMax`) and
+  `gripCenter` are set off a headless pilot, not off a thumb. The pilot cheats
+  (it reads the rock list, it has no reaction time), so it says the mechanics
+  hold, not that the curve is right
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
   listing (they all point at the site today, which is correct for now)
 - [ ] MAIN — decide which languages the games themselves are localized into
 
 ## Known drift and small debts
+
+- [ ] MAIN — background art for the six games that have none: `arcider`,
+  `chainring`, `marshmelt`, `slipdeck`, `triverse`, `vipera`. The web menu shows
+  `assets/image/<slug>-background.png` (embedded as `ASSETS.images.bg`) and
+  falls back to the SKIN's gradient, which is correct but empty — the seven
+  games with a painted hall read far better
+
+- [ ] MAIN — the leaderboard shows one local best score. The online one, the
+  accounts and the progression behind it are `packages/meta` (phase 5), and
+  OPTIONS is already the panel it plugs into
+
+- [ ] MAIN — retitle the intros: the 13 shipped `#intro-title` rules are all the
+  same white-to-accent clipped gradient. `lab/game-title.html` is the rack of
+  ready-made looks — pick one per game (the pick is remembered) and paste the
+  block it prints into that game's SKIN
 
 - [ ] CODE — `lab/overlay-pop.html` carries its own fork of the pop CSS,
   predating the extraction: it still has a `filter` on `.pop-word` and it did

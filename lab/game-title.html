@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — game titles</title>
+<style>
+/* ===========================================================================
+   GAME TITLES — a rack of finished looks for `#intro-title`, one pick per game.
+
+   Every game's intro prints its name once, big, above the one-sentence pitch,
+   and the 13 SKINs have all drifted into the same white-to-accent gradient.
+   This page is not a knob panel: it is a CATALOGUE. Pick a game, look at the
+   whole rack rendered with that game's own name and palette, click the one you
+   want, and paste the CSS block it prints. The pick is remembered per game.
+
+   These are video game titles, so the rack is deliberately loud — the same
+   licence the `Pop` callouts take: strokes, extrudes, halftones, ribbons,
+   chrome, neon. A handful of quiet ones sit at the end for contrast.
+
+   Two painting rules the rack obeys, learned the hard way:
+
+     - `text-shadow` is painted AFTER the element background, so a shadow lands
+       ON TOP of a gradient clipped with `background-clip:text`. Every clipped
+       style therefore builds its extrude and its glow out of chained
+       `filter: drop-shadow()`, which wraps the element and paints behind it.
+     - a negative-z `::before` also paints above the element background, so a
+       style with decor behind the letters uses a SOLID fill (plain `color:`),
+       which is painted in the inline-content phase, above the decor.
+
+   So: clipped-gradient styles carry no pseudo-elements, decorated styles carry
+   no clipped gradient. Nothing in the rack breaks that pairing.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  /* a fixed height, not min-height: the board has to be BOUNDED or the intro
+     frame (1280 design px tall) grows the page and its fit scale reads 1 */
+  height:100vh; overflow:hidden; display:flex; flex-direction:column;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* --- head: the game rack + the views ------------------------------------- */
+#head { flex:0 0 auto; padding:14px 18px 0; background:#12121c; border-bottom:1px solid #23233a; }
+#head h1 { font-size:14px; letter-spacing:1.4px; text-transform:uppercase; display:inline-block; }
+#head .hint { display:inline-block; margin-left:12px; font-weight:500; font-size:11.5px; color:#8b8ba7; }
+
+#games { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 10px; }
+.game {
+  padding:6px 12px; border-radius:999px; cursor:pointer;
+  background:#171725; border:1px solid #2c2c47; color:#c9c9e4;
+  font:700 12px/1.35 inherit; text-align:left;
+}
+.game i { display:block; font-style:normal; font-weight:500; font-size:10px; color:#6f6f92; }
+.game.on { color:#0b0b12; }
+.game.on i { color:rgba(0,0,0,.55); }
+
+#tabs { display:flex; gap:2px; }
+#tabs button, #head .act {
+  padding:8px 16px; border-radius:8px 8px 0 0; cursor:pointer;
+  background:#15151f; color:#8b8ba7; border:1px solid #23233a; border-bottom:0;
+  font:700 12px/1 inherit; letter-spacing:.4px;
+}
+#tabs button.on { background:#0b0b12; color:#e8e6f5; }
+#tabs .sp { flex:1; }
+#tabs .act { border-radius:8px; margin-bottom:6px; background:#7ea6ff; color:#0b0b12; border:0; }
+#tabs .badge { align-self:center; padding-bottom:6px; font-size:11px; font-weight:600; color:#6f6f92; }
+
+/* --- body ---------------------------------------------------------------- */
+#board { flex:1; min-height:0; overflow:auto; padding:16px 18px 24px; }
+
+#cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:14px; }
+.card {
+  position:relative; height:206px; border-radius:16px; overflow:hidden; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; padding:26px 16px 16px;
+  border:1px solid #23233a;
+}
+.card:hover { border-color:#3d3d63; }
+.card.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+.card .tag {
+  position:absolute; left:12px; top:9px; z-index:5;
+  font:700 10.5px/1 inherit; letter-spacing:1.3px; text-transform:uppercase;
+  color:rgba(255,255,255,.52);
+}
+.card .pick {
+  position:absolute; right:10px; top:7px; z-index:5;
+  padding:3px 8px; border-radius:999px; background:#7ea6ff; color:#0b0b12;
+  font:800 9.5px/1.4 inherit; letter-spacing:1px; text-transform:uppercase;
+}
+/* as wide as the word, so `scale()` around its centre keeps the word centred */
+.card .fit { width:max-content; flex:0 0 auto; transform-origin:center; }
+.w { display:inline-block; position:relative; white-space:nowrap; }
+
+/* --- the intro frame: the motor's own geometry, in design pixels ---------- */
+#framewrap { display:flex; justify-content:center; }
+#frame { position:relative; width:720px; height:1280px; flex:0 0 auto;
+  transform-origin:top center; border-radius:26px; overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.6); }
+#frame .screen { position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:0 40px 112px; text-align:center; }
+#frame .icon { width:230px; height:230px; border-radius:44px; margin-bottom:14px;
+  border:2px dashed rgba(255,255,255,.16); flex:0 0 auto; }
+#frame .tag2 { margin-top:18px; font-size:32px; line-height:1.4; }
+#frame .tag2 b { font-weight:900; text-shadow:0 0 16px currentColor; }
+#frame .demo { width:380px; height:210px; margin-top:26px; border-radius:28px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); }
+#frame .btn { margin-top:36px; padding:22px 52px; border-radius:999px; border:0;
+  font:900 34px/1 inherit; letter-spacing:.5px; }
+#frame .ctabar { position:absolute; left:0; right:0; bottom:0; height:112px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; font-weight:800; letter-spacing:2px;
+  border-top:1px solid rgba(255,255,255,.12); }
+
+/* --- picks sheet --------------------------------------------------------- */
+.pickrow { border:1px solid #23233a; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+.pickrow > .top { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#12121c; }
+.pickrow .slug { font:800 12px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; }
+.pickrow .name { font-weight:500; font-size:12px; color:#8b8ba7; }
+.pickrow .sp { flex:1; }
+.pickrow pre { margin:0; padding:10px 14px; overflow:auto; background:#0b0b12;
+  font:500 11.5px/1.5 "SF Mono",Menlo,Consolas,"Roboto Mono",monospace; color:#c9d6ff; }
+.mini { padding:5px 12px; border-radius:8px; border:0; cursor:pointer;
+  background:#7ea6ff; color:#0b0b12; font:700 11px/1 inherit; }
+.mini.ghost { background:#1c1c2c; color:#c9c9e4; border:1px solid #2c2c47; }
+
+/* --- export pane --------------------------------------------------------- */
+#out { flex:0 0 auto; max-height:32vh; display:flex; flex-direction:column;
+  border-top:1px solid #23233a; background:#0e0e17; }
+#out .bar { display:flex; align-items:center; gap:10px; padding:8px 14px;
+  font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:#6f6f92; }
+#out .bar .sp { flex:1; }
+#css { flex:1; overflow:auto; margin:0; padding:0 14px 14px; white-space:pre;
+  font:500 12px/1.55 "SF Mono",Menlo,Consolas,"Roboto Mono",monospace; color:#c9d6ff; }
+</style>
+</head>
+<body>
+
+<div id="head">
+  <h1>Game titles</h1>
+  <span class="hint">Pick a game, click the look you want. The block below goes into that game's <code>skin.css</code>.</span>
+  <div id="games"></div>
+  <div id="tabs">
+    <button data-view="rack" class="on">The rack</button>
+    <button data-view="intro">Intro frame</button>
+    <button data-view="picks">Picks &amp; CSS</button>
+    <span class="sp"></span>
+    <span class="badge" id="badge"></span>
+  </div>
+</div>
+
+<div id="board"></div>
+
+<div id="out">
+  <div class="bar">
+    <span id="out-label">skin.css</span>
+    <span class="sp"></span>
+    <button class="mini" id="copy">Copy CSS</button>
+  </div>
+  <pre id="css"></pre>
+</div>
+
+<style id="rack-css"></style>
+
+<script>
+/* ===========================================================================
+   Plain ES6 — a lab page runs in YOUR browser, not in a mobile WebView.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  /* -------------------------------------------------------------------------
+     THEMES — one entry per game, from its `manifest.json` theme block and its
+     SKIN tokens. `words` are the three coloured words of the pitch, so the
+     intro frame reads like the real screen.
+     ------------------------------------------------------------------------- */
+  const THEMES = {
+    arcider: { title:"Arcider",
+      bg:"radial-gradient(900px 900px at 50% 6%, #1b1147 0%, #0a0726 54%, #030316 100%)",
+      text:"#eafcff", muted:"#95a6de", accent:"#35e8ff", accent2:"#7a4dff",
+      ctaA:"#7cf9ff", ctaB:"#7a4dff", ctaText:"#03041a", ink:"#03041a",
+      gold:"#ffd43b", danger:"#ff2d55", words:["Press","reactor","volts"] },
+    blight: { title:"Blight",
+      bg:"radial-gradient(900px 900px at 50% 22%, #16224e 0%, #0a0e24 60%, #05070f 100%)",
+      text:"#eafcff", muted:"#9fb0e0", accent:"#3aa0ff", accent2:"#7048e8",
+      ctaA:"#ff8fab", ctaB:"#ff3d6b", ctaText:"#ffffff", ink:"#05070f",
+      gold:"#ffd43b", danger:"#ff4d6d", words:["Drag","aim","match 3"] },
+    bouncetry: { title:"Bouncetry",
+      bg:"radial-gradient(880px 900px at 50% 16%, #202a72 0%, #101643 46%, #070a1e 100%)",
+      text:"#eafcff", muted:"#9fb0e0", accent:"#4bf5ff", accent2:"#ff8a1a",
+      ctaA:"#ffc061", ctaB:"#ff8a1a", ctaText:"#2a1400", ink:"#070a1e",
+      gold:"#ffd43b", danger:"#ff2d78", words:["Aim","bounce","bricks"] },
+    chainring: { title:"Chainring",
+      bg:"radial-gradient(1100px 900px at 50% 42%, #191748 0%, #0a0a1c 58%, #04040c 100%)",
+      text:"#eafcff", muted:"#9fb0e0", accent:"#00e5ff", accent2:"#4263eb",
+      ctaA:"#4bf5ff", ctaB:"#00d0ff", ctaText:"#04040c", ink:"#04040c",
+      gold:"#ffd43b", danger:"#ff2d55", words:["Tap","ball","ring"] },
+    echomaze: { title:"Echomaze",
+      bg:"radial-gradient(820px 900px at 50% 30%, #101a4a 0%, #080d28 48%, #04060f 100%)",
+      text:"#eafcff", muted:"#9fb0e0", accent:"#7ef9ff", accent2:"#c026d3",
+      ctaA:"#ff9ae8", ctaB:"#c026d3", ctaText:"#2b0033", ink:"#04060f",
+      gold:"#ffd43b", danger:"#ff2d78", words:["Swipe","echo","exit"] },
+    gearball: { title:"Gearball",
+      bg:"radial-gradient(880px 940px at 50% 26%, #2a2058 0%, #140e2e 52%, #05040e 100%)",
+      text:"#f0f4ff", muted:"#a99cc6", accent:"#7ef9ff", accent2:"#ffb44f",
+      ctaA:"#ff9a44", ctaB:"#e0362c", ctaText:"#2c0900", ink:"#05040e",
+      gold:"#ffd43b", danger:"#ff3d6e", words:["Tap","ball","seat"] },
+    marshmelt: { title:"Marshmelt",
+      bg:"radial-gradient(900px 760px at 50% 108%, #7d1802 0%, #40120a 42%, #180a10 78%, #0d050a 100%)",
+      text:"#fff3e4", muted:"#c79f8a", accent:"#ff9d2e", accent2:"#ff7a1a",
+      ctaA:"#ffd166", ctaB:"#ff7a1a", ctaText:"#2a1000", ink:"#2a1000",
+      gold:"#ffd166", danger:"#ff3b30", words:["Tap","mallow","fire"] },
+    orbinity: { title:"Orbinity",
+      bg:"radial-gradient(1000px 820px at 50% 34%, #1d1a4a 0%, #0a0824 56%, #04030f 100%)",
+      text:"#eaf6ff", muted:"#a9b3e8", accent:"#7cf5ff", accent2:"#6d5cff",
+      ctaA:"#b39bff", ctaB:"#6d5cff", ctaText:"#0b0620", ink:"#0b0620",
+      gold:"#ffd43b", danger:"#ff4d6d", words:["Hold","orbit","comet"] },
+    radiam: { title:"Radiam",
+      bg:"radial-gradient(820px 900px at 50% 42%, #1a1440 0%, #0c0824 54%, #050310 100%)",
+      text:"#f4f0ff", muted:"#a293cf", accent:"#35e0ff", accent2:"#8b6cff",
+      ctaA:"#ffcf4d", ctaB:"#ff8a1f", ctaText:"#2a1400", ink:"#050310",
+      gold:"#ffd43b", danger:"#ff3d6e", words:["Tap","ray","colour"] },
+    slipdeck: { title:"Slipdeck",
+      bg:"radial-gradient(900px 860px at 50% 36%, #17402f 0%, #0b2419 56%, #040b08 100%)",
+      text:"#f3fbf6", muted:"#8fb8a4", accent:"#f5c451", accent2:"#3ddc97",
+      ctaA:"#ffe08a", ctaB:"#f0b429", ctaText:"#241703", ink:"#241703",
+      gold:"#ffd43b", danger:"#ff4a5e", words:["Swipe","keep","bin"] },
+    spinshock: { title:"Spinshock",
+      bg:"radial-gradient(1000px 900px at 50% 40%, #221c5e 0%, #0b0a26 56%, #05040f 100%)",
+      text:"#eafcff", muted:"#a3b2e6", accent:"#40ecff", accent2:"#ff4fbe",
+      ctaA:"#7ef4ff", ctaB:"#00bfff", ctaText:"#02121c", ink:"#05040f",
+      gold:"#ffd43b", danger:"#ff2f6d", words:["Tap","hit","shock"] },
+    triverse: { title:"Triverse",
+      bg:"radial-gradient(980px 900px at 50% 30%, #141a44 0%, #070a20 56%, #03040c 100%)",
+      text:"#eaf4ff", muted:"#93a4d8", accent:"#3ce0ff", accent2:"#ff5ad4",
+      ctaA:"#8ffff2", ctaB:"#2f9cff", ctaText:"#01121d", ink:"#03040c",
+      gold:"#ffd43b", danger:"#ff2d55", words:["Drag","triangle","match"] },
+    vipera: { title:"Vipera",
+      bg:"radial-gradient(920px 900px at 50% 24%, #0f3d2c 0%, #072318 54%, #020c08 100%)",
+      text:"#eafff2", muted:"#8dc4a8", accent:"#4dff9b", accent2:"#12b86a",
+      ctaA:"#c6ff6b", ctaB:"#12b86a", ctaText:"#04220f", ink:"#04220f",
+      gold:"#ffd43b", danger:"#ff2d55", words:["Tap","viper","eat"] }
+  };
+  const SLUGS = Object.keys(THEMES);
+
+  /* -------------------------------------------------------------------------
+     Font stacks — system faces only, every one ending in a generic. A game
+     runs in a mobile WebView: there is no web font to load, ever.
+     ------------------------------------------------------------------------- */
+  const F = {
+    sys:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+    imp:'Impact,"Haettenschweiler","Arial Black","Arial Bold",sans-serif',
+    blk:'"Arial Black","Arial Bold",Arial,sans-serif',
+    cnd:'"Roboto Condensed","Arial Narrow","Helvetica Neue",sans-serif-condensed,sans-serif',
+    geo:'Futura,"Century Gothic","Trebuchet MS",Avenir,sans-serif',
+    rnd:'ui-rounded,"SF Pro Rounded","Trebuchet MS",Roboto,sans-serif',
+    ser:'Georgia,"Times New Roman",serif',
+    did:'Didot,"Bodoni 72",Georgia,serif',
+    slb:'"American Typewriter",Rockwell,"Courier New",serif',
+    mon:'"SF Mono",Menlo,Consolas,"Roboto Mono",monospace'
+  };
+
+  /* -------------------------------------------------------------------------
+     helpers. Every size is a function of the NAME LENGTH, so a look that fits
+     VIPERA also fits BOUNCETRY without anybody turning a knob: the exported
+     block already carries the right px for that game.
+     ------------------------------------------------------------------------- */
+  const REF = 7.4;                                    /* the average name */
+  function sz(T, base) { return Math.round(base * Math.min(1, REF / T.title.length)); }
+  function tr(T, base) { return Math.round(base * Math.min(1, REF / T.title.length) * 10) / 10; }
+
+  function a(hex, alpha) {                            /* #rrggbb -> rgba() */
+    const h = hex.replace("#", "");
+    if (h.length !== 6) return hex;
+    const n = parseInt(h, 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
+  }
+  function mix(c1, c2, t) {                           /* blend two hexes */
+    const p = (c) => { const n = parseInt(c.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+    const A = p(c1), B = p(c2);
+    const h = (v) => ("0" + Math.round(v).toString(16)).slice(-2);
+    return "#" + h(A[0] + (B[0] - A[0]) * t) + h(A[1] + (B[1] - A[1]) * t) + h(A[2] + (B[2] - A[2]) * t);
+  }
+  /* chained drop-shadows compound: each one shadows the RESULT of the previous,
+     so N one-pixel steps read as one solid N-pixel extrude, painted BEHIND a
+     clipped gradient (which `text-shadow` cannot be). */
+  function exf(n, dx, dy, c) {
+    let s = "";
+    for (let i = 0; i < n; i++) s += (i ? " " : "") + "drop-shadow(" + dx + "px " + dy + "px 0 " + c + ")";
+    return s;
+  }
+  /* the text-shadow form, for a solid fill */
+  function exs(n, dx, dy, c) {
+    const out = [];
+    for (let i = 1; i <= n; i++) out.push((dx * i) + "px " + (dy * i) + "px 0 " + c);
+    return out.join(", ");
+  }
+  /* a clipped gradient fill, in one place: the four declarations always travel
+     together and forgetting one of them is the classic invisible title */
+  function clip(g) {
+    return "background:" + g + ";-webkit-background-clip:text;background-clip:text;" +
+           "-webkit-text-fill-color:transparent;color:transparent;";
+  }
+  function solid(c) { return "color:" + c + ";-webkit-text-fill-color:currentColor;background:none;"; }
+  function stroke(w, c) { return "-webkit-text-stroke:" + w + "px " + c + ";paint-order:stroke fill;"; }
+  /* decor sits behind the letters, which only works over a SOLID fill */
+  function decor(extra) {
+    return "content:'';position:absolute;z-index:-1;pointer-events:none;" + extra;
+  }
+
+  /* =========================================================================
+     THE RACK. One entry per look. `css(T)` returns the declarations for the
+     title itself and, when a look has decor, for its two pseudo-elements —
+     which is exactly what gets exported. Loud ones first.
+     ========================================================================= */
+  const STYLES = [
+
+    /* ---- arcade & comic -------------------------------------------------- */
+    { key:"arcade", label:"Arcade cabinet", css:(T) => ({
+      self:`font-family:${F.imp};font-size:${sz(T,108)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,4)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.gold} 44%,${T.accent2} 100%)`) +
+           stroke(7, T.ink) + `text-shadow:none;` +
+           `filter:${exf(6, 0, 1, T.ink)} drop-shadow(0 10px 0 ${a(T.ink,.5)}) ` +
+           `drop-shadow(0 0 34px ${a(T.accent,.55)});` +
+           `transform:skewX(-6deg);` }) },
+
+    { key:"comic", label:"Comic halftone", css:(T) => ({
+      self:`position:relative;font-family:${F.imp};font-size:${sz(T,100)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,3)}px;line-height:1;text-transform:uppercase;` +
+           solid(T.gold) + stroke(8, T.ink) +
+           `text-shadow:${exs(5, 0, 1, T.ink)}, 0 12px 0 ${a(T.ink,.45)};` +
+           `transform:rotate(-3deg);`,
+      before:decor(`inset:-30px -44px;border-radius:26px;` +
+           `background-color:${a(T.danger,.16)};` +
+           `background-image:radial-gradient(${a(T.ink,.85)} 24%,transparent 25%);` +
+           `background-size:15px 15px;`) }) },
+
+    { key:"rainbow", label:"Rainbow pop", css:(T) => ({
+      self:`font-family:${F.imp};font-size:${sz(T,104)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,3)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,${T.accent} 0%,${T.ctaA} 22%,${T.gold} 44%,` +
+                `${T.danger} 66%,${T.accent2} 88%,${T.accent} 100%)`) +
+           stroke(7, T.ink) + `text-shadow:none;` +
+           `filter:${exf(5, 0, 1, "#ffffff")} drop-shadow(0 12px 16px ${a(T.ink,.7)});` +
+           `transform:rotate(2deg);` }) },
+
+    { key:"stripe", label:"Circus stripes", css:(T) => ({
+      self:`font-family:${F.imp};font-size:${sz(T,102)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,4)}px;line-height:1;text-transform:uppercase;` +
+           clip(`repeating-linear-gradient(48deg,${T.gold} 0 15px,${T.danger} 15px 30px)`) +
+           stroke(6, T.ink) + `text-shadow:none;` +
+           `filter:${exf(5, 0, 1, T.ink)} drop-shadow(0 0 26px ${a(T.gold,.5)}) ` +
+           `drop-shadow(0 10px 14px ${a(T.ink,.6)});` }) },
+
+    { key:"sticker", label:"Die-cut sticker", css:(T) => ({
+      self:`font-family:${F.rnd};font-size:${sz(T,94)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,1)}px;line-height:1.02;` +
+           solid("#ffffff") + stroke(9, T.ctaB) + `text-shadow:none;` +
+           `filter:drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 4px #ffffff) ` +
+           `drop-shadow(0 0 4px #ffffff) drop-shadow(0 14px 14px ${a(T.ink,.55)});` +
+           `transform:rotate(-2deg);` }) },
+
+    { key:"deep", label:"Deep extrude", css:(T) => ({
+      self:`font-family:${F.imp};font-size:${sz(T,100)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,5)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.accent} 100%)`) +
+           stroke(5, T.ink) + `text-shadow:none;` +
+           `filter:${exf(14, .9, .9, T.accent2)} drop-shadow(0 6px 10px ${a("#000000",.7)});` }) },
+
+    { key:"tilt", label:"Cabinet tilt", css:(T) => ({
+      self:`font-family:${F.blk};font-size:${sz(T,104)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,6)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.gold} 40%,${T.accent2} 100%)`) +
+           stroke(4, T.ink) + `text-shadow:none;` +
+           `filter:${exf(13, 0, 1.3, mix(T.accent2, "#000000", .35))} ` +
+           `drop-shadow(0 6px 0 ${T.ink}) drop-shadow(0 22px 22px ${a("#000000",.6)});` +
+           `transform:perspective(700px) rotateX(20deg) scaleY(1.08);` }) },
+
+    /* ---- plates ---------------------------------------------------------- */
+    { key:"ribbon", label:"Ribbon tape", css:(T) => ({
+      self:`position:relative;display:inline-block;font-family:${F.blk};` +
+           `font-size:${sz(T,66)}px;font-weight:900;letter-spacing:${tr(T,5)}px;` +
+           `line-height:1.1;text-transform:uppercase;padding:14px 44px;` +
+           solid(T.ctaText) + `text-shadow:0 2px 0 ${a("#ffffff",.35)};` +
+           `transform:rotate(-2.5deg);`,
+      before:decor(`inset:0;border-radius:8px;` +
+           `background:linear-gradient(180deg,${T.ctaA},${T.ctaB});` +
+           `box-shadow:0 14px 30px ${a("#000000",.5)}, inset 0 3px 0 ${a("#ffffff",.55)}, ` +
+           `inset 0 -8px 16px ${a("#000000",.22)};`),
+      after:`content:'';position:absolute;z-index:-2;pointer-events:none;` +
+           `left:-34px;right:-34px;top:26%;bottom:26%;` +
+           `background:${mix(T.ctaB, "#000000", .42)};` +
+           `clip-path:polygon(0 0,10% 50%,0 100%,100% 100%,90% 50%,100% 0);` }) },
+
+    { key:"chip", label:"Glossy chip", css:(T) => ({
+      self:`position:relative;display:inline-block;font-family:${F.sys};` +
+           `font-size:${sz(T,62)}px;font-weight:900;letter-spacing:${tr(T,6)}px;` +
+           `line-height:1.1;text-transform:uppercase;padding:18px 44px;border-radius:999px;` +
+           `background:linear-gradient(180deg,${T.accent} 0%,${T.accent2} 100%);` +
+           `color:${T.ctaText};-webkit-text-fill-color:currentColor;` +
+           `box-shadow:0 12px 34px ${a(T.accent,.45)}, inset 0 4px 0 ${a("#ffffff",.6)}, ` +
+           `inset 0 -8px 16px ${a("#000000",.28)};` }) },
+
+    { key:"badge", label:"Slab badge", css:(T) => ({
+      self:`position:relative;display:inline-block;font-family:${F.geo};` +
+           `font-size:${sz(T,58)}px;font-weight:800;letter-spacing:${tr(T,10)}px;` +
+           `line-height:1.2;text-transform:uppercase;padding:18px 34px;` +
+           solid(T.text) + `text-shadow:0 3px 14px ${a("#000000",.6)};`,
+      before:decor(`inset:0;border:3px solid ${T.accent};border-radius:6px;` +
+           `background:${a(T.ink,.55)};box-shadow:0 0 0 6px ${a(T.accent,.14)}, ` +
+           `0 14px 30px ${a("#000000",.5)};`),
+      after:decor(`inset:-16px;background-repeat:no-repeat;` +
+           `background-image:${new Array(8).fill(`linear-gradient(${T.accent},${T.accent})`).join(",")};` +
+           `background-size:16px 3px,3px 16px,16px 3px,3px 16px,16px 3px,3px 16px,16px 3px,3px 16px;` +
+           `background-position:left top,left top,right top,right top,` +
+           `left bottom,left bottom,right bottom,right bottom;`) }) },
+
+    { key:"bar", label:"Poster bar", css:(T) => ({
+      self:`position:relative;font-family:${F.sys};font-size:${sz(T,92)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,2)}px;line-height:1.04;text-transform:uppercase;` +
+           solid("#ffffff") + `text-shadow:0 4px 0 ${a(T.ink,.5)};padding:0 10px;`,
+      before:decor(`left:-16px;right:-16px;bottom:11%;height:30%;` +
+           `background:${T.accent};border-radius:5px;` +
+           `box-shadow:0 12px 26px ${a(T.accent,.4)};`),
+      after:decor(`left:-16px;right:-16px;top:-16px;height:7px;` +
+           `background:${T.accent2};`) }) },
+
+    { key:"bubble", label:"Bubble gloss", css:(T) => ({
+      self:`font-family:${F.rnd};font-size:${sz(T,98)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,1)}px;line-height:1.05;` +
+           /* the gloss is a hard-stopped highlight inside the fill, so the
+              shine follows every letter instead of smearing across the word */
+           clip(`linear-gradient(180deg,#ffffff 0%,#ffffff 36%,${mix(T.ctaA,"#ffffff",.5)} 56%,` +
+                `${T.ctaA} 80%,${mix(T.ctaB,"#ffffff",.15)} 100%)`) +
+           stroke(10, T.ctaB) + `text-shadow:none;` +
+           `filter:${exf(9, 0, 1, mix(T.ctaB, "#000000", .4))} ` +
+           `drop-shadow(0 16px 16px ${a("#000000",.5)});` }) },
+
+    /* ---- metal & light --------------------------------------------------- */
+    { key:"chrome", label:"Heavy chrome", css:(T) => ({
+      self:`font-family:${F.blk};font-size:${sz(T,96)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,6)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${mix(T.text,"#ffffff",.4)} 22%,` +
+                `${T.accent} 44%,#ffffff 51%,${mix(T.accent2,"#000000",.3)} 74%,${T.accent2} 100%)`) +
+           stroke(2.5, T.ink) + `text-shadow:none;` +
+           `filter:drop-shadow(0 3px 0 ${T.ink}) drop-shadow(0 14px 20px ${a("#000000",.6)});` }) },
+
+    { key:"gold", label:"Gold trophy", css:(T) => ({
+      self:`font-family:${F.did};font-size:${sz(T,98)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,4)}px;line-height:1.02;text-transform:uppercase;` +
+           clip(`linear-gradient(174deg,#fff8e0 0%,#ffe9a8 22%,#f5c451 42%,#fffbe8 52%,` +
+                `#d99b1f 74%,#ffe9a8 100%)`) +
+           `background-size:200% 100%;` + stroke(2, "#4a2c00") + `text-shadow:none;` +
+           `filter:drop-shadow(0 2px 0 #6b4200) drop-shadow(0 0 30px ${a(T.gold,.55)}) ` +
+           `drop-shadow(0 14px 18px ${a("#000000",.55)});` +
+           `animation:title-gold 6s ease-in-out infinite;`,
+      kf:`@keyframes title-gold { 0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; } }` }) },
+
+    { key:"holo", label:"Holo sweep", css:(T) => ({
+      self:`font-family:${F.cnd};font-size:${sz(T,104)}px;font-weight:800;` +
+           `letter-spacing:${tr(T,8)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(100deg,${T.accent} 0%,${T.gold} 18%,${T.ctaA} 34%,#ffffff 48%,` +
+                `${T.accent2} 64%,${T.accent} 82%,${T.gold} 100%)`) +
+           `background-size:280% 100%;` + stroke(1.5, T.ink) + `text-shadow:none;` +
+           `filter:drop-shadow(0 0 28px ${a(T.accent,.5)}) drop-shadow(0 10px 14px ${a("#000000",.5)});` +
+           `animation:title-holo 5s linear infinite;`,
+      kf:`@keyframes title-holo { 0% { background-position:0% 50%; } 100% { background-position:280% 50%; } }` }) },
+
+    { key:"neon", label:"Neon tube", css:(T) => ({
+      self:`font-family:${F.cnd};font-size:${sz(T,106)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,9)}px;line-height:1;text-transform:uppercase;` +
+           `background:none;color:transparent;-webkit-text-fill-color:transparent;` +
+           stroke(3, "#ffffff") + `text-shadow:none;` +
+           `filter:drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px ${T.accent}) ` +
+           `drop-shadow(0 0 26px ${a(T.accent,.9)}) drop-shadow(0 0 60px ${a(T.accent,.6)});` +
+           `animation:title-neon 3.6s ease-in-out infinite;`,
+      kf:`@keyframes title-neon { 0%,100% { opacity:1; } 46% { opacity:.82; } 48% { opacity:1; } }` }) },
+
+    { key:"spotlight", label:"Spotlight", css:(T) => ({
+      self:`font-family:${F.did};font-size:${sz(T,96)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,7)}px;line-height:1.02;text-transform:uppercase;` +
+           clip(`radial-gradient(120% 210% at 50% -60%,#ffffff 0%,${T.text} 38%,` +
+                `${mix(T.text, T.ink, .5)} 72%,${mix(T.muted, T.ink, .72)} 100%)`) +
+           `text-shadow:none;` +
+           `filter:drop-shadow(0 -10px 40px ${a("#ffffff",.35)}) ` +
+           `drop-shadow(0 18px 26px ${a("#000000",.65)});` }) },
+
+    { key:"steel", label:"Steel emboss", css:(T) => ({
+      self:`font-family:${F.blk};font-size:${sz(T,92)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,4)}px;line-height:1.02;text-transform:uppercase;` +
+           solid(mix(T.muted, "#ffffff", .3)) +
+           `text-shadow:0 -2px 0 ${a("#ffffff",.6)}, 0 3px 0 ${T.ink}, ` +
+           `0 5px 1px ${a("#000000",.5)}, 0 16px 24px ${a("#000000",.55)};` }) },
+
+    /* ---- elements -------------------------------------------------------- */
+    { key:"fire", label:"Firebrand", css:(T) => ({
+      self:`font-family:${F.imp};font-size:${sz(T,104)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,4)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.gold} 34%,${T.danger} 78%,` +
+                `${mix(T.danger,"#000000",.45)} 100%)`) +
+           stroke(4, T.ink) + `text-shadow:none;` +
+           `filter:${exf(4, 0, 1, T.ink)} drop-shadow(0 -8px 26px ${a(T.gold,.8)}) ` +
+           `drop-shadow(0 10px 40px ${a(T.danger,.7)});` }) },
+
+    { key:"magma", label:"Magma glow", css:(T) => ({
+      self:`position:relative;font-family:${F.blk};font-size:${sz(T,98)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,5)}px;line-height:1.02;text-transform:uppercase;` +
+           solid(mix(T.ink, "#000000", .4)) +
+           `text-shadow:0 2px 0 ${T.gold}, 0 -1px 0 ${a("#000000",.6)}, ` +
+           `0 0 22px ${a(T.gold,.35)};`,
+      before:decor(`left:-10%;right:-10%;top:8%;bottom:-34%;filter:blur(8px);` +
+           `background:radial-gradient(62% 84% at 50% 62%,${a(T.gold,.95)} 0%,` +
+           `${a(T.danger,.55)} 44%,transparent 72%);`) }) },
+
+    { key:"ice", label:"Ice crystal", css:(T) => ({
+      self:`font-family:${F.cnd};font-size:${sz(T,102)}px;font-weight:800;` +
+           `letter-spacing:${tr(T,6)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,#e2f6ff 40%,${T.accent} 74%,` +
+                `${mix(T.accent,"#0a2a4a",.5)} 100%)`) +
+           stroke(2, "#ffffff") + `text-shadow:none;` +
+           `filter:drop-shadow(0 5px 0 ${a(mix(T.accent,"#000000",.55),.9)}) ` +
+           `drop-shadow(0 0 30px ${a(T.accent,.6)}) drop-shadow(0 12px 18px ${a("#000000",.5)});` +
+           `transform:skewX(-4deg);` }) },
+
+    { key:"toxic", label:"Toxic slime", css:(T) => ({
+      self:`font-family:${F.blk};font-size:${sz(T,98)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,3)}px;line-height:1.02;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#f4ffd4 0%,${T.accent} 46%,` +
+                `${mix(T.accent,T.ink,.55)} 100%)`) +
+           stroke(6, T.ink) + `text-shadow:none;` +
+           `filter:${exf(6, 0, 1, T.ink)} drop-shadow(0 0 26px ${a(T.accent,.75)}) ` +
+           `drop-shadow(0 16px 10px ${a(T.ink,.6)});` }) },
+
+    /* ---- tech ------------------------------------------------------------ */
+    { key:"outrun", label:"Outrun sunset", css:(T) => ({
+      self:`font-family:${F.cnd};font-size:${sz(T,108)}px;font-weight:800;` +
+           `letter-spacing:${tr(T,5)}px;line-height:1;text-transform:uppercase;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.gold} 30%,${T.danger} 50%,` +
+                `${a(T.ink,0)} 52%,${a(T.ink,0)} 56%,${T.danger} 58%,${T.accent2} 74%,` +
+                `${a(T.ink,0)} 76%,${a(T.ink,0)} 80%,${T.accent2} 82%,${T.accent} 100%)`) +
+           `text-shadow:none;` +
+           `filter:drop-shadow(0 0 24px ${a(T.accent2,.75)}) drop-shadow(0 3px 0 ${a(T.ink,.9)}) ` +
+           `drop-shadow(0 14px 22px ${a("#000000",.6)});` +
+           `transform:skewX(-10deg);` }) },
+
+    { key:"glitch", label:"Glitch split", css:(T) => ({
+      self:`position:relative;font-family:${F.cnd};font-size:${sz(T,102)}px;font-weight:800;` +
+           `letter-spacing:${tr(T,7)}px;line-height:1.02;text-transform:uppercase;` +
+           solid("#ffffff") +
+           `text-shadow:-6px 0 0 ${a(T.accent,.85)}, 6px 0 0 ${a(T.danger,.85)}, ` +
+           `0 0 30px ${a(T.accent,.35)};` +
+           `transform:skewX(-2deg);`,
+      before:decor(`inset:-12px -22px;` +
+           `background:repeating-linear-gradient(180deg,${a("#ffffff",.10)} 0 2px,transparent 2px 7px);`) }) },
+
+    { key:"pixel", label:"Pixel block", css:(T) => ({
+      self:`position:relative;font-family:${F.mon};font-size:${sz(T,80)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,2)}px;line-height:1.1;text-transform:uppercase;` +
+           solid(T.text) +
+           `text-shadow:${exs(5, 3, 3, T.accent2)}, 18px 18px 0 ${T.ink};`,
+      before:decor(`inset:-20px -24px;` +
+           `background-image:repeating-conic-gradient(${a("#ffffff",.06)} 0% 25%,transparent 0% 50%);` +
+           `background-size:18px 18px;border:1px solid ${a(T.accent,.25)};`) }) },
+
+    { key:"blueprint", label:"Blueprint", css:(T) => ({
+      self:`position:relative;font-family:${F.mon};font-size:${sz(T,86)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,6)}px;line-height:1.1;text-transform:uppercase;` +
+           `background:none;color:transparent;-webkit-text-fill-color:transparent;` +
+           stroke(1.5, T.accent) + `text-shadow:none;` +
+           `filter:drop-shadow(0 0 12px ${a(T.accent,.7)});`,
+      before:decor(`inset:-28px -34px;border:1px solid ${a(T.accent,.35)};` +
+           `background-image:linear-gradient(${a(T.accent,.16)} 1px,transparent 1px),` +
+           `linear-gradient(90deg,${a(T.accent,.16)} 1px,transparent 1px);` +
+           `background-size:24px 24px;`) }) },
+
+    { key:"stencil", label:"Stencil cut", css:(T) => ({
+      self:`font-family:${F.blk};font-size:${sz(T,96)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,7)}px;line-height:1.02;text-transform:uppercase;` +
+           /* the cuts are transparent bands INSIDE the clipped fill, so the
+              screen behind the letters shows straight through them */
+           clip(`linear-gradient(180deg,${T.text} 0 27%,${a(T.text,0)} 27% 33%,` +
+                `${T.text} 33% 61%,${a(T.text,0)} 61% 67%,${T.text} 67% 100%)`) +
+           `text-shadow:none;` +
+           `filter:drop-shadow(0 0 22px ${a(T.accent,.55)}) drop-shadow(0 10px 14px ${a("#000000",.6)});` }) },
+
+    /* ---- quiet ----------------------------------------------------------- */
+    { key:"house", label:"House gradient (today)", css:(T) => ({
+      self:`font-family:${F.sys};font-size:${sz(T,84)}px;font-weight:900;` +
+           `letter-spacing:${tr(T,2)}px;line-height:1.05;` +
+           clip(`linear-gradient(180deg,#ffffff 0%,${T.accent} 100%)`) +
+           `text-shadow:none;filter:drop-shadow(0 4px 26px ${a(T.accent,.5)});` }) },
+
+    { key:"editorial", label:"Editorial", css:(T) => ({
+      self:`font-family:${F.did};font-size:${sz(T,100)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,2)}px;line-height:1;` +
+           solid(T.text) + `text-shadow:0 8px 30px ${a("#000000",.6)};` }) },
+
+    { key:"carved", label:"Carved stone", css:(T) => ({
+      self:`display:inline-block;font-family:${F.ser};font-size:${sz(T,72)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,8)}px;line-height:1.2;text-transform:uppercase;` +
+           `padding:16px 34px;border-radius:8px;` +
+           `background:linear-gradient(180deg,${mix(T.muted,T.ink,.45)},${mix(T.ink,"#000000",.25)});` +
+           `color:${mix(T.ink,"#000000",.35)};-webkit-text-fill-color:currentColor;` +
+           `text-shadow:0 2px 0 ${a("#ffffff",.28)}, 0 -1px 0 ${a("#000000",.7)};` +
+           `box-shadow:inset 0 2px 0 ${a("#ffffff",.18)}, inset 0 -3px 8px ${a("#000000",.5)}, ` +
+           `0 14px 26px ${a("#000000",.5)};` }) },
+
+    { key:"rule", label:"Hairline rules", css:(T) => ({
+      self:`position:relative;font-family:${F.geo};font-size:${sz(T,64)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,14)}px;line-height:1.2;text-transform:uppercase;` +
+           `padding:20px 0;` + solid(T.text) + `text-shadow:0 0 24px ${a(T.accent,.35)};`,
+      before:decor(`left:0;right:0;top:0;height:2px;background:${a(T.accent,.9)};`),
+      after:decor(`left:12%;right:12%;bottom:0;height:2px;background:${a(T.accent2,.9)};`) }) },
+
+    { key:"typewriter", label:"Typewriter slab", css:(T) => ({
+      self:`font-family:${F.slb};font-size:${sz(T,84)}px;font-weight:700;` +
+           `letter-spacing:${tr(T,3)}px;line-height:1.05;` +
+           solid(T.gold) +
+           `text-shadow:0 3px 0 ${mix(T.gold,"#000000",.6)}, 0 12px 18px ${a("#000000",.55)};` }) }
+  ];
+
+  const BY_KEY = {};
+  STYLES.forEach((s) => { BY_KEY[s.key] = s; });
+
+  /* -------------------------------------------------------------------------
+     state. The pick per game survives a reload — this page is where the 13
+     decisions get made, and they are not all made in one sitting.
+     ------------------------------------------------------------------------- */
+  const STORE = "gametitle.picks.v2";
+  let picks = {};
+  try { picks = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { picks = {}; }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(picks)); } catch (e) {} }
+
+  const q = new URLSearchParams(location.search);
+  let game = THEMES[q.get("game")] ? q.get("game") : SLUGS[0];
+  let view = ["rack", "intro", "picks"].indexOf(q.get("view")) >= 0 ? q.get("view") : "rack";
+  if (BY_KEY[q.get("style")]) picks[game] = q.get("style");   /* for a screenshot */
+
+  function T() { return THEMES[game]; }
+  function pickOf(slug) { return picks[slug] && BY_KEY[picks[slug]] ? picks[slug] : null; }
+
+  /* -------------------------------------------------------------------------
+     CSS plumbing: the rack is re-emitted for the selected game, so every card
+     is that game's own name in that game's own palette.
+     ------------------------------------------------------------------------- */
+  const rackStyle = document.getElementById("rack-css");
+
+  function emitRack(theme) {
+    rackStyle.textContent = STYLES.map((st) => {
+      const r = st.css(theme);
+      let s = ".st-" + st.key + " .w{" + r.self + "}";
+      if (r.before) s += ".st-" + st.key + " .w::before{" + r.before + "}";
+      if (r.after) s += ".st-" + st.key + " .w::after{" + r.after + "}";
+      if (r.kf) s += r.kf;
+      return s;
+    }).join("\n");
+  }
+
+  /* the exportable block, formatted the way a SKIN is written */
+  function rule(sel, decl) {
+    const parts = decl.split(";").map((s) => s.trim()).filter(Boolean);
+    return "  " + sel + " {\n" + parts.map(wrapDecl).join("\n") + "\n  }\n";
+  }
+  /* the two properties that grow are broken onto continuation lines; nothing
+     else is split, since a gradient carries commas of its own */
+  function wrapDecl(dcl) {
+    if (dcl.length > 84) {
+      if (dcl.indexOf("filter:") === 0) {
+        return "    filter:\n      " + dcl.slice(7).split(") drop-shadow").join(")\n      drop-shadow") + ";";
+      }
+      if (dcl.indexOf("text-shadow:") === 0) {
+        return "    text-shadow:\n      " + dcl.slice(12).split(", ").join(",\n      ") + ";";
+      }
+      if (dcl.indexOf("box-shadow:") === 0) {
+        return "    box-shadow:\n      " + dcl.slice(11).split(", ").join(",\n      ") + ";";
+      }
+    }
+    return "    " + dcl + ";";
+  }
+  function block(styleKey, slug) {
+    const st = BY_KEY[styleKey], theme = THEMES[slug];
+    const r = st.css(theme);
+    let s = "  /* the title — " + st.label + ", from lab/game-title.html.\n" +
+            "     Sizes are already scaled to this game's name. */\n";
+    s += rule("#intro-title", r.self);
+    if (r.before) s += rule("#intro-title::before", r.before);
+    if (r.after) s += rule("#intro-title::after", r.after);
+    if (r.kf) s += "  " + r.kf + "\n";
+    return s;
+  }
+
+  /* -------------------------------------------------------------------------
+     the game rack at the top
+     ------------------------------------------------------------------------- */
+  const gamesEl = document.getElementById("games");
+
+  function renderGames() {
+    gamesEl.innerHTML = "";
+    SLUGS.forEach((slug) => {
+      const th = THEMES[slug], k = pickOf(slug);
+      const b = document.createElement("button");
+      b.className = "game" + (slug === game ? " on" : "");
+      b.dataset.slug = slug;
+      b.innerHTML = th.title + "<i>" + (k ? BY_KEY[k].label : "no pick yet") + "</i>";
+      if (slug === game) b.style.background = th.accent;
+      else if (k) b.style.borderColor = th.accent;
+      gamesEl.appendChild(b);
+    });
+  }
+
+  /* -------------------------------------------------------------------------
+     views
+     ------------------------------------------------------------------------- */
+  const board = document.getElementById("board");
+  const badge = document.getElementById("badge");
+
+  function renderRack() {
+    const theme = T(), chosen = pickOf(game);
+    const grid = document.createElement("div"); grid.id = "cards";
+    STYLES.forEach((st) => {
+      const card = document.createElement("div");
+      card.className = "card st-" + st.key + (st.key === chosen ? " on" : "");
+      card.dataset.style = st.key;
+      card.style.background = theme.bg;
+      card.innerHTML = '<div class="tag">' + st.label + "</div>" +
+                       (st.key === chosen ? '<div class="pick">picked</div>' : "") +
+                       '<div class="fit"><div class="w">' + theme.title + "</div></div>";
+      grid.appendChild(card);
+    });
+    board.appendChild(grid);
+    fitCards(grid);
+    badge.textContent = STYLES.length + " looks · " +
+      Object.keys(picks).filter((s) => pickOf(s)).length + " of " + SLUGS.length + " games picked";
+  }
+
+  /* A look is authored at intro size; the card shows it whole by scaling the
+     wrapper, so a 108px arcade word and a 62px chip are judged side by side. */
+  function fitCards(grid) {
+    requestAnimationFrame(() => {
+      grid.querySelectorAll(".card").forEach((card) => {
+        const fit = card.querySelector(".fit");
+        fit.style.transform = "none";                /* measure unscaled */
+        const r = fit.getBoundingClientRect();
+        const k = Math.min(1, (card.clientWidth - 44) / Math.max(1, r.width),
+                              (card.clientHeight - 58) / Math.max(1, r.height));
+        fit.style.transform = "scale(" + k.toFixed(3) + ")";
+      });
+    });
+  }
+
+  function renderIntro() {
+    const theme = T(), chosen = pickOf(game) || "house";
+    const wrap = document.createElement("div"); wrap.id = "framewrap";
+    const f = document.createElement("div");
+    f.id = "frame"; f.className = "st-" + chosen;
+    f.style.background = theme.bg;
+    f.innerHTML =
+      '<div class="screen">' +
+        '<div class="icon"></div>' +
+        '<div class="w" id="live-title">' + theme.title + "</div>" +
+        '<div class="tag2" id="live-tag"></div>' +
+        '<div class="demo"></div>' +
+        '<button class="btn">PLAY</button>' +
+      "</div>" +
+      '<div class="ctabar">INSTALL</div>';
+    wrap.appendChild(f); board.appendChild(wrap);
+
+    const tag = f.querySelector("#live-tag");
+    tag.style.color = theme.muted;
+    tag.innerHTML = '<b style="color:' + theme.accent + '">' + theme.words[0] +
+      '</b> to send the <b style="color:' + theme.accent2 + '">' + theme.words[1] +
+      '</b> into the <b style="color:' + theme.gold + '">' + theme.words[2] + "</b>";
+    const b = f.querySelector(".btn");
+    b.style.background = "linear-gradient(180deg," + theme.ctaA + "," + theme.ctaB + ")";
+    b.style.color = theme.ctaText;
+    f.querySelector(".ctabar").style.color = theme.muted;
+
+    fitFrame();
+    /* A name is as long as it is, and every look sizes itself off that length;
+       the badge is what proves it landed inside the screen. */
+    requestAnimationFrame(() => {
+      const t = f.querySelector("#live-title");
+      const room = 720 - 80;
+      const over = Math.ceil(t.getBoundingClientRect().width / frameScale() - room);
+      badge.textContent = BY_KEY[chosen].label +
+        (over > 0 ? " · overflows the screen by " + over + "px" : " · fits the screen");
+      badge.style.color = over > 0 ? "#ff8fab" : "#6f6f92";
+    });
+  }
+
+  function frameScale() {
+    return Math.min((board.clientWidth - 36) / 720, (board.clientHeight - 36) / 1280);
+  }
+  function fitFrame() {
+    const f = document.getElementById("frame");
+    if (!f) return;
+    const k = frameScale();
+    f.style.transform = "scale(" + k + ")";
+    document.getElementById("framewrap").style.height = (1280 * k) + "px";
+  }
+
+  function renderPicks() {
+    const done = SLUGS.filter(pickOf);
+    const head = document.createElement("div");
+    head.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">' +
+      '<span style="font-size:12px;color:#8b8ba7">' + done.length + " of " + SLUGS.length +
+      " games have a look. Each block goes into that game's <code>skin.css</code>, " +
+      "replacing its current <code>#intro-title</code> rule.</span>" +
+      '<span style="flex:1"></span>' +
+      '<button class="mini" id="copy-all">Copy every block</button>' +
+      '<button class="mini ghost" id="clear-all">Clear all picks</button></div>';
+    board.appendChild(head);
+
+    if (!done.length) {
+      const p = document.createElement("div");
+      p.style.cssText = "color:#6f6f92;font-size:13px";
+      p.textContent = "Nothing picked yet — open The rack and click a look.";
+      board.appendChild(p);
+    }
+    done.forEach((slug) => {
+      const row = document.createElement("div"); row.className = "pickrow";
+      row.innerHTML =
+        '<div class="top"><span class="slug">' + slug + "</span>" +
+        '<span class="name">' + BY_KEY[pickOf(slug)].label + "</span>" +
+        '<span class="sp"></span>' +
+        '<button class="mini" data-copy="' + slug + '">Copy</button>' +
+        '<button class="mini ghost" data-clear="' + slug + '">Clear</button></div>' +
+        "<pre>" + esc(block(pickOf(slug), slug)) + "</pre>";
+      board.appendChild(row);
+    });
+    badge.textContent = done.length + " of " + SLUGS.length + " games picked";
+    badge.style.color = "#6f6f92";
+  }
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  /* -------------------------------------------------------------------------
+     render
+     ------------------------------------------------------------------------- */
+  const cssOut = document.getElementById("css");
+  const outLabel = document.getElementById("out-label");
+
+  function render() {
+    emitRack(T());
+    board.innerHTML = "";
+    if (view === "rack") renderRack();
+    else if (view === "intro") renderIntro();
+    else renderPicks();
+    renderGames();
+    /* the picks sheet prints every block itself — the pane would repeat one */
+    document.getElementById("out").hidden = (view === "picks");
+
+    const chosen = pickOf(game);
+    outLabel.textContent = "games/" + game + "/skin.css" + (chosen ? " — " + BY_KEY[chosen].label : "");
+    cssOut.textContent = chosen ? block(chosen, game)
+      : "  /* nothing picked for " + game + " yet — click a look in the rack. */";
+  }
+
+  /* -------------------------------------------------------------------------
+     wiring
+     ------------------------------------------------------------------------- */
+  gamesEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button.game");
+    if (!b) return;
+    game = b.dataset.slug;
+    render();
+  });
+
+  board.addEventListener("click", (e) => {
+    const card = e.target.closest(".card");
+    if (card) {
+      picks[game] = card.dataset.style;
+      save();
+      render();
+      return;
+    }
+    const cp = e.target.closest("[data-copy]");
+    if (cp) { copy(block(pickOf(cp.dataset.copy), cp.dataset.copy), cp); return; }
+    const cl = e.target.closest("[data-clear]");
+    if (cl) { delete picks[cl.dataset.clear]; save(); render(); return; }
+    if (e.target.id === "copy-all") {
+      const all = SLUGS.filter(pickOf).map((slug) =>
+        "/* ===== games/" + slug + "/skin.css ===== */\n" + block(pickOf(slug), slug)).join("\n");
+      copy(all, e.target);
+      return;
+    }
+    if (e.target.id === "clear-all") { picks = {}; save(); render(); }
+  });
+
+  document.getElementById("tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]");
+    if (!b) return;
+    view = b.dataset.view;
+    document.querySelectorAll("#tabs button[data-view]").forEach((x) => x.classList.toggle("on", x === b));
+    render();
+  });
+
+  document.getElementById("copy").addEventListener("click", (e) => copy(cssOut.textContent, e.target));
+
+  function copy(text, btn) {
+    navigator.clipboard.writeText(text);
+    const was = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = was; }, 900);
+  }
+
+  window.addEventListener("resize", () => {
+    if (view === "intro") fitFrame();
+    else if (view === "rack") fitCards(document.getElementById("cards"));
+  });
+
+  /* -------------------------------------------------------------------------
+     go
+     ------------------------------------------------------------------------- */
+  document.querySelectorAll("#tabs button[data-view]").forEach((x) =>
+    x.classList.toggle("on", x.dataset.view === view));
+  render();
+})();
+</script>
+</body>
+</html>

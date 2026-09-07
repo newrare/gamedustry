@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-press\">Presse à gauche ou à droite</b> pour t’incliner, <b class=\"w-pass\">double dix-neuf rivaux</b> et ne casse jamais ton <b class=\"w-shield\">bouclier</b>"
+      }
+    },
+    "font": "orbitron"
   }
 }

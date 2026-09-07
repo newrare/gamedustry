@@ -171,5 +171,19 @@ window.GAMES = [
       tagline: "One card at a time: bin it or keep it. Five keeps make a poker hand, paid on the spot.",
       tags: ["Swipe to sort", "Three discards", "Poker hands"]
     }
+  },
+  {
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
+    draft: true,
+    fr: {
+      tagline: "Un marshmallow collant survit au-dessus d’un lac de lave. Chaque tap l’envoie sur le rocher visé, et tout ce qui tombe finit par fondre.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+    },
+    en: {
+      tagline: "A sticky marshmallow survives above a lava lake. Every tap flings it at the rock you aimed at, and everything falling ends up melting.",
+      tags: ["Tap to jump", "Endless", "Lava"]
+    }
   }
 ];

@@ -97,6 +97,7 @@ const SPLIT = target === 'web' && dest === 'site';
 const OUT_DIR = dest === 'itch' ? 'dist/itch' : 'dist/web';
 
 const read = (rel) => readFile(path.join(ROOT, rel), 'utf8');
+const readBin = (rel) => readFile(path.join(ROOT, rel));
 const hash = (buf) => createHash('sha256').update(buf).digest('hex').slice(0, 8);
 
 /*
@@ -175,11 +176,18 @@ async function loadMotor() {
 const INIT_CALL = '  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);';
 
 const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. Injected by
-     tools/build/build.mjs --target=web, absent from every other target. ---- */
+     tools/build/build.mjs --target=web, absent from every other target.
+
+     It is a plain list of references, never behaviour: the menu, the panels
+     and the settings live in packages/webshell, so what the web front end
+     does can change without touching the motor or this builder. ---- */
   window.__WEB__ = {
-    CONFIG: CONFIG, Store: Store, Music: Music,
-    start: startGame, setState: setState,
+    CONFIG: CONFIG, ASSETS: ASSETS,
+    Store: Store, Sound: Sound, Music: Music, Pop: Pop,
+    Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round,
+    start: startGame, setState: setState, onState: onState,
     state: function () { return State; },
+    render: frameRender,
     clearWorld: function () { ctx.clearRect(0, 0, view.w, view.h); }
   };
 
@@ -188,6 +196,72 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
 function withWebHandle(bootstrap) {
   if (!bootstrap.includes(INIT_CALL)) throw new Error('bootstrap changed: cannot find the init() call');
   return bootstrap.replace(INIT_CALL, WEB_HANDLE + INIT_CALL);
+}
+
+/*
+  THE GAME'S TYPEFACE — web target only.
+
+  A game names one family of assets/font/ in its manifest (`web.font`), and the
+  builder puts the face in front of its SKIN, so what follows can override any
+  of it. Every family in the pack is OFL 1.1 and is EMBEDDED, never fetched:
+  base64 in the single-file build, a file next to the other assets in the split
+  one. A playable ships no font at all — the pack belongs to the web front end.
+
+  Two tokens travel with the face, and packages/webshell/menu.css reads them:
+
+    --web-font   the family, with its system fallback stack
+    --web-fw     the weight to use where the design wants a heavy face. A
+                 single-weight family keeps 400: asking a 400-only face for 900
+                 makes the browser synthesize the bold, which smears a face
+                 that is already fat.
+*/
+let FONT_PACK = null;
+
+async function fontPack() {
+  if (!FONT_PACK) FONT_PACK = JSON.parse(await read('assets/font/fonts.json'));
+  return FONT_PACK;
+}
+
+function fontFaceCss(f, src) {
+  return `  /* ---- web target: the game's typeface, from assets/font/${f.file}.
+     SIL Open Font License 1.1 — the licence travels in
+     assets/font/${f.licence}. Embedded, never fetched: a game still works
+     over file:// and inside a sandboxed iframe.
+     These are DEFAULTS — they sit before the SKIN, which can override them. ---- */
+  @font-face {
+    font-family:"${f.family}";
+    src:url(${src}) format("woff2");
+    font-weight:${f.variable ? '400 900' : '400'};
+    font-style:normal;
+    font-display:block;
+  }
+  :root { --web-font:"${f.family}", ${f.stack}; --web-fw:${f.heavy}; }
+  #frame { font-family:var(--web-font); }
+  /* the places the motor asks for the heaviest weight it can get */
+  #intro-title, #hud-score, .hud-pill, .eo-title, .eo-score, .btn {
+    font-weight:var(--web-fw);
+  }
+
+`;
+}
+
+/*
+  Returns the CSS to prepend to the SKIN and, for the split build, the woff2 to
+  write next to the game's other assets. `mode` is "file" there and "inline"
+  for every self-contained document.
+*/
+async function gameFont(manifest, mode) {
+  const key = manifest && manifest.web && manifest.web.font;
+  if (!key) return { css: '', file: null };
+  const pack = await fontPack();
+  const f = pack[key];
+  if (!f) throw new Error(`${manifest.slug}: web.font "${key}" is not in assets/font/fonts.json`);
+  const buf = await readBin('assets/font/' + f.file);
+  if (mode === 'file') {
+    const name = `${key}.${hash(buf)}.woff2`;
+    return { css: fontFaceCss(f, `assets/${name}`), file: { name, buf } };
+  }
+  return { css: fontFaceCss(f, `data:font/woff2;base64,${buf.toString('base64')}`), file: null };
 }
 
 /*
@@ -339,7 +413,7 @@ function sharedFiles(motor, web) {
   };
 }
 
-async function writeSplit(unit, src, webCfg, shared) {
+async function writeSplit(unit, src, webCfg, shared, font) {
   const dir = path.join(OUT_DIR, unit.name);
   const abs = path.join(ROOT, dir);
 
@@ -363,10 +437,12 @@ async function writeSplit(unit, src, webCfg, shared) {
   await writeFile(path.join(abs, configName), configBody);
   await writeFile(path.join(abs, gameName), gameBody);
   for (const [name, buf] of files) await writeFile(path.join(abs, 'assets', name), buf);
+  if (font && font.file) await writeFile(path.join(abs, 'assets', font.file.name), font.file.buf);
 
   const bytes = html.length + configBody.length + gameBody.length +
-                [...files.values()].reduce((n, b) => n + b.length, 0);
-  return { dir, bytes, assets: files.size };
+                [...files.values()].reduce((n, b) => n + b.length, 0) +
+                (font && font.file ? font.file.buf.length : 0);
+  return { dir, bytes, assets: files.size + (font && font.file ? 1 : 0) };
 }
 
 // Where the two texts first disagree, in human terms.
@@ -415,8 +491,16 @@ async function main() {
     const src = await sourcesOf(unit);
     const webCfg = target === 'web' ? webConfigJs(manifest) : '';
 
+    /* The typeface is a web-target default, so it goes in front of the SKIN
+       rather than into the shared stylesheet: one family per game, and the
+       game keeps the last word on every rule it brings. */
+    const font = target === 'web'
+      ? await gameFont(manifest, SPLIT ? 'file' : 'inline')
+      : { css: '', file: null };
+    if (font.css) src.skin = font.css + src.skin;
+
     if (SPLIT) {
-      const w = await writeSplit(unit, src, webCfg, shared);
+      const w = await writeSplit(unit, src, webCfg, shared, font);
       console.log(`web   ${w.dir}/  (${(w.bytes / 1024).toFixed(0)} KB, ${w.assets} assets)`);
       continue;
     }

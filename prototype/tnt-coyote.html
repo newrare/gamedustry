@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>TNT Coyote Launch — prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;overflow:hidden;
+            -webkit-user-select:none;user-select:none;touch-action:none}
+  body{display:flex;align-items:center;justify-content:center}
+  canvas{max-width:100%;max-height:100%;aspect-ratio:720/1280;display:block;
+         background:#000;image-rendering:auto}
+</style>
+</head>
+<body>
+<canvas id="c" width="720" height="1280"></canvas>
+<script>
+/* ------------------------------------------------------------------ *
+ * TNT COYOTE LAUNCH — prototype
+ *
+ * Question: is the climb fun when the TNT is NOT on screen at launch?
+ * Nothing is visible from the pad. The crates hang in bands scattered
+ * all the way up, so every time the coyote runs out of speed and you
+ * think that was the top, another one goes off and throws him further.
+ *
+ *   - aim the rocket, then hold the bar and release the cursor at the
+ *     top of the gauge: that is the launch speed;
+ *   - gravity is low, he floats — the bands are what make the height;
+ *   - a blast that catches him already moving that way is worth more
+ *     (capped), so a chain compounds;
+ *   - once nothing is left above him the coast is fast-forwarded to the
+ *     apex, or the last 3 km would be half a minute of nothing.
+ * ------------------------------------------------------------------ */
+
+/* --- tunables ----------------------------------------------------- */
+var W = 720, H = 1280;        // design space, portrait
+var PPM = 40;                 // pixels per metre on the pad
+var MIN_PPM = 0.9;            // ...at full zoom-out
+var ZOOM_LERP = 2.6;
+var GRAVITY = -6.5;           // m/s^2 — low on purpose, he floats
+var DRAG = 0.012;             // air drag, 1/s
+var BLAST_POWER = 15;         // m/s of impulse at the blast centre
+var BOOST_MATCH = 0.030;      // extra impulse per m/s already going that way
+var BOOST_MAX = 1.45;         // ...capped, or the boosts compound exponentially
+var BLAST_FALLOFF = 1.3;      // exponent of (1 - d/R)
+var BLAST_UPBIAS = 0.30;      // pushes the direction upward
+var SIDE_DAMP = 0.16;         // he flies like a rocket: little sideways
+var CRATE_MASS = 1.20;
+var CRATE_SIZE = 1.1;         // m
+var COYOTE_R = 0.62;          // m
+var GROUND_REFLECT = 0.55;
+var BOUNCE = 0.32, FRICTION = 0.72;
+var WALL_L = 0.6, WALL_R = 17.4, WORLD_CX = 9;
+var WALL_BOUNCE = 0.62;
+var SETTLE_TIME = 0.5;
+var GROUND_PAD = 5;           // m of sand kept under the ground line
+var CAM_ANCHOR = 0.38;        // fraction of the screen he sits at, from the bottom
+var CAM_LERP = 9;
+
+/* the launch */
+var AIM_MAX = 30 * Math.PI / 180;
+var THRUST = 67;              // m/s^2 along the rocket axis at full power
+var POWER_FLOOR = 0.75;
+var BURN_T = 0.55;            // s of burn before the rocket lets go
+var GAUGE_SPEED = 1.15;       // full up-down sweeps per second
+var PERFECT = 0.94;
+var PERFECT_BONUS = 1.18;
+
+/* the corridor: bands of crates, none of them visible from the pad */
+var FIELD_START = 34;         // m — the view tops out at 27 m while aiming
+var BAND_RATIO = 1.50;        // each band this much higher than the last
+var BANDS = 11;
+var PER_BAND = 2;
+var PER_BAND_LOW = 4;         // the first two bands are near-certain: dying at
+                              // 60 m to an invisible miss is not a lesson
+var TRIG_BASE = 2.6;          // m, a band's catch radius at the bottom
+var TRIG_GROW = 0.22;         // ...and how much wider each band up
+var BLAST_SPAN = 1.6;         // blast reach as a multiple of the catch radius
+
+/* the tail */
+var FF_MAX = 8;               // time scale once nothing is left above him
+var FF_COAST = 3.2;           // ...and while the next crate is still far off
+var FF_NEAR = 0.9;            // s — under this, always play at real speed
+var FF_RAMP = 3.2;            // 1/s
+
+/* steering: without it an invisible corridor is a slot machine — the angle is
+   locked at launch and going straight up is always the right answer */
+var STEER_A = 17;             // m/s^2 sideways while a finger is down
+var STEER_VMAX = 13;          // m/s
+var POP_HOLD = 1.2;           // s of fireworks at the apex before the score
+
+/* --- setup -------------------------------------------------------- */
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var BAR = { x: 0, y: H - 96, w: W, h: 96 };
+var GAUGE = { x: W - 50, y: 300, w: 40, h: 660 };
+
+var S = null, fx = [], drag = false, fps = 0, ppm = PPM;
+
+function reset() {
+  S = {
+    phase: 'aim',                            // aim | charge | fly | pop | done
+    crates: [], rocket: null, layers: [],
+    coyote: { x: WORLD_CX, y: COYOTE_R, vx: 0, vy: 0, rot: 0, vrot: 0 },
+    angle: 0,
+    gauge: 0, gaugeDir: 1, power: 0, perfect: false, burn: 0,
+    t: 0, maxH: 0, hits: 0, pops: 0, top: 0, ff: 1, settle: 0, popT: 0, steer: null,
+    camY: -GROUND_PAD, prevX: WORLD_CX, prevY: COYOTE_R
+  };
+  fx.length = 0;
+  ppm = PPM;
+  buildField();
+}
+
+function addCrate(x, y, band) {
+  var trig = TRIG_BASE + TRIG_GROW * band;
+  var c = { x: x, y: y, y0: y, vx: 0, vy: 0, rot: 0, vrot: 0, live: true,
+            moving: false, bob: Math.random() * 6.28, band: band,
+            trig: trig, blast: trig * BLAST_SPAN };
+  S.crates.push(c);
+  return c;
+}
+
+/* bands, geometric, starting above the launch view: what makes the run is
+   never knowing whether the next one is within reach */
+function buildField() {
+  var y = FIELD_START;
+  for (var b = 0; b < BANDS; b++) {
+    var used = [], n = b < 2 ? PER_BAND_LOW : PER_BAND;
+    for (var i = 0; i < n; i++) {
+      var x = 0, tries = 0;
+      do {
+        x = 2.4 + Math.random() * 13.2;
+        tries++;
+      } while (tries < 30 && used.some(function (u) { return Math.abs(u - x) < 2.6; }));
+      used.push(x);
+      addCrate(x, y + (Math.random() - 0.5) * y * 0.10, b);
+    }
+    y *= BAND_RATIO;
+  }
+  S.top = y / BAND_RATIO;
+  buildLayers();
+}
+
+/* things to fly past, so the altitude means something */
+function buildLayers() {
+  S.layers = [];
+  var wide = function () { return -40 + Math.random() * 98; };
+  for (var i = 0; i < 34; i++) {                       // clouds
+    var y = 40 + Math.pow(i / 34, 1.8) * 820;
+    S.layers.push({ k: 'cloud', x: wide(), y: y, s: 1.6 + Math.random() * 3.4 });
+  }
+  S.layers.push({ k: 'birds', x: wide(), y: 90 + Math.random() * 60 });
+  S.layers.push({ k: 'plane', x: wide(), y: 380 + Math.random() * 120 });
+  S.layers.push({ k: 'balloon', x: wide(), y: 1100 + Math.random() * 400 });
+  S.layers.push({ k: 'sat', x: wide(), y: 2600 + Math.random() * 900 });
+  S.layers.push({ k: 'sat', x: wide(), y: 5200 + Math.random() * 1600 });
+}
+
+function fire(g) {
+  S.power = POWER_FLOOR + (1 - POWER_FLOOR) * g;
+  S.perfect = g >= PERFECT;
+  if (S.perfect) S.power *= PERFECT_BONUS;
+  S.burn = BURN_T;
+  S.phase = 'fly';
+  S.t = 0;
+  S.rocket = { on: true, x: S.coyote.x, y: S.coyote.y, rot: S.angle, vx: 0, vy: 0 };
+  if (S.perfect) {
+    fx.push({ k: 'flash', x: S.coyote.x, y: S.coyote.y, t: 0, life: 0.25, max: 3 });
+    for (var i = 0; i < 14; i++) {
+      var a = Math.random() * 6.28, sp = 3 + Math.random() * 7;
+      fx.push({ k: 'p', x: S.coyote.x, y: S.coyote.y, vx: Math.cos(a) * sp,
+                vy: Math.sin(a) * sp, t: 0, life: 0.5, sz: 0.1 + Math.random() * 0.1,
+                col: '#9dff9d' });
+    }
+  }
+}
+
+/* --- physics ------------------------------------------------------ */
+function integrate(b, dt, radius, bouncy) {
+  b.vy += GRAVITY * dt;
+  var d = 1 - DRAG * dt;
+  b.vx *= d; b.vy *= d;
+  b.x += b.vx * dt; b.y += b.vy * dt;
+  b.rot += (b.vrot || 0) * dt;
+  if (b.x < WALL_L + radius) { b.x = WALL_L + radius; b.vx = -b.vx * WALL_BOUNCE; }
+  if (b.x > WALL_R - radius) { b.x = WALL_R - radius; b.vx = -b.vx * WALL_BOUNCE; }
+  if (b.y < radius) {
+    b.y = radius;
+    if (b.vy < 0) b.vy = -b.vy * (bouncy ? BOUNCE : 0.28);
+    if (Math.abs(b.vy) < 1.2) b.vy = 0;
+    b.vx *= FRICTION;
+    b.vrot = (b.vrot || 0) * 0.6;
+  }
+  return b.y <= radius + 0.02 && Math.abs(b.vy) < 0.4 && Math.abs(b.vx) < 0.4;
+}
+
+function explode(c) {
+  c.live = false;
+  S.pops++;
+  boom(c.x, c.y, c.blast, Math.max(1, PPM / ppm) * 0.7);
+  push(S.coyote, c, 1, true);
+  for (var i = 0; i < S.crates.length; i++) {
+    var o = S.crates[i];
+    if (!o.live || o === c) continue;
+    var was = o.vx + o.vy;
+    push(o, c, CRATE_MASS, false);
+    if (o.vx + o.vy !== was) o.moving = true;
+  }
+}
+
+function push(b, c, mass, isCoyote) {
+  var R = c.blast;
+  var dx = b.x - c.x, dy = b.y - c.y;
+  var d = Math.hypot(dx, dy);
+  if (d > R) return;
+  // very close in, a blast is a lift, never a slam: normalising a 5 cm offset
+  // would otherwise point the impulse straight down
+  if (d < 0.7) { dx *= 0.15; dy = Math.max(dy, 0.25); }
+  var nd = Math.hypot(dx, dy) || 1;
+  var nx = dx / nd, ny = dy / nd + BLAST_UPBIAS;
+  var nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
+  var f = Math.pow(1 - d / R, BLAST_FALLOFF);
+  // a blast is worth more when it catches a body already moving that way
+  var along = Math.max(0, b.vx * nx + b.vy * ny);
+  var boost = Math.min(BOOST_MAX, 1 + BOOST_MATCH * along);
+  var imp = BLAST_POWER * f / mass * boost;
+  var ivx = nx * imp * (isCoyote ? SIDE_DAMP : 1), ivy = ny * imp;
+  if (ivy < 0 && b.y <= (isCoyote ? COYOTE_R : CRATE_SIZE * 0.5) + 0.15)
+    ivy = -ivy * GROUND_REFLECT;
+  b.vx += ivx; b.vy += ivy;
+  b.vrot = (b.vrot || 0) + (Math.random() - 0.5) * 14;
+  if (isCoyote && f > 0.05) S.hits++;
+}
+
+function segDist(ax, ay, bx, by, px, py) {
+  var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  var t = l2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+
+/* seconds until the next crate he could plausibly catch, or -1 if the climb is
+   over: this is what decides whether the frame is worth playing at real speed */
+function nextCrateIn() {
+  var co = S.coyote, best = -1;
+  var reach = co.y + (co.vy > 0 ? co.vy * co.vy / (2 * -GRAVITY) : 0);
+  for (var i = 0; i < S.crates.length; i++) {
+    var c = S.crates[i];
+    if (!c.live || c.y < co.y) continue;
+    if (c.y > reach + c.trig || Math.abs(c.x - co.x) > c.trig * 2.4) continue;
+    var eta = (c.y - co.y) / Math.max(4, co.vy);
+    if (best < 0 || eta < best) best = eta;
+  }
+  return best;
+}
+
+function popCoyote() {
+  S.phase = 'pop';
+  S.popT = 0;
+  var co = S.coyote, k = Math.max(1, PPM / ppm) * 1.6;
+  boom(co.x, co.y, 5, k);
+  boom(co.x, co.y, 3, k * 0.6);
+  for (var i = 0; i < 26; i++) {
+    var a = Math.random() * 6.28, sp = (3 + Math.random() * 10) * k;
+    fx.push({ k: 'p', x: co.x, y: co.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+              t: 0, life: 0.8 + Math.random(), sz: (0.12 + Math.random() * 0.18) * k,
+              col: i % 3 ? '#8a90a0' : '#c9ced8' });
+  }
+}
+
+/* --- fx ----------------------------------------------------------- */
+/* k scales a burst in WORLD units so it keeps its size on screen: a blast at
+   x0.1 zoom would otherwise be a 20 px puff */
+function boom(x, y, R, k) {
+  k = k || 1;
+  R *= k;
+  fx.push({ k: 'ring', x: x, y: y, max: R, t: 0, life: 0.45 });
+  fx.push({ k: 'flash', x: x, y: y, t: 0, life: 0.12, max: R });
+  var n = 24;
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * 6.28, sp = (4 + Math.random() * 16) * k;
+    fx.push({ k: 'p', x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 4 * k,
+              t: 0, life: 0.5 + Math.random() * 0.7,
+              sz: (0.08 + Math.random() * 0.18) * k,
+              col: ['#fff3c4', '#ffd24a', '#ff8b2a', '#ff4d2a'][i & 3] });
+  }
+  for (var j = 0; j < 8; j++)
+    fx.push({ k: 's', x: x + (Math.random() - 0.5) * 2 * k, y: y + (Math.random() - 0.5) * 2 * k,
+              vx: (Math.random() - 0.5) * 3 * k, vy: (1 + Math.random() * 3) * k,
+              t: 0, life: 0.9 + Math.random(), sz: (0.2 + Math.random() * 0.3) * k, gr: k });
+}
+
+function updateFx(dt) {
+  for (var i = fx.length - 1; i >= 0; i--) {
+    var f = fx[i];
+    f.t += dt;
+    if (f.k === 'p') { f.vy += GRAVITY * 0.5 * dt; f.x += f.vx * dt; f.y += f.vy * dt; }
+    if (f.k === 's') { f.x += f.vx * dt; f.y += f.vy * dt; f.sz += 0.35 * (f.gr || 1) * dt; }
+    if (f.t >= f.life) fx.splice(i, 1);
+  }
+}
+
+/* --- loop --------------------------------------------------------- */
+function update(dt) {
+  if (S.phase === 'charge') {                 // the cursor runs while he holds
+    S.gauge += S.gaugeDir * GAUGE_SPEED * 2 * dt;
+    if (S.gauge > 1) { S.gauge = 1; S.gaugeDir = -1; }
+    if (S.gauge < 0) { S.gauge = 0; S.gaugeDir = 1; }
+    updateFx(dt);
+    return;
+  }
+  if (S.phase === 'pop') {
+    updateFx(dt);
+    S.popT += dt;
+    if (S.popT > POP_HOLD) S.phase = 'done';
+    return;
+  }
+  if (S.phase !== 'fly') { updateFx(dt); return; }
+
+  // every blast plays at real speed; the empty coasting in between does not,
+  // or a 3 km flight is half a minute of watching a dot
+  var want = 1;
+  if (S.burn <= 0) {
+    var eta = nextCrateIn();
+    want = eta < 0 ? FF_MAX : (eta > FF_NEAR ? FF_COAST : 1);
+  }
+  S.ff += (want - S.ff) * Math.min(1, dt * FF_RAMP);
+  if (want === 1 && S.ff < 1.25) S.ff = 1;
+  var total = dt * S.ff, steps = Math.max(1, Math.ceil(total / 0.02));
+  for (var st = 0; st < steps; st++) step(total / steps);
+  updateFx(dt);
+}
+
+function step(dt) {
+  S.t += dt;
+  var co = S.coyote;
+
+  for (var i = 0; i < S.crates.length; i++) {
+    var c = S.crates[i];
+    if (!c.live) continue;
+    if (c.moving) integrate(c, dt, CRATE_SIZE * 0.5, true);
+    else c.y = c.y0 + Math.sin(S.t * 1.6 + c.bob) * 0.14;
+  }
+
+  S.prevX = co.x; S.prevY = co.y;
+  if (S.burn > 0) {                           // the rocket pushes along its axis
+    S.burn -= dt;
+    var a = THRUST * S.power * dt;
+    co.vx += Math.sin(S.angle) * a;
+    co.vy += Math.cos(S.angle) * a;
+    co.rot = -S.angle;
+    co.vrot = 0;
+    if (S.burn <= 0) dropRocket();
+  }
+  if (S.steer !== null && S.burn <= 0) {          // he paddles towards the finger
+    var want = Math.max(-1, Math.min(1, (S.steer - co.x) * 0.7));
+    co.vx += want * STEER_A * dt;
+    if (co.vx > STEER_VMAX) co.vx = STEER_VMAX;
+    if (co.vx < -STEER_VMAX) co.vx = -STEER_VMAX;
+  }
+  var rest = integrate(co, dt, COYOTE_R, false);
+  if (S.burn <= 0) co.vrot = co.vrot * (1 - 1.2 * dt);
+  if (S.rocket && !S.rocket.on) {
+    S.rocket.vy += GRAVITY * dt;
+    S.rocket.x += S.rocket.vx * dt; S.rocket.y += S.rocket.vy * dt;
+    S.rocket.rot += 6 * dt;
+    if (S.rocket.y < 0) S.rocket = null;
+  }
+
+  // swept against his whole step, or he tunnels through a crate at 200 m/s.
+  // A crate only fires once he is level with it or past it, so the blast
+  // throws him further up instead of hammering him back down.
+  for (var g = 0; g < S.crates.length; g++) {
+    var gc = S.crates[g];
+    if (gc.live && co.y >= gc.y &&
+        segDist(S.prevX, S.prevY, co.x, co.y, gc.x, gc.y) < gc.trig)
+      explode(gc);
+  }
+
+  if (co.y > S.maxH + COYOTE_R) S.maxH = co.y - COYOTE_R;
+  if (co.vy <= 0 && co.y > 8) { popCoyote(); return; }   // the apex is the score
+  if (rest && S.burn <= 0) {
+    S.settle += dt; if (S.settle > SETTLE_TIME) S.phase = 'done';
+  } else S.settle = 0;
+}
+
+function dropRocket() {
+  var co = S.coyote;
+  S.rocket.on = false;
+  S.rocket.x = co.x - Math.sin(S.angle) * 0.8;
+  S.rocket.y = co.y - Math.cos(S.angle) * 0.8;
+  S.rocket.vx = co.vx * 0.25 - Math.sin(S.angle) * 3;
+  S.rocket.vy = co.vy * 0.25 - Math.cos(S.angle) * 3;
+  co.vrot = (Math.random() - 0.5) * 6;
+  for (var i = 0; i < 10; i++)
+    fx.push({ k: 's', x: S.rocket.x, y: S.rocket.y,
+              vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 3,
+              t: 0, life: 0.7 + Math.random(), sz: 0.15 + Math.random() * 0.2 });
+}
+
+/* the world zooms out with his speed, so a crate is always on screen about a
+   second before he reaches it however fast he is going */
+function camera(dt) {
+  var co = S.coyote;
+  var target = PPM;
+  if (S.phase === 'fly') {
+    var v = Math.hypot(co.vx, co.vy);
+    target = Math.max(MIN_PPM, Math.min(PPM, H / (34 + v * 1.15)));
+  } else if (S.phase === 'pop' || S.phase === 'done') {
+    // the last frame is the trophy: the whole climb, desert at the bottom
+    target = Math.max(0.2, Math.min(PPM, H / (S.maxH * 1.25 + 60)));
+  }
+  ppm += (target - ppm) * Math.min(1, dt * ZOOM_LERP);
+  var camTarget = -GROUND_PAD;
+  if (S.phase === 'fly')
+    camTarget = Math.max(-GROUND_PAD, co.y - (H * CAM_ANCHOR) / ppm);
+  S.camY += (camTarget - S.camY) * Math.min(1, dt * CAM_LERP);
+}
+
+/* --- projection --------------------------------------------------- */
+function sx(wx) { return W / 2 + (wx - WORLD_CX) * ppm; }
+function sy(wy) { return H - (wy - S.camY) * ppm; }
+
+/* --- drawing ------------------------------------------------------ */
+/* keyed to ALTITUDE: the desert, then the sky, then space */
+var SKY = [[0, 231, 154, 77], [25, 201, 102, 58], [90, 108, 74, 120],
+           [320, 44, 52, 110], [900, 14, 18, 54], [2600, 3, 4, 16], [9000, 0, 0, 4]];
+function skyAt(m) {
+  var i = 0;
+  while (i < SKY.length - 2 && m > SKY[i + 1][0]) i++;
+  var a = SKY[i], b = SKY[i + 1];
+  var t = Math.max(0, Math.min(1, (m - a[0]) / (b[0] - a[0])));
+  return 'rgb(' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' +
+                  Math.round(a[2] + (b[2] - a[2]) * t) + ',' +
+                  Math.round(a[3] + (b[3] - a[3]) * t) + ')';
+}
+
+var STARS = [];
+for (var _i = 0; _i < 110; _i++)
+  STARS.push({ x: (_i * 149 % 719), y: (_i * 313 % 1279), r: 0.6 + (_i % 3) * 0.5 });
+
+function drawBackground() {
+  var viewM = H / ppm;
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  for (var k = 0; k <= 5; k++)
+    g.addColorStop(k / 5, skyAt(Math.max(0, S.camY + viewM * (1 - k / 5))));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  var starA = Math.max(0, Math.min(0.9, (S.camY + viewM * 0.5 - 60) / 400));
+  if (starA > 0) for (var t = 0; t < STARS.length; t++) {
+    var st = STARS[t];
+    ctx.fillStyle = 'rgba(255,255,235,' + starA * (0.35 + st.r * 0.4) + ')';
+    ctx.beginPath();
+    ctx.arc(st.x, (st.y + S.camY * 1.5) % 1280, st.r, 0, 6.3); ctx.fill();
+  }
+
+  drawLayers();
+
+  var gy = sy(0);
+  if (gy < H + 40 && gy > -600) {
+    var z = ppm / PPM, mb = gy - 40 * z;
+    ctx.fillStyle = '#6b3a34';
+    mesa(90, mb, 220, 150, z); mesa(430, mb, 300, 210, z);
+    ctx.fillStyle = '#552c2a';
+    mesa(280, mb, 180, 110, z); mesa(660, mb, 200, 130, z);
+    ctx.fillStyle = '#d8a05c'; ctx.fillRect(0, gy, W, H - gy);
+    ctx.fillStyle = '#b8813f'; ctx.fillRect(0, gy, W, Math.max(2, 8 * z));
+    var rim = sy(46);                       // the canyon he ricochets off
+    if (rim < H) {
+      var wl = sx(WALL_L), wr = sx(WALL_R);
+      ctx.fillStyle = '#4a2622';
+      ctx.fillRect(0, rim, wl, gy - rim); ctx.fillRect(wr, rim, W - wr, gy - rim);
+      ctx.fillStyle = '#603028';
+      for (var n = 0; n < 14; n++) {
+        var yy = rim + n * 70 * z;
+        if (yy > gy) break;
+        ctx.fillRect(0, yy, wl - 4 * z, 30 * z);
+        ctx.fillRect(wr + 4 * z, yy + 20 * z, W - wr, 30 * z);
+      }
+    }
+  }
+}
+function mesa(cx, base, w, h, z) {
+  w *= z; h *= z;
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, base);
+  ctx.lineTo(cx - w / 2 + 22 * z, base - h);
+  ctx.lineTo(cx + w / 2 - 22 * z, base - h);
+  ctx.lineTo(cx + w / 2, base);
+  ctx.closePath(); ctx.fill();
+}
+
+/* clouds, a plane, a balloon, satellites — the altitude has to be felt as
+   things going past, not read off a number */
+function drawLayers() {
+  for (var i = 0; i < S.layers.length; i++) {
+    var l = S.layers[i], y = sy(l.y);
+    if (y < -120 || y > H + 120) continue;
+    var x = sx(l.x), z = Math.max(0.12, ppm / PPM);
+    if (l.k === 'cloud') {
+      var w = l.s * 26 * z + 8, h = w * 0.42;
+      var ca = 0.55 * Math.max(0, 1 - l.y / 950);
+      if (ca < 0.02) continue;
+      ctx.fillStyle = 'rgba(255,255,255,' + ca + ')';
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, h, 0, 0, 6.3); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x - w * 0.5, y + h * 0.3, w * 0.55, h * 0.7, 0, 0, 6.3); ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + w * 0.55, y + h * 0.25, w * 0.5, h * 0.65, 0, 0, 6.3); ctx.fill();
+    } else if (l.k === 'birds') {
+      ctx.strokeStyle = 'rgba(40,30,30,.5)'; ctx.lineWidth = Math.max(1, 2 * z);
+      for (var b = 0; b < 5; b++) {
+        var bx = x + (b - 2) * 16 * z, by = y + ((b % 2) ? 9 : -6) * z, s = 6 * z + 2;
+        ctx.beginPath();
+        ctx.moveTo(bx - s, by); ctx.quadraticCurveTo(bx, by - s * 0.7, bx + s, by);
+        ctx.stroke();
+      }
+    } else if (l.k === 'plane') {
+      var pw = Math.max(14, 46 * z);
+      ctx.fillStyle = 'rgba(226,230,238,.85)';
+      ctx.fillRect(x - pw / 2, y - pw * 0.09, pw, pw * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(x - pw * 0.1, y); ctx.lineTo(x - pw * 0.32, y - pw * 0.3);
+      ctx.lineTo(x + pw * 0.06, y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(x + pw / 2, y - pw * 0.05, pw * 2.4, pw * 0.1);
+    } else if (l.k === 'balloon') {
+      var r = Math.max(7, 20 * z);
+      ctx.fillStyle = 'rgba(238,236,228,.8)';
+      ctx.beginPath(); ctx.ellipse(x, y, r, r * 1.25, 0, 0, 6.3); ctx.fill();
+      ctx.fillStyle = 'rgba(60,50,45,.7)';
+      ctx.fillRect(x - r * 0.25, y + r * 1.35, r * 0.5, r * 0.5);
+    } else {
+      var s2 = Math.max(6, 16 * z);
+      ctx.fillStyle = 'rgba(210,216,228,.9)';
+      ctx.fillRect(x - s2 * 0.4, y - s2 * 0.4, s2 * 0.8, s2 * 0.8);
+      ctx.fillStyle = 'rgba(90,140,220,.8)';
+      ctx.fillRect(x - s2 * 1.9, y - s2 * 0.22, s2 * 1.4, s2 * 0.44);
+      ctx.fillRect(x + s2 * 0.5, y - s2 * 0.22, s2 * 1.4, s2 * 0.44);
+    }
+  }
+}
+
+var STEPS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
+function drawRuler() {
+  var step = STEPS[STEPS.length - 1];
+  for (var i = 0; i < STEPS.length; i++) if (STEPS[i] * ppm >= 46) { step = STEPS[i]; break; }
+  var viewM = H / ppm;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (var m = Math.max(0, Math.floor(S.camY / step) * step); m <= S.camY + viewM; m += step) {
+    var y = sy(m), big = (m / step) % 5 === 0;
+    ctx.fillStyle = big ? 'rgba(255,255,255,.30)' : 'rgba(255,255,255,.12)';
+    ctx.fillRect(0, y, big ? 30 : 16, big ? 3 : 2);
+    if (big && m > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,.40)';
+      ctx.font = '600 20px system-ui,sans-serif';
+      ctx.fillText(m >= 1000 ? (m / 1000) + ' km' : m + ' m', 36, y);
+    }
+  }
+  if (S.maxH > 1 && S.phase !== 'fly') {
+    var my = sy(S.maxH);
+    ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 2; ctx.setLineDash([12, 10]);
+    ctx.beginPath(); ctx.moveTo(0, my); ctx.lineTo(W, my); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawCrate(c) {
+  var x = sx(c.x), y = sy(c.y), s = Math.max(11, CRATE_SIZE * ppm);
+  if (y < -60 || y > H + 60) return;
+  var pulse = 0.5 + 0.5 * Math.sin(S.t * 5 + c.bob);
+  ctx.fillStyle = 'rgba(255,150,60,' + (0.10 + 0.06 * pulse) + ')';
+  ctx.beginPath(); ctx.arc(x, y, Math.max(s * 1.6, c.trig * ppm), 0, 6.3); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,206,110,' + (0.30 + 0.25 * pulse) + ')'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, c.trig * ppm, 0, 6.3); ctx.stroke();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-c.rot);
+  ctx.fillStyle = s > 20 ? '#a8412c' : '#e8552f';
+  ctx.fillRect(-s / 2, -s / 2, s, s);
+  ctx.fillStyle = '#7d2c1c'; ctx.fillRect(-s / 2, -s / 2, s, Math.max(2, s * 0.14));
+  ctx.strokeStyle = s > 20 ? '#3a140d' : '#ffd8a8';
+  ctx.lineWidth = Math.max(1.5, s * 0.07);
+  ctx.strokeRect(-s / 2, -s / 2, s, s);
+  if (s > 26) {
+    ctx.fillStyle = '#ffe9c9'; ctx.font = '700 ' + Math.round(s * 0.3) + 'px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('TNT', 0, 1);
+    ctx.strokeStyle = '#e9d7a8'; ctx.lineWidth = Math.max(1, s * 0.08);
+    ctx.beginPath(); ctx.moveTo(0, -s / 2);
+    ctx.quadraticCurveTo(s * 0.2, -s / 2 - s * 0.3, 0, -s / 2 - s * 0.5);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawRocket() {
+  var r = S.rocket, u = Math.max(9, PPM * 1.25 * Math.min(1, ppm / PPM));
+  var attached = !r || r.on;
+  var x, y, rot;
+  if (attached) {
+    var ax = -Math.sin(S.angle), ay = Math.cos(S.angle);
+    x = sx(S.coyote.x + ax * 0.35 - Math.cos(S.angle) * 0.55);
+    y = sy(S.coyote.y + ay * 0.35 + Math.sin(S.angle) * 0.55);
+    rot = S.angle;
+  } else {
+    x = sx(r.x); y = sy(r.y); rot = r.rot;
+  }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  if (attached && S.burn > 0) {
+    var fl = (1.2 + Math.random() * 1.1) * u * S.power;
+    ctx.fillStyle = '#ffd24a';
+    ctx.beginPath();
+    ctx.moveTo(-0.30 * u, 1.05 * u); ctx.lineTo(0.30 * u, 1.05 * u);
+    ctx.lineTo(0, 1.05 * u + fl); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff6a2a';
+    ctx.beginPath();
+    ctx.moveTo(-0.18 * u, 1.05 * u); ctx.lineTo(0.18 * u, 1.05 * u);
+    ctx.lineTo(0, 1.05 * u + fl * 0.6); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = '#3a140d';
+  ctx.beginPath();
+  ctx.moveTo(-0.33 * u, 0.55 * u); ctx.lineTo(-0.70 * u, 1.10 * u);
+  ctx.lineTo(-0.33 * u, 1.05 * u); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0.33 * u, 0.55 * u); ctx.lineTo(0.70 * u, 1.10 * u);
+  ctx.lineTo(0.33 * u, 1.05 * u); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#d1372a';
+  ctx.fillRect(-0.33 * u, -0.60 * u, 0.66 * u, 1.65 * u);
+  ctx.fillStyle = '#e8e2d8';
+  ctx.fillRect(-0.33 * u, 0.20 * u, 0.66 * u, 0.16 * u);
+  ctx.fillRect(-0.33 * u, -0.30 * u, 0.66 * u, 0.10 * u);
+  ctx.fillStyle = '#8e2a20';
+  ctx.beginPath();
+  ctx.moveTo(-0.33 * u, -0.60 * u); ctx.lineTo(0.33 * u, -0.60 * u);
+  ctx.lineTo(0, -1.45 * u); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#3a140d'; ctx.lineWidth = 2;
+  ctx.strokeRect(-0.33 * u, -0.60 * u, 0.66 * u, 1.65 * u);
+  ctx.restore();
+}
+
+function drawCoyote(co) {
+  var x = sx(co.x), y = sy(co.y);
+  var u = Math.max(4.6, COYOTE_R * ppm / 3.0);
+  var flying = S.phase === 'fly' && co.y > COYOTE_R + 0.2;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-co.rot * 0.4);
+  ctx.scale(1, -1);                       // local frame is y-up, like the world
+  var grey = '#8a90a0';
+  ctx.strokeStyle = grey; ctx.lineWidth = 1.1 * u; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-2.2 * u, 0.2 * u);
+  ctx.quadraticCurveTo(-4.2 * u, flying ? -1.4 * u : 0.6 * u,
+                       -5.0 * u, flying ? -3.0 * u : 1.4 * u);
+  ctx.stroke();
+  ctx.lineWidth = 0.62 * u;
+  var kick = flying ? 1.5 : 0;
+  [[-1.5, -0.9], [-0.9, -0.3], [1.2, 0.6], [1.8, 1.2]].forEach(function (l) {
+    ctx.beginPath(); ctx.moveTo(l[0] * u, -1.0 * u);
+    ctx.lineTo(l[1] * u - kick * u * 0.4, -3.0 * u + kick * u * 0.5);
+    ctx.stroke();
+  });
+  ctx.fillStyle = grey;
+  ctx.beginPath(); ctx.ellipse(0, 0, 2.6 * u, 1.7 * u, 0, 0, 6.3); ctx.fill();
+  ctx.beginPath(); ctx.arc(2.1 * u, 1.3 * u, 1.35 * u, 0, 6.3); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(1.5 * u, 2.3 * u); ctx.lineTo(1.2 * u, 3.9 * u); ctx.lineTo(2.5 * u, 2.5 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(2.6 * u, 2.4 * u); ctx.lineTo(3.0 * u, 3.8 * u); ctx.lineTo(3.4 * u, 2.2 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9aa0b0';
+  ctx.beginPath(); ctx.ellipse(3.5 * u, 0.9 * u, 1.2 * u, 0.62 * u, 0, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#2a2f3a';
+  ctx.beginPath(); ctx.arc(4.5 * u, 0.9 * u, 0.36 * u, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(2.6 * u, 1.6 * u, (flying ? 0.66 : 0.44) * u, 0, 6.3); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(2.8 * u, 1.6 * u, 0.22 * u, 0, 6.3); ctx.fill();
+  ctx.restore();
+}
+
+function drawFx() {
+  for (var i = 0; i < fx.length; i++) {
+    var f = fx[i], k = f.t / f.life, x = sx(f.x), y = sy(f.y);
+    if (f.k === 'ring') {
+      var r = (0.3 + (f.max - 0.3) * k) * ppm;
+      ctx.strokeStyle = 'rgba(255,214,120,' + (1 - k) + ')';
+      ctx.lineWidth = Math.max(1.5, (10 * (1 - k) + 2) * Math.max(0.35, ppm / PPM));
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.3); ctx.stroke();
+    } else if (f.k === 'flash') {
+      ctx.fillStyle = 'rgba(255,246,205,' + (1 - k) * 0.55 + ')';
+      ctx.beginPath(); ctx.arc(x, y, (0.5 + k * 0.9) * f.max * 0.6 * ppm, 0, 6.3); ctx.fill();
+    } else if (f.k === 'p') {
+      var s = Math.max(1.5, f.sz * ppm);
+      ctx.globalAlpha = 1 - k; ctx.fillStyle = f.col;
+      ctx.fillRect(x - s / 2, y - s / 2, s, s); ctx.globalAlpha = 1;
+    } else {
+      ctx.fillStyle = 'rgba(96,86,82,' + (1 - k) * 0.22 + ')';
+      ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, f.sz * ppm), 0, 6.3); ctx.fill();
+    }
+  }
+}
+
+/* --- hud ---------------------------------------------------------- */
+function drawAim() {
+  var co = S.coyote, x = sx(co.x), y = sy(co.y);
+  var dx = Math.sin(S.angle), dy = Math.cos(S.angle);
+  ctx.setLineDash([10, 12]); ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255,255,255,.45)';
+  ctx.beginPath(); ctx.moveTo(x, y);
+  ctx.lineTo(x + dx * 9 * PPM, y - dy * 9 * PPM); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 5.4 * PPM, -Math.PI / 2 - AIM_MAX, -Math.PI / 2 + AIM_MAX);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '700 24px system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText((S.angle * 180 / Math.PI).toFixed(0) + '°',
+               x + dx * 6.2 * PPM, y - dy * 6.2 * PPM - 8);
+}
+
+function drawGauge() {
+  var g = GAUGE;
+  ctx.fillStyle = 'rgba(10,8,12,.65)';
+  roundRect(g.x, g.y, g.w, g.h, 14); ctx.fill();
+  var ph = g.h * (1 - PERFECT);
+  ctx.fillStyle = 'rgba(120,255,150,.30)';
+  roundRect(g.x + 4, g.y + 4, g.w - 8, ph, 10); ctx.fill();
+  ctx.fillStyle = 'rgba(140,255,170,.9)';
+  ctx.fillRect(g.x + 4, g.y + ph, g.w - 8, 3);
+  var cy = g.y + g.h * (1 - S.gauge);
+  ctx.fillStyle = S.gauge >= PERFECT ? '#9dff9d' : '#ffe27a';
+  ctx.fillRect(g.x - 6, cy - 7, g.w + 12, 14);
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = '600 18px system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('PWR', g.x + g.w / 2, g.y - 26);
+}
+
+function fmt(m) {
+  return m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m.toFixed(1) + ' m';
+}
+
+function drawHud() {
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, 128);
+  ctx.fillStyle = '#fff'; ctx.font = '800 62px system-ui,sans-serif';
+  ctx.fillText(fmt(S.maxH), 24, 26);
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
+  ctx.fillText('MAX HEIGHT', 26, 96);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
+  ctx.fillText(S.phase === 'fly' ? S.pops + ' TNT' : 'angle ' +
+               (S.angle * 180 / Math.PI).toFixed(0) + '°', W - 24, 34);
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
+  if (S.phase === 'fly')
+    ctx.fillText(Math.max(0, S.coyote.vy).toFixed(0) + ' m/s' +
+                 (S.ff > 1.6 ? '   x' + S.ff.toFixed(0) : ''), W - 24, 80);
+
+  if (S.phase === 'aim' || S.phase === 'charge') {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 128, W, 92);
+    ctx.fillStyle = '#ffe9c9'; ctx.font = '600 25px system-ui,sans-serif';
+    ctx.fillText('Aim the rocket, then hold the bar.', W / 2, 142);
+    ctx.fillText('Release at the top — the TNT is hidden up there.', W / 2, 180);
+    drawGauge();
+    var hot = S.phase === 'charge';
+    ctx.fillStyle = hot ? '#e8412c' : '#c2361f';
+    ctx.fillRect(BAR.x, BAR.y, BAR.w, BAR.h);
+    ctx.fillStyle = '#fff'; ctx.font = '800 40px system-ui,sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(hot ? 'RELEASE!' : 'HOLD TO LIGHT THE FUSE',
+                 BAR.x + BAR.w / 2, BAR.y + BAR.h / 2 + 2);
+  }
+
+  if (S.phase === 'fly' && S.steer !== null) {
+    var stx = sx(S.steer), sty = sy(S.coyote.y);
+    ctx.strokeStyle = 'rgba(160,220,255,.5)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(stx, sty - 26); ctx.lineTo(stx, sty + 26); ctx.stroke();
+  }
+  if (S.phase === 'fly' && S.t < 2.2) {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = Math.max(0, 1 - S.t / 2.2) * 0.8;
+    ctx.fillStyle = '#cfe6ff'; ctx.font = '700 30px system-ui,sans-serif';
+    ctx.fillText('drag to steer', W / 2, H - 150);
+    ctx.globalAlpha = 1;
+  }
+  if (S.phase === 'fly' && S.perfect && S.t < 1.2) {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = Math.max(0, 1 - S.t / 1.2);
+    ctx.fillStyle = '#9dff9d'; ctx.font = '800 64px system-ui,sans-serif';
+    ctx.fillText('PERFECT LIGHT', W / 2, 300);
+    ctx.globalAlpha = 1;
+  }
+
+  if (S.phase === 'done') {
+    ctx.fillStyle = 'rgba(0,0,0,.62)'; ctx.fillRect(0, H / 2 - 190, W, 380);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffe27a'; ctx.font = '800 104px system-ui,sans-serif';
+    ctx.fillText(fmt(S.maxH), W / 2, H / 2 - 60);
+    ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
+    ctx.fillText(S.pops + ' TNT chained   ·   power ' + (S.power * 100).toFixed(0) +
+                 '%   ·   ' + S.t.toFixed(1) + ' s', W / 2, H / 2 + 40);
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = '600 28px system-ui,sans-serif';
+    ctx.fillText('tap or press R to launch again', W / 2, H / 2 + 110);
+  }
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+function drawDebug() {
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  var y0 = S.phase === 'aim' || S.phase === 'charge' ? H - 96 : H;
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(0, y0 - 96, 440, 96);
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '500 19px ui-monospace,monospace';
+  ctx.fillText('fps ' + fps.toFixed(0) + '  ' + S.phase + '  t ' + S.t.toFixed(1) +
+               '  ppm ' + ppm.toFixed(1) + '  view ' + (H / ppm).toFixed(0) + 'm', 12, y0 - 66);
+  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  match ' + BOOST_MATCH +
+               'x' + BOOST_MAX + '  thrust ' + THRUST + '  ff ' + S.ff.toFixed(1), 12, y0 - 40);
+  ctx.fillText('bands ' + BANDS + 'x' + PER_BAND + '  top ' + S.top.toFixed(0) +
+               'm  left ' + S.crates.filter(function (c) { return c.live; }).length +
+               '  pops ' + S.pops, 12, y0 - 14);
+}
+
+function render() {
+  drawBackground();
+  drawRuler();
+  for (var i = 0; i < S.crates.length; i++) if (S.crates[i].live) drawCrate(S.crates[i]);
+  if (S.phase === 'aim' || S.phase === 'charge') drawAim();
+  if (S.rocket || S.phase === 'aim' || S.phase === 'charge') drawRocket();
+  if (S.phase !== 'pop' && S.phase !== 'done') drawCoyote(S.coyote);
+  drawFx();
+  drawHud();
+  drawDebug();
+}
+
+/* --- input -------------------------------------------------------- */
+function point(e) {
+  var r = canvas.getBoundingClientRect();
+  var px = (e.clientX - r.left) / r.width * W;
+  var py = (e.clientY - r.top) / r.height * H;
+  return { px: px, py: py,
+           x: (px - W / 2) / ppm + WORLD_CX, y: (H - py) / ppm + S.camY };
+}
+function aimAt(p) {
+  var co = S.coyote;
+  var dx = p.x - co.x, dy = Math.max(0.5, p.y - co.y);
+  S.angle = Math.max(-AIM_MAX, Math.min(AIM_MAX, Math.atan2(dx, dy)));
+}
+
+function down(e) {
+  e.preventDefault();
+  var p = point(e);
+  if (S.phase === 'done') { reset(); return; }
+  if (S.phase === 'fly') { drag = true; S.steer = p.x; return; }
+  if (S.phase !== 'aim') return;
+  if (p.py > BAR.y) {
+    S.phase = 'charge';
+    S.gauge = 0; S.gaugeDir = 1;
+    return;
+  }
+  drag = true;
+  aimAt(p);
+}
+function move(e) {
+  if (!drag) return;
+  e.preventDefault();
+  var p = point(e);
+  if (S.phase === 'fly') { S.steer = p.x; return; }
+  if (S.phase === 'aim') aimAt(p);
+}
+function up() {
+  drag = false;
+  S.steer = null;
+  if (S.phase === 'charge') fire(S.gauge);
+}
+
+canvas.addEventListener('pointerdown', down);
+canvas.addEventListener('pointermove', move);
+window.addEventListener('pointerup', up);
+window.addEventListener('keydown', function (e) {
+  if (e.code === 'Space' && !e.repeat) {
+    e.preventDefault();
+    if (S.phase === 'aim') { S.phase = 'charge'; S.gauge = 0; S.gaugeDir = 1; }
+    else if (S.phase === 'done') reset();
+  }
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+    if (S.phase === 'fly') S.steer = S.coyote.x - 3;
+    else S.angle = Math.max(-AIM_MAX, S.angle - 0.05);
+  }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+    if (S.phase === 'fly') S.steer = S.coyote.x + 3;
+    else S.angle = Math.min(AIM_MAX, S.angle + 0.05);
+  }
+  if (e.code === 'KeyR') reset();
+});
+window.addEventListener('keyup', function (e) {
+  if (e.code === 'Space' && S.phase === 'charge') fire(S.gauge);
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA' ||
+      e.code === 'ArrowRight' || e.code === 'KeyD') S.steer = null;
+});
+
+/* --- run ---------------------------------------------------------- */
+var last = performance.now();
+function frame(now) {
+  var dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
+  fps = fps * 0.9 + (1 / Math.max(dt, 0.0001)) * 0.1;
+  update(dt);
+  camera(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

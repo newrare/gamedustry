@@ -1,0 +1,165 @@
+
+
+  /* =========================================================================
+     SKIN — MARSHMELT. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     ========================================================================= */
+  :root {
+    --bg:#180a10; --text:#fff3e4; --muted:#c79f8a;
+    --accent:#ff9d2e; --cta-a:#ffd166; --cta-b:#ff7a1a; --cta-text:#2a1000;
+    --danger:#ff3b30; --gold:#ffd166; --good:#9dff8a;
+    /* the marshmallow itself, so the intro and the callouts use the body's
+       own cream rather than the fire's orange */
+    --mallow:#fff3dd; --rock:#4b444f;
+  }
+  html, body {
+    background:radial-gradient(900px 760px at 50% 108%, #7d1802 0%, #40120a 42%, #180a10 78%, #0d050a 100%);
+  }
+
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.65), 0 0 46px rgba(255,157,46,.42); }
+
+  #intro-title {
+    font-size:92px; letter-spacing:8px;
+    background:linear-gradient(180deg,#fff9ee 0%,#ffd166 46%,#ff7a1a 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  /* One sentence, three coloured words: the gesture, the character, the threat. */
+  #intro-tagline { margin-top:18px; font-size:30px; font-weight:800; color:#ffe3c4; }
+  #intro-tagline .w-tap    { color:#ffe9c4; }
+  #intro-tagline .w-mallow { color:var(--mallow); }
+  #intro-tagline .w-lava   { color:#ff7a1a; }
+
+  #cta-bar { border-top:1px solid rgba(255,157,46,.18); }
+  #hud-score { text-shadow:0 0 16px rgba(255,157,46,.55); }
+  .btn { box-shadow:0 0 22px rgba(255,122,26,.45); }
+  /* left pill: the best score. right pill: the chain, lit once it is worth
+     protecting — there is no clock in this game, the lava is the clock. */
+  #hud-left .hud-pill  { color:#ffd9a0; letter-spacing:1px; }
+  #hud-right .hud-pill { color:#ffe3c4; letter-spacing:2px; }
+  #hud-right .hud-pill.on { color:#2a1000; background:rgba(255,209,102,.85); border-color:rgba(255,243,221,.7); }
+
+  /* ---- how-to-play demo: one tap, one jump -------------------------------
+     The whole game is "a tap flings the marshmallow at what you tapped", so
+     the stage plays exactly that, twice per loop: the body is planted on the
+     left rock, the finger taps above the right rock, the body arcs over the
+     lava and plants itself there — then the same thing back.
+
+     Nothing new is added to the markup. The motor's target becomes the
+     marshmallow (its two ripples recycled into eyes and a mouth), its track
+     becomes the left rock, and the stage's ::before / ::after become the right
+     rock and the lava lake. The hand stays the SHARED finger, only moved and
+     retimed: it flicks out while the body is in the air and reappears at the
+     next landing spot, because a finger sliding across the stage would read as
+     a drag — and this game has no drag.
+
+     The beat, in a 420 x 270 stage: one 2.8 s cycle, two jumps, the finger on
+     the same cycle pressing at 4 % and 54 % — just before each launch. */
+  .demo-stage {
+    width:420px; height:270px;
+    background:radial-gradient(320px 260px at 50% 100%, rgba(255,122,26,.28), rgba(24,10,16,0) 70%),
+               rgba(255,255,255,.04);
+    border-color:rgba(255,157,46,.22);
+  }
+
+  /* the lava lake, filling the bottom of the stage */
+  .demo-stage::after {
+    content:""; position:absolute; z-index:0; left:0; right:0; bottom:0; height:54px;
+    background:linear-gradient(180deg,#ffd76a 0%,#ff8a1f 16%,#e0380a 58%,#7d1802 100%);
+    border-top:4px solid rgba(255,244,205,.9);
+    box-shadow:0 -18px 34px rgba(255,110,20,.45);
+    animation:demoLava 2.2s ease-in-out infinite;
+  }
+  @keyframes demoLava {
+    0%,100% { filter:brightness(1);    height:54px; }
+    50%     { filter:brightness(1.18); height:60px; }
+  }
+
+  /* the two rocks: the left one is the motor's track, the right one is the
+     stage's ::before, sitting higher so the jump reads as a climb */
+  .demo-tap .demo-track {
+    display:block; z-index:1; left:62px; right:auto; top:auto; bottom:52px;
+    width:96px; height:46px; border:0;
+    border-radius:46% 54% 40% 60% / 60% 56% 44% 40%;
+    background:radial-gradient(60px 40px at 40% 24%, #61545f 0%, #514550 52%, #302a34 100%);
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.4), 0 0 0 2px rgba(255,150,50,.45), 0 0 18px rgba(255,122,26,.3);
+  }
+  .demo-stage::before {
+    content:""; position:absolute; z-index:1; right:62px; bottom:88px;
+    width:84px; height:42px;
+    border-radius:54% 46% 60% 40% / 56% 60% 40% 44%;
+    background:radial-gradient(56px 36px at 60% 24%, #61545f 0%, #514550 52%, #302a34 100%);
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.4), 0 0 0 2px rgba(255,150,50,.45), 0 0 18px rgba(255,122,26,.3);
+  }
+
+  /* the marshmallow: a cream capsule, planted upright on a rock and leaning
+     into the arc while it flies */
+  .demo-tap .demo-target {
+    z-index:3; left:50%; top:auto; bottom:112px; width:46px; height:22px; margin-left:-23px;
+    border:0; border-radius:11px;
+    background:linear-gradient(180deg,#ffffff 0%,#fff3dd 52%,#f0d9b6 100%);
+    box-shadow:0 0 18px rgba(255,243,221,.5), inset 0 -4px 0 rgba(180,140,100,.25);
+    animation:demoJump 2.8s cubic-bezier(.36,0,.64,1) infinite;
+  }
+  @keyframes demoJump {
+    0%,7%    { transform:translate(-100px,0)     rotate(-90deg); }
+    20%      { transform:translate(-30px,-104px) rotate(-55deg); }
+    33%,57%  { transform:translate(100px,-40px)  rotate(-90deg); }
+    70%      { transform:translate(30px,-118px)  rotate(-125deg); }
+    83%,100% { transform:translate(-100px,0)     rotate(-90deg); }
+  }
+  /* the face, recycled out of the two ripples: eyes on the outward end (the
+     first node plus its own shadow) and a small smile in front of them */
+  .demo-tap .demo-ripple { display:none; }
+  .demo-tap .demo-ripple:first-child {
+    display:block; inset:auto; left:27px; top:5px; width:5px; height:5px;
+    border:0; border-radius:50%; background:#5a3a1c; opacity:1; animation:none;
+    box-shadow:0 9px 0 #5a3a1c;
+  }
+  .demo-tap .demo-ripple.d2 {
+    display:block; inset:auto; left:36px; top:7px; width:4px; height:8px;
+    border:2px solid #5a3a1c; border-left:0; border-radius:0 8px 8px 0;
+    background:none; opacity:.9; animation:none;
+  }
+
+  /* the finger: the motor's shared assets/svg/finger.svg. It presses just
+     before each launch, then fades out and reappears over the next target —
+     never sliding, because sliding is a gesture this game does not have. */
+  .demo-tap .demo-hand {
+    z-index:4; left:50%; bottom:14px;
+    animation:demoPoint 2.8s ease-in-out infinite;
+  }
+  @keyframes demoPoint {
+    0%       { transform:translate(96px,-58px);  opacity:1; }
+    4%       { transform:translate(96px,-80px);  opacity:1; }
+    9%,30%   { transform:translate(96px,-58px);  opacity:1; }
+    37%      { transform:translate(96px,-58px);  opacity:0; }
+    45%      { transform:translate(-96px,-22px); opacity:0; }
+    50%      { transform:translate(-96px,-22px); opacity:1; }
+    54%      { transform:translate(-96px,-44px); opacity:1; }
+    59%,86%  { transform:translate(-96px,-22px); opacity:1; }
+    92%      { transform:translate(-96px,-22px); opacity:0; }
+    97%      { transform:translate(96px,-58px);  opacity:0; }
+    100%     { transform:translate(96px,-58px);  opacity:1; }
+  }
+  /* no dotted beam here: the arc is the marshmallow's own path */
+  .demo-tap .demo-beam, .demo-tap .demo-arrow { display:none; }
+
+  /* ---- comic callouts (Pop) ----------------------------------------------
+     The catalogue lives in the motor; only the palettes are retuned so a
+     callout burns in cream over the lake's orange. */
+  .pop-score { --fill:linear-gradient(180deg,#ffffff 0%,#fff3dd 46%,#ffd166 100%);
+               --glow:rgba(255,209,102,.8); --ink:#3a1a00; }
+  .pop-combo { --chip:#2a1000; --chip-line:#ffd166;
+               --fill:linear-gradient(180deg,#ffffff 0%,#ffe9c4 44%,#ffb347 76%,#ff7a1a 100%); }
+  .pop-streak { --burst:#ffd166; --ink:#3a1a00;
+                --fill:linear-gradient(180deg,#ffffff 0%,#fff3dd 52%,#ffd166 100%);
+                --glow:rgba(255,209,102,.75); }
+  .pop-ultra  { --fill:linear-gradient(180deg,#fffdf0 0%,#ffd166 40%,#ff7a1a 100%);
+                --glow:rgba(255,122,26,.9); --ink:#2a1000; }
+  .pop-danger { --fill:linear-gradient(180deg,#ffe3c4 0%,#ff7a1a 55%,#e0380a 100%);
+                --glow:rgba(255,80,10,.75); --ink:#2a0800; --band-h:150px; --sz:60px; }
+  /* deliberately smaller than the motor defaults: the player is reading a
+     falling rock through the callout */
+  .pop-streak { --sz:74px; }
+  .pop-combo  { --sz:84px; }
+  .pop-ultra  { --sz:104px; }

@@ -167,12 +167,18 @@
   // --- Sound: WebAudio synth (zero assets) + optional embedded clips ------
   var Sound = (function () {
     var actx = null;
+    /* Muted is a switch, not a volume: the web target's OPTIONS panel flips it
+       and persists it (packages/webshell). A playable never touches it, so it
+       is false for the whole life of a creative. It gates the two leaves —
+       beep() and clip() — and therefore arp() and cue() as well. */
+    var muted = false;
     function ensure() {
       if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
       if (actx && actx.state === "suspended") actx.resume();   // iOS: user gesture
       return actx;
     }
     function beep(freq, dur, type, vol) {
+      if (muted) return;
       var a = ensure(); if (!a) return;
       var o = a.createOscillator(), g = a.createGain(), v = (vol == null ? 0.3 : vol);
       o.type = type || "sine"; o.frequency.value = freq || 440;
@@ -248,6 +254,7 @@
       });
     }
     function clip(name, vol, rate) {
+      if (muted) return;
       var src = ASSETS.sounds[name]; if (!src) return;
       var a = ensure(), buf = buffers[name];
       if (a && buf) {
@@ -279,6 +286,8 @@
     function unlock() { var a = ensure(); decodeAll(); return a; }
     return {
       unlock: unlock, beep: beep, arp: arp, clip: clip, cue: cue,
+      setMuted: function (v) { muted = !!v; },
+      isMuted: function () { return muted; },
       ctx: function () { return actx; },              // no resume: for Music
       buffer: function (name) { return buffers[name] || null; }
     };
@@ -306,6 +315,7 @@
     var TAG_AFTER = 16;           // ticks to wait for the decode before <audio>
     var master = null, timer = null, voices = [], tag = null;
     var playing = false, nextAt = 0, waited = 0, level = 0, fade = 1.6;
+    var muted = false;            // the web target's OPTIONS switch, persisted
     var origin = 0;               // audio-clock time of the track's beat 0
 
     function cfg() {
@@ -363,7 +373,7 @@
     }
     function start() {
       var src = ASSETS.sounds[KEY];
-      if (!src || playing) return;
+      if (!src || playing || muted) return;
       var a = Sound.unlock();                   // context + kicks the decode off
       if (!a) return;
       cfg();
@@ -422,8 +432,19 @@
         if (dyingTag) { try { dyingTag.pause(); } catch (e) {} }
       }, out * 1000 + 100);
     }
+    /* Unlike the sfx switch this one has work to do in both directions: a bed
+       already scheduled has to be torn down, and one turned back on has to be
+       started again — the motor only calls start() when a round begins. */
+    function setMuted(v) {
+      v = !!v;
+      if (v === muted) return;
+      muted = v;
+      if (v) stop(0.25);
+      else start();                       // no-op when the game ships no track
+    }
     return {
       start: start, stop: stop, pause: pause, resume: resume, duck: duck,
+      setMuted: setMuted, isMuted: function () { return muted; },
       unduck: function (secs) { ramp(level, secs == null ? 0.6 : secs); },
       isPlaying: function () { return playing; },
       // Audio-clock time of the track's beat 0 (0 until a pass is scheduled).

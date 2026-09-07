@@ -160,18 +160,55 @@ target it does not list is skipped and reported.
 the one region chosen by the target rather than shared: `packages/platform/web.js`
 replaces `packages/platform/mraid.js`, so there is no MRAID and no store link,
 and `CONFIG.layout.ctaHeight` is zeroed before the first layout — the CTA bar's
-band goes back to `Layout`. On top of that the webshell turns the intro into a
-menu (**PLAY / LEADERBOARD / OPTIONS / HELP**), moves the how-to-play demo into
-the Help panel (the motor's own node, moved not copied, so a SKIN's dressing
-follows it), and rewires the end screen to **PLAY AGAIN** / **MENU**. It reads
-`window.__WEB__`; the motor knows nothing about it. Leaderboard and Options are
-placeholders on purpose — the real ones are `packages/meta` (phase 5).
+band goes back to `Layout`.
+
+On top of that the webshell replaces the playable's intro with **the menu of a
+finished game**, and it is one shape for all thirteen — the two files
+(`menu.css`, `menu.js`) are the template, so a game gets it by listing `web` in
+its `targets` and nothing else:
+
+- **the game's own backdrop** — the painted background it already embeds
+  (`ASSETS.images.bg`, the re-encoded `assets/image/<slug>-background.png`), or,
+  for a game that ships no picture, the gradient its SKIN paints the game view
+  with, read off the page and re-anchored to the 720×1280 frame. Nothing of the
+  world is drawn — no entity, no `Game.reset()` — so a menu cannot break on
+  what a game does outside a round.
+- **the game's own type** — `web.font` in the manifest names one family of
+  `assets/font/` (six, all OFL), which the builder embeds in front of the SKIN
+  with two tokens: `--web-font` and `--web-fw`, the weight to ask for (a
+  single-weight face stays at 400 instead of being smeared into a fake bold).
+  Embedded, never fetched, and playables ship no font at all.
+- **the title, breathing** — the SKIN's own `#intro-title`, wrapped in a node
+  the webshell animates, so a title look that carries its own `transform` (see
+  `lab/game-title.html`) is untouched.
+- **the menu bottom-right**, one entry per line, flush against the right edge:
+  **PLAY / LEADERBOARD / OPTIONS / HELP**. PLAY *is* the motor's `#btn-start`,
+  restyled — which is what keeps `startGame`, the SPACE key and the audio
+  unlock gesture exactly as they were.
+- **the three panels open in that same band**: the title and the scene stay, the
+  menu is swapped out, and a back arrow returns (ESCAPE too).
+- **OPTIONS is real** — music, sound effects and score callouts are switches the
+  motor now carries (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), the
+  language is FR/EN live, and the best score can be wiped (it asks twice). All
+  of it persisted through `Store`.
+- the how-to-play demo moves into the Help panel (the motor's own node, moved
+  not copied, so a SKIN's dressing follows it), and the end screen is rewired to
+  **PLAY AGAIN** / **MENU**.
+
+It reads `window.__WEB__` — a plain list of motor references, never behaviour, so
+the motor knows nothing about the front end. An *online* leaderboard and
+progression are still `packages/meta` (phase 5); the score shown is the one the
+motor has always written on `endRound`.
 
 The web menu is **bilingual FR/EN**: the strings live in `packages/webshell/menu.js`
-and the language is `?lang=` (the site passes its own choice to the iframe), then
-`CONFIG.web.lang`, then the browser. A game overrides any string — its tagline
-included — from a `web.copy` block in its `manifest.json`, which the builder
-injects as `CONFIG.web`; there is no second place to write game copy.
+and the language is the player's own choice in OPTIONS (persisted, and it wins),
+then `?lang=` (the site passes its own choice to the iframe), then
+`CONFIG.web.lang`, then the browser. Changing it rewrites the screen instead of
+reloading it. A game overrides any string — its tagline included — from a
+`web.copy` block in its `manifest.json`, which the builder injects as
+`CONFIG.web`; there is no second place to write game copy, and
+`web.copy.fr.tagline` is where a game's intro sentence is translated, its key
+words and their `<b class="w-…">` classes included.
 
 `packages/frame-web/frame.css` is the third web-only layer: on a window wider
 than the portrait frame it dresses the empty bands and draws a device bezel,
@@ -246,7 +283,9 @@ idea came from.
 
 `lab/` holds standalone HTML tools: a design catalogue or a bench for one piece
 of the motor — `overlay-pop.html` is the `Pop` callout catalogue,
-`icon-card.html` composes an icon. They never ship, and they are the one place
+`icon-card.html` composes an icon, `game-title.html` is a rack of ready-made
+`#intro-title` looks — one pick per game, rendered in that game's own name and
+palette, exported as the CSS block to paste into its SKIN. They never ship, and they are the one place
 in the repo allowed to load a file out of `assets/` by relative path.
 
 Start a new one from **`lab/_template.html`**: a single page, inline CSS and JS,

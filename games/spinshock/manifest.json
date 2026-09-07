@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-tap\">Tape</b> à l’<b class=\"w-hit\">impact</b> pour éjecter les toupies rivales"
+      }
+    },
+    "font": "bungee"
   }
 }

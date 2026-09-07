@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "Tape à l’instant où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>"
+      }
+    },
+    "font": "exo2"
   }
 }

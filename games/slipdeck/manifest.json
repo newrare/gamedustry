@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-bin\">Jette</b> ou <b class=\"w-keep\">garde</b> pour compléter la <b class=\"w-hand\">main de poker</b> distribuée"
+      }
+    },
+    "font": "bebasneue"
   }
 }
