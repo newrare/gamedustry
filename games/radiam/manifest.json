@@ -50,9 +50,17 @@
     }
   },
   "web": {
+    "modes": [
+      "eclipse",
+      "classic"
+    ],
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-turn\">Tourne</b> un anneau, aligne <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>"
+        "tagline": "<b class=\"w-turn\">Tourne</b> un anneau, aligne <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>",
+        "modeClassic": "CLASSIQUE"
+      },
+      "en": {
+        "modeClassic": "CLASSIC"
       }
     },
     "font": "russoone"

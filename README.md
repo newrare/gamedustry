@@ -144,9 +144,9 @@ node tools/build/gen-catalogues.mjs          # the two catalogues, from the mani
 ```
 
 **Build a game for the web** — same motor, same game, no ad glue: the intro
-becomes a menu (PLAY / LEADERBOARD / OPTIONS / HELP), the how-to-play demo moves
-into the Help panel, and the install CTA is gone, so its band goes back to the
-play area:
+becomes a menu (PLAY / LEADERBOARD / OPTIONS / HELP, plus one entry per extra
+mode a game declares in `web.modes`), the how-to-play demo moves into the Help
+panel, and the install CTA is gone, so its band goes back to the play area:
 
 ```bash
 node tools/build/build.mjs --target=web                  # → dist/web/

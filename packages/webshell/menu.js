@@ -22,10 +22,25 @@
                            webshell animates so the game's look is untouched
     a menu, bottom right   PLAY / LEADERBOARD / OPTIONS / HELP, stacked, flush
                            right. PLAY is the motor's own #btn-start, so the
-                           click path and the SPACE key are unchanged.
+                           click path and the SPACE key are unchanged. A game
+                           that declares `web.modes` in its manifest gets one
+                           more entry per extra mode under PLAY (section 1b).
     panels in that band    LEADERBOARD / OPTIONS / HELP swap the menu out
                            without leaving the intro: same title, same scene,
                            a back arrow to come back.
+
+  And what it adds to the ROUND — the two things a playable has no use for
+  (section 5b): MENU and OPTIONS, in the bottom-right corner, where the menu's
+  own entries are and where a thumb already is. The HUD stays the game's, all of
+  it, and nothing about the round moves for them. Either control pauses the
+  round — the clock is the loop's, so freezing the loop freezes it — and opens
+  one card over the frozen world: the same options rows the menu shows, or the
+  one question that throws a run away. ESCAPE is that pause on a keyboard.
+
+  Every display size is then re-measured rather than re-tuned: `fitOne` scales
+  the intro title, the end title and the end score down until they fit the
+  frame, because a game's own face and a French string are both wider than what
+  the motor's px were eyeballed against (section 6b).
 
   The type is the game's own too: `web.font` in the manifest names a family of
   assets/font/ (all OFL), which the builder embeds in front of the SKIN with two
@@ -69,7 +84,11 @@
       resetDone: "Leaderboard cleared",
       controls: "CONTROLS",
       tap: "TAP", hold: "HOLD", drag: "DRAG", swipe: "SWIPE", aim: "AIM",
-      back: "BACK", again: "PLAY AGAIN", menu: "MENU"
+      back: "BACK", again: "PLAY AGAIN", menu: "MENU",
+      toMenu: "Back to the menu", resume: "RESUME",
+      leaveTitle: "LEAVE?",
+      leaveNote: "The round ends here and its score is lost.",
+      leaveYes: "LEAVE"
     },
     fr: {
       play: "JOUER", leaderboard: "CLASSEMENT", options: "OPTIONS", help: "AIDE",
@@ -82,7 +101,11 @@
       resetDone: "Classement effacé",
       controls: "CONTRÔLES",
       tap: "TAPER", hold: "MAINTENIR", drag: "GLISSER", swipe: "BALAYER", aim: "VISER",
-      back: "RETOUR", again: "REJOUER", menu: "MENU"
+      back: "RETOUR", again: "REJOUER", menu: "MENU",
+      toMenu: "Retour au menu", resume: "REPRENDRE",
+      leaveTitle: "QUITTER ?",
+      leaveNote: "La partie s’arrête ici et son score est perdu.",
+      leaveYes: "QUITTER"
     }
   };
 
@@ -153,6 +176,33 @@
     return { get: function (k) { return val[k]; }, set: set, apply: apply };
   })();
 
+  /* ── 1b. game modes ───────────────────────────────────────────────────── */
+
+  /* Most games have one mode and never touch any of this. A game that has
+     several lists them in its manifest, in the order the menu shows them:
+
+       "web": { "modes": ["eclipse", "classic"] }
+
+     The FIRST is the default — it is what PLAY starts, and what the menu goes
+     back to on every return from a round — and each of the others gets an
+     entry of its own right under PLAY, labelled from `web.copy` under
+     `mode<Key>` ("modeClassic") and falling back to the key in caps.
+
+     The contract with the game is one field: the web shell writes the chosen
+     key to CONFIG.mode before the round starts, and the game reads it when it
+     resets (`games/radiam` picks its eclipse there). The motor knows nothing
+     about modes, and a game with no `web.modes` never sees the field at all. */
+  var MODES = (CONFIG.web && CONFIG.web.modes) || [];
+
+  function modeCopyKey(name) {
+    return "mode" + name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  /* PLAY, the SPACE key and PLAY AGAIN all start whatever is armed, so the
+     default is armed on arrival at the menu rather than on a click: there is
+     then no path that can launch a mode the player did not pick. */
+  function armMode(name) { if (MODES.length) CONFIG.mode = name; }
+
   /* ── 2. dom helpers ───────────────────────────────────────────────────── */
 
   function $(id) { return document.getElementById(id); }
@@ -173,7 +223,9 @@
     sfx:   '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
     pops:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
     lang:  '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
-    reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>'
+    reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+    home:  '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    gear:  '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
   };
   function icon(name, cls) {
     return '<svg class="' + (cls || "ico") + '" viewBox="0 0 24 24" fill="none" ' +
@@ -271,6 +323,17 @@
     start.textContent = COPY.play;
     items.push({ node: start, key: "play" });
     menu.appendChild(start);
+
+    /* The extra modes, one entry each, under PLAY: they arm their own key and
+       then take the very same start path, so the audio unlock still happens
+       inside the click that asked for a round. */
+    MODES.slice(1).forEach(function (name) {
+      var key = modeCopyKey(name);
+      var b = el("button", "web-item web-mode", COPY[key] || name.toUpperCase());
+      b.addEventListener("click", function () { armMode(name); W.start(); });
+      items.push({ node: b, key: key, alt: name.toUpperCase() });
+      menu.appendChild(b);
+    });
 
     [["scores", "leaderboard"], ["options", "options"], ["help", "help"]]
       .forEach(function (entry) {
@@ -401,6 +464,18 @@
     return b;
   }
 
+  /* The four switches, and the wipe only where it belongs. The same rows serve
+     the menu's OPTIONS and the card that opens over a paused round (section
+     5b) — one options screen, reached from two places — but erasing the
+     leaderboard mid-round is not an option a player is looking for there. */
+  function fillOptions(box, withReset) {
+    row(box, "music", COPY.music, toggle("music"));
+    row(box, "sfx",   COPY.sfx,   toggle("sfx"));
+    row(box, "pops",  COPY.pops,  toggle("pops"));
+    row(box, "lang",  COPY.language, langPair());
+    if (withReset) box.appendChild(resetButton());
+  }
+
   var PANELS = {
     scores: {
       title: function () { return COPY.scoresTitle; },
@@ -413,13 +488,7 @@
     },
     options: {
       title: function () { return COPY.optionsTitle; },
-      fill: function (box) {
-        row(box, "music", COPY.music, toggle("music"));
-        row(box, "sfx",   COPY.sfx,   toggle("sfx"));
-        row(box, "pops",  COPY.pops,  toggle("pops"));
-        row(box, "lang",  COPY.language, langPair());
-        box.appendChild(resetButton());
-      }
+      fill: function (box) { fillOptions(box, true); }
     },
     help: {
       title: function () { return COPY.helpTitle; },
@@ -435,6 +504,145 @@
     }
   };
 
+  /* ── 5b. the game view: leave, and the options ────────────────────────── */
+
+  /* Two controls in the bottom-right corner of a round, and they are the whole
+     difference between a playable and a finished game: a playable has nowhere
+     to go and nothing to configure — the round IS the ad — while a game the
+     player owns must let them out and let them turn the music off without
+     finishing first.
+
+     Not in the top band: the HUD is the game's, all of it, and the thirteen
+     fill it differently. The corner is where the menu's own entries are, so
+     leaving a round and coming back stay on the same side of the screen, and
+     nothing about the round has to move to make room.
+
+     Either control PAUSES the round first. The clock is the loop's — Round.tick
+     is called from frameUpdate — so freezing the loop freezes the round, the
+     world and the timer in one call, and the game's own update never runs
+     underneath an open card. */
+  var ctlBar, ctlMenu, ctlOptions;
+  var pauseBox, pauseTitle, pauseBody, pauseKind = null, paused = false;
+
+  function buildControls() {
+    ctlBar = el("div"); ctlBar.id = "web-ctls";
+    ctlBar.hidden = true;                        // a round is the only time it shows
+
+    ctlMenu = el("button", "web-ctl", icon("home"));
+    ctlMenu.addEventListener("click", function () { openPause("leave"); });
+
+    ctlOptions = el("button", "web-ctl", icon("gear"));
+    ctlOptions.addEventListener("click", function () { openPause("options"); });
+
+    ctlBar.appendChild(ctlMenu);
+    ctlBar.appendChild(ctlOptions);
+    labelControls();
+    $("frame").appendChild(ctlBar);
+  }
+
+  function labelControls() {
+    if (ctlMenu) ctlMenu.setAttribute("aria-label", COPY.toMenu);
+    if (ctlOptions) ctlOptions.setAttribute("aria-label", COPY.options);
+  }
+
+  /* One card over the frozen world, in the head + body the intro's panels
+     already define: there is one panel design in this shell, not two. */
+  function buildPause() {
+    pauseBox = el("div"); pauseBox.id = "web-pause";
+    var card = el("div", "web-pcard");
+    var headRow = el("div", "web-phead");
+    var back = el("button", "web-back", icon("back", "back-ico"));
+    back.setAttribute("aria-label", COPY.resume);
+    back.addEventListener("click", closePause);
+    pauseTitle = el("h2", "web-ptitle");
+    headRow.appendChild(back);
+    headRow.appendChild(pauseTitle);
+    pauseBody = el("div", "web-pbody");
+    card.appendChild(headRow);
+    card.appendChild(pauseBody);
+    pauseBox.appendChild(card);
+    $("frame").appendChild(pauseBox);
+  }
+
+  /* A pair of wide buttons under the body — RESUME alone for the options,
+     RESUME / LEAVE for the question that loses a run. */
+  function actions(box, list) {
+    var bar = el("div", "web-actions");
+    for (var i = 0; i < list.length; i++) {
+      var b = el("button", "web-btn " + list[i][1], list[i][0]);
+      b.addEventListener("click", list[i][2]);
+      bar.appendChild(b);
+    }
+    box.appendChild(bar);
+  }
+
+  function openPause(kind) {
+    if (W.state() !== "playing") return;
+    pause();
+    pauseKind = kind;
+    pauseTitle.textContent = kind === "leave" ? COPY.leaveTitle : COPY.optionsTitle;
+    pauseBody.innerHTML = "";
+    if (kind === "leave") {
+      pauseBody.appendChild(el("div", "web-note", COPY.leaveNote));
+      actions(pauseBody, [[COPY.resume, "go", closePause], [COPY.leaveYes, "stop", leave]]);
+    } else {
+      fillOptions(pauseBody, false);
+      actions(pauseBody, [[COPY.resume, "go", closePause]]);
+    }
+    pauseBox.classList.add("on");
+  }
+
+  function closePause() {
+    if (!pauseKind) return;
+    pauseKind = null;
+    pauseBox.classList.remove("on");
+    resume();
+  }
+
+  /* The card goes with the round: time up, game over or a leave all land on a
+     state change, and by then the loop is already stopped — so this clears the
+     flags and the card without resuming anything. */
+  function dropPause() {
+    pauseKind = null;
+    paused = false;
+    if (pauseBox) pauseBox.classList.remove("on");
+  }
+
+  function pause() {
+    if (paused) return;
+    paused = true;
+    W.Loop.pause();
+    W.Music.duck(0.35, 0.25);      // the bed stays, quietly: coming back is not a restart
+  }
+
+  function resume() {
+    if (!paused) return;
+    paused = false;
+    W.Loop.resume();
+    W.Music.unduck();
+  }
+
+  /* Leaving is the one path that throws a round away, so the score is not
+     written: endRound is what records a best, and it is deliberately not
+     called here. The state hook does the rest — the card, the world and the
+     armed mode all reset on the way into the menu. */
+  function leave() {
+    W.Loop.stop();
+    W.Round.stop();
+    W.Music.unduck();
+    W.setState("intro");
+  }
+
+  /* The motor pauses the loop when the tab goes away and resumes it when it
+     comes back (packages/platform/web.js, and the engine itself), which would
+     un-pause a round the player left frozen behind a card. This listener is
+     registered last, so it has the last word. */
+  function guardVisibility() {
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && paused) W.Loop.pause();
+    });
+  }
+
   /* ── 6. language, live ────────────────────────────────────────────────── */
 
   /* Changing the language rewrites what is on screen instead of reloading: the
@@ -448,10 +656,72 @@
     W.Store.set(LANG_KEY, code);
     document.documentElement.lang = code;
 
-    for (var i = 0; i < items.length; i++) items[i].node.textContent = COPY[items[i].key];
+    for (var i = 0; i < items.length; i++)
+      items[i].node.textContent = COPY[items[i].key] || items[i].alt;
     if (COPY.tagline) $("intro-tagline").innerHTML = COPY.tagline;
     labelEnd();
+    labelControls();
     if (open) openPanel(open);                 // rebuild it in the new language
+    if (pauseKind) openPause(pauseKind);       // ...the paused card included
+  }
+
+  /* ── 6b. fitting the display type ─────────────────────────────────────── */
+
+  /* The motor's display sizes were set against the system stack. A game's own
+     face changes every width — Orbitron's digits are 24% wider than -apple-
+     system's, Bungee's caps 7% wider again, Bebas Neue's 40% narrower — and the
+     strings themselves are not fixed either: "OUT OF PULSES!" is 914px at 96px
+     in Orbitron against 624px of room, and a six-digit score is wider than the
+     five-digit one the size was eyeballed on. Two of these titles already
+     wrapped in the playable, before any font was added.
+
+     So the web front end measures and scales DOWN, never up. Three nodes, one
+     rule, and no size to re-tune per game, per language or per face. The nodes
+     are `nowrap` in the stylesheet, which is what makes `scrollWidth` the true
+     one-line width — and what makes a title that is still too wide overflow
+     visibly instead of silently becoming two lines. */
+  var FIT = [
+    { id: "intro-title", room: 632, min: 44 },   // #web-head is inset 44px
+    { id: "eo-title",    room: 624, min: 44 },   // .screen padding is 48px
+    { id: "eo-score",    room: 624, min: 60 }
+  ];
+
+  function fitOne(spec) {
+    var n = $(spec.id);
+    if (!n) return;
+    n.style.fontSize = "";                       // back to the size the CSS asks for
+    var size = parseFloat(window.getComputedStyle(n).fontSize);
+    if (!size || !n.scrollWidth) return;
+    /* Shrink, measure, repeat. One pass would be enough if width scaled with
+       size, and it does not: `letter-spacing` is a fixed px value, so 14 caps
+       of "OUT OF PULSES!" carry 56px of tracking whatever the size. Two or
+       three passes converge; six is the ceiling, `min` the floor. */
+    for (var i = 0; i < 6 && n.scrollWidth > spec.room && size > spec.min; i++) {
+      size = Math.max(spec.min, Math.floor(size * spec.room / n.scrollWidth) - 1);
+      n.style.fontSize = size + "px";
+    }
+  }
+
+  function fitAll() { for (var i = 0; i < FIT.length; i++) fitOne(FIT[i]); }
+
+  /* `endRound` calls `setState("end")` BEFORE `EndScreen.show()`, and the score
+     then counts up over ~450 ms, so one fit on the state change would measure
+     the previous round. One observer, connected on every arrival at the end
+     screen and dropped once the reveal is over, covers the whole thing. */
+  var fitObs = null, fitTimer = null, fitOff = null;
+
+  function fitSoon() { clearTimeout(fitTimer); fitTimer = setTimeout(fitAll, 60); }
+
+  function fitEndScreen() {
+    fitSoon();
+    if (!window.MutationObserver) return;
+    if (!fitObs) fitObs = new MutationObserver(fitSoon);
+    else fitObs.disconnect();
+    var opt = { childList: true, characterData: true, subtree: true };
+    fitObs.observe($("eo-title"), opt);
+    fitObs.observe($("eo-score"), opt);
+    clearTimeout(fitOff);
+    fitOff = setTimeout(function () { fitObs.disconnect(); }, 6000);
   }
 
   /* ── 7. the end screen ────────────────────────────────────────────────── */
@@ -484,8 +754,12 @@
   function bindKeys() {
     window.addEventListener("keydown", function (e) {
       var esc = e.key === "Escape" || e.keyCode === 27;
+      if (esc && pauseKind) { e.preventDefault(); closePause(); return; }
       if (esc && open) { e.preventDefault(); closePanel(); return; }
-      if (!open) return;
+      /* ESCAPE during a round is the pause every game has: it opens the
+         options over the frozen world, and a second press resumes. */
+      if (esc && W.state() === "playing") { e.preventDefault(); openPause("options"); return; }
+      if (!open && !pauseKind) return;
       e.preventDefault();
       e.stopPropagation();
     }, true);
@@ -500,8 +774,11 @@
     Settings.apply();
     buildIntro();
     dressBackground();
+    buildControls();
+    buildPause();
     rewireEnd();
     bindKeys();
+    guardVisibility();
 
     /* The tagline is the motor's, written in English in CONFIG.tagline; a game
        that ships a translated one in its manifest (web.copy.<lang>.tagline)
@@ -513,11 +790,27 @@
        round — closes whatever panel was open and wipes the last frame of the
        world off the canvas, so the background is what shows through. */
     W.onState(function (state) {
+      /* The controls belong to a round, and so does the card over it: both go
+         away on any other screen, whatever ended the round. */
+      ctlBar.hidden = state !== "playing";
+      if (state !== "playing") dropPause();
+      if (state === "end") { fitEndScreen(); return; }
       if (state !== "intro") return;
       closePanel();
+      armMode(MODES[0]);         // ...and PLAY is the default mode again
       W.clearWorld();
     });
+    armMode(MODES[0]);
     if (W.state() === "intro") W.clearWorld();
+
+    /* The title is sized off the game's own face, so it can only be measured
+       once that face is really there: a data-URI @font-face is decoded
+       asynchronously like any other. Fit now for the fallback metrics, and
+       again when the real one lands. */
+    fitAll();
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(fitAll);
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);

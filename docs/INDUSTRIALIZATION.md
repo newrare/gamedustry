@@ -229,12 +229,19 @@ game's own painted backdrop behind it (`assets/image/`, or its SKIN's gradient
 when it has no art), its own typeface out of the OFL pack in `assets/font/`, the
 SKIN's title breathing above it, PLAY / LEADERBOARD / OPTIONS / HELP stacked
 against the right edge, and three panels that open in that same band without
-leaving the screen — the how-to-play demo among them. OPTIONS is the local-only
+leaving the screen — the how-to-play demo among them. A game with more than one
+mode lists them in `web.modes` and gets one entry per extra mode under PLAY;
+the shell writes the chosen key to `CONFIG.mode` and the game reads it when it
+resets (`radiam`: PLAY is its endless eclipse, CLASSIC the timed dial). OPTIONS is the local-only
 first slice of the meta layer: music, sfx and callout switches
 (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), FR/EN live, and a
-best-score reset, all persisted through `Store`. It reads a `window.__WEB__`
-handle injected into the bootstrap, so the motor stays unaware of it and the
-playable artifacts rebuild byte-identically.
+best-score reset, all persisted through `Store`. The round itself gets the two
+controls a playable has no use for — MENU and OPTIONS, in the bottom-right
+corner of the round (Delta 4). Either one pauses the loop,
+which freezes the world and the clock together, and opens one card over it;
+leaving does not call `endRound`, so an abandoned round writes no score. It reads a
+`window.__WEB__` handle injected into the bootstrap, so the motor stays unaware
+of it and the playable artifacts rebuild byte-identically.
 
 The builder now ships that in two shapes, chosen with `--dest`. `--dest=site`
 (the default) writes the split build below; `--dest=itch` writes one
@@ -358,6 +365,36 @@ ship. `packages/platform/web.js` zeroes `CONFIG.layout.ctaHeight` before the
 first layout, so the band goes back to `Layout`; the webshell hides the bar and
 rewires the end screen's install button to PLAY AGAIN and its replay link to
 MENU. Nothing in the motor branches on a target.
+
+### Delta 4 — a round with no way out — **done**
+
+A playable never needs one: the round *is* the ad, it lasts forty seconds, and
+the only button that matters is the install CTA. A game the player owns needs
+both a way back to the menu and a way to turn the music off without finishing
+first — and it needs them where a player looks, at the top of the screen.
+
+Neither shape of "in the HUD" worked. A row of their own had to come out of
+`CONFIG.layout.hudHeight`, which moves every game's play area for two buttons;
+splitting the band 80/20 left the game's HUD squeezed and the score off-centre.
+The HUD is the game's, all of it — a level pill, a timer, a lives count, a big
+score — and the thirteen fill it differently.
+
+So they sit in the **bottom-right corner** instead (`#web-ctls`, in
+`packages/webshell/menu.css`): the corner the web menu's own entries come out
+of, so leaving a round and coming back stay on the same side of the screen, and
+the corner a thumb is already on. `--hud-h`, `--cta-h` and `Layout` are all
+untouched. They do sit over the play area, which is why they stay small and
+dark rather than becoming a bar: a 58 design px circle with an 82 px
+transparent hit area — a real thumb target on a phone without a 44 pt disc over
+the game.
+
+MENU and OPTIONS both pause first, and the pause is one call: the clock is
+`Loop`'s (`Round.tick` runs inside `frameUpdate`), so freezing the loop freezes
+the world, the timer and the game's update together, and the music is ducked
+rather than stopped. The webshell re-pauses after a tab comes back, because the
+motor's own visibility handler would otherwise resume a round the player left
+frozen behind a card. Leaving does not call `endRound`: an abandoned round
+writes no best score. ESCAPE is that pause on a keyboard.
 
 ## Tooling
 

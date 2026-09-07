@@ -178,6 +178,13 @@ its `targets` and nothing else:
   with two tokens: `--web-font` and `--web-fw`, the weight to ask for (a
   single-weight face stays at 400 instead of being smeared into a fake bold).
   Embedded, never fetched, and playables ship no font at all.
+- **the display sizes are measured, not re-tuned** — the intro title, the end
+  title and the end score are `nowrap` and scaled down until they fit the
+  frame. The motor's px were eyeballed against the system stack, and a face
+  changes every width (Orbitron's digits +24%, Bebas Neue −40%): "OUT OF
+  PULSES!" is 914px of a 624px band at 96px in Orbitron. The fit iterates
+  because `letter-spacing` is a fixed px value, so width does not scale with
+  size. Nothing to hand-tune per game, per language or per face.
 - **the title, breathing** — the SKIN's own `#intro-title`, wrapped in a node
   the webshell animates, so a title look that carries its own `transform` (see
   `lab/game-title.html`) is untouched.
@@ -185,12 +192,34 @@ its `targets` and nothing else:
   **PLAY / LEADERBOARD / OPTIONS / HELP**. PLAY *is* the motor's `#btn-start`,
   restyled — which is what keeps `startGame`, the SPACE key and the audio
   unlock gesture exactly as they were.
+- **a game with several modes gets one more entry per mode**, under PLAY, from
+  `web.modes` in its manifest — an ordered list of keys whose **first is the
+  default**. The shell writes the chosen key to `CONFIG.mode` and starts the
+  round the usual way; the game reads it when it resets, and the menu re-arms
+  the default on every return, so no path can launch a mode nobody picked. The
+  label comes from `web.copy` under `mode<Key>` (`modeClassic`), the key in
+  caps otherwise. `games/radiam` is the reference: PLAY is its endless
+  `eclipse`, CLASSIC is the timed dial (`web.modes: ["eclipse", "classic"]`).
+  The motor knows nothing about modes, and a game that declares none never
+  sees the field.
 - **the three panels open in that same band**: the title and the scene stay, the
   menu is swapped out, and a back arrow returns (ESCAPE too).
 - **OPTIONS is real** — music, sound effects and score callouts are switches the
   motor now carries (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), the
   language is FR/EN live, and the best score can be wiped (it asks twice). All
   of it persisted through `Store`.
+- **the round itself gets two controls**, MENU and OPTIONS, in the
+  **bottom-right corner** (`#web-ctls`). They are the difference between a
+  playable, where the round *is* the ad, and a game the player owns. Not in the
+  top band: the HUD is the game's, all of it, and the thirteen fill it
+  differently — the corner is where the menu's own entries are and where a thumb
+  already is, and nothing about the round has to move to make room (`--hud-h`,
+  `--cta-h` and `Layout` are all untouched). Either control **pauses the round**
+  (the clock is `Loop`'s, so freezing the loop freezes the world, the timer and
+  the game's update at once, and a tab coming back cannot un-pause it) and opens
+  one card over the frozen world: the same options rows, or the one question that
+  throws a run away — leaving does not call `endRound`, so an abandoned round
+  writes no score. ESCAPE is that pause on a keyboard.
 - the how-to-play demo moves into the Help panel (the motor's own node, moved
   not copied, so a SKIN's dressing follows it), and the end screen is rewired to
   **PLAY AGAIN** / **MENU**.

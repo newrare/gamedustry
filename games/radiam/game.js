@@ -105,7 +105,8 @@
       colours:  ["#ff4d6d", "#ffc23d", "#35e0ff", "#8b6cff", "#3ff0a0"],
       bagPer: 3,                     // beads of each hue in a plate's refill bag
       startColours: 4,               // hues in play at the start...
-      colourUpAt: 22,                // ...and the second the fifth joins them
+      colourUpAt: 22,                // ...the second the fifth joins a CLASSIC round
+      colourUpLevel: 10,             // ...and the level it joins an eclipse one
 
       /* Supers. A move that pays two rays at once, or a chain reaching x4,
          upgrades one of the refills already flying in: two rays / x4 give a
@@ -133,10 +134,17 @@
       comboMax:   8,
       comboWindow: 1.0,              // seconds a chain survives without a pop
       comboBonus: 20,                // extra per combo step, on every 4th
-      /* Two or three rays in one move multiply what that move already paid,
-         by ray count — so the skill beat scales with the chain instead of
-         handing out the same flat bonus at x1 and at x8. */
-      multiMult: [1, 2.5, 5],
+      /* One cascade can pay three rays in a third of a second, as three
+         refills land one after another. Measured on the headless pilot: it
+         stacked COMBO on COMBO five times in a 240 s run. The chain is ONE
+         event, so the callout is rate-limited and the score counter carries
+         what happens in between. */
+      comboCall:  0.4,               // seconds between two COMBO callouts
+      /* Several rays in one move multiply what that move already paid, by ray
+         count — so the skill beat scales with the chain instead of handing out
+         the same flat bonus at x1 and at x8. The fourth tier is the NOVA
+         callout's: four rays at once is the rarest move on this dial. */
+      multiMult: [1, 2.5, 5, 8],
 
       wire:  "#6f5ea8",              // the whole machine is drawn in this
       plate: "#3d2c85",              // the housing track under the beads
@@ -264,6 +272,7 @@
 
     // Run state.
     var score, matches, multis, supers, cleared, combo, bestCombo, comboLeft, palette;
+    var comboCallAt;               // last COMBO callout, to coalesce a cascade
     var charge;                     // rays banked toward the next free CHARGE
     var blastRun, blastGain, bestBlast;   // the power chain currently burning
     var best, clock, grab, touched, flyers, blobs, flares, resting, armed;
@@ -644,13 +653,22 @@
        that ray over and over, bank the hub's meter, and spend the CHARGE it
        buys to unzip a plate — a ring cleared is three rays of daylight back.
 
-       OFF unless the URL asks for it, and it owns exactly ONE hook into the
-       rules: `dead()`, read by rayColour. Since scan() feeds both the armed
-       preview and the payout, the shadow can never light a ray it would then
-       refuse to pay.
+       It owns exactly ONE hook into the rules: `dead()`, read by rayColour.
+       Since scan() feeds both the armed preview and the payout, the shadow can
+       never light a ray it would then refuse to pay.
 
-       URL flags — desk only, nothing is on by default:
-         ?mode=eclipse            the endless mode
+       WHICH MODE A ROUND RUNS IN is read at the top of Game.reset, from
+       CONFIG.mode — so the two live side by side in one build and a round can
+       switch between them. The web menu writes it (PLAY is the eclipse, the
+       CLASSIC entry is the timed dial; see packages/webshell/menu.js and
+       `web.modes` in the manifest); with nobody writing it, which is every
+       playable build, the URL flag below decides and the dial is timed. The
+       clock is the other half of the switch: this mode zeroes
+       CONFIG.gameSeconds and takes the timer pill for its own two readouts,
+       and `arm` puts both back for a CLASSIC round.
+
+       URL flags — desk only, and the tuning ones need the mode flag:
+         ?mode=eclipse            the endless mode, without the menu
          &ecl=<rate>,<step>       rays/s at level 1, and the per-level factor
          &push=<dbl>,<tpl>,<ring> ground given back, in rays
          &lines=<n>               rays popped per level
@@ -670,30 +688,42 @@
 
       // Reading location can THROW in a sandboxed ad iframe — same guard the
       // motor puts around its own ?perf= flag.
-      var on = false, start = 0;
+      var flag = false, start = 0;
       try {
         var q = location.search + location.hash;
-        on = /[?&#]mode=eclipse\b/.test(q);
+        flag = /[?&#]mode=eclipse\b/.test(q);
         var m = /[?&#]ecl=([0-9.]+),([0-9.]+)/.exec(q);
-        if (on && m) { GROW = +m[1]; STEP = +m[2]; }
+        if (flag && m) { GROW = +m[1]; STEP = +m[2]; }
         var g = /[?&#]push=([0-9.]+),([0-9.]+),([0-9.]+)/.exec(q);
-        if (on && g) { PUSH.multi = +g[1]; PUSH.triple = +g[2]; PUSH.ring = +g[3]; }
+        if (flag && g) { PUSH.multi = +g[1]; PUSH.triple = +g[2]; PUSH.ring = +g[3]; }
         var l = /[?&#]lines=([0-9]+)/.exec(q);
-        if (on && l) LINES = Math.max(1, +l[1]);
+        if (flag && l) LINES = Math.max(1, +l[1]);
         var c = /[?&#]cover=([0-9.]+)/.exec(q);
-        if (on && c) start = Math.min(N - 0.01, +c[1]);
+        if (flag && c) start = Math.min(N - 0.01, +c[1]);
       } catch (e) {}
 
-      /* No clock, so the two things CONFIG says about one are wrong here. That
-         frees both HUD pills for what this mode is actually played on: the
-         level, and how many rays are still lit. */
-      if (on) { CONFIG.gameSeconds = 0; CONFIG.hud.timer = false; }
+      /* The timed dial's own two numbers, kept as authored: a player who comes
+         back to CLASSIC after an eclipse run has to get its clock back, and
+         this module is the only thing that ever touches them. */
+      var SECONDS = CONFIG.gameSeconds, TIMER = CONFIG.hud.timer;
+      var on = false;
 
       var cover = 0, free = N, freed = false, over = false;
       var lines = 0, level = 1, hold = 0;
       var flash = 0, shove = 0, shown = -1;
       var shade0 = [], hits = [0, 0, 0], missed = [], misses = [];
       var ink = null, inkR = 0;
+
+      /* Called at the very top of Game.reset — BEFORE layout() bakes the ink
+         and before the motor's Round.reset reads the clock, which is the whole
+         reason it is not simply part of reset() below. With no clock the mode
+         frees both HUD pills for what it is actually played on: the level, and
+         how many rays are still lit. */
+      function arm() {
+        on = api.on = CONFIG.mode ? CONFIG.mode === "eclipse" : flag;
+        CONFIG.gameSeconds = on ? 0 : SECONDS;
+        CONFIG.hud.timer = on ? false : TIMER;
+      }
 
       function reset() {
         cover = start; free = N; freed = false; over = false;
@@ -702,7 +732,7 @@
         hits[0] = hits[1] = hits[2] = 0;
         misses.length = 0;
         for (var s = 0; s < N; s++) { shade0[s] = false; missed[s] = -9; }
-        if (on) { recount(); HUD.setLeft(level, "LEVEL"); }
+        if (on) { recount(); HUD.setLeft(level, "LEVEL"); HUD.setRight(lines, "RAYS"); }
       }
 
       function rate() { return GROW * Math.pow(STEP, level - 1); }
@@ -796,9 +826,12 @@
           if (!now) f++;
         }
         free = f;
+        /* The right pill counts the rays FUSED since the round began — that is
+           line()'s job. What is LEFT is still watched here, because crossing
+           the warning threshold is this mode's one alarm, and it must fire
+           once per crossing rather than once per frame. */
         if (f !== shown) {
           shown = f;
-          HUD.setRight(f, "RAYS", f <= WARN ? "warn" : "");
           if (f <= WARN && f > 0) {
             Overlay.vignette(D.colours[0], 0.85, 520);
             Sound.clip("charge", 0.4, 0.7);
@@ -821,15 +854,19 @@
         if (free <= 0 && !over) { over = true; eclipsed(); }
       }
 
-      /* Ground given back. It is announced in the clear band under the HUD —
-         the dial is where the player is looking, and the shadow's own recoil
-         is already drawn there. */
+      /* Ground given back. `word` is optional, and usually absent: a multi
+         ray already announces itself in the clear band under the HUD, and two
+         pops in that band on the same beat is one too many to read. The ink
+         recoiling is the tell — it is drawn on the dial the player is looking
+         at, which no callout can beat. Only the ring clear, which the player
+         SPENT a super on and could otherwise mistake for the blast's own
+         payout, says its name. */
       function give(rays, word) {
         if (!on || over) return;
         cover = Math.max(0, cover - rays);
         flash = 0.7; shove = 1;
         recount();
-        Pop.show("bonus", { word: word, sub: "+" + rays + " RAYS", at: "hudUnder" });
+        if (word) Pop.show("bonus", { word: word, sub: "+" + rays + " RAYS", at: "hudUnder" });
         Sound.clip("charge", 0.55, 1.15);
         Fx.flash("#8b6cff", 0.16, 1.6);
       }
@@ -842,13 +879,14 @@
       function multi(n) {
         if (!on) return;
         hold = Math.max(hold, HOLD);
-        give(n > 2 ? PUSH.triple : PUSH.multi, n > 2 ? "TRIPLE RAY" : "DOUBLE RAY");
+        give(n > 2 ? PUSH.triple : PUSH.multi);     // silent: pop() named it
       }
 
       // Tetris's clock: the lines are the rays, and only they move the level.
       function line() {
         if (!on) return;
         lines++;
+        HUD.setRight(lines, "RAYS");          // the round's running total
         if (lines % LINES) return;
         level++;
         HUD.setLeft(level, "LEVEL");
@@ -1011,18 +1049,21 @@
          move under way still finishes and still pays — the round is over, but
          it is not cut off mid-gesture. */
       function eclipsed() {
-        Pop.show("danger", { word: "ECLIPSED", at: "hudUnder" });
+        Pop.show("danger", { word: CONFIG.copy.eclipsed, at: "hudUnder" });
         Fx.shake(20, 0.5);
         onTimeUp();
       }
 
-      return { on: on, build: build, reset: reset, update: update, dead: dead,
-               sink: sink, miss: miss,
+      /* `on` is a property rather than an accessor because every call site
+         reads `Eclipse.on` fresh, and `arm` rewrites it once per round. */
+      var api = { on: false, arm: arm, build: build, reset: reset, update: update,
+               dead: dead, sink: sink, miss: miss,
                uncovered: uncovered, single: single, multi: multi, line: line,
                bead: bead, blast: blast, draw: draw,
                level: function () { return level; },
                lines: function () { return lines; },
                survived: function () { return Math.round(clock); } };
+      return api;
     })();
 
     /* The colour a ray would pay in, or -1 if it would not. A NOVA is wild:
@@ -1051,9 +1092,9 @@
       return hits;
     }
 
-    function resolve() {
+    function resolve(cascade) {
       var hits = scan(), s;
-      if (hits.length) pop(hits);
+      if (hits.length) pop(hits, cascade);
       // ...and whatever the shadow just swallowed, so the board never simply
       // says nothing when the player had it right.
       if (Eclipse.on)
@@ -1107,7 +1148,7 @@
     function flushBlast() {
       if (blastRun > bestBlast) bestBlast = blastRun;
       if (blastRun >= D.blastCall)
-        Pop.show("score", { word: "+" + blastGain, sub: blastRun + " BEADS",
+        Pop.show("combo", { word: "BLAST", sub: "+" + blastGain, cls: "blast",
                             at: { x: cx, y: cy } });
       blastRun = 0; blastGain = 0;
       Eclipse.blast();                   // a plate emptied whole buys daylight
@@ -1131,10 +1172,8 @@
       supers++;
       Sound.clip("blast", 0.6);
       Fx.shake(15, 0.36);
-      // The wave IS the spectacle and the score counter races up on its own,
-      // so the callout stays a chip: this fires every few moves, and a
-      // full-frame flash on a beat that frequent reads as the game hitching.
-      Pop.show("combo", { word: "RING BLAST", cls: "blast", at: "hudUnder" });
+      // No callout of its own: the wave IS the spectacle, and flushBlast pays
+      // the whole chain out under one BLAST once the last fuse has burnt.
     }
 
     /* NOVA — every bead of the ray's colour goes, the wave reaching each one at
@@ -1157,9 +1196,8 @@
       Fx.shake(18, 0.42);
       Fx.flash("#ffffff", 0.28, 2.2);
       Overlay.vignette(D.colours[colour], 0.9, 520);
-      // Bottom band: the blast already owns the dial, so the callout stays
-      // clear of it.
-      Pop.show("ultra", { word: "NOVA", at: "bottom" });
+      // No callout: NOVA is the name of a FOUR-RAY move now (see pop), and the
+      // payout of the chain this starts is announced once by flushBlast.
     }
 
     /* Earning a super. It is not dropped on the board out of nowhere: one of
@@ -1192,8 +1230,18 @@
 
     /* Everything a paid ray does: empty its three housings, set off whatever
        supers were sitting on it, throw the juice and move the chain on. Two
-       rays in one move is the skill beat of the game, so it earns a super. */
-    function pop(hits) {
+       rays in one move is the skill beat of the game, so it earns a super.
+
+       `cascade` is true when the board paid on its own — a refill landing on a
+       ray of its own, seconds after the finger left the plate. It is the one
+       thing a callout has to separate from a move, because the player did not
+       aim it, so it reads as the machine paying them back: those pops say
+       COMBO, whatever the ray count. ONE callout leaves this function, in the
+       clear band under the HUD, and only a lone deliberate ray gets the
+       positional `+pts` on the dial instead — three of those under a TRIPLE
+       RAY banner is three things to read on the beat the player is looking at
+       the beads. */
+    function pop(hits, cascade) {
       var i, j, s, k, r, a, v, hex, colour = 0, pts, gained = 0;
       for (i = 0; i < hits.length; i++) {
         s = hits[i];
@@ -1214,8 +1262,11 @@
           fireSuper(v, r, k, colour);          // the ray's colour, not the bead's
         }
         flares.push({ s: s, hex: hex, life: D.flareTime });
-        a = s * SLOT;
-        Pop.show("score", { word: "+" + pts, at: { x: px(a, rings[1].rad), y: py(a, rings[1].rad) } });
+        if (hits.length === 1 && !cascade) {
+          a = s * SLOT;
+          Pop.show("score", { word: "+" + pts,
+                              at: { x: px(a, rings[1].rad), y: py(a, rings[1].rad) } });
+        }
         Sound.clip("pop", 0.5, 1 + Math.min(combo, 8) * 0.05);
       }
 
@@ -1226,11 +1277,6 @@
         var mult = D.multiMult[Math.min(hits.length, D.multiMult.length) - 1];
         var bonus = Math.round(gained * (mult - 1));
         gained += bonus;
-        // Two rays is frequent enough that it must not blanket the dial the
-        // player is still turning: it goes in the clear band under the HUD.
-        Pop.show(hits.length > 2 ? "ribbon" : "bonus", {
-          word: (hits.length > 2 ? "TRIPLE RAY" : "DOUBLE RAY") + " x" + mult,
-          sub: "+" + bonus, at: "hudUnder" });
         Sound.clip("multi", 0.55);
         Fx.shake(12, 0.3);
         Overlay.vignette(D.colours[colour], 0.75, 420);
@@ -1245,6 +1291,23 @@
       HUD.setScore(score);
       HUD.punch(combo >= 8 ? "#ffd43b" : D.colours[colour]);
 
+      /* The move's one callout, named after what the player did: a cascade is
+         COMBO, two rays a DOUBLE, three a TRIPLE, four or more a NOVA. Two
+         rays is frequent enough that it must not blanket the dial the finger
+         is still on, so everything but the four-ray beat stays in the clear
+         band under the HUD. */
+      if (cascade) {
+        if (clock - comboCallAt >= D.comboCall) {
+          comboCallAt = clock;
+          Pop.show("combo", { word: "COMBO", sub: "x" + combo, at: "hudUnder" });
+        }
+      } else if (hits.length >= 4)
+        Pop.show("ultra", { word: "NOVA", sub: "+" + gained, at: "bottom" });
+      else if (hits.length === 3)
+        Pop.show("ribbon", { word: "TRIPLE RAY", sub: "+" + gained, at: "hudUnder" });
+      else if (hits.length === 2)
+        Pop.show("bonus", { word: "DOUBLE RAY", sub: "+" + gained, at: "hudUnder" });
+
       // The meter on the hub: every ray banks a notch, and a full meter buys a
       // CHARGE. It is the floor under the whole reward curve — a player who
       // never lines up two rays at once still gets a blast every few moves,
@@ -1252,18 +1315,20 @@
       if (charge >= D.chargeNeed && grant(CHARGE, colour)) charge = 0;
 
       // Milestones: every fourth link of the chain, up to the cap. The chain is
-      // the other way to earn a super, so a long clean run pays a big one.
+      // the other way to earn a super, so a long clean run pays a big one. It
+      // has no callout of its own — the chain is what the COMBO pop already
+      // reads out, and the score counter races up on the same beat.
       if (combo >= 4 && combo % 4 === 0) {
         score += D.comboBonus * combo;
         HUD.setScore(score);
-        Pop.show("combo", { word: "COMBO x" + combo, sub: "+" + D.comboBonus * combo });
         Sound.clip("chain", 0.5, 1 + combo * 0.02);
         grant(combo >= 8 ? NOVA : CHARGE, colour);
       }
     }
 
-    /* The fifth hue joins the dial mid-round: rays get rarer, so the second
-       half is played with the ring you already know rather than by sweeping. */
+    /* The fifth hue joins the dial at level 10 (D.colourUpLevel), which is 90
+       fused rays in: rays get rarer, so a long run is played with the ring you
+       already know rather than by sweeping. */
     function addColour() {
       palette.push(palette.length);
       for (var i = 0; i < 3; i++) rings[i].bag.length = 0;   // re-deal with the newcomer in
@@ -1302,8 +1367,10 @@
     // --- lifecycle ---------------------------------------------------------
     function reset() {
       var i;
+      // Which mode this round runs in, before anything is sized or seeded.
+      Eclipse.arm();
       score = 0; matches = 0; multis = 0; supers = 0; cleared = 0;
-      combo = 0; bestCombo = 0; comboLeft = 0; charge = 0;
+      combo = 0; bestCombo = 0; comboLeft = 0; charge = 0; comboCallAt = -9;
       blastRun = 0; blastGain = 0; bestBlast = 0;
       clock = 0; grab = null; touched = false; resting = true; armed = null;
       finale = null;
@@ -1367,7 +1434,7 @@
           Fx.ring(px(a, f.ring.rad), py(a, f.ring.rad),
                   { from: f.ring.ballR * 0.5, to: f.ring.ballR * 1.8,
                     color: D.colours[f.colour], width: 3, life: 0.22 });
-          if (settled()) resolve();            // the cascade, if nothing moved
+          if (settled()) resolve(true);        // the cascade, if nothing moved
           continue;
         }
         e = 1 - (1 - p) * (1 - p);                  // decelerates into the housing
@@ -1407,10 +1474,11 @@
       // A chain only lives as long as the player keeps paying rays.
       if (combo > 0) { comboLeft -= dt; if (comboLeft <= 0) combo = 0; }
 
-      // Round.elapsed() is 0 for a round with no timer, so the endless mode
-      // reads the ramp off the game's own clock.
+      // The eclipse has levels, so the newcomer is scheduled on one; a CLASSIC
+      // round never reaches level 10 in 40 seconds and keeps its stopwatch.
       if (palette.length < D.colours.length &&
-          (Eclipse.on ? clock : Round.elapsed()) >= D.colourUpAt) addColour();
+          (Eclipse.on ? Eclipse.level() >= D.colourUpLevel
+                      : Round.elapsed() >= D.colourUpAt)) addColour();
 
       // The clock is out: wait for the dial, then play the machine out.
       if (finale) stepFinale(dt);
@@ -1750,11 +1818,15 @@
     /* The power-down itself: the dial's own boom an octave under, the hazard
        callout, and the drain drawn in drawFinale. The second beat — the hub
        giving out — is fired from update once the light has finished draining,
-       so the flash lands on the picture instead of ahead of it. */
+       so the flash lands on the picture instead of ahead of it.
+
+       The round gets exactly ONE danger callout: an eclipse already threw its
+       own the moment the last ray went out, seconds before this, so only a
+       CLASSIC round's clock announces itself here. */
     function powerDown() {
       Sound.clip("nova", 0.5, 0.55);
       Fx.shake(10, 0.5);
-      Pop.show("danger", { word: CONFIG.copy.timeUp });
+      if (!Eclipse.on) Pop.show("danger", { word: CONFIG.copy.timeUp });
     }
 
     function stepFinale(dt) {
