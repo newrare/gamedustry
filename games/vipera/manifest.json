@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-tap\">Tape</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">mange</b> pour grandir"
+      }
+    },
+    "font": "baloo2"
   }
 }

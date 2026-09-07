@@ -5,6 +5,12 @@
 
   var State = "loading";   // loading | intro | playing | end
 
+  /* Anything bolted on top of the shell needs to know when the screen changes
+     — the web target repaints the menu scene on every entry into "intro". The
+     motor itself never registers a hook; a playable ships an empty list. */
+  var stateHooks = [];
+  function onState(fn) { stateHooks.push(fn); }
+
   function setState(s) {
     State = s;
     ["loading", "intro", "end"].forEach(function (n) {
@@ -15,6 +21,7 @@
     $("backdrop").classList.toggle("on", s === "end");
     if (s !== "playing") Overlay.clear();
     Ad.track("state", s);
+    for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
   }
 
   // --- HUD ---------------------------------------------------------------
@@ -291,7 +298,14 @@
       }
     }
 
+    /* The web target's OPTIONS panel can turn the callouts off — some players
+       want the screen quiet, and on a slow phone the layer is the one thing
+       worth dropping (see the mobile-stutter note in TODO.md). A playable
+       leaves it on for its whole life. */
+    var enabled = true;
+
     function show(name, opt) {
+      if (!enabled) return null;
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
@@ -470,7 +484,11 @@
       requestAnimationFrame(step);
     }
 
-    return { show: show, clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS };
+    return {
+      show: show, clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS,
+      setEnabled: function (v) { enabled = !!v; if (!enabled) clear(); },
+      isEnabled: function () { return enabled; }
+    };
   })();
 
   // --- Intro: logo, copy and the animated how-to-play demo ----------------

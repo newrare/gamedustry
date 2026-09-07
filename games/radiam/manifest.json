@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-turn\">Tourne</b> un anneau, aligne <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>"
+      }
+    },
+    "font": "russoone"
   }
 }

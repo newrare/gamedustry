@@ -1,0 +1,57 @@
+{
+  "_": "The font pack the web target may embed. One entry per family: `family` is the CSS name, `file` the woff2 next to this file, `heavy` the weight to use where the design asks for a heavy face (a single-weight face has to stay at 400 or the browser fakes the bold), `stack` the system fallback, `licence` the file that must travel with the font. Add a family here and its two files, never a URL: tools/build/build.mjs embeds the bytes as base64, so a game never fetches a font.",
+  "orbitron": {
+    "family": "Orbitron",
+    "file": "orbitron.woff2",
+    "variable": true,
+    "heavy": 800,
+    "stack": "\"Arial Black\",\"Arial Bold\",sans-serif",
+    "licence": "orbitron.OFL.txt",
+    "note": "squarish sci-fi, wide counters — reads at a glance in caps"
+  },
+  "exo2": {
+    "family": "Exo 2",
+    "file": "exo2.woff2",
+    "variable": true,
+    "heavy": 800,
+    "stack": "-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif",
+    "licence": "exo2.OFL.txt",
+    "note": "technical but humanist — the neutral one of the pack"
+  },
+  "baloo2": {
+    "family": "Baloo 2",
+    "file": "baloo2.woff2",
+    "variable": true,
+    "heavy": 800,
+    "stack": "ui-rounded,\"Trebuchet MS\",Roboto,sans-serif",
+    "licence": "baloo2.OFL.txt",
+    "note": "rounded and warm — for a friendly, cartoon game"
+  },
+  "bungee": {
+    "family": "Bungee",
+    "file": "bungee.woff2",
+    "variable": false,
+    "heavy": 400,
+    "stack": "Impact,\"Arial Black\",sans-serif",
+    "licence": "bungee.OFL.txt",
+    "note": "arcade signage, one weight only — already ultra bold"
+  },
+  "bebasneue": {
+    "family": "Bebas Neue",
+    "file": "bebasneue.woff2",
+    "variable": false,
+    "heavy": 400,
+    "stack": "\"Arial Narrow\",\"Helvetica Neue\",sans-serif-condensed,sans-serif",
+    "licence": "bebasneue.OFL.txt",
+    "note": "tall condensed caps, one weight — poster and casino"
+  },
+  "russoone": {
+    "family": "Russo One",
+    "file": "russoone.woff2",
+    "variable": false,
+    "heavy": 400,
+    "stack": "\"Arial Black\",Impact,sans-serif",
+    "licence": "russoone.OFL.txt",
+    "note": "industrial, machined — for gears and metal"
+  }
+}

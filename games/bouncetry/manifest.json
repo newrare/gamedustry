@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "Une balle ne casse que <b class=\"w-wall\">sa couleur</b> et un <b class=\"w-tap\">tap</b> retourne toutes les briques"
+      }
+    },
+    "font": "bungee"
   }
 }

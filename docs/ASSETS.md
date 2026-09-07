@@ -76,6 +76,26 @@ Icon.draw(ctx, "icoBomb", cx, cy, 26, "#2a1400");
 
 Details and the reason icons are stored white: [assets/lucide/README.md](../assets/lucide/README.md).
 
+## Type comes from `assets/font/` — web target only
+
+Six families, all **SIL Open Font License 1.1**, so they can be embedded and
+shipped. A game names one in its `manifest.json` and nothing else:
+
+```json
+"web": { "font": "bungee" }
+```
+
+`tools/build/build.mjs --target=web` embeds that family as a base64
+`@font-face` in front of the game's SKIN (a file next to the other assets in the
+split site build) and writes two tokens the webshell reads — `--web-font` and
+`--web-fw`, the weight to ask a single-weight face for. **A playable ships no
+font**: the pack belongs to the web front end, and a 20-second creative does not
+spend 30 KB on type.
+
+The rule is the same as everywhere else — embedded, never fetched. No `<link>`
+to Google Fonts, no CDN. Pack, licences and how to add a family:
+[assets/font/README.md](../assets/font/README.md).
+
 ## Embedding an asset
 
 Use the helper to convert a file into a data URI:

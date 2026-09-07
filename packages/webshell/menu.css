@@ -1,10 +1,26 @@
 /*
   webshell stylesheet — the front end the `web` target adds on top of the motor.
 
-  Unlike packages/devtools/devtools.css, this is NOT developer chrome: it is
-  part of the game as a player sees it, so it lives inside the 720x1280 design
-  space and obeys the same rule as the motor — design pixels only, never vw/vh,
-  and every colour comes from the theme tokens a SKIN already overrides.
+  Unlike a lab page this is NOT developer chrome: it is the game as a player
+  sees it, so it lives inside the 720x1280 design space and obeys the motor's
+  rules — design pixels only, never vw/vh, and every colour comes from a theme
+  token a SKIN already overrides. One layout, thirteen games.
+
+  The shape it gives the intro, and the reason for each piece:
+
+    the game's own backdrop         the painted background it already embeds
+                                    (ASSETS.images.bg, out of assets/image/),
+                                    or the gradient its SKIN paints the game
+                                    view with when it ships no picture
+    the title, breathing            top third, centred, wrapped in a node of
+                                    its own so the SKIN's transform survives
+    the menu, bottom right          PLAY / LEADERBOARD / OPTIONS / HELP, one
+                                    under the other, flush against the right
+                                    edge — a thumb reaches them, and the scene
+                                    stays visible on the left
+    the panels, in that same band   LEADERBOARD / OPTIONS / HELP replace the
+                                    menu without leaving the screen: same
+                                    title, same scene, a back arrow to return
 */
 
 /* The CTA bar is what a playable sells with; a web build has nowhere to send
@@ -12,57 +28,238 @@
    packages/platform/web.js. */
 #cta-bar { display:none !important; }
 
-/* ---- the intro turns into a menu ------------------------------------- */
-/* The demo stage moves into the Help panel, so the menu itself stays short:
-   icon, title, one sentence, PLAY, and three quiet entries under it. */
-#screen-intro #intro-demo { margin-top:0; }
-#screen-intro #btn-start { margin-top:44px; }
+/* =========================================================================
+   THE INTRO BECOMES A MENU
+   ========================================================================= */
 
-#web-menu {
-  margin-top:30px; display:flex; align-items:center; justify-content:center;
-  gap:14px; flex-wrap:wrap;
+/* The motor centres a column here; the web menu positions its two blocks
+   itself, against the top and the bottom of the frame. `isolation` is what
+   lets the scrim below sit at z-index -1 (behind the title and the menu) and
+   still stay above the canvas, which is outside this stacking context. */
+#screen-intro {
+  padding:0; isolation:isolate;
 }
-.web-menu-btn {
-  border:2px solid var(--panel-line); border-radius:999px; cursor:pointer;
-  font-family:inherit; font-weight:800; letter-spacing:1px; font-size:26px;
-  color:var(--muted); background:var(--panel); padding:16px 30px;
-  transition:color .18s ease, border-color .18s ease;
-}
-.web-menu-btn:active { transform:scale(.96); }
-.web-menu-btn:hover { color:var(--text); border-color:var(--accent); }
 
-/* ---- panels: leaderboard / options / help ---------------------------- */
-/* Above .screen (z-index 30) so a panel covers the menu it was opened from. */
-#web-panel {
-  position:absolute; inset:0; z-index:40; padding:70px 48px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center;
-  /* Opaque, and tinted with the game's own background: a panel that lets the
-     menu show through reads as a bug, and a flat black one reads as foreign. */
-  background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.5)), var(--bg);
-  transition:opacity .2s ease;
+/* The game's own backdrop, filled by packages/webshell/menu.js: a picture is
+   cover-fitted (it was painted for this frame), a gradient is left alone —
+   stretching a radial gradient would move its centre off the composition the
+   SKIN designed. */
+#web-bg {
+  position:absolute; inset:0; z-index:-2; pointer-events:none;
+  background-repeat:no-repeat; background-position:center center; background-size:cover;
 }
-#web-panel.hidden { opacity:0; pointer-events:none; }
-#web-panel-title {
-  font-size:52px; font-weight:900; letter-spacing:2px; color:var(--accent);
-  text-shadow:0 0 20px currentColor; margin-bottom:34px;
-}
-#web-panel-body { width:100%; }
-#web-panel-close { margin-top:44px; }
+#web-bg.flat { background-size:auto; }
 
+/* Nothing guarantees the backdrop is dark where the text lands — radiam's hall
+   is lit, marshmelt's lava is bright orange. The scrim is what makes ONE menu
+   design legible over all thirteen: a flat wash that pushes the picture back,
+   then a band under the title, a band under the menu, and a gradient down the
+   right edge where the entries live. */
+#screen-intro::before {
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.70) 0%, rgba(0,0,0,.24) 28%, rgba(0,0,0,0) 46%),
+    linear-gradient(0deg,   rgba(0,0,0,.88) 0%, rgba(0,0,0,.58) 22%, rgba(0,0,0,.14) 46%, rgba(0,0,0,0) 62%),
+    linear-gradient(270deg, rgba(0,0,0,.52) 0%, rgba(0,0,0,.16) 30%, rgba(0,0,0,0) 52%),
+    rgba(0,0,0,.22);
+  transition:background .22s ease;
+}
+/* A gradient backdrop needs far less: it is dark and even by design, and the
+   full wash would only flatten what the SKIN composed. */
+#screen-intro.web-flat::before {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.34) 0%, rgba(0,0,0,0) 34%),
+    linear-gradient(0deg,   rgba(0,0,0,.46) 0%, rgba(0,0,0,.14) 26%, rgba(0,0,0,0) 52%);
+}
+
+/* A panel is text, not four words: with one open, the lower half of the scene
+   goes further back so a leaderboard or an options list reads at a glance. */
+#screen-intro.web-open::before {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.70) 0%, rgba(0,0,0,.30) 30%, rgba(0,0,0,.10) 46%),
+    linear-gradient(0deg,   rgba(0,0,0,.92) 0%, rgba(0,0,0,.80) 34%, rgba(0,0,0,.34) 58%, rgba(0,0,0,0) 74%),
+    rgba(0,0,0,.30);
+}
+
+/* the intro's own tagline belongs to the Help panel now */
+#screen-intro #intro-tagline { display:none; }
+#screen-intro #app-icon { width:150px; margin-bottom:10px; }
+
+#web-head {
+  position:absolute; left:44px; right:44px; top:calc(var(--inset-top) + 118px);
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+
+/* The breathing lives on a WRAPPER, never on #intro-title: a SKIN's title look
+   carries its own `transform` (a skew, a tilt, a rotation — see
+   lab/game-title.html) and an animation on the title would overwrite it.
+   The scale stays tiny on purpose. A composited transform animation is
+   rasterized once at the largest scale it reaches, so 1.022 costs one raster
+   at 102% — the trap the Pop layer documents is scale(3.1), not this. */
+#web-title-wrap { animation:web-breathe 4.8s ease-in-out infinite; will-change:transform; }
+@keyframes web-breathe {
+  0%, 100% { transform:scale(1) translateY(0); }
+  50%      { transform:scale(1.022) translateY(-5px); }
+}
+
+/* The band the menu and the panels share, so opening one never moves the
+   title and never hides the scene. */
+#web-view {
+  position:absolute; left:44px; right:44px;
+  bottom:calc(var(--inset-bottom) + 72px);
+}
+
+/* ---- the menu ---------------------------------------------------------- */
+/* `--web-font` and `--web-fw` come from the game's `web.font` (assets/font/,
+   embedded by the builder in front of the SKIN). Both carry a fallback, so a
+   game that names no family reads exactly as before. `--web-fw` is the weight
+   to ask for: 800 from a variable family, 400 from a single-weight one, which
+   is the difference between a heavy face and a browser-smeared fake bold. */
+#web-menu { display:flex; flex-direction:column; align-items:flex-end; }
+
+/* One row per entry. PLAY is the motor's own #btn-start — same node, same
+   click, so SPACE still starts the game — with the CTA pill styling dropped:
+   a text menu is not a button bar. */
+.web-item {
+  position:relative; -webkit-appearance:none; appearance:none;
+  background:none; border:0; border-radius:0; box-shadow:none; animation:none;
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  text-transform:uppercase; cursor:pointer;
+  color:var(--muted); font-size:42px; letter-spacing:2.5px; line-height:1.1;
+  padding:13px 2px 13px 30px; margin:0; text-align:right;
+  text-shadow:0 2px 12px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.7);
+  transition:color .16s ease, transform .16s ease, text-shadow .16s ease;
+}
+.web-item:hover, .web-item:focus-visible {
+  color:var(--text); transform:translateX(-8px); outline:none;
+}
+.web-item:active { transform:translateX(-8px) scale(.98); }
+/* the accent tick that marks the entry a finger is on */
+.web-item::after {
+  content:""; position:absolute; right:-2px; bottom:6px; height:4px; width:0;
+  background:var(--accent); border-radius:2px;
+  transition:width .18s ease;
+}
+.web-item:hover::after, .web-item:focus-visible::after { width:100%; }
+
+#screen-intro #btn-start {
+  margin:0 0 6px; padding:14px 2px 14px 30px;
+  font-size:66px; letter-spacing:3px;
+  color:var(--accent); text-shadow:0 0 30px currentColor, 0 3px 14px rgba(0,0,0,.9);
+}
+#screen-intro #btn-start:hover { color:var(--text); }
+#screen-intro #btn-start::after { height:6px; background:var(--accent); }
+
+/* =========================================================================
+   THE PANELS — leaderboard / options / help, in the menu's own band
+   ========================================================================= */
+#web-panel { display:none; flex-direction:column; }
+#web-panel.on { display:flex; animation:web-panel-in .22s ease both; }
+@keyframes web-panel-in {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.web-phead { display:flex; align-items:center; gap:18px; margin-bottom:16px; }
+.web-back {
+  flex:0 0 auto; width:64px; height:64px; border-radius:50%; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); background:rgba(0,0,0,.42);
+  border:2px solid var(--panel-line);
+  transition:color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.web-back svg { width:34px; height:34px; }
+.web-back:hover { color:var(--accent); border-color:var(--accent); }
+.web-back:active { transform:scale(.94); }
+.web-ptitle {
+  flex:1; text-align:right; text-transform:uppercase;
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:38px; letter-spacing:3px;
+  color:var(--accent); text-shadow:0 0 22px currentColor, 0 3px 12px rgba(0,0,0,.9);
+}
+
+/* One card for every panel: the scene shows around it, not through the text. */
+.web-pbody {
+  border-radius:26px; padding:14px 26px;
+  background:rgba(0,0,0,.74); border:1px solid var(--panel-line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  max-height:640px; overflow-y:auto;
+}
+
+/* ---- rows shared by the panels ----------------------------------------- */
+.web-row {
+  display:flex; align-items:center; gap:18px; padding:18px 2px;
+  border-bottom:1px solid var(--panel-line);
+}
+.web-row:last-child { border-bottom:0; }
+.web-row .ico { flex:0 0 auto; width:36px; height:36px; color:var(--muted); }
+.web-row .lbl {
+  flex:1; text-align:left; font-size:29px; color:var(--text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 800);
+}
+
+/* a switch, not a checkbox: the state has to be readable at a glance */
+.web-sw {
+  flex:0 0 auto; position:relative; width:104px; height:52px; border-radius:999px;
+  cursor:pointer; background:rgba(0,0,0,.45); border:2px solid var(--panel-line);
+  transition:border-color .18s ease, background .18s ease;
+}
+.web-sw .knob {
+  position:absolute; top:5px; left:5px; width:38px; height:38px; border-radius:50%;
+  background:var(--muted); transition:transform .18s ease, background .18s ease;
+}
+.web-sw[aria-pressed="true"] { border-color:var(--accent); background:rgba(255,255,255,.08); }
+.web-sw[aria-pressed="true"] .knob {
+  transform:translateX(48px); background:var(--accent);
+  box-shadow:0 0 16px var(--accent);
+}
+.web-sw:active .knob { width:34px; height:34px; }
+
+/* the language pair */
+.web-seg { flex:0 0 auto; display:flex; gap:8px; }
+.web-chip {
+  padding:11px 22px; border-radius:13px; cursor:pointer;
+  background:rgba(0,0,0,.4); border:2px solid var(--panel-line); color:var(--muted);
+  font-family:var(--web-font, inherit); font-size:27px;
+  font-weight:var(--web-fw, 800); letter-spacing:1.5px;
+  transition:color .16s ease, background .16s ease, border-color .16s ease;
+}
+.web-chip.on { color:var(--cta-text); background:var(--accent); border-color:var(--accent); }
+.web-chip:active { transform:scale(.96); }
+
+/* the one destructive action in the panel, so it asks twice */
+.web-danger {
+  width:100%; margin:16px 0 6px; padding:17px 18px; border-radius:15px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  background:rgba(0,0,0,.4); border:2px solid var(--panel-line); color:var(--danger);
+  font-family:var(--web-font, inherit); font-size:25px;
+  font-weight:var(--web-fw, 800); letter-spacing:.5px;
+  text-align:center; line-height:1.25;
+}
+.web-danger .ico { flex:0 0 auto; width:32px; height:32px; }
+.web-danger.armed { border-color:var(--danger); background:rgba(255,45,85,.18); color:#fff; }
+.web-danger:active { transform:scale(.98); }
+
+/* ---- leaderboard ------------------------------------------------------- */
+.web-best-lbl { font-size:26px; letter-spacing:2px; color:var(--muted); text-align:center; margin-top:14px; }
+.web-best {
+  font-size:118px; font-weight:var(--web-fw, 900); line-height:1.05;
+  text-align:center; color:var(--gold);
+  text-shadow:0 0 28px rgba(255,212,59,.5); font-variant-numeric:tabular-nums;
+}
+.web-note { font-size:24px; line-height:1.5; color:var(--muted); text-align:center; padding:10px 0 16px; }
+
+/* ---- help -------------------------------------------------------------- */
 /* The Help panel re-hosts the motor's own demo stage, so a SKIN that
    re-dressed .demo-* for the intro keeps working here with no extra rule. */
-.web-help-line { font-size:32px; line-height:1.4; color:#c9d6ff; margin-bottom:30px; }
+.web-help-line { font-size:29px; line-height:1.4; color:var(--text); text-align:center; padding:16px 0 4px; }
 .web-help-line b { font-weight:900; color:var(--accent); text-shadow:0 0 16px currentColor; }
-.web-keys { margin-top:34px; display:flex; align-items:center; justify-content:center; gap:14px; }
+#screen-intro #intro-demo { margin:0 auto; }
+.web-keys { margin-top:20px; display:flex; align-items:center; justify-content:center; gap:12px; }
 .web-key {
-  border:2px solid var(--panel-line); border-radius:14px; background:var(--panel);
-  padding:12px 24px; font-size:28px; font-weight:800; letter-spacing:1px; color:var(--text);
+  border:2px solid var(--panel-line); border-radius:13px; background:rgba(0,0,0,.4);
+  padding:11px 22px; font-size:26px; letter-spacing:1px; color:var(--text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 800);
 }
-.web-keys-lbl { font-size:24px; letter-spacing:3px; color:var(--muted); margin-top:6px; }
-
-/* One score today, a table when the meta layer lands (phase 5). */
-.web-best-lbl { font-size:28px; letter-spacing:2px; color:var(--muted); }
-.web-best { font-size:130px; font-weight:900; line-height:1; color:var(--gold);
-  text-shadow:0 0 28px rgba(255,212,59,.5); font-variant-numeric:tabular-nums; }
-.web-soon { margin-top:34px; font-size:26px; line-height:1.5; color:var(--muted); }
+.web-keys-lbl { font-size:22px; letter-spacing:3px; color:var(--muted); text-align:center; margin:6px 0 12px; }

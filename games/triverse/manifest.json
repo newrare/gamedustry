@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-swipe\">Balaie</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>"
+      }
+    },
+    "font": "orbitron"
   }
 }

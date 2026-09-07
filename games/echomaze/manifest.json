@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-echo\">Rebondis</b> dans le <b class=\"w-maze\">labyrinthe</b> obscur jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>"
+      }
+    },
+    "font": "orbitron"
   }
 }

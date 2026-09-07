@@ -80,6 +80,25 @@ loading ──► intro ──► playing ──► end ──┐
 - `startGame()` unlocks audio, resets Fx/Overlay/Game/Round and starts the loop.
   It is bound to both the intro button and the end-screen replay link.
 - `endRound(result)` is the single exit from a round (see below).
+- `onState(fn)` registers a listener called on every change. The motor itself
+  never uses it; it is how a target bolted on top learns the screen moved — the
+  `web` front end repaints its menu scene on every entry into `intro`.
+
+### Muting, and the three switches a finished game needs
+
+A playable is a 20-second creative and mutes nothing. A **web** build is a game
+someone opens on purpose, so it carries an OPTIONS panel, and the motor owns
+the three switches it flips:
+
+| switch              | what it gates                                            |
+| ------------------- | -------------------------------------------------------- |
+| `Sound.setMuted(v)` | `beep` and `clip` — therefore `arp` and `cue` as well    |
+| `Music.setMuted(v)` | `start`, and it tears down a bed that is already playing |
+| `Pop.setEnabled(v)` | `Pop.show` returns `null`, and the layer is cleared      |
+
+All three default to on/unmuted, so a game reads exactly the same in a
+playable. The persistence and the panel itself belong to
+`packages/webshell` — the motor holds the state, not the preference.
 
 ### Playing with the keyboard
 
@@ -378,6 +397,7 @@ Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });                  // hero be
 var h = Pop.show("danger", { word:"SUDDEN DEATH", hold:-1 });         // stays…
 h.close();                                                            // …until closed
 Pop.clear();                                                          // wipe (Overlay.clear does it too)
+Pop.setEnabled(false);                                                // the web target's OPTIONS switch
 ```
 
 Styles, from quiet to loud:
@@ -567,8 +587,10 @@ Sound.clip(name, vol, rate)                // embedded ASSETS.sounds — the def
 Sound.beep(freq, dur, type, vol)           // synth fallback, for an event with no clip
 Sound.arp([freqs], stepMs, dur, type, vol) // rising celebration run
 Sound.cue(name, vol, rate, freq, dur, type) // clip if embedded, else a beep
+Sound.setMuted(bool) / isMuted()           // the web target's OPTIONS switch
 Music.start() / stop(fade)                 // background bed (see below)
 Music.duck(factor, secs) / unduck(secs)    // dip under a foreground moment
+Music.setMuted(bool) / isMuted()           // stops a bed already playing
 Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
 Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // localStorage + memory fallback

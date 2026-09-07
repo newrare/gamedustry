@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Sticky Pill — prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0d14;overflow:hidden;touch-action:none;
+            font:13px ui-monospace,Menlo,monospace;color:#fff}
+  canvas{display:block;position:absolute;left:0;top:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   STICKY PILL — is it fun to fling a sticky pill from falling sphere
+   to falling sphere to stay on screen?
+   Tap anywhere, drag to aim (time slows), release to fling.
+   The pill sticks to whatever sphere it hits and rides it down.
+   Fall off the bottom and it is over.
+------------------------------------------------------------------ */
+
+// ---- tunables ----------------------------------------------------
+var DES_W = 720, DES_H = 1280;
+
+var PILL_LEN   = 64;     // capsule length (design px)
+var PILL_R     = 15;     // capsule radius
+var GRAV       = 1450;   // gravity on the pill while flying
+var SHOT_SPEED = 1180;   // launch speed of a plain tap (fixed power)
+var POWER_DIST = false;  // true = speed also scales with finger distance
+var SHOT_MIN   = 620;    // used only when POWER_DIST is on
+var SHOT_MAX   = 1550;
+var FULL_DIST  = 520;    // finger distance (px) meaning full power
+var MIN_DIST   = 26;     // tap closer than this to the pill = ignored
+var AIR_SHOTS  = 0;      // extra shots allowed while flying (0 = one per sphere)
+var AIM_SLOWMO = 0.16;   // time scale while the finger stays down
+var WALL_BOUNCE= 0.55;   // side walls bounce, top bounces, bottom kills
+var EMBED      = 0.42;   // how deep the pill sinks into the sphere (fraction of length)
+var RECOIL     = 0.35;   // kick given to the sphere you leave
+
+var SPH_MIN_R  = 34, SPH_MAX_R = 112;
+var SPH_FALL_MIN = 95, SPH_FALL_MAX = 175;
+var SPH_DRIFT  = 40;     // horizontal drift px/s
+var SPIN_MAX   = 0.7;    // rad/s, the anchor rides the spin
+var SPAWN_EVERY= 0.72;   // seconds between spawns
+var MAX_SPH    = 9;
+var DIFF_RAMP  = 0.018;  // fall speed multiplier gained per second alive
+
+var PREVIEW_T  = 1.15;   // seconds of predicted trajectory
+var SHOW_DEBUG = true;
+
+// ---- frame -------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0;
+
+function resize(){
+  var w = window.innerWidth, h = window.innerHeight, dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = w*dpr; cv.height = h*dpr;
+  cv.style.width = w+"px"; cv.style.height = h+"px";
+  scale = Math.min(w/DES_W, h/DES_H);
+  offX = (w - DES_W*scale)/2; offY = (h - DES_H*scale)/2;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+function toDesign(e){
+  var r = cv.getBoundingClientRect();
+  return { x:(e.clientX - r.left - offX)/scale, y:(e.clientY - r.top - offY)/scale };
+}
+
+// ---- state -------------------------------------------------------
+var spheres, pill, aim, spawnT, alive, score, best = 0, time, shots, fps = 0;
+var airLeft = 0, fired = 0, hint = 1;
+
+function Sphere(x,y,r,vy){
+  return { x:x, y:y, r:r, vx:(Math.random()*2-1)*SPH_DRIFT, vy:vy,
+           rot:Math.random()*6.28, spin:(Math.random()*2-1)*SPIN_MAX,
+           hue:Math.floor(Math.random()*60)+185, dead:false, used:false };
+}
+
+function reset(){
+  spheres = [];
+  var anchor = Sphere(DES_W*0.5, DES_H*0.42, 92, 70);
+  anchor.vx = 0;
+  spheres.push(anchor);
+  pill = { x:0, y:0, vx:0, vy:0, ang:-Math.PI/2, host:anchor, rel:-Math.PI/2, flying:false, ignore:null };
+  placeOnHost();
+  aim = null; spawnT = 0.4; alive = true; score = 0; time = 0; shots = 0;
+  airLeft = AIR_SHOTS; fired = 0; hint = 1;
+}
+
+function placeOnHost(){
+  var s = pill.host, a = s.rot + pill.rel;
+  var d = s.r + PILL_LEN*0.5 - PILL_LEN*EMBED;
+  pill.x = s.x + Math.cos(a)*d;
+  pill.y = s.y + Math.sin(a)*d;
+  pill.ang = a;
+  pill.vx = 0; pill.vy = 0;
+}
+
+// ---- input -------------------------------------------------------
+// Direction = pill -> finger. A single tap is a whole shot; holding just
+// previews it. Nothing to drag, nothing to release in a direction.
+function aimVector(){
+  if(!aim) return null;
+  var dx = aim.x - pill.x, dy = aim.y - pill.y;
+  var len = Math.hypot(dx,dy);
+  if(len < MIN_DIST) return null;
+  var t = Math.min(len, FULL_DIST)/FULL_DIST;
+  var sp = POWER_DIST ? SHOT_MIN + (SHOT_MAX-SHOT_MIN)*t : SHOT_SPEED;
+  return { x:dx/len, y:dy/len, power:POWER_DIST?t:1, speed:sp };
+}
+
+function canShoot(){ return pill.host !== null || airLeft > 0; }
+
+function onDown(p){
+  if(!alive){ reset(); return; }
+  if(!canShoot()) return;
+  aim = { x:p.x, y:p.y };
+}
+function onMove(p){ if(aim){ aim.x = p.x; aim.y = p.y; } }
+function onUp(){
+  var v = aimVector();
+  if(v && canShoot()){
+    var s = pill.host;
+    pill.vx = v.x*v.speed; pill.vy = v.y*v.speed;
+    if(s){
+      var m = Math.max(0.25, 60/s.r);     // small spheres get kicked harder
+      s.vx -= v.x*v.speed*RECOIL*m*0.15;
+      s.vy -= v.y*v.speed*RECOIL*m*0.15;
+    } else { airLeft--; }
+    pill.ignore = s;                      // still overlapping it: do not re-stick
+    pill.flying = true; pill.host = null; shots++;
+    fired = 0.18;
+  }
+  aim = null;
+}
+cv.addEventListener("pointerdown", function(e){ cv.setPointerCapture(e.pointerId); onDown(toDesign(e)); });
+cv.addEventListener("pointermove", function(e){ onMove(toDesign(e)); });
+cv.addEventListener("pointerup",   function(){ onUp(); });
+cv.addEventListener("pointercancel", function(){ aim = null; });
+window.addEventListener("keydown", function(e){ if(e.key==="r") reset(); if(e.key==="d") SHOW_DEBUG=!SHOW_DEBUG; });
+
+// ---- collision ---------------------------------------------------
+// closest point on the pill capsule axis to a sphere centre
+function capsuleHit(px,py,ang,sx,sy,sr){
+  var hx = Math.cos(ang)*PILL_LEN*0.5, hy = Math.sin(ang)*PILL_LEN*0.5;
+  var ax = px-hx, ay = py-hy, bx = px+hx, by = py+hy;
+  var dx = bx-ax, dy = by-ay;
+  var t = ((sx-ax)*dx + (sy-ay)*dy)/(dx*dx+dy*dy);
+  t = t<0?0:(t>1?1:t);
+  var cx = ax+dx*t, cy = ay+dy*t;
+  return Math.hypot(sx-cx, sy-cy) < sr + PILL_R;
+}
+
+function attach(s){
+  pill.host = s; pill.flying = false; pill.ignore = null;
+  var a = Math.atan2(pill.y - s.y, pill.x - s.x);
+  pill.rel = a - s.rot;
+  placeOnHost();
+  airLeft = AIR_SHOTS;
+  if(!s.used){ s.used = true; score++; }
+}
+
+// ---- update ------------------------------------------------------
+function update(dt){
+  var slow = (aim && aimVector()) ? AIM_SLOWMO : 1;
+  var d = dt*slow;
+  time += dt;
+  if(fired > 0) fired -= dt;
+  if(shots > 0 && hint > 0) hint -= dt*2;
+  var ramp = 1 + time*DIFF_RAMP;
+
+  // spawn
+  spawnT -= d;
+  if(spawnT <= 0 && spheres.length < MAX_SPH){
+    spawnT = SPAWN_EVERY*(0.7+Math.random()*0.7);
+    var r = SPH_MIN_R + Math.random()*(SPH_MAX_R-SPH_MIN_R);
+    var x = r + Math.random()*(DES_W-2*r);
+    spheres.push(Sphere(x, -r-20, r, (SPH_FALL_MIN+Math.random()*(SPH_FALL_MAX-SPH_FALL_MIN))*ramp));
+  }
+
+  // spheres
+  for(var i=spheres.length-1;i>=0;i--){
+    var s = spheres[i];
+    s.x += s.vx*d; s.y += s.vy*d; s.rot += s.spin*d;
+    if(s.x < s.r){ s.x = s.r; s.vx = Math.abs(s.vx); }
+    if(s.x > DES_W-s.r){ s.x = DES_W-s.r; s.vx = -Math.abs(s.vx); }
+    if(s.y - s.r > DES_H + 60){
+      if(pill.host === s){ alive = false; }
+      spheres.splice(i,1);
+    }
+  }
+
+  if(!alive) return;
+
+  if(pill.flying){
+    pill.vy += GRAV*d;
+    pill.x += pill.vx*d; pill.y += pill.vy*d;
+    if(pill.x < PILL_R){ pill.x = PILL_R; pill.vx = -pill.vx*WALL_BOUNCE; }
+    if(pill.x > DES_W-PILL_R){ pill.x = DES_W-PILL_R; pill.vx = -pill.vx*WALL_BOUNCE; }
+    if(pill.y < PILL_R){ pill.y = PILL_R; pill.vy = -pill.vy*WALL_BOUNCE; }
+    pill.ang = Math.atan2(pill.vy, pill.vx);
+    for(var j=0;j<spheres.length;j++){
+      var q = spheres[j];
+      if(q === pill.ignore){
+        if(Math.hypot(pill.x-q.x, pill.y-q.y) > q.r + PILL_LEN*0.5 + PILL_R + 4) pill.ignore = null;
+        continue;
+      }
+      if(capsuleHit(pill.x,pill.y,pill.ang,q.x,q.y,q.r)){ attach(q); break; }
+    }
+    if(pill.y - PILL_LEN > DES_H) alive = false;
+  } else if(pill.host){
+    placeOnHost();
+    if(pill.y > DES_H + PILL_LEN) alive = false;
+  }
+
+  if(!alive && score > best) best = score;
+}
+
+// ---- predicted trajectory ---------------------------------------
+function predict(v){
+  var h = 1/60, px = pill.x, py = pill.y, vx = v.x*v.speed, vy = v.y*v.speed;
+  var pts = [], hit = null, n = Math.floor(PREVIEW_T/h);
+  var skip = pill.host || pill.ignore, clear = false;
+  for(var i=0;i<n;i++){
+    vy += GRAV*h; px += vx*h; py += vy*h;
+    if(px < PILL_R){ px = PILL_R; vx = -vx*WALL_BOUNCE; }
+    if(px > DES_W-PILL_R){ px = DES_W-PILL_R; vx = -vx*WALL_BOUNCE; }
+    if(py < PILL_R){ py = PILL_R; vy = -vy*WALL_BOUNCE; }
+    var t = i*h;
+    for(var k=0;k<spheres.length;k++){
+      var s = spheres[k];
+      var sx = s.x + s.vx*t, sy = s.y + s.vy*t;
+      var d = Math.hypot(px-sx, py-sy);
+      if(s === skip && !clear){
+        if(d > s.r + PILL_LEN*0.5 + PILL_R + 4) clear = true;
+        continue;
+      }
+      if(d < s.r + PILL_R){ hit = {x:px,y:py}; break; }
+    }
+    if(hit) break;
+    if(i%3===0) pts.push({x:px,y:py});
+    if(py > DES_H+40) break;
+  }
+  return { pts:pts, hit:hit };
+}
+
+// ---- render ------------------------------------------------------
+function drawPill(x,y,ang,dim){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+  var L = PILL_LEN*0.5 - PILL_R;
+  ctx.lineCap = "round"; ctx.lineWidth = PILL_R*2;
+  ctx.strokeStyle = dim ? "#5a3a4a" : "#ff5470";
+  ctx.beginPath(); ctx.moveTo(-L,0); ctx.lineTo(0,0); ctx.stroke();
+  ctx.strokeStyle = dim ? "#3f4a5a" : "#f7f4ef";
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(L,0); ctx.stroke();
+  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.35)";
+  ctx.beginPath(); ctx.moveTo(0,-PILL_R); ctx.lineTo(0,PILL_R); ctx.stroke();
+  ctx.restore();
+}
+
+function render(){
+  var w = cv.clientWidth, h = cv.clientHeight;
+  ctx.setTransform(cv.width/w,0,0,cv.height/h,0,0);
+  ctx.fillStyle = "#0b0d14"; ctx.fillRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(offX, offY); ctx.scale(scale, scale);
+  ctx.beginPath(); ctx.rect(0,0,DES_W,DES_H); ctx.clip();
+  ctx.fillStyle = "#11141f"; ctx.fillRect(0,0,DES_W,DES_H);
+
+  // death line
+  ctx.strokeStyle = "rgba(255,80,90,.35)"; ctx.lineWidth = 4;
+  ctx.setLineDash([18,14]);
+  ctx.beginPath(); ctx.moveTo(0,DES_H-6); ctx.lineTo(DES_W,DES_H-6); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // spheres
+  for(var i=0;i<spheres.length;i++){
+    var s = spheres[i];
+    ctx.fillStyle = "hsl("+s.hue+",42%,"+(s.used?26:34)+"%)";
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.2832); ctx.fill();
+    ctx.strokeStyle = "hsl("+s.hue+",60%,"+(s.used?42:62)+"%)"; ctx.lineWidth = 3;
+    ctx.stroke();
+    // spin marker, so the anchor drift is readable
+    ctx.strokeStyle = "hsla("+s.hue+",70%,80%,.5)"; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(s.x + Math.cos(s.rot)*(s.r-14), s.y + Math.sin(s.rot)*(s.r-14));
+    ctx.lineTo(s.x + Math.cos(s.rot)*s.r,      s.y + Math.sin(s.rot)*s.r);
+    ctx.stroke();
+  }
+
+  // aim
+  var v = alive ? aimVector() : null;
+  if(v){
+    var pr = predict(v);
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    for(var k=0;k<pr.pts.length;k++){
+      var t = k/pr.pts.length;
+      ctx.globalAlpha = 0.7*(1-t)+0.15;
+      ctx.beginPath(); ctx.arc(pr.pts[k].x, pr.pts[k].y, 5-3*t, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if(pr.hit){
+      ctx.strokeStyle = "#8affc1"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(pr.hit.x, pr.hit.y, 16, 0, 6.2832); ctx.stroke();
+    }
+    // where the finger is: the pill goes there
+    ctx.strokeStyle = "rgba(255,209,102,.9)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(aim.x, aim.y, 26, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.arc(aim.x, aim.y, 6, 0, 6.2832); ctx.stroke();
+    if(POWER_DIST){
+      ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(pill.x, pill.y, 46, 0, 6.2832); ctx.stroke();
+      ctx.strokeStyle = "#ffd166";
+      ctx.beginPath(); ctx.arc(pill.x, pill.y, 46, -1.5708, -1.5708 + 6.2832*v.power); ctx.stroke();
+    }
+  }
+
+  if(fired > 0){
+    ctx.strokeStyle = "rgba(255,255,255," + (fired/0.18*0.6).toFixed(2) + ")";
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(pill.x, pill.y, 30 + (1-fired/0.18)*70, 0, 6.2832); ctx.stroke();
+  }
+  drawPill(pill.x, pill.y, pill.ang, !alive);
+
+  if(hint > 0 && alive){
+    ctx.globalAlpha = Math.min(1, hint);
+    ctx.fillStyle = "#fff"; ctx.font = "26px ui-monospace,monospace"; ctx.textAlign = "center";
+    ctx.fillText("tap where you want to go", DES_W/2, DES_H*0.78);
+    ctx.globalAlpha = 1;
+  }
+
+  // hud
+  ctx.fillStyle = "#fff"; ctx.font = "bold 56px ui-monospace,monospace";
+  ctx.textAlign = "center"; ctx.fillText(String(score), DES_W/2, 86);
+  ctx.font = "20px ui-monospace,monospace"; ctx.fillStyle = "rgba(255,255,255,.45)";
+  ctx.fillText("best "+best, DES_W/2, 118);
+
+  if(!alive){
+    ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(0,DES_H/2-140,DES_W,280);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 64px ui-monospace,monospace";
+    ctx.fillText("DROPPED", DES_W/2, DES_H/2-20);
+    ctx.font = "26px ui-monospace,monospace";
+    ctx.fillText(score+" spheres  /  "+shots+" shots", DES_W/2, DES_H/2+30);
+    ctx.fillStyle = "rgba(255,255,255,.6)";
+    ctx.fillText("tap to retry", DES_W/2, DES_H/2+90);
+  }
+
+  if(SHOW_DEBUG){
+    ctx.textAlign = "left"; ctx.font = "18px ui-monospace,monospace";
+    ctx.fillStyle = "rgba(140,255,190,.75)";
+    var sp = pill.flying ? Math.hypot(pill.vx,pill.vy) : 0;
+    var lines = [
+      "fps "+fps.toFixed(0)+"   sph "+spheres.length+"   t "+time.toFixed(1),
+      (pill.flying?"FLY":"STUCK")+"  v "+sp.toFixed(0)+"  ramp "+(1+time*DIFF_RAMP).toFixed(2),
+      "speed "+(POWER_DIST?"by dist":SHOT_SPEED)+"  air "+airLeft+"  grav "+GRAV,
+      "keys: r=reset  d=debug"
+    ];
+    for(var L=0;L<lines.length;L++) ctx.fillText(lines[L], 16, DES_H-90+L*22);
+    ctx.textAlign = "center";
+  }
+
+  ctx.restore();
+}
+
+// ---- loop --------------------------------------------------------
+var last = performance.now(), acc = 0, frames = 0;
+function frame(now){
+  var dt = Math.min((now-last)/1000, 0.05); last = now;
+  acc += dt; frames++;
+  if(acc >= 0.5){ fps = frames/acc; acc = 0; frames = 0; }
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

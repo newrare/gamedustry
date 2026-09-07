@@ -50,7 +50,8 @@
       timeLabel:  "TIME",
       endScore:   "FINAL SCORE",
       gameOver:   "JAMMED!",
-      timeUp:     "TIME'S UP!"
+      timeUp:     "TIME'S UP!",
+      eclipsed:   "ECLIPSED!"
     },
 
     /* --- the dial ---------------------------------------------------------
@@ -319,6 +320,7 @@
       rings[0].inner = hubR * 0.62;
       buildSprites();
       buildBg();
+      Eclipse.build();                 // ...and the contaminated copy of it
     }
 
     /* One bead sprite per colour and per plate size, drawn once. Per-frame the
@@ -611,10 +613,426 @@
       return rings[0].still >= D.dwell && rings[1].still >= D.dwell && rings[2].still >= D.dwell;
     }
 
+    /* --- ECLIPSE — the shadow that fills the dial --------------------------
+       The endless mode. There is no clock: what runs out is the BOARD. A
+       shadow closes in over the machinery from the bottom of the frame toward
+       12 o'clock, and the rays it swallows cannot pay — so the arc the player
+       is allowed to play in narrows, and the same three plates have to feed a
+       smaller and smaller window.
+
+       It is INK, and it stains the machine rather than the room. The layer
+       order is the whole design (see render): background, then the plates and
+       the teeth, then the ink OVER them and clipped to them, then the beads.
+       So the frame never goes dark, the ink is only ever seen on the
+       machinery, and a bead sitting on inked plate is the signal — the beads
+       themselves stay at full colour on top, because they are what the player
+       reads to plan a move. Chosen from the ten candidates in
+       lab/eclipse-fog.html, which draws them all the way the game draws this.
+
+       What the shadow answers to, and nothing else:
+         - a single ray            it STOPS for `HOLD` seconds
+         - two rays or more        it gives ground back  (`multi`)
+         - a whole plate emptied   it gives more back    (`blast`)
+
+       The level is Tetris's: every `LINES` rays popped is one level, and the
+       shadow closes `STEP` times faster at each. Nothing else accelerates it —
+       the pressure comes from the player's own progress, which is what makes a
+       good run end as decisively as a bad one.
+
+       It ends the moment no ray is left. Note the last-stand that leaves open
+       on purpose: at one lit ray you can no longer double, but you can pop
+       that ray over and over, bank the hub's meter, and spend the CHARGE it
+       buys to unzip a plate — a ring cleared is three rays of daylight back.
+
+       OFF unless the URL asks for it, and it owns exactly ONE hook into the
+       rules: `dead()`, read by rayColour. Since scan() feeds both the armed
+       preview and the payout, the shadow can never light a ray it would then
+       refuse to pay.
+
+       URL flags — desk only, nothing is on by default:
+         ?mode=eclipse            the endless mode
+         &ecl=<rate>,<step>       rays/s at level 1, and the per-level factor
+         &push=<dbl>,<tpl>,<ring> ground given back, in rays
+         &lines=<n>               rays popped per level
+         &cover=<rays>            start with that much of the dial already dark
+       ------------------------------------------------------------------- */
+    var Eclipse = (function () {
+      /* Tuned on the headless replay (a pilot that turns plates at random, so
+         a deliberate player does better than these numbers). Playing has to be
+         worth about twice doing nothing: under that the mode is a timer with
+         extra steps, over it the shadow stops being a threat. */
+      var GROW = 0.35;               // rays of dial eaten per second at level 1
+      var STEP = 1.14;               // ...multiplied by this at every level
+      var LINES = 10;                // rays popped per level, like Tetris
+      var HOLD = 2;                  // seconds a single ray freezes the shadow
+      var PUSH = { multi: 0.8, triple: 2, ring: 3 };   // ground back, in rays
+      var WARN = 3;                  // lit rays left before the board screams
+
+      // Reading location can THROW in a sandboxed ad iframe — same guard the
+      // motor puts around its own ?perf= flag.
+      var on = false, start = 0;
+      try {
+        var q = location.search + location.hash;
+        on = /[?&#]mode=eclipse\b/.test(q);
+        var m = /[?&#]ecl=([0-9.]+),([0-9.]+)/.exec(q);
+        if (on && m) { GROW = +m[1]; STEP = +m[2]; }
+        var g = /[?&#]push=([0-9.]+),([0-9.]+),([0-9.]+)/.exec(q);
+        if (on && g) { PUSH.multi = +g[1]; PUSH.triple = +g[2]; PUSH.ring = +g[3]; }
+        var l = /[?&#]lines=([0-9]+)/.exec(q);
+        if (on && l) LINES = Math.max(1, +l[1]);
+        var c = /[?&#]cover=([0-9.]+)/.exec(q);
+        if (on && c) start = Math.min(N - 0.01, +c[1]);
+      } catch (e) {}
+
+      /* No clock, so the two things CONFIG says about one are wrong here. That
+         frees both HUD pills for what this mode is actually played on: the
+         level, and how many rays are still lit. */
+      if (on) { CONFIG.gameSeconds = 0; CONFIG.hud.timer = false; }
+
+      var cover = 0, free = N, freed = false, over = false;
+      var lines = 0, level = 1, hold = 0;
+      var flash = 0, shove = 0, shown = -1;
+      var shade0 = [], hits = [0, 0, 0], missed = [], misses = [];
+      var ink = null, inkR = 0;
+
+      function reset() {
+        cover = start; free = N; freed = false; over = false;
+        lines = 0; level = 1; hold = 0;
+        flash = 0; shove = 0; shown = -1;
+        hits[0] = hits[1] = hits[2] = 0;
+        misses.length = 0;
+        for (var s = 0; s < N; s++) { shade0[s] = false; missed[s] = -9; }
+        if (on) { recount(); HUD.setLeft(level, "LEVEL"); }
+      }
+
+      function rate() { return GROW * Math.pow(STEP, level - 1); }
+
+      /* The ink, baked ONCE per layout into a square the size of the dial.
+         It is a texture, not a copy of anything: near black, with a few slow
+         sheens across it so a big blot reads as ink and not as a hole punched
+         in the game. Baking it is what makes the effect affordable — the blot
+         changes shape every frame, the ink does not, so a frame costs one
+         clipped drawImage the size of the dial instead of a screenful of
+         gradients. It is also why the ink can never leak onto the background:
+         the bitmap is only as big as the machine it stains. */
+      function build() {
+        if (!on) return;
+        var i, g, x, y, r, grd, s;
+        inkR = rimR * 1.01;                // the teeth end at rimR, nothing past it
+        s = Math.ceil(inkR * 2);
+        ink = document.createElement("canvas");
+        ink.width = s; ink.height = s;
+        g = ink.getContext("2d");
+        g.fillStyle = "rgba(4,3,10,0.94)";
+        g.fillRect(0, 0, s, s);
+        for (i = 0; i < 9; i++) {
+          x = Rand.range(0, s); y = Rand.range(0, s);
+          r = Rand.range(s * 0.12, s * 0.42);
+          g.save();
+          g.translate(x, y); g.scale(1, Rand.range(0.2, 0.5)); g.rotate(Rand.range(-0.5, 0.5));
+          grd = g.createRadialGradient(0, 0, 0, 0, 0, r);
+          grd.addColorStop(0, "rgba(120,110,190,0.09)");
+          grd.addColorStop(1, "rgba(120,110,190,0)");
+          g.fillStyle = grd;
+          g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();
+          g.restore();
+        }
+      }
+
+      /* The blot's edge: two slow, wide frequencies down the radius, so it
+         soaks rather than sweeps. It nearly stops while the shadow is held —
+         ink holding still is the clearest tell that a single ray just bought
+         the player two seconds.
+
+         The amplitude is deliberately under half a slot: the edge can eat into
+         a live ray's sector, but it can never reach the ray's CENTRE, which is
+         where its three beads sit. So a bead on black is always a dead ray and
+         a bead on plate is always a live one, whatever the edge is doing. */
+      function wobble(r, sign) {
+        var t = clock * (hold > 0 ? 0.18 : 1);
+        return (Math.sin(r * 0.0072 + t * 0.6 + sign * 1.7) * 0.7 +
+                Math.sin(r * 0.019 - t * 0.35) * 0.3) * SLOT * 0.3;
+      }
+
+      /* One wedge, apex at the hub, wobbling edges, closed well past the
+         corners of the frame. `fresh` is false for the second subpath of the
+         even-odd clip that carves the soft outer band. */
+      function wedgePath(half, grow, fresh) {
+        var i, r, a, n = 14, m, R0 = hubR * 0.25, R1 = inkR * 1.03;
+        if (fresh) ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        for (i = 0; i <= n; i++) {
+          r = R0 + (R1 - R0) * (i / n);
+          a = Math.PI - half - grow - wobble(r, -1);
+          ctx.lineTo(px(a, r), py(a, r));
+        }
+        m = Math.max(3, Math.ceil((half + grow) * 4));      // follow the rim
+        for (i = 1; i < m; i++) {
+          a = Math.PI - half - grow + 2 * (half + grow) * (i / m);
+          ctx.lineTo(px(a, R1), py(a, R1));
+        }
+        for (i = n; i >= 0; i--) {
+          r = R0 + (R1 - R0) * (i / n);
+          a = Math.PI + half + grow + wobble(r, 1);
+          ctx.lineTo(px(a, r), py(a, r));
+        }
+        ctx.closePath();
+      }
+
+      /* How far the shadow reaches, as a half-angle off the bottom. A ray dies
+         when its whole slot is inside it, which is what makes `cover` read in
+         rays: 1 is the bottom ray alone, 11 leaves only 12 o'clock, 12 is the
+         end of the round. */
+      function reach() { return Math.min(Math.PI, cover * SLOT / 2); }
+      function depth(s) { return Math.min(Math.PI, Math.abs(wrap(s * SLOT - Math.PI)) + SLOT / 2); }
+
+      function recount() {
+        var half = reach(), s, now, f = 0;
+        freed = false;
+        for (s = 0; s < N; s++) {
+          now = depth(s) <= half + 1e-6;
+          if (shade0[s] && !now) freed = true;
+          shade0[s] = now;
+          if (!now) f++;
+        }
+        free = f;
+        if (f !== shown) {
+          shown = f;
+          HUD.setRight(f, "RAYS", f <= WARN ? "warn" : "");
+          if (f <= WARN && f > 0) {
+            Overlay.vignette(D.colours[0], 0.85, 520);
+            Sound.clip("charge", 0.4, 0.7);
+          }
+        }
+      }
+
+      function update(dt) {
+        var i;
+        if (finale) return;                    // the machine is powering down
+        if (hold > 0) hold = Math.max(0, hold - dt);
+        else cover = Math.min(N, cover + rate() * dt);
+        if (flash > 0) flash = Math.max(0, flash - dt * 1.8);
+        if (shove > 0) shove = Math.max(0, shove - dt * 2.4);
+        for (i = misses.length - 1; i >= 0; i--) {
+          misses[i].life -= dt;
+          if (misses[i].life <= 0) misses.splice(i, 1);
+        }
+        recount();
+        if (free <= 0 && !over) { over = true; eclipsed(); }
+      }
+
+      /* Ground given back. It is announced in the clear band under the HUD —
+         the dial is where the player is looking, and the shadow's own recoil
+         is already drawn there. */
+      function give(rays, word) {
+        if (!on || over) return;
+        cover = Math.max(0, cover - rays);
+        flash = 0.7; shove = 1;
+        recount();
+        Pop.show("bonus", { word: word, sub: "+" + rays + " RAYS", at: "hudUnder" });
+        Sound.clip("charge", 0.55, 1.15);
+        Fx.flash("#8b6cff", 0.16, 1.6);
+      }
+
+      /* A ray paid. One is a breather — the shadow stops where it is, which is
+         what keeps a player who can only find singles alive while they look
+         for a double. Two or more give ground back, and hold as well: a double
+         must never be worth less than a single on any axis. */
+      function single() { if (on && !over) { hold = Math.max(hold, HOLD); flash = 0.5; } }
+      function multi(n) {
+        if (!on) return;
+        hold = Math.max(hold, HOLD);
+        give(n > 2 ? PUSH.triple : PUSH.multi, n > 2 ? "TRIPLE RAY" : "DOUBLE RAY");
+      }
+
+      // Tetris's clock: the lines are the rays, and only they move the level.
+      function line() {
+        if (!on) return;
+        lines++;
+        if (lines % LINES) return;
+        level++;
+        HUD.setLeft(level, "LEVEL");
+        Pop.show("alert", { word: "LEVEL " + level, at: "hudUnder" });
+        Sound.clip("chain", 0.5, 1.18);
+        Fx.flash("#ff4d6d", 0.14, 1.8);
+        flash = 1;
+      }
+
+      // One bead taken by a wave, counted per plate...
+      function bead(idx) { if (on) hits[idx]++; }
+      // ...and read once the whole chain has burnt out. A plate is "cleared"
+      // at N-1 of its N housings: one refill in flight is the normal state of
+      // this board, and it must not cost the player the reward.
+      function blast() {
+        if (!on) return;
+        var i, best = 0;
+        for (i = 0; i < 3; i++) { if (hits[i] > best) best = hits[i]; hits[i] = 0; }
+        if (best >= N - 1) give(PUSH.ring, "RING CLEARED");
+      }
+
+      /* A move that WOULD have paid, landing on a ray the shadow owns. Without
+         this the board simply says nothing and the player reads it as the game
+         missing their alignment — so it is called out: the ray flares dead,
+         the beads spit grey, and the machine gives a flat dud instead of the
+         pop. Once per ray per second, because a cascade of refills re-reads
+         the same board several times over. */
+      function miss(s) {
+        if (!on || over || clock - missed[s] < 1) return;
+        missed[s] = clock;
+        var r = rings[1], a = r.angle + mod(s - r.step, N) * SLOT;
+        var x = px(a, r.rad), y = py(a, r.rad);
+        misses.push({ s: s, life: 0.5 });
+        Fx.burst(x, y, { color: ["#6f5ea8", "#2a2050"], count: 7, speed: 150,
+                         life: 0.4, grav: 140, size: 4 });
+        Fx.text(x, y, "BLOCKED", { color: "#8b6cff", size: 24, life: 0.6 });
+        Sound.clip("tick", 0.4, 0.52);
+      }
+
+      /* The one hook. A single array lookup when the mode is off, because
+         reset() never filled the array. */
+      function dead(s) { return shade0[s] === true; }
+
+      /* How deeply a POINT sits in the ink, 0..1 — the beads are drawn over
+         the blot and are sunk by it (see drawBall). It is measured against the
+         edge actually drawn, wobble included, so a bead darkens exactly as it
+         is dragged across the rim instead of snapping when its ray dies; and
+         it ramps over half a slot, so the bead is fully sunk about where its
+         own ray is fully swallowed. Everything drawn as a bead gets it for
+         free: the ones in their housings, the refills flying in, and the
+         dissolving ones. */
+      function sink(x, y) {
+        if (!on || cover <= 0) return 0;
+        var dx = x - cx, dy = y - cy;
+        var r = Math.sqrt(dx * dx + dy * dy);
+        var w = wrap(Math.atan2(dx, -dy) - Math.PI);
+        var edge = reach() + wobble(r, w < 0 ? -1 : 1);
+        return clamp((edge - Math.abs(w)) / (SLOT * 0.5), 0, 1);
+      }
+
+      /* A ray has just come OUT of the shadow, which only happens when the
+         player pushed it back. The dial has not moved, so this is the only
+         re-read of the board that will ever happen — without it the ground won
+         earns nothing until the next move. Consumed on read. */
+      function uncovered() {
+        if (!freed) return false;
+        freed = false;
+        return true;
+      }
+
+      /* layer 0 — BEHIND everything, over the gears: one flat wedge and its
+                   two fronts. Flat and source-over on purpose: this covers a
+                   large part of the frame every single frame, and a gradient
+                   or a multiply over that area is exactly the kind of fill a
+                   phone's rasterizer runs out of budget on.
+         layer 1 — over the beads, additive: the alignments the shadow is
+                   sitting on, and the BLOCKED flare of a move that just died
+                   in the dark. */
+      function draw(layer) {
+        var half = reach(), s, col, g, w, m, e, a0, a1;
+        if (layer === 0) {
+          if (half <= 0) return;
+          if (!ink) {                        // the bake failed: still play fair
+            ctx.fillStyle = rgba(D.sky[2], 0.82);
+            wedgePath(half, 0, true); ctx.fill();
+            return;
+          }
+          /* Everything below is clipped to the machine. That single circle is
+             what makes the ink "only on the gears": it cannot reach the
+             background, and the beads are drawn after it. */
+          ctx.save();
+          ctx.beginPath(); ctx.arc(cx, cy, inkR, 0, TAU); ctx.clip();
+          /* The band OUTSIDE the blot first, at part alpha: ink does not end
+             on a line, it thins into the paper. Two subpaths and an even-odd
+             clip carve the band, so the body is painted once and the soft edge
+             costs only its own width. */
+          var band = SLOT * 0.2;
+          if (half + band < Math.PI) {
+            ctx.save();
+            wedgePath(half, band, true);
+            wedgePath(half, 0, false);
+            ctx.clip("evenodd");
+            ctx.globalAlpha = 0.42;
+            ctx.drawImage(ink, cx - inkR, cy - inkR, inkR * 2, inkR * 2);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+          }
+          ctx.save();
+          wedgePath(half, 0, true);
+          ctx.clip();
+          ctx.drawImage(ink, cx - inkR, cy - inkR, inkR * 2, inkR * 2);
+          ctx.restore();
+          /* The wet rim of the blot. Held it goes to the game's own accent,
+             won back it goes white — the two states the player has to read at
+             a glance, on the one edge they are already watching. */
+          col = shove > 0 ? "#ffffff" : (hold > 0 ? "#35e0ff" : "#c9c2ff");
+          wedgePath(half, 0, true);
+          ctx.lineWidth = 14;
+          ctx.strokeStyle = rgba(col, 0.05 + flash * 0.1);
+          ctx.stroke();
+          ctx.lineWidth = 1.6 + shove * 2;
+          ctx.strokeStyle = rgba(col, 0.55 + flash * 0.35);
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
+        // The alignments the shadow is holding: what pushing it back is worth,
+        // dim enough never to compete with a ray that can actually pay.
+        w = unit * 0.05;
+        for (s = 0; s < N; s++) {
+          if (!shade0[s]) continue;
+          col = rawColour(s);
+          if (col < 0) continue;
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(s * SLOT);
+          g = ctx.createLinearGradient(0, -hubR, 0, -rimR);
+          g.addColorStop(0, rgba(D.colours[col], 0));
+          g.addColorStop(0.5, rgba(D.colours[col], 0.13 + 0.05 * Math.sin(clock * 7)));
+          g.addColorStop(1, rgba(D.colours[col], 0));
+          ctx.fillStyle = g;
+          ctx.fillRect(-w / 2, -rimR, w, rimR - hubR);
+          ctx.restore();
+        }
+        // ...and the ray that just died under it, flaring out.
+        for (m = 0; m < misses.length; m++) {
+          e = misses[m].life / 0.5;
+          ctx.save();
+          ctx.translate(cx, cy); ctx.rotate(misses[m].s * SLOT);
+          g = ctx.createLinearGradient(0, -hubR, 0, -rimR);
+          g.addColorStop(0, rgba("#8b6cff", 0));
+          g.addColorStop(0.5, rgba("#8b6cff", 0.75 * e * e));
+          g.addColorStop(1, rgba("#8b6cff", 0));
+          ctx.fillStyle = g;
+          ctx.fillRect(-unit * 0.055 * (2 - e), -rimR, unit * 0.11 * (2 - e), rimR - hubR);
+          ctx.restore();
+        }
+      }
+
+      /* The board is out. It goes through the motor's own wind-down, so the
+         move under way still finishes and still pays — the round is over, but
+         it is not cut off mid-gesture. */
+      function eclipsed() {
+        Pop.show("danger", { word: "ECLIPSED", at: "hudUnder" });
+        Fx.shake(20, 0.5);
+        onTimeUp();
+      }
+
+      return { on: on, build: build, reset: reset, update: update, dead: dead,
+               sink: sink, miss: miss,
+               uncovered: uncovered, single: single, multi: multi, line: line,
+               bead: bead, blast: blast, draw: draw,
+               level: function () { return level; },
+               lines: function () { return lines; },
+               survived: function () { return Math.round(clock); } };
+    })();
+
     /* The colour a ray would pay in, or -1 if it would not. A NOVA is wild:
        it agrees with whatever the other two beads are, which is what makes it
        worth hunting rather than just worth having. */
     function rayColour(s) {
+      if (Eclipse.dead(s)) return -1;      // the eclipse, and nothing else
+      return rawColour(s);
+    }
+    function rawColour(s) {
       var c = -1, i, v;
       for (i = 0; i < 3; i++) {
         v = slotAt(rings[i], s);
@@ -634,8 +1052,12 @@
     }
 
     function resolve() {
-      var hits = scan();
+      var hits = scan(), s;
       if (hits.length) pop(hits);
+      // ...and whatever the shadow just swallowed, so the board never simply
+      // says nothing when the player had it right.
+      if (Eclipse.on)
+        for (s = 0; s < N; s++) if (Eclipse.dead(s) && rawColour(s) >= 0) Eclipse.miss(s);
     }
 
     /* Empty ONE housing: the bead dissolves, a refill is ordered from outside
@@ -666,6 +1088,7 @@
       var v = clearBead(r, k);
       if (v === null) return;
       blastRun++;
+      Eclipse.bead(r.idx);
       var ramp = Math.min(1 + (blastRun - 1) * D.blastRamp, D.blastRampMax);
       var pts = Math.round(D.blastScore * Math.max(1, combo) * ramp);
       score += pts;
@@ -687,6 +1110,7 @@
         Pop.show("score", { word: "+" + blastGain, sub: blastRun + " BEADS",
                             at: { x: cx, y: cy } });
       blastRun = 0; blastGain = 0;
+      Eclipse.blast();                   // a plate emptied whole buys daylight
     }
 
     function fireSuper(v, r, k, colour) {
@@ -776,6 +1200,7 @@
         colour = rayColour(s);
         hex = D.colours[colour];
         matches++;
+        Eclipse.line();                      // ...which is this mode's "line"
         charge++;
         combo = Math.min(combo + 1, D.comboMax);
         if (combo > bestCombo) bestCombo = combo;
@@ -810,8 +1235,10 @@
         Fx.shake(12, 0.3);
         Overlay.vignette(D.colours[colour], 0.75, 420);
         grant(hits.length > 2 ? NOVA : CHARGE, colour);
+        Eclipse.multi(hits.length);      // ...and pushes the shadow back
       } else {
         Fx.shake(4 + combo * 0.4, 0.16);
+        Eclipse.single();                // one ray only freezes it
       }
 
       score += gained;
@@ -891,6 +1318,7 @@
       HUD.setScoreNow(0);
       HUD.setLeft(best, "BEST");
       Fx.reset();
+      Eclipse.reset();
     }
 
     function onResize() { layout(); }
@@ -909,11 +1337,19 @@
       }
       for (i = 0; i < 3; i++) tickRest(rings[i], dt);
 
+      // The eclipse sweeps BEFORE the board is read, so the preview and the
+      // payout of this frame both see the same shadow.
+      if (Eclipse.on) Eclipse.update(dt);
+
       // The dial pays on the frame it comes to rest, not on the way there.
       var rest = settled();
       if (rest && !resting) resolve();
       resting = rest;
       armed = rest ? null : scan();          // the preview, only while turning
+
+      // ...and on the frame the shadow lets a ray go: the dial has not moved,
+      // so this is the only re-read that will ever happen.
+      if (rest && Eclipse.uncovered()) resolve();
 
       // Refills, riding in from outside the rim. Their angle is read off the
       // ring every frame, so turning a plate mid-refill carries its incoming
@@ -971,7 +1407,10 @@
       // A chain only lives as long as the player keeps paying rays.
       if (combo > 0) { comboLeft -= dt; if (comboLeft <= 0) combo = 0; }
 
-      if (palette.length < D.colours.length && Round.elapsed() >= D.colourUpAt) addColour();
+      // Round.elapsed() is 0 for a round with no timer, so the endless mode
+      // reads the ramp off the game's own clock.
+      if (palette.length < D.colours.length &&
+          (Eclipse.on ? clock : Round.elapsed()) >= D.colourUpAt) addColour();
 
       // The clock is out: wait for the dial, then play the machine out.
       if (finale) stepFinale(dt);
@@ -994,6 +1433,14 @@
         ctx.drawImage(sp, x - w / 2, y - w / 2, w, w);
       }
       if (v & SUPER) drawCrown(v, rings[idx].ballR * sc, x, y);
+      // A bead the ink has reached is sunk into it — still perfectly legible,
+      // just plainly not in play. One flat disc over the sprite: it keeps the
+      // enamel's shape instead of washing the bead out with globalAlpha.
+      var d = Eclipse.sink(x, y);
+      if (d > 0) {
+        ctx.fillStyle = rgba("#04030a", 0.44 * d * alpha);
+        ctx.beginPath(); ctx.arc(x, y, w * 0.5, 0, TAU); ctx.fill();
+      }
       if (alpha < 1) ctx.globalAlpha = 1;
     }
 
@@ -1213,10 +1660,17 @@
       ctx.save(); ctx.translate(cx, cy);
       ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
       for (i = 0; i < N; i++) {
+        // The rotate comes first, so this pass draws ray i+1.
         ctx.rotate(SLOT);
+        if (Eclipse.on)
+          ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
         ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
       }
       ctx.restore();
+
+      // The ink, over the machine and clipped to it, and under the beads:
+      // a bead sitting on black is a ray that cannot pay. See Eclipse.
+      if (Eclipse.on) Eclipse.draw(0);
 
       for (i = 0; i < 3; i++) {
         r = rings[i];
@@ -1247,6 +1701,7 @@
         var glow = 0.34 + 0.16 * Math.sin(clock * 9);
         for (i = 0; i < armed.length; i++) drawArmed(armed[i], glow);
       }
+      if (Eclipse.on) Eclipse.draw(1);
       for (i = 0; i < flares.length; i++) drawFlare(flares[i]);
       for (i = 0; i < sweeps.length; i++) drawSweep(sweeps[i]);
       for (i = 0; i < novas.length; i++) drawNova(novas[i]);
@@ -1352,21 +1807,29 @@
 
     function gameOver() {
       var stars = score >= D.star3 ? 3 : score >= D.star2 ? 2 : score > 0 ? 1 : 0;
+      var rows = [
+        { label: "RAYS POPPED", value: matches },
+        { label: "BEADS CLEARED", value: cleared },
+        { label: "MULTI RAYS", value: multis, grade: multis > 0 ? "good" : "" },
+        { label: "SUPERS FIRED", value: supers, grade: supers > 0 ? "accent" : "" },
+        { label: "BIGGEST BLAST", value: bestBlast + " BEADS",
+          grade: bestBlast >= 8 ? "good" : "" },
+        { label: "BEST CHAIN", value: "x" + bestCombo, grade: "accent" },
+        { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+      ];
+      if (Eclipse.on) {
+        rows.splice(1, 1);                   // beads cleared says least here
+        rows.splice(0, 0,
+          { label: "LEVEL", value: Eclipse.level(), grade: "gold" },
+          { label: "SURVIVED", value: Eclipse.survived() + "s", grade: "accent" });
+      }
       endRound({
-        title: stars === 3 ? "RADIANT!" : CONFIG.copy.timeUp,
+        title: Eclipse.on ? CONFIG.copy.eclipsed
+                         : stars === 3 ? "RADIANT!" : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,
-        rows: [
-          { label: "RAYS POPPED", value: matches },
-          { label: "BEADS CLEARED", value: cleared },
-          { label: "MULTI RAYS", value: multis, grade: multis > 0 ? "good" : "" },
-          { label: "SUPERS FIRED", value: supers, grade: supers > 0 ? "accent" : "" },
-          { label: "BIGGEST BLAST", value: bestBlast + " BEADS",
-            grade: bestBlast >= 8 ? "good" : "" },
-          { label: "BEST CHAIN", value: "x" + bestCombo, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
-        ]
+        rows: rows
       });
     }
 

@@ -48,5 +48,13 @@
       "rewarded": false,
       "interstitial": false
     }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b>, <b class=\"w-fill\">enchaîne pour remplir la boucle</b>"
+      }
+    },
+    "font": "russoone"
   }
 }
