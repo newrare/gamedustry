@@ -21,6 +21,10 @@
     the panels, in that same band   LEADERBOARD / OPTIONS / HELP replace the
                                     menu without leaving the screen: same
                                     title, same scene, a back arrow to return
+
+  …and the round gets the two controls a finished game owes the player, MENU and
+  OPTIONS, in the bottom-right corner — the HUD stays the game's, all of it —
+  plus the card that opens over the paused world.
 */
 
 /* The CTA bar is what a playable sells with; a web build has nowhere to send
@@ -150,6 +154,15 @@
 #screen-intro #btn-start:hover { color:var(--text); }
 #screen-intro #btn-start::after { height:6px; background:var(--accent); }
 
+/* A game that declares several modes gets one entry per extra mode right under
+   PLAY. They start a round too, so they sit between the two weights: brighter
+   and larger than the panel entries, well under the accent of PLAY, and the
+   air below closes the group before LEADERBOARD. */
+.web-item.web-mode {
+  color:var(--text); font-size:46px; letter-spacing:2.8px;
+  padding-top:8px; padding-bottom:8px; margin-bottom:10px;
+}
+
 /* =========================================================================
    THE PANELS — leaderboard / options / help, in the menu's own band
    ========================================================================= */
@@ -263,3 +276,89 @@
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 800);
 }
 .web-keys-lbl { font-size:22px; letter-spacing:3px; color:var(--muted); text-align:center; margin:6px 0 12px; }
+
+/* =========================================================================
+   THE GAME VIEW — the two controls a finished game needs in a round
+   ========================================================================= */
+
+/* A playable has no way out of a round and nothing to configure. A finished
+   game has both, and they live in the bottom-right corner.
+
+   Not in the top band: the HUD is the game's, all of it — a level pill, a
+   timer, a lives count, a big score — and the thirteen fill it differently, so
+   a control put up there either takes a row from the play area or squeezes what
+   the game wanted read at a glance. The bottom-right corner is also where a
+   thumb already is, and it is the corner the web menu's own entries come out
+   of, so leaving a round and coming back lands on the same side of the screen.
+
+   Nothing about the round moves for them: --hud-h and --cta-h are the game's
+   own numbers and Layout is untouched. They do sit OVER the play area, which is
+   why they are small and dark rather than a bar. */
+#web-ctls {
+  position:absolute; right:0; bottom:0; z-index:22;
+  padding:0 26px calc(var(--inset-bottom) + 26px) 0;
+  display:flex; align-items:center; gap:14px;
+  pointer-events:none;                 /* only the two buttons take a tap */
+}
+/* `display:flex` above beats the browser's own [hidden] rule, so the row says
+   it again: it is only ever on screen during a round. */
+#web-ctls[hidden] { display:none; }
+
+.web-ctl {
+  position:relative; pointer-events:auto; cursor:pointer;
+  flex:0 0 auto; width:58px; height:58px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); background:rgba(0,0,0,.42);
+  border:2px solid var(--panel-line);
+  transition:color .16s ease, border-color .16s ease, transform .16s ease;
+}
+/* The circle is 58 design px, which is about 32 real px on a phone — under any
+   thumb. The TAP AREA is grown to 82 by a transparent pseudo-element instead,
+   so the control stays discreet over the game and the finger still lands. */
+.web-ctl::before { content:""; position:absolute; inset:-12px; border-radius:50%; }
+.web-ctl svg { width:31px; height:31px; }
+.web-ctl:hover, .web-ctl:focus-visible { color:var(--accent); border-color:var(--accent); outline:none; }
+.web-ctl:active { transform:scale(.94); }
+
+/* ---- the paused card --------------------------------------------------- */
+/* Either control pauses the round and puts one card over the frozen world —
+   the options, or the one question that loses a run. Same head, same body and
+   the same rows as the intro's panels: there is one panel design. */
+#web-pause {
+  position:absolute; inset:0; z-index:28; display:none;
+  align-items:center; justify-content:center; padding:0 44px;
+  background:rgba(3,4,12,.78);
+  -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
+}
+#web-pause.on { display:flex; animation:web-panel-in .2s ease both; }
+.web-pcard { width:100%; }
+
+.web-actions { display:flex; gap:16px; margin:18px 0 6px; }
+.web-btn {
+  flex:1; padding:19px 10px; border-radius:16px; cursor:pointer;
+  background:rgba(0,0,0,.4); border:2px solid var(--panel-line); color:var(--text);
+  font-family:var(--web-font, inherit); font-size:30px;
+  font-weight:var(--web-fw, 800); letter-spacing:2px; text-transform:uppercase;
+  transition:color .16s ease, background .16s ease, border-color .16s ease;
+}
+.web-btn:hover { border-color:var(--accent); color:var(--accent); }
+.web-btn:active { transform:scale(.98); }
+.web-btn.go { color:var(--cta-text); background:var(--accent); border-color:var(--accent); }
+.web-btn.go:hover { color:var(--cta-text); filter:brightness(1.08); }
+.web-btn.stop { color:var(--danger); border-color:rgba(255,45,85,.5); }
+.web-btn.stop:hover { color:#fff; background:rgba(255,45,85,.22); border-color:var(--danger); }
+
+/* =========================================================================
+   THE END SCREEN — same geometry, a different face
+   ========================================================================= */
+
+/* `nowrap` is what turns a too-long title into something measurable: the
+   webshell scales these three down until they fit (menu.js, section 6b), and a
+   string it still cannot fit overflows visibly instead of silently wrapping
+   onto a second line and pushing the whole reveal down the screen. */
+#intro-title, #screen-end .eo-title, #screen-end .eo-score { white-space:nowrap; }
+
+/* A face is free to carry tall metrics — Baloo 2 reserves room for Devanagari
+   ascenders — which inflated every stat row by 8px and pushed the CTA off the
+   fold. The row is 30px of text, so it says so. */
+.eo-row { line-height:1.1; }

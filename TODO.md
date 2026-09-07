@@ -140,6 +140,15 @@ ______________________________________________________________________
 
 ## Known drift and small debts
 
+- [ ] CODE — four playables wrap their end title onto two lines, and did so
+  before any font landed: `bouncetry` "OUT OF BALLS!" (703px of a 624px band),
+  `echomaze` "OUT OF PULSES!" (766), `orbinity` "LOST IN SPACE" (690),
+  `slipdeck` "OUT OF LIVES" (636), all at `.eo-title` 96px in the system stack.
+  The web build now measures and scales those down
+  (`packages/webshell/menu.js`, section 6b); the playable still needs a call —
+  the same fitter in the motor, a smaller `.eo-title`, or shorter strings. It
+  rebuilds all 14 creatives, so it is a decision, not a patch
+
 - [ ] MAIN — background art for the six games that have none: `arcider`,
   `chainring`, `marshmelt`, `slipdeck`, `triverse`, `vipera`. The web menu shows
   `assets/image/<slug>-background.png` (embedded as `ASSETS.images.bg`) and
