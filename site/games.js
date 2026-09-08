@@ -176,11 +176,11 @@ window.GAMES = [
     name: "Marshmelt",
     accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "Un marshmallow collant survit au-dessus d’un lac de lave. Chaque tap l’envoie sur le rocher visé, et tout ce qui tombe finit par fondre.",
+      tagline: "Chaque tap envoie le marshmallow sur le rocher visé. Les rochers fondent, la lave monte, il faut grimper.",
       tags: ["Tap pour sauter", "Sans fin", "Lave"]
     },
     en: {
-      tagline: "A sticky marshmallow survives above a lava lake. Every tap flings it at the rock you aimed at, and everything falling ends up melting.",
+      tagline: "Every tap flings a sticky marshmallow at the rock you aimed at. The rocks melt, the lava rises, you keep climbing.",
       tags: ["Tap to jump", "Endless", "Lava"]
     }
   }

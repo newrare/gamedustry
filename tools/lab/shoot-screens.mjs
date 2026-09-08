@@ -75,10 +75,30 @@ var SPAN = {
   bouncetry: 15,
   echomaze: 18,
   gearball: 20,     // clock 45
-  marshmelt: 4,     // the pilot cannot play it at all — it scores 0
+  marshmelt: 13,    // with its SWEEP entry below; every seed reaches 12.9 s
   slipdeck: 15,     // clock 30
   spinshock: 27,
   triverse: 15
+};
+
+/* Games whose tap POINT is the aim, not just a trigger. The generic "tap"
+   pilot taps the middle of the play band, which is right where a tap is a
+   tap — but marshmelt flings the body along the line to the finger, so
+   tapping the centre sends it nowhere and the round ends at score 0 (dead at
+   frame 122 on every seed, which is what the old `marshmelt: 4` span above
+   was recording). Tapping high in the band and sweeping across it crosses the
+   falling rocks instead.
+
+   Benched over 7 seeds, cadence x height x amplitude: this entry holds the
+   round for 17.5 s at the median and 12.9 s at the worst seed, for ~600
+   points. Halving the cadence loses ten seconds of it, and so does aiming at
+   0.2 of the band instead of 0.1 — the pilot is aiming past the rocks.
+
+   every - frames between taps.  y - fraction of the band, from its top.
+   amp   - half-width of the sweep, in fractions of the band's width.
+   w     - radians of sweep per frame. */
+var SWEEP = {
+  marshmelt: { every: 30, y: 0.10, amp: 0.42, w: 0.03 }
 };
 
 // --- CLI -----------------------------------------------------------------
@@ -187,6 +207,13 @@ var DRIVER_JS = `<script>
       if (k === 0) H.Input.at("down", ax, ay);
       else if (k < 20) H.Input.at("move", ax + (tx - ax) * (k / 20), ay + (ty - ay) * (k / 20));
       else if (k === 20) H.Input.at("up", tx, ty);
+      return;
+    }
+    // "tap" whose point is the aim: sweep the top of the band (see SWEEP).
+    var S = window.__SWEEP;
+    if (S) {
+      if (n % S.every === 0)
+        tap(H, L.left + L.w * (0.5 + S.amp * Math.sin(n * S.w)), L.top + L.h * S.y);
       return;
     }
     // "tap". A game played on the beat is scored on timing, so tap the grid
@@ -319,7 +346,10 @@ function prepare(slug, tmpDir) {
   src = src.slice(0, head + 6) + "\n" + SEED_JS
     + (ctls ? "" : "\n" + CTLS_CSS) + src.slice(head + 6);
 
-  src = src.replace("</body>", DRIVER_JS + "\n</body>");
+  var sweep = SWEEP[slug]
+    ? "<script>window.__SWEEP = " + JSON.stringify(SWEEP[slug]) + ";</script>\n"
+    : "";
+  src = src.replace("</body>", sweep + DRIVER_JS + "\n</body>");
 
   var out = path.join(tmpDir, slug + ".html");
   fs.writeFileSync(out, src);
