@@ -424,19 +424,21 @@ what changed, zips the directory itself, and is idempotent.
 ```bash
 node tools/build/build.mjs --target=web --dest=itch --game=vipera
 node tools/publish/deploy-itch.mjs --game=vipera            # builds, then pushes
-node tools/publish/deploy-itch.mjs --game=vipera --channel=html5 --dry-run
+node tools/publish/deploy-itch.mjs --game=vipera --dry-run
 ```
 
 `deploy-itch.mjs` is the wrapper: it reads `itch.user` / `itch.project` from the
-manifest, defaults to the `html5-dev` channel (pushing the public one is a
-decision, so it has to be typed), stamps the build with the commit it was made
-from, and refuses to push what it has not built.
+manifest, pushes the `html5` channel, stamps the build with the commit it was
+made from, and refuses to push what it has not built.
 
 - **Auth**: `butler login` once locally (credentials in `~/.config/itch`), or
   `BUTLER_API_KEY` as an environment variable in CI.
-- **Channels** are independent: `html5-dev` for every merge, `html5` for the
-  public build. A channel name containing `html` marks the build as playable in
-  the browser.
+- **One channel, `html5`.** A channel name containing `html` marks the build as
+  playable in the browser, and an itch page lists every channel's upload side by
+  side — so a second, staging channel puts two indistinguishable entries in
+  front of a visitor. The repo pushed to `html5-dev` at first and it bought
+  nothing `node tools/lab/serve-site.mjs` does not already give locally.
+  Decided 2026-09-08, after `vipera` shipped its first build.
 - **What butler cannot do**: edit the page. Title, description, tags,
   screenshots, embed size and the *play in browser* checkbox have no public
   API — they are set by hand, once per game. `tools/publish/store-meta.mjs`
@@ -461,7 +463,7 @@ the repo's own files.
 | trigger         | action                                    |
 | --------------- | ----------------------------------------- |
 | PR / push       | `build.mjs --check`, `check-size`         |
-| merge on `main` | `butler push` to `html5-dev`              |
+| merge on `main` | nothing on itch — the site redeploys      |
 | git tag         | `butler push` to `html5`, and/or fastlane |
 
 **Prerequisite, resolved**: `.gitignore` ignores `assets/` today, which would stop
@@ -646,8 +648,7 @@ have already proven something.
    artwork; extend `targets` as the game earns each outlet.
 1. Open the PR — the checks run and Vercel posts a preview URL. Play it on a
    phone.
-1. Merge — site and games redeploy; the `html5-dev` itch channel updates. The hub
-   card appears from the manifest.
+1. Merge — site and games redeploy. The hub card appears from the manifest.
 1. Tag — production site and the `html5` channel go live. That is the entire web
    release.
 1. Create the itch page by hand, once.

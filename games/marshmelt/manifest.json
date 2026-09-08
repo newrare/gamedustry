@@ -3,7 +3,7 @@
   "title": "Marshmelt",
   "tagline": "Tap to fling a sticky marshmallow from rock to rock over the lava",
   "order": 130,
-  "draft": true,
+  "draft": false,
   "targets": [
     "playable",
     "web"

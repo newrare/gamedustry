@@ -3,7 +3,7 @@
   "title": "Slipdeck",
   "tagline": "Bin it or keep it to finish the poker hand you are dealt",
   "order": 120,
-  "draft": true,
+  "draft": false,
   "targets": [
     "playable",
     "web"

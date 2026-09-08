@@ -35,8 +35,8 @@ in `prototype/`, outside the motor; see CLAUDE.md, *Three kinds of request*.
 
 ## Phase 3 — the site, deployed
 
-**Closed.** The site is live on Vercel with Web Analytics on, serving the 11
-published games from `dist/site`; `slipdeck` is held back by its `draft` flag.
+**Closed.** The site is live on Vercel with Web Analytics on, serving all 13
+games from `dist/site` — no game is held back any more.
 Verified on a phone: layout and games both hold up. Two pieces of content are
 still owed, and they belong to the phases that need them:
 
@@ -60,9 +60,13 @@ account or a CI runner:
 - [ ] MAIN — create the itch page for `vipera` by hand, from
   `node tools/publish/store-meta.mjs --game=vipera` (no public API exists); it is
   the pilot page whose form choices the other ten copy
-- [ ] AUTO — GitHub Actions: `butler push` to `html5-dev` on merge, `html5` on
-  tag. Waits on the itch pages existing — butler cannot push to a project that
-  has never been created
+- [ ] AUTO — GitHub Actions: `butler push` to `html5` on tag. Waits on the itch
+  pages existing — butler cannot push to a project that has never been created
+- [ ] MAIN — on the vipera page, tick *played in the browser* on the new
+  `html5` upload (#19153666) and **delete the `html5-dev` one** (#19152874).
+  The dev channel was pushed before the one-channel decision and now sits next
+  to the public build with nothing to tell a visitor them apart. Neither the
+  checkbox nor deleting an upload has an API
 
 ## Phase 5 — the meta layer
 
@@ -117,12 +121,9 @@ ______________________________________________________________________
 
 ## Content and assets
 
-- [ ] MAIN — `assets/icon/slipdeck.png` + its `thumb/` cut; slipdeck is
-  `draft: true` in `site/games.js` until then
-
-- [ ] MAIN — `assets/icon/marshmelt.png` + its `thumb/` cut, and
-  `assets/sound/marshmelt.mp3` for the music bed; marshmelt is `draft: true`
-  until the icon exists
+- [ ] MAIN — `assets/sound/marshmelt.mp3` and `assets/sound/slipdeck.mp3` for
+  their music beds; both games already declare `CONFIG.music`, so embedding the
+  track is the whole task
 
 - [ ] MAIN — finish `slipdeck` itself; it and marshmelt are the two games still
   in construction

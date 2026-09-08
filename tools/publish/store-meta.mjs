@@ -156,8 +156,7 @@ function render(m) {
     section('Build', [
       '```bash',
       `node tools/build/build.mjs --target=web --dest=itch --game=${m.slug}`,
-      `node tools/publish/deploy-itch.mjs --game=${m.slug}                      # → ${user}/${project}:html5-dev`,
-      `node tools/publish/deploy-itch.mjs --game=${m.slug} --channel=${channel}   # the public channel`,
+      `node tools/publish/deploy-itch.mjs --game=${m.slug}     # → ${user}/${project}:${channel}`,
       '```'
     ].join('\n')),
     section('Classification', [

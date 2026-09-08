@@ -100,6 +100,7 @@ playables/
 │   │   ├── gen-catalogues.mjs← the two catalogues, from the manifests
 │   │   ├── extract.mjs       ← the one-shot that split the motor out of the games
 │   │   └── check-size.mjs    ← verify files stay under the size budget
+│   ├── update.mjs            ← THE command after any change: build, check, what's left
 │   ├── publish/              ← ship it
 │   │   ├── deploy-itch.mjs   ← butler push, target read from the manifest
 │   │   └── store-meta.mjs    ← the itch page copy, generated from the manifest
@@ -216,11 +217,12 @@ the Vercel build command — see
 1. Follow [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md) — you edit `CONFIG`,
    the theme tokens and the `Game` module, and leave the engine/shell/ad glue
    untouched.
-1. Build it, then verify the budget and the round trip:
+1. Build and verify it — one command, which is the same one to run after any
+   later change. It rebuilds the artifacts and the catalogues, runs the three
+   checks, and prints what is left (the itch push, the screenshots, the page
+   copy) from what changed in git:
    ```bash
-   node tools/build/build.mjs --game=my-game
-   node tools/build/check-size.mjs
-   node tools/build/build.mjs --check    # artifacts match their sources
+   node tools/update.mjs
    ```
 1. Shoot the store screenshots — a scripted pilot plays every game's **web**
    build in headless Chrome (a playable would carry its install CTA into every
