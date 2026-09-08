@@ -51,10 +51,23 @@ async function manifestOf(slug) {
   return JSON.parse(await readFile(file, 'utf8'));
 }
 
-// itch tags are matched against existing ones, which are lowercase and short.
-function tagLine(copy) {
-  if (!copy || !Array.isArray(copy.tags)) return '—';
-  return copy.tags.map((t) => t.toLowerCase()).join(', ');
+/* The tags for the itch form, from `itch.tags` in the manifest.
+
+   NOT `copy.<lang>.tags`, which this used to print: those three phrases per
+   language are the site's card copy ("Tap to swerve", "Armour") and there is
+   no field on itch that wants them. An itch tag only earns its place if it
+   matches one itch already has, because what a tag does is put the page on a
+   browse list — so the form's autocomplete is the check: type a tag, and if
+   nothing is proposed, drop it.
+
+   Two kinds of tag do not belong here at all: the genre and the platform,
+   which the form asks for in their own fields. */
+function tagLine(m) {
+  const tags = (m.itch && m.itch.tags) || [];
+  if (!tags.length) {
+    return `No \`itch.tags\` in games/${m.slug}/manifest.json — add them there, once.`;
+  }
+  return tags.join(', ') + (tags.length > 10 ? '  \n**Over itch\'s limit of 10.**' : '');
 }
 
 function section(title, body) {
@@ -126,8 +139,7 @@ function render(m) {
     section('Short description (EN)', en.tagline || m.tagline),
     section('Short description (FR)', fr.tagline),
     section('Description', m.description),
-    section('Tags (EN)', tagLine(en)),
-    section('Tags (FR)', tagLine(fr)),
+    section('Tags', tagLine(m)),
     section('Images', images(slug)),
     section('Embed', [
       'Kind of project: **HTML**',
@@ -152,7 +164,14 @@ function render(m) {
       'Release status: **Released**',
       'Pricing: **free**, no payments',
       'Genre: **Action**',
-      'Input: touch, mouse, keyboard'
+      'Input: touch, mouse, keyboard',
+      /* Not a per-game field, because the answer is per kind of asset and it
+         is the same for all thirteen: see the provenance table in
+         docs/ASSETS.md, which is the record this line is read off. itch
+         enforces the disclosure and can delist a page that omits it. */
+      'AI disclosure: **Yes** — the code, the name, the icon, the background art'
+        + ' and the music bed; not the sfx (ZapSplat), the pictograms (Lucide)'
+        + ' or the type (OFL)'
     ].join('  \n'))
   ].join('\n');
 }

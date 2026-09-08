@@ -35,6 +35,15 @@
     "user": "newrare",
     "project": "slipdeck",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "cards",
+      "poker",
+      "high-score"
+    ],
     "viewport": [
       450,
       800
