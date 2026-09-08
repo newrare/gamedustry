@@ -1,18 +1,31 @@
 #!/usr/bin/env node
 /* Shoot gameplay screenshots for every game into assets/screen/.
  *
- * A playable is a single self-contained HTML file with everything wrapped in an
- * IIFE, so nothing is reachable from the outside. This tool copies each game to
- * a temporary directory with three injections:
+ * The shots come off the **web** build, not the playable: a playable carries
+ * the install CTA bar, which is wrong everywhere these images are used (the
+ * site cards, the itch pages, a store listing later). The web build is the
+ * frame a player actually sees.
+ *
+ * A build is one self-contained HTML file with the game wrapped in an IIFE, so
+ * nothing is reachable from the outside. This tool copies each game to a
+ * temporary directory with three injections:
  *
  *   1. a seeded LCG over Math.random, so a run is reproducible,
  *   2. a `window.__H` handle on the motor internals (startGame, Loop,
  *      frameUpdate/frameRender, Input, Layout, Pop, Overlay, State),
  *   3. a driver that stops the motor's rAF loop and steps the simulation by
- *      hand: it fast-forwards to the middle of a round, wipes the callout
- *      layers, then plays the last frames at real speed — CSS-animated pops and
- *      toasts only look right when the simulation runs at the wall clock — and
- *      finally raises `window.__shot` to say "this frame is worth keeping".
+ *      hand up to one point of the run, wipes the callout layers, then plays
+ *      the last frames at real speed — CSS-animated pops and toasts only look
+ *      right when the simulation runs at the wall clock — and finally raises
+ *      `window.__shot` to say "this frame is worth keeping".
+ *
+ * Each shot is aimed at a **progression**, a fraction of a full round, not at
+ * a frame count: a board at 10% and a board at 90% are different pictures,
+ * where ten shots a second apart are the same one. A timed game's round length
+ * is its own `CONFIG.gameSeconds`, read after the round starts (radiam zeroes
+ * it for its endless mode); an endless game has no such number, so SPAN below
+ * carries how long a run of it is worth sampling. The last shot of a game is
+ * its end screen.
  *
  * Chrome is driven over the DevTools protocol rather than with `--screenshot`:
  * the CLI shoots whenever its virtual-time budget expires, which lands on a
@@ -21,18 +34,52 @@
  *
  * Usage:
  *   node tools/lab/shoot-screens.mjs [slug ...] [--shots 10] [--png] [--keep]
+ *   node tools/lab/shoot-screens.mjs vipera --no-build     # reuse dist/itch
+ *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source
+ *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
+ *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
+ *   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera  # what each shot caught
  */
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var GAMES_DIR = path.join(ROOT, "games");
+var WEB_DIR = path.join(ROOT, "dist", "itch");
 var OUT_DIR = path.join(ROOT, "assets", "screen");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var W = 720, H = 1280;                               // the design resolution
+
+/* How many seconds of a round are worth sampling, per game. It is the *pilot's*
+   reach, not a good player's: the scripted player below is bad at every one of
+   these games, and a progression it cannot survive to just shoots the same
+   board twice — ten shots of the same board is the thing this tool exists to
+   stop doing.
+
+   Measured, not guessed: `SHOOT_DEBUG=1 … --shots 2 --no-end` aims the second
+   shot at 96% of the round and prints `reached`, the fraction of that the
+   pilot actually lived to. The number here is that fraction times the span it
+   was measured against. A game with no entry is one the pilot plays to the end
+   of (chainring, orbinity, radiam, vipera), and it takes its round length from
+   its own `CONFIG.gameSeconds`, or `_endless` when it has no clock.
+
+   Re-measure a game after its difficulty changes; an entry that is too long
+   shows up as `reached` well under 1 across its shots. */
+var SPAN = {
+  _endless: 30,     // a clockless round, for a game with no entry below
+  arcider: 22,
+  blight: 42,       // its own clock says 60, the pilot sees 40
+  bouncetry: 15,
+  echomaze: 18,
+  gearball: 20,     // clock 45
+  marshmelt: 4,     // the pilot cannot play it at all — it scores 0
+  slipdeck: 15,     // clock 30
+  spinshock: 27,
+  triverse: 15
+};
 
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
@@ -40,16 +87,39 @@ var slugs = [];
 var shots = 10;
 var keep = false;
 var png = false;
+var build = true;
+var playable = false;
+var withEnd = true;
+var ctls = false;
+var lang = "en";
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shots") shots = parseInt(argv[++i], 10);
   else if (argv[i] === "--keep") keep = true;
   else if (argv[i] === "--png") png = true;
+  else if (argv[i] === "--no-build") build = false;
+  else if (argv[i] === "--playable") playable = true;
+  else if (argv[i] === "--no-end") withEnd = false;
+  else if (argv[i] === "--ctls") ctls = true;
+  else if (argv[i] === "--lang") lang = argv[++i];
   else slugs.push(argv[i]);
 }
 if (!slugs.length) {
   slugs = fs.readdirSync(GAMES_DIR).filter(function (d) {
-    return fs.existsSync(path.join(GAMES_DIR, d, "index.html"));
+    return fs.existsSync(path.join(GAMES_DIR, d, "manifest.json"));
   }).sort();
+}
+
+/* The shot plan. The progressions are spread across the whole round rather
+   than bunched at the start, and the last shot is the end screen — the one
+   frame no progression can reach, since it only exists after the round. */
+function plan(n) {
+  var out = [];
+  var g = withEnd ? n - 1 : n;                       // gameplay shots
+  for (var k = 0; k < g; k++) {
+    out.push({ p: g < 2 ? 0.5 : 0.08 + 0.88 * (k / (g - 1)) });
+  }
+  if (withEnd) out.push({ end: true });
+  return out;
 }
 
 // --- Injected code -------------------------------------------------------
@@ -64,6 +134,11 @@ var SEED_JS = `<script>
 })();
 </script>`;
 
+/* The web build puts MENU and OPTIONS in the bottom-right corner of a round.
+   They are chrome, not the game, and a store screenshot is about the game — so
+   they are hidden here rather than cropped out later. `--ctls` keeps them. */
+var CTLS_CSS = `<style>#web-ctls { display: none !important; }</style>`;
+
 // Handle on the motor internals, injected inside the IIFE.
 var HOOK_JS = `
   window.__H = {
@@ -77,12 +152,19 @@ var HOOK_JS = `
 var DRIVER_JS = `<script>
 (function () {
   var q = new URLSearchParams(location.search);
-  var target = parseInt(q.get("frames"), 10) || 240;  // sim frames to play
+  var P = parseFloat(q.get("p"));                    // progression, 0..1
+  var END = q.get("end") === "1";                    // shoot the end screen
+  var SPAN = parseInt(q.get("span"), 10) || 0;       // measured reach, 0 = none
+  var ENDLESS = parseInt(q.get("endless"), 10) || 30;
   var DT = 1 / 60;
   var PACED = 110;              // frames before the shot played at wall speed
-  var HARD_CAP = target * 3 + 240;                   // bound the pilot's retries
+  /* The end screen is a timed DOM cascade, not frames: title, score count-up,
+     stars, then one stat row every 250 ms, and the two buttons 1.5 s after the
+     last of them — about 6.2 s to the replay link (packages/shell/shell.js,
+     T_TITLE…T_CTA_AFTER). So this settle is wall-clock milliseconds. */
+  var SETTLE_MS = 7200;
   var frame = 0, roundFrame = 0, rounds = 0, side = 0, lastBeat = -1;
-  var started = false, cleaned = false;
+  var started = false, cleaned = false, endedAt = 0, target = 0, cap = 0;
 
   /* A scripted player, one per demo type. It is not good at any of these games —
      it only has to keep a round alive and busy long enough to be worth a shot. */
@@ -120,6 +202,19 @@ var DRIVER_JS = `<script>
   }
   function tap(H, x, y) { H.Input.at("down", x, y); H.Input.at("up", x, y); }
 
+  /* A full round, in frames. A measured span wins, because a clock the pilot
+     never reaches the end of is not the round it plays. Failing that a timed
+     game carries its own length, read here rather than off the manifest
+     because a mode can rewrite it: radiam zeroes CONFIG.gameSeconds when its
+     endless mode is the one that started. */
+  function aim(H) {
+    var secs = SPAN || (H.CONFIG.gameSeconds > 0 ? H.CONFIG.gameSeconds : ENDLESS);
+    var span = Math.round(secs * 60);
+    target = Math.max(90, Math.round(Math.min(0.97, Math.max(0.02, P || 0.5)) * span));
+    // Bound the retries: a pilot that keeps dying must still hand back a frame.
+    cap = END ? span * 2 + 600 : target * 3 + 240;
+  }
+
   function step(H) {
     if (H.state() !== "playing") {                   // the pilot died: play again
       H.startGame(); H.Loop.stop();
@@ -135,9 +230,25 @@ var DRIVER_JS = `<script>
      retries eat into the cap — a short round beats a screenshot of a respawn. */
   function need() {
     var lost = frame - roundFrame;                   // frames spent in dead rounds
-    return Math.max(120, Math.round(target * (1 - lost / HARD_CAP)));
+    return Math.max(90, Math.round(target * (1 - lost / cap)));
   }
-  function ready() { return frame >= HARD_CAP || roundFrame >= need(); }
+  function ready() { return frame >= cap || roundFrame >= need(); }
+
+  /* The end screen is not a frame of the simulation, it is a DOM cinematic on
+     the wall clock. So the round is played out — the pilot dies, or the clock
+     runs out — and then nothing is stepped at all while it plays. */
+  function tickEnd(H) {
+    if (H.state() === "end") {
+      if (!endedAt) endedAt = Date.now();
+      if (Date.now() - endedAt >= SETTLE_MS) window.__shot = 1;
+      return;
+    }
+    if (frame >= cap) { window.__shot = 1; return; }  // never ended: keep the board
+    for (var i = 0; i < 20 && frame < cap && H.state() === "playing"; i++) {
+      pilot(H, frame); H.frameUpdate(DT); frame++; roundFrame++;
+    }
+    H.frameRender();
+  }
 
   function tick() {
     var H = window.__H;
@@ -147,16 +258,20 @@ var DRIVER_JS = `<script>
       if (H.state() !== "intro") return;              // still loading
       H.startGame();
       H.Loop.stop();                                  // we drive the clock
+      aim(H);                                         // CONFIG is final now
       started = true;
     }
+    window.__progress = frame;
+    if (END) { tickEnd(H); return; }
     if (ready()) {
       H.frameRender();                                // keep the canvas fresh
       window.__shot = 1;                              // the host may capture now
+      window.__reached = roundFrame / target;
       return;
     }
     var settle = need() - PACED;
     if (roundFrame < settle) {                        // fast-forward, cheaply
-      for (var i = 0; i < 20 && roundFrame < settle && frame < HARD_CAP; i++) step(H);
+      for (var i = 0; i < 20 && roundFrame < settle && frame < cap; i++) step(H);
       if (roundFrame >= settle && !cleaned) {         // drop the piled-up callouts
         H.Pop.clear(); H.Overlay.clear(); cleaned = true;
       }
@@ -164,21 +279,45 @@ var DRIVER_JS = `<script>
       step(H);                                        // one frame per animation frame
     }
     H.frameRender();
-    window.__progress = frame;
   }
   requestAnimationFrame(tick);
 })();
 </script>`;
 
-function prepare(slug, tmpDir) {
-  var src = fs.readFileSync(path.join(GAMES_DIR, slug, "index.html"), "utf8");
-  var head = src.indexOf("<head>");
-  if (head < 0) throw new Error(slug + ": no <head>");
-  src = src.slice(0, head + 6) + "\n" + SEED_JS + src.slice(head + 6);
+/* Where a game's build sits. The web build is one self-contained document per
+   game, like a playable, which is what lets the same three injections work on
+   either source. */
+function sourceOf(slug) {
+  return playable
+    ? path.join(GAMES_DIR, slug, "index.html")
+    : path.join(WEB_DIR, slug, "index.html");
+}
 
-  var close = src.lastIndexOf("})();");               // the game IIFE
+function buildWeb(slugs) {
+  var args = ["tools/build/build.mjs", "--target=web", "--dest=itch"];
+  if (slugs.length < 13) args = args.concat(slugs.map(function (s) { return "--game=" + s; }));
+  var r = spawnSync(process.execPath, args, { cwd: ROOT, stdio: "inherit" });
+  if (r.status !== 0) throw new Error("the web build failed");
+}
+
+function prepare(slug, tmpDir) {
+  var src = fs.readFileSync(sourceOf(slug), "utf8");
+
+  /* The hook goes inside the *game's* IIFE, which is the first script block of
+     the document: a web build appends the webshell as a second one, so the
+     document's last `})();` closes the menu, not the motor. This runs before
+     the head injection on purpose — SEED_JS carries a `</script>` of its own,
+     and inserting it first would make "the first script block" be that one. */
+  var firstScript = src.indexOf("</script>");
+  if (firstScript < 0) throw new Error(slug + ": no script block");
+  var close = src.lastIndexOf("})();", firstScript);
   if (close < 0) throw new Error(slug + ": no IIFE close");
   src = src.slice(0, close) + HOOK_JS + src.slice(close);
+
+  var head = src.indexOf("<head>");
+  if (head < 0) throw new Error(slug + ": no <head>");
+  src = src.slice(0, head + 6) + "\n" + SEED_JS
+    + (ctls ? "" : "\n" + CTLS_CSS) + src.slice(head + 6);
 
   src = src.replace("</body>", DRIVER_JS + "\n</body>");
 
@@ -272,11 +411,16 @@ async function evaluate(client, sid, expr) {
   return r.result ? r.result.value : undefined;
 }
 
-async function shoot(client, sid, file, seed, frames, outPath) {
-  var url = "file://" + file + "?seed=" + seed + "&frames=" + frames;
+async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: seconds, 0 = the game's own
+  /* `lang` is the web menu's own switch, and it reaches the end screen: left
+     to the browser, a headless Chrome in a French locale writes REJOUER on
+     the replay button of every screenshot. */
+  var url = "file://" + file + "?seed=" + seed + "&span=" + span
+    + "&endless=" + SPAN._endless + "&lang=" + lang
+    + (aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
   await client.send("Page.navigate", { url: url }, sid);
 
-  var deadline = Date.now() + 90000;
+  var deadline = Date.now() + 120000;
   var stall = 0, last = -1;
   for (;;) {
     await sleep(120);
@@ -292,13 +436,15 @@ async function shoot(client, sid, file, seed, frames, outPath) {
   var res = await client.send("Page.captureScreenshot", opts, sid);
   fs.writeFileSync(outPath, Buffer.from(res.data, "base64"));
 
-  // SHOOT_DEBUG=1 reports what the shot actually caught — the pilot's mileage
-  // varies a lot from game to game.
+  // SHOOT_DEBUG=1 reports what the shot actually caught. `reached` is the
+  // fraction of the aimed progression the pilot survived to: well under 1
+  // across a game's shots means its SPAN is longer than the pilot's reach,
+  // and the late shots are duplicates of the middle ones.
   if (process.env.SHOOT_DEBUG) {
-    process.stdout.write("  " + path.basename(outPath) + " " + await evaluate(client, sid,
-      'JSON.stringify({ frames: window.__progress, beats: Math.round(window.__H.Beat.beats()),' +
-      ' state: window.__H.state(), score: document.getElementById("hud-score").textContent,' +
-      ' right: (document.getElementById("hud-right").textContent || "").replace(/\\s+/g, "") })') + "\n");
+    process.stdout.write("  " + path.basename(outPath) + " "
+      + (aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " " + await evaluate(client, sid,
+      'JSON.stringify({ frames: window.__progress, reached: +(window.__reached || 1).toFixed(2),' +
+      ' state: window.__H.state(), score: document.getElementById("hud-score").textContent })') + "\n");
   }
 }
 
@@ -324,6 +470,13 @@ function reap(child) {
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
+if (!playable && build) buildWeb(slugs);
+var missing = slugs.filter(function (s) { return !fs.existsSync(sourceOf(s)); });
+if (missing.length) {
+  console.error("no build for: " + missing.join(" ")
+    + (playable ? "" : "  (does its manifest list the web target?)"));
+  slugs = slugs.filter(function (s) { return fs.existsSync(sourceOf(s)); });
+}
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-screens-"));
 var profileDir = path.join(tmpDir, "profile");
 var failed = 0;
@@ -333,18 +486,20 @@ reap(chrome.child);
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 
+var aims = plan(shots);
+
 for (var s = 0; s < slugs.length; s++) {
   var slug = slugs[s];
   var file = prepare(slug, tmpDir);
+  var span = SPAN[slug] || 0;
   var line = [];
-  for (var n = 1; n <= shots; n++) {
+  for (var n = 1; n <= aims.length; n++) {
     var name = slug + "-" + String(n).padStart(2, "0") + (png ? ".png" : ".jpg");
     var outPath = path.join(OUT_DIR, name);
     try {
-      // 6 s → 14 s of play, so the ten shots of a game sample the whole curve.
-      // The floor matters: a game with a musical lead-in (chainring) has not
-      // launched its first ball before ~5 s.
-      await shoot(client, sid, file, n, 330 + n * 48, outPath);
+      // The seed is the shot number, so two shots of one game are two
+      // different runs sampled at two different points of the round.
+      await shoot(client, sid, file, n, aims[n - 1], span, outPath);
       line.push(String(n).padStart(2, "0"));
     } catch (e) {
       failed++;

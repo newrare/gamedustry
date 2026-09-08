@@ -54,32 +54,27 @@ keeps one self-contained document), `packages/frame-web/` (Delta 1),
 fed from the manifest, and the two publishing scripts. What is left needs an
 account or a CI runner:
 
-- [ ] MAIN — install `butler` (it is not on this machine) and `butler login`;
-  then `BUTLER_API_KEY` as a CI secret
+- [ ] MAIN — `butler login` (butler v15.31 is installed at
+  `~/.local/lib/butler`, symlinked into `~/.local/bin`), then the same key as
+  `BUTLER_API_KEY` in the repo's CI secrets
 - [ ] MAIN — create the itch page for `vipera` by hand, from
   `node tools/publish/store-meta.mjs --game=vipera` (no public API exists); it is
   the pilot page whose form choices the other ten copy
-- [ ] CODE — `store-meta.mjs` says nothing about the page's images, which itch
-  asks for: add a section naming the cover (630×500), the screenshots to upload
-  out of `assets/screen/<slug>-NN.jpg` and the icon
-- [ ] CODE — nothing produces an itch cover: no `assets/cover/` exists and the
-  icons are square. A lab page or a `tools/lab/shoot-cover.mjs` should compose
-  630×500 from the icon and a screenshot
-- [ ] AUTO — GitHub Actions on every PR: `build.mjs --check`,
-  `gen-catalogues.mjs --check`, `check-size` — so a hand-edited artifact or a
-  stale catalogue fails the build. There is no `.github/workflows/` yet
-- [ ] AUTO — GitHub Actions: `butler push` to `html5-dev` on merge, `html5` on tag
+- [ ] AUTO — GitHub Actions: `butler push` to `html5-dev` on merge, `html5` on
+  tag. Waits on the itch pages existing — butler cannot push to a project that
+  has never been created
 
 ## Phase 5 — the meta layer
 
-The web menu already has the two entries: `packages/webshell/menu.js` opens a
-LEADERBOARD panel showing the real local best score and an OPTIONS panel that
-says "soon". Filling them is this phase, and it lands in `packages/meta` so the
-android build gets the same screens.
+The web menu carries both entries for real: `packages/webshell/menu.js` opens a
+LEADERBOARD panel showing the local best score, and an OPTIONS panel wired to
+the motor's own switches (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`),
+the FR/EN language and a best-score wipe, all persisted through `Store`. What is
+left is moving that behind an interface `packages/meta` owns, so the android
+build gets the same screens instead of a second copy.
 
-- [ ] CODE — `packages/meta/`: start screen, options, i18n, progression
-- [ ] CODE — OPTIONS, and first a mute the motor does not have: `Sound`/`Music`
-  need a master switch before the panel can offer one
+- [ ] CODE — `packages/meta/`: start screen, options, i18n, progression, shared
+  by the web and android targets
 - [ ] CODE — a local leaderboard behind the interface a server will later fill,
   replacing the webshell's single best-score placeholder
 - [ ] MAIN — decide whether progression is per game or account-wide
@@ -124,18 +119,35 @@ ______________________________________________________________________
 
 - [ ] MAIN — `assets/icon/slipdeck.png` + its `thumb/` cut; slipdeck is
   `draft: true` in `site/games.js` until then
+
 - [ ] MAIN — `assets/icon/marshmelt.png` + its `thumb/` cut, and
   `assets/sound/marshmelt.mp3` for the music bed; marshmelt is `draft: true`
   until the icon exists
+
 - [ ] MAIN — finish `slipdeck` itself; it and marshmelt are the two games still
   in construction
+
 - [ ] MAIN — playtest `marshmelt` on a phone: the recovery shot (`airShots`),
   `flingSpeed`, the two fall lanes (`fastChance`, `fastMin/fastMax`) and
   `gripCenter` are set off a headless pilot, not off a thumb. The pilot cheats
   (it reads the rock list, it has no reaction time), so it says the mechanics
   hold, not that the curve is right
+
+- [ ] MAIN — pick which of the ten shots of each game go on its itch page, in
+  which order. `assets/screen/<slug>-01..10.jpg` now walks a round from its
+  first seconds to its end screen (shot 10), and `assets/cover/<slug>.png` is
+  built from shot 6 — but which frame sells a game is a human call, and four or
+  five of the ten is what a page wants
+
+- [ ] MAIN — reshoot `marshmelt` once it is playable by the pilot: its ten
+  shots all read `score: 0`, because the scripted player in
+  `tools/lab/shoot-screens.mjs` cannot play it at all (`SPAN.marshmelt` is 4
+  seconds against 30 for the others). Its cover is skipped too, for want of an
+  icon
+
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
   listing (they all point at the site today, which is correct for now)
+
 - [ ] MAIN — decide which languages the games themselves are localized into
 
 ## Known drift and small debts
@@ -168,28 +180,6 @@ ______________________________________________________________________
   predating the extraction: it still has a `filter` on `.pop-word` and it did
   not get the composited-slide fix. The catalogue therefore no longer previews
   what the motor draws. Point it at `packages/shell/motor.css` instead
-
-- [ ] MAIN — the mobile stutter: **bisected on the device and answered — it is
-  the callout layer**, in every game. `off=pops` was fluid; `off=vig` and
-  `off=fx` changed nothing. Inside a callout, `off=glow` took the worst frame
-  of a pickup from 90 ms to 50, `off=decor` to 70, `off=face` to 80, and
-  `off=stroke` to 90 (i.e. the 14px stroke is free). Fixed accordingly and
-  pending deployment: the default glyph stack has no blur left, `record` keeps
-  it, and a single-span word no longer runs the per-glyph animation that
-  rasterized the layer at 1.6x. **Re-measure after deploying**: 50 ms was the
-  floor `off=glow` alone reached, so if `worst` is still over ~35 ms the next
-  levers are `face` (the gradient face) and `decor`, and both change the look —
-  that is a design call, not a perf one. **Measure it with `?perf=bench`**,
-  which runs the whole variant sweep on the device and prints the table: a
-  laptop cannot rank these (a software rasterizer put the decor at 92% of a
-  callout and the blurs at nothing, the exact opposite of what the phone said). What
-  has been ruled out by measurement: the sfx path (the audio graph is reclaimed
-  either way, render capacity 0.2%) and the scrolling decors (fixed in 912f62a,
-  already in production, and the stutter outlived it). What is pending: the
-  canvas backing store, which was drawing 342% of the displayed pixels on a
-  DPR-2 phone and 152% on a DPR-3 one against a desktop's 0.92 Mpx (`view.dpr`,
-  see docs/ENGINE.md), plus the HUD's per-frame `innerHTML` and the forced
-  layout in `HUD.punch`. None of the three has been seen on a real phone yet
 
 - [ ] CODE — the end screen animates two paint properties for as long as it is
   up: `starglow` animates `filter: drop-shadow` on every star and

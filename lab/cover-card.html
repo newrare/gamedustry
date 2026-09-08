@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — itch cover card</title>
+<style>
+/* ===========================================================================
+   COVER CARD — the 630x500 image itch.io asks for, composed from what a game
+   already owns: its icon, one of its screenshots, its accent and its typeface.
+
+   itch shows this image everywhere it links to a project (the browse grid, a
+   collection, an embed), cropped to 315x250 at the smallest. So the design is
+   built for that: the icon and the title live in the left two thirds and read
+   at half size, and the screenshot bleeds off the right edge instead of
+   carrying anything that must be legible.
+
+   Nothing about a game is described twice. The data comes in on the query
+   string and `tools/lab/shoot-cover.mjs` fills it from games/<slug>/manifest.json,
+   which is the single source of truth for a title, an accent and a typeface:
+
+     ?slug=vipera&title=Vipera&accent=%234dff9b&family=Baloo%202&fw=800&shot=6
+
+   Opening the page bare shows vipera, and the panel on the left re-composes it
+   live for any other game — that is what it is for. It is a lab page: it never
+   ships, and it is allowed to load ../assets/ by relative path.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* The six families of assets/font/, declared here so the page stands alone.
+   The weight to ask for travels as `fw` — a single-weight face has to stay at
+   400 or the browser fakes a bold and smears it. */
+@font-face { font-family:"Orbitron";   src:url(../assets/font/orbitron.woff2)   format("woff2"); font-weight:400 900; font-display:block; }
+@font-face { font-family:"Exo 2";      src:url(../assets/font/exo2.woff2)       format("woff2"); font-weight:400 900; font-display:block; }
+@font-face { font-family:"Baloo 2";    src:url(../assets/font/baloo2.woff2)     format("woff2"); font-weight:400 900; font-display:block; }
+@font-face { font-family:"Bungee";     src:url(../assets/font/bungee.woff2)     format("woff2"); font-weight:400;     font-display:block; }
+@font-face { font-family:"Bebas Neue"; src:url(../assets/font/bebasneue.woff2)  format("woff2"); font-weight:400;     font-display:block; }
+@font-face { font-family:"Russo One";  src:url(../assets/font/russoone.woff2)   format("woff2"); font-weight:400;     font-display:block; }
+
+/* ---------------------------------------------------------------------------
+   PANEL — the controls.
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 280px;
+  padding:22px 20px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 22px; font-weight:500; font-size:12px; color:#8b8ba7; }
+
+.row { margin-bottom:14px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row select, .row input[type=text], .row input[type=number] {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit;
+}
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row input[type=color] { width:100%; height:30px; margin-top:6px; background:#0b0b12; border:1px solid #2c2c47; border-radius:6px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE.
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px;
+  padding:30px;
+}
+#stage .meta { font-size:12px; color:#8b8ba7; }
+#stage .crop { outline:1px dashed #44446a; outline-offset:0; }
+
+/* ---------------------------------------------------------------------------
+   THE COVER — 630x500, authored 1:1. The shoot captures it at a device pixel
+   ratio of 2 and halves the result, so the type and the icon rim stay clean.
+   --------------------------------------------------------------------------- */
+#cover {
+  position:relative;
+  width:630px; height:500px;
+  overflow:hidden;
+  background:#07070e;
+  font-family:var(--cover-font, "Baloo 2"), sans-serif;
+  --accent:#4dff9b;
+}
+
+/* The backdrop is the game's own screenshot, blurred past legibility: it costs
+   no colour plumbing and it is right for all thirteen palettes at once. */
+#cover .bg {
+  position:absolute; inset:-60px;
+  background:var(--bg-img) center/cover no-repeat;
+  filter:blur(34px) saturate(1.25) brightness(.62);
+  transform:scale(1.08);
+}
+/* Darkened toward the left, where the type goes. */
+#cover .scrim {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(100deg, rgba(4,4,10,.94) 0%, rgba(4,4,10,.82) 42%, rgba(4,4,10,.18) 72%, rgba(4,4,10,.42) 100%),
+    radial-gradient(120% 90% at 8% 100%, color-mix(in srgb, var(--accent) 28%, transparent) 0%, transparent 62%);
+}
+
+/* The screenshot panel: a real portrait frame, tilted and bled off the right
+   edge so the 315x250 crop still lands on the icon and the title. */
+#cover .shot {
+  position:absolute; right:-34px; top:50%;
+  width:248px; height:441px;                 /* 720x1280, to scale */
+  transform:translateY(-50%) rotate(-4deg);
+  border-radius:20px;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.14);
+  box-shadow:0 26px 60px rgba(0,0,0,.62), 0 0 0 1px rgba(0,0,0,.5);
+}
+#cover .shot img { display:block; width:100%; height:100%; object-fit:cover; }
+/* A slight inner darkening at the bleed edge, so the panel reads as depth. */
+#cover .shot::after {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent 55%, rgba(4,4,10,.55) 100%);
+}
+
+#cover .left {
+  position:absolute; left:44px; top:0; bottom:0; width:330px;
+  display:flex; flex-direction:column; justify-content:center; gap:22px;
+}
+#cover .icon {
+  width:132px; height:132px; display:block;
+  border-radius:29px;                        /* the icon art is already round */
+  box-shadow:0 14px 34px rgba(0,0,0,.55);
+}
+#cover .icon.missing {
+  display:flex; align-items:center; justify-content:center;
+  border:2px dashed rgba(255,255,255,.22);
+  font:700 11px/1.3 -apple-system,sans-serif; letter-spacing:1px;
+  color:rgba(255,255,255,.4); text-align:center; text-transform:uppercase;
+}
+#cover h2 {
+  margin:0;
+  font-size:64px; line-height:.98;
+  font-weight:var(--cover-fw, 800);
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  white-space:nowrap;                        /* the fitter keeps it one line */
+  background:linear-gradient(180deg, #fff 0%, #fff 42%, var(--accent) 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 4px 18px rgba(0,0,0,.6));
+}
+
+/* The shoot hides everything but the card. */
+body.shoot { display:block; background:transparent; }
+body.shoot #panel, body.shoot #stage .meta { display:none; }
+body.shoot #stage { padding:0; gap:0; display:block; }
+body.shoot #stage .crop { outline:0; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Cover card</h1>
+  <p class="hint">The 630&times;500 image itch.io asks for. Shoot them all with
+    <code>node tools/lab/shoot-cover.mjs</code>.</p>
+
+  <div class="row">
+    <label>Game <b id="v-slug">vipera</b></label>
+    <select id="slug"></select>
+  </div>
+  <div class="row">
+    <label>Screenshot <b id="v-shot">6</b></label>
+    <input id="shot" type="range" min="1" max="10" step="1" value="6">
+  </div>
+  <div class="row">
+    <label>Title</label>
+    <input id="title" type="text" value="Vipera">
+  </div>
+  <div class="row">
+    <label>Typeface</label>
+    <select id="family">
+      <option value="Baloo 2|800">Baloo 2</option>
+      <option value="Orbitron|800">Orbitron</option>
+      <option value="Exo 2|800">Exo 2</option>
+      <option value="Bungee|400">Bungee</option>
+      <option value="Bebas Neue|400">Bebas Neue</option>
+      <option value="Russo One|400">Russo One</option>
+    </select>
+  </div>
+  <div class="row">
+    <label>Accent</label>
+    <input id="accent" type="color" value="#4dff9b">
+  </div>
+</div>
+
+<div id="stage">
+  <div class="crop">
+    <div id="cover">
+      <div class="bg"></div>
+      <div class="scrim"></div>
+      <div class="shot"><img id="shotimg" alt=""></div>
+      <div class="left">
+        <img id="icon" class="icon" alt="">
+        <h2 id="ctitle">VIPERA</h2>
+      </div>
+    </div>
+  </div>
+  <div class="meta">630 &times; 500 — itch crops it to 315 &times; 250 in a grid</div>
+</div>
+
+<script>
+/* The games, for the panel only: the shoot never reads this list, it passes
+   everything on the query string. Kept in sync by nothing — it is a
+   convenience, and a slug typed into the URL always wins. */
+var GAMES = ["arcider", "blight", "bouncetry", "chainring", "echomaze", "gearball",
+             "marshmelt", "orbinity", "radiam", "slipdeck", "spinshock", "triverse", "vipera"];
+
+var q = new URLSearchParams(location.search);
+var cover = document.getElementById("cover");
+var el = {
+  slug: document.getElementById("slug"),
+  shot: document.getElementById("shot"),
+  title: document.getElementById("title"),
+  family: document.getElementById("family"),
+  accent: document.getElementById("accent"),
+  vslug: document.getElementById("v-slug"),
+  vshot: document.getElementById("v-shot"),
+  img: document.getElementById("shotimg"),
+  icon: document.getElementById("icon"),
+  ctitle: document.getElementById("ctitle")
+};
+
+GAMES.forEach(function (g) {
+  var o = document.createElement("option");
+  o.value = o.textContent = g;
+  el.slug.appendChild(o);
+});
+
+// --- state, from the query string with the panel's defaults as the fallback
+var slug = q.get("slug") || "vipera";
+if (GAMES.indexOf(slug) >= 0) el.slug.value = slug;
+if (q.get("shot")) el.shot.value = q.get("shot");
+if (q.get("title")) el.title.value = q.get("title");
+if (q.get("accent")) el.accent.value = q.get("accent");
+if (q.get("family")) {
+  var fam = q.get("family"), fw = q.get("fw") || "800";
+  var match = fam + "|" + fw;
+  var known = Array.prototype.some.call(el.family.options, function (o) { return o.value === match; });
+  if (!known) {
+    var o = document.createElement("option");
+    o.value = match; o.textContent = fam;
+    el.family.appendChild(o);
+  }
+  el.family.value = match;
+}
+
+/* Shrink the title until it fits the left column. The px in the CSS were
+   picked against one face; six faces disagree about every width — Orbitron's
+   caps are wide, Bebas Neue's are half that — and `letter-spacing` is a fixed
+   px value, so the width does not scale with the size. Hence a measured fit,
+   the same one packages/webshell/menu.js runs on the intro title. */
+function fitTitle() {
+  var box = 330, size = 64;
+  el.ctitle.style.fontSize = size + "px";
+  for (var i = 0; i < 30 && el.ctitle.scrollWidth > box && size > 22; i++) {
+    size -= 2;
+    el.ctitle.style.fontSize = size + "px";
+  }
+}
+
+function paint() {
+  var s = el.slug.value;
+  var n = String(el.shot.value).padStart(2, "0");
+  var fam = el.family.value.split("|");
+
+  el.vslug.textContent = s;
+  el.vshot.textContent = el.shot.value;
+  cover.style.setProperty("--cover-font", '"' + fam[0] + '"');
+  cover.style.setProperty("--cover-fw", fam[1]);
+  cover.style.setProperty("--accent", el.accent.value);
+
+  var shot = "../assets/screen/" + s + "-" + n + ".jpg";
+  el.img.src = shot;
+  cover.querySelector(".bg").style.setProperty("--bg-img", 'url("' + shot + '")');
+
+  /* The icon is drawn by the user, not by this repo (CLAUDE.md: never create
+     an app icon). A game without one says so on the card instead of shipping
+     a placeholder that could reach itch by accident. */
+  el.icon.src = "../assets/icon/" + s + ".png";
+  el.icon.onerror = function () {
+    el.icon.classList.add("missing");
+    el.icon.removeAttribute("src");
+    el.icon.alt = "no icon";
+  };
+
+  el.ctitle.textContent = (el.title.value || s).toUpperCase();
+  fitTitle();
+}
+
+["slug", "shot", "title", "family", "accent"].forEach(function (k) {
+  el[k].addEventListener("input", function () {
+    if (k === "slug") el.title.value = el.slug.value;   // a sane starting point
+    paint();
+  });
+});
+paint();
+
+/* The shoot waits on this: the card is composed, both images have decoded and
+   the face is loaded, so the capture cannot land on a fallback font or an
+   empty frame. */
+window.__coverReady = 0;
+(async function () {
+  if (q.get("shoot")) document.body.classList.add("shoot");
+  var waits = [];
+  [el.img, el.icon].forEach(function (i) {
+    if (i.src) waits.push(i.decode ? i.decode().catch(function () {}) : Promise.resolve());
+  });
+  await Promise.all(waits);
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  fitTitle();
+  await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
+  window.__coverReady = 1;
+})();
+</script>
+</body>
+</html>

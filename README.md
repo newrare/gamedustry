@@ -109,6 +109,7 @@ playables/
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
 │   │   ├── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
+│   │   ├── shoot-cover.mjs   ← shoot lab/cover-card.html into assets/cover/
 │   │   ├── bench-pop.mjs     ← what a callout costs, on an emulated phone
 │   │   ├── bench-raster.mjs  ← layer raster cost; and why it can't stand in
 │   │   │                       for a phone (use ?perf=bench for that)
@@ -221,10 +222,21 @@ the Vercel build command — see
    node tools/build/check-size.mjs
    node tools/build/build.mjs --check    # artifacts match their sources
    ```
-1. Shoot the store screenshots — a scripted pilot plays every game in headless
-   Chrome and writes ten frames per game to `assets/screen/<slug>-NN.jpg`:
+1. Shoot the store screenshots — a scripted pilot plays every game's **web**
+   build in headless Chrome (a playable would carry its install CTA into every
+   frame) and writes ten of them to `assets/screen/<slug>-NN.jpg`. Each shot is
+   aimed at a progression of the round, from the first seconds to the end
+   screen, so ten shots are ten different pictures:
    ```bash
    node tools/lab/shoot-screens.mjs            # all games; add a slug to redo one
+   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera   # what each shot caught
+   ```
+1. Shoot the itch cover — `lab/cover-card.html` composes the 630×500 image itch
+   asks for out of the icon, one screenshot, the title in the game's own
+   typeface and its accent:
+   ```bash
+   open lab/cover-card.html                    # try a layout by hand
+   node tools/lab/shoot-cover.mjs              # all covers; add a slug to redo one
    ```
 1. Draw the app icon — the artwork is a CSS recipe in `lab/icon-card.html`
    (shared silhouette and frame, one interior per game), shot over a
