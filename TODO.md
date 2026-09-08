@@ -121,10 +121,6 @@ ______________________________________________________________________
 
 ## Content and assets
 
-- [ ] MAIN — `assets/sound/marshmelt.mp3` and `assets/sound/slipdeck.mp3` for
-  their music beds; both games already declare `CONFIG.music`, so embedding the
-  track is the whole task
-
 - [ ] MAIN — finish `slipdeck` itself; it and marshmelt are the two games still
   in construction
 
