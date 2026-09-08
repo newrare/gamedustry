@@ -35,6 +35,16 @@
     "user": "newrare",
     "project": "orbinity",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "space",
+      "physics",
+      "one-button",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

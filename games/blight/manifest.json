@@ -35,6 +35,16 @@
     "user": "newrare",
     "project": "blight",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "match-3",
+      "bubble-shooter",
+      "colorful",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

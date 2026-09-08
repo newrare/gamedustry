@@ -35,6 +35,16 @@
     "user": "newrare",
     "project": "echomaze",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "singleplayer",
+      "2d",
+      "endless",
+      "minimalist",
+      "neon",
+      "difficult",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

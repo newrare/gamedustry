@@ -43,6 +43,16 @@
     "user": "newrare",
     "project": "marshmelt",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "physics",
+      "endless",
+      "one-button",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

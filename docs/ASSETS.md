@@ -17,6 +17,30 @@ requests**, so every asset must be embedded directly in the file as a base64
 `Sound.beep` / `Sound.arp` are still there, as the fallback for an event that has
 no clip yet (and as what `Sound.cue` degrades to). They are not the target.
 
+## Where each asset comes from, and the AI disclosure
+
+Every store now asks whether a project contains the output of a generative
+model — itch.io enforces it and can delist a page that does not say so, and
+Play asks the same question in its own form. The answer is not per game, it is
+per *kind of asset*, and this table is the record of it. Keep it true: it is
+what the disclosure on thirteen store pages is copied from.
+
+| asset                                                 | where it comes from            | generative AI |
+| ----------------------------------------------------- | ------------------------------ | ------------- |
+| the code, all of it                                   | written with an LLM            | **yes**       |
+| the game names                                        | generated                      | **yes**       |
+| app icons — `assets/icon/<slug>.png`                  | an image model                 | **yes**       |
+| background art — `assets/image/<slug>-background.png` | an image model                 | **yes**       |
+| background music — `ASSETS.sounds.music`              | a music model                  | **yes**       |
+| sound effects — `assets/sfx/`                         | the ZapSplat library, licensed | no            |
+| pictograms — `assets/lucide/`                         | Lucide, ISC                    | no            |
+| type — `assets/font/`                                 | six OFL families               | no            |
+
+So the answer on a store form is **yes**, for all thirteen. What that costs is
+a place on itch's *AI Assisted* browse page; what not saying it costs is the
+page. `node tools/publish/store-meta.mjs --game=<slug>` prints the line with
+the rest of the form.
+
 ## Sound effects always come from `assets/sfx/`
 
 `assets/sfx/` is the shared sfx library of the repo (~125 clips, ZapSplat

@@ -35,6 +35,15 @@
     "user": "newrare",
     "project": "radiam",
     "channel": "html5",
+    "tags": [
+      "casual",
+      "singleplayer",
+      "2d",
+      "puzzle",
+      "relaxing",
+      "colorful",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

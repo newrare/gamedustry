@@ -35,6 +35,16 @@
     "user": "newrare",
     "project": "spinshock",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "physics",
+      "one-button",
+      "fast-paced",
+      "high-score"
+    ],
     "viewport": [
       450,
       800

@@ -35,6 +35,16 @@
     "user": "newrare",
     "project": "arcider",
     "channel": "html5",
+    "tags": [
+      "arcade",
+      "casual",
+      "singleplayer",
+      "2d",
+      "endless",
+      "racing",
+      "neon",
+      "high-score"
+    ],
     "viewport": [
       450,
       800
