@@ -7,8 +7,9 @@
     node tools/publish/store-meta.mjs --game=vipera --out=dist/meta
 
   butler uploads a build; it cannot touch the page around it. Title, taglines,
-  description, tags, the embed size and the "mobile friendly" checkbox have no
-  public API — they are filled in by hand, once per game, in the itch form.
+  description, tags, the cover image, the screenshots, the embed size and the
+  "mobile friendly" checkbox have no public API — they are filled in by hand,
+  once per game, in the itch form.
 
   So this tool does not publish anything: it prints exactly what goes into that
   form, taken from games/<slug>/manifest.json, which is the single source of
@@ -20,7 +21,7 @@
 */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -60,7 +61,49 @@ function section(title, body) {
   return `## ${title}\n\n${body || '—'}\n`;
 }
 
+/* The images the itch form asks for, named as files on disk rather than
+   described: the cover is required, and a project with no screenshots is a
+   page nobody clicks. Both are generated — the copy in this document is
+   useless without them, which is why they are part of it.
+
+   itch has no icon field: an HTML project is identified by its cover, and the
+   icon is what the cover is built out of. The square icon becomes a listing
+   asset again on Play (phase 8). */
+function imageLine(rel, note) {
+  const abs = path.join(ROOT, rel);
+  if (!existsSync(abs)) return `\`${rel}\` — **missing**, ${note}`;
+  return `\`${rel}\` — ${Math.round(statSync(abs).size / 1024)} KB`;
+}
+
+function images(slug) {
+  const shots = readdirSync(path.join(ROOT, 'assets', 'screen'))
+    .filter((f) => f.startsWith(slug + '-') && f.endsWith('.jpg'))
+    .sort();
+
+  const out = [
+    '**Cover image** (required, 630×500 — itch crops it to 315×250 in a grid)',
+    imageLine(`assets/cover/${slug}.png`,
+      `shoot it with \`node tools/lab/shoot-cover.mjs ${slug}\``),
+    '',
+    '**Screenshots**, in this order — they are portrait 720×1280, and itch shows',
+    'them in a gallery under the embed. Upload four or five, not ten: the last',
+    'one is the end screen.'
+  ];
+  if (!shots.length) {
+    out.push(`No \`assets/screen/${slug}-NN.jpg\` yet — shoot them with`,
+      `\`node tools/lab/shoot-screens.mjs ${slug}\`.`);
+  } else {
+    out.push('');
+    shots.forEach((f) => out.push(`- ${imageLine('assets/screen/' + f, '')}`));
+  }
+  out.push('',
+    '**Icon** — itch has no icon field; the cover carries it. The square art is',
+    `\`assets/icon/${slug}.png\`, and it becomes a listing asset again on Play.`);
+  return out.join('  \n');
+}
+
 function render(m) {
+  const slug = m.slug;
   const itch = m.itch || {};
   const vp = Array.isArray(itch.viewport) ? itch.viewport : [450, 800];
   const en = (m.copy && m.copy.en) || {};
@@ -85,6 +128,7 @@ function render(m) {
     section('Description', m.description),
     section('Tags (EN)', tagLine(en)),
     section('Tags (FR)', tagLine(fr)),
+    section('Images', images(slug)),
     section('Embed', [
       'Kind of project: **HTML**',
       'Embed in page, with a fullscreen button',
