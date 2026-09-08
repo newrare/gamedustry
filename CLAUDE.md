@@ -123,13 +123,24 @@ development pages and answer only to the short rules in their own sections.
    `node tools/build/gen-catalogues.mjs` to regenerate `site/games.js` and the
    `GAMES` block of the root `index.html` — never edit those two by hand. A game
    with no `assets/icon/thumb/<slug>.png` is skipped by the site build.
-1. Run `node tools/build/build.mjs --game=<slug>` then `node tools/build/check-size.mjs`, and
+1. Run `node tools/update.mjs`, which builds, checks and says what is left, then
    open `games/<slug>/index.html` in a browser to test.
 
 The full recipe with prompt patterns is in
 [docs/CREATING_A_GAME.md](docs/CREATING_A_GAME.md).
 
 ## The build
+
+**After changing anything, run `node tools/update.mjs`.** One command: it
+rebuilds every artifact and both catalogues, runs the three checks, and then
+prints what is left to do — the itch push, the screenshots, the page copy to
+paste — worked out from what actually changed in git rather than from a
+checklist to remember. Everything below this line is what that command runs;
+reach for an individual command when the update tells you which one failed, not
+as a habit.
+
+It never pushes anywhere, never reshoots an image and never commits: those are
+decisions, and it prints them instead of taking them.
 
 `games/<slug>/index.html` is a **build output**, not a source. The motor lives
 once in `packages/`, and each game owns four files:
@@ -491,8 +502,8 @@ its own, deployed by Vercel from this repo.
 - [ ] End screen shows score, stars and stat rows, then the install CTA and the
   replay link.
 - [ ] Every CTA calls `Ad.openStore()`.
-- [ ] `node tools/build/check-size.mjs` passes (< 5 MB).
-- [ ] `node tools/build/build.mjs --check` passes (the artifact matches its sources).
+- [ ] `node tools/update.mjs` passes — the artifact matches its sources, the
+  catalogues are current, and every creative is under 5 MB.
 - [ ] `node tools/build/build-site.mjs` lists the game (not "skipped") and its card
   reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).

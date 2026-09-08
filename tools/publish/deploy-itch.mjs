@@ -2,8 +2,8 @@
 /*
   deploy-itch — push a game to itch.io with butler.
 
-    node tools/publish/deploy-itch.mjs --game=vipera                # → html5-dev
-    node tools/publish/deploy-itch.mjs --game=vipera --channel=html5
+    node tools/publish/deploy-itch.mjs --game=vipera                # → html5
+    node tools/publish/deploy-itch.mjs --all
     node tools/publish/deploy-itch.mjs --all --dry-run
 
   butler is itch.io's own CLI: it talks straight to itch over HTTPS, diffs the
@@ -20,14 +20,16 @@
     `butler login` once locally (credentials land in ~/.config/itch), or
     BUTLER_API_KEY in the environment, which is what CI uses.
 
-  Channels are independent, and a channel whose name contains "html" is what
-  marks the build playable in the browser:
-    html5-dev   every merge, the one you look at yourself
-    html5       the public build, on a tag
+  A channel whose name contains "html" is what marks the build playable in the
+  browser, and there is exactly one of them: `html5`. An itch page shows every
+  channel's upload side by side, so a second channel means a visitor choosing
+  between two entries with no way to tell them apart — the staging build the
+  repo used to push to (`html5-dev`) bought nothing that a local
+  `node tools/lab/serve-site.mjs` does not, and cost that.
 
   Flags:
     --game=<slug>   one game            --all         every game targeting web
-    --channel=<c>   override the channel (default: html5-dev)
+    --channel=<c>   override the channel (default: html5, the only one)
     --no-build      push what is already in dist/itch/<slug>
     --dry-run       print the butler command and stop
 */
@@ -46,12 +48,12 @@ const all = argv.includes('--all');
 const dryRun = argv.includes('--dry-run');
 const noBuild = argv.includes('--no-build');
 
-// The default is the development channel on purpose: pushing the public one is
-// a decision, so it has to be typed.
-const DEFAULT_CHANNEL = 'html5-dev';
+/* One channel, which is the public one. See the note at the top of the file:
+   a page with two uploads asks the visitor a question nobody can answer. */
+const DEFAULT_CHANNEL = 'html5';
 
 if (!only && !all) {
-  console.error('usage: deploy-itch.mjs --game=<slug> | --all   [--channel=html5] [--no-build] [--dry-run]');
+  console.error('usage: deploy-itch.mjs --game=<slug> | --all   [--channel=<c>] [--no-build] [--dry-run]');
   process.exit(1);
 }
 

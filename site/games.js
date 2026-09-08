@@ -162,7 +162,6 @@ window.GAMES = [
     slug: "slipdeck",
     name: "Slipdeck",
     accent: ["#f5c451", "#3ddc97"],
-    draft: true,
     fr: {
       tagline: "Une carte à la fois : à la poubelle ou dans la main. Cinq gardes forment une main de poker.",
       tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
@@ -176,7 +175,6 @@ window.GAMES = [
     slug: "marshmelt",
     name: "Marshmelt",
     accent: ["#ff9d2e", "#ff7a1a"],
-    draft: true,
     fr: {
       tagline: "Un marshmallow collant survit au-dessus d’un lac de lave. Chaque tap l’envoie sur le rocher visé, et tout ce qui tombe finit par fondre.",
       tags: ["Tap pour sauter", "Sans fin", "Lave"]
