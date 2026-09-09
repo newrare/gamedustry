@@ -1112,8 +1112,7 @@
              : score >= R.star3 ? 3 : score >= R.star2 ? 2 : score > 0 ? 1 : 0;
       var rows = [
         { label: "BALLS SET", value: landed },
-        { label: "LONGEST CHAIN", value: bestRun, grade: "accent" },
-        { label: "WELD BONUS", value: weldTotal, grade: "accent" }
+        { label: "LONGEST CHAIN", value: bestRun, grade: "accent" }
       ];
       // a cleared ring is the story of the shift; the jam count is only news
       // when the shift is what the jams ended

@@ -922,7 +922,6 @@
         rows: [
           { label: "DISTANCE (M)", value: d },
           { label: "GEMS", value: gems },
-          { label: "LOOPS FLOWN", value: loops, grade: loops > 0 ? "accent" : "" },
           { label: "BEST CHAIN", value: bestChain, grade: "accent" },
           { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }
         ]

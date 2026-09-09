@@ -3,22 +3,24 @@
  *
  * itch asks for one image per project (minimum 315x250, recommended 630x500)
  * and shows it wherever it links to the game. Nothing in this repo produced
- * one: the icons are square and a screenshot is portrait, so both are the
- * wrong shape. The artwork lives in lab/cover-card.html — icon, screenshot,
- * title, accent, composed in CSS — and this tool loads that page in headless
- * Chrome, fills it from the game's manifest, and screenshots the card.
+ * one: an icon is square and a screenshot is portrait, so both are the wrong
+ * shape. The artwork lives in lab/cover-card.html — the game's landscape
+ * scene, its logotype, its character and one real frame of play, composed in
+ * CSS — and this tool loads that page in headless Chrome, fills it from the
+ * game's manifest, and screenshots the card.
  *
  * The card is authored at 630x500 and captured at a device pixel ratio of 2,
  * then halved inside the page: 2x supersampling, which is what keeps the type
  * and the icon's rim clean. Chrome does the resampling, so the repo still
  * needs no image library.
  *
- * A game with no `assets/icon/<slug>.png` is skipped and reported — the icons
- * are the user's artwork (CLAUDE.md: never create the app icon), and a cover
- * with a placeholder where the icon goes must not reach itch by accident.
+ * A game missing any of the four pieces is skipped and reported rather than
+ * shot with a dashed placeholder in the hole — a placeholder must not reach an
+ * itch page by accident. The art comes out of `assets/art/`, so the usual fix
+ * is `node tools/lab/encode-art.mjs`.
  *
  * Usage:
- *   node tools/lab/shoot-cover.mjs [slug ...] [--shot 6] [--keep]
+ *   node tools/lab/shoot-cover.mjs [slug ...] [--shot 6] [--face happy] [--keep]
  */
 
 import { spawn } from "node:child_process";
@@ -29,7 +31,6 @@ import os from "node:os";
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var CARD = path.join(ROOT, "lab", "cover-card.html");
 var GAMES_DIR = path.join(ROOT, "games");
-var FONTS = path.join(ROOT, "assets", "font", "fonts.json");
 var OUT_DIR = path.join(ROOT, "assets", "cover");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var W = 630, H = 500;                                // what itch recommends
@@ -39,11 +40,18 @@ var DSF = 2;                                         // supersampling
 var argv = process.argv.slice(2);
 var slugs = [];
 var shot = 6;                    // a mid-to-late board: the run has filled up
+var face = "happy";              // a cover invites; the winning face is the one
 var keep = false;
+var FACES = ["happy", "neutral", "sad"];
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shot") shot = parseInt(argv[++i], 10);
+  else if (argv[i] === "--face") face = argv[++i];
   else if (argv[i] === "--keep") keep = true;
   else slugs.push(argv[i]);
+}
+if (FACES.indexOf(face) < 0) {
+  console.error("--face must be one of " + FACES.join(" / "));
+  process.exit(1);
 }
 if (!slugs.length) {
   slugs = fs.readdirSync(GAMES_DIR).filter(function (d) {
@@ -51,31 +59,23 @@ if (!slugs.length) {
   }).sort();
 }
 
-var fonts = JSON.parse(fs.readFileSync(FONTS, "utf8"));
-
 /* Everything the card needs about a game, read once from the one file that
-   describes it. `web.font` names a family of the pack, which carries the
-   weight to ask for — a single-weight face stays at 400 or the browser fakes
-   the bold. */
+   describes it. The title and the typeface used to come from here too; both
+   are drawn now (assets/art/<slug>-title.webp), so the only thing left the
+   manifest decides is the accent the card's bottom glow is tinted with. */
 function describe(slug) {
   var m = JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8"));
-  var key = (m.web && m.web.font) || "baloo2";
-  var f = fonts[key];
-  if (!f) throw new Error(slug + ': web.font "' + key + '" is not in assets/font/fonts.json');
   return {
     slug: slug,
-    title: m.title || slug,
-    accent: (m.theme && m.theme.accent) || "#4dff9b",
-    family: f.family,
-    fw: f.heavy
+    accent: (m.theme && m.theme.accent) || "#4dff9b"
   };
 }
 
 function screenOf(slug, n) {
   return path.join(ROOT, "assets", "screen", slug + "-" + String(n).padStart(2, "0") + ".jpg");
 }
-function iconOf(slug) {
-  return path.join(ROOT, "assets", "icon", slug + ".png");
+function artOf(slug, role) {
+  return path.join(ROOT, "assets", "art", slug + "-" + role + ".webp");
 }
 
 // --- Chrome over the DevTools protocol -----------------------------------
@@ -173,10 +173,8 @@ function resampleJS(b64) {
 async function shootCover(client, sid, info, outPath) {
   var url = "file://" + CARD
     + "?shoot=1&slug=" + encodeURIComponent(info.slug)
-    + "&title=" + encodeURIComponent(info.title)
     + "&accent=" + encodeURIComponent(info.accent)
-    + "&family=" + encodeURIComponent(info.family)
-    + "&fw=" + info.fw
+    + "&face=" + encodeURIComponent(face)
     + "&shot=" + shot;
   await client.send("Page.navigate", { url: url }, sid);
 
@@ -211,10 +209,15 @@ function reap(child) {
   process.on("unhandledRejection", function (e) { kill(); console.error(e); process.exit(1); });
 }
 
-// A cover needs both pieces of artwork. Say which one is missing.
+/* A cover is four pieces of artwork and it is not shot with a hole in it: the
+   card would draw a dashed placeholder, and a placeholder that reaches an itch
+   page by accident is exactly what this gate exists to prevent. Say which
+   piece is missing — the answer is almost always "run encode-art". */
 var skipped = [];
 slugs = slugs.filter(function (s) {
-  var why = !fs.existsSync(iconOf(s)) ? "no icon"
+  var why = !fs.existsSync(artOf(s, "background-desk")) ? "no art background-desk"
+    : !fs.existsSync(artOf(s, "title")) ? "no art title"
+    : !fs.existsSync(artOf(s, "character-" + face)) ? "no art character-" + face
     : !fs.existsSync(screenOf(s, shot)) ? "no screenshot " + String(shot).padStart(2, "0")
     : null;
   if (why) skipped.push(s + " (" + why + ")");

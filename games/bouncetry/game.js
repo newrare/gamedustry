@@ -1031,7 +1031,6 @@
         rows: [
           { label: "BRICKS SMASHED", value: broken + " / " + total },
           { label: "BEST CHAIN", value: bestChain, grade: bestChain >= 10 ? "accent" : "" },
-          { label: "COLOUR SWAPS", value: swaps, grade: swaps > 0 ? "accent" : "" },
           { label: "BALLS FIRED", value: fired },
           { label: "BEST SCORE", value: Math.max(score, Store.get("bestScore", 0)), grade: "gold" }
         ]

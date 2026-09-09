@@ -103,6 +103,16 @@ async function main() {
     await mkdir(imgDir, { recursive: true });
     await cp(icon, path.join(imgDir, 'icon.png'));
 
+    /* The game's happy face, for the hero's cast (site/script.js,
+       initHeroCast). It is the shipping cut the games already embed —
+       assets/art/, written by tools/lab/encode-art.mjs — so the studio page
+       and the end screen of every game show the same drawing, and the site
+       gains no artwork of its own to keep in sync. A game without one is not
+       an error: the hero simply draws from the ones that are there. */
+    const face = path.join(ROOT, 'assets', 'art', slug + '-character-happy.webp');
+    const hasFace = existsSync(face);
+    if (hasFace) await cp(face, path.join(imgDir, 'character.webp'));
+
     // Screenshots are renumbered 01.jpg, 02.jpg… so the page can build the
     // list from a count instead of shipping filenames.
     const shots = await screensFor(slug);
@@ -117,7 +127,7 @@ async function main() {
        downloads neither the engine nor the menu again. */
     await cp(path.join(ROOT, 'dist', 'web', slug), path.join(OUT, 'games', slug), { recursive: true });
 
-    built.push({ ...game, draft: undefined, icon: true, screens: shots.length });
+    built.push({ ...game, draft: undefined, icon: true, screens: shots.length, character: hasFace });
   }
 
   /* The shared half of the split build: one engine, one menu, one stylesheet

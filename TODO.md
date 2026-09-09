@@ -68,6 +68,22 @@ account or a CI runner:
   to the public build with nothing to tell a visitor them apart. Neither the
   checkbox nor deleting an upload has an API
 
+## Painted artwork — the pipeline is in
+
+`assets/image/` (the masters) → `node tools/lab/encode-art.mjs` →
+`assets/art/` (committed, WebP) → `CONFIG.art`, injected by the builder. All 13
+games carry their painted intro, their logotype, their end-screen character and,
+on the web, the landscape scene around the frame; the covers and the site hero
+are composed from the same files. See
+[CLAUDE.md](CLAUDE.md#the-painted-artwork).
+
+What is owed is content and uploads, not code:
+
+- [ ] MAIN — re-upload the 13 new `assets/cover/*.png` on the itch pages
+  (no API for the gallery), and reshoot the screenshots: every intro and end
+  screen now looks different, and chainring, slipdeck and marshmelt look
+  different *in play*
+
 ## Phase 5 — the meta layer
 
 The web menu carries both entries for real: `packages/webshell/menu.js` opens a

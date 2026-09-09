@@ -22,6 +22,13 @@
     designHeight: 1280,
     bg: "#050d0a",
 
+    /* The painted scene goes behind the ROUND too, not just behind the intro
+       and the end screen: assets/art/slipdeck-background-phone.webp replaces the
+       flat felt fill this game used to draw as its own ground. The motor puts it in
+       as a CSS layer under the canvas (Art.dressFrame), and render() below asks
+       Art.scene() before painting a ground of its own. */
+    sceneArt: true,
+
     // Bands the engine reserves (design px). Layout.top / Layout.bottom are
     // derived from them plus the device safe-area insets: keep gameplay there.
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 26 },
@@ -683,16 +690,57 @@
        we are not going to embed, so J/Q/K get the other half of the same
        convention — a framed panel, split across the middle, with the index and
        its pip mirrored top and bottom exactly like a double-headed court. */
+    /* The painted illustrations of the three court cards, from
+       assets/image/slipdeck-card-{jack,queen,king}.png. They are drawn WITHOUT
+       a suit — no heart, no spade anywhere in them — which is what lets three
+       pictures dress all twelve court cards: the suit and the rank are already
+       said by the mirrored corners and by the pip inside the panel. */
+    var COURT_ART = { 10: "cardJack", 11: "cardQueen", 12: "cardKing" };
+
+    function courtArt(c) {
+      var img = ArtImages[COURT_ART[c.r]];
+      // An <img> is only safe to draw once it has decoded; the preloader waits
+      // for all of them before the intro, so this is the file:// / cache-miss
+      // case, and the drawn-by-hand panel below is the fallback.
+      return img && img.complete && img.naturalWidth ? img : null;
+    }
+
     function drawCourt(c, w, h, col) {
       var iw = w * 0.60, ih = h * 0.62, q;
+      var art = courtArt(c);
+
       roundRect(-iw / 2, -ih / 2, iw, ih, w * 0.05);
       ctx.fillStyle = rgba(col, 0.07); ctx.fill();
       ctx.lineWidth = Math.max(2, w * 0.012);
       ctx.strokeStyle = rgba(col, 0.5); ctx.stroke();
       roundRect(-iw / 2 + w * 0.03, -ih / 2 + w * 0.03, iw - w * 0.06, ih - w * 0.06, w * 0.035);
       ctx.lineWidth = Math.max(1, w * 0.006); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-iw / 2, 0); ctx.lineTo(iw / 2, 0); ctx.stroke();
+
+      if (art) {
+        /* The illustration fills the inner panel, clipped to the panel's own
+           rounded rect so it cannot spill over the double border, and
+           `contain`-fitted so a picture whose aspect ratio differs from the
+           panel's is never stretched. */
+        var pad = w * 0.03;
+        var bw = iw - pad * 2, bh = ih - pad * 2;
+        var s = Math.min(bw / art.naturalWidth, bh / art.naturalHeight);
+        var dw = art.naturalWidth * s, dh = art.naturalHeight * s;
+        ctx.save();
+        roundRect(-iw / 2 + pad, -ih / 2 + pad, bw, bh, w * 0.035);
+        ctx.clip();
+        ctx.drawImage(art, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
+      } else {
+        // No picture: the plain divided panel this card has always had.
+        ctx.beginPath();
+        ctx.moveTo(-iw / 2, 0); ctx.lineTo(iw / 2, 0); ctx.stroke();
+      }
+
+      /* The mirrored rank and pip inside the panel are what the hand-drawn
+         court card had INSTEAD of a picture. With the illustration there they
+         are a third copy of what the card's own two corners already say, so
+         they go: the panel is the picture. */
+      if (art) return;
 
       ctx.fillStyle = col;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -874,8 +922,13 @@
 
     function render() {
       var i;
-      ctx.fillStyle = L.felt || CONFIG.bg;
-      ctx.fillRect(0, 0, view.w, view.h);
+      /* The table is the painted scene (CONFIG.sceneArt), a CSS layer under the
+         canvas the frame pipeline has already wiped. The felt is the fallback
+         for a build with no artwork on disk. */
+      if (!Art.scene()) {
+        ctx.fillStyle = L.felt || CONFIG.bg;
+        ctx.fillRect(0, 0, view.w, view.h);
+      }
 
       var pull = cur ? clamp(Math.abs(cur.x) / SWIPE_DIST, 0, 1) : 0;
       drawGate(L.gateLX, BIN_COL,  "BIN",  cur && cur.x < 0 ? pull : 0);

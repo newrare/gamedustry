@@ -154,6 +154,48 @@ var games = (window.GAMES || []).filter(function (g) {
   return g.icon !== false;
 });
 
+/* The hero's cast: two of the games' own characters, standing on the arcade
+   floor either side of the headline.
+
+   They are the happy faces the games show on a winning end screen
+   (assets/art/<slug>-character-happy.webp, copied into
+   image/games/<slug>/character.webp by tools/build/build-site.mjs), so the
+   studio page is dressed with the games' own artwork and owns none of its own.
+
+   The pair is drawn at random on every load, which is the point: thirteen
+   characters over two slots is a different pair almost every visit, and the
+   page reads as a studio with a roster rather than as a poster. `initGames()`
+   has already filtered the catalogue down to what shipped, so a game whose
+   artwork is missing simply is not in the draw.
+
+   The layer is decorative and `aria-hidden` in the markup; it collapses under
+   1080px, where the headline needs the full width. */
+function initHeroCast() {
+  var box = document.getElementById('heroCast');
+  if (!box) return;
+
+  var cast = games.filter(function (g) { return g.character !== false; });
+  if (cast.length < 2) return;              // one character is not a cast
+
+  // Fisher-Yates over a copy: the two slots must never draw the same game.
+  var pool = cast.slice();
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+
+  var sides = ['left', 'right'];
+  var html = '';
+  for (var s = 0; s < sides.length; s++) {
+    var g = pool[s];
+    html += '<img class="hero-face hero-face-' + sides[s] + '"' +
+            ' src="image/games/' + g.slug + '/character.webp"' +
+            ' alt="" aria-hidden="true" loading="lazy" decoding="async"' +
+            ' style="animation-delay:' + (s * -2.4).toFixed(1) + 's">';
+  }
+  box.innerHTML = html;
+}
+
 function renderGames() {
   var grid = document.getElementById('gamesGrid');
   if (!grid) return;
@@ -476,6 +518,10 @@ document.addEventListener('DOMContentLoaded', function () {
   initShots();
   initLegal();
   applyLang();
+  /* Once, and deliberately not from applyLang(): the cast carries no text, so
+     a language toggle has nothing to rewrite there — and re-drawing it would
+     swap both characters for no reason the reader can see. */
+  initHeroCast();
 
   var toggle = document.getElementById('langToggle');
   if (toggle) toggle.addEventListener('click', toggleLang);

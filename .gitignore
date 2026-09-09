@@ -1,6 +1,9 @@
-# Source art and audio ARE tracked (phase 0 decision, ~52 MB / 324 files,
-# no LFS): CI has to be able to re-embed a sound, regenerate an icon and
-# shoot store screenshots. See docs/INDUSTRIALIZATION.md.
+# Source art and audio ARE tracked (phase 0 decision, no LFS): CI has to be
+# able to re-embed a sound, regenerate an icon and shoot store screenshots.
+# That now includes assets/image/, the painted masters — ~175 MB / 405 files in
+# total, of which 121 MB is assets/image/ alone. They ship nowhere: the build
+# embeds assets/art/, their 3.2 MB WebP cut, and the masters are what
+# tools/lab/encode-art.mjs needs to re-cut it. See docs/INDUSTRIALIZATION.md.
 
 .DS_Store
 .vscode/

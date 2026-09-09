@@ -1154,9 +1154,6 @@
           { label: "SHOCKWAVES", value: shocks },
           { label: "PERFECT HITS", value: perfects, grade: perfects > 0 ? "good" : "" },
           { label: "BEST COMBO", value: bestCombo, grade: "accent" },
-          { label: "BIGGEST WAVE", value: bestWave + " TOPS" },
-          { label: "HITS TAKEN", value: crashes, grade: crashes > 2 ? "bad" : "" },
-          { label: "TIME SPINNING", value: Math.round(elapsed) + "s" },
           { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
         ]
       });

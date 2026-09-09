@@ -14,6 +14,13 @@
     },
     designWidth: 720, designHeight: 1280, bg: "#180a10",
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 26 },
+
+    /* The painted scene goes behind the ROUND too, not just behind the intro
+       and the end screen: assets/art/marshmelt-background-phone.webp replaces the
+       pre-rendered cavern this game used to draw as its own ground. The motor puts it in
+       as a CSS layer under the canvas (Art.dressFrame), and render() below asks
+       Art.scene() before painting a ground of its own. */
+    sceneArt: true,
     intro: { logo: "logo", demo: "tap", caption: "" },
     /* No clock: the right-hand pill carries the chain instead, and the only
        thing that can end a run is the lava climbing into the marshmallow. */
@@ -723,8 +730,15 @@
     /* ---- render ---------------------------------------------------------- */
 
     function render() {
-      if (!bg) buildBackground();
-      ctx.drawImage(bg, 0, 0, bg._w, bg._h);
+      /* The cavern is the painted scene (CONFIG.sceneArt), a CSS layer under
+         the canvas the frame pipeline has already wiped — so the pre-rendered
+         walls, stalactites and bounce light it replaces are never built at all.
+         buildBackground() stays as the fallback for a build with no artwork on
+         disk. */
+      if (!Art.scene()) {
+        if (!bg) buildBackground();
+        ctx.drawImage(bg, 0, 0, bg._w, bg._h);
+      }
       drawEmbers();
 
       // A rock that caught fire keeps its silhouette and wears the flames on

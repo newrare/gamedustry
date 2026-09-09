@@ -864,8 +864,6 @@
         stars: st,
         rows: [
           { label: "LONGEST BODY", value: bestLen + " BLOCKS", grade: "accent" },
-          { label: "EATEN", value: orbs },
-          { label: "BITES TAKEN", value: bites },
           { label: "DISTANCE (M)", value: d },
           { label: "BEST CHAIN", value: bestChain, grade: "accent" },
           { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }

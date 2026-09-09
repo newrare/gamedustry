@@ -6,20 +6,35 @@
 <title>Lab — itch cover card</title>
 <style>
 /* ===========================================================================
-   COVER CARD — the 630x500 image itch.io asks for, composed from what a game
-   already owns: its icon, one of its screenshots, its accent and its typeface.
+   COVER CARD — the 630x500 image itch.io asks for, composed from the painted
+   artwork a game already owns.
 
-   itch shows this image everywhere it links to a project (the browse grid, a
-   collection, an embed), cropped to 315x250 at the smallest. So the design is
-   built for that: the icon and the title live in the left two thirds and read
-   at half size, and the screenshot bleeds off the right edge instead of
-   carrying anything that must be legible.
+   Four pieces, all of them the game's own, none of them made for this card:
+
+     assets/art/<slug>-background-desk.webp    the scene, in landscape. It was
+       drawn to be stretched wide behind a portrait frame, which is exactly the
+       shape of this card — so a cover is the game's own world, not a blurred
+       screenshot standing in for one.
+     assets/art/<slug>-title.webp              the logotype. It replaces the
+       CSS title this card used to set in one of six faces at a measured size:
+       a drawn logotype has no metrics to fit and no font to wait for.
+     assets/art/<slug>-character-happy.webp    the character, standing on the
+       bottom edge. It is the piece that makes thirteen covers read as thirteen
+       games rather than thirteen screenshots.
+     assets/screen/<slug>-NN.jpg               one real frame of play, in a
+       tilted portrait panel bled off the right edge — the proof that there is
+       a game behind the art.
+
+   itch shows this image wherever it links to a project, down to 315x250 in a
+   browse grid. That is the SAME aspect ratio, so the small size is a plain
+   downscale, not a crop: nothing gets cut, but everything has to still read at
+   half size. Hence a drawn logotype rather than type, a character in silhouette
+   rather than in detail, and no small text anywhere.
 
    Nothing about a game is described twice. The data comes in on the query
-   string and `tools/lab/shoot-cover.mjs` fills it from games/<slug>/manifest.json,
-   which is the single source of truth for a title, an accent and a typeface:
+   string and `tools/lab/shoot-cover.mjs` fills it from games/<slug>/manifest.json:
 
-     ?slug=vipera&title=Vipera&accent=%234dff9b&family=Baloo%202&fw=800&shot=6
+     ?slug=vipera&accent=%234dff9b&shot=6
 
    Opening the page bare shows vipera, and the panel on the left re-composes it
    live for any other game — that is what it is for. It is a lab page: it never
@@ -36,16 +51,6 @@ body {
   font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 
-/* The six families of assets/font/, declared here so the page stands alone.
-   The weight to ask for travels as `fw` — a single-weight face has to stay at
-   400 or the browser fakes a bold and smears it. */
-@font-face { font-family:"Orbitron";   src:url(../assets/font/orbitron.woff2)   format("woff2"); font-weight:400 900; font-display:block; }
-@font-face { font-family:"Exo 2";      src:url(../assets/font/exo2.woff2)       format("woff2"); font-weight:400 900; font-display:block; }
-@font-face { font-family:"Baloo 2";    src:url(../assets/font/baloo2.woff2)     format("woff2"); font-weight:400 900; font-display:block; }
-@font-face { font-family:"Bungee";     src:url(../assets/font/bungee.woff2)     format("woff2"); font-weight:400;     font-display:block; }
-@font-face { font-family:"Bebas Neue"; src:url(../assets/font/bebasneue.woff2)  format("woff2"); font-weight:400;     font-display:block; }
-@font-face { font-family:"Russo One";  src:url(../assets/font/russoone.woff2)   format("woff2"); font-weight:400;     font-display:block; }
-
 /* ---------------------------------------------------------------------------
    PANEL — the controls.
    --------------------------------------------------------------------------- */
@@ -61,13 +66,15 @@ body {
 .row { margin-bottom:14px; }
 .row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
 .row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
-.row select, .row input[type=text], .row input[type=number] {
+.row select {
   width:100%; margin-top:6px; padding:6px 8px;
   background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
   font:inherit;
 }
 .row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
 .row input[type=color] { width:100%; height:30px; margin-top:6px; background:#0b0b12; border:1px solid #2c2c47; border-radius:6px; }
+.miss { margin-top:18px; font-weight:500; font-size:12px; line-height:1.5; color:#ffb4b4; }
+.miss:empty { display:none; }
 
 /* ---------------------------------------------------------------------------
    STAGE.
@@ -83,42 +90,45 @@ body {
 
 /* ---------------------------------------------------------------------------
    THE COVER — 630x500, authored 1:1. The shoot captures it at a device pixel
-   ratio of 2 and halves the result, so the type and the icon rim stay clean.
+   ratio of 2 and halves the result, so the artwork's edges stay clean.
    --------------------------------------------------------------------------- */
 #cover {
   position:relative;
   width:630px; height:500px;
   overflow:hidden;
   background:#07070e;
-  font-family:var(--cover-font, "Baloo 2"), sans-serif;
   --accent:#4dff9b;
 }
 
-/* The backdrop is the game's own screenshot, blurred past legibility: it costs
-   no colour plumbing and it is right for all thirteen palettes at once. */
+/* The game's own landscape scene. It is the whole ground of the card, so it
+   is only darkened — never blurred: the point of using the painting is that
+   it is worth looking at. */
 #cover .bg {
-  position:absolute; inset:-60px;
+  position:absolute; inset:0;
   background:var(--bg-img) center/cover no-repeat;
-  filter:blur(34px) saturate(1.25) brightness(.62);
-  transform:scale(1.08);
+  filter:brightness(.74) saturate(1.06);
 }
-/* Darkened toward the left, where the type goes. */
+/* Darkened toward the bottom-left, where the logotype and the character are,
+   and lifted by the game's accent at the very bottom so the card carries the
+   game's colour even where the painting does not. */
 #cover .scrim {
   position:absolute; inset:0;
   background:
-    linear-gradient(100deg, rgba(4,4,10,.94) 0%, rgba(4,4,10,.82) 42%, rgba(4,4,10,.18) 72%, rgba(4,4,10,.42) 100%),
-    radial-gradient(120% 90% at 8% 100%, color-mix(in srgb, var(--accent) 28%, transparent) 0%, transparent 62%);
+    linear-gradient(72deg, rgba(4,4,10,.80) 0%, rgba(4,4,10,.46) 38%, rgba(4,4,10,.06) 66%, rgba(4,4,10,.30) 100%),
+    linear-gradient(0deg, rgba(4,4,10,.66) 0%, rgba(4,4,10,.10) 34%, transparent 58%),
+    radial-gradient(100% 80% at 6% 104%, color-mix(in srgb, var(--accent) 30%, transparent) 0%, transparent 60%);
 }
 
-/* The screenshot panel: a real portrait frame, tilted and bled off the right
-   edge so the 315x250 crop still lands on the icon and the title. */
+/* One real frame of play: a portrait panel, tilted and bled off the right
+   edge. It is the only rectangle on the card, which is what makes it read as
+   a screen rather than as part of the painting. */
 #cover .shot {
-  position:absolute; right:-34px; top:50%;
-  width:248px; height:441px;                 /* 720x1280, to scale */
+  position:absolute; right:-40px; top:50%;
+  width:236px; height:420px;                 /* 720x1280, to scale */
   transform:translateY(-50%) rotate(-4deg);
   border-radius:20px;
   overflow:hidden;
-  border:2px solid rgba(255,255,255,.14);
+  border:2px solid rgba(255,255,255,.16);
   box-shadow:0 26px 60px rgba(0,0,0,.62), 0 0 0 1px rgba(0,0,0,.5);
 }
 #cover .shot img { display:block; width:100%; height:100%; object-fit:cover; }
@@ -128,32 +138,35 @@ body {
   background:linear-gradient(90deg, transparent 55%, rgba(4,4,10,.55) 100%);
 }
 
-#cover .left {
-  position:absolute; left:44px; top:0; bottom:0; width:330px;
-  display:flex; flex-direction:column; justify-content:center; gap:22px;
+/* The logotype, top-left. Its box stops short of the screenshot panel, and the
+   fit is `contain`, so a 3:1 logotype and a 2:1 one both land inside it
+   without either being stretched or overlapping the panel. */
+#cover .title {
+  position:absolute; left:30px; top:34px;
+  width:308px; height:132px;
+  object-fit:contain; object-position:left top;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,.72));
 }
-#cover .icon {
-  width:132px; height:132px; display:block;
-  border-radius:29px;                        /* the icon art is already round */
-  box-shadow:0 14px 34px rgba(0,0,0,.55);
+
+/* The character, standing on the bottom edge and cropped by it: a figure the
+   frame cuts stands in the scene, one floating clear of it is a sticker. The
+   box is fixed and the fit is `contain` because the masters are portrait for
+   some games and landscape for others. */
+#cover .face {
+  position:absolute; left:14px; bottom:-12px;
+  width:250px; height:296px;
+  object-fit:contain; object-position:left bottom;
+  filter:drop-shadow(0 16px 30px rgba(0,0,0,.6));
 }
-#cover .icon.missing {
+
+/* A game whose artwork is not on disk says so on the card, in place of the
+   piece that is missing — `tools/lab/shoot-cover.mjs` refuses to shoot it, so
+   this is only ever seen in the lab. */
+#cover .missing {
   display:flex; align-items:center; justify-content:center;
-  border:2px dashed rgba(255,255,255,.22);
+  border:2px dashed rgba(255,255,255,.22); border-radius:12px;
   font:700 11px/1.3 -apple-system,sans-serif; letter-spacing:1px;
-  color:rgba(255,255,255,.4); text-align:center; text-transform:uppercase;
-}
-#cover h2 {
-  margin:0;
-  font-size:64px; line-height:.98;
-  font-weight:var(--cover-fw, 800);
-  letter-spacing:.5px;
-  text-transform:uppercase;
-  white-space:nowrap;                        /* the fitter keeps it one line */
-  background:linear-gradient(180deg, #fff 0%, #fff 42%, var(--accent) 100%);
-  -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 4px 18px rgba(0,0,0,.6));
+  color:rgba(255,255,255,.45); text-align:center; text-transform:uppercase;
 }
 
 /* The shoot hides everything but the card. */
@@ -167,7 +180,8 @@ body.shoot #stage .crop { outline:0; }
 
 <div id="panel">
   <h1>Cover card</h1>
-  <p class="hint">The 630&times;500 image itch.io asks for. Shoot them all with
+  <p class="hint">The 630&times;500 image itch.io asks for, composed from
+    <code>assets/art/</code>. Shoot them all with
     <code>node tools/lab/shoot-cover.mjs</code>.</p>
 
   <div class="row">
@@ -179,24 +193,18 @@ body.shoot #stage .crop { outline:0; }
     <input id="shot" type="range" min="1" max="10" step="1" value="6">
   </div>
   <div class="row">
-    <label>Title</label>
-    <input id="title" type="text" value="Vipera">
-  </div>
-  <div class="row">
-    <label>Typeface</label>
-    <select id="family">
-      <option value="Baloo 2|800">Baloo 2</option>
-      <option value="Orbitron|800">Orbitron</option>
-      <option value="Exo 2|800">Exo 2</option>
-      <option value="Bungee|400">Bungee</option>
-      <option value="Bebas Neue|400">Bebas Neue</option>
-      <option value="Russo One|400">Russo One</option>
+    <label>Character</label>
+    <select id="face">
+      <option value="happy">happy</option>
+      <option value="neutral">neutral</option>
+      <option value="sad">sad</option>
     </select>
   </div>
   <div class="row">
     <label>Accent</label>
     <input id="accent" type="color" value="#4dff9b">
   </div>
+  <p class="miss" id="miss"></p>
 </div>
 
 <div id="stage">
@@ -205,13 +213,11 @@ body.shoot #stage .crop { outline:0; }
       <div class="bg"></div>
       <div class="scrim"></div>
       <div class="shot"><img id="shotimg" alt=""></div>
-      <div class="left">
-        <img id="icon" class="icon" alt="">
-        <h2 id="ctitle">VIPERA</h2>
-      </div>
+      <img id="ctitle" class="title" alt="">
+      <img id="cface" class="face" alt="">
     </div>
   </div>
-  <div class="meta">630 &times; 500 — itch crops it to 315 &times; 250 in a grid</div>
+  <div class="meta">630 &times; 500 — itch shows it down to 315 &times; 250, the same shape</div>
 </div>
 
 <script>
@@ -226,14 +232,14 @@ var cover = document.getElementById("cover");
 var el = {
   slug: document.getElementById("slug"),
   shot: document.getElementById("shot"),
-  title: document.getElementById("title"),
-  family: document.getElementById("family"),
+  face: document.getElementById("face"),
   accent: document.getElementById("accent"),
   vslug: document.getElementById("v-slug"),
   vshot: document.getElementById("v-shot"),
   img: document.getElementById("shotimg"),
-  icon: document.getElementById("icon"),
-  ctitle: document.getElementById("ctitle")
+  ctitle: document.getElementById("ctitle"),
+  cface: document.getElementById("cface"),
+  miss: document.getElementById("miss")
 };
 
 GAMES.forEach(function (g) {
@@ -246,84 +252,84 @@ GAMES.forEach(function (g) {
 var slug = q.get("slug") || "vipera";
 if (GAMES.indexOf(slug) >= 0) el.slug.value = slug;
 if (q.get("shot")) el.shot.value = q.get("shot");
-if (q.get("title")) el.title.value = q.get("title");
+if (q.get("face")) el.face.value = q.get("face");
 if (q.get("accent")) el.accent.value = q.get("accent");
-if (q.get("family")) {
-  var fam = q.get("family"), fw = q.get("fw") || "800";
-  var match = fam + "|" + fw;
-  var known = Array.prototype.some.call(el.family.options, function (o) { return o.value === match; });
-  if (!known) {
-    var o = document.createElement("option");
-    o.value = match; o.textContent = fam;
-    el.family.appendChild(o);
-  }
-  el.family.value = match;
-}
 
-/* Shrink the title until it fits the left column. The px in the CSS were
-   picked against one face; six faces disagree about every width — Orbitron's
-   caps are wide, Bebas Neue's are half that — and `letter-spacing` is a fixed
-   px value, so the width does not scale with the size. Hence a measured fit,
-   the same one packages/webshell/menu.js runs on the intro title. */
-function fitTitle() {
-  var box = 330, size = 64;
-  el.ctitle.style.fontSize = size + "px";
-  for (var i = 0; i < 30 && el.ctitle.scrollWidth > box && size > 22; i++) {
-    size -= 2;
-    el.ctitle.style.fontSize = size + "px";
-  }
+/* What did not load. The card marks the hole and the panel names it, which is
+   how a re-encode that has not been run yet shows up as a sentence instead of
+   as a cover that is quietly missing its character. */
+var missing = [];
+var bgReady = Promise.resolve();
+
+function watch(img, what) {
+  img.classList.remove("missing");
+  img.removeAttribute("alt");
+  img.onerror = function () {
+    img.classList.add("missing");
+    img.removeAttribute("src");
+    img.alt = "no " + what;
+    if (missing.indexOf(what) < 0) missing.push(what);
+    el.miss.textContent = "Not on disk: " + missing.join(", ") +
+      " — run node tools/lab/encode-art.mjs";
+  };
 }
 
 function paint() {
   var s = el.slug.value;
   var n = String(el.shot.value).padStart(2, "0");
-  var fam = el.family.value.split("|");
 
+  missing = [];
+  el.miss.textContent = "";
   el.vslug.textContent = s;
   el.vshot.textContent = el.shot.value;
-  cover.style.setProperty("--cover-font", '"' + fam[0] + '"');
-  cover.style.setProperty("--cover-fw", fam[1]);
   cover.style.setProperty("--accent", el.accent.value);
 
   var shot = "../assets/screen/" + s + "-" + n + ".jpg";
+  watch(el.img, "screenshot");
   el.img.src = shot;
-  cover.querySelector(".bg").style.setProperty("--bg-img", 'url("' + shot + '")');
 
-  /* The icon is drawn by the user, not by this repo (CLAUDE.md: never create
-     an app icon). A game without one says so on the card instead of shipping
-     a placeholder that could reach itch by accident. */
-  el.icon.src = "../assets/icon/" + s + ".png";
-  el.icon.onerror = function () {
-    el.icon.classList.add("missing");
-    el.icon.removeAttribute("src");
-    el.icon.alt = "no icon";
-  };
+  /* The scene is a CSS background, so it cannot be awaited with decode() like
+     the three <img> below. It is loaded through an Image of its own instead —
+     `bgReady` is what the shoot's readiness flag waits on, or it would capture
+     a card whose whole ground is still blank. */
+  var bgUrl = "../assets/art/" + s + "-background-desk.webp";
+  cover.querySelector(".bg").style.setProperty("--bg-img", 'url("' + bgUrl + '")');
+  bgReady = new Promise(function (res) {
+    var probe = new Image();
+    probe.onload = function () { res(); };
+    probe.onerror = function () {
+      if (missing.indexOf("background-desk") < 0) missing.push("background-desk");
+      el.miss.textContent = "Not on disk: " + missing.join(", ") +
+        " — run node tools/lab/encode-art.mjs";
+      res();
+    };
+    probe.src = bgUrl;
+  });
 
-  el.ctitle.textContent = (el.title.value || s).toUpperCase();
-  fitTitle();
+  watch(el.ctitle, "title");
+  el.ctitle.src = "../assets/art/" + s + "-title.webp";
+
+  watch(el.cface, "character");
+  el.cface.src = "../assets/art/" + s + "-character-" + el.face.value + ".webp";
 }
 
-["slug", "shot", "title", "family", "accent"].forEach(function (k) {
-  el[k].addEventListener("input", function () {
-    if (k === "slug") el.title.value = el.slug.value;   // a sane starting point
-    paint();
-  });
+["slug", "shot", "face", "accent"].forEach(function (k) {
+  el[k].addEventListener("input", paint);
 });
 paint();
 
-/* The shoot waits on this: the card is composed, both images have decoded and
-   the face is loaded, so the capture cannot land on a fallback font or an
-   empty frame. */
+/* The shoot waits on this: the card is composed and all three images have
+   decoded, so the capture cannot land on an empty frame. No font to wait for
+   any more — every piece of type on this card is drawn. */
 window.__coverReady = 0;
 (async function () {
   if (q.get("shoot")) document.body.classList.add("shoot");
   var waits = [];
-  [el.img, el.icon].forEach(function (i) {
-    if (i.src) waits.push(i.decode ? i.decode().catch(function () {}) : Promise.resolve());
+  [el.img, el.ctitle, el.cface].forEach(function (i) {
+    if (i.getAttribute("src")) waits.push(i.decode ? i.decode().catch(function () {}) : Promise.resolve());
   });
+  waits.push(bgReady);
   await Promise.all(waits);
-  if (document.fonts && document.fonts.ready) await document.fonts.ready;
-  fitTitle();
   await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
   window.__coverReady = 1;
 })();

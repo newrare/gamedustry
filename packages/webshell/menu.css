@@ -54,6 +54,23 @@
 }
 #web-bg.flat { background-size:auto; }
 
+/* The motor's painted layer, when the game has one (`assets/art/<slug>-
+   background-phone.webp` — nearly always, and then #web-bg above is removed
+   outright). Two things change for the menu, and only on the intro:
+
+   the depth — the motor stacks it at 0, above this file's scrim at -1; here it
+     takes #web-bg's own place at -2, under the scrim;
+   the scrim — the motor's layer carries a generic top-and-bottom one, cut for
+     an intro whose title, tagline, demo and button run down the middle. The
+     menu puts its entries down the right edge and its title top-left, so the
+     scrim under #screen-intro::before is the one that fits and the motor's
+     would only muddy the picture twice.
+
+   The end screen is untouched: nothing here re-dresses it, so it keeps the
+   motor's layer and the motor's scrim exactly as a playable has them. */
+#screen-intro .screen-art { z-index:-2; }
+#screen-intro .screen-art::after { display:none; }
+
 /* Nothing guarantees the backdrop is dark where the text lands — radiam's hall
    is lit, marshmelt's lava is bright orange. The scrim is what makes ONE menu
    design legible over all thirteen: a flat wash that pushes the picture back,

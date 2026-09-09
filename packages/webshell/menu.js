@@ -247,10 +247,16 @@
 
   /* The menu is dressed with the game's own backdrop, in that order:
 
-       1. the painted background the game already embeds — `ASSETS.images.bg`
-          (or `bg1`), the re-encoded `assets/image/<slug>-background.png` it
-          draws behind its world. Same picture, so the menu and the round share
-          one place;
+       0. the painted screen the MOTOR already put there. `assets/art/<slug>-
+          background-phone.webp` reaches every target through CONFIG.art, and
+          the shell inserts it as `.screen-art` on the intro and the end screen
+          (see packages/shell/shell.js, Art.dress). When it is there the menu
+          has nothing to do: menu.css drops the layer's own scrim in favour of
+          the one below, which is cut for this layout — a band under the title,
+          a band under the menu, a gradient down the right edge — and re-anchors
+          it under this file's stack. That is the case for all thirteen games;
+       1. otherwise a picture the game embeds itself — `ASSETS.images.bg` (or
+          `bg1`), the backdrop it draws behind its own world;
        2. otherwise the game view's own CSS background — the radial gradient the
           SKIN sets on `html, body` — read off the page and re-applied to the
           frame, which anchors it to the 720x1280 design space instead of to
@@ -261,6 +267,12 @@
   function dressBackground() {
     var box = $("web-bg");
     if (!box) return;
+    /* The motor's own painted layer wins, and it is already in the DOM: the
+       bootstrap's DOMContentLoaded handler runs before this file's. */
+    if ($("screen-intro").querySelector(".screen-art")) {
+      box.parentNode.removeChild(box);
+      return;
+    }
     var images = (W.ASSETS && W.ASSETS.images) || {};
     var src = images.bg || images.bg1 || null;
     if (src) {

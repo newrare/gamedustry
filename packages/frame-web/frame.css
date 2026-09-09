@@ -28,6 +28,39 @@
       background-attachment: fixed;
     }
 
+    /* The game's own painting, in landscape, across the whole window —
+       `assets/art/<slug>-background-desk.webp`. The portrait cut dresses the
+       intro and the end screen inside the frame; this is the same scene wide,
+       so a desktop window shows one picture with a phone standing in the
+       middle of it instead of a lit strip in an empty room.
+
+       It is a layer of its own rather than another stop in the stack above,
+       for two reasons: the gradients are the FALLBACK, still exactly what a
+       game with no picture gets, and a picture needs a scrim the gradients
+       must not be behind. Both the token and the class come from
+       packages/platform/web.js, which sets them together — the class is what
+       keeps the scrim from darkening the window of a game with no artwork.
+
+       z-index 0 puts it above the body's background and below #backdrop (1)
+       and #stage (2), so it dresses the bands without ever covering the game.
+       `fixed` keeps it still while the page cannot scroll anyway, and stops
+       the picture from re-fitting as the bezel's margin changes. */
+    .has-art-desk body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      /* The scrim is light on purpose. These paintings are already dark, and
+         the job here is to seat the bezel's glow and keep the bands from
+         competing with the game — not to hide the picture that was drawn for
+         them. Anything past ~40% and a night scene reads as a flat gradient,
+         which is what the dressing below already does for free. */
+      background-image:
+        linear-gradient(180deg, rgba(4,5,14,.16), rgba(4,5,14,.28) 55%, rgba(4,5,14,.52)),
+        var(--art-bg-desk);
+      background-size: auto, cover;
+      background-position: center, center;
+      background-repeat: no-repeat;
+    }
+
     /* The bezel rides #frame's own transform, so the device keeps its
        proportions at every window size. A box-shadow is painted outside the
        element, i.e. it is not eaten by #frame's overflow:hidden. */

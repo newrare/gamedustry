@@ -25,16 +25,16 @@ Play asks the same question in its own form. The answer is not per game, it is
 per *kind of asset*, and this table is the record of it. Keep it true: it is
 what the disclosure on thirteen store pages is copied from.
 
-| asset                                                 | where it comes from            | generative AI |
-| ----------------------------------------------------- | ------------------------------ | ------------- |
-| the code, all of it                                   | written with an LLM            | **yes**       |
-| the game names                                        | generated                      | **yes**       |
-| app icons — `assets/icon/<slug>.png`                  | an image model                 | **yes**       |
-| background art — `assets/image/<slug>-background.png` | an image model                 | **yes**       |
-| background music — `ASSETS.sounds.music`              | a music model                  | **yes**       |
-| sound effects — `assets/sfx/`                         | the ZapSplat library, licensed | no            |
-| pictograms — `assets/lucide/`                         | Lucide, ISC                    | no            |
-| type — `assets/font/`                                 | six OFL families               | no            |
+| asset                                         | where it comes from            | generative AI |
+| --------------------------------------------- | ------------------------------ | ------------- |
+| the code, all of it                           | written with an LLM            | **yes**       |
+| the game names                                | generated                      | **yes**       |
+| app icons — `assets/icon/<slug>.png`          | an image model                 | **yes**       |
+| painted artwork — `assets/image/<slug>-*.png` | an image model                 | **yes**       |
+| background music — `ASSETS.sounds.music`      | a music model                  | **yes**       |
+| sound effects — `assets/sfx/`                 | the ZapSplat library, licensed | no            |
+| pictograms — `assets/lucide/`                 | Lucide, ISC                    | no            |
+| type — `assets/font/`                         | six OFL families               | no            |
 
 So the answer on a store form is **yes**, for all thirteen. What that costs is
 a place on itch's *AI Assisted* browse page; what not saying it costs is the
@@ -99,6 +99,55 @@ Icon.draw(ctx, "icoBomb", cx, cy, 26, "#2a1400");
 ```
 
 Details and the reason icons are stored white: [assets/lucide/README.md](../assets/lucide/README.md).
+
+## Painted artwork comes from `assets/image/`, re-encoded into `assets/art/`
+
+The one exception to Rule #1, and the reason it is an exception: a background, a
+logotype and a character cannot be drawn in canvas. They come out of an image
+model, and a game gets its six pieces by **file name alone** — no manifest key,
+no `ASSETS` entry, no code:
+
+| `assets/image/<slug>-…`              | used for                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
+| `-background-phone.png`              | behind the intro and the end screen — and behind the round with `CONFIG.sceneArt` |
+| `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**)              |
+| `-title.png`                         | the logotype: replaces the app icon and the CSS `#intro-title`                    |
+| `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0–1 / 2 / 3)                                |
+| anything else                        | `CONFIG.art.<camelName>`, for the game to use as it likes                         |
+
+`assets/image/` is the **master and ships nowhere**: PNG, up to 2172 px, ~2 MB
+apiece, 121 MB across thirteen games. One raw character would double a creative.
+The shipping cut lives next to it:
+
+```bash
+node tools/lab/encode-art.mjs             # every game, skipping what is fresh
+node tools/lab/encode-art.mjs slipdeck    # one game
+node tools/lab/encode-art.mjs --force     # after changing a profile
+```
+
+That writes `assets/art/<slug>-<role>.webp` — WebP, sized for the 720×1280
+design space, alpha intact, **~35 KB a piece and ~270 KB of base64 per game**.
+It is **committed**, exactly like `assets/font/` and `assets/sfx/`: a
+shipping-ready input the build embeds, never a build output. The build itself
+never encodes, because encoding needs headless Chrome and `tools/update.mjs`
+runs on every change.
+
+Two choices worth knowing, both in the tool's own header:
+
+- **WebP, through headless Chrome.** The repo has no image library and is not
+  going to grow one; Chrome resamples with a high-quality filter and encodes
+  WebP with alpha through `canvas.toDataURL`. `sips` cannot write WebP at all,
+  and its AVIF — smaller still — needs Safari 16.4, which a playable in an ad
+  network's WebView cannot count on.
+- **The sizes are the design space, not a guess.** A portrait background at
+  720 px is 1:1 with its largest possible display. The court cards are the
+  exception and stay near 560 px: they are the one piece a game draws on the
+  **canvas**, which is sized in device pixels, so a 3× phone asks for ~640 real
+  pixels where the DOM would have asked for 214.
+
+The builder injects the result as `CONFIG.art` — base64 in the single-file
+builds, hashed files in the split site build. See
+[ENGINE.md](ENGINE.md#configart--the-painted-artwork).
 
 ## Type comes from `assets/font/` — web target only
 

@@ -1201,12 +1201,8 @@
             grade: escaped ? "gold" : climbed >= M.rows - 1 ? "accent" : "" },
           { label: "PULSES SPARED", value: spare,
             grade: spare >= 3 ? "gold" : spare > 0 ? "accent" : "" },
-          { label: "WALLS FOUND", value: mapped + " / " + wallCount,
-            grade: mapped >= wallCount * 0.35 ? "accent" : "" },
           { label: "VALVES FORGED", value: valves.length,
             grade: valves.length >= 3 ? "accent" : "" },
-          { label: "ECHOES", value: bounces },
-          { label: "PULSES FIRED", value: fired },
           { label: "BEST SCORE", value: Math.max(score, Store.get("bestScore", 0)), grade: "gold" }
         ]
       });
