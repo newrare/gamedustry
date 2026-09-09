@@ -36,12 +36,41 @@
        A tap is a whole shot: the marshmallow leaves along the line from itself
        to the finger, at ONE fixed speed. Nothing to drag, nothing to release in
        a direction — holding only previews the arc, it never charges it. */
-    mallowLen: 66,          // capsule length (design px)
-    mallowR: 16,            // capsule radius
+    /* The body is a CUBE, the way a marshmallow out of the bag is: `mallowLen`
+       is its size along the axis it plants itself on (its height, standing on a
+       rock) and `mallowR` half its width. Near-square on purpose — a capsule
+       read as a pill, not as something you would eat. */
+    mallowLen: 62,          // body length along the planting axis (design px)
+    mallowR: 29,            // half its width
+    /* How the body is DRAWN, which is not the axis it is planted on. It carries
+       a face, so it stays upright and only leans: planted on the underside of a
+       rock, or diving, the planting axis points at the floor and a face rigidly
+       bolted to it would hang upside down. */
+    leanMax: 0.55,          // rad — the most it ever tips
+    leanEase: 11,           // 1/s — how fast it rights itself
     gravity: 1500,          // px/s^2 while flying
     flingSpeed: 1240,       // px/s a tap launches at
     aimMinDist: 34,         // a tap closer than this to the body is ignored
-    aimSlow: 0.2,           // time scale while the finger is down
+    aimSlow: 0.15,          // time scale under the finger, at FULL focus
+
+    /* --- the focus meter ----------------------------------------------------
+       The slow motion is a resource, not a mode. It drains while the finger is
+       down and the benefit fades WITH it — hold for a second and the world is
+       already back to half speed, hold to empty and it runs at full speed under
+       your finger. It comes back on its own, and faster if you land: the way to
+       keep the slow motion is to keep moving, which is the whole point. The
+       preview arc shortens with it too, so a long deliberation buys less
+       information as well as less time. */
+    focusSeconds: 0.7,      // seconds of full-strength slow motion, from full.
+                            //    Short on purpose: it is a beat to read the
+                            //    board with, not a pause to plan the round in —
+                            //    half of it is gone by 0.35 s.
+    focusDelay: 1.2,        // ...and it does not even START coming back until
+                            //    the finger has been off for this long, so
+                            //    dipping in and out costs the same as staying
+    focusRefill: 3,         // seconds to come all the way back from empty
+    focusClaim: 0.14,       // what a FRESH rock hands straight back — landing
+                            //    is the way back, not waiting
     wallBounce: 0.55,       // the cave walls bounce, the ceiling too
     embed: 0.4,             // fraction of the body sunk into what it sticks to
     /* A landing does not perch on the silhouette: the body slides inward and
@@ -65,18 +94,18 @@
        bounce decays back into the lane the rock was given — otherwise a knock
        upward would take a rock off the ceiling and never give it back. */
     rockMinR: 34, rockMaxR: 104,
-    fallMin: 78,  fallMax: 150,     // the slow lane, px/s, before the ramp
-    fastMin: 215, fastMax: 315,     // the fast lane
-    fastChance: 0.34,               // how often a rock is drawn from it
-    fastRead: 195,                  // above this a rock is drawn with a smear
+    fallMin: 128, fallMax: 215,     // the slow lane, px/s, before the ramp
+    fastMin: 305, fastMax: 430,     // the fast lane
+    fastChance: 0.4,                // how often a rock is drawn from it
+    fastRead: 265,                  // above this a rock is drawn with a smear
     driftMax: 44,                   // px/s of sideways drift
     fallSettle: 1.7,                // 1/s — how fast a bounce decays back
     rockBounce: 0.86,               // restitution between two structures
     spinMax: 0.62,                  // rad/s — the anchor rides the spin, which
                                     // is what keeps a landing from being final
     knockSpin: 0.0009,              // rad/s of spin a collision imparts, per px/s
-    spawnEvery: 0.8, spawnMin: 0.46,
-    maxRocks: 9, minRocks: 3,
+    spawnEvery: 0.66, spawnMin: 0.34,
+    maxRocks: 9, minRocks: 4,
     recoil: 0.1,                    // how much a jump kicks the rock it leaves
 
     /* --- the fireballs -----------------------------------------------------
@@ -95,13 +124,13 @@
        body for long — and only then melts away. */
     lavaStart: 0.07,                // fraction of the play band it fills at t=0
     lavaEnd: 0.3,                   // ...and once the rise is over
-    riseSeconds: 95,
+    riseSeconds: 78,
     burnSink: 46,                   // px/s a burning structure settles at
     burnSeconds: 1.7,               // how long it blazes before it melts
 
     /* --- difficulty -------------------------------------------------------- */
-    rampSeconds: 80,
-    fallRamp: 0.55,                 // extra fall speed at the top of the ramp
+    rampSeconds: 65,
+    fallRamp: 0.75,                 // extra fall speed at the top of the ramp
 
     /* --- scoring ----------------------------------------------------------- */
     baseScore: 10,
@@ -176,7 +205,7 @@
     ];
 
     var rocks, mallow, embers, bubbles;
-    var score, combo, bestCombo, rocksHit, best, nextMile, toast;
+    var score, combo, bestCombo, rocksHit, best, nextMile, toast, focus, focusT;
     var elapsed, spawnT, wave, wallT, bonkT, aim, dead, deadT, sink;
     var lavaY, lavaLo, lavaHi;
     var bg = null, fire = null;
@@ -206,22 +235,85 @@
 
     function ramp() { return clamp(elapsed / C.rampSeconds, 0, 1); }
 
+    // signed angle into (-PI, PI], so a lean eases the short way round
+    function wrapAngle(a) {
+      a = (a + Math.PI) % TAU;
+      if (a < 0) a += TAU;
+      return a - Math.PI;
+    }
+
     /* ---- the rocks ------------------------------------------------------- */
 
+    /* Five kinds of rock. A kind is a silhouette AND a texture, so the field
+       never reads as one blob repeated: `n / lo / hi` write the radius array
+       the physics already reads through radiusAt(), and `tex` only dresses the
+       inside of that same outline. What a rock is worth is still carried by
+       COLOUR alone — lit and veined while it is fresh, dead grey once it has
+       been claimed — so a kind is read at a glance without ever being learned. */
+    var KINDS = [
+      // the boulder: round, lumpy, split open on molten veins
+      { n:11, lo:0.90, hi:1.08, round:true,  fill:"#5f4a46", used:"#2c2422", tex:"cracks" },
+      // the crystal: seven long facets that catch the light as it turns
+      { n:7,  lo:0.74, hi:1.14, round:false, fill:"#484278", used:"#242142", tex:"facets" },
+      // the slab: a flat plate of layered stone, wider than it is tall
+      { n:12, lo:0.94, hi:1.04, round:true,  flat:0.38, fill:"#6d5334", used:"#33281a", tex:"strata" },
+      // the shard: broken basalt, a few points at no regular interval
+      { n:14, lo:0.58, hi:1.26, round:false, spike:true, fill:"#3d3450", used:"#1f1b2a", tex:"blades" },
+      // the pumice: light, round, eaten right through with holes
+      { n:13, lo:0.90, hi:1.06, round:true,  fill:"#6d6659", used:"#312f2a", tex:"holes" }
+    ];
+
     function makeRock(x, y, r, hot) {
-      var i, shape = [], veins = [], n = 11;
+      var i, a, sc, y0, h, shape = [], marks = [], ux = [], uy = [];
+      var kind = Rand.int(0, KINDS.length - 1), K = KINDS[kind], n = K.n;
       var drift = Rand.range(-C.driftMax, C.driftMax);
-      for (i = 0; i < n; i++) shape.push(Rand.range(0.88, 1.1));
-      for (i = 0; i < 3; i++) {
-        veins.push({ a: Rand.range(0, TAU), b: Rand.range(0, TAU), w: Rand.range(0.1, 0.45) });
+
+      /* A spiked kind gets its points marked FIRST, four to six of them at
+         irregular intervals: alternating tip and valley all the way round drew
+         a symmetrical star, which is a shape nothing breaks into. Everything
+         between two points is a face of random depth, so no two shards are the
+         same silhouette. */
+      if (K.spike) {
+        var tips = [], nt = Rand.int(4, 6), at = Rand.int(0, n - 1);
+        for (i = 0; i < n; i++) tips.push(0);
+        for (i = 0; i < nt; i++) { tips[at % n] = 1; at += Rand.int(2, 4); }
       }
+
+      for (i = 0; i < n; i++) {
+        a = i / n * TAU;
+        sc = K.spike ? (tips[i] ? Rand.range(1.0, K.hi) : Rand.range(K.lo, 0.88))
+                     : Rand.range(K.lo, K.hi);
+        /* a flat kind is squashed on the vertical, and the squash is baked into
+           the radius array rather than applied at paint time — radiusAt(), the
+           landing and the aim preview then all see the shape that is drawn. */
+        if (K.flat) sc *= 1 - K.flat * Math.abs(Math.sin(a));
+        shape.push(sc);
+        // the unit outline, cached: no trig per rock per frame
+        ux.push(Math.cos(a) * sc); uy.push(Math.sin(a) * sc);
+      }
+
+      // the texture's own random detail, drawn from the same seed every frame
+      if (K.tex === "facets") {
+        marks.push({ x: Rand.range(-0.28, 0.28), y: Rand.range(-0.28, 0.28), o: Rand.int(0, 4) });
+      } else if (K.tex === "cracks") {
+        for (i = 0; i < 3; i++) marks.push({ a: Rand.range(0, TAU), b: Rand.range(0, TAU), w: Rand.range(0.1, 0.45) });
+      } else if (K.tex === "strata") {
+        for (y0 = -0.8; y0 < 0.8; y0 += h) {
+          h = Rand.range(0.18, 0.36);
+          marks.push({ y: y0, h: h });
+        }
+      } else if (K.tex === "holes") {
+        for (i = 0; i < 7; i++) marks.push({ a: Rand.range(0, TAU), d: Rand.range(0.08, 0.62), w: Rand.range(0.07, 0.16) });
+      }
+
       return {
-        x: x, y: y, r: r, hot: !!hot,
+        x: x, y: y, r: r, hot: !!hot, kind: kind,
         /* vx/vy are what the rock is doing right now; drift/fall are the lane
            it was given and the velocity it is always pulled back toward. */
         vx: drift, vy: 0, drift: drift, fall: 0,
         rot: Rand.range(0, TAU), spin: Rand.range(-C.spinMax, C.spinMax),
-        shape: shape, veins: veins, seed: Rand.range(0, TAU),
+        shape: shape, ux: ux, uy: uy, marks: marks, tips: K.spike ? tips : null,
+        seed: Rand.range(0, TAU),
         used: false, sunk: 0, burning: false, burn: 0, glow: 3.1
       };
     }
@@ -325,7 +417,10 @@
       mallow.ang = a; mallow.vx = 0; mallow.vy = 0;
     }
 
-    // Closest point of the capsule axis to a circle centre.
+    /* Closest point of the capsule axis to the rock's centre, tested against
+       the SILHOUETTE at that bearing rather than against the bounding circle:
+       a slab is flat and a shard has valleys, and capturing on the circle would
+       stick the body to empty space beside either of them. */
     function hits(rk) {
       var hx = Math.cos(mallow.ang) * C.mallowLen * 0.5;
       var hy = Math.sin(mallow.ang) * C.mallowLen * 0.5;
@@ -334,7 +429,10 @@
       var t = ((rk.x - ax) * dx + (rk.y - ay) * dy) / (dx * dx + dy * dy);
       t = clamp(t, 0, 1);
       var cx = ax + dx * t, cy = ay + dy * t;
-      return Math.hypot(rk.x - cx, rk.y - cy) < rk.r + C.mallowR + C.stickPad;
+      var d = Math.hypot(rk.x - cx, rk.y - cy);
+      if (d > rk.r + C.mallowR + C.stickPad) return false;      // cheap reject
+      return d < radiusAt(rk, Math.atan2(cy - rk.y, cx - rk.x) - rk.rot)
+                 + C.mallowR + C.stickPad;
     }
 
     function attach(rk) {
@@ -357,6 +455,7 @@
     function claim(rk) {
       rk.used = true; rocksHit++; combo++;
       mallow.air = C.airShots;      // a fresh rock is what reloads the recovery
+      focus = Math.min(1, focus + C.focusClaim);   // ...and part of the focus
       if (combo > bestCombo) bestCombo = combo;
       Sound.clip("stick", 0.62, Rand.range(0.86, 1.02) * (rk.r > 70 ? 0.9 : 1.1));
 
@@ -453,7 +552,7 @@
     /* ---- the run --------------------------------------------------------- */
 
     function reset() {
-      score = 0; combo = 0; bestCombo = 0; rocksHit = 0; toast = 0;
+      score = 0; combo = 0; bestCombo = 0; rocksHit = 0; toast = 0; focus = 1; focusT = 0;
       elapsed = 0; wave = 0; wallT = 0; bonkT = 0; spawnT = 0.9;
       nextMile = C.milestone;
       dead = false; deadT = 0; sink = 0; aim = null;
@@ -474,7 +573,7 @@
       spawnRock(Layout.top - 250, 0);
       spawnRock(Layout.top - 470, 0);
 
-      mallow = { x:0, y:0, vx:0, vy:0, ang:-Math.PI / 2,
+      mallow = { x:0, y:0, vx:0, vy:0, ang:-Math.PI / 2, tilt:0,
                  host: start, rel: -Math.PI / 2 - start.rot,
                  flying:false, ignore:null, hold:0, grip:1, air: C.airShots };
       ride();
@@ -542,8 +641,22 @@
     /* ---- update ---------------------------------------------------------- */
 
     function update(dt) {
-      var d = aimVec() ? dt * C.aimSlow : dt;      // holding the finger slows time
+      /* The finger slows time by as much focus as is left, and spends it doing
+         so. Everything downstream runs on `d`, so a spent meter puts the whole
+         world — rocks, lava, the clock the lava is — back to full speed while
+         the finger is still down. */
+      var aiming = !dead && !!aimVec();
+      var d = dt * (aiming ? C.aimSlow + (1 - C.aimSlow) * (1 - focus) : 1);
       var i, rk, k;
+
+      if (aiming) {
+        focus = Math.max(0, focus - dt / C.focusSeconds);
+        focusT = C.focusDelay;                     // the meter is locked on release
+      } else if (focusT > 0) {
+        focusT -= dt;
+      } else {
+        focus = Math.min(1, focus + dt / C.focusRefill);
+      }
 
       elapsed += dt;
       wave += d * 1.5;
@@ -654,6 +767,13 @@
         }
       }
 
+      /* The lean, eased. The target is how far the planting axis has swung off
+         vertical — clamped, so the character tips into the rock it is clinging
+         to and into the arc of a jump, and never past the point where its own
+         face stops reading. */
+      var lean = clamp(wrapAngle(mallow.ang + Math.PI / 2), -C.leanMax, C.leanMax);
+      mallow.tilt += (lean - mallow.tilt) * Math.min(1, d * C.leanEase);
+
       if (mallow.y + C.mallowR > surfaceAt(mallow.x)) die();
     }
 
@@ -752,7 +872,7 @@
 
       if (dead) drawMallow();          // sinking: the crust closes over it
       drawLava();
-      if (!dead) { drawAim(); drawMallow(); }
+      if (!dead) { drawAim(); drawMallow(); drawFocusBar(); }
     }
 
     function drawEmbers() {
@@ -764,8 +884,126 @@
       }
     }
 
+    /* The silhouette, built from the same radius array radiusAt() reads. A
+       faceted kind is drawn straight from vertex to vertex; a weathered one is
+       smoothed through the midpoints, which rounds the profile without moving
+       it off the numbers the physics uses. Call it again before stroking: the
+       texture below beginPath()s over it. */
+    function outline(rk) {
+      var K = KINDS[rk.kind], n = rk.shape.length, R = rk.r, i, j;
+      ctx.beginPath();
+      if (!K.round) {
+        ctx.moveTo(rk.ux[0] * R, rk.uy[0] * R);
+        for (i = 1; i < n; i++) ctx.lineTo(rk.ux[i] * R, rk.uy[i] * R);
+      } else {
+        ctx.moveTo((rk.ux[n - 1] + rk.ux[0]) * 0.5 * R, (rk.uy[n - 1] + rk.uy[0]) * 0.5 * R);
+        for (i = 0; i < n; i++) {
+          j = (i + 1) % n;
+          ctx.quadraticCurveTo(rk.ux[i] * R, rk.uy[i] * R,
+                               (rk.ux[i] + rk.ux[j]) * 0.5 * R, (rk.uy[i] + rk.uy[j]) * 0.5 * R);
+        }
+      }
+      ctx.closePath();
+    }
+
+    /* The inside of a rock, clipped to its outline. `fresh` is the only thing
+       the player has to read — a rock that still scores is lit and molten, a
+       claimed one is cold — so every kind says it the same way, in its own
+       material. */
+    function texture(rk, K, fresh) {
+      var R = rk.r, n = rk.shape.length, i, j, v, mx, my;
+
+      if (K.tex === "cracks") {
+        ctx.strokeStyle = fresh ? "rgba(255,140,44,.8)" : "rgba(120,90,90,.3)";
+        ctx.lineWidth = Math.max(2.5, R * (fresh ? 0.09 : 0.05));
+        for (i = 0; i < rk.marks.length; i++) {
+          v = rk.marks[i];
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(v.a) * R, Math.sin(v.a) * R);
+          ctx.quadraticCurveTo(Math.cos(v.b) * R * v.w, Math.sin(v.b) * R * v.w,
+                               Math.cos(v.b) * R, Math.sin(v.b) * R);
+          ctx.stroke();
+        }
+
+      } else if (K.tex === "facets") {
+        /* One triangle per edge, meeting at an apex the rock carries off
+           centre: a fan that met dead centre and alternated a single tone read
+           as a parasol. Five tones cycled by a per-rock offset instead, so no
+           two crystals catch the light the same way. */
+        var ax = rk.marks[0].x * R, ay = rk.marks[0].y * R, tone;
+        for (i = 0; i < n; i++) {
+          j = (i + 1) % n;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(rk.ux[i] * R, rk.uy[i] * R);
+          ctx.lineTo(rk.ux[j] * R, rk.uy[j] * R);
+          ctx.closePath();
+          tone = (i * 3 + rk.marks[0].o) % 5;
+          ctx.fillStyle = tone === 0 ? "rgba(0,0,0,.3)"
+                        : tone === 1 ? "rgba(0,0,0,.16)"
+                        : tone === 2 ? "rgba(255,255,255,.03)"
+                        : fresh ? (tone === 3 ? "rgba(186,168,255,.14)" : "rgba(214,200,255,.22)")
+                                : (tone === 3 ? "rgba(150,140,180,.06)" : "rgba(170,160,195,.1)");
+          ctx.fill();
+        }
+        if (fresh) {                                  // the glint, out at the rim
+          ctx.strokeStyle = "rgba(230,214,255,.75)";
+          ctx.lineWidth = Math.max(2, R * 0.055);
+          ctx.beginPath();
+          ctx.moveTo(rk.ux[0] * R * 0.62, rk.uy[0] * R * 0.62);
+          ctx.lineTo(rk.ux[0] * R * 0.96, rk.uy[0] * R * 0.96);
+          ctx.stroke();
+        }
+
+      } else if (K.tex === "strata") {
+        // horizontal beds: a plate of stone laid down in layers
+        for (i = 0; i < rk.marks.length; i++) {
+          v = rk.marks[i];
+          ctx.fillStyle = i % 2 ? "rgba(0,0,0,.24)"
+                                : (fresh ? "rgba(255,196,130,.13)" : "rgba(190,175,160,.05)");
+          ctx.fillRect(-R, v.y * R, R * 2, v.h * R);
+        }
+        ctx.strokeStyle = fresh ? "rgba(255,150,60,.6)" : "rgba(120,100,90,.28)";
+        ctx.lineWidth = Math.max(2, R * 0.045);
+        for (i = 0; i < rk.marks.length; i += 2) {
+          ctx.beginPath();
+          ctx.moveTo(-R, rk.marks[i].y * R); ctx.lineTo(R, rk.marks[i].y * R);
+          ctx.stroke();
+        }
+
+      } else if (K.tex === "blades") {
+        // a dark core, so the spikes read as blades stuck into it
+        ctx.beginPath();
+        for (i = 0; i < n; i++) {
+          if (i === 0) ctx.moveTo(rk.ux[i] * R * 0.5, rk.uy[i] * R * 0.5);
+          else ctx.lineTo(rk.ux[i] * R * 0.5, rk.uy[i] * R * 0.5);
+        }
+        ctx.closePath();
+        ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fill();
+        ctx.strokeStyle = fresh ? "rgba(255,120,40,.7)" : "rgba(120,95,105,.3)";
+        ctx.lineWidth = Math.max(2, R * 0.05);
+        for (i = 0; i < n; i++) {                     // one edge up each point
+          if (!rk.tips[i]) continue;
+          ctx.beginPath();
+          ctx.moveTo(rk.ux[i] * R * 0.36, rk.uy[i] * R * 0.36);
+          ctx.lineTo(rk.ux[i] * R, rk.uy[i] * R);
+          ctx.stroke();
+        }
+
+      } else if (K.tex === "holes") {
+        for (i = 0; i < rk.marks.length; i++) {
+          v = rk.marks[i];
+          mx = Math.cos(v.a) * R * v.d; my = Math.sin(v.a) * R * v.d;
+          ctx.fillStyle = "rgba(0,0,0,.45)";
+          ctx.beginPath(); ctx.arc(mx, my, v.w * R, 0, TAU); ctx.fill();
+          ctx.fillStyle = fresh ? "rgba(255,170,80,.26)" : "rgba(180,170,160,.09)";
+          ctx.beginPath(); ctx.arc(mx, my + v.w * R * 0.36, v.w * R * 0.66, 0, TAU); ctx.fill();
+        }
+      }
+    }
+
     function drawRock(rk) {
-      var i, a, r, n = rk.shape.length;
+      var K = KINDS[rk.kind], fresh = !rk.used;
 
       /* The smear behind a fast one. It is the only cue that says "this lane is
          quick" before it goes past, and it is a plain scaled arc — no
@@ -785,41 +1023,25 @@
 
       ctx.save();
       ctx.translate(rk.x, rk.y + rk.sunk * 60); ctx.rotate(rk.rot);
-      ctx.beginPath();
-      for (i = 0; i < n; i++) {
-        a = i / n * TAU; r = rk.r * rk.shape[i];
-        if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-        else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-      }
-      ctx.closePath();
-      ctx.fillStyle = rk.used ? "#2b2530" : "#514550";
+
+      outline(rk);
+      ctx.fillStyle = fresh ? K.fill : K.used;
       ctx.fill();
 
       ctx.save(); ctx.clip();
       // lit face, from the ceiling side
-      ctx.fillStyle = rk.used ? "rgba(200,180,190,.06)" : "rgba(255,214,170,.17)";
+      ctx.fillStyle = fresh ? "rgba(255,214,170,.17)" : "rgba(200,180,190,.06)";
       ctx.fillRect(-rk.r, -rk.r, rk.r * 2, rk.r * 0.9);
       // a rock that caught fire is heated right through
       if (rk.burning) { ctx.fillStyle = "rgba(255,104,20,.38)"; ctx.fillRect(-rk.r, -rk.r, rk.r * 2, rk.r * 2); }
-      /* The veins are the read on whether a rock still scores: molten on a
-         fresh one, all but out on a claimed one. Colour alone carries it, so a
-         player never has to remember where they have already been. */
-      ctx.strokeStyle = rk.used ? "rgba(120,90,90,.3)" : "rgba(255,140,44,.8)";
-      ctx.lineWidth = Math.max(2.5, rk.r * (rk.used ? 0.05 : 0.09));
-      for (i = 0; i < rk.veins.length; i++) {
-        var v = rk.veins[i];
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(v.a) * rk.r, Math.sin(v.a) * rk.r);
-        ctx.quadraticCurveTo(Math.cos(v.b) * rk.r * v.w, Math.sin(v.b) * rk.r * v.w,
-                             Math.cos(v.b) * rk.r, Math.sin(v.b) * rk.r);
-        ctx.stroke();
-      }
+      texture(rk, K, fresh);
       ctx.restore();
 
       // the silhouette, then a hot rim on top of it while the rock is unclaimed
+      outline(rk);
       ctx.strokeStyle = "rgba(12,6,10,.95)";
       ctx.lineWidth = 5; ctx.stroke();
-      if (!rk.used) {
+      if (fresh) {
         ctx.strokeStyle = "rgba(255,150,50,.5)";
         ctx.lineWidth = 2; ctx.stroke();
       }
@@ -906,7 +1128,7 @@
     function drawAim() {
       var v = aimVec();
       if (!v) return;
-      var h = 1 / 60, n = Math.round(C.previewSeconds / h);
+      var h = 1 / 60, n = Math.round(C.previewSeconds * (0.4 + 0.6 * focus) / h);
       var px = mallow.x, py = mallow.y;
       var vx = v.x * C.flingSpeed, vy = v.y * C.flingSpeed;
       // Whatever the body is on (or has just left) is out of the preview for
@@ -926,7 +1148,13 @@
           if (rk === skip) continue;
           sx = rk.x + rk.vx * t; sy = rk.y + rk.vy * t;
           dd = Math.hypot(px - sx, py - sy);
-          if (dd < rk.r + C.mallowR) { hit = { x: px, y: py, rk: rk }; break; }
+          if (dd > rk.r + C.mallowR) continue;
+          // the same silhouette test hits() runs, on the rock as it will have
+          // turned by then — the preview cannot promise a hold the flight
+          // would miss
+          if (dd < radiusAt(rk, Math.atan2(py - sy, px - sx) - (rk.rot + rk.spin * t)) + C.mallowR) {
+            hit = { x: px, y: py, rk: rk }; break;
+          }
         }
         if (py > surfaceAt(px)) break;
         if (i % 3 === 0) {
@@ -944,49 +1172,134 @@
       ctx.strokeStyle = "rgba(255,243,221,.9)"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(aim.x, aim.y, 26, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(aim.x, aim.y, 6, 0, TAU); ctx.stroke();
+
+      /* The focus meter, drawn as a ring around that reticle: it is the thing
+         being spent, so it is drawn on the finger spending it. Empty and the
+         ring is a red line — the world under the finger is already running at
+         full speed and the player can see why. */
+      ctx.strokeStyle = "rgba(12,6,10,.45)"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(aim.x, aim.y, 38, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = focusColour();
+      ctx.lineWidth = 6; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(aim.x, aim.y, 38, -Math.PI / 2, -Math.PI / 2 + TAU * Math.max(focus, 0.001));
+      ctx.stroke();
+      ctx.lineCap = "butt";
+    }
+
+    function focusColour() {
+      return focus < 0.22 ? "#ff5a3c" : focus < 0.55 ? "#ffd166" : "#9dff8a";
+    }
+
+    /* And a bar over the body whenever the meter is not full, aiming or not:
+       coming back is half of the mechanic, and a resource the player cannot see
+       recharge is one they will not plan around. */
+    function drawFocusBar() {
+      if (dead || focus > 0.995) return;
+      var w = 56, h = 6;
+      var x = mallow.x - w / 2, y = mallow.y - C.mallowLen * 0.5 - 20;
+      ctx.fillStyle = "rgba(10,4,8,.55)";
+      ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+      // dimmed while the lock-out runs: the player has to see the difference
+      // between "recharging" and "not yet"
+      ctx.globalAlpha = focusT > 0 ? 0.4 : 1;
+      ctx.fillStyle = focusColour();
+      ctx.fillRect(x, y, w * focus, h);
+      ctx.globalAlpha = 1;
+    }
+
+    // A rounded box. ctx.roundRect is not in every mobile WebView, so the four
+    // corners are drawn by hand.
+    function boxPath(hw, hh, r) {
+      ctx.beginPath();
+      ctx.moveTo(-hw + r, -hh);
+      ctx.lineTo(hw - r, -hh);  ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
+      ctx.lineTo(hw, hh - r);   ctx.quadraticCurveTo(hw, hh, hw - r, hh);
+      ctx.lineTo(-hw + r, hh);  ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
+      ctx.lineTo(-hw, -hh + r); ctx.quadraticCurveTo(-hw, -hh, -hw, -hh + r);
+      ctx.closePath();
     }
 
     function drawMallow() {
-      var T = TOAST[toast], L = C.mallowLen * 0.5 - C.mallowR, R = C.mallowR;
+      var T = TOAST[toast];
+      var hw = C.mallowR, hh = C.mallowLen * 0.5, cr = hw * 0.44;
       var y = mallow.y + sink;
+
       // A ring around the body while a mid-air shot is still in hand: it is the
       // only resource in the game, so it is drawn on the thing that spends it.
       if (!dead && mallow.flying && mallow.air > 0) {
         ctx.strokeStyle = rgba("#ffd166", 0.5 + 0.22 * Math.sin(wave * 6));
         ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(mallow.x, y, C.mallowLen * 0.5 + 9, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(mallow.x, y, Math.max(hw, hh) + 12, 0, TAU); ctx.stroke();
       }
+
+      /* Everything below is drawn in the CHARACTER's own frame, face included:
+         a smile that stayed level while the body turned read as a sticker
+         floating on top of the thing. The frame is `mallow.tilt`, not the
+         planting axis — see CONFIG.leanMax. */
       ctx.save();
-      ctx.translate(mallow.x, y); ctx.rotate(mallow.ang);
+      ctx.translate(mallow.x, y);
+      ctx.rotate(mallow.tilt);
       if (dead) ctx.globalAlpha = clamp(1 - deadT / 1.4, 0, 1);
 
-      // body: one thick round-capped stroke, plus a thinner lit one on top
-      ctx.lineCap = "round";
-      ctx.lineWidth = R * 2; ctx.strokeStyle = T.skin;
-      ctx.beginPath(); ctx.moveTo(-L, 0); ctx.lineTo(L, 0); ctx.stroke();
-      ctx.lineWidth = R * 0.9; ctx.strokeStyle = T.lit;
-      ctx.beginPath(); ctx.moveTo(-L * 0.9, -R * 0.45); ctx.lineTo(L * 0.9, -R * 0.45); ctx.stroke();
-      // the seam every marshmallow has
-      ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(T.face, 0.22);
-      ctx.beginPath(); ctx.moveTo(0, -R * 0.85); ctx.lineTo(0, R * 0.85); ctx.stroke();
+      // --- the body: a cube of sugar, with its cut top face catching the light
+      boxPath(hw, hh, cr);
+      ctx.fillStyle = T.skin; ctx.fill();
+      ctx.strokeStyle = "rgba(26,9,4,.45)"; ctx.lineWidth = 4; ctx.stroke();
 
-      // the face rides the outward end, so it always looks where it is going
-      ctx.fillStyle = T.face; ctx.strokeStyle = T.face; ctx.lineWidth = 2.6;
+      ctx.save(); boxPath(hw, hh, cr); ctx.clip();
+      ctx.fillStyle = T.lit;
+      ctx.fillRect(-hw, -hh, hw * 2, hh * 0.3);
+      ctx.fillStyle = rgba(T.face, 0.1);
+      ctx.fillRect(-hw, hh * 0.52, hw * 2, hh * 0.48);
+      // the rim of that top face, so the cube reads as a cut cylinder
+      ctx.strokeStyle = rgba(T.face, 0.13); ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(-hw, -hh * 0.3); ctx.lineTo(hw, -hh * 0.3); ctx.stroke();
+      ctx.restore();
+
+      // --- the face
+      var eyeR = hw * 0.23, eyeX = hw * 0.42, eyeY = -hh * 0.05;
+
       if (dead) {
-        cross(L * 0.22, -6.5); cross(L * 0.22, 6.5);
-        ctx.beginPath(); ctx.arc(L * 0.66, 0, 4.5, 0, TAU); ctx.stroke();   // an "o" mouth
-      } else {
-        ctx.beginPath(); ctx.arc(L * 0.22, -6.5, 3.2, 0, TAU); ctx.fill();
-        ctx.beginPath(); ctx.arc(L * 0.22, 6.5, 3.2, 0, TAU); ctx.fill();
-        ctx.beginPath();
-        ctx.arc(L * 0.6, 0, 6, Math.PI * 0.55, Math.PI * 1.45);            // a small smile
-        ctx.stroke();
+        ctx.strokeStyle = T.face; ctx.lineWidth = 3.4; ctx.lineCap = "round";
+        cross(-eyeX, eyeY); cross(eyeX, eyeY);
+        ctx.beginPath(); ctx.arc(0, hh * 0.32, hw * 0.19, 0, TAU); ctx.stroke();
+        ctx.restore();
+        return;
       }
+
+      // the blush that makes it look greedy rather than merely square
+      ctx.fillStyle = rgba("#ff8f5e", 0.32);
+      ctx.beginPath(); ctx.ellipse(-hw * 0.68, hh * 0.18, hw * 0.21, hw * 0.13, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(hw * 0.68, hh * 0.18, hw * 0.21, hw * 0.13, 0, 0, TAU); ctx.fill();
+
+      // two big eyes, each with the highlight that gives them their life
+      ctx.fillStyle = T.face;
+      ctx.beginPath(); ctx.arc(-eyeX, eyeY, eyeR, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(eyeX, eyeY, eyeR, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.92)";
+      ctx.beginPath(); ctx.arc(-eyeX - eyeR * 0.3, eyeY - eyeR * 0.34, eyeR * 0.36, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(eyeX - eyeR * 0.3, eyeY - eyeR * 0.34, eyeR * 0.36, 0, TAU); ctx.fill();
+
+      // an open smile: the mouth is filled, so it carries at 720 px wide where
+      // a stroked arc disappeared against the body
+      var mw = hw * 0.42, my = hh * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(-mw, my);
+      ctx.quadraticCurveTo(0, my + hh * 0.03, mw, my);
+      ctx.quadraticCurveTo(0, my + hh * 0.4, -mw, my);
+      ctx.closePath();
+      ctx.fillStyle = T.face; ctx.fill();
+      ctx.save(); ctx.clip();                                  // the tongue, inside it
+      ctx.fillStyle = "rgba(255,138,150,.9)";
+      ctx.beginPath(); ctx.arc(0, my + hh * 0.28, hw * 0.17, 0, TAU); ctx.fill();
+      ctx.restore();
+
       ctx.restore();
     }
 
     function cross(x, y) {
-      var s = 3.4;
+      var s = C.mallowR * 0.2;
       ctx.beginPath();
       ctx.moveTo(x - s, y - s); ctx.lineTo(x + s, y + s);
       ctx.moveTo(x + s, y - s); ctx.lineTo(x - s, y + s);

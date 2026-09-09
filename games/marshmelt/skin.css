@@ -91,34 +91,38 @@
     box-shadow:inset 0 -6px 0 rgba(0,0,0,.4), 0 0 0 2px rgba(255,150,50,.45), 0 0 18px rgba(255,122,26,.3);
   }
 
-  /* the marshmallow: a cream capsule, planted upright on a rock and leaning
-     into the arc while it flies */
+  /* the marshmallow: a cube of sugar with a face, upright on its rock and
+     leaning into the arc while it flies — the same gabarit, and the same lean,
+     the canvas draws (CONFIG.leanMax) */
   .demo-tap .demo-target {
-    z-index:3; left:50%; top:auto; bottom:112px; width:46px; height:22px; margin-left:-23px;
-    border:0; border-radius:11px;
-    background:linear-gradient(180deg,#ffffff 0%,#fff3dd 52%,#f0d9b6 100%);
-    box-shadow:0 0 18px rgba(255,243,221,.5), inset 0 -4px 0 rgba(180,140,100,.25);
+    /* bottom 90 puts its base ON the left rock (track top = 52 + 46) and makes
+       the -40px landing keyframe meet the right rock top (88 + 42) exactly */
+    z-index:3; left:50%; top:auto; bottom:90px; width:52px; height:56px; margin-left:-26px;
+    border:0; border-radius:15px;
+    background:linear-gradient(180deg,#ffffff 0%,#ffffff 22%,#fff3dd 40%,#f5e2c4 100%);
+    box-shadow:0 0 18px rgba(255,243,221,.5), inset 0 -6px 0 rgba(180,140,100,.16);
     animation:demoJump 2.8s cubic-bezier(.36,0,.64,1) infinite;
   }
   @keyframes demoJump {
-    0%,7%    { transform:translate(-100px,0)     rotate(-90deg); }
-    20%      { transform:translate(-30px,-104px) rotate(-55deg); }
-    33%,57%  { transform:translate(100px,-40px)  rotate(-90deg); }
-    70%      { transform:translate(30px,-118px)  rotate(-125deg); }
-    83%,100% { transform:translate(-100px,0)     rotate(-90deg); }
+    0%,7%    { transform:translate(-100px,0)     rotate(0deg); }
+    20%      { transform:translate(-30px,-104px) rotate(26deg); }
+    33%,57%  { transform:translate(100px,-40px)  rotate(0deg); }
+    70%      { transform:translate(30px,-118px)  rotate(-26deg); }
+    83%,100% { transform:translate(-100px,0)     rotate(0deg); }
   }
-  /* the face, recycled out of the two ripples: eyes on the outward end (the
-     first node plus its own shadow) and a small smile in front of them */
+  /* the face, recycled out of the two ripples: the pair of eyes is one node
+     plus its own box-shadow, the open smile is the other. The body stands
+     upright now, so the pair is offset horizontally. */
   .demo-tap .demo-ripple { display:none; }
   .demo-tap .demo-ripple:first-child {
-    display:block; inset:auto; left:27px; top:5px; width:5px; height:5px;
+    display:block; inset:auto; left:14px; top:22px; width:7px; height:7px;
     border:0; border-radius:50%; background:#5a3a1c; opacity:1; animation:none;
-    box-shadow:0 9px 0 #5a3a1c;
+    box-shadow:17px 0 0 #5a3a1c;
   }
   .demo-tap .demo-ripple.d2 {
-    display:block; inset:auto; left:36px; top:7px; width:4px; height:8px;
-    border:2px solid #5a3a1c; border-left:0; border-radius:0 8px 8px 0;
-    background:none; opacity:.9; animation:none;
+    display:block; inset:auto; left:21px; top:33px; width:10px; height:7px;
+    border:0; border-radius:0 0 12px 12px; background:#5a3a1c;
+    opacity:1; animation:none;
   }
 
   /* the finger: the motor's shared assets/svg/finger.svg. It presses just
