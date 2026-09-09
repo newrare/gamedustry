@@ -1,0 +1,1183 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>rail-switch prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0a0d14; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; touch-action: none; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// Two closed train loops, top-down, generated at random, crossing at 4 to 8
+// diamonds. You own ONE train. The other one hunts it.
+//
+// Tapping a diamond arms it for a single crossing: the next train through it -
+// yours or the hunter's - is thrown onto the other loop, and the switch springs
+// back. That one verb is escape, route and weapon at once, because the tracks
+// keep filling with pickups and hazards: the profitable line is never the line
+// you are on, and a stick of TNT the hunter runs into is worth more than a
+// diamond.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;          // design space, portrait
+var CELL = 110;                 // grid pitch; parallel rails sit CELL/2 apart
+var COLS = 4, ROWS = 5;         // grid the loops ride on
+var CELLS_MIN = 5, CELLS_MAX = 7;
+var GROW_TALL = 0.4;            // odds the loop grows along the long axis
+var SPAN_ROWS = 3, SPAN_COLS = 2;   // grid cells a loop must span
+var CORNER = 30;                // corner radius of a rail turn
+var XINGS_MIN = 4, XINGS_MAX = 8;
+var XING_GAP = 70;              // min arc distance between two diamonds
+
+// The camera sits close to a small layout, so every length below is WORLD px:
+// multiply by cam.z (about 2) for what a pixel looks like on screen.
+var CAM_TOP = 130, CAM_BOT = 1180, CAM_PAD = 26;   // the band the layout is fitted into
+var CAM_ZMIN = 1.2, CAM_ZMAX = 2.4;
+var ART_PAD = 30;               // world px of margin baked into the track bitmap
+
+var SPD_MIN = 75, SPD_MAX = 145;   // world px/s target band at t=0
+var SPD_RAMP = 0.020;              // +2% of the band per second survived
+var ACCEL = 15;                    // world px/s^2 toward the current target
+var RETARGET_MIN = 5, RETARGET_MAX = 10;      // seconds between speed changes
+
+var HUNT_BASE = 0.88;           // hunter speed, as a share of the player's
+var HUNT_RAMP = 0.0045;         // ... gaining 0.45 point a second
+var HUNT_KILL = 0.06;           // ... and again after every time it is blown up
+var HUNT_CAP = 1.35;
+var HUNT_RESPAWN = 3.5;         // seconds before a destroyed hunter is back
+var HUNT_LOOK = 190;            // world px the hunter looks down each branch
+var HUNT_SHOW = 3.0;            // seconds ahead its next choice is shown
+var HUNT_BIAS = 6;              // world px a branch must win by, so it cannot dither
+var HUNT_FIX = 3;               // seconds a derailed hunter needs to re-rail itself
+var KILL_SCORE = 500;
+
+var TRAIN_L = 33, TRAIN_W = 13;
+var HIT = 22;                   // centre distance that counts as caught
+var WARN = 80;                  // centre distance that starts the red glow
+var TURN_RATE = 14;             // rad/s the sprite rotates through a switch
+var COOL_PX = 18;               // px of track ignored after a switch
+var TAP_R = 34;                 // tap radius around a diamond
+var SAME_WIN = 0.65;            // arrival gap that counts as "same time" at a diamond
+var SAME_KEEP = 1.8;            // hysteresis: how much wider the window is for the lit diamond
+var THREAT_LOOK = 5.0;          // how early a threatened diamond lights up, seconds
+var GRACE = 5.0;                // seconds of runway the spawn must guarantee
+
+// what litters the tracks
+var COLLECT = 18;               // px from a train's centre that picks an item up
+var ITEM_LIFE = 10;             // seconds an item stays on the rails
+var MAX_ITEMS = 6;
+var SPAWN_MIN = 0.8, SPAWN_MAX = 1.5;   // seconds between spawns (tightens with the ramp)
+var SPAWN_FIRST = 1.2;
+var SAFE_AHEAD = 180;           // px of clear track in front of a train, so nothing is undodgeable
+var TNT_ARM = 1.2;              // seconds a stick of TNT spends fizzing before it bites
+var LOCK_TIME = 6;              // seconds a padlock freezes a diamond
+var X2_TIME = 8;                // seconds of double score
+var SLOW_TIME = 4, SLOW_MUL = 0.55;     // the brake pickup: thinking time
+var BOOST_TIME = 6, BOOST_MUL = 1.75;   // the accelerator hazard
+var STOP_TIME = 2.5;            // seconds a train sits still
+var RESCUE_TIME = 5;            // seconds to tap a derailed train before the run is over
+
+var COL_A = '#4fd6ff', COL_B = '#ff9a3c';
+var COL_RAIL = '#8b93a5', COL_TIE = '#2b3446', COL_BED = '#161c28';
+
+// --- plumbing --------------------------------------------------------------
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+var scale = 1;
+function resize() {
+  scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.style.width = (W * scale) + 'px';
+  cv.style.height = (H * scale) + 'px';
+  cv.width = Math.round(W * scale * dpr);
+  cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function irnd(a, b) { return a + ((Math.random() * (b - a + 1)) | 0); }
+function pick(a) { return a[(Math.random() * a.length) | 0]; }
+function key(x, y) { return x + ',' + y; }
+
+// --- 1. the tracks ---------------------------------------------------------
+// A loop is the boundary of a random simply-connected polyomino, so it is a
+// closed rectilinear circuit by construction. Loop B rides the same grid
+// shifted by half a cell: every crossing is then a true 90 degree diamond and
+// two parallel rails can never come closer than CELL/2.
+
+function polyomino(n, cols, rows) {
+  var set = {}, count = 1, guard = 0;
+  set[key(irnd(0, cols - 1), irnd(0, rows - 1))] = 1;
+  while (count < n && guard++ < 3000) {
+    var frontier = [], vertical = [];
+    for (var k in set) {
+      var p = k.split(','), x = +p[0], y = +p[1];
+      var around = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+      for (var i = 0; i < 4; i++) {
+        var nx = around[i][0], ny = around[i][1];
+        if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+        if (set[key(nx, ny)]) continue;
+        frontier.push([nx, ny]);
+        if (nx === x) vertical.push([nx, ny]);
+      }
+    }
+    if (!frontier.length) break;
+    // A blob wastes the portrait screen; growing along the long axis gives a
+    // circuit that reaches the top and the bottom of the frame.
+    var pool = (vertical.length && Math.random() < GROW_TALL) ? vertical : frontier;
+    var c = pick(pool);
+    set[key(c[0], c[1])] = 1;
+    if (pinched(set, c[0], c[1]) || hasHole(set, cols, rows)) delete set[key(c[0], c[1])];
+    else count++;
+  }
+  return set;
+}
+
+// A vertex touched by two diagonal cells only makes the boundary self-touch.
+function pinched(set, cx, cy) {
+  for (var vx = cx; vx <= cx + 1; vx++) {
+    for (var vy = cy; vy <= cy + 1; vy++) {
+      var a = !!set[key(vx - 1, vy - 1)], b = !!set[key(vx, vy - 1)];
+      var c = !!set[key(vx - 1, vy)], d = !!set[key(vx, vy)];
+      if ((a && d && !b && !c) || (b && c && !a && !d)) return true;
+    }
+  }
+  return false;
+}
+
+// Flood the outside; anything empty and unreached is a hole, which would give
+// the polyomino a second boundary ring.
+function hasHole(set, cols, rows) {
+  var seen = {}, stack = [[-1, -1]];
+  while (stack.length) {
+    var p = stack.pop(), x = p[0], y = p[1], k = key(x, y);
+    if (seen[k] || set[k]) continue;
+    if (x < -1 || y < -1 || x > cols || y > rows) continue;
+    seen[k] = 1;
+    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+  }
+  for (var i = 0; i < cols; i++) {
+    for (var j = 0; j < rows; j++) if (!set[key(i, j)] && !seen[key(i, j)]) return true;
+  }
+  return false;
+}
+
+// Walk the boundary edges into one ring, then keep only the corners.
+function boundary(set) {
+  var next = {}, n = 0;
+  for (var k in set) {
+    var p = k.split(','), x = +p[0], y = +p[1];
+    if (!set[key(x, y - 1)]) { next[key(x, y)] = [x + 1, y]; n++; }
+    if (!set[key(x + 1, y)]) { next[key(x + 1, y)] = [x + 1, y + 1]; n++; }
+    if (!set[key(x, y + 1)]) { next[key(x + 1, y + 1)] = [x, y + 1]; n++; }
+    if (!set[key(x - 1, y)]) { next[key(x, y + 1)] = [x, y]; n++; }
+  }
+  var start = null;
+  for (var s in next) { start = s; break; }
+  if (!start) return null;
+  var ring = [], cur = start.split(',').map(Number);
+  for (var i = 0; i <= n; i++) {
+    ring.push(cur);
+    var nx = next[key(cur[0], cur[1])];
+    if (!nx) return null;
+    cur = nx;
+    if (key(cur[0], cur[1]) === start) break;
+  }
+  if (ring.length !== n) return null;   // several rings
+  var corners = [];
+  for (var j = 0; j < ring.length; j++) {
+    var pv = ring[(j - 1 + ring.length) % ring.length], v = ring[j], nv = ring[(j + 1) % ring.length];
+    var turn = (v[0] - pv[0]) * (nv[1] - v[1]) - (v[1] - pv[1]) * (nv[0] - v[0]);
+    if (turn !== 0) corners.push(v);
+  }
+  return corners;
+}
+
+// Corners -> sampled polyline with rounded turns, plus cumulative arc length.
+function trace(corners, ox, oy) {
+  var pts = [], P = [], i, s;
+  for (i = 0; i < corners.length; i++) P.push({ x: ox + corners[i][0] * CELL, y: oy + corners[i][1] * CELL });
+  var n = P.length;
+  for (i = 0; i < n; i++) {
+    var v = P[i], p = P[(i - 1 + n) % n], q = P[(i + 1) % n];
+    var d1 = Math.hypot(v.x - p.x, v.y - p.y), d2 = Math.hypot(q.x - v.x, q.y - v.y);
+    var r = Math.min(CORNER, d1 / 2, d2 / 2);
+    var a = { x: v.x + (p.x - v.x) / d1 * r, y: v.y + (p.y - v.y) / d1 * r };
+    var b = { x: v.x + (q.x - v.x) / d2 * r, y: v.y + (q.y - v.y) / d2 * r };
+    pts.push(a);
+    for (s = 1; s <= 6; s++) {
+      var t = s / 7, m = 1 - t;
+      pts.push({ x: m * m * a.x + 2 * m * t * v.x + t * t * b.x,
+                 y: m * m * a.y + 2 * m * t * v.y + t * t * b.y });
+    }
+    pts.push(b);
+  }
+  var cum = [0], L = 0;
+  for (i = 0; i < pts.length; i++) {
+    var u = pts[i], w = pts[(i + 1) % pts.length];
+    L += Math.hypot(w.x - u.x, w.y - u.y);
+    cum.push(L);
+  }
+  return { pts: pts, cum: cum, len: L };
+}
+
+function intersect(A, B) {
+  var out = [];
+  for (var i = 0; i < A.pts.length; i++) {
+    var a1 = A.pts[i], a2 = A.pts[(i + 1) % A.pts.length];
+    var rx = a2.x - a1.x, ry = a2.y - a1.y;
+    for (var j = 0; j < B.pts.length; j++) {
+      var b1 = B.pts[j], b2 = B.pts[(j + 1) % B.pts.length];
+      var sx = b2.x - b1.x, sy = b2.y - b1.y;
+      var d = rx * sy - ry * sx;
+      if (!d) continue;
+      var t = ((b1.x - a1.x) * sy - (b1.y - a1.y) * sx) / d;
+      var u = ((b1.x - a1.x) * ry - (b1.y - a1.y) * rx) / d;
+      if (t < 0 || t >= 1 || u < 0 || u >= 1) continue;
+      var la = Math.hypot(rx, ry), lb = Math.hypot(sx, sy);
+      out.push({ x: a1.x + rx * t, y: a1.y + ry * t,
+                 s: [A.cum[i] + la * t, B.cum[j] + lb * u], sw: false });
+    }
+  }
+  return out;
+}
+
+function minArcGap(nodes, loop, L) {
+  var a = [], i;
+  for (i = 0; i < nodes.length; i++) a.push(nodes[i].s[loop]);
+  a.sort(function (x, y) { return x - y; });
+  var m = 1e9;
+  for (i = 0; i < a.length; i++) {
+    var d = i ? a[i] - a[i - 1] : a[0] + L - a[a.length - 1];
+    if (d < m) m = d;
+  }
+  return m;
+}
+
+var loops = null, nodes = null, track = null;
+
+function generate() {
+  for (var attempt = 0; attempt < 400; attempt++) {
+    var ca = boundary(polyomino(irnd(CELLS_MIN, CELLS_MAX), COLS, ROWS));
+    var cb = boundary(polyomino(irnd(CELLS_MIN, CELLS_MAX), COLS, ROWS));
+    if (!ca || !cb || ca.length < 4 || cb.length < 4) continue;
+    if (!spans(ca) || !spans(cb)) continue;
+    var A = trace(ca, 60, 50);
+    var B = trace(cb, 60 + CELL / 2, 50 + CELL / 2);
+    var xs = intersect(A, B);
+    if (xs.length < XINGS_MIN || xs.length > XINGS_MAX) continue;
+    if (minArcGap(xs, 0, A.len) < XING_GAP || minArcGap(xs, 1, B.len) < XING_GAP) continue;
+    loops = [A, B];
+    nodes = xs;
+    measure();
+    // The two arms of every diamond, for drawing the armed switch.
+    for (var i = 0; i < xs.length; i++) {
+      xs[i].tan = [tangentAt(0, xs[i].s[0]), tangentAt(1, xs[i].s[1])];
+      xs[i].lockT = 0;
+      xs[i].flash = 0;
+      xs[i].fired = 0;
+    }
+    track = renderTrack();
+    return true;
+  }
+  return false;
+}
+
+// The layout's bounding box. The camera fits this into the play band, so the
+// world coordinates never have to be moved.
+var art = null, cam = { x: 0, y: 0, z: 1 };
+
+function measure() {
+  var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, l, i, p;
+  for (l = 0; l < 2; l++) {
+    for (i = 0; i < loops[l].pts.length; i++) {
+      p = loops[l].pts[i];
+      x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x);
+      y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
+    }
+  }
+  art = { x0: x0 - ART_PAD, y0: y0 - ART_PAD, w: x1 - x0 + ART_PAD * 2, h: y1 - y0 + ART_PAD * 2 };
+  var z = Math.min((W - CAM_PAD * 2) / art.w, (CAM_BOT - CAM_TOP) / art.h);
+  cam.z = Math.max(CAM_ZMIN, Math.min(CAM_ZMAX, z));
+  cam.x = W / 2 - (art.x0 + art.w / 2) * cam.z;
+  cam.y = (CAM_TOP + CAM_BOT) / 2 - (art.y0 + art.h / 2) * cam.z;
+}
+
+function toWorld(p) { return { x: (p.x - cam.x) / cam.z, y: (p.y - cam.y) / cam.z }; }
+function sx(x) { return x * cam.z + cam.x; }
+function sy(y) { return y * cam.z + cam.y; }
+
+// Does this circuit reach across the frame, or is it a blob in the middle?
+function spans(corners) {
+  var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (var i = 0; i < corners.length; i++) {
+    x0 = Math.min(x0, corners[i][0]); x1 = Math.max(x1, corners[i][0]);
+    y0 = Math.min(y0, corners[i][1]); y1 = Math.max(y1, corners[i][1]);
+  }
+  return (y1 - y0) >= SPAN_ROWS && (x1 - x0) >= SPAN_COLS;
+}
+
+function posAt(loop, s) {
+  var L = loops[loop], cum = L.cum, pts = L.pts;
+  var lo = 0, hi = cum.length - 1;
+  while (hi - lo > 1) {
+    var mid = (lo + hi) >> 1;
+    if (cum[mid] <= s) lo = mid; else hi = mid;
+  }
+  var a = pts[lo], b = pts[(lo + 1) % pts.length];
+  var seg = cum[lo + 1] - cum[lo] || 1, t = (s - cum[lo]) / seg;
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+function tangentAt(loop, s) {
+  var a = posAt(loop, s), L = loops[loop].len;
+  var b = posAt(loop, (s + 6) % L);
+  var d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  return { x: (b.x - a.x) / d, y: (b.y - a.y) / d };
+}
+
+// --- 2. the track layer, drawn once per generation -------------------------
+function renderTrack() {
+  var SS = 3;                                  // the bitmap is drawn 3x oversampled
+  var c = document.createElement('canvas');
+  c.width = Math.ceil(art.w * SS); c.height = Math.ceil(art.h * SS);
+  var g = c.getContext('2d');
+  g.setTransform(SS, 0, 0, SS, -art.x0 * SS, -art.y0 * SS);
+  for (var l = 0; l < 2; l++) {
+    var L = loops[l], pts = L.pts, i;
+    // ballast
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
+    g.closePath();
+    g.lineJoin = g.lineCap = 'round';
+    g.strokeStyle = COL_BED; g.lineWidth = 19; g.stroke();
+    g.strokeStyle = l ? COL_B : COL_A;
+    g.globalAlpha = 0.30; g.lineWidth = 23; g.stroke();
+    g.globalAlpha = 1;
+    // ties
+    g.strokeStyle = COL_TIE; g.lineWidth = 2.6;
+    for (var s = 0; s < L.len; s += 17) {
+      var p = posAt(l, s), t = tangentAt(l, s);
+      g.beginPath();
+      g.moveTo(p.x - t.y * 10, p.y + t.x * 10);
+      g.lineTo(p.x + t.y * 10, p.y - t.x * 10);
+      g.stroke();
+    }
+    // the two rails, offset along the normal
+    for (var side = -1; side <= 1; side += 2) {
+      g.beginPath();
+      for (i = 0; i <= pts.length; i++) {
+        var a = pts[i % pts.length], b = pts[(i + 1) % pts.length];
+        var d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        var nx = -(b.y - a.y) / d * 4 * side, ny = (b.x - a.x) / d * 4 * side;
+        if (!i) g.moveTo(a.x + nx, a.y + ny); else g.lineTo(a.x + nx, a.y + ny);
+      }
+      g.closePath();
+      g.strokeStyle = COL_RAIL; g.lineWidth = 1.8; g.stroke();
+    }
+  }
+  return c;
+}
+
+
+
+// --- 3. the two trains -----------------------------------------------------
+// trains[0] is the player's. trains[1] hunts it. Both run along a loop in
+// direction `dir`; a crossing hands a train to the other loop keeping the sign
+// of `dir`, so the exit arm of a diamond is fixed and can be drawn before
+// anything reaches it.
+
+var trains = null, player = null, hunter = null;
+var t = 0, dead = null, thrown = 0, kills = 0;
+var score = 0, best = 0, combo = 0, multT = 0, slowT = 0;
+var threat = null, hunterNext = null;
+
+// Directed distance from `from` to `to` along `dir` on a loop.
+function ahead(loop, from, to, dir) {
+  var L = loops[loop].len;
+  return (((to - from) * dir) % L + L) % L;
+}
+
+function huntRatio() {
+  return Math.min(HUNT_CAP, HUNT_BASE + t * HUNT_RAMP + kills * HUNT_KILL);
+}
+
+function speedOf(tr) {
+  if (tr.gone || tr.derailed || tr.stopT > 0) return 0;
+  // The hunter is paced off the player's own drift, not its own: it is always
+  // a known fraction of what the player is doing, and a stopped player is not
+  // a stopped hunter.
+  var base = tr === hunter ? player.spd * huntRatio() : tr.spd;
+  return base * (tr.boostT > 0 ? BOOST_MUL : 1) * (slowT > 0 ? SLOW_MUL : 1);
+}
+
+// Seconds before `tr` reaches `node`, at its current speed.
+function eta(tr, node) {
+  return ahead(tr.loop, tr.s, node.s[tr.loop], tr.dir) / Math.max(speedOf(tr), 1);
+}
+
+// Spawn away from every diamond, and away from the other train.
+function spawnAt(loop, other) {
+  var L = loops[loop].len, bestS = 0, bestScore = -1;
+  for (var i = 0; i < 80; i++) {
+    var s = L * i / 80, d = 1e9;
+    for (var j = 0; j < nodes.length; j++) {
+      var g = Math.abs(nodes[j].s[loop] - s);
+      d = Math.min(d, Math.min(g, L - g));
+    }
+    var sc = Math.min(d, 140);
+    if (other) {
+      var p = posAt(loop, s);
+      sc += Math.min(Math.hypot(p.x - other.x, p.y - other.y), 500) * 1.5;
+    }
+    if (sc > bestScore) { bestScore = sc; bestS = s; }
+  }
+  return bestS;
+}
+
+function makeTrain(loop, other) {
+  var s = spawnAt(loop, other), p = posAt(loop, s), tn = tangentAt(loop, s);
+  return { loop: loop, s: s, dir: 1, spd: SPD_MIN, target: rnd(SPD_MIN, SPD_MAX),
+           next: rnd(RETARGET_MIN, RETARGET_MAX), cool: 0,
+           boostT: 0, stopT: 0, derailed: false, rescueT: 0, tilt: 0,
+           gone: false, backIn: 0,
+           ang: Math.atan2(tn.y, tn.x), x: p.x, y: p.y };
+}
+
+function place(tr) {
+  var p = posAt(tr.loop, tr.s);
+  tr.x = p.x; tr.y = p.y;
+}
+
+function restart() {
+  generate();
+  player = makeTrain(0, null);
+  hunter = makeTrain(1, player);
+  trains = [player, hunter];
+  t = 0; dead = null; thrown = 0; kills = 0;
+  score = 0; combo = 0; multT = 0; slowT = 0;
+  threat = null; items = []; floats = []; spawnIn = SPAWN_FIRST;
+}
+
+// --- 4. the hunter's choice ------------------------------------------------
+// At a diamond nobody armed, the hunter picks the branch that takes it closer
+// to the player. It looks a fixed distance down each of the two exits and
+// keeps the one that passes nearest, which is enough to make it cut corners
+// and read as a chase rather than a follower.
+function branchScore(loop, s, dir) {
+  var L = loops[loop].len, bestD = 1e9;
+  for (var i = 1; i <= 12; i++) {
+    var p = posAt(loop, ((s + dir * i * (HUNT_LOOK / 12)) % L + L) % L);
+    var d = Math.hypot(p.x - player.x, p.y - player.y) + i * 1.5;
+    if (d < bestD) bestD = d;
+  }
+  return bestD;
+}
+
+function huntWantsCross(tr, node) {
+  var o = 1 - tr.loop;
+  var straight = branchScore(tr.loop, node.s[tr.loop], tr.dir);
+  var cross = branchScore(o, node.s[o], tr.dir);
+  return cross < straight - HUNT_BIAS;
+}
+
+// One rule for both trains: an armed diamond throws whatever crosses it next,
+// then springs back. Everything else is the hunter's own decision.
+function wantsCross(tr, node) {
+  if (node.lockT > 0) return false;
+  if (node.sw) { node.sw = false; node.fired = 0.35; thrown++; return true; }
+  return tr === hunter && huntWantsCross(tr, node);
+}
+
+function advance(tr, ds, depth) {
+  var L = loops[tr.loop].len;
+  var hit = tr.cool > 0 ? null : nodeAhead(tr.loop, tr.s, ds, tr.dir);
+  if (hit && depth < 3 && wantsCross(tr, hit.node)) {
+    var rem = ds - hit.dist;
+    tr.loop = 1 - tr.loop;
+    tr.s = hit.node.s[tr.loop];
+    tr.cool = COOL_PX;
+    advance(tr, rem, depth + 1);
+  } else {
+    tr.s = ((tr.s + ds * tr.dir) % L + L) % L;
+  }
+}
+
+// Nearest diamond within `ds` px ahead of `from`.
+function nodeAhead(loop, from, ds, dir) {
+  var hit = null, hd = ds;
+  for (var i = 0; i < nodes.length; i++) {
+    var d = ahead(loop, from, nodes[i].s[loop], dir);
+    if (d > 0.5 && d <= hd) { hd = d; hit = nodes[i]; }
+  }
+  return hit ? { node: hit, dist: hd } : null;
+}
+
+function killHunter() {
+  hunter.gone = true;
+  hunter.backIn = HUNT_RESPAWN;
+  hunter.derailed = false;
+  hunter.stopT = 0;
+  hunter.boostT = 0;
+  kills++;
+  score += KILL_SCORE;
+  popText('+' + KILL_SCORE + ' HUNTER DOWN', hunter.x, hunter.y - 24, '#ff4a4a');
+}
+
+function respawnHunter() {
+  hunter.gone = false;
+  hunter.dir = 1;
+  hunter.loop = irnd(0, 1);
+  hunter.s = spawnAt(hunter.loop, player);
+  hunter.cool = COOL_PX;
+  place(hunter);
+  var tn = tangentAt(hunter.loop, hunter.s);
+  hunter.ang = Math.atan2(tn.y * hunter.dir, tn.x * hunter.dir);
+}
+
+// --- 5. what the tracks are littered with ----------------------------------
+// Bonuses pay, hazards break the plan. They keep appearing, so a route that
+// was good five seconds ago is not the route to be on now. The hunter runs
+// over them too, which is the whole point of being able to steer it.
+
+var ITEMS = [
+  { k: 'gem',     w: 20, good: 1, c: '#7ce0ff' },
+  { k: 'ticket',  w: 22, good: 1, c: '#ffd76b' },
+  { k: 'x2',      w: 8,  good: 1, c: '#b9ff5a' },
+  { k: 'slow',    w: 8,  good: 1, c: '#a78bfa' },
+  { k: 'tnt',     w: 10, good: 0, c: '#ff4a4a' },
+  { k: 'boost',   w: 9,  good: 0, c: '#ff8a2b' },
+  { k: 'reverse', w: 9,  good: 0, c: '#ffe14a' },
+  { k: 'derail',  w: 9,  good: 0, c: '#ff6ad5' },
+  { k: 'stop',    w: 9,  good: 0, c: '#ff5252' },
+  { k: 'lock',    w: 6,  good: 0, c: '#c0c8d8' }
+];
+var items = [], floats = [], spawnIn = 0;
+
+function itemDef(k) {
+  for (var i = 0; i < ITEMS.length; i++) if (ITEMS[i].k === k) return ITEMS[i];
+  return null;
+}
+
+function rollItem() {
+  var total = 0, i;
+  for (i = 0; i < ITEMS.length; i++) total += ITEMS[i].w;
+  var r = Math.random() * total;
+  for (i = 0; i < ITEMS.length; i++) { r -= ITEMS[i].w; if (r <= 0) return ITEMS[i]; }
+  return ITEMS[0];
+}
+
+// A padlock sits on a diamond and freezes it: it attacks the only verb the
+// player has, which is a different kind of pressure than a track hazard.
+function spawnLock() {
+  var free = [];
+  for (var i = 0; i < nodes.length; i++) if (nodes[i].lockT <= 0) free.push(nodes[i]);
+  if (!free.length) return false;
+  var n = pick(free);
+  items.push({ k: 'lock', node: n, x: n.x, y: n.y, life: LOCK_TIME, born: t, arm: 0 });
+  n.lockT = LOCK_TIME;
+  n.sw = false;
+  return true;
+}
+
+// Is there a diamond between this train and a point ahead of it? A lethal
+// hazard the player has no switch to route around is not a hazard, it is a
+// dice roll.
+function switchBetween(tr, s) {
+  var d = ahead(tr.loop, tr.s, s, tr.dir);
+  for (var i = 0; i < nodes.length; i++) {
+    var dn = ahead(tr.loop, tr.s, nodes[i].s[tr.loop], tr.dir);
+    if (dn > 24 && dn < d - 24) return true;
+  }
+  return false;
+}
+
+// Nothing may appear on top of a train, or so close in front of it that the
+// player cannot reach a diamond first.
+function freeSpot(lethal) {
+  for (var attempt = 0; attempt < 40; attempt++) {
+    var loop = irnd(0, 1), L = loops[loop].len, s = Math.random() * L, ok = true, i;
+    for (i = 0; i < nodes.length; i++) {
+      var g = Math.abs(nodes[i].s[loop] - s);
+      if (Math.min(g, L - g) < 46) { ok = false; break; }
+    }
+    if (!ok) continue;
+    for (i = 0; i < 2; i++) {
+      var tr = trains[i];
+      if (tr.gone || tr.loop !== loop) continue;
+      var d = ahead(loop, tr.s, s, tr.dir);
+      if (d < SAFE_AHEAD || L - d < 40) { ok = false; break; }
+      if (lethal && tr === player && !switchBetween(tr, s)) { ok = false; break; }
+    }
+    if (!ok) continue;
+    var p = posAt(loop, s);
+    for (i = 0; i < items.length; i++) {
+      if (Math.hypot(items[i].x - p.x, items[i].y - p.y) < 48) { ok = false; break; }
+    }
+    if (ok) return { loop: loop, s: s, x: p.x, y: p.y };
+  }
+  return null;
+}
+
+function spawnItem() {
+  var def = rollItem();
+  if (def.k === 'lock') return spawnLock();
+  var spot = freeSpot(def.k === 'tnt');
+  if (!spot) return false;
+  items.push({ k: def.k, loop: spot.loop, s: spot.s, x: spot.x, y: spot.y,
+               life: ITEM_LIFE, born: t, arm: def.k === 'tnt' ? TNT_ARM : 0 });
+  return true;
+}
+
+function popText(txt, x, y, col) {
+  if (floats.length > 14) floats.shift();
+  floats.push({ txt: txt, x: x, y: y, col: col, age: 0 });
+}
+
+function addScore(base, tr) {
+  var mult = (multT > 0 ? 2 : 1) * (1 + Math.floor(combo / 5));
+  var got = base * mult;
+  score += got;
+  popText('+' + got + (mult > 1 ? ' x' + mult : ''), tr.x, tr.y - 22, '#ffe9a8');
+}
+
+function collect(tr, it) {
+  if (tr === hunter) {
+    // The hunter eats what it runs over. Sending it into the TNT is the one
+    // way the player gets to attack instead of only running.
+    switch (it.k) {
+      case 'tnt': killHunter(); break;
+      case 'stop': tr.stopT = STOP_TIME; popText('HUNTER STOPPED', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'derail': tr.derailed = true; tr.rescueT = HUNT_FIX; popText('HUNTER OFF THE RAILS', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'reverse': tr.stopT = 1; popText('HUNTER SPUN', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'boost': tr.boostT = BOOST_TIME; popText('HUNTER BOOSTED', tr.x, tr.y - 22, '#ff8a2b'); break;
+      case 'slow': slowT = SLOW_TIME; break;
+      default: popText('EATEN', tr.x, tr.y - 22, 'rgba(255,255,255,0.7)'); break;
+    }
+    return;
+  }
+  var def = itemDef(it.k);
+  if (def.good) combo++; else combo = 0;
+  switch (it.k) {
+    case 'gem': addScore(120, tr); break;
+    case 'ticket': addScore(60, tr); break;
+    case 'x2': multT = Math.max(multT, 0) + X2_TIME; popText('SCORE x2', tr.x, tr.y - 22, '#b9ff5a'); break;
+    case 'slow': slowT = SLOW_TIME; popText('SLOW', tr.x, tr.y - 22, '#a78bfa'); break;
+    case 'tnt': dead = 'BLOWN UP'; break;
+    case 'boost': tr.boostT = BOOST_TIME; popText('BOOST!', tr.x, tr.y - 22, '#ff8a2b'); break;
+    case 'reverse': tr.dir = -tr.dir; popText('REVERSE', tr.x, tr.y - 22, '#ffe14a'); break;
+    case 'derail': tr.derailed = true; tr.rescueT = RESCUE_TIME;
+      popText('DERAILED - TAP IT', tr.x, tr.y - 26, '#ff6ad5'); break;
+    case 'stop': tr.stopT = STOP_TIME; popText('STOP', tr.x, tr.y - 22, '#ff5252'); break;
+  }
+}
+
+// --- 6. update -------------------------------------------------------------
+// Time to contact on the loop the two share: a rear-end chase, or a head-on
+// after a reverse. Negative when they are not closing.
+function pairTTC() {
+  if (hunter.gone || player.loop !== hunter.loop) return -1;
+  var L = loops[player.loop].len, d = ahead(player.loop, player.s, hunter.s, player.dir);
+  var vp = speedOf(player), vh = speedOf(hunter);
+  if (player.dir !== hunter.dir) return d / Math.max(vp + vh, 1);
+  if (vh - vp > 1) return (L - d) / (vh - vp);      // it is behind and gaining
+  if (vp - vh > 1) return d / (vp - vh);            // the player is running into it
+  return -1;
+}
+
+function findThreat() {
+  if (hunter.gone) return null;
+  var lit = threat ? threat.at : null, out = null, i;
+  var ttc = pairTTC();
+  if (ttc >= 0 && ttc < THREAT_LOOK) {
+    var at = player.derailed || player.stopT > 0 ? player : hunter;
+    out = { at: at, x: at.x, y: at.y, eta: ttc, kind: 'chase' };
+  }
+  if (player.loop === hunter.loop) return out;
+  // Different loops: the diamond where the two would arrive together is where
+  // the player gets caught, and it is the one thing worth flagging early.
+  for (i = 0; i < nodes.length; i++) {
+    var e0 = eta(player, nodes[i]), e1 = eta(hunter, nodes[i]);
+    var soon = Math.min(e0, e1);
+    var win = nodes[i] === lit ? SAME_WIN * SAME_KEEP : SAME_WIN;
+    if (Math.abs(e0 - e1) >= win || soon >= THREAT_LOOK) continue;
+    var cand = { at: nodes[i], x: nodes[i].x, y: nodes[i].y, eta: soon, kind: 'xing' };
+    if (!out) { out = cand; continue; }
+    if (nodes[i] === lit && soon < out.eta + 0.4) out = cand;
+    else if (out.at !== lit && soon < out.eta) out = cand;
+  }
+  return out;
+}
+
+function update(dt) {
+  t += dt;
+  var i, j, tr;
+  if (multT > 0) multT -= dt;
+  if (slowT > 0) slowT -= dt;
+  var ramp = 1 + t * SPD_RAMP;
+
+  for (i = 0; i < nodes.length; i++) {
+    if (nodes[i].lockT > 0) { nodes[i].lockT -= dt; if (nodes[i].lockT <= 0) nodes[i].lockT = 0; }
+    if (nodes[i].flash > 0) nodes[i].flash -= dt;
+    if (nodes[i].fired > 0) nodes[i].fired -= dt;
+  }
+
+  for (i = items.length - 1; i >= 0; i--) {
+    var it = items[i];
+    if (it.arm > 0) it.arm -= dt;
+    if (t - it.born > it.life) {
+      if (it.k === 'lock' && it.node.lockT > 0) it.node.lockT = 0;
+      items.splice(i, 1);
+    }
+  }
+  spawnIn -= dt;
+  if (spawnIn <= 0 && items.length < MAX_ITEMS) {
+    spawnItem();
+    spawnIn = rnd(SPAWN_MIN, SPAWN_MAX) / Math.min(ramp, 1.8);
+  }
+
+  if (hunter.gone) {
+    hunter.backIn -= dt;
+    if (hunter.backIn <= 0) respawnHunter();
+  }
+
+  for (i = 0; i < 2; i++) {
+    tr = trains[i];
+    if (tr.gone) continue;
+    if (tr.stopT > 0) tr.stopT -= dt;
+    if (tr.boostT > 0) tr.boostT -= dt;
+    // A derailed train is otherwise the safest place to be, so leaving the
+    // player's there has to cost the run. The hunter picks itself up.
+    if (tr.derailed) {
+      tr.rescueT -= dt;
+      if (tr.rescueT <= 0) {
+        if (tr === hunter) tr.derailed = false;
+        else { dead = 'TRAIN LOST'; best = Math.max(best, score); return 0; }
+      }
+    }
+    tr.tilt += ((tr.derailed ? 0.5 : 0) - tr.tilt) * Math.min(1, dt * 8);
+    if (tr === hunter) {
+      // It chases; it never comes at you. A train has no brake and no reverse,
+      // so a head-on hunter is an unavoidable death, and the bench had it as
+      // two thirds of them.
+      tr.dir = player.dir;
+    } else {
+      tr.next -= dt;
+      if (tr.next <= 0) {
+        tr.target = rnd(SPD_MIN, SPD_MAX) * ramp;
+        tr.next = rnd(RETARGET_MIN, RETARGET_MAX);
+      }
+      var da = ACCEL * dt;
+      tr.spd += Math.max(-da, Math.min(da, tr.target - tr.spd));
+    }
+    var ds = speedOf(tr) * dt;
+    tr.cool = Math.max(0, tr.cool - ds);
+    if (ds > 0) advance(tr, ds, 0);
+    place(tr);
+    var tn = tangentAt(tr.loop, tr.s);
+    var want = Math.atan2(tn.y * tr.dir, tn.x * tr.dir), diff = want - tr.ang;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    tr.ang += Math.max(-TURN_RATE * dt, Math.min(TURN_RATE * dt, diff));
+  }
+
+  // pickups: a train only touches what is on its own loop, and the loops keep
+  // CELL/2 apart everywhere but the diamonds, so a plain distance test cannot
+  // reach across.
+  for (i = 0; i < 2; i++) {
+    tr = trains[i];
+    if (tr.gone || tr.derailed) continue;
+    for (j = items.length - 1; j >= 0; j--) {
+      var k = items[j];
+      if (k.k === 'lock' || k.loop !== tr.loop) continue;
+      if (k.k === 'tnt' && k.arm > 0) continue;
+      if (Math.hypot(k.x - tr.x, k.y - tr.y) > COLLECT) continue;
+      items.splice(j, 1);
+      collect(tr, k);
+      if (dead) { best = Math.max(best, score); return 0; }
+    }
+  }
+
+  for (i = floats.length - 1; i >= 0; i--) {
+    floats[i].age += dt;
+    if (floats[i].age > 0.9) floats.splice(i, 1);
+  }
+
+  // Which way the hunter means to go at the diamond it is about to reach. The
+  // bench says overriding that choice is the strongest play in the game, so it
+  // has to be on screen before the player can be asked to make it.
+  hunterNext = null;
+  if (!hunter.gone) {
+    var nn = null, ne = HUNT_SHOW;
+    for (i = 0; i < nodes.length; i++) {
+      if (nodes[i].lockT > 0) continue;
+      var e = eta(hunter, nodes[i]);
+      if (e > 0.12 && e < ne) { ne = e; nn = nodes[i]; }
+    }
+    if (nn) hunterNext = { node: nn, cross: nn.sw ? true : huntWantsCross(hunter, nn) };
+  }
+
+  threat = findThreat();
+  var d = hunter.gone ? 999 : Math.hypot(player.x - hunter.x, player.y - hunter.y);
+  if (d < HIT) { dead = 'CAUGHT'; best = Math.max(best, score); }
+  return d;
+}
+
+// --- 7. render -------------------------------------------------------------
+function drawSwitch(n) {
+  ctx.save();
+  ctx.translate(n.x, n.y);
+  ctx.lineCap = 'round';
+  if (n.lockT > 0) {
+    ctx.beginPath();
+    ctx.arc(0, 0, 11, 0, 6.2832);
+    ctx.fillStyle = 'rgba(10,13,20,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = n.flash > 0 ? '#ff5252' : 'rgba(192,200,216,0.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = n.flash > 0 ? '#ff5252' : '#c0c8d8';
+    ctx.fillRect(-4, -1, 8, 6);
+    ctx.beginPath();
+    ctx.arc(0, -1, 3, Math.PI, 0);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.stroke();
+  } else if (n.sw) {
+    for (var k = 0; k < 2; k++) {
+      var inn = n.tan[k], out = n.tan[1 - k];
+      ctx.beginPath();
+      ctx.moveTo(-inn.x * 20, -inn.y * 20);
+      ctx.quadraticCurveTo(0, 0, out.x * 20, out.y * 20);
+      ctx.strokeStyle = k ? COL_A : COL_B;
+      ctx.lineWidth = 4.5;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, 7, 0, 6.2832);
+    ctx.fillStyle = '#fff3c4';
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, 6.2832);
+    ctx.fillStyle = 'rgba(10,13,20,0.75)';
+    ctx.fill();
+    ctx.strokeStyle = n.fired > 0 ? 'rgba(255,243,196,0.9)' : 'rgba(255,255,255,0.30)';
+    ctx.lineWidth = n.fired > 0 ? 3 : 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, 6.2832);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function glyph(txt, size) {
+  ctx.font = '700 ' + size + 'px ui-monospace, Menlo, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(txt, 0, 1);
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawItem(it) {
+  if (it.k === 'lock') return;                 // drawn by the diamond itself
+  var def = itemDef(it.k), left = it.life - (t - it.born);
+  ctx.save();
+  ctx.translate(it.x, it.y);
+  ctx.globalAlpha = left < 2 ? 0.35 + 0.65 * Math.abs(Math.sin(t * 9)) : 1;
+  if (it.k === 'tnt') {
+    ctx.fillStyle = 'rgba(8,11,18,0.9)';
+    ctx.fillRect(-12, -12, 24, 24);
+    ctx.strokeStyle = def.c;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-12, -12, 24, 24);
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, 11, 0, 6.2832);
+    ctx.fillStyle = 'rgba(8,11,18,0.88)';
+    ctx.fill();
+    ctx.strokeStyle = def.c;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+  ctx.fillStyle = def.c;
+  ctx.strokeStyle = def.c;
+  switch (it.k) {
+    case 'gem':
+      ctx.beginPath();
+      ctx.moveTo(0, -7); ctx.lineTo(6, -1); ctx.lineTo(0, 7); ctx.lineTo(-6, -1);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-6, -1); ctx.lineTo(6, -1); ctx.moveTo(0, -7); ctx.lineTo(0, 7); ctx.stroke();
+      break;
+    case 'ticket':
+      ctx.fillRect(-7, -4, 14, 8);
+      ctx.fillStyle = 'rgba(8,11,18,0.9)';
+      ctx.fillRect(-4.5, -1.5, 9, 1.4);
+      ctx.beginPath(); ctx.arc(-7, 0, 2, 0, 6.2832); ctx.arc(7, 0, 2, 0, 6.2832); ctx.fill();
+      break;
+    case 'x2': glyph('x2', 12); break;
+    case 'slow':
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-5, -4); ctx.lineTo(0, 1); ctx.lineTo(5, -4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-5, 1); ctx.lineTo(0, 6); ctx.lineTo(5, 1); ctx.stroke();
+      break;
+    case 'tnt':
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-10, -10, 20, 20); ctx.clip();
+      ctx.lineWidth = 3;
+      for (var h = -20; h < 20; h += 7) {
+        ctx.beginPath(); ctx.moveTo(h, 10); ctx.lineTo(h + 20, -10); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.fillStyle = '#0a0d14';
+      ctx.fillRect(-10, -4, 20, 8);
+      ctx.fillStyle = def.c;
+      glyph('TNT', 8);
+      if (it.arm > 0) {
+        ctx.strokeStyle = '#ffe14a';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(5, -12); ctx.quadraticCurveTo(11, -16, 6, -19); ctx.stroke();
+        ctx.fillStyle = '#ffe14a';
+        ctx.beginPath(); ctx.arc(6, -15, 1.6 + Math.abs(Math.sin(t * 18)) * 1.4, 0, 6.2832); ctx.fill();
+      }
+      break;
+    case 'boost':
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-6, -5); ctx.lineTo(-1, 0); ctx.lineTo(-6, 5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(5, 0); ctx.lineTo(0, 5); ctx.stroke();
+      break;
+    case 'reverse':
+      ctx.lineWidth = 1.9;
+      ctx.beginPath(); ctx.arc(0, 0, 5.5, 0.6, 5.4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, -5); ctx.lineTo(7.5, -1); ctx.lineTo(2.5, 0); ctx.closePath(); ctx.fill();
+      break;
+    case 'derail':
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath(); ctx.moveTo(-8, 3); ctx.lineTo(8, 3); ctx.moveTo(-8, 6); ctx.lineTo(8, 6); ctx.stroke();
+      ctx.save();
+      ctx.rotate(-0.5);
+      ctx.fillStyle = def.c;
+      ctx.fillRect(-6, -6, 12, 4.5);
+      ctx.restore();
+      break;
+    case 'stop':
+      ctx.beginPath();
+      for (var i = 0; i < 8; i++) {
+        var an = Math.PI / 8 + i * Math.PI / 4;
+        ctx[i ? 'lineTo' : 'moveTo'](Math.cos(an) * 7, Math.sin(an) * 7);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#0a0d14'; glyph('!', 9);
+      break;
+  }
+  ctx.restore();
+}
+
+function drawTrain(tr) {
+  if (tr.gone) return;
+  var foe = tr === hunter;
+  ctx.save();
+  ctx.translate(tr.x, tr.y);
+  ctx.rotate(tr.ang + tr.tilt);
+  ctx.fillStyle = tr.derailed ? '#6b7280' : (foe ? '#ff2020' : '#5ee1ff');
+  ctx.fillRect(-TRAIN_L / 2, -TRAIN_W / 2, TRAIN_L, TRAIN_W);
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-TRAIN_L / 2, -TRAIN_W / 2, TRAIN_L, TRAIN_W);
+  if (foe) {
+    // two eyes at the front, so which train is chasing is never a question
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(TRAIN_L / 2 - 6, -3.5, 2.4, 0, 6.2832);
+    ctx.arc(TRAIN_L / 2 - 6, 3.5, 2.4, 0, 6.2832);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(TRAIN_L / 2 - 5, -3.5, 1.1, 0, 6.2832);
+    ctx.arc(TRAIN_L / 2 - 5, 3.5, 1.1, 0, 6.2832);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(TRAIN_L / 2 - 7, -TRAIN_W / 2, 7, TRAIN_W);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(-TRAIN_L / 2 + 3, -TRAIN_W / 2 + 3, TRAIN_L - 13, TRAIN_W - 6);
+  }
+  if (tr.boostT > 0) {
+    ctx.fillStyle = 'rgba(255,138,43,0.85)';
+    for (var i = 0; i < 3; i++) ctx.fillRect(-TRAIN_L / 2 - 6 - i * 5, -1.5, 3.5, 3);
+  }
+  ctx.restore();
+  if (tr.derailed) {
+    ctx.beginPath();
+    ctx.arc(tr.x, tr.y, 18, 0, 6.2832);
+    ctx.strokeStyle = 'rgba(255,106,213,0.28)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(tr.x, tr.y, 18, -Math.PI / 2,
+            -Math.PI / 2 + 6.2832 * (tr.rescueT / (foe ? HUNT_FIX : RESCUE_TIME)));
+    ctx.strokeStyle = foe ? '#b9ff5a' : (tr.rescueT < 2 ? '#ff3b3b' : '#ff6ad5');
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  } else if (tr.stopT > 0) {
+    ctx.beginPath();
+    ctx.arc(tr.x, tr.y, 16, 0, 6.2832);
+    ctx.strokeStyle = foe ? 'rgba(185,255,90,0.8)' : 'rgba(255,82,82,0.8)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+}
+
+function line(str, x, y, size, col, align) {
+  ctx.font = '600 ' + size + 'px ui-monospace, Menlo, monospace';
+  ctx.textAlign = align || 'left';
+  ctx.fillStyle = col;
+  ctx.fillText(str, x, y);
+}
+
+function render(gap, fps) {
+  var i;
+  ctx.fillStyle = '#0a0d14';
+  ctx.fillRect(0, 0, W, H);
+
+  // --- the world, seen through the camera
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.z, cam.z);
+  ctx.drawImage(track, art.x0, art.y0, art.w, art.h);
+  for (i = 0; i < nodes.length; i++) drawSwitch(nodes[i]);
+  for (i = 0; i < items.length; i++) drawItem(items[i]);
+
+  if (hunterNext && !dead) {
+    var n = hunterNext.node, out = hunterNext.cross ? 1 - hunter.loop : hunter.loop;
+    var tn = n.tan[out], dx = tn.x * hunter.dir, dy = tn.y * hunter.dir;
+    ctx.save();
+    ctx.translate(n.x + dx * 17, n.y + dy * 17);
+    ctx.rotate(Math.atan2(dy, dx));
+    ctx.strokeStyle = 'rgba(255,32,32,0.9)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-4, -5); ctx.lineTo(3, 0); ctx.lineTo(-4, 5);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (threat && !dead) {
+    var urg = 1 - threat.eta / THREAT_LOOK;
+    var pulse = 20 + Math.sin(t * 14) * 3 + urg * 8;
+    ctx.beginPath();
+    ctx.arc(threat.x, threat.y, pulse, 0, 6.2832);
+    ctx.strokeStyle = 'rgba(255,70,70,' + (0.35 + urg * 0.55).toFixed(2) + ')';
+    ctx.lineWidth = 2 + urg * 2.5;
+    ctx.stroke();
+  }
+  if (gap < WARN && !dead) {
+    var a = 1 - (gap - HIT) / (WARN - HIT);
+    ctx.strokeStyle = 'rgba(255,60,60,' + (0.25 + a * 0.6).toFixed(2) + ')';
+    ctx.lineWidth = 2 + a * 3;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(hunter.x, hunter.y);
+    ctx.stroke();
+  }
+  drawTrain(hunter);
+  drawTrain(player);
+  ctx.restore();
+
+  // --- screen space: text stays unscaled and crisp
+  if (player.derailed) {
+    line('TAP', sx(player.x), sy(player.y) - 34, 18,
+         player.rescueT < 2 ? '#ff3b3b' : '#ff6ad5', 'center');
+  }
+  for (i = 0; i < floats.length; i++) {
+    var f = floats[i], k = f.age / 0.9;
+    ctx.globalAlpha = 1 - k * k;
+    line(f.txt, sx(f.x), sy(f.y) - k * 26, 19, f.col, 'center');
+    ctx.globalAlpha = 1;
+  }
+
+  line(String(score), 24, 58, 44, '#e8edf7');
+  line('best ' + best + '   combo ' + combo + (multT > 0 ? '   x2 ' + multT.toFixed(1) + 's' : '') +
+       (slowT > 0 ? '   SLOW' : ''), 24, 88, 20, 'rgba(232,237,247,0.6)');
+  line(t.toFixed(1) + 's', W - 24, 52, 32, 'rgba(232,237,247,0.75)', 'right');
+  var hs = hunter.gone ? 'BACK IN ' + hunter.backIn.toFixed(1) + 's'
+                       : 'HUNTER x' + huntRatio().toFixed(2);
+  line(hs + (kills ? '   kills ' + kills : ''), W - 24, 80, 20,
+       hunter.gone ? '#b9ff5a' : '#ff6a6a', 'right');
+
+  var dbg = 'rgba(232,237,247,0.42)';
+  line('fps ' + fps + '  spd ' + speedOf(player).toFixed(0) + '/' + speedOf(hunter).toFixed(0) +
+       '  gap ' + gap.toFixed(0) + '  zoom ' + cam.z.toFixed(2), W - 24, H - 116, 17, dbg, 'right');
+  line('loop ' + player.loop + hunter.loop + ' dir ' + (player.dir > 0 ? '+' : '-') +
+       (hunter.dir > 0 ? '+' : '-') + '  xing ' + nodes.length + '  thrown ' + thrown,
+       W - 24, H - 94, 17, dbg, 'right');
+  line('items ' + items.length + '  threat ' + (threat ? threat.kind + ' ' + threat.eta.toFixed(1) + 's' : '-'),
+       W - 24, H - 72, 17, dbg, 'right');
+  line('TAP A CROSSING TO THROW THE NEXT TRAIN THROUGH IT', W / 2, H - 34, 17,
+       'rgba(232,237,247,0.45)', 'center');
+
+  if (dead) {
+    ctx.fillStyle = 'rgba(10,13,20,0.75)';
+    ctx.fillRect(0, 0, W, H);
+    line(dead, W / 2, H / 2 - 40, 62, '#ff5a5a', 'center');
+    line(String(score), W / 2, H / 2 + 26, 54, '#e8edf7', 'center');
+    line('in ' + t.toFixed(1) + 's   ' + kills + ' hunter' + (kills === 1 ? '' : 's') + ' down   best ' + best,
+         W / 2, H / 2 + 62, 22, 'rgba(232,237,247,0.6)', 'center');
+    line('tap or R for new tracks', W / 2, H / 2 + 108, 22, 'rgba(232,237,247,0.55)', 'center');
+  }
+}
+
+// --- 8. input --------------------------------------------------------------
+function toDesign(e) {
+  var r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+}
+cv.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  if (dead) { restart(); return; }
+  var p = toWorld(toDesign(e)), i;
+  // the player's derailed train first: it is the one thing that cannot wait
+  if (player.derailed && Math.hypot(player.x - p.x, player.y - p.y) < TAP_R) {
+    player.derailed = false;
+    player.rescueT = 0;
+    player.spd = SPD_MIN;
+    popText('BACK ON', player.x, player.y - 26, '#b9ff5a');
+    return;
+  }
+  var hit = null, hd = TAP_R;
+  for (i = 0; i < nodes.length; i++) {
+    var d = Math.hypot(nodes[i].x - p.x, nodes[i].y - p.y);
+    if (d < hd) { hd = d; hit = nodes[i]; }
+  }
+  if (!hit) return;
+  if (hit.lockT > 0) { hit.flash = 0.3; return; }
+  hit.sw = !hit.sw;
+});
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'r' || e.key === 'R') restart();
+});
+
+// --- 9. loop ---------------------------------------------------------------
+var last = 0, fps = 0, acc = 0, frames = 0, gap = 999;
+restart();
+function frame(now) {
+  var dt = last ? Math.min((now - last) / 1000, 0.05) : 0;
+  last = now;
+  acc += dt; frames++;
+  if (acc > 0.5) { fps = Math.round(frames / acc); acc = 0; frames = 0; }
+  if (!dead && dt) gap = update(dt);
+  render(gap, fps);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>

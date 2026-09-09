@@ -656,13 +656,30 @@ logotype into `#intro-title` and picks the face on `endRound`;
 `packages/platform/web.js` hands the desk background to
 `packages/frame-web/frame.css` through `--art-bg-desk`.
 
-**Four stat rows, at most.** The end screen's column is title, score label,
-score, stars, one row per stat, the install button and the replay link, and the
-character goes in whichever band is left over. Four rows leave ~205px of it;
-five leave ~165px, the floor; six leave nothing and the face is dropped. The
-games were cut back to four for exactly this reason — the fifth row costs the
-character. `Art.placeCharacter` measures it every round, so nothing breaks if a
-game grows one, it just stops showing a face.
+**The character is a corner figure that arrives at twice its size.** It hangs
+off the bottom-right corner, cropped by the bottom edge only (44px of bleed —
+the feet, where the top edge would take the head), and the box is a constant in
+`motor.css`: 660px, twice the 330px figure it settles on. It arrives at full
+size with the title, when nothing else is on the screen, then gives up room one
+step at a time as the column claims it — the score, the stars, **each stat
+row**, the buttons — so a game with three rows shrinks it in five steps and one
+with six in eight, and the face is done making room exactly when the screen is
+done filling. `Art.settleCharacter(t)` is the step, called from the reveal; it
+writes `--char-k` and the stylesheet scales about the bottom-right corner, so
+the box never moves, no step costs a layout and the bleed shrinks with the
+figure.
+
+It may overlap because it **cannot hide anything**: `#eo-char` is painted before
+everything the reveal writes, at one shared z-index, so the title, the score,
+the rows and both buttons land on top of it — the worst case is a face partly
+covered, for a beat.
+
+**Four stat rows, at most** — for the column's own sake, not the character's.
+Ten rows overflow the frame (the title starts at y=-70) and the cascade drags.
+What the row count no longer decides is whether there is a face at all: the fit
+that used to be measured band by band against the finished column was worth
+120-165px on most of the thirteen and nothing on the dense ones, which is why it
+went away.
 
 **Behind the round: `CONFIG.sceneArt`.** Off by default, because most gameplays
 are balanced against the flat ground their SKIN paints and a picture under the

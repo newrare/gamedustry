@@ -30,7 +30,7 @@
       ]
     }
   },
-  "description": "A marshmallow hangs over a lava lake, stuck to the only thing keeping it up: a falling rock. A tap flings it along the line to your finger at one fixed speed — no drag, no charge — and it sticks to the first thing it touches, then rides that rock down. Rocks melt when they reach the lava, so a landing is never a rest: the only way to stay alive is to keep climbing the ones still falling. Land high and the score pays more, chain fresh rocks and the multiplier grows. Fireballs can be grabbed too, but they only lend their back for a beat before shrugging the body off — one shade browner each time. The lava rises the whole run, and it is the only clock.",
+  "description": "A marshmallow hangs over a lava lake, stuck to the only thing keeping it up: a falling rock. A tap flings it along the line to your finger at one fixed speed — no drag, no charge — and it sticks to the first thing it touches, then rides that rock down. Rocks melt when they reach the lava, so a landing is never a rest: the only way to stay alive is to keep climbing the ones still falling. Land high and the score pays more, chain fresh rocks and the multiplier grows. Fireballs can be grabbed too, but they only lend their back for a beat before shrugging the body off — one shade browner each time. Holding the finger slows the world, but only while the focus meter under it lasts: it drains as you deliberate and the slow motion fades with it, so a long aim buys less time and a shorter preview. It stays locked for a beat once you let go before it starts filling again, and landing on a fresh rock hands part of it straight back. The lava rises the whole run, and it is the only clock.",
   "web": {
     "copy": {
       "fr": {

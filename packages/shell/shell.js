@@ -613,91 +613,53 @@
       screen.insertBefore(img, screen.firstChild.nextSibling);
     }
 
-    /* WHERE THE CHARACTER FITS IS MEASURED, EVERY ROUND.
+    /* THE FACE IS A CORNER FIGURE, AND IT ARRIVES AT TWICE ITS FINAL SIZE.
 
-       The end screen's column is title, score label, score, stars, ONE ROW PER
-       STAT, the install button and the replay link — and the games run from
-       three stat rows to ten. That is not a small spread: measured at 720x1280,
-       three rows leave ~200px clear above the title and ~200px below the replay
-       link, six rows leave ~84px at each end, and ten rows overflow the frame
-       outright (the title starts at y=-70). A fixed corner therefore works for
-       the three sparse games and is completely buried by the stat plates on the
-       dense ones — which is exactly what shipping it that way looked like.
+       It hangs off the bottom-right corner of the frame, and both sizes are
+       constants — the box lives in the stylesheet. It arrives at CHAR_ENTER,
+       when the title is the only thing on the screen and there is nothing to
+       bury, then gives up room one step at a time as the column claims it (the
+       score, the stars, each stat row, the buttons) down to CHAR_HOME. So the
+       entrance is a character and the finished screen is a corner figure.
 
-       So the band is measured and the character is fitted into it: the larger of
-       the two gaps, scaled to what is actually free, and dropped below a floor
-       where a face would be a sliver rather than a character. `offsetTop` is
-       read rather than getBoundingClientRect() because the frame carries a
-       scale transform — offsets are already in design px, rects are not.
+       WHY IT MAY COVER ANYTHING AT ALL: document order puts #eo-char before
+       everything the reveal writes, at one shared z-index, so the title, the
+       score, the rows and both buttons paint OVER it. Nothing can be hidden by
+       the face; the worst case is a face partly covered, and only for a beat.
 
-       It is allowed to bleed BLEED px off its edge: a figure the frame crops
-       stands in the scene, one floating clear of it is a sticker. */
-    var CHAR_MAX = 330, CHAR_MIN = 165, CHAR_BLEED = 44;
+       This replaced a fit measured against the column every round, band by
+       band, and the measurement was not wrong so much as pointless: the end
+       screen's column runs from three stat rows to ten, and against a finished
+       one the free band is worth 120-165px on most of the thirteen — a sliver,
+       and on the dense games no face at all. Letting the plates cover a corner
+       of a big figure buys back every pixel that measurement was protecting,
+       and it deleted the ResizeObserver the fit needed to survive the web
+       target's late title refit: a fixed box has nothing to re-measure.
 
-    function placeCharacter(img) {
-      var title = $("eo-title"), tail = $("btn-replay");
-      if (!title || !tail) return CHAR_MAX;
+       Only the BOTTOM edge crops it, CHAR_BLEED px of it: it takes the feet,
+       where the top edge would take the head — a figure the frame crops stands
+       in the scene, one floating clear of it is a sticker. The right edge is
+       flush, because a horizontal crop takes an arm and reads as an accident. */
+    var CHAR_ENTER = 660, CHAR_HOME = 330;
 
-      var above = title.offsetTop;
-      var below = CONFIG.designHeight - (tail.offsetTop + tail.offsetHeight);
+    /* How far along the settle the face is, 0..1 — kept so a replay can start
+       it over. */
+    var charT = 0;
 
-      /* THE BOTTOM BAND WINS UNLESS IT CANNOT HOLD A FACE, and that is not a
-         coin toss even when the two bands measure the same — which at four stat
-         rows they very nearly do (~161px each). Only the bottom one can be
-         cropped: a figure hanging off the bottom edge loses its FEET, which is
-         what standing in a scene looks like, while one hanging off the top
-         loses its HEAD. The first cut is free, the second is the whole
-         character.
-
-         So the bottom band gets the bleed, and the top band — the fallback for
-         a screen whose stats sit low — takes no bleed at all and rests the
-         figure's feet on the title instead. */
-      var atBottom = below + CHAR_BLEED >= CHAR_MIN;
-      var room = atBottom ? below + CHAR_BLEED : above;
-      var size = Math.min(CHAR_MAX, room);
-
-      img.style.top = atBottom ? "" : "0";
-      img.style.bottom = atBottom ? "-" + CHAR_BLEED + "px" : "";
-      img.style.height = size + "px";
-      img.style.width = Math.round(size * 0.9) + "px";
-      img.style.objectPosition = "bottom right";
-      return size;
-    }
-
-    /* PLACING IT ONCE IS NOT ENOUGH, because the column is still settling when
-       the character arrives. The web front end re-measures the end title and
-       shrinks it until it fits the game's own typeface — asynchronously, as the
-       face decodes, for up to six seconds (packages/webshell/menu.js,
-       fitEndScreen). A title that loses 40px of height moves the whole column,
-       and a character placed against the old one ends up in the wrong band: it
-       is what put spinshock's face at the top of the screen with the bottom
-       band sitting empty.
-
-       So the title node is watched and the face re-placed whenever it resizes.
-       ResizeObserver is the right trigger and the cheap one — the callback is
-       two offset reads — and where it is missing (an old WebView) two late
-       re-places cover the same window. */
-    var charObs = null, charTimers = [];
-
-    function replace(img) {
-      if (!img || !$("eo-char")) return;
-      var fits = placeCharacter(img) >= CHAR_MIN;
-      img.hidden = !fits;
-      if (fits) img.classList.add("show");
-    }
-
-    function watchLayout(img) {
-      var title = $("eo-title");
-      charTimers.forEach(clearTimeout); charTimers = [];
-      if (window.ResizeObserver && title) {
-        if (!charObs) charObs = new window.ResizeObserver(function () { replace(img); });
-        else charObs.disconnect();
-        charObs.observe(title);
-        return;
-      }
-      [900, 2400, 6200].forEach(function (ms) {
-        charTimers.push(setTimeout(function () { replace(img); }, ms));
-      });
+    /* One step of the settle. `t` is how much of the reveal has landed, and the
+       shell calls it on every beat that writes over the face. The step is a
+       `transform: scale()` about the bottom-right corner (motor.css reads
+       `--char-k`), so the box never changes, the anchor cannot drift, no step
+       costs a layout, and the bleed shrinks with the figure instead of eating
+       more of its feet. */
+    function settleCharacter(t) {
+      var img = $("eo-char");
+      charT = t < 0 ? 0 : t > 1 ? 1 : t;
+      if (!img) return;
+      /* A calm easing for the way down: the entrance transition overshoots, and
+         six of those in a row would read as a wobble. */
+      if (charT > 0) img.classList.add("settling");
+      img.style.setProperty("--char-k", (1 - (1 - CHAR_HOME / CHAR_ENTER) * charT).toFixed(3));
     }
 
     function showCharacter(stars) {
@@ -706,14 +668,10 @@
       var src = faceFor(stars);
       if (!src) { img.classList.remove("show"); return; }
       if (img.getAttribute("src") !== src) img.src = src;
-      img.classList.remove("show");
-
-      /* A full end screen has nowhere to put a face, and a 60px sliver behind
-         the stat plates reads as a bug. Say nothing instead. */
-      var fits = placeCharacter(img) >= CHAR_MIN;
-      img.hidden = !fits;
-      watchLayout(img);
-      if (!fits) return;
+      img.classList.remove("show", "settling");
+      /* A replay starts the settle over: full size with the title, again. */
+      settleCharacter(0);
+      img.classList.remove("settling");
 
       /* One frame later, so the class change is a transition and not the
          element's first paint — a replay has to see it arrive again. */
@@ -724,8 +682,6 @@
 
     function hideCharacter() {
       var img = $("eo-char");
-      if (charObs) charObs.disconnect();
-      charTimers.forEach(clearTimeout); charTimers = [];
       if (img) img.classList.remove("show");
     }
 
@@ -739,6 +695,7 @@
       scene: function () { return onScene; },
       dress: dress, titleImage: titleImage, buildCharacter: buildCharacter,
       showCharacter: showCharacter, hideCharacter: hideCharacter,
+      settleCharacter: settleCharacter,
       dressFrame: function () { onScene = dressFrame(); return onScene; }
     };
   })();
@@ -825,6 +782,16 @@
       });
       box.innerHTML = html;
 
+      /* THE CHARACTER GIVES UP ROOM AS THE COLUMN CLAIMS IT. It arrives at
+         full size with the title, alone on the screen, and every beat that
+         writes something over it takes it one step down toward the corner
+         figure — so the count is the number of beats left after the title, and
+         `settle` is called from each of them. A game with three stat rows
+         therefore shrinks it in five steps and one with six in eight: the face
+         is done making room exactly when the screen is done filling. */
+      var beats = 1 + (hasStars ? 1 : 0) + rows.length + 1, beat = 0;
+      function settle() { Art.settleCharacter(++beat / beats); }
+
       // 1) Title slams in, and the character rises with it — one beat, so the
       //    screen reads as a reaction to the round rather than as a slideshow.
       Art.hideCharacter();
@@ -837,6 +804,7 @@
       T(function () {
         $("eo-scorelbl").classList.add("show");
         $("eo-score").classList.add("show");
+        settle();
         Confetti.burst(70);
         countUp($("eo-score"), result.score || 0, 1100, function () {
           $("eo-score").classList.add("pop");
@@ -848,7 +816,10 @@
       // 3) Stars slam in one by one, each with a rising chime.
       var afterStars = T_SCORE + 900;
       if (hasStars) {
-        T(function () { for (var s = 1; s <= 3; s++) $("star-" + s).classList.add("dim"); }, T_STARS - 160);
+        T(function () {
+          for (var s = 1; s <= 3; s++) $("star-" + s).classList.add("dim");
+          settle();
+        }, T_STARS - 160);
         for (var si = 0; si < stars; si++) {
           (function (idx) {
             T(function () {
@@ -866,6 +837,7 @@
       rows.forEach(function (r, i) {
         T(function () {
           $("eo-row-" + i).classList.add("show");
+          settle();
           var el = $("eo-val-" + i);
           if (typeof r.value === "number") countUp(el, r.value, 450);
           else el.textContent = r.value;
@@ -875,7 +847,7 @@
 
       // 5) Install CTA, then the discreet replay link.
       var ctaAt = afterStars + rows.length * ROW_GAP + T_CTA_AFTER;
-      T(function () { $("btn-install").classList.add("show"); }, ctaAt);
+      T(function () { $("btn-install").classList.add("show"); settle(); }, ctaAt);
       T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
     }
     return { show: show };

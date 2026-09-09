@@ -103,10 +103,12 @@ development pages and answer only to the short rules in their own sections.
    - `onTimeUp()` — optional; without it the clock ends the round.
    - `onResize()` — optional; rebuild cached canvases when `Layout` changes.
    - call `endRound({ title, variant, score, stars, rows })` when the run is
-     over → plays the cinematic end screen. **At most four `rows`**: the fifth
-     costs the end screen its character (see
-     [The painted artwork](#the-painted-artwork)). `stars` is also what picks
-     the face — 3 → happy, 2 → neutral, 1 or 0 → sad.
+     over → plays the cinematic end screen. **At most four `rows`**: past that the
+     column overflows the frame and the cascade drags. The end screen's
+     character no longer depends on the row count — it arrives at twice its
+     size and settles into the corner over the reveal, painted under everything
+     the screen writes (see [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what
+     picks the face — 3 → happy, 2 → neutral, 1 or 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
    `Fx.burst/ring/text/shake/flash/freeze`, `Pop.show` for the score and combo
    callouts, `Overlay.toast/vignette`, `Sound.clip`.
