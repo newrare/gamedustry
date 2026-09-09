@@ -103,7 +103,10 @@ development pages and answer only to the short rules in their own sections.
    - `onTimeUp()` — optional; without it the clock ends the round.
    - `onResize()` — optional; rebuild cached canvases when `Layout` changes.
    - call `endRound({ title, variant, score, stars, rows })` when the run is
-     over → plays the cinematic end screen.
+     over → plays the cinematic end screen. **At most four `rows`**: the fifth
+     costs the end screen its character (see
+     [The painted artwork](#the-painted-artwork)). `stars` is also what picks
+     the face — 3 → happy, 2 → neutral, 1 or 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
    `Fx.burst/ring/text/shake/flash/freeze`, `Pop.show` for the score and combo
    callouts, `Overlay.toast/vignette`, `Sound.clip`.
@@ -111,11 +114,14 @@ development pages and answer only to the short rules in their own sections.
    in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Never invent a synth
    voice for a game: `Sound.beep/arp` is only the fallback for an event with no
    clip.
-1. **Never create the app icon.** The artwork (`assets/icon/<slug>.png` and its
-   `thumb/` cut, embedded as `ASSETS.images.logo` on the intro) is added later
-   by the user. Leave `ASSETS.images` without a `logo` key and keep
-   `CONFIG.intro.logo` at `null` — the intro simply hides `#app-icon`. Never
-   generate, draw or embed a placeholder icon.
+1. **Never create the app icon, and never create the painted artwork.** Both are
+   added later by the user: the icon (`assets/icon/<slug>.png` and its `thumb/`
+   cut) and the six pieces of `assets/image/<slug>-*.png` (see
+   [The painted artwork](#the-painted-artwork)). Leave `ASSETS.images` without a
+   `logo` key and keep `CONFIG.intro.logo` at `null` — the intro hides
+   `#app-icon`, and once a `-title.png` exists the drawn logotype replaces both
+   the icon and the CSS title anyway. Never generate, draw or embed a
+   placeholder for any of it.
 1. Update `#intro-title` / `#intro-tagline` in `page.html` to match `CONFIG`, then
    describe the game **once**, in `games/<slug>/manifest.json`: `title`, `order`,
    `draft`, `targets`, `theme`, `copy.fr` / `copy.en` (one tagline and three tags
@@ -178,12 +184,21 @@ finished game**, and it is one shape for all thirteen — the two files
 (`menu.css`, `menu.js`) are the template, so a game gets it by listing `web` in
 its `targets` and nothing else:
 
-- **the game's own backdrop** — the painted background it already embeds
-  (`ASSETS.images.bg`, the re-encoded `assets/image/<slug>-background.png`), or,
-  for a game that ships no picture, the gradient its SKIN paints the game view
-  with, read off the page and re-anchored to the 720×1280 frame. Nothing of the
-  world is drawn — no entity, no `Game.reset()` — so a menu cannot break on
-  what a game does outside a round.
+- **the game's own backdrop** — the painted scene the motor already put on the
+  intro (`CONFIG.art.backgroundPhone`, see
+  [The painted artwork](#the-painted-artwork)). The menu keeps the picture and
+  drops the motor's generic scrim for its own, which is cut for this layout — a
+  band under the title, a band down the right edge where the entries are. A game
+  with no artwork falls back to a picture it embeds itself (`ASSETS.images.bg`)
+  and then to the gradient its SKIN paints the game view with, read off the page
+  and re-anchored to the 720×1280 frame. Nothing of the world is drawn — no
+  entity, no `Game.reset()` — so a menu cannot break on what a game does
+  outside a round.
+- **the empty bands are the same scene, wide** — on a window wider than the
+  portrait frame, `packages/frame-web/frame.css` paints
+  `CONFIG.art.backgroundDesk` across the whole page, so a desktop shows one
+  picture with a phone standing in the middle of it. Web target only: a playable
+  runs in a fixed portrait iframe and has no band to fill.
 - **the game's own type** — `web.font` in the manifest names one family of
   `assets/font/` (six, all OFL), which the builder embeds in front of the SKIN
   with two tokens: `--web-font` and `--web-fw`, the weight to ask for (a
@@ -278,6 +293,62 @@ reword `6. GAME`, and do not reorder the sections.
 `node tools/build/extract.mjs` is the one-shot that created this layout from the old
 single-file games. It only needs re-running if a game's `index.html` becomes the
 source of truth again, which should not happen.
+
+## The painted artwork
+
+Every game ships six pieces of painted art, and **a file name is the whole
+declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
+
+| `assets/image/<slug>-…`              | where it is used                                                     |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `-background-phone.png`              | behind the intro and the end screen — **never behind the round**     |
+| `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
+| `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
+| `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0–1 / 2 / 3)        |
+
+`assets/image/` is the **master**: what came out of the image model, up to
+2172 px and ~2 MB apiece, 121 MB in total. It ships nowhere. The shipping cut is
+`assets/art/`, WebP sized for the 720×1280 design space, ~35 KB a piece and
+~270 KB of base64 per game — which is what makes painted screens fit inside the
+5 MB creative at all.
+
+```bash
+node tools/lab/encode-art.mjs             # every game, skipping what is fresh
+node tools/lab/encode-art.mjs vipera      # one game
+node tools/lab/encode-art.mjs --list      # what would run, and why
+```
+
+**`assets/art/` is committed and the build never encodes it** — same contract as
+`assets/font/` and `assets/sfx/`: a shipping-ready input, not a build output.
+Encoding needs headless Chrome (~1 s an image), and `tools/update.mjs` has to
+stay fast. Run `encode-art` when the artwork itself changes, then
+`tools/update.mjs`.
+
+The builder injects what it finds as **`CONFIG.art.<camelRole>`** — a data URI in
+the single-file builds, a hashed file in the split site build, with nothing
+target-aware in the art itself. `packages/shell/shell.js` (the `Art` module)
+puts the background, the logotype and the character on the screens; a game that
+wants to draw one of its own files on the **canvas** reads it from `ArtImages`
+(`games/slipdeck` paints `ArtImages.cardKing` into its court cards). Adding a
+new kind of art is adding a file: `<slug>-<name>.png` becomes
+`CONFIG.art.<camelName>`.
+
+The two rules that hold this together:
+
+- **The artwork is not drawn behind the round unless a game asks.** Most
+  gameplays are balanced against the flat ground their SKIN paints, and a
+  picture under the world costs them contrast. A game whose world reads over its
+  scene sets `CONFIG.sceneArt = true` and then stops painting its own opaque
+  ground, asking `Art.scene()` in `render()` — `chainring`, `slipdeck` and
+  `marshmelt` are the three, and each of them replaced a purely decorative
+  ground (a radial gradient, a felt fill, a pre-rendered cavern). It is a CSS
+  layer under the canvas, so it costs nothing per frame; the scrim over it is
+  the `--scene-scrim` token a SKIN can raise. See
+  [docs/ENGINE.md](docs/ENGINE.md#configart--the-painted-artwork).
+- **Never create the artwork.** Like the app icon, it is the user's. A game
+  without it degrades on its own — the icon comes back, the CSS title comes
+  back, the end screen keeps its flat tint — so never generate, draw or embed a
+  placeholder.
 
 ## Prototypes — a raw page, outside the motor
 
@@ -426,6 +497,14 @@ its own, deployed by Vercel from this repo.
   string in the markup, and never add a third mechanism.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
+- **The hero is dressed with the games' own characters.** `build-site.mjs` copies
+  each game's `assets/art/<slug>-character-happy.webp` to
+  `image/games/<slug>/character.webp` and marks `character: true`;
+  `initHeroCast()` draws two of them at random on every load and stands them
+  either side of the headline. The site owns no artwork of its own, and the pair
+  is never hard-coded — thirteen characters over two slots is a different pair
+  almost every visit. The layer collapses under 1080px, where the headline needs
+  the full width.
 - **`node tools/build/build-site.mjs`** assembles `dist/site/`: it runs
   `build.mjs --target=web` first, copies `site/`, then each game's web build to
   `games/<slug>/` and the motor they share to `games/`, then each game's icon and

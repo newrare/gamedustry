@@ -1879,22 +1879,22 @@
 
     function gameOver() {
       var stars = score >= D.star3 ? 3 : score >= D.star2 ? 2 : score > 0 ? 1 : 0;
-      var rows = [
+      /* Four rows, and four in both modes: the fifth is what the end screen
+         spends on its character (docs/ENGINE.md, `CONFIG.art`). The two
+         leading rows are the ones the mode disagrees about — the dial counts
+         what was popped, eclipse counts how long it was held off — and the
+         chain and the best score close either of them. */
+      var rows = Eclipse.on ? [
+        { label: "LEVEL", value: Eclipse.level(), grade: "gold" },
+        { label: "SURVIVED", value: Eclipse.survived() + "s", grade: "accent" }
+      ] : [
         { label: "RAYS POPPED", value: matches },
-        { label: "BEADS CLEARED", value: cleared },
-        { label: "MULTI RAYS", value: multis, grade: multis > 0 ? "good" : "" },
-        { label: "SUPERS FIRED", value: supers, grade: supers > 0 ? "accent" : "" },
         { label: "BIGGEST BLAST", value: bestBlast + " BEADS",
-          grade: bestBlast >= 8 ? "good" : "" },
-        { label: "BEST CHAIN", value: "x" + bestCombo, grade: "accent" },
-        { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+          grade: bestBlast >= 8 ? "good" : "" }
       ];
-      if (Eclipse.on) {
-        rows.splice(1, 1);                   // beads cleared says least here
-        rows.splice(0, 0,
-          { label: "LEVEL", value: Eclipse.level(), grade: "gold" },
-          { label: "SURVIVED", value: Eclipse.survived() + "s", grade: "accent" });
-      }
+      rows.push(
+        { label: "BEST CHAIN", value: "x" + bestCombo, grade: "accent" },
+        { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" });
       endRound({
         title: Eclipse.on ? CONFIG.copy.eclipsed
                          : stars === 3 ? "RADIANT!" : CONFIG.copy.timeUp,

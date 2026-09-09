@@ -15,6 +15,13 @@
     },
     designWidth: 720, designHeight: 1280, bg: "#0a0a18",
     layout: { hudHeight: 168, ctaHeight: 120, sideMargin: 30 },
+
+    /* The painted scene goes behind the ROUND too, not just behind the intro
+       and the end screen: assets/art/chainring-background-phone.webp replaces the
+       radial gradient this game used to draw as its own ground. The motor puts it in
+       as a CSS layer under the canvas (Art.dressFrame), and render() below asks
+       Art.scene() before painting a ground of its own. */
+    sceneArt: true,
     intro: { logo: "logo", demo: "tap", caption: "" },
     hud: { score: true, timer: true },
     /* The bed is the metronome: the track runs at a dead-steady 128 BPM (a beat
@@ -665,14 +672,21 @@
 
     function render() {
       // Dark backdrop. The radial gradient is built once and reused (cheap).
-      if (!bgGrad) {
-        bgGrad = ctx.createRadialGradient(view.w / 2, C.y, 60, view.w / 2, C.y, 730);
-        bgGrad.addColorStop(0, "#151439");
-        bgGrad.addColorStop(0.6, "#0a0a1c");
-        bgGrad.addColorStop(1, "#05050e");
+      /* No ground of our own when the painted scene is behind the canvas
+         (CONFIG.sceneArt): the frame pipeline has already wiped the canvas, so
+         the arena is drawn straight onto the picture. The gradient is what this
+         game painted before, and it is still the fallback for a build with no
+         artwork on disk. */
+      if (!Art.scene()) {
+        if (!bgGrad) {
+          bgGrad = ctx.createRadialGradient(view.w / 2, C.y, 60, view.w / 2, C.y, 730);
+          bgGrad.addColorStop(0, "#151439");
+          bgGrad.addColorStop(0.6, "#0a0a1c");
+          bgGrad.addColorStop(1, "#05050e");
+        }
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, view.w, view.h);
       }
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, view.w, view.h);
 
       var bc = ballColor();
       var now = Beat.beats(), beat = Beat.pulse(1);
@@ -784,8 +798,6 @@
         rows: [
           { label: "PERFECT",   value: stats.perfect, grade: "gold" },
           { label: "GOOD",      value: stats.good,    grade: "good" },
-          { label: "OK",        value: stats.ok },
-          { label: "CLOSE",     value: stats.close,   grade: "warn" },
           { label: "MISS",      value: stats.miss,    grade: "bad" },
           { label: "MAX COMBO", value: bestCombo,     grade: "accent" }
         ],

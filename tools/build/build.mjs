@@ -265,6 +265,73 @@ async function gameFont(manifest, mode) {
 }
 
 /*
+  THE GAME'S PAINTED ARTWORK — CONFIG.art.
+
+  `assets/art/` holds the shipping cut of the artwork: WebP, sized for the
+  720x1280 design space, written by `tools/lab/encode-art.mjs` out of the
+  masters in `assets/image/` (which are 2 MB PNGs and ship nowhere). The build
+  reads what is there and embeds it; it never encodes, so it stays fast.
+
+  A FILE NAME IS THE WHOLE DECLARATION. `assets/art/<slug>-<role>.webp` becomes
+  `CONFIG.art.<camelRole>`, so adding a picture to a game is adding a file and
+  nothing else — no manifest key, no ASSETS edit, no list to keep in sync
+  thirteen times. The roles the motor knows are documented in encode-art.mjs;
+  anything else rides along for the game itself to use, which is how slipdeck's
+  three court-card illustrations arrive without a special case.
+
+  It is CONFIG rather than ASSETS for one concrete reason: the split site build
+  externalizes data URIs out of the config region into hashed files
+  (see externalizeAssets), so the same source gets base64 in a playable and a
+  cacheable .webp on the site, with nothing target-aware in the art itself.
+
+  `background-desk` is the one exception, and it is skipped outside the web
+  target: it dresses the empty bands around the frame on a desktop window,
+  which only exist on the web (packages/frame-web/frame.css). A playable runs
+  in a fixed ad iframe and would carry 30 KB it can never show — the same
+  reason a playable ships no font.
+*/
+const ART_DIR = 'assets/art';
+const WEB_ONLY_ART = ['background-desk'];
+
+function camel(role) {
+  return role.replace(/-([a-z])/g, (m, c) => c.toUpperCase());
+}
+
+async function gameArt(slug, forWeb) {
+  const dir = path.join(ROOT, ART_DIR);
+  if (!slug || !existsSync(dir)) return '';
+
+  const prefix = slug + '-';
+  const roles = readdirSync(dir)
+    .filter((f) => f.startsWith(prefix) && f.endsWith('.webp'))
+    .map((f) => f.slice(prefix.length, -'.webp'.length))
+    .filter((role) => forWeb || !WEB_ONLY_ART.includes(role))
+    .sort();
+  if (!roles.length) return '';
+
+  const entries = [];
+  for (const role of roles) {
+    const buf = await readBin(path.join(ART_DIR, prefix + role + '.webp'));
+    entries.push(`    ${camel(role)}: "data:image/webp;base64,${buf.toString('base64')}"`);
+  }
+
+  return `
+  /* ---- the game's painted artwork, from assets/art/${prefix}*.webp.
+     Injected by tools/build/build.mjs; re-encode it with
+     tools/lab/encode-art.mjs. The shell reads background-phone, title and the
+     three character faces; packages/platform/web.js reads background-desk. ---- */
+  CONFIG.art = (function (into, from) {
+    into = into || {};
+    for (var k in from) if (from.hasOwnProperty(k)) into[k] = from[k];
+    return into;
+  })(CONFIG.art, {
+${entries.join(',\n')}
+  });
+
+`;
+}
+
+/*
   The manifest's `web` block, handed to the page as CONFIG.web. It is what
   packages/webshell reads for its wording (`copy`, one flat set or one per
   language) and its default language (`lang`) — so a game is translated in the
@@ -489,7 +556,15 @@ async function main() {
     if (DIST_TARGET && unit.template) continue;      // the template ships nowhere
 
     const src = await sourcesOf(unit);
-    const webCfg = target === 'web' ? webConfigJs(manifest) : '';
+
+    /* Both of these are appended to the game's own CONFIG/ASSETS half, so they
+       are read by the engine on the same pass as the rest of it, and the split
+       build externalizes their assets along with the game's own. The artwork
+       goes to every target (minus the desk background, which is web-only); the
+       manifest's web block only to the web. The template is a build unit with
+       no slug, so it gets neither. */
+    const artCfg = await gameArt(unit.template ? null : unit.name, target === 'web');
+    const webCfg = artCfg + (target === 'web' ? webConfigJs(manifest) : '');
 
     /* The typeface is a web-target default, so it goes in front of the SKIN
        rather than into the shared stylesheet: one family per game, and the

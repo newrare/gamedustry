@@ -55,6 +55,29 @@
   }
   #game { display:block; width:720px; height:1280px; touch-action:none; }
 
+  /* The painted scene behind the ROUND — only for a game that sets
+     `CONFIG.sceneArt` (see packages/shell/shell.js, Art.dressFrame). It is a
+     CSS layer rather than a per-frame drawImage: a full-screen blit of a
+     backdrop that never changes is ~2.7 Mpixel a frame on a 3x phone, and here
+     the compositor holds it for nothing.
+
+     z-index:-1 keeps it behind the canvas without touching the canvas's own
+     stacking — #frame carries a transform, so it is already a stacking context
+     and a negative child cannot escape it.
+
+     The scrim is a token because contrast is the whole risk of this feature:
+     the world is drawn on the canvas above, and a bright painting can swallow
+     it. A SKIN that needs the picture pushed further back raises
+     `--scene-scrim` and changes nothing else. */
+  :root { --scene-scrim: rgba(4,5,14,.34); }
+  .frame-art {
+    position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background-position:center; background-size:cover; background-repeat:no-repeat;
+  }
+  .frame-art::after {
+    content:""; position:absolute; inset:0; background:var(--scene-scrim);
+  }
+
   /* =========================================================================
      HUD — top band. Sits below the notch thanks to --inset-top, and gets a
      scrim so it stays readable over a busy game world.
@@ -681,6 +704,39 @@
   }
   .screen.hidden { opacity:0; pointer-events:none; }
 
+  /* ---- The painted screens ------------------------------------------------
+     `assets/art/<slug>-background-phone.webp`, inserted as the first child of
+     the intro and the end screen by the shell's Art module. It is behind the
+     SCREENS only, never behind the round: a gameplay is balanced against the
+     flat ground its SKIN paints.
+
+     The scrim is the layer's own ::after rather than a tint on the screen,
+     because the screen's background paints under its children — a tint there
+     would sit beneath the picture it is meant to calm down. Two stops: dark at
+     the top and bottom where the title, the score and the buttons live, open
+     in the middle where the artwork is worth seeing.
+
+     The depth is z-index:-1, and that is the whole reason this layer needs no
+     rule on any of its siblings. A negative z-index child paints behind its
+     parent's own background but in front of everything the ancestors drew, so
+     the screen's static children — the title, the tagline, the demo stage, the
+     buttons — stay exactly as they are, unpositioned, and still land on top.
+     The alternative, giving every child `position:relative`, was tried and is
+     a trap: written with an id inside `:not()` it out-specifies the webshell's
+     `#web-head { position:absolute }` and collapses the whole web menu into a
+     flex column. `#screen-end` is the one screen that paints a background of
+     its own, and it is turned off below when the art is there. ---- */
+  .screen-art {
+    position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background-position:center; background-size:cover; background-repeat:no-repeat;
+  }
+  .screen-art::after {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,
+      rgba(4,5,14,.82) 0%, rgba(4,5,14,.42) 26%,
+      rgba(4,5,14,.34) 58%, rgba(4,5,14,.88) 100%);
+  }
+
   .spinner { width:76px; height:76px; border-radius:50%;
     border:8px solid rgba(255,255,255,.15); border-top-color:var(--accent);
     animation:spin .9s linear infinite; }
@@ -696,6 +752,26 @@
   @keyframes iconfloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);} }
   #intro-title { font-size:76px; font-weight:900; letter-spacing:1px; line-height:1.05;
     text-shadow:0 0 22px rgba(0,229,255,.7); }
+
+  /* ---- The logotype ------------------------------------------------------
+     `assets/art/<slug>-title.webp` replaces the app icon AND the CSS title.
+     The image is a child of #intro-title, not a sibling, so the webshell's
+     breathing wrapper and every SKIN transform on that node still apply.
+
+     The two rules below out-specify the SKIN by one class (`#intro-title.art`
+     is (1,1,0) against its (1,0,0)), which is what lets them win from inside
+     the motor stylesheet — the SKIN is concatenated after it. Zeroing the font
+     is the point: every SKIN paints the title with a gradient clipped to its
+     glyphs, harmless with no glyphs left, but the 76-92px line box it sits in
+     would still push the image around. ---- */
+  #intro-title.art { font-size:0; line-height:0; text-shadow:none; }
+  .art-title {
+    display:block; width:100%; max-width:600px; max-height:240px;
+    margin:0 auto; object-fit:contain;
+    filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    animation:titlefloat 4s ease-in-out infinite;
+  }
+  @keyframes titlefloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
   /* ONE sentence, and nothing else: the stage below already shows the rest.
      Wrap the two or three words that carry the mechanic in <b class="w-…">
      inside CONFIG.tagline and they burn in the accent colour — a SKIN retints
@@ -787,9 +863,52 @@
 
   /* ---- End screen: staggered cinematic reveal ---- */
   #screen-end { justify-content:center; background:rgba(6,7,18,.86); }
+  /* A painted end screen carries its scrim in .screen-art::after, so the flat
+     tint would only be a second one — and it paints under the picture anyway. */
+  #screen-end.has-art { background:transparent; }
   /* Confetti sits above the dark tint but below every piece of end-screen text. */
   #confetti { position:absolute; inset:0; width:720px; height:1280px; pointer-events:none; z-index:0; }
-  #screen-end > *:not(#confetti) { position:relative; z-index:1; }
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char) { position:relative; z-index:1; }
+
+  /* ---- The character ------------------------------------------------------
+     One of `assets/art/<slug>-character-{sad,neutral,happy}.webp`, picked by
+     the star count the round scored (shell.js, Art.faceFor).
+
+     It hangs off the right-hand edge, below the replay link, cropped by the
+     bottom of the frame — a figure the edge cuts stands in the scene where one
+     floating clear of it is a sticker. Only the BOTTOM edge may crop it: it
+     takes the feet, where the top edge would take the head.
+
+     WHICH BAND, AND HOW BIG, IS MEASURED EVERY ROUND by Art.placeCharacter and
+     is NOT a constant. The column here is centred and packed — title, score
+     label, score, stars, ONE ROW PER STAT, the install button, the replay link
+     — and the thirteen games run from three stat rows to ten. Three rows leave
+     ~200px clear at each end; six leave ~84px; ten overflow the frame. A fixed
+     corner is buried by the stat plates on nine of the thirteen, so the size
+     follows the room and the face is dropped altogether below CHAR_MIN, where
+     it would be a sliver rather than a character.
+
+     ABSOLUTE, NOT A FLEX ITEM. In the flow it would push the whole column by
+     its own height. Out of the flow nothing moves — and document order puts
+     #eo-char before everything the reveal writes, at one shared z-index, so
+     the title, the score, the rows and both buttons paint over it. Nothing can
+     be hidden by it; the worst case is a face partly covered.
+
+     The masters are portrait for some games and landscape for others
+     (1024x1536 against 1374x1145), so the box is fixed and the fit is
+     `contain`: the anchor never moves with the aspect ratio. ---- */
+  #eo-char {
+    position:absolute; right:-24px; bottom:-44px; z-index:1;
+    object-fit:contain; object-position:bottom right;
+    pointer-events:none;
+    filter:drop-shadow(0 14px 30px rgba(0,0,0,.6));
+    opacity:0; transform:translateY(40px) scale(.94);
+    transition:opacity .5s ease, transform .55s cubic-bezier(.2,1.5,.4,1);
+  }
+  /* The box and the edge it hangs off are written by Art.placeCharacter every
+     round — see shell.js. They are not defaults to tune here: they are the
+     answer to how much of this screen a given game's stat rows left free. */
+  #eo-char.show { opacity:1; transform:translateY(0) scale(1); }
 
   .eo-title {
     font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);

@@ -1624,11 +1624,6 @@
         { label: "FINAL POSITION", value: ordinal(rank), grade: rank <= 3 ? "gold" : "accent" },
         { label: "PLACES TAKEN", value: passed, grade: passed >= 10 ? "good" : "" },
         { label: "DISTANCE (M)", value: Math.floor(dist) },
-        { label: "SHIELD LEFT", value: Math.max(0, Math.ceil(shield)) + "%",
-          grade: shield >= 50 ? "good" : "" },
-        { label: "HITS TAKEN", value: hits },
-        { label: "BOOSTERS", value: boosts },
-        { label: "CHARGE CELLS", value: cells },
         { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }
       ];
     }

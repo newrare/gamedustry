@@ -28,6 +28,39 @@
       CONFIG.layout.framePad = framePad();     // ES3 WebView: fixed at load
     }
 
+    /* Delta 4 — the landscape cut of the game's own painting, for the bands
+       around the frame that only a desktop window has.
+       `assets/art/<slug>-background-desk.webp` is injected as
+       `CONFIG.art.backgroundDesk` by the builder, and ONLY for this target: a
+       playable runs in a fixed portrait iframe and has no band to fill, so it
+       would carry 30 KB it can never show (the same reason it ships no font).
+
+       It travels as a custom property because the layer that paints it is a
+       stylesheet — packages/frame-web/frame.css, which keeps the threshold and
+       the whole dressing in one place. The class travels with it because a
+       picture needs a scrim and an absent picture must not get one: a bare
+       `var(--art-bg-desk, none)` would leave the scrim darkening the window of
+       a game that ships no artwork. Two facts, one contract, and frame.css
+       falls back to the gradient it has always drawn. */
+    (function () {
+      var desk = CONFIG.art && CONFIG.art.backgroundDesk;
+      if (!desk) return;
+      /* The URL is resolved against the document before it goes in, and that
+         is not decoration. In the split site build CONFIG.art holds a path
+         relative to the GAME's folder ("assets/backgroundDesk.<hash>.webp"),
+         while the var() that substitutes it lives in the motor stylesheet one
+         directory up — and a relative url() inside a custom property is
+         resolved against the sheet that uses it, so the browser looked for the
+         picture next to the shared engine.css and found nothing. Absolute, the
+         question does not arise. A data URI (every other build) comes back
+         from new URL() untouched. */
+      var url = desk;
+      try { url = new URL(desk, document.baseURI).href; } catch (e) {}
+      var root = document.documentElement;
+      root.style.setProperty("--art-bg-desk", "url(" + url + ")");
+      root.className += (root.className ? " " : "") + "has-art-desk";
+    })();
+
     // No ad container to wait for: the page is the container.
     function whenReady(cb) { cb(); }
 

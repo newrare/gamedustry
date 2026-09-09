@@ -88,6 +88,8 @@ playables/
 ├── prototype/                ← one raw HTML page per idea: no motor, no build
 ├── lab/                      ← standalone tools; a new one starts from _template
 ├── assets/                   ← source art & audio (not shipped; embed instead)
+│   ├── image/                ← the painted masters, 2 MB PNGs, shipped nowhere
+│   ├── art/                  ← their WebP shipping cut, embedded as CONFIG.art
 │   ├── icon/                 ← one app icon per game, embedded on its intro
 │   │   ├── thumb/            ← 320 px cuts, the only assets the gallery loads
 │   │   └── auto/             ← 320 px icons drawn in CSS by lab/icon-card.html
@@ -108,6 +110,7 @@ playables/
 │   │   ├── serve-site.mjs    ← the site, locally, rebuilt on save
 │   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
+│   │   ├── encode-art.mjs    ← assets/image/ masters → assets/art/ (WebP)
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/screen/
 │   │   ├── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/icon/auto/
 │   │   ├── shoot-cover.mjs   ← shoot lab/cover-card.html into assets/cover/
@@ -187,9 +190,17 @@ open games/chainring/index.html
 python3 -m http.server 8000                  # then visit localhost:8000/games/…
 ```
 
+**Re-encode the painted artwork** — after adding or changing anything in
+`assets/image/`. It writes the WebP the build embeds; see
+[docs/ASSETS.md](docs/ASSETS.md#painted-artwork-comes-from-assetsimage-re-encoded-into-assetsart):
+
+```bash
+node tools/lab/encode-art.mjs                # every game, skipping what is fresh
+```
+
 **Build the public site** — runs the web build, then assembles `site/` and every
-game into `dist/site/`, copying each game's icon and screenshots out of
-`assets/`:
+game into `dist/site/`, copying each game's icon, screenshots and character out
+of `assets/`:
 
 ```bash
 node tools/build/build-site.mjs

@@ -89,6 +89,29 @@
   }
   #game { display:block; width:720px; height:1280px; touch-action:none; }
 
+  /* The painted scene behind the ROUND — only for a game that sets
+     `CONFIG.sceneArt` (see packages/shell/shell.js, Art.dressFrame). It is a
+     CSS layer rather than a per-frame drawImage: a full-screen blit of a
+     backdrop that never changes is ~2.7 Mpixel a frame on a 3x phone, and here
+     the compositor holds it for nothing.
+
+     z-index:-1 keeps it behind the canvas without touching the canvas's own
+     stacking — #frame carries a transform, so it is already a stacking context
+     and a negative child cannot escape it.
+
+     The scrim is a token because contrast is the whole risk of this feature:
+     the world is drawn on the canvas above, and a bright painting can swallow
+     it. A SKIN that needs the picture pushed further back raises
+     `--scene-scrim` and changes nothing else. */
+  :root { --scene-scrim: rgba(4,5,14,.34); }
+  .frame-art {
+    position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background-position:center; background-size:cover; background-repeat:no-repeat;
+  }
+  .frame-art::after {
+    content:""; position:absolute; inset:0; background:var(--scene-scrim);
+  }
+
   /* =========================================================================
      HUD — top band. Sits below the notch thanks to --inset-top, and gets a
      scrim so it stays readable over a busy game world.
@@ -715,6 +738,39 @@
   }
   .screen.hidden { opacity:0; pointer-events:none; }
 
+  /* ---- The painted screens ------------------------------------------------
+     `assets/art/<slug>-background-phone.webp`, inserted as the first child of
+     the intro and the end screen by the shell's Art module. It is behind the
+     SCREENS only, never behind the round: a gameplay is balanced against the
+     flat ground its SKIN paints.
+
+     The scrim is the layer's own ::after rather than a tint on the screen,
+     because the screen's background paints under its children — a tint there
+     would sit beneath the picture it is meant to calm down. Two stops: dark at
+     the top and bottom where the title, the score and the buttons live, open
+     in the middle where the artwork is worth seeing.
+
+     The depth is z-index:-1, and that is the whole reason this layer needs no
+     rule on any of its siblings. A negative z-index child paints behind its
+     parent's own background but in front of everything the ancestors drew, so
+     the screen's static children — the title, the tagline, the demo stage, the
+     buttons — stay exactly as they are, unpositioned, and still land on top.
+     The alternative, giving every child `position:relative`, was tried and is
+     a trap: written with an id inside `:not()` it out-specifies the webshell's
+     `#web-head { position:absolute }` and collapses the whole web menu into a
+     flex column. `#screen-end` is the one screen that paints a background of
+     its own, and it is turned off below when the art is there. ---- */
+  .screen-art {
+    position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background-position:center; background-size:cover; background-repeat:no-repeat;
+  }
+  .screen-art::after {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,
+      rgba(4,5,14,.82) 0%, rgba(4,5,14,.42) 26%,
+      rgba(4,5,14,.34) 58%, rgba(4,5,14,.88) 100%);
+  }
+
   .spinner { width:76px; height:76px; border-radius:50%;
     border:8px solid rgba(255,255,255,.15); border-top-color:var(--accent);
     animation:spin .9s linear infinite; }
@@ -730,6 +786,26 @@
   @keyframes iconfloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-14px);} }
   #intro-title { font-size:76px; font-weight:900; letter-spacing:1px; line-height:1.05;
     text-shadow:0 0 22px rgba(0,229,255,.7); }
+
+  /* ---- The logotype ------------------------------------------------------
+     `assets/art/<slug>-title.webp` replaces the app icon AND the CSS title.
+     The image is a child of #intro-title, not a sibling, so the webshell's
+     breathing wrapper and every SKIN transform on that node still apply.
+
+     The two rules below out-specify the SKIN by one class (`#intro-title.art`
+     is (1,1,0) against its (1,0,0)), which is what lets them win from inside
+     the motor stylesheet — the SKIN is concatenated after it. Zeroing the font
+     is the point: every SKIN paints the title with a gradient clipped to its
+     glyphs, harmless with no glyphs left, but the 76-92px line box it sits in
+     would still push the image around. ---- */
+  #intro-title.art { font-size:0; line-height:0; text-shadow:none; }
+  .art-title {
+    display:block; width:100%; max-width:600px; max-height:240px;
+    margin:0 auto; object-fit:contain;
+    filter:drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    animation:titlefloat 4s ease-in-out infinite;
+  }
+  @keyframes titlefloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
   /* ONE sentence, and nothing else: the stage below already shows the rest.
      Wrap the two or three words that carry the mechanic in <b class="w-…">
      inside CONFIG.tagline and they burn in the accent colour — a SKIN retints
@@ -821,9 +897,52 @@
 
   /* ---- End screen: staggered cinematic reveal ---- */
   #screen-end { justify-content:center; background:rgba(6,7,18,.86); }
+  /* A painted end screen carries its scrim in .screen-art::after, so the flat
+     tint would only be a second one — and it paints under the picture anyway. */
+  #screen-end.has-art { background:transparent; }
   /* Confetti sits above the dark tint but below every piece of end-screen text. */
   #confetti { position:absolute; inset:0; width:720px; height:1280px; pointer-events:none; z-index:0; }
-  #screen-end > *:not(#confetti) { position:relative; z-index:1; }
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char) { position:relative; z-index:1; }
+
+  /* ---- The character ------------------------------------------------------
+     One of `assets/art/<slug>-character-{sad,neutral,happy}.webp`, picked by
+     the star count the round scored (shell.js, Art.faceFor).
+
+     It hangs off the right-hand edge, below the replay link, cropped by the
+     bottom of the frame — a figure the edge cuts stands in the scene where one
+     floating clear of it is a sticker. Only the BOTTOM edge may crop it: it
+     takes the feet, where the top edge would take the head.
+
+     WHICH BAND, AND HOW BIG, IS MEASURED EVERY ROUND by Art.placeCharacter and
+     is NOT a constant. The column here is centred and packed — title, score
+     label, score, stars, ONE ROW PER STAT, the install button, the replay link
+     — and the thirteen games run from three stat rows to ten. Three rows leave
+     ~200px clear at each end; six leave ~84px; ten overflow the frame. A fixed
+     corner is buried by the stat plates on nine of the thirteen, so the size
+     follows the room and the face is dropped altogether below CHAR_MIN, where
+     it would be a sliver rather than a character.
+
+     ABSOLUTE, NOT A FLEX ITEM. In the flow it would push the whole column by
+     its own height. Out of the flow nothing moves — and document order puts
+     #eo-char before everything the reveal writes, at one shared z-index, so
+     the title, the score, the rows and both buttons paint over it. Nothing can
+     be hidden by it; the worst case is a face partly covered.
+
+     The masters are portrait for some games and landscape for others
+     (1024x1536 against 1374x1145), so the box is fixed and the fit is
+     `contain`: the anchor never moves with the aspect ratio. ---- */
+  #eo-char {
+    position:absolute; right:-24px; bottom:-44px; z-index:1;
+    object-fit:contain; object-position:bottom right;
+    pointer-events:none;
+    filter:drop-shadow(0 14px 30px rgba(0,0,0,.6));
+    opacity:0; transform:translateY(40px) scale(.94);
+    transition:opacity .5s ease, transform .55s cubic-bezier(.2,1.5,.4,1);
+  }
+  /* The box and the edge it hangs off are written by Art.placeCharacter every
+     round — see shell.js. They are not defaults to tune here: they are the
+     answer to how much of this screen a given game's stat rows left free. */
+  #eo-char.show { opacity:1; transform:translateY(0) scale(1); }
 
   .eo-title {
     font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);
@@ -1655,15 +1774,43 @@
   };
 
   // --- Image preloader ----------------------------------------------------
+  /* Two registries load here, and only one of them is published.
+
+     ASSETS.images is the game's own — sprites, logos, the Lucide icons — and
+     lands in `Images[key]` for the game to draw.
+
+     CONFIG.art is the painted artwork the builder injects out of assets/art/
+     (see tools/lab/encode-art.mjs). Nothing draws it on the canvas: the shell
+     hands it to an <img> and to a CSS background, so the browser is the one
+     that needs it, not the game. It is decoded here all the same, because the
+     loading screen is the only moment where waiting for it is free — the
+     logotype IS the intro's headline, and a 35 KB WebP that decodes after the
+     screen is up shows as a blank where the title goes.
+
+     It lands in `ArtImages`, not in `Images`: those keys belong to the game,
+     and a picture called `title` must never collide with a sprite called
+     `title`. A game that wants to DRAW one of its own art files on the canvas
+     reads it from there — `games/slipdeck` paints `ArtImages.cardKing` into the
+     middle of a court card. */
   var Images = {};
+  var ArtImages = {};
   function preloadImages(done) {
-    var keys = Object.keys(ASSETS.images), left = keys.length;
+    var keys = Object.keys(ASSETS.images);
+    var art = CONFIG.art ? Object.keys(CONFIG.art) : [];
+    var left = keys.length + art.length;
     if (left === 0) return done();
+    function tick() { if (--left === 0) done(); }
     keys.forEach(function (k) {
       var img = new Image();
-      img.onload = img.onerror = function () { if (--left === 0) done(); };
+      img.onload = img.onerror = tick;
       img.src = ASSETS.images[k];
       Images[k] = img;
+    });
+    art.forEach(function (k) {
+      var img = new Image();
+      img.onload = img.onerror = tick;
+      img.src = CONFIG.art[k];
+      ArtImages[k] = img;
     });
   }
 
@@ -2451,12 +2598,275 @@
     };
   })();
 
+  /* --- Art: the game's painted screens ------------------------------------
+
+     `CONFIG.art` is injected by tools/build/build.mjs out of `assets/art/`,
+     one key per file, and a game declares nothing to get it — the file name is
+     the declaration (see tools/lab/encode-art.mjs). Three roles reach the
+     shell:
+
+       backgroundPhone   the painting behind the intro and the end screen, and
+                         — only for a game that asks with `CONFIG.sceneArt` —
+                         behind the round as well. It is off by default because
+                         most of the thirteen gameplays are balanced against the
+                         flat ground their SKIN paints, and a picture under the
+                         world is a contrast regression in those. A game whose
+                         world reads over a scene opts in; see `dressFrame`.
+       title             the logotype, which replaces BOTH the app icon and the
+                         CSS #intro-title. The image goes inside the title node
+                         rather than beside it, so the webshell — which wraps
+                         that node to make the title breathe — needs no branch.
+       character*        the three faces of the end screen.
+
+     Everything here is a no-op when a game ships no art, which is what lets
+     the template and any future game boot with an empty `CONFIG.art`. */
+  var Art = (function () {
+    var art = CONFIG.art || {};
+
+    /* The painted layer, as the first child of a screen: `.screen-art` paints
+       the picture and its own scrim (motor.css), and the marker class on the
+       screen is what tells the stylesheet to drop the flat tint it used to
+       need. Inserting it from here rather than from page.html is deliberate:
+       the markup is one file per game, thirteen copies plus the template, and
+       a layer nothing configures does not belong in any of them. */
+    function dress(screenId) {
+      if (!art.backgroundPhone) return;
+      var screen = $(screenId);
+      if (!screen || screen.querySelector(".screen-art")) return;
+      var layer = document.createElement("div");
+      layer.className = "screen-art";
+      layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+      screen.insertBefore(layer, screen.firstChild);
+      screen.classList.add("has-art");
+    }
+
+    /* The same painting behind the ROUND, for a game that sets
+       `CONFIG.sceneArt`. `games/chainring`, `games/slipdeck` and
+       `games/marshmelt` are the three: each of them painted its own decorative
+       ground — a radial gradient, a felt fill, a pre-rendered cavern — and the
+       scene replaces exactly that.
+
+       IT IS A CSS LAYER BEHIND THE CANVAS, NOT A drawImage. Blitting a full
+       720x1280 picture every frame is ~2.7 Mpixel on a 3x phone, for a
+       backdrop that never changes; as a layer the compositor holds it and the
+       per-frame cost is zero. The price is that it does not ride `Fx.shake`,
+       which transforms the canvas context — a still backdrop under a shaking
+       world is the normal way this looks, and `Fx.flash` still covers it
+       because the flash is painted on the canvas above.
+
+       A game that opts in must stop painting its own opaque ground, or there
+       is nothing to see through: that is what `Art.scene()` is for. It also
+       means the SKIN's `html, body` gradient is the fallback for free — with no
+       artwork on disk, `scene()` is false and the game paints as it always did. */
+    function dressFrame() {
+      if (!CONFIG.sceneArt || !art.backgroundPhone) return false;
+      var frame = $("frame");
+      if (!frame) return false;
+      if (!frame.querySelector(".frame-art")) {
+        var layer = document.createElement("div");
+        layer.className = "frame-art";
+        layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+        frame.insertBefore(layer, frame.firstChild);
+      }
+      return true;
+    }
+
+    /* The logotype. `alt` carries the title so the screen still reads to a
+       screen reader and to a browser with images off, and the `art` class
+       neutralizes the SKIN's text treatment: every one of them paints the
+       title with a gradient clipped to its glyphs, which has no glyphs to
+       clip once the node holds a picture, but the font metrics would still
+       leave an empty line box behind the image. */
+    function titleImage() {
+      if (!art.title) return false;
+      var node = $("intro-title");
+      if (!node) return false;
+      var img = document.createElement("img");
+      img.className = "art-title";
+      img.src = art.title;
+      img.alt = CONFIG.title;
+      node.textContent = "";
+      node.appendChild(img);
+      node.classList.add("art");
+      return true;
+    }
+
+    /* Which face the end screen wears. The star count is the one verdict every
+       game already hands the motor on `endRound`, so this works for all
+       thirteen without a line of game code: a round worth 0 or 1 star is a
+       loss, 2 is a pass, 3 is the run the player wanted. A game that passes
+       `stars: null` has no verdict to read, and gets the neutral face. */
+    function faceFor(stars) {
+      if (stars == null) return art.characterNeutral;
+      if (stars >= 3) return art.characterHappy;
+      if (stars >= 2) return art.characterNeutral;
+      return art.characterSad;
+    }
+
+    /* The character node lives in the end screen from boot, empty and hidden,
+       so a round ending only swaps a `src` — decoding a 40 KB WebP in the
+       middle of the reveal would drop the frame the title slams in on. */
+    function buildCharacter() {
+      if (!art.characterNeutral && !art.characterSad && !art.characterHappy) return;
+      var screen = $("screen-end");
+      if (!screen || $("eo-char")) return;
+      var img = document.createElement("img");
+      img.id = "eo-char";
+      img.alt = "";
+      /* Right after the confetti canvas: the end screen paints its children in
+         document order at the same z-index, so everything the reveal writes —
+         title, score, stars, rows, buttons — lands on top of the character
+         instead of under it. */
+      screen.insertBefore(img, screen.firstChild.nextSibling);
+    }
+
+    /* WHERE THE CHARACTER FITS IS MEASURED, EVERY ROUND.
+
+       The end screen's column is title, score label, score, stars, ONE ROW PER
+       STAT, the install button and the replay link — and the games run from
+       three stat rows to ten. That is not a small spread: measured at 720x1280,
+       three rows leave ~200px clear above the title and ~200px below the replay
+       link, six rows leave ~84px at each end, and ten rows overflow the frame
+       outright (the title starts at y=-70). A fixed corner therefore works for
+       the three sparse games and is completely buried by the stat plates on the
+       dense ones — which is exactly what shipping it that way looked like.
+
+       So the band is measured and the character is fitted into it: the larger of
+       the two gaps, scaled to what is actually free, and dropped below a floor
+       where a face would be a sliver rather than a character. `offsetTop` is
+       read rather than getBoundingClientRect() because the frame carries a
+       scale transform — offsets are already in design px, rects are not.
+
+       It is allowed to bleed BLEED px off its edge: a figure the frame crops
+       stands in the scene, one floating clear of it is a sticker. */
+    var CHAR_MAX = 330, CHAR_MIN = 165, CHAR_BLEED = 44;
+
+    function placeCharacter(img) {
+      var title = $("eo-title"), tail = $("btn-replay");
+      if (!title || !tail) return CHAR_MAX;
+
+      var above = title.offsetTop;
+      var below = CONFIG.designHeight - (tail.offsetTop + tail.offsetHeight);
+
+      /* THE BOTTOM BAND WINS UNLESS IT CANNOT HOLD A FACE, and that is not a
+         coin toss even when the two bands measure the same — which at four stat
+         rows they very nearly do (~161px each). Only the bottom one can be
+         cropped: a figure hanging off the bottom edge loses its FEET, which is
+         what standing in a scene looks like, while one hanging off the top
+         loses its HEAD. The first cut is free, the second is the whole
+         character.
+
+         So the bottom band gets the bleed, and the top band — the fallback for
+         a screen whose stats sit low — takes no bleed at all and rests the
+         figure's feet on the title instead. */
+      var atBottom = below + CHAR_BLEED >= CHAR_MIN;
+      var room = atBottom ? below + CHAR_BLEED : above;
+      var size = Math.min(CHAR_MAX, room);
+
+      img.style.top = atBottom ? "" : "0";
+      img.style.bottom = atBottom ? "-" + CHAR_BLEED + "px" : "";
+      img.style.height = size + "px";
+      img.style.width = Math.round(size * 0.9) + "px";
+      img.style.objectPosition = "bottom right";
+      return size;
+    }
+
+    /* PLACING IT ONCE IS NOT ENOUGH, because the column is still settling when
+       the character arrives. The web front end re-measures the end title and
+       shrinks it until it fits the game's own typeface — asynchronously, as the
+       face decodes, for up to six seconds (packages/webshell/menu.js,
+       fitEndScreen). A title that loses 40px of height moves the whole column,
+       and a character placed against the old one ends up in the wrong band: it
+       is what put spinshock's face at the top of the screen with the bottom
+       band sitting empty.
+
+       So the title node is watched and the face re-placed whenever it resizes.
+       ResizeObserver is the right trigger and the cheap one — the callback is
+       two offset reads — and where it is missing (an old WebView) two late
+       re-places cover the same window. */
+    var charObs = null, charTimers = [];
+
+    function replace(img) {
+      if (!img || !$("eo-char")) return;
+      var fits = placeCharacter(img) >= CHAR_MIN;
+      img.hidden = !fits;
+      if (fits) img.classList.add("show");
+    }
+
+    function watchLayout(img) {
+      var title = $("eo-title");
+      charTimers.forEach(clearTimeout); charTimers = [];
+      if (window.ResizeObserver && title) {
+        if (!charObs) charObs = new window.ResizeObserver(function () { replace(img); });
+        else charObs.disconnect();
+        charObs.observe(title);
+        return;
+      }
+      [900, 2400, 6200].forEach(function (ms) {
+        charTimers.push(setTimeout(function () { replace(img); }, ms));
+      });
+    }
+
+    function showCharacter(stars) {
+      var img = $("eo-char");
+      if (!img) return;
+      var src = faceFor(stars);
+      if (!src) { img.classList.remove("show"); return; }
+      if (img.getAttribute("src") !== src) img.src = src;
+      img.classList.remove("show");
+
+      /* A full end screen has nowhere to put a face, and a 60px sliver behind
+         the stat plates reads as a bug. Say nothing instead. */
+      var fits = placeCharacter(img) >= CHAR_MIN;
+      img.hidden = !fits;
+      watchLayout(img);
+      if (!fits) return;
+
+      /* One frame later, so the class change is a transition and not the
+         element's first paint — a replay has to see it arrive again. */
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { img.classList.add("show"); });
+      });
+    }
+
+    function hideCharacter() {
+      var img = $("eo-char");
+      if (charObs) charObs.disconnect();
+      charTimers.forEach(clearTimeout); charTimers = [];
+      if (img) img.classList.remove("show");
+    }
+
+    var onScene = false;
+
+    return {
+      has: function (key) { return !!art[key]; },
+      src: function (key) { return art[key] || null; },
+      /* True when the painted scene is behind the world, i.e. the game must
+         NOT paint its own opaque ground this frame. Read it in render(). */
+      scene: function () { return onScene; },
+      dress: dress, titleImage: titleImage, buildCharacter: buildCharacter,
+      showCharacter: showCharacter, hideCharacter: hideCharacter,
+      dressFrame: function () { onScene = dressFrame(); return onScene; }
+    };
+  })();
+
   // --- Intro: logo, copy and the animated how-to-play demo ----------------
   function buildIntro() {
-    var logo = CONFIG.intro.logo && ASSETS.images[CONFIG.intro.logo];
+    /* The painted screens come first: the title image below replaces the icon,
+       so the icon must not be shown and then hidden. */
+    Art.dress("screen-intro");
+    Art.dress("screen-end");
+    Art.dressFrame();
+    Art.buildCharacter();
+    var hasArtTitle = Art.titleImage();
+
+    /* A game with a logotype hides the app icon: the picture already carries
+       the name and the mark, and the two stacked is the crowded intro the
+       artwork was drawn to replace. */
+    var logo = !hasArtTitle && CONFIG.intro.logo && ASSETS.images[CONFIG.intro.logo];
     var img = $("app-icon");
     if (logo) { img.src = logo; img.alt = CONFIG.title; } else { img.style.display = "none"; }
-    $("intro-title").textContent = CONFIG.title;
+    if (!hasArtTitle) $("intro-title").textContent = CONFIG.title;
     $("intro-tagline").innerHTML = CONFIG.tagline;
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
@@ -2522,8 +2932,13 @@
       });
       box.innerHTML = html;
 
-      // 1) Title slams in.
-      T(function () { title.classList.add("show"); }, T_TITLE);
+      // 1) Title slams in, and the character rises with it — one beat, so the
+      //    screen reads as a reaction to the round rather than as a slideshow.
+      Art.hideCharacter();
+      T(function () {
+        title.classList.add("show");
+        Art.showCharacter(stars);
+      }, T_TITLE);
 
       // 2) Final score counts up, greeted by confetti.
       T(function () {
@@ -2991,6 +3406,14 @@
     HUD.tick(dt);
   }
   function frameRender() {
+    /* A game with CONFIG.sceneArt paints no ground of its own — the scene is a
+       CSS layer under the canvas — so the canvas has to be wiped for it, and it
+       has to happen HERE, before Fx.begin(). Inside the shake transform a
+       full-canvas clearRect covers a SHIFTED rectangle, which leaves a few
+       pixels of the previous frame smeared along two edges for as long as the
+       shake lasts. Every other game fills its own opaque ground and needs
+       nothing. */
+    if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
     Fx.begin();      // shake transform
     Game.render();   // the world
     Fx.render();     // particles / rings / floating text above it

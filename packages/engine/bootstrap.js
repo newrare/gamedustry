@@ -11,6 +11,14 @@
     HUD.tick(dt);
   }
   function frameRender() {
+    /* A game with CONFIG.sceneArt paints no ground of its own — the scene is a
+       CSS layer under the canvas — so the canvas has to be wiped for it, and it
+       has to happen HERE, before Fx.begin(). Inside the shake transform a
+       full-canvas clearRect covers a SHIFTED rectangle, which leaves a few
+       pixels of the previous frame smeared along two edges for as long as the
+       shake lasts. Every other game fills its own opaque ground and needs
+       nothing. */
+    if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
     Fx.begin();      // shake transform
     Game.render();   // the world
     Fx.render();     // particles / rings / floating text above it

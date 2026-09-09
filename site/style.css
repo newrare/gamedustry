@@ -333,6 +333,70 @@ svg { width: 1.15em; height: 1.15em; fill: currentColor; flex: none; }
   to { transform: translate3d(4vw, 5vh, 0) scale(1.15); }
 }
 
+/* The cast: two of the games' own characters, filled in by initHeroCast() in
+   script.js. They stand ON the horizon line the grid ends at, in the margins
+   either side of the headline — never behind it, which is why the whole layer
+   is hidden below 1080px, where the text column takes the full width and the
+   only place left for a character would be under the words. */
+.hero-cast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 1080px) {
+  .hero-cast { display: block; }
+}
+
+.hero-face {
+  position: absolute;
+  bottom: 0;
+  width: clamp(150px, 15vw, 250px);
+  height: auto;
+  /* The paintings are dark and the headline is the subject: the cast reads as
+     figures lit by the floor, not as two competing illustrations. */
+  opacity: .82;
+  filter: drop-shadow(0 18px 34px rgba(4, 6, 20, .7));
+  /* They fade up on arrival, then breathe. One animation each, the second
+     offset by initHeroCast so the two are never in step. */
+  animation: hero-face-in .9s ease-out both, hero-float 7s ease-in-out 1s infinite;
+  will-change: transform;
+}
+
+.hero-face-left { left: clamp(8px, 3vw, 64px); }
+.hero-face-right { right: clamp(8px, 3vw, 64px); transform: scaleX(-1); }
+
+@keyframes hero-face-in {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: .82; transform: translateY(0); }
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+/* A mirrored character must stay mirrored through both animations, so the
+   right-hand side gets its own keyframes rather than a transform that the
+   animation would overwrite. */
+.hero-face-right { animation-name: hero-face-in-r, hero-float-r; }
+
+@keyframes hero-face-in-r {
+  from { opacity: 0; transform: scaleX(-1) translateY(28px); }
+  to { opacity: .82; transform: scaleX(-1) translateY(0); }
+}
+
+@keyframes hero-float-r {
+  0%, 100% { transform: scaleX(-1) translateY(0); }
+  50% { transform: scaleX(-1) translateY(-14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-face { animation: hero-face-in .9s ease-out both; }
+  .hero-face-right { animation-name: hero-face-in-r; }
+}
+
 .hero-inner { position: relative; text-align: center; }
 
 .eyebrow {

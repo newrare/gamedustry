@@ -320,11 +320,22 @@ function sourceOf(slug) {
     : path.join(WEB_DIR, slug, "index.html");
 }
 
+/* ONE BUILD PER SLUG, and that is not a style choice: `build.mjs` reads its
+   target with `argv.find(a => a.startsWith("--game="))`, so it honours the
+   FIRST --game= and ignores every other one. Handing it a list used to build
+   the first game and shoot the rest off whatever was left in dist/itch from a
+   previous run — stale documents, silently, with the tool reporting success.
+   Asking for every game still builds in one pass, because that is the run with
+   no --game= at all. */
 function buildWeb(slugs) {
-  var args = ["tools/build/build.mjs", "--target=web", "--dest=itch"];
-  if (slugs.length < 13) args = args.concat(slugs.map(function (s) { return "--game=" + s; }));
-  var r = spawnSync(process.execPath, args, { cwd: ROOT, stdio: "inherit" });
-  if (r.status !== 0) throw new Error("the web build failed");
+  var base = ["tools/build/build.mjs", "--target=web", "--dest=itch"];
+  var runs = slugs.length >= 13
+    ? [base]
+    : slugs.map(function (s) { return base.concat(["--game=" + s]); });
+  for (var i = 0; i < runs.length; i++) {
+    var r = spawnSync(process.execPath, runs[i], { cwd: ROOT, stdio: "inherit" });
+    if (r.status !== 0) throw new Error("the web build failed");
+  }
 }
 
 function prepare(slug, tmpDir) {

@@ -555,15 +555,43 @@
   };
 
   // --- Image preloader ----------------------------------------------------
+  /* Two registries load here, and only one of them is published.
+
+     ASSETS.images is the game's own — sprites, logos, the Lucide icons — and
+     lands in `Images[key]` for the game to draw.
+
+     CONFIG.art is the painted artwork the builder injects out of assets/art/
+     (see tools/lab/encode-art.mjs). Nothing draws it on the canvas: the shell
+     hands it to an <img> and to a CSS background, so the browser is the one
+     that needs it, not the game. It is decoded here all the same, because the
+     loading screen is the only moment where waiting for it is free — the
+     logotype IS the intro's headline, and a 35 KB WebP that decodes after the
+     screen is up shows as a blank where the title goes.
+
+     It lands in `ArtImages`, not in `Images`: those keys belong to the game,
+     and a picture called `title` must never collide with a sprite called
+     `title`. A game that wants to DRAW one of its own art files on the canvas
+     reads it from there — `games/slipdeck` paints `ArtImages.cardKing` into the
+     middle of a court card. */
   var Images = {};
+  var ArtImages = {};
   function preloadImages(done) {
-    var keys = Object.keys(ASSETS.images), left = keys.length;
+    var keys = Object.keys(ASSETS.images);
+    var art = CONFIG.art ? Object.keys(CONFIG.art) : [];
+    var left = keys.length + art.length;
     if (left === 0) return done();
+    function tick() { if (--left === 0) done(); }
     keys.forEach(function (k) {
       var img = new Image();
-      img.onload = img.onerror = function () { if (--left === 0) done(); };
+      img.onload = img.onerror = tick;
       img.src = ASSETS.images[k];
       Images[k] = img;
+    });
+    art.forEach(function (k) {
+      var img = new Image();
+      img.onload = img.onerror = tick;
+      img.src = CONFIG.art[k];
+      ArtImages[k] = img;
     });
   }
 

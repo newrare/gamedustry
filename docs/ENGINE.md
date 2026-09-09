@@ -142,10 +142,21 @@ var CONFIG = {
   // Bands the motor reserves; Layout is derived from these + safe-area insets.
   layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
 
-  // logo   : key in ASSETS.images (null = text-only intro)
+  // logo   : key in ASSETS.images (null = text-only intro). A game with a
+  //          logotype in assets/art/ ignores this: the drawn title replaces
+  //          both the icon and #intro-title — see `CONFIG.art` below.
   // demo   : tap | hold | drag | swipe | aim
   // caption: one short line under the demo
   intro: { logo: "logo", demo: "tap", caption: "TAP to hit the target" },
+
+  // NOT authored here. `art` is injected by tools/build/build.mjs from
+  // assets/art/<slug>-*.webp — see `CONFIG.art` below.
+  // art: { backgroundPhone, backgroundDesk, title, characterSad|Neutral|Happy },
+
+  // Put the painted scene behind the ROUND too, not just behind the intro and
+  // the end screen. Off by default; a game that opts in must stop painting its
+  // own opaque ground — see `Art.scene()` under `CONFIG.art`.
+  sceneArt: false,
 
   // Desktop SPACE + arrow keys — see "Playing with the keyboard".
   keyboard: true,
@@ -596,6 +607,7 @@ Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // localStorage + memory fallback
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
+                    → ArtImages[key]       // …and the painted artwork (see below)
 Icon.draw(ctx, key, cx, cy, size, colour)  // an embedded SVG icon, tinted
 Icon.get(key, size, colour) → canvas       // …or the tinted canvas itself
 Confetti.burst(n) / clear()
@@ -613,6 +625,97 @@ encode it with `node tools/lab/embed-icon.mjs <name> --key icoThing`, paste it i
 `<img>` has no `currentColor` to resolve — so `Icon` tints them through a
 `source-in` fill and caches one canvas per key+size+colour. Never `drawImage`
 the raw SVG. See [assets/lucide/README.md](../assets/lucide/README.md).
+
+### `CONFIG.art` — the painted artwork
+
+A game declares nothing to get its painted screens. `tools/build/build.mjs`
+reads `assets/art/<slug>-<role>.webp` — the shipping cut of
+`assets/image/<slug>-<role>.png`, written by `tools/lab/encode-art.mjs` — and
+injects what it finds as `CONFIG.art.<camelRole>`. **A file name is the whole
+declaration**; see [ASSETS.md](ASSETS.md#painted-artwork-comes-from-assetsimage-re-encoded-into-assetsart).
+
+```js
+CONFIG.art = {
+  backgroundPhone: "…",   // behind the intro and the end screen
+  backgroundDesk:  "…",   // the bands around the frame — WEB TARGET ONLY
+  title:           "…",   // the logotype: replaces #app-icon AND #intro-title
+  characterSad:    "…",   // the end screen's face, by star count:
+  characterNeutral:"…",   //   0-1 → sad, 2 → neutral, 3 → happy
+  characterHappy:  "…",   //   stars:null → neutral
+  // …plus anything else named <slug>-<name>.png, e.g. slipdeck's cardKing
+};
+```
+
+Each value is a data URI in the single-file builds and a hashed file path in the
+split site build — the same source, nothing target-aware in the art itself,
+because the splitter externalizes data URIs out of the config region.
+
+**Where each piece is consumed.** `packages/shell/shell.js` holds an `Art`
+module that inserts `.screen-art` on the intro and the end screen, swaps the
+logotype into `#intro-title` and picks the face on `endRound`;
+`packages/platform/web.js` hands the desk background to
+`packages/frame-web/frame.css` through `--art-bg-desk`.
+
+**Four stat rows, at most.** The end screen's column is title, score label,
+score, stars, one row per stat, the install button and the replay link, and the
+character goes in whichever band is left over. Four rows leave ~205px of it;
+five leave ~165px, the floor; six leave nothing and the face is dropped. The
+games were cut back to four for exactly this reason — the fifth row costs the
+character. `Art.placeCharacter` measures it every round, so nothing breaks if a
+game grows one, it just stops showing a face.
+
+**Behind the round: `CONFIG.sceneArt`.** Off by default, because most gameplays
+are balanced against the flat ground their SKIN paints and a picture under the
+world costs contrast. A game that reads fine over its scene opts in, and then
+**must not paint an opaque ground of its own** — ask `Art.scene()` in
+`render()`:
+
+```js
+if (!Art.scene()) { /* the gradient / felt / cavern the game painted before */ }
+```
+
+Do not clear the canvas yourself: the frame pipeline does it, and it has to,
+because `frameRender()` calls `Game.render()` *inside* `Fx.begin()`'s shake
+transform — a full-canvas `clearRect` there covers a shifted rectangle and
+smears a few pixels of the previous frame along two edges for as long as the
+shake lasts.
+
+`games/chainring`, `games/slipdeck` and `games/marshmelt` are the three that opt
+in. The picture is a CSS layer under the canvas (`.frame-art`), not a per-frame
+`drawImage`: a full-screen blit of a backdrop that never changes is ~2.7 Mpixel
+a frame on a 3× phone, and a layer costs the compositor nothing. The one
+consequence is that it does **not** ride `Fx.shake`, which transforms the canvas
+context — a still backdrop under a shaking world is how this normally looks, and
+`Fx.flash` still covers it, being painted on the canvas above.
+
+Contrast is the whole risk, so the scrim over the picture is the token
+`--scene-scrim` (default `rgba(4,5,14,.34)`): a SKIN that needs the scene pushed
+further back raises it and changes nothing else.
+
+Because `Art.scene()` is false without artwork on disk, the `else` branch is
+also the free fallback — the game paints exactly as it always did.
+
+**To draw a piece on the canvas**, read `ArtImages[key]` — the `Image` the
+preloader decoded, guarded with `img.complete && img.naturalWidth` so a
+cache miss falls back to whatever the game drew before:
+
+```js
+var art = ArtImages.cardKing;
+if (art && art.complete && art.naturalWidth) ctx.drawImage(art, x, y, w, h);
+```
+
+`ArtImages` is deliberately separate from `Images`: those keys belong to the
+game, and a picture called `title` must never collide with a sprite called
+`title`. `games/slipdeck` is the reference — it paints the jack, queen and king
+illustrations into its court cards.
+
+Every piece is decoded during the loading screen, which is the only moment where
+waiting for it is free: the logotype *is* the intro's headline, and a 35 KB WebP
+that decodes after the screen is up shows as a blank where the title goes.
+
+A game with no artwork degrades on its own and needs no branch: the app icon
+comes back, the CSS title comes back, the end screen keeps its flat tint, and
+the web menu falls back to `ASSETS.images.bg` and then to the SKIN's gradient.
 
 ### `Music` — the background bed
 

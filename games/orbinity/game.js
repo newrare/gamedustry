@@ -1362,7 +1362,6 @@
       var rows = [
         { label: "PLANETS HOPPED", value: hops },
         { label: "BEST COMBO", value: bestCombo, grade: "accent" },
-        { label: "WALL HITS", value: bounces, grade: bounces === 0 ? "good" : "warn" },
         { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
       ];
       // Overtime is an achievement in itself: it leads the stats and renames
