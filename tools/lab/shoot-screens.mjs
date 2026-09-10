@@ -261,6 +261,17 @@ var DRIVER_JS = `<script>
   }
   function ready() { return frame >= cap || roundFrame >= need(); }
 
+  /* ...and it must not be a frame the game is using to say something went
+     wrong. A "danger" callout is the motor's one shared vocabulary for that —
+     marshmelt's MELTED, its HOT!/BURNT! — and it sits in #ov-pops like every
+     other Pop, so this needs no game internals and no new motor API. Death
+     itself is invisible from here: a game sets its own private flag and only
+     reaches endRound a beat later, so state() still says "playing" over the
+     very frames that show the banner. Deferring past them is what stops a
+     store gallery full of game-overs; cap is the bound, so a game that warns
+     constantly still hands back a frame. */
+  function dying() { return !!document.querySelector("#ov-pops .pop-danger"); }
+
   /* The end screen is not a frame of the simulation, it is a DOM cinematic on
      the wall clock. So the round is played out — the pilot dies, or the clock
      runs out — and then nothing is stepped at all while it plays. */
@@ -290,12 +301,13 @@ var DRIVER_JS = `<script>
     }
     window.__progress = frame;
     if (END) { tickEnd(H); return; }
-    if (ready()) {
+    if (ready() && !(dying() && frame < cap)) {
       H.frameRender();                                // keep the canvas fresh
       window.__shot = 1;                              // the host may capture now
       window.__reached = roundFrame / target;
       return;
     }
+    if (ready()) { step(H); H.frameRender(); return; } // wait out the warning
     var settle = need() - PACED;
     if (roundFrame < settle) {                        // fast-forward, cheaply
       for (var i = 0; i < 20 && roundFrame < settle && frame < cap; i++) step(H);
