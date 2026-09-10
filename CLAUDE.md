@@ -139,16 +139,21 @@ The full recipe with prompt patterns is in
 
 ## The build
 
-**After changing anything, run `node tools/update.mjs`.** One command: it
-rebuilds every artifact and both catalogues, runs the three checks, and then
-prints what is left to do — the itch push, the screenshots, the page copy to
+**After changing anything, run `node tools/update.mjs`** — or `make check`,
+which runs `mdformat` first. One command: it rebuilds every artifact and both
+catalogues, runs the three checks, and then prints what is left to do — the itch push, the screenshots, the page copy to
 paste — worked out from what actually changed in git rather than from a
 checklist to remember. Everything below this line is what that command runs;
 reach for an individual command when the update tells you which one failed, not
 as a habit.
 
 It never pushes anywhere, never reshoots an image and never commits: those are
-decisions, and it prints them instead of taking them.
+decisions, and it prints them instead of taking them. **`make push` is the one
+that acts** — it gates, refuses a dirty tree, `git push`es, then publishes the
+13 to itch; Vercel redeploys the site off the same push. There is no CI: GitHub
+Actions never ran on this repo and its workflows were deleted (see
+[docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), *CI*), so nothing checks
+a commit but the person making it.
 
 `games/<slug>/index.html` is a **build output**, not a source. The motor lives
 once in `packages/`, and each game owns four files:

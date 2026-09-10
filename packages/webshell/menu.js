@@ -37,10 +37,11 @@
   one card over the frozen world: the same options rows the menu shows, or the
   one question that throws a run away. ESCAPE is that pause on a keyboard.
 
-  Every display size is then re-measured rather than re-tuned: `fitOne` scales
-  the intro title, the end title and the end score down until they fit the
-  frame, because a game's own face and a French string are both wider than what
-  the motor's px were eyeballed against (section 6b).
+  Every display size is measured rather than re-tuned, by the motor's own `Fit`
+  (shell.js): the intro title, the end title and the end score are scaled down
+  until they fit the frame, because a game's own face and a French string are
+  both wider than what the motor's px were eyeballed against. This file only
+  gives it the one measurement the web layout changes (section 6b).
 
   The type is the game's own too: `web.font` in the manifest names a family of
   assets/font/ (all OFL), which the builder embeds in front of the SKIN with two
@@ -679,62 +680,21 @@
 
   /* ── 6b. fitting the display type ─────────────────────────────────────── */
 
-  /* The motor's display sizes were set against the system stack. A game's own
-     face changes every width — Orbitron's digits are 24% wider than -apple-
-     system's, Bungee's caps 7% wider again, Bebas Neue's 40% narrower — and the
-     strings themselves are not fixed either: "OUT OF PULSES!" is 914px at 96px
-     in Orbitron against 624px of room, and a six-digit score is wider than the
-     five-digit one the size was eyeballed on. Two of these titles already
-     wrapped in the playable, before any font was added.
+  /* The measuring itself is the motor's `Fit` (shell.js): the same four
+     playables that wrapped their end title needed it too, so it moved down
+     rather than being forked here. This file only tells it about the one piece
+     of geometry the web target changes — #intro-title lives in #web-head,
+     inset 44px, where the playable has it inside .screen's 48px.
 
-     So the web front end measures and scales DOWN, never up. Three nodes, one
-     rule, and no size to re-tune per game, per language or per face. The nodes
-     are `nowrap` in the stylesheet, which is what makes `scrollWidth` the true
-     one-line width — and what makes a title that is still too wide overflow
-     visibly instead of silently becoming two lines. */
-  var FIT = [
-    { id: "intro-title", room: 632, min: 44 },   // #web-head is inset 44px
-    { id: "eo-title",    room: 624, min: 44 },   // .screen padding is 48px
-    { id: "eo-score",    room: 624, min: 60 }
-  ];
+     A game's own face is what makes the web case harder than the playable's:
+     Orbitron's digits are 24% wider than -apple-system's, Bungee's caps 7%
+     wider again, Bebas Neue's 40% narrower, so "OUT OF PULSES!" is 914px of a
+     624px band at 96px in Orbitron. Nothing to re-tune per game — it is
+     measured. */
+  var Fit = W.Fit;
+  Fit.room("intro-title", 632);
 
-  function fitOne(spec) {
-    var n = $(spec.id);
-    if (!n) return;
-    n.style.fontSize = "";                       // back to the size the CSS asks for
-    var size = parseFloat(window.getComputedStyle(n).fontSize);
-    if (!size || !n.scrollWidth) return;
-    /* Shrink, measure, repeat. One pass would be enough if width scaled with
-       size, and it does not: `letter-spacing` is a fixed px value, so 14 caps
-       of "OUT OF PULSES!" carry 56px of tracking whatever the size. Two or
-       three passes converge; six is the ceiling, `min` the floor. */
-    for (var i = 0; i < 6 && n.scrollWidth > spec.room && size > spec.min; i++) {
-      size = Math.max(spec.min, Math.floor(size * spec.room / n.scrollWidth) - 1);
-      n.style.fontSize = size + "px";
-    }
-  }
-
-  function fitAll() { for (var i = 0; i < FIT.length; i++) fitOne(FIT[i]); }
-
-  /* `endRound` calls `setState("end")` BEFORE `EndScreen.show()`, and the score
-     then counts up over ~450 ms, so one fit on the state change would measure
-     the previous round. One observer, connected on every arrival at the end
-     screen and dropped once the reveal is over, covers the whole thing. */
-  var fitObs = null, fitTimer = null, fitOff = null;
-
-  function fitSoon() { clearTimeout(fitTimer); fitTimer = setTimeout(fitAll, 60); }
-
-  function fitEndScreen() {
-    fitSoon();
-    if (!window.MutationObserver) return;
-    if (!fitObs) fitObs = new MutationObserver(fitSoon);
-    else fitObs.disconnect();
-    var opt = { childList: true, characterData: true, subtree: true };
-    fitObs.observe($("eo-title"), opt);
-    fitObs.observe($("eo-score"), opt);
-    clearTimeout(fitOff);
-    fitOff = setTimeout(function () { fitObs.disconnect(); }, 6000);
-  }
+  function fitAll() { Fit.all(); }
 
   /* ── 7. the end screen ────────────────────────────────────────────────── */
 
@@ -806,7 +766,9 @@
          away on any other screen, whatever ended the round. */
       ctlBar.hidden = state !== "playing";
       if (state !== "playing") dropPause();
-      if (state === "end") { fitEndScreen(); return; }
+      /* Nothing to fit here any more: the motor sizes the end title and the
+         score inside EndScreen.show, which runs after this hook. */
+      if (state === "end") return;
       if (state !== "intro") return;
       closePanel();
       armMode(MODES[0]);         // ...and PLAY is the default mode again

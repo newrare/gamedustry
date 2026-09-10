@@ -115,6 +115,7 @@
     preloadImages(function () {
       Ad.whenReady(function () {
         setState("intro");
+        Fit.all();              // measure the display type now the screen is up
         Pop.prewarm();          // pay the callouts' first-raster cost off-gameplay
         Ad.track("loaded");
       });

@@ -431,8 +431,9 @@ node tools/publish/deploy-itch.mjs --game=vipera --dry-run
 manifest, pushes the `html5` channel, stamps the build with the commit it was
 made from, and refuses to push what it has not built.
 
-- **Auth**: `butler login` once locally (credentials in `~/.config/itch`), or
-  `BUTLER_API_KEY` as an environment variable in CI.
+- **Auth**: `butler login` once locally, credentials in `~/.config/itch`. That
+  is the whole story today — `BUTLER_API_KEY` in the environment is butler's
+  other route and is what a build machine would use, if one ever runs.
 - **One channel, `html5`.** A channel name containing `html` marks the build as
   playable in the browser, and an itch page lists every channel's upload side by
   side — so a second, staging channel puts two indistinguishable entries in
@@ -444,7 +445,7 @@ made from, and refuses to push what it has not built.
   API — they are set by hand, once per game. `tools/publish/store-meta.mjs`
   generates the text from the manifest so it is only ever copy-pasted.
 
-## CI — two systems, two jobs
+## CI — one system, and a Makefile
 
 **Vercel owns the web.** The project points at this repo, production branch
 `main`, build command `node tools/build/build-site.mjs`, output directory `dist/site`.
@@ -458,16 +459,34 @@ the repo's own files.
 - Adding a game updates the hub by itself: the cards are generated from the
   manifests.
 
-**GitHub Actions owns everything Vercel cannot run**: `butler`, Gradle, fastlane.
+**Nothing else runs in CI, and that is not a design choice.** GitHub Actions was
+wired for what Vercel cannot run — `butler`, later Gradle and fastlane — and it
+never executed once: all 11 runs from 2026-09-08 onward were refused with *"the
+job was not started because your account is locked due to a billing issue"*, and
+every job reported `steps: 0`, so no runner was ever allocated. Not a
+consumption problem either — the repo is public, so standard runners are free,
+and the account showed $0 metered and nothing due. The two workflows were
+deleted on 2026-09-10 rather than left red, and what they did became a
+`Makefile` at the repo root, run by hand:
 
-| trigger         | action                                    |
-| --------------- | ----------------------------------------- |
-| PR / push       | `build.mjs --check`, `check-size`         |
-| merge on `main` | nothing on itch — the site redeploys      |
-| git tag         | `butler push` to `html5`, and/or fastlane |
+| command      | what it does                                                        |
+| ------------ | ------------------------------------------------------------------- |
+| `make check` | `mdformat`, then `update.mjs` — the three gates, before a commit    |
+| `make push`  | check, refuse a dirty tree, `git push`, then publish the 13 to itch |
+| `make itch`  | re-publish to itch without pushing                                  |
+| `make site`  | assemble `dist/site` locally                                        |
+| `make serve` | the dev loop, with reload on save                                   |
+| `make meta`  | the itch page copy, one file per game                               |
+
+`make push` orders the two halves on purpose: the commit goes to the remote
+first, so the `<day>-<short sha>` stamp `deploy-itch.mjs` writes names a commit
+someone else can fetch. A dirty tree is refused outright, because it would ship
+as `-dirty` and trace back to nothing. Re-enabling Actions later means restoring
+two files and deleting nothing — the Makefile targets are the same commands.
 
 **Prerequisite, resolved**: `.gitignore` ignores `assets/` today, which would stop
-CI from ever re-embedding a sound, regenerating an icon or shooting a screenshot.
+a build machine from ever re-embedding a sound, regenerating an icon or shooting
+a screenshot.
 `assets/` is now tracked — 52 MB over 324 files, comfortably inside GitHub's
 limits, **no Git LFS needed**. Untracking it is a one-line `.gitignore` change
 plus one commit.
@@ -493,6 +512,13 @@ reachable traffic. Poki is a goal, not a checkbox.
 
 ## android
 
+**Scope narrowed on 2026-09-10: this is the only phase still tracked in
+[TODO.md](../TODO.md).** The meta layer, the web portals and the measurement
+gate below were parked — the reasoning is kept here in case one comes back, but
+none of them is on the list any more. Android does not need the meta layer:
+the web directory Capacitor wraps already carries `packages/webshell`, so the
+app gets the same start screen, options and FR/EN switch as the site.
+
 `--target=android` produces a web directory, `gen-native.mjs` turns the manifest
 into a Capacitor project, Gradle produces a signed `.aab`, and `fastlane supply`
 uploads it.
@@ -505,9 +531,10 @@ cd native/vipera && fastlane android beta
 
 Friction points, all one-time:
 
-- **Keystore** generated once, never committed (base64 in a CI secret), and backed
-  up somewhere other than CI. Losing it means never being able to update the app
-  again.
+- **Keystore** generated once, never committed, and backed up off the machine
+  that signs with it. Losing it means never being able to update the app again.
+  There is no CI to hold it as a secret today — see *CI — one system, and a
+  Makefile*.
 - **Play Console listing created by hand**, once per app: store listing,
   screenshots, content rating questionnaire, *Data safety* form, privacy policy
   URL, public support email, target API level.
@@ -571,14 +598,17 @@ building tools that cannot exist.
 
 **Once, before the store phase:**
 
-- Buy the domain and attach it to the Vercel project (deferred until this phase;
-  the site itself needs nothing).
+- Buy the domain and attach it to the Vercel project (deferred; the site runs on
+  <https://newrare-website.vercel.app> and needs nothing else. `SITE.url` in
+  `tools/publish/store-meta.mjs` is the one place that address is written, so
+  attaching a domain is a one-string change).
 - Publish the privacy policy page, a public support address, and `app-ads.txt`.
 - Clear Play identity verification and set the public developer address.
 - Create the AdMob account, tax and payment profile, and configure the CMP.
 - Recruit twelve testers with twelve distinct Google accounts.
-- Store the secrets: `BUTLER_API_KEY`, the Google Play service account JSON, the
-  base64 keystore. (Vercel needs no secret — it builds from the repo.)
+- Keep the credentials somewhere: the Google Play service account JSON and the
+  keystore. There is no CI to hold them as secrets, and `butler` is already
+  logged in locally. (Vercel needs no secret — it builds from the repo.)
 
 **Once per game, forever:**
 
