@@ -9,9 +9,9 @@
     tagline: "Tap the instant a <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">ring</b>",
     gameSeconds: 30,
     storeUrl: {
-      ios:     "https://newrare-website.vercel.app/#playables",
-      android: "https://newrare-website.vercel.app/#playables",
-      fallback:"https://newrare-website.vercel.app/#playables"
+      ios:     "https://newrare.app/#playables",
+      android: "https://newrare.app/#playables",
+      fallback:"https://newrare.app/#playables"
     },
     designWidth: 720, designHeight: 1280, bg: "#0a0a18",
     layout: { hudHeight: 168, ctaHeight: 120, sideMargin: 30 },

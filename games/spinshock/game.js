@@ -9,9 +9,9 @@
     tagline: "<b class=\"w-tap\">Tap</b> on the <b class=\"w-hit\">impact</b> to blast the rival tops away",
     gameSeconds: 0,                  // endless: the round ends when the top falls
     storeUrl: {
-      ios:     "https://newrare-website.vercel.app/#playables",
-      android: "https://newrare-website.vercel.app/#playables",
-      fallback:"https://newrare-website.vercel.app/#playables"
+      ios:     "https://newrare.app/#playables",
+      android: "https://newrare.app/#playables",
+      fallback:"https://newrare.app/#playables"
     },
     designWidth: 720, designHeight: 1280, bg: "#08081c",
     layout: { hudHeight: 160, ctaHeight: 118, sideMargin: 26 },
