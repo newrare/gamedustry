@@ -9,9 +9,9 @@
     gameSeconds: 0,                  // no clock: the run ends with the pulses
 
     storeUrl: {
-      ios:     "https://newrare-website.vercel.app/#playables",
-      android: "https://newrare-website.vercel.app/#playables",
-      fallback:"https://newrare-website.vercel.app/#playables"
+      ios:     "https://newrare.app/#playables",
+      android: "https://newrare.app/#playables",
+      fallback:"https://newrare.app/#playables"
     },
 
     designWidth: 720, designHeight: 1280, bg: "#04060f",

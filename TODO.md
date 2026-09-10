@@ -58,16 +58,21 @@ ______________________________________________________________________
 
 ## Android
 
-**The prerequisites are slow and none of them are code.** The domain especially:
-it was deferred while the site ran on Vercel, which was right, but Google Play
-wants a real support address and a privacy URL on a domain you own, so it comes
-back first here.
+**The prerequisites are slow and none of them are code.** The domain was the
+first of them and it is done: Google Play wants a real support address and a
+privacy URL on a domain you own, and both now exist.
 
-- [ ] MAIN — buy the domain and attach it to Vercel. `SITE.url` in
+- [x] MAIN — buy the domain and attach it to Vercel. `newrare.app`, registered
+  at OVH, DNS zone at OVH (apex `A` → Vercel, `www` `CNAME` → Vercel, MX left on
+  OVH mail), certificate issued by Vercel. `SITE.url` in
   `tools/publish/store-meta.mjs` is the one place the address is written
-- [ ] MAIN — a support e-mail on that domain, replacing the personal Gmail
-  quoted in `site/privacy.html` and `site/index.html` (both to update, and the
-  two copies of the privacy text are edited together)
+- [x] MAIN — a support e-mail on that domain, replacing the personal Gmail
+  quoted in `site/privacy.html` and `site/index.html` (both updated together).
+  `contact@newrare.app` is an OVH redirection, so it **receives only**
+- [ ] MAIN — *if Play support ever needs an answer sent from the studio address*:
+  turn that redirection into a real OVH mailbox and wire Gmail's "send mail as"
+  to `ssl0.ovh.net:465`. Routing it through Gmail's own servers instead would
+  fail SPF, which is a strict `-all`
 - [ ] MAIN — clear Play identity verification, set the public developer address
 - [ ] MAIN — recruit 12 testers with 12 distinct Google accounts. Google
   requires closed testing before a new personal developer account can go

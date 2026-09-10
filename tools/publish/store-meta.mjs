@@ -28,10 +28,11 @@ import { fileURLToPath } from 'node:url';
 /* The studio's own address, and the only place it is written down. Every
    description ends with a line pointing back at it, so a visitor who lands on
    one itch page can find the other twelve — and so that line is never pasted
-   into thirteen forms by hand. Vercel serves the site; the domain is deferred
-   (see TODO.md, phase 3), and replacing this string is the whole migration.
+   into thirteen forms by hand. Vercel serves the site on the studio's own
+   domain, bought at OVH and pointed at the existing project — so this string is
+   the one that would change again if the domain ever moved.
    Left empty, the line is simply not printed. */
-const SITE = { name: 'Newrare', url: 'https://newrare-website.vercel.app' };
+const SITE = { name: 'Newrare', url: 'https://newrare.app' };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);

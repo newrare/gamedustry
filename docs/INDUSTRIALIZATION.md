@@ -281,16 +281,24 @@ Three things this target gets that no other web destination does:
    parts of `packages/meta` that itch can never host. Start with the local-only
    version, add the server later behind the same interface.
 
-The CTA fallback baked into every game still points at `52-entertainment.com`
-([template/game-template.html:936](../template/game-template.html#L936)); phase 1
-rewrites it to the newrare domain across the template and the nine games.
+The CTA fallback baked into every game points at `https://newrare.app/#playables`,
+written once per game in `CONFIG.storeUrl` and rewritten across the template and
+the thirteen games when the domain landed.
 
-**A custom domain is a store prerequisite, not a site prerequisite.** The site
-runs perfectly on `newrare-website.vercel.app`, which is where it stays for now.
-But that host cannot serve as the developer domain of a Play listing: AdMob wants
-an `app-ads.txt` at the root of that domain, and a `*.vercel.app` listing reads as
-unfinished. Buy the domain and point it at the existing Vercel project before the
-android phase — a few euros a year, and nothing depends on it until then.
+**A custom domain was a store prerequisite, not a site prerequisite** — and it is
+now in place. `newrare.app` is registered at OVH, whose DNS zone holds the apex
+`A` record and the `www` `CNAME` that Vercel asked for; the Vercel project is
+unchanged, it simply answers on that name and issues its own certificate. The
+`www` host redirects to the apex in 308.
+
+Two consequences worth writing down. `https://newrare.app/app-ads.txt` is served
+from the root of a domain the studio owns, which is what AdMob requires of the
+developer domain of a Play listing and what a `*.vercel.app` host could never
+provide. And the support address is `contact@newrare.app`, an OVH redirection to
+the personal Gmail rather than a mailbox — enough to receive, which is all Play
+and AdMob need; sending *as* that address would need a real mailbox and Gmail's
+"send mail as" wired to OVH's SMTP, because the SPF record is a strict
+`-all`.
 
 **The site is where the store paperwork lives**: `app-ads.txt`, the privacy policy
 URL (mandatory as soon as an ad SDK ships) and a public support address.
@@ -578,18 +586,18 @@ root of the developer domain declared in the listing.
 
 ## Decisions
 
-| question            | decision                                                                                                                                              |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `assets/` in git    | tracked, no LFS (52 MB / 324 files)                                                                                                                   |
-| site stack          | static HTML/CSS, no build of its own                                                                                                                  |
-| site location       | **monorepo** — `site/` in this repo, built by `tools/build/build-site.mjs`, deployed by Vercel                                                        |
-| hosting             | Vercel, games under `/games/<slug>` of the site                                                                                                       |
-| domain              | deferred — the site stays on `newrare-website.vercel.app` until the android phase, which is the first thing that actually requires a developer domain |
-| itch account        | `newrare`, personal                                                                                                                                   |
-| itch structure      | one project per game, plus a collection                                                                                                               |
-| Play account        | `newrare`, personal → the 12-testers / 14-days rule applies                                                                                           |
-| bundle id namespace | `com.newrare.<slug>`                                                                                                                                  |
-| CTA fallback        | newrare domain, replacing `52-entertainment.com` in the template + 9 games                                                                            |
+| question            | decision                                                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assets/` in git    | tracked, no LFS (52 MB / 324 files)                                                                                                                                    |
+| site stack          | static HTML/CSS, no build of its own                                                                                                                                   |
+| site location       | **monorepo** — `site/` in this repo, built by `tools/build/build-site.mjs`, deployed by Vercel                                                                         |
+| hosting             | Vercel, games under `/games/<slug>` of the site                                                                                                                        |
+| domain              | `newrare.app` — registered at OVH, DNS zone at OVH, pointed at the Vercel project (apex `A`, `www` `CNAME`); support address `contact@newrare.app`, an OVH redirection |
+| itch account        | `newrare`, personal                                                                                                                                                    |
+| itch structure      | one project per game, plus a collection                                                                                                                                |
+| Play account        | `newrare`, personal → the 12-testers / 14-days rule applies                                                                                                            |
+| bundle id namespace | `com.newrare.<slug>`                                                                                                                                                   |
+| CTA fallback        | newrare domain, replacing `52-entertainment.com` in the template + 9 games                                                                                             |
 
 ## The manual surface
 
@@ -598,11 +606,12 @@ building tools that cannot exist.
 
 **Once, before the store phase:**
 
-- Buy the domain and attach it to the Vercel project (deferred; the site runs on
-  <https://newrare-website.vercel.app> and needs nothing else. `SITE.url` in
-  `tools/publish/store-meta.mjs` is the one place that address is written, so
-  attaching a domain is a one-string change).
-- Publish the privacy policy page, a public support address, and `app-ads.txt`.
+- ~~Buy the domain and attach it to the Vercel project.~~ Done: `newrare.app`,
+  bought at OVH and pointed at the existing project. `SITE.url` in
+  `tools/publish/store-meta.mjs` is the one place that address is written.
+- ~~A public support address.~~ Done: `contact@newrare.app`, an OVH redirection
+  to the personal Gmail, quoted in `site/index.html` and `site/privacy.html`.
+- Publish the privacy policy page and `app-ads.txt` on the domain.
 - Clear Play identity verification and set the public developer address.
 - Create the AdMob account, tax and payment profile, and configure the CMP.
 - Recruit twelve testers with twelve distinct Google accounts.
