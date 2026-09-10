@@ -51,22 +51,15 @@ The code is in: `--target=web` with its two destinations (`--dest=site` splits
 the motor into shared hashed files and ships the assets as files, `--dest=itch`
 keeps one self-contained document), `packages/frame-web/` (Delta 1),
 `Store`'s memory fallback (Delta 2), the bilingual web menu with `CONFIG.web`
-fed from the manifest, and the two publishing scripts. What is left needs an
-account or a CI runner:
+fed from the manifest, and the two publishing scripts. The 13 itch pages exist,
+`butler` is logged in locally, and every game's `html5` channel carries the same
+build (`deploy-itch.mjs --all`, stamped `20260910-34452bb`). `BUTLER_API_KEY`
+is in the repo's CI secrets. What is left is one commit:
 
-- [ ] MAIN — `butler login` (butler v15.31 is installed at
-  `~/.local/lib/butler`, symlinked into `~/.local/bin`), then the same key as
-  `BUTLER_API_KEY` in the repo's CI secrets
-- [ ] MAIN — create the itch page for `vipera` by hand, from
-  `node tools/publish/store-meta.mjs --game=vipera` (no public API exists); it is
-  the pilot page whose form choices the other ten copy
-- [ ] AUTO — GitHub Actions: `butler push` to `html5` on tag. Waits on the itch
-  pages existing — butler cannot push to a project that has never been created
-- [ ] MAIN — on the vipera page, tick *played in the browser* on the new
-  `html5` upload (#19153666) and **delete the `html5-dev` one** (#19152874).
-  The dev channel was pushed before the one-channel decision and now sits next
-  to the public build with nothing to tell a visitor them apart. Neither the
-  checkbox nor deleting an upload has an API
+- [ ] MAIN — commit and push `.github/workflows/itch.yml`. It is written and
+  needs nothing else — three build gates, butler from broth, all 13 pushed on a
+  `v*` tag — but it is still untracked locally, so GitHub has no such workflow
+  and the secret has nothing to feed. Then tag once and watch the Actions run
 
 ## Painted artwork — the pipeline is in
 
@@ -77,12 +70,7 @@ on the web, the landscape scene around the frame; the covers and the site hero
 are composed from the same files. See
 [CLAUDE.md](CLAUDE.md#the-painted-artwork).
 
-What is owed is content and uploads, not code:
-
-- [ ] MAIN — re-upload the 13 new `assets/cover/*.png` on the itch pages
-  (no API for the gallery), and reshoot the screenshots: every intro and end
-  screen now looks different, and chainring, slipdeck and marshmelt look
-  different *in play*
+The covers and the screenshots are shot from it and uploaded on the 13 pages.
 
 ## Phase 5 — the meta layer
 
@@ -101,10 +89,10 @@ build gets the same screens instead of a second copy.
 
 ## Phase 6 — all games public, then measure
 
-- [ ] AUTO — build and publish every game to the site and to itch
-  (`deploy-itch.mjs --all`)
-- [ ] MAIN — create the ten remaining itch pages, one per game, and a collection
-  that holds them
+The 13 are public on both outlets: the site serves them from `dist/site` and
+every itch page carries its build. Nothing is in construction any more. What is
+left is the measurement, and the discipline of waiting for it:
+
 - [ ] MAIN — read retention and replay rate, and decide which games go further
 - [ ] MAIN — do not wire ads into the site before this measurement exists
 
@@ -137,26 +125,17 @@ ______________________________________________________________________
 
 ## Content and assets
 
-- [ ] MAIN — finish `slipdeck` itself; it and marshmelt are the two games still
-  in construction
-
 - [ ] MAIN — playtest `marshmelt` on a phone: the recovery shot (`airShots`),
   `flingSpeed`, the two fall lanes (`fastChance`, `fastMin/fastMax`) and
-  `gripCenter` are set off a headless pilot, not off a thumb. The pilot cheats
-  (it reads the rock list, it has no reaction time), so it says the mechanics
-  hold, not that the curve is right
+  `gripCenter` are set off a headless pilot, not off a thumb. That pilot is a
+  blind sweep with no reaction time (`SWEEP` in `tools/lab/shoot-screens.mjs`:
+  reading the rock list to aim was benched and came out *worse*), so it says the
+  mechanics hold, not that the curve is right
 
-- [ ] MAIN — pick which of the ten shots of each game go on its itch page, in
-  which order. `assets/screen/<slug>-01..10.jpg` now walks a round from its
-  first seconds to its end screen (shot 10), and `assets/cover/<slug>.png` is
-  built from shot 6 — but which frame sells a game is a human call, and four or
-  five of the ten is what a page wants
-
-- [ ] MAIN — reshoot `marshmelt` once it is playable by the pilot: its ten
-  shots all read `score: 0`, because the scripted player in
-  `tools/lab/shoot-screens.mjs` cannot play it at all (`SPAN.marshmelt` is 4
-  seconds against 30 for the others). Its cover is skipped too, for want of an
-  icon
+- [ ] MAIN — record the site's URL somewhere in the repo (a `site.url` field,
+  or `store-meta.mjs`): it is written nowhere today, and the "A Newrare game"
+  line that closes each itch description needs a link target. The Vercel
+  address is the one to use — buying the domain is deferred, it works fine
 
 - [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
   listing (they all point at the site today, which is correct for now)
@@ -174,20 +153,15 @@ ______________________________________________________________________
   the same fitter in the motor, a smaller `.eo-title`, or shorter strings. It
   rebuilds all 14 creatives, so it is a decision, not a patch
 
-- [ ] MAIN — background art for the six games that have none: `arcider`,
-  `chainring`, `marshmelt`, `slipdeck`, `triverse`, `vipera`. The web menu shows
-  `assets/image/<slug>-background.png` (embedded as `ASSETS.images.bg`) and
-  falls back to the SKIN's gradient, which is correct but empty — the seven
-  games with a painted hall read far better
-
 - [ ] MAIN — the leaderboard shows one local best score. The online one, the
   accounts and the progression behind it are `packages/meta` (phase 5), and
   OPTIONS is already the panel it plugs into
 
-- [ ] MAIN — retitle the intros: the 13 shipped `#intro-title` rules are all the
-  same white-to-accent clipped gradient. `lab/game-title.html` is the rack of
-  ready-made looks — pick one per game (the pick is remembered) and paste the
-  block it prints into that game's SKIN
+- [ ] CODE — `tools/publish/store-meta.mjs` prints two fields it cannot know:
+  `Genre` is hard-coded `Action` for all 13 (`radiam` is a puzzle, `slipdeck` a
+  card game), and `Colours` falls back to `#0a0a1c` because no manifest carries
+  a `theme.bg` — the real ground is the SKIN's own `--bg`. An itch page theme
+  wants four colours (BG, BG2, Text, Link); the manifest carries one and a half
 
 - [ ] CODE — `lab/overlay-pop.html` carries its own fork of the pop CSS,
   predating the extraction: it still has a `filter` on `.pop-word` and it did

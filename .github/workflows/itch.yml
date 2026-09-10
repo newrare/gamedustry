@@ -1,0 +1,70 @@
+# Publish every game to itch.io, on a tag.
+#
+# butler is the only way in: itch has no public API for a page, so this job
+# uploads builds and nothing else — the title, description, tags, cover,
+# screenshots and the "played in the browser" checkbox stay a human's job (see
+# tools/publish/store-meta.mjs, which prints the form).
+#
+# The tag is the trigger rather than a push to main, because a build reaching
+# thirteen public pages is a decision. workflow_dispatch is the same job on
+# demand, for a re-push that does not deserve a version of its own.
+#
+# One secret: BUTLER_API_KEY, from https://itch.io/user/settings/api-keys.
+# butler reads it from the environment on its own — there is no `butler login`
+# in CI and no credentials file to write.
+name: itch
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# Two tags pushed together would race for the same thirteen channels.
+concurrency:
+  group: itch
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The same three gates as ci.yml. A tag is not a reason to skip them:
+      # this job is what makes a build public, so it is the last place a
+      # source/artifact drift can still be caught.
+      - name: build artifacts match their sources
+        run: node tools/build/build.mjs --check
+
+      - name: catalogues are up to date
+        run: node tools/build/gen-catalogues.mjs --check
+
+      - name: creatives are within budget
+        run: node tools/build/check-size.mjs
+
+      # butler is not vendored (tools/publish/README.md). broth is itch's own
+      # download host; the linux-amd64 LATEST archive is a zip holding the
+      # binary and its libraries, so unzip it whole and put the folder on PATH.
+      - name: install butler
+        run: |
+          curl -sSL -o butler.zip \
+            https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$HOME/butler"
+          chmod +x "$HOME/butler/butler"
+          echo "$HOME/butler" >> "$GITHUB_PATH"
+
+      - name: butler version
+        run: butler -V
+
+      # deploy-itch.mjs builds dist/itch/<slug>/ for every game whose manifest
+      # lists the web target, then pushes each to <user>/<project>:html5 with
+      # --userversion <day>-<short sha>. The stamp is read before the build
+      # runs, and dist/ is gitignored, so it never comes out -dirty here.
+      - name: push every game to itch
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: node tools/publish/deploy-itch.mjs --all
