@@ -948,6 +948,15 @@
   #eo-char.settling { transition:opacity .5s ease, transform .5s ease; }
   #eo-char.show { opacity:1; transform:translateY(0) scale(var(--char-k)); }
 
+  /* The three display strings are measured and scaled DOWN by Fit (section 5)
+     rather than sized per game: "OUT OF BALLS!" is 703px of a 624px band at
+     96px in the system stack, and a game's own face moves every width again.
+     `nowrap` is what makes that possible — it turns scrollWidth into the true
+     one-line width, and it makes a string that is still too wide overflow
+     visibly instead of silently becoming two lines. Room is 720 minus the
+     96px of .screen padding. */
+  #intro-title, #screen-end .eo-title, #screen-end .eo-score { white-space:nowrap; }
+
   .eo-title {
     font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);
     text-shadow:0 0 24px rgba(255,45,85,.85), 0 0 52px rgba(255,45,85,.45);
@@ -2135,6 +2144,61 @@
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
   }
 
+  /* --- Fit — measured display type ---------------------------------------
+
+     The motor's display sizes were eyeballed against the system stack, and the
+     strings are not fixed: "OUT OF BALLS!" is 703px of a 624px band at 96px,
+     "OUT OF PULSES!" 766px, and a six-digit score is wider than the five-digit
+     one .eo-score was sized on. Four playables wrapped their end title onto two
+     lines before any font was added; a game's own face on the web moves every
+     width again (Orbitron's digits +24%, Bebas Neue -40%).
+
+     So measure and scale DOWN, never up. No size to re-tune per game, per
+     language or per face. The nodes are `nowrap` in the stylesheet, which is
+     what makes scrollWidth the true one-line width.
+
+     Room is the design width minus the .screen padding; the web front end
+     overrides #intro-title, which lives in its own inset header. Nothing here
+     watches for resize on purpose: the frame is a fixed 720x1280 design space
+     that CSS scales as a whole, so a fit is deterministic.
+
+     #intro-title is in the list for the game that has no logotype: once
+     `assets/art/<slug>-title.png` exists, Art puts an <img> inside that node
+     and there is no type left to measure, so the fit is a no-op. All thirteen
+     are in that case today. The end title and the score are always type. */
+  var Fit = (function () {
+    var ROOM = { "intro-title": 624, "eo-title": 624, "eo-score": 624 };
+    var MIN  = { "intro-title": 44,  "eo-title": 44,  "eo-score": 60 };
+
+    /* `text` measures a string the node does not carry yet — the score is fitted
+       against its final value before the count-up starts, so the number never
+       outgrows the size mid-animation. */
+    function one(id, text) {
+      var n = $(id);
+      if (!n) return;
+      var had = null;
+      if (text != null) { had = n.textContent; n.textContent = text; }
+      n.style.fontSize = "";                  // back to the size the CSS asks for
+      var size = parseFloat(window.getComputedStyle(n).fontSize);
+      var room = ROOM[id] || 624, min = MIN[id] || 44;
+      /* Shrink, measure, repeat. One pass would do if width scaled with size,
+         and it does not: letter-spacing is a fixed px value, so 13 caps carry
+         52px of tracking whatever the size. Two or three passes converge. */
+      if (size && n.scrollWidth) {
+        for (var i = 0; i < 6 && n.scrollWidth > room && size > min; i++) {
+          size = Math.max(min, Math.floor(size * room / n.scrollWidth) - 1);
+          n.style.fontSize = size + "px";
+        }
+      }
+      if (had != null) n.textContent = had;
+    }
+
+    function all() { for (var id in ROOM) if (ROOM.hasOwnProperty(id)) one(id); }
+    function room(id, px) { if (px != null) ROOM[id] = px; return ROOM[id]; }
+
+    return { one: one, all: all, room: room };
+  })();
+
   // --- HUD ---------------------------------------------------------------
   var HUD = (function () {
     var target = 0, shown = 0, colorT = null;
@@ -2869,6 +2933,8 @@
 
       var title = $("eo-title");
       title.textContent = result.title || CONFIG.copy.gameOver;
+      Fit.one("eo-title");
+      Fit.one("eo-score", String(result.score || 0));
       title.className = "eo-title" + (result.variant ? " " + result.variant : "");
       ["eo-title", "eo-scorelbl", "eo-score"].forEach(function (id) { $(id).classList.remove("show", "pop"); });
       $("eo-score").textContent = "0";
@@ -3486,6 +3552,7 @@
     preloadImages(function () {
       Ad.whenReady(function () {
         setState("intro");
+        Fit.all();              // measure the display type now the screen is up
         Pop.prewarm();          // pay the callouts' first-raster cost off-gameplay
         Ad.track("loaded");
       });

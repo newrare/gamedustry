@@ -3,11 +3,11 @@
 The publishing scripts, one per destination — see
 [docs/INDUSTRIALIZATION.md](../../docs/INDUSTRIALIZATION.md):
 
-| script            | phase | what it does                                                                           |
-| ----------------- | ----- | -------------------------------------------------------------------------------------- |
+| script            | phase | what it does                                                               |
+| ----------------- | ----- | -------------------------------------------------------------------------- |
 | `deploy-itch.mjs` | 4     | builds `dist/itch/<slug>/`, then `butler push` to `html5`, the one channel |
-| `store-meta.mjs`  | 4     | the itch (and later store) page copy, generated from the manifest                      |
-| `gen-native.mjs`  | 8     | manifest → Capacitor project under `native/<slug>/`                                    |
+| `store-meta.mjs`  | 4     | the itch (and later store) page copy, generated from the manifest          |
+| `gen-native.mjs`  | 8     | manifest → Capacitor project under `native/<slug>/`                        |
 
 ```bash
 node tools/publish/deploy-itch.mjs --game=vipera --dry-run   # print the command
@@ -23,5 +23,8 @@ description, tags, screenshots and the embed size have no public API, so
 `dist/site/`, and Vercel does the deploying, from the repo.
 
 `butler` itself is not vendored: install it from
-<https://itch.io/docs/butler/> and run `butler login` once, or set
-`BUTLER_API_KEY` in the environment, which is what CI does.
+<https://itch.io/docs/butler/> and run `butler login` once (or set
+`BUTLER_API_KEY` in the environment, butler's other route). Nothing here runs in
+CI — GitHub Actions never worked on this repo and its workflows were deleted, so
+`make push` at the repo root is what publishes: it gates, pushes the commit,
+then runs `deploy-itch.mjs --all`.

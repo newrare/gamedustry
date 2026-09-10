@@ -914,6 +914,15 @@
   #eo-char.settling { transition:opacity .5s ease, transform .5s ease; }
   #eo-char.show { opacity:1; transform:translateY(0) scale(var(--char-k)); }
 
+  /* The three display strings are measured and scaled DOWN by Fit (section 5)
+     rather than sized per game: "OUT OF BALLS!" is 703px of a 624px band at
+     96px in the system stack, and a game's own face moves every width again.
+     `nowrap` is what makes that possible — it turns scrollWidth into the true
+     one-line width, and it makes a string that is still too wide overflow
+     visibly instead of silently becoming two lines. Room is 720 minus the
+     96px of .screen padding. */
+  #intro-title, #screen-end .eo-title, #screen-end .eo-score { white-space:nowrap; }
+
   .eo-title {
     font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);
     text-shadow:0 0 24px rgba(255,45,85,.85), 0 0 52px rgba(255,45,85,.45);

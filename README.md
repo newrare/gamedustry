@@ -41,10 +41,11 @@ Each creative ships as a **single, self-contained `index.html`**:
 ## Repository layout
 
 ```
-playables/
+gamedustry/
 ├── index.html                ← gallery + motor overview (open this first)
 ├── README.md                 ← you are here
 ├── CLAUDE.md                 ← instructions for AI-assisted game creation
+├── Makefile                  ← check / push / itch / site / serve — there is no CI
 ├── vercel.json               ← the deploy settings, in the repo and not a dashboard
 ├── site/                     ← the public newrare site (static, deployed by Vercel)
 │   ├── index.html            ← studio page: playables, store apps, studio, legal
@@ -131,6 +132,23 @@ playables/
 The running task list is [TODO.md](TODO.md).
 
 ## Quick start
+
+**Everything routine is a make target.** GitHub Actions never ran on this repo
+(see [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), *CI*), so the
+`Makefile` at the root holds what it would have done. Vercel still redeploys the
+site by itself on every push to `main`.
+
+```bash
+make check     # mdformat, then the three build gates — before a commit
+make push      # check, refuse a dirty tree, git push, publish the 13 to itch
+make itch      # re-publish to itch without pushing
+make site      # assemble dist/site locally
+make serve     # the dev loop, reload on save
+make meta      # the itch page copy, one file per game
+```
+
+The individual commands below are what those targets run; reach for one when a
+target tells you which step failed.
 
 **Browse** — open the landing page:
 

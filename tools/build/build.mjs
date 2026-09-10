@@ -185,6 +185,7 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
     CONFIG: CONFIG, ASSETS: ASSETS,
     Store: Store, Sound: Sound, Music: Music, Pop: Pop,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
+    Fit: Fit,
     start: startGame, setState: setState, onState: onState,
     state: function () { return State; },
     render: frameRender,

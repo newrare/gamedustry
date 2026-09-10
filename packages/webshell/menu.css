@@ -369,11 +369,8 @@
    THE END SCREEN — same geometry, a different face
    ========================================================================= */
 
-/* `nowrap` is what turns a too-long title into something measurable: the
-   webshell scales these three down until they fit (menu.js, section 6b), and a
-   string it still cannot fit overflows visibly instead of silently wrapping
-   onto a second line and pushing the whole reveal down the screen. */
-#intro-title, #screen-end .eo-title, #screen-end .eo-score { white-space:nowrap; }
+/* `nowrap` on these three now lives in the motor stylesheet, next to the
+   sizes it protects — the playables need it for the same reason. */
 
 /* A face is free to carry tall metrics — Baloo 2 reserves room for Devanagari
    ascenders — which inflated every stat row by 8px and pushed the CTA off the

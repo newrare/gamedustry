@@ -2,10 +2,10 @@
 
 The single running list. [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md)
 explains *why* each item exists and in what order; this file tracks *what is
-left*. One line per task, grouped by phase, each tagged with who does it:
+left*. One line per task, each tagged with who does it:
 
 - **MAIN** — a human action: a decision, an account, an upload, a piece of content.
-- **AUTO** — a command or a CI job; no code to write.
+- **AUTO** — a command; no code to write.
 - **CODE** — something to develop.
 
 Keep this file honest: a task is **removed** once it is verifiably done — the
@@ -14,174 +14,93 @@ Add new tasks here rather than leaving them in a conversation.
 
 ______________________________________________________________________
 
-## Phase 0 — decisions
+## Scope, narrowed on 2026-09-10
 
-Settled and closed; recorded in the `Decisions` table of the industrialization
-doc.
+The factory is built. What is left is **android**, and nothing else is tracked
+here any more. The meta layer (`packages/meta`: progression, an online
+leaderboard, accounts), the web portals (CrazyGames, Poki and their SDKs), the
+measurement gate before wiring ads, and a list of small internal debts were all
+dropped from this file on purpose — not done, parked. The industrialization doc
+still holds their reasoning if any of them comes back.
 
-## Phase 1 — extract the motor
+Android does not need the meta layer: `--target=android` produces a *web*
+directory that Capacitor wraps, so `packages/webshell` ships the start screen,
+the options and the FR/EN switch to the app exactly as it does to the site.
 
-Closed. The motor lives in `packages/`, the builder consumes the manifests, the
-tools are split into `lab/` / `build/` / `publish/`, the two catalogues are
-generated, and all 13 units rebuild byte-identically (`build.mjs --check`).
+## In place
 
-## Phase 2 — prototyping
+Documented here so the list of what exists does not live only in git.
 
-Closed, and reversed: `--target=proto`, `packages/devtools/` and
-`tools/lab/serve.mjs` were built, then **removed** — nobody used the tuning
-panel, iteration happens on the web build, and the word "proto" made a request
-for a quick prototype produce a whole game. A prototype is now one raw HTML page
-in `prototype/`, outside the motor; see CLAUDE.md, *Three kinds of request*.
+| capability                           | how                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------ |
+| a quick prototype                    | one raw page in `prototype/`, no motor and no build (CLAUDE.md)          |
+| the playable-ad build                | `build.mjs` — one self-contained file per game, under 5 MB               |
+| the web build                        | `build.mjs --target=web`, `--dest=site` split / `--dest=itch` standalone |
+| screenshots, covers, icons           | `tools/lab/shoot-{screens,cover,icon}.mjs`, headless and repeatable      |
+| the site, built and deployed         | `build-site.mjs`, then Vercel on every push to `main`                    |
+| the 13 itch pages                    | by hand — itch has no API for a page; `store-meta.mjs` prints the form   |
+| publishing to itch                   | `make push` — gate, push the commit, then `deploy-itch.mjs --all`        |
+| a Newgrounds submission, ready to go | `make ng` — the 13 zips in `dist/newgrounds/`, upload is manual          |
+| display type that always fits        | `Fit` in `packages/shell/shell.js`, measured — playable and web alike    |
 
-## Phase 3 — the site, deployed
+Two things about that last row, so nobody re-derives them: the `--dest=itch`
+build is already portal-neutral (no external request, nothing naming itch.io,
+the install CTA inert), and a Newgrounds submission goes *Under Judgment* first
+and is deleted automatically if it scores under 1.6/5 at 200 votes — so it is
+one game first, not thirteen.
 
-**Closed.** The site is live on Vercel with Web Analytics on, serving all 13
-games from `dist/site` — no game is held back any more.
-Verified on a phone: layout and games both hold up. Two pieces of content are
-still owed, and they belong to the phases that need them:
-
-- [ ] MAIN — a support e-mail on the newrare domain (currently a personal Gmail);
-  it is quoted in `site/privacy.html` and `site/index.html`, both to update
-- [ ] MAIN — fill `site/app-ads.txt` with the AdMob publisher record, once the
-  AdMob account exists (phase 8)
-
-## Phase 4 — the web adapter (site + itch share one build)
-
-The code is in: `--target=web` with its two destinations (`--dest=site` splits
-the motor into shared hashed files and ships the assets as files, `--dest=itch`
-keeps one self-contained document), `packages/frame-web/` (Delta 1),
-`Store`'s memory fallback (Delta 2), the bilingual web menu with `CONFIG.web`
-fed from the manifest, and the two publishing scripts. The 13 itch pages exist,
-`butler` is logged in locally, and every game's `html5` channel carries the same
-build (`deploy-itch.mjs --all`, stamped `20260910-34452bb`). `BUTLER_API_KEY`
-is in the repo's CI secrets. What is left is one commit:
-
-- [ ] MAIN — commit and push `.github/workflows/itch.yml`. It is written and
-  needs nothing else — three build gates, butler from broth, all 13 pushed on a
-  `v*` tag — but it is still untracked locally, so GitHub has no such workflow
-  and the secret has nothing to feed. Then tag once and watch the Actions run
-
-## Painted artwork — the pipeline is in
-
-`assets/image/` (the masters) → `node tools/lab/encode-art.mjs` →
-`assets/art/` (committed, WebP) → `CONFIG.art`, injected by the builder. All 13
-games carry their painted intro, their logotype, their end-screen character and,
-on the web, the landscape scene around the frame; the covers and the site hero
-are composed from the same files. See
-[CLAUDE.md](CLAUDE.md#the-painted-artwork).
-
-The covers and the screenshots are shot from it and uploaded on the 13 pages.
-
-## Phase 5 — the meta layer
-
-The web menu carries both entries for real: `packages/webshell/menu.js` opens a
-LEADERBOARD panel showing the local best score, and an OPTIONS panel wired to
-the motor's own switches (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`),
-the FR/EN language and a best-score wipe, all persisted through `Store`. What is
-left is moving that behind an interface `packages/meta` owns, so the android
-build gets the same screens instead of a second copy.
-
-- [ ] CODE — `packages/meta/`: start screen, options, i18n, progression, shared
-  by the web and android targets
-- [ ] CODE — a local leaderboard behind the interface a server will later fill,
-  replacing the webshell's single best-score placeholder
-- [ ] MAIN — decide whether progression is per game or account-wide
-
-## Phase 6 — all games public, then measure
-
-The 13 are public on both outlets: the site serves them from `dist/site` and
-every itch page carries its build. Nothing is in construction any more. What is
-left is the measurement, and the discipline of waiting for it:
-
-- [ ] MAIN — read retention and replay rate, and decide which games go further
-- [ ] MAIN — do not wire ads into the site before this measurement exists
-
-## Phase 7 — portals
-
-- [ ] CODE — a Newgrounds build, to shake down the adapter (open upload, no QA)
-- [ ] CODE — `packages/platform/crazygames.js`: SDK, `gameplayStart/Stop`, no
-  outbound links, no ads of our own
-- [ ] MAIN — submit to CrazyGames QA and iterate on their report
-- [ ] CODE — `packages/platform/poki.js`, only if Poki selects a game
-
-## Phase 8 — android
-
-- [ ] MAIN — buy the domain and attach it to Vercel (the first hard requirement)
-- [ ] MAIN — clear Play identity verification, set the public developer address
-- [ ] MAIN — recruit 12 testers with 12 distinct Google accounts
-- [ ] CODE — `--target=android`
-- [ ] CODE — `tools/publish/gen-native.mjs`: manifest → Capacitor project
-- [ ] MAIN — generate the keystore, back it up outside CI, base64 into a secret
-- [ ] MAIN — create the Play app: listing, screenshots, content rating, *Data
-  safety*, privacy URL, support e-mail
-- [ ] MAIN — upload the very first `.aab` through the console by hand
-- [ ] AUTO — `fastlane android beta`, then track promotion, in CI on tag
-- [ ] CODE — `packages/platform/capacitor.js`: `Platform.ads` → AdMob
-- [ ] CODE — integrate a TCF-certified CMP (Google UMP) for EEA/UK traffic
-- [ ] MAIN — AdMob account, tax and payment profile, ad units linked to the app
-- [ ] MAIN — decide whether the audience is declared under 13 (Families policy)
+There is no CI. GitHub Actions never ran on this repo (11 runs, every job
+refused before a runner was allocated, on a public repo with nothing owed), so
+the workflows were deleted and their commands became the root `Makefile`. Run
+`make check` before a commit; nothing else will.
 
 ______________________________________________________________________
 
-## Content and assets
+## Android
 
-- [ ] MAIN — playtest `marshmelt` on a phone: the recovery shot (`airShots`),
-  `flingSpeed`, the two fall lanes (`fastChance`, `fastMin/fastMax`) and
-  `gripCenter` are set off a headless pilot, not off a thumb. That pilot is a
-  blind sweep with no reaction time (`SWEEP` in `tools/lab/shoot-screens.mjs`:
-  reading the rock list to aim was benched and came out *worse*), so it says the
-  mechanics hold, not that the curve is right
+**The prerequisites are slow and none of them are code.** The domain especially:
+it was deferred while the site ran on Vercel, which was right, but Google Play
+wants a real support address and a privacy URL on a domain you own, so it comes
+back first here.
 
-- [ ] MAIN — record the site's URL somewhere in the repo (a `site.url` field,
-  or `store-meta.mjs`): it is written nowhere today, and the "A Newrare game"
-  line that closes each itch description needs a link target. The Vercel
-  address is the one to use — buying the domain is deferred, it works fine
+- [ ] MAIN — buy the domain and attach it to Vercel. `SITE.url` in
+  `tools/publish/store-meta.mjs` is the one place the address is written
+- [ ] MAIN — a support e-mail on that domain, replacing the personal Gmail
+  quoted in `site/privacy.html` and `site/index.html` (both to update, and the
+  two copies of the privacy text are edited together)
+- [ ] MAIN — clear Play identity verification, set the public developer address
+- [ ] MAIN — recruit 12 testers with 12 distinct Google accounts. Google
+  requires closed testing before a new personal developer account can go
+  public, and this is the item with the longest lead time — start it early
 
-- [ ] MAIN — per-game store URLs in `CONFIG.storeUrl`, once a game has a real
-  listing (they all point at the site today, which is correct for now)
+**The build:**
 
-- [ ] MAIN — decide which languages the games themselves are localized into
+- [ ] CODE — `--target=android` in `build.mjs` (`TARGETS` is `['playable', 'web']`
+  today): a web directory for Capacitor to wrap
+- [ ] CODE — `tools/publish/gen-native.mjs`: manifest → Capacitor project under
+  `native/<slug>/`
+- [ ] CODE — `packages/platform/capacitor.js`, the fourth implementation of the
+  slot MRAID and `web.js` already fill
+- [ ] MAIN — generate the keystore and back it up off the signing machine.
+  Losing it means never being able to update an app again
+- [ ] AUTO — a `make android` target next to `push`, wrapping Gradle and
+  `fastlane android beta`; there is no CI to run it on a tag
 
-## Known drift and small debts
+**Per app, on the console:**
 
-- [ ] CODE — four playables wrap their end title onto two lines, and did so
-  before any font landed: `bouncetry` "OUT OF BALLS!" (703px of a 624px band),
-  `echomaze` "OUT OF PULSES!" (766), `orbinity` "LOST IN SPACE" (690),
-  `slipdeck` "OUT OF LIVES" (636), all at `.eo-title` 96px in the system stack.
-  The web build now measures and scales those down
-  (`packages/webshell/menu.js`, section 6b); the playable still needs a call —
-  the same fitter in the motor, a smaller `.eo-title`, or shorter strings. It
-  rebuilds all 14 creatives, so it is a decision, not a patch
+- [ ] MAIN — create the Play app: listing, screenshots, content rating
+  questionnaire, *Data safety* form, privacy URL, support e-mail, target API
+  level. `store-meta.mjs` already prints the copy
+- [ ] MAIN — upload the very first `.aab` by hand; `fastlane supply` cannot
+  create the app
+- [ ] MAIN — decide whether the audience is declared under 13 (Families policy).
+  It changes what ads and what data collection are allowed, so decide it before
+  the *Data safety* form, not after
 
-- [ ] MAIN — the leaderboard shows one local best score. The online one, the
-  accounts and the progression behind it are `packages/meta` (phase 5), and
-  OPTIONS is already the panel it plugs into
+**Only if the apps are monetized** — kept because the CMP is a legal
+requirement, not a feature, and it is easy to discover too late:
 
-- [ ] CODE — `tools/publish/store-meta.mjs` prints two fields it cannot know:
-  `Genre` is hard-coded `Action` for all 13 (`radiam` is a puzzle, `slipdeck` a
-  card game), and `Colours` falls back to `#0a0a1c` because no manifest carries
-  a `theme.bg` — the real ground is the SKIN's own `--bg`. An itch page theme
-  wants four colours (BG, BG2, Text, Link); the manifest carries one and a half
-
-- [ ] CODE — `lab/overlay-pop.html` carries its own fork of the pop CSS,
-  predating the extraction: it still has a `filter` on `.pop-word` and it did
-  not get the composited-slide fix. The catalogue therefore no longer previews
-  what the motor draws. Point it at `packages/shell/motor.css` instead
-
-- [ ] CODE — the end screen animates two paint properties for as long as it is
-  up: `starglow` animates `filter: drop-shadow` on every star and
-  `.eo-row .shine` animates `left`, i.e. a layout pass per frame per stat row.
-  `tools/lab/bench-pop.mjs --styles=end` measures them at 16 ms of raster over
-  3 s, so this is a latent cost and not the mobile stall that was fixed — but
-  both break the "transform and opacity only" rule and should follow the decors
-
-- [ ] CODE — the games' `page.html` files carry per-game comment drift in the
-  markup (edited comments, shortened blocks). Harmless, but it means the markup
-  is not shared. Normalize it and reduce `page.html` to three tokens.
-
-- [ ] CODE — `CONFIG.title` is all caps in most games while `manifest.json`
-  carries the proper name; pick one and derive the other
-
-- [ ] CODE — the root `index.html` gallery duplicates the site's catalogue
-
-- [ ] MAIN — rename the repo: `playables` no longer describes what it holds
+- [ ] MAIN — AdMob account, tax and payment profile, ad units linked to the app
+- [ ] CODE — a TCF-certified CMP (Google UMP) for EEA/UK traffic, and
+  `Platform.ads` wired to AdMob through the Capacitor adapter
+- [ ] MAIN — fill `site/app-ads.txt` with the AdMob publisher record

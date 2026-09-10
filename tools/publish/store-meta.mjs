@@ -25,6 +25,14 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/* The studio's own address, and the only place it is written down. Every
+   description ends with a line pointing back at it, so a visitor who lands on
+   one itch page can find the other twelve — and so that line is never pasted
+   into thirteen forms by hand. Vercel serves the site; the domain is deferred
+   (see TODO.md, phase 3), and replacing this string is the whole migration.
+   Left empty, the line is simply not printed. */
+const SITE = { name: 'Newrare', url: 'https://newrare-website.vercel.app' };
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);
 const only = (argv.find((a) => a.startsWith('--game=')) || '').split('=')[1] || null;
@@ -34,6 +42,15 @@ const all = argv.includes('--all');
 if (!only && !all) {
   console.error('usage: store-meta.mjs --game=<slug> | --all   [--out=<dir>]');
   process.exit(1);
+}
+
+/* The long write-up, plus the one line that is the same on all thirteen pages.
+   Markdown, because that is what itch's editor takes: it renders the link and
+   keeps "Newrare" as its text. */
+function description(m) {
+  const body = m.description || '';
+  if (!SITE.url) return body;
+  return [body, '', `A ${SITE.name} game — more at [${SITE.name}](${SITE.url}).`].join('\n');
 }
 
 function slugs() {
@@ -138,7 +155,7 @@ function render(m) {
     section('Title', m.title || m.slug),
     section('Short description (EN)', en.tagline || m.tagline),
     section('Short description (FR)', fr.tagline),
-    section('Description', m.description),
+    section('Description', description(m)),
     section('Tags', tagLine(m)),
     section('Images', images(slug)),
     section('Embed', [
