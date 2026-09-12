@@ -43,7 +43,7 @@
      that CSS scales as a whole, so a fit is deterministic.
 
      #intro-title is in the list for the game that has no logotype: once
-     `assets/art/<slug>-title.png` exists, Art puts an <img> inside that node
+     `assets/image/embed/<slug>-title.png` exists, Art puts an <img> inside that node
      and there is no type left to measure, so the fit is a no-op. All thirteen
      are in that case today. The end title and the score are always type. */
   var Fit = (function () {
@@ -548,7 +548,7 @@
 
   /* --- Art: the game's painted screens ------------------------------------
 
-     `CONFIG.art` is injected by tools/build/build.mjs out of `assets/art/`,
+     `CONFIG.art` is injected by tools/build/build.mjs out of `assets/image/embed/`,
      one key per file, and a game declares nothing to get it — the file name is
      the declaration (see tools/lab/encode-art.mjs). Three roles reach the
      shell:
@@ -755,6 +755,249 @@
     };
   })();
 
+
+  /* --- Decor: the game's own objects, scattered over the screens ----------
+
+     `assets/image/embed/<slug>-decor-NN.webp` reaches CONFIG.art like every other
+     piece of artwork, and NO GAME NAMES ONE: the pool is every key whose name
+     starts with `decor`, so dressing a game is adopting four cuts out of its
+     own object sheet and nothing else —
+     `tools/lab/cut-objects.mjs <slug>-object-<name> --adopt 1,4 --as decor`.
+
+     WHAT IT DRESSES. The end screen and the round's corners from here; the
+     web menu's panels, the pause card and the level map from packages/webshell
+     through the web handle. A screen the motor writes in a column is a column
+     on a picture; the same screen with a gear hanging off its corner and a leaf
+     behind its card is a screen somebody dressed. It costs nothing to add,
+     because the objects were painted for the game already and the cut is 20 KB.
+
+     THE RULES, AND EVERY ONE OF THEM IS A LIMIT:
+
+       three pieces on a screen, never     past that it is a collage, and what
+                                           the player came to read is competing
+                                           with wallpaper. `count` is clamped;
+       every piece bleeds off an edge      a picture floating clear of a corner
+                                           is a sticker — the same reason the
+                                           end screen's character is cropped by
+                                           the bottom of the frame;
+       nothing is drawn per frame          two DOM nodes and one composited bob.
+                                           A still object blitted on the canvas
+                                           would bill a game's frame budget for
+                                           something that never changes;
+       no piece ever takes a tap           pointer-events:none, on the layer.
+
+     PSEUDO-RANDOM, NOT RANDOM. The pieces come out of a bag that is reshuffled
+     only once it is empty, so a pool of four dresses four screens running
+     without repeating itself. Sampling the pool independently would put the
+     same gear on a panel and on the pause card behind it, which reads as a bug
+     rather than as variety. Each piece then takes its own size, tilt, flip,
+     bob and depth — in front of the screen's content or behind it.
+
+     A game opts out with `CONFIG.decor = false`, and out of the round alone
+     with `CONFIG.decor = { round: false }` — the one place a picture sits over
+     a live world rather than over a screen. */
+  var Decor = (function () {
+    var art = CONFIG.art || {};
+    var opt = CONFIG.decor;
+    var OFF = opt === false;
+
+    /* The pool, sorted so two builds of the same game scatter the same set.
+       `decor01`, `decorBall01`, `decorBolt17` — a game whose objects come off
+       two sheets keeps one role per sheet (cut-objects.mjs, --as). */
+    var pool = [];
+    for (var k in art) {
+      if (art.hasOwnProperty(k) && art[k] && /^decor([A-Z]|\d)/.test(k)) pool.push(k);
+    }
+    pool.sort();
+
+    /* Where a piece may land, in percent of the box it dresses, and which edge
+       it hangs off. The x is negative on purpose: every anchor bleeds out. */
+    var SPOTS = {
+      tl: { h: "left",  v: "top",    x: -7, y: 3 },
+      tr: { h: "right", v: "top",    x: -7, y: 4 },
+      bl: { h: "left",  v: "bottom", x: -8, y: 5 },
+      br: { h: "right", v: "bottom", x: -8, y: 3 },
+      l:  { h: "left",  v: "top",    x: -9, y: 36 },
+      r:  { h: "right", v: "top",    x: -9, y: 40 }
+    };
+
+    var bag = [];
+    function take() {
+      if (!bag.length) {
+        bag = pool.slice();
+        for (var i = bag.length - 1; i > 0; i--) {          // Fisher-Yates
+          var j = Rand.int(0, i), t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+        }
+      }
+      return bag.pop();
+    }
+
+    /* Two nodes per piece, and the split is what keeps both animations honest:
+       the SLOT owns the position and the fade, the IMAGE owns the tilt, the
+       flip and the bob. One node would make the bob's keyframes overwrite the
+       tilt — the same trap #web-title-wrap exists to avoid in the webshell. */
+    function piece(key, spot, size, alpha) {
+      var slot = document.createElement("div");
+      slot.className = "decor-slot";
+      var w = Math.round(size * Rand.range(0.82, 1.24));
+      slot.style[spot.h] = (spot.x + Rand.range(-2.5, 2.5)).toFixed(1) + "%";
+      slot.style[spot.v] = (spot.y + Rand.range(-3, 3)).toFixed(1) + "%";
+      slot.style.width = w + "px";
+      slot.style.setProperty("--d-a", alpha.toFixed(2));
+
+      var img = document.createElement("img");
+      img.className = "decor-piece";
+      img.alt = "";
+      img.src = art[key];
+      img.style.setProperty("--d-r", Rand.range(-19, 19).toFixed(1) + "deg");
+      img.style.setProperty("--d-f", Rand.chance(0.5) ? "1" : "-1");
+      img.style.setProperty("--d-bob", Math.round(w * 0.055) + "px");
+      img.style.animationDuration = Rand.range(5.5, 9).toFixed(1) + "s";
+      img.style.animationDelay = "-" + Rand.range(0, 6).toFixed(1) + "s";
+      slot.appendChild(img);
+      return slot;
+    }
+
+    function layer(box, cls) {
+      var lay = document.createElement("div");
+      lay.className = "decor-layer " + cls;
+      box.appendChild(lay);
+      return lay;
+    }
+
+    /* Direct children only: #frame holds the end screen, and clearing the
+       round's corners must not take the end screen's own dressing with it. */
+    function clear(box) {
+      if (!box) return;
+      for (var i = box.children.length - 1; i >= 0; i--) {
+        var c = box.children[i];
+        if (c.className && String(c.className).indexOf("decor-layer") === 0) box.removeChild(c);
+      }
+    }
+
+    /* opts: { count, spots, size, opacity, front, cls }
+         count    1..3, clamped — and never more than there are spots left
+         spots    which anchors this screen allows (see SPOTS)
+         size     the base width in design px; each piece varies around it
+         opacity  what a piece BEHIND the content is worth; one in front of it
+                  gets two thirds of that, because it lands over text
+         front    the odds a piece is in front of the content at all
+         cls      an extra class on the layer, for a caller that needs its own
+                  depth (the round, the level map) */
+    function dress(box, opts) {
+      if (OFF || !pool.length || !box) return;
+      opts = opts || {};
+      clear(box);
+      var spots = (opts.spots || ["tl", "br"]).slice();
+      var n = clamp(opts.count || 1, 1, Math.min(3, spots.length));
+      var size = opts.size || 170;
+      var alpha = opts.opacity == null ? 0.55 : opts.opacity;
+      var odds = opts.front == null ? 0.34 : opts.front;
+      var extra = opts.cls ? " " + opts.cls : "";
+      var lays = {}, slots = [];
+
+      for (var i = 0; i < n; i++) {
+        var spot = SPOTS[spots.splice(Rand.int(0, spots.length - 1), 1)[0]];
+        if (!spot) continue;
+        var depth = Rand.chance(odds) ? "front" : "back";
+        var lay = lays[depth] || (lays[depth] = layer(box, depth + extra));
+        var slot = piece(take(), spot, size, depth === "front" ? alpha * 0.62 : alpha);
+        lay.appendChild(slot);
+        slots.push(slot);
+      }
+      /* The fade is what keeps a panel from flashing its dressing in before
+         its own card: one frame at opacity 0, then the transition. */
+      requestAnimationFrame(function () {
+        for (var i = 0; i < slots.length; i++) slots[i].classList.add("on");
+      });
+    }
+
+    /* The round's own corners, one or two of them, at a fraction of the
+       opacity a screen gets: this is the one layer that sits over a live world,
+       and a gameplay is read through it. It goes on #frame rather than on the
+       canvas, under the HUD and the overlay (motor.css), so no game has to
+       give up a pixel of Layout for it. */
+    function round() {
+      if (opt && opt.round === false) return;
+      dress($("frame"), {
+        count: Rand.int(1, 2), spots: ["tl", "tr", "bl", "br"],
+        size: 150, opacity: 0.2, front: 0, cls: "round"
+      });
+    }
+
+    function end() {
+      /* Never bottom-right: that corner is the character's, and the two of them
+         stacked is the crowded end screen the artwork was drawn to replace. */
+      dress($("screen-end"), {
+        count: 2, spots: ["tl", "tr", "l", "bl"],
+        size: 195, opacity: 0.5, front: 0.35
+      });
+    }
+
+    /* The module wires itself to the state machine rather than being called
+       from the bootstrap: a layer the motor only decorates with has no business
+       adding a line to the round's start-up path. */
+    if (!OFF && pool.length) {
+      onState(function (s) {
+        if (s === "playing") round();
+        else clear($("frame"));
+        if (s === "end") end();
+      });
+    }
+
+    return {
+      has: function () { return !pool.length ? false : !OFF; },
+      dress: dress, clear: clear
+    };
+  })();
+
+  /* --- Brand: the studio signature on the title screen ---------------------
+
+     `CONFIG.brand` is injected by tools/build/build.mjs — the mark out of
+     `assets/image/brand/newrare.webp`, the version out of the game's manifest — so a
+     game declares nothing and the thirteen sign themselves identically. The
+     block is built here rather than written into page.html for the same reason
+     the painted layer is: it is one piece of markup that would otherwise live
+     in thirteen copies plus the template, configured by none of them.
+
+     It goes on the intro and nowhere else. The web target keeps it as it is:
+     its menu APPENDS to #screen-intro instead of rebuilding it, and the
+     signature takes the bottom-left corner the menu leaves empty. */
+  function buildBrand() {
+    var brand = CONFIG.brand;
+    if (!brand || !brand.mark) return;
+    var screen = $("screen-intro");
+    if (!screen || $("brand-sig")) return;
+
+    var sig = document.createElement("div");
+    sig.id = "brand-sig";
+
+    var img = document.createElement("img");
+    img.className = "brand-mark";
+    img.src = brand.mark;
+    img.alt = "";
+    sig.appendChild(img);
+
+    var copy = document.createElement("div");
+    copy.className = "brand-copy";
+
+    var line = document.createElement("div");
+    line.className = "brand-line";
+    line.textContent = brand.label || "Newrare";
+    copy.appendChild(line);
+
+    /* No number in the manifest is not an error: a game that has never been
+       versioned signs itself with the mark and the name, and the empty node
+       collapses on its own (.brand-ver:empty). */
+    var ver = document.createElement("div");
+    ver.className = "brand-ver";
+    ver.textContent = brand.version ? "v" + brand.version : "";
+    copy.appendChild(ver);
+
+    sig.appendChild(copy);
+    screen.appendChild(sig);
+  }
+
   // --- Intro: logo, copy and the animated how-to-play demo ----------------
   function buildIntro() {
     /* The painted screens come first: the title image below replaces the icon,
@@ -764,6 +1007,7 @@
     Art.dressFrame();
     Art.buildCharacter();
     var hasArtTitle = Art.titleImage();
+    buildBrand();
 
     /* A game with a logotype hides the app icon: the picture already carries
        the name and the mark, and the two stacked is the crowded intro the
@@ -1187,6 +1431,15 @@
     };
   })();
 
+  /* Anything bolted on top of the shell may rewrite a round's result before
+     the end screen reads it — the web target's level layer turns the game's
+     own star thresholds into the level's, and writes the progression off the
+     same object. The motor registers none, and a playable ships an empty
+     list. The hook runs after the score is settled and before anything is
+     stored, so a filter sees the number the player actually made. */
+  var resultHooks = [];
+  function onResult(fn) { resultHooks.push(fn); }
+
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
   function endRound(result) {
@@ -1194,7 +1447,9 @@
     result = result || {};
     Loop.stop(); Round.stop();
     Music.duck(0.55, 0.8);        // let the end-screen cues sit on top
-    var score = result.score == null ? Math.round(HUD.score()) : result.score;
+    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
+    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
+    var score = result.score;
     var best = Math.max(score, Store.get("bestScore", 0));
     Store.set("bestScore", best);
     setState("end");

@@ -1,6 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
+  "version": "1.0.0",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "Three ropes of light run up the void, curling into loops and crossing each other. Swipe to hop the arrow from one to the next: gems and power-ups pay, mines and voids cost, and the run only ends when the third life does.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "THREE ROPES",
+            "line": "Swipe to <b>hop</b>"
+          },
+          {
+            "kicker": "GEMS & MINES",
+            "line": "Read the <b>rope</b> ahead"
+          },
+          {
+            "kicker": "THREE LIVES",
+            "line": "The void <b>costs</b> one"
+          },
+          {
+            "kicker": "ENDLESS",
+            "line": "Straight <b>up</b>, forever"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "TROIS CORDES",
+            "line": "Swipe pour <b>sauter</b>"
+          },
+          {
+            "kicker": "GEMMES ET MINES",
+            "line": "Lis la <b>corde</b> devant"
+          },
+          {
+            "kicker": "TROIS VIES",
+            "line": "Le vide en <b>coûte</b> une"
+          },
+          {
+            "kicker": "SANS FIN",
+            "line": "Tout <b>droit</b>, sans fin"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "triverse",
@@ -65,6 +110,47 @@
         "tagline": "<b class=\"w-swipe\">Balaie</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>"
       }
     },
-    "font": "orbitron"
+    "font": "orbitron",
+    "levels": {
+      "objective": {
+        "from": 180,
+        "to": 1200,
+        "step": 20
+      },
+      "copy": {
+        "en": "Reach <b>{n} m</b> on three lanes",
+        "fr": "Atteins <b>{n} m</b> sur trois voies"
+      },
+      "tune": {
+        "play.speedMin": [
+          440,
+          680
+        ],
+        "play.speedMax": [
+          820,
+          1250
+        ],
+        "play.ramp": [
+          26,
+          12
+        ],
+        "play.diffFull": [
+          900,
+          320
+        ],
+        "play.hazardMax": [
+          0.5,
+          0.95
+        ],
+        "play.gapNear": [
+          340,
+          250
+        ],
+        "play.lives": [
+          4,
+          2
+        ]
+      }
+    }
   }
 }

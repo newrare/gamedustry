@@ -94,7 +94,7 @@
     100% { transform:rotate(-44.1deg) translate(62px,0);   opacity:1; }
   }
 
-  /* the finger: the shared assets/svg/finger.svg from the motor, tapping on
+  /* the finger: the shared assets/motor/svg/finger.svg from the motor, tapping on
      the frame the comet lets go. Its shockwave rides the motor's beam. */
   .demo-tap .demo-hand {
     left:263px; margin-left:0; bottom:8px; z-index:2;

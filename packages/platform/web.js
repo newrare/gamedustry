@@ -30,7 +30,7 @@
 
     /* Delta 4 — the landscape cut of the game's own painting, for the bands
        around the frame that only a desktop window has.
-       `assets/art/<slug>-background-desk.webp` is injected as
+       `assets/image/embed/<slug>-background-desk.webp` is injected as
        `CONFIG.art.backgroundDesk` by the builder, and ONLY for this target: a
        playable runs in a fixed portrait iframe and has no band to fill, so it
        would carry 30 KB it can never show (the same reason it ships no font).

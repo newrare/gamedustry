@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Shoot the itch.io cover of every game into assets/cover/.
+/* Shoot the itch.io cover of every game into assets/image/itch/cover/.
  *
  * itch asks for one image per project (minimum 315x250, recommended 630x500)
  * and shows it wherever it links to the game. Nothing in this repo produced
@@ -16,11 +16,32 @@
  *
  * A game missing any of the four pieces is skipped and reported rather than
  * shot with a dashed placeholder in the hole — a placeholder must not reach an
- * itch page by accident. The art comes out of `assets/art/`, so the usual fix
+ * itch page by accident. The art comes out of `assets/image/embed/`, so the usual fix
  * is `node tools/lab/encode-art.mjs`.
+ *
+ * --play shoots the other image built out of the same four pieces: the
+ * 1024x500 feature graphic Google Play asks for, into assets/image/google/feature/. Same
+ * card, widened (lab/cover-card.html, `?wide=1`) — Play's listing is the
+ * second place this composition is needed and it must not become a second
+ * design to maintain.
+ *
+ * --store shoots the listing gallery: four 720x1280 screenshots into
+ * assets/image/google/, each one a real frame of play with the character
+ * standing in front of it, alternating side and face.
+ *
+ * **--store is superseded by tools/lab/shoot-store.mjs**, which composes the
+ * same idea with the game's own objects and a punchline in the player's
+ * language, at the size the stores actually want, into
+ * assets/image/google/<lang>/ and assets/image/itch/<lang>/. Use that one: the
+ * flat files this flag wrote are gone, and it writes beside the per-language
+ * folders rather than into them because it knows no language. The other two
+ * modes — the plain itch cover and the 1024x500 Play feature graphic — are
+ * still this tool's, and carry no copy.
  *
  * Usage:
  *   node tools/lab/shoot-cover.mjs [slug ...] [--shot 6] [--face happy] [--keep]
+ *   node tools/lab/shoot-cover.mjs radiam --play
+ *   node tools/lab/shoot-cover.mjs radiam --store
  */
 
 import { spawn } from "node:child_process";
@@ -31,9 +52,26 @@ import os from "node:os";
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var CARD = path.join(ROOT, "lab", "cover-card.html");
 var GAMES_DIR = path.join(ROOT, "games");
-var OUT_DIR = path.join(ROOT, "assets", "cover");
+var OUT_DIR = path.join(ROOT, "assets", "image", "itch", "cover");   // --play: assets/image/google/feature/
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var W = 630, H = 500;                                // what itch recommends
+var PLAY_W = 1024, PLAY_H = 500;                     // what Play requires
+var STORE_W = 720, STORE_H = 1280;                   // the design space itself
+
+/* The gallery, in order. The face rotates through the three the games ship
+   and the side alternates, because four shots hugging the same corner read as
+   one image posted four times. The shots are spread across a run — an early
+   board, two mid ones, a late one — so the gallery shows a game going
+   somewhere rather than one frozen state.
+
+   The sad face is last on purpose: the first two images are the ones a store
+   card shows, and a listing does not open on a character who is losing. */
+var STORE_PLAN = [
+  { shot: 2, face: "happy",   side: "right" },
+  { shot: 4, face: "neutral", side: "left" },
+  { shot: 6, face: "happy",   side: "right" },
+  { shot: 8, face: "sad",     side: "left" }
+];
 var DSF = 2;                                         // supersampling
 
 // --- CLI -----------------------------------------------------------------
@@ -42,12 +80,28 @@ var slugs = [];
 var shot = 6;                    // a mid-to-late board: the run has filled up
 var face = "happy";              // a cover invites; the winning face is the one
 var keep = false;
+var play = false;
+var store = false;
 var FACES = ["happy", "neutral", "sad"];
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shot") shot = parseInt(argv[++i], 10);
   else if (argv[i] === "--face") face = argv[++i];
   else if (argv[i] === "--keep") keep = true;
+  else if (argv[i] === "--play") play = true;
+  else if (argv[i] === "--store") store = true;
   else slugs.push(argv[i]);
+}
+if (play && store) {
+  console.error("--play and --store are two different images; run them one at a time");
+  process.exit(1);
+}
+if (play) {
+  W = PLAY_W; H = PLAY_H;
+  OUT_DIR = path.join(ROOT, "assets", "image", "google", "feature");
+}
+if (store) {
+  W = STORE_W; H = STORE_H;
+  OUT_DIR = path.join(ROOT, "assets", "image", "google");
 }
 if (FACES.indexOf(face) < 0) {
   console.error("--face must be one of " + FACES.join(" / "));
@@ -61,7 +115,7 @@ if (!slugs.length) {
 
 /* Everything the card needs about a game, read once from the one file that
    describes it. The title and the typeface used to come from here too; both
-   are drawn now (assets/art/<slug>-title.webp), so the only thing left the
+   are drawn now (assets/image/embed/<slug>-title.webp), so the only thing left the
    manifest decides is the accent the card's bottom glow is tinted with. */
 function describe(slug) {
   var m = JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8"));
@@ -72,10 +126,10 @@ function describe(slug) {
 }
 
 function screenOf(slug, n) {
-  return path.join(ROOT, "assets", "screen", slug + "-" + String(n).padStart(2, "0") + ".jpg");
+  return path.join(ROOT, "assets", "image", "screen", slug + "-" + String(n).padStart(2, "0") + ".jpg");
 }
 function artOf(slug, role) {
-  return path.join(ROOT, "assets", "art", slug + "-" + role + ".webp");
+  return path.join(ROOT, "assets", "image", "embed", slug + "-" + role + ".webp");
 }
 
 // --- Chrome over the DevTools protocol -----------------------------------
@@ -170,12 +224,15 @@ function resampleJS(b64) {
   })()`;
 }
 
-async function shootCover(client, sid, info, outPath) {
+async function shootCover(client, sid, info, outPath, job) {
+  job = job || { shot: shot, face: face };
   var url = "file://" + CARD
     + "?shoot=1&slug=" + encodeURIComponent(info.slug)
     + "&accent=" + encodeURIComponent(info.accent)
-    + "&face=" + encodeURIComponent(face)
-    + "&shot=" + shot;
+    + "&face=" + encodeURIComponent(job.face)
+    + "&shot=" + job.shot
+    + (play ? "&wide=1" : "")
+    + (store ? "&store=1&side=" + job.side : "");
   await client.send("Page.navigate", { url: url }, sid);
 
   var deadline = Date.now() + 20000;
@@ -215,11 +272,22 @@ function reap(child) {
    piece is missing — the answer is almost always "run encode-art". */
 var skipped = [];
 slugs = slugs.filter(function (s) {
-  var why = !fs.existsSync(artOf(s, "background-desk")) ? "no art background-desk"
-    : !fs.existsSync(artOf(s, "title")) ? "no art title"
-    : !fs.existsSync(artOf(s, "character-" + face)) ? "no art character-" + face
-    : !fs.existsSync(screenOf(s, shot)) ? "no screenshot " + String(shot).padStart(2, "0")
-    : null;
+  var why;
+  if (store) {
+    /* The ground is the capture and the only artwork is the character, so a
+       game with no landscape painting and no logotype still has a gallery. */
+    why = STORE_PLAN.map(function (j) {
+      if (!fs.existsSync(artOf(s, "character-" + j.face))) return "no art character-" + j.face;
+      if (!fs.existsSync(screenOf(s, j.shot))) return "no screenshot " + String(j.shot).padStart(2, "0");
+      return null;
+    }).filter(Boolean)[0] || null;
+  } else {
+    why = !fs.existsSync(artOf(s, "background-desk")) ? "no art background-desk"
+      : !fs.existsSync(artOf(s, "title")) ? "no art title"
+      : !fs.existsSync(artOf(s, "character-" + face)) ? "no art character-" + face
+      : !fs.existsSync(screenOf(s, shot)) ? "no screenshot " + String(shot).padStart(2, "0")
+      : null;
+  }
   if (why) skipped.push(s + " (" + why + ")");
   return !why;
 });
@@ -237,14 +305,21 @@ var sid = await openPage(client);
 
 for (var s = 0; s < slugs.length; s++) {
   var slug = slugs[s];
-  var out = path.join(OUT_DIR, slug + ".png");
-  try {
-    await shootCover(client, sid, describe(slug), out);
-    console.log("OK    " + path.relative(ROOT, out)
-      + "  (" + Math.round(fs.statSync(out).size / 1024) + " KB)");
-  } catch (e) {
-    failed++;
-    console.error("FAIL  " + slug + ": " + e.message);
+  var jobs = store
+    ? STORE_PLAN.map(function (j, i) {
+        return { job: j, out: path.join(OUT_DIR, slug + "-" + String(i + 1).padStart(2, "0") + ".png") };
+      })
+    : [{ job: null, out: path.join(OUT_DIR, slug + ".png") }];
+
+  for (var k = 0; k < jobs.length; k++) {
+    try {
+      await shootCover(client, sid, describe(slug), jobs[k].out, jobs[k].job);
+      console.log("OK    " + path.relative(ROOT, jobs[k].out)
+        + "  (" + Math.round(fs.statSync(jobs[k].out).size / 1024) + " KB)");
+    } catch (e) {
+      failed++;
+      console.error("FAIL  " + slug + ": " + e.message);
+    }
   }
 }
 

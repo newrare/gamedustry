@@ -6,8 +6,8 @@
 
   The site builder rewrites this array again on the way to dist/site/, adding for
   each game:
-    icon    - true when assets/icon/thumb/<slug>.png exists
-    screens - how many assets/screen/<slug>-NN.jpg were found
+    icon    - true when assets/image/icon/thumb/<slug>.png exists
+    screens - how many assets/image/screen/<slug>-NN.jpg were found
 
   Two ways a game stays off the public site:
     draft: true   - still in construction, set in the manifest

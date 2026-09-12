@@ -1,6 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
+  "version": "1.0.0",
   "tagline": "Tap to fling the comet from planet to planet",
   "order": 50,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "A comet orbits a mini planet, dust tail trailing. Tap to snap gravity and fling it along the tangent — the planet explodes, a new one spawns, and the next well catches you. Walls bounce and break the chain.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "TIMING TAP",
+            "line": "Snap <b>gravity</b>"
+          },
+          {
+            "kicker": "TANGENT",
+            "line": "Fling to the next <b>planet</b>"
+          },
+          {
+            "kicker": "COMBO",
+            "line": "Chain every <b>orbit</b>"
+          },
+          {
+            "kicker": "WALLS",
+            "line": "A bounce <b>breaks</b> the chain"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "TAP DE PRÉCISION",
+            "line": "Coupe la <b>gravité</b>"
+          },
+          {
+            "kicker": "TANGENTE",
+            "line": "File vers la <b>planète</b>"
+          },
+          {
+            "kicker": "COMBO",
+            "line": "Enchaîne chaque <b>orbite</b>"
+          },
+          {
+            "kicker": "LES MURS",
+            "line": "Un rebond <b>casse</b> la chaîne"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "orbinity",
@@ -65,6 +110,43 @@
         "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b>"
       }
     },
-    "font": "exo2"
+    "font": "exo2",
+    "levels": {
+      "objective": {
+        "from": 250,
+        "to": 1700,
+        "step": 25
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> in one orbit run",
+        "fr": "Marque <b>{n}</b> en une série d’orbites"
+      },
+      "tune": {
+        "planet.start": [
+          4,
+          2
+        ],
+        "planet.max": [
+          5,
+          3
+        ],
+        "planet.rMax": [
+          70,
+          48
+        ],
+        "planet.shrink": [
+          0.7,
+          0.42
+        ],
+        "comet.speed": [
+          440,
+          760
+        ],
+        "comet.trapAfter": [
+          2.4,
+          1.2
+        ]
+      }
+    }
   }
 }

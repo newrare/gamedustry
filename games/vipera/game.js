@@ -143,8 +143,8 @@
     },
     sounds: {
       // The background bed, looped and crossfaded by Music (see CONFIG.music):
-      //   ffmpeg -i assets/sound/vipera.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
-      // assets/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
+      //   ffmpeg -i assets/audio/music/vipera.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
+      // assets/audio/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
       // orb:   ui_mallet_tone_single_plink_generic_002        (pitched by chain)
       // mega:  ui_refresh_smartphone_app_short_sine_whistle_ascending_001
       // chain: alert_notification_clicks_fast_ascending_001   (also the milestone, pitched down)
@@ -861,6 +861,11 @@
         title: st === 3 ? "APEX VIPER!" : st === 2 ? "GREAT RUN!" : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
+        /* A level's objective is a DISTANCE, so the burrow says how far it got
+           rather than letting gems inflate the measure. The playable ignores
+           the field entirely; only the web target's level layer reads it, and
+           the flat thresholds above are what it replaces. */
+        levelScore: d,
         stars: st,
         rows: [
           { label: "LONGEST BODY", value: bestLen + " BLOCKS", grade: "accent" },
@@ -2157,6 +2162,19 @@
 
     function onResize() { metrics(); }
 
-    return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize };
+    /* --- THE LEVEL LAYER (web target) ------------------------------------
+       Two optional hooks, both ignored by the playable — the motor knows
+       nothing about levels and neither does this module beyond these lines.
+
+       `levelProgress` is what a level's objective is measured against while
+       the round runs, and it is the same number `die()` reports as
+       `levelScore`: the metres, never the score, so gems cannot pay for a
+       distance. `levelWon` is the three-star finish — the web shell has
+       already played the slow motion, and the round ends through the game's
+       own result so the end screen keeps vipera's stat rows. */
+    function levelProgress() { return Math.floor(dist); }
+
+    return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
+             levelProgress: levelProgress, levelWon: die };
   })();
 

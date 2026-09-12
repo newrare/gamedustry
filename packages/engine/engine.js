@@ -143,19 +143,26 @@
 
   // --- Loop: rAF with clamped dt, pausable when the ad is not visible -----
   var Loop = (function () {
-    var running = false, paused = false, last = 0, u = null, r = null;
+    var running = false, paused = false, last = 0, u = null, r = null, rate = 1;
     function frame(now) {
       if (!running) return;
       var dt = Math.min((now - last) / 1000, 0.05);   // clamp tab-switch gaps
       last = now;
-      if (!paused) { if (u) u(dt); if (r) r(); }
+      if (!paused) { if (u) u(dt * rate); if (r) r(); }
       requestAnimationFrame(frame);
     }
     return {
-      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; last = performance.now(); requestAnimationFrame(frame); },
+      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; rate = 1; last = performance.now(); requestAnimationFrame(frame); },
       stop:  function () { running = false; },
       pause: function () { paused = true; },
       resume:function () { paused = false; last = performance.now(); },
+      /* SLOW MOTION, one number. The frame keeps rendering at full rate and the
+         simulation is handed a shorter `dt`, so the world, the round clock and
+         the game's own update slow down together — the same reason Loop.pause()
+         freezes all three at once. `start` resets it, so a rate left behind by
+         one round can never leak into the next. The motor never changes it
+         itself; the web target ramps it down for the three-star finish. */
+      rate: function (k) { if (k != null) rate = Math.max(0, k); return rate; },
       isRunning: function () { return running; }
     };
   })();
@@ -534,7 +541,22 @@
      false. The map turns that into session-scoped persistence. */
   var Store = (function () {
     var mem = {};
+
+    /* ONE BEST SCORE PER GAME. The split site build serves the thirteen from
+       ONE origin (/games/<slug>/), so the bare "bestScore" key every game
+       writes was shared by all of them — a high score in vipera showed up in
+       slipdeck. The key is renamed here rather than in thirteen games: a game
+       that knows its slug (CONFIG.slug, injected by the web build) reads and
+       writes "best:<slug>" wherever it asks for "bestScore", and section 6
+       needs no edit. A playable is alone in its own origin and keeps the bare
+       key. "webLang" and "webSettings" stay shared on purpose: one language
+       and one sound choice for the whole site. */
+    function real(k) {
+      return (k === "bestScore" && CONFIG.slug) ? "best:" + CONFIG.slug : k;
+    }
+
     function get(k, d) {
+      k = real(k);
       try {
         var v = localStorage.getItem(k);
         if (v !== null) return JSON.parse(v);
@@ -542,10 +564,34 @@
       return mem.hasOwnProperty(k) ? mem[k] : d;
     }
     function set(k, v) {
+      k = real(k);
       mem[k] = v;                                   // always, so a blocked write still holds
       try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
     }
-    return { get: get, set: set };
+    /* Dropping a key is not the same as setting it to a default: a rename has
+       to leave nothing behind, or the old name keeps being adopted by whoever
+       reads it next. */
+    function del(k) {
+      k = real(k);
+      delete mem[k];
+      try { localStorage.removeItem(k); } catch (e) {}
+    }
+
+    /* The rename, once. Whichever game is opened first adopts what the shared
+       key held; the key is then dropped so it cannot hand the other twelve a
+       score they never made. */
+    (function migrate() {
+      if (!CONFIG.slug) return;
+      var old = null;
+      try { old = localStorage.getItem("bestScore"); } catch (e) {}
+      if (old === null) return;
+      try {
+        if (localStorage.getItem(real("bestScore")) === null) set("bestScore", JSON.parse(old));
+        localStorage.removeItem("bestScore");
+      } catch (e) {}
+    })();
+
+    return { get: get, set: set, del: del };
   })();
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
@@ -560,7 +606,7 @@
      ASSETS.images is the game's own — sprites, logos, the Lucide icons — and
      lands in `Images[key]` for the game to draw.
 
-     CONFIG.art is the painted artwork the builder injects out of assets/art/
+     CONFIG.art is the painted artwork the builder injects out of assets/image/embed/
      (see tools/lab/encode-art.mjs). Nothing draws it on the canvas: the shell
      hands it to an <img> and to a CSS background, so the browser is the one
      that needs it, not the game. It is decoded here all the same, because the
@@ -596,7 +642,7 @@
   }
 
   /* --- Icons: embedded SVGs, tinted and cached --------------------------
-     Pictograms come from the repo's Lucide pack (assets/lucide/), encoded per
+     Pictograms come from the repo's Lucide pack (assets/motor/lucide/), encoded per
      game with tools/lab/embed-icon.mjs and listed in ASSETS.images under an "ico"
      key. They are authored white, because an <img> has no `currentColor` to
      resolve, so every draw goes through here: the icon is rasterized once per

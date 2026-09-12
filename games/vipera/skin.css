@@ -146,7 +146,7 @@
     100% { transform:translateX(-66px) rotate(-16deg); }
   }
 
-  /* the finger: the motor's shared assets/svg/finger.svg, parked in the bottom
+  /* the finger: the motor's shared assets/motor/svg/finger.svg, parked in the bottom
      right so it never crosses the body, pressing once per turn */
   .demo-tap .demo-hand {
     z-index:3; left:318px; margin-left:0; bottom:4px;

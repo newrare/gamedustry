@@ -135,7 +135,7 @@
     100% { transform:translateX(30px)  rotate(15deg); }
   }
 
-  /* the finger: the motor's shared assets/svg/finger.svg, jumping between the
+  /* the finger: the motor's shared assets/motor/svg/finger.svg, jumping between the
      two halves of the road (`left` is stepped, the press stays on transform so
      the two animations never fight over the same property) */
   .demo-hold .demo-hand {

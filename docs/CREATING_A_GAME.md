@@ -55,7 +55,7 @@ mechanic instead of describing it.
    mechanic in `<b class="w-…">`. They glow in `--accent` by default; retint
    each class from the SKIN (`#intro-tagline .w-fruit { color:… }`).
 1. **The stage illustrates the game, not a generic gesture.** Keep the shared
-   finger from the motor (`assets/svg/finger.svg`, already inlined in
+   finger from the motor (`assets/motor/svg/finger.svg`, already inlined in
    `.demo-hand` — never draw your own hand) and re-dress the other nodes from
    the SKIN: the target becomes the character, the track becomes the world, the
    beam becomes the tap shockwave, the stage's `::before` / `::after` become
@@ -144,13 +144,13 @@ file reads correctly), `<b class="w-…">` markers included.
 
 ### 6. Sound, and the assets you truly need
 
-**Every sound effect comes from the shared `assets/sfx/` library** — pick a clip
+**Every sound effect comes from the shared `assets/audio/sfx/` library** — pick a clip
 per event, trim it, re-encode it mono 32 kHz / 64 kbps and embed it in
 `ASSETS.sounds` under a short key. The full recipe (and the ffmpeg one-liners) is
-in [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx):
+in [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetsaudiosfx):
 
 ```bash
-ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
+ffmpeg -i assets/audio/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
 node tools/lab/embed-asset.mjs gem.mp3 --key gem
 ```
 
@@ -230,7 +230,7 @@ that is the whole convention.
 - [`games/triverse/`](../games/triverse/index.html) — endless swipe-between-lanes
   runner: procedural paths (including real self-crossing loops) evaluated as
   closed-form functions of a progress coordinate, keyboard arrows through
-  `Input.swipe`, eight `assets/sfx` clips.
+  `Input.swipe`, eight `assets/audio/sfx` clips.
 - [`games/blight/`](../games/blight/index.html) — drag-to-aim
   with a trajectory preview, hex grid, cached sprites, an embedded background,
   pressure rows and a danger line.

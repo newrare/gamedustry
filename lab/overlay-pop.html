@@ -9,7 +9,7 @@
    OVERLAY LAB — comic / manga onomatopoeia callouts for the playable motor.
 
    This is a design lab, not a shipped playable: the background is loaded from
-   ../assets/image/ with a relative path so the file stays small.
+   ../assets/image/master/ with a relative path so the file stays small.
 
    The `Pop` module now SHIPS IN THE MOTOR (template/game-template.html,
    section 5 + the POP LAYER stylesheet). Use this file to design a look — new
@@ -538,7 +538,7 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
 <div id="stage">
  <div id="fit">
   <div id="frame">
-    <img id="bg" src="../assets/image/blight-background.png" alt="">
+    <img id="bg" src="../assets/image/embed/blight-background-phone.webp" alt="">
     <div id="bg-tint"></div>
 
     <!-- fake game chrome, so the callouts can be judged in context -->
@@ -1100,15 +1100,23 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     this.classList.toggle("on", anchorHost.classList.toggle("on"));
   };
 
-  var BGS = ["blight-background.png", "orbinity-background-1.png", "orbinity-background-2.png", "orbinity-background-3.png"];
+/* The grounds the callouts are judged against, ordered darkest to brightest:
+     a callout that reads over marshmelt's lava and over echomaze's near-black
+     reads everywhere. These are the shipping cut (assets/image/embed/), which
+     is what the motor actually paints behind the intro and the end screen —
+     and 20 KB apiece instead of the 2 MB masters, so the page opens at once. */
+  var BGS = ["echomaze", "blight", "orbinity", "slipdeck", "marshmelt"];
+  var BG_DIR = "../assets/image/embed/", BG_SUF = "-background-phone.webp";
   var bgRow = $("bg-row"), j;
   for (j = 0; j < BGS.length; j++) {
-    (function (file) {
+    (function (slug) {
+      var src = BG_DIR + slug + BG_SUF;
       var b = document.createElement("button");
       b.className = "bgbtn";
-      var im = document.createElement("img"); im.src = "../assets/image/" + file; im.alt = "";
+      b.title = slug;
+      var im = document.createElement("img"); im.src = src; im.alt = slug;
       b.appendChild(im);
-      b.onclick = function () { $("bg").src = "../assets/image/" + file; };
+      b.onclick = function () { $("bg").src = src; };
       bgRow.appendChild(b);
     })(BGS[j]);
   }

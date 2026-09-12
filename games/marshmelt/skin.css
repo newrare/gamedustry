@@ -125,7 +125,7 @@
     opacity:1; animation:none;
   }
 
-  /* the finger: the motor's shared assets/svg/finger.svg. It presses just
+  /* the finger: the motor's shared assets/motor/svg/finger.svg. It presses just
      before each launch, then fades out and reappears over the next target —
      never sliding, because sliding is a gesture this game does not have. */
   .demo-tap .demo-hand {

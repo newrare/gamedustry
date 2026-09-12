@@ -1,6 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
+  "version": "1.0.0",
   "tagline": "Tap to fling a sticky marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -31,13 +32,94 @@
     }
   },
   "description": "A marshmallow hangs over a lava lake, stuck to the only thing keeping it up: a falling rock. A tap flings it along the line to your finger at one fixed speed — no drag, no charge — and it sticks to the first thing it touches, then rides that rock down. Rocks melt when they reach the lava, so a landing is never a rest: the only way to stay alive is to keep climbing the ones still falling. Land high and the score pays more, chain fresh rocks and the multiplier grows. Fireballs can be grabbed too, but they only lend their back for a beat before shrugging the body off — one shade browner each time. Holding the finger slows the world, but only while the focus meter under it lasts: it drains as you deliberate and the slow motion fades with it, so a long aim buys less time and a shorter preview. It stays locked for a beat once you let go before it starts filling again, and landing on a fresh rock hands part of it straight back. The lava rises the whole run, and it is the only clock.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "ONE TAP",
+            "line": "Fling at the <b>rock</b>"
+          },
+          {
+            "kicker": "THE LAVA RISES",
+            "line": "Keep <b>climbing</b>"
+          },
+          {
+            "kicker": "ROCKS MELT",
+            "line": "Nothing holds for <b>long</b>"
+          },
+          {
+            "kicker": "ENDLESS",
+            "line": "How high can you <b>get</b>?"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "UN TAP",
+            "line": "Vise le <b>rocher</b>"
+          },
+          {
+            "kicker": "LA LAVE MONTE",
+            "line": "Continue de <b>grimper</b>"
+          },
+          {
+            "kicker": "TOUT FOND",
+            "line": "Rien ne tient <b>longtemps</b>"
+          },
+          {
+            "kicker": "SANS FIN",
+            "line": "Jusqu’où peux-tu <b>monter</b> ?"
+          }
+        ]
+      }
+    }
+  },
   "web": {
     "copy": {
       "fr": {
         "tagline": "<b class=\"w-tap\">Tape</b> pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>"
       }
     },
-    "font": "baloo2"
+    "font": "baloo2",
+    "levels": {
+      "objective": {
+        "from": 125,
+        "to": 850,
+        "step": 25
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> above the lava",
+        "fr": "Marque <b>{n}</b> au-dessus de la lave"
+      },
+      "tune": {
+        "riseSeconds": [
+          110,
+          45
+        ],
+        "lavaEnd": [
+          0.22,
+          0.45
+        ],
+        "spawnEvery": [
+          0.9,
+          0.45
+        ],
+        "fastChance": [
+          0.2,
+          0.65
+        ],
+        "rampSeconds": [
+          90,
+          40
+        ],
+        "airShots": [
+          2,
+          1
+        ]
+      }
+    }
   },
   "itch": {
     "user": "newrare",

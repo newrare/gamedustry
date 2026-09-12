@@ -1,6 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
+  "version": "1.0.0",
   "tagline": "Tap on the impact to blast the rival tops away",
   "order": 10,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that launches them into the walls and winds your spin back up. They carry 3 to 5 shell points, so a top you blast away ricochets and comes back for more. The top's colour is the only gauge — the run ends when it blows apart.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "TOP VS TOP",
+            "line": "Tap right on <b>impact</b>"
+          },
+          {
+            "kicker": "SHOCKWAVE",
+            "line": "Blast them into the <b>wall</b>"
+          },
+          {
+            "kicker": "WIND BACK UP",
+            "line": "Every hit <b>refills</b> your spin"
+          },
+          {
+            "kicker": "THEY COME BACK",
+            "line": "Three to five <b>shells</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "TOUPIE CONTRE TOUPIE",
+            "line": "Tape pile à l’<b>impact</b>"
+          },
+          {
+            "kicker": "ONDE DE CHOC",
+            "line": "Colle-les au <b>mur</b>"
+          },
+          {
+            "kicker": "REGAGNE DE LA VITESSE",
+            "line": "Chaque coup te <b>relance</b>"
+          },
+          {
+            "kicker": "ILS REVIENNENT",
+            "line": "Trois à cinq <b>coques</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "spinshock",
@@ -65,6 +110,43 @@
         "tagline": "<b class=\"w-tap\">Tape</b> à l’<b class=\"w-hit\">impact</b> pour éjecter les toupies rivales"
       }
     },
-    "font": "bungee"
+    "font": "bungee",
+    "levels": {
+      "objective": {
+        "from": 350,
+        "to": 2300,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> in the dish",
+        "fr": "Marque <b>{n}</b> dans l’arène"
+      },
+      "tune": {
+        "spawnEvery": [
+          1.8,
+          0.6
+        ],
+        "spawnEveryEnd": [
+          0.9,
+          0.32
+        ],
+        "maxFoes": [
+          3,
+          7
+        ],
+        "drainBase": [
+          0.03,
+          0.07
+        ],
+        "drainRamp": [
+          0.035,
+          0.085
+        ],
+        "spinStart": [
+          1,
+          0.7
+        ]
+      }
+    }
   }
 }

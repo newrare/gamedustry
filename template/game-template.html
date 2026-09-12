@@ -739,7 +739,7 @@
   .screen.hidden { opacity:0; pointer-events:none; }
 
   /* ---- The painted screens ------------------------------------------------
-     `assets/art/<slug>-background-phone.webp`, inserted as the first child of
+     `assets/image/embed/<slug>-background-phone.webp`, inserted as the first child of
      the intro and the end screen by the shell's Art module. It is behind the
      SCREENS only, never behind the round: a gameplay is balanced against the
      flat ground its SKIN paints.
@@ -771,6 +771,44 @@
       rgba(4,5,14,.34) 58%, rgba(4,5,14,.88) 100%);
   }
 
+  /* ---- The decor: the game's own objects, on the screens ------------------
+     `assets/image/embed/<slug>-decor-NN.webp`, scattered by the shell's Decor module
+     (packages/shell/shell.js) over the end screen and the round's corners, and
+     by packages/webshell over the menu's panels, the pause card and the level
+     map. One to three per screen, each of them hanging off an edge.
+
+     Two nodes per piece: the SLOT carries the position and the fade, the IMAGE
+     carries the tilt, the flip and the bob. Putting both on one node would let
+     the bob's keyframes overwrite the tilt, which is the very trap
+     `#web-title-wrap` exists to avoid in the webshell.
+
+     The bob is a composited transform on a node of at most 220px, so it costs
+     one raster and no frame; `filter` is a drop-shadow on a still image, paid
+     once at paint, not the per-frame `shadowBlur` the canvas rules ban. ---- */
+  .decor-layer { position:absolute; inset:0; pointer-events:none; }
+  /* Behind the screen's own content, and in front of it — a piece over a title
+     is worth two thirds of the opacity (Decor.dress), never more. */
+  .decor-layer.back  { z-index:0; }
+  .decor-layer.front { z-index:3; }
+  /* The round's corners: over the canvas, under the HUD (15) and the overlay
+     (16), so nothing the GAME writes can ever be behind a piece of dressing. */
+  .decor-layer.round { z-index:10; }
+
+  .decor-slot { position:absolute; opacity:0; transition:opacity .55s ease; }
+  .decor-slot.on { opacity:var(--d-a, .5); }
+
+  .decor-piece {
+    display:block; width:100%; height:auto;
+    --d-r:0deg; --d-f:1; --d-bob:8px;
+    transform:rotate(var(--d-r)) scaleX(var(--d-f));
+    animation:decor-bob 7s ease-in-out infinite;
+    filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));
+  }
+  @keyframes decor-bob {
+    0%, 100% { transform:rotate(var(--d-r)) scaleX(var(--d-f)) translateY(0); }
+    50%      { transform:rotate(var(--d-r)) scaleX(var(--d-f)) translateY(calc(var(--d-bob) * -1)); }
+  }
+
   .spinner { width:76px; height:76px; border-radius:50%;
     border:8px solid rgba(255,255,255,.15); border-top-color:var(--accent);
     animation:spin .9s linear infinite; }
@@ -788,7 +826,7 @@
     text-shadow:0 0 22px rgba(0,229,255,.7); }
 
   /* ---- The logotype ------------------------------------------------------
-     `assets/art/<slug>-title.webp` replaces the app icon AND the CSS title.
+     `assets/image/embed/<slug>-title.webp` replaces the app icon AND the CSS title.
      The image is a child of #intro-title, not a sibling, so the webshell's
      breathing wrapper and every SKIN transform on that node still apply.
 
@@ -812,6 +850,45 @@
      each class on its own (`#intro-tagline .w-foo { color:… }`). */
   #intro-tagline { margin-top:16px; font-size:32px; line-height:1.4; color:#c9d6ff; }
   #intro-tagline b { font-weight:900; color:var(--accent); text-shadow:0 0 16px currentColor; }
+
+  /* ---- The studio signature ----------------------------------------------
+     The newrare mark, the studio's name and the build's version number, in the
+     bottom-left corner of the title screen. Built by the shell's Brand module
+     out of CONFIG.brand, which tools/build/build.mjs injects from
+     assets/image/brand/newrare.webp and the manifest — a game declares nothing.
+
+     ONE mark against two lines: the name over the number, so the block is the
+     height of the mark and reads as a signature rather than as a caption.
+
+     The margins are the WEB MENU's own — 44px in from the edge, 72px up from
+     the safe area (packages/webshell/menu.css, #web-view) — so on the web the
+     signature and the menu sit on the same two lines of the layout, one in
+     each bottom corner. A playable has no menu and inherits the same numbers,
+     which keeps the corner identical between the two builds of a game.
+
+     It is absolutely positioned, so it is out of the intro's flex column and
+     nothing above it moves. z-index 4 puts it over the decor layer's front
+     pieces — a signature under a bobbing prop reads as a bug — and
+     pointer-events are off so it can never eat a tap meant for the button
+     above it. Discreet is the point: the muted token, and an opacity per
+     element, because a painted ring and a line of type do not fade the same.
+     ---- */
+  #brand-sig {
+    position:absolute; left:44px; bottom:calc(var(--inset-bottom) + 72px);
+    z-index:4; pointer-events:none;
+    display:flex; align-items:center; gap:12px;
+  }
+  .brand-mark {
+    display:block; width:46px; height:46px; opacity:.8; flex:none;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.6));
+  }
+  .brand-copy {
+    display:flex; flex-direction:column; text-align:left;
+    color:var(--muted); opacity:.45; text-shadow:0 1px 6px rgba(0,0,0,.75);
+  }
+  .brand-line { font-size:22px; font-weight:800; letter-spacing:2px; line-height:1.2; text-transform:uppercase; }
+  .brand-ver  { font-size:18px; font-weight:700; letter-spacing:1px; line-height:1.2; }
+  .brand-ver:empty { display:none; }
 
   /* ---- Animated how-to-play demo -------------------------------------------
      One markup block, five variants (tap / hold / drag / swipe / aim) picked
@@ -842,7 +919,7 @@
   .demo-ripple.d2 { animation-delay:.18s; }
   @keyframes rip { 0%,36%{transform:scale(.4); opacity:0;} 42%{opacity:.8;} 100%{transform:scale(2.1); opacity:0;} }
 
-  /* a fingertip coming from the bottom of the frame — assets/svg/finger.svg,
+  /* a fingertip coming from the bottom of the frame — assets/motor/svg/finger.svg,
      turned 180deg so the index finger points up, inlined as a data URI so the
      file stays self-contained. The tip sits at the top edge of the box. */
   .demo-hand { left:50%; bottom:14px; width:74px; height:92px; margin-left:-37px;
@@ -902,10 +979,14 @@
   #screen-end.has-art { background:transparent; }
   /* Confetti sits above the dark tint but below every piece of end-screen text. */
   #confetti { position:absolute; inset:0; width:720px; height:1280px; pointer-events:none; z-index:0; }
-  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char) { position:relative; z-index:1; }
+  /* `.decor-layer` is excluded with the three below: the rule is an id-strong
+     selector, and catching the layer would replace its own `position:absolute`
+     with `relative` — the dressing would then stack in the flex column and push
+     the whole end screen down. */
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer) { position:relative; z-index:1; }
 
   /* ---- The character ------------------------------------------------------
-     One of `assets/art/<slug>-character-{sad,neutral,happy}.webp`, picked by
+     One of `assets/image/embed/<slug>-character-{sad,neutral,happy}.webp`, picked by
      the star count the round scored (shell.js, Art.faceFor).
 
      It hangs off the bottom-right corner of the frame, cropped by the bottom
@@ -1195,12 +1276,12 @@
      Generate entries with tools/lab/embed-asset.mjs. Draw the graphics on canvas:
      every embedded byte counts against the 5 MB budget.
 
-     SOUND EFFECTS ALWAYS COME FROM assets/sfx/ — that shared library is the
+     SOUND EFFECTS ALWAYS COME FROM assets/audio/sfx/ — that shared library is the
      palette for every game, so the whole catalogue sounds like one product.
      Pick a clip per event, trim it to the useful part and re-encode it small,
      then embed it under a short game-side key:
 
-       ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
+       ffmpeg -i assets/audio/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
        node tools/lab/embed-asset.mjs gem.mp3 --key gem
 
      Keep a comment naming the source clip next to every key (below), and pitch
@@ -1213,7 +1294,7 @@
       // logo: "data:image/png;base64,iVBORw0KGgo…"
     },
     sounds: {
-      // assets/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
+      // assets/audio/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
       // pop: "data:audio/mpeg;base64,SUQzBAAAAAA…"
       // music: the background bed, looped and crossfaded by Music (see
       // CONFIG.music). Encode it small — mono 64 kbps is plenty under sfx:
@@ -1228,6 +1309,16 @@
       uiStar: "data:audio/mpeg;base64,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9bVeZf5NL7itzvIJTABwAIwA8AKMAUANzACQEYwDQC1MDdDfDTozZowmEFGMBeAMTAEQBowgTZWMpM6gGBLaZ04bTYdicmgaGrWu6tUV2GZXG8aPWL8vTlOZRHUqmr8dxy+km6Ccp8ZTzVvdWPU1HG7eOVjW7tWWUF3IWDhWJmKhYPFQcEoierHHKQF/IgKxf5n+jf6X/qFyIXoF0IahmilC49R///mMIdoLohfiUA0E0KVAJgawGh38wfn//+hASN//ypANmu3v////5Tx+kuz/+1jE7gHToiLwrxi3AZE1XqGPChJr0RgcAKYBgDpgEgbGAkDCYHocxhSH6nqxRCZMArJg5g4GAAAqDgAgMBaYEoCAcBtUa0CQNISYlLJkuFSImj6pMtsmIJKkpC6SyzuISXpN4KXlCqT6XZbuoy9kvIrdca2ISH8RMODpS/1L8O/jB/+JH1ExdqAwK///wGP////QGDwt//6Cgn8KDH//+AS///qLkoAAKWMqr3pVXlsqlcOxGIQMuVpCYSyxIBUwHwEDAjBCCgLpgLAvGASEaYeaCht5viGwCWEYHwZJghAAGBoBaYEYFxgNAjmBQAC8DfMNfRg0NROBYalaAASM8hUaVq4pE1asiKkudYlSatChQsqyWJpoWatDKW37pEv/+1jE8oOZ+hTfD+VTQnBC20HklqAQsy31506OgtElk/6c1Dl9jnN/NY6o1PBaLR4fB6UJf746RQbEh0iIxhxv///uarf/6OPAuB0/YbFCX/VvNU05///joLQclgAgq3Ldmmq1K9ymnHXW4LCMwzLYQfFODjEd1TA5pmSRnF5jYRJJMFAAEAAsRAqBKUwxgyIsMGEwtC1IlYJaa6Ght64zsvtAUFwxF5NPBIMJEiCaC0SRpxx8XlScWXDEoiVIlUGrpV/6f/ldTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+1jEwgBYAhjKzyT2waqST9WNGhlVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=",
       uiRow: "data:audio/mpeg;base64,SUQzBAAAAAAAW1RFTkMAAAAVAAADU291bmQgR3JpbmRlciA0LjQuMQBUQ09QAAAADwAAA0FsYW4gTWNLaW5uZXkAVFNTRQAAAA8AAANMYXZmNjIuMTIuMTAwAAAAAAAAAAAAAAD/+1jAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAAAMAAASAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwP///////////////////////////////////////////wAAAABMYXZjNjIuMjgAAAAAAAAAAAAAAAAkBSAAAAAAAAAEgBfTdCoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/+1jEAAAOiRtP9IWAAiO4br8w0AJQhAAAAAAAACkf+vnSpLDsG4flAoAHADADAnLwSABAEB8UHYOwdg7DSthubv4Yxlf////+9jGU83Nz9m5ubm5uffcPe973v0B3m9sNDRlPZUvfDGSaGjGf/////sYykx2GlJm58+Iz/D//8uH/+Qhj////BCIdmUiMAESMiNuJAAFKQSALCd10W8q7rJOabt+3hbbN+NP0E3CrEgTSs2FYvF8kVGpYTVAtgyycPBAkXPGxedIvHnLCcUHSNlHUFpJObS4O0fEVJWpK9H/dK1iXT/1rb/9TXWdHpU36TmYvH1f9BNS/Zk66lqTSZO69T/f6///01f1fy+pxJP6FKhN/wAAFWwFX9fKqrML/+1jEBoEP4idFvIiAAg/E4qBctaDeSCkBUBUpACwLKhxHRzSdRKJAiLEWJ5J2LxtWgXkjYxNUC6i3qLyi8bGJdNTI2V9WpFFFH3rapJJJL1o/1Ja0nUkkklb6kvWiijScvECIMovkVNUVIooqMUF//////1N/1UldaWj7N////////Wj6KJ6CE4JfqXMowLehm5aUQKnM+hA48CQqW5SrCm3Zy1Tbw/GJRbaNEyUtkn9T+palJUS6g6KP1t113/rZKl6qnMR7JnC8s1qSQek5kXlqUmgPYzNVGw4RikoFuAAmBGiVCpArw8jEnFMepOHkXnUjS//////+v/////////9KkpLotzIvJFt8bv6uTYJApAKBSAUKTCRSaJ2zct//+1jECoPNWhzgAyBZCAAANIAAAATJWkXRJFwuTjS42W//8x00z/800WsXXxE1fax+sWsXPP2sWv//szmlObBxLrTSqB8CkMiIIy8wPFRo45UUEdlYysb////////////////6yocqOUNKSUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU="
     }
+  };
+
+
+  /* ---- the studio signature, from assets/image/brand/newrare.webp and the manifest's
+     version. Injected by tools/build/build.mjs; packages/shell/shell.js draws
+     it down the left edge of the title screen. ---- */
+  CONFIG.brand = {
+    label: "Newrare",
+    version: "",
+    mark: "data:image/webp;base64,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"
   };
 
   /* ===================================================================
@@ -1375,19 +1466,26 @@
 
   // --- Loop: rAF with clamped dt, pausable when the ad is not visible -----
   var Loop = (function () {
-    var running = false, paused = false, last = 0, u = null, r = null;
+    var running = false, paused = false, last = 0, u = null, r = null, rate = 1;
     function frame(now) {
       if (!running) return;
       var dt = Math.min((now - last) / 1000, 0.05);   // clamp tab-switch gaps
       last = now;
-      if (!paused) { if (u) u(dt); if (r) r(); }
+      if (!paused) { if (u) u(dt * rate); if (r) r(); }
       requestAnimationFrame(frame);
     }
     return {
-      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; last = performance.now(); requestAnimationFrame(frame); },
+      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; rate = 1; last = performance.now(); requestAnimationFrame(frame); },
       stop:  function () { running = false; },
       pause: function () { paused = true; },
       resume:function () { paused = false; last = performance.now(); },
+      /* SLOW MOTION, one number. The frame keeps rendering at full rate and the
+         simulation is handed a shorter `dt`, so the world, the round clock and
+         the game's own update slow down together — the same reason Loop.pause()
+         freezes all three at once. `start` resets it, so a rate left behind by
+         one round can never leak into the next. The motor never changes it
+         itself; the web target ramps it down for the three-star finish. */
+      rate: function (k) { if (k != null) rate = Math.max(0, k); return rate; },
       isRunning: function () { return running; }
     };
   })();
@@ -1766,7 +1864,22 @@
      false. The map turns that into session-scoped persistence. */
   var Store = (function () {
     var mem = {};
+
+    /* ONE BEST SCORE PER GAME. The split site build serves the thirteen from
+       ONE origin (/games/<slug>/), so the bare "bestScore" key every game
+       writes was shared by all of them — a high score in vipera showed up in
+       slipdeck. The key is renamed here rather than in thirteen games: a game
+       that knows its slug (CONFIG.slug, injected by the web build) reads and
+       writes "best:<slug>" wherever it asks for "bestScore", and section 6
+       needs no edit. A playable is alone in its own origin and keeps the bare
+       key. "webLang" and "webSettings" stay shared on purpose: one language
+       and one sound choice for the whole site. */
+    function real(k) {
+      return (k === "bestScore" && CONFIG.slug) ? "best:" + CONFIG.slug : k;
+    }
+
     function get(k, d) {
+      k = real(k);
       try {
         var v = localStorage.getItem(k);
         if (v !== null) return JSON.parse(v);
@@ -1774,10 +1887,34 @@
       return mem.hasOwnProperty(k) ? mem[k] : d;
     }
     function set(k, v) {
+      k = real(k);
       mem[k] = v;                                   // always, so a blocked write still holds
       try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
     }
-    return { get: get, set: set };
+    /* Dropping a key is not the same as setting it to a default: a rename has
+       to leave nothing behind, or the old name keeps being adopted by whoever
+       reads it next. */
+    function del(k) {
+      k = real(k);
+      delete mem[k];
+      try { localStorage.removeItem(k); } catch (e) {}
+    }
+
+    /* The rename, once. Whichever game is opened first adopts what the shared
+       key held; the key is then dropped so it cannot hand the other twelve a
+       score they never made. */
+    (function migrate() {
+      if (!CONFIG.slug) return;
+      var old = null;
+      try { old = localStorage.getItem("bestScore"); } catch (e) {}
+      if (old === null) return;
+      try {
+        if (localStorage.getItem(real("bestScore")) === null) set("bestScore", JSON.parse(old));
+        localStorage.removeItem("bestScore");
+      } catch (e) {}
+    })();
+
+    return { get: get, set: set, del: del };
   })();
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
@@ -1792,7 +1929,7 @@
      ASSETS.images is the game's own — sprites, logos, the Lucide icons — and
      lands in `Images[key]` for the game to draw.
 
-     CONFIG.art is the painted artwork the builder injects out of assets/art/
+     CONFIG.art is the painted artwork the builder injects out of assets/image/embed/
      (see tools/lab/encode-art.mjs). Nothing draws it on the canvas: the shell
      hands it to an <img> and to a CSS background, so the browser is the one
      that needs it, not the game. It is decoded here all the same, because the
@@ -1828,7 +1965,7 @@
   }
 
   /* --- Icons: embedded SVGs, tinted and cached --------------------------
-     Pictograms come from the repo's Lucide pack (assets/lucide/), encoded per
+     Pictograms come from the repo's Lucide pack (assets/motor/lucide/), encoded per
      game with tools/lab/embed-icon.mjs and listed in ASSETS.images under an "ico"
      key. They are authored white, because an <img> has no `currentColor` to
      resolve, so every draw goes through here: the icon is rasterized once per
@@ -2163,7 +2300,7 @@
      that CSS scales as a whole, so a fit is deterministic.
 
      #intro-title is in the list for the game that has no logotype: once
-     `assets/art/<slug>-title.png` exists, Art puts an <img> inside that node
+     `assets/image/embed/<slug>-title.png` exists, Art puts an <img> inside that node
      and there is no type left to measure, so the fit is a no-op. All thirteen
      are in that case today. The end title and the score are always type. */
   var Fit = (function () {
@@ -2668,7 +2805,7 @@
 
   /* --- Art: the game's painted screens ------------------------------------
 
-     `CONFIG.art` is injected by tools/build/build.mjs out of `assets/art/`,
+     `CONFIG.art` is injected by tools/build/build.mjs out of `assets/image/embed/`,
      one key per file, and a game declares nothing to get it — the file name is
      the declaration (see tools/lab/encode-art.mjs). Three roles reach the
      shell:
@@ -2875,6 +3012,249 @@
     };
   })();
 
+
+  /* --- Decor: the game's own objects, scattered over the screens ----------
+
+     `assets/image/embed/<slug>-decor-NN.webp` reaches CONFIG.art like every other
+     piece of artwork, and NO GAME NAMES ONE: the pool is every key whose name
+     starts with `decor`, so dressing a game is adopting four cuts out of its
+     own object sheet and nothing else —
+     `tools/lab/cut-objects.mjs <slug>-object-<name> --adopt 1,4 --as decor`.
+
+     WHAT IT DRESSES. The end screen and the round's corners from here; the
+     web menu's panels, the pause card and the level map from packages/webshell
+     through the web handle. A screen the motor writes in a column is a column
+     on a picture; the same screen with a gear hanging off its corner and a leaf
+     behind its card is a screen somebody dressed. It costs nothing to add,
+     because the objects were painted for the game already and the cut is 20 KB.
+
+     THE RULES, AND EVERY ONE OF THEM IS A LIMIT:
+
+       three pieces on a screen, never     past that it is a collage, and what
+                                           the player came to read is competing
+                                           with wallpaper. `count` is clamped;
+       every piece bleeds off an edge      a picture floating clear of a corner
+                                           is a sticker — the same reason the
+                                           end screen's character is cropped by
+                                           the bottom of the frame;
+       nothing is drawn per frame          two DOM nodes and one composited bob.
+                                           A still object blitted on the canvas
+                                           would bill a game's frame budget for
+                                           something that never changes;
+       no piece ever takes a tap           pointer-events:none, on the layer.
+
+     PSEUDO-RANDOM, NOT RANDOM. The pieces come out of a bag that is reshuffled
+     only once it is empty, so a pool of four dresses four screens running
+     without repeating itself. Sampling the pool independently would put the
+     same gear on a panel and on the pause card behind it, which reads as a bug
+     rather than as variety. Each piece then takes its own size, tilt, flip,
+     bob and depth — in front of the screen's content or behind it.
+
+     A game opts out with `CONFIG.decor = false`, and out of the round alone
+     with `CONFIG.decor = { round: false }` — the one place a picture sits over
+     a live world rather than over a screen. */
+  var Decor = (function () {
+    var art = CONFIG.art || {};
+    var opt = CONFIG.decor;
+    var OFF = opt === false;
+
+    /* The pool, sorted so two builds of the same game scatter the same set.
+       `decor01`, `decorBall01`, `decorBolt17` — a game whose objects come off
+       two sheets keeps one role per sheet (cut-objects.mjs, --as). */
+    var pool = [];
+    for (var k in art) {
+      if (art.hasOwnProperty(k) && art[k] && /^decor([A-Z]|\d)/.test(k)) pool.push(k);
+    }
+    pool.sort();
+
+    /* Where a piece may land, in percent of the box it dresses, and which edge
+       it hangs off. The x is negative on purpose: every anchor bleeds out. */
+    var SPOTS = {
+      tl: { h: "left",  v: "top",    x: -7, y: 3 },
+      tr: { h: "right", v: "top",    x: -7, y: 4 },
+      bl: { h: "left",  v: "bottom", x: -8, y: 5 },
+      br: { h: "right", v: "bottom", x: -8, y: 3 },
+      l:  { h: "left",  v: "top",    x: -9, y: 36 },
+      r:  { h: "right", v: "top",    x: -9, y: 40 }
+    };
+
+    var bag = [];
+    function take() {
+      if (!bag.length) {
+        bag = pool.slice();
+        for (var i = bag.length - 1; i > 0; i--) {          // Fisher-Yates
+          var j = Rand.int(0, i), t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+        }
+      }
+      return bag.pop();
+    }
+
+    /* Two nodes per piece, and the split is what keeps both animations honest:
+       the SLOT owns the position and the fade, the IMAGE owns the tilt, the
+       flip and the bob. One node would make the bob's keyframes overwrite the
+       tilt — the same trap #web-title-wrap exists to avoid in the webshell. */
+    function piece(key, spot, size, alpha) {
+      var slot = document.createElement("div");
+      slot.className = "decor-slot";
+      var w = Math.round(size * Rand.range(0.82, 1.24));
+      slot.style[spot.h] = (spot.x + Rand.range(-2.5, 2.5)).toFixed(1) + "%";
+      slot.style[spot.v] = (spot.y + Rand.range(-3, 3)).toFixed(1) + "%";
+      slot.style.width = w + "px";
+      slot.style.setProperty("--d-a", alpha.toFixed(2));
+
+      var img = document.createElement("img");
+      img.className = "decor-piece";
+      img.alt = "";
+      img.src = art[key];
+      img.style.setProperty("--d-r", Rand.range(-19, 19).toFixed(1) + "deg");
+      img.style.setProperty("--d-f", Rand.chance(0.5) ? "1" : "-1");
+      img.style.setProperty("--d-bob", Math.round(w * 0.055) + "px");
+      img.style.animationDuration = Rand.range(5.5, 9).toFixed(1) + "s";
+      img.style.animationDelay = "-" + Rand.range(0, 6).toFixed(1) + "s";
+      slot.appendChild(img);
+      return slot;
+    }
+
+    function layer(box, cls) {
+      var lay = document.createElement("div");
+      lay.className = "decor-layer " + cls;
+      box.appendChild(lay);
+      return lay;
+    }
+
+    /* Direct children only: #frame holds the end screen, and clearing the
+       round's corners must not take the end screen's own dressing with it. */
+    function clear(box) {
+      if (!box) return;
+      for (var i = box.children.length - 1; i >= 0; i--) {
+        var c = box.children[i];
+        if (c.className && String(c.className).indexOf("decor-layer") === 0) box.removeChild(c);
+      }
+    }
+
+    /* opts: { count, spots, size, opacity, front, cls }
+         count    1..3, clamped — and never more than there are spots left
+         spots    which anchors this screen allows (see SPOTS)
+         size     the base width in design px; each piece varies around it
+         opacity  what a piece BEHIND the content is worth; one in front of it
+                  gets two thirds of that, because it lands over text
+         front    the odds a piece is in front of the content at all
+         cls      an extra class on the layer, for a caller that needs its own
+                  depth (the round, the level map) */
+    function dress(box, opts) {
+      if (OFF || !pool.length || !box) return;
+      opts = opts || {};
+      clear(box);
+      var spots = (opts.spots || ["tl", "br"]).slice();
+      var n = clamp(opts.count || 1, 1, Math.min(3, spots.length));
+      var size = opts.size || 170;
+      var alpha = opts.opacity == null ? 0.55 : opts.opacity;
+      var odds = opts.front == null ? 0.34 : opts.front;
+      var extra = opts.cls ? " " + opts.cls : "";
+      var lays = {}, slots = [];
+
+      for (var i = 0; i < n; i++) {
+        var spot = SPOTS[spots.splice(Rand.int(0, spots.length - 1), 1)[0]];
+        if (!spot) continue;
+        var depth = Rand.chance(odds) ? "front" : "back";
+        var lay = lays[depth] || (lays[depth] = layer(box, depth + extra));
+        var slot = piece(take(), spot, size, depth === "front" ? alpha * 0.62 : alpha);
+        lay.appendChild(slot);
+        slots.push(slot);
+      }
+      /* The fade is what keeps a panel from flashing its dressing in before
+         its own card: one frame at opacity 0, then the transition. */
+      requestAnimationFrame(function () {
+        for (var i = 0; i < slots.length; i++) slots[i].classList.add("on");
+      });
+    }
+
+    /* The round's own corners, one or two of them, at a fraction of the
+       opacity a screen gets: this is the one layer that sits over a live world,
+       and a gameplay is read through it. It goes on #frame rather than on the
+       canvas, under the HUD and the overlay (motor.css), so no game has to
+       give up a pixel of Layout for it. */
+    function round() {
+      if (opt && opt.round === false) return;
+      dress($("frame"), {
+        count: Rand.int(1, 2), spots: ["tl", "tr", "bl", "br"],
+        size: 150, opacity: 0.2, front: 0, cls: "round"
+      });
+    }
+
+    function end() {
+      /* Never bottom-right: that corner is the character's, and the two of them
+         stacked is the crowded end screen the artwork was drawn to replace. */
+      dress($("screen-end"), {
+        count: 2, spots: ["tl", "tr", "l", "bl"],
+        size: 195, opacity: 0.5, front: 0.35
+      });
+    }
+
+    /* The module wires itself to the state machine rather than being called
+       from the bootstrap: a layer the motor only decorates with has no business
+       adding a line to the round's start-up path. */
+    if (!OFF && pool.length) {
+      onState(function (s) {
+        if (s === "playing") round();
+        else clear($("frame"));
+        if (s === "end") end();
+      });
+    }
+
+    return {
+      has: function () { return !pool.length ? false : !OFF; },
+      dress: dress, clear: clear
+    };
+  })();
+
+  /* --- Brand: the studio signature on the title screen ---------------------
+
+     `CONFIG.brand` is injected by tools/build/build.mjs — the mark out of
+     `assets/image/brand/newrare.webp`, the version out of the game's manifest — so a
+     game declares nothing and the thirteen sign themselves identically. The
+     block is built here rather than written into page.html for the same reason
+     the painted layer is: it is one piece of markup that would otherwise live
+     in thirteen copies plus the template, configured by none of them.
+
+     It goes on the intro and nowhere else. The web target keeps it as it is:
+     its menu APPENDS to #screen-intro instead of rebuilding it, and the
+     signature takes the bottom-left corner the menu leaves empty. */
+  function buildBrand() {
+    var brand = CONFIG.brand;
+    if (!brand || !brand.mark) return;
+    var screen = $("screen-intro");
+    if (!screen || $("brand-sig")) return;
+
+    var sig = document.createElement("div");
+    sig.id = "brand-sig";
+
+    var img = document.createElement("img");
+    img.className = "brand-mark";
+    img.src = brand.mark;
+    img.alt = "";
+    sig.appendChild(img);
+
+    var copy = document.createElement("div");
+    copy.className = "brand-copy";
+
+    var line = document.createElement("div");
+    line.className = "brand-line";
+    line.textContent = brand.label || "Newrare";
+    copy.appendChild(line);
+
+    /* No number in the manifest is not an error: a game that has never been
+       versioned signs itself with the mark and the name, and the empty node
+       collapses on its own (.brand-ver:empty). */
+    var ver = document.createElement("div");
+    ver.className = "brand-ver";
+    ver.textContent = brand.version ? "v" + brand.version : "";
+    copy.appendChild(ver);
+
+    sig.appendChild(copy);
+    screen.appendChild(sig);
+  }
+
   // --- Intro: logo, copy and the animated how-to-play demo ----------------
   function buildIntro() {
     /* The painted screens come first: the title image below replaces the icon,
@@ -2884,6 +3264,7 @@
     Art.dressFrame();
     Art.buildCharacter();
     var hasArtTitle = Art.titleImage();
+    buildBrand();
 
     /* A game with a logotype hides the app icon: the picture already carries
        the name and the mark, and the two stacked is the crowded intro the
@@ -3307,6 +3688,15 @@
     };
   })();
 
+  /* Anything bolted on top of the shell may rewrite a round's result before
+     the end screen reads it — the web target's level layer turns the game's
+     own star thresholds into the level's, and writes the progression off the
+     same object. The motor registers none, and a playable ships an empty
+     list. The hook runs after the score is settled and before anything is
+     stored, so a filter sees the number the player actually made. */
+  var resultHooks = [];
+  function onResult(fn) { resultHooks.push(fn); }
+
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
   function endRound(result) {
@@ -3314,7 +3704,9 @@
     result = result || {};
     Loop.stop(); Round.stop();
     Music.duck(0.55, 0.8);        // let the end-screen cues sit on top
-    var score = result.score == null ? Math.round(HUD.score()) : result.score;
+    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
+    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
+    var score = result.score;
     var best = Math.max(score, Store.get("bestScore", 0));
     Store.set("bestScore", best);
     setState("end");

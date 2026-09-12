@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Shoot gameplay screenshots for every game into assets/screen/.
+/* Shoot gameplay screenshots for every game into assets/image/screen/.
  *
  * The shots come off the **web** build, not the playable: a playable carries
  * the install CTA bar, which is wrong everywhere these images are used (the
@@ -49,7 +49,7 @@ import os from "node:os";
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var GAMES_DIR = path.join(ROOT, "games");
 var WEB_DIR = path.join(ROOT, "dist", "itch");
-var OUT_DIR = path.join(ROOT, "assets", "screen");
+var OUT_DIR = path.join(ROOT, "assets", "image", "screen");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var W = 720, H = 1280;                               // the design resolution
 

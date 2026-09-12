@@ -12,7 +12,7 @@
   What it turns the intro into — one shape for every game:
 
     the game's backdrop    the painted background the game already embeds
-                           (ASSETS.images.bg, from assets/image/) behind the
+                           (ASSETS.images.bg, from assets/image/master/) behind the
                            menu, or — for a game that ships no picture — the
                            very gradient its SKIN paints the game view with.
                            Nothing of the world is drawn: no entity, no
@@ -27,7 +27,9 @@
                            more entry per extra mode under PLAY (section 1b).
     panels in that band    LEADERBOARD / OPTIONS / HELP swap the menu out
                            without leaving the intro: same title, same scene,
-                           a back arrow to come back.
+                           a back arrow to come back — and one or two of the
+                           game's own painted objects around the card, which
+                           the motor's Decor module places (shell.js).
 
   And what it adds to the ROUND — the two things a playable has no use for
   (section 5b): MENU and OPTIONS, in the bottom-right corner, where the menu's
@@ -44,7 +46,7 @@
   gives it the one measurement the web layout changes (section 6b).
 
   The type is the game's own too: `web.font` in the manifest names a family of
-  assets/font/ (all OFL), which the builder embeds in front of the SKIN with two
+  assets/motor/font/ (all OFL), which the builder embeds in front of the SKIN with two
   tokens this file reads — `--web-font` and `--web-fw`, the weight to ask a
   single-weight face for.
 
@@ -67,6 +69,13 @@
   if (!W) return;                       // not a web build
 
   var CONFIG = W.CONFIG;
+
+  /* The level layer, published by packages/webshell/levels.js — which the
+     builder loads immediately before this file. It is inert for a game that
+     declares no `web.levels` in its manifest, and `LV.active()` is then false
+     everywhere below: that game's menu is exactly what it was. */
+  var LV = window.__LEVELS__ || null;
+  function levelled() { return !!(LV && LV.active()); }
 
   /* ── 0. strings ───────────────────────────────────────────────────────── */
 
@@ -182,7 +191,7 @@
   /* Most games have one mode and never touch any of this. A game that has
      several lists them in its manifest, in the order the menu shows them:
 
-       "web": { "modes": ["eclipse", "classic"] }
+       "web": { "modes": ["eclipse", "classic"] }        // none ships two today
 
      The FIRST is the default — it is what PLAY starts, and what the menu goes
      back to on every return from a round — and each of the others gets an
@@ -215,7 +224,7 @@
     return n;
   }
 
-  /* Pictograms from the shared assets/lucide/ pack, inlined as SVG rather than
+  /* Pictograms from the shared assets/motor/lucide/ pack, inlined as SVG rather than
      drawn through Icon (which is canvas-only). Stroked with currentColor, so a
      row's colour is the only thing that dresses them. */
   var ICON = {
@@ -248,7 +257,7 @@
 
   /* The menu is dressed with the game's own backdrop, in that order:
 
-       0. the painted screen the MOTOR already put there. `assets/art/<slug>-
+       0. the painted screen the MOTOR already put there. `assets/image/embed/<slug>-
           background-phone.webp` reaches every target through CONFIG.art, and
           the shell inserts it as `.screen-art` on the intro and the end screen
           (see packages/shell/shell.js, Art.dress). When it is there the menu
@@ -330,11 +339,17 @@
     menu = el("nav"); menu.id = "web-menu";
 
     /* PLAY is the motor's node, restyled: keeping it is what keeps startGame,
-       the SPACE key and Sound.unlock()'s user gesture exactly as they were. */
-    var start = $("btn-start");
+       the SPACE key and Sound.unlock()'s user gesture exactly as they were.
+
+       A game with levels puts the MAP between the menu and the round instead
+       (docs/LEVELS.md), so the motor's own listener comes off and the map's
+       PLAY button becomes the click that starts a round — still one click, so
+       the audio unlock still happens inside the gesture that asked for it. */
+    var start = levelled() ? unbind("btn-start") : $("btn-start");
     start.className = "web-item";
-    start.textContent = COPY.play;
-    items.push({ node: start, key: "play" });
+    start.textContent = levelled() ? LV.text("levelsEntry") : COPY.play;
+    if (levelled()) start.addEventListener("click", function () { LV.open(); });
+    items.push({ node: start, key: "play", lv: "levelsEntry" });
     menu.appendChild(start);
 
     /* The extra modes, one entry each, under PLAY: they arm their own key and
@@ -343,7 +358,11 @@
     MODES.slice(1).forEach(function (name) {
       var key = modeCopyKey(name);
       var b = el("button", "web-item web-mode", COPY[key] || name.toUpperCase());
-      b.addEventListener("click", function () { armMode(name); W.start(); });
+      b.addEventListener("click", function () {
+        armMode(name);
+        if (levelled()) LV.clear();      // a mode entry is a free run, not a level
+        W.start();
+      });
       items.push({ node: b, key: key, alt: name.toUpperCase() });
       menu.appendChild(b);
     });
@@ -383,6 +402,16 @@
     menu.style.display = "none";
     panel.classList.add("on");
     $("screen-intro").classList.add("web-open");     // the scrim goes darker
+    /* Two of the game's own painted objects around the card. A panel is the
+       plainest thing this shell draws — a list of rows on a black card — and
+       the scene behind it is pushed back by the scrim precisely where the card
+       is, so this is where a picture is worth the most. Never bottom-right:
+       that corner is the back arrow's and the menu's. The motor draws them
+       (packages/shell/shell.js, Decor) and re-rolls on every opening, so the
+       game is dressed differently each time it is asked for. */
+    W.Decor.dress(panel, {
+      count: 2, spots: ["tl", "tr", "l", "bl"], size: 145, opacity: 0.5, front: 0.4
+    });
   }
 
   function closePanel() {
@@ -392,6 +421,7 @@
     if (open === "help") parkDemo();
     open = null;
     panel.classList.remove("on");
+    W.Decor.clear(panel);
     $("screen-intro").classList.remove("web-open");
     menu.style.display = "";
   }
@@ -455,23 +485,31 @@
   /* The only destructive button in the game, so it asks twice and forgets the
      question after a few seconds rather than staying armed. */
   function resetButton() {
+    /* With a map, this throws away thirty levels of stars and not just a
+       number, so it says so: its own wording, and the same two taps. */
+    var lv = levelled();
+    var LBL = lv ? LV.text("resetProgress") : COPY.resetScores;
+    var ASK = lv ? LV.text("resetProgressAsk") : COPY.resetAsk;
+    var DONE = lv ? LV.text("resetProgressDone") : COPY.resetDone;
+
     var b = el("button", "web-danger", icon("reset") + '<span class="txt"></span>');
     var txt = b.querySelector(".txt");
     var armed = 0, timer = null;
-    txt.textContent = COPY.resetScores;
+    txt.textContent = LBL;
     function rest() {
-      armed = 0; b.classList.remove("armed"); txt.textContent = COPY.resetScores;
+      armed = 0; b.classList.remove("armed"); txt.textContent = LBL;
     }
     b.addEventListener("click", function () {
       if (!armed) {
-        armed = 1; b.classList.add("armed"); txt.textContent = COPY.resetAsk;
+        armed = 1; b.classList.add("armed"); txt.textContent = ASK;
         clearTimeout(timer);
         timer = setTimeout(rest, 4000);
         return;
       }
       clearTimeout(timer);
       W.Store.set("bestScore", 0);
-      armed = 0; b.classList.remove("armed"); txt.textContent = COPY.resetDone;
+      if (lv) LV.wipe();
+      armed = 0; b.classList.remove("armed"); txt.textContent = DONE;
       timer = setTimeout(rest, 1600);
     });
     return b;
@@ -535,7 +573,7 @@
      world and the timer in one call, and the game's own update never runs
      underneath an open card. */
   var ctlBar, ctlMenu, ctlOptions;
-  var pauseBox, pauseTitle, pauseBody, pauseKind = null, paused = false;
+  var pauseBox, pauseCard, pauseTitle, pauseBody, pauseKind = null, paused = false;
 
   function buildControls() {
     ctlBar = el("div"); ctlBar.id = "web-ctls";
@@ -562,7 +600,8 @@
      already define: there is one panel design in this shell, not two. */
   function buildPause() {
     pauseBox = el("div"); pauseBox.id = "web-pause";
-    var card = el("div", "web-pcard");
+    pauseCard = el("div", "web-pcard");
+    var card = pauseCard;
     var headRow = el("div", "web-phead");
     var back = el("button", "web-back", icon("back", "back-ico"));
     back.setAttribute("aria-label", COPY.resume);
@@ -603,12 +642,18 @@
       actions(pauseBody, [[COPY.resume, "go", closePause]]);
     }
     pauseBox.classList.add("on");
+    /* One piece only, and never at the bottom: the card opens over a frozen
+       round with the two controls still in the corner under it. */
+    W.Decor.dress(pauseCard, {
+      count: 1, spots: ["tl", "tr", "l"], size: 140, opacity: 0.45, front: 0
+    });
   }
 
   function closePause() {
     if (!pauseKind) return;
     pauseKind = null;
     pauseBox.classList.remove("on");
+    W.Decor.clear(pauseCard);
     resume();
   }
 
@@ -619,6 +664,7 @@
     pauseKind = null;
     paused = false;
     if (pauseBox) pauseBox.classList.remove("on");
+    if (pauseCard) W.Decor.clear(pauseCard);
   }
 
   function pause() {
@@ -644,6 +690,9 @@
     W.Round.stop();
     W.Music.unduck();
     W.setState("intro");
+    /* With a map, the screen a round came from is the map — the menu is one
+       back arrow further. */
+    if (levelled()) LV.open();
   }
 
   /* The motor pauses the loop when the tab goes away and resumes it when it
@@ -669,8 +718,10 @@
     W.Store.set(LANG_KEY, code);
     document.documentElement.lang = code;
 
+    if (levelled()) LV.setLang(code);
     for (var i = 0; i < items.length; i++)
-      items[i].node.textContent = COPY[items[i].key] || items[i].alt;
+      items[i].node.textContent = (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
+                                  COPY[items[i].key] || items[i].alt;
     if (COPY.tagline) $("intro-tagline").innerHTML = COPY.tagline;
     labelEnd();
     labelControls();
@@ -702,19 +753,30 @@
 
   function rewireEnd() {
     btnAgain = unbind("btn-install");
-    btnAgain.addEventListener("click", function () { W.start(); });
+    btnAgain.addEventListener("click", function () {
+      /* On a map, the round that just ended has a successor — or it has to be
+         played again. The level layer knows which; the button only asks. */
+      if (levelled() && LV.last()) { LV.playNext(); return; }
+      W.start();
+    });
 
     btnMenu = unbind("btn-replay");
     btnMenu.addEventListener("click", function () {
       W.Music.unduck();          // endRound ducked the bed for the reveal
       W.setState("intro");       // the state hook repaints the scene
+      if (levelled()) LV.open();
     });
     labelEnd();
   }
 
   function labelEnd() {
-    if (btnAgain) btnAgain.textContent = COPY.again;
-    if (btnMenu) btnMenu.textContent = COPY.menu;
+    if (btnAgain) {
+      var last = levelled() ? LV.last() : null;
+      btnAgain.textContent = last
+        ? (LV.nextOf() ? LV.text("next") : LV.text("retry"))
+        : COPY.again;
+    }
+    if (btnMenu) btnMenu.textContent = levelled() ? LV.text("map") : COPY.menu;
   }
 
   /* ── 8. keys ──────────────────────────────────────────────────────────── */
@@ -731,7 +793,15 @@
       /* ESCAPE during a round is the pause every game has: it opens the
          options over the frozen world, and a second press resumes. */
       if (esc && W.state() === "playing") { e.preventDefault(); openPause("options"); return; }
-      if (!open && !pauseKind) return;
+      if (esc && levelled() && LV.isOpen()) { e.preventDefault(); LV.close(); return; }
+      /* SPACE from the intro is "start the round" in the bootstrap, and with a
+         map there is no round to start until a level is picked — so the key
+         opens the map and never reaches the motor's own listener. */
+      if ((e.key === " " || e.keyCode === 32) && levelled() &&
+          W.state() === "intro" && !open && !LV.isOpen()) {
+        e.preventDefault(); e.stopPropagation(); LV.open(); return;
+      }
+      if (!open && !pauseKind && !(levelled() && LV.isOpen())) return;
       e.preventDefault();
       e.stopPropagation();
     }, true);
@@ -744,6 +814,22 @@
   function mount() {
     document.documentElement.lang = LANG;
     Settings.apply();
+    /* The level layer gets this file's dom helpers and its language, so the
+       web shell has one `el`, one icon pack and one FR/EN mechanism rather
+       than two. It must be mounted before buildIntro(), which asks it for the
+       PLAY entry's label. */
+    if (LV) LV.mount({
+      el: el, icon: icon, lang: LANG,
+      /* ...and the Help panel itself, so the map's level 0 opens the ONE help
+         screen this shell has rather than a second copy of it: the same title,
+         the same sentence, the same motor demo stage moved into whichever
+         body asked for it last, and `park` to hand the stage back. */
+      help: {
+        title: function () { return COPY.helpTitle; },
+        fill: function (body) { PANELS.help.fill(body); },
+        park: parkDemo
+      }
+    });
     buildIntro();
     dressBackground();
     buildControls();
@@ -767,11 +853,16 @@
       ctlBar.hidden = state !== "playing";
       if (state !== "playing") dropPause();
       /* Nothing to fit here any more: the motor sizes the end title and the
-         score inside EndScreen.show, which runs after this hook. */
-      if (state === "end") return;
+         score inside EndScreen.show, which runs after this hook. The two
+         buttons are relabelled though: after a level they read NEXT LEVEL or
+         RETRY, and which one depends on the round that just ended. */
+      if (state === "end") { labelEnd(); return; }
       if (state !== "intro") return;
       closePanel();
       armMode(MODES[0]);         // ...and PLAY is the default mode again
+      /* Ninety of ninety is reached on an end screen, so the golden veil is
+         re-read on the way back rather than only at boot. */
+      if (levelled()) LV.refreshVeil();
       W.clearWorld();
     });
     armMode(MODES[0]);

@@ -328,8 +328,8 @@
     },
     sounds: {
       // The background bed, looped and crossfaded by Music (see CONFIG.music):
-      //   ffmpeg -i assets/sound/chainring.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
-      // assets/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
+      //   ffmpeg -i assets/audio/music/chainring.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
+      // assets/audio/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
       // batt:   alert_chime_bright_airy_positive_002          (pitched by the chain)
       // boost:  ui_mobile_touch_screen_pull_down_refresh_trill_flutter_percussive_bold_002
       //         (a bass-heavy percussive surge — a booster has to sound like
@@ -1649,6 +1649,9 @@
         title: title || CONFIG.copy.gameOver,
         variant: st === 3 ? "win" : "",
         score: sc,
+        // A level's objective is a distance: the metres, not the metres plus
+        // what was picked up along them (web target only — see levelProgress).
+        levelScore: Math.floor(travel),
         stars: st,
         rows: resultRows(sc)
       });
@@ -2856,7 +2859,18 @@
 
     function onResize() { metrics(); lens(); }
 
+    /* --- THE LEVEL LAYER (web target) ------------------------------------
+       `levelProgress` is what a level's objective is measured against while
+       the round runs, and it is the same number the result reports as
+       `levelScore`: the METRES, never the score, so pickups cannot pay for a
+       distance. `levelWon` is the three-star finish — the web shell has
+       already played the slow motion, and the round ends through the game's
+       own result so the end screen keeps these stat rows. Both are ignored by
+       the playable, which has no levels — see docs/LEVELS.md. */
+    function levelProgress() { return Math.floor(travel); }
+
     return { reset: reset, update: update, render: render,
-             onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize };
+             onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
+             levelProgress: levelProgress, levelWon: die };
   })();
 

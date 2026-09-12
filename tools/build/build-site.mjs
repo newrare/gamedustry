@@ -17,7 +17,7 @@
        links an image that is not there
 
   Games are read from site/games.js. A game marked `draft: true` is held back on
-  purpose; a game with no icon in assets/icon/thumb/ is dropped and reported as a
+  purpose; a game with no icon in assets/image/icon/thumb/ is dropped and reported as a
   problem.
 
   This is the Vercel build command. Output is gitignored.
@@ -53,7 +53,7 @@ async function copySite() {
 }
 
 async function screensFor(slug) {
-  const dir = path.join(ROOT, 'assets', 'screen');
+  const dir = path.join(ROOT, 'assets', 'image', 'screen');
   if (!existsSync(dir)) return [];
   const all = await readdir(dir);
   return all
@@ -93,10 +93,10 @@ async function main() {
 
     // Held back on purpose: still in construction, copy already written.
     if (game.draft) { drafts.push(slug); continue; }
-    const icon = path.join(ROOT, 'assets', 'icon', 'thumb', slug + '.png');
+    const icon = path.join(ROOT, 'assets', 'image', 'icon', 'thumb', slug + '.png');
     const page = path.join(ROOT, 'dist', 'web', slug, 'index.html');
 
-    if (!existsSync(icon)) { skipped.push(`${slug} — no assets/icon/thumb/${slug}.png`); continue; }
+    if (!existsSync(icon)) { skipped.push(`${slug} — no assets/image/icon/thumb/${slug}.png`); continue; }
     if (!existsSync(page)) { skipped.push(`${slug} — no web build (targets in manifest?)`); continue; }
 
     const imgDir = path.join(OUT, 'image', 'games', slug);
@@ -105,11 +105,11 @@ async function main() {
 
     /* The game's happy face, for the hero's cast (site/script.js,
        initHeroCast). It is the shipping cut the games already embed —
-       assets/art/, written by tools/lab/encode-art.mjs — so the studio page
+       assets/image/embed/, written by tools/lab/encode-art.mjs — so the studio page
        and the end screen of every game show the same drawing, and the site
        gains no artwork of its own to keep in sync. A game without one is not
        an error: the hero simply draws from the ones that are there. */
-    const face = path.join(ROOT, 'assets', 'art', slug + '-character-happy.webp');
+    const face = path.join(ROOT, 'assets', 'image', 'embed', slug + '-character-happy.webp');
     const hasFace = existsSync(face);
     if (hasFace) await cp(face, path.join(imgDir, 'character.webp'));
 
@@ -118,7 +118,7 @@ async function main() {
     const shots = await screensFor(slug);
     for (let i = 0; i < shots.length; i++) {
       const n = String(i + 1).padStart(2, '0');
-      await cp(path.join(ROOT, 'assets', 'screen', shots[i]), path.join(imgDir, `${n}.jpg`));
+      await cp(path.join(ROOT, 'assets', 'image', 'screen', shots[i]), path.join(imgDir, `${n}.jpg`));
     }
 
     /* A web build is a folder now: index.html, the game's own two scripts and
