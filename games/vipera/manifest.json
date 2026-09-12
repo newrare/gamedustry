@@ -1,6 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
+  "version": "1.0.0",
   "tagline": "Tap to swerve the viper and eat to grow",
   "order": 80,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "A viper races up an endless burrow. Every tap flips the side it carves toward, so a rhythm of taps weaves it through the thorns. Gems grow the body — and the longer it gets, the higher its head rides and the less time there is to read what comes next. Eat all the way to full length and the scales plate over: the armour eats the next bite for free. Unarmoured, a thorn strips the body back to a stump and costs one of only three lives — the whole ladder has to be eaten again, at the speed the run has already reached.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "ONE TAP",
+            "line": "Flip the side it <b>digs</b>"
+          },
+          {
+            "kicker": "EVERY GEM",
+            "line": "Grows the <b>body</b>"
+          },
+          {
+            "kicker": "THORNS",
+            "line": "Longer means <b>less</b> time"
+          },
+          {
+            "kicker": "FULL LENGTH",
+            "line": "The scales turn to <b>armour</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "UN TAP",
+            "line": "Change le côté qu’elle <b>creuse</b>"
+          },
+          {
+            "kicker": "CHAQUE GEMME",
+            "line": "Allonge le <b>corps</b>"
+          },
+          {
+            "kicker": "LES ÉPINES",
+            "line": "Plus longue, <b>moins</b> de temps"
+          },
+          {
+            "kicker": "PLEINE LONGUEUR",
+            "line": "Les écailles deviennent <b>armure</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "vipera",
@@ -65,6 +110,47 @@
         "tagline": "<b class=\"w-tap\">Tape</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">mange</b> pour grandir"
       }
     },
-    "font": "baloo2"
+    "font": "baloo2",
+    "levels": {
+      "objective": {
+        "from": 100,
+        "to": 650,
+        "step": 25
+      },
+      "copy": {
+        "en": "Reach <b>{n} m</b> without being torn apart",
+        "fr": "Atteins <b>{n} m</b> sans te faire déchiqueter"
+      },
+      "tune": {
+        "play.speedMin": [
+          280,
+          430
+        ],
+        "play.speedMax": [
+          480,
+          680
+        ],
+        "play.diffFull": [
+          900,
+          340
+        ],
+        "play.rowMax": [
+          0.55,
+          0.95
+        ],
+        "play.gapTight": [
+          240,
+          165
+        ],
+        "play.lives": [
+          4,
+          2
+        ],
+        "play.anchorHigh": [
+          400,
+          540
+        ]
+      }
+    }
   }
 }

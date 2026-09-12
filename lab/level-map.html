@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — level map (30 levels)</title>
+<style>
+/* ===========================================================================
+   LAB — LEVEL MAP. The screen that would sit between the web menu and the
+   round: thirty levels on a world map, each one carrying the stars it was
+   cleared with.
+
+   What this page answers: does ONE level screen dress correctly for all
+   thirteen games, with nothing per-game but the tokens the SKIN already
+   defines and the backdrop the game already ships? Everything on screen is
+   driven by the game picker on the left — palette, face, artwork, objective
+   wording — so a look that only works for one game shows up immediately.
+
+   It is a lab page, not a prototype and not a game: it loads ../assets/ by
+   relative path (the one liberty lab/ has), it ships nowhere, and the real
+   thing would be a fourth panel of packages/webshell/ reading the same
+   CONFIG.art and :root tokens this page fakes.
+
+   Frame is the design space, 720x1280, scaled to fit the stage. No unit in
+   the frame is relative: what you measure here is what the webshell gets.
+   =========================================================================== */
+
+/* The six OFL faces the games already ship. A lab page may load them from
+   disk; a build embeds them (manifest `web.font`). */
+@font-face { font-family:"orbitron";   src:url("../assets/motor/font/orbitron.woff2")   format("woff2"); font-display:block; }
+@font-face { font-family:"baloo2";     src:url("../assets/motor/font/baloo2.woff2")     format("woff2"); font-display:block; }
+@font-face { font-family:"bungee";     src:url("../assets/motor/font/bungee.woff2")     format("woff2"); font-display:block; }
+@font-face { font-family:"exo2";       src:url("../assets/motor/font/exo2.woff2")       format("woff2"); font-display:block; }
+@font-face { font-family:"russoone";   src:url("../assets/motor/font/russoone.woff2")   format("woff2"); font-display:block; }
+@font-face { font-family:"bebasneue";  src:url("../assets/motor/font/bebasneue.woff2")  format("woff2"); font-display:block; }
+
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+
+body {
+  min-height:100vh; display:flex;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — one row per knob.
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 300px; padding:22px 20px 40px; overflow-y:auto; height:100vh;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 20px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 {
+  margin:22px 0 10px; font-size:11px; letter-spacing:1.4px; text-transform:uppercase;
+  color:#6f6f90; border-top:1px solid #23233a; padding-top:14px;
+}
+.row { margin-bottom:14px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.check { display:flex; align-items:center; gap:8px; font-size:12px; color:#9c9cba; margin-bottom:9px; }
+.check input { accent-color:#7ea6ff; width:15px; height:15px; }
+button.act {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+#readout {
+  margin-top:16px; padding:10px 12px; border-radius:8px; background:#0b0b12;
+  border:1px solid #23233a; font:500 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:#8b8ba7; white-space:pre-wrap;
+}
+#readout b { color:#cdd3ff; font-weight:700; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the 720x1280 frame, scaled.
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; display:flex; align-items:center; justify-content:center; padding:24px; overflow:hidden;
+  background-image:
+    linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),
+    linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px;
+}
+#shell { transform-origin:50% 50%; }
+
+/* ===========================================================================
+   THE SCREEN. From here down every length is a design pixel.
+   =========================================================================== */
+#frame {
+  position:relative; width:720px; height:1280px; overflow:hidden;
+  border-radius:26px; background:var(--bg);
+  box-shadow:0 26px 70px rgba(0,0,0,.6);
+  font-family:var(--font),-apple-system,BlinkMacSystemFont,sans-serif;
+  color:var(--text); isolation:isolate;
+}
+
+/* the game's own painted backdrop, exactly as the menu uses it */
+#lm-bg { position:absolute; inset:0; z-index:0; }
+#lm-bg img { width:100%; height:100%; object-fit:cover; display:block; }
+#lm-bg.off img { display:none; }
+/* Its own scrim, cut for THIS layout: heavy under the header and along the
+   bottom card, light in the middle where the path reads over the picture. */
+#lm-bg::after {
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, var(--bg) 0%, rgba(0,0,0,.62) 170px, rgba(0,0,0,.34) 380px,
+                            rgba(0,0,0,.34) 900px, rgba(0,0,0,.72) 1120px, var(--bg) 100%);
+}
+
+/* ---- header band ---------------------------------------------------------- */
+#lm-head {
+  position:absolute; top:0; left:0; right:0; height:150px; z-index:3;
+  display:flex; align-items:center; gap:18px; padding:0 28px;
+  background:linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 100%);
+}
+.lm-back {
+  width:62px; height:62px; flex:0 0 62px; border-radius:50%; cursor:pointer;
+  border:2px solid rgba(255,255,255,.22); background:rgba(0,0,0,.32);
+  display:flex; align-items:center; justify-content:center;
+}
+.lm-back svg { width:26px; height:26px; stroke:var(--text); }
+#lm-titles { flex:1; }
+#lm-eyebrow {
+  font-size:17px; letter-spacing:4px; text-transform:uppercase; color:var(--accent);
+  opacity:.85; margin-bottom:2px;
+}
+#lm-title {
+  font-weight:var(--fw); font-size:44px; letter-spacing:2px; text-transform:uppercase; line-height:1;
+  text-shadow:0 3px 0 rgba(0,0,0,.5), 0 0 26px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+#lm-total {
+  display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:40px;
+  background:rgba(0,0,0,.42); border:2px solid rgba(255,255,255,.14);
+  font-size:28px; font-weight:var(--fw); font-variant-numeric:tabular-nums;
+}
+#lm-total .g { color:var(--gold); font-size:30px; }
+
+/* ninety of ninety: the counter burns like the levels do */
+#lm-total.full {
+  border-color:var(--gold); color:var(--gold);
+  background:rgba(30,20,0,.55);
+  box-shadow:0 0 34px rgba(255,212,59,.75), inset 0 0 18px rgba(255,212,59,.25);
+  animation:lvBurn 2.4s ease-in-out infinite;
+}
+
+/* ---- the scrolling map ---------------------------------------------------- */
+#lm-scroll {
+  position:absolute; top:150px; bottom:246px; left:0; right:0; z-index:2;
+  overflow-y:auto; overflow-x:hidden; scrollbar-width:none;
+}
+#lm-scroll::-webkit-scrollbar { display:none; }
+#lm-canvas { position:relative; width:720px; }
+
+/* A PERFECT BOARD. Ninety of ninety, so the whole map lights: every road goes
+   gold and the star at the top of it is the endless run. The recolour is one
+   filter over the svg, so no stroke has to know about it. */
+#lm-canvas.allstars #lm-path {
+  filter:drop-shadow(0 0 10px rgba(255,212,59,.85)) drop-shadow(0 0 22px rgba(255,160,40,.45));
+}
+#lm-canvas.allstars #lm-path path { stroke:var(--gold) !important; }
+#lm-path { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* There is no sign on a road. A "2 LEVELS" label was tried and it says
+   nothing the board does not already say louder: the two roads out of a fork
+   are drawn with their levels on them, so counting them IS looking at them.
+   What is left on a road is the wall, and only where there is a gate. */
+
+/* ---- the wall across a gated road ----------------------------------------
+   It stands ACROSS the road, so on a horizontal run it is a vertical bar.
+   Two states and no words on either — the wall IS the message, and tapping
+   it opens the conditions.
+
+   SHUT: two stone halves meeting, a lock over the join. The road is painted
+   up to it and stops dead there.
+   BROKEN: the same halves blown apart, the road's own colour running through
+   the gap and on to the level. */
+.wall {
+  position:absolute; transform:translate(-50%, -50%);
+  width:42px; height:104px; cursor:pointer; z-index:3;
+}
+.wall .half {
+  position:absolute; left:0; right:0; height:48px; border-radius:3px;
+  border:2px solid rgba(0,0,0,.6);
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.42) 0 22px, transparent 22px 25px),
+    repeating-linear-gradient(90deg, #6a6472 0 12px, #332f3c 12px 15px);
+  box-shadow:0 3px 12px rgba(0,0,0,.65);
+}
+.wall .half.l { top:2px; }
+.wall .half.r { bottom:2px; }
+.wall.shut .half { border-left:3px solid var(--danger); border-right:3px solid var(--danger); }
+.wall .lock {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:24px; height:24px; stroke:var(--danger); fill:rgba(10,8,14,.92); stroke-width:2.2;
+}
+
+/* blown apart: the halves retreat up and down, their broken edge faces the
+   gap, and the gap is exactly wide enough for the road to run through */
+.wall.broken { width:54px; height:122px; }
+.wall.broken .half {
+  height:48px;
+  border-left:3px solid color-mix(in srgb, var(--accent) 75%, transparent);
+  border-right:3px solid color-mix(in srgb, var(--accent) 75%, transparent);
+  box-shadow:0 0 20px color-mix(in srgb, var(--accent) 55%, transparent),
+             0 3px 10px rgba(0,0,0,.6);
+}
+.wall.broken .half.l { top:0;    clip-path:polygon(0 0, 100% 0, 100% 66%, 58% 86%, 26% 62%, 0 82%); }
+.wall.broken .half.r { bottom:0; clip-path:polygon(0 18%, 30% 38%, 62% 14%, 100% 34%, 100% 100%, 0 100%); }
+/* rubble, so it reads as broken rather than merely apart */
+.wall.broken::before, .wall.broken::after {
+  content:""; position:absolute; width:9px; height:7px; border-radius:2px;
+  background:#5b5566; box-shadow:0 0 8px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.wall.broken::before { left:-11px; top:52%; transform:rotate(-18deg); }
+.wall.broken::after  { right:-9px; top:40%; transform:rotate(24deg); }
+.wall.broken .lock { display:none; }
+
+/* ---- a level node --------------------------------------------------------- */
+.lv {
+  position:absolute; width:84px; height:84px; margin:-42px 0 0 -42px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; border:5px solid rgba(255,255,255,.2);
+  /* opaque on purpose: a road must never be seen running behind a level */
+  background:radial-gradient(circle at 38% 30%, rgba(255,255,255,.13), rgba(0,0,0,.72) 70%), #0a0812;
+  font-size:31px; font-weight:var(--fw); color:var(--text);
+  font-variant-numeric:tabular-nums; line-height:1;
+  transition:transform .14s ease, box-shadow .14s ease;
+}
+.lv:active { transform:scale(.94); }
+.lv.grid { width:94px; height:94px; margin:-47px 0 0 -47px; border-radius:24px; font-size:34px; }
+.lv.grid .num { font-size:34px; }
+
+/* cleared — the ring carries the accent, the stars sit under it */
+.lv.done {
+  border-color:var(--accent);
+  background:radial-gradient(circle at 38% 28%, color-mix(in srgb, var(--accent) 30%, transparent),
+             rgba(0,0,0,.76) 72%), #0a0812;
+  box-shadow:0 0 0 3px rgba(0,0,0,.35), 0 0 26px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+/* the next one to play — the only node that moves */
+.lv.next {
+  border-color:var(--cta-a); color:var(--cta-text);
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
+  box-shadow:0 0 0 5px rgba(0,0,0,.4), 0 0 40px color-mix(in srgb, var(--cta-a) 70%, transparent);
+  animation:lvPulse 1.5s ease-in-out infinite;
+}
+@keyframes lvPulse {
+  0%,100% { transform:scale(1);    }
+  50%     { transform:scale(1.09); }
+}
+/* unlocked but not the next one (a level you may replay ahead of yourself) */
+.lv.open { border-color:rgba(255,255,255,.42); }
+/* locked */
+.lv.lock { color:rgba(255,255,255,.28); border-color:rgba(255,255,255,.1); background:#0a0812; }
+.lv.lock .num { display:none; }
+.lv.lock .padlock { display:block; }
+.padlock { display:none; width:40px; height:40px; stroke:rgba(255,255,255,.4); fill:none; stroke-width:2.2; }
+
+/* A level skipped by a shortcut and left behind: open, unplayed, and marked
+   as a hole so a completionist can see at a glance what they walked past. */
+/* THREE STARS. The map is read at a glance and a perfect level has to be
+   findable in that glance, so it does not merely change border colour — it
+   burns: a gold rim, a gold halo, and a slow breath. */
+.lv.perfect {
+  border-color:var(--gold);
+  background:radial-gradient(circle at 38% 28%, rgba(255,212,59,.34), rgba(0,0,0,.74) 72%), #0a0812;
+  box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 34px rgba(255,212,59,.75),
+             inset 0 0 18px rgba(255,212,59,.3);
+  animation:lvBurn 2.4s ease-in-out infinite;
+}
+@keyframes lvBurn {
+  0%,100% { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 30px rgba(255,212,59,.6),
+                       inset 0 0 16px rgba(255,212,59,.24); }
+  50%     { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 46px rgba(255,212,59,.95),
+                       inset 0 0 22px rgba(255,212,59,.4); }
+}
+
+/* THE BONUS. It only exists on a perfect board, so it is not a level — it is
+   a star, and it starts the endless run. */
+.lv.bonus {
+  width:108px; height:108px; margin:-54px 0 0 -54px; border:0; background:none;
+  box-shadow:none; font-size:0; animation:lvBurn 2.4s ease-in-out infinite;
+}
+.lv.bonus::before {
+  content:""; position:absolute; inset:0;
+  clip-path:polygon(50% 0%, 62% 36%, 100% 38%, 69% 60%, 80% 98%,
+                    50% 75%, 20% 98%, 31% 60%, 0% 38%, 38% 36%);
+  background:linear-gradient(180deg, #fff6cc, var(--gold) 46%, #ff9a2e);
+}
+.lv.bonus .num, .lv.bonus .padlock { display:none; }
+
+/* a level on the road the player did not take. Missing one is fine — this is
+   a note, not a warning, so it is dashed and quiet rather than loud. */
+.lv.gap { border-style:dashed; border-color:rgba(255,255,255,.42); color:rgba(255,255,255,.62); }
+
+/* The row's read-out sits to the RIGHT of the node, the way a commit message
+   sits beside its dot — which is also what buys the vertical room the lanes
+   need. In the grid layout it goes back under the node. */
+.row-tag {
+  position:absolute; transform:translateY(-50%); display:flex; align-items:center; gap:9px;
+  white-space:nowrap; pointer-events:none;
+}
+.row-tag .stars { display:flex; gap:3px; font-size:21px; line-height:1;
+                  text-shadow:0 2px 4px rgba(0,0,0,.8); }
+.row-tag .stars s { text-decoration:none; color:rgba(255,255,255,.2); }
+.row-tag .stars s.on { color:var(--gold); }
+.row-tag em {
+  font-style:normal; font-size:16px; letter-spacing:2.2px; text-transform:uppercase;
+  color:rgba(255,255,255,.42);
+}
+.row-tag .best { font-size:15px; color:rgba(255,255,255,.42); font-variant-numeric:tabular-nums; }
+
+/* the grid keeps the old arrangement: three stars tucked under the tile */
+.lv .stars {
+  position:absolute; bottom:-23px; left:50%; transform:translateX(-50%);
+  display:flex; gap:3px; font-size:19px; line-height:1; white-space:nowrap;
+  text-shadow:0 2px 4px rgba(0,0,0,.8);
+}
+.lv .stars s { text-decoration:none; color:rgba(255,255,255,.22); }
+.lv .stars s.on { color:var(--gold); }
+
+/* ---- a branch: the pill sitting on a shortcut ----------------------------- */
+.br {
+  position:absolute; transform:translate(-50%, -50%); white-space:nowrap;
+  padding:8px 13px; border-radius:26px; cursor:default;
+  background:rgba(8,6,12,.88); border:2px solid rgba(255,255,255,.18);
+  font-size:17px; font-weight:var(--fw); line-height:1;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.br s { font-size:15px; }
+.br s { text-decoration:none; color:var(--gold); }
+.br i { font-style:normal; color:rgba(255,255,255,.55); }
+.br.live { border-color:var(--cta-a); background:rgba(0,0,0,.78);
+           box-shadow:0 0 22px color-mix(in srgb, var(--cta-a) 45%, transparent); }
+.br.live i { color:var(--cta-a); }
+.br.took { border-color:var(--accent); }
+.br.took i { color:var(--accent); }
+
+/* ---- the level card, docked at the bottom --------------------------------- */
+#lm-card {
+  /* The card is as tall as what it has to say: a level needs four lines, a
+     locked wall needs the explanation and its chips. The map's scroll band
+     is resized to match after every render, so the two never overlap. */
+  position:absolute; left:0; right:0; bottom:0; z-index:4;
+  height:auto; min-height:246px; max-height:452px; overflow:hidden;
+  padding:22px 28px 26px; display:flex; flex-direction:column; gap:10px;
+  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.72) 34%, rgba(0,0,0,.92) 100%);
+  border-top:2px solid rgba(255,255,255,.08);
+}
+#lm-card .top { display:flex; align-items:baseline; gap:14px; }
+#lm-lv { font-size:40px; font-weight:var(--fw); letter-spacing:1px; text-transform:uppercase; }
+#lm-tier { font-size:19px; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
+#lm-goal { font-size:26px; color:rgba(255,255,255,.92); }
+#lm-card.is-wall #lm-goal { font-size:23px; }
+#lm-goal b { color:var(--accent); font-weight:var(--fw); }
+#lm-best { font-size:19px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums; }
+#lm-best em { font-style:normal; color:var(--gold); }
+
+/* the wall card's suggestions: the cheapest places to find the missing stars */
+#lm-chips { display:flex; gap:10px; flex-wrap:wrap; }
+#lm-chips:empty { display:none; }
+#lm-chips button {
+  display:flex; align-items:center; gap:7px; cursor:pointer;
+  padding:9px 15px; border-radius:26px; font:inherit; font-size:19px;
+  background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.18);
+  color:var(--text);
+}
+#lm-chips button s { text-decoration:none; color:var(--gold); font-size:16px; }
+
+/* the difficulty bar: the same d the tunables are lerped with */
+#lm-diff { display:flex; align-items:center; gap:12px; font-size:16px; color:rgba(255,255,255,.5);
+           letter-spacing:1.6px; text-transform:uppercase; }
+#lm-diff .bar { flex:1; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
+#lm-diff .bar i { display:block; height:100%; border-radius:6px;
+                  background:linear-gradient(90deg, var(--good, #69db7c), var(--gold), var(--danger)); }
+
+#lm-play {
+  margin-top:auto; height:78px; border:0; border-radius:20px; cursor:pointer;
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:var(--cta-text);
+  font:inherit; font-weight:var(--fw); font-size:32px; letter-spacing:3px; text-transform:uppercase;
+  box-shadow:0 8px 0 rgba(0,0,0,.4), 0 0 34px color-mix(in srgb, var(--cta-a) 45%, transparent);
+}
+#lm-play:disabled {
+  background:rgba(255,255,255,.09); color:rgba(255,255,255,.32);
+  box-shadow:none; cursor:not-allowed;
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Level map</h1>
+  <p class="hint">The screen between the menu and the round: 30 levels, the
+  stars each was cleared with. One layout for the thirteen games — pick a game
+  and everything re-dresses from its tokens.</p>
+
+  <div class="row">
+    <label for="game">game</label>
+    <select id="game"></select>
+  </div>
+
+  <div class="row">
+    <label for="style">path style</label>
+    <select id="style">
+      <option value="wander" selected>wander — any column, any jump</option>
+      <option value="tight">tight — never more than two columns over</option>
+      <option value="zigzag">zigzag — it crosses the board every time</option>
+      <option value="edges">edges — it keeps to the outer columns</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <button class="act" id="remap">Re-roll the map</button>
+    <label style="margin-top:8px"><span>seed</span><b id="seed-v">slug</b></label>
+  </div>
+
+  <h2>progress</h2>
+
+  <div class="row">
+    <label for="cleared">progress <b id="cleared-v">7</b></label>
+    <input id="cleared" type="range" min="0" max="30" value="7">
+  </div>
+
+  <div class="row">
+    <label for="skill">player <b id="skill-v">average</b></label>
+    <input id="skill" type="range" min="0" max="3" value="1">
+  </div>
+
+  <div class="row">
+    <button class="act" id="reroll">Re-roll the stars</button>
+  </div>
+
+  <h2>show</h2>
+  <label class="check"><input type="checkbox" id="opt-bg" checked> painted backdrop</label>
+  <label class="check"><input type="checkbox" id="opt-worlds" checked> walls at the gates</label>
+  <label class="check"><input type="checkbox" id="opt-font" checked> the game's own face</label>
+
+  <div id="readout"></div>
+</div>
+
+<div id="stage">
+  <div id="shell">
+    <div id="frame">
+
+      <div id="lm-bg"><img id="lm-img" alt=""></div>
+
+      <header id="lm-head">
+        <div class="lm-back" title="back to the menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </div>
+        <div id="lm-titles">
+          <div id="lm-eyebrow">Select a level</div>
+          <div id="lm-title">Levels</div>
+        </div>
+        <div id="lm-total"><span class="g">&#9733;</span><span id="lm-total-n">0/90</span></div>
+      </header>
+
+      <div id="lm-scroll">
+        <div id="lm-canvas">
+          <svg id="lm-path" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <section id="lm-card">
+        <div class="top">
+          <div id="lm-lv">Level 1</div>
+          <div id="lm-tier">World 1</div>
+        </div>
+        <div id="lm-goal"></div>
+        <div id="lm-best"></div>
+        <div id="lm-chips"></div>
+        <div id="lm-diff"><span>difficulty</span><span class="bar"><i></i></span><b id="lm-diff-n"></b></div>
+        <button id="lm-play">Play</button>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   Plain ES6 — a lab page runs in your browser, not in a mobile WebView.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  /* ── 1. the thirteen games ───────────────────────────────────────────────
+     Palette and face are read off games/<slug>/skin.css and manifest.json;
+     the backdrop is the same assets/image/embed file the menu already puts behind the
+     intro. `goal` is the objective line the level card writes — it is the
+     per-game half of the progression model (see docs/LEVELS.md), and the only
+     string on this screen a game has to own.
+     ------------------------------------------------------------------------ */
+  const GAMES = [
+    { slug:"arcider",  name:"Arcider",  font:"orbitron",  fw:700,
+      pal:{ bg:"#05041a", text:"#eafcff", accent:"#35e8ff", a:"#7cf9ff", b:"#7a4dff", ink:"#03041a", danger:"#ff2d55", good:"#5cffb0" },
+      goal:d => `Reach <b>${r(600, 3400, d, 100)} m</b> before the cells run out` },
+    { slug:"blight",   name:"Blight",   font:"baloo2",    fw:800,
+      pal:{ bg:"#0a0e24", text:"#eaf2ff", accent:"#3aa0ff", a:"#ff8fab", b:"#ff3d6b", ink:"#ffffff", danger:"#ff4d6d", good:"#69db7c" },
+      goal:d => `Clear the wall — <b>${r(4, 11, d, 1)} rows</b>` },
+    { slug:"bouncetry",name:"Bouncetry",font:"bungee",    fw:400,
+      pal:{ bg:"#070a1e", text:"#eafcff", accent:"#4bf5ff", a:"#ffc061", b:"#ff8a1a", ink:"#2a1400", danger:"#ff2d78", good:"#69db7c" },
+      goal:d => `Break <b>${r(55, 100, d, 5)}%</b> of the wall` },
+    { slug:"chainring",name:"Chainring",font:"exo2",      fw:800,
+      pal:{ bg:"#0a0a1c", text:"#eafcff", accent:"#00e5ff", a:"#4bf5ff", b:"#00d0ff", ink:"#04040c", danger:"#ff2d55", good:"#69db7c" },
+      goal:d => `Score <b>${r(1200, 9000, d, 100)}</b> on the chart` },
+    { slug:"echomaze", name:"Echomaze", font:"orbitron",  fw:700,
+      pal:{ bg:"#04060f", text:"#eafcff", accent:"#7ef9ff", a:"#ff9ae8", b:"#c026d3", ink:"#2b0033", danger:"#ff2d78", good:"#4ade80" },
+      goal:d => `Escape a <b>${r(10, 16, d, 1)} x ${r(7, 13, d, 1)}</b> maze` },
+    { slug:"gearball", name:"Gearball", font:"russoone",  fw:400,
+      pal:{ bg:"#0a0718", text:"#f0f4ff", accent:"#7ef9ff", a:"#ff9a44", b:"#e0362c", ink:"#2c0900", danger:"#ff3d6e", good:"#42e8b0" },
+      goal:d => `Seat <b>${r(18, 64, d, 1)} balls</b> without a jam` },
+    { slug:"marshmelt",name:"Marshmelt",font:"baloo2",    fw:800,
+      pal:{ bg:"#180a10", text:"#fff3e4", accent:"#ff9d2e", a:"#ffd166", b:"#ff7a1a", ink:"#2a1000", danger:"#ff3b30", good:"#9dff8a" },
+      goal:d => `Climb <b>${r(220, 1400, d, 20)} m</b> over the lava` },
+    { slug:"orbinity", name:"Orbinity", font:"exo2",      fw:800,
+      pal:{ bg:"#05061a", text:"#eaf6ff", accent:"#7cf5ff", a:"#b39bff", b:"#6d5cff", ink:"#0b0620", danger:"#ff4d6d", good:"#69db7c" },
+      goal:d => `Score <b>${r(900, 6200, d, 100)}</b> in one orbit run` },
+    { slug:"radiam",   name:"Radiam",   font:"russoone",  fw:400,
+      pal:{ bg:"#070512", text:"#f4f0ff", accent:"#35e0ff", a:"#ffcf4d", b:"#ff8a1f", ink:"#2a1400", danger:"#ff3d6e", good:"#3ff0a0" },
+      goal:d => `Pop <b>${r(14, 90, d, 2)} rays</b> before the eclipse` },
+    { slug:"slipdeck", name:"Slipdeck", font:"bebasneue", fw:400,
+      pal:{ bg:"#050d0a", text:"#f3fbf6", accent:"#f5c451", a:"#ffe08a", b:"#f0b429", ink:"#241703", danger:"#ff4a5e", good:"#3ddc97" },
+      goal:d => `Make <b>${r(3, 14, d, 1)} paying hands</b>` },
+    { slug:"spinshock",name:"Spinshock",font:"bungee",    fw:400,
+      pal:{ bg:"#08081c", text:"#eafcff", accent:"#40ecff", a:"#7ef4ff", b:"#00bfff", ink:"#04040c", danger:"#ff2f6d", good:"#69db7c" },
+      goal:d => `Knock out <b>${r(6, 40, d, 1)} rivals</b>` },
+    { slug:"triverse", name:"Triverse", font:"orbitron",  fw:700,
+      pal:{ bg:"#04050f", text:"#eaf4ff", accent:"#3ce0ff", a:"#8ffff2", b:"#2f9cff", ink:"#01121d", danger:"#ff2d55", good:"#a6ff3d" },
+      goal:d => `Reach <b>${r(500, 3000, d, 100)} m</b> on three lives` },
+    { slug:"vipera",   name:"Vipera",   font:"baloo2",    fw:800,
+      pal:{ bg:"#03110c", text:"#eafff2", accent:"#4dff9b", a:"#c6ff6b", b:"#12b86a", ink:"#04220f", danger:"#ff2d55", good:"#a6ff3d" },
+      goal:d => `Reach <b>${r(450, 2600, d, 50)} m</b> without being torn apart` }
+  ];
+
+  /* ── 2. the progression model ────────────────────────────────────────────
+     THE MAP IS A ROAD WITH FORKS, not a ladder with bypasses. At a fork the
+     player picks a side and SEES what each side costs: one level this way,
+     three that way. Both roads rejoin. Neither is the "real" one.
+
+     That is the difference from the first pass, which drew shortcuts as
+     detours over a spine: a detour says "the spine is the game and this is a
+     cheat", a fork says "these are two roads, choose". Missing the levels on
+     the road not taken is fine — they are a thing to come back for, not a
+     debt.
+
+     Every level is the same kind of level. There is no boss, there never
+     will be one.
+     ------------------------------------------------------------------------ */
+
+  /* The whole graph, in order. A `line` is that many levels in a row; a
+     `fork` is two roads that split and rejoin, the FIRST one on the left.
+     A road may ask for a total star count before it opens — and it is
+     always the SHORT road that asks, because the short road is the favour. */
+  const SECTIONS = [
+    { line: 3 },                                            // 1 2 3
+    { fork: [{ len: 1 },           { len: 3 }] },           // 4        | 5 6 7
+    { line: 2 },                                            // 8 9
+    { fork: [{ len: 2, gate: 14 }, { len: 4 }] },           // 10 11    | 12 13 14 15
+    { line: 2 },                                            // 16 17
+    { fork: [{ len: 1, gate: 30 }, { len: 3 }] },           // 18       | 19 20 21
+    { line: 2 },                                            // 22 23
+    { fork: [{ len: 2 },           { len: 3 }] },           // 24 25    | 26 27 28
+    { line: 2 }                                             // 29 30
+  ];
+
+  const BAND_NAME = ["Warm-up", "Pressure", "Squeeze", "Overdrive", "Meltdown"];
+
+  /* Build the graph once: every node's row on the climb (`pos`), which side
+     of the road it is on (`lane`), the edges, and the roads themselves.
+
+     A fork's two roads share one band of the climb — the band is as long as
+     the LONGER road — and a short road spreads its levels across the whole
+     band, landing its last one at the top of it. So one level standing in
+     for three is the hardest of the three, not the easiest: taking the short
+     road buys time, never an easier game. */
+  const NODE = {}, EDGES = [], ROADS = [], PLAN = [];
+  const LEVELS = (function build() {
+    let n = 1, pos = 1, prev = [];
+    SECTIONS.forEach(sec => {
+      if (sec.line) {
+        const ids = [];
+        for (let i = 0; i < sec.line; i++) { NODE[n] = { n: n, pos: pos + i, lane: 0 }; ids.push(n++); }
+        prev.forEach(p => EDGES.push({ from: p, to: ids[0] }));
+        for (let i = 0; i < ids.length - 1; i++) EDGES.push({ from: ids[i], to: ids[i + 1] });
+        PLAN.push({ line: ids });
+        pos += sec.line;
+        prev = [ids[ids.length - 1]];
+      } else {
+        const L = Math.max.apply(null, sec.fork.map(r => r.len));
+        const exits = [], plan = { fork: [] };
+        sec.fork.forEach((r, ri) => {
+          const side = ri === 0 ? -1 : 1;
+          const ids = [];
+          for (let i = 0; i < r.len; i++) {
+            NODE[n] = { n: n, pos: pos + Math.round((i + 1) * L / r.len) - 1, lane: side };
+            ids.push(n++);
+          }
+          prev.forEach(p => EDGES.push({ from: p, to: ids[0] }));
+          for (let i = 0; i < ids.length - 1; i++) EDGES.push({ from: ids[i], to: ids[i + 1] });
+          ROADS.push({ side: side, nodes: ids, gate: r.gate || 0,
+                       entry: ids[0], from: prev[0], len: r.len, other: L });
+          exits.push(ids[ids.length - 1]);
+          plan.fork.push(ids);
+        });
+        PLAN.push(plan);
+        pos += L;
+        prev = exits;
+      }
+    });
+    return n - 1;
+  })();
+  const ROWS = Math.max.apply(null, Object.keys(NODE).map(k => NODE[k].pos));
+
+  // difficulty: where the node sits on the climb, not what number it wears
+  const dOf = n => Math.pow((NODE[n].pos - 1) / (ROWS - 1), 0.9);
+  const bandOf = n => Math.min(4, Math.floor(dOf(n) * 5));
+
+  /* lerp, rounded to a step the player can read (600 m, not 617 m) — the
+     shape every objective number on this screen is built with. */
+  function r(lo, hi, d, step) {
+    const v = lo + (hi - lo) * d;
+    return (Math.round(v / step) * step).toLocaleString("en-US");
+  }
+
+  const preds = n => EDGES.filter(e => e.to === n).map(e => e.from);
+  const succs = n => EDGES.filter(e => e.from === n).map(e => e.to);
+  const roadOf = n => ROADS.find(rd => rd.nodes.indexOf(n) >= 0);
+  const roadAt = n => ROADS.filter(rd => rd.from === n);   // the fork's two roads
+
+  /* ── 3. the saved progression ────────────────────────────────────────────
+     Shape of what Store would hold under `prog:<slug>` — see docs/LEVELS.md.
+     No "highest level unlocked": with a graph one number cannot say where a
+     player is, and it does not have to. Here it is faked from the sliders.
+     ------------------------------------------------------------------------ */
+  let save = { v: 1, l: {} };
+
+  function fakeSave(rounds, skill, seed) {
+    const spread = [[1, 1, 2], [1, 2, 2, 3], [2, 3, 3], [3]][skill];
+    const out = { v: 1, l: {} };
+    let rnd = seed;
+    const next = () => (rnd = (rnd * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+
+    /* Walk the graph the way a player would: at a fork, take the short road
+       when its gate is already paid, otherwise the long one. That is what
+       puts real roads-not-taken on the map instead of a tidy prefix. */
+    const stars = () => Object.keys(out.l).reduce((t, k) => t + out.l[k].s, 0);
+    let n = 1, done = 0;
+    while (n && done < rounds) {
+      const s = spread[Math.floor(next() * spread.length)];
+      out.l[n] = { s: s, b: Math.round((400 + next() * 4200) * (1 + dOf(n) * 2)),
+                   p: 1 + Math.floor(next() * 6) };
+      done++;
+      const outs = succs(n);
+      if (!outs.length) break;
+      const roads = outs.map(t => ({ t: t, rd: ROADS.find(x => x.entry === t) }));
+      const shortRd = roads.filter(x => x.rd).sort((a, b) => a.rd.len - b.rd.len)[0];
+      n = (shortRd && (!shortRd.rd.gate || stars() >= shortRd.rd.gate))
+        ? shortRd.t : outs[outs.length - 1];
+    }
+    /* At the top of the slider the completionist has been back for the roads
+       they skipped — which is the only way to reach 90 of 90, and the only
+       way to see what a perfect board looks like. */
+    if (rounds >= LEVELS)
+      for (let m = 1; m <= LEVELS; m++)
+        if (!out.l[m]) out.l[m] = { s: spread[Math.floor(next() * spread.length)],
+                                    b: Math.round((400 + next() * 4200) * (1 + dOf(m) * 2)),
+                                    p: 1 + Math.floor(next() * 6) };
+    return out;
+  }
+
+  const cleared = n => !!save.l[n];
+  const starsOf = n => (save.l[n] ? save.l[n].s : 0);
+  const totalStars = () => Object.keys(save.l).reduce((t, k) => t + save.l[k].s, 0);
+  const played = () => Object.keys(save.l).length;
+
+  const roadShut = rd => !!rd.gate && totalStars() < rd.gate;
+  const roadTaken = rd => rd.nodes.some(cleared);
+
+  /* Open: a predecessor is cleared, and the road this level starts is not
+     gated shut. Nothing else — no stored frontier to disagree with it. */
+  function open(n) {
+    if (n === 1) return true;
+    const rd = roadOf(n);
+    if (rd && rd.entry === n && roadShut(rd)) return false;
+    return preds(n).some(cleared);
+  }
+
+  /* Where the player is: the successors of the furthest level they finished.
+     At a fork that is TWO nodes, and both should pulse — the choice is the
+     state, and picking one for them would be a lie. */
+  function frontier() {
+    let top = 0, topPos = -1;
+    for (let n = 1; n <= LEVELS; n++)
+      if (cleared(n) && NODE[n].pos > topPos) { topPos = NODE[n].pos; top = n; }
+    if (!top) return [1];
+    return succs(top).filter(n => open(n) && !cleared(n));
+  }
+  let NEXT = [];
+  const isNext = n => NEXT.indexOf(n) >= 0;
+  // a level on the road not taken: open, unplayed, and behind the frontier
+  const isGap = n => open(n) && !cleared(n) && !isNext(n) &&
+                     Object.keys(save.l).some(k => NODE[+k].pos > NODE[n].pos);
+
+  /* ── 4. geometry — an invisible grid, and roads that walk it ────────────
+     Two passes failed before this one, and how they failed is the reason
+     this one is built the way it is:
+
+       - a snake with dotted arcs bowed over it: everything curved, nothing
+         said which line was the road and which the detour;
+       - free-placed nodes joined by cubic curves: better, but the curves
+         went where the maths put them, which was never where a road would
+         go, and two of them crossing looked like a mistake.
+
+     So there is a GRID now. Six columns wide, as many rows as it takes, and
+     invisible. Levels are dropped on cells — most cells stay empty, which is
+     the point — and a road is then just a walk from cell to cell: across,
+     and up. Nothing curves, nothing crosses, and every corner is a right
+     angle, so the eye can follow one road without losing it.
+
+     Levels sit on EVEN rows and roads turn on the ODD row between them, so a
+     horizontal run can never pass through a level: the free row is reserved
+     by construction rather than checked for.
+     ------------------------------------------------------------------------ */
+  const COLS = 6, COL_W = 120, ROW_H = 64, CORNER = 22;
+  const PAD_BOT = 120, PAD_TOP = 130;
+  const colX = c => COL_W / 2 + c * COL_W;              // 60 180 300 420 540 660
+  const GRID_ROWS = (ROWS - 1) * 2;                     // even rows hold levels
+
+  /* Deterministic noise: a map has to be the same map tomorrow, and a
+     different one per game — so the seed is the slug unless the lab
+     overrides it. */
+  function hashSeed(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function lcg(seed) {
+    let s = seed || 1;
+    return () => (s = (Math.imul(s, 1103515245) + 12345) & 0x7fffffff) / 0x7fffffff;
+  }
+
+  /* How the common road picks its next column. This is the whole character of
+     a map, so it is a setting rather than a constant. */
+  const STYLES = {
+    wander:  { pool: c => [0, 1, 2, 3, 4, 5], minJump: 1, maxJump: 5 },
+    tight:   { pool: c => [0, 1, 2, 3, 4, 5], minJump: 1, maxJump: 2 },
+    zigzag:  { pool: c => (c <= 2 ? [3, 4, 5] : [0, 1, 2]), minJump: 1, maxJump: 5 },
+    edges:   { pool: c => [0, 1, 4, 5],       minJump: 1, maxJump: 5 }
+  };
+
+  /* Drop the thirty on the grid. The only hard rules are the ones that keep
+     a road drawable:
+       - a level never shares its predecessor's column, or the road between
+         them would be a straight line with nothing to read;
+       - a fork's two roads live in the left half and the right half, so
+         "left" and "right" mean what they say — and so the long vertical of
+         a short road can never run through the other road's levels;
+       - a fork's roads start at least two columns off the fork, so the
+         horizontal run out of it is long enough to carry a sign;
+       - a merge takes neither of its two incoming columns, or one road's
+         final climb would pass straight through the other road's last level.
+     Everything else is the dice. */
+  function assignColumns(seed, style) {
+    const rnd = lcg(seed), st = STYLES[style] || STYLES.wander;
+    const col = {};
+    const pick = arr => arr[Math.floor(rnd() * arr.length)];
+    const away = (from, pool, lo, hi) => {
+      const ok = pool.filter(c => {
+        const d = Math.abs(c - from);
+        return d >= (lo || 1) && d <= (hi || 5);
+      });
+      return pick(ok.length ? ok : pool.filter(c => c !== from));
+    };
+
+    let prevCol = pick([1, 2, 3, 4]);
+    let prevExits = null;                       // the two columns a fork left behind
+
+    PLAN.forEach((sec, si) => {
+      if (sec.line) {
+        sec.line.forEach((id, i) => {
+          const beforeFork = (i === sec.line.length - 1) &&
+                             PLAN[si + 1] && PLAN[si + 1].fork;
+          if (i === 0 && prevExits) {
+            // the merge: dodge both roads' last columns
+            let pool = [0, 1, 2, 3, 4, 5].filter(c => prevExits.indexOf(c) < 0);
+            if (beforeFork) pool = pool.filter(c => c === 2 || c === 3);
+            col[id] = pick(pool.length ? pool : [2, 3]);
+          } else if (beforeFork) {
+            /* A FORK NODE SITS IN THE MIDDLE. Its two roads have to leave in
+               OPPOSITE directions — the first pass let both go right and the
+               two runs were drawn on top of each other, which is how you get
+               a map where "left" and "right" mean nothing. Only columns 2
+               and 3 have the two spare columns each side that a road needs. */
+            col[id] = pick([2, 3]);
+          } else {
+            col[id] = away(prevCol, st.pool(prevCol), st.minJump, st.maxJump);
+          }
+          prevCol = col[id];
+        });
+        prevExits = null;
+      } else {
+        /* left of the fork, and right of it — measured from the fork's own
+           column, not from the middle of the board */
+        const halves = [
+          [0, 1, 2, 3, 4, 5].filter(c => c < prevCol),
+          [0, 1, 2, 3, 4, 5].filter(c => c > prevCol)
+        ];
+        const exits = [];
+        sec.fork.forEach((ids, ri) => {
+          const half = halves[ri];
+          // the first level of a road sits two columns or more off the fork,
+          // so its run is 240 px — room for a wall with clearance either side
+          const far = half.filter(c => Math.abs(c - prevCol) >= 2);
+          let last = pick(far.length ? far : half);
+          col[ids[0]] = last;
+          for (let i = 1; i < ids.length; i++) {
+            const rest = half.filter(c => c !== last);
+            last = pick(rest.length ? rest : half);
+            col[ids[i]] = last;
+          }
+          exits.push(last);
+        });
+        prevExits = exits;
+        prevCol = exits[0];
+      }
+    });
+    return col;
+  }
+
+  /* The walk from one level to the next: up into the free row, across it,
+     then up into the level. Right angles, rounded just enough not to look
+     like a circuit diagram. A road that does not change column is one
+     straight climb. */
+  /* The walk from one level to the next: up into the free row, across it,
+     then up into the level. Right angles, rounded just enough not to look
+     like a circuit diagram. A road that does not change column is one
+     straight climb.
+
+     It comes back in TWO pieces, cut at the point a wall would stand — the
+     middle of the final climb. A gated road paints the first piece and stops
+     there; nothing else needs to know a wall exists. */
+  function roadPath(a, b) {
+    const turnY = a.y - ROW_H;                          // the free row above `a`
+    if (a.x === b.x) {                                  // one straight climb
+      const cutY = (turnY + b.y) / 2;
+      return { head: `M ${a.x} ${a.y} L ${a.x} ${cutY}`,
+               tail: `M ${a.x} ${cutY} L ${b.x} ${b.y}`,
+               cut: { x: b.x, y: cutY, vertical: false }, run: null };
+    }
+    const dir = b.x > a.x ? 1 : -1, r = CORNER;
+    /* A wall stands on the horizontal RUN, a little past its middle — not on
+       the final climb, which is one row tall and mostly covered by the level
+       sitting on top of it. The run is 240 px or more by construction, so a
+       54 px wall sits in it with room either side. */
+    const cutX = a.x + (b.x - a.x) * 0.55;
+    return {
+      head: `M ${a.x} ${a.y} L ${a.x} ${turnY + r}` +
+            ` Q ${a.x} ${turnY} ${a.x + dir * r} ${turnY}` +
+            ` L ${cutX} ${turnY}`,
+      tail: `M ${cutX} ${turnY} L ${b.x - dir * r} ${turnY}` +
+            ` Q ${b.x} ${turnY} ${b.x} ${turnY - r}` +
+            ` L ${b.x} ${b.y}`,
+      cut: { x: cutX, y: turnY, vertical: true }
+    };
+  }
+
+  const BONUS = LEVELS + 1;              // level 31: only on a perfect board
+
+  function place(seed, style, withBonus) {
+    const col = assignColumns(seed, style);
+    const rows = GRID_ROWS + (withBonus ? 2 : 0);
+    const height = PAD_BOT + rows * ROW_H + PAD_TOP;
+    const pts = {};
+    for (let n = 1; n <= LEVELS; n++)
+      pts[n] = { n: n, col: col[n], x: colX(col[n]),
+                 y: height - (PAD_BOT + (NODE[n].pos - 1) * 2 * ROW_H) };
+    if (withBonus)
+      pts[BONUS] = { n: BONUS, col: col[LEVELS], x: colX(col[LEVELS]),
+                     y: height - (PAD_BOT + ROWS * 2 * ROW_H) };
+    return { pts: pts, height: height };
+  }
+
+
+  /* ── 5. drawing ──────────────────────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const frame = $("frame"), canvas = $("lm-canvas"), svg = $("lm-path"), scroll = $("lm-scroll");
+  let game = GAMES[0], style = "wander", seed = 0, geo = null;
+  // seed 0 means "take it from the game's slug" — one map per game, stable
+  let picked = 1;                    // a level number, or { road: <index> }
+  let pickFollows = true;
+
+  const LOCK_SVG = '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+  const OPEN_SVG = '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 7.5-1.2"/></svg>';
+
+  function dress() {
+    const p = game.pal;
+    frame.style.setProperty("--bg", p.bg);
+    frame.style.setProperty("--text", p.text);
+    frame.style.setProperty("--accent", p.accent);
+    frame.style.setProperty("--cta-a", p.a);
+    frame.style.setProperty("--cta-b", p.b);
+    frame.style.setProperty("--cta-text", p.ink);
+    frame.style.setProperty("--danger", p.danger);
+    frame.style.setProperty("--good", p.good);
+    frame.style.setProperty("--gold", "#ffd43b");
+    frame.style.setProperty("--font", $("opt-font").checked ? game.font : "system-ui");
+    frame.style.setProperty("--fw", $("opt-font").checked ? game.fw : 800);
+    $("lm-img").src = "../assets/image/embed/" + game.slug + "-background-phone.webp";
+    $("lm-bg").classList.toggle("off", !$("opt-bg").checked);
+    $("lm-title").textContent = game.name;
+  }
+
+  const starRow = s => `<span class="stars">${[1, 2, 3].map(i =>
+    `<s class="${i <= s ? "on" : ""}">&#9733;</s>`).join("")}</span>`;
+
+  const perfectBoard = () => totalStars() === LEVELS * 3;
+
+  function draw() {
+    const perfect = perfectBoard();
+    geo = place(seed || hashSeed(game.slug), style, perfect);
+    const at = n => geo.pts[n];
+    NEXT = frontier();
+    canvas.style.height = geo.height + "px";
+    canvas.classList.toggle("allstars", perfect);
+    svg.setAttribute("viewBox", `0 0 720 ${geo.height}`);
+    svg.style.height = geo.height + "px";
+
+    /* One road per edge, walked cell to cell. WALKED means both ends are
+       done (or the far end is where the player stands) — that is the road
+       behind them, and the only thing painted in the accent.
+
+       A GATED road is painted the same way up to its wall and no further:
+       the colour arrives, the wall stops it. Past the wall the road is the
+       dim unwalked grey, whether or not the player could see it coming. */
+    let ink = "";
+    const cuts = {};
+    EDGES.forEach(e => {
+      const a = at(e.from), b = at(e.to);
+      const rd = ROADS.find(x => x.entry === e.to);
+      const shut = rd && roadShut(rd);
+      const path = roadPath(a, b);
+      if (rd) cuts[ROADS.indexOf(rd)] = path.cut;
+
+      const live = cleared(e.from) && (cleared(e.to) || isNext(e.to));
+      const DIM = "rgba(255,255,255,.15)";
+      const paint = (d, on) =>
+        `<path d="${d}" fill="none" stroke-linecap="round" stroke-linejoin="round"
+               stroke="${on ? "var(--accent)" : DIM}" stroke-width="13"/>`;
+
+      if (shut) {
+        // up to the wall in the colour of a road the player has reached
+        ink += paint(path.head, cleared(e.from)) + paint(path.tail, false);
+      } else {
+        ink += paint(path.head, live) + paint(path.tail, live);
+      }
+    });
+    // the last stretch, to the bonus star
+    if (perfect) {
+      const p = roadPath(at(LEVELS), at(BONUS));
+      ink += `<path d="${p.head} ${p.tail}" fill="none" stroke-linecap="round"
+                    stroke-linejoin="round" stroke="var(--gold)" stroke-width="13"/>`;
+    }
+    svg.innerHTML = ink;
+
+    [].slice.call(canvas.querySelectorAll(".lv,.wall,.row-tag")).forEach(el => el.remove());
+
+    /* The only furniture on a road is its wall, and only a gated road has
+       one. It stands across the run, a little past the middle — clear of
+       both corners, and clear of the fork the road leaves. */
+    if ($("opt-worlds").checked) ROADS.forEach((rd, i) => {
+      if (!rd.gate) return;
+      const shut = roadShut(rd);
+      const w = document.createElement("div");
+      w.className = "wall " + (shut ? "shut" : "broken");
+      w.style.left = cuts[i].x + "px";
+      w.style.top = cuts[i].y + "px";
+      w.innerHTML = '<span class="half l"></span><span class="half r"></span>' +
+        '<svg class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5"/>' +
+        '<path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      w.addEventListener("click", () => { picked = { road: i }; pickFollows = false; card(); });
+      canvas.appendChild(w);
+    });
+
+    // ---- the levels ------------------------------------------------------
+    const last = perfect ? BONUS : LEVELS;
+    for (let n = 1; n <= last; n++) {
+      const p = at(n), st = starsOf(n);
+      const cls = n === BONUS ? "bonus"
+                : starsOf(n) === 3 ? "done perfect"
+                : cleared(n) ? "done" : isNext(n) ? "next" : isGap(n) ? "gap"
+                : open(n) ? "open" : "lock";
+      const el = document.createElement("div");
+      el.className = "lv " + cls;
+      el.style.left = p.x + "px";
+      el.style.top = p.y + "px";
+      el.innerHTML = `<span class="num">${n}</span>` +
+        `<svg class="padlock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>`;
+      el.addEventListener("click", () => { picked = n; pickFollows = false; card(); });
+      canvas.appendChild(el);
+
+      if (n === BONUS) continue;
+
+      /* The read-out goes on whichever side of the frame has room for it —
+         measured against the frame, not guessed from the column, because the
+         stars are the one thing on this screen that must never be clipped. */
+      const bits = cleared(n)
+        ? starRow(st) + `<span class="best">${save.l[n].b.toLocaleString("en-US")}</span>`
+        : isGap(n) ? "<em>not taken</em>" : "";
+      if (bits) {
+        const TAG_W = 150, PAD = 16;
+        const toLeft = p.x + 46 + TAG_W > 720 - PAD;
+        const tag = document.createElement("div");
+        tag.className = "row-tag";
+        tag.style.left = (p.x + (toLeft ? -50 : 50)) + "px";
+        tag.style.top = p.y + "px";
+        if (toLeft) tag.style.transform = "translate(-100%, -50%)";
+        tag.innerHTML = bits;
+        canvas.appendChild(tag);
+      }
+    }
+
+    $("lm-total-n").textContent = totalStars() + "/" + (LEVELS * 3);
+    $("lm-total").classList.toggle("full", perfect);
+    $("cleared-v").textContent = played() + "/" + LEVELS + " played";
+    card();
+  }
+
+  /* ── 5b. the card, for a level or for a road ───────────────────────────── */
+
+  function card() {
+    if (picked && picked.road != null) roadCard(ROADS[picked.road]); else levelCard(picked);
+    fitCard();
+  }
+  function fitCard() { scroll.style.bottom = $("lm-card").offsetHeight + "px"; }
+
+  function levelCard(n) {
+    $("lm-card").classList.remove("is-wall");
+    if (n === BONUS) return bonusCard();
+    const d = dOf(n), rec = save.l[n], can = open(n);
+    $("lm-lv").textContent = "Level " + n;
+    $("lm-tier").innerHTML = BAND_NAME[bandOf(n)];
+    $("lm-goal").innerHTML = game.goal(d);
+
+    const forks = roadAt(n);
+    const ahead = forks.length
+      ? ` &middot; <em>the road forks: ${forks.map(f => f.len).join(" or ")} levels</em>` : "";
+    $("lm-best").innerHTML = (rec
+      ? `Best <em>${rec.b.toLocaleString("en-US")}</em> &middot; ${rec.s}/3 stars &middot; ${rec.p} tries`
+      : can ? (isGap(n) ? "On the road you did not take" : "Never played")
+            : "Locked &middot; the road here is gated") + ahead;
+    $("lm-chips").innerHTML = "";
+    $("lm-diff").style.display = "";
+    document.querySelector("#lm-diff .bar i").style.width = Math.round(d * 100) + "%";
+    $("lm-diff-n").textContent = d.toFixed(2);
+
+    const play = $("lm-play");
+    play.disabled = !can;
+    play.textContent = !can ? "Locked" : rec ? "Replay" : "Play";
+    readout();
+  }
+
+  /* Ninety of ninety opens one more node, and it is not a level: it is the
+     game with the levels taken off. No objective, no stars, no end. */
+  function bonusCard() {
+    $("lm-lv").textContent = "Endless";
+    $("lm-tier").innerHTML = "Level 31 &middot; the reward for a perfect board";
+    $("lm-goal").innerHTML = "Every level cleared with <b>three stars</b>. " +
+      "There is nothing left to unlock, so the run simply does not stop.";
+    $("lm-best").innerHTML = "No objective, no clock, no levels &mdash; " +
+      "<em>&#9733; 90/90</em>.";
+    $("lm-chips").innerHTML = "";
+    $("lm-diff").style.display = "none";
+    const play = $("lm-play");
+    play.disabled = false;
+    play.textContent = "Start the endless run";
+    readout();
+  }
+
+  /* A road's card answers the two questions the fork asks: what is down
+     there, and — if it is gated — where the stars come from. */
+  function roadCard(rd) {
+    const shut = roadShut(rd), have = totalStars(), short = rd.gate - have;
+    $("lm-card").classList.add("is-wall");
+    $("lm-lv").textContent = rd.len + (rd.len > 1 ? " levels" : " level");
+    $("lm-tier").innerHTML = (rd.side < 0 ? "Left road" : "Right road") +
+      (rd.gate ? (shut ? " &middot; Gated" : " &middot; Open") : " &middot; Free");
+    $("lm-diff").style.display = "none";
+
+    const first = rd.nodes[0], last = rd.nodes[rd.nodes.length - 1];
+    const span = rd.len > 1 ? `Levels ${first}–${last}` : `Level ${first}`;
+    const other = ROADS.filter(x => x.from === rd.from && x !== rd)[0];
+
+    if (!shut) {
+      $("lm-goal").innerHTML = `${span}, then both roads meet again. ` +
+        (other ? `The other way is <b>${other.len}</b>.` : "");
+      $("lm-best").innerHTML = rd.gate
+        ? `The gate wanted <em>&#9733; ${rd.gate}</em> and you have ${have}.`
+        : rd.len < rd.other
+          ? "The short way — fewer levels, and each one is the harder end of the band."
+          : "The long way — more levels, more stars to collect.";
+      $("lm-chips").innerHTML = rd.nodes.map(n =>
+        `<button data-lv="${n}">${n}${cleared(n) ? ` <s>${starsOf(n)}&#9733;</s>` : ""}</button>`).join("");
+      bindChips();
+      const play = $("lm-play");
+      play.disabled = !open(rd.entry);
+      play.textContent = "Take this road";
+      readout();
+      return;
+    }
+
+    $("lm-goal").innerHTML = `${span}. This road wants <b>&#9733; ${rd.gate}</b> — ` +
+      `you have ${have}, <b>${short} short</b>.`;
+
+    const spare = [];
+    for (let n = 1; n <= LEVELS; n++)
+      if (cleared(n) && save.l[n].s < 3) spare.push({ n: n, gain: 3 - save.l[n].s });
+    spare.sort((a, b) => dOf(a.n) - dOf(b.n));
+    const pick = [];
+    let got = 0;
+    for (const c of spare) { if (got >= short) break; pick.push(c); got += c.gain; }
+
+    $("lm-best").innerHTML = other
+      ? `The other way is <em>${other.len} levels</em> and it is open — ` +
+        (pick.length && got >= short
+          ? "or find the stars here:"
+          : "the stars will come from playing on.")
+      : "";
+    $("lm-chips").innerHTML = pick.slice(0, 4).map(c =>
+      `<button data-lv="${c.n}">${c.n} <s>+${c.gain}&#9733;</s></button>`).join("");
+    bindChips();
+
+    const play = $("lm-play");
+    play.disabled = !pick.length;
+    play.textContent = pick.length ? "Replay level " + pick[0].n : "Locked";
+    readout();
+  }
+
+  function bindChips() {
+    [].slice.call($("lm-chips").querySelectorAll("button")).forEach(b =>
+      b.addEventListener("click", () => {
+        picked = +b.dataset.lv; pickFollows = false; card(); scrollTo(picked);
+      }));
+  }
+
+  function readout() {
+    if (picked && picked.road != null) {
+      const rd = ROADS[picked.road];
+      $("readout").innerHTML =
+        `<b>road</b> from ${rd.from}\n` +
+        `levels = ${rd.nodes.join(", ")}\n` +
+        `gate   = ${rd.gate ? "★ " + rd.gate + "  (have " + totalStars() + ")" : "none"}\n` +
+        `played = ${played()}/${LEVELS}\n`;
+      return;
+    }
+    const n = picked, rec = save.l[n];
+    if (n === BONUS) {
+      $("readout").innerHTML = `<b>bonus</b>  endless\nstars  = ${totalStars()}/${LEVELS * 3}\n`;
+      return;
+    }
+    $("readout").innerHTML =
+      `<b>d(${n})</b> = ${dOf(n).toFixed(3)}   row ${NODE[n].pos}/${ROWS}\n` +
+      `band   = ${BAND_NAME[bandOf(n)]}\n` +
+      `in     = ${preds(n).join(", ") || "—"}\n` +
+      `out    = ${succs(n).join(", ") || "—"}\n` +
+      `next   = ${NEXT.join(", ") || "—"}\n` +
+      `played = ${played()}/${LEVELS}\n` +
+      `\n<b>prog:${game.slug}</b>\n` +
+      JSON.stringify({ v: save.v, l: rec ? { [n]: rec } : {} }).replace(/,"/g, ',\n "');
+  }
+
+  function scrollTo(n) {
+    const p = geo.pts[n];
+    if (p) scroll.scrollTop = Math.max(0, p.y - scroll.clientHeight / 2);
+  }
+  function scrollToNext() {
+    if (picked && picked.road != null) return scrollTo(ROADS[picked.road].entry);
+    scrollTo(perfectBoard() ? BONUS : (NEXT[0] || LEVELS));
+  }
+
+
+  /* ── 6. controls ─────────────────────────────────────────────────────────── */
+  const sel = $("game");
+  GAMES.forEach((g, i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = g.name;
+    sel.appendChild(o);
+  });
+
+  /* ?game=vipera&style=zigzag&cleared=18&skill=2&road=3&seed=99 — so a
+     variant can be opened (or shot headless) without touching the panel. */
+  (function fromQuery() {
+    const q = new URLSearchParams(location.search);
+    const gi = GAMES.findIndex(g => g.slug === q.get("game"));
+    if (gi >= 0) { game = GAMES[gi]; sel.value = gi; }
+    if (STYLES[q.get("style")]) { style = q.get("style"); $("style").value = style; }
+    if (q.has("seed")) seed = +q.get("seed") | 0;
+    if (q.has("cleared")) $("cleared").value = q.get("cleared");
+    if (q.has("road")) { picked = { road: +q.get("road") }; pickFollows = false; }
+    if (q.has("skill")) {
+      $("skill").value = q.get("skill");
+      $("skill-v").textContent = ["struggling", "average", "good", "perfect"][+q.get("skill")];
+    }
+  })();
+
+  let starSeed = 12345;
+  function rebuild(keepScroll) {
+    const top = scroll.scrollTop;
+    save = fakeSave(+$("cleared").value, +$("skill").value, starSeed);
+    $("seed-v").textContent = seed ? String(seed) : "slug";
+    dress(); draw();
+    // draw() computes the frontier; the card follows it unless the player chose
+    // on a perfect board the next thing to do IS the endless run
+    if (pickFollows) { picked = perfectBoard() ? BONUS : (frontier()[0] || LEVELS); card(); }
+    if (keepScroll) scroll.scrollTop = top; else scrollToNext();
+  }
+
+  sel.addEventListener("change", () => { game = GAMES[+sel.value]; rebuild(true); });
+  $("style").addEventListener("change", e => { style = e.target.value; rebuild(false); });
+  $("remap").addEventListener("click", () => { seed = (Math.random() * 1e9) | 0; rebuild(false); });
+  $("cleared").addEventListener("input", e => {
+    pickFollows = true;
+    rebuild(false);
+  });
+  $("skill").addEventListener("input", e => {
+    $("skill-v").textContent = ["struggling", "average", "good", "perfect"][+e.target.value];
+    rebuild(true);
+  });
+  $("reroll").addEventListener("click", () => { starSeed = (Math.random() * 1e9) | 0; rebuild(true); });
+  ["opt-bg", "opt-worlds", "opt-font"].forEach(id =>
+    $(id).addEventListener("change", () => rebuild(true)));
+  $("lm-play").addEventListener("click", () => {
+    // the real screen hands the level to the shell here: CONFIG.level = n,
+    // then the motor's own startGame() — nothing else changes.
+    if (picked && picked.road != null) { picked = ROADS[picked.road].entry; card(); scrollTo(picked); return; }
+    $("lm-play").textContent = picked === BONUS ? "→ endless" : "→ level " + picked;
+  });
+
+  /* the frame is a fixed 720x1280; scale it into whatever the window gives */
+  function fit() {
+    const st = $("stage"), k = Math.min((st.clientWidth - 48) / 720, (st.clientHeight - 48) / 1280);
+    const shell = $("shell");
+    shell.style.width  = (720 * k) + "px";
+    shell.style.height = (1280 * k) + "px";
+    frame.style.transformOrigin = "0 0";
+    frame.style.transform = "scale(" + k + ")";
+  }
+  window.addEventListener("resize", fit);
+
+  fit();
+  rebuild(false);
+})();
+</script>
+</body>
+</html>

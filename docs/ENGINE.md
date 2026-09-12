@@ -143,14 +143,14 @@ var CONFIG = {
   layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
 
   // logo   : key in ASSETS.images (null = text-only intro). A game with a
-  //          logotype in assets/art/ ignores this: the drawn title replaces
+  //          logotype in assets/image/embed/ ignores this: the drawn title replaces
   //          both the icon and #intro-title — see `CONFIG.art` below.
   // demo   : tap | hold | drag | swipe | aim
   // caption: one short line under the demo
   intro: { logo: "logo", demo: "tap", caption: "TAP to hit the target" },
 
   // NOT authored here. `art` is injected by tools/build/build.mjs from
-  // assets/art/<slug>-*.webp — see `CONFIG.art` below.
+  // assets/image/embed/<slug>-*.webp — see `CONFIG.art` below.
   // art: { backgroundPhone, backgroundDesk, title, characterSad|Neutral|Happy },
 
   // Put the painted scene behind the ROUND too, not just behind the intro and
@@ -210,6 +210,8 @@ endRound({
     { label:"MAX COMBO",  value: 9,  grade:"accent" },
     { label:"BEST SCORE", value: 1840, grade:"gold" }
   ],
+  levelScore: 1200,              // optional: what a level's objective measures,
+                                 //   when the score is not it (web target only)
   track: { /* extra analytics payload */ }
 });
 ```
@@ -221,6 +223,13 @@ case it is written as-is instead of counted up.
 `endRound` stops the loop, stores the best score, switches to the end screen and
 plays the reveal. It is idempotent — calling it twice does nothing the second
 time.
+
+**`onResult(fn)` is a filter over that object**, run once the score is settled
+and before anything is stored, so a layer bolted on top of the shell may rewrite
+the title, the stars and the rows. The motor registers none and a playable ships
+an empty list; the web target's level map is the one user, which is how a level's
+objective replaces a game's own `score >= 1800 ? 3 : …` thresholds without a line
+changing in any `game.js` (see [LEVELS.md](LEVELS.md)).
 
 The reveal scores itself through `Sound.cue`, on three keys the games embed in
 `ASSETS.sounds`: `uiScore` (the count-up landing), `uiStar` (one chime per star,
@@ -593,6 +602,10 @@ Input.on("down"|"move"|"up", fn)   // design-space pointer events
 Input.at(type, x, y)               // synthesize one (used by the SPACE key)
 Input.swipe(dir, dist)             // synthesize a whole flick (the arrow keys)
 Loop.start(u, r) / stop() / pause() / resume()
+Loop.rate(k)                       // time scale on the simulation: the frame still
+                                   //   renders at 60, update() is handed k * dt, so
+                                   //   world, round clock and game slow together.
+                                   //   start() resets it to 1.
 Sound.unlock()                             // must run in a user gesture (iOS)
 Sound.clip(name, vol, rate)                // embedded ASSETS.sounds — the default
 Sound.beep(freq, dur, type, vol)           // synth fallback, for an event with no clip
@@ -615,24 +628,24 @@ rgba("#rrggbb", alpha) → "rgba(…)"
 clamp(v, lo, hi)
 ```
 
-Every sound effect is a clip picked from the shared **`assets/sfx/`** library and
-embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetssfx).
+Every sound effect is a clip picked from the shared **`assets/audio/sfx/`** library and
+embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetsaudiosfx).
 One sample per event, pitched with `rate` instead of duplicated.
 
-Pictograms work the same way: pick one from the shared **`assets/lucide/`** pack,
+Pictograms work the same way: pick one from the shared **`assets/motor/lucide/`** pack,
 encode it with `node tools/lab/embed-icon.mjs <name> --key icoThing`, paste it into
 `ASSETS.images`, and draw it with `Icon.draw`. Icons are authored white — an
 `<img>` has no `currentColor` to resolve — so `Icon` tints them through a
 `source-in` fill and caches one canvas per key+size+colour. Never `drawImage`
-the raw SVG. See [assets/lucide/README.md](../assets/lucide/README.md).
+the raw SVG. See [assets/motor/lucide/README.md](../assets/motor/lucide/README.md).
 
 ### `CONFIG.art` — the painted artwork
 
 A game declares nothing to get its painted screens. `tools/build/build.mjs`
-reads `assets/art/<slug>-<role>.webp` — the shipping cut of
-`assets/image/<slug>-<role>.png`, written by `tools/lab/encode-art.mjs` — and
+reads `assets/image/embed/<slug>-<role>.webp` — the shipping cut of
+`assets/image/master/<slug>-<role>.png`, written by `tools/lab/encode-art.mjs` — and
 injects what it finds as `CONFIG.art.<camelRole>`. **A file name is the whole
-declaration**; see [ASSETS.md](ASSETS.md#painted-artwork-comes-from-assetsimage-re-encoded-into-assetsart).
+declaration**; see [ASSETS.md](ASSETS.md#painted-artwork-comes-from-assetsimagemaster-re-encoded-into-assetsimageembed).
 
 ```js
 CONFIG.art = {
@@ -642,6 +655,7 @@ CONFIG.art = {
   characterSad:    "…",   // the end screen's face, by star count:
   characterNeutral:"…",   //   0-1 → sad, 2 → neutral, 3 → happy
   characterHappy:  "…",   //   stars:null → neutral
+  decor01:         "…",   // the decor pool — see `Decor` below
   // …plus anything else named <slug>-<name>.png, e.g. slipdeck's cardKing
 };
 ```
@@ -733,6 +747,75 @@ that decodes after the screen is up shows as a blank where the title goes.
 A game with no artwork degrades on its own and needs no branch: the app icon
 comes back, the CSS title comes back, the end screen keeps its flat tint, and
 the web menu falls back to `ASSETS.images.bg` and then to the SKIN's gradient.
+
+### `CONFIG.brand` — the studio signature
+
+The newrare mark, the studio's name and the build's version number, in the
+**bottom-left corner of the title screen**. A game declares nothing and calls
+nothing: `tools/build/build.mjs` injects
+
+```js
+CONFIG.brand = { label: "Newrare", version: "1.0.0", mark: "data:image/webp;base64,…" };
+```
+
+into every target, and `buildBrand()` (`packages/shell/shell.js`) builds the
+block on the intro. The mark is `assets/image/brand/newrare.webp`, the shipping cut of
+the site's own logo written by `tools/lab/encode-art.mjs`; the number is
+`version` in the game's `manifest.json`, falling back to `android.versionName`
+so a game on Play has one place to bump. With neither, the line collapses and
+the signature keeps the mark and the name.
+
+It sits on the web menu's own margins — 44px in, 72px up from the safe area —
+so on the web target the signature and the menu take one bottom corner each,
+and a playable's corner is identical to its web build's. It is
+`pointer-events:none` at `z-index:4`, over the decor layer and under nothing
+the player touches.
+
+### `Decor` — the game's own objects, on the screens
+
+`assets/image/embed/<slug>-decor-NN.webp` is the **decor pool**: four or five small
+painted objects — a gear, a leaf, a card fan — cut out of the game's own object
+sheet with `tools/lab/cut-objects.mjs … --adopt 1,4 --as decor`. A game names
+none of them and wires nothing: the pool is every `CONFIG.art` key that starts
+with `decor`, and `Decor` (in `packages/shell/shell.js`) scatters it over the
+screens.
+
+Where it lands, and who asks for it:
+
+| screen                           | who calls it                    | pieces |
+| -------------------------------- | ------------------------------- | ------ |
+| the end screen                   | the motor, on `setState("end")` | 2      |
+| the round's corners              | the motor, on `"playing"`       | 1–2    |
+| the web menu's panels            | `packages/webshell/menu.js`     | 2      |
+| the pause card                   | `packages/webshell/menu.js`     | 1      |
+| the level map, and its help card | `packages/webshell/levels.js`   | 2 / 1  |
+
+```js
+Decor.dress(node, {
+  count: 2,                       // 1..3, clamped — never a collage
+  spots: ["tl", "tr", "l", "bl"], // which anchors this screen allows
+  size: 195,                      // base width in design px, varied per piece
+  opacity: 0.5,                   // what a piece BEHIND the content is worth
+  front: 0.35                     // the odds one lands in front of it instead
+});
+Decor.clear(node);                // when the screen goes away
+```
+
+The rules the layer obeys, and each of them is a limit: **three pieces at most**
+(past that the screen is wallpaper), **every piece bleeds off an edge** (one
+floating clear of a corner is a sticker — the same reason the end screen's
+character is cropped), **nothing is drawn per frame** (two DOM nodes and a
+composited bob; a still object blitted on the canvas would bill a game's frame
+budget for something that never changes) and **no piece takes a tap**.
+
+Pieces come out of a bag reshuffled only once it is empty, so a pool of four
+dresses four screens running without repeating itself, and each takes its own
+size, tilt, flip, bob and depth. The round is the one place a picture sits over
+a live world, so it is worth 0.2 opacity against a screen's 0.5, it is under the
+HUD and the overlay (`motor.css`), and it costs `Layout` nothing.
+
+`CONFIG.decor = false` turns the whole layer off; `CONFIG.decor = { round: false }` keeps the screens and leaves the round alone. A game with no
+`decor-NN` art has an empty pool and never sees any of it.
 
 ### `Music` — the background bed
 
@@ -862,7 +945,7 @@ Add a variant by adding a `.demo-<name>` block to the stylesheet — the markup
 already carries every piece (`.demo-target`, `.demo-hand`, `.demo-track`,
 `.demo-arrow`, `.demo-beam`).
 
-`.demo-hand` is `assets/svg/finger.svg`, turned 180° so the index finger points
+`.demo-hand` is `assets/motor/svg/finger.svg`, turned 180° so the index finger points
 up and inlined in the motor stylesheet as a `data:image/svg+xml` background.
 Every game shares it — never replace it with a hand of your own. Its fingertip
 sits at the **top edge** of the box, so a variant that has to reach a target

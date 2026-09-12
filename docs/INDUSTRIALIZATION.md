@@ -23,7 +23,7 @@ playable is no longer the reason the repo exists — it is one of four outlets.
 This is the plan of record; the phasing at the end is the order to build it in,
 and the prerequisite decisions are settled — see [Decisions](#decisions).
 
-Three pieces exist already:
+Four pieces exist already:
 
 - **The extraction.** The motor lives once in `packages/`; every game owns only
   `page.html`, `skin.css`, `game.js` and `manifest.json`. `node tools/build/build.mjs`
@@ -31,6 +31,7 @@ Three pieces exist already:
   rebuild **byte-identically**.
 - **The `playable` target**, which is what that build produces.
 - **The public site**, in `site/`, assembled by `node tools/build/build-site.mjs`.
+- **The `android` target** — the web build inside Capacitor, `make android GAME=<slug>`. See [android](#android).
 
 Everything else below is still to build.
 
@@ -225,14 +226,14 @@ save — there is deliberately no second way to assemble the site.
 The `web` target exists and delivers Delta 3 (see below): section 4 becomes
 `packages/platform/web.js` — no MRAID, no store link, no CTA band — and
 `packages/webshell/` replaces the intro with the menu of a finished game: the
-game's own painted backdrop behind it (`assets/image/`, or its SKIN's gradient
-when it has no art), its own typeface out of the OFL pack in `assets/font/`, the
+game's own painted backdrop behind it (`assets/image/master/`, or its SKIN's gradient
+when it has no art), its own typeface out of the OFL pack in `assets/motor/font/`, the
 SKIN's title breathing above it, PLAY / LEADERBOARD / OPTIONS / HELP stacked
 against the right edge, and three panels that open in that same band without
 leaving the screen — the how-to-play demo among them. A game with more than one
 mode lists them in `web.modes` and gets one entry per extra mode under PLAY;
 the shell writes the chosen key to `CONFIG.mode` and the game reads it when it
-resets (`radiam`: PLAY is its endless eclipse, CLASSIC the timed dial). OPTIONS is the local-only
+resets (`radiam` declares one, its endless eclipse). OPTIONS is the local-only
 first slice of the meta layer: music, sfx and callout switches
 (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), FR/EN live, and a
 best-score reset, all persisted through `Store`. The round itself gets the two
@@ -531,30 +532,71 @@ app gets the same start screen, options and FR/EN switch as the site.
 into a Capacitor project, Gradle produces a signed `.aab`, and `fastlane supply`
 uploads it.
 
+**Built, and run through on `radiam` on 2026-09-10.** The three pieces exist:
+`--target=android` in `build.mjs`, `packages/platform/capacitor.js` and
+`tools/publish/gen-native.mjs`, wrapped by `make android GAME=<slug>`. The
+unsigned bundle is 4.1 MB.
+
 ```bash
-node tools/build/build.mjs --target=android --game=vipera
-node tools/publish/gen-native.mjs vipera      # → native/vipera/ (android/)
-cd native/vipera && fastlane android beta
+make android GAME=radiam                      # the three commands below, in order
+node tools/build/build.mjs --target=android --game=radiam
+node tools/publish/gen-native.mjs radiam      # → native/radiam/ (android/)
+cd native/radiam/android && ./gradlew bundleRelease
 ```
+
+`native/<slug>/` is a **build output**, gitignored the way `dist/` is: every
+file in it is derived from `games/<slug>/manifest.json`, from
+`assets/image/icon/<slug>.png` and from the android build, so it is regenerated
+rather than edited. What `gen-native.mjs` owns beyond `npx cap add android`:
+
+- **the manifest → the project**: `appId`, app name, version pair, the theme's
+  background colour, and the `web` block the menu is translated in, all from
+  the one file that describes the game;
+- **the launcher icon**, from the square painting, with the foreground at 66%
+  because an adaptive icon is masked to a circle and a full-bleed one loses its
+  corners — plus the 512×512 the Play listing asks for, in
+  `native/<slug>/store/`;
+- **no splash bitmaps.** `@capacitor/assets` answers a splash source with 56
+  files and 17 MB of upscaled PNG for a 1.4 MB game, and Android 12 and up
+  ignore every one of them; the launch screen is the theme's own colour;
+- **the patches Capacitor cannot know**: portrait lock (the motor has no
+  landscape layout), API level and the AGP that compiles it (the scaffold is a
+  year behind Play's target-API rule — 36 and AGP 8.9.1 today), and a release
+  signing config reading `android/keystore.properties`, which is never
+  generated and never committed. No keystore means an unsigned bundle and a
+  line saying so, not a failure three minutes in.
+
+The one thing the android target does **not** fork is the game: it is the web
+build — `packages/webshell`'s menu, options, FR/EN switch and pause — with
+`packages/platform/capacitor.js` in section 4 instead of `web.js`. That adapter
+owns exactly what a browser tab has no equivalent of: the hardware back button
+(dispatched as ESCAPE, which the web shell already handles, and an app exit
+when nobody takes it) and `appStateChange`, so the loop and the music stop when
+the app goes to the background or the screen locks.
 
 Friction points, all one-time:
 
-- **Keystore** generated once, never committed, and backed up off the machine
-  that signs with it. Losing it means never being able to update the app again.
-  There is no CI to hold it as a secret today — see *CI — one system, and a
-  Makefile*.
+- **Keystore**: one for the studio, one key alias per game (the slug), never
+  committed, backed up off the machine that signs with it. Losing it costs an
+  app its updates. Where it is and what unlocks it is written once in
+  `~/.newrare/signing.properties`, outside the repo — `gen-native.mjs` copies
+  it into each generated project with that game's alias, because
+  `native/<slug>/` is a build output `--clean` deletes. There is no CI to hold
+  it as a secret today — see *CI — one system, and a Makefile*.
 - **Play Console listing created by hand**, once per app: store listing,
   screenshots, content rating questionnaire, *Data safety* form, privacy policy
   URL, public support email, target API level.
 - **fastlane supply** needs a Google Play **service account** JSON with API
   access. Expect the very first `.aab` to require a manual upload through the
   console before the API accepts subsequent ones.
-- **The closed-test rule applies.** The newrare Play account is a personal one, so
-  every app must run a closed test with **12 testers opted in for 14 consecutive
-  days** before production. That is the real cost of this phase — recruiting and
-  holding twelve distinct Google accounts, not the engineering.
-- **Identity verification** (ID, address) and a **public developer address** are
-  mandatory on personal accounts and take days to clear. Do it once, early.
+- ~~**The closed-test rule applies.**~~ It does not, for this account: the
+  12-testers / 14-consecutive-days closed test gates a personal account's
+  **first** production release, and the newrare account already has an app in
+  production — production access is granted per account, not per app. Verified
+  against the account on 2026-09-10; the console's *Production* page is the
+  authority if that ever changes.
+- ~~**Identity verification** and a **public developer address**.~~ Done: the
+  account is active and publishing.
 - An offline Capacitor game does not trip the "webview wrapping a website"
   rejection — all assets are embedded.
 

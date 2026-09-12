@@ -10,7 +10,7 @@
 
    `node tools/lab/shoot-icon.mjs` loads this file in headless Chrome with
    `?slug=<game>&shoot=1` and screenshots the card over a transparent viewport,
-   writing assets/icon/auto/<slug>.png (320 px, rounded corners at alpha 0).
+   writing assets/image/icon/auto/<slug>.png (320 px, rounded corners at alpha 0).
    Opened by hand with no query string it shows every icon side by side on a
    checkerboard, which is the way to judge the series.
 
@@ -74,7 +74,7 @@ p.hint code { color:#c9c9e6; font-family:ui-monospace,SFMono-Regular,Menlo,monos
   position:relative;
   width:1024px; height:1024px;
   /* The one number that makes the series a series. 22.37% of the side is the
-     iOS icon-mask ratio; the hand-painted icons in assets/icon/ drift between
+     iOS icon-mask ratio; the hand-painted icons in assets/image/icon/ drift between
      20.6% and 25.6%, which is exactly the inconsistency this file removes. */
   border-radius:229px;
   overflow:hidden;

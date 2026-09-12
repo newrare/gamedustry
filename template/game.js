@@ -71,12 +71,12 @@
      Generate entries with tools/lab/embed-asset.mjs. Draw the graphics on canvas:
      every embedded byte counts against the 5 MB budget.
 
-     SOUND EFFECTS ALWAYS COME FROM assets/sfx/ — that shared library is the
+     SOUND EFFECTS ALWAYS COME FROM assets/audio/sfx/ — that shared library is the
      palette for every game, so the whole catalogue sounds like one product.
      Pick a clip per event, trim it to the useful part and re-encode it small,
      then embed it under a short game-side key:
 
-       ffmpeg -i assets/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
+       ffmpeg -i assets/audio/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
        node tools/lab/embed-asset.mjs gem.mp3 --key gem
 
      Keep a comment naming the source clip next to every key (below), and pitch
@@ -89,7 +89,7 @@
       // logo: "data:image/png;base64,iVBORw0KGgo…"
     },
     sounds: {
-      // assets/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
+      // assets/audio/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
       // pop: "data:audio/mpeg;base64,SUQzBAAAAAA…"
       // music: the background bed, looped and crossfaded by Music (see
       // CONFIG.music). Encode it small — mono 64 kbps is plenty under sfx:

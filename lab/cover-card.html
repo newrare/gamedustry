@@ -11,17 +11,17 @@
 
    Four pieces, all of them the game's own, none of them made for this card:
 
-     assets/art/<slug>-background-desk.webp    the scene, in landscape. It was
+     assets/image/embed/<slug>-background-desk.webp    the scene, in landscape. It was
        drawn to be stretched wide behind a portrait frame, which is exactly the
        shape of this card — so a cover is the game's own world, not a blurred
        screenshot standing in for one.
-     assets/art/<slug>-title.webp              the logotype. It replaces the
+     assets/image/embed/<slug>-title.webp              the logotype. It replaces the
        CSS title this card used to set in one of six faces at a measured size:
        a drawn logotype has no metrics to fit and no font to wait for.
-     assets/art/<slug>-character-happy.webp    the character, standing on the
+     assets/image/embed/<slug>-character-happy.webp    the character, standing on the
        bottom edge. It is the piece that makes thirteen covers read as thirteen
        games rather than thirteen screenshots.
-     assets/screen/<slug>-NN.jpg               one real frame of play, in a
+     assets/image/screen/<slug>-NN.jpg               one real frame of play, in a
        tilted portrait panel bled off the right edge — the proof that there is
        a game behind the art.
 
@@ -159,6 +159,56 @@ body {
   filter:drop-shadow(0 16px 30px rgba(0,0,0,.6));
 }
 
+/* ---------------------------------------------------------------------------
+   THE FEATURE GRAPHIC — 1024x500, the one image Google Play asks for and the
+   only other place the same four pieces of artwork compose. It is the cover
+   card widened, not a second design: the anchors are the same, the empty
+   middle is the painting, and Play's own overlays sit there.
+   --------------------------------------------------------------------------- */
+#cover.wide { width:1024px; height:500px; }
+#cover.wide .title { left:52px; top:78px; width:412px; height:168px; }
+#cover.wide .face  { left:34px; bottom:-14px; width:300px; height:330px; }
+/* Two panels rather than one: at this width a single screen leaves a hole
+   where the eye expects the game, and a pair reads as a phone game the way
+   one tilted rectangle does on the square card. */
+#cover.wide .shot   { right:52px; width:230px; height:410px; }
+#cover.wide .shot2  { display:block; right:252px; top:50%; width:206px; height:366px;
+                      transform:translateY(-50%) rotate(4deg); opacity:.92; }
+#cover .shot2 { display:none; }
+
+/* ---------------------------------------------------------------------------
+   THE STORE SCREENSHOT — 720x1280, what Google Play shows in the listing
+   gallery. Same four pieces again, composed the other way round: one real
+   frame of play IS the ground, and the character stands in front of it,
+   cropped by the bottom edge and by one side. A raw capture sells nothing —
+   it is a dial on a dark background next to twelve other dials on dark
+   backgrounds — and the character is the only thing in the folder that says
+   whose game it is at thumbnail size.
+   --------------------------------------------------------------------------- */
+#cover.store { width:720px; height:1280px; }
+/* The capture is the ground, at its own size: it was shot at 720x1280 and is
+   never scaled, so the HUD type stays as crisp as the game drew it. */
+#cover.store .bg { filter:none; background-size:cover; }
+#cover.store .shot, #cover.store .title { display:none; }
+/* Dark only where the character stands, so the play area is untouched and the
+   figure still separates from it. */
+#cover.store .scrim {
+  background:linear-gradient(0deg,
+    rgba(4,4,10,.74) 0%, rgba(4,4,10,.30) 16%, rgba(4,4,10,.04) 32%, transparent 46%);
+}
+/* Deliberately small and deliberately in the corner: the game has to read at
+   thumbnail size, and a figure that covers the dial sells a character nobody
+   can play. It bleeds off two edges so it stands in the frame rather than
+   floating on it. */
+#cover.store .face {
+  left:-40px; bottom:-16px; width:352px; height:528px;
+  object-position:left bottom;
+  filter:drop-shadow(0 18px 34px rgba(0,0,0,.72));
+}
+/* The side alternates down the gallery: four shots that all hug the same
+   corner read as one image posted four times. */
+#cover.store.right .face { left:auto; right:-40px; object-position:right bottom; }
+
 /* A game whose artwork is not on disk says so on the card, in place of the
    piece that is missing — `tools/lab/shoot-cover.mjs` refuses to shoot it, so
    this is only ever seen in the lab. */
@@ -181,7 +231,7 @@ body.shoot #stage .crop { outline:0; }
 <div id="panel">
   <h1>Cover card</h1>
   <p class="hint">The 630&times;500 image itch.io asks for, composed from
-    <code>assets/art/</code>. Shoot them all with
+    <code>assets/image/embed/</code>. Shoot them all with
     <code>node tools/lab/shoot-cover.mjs</code>.</p>
 
   <div class="row">
@@ -212,6 +262,7 @@ body.shoot #stage .crop { outline:0; }
     <div id="cover">
       <div class="bg"></div>
       <div class="scrim"></div>
+      <div class="shot shot2"><img id="shotimg2" alt=""></div>
       <div class="shot"><img id="shotimg" alt=""></div>
       <img id="ctitle" class="title" alt="">
       <img id="cface" class="face" alt="">
@@ -237,6 +288,7 @@ var el = {
   vslug: document.getElementById("v-slug"),
   vshot: document.getElementById("v-shot"),
   img: document.getElementById("shotimg"),
+  img2: document.getElementById("shotimg2"),
   ctitle: document.getElementById("ctitle"),
   cface: document.getElementById("cface"),
   miss: document.getElementById("miss")
@@ -250,6 +302,22 @@ GAMES.forEach(function (g) {
 
 // --- state, from the query string with the panel's defaults as the fallback
 var slug = q.get("slug") || "vipera";
+/* 720x1280 with the capture as the ground — a Play listing screenshot, shot
+   by tools/lab/shoot-cover.mjs --store. */
+var storeMode = !!q.get("store");
+if (storeMode) {
+  cover.classList.add("store");
+  if (q.get("side") === "right") cover.classList.add("right");
+  document.querySelector("#stage .meta").textContent =
+    "720 \u00d7 1280 — a Google Play listing screenshot";
+}
+/* 1024x500 instead of 630x500 — the Play feature graphic, shot by
+   tools/lab/shoot-cover.mjs --play. */
+if (q.get("wide")) {
+  cover.classList.add("wide");
+  document.querySelector("#stage .meta").textContent =
+    "1024 \u00d7 500 — the feature graphic Google Play asks for";
+}
 if (GAMES.indexOf(slug) >= 0) el.slug.value = slug;
 if (q.get("shot")) el.shot.value = q.get("shot");
 if (q.get("face")) el.face.value = q.get("face");
@@ -284,21 +352,32 @@ function paint() {
   el.vshot.textContent = el.shot.value;
   cover.style.setProperty("--accent", el.accent.value);
 
-  var shot = "../assets/screen/" + s + "-" + n + ".jpg";
+  var shot = "../assets/image/screen/" + s + "-" + n + ".jpg";
   watch(el.img, "screenshot");
   el.img.src = shot;
+
+  /* The wide card's second panel: an earlier moment of the same run, so the
+     pair reads as one game rather than as one frame printed twice. It is
+     never a hole — a game with a single screenshot shows the same one. */
+  var n2 = String(Math.max(1, parseInt(el.shot.value, 10) - 3)).padStart(2, "0");
+  el.img2.src = "../assets/image/screen/" + s + "-" + n2 + ".jpg";
 
   /* The scene is a CSS background, so it cannot be awaited with decode() like
      the three <img> below. It is loaded through an Image of its own instead —
      `bgReady` is what the shoot's readiness flag waits on, or it would capture
      a card whose whole ground is still blank. */
-  var bgUrl = "../assets/art/" + s + "-background-desk.webp";
+  /* The ground: the painted landscape on the two cards, the capture itself on
+     a store screenshot — one slot, so the readiness wait below is the same. */
+  var bgUrl = storeMode
+    ? shot
+    : "../assets/image/embed/" + s + "-background-desk.webp";
   cover.querySelector(".bg").style.setProperty("--bg-img", 'url("' + bgUrl + '")');
   bgReady = new Promise(function (res) {
     var probe = new Image();
     probe.onload = function () { res(); };
     probe.onerror = function () {
-      if (missing.indexOf("background-desk") < 0) missing.push("background-desk");
+      var what = storeMode ? "screenshot" : "background-desk";
+      if (missing.indexOf(what) < 0) missing.push(what);
       el.miss.textContent = "Not on disk: " + missing.join(", ") +
         " — run node tools/lab/encode-art.mjs";
       res();
@@ -307,10 +386,10 @@ function paint() {
   });
 
   watch(el.ctitle, "title");
-  el.ctitle.src = "../assets/art/" + s + "-title.webp";
+  el.ctitle.src = "../assets/image/embed/" + s + "-title.webp";
 
   watch(el.cface, "character");
-  el.cface.src = "../assets/art/" + s + "-character-" + el.face.value + ".webp";
+  el.cface.src = "../assets/image/embed/" + s + "-character-" + el.face.value + ".webp";
 }
 
 ["slug", "shot", "face", "accent"].forEach(function (k) {
@@ -325,7 +404,7 @@ window.__coverReady = 0;
 (async function () {
   if (q.get("shoot")) document.body.classList.add("shoot");
   var waits = [];
-  [el.img, el.ctitle, el.cface].forEach(function (i) {
+  [el.img, el.img2, el.ctitle, el.cface].forEach(function (i) {
     if (i.getAttribute("src")) waits.push(i.decode ? i.decode().catch(function () {}) : Promise.resolve());
   });
   waits.push(bgReady);

@@ -29,7 +29,7 @@
     }
 
     /* The game's own painting, in landscape, across the whole window —
-       `assets/art/<slug>-background-desk.webp`. The portrait cut dresses the
+       `assets/image/embed/<slug>-background-desk.webp`. The portrait cut dresses the
        intro and the end screen inside the frame; this is the same scene wide,
        so a desktop window shows one picture with a phone standing in the
        middle of it instead of a lit strip in an empty room.

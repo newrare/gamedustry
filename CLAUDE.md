@@ -85,7 +85,7 @@ development pages and answer only to the short rules in their own sections.
 1. Write the intro to the house rules: **one sentence** in `tagline` (never two,
    and `intro.caption` stays `""`), its two or three key words wrapped in
    `<b class="w-…">` so they read in colour, and a demo stage that illustrates
-   *this* game — keep the motor's shared finger (`assets/svg/finger.svg`, already
+   *this* game — keep the motor's shared finger (`assets/motor/svg/finger.svg`, already
    inlined in `.demo-hand`; never draw another hand) and re-dress the target /
    track / beam and the stage's `::before` / `::after` from the SKIN.
    `games/vipera` and `games/orbinity` are the reference.
@@ -112,25 +112,29 @@ development pages and answer only to the short rules in their own sections.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
    `Fx.burst/ring/text/shake/flash/freeze`, `Pop.show` for the score and combo
    callouts, `Overlay.toast/vignette`, `Sound.clip`.
-1. Give every event a sound **picked from `assets/sfx/`**, trimmed and embedded
+1. Give every event a sound **picked from `assets/audio/sfx/`**, trimmed and embedded
    in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Never invent a synth
    voice for a game: `Sound.beep/arp` is only the fallback for an event with no
    clip.
 1. **Never create the app icon, and never create the painted artwork.** Both are
-   added later by the user: the icon (`assets/icon/<slug>.png` and its `thumb/`
-   cut) and the six pieces of `assets/image/<slug>-*.png` (see
+   added later by the user: the icon (`assets/image/icon/<slug>.png` and its `thumb/`
+   cut) and the six pieces of `assets/image/master/<slug>-*.png` (see
    [The painted artwork](#the-painted-artwork)). Leave `ASSETS.images` without a
    `logo` key and keep `CONFIG.intro.logo` at `null` — the intro hides
    `#app-icon`, and once a `-title.png` exists the drawn logotype replaces both
    the icon and the CSS title anyway. Never generate, draw or embed a
    placeholder for any of it.
 1. Update `#intro-title` / `#intro-tagline` in `page.html` to match `CONFIG`, then
-   describe the game **once**, in `games/<slug>/manifest.json`: `title`, `order`,
-   `draft`, `targets`, `theme`, `copy.fr` / `copy.en` (one tagline and three tags
-   each) and `description` (the long English write-up). Run
+   describe the game **once**, in `games/<slug>/manifest.json`: `title`,
+   `version`, `order`, `draft`, `targets`, `theme`, `copy.fr` / `copy.en` (one
+   tagline and three tags each) and `description` (the long English write-up).
+   `version` is what the studio signature prints on the title screen — the mark,
+   `NEWRARE` and `v<version>` in the bottom-left corner, injected as
+   `CONFIG.brand` by the builder and drawn by the shell, so a game writes the
+   number and nothing else (see [docs/ENGINE.md](docs/ENGINE.md)). Run
    `node tools/build/gen-catalogues.mjs` to regenerate `site/games.js` and the
    `GAMES` block of the root `index.html` — never edit those two by hand. A game
-   with no `assets/icon/thumb/<slug>.png` is skipped by the site build.
+   with no `assets/image/icon/thumb/<slug>.png` is skipped by the site build.
 1. Run `node tools/update.mjs`, which builds, checks and says what is left, then
    open `games/<slug>/index.html` in a browser to test.
 
@@ -155,15 +159,27 @@ Actions never ran on this repo and its workflows were deleted (see
 [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), *CI*), so nothing checks
 a commit but the person making it.
 
+**Bump the game's `version` when you change the game.** `manifest.json` carries
+a semver `version`, and the title screen signs itself with it — the newrare
+mark, `NEWRARE` and `v<version>` in the bottom-left corner, injected as
+`CONFIG.brand` (see [docs/ENGINE.md](docs/ENGINE.md)). It is the one number
+that says which build a player — or a bug report, or an itch page — is looking
+at, so **touching a game's sources means moving its version in the same
+change**: patch for a fix or a tuning pass, minor for a new mechanic, mode or
+level set, major for a game the player would not recognise. A game that also
+ships on Play moves `android.versionName` and `versionCode` with it. Nothing
+checks this: `tools/update.mjs` cannot tell a rebuild from a new build, so it
+is on the person making the change.
+
 `games/<slug>/index.html` is a **build output**, not a source. The motor lives
 once in `packages/`, and each game owns four files:
 
-| file            | what it is                                                      |
-| --------------- | --------------------------------------------------------------- |
-| `page.html`     | head + markup, with `{{MOTOR_CSS}}` `{{SKIN_CSS}}` `{{SCRIPT}}` |
-| `skin.css`      | the `SKIN — <GAME>` block, nothing else                         |
-| `game.js`       | sections 1 (`CONFIG`), 2 (`ASSETS`) and 6 (`GAME`)              |
-| `manifest.json` | title, tagline, targets, theme, itch and android config         |
+| file            | what it is                                                       |
+| --------------- | ---------------------------------------------------------------- |
+| `page.html`     | head + markup, with `{{MOTOR_CSS}}` `{{SKIN_CSS}}` `{{SCRIPT}}`  |
+| `skin.css`      | the `SKIN — <GAME>` block, nothing else                          |
+| `game.js`       | sections 1 (`CONFIG`), 2 (`ASSETS`) and 6 (`GAME`)               |
+| `manifest.json` | title, version, tagline, targets, theme, itch and android config |
 
 ```bash
 node tools/build/build.mjs                     # every game + the template
@@ -171,7 +187,22 @@ node tools/build/build.mjs --game=vipera
 node tools/build/build.mjs --check             # assert the artifacts match the sources
 node tools/build/build.mjs --target=web        # → dist/web/, never committed
 node tools/build/build.mjs --target=web --dest=itch   # → dist/itch/<slug>/
+node tools/build/build.mjs --target=android --game=radiam   # → dist/android/<slug>/
 ```
+
+**`make android GAME=<slug>` is the Play bundle**, and it is the web build in a
+Capacitor WebView: same menu, same options, same FR/EN switch, with
+`packages/platform/capacitor.js` in section 4 instead of `web.js` — the back
+button and the app going to the background are all it adds.
+`tools/publish/gen-native.mjs` turns the manifest into `native/<slug>/`, which
+is a build output like `dist/` and is never edited by hand; Gradle then writes
+the `.aab`, signed with the studio's one keystore and this game's own key alias
+— named in `~/.newrare/signing.properties`, outside the repo, because
+`native/<slug>/` is regenerated; without that file the bundle is unsigned and
+says so.
+A game gets there by listing `android` in its `targets` and setting
+`android.appId` / `versionName` / `versionCode`. See
+[docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), *android*.
 
 A game's `manifest.json` lists the `targets` it is meant for; a build for a
 target it does not list is skipped and reported.
@@ -207,7 +238,7 @@ its `targets` and nothing else:
   picture with a phone standing in the middle of it. Web target only: a playable
   runs in a fixed portrait iframe and has no band to fill.
 - **the game's own type** — `web.font` in the manifest names one family of
-  `assets/font/` (six, all OFL), which the builder embeds in front of the SKIN
+  `assets/motor/font/` (six, all OFL), which the builder embeds in front of the SKIN
   with two tokens: `--web-font` and `--web-fw`, the weight to ask for (a
   single-weight face stays at 400 instead of being smeared into a fake bold).
   Embedded, never fetched, and playables ship no font at all.
@@ -231,10 +262,13 @@ its `targets` and nothing else:
   round the usual way; the game reads it when it resets, and the menu re-arms
   the default on every return, so no path can launch a mode nobody picked. The
   label comes from `web.copy` under `mode<Key>` (`modeClassic`), the key in
-  caps otherwise. `games/radiam` is the reference: PLAY is its endless
-  `eclipse`, CLASSIC is the timed dial (`web.modes: ["eclipse", "classic"]`).
-  The motor knows nothing about modes, and a game that declares none never
-  sees the field.
+  caps otherwise. The motor knows nothing about modes, and a game that declares
+  none never sees the field. **No game ships a second mode today**: `radiam`
+  declares `web.modes: ["eclipse"]`, a one-entry list that arms `CONFIG.mode`
+  and adds nothing to the menu — its timed dial is still in the build, reached
+  with `?mode=` for a bench, but the map is what the player gets. An extra entry
+  would start a *free* round, so the shell clears `CONFIG.level` and the base
+  tuning before it does.
 - **the three panels open in that same band**: the title and the scene stay, the
   menu is swapped out, and a back arrow returns (ESCAPE too).
 - **OPTIONS is real** — music, sound effects and score callouts are switches the
@@ -256,6 +290,27 @@ its `targets` and nothing else:
 - the how-to-play demo moves into the Help panel (the motor's own node, moved
   not copied, so a SKIN's dressing follows it), and the end screen is rewired to
   **PLAY AGAIN** / **MENU**.
+- **a game that declares `web.levels` gets the LEVEL MAP instead**, and PLAY is
+  what opens it: thirty levels on a forking road, the stars each was cleared
+  with, one objective per level lerped out of the ranges the manifest names.
+  `packages/webshell/levels.{js,css}` is the screen, `prog:<slug>` is the save,
+  and the end screen's two buttons become **NEXT LEVEL** / **MAP**. At 90/90
+  every road turns gold, a star above level 30 starts an endless run, and the
+  title screen takes a golden veil. **Under level 1 there is an optional level
+  0**, dashed and joined by a dotted spur: it starts no round and earns no
+  star — it opens the shell's own Help panel over the map (the menu hands it
+  over on mount, so there is one help screen and not two). A board that has
+  never been played opens on it; everything else is unchanged, level 1 included.
+  All thirteen games declare a `web.levels` block today. The
+  motor's only share of it is `onResult(fn)`, a filter over a round's result,
+  and `Loop.rate(k)` — the stars become the level's without a line changing in
+  any `game.js`. **The round wears its three stars live**, in a pill under the
+  HUD (never *in* it), and **the third star ends it**: slow motion down to 12 %
+  over ~0.6 s, then the end screen, because a player who has maxed a level
+  should not have to die to be told so. A game refines that with two optional
+  hooks — `Game.levelProgress()` (what the objective is measured against; the
+  HUD score otherwise) and `Game.levelWon()` (how it ends its own round, so the
+  end screen keeps its stat rows). See [docs/LEVELS.md](docs/LEVELS.md).
 
 It reads `window.__WEB__` — a plain list of motor references, never behaviour, so
 the motor knows nothing about the front end. An *online* leaderboard and
@@ -306,16 +361,17 @@ source of truth again, which should not happen.
 Every game ships six pieces of painted art, and **a file name is the whole
 declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
 
-| `assets/image/<slug>-…`              | where it is used                                                     |
+| `assets/image/master/<slug>-…`       | where it is used                                                     |
 | ------------------------------------ | -------------------------------------------------------------------- |
 | `-background-phone.png`              | behind the intro and the end screen — **never behind the round**     |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
 | `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0–1 / 2 / 3)        |
+| `-decor-NN.png`                      | the decor pool, scattered over the screens (below)                   |
 
-`assets/image/` is the **master**: what came out of the image model, up to
+`assets/image/master/` is the **master**: what came out of the image model, up to
 2172 px and ~2 MB apiece, 121 MB in total. It ships nowhere. The shipping cut is
-`assets/art/`, WebP sized for the 720×1280 design space, ~35 KB a piece and
+`assets/image/embed/`, WebP sized for the 720×1280 design space, ~35 KB a piece and
 ~270 KB of base64 per game — which is what makes painted screens fit inside the
 5 MB creative at all.
 
@@ -325,8 +381,8 @@ node tools/lab/encode-art.mjs vipera      # one game
 node tools/lab/encode-art.mjs --list      # what would run, and why
 ```
 
-**`assets/art/` is committed and the build never encodes it** — same contract as
-`assets/font/` and `assets/sfx/`: a shipping-ready input, not a build output.
+**`assets/image/embed/` is committed and the build never encodes it** — same contract as
+`assets/motor/font/` and `assets/audio/sfx/`: a shipping-ready input, not a build output.
 Encoding needs headless Chrome (~1 s an image), and `tools/update.mjs` has to
 stay fast. Run `encode-art` when the artwork itself changes, then
 `tools/update.mjs`.
@@ -352,6 +408,37 @@ The two rules that hold this together:
   layer under the canvas, so it costs nothing per frame; the scrim over it is
   the `--scene-scrim` token a SKIN can raise. See
   [docs/ENGINE.md](docs/ENGINE.md#configart--the-painted-artwork).
+- **Four of those cuts are the decor pool, and the shell places them itself.**
+  `assets/image/master/<slug>-decor-NN.png` (adopted with `--as decor`) reaches
+  `CONFIG.art.decorNN` like any other picture, and `Decor` — a module of
+  `packages/shell/shell.js` — scatters one to three of them over the end
+  screen, the round's corners, the web menu's panels, the pause card and the
+  level map. **A game names none of them and calls nothing**: the pool is
+  whatever `decor*` keys exist. Three pieces on a screen is the ceiling, every
+  piece bleeds off an edge, none of them takes a tap, and the round's are worth
+  a fifth of a screen's opacity because that is the one place a picture sits
+  over a live world. `CONFIG.decor = false` turns it off,
+  `CONFIG.decor = { round: false }` keeps the screens only. See
+  [docs/ENGINE.md](docs/ENGINE.md#decor--the-games-own-objects-on-the-screens).
+- **A sheet of objects is material, not a role.** An image model asked for a
+  gear returns a wall of sixteen, so `assets/image/master/<slug>-object-<name>.png` is
+  a **sheet to cut**: `encode-art.mjs` skips it and
+  `node tools/lab/cut-objects.mjs <slug>` takes it apart into
+  `assets/image/object/<slug>-<name>-NN.png`, one transparent PNG per object (383 of
+  them across the thirteen games). Nothing ships from there until
+  `--adopt 1,4` promotes a cut into `assets/image/master/`, where it becomes a master
+  like any other — `CONFIG.art.<name>NN`, `ArtImages.gear01` on the canvas. The
+  adoption is manual on purpose: every file under `assets/image/embed/` is embedded in
+  every build of its game. See [docs/ASSETS.md](docs/ASSETS.md).
+- **The store listing images are made from these pieces too.** A capture, the
+  character, two or three adopted objects, the logotype and one punchline out of
+  `store.copy` in the manifest. `lab/store-card.html` is where one is composed
+  by hand — three layers, every piece dragged onto the card and placed on a
+  magnetic grid, saved as a layout in `lab/store-presets.json` and written
+  straight into `assets/image/<store>/<lang>/` (`make store`);
+  `tools/lab/shoot-store.mjs`
+  is the batch, and it shoots a game with its saved layout when it has one. See
+  [docs/ASSETS.md](docs/ASSETS.md#the-listing-images-come-from-assetsimagegoogle-and-assetsimageitch).
 - **Never create the artwork.** Like the app icon, it is the user's. A game
   without it degrades on its own — the icon comes back, the CSS title comes
   back, the end screen keeps its flat tint — so never generate, draw or embed a
@@ -403,7 +490,21 @@ idea came from.
 of the motor — `overlay-pop.html` is the `Pop` callout catalogue,
 `icon-card.html` composes an icon, `game-title.html` is a rack of ready-made
 `#intro-title` looks — one pick per game, rendered in that game's own name and
-palette, exported as the CSS block to paste into its SKIN. They never ship, and they are the one place
+palette, exported as the CSS block to paste into its SKIN,
+`gear-decor.html` draws the cogs `tools/lab/shoot-gears.mjs` shoots into
+`assets/image/gear/` as transparent PNGs to lay over a screenshot,
+`store-card.html` is the store listing composer — a real frame of play dressed
+with the game's own character, objects and logotype and one FR/EN punchline
+over it, in three formats (`phone` 1080×1920 for Play and itch, `desk`
+1920×1080 for the Play tablet slot, `thumb` 630×500 for the itch cover). It is
+the one lab page with a server of its own (`make store`,
+`tools/lab/serve-store.mjs`), because it lists what a game owns and writes the
+image it composed into `assets/image/<store>/<lang>/`, neither of which a
+`file://` page
+can do; `tools/lab/shoot-store.mjs` shoots the same page for the batch — and
+`level-map.html` is the 30-level map that would sit between the web menu and
+the round — a forking road walked on an invisible 6-column grid (see
+[docs/LEVELS.md](docs/LEVELS.md)). They never ship, and they are the one place
 in the repo allowed to load a file out of `assets/` by relative path.
 
 Start a new one from **`lab/_template.html`**: a single page, inline CSS and JS,
@@ -425,9 +526,12 @@ Frame & input (section 3):
   `tap` / `hold` games — taps at `Layout.cx/cy`; **← / → (or A / D) fire a whole
   left/right flick for `swipe` games**, so a swipe mechanic needs no keyboard
   code of its own. Opt out with `CONFIG.keyboard = false`.
-- `Loop.start/stop/pause/resume` — rAF loop with clamped `dt`.
+- `Loop.start/stop/pause/resume` — rAF loop with clamped `dt`. `Loop.rate(k)`
+  is a time scale on the simulation only: the frame keeps rendering, `update`
+  gets `k * dt`, and `start` resets it to 1. The web target's three-star finish
+  is what ramps it.
 - `Sound.unlock()` (in a user gesture), `Sound.clip(name,vol,rate)` — the way a
-  game plays sound: one clip from `assets/sfx/` per event, pitched with `rate`
+  game plays sound: one clip from `assets/audio/sfx/` per event, pitched with `rate`
   rather than duplicated. `Sound.cue(name,vol,rate,freq,dur,type)` plays the clip
   when the game ships one under `name` and a synthesized beep otherwise;
   `Sound.beep(f,dur,type,vol)` / `Sound.arp(freqs,step,dur,type)` are that
@@ -442,12 +546,16 @@ Frame & input (section 3):
   timer, it drifts). It runs off `dt` when the track is missing or muted and
   phase-corrects onto the audio clock without snapping. Reference:
   `games/chainring`.
-- `Store.get/set` — localStorage with an in-memory fallback, so a best score
+- `Store.get/set/del` — localStorage with an in-memory fallback, so a best score
   survives the session even where a sandboxed iframe makes localStorage throw
-  (itch, a portal). `Rand.range/int/pick/chance`.
+  (itch, a portal). **`"bestScore"` is renamed to `"best:<slug>"` inside `Store`**
+  whenever `CONFIG.slug` is set (the web build injects it): the split site build
+  serves the thirteen from one origin, and a bare key there is one score for all
+  of them. Ask for `"bestScore"` as before — never write the scoped name.
+  `Rand.range/int/pick/chance`.
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
-  the shared `assets/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
+  the shared `assets/motor/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
   white, so never `drawImage` the raw SVG.
 - `Fx.burst/ring/text/shake/flash/freeze` — the canvas juice layer; the frame
   pipeline updates and draws it for you.
@@ -462,6 +570,10 @@ Shell (section 5):
   Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`.
 - `Overlay.toast/banner/reward/vignette/clear` — screen-space notifications,
   combo callouts, rewards, dramatic glow.
+- `Decor.dress(node, {count, spots, size, opacity, front})` / `Decor.clear(node)`
+  — one to three of the game's own painted objects around a screen, out of
+  `assets/image/embed/<slug>-decor-NN.webp`. The motor dresses the end screen and the
+  round on its own; a new screen calls this. Never more than three.
 - `Round.left()/elapsed()` — the clock.
 - **`?perf=1`** on a game's URL — the on-device readout: fps, worst frame, and
   how much of it the main thread owned, so a stutter is attributed to script or
@@ -472,7 +584,9 @@ Shell (section 5):
   the table — the only measurement whose ordering transfers, because a laptop's
   rasterizer and a phone's GPU disagree about what is expensive (see
   docs/ENGINE.md and tools/lab/bench-raster.mjs).
-- `endRound(result)` — the single way a round ends.
+- `endRound(result)` — the single way a round ends. `onResult(fn)` registers a
+  filter that may rewrite the result before the end screen reads it; the motor
+  registers none, and the web target's level layer is what uses it.
 
 ## Ad-network glue (section 4) — do not remove
 
@@ -505,7 +619,7 @@ its own, deployed by Vercel from this repo.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
 - **The hero is dressed with the games' own characters.** `build-site.mjs` copies
-  each game's `assets/art/<slug>-character-happy.webp` to
+  each game's `assets/image/embed/<slug>-character-happy.webp` to
   `image/games/<slug>/character.webp` and marks `character: true`;
   `initHeroCast()` draws two of them at random on every load and stands them
   either side of the headline. The site owns no artwork of its own, and the pair

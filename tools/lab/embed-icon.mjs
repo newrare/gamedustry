@@ -2,8 +2,8 @@
 /**
  * embed-icon.mjs — turn a Lucide icon into an inlined, tintable data URI.
  *
- * The repo ships a curated slice of the Lucide pack in assets/lucide/ (see
- * assets/lucide/README.md). A game embeds only the handful of icons it needs,
+ * The repo ships a curated slice of the Lucide pack in assets/motor/lucide/ (see
+ * assets/motor/lucide/README.md). A game embeds only the handful of icons it needs,
  * as base64 SVG data URIs in ASSETS.images, and draws them through the motor's
  * `Icon` helper (section 3), which tints them at any colour.
  *
@@ -19,7 +19,7 @@
  *     brick.
  *
  * Usage:
- *   node tools/lab/embed-icon.mjs bomb                       # from assets/lucide
+ *   node tools/lab/embed-icon.mjs bomb                       # from assets/motor/lucide
  *   node tools/lab/embed-icon.mjs arrow-left-right --key icoRow
  *   node tools/lab/embed-icon.mjs bomb --size 128 --stroke 2.6 --color "#ffd43b"
  *   node tools/lab/embed-icon.mjs path/to/custom.svg --key icoThing
@@ -27,7 +27,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { basename, join } from "node:path";
 
-const PACK = "assets/lucide";
+const PACK = "assets/motor/lucide";
 
 const args = process.argv.slice(2);
 const name = args.find((a) => !a.startsWith("--"));

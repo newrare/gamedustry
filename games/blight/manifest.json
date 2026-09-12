@@ -1,6 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
+  "version": "1.0.0",
   "tagline": "Drag to aim, release to shoot and match 3 bubbles",
   "order": 40,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "Drag to aim, release to fire and match 3 bubbles to pop them. Rainbow supers chain-detonate; the spreading blight only falls if you cut it off.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "MATCH THREE",
+            "line": "Aim, shoot, <b>pop</b>"
+          },
+          {
+            "kicker": "SUPERS",
+            "line": "Rainbows <b>chain</b> everything"
+          },
+          {
+            "kicker": "DANGER LINE",
+            "line": "Cut the blight <b>off</b>"
+          },
+          {
+            "kicker": "ONE SHOT",
+            "line": "Every bubble <b>counts</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "ALIGNE TROIS",
+            "line": "Vise, tire, <b>éclate</b>"
+          },
+          {
+            "kicker": "SUPERS",
+            "line": "L’arc-en-ciel <b>enchaîne</b> tout"
+          },
+          {
+            "kicker": "LIGNE ROUGE",
+            "line": "Coupe la <b>moisissure</b>"
+          },
+          {
+            "kicker": "UN TIR",
+            "line": "Chaque bulle <b>compte</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "blight",
@@ -65,6 +110,39 @@
         "tagline": "Glisse pour <b class=\"w-aim\">viser</b>, <b class=\"w-fire\">lâche</b> pour tirer et aligner 3 bulles"
       }
     },
-    "font": "baloo2"
+    "font": "baloo2",
+    "levels": {
+      "objective": {
+        "from": 350,
+        "to": 2300,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> before the blight takes the wall",
+        "fr": "Marque <b>{n}</b> avant que la pourriture prenne le mur"
+      },
+      "tune": {
+        "startRows": [
+          4,
+          11
+        ],
+        "blightInterval": [
+          3.4,
+          1.2
+        ],
+        "addRowShots": [
+          8,
+          3
+        ],
+        "shotSuperChance": [
+          0.2,
+          0.05
+        ],
+        "wallSuperChance": [
+          0.1,
+          0.03
+        ]
+      }
+    }
   }
 }

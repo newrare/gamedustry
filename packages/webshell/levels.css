@@ -1,0 +1,467 @@
+/*
+  webshell — the level map, the screen that sits between the menu and a round.
+
+  Loaded only by `node tools/build/build.mjs --target=web`, right after
+  menu.css, and inert for a game that declares no `web.levels`: a playable is
+  one round shown once and has no map, which is why none of this is in the
+  motor stylesheet.
+
+  Like the rest of the webshell it is the game as a player sees it, so every
+  length is a design pixel of the 720x1280 frame and every colour comes from a
+  theme token the SKIN already overrides. One layout, thirteen games.
+
+  The shape, and the reason for each piece — the long form is docs/LEVELS.md:
+
+    an invisible grid          six columns, a level every other row, roads that
+                               walk from cell to cell: across, and up. Nothing
+                               curves, nothing crosses, every corner is a right
+                               angle, so the eye can follow one road.
+    a road with forks          at a junction the player sees what each side
+                               costs and both roads rejoin. A gated road wears
+                               a wall and nothing else: no sign, no label.
+    three stars burns          a perfect level is found at a glance, which a
+                               change of border colour does not achieve.
+    ninety of ninety           every road goes gold, one more node appears above
+                               level 30, and the title screen behind the menu
+                               takes a golden veil (see the last section).
+*/
+
+/* =========================================================================
+   THE SCREEN — a layer over the frame, opened from PLAY
+   ========================================================================= */
+
+/* It covers the whole frame rather than living in the menu's right-hand band:
+   a map of thirty nodes needs the height, and the menu it came from is one
+   back arrow away. The scene underneath is the same painted backdrop the menu
+   dresses itself with, so nothing of the game's look changes on the way in. */
+/* Over the screens, not under them: `.screen` is z-index 30 in the motor
+   stylesheet, and the map opens from the intro without leaving it. */
+#lv-screen {
+  position:absolute; inset:0; z-index:34; display:none;
+  font-family:var(--web-font, inherit);
+  color:var(--text);
+  isolation:isolate;
+}
+#lv-screen.on { display:block; animation:lv-in .22s ease both; }
+@keyframes lv-in {
+  from { opacity:0; transform:scale(.985); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* The backdrop is the intro's own, copied as a background image rather than
+   moved: the menu is still behind this layer and has to keep its scene. Its
+   scrim is cut for THIS layout — heavy under the header and the card, light
+   through the middle where the roads read over the picture. */
+#lv-bg { position:absolute; inset:0; z-index:0; background-color:var(--bg);
+         background-size:cover; background-position:center center; }
+#lv-bg.flat { background-size:auto; }
+#lv-bg::after {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg,
+    rgba(0,0,0,.92) 0%, rgba(0,0,0,.62) 170px, rgba(0,0,0,.36) 380px,
+    rgba(0,0,0,.36) 900px, rgba(0,0,0,.74) 1120px, rgba(0,0,0,.94) 100%);
+}
+
+/* ---- the header band ---------------------------------------------------- */
+/* The decor the motor scatters here (packages/shell/shell.js, Decor): above
+   the backdrop, below the road and the card, so a piece dresses the margins of
+   the grid and never sits between a finger and a level. */
+#lv-screen .decor-layer { z-index:1; }
+
+#lv-head {
+  position:absolute; top:0; left:0; right:0; z-index:3;
+  height:calc(var(--inset-top) + 150px);
+  padding:calc(var(--inset-top) + 0px) 28px 0;
+  display:flex; align-items:center; gap:18px;
+  background:linear-gradient(180deg, rgba(0,0,0,.58) 0%, rgba(0,0,0,0) 100%);
+}
+#lv-titles { flex:1; min-width:0; }
+#lv-eyebrow {
+  font-size:19px; letter-spacing:4px; text-transform:uppercase;
+  color:var(--accent); opacity:.85; margin-bottom:3px;
+}
+#lv-title {
+  font-weight:var(--web-fw, 900); font-size:46px; letter-spacing:2px;
+  text-transform:uppercase; line-height:1; white-space:nowrap; overflow:hidden;
+  /* No coloured halo here. A 26px glow in a bright accent — vipera's mint,
+     radiam's cyan — saturates into a filled rectangle behind the caps instead
+     of lighting them; the eyebrow above carries the accent, and the header's
+     own gradient is what the type needs to sit on. */
+  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
+}
+#lv-total {
+  flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  padding:10px 18px; border-radius:40px;
+  background:rgba(0,0,0,.42); border:2px solid var(--panel-line);
+  font-size:28px; font-weight:var(--web-fw, 900); font-variant-numeric:tabular-nums;
+}
+#lv-total .g { color:var(--gold); font-size:30px; }
+
+/* ninety of ninety: the counter burns the way the levels do */
+#lv-total.full {
+  border-color:var(--gold); color:var(--gold); background:rgba(30,20,0,.55);
+  animation:lv-burn 2.4s ease-in-out infinite;
+}
+
+/* ---- the scrolling map -------------------------------------------------- */
+#lv-scroll {
+  position:absolute; left:0; right:0; z-index:2;
+  top:calc(var(--inset-top) + 150px); bottom:246px;
+  overflow-y:auto; overflow-x:hidden; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#lv-scroll::-webkit-scrollbar { display:none; }
+#lv-canvas { position:relative; width:720px; }
+#lv-path { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* A PERFECT BOARD. Every road turns gold — one filter over the svg, so no
+   stroke has to know about it — and the star at the top of the climb is the
+   endless run. */
+#lv-canvas.allstars #lv-path {
+  filter:drop-shadow(0 0 10px rgba(255,212,59,.85)) drop-shadow(0 0 22px rgba(255,160,40,.45));
+}
+#lv-canvas.allstars #lv-path path { stroke:var(--gold) !important; }
+
+/* ---- the wall across a gated road ---------------------------------------
+   It stands ACROSS the road, so on a horizontal run it is a vertical bar. Two
+   states and no words on either — the wall IS the message, and tapping it is
+   how the player learns what it wants. */
+.lv-wall {
+  position:absolute; transform:translate(-50%, -50%);
+  width:42px; height:104px; cursor:pointer; z-index:3;
+}
+.lv-wall .half {
+  position:absolute; left:0; right:0; height:48px; border-radius:3px;
+  border:2px solid rgba(0,0,0,.6);
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.42) 0 22px, transparent 22px 25px),
+    repeating-linear-gradient(90deg, #6a6472 0 12px, #332f3c 12px 15px);
+  box-shadow:0 3px 12px rgba(0,0,0,.65);
+}
+.lv-wall .half.l { top:2px; }
+.lv-wall .half.r { bottom:2px; }
+.lv-wall.shut .half { border-left:3px solid var(--danger); border-right:3px solid var(--danger); }
+.lv-wall .lock {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:24px; height:24px; stroke:var(--danger); fill:rgba(10,8,14,.92);
+  stroke-width:2.2;
+}
+
+/* blown apart: the halves retreat, their broken edge faces the gap, and the
+   gap is exactly wide enough for the road's own colour to run through */
+.lv-wall.broken { width:54px; height:122px; }
+.lv-wall.broken .half {
+  border-left:3px solid var(--accent); border-right:3px solid var(--accent);
+  box-shadow:0 0 20px var(--accent), 0 3px 10px rgba(0,0,0,.6);
+}
+.lv-wall.broken .half.l { top:0;    clip-path:polygon(0 0, 100% 0, 100% 66%, 58% 86%, 26% 62%, 0 82%); }
+.lv-wall.broken .half.r { bottom:0; clip-path:polygon(0 18%, 30% 38%, 62% 14%, 100% 34%, 100% 100%, 0 100%); }
+.lv-wall.broken::before, .lv-wall.broken::after {
+  content:""; position:absolute; width:9px; height:7px; border-radius:2px;
+  background:#5b5566; box-shadow:0 0 8px var(--accent);
+}
+.lv-wall.broken::before { left:-11px; top:52%; transform:rotate(-18deg); }
+.lv-wall.broken::after  { right:-9px; top:40%; transform:rotate(24deg); }
+.lv-wall.broken .lock { display:none; }
+
+/* ---- a level node ------------------------------------------------------- */
+.lv-node {
+  position:absolute; width:84px; height:84px; margin:-42px 0 0 -42px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; border:5px solid rgba(255,255,255,.2);
+  /* opaque on purpose: a road must never be seen running behind a level */
+  background:radial-gradient(circle at 38% 30%, rgba(255,255,255,.13), rgba(0,0,0,.72) 70%), #0a0812;
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:31px; color:var(--text);
+  font-variant-numeric:tabular-nums; line-height:1; padding:0;
+  -webkit-appearance:none; appearance:none;
+  transition:transform .14s ease, box-shadow .14s ease;
+}
+.lv-node:active { transform:scale(.94); }
+.lv-node.sel { outline:none; box-shadow:0 0 0 6px rgba(255,255,255,.22); }
+
+/* cleared — the ring carries the accent */
+.lv-node.done {
+  border-color:var(--accent);
+  background:radial-gradient(circle at 38% 28%, rgba(255,255,255,.18), rgba(0,0,0,.76) 72%), #0a0812;
+  box-shadow:0 0 0 3px rgba(0,0,0,.35), 0 0 26px var(--accent);
+}
+/* the next one to play — the only node that moves */
+.lv-node.next {
+  border-color:var(--cta-a); color:var(--cta-text);
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
+  box-shadow:0 0 0 5px rgba(0,0,0,.4), 0 0 40px var(--cta-a);
+  animation:lv-pulse 1.5s ease-in-out infinite;
+}
+@keyframes lv-pulse {
+  0%,100% { transform:scale(1);    }
+  50%     { transform:scale(1.09); }
+}
+/* unlocked but not the next one (a level the player may replay ahead of
+   themselves), and a level behind a road that is shut */
+.lv-node.open { border-color:rgba(255,255,255,.42); }
+.lv-node.lock { color:rgba(255,255,255,.28); border-color:rgba(255,255,255,.1); background:#0a0812; }
+.lv-node.lock .num { display:none; }
+.lv-node.lock .padlock { display:block; }
+.lv-node .padlock { display:none; width:40px; height:40px; stroke:rgba(255,255,255,.4); fill:none; stroke-width:2.2; }
+
+/* THREE STARS. The map is read at a glance and a perfect level has to be
+   findable in that glance, so it does not merely change border colour — it
+   burns: a gold rim, a gold halo and a slow breath. */
+.lv-node.perfect {
+  border-color:var(--gold);
+  background:radial-gradient(circle at 38% 28%, rgba(255,212,59,.34), rgba(0,0,0,.74) 72%), #0a0812;
+  animation:lv-burn 2.4s ease-in-out infinite;
+}
+@keyframes lv-burn {
+  0%,100% { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 30px rgba(255,212,59,.6),
+                       inset 0 0 16px rgba(255,212,59,.24); }
+  50%     { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 46px rgba(255,212,59,.95),
+                       inset 0 0 22px rgba(255,212,59,.4); }
+}
+
+/* a level on the road the player did not take. Missing one is fine — this is
+   a note, not a warning, so it is dashed and quiet rather than loud. */
+.lv-node.gap { border-style:dashed; border-color:rgba(255,255,255,.42); color:rgba(255,255,255,.62); }
+
+/* THE BONUS. It only exists on a perfect board, so it is not a level — it is
+   a star, and it starts the endless run. */
+.lv-node.bonus {
+  width:108px; height:108px; margin:-54px 0 0 -54px; border:0; background:none;
+  box-shadow:none; font-size:0; animation:lv-burn 2.4s ease-in-out infinite;
+}
+.lv-node.bonus::before {
+  content:""; position:absolute; inset:0;
+  clip-path:polygon(50% 0%, 62% 36%, 100% 38%, 69% 60%, 80% 98%,
+                    50% 75%, 20% 98%, 31% 60%, 0% 38%, 38% 36%);
+  background:linear-gradient(180deg, #fff6cc, var(--gold) 46%, #ff9a2e);
+}
+.lv-node.bonus .num, .lv-node.bonus .padlock { display:none; }
+
+/* LEVEL 0 — the tutorial, off the climb.
+   Not a level and never on the road: the one node that starts no round. It
+   opens the Help panel — the game's own sentence, the hand acting the gesture
+   out, the keys that do the same thing — and the dotted spur up to level 1
+   says the climb does not go through it.
+
+   Smaller than a level, dashed, wearing a question mark instead of a number:
+   three ways of saying "optional" at a glance, none of them a word. Once it
+   has been read the ring goes solid and takes the accent, the way a cleared
+   level does — it is the only reward there is here. */
+.lv-node.tuto {
+  width:68px; height:68px; margin:-34px 0 0 -34px;
+  border-style:dashed; border-color:rgba(255,255,255,.34);
+  color:rgba(255,255,255,.66); font-size:34px;
+}
+.lv-node.tuto.seen {
+  border-style:solid; border-color:var(--accent); color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,0,0,.35), 0 0 18px rgba(255,255,255,.08);
+}
+
+/* The row's read-out sits beside the node, on whichever side of the FRAME has
+   room for it — measured, not guessed from the column, because the stars are
+   the one thing on this screen that must never be clipped. */
+.lv-tag {
+  position:absolute; transform:translateY(-50%); display:flex; align-items:center; gap:9px;
+  white-space:nowrap; pointer-events:none;
+}
+.lv-stars { display:flex; gap:3px; font-size:21px; line-height:1;
+            text-shadow:0 2px 4px rgba(0,0,0,.8); }
+.lv-stars s { text-decoration:none; color:rgba(255,255,255,.2); }
+.lv-stars s.on { color:var(--gold); }
+.lv-tag em {
+  font-style:normal; font-size:16px; letter-spacing:2.2px; text-transform:uppercase;
+  color:rgba(255,255,255,.42);
+}
+.lv-tag .best { font-size:15px; color:rgba(255,255,255,.42); font-variant-numeric:tabular-nums; }
+
+/* ---- the card, docked at the bottom ------------------------------------- */
+/* As tall as what it has to say: a level needs four lines, a shut wall needs
+   the explanation and its chips. The scroll band above is resized to match
+   after every render, so the two never overlap. */
+#lv-card {
+  position:absolute; left:0; right:0; bottom:0; z-index:4;
+  min-height:246px; max-height:452px; overflow:hidden;
+  padding:22px 28px calc(var(--inset-bottom) + 26px);
+  display:flex; flex-direction:column; gap:10px;
+  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.74) 34%, rgba(0,0,0,.93) 100%);
+  border-top:2px solid var(--panel-line);
+}
+#lv-card .top { display:flex; align-items:baseline; gap:14px; }
+#lv-name { font-size:40px; font-weight:var(--web-fw, 900); letter-spacing:1px; text-transform:uppercase; }
+#lv-band { font-size:19px; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
+#lv-goal { font-size:26px; line-height:1.35; color:rgba(255,255,255,.92); }
+/* the wall's explanation and level 0's both run longer than an objective, and
+   a game's own face is what decides how long */
+#lv-card.is-wall #lv-goal,
+#lv-card.is-tuto #lv-goal { font-size:23px; }
+#lv-goal b { color:var(--accent); font-weight:var(--web-fw, 900); }
+#lv-note { font-size:19px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums; }
+#lv-note em { font-style:normal; color:var(--gold); }
+
+/* the wall card's suggestions: the cheapest places to find the missing stars */
+#lv-chips { display:flex; gap:10px; flex-wrap:wrap; }
+#lv-chips:empty { display:none; }
+#lv-chips button {
+  display:flex; align-items:center; gap:7px; cursor:pointer;
+  padding:9px 15px; border-radius:26px; font:inherit; font-size:19px;
+  font-family:var(--web-font, inherit);
+  background:rgba(255,255,255,.08); border:2px solid var(--panel-line);
+  color:var(--text);
+}
+#lv-chips button s { text-decoration:none; color:var(--gold); font-size:16px; }
+
+/* the difficulty bar: the same d the tunables are lerped with */
+#lv-diff { display:flex; align-items:center; gap:12px; font-size:16px;
+           color:rgba(255,255,255,.5); letter-spacing:1.6px; text-transform:uppercase; }
+#lv-diff .bar { flex:1; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
+#lv-diff .bar i { display:block; height:100%; border-radius:6px;
+                  background:linear-gradient(90deg, var(--good), var(--gold), var(--danger)); }
+
+#lv-play {
+  margin-top:auto; height:78px; border:0; border-radius:20px; cursor:pointer;
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:var(--cta-text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:32px; letter-spacing:3px; text-transform:uppercase;
+  box-shadow:0 8px 0 rgba(0,0,0,.4), 0 0 34px var(--cta-a);
+}
+#lv-play:disabled {
+  background:rgba(255,255,255,.09); color:rgba(255,255,255,.32);
+  box-shadow:none; cursor:not-allowed;
+}
+#lv-play:active:not(:disabled) { transform:translateY(3px); box-shadow:0 5px 0 rgba(0,0,0,.4); }
+
+/* ---- the help panel, over the map --------------------------------------- */
+/* Level 0's button opens menu.js's own Help panel here rather than back on the
+   menu: `#screen-intro` is a stacking context of its own (z-index 30 in the
+   motor stylesheet) and this screen sits at 34, so the menu's panel cannot be
+   raised above the map — and sending the player back to the menu to read two
+   lines would lose the map they were standing on.
+
+   The head, the body and the rows inside are menu.css's: there is one panel
+   design in this shell, and this is the third place it is used after the
+   intro's panels and the card over a paused round. */
+#lv-help {
+  position:absolute; inset:0; z-index:6; display:none;
+  flex-direction:column; justify-content:center; padding:0 40px;
+  background:rgba(3,4,12,.82);
+  -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
+}
+#lv-help.on { display:flex; animation:lv-in .2s ease both; }
+/* The help card gets one object too, and it is dressed against its own
+   stacking context (z-index 6 above): the head and the body are already
+   raised to 1 by the menu stylesheet, so the layer behind them has to be 0
+   here rather than the 1 the map's own margins use. */
+#lv-help .decor-layer { z-index:0; }
+#lv-help .decor-layer.front { z-index:2; }
+
+/* =========================================================================
+   THE ROUND — the three stars, as they are earned
+   ========================================================================= */
+
+/* A level is three thresholds on one number, and a player who cannot see where
+   they stand against them is playing an endless run with a score to remember.
+
+   It is NOT in the HUD — the top band is the game's, all of it, and the
+   thirteen fill it differently. This is one pill UNDER it, centred on the
+   score it is measured against, small and dark enough to sit over the play
+   area the way the round's two controls do in the opposite corner. Nothing of
+   the game's layout moves for it: --hud-h and Layout are untouched. */
+#lv-hud {
+  position:absolute; z-index:21; left:50%;
+  top:calc(var(--inset-top) + var(--hud-h) + 4px);
+  transform:translateX(-50%);
+  display:flex; flex-direction:column; gap:5px; align-items:stretch;
+  min-width:196px; padding:8px 14px 9px; border-radius:16px;
+  background:rgba(0,0,0,.46); border:2px solid var(--panel-line);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  font-family:var(--web-font, inherit); pointer-events:none;
+}
+#lv-hud[hidden] { display:none; }
+#lv-hud .top { display:flex; align-items:center; gap:10px; }
+#lv-hud .n {
+  font-size:22px; font-weight:var(--web-fw, 900); line-height:1;
+  color:var(--muted); font-variant-numeric:tabular-nums;
+}
+#lv-hud .st { display:flex; gap:4px; line-height:1; }
+#lv-hud .st s {
+  text-decoration:none; font-size:22px; color:rgba(255,255,255,.22);
+  transition:color .18s ease, text-shadow .18s ease, transform .18s ease;
+}
+#lv-hud .st s::before { content:"\2605"; }
+#lv-hud .st s.on { color:var(--gold); text-shadow:0 0 12px rgba(255,212,59,.9); }
+#lv-hud .goal {
+  margin-left:auto; font-style:normal; font-size:19px; line-height:1;
+  color:rgba(255,255,255,.6); font-variant-numeric:tabular-nums;
+}
+#lv-hud .bar { display:block; height:6px; border-radius:4px; background:rgba(255,255,255,.14); overflow:hidden; }
+#lv-hud .bar u {
+  display:block; height:100%; width:0; border-radius:4px; text-decoration:none;
+  background:linear-gradient(90deg, var(--accent), var(--gold));
+  transition:width .18s linear;
+}
+
+/* a star landing — the pill punches once, not once a frame */
+#lv-hud.hit { animation:lv-hud-hit .34s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes lv-hud-hit {
+  0%   { transform:translateX(-50%) scale(1);    border-color:var(--gold); }
+  45%  { transform:translateX(-50%) scale(1.14); border-color:var(--gold); }
+  100% { transform:translateX(-50%) scale(1);    border-color:var(--panel-line); }
+}
+
+/* =========================================================================
+   NINETY OF NINETY — the title screen says the game is finished
+   ========================================================================= */
+
+/* Thirty levels, three stars each, nothing left to unlock. The map already
+   turns gold; the MENU has to say it too, or a player who finished the game
+   comes back to exactly the screen they left.
+
+   It is a veil, not a repaint: a gold wash over the whole intro with a
+   highlight that sweeps across it, so the artwork, the title and the entries
+   are all still themselves — lit. Two composited properties (opacity and a
+   translate), nothing per frame. */
+#screen-intro.lv-perfect::after {
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(120% 70% at 50% 8%, rgba(255,212,59,.32), rgba(255,160,40,.10) 55%, rgba(0,0,0,0) 78%),
+    linear-gradient(180deg, rgba(255,196,40,.18) 0%, rgba(255,150,30,.08) 55%, rgba(255,212,59,.16) 100%);
+  mix-blend-mode:screen;
+  animation:lv-veil 5.2s ease-in-out infinite;
+}
+@keyframes lv-veil {
+  0%, 100% { opacity:.72; }
+  50%      { opacity:1; }
+}
+
+/* the sweep: one band of light crossing the frame, slowly */
+#screen-intro.lv-perfect .lv-sheen {
+  position:absolute; inset:-20% -60%; z-index:-1; pointer-events:none;
+  background:linear-gradient(74deg,
+    rgba(255,255,255,0) 40%, rgba(255,240,170,.34) 50%, rgba(255,255,255,0) 60%);
+  mix-blend-mode:screen;
+  animation:lv-sheen 6.4s ease-in-out infinite;
+}
+@keyframes lv-sheen {
+  0%      { transform:translateX(-42%); opacity:0; }
+  22%     { opacity:1; }
+  60%     { opacity:1; }
+  100%    { transform:translateX(42%); opacity:0; }
+}
+
+/* and the entries take the gold, so the menu itself reads as finished */
+#screen-intro.lv-perfect #btn-start {
+  color:var(--gold); text-shadow:0 0 34px rgba(255,212,59,.9), 0 3px 14px rgba(0,0,0,.9);
+}
+#screen-intro.lv-perfect #btn-start::after,
+#screen-intro.lv-perfect .web-item::after { background:var(--gold); }
+#screen-intro.lv-perfect #intro-title {
+  text-shadow:0 0 38px rgba(255,212,59,.75), 0 3px 0 rgba(0,0,0,.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #screen-intro.lv-perfect::after,
+  #screen-intro.lv-perfect .lv-sheen,
+  .lv-node.perfect, .lv-node.next, #lv-total.full, #lv-hud.hit { animation:none; }
+  .lv-node.perfect { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 34px rgba(255,212,59,.8); }
+}

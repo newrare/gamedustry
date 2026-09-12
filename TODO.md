@@ -1,111 +1,252 @@
 # TODO — the newrare game factory
 
-The single running list. [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md)
-explains *why* each item exists and in what order; this file tracks *what is
-left*. One line per task, each tagged with who does it:
+What is left, one line per task. [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md)
+holds the reasoning. A task is **removed** once it is verifiably done.
 
 - **MAIN** — a human action: a decision, an account, an upload, a piece of content.
 - **AUTO** — a command; no code to write.
 - **CODE** — something to develop.
 
-Keep this file honest: a task is **removed** once it is verifiably done — the
-record of what shipped lives in git and in the industrialization doc, not here.
-Add new tasks here rather than leaving them in a conversation.
-
-______________________________________________________________________
-
-## Scope, narrowed on 2026-09-10
-
-The factory is built. What is left is **android**, and nothing else is tracked
-here any more. The meta layer (`packages/meta`: progression, an online
-leaderboard, accounts), the web portals (CrazyGames, Poki and their SDKs), the
-measurement gate before wiring ads, and a list of small internal debts were all
-dropped from this file on purpose — not done, parked. The industrialization doc
-still holds their reasoning if any of them comes back.
-
-Android does not need the meta layer: `--target=android` produces a *web*
-directory that Capacitor wraps, so `packages/webshell` ships the start screen,
-the options and the FR/EN switch to the app exactly as it does to the site.
-
-## In place
-
-Documented here so the list of what exists does not live only in git.
-
-| capability                           | how                                                                      |
-| ------------------------------------ | ------------------------------------------------------------------------ |
-| a quick prototype                    | one raw page in `prototype/`, no motor and no build (CLAUDE.md)          |
-| the playable-ad build                | `build.mjs` — one self-contained file per game, under 5 MB               |
-| the web build                        | `build.mjs --target=web`, `--dest=site` split / `--dest=itch` standalone |
-| screenshots, covers, icons           | `tools/lab/shoot-{screens,cover,icon}.mjs`, headless and repeatable      |
-| the site, built and deployed         | `build-site.mjs`, then Vercel on every push to `main`                    |
-| the 13 itch pages                    | by hand — itch has no API for a page; `store-meta.mjs` prints the form   |
-| publishing to itch                   | `make push` — gate, push the commit, then `deploy-itch.mjs --all`        |
-| a Newgrounds submission, ready to go | `make ng` — the 13 zips in `dist/newgrounds/`, upload is manual          |
-| display type that always fits        | `Fit` in `packages/shell/shell.js`, measured — playable and web alike    |
-
-Two things about that last row, so nobody re-derives them: the `--dest=itch`
-build is already portal-neutral (no external request, nothing naming itch.io,
-the install CTA inert), and a Newgrounds submission goes *Under Judgment* first
-and is deleted automatically if it scores under 1.6/5 at 200 votes — so it is
-one game first, not thirteen.
-
-There is no CI. GitHub Actions never ran on this repo (11 runs, every job
-refused before a runner was allocated, on a public repo with nothing owed), so
-the workflows were deleted and their commands became the root `Makefile`. Run
-`make check` before a commit; nothing else will.
+Two scopes are tracked here: **android** and the **web build's own bugs**. The
+meta layer, the web portals and the ad measurement gate are parked, not done.
 
 ______________________________________________________________________
 
 ## Android
 
-**The prerequisites are slow and none of them are code.** The domain was the
-first of them and it is done: Google Play wants a real support address and a
-privacy URL on a domain you own, and both now exist.
+**Prerequisites — the Play account:** the account is **active with an app
+already in production** (2026-09-10), so identity verification and the public
+developer address are done, and **production access is granted at the account
+level, not per app** — the 12-testers / 14-consecutive-days closed test is the
+gate on a personal account's *first* production release and does not apply to
+radiam. Confirm it in *Test and release → Production* before planning a closed
+test anyway.
 
-- [x] MAIN — buy the domain and attach it to Vercel. `newrare.app`, registered
-  at OVH, DNS zone at OVH (apex `A` → Vercel, `www` `CNAME` → Vercel, MX left on
-  OVH mail), certificate issued by Vercel. `SITE.url` in
-  `tools/publish/store-meta.mjs` is the one place the address is written
-- [x] MAIN — a support e-mail on that domain, replacing the personal Gmail
-  quoted in `site/privacy.html` and `site/index.html` (both updated together).
-  `contact@newrare.app` is an OVH redirection, so it **receives only**
-- [ ] MAIN — *if Play support ever needs an answer sent from the studio address*:
-  turn that redirection into a real OVH mailbox and wire Gmail's "send mail as"
-  to `ssl0.ovh.net:465`. Routing it through Gmail's own servers instead would
-  fail SPF, which is a strict `-all`
-- [ ] MAIN — clear Play identity verification, set the public developer address
-- [ ] MAIN — recruit 12 testers with 12 distinct Google accounts. Google
-  requires closed testing before a new personal developer account can go
-  public, and this is the item with the longest lead time — start it early
+- [ ] MAIN — *only if answering from the studio address is ever needed*: the
+  support address is a redirection, so it receives but cannot send. Turning it
+  into a real OVH mailbox means wiring Gmail's "send mail as" to
+  `ssl0.ovh.net:465` — routing it through Gmail's own servers instead fails SPF,
+  which is a strict `-all`
 
-**The build:**
+**The build** — done for `radiam`, and it is the same command for the other
+twelve: `--target=android`, `packages/platform/capacitor.js`,
+`tools/publish/gen-native.mjs` and `make android GAME=<slug>` all exist, and
+the unsigned `.aab` builds (4.1 MB). What is left:
 
-- [ ] CODE — `--target=android` in `build.mjs` (`TARGETS` is `['playable', 'web']`
-  today): a web directory for Capacitor to wrap
-- [ ] CODE — `tools/publish/gen-native.mjs`: manifest → Capacitor project under
-  `native/<slug>/`
-- [ ] CODE — `packages/platform/capacitor.js`, the fourth implementation of the
-  slot MRAID and `web.js` already fill
-- [ ] MAIN — generate the keystore and back it up off the signing machine.
-  Losing it means never being able to update an app again
-- [ ] AUTO — a `make android` target next to `push`, wrapping Gradle and
-  `fastlane android beta`; there is no CI to run it on a tag
+- [ ] MAIN — generate the studio keystore, **one file for the thirteen games
+  with one key alias per game**, and back it up off the signing machine.
+  Losing it costs an app its updates. Then write
+  `~/.newrare/signing.properties` (`storeFile`, `storePassword`) — once, for
+  every game — and re-run `make android`: the same bundle comes out signed.
+  ```bash
+  keytool -genkeypair -v -keystore ~/keys/newrare.keystore \
+    -alias radiam -keyalg RSA -keysize 4096 -validity 10000
+  ```
+- [ ] MAIN — add `"android"` to `targets` in the other twelve manifests, one at
+  a time, as each game earns the store
+- [ ] AUTO — `fastlane android beta` once the app exists and the Play service
+  account JSON is downloaded; `native/<slug>/fastlane/` is generated but
+  fastlane itself is not installed on this machine
 
 **Per app, on the console:**
 
 - [ ] MAIN — create the Play app: listing, screenshots, content rating
   questionnaire, *Data safety* form, privacy URL, support e-mail, target API
-  level. `store-meta.mjs` already prints the copy
+  level. `node tools/publish/store-meta.mjs --game=<slug> --play` prints the
+  whole form — the copy against Play's own length limits, and the content
+  rating and *Data safety* answers derived from what the manifest says the app
+  does
+- [ ] MAIN — upload the listing images, all four generated by
+  `node tools/lab/shoot-store.mjs <slug>` (or composed by hand in `make store`,
+  which saves a layout the batch then shoots with): the phone gallery
+  `assets/image/google/<lang>/<slug>-NN.jpg` (1080×1920) and the tablet pair
+  `-desk-NN.jpg` (1920×1080), both dressed with the game's character, its own
+  objects and one punchline per language; plus the icon
+  `native/<slug>/store/icon-512.png` and the 1024×500 feature graphic
+  `assets/image/google/feature/<slug>.png` (`shoot-cover.mjs <slug> --play`). Play holds one
+  graphics set per locale — `store-meta.mjs --game=<slug> --play --lang=fr`
+  names the French one
 - [ ] MAIN — upload the very first `.aab` by hand; `fastlane supply` cannot
   create the app
+- [ ] MAIN — add the game's key to the studio keystore
+  (`keytool -genkeypair -alias <slug> -keystore ~/keys/newrare.keystore …`);
+  `gen-native.mjs` names the alias after the slug
 - [ ] MAIN — decide whether the audience is declared under 13 (Families policy).
   It changes what ads and what data collection are allowed, so decide it before
   the *Data safety* form, not after
 
-**Only if the apps are monetized** — kept because the CMP is a legal
-requirement, not a feature, and it is easy to discover too late:
+**Only if the apps are monetized** — the CMP is a legal requirement:
 
 - [ ] MAIN — AdMob account, tax and payment profile, ad units linked to the app
 - [ ] CODE — a TCF-certified CMP (Google UMP) for EEA/UK traffic, and
   `Platform.ads` wired to AdMob through the Capacitor adapter
 - [ ] MAIN — fill `site/app-ads.txt` with the AdMob publisher record
+
+______________________________________________________________________
+
+## The web build
+
+- [ ] CODE — **changing the language does not translate the round.**
+  `setLang()` ([packages/webshell/menu.js:665](packages/webshell/menu.js))
+  rewrites the menu entries, the tagline, the two end-screen buttons and the
+  open panel, and stops there. Everything the motor writes out of
+  `CONFIG.copy` is set once at boot
+  ([packages/shell/shell.js:778-783](packages/shell/shell.js)) and never
+  revisited, so switching FR/EN leaves in English: the HUD labels (`SCORE`,
+  `TIME`), the end screen's `FINAL SCORE`, the game-over title and the replay
+  link. Two halves, and the second is the real work:
+
+  - `setLang()` has to re-apply `CONFIG.copy` — which means `web.copy.<lang>`
+    in the manifest must be able to carry the whole `copy` block, not just the
+    tagline, and the builder must inject both languages instead of one.
+  - the **end screen's rows and titles are hardcoded English literals inside
+    each game's section 6** (`{ label: "LONGEST BODY" }`, `"TORN APART"`,
+    `"SURVIVOR!"` …), so there is nothing to re-read. They have to move out of
+    `game.js` into the manifest's `web.copy`, thirteen games over, or gain a
+    key the shell resolves. Decide which before touching any game.
+  - a round in progress cannot be relabelled mid-flight for free: the language
+    switch already only happens from OPTIONS, which pauses, so re-applying on
+    resume is enough.
+
+- [x] CODE — **OPTIONS "erase the best score" needs its own wording.** Done
+  with the level layer: with `prog:<slug>` in play the row reads *erase the
+  thirty levels*, asks twice with that wording, and wipes the best score and
+  the progression together — they are one action, because a best score with no
+  stars behind it describes nothing.
+
+- [x] CODE — **`bestScore` is shared by the thirteen games.** Done in `Store`
+  ([packages/engine/engine.js](packages/engine/engine.js)) rather than in
+  thirteen `game.js` files: a game that knows its slug (`CONFIG.slug`, injected
+  by the web build) reads and writes `best:<slug>` wherever it asks for
+  `bestScore`, so section 6 needed no edit. The old shared key is adopted once,
+  by whichever game is opened first, and then **dropped** — copying it into all
+  thirteen would have handed twelve of them a score they never made, and
+  merge-max never takes it back. `webLang` and `webSettings` stay shared.
+
+- [x] CODE — **the levels, on all thirteen.** Every game declares a
+  `web.levels` block; `games/slipdeck` promoted its seven section-6 `var`s into
+  `CONFIG.play` and `games/blight` re-reads three of its five at `reset()`, both
+  because a knob copied when the file parsed never sees the lerp. blight needed
+  no new win condition after all — measuring the score keeps its 60-second
+  round and the third star ends it early when it is earned.
+
+- [ ] TUNE — **the objectives are a formula, not a bench.** Ten games are
+  scored on `objective(L15) ≈ their own 3★ threshold ÷ 2.2` with the ladder
+  spread `L30 ≈ 6.5 × L1`; the three distance runners are calibrated on round
+  length (27 s → 95 s). Nothing has been swept. What settles it is a scripted
+  pilot over a few levels per game, the way `tools/lab/bench-*.mjs` do for the
+  raster and the audio — and the same bench is what would let the flavour
+  objectives (*seat 64 balls*, *escape the maze*) replace the score, which the
+  machinery already takes through `levelProgress()` and `levelScore`.
+
+- [ ] TUNE — **the `1.5x` / `2.2x` star multipliers are flat.** They are applied
+  to an objective that already grows 6.5x across the ladder, so the third star
+  of level 30 is a long way past the first. A multiplier that shrinks with `d`
+  is the obvious alternative; it is a bench question, not a table one.
+
+- [x] CODE — **the screens are dressed with the game's own objects.** Four cuts
+  per game adopted out of its object sheet (`cut-objects.mjs --adopt … --as decor`, 52 in all, ~110 KB of base64 a game) and a `Decor` module in
+  `packages/shell/shell.js` that scatters one to three of them over the end
+  screen, the round's corners, the menu's panels, the pause card and the level
+  map. No game declares or calls anything. What is left is a taste pass: the
+  picks were made off the contact sheets, and a game whose four do not suit its
+  screens re-adopts four others — nothing else changes.
+
+- [ ] CODE — **radiam's eclipse clock is not lerpable.** `GROW`, `STEP` and
+  `LINES` are locals of its eclipse module with a URL override on top, so a map
+  level cannot set the level that clock starts at. Promoting them to
+  `CONFIG.dial` is the whole job (see [docs/LEVELS.md](docs/LEVELS.md) §2).
+
+- [ ] CODE — **the studio signature shows behind the menus.** `buildBrand()`
+  ([packages/shell/shell.js:966](packages/shell/shell.js)) appends `#brand-sig`
+  to `#screen-intro`, and the web menu appends to that same node instead of
+  rebuilding it, so the mark, `NEWRARE` and `v<version>` keep the bottom-left
+  corner under the OPTIONS, HELP and LEADERBOARD panels, under the pause card
+  and under the level map. The signature belongs to the title screen alone:
+  hide it whenever the band is swapped out and bring it back on the way home.
+  One shell-level rule, all thirteen at once — no `game.js` and no SKIN is
+  touched.
+
+- [ ] CODE — **the music stays too loud once the round is over.** The two
+  ducks that exist were never listened to side by side: the map ramps to `0.4`
+  ([packages/webshell/levels.js:568](packages/webshell/levels.js)), a panel to
+  `0.35` ([packages/webshell/menu.js:674](packages/webshell/menu.js)), and the
+  end screen only rides the duck `endRound` applied for the reveal — which
+  `btn-replay` and PLAY AGAIN then undo
+  ([packages/webshell/menu.js:765](packages/webshell/menu.js)). Halve the bed
+  on the level map and on the end screen, hold it for as long as the screen is
+  up, and settle on **one** factor rather than three.
+
+______________________________________________________________________
+
+## The games — content pass on the thirteen
+
+- [ ] TUNE — **rethink the difficulty ramp level by level, all thirteen
+  games.** The ladder is a formula today, never played end to end: see the two
+  TUNE lines above (`objective(L15)`, the flat `1.5x` / `2.2x` star
+  multipliers). What this adds is the pass itself — play or bench each game's
+  L1, L15 and L30, and where the curve breaks fix it per game rather than by
+  one shared spread. It is not only the objective that has to climb: the
+  tuning the level lerps (speed, spawn rate, room to fail) is what makes a
+  level harder than the one before, and a game whose knobs cannot express that
+  needs more of them promoted into `CONFIG`.
+
+- [ ] CODE — **the French taglines, rewritten by hand, all thirteen games.**
+  List what `web.copy.fr.tagline` says in every `manifest.json` today, read the
+  thirteen in one column, and rewrite each one by hand: they were written game
+  by game — several of them read as a translation of the English rather than as
+  a French sentence. The house rules hold (one sentence, never two, two or
+  three key words wrapped in `<b class="w-…">`, `intro.caption` stays `""`),
+  and the manifest is the only place to write them.
+
+- [ ] CODE — **the level-select copy on the map, all thirteen games.** A level
+  card is one shared string table
+  ([packages/webshell/levels.js:88-145](packages/webshell/levels.js)) plus a
+  bare number: *OBJECTIVE 120* says nothing about what 120 is in this game, and
+  the band names (*Warm-up … Meltdown*) are the same five words for the
+  thirteen. Give the objective a per-game sentence — from the manifest, next to
+  the rest of the game copy — in both languages, and re-read the road, fork and
+  endless cards with it.
+
+- [ ] MAIN/AUTO — **the store listing images, all thirteen games.** Only a few
+  games have a saved layout in `lab/store-presets.json` today. Compose each
+  game's card by hand in `make store`, then shoot the set with
+  `node tools/lab/shoot-store.mjs <slug>`: the phone gallery
+  `assets/image/google/<lang>/<slug>-NN.jpg` (1080×1920), the tablet pair
+  `-desk-NN.jpg` (1920×1080), the itch cover (630×500) and the 1024×500 feature
+  graphic (`shoot-cover.mjs <slug> --play`) — FR and EN, since Play holds one
+  graphics set per locale. This is the asset half of the *upload the listing
+  images* line in *Android*.
+
+- [ ] CODE — **review the copy and the `Pop` callouts, all thirteen games.**
+  Every score gain, combo and celebration beat goes through `Pop.show` and
+  `Overlay.toast/banner`; the words, the styles and when they fire were written
+  game by game and have never been read side by side. Check they say something,
+  that two callouts never stack on the same beat, and that the FR strings exist
+  (the copy still lives in section 6 for the end screen — see the language TODO
+  in *The web build*).
+
+- [ ] CODE — **review the sfx, all thirteen games.** One clip per event out of
+  `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships
+  (levels, pitch via `rate`, events still falling back to `Sound.beep`) and
+  even out the loudness between games.
+
+- [ ] CODE — **add bonus and gameplay elements, all thirteen games.** The web
+  target gave every game a 30-level ladder against a loop that was designed for
+  a 30-second ad; each one needs more to give across thirty levels — pickups,
+  a second entity, a risk/reward beat. One design per game, not a shared
+  system.
+
+- [ ] CODE — **`gearball`, rework the gameplay.** The closed-gear-loop redesign
+  is in, but the loop itself is still thin over a full ladder.
+
+- [ ] CODE — **`slipdeck`, rework the gameplay.** Same call, and its seven
+  tunables are already in `CONFIG.play`, so a new loop has the knobs it needs.
+
+- [ ] CODE — **an online leaderboard.** Phase 5 of `packages/meta`, still only
+  the local `best:<slug>` the motor writes on `endRound`. The site is on
+  Vercel, so a Vercel store (Postgres or KV) behind a route under the site's
+  own origin keeps the games' zero-external-request rule intact — the page
+  hosts the fetch and talks to the iframe by `postMessage`, the game does not.
+  Decide the identity model (a name typed once, stored in `Store`) and the
+  anti-cheat stance before writing the schema.

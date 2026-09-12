@@ -121,8 +121,8 @@
     },
     sounds: {
       // The background bed, looped and crossfaded by Music (see CONFIG.music):
-      //   ffmpeg -i assets/sound/triverse.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
-      // assets/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
+      //   ffmpeg -i assets/audio/music/triverse.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
+      // assets/audio/sfx/*.mp3, trimmed and re-encoded mono 32 kHz / 64 kbps
       // gem:   ui_mallet_tone_single_plink_generic_002        (pitched by chain)
       // mega:  ui_refresh_smartphone_app_short_sine_whistle_ascending_001
       // chain: alert_notification_clicks_fast_ascending_001   (also the milestone, pitched down)
@@ -918,6 +918,9 @@
         title: st === 3 ? "LEGEND RUN!" : st === 2 ? "GREAT RUN!" : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
+        // A level's objective is a distance: the metres, not the metres plus
+        // the gems picked up along them (web target only — see levelProgress).
+        levelScore: d,
         stars: st,
         rows: [
           { label: "DISTANCE (M)", value: d },
@@ -1193,7 +1196,18 @@
 
     function onResize() { metrics(); }
 
+    /* --- THE LEVEL LAYER (web target) ------------------------------------
+       `levelProgress` is what a level's objective is measured against while
+       the round runs, and it is the same number the result reports as
+       `levelScore`: the METRES, never the score, so pickups cannot pay for a
+       distance. `levelWon` is the three-star finish — the web shell has
+       already played the slow motion, and the round ends through the game's
+       own result so the end screen keeps these stat rows. Both are ignored by
+       the playable, which has no levels — see docs/LEVELS.md. */
+    function levelProgress() { return Math.floor(dist); }
+
     return { reset: reset, update: update, render: render,
-             onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize };
+             onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
+             levelProgress: levelProgress, levelWon: die };
   })();
 

@@ -1,6 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
+  "version": "1.0.0",
   "tagline": "Press left or right to lean, take places off nineteen rivals and never break your shield",
   "order": 70,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "Twenty pilots launch onto a bending neon highway and three of them finish. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. Four gates span the road ahead, green while you are inside the rank they ask for and red while you are not; clear one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "20 PILOTS",
+            "line": "Lean to <b>overtake</b>"
+          },
+          {
+            "kicker": "NO REFILL",
+            "line": "Your shield never <b>comes back</b>"
+          },
+          {
+            "kicker": "TOP THREE",
+            "line": "Only <b>three</b> finish"
+          },
+          {
+            "kicker": "1020 M",
+            "line": "One neon <b>highway</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "20 PILOTES",
+            "line": "Penche-toi pour <b>doubler</b>"
+          },
+          {
+            "kicker": "AUCUNE RECHARGE",
+            "line": "Ton bouclier ne <b>revient</b> jamais"
+          },
+          {
+            "kicker": "TOP TROIS",
+            "line": "Seuls <b>trois</b> arrivent"
+          },
+          {
+            "kicker": "1020 M",
+            "line": "Une autoroute <b>néon</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "arcider",
@@ -65,6 +110,47 @@
         "tagline": "<b class=\"w-press\">Presse à gauche ou à droite</b> pour t’incliner, <b class=\"w-pass\">double dix-neuf rivaux</b> et ne casse jamais ton <b class=\"w-shield\">bouclier</b>"
       }
     },
-    "font": "orbitron"
+    "font": "orbitron",
+    "levels": {
+      "objective": {
+        "from": 200,
+        "to": 1300,
+        "step": 25
+      },
+      "copy": {
+        "en": "Reach <b>{n} m</b> before the cells run out",
+        "fr": "Atteins <b>{n} m</b> avant la panne de cellules"
+      },
+      "tune": {
+        "play.speedMin": [
+          400,
+          560
+        ],
+        "play.speedMax": [
+          820,
+          1200
+        ],
+        "play.ramp": [
+          44,
+          22
+        ],
+        "play.forkEvery": [
+          3400,
+          1700
+        ],
+        "play.forkBombs": [
+          1,
+          4
+        ],
+        "play.shieldStart": [
+          100,
+          70
+        ],
+        "play.crashCost": [
+          26,
+          44
+        ]
+      }
+    }
   }
 }

@@ -107,7 +107,7 @@ const manifests = paths
   .filter(Boolean).map((m) => m[1])
   .filter((s) => !only.length || only.includes(s));
 
-const imagesTouched = paths.some((p) => /^assets\/(screen|cover|icon)\//.test(p));
+const imagesTouched = paths.some((p) => /^assets\/image\/(screen|itch|google|icon)\//.test(p));
 const siteTouched = paths.some((p) => p.startsWith('site/'));
 
 /* A game is on itch only once its page exists, and the repo does not know
@@ -147,7 +147,9 @@ if (!where) {
   if (games.length) {
     left.push([
       'if the game LOOKS different, reshoot its images — nothing here can tell:',
-      ...games.map((s) => `    node tools/lab/shoot-screens.mjs ${s} && node tools/lab/shoot-cover.mjs ${s}`),
+      ...games.map((s) => `    node tools/lab/shoot-screens.mjs ${s} && node tools/lab/shoot-store.mjs ${s}`),
+      '  shoot-store rebuilds the listing images out of the fresh captures — the',
+      '  phone gallery, the two desk pictures and the itch cover, in both languages.',
       '  Then upload them on the itch page; there is no API for the gallery.'
     ].join('\n'));
   }

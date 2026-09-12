@@ -1,27 +1,27 @@
 #!/usr/bin/env node
-/* Re-encode the painted artwork of assets/image/ into assets/art/.
+/* Re-encode the painted artwork of assets/image/master/ into assets/image/embed/.
  *
  * WHY THIS EXISTS
  * ---------------
- * `assets/image/` holds the artwork as it came out of the image model: PNG,
+ * `assets/image/master/` holds the artwork as it came out of the image model: PNG,
  * up to 2172px wide, ~2 MB apiece, 121 MB for the thirteen games. None of it
  * can ship. A playable is ONE self-contained HTML file with a 5 MB ceiling and
  * a < 2 MB target, and the games sit at ~1 MB today — a single raw character
  * would double one.
  *
- * So `assets/image/` is the master, never shipped, and this tool writes the
- * shipping cut next to it in `assets/art/`: WebP, sized for the 720x1280
+ * So `assets/image/master/` is the master, never shipped, and this tool writes the
+ * shipping cut next to it in `assets/image/embed/`: WebP, sized for the 720x1280
  * design space, alpha intact. The measured result is ~35 KB per asset, ~270 KB
  * of base64 for a whole game — which is what makes "every game gets painted
  * screens" fit inside the budget at all.
  *
- * WHY IT IS A SEPARATE STEP, AND WHY assets/art/ IS COMMITTED
+ * WHY IT IS A SEPARATE STEP, AND WHY assets/image/embed/ IS COMMITTED
  * -----------------------------------------------------------
  * Encoding needs headless Chrome (see below), which costs a second or two per
  * image — 80 images is a minute and a half. `tools/update.mjs` runs on every
  * change and must stay fast, so the build never encodes: it reads the WebP that
- * is already there. `assets/art/` is therefore committed, exactly like
- * `assets/font/` and `assets/sfx/` are: a shipping-ready input the build
+ * is already there. `assets/image/embed/` is therefore committed, exactly like
+ * `assets/motor/font/` and `assets/audio/sfx/` are: a shipping-ready input the build
  * embeds, not a build output.
  *
  * Run this when the artwork itself changes. Files whose master has not moved
@@ -55,6 +55,12 @@
  *   character-neutral  count the round scored (0-1 / 2 / 3)
  *   character-happy
  *
+ *   decor-NN           the decor pool: small painted objects the shell
+ *                      scatters over the end screen, the round's corners and
+ *                      the web menu's panels. They come out of a sheet with
+ *                      `cut-objects.mjs --adopt 1,4 --as decor`, and no game
+ *                      names one — see packages/shell/shell.js, Decor
+ *
  *   card-*             a court-card illustration a GAME draws itself, out of
  *                      ArtImages — slipdeck's jack, queen and king. Kept near
  *                      the master's resolution because the canvas is sized in
@@ -63,6 +69,13 @@
  * Anything else under `<slug>-<name>.png` is encoded too, with the generic
  * profile, and lands on `CONFIG.art.<camelName>`, ready for whatever asks for
  * it — one more file, no code anywhere.
+ *
+ * ONE NAME IS NOT A ROLE: `<slug>-object-<name>.png` is a SHEET — sixteen
+ * gears on one canvas, as the image model returns them — and it is material to
+ * cut, not artwork to ship. Encoding it would put 2 MB of wall into every
+ * build of that game to draw one gear out of it. It is skipped here and taken
+ * apart by `tools/lab/cut-objects.mjs`, whose adopted cuts come back through
+ * this tool as masters of their own.
  *
  * Usage:
  *   node tools/lab/encode-art.mjs                 # every game, skipping fresh
@@ -77,8 +90,8 @@ import path from "node:path";
 import os from "node:os";
 
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
-var SRC_DIR = path.join(ROOT, "assets", "image");
-var OUT_DIR = path.join(ROOT, "assets", "art");
+var SRC_DIR = path.join(ROOT, "assets", "image", "master");
+var OUT_DIR = path.join(ROOT, "assets", "image", "embed");
 var GAMES_DIR = path.join(ROOT, "games");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
@@ -110,6 +123,15 @@ var PROFILE = {
    close to their master's 650px. */
 var CARDS = { w: 560, h: 700, q: 0.84 };
 
+/* The DECOR POOL: `<slug>-decor-NN.png`, adopted out of a sheet with
+   `cut-objects.mjs --adopt 1,4 --as decor`. These are the small objects the
+   shell scatters over the end screen, the round's corners and the web menu's
+   panels (packages/shell/shell.js, Decor) — a game names none of them, so
+   four or five of them ride in EVERY build of that game and the size is what
+   keeps that affordable. They are shown between 120 and 220 design px and
+   never carry a detail the player reads, so 360px is already generous. */
+var DECOR = { w: 360, h: 360, q: 0.78 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -117,6 +139,7 @@ var GENERIC = { w: 320, h: 400, q: 0.86 };
 function profileFor(role) {
   if (PROFILE[role]) return PROFILE[role];
   if (role.indexOf("card-") === 0) return CARDS;
+  if (role.indexOf("decor") === 0) return DECOR;
   return GENERIC;
 }
 
@@ -130,7 +153,7 @@ for (var i = 0; i < argv.length; i++) {
   else slugs.push(argv[i]);
 }
 
-/* Every master under assets/image/, split into the game it belongs to and the
+/* Every master under assets/image/master/, split into the game it belongs to and the
    role it plays. The slug is matched against games/ rather than parsed off the
    first dash, because a slug never contains one but a role always does
    ("background-phone"), and guessing would break the day a game is called
@@ -154,15 +177,40 @@ function masters(all) {
     if (!slug) { console.log("?     " + file + " — no game of that name, left alone"); return; }
     var role = stem.slice(slug.length + 1);
     if (!role) { console.log("?     " + file + " — no role in the name, left alone"); return; }
+    if (role.indexOf("object-") === 0) {
+      console.log("sheet " + file + " — cut it with tools/lab/cut-objects.mjs, not shipped");
+      return;
+    }
     out.push({
       file: file, slug: slug, role: role,
       src: path.join(SRC_DIR, file),
       out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
       profile: profileFor(role),
-      known: !!PROFILE[role] || role.indexOf("card-") === 0
+      known: !!PROFILE[role] || role.indexOf("card-") === 0 || role.indexOf("decor") === 0
     });
   });
   return out;
+}
+
+/* THE STUDIO MARK — the one cut in this tool that belongs to no game.
+   `site/image/logo.png` is the newrare logo the site already ships, and every
+   game now signs its title screen with it (packages/shell/shell.js, Brand). It
+   needs exactly the treatment the artwork gets — WebP, small, alpha intact —
+   so it rides the same rig, and it lands in `assets/image/brand/` rather than
+   `assets/image/embed/`, which is keyed by slug and read by the builder per game.
+
+   128px for a mark shown at 40 design px: it is drawn at 3x on a phone, and
+   the master is a painted glow ring that goes to mush below that. */
+var BRAND_SRC = path.join(ROOT, "site", "image", "logo.png");
+var BRAND_OUT = path.join(ROOT, "assets", "image", "brand", "newrare.webp");
+
+function brandJob() {
+  if (!fs.existsSync(BRAND_SRC)) return [];
+  return [{
+    file: "logo.png", slug: "newrare", role: "mark",
+    src: BRAND_SRC, out: BRAND_OUT,
+    profile: { w: 112, h: 112, q: 0.74 }, known: true
+  }];
 }
 
 /* A cut is stale when its master is newer than it, which is the only question
@@ -280,11 +328,12 @@ async function encode(client, sid, job) {
 
 // --- run -----------------------------------------------------------------
 async function main() {
-  if (!fs.existsSync(SRC_DIR)) throw new Error("no assets/image/ to read");
+  if (!fs.existsSync(SRC_DIR)) throw new Error("no assets/image/master/ to read");
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   var all = knownSlugs();
-  var jobs = masters(all);
+  var jobs = masters(all).concat(brandJob());
+  fs.mkdirSync(path.dirname(BRAND_OUT), { recursive: true });
   if (slugs.length) {
     var want = {};
     slugs.forEach(function (s) {
@@ -339,7 +388,7 @@ async function main() {
     }
   }
 
-  console.log("\n" + count + " encoded, " + (total / 1024).toFixed(0) + " KB into assets/art/" +
+  console.log("\n" + count + " encoded, " + (total / 1024).toFixed(0) + " KB into assets/image/embed/" +
               (fresh ? ", " + fresh + " left alone" : ""));
   console.log("Now run:  node tools/update.mjs");
 }

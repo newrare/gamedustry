@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Shoot the app icon of every game into assets/icon/auto/.
+/* Shoot the app icon of every game into assets/image/icon/auto/.
  *
  * The artwork lives in lab/icon-card.html: one shared shell (silhouette, rim,
  * gloss) plus one recipe per game, all in CSS. This tool loads that page in
@@ -28,14 +28,14 @@ import os from "node:os";
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var CARD = path.join(ROOT, "lab", "icon-card.html");
 var GAMES_DIR = path.join(ROOT, "games");
-var OUT_DIR = path.join(ROOT, "assets", "icon", "auto");
+var OUT_DIR = path.join(ROOT, "assets", "image", "icon", "auto");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var DESIGN = 1024;                                   // the card's design space
 
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
 var slugs = [];
-var size = 320;                                      // matches assets/icon/thumb
+var size = 320;                                      // matches assets/image/icon/thumb
 var keep = false;
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--size") size = parseInt(argv[++i], 10);

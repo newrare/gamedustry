@@ -1,6 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
+  "version": "1.0.0",
   "tagline": "Bounce through the dark maze to the exit",
   "order": 90,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "An electric labyrinth is powered up for two seconds — the only look you ever get at it. Then everything goes out: the maze, the six mouths along its floor, even the walls of the arena. Fire pulses up into a mouth and the board exists only where one just hit it, arcing white and dying out over a couple of seconds, so you are echolocating a maze you can no longer see. Each mouth is a one-way flap — a pulse pushes through and it drops shut behind — and of the six, one leads to the gate at the top and five are dead ends.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "TWO SECONDS",
+            "line": "Then total <b>darkness</b>"
+          },
+          {
+            "kicker": "ECHO",
+            "line": "Fire a pulse, <b>see</b>"
+          },
+          {
+            "kicker": "SIX MOUTHS",
+            "line": "One way <b>out</b>"
+          },
+          {
+            "kicker": "MEMORY",
+            "line": "Remember the <b>maze</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "DEUX SECONDES",
+            "line": "Puis le noir <b>total</b>"
+          },
+          {
+            "kicker": "ÉCHO",
+            "line": "Tire une impulsion, <b>vois</b>"
+          },
+          {
+            "kicker": "SIX BOUCHES",
+            "line": "Une seule <b>sortie</b>"
+          },
+          {
+            "kicker": "MÉMOIRE",
+            "line": "Souviens-toi du <b>labyrinthe</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "echomaze",
@@ -65,6 +110,43 @@
         "tagline": "<b class=\"w-echo\">Rebondis</b> dans le <b class=\"w-maze\">labyrinthe</b> obscur jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>"
       }
     },
-    "font": "orbitron"
+    "font": "orbitron",
+    "levels": {
+      "objective": {
+        "from": 500,
+        "to": 3500,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> reading the maze",
+        "fr": "Marque <b>{n}</b> en lisant le labyrinthe"
+      },
+      "tune": {
+        "cols": [
+          10,
+          16
+        ],
+        "rows": [
+          7,
+          13
+        ],
+        "startBalls": [
+          8,
+          4
+        ],
+        "ballLife": [
+          14,
+          8
+        ],
+        "revealSeconds": [
+          1.4,
+          0.55
+        ],
+        "bounceJitter": [
+          0.03,
+          0.09
+        ]
+      }
+    }
   }
 }

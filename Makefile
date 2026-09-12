@@ -10,7 +10,9 @@
 #   make itch    re-publish to itch without pushing
 #   make site    assemble dist/site locally
 #   make serve   the dev loop, with reload on save
+#   make store   the store card composer, at http://localhost:8091/
 #   make meta    the itch page copy, one file per game
+#   make android GAME=<slug>   the signed .aab for the Play Console
 #   make ng      zip the 13 for a Newgrounds submission
 #
 # Written for GNU Make 3.81, which is what macOS ships: no .ONESHELL, so every
@@ -18,7 +20,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check push itch site serve meta ng
+.PHONY: help check push itch site serve store meta ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -61,8 +63,28 @@ site:
 serve:
 	node tools/lab/serve-site.mjs
 
+# lab/store-card.html needs a server for two things it cannot do over file://:
+# list what a game owns, and write the image it composed into assets/image/<store>/.
+store:
+	node tools/lab/serve-store.mjs
+
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta
+
+# One game to one .aab. The web build, the Capacitor project and Gradle, in
+# that order — gen-native re-runs the build itself, so this target is the same
+# command whether native/<slug>/ exists or not. It signs only if
+# native/<slug>/android/keystore.properties is there; Gradle says so otherwise
+# rather than producing a bundle Play will refuse.
+#
+# There is no `make play`: the first .aab goes up through the console by hand
+# (supply cannot create an app), and every later one is
+# `cd native/<slug> && fastlane android beta`.
+android:
+	@test -n "$(GAME)" || { echo "usage: make android GAME=<slug>"; exit 1; }
+	node tools/publish/gen-native.mjs $(GAME)
+	cd native/$(GAME)/android && ./gradlew --quiet bundleRelease
+	@ls -l native/$(GAME)/android/app/build/outputs/bundle/release/*.aab
 
 # Newgrounds takes a zip with index.html at its TOP level, so each one is zipped
 # from inside its own folder. The itch destination is already the right build —

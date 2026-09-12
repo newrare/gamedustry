@@ -10,6 +10,7 @@
   Targets:
     playable   the single self-contained games/<slug>/index.html ad networks get
     web        the same game for the newrare site and itch — see --target=web below
+    android    the same web build, for Capacitor to wrap — see --target=android
 
   A game's manifest lists the targets it is meant for; a build for a target the
   manifest does not list is skipped and reported.
@@ -20,7 +21,7 @@
 
   Inputs:
     packages/shell/motor.css        packages/shell/script-open.js
-    packages/engine/engine.js       packages/platform/<mraid|web>.js
+    packages/engine/engine.js       packages/platform/<mraid|web|capacitor>.js
     packages/shell/shell.js         packages/engine/bootstrap.js
     packages/shell/script-close.js
     games/<slug>/page.html          {{MOTOR_CSS}} {{SKIN_CSS}} {{SCRIPT}}
@@ -53,6 +54,17 @@
       cache with, and a single file is the least that can go wrong in their
       sandbox. Push it with tools/publish/deploy-itch.mjs.
 
+  --target=android is that same web build with the third platform adapter —
+  packages/platform/capacitor.js instead of web.js — written to
+  dist/android/<slug>/index.html as one self-contained document. A Capacitor
+  app has nobody to share a cache with either, and the whole bundle is on the
+  device, so the split build buys it nothing. Everything the web target adds
+  travels with it: the menu, the options, the FR/EN switch, the game's typeface
+  and its painted artwork.
+
+    node tools/build/build.mjs --target=android --game=radiam
+    node tools/publish/gen-native.mjs radiam        # → native/radiam/
+
   Iterate on a game with `node tools/lab/serve-site.mjs`: it runs the site build
   and serves it with reload on save, so what you play locally is the web build
   the site ships.
@@ -72,11 +84,16 @@ const target = (argv.find((a) => a.startsWith('--target=')) || '--target=playabl
 const dest = (argv.find((a) => a.startsWith('--dest=')) || '--dest=site').split('=')[1];
 const only = (argv.find((a) => a.startsWith('--game=')) || '').split('=')[1] || null;
 
-const TARGETS = ['playable', 'web'];
+const TARGETS = ['playable', 'web', 'android'];
 if (!TARGETS.includes(target)) {
   console.error(`--target=${target} is not implemented (have: ${TARGETS.join(', ')}). See docs/INDUSTRIALIZATION.md.`);
   process.exit(1);
 }
+
+/* The android target is the web build in a WebView: same menu, same shell,
+   same artwork, one adapter apart. Everything below that asks "is this the web
+   target?" is really asking this. */
+const WEBISH = target === 'web' || target === 'android';
 
 const DESTS = ['site', 'itch'];
 if (!DESTS.includes(dest)) {
@@ -88,13 +105,14 @@ if (dest !== 'site' && target !== 'web') {
   process.exit(1);
 }
 
-// The web build writes under dist/, never over the committed artifacts.
-const DIST_TARGET = target === 'web';
+// The web and android builds write under dist/, never over the committed
+// artifacts: games/<slug>/index.html is the playable and nothing else.
+const DIST_TARGET = WEBISH;
 
 /* The site gets the split build (one shared motor, assets as files); every
    other output is one self-contained document. */
 const SPLIT = target === 'web' && dest === 'site';
-const OUT_DIR = dest === 'itch' ? 'dist/itch' : 'dist/web';
+const OUT_DIR = target === 'android' ? 'dist/android' : dest === 'itch' ? 'dist/itch' : 'dist/web';
 
 const read = (rel) => readFile(path.join(ROOT, rel), 'utf8');
 const readBin = (rel) => readFile(path.join(ROOT, rel));
@@ -148,7 +166,9 @@ function wantsTarget(manifest) {
   a playable talks to MRAID, a web build talks to the page. Same interface, so
   the shell and the bootstrap above and below it never change.
 */
-const PLATFORM = target === 'web' ? 'packages/platform/web.js' : 'packages/platform/mraid.js';
+const PLATFORM = target === 'android' ? 'packages/platform/capacitor.js'
+               : target === 'web' ? 'packages/platform/web.js'
+               : 'packages/platform/mraid.js';
 
 async function loadMotor() {
   const [motorCss, scriptOpen, engine, platform, shell, bootstrap, scriptClose] = await Promise.all([
@@ -164,7 +184,7 @@ async function loadMotor() {
   /* Delta 1 — the desktop dressing rides with the motor stylesheet, before the
      SKIN, so a game can still override any of it. Web target only: a playable
      always fills its ad container, so it has no empty band to dress. */
-  const frame = target === 'web' ? await read('packages/frame-web/frame.css') : '';
+  const frame = WEBISH ? await read('packages/frame-web/frame.css') : '';
 
   return {
     motorCss: frame ? motorCss + '\n' + frame : motorCss,
@@ -185,8 +205,9 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
     CONFIG: CONFIG, ASSETS: ASSETS,
     Store: Store, Sound: Sound, Music: Music, Pop: Pop,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
-    Fit: Fit,
-    start: startGame, setState: setState, onState: onState,
+    Fit: Fit, HUD: HUD, Decor: Decor,
+    start: startGame, setState: setState, onState: onState, onResult: onResult,
+    endRound: endRound,
     state: function () { return State; },
     render: frameRender,
     clearWorld: function () { ctx.clearRect(0, 0, view.w, view.h); }
@@ -202,7 +223,7 @@ function withWebHandle(bootstrap) {
 /*
   THE GAME'S TYPEFACE — web target only.
 
-  A game names one family of assets/font/ in its manifest (`web.font`), and the
+  A game names one family of assets/motor/font/ in its manifest (`web.font`), and the
   builder puts the face in front of its SKIN, so what follows can override any
   of it. Every family in the pack is OFL 1.1 and is EMBEDDED, never fetched:
   base64 in the single-file build, a file next to the other assets in the split
@@ -219,14 +240,14 @@ function withWebHandle(bootstrap) {
 let FONT_PACK = null;
 
 async function fontPack() {
-  if (!FONT_PACK) FONT_PACK = JSON.parse(await read('assets/font/fonts.json'));
+  if (!FONT_PACK) FONT_PACK = JSON.parse(await read('assets/motor/font/fonts.json'));
   return FONT_PACK;
 }
 
 function fontFaceCss(f, src) {
-  return `  /* ---- web target: the game's typeface, from assets/font/${f.file}.
+  return `  /* ---- web target: the game's typeface, from assets/motor/font/${f.file}.
      SIL Open Font License 1.1 — the licence travels in
-     assets/font/${f.licence}. Embedded, never fetched: a game still works
+     assets/motor/font/${f.licence}. Embedded, never fetched: a game still works
      over file:// and inside a sandboxed iframe.
      These are DEFAULTS — they sit before the SKIN, which can override them. ---- */
   @font-face {
@@ -256,8 +277,8 @@ async function gameFont(manifest, mode) {
   if (!key) return { css: '', file: null };
   const pack = await fontPack();
   const f = pack[key];
-  if (!f) throw new Error(`${manifest.slug}: web.font "${key}" is not in assets/font/fonts.json`);
-  const buf = await readBin('assets/font/' + f.file);
+  if (!f) throw new Error(`${manifest.slug}: web.font "${key}" is not in assets/motor/font/fonts.json`);
+  const buf = await readBin('assets/motor/font/' + f.file);
   if (mode === 'file') {
     const name = `${key}.${hash(buf)}.woff2`;
     return { css: fontFaceCss(f, `assets/${name}`), file: { name, buf } };
@@ -268,12 +289,12 @@ async function gameFont(manifest, mode) {
 /*
   THE GAME'S PAINTED ARTWORK — CONFIG.art.
 
-  `assets/art/` holds the shipping cut of the artwork: WebP, sized for the
+  `assets/image/embed/` holds the shipping cut of the artwork: WebP, sized for the
   720x1280 design space, written by `tools/lab/encode-art.mjs` out of the
-  masters in `assets/image/` (which are 2 MB PNGs and ship nowhere). The build
+  masters in `assets/image/master/` (which are 2 MB PNGs and ship nowhere). The build
   reads what is there and embeds it; it never encodes, so it stays fast.
 
-  A FILE NAME IS THE WHOLE DECLARATION. `assets/art/<slug>-<role>.webp` becomes
+  A FILE NAME IS THE WHOLE DECLARATION. `assets/image/embed/<slug>-<role>.webp` becomes
   `CONFIG.art.<camelRole>`, so adding a picture to a game is adding a file and
   nothing else — no manifest key, no ASSETS edit, no list to keep in sync
   thirteen times. The roles the motor knows are documented in encode-art.mjs;
@@ -291,11 +312,15 @@ async function gameFont(manifest, mode) {
   in a fixed ad iframe and would carry 30 KB it can never show — the same
   reason a playable ships no font.
 */
-const ART_DIR = 'assets/art';
+const ART_DIR = 'assets/image/embed';
 const WEB_ONLY_ART = ['background-desk'];
 
+/* `background-phone` → backgroundPhone, and `decor-ball-01` → decorBall01: the
+   digits matter, because a role ending in a number is what the decor pool is
+   made of and `decorBall-01` is not an identifier — it would land in the
+   CONFIG.art literal as a syntax error, not as a missing picture. */
 function camel(role) {
-  return role.replace(/-([a-z])/g, (m, c) => c.toUpperCase());
+  return role.replace(/-([a-z0-9])/g, (m, c) => c.toUpperCase());
 }
 
 async function gameArt(slug, forWeb) {
@@ -317,7 +342,7 @@ async function gameArt(slug, forWeb) {
   }
 
   return `
-  /* ---- the game's painted artwork, from assets/art/${prefix}*.webp.
+  /* ---- the game's painted artwork, from assets/image/embed/${prefix}*.webp.
      Injected by tools/build/build.mjs; re-encode it with
      tools/lab/encode-art.mjs. The shell reads background-phone, title and the
      three character faces; packages/platform/web.js reads background-desk. ---- */
@@ -328,6 +353,61 @@ async function gameArt(slug, forWeb) {
   })(CONFIG.art, {
 ${entries.join(',\n')}
   });
+
+`;
+}
+
+/*
+  THE STUDIO SIGNATURE — CONFIG.brand.
+
+  One mark, one line and one version number, in a discreet vertical rail down
+  the left edge of the title screen (packages/shell/shell.js, Brand). It is the
+  STUDIO's and not the game's, which is why it is injected here rather than
+  written into thirteen sources: `assets/image/brand/newrare.webp` is the shipping
+  cut of the site's own logo, encoded by tools/lab/encode-art.mjs, and every
+  target carries it — a playable signs itself exactly like the web build does.
+
+  The number is the manifest's `version`, and it falls back to
+  `android.versionName` so a game on Play has one place to bump and not two.
+  With neither, the rail keeps the mark and the line and shows no number.
+*/
+const BRAND_MARK = 'assets/image/brand/newrare.webp';
+const BRAND_LABEL = 'Newrare';
+
+async function brandJs(manifest) {
+  if (!existsSync(path.join(ROOT, BRAND_MARK))) return '';
+  const buf = await readBin(BRAND_MARK);
+  const version = (manifest && (manifest.version ||
+                   (manifest.android && manifest.android.versionName))) || '';
+  return `
+  /* ---- the studio signature, from ${BRAND_MARK} and the manifest's
+     version. Injected by tools/build/build.mjs; packages/shell/shell.js draws
+     it down the left edge of the title screen. ---- */
+  CONFIG.brand = {
+    label: ${JSON.stringify(BRAND_LABEL)},
+    version: ${JSON.stringify(version)},
+    mark: "data:image/webp;base64,${buf.toString('base64')}"
+  };
+
+`;
+}
+
+/*
+  The game's own name, handed to the page as CONFIG.slug — web target only.
+
+  It is what makes a key belong to ONE game: the split site build serves the
+  thirteen from one origin, so `Store` scopes "bestScore" with it (see
+  packages/engine/engine.js) and packages/webshell/levels.js scopes the
+  progression it writes under `prog:<slug>`. A playable is alone in its own
+  origin and never needs it.
+*/
+function slugJs(slug) {
+  if (!slug) return '';
+  return `
+  /* ---- web target: the game's own name. Injected by
+     tools/build/build.mjs --target=web; Store and the level map scope their
+     keys with it, so the thirteen do not share one origin's storage. ---- */
+  CONFIG.slug = ${JSON.stringify(slug)};
 
 `;
 }
@@ -531,8 +611,15 @@ async function main() {
   }
 
   // the web target ships a layer of its own; load it once for the run.
-  const web = target === 'web'
-    ? { css: await read('packages/webshell/menu.css'), js: await read('packages/webshell/menu.js') }
+  /* The web layer is two files, and the order is the contract: levels.js
+     publishes window.__LEVELS__, menu.js mounts it. */
+  const web = WEBISH
+    ? {
+        css: await read('packages/webshell/menu.css') + '\n' +
+             await read('packages/webshell/levels.css'),
+        js: await read('packages/webshell/levels.js') + '\n' +
+            await read('packages/webshell/menu.js')
+      }
     : null;
 
   // The split build shares its motor between games, so the folder is rebuilt
@@ -558,19 +645,20 @@ async function main() {
 
     const src = await sourcesOf(unit);
 
-    /* Both of these are appended to the game's own CONFIG/ASSETS half, so they
+    /* All of these are appended to the game's own CONFIG/ASSETS half, so they
        are read by the engine on the same pass as the rest of it, and the split
        build externalizes their assets along with the game's own. The artwork
-       goes to every target (minus the desk background, which is web-only); the
-       manifest's web block only to the web. The template is a build unit with
-       no slug, so it gets neither. */
-    const artCfg = await gameArt(unit.template ? null : unit.name, target === 'web');
-    const webCfg = artCfg + (target === 'web' ? webConfigJs(manifest) : '');
+       and the studio signature go to every target (minus the desk background,
+       which is web-only); the manifest's web block only to the web. The
+       template is a build unit with no slug, so it gets neither of those two. */
+    const artCfg = await gameArt(unit.template ? null : unit.name, WEBISH);
+    const webCfg = artCfg + await brandJs(manifest) +
+      (WEBISH ? slugJs(unit.template ? null : unit.name) + webConfigJs(manifest) : '');
 
     /* The typeface is a web-target default, so it goes in front of the SKIN
        rather than into the shared stylesheet: one family per game, and the
        game keeps the last word on every rule it brings. */
-    const font = target === 'web'
+    const font = WEBISH
       ? await gameFont(manifest, SPLIT ? 'file' : 'inline')
       : { css: '', file: null };
     if (font.css) src.skin = font.css + src.skin;
@@ -624,6 +712,7 @@ async function main() {
   }
   if (DIST_TARGET) {
     if (dest === 'itch') console.log(`\nPush one with:  node tools/publish/deploy-itch.mjs --game=<slug>`);
+    if (target === 'android') console.log(`\nWrap one with:  node tools/publish/gen-native.mjs <slug>`);
     return;
   }
 

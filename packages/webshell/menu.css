@@ -9,7 +9,7 @@
   The shape it gives the intro, and the reason for each piece:
 
     the game's own backdrop         the painted background it already embeds
-                                    (ASSETS.images.bg, out of assets/image/),
+                                    (ASSETS.images.bg, out of assets/image/master/),
                                     or the gradient its SKIN paints the game
                                     view with when it ships no picture
     the title, breathing            top third, centred, wrapped in a node of
@@ -20,7 +20,9 @@
                                     stays visible on the left
     the panels, in that same band   LEADERBOARD / OPTIONS / HELP replace the
                                     menu without leaving the screen: same
-                                    title, same scene, a back arrow to return
+                                    title, same scene, a back arrow to return,
+                                    and one or two of the game's own objects
+                                    around the card (motor.css, `.decor-layer`)
 
   …and the round gets the two controls a finished game owes the player, MENU and
   OPTIONS, in the bottom-right corner — the HUD stays the game's, all of it —
@@ -54,7 +56,7 @@
 }
 #web-bg.flat { background-size:auto; }
 
-/* The motor's painted layer, when the game has one (`assets/art/<slug>-
+/* The motor's painted layer, when the game has one (`assets/image/embed/<slug>-
    background-phone.webp` — nearly always, and then #web-bg above is removed
    outright). Two things change for the menu, and only on the intro:
 
@@ -131,7 +133,7 @@
 }
 
 /* ---- the menu ---------------------------------------------------------- */
-/* `--web-font` and `--web-fw` come from the game's `web.font` (assets/font/,
+/* `--web-font` and `--web-fw` come from the game's `web.font` (assets/motor/font/,
    embedded by the builder in front of the SKIN). Both carry a fallback, so a
    game that names no family reads exactly as before. `--web-fw` is the weight
    to ask for: 800 from a variable family, 400 from a single-weight one, which
@@ -183,13 +185,20 @@
 /* =========================================================================
    THE PANELS — leaderboard / options / help, in the menu's own band
    ========================================================================= */
-#web-panel { display:none; flex-direction:column; }
+/* `position:relative` is what the decor hangs off: the motor's Decor module
+   scatters one or two of the game's own objects around the card, in the
+   panel's own box, and a piece is positioned against THIS node rather than
+   against the frame (see packages/shell/shell.js). The two blocks below then
+   take an explicit depth, because a positioned layer would otherwise paint
+   over static siblings whatever its z-index says. */
+#web-panel { display:none; flex-direction:column; position:relative; }
 #web-panel.on { display:flex; animation:web-panel-in .22s ease both; }
 @keyframes web-panel-in {
   from { opacity:0; transform:translateY(14px); }
   to   { opacity:1; transform:translateY(0); }
 }
 
+.web-phead, .web-pbody { position:relative; z-index:1; }
 .web-phead { display:flex; align-items:center; gap:18px; margin-bottom:16px; }
 .web-back {
   flex:0 0 auto; width:64px; height:64px; border-radius:50%; cursor:pointer;
@@ -348,7 +357,7 @@
   -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
 }
 #web-pause.on { display:flex; animation:web-panel-in .2s ease both; }
-.web-pcard { width:100%; }
+.web-pcard { width:100%; position:relative; }
 
 .web-actions { display:flex; gap:16px; margin:18px 0 6px; }
 .web-btn {

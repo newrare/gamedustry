@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — store card</title>
+<style>
+/* ===========================================================================
+   STORE CARD — the listing images a store asks for, composed by hand out of
+   the pieces a game already owns.
+
+   THE MODEL IS THREE LAYERS, and the whole page is that idea:
+
+     1  the ground      one picture — a real frame of play, or the game's
+                        painted landscape — plus the scrim cut over it.
+     2  the elements    the game's own objects, its character, its logotype,
+                        a screenshot in a phone frame. Dragged out of the
+                        palette and DROPPED where they belong: moved, turned,
+                        resized and deleted with the handles on the selection.
+     3  the taglines    one punchline out of the manifest (or typed here), in
+                        one of five styles, set in the game's own typeface.
+
+   Nothing is placed for you, because nothing here is generic: a card whose
+   character stands where the board is empty is worth three cards laid out by
+   a rule. What IS automated is repeating a good one — see THE GRID below.
+
+   Three formats, authored at the size the repo already thinks in:
+
+     phone   720x1280 authored, shipped 1080x1920 — the Play phone slot and
+             the itch screenshots.
+     desk    1280x720 authored, shipped 1920x1080 — the Play tablet slot and
+             the desktop picture.
+     thumb   630x500 — the itch cover, shown down to 315x250 in a grid.
+
+   THE GRID is what makes thirteen listings one family. Snapping is on by
+   default, and a composition is saved as a LAYOUT (`lab/store-presets.json`,
+   keyed `<slug>/<format>`). Save one as the TEMPLATE for its format and every
+   game that has no layout of its own opens on it — because an element refers
+   to its asset BY ROLE AND INDEX ("the second decor", "the happy face", "the
+   third screenshot"), never by file name, so the same composition resolves
+   against whichever game is loaded. Design once, walk the thirteen, adjust.
+
+   SAVE writes the image itself, at shipped size, into the store the format
+   belongs to — assets/image/google/<lang>/ for the phone and desk pictures,
+   assets/image/itch/<lang>/ for the 630x500 cover —
+   the folder the store upload reads. That needs the small local server, which
+   is also what lists the palettes:
+
+     node tools/lab/serve-store.mjs      →  http://localhost:8091/
+
+   Opened over file:// the page still composes and previews (that is how
+   tools/lab/shoot-store.mjs drives it for the batch shoot), but the palettes
+   are guessed rather than read, and Save is off: a canvas that drew a file://
+   image is tainted and cannot be exported at all.
+
+   It is a lab page: it never ships, and it is allowed to read ../assets/ by
+   relative path.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   THE TWO COLUMNS — sources on the left, the composition on the right. The
+   stage is in the middle and takes whatever is left.
+   --------------------------------------------------------------------------- */
+.col {
+  flex:0 0 296px;
+  padding:16px 14px 60px;
+  background:#12121c;
+  overflow-y:auto;
+  max-height:100vh;
+}
+.col.left { border-right:1px solid #23233a; }
+.col.right { border-left:1px solid #23233a; flex-basis:276px; }
+
+h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+p.hint { margin:6px 0 16px; font-weight:500; font-size:11px; line-height:1.45; color:#8b8ba7; }
+p.hint code { color:#b9b9d8; }
+p.hint.offline {
+  padding:8px 10px; border:1px solid #5a2c34; border-radius:6px;
+  background:#2a1419; color:#ffc4c4;
+}
+p.hint.offline b, p.hint.offline code { color:#fff; }
+
+h2 {
+  margin:20px 0 8px; padding-top:14px;
+  border-top:1px solid #23233a;
+  font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:#7ea6ff;
+}
+h2:first-of-type { border-top:0; padding-top:0; }
+h2 span { color:#4d4d6b; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; font-size:11px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row select, .row input[type=text], .row textarea {
+  width:100%; margin-top:5px; padding:5px 7px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-size:12px;
+}
+.row textarea { resize:vertical; min-height:44px; font-weight:500; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.two { display:flex; gap:8px; }
+.two > * { flex:1; min-width:0; }
+
+.seg { display:flex; margin-top:5px; border:1px solid #2c2c47; border-radius:6px; overflow:hidden; }
+.seg button {
+  flex:1; padding:5px 0; border:0; background:#0b0b12; color:#9c9cba;
+  font:inherit; font-size:11px; cursor:pointer; white-space:nowrap;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+
+button.act {
+  width:100%; margin-top:6px; padding:7px 8px;
+  background:#1b1b2b; color:#cfcfe8; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-size:11px; cursor:pointer;
+}
+button.act:hover { background:#24243a; }
+button.act.go { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; font-weight:700; }
+button.act.go:hover { background:#96b7ff; }
+button.act:disabled { opacity:.4; cursor:not-allowed; }
+button.act.warn { color:#ffb4b4; }
+
+/* ---------------------------------------------------------------------------
+   THE PALETTES — every thumbnail is a file on disk, and it is dragged onto the
+   card. Clicking one drops it in the middle instead, which is faster when the
+   card is scrolled out of reach.
+   --------------------------------------------------------------------------- */
+/* The ground is one picture out of many, so its palette is a reel rather than
+   a wall: a single row that scrolls, with an arrow at each end. */
+.strip { display:flex; align-items:center; gap:4px; margin-top:6px; }
+.strip button.go {
+  flex:0 0 20px; height:58px; padding:0;
+  background:#0b0b12; color:#9c9cba; border:1px solid #2c2c47; border-radius:6px;
+  font:700 13px/1 -apple-system,sans-serif; cursor:pointer;
+}
+.strip button.go:hover { color:#fff; border-color:#7ea6ff; }
+.strip .reel {
+  flex:1; min-width:0;
+  display:flex; gap:5px; overflow-x:auto; scroll-behavior:smooth;
+  scrollbar-width:none;
+}
+.strip .reel::-webkit-scrollbar { display:none; }
+.strip .reel .thumb { flex:0 0 auto; }
+
+/* A section that folds. The header carries the chevron and the block under it
+   is hidden with the same class, so one click toggles both. */
+.fold { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+.fold i { margin-left:auto; font-style:normal; font-size:13px; color:#4d4d6b; transition:transform .12s; }
+.fold.shut i { transform:rotate(-90deg); }
+.fold:hover i { color:#9c9cba; }
+h3.fold {
+  margin:12px 0 2px; padding-top:10px;
+  border-top:1px solid #23233a;
+  font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#8b8ba7;
+}
+.shut + .foldee, .foldee.shut { display:none; }
+
+.pal { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.pal .thumb, .strip .thumb {
+  position:relative;
+  width:58px; height:58px;
+  display:flex; align-items:center; justify-content:center;
+  background:#07070e; border:1px solid #2c2c47; border-radius:6px;
+  cursor:grab; overflow:hidden;
+}
+.pal .thumb:hover, .strip .thumb:hover { border-color:#7ea6ff; }
+.pal .thumb img, .strip .thumb img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:none; }
+.pal .thumb i, .strip .thumb i {
+  position:absolute; right:2px; bottom:1px;
+  font:700 9px/1 -apple-system,sans-serif; font-style:normal;
+  color:#cfcfe8; text-shadow:0 1px 3px #000;
+}
+.pal .thumb.wide, .strip .thumb.wide { width:92px; }
+.pal .thumb.on, .strip .thumb.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+
+/* ---------------------------------------------------------------------------
+   THE LAYER LIST — the composition, top of the card first, which is the order
+   a designer thinks in and the reverse of the order it is drawn in.
+   --------------------------------------------------------------------------- */
+#layers { margin-top:6px; }
+.lay {
+  display:flex; align-items:center; gap:6px;
+  padding:4px 6px; margin-bottom:3px;
+  background:#0b0b12; border:1px solid #23233a; border-radius:6px;
+  font-size:11px; color:#b9b9d8; cursor:pointer;
+}
+.lay.on { border-color:#7ea6ff; color:#fff; }
+.lay img { width:22px; height:22px; object-fit:contain; }
+.lay span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lay b { font-weight:700; color:#6d6d8d; }
+.lay button {
+  padding:1px 4px; background:transparent; border:0; color:#6d6d8d;
+  font:inherit; font-size:12px; cursor:pointer;
+}
+.lay button:hover { color:#fff; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the card at its real size, scaled down to fit the window. Nothing
+   about the preview reaches the export: it is drawn again, at shipped size.
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:18px;
+}
+#wrap { position:relative; box-shadow:0 26px 70px rgba(0,0,0,.6); }
+#card { display:block; touch-action:none; cursor:default; }
+#card.dragover { outline:2px dashed #7ea6ff; outline-offset:-6px; }
+#meta { font-size:11px; color:#8b8ba7; text-align:center; }
+#meta b { color:#cfcfe8; }
+kbd {
+  padding:1px 4px; border:1px solid #2c2c47; border-radius:4px;
+  background:#12121c; font:600 10px/1.4 ui-monospace,monospace; color:#9c9cba;
+}
+.miss { margin-top:10px; font-weight:500; font-size:11px; line-height:1.45; color:#ffb4b4; }
+.ok { margin-top:10px; font-weight:500; font-size:11px; line-height:1.45; color:#8ce9b0; }
+.miss:empty, .ok:empty { display:none; }
+
+/* The shoot (tools/lab/shoot-store.mjs) wants the card alone, at its authored
+   size, with nothing of the tool around it. */
+body.shoot { display:block; background:transparent; overflow:visible; }
+body.shoot .col, body.shoot #meta { display:none; }
+body.shoot #stage { padding:0; gap:0; display:block; }
+body.shoot #wrap { box-shadow:none; }
+</style>
+</head>
+<body>
+
+<div class="col left">
+  <h1>Store card</h1>
+  <p class="hint" id="mode-hint"></p>
+
+  <div class="row">
+    <label>Game <b id="v-slug">—</b></label>
+    <select id="slug"></select>
+  </div>
+  <div class="row">
+    <label>Format</label>
+    <div class="seg" id="seg-format">
+      <button data-v="phone">phone</button>
+      <button data-v="desk">desk</button>
+      <button data-v="thumb">thumb</button>
+    </div>
+  </div>
+  <h2>1 · Ground <span>the layer under everything</span></h2>
+  <div class="strip">
+    <button class="go" data-d="-1" id="bg-prev">‹</button>
+    <div class="reel" id="pal-bg"></div>
+    <button class="go" data-d="1" id="bg-next">›</button>
+  </div>
+
+  <h2>2 · Elements <span>drag onto the card</span></h2>
+  <div class="seg" id="seg-pal">
+    <button data-v="object">objects</button>
+    <button data-v="face">faces</button>
+    <button data-v="screen">screens</button>
+  </div>
+  <div class="pal" id="pal-el"></div>
+
+  <h2>3 · Tagline <span>the style is on the right</span></h2>
+  <div class="row">
+    <label>Language</label>
+    <div class="seg" id="seg-lang">
+      <button data-v="en">EN</button>
+      <button data-v="fr">FR</button>
+    </div>
+  </div>
+  <button class="act" id="add-text">Add a tagline</button>
+</div>
+
+<div id="stage">
+  <div id="wrap"><canvas id="card"></canvas></div>
+  <div id="meta"></div>
+</div>
+
+<div class="col right">
+  <h2>Layers</h2>
+  <div id="layers"></div>
+
+  <h2>Selection</h2>
+  <div id="inspect"><p class="hint">Nothing selected. Click a piece on the card,
+    drag it to move, turn it with the top handle, resize it with the corner one,
+    <kbd>⌫</kbd> deletes, <kbd>D</kbd> duplicates.</p></div>
+
+  <h2 class="fold shut" id="h-grid">The grid <span>magnetic</span><i>⌄</i></h2>
+  <div class="foldee" id="fold-grid">
+    <div class="row">
+      <div class="seg" id="seg-grid">
+        <button data-v="1">snap on</button>
+        <button data-v="0">free</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Grid step <b id="v-step">50</b></label>
+      <input id="step" type="range" min="10" max="100" step="10" value="50">
+    </div>
+  </div>
+
+  <h2>Template <span>the composition itself</span></h2>
+  <button class="act" id="save-layout">Save layout</button>
+  <button class="act" id="save-template">Save template</button>
+
+  <h2>Save the image</h2>
+  <div class="row">
+    <label>File name <b id="v-ext">.jpg</b></label>
+    <input id="name" type="text">
+  </div>
+  <div class="row">
+    <div class="seg" id="seg-ext">
+      <button data-v="jpg">JPEG</button>
+      <button data-v="png">PNG</button>
+    </div>
+  </div>
+  <div class="two">
+    <button class="act go" id="save">Save <span id="v-lang">en</span></button>
+    <button class="act go" id="save-all">Save for all games</button>
+  </div>
+  <p class="hint" id="save-where"></p>
+  <p class="ok" id="said"></p>
+  <p class="miss" id="miss"></p>
+</div>
+
+<script>
+/* ===========================================================================
+   1. WHAT THE PAGE IS RUNNING AGAINST
+   =========================================================================== */
+
+var q = new URLSearchParams(location.search);
+var SHOOT = !!q.get("shoot");
+if (SHOOT) document.body.classList.add("shoot");
+
+/* The server (tools/lab/serve-store.mjs) lists the assets and takes the saves.
+   Over file:// neither is possible, so the palettes are guessed and Save is
+   off — see the header comment. */
+var SERVED = location.protocol === "http:" || location.protocol === "https:";
+var BASE = SERVED ? "/assets/" : "../assets/";
+
+var FORMATS = {
+  phone: { w: 720,  h: 1280, out: [1080, 1920], says: "the Play phone slot and the itch screenshots" },
+  desk:  { w: 1280, h: 720,  out: [1920, 1080], says: "the Play tablet slot and the desktop picture" },
+  thumb: { w: 630,  h: 500,  out: [630, 500],   says: "the itch cover, shown down to 315 × 250" }
+};
+
+/* The fallback tables: what the server would have said, for the file:// path.
+   A value read off the disk always wins over these. */
+var FALLBACK_GAMES = {
+  arcider:   { font:"orbitron",  accent:"#35e8ff", sheets:["race"] },
+  blight:    { font:"baloo2",    accent:"#ff8fab", sheets:["ball"] },
+  bouncetry: { font:"bungee",    accent:"#ff3b57", sheets:["ball","brick"] },
+  chainring: { font:"exo2",      accent:"#4bf5ff", sheets:["ring"] },
+  echomaze:  { font:"orbitron",  accent:"#7ef9ff", sheets:["ball","electrical","bolt"] },
+  gearball:  { font:"russoone",  accent:"#7ef9ff", sheets:["gear"] },
+  marshmelt: { font:"baloo2",    accent:"#ff9d2e", sheets:["rock"] },
+  orbinity:  { font:"exo2",      accent:"#7cf5ff", sheets:["planet"] },
+  radiam:    { font:"russoone",  accent:"#35e0ff", sheets:["ball","gear"] },
+  slipdeck:  { font:"bebasneue", accent:"#f5c451", sheets:["card"] },
+  spinshock: { font:"bungee",    accent:"#40ecff", sheets:["spin"] },
+  triverse:  { font:"orbitron",  accent:"#3ce0ff", sheets:["arrow"] },
+  vipera:    { font:"baloo2",    accent:"#4dff9b", sheets:["jungle"] }
+};
+
+var FALLBACK_FONTS = {
+  orbitron:  { family:"Orbitron",   file:"orbitron.woff2",  heavy:800, stack:'"Arial Black",sans-serif' },
+  exo2:      { family:"Exo 2",      file:"exo2.woff2",      heavy:800, stack:'-apple-system,sans-serif' },
+  baloo2:    { family:"Baloo 2",    file:"baloo2.woff2",    heavy:800, stack:'ui-rounded,sans-serif' },
+  bungee:    { family:"Bungee",     file:"bungee.woff2",    heavy:400, stack:'Impact,sans-serif' },
+  bebasneue: { family:"Bebas Neue", file:"bebasneue.woff2", heavy:400, stack:'"Arial Narrow",sans-serif' },
+  russoone:  { family:"Russo One",  file:"russoone.woff2",  heavy:400, stack:'"Arial Black",sans-serif' }
+};
+
+var CAT = { games: {}, fonts: FALLBACK_FONTS, presets: { presets: {} } };
+
+/* ===========================================================================
+   2. THE STATE
+
+   `comp` is the whole composition and the only thing that is saved: a ground
+   and a list of items, in draw order. Every reference into the game's assets
+   is a ROLE and an INDEX, never a file name — which is what lets one layout be
+   applied to a game that owns different files. Resolution is modulo the pool,
+   so a game with two decors and a layout that asks for the fifth still draws
+   something.
+   =========================================================================== */
+
+var state = {
+  slug:   q.get("slug") || "radiam",
+  format: q.get("format") || "phone",
+  lang:   q.get("lang") === "fr" ? "fr" : "en",
+  pal:    "object",
+  ext:    "jpg",
+  grid:   { on: true, step: 50 },
+  sel:    null,
+  openXY: false,
+  zoom:   1,
+  comp:   null
+};
+
+function fmt() { return FORMATS[state.format]; }
+function game() { return CAT.games[state.slug] || {}; }
+function accent() { return game().accent || "#35e0ff"; }
+function accent2() { return game().accent2 || accent(); }
+
+function blankComp() {
+  return {
+    ground: { kind: "screen", ref: 0, bright: 100, scrim: "both", scrimK: 100 },
+    items: []
+  };
+}
+
+var nextId = 1;
+function uid() { return "i" + (nextId++); }
+
+/* ===========================================================================
+   3. THE ASSETS — one cache, one resolver.
+
+   A pool is whatever the game owns, sorted: `screens` are the captures,
+   `decor` the adopted objects, `cuts.<sheet>` the raw object cuts, `art` every
+   painted piece. An item's `ref` indexes into one of them.
+   =========================================================================== */
+
+var IMG = {};                          // url → Image
+var pending = 0;
+
+function load(url) {
+  if (IMG[url]) return IMG[url];
+  var img = new Image();
+  img.__ok = 0;
+  pending++;
+  img.onload = function () { img.__ok = 1; pending--; invalidate(); };
+  img.onerror = function () { img.__ok = -1; pending--; note(url.split("/").pop()); invalidate(); };
+  img.src = url;
+  IMG[url] = img;
+  return img;
+}
+
+function pool(kind) {
+  var g = game();
+  if (kind === "screen") return (g.screens || []).map(function (n) { return BASE + "image/screen/" + state.slug + "-" + n + ".jpg"; });
+  if (kind === "decor") return (g.art || []).filter(function (r) { return r.indexOf("decor") === 0; })
+    .map(function (r) { return BASE + "image/embed/" + state.slug + "-" + r + ".webp"; });
+  if (kind === "face") return ["happy", "neutral", "sad"].filter(function (f) {
+    return (g.art || []).indexOf("character-" + f) >= 0;
+  }).map(function (f) { return BASE + "image/embed/" + state.slug + "-character-" + f + ".webp"; });
+  if (kind === "art") return (g.art || []).map(function (r) { return BASE + "image/embed/" + state.slug + "-" + r + ".webp"; });
+  return [];
+}
+
+function cutPool(sheet) {
+  var cuts = (game().cuts || {});
+  var names = Object.keys(cuts);
+  var use = cuts[sheet] ? sheet : names[0];
+  return (cuts[use] || []).map(function (f) { return BASE + "image/object/" + f; });
+}
+
+/* An item's picture. `ref` is an index (or a sheet + index for a raw cut), and
+   the modulo is the whole point: the same layout on another game lands on that
+   game's pieces instead of on nothing. */
+function urlOf(it) {
+  var list;
+  if (it.kind === "cut") list = cutPool(it.sheet);
+  else if (it.kind === "logo") return BASE + "image/embed/" + state.slug + "-title.webp";
+  else if (it.kind === "art") return BASE + "image/embed/" + state.slug + "-" + it.role + ".webp";
+  else list = pool(it.kind === "face" ? "face" : it.kind === "screen" ? "screen" : "decor");
+  if (!list.length) return null;
+  return list[((it.ref | 0) % list.length + list.length) % list.length];
+}
+
+function groundUrl() {
+  var gr = state.comp.ground;
+  if (gr.kind === "flat") return null;
+  if (gr.kind === "art") return BASE + "image/embed/" + state.slug + "-" + gr.role + ".webp";
+  var list = pool("screen");
+  if (!list.length) return null;
+  return list[((gr.ref | 0) % list.length + list.length) % list.length];
+}
+
+function imgOf(url) { return url ? load(url) : null; }
+function ready(img) { return img && img.__ok === 1; }
+
+/* ===========================================================================
+   4. THE TYPEFACE
+
+   Each family is registered under its own canvas family name, once. A card set
+   in the fallback stack and a card set in the game's own face are two different
+   widths, so every measurement waits on the load.
+   =========================================================================== */
+
+var faceLoaded = {};
+var faceReady = Promise.resolve();
+
+function faceName(key) { return "LabFace-" + key; }
+
+function useFont(key) {
+  var f = CAT.fonts[key] || FALLBACK_FONTS[key] || FALLBACK_FONTS.exo2;
+  if (faceLoaded[key]) { faceReady = faceLoaded[key]; return; }
+  var ff = new FontFace(faceName(key), 'url("' + BASE + "motor/font/" + f.file + '")');
+  document.fonts.add(ff);
+  faceLoaded[key] = ff.load().then(invalidate).catch(function () {});
+  faceReady = faceLoaded[key];
+}
+
+function fontStack() {
+  var key = game().font || "exo2";
+  var f = CAT.fonts[key] || FALLBACK_FONTS[key] || FALLBACK_FONTS.exo2;
+  return { name: '"' + faceName(key) + '",' + (f.stack || "sans-serif"), heavy: f.heavy || 700 };
+}
+
+/* ===========================================================================
+   5. THE TAGLINE — five styles, one layout engine.
+
+   The text is the manifest's, with one word in <b>. Everything is laid out in
+   authored px around the item's centre, so a tagline moves, turns and resizes
+   like any other piece.
+   =========================================================================== */
+
+var STYLES = {
+  hero:   { label: "Hero",   about: "kicker, big line, accent rule — the default", caps: 1, rule: 1 },
+  banner: { label: "Banner", about: "the line on a bar of the game's accent",      caps: 1, bar: 1 },
+  plate:  { label: "Plate",  about: "a dark plate with an accent edge",            caps: 1, plate: 1 },
+  outline:{ label: "Outline",about: "heavy white, hard outline, no furniture",     caps: 1, stroke: 1 },
+  ribbon: { label: "Ribbon", about: "the kicker on a pill above the line",         caps: 1, pill: 1 }
+};
+
+/* Only <b> survives. The copy comes out of a manifest, which is the repo's own
+   file, but a listing image is not the place to discover a stray tag. */
+function runsOf(text) {
+  var out = [];
+  String(text || "").split(/(<b>|<\/b>)/i).reduce(function (bold, chunk) {
+    if (/^<b>$/i.test(chunk)) return true;
+    if (/^<\/b>$/i.test(chunk)) return false;
+    if (chunk) out.push({ t: chunk.replace(/<[^>]*>/g, ""), b: bold });
+    return bold;
+  }, false);
+  return out;
+}
+
+/* The text an item shows: a line of the manifest's copy, or what was typed
+   here. The copy index is kept rather than the string, so switching the
+   language rewrites the card instead of stranding it in one. */
+function textOf(it) {
+  if (it.src === "free") return { line: it.line || "", kicker: it.kicker || "" };
+  var lines = ((game().copy || {})[state.lang]) || [];
+  if (!lines.length) return { line: it.line || "TAGLINE", kicker: it.kicker || "" };
+  var l = lines[((it.ref | 0) % lines.length + lines.length) % lines.length];
+  return { line: l.line, kicker: l.kicker };
+}
+
+function setFont(g, size, weight, stack) { g.font = weight + " " + size + "px " + stack; }
+
+/* Wrap the runs to `maxW`, keeping the bold spans. Words carry their own run
+   flag, so "<b>one</b> ring" breaks like any other sentence. */
+function wrapRuns(g, runs, maxW) {
+  var words = [];
+  runs.forEach(function (r) {
+    r.t.split(/(\s+)/).forEach(function (w) { if (w !== "") words.push({ t: w, b: r.b }); });
+  });
+  var lines = [], cur = [], curW = 0;
+  words.forEach(function (w) {
+    var ww = g.measureText(w.t).width;
+    if (/^\s+$/.test(w.t)) { if (cur.length) { cur.push(w); curW += ww; } return; }
+    if (cur.length && curW + ww > maxW) { lines.push(trimLine(cur)); cur = []; curW = 0; }
+    cur.push(w); curW += ww;
+  });
+  if (cur.length) lines.push(trimLine(cur));
+  return lines.map(function (parts) {
+    var w = 0;
+    parts.forEach(function (p) { w += g.measureText(p.t).width; });
+    return { parts: parts, w: w };
+  });
+  function trimLine(a) { while (a.length && /^\s+$/.test(a[a.length - 1].t)) a.pop(); return a; }
+}
+
+/* The block: kicker, the wrapped line, the furniture its style asks for. It is
+   measured before it is drawn, because every piece on this card is positioned
+   by its centre. `letterSpacing` on a 2D context is Chrome-only and this is a
+   lab page — it is what makes a kicker read as a kicker. */
+function layoutText(g, it) {
+  var st = STYLES[it.style] || STYLES.hero;
+  var f = fontStack();
+  var t = textOf(it);
+  var line = st.caps ? (t.line || "").toUpperCase() : (t.line || "");
+  var kick = st.caps ? (t.kicker || "").toUpperCase() : (t.kicker || "");
+  var size = it.size;
+  var boxW = it.w;
+  var lines;
+
+  /* Shrink until the line fits the box in at most two rows: a punchline is
+     written per game and per language and no fixed size survives both. Past
+     58% of the asked size it is not a punchline any more and should be
+     rewritten rather than shrunk. */
+  var floor = Math.max(12, Math.round(it.size * 0.58));
+  for (;;) {
+    g.letterSpacing = "0px";
+    setFont(g, size, f.heavy, f.name);
+    lines = wrapRuns(g, runsOf(line), boxW);
+    var widest = lines.reduce(function (m, l) { return Math.max(m, l.w); }, 0);
+    if ((lines.length <= 2 && widest <= boxW) || size <= floor) break;
+    size -= 2;
+  }
+
+  var lineH = size * 1.04;
+  var kickSize = Math.max(10, Math.round(size * 0.30));
+  var kickH = kick ? kickSize * 1.5 : 0;
+  var ruleH = st.rule ? Math.max(4, size * 0.10) + size * 0.22 : 0;
+  var w = lines.reduce(function (m, l) { return Math.max(m, l.w); }, 0);
+  if (kick) {
+    g.letterSpacing = Math.round(kickSize * 0.14) + "px";
+    setFont(g, kickSize, 700, f.name);
+    w = Math.max(w, g.measureText(kick).width);
+    g.letterSpacing = "0px";
+  }
+  var h = kickH + lines.length * lineH + ruleH;
+  var padX = st.plate ? size * 0.42 : st.bar ? size * 0.34 : 0;
+  var padY = st.plate ? size * 0.34 : st.bar ? size * 0.16 : 0;
+
+  return {
+    size: size, lines: lines, kick: kick, kickSize: kickSize, kickH: kickH,
+    lineH: lineH, ruleH: ruleH, w: w + padX * 2, h: h + padY * 2,
+    padX: padX, padY: padY, st: st, f: f
+  };
+}
+
+function drawRuns(g, parts, x, y, acc, stroke) {
+  parts.forEach(function (p) {
+    var w = g.measureText(p.t).width;
+    if (p.b) {
+      g.save();
+      g.fillStyle = acc;
+      g.shadowColor = acc; g.shadowBlur = 26;
+      if (stroke) { g.strokeText(p.t, x, y); }
+      g.fillText(p.t, x, y);
+      g.restore();
+    } else {
+      if (stroke) g.strokeText(p.t, x, y);
+      g.fillText(p.t, x, y);
+    }
+    x += w;
+  });
+}
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+/* Draw the block centred on (0,0) — the caller has already translated and
+   rotated into the item's own space. */
+function drawText(g, it, L) {
+  var acc = accent(), acc2 = accent2();
+  var st = L.st, f = L.f;
+  var w = L.w, h = L.h;
+  var x0 = -w / 2, y0 = -h / 2;
+  var innerW = w - L.padX * 2;
+
+  if (st.bar) {
+    var grad = g.createLinearGradient(x0, 0, x0 + w, 0);
+    grad.addColorStop(0, acc); grad.addColorStop(1, acc2);
+    g.fillStyle = grad;
+    g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 26; g.shadowOffsetY = 10;
+    roundRect(g, x0, y0, w, h, Math.min(h * 0.18, 18));
+    g.fill();
+    g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  }
+  if (st.plate) {
+    g.fillStyle = "rgba(6,6,14,.82)";
+    g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 30; g.shadowOffsetY = 12;
+    roundRect(g, x0, y0, w, h, Math.min(h * 0.16, 20));
+    g.fill();
+    g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetY = 0;
+    g.fillStyle = acc;
+    roundRect(g, x0, y0, Math.max(5, L.size * 0.11), h, 4);
+    g.fill();
+  }
+
+  var x = it.align === "center" ? 0 : it.align === "right" ? x0 + w - L.padX : x0 + L.padX;
+  g.textAlign = "left";
+  g.textBaseline = "top";
+  var y = y0 + L.padY;
+
+  if (L.kick) {
+    g.letterSpacing = Math.round(L.kickSize * 0.14) + "px";
+    setFont(g, L.kickSize, 700, f.name);
+    var kw = g.measureText(L.kick).width;
+    var kx = it.align === "center" ? -kw / 2 : it.align === "right" ? x - kw : x;
+    if (st.pill) {
+      g.fillStyle = acc;
+      roundRect(g, kx - L.kickSize * 0.5, y - L.kickSize * 0.22,
+        kw + L.kickSize, L.kickSize * 1.5, L.kickSize);
+      g.fill();
+      g.fillStyle = "#08080f";
+    } else {
+      g.fillStyle = st.bar ? "rgba(8,8,16,.72)" : acc;
+      g.shadowColor = "rgba(0,0,0,.8)"; g.shadowBlur = 12;
+    }
+    g.fillText(L.kick, kx, y);
+    g.shadowColor = "transparent"; g.shadowBlur = 0;
+    g.letterSpacing = "0px";
+    y += L.kickH;
+  }
+
+  setFont(g, L.size, f.heavy, f.name);
+  g.fillStyle = st.bar ? "#08080f" : "#fff";
+  if (st.stroke) {
+    g.lineWidth = Math.max(3, L.size * 0.085);
+    g.lineJoin = "round";
+    g.strokeStyle = "rgba(6,6,14,.92)";
+  }
+  g.shadowColor = st.bar || st.plate ? "transparent" : "rgba(0,0,0,.75)";
+  g.shadowBlur = st.bar || st.plate ? 0 : 22;
+  g.shadowOffsetY = st.bar || st.plate ? 0 : 6;
+  L.lines.forEach(function (l) {
+    var lx = it.align === "center" ? -l.w / 2 : it.align === "right" ? x - l.w : x;
+    drawRuns(g, l.parts, lx, y, st.bar ? "#08080f" : acc, st.stroke);
+    y += L.lineH;
+  });
+  g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetY = 0;
+
+  if (st.rule) {
+    var rw = Math.min(innerW, L.size * 1.9), rh = Math.max(4, L.size * 0.10);
+    var rx = it.align === "center" ? -rw / 2 : it.align === "right" ? x - rw : x;
+    var rg = g.createLinearGradient(rx, 0, rx + rw, 0);
+    rg.addColorStop(0, acc); rg.addColorStop(1, acc2);
+    g.fillStyle = rg;
+    roundRect(g, rx, y + L.size * 0.10, rw, rh, rh / 2);
+    g.fill();
+  }
+}
+
+/* ===========================================================================
+   6. THE SCENE
+
+   One function draws the card, at any scale: the preview, the export and the
+   headless shoot all go through it, so what is seen is what is written.
+   =========================================================================== */
+
+function hexA(hex, a) {
+  var h = String(hex).replace("#", "");
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  var n = parseInt(h, 16) || 0;
+  return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+}
+
+function drawGround(g, W, H) {
+  var gr = state.comp.ground;
+  g.fillStyle = "#07070e";
+  g.fillRect(0, 0, W, H);
+
+  var img = imgOf(groundUrl());
+  if (ready(img)) {
+    /* cover, never stretched: a capture is 720x1280 and so is a phone card, so
+       on that one it lands pixel for pixel. */
+    var s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+    var dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+    g.save();
+    if (gr.bright !== 100) g.filter = "brightness(" + (gr.bright / 100) + ") saturate(1.06)";
+    g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    g.restore();
+  }
+
+  var k = (gr.scrimK == null ? 100 : gr.scrimK) / 100;
+  if (!k || gr.scrim === "none") return;
+  var acc = accent();
+  function band(x0, y0, x1, y1, stops) {
+    var lg = g.createLinearGradient(x0, y0, x1, y1);
+    stops.forEach(function (s) { lg.addColorStop(s[0], "rgba(4,4,10," + Math.min(1, s[1] * k).toFixed(3) + ")"); });
+    g.fillStyle = lg;
+    g.fillRect(0, 0, W, H);
+  }
+  if (gr.scrim === "top" || gr.scrim === "both") {
+    band(0, 0, 0, H, [[0, .93], [.20, .78], [.34, .12], [.46, 0], [1, 0]]);
+    var rg = g.createRadialGradient(W / 2, -H * 0.04, 0, W / 2, -H * 0.04, W * 0.9);
+    rg.addColorStop(0, hexA(acc, 0.22 * k)); rg.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  }
+  if (gr.scrim === "bottom" || gr.scrim === "both") {
+    band(0, H, 0, 0, [[0, .90], [.20, .62], [.36, .10], [.48, 0], [1, 0]]);
+  }
+  if (gr.scrim === "left") {
+    band(0, 0, W, 0, [[0, .88], [.34, .56], [.62, .06], [1, .34]]);
+    band(0, H, 0, 0, [[0, .60], [.40, 0], [1, 0]]);
+  }
+  if (gr.scrim === "vignette") {
+    var vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.72);
+    vg.addColorStop(0, "rgba(4,4,10,0)");
+    vg.addColorStop(1, "rgba(4,4,10," + (0.86 * k).toFixed(3) + ")");
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  }
+}
+
+/* The size an item is actually drawn at: the width is the one knob, the height
+   follows the picture's own aspect so nothing on this card is ever stretched. */
+/* The ceiling on a picture: its own pixels. Blowing a 360px decor up to 600
+   authored px costs exactly the sharpness the painted artwork was cut for, and
+   nothing on a listing image is worth that — so the width is capped here,
+   where every path that sizes an item goes through (the handle, the slider,
+   the drop, and a layout adopted from another game). */
+function capOf(it) {
+  var img = imgOf(urlOf(it));
+  return ready(img) ? img.naturalWidth : 0;
+}
+
+function sizeOf(it, g) {
+  if (it.kind === "text") {
+    var L = layoutText(g, it);
+    it._L = L;
+    return { w: L.w, h: L.h };
+  }
+  var img = imgOf(urlOf(it));
+  var a = ready(img) ? img.naturalWidth / img.naturalHeight : (it.kind === "screen" ? 720 / 1280 : 1);
+  /* Capped for the drawing, not in the item: one composition is walked across
+     thirteen games whose pictures are not the same size, and a width clipped
+     to the smallest of them would never grow back. */
+  var w = ready(img) ? Math.min(it.w, img.naturalWidth) : it.w;
+  return { w: w, h: w / a };
+}
+
+function drawItem(g, it, edit) {
+  var d = sizeOf(it, g);
+  it._w = d.w; it._h = d.h;
+  g.save();
+  g.globalAlpha = it.op == null ? 1 : it.op;
+  g.translate(it.cx, it.cy);
+  if (it.rot) g.rotate(it.rot * Math.PI / 180);
+  if (it.flip) g.scale(-1, 1);
+
+  if (it.kind === "text") {
+    drawText(g, it, it._L);
+  } else {
+    var img = imgOf(urlOf(it));
+    if (!ready(img)) {
+      if (edit && g.globalAlpha > .5) {
+        g.strokeStyle = "rgba(255,255,255,.28)";
+        g.lineWidth = 2; g.setLineDash([7, 6]);
+        g.strokeRect(-d.w / 2, -d.h / 2, d.w, d.h);
+        g.setLineDash([]);
+      }
+      g.restore();
+      return;
+    }
+    if (it.kind === "screen") {
+      /* A capture inside the card is a phone: rounded, edged and dropped, which
+         is what makes it read as a screen rather than as a picture. */
+      var r = Math.min(d.w, d.h) * 0.055;
+      g.save();
+      g.shadowColor = "rgba(0,0,0,.65)"; g.shadowBlur = 60; g.shadowOffsetY = 26;
+      g.fillStyle = "#000";
+      roundRect(g, -d.w / 2, -d.h / 2, d.w, d.h, r);
+      g.fill();
+      g.restore();
+      g.save();
+      roundRect(g, -d.w / 2, -d.h / 2, d.w, d.h, r);
+      g.clip();
+      g.drawImage(img, -d.w / 2, -d.h / 2, d.w, d.h);
+      g.restore();
+      g.strokeStyle = "rgba(255,255,255,.18)";
+      g.lineWidth = Math.max(2, d.w * 0.006);
+      roundRect(g, -d.w / 2, -d.h / 2, d.w, d.h, r);
+      g.stroke();
+    } else {
+      g.shadowColor = "rgba(0,0,0,.6)";
+      g.shadowBlur = it.kind === "face" ? 34 : 22;
+      g.shadowOffsetY = it.kind === "face" ? 18 : 10;
+      g.drawImage(img, -d.w / 2, -d.h / 2, d.w, d.h);
+      g.shadowColor = "transparent"; g.shadowBlur = 0; g.shadowOffsetY = 0;
+    }
+  }
+  g.restore();
+}
+
+/* The board the card sits on while it is being composed. A piece is allowed to
+   bleed off the card — most of them are meant to — and its handles go with it,
+   so the editor works on a surface bigger than the card and shows what hangs
+   over the edge as a ghost. Nothing of this reaches an export: that is drawn
+   with `edit` false, at the card's own size. */
+var PAD = 90;
+
+function drawScene(g, scale, edit) {
+  var W = fmt().w, H = fmt().h;
+  g.save();
+  g.scale(scale, scale);
+  if (!edit) {
+    g.clearRect(0, 0, W, H);
+    drawGround(g, W, H);
+    state.comp.items.forEach(function (it) { drawItem(g, it, edit); });
+    g.restore();
+    return;
+  }
+
+  g.clearRect(0, 0, W + PAD * 2, H + PAD * 2);
+  g.translate(PAD, PAD);
+
+  // what hangs over the edge, and only that: the card itself is painted on top.
+  g.save();
+  g.globalAlpha = 0.26;
+  state.comp.items.forEach(function (it) { drawItem(g, it, edit); });
+  g.restore();
+
+  g.save();
+  g.beginPath();
+  g.rect(0, 0, W, H);
+  g.clip();
+  drawGround(g, W, H);
+  state.comp.items.forEach(function (it) { drawItem(g, it, edit); });
+  g.restore();
+
+  drawEditing(g, W, H);
+  g.strokeStyle = "rgba(126,166,255,.5)";
+  g.lineWidth = u();
+  g.strokeRect(0, 0, W, H);
+  g.restore();
+}
+
+/* ===========================================================================
+   7. THE GRID AND THE HANDLES — the editor's own furniture, drawn in authored
+   units but sized in screen px, so a handle is the same size at any zoom and
+   none of it ever reaches an export.
+   =========================================================================== */
+
+function u() { return 1 / state.zoom; }
+
+function drawEditing(g, W, H) {
+  if (state.grid.on) {
+    g.save();
+    g.strokeStyle = "rgba(126,166,255,.13)";
+    g.lineWidth = u();
+    g.beginPath();
+    for (var x = state.grid.step; x < W; x += state.grid.step) { g.moveTo(x, 0); g.lineTo(x, H); }
+    for (var y = state.grid.step; y < H; y += state.grid.step) { g.moveTo(0, y); g.lineTo(W, y); }
+    g.stroke();
+    g.strokeStyle = "rgba(126,166,255,.34)";
+    g.beginPath();
+    g.moveTo(W / 2, 0); g.lineTo(W / 2, H);
+    g.moveTo(0, H / 2); g.lineTo(W, H / 2);
+    g.stroke();
+    g.restore();
+  }
+
+  var it = selected();
+  if (!it) return;
+  var hw = it._w / 2, hh = it._h / 2;
+  g.save();
+  g.translate(it.cx, it.cy);
+  g.rotate((it.rot || 0) * Math.PI / 180);
+  g.strokeStyle = "#7ea6ff";
+  g.lineWidth = 1.6 * u();
+  g.setLineDash([6 * u(), 5 * u()]);
+  g.strokeRect(-hw, -hh, it._w, it._h);
+  g.setLineDash([]);
+
+  var r = 9 * u();
+  var hs = handleSpots(it);
+  g.beginPath(); g.moveTo(0, -hh); g.lineTo(hs.rot.x, hs.rot.y); g.stroke();
+  [["rot", "#7ea6ff"], ["scale", "#7ea6ff"], ["del", "#ff6b7d"]].forEach(function (p) {
+    var s = hs[p[0]];
+    g.beginPath();
+    g.arc(s.x, s.y, r, 0, Math.PI * 2);
+    g.fillStyle = p[1];
+    g.fill();
+    g.strokeStyle = "rgba(4,4,10,.8)";
+    g.lineWidth = 1.4 * u();
+    g.stroke();
+  });
+  g.restore();
+}
+
+/* In the item's own space: turn above, resize at the bottom-right, delete at
+   the top-right — and every one of them pulled back onto the board when the
+   piece hangs past it. A character is meant to bleed off the card, and a
+   handle that lands outside the canvas cannot be grabbed at all; dragging one
+   still measures from the centre, so a pulled-back handle behaves like the
+   one it stands in for. */
+function handleSpots(it) {
+  var hw = it._w / 2, hh = it._h / 2;
+  var spots = {
+    rot:   { x: 0, y: -hh - 30 * u() },
+    scale: { x: hw, y: hh },
+    del:   { x: hw, y: -hh }
+  };
+  var a = (it.rot || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+  var W = fmt().w, H = fmt().h, m = PAD - 16 * u();
+  Object.keys(spots).forEach(function (k) {
+    var p = spots[k];
+    var wx = it.cx + p.x * ca - p.y * sa, wy = it.cy + p.x * sa + p.y * ca;
+    var cx = Math.min(Math.max(wx, -m), W + m), cy = Math.min(Math.max(wy, -m), H + m);
+    if (cx === wx && cy === wy) return;
+    var dx = cx - it.cx, dy = cy - it.cy;
+    spots[k] = { x: dx * ca + dy * sa, y: -dx * sa + dy * ca };
+  });
+  return spots;
+}
+
+/* ===========================================================================
+   8. THE BUILT-IN LAYOUT
+
+   What a card looks like before anyone has moved anything, per format. It is
+   the composition the old card hard-coded in CSS, expressed as items — which
+   is also what tools/lab/shoot-store.mjs asks for when it drives this page with
+   no saved layout.
+   =========================================================================== */
+
+function fit(nat, bw, bh) {
+  var a = nat || 1;
+  var w = Math.min(bw, bh * a);
+  return { w: w, h: w / a };
+}
+
+function natOf(it) {
+  var img = imgOf(urlOf(it));
+  return ready(img) ? img.naturalWidth / img.naturalHeight : 1;
+}
+
+function defaultComp(p) {
+  p = p || {};
+  var W = fmt().w, H = fmt().h;
+  var right = p.side === "right";
+  var bottom = p.pos === "bottom";
+  var logo = p.logo == null ? (state.format !== "phone") : !!+p.logo;
+  var objn = p.objn == null ? 2 : +p.objn;
+  var faceRef = { happy: 0, neutral: 1, sad: 2 }[p.face || "happy"] || 0;
+  var shot = p.shot == null ? 0 : +p.shot;
+  var c = blankComp();
+  var items = c.items;
+
+  function add(o) { o.id = uid(); o.op = o.op == null ? 1 : o.op; o.rot = o.rot || 0; items.push(o); return o; }
+  function place(it, box) {
+    var d = fit(natOf(it), box.w, box.h);
+    it.w = d.w;
+    it.cx = box.ax === "right" ? box.x - d.w / 2 : box.ax === "center" ? box.x : box.x + d.w / 2;
+    it.cy = box.ay === "bottom" ? box.y - d.h / 2 : box.ay === "center" ? box.y : box.y + d.h / 2;
+    return it;
+  }
+
+  if (state.format === "phone") {
+    /* With the logotype on, the top band has to go darker than the punchline
+       needs it: the capture's own HUD sits exactly there, and a score ghosting
+       through a logotype is the one thing on this card that looks like a
+       mistake. */
+    c.ground = { kind: "screen", ref: shot, bright: 100,
+      scrim: bottom ? "bottom" : "both", scrimK: logo ? 135 : 100 };
+
+    if (logo) {
+      var lg = add({ kind: "logo", w: 400 });
+      place(lg, { x: 52, y: 64, ax: "left", ay: "top", w: 400, h: 120 });
+    }
+
+    var tx = add({
+      kind: "text", style: "hero", src: "copy", ref: p.lineIndex || 0,
+      line: p.line || "", kicker: p.kicker || "",
+      size: 72, w: bottom ? (W - 52 - 242) : (W - 104), align: "left"
+    });
+    layoutInto(tx, bottom
+      ? { x: right ? 52 : 242, y: H - 96, ax: "left", ay: "bottom" }
+      : { x: 52, y: logo ? 214 : 74, ax: "left", ay: "top" });
+
+    var face = add({ kind: "face", ref: faceRef, w: 340 });
+    var fw = bottom ? 250 : 360, fh = bottom ? 360 : 520;
+    place(face, { x: right ? W + 46 : -46, y: H + 18, ax: right ? "right" : "left", ay: "bottom", w: fw, h: fh });
+
+    spots(bottom ? SPOTS["phone-bottom"] : SPOTS.phone, objn, p.objOff || 0);
+  } else if (state.format === "desk") {
+    c.ground = { kind: "art", role: "background-desk", bright: 66, scrim: "left", scrimK: 100 };
+
+    var sc1 = add({ kind: "screen", ref: shot, w: 349, rot: -3 });
+    sc1.cx = W - 120 - 349 / 2; sc1.cy = H / 2;
+    var sc2 = add({ kind: "screen", ref: shot + 1, w: 304, rot: 4, op: .9 });
+    sc2.cx = W - 400 - 304 / 2; sc2.cy = H / 2;
+    items.splice(items.indexOf(sc2), 1);
+    items.splice(items.indexOf(sc1), 0, sc2);      // the second phone sits behind
+
+    var dl = add({ kind: "logo", w: 420 });
+    place(dl, { x: 70, y: 48, ax: "left", ay: "top", w: 420, h: 120 });
+
+    var dt = add({
+      kind: "text", style: "hero", src: "copy", ref: p.lineIndex || 0,
+      line: p.line || "", kicker: p.kicker || "",
+      size: 64, w: 520, align: "left"
+    });
+    layoutInto(dt, { x: 70, y: 186, ax: "left", ay: "top" });
+
+    var dfa = add({ kind: "face", ref: faceRef, w: 270 });
+    place(dfa, { x: right ? W - 26 : 26, y: H + 14, ax: right ? "right" : "left", ay: "bottom", w: 270, h: 330 });
+
+    spots(SPOTS.desk, objn, p.objOff || 0);
+  } else {
+    c.ground = { kind: "art", role: "background-desk", bright: 72, scrim: "left", scrimK: 100 };
+
+    var ts = add({ kind: "screen", ref: shot, w: 236, rot: -4 });
+    ts.cx = W + 40 - 236 / 2; ts.cy = H / 2;
+
+    var tl = add({ kind: "logo", w: 300 });
+    place(tl, { x: 30, y: 30, ax: "left", ay: "top", w: 300, h: 112 });
+
+    var tt = add({
+      kind: "text", style: "hero", src: "copy", ref: p.lineIndex || 0,
+      line: p.line || "", kicker: p.kicker || "",
+      size: 30, w: 300, align: "left"
+    });
+    layoutInto(tt, { x: 30, y: 154, ax: "left", ay: "top" });
+
+    var tf = add({ kind: "face", ref: faceRef, w: 232 });
+    place(tf, { x: 10, y: H + 12, ax: "left", ay: "bottom", w: 232, h: 270 });
+
+    spots(SPOTS.thumb, objn, p.objOff || 0);
+  }
+
+  return c;
+
+  /* A text block is positioned by its centre like everything else, so the band
+     it was written for has to be measured first. */
+  function layoutInto(it, box) {
+    var g = measureCtx();
+    var L = layoutText(g, it);
+    it.cx = box.ax === "right" ? box.x - L.w / 2 : box.ax === "center" ? box.x : box.x + L.w / 2;
+    it.cy = box.ay === "bottom" ? box.y - L.h / 2 : box.ay === "center" ? box.y : box.y + L.h / 2;
+  }
+
+  /* Where the furniture starts: the objects go under the logotype, the tagline
+     and the character, and over the ground and the phone frames. */
+  function furnitureAt() {
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].kind === "logo" || items[i].kind === "text" || items[i].kind === "face") return i;
+    }
+    return items.length;
+  }
+
+  function spots(list, n, off) {
+    var have = pool("decor").length;
+    for (var i = 0; i < Math.min(n, list.length); i++) {
+      var s = list[i];
+      var it = add({ kind: "decor", ref: have ? (i + off) % have : 0, w: s.size, rot: s.rot, op: s.op });
+      var d = fit(natOf(it), s.size, s.size);
+      it.w = d.w;
+      it.cx = s.left != null ? s.left + d.w / 2 : W - s.right - d.w / 2;
+      it.cy = s.top != null ? s.top + d.h / 2 : H - s.bottom - d.h / 2;
+      /* Under the type and under the character, over the ground: an object that
+         covers the face or the punchline is noise. */
+      items.splice(items.indexOf(it), 1);
+      items.splice(furnitureAt(), 0, it);
+    }
+  }
+}
+
+/* Where the objects go before anyone moves them. Every spot bleeds off an edge
+   or sits behind the type; three is the ceiling, past that a listing image is
+   a collage. */
+var SPOTS = {
+  phone: [
+    { right:-70, top:330,   size:250, rot:-14, op:.95 },
+    { left:-64,  top:206,   size:196, rot:18,  op:.88 },
+    { right:56,  bottom:-58,size:220, rot:9,   op:.92 }
+  ],
+  "phone-bottom": [
+    { right:-70, bottom:330,size:250, rot:-14, op:.95 },
+    { left:-64,  bottom:212,size:196, rot:18,  op:.88 },
+    { right:56,  top:-58,   size:220, rot:9,   op:.92 }
+  ],
+  desk: [
+    { left:-56,  top:-52,   size:240, rot:16,  op:.9 },
+    { left:430,  bottom:-66,size:230, rot:-12, op:.92 },
+    { right:-52, top:-56,   size:210, rot:-20, op:.85 }
+  ],
+  thumb: [
+    { left:-40,  top:-38,   size:150, rot:14,  op:.9 },
+    { left:250,  bottom:-44,size:142, rot:-12, op:.9 },
+    { left:-34,  bottom:150,size:110, rot:24,  op:.8 }
+  ]
+};
+
+var _mctx = null;
+function measureCtx() {
+  if (!_mctx) _mctx = document.createElement("canvas").getContext("2d");
+  return _mctx;
+}
+
+/* ===========================================================================
+   9. THE CANVAS, THE PREVIEW AND THE PAINT LOOP
+   =========================================================================== */
+
+var canvas = document.getElementById("card");
+var ctx = canvas.getContext("2d");
+var wrap = document.getElementById("wrap");
+var stage = document.getElementById("stage");
+var dirty = false;
+
+function invalidate() {
+  if (dirty) return;
+  dirty = true;
+  /* Always paint inside a frame: a canvas painted outside requestAnimationFrame
+     is not in the frame a headless capture grabs. */
+  requestAnimationFrame(function () { dirty = false; paint(); });
+}
+
+function paint() {
+  var pad = SHOOT ? 0 : PAD * 2;
+  var W = fmt().w + pad, H = fmt().h + pad;
+  var z = state.zoom;
+  var dpr = SHOOT ? 2 : Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.round(W * z * dpr);
+  canvas.height = Math.round(H * z * dpr);
+  canvas.style.width = Math.round(W * z) + "px";
+  canvas.style.height = Math.round(H * z) + "px";
+  drawScene(ctx, z * dpr, !SHOOT);
+}
+
+function fitStage() {
+  var W = fmt().w + PAD * 2, H = fmt().h + PAD * 2;
+  state.zoom = SHOOT ? 1 : Math.min((stage.clientWidth - 30) / W, (stage.clientHeight - 54) / H, 1);
+  invalidate();
+}
+
+/* ===========================================================================
+   10. SELECTION AND DIRECT MANIPULATION
+   =========================================================================== */
+
+function selected() {
+  return state.comp.items.filter(function (i) { return i.id === state.sel; })[0] || null;
+}
+
+function toCard(e) {
+  var r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / state.zoom - PAD, y: (e.clientY - r.top) / state.zoom - PAD };
+}
+
+/* Into the item's own space, so hit-testing a turned piece is the same as
+   hit-testing a straight one. */
+function local(it, p) {
+  var dx = p.x - it.cx, dy = p.y - it.cy;
+  var a = -(it.rot || 0) * Math.PI / 180;
+  return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) };
+}
+
+function hitHandle(it, p) {
+  var l = local(it, p), hs = handleSpots(it), r = 12 * u();
+  var best = null;
+  Object.keys(hs).forEach(function (k) {
+    var d = Math.hypot(l.x - hs[k].x, l.y - hs[k].y);
+    if (d <= r) best = k;
+  });
+  return best;
+}
+
+function hitItem(p) {
+  for (var i = state.comp.items.length - 1; i >= 0; i--) {
+    var it = state.comp.items[i];
+    var l = local(it, p);
+    if (Math.abs(l.x) <= it._w / 2 && Math.abs(l.y) <= it._h / 2) return it;
+  }
+  return null;
+}
+
+function snap(v) {
+  if (!state.grid.on) return v;
+  return Math.round(v / state.grid.step) * state.grid.step;
+}
+
+var drag = null;
+
+canvas.addEventListener("pointerdown", function (e) {
+  if (SHOOT) return;
+  var p = toCard(e);
+  var it = selected();
+  if (it) {
+    var h = hitHandle(it, p);
+    if (h === "del") { removeItem(it); return; }
+    if (h === "rot") {
+      drag = { mode: "rot", it: it, a0: Math.atan2(p.y - it.cy, p.x - it.cx), r0: it.rot || 0 };
+      canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (h === "scale") {
+      drag = { mode: "scale", it: it, d0: Math.hypot(p.x - it.cx, p.y - it.cy), w0: it.w, s0: it.size };
+      canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+  }
+  var hit = hitItem(p);
+  select(hit ? hit.id : null);
+  if (hit) {
+    drag = { mode: "move", it: hit, dx: p.x - hit.cx, dy: p.y - hit.cy };
+    canvas.setPointerCapture(e.pointerId);
+  }
+});
+
+canvas.addEventListener("pointermove", function (e) {
+  if (!drag) {
+    if (!SHOOT) {
+      var p0 = toCard(e);
+      var it0 = selected();
+      canvas.style.cursor = (it0 && hitHandle(it0, p0)) ? "pointer" : hitItem(p0) ? "move" : "default";
+    }
+    return;
+  }
+  var p = toCard(e);
+  var it = drag.it;
+  if (drag.mode === "move") {
+    it.cx = snap(p.x - drag.dx);
+    it.cy = snap(p.y - drag.dy);
+  } else if (drag.mode === "rot") {
+    var a = Math.atan2(p.y - it.cy, p.x - it.cx);
+    var deg = drag.r0 + (a - drag.a0) * 180 / Math.PI;
+    /* The grid turns rotation magnetic too: five degrees is what keeps a row of
+       thirteen cards from looking hand-shaken. */
+    it.rot = state.grid.on ? Math.round(deg / 5) * 5 : Math.round(deg);
+    if (e.shiftKey) it.rot = 0;
+  } else if (drag.mode === "scale") {
+    var k = Math.max(0.06, Math.hypot(p.x - it.cx, p.y - it.cy) / Math.max(1, drag.d0));
+    if (it.kind === "text") { it.size = Math.max(10, Math.round(drag.s0 * k)); it.w = Math.round(drag.w0 * k); }
+    else {
+      var cap = capOf(it) || 4000;
+      it.w = Math.min(cap, Math.max(24, state.grid.on ? snap(drag.w0 * k) : Math.round(drag.w0 * k)));
+    }
+  }
+  inspect();
+  invalidate();
+});
+
+function endDrag() { if (drag) { drag = null; invalidate(); } }
+canvas.addEventListener("pointerup", endDrag);
+canvas.addEventListener("pointercancel", endDrag);
+
+/* Dropping out of a palette: the piece lands where the pointer let it go. */
+canvas.addEventListener("dragover", function (e) { e.preventDefault(); canvas.classList.add("dragover"); });
+canvas.addEventListener("dragleave", function () { canvas.classList.remove("dragover"); });
+canvas.addEventListener("drop", function (e) {
+  e.preventDefault();
+  canvas.classList.remove("dragover");
+  var raw = e.dataTransfer.getData("text/plain");
+  if (!raw) return;
+  var p = toCard(e);
+  addPiece(JSON.parse(raw), snap(p.x), snap(p.y));
+});
+
+document.addEventListener("keydown", function (e) {
+  if (SHOOT) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  var it = selected();
+  if (e.key === "Escape") { select(null); return; }
+  if (!it) return;
+  var step = e.shiftKey ? state.grid.step : 1;
+  if (e.key === "Backspace" || e.key === "Delete") { e.preventDefault(); removeItem(it); return; }
+  if (e.key === "d" || e.key === "D") { duplicate(it); return; }
+  if (e.key === "ArrowLeft")  { it.cx -= step; }
+  else if (e.key === "ArrowRight") { it.cx += step; }
+  else if (e.key === "ArrowUp")    { it.cy -= step; }
+  else if (e.key === "ArrowDown")  { it.cy += step; }
+  else if (e.key === "[") { raise(it, -1); }
+  else if (e.key === "]") { raise(it, 1); }
+  else return;
+  e.preventDefault();
+  inspect(); invalidate();
+});
+
+/* ===========================================================================
+   11. THE COMPOSITION — adding, removing, ordering
+   =========================================================================== */
+
+function addPiece(spec, x, y) {
+  var W = fmt().w, H = fmt().h;
+  var it = { id: uid(), op: 1, rot: 0 };
+  Object.keys(spec).forEach(function (k) { it[k] = spec[k]; });
+  it.cx = x == null ? W / 2 : x;
+  it.cy = y == null ? H / 2 : y;
+  if (it.kind === "text") {
+    it.style = it.style || "hero";
+    it.src = it.src || "copy";
+    it.ref = it.ref || 0;
+    it.align = it.align || "left";
+    it.size = it.size || { phone: 72, desk: 64, thumb: 30 }[state.format];
+    it.w = it.w || fmt().w * 0.82;
+  } else {
+    it.w = it.w || { face: 340, logo: 380, screen: 300, decor: 200, cut: 200, art: 360 }[it.kind] || 240;
+    if (state.format === "thumb") it.w *= 0.62;
+    var cap0 = capOf(it);
+    if (cap0) it.w = Math.min(it.w, cap0);
+    /* The picture may still be loading — once it is, the item is measured and
+       drawn with its own aspect, so nothing has to be known here. */
+    load(urlOf(it));
+  }
+  state.comp.items.push(it);
+  select(it.id);
+  invalidate();
+  return it;
+}
+
+function removeItem(it) {
+  state.comp.items = state.comp.items.filter(function (x) { return x !== it; });
+  if (state.sel === it.id) state.sel = null;
+  layerList(); inspect(); invalidate();
+}
+
+function duplicate(it) {
+  var copy = JSON.parse(JSON.stringify(it));
+  delete copy._L;
+  copy.id = uid();
+  copy.cx += state.grid.step * 2;
+  copy.cy += state.grid.step * 2;
+  state.comp.items.push(copy);
+  select(copy.id);
+  invalidate();
+}
+
+function raise(it, dir) {
+  var a = state.comp.items, i = a.indexOf(it), j = i + dir;
+  if (i < 0 || j < 0 || j >= a.length) return;
+  a.splice(i, 1); a.splice(j, 0, it);
+  layerList(); invalidate();
+}
+
+function select(id) {
+  state.sel = id;
+  layerList(); inspect(); invalidate();
+}
+
+/* ===========================================================================
+   12. THE PANELS
+   =========================================================================== */
+
+var el = {};
+["slug","name","step","said","miss","v-slug","v-step","v-ext","v-lang","meta",
+ "layers","inspect","pal-bg","pal-el","mode-hint","save-where"]
+  .forEach(function (id) { el[id] = document.getElementById(id); });
+
+function segs(id, fn) {
+  document.getElementById(id).addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (b) fn(b.dataset.v);
+  });
+}
+function segOn(id, v) {
+  Array.prototype.forEach.call(document.getElementById(id).querySelectorAll("button"), function (b) {
+    b.classList.toggle("on", b.dataset.v === String(v));
+  });
+}
+
+function thumb(url, label, wide) {
+  var d = document.createElement("div");
+  d.className = "thumb" + (wide ? " wide" : "");
+  if (url) {
+    var i = document.createElement("img");
+    i.src = url; i.loading = "lazy";
+    d.appendChild(i);
+  }
+  if (label) {
+    var t = document.createElement("i");
+    t.textContent = label;
+    d.appendChild(t);
+  }
+  return d;
+}
+
+/* Layer 1 — the ground is a choice, not a drag: there is only one. */
+function groundPalette() {
+  var box = el["pal-bg"];
+  box.innerHTML = "";
+  var g = game();
+  pool("screen").forEach(function (url, i) {
+    var t = thumb(url, String(i + 1));
+    t.classList.toggle("on", state.comp.ground.kind === "screen" && (state.comp.ground.ref | 0) === i);
+    t.onclick = function () {
+      state.comp.ground = Object.assign({}, state.comp.ground, { kind: "screen", ref: i });
+      delete state.comp.ground.role;
+      groundPalette(); invalidate();
+    };
+    box.appendChild(t);
+  });
+  (g.art || []).filter(function (r) { return r.indexOf("background") === 0; }).forEach(function (role) {
+    var url = BASE + "image/embed/" + state.slug + "-" + role + ".webp";
+    var t = thumb(url, role.replace("background-", ""), true);
+    t.classList.toggle("on", state.comp.ground.kind === "art" && state.comp.ground.role === role);
+    t.onclick = function () {
+      state.comp.ground = Object.assign({}, state.comp.ground, { kind: "art", role: role });
+      groundPalette(); invalidate();
+    };
+    box.appendChild(t);
+  });
+}
+
+/* Layer 2 — every thumbnail is draggable, and clicking one drops it in the
+   middle of the card instead. */
+function elementPalette() {
+  var box = el["pal-el"];
+  box.innerHTML = "";
+
+  var list = [];
+  if (state.pal === "object") {
+    /* Everything the game owns, not only what was adopted: the four pieces
+       under assets/image/embed/ are the ones its own screens are dressed with, and the
+       rest of the sheet — every cut under assets/image/object/ — is just as usable on
+       a listing image, which embeds nothing. The select narrows, it does not
+       gate. */
+    var cuts = game().cuts || {};
+    var names = Object.keys(cuts);
+    var decor = pool("decor").map(function (url, i) {
+      return { url: url, spec: { kind: "decor", ref: i }, label: "d" + (i + 1) };
+    });
+    list = names.reduce(function (acc, n) {
+      return acc.concat(cutPool(n).map(function (url, i) {
+        return { url: url, spec: { kind: "cut", sheet: n, ref: i }, label: n.slice(0, 3) + (i + 1) };
+      }));
+    }, decor.slice());
+  } else if (state.pal === "face") {
+    list = pool("face").map(function (url, i) {
+      return { url: url, spec: { kind: "face", ref: i }, label: url.split("character-")[1].replace(".webp", "").slice(0, 4) };
+    });
+  } else {
+    /* The logotype rides with the captures: it is the one piece of art that is
+       not an object and not a face, and a card almost always wants it. */
+    list = pool("screen").map(function (url, i) {
+      return { url: url, spec: { kind: "screen", ref: i }, label: String(i + 1) };
+    });
+    if ((game().art || []).indexOf("title") >= 0) {
+      list.unshift({ url: BASE + "image/embed/" + state.slug + "-title.webp", spec: { kind: "logo" }, label: "logo" });
+    }
+  }
+
+  list.forEach(function (o) {
+    var t = thumb(o.url, o.label, o.spec.kind === "logo");
+    t.draggable = true;
+    t.addEventListener("dragstart", function (e) {
+      e.dataTransfer.setData("text/plain", JSON.stringify(o.spec));
+      e.dataTransfer.effectAllowed = "copy";
+    });
+    t.onclick = function () { addPiece(JSON.parse(JSON.stringify(o.spec))); };
+    box.appendChild(t);
+  });
+  if (!list.length) {
+    var p = document.createElement("p");
+    p.className = "hint";
+    p.textContent = SERVED ? "nothing on disk for this game" : "run the server to list these";
+    box.appendChild(p);
+  }
+}
+
+/* Layer 3 — one button. A tagline is added, then its style, its line and its
+   alignment are chosen on the selection, where every other property of a piece
+   already lives. */
+function addTagline() {
+  addPiece({ kind: "text", style: "hero", src: "copy", ref: 0 });
+}
+
+function nameOf(it) {
+  if (it.kind === "text") return STYLES[it.style].label + " · " + (textOf(it).line || "").replace(/<[^>]*>/g, "").slice(0, 18);
+  if (it.kind === "logo") return "logotype";
+  if (it.kind === "face") return "character " + (["happy","neutral","sad"][it.ref] || "");
+  if (it.kind === "screen") return "screenshot " + ((it.ref | 0) + 1);
+  if (it.kind === "cut") return it.sheet + " " + ((it.ref | 0) + 1);
+  if (it.kind === "art") return it.role;
+  return "object " + ((it.ref | 0) + 1);
+}
+
+function layerList() {
+  var box = el.layers;
+  box.innerHTML = "";
+  state.comp.items.slice().reverse().forEach(function (it) {
+    var d = document.createElement("div");
+    d.className = "lay" + (it.id === state.sel ? " on" : "");
+    var url = it.kind === "text" ? null : urlOf(it);
+    d.innerHTML = (url ? '<img src="' + url + '">' : '<b>T</b>') +
+      "<span>" + nameOf(it) + "</span>" +
+      '<button title="up">↑</button><button title="down">↓</button><button title="remove">✕</button>';
+    d.onclick = function (e) {
+      var b = e.target.closest("button");
+      if (!b) { select(it.id); return; }
+      var i = Array.prototype.indexOf.call(d.querySelectorAll("button"), b);
+      if (i === 0) raise(it, 1);
+      else if (i === 1) raise(it, -1);
+      else removeItem(it);
+    };
+    box.appendChild(d);
+  });
+  if (!state.comp.items.length) box.innerHTML = '<p class="hint">Empty — drag a piece onto the card.</p>';
+}
+
+function inspect() {
+  var it = selected();
+  var box = el.inspect;
+  if (!it) {
+    box.innerHTML = '<p class="hint">Nothing selected. Click a piece on the card, drag it to move, ' +
+      'turn it with the top handle, resize it with the corner one, <kbd>⌫</kbd> deletes, <kbd>D</kbd> duplicates.</p>';
+    return;
+  }
+  var lines = ((game().copy || {})[state.lang]) || [];
+  var h = '<div class="row"><label>' + nameOf(it) + '</label></div>';
+
+  if (it.kind === "text") {
+    h += '<div class="row"><label>Style</label><select data-k="style">' +
+      Object.keys(STYLES).map(function (k) {
+        return '<option value="' + k + '"' + (it.style === k ? " selected" : "") + '>' + STYLES[k].label + "</option>";
+      }).join("") + "</select></div>";
+    h += '<div class="row"><label>Copy <b>' + lines.length + " " + state.lang.toUpperCase() +
+      ' line' + (lines.length === 1 ? "" : "s") + '</b></label><select data-k="src">' +
+      '<option value="copy"' + (it.src !== "free" ? " selected" : "") + '>from the manifest</option>' +
+      '<option value="free"' + (it.src === "free" ? " selected" : "") + '>typed here</option></select></div>';
+    if (it.src !== "free" && !lines.length) {
+      /* `store.copy.<lang>.lines` in games/<slug>/manifest.json is where these
+         are written, and all thirteen have four per language — an empty list
+         here means the page is guessing, not that the game has no copy. */
+      h += '<p class="hint">No line to pick: ' + (SERVED
+        ? "this game writes none in its manifest (<code>store.copy." + state.lang + ".lines</code>)."
+        : "the manifests cannot be read over <code>file://</code> — run <code>make store</code>.") + "</p>";
+    }
+    if (it.src !== "free" && lines.length) {
+      h += '<div class="row"><label>Line <b>' + (lines.length ? (it.ref | 0) % lines.length + 1 : 0) + "/" + lines.length + '</b></label>' +
+        '<select data-k="ref" data-num="1">' + lines.map(function (l, i) {
+          /* Numbered, kicker included: the four lines of a game are picked by
+             eye here and the manifest's order is what the batch shoots in. */
+          return '<option value="' + i + '"' + ((it.ref | 0) === i ? " selected" : "") + '>' +
+            (i + 1) + " · " + esc((l.kicker ? l.kicker + " — " : "") +
+              (l.line || "").replace(/<[^>]*>/g, "")) + "</option>";
+        }).join("") + "</select></div>";
+    } else {
+      h += '<div class="row"><label>Kicker</label><input type="text" data-k="kicker" value="' + esc(it.kicker || "") + '"></div>' +
+        '<div class="row"><label>Line <b>&lt;b&gt;</b></label><textarea data-k="line">' + esc(it.line || "") + "</textarea></div>";
+    }
+    h += '<div class="row"><label>Align</label><select data-k="align">' +
+      ["left","center","right"].map(function (a) {
+        return '<option value="' + a + '"' + (it.align === a ? " selected" : "") + ">" + a + "</option>";
+      }).join("") + "</select></div>";
+    h += '<div class="row"><label>Size <b>' + it.size + '</b></label>' +
+      '<input type="range" data-k="size" data-num="1" min="14" max="140" step="2" value="' + it.size + '"></div>';
+  }
+
+  /* The numbers are behind a chevron: a piece is placed by dragging it, and the
+     five rows that say where it landed are a fallback, not the interface. The
+     width tops out at the picture's own pixels — see capOf. */
+  var cap = it.kind === "text" ? Math.round(fmt().w * 1.4) : (capOf(it) || Math.round(fmt().w * 1.4));
+  h += '<h3 class="fold' + (state.openXY ? "" : " shut") + '" id="h-xy">Position &amp; size<i>⌄</i></h3>' +
+    '<div class="foldee' + (state.openXY ? "" : " shut") + '">' +
+    '<div class="two"><div class="row"><label>X <b>' + Math.round(it.cx) + '</b></label>' +
+    '<input type="text" data-k="cx" data-num="1" value="' + Math.round(it.cx) + '"></div>' +
+    '<div class="row"><label>Y <b>' + Math.round(it.cy) + '</b></label>' +
+    '<input type="text" data-k="cy" data-num="1" value="' + Math.round(it.cy) + '"></div></div>' +
+    '<div class="row"><label>Width <b>' + Math.round(it.w) + '</b>' +
+    (it.kind === "text" ? "" : ' <b style="color:#6d6d8d">/ ' + cap + '</b>') + '</label>' +
+    '<input type="range" data-k="w" data-num="1" min="30" max="' + cap + '" step="2" value="' +
+    Math.min(cap, Math.round(it.w)) + '"></div>' +
+    '<div class="row"><label>Rotation <b>' + Math.round(it.rot || 0) + '°</b></label>' +
+    '<input type="range" data-k="rot" data-num="1" min="-180" max="180" step="1" value="' + Math.round(it.rot || 0) + '"></div>' +
+    '<div class="row"><label>Opacity <b>' + Math.round((it.op == null ? 1 : it.op) * 100) + '%</b></label>' +
+    '<input type="range" data-k="op" data-num="1" data-div="100" min="10" max="100" step="5" value="' +
+    Math.round((it.op == null ? 1 : it.op) * 100) + '"></div></div>';
+
+  if (it.kind !== "text") h += '<button class="act" data-do="flip">Mirror it</button>';
+  h += '<button class="act" data-do="dup">Duplicate</button>' +
+    '<button class="act warn" data-do="del">Delete</button>';
+
+  box.innerHTML = h;
+  fold(box.querySelector("#h-xy"), function (open) { state.openXY = open; });
+
+  Array.prototype.forEach.call(box.querySelectorAll("[data-k]"), function (inp) {
+    inp.addEventListener("input", function () {
+      var v = inp.value;
+      if (inp.dataset.num) v = parseFloat(v) / (inp.dataset.div ? +inp.dataset.div : 1);
+      if (inp.dataset.num && isNaN(v)) return;
+      it[inp.dataset.k] = v;
+      if (inp.dataset.k === "src" || inp.dataset.k === "style") inspect();
+      layerList();
+      invalidate();
+      var lab = inp.parentNode.querySelector("label b");
+      if (lab && inp.type === "range") lab.textContent = inp.dataset.k === "op" ? Math.round(v * 100) + "%"
+        : inp.dataset.k === "rot" ? Math.round(v) + "°" : Math.round(v);
+    });
+  });
+  Array.prototype.forEach.call(box.querySelectorAll("[data-do]"), function (b) {
+    b.onclick = function () {
+      var d = b.dataset.do;
+      if (d === "del") removeItem(it);
+      else if (d === "dup") duplicate(it);
+      else if (d === "flip") { it.flip = !it.flip; invalidate(); }
+    };
+  });
+}
+
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+
+/* A header and the block right after it, folded together. `onto` is told which
+   way it went, so a section that is rebuilt (the inspector is, on every
+   selection) reopens the way it was left. */
+function fold(head, onto) {
+  if (!head) return;
+  head.onclick = function () {
+    var open = head.classList.contains("shut");
+    head.classList.toggle("shut", !open);
+    var body = head.nextElementSibling;
+    if (body) body.classList.toggle("shut", !open);
+    if (onto) onto(open);
+  };
+}
+
+// --- what did not load ---------------------------------------------------
+var missing = [];
+function note(what) {
+  if (missing.indexOf(what) >= 0) return;
+  missing.push(what);
+  el.miss.textContent = "Not on disk: " + missing.slice(0, 6).join(", ") +
+    " — run node tools/lab/encode-art.mjs or tools/lab/shoot-screens.mjs";
+}
+function said(t) { el.said.textContent = t; }
+/* A tool that cannot do something says so in its own words — `note` is for a
+   file that is not on disk, and it always ends with the command that makes
+   one. */
+function warn(t) { el.miss.textContent = t; }
+
+/* Which store a format belongs to — the same rule tools/lab/shoot-store.mjs
+   and tools/lab/serve-store.mjs apply: the 630x500 cover is itch's, the phone
+   and desk pictures are cut to Play's specs (itch reuses the phone gallery). */
+function storeOf(format) { return format === "thumb" ? "itch" : "google"; }
+
+function meta() {
+  var f = fmt();
+  el.meta.innerHTML = "<b>" + f.w + " × " + f.h + "</b> authored, shipped <b>" +
+    f.out[0] + " × " + f.out[1] + "</b> — " + f.says +
+    " · <kbd>⌫</kbd> delete <kbd>D</kbd> duplicate <kbd>[</kbd><kbd>]</kbd> order <kbd>⇧</kbd>+turn straightens";
+  el["v-slug"].textContent = state.slug;
+  el["v-lang"].textContent = state.lang.toUpperCase();
+  el["v-ext"].textContent = "." + state.ext;
+  el["v-step"].textContent = state.grid.step;
+  document.getElementById("save-layout").textContent = "Save " + state.slug + " layout";
+  document.getElementById("save-template").textContent = "Save " + state.format + " template";
+  el["save-where"].innerHTML = "→ <code>assets/image/" + storeOf(state.format) +
+    "/" + state.lang + "/</code>. " +
+    "<b>Save for all games</b> writes this exact composition for each of the " +
+    Object.keys(CAT.games).length + ", every one with " +
+    "its own pieces, copy and typeface.";
+}
+
+/* ===========================================================================
+   13. LAYOUTS — one per game, one template per format.
+
+   A layout is the composition, nothing else: no file names, no sizes in
+   pixels of a particular picture. Applying the template to another game is
+   therefore the whole duplication story — every reference resolves against
+   whatever that game owns.
+   =========================================================================== */
+
+function compKey() { return state.slug + "/" + state.format; }
+function templateKey() { return "__template/" + state.format; }
+
+function cleanComp(c) {
+  return {
+    ground: c.ground,
+    items: c.items.map(function (it) {
+      var o = {};
+      Object.keys(it).forEach(function (k) { if (k[0] !== "_" && k !== "id") o[k] = it[k]; });
+      return o;
+    })
+  };
+}
+
+function adoptComp(c) {
+  var comp = JSON.parse(JSON.stringify(c));
+  comp.ground = Object.assign({ kind: "screen", ref: 0, bright: 100, scrim: "both", scrimK: 100 }, comp.ground);
+  comp.items = (comp.items || []).map(function (it) {
+    it.id = uid();
+    if (it.kind !== "text") load(urlOf(it));
+    return it;
+  });
+  return comp;
+}
+
+function savePreset(key, comp, thenSay) {
+  if (!SERVED) { said(""); warn("no server — a layout cannot be saved over file://"); return; }
+  fetch("/api/preset", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: key, comp: comp })
+  }).then(function (r) { return r.json(); }).then(function (r) {
+    if (r.error) { warn(r.error); return; }
+    CAT.presets.presets = CAT.presets.presets || {};
+    if (comp === null) delete CAT.presets.presets[key]; else CAT.presets.presets[key] = comp;
+    said(thenSay);
+  }).catch(function (e) { warn(String(e.message || e)); });
+}
+
+function presetFor(key) { return (CAT.presets && CAT.presets.presets && CAT.presets.presets[key]) || null; }
+
+/* Everything a game owns, in the cache before anything is measured: an item is
+   sized from its picture's own aspect, so a layout built against a picture
+   that has not decoded yet would be built square. */
+function preloadGame() {
+  pool("face").forEach(load);
+  pool("decor").forEach(load);
+  pool("screen").forEach(load);
+  (game().art || []).forEach(function (role) {
+    if (role === "title" || role.indexOf("background") === 0) load(BASE + "image/embed/" + state.slug + "-" + role + ".webp");
+  });
+  return waitForPictures();
+}
+
+/* What opens when a game and a format are picked: its own layout, else the
+   template for that format, else the built-in one. */
+function loadComp(params) {
+  return preloadGame().then(function () {
+    var saved = presetFor(compKey()) || presetFor(templateKey());
+    state.comp = saved && !params ? adoptComp(saved) : defaultComp(params || {});
+    state.sel = null;
+    defaultName();
+    groundPalette(); layerList(); inspect(); meta(); invalidate();
+  });
+}
+
+function defaultName() {
+  var base = state.format === "phone" ? state.slug + "-01"
+    : state.format === "desk" ? state.slug + "-desk-01"
+    : state.slug + "-thumb";
+  el.name.value = base;
+}
+
+/* ===========================================================================
+   14. SAVE — the image itself, at shipped size, into assets/image/<store>/<lang>/
+   =========================================================================== */
+
+function exportDataURI() {
+  var f = fmt();
+  var c = document.createElement("canvas");
+  c.width = f.out[0]; c.height = f.out[1];
+  var g = c.getContext("2d");
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = "high";
+  drawScene(g, f.out[0] / f.w, false);
+  return c.toDataURL(state.ext === "png" ? "image/png" : "image/jpeg", 0.92);
+}
+
+function saveImage() {
+  if (!SERVED) { warn("Save needs the server: node tools/lab/serve-store.mjs"); return; }
+  warn(""); said("saving…");
+  var data;
+  try { data = exportDataURI(); }
+  catch (e) { warn("the canvas is tainted — serve the page instead of opening it"); return; }
+  fetch("/api/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      slug: state.slug, lang: state.lang, format: state.format,
+      name: el.name.value, ext: state.ext, data: data
+    })
+  }).then(function (r) { return r.json(); }).then(function (r) {
+    if (r.error) { said(""); warn(r.error); return; }
+    said((r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB)");
+    /* The layout is saved with the image: the point of composing one is being
+       able to open it again, and to hand it to the next game. */
+    savePreset(compKey(), cleanComp(state.comp),
+      (r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB) — layout saved too");
+  }).catch(function (e) { said(""); warn(String(e.message || e)); });
+}
+
+/* The name one image takes for another game. The slug is the prefix the store
+   folder is sorted by, so it is swapped and the rest of the name — the number,
+   the `-desk`, the `-thumb` — is kept exactly. */
+function nameFor(slug, from, base) {
+  return base.indexOf(from) === 0 ? slug + base.slice(from.length)
+    : slug + "-" + base.replace(/^-+/, "");
+}
+
+/* SAVE FOR ALL — the same composition, once per game.
+
+   This is what the whole role-and-index business is for: an item points at
+   "the second decor" and "the happy face", so switching the game under a
+   finished composition re-resolves every piece, every punchline and the
+   typeface, and the card comes out as that game's own. Nothing here is
+   per-game work: compose one, walk the thirteen.
+
+   The layouts are NOT written — a game that has a composition of its own keeps
+   it, and this only prints images. */
+function saveEveryGame() {
+  if (!SERVED) { warn("Save needs the server: make store"); return; }
+  var base = el.name.value.trim();
+  if (!base) { warn("name the image first"); return; }
+
+  var games = Object.keys(CAT.games);
+  var from = state.slug;
+  var btn = document.getElementById("save-all"), one = document.getElementById("save");
+  btn.disabled = one.disabled = true;
+  warn("");
+
+  var made = 0, trouble = [];
+  var chain = Promise.resolve();
+  games.forEach(function (slug, i) {
+    chain = chain.then(function () {
+      said("(" + (i + 1) + "/" + games.length + ") " + slug + " …");
+      state.slug = slug;
+      useFont(game().font || "exo2");
+      return Promise.all([faceReady, preloadGame()]);
+    }).then(function () {
+      /* Paint inside a frame before reading the canvas back: the export draws
+         its own, but the preview is what says the game actually resolved. */
+      return new Promise(function (r) { requestAnimationFrame(function () { paint(); r(); }); });
+    }).then(function () {
+      var holes = state.comp.items.filter(function (it) {
+        if (it.kind === "text") return false;
+        var im = imgOf(urlOf(it));
+        return !im || im.__ok === -1;
+      }).length;
+      if (holes) trouble.push(slug + ": " + holes + " piece" + (holes === 1 ? "" : "s") + " missing");
+      return fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: slug, lang: state.lang, format: state.format,
+          name: nameFor(slug, from, base), ext: state.ext, data: exportDataURI()
+        })
+      }).then(function (r) { return r.json(); });
+    }).then(function (r) {
+      if (r.error) trouble.push(slug + ": " + r.error); else made++;
+    }).catch(function (e) {
+      trouble.push(slug + ": " + (e.message || e));
+    });
+  });
+
+  return chain.then(function () {
+    state.slug = from;
+    el.slug.value = from;
+    useFont(game().font || "exo2");
+    return Promise.all([faceReady, preloadGame()]);
+  }).then(function () {
+    btn.disabled = one.disabled = false;
+    groundPalette(); elementPalette(); layerList(); inspect(); meta(); invalidate();
+    said(made + " image" + (made === 1 ? "" : "s") + " written into assets/image/" +
+      storeOf(state.format) + "/" + state.lang + "/");
+    if (trouble.length) warn(trouble.join(" · "));
+  });
+}
+
+/* ===========================================================================
+   15. WIRING
+   =========================================================================== */
+
+segs("seg-format", function (v) {
+  state.format = v; segOn("seg-format", v);
+  loadComp(); fitStage();
+});
+segs("seg-lang", function (v) {
+  state.lang = v; segOn("seg-lang", v);
+  meta(); layerList(); inspect(); invalidate();
+});
+segs("seg-pal", function (v) { state.pal = v; segOn("seg-pal", v); elementPalette(); });
+
+/* The ground reel: one row, scrolled a screenful at a time. */
+["bg-prev", "bg-next"].forEach(function (id) {
+  var b = document.getElementById(id);
+  b.onclick = function () {
+    el["pal-bg"].scrollLeft += (+b.dataset.d) * Math.max(130, el["pal-bg"].clientWidth - 60);
+  };
+});
+fold(document.getElementById("h-grid"));
+document.getElementById("add-text").onclick = addTagline;
+segs("seg-ext", function (v) { state.ext = v; segOn("seg-ext", v); meta(); });
+segs("seg-grid", function (v) { state.grid.on = v === "1"; segOn("seg-grid", v); invalidate(); });
+
+el.slug.addEventListener("change", function () {
+  state.slug = el.slug.value;
+  useFont(game().font || "exo2");
+  var known = SERVED ? Promise.resolve() : guessCatalogue();
+  Promise.all([known, faceReady]).then(function () {
+    elementPalette();
+    return loadComp();
+  });
+});
+el.step.addEventListener("input", function () { state.grid.step = +el.step.value; meta(); invalidate(); });
+
+document.getElementById("save").onclick = saveImage;
+document.getElementById("save-all").onclick = saveEveryGame;
+document.getElementById("save-layout").onclick = function () {
+  savePreset(compKey(), cleanComp(state.comp), "layout saved for " + compKey());
+};
+document.getElementById("save-template").onclick = function () {
+  savePreset(templateKey(), cleanComp(state.comp),
+    "template saved — every game with no layout of its own now opens on it");
+};
+window.addEventListener("resize", fitStage);
+
+/* ===========================================================================
+   16. BOOT
+   =========================================================================== */
+
+function fillGames() {
+  el.slug.innerHTML = "";
+  Object.keys(CAT.games).forEach(function (g) {
+    var o = document.createElement("option");
+    o.value = o.textContent = g;
+    el.slug.appendChild(o);
+  });
+  if (CAT.games[state.slug]) el.slug.value = state.slug;
+  else state.slug = el.slug.value || state.slug;
+}
+
+/* Over file:// there is no directory to read, so what a game owns is guessed:
+   the captures are probed one by one and the decor by the sheet names the
+   fallback table carries. The shoot never gets here — it is handed its pool on
+   the query string. */
+function guessCatalogue() {
+  var done = 0, want = 0;
+  Object.keys(FALLBACK_GAMES).forEach(function (slug) {
+    var f = FALLBACK_GAMES[slug];
+    CAT.games[slug] = {
+      slug: slug, title: slug, font: f.font, accent: f.accent, accent2: f.accent,
+      copy: { en: [], fr: [] }, screens: [], art: [], cuts: {}
+    };
+  });
+  var g = CAT.games[state.slug];
+  if (!g) return Promise.resolve();
+
+  var probes = [];
+  ["title", "background-desk", "background-phone", "character-happy", "character-neutral", "character-sad"]
+    .forEach(function (role) { probes.push(probe(BASE + "image/embed/" + state.slug + "-" + role + ".webp", function () { g.art.push(role); })); });
+  for (var i = 1; i <= 16; i++) {
+    (function (i) {
+      var n = String(i).padStart(2, "0");
+      probes.push(probe(BASE + "image/screen/" + state.slug + "-" + n + ".jpg", function () { g.screens.push(n); }));
+    })(i);
+  }
+  [""].concat(FALLBACK_GAMES[state.slug].sheets).forEach(function (name) {
+    for (var i = 1; i <= 40; i++) {
+      (function (i) {
+        var role = "decor-" + (name ? name + "-" : "") + String(i).padStart(2, "0");
+        probes.push(probe(BASE + "image/embed/" + state.slug + "-" + role + ".webp", function () { g.art.push(role); }));
+      })(i);
+    }
+  });
+  /* The object sheets, cut but not adopted (assets/image/object/). They are most of
+     what a game owns — 36 of radiam's 40 pieces — so a page that could not see
+     them showed four objects and looked like a game with four objects. */
+  FALLBACK_GAMES[state.slug].sheets.forEach(function (name) {
+    g.cuts[name] = [];
+    for (var i = 1; i <= 44; i++) {
+      (function (i) {
+        var f = state.slug + "-" + name + "-" + String(i).padStart(2, "0") + ".png";
+        probes.push(probe(BASE + "image/object/" + f, function () { g.cuts[name].push(f); }));
+      })(i);
+    }
+  });
+  return Promise.all(probes).then(function () {
+    g.screens.sort();
+    g.art.sort();
+    Object.keys(g.cuts).forEach(function (k) {
+      g.cuts[k].sort();
+      if (!g.cuts[k].length) delete g.cuts[k];
+    });
+  });
+
+  function probe(url, ok) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { ok(); res(); };
+      im.onerror = function () { res(); };
+      im.src = url;
+    });
+  }
+}
+
+/* The shoot hands everything over on the query string, because a file:// page
+   can read no directory: the capture it wants, the pool of objects it picked
+   and the punchline out of the manifest. */
+function shootCatalogue() {
+  var slug = state.slug;
+  var shot = String(q.get("shot") || 6).padStart(2, "0");
+  var prev = String(Math.max(1, (+q.get("shot") || 6) - 3)).padStart(2, "0");
+  var objects = (q.get("objects") || "").split(",").filter(Boolean);
+  CAT.games[slug] = {
+    slug: slug, title: slug,
+    font: q.get("font") || "exo2",
+    accent: q.get("accent") || "#35e0ff",
+    accent2: q.get("accent2") || q.get("accent") || "#35e0ff",
+    copy: { en: [], fr: [] },
+    screens: [shot, prev],
+    art: ["title", "background-desk", "background-phone",
+      "character-happy", "character-neutral", "character-sad"]
+      .concat(objects.map(function (u) {
+        return u.split("/").pop().replace(slug + "-", "").replace(".webp", "");
+      })),
+    cuts: {}
+  };
+  return Promise.resolve();
+}
+
+function boot() {
+  segOn("seg-format", state.format);
+  segOn("seg-lang", state.lang);
+  segOn("seg-pal", state.pal);
+  segOn("seg-ext", state.ext);
+  segOn("seg-grid", state.grid.on ? "1" : "0");
+
+  el["mode-hint"].className = SERVED ? "hint" : "hint offline";
+  el["mode-hint"].innerHTML = SERVED
+    ? "Three layers: the ground, the pieces dragged onto it, the tagline. " +
+      "<code>Save</code> writes the image into <code>assets/image/&lt;store&gt;/&lt;lang&gt;/</code>."
+    : "<b>Opened over file://</b> — the manifests cannot be read from here, so " +
+      "there is <b>no tagline to pick</b> and no other game's assets, and Save " +
+      "is off. Run <code>make store</code> and open " +
+      "<code>http://localhost:8091/</code>.";
+
+  var got = SHOOT ? shootCatalogue()
+    : SERVED ? fetch("/api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
+        CAT = c;
+        if (!CAT.presets) CAT.presets = { presets: {} };
+      }).catch(function () { return guessCatalogue(); })
+    : guessCatalogue();
+
+  return got.then(function () {
+    fillGames();
+    useFont(game().font || "exo2");
+    elementPalette();
+    return Promise.all([faceReady, preloadGame()]);
+  }).then(function () {
+    /* A composition the shoot was handed, else the layout the game has, else
+       the built-in one. The shoot's parameters ARE the built-in layout's
+       parameters, which is why the batch tool needs no layout to work. */
+    var inline = q.get("comp");
+    if (inline) {
+      state.comp = adoptComp(JSON.parse(decodeURIComponent(escape(atob(inline)))));
+      defaultName();
+      groundPalette(); layerList(); inspect(); meta();
+      fitStage();
+      return waitForPictures();
+    }
+    if (SHOOT) {
+      state.comp = defaultComp({
+        side: q.get("side"), pos: q.get("pos"), logo: q.get("logo"),
+        objn: q.get("objn"), face: q.get("face"), shot: 0,
+        line: q.get("line") || "", kicker: q.get("kicker") || "",
+        objOff: 0
+      });
+      /* Typed copy: the shoot carries the manifest's line itself. */
+      state.comp.items.forEach(function (it) { if (it.kind === "text") it.src = "free"; });
+      defaultName(); meta();
+      fitStage();
+      return waitForPictures();
+    }
+    fitStage();
+    return loadComp().then(waitForPictures);
+  });
+}
+
+function waitForPictures() {
+  return new Promise(function (res) {
+    var tries = 0;
+    (function tick() {
+      if (!pending || ++tries > 200) return res();
+      setTimeout(tick, 40);
+    })();
+  });
+}
+
+boot().then(function () {
+  invalidate();
+  return faceReady;
+}).then(function () {
+  /* The shoot waits on this: the composition is resolved, the typeface is
+     loaded, every picture has decoded and the card has been painted inside a
+     frame — so a capture cannot land on a blank ground or on the fallback
+     face. */
+  return new Promise(function (r) {
+    requestAnimationFrame(function () { paint(); requestAnimationFrame(function () { r(); }); });
+  });
+}).then(function () {
+  window.__cardReady = 1;
+});
+</script>
+</body>
+</html>

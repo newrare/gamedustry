@@ -158,7 +158,7 @@ var games = (window.GAMES || []).filter(function (g) {
    floor either side of the headline.
 
    They are the happy faces the games show on a winning end screen
-   (assets/art/<slug>-character-happy.webp, copied into
+   (assets/image/embed/<slug>-character-happy.webp, copied into
    image/games/<slug>/character.webp by tools/build/build-site.mjs), so the
    studio page is dressed with the games' own artwork and owns none of its own.
 

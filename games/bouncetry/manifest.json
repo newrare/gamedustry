@@ -1,6 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
+  "version": "1.0.0",
   "tagline": "A ball only breaks its own colour and one tap flips every brick",
   "order": 30,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "A wall of red and blue glass over a lake of lava. A ball only breaks its own colour and never changes it on its own, so the tap that swaps the whole wall — as often as you like while the ball is in the air — is the only colour control you have. The dotted sight solves five bounces ahead.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "BREAKOUT",
+            "line": "Tap to <b>flip</b> the wall"
+          },
+          {
+            "kicker": "MID-AIR",
+            "line": "Swap colours <b>mid-air</b>"
+          },
+          {
+            "kicker": "LAVA FLOOR",
+            "line": "Miss and it all <b>melts</b>"
+          },
+          {
+            "kicker": "FIVE BOUNCES",
+            "line": "The sight solves <b>ahead</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "CASSE-BRIQUES",
+            "line": "Tape pour <b>inverser</b> le mur"
+          },
+          {
+            "kicker": "EN PLEIN VOL",
+            "line": "Change de couleur <b>en vol</b>"
+          },
+          {
+            "kicker": "SOL DE LAVE",
+            "line": "Rate et tout <b>fond</b>"
+          },
+          {
+            "kicker": "CINQ REBONDS",
+            "line": "La visée <b>anticipe</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "bouncetry",
@@ -64,6 +109,39 @@
         "tagline": "Une balle ne casse que <b class=\"w-wall\">sa couleur</b> et un <b class=\"w-tap\">tap</b> retourne toutes les briques"
       }
     },
-    "font": "bungee"
+    "font": "bungee",
+    "levels": {
+      "objective": {
+        "from": 350,
+        "to": 2300,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> off the wall",
+        "fr": "Marque <b>{n}</b> sur le mur"
+      },
+      "tune": {
+        "rows": [
+          7,
+          11
+        ],
+        "startBalls": [
+          8,
+          4
+        ],
+        "multiBalls": [
+          3,
+          2
+        ],
+        "bonusBricks": [
+          4,
+          1
+        ],
+        "pullAfter": [
+          7,
+          4
+        ]
+      }
+    }
   }
 }

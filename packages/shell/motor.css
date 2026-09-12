@@ -705,7 +705,7 @@
   .screen.hidden { opacity:0; pointer-events:none; }
 
   /* ---- The painted screens ------------------------------------------------
-     `assets/art/<slug>-background-phone.webp`, inserted as the first child of
+     `assets/image/embed/<slug>-background-phone.webp`, inserted as the first child of
      the intro and the end screen by the shell's Art module. It is behind the
      SCREENS only, never behind the round: a gameplay is balanced against the
      flat ground its SKIN paints.
@@ -737,6 +737,44 @@
       rgba(4,5,14,.34) 58%, rgba(4,5,14,.88) 100%);
   }
 
+  /* ---- The decor: the game's own objects, on the screens ------------------
+     `assets/image/embed/<slug>-decor-NN.webp`, scattered by the shell's Decor module
+     (packages/shell/shell.js) over the end screen and the round's corners, and
+     by packages/webshell over the menu's panels, the pause card and the level
+     map. One to three per screen, each of them hanging off an edge.
+
+     Two nodes per piece: the SLOT carries the position and the fade, the IMAGE
+     carries the tilt, the flip and the bob. Putting both on one node would let
+     the bob's keyframes overwrite the tilt, which is the very trap
+     `#web-title-wrap` exists to avoid in the webshell.
+
+     The bob is a composited transform on a node of at most 220px, so it costs
+     one raster and no frame; `filter` is a drop-shadow on a still image, paid
+     once at paint, not the per-frame `shadowBlur` the canvas rules ban. ---- */
+  .decor-layer { position:absolute; inset:0; pointer-events:none; }
+  /* Behind the screen's own content, and in front of it — a piece over a title
+     is worth two thirds of the opacity (Decor.dress), never more. */
+  .decor-layer.back  { z-index:0; }
+  .decor-layer.front { z-index:3; }
+  /* The round's corners: over the canvas, under the HUD (15) and the overlay
+     (16), so nothing the GAME writes can ever be behind a piece of dressing. */
+  .decor-layer.round { z-index:10; }
+
+  .decor-slot { position:absolute; opacity:0; transition:opacity .55s ease; }
+  .decor-slot.on { opacity:var(--d-a, .5); }
+
+  .decor-piece {
+    display:block; width:100%; height:auto;
+    --d-r:0deg; --d-f:1; --d-bob:8px;
+    transform:rotate(var(--d-r)) scaleX(var(--d-f));
+    animation:decor-bob 7s ease-in-out infinite;
+    filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));
+  }
+  @keyframes decor-bob {
+    0%, 100% { transform:rotate(var(--d-r)) scaleX(var(--d-f)) translateY(0); }
+    50%      { transform:rotate(var(--d-r)) scaleX(var(--d-f)) translateY(calc(var(--d-bob) * -1)); }
+  }
+
   .spinner { width:76px; height:76px; border-radius:50%;
     border:8px solid rgba(255,255,255,.15); border-top-color:var(--accent);
     animation:spin .9s linear infinite; }
@@ -754,7 +792,7 @@
     text-shadow:0 0 22px rgba(0,229,255,.7); }
 
   /* ---- The logotype ------------------------------------------------------
-     `assets/art/<slug>-title.webp` replaces the app icon AND the CSS title.
+     `assets/image/embed/<slug>-title.webp` replaces the app icon AND the CSS title.
      The image is a child of #intro-title, not a sibling, so the webshell's
      breathing wrapper and every SKIN transform on that node still apply.
 
@@ -778,6 +816,45 @@
      each class on its own (`#intro-tagline .w-foo { color:… }`). */
   #intro-tagline { margin-top:16px; font-size:32px; line-height:1.4; color:#c9d6ff; }
   #intro-tagline b { font-weight:900; color:var(--accent); text-shadow:0 0 16px currentColor; }
+
+  /* ---- The studio signature ----------------------------------------------
+     The newrare mark, the studio's name and the build's version number, in the
+     bottom-left corner of the title screen. Built by the shell's Brand module
+     out of CONFIG.brand, which tools/build/build.mjs injects from
+     assets/image/brand/newrare.webp and the manifest — a game declares nothing.
+
+     ONE mark against two lines: the name over the number, so the block is the
+     height of the mark and reads as a signature rather than as a caption.
+
+     The margins are the WEB MENU's own — 44px in from the edge, 72px up from
+     the safe area (packages/webshell/menu.css, #web-view) — so on the web the
+     signature and the menu sit on the same two lines of the layout, one in
+     each bottom corner. A playable has no menu and inherits the same numbers,
+     which keeps the corner identical between the two builds of a game.
+
+     It is absolutely positioned, so it is out of the intro's flex column and
+     nothing above it moves. z-index 4 puts it over the decor layer's front
+     pieces — a signature under a bobbing prop reads as a bug — and
+     pointer-events are off so it can never eat a tap meant for the button
+     above it. Discreet is the point: the muted token, and an opacity per
+     element, because a painted ring and a line of type do not fade the same.
+     ---- */
+  #brand-sig {
+    position:absolute; left:44px; bottom:calc(var(--inset-bottom) + 72px);
+    z-index:4; pointer-events:none;
+    display:flex; align-items:center; gap:12px;
+  }
+  .brand-mark {
+    display:block; width:46px; height:46px; opacity:.8; flex:none;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.6));
+  }
+  .brand-copy {
+    display:flex; flex-direction:column; text-align:left;
+    color:var(--muted); opacity:.45; text-shadow:0 1px 6px rgba(0,0,0,.75);
+  }
+  .brand-line { font-size:22px; font-weight:800; letter-spacing:2px; line-height:1.2; text-transform:uppercase; }
+  .brand-ver  { font-size:18px; font-weight:700; letter-spacing:1px; line-height:1.2; }
+  .brand-ver:empty { display:none; }
 
   /* ---- Animated how-to-play demo -------------------------------------------
      One markup block, five variants (tap / hold / drag / swipe / aim) picked
@@ -808,7 +885,7 @@
   .demo-ripple.d2 { animation-delay:.18s; }
   @keyframes rip { 0%,36%{transform:scale(.4); opacity:0;} 42%{opacity:.8;} 100%{transform:scale(2.1); opacity:0;} }
 
-  /* a fingertip coming from the bottom of the frame — assets/svg/finger.svg,
+  /* a fingertip coming from the bottom of the frame — assets/motor/svg/finger.svg,
      turned 180deg so the index finger points up, inlined as a data URI so the
      file stays self-contained. The tip sits at the top edge of the box. */
   .demo-hand { left:50%; bottom:14px; width:74px; height:92px; margin-left:-37px;
@@ -868,10 +945,14 @@
   #screen-end.has-art { background:transparent; }
   /* Confetti sits above the dark tint but below every piece of end-screen text. */
   #confetti { position:absolute; inset:0; width:720px; height:1280px; pointer-events:none; z-index:0; }
-  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char) { position:relative; z-index:1; }
+  /* `.decor-layer` is excluded with the three below: the rule is an id-strong
+     selector, and catching the layer would replace its own `position:absolute`
+     with `relative` — the dressing would then stack in the flex column and push
+     the whole end screen down. */
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer) { position:relative; z-index:1; }
 
   /* ---- The character ------------------------------------------------------
-     One of `assets/art/<slug>-character-{sad,neutral,happy}.webp`, picked by
+     One of `assets/image/embed/<slug>-character-{sad,neutral,happy}.webp`, picked by
      the star count the round scored (shell.js, Art.faceFor).
 
      It hangs off the bottom-right corner of the frame, cropped by the bottom

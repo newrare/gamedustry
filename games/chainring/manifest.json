@@ -1,6 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
+  "version": "1.0.0",
   "tagline": "Tap the instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -31,6 +32,50 @@
     }
   },
   "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "ON THE BEAT",
+            "line": "Tap on the <b>beat</b>"
+          },
+          {
+            "kicker": "PERFECT",
+            "line": "Chain a <b>perfect</b> combo"
+          },
+          {
+            "kicker": "SUDDEN DEATH",
+            "line": "One spike <b>ends</b> it"
+          },
+          {
+            "kicker": "EVERY RING",
+            "line": "Some beats are <b>empty</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "SUR LE TEMPS",
+            "line": "Tape sur le <b>temps</b>"
+          },
+          {
+            "kicker": "PARFAIT",
+            "line": "Enchaîne les <b>parfaits</b>"
+          },
+          {
+            "kicker": "MORT SUBITE",
+            "line": "Un pic et c’est <b>fini</b>"
+          },
+          {
+            "kicker": "CHAQUE ANNEAU",
+            "line": "Certains temps sont <b>vides</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "chainring",
@@ -65,6 +110,43 @@
         "tagline": "Tape à l’instant où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>"
       }
     },
-    "font": "exo2"
+    "font": "exo2",
+    "levels": {
+      "objective": {
+        "from": 700,
+        "to": 4600,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> on the chart",
+        "fr": "Marque <b>{n}</b> sur la partition"
+      },
+      "tune": {
+        "gameSeconds": [
+          24,
+          60
+        ],
+        "travelBeats": [
+          8,
+          3.5
+        ],
+        "travelBeatsEnd": [
+          6,
+          2.5
+        ],
+        "gapChance": [
+          0.02,
+          0.35
+        ],
+        "gapChanceEnd": [
+          0.35,
+          0.85
+        ],
+        "breakAfter": [
+          4,
+          2
+        ]
+      }
+    }
   }
 }
