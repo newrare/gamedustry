@@ -5,7 +5,7 @@
     title:   "ECHOMAZE",
     /* One short sentence, and nothing else: bounce, the dark maze, the exit.
        The stage below plays exactly that. */
-    tagline: "<b class=\"w-echo\">Bounce</b> through the dark <b class=\"w-maze\">maze</b> to&nbsp;the&nbsp;<b class=\"w-exit\">exit</b>",
+    tagline: "<b class=\"w-echo\">Find</b> and aim the right way through the <b class=\"w-maze\">maze</b> to&nbsp;the&nbsp;<b class=\"w-exit\">exit</b>",
     gameSeconds: 0,                  // no clock: the run ends with the pulses
 
     storeUrl: {

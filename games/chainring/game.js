@@ -6,7 +6,7 @@
     /* The intro carries one sentence and nothing else — the title, the second
        line of copy and the demo caption are hidden in the SKIN, because the
        animated stage below already shows the whole mechanic. */
-    tagline: "Tap the instant a <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">ring</b>",
+    tagline: "Tap to the beat, at the exact instant a <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">ring</b>",
     gameSeconds: 30,
     storeUrl: {
       ios:     "https://newrare.app/#playables",

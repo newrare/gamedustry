@@ -1,8 +1,8 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.0.0",
-  "tagline": "Tap on the impact to blast the rival tops away",
+  "version": "1.0.1",
+  "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Toupie contre toupie. Tape pile à l’impact pour souffler tes rivaux et regagner de la vitesse.",
+      "tagline": "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
       "tags": [
         "Tap rythmé",
         "Sans fin",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Top against top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      "tagline": "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
       "tags": [
         "Timing tap",
         "Endless",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "TOP VS TOP",
-            "line": "Tap right on <b>impact</b>"
+            "kicker": "VERSUS",
+            "line": "Impact and <b>rhythm</b>"
           },
           {
             "kicker": "SHOCKWAVE",
-            "line": "Blast them into the <b>wall</b>"
+            "line": "Smash the others into the <b>walls</b>"
           },
           {
-            "kicker": "WIND BACK UP",
-            "line": "Every hit <b>refills</b> your spin"
+            "kicker": "SPIN",
+            "line": "Keep your <b>speed</b>"
           },
           {
-            "kicker": "THEY COME BACK",
-            "line": "Three to five <b>shells</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "TOUPIE CONTRE TOUPIE",
-            "line": "Tape pile à l’<b>impact</b>"
+            "kicker": "VERSUS",
+            "line": "Impact et <b>rythme</b>"
           },
           {
             "kicker": "ONDE DE CHOC",
-            "line": "Colle-les au <b>mur</b>"
+            "line": "Explose les autres sur les <b>murs</b>"
           },
           {
-            "kicker": "REGAGNE DE LA VITESSE",
-            "line": "Chaque coup te <b>relance</b>"
+            "kicker": "ROTATION",
+            "line": "Conserve la <b>vitesse</b>"
           },
           {
-            "kicker": "ILS REVIENNENT",
-            "line": "Trois à cinq <b>coques</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">Tape</b> à l’<b class=\"w-hit\">impact</b> pour éjecter les toupies rivales"
+        "tagline": "Éjecte puis détruis les toupies rivales avec un <b class=\"w-tap\">TAP</b> pile à l’<b class=\"w-hit\">impact</b>"
       }
     },
     "font": "bungee",

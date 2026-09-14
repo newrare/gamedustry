@@ -1,8 +1,8 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.0.0",
-  "tagline": "Bin it or keep it to finish the poker hand you are dealt",
+  "version": "1.0.1",
+  "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Une carte à la fois : à la poubelle ou dans la main. Cinq gardes forment une main de poker.",
+      "tagline": "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
       "tags": [
         "Swipe pour trier",
         "Trois défausses",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "One card at a time: bin it or keep it. Five keeps make a poker hand, paid on the spot.",
+      "tagline": "Chain the best poker hands as fast as you can to score as much as possible.",
       "tags": [
         "Swipe to sort",
         "Three discards",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "ONE CARD",
-            "line": "Bin it or <b>keep</b> it"
+            "kicker": "CHOICE",
+            "line": "Keep it or <b>bin</b> it"
           },
           {
-            "kicker": "FIVE KEEPS",
-            "line": "Make a <b>poker</b> hand"
+            "kicker": "FAST",
+            "line": "Choose <b>fast</b>"
           },
           {
-            "kicker": "PAID ON THE SPOT",
-            "line": "A pair or <b>better</b>"
+            "kicker": "THINKING",
+            "line": "The timer is the <b>enemy</b>"
           },
           {
-            "kicker": "THREE DISCARDS",
-            "line": "Waste one and it <b>costs</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "UNE CARTE",
-            "line": "Jette-la ou <b>garde</b>-la"
+            "kicker": "CHOIX",
+            "line": "Garde ou <b>jette</b>"
           },
           {
-            "kicker": "CINQ GARDES",
-            "line": "Fais une main de <b>poker</b>"
+            "kicker": "RAPIDE",
+            "line": "Choisis <b>rapidement</b>"
           },
           {
-            "kicker": "PAYÉ SUR PLACE",
-            "line": "Une paire ou <b>mieux</b>"
+            "kicker": "RÉFLEXION",
+            "line": "Le timer est l’<b>ennemi</b>"
           },
           {
-            "kicker": "TROIS CHUTES",
-            "line": "Un gâchis et ça <b>coûte</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -106,7 +114,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-bin\">Jette</b> ou <b class=\"w-keep\">garde</b> pour compléter la <b class=\"w-hand\">main de poker</b> distribuée"
+        "tagline": "<b class=\"w-bin\">Jette</b> ou <b class=\"w-keep\">garde</b> la carte proposée pour compléter ta <b class=\"w-hand\">main</b>"
       }
     },
     "font": "bebasneue",

@@ -6,7 +6,7 @@
     /* One sentence, and nothing else: the stage under it shows the finger
        pressing one side and the bike carving that way, so the line only has to
        name the gesture, the machine and the fuel. */
-    tagline: "<b class=\"w-press\">Press left or right</b> to lean, <b class=\"w-pass\">take places</b> off nineteen rivals and never break your <b class=\"w-shield\">shield</b>",
+    tagline: "Lean your ship <b class=\"w-press\">left or right</b> to <b class=\"w-pass\">take places</b> and never break your <b class=\"w-shield\">shield</b>",
     gameSeconds: 0,                  // endless: the run ends when the cells do
 
     // Store links used by every CTA. The right one is picked at runtime from the

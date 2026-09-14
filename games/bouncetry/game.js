@@ -6,7 +6,7 @@
     /* One sentence, and nothing else — the one rule of the game and nothing
        around them. The stage below plays exactly that: the ball keeps its
        colour, the tap flips the whole wall of glass. */
-    tagline: "A ball only breaks its <b class=\"w-wall\">own colour</b> and one <b class=\"w-tap\">tap</b> flips every brick",
+    tagline: "A ball only breaks the bricks of <b class=\"w-wall\">its own colour</b> and one <b class=\"w-tap\">tap</b> flips them all",
     gameSeconds: 0,                  // no clock: the run ends when the balls do
 
     storeUrl: {

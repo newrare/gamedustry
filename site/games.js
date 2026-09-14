@@ -20,11 +20,11 @@ window.GAMES = [
     name: "Spinshock",
     accent: ["#40ecff", "#ff4fbe"],
     fr: {
-      tagline: "Toupie contre toupie. Tape pile à l’impact pour souffler tes rivaux et regagner de la vitesse.",
+      tagline: "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
       tags: ["Tap rythmé", "Sans fin", "Physique"]
     },
     en: {
-      tagline: "Top against top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
       tags: ["Timing tap", "Endless", "Physics"]
     }
   },
@@ -33,11 +33,11 @@ window.GAMES = [
     name: "Chainring",
     accent: ["#4bf5ff", "#4263eb"],
     fr: {
-      tagline: "Tape à l’instant où l’anneau se referme sur la balle. Chaque anneau tombe sur un temps de la musique.",
+      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
       tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
     },
     en: {
-      tagline: "Tap the instant the closing ring hits the ball. Every ring lands on a beat of the track.",
+      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
       tags: ["Rhythm tap", "On the beat", "Sudden death"]
     }
   },
@@ -46,11 +46,11 @@ window.GAMES = [
     name: "Bouncetry",
     accent: ["#ff3b57", "#2f86ff"],
     fr: {
-      tagline: "Un mur de verre rouge et bleu au-dessus de la lave. Tape pour inverser toutes les couleurs en plein vol.",
+      tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
       tags: ["Tap inverseur", "Casse-brique", "Sol de lave"]
     },
     en: {
-      tagline: "A wall of red and blue glass over a lake of lava. Tap to flip every colour while the ball is mid-air.",
+      tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
       tags: ["Tap to swap", "Breakout", "Lava floor"]
     }
   },
@@ -59,11 +59,11 @@ window.GAMES = [
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
     fr: {
-      tagline: "Vise, tire, aligne trois bulles. Pas de chrono : la moisissure s’emballe, à toi de la coiffer.",
+      tagline: "Un Bubble magique classique, mais avec un léger twist : sois plus rapide et plus stratégique que la contamination des bulles.",
       tags: ["Vise et tire", "Trois d’affilée", "Course à la pourriture"]
     },
     en: {
-      tagline: "Aim, shoot, match three bubbles. No clock — just the blight, spreading faster and faster.",
+      tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
       tags: ["Aim & shoot", "Match three", "Race the rot"]
     }
   },
@@ -85,11 +85,11 @@ window.GAMES = [
     name: "Triverse",
     accent: ["#3ce0ff", "#ff5ad4"],
     fr: {
-      tagline: "Trois cordes de lumière montent dans le vide. Swipe pour sauter de l’une à l’autre, gemmes contre mines.",
+      tagline: "Trois routes lumineuses. Swipe pour sauter de l’une à l’autre afin d’éviter les pièges.",
       tags: ["Swipe", "Sans fin", "3 vies"]
     },
     en: {
-      tagline: "Three ropes of light run up the void. Swipe to hop between them, gems against mines.",
+      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
       tags: ["Swipe lanes", "Endless", "3 lives"]
     }
   },
@@ -98,11 +98,11 @@ window.GAMES = [
     name: "Arcider",
     accent: ["#35e8ff", "#7a4dff"],
     fr: {
-      tagline: "Vingt pilotes, une autoroute néon, trois arrivants. Penche-toi pour doubler : ton bouclier ne se recharge jamais.",
+      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de battle royale. Évite les pièges et les adversaires, et choisis entre santé et vitesse.",
       tags: ["Maintiens pour incliner", "Battle royale", "1020 m"]
     },
     en: {
-      tagline: "Twenty pilots, one neon highway, three finishers. Lean to overtake, because your shield never refills.",
+      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
       tags: ["Hold to lean", "Battle royale", "1020 m"]
     }
   },
@@ -111,11 +111,11 @@ window.GAMES = [
     name: "Vipera",
     accent: ["#4dff9b", "#12b86a"],
     fr: {
-      tagline: "Une vipère taille sa galerie sans fin. Chaque tap change le côté qu’elle creuse, chaque gemme l’allonge.",
+      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
       tags: ["Tap pour dévier", "Sans fin", "Armure"]
     },
     en: {
-      tagline: "A viper carves its endless burrow. Every tap flips the side it digs toward, every gem makes it longer.",
+      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
       tags: ["Tap to swerve", "Endless", "Armour"]
     }
   },
@@ -124,11 +124,11 @@ window.GAMES = [
     name: "Echomaze",
     accent: ["#7ef9ff", "#4ade80"],
     fr: {
-      tagline: "Deux secondes pour voir le labyrinthe, puis le noir total. Tire des impulsions pour l’écholocaliser.",
+      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin à l’écho des balles.",
       tags: ["Vise et tire", "Écholocation", "1 sortie sur 6"]
     },
     en: {
-      tagline: "Two seconds to see the labyrinth, then total darkness. Fire pulses to echolocate it.",
+      tagline: "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
       tags: ["Aim & fire", "Echolocation", "1 way out of 6"]
     }
   },
@@ -137,11 +137,11 @@ window.GAMES = [
     name: "Gearball",
     accent: ["#7ef9ff", "#ffb44f"],
     fr: {
-      tagline: "Huit engrenages, une piste continue, une bille qui tombe. Anticipe la rotation et soude la chaîne.",
+      tagline: "Des engrenages et des billes. Anticipe la rotation pour placer les billes au bon moment.",
       tags: ["Tap pour lâcher", "Anticipe la roue", "Boucle à remplir"]
     },
     en: {
-      tagline: "Eight cogs, one continuous track, one falling ball. Lead the rotation and weld the chain.",
+      tagline: "Cogs and balls. Lead the rotation to drop each ball at the right moment.",
       tags: ["Tap to drop", "Lead the cog", "Fill the loop"]
     }
   },
@@ -150,11 +150,11 @@ window.GAMES = [
     name: "Radiam",
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
-      tagline: "Trois couronnes de perles sur douze rayons. Fais tourner une seule couronne : la mise ne tombe qu’à l’arrêt.",
+      tagline: "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
       tags: ["Glisse un anneau", "Trois par rayon", "Charges et novas"]
     },
     en: {
-      tagline: "Three rings of beads over twelve rays. Turn one ring at a time; the dial only pays once it stops.",
+      tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
       tags: ["Drag a ring", "Three per ray", "Charges & novas"]
     }
   },
@@ -163,11 +163,11 @@ window.GAMES = [
     name: "Slipdeck",
     accent: ["#f5c451", "#3ddc97"],
     fr: {
-      tagline: "Une carte à la fois : à la poubelle ou dans la main. Cinq gardes forment une main de poker.",
+      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
       tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
     },
     en: {
-      tagline: "One card at a time: bin it or keep it. Five keeps make a poker hand, paid on the spot.",
+      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
       tags: ["Swipe to sort", "Three discards", "Poker hands"]
     }
   },
@@ -176,11 +176,11 @@ window.GAMES = [
     name: "Marshmelt",
     accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "Chaque tap envoie le marshmallow sur le rocher visé. Les rochers fondent, la lave monte, il faut grimper.",
+      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
       tags: ["Tap pour sauter", "Sans fin", "Lave"]
     },
     en: {
-      tagline: "Every tap flings a sticky marshmallow at the rock you aimed at. The rocks melt, the lava rises, you keep climbing.",
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
       tags: ["Tap to jump", "Endless", "Lava"]
     }
   }

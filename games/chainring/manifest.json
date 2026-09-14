@@ -1,8 +1,8 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.0.0",
-  "tagline": "Tap the instant a ball hits a ring",
+  "version": "1.0.1",
+  "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Tape à l’instant où l’anneau se referme sur la balle. Chaque anneau tombe sur un temps de la musique.",
+      "tagline": "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
       "tags": [
         "Tap rythmé",
         "Sur la musique",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Tap the instant the closing ring hits the ball. Every ring lands on a beat of the track.",
+      "tagline": "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
       "tags": [
         "Rhythm tap",
         "On the beat",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "ON THE BEAT",
-            "line": "Tap on the <b>beat</b>"
+            "kicker": "RHYTHM",
+            "line": "Tap on the <b>right beat</b>"
           },
           {
             "kicker": "PERFECT",
-            "line": "Chain a <b>perfect</b> combo"
+            "line": "Chain <b>perfects</b> to the music"
           },
           {
-            "kicker": "SUDDEN DEATH",
-            "line": "One spike <b>ends</b> it"
+            "kicker": "SATISFYING",
+            "line": "<b>Endless</b> bounce"
           },
           {
-            "kicker": "EVERY RING",
-            "line": "Some beats are <b>empty</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "SUR LE TEMPS",
-            "line": "Tape sur le <b>temps</b>"
+            "kicker": "RYTHME",
+            "line": "Tape au <b>bon moment</b>"
           },
           {
             "kicker": "PARFAIT",
-            "line": "Enchaîne les <b>parfaits</b>"
+            "line": "Enchaîne les <b>perfect</b> en musique"
           },
           {
-            "kicker": "MORT SUBITE",
-            "line": "Un pic et c’est <b>fini</b>"
+            "kicker": "SATISFAISANT",
+            "line": "Rebond <b>infini</b>"
           },
           {
-            "kicker": "CHAQUE ANNEAU",
-            "line": "Certains temps sont <b>vides</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape à l’instant où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>"
+        "tagline": "Tape en rythme, à l’instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>"
       }
     },
     "font": "exo2",

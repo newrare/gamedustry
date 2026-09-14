@@ -1,8 +1,8 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.0.0",
-  "tagline": "Tap to fling the comet from planet to planet",
+  "version": "1.0.1",
+  "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
   "targets": [
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "TIMING TAP",
-            "line": "Snap <b>gravity</b>"
+            "kicker": "TAP",
+            "line": "Snap the <b>gravity</b>"
           },
           {
-            "kicker": "TANGENT",
-            "line": "Fling to the next <b>planet</b>"
+            "kicker": "AIM",
+            "line": "Use the <b>trajectories</b>"
           },
           {
             "kicker": "COMBO",
-            "line": "Chain every <b>orbit</b>"
+            "line": "Chain the <b>orbits</b>"
           },
           {
-            "kicker": "WALLS",
-            "line": "A bounce <b>breaks</b> the chain"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "TAP DE PRÉCISION",
+            "kicker": "TAP",
             "line": "Coupe la <b>gravité</b>"
           },
           {
-            "kicker": "TANGENTE",
-            "line": "File vers la <b>planète</b>"
+            "kicker": "VISE",
+            "line": "Utilise les <b>trajectoires</b>"
           },
           {
             "kicker": "COMBO",
-            "line": "Enchaîne chaque <b>orbite</b>"
+            "line": "Enchaîne les <b>orbites</b>"
           },
           {
-            "kicker": "LES MURS",
-            "line": "Un rebond <b>casse</b> la chaîne"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b>"
+        "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b> et enchaîner les combos"
       }
     },
     "font": "exo2",

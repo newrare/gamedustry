@@ -1,8 +1,8 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "1.0.0",
-  "tagline": "A ball only breaks its own colour and one tap flips every brick",
+  "version": "1.0.1",
+  "tagline": "A ball only breaks the bricks of its own colour and one tap flips them all",
   "order": 30,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un mur de verre rouge et bleu au-dessus de la lave. Tape pour inverser toutes les couleurs en plein vol.",
+      "tagline": "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
       "tags": [
         "Tap inverseur",
         "Casse-brique",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "A wall of red and blue glass over a lake of lava. Tap to flip every colour while the ball is mid-air.",
+      "tagline": "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
       "tags": [
         "Tap to swap",
         "Breakout",
@@ -37,20 +37,24 @@
       "en": {
         "lines": [
           {
-            "kicker": "BREAKOUT",
-            "line": "Tap to <b>flip</b> the wall"
+            "kicker": "BRICK BREAKER",
+            "line": "With a limited supply of <b>balls</b>"
           },
           {
-            "kicker": "MID-AIR",
-            "line": "Swap colours <b>mid-air</b>"
+            "kicker": "BRICK SWITCH",
+            "line": "Tap to <b>flip them all</b>"
           },
           {
-            "kicker": "LAVA FLOOR",
-            "line": "Miss and it all <b>melts</b>"
+            "kicker": "AIM LINE",
+            "line": "Read the <b>bounces</b> ahead"
           },
           {
-            "kicker": "FIVE BOUNCES",
-            "line": "The sight solves <b>ahead</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
@@ -58,19 +62,23 @@
         "lines": [
           {
             "kicker": "CASSE-BRIQUES",
-            "line": "Tape pour <b>inverser</b> le mur"
+            "line": "Avec une limite de <b>billes</b>"
           },
           {
-            "kicker": "EN PLEIN VOL",
-            "line": "Change de couleur <b>en vol</b>"
+            "kicker": "BRIQUE SWITCH",
+            "line": "TAP pour <b>tout inverser</b>"
           },
           {
-            "kicker": "SOL DE LAVE",
-            "line": "Rate et tout <b>fond</b>"
+            "kicker": "AIDE",
+            "line": "Anticipe les <b>rebonds</b>"
           },
           {
-            "kicker": "CINQ REBONDS",
-            "line": "La visée <b>anticipe</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -106,7 +114,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Une balle ne casse que <b class=\"w-wall\">sa couleur</b> et un <b class=\"w-tap\">tap</b> retourne toutes les briques"
+        "tagline": "Une balle ne brise que les briques de <b class=\"w-wall\">sa couleur</b> et un <b class=\"w-tap\">TAP</b> les inverse toutes"
       }
     },
     "font": "bungee",

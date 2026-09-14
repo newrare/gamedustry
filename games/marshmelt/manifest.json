@@ -1,8 +1,8 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.0.0",
-  "tagline": "Tap to fling a sticky marshmallow from rock to rock over the lava",
+  "version": "1.0.1",
+  "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Chaque tap envoie le marshmallow sur le rocher visé. Les rochers fondent, la lave monte, il faut grimper.",
+      "tagline": "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
       "tags": [
         "Tap pour sauter",
         "Sans fin",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Every tap flings a sticky marshmallow at the rock you aimed at. The rocks melt, the lava rises, you keep climbing.",
+      "tagline": "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
       "tags": [
         "Tap to jump",
         "Endless",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "ONE TAP",
-            "line": "Fling at the <b>rock</b>"
+            "kicker": "DON’T BURN",
+            "line": "Aim <b>fast</b>"
           },
           {
-            "kicker": "THE LAVA RISES",
-            "line": "Keep <b>climbing</b>"
+            "kicker": "THE LAVA",
+            "line": "Climb to <b>survive</b>"
           },
           {
-            "kicker": "ROCKS MELT",
-            "line": "Nothing holds for <b>long</b>"
+            "kicker": "FAST",
+            "line": "<b>Reflex</b> mode"
           },
           {
-            "kicker": "ENDLESS",
-            "line": "How high can you <b>get</b>?"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "UN TAP",
-            "line": "Vise le <b>rocher</b>"
+            "kicker": "NE BRULE PAS",
+            "line": "Vise <b>rapidement</b>"
           },
           {
-            "kicker": "LA LAVE MONTE",
-            "line": "Continue de <b>grimper</b>"
+            "kicker": "LA LAVE",
+            "line": "Grimpe pour <b>survivre</b>"
           },
           {
-            "kicker": "TOUT FOND",
-            "line": "Rien ne tient <b>longtemps</b>"
+            "kicker": "RAPIDE",
+            "line": "Mode <b>réflexe</b>"
           },
           {
-            "kicker": "SANS FIN",
-            "line": "Jusqu’où peux-tu <b>monter</b> ?"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -79,7 +87,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">Tape</b> pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>"
+        "tagline": "<b class=\"w-tap\">TAP</b> en visant pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>"
       }
     },
     "font": "baloo2",

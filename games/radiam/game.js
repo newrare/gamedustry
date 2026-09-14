@@ -6,7 +6,7 @@
     /* One sentence, and the stage below plays it: the finger rocks the toothed
        outer ring one slot, the amber bead it carries joins the two ambers
        already sitting on the 12 o'clock ray, and the ray pays. */
-    tagline: "<b class=\"w-turn\">Turn</b> a ring, line up <b class=\"w-three\">three</b> on one <b class=\"w-ray\">ray</b>",
+    tagline: "<b class=\"w-turn\">Turn</b> one or more rings to line up <b class=\"w-three\">three</b> beads on one <b class=\"w-ray\">ray</b>",
     gameSeconds: 40,                 // round length in seconds; 0 = endless
 
     // Store links used by every CTA. The right one is picked at runtime from the

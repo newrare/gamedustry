@@ -5,7 +5,7 @@
     title:   "GEARBALL",
     /* One sentence, and the stage below plays it: the loop turns, a gap comes
        round to the hopper, the finger taps and the ball takes the empty seat. */
-    tagline: "<b class=\"w-drop\">Drop</b> a ball in an <b class=\"w-slot\">empty slot</b>, <b class=\"w-fill\">chain them to fill the loop</b>",
+    tagline: "<b class=\"w-drop\">Drop</b> a ball in an <b class=\"w-slot\">empty slot</b> and <b class=\"w-fill\">chain them to fill the loop</b>",
     gameSeconds: 45,                 // round length in seconds; 0 = endless
 
     // Store links used by every CTA. The right one is picked at runtime from the

@@ -1,8 +1,8 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.0.0",
-  "tagline": "Press left or right to lean, take places off nineteen rivals and never break your shield",
+  "version": "1.0.1",
+  "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vingt pilotes, une autoroute néon, trois arrivants. Penche-toi pour doubler : ton bouclier ne se recharge jamais.",
+      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de battle royale. Évite les pièges et les adversaires, et choisis entre santé et vitesse.",
       "tags": [
         "Maintiens pour incliner",
         "Battle royale",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Twenty pilots, one neon highway, three finishers. Lean to overtake, because your shield never refills.",
+      "tagline": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
       "tags": [
         "Hold to lean",
         "Battle royale",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "20 PILOTS",
-            "line": "Lean to <b>overtake</b>"
+            "kicker": "BATTLE ROYALE RACE",
+            "line": "Stay <b>alive</b> and win"
           },
           {
-            "kicker": "NO REFILL",
-            "line": "Your shield never <b>comes back</b>"
+            "kicker": "CHOICE",
+            "line": "More speed, or a shield <b>refill</b>"
           },
           {
-            "kicker": "TOP THREE",
-            "line": "Only <b>three</b> finish"
+            "kicker": "RETRO",
+            "line": "A <b>futuristic</b> race"
           },
           {
-            "kicker": "1020 M",
-            "line": "One neon <b>highway</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "20 PILOTES",
-            "line": "Penche-toi pour <b>doubler</b>"
+            "kicker": "COURSE EN BATTLE ROYALE",
+            "line": "Reste en <b>vie</b> et gagne"
           },
           {
-            "kicker": "AUCUNE RECHARGE",
-            "line": "Ton bouclier ne <b>revient</b> jamais"
+            "kicker": "CHOIX",
+            "line": "Plus de vitesse ou reprise de <b>bouclier</b>"
           },
           {
-            "kicker": "TOP TROIS",
-            "line": "Seuls <b>trois</b> arrivent"
+            "kicker": "RETRO",
+            "line": "Course <b>futuriste</b>"
           },
           {
-            "kicker": "1020 M",
-            "line": "Une autoroute <b>néon</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-press\">Presse à gauche ou à droite</b> pour t’incliner, <b class=\"w-pass\">double dix-neuf rivaux</b> et ne casse jamais ton <b class=\"w-shield\">bouclier</b>"
+        "tagline": "Incline ton vaisseau à <b class=\"w-press\">droite ou à gauche</b> pour <b class=\"w-pass\">gagner des places</b> sans jamais casser ton <b class=\"w-shield\">bouclier</b>"
       }
     },
     "font": "orbitron",
