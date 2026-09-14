@@ -5,7 +5,7 @@
     title:   "ORBINITY",
     /* One sentence, and nothing else: the demo caption is dropped in the SKIN
        because the stage below already plays the orbit / release / catch. */
-    tagline: "Tap to fling the <b class=\"w-comet\">comet</b><br>from <b class=\"w-planet\">planet</b> to <b class=\"w-planet\">planet</b>",
+    tagline: "Tap to fling the <b class=\"w-comet\">comet</b><br>from <b class=\"w-planet\">planet</b> to <b class=\"w-planet\">planet</b> and chain the combos",
     gameSeconds: 30,                 // round length in seconds; 0 = endless
 
     // Store links used by every CTA. The right one is picked at runtime from the

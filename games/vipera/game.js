@@ -6,7 +6,7 @@
     /* One sentence, and nothing else: the stage under it shows the viper
        turning right then left on two taps, so the line only has to name the
        gesture, the character and the reward. */
-    tagline: "<b class=\"w-tap\">Tap</b> to swerve the <b class=\"w-viper\">viper</b><br>and <b class=\"w-eat\">eat</b> to grow",
+    tagline: "<b class=\"w-tap\">Tap</b> to swerve the <b class=\"w-viper\">viper</b><br>and <b class=\"w-eat\">grow</b> for maximum bonus",
     gameSeconds: 0,                  // endless: the run ends on the third bite
 
     // Store links used by every CTA. The right one is picked at runtime from the

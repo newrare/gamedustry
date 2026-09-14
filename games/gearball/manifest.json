@@ -1,8 +1,8 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.0.0",
-  "tagline": "Drop a ball in an empty slot, chain them to fill the loop",
+  "version": "1.0.1",
+  "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
   "order": 100,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Huit engrenages, une piste continue, une bille qui tombe. Anticipe la rotation et soude la chaîne.",
+      "tagline": "Des engrenages et des billes. Anticipe la rotation pour placer les billes au bon moment.",
       "tags": [
         "Tap pour lâcher",
         "Anticipe la roue",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Eight cogs, one continuous track, one falling ball. Lead the rotation and weld the chain.",
+      "tagline": "Cogs and balls. Lead the rotation to drop each ball at the right moment.",
       "tags": [
         "Tap to drop",
         "Lead the cog",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "EIGHT COGS",
-            "line": "One continuous <b>track</b>"
+            "kicker": "GEAR",
+            "line": "<b>Chain</b> electrification"
           },
           {
             "kicker": "TIMING",
             "line": "Lead the <b>rotation</b>"
           },
           {
-            "kicker": "WELD",
-            "line": "Fill the whole <b>loop</b>"
+            "kicker": "SKILL",
+            "line": "Aim for the right <b>slot</b>"
           },
           {
-            "kicker": "ONE TAP",
-            "line": "Drop the <b>ball</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "HUIT ENGRENAGES",
-            "line": "Une piste <b>continue</b>"
+            "kicker": "GEAR",
+            "line": "<b>Électrification</b> en chaîne"
           },
           {
             "kicker": "TIMING",
             "line": "Anticipe la <b>rotation</b>"
           },
           {
-            "kicker": "SOUDE",
-            "line": "Remplis toute la <b>boucle</b>"
+            "kicker": "SKILL",
+            "line": "Vise le bon <b>espace</b>"
           },
           {
-            "kicker": "UN TAP",
-            "line": "Lâche la <b>bille</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -106,7 +114,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b>, <b class=\"w-fill\">enchaîne pour remplir la boucle</b>"
+        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b> et <b class=\"w-fill\">enchaîne-les pour remplir la chaîne</b>"
       }
     },
     "font": "russoone",

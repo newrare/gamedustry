@@ -4,7 +4,7 @@
   var CONFIG = {
     title:   "SLIPDECK",
     /* One sentence, three words in colour: the two gestures and the prize. */
-    tagline: "<b class=\"w-bin\">Bin</b> it or <b class=\"w-keep\">keep</b> it to finish the <b class=\"w-hand\">poker hand</b> you are dealt",
+    tagline: "<b class=\"w-bin\">Bin</b> or <b class=\"w-keep\">keep</b> the card you are dealt to finish your <b class=\"w-hand\">hand</b>",
     gameSeconds: 30,                 // round length in seconds; 0 = endless
 
     // Store links used by every CTA. The right one is picked at runtime from the

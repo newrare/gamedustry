@@ -5,7 +5,7 @@
     title:   "MARSHMELT",
     /* One sentence, three coloured words: the gesture, the character, the
        threat — exactly what the stage below acts out. */
-    tagline: "<b class=\"w-tap\">Tap</b> to fling the <b class=\"w-mallow\">marshmallow</b> from rock to rock over the <b class=\"w-lava\">lava</b>",
+    tagline: "<b class=\"w-tap\">Tap</b> where you aim to fling the <b class=\"w-mallow\">marshmallow</b> from rock to rock over the <b class=\"w-lava\">lava</b>",
     gameSeconds: 0,                  // endless: the run ends in the lava
     storeUrl: {
       ios:     "https://newrare.app/#playables",

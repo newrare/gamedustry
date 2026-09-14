@@ -1,8 +1,8 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.0.0",
-  "tagline": "Bounce through the dark maze to the exit",
+  "version": "1.0.1",
+  "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Deux secondes pour voir le labyrinthe, puis le noir total. Tire des impulsions pour l’écholocaliser.",
+      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin à l’écho des balles.",
       "tags": [
         "Vise et tire",
         "Écholocation",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Two seconds to see the labyrinth, then total darkness. Fire pulses to echolocate it.",
+      "tagline": "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
       "tags": [
         "Aim & fire",
         "Echolocation",
@@ -38,19 +38,23 @@
         "lines": [
           {
             "kicker": "TWO SECONDS",
-            "line": "Then total <b>darkness</b>"
+            "line": "<b>Fast</b> memorising"
           },
           {
             "kicker": "ECHO",
-            "line": "Fire a pulse, <b>see</b>"
+            "line": "The <b>bounces</b> can help"
           },
           {
-            "kicker": "SIX MOUTHS",
-            "line": "One way <b>out</b>"
+            "kicker": "SATISFYING",
+            "line": "A <b>joy</b> to run through"
           },
           {
-            "kicker": "MEMORY",
-            "line": "Remember the <b>maze</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
@@ -58,19 +62,23 @@
         "lines": [
           {
             "kicker": "DEUX SECONDES",
-            "line": "Puis le noir <b>total</b>"
+            "line": "Mémorisation <b>rapide</b>"
           },
           {
-            "kicker": "ÉCHO",
-            "line": "Tire une impulsion, <b>vois</b>"
+            "kicker": "ECHO",
+            "line": "Les <b>rebonds</b> peuvent aider"
           },
           {
-            "kicker": "SIX BOUCHES",
-            "line": "Une seule <b>sortie</b>"
+            "kicker": "SATISFAISANT",
+            "line": "Un <b>plaisir</b> à parcourir"
           },
           {
-            "kicker": "MÉMOIRE",
-            "line": "Souviens-toi du <b>labyrinthe</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-echo\">Rebondis</b> dans le <b class=\"w-maze\">labyrinthe</b> obscur jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>"
+        "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>"
       }
     },
     "font": "orbitron",

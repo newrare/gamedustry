@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Trois cordes de lumière montent dans le vide. Swipe pour sauter de l’une à l’autre, gemmes contre mines.",
+      "tagline": "Trois routes lumineuses. Swipe pour sauter de l’une à l’autre afin d’éviter les pièges.",
       "tags": [
         "Swipe",
         "Sans fin",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Three ropes of light run up the void. Swipe to hop between them, gems against mines.",
+      "tagline": "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
       "tags": [
         "Swipe lanes",
         "Endless",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "THREE ROPES",
-            "line": "Swipe to <b>hop</b>"
+            "kicker": "PATH",
+            "line": "Fast <b>swipe</b>"
           },
           {
-            "kicker": "GEMS & MINES",
-            "line": "Read the <b>rope</b> ahead"
+            "kicker": "BONUS",
+            "line": "Read what <b>comes next</b>"
           },
           {
-            "kicker": "THREE LIVES",
-            "line": "The void <b>costs</b> one"
+            "kicker": "LOOP",
+            "line": "Stay <b>focused</b>"
           },
           {
-            "kicker": "ENDLESS",
-            "line": "Straight <b>up</b>, forever"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "TROIS CORDES",
-            "line": "Swipe pour <b>sauter</b>"
+            "kicker": "CHEMIN",
+            "line": "<b>Swipe</b> rapide"
           },
           {
-            "kicker": "GEMMES ET MINES",
-            "line": "Lis la <b>corde</b> devant"
+            "kicker": "BONUS",
+            "line": "Anticipe la <b>suite</b>"
           },
           {
-            "kicker": "TROIS VIES",
-            "line": "Le vide en <b>coûte</b> une"
+            "kicker": "LOOP",
+            "line": "Reste <b>focus</b>"
           },
           {
-            "kicker": "SANS FIN",
-            "line": "Tout <b>droit</b>, sans fin"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-swipe\">Balaie</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>"
+        "tagline": "<b class=\"w-swipe\">Swipe</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>"
       }
     },
     "font": "orbitron",

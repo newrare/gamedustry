@@ -5,7 +5,7 @@
     title:   "BLIGHT",
     /* One sentence, and nothing else: the demo caption is dropped in the SKIN
        because the stage below already plays the drag / release / match beat. */
-    tagline: "Drag to <b class=\"w-aim\">aim</b>, <b class=\"w-fire\">release</b> to shoot and match 3 bubbles",
+    tagline: "<b class=\"w-aim\">Aim</b>, <b class=\"w-fire\">shoot</b> and match 3 bubbles to push the black magic back",
     /* NO CLOCK. The blight is the clock: it winds up until the whole wall has
        turned, and the round ends there. A player either has what they came
        for before that — the three stars of a level, a score on a playable —

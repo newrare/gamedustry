@@ -6,7 +6,7 @@
     /* One sentence, and the stage below plays it: a top spinning in a dish, an
        enemy top charging in, the finger tapping on the impact. The title and
        the demo caption are hidden in the SKIN — the picture says the rest. */
-    tagline: "<b class=\"w-tap\">Tap</b> on the <b class=\"w-hit\">impact</b> to blast the rival tops away",
+    tagline: "Blast then break the rival tops with one <b class=\"w-tap\">tap</b> right on the <b class=\"w-hit\">impact</b>",
     gameSeconds: 0,                  // endless: the round ends when the top falls
     storeUrl: {
       ios:     "https://newrare.app/#playables",

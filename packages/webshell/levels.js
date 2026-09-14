@@ -76,9 +76,8 @@
       playOn: "The stars will come from playing on.",
       takeRoad: "GO THIS WAY",
       tutoBand: "Optional", tutoTag: "how to play",
-      tutoGoal: "Not a level — the <b>one gesture</b> this game is played with, " +
-                "acted out by the hand, and the key that does the same thing.",
-      tutoNote: "The road skips it: level 1 is open from the start.",
+      tutoGoal: "Start the tutorial to learn how to play.",
+      tutoNote: "Level 1 is open from the start.",
       tutoNoteSeen: "Read · open it again whenever you want.",
       tutoPlay: "HOW TO PLAY",
       endless: "Endless", endlessSub: "Level 31 · the reward for a perfect board",
@@ -110,9 +109,8 @@
       playOn: "Les étoiles viendront en continuant.",
       takeRoad: "PASSER PAR LÀ",
       tutoBand: "Facultatif", tutoTag: "comment jouer",
-      tutoGoal: "Pas un niveau — le <b>geste unique</b> avec lequel ce jeu se joue, " +
-                "mimé par la main, et la touche qui fait la même chose.",
-      tutoNote: "La route l’ignore : le niveau 1 est ouvert dès le départ.",
+      tutoGoal: "Lance le tutoriel pour savoir comment jouer.",
+      tutoNote: "Le niveau 1 est ouvert dès le départ.",
       tutoNoteSeen: "Lu · à rouvrir quand tu veux.",
       tutoPlay: "COMMENT JOUER",
       endless: "Sans fin", endlessSub: "Niveau 31 · la récompense d’un tableau parfait",

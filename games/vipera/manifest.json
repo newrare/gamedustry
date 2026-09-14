@@ -1,8 +1,8 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.0.0",
-  "tagline": "Tap to swerve the viper and eat to grow",
+  "version": "1.0.1",
+  "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Une vipère taille sa galerie sans fin. Chaque tap change le côté qu’elle creuse, chaque gemme l’allonge.",
+      "tagline": "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
       "tags": [
         "Tap pour dévier",
         "Sans fin",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "A viper carves its endless burrow. Every tap flips the side it digs toward, every gem makes it longer.",
+      "tagline": "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
       "tags": [
         "Tap to swerve",
         "Endless",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "ONE TAP",
-            "line": "Flip the side it <b>digs</b>"
+            "kicker": "TAP",
+            "line": "<b>Reptile</b> movement"
           },
           {
-            "kicker": "EVERY GEM",
-            "line": "Grows the <b>body</b>"
+            "kicker": "BONUS",
+            "line": "Mutation and <b>evolution</b>"
           },
           {
-            "kicker": "THORNS",
-            "line": "Longer means <b>less</b> time"
+            "kicker": "TRAPS",
+            "line": "Watch out for <b>danger</b>"
           },
           {
-            "kicker": "FULL LENGTH",
-            "line": "The scales turn to <b>armour</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "UN TAP",
-            "line": "Change le côté qu’elle <b>creuse</b>"
+            "kicker": "TAP",
+            "line": "Déplacement <b>reptilien</b>"
           },
           {
-            "kicker": "CHAQUE GEMME",
-            "line": "Allonge le <b>corps</b>"
+            "kicker": "BONUS",
+            "line": "Mutation et <b>évolution</b>"
           },
           {
-            "kicker": "LES ÉPINES",
-            "line": "Plus longue, <b>moins</b> de temps"
+            "kicker": "PIEGE",
+            "line": "Attention aux <b>dangers</b>"
           },
           {
-            "kicker": "PLEINE LONGUEUR",
-            "line": "Les écailles deviennent <b>armure</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">Tape</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">mange</b> pour grandir"
+        "tagline": "<b class=\"w-tap\">TAP</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour un maximum de bonus"
       }
     },
     "font": "baloo2",

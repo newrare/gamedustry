@@ -1,8 +1,8 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.5.3",
-  "tagline": "Drag to aim, release to shoot and match 3 bubbles",
+  "version": "1.5.4",
+  "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
   "targets": [
@@ -15,7 +15,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vise, tire, aligne trois bulles. Pas de chrono : la moisissure s’emballe, à toi de la coiffer.",
+      "tagline": "Un Bubble magique classique, mais avec un léger twist : sois plus rapide et plus stratégique que la contamination des bulles.",
       "tags": [
         "Vise et tire",
         "Trois d’affilée",
@@ -23,7 +23,7 @@
       ]
     },
     "en": {
-      "tagline": "Aim, shoot, match three bubbles. No clock — just the blight, spreading faster and faster.",
+      "tagline": "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
       "tags": [
         "Aim & shoot",
         "Match three",
@@ -37,40 +37,48 @@
       "en": {
         "lines": [
           {
-            "kicker": "MATCH THREE",
-            "line": "Aim, shoot, <b>pop</b>"
+            "kicker": "BUBBLE TWIST",
+            "line": "Pop fast, before the <b>blight</b>"
           },
           {
-            "kicker": "RAINBOW",
-            "line": "The joker <b>cures</b> the rot"
+            "kicker": "SUPER",
+            "line": "The rainbow <b>wipes it all</b>"
           },
           {
-            "kicker": "DANGER LINE",
-            "line": "Cut the blight <b>off</b>"
+            "kicker": "DARKNESS",
+            "line": "The blight has to <b>lose</b>"
           },
           {
-            "kicker": "NO CLOCK",
-            "line": "Race the <b>rot</b>"
+            "kicker": "30 LEVELS",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Go for the <b>best score</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "ALIGNE TROIS",
-            "line": "Vise, tire, <b>éclate</b>"
+            "kicker": "BUBBLE TWIST",
+            "line": "Éclate vite, avant la <b>contamination</b>"
           },
           {
-            "kicker": "ARC-EN-CIEL",
-            "line": "Le joker <b>soigne</b> le mur"
+            "kicker": "SUPER",
+            "line": "L’arc-en-ciel <b>détruit tout</b>"
           },
           {
-            "kicker": "LIGNE ROUGE",
-            "line": "Coupe la <b>moisissure</b>"
+            "kicker": "OBSCURE",
+            "line": "La contamination doit <b>perdre</b>"
           },
           {
-            "kicker": "PAS DE CHRONO",
-            "line": "Course contre la <b>pourriture</b>"
+            "kicker": "30 LEVELS",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "CHALLENGE",
+            "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
       }
@@ -107,7 +115,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Glisse pour <b class=\"w-aim\">viser</b>, <b class=\"w-fire\">lâche</b> pour tirer et aligner 3 bulles"
+        "tagline": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire"
       }
     },
     "font": "baloo2",
