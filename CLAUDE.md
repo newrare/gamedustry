@@ -495,8 +495,10 @@ palette, exported as the CSS block to paste into its SKIN,
 `assets/image/gear/` as transparent PNGs to lay over a screenshot,
 `store-card.html` is the store listing composer — a real frame of play dressed
 with the game's own character, objects and logotype and one FR/EN punchline
-over it, in three formats (`phone` 1080×1920 for Play and itch, `desk`
-1920×1080 for the Play tablet slot, `thumb` 630×500 for the itch cover). It is
+over it, in four formats (`phone` 1080×1920 for Play and itch, `desk`
+1920×1080 for the Play tablet slot, `thumb` 630×500 for the itch cover, and
+`multi`, three phone slots composed as one picture and cut at the seams on
+save, so a motif carries from one gallery screenshot to the next). It is
 the one lab page with a server of its own (`make store`,
 `tools/lab/serve-store.mjs`), because it lists what a game owns and writes the
 image it composed into `assets/image/<store>/<lang>/`, neither of which a

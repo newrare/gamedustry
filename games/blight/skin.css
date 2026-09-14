@@ -37,22 +37,45 @@
   #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#d9e6ff; }
   #intro-tagline .w-aim  { color:var(--accent); text-shadow:0 0 18px rgba(58,160,255,.75); }
   #intro-tagline .w-fire { color:#ff4d6d; text-shadow:0 0 18px rgba(255,77,109,.75); }
+
+  /* The right-hand pill is not a clock here, it is the rot gauge: its warning
+     is the blight's violet, not the motor's danger pink. */
+  #hud-right .hud-pill.warn { color:#c050ff; border-color:rgba(150,40,255,.55); }
   #intro-demo { margin-top:30px; }
 
+  /* The stage is the round's own ground, not the panel's: a soap film is a
+     thin translucent thing and it only reads over something dark — the same
+     reason the play area is painted the way it is. */
   .demo-stage {
     width:420px; height:280px; overflow:hidden;
-    background:radial-gradient(300px 240px at 62% 26%, rgba(30,54,120,.55), rgba(10,14,36,0) 72%), var(--panel);
+    background:
+      radial-gradient(300px 240px at 62% 26%, rgba(60,92,190,.42), rgba(10,14,36,0) 72%),
+      linear-gradient(180deg, #171139 0%, #0a0b22 100%);
   }
 
-  /* the two wall bubbles the shot completes into a match of three */
+  /* the two wall bubbles the shot completes into a match of three.
+     The film, in CSS: a hollow middle the panel shows through, a lit rim, two
+     iridescent insets and one hard little window — the same read as the canvas
+     sprite the round is played with. */
+  .demo-stage::before, .demo-stage::after, .demo-aim .demo-target {
+    background:
+      radial-gradient(circle at 30% 24%, rgba(255,255,255,.95) 0 5%, rgba(255,255,255,0) 11%),
+      radial-gradient(circle at 66% 78%, rgba(255,225,232,.34), rgba(255,225,232,0) 44%),
+      radial-gradient(circle at 50% 50%, rgba(255,77,109,.34) 0 44%, rgba(255,77,109,.74) 76%,
+                                         rgba(255,77,109,1) 89%, rgba(255,230,236,1) 96%,
+                                         rgba(193,30,70,.70) 100%);
+    box-shadow:0 0 18px rgba(255,77,109,.6),
+               inset 7px -9px 16px rgba(120,255,235,.30),
+               inset -9px 7px 16px rgba(190,140,255,.26);
+  }
   .demo-stage::before, .demo-stage::after {
     content:""; position:absolute; z-index:0; top:21px;
     width:44px; height:44px; border-radius:50%;
-    background:radial-gradient(circle at 34% 26%, #ffd3dc 0 15%, #ff4d6d 54%, #c11e46 100%);
-    box-shadow:0 0 16px rgba(255,77,109,.6), inset -5px -7px 12px rgba(0,0,0,.3);
   }
+  /* 40 ms apart: the blow reaches one before the other, which is the cushion
+     the round itself plays when a shot lands on a cluster */
   .demo-stage::before { left:249px; animation:demoBubblePop 2.4s linear infinite; }
-  .demo-stage::after  { left:293px; animation:demoBubblePop 2.4s linear infinite; }
+  .demo-stage::after  { left:293px; animation:demoBubblePop 2.4s linear infinite -.04s; }
 
   /* the aim line: anchored at the launcher, swinging onto the cluster while
      the finger drags, gone the instant the finger lets go */
@@ -75,21 +98,32 @@
   .demo-aim .demo-target {
     z-index:1; left:138px; top:192px; width:44px; height:44px; margin-left:0;
     border:0; border-radius:50%;
-    background:radial-gradient(circle at 34% 26%, #ffd3dc 0 15%, #ff4d6d 54%, #c11e46 100%);
-    box-shadow:0 0 20px rgba(255,77,109,.8), inset -5px -7px 12px rgba(0,0,0,.3);
     animation:demoShot 2.4s linear infinite;
   }
   .demo-aim .demo-ripple { display:none; }
+  /* A soap bubble is only round when nothing is happening to it. Every scale()
+     below is rotated onto the 45 deg flight line, so the film is pinched ALONG
+     the direction it travels and stretched across it: loaded on the launcher,
+     snapped out at the release, and flattened on the wall it lands against
+     before it springs back round. */
   @keyframes demoShot {
-    0%,40%   { transform:translate(0,0) scale(.84); opacity:.85; }
-    44%      { transform:translate(0,0) scale(1); opacity:1; }
-    70%      { transform:translate(133px,-133px) scale(1); opacity:1; }
-    82%      { transform:translate(133px,-133px) scale(1.4); opacity:0; }
-    100%     { transform:translate(133px,-133px) scale(1.4); opacity:0; }
+    0%,38%   { transform:translate(0,0) scale(.84); opacity:.85; }
+    43%      { transform:translate(0,0) rotate(-45deg) scale(.82,1.18); opacity:1; }
+    48%      { transform:translate(14px,-14px) rotate(-45deg) scale(1.30,.76); opacity:1; }
+    66%      { transform:translate(118px,-118px) rotate(-45deg) scale(1.16,.86); opacity:1; }
+    71%      { transform:translate(133px,-133px) rotate(-45deg) scale(.70,1.30); opacity:1; }
+    76%      { transform:translate(133px,-133px) rotate(-45deg) scale(1.08,.95); opacity:1; }
+    80%      { transform:translate(133px,-133px) scale(1); opacity:1; }
+    86%      { transform:translate(133px,-133px) scale(1.45); opacity:0; }
+    100%     { transform:translate(133px,-133px) scale(1.45); opacity:0; }
   }
+  /* the two it lands on take the blow first and give it back */
   @keyframes demoBubblePop {
-    0%,70%   { transform:scale(1); opacity:1; }
-    82%      { transform:scale(1.4); opacity:0; }
+    0%,68%   { transform:scale(1); opacity:1; }
+    72%      { transform:scale(1.14,.84); opacity:1; }
+    77%      { transform:scale(.90,1.12); opacity:1; }
+    81%      { transform:scale(1.04,.98); opacity:1; }
+    86%      { transform:scale(1.45); opacity:0; }
     93%      { transform:scale(.8); opacity:0; }
     100%     { transform:scale(1); opacity:1; }
   }
@@ -126,8 +160,9 @@
     --fill:linear-gradient(180deg,#ffffff 0%,#ffd3dc 40%,#ff4d6d 100%);
     --chip:#2a0009; --chip-line:#ff4d6d;
   }
-  /* SUPER BLAST — the gold chip, the only clear that detonates the board */
-  .pop-combo.pop-blast {
+  /* PURIFIED! — the gold chip of the rainbow, the only shot that gives a
+     colour back instead of taking one away */
+  .pop-combo.pop-cure {
     --fill:linear-gradient(180deg,#fff8dd 0%,#ffc93c 45%,#dc8a00 100%);
     --chip:#2a1a00; --chip-line:#ffc93c;
   }

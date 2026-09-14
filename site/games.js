@@ -59,12 +59,12 @@ window.GAMES = [
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
     fr: {
-      tagline: "Vise, tire, aligne trois bulles. La moisissure ne redescend que si tu lui coupes la route.",
-      tags: ["Vise et tire", "Trois d’affilée", "Ligne de danger"]
+      tagline: "Vise, tire, aligne trois bulles. Pas de chrono : la moisissure s’emballe, à toi de la coiffer.",
+      tags: ["Vise et tire", "Trois d’affilée", "Course à la pourriture"]
     },
     en: {
-      tagline: "Aim, shoot, match three bubbles. The spreading blight only falls if you cut it off.",
-      tags: ["Aim & shoot", "Match three", "Danger line"]
+      tagline: "Aim, shoot, match three bubbles. No clock — just the blight, spreading faster and faster.",
+      tags: ["Aim & shoot", "Match three", "Race the rot"]
     }
   },
   {

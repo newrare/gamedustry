@@ -269,13 +269,16 @@ three of its own objects, its logotype, its typeface, and one punchline in the
 player's language.
 
 `lab/store-card.html` is the composition and `tools/lab/shoot-store.mjs` shoots
-it, in three formats and two languages:
+it, in four formats and two languages:
 
-| format  | shipped     | where it goes                                     |
-| ------- | ----------- | ------------------------------------------------- |
-| `phone` | 1080 × 1920 | the Play phone slot, and the itch screenshots     |
-| `desk`  | 1920 × 1080 | the Play tablet slot, and the desktop picture     |
-| `thumb` | 630 × 500   | the itch cover, shown down to 315 × 250 in a grid |
+| format  | shipped         | where it goes                                     |
+| ------- | --------------- | ------------------------------------------------- |
+| `phone` | 1080 × 1920     | the Play phone slot, and the itch screenshots     |
+| `desk`  | 1920 × 1080     | the Play tablet slot, and the desktop picture     |
+| `thumb` | 630 × 500       | the itch cover, shown down to 315 × 250 in a grid |
+| `multi` | 3 × 1080 × 1920 | the same phone slots, composed as one picture     |
+
+`multi` is composed by hand only — `shoot-store.mjs` shoots the other three.
 
 ```bash
 node tools/lab/shoot-store.mjs                    # 13 games, en + fr, all three
@@ -314,8 +317,29 @@ by file name, so the same composition resolves against whichever game is
 loaded. `tools/lab/shoot-store.mjs` reads that file too: a game with a layout is
 shot with it, and the built-in layout is what the other twelve get.
 
+#### `multi` — three slots, one picture
+
+A store gallery shows the phone screenshots **side by side**, so the third
+format is a card three slots wide (2160 × 1280 authored) that **Save cuts at
+the seams**: one press writes three files, numbered from the name in the box —
+`radiam-01`, `radiam-02`, `radiam-03`, the order the gallery sorts them in.
+
+Nothing is clipped by hand and no piece is duplicated: each image is drawn from
+the whole scene through its own window, which is exactly what makes a background,
+an object or a beam laid **over a seam** come out as two halves that line up.
+That is the point of the format — the motif carries from one screenshot to the
+next instead of every image being its own little poster. The seams are dashed
+on the card while it is being composed, each slot numbered in its corner, and
+the editor is the only place they exist.
+
+A panel of a `multi` is exactly a `phone`, so every number in a layout means the
+same thing in both; the built-in composition is the landscape scene running
+across all three, one punchline per slot out of `store.copy`, the logotype on
+the first and the objects sitting on the seams. It is saved like any other
+layout, keyed `<slug>/multi`.
+
 **Save writes the image itself**, at shipped size, into `assets/image/<store>/<lang>/`,
-and saves the layout with it. **Save for all** writes the same composition once
+and saves the layout with it. A `multi` writes its three. **Save for all** writes the same composition once
 per game — thirteen images, each with that game's own pieces, its own punchline
 and its own typeface, the file name keeping everything but the slug. That is
 what the role-and-index references are for, and it is the whole point of the

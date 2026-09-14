@@ -63,25 +63,18 @@
     en: {
       title: "LEVELS", pick: "SELECT A LEVEL",
       level: "Level", locked: "Locked", play: "PLAY", replay: "REPLAY",
-      never: "Never played", notTaken: "On the road you did not take",
-      notTakenTag: "not taken",
-      gatedHere: "Locked · the road here is gated",
+      never: "Never played", notTaken: "Not played yet",
+      notTakenTag: "not played",
+      gatedHere: "Locked",
       best: "Best", tries: "tries", starsOf: "stars",
       difficulty: "difficulty",
-      forks: "the road forks: {a} or {b} levels",
-      roadL: "Left road", roadR: "Right road",
+      roadL: "Left branch", roadR: "Right branch",
       gated: "Gated", opened: "Open", free: "Free",
-      roadSpan: "Levels {a}–{b}, then both roads meet again.",
-      roadOne: "Level {a}, then both roads meet again.",
-      roadOther: "The other way is <b>{n}</b>.",
-      roadShort: "The short way — fewer levels, and each one is the harder end of the band.",
-      roadLong: "The long way — more levels, more stars to collect.",
-      roadPaid: "The gate wanted <em>★ {n}</em> and you have {have}.",
-      roadWants: "{span} This road wants <b>★ {n}</b> — you have {have}, <b>{short} short</b>.",
-      roadOpenOther: "The other way is <em>{n} levels</em> and it is open — ",
-      findHere: "or find the stars here:",
-      playOn: "the stars will come from playing on.",
-      takeRoad: "TAKE THIS ROAD",
+      roadPaid: "<em>★ {n}</em> needed — you have <b>{have}</b>.",
+      roadWants: "<b>★ {n}</b> to unlock — you have <b>{have}</b>, <b>{short} short</b>.",
+      findHere: "The cheapest stars to go back for:",
+      playOn: "The stars will come from playing on.",
+      takeRoad: "GO THIS WAY",
       tutoBand: "Optional", tutoTag: "how to play",
       tutoGoal: "Not a level — the <b>one gesture</b> this game is played with, " +
                 "acted out by the hand, and the key that does the same thing.",
@@ -104,25 +97,18 @@
     fr: {
       title: "NIVEAUX", pick: "CHOISIS UN NIVEAU",
       level: "Niveau", locked: "Verrouillé", play: "JOUER", replay: "REJOUER",
-      never: "Jamais joué", notTaken: "Sur la route que tu n’as pas prise",
-      notTakenTag: "non prise",
-      gatedHere: "Verrouillé · la route est fermée ici",
+      never: "Jamais joué", notTaken: "Pas encore joué",
+      notTakenTag: "non joué",
+      gatedHere: "Verrouillé",
       best: "Record", tries: "essais", starsOf: "étoiles",
       difficulty: "difficulté",
-      forks: "la route bifurque : {a} ou {b} niveaux",
-      roadL: "Route de gauche", roadR: "Route de droite",
+      roadL: "Branche de gauche", roadR: "Branche de droite",
       gated: "Fermée", opened: "Ouverte", free: "Libre",
-      roadSpan: "Niveaux {a}–{b}, puis les deux routes se rejoignent.",
-      roadOne: "Niveau {a}, puis les deux routes se rejoignent.",
-      roadOther: "L’autre voie en compte <b>{n}</b>.",
-      roadShort: "La voie courte — moins de niveaux, et chacun est le bout le plus dur de la tranche.",
-      roadLong: "La voie longue — plus de niveaux, plus d’étoiles à ramasser.",
-      roadPaid: "La porte demandait <em>★ {n}</em>, tu en as {have}.",
-      roadWants: "{span} Cette route demande <b>★ {n}</b> — tu en as {have}, <b>il en manque {short}</b>.",
-      roadOpenOther: "L’autre voie fait <em>{n} niveaux</em> et elle est ouverte — ",
-      findHere: "ou trouve les étoiles ici :",
-      playOn: "les étoiles viendront en continuant.",
-      takeRoad: "PRENDRE CETTE ROUTE",
+      roadPaid: "<em>★ {n}</em> demandées — tu en as <b>{have}</b>.",
+      roadWants: "<b>★ {n}</b> pour déverrouiller — tu en as <b>{have}</b>, <b>il en manque {short}</b>.",
+      findHere: "Les étoiles les moins chères à rattraper :",
+      playOn: "Les étoiles viendront en continuant.",
+      takeRoad: "PASSER PAR LÀ",
       tutoBand: "Facultatif", tutoTag: "comment jouer",
       tutoGoal: "Pas un niveau — le <b>geste unique</b> avec lequel ce jeu se joue, " +
                 "mimé par la main, et la touche qui fait la même chose.",
@@ -264,12 +250,6 @@
     for (var i = 0; i < ROADS.length; i++) if (ROADS[i].entry === n) return ROADS[i];
     return null;
   }
-  function roadsAt(n) {
-    var out = [];
-    for (var i = 0; i < ROADS.length; i++) if (ROADS[i].from === n) out.push(ROADS[i]);
-    return out;
-  }
-
   /* ── 2. the objective ─────────────────────────────────────────────────── */
 
   /* One number on the same lerp, rounded to a step the player can read. The
@@ -805,6 +785,18 @@
   var box, scroll, canvasBox, svg, card, headTitle, headEyebrow, totalBox, totalN;
   var cName, cBand, cGoal, cNote, cChips, cDiff, cDiffN, cPlay;
   var picked = 1;                 // a level number, or { road: index }
+
+  /* A second tap on the node already selected starts it. The card's own button
+     is still the only way in on a first touch — this is the shortcut for a
+     player who knows where they are going, and it is counted here rather than
+     read from `dblclick`, which a touch WebView does not always send. */
+  var tapOn = null, tapAt = 0;
+  function tapped(n) {
+    var now = Date.now(), again = tapOn === n && now - tapAt < 420;
+    tapOn = n; tapAt = now;
+    picked = n; writeCard();
+    if (again) { tapAt = 0; onPlay(); }
+  }
   var built = false, shown = false;
 
   var PADLOCK = '<svg class="padlock" viewBox="0 0 24 24" fill="none" ' +
@@ -988,7 +980,7 @@
                       '<span class="num">?</span>');
     tuto.style.left = geo.pts[TUTO].x + "px";
     tuto.style.top = geo.pts[TUTO].y + "px";
-    tuto.addEventListener("click", function () { picked = TUTO; writeCard(); });
+    tuto.addEventListener("click", function () { tapped(TUTO); });
     canvasBox.appendChild(tuto);
     tagAt(geo.pts[TUTO], "<em>" + T.tutoTag + "</em>");
 
@@ -1006,7 +998,7 @@
       node.style.left = pt.x + "px";
       node.style.top = pt.y + "px";
       node.addEventListener("click", (function (m) {
-        return function () { picked = m; writeCard(); };
+        return function () { tapped(m); };
       })(n));
       canvasBox.appendChild(node);
 
@@ -1040,14 +1032,10 @@
     cBand.textContent = T.bands[bandOf(n)];
     cGoal.innerHTML = goalText(n);
 
-    var forks = roadsAt(n), ahead = "";
-    if (forks.length === 2)
-      ahead = " &middot; <em>" + fill(T.forks, { a: forks[0].len, b: forks[1].len }) + "</em>";
-
-    cNote.innerHTML = (rec
+    cNote.innerHTML = rec
       ? T.best + " <em>" + num(rec.b) + "</em> &middot; " +
         rec.s + "/3 " + T.starsOf + " &middot; " + rec.p + " " + T.tries
-      : can ? (isGap(n) ? T.notTaken : T.never) : T.gatedHere) + ahead;
+      : can ? (isGap(n) ? T.notTaken : T.never) : T.gatedHere;
 
     cChips.innerHTML = "";
     cDiff.style.display = "";
@@ -1097,17 +1085,13 @@
       (rd.gate ? (shut ? T.gated : T.opened) : T.free);
     cDiff.style.display = "none";
 
-    var first = rd.nodes[0], lastN = rd.nodes[rd.nodes.length - 1];
-    var span = rd.len > 1 ? fill(T.roadSpan, { a: first, b: lastN }) : fill(T.roadOne, { a: first });
-    var other = null, i;
-    for (i = 0; i < ROADS.length; i++)
-      if (ROADS[i].from === rd.from && ROADS[i] !== rd) other = ROADS[i];
+    var i;
 
+    /* A gate says one thing and nothing else: what it costs, and what the
+       player is holding. The road it opens is drawn on the map already. */
     if (!shut) {
-      cGoal.innerHTML = span + (other ? " " + fill(T.roadOther, { n: other.len }) : "");
-      cNote.innerHTML = rd.gate
-        ? fill(T.roadPaid, { n: rd.gate, have: have })
-        : (rd.len < rd.other ? T.roadShort : T.roadLong);
+      cGoal.innerHTML = rd.gate ? fill(T.roadPaid, { n: rd.gate, have: have }) : "";
+      cNote.innerHTML = "";
       var chips = "";
       for (i = 0; i < rd.nodes.length; i++) {
         var m = rd.nodes[i];
@@ -1121,7 +1105,7 @@
       return;
     }
 
-    cGoal.innerHTML = fill(T.roadWants, { span: span, n: rd.gate, have: have, short: short });
+    cGoal.innerHTML = fill(T.roadWants, { n: rd.gate, have: have, short: short });
 
     /* The cheapest stars to go back for: already cleared, short of three,
        easiest first. Naming them is the difference between a wall that
@@ -1133,9 +1117,7 @@
     var take = [], got = 0;
     for (i = 0; i < spare.length && got < short; i++) { take.push(spare[i]); got += spare[i].gain; }
 
-    cNote.innerHTML = other
-      ? fill(T.roadOpenOther, { n: other.len }) + (take.length && got >= short ? T.findHere : T.playOn)
-      : "";
+    cNote.innerHTML = take.length ? T.findHere : T.playOn;
     var out = "";
     for (i = 0; i < take.length && i < 4; i++)
       out += '<button data-lv="' + take[i].n + '">' + take[i].n +

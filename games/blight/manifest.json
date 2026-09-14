@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.0.0",
+  "version": "1.5.3",
   "tagline": "Drag to aim, release to shoot and match 3 bubbles",
   "order": 40,
   "draft": false,
@@ -15,23 +15,23 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vise, tire, aligne trois bulles. La moisissure ne redescend que si tu lui coupes la route.",
+      "tagline": "Vise, tire, aligne trois bulles. Pas de chrono : la moisissure s’emballe, à toi de la coiffer.",
       "tags": [
         "Vise et tire",
         "Trois d’affilée",
-        "Ligne de danger"
+        "Course à la pourriture"
       ]
     },
     "en": {
-      "tagline": "Aim, shoot, match three bubbles. The spreading blight only falls if you cut it off.",
+      "tagline": "Aim, shoot, match three bubbles. No clock — just the blight, spreading faster and faster.",
       "tags": [
         "Aim & shoot",
         "Match three",
-        "Danger line"
+        "Race the rot"
       ]
     }
   },
-  "description": "Drag to aim, release to fire and match 3 bubbles to pop them. Rainbow supers chain-detonate; the spreading blight only falls if you cut it off.",
+  "description": "Drag to aim, release to fire and match 3 bubbles to pop them — a cluster goes off one bubble at a time, each scoring on its own. Swap the loaded bubble for the next one whenever you like. Rainbows are jokers: one in the wall takes the colour of whatever lands on it, one fired into the rot gives a pocket of blighted bubbles their colour back — and those bubbles stay on the board. There is no clock: the blight winds up until the whole wall has turned, so the round is a race against it, and a cut-off bubble bursting on the floor pays a bonus on the way out.",
   "store": {
     "copy": {
       "en": {
@@ -41,16 +41,16 @@
             "line": "Aim, shoot, <b>pop</b>"
           },
           {
-            "kicker": "SUPERS",
-            "line": "Rainbows <b>chain</b> everything"
+            "kicker": "RAINBOW",
+            "line": "The joker <b>cures</b> the rot"
           },
           {
             "kicker": "DANGER LINE",
             "line": "Cut the blight <b>off</b>"
           },
           {
-            "kicker": "ONE SHOT",
-            "line": "Every bubble <b>counts</b>"
+            "kicker": "NO CLOCK",
+            "line": "Race the <b>rot</b>"
           }
         ]
       },
@@ -61,16 +61,16 @@
             "line": "Vise, tire, <b>éclate</b>"
           },
           {
-            "kicker": "SUPERS",
-            "line": "L’arc-en-ciel <b>enchaîne</b> tout"
+            "kicker": "ARC-EN-CIEL",
+            "line": "Le joker <b>soigne</b> le mur"
           },
           {
             "kicker": "LIGNE ROUGE",
             "line": "Coupe la <b>moisissure</b>"
           },
           {
-            "kicker": "UN TIR",
-            "line": "Chaque bulle <b>compte</b>"
+            "kicker": "PAS DE CHRONO",
+            "line": "Course contre la <b>pourriture</b>"
           }
         ]
       }
@@ -118,17 +118,13 @@
         "step": 50
       },
       "copy": {
-        "en": "Score <b>{n}</b> before the blight takes the wall",
-        "fr": "Marque <b>{n}</b> avant que la pourriture prenne le mur"
+        "en": "Score <b>{n}</b> before the wall is fully contaminated",
+        "fr": "Marque <b>{n}</b> avant que la contamination soit totale"
       },
       "tune": {
-        "startRows": [
-          4,
-          11
-        ],
         "blightInterval": [
-          3.4,
-          1.2
+          5.4,
+          1.9
         ],
         "addRowShots": [
           8,
