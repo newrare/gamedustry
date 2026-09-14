@@ -14,11 +14,14 @@
      1  the ground      one picture — a real frame of play, or the game's
                         painted landscape — plus the scrim cut over it.
      2  the elements    the game's own objects, its character, its logotype,
-                        a screenshot in a phone frame. Dragged out of the
-                        palette and DROPPED where they belong: moved, turned,
-                        resized and deleted with the handles on the selection.
-     3  the taglines    one punchline out of the manifest (or typed here), in
-                        one of five styles, set in the game's own typeface.
+                        a screenshot in a phone frame — and its taglines, one
+                        tile per style. Dragged out of the palette and DROPPED
+                        where they belong: moved, turned, resized and deleted
+                        with the handles on the selection.
+     3  the copy        every tagline is a line of `store.copy` in the game's
+                        manifest, picked by number on the selection. Nothing is
+                        typed here: the manifests are the one place the copy is
+                        written, and they are proofread.
 
    Nothing is placed for you, because nothing here is generic: a card whose
    character stands where the board is empty is worth three cards laid out by
@@ -51,10 +54,20 @@
    SAVE writes the image itself, at shipped size, into the store the format
    belongs to — assets/image/google/<lang>/ for the phone, desk and multi
    pictures, assets/image/itch/<lang>/ for the 630x500 cover —
-   the folder the store upload reads. A `multi` save writes three files rather
-   than one, numbered from the name in the box (`radiam-01` → `-01 -02 -03`),
-   which is the order the gallery shows them in. That needs the small local server, which
-   is also what lists the palettes:
+   the folder the store upload reads. It writes BOTH LANGUAGES every time: the
+   composition is the same picture in EN and FR, only the manifest line under
+   it changes, so there is no language to pick and no half-shot listing. A
+   `multi` save writes three files per language rather than one, on three
+   consecutive numbers, which is the order the gallery shows them in.
+
+   THE NAME IS NOT TYPED, and neither is the format. A listing image is a
+   numbered slot of a gallery, so the server hands out the next free numbers
+   (`nextNames` in tools/lab/serve-store.mjs) and refuses to write over a file
+   that is already there — a saved card is kept, and a second press of SAVE is
+   a second picture, not a lost one. JPEG, always: 182 pictures of painted
+   artwork over a capture is 34 MB as JPEG and 450 MB as PNG.
+
+   That needs the small local server, which is also what lists the palettes:
 
      node tools/lab/serve-store.mjs      →  http://localhost:8091/
 
@@ -190,6 +203,11 @@ h3.fold {
   color:#cfcfe8; text-shadow:0 1px 3px #000;
 }
 .pal .thumb.wide, .strip .thumb.wide { width:92px; }
+.pal .thumb.text { width:92px; height:34px; }
+.pal .thumb.text b {
+  font:700 10px/1.2 -apple-system,sans-serif;
+  letter-spacing:.6px; text-transform:uppercase; color:#cfcfe8;
+}
 .pal .thumb.on, .strip .thumb.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
 
 /* ---------------------------------------------------------------------------
@@ -274,18 +292,10 @@ body.shoot #wrap { box-shadow:none; }
     <button data-v="object">objects</button>
     <button data-v="face">faces</button>
     <button data-v="screen">screens</button>
+    <button data-v="text">taglines</button>
   </div>
   <div class="pal" id="pal-el"></div>
-
-  <h2>3 · Tagline <span>the style is on the right</span></h2>
-  <div class="row">
-    <label>Language</label>
-    <div class="seg" id="seg-lang">
-      <button data-v="en">EN</button>
-      <button data-v="fr">FR</button>
-    </div>
-  </div>
-  <button class="act" id="add-text">Add a tagline</button>
+  <p class="hint" id="pal-hint"></p>
 </div>
 
 <div id="stage">
@@ -321,18 +331,9 @@ body.shoot #wrap { box-shadow:none; }
   <button class="act" id="save-template">Save template</button>
 
   <h2>Save the image</h2>
-  <div class="row">
-    <label>File name <b id="v-ext">.jpg</b></label>
-    <input id="name" type="text">
-  </div>
-  <div class="row">
-    <div class="seg" id="seg-ext">
-      <button data-v="jpg">JPEG</button>
-      <button data-v="png">PNG</button>
-    </div>
-  </div>
+  <p class="hint" id="next-name"></p>
   <div class="two">
-    <button class="act go" id="save">Save <span id="v-lang">en</span></button>
+    <button class="act go" id="save">Save</button>
     <button class="act go" id="save-all">Save for all games</button>
   </div>
   <p class="hint" id="save-where"></p>
@@ -407,12 +408,14 @@ var CAT = { games: {}, fonts: FALLBACK_FONTS, presets: { presets: {} } };
    something.
    =========================================================================== */
 
+/* `lang` is not a control: the card is saved in both, and this is only which
+   of the two the preview is drawing (and which one a shoot was sent for). The
+   save flips it, panel by panel, and puts it back. */
 var state = {
   slug:   q.get("slug") || "radiam",
   format: FORMATS[q.get("format")] ? q.get("format") : "phone",
   lang:   q.get("lang") === "fr" ? "fr" : "en",
   pal:    "object",
-  ext:    "jpg",
   grid:   { on: true, step: 50 },
   sel:    null,
   openXY: false,
@@ -473,11 +476,20 @@ function pool(kind) {
   return [];
 }
 
-function cutPool(sheet) {
+/* The sheet a cut actually resolves against, falling back to the first one the
+   game owns — a layout walked onto another game asks for a sheet it may not
+   have. */
+function sheetOf(sheet) {
   var cuts = (game().cuts || {});
-  var names = Object.keys(cuts);
-  var use = cuts[sheet] ? sheet : names[0];
-  return (cuts[use] || []).map(function (f) { return BASE + "image/object/" + f; });
+  return cuts[sheet] ? sheet : Object.keys(cuts)[0];
+}
+
+function cutFiles(sheet) {
+  return (game().cuts || {})[sheetOf(sheet)] || [];
+}
+
+function cutPool(sheet) {
+  return cutFiles(sheet).map(function (f) { return BASE + "image/object/" + f; });
 }
 
 /* An item's picture. `ref` is an index (or a sheet + index for a raw cut), and
@@ -562,9 +574,13 @@ function runsOf(text) {
   return out;
 }
 
-/* The text an item shows: a line of the manifest's copy, or what was typed
-   here. The copy index is kept rather than the string, so switching the
-   language rewrites the card instead of stranding it in one. */
+/* The text an item shows: a line of the manifest's copy, by number. The index
+   is kept rather than the string, which is what lets one save write the card
+   in both languages and one layout travel from game to game.
+
+   `src: "free"` carries a literal line instead, and it is NOT offered on the
+   page: tools/lab/shoot-store.mjs drives this file over file://, where no
+   manifest can be read, so it hands the copy over on the query string. */
 function textOf(it) {
   if (it.src === "free") return { line: it.line || "", kicker: it.kicker || "" };
   var lines = ((game().copy || {})[state.lang]) || [];
@@ -1515,8 +1531,8 @@ function select(id) {
    =========================================================================== */
 
 var el = {};
-["slug","name","step","said","miss","v-slug","v-step","v-ext","v-lang","meta",
- "layers","inspect","pal-bg","pal-el","mode-hint","save-where"]
+["slug","step","said","miss","v-slug","v-step","meta","next-name",
+ "layers","inspect","pal-bg","pal-el","pal-hint","mode-hint","save-where"]
   .forEach(function (id) { el[id] = document.getElementById(id); });
 
 function segs(id, fn) {
@@ -1579,6 +1595,31 @@ function groundPalette() {
 function elementPalette() {
   var box = el["pal-el"];
   box.innerHTML = "";
+  palHint();
+
+  /* A tagline is a piece like any other, so it is added the same way: one tile
+     per style, dragged or clicked onto the card. WHICH line it shows is picked
+     on the selection, out of the manifest — the page writes no copy of its
+     own. */
+  if (state.pal === "text") {
+    Object.keys(STYLES).forEach(function (k) {
+      var spec = { kind: "text", style: k, src: "copy", ref: 0 };
+      var t = document.createElement("div");
+      t.className = "thumb text";
+      t.title = STYLES[k].about;
+      var b = document.createElement("b");
+      b.textContent = STYLES[k].label;
+      t.appendChild(b);
+      t.draggable = true;
+      t.addEventListener("dragstart", function (e) {
+        e.dataTransfer.setData("text/plain", JSON.stringify(spec));
+        e.dataTransfer.effectAllowed = "copy";
+      });
+      t.onclick = function () { addPiece(JSON.parse(JSON.stringify(spec))); };
+      box.appendChild(t);
+    });
+    return;
+  }
 
   var list = [];
   if (state.pal === "object") {
@@ -1630,11 +1671,20 @@ function elementPalette() {
   }
 }
 
-/* Layer 3 — one button. A tagline is added, then its style, its line and its
-   alignment are chosen on the selection, where every other property of a piece
-   already lives. */
-function addTagline() {
-  addPiece({ kind: "text", style: "hero", src: "copy", ref: 0 });
+/* What the palette is showing, said under it. The tagline tiles are the only
+   ones that need it: they are the piece whose content is not the thumbnail. */
+function palHint() {
+  if (state.pal !== "text") { el["pal-hint"].textContent = ""; return; }
+  var lines = ((game().copy || {}).en) || [];
+  el["pal-hint"].innerHTML = lines.length
+    ? "Drop one, then pick its line on the selection — <b>" + lines.length +
+      "</b> written in <code>store.copy</code>, and none typed here. " +
+      "Save writes the card twice, EN and FR."
+    : (SERVED
+        ? "This game writes no line in <code>store.copy</code> of its " +
+          "<code>manifest.json</code> — add them there, not here."
+        : "The manifests cannot be read over <code>file://</code> — run " +
+          "<code>make store</code>.");
 }
 
 function nameOf(it) {
@@ -1678,7 +1728,6 @@ function inspect() {
       'turn it with the top handle, resize it with the corner one, <kbd>⌫</kbd> deletes, <kbd>D</kbd> duplicates.</p>';
     return;
   }
-  var lines = ((game().copy || {})[state.lang]) || [];
   var h = '<div class="row"><label>' + nameOf(it) + '</label></div>';
 
   if (it.kind === "text") {
@@ -1686,30 +1735,30 @@ function inspect() {
       Object.keys(STYLES).map(function (k) {
         return '<option value="' + k + '"' + (it.style === k ? " selected" : "") + '>' + STYLES[k].label + "</option>";
       }).join("") + "</select></div>";
-    h += '<div class="row"><label>Copy <b>' + lines.length + " " + state.lang.toUpperCase() +
-      ' line' + (lines.length === 1 ? "" : "s") + '</b></label><select data-k="src">' +
-      '<option value="copy"' + (it.src !== "free" ? " selected" : "") + '>from the manifest</option>' +
-      '<option value="free"' + (it.src === "free" ? " selected" : "") + '>typed here</option></select></div>';
-    if (it.src !== "free" && !lines.length) {
-      /* `store.copy.<lang>.lines` in games/<slug>/manifest.json is where these
-         are written, and all thirteen have four per language — an empty list
-         here means the page is guessing, not that the game has no copy. */
+    /* The line is picked by NUMBER, out of `store.copy` in the game's
+       manifest — the one place the copy is written, and the same number in
+       both languages. Nothing is typed on this page: a listing image is not
+       where a punchline is drafted. */
+    var lines = ((game().copy || {}).en) || [];
+    var other = ((game().copy || {}).fr) || [];
+    if (!lines.length) {
       h += '<p class="hint">No line to pick: ' + (SERVED
-        ? "this game writes none in its manifest (<code>store.copy." + state.lang + ".lines</code>)."
+        ? "this game writes none in its manifest (<code>store.copy.en.lines</code>)."
         : "the manifests cannot be read over <code>file://</code> — run <code>make store</code>.") + "</p>";
-    }
-    if (it.src !== "free" && lines.length) {
-      h += '<div class="row"><label>Line <b>' + (lines.length ? (it.ref | 0) % lines.length + 1 : 0) + "/" + lines.length + '</b></label>' +
+    } else {
+      h += '<div class="row"><label>Line <b>' + ((it.ref | 0) % lines.length + 1) + "/" + lines.length + '</b></label>' +
         '<select data-k="ref" data-num="1">' + lines.map(function (l, i) {
           /* Numbered, kicker included: the four lines of a game are picked by
              eye here and the manifest's order is what the batch shoots in. */
           return '<option value="' + i + '"' + ((it.ref | 0) === i ? " selected" : "") + '>' +
-            (i + 1) + " · " + esc((l.kicker ? l.kicker + " — " : "") +
-              (l.line || "").replace(/<[^>]*>/g, "")) + "</option>";
+            (i + 1) + " · " + esc(flat(l)) + "</option>";
         }).join("") + "</select></div>";
-    } else {
-      h += '<div class="row"><label>Kicker</label><input type="text" data-k="kicker" value="' + esc(it.kicker || "") + '"></div>' +
-        '<div class="row"><label>Line <b>&lt;b&gt;</b></label><textarea data-k="line">' + esc(it.line || "") + "</textarea></div>";
+      /* The French of that same number, shown rather than switched to: it is
+         written on the other file this save prints, and a line that does not
+         fit in French is worth knowing about while the card is composed. */
+      var fr = other.length ? other[((it.ref | 0) % other.length + other.length) % other.length] : null;
+      h += '<p class="hint">FR · ' + (fr ? esc(flat(fr))
+        : "nothing under <code>store.copy.fr</code> — the English line is written in both") + "</p>";
     }
     h += '<div class="row"><label>Align</label><select data-k="align">' +
       ["left","center","right"].map(function (a) {
@@ -1718,6 +1767,14 @@ function inspect() {
     h += '<div class="row"><label>Size <b>' + it.size + '</b></label>' +
       '<input type="range" data-k="size" data-num="1" min="14" max="140" step="2" value="' + it.size + '"></div>';
   }
+
+  /* Every pooled piece is picked BY NUMBER, out of the pool its kind resolves
+     against: the captures, the faces the game ships, its decor, one sheet of
+     its object cuts. Swapping one used to mean deleting the piece and dragging
+     another out of the palette — which threw its position, its rotation and
+     its size away. The index is what the layout carries, so this dropdown is
+     also what a walk across the thirteen re-resolves. */
+  if (POOLED[it.kind]) h += poolRows(it);
 
   /* The numbers are behind a chevron: a piece is placed by dragging it, and the
      five rows that say where it landed are a fallback, not the interface. The
@@ -1752,7 +1809,10 @@ function inspect() {
       if (inp.dataset.num) v = parseFloat(v) / (inp.dataset.div ? +inp.dataset.div : 1);
       if (inp.dataset.num && isNaN(v)) return;
       it[inp.dataset.k] = v;
-      if (inp.dataset.k === "src" || inp.dataset.k === "style") inspect();
+      /* A new index is a new file: ask for it before the next frame draws, or
+         the piece blinks out while its picture decodes. */
+      if (inp.dataset.k === "ref" && it.kind !== "text") load(urlOf(it));
+      if (/^(src|style|ref)$/.test(inp.dataset.k)) inspect();
       layerList();
       invalidate();
       var lab = inp.parentNode.querySelector("label b");
@@ -1760,6 +1820,21 @@ function inspect() {
         : inp.dataset.k === "rot" ? Math.round(v) + "°" : Math.round(v);
     });
   });
+  /* The object row sets three fields at once — an adopted decor and a raw cut
+     are two kinds of item, and the list mixes them — so it is wired on its own
+     rather than through the generic one-key binding above. */
+  Array.prototype.forEach.call(box.querySelectorAll('[data-pick="object"]'), function (sel) {
+    sel.addEventListener("input", function () {
+      var o = objectPool()[+sel.value];
+      if (!o) return;
+      it.kind = o.kind;
+      it.ref = o.ref;
+      if (o.kind === "cut") it.sheet = o.sheet; else delete it.sheet;
+      load(urlOf(it));
+      inspect(); layerList(); invalidate();
+    });
+  });
+
   Array.prototype.forEach.call(box.querySelectorAll("[data-do]"), function (b) {
     b.onclick = function () {
       var d = b.dataset.do;
@@ -1770,7 +1845,92 @@ function inspect() {
   });
 }
 
+/* The pieces that come out of a pool, what their row is called, and the
+   command that fills the pool when it is empty. The logotype is not here: a
+   game has exactly one. */
+var POOLED = {
+  screen: { label: "Capture", run: "node tools/lab/shoot-screens.mjs" },
+  face:   { label: "Face",    run: "node tools/lab/encode-art.mjs" },
+  decor:  { label: "Object",  run: "node tools/lab/cut-objects.mjs" },
+  cut:    { label: "Object",  run: "node tools/lab/cut-objects.mjs" }
+};
+
+/* EVERY object the game owns, in one flat list and in the palette's own order:
+   the adopted decor first, then every cut of every sheet. The sheet is how the
+   disk stores them, not how a card is composed — asking which sheet a gear
+   came out of before showing the gears is a filter to get through, so there
+   is none, and one dropdown holds the lot.
+
+   An entry carries what it takes to BE that object — `kind`, `sheet`, `ref` —
+   because an adopted decor and a raw cut are two kinds of item and the list
+   mixes them the way the palette does. */
+function objectPool() {
+  var g = game();
+  var out = (g.art || []).filter(function (r) { return r.indexOf("decor") === 0; })
+    .map(function (r, i) { return { kind: "decor", ref: i, label: r }; });
+  var cuts = g.cuts || {};
+  Object.keys(cuts).forEach(function (sheet) {
+    cuts[sheet].forEach(function (f, i) {
+      out.push({ kind: "cut", sheet: sheet, ref: i,
+        label: f.replace(state.slug + "-", "").replace(".png", "") });
+    });
+  });
+  return out;
+}
+
+/* Where the selected object sits in that list. It resolves the item exactly
+   the way urlOf does — the sheet falls back to the first one, the index wraps
+   — so the row can never point at a different picture from the one on the
+   card. */
+function objectAt(it) {
+  var list = objectPool();
+  var sheet = sheetOf(it.sheet);
+  var mine = list.filter(function (o) {
+    return o.kind === it.kind && (it.kind !== "cut" || o.sheet === sheet);
+  });
+  if (!mine.length) return 0;
+  var r = ((it.ref | 0) % mine.length + mine.length) % mine.length;
+  return list.indexOf(mine[r]);
+}
+
+/* What each piece of a pool is called, in the pool's own order — the order
+   `ref` indexes into. */
+function poolLabels(it) {
+  var g = game();
+  if (it.kind === "screen") return (g.screens || []).map(function (nn) { return state.slug + "-" + nn; });
+  if (it.kind === "face") return ["happy", "neutral", "sad"].filter(function (f) {
+    return (g.art || []).indexOf("character-" + f) >= 0;
+  });
+  return [];
+}
+
+function poolRows(it) {
+  var what = POOLED[it.kind];
+
+  /* An object is picked out of the flat list above; a capture and a face index
+     into their own pool and need nothing else. */
+  var isObject = it.kind === "decor" || it.kind === "cut";
+  var list = isObject ? objectPool() : poolLabels(it);
+  if (!list.length) {
+    return '<p class="hint">Nothing on disk — run <code>' + what.run + " " + state.slug + "</code>.</p>";
+  }
+
+  var at = isObject ? objectAt(it)
+    : ((it.ref | 0) % list.length + list.length) % list.length;
+
+  return '<div class="row"><label>' + what.label + ' <b>' + (at + 1) + "/" + list.length + '</b></label>' +
+    '<select data-' + (isObject ? "pick=\"object\"" : 'k="ref" data-num="1"') + ">" +
+    list.map(function (o, i) {
+      return '<option value="' + i + '"' + (at === i ? " selected" : "") + '>' +
+        (i + 1) + " · " + esc(isObject ? o.label : o) + "</option>";
+    }).join("") + "</select></div>";
+}
+
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+/* A line of copy as one plain string: kicker, the line, no <b>. */
+function flat(l) {
+  return (l.kicker ? l.kicker + " — " : "") + String(l.line || "").replace(/<[^>]*>/g, "");
+}
 
 /* A header and the block right after it, folded together. `onto` is told which
    way it went, so a section that is rebuilt (the inspector is, on every
@@ -1815,16 +1975,13 @@ function meta() {
     shipped + " — " + f.says +
     " · <kbd>⌫</kbd> delete <kbd>D</kbd> duplicate <kbd>[</kbd><kbd>]</kbd> order <kbd>⇧</kbd>+turn straightens";
   el["v-slug"].textContent = state.slug;
-  el["v-lang"].textContent = state.lang.toUpperCase();
-  el["v-ext"].textContent = "." + state.ext;
   el["v-step"].textContent = state.grid.step;
   document.getElementById("save-layout").textContent = "Save " + state.slug + " layout";
   document.getElementById("save-template").textContent = "Save " + state.format + " template";
   el["save-where"].innerHTML = "→ <code>assets/image/" + storeOf(state.format) +
-    "/" + state.lang + "/</code>" +
-    (panels() > 1 ? ", <b>" + panels() + " files</b> numbered from the name in the box (" +
-      panelName(el.name.value || state.slug + "-01", 0) + " … " +
-      panelName(el.name.value || state.slug + "-01", panels() - 1) + "). " : ". ") +
+    "/en/</code> <b>and</b> <code>/fr/</code>, both written every time" +
+    (panels() > 1 ? ", <b>" + panels() + " files</b> a language. " : ". ") +
+    "The name is the next free slot of the gallery — nothing is ever replaced. " +
     "<b>Save for all games</b> writes this exact composition for each of the " +
     Object.keys(CAT.games).length + ", every one with " +
     "its own pieces, copy and typeface.";
@@ -1858,6 +2015,10 @@ function adoptComp(c) {
   comp.ground = Object.assign({ kind: "screen", ref: 0, bright: 100, scrim: "both", scrimK: 100 }, comp.ground);
   comp.items = (comp.items || []).map(function (it) {
     it.id = uid();
+    /* A layout written before the copy was settled may still carry a typed
+       line. On this page it goes back to the manifest — the shoot is the one
+       caller allowed to keep a literal, and it is the one that sets it. */
+    if (it.kind === "text" && !SHOOT) { it.src = "copy"; delete it.line; delete it.kicker; }
     if (it.kind !== "text") load(urlOf(it));
     return it;
   });
@@ -1900,18 +2061,8 @@ function loadComp(params) {
     var saved = presetFor(compKey()) || presetFor(templateKey());
     state.comp = saved && !params ? adoptComp(saved) : defaultComp(params || {});
     state.sel = null;
-    defaultName();
-    groundPalette(); layerList(); inspect(); meta(); invalidate();
+    groundPalette(); layerList(); inspect(); meta(); showNext(); invalidate();
   });
-}
-
-function defaultName() {
-  /* A multi is the first three phone slots of the gallery, so it opens on the
-     same name a phone card does — the save numbers the rest from it. */
-  var base = state.format === "phone" || state.format === "multi" ? state.slug + "-01"
-    : state.format === "desk" ? state.slug + "-desk-01"
-    : state.slug + "-thumb";
-  el.name.value = base;
 }
 
 /* ===========================================================================
@@ -1933,78 +2084,106 @@ function exportDataURI(panel) {
   g.imageSmoothingQuality = "high";
   g.translate(-(panel || 0) * ow, 0);
   drawScene(g, f.out[0] / f.w, false);
-  return c.toDataURL(state.ext === "png" ? "image/png" : "image/jpeg", 0.92);
+  return c.toDataURL("image/jpeg", 0.92);
 }
 
-/* The name of panel `i`, from the name of the first. A trailing number is the
-   slot a store sorts the gallery by, so it is incremented and its padding kept
-   (`radiam-01` → `radiam-02`); a name without one takes a suffix instead. */
-function panelName(base, i) {
-  base = String(base || "").trim();
-  if (!i) return base;
-  var m = base.match(/^(.*?)(\d+)$/);
-  if (!m) return base + "-" + (i + 1);
-  var n = String(+m[2] + i);
-  while (n.length < m[2].length) n = "0" + n;
-  return m[1] + n;
+/* The names the next save will take. The page decides none of them: a listing
+   image is a numbered slot of a store gallery, and which slots are free is a
+   question about the disk — so the server answers it (see `nextNames` in
+   tools/lab/serve-store.mjs). It only reads, so asking to show the name costs
+   nothing and the answer is the same one the save uses. */
+function nextNames(slug) {
+  return fetch("/api/next?slug=" + encodeURIComponent(slug) +
+    "&format=" + state.format + "&count=" + panels())
+    .then(function (r) { return r.json(); })
+    .then(function (r) {
+      if (r.error) throw new Error(r.error);
+      return r.names;
+    });
 }
 
-function postImage(slug, name, data) {
+/* What that would be, under the buttons: a card is composed for a slot, and
+   the number it lands on is worth seeing before the press, not after. */
+function showNext() {
+  if (!SERVED) { el["next-name"].textContent = ""; return; }
+  var asked = state.slug + "/" + state.format;
+  nextNames(state.slug).then(function (names) {
+    if (asked !== state.slug + "/" + state.format) return;   // the panel moved on
+    el["next-name"].innerHTML = "next: <code>" + names.join("</code> <code>") + "</code>.jpg";
+  }).catch(function () { el["next-name"].textContent = ""; });
+}
+
+function postImage(slug, lang, name, data) {
   return fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      slug: slug, lang: state.lang, format: state.format,
-      name: name, ext: state.ext, data: data
+      slug: slug, lang: lang, format: state.format,
+      name: name, data: data
     })
   }).then(function (r) { return r.json(); });
 }
 
-/* Every panel of one card, in gallery order, one POST after another. A format
-   with no panels is one image and the loop runs once. */
-function savePanels(slug, base) {
-  var shots = [];
-  for (var i = 0; i < panels(); i++) shots.push(exportDataURI(i));
-  var wrote = [];
-  var chain = Promise.resolve();
-  shots.forEach(function (data, i) {
-    chain = chain.then(function () {
-      return postImage(slug, panelName(base, i), data);
-    }).then(function (r) {
-      if (r.error) throw new Error(r.error);
-      wrote.push(r);
+/* Every panel of one card, in gallery order, IN BOTH LANGUAGES — one POST
+   after another. A tagline is a line of the manifest and nothing else, so EN
+   and FR are the same composition with the other line drawn on it: there is
+   no second card to compose and no language to remember. A card carrying no
+   tagline writes the same picture twice, which is what keeps each
+   assets/image/<store>/<lang>/ a complete upload on its own.
+
+   The export reads `state.lang`, so it is flipped around the draw and put
+   back — the preview must not be left in the language of the last save. */
+var LANGS = ["en", "fr"];
+
+/* One card, both languages, every panel — and the slots it lands in asked for
+   first, in ONE allocation: en/<slug>-05 and fr/<slug>-05 have to be the same
+   composition, and the three panels of a `multi` have to be consecutive. */
+function savePanels(slug) {
+  return nextNames(slug).then(function (names) {
+    var shots = [];
+    var was = state.lang;
+    try {
+      LANGS.forEach(function (lang) {
+        state.lang = lang;
+        for (var i = 0; i < panels(); i++) {
+          shots.push({ lang: lang, name: names[i], data: exportDataURI(i) });
+        }
+      });
+    } finally { state.lang = was; }
+
+    var wrote = [];
+    var chain = Promise.resolve();
+    shots.forEach(function (shot) {
+      chain = chain.then(function () {
+        return postImage(slug, shot.lang, shot.name, shot.data);
+      }).then(function (r) {
+        if (r.error) throw new Error(r.error);
+        wrote.push(r);
+      });
     });
+    return chain.then(function () { return wrote; });
   });
-  return chain.then(function () { return wrote; });
 }
 
 function saidWrote(list) {
-  return list.map(function (r) {
-    return (r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB)";
-  }).join(" · ");
+  return list.map(function (r) { return "wrote " + r.path + " (" + r.kb + " KB)"; }).join(" · ");
 }
 
 function saveImage() {
   if (!SERVED) { warn("Save needs the server: node tools/lab/serve-store.mjs"); return; }
-  if (!el.name.value.trim()) { warn("name the image first"); return; }
   warn(""); said("saving…");
-  var run;
-  try { run = savePanels(state.slug, el.name.value); }
-  catch (e) { said(""); warn("the canvas is tainted — serve the page instead of opening it"); return; }
-  run.then(function (wrote) {
+  savePanels(state.slug).then(function (wrote) {
     said(saidWrote(wrote));
+    showNext();
     /* The layout is saved with the image: the point of composing one is being
        able to open it again, and to hand it to the next game. */
     savePreset(compKey(), cleanComp(state.comp), saidWrote(wrote) + " — layout saved too");
-  }).catch(function (e) { said(""); warn(String(e.message || e)); });
-}
-
-/* The name one image takes for another game. The slug is the prefix the store
-   folder is sorted by, so it is swapped and the rest of the name — the number,
-   the `-desk`, the `-thumb` — is kept exactly. */
-function nameFor(slug, from, base) {
-  return base.indexOf(from) === 0 ? slug + base.slice(from.length)
-    : slug + "-" + base.replace(/^-+/, "");
+  }).catch(function (e) {
+    said("");
+    warn(/tainted|SecurityError/i.test(String(e && e.message || e))
+      ? "the canvas is tainted — serve the page instead of opening it"
+      : String(e.message || e));
+  });
 }
 
 /* SAVE FOR ALL — the same composition, once per game.
@@ -2019,8 +2198,6 @@ function nameFor(slug, from, base) {
    it, and this only prints images. */
 function saveEveryGame() {
   if (!SERVED) { warn("Save needs the server: make store"); return; }
-  var base = el.name.value.trim();
-  if (!base) { warn("name the image first"); return; }
 
   var games = Object.keys(CAT.games);
   var from = state.slug;
@@ -2047,7 +2224,9 @@ function saveEveryGame() {
         return !im || im.__ok === -1;
       }).length;
       if (holes) trouble.push(slug + ": " + holes + " piece" + (holes === 1 ? "" : "s") + " missing");
-      return savePanels(slug, nameFor(slug, from, base));
+      /* Each game takes the next free slots of ITS OWN gallery — thirteen
+         allocations, not one name with the slug swapped in it. */
+      return savePanels(slug);
     }).then(function (wrote) {
       made += wrote.length;
     }).catch(function (e) {
@@ -2062,9 +2241,9 @@ function saveEveryGame() {
     return Promise.all([faceReady, preloadGame()]);
   }).then(function () {
     btn.disabled = one.disabled = false;
-    groundPalette(); elementPalette(); layerList(); inspect(); meta(); invalidate();
+    groundPalette(); elementPalette(); layerList(); inspect(); meta(); showNext(); invalidate();
     said(made + " image" + (made === 1 ? "" : "s") + " written into assets/image/" +
-      storeOf(state.format) + "/" + state.lang + "/");
+      storeOf(state.format) + "/{en,fr}/");
     if (trouble.length) warn(trouble.join(" · "));
   });
 }
@@ -2077,10 +2256,6 @@ segs("seg-format", function (v) {
   state.format = v; segOn("seg-format", v);
   loadComp(); fitStage();
 });
-segs("seg-lang", function (v) {
-  state.lang = v; segOn("seg-lang", v);
-  meta(); layerList(); inspect(); invalidate();
-});
 segs("seg-pal", function (v) { state.pal = v; segOn("seg-pal", v); elementPalette(); });
 
 /* The ground reel: one row, scrolled a screenful at a time. */
@@ -2091,8 +2266,6 @@ segs("seg-pal", function (v) { state.pal = v; segOn("seg-pal", v); elementPalett
   };
 });
 fold(document.getElementById("h-grid"));
-document.getElementById("add-text").onclick = addTagline;
-segs("seg-ext", function (v) { state.ext = v; segOn("seg-ext", v); meta(); });
 segs("seg-grid", function (v) { state.grid.on = v === "1"; segOn("seg-grid", v); invalidate(); });
 
 el.slug.addEventListener("change", function () {
@@ -2223,15 +2396,14 @@ function shootCatalogue() {
 
 function boot() {
   segOn("seg-format", state.format);
-  segOn("seg-lang", state.lang);
   segOn("seg-pal", state.pal);
-  segOn("seg-ext", state.ext);
   segOn("seg-grid", state.grid.on ? "1" : "0");
 
   el["mode-hint"].className = SERVED ? "hint" : "hint offline";
   el["mode-hint"].innerHTML = SERVED
-    ? "Three layers: the ground, the pieces dragged onto it, the tagline. " +
-      "<code>Save</code> writes the image into <code>assets/image/&lt;store&gt;/&lt;lang&gt;/</code>."
+    ? "Two layers: the ground, and the pieces dragged onto it — taglines " +
+      "included, straight out of the manifest. <code>Save</code> writes the " +
+      "image into <code>assets/image/&lt;store&gt;/</code>, <b>EN and FR</b>."
     : "<b>Opened over file://</b> — the manifests cannot be read from here, so " +
       "there is <b>no tagline to pick</b> and no other game's assets, and Save " +
       "is off. Run <code>make store</code> and open " +
@@ -2256,7 +2428,6 @@ function boot() {
     var inline = q.get("comp");
     if (inline) {
       state.comp = adoptComp(JSON.parse(decodeURIComponent(escape(atob(inline)))));
-      defaultName();
       groundPalette(); layerList(); inspect(); meta();
       fitStage();
       return waitForPictures();
@@ -2270,7 +2441,7 @@ function boot() {
       });
       /* Typed copy: the shoot carries the manifest's line itself. */
       state.comp.items.forEach(function (it) { if (it.kind === "text") it.src = "free"; });
-      defaultName(); meta();
+      meta();
       fitStage();
       return waitForPictures();
     }

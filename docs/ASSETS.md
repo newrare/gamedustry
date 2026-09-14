@@ -290,22 +290,49 @@ make store                                        # compose one by hand
 
 ### Composing one by hand: `make store`
 
-`lab/store-card.html` is an editor, and the card in it is **three layers**:
+`lab/store-card.html` is an editor, and the card in it is **two layers**:
 
 1. **the ground** — one picture, picked on a reel: every capture the game has,
    then its painted backgrounds. The scrim over it comes with the layout.
-1. **the elements** — everything the game owns, in three palettes: its objects
+1. **the elements** — everything the game owns, in four palettes: its objects
    (the adopted decor *and* every cut of every object sheet — 40 of them on
    `radiam`, narrowed with the *Show* filter), its three faces, its captures and
-   its logotype. Every one of them is **dragged out of the palette and dropped
-   on the card**, then moved, turned, resized and deleted with the handles on
-   the selection. **A picture never goes past 100 % of its own pixels** — the
-   width is capped at the file's natural size, because a decor cut for 360 px
-   blown up to 600 loses exactly the sharpness it was encoded for.
-1. **the tagline** — one button adds it; the style (hero, banner, plate,
-   outline, ribbon), the line of `store.copy` it shows, its alignment and its
-   size are then chosen on the selection, where every other property of a piece
-   already lives.
+   its logotype, and **its taglines**, one tile per style (hero, banner, plate,
+   outline, ribbon). Every one of them is **dragged out of the palette and
+   dropped on the card**, then moved, turned, resized and deleted with the
+   handles on the selection. **A picture never goes past 100 % of its own
+   pixels** — the width is capped at the file's natural size, because a decor
+   cut for 360 px blown up to 600 loses exactly the sharpness it was encoded
+   for.
+
+**A piece changes without being replaced.** Every element that comes out of a
+pool carries a dropdown on the selection — *Capture* for a screenshot, *Face*
+for the character, *Object* for anything the objects palette holds — so trying
+the card with a later board, the neutral face or another gear is one menu, and
+not a delete, a new drag and a position, a rotation and a size to find again.
+The layout stores that index, which is what a walk across the thirteen
+re-resolves.
+
+The *Object* row is **one flat list of everything the game owns** — the adopted
+decor first, then every cut of every sheet, forty of them on `radiam`. The
+sheet a gear came out of is how the disk stores it, not how a card is composed,
+so there is no category to pick before the objects are shown; an entry carries
+the kind and the sheet itself, which is why the same row swaps an adopted decor
+for a raw cut.
+
+**A tagline is a line of `store.copy` and nothing else.** The style, the line's
+number, its alignment and its size are chosen on the selection, where every
+other property of a piece already lives; the text itself is never typed on the
+page. The manifests are where the thirteen games' copy is written and
+proofread, and a listing image is not where a punchline is drafted — so the
+picker shows the English lines by number, with the French of that same number
+under it, and a line that needs changing is changed in the manifest.
+
+**There is no language to pick, because Save writes both.** One press prints
+the same composition into `assets/image/<store>/en/` and `.../fr/`, the only
+difference being the manifest line drawn on it. A card carrying no tagline
+writes the same picture twice, which is what keeps each language folder a
+complete upload on its own.
 
 **The grid is magnetic** and it is what makes thirteen listings one family:
 positions snap to its step (50 px) and rotation to 5°. A composition is saved as a
@@ -321,7 +348,7 @@ shot with it, and the built-in layout is what the other twelve get.
 
 A store gallery shows the phone screenshots **side by side**, so the third
 format is a card three slots wide (2160 × 1280 authored) that **Save cuts at
-the seams**: one press writes three files, numbered from the name in the box —
+the seams**: one press writes three files on three consecutive free numbers —
 `radiam-01`, `radiam-02`, `radiam-03`, the order the gallery sorts them in.
 
 Nothing is clipped by hand and no piece is duplicated: each image is drawn from
@@ -338,10 +365,23 @@ across all three, one punchline per slot out of `store.copy`, the logotype on
 the first and the objects sitting on the seams. It is saved like any other
 layout, keyed `<slug>/multi`.
 
-**Save writes the image itself**, at shipped size, into `assets/image/<store>/<lang>/`,
-and saves the layout with it. A `multi` writes its three. **Save for all** writes the same composition once
-per game — thirteen images, each with that game's own pieces, its own punchline
-and its own typeface, the file name keeping everything but the slug. That is
+**Save writes the image itself**, at shipped size, into `assets/image/<store>/en/`
+**and** `.../fr/`, and saves the layout with it. A `multi` writes its three per
+language, so six files.
+
+**The name is not typed, and neither is the format.** A listing image is a
+numbered slot of a store gallery, so the server hands out the next free numbers
+— `<slug>-NN` for a phone or a `multi`, `<slug>-desk-NN`, `<slug>-thumb` for
+the itch cover — and **refuses to write over a file that is already there**.
+Both languages are allocated together, so `en/<slug>-05.jpg` and
+`fr/<slug>-05.jpg` are always the same composition, and a `multi` takes its
+three numbers in one go. A second press of Save is therefore a second picture,
+never a lost one; the page shows the names it is about to take under the
+button. The format is JPEG, always — see below.
+
+**Save for all** writes the same composition once per game and per language —
+twenty-six images, each into its own game's next free slots, with that game's
+own pieces, its own punchline and its own typeface. That is
 what the role-and-index references are for, and it is the whole point of the
 tool: compose one card, print thirteen. It touches no layout, so a game that
 has a composition of its own keeps it. That — and listing what a game owns, which a
@@ -355,15 +395,15 @@ node tools/lab/serve-store.mjs --port=4000
 Opened straight off the disk (`open lab/store-card.html`) the page still
 composes and previews, which is how the batch shoot drives it, and it probes for
 the pictures it cannot list. But **a manifest cannot be read from there at all**,
-so there is no tagline to pick and no other game's copy, only the game the URL
-names; and Save is off, because a canvas that drew a `file://` image is tainted
+so there is no tagline to pick and no other game's copy, only the line the URL
+carries (which is how the batch shoot hands the copy over); and Save is off, because a canvas that drew a `file://` image is tainted
 and cannot be exported. The page says so, in red, at the top of its panel.
 
 Output is `assets/image/google/<lang>/<slug>-NN.jpg` and `-desk-NN.jpg`, and
 `assets/image/itch/<lang>/<slug>-thumb.jpg`
 — **JPEG like `assets/image/screen/`**, because 182 pictures of painted artwork over a
-capture is 34 MB as JPEG and 450 MB as PNG. `--png` is there for a piece that
-has to stay lossless. `node tools/publish/store-meta.mjs --game=<slug> --play --lang=fr` names the set it should be uploaded with.
+capture is 34 MB as JPEG and 450 MB as PNG. The composer writes nothing else;
+`--png` is a flag of the batch shoot, for a piece that has to stay lossless. `node tools/publish/store-meta.mjs --game=<slug> --play --lang=fr` names the set it should be uploaded with.
 
 Nothing is invented: a game missing a character, a logotype, a landscape scene
 or the capture a shot is aimed at is **skipped and reported**, never shot with a

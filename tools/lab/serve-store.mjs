@@ -18,6 +18,7 @@
     GET  /assets/…            the real assets, by path
     GET  /api/catalogue       every game: copy, typeface, accent, and the
                               screens / art / decor / object cuts it owns
+    GET  /api/next            the names the next save would take
     PUT  /api/preset          save (or delete) one composition
     POST /api/save            write the composed image into assets/image/<store>/<lang>/
 
@@ -146,6 +147,56 @@ function writePreset(key, comp) {
   return Object.keys(db.presets).length;
 }
 
+// ── the names ──────────────────────────────────────────────────────────────
+/* The page names nothing. A listing image is a numbered slot of a store
+   gallery, so the name is worked out from what is already on disk and the next
+   free numbers are handed out — never a name typed into a box, and never a
+   file replaced.
+
+   Three things it has to get right:
+     · BOTH LANGUAGES SHARE THE NUMBER. en/<slug>-05.jpg and fr/<slug>-05.jpg
+       have to be the same composition, so a number taken in either folder is
+       taken in both.
+     · A `multi` IS ALLOCATED IN ONE GO — three consecutive numbers, because
+       the three panels are one picture cut at the seams and the gallery sorts
+       them by that number.
+     · THE ITCH COVER IS NOT A GALLERY. It keeps its bare `<slug>-thumb` while
+       that is free, and is numbered after it.
+
+   It only reads: asking twice changes nothing, which is what lets the page
+   show the next name while a card is being composed. */
+function nextNames(slug, format, count) {
+  const store = format === 'thumb' ? 'itch' : 'google';
+  const taken = new Set();
+  for (const lang of ['en', 'fr']) {
+    for (const f of ls(path.join(STORE_DIR, store, lang))) {
+      taken.add(f.replace(/\.(jpe?g|png)$/i, ''));
+    }
+  }
+
+  const names = [];
+  if (format === 'thumb') {
+    for (let i = 0; names.length < count && i < 1000; i++) {
+      const n = i === 0 ? `${slug}-thumb` : `${slug}-thumb-${String(i + 1).padStart(2, '0')}`;
+      if (!taken.has(n)) names.push(n);
+    }
+    return { store, names };
+  }
+
+  /* Past the highest number, not into the first hole: a gallery reads in the
+     order it was shot, and refilling the gap left by a deleted slot would put
+     a new picture in the middle of an old set. */
+  const prefix = format === 'desk' ? `${slug}-desk-` : `${slug}-`;
+  const re = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\d+)$');
+  let max = 0;
+  for (const n of taken) {
+    const m = n.match(re);
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  for (let i = 0; i < count; i++) names.push(prefix + String(max + 1 + i).padStart(2, '0'));
+  return { store, names };
+}
+
 // ── serving ────────────────────────────────────────────────────────────────
 
 function body(req) {
@@ -166,13 +217,18 @@ function json(res, code, obj) {
   res.end(s);
 }
 
-/* A save writes one file and only under assets/image/<store>/<lang>/: the name
-   comes from a text field in a browser, so it is scrubbed to the shape the
-   store images already have rather than trusted. The name is also what picks
-   the destination — a `-thumb` is the itch cover, everything else is cut to
-   Play's specs — which is the same rule tools/lab/shoot-store.mjs applies. */
+/* A save writes one file and only under assets/image/<store>/<lang>/. The name
+   is the one /api/next handed out, but it still arrives over HTTP, so it is
+   scrubbed to the shape the store images already have rather than trusted. The
+   name is also what picks the destination — a `-thumb` is the itch cover,
+   everything else is cut to Play's specs — which is the same rule
+   tools/lab/shoot-store.mjs applies. */
 function safeName(name) {
   return String(name || '').trim().replace(/\.(png|jpe?g)$/i, '').replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 80);
+}
+
+function safeSlug(slug) {
+  return /^[a-z0-9-]{1,40}$/.test(String(slug || '')) ? String(slug) : '';
 }
 
 createServer(async (req, res) => {
@@ -181,6 +237,15 @@ createServer(async (req, res) => {
 
   try {
     if (p === '/api/catalogue') return json(res, 200, catalogue());
+
+    if (p === '/api/next') {
+      const slug = safeSlug(url.searchParams.get('slug'));
+      if (!slug) return json(res, 400, { error: 'bad slug' });
+      const asked = url.searchParams.get('format');
+      const format = ['phone', 'desk', 'thumb', 'multi'].includes(asked) ? asked : 'phone';
+      const count = Math.max(1, Math.min(8, Number(url.searchParams.get('count')) || 1));
+      return json(res, 200, nextNames(slug, format, count));
+    }
 
     if (p === '/api/preset' && req.method === 'PUT') {
       const b = JSON.parse(await body(req));
@@ -194,19 +259,26 @@ createServer(async (req, res) => {
       const b = JSON.parse(await body(req));
       const lang = b.lang === 'fr' ? 'fr' : 'en';
       const name = safeName(b.name);
-      const ext = b.ext === 'png' ? '.png' : '.jpg';
       if (!name) return json(res, 400, { error: 'no name' });
       const comma = String(b.data || '').indexOf(',');
       if (comma < 0) return json(res, 400, { error: 'no image' });
 
-      const out = path.join(STORE_DIR, /-thumb$/.test(name) ? 'itch' : 'google', lang, name + ext);
-      const existed = fs.existsSync(out);
+      /* JPEG, always: 182 pictures of painted artwork over a capture is 34 MB
+         as JPEG and 450 MB as PNG, and a store listing has no use for a
+         lossless one — see docs/ASSETS.md. */
+      const out = path.join(STORE_DIR, /-thumb/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
+      /* A slot is written once. The name came from /api/next, so a collision
+         here means two saves raced or a stale page asked — either way the
+         picture on disk is somebody's and is not overwritten. */
+      if (fs.existsSync(out)) {
+        return json(res, 409, { error: path.relative(ROOT, out) + ' already exists — reload the page' });
+      }
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, Buffer.from(b.data.slice(comma + 1), 'base64'));
       const kb = Math.round(fs.statSync(out).size / 1024);
       const rel = path.relative(ROOT, out);
-      console.log(`  ${existed ? 'replaced' : 'wrote   '}  ${rel}  (${kb} KB)`);
-      return json(res, 200, { ok: true, path: rel, kb, existed });
+      console.log(`  wrote   ${rel}  (${kb} KB)`);
+      return json(res, 200, { ok: true, path: rel, kb });
     }
 
     // static: the page itself, and the two directories it is allowed to read.
