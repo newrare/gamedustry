@@ -191,6 +191,15 @@ ______________________________________________________________________
   level harder than the one before, and a game whose knobs cannot express that
   needs more of them promoted into `CONFIG`.
 
+- [ ] CODE — **the opening board, level by level, on the twelve others.**
+  `games/blight` has it: a table of thirty openings in section 6, each one a
+  colour motif on a full wall or a figure hung from the ceiling (a heart, a
+  ring, a diamond, an X), plus how many colours and how many blight seeds the
+  level deals. The lerped knobs never changed what the player *sees* when a
+  level starts, and a wall of random bubbles looks the same at level 2 and at
+  level 28. What travels to another game is the idea, not the code: what its
+  board is made of at reset is the thing to vary.
+
 - [ ] CODE — **the French taglines, rewritten by hand, all thirteen games.**
   List what `web.copy.fr.tagline` says in every `manifest.json` today, read the
   thirteen in one column, and rewrite each one by hand: they were written game

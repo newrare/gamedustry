@@ -385,3 +385,24 @@
    ascenders — which inflated every stat row by 8px and pushed the CTA off the
    fold. The row is 30px of text, so it says so. */
 .eo-row { line-height:1.1; }
+
+/* The end screen's two buttons are navigation, not an ad. The playable's
+   pulsing install CTA is the loudest thing on the screen because in a creative
+   it is the point; here NEXT LEVEL / MAP are the same control the menu and the
+   pause card use, so they wear the same face — no pulse, no glow, no width
+   they did not earn. */
+#screen-end #btn-install, #screen-end #btn-replay {
+  width:100%; max-width:420px; padding:17px 12px;
+  border-radius:16px; border:2px solid rgba(255,255,255,.22);
+  background:rgba(0,0,0,.42); color:var(--text);
+  font-family:var(--web-font, inherit); font-size:29px;
+  font-weight:var(--web-fw, 800); letter-spacing:2px; text-transform:uppercase;
+  text-decoration:none; box-shadow:none; animation:none;
+  transition:color .16s ease, background .16s ease, border-color .16s ease, opacity .5s ease;
+}
+#screen-end #btn-install { margin-top:26px; color:var(--cta-text);
+  background:var(--accent); border-color:var(--accent); }
+#screen-end #btn-install:hover { color:var(--cta-text); filter:brightness(1.08); }
+#screen-end #btn-replay { margin-top:14px; }
+#screen-end #btn-replay:hover { border-color:var(--accent); color:var(--accent); }
+#screen-end #btn-install:active, #screen-end #btn-replay:active { transform:scale(.98); }

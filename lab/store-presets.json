@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "presets": {
+    "radiam/multi": {
+      "ground": {
+        "kind": "art",
+        "bright": 66,
+        "scrim": "both",
+        "scrimK": 110,
+        "ref": 3,
+        "role": "background-desk"
+      },
+      "items": [
+        {
+          "kind": "decor",
+          "ref": 1,
+          "w": 250,
+          "rot": 12,
+          "op": 0.9,
+          "cx": 1455,
+          "cy": 1231
+        },
+        {
+          "kind": "text",
+          "style": "hero",
+          "src": "copy",
+          "ref": 1,
+          "line": "",
+          "kicker": "",
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 1080,
+          "cy": 178.35
+        },
+        {
+          "kind": "screen",
+          "ref": 2,
+          "w": 550,
+          "op": 1,
+          "rot": 15,
+          "cx": 1750,
+          "cy": 650
+        },
+        {
+          "kind": "text",
+          "style": "hero",
+          "src": "copy",
+          "ref": 2,
+          "line": "",
+          "kicker": "",
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 1800,
+          "cy": 178.35
+        },
+        {
+          "op": 1,
+          "rot": -15,
+          "kind": "screen",
+          "ref": 4,
+          "cx": 350,
+          "cy": 650,
+          "w": 650
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 373,
+          "op": 1,
+          "rot": 0,
+          "cx": 650,
+          "cy": 500,
+          "flip": true
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 1,
+          "cx": 650,
+          "cy": 1300,
+          "w": 456
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 0,
+          "cx": 750,
+          "cy": 1150,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "screen",
+          "ref": 3,
+          "cx": 1080,
+          "cy": 640,
+          "w": 300
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "screen",
+          "ref": 4,
+          "cx": 1250,
+          "cy": 750,
+          "w": 300
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 6,
+          "cx": 1350,
+          "cy": 550,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 5,
+          "cx": 1200,
+          "cy": 700,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 6,
+          "cx": 1050,
+          "cy": 850,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "face",
+          "ref": 1,
+          "cx": 1950,
+          "cy": 1150,
+          "w": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 5,
+          "cx": 1500,
+          "cy": 50,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 7,
+          "cx": 1600,
+          "cy": 100,
+          "w": 100
+        }
+      ]
+    },
+    "blight/multi": {
+      "ground": {
+        "kind": "art",
+        "bright": 66,
+        "scrim": "both",
+        "scrimK": 110,
+        "ref": 5,
+        "role": "background-desk"
+      },
+      "items": [
+        {
+          "op": 1,
+          "rot": 15,
+          "kind": "screen",
+          "ref": 6,
+          "cx": 1800,
+          "cy": 650,
+          "w": 720
+        },
+        {
+          "kind": "screen",
+          "ref": 2,
+          "w": 460,
+          "op": 1,
+          "rot": 0,
+          "cx": 1000,
+          "cy": 700
+        },
+        {
+          "kind": "screen",
+          "ref": 0,
+          "w": 720,
+          "op": 1,
+          "rot": -10,
+          "cx": 400,
+          "cy": 700
+        },
+        {
+          "kind": "decor",
+          "ref": 1,
+          "w": 250,
+          "rot": 12,
+          "op": 0.9,
+          "cx": 1455,
+          "cy": 1233.411575562701
+        },
+        {
+          "kind": "logo",
+          "w": 318.7548638132296,
+          "op": 1,
+          "rot": 0,
+          "cx": 250,
+          "cy": 1100
+        },
+        {
+          "kind": "text",
+          "style": "hero",
+          "src": "copy",
+          "ref": 0,
+          "line": "",
+          "kicker": "",
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 350,
+          "cy": 800
+        },
+        {
+          "kind": "text",
+          "style": "hero",
+          "src": "copy",
+          "ref": 1,
+          "line": "",
+          "kicker": "",
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 1080,
+          "cy": 178.35
+        },
+        {
+          "kind": "text",
+          "style": "plate",
+          "src": "copy",
+          "ref": 2,
+          "line": "",
+          "kicker": "",
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 1800,
+          "cy": 1000
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 373,
+          "op": 1,
+          "rot": 0,
+          "cx": 650,
+          "cy": 550,
+          "flip": true
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 13,
+          "cx": 700,
+          "cy": 1100,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "screen",
+          "ref": 5,
+          "cx": 1150,
+          "cy": 800,
+          "w": 450
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 12,
+          "cx": 1450,
+          "cy": 50,
+          "w": 200
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 14,
+          "cx": 900,
+          "cy": 1250,
+          "w": 200
+        }
+      ]
+    }
+  }
+}

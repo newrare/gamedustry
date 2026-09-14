@@ -366,35 +366,41 @@
    thirteen fill it differently. This is one pill UNDER it, centred on the
    score it is measured against, small and dark enough to sit over the play
    area the way the round's two controls do in the opposite corner. Nothing of
-   the game's layout moves for it: --hud-h and Layout are untouched. */
+   the game's layout moves for it: --hud-h and Layout are untouched.
+
+   It is kept SMALL, and tucked into the bottom of the top band rather than
+   hung under it: whatever a game draws at the very top of Layout — the first
+   row of a bubble wall, the ceiling of a shaft — is the one thing the player
+   reads a level against, and a pill that covers it costs more than it says.
+   The band has the room (the HUD's own score block ends well above it). */
 #lv-hud {
   position:absolute; z-index:21; left:50%;
-  top:calc(var(--inset-top) + var(--hud-h) + 4px);
+  top:calc(var(--inset-top) + var(--hud-h) - 10px);
   transform:translateX(-50%);
-  display:flex; flex-direction:column; gap:5px; align-items:stretch;
-  min-width:196px; padding:8px 14px 9px; border-radius:16px;
+  display:flex; flex-direction:column; gap:4px; align-items:stretch;
+  min-width:172px; padding:5px 12px 6px; border-radius:14px;
   background:rgba(0,0,0,.46); border:2px solid var(--panel-line);
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
   font-family:var(--web-font, inherit); pointer-events:none;
 }
 #lv-hud[hidden] { display:none; }
-#lv-hud .top { display:flex; align-items:center; gap:10px; }
+#lv-hud .top { display:flex; align-items:center; gap:8px; }
 #lv-hud .n {
-  font-size:22px; font-weight:var(--web-fw, 900); line-height:1;
+  font-size:18px; font-weight:var(--web-fw, 900); line-height:1;
   color:var(--muted); font-variant-numeric:tabular-nums;
 }
-#lv-hud .st { display:flex; gap:4px; line-height:1; }
+#lv-hud .st { display:flex; gap:3px; line-height:1; }
 #lv-hud .st s {
-  text-decoration:none; font-size:22px; color:rgba(255,255,255,.22);
+  text-decoration:none; font-size:18px; color:rgba(255,255,255,.22);
   transition:color .18s ease, text-shadow .18s ease, transform .18s ease;
 }
 #lv-hud .st s::before { content:"\2605"; }
 #lv-hud .st s.on { color:var(--gold); text-shadow:0 0 12px rgba(255,212,59,.9); }
 #lv-hud .goal {
-  margin-left:auto; font-style:normal; font-size:19px; line-height:1;
+  margin-left:auto; font-style:normal; font-size:16px; line-height:1;
   color:rgba(255,255,255,.6); font-variant-numeric:tabular-nums;
 }
-#lv-hud .bar { display:block; height:6px; border-radius:4px; background:rgba(255,255,255,.14); overflow:hidden; }
+#lv-hud .bar { display:block; height:5px; border-radius:4px; background:rgba(255,255,255,.14); overflow:hidden; }
 #lv-hud .bar u {
   display:block; height:100%; width:0; border-radius:4px; text-decoration:none;
   background:linear-gradient(90deg, var(--accent), var(--gold));

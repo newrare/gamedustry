@@ -24,13 +24,21 @@
    character stands where the board is empty is worth three cards laid out by
    a rule. What IS automated is repeating a good one — see THE GRID below.
 
-   Three formats, authored at the size the repo already thinks in:
+   Four formats, authored at the size the repo already thinks in:
 
      phone   720x1280 authored, shipped 1080x1920 — the Play phone slot and
              the itch screenshots.
      desk    1280x720 authored, shipped 1920x1080 — the Play tablet slot and
              the desktop picture.
      thumb   630x500 — the itch cover, shown down to 315x250 in a grid.
+     multi   2160x1280 authored, shipped as THREE 1080x1920 phone slots — one
+             composition cut at the seams. A store gallery shows those three
+             side by side, so the ground, the objects and a punchline are
+             free to run from one slot into the next instead of each image
+             being its own little poster. The seams are drawn on the card
+             while it is composed, and nothing but the export knows about
+             them: a piece straddling one is drawn twice, once per image,
+             and the motif continues.
 
    THE GRID is what makes thirteen listings one family. Snapping is on by
    default, and a composition is saved as a LAYOUT (`lab/store-presets.json`,
@@ -41,9 +49,11 @@
    against whichever game is loaded. Design once, walk the thirteen, adjust.
 
    SAVE writes the image itself, at shipped size, into the store the format
-   belongs to — assets/image/google/<lang>/ for the phone and desk pictures,
-   assets/image/itch/<lang>/ for the 630x500 cover —
-   the folder the store upload reads. That needs the small local server, which
+   belongs to — assets/image/google/<lang>/ for the phone, desk and multi
+   pictures, assets/image/itch/<lang>/ for the 630x500 cover —
+   the folder the store upload reads. A `multi` save writes three files rather
+   than one, numbered from the name in the box (`radiam-01` → `-01 -02 -03`),
+   which is the order the gallery shows them in. That needs the small local server, which
    is also what lists the palettes:
 
      node tools/lab/serve-store.mjs      →  http://localhost:8091/
@@ -249,6 +259,7 @@ body.shoot #wrap { box-shadow:none; }
       <button data-v="phone">phone</button>
       <button data-v="desk">desk</button>
       <button data-v="thumb">thumb</button>
+      <button data-v="multi">multi</button>
     </div>
   </div>
   <h2>1 · Ground <span>the layer under everything</span></h2>
@@ -344,10 +355,16 @@ if (SHOOT) document.body.classList.add("shoot");
 var SERVED = location.protocol === "http:" || location.protocol === "https:";
 var BASE = SERVED ? "/assets/" : "../assets/";
 
+/* `panels` is how many images one card is cut into on the way out: three for
+   the triptych, one — and unstated — for everything else. The authored width
+   is the panel width times the count, so a panel of a `multi` is exactly a
+   `phone` and every layout number means the same thing in both. */
 var FORMATS = {
   phone: { w: 720,  h: 1280, out: [1080, 1920], says: "the Play phone slot and the itch screenshots" },
   desk:  { w: 1280, h: 720,  out: [1920, 1080], says: "the Play tablet slot and the desktop picture" },
-  thumb: { w: 630,  h: 500,  out: [630, 500],   says: "the itch cover, shown down to 315 × 250" }
+  thumb: { w: 630,  h: 500,  out: [630, 500],   says: "the itch cover, shown down to 315 × 250" },
+  multi: { w: 2160, h: 1280, out: [3240, 1920], panels: 3,
+    says: "three Play phone slots, one picture running across them" }
 };
 
 /* The fallback tables: what the server would have said, for the file:// path.
@@ -392,7 +409,7 @@ var CAT = { games: {}, fonts: FALLBACK_FONTS, presets: { presets: {} } };
 
 var state = {
   slug:   q.get("slug") || "radiam",
-  format: q.get("format") || "phone",
+  format: FORMATS[q.get("format")] ? q.get("format") : "phone",
   lang:   q.get("lang") === "fr" ? "fr" : "en",
   pal:    "object",
   ext:    "jpg",
@@ -404,6 +421,9 @@ var state = {
 };
 
 function fmt() { return FORMATS[state.format]; }
+/* How many images this card is saved as, and how wide one of them is. */
+function panels() { return fmt().panels || 1; }
+function panelW() { return fmt().w / panels(); }
 function game() { return CAT.games[state.slug] || {}; }
 function accent() { return game().accent || "#35e0ff"; }
 function accent2() { return game().accent2 || accent(); }
@@ -888,6 +908,7 @@ function drawItem(g, it, edit) {
 var PAD = 90;
 
 function drawScene(g, scale, edit) {
+  if (!state.comp) return;              // the first paint can land before a layout does
   var W = fmt().w, H = fmt().h;
   g.save();
   g.scale(scale, scale);
@@ -932,6 +953,28 @@ function drawScene(g, scale, edit) {
 function u() { return 1 / state.zoom; }
 
 function drawEditing(g, W, H) {
+  /* THE SEAMS — where a multi card is cut into the images a store shows side
+     by side. Drawn whatever the grid is doing, because it is the one line a
+     triptych has to be read against: a piece laid over a seam comes out of the
+     export split between two slots, which is the whole point of the format. */
+  var np = panels();
+  if (np > 1) {
+    var pw = W / np;
+    g.save();
+    g.strokeStyle = "rgba(255,255,255,.40)";
+    g.lineWidth = 1.6 * u();
+    g.setLineDash([11 * u(), 9 * u()]);
+    for (var s = 1; s < np; s++) {
+      g.beginPath(); g.moveTo(s * pw, 0); g.lineTo(s * pw, H); g.stroke();
+    }
+    g.setLineDash([]);
+    g.fillStyle = "rgba(255,255,255,.34)";
+    g.font = "700 " + (13 * u()) + "px ui-monospace,monospace";
+    g.textAlign = "left"; g.textBaseline = "top";
+    for (var s2 = 0; s2 < np; s2++) g.fillText(String(s2 + 1), s2 * pw + 10 * u(), 10 * u());
+    g.restore();
+  }
+
   if (state.grid.on) {
     g.save();
     g.strokeStyle = "rgba(126,166,255,.13)";
@@ -1070,6 +1113,41 @@ function defaultComp(p) {
     place(face, { x: right ? W + 46 : -46, y: H + 18, ax: right ? "right" : "left", ay: "bottom", w: fw, h: fh });
 
     spots(bottom ? SPOTS["phone-bottom"] : SPOTS.phone, objn, p.objOff || 0);
+  } else if (state.format === "multi") {
+    /* THE TRIPTYCH. The ground is the one continuous picture — the landscape
+       scene, not a capture, because a 720-wide capture blown across 2160 is a
+       blur — and the three slots are three phones standing in it, each with
+       the punchline of its own line of copy above it. The logotype goes on the
+       first slot only: a store shows them in order, and a name repeated three
+       times reads as three games. */
+    c.ground = { kind: "art", role: "background-desk", bright: 66, scrim: "both", scrimK: 110 };
+
+    var PW = W / 3;
+    for (var mi = 0; mi < 3; mi++) {
+      var ox = mi * PW;
+
+      if (mi === 0 && logo) {
+        var ml = add({ kind: "logo", w: 420 });
+        place(ml, { x: ox + 50, y: 62, ax: "left", ay: "top", w: 420, h: 128 });
+      }
+
+      var mt = add({
+        kind: "text", style: "hero", src: "copy", ref: (p.lineIndex || 0) + mi,
+        line: p.line || "", kicker: p.kicker || "",
+        size: 58, w: PW - 96, align: "center"
+      });
+      layoutInto(mt, { x: ox + PW / 2, y: mi === 0 && logo ? 226 : 96, ax: "center", ay: "top" });
+
+      var ms = add({ kind: "screen", ref: shot + mi, w: 460 });
+      place(ms, { x: ox + PW / 2, y: H - 80, ax: "center", ay: "bottom", w: 460, h: 830 });
+    }
+
+    /* One character, on the slot the eye lands on last, bleeding off the far
+       edge the way it does on a phone card. */
+    var mf = add({ kind: "face", ref: faceRef, w: 300 });
+    place(mf, { x: right ? W + 40 : -40, y: H + 16, ax: right ? "right" : "left", ay: "bottom", w: 330, h: 470 });
+
+    spots(SPOTS.multi, objn, p.objOff || 0);
   } else if (state.format === "desk") {
     c.ground = { kind: "art", role: "background-desk", bright: 66, scrim: "left", scrimK: 100 };
 
@@ -1176,6 +1254,14 @@ var SPOTS = {
     { left:-40,  top:-38,   size:150, rot:14,  op:.9 },
     { left:250,  bottom:-44,size:142, rot:-12, op:.9 },
     { left:-34,  bottom:150,size:110, rot:24,  op:.8 }
+  ],
+  /* A triptych's objects sit ON the seams — an object cut in half by the
+     export and continued by the next image is what tells a player the three
+     pictures are one picture. */
+  multi: [
+    { left:610,  top:-70,   size:260, rot:-14, op:.92 },
+    { left:1330, bottom:-76,size:250, rot:12,  op:.9 },
+    { right:-66, top:120,   size:220, rot:22,  op:.85 }
   ]
 };
 
@@ -1378,8 +1464,8 @@ function addPiece(spec, x, y) {
     it.src = it.src || "copy";
     it.ref = it.ref || 0;
     it.align = it.align || "left";
-    it.size = it.size || { phone: 72, desk: 64, thumb: 30 }[state.format];
-    it.w = it.w || fmt().w * 0.82;
+    it.size = it.size || { phone: 72, desk: 64, thumb: 30, multi: 58 }[state.format];
+    it.w = it.w || panelW() * 0.82;
   } else {
     it.w = it.w || { face: 340, logo: 380, screen: 300, decor: 200, cut: 200, art: 360 }[it.kind] || 240;
     if (state.format === "thumb") it.w *= 0.62;
@@ -1721,8 +1807,12 @@ function storeOf(format) { return format === "thumb" ? "itch" : "google"; }
 
 function meta() {
   var f = fmt();
-  el.meta.innerHTML = "<b>" + f.w + " × " + f.h + "</b> authored, shipped <b>" +
-    f.out[0] + " × " + f.out[1] + "</b> — " + f.says +
+  var np = panels();
+  var shipped = np > 1
+    ? np + " × <b>" + Math.round(f.out[0] / np) + " × " + f.out[1] + "</b>"
+    : "<b>" + f.out[0] + " × " + f.out[1] + "</b>";
+  el.meta.innerHTML = "<b>" + f.w + " × " + f.h + "</b> authored, shipped " +
+    shipped + " — " + f.says +
     " · <kbd>⌫</kbd> delete <kbd>D</kbd> duplicate <kbd>[</kbd><kbd>]</kbd> order <kbd>⇧</kbd>+turn straightens";
   el["v-slug"].textContent = state.slug;
   el["v-lang"].textContent = state.lang.toUpperCase();
@@ -1731,7 +1821,10 @@ function meta() {
   document.getElementById("save-layout").textContent = "Save " + state.slug + " layout";
   document.getElementById("save-template").textContent = "Save " + state.format + " template";
   el["save-where"].innerHTML = "→ <code>assets/image/" + storeOf(state.format) +
-    "/" + state.lang + "/</code>. " +
+    "/" + state.lang + "/</code>" +
+    (panels() > 1 ? ", <b>" + panels() + " files</b> numbered from the name in the box (" +
+      panelName(el.name.value || state.slug + "-01", 0) + " … " +
+      panelName(el.name.value || state.slug + "-01", panels() - 1) + "). " : ". ") +
     "<b>Save for all games</b> writes this exact composition for each of the " +
     Object.keys(CAT.games).length + ", every one with " +
     "its own pieces, copy and typeface.";
@@ -1813,7 +1906,9 @@ function loadComp(params) {
 }
 
 function defaultName() {
-  var base = state.format === "phone" ? state.slug + "-01"
+  /* A multi is the first three phone slots of the gallery, so it opens on the
+     same name a phone card does — the save numbers the rest from it. */
+  var base = state.format === "phone" || state.format === "multi" ? state.slug + "-01"
     : state.format === "desk" ? state.slug + "-desk-01"
     : state.slug + "-thumb";
   el.name.value = base;
@@ -1823,37 +1918,84 @@ function defaultName() {
    14. SAVE — the image itself, at shipped size, into assets/image/<store>/<lang>/
    =========================================================================== */
 
-function exportDataURI() {
+/* One panel of the card, at shipped size. The scene is drawn whole and the
+   canvas is the window onto it — no item is repositioned and nothing is
+   clipped by hand, which is what makes a piece laid over a seam come out as
+   two halves that line up. `panel` is 0 for every single-image format. */
+function exportDataURI(panel) {
   var f = fmt();
+  var np = panels();
+  var ow = Math.round(f.out[0] / np);
   var c = document.createElement("canvas");
-  c.width = f.out[0]; c.height = f.out[1];
+  c.width = ow; c.height = f.out[1];
   var g = c.getContext("2d");
   g.imageSmoothingEnabled = true;
   g.imageSmoothingQuality = "high";
+  g.translate(-(panel || 0) * ow, 0);
   drawScene(g, f.out[0] / f.w, false);
   return c.toDataURL(state.ext === "png" ? "image/png" : "image/jpeg", 0.92);
 }
 
-function saveImage() {
-  if (!SERVED) { warn("Save needs the server: node tools/lab/serve-store.mjs"); return; }
-  warn(""); said("saving…");
-  var data;
-  try { data = exportDataURI(); }
-  catch (e) { warn("the canvas is tainted — serve the page instead of opening it"); return; }
-  fetch("/api/save", {
+/* The name of panel `i`, from the name of the first. A trailing number is the
+   slot a store sorts the gallery by, so it is incremented and its padding kept
+   (`radiam-01` → `radiam-02`); a name without one takes a suffix instead. */
+function panelName(base, i) {
+  base = String(base || "").trim();
+  if (!i) return base;
+  var m = base.match(/^(.*?)(\d+)$/);
+  if (!m) return base + "-" + (i + 1);
+  var n = String(+m[2] + i);
+  while (n.length < m[2].length) n = "0" + n;
+  return m[1] + n;
+}
+
+function postImage(slug, name, data) {
+  return fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      slug: state.slug, lang: state.lang, format: state.format,
-      name: el.name.value, ext: state.ext, data: data
+      slug: slug, lang: state.lang, format: state.format,
+      name: name, ext: state.ext, data: data
     })
-  }).then(function (r) { return r.json(); }).then(function (r) {
-    if (r.error) { said(""); warn(r.error); return; }
-    said((r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB)");
+  }).then(function (r) { return r.json(); });
+}
+
+/* Every panel of one card, in gallery order, one POST after another. A format
+   with no panels is one image and the loop runs once. */
+function savePanels(slug, base) {
+  var shots = [];
+  for (var i = 0; i < panels(); i++) shots.push(exportDataURI(i));
+  var wrote = [];
+  var chain = Promise.resolve();
+  shots.forEach(function (data, i) {
+    chain = chain.then(function () {
+      return postImage(slug, panelName(base, i), data);
+    }).then(function (r) {
+      if (r.error) throw new Error(r.error);
+      wrote.push(r);
+    });
+  });
+  return chain.then(function () { return wrote; });
+}
+
+function saidWrote(list) {
+  return list.map(function (r) {
+    return (r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB)";
+  }).join(" · ");
+}
+
+function saveImage() {
+  if (!SERVED) { warn("Save needs the server: node tools/lab/serve-store.mjs"); return; }
+  if (!el.name.value.trim()) { warn("name the image first"); return; }
+  warn(""); said("saving…");
+  var run;
+  try { run = savePanels(state.slug, el.name.value); }
+  catch (e) { said(""); warn("the canvas is tainted — serve the page instead of opening it"); return; }
+  run.then(function (wrote) {
+    said(saidWrote(wrote));
     /* The layout is saved with the image: the point of composing one is being
        able to open it again, and to hand it to the next game. */
-    savePreset(compKey(), cleanComp(state.comp),
-      (r.existed ? "replaced " : "wrote ") + r.path + " (" + r.kb + " KB) — layout saved too");
+    savePreset(compKey(), cleanComp(state.comp), saidWrote(wrote) + " — layout saved too");
   }).catch(function (e) { said(""); warn(String(e.message || e)); });
 }
 
@@ -1905,16 +2047,9 @@ function saveEveryGame() {
         return !im || im.__ok === -1;
       }).length;
       if (holes) trouble.push(slug + ": " + holes + " piece" + (holes === 1 ? "" : "s") + " missing");
-      return fetch("/api/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: slug, lang: state.lang, format: state.format,
-          name: nameFor(slug, from, base), ext: state.ext, data: exportDataURI()
-        })
-      }).then(function (r) { return r.json(); });
-    }).then(function (r) {
-      if (r.error) trouble.push(slug + ": " + r.error); else made++;
+      return savePanels(slug, nameFor(slug, from, base));
+    }).then(function (wrote) {
+      made += wrote.length;
     }).catch(function (e) {
       trouble.push(slug + ": " + (e.message || e));
     });
