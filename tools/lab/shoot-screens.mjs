@@ -24,8 +24,17 @@
  * where ten shots a second apart are the same one. A timed game's round length
  * is its own `CONFIG.gameSeconds`, read after the round starts (radiam zeroes
  * it for its endless mode); an endless game has no such number, so SPAN below
- * carries how long a run of it is worth sampling. The last shot of a game is
- * its end screen.
+ * carries how long a run of it is worth sampling. The last two shots are the
+ * two screens no progression can reach: the end screen, and the LEVEL MAP.
+ *
+ * The map is not a frame of a round either — it is the web shell's own screen,
+ * and an empty board is a picture of nothing: thirty grey circles, no stars, a
+ * card offering level 1. So a fourth injection hands the tool a handle on the
+ * level layer (`window.__LV`) and the driver plays a climb in before opening
+ * it, through the layer's OWN `record()` — the stars, the best scores and the
+ * frontier are then whatever this game's objective says they are, with none of
+ * the map's arithmetic copied out here. It then clicks the menu's own PLAY
+ * entry, which is the click a player makes.
  *
  * Chrome is driven over the DevTools protocol rather than with `--screenshot`:
  * the CLI shoots whenever its virtual-time budget expires, which lands on a
@@ -38,6 +47,8 @@
  *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source
  *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
  *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
+ *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -11
+ *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
  *   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera  # what each shot caught
  */
 
@@ -110,6 +121,8 @@ var png = false;
 var build = true;
 var playable = false;
 var withEnd = true;
+var withMap = true;
+var mapOnly = false;
 var ctls = false;
 var lang = "en";
 for (var i = 0; i < argv.length; i++) {
@@ -119,10 +132,15 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--no-build") build = false;
   else if (argv[i] === "--playable") playable = true;
   else if (argv[i] === "--no-end") withEnd = false;
+  else if (argv[i] === "--no-map") withMap = false;
+  else if (argv[i] === "--map-only") mapOnly = true;
   else if (argv[i] === "--ctls") ctls = true;
   else if (argv[i] === "--lang") lang = argv[++i];
   else slugs.push(argv[i]);
 }
+/* The map lives in the web shell, which a playable does not ship. */
+if (playable) withMap = false;
+if (mapOnly) { withEnd = false; }
 if (!slugs.length) {
   slugs = fs.readdirSync(GAMES_DIR).filter(function (d) {
     return fs.existsSync(path.join(GAMES_DIR, d, "manifest.json"));
@@ -130,15 +148,23 @@ if (!slugs.length) {
 }
 
 /* The shot plan. The progressions are spread across the whole round rather
-   than bunched at the start, and the last shot is the end screen — the one
-   frame no progression can reach, since it only exists after the round. */
+   than bunched at the start, then the end screen — the one frame no
+   progression can reach, since it only exists after the round — and then the
+   level map, which is not a frame of a round at all.
+
+   Every aim carries the NUMBER it is written under, so the map is always
+   `<slug>-11.jpg` whether or not the round was reshot with it: `--map-only`
+   must not renumber the ten pictures already on the itch page. */
 function plan(n) {
   var out = [];
   var g = withEnd ? n - 1 : n;                       // gameplay shots
-  for (var k = 0; k < g; k++) {
-    out.push({ p: g < 2 ? 0.5 : 0.08 + 0.88 * (k / (g - 1)) });
+  if (!mapOnly) {
+    for (var k = 0; k < g; k++) {
+      out.push({ n: k + 1, seed: k + 1, p: g < 2 ? 0.5 : 0.08 + 0.88 * (k / (g - 1)) });
+    }
+    if (withEnd) out.push({ n: n, seed: n, end: true });
   }
-  if (withEnd) out.push({ end: true });
+  if (withMap) out.push({ n: n + 1, seed: n + 1, map: true });
   return out;
 }
 
@@ -168,12 +194,24 @@ var HOOK_JS = `
   };
 `;
 
+/* Handle on the level layer, injected inside packages/webshell/levels.js —
+   the same trick as HOOK_JS, at the one line that closes that module. The map
+   shot needs a board with a history on it, and `record` is how the shell
+   itself writes one: stars, best scores and the frontier then come out of this
+   game's own objective instead of being invented here. */
+var LV_HOOK_JS = `
+  window.__LV = {
+    record: record, save: save, goalOf: goalOf, dOf: dOf, levels: LEVELS
+  };
+`;
+
 // The pilot + stepper. Runs after the game script.
 var DRIVER_JS = `<script>
 (function () {
   var q = new URLSearchParams(location.search);
   var P = parseFloat(q.get("p"));                    // progression, 0..1
   var END = q.get("end") === "1";                    // shoot the end screen
+  var MAP = q.get("map") === "1";                    // shoot the level map
   var SPAN = parseInt(q.get("span"), 10) || 0;       // measured reach, 0 = none
   var ENDLESS = parseInt(q.get("endless"), 10) || 30;
   var DT = 1 / 60;
@@ -185,6 +223,20 @@ var DRIVER_JS = `<script>
   var SETTLE_MS = 7200;
   var frame = 0, roundFrame = 0, rounds = 0, side = 0, lastBeat = -1;
   var started = false, cleaned = false, endedAt = 0, target = 0, cap = 0;
+
+  /* The climb played in before the map is opened: one level per entry,
+     [level, stars]. It walks the first fork's long road (5 6 7) and stops
+     under the second, which puts a road taken and a road not taken on the
+     same screen, lights BOTH frontier nodes — 21 stars clears the gate of 14
+     on the short road — and leaves the card on a level that has never been
+     played. Anything further up and the map is a wall of gold; anything
+     shorter and it is a wall of grey. */
+  var CLIMB = [[1, 3], [2, 3], [3, 2], [5, 3], [6, 2], [7, 3], [8, 3], [9, 2]];
+  /* What a run worth that many stars scored, as a multiple of the level's own
+     objective: the layer's thresholds are 1x, 1.5x and 2.2x (levels.js,
+     starsFor), so these land inside each band rather than on its edge. */
+  var WORTH = { 3: 2.35, 2: 1.62, 1: 1.15 };
+  var MAP_MS = 2000;            // the open, the scroll and the decor, settling
 
   /* A scripted player, one per demo type. It is not good at any of these games —
      it only has to keep a round alive and busy long enough to be worth a shot. */
@@ -288,10 +340,33 @@ var DRIVER_JS = `<script>
     H.frameRender();
   }
 
+  /* The map is a DOM screen, like the end screen: nothing is stepped, the
+     board is written, the menu's own PLAY entry is clicked and the wall clock
+     does the rest. A game with no web.levels block has no map to shoot and says
+     so — the host skips it rather than writing a picture of the menu. */
+  function tickMap(H) {
+    if (!started) {
+      if (H.state() !== "intro" || !window.__LV) return;
+      if (!window.__LEVELS__ || !window.__LEVELS__.active()) { window.__skip = 1; return; }
+      var LV = window.__LV;
+      LV.save.h = 1;                                  // the tutorial is read
+      for (var i = 0; i < CLIMB.length; i++) {
+        var n = CLIMB[i][0], stars = CLIMB[i][1];
+        LV.record(n, stars, Math.round(LV.goalOf(LV.dOf(n)) * WORTH[stars]));
+      }
+      document.getElementById("btn-start").click();   // the player's own click
+      started = true;
+      endedAt = Date.now();
+    }
+    window.__progress = (window.__progress || 0) + 1;  // the host watches this
+    if (Date.now() - endedAt >= MAP_MS) window.__shot = 1;
+  }
+
   function tick() {
     var H = window.__H;
     requestAnimationFrame(tick);
     if (!H) return;
+    if (MAP) { tickMap(H); return; }
     if (!started) {
       if (H.state() !== "intro") return;              // still loading
       H.startGame();
@@ -368,6 +443,12 @@ function prepare(slug, tmpDir) {
   if (head < 0) throw new Error(slug + ": no <head>");
   src = src.slice(0, head + 6) + "\n" + SEED_JS
     + (ctls ? "" : "\n" + CTLS_CSS) + src.slice(head + 6);
+
+  /* The level layer is a second IIFE in the same document, and it publishes
+     exactly one name — which is the anchor the handle is written in front of.
+     Absent on a playable, which ships no web shell. */
+  var lv = src.indexOf("window.__LEVELS__ = {");
+  if (lv >= 0) src = src.slice(0, lv) + LV_HOOK_JS + "  " + src.slice(lv);
 
   var sweep = SWEEP[slug]
     ? "<script>window.__SWEEP = " + JSON.stringify(SWEEP[slug]) + ";</script>\n"
@@ -470,7 +551,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
      the replay button of every screenshot. */
   var url = "file://" + file + "?seed=" + seed + "&span=" + span
     + "&endless=" + SPAN._endless + "&lang=" + lang
-    + (aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
+    + (aim.map ? "&map=1" : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
   await client.send("Page.navigate", { url: url }, sid);
 
   var deadline = Date.now() + 120000;
@@ -478,6 +559,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   for (;;) {
     await sleep(120);
     if (await evaluate(client, sid, "window.__shot || 0")) break;
+    if (await evaluate(client, sid, "window.__skip || 0")) return false;
     var p = await evaluate(client, sid, "window.__progress || 0");
     if (p === last) stall++; else { stall = 0; last = p; }
     if (stall > 60) throw new Error("the driver stopped advancing at frame " + p);
@@ -495,10 +577,12 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   // and the late shots are duplicates of the middle ones.
   if (process.env.SHOOT_DEBUG) {
     process.stdout.write("  " + path.basename(outPath) + " "
-      + (aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " " + await evaluate(client, sid,
+      + (aim.map ? "map" : aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " "
+      + await evaluate(client, sid,
       'JSON.stringify({ frames: window.__progress, reached: +(window.__reached || 1).toFixed(2),' +
       ' state: window.__H.state(), score: document.getElementById("hud-score").textContent })') + "\n");
   }
+  return true;
 }
 
 // --- Run -----------------------------------------------------------------
@@ -546,17 +630,19 @@ for (var s = 0; s < slugs.length; s++) {
   var file = prepare(slug, tmpDir);
   var span = SPAN[slug] || 0;
   var line = [];
-  for (var n = 1; n <= aims.length; n++) {
-    var name = slug + "-" + String(n).padStart(2, "0") + (png ? ".png" : ".jpg");
+  for (var a = 0; a < aims.length; a++) {
+    var aim = aims[a];
+    var tag = String(aim.n).padStart(2, "0");
+    var name = slug + "-" + tag + (png ? ".png" : ".jpg");
     var outPath = path.join(OUT_DIR, name);
     try {
       // The seed is the shot number, so two shots of one game are two
       // different runs sampled at two different points of the round.
-      await shoot(client, sid, file, n, aims[n - 1], span, outPath);
-      line.push(String(n).padStart(2, "0"));
+      var shot = await shoot(client, sid, file, aim.seed, aim, span, outPath);
+      line.push(shot ? tag : "-" + tag);              // -NN: nothing to shoot
     } catch (e) {
       failed++;
-      line.push("!" + n);
+      line.push("!" + tag);
       process.stderr.write("\n" + name + ": " + e.message + "\n");
     }
   }

@@ -433,9 +433,12 @@ The two rules that hold this together:
 - **The store listing images are made from these pieces too.** A capture, the
   character, two or three adopted objects, the logotype and one punchline out of
   `store.copy` in the manifest. `lab/store-card.html` is where one is composed
-  by hand — three layers, every piece dragged onto the card and placed on a
-  magnetic grid, saved as a layout in `lab/store-presets.json` and written
-  straight into `assets/image/<store>/<lang>/` (`make store`);
+  by hand — two layers, every piece dragged onto the card and placed on a
+  magnetic grid, the tagline included: it is a palette tile like the rest, its
+  line is picked by number out of the manifest and **never typed**, and one
+  Save writes the card in both languages. Saved as a layout in
+  `lab/store-presets.json` and written straight into
+  `assets/image/<store>/{en,fr}/` (`make store`);
   `tools/lab/shoot-store.mjs`
   is the batch, and it shoots a game with its saved layout when it has one. See
   [docs/ASSETS.md](docs/ASSETS.md#the-listing-images-come-from-assetsimagegoogle-and-assetsimageitch).
@@ -494,8 +497,8 @@ palette, exported as the CSS block to paste into its SKIN,
 `gear-decor.html` draws the cogs `tools/lab/shoot-gears.mjs` shoots into
 `assets/image/gear/` as transparent PNGs to lay over a screenshot,
 `store-card.html` is the store listing composer — a real frame of play dressed
-with the game's own character, objects and logotype and one FR/EN punchline
-over it, in four formats (`phone` 1080×1920 for Play and itch, `desk`
+with the game's own character, objects and logotype and one punchline of its
+manifest over it, printed FR and EN at once, in four formats (`phone` 1080×1920 for Play and itch, `desk`
 1920×1080 for the Play tablet slot, `thumb` 630×500 for the itch cover, and
 `multi`, three phone slots composed as one picture and cut at the seams on
 save, so a motif carries from one gallery screenshot to the next). It is

@@ -132,7 +132,7 @@ gamedustry/
 │   │   ├── shoot-cover.mjs   ← shoot lab/cover-card.html into assets/image/itch/cover/
 │   │   │                        (--play → the 1024x500 Play graphic, assets/image/google/feature/)
 │   │   ├── shoot-store.mjs   ← shoot lab/store-card.html into assets/image/<store>/
-│   │   │                        (the listing images, FR/EN punchline on each)
+│   │   │                        (the listing images, FR and EN of each)
 │   │   ├── serve-store.mjs   ← the server lab/store-card.html composes over
 │   │   │                        (make store — lists the assets, takes the saves)
 │   │   ├── bench-pop.mjs     ← what a callout costs, on an emulated phone
@@ -165,6 +165,8 @@ make itch      # re-publish to itch without pushing
 make site      # assemble dist/site locally
 make serve     # the dev loop, reload on save
 make meta      # the itch page copy, one file per game
+make shots     # the eleven captures of every game — add GAME=radiam for one
+make map       # just the eleventh, the level map — renumbers none of the ten
 make android GAME=radiam   # the signed .aab for the Play Console
 ```
 
@@ -381,11 +383,16 @@ the Vercel build command — see
    ```
 1. Shoot the store screenshots — a scripted pilot plays every game's **web**
    build in headless Chrome (a playable would carry its install CTA into every
-   frame) and writes ten of them to `assets/image/screen/<slug>-NN.jpg`. Each shot is
-   aimed at a progression of the round, from the first seconds to the end
-   screen, so ten shots are ten different pictures:
+   frame) and writes eleven of them to `assets/image/screen/<slug>-NN.jpg`. Each
+   shot is aimed at a progression of the round, from the first seconds to the end
+   screen, so ten shots are ten different pictures; the eleventh is the **level
+   map**, opened on a board the tool climbs first — nine levels cleared, 21 of
+   90 stars, one fork taken and one not — through the level layer's own
+   `record()`, so the stars and best scores are this game's objective and not a
+   picture invented for the shot:
    ```bash
    node tools/lab/shoot-screens.mjs            # all games; add a slug to redo one
+   node tools/lab/shoot-screens.mjs --map-only # just the map, -11, nothing renumbered
    SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera   # what each shot caught
    ```
 1. Shoot the listing images — `lab/store-card.html` dresses those captures with

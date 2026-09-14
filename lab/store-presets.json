@@ -180,22 +180,13 @@
     "blight/multi": {
       "ground": {
         "kind": "art",
+        "ref": 5,
         "bright": 66,
         "scrim": "both",
         "scrimK": 110,
-        "ref": 5,
         "role": "background-desk"
       },
       "items": [
-        {
-          "op": 1,
-          "rot": 15,
-          "kind": "screen",
-          "ref": 6,
-          "cx": 1800,
-          "cy": 650,
-          "w": 720
-        },
         {
           "kind": "screen",
           "ref": 2,
@@ -206,22 +197,31 @@
           "cy": 700
         },
         {
-          "kind": "screen",
-          "ref": 0,
-          "w": 720,
           "op": 1,
           "rot": -10,
+          "kind": "screen",
+          "ref": 5,
           "cx": 400,
-          "cy": 700
+          "cy": 700,
+          "w": 720
         },
         {
-          "kind": "decor",
-          "ref": 1,
-          "w": 250,
-          "rot": 12,
-          "op": 0.9,
-          "cx": 1455,
-          "cy": 1233.411575562701
+          "op": 1,
+          "rot": 15,
+          "kind": "screen",
+          "ref": 10,
+          "cx": 1750,
+          "cy": 650,
+          "w": 720
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "screen",
+          "ref": 3,
+          "cx": 1150,
+          "cy": 800,
+          "w": 450
         },
         {
           "kind": "logo",
@@ -233,11 +233,9 @@
         },
         {
           "kind": "text",
-          "style": "hero",
+          "style": "banner",
           "src": "copy",
           "ref": 0,
-          "line": "",
-          "kicker": "",
           "size": 58,
           "w": 624,
           "align": "center",
@@ -248,33 +246,29 @@
         },
         {
           "kind": "text",
-          "style": "hero",
+          "style": "banner",
           "src": "copy",
-          "ref": 1,
-          "line": "",
-          "kicker": "",
-          "size": 58,
-          "w": 624,
-          "align": "center",
-          "op": 1,
-          "rot": 0,
-          "cx": 1080,
-          "cy": 178.35
-        },
-        {
-          "kind": "text",
-          "style": "plate",
-          "src": "copy",
-          "ref": 2,
-          "line": "",
-          "kicker": "",
+          "ref": 3,
           "size": 58,
           "w": 624,
           "align": "center",
           "op": 1,
           "rot": 0,
           "cx": 1800,
-          "cy": 1000
+          "cy": 350
+        },
+        {
+          "kind": "text",
+          "style": "banner",
+          "src": "copy",
+          "ref": 4,
+          "size": 58,
+          "w": 624,
+          "align": "center",
+          "op": 1,
+          "rot": 0,
+          "cx": 1050,
+          "cy": 150
         },
         {
           "kind": "face",
@@ -291,19 +285,29 @@
           "rot": 0,
           "kind": "cut",
           "sheet": "bubble",
-          "ref": 13,
-          "cx": 700,
-          "cy": 1100,
+          "ref": 15,
+          "cx": 1550,
+          "cy": 1200,
           "w": 200
+        },
+        {
+          "kind": "decor",
+          "ref": 1,
+          "w": 250,
+          "rot": 12,
+          "op": 0.9,
+          "cx": 1455,
+          "cy": 1233.411575562701
         },
         {
           "op": 1,
           "rot": 0,
-          "kind": "screen",
-          "ref": 5,
-          "cx": 1150,
-          "cy": 800,
-          "w": 450
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 13,
+          "cx": 700,
+          "cy": 1100,
+          "w": 200
         },
         {
           "op": 1,
@@ -323,7 +327,7 @@
           "ref": 14,
           "cx": 900,
           "cy": 1250,
-          "w": 200
+          "w": 236
         }
       ]
     }

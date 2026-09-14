@@ -486,6 +486,8 @@ deleted on 2026-09-10 rather than left red, and what they did became a
 | `make site`  | assemble `dist/site` locally                                        |
 | `make serve` | the dev loop, with reload on save                                   |
 | `make meta`  | the itch page copy, one file per game                               |
+| `make shots` | the eleven captures of every game, `GAME=<slug>` for one            |
+| `make map`   | the eleventh alone — the level map, on a board the tool climbs      |
 
 `make push` orders the two halves on purpose: the commit goes to the remote
 first, so the `<day>-<short sha>` stamp `deploy-itch.mjs` writes names a commit

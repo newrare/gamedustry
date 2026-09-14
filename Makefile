@@ -12,6 +12,8 @@
 #   make serve   the dev loop, with reload on save
 #   make store   the store card composer, at http://localhost:8091/
 #   make meta    the itch page copy, one file per game
+#   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
+#   make map   [GAME=<slug>]   just the eleventh, the level map
 #   make android GAME=<slug>   the signed .aab for the Play Console
 #   make ng      zip the 13 for a Newgrounds submission
 #
@@ -20,7 +22,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check push itch site serve store meta ng android
+.PHONY: help check push itch site serve store meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -70,6 +72,19 @@ store:
 
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta
+
+# A scripted pilot replays every game's web build in headless Chrome and writes
+# eleven pictures per game: ten of the round, from its first seconds to the end
+# screen, and the level map. Two minutes a game, so GAME=<slug> is how one is
+# redone; `make map` is the eleventh alone, and it renumbers none of the ten.
+#
+# The images are an input, like the painted art: nothing rebuilds them, and the
+# site picks them up on its next build — `make check && make site` after a run.
+shots:
+	node tools/lab/shoot-screens.mjs $(GAME)
+
+map:
+	node tools/lab/shoot-screens.mjs $(GAME) --map-only
 
 # One game to one .aab. The web build, the Capacitor project and Gradle, in
 # that order — gen-native re-runs the build itself, so this target is the same
