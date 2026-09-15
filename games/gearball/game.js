@@ -943,12 +943,12 @@
         else if (run >= 4) { style = "combo";  word = "WELD x" + run;  sub_ = "+" + gain; at = "bottom"; }
         else if (combo >= 6) { style = "streak"; at = "bottom"; }
         Pop.show(style, { word: word, sub: sub_, at: at });
-        /* The chain is the one thing the opening toast cannot teach, because
+        /* The chain is the one thing the opening hint cannot teach, because
            it needs a ball already on the track to point at. So it is taught by
            the first weld the player actually makes, and never again. */
         if (weld && warnWeld) {
           warnWeld = false;
-          Overlay.toast(CONFIG.copy.hintWeld, { color: R.ball, dur: 1800 });
+          Pop.show("alert", { word: CONFIG.copy.hintWeld, hold: 1800 });
         }
       }
       if (combo === 4 || combo === 7 || combo === R.comboMax) {
@@ -1040,11 +1040,12 @@
     function after() {
       if (filled >= slotN) complete();
       else if (slotN - filled <= 3 && warnLeft) {
-        /* A status line, not a celebration — so it goes through Overlay and
-           not through Pop, which is already showing the callout for the ball
-           that just landed. Two Pops on one frame stack on top of each other. */
+        /* A status line, not a celebration, and it fires on the same frame as
+           the callout for the ball that just landed — so it takes the `alert`
+           style, whose spot is under the HUD, well clear of the `bottom` band
+           that callout lands in. */
         warnLeft = false;
-        Overlay.toast((slotN - filled) + " SLOTS LEFT", { color: R.slot, dur: 1600 });
+        Pop.show("alert", { word: (slotN - filled) + " SLOTS LEFT", hold: 1600 });
       }
     }
 
@@ -1152,7 +1153,7 @@
       surge(0.85, R.slot);            // the shape of the loop, spelled out once
       HUD.setScoreNow(0);
       showLives();
-      Overlay.toast(CONFIG.copy.hint, { color: R.slot, dur: 1900 });
+      Pop.show("alert", { word: CONFIG.copy.hint, hold: 1900 });
     }
 
     function update(dt) {

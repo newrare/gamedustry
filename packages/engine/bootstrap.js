@@ -3,11 +3,12 @@
      =================================================================== */
   function frameUpdate(dt) {
     Beat.update(dt);                                // music does not hit-stop
-    if (Fx.frozen(dt)) { Fx.update(dt); return; }   // hit-stop: only fx advance
+    if (Fx.frozen(dt)) { Fx.update(dt); Pop.tick(dt); return; }   // hit-stop: only fx advance
     Round.tick(dt);
     if (State !== "playing") return;                // a game may have ended us
     Game.update(dt);
     Fx.update(dt);
+    Pop.tick(dt);                                   // Pop's canvas half (Pop.text)
     HUD.tick(dt);
   }
   function frameRender() {
@@ -21,7 +22,8 @@
     if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
     Fx.begin();      // shake transform
     Game.render();   // the world
-    Fx.render();     // particles / rings / floating text above it
+    Fx.render();     // particles / rings above it
+    Pop.canvas();    // the floating numbers, inside the shake with the rest
     Fx.end();
     Fx.post();       // full-frame flash, unshaken
     Perf.frame();    // no-op unless the URL carries ?perf=1

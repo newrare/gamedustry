@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — game events</title>
+<style>
+/* ===========================================================================
+   EVENTS BENCH — what a game SAYS and what it PLAYS, in one list, played on
+   that game's own backdrop.
+
+   The scope is deliberately narrow, and it is the whole point of the page.
+   The list has TWO sides, and they are the two questions a beat is reviewed
+   against — what the player READS and what the player HEARS:
+
+     VIEW          the Pop callouts (`Pop.show` in the DOM, `Pop.text` on the
+                   canvas) and the Overlay notifications, in source order,
+                   grouped into the beat they fire together on
+     SOUND         the background bed and its CONFIG.music, then ONE CARD PER
+                   CLIP — the file of assets/audio/sfx/ it is cut from and how
+                   long the cut is at the top, and under it every line of the
+                   game that plays it, with the volume and the pitch that line
+                   asks for
+
+   The card is the clip and not the line, because 18 cues in a game are 7 clips:
+   listing the clip once per line said the same thing five times over and
+   offered the same file list five times for one decision. What is shared is
+   written once; what a line owns — how loud, how high, since one sample covers
+   a family of events through `rate` — stays on the line.
+
+   The whole of assets/audio/sfx/ opens from the file button, and HOVERING a row
+   plays it, trimmed to the cut length: a clip is chosen by ear, 127 file names
+   say nothing, and picking them one at a time to hear them is not choosing.
+   That is also why the list is not a <select> — a native popup is drawn by the
+   operating system and fires nothing over its rows. A clip nothing plays has no
+   line and therefore no card: the "never played" pill in the header names it,
+   which is the one thing a separate list of the pack was for.
+
+   Everything else a beat does — Fx.burst / ring / shake / flash / freeze,
+   HUD.punch, and `Overlay.vignette`, which is a coloured glow over the frame
+   and not a notification — is juice with no words in it. There is nothing on
+   it to read, re-style or re-word, so tools/lab/scan-events.mjs lists it and
+   this page does not.
+
+   The right column is the game's own web build with its chrome hidden — the
+   painted backdrop, the canvas and the overlay layer, nothing else. No round
+   is started and no world is drawn: the build is there because it is the only
+   honest source of the real Pop styles, the real SKIN and the real samples.
+   `Pop.text` needs the frame pipeline, which is not turning, so the bench
+   drives the three calls that pipeline would make and nothing more (see
+   `juice`).
+
+   Every row is editable — the style, the word, the anchor, the clip, the file
+   that clip is cut from, the volume, the pitch — so a change can be seen and
+   heard before it is written.
+
+   APPLY is what makes it stick. What the rows changed goes to POST /api/apply
+   (tools/lab/apply-events.mjs), which splices the arguments back into
+   games/<slug>/game.js — one span at a time, so a multi-line call keeps its
+   shape — re-cuts a clip with ffmpeg when its FILE changed, moves the
+   provenance comment with it, and bumps the game's patch version. The save
+   trips the server's watcher, the build is rebuilt, the page comes back on the
+   change. An argument the game builds at runtime (`"+" + gain`) is REFUSED by
+   name rather than overwritten with the bench's stand-in.
+
+   A row carries no `copy` button and a beat no `play all`: the one way a change
+   leaves this page is APPLY, and the one thing to copy is the beat's own
+   `file:line`, which its header hands over on a click. A number is a slider
+   rather than a field, because a volume and a pitch are swept, not typed.
+
+   Two icons sit on everything the bench can change. REVERT puts the element
+   back where the source has it. TRASH deletes nothing by itself — it MARKS,
+   the way every other change here is marked, so a removal is reviewed next to
+   the rest of the plan, counted in the Apply badge, and taken back with the
+   same revert as a typo. On a cue line it removes that line; on a clip's card
+   it removes the clip from ASSETS.sounds AND every line that plays it, because
+   a game calling a clip it no longer ships gets silence rather than an error. Served by `make events` (tools/lab/serve-events.mjs).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — one list: the bed, the pack, then the beats.
+   --------------------------------------------------------------------------- */
+#panel { flex:1 1 auto; min-width:420px; display:flex; flex-direction:column; background:#12121c; border-right:1px solid #23233a; }
+#head { padding:16px 18px 14px; border-bottom:1px solid #23233a; }
+#head h1 { font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:flex; align-items:center; gap:10px; }
+#head h1 small { font-weight:600; font-size:11px; letter-spacing:.5px; color:#8b8ba7; text-transform:none; }
+
+select, input[type=text], input[type=number] {
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:7px;
+  font:inherit; padding:7px 9px;
+}
+select:focus, input:focus { outline:none; border-color:#7ea6ff; }
+#game-pick { width:100%; margin-top:12px; font-weight:700; }
+
+/* The two sides of the list. VIEW is what the player reads, SOUND is what the
+   player hears — and a beat that does both shows its own half in each. */
+#tabs { display:flex; gap:4px; margin-top:12px; padding:3px; background:#0b0b12; border:1px solid #2c2c47; border-radius:9px; }
+#tabs button {
+  flex:1; padding:7px 0; border:0; border-radius:7px; background:none; color:#8b8ba7;
+  font:700 11px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; cursor:pointer;
+}
+#tabs button:hover { color:#e8e6f5; }
+#tabs button.on { background:#2a2a44; color:#e8e6f5; }
+#tabs button b { color:#6f6f92; font-weight:700; }
+#tabs button.on b { color:#7ea6ff; }
+
+#stats { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; font-size:11px; }
+#stats span { padding:3px 8px; border-radius:20px; background:#1b1b2b; color:#9c9cba; }
+#stats span b { color:#e8e6f5; }
+
+#list { flex:1; overflow:auto; padding:14px 14px 60px; }
+#list::-webkit-scrollbar { width:10px; }
+#list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+
+.section { margin:18px 0 8px; font:700 10px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; color:#6f6f92; }
+.section:first-child { margin-top:2px; }
+.legend { margin:-2px 0 12px; font-size:11px; color:#6f6f92; }
+
+/* --- one beat: the moment, its rows, its source -------------------------- */
+.beat { background:#151522; border:1px solid #22223a; border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.bhead { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#191927; border-bottom:1px solid #22223a; flex-wrap:wrap; }
+/* A clip's card: the shared decisions on top, the lines that play it below. */
+.bhead .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8fe0b8; min-width:58px; cursor:pointer; }
+.bhead .filebtn { flex:1 1 180px; min-width:150px; max-width:280px; }
+.bhead .plays { font-size:11px; color:#8fe0b8; font-variant-numeric:tabular-nums; }
+.bhead .approx { color:#ffb648; font-size:11px; cursor:help; }
+.beat.clip .call { padding-left:16px; }
+.call .ln { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
+.call .fn { font-size:12px; color:#c9c9e0; }
+.call .fn i { color:#6f6f92; font-style:normal; }
+.bhead .ln { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
+.bhead .fn { font-size:12px; color:#c9c9e0; }
+.bhead .fn i { color:#6f6f92; font-style:normal; }
+.bhead .sp { flex:1; }
+.bhead .warn { color:#ffb648; font-size:11px; cursor:help; }
+
+button.act {
+  padding:5px 10px; border-radius:7px; border:0; background:#2a2a44; color:#e8e6f5;
+  font:700 11px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.act:hover { background:#3b3b5f; }
+button.act.go { background:#7ea6ff; color:#0b0b12; }
+button.act.go:hover { background:#9dbaff; }
+button.act.sm { padding:4px 7px; }
+button.act.ghost { background:none; border:1px solid #2c2c47; color:#8b8ba7; }
+button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
+
+.call { display:flex; align-items:center; gap:7px; padding:7px 10px; border-top:1px solid #1d1d2e; flex-wrap:wrap; }
+.call:first-child { border-top:0; }
+.tag {
+  font:700 10px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.4px;
+  padding:1px 7px; border-radius:5px; background:#22223a; color:#9c9cba; white-space:nowrap;
+}
+.k-pop     .tag { background:#3a2350; color:#dcb6ff; }
+.k-overlay .tag { background:#1f3550; color:#9fd0ff; }
+.k-sound   .tag { background:#1d3d31; color:#8fe0b8; }
+
+.call input, .call select { padding:3px 7px; border-radius:6px; font:700 12px/1.4 inherit; }
+.call input.w { width:150px; }
+.call input.s { width:110px; font-weight:600; color:#a8a8c8; }
+.call select { font-size:11px; font-weight:700; }
+
+/* A number here is a FEEL — a volume, a pitch, how much of a file to keep —
+   and a feel is swept, not typed. The track carries the step as a printed
+   grid, and the thumb lands on it, so the value is read off the position and
+   two rows are comparable at a glance. */
+/* Label, track and value are three columns of a fixed grid, so VOL and RATE
+   sit under VOL and RATE all the way down a card however long the words to
+   their left are. */
+.rng { display:grid; grid-template-columns:30px 96px 34px; align-items:center; gap:7px; }
+.rng > .lbl { text-align:right; }
+
+/* THE GROOVE IS THIS SPAN, not the input's pseudo-track: `::-webkit-slider-*`
+   styles or does not depending on the engine, and where it does not the slider
+   comes out as a bare thumb over nothing. Three layers, topmost first — the
+   grid of ticks, the fill up to the thumb, the groove — so the extent AND the
+   value read at rest instead of only under the hand. */
+.rng .track {
+  position:relative; height:9px; border-radius:5px; border:1px solid #4a4a78;
+  background:
+    repeating-linear-gradient(90deg, rgba(160,160,215,.32) 0 1px, transparent 1px var(--tick, 8px)),
+    linear-gradient(90deg, #35507f 0 var(--fill, 0%), #07070d var(--fill, 0%));
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.6);
+}
+.rng.dirty .track { border-color:#7ea6ff; }
+.rng.dirty .track {
+  background:
+    repeating-linear-gradient(90deg, rgba(190,210,255,.38) 0 1px, transparent 1px var(--tick, 8px)),
+    linear-gradient(90deg, #4a6dad 0 var(--fill, 0%), #07070d var(--fill, 0%));
+}
+.rng.expr .track { border-color:#6b5824; }
+
+/* The input is an invisible overlay: it keeps the dragging, the keyboard and
+   the snapping, and contributes nothing but its thumb. */
+.rng .track input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  position:absolute; left:-1px; right:-1px; top:-5px; height:19px;
+  margin:0; padding:0; border:0; background:transparent; cursor:pointer;
+}
+.rng .track input[type=range]::-webkit-slider-runnable-track { height:19px; background:transparent; border:0; }
+.rng .track input[type=range]::-moz-range-track { height:19px; background:transparent; border:0; }
+.rng .track input[type=range]::-moz-range-progress { background:transparent; }
+
+.rng .track input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:14px; height:14px; margin-top:2px; border-radius:50%;
+  background:#7ea6ff; border:2px solid #12121c; box-shadow:0 0 0 1px #7ea6ff;
+}
+.rng .track input[type=range]::-moz-range-thumb {
+  width:14px; height:14px; border-radius:50%;
+  background:#7ea6ff; border:2px solid #12121c; box-shadow:0 0 0 1px #7ea6ff;
+}
+.rng .track input[type=range]:hover::-webkit-slider-thumb { background:#9dbaff; }
+.rng .track input[type=range]:hover::-moz-range-thumb { background:#9dbaff; }
+.rng .track input[type=range]:focus { outline:none; }
+.rng .track input[type=range]:focus::-webkit-slider-thumb { box-shadow:0 0 0 1px #7ea6ff, 0 0 0 4px rgba(126,166,255,.3); }
+.rng .track input[type=range]:focus::-moz-range-thumb { box-shadow:0 0 0 1px #7ea6ff, 0 0 0 4px rgba(126,166,255,.3); }
+.rng.dirty .track input[type=range]::-webkit-slider-thumb { background:#9dbaff; box-shadow:0 0 0 1px #9dbaff; }
+.rng.dirty .track input[type=range]::-moz-range-thumb { background:#9dbaff; box-shadow:0 0 0 1px #9dbaff; }
+.rng.dirty.expr .track input[type=range]::-webkit-slider-thumb { background:#ffb648; box-shadow:0 0 0 1px #ffb648; }
+.rng.dirty.expr .track input[type=range]::-moz-range-thumb { background:#ffb648; box-shadow:0 0 0 1px #ffb648; }
+
+.rng b {
+  font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:#c9c9e0; font-variant-numeric:tabular-nums; text-align:right;
+}
+.rng.dirty b { color:#9dbaff; }
+
+/* A cue line is a grid and not a flow: nine cells, the same nine on every
+   line, so nothing in front of a slider can push it out of its column. */
+.call.k-sound {
+  display:grid; align-items:center; gap:7px;
+  grid-template-columns: 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px;
+}
+.call.k-sound .fn { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.call .approx { min-width:12px; text-align:center; }
+.lbl { font-size:10px; color:#6f6f92; text-transform:uppercase; letter-spacing:.6px; }
+.call .meta { font-size:11px; color:#7d7d9d; font-variant-numeric:tabular-nums; }
+.call .approx { color:#ffb648; font-size:11px; cursor:help; }
+.call .sp { flex:1; }
+
+/* A control the bench changed and APPLY has not written yet. The amber one is
+   a control whose value the GAME builds at runtime — it can be previewed, and
+   apply will refuse it by name rather than paste the stand-in into the source. */
+.call input.dirty, .call select.dirty, .sfx select.dirty, .sfx input.dirty {
+  border-color:#7ea6ff; background:#141d33;
+}
+.call .expr, .call select.expr, .call input.expr { border-color:#5a4a1e; }
+.call .dirty.expr, .sfx .dirty.expr { border-color:#ffb648; background:#251c0e; }
+/* The file picker is NOT a <select>: a native popup is drawn by the OS and
+   fires no event over its rows, so a clip could only be heard by committing to
+   it. This one is ours — hovering a row plays it, and nothing is chosen until
+   a click. */
+.filebtn {
+  flex:1 1 200px; min-width:150px; max-width:300px; text-align:left;
+  padding:3px 22px 3px 7px; border-radius:6px; border:1px solid #2c2c47; background:#0b0b12;
+  font:600 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff;
+  cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  position:relative;
+}
+.filebtn::after { content:"▾"; position:absolute; right:7px; top:3px; color:#6f6f92; }
+.filebtn:hover, .filebtn.open { border-color:#7ea6ff; background:#141d33; }
+.filebtn.swap { color:#ffd08a; }
+.filebtn.dirty { border-color:#7ea6ff; background:#141d33; }
+
+/* The list itself, anchored to the button and parked on the body so the
+   panel's own overflow cannot clip it. */
+/* `display:flex` beats the hidden attribute's UA rule, so say it again. */
+#filemenu[hidden] { display:none; }
+#filemenu {
+  position:fixed; z-index:50; width:340px; max-height:390px; display:flex; flex-direction:column;
+  background:#12121c; border:1px solid #3b3b5f; border-radius:10px;
+  box-shadow:0 18px 50px rgba(0,0,0,.6); overflow:hidden;
+}
+#filemenu .fm-head { padding:8px; border-bottom:1px solid #23233a; }
+#filemenu input.fm-filter { width:100%; font-weight:600; }
+#filemenu .fm-note { padding:6px 10px 0; font-size:10px; color:#6f6f92; }
+#filemenu .fm-list { overflow:auto; padding:6px; }
+#filemenu .fm-list::-webkit-scrollbar { width:9px; }
+#filemenu .fm-list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+#filemenu .fm-row {
+  display:block; width:100%; text-align:left; padding:5px 8px; border:0; border-radius:6px;
+  background:none; color:#b9b9d6; cursor:pointer;
+  font:600 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+  word-break:break-word; overflow-wrap:anywhere;
+}
+#filemenu .fm-row:hover, #filemenu .fm-row.on { background:#1e2740; color:#e8e6f5; }
+#filemenu .fm-row.cur { color:#ffd08a; }
+#filemenu .fm-row .sz { color:#5f5f80; font-size:9px; }
+#filemenu .fm-row.used .sz { color:#8fe0b8; }
+#filemenu .fm-none { padding:14px; text-align:center; color:#6f6f92; font-size:11px; }
+
+
+/* The two icons every changeable element carries. Dim until there is something
+   to undo; the trash turns red once it is armed. */
+.iconbtn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:22px; padding:0; border:0; border-radius:6px;
+  background:none; color:#4d4d68; cursor:pointer;
+}
+.iconbtn svg { width:14px; height:14px; }
+.iconbtn:hover { background:#22223a; color:#e8e6f5; }
+.iconbtn.trash:hover { background:#3a1520; color:#ff8fa3; }
+.call.killed .iconbtn.trash, .beat.clip.killed .bhead .iconbtn.trash { color:#ff6b83; }
+
+/* Marked for removal: still readable, plainly on its way out, and one click on
+   the revert brings it back. */
+.call.killed > *:not(.iconbtn), .beat.clip.killed .bhead > *:not(.iconbtn) {
+  opacity:.4; text-decoration:line-through; pointer-events:none;
+}
+.call.killed { background:#1d1218; }
+.beat.clip.killed { border-color:#5a2030; }
+
+details.src { border-top:1px solid #1d1d2e; }
+details.src summary { padding:6px 10px; font-size:11px; color:#6f6f92; cursor:pointer; list-style:none; }
+details.src summary::-webkit-details-marker { display:none; }
+details.src summary:hover { color:#9c9cba; }
+details.src pre {
+  margin:0; padding:10px 12px; background:#0d0d16; overflow:auto;
+  font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6; white-space:pre;
+}
+
+/* --- the bed and the pack ------------------------------------------------ */
+.sfx { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151522; border:1px solid #22223a; border-radius:9px; margin-bottom:7px; }
+.sfx .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#e8e6f5; width:84px; }
+.sfx .note { flex:1; font-size:11px; color:#7d7d9d; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sfx.bed { border-color:#4a2338; background:#181220; }
+.sfx.bed .key { color:#f0a0c0; }
+.empty { padding:26px; text-align:center; color:#6f6f92; font-size:12px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the game's backdrop and the overlay layer, nothing else.
+   --------------------------------------------------------------------------- */
+#stage { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; padding:14px; background:#08080f; }
+#bar { display:flex; align-items:center; gap:7px; margin-bottom:12px; width:100%; }
+#bar .sp { flex:1; }
+#shell { position:relative; }
+#fit { transform-origin:top left; }
+#frame { width:720px; height:1280px; border:0; border-radius:22px; background:#000; display:block; box-shadow:0 24px 70px rgba(0,0,0,.6); }
+#hint { margin-top:9px; text-align:center; font-size:11px; color:#6f6f92; min-height:15px; }
+/* The column must not SHRINK its own rows: fit() sizes the frame from what the
+   hint and the report measure, and a flex-shrunk report would make it read a
+   height it had already caused. */
+#bar, #shell, #hint, #report { flex:0 0 auto; }
+
+/* What APPLY did, kept across the rebuild's reload: the line as it is now
+   written, and every change that was refused and why. */
+#report {
+  margin-top:10px; width:100%; max-height:190px; overflow:auto;
+  background:#12121c; border:1px solid #23233a; border-radius:9px; padding:9px 11px;
+  font:600 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6;
+}
+#report:empty { display:none; }
+#report .ok { color:#8fe0b8; }
+#report .no { color:#ffb648; }
+#report .at { color:#6f6f92; display:block; padding-left:14px; white-space:pre-wrap; word-break:break-word; }
+#report .ver { color:#7ea6ff; }
+#bar .cnt { font:700 11px/1 inherit; color:#0b0b12; background:#7ea6ff; border-radius:20px; padding:3px 7px; }
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <div id="head">
+    <h1>Events <small id="sub">what the game says, and what it plays</small></h1>
+    <select id="game-pick"></select>
+    <div id="tabs">
+      <button data-view="view">View <b></b></button>
+      <button data-view="sound">Sound <b></b></button>
+    </div>
+    <div id="stats"></div>
+  </div>
+  <div id="list"></div>
+</aside>
+
+<main id="stage">
+  <div id="bar">
+    <button class="act ghost" id="btn-reload">Reload</button>
+    <span class="sp"></span>
+    <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
+  </div>
+  <div id="shell">
+    <div id="fit"><iframe id="frame" title="the game's backdrop"></iframe></div>
+  </div>
+  <div id="hint"></div>
+  <div id="report"></div>
+</main>
+
+<div id="filemenu" hidden>
+  <div class="fm-head">
+    <input class="fm-filter" type="text" placeholder="filter — ping, wooden error, pop…">
+    <div class="fm-note">Hover to hear it · click to keep it · esc to leave</div>
+  </div>
+  <div class="fm-list"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   The motor's own callout styles and anchor names (packages/shell/shell.js —
+   Pop.STYLES and Pop.ANCHORS). Copied, not read: neither is exported, and a
+   lab page listing them is the same deal as lab/overlay-pop.html.
+   --------------------------------------------------------------------------- */
+const STYLES = ["score","alert","combo","streak","ribbon","manifest","perfect",
+                "ultra","bonus","danger","record","vert"];
+const ANCHORS = ["topLeft","top","topRight","upperLeft","upper","upperRight",
+  "left","center","right","lowerLeft","lower","lowerRight",
+  "bottomLeft","bottom","bottomRight","hudUnder","ctaAbove","edgeLeft","edgeRight"];
+
+/* The two sides of the list. Canvas juice (Fx.*, HUD.punch) is scanned but
+   listed by neither — see the head. */
+const VIEWS = {
+  view:  { kinds: { pop: 1, overlay: 1 }, label: "what the game says" },
+  sound: { kinds: { sound: 1 },           label: "what the game plays" }
+};
+
+const el = (id) => document.getElementById(id);
+const frame = el("frame");
+const state = {
+  slug: null, data: null, sfx: [],
+  view: localStorage.getItem("events:view") === "sound" ? "sound" : "view",
+  /* What the rows changed and APPLY has not written yet, keyed so a re-render
+     (a tab, a filter) puts every control back where the hand left it.
+       calls: { "<line>|<Name>": { style, word, sub, at, clip, vol, rate } }
+       sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file */
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} } }
+};
+
+const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} } });
+
+/* A value apply can write back, as opposed to one the game builds at runtime.
+   The two shapes are the two the splicer accepts (tools/lab/apply-events.mjs):
+   a quoted string where the argument is copy, a bare number where it is a knob.
+   `Sound.clip("wall", 0.32, 1.15)` is three literals, not one. */
+function isLit(expr) {
+  return expr != null && /^\s*(["'])(?:[^\\]|\\.)*?\1\s*$/.test(String(expr));
+}
+function isNum(expr) {
+  return expr != null && /^\s*-?\d+(\.\d+)?\s*$/.test(String(expr));
+}
+const NUMERIC = { vol: 1, rate: 1 };
+function writable(name, expr) {
+  return NUMERIC[name] ? isNum(expr) : isLit(expr);
+}
+
+function pendKey(call) { return call.line + "|" + call.name; }
+function pend(call) {
+  const k = pendKey(call);
+  return state.pending.calls[k] || (state.pending.calls[k] = {});
+}
+
+/* A control is dirty when its value is not the one the row was BUILT with —
+   never by comparing against the source, because a value the game computes is
+   previewed with a stand-in that differs from the source by construction.
+   Typing over it and typing it back is not a change. */
+function watch(ctrl, call, name, expr) {
+  ctrl.dataset.was = ctrl.value;
+  if (expr != null && !writable(name, expr)) {
+    ctrl.classList.add("expr");
+    ctrl.title = "the game builds this at runtime (" + expr + ") — apply refuses it rather than write the bench's stand-in";
+  }
+  const sync = () => {
+    const changed = ctrl.value !== ctrl.dataset.was;
+    ctrl.classList.toggle("dirty", changed);
+    // A slider's wrapper carries the marking, and this runs AFTER the readout
+    // (wireSliders binds first, so the snap lands before anything reads it).
+    if (ctrl._show) ctrl._show();
+    const p = pend(call);
+    if (changed) p[name] = ctrl.value; else delete p[name];
+    if (!Object.keys(p).length) delete state.pending.calls[pendKey(call)];
+    countPending();
+  };
+  ctrl.addEventListener("input", sync);
+  ctrl.addEventListener("change", sync);
+  // A tab away and back rebuilds the row: put the pending value back on it.
+  const p = state.pending.calls[pendKey(call)];
+  if (p && p[name] != null) { ctrl.value = p[name]; ctrl.classList.add("dirty"); }
+  return ctrl;
+}
+
+function countPending() {
+  const kill = state.pending.kill;
+  const n = Object.values(state.pending.calls).reduce((a, o) => a + Object.keys(o).length, 0) +
+            Object.keys(state.pending.sfx).length +
+            Object.keys(kill.calls).length + Object.keys(kill.clips).length;
+  const btn = el("btn-apply");
+  btn.disabled = !n;
+  btn.innerHTML = n ? `Apply <span class="cnt">${n}</span>` : "Apply";
+  return n;
+}
+
+/* --- talking to the game -------------------------------------------------
+   The web build injects window.__WEB__, a plain list of motor references (see
+   tools/build/build.mjs). Everything below goes through it. */
+function api(mod) {
+  const w = frame.contentWindow;
+  if (!w) return null;
+  return (w.__WEB__ && w.__WEB__[mod]) || w[mod] || null;
+}
+
+/* The stage is the game's build with everything but the picture taken out of
+   the way, injected into the iframe and nowhere near the repo:
+
+     - the overlay layer sits at z-index 16, UNDER the intro screen (30), which
+       is right in a game and wrong here — a callout fired on the menu would be
+       hidden behind the title;
+     - the menu itself (title, entries, panels, signature, the round's two
+       controls) is chrome this bench does not review. `.screen-art` is the
+       painted backdrop the motor already put on the intro, and it is what a
+       callout has to be read against.                                       */
+const BENCH_CSS = `
+  #overlay { z-index:40; }
+  /* Under the canvas, not over it: the backdrop is the ground a callout is
+     read against, and Pop's canvas half has to draw on top of it. A negative
+     z-index paints the screen between the frame's own background and the
+     canvas, which is exactly the stack a round has. */
+  #screen-intro { z-index:-1 !important; }
+  #screen-intro > *:not(.screen-art):not(.decor-layer) { display:none !important; }
+  #web-ctls, #screen-end, #screen-loading { display:none !important; }
+`;
+frame.addEventListener("load", () => {
+  try {
+    const d = frame.contentDocument;
+    const style = d.createElement("style");
+    style.id = "lab-bench";
+    style.textContent = BENCH_CSS;
+    d.head.appendChild(style);
+    // A click on the game is a click away from anything this page has open.
+    d.addEventListener("mousedown", () => closeFileMenu());
+  } catch (e) { note("the build did not load"); }
+});
+
+function web() { return frame.contentWindow && frame.contentWindow.__WEB__; }
+
+/* Pop has two halves and the second one is drawn on the canvas, by the frame
+   pipeline — which does not turn here, because no round is running. So the
+   bench drives the three calls the pipeline would (clear, tick, draw) for as
+   long as the number lives, and nothing else: no Game.update, no Game.render,
+   no world. That is the whole reason `Pop.text` can be previewed on a bench
+   showing only a backdrop. */
+let juiceUntil = 0, juiceRunning = false;
+function juice(seconds) {
+  juiceUntil = Math.max(juiceUntil, performance.now() + seconds * 1000);
+  if (juiceRunning) return;
+  const W = web();
+  if (!W) return;
+  juiceRunning = true;
+  let last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    W.clearWorld();
+    W.Pop.tick(dt);
+    W.Pop.canvas();
+    if (now < juiceUntil) requestAnimationFrame(step);
+    else { W.clearWorld(); juiceRunning = false; }
+  };
+  requestAnimationFrame(step);
+}
+
+/* iOS and every desktop browser want the AudioContext opened inside a gesture.
+   The click that fires a row is one, and user activation reaches a same-origin
+   iframe, so unlocking the GAME's context from here is enough — and it decodes
+   the whole pack, which is what makes the first cue audible. */
+function unlock() {
+  const S = api("Sound");
+  if (S) { try { S.unlock(); } catch (e) {} }
+}
+
+/* What a row will actually call: the source's own arguments, with whatever the
+   row's inputs now say written over them. One function, so firing a row and
+   copying its line can never disagree. */
+function argsFor(call, row) {
+  const args = JSON.parse(JSON.stringify(call.preview.args));
+  if (!row) return args;
+  const get = (sel) => row.querySelector(sel);
+  if (call.name === "Pop.text") {
+    args[2] = get("input.w").value;
+  } else if (call.kind === "pop") {
+    const o = args[1] = Object.assign({}, args[1]);
+    args[0] = get("select.style").value;
+    o.word = get("input.w").value;
+    const sub = get("input.s").value;
+    if (sub) o.sub = sub; else delete o.sub;
+    const at = get("select.at").value;
+    if (at) o.at = at; else delete o.at;
+  } else if (call.kind === "sound") {
+    args[1] = num(get("input.vol"), args[1]);
+    args[2] = num(get("input.rate"), args[2]);
+  } else if (call.kind === "overlay") {
+    const w = get("input.w");
+    if (w) args[0] = w.value;
+  }
+  return args;
+}
+function num(input, fallback) {
+  if (!input) return fallback;
+  const v = parseFloat(input.value);
+  return isNaN(v) ? fallback : v;
+}
+
+function fire(call, row) {
+  /* A clip picked but not applied is not in the build yet, so the motor cannot
+     play it: the page plays the file itself, whole and untrimmed, which is the
+     honest preview of what the cut will be taken from. */
+  /* A clip picked but not applied is not in the build yet, so the motor cannot
+     play it: the page plays the file itself, cut to the length the card asks
+     for, which is the honest preview of what apply would embed. */
+  if (call.kind === "sound" && row && row.dataset.key) {
+    const p = state.pending.sfx[row.dataset.key];
+    if (p) {
+      sfxPlay(p.file, p.len);
+      note(p.file + " — " + p.len + "s of it, which is what apply would cut");
+      return;
+    }
+  }
+  unlock();
+  const [mod, meth] = call.preview.fn.split(".");
+  const target = api(mod);
+  if (!target || typeof target[meth] !== "function") { note(call.name + " is not reachable in this build"); return; }
+  const args = argsFor(call, row);
+  try { target[meth].apply(target, args); }
+  catch (e) { note(call.name + " threw: " + e.message); return; }
+  // The canvas half only exists while something draws it.
+  if (call.name === "Pop.text") juice(((args[3] && args[3].life) || 0.9) + 0.4);
+}
+
+function note(msg) { el("hint").textContent = msg || ""; }
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => note(text + "   copied"), () => note(text));
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function add(cls, text) {
+  const n = document.createElement("div");
+  n.className = cls;
+  n.textContent = text;
+  el("list").appendChild(n);
+  return n;
+}
+
+/* --- swapping the FILE a clip is cut from --------------------------------
+   `Sound.clip("orb")` names a KEY, and the key names a cut of one file of
+   assets/audio/sfx/ — the only record of which is the provenance comment.
+   Changing the file is therefore a change to the PACK, not to the call: it
+   reaches every beat that plays that key, which is why the swap is shown on
+   every row holding it and not only on the one that made it.               */
+/* ── the file picker ──────────────────────────────────────────────────────
+   One panel for the whole page, moved to whichever button opened it. A native
+   <select> could not do this: its popup is drawn by the operating system and
+   fires nothing over its rows, so every clip would have to be COMMITTED to be
+   heard — 127 files, one click each. Here the pointer is the audition and the
+   click is the decision, which is the order a clip is actually picked in.
+
+   Nothing is written until that click: leaving by escape or by clicking away
+   puts the button back where it was.                                        */
+const fileMenu = { btn: null, key: null, rows: [], hover: null, idx: -1 };
+
+function closeFileMenu() {
+  const box = el("filemenu");
+  box.hidden = true;
+  clearTimeout(fileMenu.hover);
+  if (fileMenu.btn) fileMenu.btn.classList.remove("open");
+  fileMenu.btn = null; fileMenu.key = null; fileMenu.rows = []; fileMenu.idx = -1;
+}
+
+function openFileMenu(btn, key) {
+  const box = el("filemenu");
+  if (fileMenu.btn === btn && !box.hidden) { closeFileMenu(); return; }
+  closeFileMenu();
+  fileMenu.btn = btn; fileMenu.key = key;
+  btn.classList.add("open");
+
+  // Which files this game already embeds, and under which key — the same mark
+  // the library grid used to carry, now where the choice is made.
+  const used = {};
+  (state.data ? state.data.sounds : []).forEach((x) => { if (x.file) used[x.file] = x.key; });
+
+  const list = box.querySelector(".fm-list");
+  list.innerHTML = "";
+  fileMenu.rows = (state.sfx || []).map((f) => {
+    const row = document.createElement("button");
+    row.className = "fm-row" + (used[f.file] ? " used" : "") + (f.file === btn.value ? " cur" : "");
+    row.innerHTML = `${esc(f.label)}<br><span class="sz">${Math.round(f.size / 1024)} KB` +
+      (used[f.file] ? " · " + esc(used[f.file]) : "") + `</span>`;
+    // A short intent delay, so sweeping the list does not fire every file it
+    // crosses on the way to the one being aimed at.
+    row.onmouseenter = () => {
+      clearTimeout(fileMenu.hover);
+      fileMenu.hover = setTimeout(() => sfxPlay(f.file, cutLen(key)), 110);
+    };
+    row.onmouseleave = () => clearTimeout(fileMenu.hover);
+    row.onclick = () => { pickFile(btn, key, f.file); closeFileMenu(); };
+    list.appendChild(row);
+    return { node: row, file: f.file, hay: (f.file + " " + f.label).toLowerCase() };
+  });
+  const none = document.createElement("div");
+  none.className = "fm-none";
+  none.textContent = "nothing matches";
+  none.hidden = true;
+  list.appendChild(none);
+
+  // Every space-separated term has to be in the name — "wooden error" is an AND.
+  const filter = box.querySelector("input.fm-filter");
+  filter.value = "";
+  filter.oninput = () => {
+    const terms = filter.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let n = 0;
+    fileMenu.rows.forEach((r) => {
+      const hit = terms.every((t) => r.hay.indexOf(t) >= 0);
+      r.node.hidden = !hit;
+      if (hit) n++;
+    });
+    none.hidden = !!n;
+    fileMenu.idx = -1;
+  };
+
+  // Anchored to the button, flipped up when the bottom of the window is close.
+  const r = btn.getBoundingClientRect();
+  box.hidden = false;
+  const h = box.offsetHeight;
+  box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - box.offsetWidth - 8)) + "px";
+  box.style.top = (r.bottom + h + 8 < window.innerHeight ? r.bottom + 4 : Math.max(8, r.top - h - 4)) + "px";
+
+  const cur = fileMenu.rows.find((x) => x.file === btn.value);
+  if (cur) cur.node.scrollIntoView({ block: "center" });
+  filter.focus();
+}
+
+// Keeping one: the button takes the value, the pending re-cut follows.
+function pickFile(btn, key, file) {
+  btn.value = file;
+  btn.textContent = sfxLabelOf(file);
+  btn.title = file;
+  syncPending(key, btn.closest(".call"));
+}
+
+function sfxLabelOf(file) {
+  const f = (state.sfx || []).find((x) => x.file === file);
+  return f ? f.label : (file || "— no provenance comment —");
+}
+
+/* The arrows walk the list and play as they go — the same audition as the
+   pointer, for a hand already on the keyboard. */
+function fileMenuKey(e) {
+  const box = el("filemenu");
+  if (box.hidden) return;
+  const live = fileMenu.rows.filter((r) => !r.node.hidden);
+  if (e.key === "Escape") { closeFileMenu(); fileMenu.btn && fileMenu.btn.focus(); e.preventDefault(); return; }
+  if (e.key === "Enter") {
+    const r = live[fileMenu.idx];
+    if (r) { pickFile(fileMenu.btn, fileMenu.key, r.file); closeFileMenu(); }
+    e.preventDefault();
+    return;
+  }
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  if (!live.length) return;
+  fileMenu.idx = Math.max(0, Math.min(live.length - 1, fileMenu.idx + (e.key === "ArrowDown" ? 1 : -1)));
+  live.forEach((r) => r.node.classList.remove("on"));
+  const r = live[fileMenu.idx];
+  r.node.classList.add("on");
+  r.node.scrollIntoView({ block: "nearest" });
+  sfxPlay(r.file, cutLen(fileMenu.key));
+}
+
+function awayFromMenu(e) {
+  if (el("filemenu").hidden) return;
+  if (e && (el("filemenu").contains(e.target) || e.target === fileMenu.btn)) return;
+  closeFileMenu();
+}
+
+document.addEventListener("keydown", fileMenuKey);
+document.addEventListener("mousedown", awayFromMenu);
+/* The stage is an IFRAME, and a click inside one never reaches this document —
+   so a menu left open over the game stayed open however hard the picture was
+   clicked. The frame is same-origin, so it gets the same handler on every load
+   (see the load listener that dresses it), and losing the window entirely
+   closes the menu too. */
+window.addEventListener("blur", () => closeFileMenu());
+window.addEventListener("resize", () => closeFileMenu());
+el("list").addEventListener("scroll", () => closeFileMenu());
+
+// What the embedded clip measures, which is the length a re-cut starts from.
+function clipSeconds(snd) {
+  return snd && snd.bytes ? Math.max(0.05, Math.round(snd.bytes / 8000 * 20) / 20) : 0.6;
+}
+function cutLen(key) {
+  const p = state.pending.sfx[key];
+  if (p && p.len) return p.len;
+  const snd = (state.data.sounds || []).find((s) => s.key === key);
+  return clipSeconds(snd);
+}
+
+/* ── the pending re-cut of one key ────────────────────────────────────────
+   Two controls describe it — the FILE the clip is cut from and how long the
+   cut is — and either one off the source is a re-cut. They are read together,
+   from the row that was just touched, so moving one never drops the other:
+   picking a file back to its original with a shorter `cut` still standing is a
+   re-cut of the same file, not a cancellation.
+
+   `row` is the one the hand is in. A key is played by several beats and each
+   of them carries the pair; refreshFiles() puts the others back in step.     */
+function syncPending(key, row) {
+  if (!key) return;
+  row = row || document.querySelector('.bhead[data-key="' + key + '"]');
+  const sel = row && row.querySelector(".filebtn");
+  const len = row && row.querySelector("input.len");
+  const snd = (state.data.sounds || []).find((x) => x.key === key);
+  const wasFile = (snd && snd.file) || "";
+  const file = sel ? sel.value : wasFile;
+  const v = len ? parseFloat(len.value) : NaN;
+  const nowLen = isNaN(v) ? cutLen(key) : v;
+  const moved = (!!file && file !== wasFile) || (len && String(nowLen) !== len.dataset.was);
+  if (!moved || !file) delete state.pending.sfx[key];
+  else state.pending.sfx[key] = { file: file, len: nowLen };
+  refreshFiles();
+  countPending();
+}
+
+/* One file select, wherever it is shown. `key` is read off the row so a swap
+   made on one beat shows on every other beat that plays the same clip. */
+function wireFile(sel, keyOf) {
+  const sync = () => {
+    const key = keyOf();
+    const snd = (state.data.sounds || []).find((s) => s.key === key);
+    const was = (snd && snd.file) || "";
+    sel.dataset.was = was;
+    const p = state.pending.sfx[key];
+    const now = p ? p.file : was;
+    if (sel.value !== now) sel.value = now;
+    sel.textContent = sfxLabelOf(now);
+    sel.title = now || "this clip has no provenance comment — nothing says which file it was cut from";
+    sel.classList.toggle("swap", !!p);
+    sel.classList.toggle("dirty", !!p);
+  };
+  sel.onclick = () => openFileMenu(sel, keyOf());
+  sel.onkeydown = (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openFileMenu(sel, keyOf());
+    }
+  };
+  sel._sync = sync;
+  sync();
+  return sel;
+}
+
+/* The cut length, per KEY and shown on every beat that plays it. A length on
+   its own is a re-cut too: the same file, a shorter clip. */
+function wireLen(len, key) {
+  if (!len) return;
+  len.dataset.was = String(cutLen(key));
+  len.onchange = len.oninput = () => {
+    const v = parseFloat(len.value);
+    if (isNaN(v)) return;
+    const row = len.closest(".bhead");
+    const sel = row && row.querySelector(".filebtn");
+    /* A cut needs something to cut FROM, and a clip whose game never wrote a
+       provenance comment names no file. Pick one first; a length alone would
+       come back refused. */
+    if (!(sel && sel.value)) {
+      note(key + " has no provenance comment — pick the file it comes from first");
+      return;
+    }
+    syncPending(key, row);
+  };
+}
+
+// Every file select on the page agrees about every key, always.
+function refreshFiles() {
+  document.querySelectorAll(".filebtn").forEach((sel) => { if (sel._sync) sel._sync(); });
+  // One card per clip, so one pair of controls to put back in step.
+  document.querySelectorAll(".bhead[data-key]").forEach((row) => {
+    const p = state.pending.sfx[row.dataset.key];
+    const len = row.querySelector("input.len");
+    if (!len) return;
+    if (p && String(p.len) !== len.value) len.value = p.len;
+    len.classList.toggle("dirty", !!p && String(p.len) !== len.dataset.was);
+    if (len._show) len._show();
+  });
+}
+
+/* One number as a slider cut into magnetic segments, with the value printed
+   beside it. Two grids, and the difference between them is the whole trick:
+
+     `grid`   what the HAND lands on. Dragging snaps to it, so the round values
+              are the easy ones to hit — 0.05, 0.10, 0.15…
+     `tick`   what the EYE reads, drawn on the track. Coarser where a step-sized
+              graduation would be a grey smear (a 0.05 cut over three seconds is
+              59 segments).
+
+   The snap is applied on the MOVE, never on the draw: 43 of the 340 volumes
+   and pitches in the thirteen games sit off a 0.05 grid (0.32, 1.45, 0.62…),
+   and a slider whose `step` was 0.05 would rewrite them the moment the row was
+   drawn — a change nobody asked for, in a tool whose whole job is to write
+   changes back. So the input is free (`step` 0.01, which every source value is
+   already on) and the handler rounds what the hand moves. The first drag of
+   0.32 lands on 0.30, which the hand did ask for.                            */
+function slider(cls, value, min, max, grid, tickEvery, label, title) {
+  const v = Math.min(max, Math.max(min, Number(value) || 0));
+  const tick = 78 / ((max - min) / tickEvery);
+  /* The groove is a NODE of ours, not `::-webkit-slider-runnable-track`. The
+     pseudo-element is the usual way and it is the wrong one here: whether it
+     styles at all depends on the engine, and where it does not the slider comes
+     out as a bare thumb floating on nothing — which is exactly what it did.
+     A span we draw ourselves renders the same everywhere; the input lies over
+     it, transparent, and only its THUMB is styled, in every vendor spelling. */
+  return `<span class="rng" title="${esc(title || "")}"><span class="lbl">${label}</span>` +
+    `<span class="track" style="--tick:${tick.toFixed(2)}px">` +
+    `<input class="n ${cls}" type="range" min="${min}" max="${max}" step="0.01" value="${v}" data-grid="${grid}">` +
+    `</span><b>${v}</b></span>`;
+}
+
+// The snap itself. Rounded to the hundredth too, or 0.1 * 3 prints 0.30000000000000004.
+function snapTo(v, grid) {
+  return Math.round(Math.round(v / grid) * grid * 100) / 100;
+}
+
+/* The readout follows the thumb. Kept out of `watch` on purpose: the dirty
+   marking is about the pending change, this is about reading the value. */
+function wireSliders(row) {
+  row.querySelectorAll(".rng").forEach((box) => {
+    const input = box.querySelector("input[type=range]");
+    const out = box.querySelector("b");
+    const grid = Number(input.dataset.grid) || 0.05;
+    const show = () => {
+      out.textContent = input.value;
+      // How much of the track is behind the thumb, for the fill (see the CSS).
+      const lo = Number(input.min), hi = Number(input.max);
+      const track = input.parentNode;
+      track.style.setProperty("--fill", ((Number(input.value) - lo) / (hi - lo) * 100).toFixed(1) + "%");
+      box.classList.toggle("dirty", input.classList.contains("dirty"));
+      box.classList.toggle("expr", input.classList.contains("expr"));
+    };
+    /* The snap runs BEFORE the listeners that read the value — `watch` and
+       `wireLen` are bound after this one, so they see the rounded number and
+       never a 0.37 the hand did not choose. */
+    input.addEventListener("input", () => {
+      const v = snapTo(parseFloat(input.value), grid);
+      if (String(v) !== input.value) input.value = v;
+    });
+    input.addEventListener("input", show);
+    input.addEventListener("change", show);
+    input._show = show;             // refreshFiles() moves one from elsewhere
+    show();
+  });
+}
+
+/* ── undo, and remove ─────────────────────────────────────────────────────
+   Two icons on everything the bench can change. REVERT puts the element back
+   where the source has it — every control to the value the row was built with,
+   and the pending entry gone. TRASH does not delete anything on its own: it
+   MARKS, the way every other change here is marked, and apply is what carries
+   it out. So a removal is reviewed next to the rest of the plan, counted in
+   the Apply badge, and taken back with the same revert as a typo.            */
+const ICON = {
+  revert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h12a5 5 0 0 1 0 10h-5"/><path d="M7 5 3 9l4 4"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>'
+};
+function iconBtn(cls, name, title) {
+  return `<button class="iconbtn ${cls}" title="${esc(title)}">${ICON[name]}</button>`;
+}
+
+// Every control of one element, back to what the row was built with.
+function resetControls(node) {
+  node.querySelectorAll("input, select, .filebtn").forEach((c) => {
+    if (c.dataset.was === undefined) return;
+    c.value = c.dataset.was;
+    c.classList.remove("dirty", "swap");
+    if (c._show) c._show();
+    if (c._sync) c._sync();
+  });
+}
+
+function revertCall(call, row) {
+  delete state.pending.calls[pendKey(call)];
+  delete state.pending.kill.calls[pendKey(call)];
+  resetControls(row);
+  row.classList.remove("killed");
+  countPending();
+  note("");
+}
+
+function revertClip(key, card) {
+  delete state.pending.sfx[key];
+  delete state.pending.kill.clips[key];
+  // The controls first: with the pending entry gone, refreshFiles() has
+  // nothing left to put them back from.
+  resetControls(card.querySelector(".bhead"));
+  card.querySelectorAll(".call").forEach((r) => r.classList.remove("killed"));
+  card.classList.remove("killed");
+  refreshFiles();
+  countPending();
+  note("");
+}
+
+function killCall(call, row) {
+  const k = pendKey(call);
+  if (state.pending.kill.calls[k]) delete state.pending.kill.calls[k];
+  else state.pending.kill.calls[k] = { line: call.line, name: call.name };
+  row.classList.toggle("killed", !!state.pending.kill.calls[k]);
+  countPending();
+  note(state.pending.kill.calls[k]
+    ? `${call.name} line ${call.line} will be removed from the source on apply`
+    : "");
+}
+
+function killClip(key, card) {
+  const kill = state.pending.kill.clips;
+  if (kill[key]) delete kill[key];
+  else kill[key] = 1;
+  const on = !!kill[key];
+  card.classList.toggle("killed", on);
+  card.querySelectorAll(".call").forEach((r) => r.classList.toggle("killed", on));
+  countPending();
+  const n = card.querySelectorAll(".call").length;
+  note(on
+    ? `${key} will be removed from ASSETS.sounds on apply, and so will the ${n} line${n > 1 ? "s" : ""} that play it`
+    : "");
+}
+
+/* --- the rows ------------------------------------------------------------ */
+function callRow(call) {
+  const row = document.createElement("div");
+  row.className = "call k-" + call.kind;
+  const bits = [`<button class="act sm play" title="fire it in the game">▶</button>`,
+                `<span class="tag">${call.name}</span>`];
+
+  if (call.name === "Pop.text") {
+    // The canvas half: a word at a point in the world, no style and no anchor.
+    const o = call.preview.args[3] || {};
+    bits.push(`<span class="style">text</span>`);
+    bits.push(`<input class="w" value="${esc(String(call.preview.args[2]))}">`);
+    bits.push(`<span class="meta">${esc(Object.keys(o).map((k) => k + " " + o[k]).join(" · "))}</span>`);
+  } else if (call.kind === "pop") {
+    const o = call.preview.args[1] || {};
+    const style = call.preview.args[0];
+    bits.push(`<select class="style">${STYLES.map((s) =>
+      `<option${style === s ? " selected" : ""}>${s}</option>`).join("")}</select>`);
+    bits.push(`<input class="w" value="${esc(o.word == null ? "" : o.word)}">`);
+    bits.push(`<input class="s" placeholder="sub" value="${esc(o.sub == null ? "" : o.sub)}">`);
+    // The empty option is "whatever the style says" — a call that names no
+    // anchor must not be previewed at some arbitrary corner of the frame.
+    const at = o.at || "";
+    bits.push(`<select class="at"><option value=""${at ? "" : " selected"}>style spot</option>${ANCHORS.map((a) =>
+      `<option${at === a ? " selected" : ""}>${a}</option>`).join("")}</select>`);
+    if (call.cls) bits.push(`<span class="meta">.${esc(call.cls)}</span>`);
+    if (call.style !== style) bits.push(`<span class="meta">src: ${esc(call.style)}</span>`);
+  } else if (call.kind === "sound") {
+    /* The clip itself — which file it is cut from, and how long the cut is —
+       belongs to the KEY, and it is written once on the card's header. What a
+       line owns is how loud and how high IT plays it: one sample covers a whole
+       family of events through `rate`, which is the point of the pack. */
+    bits.push(`<span class="ln" title="${esc(call.source)}">L${call.line}</span>`);
+    bits.push(`<span class="fn">${call.fn ? esc(call.fn) + "<i>()</i>" : "<i>top level</i>"}</span>`);
+    bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it"));
+    bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
+      "the pitch — one sample covers a whole family of events through this, instead of a clip each"));
+  } else if (call.kind === "overlay") {
+    // toast / banner / reward — the ones that carry a word. The vignette is
+    // scanned as juice (scan-events.mjs) and never reaches this list.
+    bits.push(`<input class="w" value="${esc(String(call.preview.args[0]))}">`);
+  }
+
+  /* The marker holds its cell whether or not it has anything to say: a cue row
+     is a GRID, and a column that appears on some lines and not on others is a
+     column that never lines up. */
+  bits.push(call.preview.exact
+    ? `<span class="approx"></span>`
+    : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Type over it.">≈</span>`);
+  if (call.kind !== "sound") bits.push(`<span class="sp"></span>`);
+  bits.push(iconBtn("revert", "revert", "put this line back where the source has it"));
+  bits.push(iconBtn("trash", "trash",
+    call.kind === "sound" ? "remove this line from the game — the clip stays, the other lines that play it stay"
+                          : "remove this callout from the game"));
+
+  row.innerHTML = bits.join("");
+  // Before the bindings below: the snap has to run first, so everything that
+  // reads the value reads the one the grid gave it.
+  wireSliders(row);
+  row.querySelector(".play").onclick = () => fire(call, row);
+  row.querySelector(".revert").onclick = () => revertCall(call, row);
+  row.querySelector(".trash").onclick = () => killCall(call, row);
+
+  /* Which control writes which argument back. `expr` is the source as the game
+     wrote it, and it is what tells an editable value from one apply has to
+     refuse — the row shows both the same way, so nothing is a surprise. */
+  const opts = call.opts || {};
+  const bind = (sel, name, expr) => {
+    const ctrl = row.querySelector(sel);
+    if (!ctrl) return;
+    // A call apply cannot write back (Sound.beep, Sound.arp) is still played
+    // from here — it is read-only, not hidden.
+    if (!name) { ctrl.disabled = true; ctrl.title = "apply does not write this call — change it in the source"; return; }
+    watch(ctrl, call, name, expr);
+  };
+  if (call.name === "Pop.text") bind("input.w", "word", call.args[2]);
+  else if (call.kind === "pop") {
+    bind("select.style", "style", call.args[0]);
+    bind("input.w", "word", opts.word);
+    bind("input.s", "sub", opts.sub);
+    bind("select.at", "at", opts.at);
+  } else if (call.kind === "sound") {
+    const editable = call.name === "Sound.clip" || call.name === "Sound.cue";
+    bind("input.vol", editable ? "vol" : null, call.args[1]);
+    bind("input.rate", editable ? "rate" : null, call.args[2]);
+    row.dataset.key = String(call.preview.args[0]);
+    row.querySelector(".ln").onclick = () => copy(state.data.where + ":" + call.line);
+  } else if (call.kind === "overlay") {
+    bind("input.w", "word", call.args[0]);
+  }
+  return row;
+}
+
+/* ── one card per CLIP ────────────────────────────────────────────────────
+   A pack of eight clips is played by eighteen lines, and listing the clip once
+   per line said the same thing eighteen times — worse, it offered the same
+   file dropdown eighteen times for one decision. The clip is the card: the
+   file it is cut from and the length of the cut are written once, at the top,
+   and the lines that play it are underneath with the only things that are
+   theirs — how loud, and how high.                                          */
+function clipCard(key, calls) {
+  const card = document.createElement("div");
+  card.className = "beat clip";
+  card.dataset.key = key;
+  const snd = (state.data.sounds || []).find((x) => x.key === key);
+
+  const head = document.createElement("div");
+  head.className = "bhead";
+  head.dataset.key = key;
+  head.innerHTML =
+    `<span class="key" title="ASSETS.sounds.${esc(key)}">${esc(key)}</span>` +
+    `<button class="filebtn" title="the file in assets/audio/sfx/ this clip is cut from — open it, hover to hear, click to keep. Apply re-cuts the clip, for every line below."></button>` +
+    slider("len", cutLen(key), 0.05, 3, 0.05, 0.5, "cut",
+      "how much of the file the clip keeps — mono 32 kHz / 64 kbps with a 70 ms fade. It starts at what the embedded clip measures.") +
+    `<span class="sp"></span>` +
+    (snd ? `<span class="plays">${calls.length}×</span>`
+         : `<span class="approx" title="this game embeds no clip under that name — every line below plays nothing">no clip</span>`) +
+    iconBtn("revert", "revert", "put this clip back where the source has it") +
+    iconBtn("trash", "trash", "remove this clip from ASSETS.sounds, and every line of the game that plays it");
+  head.querySelector(".key").onclick = () => copy(key);
+  head.querySelector(".revert").onclick = () => revertClip(key, card);
+  head.querySelector(".trash").onclick = () => killClip(key, card);
+  card.appendChild(head);
+
+  calls.forEach((c) => card.appendChild(callRow(c)));
+
+  wireSliders(head);                       // the snap, before what reads it
+  wireFile(head.querySelector(".filebtn"), () => key);
+  wireLen(head.querySelector("input.len"), key);
+  return card;
+}
+
+function beatCard(beat, calls) {
+  const card = document.createElement("div");
+  card.className = "beat";
+  const silent = calls.some((c) => c.kind === "pop") && !calls.some((c) => c.kind === "sound");
+  const head = document.createElement("div");
+  head.className = "bhead";
+  head.innerHTML =
+    `<span class="ln" title="click to copy the path">L${beat.line}</span>` +
+    `<span class="fn">${beat.fn ? esc(beat.fn) + "<i>()</i>" : "<i>top level</i>"}</span>` +
+    `<span class="sp"></span>` +
+    (silent ? `<span class="warn" title="this moment shows a callout and plays nothing — deliberate on a beat that is already loud, a gap otherwise">no sound</span>` : "");
+  head.querySelector(".ln").onclick = () => copy(state.data.where + ":" + beat.line);
+  card.appendChild(head);
+
+  calls.forEach((c) => card.appendChild(callRow(c)));
+
+  const src = document.createElement("details");
+  src.className = "src";
+  src.innerHTML = `<summary>source · ${state.data.where}:${beat.codeFrom}</summary><pre>${esc(beat.code)}</pre>`;
+  card.appendChild(src);
+  return card;
+}
+
+/* --- auditioning a raw file ----------------------------------------------
+   A file of assets/audio/sfx/ picked in a dropdown is not embedded yet, so the
+   motor cannot play it: the PAGE plays it, off /sfx/…, with its own <audio>.
+   It stops at the cut length rather than running the whole file — most clips
+   are mostly tail, and what the game will ship is the first `len` seconds. */
+const sfxAudio = {};
+let sfxPlaying = null, sfxStop = null;
+
+function sfxVol() {
+  const v = parseFloat(localStorage.getItem("events:libvol"));
+  return isNaN(v) ? 0.9 : v;
+}
+
+function sfxPlay(file, len) {
+  if (sfxPlaying) sfxPlaying.pause();
+  clearTimeout(sfxStop);
+  const a = sfxAudio[file] || (sfxAudio[file] = new Audio("/sfx/" + encodeURIComponent(file)));
+  a.volume = sfxVol();
+  try { a.currentTime = 0; } catch (e) {}
+  a.play().catch(() => note("cannot play " + file));
+  sfxPlaying = a;
+  if (len > 0) sfxStop = setTimeout(() => { try { a.pause(); } catch (e) {} }, len * 1000);
+}
+
+/* --- the one list -------------------------------------------------------- */
+function render() {
+  const list = el("list");
+  list.innerHTML = "";
+  if (!state.data) { list.innerHTML = `<div class="empty">loading…</div>`; return; }
+  const d = state.data;
+  const sound = state.view === "sound";
+
+  // 1. the bed — the one sound nothing in the game ever calls.
+  const bed = sound && d.sounds.find((s) => s.music);
+  if (bed) {
+    add("section", "music — the background bed");
+    const m = d.music || {};
+    const settings = Object.keys(m).map((k) => k + " " + m[k]).join(" · ");
+    const row = document.createElement("div");
+    row.className = "sfx bed";
+    row.innerHTML = `<span class="key">${esc(bed.key)}</span><span class="note">` +
+      esc(bed.note || "assets/audio/music/" + d.slug + ".mp3") +
+      (settings ? ` — <b style="color:#c98fb0">${esc(settings)}</b>` : "") + `</span>`;
+    const play = document.createElement("button");
+    play.className = "act sm";
+    play.textContent = "▶ play";
+    play.onclick = () => { unlock(); const M = api("Music"); if (M) M.start(); };
+    const stop = document.createElement("button");
+    stop.className = "act sm ghost";
+    stop.textContent = "stop";
+    stop.onclick = () => { const M = api("Music"); if (M) M.stop(); };
+    row.appendChild(play); row.appendChild(stop);
+    list.appendChild(row);
+    add("legend", "The shell starts it, ducks it on the end screen and pauses it off-screen. A game only embeds it and sets CONFIG.music.");
+  }
+
+  /* 2. the beats, in source order, with only this side of each showing. The
+        pack is not listed a second time: a clip is reached through the beat
+        that plays it, which is the only place it can be judged anyway. */
+  add("section", sound ? "cues — one card per clip, and the lines that play it" : "events — the callouts and the notifications");
+  add("legend", sound
+    ? "The file a clip is cut from and the length of the cut belong to the clip, so they are written once, at the top of its card — change them and every line below follows. Open the file list and hover a row to hear it. Volume and pitch are each line's own."
+    : "The style dropdown is the callout's look; apply writes it back into the Pop.show line. A value the game builds at runtime is marked and refused rather than overwritten.");
+  let n = 0;
+  if (sound) {
+    // Grouped by the clip, the groups in the order their first line appears.
+    const groups = new Map();
+    d.calls.filter((c) => c.kind === "sound").forEach((c) => {
+      const key = String(c.preview.args[0]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(c);
+    });
+    groups.forEach((calls, key) => { list.appendChild(clipCard(key, calls)); n++; });
+  } else {
+    const kinds = VIEWS[state.view].kinds;
+    d.beats.forEach((b) => {
+      const calls = b.calls.filter((c) => kinds[c.kind]);
+      if (!calls.length) return;
+      list.appendChild(beatCard(b, calls));
+      n++;
+    });
+  }
+  if (!n) add("empty", sound ? "this game plays no cue" : "this game fires no callout");
+
+  /* A clip nothing plays has no beat, so it has no row — the pill is the only
+     place it is still named, and it names it: dead bytes in every build. */
+  const dead = d.sounds.filter((x) => !x.music && !x.plays.length).map((x) => x.key);
+  el("stats").innerHTML =
+    `<span><b>${d.counts.pop}</b> callouts</span>` +
+    `<span><b>${d.counts.overlay}</b> notifications</span>` +
+    `<span><b>${d.counts.sound}</b> cues</span>` +
+    `<span><b>${d.sounds.length}</b> clips</span>` +
+    (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "");
+
+  el("tabs").querySelectorAll("button").forEach((btn) => {
+    const v = btn.dataset.view;
+    btn.classList.toggle("on", v === state.view);
+    btn.title = VIEWS[v].label;
+    btn.querySelector("b").textContent =
+      d.beats.reduce((a, b2) => a + b2.calls.filter((c) => VIEWS[v].kinds[c.kind]).length, 0);
+  });
+  refreshFiles();
+  countPending();
+}
+
+function fit() {
+  const stage = el("stage"), bar = el("bar");
+  // The apply report takes its room out of the frame, never off the bottom of
+  // the window: what it costs in height the frame gives back.
+  const h = stage.clientHeight - bar.offsetHeight - el("hint").offsetHeight - el("report").offsetHeight - 75;
+  const k = Math.max(0.2, Math.min(h / 1280, (window.innerWidth * 0.46) / 720));
+  el("fit").style.transform = "scale(" + k + ")";
+  el("fit").style.width = (720 * k) + "px";
+  el("fit").style.height = (1280 * k) + "px";
+  el("shell").style.width = (720 * k) + "px";
+  stage.style.flexBasis = (720 * k + 28) + "px";
+}
+
+function load(slug) {
+  if (slug !== state.slug) state.pending = EMPTY_PENDING();
+  state.slug = slug;
+  localStorage.setItem("events:game", slug);
+  frame.src = "/build/" + slug + "/index.html";
+  fetch("/api/events?game=" + encodeURIComponent(slug))
+    .then((r) => r.json())
+    .then((d) => { state.data = d; el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
+}
+
+fetch("/api/sfx").then((r) => r.json()).then((files) => {
+  state.sfx = files;
+  if (state.data) render();
+});
+
+fetch("/api/games").then((r) => r.json()).then((list) => {
+  const pick = el("game-pick");
+  pick.innerHTML = list.map((g) =>
+    `<option value="${g.slug}">${esc(g.title)} — ${g.counts.pop} callouts, ${g.counts.sound} cues</option>`).join("");
+  const saved = localStorage.getItem("events:game");
+  pick.value = list.some((g) => g.slug === saved) ? saved : list[0].slug;
+  pick.onchange = () => load(pick.value);
+  load(pick.value);
+});
+
+/* --- APPLY — the one thing on this page that writes ----------------------
+   What the rows changed goes to the server as a plan, never as a patch: the
+   page names the call by LINE and by NAME, and tools/lab/apply-events.mjs
+   re-reads the source and splices the argument itself. So a file that moved
+   under the bench is refused by name instead of being written over blind.
+
+   The write trips the server's watcher, which rebuilds and reloads the page —
+   which is why the report is parked in sessionStorage and read back on the way
+   in. It is the only record of what was refused.                            */
+function applyPlan() {
+  const calls = [];
+  for (const [k, set] of Object.entries(state.pending.calls)) {
+    const [line, name] = k.split("|");
+    if (Object.keys(set).length) calls.push({ line: Number(line), name, set });
+  }
+  const sfx = Object.entries(state.pending.sfx).map(([key, v]) => ({ key, file: v.file, len: v.len }));
+  const kill = {
+    calls: Object.values(state.pending.kill.calls),
+    clips: Object.keys(state.pending.kill.clips)
+  };
+  /* The version always moves with the source — CLAUDE.md, and it is the number
+     the title screen signs itself with, so a build nobody can name is worse
+     than a patch number nobody reads. There is no switch for it here. */
+  return { game: state.slug, calls, sfx, kill, bump: true };
+}
+
+function showReport(r) {
+  const box = el("report");
+  if (!r) { box.innerHTML = ""; fit(); return; }
+  if (r.error) { box.innerHTML = `<div class="no">apply failed — ${esc(r.error)}</div>`; return; }
+  const seen = {};
+  const lines = [];
+  for (const a of r.applied || []) {
+    lines.push(`<div class="ok">✓ ${esc(a.what)} → ${esc(a.value)}</div>`);
+    // Several changes land on one line; the line as it now reads is printed once.
+    if (a.after && !seen[a.at]) { seen[a.at] = 1; lines.push(`<span class="at">${a.at}: ${esc(a.after)}</span>`); }
+  }
+  for (const w of r.skipped || []) lines.push(`<div class="no">! ${esc(w)}</div>`);
+  if (r.version) lines.push(`<div class="ver">version → ${esc(r.version)}</div>`);
+  if (!lines.length) lines.push(`<div class="no">nothing to apply</div>`);
+  box.innerHTML = lines.join("");
+  fit();
+}
+
+function applyNow() {
+  const plan = applyPlan();
+  if (!plan.calls.length && !plan.sfx.length && !plan.kill.calls.length && !plan.kill.clips.length) return;
+  const btn = el("btn-apply");
+  btn.disabled = true;
+  btn.textContent = plan.sfx.length ? "Cutting…" : "Writing…";
+  note("writing games/" + plan.game + "/game.js…");
+  fetch("/api/apply", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(plan)
+  })
+    .then((r) => r.json())
+    .then((r) => {
+      state.pending = EMPTY_PENDING();
+      try { sessionStorage.setItem("events:report", JSON.stringify(r)); } catch (e) {}
+      showReport(r);
+      note(r.written ? "written — rebuilding" : "nothing written");
+      countPending();
+      render();
+    })
+    .catch((e) => { note("apply failed: " + e.message); countPending(); });
+}
+
+el("btn-apply").onclick = applyNow;
+el("tabs").querySelectorAll("button").forEach((btn) => {
+  btn.onclick = () => {
+    state.view = btn.dataset.view;
+    localStorage.setItem("events:view", state.view);
+    render();
+    el("list").scrollTop = 0;
+  };
+});
+try {
+  const saved = sessionStorage.getItem("events:report");
+  if (saved) showReport(JSON.parse(saved));
+} catch (e) {}
+
+el("btn-reload").onclick = () => load(state.slug);
+
+/* The report is the only thing on the stage that outlives its moment — a
+   callout expires on its own and the bed is started and stopped from its own
+   row in SOUND. Click it away. */
+el("report").onclick = () => {
+  showReport(null);
+  try { sessionStorage.removeItem("events:report"); } catch (e) {}
+};
+
+window.addEventListener("resize", fit);
+fit();
+</script>
+</body>
+</html>

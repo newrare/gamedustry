@@ -2257,13 +2257,13 @@
      -------------------------------------------------------------------- */
   var Fx = (function () {
     var MAX_PARTICLES = 260;
-    var parts = [], rings = [], texts = [];
+    var parts = [], rings = [];
     var shakeMag = 0, shakeT = 0, shakeDur = 1;
     var flashCol = "#ffffff", flashA = 0, flashDecay = 1.8;
     var freezeT = 0;
 
     function reset() {
-      parts.length = 0; rings.length = 0; texts.length = 0;
+      parts.length = 0; rings.length = 0;
       shakeMag = 0; shakeT = 0; flashA = 0; freezeT = 0;
     }
 
@@ -2294,13 +2294,11 @@
         life: opt.life || 0.4, maxLife: opt.life || 0.4 });
     }
 
-    // Floating world-space text. tier 0..3 escalates the outline/glow/gradient.
-    function text(x, y, str, opt) {
-      opt = opt || {};
-      texts.push({ x: x, y: y, text: str, color: opt.color || "#ffffff",
-        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
-        life: opt.life || 0.9, maxLife: opt.life || 0.9 });
-    }
+    /* There is no Fx.text: the words a game writes all live in `Pop` —
+       `Pop.show` for the beat, `Pop.text` for the floating number — so a game
+       has one notification system, not two. Pop draws its canvas half inside
+       this module's render pass (see bootstrap.js), which is why the number
+       still rides the shake. */
 
     function shake(mag, dur) {
       var cur = shakeT > 0 ? shakeMag * (shakeT / shakeDur) : 0;
@@ -2324,11 +2322,6 @@
         if (p.life <= 0) parts.splice(i, 1);
       }
       for (i = rings.length - 1; i >= 0; i--) { rings[i].life -= dt; if (rings[i].life <= 0) rings.splice(i, 1); }
-      for (i = texts.length - 1; i >= 0; i--) {
-        var t = texts[i];
-        t.y += t.vy * dt; t.vy *= 0.9; t.life -= dt;
-        if (t.life <= 0) texts.splice(i, 1);
-      }
       if (shakeT > 0) shakeT -= dt;
       if (flashA > 0) flashA = Math.max(0, flashA - dt * flashDecay);
     }
@@ -2359,36 +2352,6 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
-      // floating text
-      for (i = 0; i < texts.length; i++) drawText(texts[i]);
-    }
-
-    function drawText(fl) {
-      var t = fl.life / fl.maxLife;
-      var pop = t > 0.85 ? (1 - t) / 0.15 : 1;                 // quick pop-in
-      var scale = 1 + (1 - t) * (fl.tier >= 2 ? 0.45 : fl.tier >= 1 ? 0.25 : 0.12);
-      ctx.save();
-      ctx.globalAlpha = clamp(Math.min(1, t * 2.2) * pop, 0, 1);
-      ctx.translate(fl.x, fl.y); ctx.scale(scale, scale);
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = "900 " + fl.size + "px -apple-system,Segoe UI,Roboto,sans-serif";
-      if (fl.tier >= 3)      { ctx.shadowColor = "#ff44ff"; ctx.shadowBlur = 22; }
-      else if (fl.tier >= 2) { ctx.shadowColor = "#ffaa00"; ctx.shadowBlur = 16; }
-      else if (fl.tier >= 1) { ctx.shadowColor = "#22ccff"; ctx.shadowBlur = 12; }
-      else                   { ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 4; }
-      ctx.lineWidth = Math.max(4, fl.size * 0.17);
-      ctx.strokeStyle = fl.tier >= 3 ? "rgba(80,0,80,.8)" : "rgba(0,0,0,.75)";
-      ctx.strokeText(fl.text, 0, 0);
-      ctx.shadowBlur = 0;
-      if (fl.tier >= 1) {
-        var g = ctx.createLinearGradient(0, -fl.size * 0.5, 0, fl.size * 0.5);
-        if (fl.tier >= 3)      { g.addColorStop(0, "#ffffff"); g.addColorStop(.3, "#ff88ff"); g.addColorStop(.7, "#ff00cc"); g.addColorStop(1, "#ffbb00"); }
-        else if (fl.tier >= 2) { g.addColorStop(0, "#ffffff"); g.addColorStop(.4, "#ffe060"); g.addColorStop(1, "#ff7700"); }
-        else                   { g.addColorStop(0, "#e8f8ff"); g.addColorStop(1, fl.color); }
-        ctx.fillStyle = g;
-      } else { ctx.fillStyle = fl.color; }
-      ctx.fillText(fl.text, 0, 0);
-      ctx.restore();
     }
 
     // Full-frame flash, drawn outside the shake transform.
@@ -2400,7 +2363,7 @@
       ctx.globalAlpha = 1;
     }
 
-    return { reset: reset, burst: burst, ring: ring, text: text, shake: shake,
+    return { reset: reset, burst: burst, ring: ring, shake: shake,
              flash: flash, freeze: freeze, frozen: frozen,
              update: update, begin: begin, end: end, render: render, post: post };
   })();
@@ -3009,7 +2972,80 @@
     function clear() {
       var i; for (i = 0; i < timers.length; i++) clearTimeout(timers[i]);
       timers = []; live = [];
+      floats.length = 0;                       // the canvas half goes with it
       $("ov-pops").innerHTML = "";
+    }
+
+    /* --- the cheap half: a number, in the world, on the canvas -------------
+
+       A callout is a DOM layer and a MOMENT: it is rasterized, capped at four
+       live, and it costs something. A "+40" over the brick that was just hit is
+       neither — it fires several times a second, it belongs at a point in the
+       world rather than at an anchor, and it has to cost nothing. Both are
+       words the player reads, so both live here and a game has one notification
+       system:
+
+           Pop.show("combo", { word: "CHAIN x5", sub: "+120" })   the beat
+           Pop.text(x, y, "+40", { color: "#ffd43b", tier: 1 })    the number
+
+       This half was `Fx.text` until the two were merged. It is still drawn on
+       the canvas, inside Fx's render pass (bootstrap.js calls `Pop.tick` next
+       to `Fx.update` and `Pop.canvas` between `Fx.render` and `Fx.end`), so it
+       still rides the screen shake and still costs one fillText — and it still
+       only shows while a round is running, because that is the only time the
+       frame pipeline turns.
+
+       opt: { color, size, tier 0..3, vy, life }. `tier` escalates the outline,
+       the glow and the gradient. The OPTIONS switch that silences the callouts
+       silences these too: they are the same feedback to the player.           */
+    var floats = [];
+
+    function text(x, y, str, opt) {
+      if (!enabled) return;
+      opt = opt || {};
+      floats.push({ x: x, y: y, text: String(str), color: opt.color || "#ffffff",
+        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
+        life: opt.life || 0.9, maxLife: opt.life || 0.9 });
+    }
+
+    function tick(dt) {
+      for (var i = floats.length - 1; i >= 0; i--) {
+        var f = floats[i];
+        f.y += f.vy * dt; f.vy *= 0.9; f.life -= dt;
+        if (f.life <= 0) floats.splice(i, 1);
+      }
+    }
+
+    function canvas() {
+      for (var i = 0; i < floats.length; i++) drawText(floats[i]);
+    }
+
+    function drawText(fl) {
+      var t = fl.life / fl.maxLife;
+      var pop = t > 0.85 ? (1 - t) / 0.15 : 1;                 // quick pop-in
+      var scale = 1 + (1 - t) * (fl.tier >= 2 ? 0.45 : fl.tier >= 1 ? 0.25 : 0.12);
+      ctx.save();
+      ctx.globalAlpha = clamp(Math.min(1, t * 2.2) * pop, 0, 1);
+      ctx.translate(fl.x, fl.y); ctx.scale(scale, scale);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "900 " + fl.size + "px -apple-system,Segoe UI,Roboto,sans-serif";
+      if (fl.tier >= 3)      { ctx.shadowColor = "#ff44ff"; ctx.shadowBlur = 22; }
+      else if (fl.tier >= 2) { ctx.shadowColor = "#ffaa00"; ctx.shadowBlur = 16; }
+      else if (fl.tier >= 1) { ctx.shadowColor = "#22ccff"; ctx.shadowBlur = 12; }
+      else                   { ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 4; }
+      ctx.lineWidth = Math.max(4, fl.size * 0.17);
+      ctx.strokeStyle = fl.tier >= 3 ? "rgba(80,0,80,.8)" : "rgba(0,0,0,.75)";
+      ctx.strokeText(fl.text, 0, 0);
+      ctx.shadowBlur = 0;
+      if (fl.tier >= 1) {
+        var g = ctx.createLinearGradient(0, -fl.size * 0.5, 0, fl.size * 0.5);
+        if (fl.tier >= 3)      { g.addColorStop(0, "#ffffff"); g.addColorStop(.3, "#ff88ff"); g.addColorStop(.7, "#ff00cc"); g.addColorStop(1, "#ffbb00"); }
+        else if (fl.tier >= 2) { g.addColorStop(0, "#ffffff"); g.addColorStop(.4, "#ffe060"); g.addColorStop(1, "#ff7700"); }
+        else                   { g.addColorStop(0, "#e8f8ff"); g.addColorStop(1, fl.color); }
+        ctx.fillStyle = g;
+      } else { ctx.fillStyle = fl.color; }
+      ctx.fillText(fl.text, 0, 0);
+      ctx.restore();
     }
 
     /* Rasterizing a style for the first time costs 50-80 ms (gradient text,
@@ -3035,7 +3071,8 @@
     }
 
     return {
-      show: show, clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS,
+      show: show, text: text, tick: tick, canvas: canvas,
+      clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS,
       setEnabled: function (v) { enabled = !!v; if (!enabled) clear(); },
       isEnabled: function () { return enabled; }
     };
@@ -3713,9 +3750,11 @@
 
     function noop() {}
     if (off.vig)  Overlay.vignette = noop;
-    if (off.pops) Pop.show = function () { return null; };
+    // `pops` takes out both halves of Pop: the DOM callout and the number it
+    // draws on the canvas. They are one system, so they are one switch.
+    if (off.pops) { Pop.show = function () { return null; }; Pop.text = noop; }
     if (off.fx) {
-      Fx.burst = noop; Fx.ring = noop; Fx.flash = noop; Fx.shake = noop; Fx.text = noop;
+      Fx.burst = noop; Fx.ring = noop; Fx.flash = noop; Fx.shake = noop;
     }
     /* Inside a callout, the word is rendered several times over: a 14px path
        stroke, three solid extrusion copies, two blurred ones, and a second
@@ -5176,11 +5215,12 @@
      =================================================================== */
   function frameUpdate(dt) {
     Beat.update(dt);                                // music does not hit-stop
-    if (Fx.frozen(dt)) { Fx.update(dt); return; }   // hit-stop: only fx advance
+    if (Fx.frozen(dt)) { Fx.update(dt); Pop.tick(dt); return; }   // hit-stop: only fx advance
     Round.tick(dt);
     if (State !== "playing") return;                // a game may have ended us
     Game.update(dt);
     Fx.update(dt);
+    Pop.tick(dt);                                   // Pop's canvas half (Pop.text)
     HUD.tick(dt);
   }
   function frameRender() {
@@ -5194,7 +5234,8 @@
     if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
     Fx.begin();      // shake transform
     Game.render();   // the world
-    Fx.render();     // particles / rings / floating text above it
+    Fx.render();     // particles / rings above it
+    Pop.canvas();    // the floating numbers, inside the shake with the rest
     Fx.end();
     Fx.post();       // full-frame flash, unshaken
     Perf.frame();    // no-op unless the URL carries ?perf=1

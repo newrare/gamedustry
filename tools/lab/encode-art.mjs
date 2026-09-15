@@ -3,9 +3,9 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * `assets/image/master/` holds the artwork as it came out of the image model: PNG,
- * up to 2172px wide, ~2 MB apiece, 121 MB for the thirteen games. None of it
- * can ship. A playable is ONE self-contained HTML file with a 5 MB ceiling and
+ * `assets/image/master/` holds the artwork as it came out of the image model:
+ * PNG (or JPEG, for a panorama that came out of an editor), up to 2172px wide,
+ * ~2 MB apiece, 121 MB for the thirteen games. None of it can ship. A playable is ONE self-contained HTML file with a 5 MB ceiling and
  * a < 2 MB target, and the games sit at ~1 MB today — a single raw character
  * would double one.
  *
@@ -61,6 +61,12 @@
  *                      `cut-objects.mjs --adopt 1,4 --as decor`, and no game
  *                      names one — see packages/shell/shell.js, Decor
  *
+ *   sky                a painted panorama a GAME draws on the CANVAS behind
+ *                      its round, out of ArtImages — games/arcider stands its
+ *                      city on the horizon line and slides it with the lean.
+ *                      Cut much wider than the frame: that surplus IS the
+ *                      parallax's room to move.
+ *
  *   card-*             a court-card illustration a GAME draws itself, out of
  *                      ArtImages — slipdeck's jack, queen and king. Kept near
  *                      the master's resolution because the canvas is sized in
@@ -112,7 +118,13 @@ var PROFILE = {
   "title": { w: 640, h: 280, q: 0.86 },
   "character-sad": { w: 460, h: 560, q: 0.80 },
   "character-neutral": { w: 460, h: 560, q: 0.80 },
-  "character-happy": { w: 460, h: 560, q: 0.80 }
+  "character-happy": { w: 460, h: 560, q: 0.80 },
+
+  /* A PANORAMA, and the one cut that is deliberately wider than the frame:
+     `sky` is the painted horizon a game draws on the CANVAS behind its round
+     (games/arcider), and the parallax slides it sideways under a 720px window.
+     A cut only 720 wide would run out of picture on the first bend. */
+  "sky": { w: 1440, h: 760, q: 0.78 }
 };
 
 /* The court-card illustrations. These are the one piece of artwork a game
@@ -135,6 +147,16 @@ var DECOR = { w: 360, h: 360, q: 0.78 };
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
+
+/* A master is whatever an image tool wrote: the model returns PNG, but a
+   panorama exported out of an editor arrives as a JPEG and there is no reason
+   to round-trip it through PNG just to be re-encoded here. The extension is
+   stripped off the stem so the role is read the same either way. */
+var MASTER_RE = /\.(png|jpe?g)$/i;
+
+function mimeOf(file) {
+  return /\.png$/i.test(file) ? "image/png" : "image/jpeg";
+}
 
 function profileFor(role) {
   if (PROFILE[role]) return PROFILE[role];
@@ -167,9 +189,9 @@ function knownSlugs() {
 function masters(all) {
   var out = [];
   fs.readdirSync(SRC_DIR).filter(function (f) {
-    return /\.png$/i.test(f);
+    return MASTER_RE.test(f);
   }).sort().forEach(function (file) {
-    var stem = file.replace(/\.png$/i, "");
+    var stem = file.replace(MASTER_RE, "");
     var slug = null;
     for (var i = 0; i < all.length; i++) {
       if (stem === all[i] || stem.indexOf(all[i] + "-") === 0) { slug = all[i]; break; }
@@ -182,7 +204,7 @@ function masters(all) {
       return;
     }
     out.push({
-      file: file, slug: slug, role: role,
+      file: file, slug: slug, role: role, mime: mimeOf(file),
       src: path.join(SRC_DIR, file),
       out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
       profile: profileFor(role),
@@ -291,10 +313,10 @@ async function openPage(client) {
    The master is handed over as a data URI in the expression itself rather than
    loaded off disk: Chrome is headless with no file access to this repo, and a
    2 MB PNG through the CDP is still faster than serving it. */
-function encodeJs(b64, box) {
+function encodeJs(b64, box, mime) {
   return "(async () => {" +
     'const img = new Image();' +
-    'img.src = "data:image/png;base64,' + b64 + '";' +
+    'img.src = "data:' + mime + ';base64,' + b64 + '";' +
     "await img.decode();" +
     "const s = Math.min(1, " + box.w + " / img.width, " + box.h + " / img.height);" +
     "const w = Math.max(1, Math.round(img.width * s));" +
@@ -312,7 +334,7 @@ function encodeJs(b64, box) {
 async function encode(client, sid, job) {
   var b64 = fs.readFileSync(job.src).toString("base64");
   var r = await client.send("Runtime.evaluate", {
-    expression: encodeJs(b64, job.profile),
+    expression: encodeJs(b64, job.profile, job.mime || "image/png"),
     returnByValue: true, awaitPromise: true
   }, sid);
   if (r.exceptionDetails) {

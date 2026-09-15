@@ -88,7 +88,7 @@ Reusable, game-agnostic helpers:
 | `Store`                    | `try/catch`-wrapped `localStorage` (sandboxed iframes may throw).                                                                                         |
 | `Rand`                     | `range / int / pick / chance`.                                                                                                                            |
 | `preloadImages` / `Images` | Decodes embedded images before the intro shows.                                                                                                           |
-| `Fx`                       | Particles, rings, floating text, shake, flash, hit-stop — driven by the frame pipeline.                                                                   |
+| `Fx`                       | Particles, rings, shake, flash, hit-stop — driven by the frame pipeline.                                                                                  |
 | `Confetti`                 | End-screen celebration on its own canvas.                                                                                                                 |
 | `rgba` / `clamp`           | Small shared helpers.                                                                                                                                     |
 

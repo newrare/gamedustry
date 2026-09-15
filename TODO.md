@@ -233,12 +233,28 @@ ______________________________________________________________________
   game by game and have never been read side by side. Check they say something,
   that two callouts never stack on the same beat, and that the FR strings exist
   (the copy still lives in section 6 for the end screen — see the language TODO
-  in *The web build*).
+  in *The web build*). **`make events` is the bench for this pass**: every beat
+  of a game listed off its own source and fired inside its own build
+  (`lab/game-events.html`), under the *view* tab — and a re-styled callout is
+  written back into `game.js` by **Apply**, so the pass is read, heard and
+  landed in one place. A word the game builds at runtime is still changed by
+  hand: apply refuses it rather than paste the bench's stand-in.
 
 - [ ] CODE — **review the sfx, all thirteen games.** One clip per event out of
   `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships
   (levels, pitch via `rate`, events still falling back to `Sound.beep`) and
-  even out the loudness between games.
+  even out the loudness between games. The *sound* tab of `make events` already
+  does the audit — it names every clip, its provenance, how many beats play it
+  and at what volume — the *sfx library* under it auditions the 127 files of
+  `assets/audio/sfx/` on hover, and a clip's **file is a dropdown over the whole
+  folder**: pick another one, set the cut length, and Apply re-encodes it into
+  `ASSETS.sounds` with its provenance comment. What it found on the first run:
+  **`bouncetry` embeds `drop` and never plays it** (dead bytes in every build),
+  and callouts still fire with no cue under them — `gearball` ×5, `arcider` ×4,
+  `blight` ×3, `bouncetry` ×3, `chainring` ×3, `radiam` ×3, `spinshock` ×2, one
+  each in `orbinity`, `slipdeck`, `triverse` and `vipera`. Several of those are
+  the former `Overlay.toast` status lines, which never had a sound and now read
+  as the silent callouts they always were.
 
 - [ ] CODE — **add bonus and gameplay elements, all thirteen games.** The web
   target gave every game a 30-level ladder against a loop that was designed for

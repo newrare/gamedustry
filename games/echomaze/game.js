@@ -853,7 +853,7 @@
         Fx.ring(x, y, { from: 3, to: 30 + 18 * power, color: ARC, width: 3, life: 0.22 });
         if (clock - lastText > 0.2) {
           lastText = clock;
-          Fx.text(x, y - 14, "+" + C.mapScore, { color: "#dffcff", size: 22, life: 0.45 });
+          Pop.text(x, y - 14, "+" + C.mapScore, { color: "#dffcff", size: 22, life: 0.6, tier: 1 });
         }
         if (mapped % 25 === 0) {
           Pop.show("combo", { word: mapped + " WALLS", sub: "FOUND", at: popAt() });
@@ -1011,7 +1011,7 @@
       Fx.burst(mx, my, { color: [PULSE.core, "#ffffff"], count: 12, speed: 380,
                          life: 0.3, angle: aimA, spread: 1.0 });
       Fx.ring(mx, my, { from: 10, to: 78, color: PULSE.core, width: 5, life: 0.26 });
-      if (queue === 1) Overlay.toast("LAST PULSE", { color: DYING });
+      if (queue === 1) Pop.show("alert", { word: "LAST PULSE", hold: 1400 });
     }
 
     function stepBall(b, h) {
@@ -1084,7 +1084,7 @@
     function goDark() {
       phase = "play"; darkT = 0;
       Sound.clip("dark", 0.7);
-      Overlay.toast("LIGHTS OUT — FIRE!", { color: ARC, dur: 1600 });
+      Pop.show("alert", { word: "LIGHTS OUT — FIRE!", hold: 1600 });
       zapAll(0.5);                                 // the arena flashes once, and
     }                                              // that is the last of it
     // What fraction of the board is drawn for free right now: 1 during the

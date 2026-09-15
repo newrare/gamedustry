@@ -922,7 +922,7 @@
         misses.push({ s: s, life: 0.5 });
         Fx.burst(x, y, { color: ["#6f5ea8", "#2a2050"], count: 7, speed: 150,
                          life: 0.4, grav: 140, size: 4 });
-        Fx.text(x, y, "BLOCKED", { color: "#8b6cff", size: 24, life: 0.6 });
+        Pop.text(x, y, "BLOCKED", { color: "#8b6cff", size: 22, life: 0.6, tier: 1 });
         Sound.clip("tick", 0.4, 0.52);
       }
 

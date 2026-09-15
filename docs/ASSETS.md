@@ -115,9 +115,11 @@ no `ASSETS` entry, no code:
 | `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0–1 / 2 / 3)                                |
 | `-object-<name>.png`                 | **a sheet to cut, never a role** — see below; `encode-art` leaves it alone        |
 | `-decor-NN.png`                      | the decor pool: objects the shell scatters over the screens — see below           |
+| `-sky.png` / `-sky.jpg`              | a panorama a GAME draws on the CANVAS behind its round — `games/arcider`          |
 | anything else                        | `CONFIG.art.<camelName>`, for the game to use as it likes                         |
 
-`assets/image/master/` is the **master and ships nowhere**: PNG, up to 2172 px, ~2 MB
+`assets/image/master/` is the **master and ships nowhere**: PNG — or JPEG, for a
+panorama that came out of an editor rather than the model — up to 2172 px, ~2 MB
 apiece, 121 MB across thirteen games. One raw character would double a creative.
 The shipping cut lives next to it:
 

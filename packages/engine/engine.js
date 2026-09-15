@@ -696,13 +696,13 @@
      -------------------------------------------------------------------- */
   var Fx = (function () {
     var MAX_PARTICLES = 260;
-    var parts = [], rings = [], texts = [];
+    var parts = [], rings = [];
     var shakeMag = 0, shakeT = 0, shakeDur = 1;
     var flashCol = "#ffffff", flashA = 0, flashDecay = 1.8;
     var freezeT = 0;
 
     function reset() {
-      parts.length = 0; rings.length = 0; texts.length = 0;
+      parts.length = 0; rings.length = 0;
       shakeMag = 0; shakeT = 0; flashA = 0; freezeT = 0;
     }
 
@@ -733,13 +733,11 @@
         life: opt.life || 0.4, maxLife: opt.life || 0.4 });
     }
 
-    // Floating world-space text. tier 0..3 escalates the outline/glow/gradient.
-    function text(x, y, str, opt) {
-      opt = opt || {};
-      texts.push({ x: x, y: y, text: str, color: opt.color || "#ffffff",
-        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
-        life: opt.life || 0.9, maxLife: opt.life || 0.9 });
-    }
+    /* There is no Fx.text: the words a game writes all live in `Pop` —
+       `Pop.show` for the beat, `Pop.text` for the floating number — so a game
+       has one notification system, not two. Pop draws its canvas half inside
+       this module's render pass (see bootstrap.js), which is why the number
+       still rides the shake. */
 
     function shake(mag, dur) {
       var cur = shakeT > 0 ? shakeMag * (shakeT / shakeDur) : 0;
@@ -763,11 +761,6 @@
         if (p.life <= 0) parts.splice(i, 1);
       }
       for (i = rings.length - 1; i >= 0; i--) { rings[i].life -= dt; if (rings[i].life <= 0) rings.splice(i, 1); }
-      for (i = texts.length - 1; i >= 0; i--) {
-        var t = texts[i];
-        t.y += t.vy * dt; t.vy *= 0.9; t.life -= dt;
-        if (t.life <= 0) texts.splice(i, 1);
-      }
       if (shakeT > 0) shakeT -= dt;
       if (flashA > 0) flashA = Math.max(0, flashA - dt * flashDecay);
     }
@@ -798,36 +791,6 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
-      // floating text
-      for (i = 0; i < texts.length; i++) drawText(texts[i]);
-    }
-
-    function drawText(fl) {
-      var t = fl.life / fl.maxLife;
-      var pop = t > 0.85 ? (1 - t) / 0.15 : 1;                 // quick pop-in
-      var scale = 1 + (1 - t) * (fl.tier >= 2 ? 0.45 : fl.tier >= 1 ? 0.25 : 0.12);
-      ctx.save();
-      ctx.globalAlpha = clamp(Math.min(1, t * 2.2) * pop, 0, 1);
-      ctx.translate(fl.x, fl.y); ctx.scale(scale, scale);
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = "900 " + fl.size + "px -apple-system,Segoe UI,Roboto,sans-serif";
-      if (fl.tier >= 3)      { ctx.shadowColor = "#ff44ff"; ctx.shadowBlur = 22; }
-      else if (fl.tier >= 2) { ctx.shadowColor = "#ffaa00"; ctx.shadowBlur = 16; }
-      else if (fl.tier >= 1) { ctx.shadowColor = "#22ccff"; ctx.shadowBlur = 12; }
-      else                   { ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = 4; }
-      ctx.lineWidth = Math.max(4, fl.size * 0.17);
-      ctx.strokeStyle = fl.tier >= 3 ? "rgba(80,0,80,.8)" : "rgba(0,0,0,.75)";
-      ctx.strokeText(fl.text, 0, 0);
-      ctx.shadowBlur = 0;
-      if (fl.tier >= 1) {
-        var g = ctx.createLinearGradient(0, -fl.size * 0.5, 0, fl.size * 0.5);
-        if (fl.tier >= 3)      { g.addColorStop(0, "#ffffff"); g.addColorStop(.3, "#ff88ff"); g.addColorStop(.7, "#ff00cc"); g.addColorStop(1, "#ffbb00"); }
-        else if (fl.tier >= 2) { g.addColorStop(0, "#ffffff"); g.addColorStop(.4, "#ffe060"); g.addColorStop(1, "#ff7700"); }
-        else                   { g.addColorStop(0, "#e8f8ff"); g.addColorStop(1, fl.color); }
-        ctx.fillStyle = g;
-      } else { ctx.fillStyle = fl.color; }
-      ctx.fillText(fl.text, 0, 0);
-      ctx.restore();
     }
 
     // Full-frame flash, drawn outside the shake transform.
@@ -839,7 +802,7 @@
       ctx.globalAlpha = 1;
     }
 
-    return { reset: reset, burst: burst, ring: ring, text: text, shake: shake,
+    return { reset: reset, burst: burst, ring: ring, shake: shake,
              flash: flash, freeze: freeze, frozen: frozen,
              update: update, begin: begin, end: end, render: render, post: post };
   })();

@@ -750,7 +750,7 @@
         if (rotCount < liveCount) {
           seedBlight(1);
           Fx.flash("rgba(150,40,255,0.35)", 0.2);
-          if (!rotCount) Overlay.toast("THE ROT SPREADS", { color: "#c050ff" });
+          if (!rotCount) Pop.show("alert", { word: "THE ROT SPREADS", hold: 1400 });
           Sound.clip("spread", 1, 0.55);
         }
         return;
@@ -844,7 +844,7 @@
         grid[r][c] = mine; sup[r][c] = false;
         x = cellX(r, c); y = cellY(r);
         prismFx(x, y, mine);
-        Fx.text(x, y - R * 0.9, "JOKER", { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
+        Pop.text(x, y - R * 0.9, "JOKER", { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
         setWobble(r, c, 0.95, Math.atan2(cellY(cell.r) - y, cellX(cell.r, cell.c) - x), 0);
         chain.joker++;
       }
@@ -970,8 +970,8 @@
       var gain = 12 * Math.min(streak + 1, 6);
       chain.gained += gain; chain.sx += x; chain.sy += y;
       score += gain; HUD.setScore(score);
-      Fx.text(x, y - 12, "+" + gain, { color: (PAL[idx] || PAL[0]).light,
-        size: 24, life: 0.5, tier: n >= 6 ? 1 : 0 });
+      Pop.text(x, y - 12, "+" + gain, { color: (PAL[idx] || PAL[0]).light,
+        size: 22, life: 0.6, tier: 1 });
       // Each bubble hands the blow to the foam around it: the hole travels.
       ripple(x, y, 0.34, R * 4.2);
       Fx.shake(Math.min(2 + n * 0.8, 12), 0.12);
@@ -994,7 +994,7 @@
       Fx.ring(x, y, { from: R * 1.6, to: R * 0.4, color: "#ffffff", width: 3, life: 0.32 });
       Fx.burst(x, y, { color: [pal.light, "#ffffff", pal.core], count: 10, speed: 250,
         size: 3, life: 0.5 });
-      Fx.text(x, y - 12, "+" + gain, { color: "#fff3c4", size: 26, life: 0.6, tier: 1 });
+      Pop.text(x, y - 12, "+" + gain, { color: "#fff3c4", size: 22, life: 0.6, tier: 1 });
       setWobble(r, c, 1.0, Rand.range(0, PI2), 0);
       ripple(x, y, 0.3, R * 4);
       Sound.clip("pop", 0.4, 1.45 + Math.min(chain.cured, 6) * 0.05);
@@ -1389,8 +1389,8 @@
       // and the floor takes it: a short kick, capped so a ten-bubble cascade
       // shakes once rather than ten times (Fx.shake keeps the loudest).
       Fx.shake(3.5 * speed, 0.14);
-      Fx.text(f.x, FLOOR_Y - 30, "+" + gain, { color: rot ? "#d8a6ff" : "#ffffff",
-        size: 19, life: 0.42, vy: -95 });
+      Pop.text(f.x, FLOOR_Y - 30, "+" + gain, { color: rot ? "#d8a6ff" : "#ffffff",
+        size: 22, life: 0.6, tier: 1 });
       Sound.clip("pop", 0.3, 1.45 + Rand.range(-0.08, 0.08));
     }
 

@@ -15,7 +15,7 @@ A playable always needs the same things, so the motor owns them:
 | **Overlay**    | Screen-space notification layer over the game view: toasts, combo banners, reward badges, dramatic edge glow.                     |
 | **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats. The loud half of the notification layer.    |
 | **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                             |
-| **Fx**         | Canvas juice: particles, rings, floating text, screen shake, colour flash, hit-stop.                                              |
+| **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                             |
 | **End screen** | Cinematic reveal: title, score count-up with confetti, star rating, cascading stat rows, big install CTA and a small replay link. |
 | **Ad glue**    | MRAID readiness, pause when not viewable, one `Ad.openStore()` for every CTA.                                                     |
 
@@ -259,12 +259,14 @@ frameUpdate(dt):
   Round.tick(dt)                                   // clock + HUD timer
   Game.update(dt)
   Fx.update(dt)
+  Pop.tick(dt)                                     // Pop's canvas half
   HUD.tick(dt)                                     // eases the score counter
 
 frameRender():
   Fx.begin()      // screen-shake transform
   Game.render()   // background + world
-  Fx.render()     // particles, rings, floating text on top of the world
+  Fx.render()     // particles and rings on top of the world
+  Pop.canvas()    // Pop.text, inside the shake with the rest
   Fx.end()
   Fx.post()       // full-frame colour flash, unshaken
 ```
@@ -286,18 +288,21 @@ HUD.score()              // current target score
 `cls` may be `warn` (red) or any class you add in the game's CSS. Pass `null` as
 the text to empty a slot.
 
-### `Overlay` — screen-space notifications
+### `Overlay` — the full-frame glow
 
 ```js
-Overlay.toast("+1 LIFE", { color:"#4bf5ff", dur:1400 });  // pill under the HUD
-Overlay.banner("COMBO x8", "+160", { color:"#ffd43b" });   // big mid-screen hit
-Overlay.reward("SUPER BLAST!");                            // badge that pops
-Overlay.vignette("#ff2d55", 0.9, 600);                     // edge glow (ms = auto-off)
-Overlay.clear();                                           // wipe everything
+Overlay.vignette("#ff2d55", 0.9, 600);   // edge glow (ms = auto-off)
+Overlay.clear();                         // wipe everything
 ```
 
-Use `Overlay` for UI-level feedback and `Fx.text` for anything anchored to a
-world position.
+`Overlay.toast`, `Overlay.banner` and `Overlay.reward` are still here and **no
+game calls them**: every word a game writes goes through `Pop` (below), which is
+what makes thirteen games sound like one product instead of thirteen. A toast
+was a coloured pill in a layer of its own; `Pop.show("alert", …)` sits in the
+same place, under the HUD, and is styled like every other callout.
+
+Use `Overlay` for UI-level feedback and `Pop` for anything the player reads as
+a reward — `Pop.show` at a screen anchor, `Pop.text` at a world position.
 
 ### Canvas resolution — `view.dpr`, and why it is not `devicePixelRatio`
 
@@ -405,10 +410,34 @@ what is currently off, so a reading can never be misattributed.
 
 ### `Pop` — comic callouts
 
-The loud half of the overlay. **Prefer it over `Overlay.banner` / `Overlay.toast`
-and over `Fx.text` for anything that celebrates a player action** — score gains,
-combo milestones, tier-ups, hero beats. Designed and previewed in
-[`lab/overlay-pop.html`](../lab/overlay-pop.html).
+**Every word a game writes goes through `Pop`**, and it has two halves for two
+jobs — the beats that celebrate a player action (score gains, combo milestones,
+tier-ups, hero beats) and the status lines that used to be `Overlay.toast`,
+which the `alert` style now carries. Nothing a player reads mid-round is left
+outside this module. The DOM half is designed and previewed in
+[`lab/overlay-pop.html`](../lab/overlay-pop.html); what a given game already
+fires, in that game's own build, is `make events`.
+
+| call       | what it is                             | where it is drawn     | when to use it                                       |
+| ---------- | -------------------------------------- | --------------------- | ---------------------------------------------------- |
+| `Pop.show` | a comic callout: word, sub-line, decor | DOM, capped at 4 live | a MOMENT — a milestone, a tier-up, a hero beat       |
+| `Pop.text` | a number floating up from a point      | canvas, uncapped      | a VALUE — the `+40` over the thing that was just hit |
+
+`Pop.text` was `Fx.text` until the two were merged: a game had two notification
+systems, and the split was a rendering detail, not a design one. The costs are
+what keep them apart — a callout is rasterized and capped, a number is one
+`fillText` and fires several times a second — so a beat that scores takes
+`Pop.text`, and the milestone it crosses takes `Pop.show`.
+
+```js
+Pop.text(x, y, "+120", { color, size, tier:0..3, life, vy });
+```
+
+`tier` escalates the text treatment (outline → glow → gradient) — 0 for a plain
+`+10`, 3 for a screen-shaking milestone. Both halves go dark together: the
+web target's OPTIONS switch and `?perf=1&off=pops` take out the pair, and
+`Pop.text` only shows while a round is running, because the frame pipeline is
+what draws it.
 
 ```js
 Pop.show("score", { word:"+250", at:{ x:ball.x, y:ball.y - 50 } });   // impact point
@@ -575,16 +604,15 @@ frames.
 ```js
 Fx.burst(x, y, { color, count, speed, size, life, grav, angle, spread });
 Fx.ring(x, y, { from, to, color, width, life });
-Fx.text(x, y, "+120", { color, size, tier:0..3, life, vy });
 Fx.shake(magnitude, seconds);
 Fx.flash(color, alpha, decay);
 Fx.freeze(seconds);     // hit-stop: the world pauses, the effects do not
 Fx.reset();             // called for you by startGame()
 ```
 
-`tier` escalates the text treatment (outline → glow → gradient) — 0 for a plain
-`+10`, 3 for a screen-shaking milestone. `color` may be an array: each particle
-picks one.
+`color` may be an array: each particle picks one. There is no `Fx.text` — the
+floating number is `Pop.text` (above), so every word a game writes belongs to
+one module.
 
 ### `Round`
 

@@ -25,7 +25,7 @@ Every playable has the same skeleton, so the skeleton is written once:
   glow.
 - **Persistent CTA bar** — install button on screen for the whole round, lifted
   above the home indicator.
-- **Fx layer** — particles, rings, floating text, screen shake, flash, hit-stop.
+- **Fx layer** — particles, rings, screen shake, flash, hit-stop.
 - **Cinematic end screen** — score count-up with confetti, star rating,
   cascading stat rows, a big install CTA and a small replay link.
 
@@ -135,6 +135,12 @@ gamedustry/
 │   │   │                        (the listing images, FR and EN of each)
 │   │   ├── serve-store.mjs   ← the server lab/store-card.html composes over
 │   │   │                        (make store — lists the assets, takes the saves)
+│   │   ├── scan-events.mjs   ← every callout / notification / cue a game fires,
+│   │   │                        read off its own game.js (a table, or --json)
+│   │   ├── serve-events.mjs  ← the server lab/game-events.html plays them over
+│   │   │                        (make events — the list, inside the real build)
+│   │   ├── apply-events.mjs  ← write a beat changed on that bench back into
+│   │   │                        game.js; re-cuts a clip from assets/audio/sfx/
 │   │   ├── bench-pop.mjs     ← what a callout costs, on an emulated phone
 │   │   ├── bench-raster.mjs  ← layer raster cost; and why it can't stand in
 │   │   │                       for a phone (use ?perf=bench for that)
@@ -285,6 +291,44 @@ open games/chainring/index.html
 # or serve the folder if your browser blocks file:// features:
 python3 -m http.server 8000                  # then visit localhost:8000/games/…
 ```
+
+**Review what a game says and plays** — the callouts, the notifications and the
+sound under each of them are written where the beat happens, one line at a time,
+and nobody can review twenty of them by reading nine hundred lines of game
+logic. The bench is one list per game: the background bed with its
+`CONFIG.music`, then every callout and notification in source order, and one
+card per sound clip: the file of `assets/audio/sfx/` it is cut from at the top,
+and under it every line of the game that plays it. Each row is fired **inside that
+game's own web build**, on the game's own painted backdrop with the menu hidden:
+the real `Pop` styles, the real SKIN, the real samples at their own volume and
+pitch. The list has two sides — **view** (the `Pop` callouts and the
+`Overlay.toast/banner/reward` notifications) and **sound** (the bed, the sfx
+pack, the library and the cues). The juice carries no word and is scanned but
+not listed: `Fx.*`, `HUD.punch`, and `Overlay.vignette`, which is a glow over
+the frame rather than a notification.
+
+Each row is editable — the pop's style, the word, the anchor, the file a clip is
+cut from and how long the cut is (the whole of `assets/audio/sfx/` opens from
+that button, and hovering a row plays it, trimmed to that length), the volume,
+the pitch — and **Apply
+writes it back into `games/<slug>/game.js`**: the argument is spliced in place,
+a changed file is re-cut with ffmpeg into `ASSETS.sounds` with its provenance
+comment, and the game's patch version moves with it. An argument the game builds
+at runtime (`"+" + gain`) is refused by name instead of being overwritten with
+the bench's stand-in.
+
+```bash
+make events                                  # http://localhost:8092/
+node tools/lab/scan-events.mjs vipera        # the same list as text, no browser
+node tools/lab/scan-events.mjs --all         # every game, warnings included
+node tools/lab/apply-events.mjs vipera --pop 551:style=ultra --dry
+```
+
+Every line hands back its own `file:line` on a click, and carries two icons:
+*revert*, which puts it back where the source has it, and *trash*, which marks
+it for removal — nothing is deleted until Apply, and the mark comes off with the
+same revert. On a clip's card the trash takes the clip out of `ASSETS.sounds`
+and every line that plays it. Apply is the one way a change leaves the page.
 
 **Dress the store listing** — a store page wants the game sold, not documented:
 a raw capture is a dial on a dark background next to twelve other dials on dark
