@@ -885,7 +885,7 @@
       if (invT > 0) invT -= dt;
       if (multT > 0) {
         multT -= dt;
-        if (multT <= 0) { mult = 1; Overlay.toast("x2 OVER", { color: "#a6ff3d" }); }
+        if (multT <= 0) { mult = 1; Pop.show("alert", { word: "x2 OVER", hold: 1400 }); }
       }
 
       updateArrow();

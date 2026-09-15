@@ -11,6 +11,7 @@
 #   make site    assemble dist/site locally
 #   make serve   the dev loop, with reload on save
 #   make store   the store card composer, at http://localhost:8091/
+#   make events  the callouts / cues bench, at http://localhost:8092/
 #   make meta    the itch page copy, one file per game
 #   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
 #   make map   [GAME=<slug>]   just the eleventh, the level map
@@ -22,7 +23,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check push itch site serve store meta shots map ng android
+.PHONY: help check push itch site serve store events meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -69,6 +70,15 @@ serve:
 # list what a game owns, and write the image it composed into assets/image/<store>/.
 store:
 	node tools/lab/serve-store.mjs
+
+# Every callout, notification and cue a game fires, listed off its own source
+# and played inside its own build, under two tabs: view and sound. Same reason
+# for a server as the composer — it reads the sources back and serves a built
+# game on a scriptable origin — plus one more: Apply writes the change back into
+# games/<slug>/game.js (tools/lab/apply-events.mjs) and re-cuts a swapped clip.
+# `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
+events:
+	node tools/lab/serve-events.mjs
 
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta

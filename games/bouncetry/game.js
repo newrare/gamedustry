@@ -854,7 +854,7 @@
       if (broken >= total) { clearBoard(); return; }
       if (queue.length > 0) {
         phase = "aim"; aiming = false; idleT = 0; traceShot();
-        if (queue.length === 1) Overlay.toast("LAST BALL", { color: "#ff8a1a" });
+        if (queue.length === 1) Pop.show("alert", { word: "LAST BALL", hold: 1400 });
       } else {
         phase = "over"; endT = 0;
       }
@@ -944,8 +944,8 @@
                             cls: chain >= 15 ? "pop-t3" : chain >= 8 ? "pop-t2"
                                : chain >= 4 ? "pop-t1" : "pop-t0" });
       } else {
-        Fx.text(cx, cy - 14, "+" + gain, { color: p.light, size: 30,
-                                           tier: chain >= 8 ? 1 : 0, life: 0.6 });
+        Pop.text(cx, cy - 14, "+" + gain, { color: p.light, size: 22,
+                                           life: 0.6, tier: 1 });
       }
 
       if (bonus === B_BOMB) {                      // takes its eight neighbours
@@ -1087,7 +1087,7 @@
       if (chain > 0) { chainT += dt; if (chainT > C.chainWindow) chain = 0; }
       if (!pulled && flightT > C.pullAfter) {      // every shot ends in the lake
         pulled = true;
-        Overlay.toast("THE LAVA PULLS", { color: "#ff8a1a" });
+        Pop.show("alert", { word: "THE LAVA PULLS", hold: 1400 });
         Overlay.vignette("rgba(255,106,0,.5)", 1, 900);
       }
 

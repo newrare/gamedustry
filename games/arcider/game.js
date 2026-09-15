@@ -87,13 +87,48 @@
       anchor:     212,     // px above Layout.bottom: the craft's row on screen
       camZ:       260,     // progress px from the camera to the craft (scale 1)
       zNear:      118,     // nearest slice of road drawn...
-      zFar:      1980,     // ...and the furthest, where it meets the haze
+      zFar:      1980,     // ...and the furthest the LADDER of even rows reaches
+      /* THE ROAD IS DRAWN FURTHER THAN THE LADDER IS EVEN. Past zFar a row
+         every 44 progress px buys a fraction of a pixel, so the step grows by
+         `roadGrow` out to `zRoad` — ten more rows, all of them SAMPLED off the
+         real curve like every other row. Nothing here is extrapolated: what
+         the player sees up by the city is the road they will be on. The gap
+         that is left between the last row and the vanishing point is not
+         filled, it is COVERED — the painting is laid on that row (see
+         `skyBase`), so the tarmac meets the city instead of reaching for a
+         horizon no finite amount of road can touch. */
+      /* HOW FAR THE ROAD IS WORTH DRAWING, and it is not a matter of cost.
+         A band's sideways travel against its height is z/3400 in this road's
+         own numbers (its bend is 170 px over 1050 progress px, the projection
+         gains span*camZ/z² a row) — so past ~3400 the tarmac is seen more
+         edge-on than end-on, every band is wider than it is tall, and eleven
+         of them stacked draw a dark slab lying across the distance rather than
+         a road going into it. NO step size fixes that: the ratio is z alone.
+         So the road stops where it still reads as a road, and the painting is
+         laid on that row (see `skyBase`) instead of the road being stretched
+         to reach the painting. `roadGrow` then only has to keep the rows
+         monotone — a gap of ~400 progress px against a swell 10 000 px long
+         leaves the perspective well ahead of the climb. */
+      zRoad:     3600,
+      roadGrow:  1.13,
       seg:         44,     // progress px per road band: the stripes that scroll
       camEase:    6.2,     // how fast the camera swings back behind the craft
       camLead:     52,     // px the craft slides across the frame at full lean
       fovKick:   0.075,    // how far the field of view opens up at full speed
 
       rumble:      26,     // world width of the neon kerb on each side
+
+      // --- the painted horizon ---------------------------------------------
+      // The backdrop slides on two things, because the camera hides one of
+      // them: the vanishing point IS the heading, but it barely travels — the
+      // chase camera eases back behind the craft, so a bend moves the road and
+      // leaves the far row near the middle of the frame. `skyShift` is the
+      // other half and the one the player feels: leaning right walks the whole
+      // city left, at a third of the speed the road does it. The stars over it
+      // ride at 0.16 and the road at 1, so the picture sitting between them is
+      // what turns a lean into depth instead of a wall sliding sideways.
+      skyPara:   0.62,     // share of the vanishing point's travel
+      skyShift:  0.34,     // px of backdrop per px the camera moves across
 
       // --- the fork --------------------------------------------------------
       // Every so often the tarmac splits in two around a wedge of gravel and
@@ -535,15 +570,43 @@
     var camX = 0, fov = 0, fovZ = T.camZ, elevCar = 0;
 
     // --- cached per layout ---------------------------------------------------
-    var horizonY = 0, anchorY = 0, span = 0, halfW = 0;
+    var horizonY = 0, anchorY = 0, span = 0, halfW = 0, skyBase = 0;
     var skyGrad = null, plainGrad = null, fogGrad = null, sunGrad = null;
-    var stars = [], towers = [], rows = [], rowN = 0;
+    var stars = [], towers = [], rows = [], rowN = 0, farI = -1;
+    /* The two tarmac tones, ramped from their own average (see metrics). A
+       band that covers ONE stripe of road shows the alternation in full; past
+       two and a half it is flat, because there is no single tone left to be
+       right. Progress covered is the criterion and not height on screen: a
+       band's height says how big it looks, and what shimmers is how much road
+       it is being asked to stand for. */
+    var tarmacOn = [], tarmacOff = [];
+    var TARMAC_MID = "#211c59", FADE_N = 8, FADE_FULL = 1.05, FADE_FLAT = 2.5;
     // The two rails, in design px. Rebuilt by metrics() with everything else.
     var shieldRail = { x: 0, y: 0, w: 0, h: 0 };
     var boardRail  = { x: 0, y: 0, w: 0, h: 0 };
     // How hot each rail is burning right now: the side the craft leaves flares,
     // so the way back onto the tarmac is never ambiguous.
     var railGlow = { l: 0, r: 0 };
+
+    // Two "#rrggbb" mixed at t. Layout-time only — never per frame.
+    function mixHex(a, b, t) {
+      var out = "#", i, ca, cb, v;
+      for (i = 1; i < 7; i += 2) {
+        ca = parseInt(a.substr(i, 2), 16);
+        cb = parseInt(b.substr(i, 2), 16);
+        v = Math.round(ca + (cb - ca) * t);
+        out += (v < 16 ? "0" : "") + v.toString(16);
+      }
+      return out;
+    }
+    /* Which rung of the ramps a band spanning `sp` progress px lands on, and
+       the same number the kerbs, the centre line and the shoulder read to know
+       whether they are still one stripe or an average of several. 0 is flat. */
+    function fadeI(sp) {
+      var u = (FADE_FLAT - sp / T.seg) / (FADE_FLAT - FADE_FULL);
+      var i = Math.round(u * FADE_N);
+      return i < 0 ? 0 : i > FADE_N ? FADE_N : i;
+    }
 
     function diff() { return Math.min(1, dist / T.diffFull); }
 
@@ -1027,7 +1090,7 @@
          only question the board is ever asking. No sound: an overtake is the
          most frequent good thing that happens in a run, and a chime on every
          one of them turned the whole race into a ringtone. */
-      Pop.show("streak", { word: rank + "/" + need, sub: "+" + g, at: popSpot(),
+      Pop.show("streak", { word: rank + "/" + need, sub: "+" + g, at: "top",
                            cls: safe ? "rank-in" : "rank-out" });
       if (rank === 1) {
         Pop.show("ultra", { word: "LEADER", at: popSpot() });
@@ -1601,7 +1664,7 @@
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
       Pop.show("combo", { word: fieldSize + " PILOTS LEFT",
-                          sub: "NEXT CUT · TOP " + T.cuts[cutI].rank, at: popSpot() });
+                          sub: "NEXT CUT · TOP " + T.cuts[cutI].rank, at: "center" });
       showRank();
     }
 
@@ -1667,6 +1730,45 @@
        ==================================================================== */
 
     var SUN_R = 118;                   // the sun on the horizon, in design px
+    /* THE PAINTED HORIZON — assets/image/master/arcider-sky.jpg, cut to
+       1440x498 in assets/image/embed/ and injected as CONFIG.art.sky, which
+       the engine decodes into ArtImages with the rest of the artwork.
+
+       Its bottom edge IS the horizon line: sky, stars, the setting sun, the
+       mountains and the city are all in the one picture, so it stands in for
+       the sun and the skyline drawn below rather than sitting behind them. It
+       is the only piece of art this game draws on the CANVAS, because it
+       belongs to the round and CONFIG.art.backgroundPhone never does.
+
+       A build without the file keeps the drawn sun and towers — artwork is the
+       user's, and nothing here generates a stand-in for it. */
+    function skyArt() {
+      var img = typeof ArtImages !== "undefined" && ArtImages.sky;
+      return img && img.complete && img.naturalWidth ? img : null;
+    }
+
+    /* THE GROUND'S OWN COLOUR, read off the picture instead of written down a
+       second time. The plain used to open on a near-black violet, which was
+       right under a drawn gradient and wrong under a painting: the cut ends on
+       a lit band of haze at the foot of the city, and a dark plain met it on a
+       hard edge — the dark strip between the city and the road. Averaging the
+       bottom rows of the picture into a single pixel is the exact answer and
+       costs one drawImage per layout, not per frame. The literal is the
+       fallback for a build with no artwork, where the drawn sky meets it. */
+    var DARK_PLAIN = [27, 16, 70];
+    var foot = DARK_PLAIN;                    // refreshed by metrics()
+    function skyFoot() {
+      var img = skyArt(), c, g, d;
+      if (!img) return DARK_PLAIN;
+      c = document.createElement("canvas"); c.width = 1; c.height = 1;
+      g = c.getContext("2d");
+      g.drawImage(img, 0, img.naturalHeight - 24, img.naturalWidth, 24, 0, 0, 1, 1);
+      d = g.getImageData(0, 0, 1, 1).data;
+      return [d[0], d[1], d[2]];
+    }
+    function footCol(a) {
+      return "rgba(" + foot[0] + "," + foot[1] + "," + foot[2] + "," + a + ")";
+    }
     /* How far past the frame the sky and the plain are painted. The shake
        translates the whole canvas, and a low shield now shakes it EVERY frame —
        without this bleed the shift would expose a permanent unpainted strip
@@ -1686,6 +1788,18 @@
       anchorY = Layout.bottom - T.anchor;
       span = anchorY - horizonY;
 
+      /* WHERE THE PAINTING SITS. `horizonY` is the vanishing line — k reaches
+         zero there and no finite road ever does — so the picture is laid on
+         the last row the road actually draws instead, and everything below is
+         clipped to it (see render). The row's own height wanders with the
+         relief and the lens: the crest under the craft moves it by ±hillAmp,
+         and the field of view opens by fovKick at speed. Taking the worst of
+         both puts skyBase just UNDER the road's furthest row in every frame,
+         so the tarmac always runs into the city and a strip of bare plain can
+         never open between the two. */
+      skyBase = horizonY + Math.ceil(
+        (span + T.hillAmp * 2) * T.camZ * (1 + T.fovKick) / T.zRoad) + 1;
+
       /* The two rails: full height of the play band, hard against the frame's
          side margins. They are overlays on the road rather than a band cut out
          of it — the road is a perspective view whose interest is all in the
@@ -1704,23 +1818,52 @@
       skyGrad.addColorStop(0.84, "#5c1e77");
       skyGrad.addColorStop(1, "#ff5f9e");
 
-      // the plain the road is laid across
+      /* The plain the road is laid across. It opens on the colour the sky cut
+         ends with, so the ground the city stands on IS the ground the road is
+         on, and drops into the dark over the first eighth of the band — which
+         is aerial perspective and not a seam being covered up. */
+      foot = skyFoot();
       plainGrad = ctx.createLinearGradient(0, horizonY, 0, view.h);
-      plainGrad.addColorStop(0, "#1b1046");
-      plainGrad.addColorStop(0.34, "#0d0a2c");
+      plainGrad.addColorStop(0, footCol(1));
+      plainGrad.addColorStop(0.11, "#2a1550");
+      plainGrad.addColorStop(0.40, "#0d0a2c");
       plainGrad.addColorStop(1, "#05041a");
 
-      // the haze that hides the row where the road stops being drawn
-      fogGrad = ctx.createLinearGradient(0, horizonY - 6, 0, horizonY + 210);
-      fogGrad.addColorStop(0, "rgba(255,110,170,.55)");
-      fogGrad.addColorStop(0.3, "rgba(120,60,190,.32)");
-      fogGrad.addColorStop(1, "rgba(10,8,40,0)");
+      /* The haze, drawn OVER the road. It used to be a screen — the road
+         stopped 70 px short of the horizon and this hid the straight edge
+         where it did — and it is aerial perspective now that the tail rows
+         close that gap. Which is why it is the ground's own colour and not a
+         pink of its own: over the plain it changes nothing, since the plain
+         already opens on it, and over the tarmac it sinks the road into the
+         distance the way the city behind it already fades. A haze of any
+         other colour would lift the plain instead and put the band back. */
+      fogGrad = ctx.createLinearGradient(0, horizonY, 0, horizonY + 170);
+      fogGrad.addColorStop(0, footCol(0.72));
+      fogGrad.addColorStop(0.30, footCol(0.34));
+      fogGrad.addColorStop(0.64, footCol(0.12));
+      fogGrad.addColorStop(1, footCol(0));
 
       // the sun, in its own local space so it can slide with the bend
       sunGrad = ctx.createLinearGradient(0, -SUN_R, 0, SUN_R);
       sunGrad.addColorStop(0, "#fff3c4");
       sunGrad.addColorStop(0.44, "#ffb347");
       sunGrad.addColorStop(1, "#ff2e83");
+
+      /* THE TARMAC RAMPS — the fix for a band that strobed near the horizon.
+         `on` is sampled off ONE progress value per row, and a band up by the
+         city spans hundreds of progress px: which side of the 44 px stripe its
+         sample lands on is then pure aliasing, and the sample moves every
+         frame, so the far bands flickered between the two tones on the spot.
+
+         The answer is the one a mipmap gives: a band thinner than a few pixels
+         has no alternation left to show and fades to the average of the two
+         tones. Precomputed here as two ramps rather than mixed per band —
+         fifty bands a frame, and a string built per band is pure garbage. */
+      tarmacOn = []; tarmacOff = [];
+      for (i = 0; i <= FADE_N; i++) {
+        tarmacOn.push(mixHex(TARMAC_MID, "#2b2470", i / FADE_N));
+        tarmacOff.push(mixHex(TARMAC_MID, "#181442", i / FADE_N));
+      }
 
       stars = [];
       for (i = 0; i < 54; i++) {
@@ -1742,74 +1885,116 @@
        `seg` progress px, from just under the lens out to the haze. Their objects
        are recycled between frames — this runs forty-odd times a frame and a
        fresh literal each time would be pure garbage for the collector. */
-    function buildRows() {
-      var p = Math.floor((camP + T.zNear) / T.seg) * T.seg, lim = camP + T.zFar, k, r, t;
-      rowN = 0;
-      while (p <= lim) {
-        r = rows[rowN] || (rows[rowN] = {});
-        k = kAt(p);
-        t = forkAmt(p);
-        r.p = p; r.k = k; r.t = t;
-        r.y  = screenY(p, k);
-        r.cx = screenX(roadX(p), k);
-        // Half width of one ribbon and how far off the centre line it sits,
-        // both already in screen px. On a single road `o` is 0 and `hw` is the
-        // full road, so the two branches collapse into one.
-        r.hw = branchHalf(p, t) * k;
-        r.o  = branchOff(t) * k;
-        // Alternating bands. This one flag drives the tarmac tone, the kerbs and
-        // the shoulder stripes, which is why they all scroll in lockstep.
-        r.on = (Math.floor(p / T.seg) & 1) === 0;
-        rowN++;
-        p += T.seg;
-      }
+    // ONE sample of the road, appended to the ladder.
+    function pushRow(p) {
+      var k = kAt(p), t = forkAmt(p);
+      var r = rows[rowN] || (rows[rowN] = {});
+      r.p = p; r.k = k; r.t = t;
+      r.y  = screenY(p, k);
+      r.cx = screenX(roadX(p), k);
+      // Half width of one ribbon and how far off the centre line it sits,
+      // both already in screen px. On a single road `o` is 0 and `hw` is the
+      // full road, so the two branches collapse into one.
+      r.hw = branchHalf(p, t) * k;
+      r.o  = branchOff(t) * k;
+      // Alternating bands. This one flag drives the tarmac tone, the kerbs and
+      // the shoulder stripes, which is why they all scroll in lockstep.
+      r.on = (Math.floor(p / T.seg) & 1) === 0;
+      rowN++;
     }
 
-    // Where the road disappears. Every parallax layer in the sky hangs off this
-    // one number, so a bend turns the whole world and not just the tarmac.
-    function vanishX() { return rowN ? rows[rowN - 1].cx : halfW; }
+    function buildRows() {
+      var p = Math.floor((camP + T.zNear) / T.seg) * T.seg, lim = camP + T.zFar, z;
+      rowN = 0;
+      while (p <= lim) { pushRow(p); p += T.seg; }
+
+      /* `farI` is the last rung of the EVEN ladder, and it stays the row the
+         sky's parallax hangs off: past it the rows are so far out that their
+         screen x barely moves, and a backdrop hung there would sit still. */
+      farI = rowN - 1;
+
+      /* Out to zRoad on a growing step. The step stays well inside the bend's
+         own wavelength (6600 progress px), so two neighbouring rows are still
+         on the same stretch of curve — that is the whole reason these are
+         sampled and the old tail could not be. */
+      z = T.zFar;
+      while (z < T.zRoad) { z = Math.min(T.zRoad, z * T.roadGrow); pushRow(camP + z); }
+    }
+
+    /* Where the road disappears. Every parallax layer in the sky hangs off this
+       one number, so a bend turns the whole world and not just the tarmac — and
+       it reads the last EVEN row, not the last row: the tail converges on the
+       optical centre by construction, so hanging the sky off it would pin the
+       backdrop dead centre and there would be no parallax left at all. */
+    function vanishX() { return farI >= 0 ? rows[farI].cx : halfW; }
 
     function drawSky() {
-      var off = vanishX() - halfW, i, s, t, y;
+      var off = vanishX() - halfW, img = skyArt(), i, s, t, y, iw, ih, dx, slack;
 
       ctx.fillStyle = skyGrad;
-      ctx.fillRect(-BLEED, -BLEED, view.w + BLEED * 2, horizonY + 2 + BLEED);
+      ctx.fillRect(-BLEED, -BLEED, view.w + BLEED * 2, skyBase + 2 + BLEED);
 
-      // stars, on the slowest parallax of the three
+      if (img) {
+        /* Fitted by HEIGHT on the band it has to fill, so the city always
+           stands exactly on the road's last row whatever that band measures on
+           this device, and the surplus width — the picture is nearly 3:1
+           against a 720 px frame — is the room the parallax drifts in. The
+           drift is clamped to that slack: running out of picture would expose
+           the gradient in a strip down one edge, which reads as a bug and not
+           as a wide sky. */
+        ih = skyBase + BLEED;
+        iw = ih * (img.naturalWidth / img.naturalHeight);
+        slack = Math.max(0, (iw - view.w) * 0.5);
+        dx = clamp(off * T.skyPara - camX * T.skyShift, -slack, slack);
+        ctx.drawImage(img, Math.round(halfW - iw * 0.5 + dx),
+                           Math.round(skyBase - ih), Math.round(iw), Math.round(ih));
+      }
+
+      // stars, on the slowest parallax: the painted sky carries its own, and
+      // these drifting over them at a quarter of the speed is the depth
       ctx.fillStyle = "#eaf6ff";
       for (i = 0; i < stars.length; i++) {
         s = stars[i];
-        ctx.globalAlpha = s.a;
+        ctx.globalAlpha = s.a * (img ? 0.55 : 1);
         ctx.beginPath(); ctx.arc(s.x + off * 0.16, s.y, s.r, 0, TAU); ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // the sun: a disc cut by the classic slats, clipped so it sets exactly on
-      // the horizon instead of bleeding onto the plain
-      ctx.save();
-      ctx.beginPath(); ctx.rect(0, 0, view.w, horizonY); ctx.clip();
-      ctx.translate(halfW + off * 0.52, horizonY - 24);
-      ctx.fillStyle = sunGrad;
-      ctx.beginPath(); ctx.arc(0, 0, SUN_R, 0, TAU); ctx.fill();
-      ctx.fillStyle = "rgba(24,13,72,.85)";
-      for (i = 0; i < 6; i++) {
-        y = -16 + i * 22;
-        ctx.fillRect(-SUN_R, y, SUN_R * 2, 3 + i * 2.4);
-      }
-      ctx.restore();
+      if (!img) {
+        // the sun: a disc cut by the classic slats, clipped so it sets exactly
+        // on the horizon instead of bleeding onto the plain
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, 0, view.w, horizonY); ctx.clip();
+        ctx.translate(halfW + off * 0.52, horizonY - 24);
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath(); ctx.arc(0, 0, SUN_R, 0, TAU); ctx.fill();
+        ctx.fillStyle = "rgba(24,13,72,.85)";
+        for (i = 0; i < 6; i++) {
+          y = -16 + i * 22;
+          ctx.fillRect(-SUN_R, y, SUN_R * 2, 3 + i * 2.4);
+        }
+        ctx.restore();
 
-      // the skyline, on the fastest, standing in front of the sun
-      ctx.fillStyle = "#110a30";
-      for (i = 0; i < towers.length; i++) {
-        t = towers[i];
-        ctx.fillRect(t.x + off * 0.95, horizonY - t.h, t.w, t.h + 3);
+        // the skyline, on the fastest, standing in front of the sun
+        ctx.fillStyle = "#110a30";
+        for (i = 0; i < towers.length; i++) {
+          t = towers[i];
+          ctx.fillRect(t.x + off * 0.95, horizonY - t.h, t.w, t.h + 3);
+        }
       }
-      ctx.fillStyle = "rgba(255,95,158,.30)";
-      ctx.fillRect(-BLEED, horizonY - 5, view.w + BLEED * 2, 8);
+
+      /* The weld between the sky and the plain. The drawn sky needs it — its
+         gradient and the plain's meet on a hard edge — but the painting ends on
+         its own band of ground haze, and a second bar over that is the pale
+         strip that reads as a third layer between the city and the road. */
+      if (!img) {
+        ctx.fillStyle = "rgba(255,95,158,.30)";
+        ctx.fillRect(-BLEED, skyBase - 5, view.w + BLEED * 2, 8);
+      }
     }
 
     function drawPlain() {
-      var i, r, s, x, first;
+      var i, r, s, gN;
       ctx.fillStyle = plainGrad;
       ctx.fillRect(-BLEED, horizonY, view.w + BLEED * 2, view.h - horizonY + BLEED);
 
@@ -1820,17 +2005,23 @@
       ctx.strokeStyle = "rgba(53,232,255,.11)";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      for (i = 0; i < rowN; i += 2) {
+      /* THE GRID STOPS WHERE ITS ROWS DO. Two rows closer than 2 px pile the
+         horizontals onto each other, and which of them lands on a pixel then
+         changes every frame — the same shimmer the tarmac had. Both families
+         end on the road's furthest row, which the painting is laid on, so
+         there is nothing beyond it to draw anyway. */
+      for (gN = 1; gN < rowN; gN++) if (rows[gN].y - rows[gN - 1].y < 2) break;
+
+      for (i = 0; i + 2 < gN; i += 2) {
         r = rows[i];
         ctx.moveTo(-BLEED, r.y); ctx.lineTo(view.w + BLEED, r.y);
       }
       for (s = -4; s <= 4; s++) {
         if (s === 0) continue;
-        first = true;
-        for (i = rowN - 1; i >= 0; i--) {
+        for (i = gN - 1; i >= 0; i--) {
           r = rows[i];
-          x = r.cx + s * 300 * r.k;
-          if (first) { ctx.moveTo(x, r.y); first = false; } else ctx.lineTo(x, r.y);
+          if (i === gN - 1) ctx.moveTo(r.cx + s * 300 * r.k, r.y);
+          else ctx.lineTo(r.cx + s * 300 * r.k, r.y);
         }
       }
       ctx.stroke();
@@ -1844,8 +2035,9 @@
        side being scraped so the way back onto the tarmac is never ambiguous. */
     function ribbon(a, b, s) {
       var ax = a.cx + s * a.o, bx2 = b.cx + s * b.o, rwA, rwB, gl;
+      var fi = fadeI(a.p - b.p);
 
-      if (a.on) {
+      if (a.on && fi === FADE_N) {
         rwA = T.rumble * a.k; rwB = T.rumble * b.k;
         gl = railGlow.l;
         ctx.fillStyle = gl > 0.02 ? rgba("#ff2d55", 0.5 + 0.5 * gl) : "#35e8ff";
@@ -1864,14 +2056,14 @@
       // the tarmac — two tones far enough apart to strobe, and both lifted well
       // clear of black, because the rows nearest the lens are enormous and a
       // near-black one reads as a hole in the frame rather than as road
-      ctx.fillStyle = a.on ? "#2b2470" : "#181442";
+      ctx.fillStyle = a.on ? tarmacOn[fi] : tarmacOff[fi];
       ctx.beginPath();
       ctx.moveTo(ax - a.hw, a.y);  ctx.lineTo(ax + a.hw, a.y);
       ctx.lineTo(bx2 + b.hw, b.y); ctx.lineTo(bx2 - b.hw, b.y);
       ctx.closePath(); ctx.fill();
 
       // the centre line: one band in four, so it dashes rather than strobes
-      if ((Math.floor(a.p / T.seg) & 3) === 0) {
+      if (fi === FADE_N && (Math.floor(a.p / T.seg) & 3) === 0) {
         ctx.fillStyle = "rgba(220,240,255,.34)";
         ctx.beginPath();
         ctx.moveTo(ax - 5 * a.k, a.y);  ctx.lineTo(ax + 5 * a.k, a.y);
@@ -1894,9 +2086,10 @@
         b = rows[i];                                     // ...and the near one
         if (a.y > view.h) continue;                      // wholly under the frame
         if (b.y < horizonY) continue;                    // wholly over a crest
+        if (a.y >= b.y) continue;                        // folded: behind one
 
         // the shoulder: full-width stripes, so the plain scrolls with the road
-        if (a.on) {
+        if (a.on && fadeI(a.p - b.p) === FADE_N) {
           ctx.fillStyle = "rgba(92,52,190,.20)";
           ctx.fillRect(-BLEED, a.y, view.w + BLEED * 2, b.y - a.y + 1);
         }
@@ -1908,7 +2101,7 @@
 
     function drawFog() {
       ctx.fillStyle = fogGrad;
-      ctx.fillRect(-BLEED, horizonY - 6, view.w + BLEED * 2, 216);
+      ctx.fillRect(-BLEED, horizonY, view.w + BLEED * 2, 170);
     }
 
     /* A soft glow under an item — a radial gradient, not stacked flat discs: a
@@ -2846,12 +3039,22 @@
     function render() {
       buildRows();
       drawSky();
+      /* EVERYTHING ON THE GROUND IS CLIPPED TO THE PAINTING'S FOOT. The road's
+         furthest row sits above skyBase by design, so the tarmac, the grid and
+         a gate rising out of the distance all run INTO the city and are cut
+         there — which is what makes the two one picture. The craft and the
+         rails are the player's own layer and stay outside it. */
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-BLEED, skyBase, view.w + BLEED * 2, view.h - skyBase + BLEED);
+      ctx.clip();
       drawPlain();
       drawRoad();
       drawFog();
       drawItems();
       drawShards();
       drawStreaks();
+      ctx.restore();
       drawCraft();
       drawShieldRail();
       drawBoardRail();

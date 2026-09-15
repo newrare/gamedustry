@@ -646,8 +646,8 @@
       if (phase === "spin") {
         var ko = f.type.score * CONFIG.koScore;
         score += ko; HUD.setScore(score);
-        Fx.text(clamp(f.x, Layout.left + 90, Layout.right - 90 - GAUGE_BAND),
-          f.y - f.type.r, "KO +" + ko, { color: col, size: 40, tier: 1 });
+        Pop.text(clamp(f.x, Layout.left + 90, Layout.right - 90 - GAUGE_BAND),
+          f.y - f.type.r, "KO +" + ko, { color: col, size: 22, life: 0.6, tier: 1 });
       }
     }
 
@@ -1197,7 +1197,7 @@
       if (spin <= 0) { fall(); return; }
       if (!wornSaid && cap <= 0.62) {
         wornSaid = true;
-        Overlay.toast("BEARINGS WEARING OUT", { color: "#ffd43b", dur: 1600 });
+        Pop.show("alert", { word: "BEARINGS WEARING OUT", hold: 1600 });
       }
 
       // Spinning-out alarm, armed once per dive into the red. The edge glow is

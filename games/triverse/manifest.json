@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,

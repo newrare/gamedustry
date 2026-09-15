@@ -126,15 +126,20 @@ Fx.shake(8, .22); Fx.flash("#ffffff", .3); Fx.freeze(.05);
 Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
 Pop.show("combo", { word:"COMBO x8", sub:"+160" });              // milestone
 Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });             // hero beat
-Overlay.toast("NICE CHAIN!"); Overlay.vignette("#ffd43b", 1, 520);
+Pop.show("alert", { word:"THE LAVA PULLS", hold:1400 });          // a status line
+Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone
 ```
 
 `Pop` is the comic callout layer (see [ENGINE.md](ENGINE.md) and the live
-catalogue in [`lab/overlay-pop.html`](../lab/overlay-pop.html)). Use it for
-anything that celebrates a player action — it sells harder than `Overlay.banner`
-or `Fx.text`. Retint a style from the SKIN block, never inline.
+catalogue in [`lab/overlay-pop.html`](../lab/overlay-pop.html)), and it carries
+**every word the game writes on the round** — the beats that celebrate a player
+action, and the status lines too, which take the `alert` style. No game calls
+`Overlay.toast/banner/reward` any more, and a new one should not start. The
+other half is `Pop.text`, the canvas one, for a number at a world point; the
+thirteen give it the same look (`size: 22, life: 0.6, tier: 1`) and vary only
+its colour. Retint a style from the SKIN block, never inline.
 
 ### 5. Update the intro markup
 

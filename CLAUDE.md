@@ -110,8 +110,10 @@ development pages and answer only to the short rules in their own sections.
      the screen writes (see [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what
      picks the face — 3 → happy, 2 → neutral, 1 or 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
-   `Fx.burst/ring/text/shake/flash/freeze`, `Pop.show` for the score and combo
-   callouts, `Overlay.toast/vignette`, `Sound.clip`.
+   `Fx.burst/ring/shake/flash/freeze`, `Pop.show` for **every word the game
+   writes** — a status line included, which is what the `alert` style is for —
+   `Pop.text` for a value floating in the world, `Overlay.vignette` for the
+   glow, `Sound.clip`.
 1. Give every event a sound **picked from `assets/audio/sfx/`**, trimmed and embedded
    in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Never invent a synth
    voice for a game: `Sound.beep/arp` is only the fallback for an event with no
@@ -506,11 +508,77 @@ the one lab page with a server of its own (`make store`,
 `tools/lab/serve-store.mjs`), because it lists what a game owns and writes the
 image it composed into `assets/image/<store>/<lang>/`, neither of which a
 `file://` page
-can do; `tools/lab/shoot-store.mjs` shoots the same page for the batch — and
-`level-map.html` is the 30-level map that would sit between the web menu and
-the round — a forking road walked on an invisible 6-column grid (see
-[docs/LEVELS.md](docs/LEVELS.md)). They never ship, and they are the one place
-in the repo allowed to load a file out of `assets/` by relative path.
+can do; `tools/lab/shoot-store.mjs` shoots the same page for the batch,
+`game-events.html` is **the bench for what a game says and plays**, and the
+list has the two sides that question has: **VIEW** is every `Pop.show`,
+`Pop.text` and `Overlay.toast/banner/reward` of the `game.js` in source order,
+grouped into the beat they fire together on; **SOUND** is the background bed with its
+`CONFIG.music`, then **one card per clip** — the file of `assets/audio/sfx/` it
+is cut from and how long the cut is at the top, and under it every line of the
+game that plays it with the volume and pitch that line asks for. The card is the
+clip and not the line because eighteen cues in a game are seven clips: one
+decision, offered once. The whole folder opens from the file button and
+**hovering a row plays it**, trimmed to the cut length — a clip is chosen by
+ear, 127 names say nothing, and picking them one at a time to hear them is not
+choosing. That list is not a `<select>`, for the same reason: a native popup is
+drawn by the OS and fires nothing over its rows. A clip nothing plays has no beat and therefore
+no row; the *never played* pill in the header names it, which is the one thing
+a separate list of the pack was for. `tools/lab/scan-events.mjs` reads them back, and each row is fired
+**inside that game's own web build** through `window.__WEB__`, so a callout is
+reviewed with its real style, its real SKIN and its real sample under it. The
+stage is the build with its chrome hidden — the painted backdrop and the
+overlay layer, no menu, no round, no world.
+
+Every row is editable — the pop's **style** from the motor's twelve, the word,
+the anchor, the **file a clip is cut from** and how long the cut is, the volume,
+the pitch — and **APPLY
+writes the choice back into `games/<slug>/game.js`**: `tools/lab/apply-events.mjs`
+re-reads the source and splices the one argument, so a multi-line call keeps its
+shape; a changed file is re-cut with ffmpeg (mono 32 kHz / 64 kbps, a 70 ms
+fade) into `ASSETS.sounds`, its provenance comment moves with it, and the game's
+patch version moves in the same change. **An argument the game builds at runtime
+is refused by name, never overwritten**: a word written as `"+" plus the gain` is
+previewed with a stand-in, and pasting a stand-in back would break the game, so
+the row marks it before the click and the report names it after. Changing a
+clip's FILE reaches every beat that plays that key, which is why the swap shows
+on all of them, and why they are on the card rather than on each line. A volume,
+a pitch and a cut length are **sliders cut into magnetic segments** of 0.05, so
+the round values are the easy ones to reach. The snap is applied on the MOVE and
+never on the draw: 43 of the catalogue's 340 volumes and pitches sit off a 0.05
+grid (`0.32`, `1.45`), and a slider whose `step` was 0.05 would rewrite them the
+moment the row was drawn — a change nobody asked for, in a tool whose job is to
+write changes back. Apply is the one way a change leaves the page; what a line
+hands back on a click is its own `file:line`.
+
+**Every element carries two icons.** *Revert* puts it back where the source has
+it. *Trash* deletes nothing by itself — it MARKS, like every other change here,
+so a removal is reviewed next to the rest of the plan, counted in the Apply
+badge and taken back with the same revert as a typo. On a callout or a cue line
+it removes that statement; on a clip's card it removes the clip from
+`ASSETS.sounds` **and every line that plays it**, because a game calling a clip
+it no longer ships gets silence rather than an error. The statement goes, not
+the call: `apply-events.mjs` takes the whole line, and the `if (…)` guard with
+it when the guard was only ever there for that call — 259 of the catalogue's 277
+calls qualify. Anything else (a line shared with code, a dangling `else`, a
+guard that closes a brace) is refused by name, and a `//` comment sitting above
+a removed line is left alone and reported, because guessing whether it described
+that beat or the block around it is worse than saying so.
+
+**The juice is scanned but not listed.** `Fx.burst/ring/shake/flash/freeze` and
+`HUD.punch` are drawn by the frame pipeline, which only turns inside a round, so
+a button for them would do nothing; and `Overlay.vignette` is a coloured glow
+over the frame rather than a notification — it carries no word, so there is
+nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
+because it is what holds a beat together.
+
+The events bench is the second lab page with a server of its own (`make events`,
+`tools/lab/serve-events.mjs`), for the same two reasons as the store composer
+plus one more: Apply writes.
+
+Last, `level-map.html` is the 30-level map that would sit between the web menu
+and the round — a forking road walked on an invisible 6-column grid (see
+[docs/LEVELS.md](docs/LEVELS.md)). None of these pages ship, and they are the one
+place in the repo allowed to load a file out of `assets/` by relative path.
 
 Start a new one from **`lab/_template.html`**: a single page, inline CSS and JS,
 a control panel on one side and the thing being tried on the other. Same
@@ -562,19 +630,39 @@ Frame & input (section 3):
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
   the shared `assets/motor/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
   white, so never `drawImage` the raw SVG.
-- `Fx.burst/ring/text/shake/flash/freeze` — the canvas juice layer; the frame
-  pipeline updates and draws it for you.
+- `Fx.burst/ring/shake/flash/freeze` — the canvas juice layer; the frame
+  pipeline updates and draws it for you. It holds no text: every word a game
+  writes is `Pop`.
 - `Confetti.burst(n)`.
 
 Shell (section 5):
 
 - `HUD.setScore/setScoreNow/punch/setLeft/setRight` — the top band.
 - `Pop.show(style, {word, sub, at, rot, cls, hold})` — the comic / manga callout
-  layer. **Use it for score gains, combos and every beat that celebrates a
-  player action**, in preference to `Overlay.banner/toast` and `Fx.text`.
-  Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`.
-- `Overlay.toast/banner/reward/vignette/clear` — screen-space notifications,
-  combo callouts, rewards, dramatic glow.
+  layer, and **the only place a game writes a word on the round**: score gains,
+  combos, every beat that celebrates a player action, and the status lines too —
+  `alert` exists for exactly that, sitting where a toast used to and styled like
+  the rest of the callouts instead of a leftover pill. **No game calls
+  `Overlay.toast/banner/reward` any more**, and a new one should not start:
+  thirteen games speaking in one voice is the point, and a pill in its own layer
+  reads as another product. A status line that must not fight a celebration
+  landing on the same frame is answered by the ANCHOR, not by a second system —
+  `alert` sits at `hudUnder`, callouts at `bottom` or in the world.
+  Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`; what a
+  given game already fires, in that game's own build: `make events`.
+- `Pop.text(x, y, str, {color, size, tier:0..3, life, vy})` — **the same
+  system's other half**: a number floating up from a point in the world, drawn
+  on the canvas instead of in the DOM. Use it for the VALUE a hit pays (`+40`
+  over the brick) and `Pop.show` for the MOMENT it crosses (the milestone). It
+  was `Fx.text` until the two were merged — a game writes its words in one
+  place, and `Fx` is pure juice. Uncapped and cheap; only draws while a round is
+  running. **The thirteen share one look for it** — `size: 22, life: 0.6, tier: 1`, taken from blight's JOKER — and only the `color` is the game's,
+  because the colour is data (the brick that was hit, rot against clean) and the
+  rest is style.
+- `Overlay.vignette/clear` — the dramatic full-frame glow, and the way to wipe
+  the layer. `Overlay.toast/banner/reward` are still in the motor and no game
+  calls them: their words moved to `Pop.show` above, which is where a word
+  belongs.
 - `Decor.dress(node, {count, spots, size, opacity, front})` / `Decor.clear(node)`
   — one to three of the game's own painted objects around a screen, out of
   `assets/image/embed/<slug>-decor-NN.webp`. The motor dresses the end screen and the

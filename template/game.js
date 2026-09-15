@@ -137,7 +137,7 @@
       if (dx * dx + dy * dy > dot.r * dot.r) {           // miss: break the chain
         combo = 0;
         Fx.shake(4, 0.15);
-        Fx.text(p.x, p.y, "MISS", { color: "#ff6b6b", size: 34 });
+        Pop.text(p.x, p.y, "MISS", { color: "#ff6b6b", size: 34 });
         return;
       }
       combo++; hits++;
