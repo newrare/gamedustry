@@ -31,11 +31,17 @@
 
   function startGame() {
     Sound.unlock();                       // must run inside a user gesture (iOS)
-    Music.start();                        // no-op without ASSETS.sounds.music
-    Music.unduck();                       // back to full bed after an end screen
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it
+    /* The bed the ROUND plays, armed before the game's own reset so that a
+       game picking one stretch of its track per biome or per level — from
+       reset(), with Music.play(section) — simply wins, and so that the menus'
+       own bed (web target) can never leak into a round. Nothing is audible
+       until start() below, which is what makes the armed section play. */
+    Music.arm((CONFIG.music || {}).round || null);
     Game.reset();
+    Music.start();                        // no-op without ASSETS.sounds.music
+    Music.unduck();                       // back to full bed after an end screen
     Round.reset();
     setState("playing");
     Ad.track("game_start");

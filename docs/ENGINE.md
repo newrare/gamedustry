@@ -641,6 +641,8 @@ Sound.arp([freqs], stepMs, dur, type, vol) // rising celebration run
 Sound.cue(name, vol, rate, freq, dur, type) // clip if embedded, else a beep
 Sound.setMuted(bool) / isMuted()           // the web target's OPTIONS switch
 Music.start() / stop(fade)                 // background bed (see below)
+Music.play({from,length,rate,gain})        // loop one section of the track
+Music.arm(section)                         // ...from the next start(), silently
 Music.duck(factor, secs) / unduck(secs)    // dip under a foreground moment
 Music.setMuted(bool) / isMuted()           // stops a bed already playing
 Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
@@ -866,12 +868,63 @@ CONFIG.music = { volume: 0.10, fade: 2.0,     // …plus the grid
 Nothing else to wire: `startGame()` calls `Music.start()`, which is a no-op
 when the game ships no `music` clip.
 
-Two things the module takes care of:
+**One track, several beds.** What loops is a **section** of the track, and by
+default that section is the whole file at speed. Name another one and the same
+file becomes a different bed:
+
+```js
+Music.play({ from: 76, length: 36 });                       // a stretch of it
+Music.play({ from: 0, length: 40, rate: 0.85, gain: 0.5 }); // quiet and slower
+```
+
+| field    | what it is                                                     |
+| -------- | -------------------------------------------------------------- |
+| `from`   | seconds into the file the section starts (0)                   |
+| `length` | how many seconds of it loop (to the end of the file)           |
+| `rate`   | playback speed, which pitches it with it (1)                   |
+| `gain`   | a multiplier on `CONFIG.music.volume` (1)                      |
+| `fade`   | this section's own crossfade, in seconds (`CONFIG.music.fade`) |
+
+A window past the end of the file is clamped to what is there, so `from` alone
+is enough. The section is what the crossfade loops — reaching its end IS the
+seam, and it fades out and back in like any other pass — and **switching
+section crossfades** rather than cutting, so a biome change is not a restart.
+Asking for the section already playing does nothing at all, so a game may call
+`Music.play` on every `reset()`.
+
+Three ways in, and the difference matters once per round:
+
+| call              | what it does                                                   |
+| ----------------- | -------------------------------------------------------------- |
+| `Music.arm(sec)`  | the section from now on, nothing audible yet                   |
+| `Music.start()`   | make what is armed play — the motor's own call, once per round |
+| `Music.play(sec)` | both: switch the running bed to this section                   |
+
+`startGame()` arms `CONFIG.music.round` **before** `Game.reset()` and calls
+`start()` after it, so a game that picks its own stretch in `reset()` simply
+wins and nothing was scheduled in between for the switch to fade out.
+`CONFIG.music.round` is there for a game whose round always plays the same
+window without code; `CONFIG.music.menu` is the **web shell's** — the section it
+plays over the menu, the level map, the panels and the pause card, which is
+where a quiet, slower window of the game's own track belongs. A game that
+declares no `menu` keeps silent menus, which is the twelve others.
+
+`games/arcider` is the reference: a three-minute track, one 28–36 s window per
+biome named next to that biome's palette, and the track's own opening 40 s at
+`rate: 0.85, gain: 0.5` under every menu. A playable has neither biomes nor
+menus, so it embeds a short cut of that same track and plays the whole of it.
+
+**[MUSIC.md](MUSIC.md) is the procedure** — how to find a track's seams, how to
+cut the two files, what to write where, and which of the thirteen this can be
+replicated on. Read it before cutting a game's bed into sections.
+
+Two more things the module takes care of:
 
 - **Volume.** The bed hangs off its own master gain at `CONFIG.music.volume`
   (default `0.12`). Keep it around `0.10` — it must never fight the sfx or the
-  callouts. `endRound()` ducks it to 55 % so the end-screen cues cut through,
-  and the next `startGame()` lifts it back.
+  callouts. `endRound()` ducks it to 30 % so the end-screen
+  reveal is read in silence, and the next `startGame()` lifts it back (as does
+  the web shell's MENU).
 - **A pleasant loop.** The track is *not* required to be a seamless loop. The
   same decoded buffer is re-scheduled every `duration - fade` seconds and each
   pass fades in and out over `fade`, so the tail of one pass crossfades into
@@ -940,6 +993,10 @@ Two details make it usable in an ad:
   is folded to the nearest beat and walked out at half a beat per second, so
   locking on (and coming back from a backgrounded tab) stays invisible and
   nothing in flight jumps.
+- **It only rides a bed playing the whole file at speed.** A section with an
+  offset or a rate moves every beat of the track, so `Music.beatOrigin()` is 0
+  there and the clock runs off `dt` — the very path a muted creative takes,
+  which is why a game on the beat and a bed per biome do not mix.
 
 Measuring a track: run a beat tracker, or find the first kick's attack on the
 waveform (`beatOffset`) and count the bars the loop should keep. Check that

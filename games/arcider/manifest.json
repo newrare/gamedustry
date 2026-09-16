@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -119,6 +119,7 @@
       }
     },
     "font": "orbitron",
+    "music": "arcider.mp3",
     "levels": {
       "objective": {
         "from": 200,

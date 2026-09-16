@@ -2168,6 +2168,24 @@
        pass crossfades into the head of the next. Any track loops pleasantly,
        and the very first pass fades in instead of slamming on.
 
+     ONE FILE, SEVERAL BEDS. What loops is a SECTION of the track, and by
+     default that section is the whole file at speed. `Music.play(section)`
+     names another one:
+
+        Music.play({ from: 76, length: 36 })        // a stretch of the track
+        Music.play({ from: 0, length: 40, rate: 0.85, gain: 0.5 })
+
+     `from` and `length` are seconds inside the file, `rate` is the playback
+     speed (which pitches it with it) and `gain` a multiplier on
+     CONFIG.music.volume. A three-minute track is therefore five different
+     beds — one per biome, entering the music at its own offset — plus a
+     quiet, slower window for the menus, and none of them costs a byte more
+     than the file already costs. The section is what the crossfade loops, so
+     "reaching the end" is the seam and it fades out and back in like any
+     other pass. Switching section CROSSFADES: the passes in flight fade out
+     over `fade` while the new one fades in, so a biome change is not a
+     restart and never clicks.
+
      Scheduling is done with a look-ahead timer against the WebAudio clock,
      which keeps the seam sample-accurate even when the rAF loop is paused.  */
   var Music = (function () {
@@ -2179,78 +2197,162 @@
     var playing = false, nextAt = 0, waited = 0, level = 0, fade = 1.6;
     var muted = false;            // the web target's OPTIONS switch, persisted
     var origin = 0;               // audio-clock time of the track's beat 0
+    var want = null;              // the section asked for, as the caller wrote it
+    var cur = null;               // that section resolved against the buffer
 
     function cfg() {
       var m = CONFIG.music || {};
       level = m.volume == null ? 0.12 : clamp(m.volume, 0, 1);
       fade  = m.fade   == null ? 1.6  : m.fade;
     }
-    /* How far one pass advances before the next one is queued. A beat-locked
-       track (CONFIG.music.bpm + loopBeats, see Beat) advances by a whole number
-       of beats, so the pulse crosses the seam without shifting and the musical
-       clock stays valid for the whole session; whatever is left of the buffer
-       past that point is what the crossfade eats. Any other track keeps the
-       plain "duration minus fade" wrap.                                      */
-    function advance(dur) {
+    /* A section against the DECODED buffer, which is the only place its length
+       is known: `from` / `len` are seconds inside the file, so one pass lasts
+       len / rate of wall-clock time. `plain` says the section is the whole
+       file at speed — the one case where the beat grid (see Beat) still means
+       anything, since an offset or a rate moves every beat of it. */
+    function resolve(o, dur) {
+      var s = o || {};
+      var from = clamp(s.from > 0 ? s.from : 0, 0, Math.max(dur - 2, 0));
+      var len = s.length > 0 ? Math.min(s.length, dur - from) : dur - from;
+      var rate = s.rate > 0 ? clamp(s.rate, 0.25, 4) : 1;
+      return {
+        from: from, len: Math.max(len, 1), rate: rate,
+        gain: s.gain == null ? 1 : clamp(s.gain, 0, 4),
+        fade: s.fade > 0 ? s.fade : fade,
+        plain: from === 0 && rate === 1 && len >= dur - 0.05
+      };
+    }
+    function same(a, b) {
+      return !!a && !!b && a.from === b.from && a.len === b.len &&
+             a.rate === b.rate && a.gain === b.gain;
+    }
+    /* How far one pass advances before the next one is queued, in seconds of
+       the FILE. A beat-locked track (CONFIG.music.bpm + loopBeats, see Beat)
+       advances by a whole number of beats, so the pulse crosses the seam
+       without shifting and the musical clock stays valid for the whole
+       session; whatever is left of the section past that point is what the
+       crossfade eats. Any other track keeps the plain "length minus fade"
+       wrap.                                                                 */
+    function advance(s) {
       var m = CONFIG.music || {};
-      if (m.bpm > 0 && m.loopBeats > 0) {
+      if (s.plain && m.bpm > 0 && m.loopBeats > 0) {
         var body = m.loopBeats * 60 / m.bpm;
-        if (body > 0.5 && body <= dur) return body;
+        if (body > 0.5 && body <= s.len) return body;
       }
-      return dur - Math.min(fade, dur * 0.45);
+      return s.len - Math.min(s.fade, s.len * 0.45);
     }
     // Queue passes until the schedule reaches LOOKAHEAD past "now".
     function schedule(a, buf) {
-      var dur = buf.duration, adv = advance(dur);
-      var f = clamp(dur - adv, 0.05, dur * 0.45);
+      var s = cur, adv = advance(s);
+      var f = clamp(s.len - adv, 0.05, s.len * 0.45);
+      // The same three lengths in wall-clock seconds: a rate stretches a pass.
+      var pass = s.len / s.rate, wf = f / s.rate, wadv = adv / s.rate;
       while (nextAt < a.currentTime + LOOKAHEAD) {
         var at = Math.max(nextAt, a.currentTime + 0.05);
         var src = a.createBufferSource(), g = a.createGain();
         src.buffer = buf;
+        if (s.rate !== 1) src.playbackRate.value = s.rate;
+        /* The section's own level lives on the PASS, not on the master: the
+           master is what duck() and pause() own, and putting the level here is
+           what makes a switch between two sections of different volume one
+           crossfade instead of a ramp across both of them. */
         g.gain.setValueAtTime(0.0001, at);
-        g.gain.linearRampToValueAtTime(1, at + f);
-        g.gain.setValueAtTime(1, at + dur - f);
-        g.gain.linearRampToValueAtTime(0.0001, at + dur);
+        g.gain.linearRampToValueAtTime(s.gain, at + wf);
+        g.gain.setValueAtTime(s.gain, at + pass - wf);
+        g.gain.linearRampToValueAtTime(0.0001, at + pass);
         src.connect(g); g.connect(master);
         src.onended = function () { try { src.disconnect(); g.disconnect(); } catch (e) {} };
-        src.start(at);
-        src.stop(at + dur + 0.1);
-        voices.push(src);
-        if (voices.length > 4) voices.shift();
+        src.start(at, s.from, s.len);
+        src.stop(at + pass + 0.1);
+        voices.push({ src: src, gain: g });
+        if (voices.length > 6) voices.shift();
         // Beat 0 of the first pass anchors the grid: every later pass lands a
         // whole number of beats after it, so the anchor never moves.
-        if (!origin) origin = at + ((CONFIG.music || {}).beatOffset || 0);
-        nextAt = at + adv;                      // next pass overlaps the tail
+        if (!origin && s.plain) origin = at + ((CONFIG.music || {}).beatOffset || 0);
+        nextAt = at + wadv;                     // next pass overlaps the tail
       }
     }
-    // Last resort: the browser's own loop, seam included. Only used when
-    // decodeAudioData never came back (some WebViews refuse long data URIs).
+    /* Top the schedule up, resolving the section asked for now that the buffer
+       is there to resolve it against. Called on the look-ahead timer, and
+       straight away whenever something changes the section. */
+    function pump() {
+      var a = Sound.ctx(); if (!a || !playing) return;
+      var buf = Sound.buffer(KEY);
+      if (!buf) { if (++waited > TAG_AFTER) startTag(ASSETS.sounds[KEY]); return; }
+      if (!cur) cur = resolve(want, buf.duration);
+      if (!nextAt) nextAt = a.currentTime + 0.08;
+      schedule(a, buf);
+    }
+    /* Last resort: the browser's own loop, seam included. Only used when
+       decodeAudioData never came back (some WebViews refuse long data URIs).
+       A section is honoured as far as an <audio> element can — the entry
+       point, the rate and the level — but the loop is the whole file: there is
+       no way to wrap an element on a window of it. */
     function startTag(src) {
       if (tag) return;
+      var s = want || {};
       try {
         tag = new Audio(src);
-        tag.loop = true; tag.volume = level;
+        tag.loop = true;
+        tag.volume = clamp(level * (s.gain == null ? 1 : s.gain), 0, 1);
+        if (s.rate > 0) tag.playbackRate = s.rate;
+        if (s.from > 0) { try { tag.currentTime = s.from; } catch (e) {} }
         tag.play();
       } catch (e) {}
     }
-    function start() {
+    function begin() {
       var src = ASSETS.sounds[KEY];
       if (!src || playing || muted) return;
       var a = Sound.unlock();                   // context + kicks the decode off
       if (!a) return;
       cfg();
-      playing = true; nextAt = 0; waited = 0; origin = 0;
+      playing = true; nextAt = 0; waited = 0; origin = 0; cur = null;
       master = a.createGain();
       master.gain.value = level;
       master.connect(a.destination);
-      function pump() {
-        var buf = Sound.buffer(KEY);
-        if (!buf) { if (++waited > TAG_AFTER) startTag(src); return; }
-        if (!nextAt) nextAt = a.currentTime + 0.08;
-        schedule(a, buf);
-      }
       pump();                     // already decoded (a replay): start at once
       timer = setInterval(pump, TICK_MS);
+    }
+    /* Three ways in, one behaviour:
+
+         arm(section)     the bed's section from now on, nothing audible yet
+         start()          make whatever is armed play — the motor's own call,
+                          once per round, and it is a no-op mid-bed
+         play(section)    both: switch the running bed to this section
+
+       `arm` is what keeps the order of a round's wiring honest. The bootstrap
+       arms the round's default (CONFIG.music.round) BEFORE Game.reset(), so a
+       game that picks its own stretch there simply wins, and nothing was
+       scheduled in between for the switch to fade out. Asking for the section
+       already in force does nothing at all, so a game may call play() on every
+       reset() without ever restarting its own music. */
+    function arm(o) { want = o || null; }
+    function apply() {
+      if (!playing) { begin(); return; }
+      var a = Sound.ctx(), buf = Sound.buffer(KEY);
+      if (!a || !buf) { cur = null; nextAt = 0; return; }   // pump will resolve it
+      var next = resolve(want, buf.duration);
+      if (same(cur, next)) return;
+      cur = next;
+      fadeOut(a, next.fade);
+      nextAt = 0;                               // the new section starts now
+      pump();
+    }
+    function start(o) { if (o) arm(o); apply(); }
+    function play(o) { arm(o); apply(); }
+    // Let go of every pass in flight over `secs`, leaving the master alone.
+    function fadeOut(a, secs) {
+      var t = a.currentTime, dying = voices;
+      voices = [];
+      for (var i = 0; i < dying.length; i++) {
+        var g = dying[i].gain, src = dying[i].src;
+        try {
+          g.gain.cancelScheduledValues(t);
+          g.gain.setValueAtTime(g.gain.value, t);
+          g.gain.linearRampToValueAtTime(0.0001, t + secs);
+          src.stop(t + secs + 0.05);
+        } catch (e) {}
+      }
     }
     function ramp(to, secs) {
       var a = Sound.ctx(); if (!a || !master) return;
@@ -2258,7 +2360,7 @@
       master.gain.cancelScheduledValues(t);
       master.gain.setValueAtTime(master.gain.value, t);
       master.gain.linearRampToValueAtTime(Math.max(to, 0.0001), t + secs);
-      if (tag) tag.volume = clamp(to, 0, 1);
+      if (tag) tag.volume = clamp(to * (cur ? cur.gain : 1), 0, 1);
     }
     /* Suspending the context freezes its clock, so every pass already queued
        stays exactly where it was and the loop resumes without a gap.        */
@@ -2276,8 +2378,7 @@
       var a = Sound.ctx(); if (!a) return;
       if (a.state === "suspended") a.resume();
       if (tag) { try { tag.play(); } catch (e) {} }
-      var buf = Sound.buffer(KEY);
-      if (buf && nextAt) schedule(a, buf);      // top the schedule back up
+      pump();                                   // top the schedule back up
       ramp(level, 0.6);
     }
     // Duck under a moment that needs the foreground (0..1 of the base level).
@@ -2286,17 +2387,18 @@
       if (!playing) return;
       var out = secs == null ? fade : secs;
       ramp(0, out);
-      clearInterval(timer); timer = null; playing = false; origin = 0;
+      clearInterval(timer); timer = null; playing = false; origin = 0; cur = null;
       var dying = voices, dyingTag = tag;
       voices = []; tag = null;
       setTimeout(function () {
-        for (var i = 0; i < dying.length; i++) { try { dying[i].stop(); } catch (e) {} }
+        for (var i = 0; i < dying.length; i++) { try { dying[i].src.stop(); } catch (e) {} }
         if (dyingTag) { try { dyingTag.pause(); } catch (e) {} }
       }, out * 1000 + 100);
     }
     /* Unlike the sfx switch this one has work to do in both directions: a bed
        already scheduled has to be torn down, and one turned back on has to be
-       started again — the motor only calls start() when a round begins. */
+       started again — the motor only calls start() when a round begins. The
+       section asked for last is kept, so it comes back on the same bed. */
     function setMuted(v) {
       v = !!v;
       if (v === muted) return;
@@ -2305,11 +2407,13 @@
       else start();                       // no-op when the game ships no track
     }
     return {
-      start: start, stop: stop, pause: pause, resume: resume, duck: duck,
+      start: start, arm: arm, play: play, stop: stop, pause: pause, resume: resume, duck: duck,
       setMuted: setMuted, isMuted: function () { return muted; },
       unduck: function (secs) { ramp(level, secs == null ? 0.6 : secs); },
       isPlaying: function () { return playing; },
       // Audio-clock time of the track's beat 0 (0 until a pass is scheduled).
+      // Always 0 for a section that is not the whole file at speed: an offset
+      // or a rate moves every beat, so there is no grid left to ride.
       beatOrigin: function () { return origin; }
     };
   })();
@@ -4274,7 +4378,13 @@
     if (State === "end") return;
     result = result || {};
     Loop.stop(); Round.stop();
-    Music.duck(0.55, 0.8);        // let the end-screen cues sit on top
+    /* The bed steps WELL back for the end screen — 30 % of its level, not the
+       55 % it used to be. What happens here is a reveal read in silence: the
+       title, then the score counting up, then a star and a stat row at a time,
+       each with a cue of its own, and the music was still loud enough to sit
+       on top of all of it. `startGame` and the web shell's MENU both unduck,
+       so nothing has to put it back. */
+    Music.duck(0.3, 0.8);
     result.score = result.score == null ? Math.round(HUD.score()) : result.score;
     for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
     var score = result.score;
@@ -6777,11 +6887,17 @@
 
   function startGame() {
     Sound.unlock();                       // must run inside a user gesture (iOS)
-    Music.start();                        // no-op without ASSETS.sounds.music
-    Music.unduck();                       // back to full bed after an end screen
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it
+    /* The bed the ROUND plays, armed before the game's own reset so that a
+       game picking one stretch of its track per biome or per level — from
+       reset(), with Music.play(section) — simply wins, and so that the menus'
+       own bed (web target) can never leak into a round. Nothing is audible
+       until start() below, which is what makes the armed section play. */
+    Music.arm((CONFIG.music || {}).round || null);
     Game.reset();
+    Music.start();                        // no-op without ASSETS.sounds.music
+    Music.unduck();                       // back to full bed after an end screen
     Round.reset();
     setState("playing");
     Ad.track("game_start");

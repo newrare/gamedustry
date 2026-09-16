@@ -239,6 +239,12 @@ its `targets` and nothing else:
   `CONFIG.art.backgroundDesk` across the whole page, so a desktop shows one
   picture with a phone standing in the middle of it. Web target only: a playable
   runs in a fixed portrait iframe and has no band to fill.
+- **the game's own music, in full** — `web.music` names a track of
+  `assets/audio/music/embed/` and the web build ships the whole of it as a
+  cached file, in place of the short cut `ASSETS.sounds.music` embeds for a
+  playable. Same track, different amount of it: a playable downloads its bytes
+  before it can show anything, and has neither the biomes nor the menus that a
+  three-minute bed is cut into sections for.
 - **the game's own type** — `web.font` in the manifest names one family of
   `assets/motor/font/` (six, all OFL), which the builder embeds in front of the SKIN
   with two tokens: `--web-font` and `--web-fw`, the weight to ask for (a
@@ -271,6 +277,11 @@ its `targets` and nothing else:
   with `?mode=` for a bench, but the map is what the player gets. An extra entry
   would start a *free* round, so the shell clears `CONFIG.level` and the base
   tuning before it does.
+- **a bed over all of it** — the same track the round plays, as its own quiet,
+  slower section of the file: `CONFIG.music.menu` in the game, `Music.play` in
+  the motor. It starts on the first gesture (nothing may play before one) and
+  crossfades into the round's bed on PLAY. A game that names no `menu` section
+  keeps silent menus.
 - **the three panels open in that same band**: the title and the scene stay, the
   menu is swapped out, and a back arrow returns (ESCAPE too).
 - **OPTIONS is real** — music, sound effects and score callouts are switches the
@@ -618,6 +629,13 @@ Frame & input (section 3):
   embeds `ASSETS.sounds.music` and sets `CONFIG.music = { volume, fade }`; the
   shell starts it, ducks it on the end screen and pauses it off-screen, and the
   loop seam is crossfaded so the track need not be seamless.
+  `Music.play({ from, length, rate, gain })` loops **one section** of that
+  track instead of all of it, and switching section crossfades — which is how
+  one long file becomes a bed per biome plus a quiet, slower one for the menus
+  (`CONFIG.music.menu`), at no cost in bytes. `games/arcider` is the reference
+  and [docs/MUSIC.md](docs/MUSIC.md) is the procedure for replicating it — read
+  it before cutting a game's bed into sections. A long track ships whole on the
+  web only (`web.music`).
 - `Beat.beats/next/pulse/period/seconds` — the musical clock, for a game played
   on the beat. Add `bpm`, `beatOffset` and `loopBeats` to `CONFIG.music`, then
   schedule on the grid and interpolate toward it (never accumulate your own

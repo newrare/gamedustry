@@ -787,13 +787,18 @@
   /* A second tap on the node already selected starts it. The card's own button
      is still the only way in on a first touch — this is the shortcut for a
      player who knows where they are going, and it is counted here rather than
-     read from `dblclick`, which a touch WebView does not always send. */
-  var tapOn = null, tapAt = 0;
+     read from `dblclick`, which a touch WebView does not always send.
+     The SELECTION is the memory, not a stopwatch: the player reads the card
+     the first tap opened, and the tap that follows starts the round however
+     long that took. Every other way of moving the selection clears the arm
+     (`select` below), so the node a tap starts is always the one the card is
+     describing. */
+  var tapOn = null;
+  function select(v) { tapOn = null; picked = v; writeCard(); }
   function tapped(n) {
-    var now = Date.now(), again = tapOn === n && now - tapAt < 420;
-    tapOn = n; tapAt = now;
-    picked = n; writeCard();
-    if (again) { tapAt = 0; onPlay(); }
+    var again = tapOn === n && picked === n;
+    tapOn = n; picked = n; writeCard();
+    if (again) { tapOn = null; onPlay(); }
   }
   var built = false, shown = false;
 
@@ -966,7 +971,7 @@
         '<svg class="lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" ' +
         'height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
       w.addEventListener("click", (function (idx) {
-        return function () { picked = { road: idx }; writeCard(); };
+        return function () { select({ road: idx }); };
       })(i));
       canvasBox.appendChild(w);
     }
@@ -1131,7 +1136,7 @@
     var bs = cChips.querySelectorAll("button");
     for (var i = 0; i < bs.length; i++) {
       bs[i].addEventListener("click", (function (b) {
-        return function () { picked = +b.getAttribute("data-lv"); writeCard(); scrollTo(picked); };
+        return function () { select(+b.getAttribute("data-lv")); scrollTo(picked); };
       })(bs[i]));
     }
   }
@@ -1206,8 +1211,7 @@
       var rd = ROADS[picked.road];
       // A shut wall's button goes to the cheapest star, not through the wall.
       var chip = cChips.querySelector("button");
-      picked = roadShut(rd) && chip ? +chip.getAttribute("data-lv") : rd.entry;
-      writeCard();
+      select(roadShut(rd) && chip ? +chip.getAttribute("data-lv") : rd.entry);
       scrollTo(picked);
       return;
     }
@@ -1238,6 +1242,7 @@
     /* A board nobody has played yet opens ON level 0 — the map scrolled to its
        foot, the card offering the lesson. It is still one tap to level 1, and
        every later arrival lands on the level the player is actually at. */
+    tapOn = null;
     picked = perfect() ? BONUS
            : (!tutoSeen() && virgin()) ? TUTO
            : (frontier()[0] || LEVELS);
