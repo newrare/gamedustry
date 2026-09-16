@@ -144,6 +144,16 @@ var CARDS = { w: 560, h: 700, q: 0.84 };
    never carry a detail the player reads, so 360px is already generous. */
 var DECOR = { w: 360, h: 360, q: 0.78 };
 
+/* THE BEAD STYLES: `<slug>-ball-<colour>-NN.png`, adopted out of the six
+   recoloured sheets with `cut-objects.mjs --grid 5x4 --adopt … --as ball-red`.
+   These are the only cuts a game draws at a size it can state exactly, which
+   is why this is the smallest box of the set and not a guess: games/radiam's
+   biggest bead is the outer plate's, `0.125 * 330` design px of radius — 83 px
+   across — so 256 covers it at a 3x device ratio with nothing spare.
+   The size is also the budget. A game carries fifteen styles in six colours,
+   ninety files in one build, so every kilobyte here is paid ninety times. */
+var BALL = { w: 256, h: 256, q: 0.84 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -162,6 +172,12 @@ function profileFor(role) {
   if (PROFILE[role]) return PROFILE[role];
   if (role.indexOf("card-") === 0) return CARDS;
   if (role.indexOf("decor") === 0) return DECOR;
+  if (role.indexOf("ball-") === 0) return BALL;
+  /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
+     per biome and picks between them at runtime (games/arcider). They are the
+     same panorama as `sky` and must not fall to the generic 320px box, which
+     would squash a 3:1 picture into a portrait thumbnail. */
+  if (role.indexOf("sky") === 0) return PROFILE.sky;
   return GENERIC;
 }
 
@@ -208,7 +224,9 @@ function masters(all) {
       src: path.join(SRC_DIR, file),
       out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
       profile: profileFor(role),
-      known: !!PROFILE[role] || role.indexOf("card-") === 0 || role.indexOf("decor") === 0
+      known: !!PROFILE[role] || role.indexOf("card-") === 0 ||
+             role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
+             role.indexOf("ball-") === 0
     });
   });
   return out;

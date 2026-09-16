@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -31,7 +31,7 @@
       ]
     }
   },
-  "description": "Twenty pilots launch onto a bending neon highway and three of them finish. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. Four gates span the road ahead, green while you are inside the rank they ask for and red while you are not; clear one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
+  "description": "Twenty pilots launch onto a bending neon highway and three of them finish. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. A line across the tarmac marks each cut, green while you are inside the rank it asks for and red while you are not; cross one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
   "store": {
     "copy": {
       "en": {
@@ -130,6 +130,30 @@
         "fr": "Atteins <b>{n} m</b> avant la panne de cellules"
       },
       "tune": {
+        "play.pilots": [
+          8,
+          20
+        ],
+        "play.paceLow": [
+          0.62,
+          0.78
+        ],
+        "play.paceHigh": [
+          0.82,
+          0.94
+        ],
+        "play.halfBase": [
+          330,
+          235
+        ],
+        "play.halfShrink": [
+          18,
+          82
+        ],
+        "play.forkSep": [
+          372,
+          265
+        ],
         "play.speedMin": [
           400,
           560
@@ -142,13 +166,69 @@
           44,
           22
         ],
+        "play.diffFull": [
+          700,
+          380
+        ],
+        "play.slotFar": [
+          1300,
+          780
+        ],
+        "play.slotNear": [
+          1000,
+          520
+        ],
+        "play.blockMin": [
+          0.04,
+          0.16
+        ],
+        "play.blockMax": [
+          0.1,
+          0.3
+        ],
+        "play.bombChance": [
+          0.06,
+          0.26
+        ],
+        "play.rampChance": [
+          0.08,
+          0.3
+        ],
+        "play.rampSolid": [
+          0.2,
+          0.7
+        ],
+        "play.wallFrom": [
+          0.85,
+          0.3
+        ],
+        "play.gateWide": [
+          300,
+          205
+        ],
+        "play.gateTight": [
+          230,
+          145
+        ],
+        "play.forkFirst": [
+          1600,
+          2800
+        ],
         "play.forkEvery": [
-          3400,
-          1700
+          2100,
+          3400
+        ],
+        "play.forkCells": [
+          180,
+          300
         ],
         "play.forkBombs": [
-          1,
+          0,
           4
+        ],
+        "play.cellPower": [
+          16,
+          7
         ],
         "play.shieldStart": [
           100,

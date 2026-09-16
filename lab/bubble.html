@@ -288,7 +288,7 @@ body{
 
   /* ----------------------------------------------------------- 02 enamel */
   look("enamel", "Hard enamel", false, true,
-    "The same sphere with every soft edge deleted: a dark enamel wall, one flat body colour, one hard shadow crescent and a cut gloss cap. No halo, no gradient, no blur — and it is the cheapest sprite in the list. The safe answer if the goal is only to sharpen what ships — and the one games/radiam now ships, canvas sprite and intro demo alike.",
+    "The same sphere with every soft edge deleted: a dark enamel wall, one flat body colour, one hard shadow crescent and a cut gloss cap. No halo, no gradient, no blur — and it is the cheapest sprite in the list. The safe answer if the goal is only to sharpen what ships. games/radiam shipped it for one build and now keeps it as its FALLBACK: its beads are painted files (assets/image/embed/radiam-ball-*.webp, twenty designs in six colours), and this is what a build with no artwork draws instead.",
     function (x, cx, cy, r, hex) {
       x.fillStyle = mix(hex, -0.62); disc(x, cx, cy, r);            // wall
       x.fillStyle = hex; disc(x, cx, cy, r * 0.87);                 // body

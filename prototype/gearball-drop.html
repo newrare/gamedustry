@@ -1,0 +1,691 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>gearball-drop prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #07090f; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; touch-action: none; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// gearball-drop
+//
+// This is games/gearball's machine, opened up. There a ball is MAGNETISED to
+// the rim of a cog and carried along it, handed to the next cog where the two
+// mesh, so a run of balls reads as one string travelling through the works.
+// Same here - the difference is that the track is no longer one closed ring
+// but a NETWORK.
+//
+// The cogs sit on a square lattice of pitch R_BIG + R_SMALL, big and small
+// alternating by parity, so every orthogonal neighbour is exactly tangent and
+// every mesh counter-rotates: a real gear train, not cogs drawn near cogs. A
+// ball rides a rim round to that cog's leading EQUATOR - the point its chevron
+// marks - and there it is either handed to the cog standing in that direction
+// or let go, to drop until another rim magnetises it.
+//
+// One exit per cog is the whole rule, and it is what makes the machine
+// readable: a chevron says where a ball goes. Routes cross and re-cross, the
+// top half spreads the balls out and the bottom half funnels them back, and the
+// outer columns throw OUT past the socle, where a ball is lost. Dropping a cog
+// into an empty seat gives its neighbour somewhere to hand to - a ball that was
+// falling out of the works is carried one more span instead.
+//
+// Four spouts feed it, one series at a time, telegraphed a second ahead. SIX
+// cogs are missing and the player carries THREE: a fourth placement evicts the
+// first, so every route the player builds is a temporary one. White, gold and
+// blue balls pay; BLACK balls cost and break the combo.
+//
+// The question this page answers: is re-routing a live machine between two
+// series - three cogs, four spouts, one second of warning - fun?
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;            // design space, portrait
+
+var R_BIG = 46, R_SMALL = 28;     // the two cogs of the train
+var PITCH = R_BIG + R_SMALL;      // the lattice pitch IS the mesh distance
+var COLS = 8, ROWS = 9;
+var GRID_Y0 = 392;
+var RIM = 235;                    // px/s along the rim, shared by the whole train,
+                                  // so a string of balls keeps its spacing forever
+var BALL_R = 11;
+var GRAV = 1300;                  // only ever felt between two cogs
+var MAGNET = 18;                  // px of reach a rim grabs a falling ball with. It has
+                                  // to cover the release offset of the BIGGEST cog
+                                  // (r + BALL_R = 57) reaching the SMALLEST one below
+                                  // it (28 + 11), or a column skips every small cog.
+var RECATCH = 0.10;               // s a cog cannot re-grab the ball it just threw
+
+var SPOUT_N = 4, SPOUT_Y = 176;
+var SERIES_N = 5;                 // balls in one series
+var BALL_GAP = 0.18;              // seconds between two balls of a series
+var SERIES_GAP = 1.8;             // seconds between two series
+var TELEGRAPH = 1.15;             // seconds of warning before a series drops
+var BLACK_CHANCE = 0.30;          // odds a whole series is black
+var STRAY_BLACK = 0.18;           // odds a good series hides one black ball
+var BONUS_CHANCE = 0.16, MULT_CHANCE = 0.10;
+
+var RUN_MIN = 2, RUN_MAX = 3;     // cogs in one lateral run - the length of a hand-off
+var TURN_ROW = 4;                 // where a feed route stops sweeping out and comes back
+var DUMP_ROW = 5;                 // the row the two outside routes branch from
+
+var SLOTS = 6;                    // cogs missing from the network
+var HAND = 3;                     // cogs carried at once - the 4th evicts the 1st
+var PROBE_N = 4;                  // test balls per spout the generator fires
+var BUILD_TRIES = 16;             // layouts tried before the best one is kept
+var BUILD_TARGET = 0.80;          // share of test balls an intact machine must land
+                                  // before its carriage is what ranks it
+
+var BUCKET_X = 360, BUCKET_W = 190, BUCKET_Y = 1078, BUCKET_H = 96;
+
+var SCORE_POINT = 10, SCORE_BONUS = 60, SCORE_BLACK = -120;
+var COMBO_WINDOW = 2.4, COMBO_STEP = 0.25, COMBO_CAP = 12;
+var MULT_TIME = 8, MULT_CAP = 5;
+
+var BALL_LIFE = 26;
+
+var PI2 = Math.PI * 2;
+// A cog lets go at its EQUATOR on the leading side, not at its bottom: that is
+// the one point of the rim where the surface velocity is straight DOWN, so a
+// ball with no mesh to take drops into the column instead of being flung back
+// the way it came.
+function detachAngle(g) { return g.spin > 0 ? 0 : Math.PI; }
+
+// --- canvas ----------------------------------------------------------------
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+function fit() {
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  cv.style.width = (W * s) + 'px';
+  cv.style.height = (H * s) + 'px';
+  cv.width = Math.round(W * s * dpr);
+  cv.height = Math.round(H * s * dpr);
+  ctx.setTransform(s * dpr, 0, 0, s * dpr, 0, 0);
+}
+window.addEventListener('resize', fit);
+fit();
+
+// --- the lattice -----------------------------------------------------------
+// Parity picks the RADIUS, so every orthogonal pair sums to PITCH and meshes
+// exactly. It does not pick the spin: parity-driven spin gave every ball the
+// same staircase - right, down, right, down - and all 24 test balls walked off
+// the same edge. The spin belongs to the ROUTE that laid the cog down, so a
+// machine can be aimed. Two meshed cogs therefore sometimes turn the same way;
+// that is a drawing, not a gearbox.
+var GRID_X0 = Math.round((W - (COLS - 1) * PITCH) / 2);
+
+function cellX(c) { return GRID_X0 + c * PITCH; }
+function cellY(r) { return GRID_Y0 + r * PITCH; }
+function parity(r, c) { return (r + c) & 1; }
+function radiusAt(r, c) { return parity(r, c) ? R_SMALL : R_BIG; }
+
+// state: 0 nothing here, 1 a bolted cog, 2 an empty seat, 3 the player's cog.
+var cells = [], placed = [];
+function at(r, c) { return (r < 0 || r >= ROWS || c < 0 || c >= COLS) ? -1 : r * COLS + c; }
+function live(i) { return i >= 0 && (cells[i].state === 1 || cells[i].state === 3); }
+
+function blankGrid() {
+  cells = [];
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      cells.push({ r: r, c: c, x: cellX(c), y: cellY(r), rad: radiusAt(r, c),
+                   spin: 1, a: 0, state: 0, pop: 0, lit: 0 });
+    }
+  }
+}
+
+// The four meshes a cog can have. A mesh only exists where BOTH cogs are
+// there, which is what makes filling a seat change the routing at all.
+var NB = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+function meshesOf(i) {
+  var g = cells[i], out = [], k, j;
+  for (k = 0; k < 4; k++) {
+    j = at(g.r + NB[k][0], g.c + NB[k][1]);
+    if (live(j)) out.push(j);
+  }
+  return out;
+}
+function meshAngle(i, j) { return Math.atan2(cells[j].y - cells[i].y, cells[j].x - cells[i].x); }
+
+// --- the network -----------------------------------------------------------
+function spoutX(i) { return Math.round(W * (i + 1) / (SPOUT_N + 1)); }
+function colNear(x) {
+  var best = 0, bd = 1e9, c;
+  for (c = 0; c < COLS; c++) { var d = Math.abs(cellX(c) - x); if (d < bd) { bd = d; best = c; } }
+  return best;
+}
+
+// One route, walked as a STAIRCASE: a lateral RUN of two or three cogs all
+// turning the same way, which hand the ball along from one to the next, then a
+// drop of one row and the next run. The run is the point - a route made of
+// single cogs is just a column, and a ball down a column never rides anything;
+// it falls, is caught, is let go, and falls again. Two routes sharing a cell is
+// not a collision, it is a junction.
+function route(r, c, target, stopRow) {
+  var guard = 0;
+  while (r < stopRow && guard++ < 60) {
+    // A route that has arrived at its column must not stop moving: laying one
+    // cog a row from there builds a bare column, and a ball down a bare column
+    // rides nothing - it falls, is caught, is let go, falls again. Off-target it
+    // walks back next row, so the tail of a route is a zigzag of real runs.
+    var dir = c < target ? 1 : (c > target ? -1 : (Math.random() < 0.5 ? 1 : -1));
+    var len = RUN_MIN + ((Math.random() * (RUN_MAX - RUN_MIN + 1)) | 0);
+    for (var k = 0; k < len; k++) {
+      var i = at(r, c);
+      if (i < 0) break;
+      cells[i].state = 1;
+      // every cog of a run throws the same way, and the LAST one throws into
+      // nothing - which is exactly how the ball is handed down a row.
+      cells[i].spin = dir || (cellX(c) <= BUCKET_X ? 1 : -1);
+      if (k === len - 1 || at(r, c + dir) < 0) break;
+      c += dir;
+    }
+    r++;
+  }
+  return { r: r, c: c };
+}
+
+// Laying the routes decides WHERE the cogs are. It does not get to decide
+// which way they turn, because routes cross: two returns coming from opposite
+// edges overwrote each other in the middle and every ball walked out the side
+// the later route pointed at. So the spin is a function of the BAND a cog is
+// in, and it is applied after every route is down.
+//
+//   above the turn row   the route's own way - the machine spreads the balls out
+//   below it            toward the bucket - the machine funnels them back
+//   the outer column    outward, off the board: the routes that leave past the
+//                       socle, which is what makes a hole cost something
+function aimSpins() {
+  for (var i = 0; i < cells.length; i++) {
+    var g = cells[i];
+    if (g.state === 0 || g.r < TURN_ROW) continue;
+    g.spin = g.c === 0 ? -1 : (g.c === COLS - 1 ? 1 : (g.x <= BUCKET_X ? 1 : -1));
+  }
+}
+
+function layout() {
+  blankGrid(); placed = [];
+  var mid = colNear(BUCKET_X), s, p;
+
+  // Each feed route sweeps OUT to its own side of the board first and only
+  // comes back to the bucket in the lower half - that is what makes the routes
+  // cross, and what stops a hole from being free. A route that ran straight at
+  // the bucket from the top left every ball already over the mouth.
+  for (s = 0; s < SPOUT_N; s++) {
+    // out to the column just INSIDE the ejector, never onto it: sweeping all
+    // the way to column 0 parked every left-hand ball on the one cog whose job
+    // is to throw balls off the board, and two spouts in four scored nothing.
+    p = route(0, colNear(spoutX(s)), s < 2 ? 1 : COLS - 2, TURN_ROW);
+    route(p.r, p.c, mid + (s < 2 ? 0 : 1), ROWS);
+  }
+  // and two that branch off under the bucket and run for the edges
+  route(DUMP_ROW, mid, 0, ROWS);
+  route(DUMP_ROW, mid + 1, COLS - 1, ROWS);
+
+  aimSpins();
+}
+
+// Grow machines until one is worth playing - the same move games/gearball makes
+// with its ring. The walks are random, so a layout can be born useless; rather
+// than tune the walks until every one of them works, lay one down, fire the
+// silent test balls at it, and keep the best of a handful.
+function buildBoard() {
+  var bestScore = -1, bestState = null, t;
+  for (t = 0; t < BUILD_TRIES; t++) {
+    layout();
+    // Capture alone is the WRONG thing to grow for: the most reliable way to
+    // land a ball in the bucket is a bare column it free-falls down, so picking
+    // the best of twelve by capture picked the flattest machine every time and
+    // the hand-offs fell to 0.3 a ball. A machine that works is the gate; how
+    // much of the ball's trip it actually CARRIES is the score.
+    var got = probeRun(), carry = probeHops;
+    var rank = got < BUILD_TARGET ? got : 1 + carry;
+    if (rank > bestScore) {
+      bestScore = rank;
+      bestState = cells.map(function (g) { return g.state * 2 + (g.spin > 0 ? 1 : 0); });
+    }
+  }
+  if (bestState) {
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].state = bestState[i] >> 1;
+      cells[i].spin = (bestState[i] & 1) ? 1 : -1;
+    }
+  }
+  punchSeats();
+}
+
+/* ===============================================================
+   WHERE THE HOLES GO.
+
+   Pull a cog out at random and the network usually shrugs: the ball drops one
+   row and another rim catches it. A hole is only a hole where losing that cog
+   spills the ball off the machine or onto a dump route - and which cog that is
+   depends on the network that came out of the walks, not on any rule worth
+   writing down.
+
+   So the generator measures it. It fires a fan of silent test balls down every
+   spout, once for the whole machine and once per cog with that cog pulled, and
+   keeps the six whose absence costs the most. The board is not random with a
+   bias, it is chosen.
+   =============================================================== */
+function punchSeats() {
+  var base = probeRun(), cand = [], i, loss;
+  for (i = 0; i < cells.length; i++) {
+    if (cells[i].state !== 1 || cells[i].r === 0) continue;   // the entry row always stays
+    cells[i].state = 0;
+    loss = base - probeRun();
+    cells[i].state = 1;
+    cand.push({ i: i, loss: loss + Math.random() * 0.04 });   // a nudge, so two runs differ
+  }
+  cand.sort(function (a, b) { return b.loss - a.loss; });
+  for (i = 0; i < SLOTS && i < cand.length; i++) cells[cand[i].i].state = 2;
+}
+
+function placeAt(i) {
+  var g = cells[i];
+  if (g.state === 3) { g.state = 2; dropFromHand(i); return; }
+  if (g.state !== 2) return;
+  g.state = 3;                    // radius and spin were never the player's to pick
+  placed.push(i);
+  if (placed.length > HAND) {
+    var old = placed.shift();
+    cells[old].state = 2;
+    cells[old].pop = 1;           // fade, so the eviction is readable
+  }
+}
+function dropFromHand(i) {
+  for (var k = 0; k < placed.length; k++) if (placed[k] === i) { placed.splice(k, 1); return; }
+}
+
+// --- balls -----------------------------------------------------------------
+// A ball is either RIDING (welded to a rim at an angle) or FALLING. Riding is
+// the normal state; falling is the gap between two routes.
+var balls = [], pops = [];
+var probing = 0, probeHit = 0, probeHops = 0;
+
+function newBall(x, y, kind) {
+  return { on: -1, th: 0, x: x, y: y, vx: 0, vy: 40, kind: kind, life: BALL_LIFE,
+           cool: 0, from: -1, noCatch: -1, noRow: -1 };
+}
+
+function seat(b, i, th) {
+  b.on = i; b.th = th; b.from = -1; b.noCatch = -1; b.noRow = -1;
+  var g = cells[i];
+  b.x = g.x + Math.cos(th) * (g.rad + BALL_R);
+  b.y = g.y + Math.sin(th) * (g.rad + BALL_R);
+}
+
+function sweepTo(from, to, dir) {
+  var s = dir * (to - from) % PI2;
+  if (s < 0) s += PI2;
+  return s;
+}
+
+// One frame of a ball welded to a rim. It advances at the shared rim speed to
+// the cog's leading EQUATOR - the point its chevron marks - and there it is
+// either handed to the cog standing in that direction, or let go and dropped
+// straight down.
+//
+// That is the whole routing rule, and it is deliberately the ONLY exit. The
+// first version took whichever mesh the sweep met first, which let a cog hand
+// a ball to its right-hand neighbour while its own chevron pointed left: the
+// neighbour dropped it straight back and the two traded it forever. A cog
+// throws where it says it throws.
+function ride(b, dt) {
+  var g = cells[b.on];
+  if (g.state !== 1 && g.state !== 3) { detach(b, g); return true; }
+  g.lit = 1;
+  var left = (RIM / g.rad) * dt, guard = 0;
+
+  while (left > 1e-6 && guard++ < 4) {
+    var exit = detachAngle(g);
+    var sweep = sweepTo(b.th, exit, g.spin);
+    if (sweep > left) { b.th += g.spin * left; left = 0; break; }
+    b.th += g.spin * sweep; left -= sweep;
+
+    var j = at(g.r, g.c + (g.spin > 0 ? 1 : -1));
+    if (live(j) && j !== b.from) {
+      var prev = b.on;
+      probeHops++;
+      b.on = j; b.from = prev;
+      b.th = meshAngle(j, prev);                 // arrive facing the cog behind
+      g = cells[b.on]; g.lit = 1;
+    } else { detach(b, g); return true; }
+  }
+
+  b.x = g.x + Math.cos(b.th) * (g.rad + BALL_R);
+  b.y = g.y + Math.sin(b.th) * (g.rad + BALL_R);
+  return true;
+}
+
+function detach(b, g) {
+  b.x = g.x + Math.cos(b.th) * (g.rad + BALL_R);
+  b.y = g.y + Math.sin(b.th) * (g.rad + BALL_R);
+  var t = RIM * g.spin;
+  b.vx = -Math.sin(b.th) * t;
+  b.vy = Math.cos(b.th) * t;
+  b.cool = RECATCH; b.on = -1; b.from = -1;
+  b.noCatch = cells.indexOf(g);   // it cannot be re-grabbed by the cog that threw it
+  b.noRow = g.r;                  // nor by any other cog of that same row
+}
+
+function fall(b, dt) {
+  b.vy += GRAV * dt;
+  b.x += b.vx * dt; b.y += b.vy * dt;
+  if (b.cool > 0) b.cool -= dt;
+  else {
+    for (var i = 0; i < cells.length; i++) {
+      var g = cells[i];
+      if (g.state !== 1 && g.state !== 3) continue;
+      var dx = b.x - g.x, dy = b.y - g.y, rr = g.rad + BALL_R + MAGNET;
+      if (Math.abs(dx) > rr || Math.abs(dy) > rr) continue;
+      if (dx * dx + dy * dy > rr * rr) continue;
+      if (i === b.noCatch || g.r <= b.noRow) continue;
+      seat(b, i, Math.atan2(dy, dx));                   // the rim magnetises it
+      return true;
+    }
+    // A row lets go of a ball only once the ball is clear of the BIGGEST cog
+    // that row can hold. Releasing the guard at half a pitch put the ball back
+    // inside the magnet ring of the cog it had just left, and the two of them
+    // traded it for the rest of the round.
+    if (b.noRow >= 0 && b.y > cellY(b.noRow) + R_BIG + BALL_R + MAGNET + 4) {
+      b.noRow = -1; b.noCatch = -1;
+    }
+  }
+  if (b.y > BUCKET_Y && b.y < BUCKET_Y + 40 && Math.abs(b.x - BUCKET_X) < BUCKET_W / 2 - 4) {
+    if (probing) { probeHit++; return false; }
+    collect(b); return false;
+  }
+  return b.y < H + 60 && b.x > -80 && b.x < W + 80;
+}
+
+function stepBall(b, dt) {
+  b.life -= dt;
+  if (b.life <= 0) return false;
+  return b.on >= 0 ? ride(b, dt) : fall(b, dt);
+}
+
+// --- the generator's own test balls ----------------------------------------
+function probeRun() {
+  var save = balls, s, k, guard, b, n = 0;
+  balls = []; probing = 1; probeHit = 0; probeHops = 0;
+  for (s = 0; s < SPOUT_N; s++) {
+    for (k = 0; k < PROBE_N; k++) {
+      b = newBall(spoutX(s) + ((k / (PROBE_N - 1)) - 0.5) * 40, SPOUT_Y + 24, 'point');
+      for (guard = 0; guard < 900; guard++) if (!stepBall(b, 1 / 60)) break;
+      n++;
+    }
+  }
+  balls = save; probing = 0;
+  probeHops = n ? probeHops / n : 0;      // hand-offs per ball, the thing being built
+  return n ? probeHit / n : 0;
+}
+
+// --- series ----------------------------------------------------------------
+var series = null, next = null, gapT = SERIES_GAP;
+
+function rollKind(black) {
+  if (black) return 'black';
+  var r = Math.random();
+  if (r < MULT_CHANCE) return 'mult';
+  if (r < MULT_CHANCE + BONUS_CHANCE) return 'bonus';
+  return 'point';
+}
+function planSeries() {
+  var black = Math.random() < BLACK_CHANCE;
+  var s = (Math.random() * SPOUT_N) | 0;
+  if (next && s === next.spout) s = (s + 1 + ((Math.random() * (SPOUT_N - 1)) | 0)) % SPOUT_N;
+  var kinds = [], i;
+  for (i = 0; i < SERIES_N; i++) kinds.push(rollKind(black));
+  if (!black && Math.random() < STRAY_BLACK) kinds[(Math.random() * SERIES_N) | 0] = 'black';
+  next = { spout: s, kind: black ? 'black' : 'point', kinds: kinds, t: TELEGRAPH };
+}
+function drop(spout, kind) {
+  balls.push(newBall(spoutX(spout), SPOUT_Y + 24, kind));
+}
+
+// --- score -----------------------------------------------------------------
+var score = 0, combo = 0, comboT = 0, mult = 1, multT = 0, flash = 0, best = 0;
+function pop(x, y, txt, col) { pops.push({ x: x, y: y, txt: txt, col: col, t: 0.9 }); }
+
+function collect(b) {
+  if (b.kind === 'black') {
+    score += SCORE_BLACK; combo = 0; comboT = 0; mult = 1; multT = 0; flash = 1;
+    pop(b.x, BUCKET_Y - 14, SCORE_BLACK, '#ff5566');
+    return;
+  }
+  if (b.kind === 'mult') {
+    mult = Math.min(MULT_CAP, mult + 1); multT = MULT_TIME;
+    pop(b.x, BUCKET_Y - 14, 'x' + mult, '#8fb5ff');
+  }
+  combo = Math.min(COMBO_CAP, combo + 1); comboT = COMBO_WINDOW;
+  var base = b.kind === 'bonus' ? SCORE_BONUS : SCORE_POINT;
+  var gain = Math.round(base * (1 + combo * COMBO_STEP) * mult);
+  score += gain;
+  if (score > best) best = score;
+  if (b.kind !== 'mult') pop(b.x, BUCKET_Y - 14, '+' + gain, b.kind === 'bonus' ? '#ffd257' : '#7ee0a0');
+}
+
+// --- update ----------------------------------------------------------------
+function update(dt) {
+  var i;
+  for (i = 0; i < cells.length; i++) {
+    var g = cells[i];
+    if (g.state === 1 || g.state === 3) g.a += g.spin * (RIM / g.rad) * dt;
+    if (g.lit > 0) g.lit = Math.max(0, g.lit - dt * 1.6);
+    if (g.pop > 0) g.pop = Math.max(0, g.pop - dt * 2);
+  }
+
+  if (series) {
+    series.t -= dt;
+    while (series.t <= 0 && series.left > 0) {
+      drop(series.spout, series.kinds[SERIES_N - series.left]);
+      series.left--; series.t += BALL_GAP;
+    }
+    if (series.left <= 0) { series = null; gapT = SERIES_GAP; }
+  } else if (next) {
+    next.t -= dt;
+    if (next.t <= 0) { series = { spout: next.spout, kinds: next.kinds, left: SERIES_N, t: 0 }; next = null; }
+  } else {
+    gapT -= dt;
+    if (gapT <= TELEGRAPH) planSeries();
+  }
+
+  for (i = balls.length - 1; i >= 0; i--) if (!stepBall(balls[i], dt)) balls.splice(i, 1);
+  for (i = pops.length - 1; i >= 0; i--) { pops[i].t -= dt; pops[i].y -= 40 * dt; if (pops[i].t <= 0) pops.splice(i, 1); }
+
+  if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
+  if (multT > 0) { multT -= dt; if (multT <= 0) mult = 1; }
+  if (flash > 0) flash = Math.max(0, flash - dt * 2.2);
+}
+
+// --- render ----------------------------------------------------------------
+var KIND_COL = { point: '#7ee0a0', bonus: '#ffd257', mult: '#8fb5ff', black: '#1a1d26' };
+
+function drawGear(g, fill, stroke) {
+  var teeth = Math.max(9, Math.round(g.rad / 4.2)), i;
+  ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(g.a);
+  ctx.beginPath();
+  for (i = 0; i < teeth * 2; i++) {
+    var ang = i / (teeth * 2) * PI2, rad = (i % 2) ? g.rad * 0.84 : g.rad;
+    var px = Math.cos(ang) * rad, py = Math.sin(ang) * rad;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = stroke; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, g.rad * 0.26, 0, PI2);
+  ctx.fillStyle = '#0b0e15'; ctx.fill();
+  ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(g.rad * 0.7, 0);
+  ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(3, g.rad / 12); ctx.stroke();
+  ctx.restore();
+  chevron(g.x + (g.spin > 0 ? 1 : -1) * g.rad * 0.46, g.y, g.spin, g.rad, stroke);
+}
+
+// Which way this cog throws - the one thing that has to be legible at a glance,
+// because it is the whole routing rule.
+function chevron(x, y, spin, rad, col) {
+  var t = Math.max(5, rad * 0.19);
+  ctx.save(); ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.moveTo(-t * spin, -t); ctx.lineTo(t * 1.25 * spin, 0); ctx.lineTo(-t * spin, t);
+  ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+  ctx.restore();
+}
+
+function render() {
+  ctx.fillStyle = '#0b0e15'; ctx.fillRect(0, 0, W, H);
+
+  // spouts + telegraph
+  var s;
+  for (s = 0; s < SPOUT_N; s++) {
+    var sx = spoutX(s), liveS = (series && series.spout === s), warn = (next && next.spout === s);
+    ctx.fillStyle = liveS ? '#39425c' : '#232a3a';
+    ctx.fillRect(sx - 34, SPOUT_Y - 46, 68, 46);
+    ctx.fillStyle = '#0b0e15'; ctx.fillRect(sx - 20, SPOUT_Y - 14, 40, 16);
+    if (warn) {
+      var k = 1 - next.t / TELEGRAPH;
+      var col = next.kind === 'black' ? '#ff5566' : KIND_COL.point;
+      ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(next.t * 10));
+      ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.strokeRect(sx - 36, SPOUT_Y - 48, 72, 50);
+      ctx.beginPath();
+      ctx.moveTo(sx - 16, SPOUT_Y + 16); ctx.lineTo(sx + 16, SPOUT_Y + 16); ctx.lineTo(sx, SPOUT_Y + 40);
+      ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = col; ctx.fillRect(sx - 34, SPOUT_Y - 52, 68 * k, 4);
+    }
+  }
+
+  // Where the machine LETS GO. A line between two cogs that hand a ball along
+  // is invisible - they are tangent, the cogs cover it - so the hand-off is
+  // drawn by the chevrons instead, and the only line worth painting is the stub
+  // under a cog that throws into nothing: that is where a ball leaves.
+  var i, k;
+  for (i = 0; i < cells.length; i++) {
+    if (!live(i)) continue;
+    var gr = cells[i], dc = gr.spin > 0 ? 1 : -1, j = at(gr.r, gr.c + dc);
+    ctx.lineCap = 'round';
+    if (!live(j)) {
+      ctx.beginPath();
+      ctx.moveTo(gr.x + dc * gr.rad * 0.8, gr.y);
+      ctx.lineTo(gr.x + dc * (gr.rad + BALL_R), gr.y + PITCH * 0.62);
+      ctx.strokeStyle = 'rgba(120,170,230,0.20)'; ctx.lineWidth = 7; ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+  }
+
+  // the cogs
+  for (i = 0; i < cells.length; i++) {
+    var g = cells[i];
+    if (g.state === 1) {
+      drawGear(g, '#2b3446', g.lit > 0 ? '#7f93bd' : '#4a5878');
+    } else if (g.state === 3) {
+      if (placed.length >= HAND && placed[0] === i) {
+        ctx.globalAlpha = 0.35 + 0.35 * Math.sin(performance.now() / 160);
+        ctx.beginPath(); ctx.arc(g.x, g.y, g.rad + 11, 0, PI2);
+        ctx.strokeStyle = '#ff9a3c'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      drawGear(g, '#1c4a4f', '#39d6c8');
+    } else if (g.state === 2) {
+      ctx.save();
+      ctx.globalAlpha = g.pop ? 0.25 + g.pop * 0.6 : 0.6;
+      ctx.setLineDash([9, 9]);
+      ctx.beginPath(); ctx.arc(g.x, g.y, g.rad - 3, 0, PI2);
+      ctx.strokeStyle = g.pop ? '#ff9a3c' : '#39d6c8'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.setLineDash([]);
+      chevron(g.x + (g.spin > 0 ? 1 : -1) * g.rad * 0.46, g.y, g.spin, g.rad, '#39d6c8');
+      ctx.restore();
+    }
+  }
+
+  // bucket
+  ctx.fillStyle = '#232a3a';
+  ctx.fillRect(BUCKET_X - BUCKET_W / 2 - 7, BUCKET_Y, 14, BUCKET_H);
+  ctx.fillRect(BUCKET_X + BUCKET_W / 2 - 7, BUCKET_Y, 14, BUCKET_H);
+  ctx.fillRect(BUCKET_X - BUCKET_W / 2, BUCKET_Y + BUCKET_H - 12, BUCKET_W, 12);
+  ctx.fillStyle = combo > 0 ? 'rgba(126,224,160,0.30)' : 'rgba(143,181,255,0.14)';
+  ctx.fillRect(BUCKET_X - BUCKET_W / 2, BUCKET_Y, BUCKET_W, BUCKET_H - 12);
+  ctx.strokeStyle = combo > 0 ? '#7ee0a0' : '#4a5878'; ctx.lineWidth = 3;
+  ctx.strokeRect(BUCKET_X - BUCKET_W / 2, BUCKET_Y, BUCKET_W, BUCKET_H - 12);
+
+  // balls
+  for (i = 0; i < balls.length; i++) {
+    var b = balls[i];
+    ctx.beginPath(); ctx.arc(b.x, b.y, BALL_R, 0, PI2);
+    ctx.fillStyle = KIND_COL[b.kind]; ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = b.kind === 'black' ? '#ff5566' : 'rgba(255,255,255,0.75)';
+    ctx.stroke();
+  }
+
+  for (i = 0; i < pops.length; i++) {
+    ctx.globalAlpha = Math.min(1, pops[i].t * 1.6);
+    ctx.fillStyle = pops[i].col;
+    ctx.font = 'bold 30px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(pops[i].txt, pops[i].x, pops[i].y);
+    ctx.globalAlpha = 1;
+  }
+
+  // hud + debug, straight onto the canvas
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#eaf0ff'; ctx.font = 'bold 46px system-ui, sans-serif';
+  ctx.fillText(score, 40, 74);
+  ctx.font = 'bold 24px system-ui, sans-serif';
+  ctx.fillStyle = combo > 1 ? '#7ee0a0' : '#5a6580';
+  ctx.fillText('COMBO x' + combo + '  (' + (1 + combo * COMBO_STEP).toFixed(2) + ')', 40, 106);
+  ctx.fillStyle = mult > 1 ? '#8fb5ff' : '#5a6580';
+  ctx.fillText('MULT x' + mult + (multT > 0 ? '  ' + multT.toFixed(1) + 's' : ''), 40, 134);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#5a6580'; ctx.font = '22px system-ui, sans-serif';
+  ctx.fillText('cogs ' + placed.length + '/' + HAND + '   balls ' + balls.length + '   ' + fps.toFixed(0) + ' fps', W - 40, 74);
+  ctx.fillText('best ' + best, W - 40, 102);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#48526b'; ctx.font = '19px system-ui, sans-serif';
+  ctx.fillText('tap a dashed seat: the 4th cog evicts the 1st, tap your own to take it back', W / 2, H - 38);
+  ctx.fillText('R: new machine    C: clear cogs', W / 2, H - 14);
+
+  if (flash > 0) {
+    ctx.fillStyle = 'rgba(255,60,80,' + (flash * 0.28).toFixed(3) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+// --- input -----------------------------------------------------------------
+function toDesign(e) {
+  var r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / (r.width / W), y: (e.clientY - r.top) / (r.height / H) };
+}
+cv.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  var p = toDesign(e), bestI = -1, bestD = 1e9, i;
+  for (i = 0; i < cells.length; i++) {
+    var g = cells[i];
+    if (g.state !== 2 && g.state !== 3) continue;
+    var d = Math.hypot(p.x - g.x, p.y - g.y);
+    if (d < g.rad + 20 && d < bestD) { bestD = d; bestI = i; }
+  }
+  if (bestI >= 0) placeAt(bestI);
+});
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'r' || e.key === 'R') { buildBoard(); balls.length = 0; }
+  if (e.key === 'c' || e.key === 'C') { while (placed.length) cells[placed.shift()].state = 2; }
+});
+
+// --- loop ------------------------------------------------------------------
+var last = performance.now(), fps = 60;
+function frame(now) {
+  var dt = Math.min(0.033, (now - last) / 1000); last = now;
+  fps += ((1 / Math.max(dt, 0.0001)) - fps) * 0.08;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+buildBoard();
+requestAnimationFrame(frame);
+</script>

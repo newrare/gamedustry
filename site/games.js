@@ -151,11 +151,11 @@ window.GAMES = [
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
       tagline: "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
-      tags: ["Glisse un anneau", "Trois par rayon", "Charges et novas"]
+      tags: ["Glisse un anneau", "Trois par rayon", "8 billes spéciales"]
     },
     en: {
       tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
-      tags: ["Drag a ring", "Three per ray", "Charges & novas"]
+      tags: ["Drag a ring", "Three per ray", "8 special beads"]
     }
   },
   {

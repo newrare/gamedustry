@@ -102,7 +102,25 @@
       popTime: 0.26,                 // a popped bead's dissolve
       flareTime: 0.42,               // the ray staying lit after it paid
 
-      colours:  ["#ff4d6d", "#ffc23d", "#35e0ff", "#8b6cff", "#3ff0a0"],
+      /* THE FIVE HUES ARE SAMPLED OFF THE PAINTED BALLS, not chosen next to
+         them. A bead is a bitmap now (see BALL_HUE), so these five are what
+         everything AROUND it is drawn in — the armed ray's bar and halo, the
+         flare a paid ray leaves, the vignette, the HUD punch, the sparks a pop
+         throws — and a palette that disagreed with the paint would put a pink
+         glow under a red marble on the one board where colour is the rules.
+         Each one is the mean of its ball's saturated band (0.35..0.78 of the
+         radius, so the white highlight and the dark rim are both out of it),
+         lifted to 58% lightness at full saturation — the sampled body is a
+         colour seen in shadow, and these are a light drawn on a dark dial.
+         They are the same in every biome: a biome repaints the MACHINE, and a
+         bitmap cannot be retinted. */
+      colours:  ["#f63133", "#feb82a", "#29a0ff", "#8831f6", "#35f631"],
+      /* What share of a ball cut's shorter side the ball itself takes up. A
+         cut carries 20 px of transparent margin plus its own painted glow, so
+         the file is wider than the marble in it; without this every bead would
+         be drawn ~14% small and every housing would show a gap. Picked by eye
+         on the dial, which is the only place it can be. */
+      ballArtFill: 0.86,
       bagPer: 3,                     // beads of each hue in a plate's refill bag
       startColours: 4,               // hues in play at the start...
       colourUpAt: 22,                // ...the second the fifth joins a CLASSIC round
@@ -159,7 +177,168 @@
       finaleDrain: 0.85,             // the light draining into the hub...
       finaleDrama: 2.0,              // ...inside the whole power-down
 
-      star2: 7000, star3: 18000
+      star2: 7000, star3: 18000,
+
+      /* --- THE SPECIAL BEADS ------------------------------------------------
+         Eight of them, and the dial shipped with two: a CHARGE that unzips the
+         plate it sits on, and a NOVA that is wild and takes its colour off the
+         board. The six below are what turns thirty levels into thirty
+         different games (see `ladder`), and each one is a different SHAPE of
+         answer to the same board:
+
+           BOMB   clears the WHOLE dial, and the supers it reaches go off in
+                  turn. The top of the ladder: CHARGE empties a ring, NOVA a
+                  colour, BOMB everything.
+           FIRE   pops the two rays either side of its own.
+           LASER  fires straight through the hub and pops the ray opposite.
+           SCORE  arms a round-wide multiplier for a few seconds — x2, x5 or
+                  x10, the bigger face burning the shorter.
+           SLOW   holds the eclipse's ink back. The one relief power, and the
+                  only one that does nothing at all to the beads.
+           ICE    the one HAZARD. It matches like any bead, but breaking it
+                  freezes the plate it sat on: that ring cannot be turned until
+                  `iceRays` more rays have paid.
+
+         Everything here is per-bead and instant except the two that carry a
+         clock, and both of those are capped by construction — see `iceMax`
+         (the cold may never hold all three plates) and `mulTime`. */
+      bombSpeed: 900,                // design px/s the bomb's wave crosses the dial
+      fireDelay: 0.07,               // beat before a neighbouring ray catches
+      laserDelay: 0.11,              // ...and before the beam reaches the far side
+      iceRays: 2,                    // rays that must pay before a frozen plate turns
+      iceTime: 8,                    // ...and the seconds that thaw it whatever happens
+      iceMax: 2,                     // plates the cold may hold at once — never three
+      mulSteps: [2, 5, 10],          // the score bead's three faces
+      mulTime:  [6, 5, 4],           // ...and how long each one burns
+      /* The window multiplies a RAY and the chain milestone, never the beads a
+         wave takes — see scoreHit, and the bench that forced it. */
+      slowTime: 6,                   // seconds a SLOW bead holds the ink back
+      slowFactor: 0.34,              // ...and what it multiplies the eclipse rate by
+      specTeach: 3                   // times a power names itself before it goes quiet
+    },
+
+    /* --- THE LADDER — what makes thirty levels thirty games ----------------
+       A lerp says HARDER. It cannot say DIFFERENT, and thirty rounds of the
+       same dial turning faster is one level played thirty times. This is the
+       other half, and the shape of it comes straight from games/arcider (see
+       docs/LEVELS.md, *the first game to use applyLevel*).
+
+       Two tables, and between them they own everything a level is beyond its
+       difficulty:
+
+         biomes  FIVE whole looks, one per stretch of the climb. A biome is the
+                 bead's own MATERIAL — one of the five picked by eye in
+                 lab/bubble.html — and the palette the machine is painted with
+                 under it. Swapping the bead alone would stand vinyl stickers
+                 on a neon dial, which reads as a bug; the five hues move with
+                 it, because the colour of a bead IS the gameplay and a
+                 material that fights its own palette costs the player moves.
+
+         levels  THIRTY ROWS, each naming the special beads in play. Almost
+                 every row carries one or two of the eight, never the
+                 catalogue: a level is the one where you meet the laser, or the
+                 one where the ice meets the bomb. That is the variation, and
+                 it is why a row is a list and not a difficulty. `ice` is the
+                 share of refills that come in frozen — the only entry here
+                 that is a hazard rather than a reward.
+
+       Read by `applyLevel` (section 6). The playable never calls it and so
+       never sees any of this: it keeps the hard enamel bead and the
+       CHARGE / NOVA pair it shipped with, which is the creative as designed. */
+    ladder: {
+      /* A BIOME IS THE MACHINE, NOT THE BEAD. It was both for one build, each
+         biome naming a bead material this file painted itself — sticker, soap,
+         gem, ink, neon, ported out of lab/bubble.html. The painted balls took
+         that half over: a bitmap cannot be retinted, so the five hues are
+         fixed now (see dial.colours) and a biome repaints everything the beads
+         sit ON. Five worlds of six levels, with the bead style changing twice
+         inside each of them.
+
+         `sky` is the three stops of the radial the hall is lit with, `wire`
+         the machine's whole line work, `plate` the housing track under the
+         beads, `hub` the cap the three plates turn on. */
+      biomes: [
+        { name: "ATELIER",
+          sky: ["#241a52", "#0d0827", "#050310"],
+          wire: "#6f5ea8", plate: "#3d2c85", hub: "#120c2c" },
+        { name: "LAGOON",
+          sky: ["#1b2450", "#070f26", "#03060f"],
+          wire: "#5f7aa8", plate: "#27407a", hub: "#0a1226" },
+        { name: "RELIQUARY",
+          sky: ["#3a1450", "#160726", "#06020e"],
+          wire: "#8b5ea8", plate: "#4d2170", hub: "#1a0a2c" },
+        { name: "SUMI",
+          sky: ["#2b2440", "#12101f", "#07060c"],
+          wire: "#8d8299", plate: "#3a3450", hub: "#15121d" },
+        { name: "CIRCUIT",
+          sky: ["#141033", "#08061a", "#020108"],
+          wire: "#4d6fc8", plate: "#1c2760", hub: "#070a1e" }
+      ],
+      // Which biome each stretch wears. Five entries, six levels apiece, and
+      // it is read off the LEVEL NUMBER and not off `d`: the two roads out of
+      // a fork have to be the same world.
+      biomeFrom: [1, 7, 13, 19, 25],
+
+      /* THE BEAD STYLE, ONE PER TWO LEVELS — fifteen of the twenty designs on
+         the sheets, ordered to rise with the climb and to sit inside their
+         biome: three styles to a world, so the board changes under the player
+         twice as often as the room does.
+
+         The five left on the sheet are not spares by accident. Every one of
+         them carries a motif dead in the CENTRE of the ball — a star, a ringed
+         planet, a four-point sparkle, a diamond, a bullseye — and the centre of
+         a bead is exactly where a special's glyph is struck (see drawBadge). A
+         painted bullseye under the CHARGE's concentric rings is not a style, it
+         is a bead the player has to read twice. So the fifteen that ship are
+         the ones whose paint is all-over or off-centre; the one that comes back
+         is the star, for the endless run a perfect board unlocks, because that
+         node on the map is drawn as a star and nothing else here is. */
+      styles: [1, 17, 6, 2, 11, 12, 4, 20, 7, 5, 14, 16, 8, 15, 19],
+      baseStyle:  1,     // a round with no level — the playable's only style
+      bonusStyle: 3,     // ...and the endless run a perfect board unlocks
+
+      /* THE THIRTY ROWS. `pool` is what the level may hand out, split by tier
+         inside section 6 — a two-ray move or a x4 chain buys a small one, a
+         three-ray move or a x8 chain buys a big one — so a level with no big
+         special simply pays its big beats in small ones.
+
+         Read it down the column and the shape is the teaching order: one new
+         bead at a time, alone on the level it arrives on, then paired with
+         what came before. The ice is never the newcomer AND the only thing on
+         a level, because a level whose one new idea is a penalty is a level
+         nobody wants to reach. */
+      levels: [
+        { pool: ["charge"],                    ice: 0    },  //  1  the meter, and nothing else
+        { pool: ["charge"],                    ice: 0    },  //  2
+        { pool: ["charge"],                    ice: 0    },  //  3
+        { pool: ["charge", "nova"],            ice: 0    },  //  4  the wild bead arrives
+        { pool: ["nova"],                      ice: 0    },  //  5  ...and holds the level alone
+        { pool: ["charge", "nova"],            ice: 0    },  //  6
+        { pool: ["bomb"],                      ice: 0    },  //  7  BOMB, alone
+        { pool: ["charge", "bomb"],            ice: 0    },  //  8
+        { pool: ["nova", "bomb"],              ice: 0    },  //  9
+        { pool: ["score"],                     ice: 0    },  // 10  the multiplier, alone
+        { pool: ["charge", "score"],           ice: 0    },  // 11
+        { pool: ["bomb", "score"],             ice: 0    },  // 12
+        { pool: ["fire"],                      ice: 0    },  // 13  FIRE, alone
+        { pool: ["charge", "fire"],            ice: 0    },  // 14
+        { pool: ["laser"],                     ice: 0    },  // 15  LASER, alone
+        { pool: ["fire", "laser"],             ice: 0    },  // 16  the two ray powers meet
+        { pool: ["nova", "laser"],             ice: 0    },  // 17
+        { pool: ["fire", "score"],             ice: 0    },  // 18
+        { pool: ["charge"],                    ice: 0.06 },  // 19  ICE, against the safest boon
+        { pool: ["fire"],                      ice: 0.08 },  // 20
+        { pool: ["laser", "score"],            ice: 0.08 },  // 21
+        { pool: ["nova"],                      ice: 0.10 },  // 22
+        { pool: ["charge", "bomb"],            ice: 0.10 },  // 23
+        { pool: ["laser", "score"],            ice: 0.12 },  // 24
+        { pool: ["slow"],                      ice: 0.10 },  // 25  SLOW, when the ink is fast
+        { pool: ["charge", "slow"],            ice: 0.12 },  // 26
+        { pool: ["fire", "laser"],             ice: 0.14 },  // 27
+        { pool: ["bomb", "score"],             ice: 0.14 },  // 28
+        { pool: ["nova", "slow"],              ice: 0.16 },  // 29
+        { pool: ["bomb", "nova", "score"],     ice: 0.18 }   // 30  the only row with three
+      ]
     }
   };
 
@@ -245,29 +424,60 @@
     var D = CONFIG.dial;
     var N = D.slots, TAU = Math.PI * 2, SLOT = TAU / N;
 
-    /* A housing still holds ONE integer. The low byte is the bead's hue; one
-       high bit says the bead is a SUPER, and there are exactly two:
+    /* A housing still holds ONE INTEGER, and that has not changed with eight
+       specials in the game — it is what makes reading the whole board one
+       modulo per ring, and what lets a refill in flight carry its own power
+       through the same field every other bead uses.
 
-         CHARGE — detonates the whole plate it sits on, the wave running both
-                  ways around the ring from its own housing.
-         NOVA   — wild (it completes a ray of any colour), and takes every bead
-                  of that colour off the dial when the ray pays.
+         bits 0..7    the hue, an index into D.colours
+         bits 8..15   the special, one bit each — a bead is never two things
+         bits 16..17  the SCORE bead's face: 0 -> x2, 1 -> x5, 2 -> x10
 
-       Both go off when the ray they sit on pays, and both pop supers they
-       reach on the way, so a dial with two charges on one plate empties in one
-       chain. `null` still means "housing empty, refill on its way". */
-    var CHARGE = 0x100, NOVA = 0x200, SUPER = 0x300;
+       Every special goes off when the ray it sits on pays, and every one of
+       them pops the supers its own wave reaches, so a dial with two charges on
+       one plate empties in a single chain. `null` still means "housing empty,
+       refill on its way".
+
+       ICE is in the same field and is deliberately NOT in BOON: it is the one
+       bead the player does not want, so it must never eat a reward slot (see
+       liveSupers) and must never be handed out by grant(). */
+    var CHARGE = 0x0100, NOVA  = 0x0200, BOMB  = 0x0400, SCORE = 0x0800,
+        FIRE   = 0x1000, LASER = 0x2000, ICE   = 0x4000, SLOW  = 0x8000;
+    var SUPER = 0xff00;                 // any special at all, hazard included
+    var BOON  = SUPER & ~ICE;           // ...and the seven a player wants
+    var MULSHIFT = 16;                  // where the score bead keeps its face
     function hueOf(v) { return v & 0xff; }
+    function mulOf(v) { return (v >> MULSHIFT) & 3; }
+
+    /* The catalogue, and the ONLY place a special's name, bit and tier are
+       written down. A level's `pool` (CONFIG.ladder.levels) is a list of these
+       keys, and grant() picks out of it by tier: a two-ray move or a x4 chain
+       buys a SMALL one, a three-ray move or a x8 chain buys a BIG one. A pool
+       with no big special pays its big beats in small ones rather than
+       reaching outside the level for something the player has not met. */
+    var SPEC = {
+      charge: { bit: CHARGE, tier: 1, word: "CHARGE" },
+      fire:   { bit: FIRE,   tier: 1, word: "FIRE"   },
+      laser:  { bit: LASER,  tier: 1, word: "LASER"  },
+      score:  { bit: SCORE,  tier: 1, word: "SCORE"  },
+      slow:   { bit: SLOW,   tier: 1, word: "SLOW"   },
+      nova:   { bit: NOVA,   tier: 2, word: "NOVA"   },
+      bomb:   { bit: BOMB,   tier: 2, word: "BOMB"   },
+      ice:    { bit: ICE,    tier: 0, word: "FROZEN" }
+    };
 
     // Geometry — every one of these is rebuilt from Layout by layout().
     var cx = 0, cy = 0, unit = 0, rimR = 0, hubR = 0;
     var sprites = [], novaBodies = [], novaShells = [], wheel = null, bg = null;
     // The three plates exist from the first frame, because the motor fits the
     // canvas (and calls onResize) before the first reset().
+    /* `cold` is the rays a frozen plate still owes before it turns again and
+       `coldT` the seconds that thaw it whatever happens — a board where no ray
+       can pay must never leave a plate locked forever (see iceHit). */
     var rings = [
-      { idx: 0, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9 },
-      { idx: 1, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9 },
-      { idx: 2, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9 }
+      { idx: 0, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9, cold: 0, coldT: 0 },
+      { idx: 1, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9, cold: 0, coldT: 0 },
+      { idx: 2, slots: new Array(N), angle: 0, step: 0, bag: [], prev: 0, still: 9, cold: 0, coldT: 0 }
     ];
 
     // Run state.
@@ -277,7 +487,24 @@
     var blastRun, blastGain, bestBlast;   // the power chain currently burning
     var best, clock, grab, touched, flyers, blobs, flares, resting, armed;
     var finale;                     // the wind-down after the clock (see onTimeUp)
-    var fuses, sweeps, novas;
+    var fuses, sweeps, novas, booms, beams;
+    var mulK, mulLeft, mulSpan;     // the SCORE bead's round-wide multiplier
+
+    /* --- what the level makes of the game --------------------------------
+       Set by applyLevel and read everywhere. With no level — the playable, and
+       the endless run at 90/90 — they stay exactly what the file shipped: the
+       hard enamel bead, the studio palette, and the CHARGE / NOVA pair. */
+    var LAD = CONFIG.ladder;
+    var BIO = null;                 // the biome in force, or null for the playable
+    var POOL = ["charge", "nova"];  // the specials this level may hand out
+    var ICE_RATE = 0;               // ...and the share of refills that come in frozen
+    var MUL_FACE = 1;               // how many faces of the SCORE bead are in play
+
+    /* The machine as the file wrote it, snapshotted at load: a biome writes
+       over D.colours and the four machine colours IN PLACE (so the armed glow,
+       the flares, the vignettes and the pops all follow it without a line of
+       their own), and a round with no level has to get them back. */
+    var SKIN0 = { sky: D.sky.slice(), wire: D.wire, plate: D.plate, hub: D.hub };
 
     // --- small shared maths ------------------------------------------------
     // Angles are measured from 12 o'clock, clockwise, because that is how the
@@ -343,23 +570,96 @@
        enamel wall, the body colour, a shade crescent and a gloss cap, the last
        two cut to the body by a clip. The sprite is also barely wider than the
        bead now, since there is no halo to make room for. */
-    function ballSprite(hex, r) {
-      var pad = Math.max(2, r * 0.06), s = Math.ceil((r + pad) * 2);
-      var c = document.createElement("canvas"); c.width = s; c.height = s;
-      var g = c.getContext("2d"), m = s / 2;
+    /* --- THE BEAD IS A PAINTED BALL ---------------------------------------
+       Twenty designs, each painted in the five game colours plus a rainbow,
+       out of six sheets in `assets/image/master/radiam-object-ball-*.png`. They
+       are cut by `tools/lab/cut-objects.mjs --grid 5x4`, and the grid is the
+       whole reason that command has a grid mode: the six sheets are the same
+       twenty designs recoloured, so design 7 has to be design 7 in all six.
+       Cutting by blob AREA — which is what the tool did before, and the right
+       answer for a wall of gears — cannot promise that, because a halo a few
+       pixels wider in one recolour reorders everything after it in silence.
+
+       A STYLE IS SIX FILES: `radiam-ball-<colour>-NN.webp` reaches
+       `CONFIG.art.ballRedNN` like every other picture, with no manifest key and
+       no ASSETS edit, and `ArtImages` is where the canvas reads it.
+
+       This replaced five bead MATERIALS this file used to paint itself —
+       sticker, soap, gem, ink and neon, ported out of lab/bubble.html. They
+       were good and they are gone, because painted art beats a canvas
+       pastiche of it and because keeping both would be two systems doing one
+       job. What survives is `paintEnamel`, and only as the fallback: a build
+       whose artwork is missing still gets a legible dial rather than a hole,
+       which is the same rule the rest of the artwork answers to.
+
+       The sprite is still BAKED once per colour and per plate size, so the
+       frame loop is the same 36 drawImage calls it always was — the painted
+       ball costs a decode at load and nothing per frame. */
+
+    /* Which file a hue index asks for. The order is CONFIG.dial.colours', and
+       it is the order the six sheets were painted in. */
+    var BALL_HUE = ["red", "yellow", "blue", "purple", "green"];
+
+    /* The style in force. It is not null for a round with no level: the
+       playable ships style 1 and nothing else (tools/build/build.mjs holds the
+       other fourteen back from a creative that has no levels to show them on),
+       so the ad is painted too. */
+    var STYLE = CONFIG.ladder.baseStyle, ART_ON = false;
+
+    /* `ArtImages.ballRed07`, if the build carries it and it decoded. Everything
+       here has to survive the picture being absent — a game degrades to the
+       enamel bead on its own, it never ships a placeholder. */
+    function ballArt(name, style) {
+      if (!style) return null;
+      var k = "ball" + name.charAt(0).toUpperCase() + name.slice(1) +
+              (style < 10 ? "0" : "") + style;
+      var img = typeof ArtImages !== "undefined" ? ArtImages[k] : null;
+      return img && img.width ? img : null;
+    }
+
+    /* HARD ENAMEL — the bead this file used to draw, and now the floor under
+       the painted one. Four flat discs: an enamel wall, the body colour, a
+       shade crescent and a gloss cap, the last two cut to the body by a clip.
+       No halo, no gradient, nothing soft — the bead before it stacked three
+       soft edges and the dial read as fogged. */
+    function disc(g, x, y, r) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+    function paintEnamel(g, m, r, hex) {
       g.fillStyle = shade(hex, 0.38);                 // the enamel wall
-      g.beginPath(); g.arc(m, m, r, 0, TAU); g.fill();
+      disc(g, m, m, r);
       g.fillStyle = hex;                              // the flat body
-      g.beginPath(); g.arc(m, m, r * 0.87, 0, TAU); g.fill();
+      disc(g, m, m, r * 0.87);
       g.save();
       g.beginPath(); g.arc(m, m, r * 0.87, 0, TAU); g.clip();
       g.fillStyle = shade(hex, 0.70);                 // the side turned away
-      g.beginPath(); g.arc(m + r * 0.42, m + r * 0.50, r * 0.95, 0, TAU); g.fill();
+      disc(g, m + r * 0.42, m + r * 0.50, r * 0.95);
       g.fillStyle = rgba("#ffffff", 0.50);            // the gloss cap
-      g.beginPath(); g.arc(m - r * 0.06, m - r * 0.66, r * 0.62, 0, TAU); g.fill();
+      disc(g, m - r * 0.06, m - r * 0.66, r * 0.62);
       g.restore();
       g.fillStyle = "#ffffff";                        // the spark
-      g.beginPath(); g.arc(m - r * 0.30, m - r * 0.36, r * 0.13, 0, TAU); g.fill();
+      disc(g, m - r * 0.30, m - r * 0.36, r * 0.13);
+    }
+
+    /* One sprite per colour and per plate size, baked once.
+
+       `ballArtFill` is the one number this needs and it cannot be derived: a
+       cut carries `--pad 20` of transparent margin AND the ball's own painted
+       glow inside it, so the file is wider than the ball it holds. Scaling the
+       image to `2r` would draw every bead about 14% small and open a gap in
+       every housing. The fill says what share of the shorter side the BALL
+       occupies, the image keeps its own aspect so the glow is never squashed,
+       and the sprite is padded enough to hold the overflow. */
+    function ballSprite(hex, r, ci) {
+      var pad = Math.max(3, r * 0.24), s = Math.ceil((r + pad) * 2);
+      var c = document.createElement("canvas"); c.width = s; c.height = s;
+      var g = c.getContext("2d");
+      var art = ballArt(BALL_HUE[ci % BALL_HUE.length], STYLE), k, dw, dh;
+      if (art) {
+        k = (r * 2) / (Math.min(art.width, art.height) * D.ballArtFill);
+        dw = art.width * k; dh = art.height * k;
+        g.drawImage(art, s / 2 - dw / 2, s / 2 - dh / 2, dw, dh);
+      } else {
+        paintEnamel(g, s / 2, r, hex);
+      }
       return c;
     }
 
@@ -474,19 +774,50 @@
 
     function buildSprites() {
       var c, i;
+      /* Is this build painted? One probe, on the one file every style has:
+         either the artwork is there and the whole dial is painted, or none of
+         it is and the whole dial is enamel. There is no half-painted board —
+         a dial mixing a photographed marble with a drawn disc would read as a
+         bug rather than as a fallback. */
+      ART_ON = !!ballArt(BALL_HUE[0], STYLE);
       sprites = [];
       for (c = 0; c < D.colours.length; c++) {
-        sprites.push([ballSprite(D.colours[c], rings[0].ballR),
-                      ballSprite(D.colours[c], rings[1].ballR),
-                      ballSprite(D.colours[c], rings[2].ballR)]);
+        sprites.push([ballSprite(D.colours[c], rings[0].ballR, c),
+                      ballSprite(D.colours[c], rings[1].ballR, c),
+                      ballSprite(D.colours[c], rings[2].ballR, c)]);
       }
-      // ...and the two layers of the wild bead, one pair per plate size
-      wheel = hueWheel();
       novaBodies = []; novaShells = [];
+      if (ART_ON) {
+        /* THE WILD BEAD IS PAINTED TOO, and it is the rainbow cut of the very
+           style the round is wearing — so the one bead that belongs to no
+           colour still belongs to the same set as the five that do. It does
+           NOT spin: the drawn spectrum had to turn because a static wheel of
+           five wedges reads as a pie chart, but a painted marble carries its
+           own highlight, and rolling that highlight round the bead would break
+           the one thing every bead on this dial shares — they are all lit from
+           the same corner. */
+        for (i = 0; i < 3; i++) novaBodies.push(novaSprite(rings[i].ballR));
+        return;
+      }
+      // ...and without the artwork, the drawn spectrum it shipped with: a body
+      // the frame loop spins and a lighting layer blitted flat on top of it.
+      wheel = hueWheel();
       for (i = 0; i < 3; i++) {
         novaBodies.push(novaBody(rings[i].ballR));
         novaShells.push(novaShell(rings[i].ballR));
       }
+    }
+
+    // The painted wild bead: the same sprite as any other, from the rainbow cut.
+    function novaSprite(r) {
+      var pad = Math.max(3, r * 0.24), s = Math.ceil((r + pad) * 2);
+      var c = document.createElement("canvas"); c.width = s; c.height = s;
+      var g = c.getContext("2d"), art = ballArt("rainbow", STYLE), k, dw, dh;
+      if (!art) return c;
+      k = (r * 2) / (Math.min(art.width, art.height) * D.ballArtFill);
+      dw = art.width * k; dh = art.height * k;
+      g.drawImage(art, s / 2 - dw / 2, s / 2 - dh / 2, dw, dh);
+      return c;
     }
 
     // How far the spectrum has turned, in radians. `novaSpin` is the time one
@@ -709,7 +1040,7 @@
       var on = false;
 
       var cover = 0, free = N, freed = false, over = false;
-      var lines = 0, level = 1, hold = 0;
+      var lines = 0, level = 1, hold = 0, slowLeft = 0;
       var flash = 0, shove = 0, shown = -1;
       var shade0 = [], hits = [0, 0, 0], missed = [], misses = [];
       var ink = null, inkR = 0;
@@ -727,7 +1058,7 @@
 
       function reset() {
         cover = start; free = N; freed = false; over = false;
-        lines = 0; level = 1; hold = 0;
+        lines = 0; level = 1; hold = 0; slowLeft = 0;
         flash = 0; shove = 0; shown = -1;
         hits[0] = hits[1] = hits[2] = 0;
         misses.length = 0;
@@ -735,7 +1066,19 @@
         if (on) { recount(); HUD.setLeft(level, "LEVEL"); HUD.setRight(lines, "RAYS"); }
       }
 
-      function rate() { return GROW * Math.pow(STEP, level - 1); }
+      /* A SLOW bead does not stop the ink the way a single ray does — it puts
+         it in treacle. Two different reliefs on one axis: a ray you found buys
+         a full stop for two seconds, a bead you were given buys six seconds at
+         a third of the speed, and the rim says which is running. */
+      function rate() {
+        return GROW * Math.pow(STEP, level - 1) * (slowLeft > 0 ? D.slowFactor : 1);
+      }
+      function slow(sec) {
+        if (!on || over) return;
+        slowLeft = Math.max(slowLeft, sec);
+        flash = 0.7;
+        Fx.flash("#3ff0a0", 0.14, 1.5);
+      }
 
       /* The ink, baked ONCE per layout into a square the size of the dial.
          It is a texture, not a copy of anything: near black, with a few slow
@@ -842,6 +1185,7 @@
       function update(dt) {
         var i;
         if (finale) return;                    // the machine is powering down
+        if (slowLeft > 0) slowLeft = Math.max(0, slowLeft - dt);
         if (hold > 0) hold = Math.max(0, hold - dt);
         else cover = Math.min(N, cover + rate() * dt);
         if (flash > 0) flash = Math.max(0, flash - dt * 1.8);
@@ -1002,7 +1346,13 @@
           /* The wet rim of the blot. Held it goes to the game's own accent,
              won back it goes white — the two states the player has to read at
              a glance, on the one edge they are already watching. */
-          col = shove > 0 ? "#ffffff" : (hold > 0 ? "#35e0ff" : "#c9c2ff");
+          /* The wet rim is the one edge the player is already watching, so it
+             is where all three states are read: white for ground just won
+             back, cyan for the ink held still by a ray, green for the ink
+             merely slowed by a SLOW bead. */
+          col = shove > 0 ? "#ffffff"
+              : hold > 0 ? "#35e0ff"
+              : slowLeft > 0 ? "#3ff0a0" : "#c9c2ff";
           wedgePath(half, 0, true);
           ctx.lineWidth = 14;
           ctx.strokeStyle = rgba(col, 0.05 + flash * 0.1);
@@ -1057,7 +1407,7 @@
       /* `on` is a property rather than an accessor because every call site
          reads `Eclipse.on` fresh, and `arm` rewrites it once per round. */
       var api = { on: false, arm: arm, build: build, reset: reset, update: update,
-               dead: dead, sink: sink, miss: miss,
+               dead: dead, sink: sink, miss: miss, slow: slow,
                uncovered: uncovered, single: single, multi: multi, line: line,
                bead: bead, blast: blast, draw: draw,
                level: function () { return level; },
@@ -1115,7 +1465,13 @@
       blobs.push({ v: v, idx: r.idx, x: x, y: y, life: D.popTime });
       Fx.burst(x, y, { color: [hex, "#ffffff"], count: 9, speed: 250,
                        life: 0.45, grav: 90, size: 5 });
-      flyers.push({ ring: r, k: k, colour: drawColour(r),
+      /* The refill. ICE is seeded HERE and nowhere else — never on the
+         opening board, which has to be read clean, and never through grant(),
+         which hands out rewards. It rides in through the same door as every
+         other bead, so the player watches the cold arrive and knows where. */
+      var nc = drawColour(r);
+      if (ICE_RATE > 0 && Rand.chance(ICE_RATE)) nc |= ICE;
+      flyers.push({ ring: r, k: k, colour: nc,
                     t: -(D.fillDelay + r.idx * D.fillStagger),
                     dur: D.fillTime * (1 + (2 - r.idx) * 0.34),
                     x: x, y: y, a: 0 });
@@ -1130,6 +1486,9 @@
       if (v === null) return;
       blastRun++;
       Eclipse.bead(r.idx);
+      /* NOT multiplied by the SCORE window — see scoreHit. A wave's beads are
+         already the biggest payout on this dial, and multiplying them is what
+         put a bomb under an x10 thirteen times over the level next door. */
       var ramp = Math.min(1 + (blastRun - 1) * D.blastRamp, D.blastRampMax);
       var pts = Math.round(D.blastScore * Math.max(1, combo) * ramp);
       score += pts;
@@ -1154,9 +1513,188 @@
       Eclipse.blast();                   // a plate emptied whole buys daylight
     }
 
+    /* A special going off. Everything here is reached the same way — the bead
+       was cleared, and `v` is what it was carrying — so a power fires
+       identically whether its own ray paid or another power's wave reached it.
+       That single door is what makes eight specials chain into each other for
+       free.
+
+       `s` is the RAY the housing was sitting on, derived rather than passed:
+       a plate stores its beads in its own frame, so the ray is `k + step`. Two
+       of the powers need it and neither caller has it to hand. */
     function fireSuper(v, r, k, colour) {
-      if (v & CHARGE) ringBlast(r, k, colour);
-      else if (v & NOVA) novaBlast(r, k, colour);
+      if (v & ICE) { iceHit(r); return; }          // the hazard, and it pays nothing
+      if (!(v & BOON)) return;
+      var s = mod(k + r.step, N);
+      if (v & CHARGE)     ringBlast(r, k, colour);
+      else if (v & NOVA)  novaBlast(r, k, colour);
+      else if (v & BOMB)  bombBlast(r, k, colour);
+      else if (v & FIRE)  fireBlast(r, k, colour, s);
+      else if (v & LASER) beamBlast(r, k, colour, s);
+      else if (v & SCORE) scoreHit(v, r, k);
+      else if (v & SLOW)  slowHit(r, k);
+    }
+
+    /* A power names itself ONCE and in the clear band under the HUD, never at
+       the hub: the hub is where flushBlast pays the whole chain out under one
+       BLAST, and a name and a payout landing on the same pixel on the same
+       beat is two things to read. Rate-limited for the same reason a cascade's
+       COMBO is — one move can set off three powers inside a third of a second.
+
+       CHARGE and NOVA say nothing, which is how they shipped: they are the two
+       the player meets on levels 1 and 4 and they are self-evident on screen.
+       The six below arrive one per level with nothing else new on it, and a
+       name is what makes that lesson land. */
+    var specCallAt = -9, specSaid = {};
+    function specCall(word, hex) {
+      /* A power names itself for the first `specTeach` of the round and then
+         shuts up. The word is a LESSON, not a celebration — the level a power
+         arrives on is the one where it is the only new thing, so three
+         sightings is where a player has it; after that the same word over the
+         same effect is noise on the beat they are watching the board. The
+         effect itself never goes quiet: the wave, the flare and the payout are
+         all still there. */
+      if (clock - specCallAt < 0.45) return;
+      var seen = (specSaid[word] || 0) + 1;
+      specSaid[word] = seen;
+      if (seen > D.specTeach) return;
+      specCallAt = clock;
+      Pop.show("alert", { word: word, at: "hudUnder" });
+      if (hex) Overlay.vignette(hex, 0.6, 360);
+    }
+
+    /* BOMB — the whole dial, and the supers it reaches go off in turn. The
+       wave reaches each bead at the speed it would have travelled there, so
+       the picture and the board can never disagree; it is the same contract
+       every other wave here honours. */
+    function bombBlast(r, k, colour) {
+      var i, kk, aa, dx, dy;
+      var a = r.angle + k * SLOT, ox = px(a, r.rad), oy = py(a, r.rad);
+      for (i = 0; i < 3; i++) {
+        for (kk = 0; kk < N; kk++) {
+          if (rings[i].slots[kk] === null) continue;
+          aa = rings[i].angle + kk * SLOT;
+          dx = px(aa, rings[i].rad) - ox; dy = py(aa, rings[i].rad) - oy;
+          fuse(rings[i], kk, Math.sqrt(dx * dx + dy * dy) / D.bombSpeed);
+        }
+      }
+      booms.push({ x: ox, y: oy, t: 0, dur: 0.85, hex: D.colours[colour] });
+      supers++;
+      Sound.clip("blast", 0.7, 0.68);
+      Fx.shake(26, 0.55);
+      Fx.flash("#ffffff", 0.34, 2.6);
+      specCall("BOMB", "#ffd43b");
+    }
+
+    /* FIRE — the two rays either side of its own. Both catch on the same beat:
+       a stagger would read as two separate events, and the whole point of this
+       one is that it takes a NEIGHBOURHOOD. */
+    function fireBlast(r, k, colour, s) {
+      var rays = [mod(s - 1, N), mod(s + 1, N)], i, j, rr, kk;
+      for (i = 0; i < rays.length; i++) {
+        for (j = 0; j < 3; j++) {
+          rr = rings[j]; kk = mod(rays[i] - rr.step, N);
+          fuse(rr, kk, D.fireDelay);
+        }
+        flares.push({ s: rays[i], hex: "#ff8a3d", life: D.flareTime * 1.3 });
+      }
+      supers++;
+      Sound.clip("blast", 0.5, 1.22);
+      Fx.shake(11, 0.3);
+      specCall("FIRE", "#ff8a3d");
+    }
+
+    /* LASER — straight through the hub and out the far side. `N / 2` is the
+       ray opposite, which is only a whole ray because the dial has an even
+       number of them; on an odd dial the floor picks the nearer of the two and
+       the beam is drawn down the same line, so nothing here can desync. */
+    function beamBlast(r, k, colour, s) {
+      var opp = mod(s + Math.floor(N / 2), N), j, rr, kk;
+      for (j = 0; j < 3; j++) {
+        rr = rings[j]; kk = mod(opp - rr.step, N);
+        fuse(rr, kk, D.laserDelay);
+      }
+      beams.push({ s: s, t: 0, dur: 0.45, hex: D.colours[colour] });
+      flares.push({ s: opp, hex: D.colours[colour], life: D.flareTime * 1.3 });
+      supers++;
+      Sound.clip("nova", 0.5, 1.35);
+      Fx.shake(9, 0.26);
+      specCall("LASER", D.colours[colour]);
+    }
+
+    /* SCORE — the one power that touches no bead at all. It arms a multiplier
+       for a few seconds, and the bigger the face the shorter it burns
+       (D.mulTime), so an x10 is a window to SPEND rather than a number to bank.
+       A second bead inside the window takes the bigger of the two faces and
+       restarts its clock: stacking them would put x100 on a dial where the
+       combo already multiplies everything once.
+
+       IT MULTIPLIES THE RAYS THE PLAYER LINES UP, AND NOTHING ELSE — not the
+       beads a wave takes, not a chain a power set off on its own. The scripted
+       bench is what settled that, and the number was not close: with the window
+       over everything, level 28 (bomb + score) paid 1.37M against level 27's
+       101k — two adjacent levels in the same band, thirteen times apart, and
+       no single objective line can serve both. The cause is arithmetic rather
+       than tuning. A ray pays `rayScore * combo`; a bomb pays `blastScore *
+       combo * ramp` across thirty-six beads, which is two orders of magnitude
+       more before any multiplier touches it, so a window over the blast is a
+       window over the whole round.
+
+       Narrowing it to the rays also makes the two powers say different things.
+       A bomb is the board cleared; a window is a few seconds where FINDING an
+       alignment is worth ten of them. One is a payout, the other is a reason to
+       play well while it burns — which is the only thing a multiplier on a
+       match dial should ever be. */
+    function scoreHit(v, r, k) {
+      var tier = mulOf(v), face = D.mulSteps[tier] || 2, span = D.mulTime[tier] || 5;
+      if (face >= mulK) { mulK = face; mulSpan = span; mulLeft = span; }
+      else { mulLeft = Math.max(mulLeft, span); mulSpan = Math.max(mulSpan, mulLeft); }
+      supers++;
+      Sound.clip("multi", 0.6, 1 + tier * 0.08);
+      Fx.flash("#ffd43b", 0.22, 1.9);
+      Pop.show("record", { word: "x" + face, sub: "SCORE", at: "hudUnder" });
+      specCallAt = clock;                 // ...and it counts as this beat's word
+    }
+
+    /* SLOW — the relief power, and the only one whose effect is on the room
+       rather than on the board. It holds the eclipse's ink back; a CLASSIC
+       round has no ink, so Eclipse.slow is a no-op there and the bead simply
+       never reaches a pool that could hand it out. */
+    function slowHit(r, k) {
+      Eclipse.slow(D.slowTime);
+      supers++;
+      Sound.clip("charge", 0.55, 0.78);
+      specCall("SLOW", "#3ff0a0");
+    }
+
+    /* ICE — the hazard. Breaking it freezes the plate it sat on: that ring
+       cannot be turned until `iceRays` more rays have paid, or `iceTime`
+       seconds have gone by, whichever comes first.
+
+       The clock is not decoration. A board where no ray can pay would leave a
+       plate locked for the rest of the round, and `iceMax` is the other half
+       of the same guard: the cold may hold TWO plates and never all three, so
+       there is always a ring left to turn. Two frozen and one free is the
+       interesting constraint; three frozen is a round the player watches. */
+    function iceHit(r) {
+      var i, held = 0;
+      for (i = 0; i < 3; i++) if (rings[i].cold > 0) held++;
+      if (r.cold <= 0 && held >= D.iceMax) return;
+      r.cold = D.iceRays; r.coldT = D.iceTime;
+      if (grab && grab.ring === r) grab = null;      // the finger loses it mid-turn
+      Sound.clip("tick", 0.5, 0.42);
+      Fx.ring(cx, cy, { from: r.rad - r.band / 2, to: r.rad + r.band / 2,
+                        color: "#9fdcff", width: r.band * 0.6, life: 0.35 });
+      Overlay.vignette("#9fdcff", 0.7, 420);
+      Pop.show("danger", { word: "FROZEN", sub: r.cold + " RAYS", at: "hudUnder" });
+      specCallAt = clock;
+    }
+
+    function thaw(r) {
+      r.cold = 0; r.coldT = 0;
+      Sound.clip("land", 0.35, 1.3);
+      Fx.ring(cx, cy, { from: r.rad + r.band / 2, to: r.rad - r.band / 2,
+                        color: "#ffffff", width: r.band * 0.5, life: 0.3 });
     }
 
     /* CHARGE — the wave leaves its own housing and runs both ways around the
@@ -1211,20 +1749,52 @@
        cap the meter simply stays full and pays out the moment a super fires. */
     function liveSupers() {
       var n = 0, i, k;
+      // BOON and not SUPER: an ICE bead is a hazard the board threw at the
+      // player, and letting it fill a reward slot would make a frozen dial pay
+      // less as well as turn less.
       for (i = 0; i < 3; i++)
-        for (k = 0; k < N; k++) if (rings[i].slots[k] & SUPER) n++;
-      for (i = 0; i < flyers.length; i++) if (flyers[i].colour & SUPER) n++;
+        for (k = 0; k < N; k++) if (rings[i].slots[k] & BOON) n++;
+      for (i = 0; i < flyers.length; i++) if (flyers[i].colour & BOON) n++;
       return n;
     }
 
-    function grant(flag, colour) {
+    /* Earning a special. It is not dropped on the board out of nowhere: one of
+       the refills already flying in from the rim is upgraded, so the reward
+       arrives through the same door every other bead does — and the player
+       watches it land and knows where it is.
+
+       WHICH special comes out of the LEVEL, never out of the code: `tier` says
+       how big the beat was (1 for a two-ray move or a x4 chain, 2 for a
+       three-ray move or a x8 chain) and the level's own `pool` says what a big
+       or a small beat pays in. A level whose pool has no big special pays its
+       big beats in small ones rather than reaching outside the level for
+       something the player has not met yet — which is the entire reason the
+       first three levels can be CHARGE and nothing else. */
+    function grant(tier, colour) {
       if (liveSupers() >= D.superCap) return false;
-      var cand = [], i;
+      var keys = [], cand = [], i, sp, v, bit;
+      for (i = 0; i < POOL.length; i++) {
+        sp = SPEC[POOL[i]];
+        if (sp && sp.tier === tier) keys.push(POOL[i]);
+      }
+      if (!keys.length && tier > 1)
+        for (i = 0; i < POOL.length; i++) {
+          sp = SPEC[POOL[i]];
+          if (sp && sp.tier === 1) keys.push(POOL[i]);
+        }
+      if (!keys.length) return false;
       for (i = 0; i < flyers.length; i++) if (!(flyers[i].colour & SUPER)) cand.push(i);
       if (!cand.length) return false;
-      var f = flyers[Rand.pick(cand)];
-      f.colour = (flag === NOVA ? Rand.int(0, palette.length - 1) : colour) | flag;
-      Sound.clip("charge", 0.5, flag === NOVA ? 1.12 : 1);
+      bit = SPEC[Rand.pick(keys)].bit;
+      // A NOVA belongs to no colour, so it takes one at random and its hue is
+      // only what it PAYS in; everything else takes the colour of the ray that
+      // earned it, which is the colour it will have to line up on to go off.
+      v = (bit === NOVA ? Rand.int(0, palette.length - 1) : colour) | bit;
+      // The score bead's face climbs with the level: x2 low down, x10 only
+      // where the round is long enough to spend a four-second window.
+      if (bit === SCORE) v |= Rand.int(0, MUL_FACE - 1) << MULSHIFT;
+      flyers[Rand.pick(cand)].colour = v;
+      Sound.clip("charge", 0.5, bit === NOVA ? 1.12 : 1);
       return true;
     }
 
@@ -1253,7 +1823,9 @@
         combo = Math.min(combo + 1, D.comboMax);
         if (combo > bestCombo) bestCombo = combo;
         comboLeft = D.comboWindow;
-        pts = D.rayScore * combo;
+        // The SCORE bead's window multiplies the ray at source, so the "+pts"
+        // that floats over the beads is the number actually banked.
+        pts = Math.round(D.rayScore * combo * mulK);
         gained += pts;
         for (j = 0; j < 3; j++) {
           r = rings[j];
@@ -1280,7 +1852,7 @@
         Sound.clip("multi", 0.55);
         Fx.shake(12, 0.3);
         Overlay.vignette(D.colours[colour], 0.75, 420);
-        grant(hits.length > 2 ? NOVA : CHARGE, colour);
+        grant(hits.length > 2 ? 2 : 1, colour);
         Eclipse.multi(hits.length);      // ...and pushes the shadow back
       } else {
         Fx.shake(4 + combo * 0.4, 0.16);
@@ -1308,21 +1880,31 @@
       else if (hits.length === 2)
         Pop.show("bonus", { word: "DOUBLE RAY", sub: "+" + gained, at: "hudUnder" });
 
+      /* Every ray paid is a ray off a frozen plate's debt. It is counted per
+         RAY and not per move, so a double unfreezes twice as fast as a single
+         — the ice is answered by playing well, which is the only currency this
+         dial has. */
+      for (j = 0; j < 3; j++) {
+        if (rings[j].cold <= 0) continue;
+        rings[j].cold -= hits.length;
+        if (rings[j].cold <= 0) thaw(rings[j]);
+      }
+
       // The meter on the hub: every ray banks a notch, and a full meter buys a
-      // CHARGE. It is the floor under the whole reward curve — a player who
-      // never lines up two rays at once still gets a blast every few moves,
+      // small special. It is the floor under the whole reward curve — a player
+      // who never lines up two rays at once still gets one every few moves,
       // and gets to watch it coming.
-      if (charge >= D.chargeNeed && grant(CHARGE, colour)) charge = 0;
+      if (charge >= D.chargeNeed && grant(1, colour)) charge = 0;
 
       // Milestones: every fourth link of the chain, up to the cap. The chain is
       // the other way to earn a super, so a long clean run pays a big one. It
       // has no callout of its own — the chain is what the COMBO pop already
       // reads out, and the score counter races up on the same beat.
       if (combo >= 4 && combo % 4 === 0) {
-        score += D.comboBonus * combo;
+        score += Math.round(D.comboBonus * combo * mulK);
         HUD.setScore(score);
         Sound.clip("chain", 0.5, 1 + combo * 0.02);
-        grant(combo >= 8 ? NOVA : CHARGE, colour);
+        grant(combo >= 8 ? 2 : 1, colour);
       }
     }
 
@@ -1349,6 +1931,14 @@
       var dx = p.x - cx, dy = p.y - cy;
       var r = ringAt(Math.sqrt(dx * dx + dy * dy));
       if (!r) return;
+      /* A frozen plate refuses the finger, and says so where the finger is —
+         the plate is already drawn in frost, but a player reaching for it is
+         reading their own thumb, not the dial. */
+      if (r.cold > 0) {
+        Pop.text(p.x, p.y, "FROZEN", { color: "#9fdcff", size: 22, life: 0.6, tier: 1 });
+        Sound.clip("tick", 0.35, 0.48);
+        return;
+      }
       grab = { ring: r, last: pang(p) };
       touched = true;
       Sound.clip("tick", 0.2, 0.85);
@@ -1374,9 +1964,13 @@
       blastRun = 0; blastGain = 0; bestBlast = 0;
       clock = 0; grab = null; touched = false; resting = true; armed = null;
       finale = null;
-      for (i = 0; i < 3; i++) { rings[i].prev = 0; rings[i].still = 9; }
+      mulK = 1; mulLeft = 0; mulSpan = 1; specCallAt = -9; specSaid = {};
+      for (i = 0; i < 3; i++) {
+        rings[i].prev = 0; rings[i].still = 9;
+        rings[i].cold = 0; rings[i].coldT = 0;
+      }
       flyers = []; blobs = []; flares = [];
-      fuses = []; sweeps = []; novas = [];
+      fuses = []; sweeps = []; novas = []; booms = []; beams = [];
       palette = [];
       for (i = 0; i < D.startColours; i++) palette.push(i);
       layout();
@@ -1466,6 +2060,14 @@
         novas[i].t += dt;
         if (novas[i].t >= novas[i].dur) novas.splice(i, 1);
       }
+      for (i = booms.length - 1; i >= 0; i--) {
+        booms[i].t += dt;
+        if (booms[i].t >= booms[i].dur) booms.splice(i, 1);
+      }
+      for (i = beams.length - 1; i >= 0; i--) {
+        beams[i].t += dt;
+        if (beams[i].t >= beams[i].dur) beams.splice(i, 1);
+      }
       for (i = flares.length - 1; i >= 0; i--) {
         flares[i].life -= dt;
         if (flares[i].life <= 0) flares.splice(i, 1);
@@ -1473,6 +2075,16 @@
 
       // A chain only lives as long as the player keeps paying rays.
       if (combo > 0) { comboLeft -= dt; if (comboLeft <= 0) combo = 0; }
+
+      // The SCORE bead's window, and the cold. The ice thaws on RAYS (see pop)
+      // and this is only its safety net: a board that cannot pay must never
+      // leave a plate locked for the rest of the round.
+      if (mulLeft > 0) { mulLeft -= dt; if (mulLeft <= 0) { mulLeft = 0; mulK = 1; } }
+      for (i = 0; i < 3; i++) {
+        if (rings[i].cold <= 0) continue;
+        rings[i].coldT -= dt;
+        if (rings[i].coldT <= 0) thaw(rings[i]);
+      }
 
       // The eclipse has levels, so the newcomer is scheduled on one; a CLASSIC
       // round never reaches level 10 in 40 seconds and keeps its stopwatch.
@@ -1489,8 +2101,8 @@
       var sp = (v & NOVA) ? novaBodies[idx] : sprites[hueOf(v)][idx];
       var w = sp.width * sc;
       if (alpha < 1) ctx.globalAlpha = alpha;
-      if (v & NOVA) {
-        // the spectrum spins, its lighting stays put — see novaBody / novaShell
+      if (v & NOVA && !ART_ON) {
+        // the drawn spectrum spins, its lighting stays put — see novaBody
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(novaAngle());
@@ -1500,61 +2112,242 @@
       } else {
         ctx.drawImage(sp, x - w / 2, y - w / 2, w, w);
       }
-      if (v & SUPER) drawCrown(v, rings[idx].ballR * sc, x, y);
+      if (v & SUPER) drawBadge(v, rings[idx].ballR * sc, x, y);
       // A bead the ink has reached is sunk into it — still perfectly legible,
       // just plainly not in play. One flat disc over the sprite: it keeps the
       // enamel's shape instead of washing the bead out with globalAlpha.
+      // It is measured on the BEAD, not on the sprite: the materials pad their
+      // canvases by 22% for the sticker's shadow and the ink's wobble, and a
+      // veil that wide would sink the housings either side of this one too.
       var d = Eclipse.sink(x, y);
       if (d > 0) {
         ctx.fillStyle = rgba("#04030a", 0.44 * d * alpha);
-        ctx.beginPath(); ctx.arc(x, y, w * 0.5, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, rings[idx].ballR * sc * 1.04, 0, TAU); ctx.fill();
       }
       if (alpha < 1) ctx.globalAlpha = 1;
     }
 
-    /* What tells a super apart at a glance, drawn live because it moves. The
-       two now say different things with different shapes, which is the whole
-       point — a player has a second to read the dial, not a legend:
+    /* --- WHAT TELLS A SPECIAL APART, at a glance and with no legend --------
+       Eight beads that all have to be read in the second before a finger
+       moves, on a dial whose whole gameplay is the COLOUR underneath them.
+       Three rules, and between them they are the reason this stayed readable
+       when it went from two specials to eight:
 
-         CHARGE — CONCENTRIC CIRCLES. A gold bullseye struck into the bead,
-                  and two rings crawling out of it half a cycle apart. The
-                  target says "this one is armed", the rings leaving it say
-                  what it does: the blast travels away from this housing,
-                  round the plate, both ways. It keeps the bead's own colour,
-                  because a charge only goes off when its colour lines up.
-         NOVA   — no shape at all. Its body already turns through every colour
-                  (see novaSprite), so the crown is only a white rim breathing
-                  around it; giving it circles too would blur the one
-                  distinction the player has to make in a glance.
+         1. THE HUE IS NEVER TOUCHED. Every badge is drawn OVER the bead's own
+            material, never instead of it. A special only goes off when its
+            colour lines up on its ray, so a bead whose colour you cannot read
+            is a bead you cannot plan with. The one exception is the NOVA,
+            which belongs to no colour at all and therefore has none to hide.
+         2. THE SHAPE SAYS WHICH, THE RIM SAYS WHETHER. Every boon wears the
+            SAME gold breathing rim — that is "there is something here", legible
+            on the inner plate where the bead is 22 px across and the glyph is
+            barely 12. The silhouette inside it is what says which one, and the
+            eight silhouettes were chosen to share no outline: concentric
+            rings, a starburst, a two-headed arrow, a flame, two digits, an
+            hourglass, a six-spoke flake, and — for the nova — nothing at all.
+         3. WHITE ON A DOUBLE PASS OF INK. Every glyph is drawn twice, a wide
+            near-black pass under a white one, so it holds on the amber and the
+            cyan exactly as it does on the violet. One ink colour for all of
+            them means the eye never has to ask what a glyph's COLOUR meant, on
+            a board where colour already means something else.
 
-       Only a handful are ever on the dial (D.superCap), so this can afford to
-       be drawn live where the beads themselves cannot. */
-    function drawCrown(v, r, x, y) {
-      var i, t, rr;
+       The gold is the badge and the white is the glyph, and neither collides
+       with the white HALO of an armed ray: that halo is a ring drawn AROUND
+       the bead with a bar down its ray, this sits inside it.
+
+       ICE is the exception to the rim, and deliberately so: it is the one bead
+       the player does not want, so it wears a pale frost crust and a cold rim
+       instead of the gold. Gold on this dial means a reward.
+
+       Only a handful are ever on the board at once (D.superCap), so all of
+       this can afford to be drawn live where the beads themselves cannot. */
+    function drawBadge(v, r, x, y) {
+      /* The glyph is 46% of the radius and not a pixel more. It was 54% on the
+         first sheet and the contact print settled it: on the sticker biome —
+         whose body is only 79% of the bead to start with — a glyph that wide
+         leaves the hue as a rim, and the hue is what the player is actually
+         matching. The badge has to be the second thing read, never the first. */
+      var i, t, rr, s = r * 0.46, lw = Math.max(1.5, r * 0.105);
+
+      /* A path drawn twice: a wide near-black pass, then the colour. It is
+         what makes one white glyph work over five hues and six materials. */
+      function stroked(build, col) {
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        build();
+        ctx.lineWidth = lw * 2.5; ctx.strokeStyle = rgba("#070414", 0.6); ctx.stroke();
+        ctx.lineWidth = lw;       ctx.strokeStyle = col;                  ctx.stroke();
+      }
+      function filled(build, col) {
+        ctx.lineJoin = "round";
+        build();
+        ctx.lineWidth = lw * 2.0; ctx.strokeStyle = rgba("#070414", 0.6); ctx.stroke();
+        ctx.fillStyle = col; ctx.fill();
+      }
+
       ctx.save();
       ctx.translate(x, y);
-      if (v & CHARGE) {
-        // gold, because white already means "this ray would pay" on this dial
-        ctx.lineWidth = Math.max(2, r * 0.13);
-        ctx.strokeStyle = rgba("#ffd43b", 0.95);
-        ctx.beginPath(); ctx.arc(0, 0, r * 0.63, 0, TAU); ctx.stroke();
-        ctx.lineWidth = Math.max(1.6, r * 0.10);
-        ctx.strokeStyle = rgba("#fff3c4", 0.95);
-        ctx.beginPath(); ctx.arc(0, 0, r * 0.36, 0, TAU); ctx.stroke();
-        ctx.fillStyle = rgba("#fff3c4", 0.95);
-        ctx.beginPath(); ctx.arc(0, 0, r * 0.13, 0, TAU); ctx.fill();
-        for (i = 0; i < 2; i++) {              // the pings, half a cycle apart
-          t = mod(clock / D.chargePing + i * 0.5, 1);
-          rr = r * (0.92 + t * 0.45);          // stops short of the next housing
-          ctx.lineWidth = Math.max(1.4, r * 0.10 * (1 - t));
-          ctx.strokeStyle = rgba("#ffd43b", 0.7 * (1 - t));
-          ctx.beginPath(); ctx.arc(0, 0, rr, 0, TAU); ctx.stroke();
-        }
-      } else {
+
+      /* NOVA — no shape at all. Its body already turns through every colour
+         (see novaBody), so a glyph on top would blur the one distinction the
+         player has to make in a glance. A white rim, breathing. */
+      if (v & NOVA) {
         t = 0.30 + 0.45 * (0.5 + 0.5 * Math.sin(clock * 3.2));
         ctx.lineWidth = Math.max(1.2, r * 0.055);
         ctx.strokeStyle = rgba("#ffffff", t);
         ctx.beginPath(); ctx.arc(0, 0, r * 1.13, 0, TAU); ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      /* ICE — a crust of frost over the bead and a cold rim. No gold: this is
+         the one bead on the dial that costs the player something. */
+      if (v & ICE) {
+        /* The crust is light on purpose. An ICE bead MATCHES like any other —
+           it is a normal bead that punishes the plate it breaks on — so
+           whitening it until its hue is gone would cost the player the move,
+           not just the plate. */
+        ctx.fillStyle = rgba("#cfeeff", 0.17);
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.93, 0, TAU); ctx.fill();
+        t = 0.45 + 0.30 * (0.5 + 0.5 * Math.sin(clock * 2.4));
+        ctx.lineWidth = Math.max(1.4, r * 0.10);
+        ctx.strokeStyle = rgba("#9fdcff", t);
+        ctx.beginPath(); ctx.arc(0, 0, r * 1.02, 0, TAU); ctx.stroke();
+        stroked(function () {                      // the six-spoke flake
+          var j, a, fs = s * 0.86;
+          ctx.beginPath();
+          for (j = 0; j < 3; j++) {
+            a = j * Math.PI / 3;
+            ctx.moveTo(-Math.cos(a) * fs, -Math.sin(a) * fs);
+            ctx.lineTo(Math.cos(a) * fs, Math.sin(a) * fs);
+          }
+          for (j = 0; j < 6; j++) {                // ...and its barbs
+            a = j * Math.PI / 3;
+            var bx = Math.cos(a) * fs * 0.58, by = Math.sin(a) * fs * 0.58;
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(a + 0.9) * fs * 0.34, by + Math.sin(a + 0.9) * fs * 0.34);
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(a - 0.9) * fs * 0.34, by + Math.sin(a - 0.9) * fs * 0.34);
+          }
+        }, "#eaf8ff");
+        ctx.restore();
+        return;
+      }
+
+      // Every boon wears the same gold rim: "there is something here", read
+      // before the glyph inside it can be.
+      t = 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(clock * 3.2));
+      ctx.lineWidth = Math.max(1.4, r * 0.085);
+      ctx.strokeStyle = rgba("#ffd43b", t);
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.08, 0, TAU); ctx.stroke();
+
+      if (v & CHARGE) {
+        /* CONCENTRIC RINGS, and two more crawling out of them half a cycle
+           apart. The target says "armed", the rings leaving it say what it
+           does — the blast travels AWAY from this housing, round the plate,
+           both ways at once. */
+        stroked(function () {
+          ctx.beginPath(); ctx.arc(0, 0, s * 0.92, 0, TAU);
+          ctx.moveTo(s * 0.48, 0); ctx.arc(0, 0, s * 0.48, 0, TAU);
+        }, "#ffffff");
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(0, 0, Math.max(1.4, s * 0.17), 0, TAU); ctx.fill();
+        for (i = 0; i < 2; i++) {
+          t = mod(clock / D.chargePing + i * 0.5, 1);
+          rr = r * (0.92 + t * 0.45);            // stops short of the next housing
+          ctx.lineWidth = Math.max(1.4, r * 0.10 * (1 - t));
+          ctx.strokeStyle = rgba("#ffd43b", 0.7 * (1 - t));
+          ctx.beginPath(); ctx.arc(0, 0, rr, 0, TAU); ctx.stroke();
+        }
+      } else if (v & BOMB) {
+        /* A STARBURST — sixteen points alternating long and short. It is the
+           only glyph here with spikes, and it is the only power that reaches
+           every bead on the board: the silhouette says "in all directions"
+           before the player has ever seen one go off. */
+        filled(function () {
+          var j, a, rr2;
+          ctx.beginPath();
+          for (j = 0; j < 16; j++) {
+            a = j * TAU / 16 - Math.PI / 2;
+            rr2 = (j % 2) ? s * 0.42 : s;
+            if (j) ctx.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2);
+            else   ctx.moveTo(Math.cos(a) * rr2, Math.sin(a) * rr2);
+          }
+          ctx.closePath();
+        }, "#ffffff");
+      } else if (v & LASER) {
+        /* A TWO-HEADED ARROW, turned to lie ALONG its own ray. The beam goes
+           straight through the hub and out the far side, so the glyph points
+           at the two ends of the line it is about to fire down — which is the
+           one thing about this power that is not guessable from a word. */
+        ctx.save();
+        ctx.rotate(Math.atan2(x - cx, cy - y));
+        stroked(function () {
+          var h = s * 0.42;
+          ctx.beginPath();
+          ctx.moveTo(0, -s); ctx.lineTo(0, s);
+          ctx.moveTo(-h, -s + h); ctx.lineTo(0, -s); ctx.lineTo(h, -s + h);
+          ctx.moveTo(-h, s - h); ctx.lineTo(0, s); ctx.lineTo(h, s - h);
+        }, "#ffffff");
+        ctx.restore();
+      } else if (v & FIRE) {
+        /* A FLAME, and it took three goes at the contact sheet before it was
+           one. A symmetric teardrop read as a LEAF; the same teardrop with one
+           asymmetric curl down its left side read as a WATER DROP, which is
+           worse — the only glyph here named after what it does, saying the
+           opposite of it.
+
+           What settles it is not the outline, it is the COUNT: three tongues
+           over two valleys. A single peak is a drop at any size and a flame at
+           none, and no amount of wobble on the flanks changes that. The three
+           peaks survive being drawn 10 px across on the inner plate, which is
+           the only size that was ever in question.
+
+           The two rays it takes are its neighbours, and the first one the
+           player sets off teaches that in half a second. The glyph's whole job
+           is to be unmistakably FIRE before then. */
+        filled(function () {
+          ctx.beginPath();
+          ctx.moveTo(s * 0.04, -s);                                   // the tall tongue
+          ctx.quadraticCurveTo(s * 0.30, -s * 0.58, s * 0.34, -s * 0.30);
+          ctx.quadraticCurveTo(s * 0.44, -s * 0.64, s * 0.62, -s * 0.44);  // right tongue
+          ctx.quadraticCurveTo(s * 0.88, -s * 0.06, s * 0.60, s * 0.44);
+          ctx.quadraticCurveTo(s * 0.36, s * 0.96, -s * 0.04, s * 0.96);   // the base
+          ctx.quadraticCurveTo(-s * 0.48, s * 0.96, -s * 0.62, s * 0.40);
+          ctx.quadraticCurveTo(-s * 0.82, -s * 0.06, -s * 0.56, -s * 0.44); // left tongue
+          ctx.quadraticCurveTo(-s * 0.48, -s * 0.66, -s * 0.36, -s * 0.30);
+          ctx.quadraticCurveTo(-s * 0.26, -s * 0.62, s * 0.04, -s);
+          ctx.closePath();
+        }, "#ffffff");
+      } else if (v & SCORE) {
+        /* THE NUMBER ITSELF. Every other glyph is a picture standing in for a
+           word; this one IS the word, and no picture of a multiplier beats
+           reading "x10". The x10 face is set narrower so the three glyphs cost
+           the same width on the inner plate. */
+        var face = D.mulSteps[mulOf(v)] || 2;
+        var txt = "x" + face;
+        ctx.font = "900 " + Math.round(r * (face >= 10 ? 0.74 : 0.92)) + "px " +
+                   "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = lw * 2.2; ctx.strokeStyle = rgba("#070414", 0.7);
+        ctx.strokeText(txt, 0, r * 0.04);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(txt, 0, r * 0.04);
+      } else if (v & SLOW) {
+        // AN HOURGLASS — the two caps are what stop it reading as a bowtie,
+        // and they are worth the two extra lines.
+        filled(function () {
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.62, -s * 0.74); ctx.lineTo(s * 0.62, -s * 0.74);
+          ctx.lineTo(0, 0); ctx.closePath();
+          ctx.moveTo(-s * 0.62, s * 0.74); ctx.lineTo(s * 0.62, s * 0.74);
+          ctx.lineTo(0, 0); ctx.closePath();
+        }, "#ffffff");
+        stroked(function () {
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.80, -s * 0.86); ctx.lineTo(s * 0.80, -s * 0.86);
+          ctx.moveTo(-s * 0.80, s * 0.86); ctx.lineTo(s * 0.80, s * 0.86);
+        }, "#ffffff");
       }
       ctx.restore();
     }
@@ -1571,6 +2364,21 @@
       ctx.strokeStyle = rgba(D.wire, 0.46 + (held ? 0.4 : 0) + call);
       ctx.beginPath(); ctx.arc(cx, cy, r.rad - r.band / 2, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(cx, cy, r.rad + r.band / 2, 0, TAU); ctx.stroke();
+      /* Frost, on the PLATE and not on its beads. The beads are what the
+         player reads to plan the move they will make once it thaws, so they
+         stay at full colour; the track under them goes cold and its two walls
+         go white, which is the same trick the eclipse uses to say "this part
+         of the machine is out" without hiding anything. */
+      if (r.cold > 0) {
+        var ph = 0.5 + 0.5 * Math.sin(clock * 2.4);
+        ctx.lineWidth = r.band;
+        ctx.strokeStyle = rgba("#9fdcff", 0.15 + 0.07 * ph);
+        ctx.beginPath(); ctx.arc(cx, cy, r.rad, 0, TAU); ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = rgba("#dff6ff", 0.45 + 0.28 * ph);
+        ctx.beginPath(); ctx.arc(cx, cy, r.rad - r.band / 2, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, r.rad + r.band / 2, 0, TAU); ctx.stroke();
+      }
     }
 
     /* The teeth belong to the outer plate, so they turn with it: one path,
@@ -1636,6 +2444,37 @@
       ctx.beginPath(); ctx.arc(cx, cy, w.ring.rad, a0 + span - head, a0 + span); ctx.stroke();
       ctx.beginPath(); ctx.arc(cx, cy, w.ring.rad, a0 - span, a0 - span + head); ctx.stroke();
       ctx.lineCap = "butt";
+    }
+
+    /* A bomb: the same shockwave as a nova's, wider and slower, and gold
+       rather than the ray's own colour — it is the one wave that is not about
+       a colour at all. */
+    function drawBoom(w) {
+      var p = w.t / w.dur, fade = 1 - p, rad = p * w.dur * D.bombSpeed;
+      ctx.lineWidth = 26 * fade + 3;
+      ctx.strokeStyle = rgba("#ffd43b", 0.30 * fade);
+      ctx.beginPath(); ctx.arc(w.x, w.y, rad * 0.84, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 12 * fade + 2;
+      ctx.strokeStyle = rgba("#ffffff", 0.60 * fade);
+      ctx.beginPath(); ctx.arc(w.x, w.y, rad, 0, TAU); ctx.stroke();
+    }
+
+    /* A laser: the whole DIAMETER, drawn in one pass. It is the only effect on
+       this dial that crosses the hub, which is exactly what makes it read as
+       "through, and out the other side" rather than as one more flare. */
+    function drawBeam(b) {
+      var fade = 1 - b.t / b.dur, w = unit * 0.05 * (0.35 + fade);
+      ctx.save();
+      ctx.translate(cx, cy); ctx.rotate(b.s * SLOT);
+      var g = ctx.createLinearGradient(0, -rimR, 0, rimR);
+      g.addColorStop(0, rgba(b.hex, 0));
+      g.addColorStop(0.14, rgba("#ffffff", 0.85 * fade));
+      g.addColorStop(0.5, rgba("#ffffff", 0.95 * fade));
+      g.addColorStop(0.86, rgba("#ffffff", 0.85 * fade));
+      g.addColorStop(1, rgba(b.hex, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(-w / 2, -rimR, w, rimR * 2);
+      ctx.restore();
     }
 
     /* A nova: one shockwave off the bead, travelling at the speed its fuses do. */
@@ -1715,6 +2554,51 @@
       }
     }
 
+    /* A rounded rectangle path, written out because `ctx.roundRect` is still
+       missing from the mobile WebViews this file has to run in. */
+    function pill(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    /* THE SCORE WINDOW — the one piece of state on this dial that lives on a
+       clock, so it is the one piece that needs somewhere to be read.
+
+       Under the DISC, and that is not a free choice: the HUD's two slots are
+       already the game's own (BEST and the clock in a CLASSIC round, LEVEL and
+       RAYS in an eclipse one), and the band immediately under the HUD belongs
+       to the level layer's three stars. The strip below the rim is the only
+       part of the frame nothing else writes on — and it is under the dial the
+       player is already looking at, which the top of the screen is not. It
+       clamps into whatever room the frame leaves, so a squat ad iframe cannot
+       push it off the bottom. */
+    function drawMul() {
+      if (mulLeft <= 0 || mulK <= 1) return;
+      var w = Math.max(132, unit * 0.46), h = 34;
+      var y = Math.min(cy + rimR + 30, Layout.bottom - h - 6);
+      var x0 = cx - w / 2, p = clamp(mulLeft / mulSpan, 0, 1);
+      ctx.fillStyle = rgba("#0a0720", 0.74);
+      pill(x0, y, w, h, h / 2); ctx.fill();
+      ctx.save();                                  // the window draining inside it
+      pill(x0, y, w, h, h / 2); ctx.clip();
+      ctx.fillStyle = rgba("#ffd43b", 0.26);
+      ctx.fillRect(x0, y, w * p, h);
+      ctx.restore();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = rgba("#ffd43b", 0.55 + 0.35 * p);
+      pill(x0, y, w, h, h / 2); ctx.stroke();
+      ctx.fillStyle = "#ffe98a";
+      ctx.font = "900 " + Math.round(h * 0.58) + "px " +
+                 "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("x" + mulK + "  SCORE", cx, y + h / 2 + 1);
+    }
+
     function render() {
       var i, k, r, a, b, sc;
       ctx.drawImage(bg, 0, 0);
@@ -1773,9 +2657,12 @@
       for (i = 0; i < flares.length; i++) drawFlare(flares[i]);
       for (i = 0; i < sweeps.length; i++) drawSweep(sweeps[i]);
       for (i = 0; i < novas.length; i++) drawNova(novas[i]);
+      for (i = 0; i < booms.length; i++) drawBoom(booms[i]);
+      for (i = 0; i < beams.length; i++) drawBeam(beams[i]);
       ctx.globalCompositeOperation = "source-over";
 
       drawHub();
+      drawMul();
       if (finale && finale.phase === "drama") drawFinale();
     }
 
@@ -1807,7 +2694,8 @@
        this also holds `finaleCalm` seconds of it (see stepFinale). */
     function quiet() {
       return !grab && settled() && !flyers.length && !fuses.length &&
-             !sweeps.length && !novas.length && !blobs.length && !flares.length;
+             !sweeps.length && !novas.length && !booms.length && !beams.length &&
+             !blobs.length && !flares.length;
     }
 
     function onTimeUp() {
@@ -1906,13 +2794,66 @@
     }
 
     /* --- THE LEVEL LAYER (web target) ------------------------------------
-       The three-star finish: the web shell has already played the slow
-       motion, and the round ends through the game's own result so the end
-       screen keeps these stat rows. Ignored by the playable, which has no
-       levels — see docs/LEVELS.md. */
+       `applyLevel(d)` is the escape hatch a lerp cannot cover (docs/LEVELS.md):
+       the level layer lerps the manifest's four `dial.*` knobs first and then
+       hands the game its own difficulty, 0 at the foot of the climb and 1 at
+       the top. Everything that makes a level a DIFFERENT game rather than a
+       harder one comes through here — the biome, the specials in play, how
+       much ice the refills carry, and how big a face the SCORE bead may wear.
+
+       It is called BEFORE reset(), which is what lets it write the biome and
+       the style straight into place: reset -> layout -> buildSprites bakes the
+       new bead out of the new style's cuts, and buildBg repaints the hall under
+       it, without a call of its own.
+
+       `null` is the playable and the endless run at 90/90, and it puts the
+       machine back exactly the way the file wrote it. Every read of BIO has a
+       fallback for the same reason. */
+    function applyLevel(d) {
+      var n = CONFIG.level | 0, i, row;
+      if (!n || d == null) {
+        BIO = null; POOL = ["charge", "nova"]; ICE_RATE = 0; MUL_FACE = 1;
+        /* A WEB build with no level is the endless run a perfect board
+           unlocks, and it gets the style held back for it; a PLAYABLE has no
+           levels at all and carries only the base one, because the builder
+           holds the other fourteen back from a creative that could never show
+           them. `CONFIG.slug` is what tells the two apart — the web build
+           injects it and a creative never has it. */
+        STYLE = CONFIG.slug ? LAD.bonusStyle : LAD.baseStyle;
+        D.sky = SKIN0.sky.slice();
+        D.wire = SKIN0.wire; D.plate = SKIN0.plate; D.hub = SKIN0.hub;
+        return;
+      }
+
+      // The biome is the stretch of the climb the LEVEL NUMBER sits in, never
+      // the difficulty: the two roads out of a fork have to be the same world.
+      BIO = LAD.biomes[0];
+      for (i = 0; i < LAD.biomeFrom.length; i++) if (n >= LAD.biomeFrom[i]) BIO = LAD.biomes[i];
+      D.sky = BIO.sky.slice();
+      D.wire = BIO.wire; D.plate = BIO.plate; D.hub = BIO.hub;
+
+      /* ...and the bead, which turns over twice as fast as the room: one style
+         per PAIR of levels, so thirty levels are fifteen boards. Clamped rather
+         than wrapped — a thirty-first level would otherwise start the set again
+         and read as a mistake, where holding the last one reads as the top. */
+      STYLE = LAD.styles[Math.min(LAD.styles.length - 1, Math.floor((n - 1) / 2))];
+
+      row = LAD.levels[(n - 1) % LAD.levels.length];
+      POOL = row.pool.slice();
+      ICE_RATE = row.ice || 0;
+
+      /* The SCORE bead's face climbs with the round, not with the dice: x2 at
+         the foot, x5 from the middle, x10 only where the level is long enough
+         that a four-second window is worth planning a move around. */
+      MUL_FACE = d < 0.34 ? 1 : d < 0.68 ? 2 : 3;
+    }
+
+    /* The three-star finish: the web shell has already played the slow motion,
+       and the round ends through the game's own result so the end screen keeps
+       its stat rows. Ignored by the playable, which has no levels. */
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp,
              onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: gameOver };
+             applyLevel: applyLevel, levelWon: gameOver };
   })();
 

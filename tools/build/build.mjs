@@ -315,6 +315,23 @@ async function gameFont(manifest, mode) {
 const ART_DIR = 'assets/image/embed';
 const WEB_ONLY_ART = ['background-desk'];
 
+/* A STYLE SET beyond its first member is web-only too, for the same reason and
+   at a much larger scale. `<slug>-ball-<colour>-NN.webp` is games/radiam's bead
+   in twenty designs and six colours: the LEVELS pick one design per pair of
+   levels, so all of them belong to a target that has levels, and a playable —
+   which is one round and no map — could never show the other fourteen. Left in,
+   they would be ~1.8 MB of base64 in a creative capped at 5 MB, to draw a bead
+   the ad never changes. Style 01 ships everywhere, because the ad should still
+   be painted.
+   It is a RULE and not a list because a list of ninety filenames is a list
+   nobody keeps in step with the artwork. */
+const WEB_ONLY_STYLE = /^ball-[a-z]+-(\d+)$/;
+function webOnlyArt(role) {
+  if (WEB_ONLY_ART.includes(role)) return true;
+  const m = WEB_ONLY_STYLE.exec(role);
+  return !!m && Number(m[1]) !== 1;
+}
+
 /* `background-phone` → backgroundPhone, and `decor-ball-01` → decorBall01: the
    digits matter, because a role ending in a number is what the decor pool is
    made of and `decorBall-01` is not an identifier — it would land in the
@@ -331,7 +348,7 @@ async function gameArt(slug, forWeb) {
   const roles = readdirSync(dir)
     .filter((f) => f.startsWith(prefix) && f.endsWith('.webp'))
     .map((f) => f.slice(prefix.length, -'.webp'.length))
-    .filter((role) => forWeb || !WEB_ONLY_ART.includes(role))
+    .filter((role) => forWeb || !webOnlyArt(role))
     .sort();
   if (!roles.length) return '';
 
