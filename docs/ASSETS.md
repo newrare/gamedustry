@@ -631,6 +631,51 @@ node tools/lab/embed-asset.mjs music.mp3 --key music
 
 Orbinity and Chainring both ship a ~30 s bed at 321 KB as a data URI.
 
+#### One track, several beds
+
+What loops is a **section** of the track, and by default that section is the
+whole file. `Music.play({ from, length, rate, gain })` names another one, so a
+long track is several beds at no extra cost: one stretch per biome or level
+band, plus a quiet, slower window for the menus. **The procedure is
+[MUSIC.md](MUSIC.md)** — read it before cutting a track into sections; the API
+is in [ENGINE.md](ENGINE.md#music--the-background-bed).
+
+#### A long track: `assets/audio/music/embed/` and `web.music`
+
+A playable is one file an ad network downloads before it can show anything, so a
+three-minute bed has no business in it — and no use either, having neither
+levels nor a menu. So the two targets ship different amounts of the same track:
+
+| target                    | what ships                                                  |
+| ------------------------- | ----------------------------------------------------------- |
+| playable                  | the **short cut** embedded in `ASSETS.sounds.music`         |
+| web (site, itch), android | the whole track, from `assets/audio/music/embed/<name>.mp3` |
+
+The web one is a manifest key and nothing else:
+
+```json
+"web": { "music": "arcider.mp3" }
+```
+
+`assets/audio/music/embed/` is the **shipping cut** and the build never encodes
+it — the same contract as `assets/image/embed/`, `assets/motor/font/` and
+`assets/audio/sfx/`. `assets/audio/music/` itself holds the masters (192 kbps
+stereo), which ship nowhere. One ffmpeg line makes each cut:
+
+```bash
+# the web target's bed — the whole track, mono 64 kbps
+ffmpeg -i assets/audio/music/arcider.mp3 -t 177.75 -ac 1 -ar 44100 -b:a 64k \
+       assets/audio/music/embed/arcider.mp3
+
+# the playable's — the one stretch it plays
+ffmpeg -ss 12 -t 36 -i assets/audio/music/arcider.mp3 -ac 1 -ar 44100 -b:a 64k music.mp3
+node tools/lab/embed-asset.mjs music.mp3 --key music
+```
+
+The builder swaps the entry for the web target rather than adding a second one,
+so the site never carries a music file nothing fetches. A game that names no
+`web.music` keeps its embedded cut on every target, which is the twelve others.
+
 ### The three end-screen keys
 
 The template already ships `uiScore`, `uiStar` and `uiRow` (~22 KB) — the shared

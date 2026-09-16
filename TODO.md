@@ -211,6 +211,20 @@ ______________________________________________________________________
   the ultra congratulation the veil is a leftover of: the same screen as above
   in its gold state, fired once, and never again on a later visit.
 
+- [ ] CODE — **the round's home button, and the game-over buttons, all
+  thirteen.** Two halves of the same question: where a player goes when they
+  stop playing. In the round, the home control
+  ([packages/webshell/menu.js:645](packages/webshell/menu.js)) opens the leave
+  card and drops straight to the menu — on a levelled game the way back is the
+  MAP, not the title screen, so the card needs the choice (MAP / MENU /
+  RESUME) rather than one question. On the end screen the two buttons are
+  relabelled per case (PLAY AGAIN / MENU, NEXT LEVEL / MAP,
+  [packages/webshell/menu.js:842](packages/webshell/menu.js)) and were never
+  read side by side: decide the set once — retry, next, map, menu — which two
+  show in which case, and in what order. One pass in `packages/webshell/`, no
+  `game.js` touched, and it reaches the thirteen at once. Related: the
+  game-over *content* pass in *The games*.
+
 - [ ] CODE — **a sticker collection, ten per game.** The cuts under
   `assets/image/object/` (414 of them across the thirteen) are the material: pick
   ten per game, adopt them like any other master, and unlock them against the
@@ -278,6 +292,15 @@ ______________________________________________________________________
   graphics set per locale. This is the asset half of the *upload the listing
   images* line in *Android*.
 
+- [ ] CODE — **review the game-over screens, all thirteen games.** Read the end
+  screen of each game and re-decide what it shows: the title and its variant,
+  the score, the stars, and above all the stat `rows` — at most four, and today
+  they were written game by game, so several print a number the player has no
+  use for while the one that describes the run is missing. Check each row
+  earns its line (it says something about *this* run, not a constant), that
+  the wording matches the game's own vocabulary, and that the title reads
+  differently on a win and on a loss. `endRound({ title, variant, score, stars, rows })` in section 6 is the only place to change.
+
 - [ ] CODE — **review the copy and the `Pop` callouts, all thirteen games.**
   Every score gain, combo and celebration beat goes through `Pop.show` and
   `Overlay.toast/banner`; the words, the styles and when they fire were written
@@ -338,3 +361,38 @@ ______________________________________________________________________
   hosts the fetch and talks to the iframe by `postMessage`, the game does not.
   Decide the identity model (a name typed once, stored in `Store`) and the
   anti-cheat stance before writing the schema.
+
+______________________________________________________________________
+
+## The codebase
+
+- [ ] CODE — **a full code audit: dead code, architecture, security.** Nothing
+  has ever been read end to end since the motor was split into `packages/` and
+  the web, itch and android targets were layered on top. One pass over
+  `packages/`, `games/*/game.js`, `tools/` and `site/`, three questions:
+
+  - **dead code** — helpers nobody calls any more, `ASSETS` entries nothing
+    plays or draws (`make events` already named one: `bouncetry` embeds `drop`
+    and never plays it), motor APIs no game uses (`Overlay.toast/banner/reward`
+    is the known case), `CONFIG` keys read nowhere, and the leftovers of the
+    single-file era — `tools/build/extract.mjs` among them. Every byte of a
+    game's sources ships in its creative, so a dead clip or a dead image is
+    paid for thirteen times.
+  - **structure** — is the `engine / ad glue / shell / webshell / platform`
+    split still where the seams are? What a game has to copy into section 6 to
+    work, what a target has to know about the motor (`window.__WEB__`), and
+    which of the thirteen `game.js` hold the same code written thirteen times
+    are the three things that say it is not. Anything shared by construction
+    belongs in `packages/`.
+  - **security** — the games are third-party HTML served in an iframe (the
+    site, itch, an ad network), so: no `eval`, no `new Function`, no
+    `innerHTML` fed by anything a player or a URL can write (`?lang=`,
+    `?mode=`, `?level=` are parsed today), the `Store` keys and the saved
+    progression treated as untrusted input on read, the site's own
+    `postMessage` origin-checked, and no key, token or personal data in any
+    committed file. `tools/` runs on the machine, not in a browser, but a
+    command built out of a file name still needs to be quoted.
+
+  Write the findings down before fixing anything: what is dead, what moves, and
+  what is a real hole, so the fixes land as separate changes rather than one
+  sweep nobody can review.

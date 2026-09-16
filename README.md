@@ -151,6 +151,8 @@ gamedustry/
     ├── ARCHITECTURE.md       ← how a game file is structured (the 7 sections)
     ├── CREATING_A_GAME.md    ← step-by-step recipe + prompt patterns
     ├── ASSETS.md             ← embedding images/sounds, staying under 5 MB
+    ├── MUSIC.md              ← one track, several beds: the sections procedure
+    ├── LEVELS.md             ← the 30-level map, the stars, the progression
     ├── AD_NETWORKS.md        ← MRAID, the CTA, per-network notes & QA
     └── INDUSTRIALIZATION.md  ← the four targets, the build, the deploy, the phasing
 ```

@@ -25,6 +25,10 @@
                            click path and the SPACE key are unchanged. A game
                            that declares `web.modes` in its manifest gets one
                            more entry per extra mode under PLAY (section 1b).
+    a bed over all of it   the same track the round plays, as its own quiet,
+                           slower section of the file — CONFIG.music.menu
+                           (section 1b). A game that names none keeps silent
+                           menus, and nothing else about it changes.
     panels in that band    LEADERBOARD / OPTIONS / HELP swap the menu out
                            without leaving the intro: same title, same scene,
                            a back arrow to come back — and one or two of the
@@ -174,6 +178,11 @@
     /* The motor holds the truth: these three calls are the whole integration,
        and they are no-ops on a playable because nothing there ever calls them. */
     function apply() {
+      /* Armed before the switch, never after: a bed turned back ON from the
+         menu has to come back on the menus' own section (section 1b) rather
+         than on whatever the last round played. From the pause card the state
+         is "playing" and the round's section is the one already armed. */
+      if (menuBed() && W.state() === "intro") W.Music.arm(menuBed());
       W.Sound.setMuted(!val.sfx);
       W.Music.setMuted(!val.music);
       W.Pop.setEnabled(val.pops);
@@ -185,6 +194,60 @@
     }
     return { get: function (k) { return val[k]; }, set: set, apply: apply };
   })();
+
+  /* ── 1b. the bed over the menus ───────────────────────────────────────── */
+
+  /* A playable's music starts with the round: there is nothing in front of it
+     but an ad's title card. A finished game has a menu, a map, three panels
+     and a pause card in front of that round, and silence over all of them
+     reads as a build with its audio broken.
+
+     So the menus get a bed of their own, and it is the SAME FILE the round
+     plays — one quiet, slower window of it, which the game names in
+     CONFIG.music.menu and the motor plays as a section (see Music.play in
+     packages/engine/engine.js):
+
+       music: { volume: 0.11, fade: 1.8,
+                menu: { from: 0, length: 40, rate: 0.85, gain: 0.5 } }
+
+     A game that declares no `menu` section keeps exactly what it had: this
+     whole part is inert, and its menus stay silent.
+
+     Nothing may play before a gesture — a context created on load is suspended
+     and resume() is refused until the player touches something — so the bed is
+     armed on the first pointer or key on the page, and then follows the
+     screens. */
+  var bedOut = false;                      // the first gesture has happened
+
+  function menuBed() { return (CONFIG.music || {}).menu || null; }
+
+  /* Back to the menu's own section. Starts the bed when nothing is playing
+     yet, crossfades when the round's section is; asking twice for the same
+     section is a no-op, so every arrival on the menu can call it. */
+  function toMenuBed() {
+    var sec = menuBed();
+    if (!sec || !bedOut) return;
+    W.Music.play(sec);
+    W.Music.unduck();
+  }
+
+  function letBedOut() {
+    if (bedOut || !menuBed()) return;
+    bedOut = true;
+    W.Sound.unlock();                      // we are inside the gesture: iOS is happy
+    if (W.state() === "intro") toMenuBed();
+  }
+
+  function bindBed() {
+    if (!menuBed()) return;
+    var go = function () {
+      letBedOut();
+      window.removeEventListener("pointerdown", go, true);
+      window.removeEventListener("keydown", go, true);
+    };
+    window.addEventListener("pointerdown", go, true);
+    window.addEventListener("keydown", go, true);
+  }
 
   /* ── 1b. game modes ───────────────────────────────────────────────────── */
 
@@ -836,6 +899,7 @@
     buildPause();
     rewireEnd();
     bindKeys();
+    bindBed();
     guardVisibility();
 
     /* The tagline is the motor's, written in English in CONFIG.tagline; a game
@@ -859,6 +923,7 @@
       if (state === "end") { labelEnd(); return; }
       if (state !== "intro") return;
       closePanel();
+      toMenuBed();               // the menus' own quiet section of the track
       armMode(MODES[0]);         // ...and PLAY is the default mode again
       /* Ninety of ninety is reached on an end screen, so the golden veil is
          re-read on the way back rather than only at boot. */

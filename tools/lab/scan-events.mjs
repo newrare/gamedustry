@@ -568,14 +568,29 @@ async function motorCalls() {
    appears in no call the scan can find, and a bench that lists the audio of a
    game has to list it from somewhere. */
 function musicConfig(src) {
-  const m = /\bmusic\s*:\s*\{([^}]*)\}/.exec(stripComments(src));
+  // The block may hold a nested one of its own (`menu`, the web shell's
+  // section of the track), so the body is read brace-aware rather than up to
+  // the first `}`.
+  const m = /\bmusic\s*:\s*\{/.exec(stripComments(src));
   if (!m) return null;
+  const body = braced(stripComments(src), m.index + m[0].length - 1);
+  if (body == null) return null;
   const out = {};
-  for (const part of splitArgs(m[1])) {
-    const kv = /^([\w$]+)\s*:\s*(.+)$/.exec(part.trim());
-    if (kv) out[kv[1]] = kv[2];
+  for (const part of splitArgs(body)) {
+    const kv = /^([\w$]+)\s*:\s*([\s\S]+)$/.exec(part.trim());
+    if (kv) out[kv[1]] = kv[2].replace(/\s+/g, ' ');
   }
   return out;
+}
+
+// The contents of the {...} whose opening brace sits at `at`, braces balanced.
+function braced(src, at) {
+  let depth = 0;
+  for (let i = at; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(at + 1, i);
+  }
+  return null;
 }
 
 export async function scanGame(slug) {

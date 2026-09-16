@@ -1522,7 +1522,13 @@
     if (State === "end") return;
     result = result || {};
     Loop.stop(); Round.stop();
-    Music.duck(0.55, 0.8);        // let the end-screen cues sit on top
+    /* The bed steps WELL back for the end screen — 30 % of its level, not the
+       55 % it used to be. What happens here is a reveal read in silence: the
+       title, then the score counting up, then a star and a stat row at a time,
+       each with a cue of its own, and the music was still loud enough to sit
+       on top of all of it. `startGame` and the web shell's MENU both unduck,
+       so nothing has to put it back. */
+    Music.duck(0.3, 0.8);
     result.score = result.score == null ? Math.round(HUD.score()) : result.score;
     for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
     var score = result.score;

@@ -450,6 +450,67 @@ function webConfigJs(manifest) {
 `;
 }
 
+/*
+  THE FULL-LENGTH BED — web target only.
+
+  A playable is one file an ad network downloads before it can show anything,
+  so its music is a SHORT CUT of the track, embedded in ASSETS like every
+  other asset it needs. The web target is a page whose assets are FILES —
+  fetched on demand and cached — so a game whose bed is a long track names
+  that track in its manifest and the web build ships the whole of it instead:
+
+    "web": { "music": "arcider.mp3" }    // assets/audio/music/embed/arcider.mp3
+
+  Same track both times; what changes is how much of it travels. The motor
+  plays a WINDOW of whatever it is handed (`Music.play`, see docs/ENGINE.md),
+  which is how one three-minute file becomes a bed per biome and a quiet,
+  slower one for the menus — none of which a playable has any use for, having
+  neither levels nor a menu.
+
+  `assets/audio/music/embed/` is the shipping cut and the build NEVER encodes
+  it — the same contract as assets/image/embed/, assets/motor/font/ and
+  assets/audio/sfx/: a committed, ready-to-ship input rather than a build
+  output, so `tools/update.mjs` stays fast and a rebuild cannot silently
+  re-compress the music. `assets/audio/music/` itself holds the masters, which
+  ship nowhere; one ffmpeg line is the whole pipeline:
+
+    ffmpeg -i assets/audio/music/<slug>.mp3 -ac 1 -ar 44100 -b:a 64k \
+           assets/audio/music/embed/<slug>.mp3
+
+  A game that names nothing keeps the cut its own ASSETS holds on every
+  target, which is the twelve others.
+*/
+const MUSIC_DIR = 'assets/audio/music/embed';
+
+// The key is written both ways across the thirteen — `music:` and `"music":`.
+const MUSIC_KEY = /(\bmusic"?\s*:\s*)"data:audio\/mpeg;base64,[A-Za-z0-9+/=]+"/;
+
+/* The long track REPLACES the game's own ASSETS entry rather than being
+   appended as an assignment: an assignment would leave the short cut in the
+   source, and the split build would then write — and the site would then
+   carry — a second music file nothing ever fetches. */
+async function webMusic(configSrc, manifest) {
+  const name = manifest && manifest.web && manifest.web.music;
+  if (!name) return configSrc;
+  if (!/^[\w.-]+\.mp3$/.test(name)) {
+    throw new Error(`${manifest.slug}: web.music "${name}" must name an .mp3 of ${MUSIC_DIR}/`);
+  }
+  const file = path.posix.join(MUSIC_DIR, name);
+  let buf;
+  try {
+    buf = await readBin(file);
+  } catch {
+    throw new Error(
+      `${manifest.slug}: web.music names ${file}, which is not there. Cut it from the master:\n` +
+      `  ffmpeg -i assets/audio/music/${name} -ac 1 -ar 44100 -b:a 64k ${file}`);
+  }
+  if (!MUSIC_KEY.test(configSrc)) {
+    throw new Error(`${manifest.slug}: web.music is set, but ASSETS.sounds has no embedded "music" entry to replace`);
+  }
+  const uri = `data:audio/mpeg;base64,${buf.toString('base64')}`;
+  return configSrc.replace(MUSIC_KEY, (m, pre) => `${pre}"${uri}"`);
+}
+
 function webDress(html, menuCss, menuJs) {
   let out = withWebHandle(html);
   out = out.replace('</style>', '\n/* ---- web: menu ---- */\n' + menuCss + '\n</style>');
@@ -671,6 +732,9 @@ async function main() {
     const artCfg = await gameArt(unit.template ? null : unit.name, WEBISH);
     const webCfg = artCfg + await brandJs(manifest) +
       (WEBISH ? slugJs(unit.template ? null : unit.name) + webConfigJs(manifest) : '');
+    // The web target's own bed, swapped into the game's ASSETS in place of the
+    // short cut a playable ships (THE FULL-LENGTH BED, above).
+    if (WEBISH) src.config = await webMusic(src.config, manifest);
 
     /* The typeface is a web-target default, so it goes in front of the SKIN
        rather than into the shared stylesheet: one family per game, and the
