@@ -180,6 +180,26 @@
                            // IS the climb: at a plain cruise the player reels
                            // the back-markers in and nobody else, and a
                            // booster is the only thing that passes the front
+      /* THE SPEEDOMETER IS A FANTASY DIAL, and deliberately so. The world is
+         measured in `pxPerM`, so the craft's 1020 px/s at the top of its ramp
+         is 92 km/h on the game's own scale — a number that says "scooter"
+         under a machine the rest of the frame draws as a blur. The readout is
+         scaled to what the SCREEN says instead: a full cruise reads about
+         500 km/h, a booster takes it past 850 and the gravel drops it like a
+         stone, which is the whole reason it is on screen — it is the one place
+         the pace is a figure and not a feeling. The distance, the objective and
+         the score are still the honest metres; this dial is the only thing in
+         the game that exaggerates, and it exaggerates in the direction the
+         picture already goes.
+
+         A fixed factor and not a per-level one, so the number MEANS something
+         across the climb: the ladder lerps `speedMax` from 820 to 1200, and a
+         dial rescaled per level would read 500 at the foot and 500 at the top
+         of a road that is half as fast again. Level 1 cruises at 400 and level
+         30 at 590 because that is what they do. */
+      kmhPerPx:   0.49,    // km/h per progress px/s: 1020 px/s -> 500 km/h
+      kmhEase:      10,    // 1/s the figure chases the real speed. Eased, or
+                           // three digits flicker at 60 fps and nothing is read
       boostTime:  3.0,     // seconds a booster lasts
       crashSlow:  0.55,    // seconds of crawling out of a crash
       gripEase:   4.2,     // how fast the speed multiplier follows its target
@@ -253,9 +273,31 @@
          pilot at `(1 - pace)` of the base speed, so putting it `f * R *
          (1 - pace)` metres up the road — R being the race, `f` the share of it
          that should be driven before the pass — has it caught at exactly `f`.
-         The two ends below spread the nineteen passes evenly from just after
-         the start to just before the flag, at every level and whatever the
-         field size, and they cannot be bunched by construction.
+         All the schedule has to decide is the `f` of each of the nineteen.
+
+         AND IT IS DEALT PER SECTION. The cuts already cut the race into
+         stretches, so the field is dealt into those stretches rather than
+         ramped from the line to the flag: each one gets its share of the
+         pilots, spread strictly inside it and never on a gate line, where a
+         place counted a metre either way would decide a run. No section can
+         then be a lonely cruise, and none of them a wall of traffic — which a
+         single ramp could not promise, because the gates are not the same
+         distance apart at every level.
+
+         THE LAST SECTION ALWAYS GETS `lastFoes`, and that is the point of the
+         whole shape: between the last checkpoint and the flag there are two
+         pilots left to take, and they are the race. A run-in with nobody in it
+         is a cruise to a result that was settled several hundred metres back —
+         which is what a boosted run used to arrive at, having passed the whole
+         field by four fifths of the way.
+
+         One of the two is caught halfway down it, which puts a boost-free
+         drive second at the flag. The other is scheduled just PAST the flag:
+         the leader is not caught by driving well, only by driving faster, and
+         a single booster in the run-in is worth far more than the 4% of the
+         race it stands beyond it. That is where the win — and the third star
+         with it — actually lives, and reaching the finish is never what is at
+         stake there, because the flag eliminates nobody (see checkCut).
 
          A side effect worth knowing: the fastest pilots do NOT start furthest
          up the road, because a pilot the player barely out-paces cannot be far
@@ -263,17 +305,20 @@
          order, and it corrects itself over the first few seconds as the quick
          ones pull away. The rank the HUD shows counts positions, so nothing
          downstream cares. */
-      passFirst:  0.10,    // share of the race driven before the FIRST pass...
-      passLast:   1.05,    /* ...and before the last one. OVER 1 on purpose: the
-                              schedule is worked out for a craft that never
-                              boosts, and a booster is +72% for three seconds —
-                              a run that picks a few up closes on the leaders
-                              well ahead of the plan and arrives at the flag
-                              with nobody left to pass. Set so that the podium
-                              is still reachable on a boost-free drive at both
-                              ends of the ladder (level 1: 6 of 7 passed by the
-                              flag, level 30: 18 of 19) and the last overtake
-                              lands near it on a real one. */
+      passFirst:  0.10,    // share of the race driven before the FIRST overtake:
+                           // a craft leaves the line at `speedMin` and traffic
+                           // met before it is up to speed is a contact, not a
+                           // pass
+      lastFoes:      2,    // pilots left to pass in the final section...
+      lastPass: [0.55, 1.04], // ...and where in it the schedule catches them.
+                           // The second is OVER 1 on purpose: the schedule is
+                           // worked out for a craft that never boosts, and the
+                           // leader of a race is not something a clean cruise
+                           // is owed
+      lastSpread: 0.35,    // the share of `rivalSpread` that final pair carries.
+                           // The ending of a race may not be rolled before the
+                           // start: a photo finish jittered by 14% of the race
+                           // is a flag crossed 400 m early or never reached
       rivalSpread:0.14,    // jitter on a pilot's place, as a share of it
       paceLow:   0.745,    // pace of the last rival, as a share of base speed
       paceHigh:  0.925,    // ...and of the leader, who very nearly matches it.
@@ -387,22 +432,22 @@
                            // out-driven, only out-boosted
       rivalPts:     60,    // score for taking a place
       cutWarn:      90,    // metres out the HUD starts counting a cut down
-      /* metres, and the rank the run has to be inside. Spaced by the PLACES
-         they ask for and not evenly: each one is five overtakes on from the
-         last. WHERE they stand is worked out from the grid rather than picked —
-         a gate asking for five places has to be far enough up the road that the
-         schedule in `passFirst` / `passLast` has already handed five over, plus
-         `cutSlack` so a mistake or a bad fork is survivable. These four are
-         that calculation for the twenty-pilot field the playable runs; the web
-         target builds its own per level (see `cutsFor`, section 6). */
+      /* metres, and the rank the run has to be inside — each one five overtakes
+         on from the last. THE GATES COME FIRST and the grid follows them: they
+         cut the race into the sections the field is dealt into (see
+         `lastFoes`), so a gate asking for five places is always driven at with
+         more than five already handed over, and that surplus is what makes a
+         mistake or a bad fork survivable. The last entry is the FLAG: its
+         `rank` is the place worth taking and not a wall, because nothing is
+         eliminated there. These four are the twenty-pilot field the playable
+         runs; the web target builds its own per level, over sections that
+         shrink into the run-in (see `cutsFor`, section 6). */
       cuts: [
         { at: 420, rank: 15 },
         { at: 675, rank: 10 },
         { at: 905, rank:  5 },
-        { at: 1020, rank: 3 }
+        { at: 1020, rank: 1 }        // the flag: the place to take, not a cut
       ],
-      cutSlack:   0.06,    // share of the race a gate stands past the metre the
-                           // grid alone would deliver its places on
 
       /* --- the gates -------------------------------------------------------
          NOTHING STANDS ABOVE THE ROAD. Every cut is a mark on the tarmac and
@@ -444,6 +489,19 @@
       blockMax:   0.20,    // start of the run / at full difficulty
       rampChance: 0.20,    // a ramp (always followed by the wall it clears)
       boostChance:0.30,
+      /* THE FIRST BIOME OPENS ON A RUN OF BOOSTERS — the road from the line to
+         the first checkpoint, on the first six levels, and nowhere else. That
+         stretch is where a player meets the craft, and it was the slowest road
+         in the game: the slots are at their widest down there (`slotFar` lerps
+         to 1300 px at level 1) and three in ten carried a pad, so the race
+         opened on a long quiet cruise and the first thing it taught was that
+         the machine is slow. It is paved instead — most slots a booster, laid
+         closer together — so the craft is up to speed within seconds and the
+         first gate arrives at a pace worth arriving at. A later biome, a later
+         section and the playable all roll the shipped `boostChance`: this is
+         the game teaching itself, not a difficulty knob. */
+      openBoost:  0.80,    // share of slots carrying a booster over it...
+      openGap:    0.55,    // ...and the share of the usual slot gap they sit on
       bombChance: 0.17,    // a scatter of mines
       bombMin:      2,     // mines in one scatter, at the start of the run...
       bombMax:      3,     // ...and at full difficulty
@@ -782,7 +840,7 @@
      out and back in with it. Nothing in the simulation knows about the
      projection; only section RENDER does.
 
-     TWENTY PILOTS START AND THREE FINISH. The player starts LAST, and the
+     TWENTY PILOTS START AND A HANDFUL FINISH. The player starts LAST, and the
      ranking is not a statistic bolted on the side: the rivals are real craft
      on the same road, each cruising at its own share of the base speed, and a
      place changes hands the moment one is physically overtaken. Clipping one
@@ -790,8 +848,11 @@
      shouldering through it.
 
      THE CUTS ARE THE CLOCK. At `cuts[i].at` metres the field is trimmed to
-     `cuts[i].rank` — 15th, then 10th, then 5th, then 3rd. Miss one and the run
-     is over however healthy the shield is; clear the last and the race is won.
+     `cuts[i].rank` — 15th, then 10th, then 5th. Miss one and the run is over
+     however healthy the shield is. The LAST entry of the table is the
+     chequered flag and it is not a cut: it ends the race for whoever reaches
+     it, in whatever place, and the two pilots the schedule keeps in front of
+     it are what the win is fought over (see `lastFoes`).
      Between two cuts the player is asked the same question over and over: the
      charge branch and stay alive, or the fast branch and climb. Both are
      right, never at the same time, and the cut counting down in the HUD is
@@ -849,43 +910,61 @@
        outright, so an arch standing anywhere else is either unreachable — the
        shipped ladder asked for 1300 m on a road that stopped at 1020 — or a
        finish that pays less than driving past it would. Putting it exactly on
-       the third star makes winning the race and maxing the level the same
-       event, which is the only way both can be true.
+       the third star's distance ends the race and the level on the same metre,
+       which is the only way both can be true. What that metre PAYS is then the
+       place it was reached in, and nothing else — see `raceStars`.
 
-       The cuts below it keep the shipped rhythm, evenly spaced up to the
-       arch, and there are fewer of them low down: two gates is a sprint, four
-       is a race. The ranks walk from the field size down to the podium, so a
-       cut always asks for the same SHARE of the field however big it is. */
+       The cuts below it are evenly spaced up to the arch, and there are fewer
+       of them low down: two gates is a sprint, four is a race. The ranks walk
+       from the field size down to the podium, so a cut always asks for the same
+       SHARE of the field however big it is. */
+    /* WHERE THE i-TH GATE STANDS, as a share of the race. The sections shrink
+       by one unit each — `S + 3 - i` — so the race tightens as it is driven
+       and the run-in is the shortest stretch of it, which is what two
+       overtakes wants: a sprint and not a stretch. Even sections were tried
+       and they are the one shape this cannot use: they pull the first gate to
+       a quarter of the race, and the six passes it asks for then land on a
+       craft that has barely left `speedMin` — the field arrives as contact
+       rather than as traffic, and at the top of the ladder, where a shield
+       holds two crashes, that is where the run ends. */
+    function cutAt(i, S) {
+      var tot = 0, cum = 0, j;
+      for (j = 1; j <= S; j++) tot += S + 3 - j;
+      for (j = 1; j <= i; j++) cum += S + 3 - j;
+      return cum / tot;
+    }
+
     function cutsFor(d) {
-      /* CEILED, and that is not cosmetic. The shell's third star is
+      /* CEILED, and that is not cosmetic. The shell's third band is
          `value >= goal * 2.2` in floating point, and 200 * 2.2 is
          440.00000000000006 — an arch standing at 440 would be crossed with the
-         third star still unearned, and a won race would pay two stars. The
-         ceiling puts the flag on the first metre that clears the threshold
-         however the double falls. */
+         band still unearned, and a race won in first place would pay two
+         stars. The ceiling puts the flag on the first metre that clears the
+         threshold however the double falls. */
       var finish = Math.ceil(goalOf(d) * 2.2), P = T.pilots;
-      var n = d < 0.25 ? 2 : d < 0.6 ? 3 : 4, i, q, rank, share, x, out = [];
+      var n = d < 0.25 ? 2 : d < 0.6 ? 3 : 4, i, rank, out = [];
+      /* The ladder walks the field down to the podium over the CHECKPOINTS, and
+         the flag is not one of them — it asks for first place because that is
+         what the run-in is for, and it eliminates nobody (see checkCut). */
       for (i = 1; i <= n; i++) {
-        q = i / n;
-        rank = i === n ? 3 : Math.min(P - 1, Math.max(4, Math.round(P - (P - 3) * q)));
-        /* WHERE A GATE STANDS FOLLOWS FROM THE GRID, not from an even spacing.
-           A gate asks for a share of the field to be behind the player, and
-           `seedRivals` hands that share over on a schedule it owns — so the
-           gate goes where the schedule has already delivered it, plus
-           `cutSlack`. Spaced evenly instead, the early gates land before the
-           places they ask for exist, and a clean drive is eliminated by the
-           arithmetic rather than by anything it did.
+        rank = i === n ? 1
+             : Math.min(P - 1, Math.max(4, Math.round(P - (P - 3) * (i / n))));
+        /* THE GATES DIVIDE THE RACE AND THE GRID FOLLOWS THEM. They used to be
+           placed off the pass schedule — a gate asking for five places stood
+           where the schedule had already handed five over — and that ordering
+           is now the other way round: `seedRivals` deals the field into the
+           sections these gates cut, so a gate is always driven at with more
+           places already taken than it asks for, whatever it is spaced at.
+           Even spacing is then the honest one, because the sections ARE the
+           race's beats and a beat is a length of road, not an arithmetic.
 
-           The LAST one is the exception twice over: it stands on `finish`,
-           which is the third star and is never rounded — the objective moves in
-           steps of 25 m so 2.2x it is a whole number of metres, and an arch
-           rounded up would sit past a star that had already stopped the round,
-           so the chequered flag would never be reached. The gates below it are
+           The LAST one is the exception: it stands on `finish`, which is the
+           third band and is never rounded — the objective moves in steps of
+           25 m so 2.2x it is a whole number of metres, and an arch rounded up
+           would sit past a threshold that had already stopped the round, so the
+           chequered flag would never be reached. The gates below it are
            landmarks and round to ten. */
-        share = (P - rank) / Math.max(1, P - 1);
-        x = T.passFirst + share * (T.passLast - T.passFirst) + T.cutSlack;
-        out.push({ at: i === n ? finish
-                              : Math.round(finish * Math.min(0.94, x) / 10) * 10,
+        out.push({ at: i === n ? finish : Math.round(finish * cutAt(i, n) / 10) * 10,
                    rank: rank });
       }
       return out;
@@ -1011,6 +1090,7 @@
     // Seeded from the first frame: fitCanvas() runs (and asks the game to
     // re-measure) before the first reset().
     var camP = 0, runT = 0, speed = T.speedMin, mult = 1, dist = 0, travel = 0;
+    var kmhShown = 0;                 // the speedometer's own eased figure
     var bx = 0, lean = 0, side = 0, touchSide = 0, keySide = 0, held = false;
     var air = false, airT = 0, airMax = 1, airFrom = 0, airZ = 0;
     var shield = T.shieldStart, boostT = 0, crashT = 0, invT = 0;
@@ -1021,6 +1101,9 @@
     // `rank` is 1 + however many rivals are physically up the road, recomputed
     // every frame; `cutI` is the next wall in CONFIG.play.cuts.
     var rank = T.pilots, fieldSize = T.pilots, cutI = 0, cutWarned = false;
+    // The chequered flag was crossed — the one thing that pays more than a
+    // single star (see raceStars).
+    var finished = false;
     // What the HUD pills currently read, so they are only rewritten on a change.
     var shownShield = -1, shownRank = "", shownNeed = "";
 
@@ -1207,6 +1290,19 @@
        ==================================================================== */
 
     function slotGap() { return (T.slotFar - (T.slotFar - T.slotNear) * diff()) * Rand.range(0.9, 1.15); }
+
+    // Which step of the opening chain the next booster is (see spawnBoost).
+    var openWeave = 0;
+
+    /* THE OPENING STRETCH OF A FIRST-BIOME LEVEL: the road from the line to
+       the first checkpoint, on the six levels that wear the first sky. `p` is
+       progress in world px and a cut is in metres, which is the one conversion
+       here. The playable and the endless run have no level and never qualify —
+       both of them are the game as it was designed. */
+    function openRoad(p) {
+      return levelD != null && BIO === LAD.biomes[0] && T.cuts.length > 0 &&
+             p < T.cuts[0].at * T.pxPerM;
+    }
     function gateGap() {
       var k = clamp((diff() - T.wallFrom) / (1 - T.wallFrom), 0, 1);
       return T.gateWide - (T.gateWide - T.gateTight) * k;
@@ -1384,24 +1480,33 @@
       nextP = pw + slotGap();
     }
 
+    /* A lone pad, dropped anywhere across the tarmac — except over the first
+       biome's opening stretch, where the pads are a CHAIN. A booster the craft
+       has to cross the whole road for is not speed handed over quickly: down
+       there the offsets walk a gentle weave instead, shallow enough to be
+       ridden from one pad to the next, which is also the first thing the
+       opening has to teach — that the machine is steered by leaning into a
+       line and not by aiming at one object at a time. */
     function spawnBoost(p) {
-      var h = roadHalf(p) - 62;
-      placePad(p, Rand.range(-h, h), 0);
-      nextP = p + slotGap() * 0.8;
+      var h = roadHalf(p) - 62, open = openRoad(p);
+      placePad(p, open ? Math.sin(openWeave++ * 0.9) * h * 0.55
+                       : Rand.range(-h, h), 0);
+      nextP = p + slotGap() * 0.8 * (open ? T.openGap : 1);
     }
 
     /* No cells here, ever: an open road is boosters, mines, barriers and the
        ramps that clear them. A shield only comes back inside a fork. */
     function spawnAhead(horizon) {
-      var p, r, bc;
+      var p, r, bc, bo;
       while (nextP < horizon) {
         p = nextP; r = Rand.range(0, 1);
         bc = T.blockMin + (T.blockMax - T.blockMin) * diff();
+        bo = openRoad(p) ? T.openBoost : T.boostChance;
         if (p > forkTry) spawnFork(p);                            // the decision
         else if (r < T.rampChance) spawnRamp(p);
-        else if (r < T.rampChance + T.boostChance) spawnBoost(p);
-        else if (r < T.rampChance + T.boostChance + bc) spawnBlocks(p);
-        else if (r < T.rampChance + T.boostChance + bc + T.bombChance) spawnBombs(p);
+        else if (r < T.rampChance + bo) spawnBoost(p);
+        else if (r < T.rampChance + bo + bc) spawnBlocks(p);
+        else if (r < T.rampChance + bo + bc + T.bombChance) spawnBombs(p);
         // ...and otherwise nothing at all. An empty stretch is not wasted
         // road: it is where the player looks up, reads the board and picks
         // which branch of the next fork they are going to need.
@@ -1625,12 +1730,51 @@
       return out;
     }
 
+    /* HOW MANY PASSES EACH SECTION GETS. The last one always gets `lastFoes`
+       — the podium fight — and what is left is dealt evenly over the sections
+       before it, the remainder going to the earliest of them, which are the
+       cheapest to make a mistake in. Derived and never rolled, like the
+       temperaments: a level is the same race every time it is opened. */
+    function passPlan(n, S) {
+      var last = Math.min(T.lastFoes, n), i;
+      var rest, base, extra, out = [];
+      if (S < 2) return [n];
+      rest = n - last;
+      base = Math.floor(rest / (S - 1));
+      extra = rest - base * (S - 1);
+      for (i = 0; i < S - 1; i++) out.push(base + (i < extra ? 1 : 0));
+      out.push(last);
+      return out;
+    }
+
+    /* WHEN EACH OF THEM IS CAUGHT, as a share of the whole race. A section's
+       passes are spread strictly inside it — `(j + 1) / (m + 1)` leaves half a
+       gap at each end, so no overtake lands on a gate line — except the final
+       section, which is the finish and is placed by hand out of `lastPass`:
+       one pass halfway down the run-in and one a few metres past the flag. */
+    function passSchedule(n) {
+      var cuts = T.cuts, S = cuts.length, R = cuts[S - 1].at;
+      var plan = passPlan(n, S), out = [], i, j, m, a, b, k;
+      for (i = 0; i < S; i++) {
+        a = i ? cuts[i - 1].at : R * T.passFirst;
+        b = cuts[i].at;
+        m = plan[i];
+        for (j = 0; j < m; j++) {
+          k = (i === S - 1 && T.lastPass[j] != null) ? T.lastPass[j]
+                                                     : (j + 1) / (m + 1);
+          out.push((a + (b - a) * k) / R);
+        }
+      }
+      return out;
+    }
+
     function seedRivals() {
-      var i, n = T.pilots - 1, cp = craftP(), q, pace, f, gap;
+      var i, n = T.pilots - 1, cp = craftP(), q, pace, f, gap, jit;
       // The race, in metres: the last cut is the chequered arch, and every pass
-      // is scheduled as a share of it (see passFirst / passLast in CONFIG).
+      // is scheduled as a share of it (see passSchedule).
       var R = T.cuts.length ? T.cuts[T.cuts.length - 1].at : 1020;
       var grid = foeGrid(n), fo;
+      var sched = passSchedule(n), lastFrom = n - Math.min(T.lastFoes, n);
       rivals = [];
       for (i = 0; i < n; i++) {
         q = n > 1 ? i / (n - 1) : 1;                  // 0 at the back, 1 in front
@@ -1640,11 +1784,11 @@
            share is slow, so the grid stands it further up the road and the
            player still meets it at the metre it was meant to be met at. */
         pace = (T.paceLow + (T.paceHigh - T.paceLow) * q) * fo.pace;
-        f = T.passFirst + (T.passLast - T.passFirst) * q;
+        f = sched[i];
         // ...and where that puts it on the grid. `1 - pace` is how fast the
         // player closes, so this is the lead that is spent exactly at `f`.
-        gap = f * R * (1 - pace) * T.pxPerM *
-              (1 + Rand.range(-T.rivalSpread, T.rivalSpread));
+        jit = i >= lastFrom ? T.rivalSpread * T.lastSpread : T.rivalSpread;
+        gap = f * R * (1 - pace) * T.pxPerM * (1 + Rand.range(-jit, jit));
         rivals.push({ p: cp + gap, pace: pace, kind: grid[i],
                       br: Rand.chance(0.5) ? -1 : 1, seed: Rand.range(0, TAU),
                       bump: 0, push: 0, pushV: 0, dodge: 0, hunt: 0 });
@@ -2049,9 +2193,13 @@
     }
     function showRank() {
       var cut = T.cuts[cutI], need = "FINAL " + fieldSize, left, txt;
+      var flag = cut && atFlag();
       if (cut) {
         left = Math.max(0, Math.round(cut.at - dist));
-        need = left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
+        // The flag is a countdown and never an ask: nothing about the place is
+        // at stake there but the win itself.
+        need = flag ? "FINISH · " + left + "M"
+             : left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
                                  : "CUT TO " + cut.rank + " · " + left + "M";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
@@ -2059,7 +2207,7 @@
       txt = rank + "/" + fieldSize;
       if (txt === shownRank && need === shownNeed) return;
       shownRank = txt; shownNeed = need;
-      HUD.setRight(txt, need, cut && rank > cut.rank ? "warn" : "");
+      HUD.setRight(txt, need, cut && !flag && rank > cut.rank ? "warn" : "");
     }
     function reset() {
       best = Store.get("bestScore", 0);
@@ -2088,6 +2236,7 @@
       Music.play(CONFIG.level ? BIO.music : null);
 
       camP = 0; runT = 0; speed = T.speedMin; mult = 1; dist = 0; travel = 0;
+      kmhShown = T.speedMin * T.kmhPerPx;      // it leaves the line already on
       fov = 0; lens();
       bx = roadX(T.camZ); camX = bx;      // dead centre of the road, not of the frame
       lean = 0; side = 0; touchSide = 0; keySide = 0; held = false;
@@ -2104,11 +2253,13 @@
       // The first fork waits until the player has ridden a straight road for a
       // few seconds: a choice only reads as a choice once the default is known.
       forkTry = T.forkFirst;
+      openWeave = 0;
 
       // The grid: nineteen rivals stacked up the road, so the player starts on
       // the back row of a twenty-craft field.
       seedRivals();
       rank = T.pilots; fieldSize = T.pilots; cutI = 0; cutWarned = false;
+      finished = false;
 
       shownShield = -1; shownRank = ""; shownNeed = "";
       // The rail starts settled on a full shield, so the first frame of a run
@@ -2154,6 +2305,7 @@
       if (crashT > 0) tgt *= 0.42;
       mult += (tgt - mult) * Math.min(1, dt * T.gripEase);
       speed = baseSpeed() * mult;
+      kmhShown += (speed * T.kmhPerPx - kmhShown) * Math.min(1, dt * T.kmhEase);
 
       bx += lean * T.steer * (0.72 + 0.28 * Math.min(1, speed / T.speedMax)) * dt;
 
@@ -2300,8 +2452,12 @@
        booster on, which is the entire point of announcing it.
        ==================================================================== */
 
+    // The chequered flag is the last entry of `cuts` and it is not a cut: it
+    // ends the race for whoever reaches it (see checkCut).
+    function atFlag() { return cutI === T.cuts.length - 1; }
+
     function checkCut() {
-      var cut = T.cuts[cutI], safe;
+      var cut = T.cuts[cutI], safe, flag = atFlag();
       if (!cut) return;
 
       /* The warning that gives the player time to do something about it. It is
@@ -2312,18 +2468,26 @@
          cyan means inside, red means pass someone. */
       if (!cutWarned && cut.at - dist <= T.cutWarn) {
         cutWarned = true;
-        safe = rank <= cut.rank;
+        safe = flag || rank <= cut.rank;
         Overlay.vignette(safe ? "rgba(53,232,255,.7)" : "rgba(255,45,85,.8)", 1, 620);
         Sound.clip("warn", 0.7, safe ? 1.1 : 0.9);
       }
       if (dist < cut.at) return;
 
-      if (rank > cut.rank) { die("ELIMINATED"); return; }
+      /* THE FLAG ELIMINATES NOBODY. A checkpoint is a wall and being outside it
+         ends the run; the finish is the end of the race and ends it for
+         whoever gets there, in whatever place. It used to ask for the podium
+         like any other cut, and that was one ending too many: a run driven to
+         the very last metre was told it had been eliminated ON the line, and
+         under the star rule it now scores exactly what a crash at a third of
+         the distance scores. The culling belongs to the checkpoints; the flag
+         belongs to the race. */
+      if (!flag && rank > cut.rank) { die("ELIMINATED"); return; }
 
       // Through it — and the field is REALLY trimmed. Everyone the cut took is
       // deleted from the road, so the pack the player is racing gets visibly
       // shorter every time and the "3/10" in the HUD is a fact and not a label.
-      trimField(cut.rank);
+      if (!flag) trimField(cut.rank);
       cutI++;
       cutWarned = false;
       pick += T.milePts * 2;
@@ -2339,7 +2503,9 @@
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
       Pop.show("combo", { word: fieldSize + " PILOTS LEFT",
-                          sub: "NEXT CUT · TOP " + T.cuts[cutI].rank, at: "center" });
+                          sub: atFlag() ? "FINISH · TAKE THE LEAD"
+                                        : "NEXT CUT · TOP " + T.cuts[cutI].rank,
+                          at: "center" });
       showRank();
     }
 
@@ -2366,13 +2532,39 @@
       ];
     }
 
-    // Clearing the last cut wins the race outright — the one ending the whole
-    // structure is built towards, so it gets all three stars and the podium.
+    /* THE STARS ARE THE RESULT OF THE RACE, and nothing else — not the score,
+       not the distance, not how many cuts were survived. A race is won by
+       crossing the flag in front, so:
+
+         3 — the chequered flag taken in FIRST place. The whole field passed,
+             which a boost-free drive cannot do — the schedule keeps the leader
+             just past the flag (see `lastPass`), so the win is bought on the
+             fast branch of the forks, which is exactly the decision the run is
+             built around;
+         2 — the flag in any other place. The race was finished, and the flag
+             turns nobody away: the checkpoints did the culling;
+         1 — the road ran out under it, the objective covered all the same;
+         0 — short of the objective.
+
+       The objective is the LEVEL's distance on the web target, where the star
+       bands are the shell's and `levelStars` only caps them. The playable has
+       no objective at all, so its first gate stands in for one — the only
+       distance it names. */
+    function raceStars() {
+      if (finished) return rank === 1 ? 3 : 2;
+      return cutI >= 1 ? 1 : 0;
+    }
+
+    // Clearing the last cut ends the race at the flag — the ending the whole
+    // structure is built towards, and the only one that can pay three stars.
     function win() {
+      finished = true;
+      var st = raceStars();
       var sc = Math.floor(travel + pick) + 500;
       endRound({
-        title: rank === 1 ? "RACE WON!" : "ON THE PODIUM!",
-        variant: "perfect",
+        title: rank === 1 ? "RACE WON!"
+             : rank <= 3 ? "ON THE PODIUM!" : "RACE FINISHED!",
+        variant: st === 3 ? "perfect" : "win",
         score: sc,
         /* The METRES here too, for the same reason `die` reports them: on the
            web target the last arch stands on the level's third star, so a
@@ -2380,23 +2572,21 @@
            Reporting the score instead would hand the level layer a number in
            the wrong unit and lose the stars the drive just earned. */
         levelScore: Math.floor(dist),
-        stars: 3,
+        stars: st,
         rows: resultRows(sc)
       });
     }
 
     function die(title) {
       var sc = Math.floor(travel + pick);
-      // Stars are the board, not the score: surviving cuts is the whole game.
-      var st = cutI >= 3 ? 3 : cutI >= 1 ? 2 : 1;
       endRound({
         title: title || CONFIG.copy.gameOver,
-        variant: st === 3 ? "win" : "",
+        variant: "",
         score: sc,
         // A level's objective is a distance: the ROAD covered, and nothing
         // else (web target only — see levelProgress).
         levelScore: Math.floor(dist),
-        stars: st,
+        stars: raceStars(),
         rows: resultRows(sc)
       });
     }
@@ -2464,8 +2654,28 @@
     var WASH_A   = [0.34, 0.50, 0.70];
     var WASH_W   = [2.10, 1.30, 0.26];
 
+    /* THE FACE THE FIGURE IS SET IN. The web build embeds the game's own family
+       and hands it to the page as `--web-font` (see the builder and
+       packages/webshell/menu.css); a playable ships no font at all and falls
+       back to the motor's system stack. Resolved here rather than per frame:
+       it is a `getComputedStyle` read, and `metrics()` is where everything
+       else that only changes with the frame is worked out. */
+    var SYS_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    var speedoFont = SYS_FONT;
+
+    function readFont() {
+      var v = "";
+      try {
+        v = getComputedStyle(document.documentElement)
+              .getPropertyValue("--web-font") || "";
+      } catch (e) { v = ""; }
+      v = v.replace(/^\s+|\s+$/g, "");
+      speedoFont = v ? v + "," + SYS_FONT : SYS_FONT;
+    }
+
     function metrics() {
       var i, x, w;
+      readFont();
       halfW = view.w * 0.5;
       horizonY = Math.round(Layout.top + Layout.h * T.horizon);
       anchorY = Layout.bottom - T.anchor;
@@ -3742,6 +3952,50 @@
       ctx.restore();
     }
 
+    /* THE SPEEDOMETER — bottom-left of the play band, in the column the shield
+       rail already owns, because that side of the frame IS the instrument side
+       and the road's interest is all in the middle. It sits just clear of the
+       rail and just above `Layout.bottom`, so it is over the CTA bar on the
+       playable and over nothing on the web target, whose own two controls are
+       in the opposite corner.
+
+       No plate under it and no glow behind it: a box would be a second object
+       to read and `shadowBlur` is banned per frame (see CLAUDE.md). What keeps
+       three digits legible over a bright road is the same thing that keeps the
+       HUD legible — a dark stroke around them, drawn once.
+
+       The colour is the only thing it says beyond the figure: gold while a
+       booster burns, red while the gravel is taking the pace off, white the
+       rest of the time. That is the dial reading back the two things that move
+       it, in the place the eye is already looking for the shield. */
+    function drawSpeedo() {
+      var r = shieldRail, x = r.x + r.w + 14, y = Layout.bottom - 16;
+      var n = String(Math.max(0, Math.round(kmhShown))), col;
+      col = boostT > 0 ? "#ffd43b" : mult < 0.9 ? "#ff2d55" : "#ffffff";
+
+      ctx.save();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.lineJoin = "round";
+      /* The outline is what makes it legible, and it has to be strong: the MIST
+         biome lays a pale lilac road and white digits on it read as nothing. */
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "rgba(4,4,20,.72)";
+
+      ctx.font = "900 52px " + speedoFont;
+      ctx.strokeText(n, x, y);
+      ctx.fillStyle = col;
+      ctx.fillText(n, x, y);
+
+      x += ctx.measureText(n).width + 10;
+      ctx.font = "900 20px " + speedoFont;
+      ctx.lineWidth = 5;
+      ctx.strokeText("KM/H", x, y);
+      ctx.fillStyle = rgba(col, 0.9);
+      ctx.fillText("KM/H", x, y);
+      ctx.restore();
+    }
+
     function render() {
       buildRows();
       drawSky();
@@ -3763,6 +4017,7 @@
       ctx.restore();
       drawCraft();
       drawShieldRail();
+      drawSpeedo();
     }
 
     function onResize() { metrics(); lens(); }
@@ -3775,23 +4030,40 @@
        asking for 900 m has to mean 900 m of tarmac, and the arch that ends the
        race stands on that same number (see `cutsFor`); measuring the objective
        on the boosted counter would fire the third star before the player ever
-       reached the chequered flag. `levelWon` is the three-star finish — the web shell has
-       already played the slow motion, and the round ends through the game's
-       own result so the end screen keeps these stat rows. `applyLevel` is the
-       third and it is at the top of this module, because what it rewrites —
-       the biome, the trace, the cuts, which hazards exist — is read all over
-       the file. All three are ignored by the playable, which has no levels —
-       see docs/LEVELS.md. */
+       reached the chequered flag.
+
+       `levelStars` is the second, and it is what makes the board a RACE
+       result rather than a distance read: the shell's three bands say whether
+       the objective was covered, and this caps them — a run that stopped
+       short of the flag is worth one star however far it drove, the flag
+       itself is worth two, and only first place is worth three (see
+       `raceStars`). It filters the live pill as well as the end screen, so
+       the stars the round wears are the stars it will be paid.
+
+       `levelWon` is the shell's own three-star finish. It cannot fire here any
+       more — nothing raises the count past one before the flag, and the flag
+       ends the round through `win()` on the same frame — but it stays pointed
+       at the podium, which is the truthful ending if the shell ever reaches
+       for it. `applyLevel` is the fourth and it is at the top of this module,
+       because what it rewrites — the biome, the trace, the cuts, which hazards
+       exist — is read all over the file. All of them are ignored by the
+       playable, which has no levels — see docs/LEVELS.md. */
     function levelProgress() { return Math.floor(dist); }
+
+    function levelStars(st) {
+      if (finished) return rank === 1 ? 3 : 2;
+      return Math.min(st, 1);
+    }
 
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             /* `levelWon` is the PODIUM and not `die`: on the web target the
-                last arch stands on the level's third star, so a third star
-                means the craft is at the chequered flag with every cut behind
-                it — which is a race won, finish bonus included. The level
-                layer writes the title over it either way. */
-             levelProgress: levelProgress, levelWon: win,
+             /* `levelWon` is the PODIUM and not `die`: the last arch stands on
+                the level's third star, so a shell-side win could only ever
+                happen at the chequered flag with every cut behind it — which
+                is a race won, finish bonus included. The level layer writes
+                the title over it either way. */
+             levelProgress: levelProgress, levelStars: levelStars,
+             levelWon: win,
              applyLevel: applyLevel };
   })();
 

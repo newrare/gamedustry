@@ -108,7 +108,7 @@ development pages and answer only to the short rules in their own sections.
      character no longer depends on the row count — it arrives at twice its
      size and settles into the corner over the reveal, painted under everything
      the screen writes (see [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what
-     picks the face — 3 → happy, 2 → neutral, 1 or 0 → sad.
+     picks the face — 3 → happy, 2 or 1 → neutral, 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
    `Fx.burst/ring/shake/flash/freeze`, `Pop.show` for **every word the game
    writes** — a status line included, which is what the `alert` style is for —
@@ -320,10 +320,13 @@ its `targets` and nothing else:
   any `game.js`. **The round wears its three stars live**, in a pill under the
   HUD (never *in* it), and **the third star ends it**: slow motion down to 12 %
   over ~0.6 s, then the end screen, because a player who has maxed a level
-  should not have to die to be told so. A game refines that with two optional
+  should not have to die to be told so. A game refines that with three optional
   hooks — `Game.levelProgress()` (what the objective is measured against; the
-  HUD score otherwise) and `Game.levelWon()` (how it ends its own round, so the
-  end screen keeps its stat rows). See [docs/LEVELS.md](docs/LEVELS.md).
+  HUD score otherwise), `Game.levelStars(stars, value)` (a CAP over what those
+  bands pay, never a promotion: `games/arcider` is a race, so the third star
+  is the chequered flag taken in first place and a run that never reached it
+  is worth one) and `Game.levelWon()` (how it ends its own round, so the end
+  screen keeps its stat rows). See [docs/LEVELS.md](docs/LEVELS.md).
 
 It reads `window.__WEB__` — a plain list of motor references, never behaviour, so
 the motor knows nothing about the front end. An *online* leaderboard and
@@ -379,7 +382,7 @@ declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
 | `-background-phone.png`              | behind the intro and the end screen — **never behind the round**     |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
 | `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
-| `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0–1 / 2 / 3)        |
+| `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0 / 1–2 / 3)        |
 | `-decor-NN.png`                      | the decor pool, scattered over the screens (below)                   |
 
 `assets/image/master/` is the **master**: what came out of the image model, up to

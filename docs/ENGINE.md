@@ -683,7 +683,7 @@ CONFIG.art = {
   backgroundDesk:  "…",   // the bands around the frame — WEB TARGET ONLY
   title:           "…",   // the logotype: replaces #app-icon AND #intro-title
   characterSad:    "…",   // the end screen's face, by star count:
-  characterNeutral:"…",   //   0-1 → sad, 2 → neutral, 3 → happy
+  characterNeutral:"…",   //   0 → sad, 1-2 → neutral, 3 → happy
   characterHappy:  "…",   //   stars:null → neutral
   decor01:         "…",   // the decor pool — see `Decor` below
   // …plus anything else named <slug>-<name>.png, e.g. slipdeck's cardKing

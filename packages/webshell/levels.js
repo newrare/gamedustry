@@ -267,6 +267,27 @@
     return value >= g * 2.2 ? 3 : value >= g * 1.5 ? 2 : value >= g ? 1 : 0;
   }
 
+  /* WHAT THE THREE BANDS ACTUALLY PAY. A game whose round is not won by piling
+     up a quantity may CAP them through `Game.levelStars(stars, value)`.
+     arcider is the one: the objective says how far the craft drove, but the
+     board is a race, so a run that stopped short of the chequered flag is
+     worth one star however far it drove, the flag is worth two, and only first
+     place is worth three.
+
+     A filter, never a promotion — the measure stays the objective's, a level
+     is still cleared by meeting it, and no hook may hand out a star the value
+     did not reach. It runs on the live pill as well as on the result, so the
+     stars a round wears are the stars it will be paid; the BAR under them
+     keeps walking the raw bands, because what it counts down is the distance
+     to the next threshold and that is the same distance either way. */
+  function starsEarned(n, value) {
+    var st = starsFor(n, value);
+    if (W.Game && W.Game.levelStars) {
+      st = Math.max(0, Math.min(st, W.Game.levelStars(st, value) | 0));
+    }
+    return st;
+  }
+
   /* ── 3. the saved progression ─────────────────────────────────────────── */
 
   /* One key per game, through Store — localStorage with an in-memory map
@@ -436,7 +457,7 @@
     last = null;
     if (!ON || !n) return;                      // the endless run scores nothing
     var value = result.levelScore == null ? result.score : result.levelScore;
-    var st = starsFor(n, value);
+    var st = starsEarned(n, value);
     var goal = goalOf(dOf(n));
 
     result.stars = st;
@@ -507,12 +528,14 @@
      distance the player still cares about. */
   function paintHud(value) {
     var n = CONFIG.level, g = goalOf(dOf(n));
-    var st = starsFor(n, value);
-    var lo = st === 0 ? 0 : st === 1 ? g : g * 1.5;
-    var hi = st === 0 ? g : st === 1 ? g * 1.5 : g * 2.2;
-    var k = st >= 3 ? 1 : Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
+    // The bar walks the raw bands and the stars are what they earn — the two
+    // differ only for a game that caps them (see starsEarned).
+    var raw = starsFor(n, value), st = starsEarned(n, value);
+    var lo = raw === 0 ? 0 : raw === 1 ? g : g * 1.5;
+    var hi = raw === 0 ? g : raw === 1 ? g * 1.5 : g * 2.2;
+    var k = raw >= 3 ? 1 : Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
     hudFill.style.width = (k * 100).toFixed(1) + "%";
-    hudGoal.textContent = num(Math.round(st >= 3 ? value : hi));
+    hudGoal.textContent = num(Math.round(raw >= 3 ? value : hi));
     if (st === litStars) return;
     /* A star landing is a beat of its own: the pill punches, the star burns in
        and the chime goes up a step. */

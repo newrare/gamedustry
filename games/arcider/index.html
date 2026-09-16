@@ -1611,6 +1611,26 @@
                            // IS the climb: at a plain cruise the player reels
                            // the back-markers in and nobody else, and a
                            // booster is the only thing that passes the front
+      /* THE SPEEDOMETER IS A FANTASY DIAL, and deliberately so. The world is
+         measured in `pxPerM`, so the craft's 1020 px/s at the top of its ramp
+         is 92 km/h on the game's own scale — a number that says "scooter"
+         under a machine the rest of the frame draws as a blur. The readout is
+         scaled to what the SCREEN says instead: a full cruise reads about
+         500 km/h, a booster takes it past 850 and the gravel drops it like a
+         stone, which is the whole reason it is on screen — it is the one place
+         the pace is a figure and not a feeling. The distance, the objective and
+         the score are still the honest metres; this dial is the only thing in
+         the game that exaggerates, and it exaggerates in the direction the
+         picture already goes.
+
+         A fixed factor and not a per-level one, so the number MEANS something
+         across the climb: the ladder lerps `speedMax` from 820 to 1200, and a
+         dial rescaled per level would read 500 at the foot and 500 at the top
+         of a road that is half as fast again. Level 1 cruises at 400 and level
+         30 at 590 because that is what they do. */
+      kmhPerPx:   0.49,    // km/h per progress px/s: 1020 px/s -> 500 km/h
+      kmhEase:      10,    // 1/s the figure chases the real speed. Eased, or
+                           // three digits flicker at 60 fps and nothing is read
       boostTime:  3.0,     // seconds a booster lasts
       crashSlow:  0.55,    // seconds of crawling out of a crash
       gripEase:   4.2,     // how fast the speed multiplier follows its target
@@ -1684,9 +1704,31 @@
          pilot at `(1 - pace)` of the base speed, so putting it `f * R *
          (1 - pace)` metres up the road — R being the race, `f` the share of it
          that should be driven before the pass — has it caught at exactly `f`.
-         The two ends below spread the nineteen passes evenly from just after
-         the start to just before the flag, at every level and whatever the
-         field size, and they cannot be bunched by construction.
+         All the schedule has to decide is the `f` of each of the nineteen.
+
+         AND IT IS DEALT PER SECTION. The cuts already cut the race into
+         stretches, so the field is dealt into those stretches rather than
+         ramped from the line to the flag: each one gets its share of the
+         pilots, spread strictly inside it and never on a gate line, where a
+         place counted a metre either way would decide a run. No section can
+         then be a lonely cruise, and none of them a wall of traffic — which a
+         single ramp could not promise, because the gates are not the same
+         distance apart at every level.
+
+         THE LAST SECTION ALWAYS GETS `lastFoes`, and that is the point of the
+         whole shape: between the last checkpoint and the flag there are two
+         pilots left to take, and they are the race. A run-in with nobody in it
+         is a cruise to a result that was settled several hundred metres back —
+         which is what a boosted run used to arrive at, having passed the whole
+         field by four fifths of the way.
+
+         One of the two is caught halfway down it, which puts a boost-free
+         drive second at the flag. The other is scheduled just PAST the flag:
+         the leader is not caught by driving well, only by driving faster, and
+         a single booster in the run-in is worth far more than the 4% of the
+         race it stands beyond it. That is where the win — and the third star
+         with it — actually lives, and reaching the finish is never what is at
+         stake there, because the flag eliminates nobody (see checkCut).
 
          A side effect worth knowing: the fastest pilots do NOT start furthest
          up the road, because a pilot the player barely out-paces cannot be far
@@ -1694,17 +1736,20 @@
          order, and it corrects itself over the first few seconds as the quick
          ones pull away. The rank the HUD shows counts positions, so nothing
          downstream cares. */
-      passFirst:  0.10,    // share of the race driven before the FIRST pass...
-      passLast:   1.05,    /* ...and before the last one. OVER 1 on purpose: the
-                              schedule is worked out for a craft that never
-                              boosts, and a booster is +72% for three seconds —
-                              a run that picks a few up closes on the leaders
-                              well ahead of the plan and arrives at the flag
-                              with nobody left to pass. Set so that the podium
-                              is still reachable on a boost-free drive at both
-                              ends of the ladder (level 1: 6 of 7 passed by the
-                              flag, level 30: 18 of 19) and the last overtake
-                              lands near it on a real one. */
+      passFirst:  0.10,    // share of the race driven before the FIRST overtake:
+                           // a craft leaves the line at `speedMin` and traffic
+                           // met before it is up to speed is a contact, not a
+                           // pass
+      lastFoes:      2,    // pilots left to pass in the final section...
+      lastPass: [0.55, 1.04], // ...and where in it the schedule catches them.
+                           // The second is OVER 1 on purpose: the schedule is
+                           // worked out for a craft that never boosts, and the
+                           // leader of a race is not something a clean cruise
+                           // is owed
+      lastSpread: 0.35,    // the share of `rivalSpread` that final pair carries.
+                           // The ending of a race may not be rolled before the
+                           // start: a photo finish jittered by 14% of the race
+                           // is a flag crossed 400 m early or never reached
       rivalSpread:0.14,    // jitter on a pilot's place, as a share of it
       paceLow:   0.745,    // pace of the last rival, as a share of base speed
       paceHigh:  0.925,    // ...and of the leader, who very nearly matches it.
@@ -1818,22 +1863,22 @@
                            // out-driven, only out-boosted
       rivalPts:     60,    // score for taking a place
       cutWarn:      90,    // metres out the HUD starts counting a cut down
-      /* metres, and the rank the run has to be inside. Spaced by the PLACES
-         they ask for and not evenly: each one is five overtakes on from the
-         last. WHERE they stand is worked out from the grid rather than picked —
-         a gate asking for five places has to be far enough up the road that the
-         schedule in `passFirst` / `passLast` has already handed five over, plus
-         `cutSlack` so a mistake or a bad fork is survivable. These four are
-         that calculation for the twenty-pilot field the playable runs; the web
-         target builds its own per level (see `cutsFor`, section 6). */
+      /* metres, and the rank the run has to be inside — each one five overtakes
+         on from the last. THE GATES COME FIRST and the grid follows them: they
+         cut the race into the sections the field is dealt into (see
+         `lastFoes`), so a gate asking for five places is always driven at with
+         more than five already handed over, and that surplus is what makes a
+         mistake or a bad fork survivable. The last entry is the FLAG: its
+         `rank` is the place worth taking and not a wall, because nothing is
+         eliminated there. These four are the twenty-pilot field the playable
+         runs; the web target builds its own per level, over sections that
+         shrink into the run-in (see `cutsFor`, section 6). */
       cuts: [
         { at: 420, rank: 15 },
         { at: 675, rank: 10 },
         { at: 905, rank:  5 },
-        { at: 1020, rank: 3 }
+        { at: 1020, rank: 1 }        // the flag: the place to take, not a cut
       ],
-      cutSlack:   0.06,    // share of the race a gate stands past the metre the
-                           // grid alone would deliver its places on
 
       /* --- the gates -------------------------------------------------------
          NOTHING STANDS ABOVE THE ROAD. Every cut is a mark on the tarmac and
@@ -1875,6 +1920,19 @@
       blockMax:   0.20,    // start of the run / at full difficulty
       rampChance: 0.20,    // a ramp (always followed by the wall it clears)
       boostChance:0.30,
+      /* THE FIRST BIOME OPENS ON A RUN OF BOOSTERS — the road from the line to
+         the first checkpoint, on the first six levels, and nowhere else. That
+         stretch is where a player meets the craft, and it was the slowest road
+         in the game: the slots are at their widest down there (`slotFar` lerps
+         to 1300 px at level 1) and three in ten carried a pad, so the race
+         opened on a long quiet cruise and the first thing it taught was that
+         the machine is slow. It is paved instead — most slots a booster, laid
+         closer together — so the craft is up to speed within seconds and the
+         first gate arrives at a pace worth arriving at. A later biome, a later
+         section and the playable all roll the shipped `boostChance`: this is
+         the game teaching itself, not a difficulty knob. */
+      openBoost:  0.80,    // share of slots carrying a booster over it...
+      openGap:    0.55,    // ...and the share of the usual slot gap they sit on
       bombChance: 0.17,    // a scatter of mines
       bombMin:      2,     // mines in one scatter, at the start of the run...
       bombMax:      3,     // ...and at full difficulty
@@ -2205,7 +2263,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "1.5.0",
+    version: "1.8.0",
     mark: "data:image/webp;base64,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"
   };
 
@@ -3927,13 +3985,13 @@
 
     /* Which face the end screen wears. The star count is the one verdict every
        game already hands the motor on `endRound`, so this works for all
-       thirteen without a line of game code: a round worth 0 or 1 star is a
-       loss, 2 is a pass, 3 is the run the player wanted. A game that passes
-       `stars: null` has no verdict to read, and gets the neutral face. */
+       thirteen without a line of game code: a round worth no star is the only
+       loss, 1 or 2 is a pass, 3 is the run the player wanted. A game that
+       passes `stars: null` has no verdict to read, and gets the neutral face. */
     function faceFor(stars) {
       if (stars == null) return art.characterNeutral;
       if (stars >= 3) return art.characterHappy;
-      if (stars >= 2) return art.characterNeutral;
+      if (stars >= 1) return art.characterNeutral;
       return art.characterSad;
     }
 
@@ -4803,7 +4861,7 @@
      out and back in with it. Nothing in the simulation knows about the
      projection; only section RENDER does.
 
-     TWENTY PILOTS START AND THREE FINISH. The player starts LAST, and the
+     TWENTY PILOTS START AND A HANDFUL FINISH. The player starts LAST, and the
      ranking is not a statistic bolted on the side: the rivals are real craft
      on the same road, each cruising at its own share of the base speed, and a
      place changes hands the moment one is physically overtaken. Clipping one
@@ -4811,8 +4869,11 @@
      shouldering through it.
 
      THE CUTS ARE THE CLOCK. At `cuts[i].at` metres the field is trimmed to
-     `cuts[i].rank` — 15th, then 10th, then 5th, then 3rd. Miss one and the run
-     is over however healthy the shield is; clear the last and the race is won.
+     `cuts[i].rank` — 15th, then 10th, then 5th. Miss one and the run is over
+     however healthy the shield is. The LAST entry of the table is the
+     chequered flag and it is not a cut: it ends the race for whoever reaches
+     it, in whatever place, and the two pilots the schedule keeps in front of
+     it are what the win is fought over (see `lastFoes`).
      Between two cuts the player is asked the same question over and over: the
      charge branch and stay alive, or the fast branch and climb. Both are
      right, never at the same time, and the cut counting down in the HUD is
@@ -4870,43 +4931,61 @@
        outright, so an arch standing anywhere else is either unreachable — the
        shipped ladder asked for 1300 m on a road that stopped at 1020 — or a
        finish that pays less than driving past it would. Putting it exactly on
-       the third star makes winning the race and maxing the level the same
-       event, which is the only way both can be true.
+       the third star's distance ends the race and the level on the same metre,
+       which is the only way both can be true. What that metre PAYS is then the
+       place it was reached in, and nothing else — see `raceStars`.
 
-       The cuts below it keep the shipped rhythm, evenly spaced up to the
-       arch, and there are fewer of them low down: two gates is a sprint, four
-       is a race. The ranks walk from the field size down to the podium, so a
-       cut always asks for the same SHARE of the field however big it is. */
+       The cuts below it are evenly spaced up to the arch, and there are fewer
+       of them low down: two gates is a sprint, four is a race. The ranks walk
+       from the field size down to the podium, so a cut always asks for the same
+       SHARE of the field however big it is. */
+    /* WHERE THE i-TH GATE STANDS, as a share of the race. The sections shrink
+       by one unit each — `S + 3 - i` — so the race tightens as it is driven
+       and the run-in is the shortest stretch of it, which is what two
+       overtakes wants: a sprint and not a stretch. Even sections were tried
+       and they are the one shape this cannot use: they pull the first gate to
+       a quarter of the race, and the six passes it asks for then land on a
+       craft that has barely left `speedMin` — the field arrives as contact
+       rather than as traffic, and at the top of the ladder, where a shield
+       holds two crashes, that is where the run ends. */
+    function cutAt(i, S) {
+      var tot = 0, cum = 0, j;
+      for (j = 1; j <= S; j++) tot += S + 3 - j;
+      for (j = 1; j <= i; j++) cum += S + 3 - j;
+      return cum / tot;
+    }
+
     function cutsFor(d) {
-      /* CEILED, and that is not cosmetic. The shell's third star is
+      /* CEILED, and that is not cosmetic. The shell's third band is
          `value >= goal * 2.2` in floating point, and 200 * 2.2 is
          440.00000000000006 — an arch standing at 440 would be crossed with the
-         third star still unearned, and a won race would pay two stars. The
-         ceiling puts the flag on the first metre that clears the threshold
-         however the double falls. */
+         band still unearned, and a race won in first place would pay two
+         stars. The ceiling puts the flag on the first metre that clears the
+         threshold however the double falls. */
       var finish = Math.ceil(goalOf(d) * 2.2), P = T.pilots;
-      var n = d < 0.25 ? 2 : d < 0.6 ? 3 : 4, i, q, rank, share, x, out = [];
+      var n = d < 0.25 ? 2 : d < 0.6 ? 3 : 4, i, rank, out = [];
+      /* The ladder walks the field down to the podium over the CHECKPOINTS, and
+         the flag is not one of them — it asks for first place because that is
+         what the run-in is for, and it eliminates nobody (see checkCut). */
       for (i = 1; i <= n; i++) {
-        q = i / n;
-        rank = i === n ? 3 : Math.min(P - 1, Math.max(4, Math.round(P - (P - 3) * q)));
-        /* WHERE A GATE STANDS FOLLOWS FROM THE GRID, not from an even spacing.
-           A gate asks for a share of the field to be behind the player, and
-           `seedRivals` hands that share over on a schedule it owns — so the
-           gate goes where the schedule has already delivered it, plus
-           `cutSlack`. Spaced evenly instead, the early gates land before the
-           places they ask for exist, and a clean drive is eliminated by the
-           arithmetic rather than by anything it did.
+        rank = i === n ? 1
+             : Math.min(P - 1, Math.max(4, Math.round(P - (P - 3) * (i / n))));
+        /* THE GATES DIVIDE THE RACE AND THE GRID FOLLOWS THEM. They used to be
+           placed off the pass schedule — a gate asking for five places stood
+           where the schedule had already handed five over — and that ordering
+           is now the other way round: `seedRivals` deals the field into the
+           sections these gates cut, so a gate is always driven at with more
+           places already taken than it asks for, whatever it is spaced at.
+           Even spacing is then the honest one, because the sections ARE the
+           race's beats and a beat is a length of road, not an arithmetic.
 
-           The LAST one is the exception twice over: it stands on `finish`,
-           which is the third star and is never rounded — the objective moves in
-           steps of 25 m so 2.2x it is a whole number of metres, and an arch
-           rounded up would sit past a star that had already stopped the round,
-           so the chequered flag would never be reached. The gates below it are
+           The LAST one is the exception: it stands on `finish`, which is the
+           third band and is never rounded — the objective moves in steps of
+           25 m so 2.2x it is a whole number of metres, and an arch rounded up
+           would sit past a threshold that had already stopped the round, so the
+           chequered flag would never be reached. The gates below it are
            landmarks and round to ten. */
-        share = (P - rank) / Math.max(1, P - 1);
-        x = T.passFirst + share * (T.passLast - T.passFirst) + T.cutSlack;
-        out.push({ at: i === n ? finish
-                              : Math.round(finish * Math.min(0.94, x) / 10) * 10,
+        out.push({ at: i === n ? finish : Math.round(finish * cutAt(i, n) / 10) * 10,
                    rank: rank });
       }
       return out;
@@ -5032,6 +5111,7 @@
     // Seeded from the first frame: fitCanvas() runs (and asks the game to
     // re-measure) before the first reset().
     var camP = 0, runT = 0, speed = T.speedMin, mult = 1, dist = 0, travel = 0;
+    var kmhShown = 0;                 // the speedometer's own eased figure
     var bx = 0, lean = 0, side = 0, touchSide = 0, keySide = 0, held = false;
     var air = false, airT = 0, airMax = 1, airFrom = 0, airZ = 0;
     var shield = T.shieldStart, boostT = 0, crashT = 0, invT = 0;
@@ -5042,6 +5122,9 @@
     // `rank` is 1 + however many rivals are physically up the road, recomputed
     // every frame; `cutI` is the next wall in CONFIG.play.cuts.
     var rank = T.pilots, fieldSize = T.pilots, cutI = 0, cutWarned = false;
+    // The chequered flag was crossed — the one thing that pays more than a
+    // single star (see raceStars).
+    var finished = false;
     // What the HUD pills currently read, so they are only rewritten on a change.
     var shownShield = -1, shownRank = "", shownNeed = "";
 
@@ -5228,6 +5311,19 @@
        ==================================================================== */
 
     function slotGap() { return (T.slotFar - (T.slotFar - T.slotNear) * diff()) * Rand.range(0.9, 1.15); }
+
+    // Which step of the opening chain the next booster is (see spawnBoost).
+    var openWeave = 0;
+
+    /* THE OPENING STRETCH OF A FIRST-BIOME LEVEL: the road from the line to
+       the first checkpoint, on the six levels that wear the first sky. `p` is
+       progress in world px and a cut is in metres, which is the one conversion
+       here. The playable and the endless run have no level and never qualify —
+       both of them are the game as it was designed. */
+    function openRoad(p) {
+      return levelD != null && BIO === LAD.biomes[0] && T.cuts.length > 0 &&
+             p < T.cuts[0].at * T.pxPerM;
+    }
     function gateGap() {
       var k = clamp((diff() - T.wallFrom) / (1 - T.wallFrom), 0, 1);
       return T.gateWide - (T.gateWide - T.gateTight) * k;
@@ -5405,24 +5501,33 @@
       nextP = pw + slotGap();
     }
 
+    /* A lone pad, dropped anywhere across the tarmac — except over the first
+       biome's opening stretch, where the pads are a CHAIN. A booster the craft
+       has to cross the whole road for is not speed handed over quickly: down
+       there the offsets walk a gentle weave instead, shallow enough to be
+       ridden from one pad to the next, which is also the first thing the
+       opening has to teach — that the machine is steered by leaning into a
+       line and not by aiming at one object at a time. */
     function spawnBoost(p) {
-      var h = roadHalf(p) - 62;
-      placePad(p, Rand.range(-h, h), 0);
-      nextP = p + slotGap() * 0.8;
+      var h = roadHalf(p) - 62, open = openRoad(p);
+      placePad(p, open ? Math.sin(openWeave++ * 0.9) * h * 0.55
+                       : Rand.range(-h, h), 0);
+      nextP = p + slotGap() * 0.8 * (open ? T.openGap : 1);
     }
 
     /* No cells here, ever: an open road is boosters, mines, barriers and the
        ramps that clear them. A shield only comes back inside a fork. */
     function spawnAhead(horizon) {
-      var p, r, bc;
+      var p, r, bc, bo;
       while (nextP < horizon) {
         p = nextP; r = Rand.range(0, 1);
         bc = T.blockMin + (T.blockMax - T.blockMin) * diff();
+        bo = openRoad(p) ? T.openBoost : T.boostChance;
         if (p > forkTry) spawnFork(p);                            // the decision
         else if (r < T.rampChance) spawnRamp(p);
-        else if (r < T.rampChance + T.boostChance) spawnBoost(p);
-        else if (r < T.rampChance + T.boostChance + bc) spawnBlocks(p);
-        else if (r < T.rampChance + T.boostChance + bc + T.bombChance) spawnBombs(p);
+        else if (r < T.rampChance + bo) spawnBoost(p);
+        else if (r < T.rampChance + bo + bc) spawnBlocks(p);
+        else if (r < T.rampChance + bo + bc + T.bombChance) spawnBombs(p);
         // ...and otherwise nothing at all. An empty stretch is not wasted
         // road: it is where the player looks up, reads the board and picks
         // which branch of the next fork they are going to need.
@@ -5646,12 +5751,51 @@
       return out;
     }
 
+    /* HOW MANY PASSES EACH SECTION GETS. The last one always gets `lastFoes`
+       — the podium fight — and what is left is dealt evenly over the sections
+       before it, the remainder going to the earliest of them, which are the
+       cheapest to make a mistake in. Derived and never rolled, like the
+       temperaments: a level is the same race every time it is opened. */
+    function passPlan(n, S) {
+      var last = Math.min(T.lastFoes, n), i;
+      var rest, base, extra, out = [];
+      if (S < 2) return [n];
+      rest = n - last;
+      base = Math.floor(rest / (S - 1));
+      extra = rest - base * (S - 1);
+      for (i = 0; i < S - 1; i++) out.push(base + (i < extra ? 1 : 0));
+      out.push(last);
+      return out;
+    }
+
+    /* WHEN EACH OF THEM IS CAUGHT, as a share of the whole race. A section's
+       passes are spread strictly inside it — `(j + 1) / (m + 1)` leaves half a
+       gap at each end, so no overtake lands on a gate line — except the final
+       section, which is the finish and is placed by hand out of `lastPass`:
+       one pass halfway down the run-in and one a few metres past the flag. */
+    function passSchedule(n) {
+      var cuts = T.cuts, S = cuts.length, R = cuts[S - 1].at;
+      var plan = passPlan(n, S), out = [], i, j, m, a, b, k;
+      for (i = 0; i < S; i++) {
+        a = i ? cuts[i - 1].at : R * T.passFirst;
+        b = cuts[i].at;
+        m = plan[i];
+        for (j = 0; j < m; j++) {
+          k = (i === S - 1 && T.lastPass[j] != null) ? T.lastPass[j]
+                                                     : (j + 1) / (m + 1);
+          out.push((a + (b - a) * k) / R);
+        }
+      }
+      return out;
+    }
+
     function seedRivals() {
-      var i, n = T.pilots - 1, cp = craftP(), q, pace, f, gap;
+      var i, n = T.pilots - 1, cp = craftP(), q, pace, f, gap, jit;
       // The race, in metres: the last cut is the chequered arch, and every pass
-      // is scheduled as a share of it (see passFirst / passLast in CONFIG).
+      // is scheduled as a share of it (see passSchedule).
       var R = T.cuts.length ? T.cuts[T.cuts.length - 1].at : 1020;
       var grid = foeGrid(n), fo;
+      var sched = passSchedule(n), lastFrom = n - Math.min(T.lastFoes, n);
       rivals = [];
       for (i = 0; i < n; i++) {
         q = n > 1 ? i / (n - 1) : 1;                  // 0 at the back, 1 in front
@@ -5661,11 +5805,11 @@
            share is slow, so the grid stands it further up the road and the
            player still meets it at the metre it was meant to be met at. */
         pace = (T.paceLow + (T.paceHigh - T.paceLow) * q) * fo.pace;
-        f = T.passFirst + (T.passLast - T.passFirst) * q;
+        f = sched[i];
         // ...and where that puts it on the grid. `1 - pace` is how fast the
         // player closes, so this is the lead that is spent exactly at `f`.
-        gap = f * R * (1 - pace) * T.pxPerM *
-              (1 + Rand.range(-T.rivalSpread, T.rivalSpread));
+        jit = i >= lastFrom ? T.rivalSpread * T.lastSpread : T.rivalSpread;
+        gap = f * R * (1 - pace) * T.pxPerM * (1 + Rand.range(-jit, jit));
         rivals.push({ p: cp + gap, pace: pace, kind: grid[i],
                       br: Rand.chance(0.5) ? -1 : 1, seed: Rand.range(0, TAU),
                       bump: 0, push: 0, pushV: 0, dodge: 0, hunt: 0 });
@@ -6070,9 +6214,13 @@
     }
     function showRank() {
       var cut = T.cuts[cutI], need = "FINAL " + fieldSize, left, txt;
+      var flag = cut && atFlag();
       if (cut) {
         left = Math.max(0, Math.round(cut.at - dist));
-        need = left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
+        // The flag is a countdown and never an ask: nothing about the place is
+        // at stake there but the win itself.
+        need = flag ? "FINISH · " + left + "M"
+             : left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
                                  : "CUT TO " + cut.rank + " · " + left + "M";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
@@ -6080,7 +6228,7 @@
       txt = rank + "/" + fieldSize;
       if (txt === shownRank && need === shownNeed) return;
       shownRank = txt; shownNeed = need;
-      HUD.setRight(txt, need, cut && rank > cut.rank ? "warn" : "");
+      HUD.setRight(txt, need, cut && !flag && rank > cut.rank ? "warn" : "");
     }
     function reset() {
       best = Store.get("bestScore", 0);
@@ -6109,6 +6257,7 @@
       Music.play(CONFIG.level ? BIO.music : null);
 
       camP = 0; runT = 0; speed = T.speedMin; mult = 1; dist = 0; travel = 0;
+      kmhShown = T.speedMin * T.kmhPerPx;      // it leaves the line already on
       fov = 0; lens();
       bx = roadX(T.camZ); camX = bx;      // dead centre of the road, not of the frame
       lean = 0; side = 0; touchSide = 0; keySide = 0; held = false;
@@ -6125,11 +6274,13 @@
       // The first fork waits until the player has ridden a straight road for a
       // few seconds: a choice only reads as a choice once the default is known.
       forkTry = T.forkFirst;
+      openWeave = 0;
 
       // The grid: nineteen rivals stacked up the road, so the player starts on
       // the back row of a twenty-craft field.
       seedRivals();
       rank = T.pilots; fieldSize = T.pilots; cutI = 0; cutWarned = false;
+      finished = false;
 
       shownShield = -1; shownRank = ""; shownNeed = "";
       // The rail starts settled on a full shield, so the first frame of a run
@@ -6175,6 +6326,7 @@
       if (crashT > 0) tgt *= 0.42;
       mult += (tgt - mult) * Math.min(1, dt * T.gripEase);
       speed = baseSpeed() * mult;
+      kmhShown += (speed * T.kmhPerPx - kmhShown) * Math.min(1, dt * T.kmhEase);
 
       bx += lean * T.steer * (0.72 + 0.28 * Math.min(1, speed / T.speedMax)) * dt;
 
@@ -6321,8 +6473,12 @@
        booster on, which is the entire point of announcing it.
        ==================================================================== */
 
+    // The chequered flag is the last entry of `cuts` and it is not a cut: it
+    // ends the race for whoever reaches it (see checkCut).
+    function atFlag() { return cutI === T.cuts.length - 1; }
+
     function checkCut() {
-      var cut = T.cuts[cutI], safe;
+      var cut = T.cuts[cutI], safe, flag = atFlag();
       if (!cut) return;
 
       /* The warning that gives the player time to do something about it. It is
@@ -6333,18 +6489,26 @@
          cyan means inside, red means pass someone. */
       if (!cutWarned && cut.at - dist <= T.cutWarn) {
         cutWarned = true;
-        safe = rank <= cut.rank;
+        safe = flag || rank <= cut.rank;
         Overlay.vignette(safe ? "rgba(53,232,255,.7)" : "rgba(255,45,85,.8)", 1, 620);
         Sound.clip("warn", 0.7, safe ? 1.1 : 0.9);
       }
       if (dist < cut.at) return;
 
-      if (rank > cut.rank) { die("ELIMINATED"); return; }
+      /* THE FLAG ELIMINATES NOBODY. A checkpoint is a wall and being outside it
+         ends the run; the finish is the end of the race and ends it for
+         whoever gets there, in whatever place. It used to ask for the podium
+         like any other cut, and that was one ending too many: a run driven to
+         the very last metre was told it had been eliminated ON the line, and
+         under the star rule it now scores exactly what a crash at a third of
+         the distance scores. The culling belongs to the checkpoints; the flag
+         belongs to the race. */
+      if (!flag && rank > cut.rank) { die("ELIMINATED"); return; }
 
       // Through it — and the field is REALLY trimmed. Everyone the cut took is
       // deleted from the road, so the pack the player is racing gets visibly
       // shorter every time and the "3/10" in the HUD is a fact and not a label.
-      trimField(cut.rank);
+      if (!flag) trimField(cut.rank);
       cutI++;
       cutWarned = false;
       pick += T.milePts * 2;
@@ -6360,7 +6524,9 @@
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
       Pop.show("combo", { word: fieldSize + " PILOTS LEFT",
-                          sub: "NEXT CUT · TOP " + T.cuts[cutI].rank, at: "center" });
+                          sub: atFlag() ? "FINISH · TAKE THE LEAD"
+                                        : "NEXT CUT · TOP " + T.cuts[cutI].rank,
+                          at: "center" });
       showRank();
     }
 
@@ -6387,13 +6553,39 @@
       ];
     }
 
-    // Clearing the last cut wins the race outright — the one ending the whole
-    // structure is built towards, so it gets all three stars and the podium.
+    /* THE STARS ARE THE RESULT OF THE RACE, and nothing else — not the score,
+       not the distance, not how many cuts were survived. A race is won by
+       crossing the flag in front, so:
+
+         3 — the chequered flag taken in FIRST place. The whole field passed,
+             which a boost-free drive cannot do — the schedule keeps the leader
+             just past the flag (see `lastPass`), so the win is bought on the
+             fast branch of the forks, which is exactly the decision the run is
+             built around;
+         2 — the flag in any other place. The race was finished, and the flag
+             turns nobody away: the checkpoints did the culling;
+         1 — the road ran out under it, the objective covered all the same;
+         0 — short of the objective.
+
+       The objective is the LEVEL's distance on the web target, where the star
+       bands are the shell's and `levelStars` only caps them. The playable has
+       no objective at all, so its first gate stands in for one — the only
+       distance it names. */
+    function raceStars() {
+      if (finished) return rank === 1 ? 3 : 2;
+      return cutI >= 1 ? 1 : 0;
+    }
+
+    // Clearing the last cut ends the race at the flag — the ending the whole
+    // structure is built towards, and the only one that can pay three stars.
     function win() {
+      finished = true;
+      var st = raceStars();
       var sc = Math.floor(travel + pick) + 500;
       endRound({
-        title: rank === 1 ? "RACE WON!" : "ON THE PODIUM!",
-        variant: "perfect",
+        title: rank === 1 ? "RACE WON!"
+             : rank <= 3 ? "ON THE PODIUM!" : "RACE FINISHED!",
+        variant: st === 3 ? "perfect" : "win",
         score: sc,
         /* The METRES here too, for the same reason `die` reports them: on the
            web target the last arch stands on the level's third star, so a
@@ -6401,23 +6593,21 @@
            Reporting the score instead would hand the level layer a number in
            the wrong unit and lose the stars the drive just earned. */
         levelScore: Math.floor(dist),
-        stars: 3,
+        stars: st,
         rows: resultRows(sc)
       });
     }
 
     function die(title) {
       var sc = Math.floor(travel + pick);
-      // Stars are the board, not the score: surviving cuts is the whole game.
-      var st = cutI >= 3 ? 3 : cutI >= 1 ? 2 : 1;
       endRound({
         title: title || CONFIG.copy.gameOver,
-        variant: st === 3 ? "win" : "",
+        variant: "",
         score: sc,
         // A level's objective is a distance: the ROAD covered, and nothing
         // else (web target only — see levelProgress).
         levelScore: Math.floor(dist),
-        stars: st,
+        stars: raceStars(),
         rows: resultRows(sc)
       });
     }
@@ -6485,8 +6675,28 @@
     var WASH_A   = [0.34, 0.50, 0.70];
     var WASH_W   = [2.10, 1.30, 0.26];
 
+    /* THE FACE THE FIGURE IS SET IN. The web build embeds the game's own family
+       and hands it to the page as `--web-font` (see the builder and
+       packages/webshell/menu.css); a playable ships no font at all and falls
+       back to the motor's system stack. Resolved here rather than per frame:
+       it is a `getComputedStyle` read, and `metrics()` is where everything
+       else that only changes with the frame is worked out. */
+    var SYS_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    var speedoFont = SYS_FONT;
+
+    function readFont() {
+      var v = "";
+      try {
+        v = getComputedStyle(document.documentElement)
+              .getPropertyValue("--web-font") || "";
+      } catch (e) { v = ""; }
+      v = v.replace(/^\s+|\s+$/g, "");
+      speedoFont = v ? v + "," + SYS_FONT : SYS_FONT;
+    }
+
     function metrics() {
       var i, x, w;
+      readFont();
       halfW = view.w * 0.5;
       horizonY = Math.round(Layout.top + Layout.h * T.horizon);
       anchorY = Layout.bottom - T.anchor;
@@ -7763,6 +7973,50 @@
       ctx.restore();
     }
 
+    /* THE SPEEDOMETER — bottom-left of the play band, in the column the shield
+       rail already owns, because that side of the frame IS the instrument side
+       and the road's interest is all in the middle. It sits just clear of the
+       rail and just above `Layout.bottom`, so it is over the CTA bar on the
+       playable and over nothing on the web target, whose own two controls are
+       in the opposite corner.
+
+       No plate under it and no glow behind it: a box would be a second object
+       to read and `shadowBlur` is banned per frame (see CLAUDE.md). What keeps
+       three digits legible over a bright road is the same thing that keeps the
+       HUD legible — a dark stroke around them, drawn once.
+
+       The colour is the only thing it says beyond the figure: gold while a
+       booster burns, red while the gravel is taking the pace off, white the
+       rest of the time. That is the dial reading back the two things that move
+       it, in the place the eye is already looking for the shield. */
+    function drawSpeedo() {
+      var r = shieldRail, x = r.x + r.w + 14, y = Layout.bottom - 16;
+      var n = String(Math.max(0, Math.round(kmhShown))), col;
+      col = boostT > 0 ? "#ffd43b" : mult < 0.9 ? "#ff2d55" : "#ffffff";
+
+      ctx.save();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.lineJoin = "round";
+      /* The outline is what makes it legible, and it has to be strong: the MIST
+         biome lays a pale lilac road and white digits on it read as nothing. */
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "rgba(4,4,20,.72)";
+
+      ctx.font = "900 52px " + speedoFont;
+      ctx.strokeText(n, x, y);
+      ctx.fillStyle = col;
+      ctx.fillText(n, x, y);
+
+      x += ctx.measureText(n).width + 10;
+      ctx.font = "900 20px " + speedoFont;
+      ctx.lineWidth = 5;
+      ctx.strokeText("KM/H", x, y);
+      ctx.fillStyle = rgba(col, 0.9);
+      ctx.fillText("KM/H", x, y);
+      ctx.restore();
+    }
+
     function render() {
       buildRows();
       drawSky();
@@ -7784,6 +8038,7 @@
       ctx.restore();
       drawCraft();
       drawShieldRail();
+      drawSpeedo();
     }
 
     function onResize() { metrics(); lens(); }
@@ -7796,23 +8051,40 @@
        asking for 900 m has to mean 900 m of tarmac, and the arch that ends the
        race stands on that same number (see `cutsFor`); measuring the objective
        on the boosted counter would fire the third star before the player ever
-       reached the chequered flag. `levelWon` is the three-star finish — the web shell has
-       already played the slow motion, and the round ends through the game's
-       own result so the end screen keeps these stat rows. `applyLevel` is the
-       third and it is at the top of this module, because what it rewrites —
-       the biome, the trace, the cuts, which hazards exist — is read all over
-       the file. All three are ignored by the playable, which has no levels —
-       see docs/LEVELS.md. */
+       reached the chequered flag.
+
+       `levelStars` is the second, and it is what makes the board a RACE
+       result rather than a distance read: the shell's three bands say whether
+       the objective was covered, and this caps them — a run that stopped
+       short of the flag is worth one star however far it drove, the flag
+       itself is worth two, and only first place is worth three (see
+       `raceStars`). It filters the live pill as well as the end screen, so
+       the stars the round wears are the stars it will be paid.
+
+       `levelWon` is the shell's own three-star finish. It cannot fire here any
+       more — nothing raises the count past one before the flag, and the flag
+       ends the round through `win()` on the same frame — but it stays pointed
+       at the podium, which is the truthful ending if the shell ever reaches
+       for it. `applyLevel` is the fourth and it is at the top of this module,
+       because what it rewrites — the biome, the trace, the cuts, which hazards
+       exist — is read all over the file. All of them are ignored by the
+       playable, which has no levels — see docs/LEVELS.md. */
     function levelProgress() { return Math.floor(dist); }
+
+    function levelStars(st) {
+      if (finished) return rank === 1 ? 3 : 2;
+      return Math.min(st, 1);
+    }
 
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             /* `levelWon` is the PODIUM and not `die`: on the web target the
-                last arch stands on the level's third star, so a third star
-                means the craft is at the chequered flag with every cut behind
-                it — which is a race won, finish bonus included. The level
-                layer writes the title over it either way. */
-             levelProgress: levelProgress, levelWon: win,
+             /* `levelWon` is the PODIUM and not `die`: the last arch stands on
+                the level's third star, so a shell-side win could only ever
+                happen at the chequered flag with every cut behind it — which
+                is a race won, finish bonus included. The level layer writes
+                the title over it either way. */
+             levelProgress: levelProgress, levelStars: levelStars,
+             levelWon: win,
              applyLevel: applyLevel };
   })();
 
