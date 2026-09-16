@@ -86,6 +86,17 @@ ______________________________________________________________________
 
 ## The web build
 
+- [ ] CODE — **a TAP reloads the game view at random, and the layers pile up.**
+  Reported from play: tapping somewhere re-enters the round instead of playing
+  it, and after a few of those the frame drags as if several views were alive
+  at once — a second canvas, a second `Loop`, a second set of `Input`
+  listeners, or an intro that was never torn down under the round. Reproduce it
+  first (which tap, which screen, which target), then find who re-mounts:
+  `startGame` is reachable from `#btn-start`, from PLAY AGAIN, from the map's
+  level cards and from SPACE, and nothing today asserts that a round is mounted
+  once. The fix is one guard plus a real teardown, in the shell or the
+  webshell — no `game.js` should need it.
+
 - [ ] CODE — **changing the language does not translate the round.**
   `setLang()` ([packages/webshell/menu.js:665](packages/webshell/menu.js))
   rewrites the menu entries, the tagline, the two end-screen buttons and the
@@ -177,6 +188,46 @@ ______________________________________________________________________
   on the level map and on the end screen, hold it for as long as the screen is
   up, and settle on **one** factor rather than three.
 
+- [ ] CODE — **the HUD does not say which level is being played.** A round
+  opened from the map is level 12 or level 29 and looks the same either way.
+  Print `Lv12` in the top band for all thirteen — the level layer already knows
+  the number (`packages/webshell/levels.js`), the HUD already has the two side
+  slots (`HUD.setLeft/setRight`, [packages/shell/shell.js:127](packages/shell/shell.js)),
+  and a game that fills both needs the shell to place it without stealing a
+  slot. Nothing in `game.js` is touched, and a playable — which has no
+  levels — shows nothing.
+
+- [ ] CODE — **an end-of-game screen when level 30 falls, all thirteen.**
+  Finishing the ladder is today one more end screen followed by a map with
+  nothing left to open. Give it a screen of its own: the game's own character
+  and decor, the total stars, and a way on — the endless run, or back to the
+  map. One screen in `packages/webshell/`, fired off the level layer, so no
+  game declares it.
+
+- [ ] CODE — **a golden screen for a perfect board, all thirteen.** Level 30
+  cleared is one thing; **90/90** is the other, and it already has a look —
+  the gold roads, the golden veil on the title screen
+  ([packages/webshell/levels.js:1270](packages/webshell/levels.js)). Give it
+  the ultra congratulation the veil is a leftover of: the same screen as above
+  in its gold state, fired once, and never again on a later visit.
+
+- [ ] CODE — **a sticker collection, ten per game.** The cuts under
+  `assets/image/object/` (414 of them across the thirteen) are the material: pick
+  ten per game, adopt them like any other master, and unlock them against the
+  star count on the ladder — so the stars buy something besides a road. A
+  collection view in the web menu, next to LEADERBOARD, showing the ten with
+  what is still locked. Decide the unlock curve once, shared, and the ten picks
+  per game; the screen and the save (`prog:<slug>`) are the webshell's.
+
+- [ ] CODE — **a CTA button styled per game, and a lab page to pick it.** The
+  install bar is the same button in thirteen games while the titles, the
+  palettes and the type are all the game's own. Build the rack the way
+  `lab/game-title.html` does it for `#intro-title`: a page of ready-made CTA
+  looks rendered in each game's palette and font, one pick per game, exported
+  as the CSS block to paste into its SKIN. Motor tokens
+  (`--cta-a/b`) stay the source of the colour — the page adds the shape, the
+  border and the motion, not a second theming system.
+
 ______________________________________________________________________
 
 ## The games — content pass on the thirteen
@@ -256,11 +307,23 @@ ______________________________________________________________________
   the former `Overlay.toast` status lines, which never had a sound and now read
   as the silent callouts they always were.
 
-- [ ] CODE — **add bonus and gameplay elements, all thirteen games.** The web
-  target gave every game a 30-level ladder against a loop that was designed for
-  a 30-second ad; each one needs more to give across thirty levels — pickups,
-  a second entity, a risk/reward beat. One design per game, not a shared
-  system.
+- [ ] CODE — **add bonus and gameplay elements, twelve games.** The web target
+  gave every game a 30-level ladder against a loop that was designed for a
+  30-second ad; each one needs more to give across thirty levels — pickups, a
+  second entity, a risk/reward beat. One design per game, not a shared system.
+
+  **`radiam` is done and is the pattern to copy** (v1.1.0). Two tables in
+  `CONFIG.ladder` and one `applyLevel` hook, the shape `games/arcider` first
+  built: **eight special beads** where the dial shipped with two — BOMB (the
+  whole board), FIRE (the two neighbouring rays), LASER (through the hub to the
+  ray opposite), SCORE (an x2 / x5 / x10 window on a clock), SLOW (the eclipse
+  held back) and ICE (the one hazard: it freezes the plate it breaks on) — and
+  **thirty rows naming which one or two are in play**, so a level is *the one
+  where you meet the laser* rather than the same level turning faster. Under it,
+  **five biomes** of six levels, each a whole look: a bead material out of
+  `lab/bubble.html` (sticker, soap, gem, ink, neon) and the palette the machine
+  is painted in. A special's badge is a white glyph on a double pass of ink over
+  the bead's own hue, never instead of it — the colour is the gameplay.
 
 - [ ] CODE — **`gearball`, rework the gameplay.** The closed-gear-loop redesign
   is in, but the loop itself is still thin over a full ladder.

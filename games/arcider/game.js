@@ -230,10 +230,39 @@
          The cuts are walls across the run: be inside the rank when one lands
          or the race is over, whatever the shield says. */
       pilots:       20,    // including the player, who starts last
-      rivalGap:    300,    // average progress between two rivals at the start:
-                           // far enough apart that an overtake is a manoeuvre
-                           // rather than a number ticking over
-      rivalSpread:0.40,    // how far that gap wanders, as a share of itself
+      /* THE GRID IS LAID OUT BY WHEN EACH PILOT IS CAUGHT, not by a gap.
+         A fixed gap between craft puts the whole field inside the first
+         seconds of the race — nineteen pilots at 300 progress px apart span
+         140 m of a 440 m race, so the player reeled in the lot before the
+         first gate and then drove alone. What a race has to deliver is an
+         overtake every so often, all the way to the flag.
+
+         So a pilot's place on the grid is DERIVED. The player closes on a
+         pilot at `(1 - pace)` of the base speed, so putting it `f * R *
+         (1 - pace)` metres up the road — R being the race, `f` the share of it
+         that should be driven before the pass — has it caught at exactly `f`.
+         The two ends below spread the nineteen passes evenly from just after
+         the start to just before the flag, at every level and whatever the
+         field size, and they cannot be bunched by construction.
+
+         A side effect worth knowing: the fastest pilots do NOT start furthest
+         up the road, because a pilot the player barely out-paces cannot be far
+         ahead and still be caught. The grid order is therefore not the pace
+         order, and it corrects itself over the first few seconds as the quick
+         ones pull away. The rank the HUD shows counts positions, so nothing
+         downstream cares. */
+      passFirst:  0.10,    // share of the race driven before the FIRST pass...
+      passLast:   1.05,    /* ...and before the last one. OVER 1 on purpose: the
+                              schedule is worked out for a craft that never
+                              boosts, and a booster is +72% for three seconds —
+                              a run that picks a few up closes on the leaders
+                              well ahead of the plan and arrives at the flag
+                              with nobody left to pass. Set so that the podium
+                              is still reachable on a boost-free drive at both
+                              ends of the ladder (level 1: 6 of 7 passed by the
+                              flag, level 30: 18 of 19) and the last overtake
+                              lands near it on a real one. */
+      rivalSpread:0.14,    // jitter on a pilot's place, as a share of it
       paceLow:   0.745,    // pace of the last rival, as a share of base speed
       paceHigh:  0.925,    // ...and of the leader, who very nearly matches it.
                            // Nothing here is above 1: a rival is never faster
@@ -269,20 +298,97 @@
       pushRelax:   1.4,    // how fast a shoved pilot drifts back onto its own
                            // line once the shove is spent (1/s, exponential)
       pushMax:     260,    // px a pilot can ever be shoved off that line
+
+      /* --- THE FIVE TEMPERAMENTS -------------------------------------------
+         A PILOT'S LIVERY IS ITS BEHAVIOUR, and that is the whole contract: the
+         player reads the colour of the craft in front of them and knows what
+         it is going to do about them, before it is close enough to matter.
+         Nineteen identical rivals wandering on a sine were nineteen moving
+         barriers; five kinds, each recognisable at a glance, turn the pack
+         into something to read.
+
+           GREEN  · SCOUT   — gets out of the way. It steers AWAY from the
+                              craft, so the back of the field is a road that
+                              opens as it is driven at.
+           BLUE   · DRONE   — a straight line and nothing else: no wander, no
+                              dodge, no reaction. It holds its lane through the
+                              mines and takes the barriers apart on the way.
+           YELLOW · STALKER — slow, and steering into the craft. Reeled in
+                              early and awkward to pass cleanly: that is the
+                              whole trade it offers.
+           RED    · MARSHAL — takes the craft's own pace and boxes its line. It
+                              never closes the last `foeHold` px — the contact
+                              is the PLAYER's to make or to avoid — so the only
+                              thing that gets past it is a booster.
+           VIOLET · RAM     — comes for the craft and means it. Hardest hunter
+                              in the game, and its contact costs the most.
+
+         `hunt` is a share of `foeMax`, negative to run away; `wander` scales
+         the lane the pilot drives on its own; `dodge` is whether it reads the
+         road at all; `pace` multiplies its share of the base speed AT SEED
+         TIME, so the grid still hands its pass over on schedule (seedRivals).
+         `kick` and `cost` are what a contact with it is worth.
+
+         WHICH of them are on the grid is the level's business and not this
+         table's — see `ladder.foeMix`. */
+      foes: [
+        { name: "SCOUT",   col: ["#5cffb0", "#0b5c3c"],
+          hunt: -0.80, wander: 1.00, dodge: 1, pace: 1.00, kick: 1.00, cost: 1.00 },
+        { name: "DRONE",   col: ["#57d2ff", "#0e4a6e"],
+          hunt:  0.00, wander: 0.00, dodge: 0, pace: 1.00, kick: 1.00, cost: 1.00 },
+        { name: "STALKER", col: ["#ffd43b", "#6b4a06"],
+          hunt:  0.70, wander: 0.35, dodge: 1, pace: 0.70, kick: 0.85, cost: 0.85 },
+        { name: "MARSHAL", col: ["#ff6b6b", "#6e1414"], hold: 1, match: 1,
+          hunt:  0.95, wander: 0.25, dodge: 1, pace: 1.00, kick: 1.00, cost: 1.00 },
+        { name: "RAM",     col: ["#8b5cf6", "#1a0b3e"],
+          hunt:  1.00, wander: 0.15, dodge: 1, pace: 1.03, kick: 1.70, cost: 1.30 }
+      ],
+      foeSee:     1400,    // progress px inside which a pilot reacts to the
+                           // craft at all. Beyond it every kind drives its own
+                           // line, so the pack still spreads out on the grid
+                           // and a hunt reads as a hunt when it starts
+      foeMax:      240,    // px a hunter will ever steer off its own line for
+                           // the craft. Its `hunt` above is a share of this
+      foeEase:     2.4,    // how fast it slides onto that line. Slower than the
+                           // hazard dodge on purpose: a pilot answering the
+                           // PLAYER has to read as intent, and a snap reads as
+                           // a magnet
+      foeHold:     136,    // px the MARSHAL refuses to come closer than. Well
+                           // over `rivalHalf`, so its own steering can never be
+                           // what causes the contact — only the player's can
+      foeMatch:   1.00,    // the pace a marshal takes up while it is ahead of
+                           // the craft and inside `foeSee`, as a share of the
+                           // base speed. Capped at a plain cruise: it cannot be
+                           // out-driven, only out-boosted
       rivalPts:     60,    // score for taking a place
       cutWarn:      90,    // metres out the HUD starts counting a cut down
-      cuts: [              // metres, and the rank the run has to be inside.
-        { at: 280, rank: 15 },   // Spaced by the PLACES they ask for, not
-        { at: 520, rank: 10 },   // evenly: each one is five overtakes on from
-        { at: 780, rank:  5 },   // the last, with enough slack that a good
-        { at: 1020, rank: 3 }    // fork choice covers a mistake.
+      /* metres, and the rank the run has to be inside. Spaced by the PLACES
+         they ask for and not evenly: each one is five overtakes on from the
+         last. WHERE they stand is worked out from the grid rather than picked —
+         a gate asking for five places has to be far enough up the road that the
+         schedule in `passFirst` / `passLast` has already handed five over, plus
+         `cutSlack` so a mistake or a bad fork is survivable. These four are
+         that calculation for the twenty-pilot field the playable runs; the web
+         target builds its own per level (see `cutsFor`, section 6). */
+      cuts: [
+        { at: 420, rank: 15 },
+        { at: 675, rank: 10 },
+        { at: 905, rank:  5 },
+        { at: 1020, rank: 3 }
       ],
+      cutSlack:   0.06,    // share of the race a gate stands past the metre the
+                           // grid alone would deliver its places on
 
       /* --- the gates -------------------------------------------------------
-         Every cut is a physical arch across the road, lit green while the
-         player is inside it and red while they are not, so the thing that is
-         about to end the run is a landmark growing out of the horizon and not
-         a line of text in a corner. The last one is the finish. */
+         Only the LAST cut is a physical arch — the finish, gold and chequered,
+         standing outside the kerbs on two pylons. The three checkpoints before
+         it are a coloured line on the tarmac and nothing above it: three
+         arches on a run is more furniture than a road can carry, and a pair of
+         lit columns growing out of the horizon reads as something to avoid
+         rather than something to cross. What they were there to say is already
+         said in the corner the eye is on — the rank pill counts the gate down
+         in metres and turns red the moment the place is not good enough — and
+         again by the vignette and the chime at `cutWarn`. */
       gateFrom:  3600,     // progress out from the camera a gate starts drawing
       gateH:      500,     // world px from the tarmac to the beam
       gatePost:    30,     // world half-width of a pylon
@@ -314,6 +420,16 @@
       bombMin:      2,     // mines in one scatter, at the start of the run...
       bombMax:      3,     // ...and at full difficulty
       bombStep:   150,     // progress between two mines of a scatter
+      /* A MINE NEVER GUARDS A BOOSTER. A pad is the only thing on an open road
+         that climbs the board, so a mine sitting on the way into one turns the
+         reward into a toll: the player either gives the place up or pays 24%
+         for it, and neither of those is a decision worth offering. This is the
+         box of clear road a pad keeps around itself — a mine laid inside it is
+         moved to the far side of the ribbon and dropped outright when the road
+         is too narrow to hold both (see placeBomb), and a pad laid over a mine
+         already down simply lifts it off (see placePad). */
+      padClear:   240,     // progress px of clear road each side of a pad...
+      padClearX:  115,     // ...and the lateral px, which is a craft and a half
       blockStep:   92,     // x spacing inside a wall of blockers
       wallFrom:   0.5,     // difficulty at which rows become walls with a gate
       gateWide:   235,     // the gate through a wall, at wallFrom...
@@ -330,23 +446,202 @@
                            // between two blockers and the wall is not a wall
       rampGate:    88,     // half the escape gate, when the wall keeps one
 
-      /* --- THE TWO RAILS down the flanks of the frame ----------------------
-         Both are built like the spin rail in games/spinshock — smoked glass the
-         road reads straight through, cells filled from the bottom, an arc and a
-         chevron at the value — because the two numbers this game is played on
-         are the two the HUD pills are too small to make felt.
+      /* --- THE SHIELD RAIL down the left flank of the frame ----------------
+         Built like the spin rail in games/spinshock — smoked glass the road
+         reads straight through, cells filled from the bottom, an arc and a
+         chevron at the value — because the number this game is played on is
+         the one the HUD pill is too small to make felt: cyan at full, cooling
+         through gold to red as the hull comes apart, so a run going bad turns
+         the left edge of the frame red.
 
-           LEFT  = the SHIELD. Cyan at full, cooling through gold to red as the
-                   hull comes apart, so a run going bad turns the left edge red.
-           RIGHT = the BOARD. One cell per pilot still in the race, P1 at the
-                   top, every rival on its own cell and the player's marked; the
-                   whole rail is GREEN while the player is inside the next cut
-                   and RED while they are not. */
-      railW:        30,    // width of a rail
-      railGap:       4,    // air between a rail and the frame's side margin
+         The right flank used to carry a second rail, a ladder of the whole
+         field with the player's marker sliding up it. It is gone: the place
+         and the cut it has to be inside are already on the rank pill, the
+         cut's own line on the tarmac is green or red under the craft, and a
+         nineteen-cell ladder down the edge of a race the player is steering
+         through was a second thing to read at 400 km/h and never the one they
+         read. The road got its right-hand side back. */
+      railW:        30,    // width of the rail
+      railGap:       4,    // air between it and the frame's side margin
       railSegs:     20,    // cells in the shield rail (one per 5%)
       railPad:       3,    // air between two cells
       railInset:    10     // air under Layout.top and above Layout.bottom
+    },
+
+    /* ---- THE LADDER — what makes one level not another ------------------
+       The web target's thirty levels are a LERP over the knobs above
+       (`web.levels.tune` in the manifest), and a lerp can only ever say
+       "harder". These two tables are the other half: what a level LOOKS like
+       and what shape of road it is. Read by `applyLevel` (section 6), which
+       the level layer calls before every round; the playable never calls it
+       and therefore never sees any of this. */
+    ladder: {
+      /* FIVE BIOMES, one per stretch of the climb — six levels apiece.
+         `sky` names the painted horizon out of `assets/image/master/`
+         (`arcider-sky-night.png` -> `CONFIG.art.skyNight` -> `ArtImages`), and
+         the rest is the palette the canvas is painted with UNDER it: the
+         plain, the two tarmac tones, the kerbs and the grid. A biome is
+         therefore one whole look and not a picture swapped behind the same
+         road — a blue daylight sky over a violet dusk tarmac reads as a bug.
+
+         `grad` and `sun` only ever show in a build with no artwork; they are
+         kept in step all the same, because that build is the one a designer
+         opens when the art is being redone. */
+      biomes: [
+        {
+          name: "DUSK", sky: "skySunset",
+          grad:  ["#07051c", "#1d1055", "#5c1e77", "#ff5f9e"],
+          plain: ["#2a1550", "#0d0a2c", "#05041a"],
+          sun:   ["#fff3c4", "#ffb347", "#ff2e83"],
+          road:  ["#211c59", "#2b2470", "#181442"],
+          kerb:  ["#35e8ff", "#8a5cff"],
+          grid:  "rgba(53,232,255,.11)",
+          weld:  "rgba(255,95,158,.30)",
+          stars: 1,
+          dark:  [27, 16, 70]
+        },
+        {
+          name: "DAY", sky: "skyDay",
+          grad:  ["#0a4fb4", "#1d86e0", "#63c4f2", "#cdeeff"],
+          plain: ["#2f5aa0", "#0d2049", "#050f26"],
+          sun:   ["#ffffff", "#dff2ff", "#8fd4ff"],
+          road:  ["#1e3570", "#2a478f", "#16264f"],
+          kerb:  ["#ffd34d", "#ff5fa8"],
+          grid:  "rgba(255,255,255,.13)",
+          weld:  "rgba(205,238,255,.30)",
+          stars: 0,
+          dark:  [40, 70, 110]
+        },
+        {
+          /* MORNING MIST. The one biome whose road is PALE — a warm lilac the
+             mist has bleached instead of the dark tarmac every other one
+             lays — because the picture is a cool sky over an apricot horizon
+             with the city dissolved in white, and a near-black road under it
+             reads as a different scene rather than the same weather. The
+             kerbs go apricot and pale cyan for the same reason: the two
+             colours the sky itself is made of. */
+          name: "MIST", sky: "skyHaze",
+          grad:  ["#8fa8e0", "#b6c2ea", "#e6cdc0", "#ffd9a8"],
+          plain: ["#9aa2c4", "#4e5478", "#232741"],
+          sun:   ["#fff6e2", "#ffd9a8", "#e8a9a0"],
+          road:  ["#5a5470", "#6b6489", "#464059"],
+          kerb:  ["#ff9e5c", "#7ad7ff"],
+          grid:  "rgba(255,226,205,.15)",
+          weld:  "rgba(255,217,168,.26)",
+          stars: 0,
+          dark:  [154, 162, 196]
+        },
+        {
+          name: "OVERCAST", sky: "skyCloud",
+          grad:  ["#1f7ad8", "#4fa2ea", "#9ed4f5", "#e2f2ff"],
+          plain: ["#5e8ca0", "#1b3b4c", "#07141c"],
+          sun:   ["#ffffff", "#eaf6ff", "#a8d8f5"],
+          road:  ["#33525e", "#43697a", "#26414c"],
+          kerb:  ["#ff7a2d", "#35ffd0"],
+          grid:  "rgba(255,255,255,.12)",
+          weld:  "rgba(226,242,255,.28)",
+          stars: 0,
+          dark:  [94, 140, 160]
+        },
+        {
+          name: "NIGHT", sky: "skyNight",
+          grad:  ["#030312", "#0b0836", "#1d1360", "#4a2a8c"],
+          plain: ["#241452", "#0a0726", "#030210"],
+          sun:   ["#e8f4ff", "#9ec8ff", "#4a6ecc"],
+          road:  ["#1a1748", "#252060", "#120f33"],
+          kerb:  ["#35e8ff", "#ff2df0"],
+          grid:  "rgba(140,90,255,.13)",
+          weld:  "rgba(122,77,255,.30)",
+          stars: 1.5,
+          dark:  [24, 14, 60]
+        }
+      ],
+      // Which biome each stretch of the climb wears: six levels apiece, and a
+      // new one every time the map turns a band.
+      biomeFrom: [1, 7, 13, 19, 25],
+
+      /* THIRTY TRACES, one per level, and they are FIXED: the four phases of
+         the road's four sines are read off this table instead of being rolled
+         at every reset, so level 12 is the same road every time it is opened
+         and a different road from level 11. That is the whole point — a ladder
+         of thirty randomly generated roads is one road played thirty times.
+
+         Each row is  [phLong, phShort, phWidth, phHill, wLong, wShort, wHill, wFreq]:
+         the four phases in radians, then four WEIGHTS, 0..1-ish, which say what
+         KIND of road this is — a long sweeper, a slalom, a rollercoaster. The
+         weights are scaled by the level's own `d` in `applyLevel`, so the
+         table carries the character and the climb carries the severity: the
+         slalom at level 12 and the slalom at level 30 are the same road,
+         driven at different amplitudes.
+
+         The playable, and the endless bonus run, use none of this and roll
+         their phases the way they always did. */
+      road: [
+        [3.88, 0.41, 0.33, 4.29, 0.10, 0.06, 0.12, 0.60],  //  1  straight run
+        [1.48, 5.15, 2.73, 1.43, 0.90, 0.08, 0.23, 0.58],  //  2  long sweeper
+        [5.36, 3.61, 5.12, 4.84, 0.28, 0.13, 0.81, 0.74],  //  3  rolling crests
+        [2.97, 2.07, 1.24, 1.98, 0.11, 0.06, 0.13, 0.64],  //  4  straight run
+        [0.57, 0.53, 3.64, 5.39, 0.22, 0.79, 0.20, 1.33],  //  5  tight kinks
+        [4.45, 5.27, 6.04, 2.53, 0.63, 0.29, 0.43, 0.67],  //  6  wide S
+        [2.05, 3.73, 2.16, 5.94, 0.92, 0.09, 0.24, 0.59],  //  7  long sweeper
+        [5.93, 2.19, 4.56, 3.07, 0.28, 0.13, 0.82, 0.74],  //  8  rolling crests
+        [3.53, 0.65, 0.68, 0.21, 0.46, 0.46, 0.98, 1.23],  //  9  rollercoaster
+        [1.13, 5.39, 3.08, 3.62, 0.23, 0.82, 0.21, 1.39],  // 10  tight kinks
+        [5.01, 3.85, 5.47, 0.76, 0.61, 0.28, 0.42, 0.65],  // 11  wide S
+        [2.62, 2.31, 1.59, 4.17, 0.38, 1.02, 0.38, 1.67],  // 12  slalom
+        [0.22, 0.78, 3.99, 1.31, 0.29, 0.13, 0.85, 0.77],  // 13  rolling crests
+        [4.10, 5.52, 0.11, 4.72, 0.74, 0.54, 0.69, 0.93],  // 14  big dipper
+        [1.70, 3.98, 2.51, 1.85, 0.48, 0.48, 1.01, 1.28],  // 15  rollercoaster
+        [5.58, 2.44, 4.91, 5.27, 0.78, 0.07, 0.20, 0.51],  // 16  long sweeper
+        [3.18, 0.90, 1.03, 2.40, 0.23, 0.84, 0.21, 1.42],  // 17  tight kinks
+        [0.78, 5.64, 3.43, 5.82, 0.35, 0.95, 0.35, 1.56],  // 18  slalom
+        [4.66, 4.10, 5.82, 2.95, 0.62, 0.28, 0.42, 0.66],  // 19  wide S
+        [2.27, 2.56, 1.94, 0.09, 0.81, 0.59, 0.76, 1.03],  // 20  big dipper
+        [6.15, 1.02, 4.34, 3.50, 0.42, 0.42, 0.89, 1.13],  // 21  rollercoaster
+        [3.75, 5.76, 0.46, 0.64, 0.30, 0.14, 0.89, 0.81],  // 22  rolling crests
+        [1.35, 4.22, 2.86, 4.05, 0.37, 0.99, 0.37, 1.62],  // 23  slalom
+        [5.23, 2.68, 5.26, 1.18, 0.20, 0.74, 0.18, 1.24],  // 24  tight kinks
+        [2.83, 1.14, 1.38, 4.60, 0.80, 0.59, 0.75, 1.02],  // 25  big dipper
+        [0.43, 5.88, 3.78, 1.73, 0.65, 0.29, 0.44, 0.68],  // 26  wide S
+        [4.31, 4.34, 6.17, 5.15, 0.34, 0.92, 0.34, 1.50],  // 27  slalom
+        [1.92, 2.80, 2.29, 2.28, 0.48, 0.48, 1.02, 1.29],  // 28  rollercoaster
+        [5.80, 1.27, 4.69, 5.70, 0.69, 0.51, 0.65, 0.88],  // 29  big dipper
+        [3.40, 6.01, 0.81, 2.83, 0.36, 0.98, 0.36, 1.60]   // 30  slalom
+      ],
+
+      /* WHAT THE ROAD IS ALLOWED TO THROW, and the level each thing first
+         appears on. The manifest's lerp already makes every hazard denser as
+         the climb goes up; this is the other half of the same idea — a player
+         meets ONE new object at a time, in an order, instead of the whole
+         catalogue on level 1. Below its level a knob is forced to zero, above
+         it the lerp owns it again. */
+      unlock: {
+        wall:  3,     // a row of blockers becomes a WALL with a gate in it
+        bomb:  5,     // scatters of mines
+        ramp:  9,     // ramps, and the wall they are there to clear
+        solid: 13     // ...and a ramp wall with no gate at all: jump or stop
+      },
+
+      /* WHO IS IN THE FIELD, per level — the same idea as `unlock` above,
+         applied to the pack instead of to the road. A share per temperament
+         (`play.foes`) at the foot of the climb and at the top of it, plus the
+         level each one first appears on, so a player meets one new BEHAVIOUR
+         at a time exactly the way they meet one new hazard at a time.
+
+         Level 1 is a field that gets out of the way and a field that drives in
+         a straight line — a road to learn the steering on. The stalker arrives
+         at 6, the marshal at 12, the ram at 18, and by the top of the ladder
+         two craft in three are hunting.
+
+         `solo` is the playable and the endless run, which have no level to
+         read and therefore get the whole catalogue at once. */
+      foeMix: {
+        //      SCOUT DRONE STALK MARSH  RAM
+        from: [ 0.60, 0.40, 0.00, 0.00, 0.00 ],
+        to:   [ 0.12, 0.14, 0.24, 0.20, 0.30 ],
+        solo: [ 0.24, 0.24, 0.20, 0.14, 0.18 ]
+      },
+      foeUnlock: [1, 1, 6, 12, 18]
     }
   };
 
@@ -463,6 +758,153 @@
   var Game = (function () {
     var TAU = Math.PI * 2;
     var T = CONFIG.play;
+    var LAD = CONFIG.ladder;
+
+    /* ── THE LEVEL, AND WHAT IT MAKES OF THE ROAD ────────────────────────
+       `applyLevel(d)` is the web target's escape hatch (see docs/LEVELS.md):
+       the level layer lerps the manifest's knobs first and then hands the
+       game its own difficulty, 0 at the foot of the climb and 1 at the top.
+       Everything a lerp cannot say goes here — the biome, the level's fixed
+       road, the cuts the race is actually run over, and which hazards exist
+       at all this early.
+
+       `BIO` is the biome in force and `TRACE` the level's row of
+       `CONFIG.ladder.road`, or null when there is no level: the playable and
+       the endless bonus run both land there and keep the game exactly as it
+       was designed, which is why every read of these two has a fallback. */
+    var BIO = LAD.biomes[0], TRACE = null;
+
+    /* The difficulty the level layer handed over, kept because the FIELD is
+       built from it too (see foeGrid): null on the playable and on the endless
+       run, which have no level and take the whole catalogue of pilots. */
+    var levelD = null;
+
+    /* The four road knobs `applyLevel` overwrites are NOT in the manifest's
+       tune table — they are computed here — so nothing else would put them
+       back for a run with no level. Snapshotted at load, restored on null. */
+    var ROAD0 = { bendLong: T.bendLong, bendShort: T.bendShort,
+                  bendKShort: T.bendKShort, hillAmp: T.hillAmp, hillK: T.hillK,
+                  cuts: T.cuts, wallFrom: T.wallFrom };
+
+    /* The objective in METRES, off the manifest's own range — the same lerp
+       packages/webshell/levels.js runs, read from the same block, so the arch
+       the player drives at and the number the map promises can never drift.
+       The literals are the fallback for a build with no `web` block at all. */
+    function goalOf(d) {
+      var o = (CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.objective) ||
+              { from: 200, to: 1300, step: 25 };
+      var step = o.step || 1;
+      return Math.round((o.from + (o.to - o.from) * d) / step) * step;
+    }
+
+    /* THE RACE IS AS LONG AS ITS THIRD STAR. Three stars is 2.2x the
+       objective (levels.js, starsFor) and the chequered arch ends the round
+       outright, so an arch standing anywhere else is either unreachable — the
+       shipped ladder asked for 1300 m on a road that stopped at 1020 — or a
+       finish that pays less than driving past it would. Putting it exactly on
+       the third star makes winning the race and maxing the level the same
+       event, which is the only way both can be true.
+
+       The cuts below it keep the shipped rhythm, evenly spaced up to the
+       arch, and there are fewer of them low down: two gates is a sprint, four
+       is a race. The ranks walk from the field size down to the podium, so a
+       cut always asks for the same SHARE of the field however big it is. */
+    function cutsFor(d) {
+      /* CEILED, and that is not cosmetic. The shell's third star is
+         `value >= goal * 2.2` in floating point, and 200 * 2.2 is
+         440.00000000000006 — an arch standing at 440 would be crossed with the
+         third star still unearned, and a won race would pay two stars. The
+         ceiling puts the flag on the first metre that clears the threshold
+         however the double falls. */
+      var finish = Math.ceil(goalOf(d) * 2.2), P = T.pilots;
+      var n = d < 0.25 ? 2 : d < 0.6 ? 3 : 4, i, q, rank, share, x, out = [];
+      for (i = 1; i <= n; i++) {
+        q = i / n;
+        rank = i === n ? 3 : Math.min(P - 1, Math.max(4, Math.round(P - (P - 3) * q)));
+        /* WHERE A GATE STANDS FOLLOWS FROM THE GRID, not from an even spacing.
+           A gate asks for a share of the field to be behind the player, and
+           `seedRivals` hands that share over on a schedule it owns — so the
+           gate goes where the schedule has already delivered it, plus
+           `cutSlack`. Spaced evenly instead, the early gates land before the
+           places they ask for exist, and a clean drive is eliminated by the
+           arithmetic rather than by anything it did.
+
+           The LAST one is the exception twice over: it stands on `finish`,
+           which is the third star and is never rounded — the objective moves in
+           steps of 25 m so 2.2x it is a whole number of metres, and an arch
+           rounded up would sit past a star that had already stopped the round,
+           so the chequered flag would never be reached. The gates below it are
+           landmarks and round to ten. */
+        share = (P - rank) / Math.max(1, P - 1);
+        x = T.passFirst + share * (T.passLast - T.passFirst) + T.cutSlack;
+        out.push({ at: i === n ? finish
+                              : Math.round(finish * Math.min(0.94, x) / 10) * 10,
+                   rank: rank });
+      }
+      return out;
+    }
+
+    function applyLevel(d) {
+      var n = CONFIG.level | 0, i, w, u, k, lim;
+      levelD = (!n || d == null) ? null : d;
+      if (!n || d == null) {
+        // No level: the playable, or the endless run at 90/90. Put the road
+        // back the way the file wrote it and let reset() roll its own phases.
+        BIO = LAD.biomes[0]; TRACE = null;
+        for (i in ROAD0) if (ROAD0.hasOwnProperty(i)) T[i] = ROAD0[i];
+        return;
+      }
+
+      // The biome is the stretch of the climb the LEVEL NUMBER sits in, not
+      // the difficulty: two roads out of a fork have to wear the same sky.
+      BIO = LAD.biomes[0];
+      for (i = 0; i < LAD.biomeFrom.length; i++) {
+        if (n >= LAD.biomeFrom[i]) BIO = LAD.biomes[i];
+      }
+
+      /* The trace. The table's weights say what kind of road it is and `d`
+         says how hard it is driven, so a level keeps its character all the way
+         up the climb instead of every road converging on the same wiggle. */
+      TRACE = LAD.road[(n - 1) % LAD.road.length];
+      w = TRACE;
+      T.bendLong   = (60 + 240 * w[4]) * (0.70 + 0.50 * d);
+      T.bendShort  = (8 + 112 * w[5]) * (0.60 + 0.70 * d);
+      T.hillAmp    = Math.min(170, Math.round((20 + 145 * w[6]) * (0.60 + 0.60 * d)));
+      T.bendKShort = ROAD0.bendKShort * w[7];
+      T.hillK      = ROAD0.hillK * (0.7 + 0.5 * w[7]);
+
+      /* THE ROAD MAY NEVER OUT-STEER THE CRAFT. A bend's amplitude and its
+         frequency multiply into one number — how fast the tarmac travels
+         sideways under a craft going flat out, `sum(amp * k) * speedMax` in
+         px/s — and the table moves both at once, so a slalom at the top of the
+         climb worked out at 964 px/s against a craft that steers at 720. That
+         is not a hard level, it is a road nobody can stay on.
+
+         So the two amplitudes are scaled down together until the drift fits a
+         share of `steer` that the climb itself decides: 0.30 at the foot and
+         0.60 at the top, against the 0.42 the shipped endless road sits at.
+         Scaling BOTH keeps the trace's character — the shape is the same road,
+         driven shallower — and it falls on the high-frequency traces first,
+         which is why a slalom comes out tight and shallow and a sweeper comes
+         out long and wide. Nothing is clamped when the trace already fits. */
+      k = T.bendLong * T.bendKLong + T.bendShort * T.bendKShort;
+      lim = T.steer * (0.30 + 0.30 * d) / T.speedMax;
+      if (k > lim) { T.bendLong *= lim / k; T.bendShort *= lim / k; }
+      T.bendLong = Math.round(T.bendLong);
+      T.bendShort = Math.round(T.bendShort);
+
+      T.cuts = cutsFor(d);
+
+      /* ONE NEW OBJECT AT A TIME. Below its unlock level a hazard is forced
+         to zero whatever the lerp made of it, so the first levels are a road
+         with barriers on it and nothing else, and every band after that adds
+         exactly one thing the player has not met. */
+      u = LAD.unlock;
+      if (n < u.wall)  T.wallFrom = 2;      // over 1: a row never becomes a wall
+      if (n < u.bomb)  T.bombChance = 0;
+      if (n < u.ramp)  T.rampChance = 0;
+      if (n < u.solid) T.rampSolid = 0;     // a ramp wall always keeps its gate
+    }
 
     /* Hit sizes, deliberately generous on the rewards and tight on the blockers:
         a playable should bias toward the player succeeding. The cell is an
@@ -480,9 +922,11 @@
        clamps x so the outer columns can sit closer to the frame's edges than its
        own anchors.
 
-       Those outer columns are nevertheless held well off the edges: the two
-       gauges live there now (see drawShieldRail / drawBoardRail) and a callout is
-       the one thing on screen wide enough to cover the shield running out. */
+       Those outer columns are nevertheless held well off the edges: the shield
+       gauge lives down the left one (see drawShieldRail) and a callout is the
+       one thing on screen wide enough to cover the shield running out. The
+       right column keeps the same inset, because a callout hanging off one
+       edge of the frame and not the other reads as a layout bug. */
     var POP_SPOTS = [
       [0.22, 0.17], [0.50, 0.15], [0.78, 0.17],
       [0.21, 0.34], [0.79, 0.34],
@@ -533,19 +977,15 @@
     // What the HUD pills currently read, so they are only rewritten on a change.
     var shownShield = -1, shownRank = "", shownNeed = "";
 
-    /* --- the two rails (see drawRails) ------------------------------------
+    /* --- the shield rail (see drawShieldRail) -----------------------------
        `shieldLag` is the ghost head that trails the real shield, so the band
        between the two can flash white for charge won and red for charge lost;
        `shieldSeen` is what the rail last knew, which is how a change is noticed
        without every call site having to announce itself. `railPunch` is the
        discharge a change leaves on the rail and `railT` the clock its alarm
-       pulses on. The board rail carries its own ghost so the player's marker
-       slides between places instead of teleporting. */
+       pulses on. */
     var shieldLag = T.shieldStart, shieldSeen = T.shieldStart;
     var railPunch = 0, railCol = "#5cffb0", railT = 0;
-    var rankLag = T.pilots, rankSeen = T.pilots, boardPunch = 0, boardCol = "#5cffb0";
-    // Scratch list the board rail sorts the field into, reused every frame.
-    var board = [];
 
     // The lateral velocity a mine's blast leaves on the hull, and the roll that
     // rides with it. Both bleed off on T.kickDrag.
@@ -580,10 +1020,9 @@
        band's height says how big it looks, and what shimmers is how much road
        it is being asked to stand for. */
     var tarmacOn = [], tarmacOff = [];
-    var TARMAC_MID = "#211c59", FADE_N = 8, FADE_FULL = 1.05, FADE_FLAT = 2.5;
-    // The two rails, in design px. Rebuilt by metrics() with everything else.
+    var FADE_N = 8, FADE_FULL = 1.05, FADE_FLAT = 2.5;
+    // The shield rail, in design px. Rebuilt by metrics() with everything else.
     var shieldRail = { x: 0, y: 0, w: 0, h: 0 };
-    var boardRail  = { x: 0, y: 0, w: 0, h: 0 };
     // How hot each rail is burning right now: the side the craft leaves flares,
     // so the way back onto the tarmac is never ambiguous.
     var railGlow = { l: 0, r: 0 };
@@ -734,13 +1173,59 @@
                    seed: Rand.range(0, TAU), used: false });
     }
 
+    /* IS THERE A PAD IN THE WAY? One walk over the live item list, which is a
+       few dozen entries and is only ever asked at spawn time. `p`/`x` are the
+       progress and the offset the mine would be laid at, on ribbon `br`. */
+    function padNear(p, x, br) {
+      var i, it, base = ribbonX(p, br || 0);
+      for (i = 0; i < items.length; i++) {
+        it = items[i];
+        if (it.type !== "boost" || (it.br || 0) !== (br || 0)) continue;
+        if (Math.abs(it.p - p) > T.padClear) continue;
+        if (Math.abs(itemX(it) - (base + x)) > T.padClearX) continue;
+        return true;
+      }
+      return false;
+    }
+
+    /* LAY A MINE — but never across the way into a booster (see `padClear`).
+       It is pushed to the other side of the ribbon first, and dropped
+       altogether when even that is not clear: a scatter with a hole in it is
+       still a road to weave through, and a pad nobody can reach is not a
+       reward at all. */
+    function placeBomb(p, off, br) {
+      var h = branchHalf(p, forkAmt(p)) - 54;
+      if (!padNear(p, off, br)) { place(p, off, "bomb", br); return; }
+      off = -clamp(off, -h, h);
+      if (Math.abs(off) < h * 0.6) off = (off < 0 ? -1 : 1) * h * 0.8;
+      if (padNear(p, off, br)) return;
+      place(p, off, "bomb", br);
+    }
+
+    /* LAY A BOOSTER, and it always wins: a mine already inside its box is
+       LIFTED OFF the road rather than the pad being moved. The generator lays
+       a scatter and then rolls the next slot, so a pad can perfectly well be
+       rolled 150 px past the last mine of one — and when the two meet, the
+       thing that has to survive is the one the player is racing towards. */
+    function placePad(p, off, br) {
+      var i, it, base = ribbonX(p, br || 0);
+      for (i = items.length - 1; i >= 0; i--) {
+        it = items[i];
+        if (it.type !== "bomb" || (it.br || 0) !== (br || 0)) continue;
+        if (Math.abs(it.p - p) > T.padClear) continue;
+        if (Math.abs(itemX(it) - (base + off)) > T.padClearX) continue;
+        items.splice(i, 1);
+      }
+      place(p, off, "boost", br);
+    }
+
     /* A SCATTER OF MINES, laid in a lateral sweep so threading it is a weave
        and not a single dodge. They are the reason a shield runs down at all on
        an open road, and they get denser as the field thins out. */
     function spawnBombs(p) {
       var h = roadHalf(p) - 54, n = Rand.int(T.bombMin, Math.round(T.bombMin + (T.bombMax - T.bombMin) * diff()));
       var amp = h * Rand.range(0.45, 0.95), ph = Rand.range(0, TAU), i;
-      for (i = 0; i < n; i++) place(p + i * T.bombStep, amp * Math.sin(ph + i * 1.25), "bomb", 0);
+      for (i = 0; i < n; i++) placeBomb(p + i * T.bombStep, amp * Math.sin(ph + i * 1.25), 0);
       nextP = p + n * T.bombStep + slotGap() * 0.6;
     }
 
@@ -753,7 +1238,7 @@
        fork costs nothing but the decision itself. */
     function spawnFork(p) {
       var a = p + 240, b = a + T.forkLen, side = Rand.chance(0.5) ? -1 : 1;
-      var n, i, q, run;
+      var n, i, q, run, pads = [], gaps = [], q0, lo, hi;
       forks.push({ a: a, b: b });
 
       // the charge branch
@@ -764,14 +1249,32 @@
         place(q, (branchHalf(q, 1) - 60) * 0.72 * Math.sin(i * 1.15), "cell", side);
       }
 
-      // the speed branch, and the mines that make it cost something
+      // the speed branch...
+      q0 = a + T.forkFade * 0.85;
       for (i = 0; i < T.forkPads; i++) {
-        q = a + T.forkFade * 0.85 + (i + 0.5) * run / T.forkPads;
-        place(q, Rand.range(-26, 26), "boost", -side);
+        q = q0 + (i + 0.5) * run / T.forkPads;
+        placePad(q, Rand.range(-26, 26), -side);
+        pads.push(q);
       }
-      for (i = 0; i < T.forkBombs; i++) {
-        q = a + T.forkFade * 0.85 + (i + 1) * run / (T.forkBombs + 1);
-        place(q, (branchHalf(q, 1) - 54) * (Rand.chance(0.5) ? 0.75 : -0.75), "bomb", -side);
+      /* ...and the mines that make it cost something, laid in the GAPS between
+         the pads and never on the way into one. A branch is barely 330 px wide
+         while it is split, so there is no room out here to put a mine beside a
+         booster — the separation has to be along the road, which is what these
+         gaps are. The widest are filled first (the mouth and the run out to the
+         merge are half-gaps, the pads' own intervals are the roomy ones), and a
+         mine with nowhere clear to sit is simply not laid: at the top of the
+         ladder the tune asks for four and the geometry hands over what fits.
+         The fast line stays the dangerous one; it stops being a fenced one. */
+      gaps = [];
+      for (i = 0; i <= pads.length; i++) {
+        lo = i ? pads[i - 1] : q0;
+        hi = i < pads.length ? pads[i] : q0 + run;
+        gaps.push({ mid: (lo + hi) * 0.5, w: hi - lo });
+      }
+      gaps.sort(function (x, y) { return y.w - x.w; });
+      for (i = 0; i < T.forkBombs && i < gaps.length; i++) {
+        q = gaps[i].mid;
+        placeBomb(q, (branchHalf(q, 1) - 54) * (Rand.chance(0.5) ? 0.75 : -0.75), -side);
       }
 
       nextP = b + slotGap() * 0.9;
@@ -803,7 +1306,7 @@
         // Threading the gate has to pay, or the player only ever learns what
         // NOT to do — and on an open road the only thing worth paying with is
         // speed, because charge lives in the forks.
-        if (Rand.chance(0.55)) place(p, gx, "boost", 0);
+        if (Rand.chance(0.55)) placePad(p, gx, 0);
       }
       nextP = p + slotGap();
     }
@@ -830,13 +1333,13 @@
         for (x = -hw; x < gx - g; x += T.blockStep) place(pw + Rand.range(-12, 12), x, "block", 0);
         for (x = hw; x > gx + g; x -= T.blockStep) place(pw + Rand.range(-12, 12), x, "block", 0);
       }
-      if (Rand.chance(0.6)) place(pw + T.rampWall * 0.55, rx, "boost", 0);
+      if (Rand.chance(0.6)) placePad(pw + T.rampWall * 0.55, rx, 0);
       nextP = pw + slotGap();
     }
 
     function spawnBoost(p) {
       var h = roadHalf(p) - 62;
-      place(p, Rand.range(-h, h), "boost", 0);
+      placePad(p, Rand.range(-h, h), 0);
       nextP = p + slotGap() * 0.8;
     }
 
@@ -865,7 +1368,7 @@
     // The centre of the ribbon an item hangs off, at any progress along it: the
     // branch offset fades in and out with the fork, so an item near the mouth
     // sits near the centre line exactly like the tarmac under it.
-    function itemBase(it, p) { return roadX(p) + it.br * branchOff(forkAmt(p)); }
+    function itemBase(it, p) { return ribbonX(p, it.br); }
     function itemX(it) { return itemBase(it, it.p) + it.off; }
 
     function resolveItems() {
@@ -913,18 +1416,53 @@
        the only way an overtake feels like one.
        ==================================================================== */
 
-    /* Their lateral line, in three parts that answer to three different things:
-       a slow wander of their own (plus, inside a fork, the branch their seed
-       committed them to, so the pack splits at a fork too), the dodge they are
-       currently steering to miss what is up the road, and the shove they are
-       recovering from. Wander and dodge are held on the ribbon — a pilot never
-       drives itself into the gravel — but the SHOVE is not, because being
-       thrown off the road is exactly what a contact is for. */
-    function rivalX(r) {
-      var p = r.p, t = forkAmt(p), c = roadX(p) + r.br * branchOff(t);
+    // The centre line of the ribbon a pilot (or an item) is riding.
+    function ribbonX(p, br) { return roadX(p) + br * branchOff(forkAmt(p)); }
+
+    /* Their lateral line, in four parts that answer to four different things:
+       a slow wander of their own — scaled by their temperament, so a DRONE has
+       none at all — plus, inside a fork, the branch their seed committed them
+       to; the dodge they are steering to miss what is up the road; the HUNT,
+       which is what they are doing about the player (see huntWant); and the
+       shove they are recovering from. The first three are held on the ribbon —
+       a pilot never drives itself into the gravel — but the SHOVE is not,
+       because being thrown off the road is exactly what a contact is for. */
+    function rivalOff(r, hunt) {
+      var p = r.p, t = forkAmt(p);
       var h = Math.max(30, branchHalf(p, t) - 30);
       var lane = (branchHalf(p, t) - 58) * 0.72 * Math.sin(p * 0.0016 + r.seed);
-      return c + clamp(lane + r.dodge, -h, h) + r.push;
+      return clamp(lane * T.foes[r.kind].wander + r.dodge + hunt, -h, h) + r.push;
+    }
+    function rivalX(r) { return ribbonX(r.p, r.br) + rivalOff(r, r.hunt); }
+    /* ...and where the same pilot would be with nobody else on the road, which
+       is what the hunt is measured FROM: reading `rivalX` back into the want
+       would be a feedback loop that either welds the pilot to the craft or
+       walks it off on its own. */
+    function rivalLine(r) { return ribbonX(r.p, r.br) + rivalOff(r, 0); }
+
+    /* WHAT A PILOT DOES ABOUT THE PLAYER — the one thing its livery promises.
+       `foes[kind].hunt` gives it a sign and a share of `foeMax`: positive comes
+       for the craft, negative gets out of its way, zero does not look. The want
+       is weighted by how close the craft is, so the pack drives its own line up
+       the road and only wakes up once the player is in its mirrors — a hunt
+       that started a kilometre out would read as a rail, not as a decision. */
+    function huntWant(r) {
+      var f = T.foes[r.kind], dz, w, want;
+      if (!f.hunt) return 0;
+      dz = r.p - craftP();
+      // Behind the craft it is over: a pilot the player has passed is a pilot
+      // in the mirror, and turning it into a chase would make an overtake
+      // something that never quite finishes.
+      if (dz < 0 || dz > T.foeSee) return 0;
+      w = 1 - dz / T.foeSee;
+      want = bx - rivalLine(r);
+      /* THE MARSHAL NEVER ARRIVES. It steers for a point `foeHold` px to the
+         side of the craft — whichever side it is already on — so it hangs on
+         the line the player wants without ever being the one that closes the
+         gap. Inside the hold the term goes NEGATIVE on its own and it backs
+         off, which is the whole reason the contact stays the player's. */
+      if (f.hold) want -= (want > 0 ? 1 : -1) * T.foeHold;
+      return clamp(f.hunt * want * w, -T.foeMax, T.foeMax);
     }
 
     /* WHAT A PILOT IS TRYING TO MISS. Every hazard ahead of it inside the cone
@@ -935,7 +1473,11 @@
        into the gap — which is how a wall gets threaded without anyone writing
        code that looks for a gate. */
     function dodgeWant(r) {
-      var i, it, dz, dx, ax, w, f = 0, x = rivalX(r);
+      var i, it, dz, dx, ax, w, f = 0, x;
+      // A DRONE does not read the road at all: it holds its lane through the
+      // scatter and takes the barriers apart on the way (see rivalWall).
+      if (!T.foes[r.kind].dodge) return 0;
+      x = rivalX(r);
       for (i = 0; i < hazN; i++) {
         it = hazards[i];
         dz = it.p - r.p;
@@ -997,16 +1539,68 @@
       }
     }
 
+    /* WHO IS ON THE GRID. The mix is the LEVEL's — lerped between
+       `ladder.foeMix.from` and `.to` on the difficulty the level layer handed
+       over, and zeroed for every temperament the climb has not reached yet
+       (`foeUnlock`) — so a player meets one new behaviour at a time exactly
+       the way they meet one new hazard at a time. With no level at all, the
+       playable and the endless run take `foeMix.solo`, which is the whole
+       catalogue.
+
+       The counts are DERIVED and never rolled: a level is the same road every
+       time it is opened, and a field that was three rams on one run and none
+       on the next would be a different level under the same number. Largest
+       remainder, then handed out FROM THE BACK OF THE GRID FORWARD — the
+       temperaments are listed easiest first, so the stragglers the player
+       reels in over the opening metres are the ones that get out of the way,
+       and the craft still up the road at the flag are the ones coming for
+       them. One race, and it hardens as it is driven. */
+    function foeGrid(n) {
+      var mix = LAD.foeMix, lv = CONFIG.level | 0, i, j, v;
+      var share = [], tot = 0, cnt = [], rest = [], left = n, out = [];
+      for (i = 0; i < T.foes.length; i++) {
+        v = levelD == null ? mix.solo[i]
+                           : mix.from[i] + (mix.to[i] - mix.from[i]) * levelD;
+        if (lv && lv < LAD.foeUnlock[i]) v = 0;
+        share.push(v > 0 ? v : 0);
+        tot += share[i];
+      }
+      if (tot <= 0) { share[0] = 1; tot = 1; }        // a field of scouts
+      for (i = 0; i < share.length; i++) {
+        v = n * share[i] / tot;
+        cnt.push(Math.floor(v));
+        rest.push({ i: i, r: v - Math.floor(v) });
+        left -= cnt[i];
+      }
+      rest.sort(function (a, b) { return b.r - a.r; });
+      for (i = 0; i < left; i++) cnt[rest[i % rest.length].i]++;
+      for (i = 0; i < cnt.length; i++) for (j = 0; j < cnt[i]; j++) out.push(i);
+      return out;
+    }
+
     function seedRivals() {
-      var i, n = T.pilots - 1, p = craftP(), q;
+      var i, n = T.pilots - 1, cp = craftP(), q, pace, f, gap;
+      // The race, in metres: the last cut is the chequered arch, and every pass
+      // is scheduled as a share of it (see passFirst / passLast in CONFIG).
+      var R = T.cuts.length ? T.cuts[T.cuts.length - 1].at : 1020;
+      var grid = foeGrid(n), fo;
       rivals = [];
       for (i = 0; i < n; i++) {
-        // Stacked up the road ahead of the player, who therefore starts last.
-        p += T.rivalGap * (1 + Rand.range(-T.rivalSpread, T.rivalSpread));
-        q = i / (n - 1);                              // 0 at the back, 1 in front
-        rivals.push({ p: p, pace: T.paceLow + (T.paceHigh - T.paceLow) * q,
+        q = n > 1 ? i / (n - 1) : 1;                  // 0 at the back, 1 in front
+        fo = T.foes[grid[i]];
+        /* The temperament's own pace is folded in HERE and not in the update,
+           which is what keeps the schedule honest: a stalker at 0.70 of its
+           share is slow, so the grid stands it further up the road and the
+           player still meets it at the metre it was meant to be met at. */
+        pace = (T.paceLow + (T.paceHigh - T.paceLow) * q) * fo.pace;
+        f = T.passFirst + (T.passLast - T.passFirst) * q;
+        // ...and where that puts it on the grid. `1 - pace` is how fast the
+        // player closes, so this is the lead that is spent exactly at `f`.
+        gap = f * R * (1 - pace) * T.pxPerM *
+              (1 + Rand.range(-T.rivalSpread, T.rivalSpread));
+        rivals.push({ p: cp + gap, pace: pace, kind: grid[i],
                       br: Rand.chance(0.5) ? -1 : 1, seed: Rand.range(0, TAU),
-                      hue: i, bump: 0, push: 0, pushV: 0, dodge: 0 });
+                      bump: 0, push: 0, pushV: 0, dodge: 0, hunt: 0 });
       }
     }
 
@@ -1015,14 +1609,28 @@
        whole thing is a single linear walk every frame. */
     function updateRivals(dt) {
       var i, r, ahead = 0, cp = craftP(), base = baseSpeed(), dx, dy, was = rank;
+      var fo, pace;
       collectHazards();
       for (i = 0; i < rivals.length; i++) {
         r = rivals[i];
-        r.p += base * r.pace * dt;
+        fo = T.foes[r.kind];
+        /* THE MARSHAL TAKES THE PLAYER'S OWN PACE while it is still ahead of
+           them and inside its reach, capped at a plain cruise: it cannot be
+           out-driven, only out-boosted. Once it has been passed it drops back
+           onto its own pace — a pilot that kept station behind the craft
+           forever would turn every overtake into something that never ends. */
+        pace = r.pace;
+        if (fo.match) {
+          dy = r.p - cp;
+          if (dy > 0 && dy < T.foeSee) pace = Math.max(pace, Math.min(mult, T.foeMatch));
+        }
+        r.p += base * pace * dt;
         if (r.bump > 0) r.bump -= dt;
         // ...and it steers. Eased rather than snapped, so a pilot leans into
-        // its line the way the player's craft does.
+        // its line the way the player's craft does. The hunt is eased more
+        // slowly still: what it has to read as is a decision, not a magnet.
         r.dodge += (dodgeWant(r) - r.dodge) * Math.min(1, dt * T.dodgeEase);
+        r.hunt += (huntWant(r) - r.hunt) * Math.min(1, dt * T.foeEase);
         /* The shove: a lateral velocity like the craft's own kick, integrated
            into an offset that then relaxes back onto the pilot's line, so a
            contact throws it wide and it fights its way back rather than
@@ -1114,10 +1722,13 @@
     // Clipping another pilot. It costs shield and it costs speed, which is the
     // point: the board is climbed by out-driving the pack, not through it.
     function clip(r) {
-      var dx = rivalX(r) - bx, dir;
+      var fo = T.foes[r.kind], dx = rivalX(r) - bx, dir;
+      // What a contact is worth is the OTHER pilot's business: a ram hits half
+      // again as hard as a stalker does, and the livery said so on the way in.
+      var cost = Math.round(T.rivalCost * fo.cost);
       chain = 0;
       hits++;
-      shield = Math.max(0, shield - T.rivalCost);
+      shield = Math.max(0, shield - cost);
       invT = T.invTime * 0.7;
       mult = Math.min(mult, 0.72);
       boostT = 0;
@@ -1128,10 +1739,11 @@
          one collision, two bodies, opposite directions. Dead level is a coin
          toss, because two hulls in the same lane have to end up somewhere. */
       dir = Math.abs(dx) < 4 ? (Rand.chance(0.5) ? -1 : 1) : (dx > 0 ? -1 : 1);
-      kick = dir * T.rivalKick;
-      kickRoll = dir * T.bombRoll * 0.7;
-      r.pushV = -dir * T.rivalShove;
-      Fx.shake(11, 0.26); Fx.flash("#ff9c3b", 0.26);
+      kick = dir * T.rivalKick * fo.kick;
+      kickRoll = dir * T.bombRoll * 0.7 * fo.kick;
+      // ...and the hull that hits hardest is the one that is moved least by it.
+      r.pushV = -dir * T.rivalShove / fo.kick;
+      Fx.shake(11 * fo.kick, 0.26); Fx.flash("#ff9c3b", 0.26);
       Fx.burst(craftX(), craftY(), { color: ["#ff9c3b", "#ffd43b", "#ffffff"], count: 18, speed: 380, life: 0.42, size: 5 });
       // The spray follows the way the craft is thrown, so the eye is pushed the
       // same direction the hull is.
@@ -1141,7 +1753,7 @@
       Overlay.vignette("rgba(255,120,60,.8)", 1, 460);
       Sound.clip("scrape", 0.8, 0.8);
       if (shield <= 0) { showShield(); die("SHIELD DOWN"); return; }
-      dmgPop(T.rivalCost);
+      dmgPop(cost);
     }
 
     // A mine. Cheaper than a barrier and far more common, so it is the drip
@@ -1406,10 +2018,17 @@
       best = Store.get("bestScore", 0);
       metrics();
 
-      // A fresh set of bends, swells and crests every run, so the road is never
-      // learned by heart.
-      phA = Rand.range(0, TAU); phB = Rand.range(0, TAU);
-      phC = Rand.range(0, TAU); phD = Rand.range(0, TAU);
+      /* THE ROAD. A level has a trace of its own and it never moves: the four
+         phases come off CONFIG.ladder.road, so level 12 is one road the player
+         can learn and level 11 is another. Without a level — the playable, and
+         the endless bonus run — they are rolled fresh every run, which is what
+         keeps an endless road from being learned by heart. */
+      if (TRACE) {
+        phA = TRACE[0]; phB = TRACE[1]; phC = TRACE[2]; phD = TRACE[3];
+      } else {
+        phA = Rand.range(0, TAU); phB = Rand.range(0, TAU);
+        phC = Rand.range(0, TAU); phD = Rand.range(0, TAU);
+      }
 
       camP = 0; runT = 0; speed = T.speedMin; mult = 1; dist = 0; travel = 0;
       fov = 0; lens();
@@ -1435,11 +2054,10 @@
       rank = T.pilots; fieldSize = T.pilots; cutI = 0; cutWarned = false;
 
       shownShield = -1; shownRank = ""; shownNeed = "";
-      // The rails start settled on a full shield and a last place, so the first
-      // frame of a run is not an animation of values arriving.
+      // The rail starts settled on a full shield, so the first frame of a run
+      // is not an animation of a value arriving.
       shieldLag = shield; shieldSeen = shield;
       railPunch = 0; railCol = "#5cffb0"; railT = 0;
-      rankLag = rank; rankSeen = rank; boardPunch = 0; boardCol = "#5cffb0";
       HUD.setScoreNow(0);
       showShield(); showRank();
       Fx.reset();
@@ -1699,6 +2317,12 @@
         title: rank === 1 ? "RACE WON!" : "ON THE PODIUM!",
         variant: "perfect",
         score: sc,
+        /* The METRES here too, for the same reason `die` reports them: on the
+           web target the last arch stands on the level's third star, so a
+           won race has to be measured on the distance that put it there.
+           Reporting the score instead would hand the level layer a number in
+           the wrong unit and lose the stars the drive just earned. */
+        levelScore: Math.floor(dist),
         stars: 3,
         rows: resultRows(sc)
       });
@@ -1712,9 +2336,9 @@
         title: title || CONFIG.copy.gameOver,
         variant: st === 3 ? "win" : "",
         score: sc,
-        // A level's objective is a distance: the metres, not the metres plus
-        // what was picked up along them (web target only — see levelProgress).
-        levelScore: Math.floor(travel),
+        // A level's objective is a distance: the ROAD covered, and nothing
+        // else (web target only — see levelProgress).
+        levelScore: Math.floor(dist),
         stars: st,
         rows: resultRows(sc)
       });
@@ -1743,7 +2367,10 @@
        A build without the file keeps the drawn sun and towers — artwork is the
        user's, and nothing here generates a stand-in for it. */
     function skyArt() {
-      var img = typeof ArtImages !== "undefined" && ArtImages.sky;
+      // The biome names its own cut (`skyNight` -> arcider-sky-night.png). A
+      // build with no artwork, or a biome whose picture is missing, falls back
+      // to the drawn sky the same way it always did.
+      var img = typeof ArtImages !== "undefined" && ArtImages[BIO.sky];
       return img && img.complete && img.naturalWidth ? img : null;
     }
 
@@ -1755,11 +2382,10 @@
        bottom rows of the picture into a single pixel is the exact answer and
        costs one drawImage per layout, not per frame. The literal is the
        fallback for a build with no artwork, where the drawn sky meets it. */
-    var DARK_PLAIN = [27, 16, 70];
-    var foot = DARK_PLAIN;                    // refreshed by metrics()
+    var foot = [27, 16, 70];                  // refreshed by metrics()
     function skyFoot() {
       var img = skyArt(), c, g, d;
-      if (!img) return DARK_PLAIN;
+      if (!img) return BIO.dark;
       c = document.createElement("canvas"); c.width = 1; c.height = 1;
       g = c.getContext("2d");
       g.drawImage(img, 0, img.naturalHeight - 24, img.naturalWidth, 24, 0, 0, 1, 1);
@@ -1800,23 +2426,23 @@
       skyBase = horizonY + Math.ceil(
         (span + T.hillAmp * 2) * T.camZ * (1 + T.fovKick) / T.zRoad) + 1;
 
-      /* The two rails: full height of the play band, hard against the frame's
-         side margins. They are overlays on the road rather than a band cut out
-         of it — the road is a perspective view whose interest is all in the
-         middle, and the rails are smoked glass, so nothing the player has to
-         read is lost under them. */
-      shieldRail.w = boardRail.w = T.railW;
+      /* The shield rail: full height of the play band, hard against the
+         frame's left margin. It is an overlay on the road rather than a band
+         cut out of it — the road is a perspective view whose interest is all
+         in the middle, and the rail is smoked glass, so nothing the player has
+         to read is lost under it. */
+      shieldRail.w = T.railW;
       shieldRail.x = Layout.left + T.railGap;
-      boardRail.x  = Layout.right - T.railGap - T.railW;
-      shieldRail.y = boardRail.y = Layout.top + T.railInset;
-      shieldRail.h = boardRail.h = Layout.h - T.railInset * 2;
+      shieldRail.y = Layout.top + T.railInset;
+      shieldRail.h = Layout.h - T.railInset * 2;
 
-      // the sky: a synthwave dusk, darkest overhead and hottest at the skyline
+      // the sky, darkest overhead and hottest at the skyline. Four stops out
+      // of the biome, so a build with no artwork is still the right weather.
       skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-      skyGrad.addColorStop(0, "#07051c");
-      skyGrad.addColorStop(0.46, "#1d1055");
-      skyGrad.addColorStop(0.84, "#5c1e77");
-      skyGrad.addColorStop(1, "#ff5f9e");
+      skyGrad.addColorStop(0, BIO.grad[0]);
+      skyGrad.addColorStop(0.46, BIO.grad[1]);
+      skyGrad.addColorStop(0.84, BIO.grad[2]);
+      skyGrad.addColorStop(1, BIO.grad[3]);
 
       /* The plain the road is laid across. It opens on the colour the sky cut
          ends with, so the ground the city stands on IS the ground the road is
@@ -1825,9 +2451,9 @@
       foot = skyFoot();
       plainGrad = ctx.createLinearGradient(0, horizonY, 0, view.h);
       plainGrad.addColorStop(0, footCol(1));
-      plainGrad.addColorStop(0.11, "#2a1550");
-      plainGrad.addColorStop(0.40, "#0d0a2c");
-      plainGrad.addColorStop(1, "#05041a");
+      plainGrad.addColorStop(0.11, BIO.plain[0]);
+      plainGrad.addColorStop(0.40, BIO.plain[1]);
+      plainGrad.addColorStop(1, BIO.plain[2]);
 
       /* The haze, drawn OVER the road. It used to be a screen — the road
          stopped 70 px short of the horizon and this hid the straight edge
@@ -1845,9 +2471,9 @@
 
       // the sun, in its own local space so it can slide with the bend
       sunGrad = ctx.createLinearGradient(0, -SUN_R, 0, SUN_R);
-      sunGrad.addColorStop(0, "#fff3c4");
-      sunGrad.addColorStop(0.44, "#ffb347");
-      sunGrad.addColorStop(1, "#ff2e83");
+      sunGrad.addColorStop(0, BIO.sun[0]);
+      sunGrad.addColorStop(0.44, BIO.sun[1]);
+      sunGrad.addColorStop(1, BIO.sun[2]);
 
       /* THE TARMAC RAMPS — the fix for a band that strobed near the horizon.
          `on` is sampled off ONE progress value per row, and a band up by the
@@ -1861,8 +2487,8 @@
          fifty bands a frame, and a string built per band is pure garbage. */
       tarmacOn = []; tarmacOff = [];
       for (i = 0; i <= FADE_N; i++) {
-        tarmacOn.push(mixHex(TARMAC_MID, "#2b2470", i / FADE_N));
-        tarmacOff.push(mixHex(TARMAC_MID, "#181442", i / FADE_N));
+        tarmacOn.push(mixHex(BIO.road[0], BIO.road[1], i / FADE_N));
+        tarmacOff.push(mixHex(BIO.road[0], BIO.road[2], i / FADE_N));
       }
 
       stars = [];
@@ -1953,9 +2579,9 @@
       // stars, on the slowest parallax: the painted sky carries its own, and
       // these drifting over them at a quarter of the speed is the depth
       ctx.fillStyle = "#eaf6ff";
-      for (i = 0; i < stars.length; i++) {
+      for (i = 0; BIO.stars > 0 && i < stars.length; i++) {
         s = stars[i];
-        ctx.globalAlpha = s.a * (img ? 0.55 : 1);
+        ctx.globalAlpha = Math.min(1, s.a * BIO.stars * (img ? 0.55 : 1));
         ctx.beginPath(); ctx.arc(s.x + off * 0.16, s.y, s.r, 0, TAU); ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -1988,7 +2614,7 @@
          its own band of ground haze, and a second bar over that is the pale
          strip that reads as a third layer between the city and the road. */
       if (!img) {
-        ctx.fillStyle = "rgba(255,95,158,.30)";
+        ctx.fillStyle = BIO.weld;
         ctx.fillRect(-BLEED, skyBase - 5, view.w + BLEED * 2, 8);
       }
     }
@@ -2002,7 +2628,7 @@
          converge with them. Both come out of the road's own curve, so the grid
          banks into a bend WITH the tarmac instead of sliding under it. One path,
          one stroke, and the whole plain scrolls. */
-      ctx.strokeStyle = "rgba(53,232,255,.11)";
+      ctx.strokeStyle = BIO.grid;
       ctx.lineWidth = 2;
       ctx.beginPath();
       /* THE GRID STOPS WHERE ITS ROWS DO. Two rows closer than 2 px pile the
@@ -2040,13 +2666,13 @@
       if (a.on && fi === FADE_N) {
         rwA = T.rumble * a.k; rwB = T.rumble * b.k;
         gl = railGlow.l;
-        ctx.fillStyle = gl > 0.02 ? rgba("#ff2d55", 0.5 + 0.5 * gl) : "#35e8ff";
+        ctx.fillStyle = gl > 0.02 ? rgba("#ff2d55", 0.5 + 0.5 * gl) : BIO.kerb[0];
         ctx.beginPath();
         ctx.moveTo(ax - a.hw - rwA, a.y);  ctx.lineTo(ax - a.hw, a.y);
         ctx.lineTo(bx2 - b.hw, b.y);       ctx.lineTo(bx2 - b.hw - rwB, b.y);
         ctx.closePath(); ctx.fill();
         gl = railGlow.r;
-        ctx.fillStyle = gl > 0.02 ? rgba("#ff2d55", 0.5 + 0.5 * gl) : "#8a5cff";
+        ctx.fillStyle = gl > 0.02 ? rgba("#ff2d55", 0.5 + 0.5 * gl) : BIO.kerb[1];
         ctx.beginPath();
         ctx.moveTo(ax + a.hw, a.y);        ctx.lineTo(ax + a.hw + rwA, a.y);
         ctx.lineTo(bx2 + b.hw + rwB, b.y); ctx.lineTo(bx2 + b.hw, b.y);
@@ -2295,14 +2921,16 @@
     /* A RIVAL, seen from behind like everything else out here. It is the
        player's own silhouette read at a glance — same hull, same fins — but
        painted in its own livery and lit by two hot rear lamps, so the eye files
-       it as "another pilot" and not as an obstacle to shoot for. The livery is
-       taken off its index, so the same craft keeps the same colours all run. */
-    var RIVAL_SKIN = [
-      ["#ff5f9e", "#7a1440"], ["#ffb347", "#7a4210"], ["#9d7bff", "#33196e"],
-      ["#5cffb0", "#0b5c3c"], ["#ff6b6b", "#6e1414"], ["#57d2ff", "#0e4a6e"]
-    ];
+       it as "another pilot" and not as an obstacle to shoot for.
+
+       THE LIVERY IS THE TEMPERAMENT and nothing else (`play.foes`): green gets
+       out of the way, blue drives straight, yellow is slow and coming for you,
+       red boxes your line and violet means to put you in the gravel. Reading
+       the colour a second before the craft is in range IS the game out here,
+       so the same pilot keeps the same colours all run, and no two kinds share
+       a hue. */
     function drawRival(r, k) {
-      var x = screenX(rivalX(r), k), y = screenY(r.p, k), sk = RIVAL_SKIN[r.hue % 6];
+      var x = screenX(rivalX(r), k), y = screenY(r.p, k), sk = T.foes[r.kind].col;
       var g, i, ex, hit = r.bump > 0 && Math.floor(r.bump * 16) % 2;
 
       if (x < -300 * k || x > view.w + 300 * k) return;
@@ -2366,27 +2994,35 @@
       ctx.restore();
     }
 
-    /* A CUT GATE — the single most important thing on the road, so it is built
-       like a landmark: an arch spanning rail to rail, a painted band across the
-       tarmac under it and its target written across the beam. It is GREEN while
-       the player is inside the rank it asks for and RED while they are not, so
-       the question "am I going to survive this" is answered by the colour of the
-       thing growing out of the horizon rather than by arithmetic on a HUD pill.
-       The last gate is the finish line and is always gold and chequered. */
+    /* A CUT — and only the LAST one is built. A checkpoint used to be an arch
+       spanning the road, two lit pylons and its target on a banner, and it was
+       too much furniture for what it is: three of them stand on a run, they are
+       three storeys tall, and a pair of coloured columns growing out of the
+       horizon reads as a thing to avoid rather than as a line to cross. What
+       the player actually needs to know is already said in the corner the eye
+       is on — the rank pill counts the gate down in metres and turns red the
+       moment the place is not good enough — and said again by the vignette and
+       the chime at `cutWarn`.
+
+       So a checkpoint is a LINE ON THE TARMAC now, in the same green or red,
+       and nothing above the road at all. The last gate is different in kind: it
+       is the finish, it ends the race, and it keeps its gold arch and its
+       chequers. */
     function drawGate(cut, isLast) {
       var p = cut.at * T.pxPerM, k = kAt(p), safe = rank <= cut.rank;
       var col = isLast ? "#ffd43b" : safe ? "#5cffb0" : "#ff2d55";
-      var ink = isLast ? "#2e2000" : safe ? "#03291a" : "#33000e";
+      var ink = "#2e2000";
       var half = roadHalf(p) + branchOff(forkAmt(p)) + T.rumble + T.gateOut;
       var cx = screenX(roadX(p), k), yG = screenY(p, k), yT = yG - T.gateH * k;
       var xl = screenX(roadX(p) - half, k), xr = screenX(roadX(p) + half, k);
       var pw = Math.max(2, T.gatePost * k), fs, bh, bw, span, label;
 
-      /* Only the FINISH paints its line on the tarmac, and then in chequers. A
-         checkpoint is its banner and its two pylons and nothing else: the solid
-         band across the road hid the tarmac the player is reading for mines at
-         exactly the moment they are threading one. */
-      if (isLast) groundBand(p, half);
+      // The stripe stops at the KERBS — `gateOut` is the clearance the finish
+      // arch's pylons need to stand outside the road, and a line running past
+      // the neon rails reads as a bar across the scene instead of a mark on
+      // the tarmac.
+      if (!isLast) { checkLine(p, half - T.gateOut, col); return; }
+      groundBand(p, half);
       if (k < 0.015) return;
 
       /* The two pylons, each standing in its own column of light. The column is
@@ -2426,6 +3062,34 @@
       ctx.fillStyle = ink;
       ctx.fillText(label, cx, yT - bh * 0.5 + fs * 0.04);
       ctx.restore();
+    }
+
+    /* A CHECKPOINT, and it is one stripe. Laid in the road's own space like
+       the finish chequers, so it banks into a bend with the tarmac; thin enough
+       and pale enough that it never hides the road the player is reading for
+       mines at the one moment they are threading a wall, and coloured, so
+       whether it is about to end the run is still legible from the far side of
+       the horizon. The brighter core is what keeps it visible once the stripe
+       is a pixel tall. */
+    function checkLine(p, half, col) {
+      // Two stripes on the same line: a soft one 26 progress px deep and a
+      // bright core inside it. The core is what survives once the whole thing
+      // projects to a pixel, which is most of the way in.
+      band(p, 13, half, col, 0.26);
+      band(p, 4, half, col, 0.62);
+    }
+    // One stripe across the road, `d` progress px either side of `p`.
+    function band(p, d, half, col, alpha) {
+      var pF = p + d, pN = p - d, kF = kAt(pF), kN = kAt(pN);
+      if (kF <= 0 || kN <= 0) return;
+      ctx.beginPath();
+      ctx.moveTo(screenX(roadX(pF) - half, kF), screenY(pF, kF));
+      ctx.lineTo(screenX(roadX(pF) + half, kF), screenY(pF, kF));
+      ctx.lineTo(screenX(roadX(pN) + half, kN), screenY(pN, kN));
+      ctx.lineTo(screenX(roadX(pN) - half, kN), screenY(pN, kN));
+      ctx.closePath();
+      ctx.fillStyle = rgba(col, alpha);
+      ctx.fill();
     }
 
     /* THE FINISH LINE, and only ever that: eight chequers across, laid in the
@@ -2757,15 +3421,15 @@
     }
 
     /* ====================================================================
-       THE TWO RAILS — the shield down the left flank, the board down the right
+       THE SHIELD RAIL — down the left flank of the frame
 
-       The HUD pills say the same two things in eight point type at the top of
-       the frame, where a player at 400 km/h is not looking. These say them in
-       the player's peripheral vision instead, the whole height of the play band,
-       so a shield running out and a place about to be lost are felt rather than
-       read. Built like the spin rail in games/spinshock: smoked glass the road
-       shows straight through, cells filled from the bottom, an arc and a chevron
-       at the value, every alpha kept well under 1 and no shadowBlur anywhere.
+       The HUD pill says the same thing in eight point type at the top of the
+       frame, where a player at 400 km/h is not looking. This says it in the
+       player's peripheral vision instead, the whole height of the play band, so
+       a shield running out is felt rather than read. Built like the spin rail in
+       games/spinshock: smoked glass the road shows straight through, cells
+       filled from the bottom, an arc and a chevron at the value, every alpha
+       kept well under 1 and no shadowBlur anywhere.
        ==================================================================== */
 
     // The shield's colour: ice-cyan at full, cooling through gold to a dying red
@@ -2793,16 +3457,9 @@
       var i = Math.min(n - 1, Math.floor(u));
       return mixHex(SHIELD_TIERS[i], SHIELD_TIERS[i + 1], u - i);
     }
-    // Green while the player is inside the next cut, red while they are not —
-    // and green once every cut is behind them, because then they cannot be cut.
-    function qualified() {
-      var cut = T.cuts[cutI];
-      return !cut || rank <= cut.rank;
-    }
-
-    /* The rails' animation, driven from update() and not from the draw call, so
-       a hit-stopped frame does not quietly keep animating them: the ghost heads
-       chase the real values and a change discharges the rail it happened on. */
+    /* The rail's animation, driven from update() and not from the draw call, so
+       a hit-stopped frame does not quietly keep animating it: the ghost head
+       chases the real value and a change discharges the rail. */
     function updateRails(dt) {
       railT += dt;
       if (shield !== shieldSeen) {
@@ -2819,14 +3476,6 @@
       } else if (shieldLag < shield) {
         shieldLag = Math.min(shield, shieldLag + dt * (60 + (shield - shieldLag) * 6));
       }
-      if (rank !== rankSeen) {
-        boardPunch = 1;
-        boardCol = rank < rankSeen ? "#7cf9ff" : "#ff2d55";
-        rankSeen = rank;
-      }
-      if (boardPunch > 0) boardPunch = Math.max(0, boardPunch - dt * 2.6);
-      rankLag += (rank - rankLag) * Math.min(1, dt * 9);
-      if (Math.abs(rankLag - rank) < 0.02) rankLag = rank;
     }
 
     /* The glass every rail is cut from: a smoked pane with a light down one
@@ -2954,88 +3603,6 @@
       ctx.restore();
     }
 
-    /* THE BOARD RAIL. One cell per pilot still in the race, P1 at the top and
-       the back of the field at the bottom, every rival sitting on its own cell
-       in its own livery and the player's cell lit and marked. The zone the next
-       cut keeps is backed in colour and closed by a line, and the rail itself is
-       GREEN while the player is inside that zone and RED while they are not — so
-       the answer to "am I through?" is a colour in the corner of the eye, and
-       every overtake visibly moves the marker up the ladder. */
-    function drawBoardRail() {
-      var r = boardRail, cut = T.cuts[cutI], safe = qualified();
-      var col = safe ? "#5cffb0" : "#ff2d55";
-      var n = Math.max(1, fieldSize), i, j, dx, pos, y, cellH, cy, rv, rc;
-      var pulse = safe ? 0 : 0.5 + 0.5 * Math.sin(railT * 9);
-
-      ctx.save();
-      railGlass(r, col);
-      ctx.save();
-      roundRect(r.x, r.y, r.w, r.h, r.w / 2); ctx.clip();
-
-      cellH = r.h / n;
-
-      /* The cut, as a region and not as a number: everything above the line is
-         the field that goes through, everything below it is the field that goes
-         home. Without the region a marker on a ladder says nothing about
-         whether the ladder is long enough. */
-      if (cut) {
-        y = r.y + cellH * cut.rank;
-        ctx.fillStyle = "rgba(92,255,176,.13)";
-        ctx.fillRect(r.x, r.y, r.w, y - r.y);
-        ctx.fillStyle = "rgba(255,45,85,.16)";
-        ctx.fillRect(r.x, y, r.w, r.y + r.h - y);
-        // the line itself, dashed by hand so it reads as a threshold
-        ctx.fillStyle = "rgba(255,212,59,.75)";
-        for (dx = r.x + 2; dx < r.x + r.w - 3; dx += 8) ctx.fillRect(dx, y - 1.5, 5, 3);
-      }
-
-      // the ladder: one dim rung per place, so the rail reads as a scale even
-      // with nothing on it
-      ctx.fillStyle = "rgba(255,255,255,.06)";
-      for (i = 0; i < n; i++) {
-        ctx.fillRect(r.x + 6, r.y + i * cellH + cellH * 0.5 - 1, r.w - 12, 2);
-      }
-
-      /* THE FIELD. `rank` is already 1 + however many rivals are up the road, so
-         the pack sorted by progress lines up with it exactly: the first
-         `rank - 1` entries are the places above the player and the rest are the
-         places below. Deriving the ladder from that instead of counting again is
-         what stops the rail and the HUD pill ever disagreeing. */
-      board.length = 0;
-      for (i = 0; i < rivals.length; i++) board.push(rivals[i]);
-      board.sort(function (a, b) { return b.p - a.p; });
-      for (j = 0; j < board.length; j++) {
-        rv = board[j];
-        pos = j < rank - 1 ? j + 1 : j + 2;
-        if (pos > n) continue;                       // trimmed out by a cut
-        cy = r.y + (pos - 0.5) * cellH;
-        rc = RIVAL_SKIN[rv.hue % RIVAL_SKIN.length][0];
-        ctx.fillStyle = rgba(rc, 0.62);
-        roundRect(r.x + 6, cy - 3, r.w - 12, 6, 3);
-        ctx.fill();
-      }
-
-      // THE PLAYER, on the eased rank so an overtake slides the marker instead
-      // of teleporting it, and lit in the qualification colour.
-      cy = r.y + (clamp(rankLag, 1, n) - 0.5) * cellH;
-      ctx.fillStyle = rgba(col, 0.30 + 0.25 * boardPunch);
-      roundRect(r.x + 2, cy - cellH * 0.5 + 1, r.w - 4, cellH - 2, 5);
-      ctx.fill();
-      ctx.fillStyle = rgba(col, 0.95);
-      roundRect(r.x + 4, cy - 5, r.w - 8, 10, 5);
-      ctx.fill();
-      ctx.fillStyle = "rgba(255,255,255,.85)";
-      roundRect(r.x + 7, cy - 2, r.w - 14, 4, 2);
-      ctx.fill();
-
-      ctx.restore();
-
-      // the marker's chevron, outside the rail and pointing into the frame
-      railHead(r, cy, -1, col, 0.72 + 0.28 * boardPunch, 14);
-      railRim(r, boardPunch > 0 ? boardCol : col, boardPunch, pulse);
-      ctx.restore();
-    }
-
     function render() {
       buildRows();
       drawSky();
@@ -3043,7 +3610,7 @@
          furthest row sits above skyBase by design, so the tarmac, the grid and
          a gate rising out of the distance all run INTO the city and are cut
          there — which is what makes the two one picture. The craft and the
-         rails are the player's own layer and stay outside it. */
+         rail are the player's own layer and stay outside it. */
       ctx.save();
       ctx.beginPath();
       ctx.rect(-BLEED, skyBase, view.w + BLEED * 2, view.h - skyBase + BLEED);
@@ -3057,7 +3624,6 @@
       ctx.restore();
       drawCraft();
       drawShieldRail();
-      drawBoardRail();
     }
 
     function onResize() { metrics(); lens(); }
@@ -3065,15 +3631,28 @@
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        `levelProgress` is what a level's objective is measured against while
        the round runs, and it is the same number the result reports as
-       `levelScore`: the METRES, never the score, so pickups cannot pay for a
-       distance. `levelWon` is the three-star finish — the web shell has
+       `levelScore`: `dist`, the road actually covered — never `travel`, which
+       is the SCORE's distance and counts double under a booster. A level
+       asking for 900 m has to mean 900 m of tarmac, and the arch that ends the
+       race stands on that same number (see `cutsFor`); measuring the objective
+       on the boosted counter would fire the third star before the player ever
+       reached the chequered flag. `levelWon` is the three-star finish — the web shell has
        already played the slow motion, and the round ends through the game's
-       own result so the end screen keeps these stat rows. Both are ignored by
-       the playable, which has no levels — see docs/LEVELS.md. */
-    function levelProgress() { return Math.floor(travel); }
+       own result so the end screen keeps these stat rows. `applyLevel` is the
+       third and it is at the top of this module, because what it rewrites —
+       the biome, the trace, the cuts, which hazards exist — is read all over
+       the file. All three are ignored by the playable, which has no levels —
+       see docs/LEVELS.md. */
+    function levelProgress() { return Math.floor(dist); }
 
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             levelProgress: levelProgress, levelWon: die };
+             /* `levelWon` is the PODIUM and not `die`: on the web target the
+                last arch stands on the level's third star, so a third star
+                means the craft is at the chequered flag with every cut behind
+                it — which is a race won, finish bonus included. The level
+                layer writes the title over it either way. */
+             levelProgress: levelProgress, levelWon: win,
+             applyLevel: applyLevel };
   })();
 

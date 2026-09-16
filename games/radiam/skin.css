@@ -12,8 +12,13 @@
     --panel:rgba(140,112,236,.07); --panel-line:rgba(168,142,255,.18);
     /* the dial is drawn in one cold wire colour so the beads own every hue */
     --wire:#6f5ea8;
-    /* the five bead colours, in the order the game hands them out */
-    --c1:#ff4d6d; --c2:#ffc23d; --c3:#35e0ff; --c4:#8b6cff; --c5:#3ff0a0;
+    /* The five bead colours, in the order the game hands them out, and they
+       are the intro DEMO's beads — the round's are painted files now
+       (assets/image/embed/radiam-ball-*.webp). These five are sampled off those
+       paintings and match CONFIG.dial.colours exactly: the demo promises the
+       dial the player is about to touch, so a demo in the old palette would
+       promise a different game. */
+    --c1:#f63133; --c2:#feb82a; --c3:#29a0ff; --c4:#8831f6; --c5:#35f631;
   }
   html, body { background:radial-gradient(820px 900px at 50% 42%, #1a1440 0%, #0c0824 54%, #050310 100%); }
   .btn { box-shadow:0 10px 30px rgba(255,138,31,.42), inset 0 2px 6px rgba(255,255,255,.4); }

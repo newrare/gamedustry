@@ -92,6 +92,25 @@
  *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4
  *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4 --as decor
  *   node tools/lab/cut-objects.mjs radiam --step 18 --min 4000 --keep-partial
+ *   node tools/lab/cut-objects.mjs radiam-object-ball-red --grid 5x4
+ *
+ * --grid COLSxROWS — WHEN SEVERAL SHEETS MUST BE CUT THE SAME WAY
+ * ---------------------------------------------------------------
+ * Without it the objects come out ordered by AREA, which is the right answer
+ * for a wall of gears nobody has to index and the wrong one for a set of
+ * sheets that are the same picture in six colours: object 7 has to be the same
+ * design in all six, and a halo a few pixels wider in one recolour reorders
+ * everything after it without a word.
+ *
+ * On a regular sheet, `--grid 5x4` makes the CELL the identity. Each blob is
+ * filed by the cell its centre falls in, the biggest one wins the cell, and
+ * the cuts come out in reading order — cell (0,0) is object 1 whatever it
+ * weighs. An empty cell is REPORTED rather than closed over: a missing object
+ * would shift every index after it, which is the one thing the grid is there
+ * to stop.
+ *
+ * The mask itself is unchanged — alpha or flood exactly as below. The grid
+ * only decides which blobs are kept and in what order.
  */
 
 import { spawn } from "node:child_process";
@@ -123,6 +142,7 @@ var keepPartial = false;
 var listOnly = false;
 var adopt = null;
 var adoptAs = null;     // the role the adopted cuts take in assets/image/master/
+var grid = null;        // "5x4": the sheet is a regular grid, and the cell is the index
 
 for (var i = 0; i < argv.length; i++) {
   var a = argv[i];
@@ -133,6 +153,11 @@ for (var i = 0; i < argv.length; i++) {
   else if (a === "--pad") pad = parseInt(argv[++i], 10);
   else if (a === "--keep-partial") keepPartial = true;
   else if (a === "--list") listOnly = true;
+  else if (a === "--grid") {
+    var gm = /^(\d+)x(\d+)$/i.exec(argv[++i] || "");
+    if (!gm) throw new Error("--grid wants COLSxROWS, e.g. --grid 5x4");
+    grid = { cols: parseInt(gm[1], 10), rows: parseInt(gm[2], 10) };
+  }
   else if (a === "--adopt") adopt = argv[++i];
   else if (a === "--as") adoptAs = argv[++i];
   else targets.push(a);
@@ -339,9 +364,40 @@ function cutJs(b64, o) {
     boxes.push({ id, area, x0, y0, x1, y1, partial: edgeTouch });
   }
 
-  const kept = boxes
+  let kept = boxes
     .filter(b => b.area >= ${o.minArea} && (${o.keepPartial ? "true" : "!b.partial"}))
     .sort((a, b) => b.area - a.area);
+
+  /* --grid: THE CELL IS THE IDENTITY, not the blob.
+     Sorting by area is right for a wall of gears nobody has to index, and
+     wrong the moment several sheets have to be cut THE SAME WAY — a set of
+     recoloured sheets where object 7 must be the same design in all of them.
+     Area ordering cannot promise that: a halo a few pixels wider in one
+     recolour reorders everything after it, silently.
+     So on a regular sheet the grid decides. Each kept blob is filed by the
+     cell its CENTRE falls in, the biggest one in a cell wins it, and the
+     objects come out in reading order — cell (0,0) is object 1 whatever it
+     weighs. An empty cell is reported rather than closed over, because a
+     missing object would shift every index after it, which is the exact
+     failure the grid exists to prevent. */
+  const GRID = ${o.grid ? JSON.stringify(o.grid) : "null"};
+  let empties = [];
+  if (GRID) {
+    const cw = W / GRID.cols, ch = H / GRID.rows;
+    const cell = new Array(GRID.cols * GRID.rows).fill(null);
+    for (const b of kept) {
+      const cxp = (b.x0 + b.x1) / 2, cyp = (b.y0 + b.y1) / 2;
+      const col = Math.min(GRID.cols - 1, Math.floor(cxp / cw));
+      const row = Math.min(GRID.rows - 1, Math.floor(cyp / ch));
+      const k = row * GRID.cols + col;
+      if (!cell[k] || b.area > cell[k].area) cell[k] = b;
+    }
+    kept = [];
+    cell.forEach((b, k) => {
+      if (b) kept.push(b);
+      else empties.push("r" + ((k / GRID.cols | 0) + 1) + "c" + (k % GRID.cols + 1));
+    });
+  }
 
   // 5. one canvas per object: alpha eroded by a pixel, then feathered by one.
   const out = [];
@@ -425,6 +481,7 @@ function cutJs(b64, o) {
   return {
     sheet: { w: W, h: H, ground: med, byAlpha },
     found: boxes.length,
+    empties: empties,
     dropped: boxes.length - kept.length,
     objects: out
   };
@@ -543,7 +600,7 @@ async function main() {
     var b64 = fs.readFileSync(sheet.src).toString("base64");
     var r = await evaluate(client, sid, cutJs(b64, {
       step: step, envelope: envelope, minArea: minArea, pad: pad,
-      keepPartial: keepPartial, solid: solid
+      keepPartial: keepPartial, solid: solid, grid: grid
     }));
 
     console.log("\n" + path.relative(ROOT, sheet.src) + "  " + r.sheet.w + "x" + r.sheet.h +
@@ -573,6 +630,9 @@ async function main() {
       var contact = path.join(CONTACT_DIR, sheet.slug + "-" + sheet.name + ".png");
       write(contact, await evaluate(client, sid, contactJs(r.objects)));
       console.log("\n  look at it:  open " + path.relative(ROOT, contact));
+      if (r.empties && r.empties.length)
+        console.log("  EMPTY CELLS: " + r.empties.join(" ") +
+                    "  — the grid found nothing there, so every index after it has shifted");
       console.log("  keep some:   node tools/lab/cut-objects.mjs " + sheet.stem + " --adopt 1,4");
     }
 

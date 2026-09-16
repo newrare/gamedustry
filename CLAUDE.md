@@ -431,7 +431,12 @@ The two rules that hold this together:
   `--adopt 1,4` promotes a cut into `assets/image/master/`, where it becomes a master
   like any other — `CONFIG.art.<name>NN`, `ArtImages.gear01` on the canvas. The
   adoption is manual on purpose: every file under `assets/image/embed/` is embedded in
-  every build of its game. See [docs/ASSETS.md](docs/ASSETS.md).
+  every build of its game. **`--grid 5x4` is what several sheets of the same
+  picture need** — the cuts are ordered by AREA otherwise, and a recolour whose
+  halo is a few pixels wider silently reorders every index after it; with a grid
+  the CELL is the identity, so object 7 is the same design in all six sheets.
+  `games/radiam`'s bead is that case: twenty designs in six colours, one style
+  per pair of levels. See [docs/ASSETS.md](docs/ASSETS.md).
 - **The store listing images are made from these pieces too.** A capture, the
   character, two or three adopted objects, the logotype and one punchline out of
   `store.copy` in the manifest. `lab/store-card.html` is where one is composed

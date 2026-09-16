@@ -315,7 +315,7 @@ and `levelScore`.
 
 | game          | round shape          | measured on | the objective a level sets | what the thirty levels move (`L1 → L30`)                                                                                                 |
 | ------------- | -------------------- | ----------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **arcider**   | endless, shield      | metres      | `200 → 1 300 m`            | `speedMin 400→560`, `speedMax 820→1200`, `ramp 44→22`, `forkEvery 3400→1700`, `forkBombs 1→4`, `shieldStart 100→70`, `crashCost 26→44`   |
+| **arcider**   | a race, to the arch  | metres      | `200 → 1 300 m`            | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                       |
 | **blight**    | 60 s, bubble shooter | score       | `350 → 2 300`              | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                      |
 | **bouncetry** | ends with the balls  | score       | `350 → 2 300`              | `rows 7→11`, `startBalls 8→4`, `multiBalls 3→2`, `bonusBricks 4→1`, `pullAfter 7→4`                                                      |
 | **chainring** | timed, on the beat   | score       | `700 → 4 600`              | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`          |
@@ -323,7 +323,7 @@ and `levelScore`.
 | **gearball**  | 45 s, fill the ring  | score       | `1 100 → 7 300`            | `ring.gears 6→12`, `ring.speed 240→420`, `ring.accel 3→9`, `ring.magSize 4→2`, `ring.reload .34→.60`, `ring.lives 5→2`                   |
 | **marshmelt** | endless, rising lava | score       | `125 → 850`                | `riseSeconds 110→45`, `lavaEnd .22→.45`, `spawnEvery .9→.45`, `fastChance .2→.65`, `rampSeconds 90→40`, `airShots 2→1`                   |
 | **orbinity**  | 30 s, orbits         | score       | `250 → 1 700`              | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`      |
-| **radiam**    | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | `dial.startColours 3→5`, `dial.comboWindow 1.3→0.7`, `dial.chargeNeed 3→6`, `dial.superCap 3→2`                                          |
+| **radiam**    | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                           |
 | **slipdeck**  | 30 s, poker swipe    | score       | `475 → 3 100`              | `play.chuteDepth 4→2`, `play.shoeBias .85→.40`, `play.fuse 4.6→2.2`, `play.fuseRamp .06→.18`, `play.fuseFloor 1.6→0.9`, `play.lives 4→2` |
 | **spinshock** | endless, top battle  | score       | `350 → 2 300`              | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                |
 | **triverse**  | endless, 3 lanes     | metres      | `180 → 1 200 m`            | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`           |
@@ -346,6 +346,215 @@ have made level 1 *harder* than the shipped game:
 Nothing about a knob's direction is guessable from its name: `diffFull` falls
 because it is *metres to full difficulty*, `lives` falls, `speedMin` rises.
 Read what it does, then write the row.
+
+### arcider — the first game to use `applyLevel`
+
+A lerp says *harder*. It cannot say *different*, and thirty levels of the same
+road driven faster is one level played thirty times. arcider is where the other
+half was built, and the shape of it transfers to any game that wants it:
+
+- **five biomes, one per stretch of the climb**, six levels apiece: DUSK, DAY,
+  MIST, OVERCAST, NIGHT. A biome is a painted horizon out of
+  `assets/image/master/` — `arcider-sky-night.png` reaches `CONFIG.art.skyNight`
+  like any other picture, no manifest key — *and* the palette the canvas is
+  painted with under it: the plain, the two tarmac tones, the kerbs, the grid,
+  the stars. Swapping the picture alone would put a blue daylight sky over a
+  violet dusk road, which reads as a bug.
+
+  Two things the five taught. **A biome has to differ in HUE, not in
+  brightness**: DAY and OVERCAST are both bright blue skies and were first
+  given two blue roads, which made twelve levels look like one biome — they are
+  deep cobalt with gold and pink kerbs against teal with orange and aqua now,
+  and the skies read as different weather because the world under them does.
+  And **the plain has to sit clear of the tarmac in value**, or the road's edge
+  is carried by the kerbs alone and the whole mid-frame flattens into one
+  sheet. MIST is the one that inverts it: the picture is a cool sky over an
+  apricot horizon with the city dissolved in white, so its road is PALE and the
+  plain around it dark — a near-black tarmac under that sky reads as a
+  different scene rather than as the same weather.
+
+- **thirty fixed traces**, `CONFIG.ladder.road`. The road's four sine phases
+  were rolled at every `reset()` — right for an endless creative, wrong for a
+  ladder, where a level has to be the same road twice. Each row carries the
+  four phases and four weights saying what KIND of road it is (a sweeper, a
+  slalom, a rollercoaster); `d` scales the weights, so the table owns the
+  character and the climb owns the severity.
+
+- **one new hazard at a time.** `CONFIG.ladder.unlock` forces a hazard's chance
+  to zero below the level it is introduced on — walls at 3, mines at 5, ramps
+  at 9, a ramp wall with no gate at 13 — and the manifest's lerp owns it above.
+  A ladder that opens with the whole catalogue teaches none of it.
+
+- **the road may never out-steer the craft.** A bend's amplitude times its
+  frequency times the top speed is how fast the tarmac travels sideways, and a
+  table that moves amplitude and frequency together reaches 964 px/s against a
+  craft that steers at 720 — a road nobody can stay on. Both amplitudes are
+  scaled down together until that fits a share of `steer` the climb decides
+  (0.30 at the foot, 0.60 at the top, against the 0.42 the endless road sits
+  at). It falls on the fast traces first, which is why a slalom comes out tight
+  and shallow and a sweeper long and wide.
+
+**The grid is laid out by when each pilot is caught.** The field used to be
+stacked at a fixed gap — nineteen craft 300 progress px apart span 140 m of a
+440 m race — so the player reeled in the whole pack in the opening seconds and
+then drove alone to the flag. A race has to hand over an overtake every so
+often, all the way in.
+
+So a pilot's place is derived rather than spaced. The player closes on a pilot
+at `1 - pace` of the base speed, so putting it `f * R * (1 - pace)` metres up
+the road, `R` being the race and `f` the share of it that should be driven
+first, has it caught at exactly `f`. Nineteen values of `f` spread from 0.10 to
+1.05 are nineteen passes spread across the race, at every level and whatever
+the field size, and they cannot bunch. `passLast` is over 1 because the
+schedule assumes a craft that never boosts, and a booster is +72 % for three
+seconds — it closes on the leaders hardest, which is what a booster is for.
+
+Two consequences worth knowing:
+
+- **the fastest pilots do not start furthest up the road.** A pilot the player
+  barely out-paces cannot be far ahead and still be caught, so the grid order
+  is not the pace order and it sorts itself out over the first seconds. The
+  rank counts positions, so nothing downstream cares;
+- **a gate can no longer be spaced evenly.** A gate asks for a share of the
+  field to be behind the player, and the grid hands that share over on its own
+  schedule; spaced evenly, the early gates land before the places they ask for
+  exist and a clean drive is eliminated by arithmetic. Each gate now stands
+  where the schedule has delivered its places, plus `cutSlack`. The playable's
+  four moved with it — 280/520/780 became 420/675/905 — for the same reason.
+
+**And the checkpoints lost their arches.** Three lit gantries on a run is more
+furniture than a road can carry, and a pair of coloured columns growing out of
+the horizon reads as something to avoid rather than something to cross. A
+checkpoint is a coloured line on the tarmac now, green or red like the arch
+was; what it stopped saying is said twice already in the corner the eye is on —
+the rank pill counts it down in metres and the board rail is green or red the
+whole way in — and a third time by the vignette and the chime at `cutWarn`.
+Only the finish keeps its arch, because it is the only one that ends the race.
+
+**And the arch stands on the third star.** arcider's race ends at a chequered
+gate, and the shipped one was nailed to 1020 m while the objective climbed to
+1300 — the top third of the ladder asked for more metres than the track had.
+The cuts are now built per level from the objective itself, the last of them at
+`ceil(objective * 2.2)`: winning the race and maxing the level are the same
+event, which is the only way both can be true. Two details that are not
+cosmetic:
+
+- `200 * 2.2` is `440.00000000000006`, so an arch at 440 is crossed with the
+  third star still unearned and a won race pays two stars. The finish is
+  **ceiled**;
+- the measure had to become the distance actually driven. arcider's `travel`
+  counts double under a booster — it is the score's distance — so a level
+  asking for 900 m was met at 600 m of tarmac, and the third star fired well
+  before the flag. `levelProgress()` and `levelScore` both report `dist`.
+
+`levelWon` points at the game's own `win()` rather than `die()`: at the third
+star the craft is at the flag with every cut behind it, so the podium is the
+truthful ending.
+
+### radiam — the second, and what it took from arcider
+
+The same two halves, on a board rather than on a road, and it is worth reading
+next to arcider because the pieces map one for one: `CONFIG.ladder.biomes` is
+the same idea as arcider's, `CONFIG.ladder.levels` is its `road` table, and
+`applyLevel` is the same hook doing the same job.
+
+- **eight special beads where the dial shipped with two.** CHARGE unzipped a
+  plate and NOVA took a colour off the board, and that was the whole catalogue
+  for thirty levels. There are now six more — BOMB (the whole dial, and the
+  supers it reaches go off in turn), FIRE (the two rays either side), LASER
+  (through the hub and out the far side), SCORE (an x2 / x5 / x10 window on a
+  clock), SLOW (the eclipse's ink held back) and ICE, the one hazard: it
+  matches like any bead and freezes the plate it breaks on.
+
+- **thirty rows naming which one or two are in play.** This is the part a lerp
+  cannot say. Almost every row carries one or two of the eight and never the
+  catalogue, so a level is *the one where you meet the laser* — and the six new
+  ones each arrive alone on a level with nothing else new on it. A pool with no
+  big special pays its big beats in small ones rather than reaching outside the
+  level for something the player has not met, which is what lets levels 1 to 3
+  be CHARGE and nothing else.
+
+- **the bead is a PAINTED BALL, and it turns over every two levels.** Twenty
+  designs, each painted in the five game colours plus a rainbow for the wild
+  bead, out of six sheets in `assets/image/master/`. Fifteen of the twenty ship:
+  one per pair of levels, so thirty levels are fifteen boards, and the sixteenth
+  — the star — is held back for the endless run a perfect board unlocks,
+  because that node on the map is drawn as a star and nothing else is.
+
+  The five left behind were not a shortlist, they were a collision. Every one of
+  them paints a motif dead in the CENTRE of the ball — a star, a ringed planet,
+  a four-point sparkle, a diamond, a bullseye — and the centre of a bead is
+  exactly where a special's glyph is struck. A painted bullseye under the
+  CHARGE's concentric rings is not a style, it is a bead the player reads twice.
+
+  This replaced five bead MATERIALS the game painted itself, ported out of
+  `lab/bubble.html` — sticker, soap, gem, ink, neon. They were good and they are
+  gone: painted art beats a canvas pastiche of it, and keeping both would be two
+  systems doing one job. The enamel bead survives as the fallback, so a build
+  with no artwork still draws a legible dial.
+
+- **five biomes of six levels, and a biome is the MACHINE now.** It was the
+  bead as well, for one build. A bitmap cannot be retinted, so the five hues
+  are fixed — *sampled off the paintings*, not chosen next to them, because
+  everything drawn around a bead (the armed ray's bar and halo, the flare, the
+  vignette, the HUD punch) has to agree with the marble it is drawn around — and
+  a biome repaints the hall, the line work, the housing tracks and the hub. The
+  room changes every six levels, the board every two.
+
+- **the badge never touches the hue.** The colour of a bead *is* this
+  gameplay, so every special is drawn OVER its own material: one gold breathing
+  rim on every boon (*there is something here*, legible at 22 px on the inner
+  plate) and one white glyph on a double pass of near-black ink inside it
+  (*which one*), with the eight silhouettes picked to share no outline. ICE is
+  the one exception and deliberately so — a frost crust and a cold rim, because
+  gold on this dial means a reward.
+
+- **two clocks, and both are capped by construction.** The score window takes
+  the bigger of two faces rather than stacking them, because the combo already
+  multiplies everything once; and the cold may hold two plates and never all
+  three, with a seconds fallback under the ray counter, so a board that cannot
+  pay can never leave a plate locked for the rest of the round.
+
+- **the score window multiplies the RAYS, not the waves.** It multiplied
+  everything on the first build, and the bench put a number on why that could
+  not ship: level 28 (bomb + score) paid `1.37M` against level 27's `101k` —
+  adjacent levels in the same band, thirteen times apart. The cause is
+  arithmetic rather than tuning. A ray pays `rayScore * combo`; a bomb pays
+  `blastScore * combo * ramp` across thirty-six beads, two orders of magnitude
+  more before a multiplier touches it, so a window over the blast is a window
+  over the whole round. Narrowed to the rays, the two powers also stop saying
+  the same thing: a bomb is the board cleared, a window is a few seconds in
+  which *finding* an alignment is worth ten of them.
+
+  **It narrows the gap, it does not close it**: rerun per second of round, the
+  same pair goes from 12.6x to 5.8x. What is left is the multiplier doing its
+  job, and it is overstated by the pilot — a solver finds a ray almost every
+  move, so a ray multiplier is worth more to it than to anyone. Closing the
+  rest is a human-run question, like the objective itself.
+
+**The objective did NOT move, and what that cost to find out is worth keeping.**
+It was raised to `2 100 → 17 500` on the obvious reasoning — eight specials pay
+more than two, and the third star *ends* the round, so an unchanged objective
+would close the top of the ladder in seconds. Two scripted pilots then said
+that the reasoning had nothing under it, and they disagreed by three orders of
+magnitude:
+
+- a **blind** pilot, turning plates at random, scores `33 000` on level 1 and
+  `780` on level 30 — a *falling* curve, because what it measures is how long
+  the eclipse tolerates someone who cannot find an alignment;
+- a **greedy** pilot, reading all three plates and all twelve detents and
+  always playing the best move, scores `600 000+` and never dies on 22 of the
+  30\. That is not a tuning result either: in this mode one paid ray freezes the
+  shadow for two seconds, so a solver that always finds a ray is **immortal by
+  design** and its score is only "points per second times the bench ceiling".
+
+Neither is a player, and a range they bracket 100× apart calibrates nothing. So
+the shipped numbers stay, and radiam joins the other twelve in §5: the objective
+is a table, and a human run is what settles it.
+
+**The same bench did settle something else**, because that comparison is between
+two levels rather than against a table — see the SCORE window above. It is the
+finding the exercise was worth.
 
 ### The two that needed more than a table
 

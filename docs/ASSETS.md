@@ -185,9 +185,39 @@ node tools/lab/encode-art.mjs radiam               # the adopted two become art
 | `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                           |
 | `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel            |
 | `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go     |
+| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area      |
 | `--adopt 1,4`     | —       | copy those cuts into `assets/image/master/` as masters (one sheet at a time) |
 | `--as <role>`     | —       | rename them on the way in: `--as decor` → `<slug>-decor-NN.png`              |
 | `--list`          | —       | name the sheets and stop                                                     |
+
+#### `--grid` — when several sheets must be cut the same way
+
+Without it the cuts come out ordered by **area**, which is right for a wall of
+gears nobody has to index and wrong the moment a set of sheets is *the same
+picture in several colours*. `radiam` has six: twenty bead designs painted in
+red, yellow, blue, purple, green and rainbow, and design 7 has to be design 7 in
+all six of them or a red marble and a blue one stop being the same bead. Area
+cannot promise that — a halo a few pixels wider in one recolour reorders
+everything after it, in silence, and the mistake only shows up on the dial.
+
+`--grid COLSxROWS` makes the cell the identity. Each blob is filed by the cell
+its centre falls in, the biggest one wins the cell, and the cuts come out in
+reading order: cell (0,0) is object 1 whatever it weighs. **An empty cell is
+reported, never closed over** — a missing object would shift every index after
+it, which is the one failure the grid exists to prevent.
+
+The mask is unchanged, alpha or flood exactly as above. The grid only decides
+which blobs survive and in what order, which is also why it rescues a sheet the
+flood struggles with: radiam's rainbow sheet breaks into 5 448 blobs because its
+background is a coloured haze, and the grid still picks the right twenty.
+
+```bash
+for c in red yellow blue purple green rainbow; do
+  node tools/lab/cut-objects.mjs radiam-object-ball-$c --grid 5x4 \
+    --adopt 1,2,3,4,5,6,7,8,11,12,14,15,16,17,19,20 --as ball-$c
+done
+node tools/lab/encode-art.mjs radiam
+```
 
 What the thirteen games' sheets gave, at the defaults — 383 objects out of
 sixteen sheets:
@@ -233,6 +263,25 @@ other, and from there the usual pipeline names them `CONFIG.art.<name>NN` —
 `ArtImages.gear01` on the canvas, or a piece of a store screenshot.
 
 ### The decor pool: `assets/image/master/<slug>-decor-NN.png`
+
+#### A style set: `<slug>-ball-<colour>-NN.png`
+
+`radiam`'s bead is the one adopted role that is a **set** rather than a
+picture. Sixteen designs times six colours is 96 files, each one reaching
+`CONFIG.art.ballRed07` like any other art and read off `ArtImages` on the
+canvas. Two things follow from the count, and both are written down because
+neither is obvious:
+
+- **the encode profile is the budget.** `BALL` is a 256 px box, the smallest of
+  the set, and it is not a guess: radiam's biggest bead is the outer plate's,
+  83 design px across, which a 3x device draws at 249. At ~15 KB a file the set
+  is 1.4 MB, and every kilobyte here is paid ninety-six times.
+- **the playable carries style 01 and nothing else.** The styles are what the
+  LEVELS turn over, and a creative is one round with no map, so the other
+  fifteen would be ~1.8 MB of base64 in a file capped at 5 MB, to draw a bead
+  the ad never changes. `tools/build/build.mjs` holds them back with the same
+  rule that already holds back `background-desk`, and style 01 ships everywhere
+  so the ad is painted too.
 
 One adopted role is not a game's to draw: `--as decor` renames a cut on its way
 into `assets/image/master/`, and every `CONFIG.art.decor*` key is the pool the shell
