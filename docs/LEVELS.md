@@ -264,6 +264,15 @@ What it reads is `Game.levelProgress()` when the game has one and the HUD score
 otherwise — **the same rule as `levelScore`**, so a level can never be scored on
 one number and shown against another.
 
+**A game may CAP what those bands pay**, with `Game.levelStars(stars, value)`.
+The objective stays the measure and a level is still cleared by meeting it — the
+hook only ever takes stars away, never hands one out that the value did not
+reach. It is for a round whose result is not a quantity: arcider's board is a
+race, so the flag has to be crossed before the distance pays in full (below).
+The cap runs on the live pill as well as on the result, so the stars a round
+wears are the stars it will be paid; the bar under them keeps walking the raw
+bands, because the distance to the next threshold is the same either way.
+
 **The third star ends the round.** There is nothing left to earn, so the game
 stops asking: a gold flash, the callout, then slow motion easing the world down
 to 12 % over ~0.6 s, a beat of hold, and the end screen. Arriving there fast is
@@ -403,11 +412,13 @@ often, all the way in.
 So a pilot's place is derived rather than spaced. The player closes on a pilot
 at `1 - pace` of the base speed, so putting it `f * R * (1 - pace)` metres up
 the road, `R` being the race and `f` the share of it that should be driven
-first, has it caught at exactly `f`. Nineteen values of `f` spread from 0.10 to
-1.05 are nineteen passes spread across the race, at every level and whatever
-the field size, and they cannot bunch. `passLast` is over 1 because the
-schedule assumes a craft that never boosts, and a booster is +72 % for three
-seconds — it closes on the leaders hardest, which is what a booster is for.
+first, has it caught at exactly `f`. The nineteen values of `f` are dealt
+SECTION BY SECTION — each stretch between two gates gets its share of the pack
+and the last one always gets two — so no section is a lonely cruise and none is
+a wall of traffic, at every level and whatever the field size. The last of them
+sits just past the flag because the schedule assumes a craft that never boosts,
+and a booster is +72 % for three seconds: it closes on the leaders hardest,
+which is what a booster is for.
 
 Two consequences worth knowing:
 
@@ -416,11 +427,12 @@ Two consequences worth knowing:
   is not the pace order and it sorts itself out over the first seconds. The
   rank counts positions, so nothing downstream cares;
 - **a gate can no longer be spaced evenly.** A gate asks for a share of the
-  field to be behind the player, and the grid hands that share over on its own
-  schedule; spaced evenly, the early gates land before the places they ask for
-  exist and a clean drive is eliminated by arithmetic. Each gate now stands
-  where the schedule has delivered its places, plus `cutSlack`. The playable's
-  four moved with it — 280/520/780 became 420/675/905 — for the same reason.
+  field to be behind the player, and spaced evenly the early ones land before
+  the places they ask for exist — a clean drive eliminated by arithmetic. The
+  gates now cut the race into sections that SHRINK into the run-in, and the
+  grid is dealt into those sections, so the ordering is settled: gates first,
+  field after. The playable's four moved with it — 280/520/780 became
+  420/675/905 — for the same reason.
 
 **And the checkpoints lost their arches.** Three lit gantries on a run is more
 furniture than a road can carry, and a pair of coloured columns growing out of
@@ -435,21 +447,75 @@ Only the finish keeps its arch, because it is the only one that ends the race.
 gate, and the shipped one was nailed to 1020 m while the objective climbed to
 1300 — the top third of the ladder asked for more metres than the track had.
 The cuts are now built per level from the objective itself, the last of them at
-`ceil(objective * 2.2)`: winning the race and maxing the level are the same
-event, which is the only way both can be true. Two details that are not
-cosmetic:
+`ceil(objective * 2.2)`: the race and the level end on the same metre, which is
+the only way both can be true — what that metre pays is then the place it was
+reached in (see the star table below). Two details that are not cosmetic:
 
 - `200 * 2.2` is `440.00000000000006`, so an arch at 440 is crossed with the
-  third star still unearned and a won race pays two stars. The finish is
-  **ceiled**;
+  third band still unearned and a race won in first place pays two stars. The
+  finish is **ceiled**;
 - the measure had to become the distance actually driven. arcider's `travel`
   counts double under a booster — it is the score's distance — so a level
   asking for 900 m was met at 600 m of tarmac, and the third star fired well
   before the flag. `levelProgress()` and `levelScore` both report `dist`.
 
-`levelWon` points at the game's own `win()` rather than `die()`: at the third
-star the craft is at the flag with every cut behind it, so the podium is the
-truthful ending.
+`levelWon` points at the game's own `win()` rather than `die()`: a shell-side
+third star could only ever land at the flag with every cut behind it, so the
+podium is the truthful ending.
+
+**And the stars are the race, not the distance.** The flag standing on the
+third star made a won race worth three stars whatever place it was won in —
+twentieth past the post paid the same as first, which is not what a race says.
+`Game.levelStars` caps the bands into the result the board actually reads:
+
+| the run                              | stars |
+| ------------------------------------ | ----- |
+| the flag crossed in **first place**  | 3     |
+| the flag crossed in any other place  | 2     |
+| short of the flag, objective covered | 1     |
+| short of the objective               | 0     |
+
+The cap also holds the live pill to one star until the flag, which is why
+arcider never plays the shell's three-star slow motion any more: nothing raises
+the count before the flag, and the flag ends the round through `win()` on the
+same frame.
+
+Three things had to move with it, because a star table is only as true as the
+race under it:
+
+- **the flag eliminates nobody.** It used to ask for the podium like every
+  other cut, so a run driven to the last metre outside the top three was told
+  it had been ELIMINATED there — and under the table above that pays the same
+  single star as a crash at a third of the distance. The culling belongs to the
+  checkpoints; the finish ends the race for whoever reaches it, and its `rank`
+  is now the place worth taking rather than a wall;
+- **the field is dealt per section, two of them reserved for the run-in.** The
+  grid used to spread its nineteen overtakes on one ramp from the line to just
+  past the flag, which a boosted run walked through by four fifths of the way
+  before cruising home alone. Each stretch between two gates now gets its own
+  share of the pack, spread strictly inside it, and the last one always holds
+  `lastFoes` = 2: one caught halfway down the run-in, one scheduled just past
+  the flag. A clean drive finishes second; the win is what a booster buys;
+- **the sections shrink** — `S + 3 - i` — so the race tightens as it is driven
+  and the run-in is the shortest stretch of it. Even sections were tried and
+  they pull the first gate to a quarter of the race, where the six overtakes it
+  asks for land on a craft that has barely left `speedMin`.
+
+Measured over twelve seeds a side, driven by a scripted pilot: reaching the
+flag went from 5/12 to 12/12 at level 6 and from 4/12 to 9/12 at level 14,
+while winning the race fell from 9/12 to 5/12 at level 22 and from 5/12 to 1/12
+at level 30. Finishing got easier, the third star got dearer, which is the
+whole point of separating them.
+
+**The first biome opens on a run of boosters.** Levels 1 to 6, between the line
+and the first checkpoint and nowhere else: `play.openBoost` puts a pad on four
+slots in five and `play.openGap` lays them closer together, on a shallow weave
+the craft can ride from one to the next rather than scattered across the
+tarmac. That stretch is where a player meets the machine and it was the slowest
+road in the game — the slots are at their widest down there and three in ten
+carried a pad — so the race opened on a long quiet cruise. The same pilot
+spends 26-42% of it boosted where it used to spend 7-16%, and a later biome, a
+later section and the playable are all untouched.
 
 ### radiam — the second, and what it took from arcider
 
@@ -710,6 +776,7 @@ nothing about levels beyond a number in `CONFIG`.
 | `CONFIG.level`                         | the chosen level, written before `startGame()` — exactly how `CONFIG.mode` already works, and `0` for endless        |
 | `Game.applyLevel(d)`                   | optional hook for what a lerp cannot express (a maze seed, a brick blueprint, a win condition); `null` = endless     |
 | `Game.levelProgress()`                 | optional: what the objective is measured against while the round runs — the HUD score otherwise                      |
+| `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, not a distance         |
 | `Game.levelWon()`                      | optional: how the game ends its own round on the third star, so the end screen keeps its stat rows                   |
 | `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides           |
 | `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes |

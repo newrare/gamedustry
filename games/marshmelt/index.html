@@ -3302,13 +3302,13 @@
 
     /* Which face the end screen wears. The star count is the one verdict every
        game already hands the motor on `endRound`, so this works for all
-       thirteen without a line of game code: a round worth 0 or 1 star is a
-       loss, 2 is a pass, 3 is the run the player wanted. A game that passes
-       `stars: null` has no verdict to read, and gets the neutral face. */
+       thirteen without a line of game code: a round worth no star is the only
+       loss, 1 or 2 is a pass, 3 is the run the player wanted. A game that
+       passes `stars: null` has no verdict to read, and gets the neutral face. */
     function faceFor(stars) {
       if (stars == null) return art.characterNeutral;
       if (stars >= 3) return art.characterHappy;
-      if (stars >= 2) return art.characterNeutral;
+      if (stars >= 1) return art.characterNeutral;
       return art.characterSad;
     }
 

@@ -112,7 +112,7 @@ no `ASSETS` entry, no code:
 | `-background-phone.png`              | behind the intro and the end screen — and behind the round with `CONFIG.sceneArt` |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**)              |
 | `-title.png`                         | the logotype: replaces the app icon and the CSS `#intro-title`                    |
-| `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0–1 / 2 / 3)                                |
+| `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0 / 1–2 / 3)                                |
 | `-object-<name>.png`                 | **a sheet to cut, never a role** — see below; `encode-art` leaves it alone        |
 | `-decor-NN.png`                      | the decor pool: objects the shell scatters over the screens — see below           |
 | `-sky.png` / `-sky.jpg`              | a panorama a GAME draws on the CANVAS behind its round — `games/arcider`          |
