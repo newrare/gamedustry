@@ -19,7 +19,8 @@
   };
 
   // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
-  // and clear of the device insets. Recomputed on every resize.
+  // clear of the device insets, and never closer to the glass than the house
+  // margin (see relayout). Recomputed on every resize.
   var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
 
   // env(safe-area-inset-*) is only observable through a probe element.
@@ -83,12 +84,44 @@
     relayout();
   }
 
+  /* THE HOUSE MARGIN. Nothing the player has to read or touch may sit against
+     the edge of the frame: a phone rounds its corners, a gesture bar eats the
+     last few pixels, and a figure printed one pixel from the glass reads as a
+     bug whatever the device. 26 design px is the number the rest of the motor
+     already uses — the HUD band's own side padding, the web shell's two round
+     controls, the level map's footer — so it is the one written here.
+
+     It is a FLOOR on the four edges, never an addition: a band that already
+     reserves more keeps exactly what it reserved, which is why a playable is
+     untouched (its HUD is 150 px and its CTA bar 112). The edge it actually
+     bites is the BOTTOM of the web and android builds, where
+     packages/platform/web.js zeroes `ctaHeight` and `Layout.bottom` fell on
+     the last row of the frame — every instrument a game anchors there (the
+     shield rail of games/arcider, the hand label of games/slipdeck, the spin
+     gauge of games/spinshock) was flush against the glass.
+
+     A game may raise it through CONFIG.layout.safePad; nothing may lower it
+     below zero, and a game that wants its world to bleed off an edge (a lava
+     lake, a scrolling lane, a shockwave) draws that outside Layout, which is
+     the play band and not a clip rect.
+
+     WHAT IT DOES NOT SAY IS THE TWO BOTTOM CORNERS. The web target's round
+     carries MENU / OPTIONS in one and the level's three stars in the other,
+     each about 240 x 58 in from the frame by 26, and neither takes a band out
+     of `Layout` — they are an overlay, so the world still runs under them.
+     A game may therefore draw THROUGH them, and may anchor no INSTRUMENT and
+     no word there. Both are the shell's (packages/webshell/menu.css and
+     levels.css); a game whose own layout owns the left one moves the pill with
+     `--lv-hud-bottom` rather than reserving anything here. */
+  var SAFE_PAD = 26;
+
   function relayout() {
     var m = CONFIG.layout;
-    Layout.top    = view.insetTop + m.hudHeight;
-    Layout.bottom = view.h - view.insetBottom - m.ctaHeight;
-    Layout.left   = m.sideMargin;
-    Layout.right  = view.w - m.sideMargin;
+    var pad = Math.max(0, m.safePad == null ? SAFE_PAD : m.safePad);
+    Layout.top    = view.insetTop + Math.max(m.hudHeight, pad);
+    Layout.bottom = view.h - view.insetBottom - Math.max(m.ctaHeight, pad);
+    Layout.left   = Math.max(m.sideMargin, pad);
+    Layout.right  = view.w - Math.max(m.sideMargin, pad);
     Layout.w = Layout.right - Layout.left;
     Layout.h = Layout.bottom - Layout.top;
     Layout.cx = (Layout.left + Layout.right) / 2;
@@ -144,16 +177,37 @@
   // --- Loop: rAF with clamped dt, pausable when the ad is not visible -----
   var Loop = (function () {
     var running = false, paused = false, last = 0, u = null, r = null, rate = 1;
+    /* THE HANDLE IS THE WHOLE POINT. There is exactly ONE rAF chain, and `raf`
+       is it. Without it `start()` scheduled a chain every time it was called
+       while the old one was still alive — and the old one only checks
+       `running`, which start() had just set back to true — so two chains ran
+       side by side, each calling update AND render, the world advancing at
+       twice the rate and the frame drawn twice over itself. A third call made
+       three. The guard below is what makes a round mount once, whoever asks
+       and however often; `stop()` cancels the pending frame instead of merely
+       flagging it, so a restart in the same frame cannot resurrect it either.
+       See the TODO entry "a TAP reloads the game view". */
+    var raf = 0;
     function frame(now) {
+      raf = 0;
       if (!running) return;
       var dt = Math.min((now - last) / 1000, 0.05);   // clamp tab-switch gaps
       last = now;
       if (!paused) { if (u) u(dt * rate); if (r) r(); }
-      requestAnimationFrame(frame);
+      if (running) raf = requestAnimationFrame(frame);
     }
     return {
-      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; rate = 1; last = performance.now(); requestAnimationFrame(frame); },
-      stop:  function () { running = false; },
+      /* Idempotent: asking a running loop to start re-arms it — the callbacks,
+         the time scale and the clock — and keeps the one chain it already has.
+         A paused loop is un-paused by it, which is what a round starting from
+         behind an open card expects. */
+      start: function (uu, rr) {
+        u = uu; r = rr; paused = false; rate = 1; last = performance.now();
+        if (running) return;
+        running = true;
+        raf = requestAnimationFrame(frame);
+      },
+      stop:  function () { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } },
       pause: function () { paused = true; },
       resume:function () { paused = false; last = performance.now(); },
       /* SLOW MOTION, one number. The frame keeps rendering at full rate and the
@@ -697,6 +751,45 @@
 
     return { get: get, set: set, del: del };
   })();
+  /* --- Lang: the one place a word is translated --------------------------
+
+     A game is WRITTEN in English — `CONFIG.copy`, every `Pop.show` word, every
+     HUD label, every end-screen row — and its French is a DICTIONARY in its
+     manifest (`web.copy.<lang>.strings`), keyed by the English string itself.
+     No game invents a key, and a missing entry falls back to the English
+     rather than to an empty box.
+
+     `Lang.t` is applied where the motor WRITES the word (Pop, the HUD, the end
+     screen, CONFIG.copy), so a game needs no change for the whole of what it
+     says to switch language. The one exception is a word a game BUILDS —
+     `"x" + mult + " STREAK"` reaches the motor already assembled and no
+     dictionary can match it — and there the game wraps its own literal:
+     `Lang.t(" STREAK")`. It is evaluated at the call site, every round, which
+     is what makes the switch live.
+
+     Nothing is set on a playable: no `CONFIG.web`, no dictionary, `t` is the
+     identity, and an ad creative ships in one language as it always has. */
+  var Lang = (function () {
+    var code = "en", dict = null;
+
+    // `code` is informative; the dictionary is what translates.
+    function set(c, d) {
+      code = c || "en";
+      dict = (d && typeof d === "object") ? d : null;
+    }
+
+    /* Anything that is not a string is handed back untouched: the HUD's own
+       value is a number more often than not, and a game should never have to
+       ask whether a slot holds a word before it fills it. */
+    function t(s) {
+      if (!dict || typeof s !== "string") return s;
+      var v = dict[s];
+      return typeof v === "string" ? v : s;
+    }
+
+    return { set: set, t: t, code: function () { return code; } };
+  })();
+
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },

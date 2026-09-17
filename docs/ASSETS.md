@@ -110,6 +110,7 @@ no `ASSETS` entry, no code:
 | `assets/image/master/<slug>-…`       | used for                                                                          |
 | ------------------------------------ | --------------------------------------------------------------------------------- |
 | `-background-phone.png`              | behind the intro and the end screen — and behind the round with `CONFIG.sceneArt` |
+| `-background-phone-<name>.png`       | the same, ONE PER BAND of the climb — `games/echomaze`; see below                 |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**)              |
 | `-title.png`                         | the logotype: replaces the app icon and the CSS `#intro-title`                    |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0 / 1–2 / 3)                                |
@@ -117,6 +118,18 @@ no `ASSETS` entry, no code:
 | `-decor-NN.png`                      | the decor pool: objects the shell scatters over the screens — see below           |
 | `-sky.png` / `-sky.jpg`              | a panorama a GAME draws on the CANVAS behind its round — `games/arcider`          |
 | anything else                        | `CONFIG.art.<camelName>`, for the game to use as it likes                         |
+
+**A scene per band.** A game whose look turns over with the climb keeps one
+painting per band instead of one for the whole game, and then there is no plain
+`-background-phone.png` at all: `echomaze-background-phone-yellow.png` reaches
+`CONFIG.art.backgroundPhoneYellow` like any other role, and the game names it on
+the band it belongs to. Two rules come with it, both because a playable is ONE
+round at level 0 and can only ever show one of them: the **first** variant
+alphabetically is the one a playable ships (`tools/build/build.mjs`,
+`SCENE_SET`) and the one the shell dresses the intro, the web menu and the level
+map with, so a game puts that picture on its first band. The motor's side of it
+is `Art.backdrop()`, in
+[ENGINE.md](ENGINE.md#configart--the-painted-artwork).
 
 `assets/image/master/` is the **master and ships nowhere**: PNG — or JPEG, for a
 panorama that came out of an editor rather than the model — up to 2172 px, ~2 MB

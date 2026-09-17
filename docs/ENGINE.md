@@ -40,7 +40,7 @@ A playable always needs the same things, so the motor owns them:
    │    gameplay area   │    Layout.left / right / w / h / cx / cy
    │                    │
    ├────────────────────┤  ← Layout.bottom
-   │ CTA bar (ctaHeight)│
+   │ CTA bar (ctaHeight)│    (zero on web/android — safePad holds the edge)
    └────────────────────┘  ← home indicator (view.insetBottom)
 ```
 
@@ -55,8 +55,9 @@ A playable always needs the same things, so the motor owns them:
 
 ### `Layout`
 
-The rectangle gameplay may safely use: below the HUD, above the CTA bar and
-clear of the device insets. Recomputed on every resize and orientation change.
+The rectangle gameplay may safely use: below the HUD, above the CTA bar, clear
+of the device insets and never closer to the glass than the house margin.
+Recomputed on every resize and orientation change.
 
 ```js
 Layout.top, Layout.bottom, Layout.left, Layout.right   // edges
@@ -66,6 +67,51 @@ Layout.w, Layout.h, Layout.cx, Layout.cy               // size + centre
 **Author gameplay against `Layout`, never against hard-coded y values.** That is
 what keeps the score, timer and CTA from being covered by a bubble grid or a
 bouncing ball — and what keeps the HUD out from under a camera cut-out.
+
+#### The house margin — `CONFIG.layout.safePad`
+
+**26 design px, on all four edges, and it is a FLOOR rather than an addition.**
+A band that already reserves more keeps exactly what it reserved, so a playable
+— HUD 150, CTA bar 112 — is untouched by it. 26 is not a new number: it is the
+HUD band's own side padding, the web shell's two round controls (`#web-ctls`)
+and the level map's footer, i.e. what the rest of the motor was already using.
+
+The edge it actually bites is the **bottom of the web and android builds**.
+`packages/platform/web.js` zeroes `ctaHeight` — the CTA bar's band goes back to
+the play area — and `Layout.bottom` then fell on the last row of the frame, so
+every instrument a game anchors there was printed against the glass: the shield
+rail and the km/h readout of `games/arcider`, the hand label of
+`games/slipdeck`, the spin gauge of `games/spinshock`, the launcher of
+`games/blight`, the emitter of `games/echomaze`.
+
+`Pop.show` and `Pop.text` answer to it too — a callout is clamped inside
+`Layout`, and a floating value over an entity at the edge of the band is pulled
+back in (measured once, when it is pushed).
+
+A game may raise it (`layout: { …, safePad: 40 }`); nothing lowers it below
+zero. **It is not a clip rect**: a world that is meant to bleed off an edge — a
+lava lake, a scrolling lane, an expanding shockwave — is drawn outside `Layout`
+and always was. The rule is about what the player has to READ or TOUCH.
+
+#### The two bottom corners are the shell's
+
+`Layout` does not say this, because neither of them takes a band out of it. On
+the **web** target a round carries two overlays, each about 240 × 58 design px
+and 26 in from the frame:
+
+| corner       | what sits there          | whose it is                    |
+| ------------ | ------------------------ | ------------------------------ |
+| bottom-right | MENU / OPTIONS           | `packages/webshell/menu.css`   |
+| bottom-left  | the level number + stars | `packages/webshell/levels.css` |
+
+The world still runs under both, so a game **draws** through them as it always
+did — and **anchors no instrument and no word** in either: a gauge, a counter,
+a label or a status line in a bottom corner is the one thing they cover.
+`games/arcider` is what that cost: its shield rail ran down the left flank with
+the km/h readout at its foot, and both moved to the right, above MENU /
+OPTIONS. A game whose own layout owns the left corner moves the pill instead,
+from its SKIN — `games/slipdeck` sets `--lv-hud-bottom` because its five-card
+hand fills the foot of the frame. See [LEVELS.md](LEVELS.md).
 
 ## Screen flow
 
@@ -139,7 +185,8 @@ var CONFIG = {
   designWidth: 720, designHeight: 1280,
   bg: "#0a0a1c",
 
-  // Bands the motor reserves; Layout is derived from these + safe-area insets.
+  // Bands the motor reserves; Layout is derived from these + safe-area insets,
+  // floored by the house margin (safePad, 26 by default — see `Layout`).
   layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
 
   // logo   : key in ASSETS.images (null = text-only intro). A game with a
@@ -416,7 +463,9 @@ tier-ups, hero beats) and the status lines that used to be `Overlay.toast`,
 which the `alert` style now carries. Nothing a player reads mid-round is left
 outside this module. The DOM half is designed and previewed in
 [`lab/overlay-pop.html`](../lab/overlay-pop.html); what a given game already
-fires, in that game's own build, is `make events`.
+fires, in that game's own build, is `make events`. The WORDS themselves — every
+one of them, next to the manifest's FR and EN copy and the rest of what the game
+says — are `make text`, the copy desk.
 
 | call       | what it is                             | where it is drawn     | when to use it                                       |
 | ---------- | -------------------------------------- | --------------------- | ---------------------------------------------------- |
@@ -648,6 +697,7 @@ Music.setMuted(bool) / isMuted()           // stops a bed already playing
 Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
 Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // localStorage + memory fallback
+Lang.t(str) / Lang.code()                  // the FR/EN dictionary (see below)
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
                     → ArtImages[key]       // …and the painted artwork (see below)
@@ -668,6 +718,57 @@ encode it with `node tools/lab/embed-icon.mjs <name> --key icoThing`, paste it i
 `<img>` has no `currentColor` to resolve — so `Icon` tints them through a
 `source-in` fill and caches one canvas per key+size+colour. Never `drawImage`
 the raw SVG. See [assets/motor/lucide/README.md](../assets/motor/lucide/README.md).
+
+### `Lang` — the game, in the player's language
+
+A game is **written in English** and **translated in its manifest**, by a
+dictionary whose key is the English string itself:
+
+```json
+"web": { "copy": { "fr": { "strings": {
+  "LAST LIFE": "DERNIÈRE VIE",
+  "CHAIN x":   "CHAÎNE x",
+  "TORN APART": "DÉCHIQUETÉ"
+} } } }
+```
+
+There is no key to invent, no second file, and a string with no entry falls back
+to the English rather than to an empty box. The builder injects the block as
+`CONFIG.web`, the web shell hands the right language to `Lang.set` at boot and
+again whenever OPTIONS switches it, and the playable — which has no `CONFIG.web`
+at all — keeps `Lang.t` as the identity and ships in one language, as an ad
+creative always has.
+
+**The motor translates where it WRITES a word**, so a game needs no change for
+the whole of what it says to switch language:
+
+| written by                                                   | translated                          |
+| ------------------------------------------------------------ | ----------------------------------- |
+| `CONFIG.copy.*`                                              | on boot and on every switch         |
+| `Pop.show` — `word` and `sub`                                | at the call                         |
+| `Pop.text` — the string                                      | at the call                         |
+| `HUD.setLeft` / `setRight` — both slots                      | at the call, and re-run on a switch |
+| `endRound` — `title`, every row's `label` and string `value` | on the end screen                   |
+
+**The one thing a game does itself is the string it BUILDS.** `"x" + mult + " STREAK"`
+reaches the motor already assembled and no dictionary keyed on the finished
+sentence can match it, so the game wraps its own literal:
+
+```js
+Pop.show("streak", { word: "x" + mult + Lang.t(" STREAK") });   // " STREAK" → " D'AFFILÉE"
+ctx.fillText(Lang.t("EXIT"), mid, top - 1);                     // ...and anything the game paints itself
+```
+
+`Lang.t` is evaluated at the call site, every round, which is what makes the
+switch live. Two rules follow: **never wrap a comparison or a key**
+(`reason === "jam"`, `Store.get("bestScore")` are code, not copy), and **keep
+the pieces translatable on their own** — an English plural built as
+`n + " PULSE" + (n > 1 ? "S" : "") + " SPARED"` only survives if the French
+pieces take that same S (" IMPULSION" + "S" + " D'AVANCE").
+
+`make text` is the gate: it reads all four sources back, lists the dictionary
+under *Game words*, and prints **`N untranslated`** — every string the game
+writes that has no FR entry. A game is done when it prints *fully translated*.
 
 ### `CONFIG.art` — the painted artwork
 
@@ -699,6 +800,35 @@ module that inserts `.screen-art` on the intro and the end screen, swaps the
 logotype into `#intro-title` and picks the face on `endRound`;
 `packages/platform/web.js` hands the desk background to
 `packages/frame-web/frame.css` through `--art-bg-desk`.
+
+**One scene per band: `Art.backdrop(key)`.** A game whose look turns over with
+the climb ships one painting per band —
+`<slug>-background-phone-<name>.webp` → `CONFIG.art.backgroundPhone<Name>` —
+and then there is no plain `backgroundPhone` key at all. `Art` resolves the
+FIRST variant alphabetically as the game's own scene, which is what the intro,
+the web menu and the level map wear (`Art.sceneKey()`), and a game moves the
+scene for the band it is playing with `Art.backdrop(key)` — from `reset()`,
+next to the `Music.play` that moves the bed with it. The END SCREEN and, for a
+`CONFIG.sceneArt` game, the round follow; the three screens above deliberately
+do not, because none of them belongs to a level.
+
+`games/echomaze` is the reference: five halls over thirty levels, on
+`CONFIG.bands` next to each band's stretch of the track, and the round paints
+its own out of `ArtImages[BAND.scene]`. `games/blight` is the second, and it
+shows what the set is worth to a game that already had a picture behind its
+world: its round was painted over `ASSETS.images.bg`, a 181 KB jpeg that was
+this game's own scene re-encoded, so the five bands cost it nothing to embed
+and gave 181 KB back — a playable ships the one picture it always did, and only
+the web build carries the other four. **A playable ships the first scene
+alone** — one round at level 0 can only ever show one, and the other four would
+be ~390 KB of base64 it never reaches (`tools/build/build.mjs`, `SCENE_SET`),
+which is why the first band takes the first picture alphabetically.
+
+A game that darkens its scene must darken each one *separately*: five paintings
+are rarely equally bright, and echomaze — played in the dark, where the art may
+only ever be a texture its echo arcs read against — carries a measured `scrim`
+per band, each solved for the same residual luma, so the colour carries the
+variety and not the light.
 
 **The character is a corner figure that arrives at twice its size.** It hangs
 off the bottom-right corner, cropped by the bottom edge only (44px of bleed —
@@ -741,8 +871,10 @@ transform — a full-canvas `clearRect` there covers a shifted rectangle and
 smears a few pixels of the previous frame along two edges for as long as the
 shake lasts.
 
-`games/chainring`, `games/slipdeck` and `games/marshmelt` are the three that opt
-in. The picture is a CSS layer under the canvas (`.frame-art`), not a per-frame
+`games/chainring`, `games/slipdeck`, `games/marshmelt` and `games/radiam` are
+the four that opt in — and `radiam` is the one whose picture changes per band,
+so `Art.backdrop` moves the round's scene along with the end screen's.
+The picture is a CSS layer under the canvas (`.frame-art`), not a per-frame
 `drawImage`: a full-screen blit of a backdrop that never changes is ~2.7 Mpixel
 a frame on a 3× phone, and a layer costs the compositor nothing. The one
 consequence is that it does **not** ride `Fx.shake`, which transforms the canvas

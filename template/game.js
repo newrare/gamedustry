@@ -27,6 +27,20 @@
 
     // Bands the engine reserves (design px). Layout.top / Layout.bottom are
     // derived from them plus the device safe-area insets: keep gameplay there.
+    // The four edges are also floored by the house margin — `safePad`, 26 by
+    // default — so nothing the player reads or touches lands on the glass when
+    // a target drops one of these bands (the web build zeroes `ctaHeight`).
+    //
+    // THE TWO BOTTOM CORNERS ARE THE SHELL'S, not the game's. On the web
+    // target the round carries MENU / OPTIONS in the bottom-right and the
+    // level's stars in the bottom-left, both roughly 240 x 58 design px in
+    // from the frame's edge by 26. `Layout` does NOT shrink for either — they
+    // are an overlay — so draw the world through them as usual, but anchor no
+    // INSTRUMENT and no word there: a gauge, a counter or a label in a bottom
+    // corner is the one thing they cover. `games/arcider` moved its shield
+    // rail to the right flank for this, and `games/slipdeck`, whose hand fills
+    // the foot of the frame, moves the pill instead with `--lv-hud-bottom`
+    // (packages/webshell/levels.css).
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
 
     // Intro: logo is a key in ASSETS.images (omit for a text-only intro).

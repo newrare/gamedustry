@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -115,7 +115,32 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape en rythme, à l’instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>"
+        "tagline": "Tape en rythme, à l’instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>",
+        "strings": {
+          "CLOSE": "PRESQUE",
+          "COMBO": "COMBO",
+          "DODGE THE SPIKES": "ÉVITE LES PIQUANTS",
+          "EMPTY BEAT": "TEMPS MORT",
+          "FEEL THE BEAT": "SENS LE RYTHME",
+          "FINAL SCORE": "SCORE FINAL",
+          "GAME OVER": "PARTIE TERMINÉE",
+          "GET READY": "PRÉPARE-TOI",
+          "GO!": "GO !",
+          "GOOD": "BIEN",
+          "INSTALL NOW": "INSTALLER",
+          "MAX COMBO": "COMBO MAX",
+          "MEGA BONUS": "MÉGA BONUS",
+          "MISS": "RATÉ",
+          "OK": "OK",
+          "PERFECT": "PARFAIT",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SUDDEN DEATH": "MORT SUBITE",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !"
+        }
       }
     },
     "font": "exo2",

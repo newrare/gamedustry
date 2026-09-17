@@ -940,7 +940,7 @@
         style = "score"; word = "+" + gain;
         sub_ = combo > 1 ? "x" + combo : ""; at = { x: p.x, y: p.y - 54 };
         if (splice)        { style = "bonus";  word = "SPLICE";        sub_ = "+" + gain; at = "bottom"; }
-        else if (run >= 4) { style = "combo";  word = "WELD x" + run;  sub_ = "+" + gain; at = "bottom"; }
+        else if (run >= 4) { style = "combo";  word = Lang.t("WELD x") + run;  sub_ = "+" + gain; at = "bottom"; }
         else if (combo >= 6) { style = "streak"; at = "bottom"; }
         Pop.show(style, { word: word, sub: sub_, at: at });
         /* The chain is the one thing the opening hint cannot teach, because
@@ -1028,7 +1028,7 @@
         score += R.chargeScore * Math.min(run, R.weldMax);
         HUD.setScore(score);
         discharge(k, run);
-        Pop.show("ultra", { word: "CHARGE x" + run,
+        Pop.show("ultra", { word: Lang.t("CHARGE x") + run,
                             sub: "+" + R.chargeScore * Math.min(run, R.weldMax),
                             at: "bottom" });
       }
@@ -1045,7 +1045,7 @@
            style, whose spot is under the HUD, well clear of the `bottom` band
            that callout lands in. */
         warnLeft = false;
-        Pop.show("alert", { word: (slotN - filled) + " SLOTS LEFT", hold: 1600 });
+        Pop.show("alert", { word: (slotN - filled) + Lang.t(" SLOTS LEFT"), hold: 1600 });
       }
     }
 

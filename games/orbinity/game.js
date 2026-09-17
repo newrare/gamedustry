@@ -956,7 +956,7 @@
       if (tier > wasTier) {
         Fx.ring(comet.x, comet.y, { from: 18, to: 170, color: col, width: 9, life: 0.5 });
         Fx.burst(comet.x, comet.y, { color: [col, "#ffffff"], count: 18, speed: 330, size: 6, life: 0.55 });
-        Pop.show("perfect", { word: "EVOLVED", sub: "TIER " + (tier + 1),
+        Pop.show("perfect", { word: "EVOLVED", sub: Lang.t("TIER ") + (tier + 1),
                               at: "upper", hold: 380 });
         Sound.clip("evolve", 0.7);
       } else if (combo === 2) {
@@ -968,7 +968,7 @@
         HUD.setScore(score);
         // Deep chains graduate from the sticker to the full hero callout.
         Pop.show(combo >= 15 ? "ultra" : "combo",
-                 { word: "COMBO x" + combo, sub: "+" + bonus,
+                 { word: Lang.t("COMBO x") + combo, sub: "+" + bonus,
                    hold: combo >= 15 ? 460 : 380 });
         Overlay.vignette(col, 1, 520);                   // edge glow in tier colour
         Sound.clip("milestone", 0.65);
@@ -997,13 +997,13 @@
         // A big chain deserves a loud eulogy; a small one just a toast.
         if (had >= 5 || overtime) {
           Pop.show("danger", { word: reason,
-                               sub: overtime ? "RUN OVER — x" + had : "COMBO x" + had + " LOST",
+                               sub: overtime ? Lang.t("RUN OVER — x") + had : Lang.t("COMBO x") + had + Lang.t(" LOST"),
                                hold: 420 });
         } else {
           Pop.show("alert", { word: reason, sub: "COMBO LOST" });
         }
         if (had >= 2) {
-          Pop.show("score", { word: "x" + had + " LOST", cls: "pop-lost",
+          Pop.show("score", { word: "x" + had + Lang.t(" LOST"), cls: "pop-lost",
                               at: { x: comet.x, y: comet.y - 48 } });
         }
         Sound.clip("lost", 0.55);
@@ -1334,11 +1334,11 @@
       var w = comboWindow();
       if (otWarn < 1 && w <= C.window * 0.5) {
         otWarn = 1;
-        Pop.show("danger", { word: "WINDOW CLOSING", sub: w.toFixed(1) + "s PER HOP",
+        Pop.show("danger", { word: "WINDOW CLOSING", sub: w.toFixed(1) + Lang.t("s PER HOP"),
                              at: "upperLeft", hold: 300 });
       } else if (otWarn < 2 && w <= C.window * 0.25) {
         otWarn = 2;
-        Pop.show("danger", { word: "LAST BREATH", sub: w.toFixed(1) + "s PER HOP",
+        Pop.show("danger", { word: "LAST BREATH", sub: w.toFixed(1) + Lang.t("s PER HOP"),
                              at: "upperLeft", hold: 300 });
         Overlay.vignette("#ff4d6d", 0.7, 900);
       }
@@ -1370,7 +1370,7 @@
         rows.unshift({ label: "OVERTIME", value: otT.toFixed(1) + "s", grade: "good" });
       }
       endRound({
-        title: stars === 3 ? "COSMIC!" : otT > 0 ? "OVERTIME OVER" : CONFIG.copy.timeUp,
+        title: stars === 3 ? Lang.t("COSMIC!") : otT > 0 ? Lang.t("OVERTIME OVER") : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,

@@ -731,8 +731,14 @@
   /* =========================================================================
      SCREENS — loading / intro / end
      ========================================================================= */
+  /* The padding is the house margin at full size — 48 px of air down each side
+     and 70 at the ends — and it is written against the INSETS rather than
+     against the frame: on a phone with a notch the title used to start under
+     it and the replay link under the gesture bar, because the letterbox bars
+     only cover part of that overlap (see fitCanvas in section 3). */
   .screen {
-    position:absolute; inset:0; z-index:30; padding:70px 48px;
+    position:absolute; inset:0; z-index:30;
+    padding:calc(var(--inset-top) + 70px) 48px calc(var(--inset-bottom) + 70px);
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
     transition:opacity .25s ease;
   }
@@ -1117,6 +1123,16 @@
   #screen-end #btn-install, #screen-end #btn-replay { opacity:0; pointer-events:none; transition:opacity .5s ease; }
   #screen-end #btn-install { margin-top:34px; }
   #screen-end #btn-install.show, #screen-end #btn-replay.show { opacity:1; pointer-events:auto; }
+  /* ...and a CLOSED end screen takes them back. `pointer-events:none` on
+     .screen.hidden does NOT beat `auto` on a descendant — the property is
+     resolved per element, never inherited as a veto — so the two buttons of
+     the last end screen stayed hit-testable over the round that followed:
+     two invisible 420x84 rectangles in the middle of the play area, and a tap
+     on either one re-entered the round under the one already running. Written
+     with the same two ids as the rule above, so it wins on order and never on
+     a specificity trick. The shell strips `.show` on the way out as well
+     (setState); this is the belt to that pair of braces. */
+  #screen-end.hidden #btn-install, #screen-end.hidden #btn-replay { opacity:0; pointer-events:none; }
 
   /* =========================================================================
      SKIN — ARCIDER. Everything above is the shared motor stylesheet; the theme
@@ -1963,26 +1979,29 @@
                            // between two blockers and the wall is not a wall
       rampGate:    88,     // half the escape gate, when the wall keeps one
 
-      /* --- THE SHIELD RAIL down the left flank of the frame ----------------
+      /* --- THE SHIELD RAIL down the right flank of the frame ---------------
          Built like the spin rail in games/spinshock — smoked glass the road
          reads straight through, cells filled from the bottom, an arc and a
          chevron at the value — because the number this game is played on is
          the one the HUD pill is too small to make felt: cyan at full, cooling
          through gold to red as the hull comes apart, so a run going bad turns
-         the left edge of the frame red.
+         the right edge of the frame red.
 
-         The right flank used to carry a second rail, a ladder of the whole
-         field with the player's marker sliding up it. It is gone: the place
-         and the cut it has to be inside are already on the rank pill, the
-         cut's own line on the tarmac is green or red under the craft, and a
-         nineteen-cell ladder down the edge of a race the player is steering
-         through was a second thing to read at 400 km/h and never the one they
-         read. The road got its right-hand side back. */
+         That flank used to carry a second rail, a ladder of the whole field
+         with the player's marker sliding up it. It is gone: the place and the
+         cut it has to be inside are already on the rank pill, the cut's own
+         line on the tarmac is green or red under the craft, and a nineteen-cell
+         ladder down the edge of a race the player is steering through was a
+         second thing to read at 400 km/h and never the one they read. This
+         rail then took the side it left, because the left flank is the level
+         pill's in all thirteen games. */
       railW:        30,    // width of the rail
       railGap:       4,    // air between it and the frame's side margin
       railSegs:     20,    // cells in the shield rail (one per 5%)
       railPad:       3,    // air between two cells
-      railInset:    10     // air under Layout.top and above Layout.bottom
+      railInset:    10,    // air under Layout.top
+      railFoot:    142     // air under the rail: the speedo and, on the web
+                           // target, the round's two controls stack in it
     },
 
     /* ---- THE LADDER — what makes one level not another ------------------
@@ -2263,7 +2282,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "1.8.0",
+    version: "1.9.3",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2288,7 +2307,8 @@
   };
 
   // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
-  // and clear of the device insets. Recomputed on every resize.
+  // clear of the device insets, and never closer to the glass than the house
+  // margin (see relayout). Recomputed on every resize.
   var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
 
   // env(safe-area-inset-*) is only observable through a probe element.
@@ -2352,12 +2372,44 @@
     relayout();
   }
 
+  /* THE HOUSE MARGIN. Nothing the player has to read or touch may sit against
+     the edge of the frame: a phone rounds its corners, a gesture bar eats the
+     last few pixels, and a figure printed one pixel from the glass reads as a
+     bug whatever the device. 26 design px is the number the rest of the motor
+     already uses — the HUD band's own side padding, the web shell's two round
+     controls, the level map's footer — so it is the one written here.
+
+     It is a FLOOR on the four edges, never an addition: a band that already
+     reserves more keeps exactly what it reserved, which is why a playable is
+     untouched (its HUD is 150 px and its CTA bar 112). The edge it actually
+     bites is the BOTTOM of the web and android builds, where
+     packages/platform/web.js zeroes `ctaHeight` and `Layout.bottom` fell on
+     the last row of the frame — every instrument a game anchors there (the
+     shield rail of games/arcider, the hand label of games/slipdeck, the spin
+     gauge of games/spinshock) was flush against the glass.
+
+     A game may raise it through CONFIG.layout.safePad; nothing may lower it
+     below zero, and a game that wants its world to bleed off an edge (a lava
+     lake, a scrolling lane, a shockwave) draws that outside Layout, which is
+     the play band and not a clip rect.
+
+     WHAT IT DOES NOT SAY IS THE TWO BOTTOM CORNERS. The web target's round
+     carries MENU / OPTIONS in one and the level's three stars in the other,
+     each about 240 x 58 in from the frame by 26, and neither takes a band out
+     of `Layout` — they are an overlay, so the world still runs under them.
+     A game may therefore draw THROUGH them, and may anchor no INSTRUMENT and
+     no word there. Both are the shell's (packages/webshell/menu.css and
+     levels.css); a game whose own layout owns the left one moves the pill with
+     `--lv-hud-bottom` rather than reserving anything here. */
+  var SAFE_PAD = 26;
+
   function relayout() {
     var m = CONFIG.layout;
-    Layout.top    = view.insetTop + m.hudHeight;
-    Layout.bottom = view.h - view.insetBottom - m.ctaHeight;
-    Layout.left   = m.sideMargin;
-    Layout.right  = view.w - m.sideMargin;
+    var pad = Math.max(0, m.safePad == null ? SAFE_PAD : m.safePad);
+    Layout.top    = view.insetTop + Math.max(m.hudHeight, pad);
+    Layout.bottom = view.h - view.insetBottom - Math.max(m.ctaHeight, pad);
+    Layout.left   = Math.max(m.sideMargin, pad);
+    Layout.right  = view.w - Math.max(m.sideMargin, pad);
     Layout.w = Layout.right - Layout.left;
     Layout.h = Layout.bottom - Layout.top;
     Layout.cx = (Layout.left + Layout.right) / 2;
@@ -2413,16 +2465,37 @@
   // --- Loop: rAF with clamped dt, pausable when the ad is not visible -----
   var Loop = (function () {
     var running = false, paused = false, last = 0, u = null, r = null, rate = 1;
+    /* THE HANDLE IS THE WHOLE POINT. There is exactly ONE rAF chain, and `raf`
+       is it. Without it `start()` scheduled a chain every time it was called
+       while the old one was still alive — and the old one only checks
+       `running`, which start() had just set back to true — so two chains ran
+       side by side, each calling update AND render, the world advancing at
+       twice the rate and the frame drawn twice over itself. A third call made
+       three. The guard below is what makes a round mount once, whoever asks
+       and however often; `stop()` cancels the pending frame instead of merely
+       flagging it, so a restart in the same frame cannot resurrect it either.
+       See the TODO entry "a TAP reloads the game view". */
+    var raf = 0;
     function frame(now) {
+      raf = 0;
       if (!running) return;
       var dt = Math.min((now - last) / 1000, 0.05);   // clamp tab-switch gaps
       last = now;
       if (!paused) { if (u) u(dt * rate); if (r) r(); }
-      requestAnimationFrame(frame);
+      if (running) raf = requestAnimationFrame(frame);
     }
     return {
-      start: function (uu, rr) { u = uu; r = rr; running = true; paused = false; rate = 1; last = performance.now(); requestAnimationFrame(frame); },
-      stop:  function () { running = false; },
+      /* Idempotent: asking a running loop to start re-arms it — the callbacks,
+         the time scale and the clock — and keeps the one chain it already has.
+         A paused loop is un-paused by it, which is what a round starting from
+         behind an open card expects. */
+      start: function (uu, rr) {
+        u = uu; r = rr; paused = false; rate = 1; last = performance.now();
+        if (running) return;
+        running = true;
+        raf = requestAnimationFrame(frame);
+      },
+      stop:  function () { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } },
       pause: function () { paused = true; },
       resume:function () { paused = false; last = performance.now(); },
       /* SLOW MOTION, one number. The frame keeps rendering at full rate and the
@@ -2966,6 +3039,45 @@
 
     return { get: get, set: set, del: del };
   })();
+  /* --- Lang: the one place a word is translated --------------------------
+
+     A game is WRITTEN in English — `CONFIG.copy`, every `Pop.show` word, every
+     HUD label, every end-screen row — and its French is a DICTIONARY in its
+     manifest (`web.copy.<lang>.strings`), keyed by the English string itself.
+     No game invents a key, and a missing entry falls back to the English
+     rather than to an empty box.
+
+     `Lang.t` is applied where the motor WRITES the word (Pop, the HUD, the end
+     screen, CONFIG.copy), so a game needs no change for the whole of what it
+     says to switch language. The one exception is a word a game BUILDS —
+     `"x" + mult + " STREAK"` reaches the motor already assembled and no
+     dictionary can match it — and there the game wraps its own literal:
+     `Lang.t(" STREAK")`. It is evaluated at the call site, every round, which
+     is what makes the switch live.
+
+     Nothing is set on a playable: no `CONFIG.web`, no dictionary, `t` is the
+     identity, and an ad creative ships in one language as it always has. */
+  var Lang = (function () {
+    var code = "en", dict = null;
+
+    // `code` is informative; the dictionary is what translates.
+    function set(c, d) {
+      code = c || "en";
+      dict = (d && typeof d === "object") ? d : null;
+    }
+
+    /* Anything that is not a string is handed back untouched: the HUD's own
+       value is a number more often than not, and a game should never have to
+       ask whether a slot holds a word before it fills it. */
+    function t(s) {
+      if (!dict || typeof s !== "string") return s;
+      var v = dict[s];
+      return typeof v === "string" ? v : s;
+    }
+
+    return { set: set, t: t, code: function () { return code; } };
+  })();
+
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },
@@ -3289,6 +3401,24 @@
     $("hud").classList.toggle("hidden", s !== "playing");
     $("cta-bar").classList.toggle("hidden", s !== "playing");
     $("backdrop").classList.toggle("on", s === "end");
+    /* THE END SCREEN'S TWO BUTTONS GO WITH IT. `.show` is what makes them
+       visible AND `pointer-events:auto`, and until this line it was only ever
+       removed by the NEXT end screen — so from the second round on, a closed
+       #screen-end left two invisible, fully hit-testable rectangles sitting in
+       the middle of the play area. `pointer-events:none` on the screen does
+       not win against `auto` on a descendant, so a tap that landed on one of
+       them re-entered startGame (or Ad.openStore in a playable) from inside a
+       running round, and the frame carried another loop on top of the last.
+       The stylesheet says the same thing again at the same specificity; this
+       is the one that also takes the focus off a button nobody can see. */
+    if (s !== "end") {
+      EndScreen.clear();                  // the reveal's timers go with it
+      ["btn-install", "btn-replay"].forEach(function (id) {
+        var b = $(id);
+        b.classList.remove("show");
+        if (document.activeElement === b) b.blur();
+      });
+    }
     if (s !== "playing") Overlay.clear();
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
@@ -3393,16 +3523,28 @@
        game spent on its HUD: measured with tools/lab/bench-pop.mjs on the
        gameplay window alone (no callouts), orbinity went from 22 ms of style
        and 19 ms of layout per 3 s to vipera's numbers, which has no timer. */
-    var shownL = null, shownR = null;
+    var shownL = null, shownR = null, lastL = null, lastR = null;
     function setLeft(text, label, cls) {
-      var html = text == null ? "" : pill(text, label, cls);
+      lastL = [text, label, cls];
+      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
       if (html === shownL) return;
       shownL = html; $("hud-left").innerHTML = html;
     }
     function setRight(text, label, cls) {
-      var html = text == null ? "" : pill(text, label, cls);
+      lastR = [text, label, cls];
+      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
       if (html === shownR) return;
       shownR = html; $("hud-right").innerHTML = html;
+    }
+    /* A language changed from OPTIONS pauses the round, so the two pills are
+       not rewritten by the loop: they hold the English the game last wrote
+       until it writes again, which on a label like LIVES can be the whole
+       round. Re-running the last call with the new dictionary is the whole
+       fix — the arguments are the game's own and are kept untranslated. */
+    function relabel() {
+      shownL = shownR = null;
+      if (lastL) setLeft(lastL[0], lastL[1], lastL[2]);
+      if (lastR) setRight(lastR[0], lastR[1], lastR[2]);
     }
     function setTime(sec) {
       if (!CONFIG.hud.timer) return;
@@ -3410,7 +3552,7 @@
       setRight(s, CONFIG.copy.timeLabel, s <= 5 ? "warn" : "");
     }
     return { setScore: setScore, setScoreNow: setScoreNow, tick: tick, punch: punch,
-             setLeft: setLeft, setRight: setRight, setTime: setTime,
+             setLeft: setLeft, setRight: setRight, setTime: setTime, relabel: relabel,
              score: function () { return target; } };
   })();
 
@@ -3511,6 +3653,7 @@
   var Pop = (function () {
     var timers = [];
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+    function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
 
     /* Callouts currently on screen, oldest first, and a hard cap on them. Each
        one owns compositing layers, so a player mashing the screen could
@@ -3634,9 +3777,9 @@
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
-      var word = opt.word != null ? opt.word : st.word;
+      var word = Lang.t(opt.word != null ? opt.word : st.word);
       if (word == null) return null;
-      var sub = opt.sub != null ? opt.sub : st.sub;
+      var sub = Lang.t(opt.sub != null ? opt.sub : st.sub);
       var pos = resolve(opt.at != null ? opt.at : st.at);
       var enter = opt.enter != null ? opt.enter : (st.enter || 420);
       var hold  = opt.hold  != null ? opt.hold  : (st.hold == null ? 900 : st.hold);
@@ -3691,8 +3834,19 @@
       // frame ON PURPOSE and must keep bleeding off both edges.
       var ringEl = anim.querySelector(".pop-d-ring");
       var bodyW = Math.min(Math.max(body.offsetWidth, wordW), Layout.w);
-      var half = Math.min(Math.max(bodyW / 2 + 8, ringEl ? ringEl.offsetWidth / 2 : 0), view.w / 2);
-      pop.style.left = clamp(px, half, view.w - half) + "px";
+      /* Against LAYOUT, not against the frame: the callout is a word the player
+         reads, so it answers to the same house margin as everything else the
+         motor writes. The cap is half the play band rather than half the frame,
+         which is what keeps the two bounds in order — a word as wide as the
+         band lands dead centre instead of being pushed against one edge. */
+      var half = Math.min(Math.max(bodyW / 2 + 8, ringEl ? ringEl.offsetWidth / 2 : 0), Layout.w / 2);
+      pop.style.left = clamp(px, Layout.left + half, Layout.right - half) + "px";
+      /* The same, down the other axis, and it is the one a WORLD anchor breaks:
+         `at: {x, y}` follows an entity, and an entity at the foot of the band
+         printed its eulogy below Layout.bottom — half of it on the glass. The
+         named anchors resolve inside Layout already and are untouched by this. */
+      var halfH = Math.min(body.offsetHeight / 2 + 8, Layout.h / 2);
+      pop.style.top = clamp(py, Layout.top + halfH, Layout.bottom - halfH) + "px";
 
       // Full-frame impact, borrowed from the layers that own it. `opt.silent`
       // opts out: the prewarm pass below builds every style while the intro is
@@ -3718,7 +3872,10 @@
       }
       if (hold >= 0) close(enter + hold);
 
-      handle = { el: pop, close: function () { close(0); }, remove: remove };
+      handle = { el: pop, close: function () { close(0); }, remove: remove,
+                 // when this callout is off the screen, so a caller can wait
+                 // for the layer to go quiet before it speaks (see pending())
+                 until: now() + enter + Math.max(hold, 0) + exit };
       live.push(handle);
       // Over the cap: drop the oldest outright rather than play it out — under a
       // burst it is already faded, and an exit animation costs another frame.
@@ -3812,18 +3969,36 @@
        silences these too: they are the same feedback to the player.           */
     var floats = [];
 
+    /* A value hangs over the entity that paid it, so the anchor is the world's
+       and not the layout's — and an entity at the edge of the play band would
+       print its number on the glass. It is clamped into Layout like every other
+       word the motor writes, measured ONCE here rather than per frame: the
+       float is drawn ~40 times over its life and the string never changes.
+       `grow` is the headroom the tier scales add on the way out (drawText). */
     function text(x, y, str, opt) {
       if (!enabled) return;
       opt = opt || {};
-      floats.push({ x: x, y: y, text: String(str), color: opt.color || "#ffffff",
-        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
+      var str2 = String(Lang.t(str));
+      var size = opt.size || 34, tier = opt.tier || 0;
+      var grow = tier >= 2 ? 1.45 : tier >= 1 ? 1.25 : 1.12;
+      var hw, hh = size * 0.5 * grow;
+      ctx.save();
+      ctx.font = "900 " + size + "px -apple-system,Segoe UI,Roboto,sans-serif";
+      hw = ctx.measureText(str2).width * 0.5 * grow;
+      ctx.restore();
+      floats.push({ x: clamp(x, Layout.left + hw, Layout.right - hw),
+        y: clamp(y, Layout.top + hh, Layout.bottom - hh),
+        hh: hh, text: str2, color: opt.color || "#ffffff",
+        size: size, tier: tier, vy: opt.vy == null ? -70 : opt.vy,
         life: opt.life || 0.9, maxLife: opt.life || 0.9 });
     }
 
     function tick(dt) {
       for (var i = floats.length - 1; i >= 0; i--) {
         var f = floats[i];
-        f.y += f.vy * dt; f.vy *= 0.9; f.life -= dt;
+        // The rise is what would take it out of the band on the other side.
+        f.y = Math.max(Layout.top + f.hh, f.y + f.vy * dt);
+        f.vy *= 0.9; f.life -= dt;
         if (f.life <= 0) floats.splice(i, 1);
       }
     }
@@ -3882,8 +4057,18 @@
       requestAnimationFrame(step);
     }
 
+    /* How long the callout layer is still busy, in ms — 0 when it is already
+       quiet. A caller that must not talk over the game (the level layer's
+       three-star finish lands on the same frame as the game's own hero
+       callout) waits this out instead of guessing a delay. */
+    function pending() {
+      var t = now(), i, ms = 0;
+      for (i = 0; i < live.length; i++) ms = Math.max(ms, live[i].until - t);
+      return Math.max(0, ms);
+    }
+
     return {
-      show: show, text: text, tick: tick, canvas: canvas,
+      show: show, text: text, tick: tick, canvas: canvas, pending: pending,
       clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS,
       setEnabled: function (v) { enabled = !!v; if (!enabled) clear(); },
       isEnabled: function () { return enabled; }
@@ -3915,6 +4100,27 @@
   var Art = (function () {
     var art = CONFIG.art || {};
 
+    /* WHICH PICTURE IS "THE SCENE". Twelve games ship one painting and it is
+       `backgroundPhone`; a game whose scene changes per band of the climb
+       ships one per band instead (`<slug>-background-phone-<name>.webp` ->
+       `backgroundPhoneBlue`, games/echomaze), and then there is no plain key
+       at all. The FIRST variant is the default the screens are dressed with,
+       alphabetically — the same one the builder is left with when it strips
+       the other four out of a playable (tools/build/build.mjs, SCENE_SET), so
+       the two agree without a manifest key to keep in step. `Art.backdrop`
+       below is what a game moves it to for the band it is playing. */
+    function defaultScene() {
+      if (art.backgroundPhone) return "backgroundPhone";
+      var keys = [], k;
+      for (k in art)
+        if (art.hasOwnProperty(k) && k.indexOf("backgroundPhone") === 0) keys.push(k);
+      return keys.length ? keys.sort()[0] : null;
+    }
+    var baseKey = defaultScene();      // the game's own scene: the intro's, and the map's
+    var bandKey = baseKey;             // the band's, which only the end screen and a
+                                       // `CONFIG.sceneArt` round follow
+    function sceneSrc() { return bandKey ? art[bandKey] : null; }
+
     /* The painted layer, as the first child of a screen: `.screen-art` paints
        the picture and its own scrim (motor.css), and the marker class on the
        screen is what tells the stylesheet to drop the flat tint it used to
@@ -3922,21 +4128,23 @@
        the markup is one file per game, thirteen copies plus the template, and
        a layer nothing configures does not belong in any of them. */
     function dress(screenId) {
-      if (!art.backgroundPhone) return;
+      if (!sceneSrc()) return;
       var screen = $(screenId);
       if (!screen || screen.querySelector(".screen-art")) return;
       var layer = document.createElement("div");
       layer.className = "screen-art";
-      layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+      layer.style.backgroundImage = "url(" + sceneSrc() + ")";
       screen.insertBefore(layer, screen.firstChild);
       screen.classList.add("has-art");
     }
 
     /* The same painting behind the ROUND, for a game that sets
-       `CONFIG.sceneArt`. `games/chainring`, `games/slipdeck` and
-       `games/marshmelt` are the three: each of them painted its own decorative
-       ground — a radial gradient, a felt fill, a pre-rendered cavern — and the
-       scene replaces exactly that.
+       `CONFIG.sceneArt`. `games/chainring`, `games/slipdeck`,
+       `games/marshmelt` and `games/radiam` are the four: each of them painted
+       its own decorative ground — a radial gradient, a felt fill, a
+       pre-rendered cavern, a wall of gears embedded as a JPEG — and the scene
+       replaces exactly that. radiam is the one with a scene PER BAND, so
+       `backdrop` below moves the round's picture as well as the end screen's.
 
        IT IS A CSS LAYER BEHIND THE CANVAS, NOT A drawImage. Blitting a full
        720x1280 picture every frame is ~2.7 Mpixel on a 3x phone, for a
@@ -3951,13 +4159,13 @@
        means the SKIN's `html, body` gradient is the fallback for free — with no
        artwork on disk, `scene()` is false and the game paints as it always did. */
     function dressFrame() {
-      if (!CONFIG.sceneArt || !art.backgroundPhone) return false;
+      if (!CONFIG.sceneArt || !sceneSrc()) return false;
       var frame = $("frame");
       if (!frame) return false;
       if (!frame.querySelector(".frame-art")) {
         var layer = document.createElement("div");
         layer.className = "frame-art";
-        layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+        layer.style.backgroundImage = "url(" + sceneSrc() + ")";
         frame.insertBefore(layer, frame.firstChild);
       }
       return true;
@@ -4086,9 +4294,36 @@
 
     var onScene = false;
 
+    /* MOVE THE SCENE. A game with one painting per band calls this from
+       `reset()` with the band's key, next to the `Music.play` that moves the
+       bed with it — the END SCREEN and, for a `CONFIG.sceneArt` game, the
+       round itself then wear the scene of the band just played, so the picture
+       turns over exactly where the music does.
+
+       The INTRO is deliberately left where it is, and with it the web menu
+       (which reuses that layer) and the level map (which reads the key back):
+       those screens belong to the game and not to a level, and a menu that
+       took the colour of whichever band was last played would be a different
+       game every visit. An unknown key is ignored rather than clearing the
+       screen, so a playable — which ships the first scene alone — keeps its
+       picture when the game asks for a band it does not carry. */
+    function backdrop(key) {
+      if (!key || !art[key] || key === bandKey) return;
+      bandKey = key;
+      var end = $("screen-end"), layer = end && end.querySelector(".screen-art");
+      if (layer) layer.style.backgroundImage = "url(" + art[key] + ")";
+      var frame = $("frame"), fl = frame && frame.querySelector(".frame-art");
+      if (fl) fl.style.backgroundImage = "url(" + art[key] + ")";
+    }
+
     return {
       has: function (key) { return !!art[key]; },
       src: function (key) { return art[key] || null; },
+      /* The game's OWN scene — the one the intro, the web menu and the level
+         map wear. It is the default one whatever band `backdrop` has moved the
+         end screen to, because none of those three screens belongs to a level. */
+      sceneKey: function () { return baseKey; },
+      backdrop: backdrop,
       /* True when the painted scene is behind the world, i.e. the game must
          NOT paint its own opaque ground this frame. Read it in render(). */
       scene: function () { return onScene; },
@@ -4363,12 +4598,21 @@
     $("intro-tagline").innerHTML = CONFIG.tagline;
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
-    $("btn-start").textContent = CONFIG.copy.start;
-    $("btn-cta").textContent = CONFIG.copy.ctaBar;
-    $("btn-install").textContent = CONFIG.copy.ctaEnd;
-    $("btn-replay").textContent = CONFIG.copy.replay;
-    $("hud-score-lbl").textContent = CONFIG.copy.scoreLabel;
-    $("eo-scorelbl").textContent = CONFIG.copy.endScore;
+    applyCopy();
+  }
+
+  /* The six fixed strings, written into the page. They are the one piece of a
+     game's copy that is NOT written at the moment it is read — the nodes are
+     filled once at boot and then sit there — so a language change has to come
+     back through here. The web shell calls it; a playable calls it once from
+     buildIntro and never again. */
+  function applyCopy() {
+    $("btn-start").textContent = Lang.t(CONFIG.copy.start);
+    $("btn-cta").textContent = Lang.t(CONFIG.copy.ctaBar);
+    $("btn-install").textContent = Lang.t(CONFIG.copy.ctaEnd);
+    $("btn-replay").textContent = Lang.t(CONFIG.copy.replay);
+    $("hud-score-lbl").textContent = Lang.t(CONFIG.copy.scoreLabel);
+    $("eo-scorelbl").textContent = Lang.t(CONFIG.copy.endScore);
   }
 
   // --- End screen: the cinematic reveal ----------------------------------
@@ -4400,7 +4644,7 @@
       function T(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
       var title = $("eo-title");
-      title.textContent = result.title || CONFIG.copy.gameOver;
+      title.textContent = Lang.t(result.title || CONFIG.copy.gameOver);
       Fit.one("eo-title");
       Fit.one("eo-score", String(result.score || 0));
       title.className = "eo-title" + (result.variant ? " " + result.variant : "");
@@ -4420,8 +4664,8 @@
       var box = $("eo-stats"), html = "";
       rows.forEach(function (r, i) {
         var label = r.grade === "gold"
-          ? '<span class="spark">✦</span> ' + r.label + ' <span class="spark">✦</span>'
-          : r.label;
+          ? '<span class="spark">✦</span> ' + Lang.t(r.label) + ' <span class="spark">✦</span>'
+          : Lang.t(r.label);
         html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
                 '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
       });
@@ -4485,7 +4729,7 @@
           settle();
           var el = $("eo-val-" + i);
           if (typeof r.value === "number") countUp(el, r.value, 450);
-          else el.textContent = r.value;
+          else el.textContent = Lang.t(r.value);
           Sound.cue("uiRow", 0.5, 1 + i * 0.07, 480 + i * 70, 0.05);
         }, afterStars + i * ROW_GAP);
       });
@@ -4495,7 +4739,19 @@
       T(function () { $("btn-install").classList.add("show"); settle(); }, ctaAt);
       T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
     }
-    return { show: show };
+
+    /* THE REVEAL IS A CASCADE OF TIMERS, AND IT HAS TO BE CANCELLABLE. A
+       player who taps PLAY AGAIN before the last stat row has landed leaves
+       a dozen setTimeouts in flight, and until this existed they went on
+       firing INSIDE the next round: confetti bursts, the star and row chimes,
+       the character settling, and — the one with teeth — `.show` put back on
+       the two buttons a moment after setState had taken it off. `show()`
+       cleared them, but only on the way into the NEXT end screen, which is
+       one round too late. The shell calls this whenever the state leaves
+       "end". */
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+
+    return { show: show, clear: clear };
   })();
 
   /* --- Perf: a readout on the device itself ------------------------------
@@ -5070,9 +5326,9 @@
        own anchors.
 
        Those outer columns are nevertheless held well off the edges: the shield
-       gauge lives down the left one (see drawShieldRail) and a callout is the
+       gauge lives down the right one (see drawShieldRail) and a callout is the
        one thing on screen wide enough to cover the shield running out. The
-       right column keeps the same inset, because a callout hanging off one
+       left column keeps the same inset, because a callout hanging off one
        edge of the frame and not the other reads as a layout bug. */
     var POP_SPOTS = [
       [0.22, 0.17], [0.50, 0.15], [0.78, 0.17],
@@ -6209,19 +6465,19 @@
        worth panicking about, the plain field size before that. */
     function ordinal(n) {
       var t = n % 100;
-      if (t >= 11 && t <= 13) return n + "TH";
-      return n + (["TH", "ST", "ND", "RD"][n % 10] || "TH");
+      if (t >= 11 && t <= 13) return n + Lang.t("TH");
+      return n + Lang.t(["TH", "ST", "ND", "RD"][n % 10] || "TH");
     }
     function showRank() {
-      var cut = T.cuts[cutI], need = "FINAL " + fieldSize, left, txt;
+      var cut = T.cuts[cutI], need = Lang.t("FINAL ") + fieldSize, left, txt;
       var flag = cut && atFlag();
       if (cut) {
         left = Math.max(0, Math.round(cut.at - dist));
         // The flag is a countdown and never an ask: nothing about the place is
         // at stake there but the win itself.
-        need = flag ? "FINISH · " + left + "M"
-             : left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
-                                 : "CUT TO " + cut.rank + " · " + left + "M";
+        need = flag ? Lang.t("FINISH · ") + left + "M"
+             : left <= T.cutWarn ? Lang.t("TOP ") + cut.rank + Lang.t(" IN ") + left + "M"
+                                 : Lang.t("CUT TO ") + cut.rank + " · " + left + "M";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
       // glance has to answer both "where am I" and "how many are left".
@@ -6523,9 +6779,9 @@
          pack thinning out on screen; what the player cannot see is the size of
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
-      Pop.show("combo", { word: fieldSize + " PILOTS LEFT",
-                          sub: atFlag() ? "FINISH · TAKE THE LEAD"
-                                        : "NEXT CUT · TOP " + T.cuts[cutI].rank,
+      Pop.show("combo", { word: fieldSize + Lang.t(" PILOTS LEFT"),
+                          sub: atFlag() ? Lang.t("FINISH · TAKE THE LEAD")
+                                        : Lang.t("NEXT CUT · TOP ") + T.cuts[cutI].rank,
                           at: "center" });
       showRank();
     }
@@ -6583,8 +6839,8 @@
       var st = raceStars();
       var sc = Math.floor(travel + pick) + 500;
       endRound({
-        title: rank === 1 ? "RACE WON!"
-             : rank <= 3 ? "ON THE PODIUM!" : "RACE FINISHED!",
+        title: rank === 1 ? Lang.t("RACE WON!")
+             : rank <= 3 ? Lang.t("ON THE PODIUM!") : Lang.t("RACE FINISHED!"),
         variant: st === 3 ? "perfect" : "win",
         score: sc,
         /* The METRES here too, for the same reason `die` reports them: on the
@@ -6714,15 +6970,22 @@
       skyBase = horizonY + Math.ceil(
         (span + T.hillAmp * 2) * T.camZ * (1 + T.fovKick) / T.zRoad) + 1;
 
-      /* The shield rail: full height of the play band, hard against the
-         frame's left margin. It is an overlay on the road rather than a band
-         cut out of it — the road is a perspective view whose interest is all
-         in the middle, and the rail is smoked glass, so nothing the player has
-         to read is lost under it. */
+      /* The shield rail, hard against the frame's RIGHT margin. It is an
+         overlay on the road rather than a band cut out of it — the road is a
+         perspective view whose interest is all in the middle, and the rail is
+         smoked glass, so nothing the player has to read is lost under it.
+
+         It is on the right because the bottom-LEFT corner is the level pill's
+         (packages/webshell/levels.css): the three stars of a run are read in
+         the same corner in all thirteen games, and arcider is the one that had
+         an instrument there. So this side of the frame is now the whole
+         instrument column, and it reads top to bottom — the rail, the
+         speedometer under its foot, and the round's MENU / OPTIONS controls
+         under that. `railFoot` is the air those two need. */
       shieldRail.w = T.railW;
-      shieldRail.x = Layout.left + T.railGap;
+      shieldRail.x = Layout.right - T.railGap - T.railW;
       shieldRail.y = Layout.top + T.railInset;
-      shieldRail.h = Layout.h - T.railInset * 2;
+      shieldRail.h = Layout.h - T.railInset - T.railFoot;
 
       // the sky, darkest overhead and hottest at the skyline. Four stops out
       // of the biome, so a build with no artwork is still the right weather.
@@ -7791,7 +8054,7 @@
     }
 
     /* ====================================================================
-       THE SHIELD RAIL — down the left flank of the frame
+       THE SHIELD RAIL — down the right flank of the frame
 
        The HUD pill says the same thing in eight point type at the top of the
        frame, where a player at 400 km/h is not looking. This says it in the
@@ -7973,12 +8236,12 @@
       ctx.restore();
     }
 
-    /* THE SPEEDOMETER — bottom-left of the play band, in the column the shield
-       rail already owns, because that side of the frame IS the instrument side
-       and the road's interest is all in the middle. It sits just clear of the
-       rail and just above `Layout.bottom`, so it is over the CTA bar on the
-       playable and over nothing on the web target, whose own two controls are
-       in the opposite corner.
+    /* THE SPEEDOMETER — right-hand column, under the shield rail's foot,
+       because that side of the frame IS the instrument side and the road's
+       interest is all in the middle. It is right-aligned on the rail's own
+       outer edge, so the two read as one column, and it clears the bottom of
+       the frame by `railFoot` — which is where the web target's MENU and
+       OPTIONS controls sit, and where the playable's CTA bar starts.
 
        No plate under it and no glow behind it: a box would be a second object
        to read and `shadowBlur` is banned per frame (see CLAUDE.md). What keeps
@@ -7990,8 +8253,8 @@
        rest of the time. That is the dial reading back the two things that move
        it, in the place the eye is already looking for the shield. */
     function drawSpeedo() {
-      var r = shieldRail, x = r.x + r.w + 14, y = Layout.bottom - 16;
-      var n = String(Math.max(0, Math.round(kmhShown))), col;
+      var r = shieldRail, right = r.x + r.w, y = r.y + r.h + 54;
+      var n = String(Math.max(0, Math.round(kmhShown))), col, unit = Lang.t("KM/H");
       col = boostT > 0 ? "#ffd43b" : mult < 0.9 ? "#ff2d55" : "#ffffff";
 
       ctx.save();
@@ -8003,17 +8266,25 @@
       ctx.lineWidth = 6;
       ctx.strokeStyle = "rgba(4,4,20,.72)";
 
+      /* Measured, then laid out from the right: the figure runs 1 to 3 digits
+         and the unit changes width with the language, so the pair is placed by
+         its own width rather than by a guessed x — otherwise the column's edge
+         moves every time the speed crosses 100. */
+      ctx.font = "900 20px " + speedoFont;
+      var unitW = ctx.measureText(unit).width;
       ctx.font = "900 52px " + speedoFont;
+      var x = right - unitW - 10 - ctx.measureText(n).width;
+
       ctx.strokeText(n, x, y);
       ctx.fillStyle = col;
       ctx.fillText(n, x, y);
 
-      x += ctx.measureText(n).width + 10;
+      x = right - unitW;
       ctx.font = "900 20px " + speedoFont;
       ctx.lineWidth = 5;
-      ctx.strokeText("KM/H", x, y);
+      ctx.strokeText(unit, x, y);
       ctx.fillStyle = rgba(col, 0.9);
-      ctx.fillText("KM/H", x, y);
+      ctx.fillText(unit, x, y);
       ctx.restore();
     }
 
@@ -8120,6 +8391,15 @@
   }
 
   function startGame() {
+    /* ONE ROUND AT A TIME. Every way in lands here — #btn-start, the replay
+       link, the web menu's PLAY, a level card on the map, SPACE — and nothing
+       used to assert that the last one had been taken down. Tear the previous
+       round down first, so a call arriving from inside a running round
+       replaces it instead of being laid on top of it. `Loop.start` is
+       idempotent on its own now (packages/engine/engine.js); this is the round
+       itself saying the same thing, and it is also what stops a clock that was
+       already counting from carrying into the new one. */
+    Loop.stop(); Round.stop();
     Sound.unlock();                       // must run inside a user gesture (iOS)
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it

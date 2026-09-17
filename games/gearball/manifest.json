@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
   "order": 100,
   "draft": false,
@@ -114,7 +114,35 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b> et <b class=\"w-fill\">enchaîne-les pour remplir la chaîne</b>"
+        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b> et <b class=\"w-fill\">enchaîne-les pour remplir la chaîne</b>",
+        "strings": {
+          " SLOTS LEFT": " ENCOCHES RESTANTES",
+          "A BALL NEXT TO ANOTHER WELDS — THE WHOLE RUN PAYS": "UNE BILLE COLLÉE À UNE AUTRE SOUDE — TOUTE LA SÉRIE PAIE",
+          "BALLS SET": "BILLES POSÉES",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "CHARGE x": "CHARGE x",
+          "CIRCUIT CLEARED!": "CIRCUIT BOUCLÉ !",
+          "CIRCUIT FULL": "CIRCUIT PLEIN",
+          "FINAL SCORE": "SCORE FINAL",
+          "INSTALL NOW": "INSTALLER",
+          "JAM": "BOURRAGE",
+          "JAMMED!": "ENRAYÉ !",
+          "JAMS": "BOURRAGES",
+          "LIVES": "VIES",
+          "LONGEST CHAIN": "PLUS LONGUE SÉRIE",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SHIFT OVER": "FIN DE SERVICE",
+          "SPLICE": "RACCORD",
+          "SPLIT": "DOUBLÉ",
+          "STAGE BONUS": "BONUS DE TABLEAU",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TAP WHEN A GAP REACHES THE HOPPER": "TAP QUAND UN TROU ARRIVE À LA TRÉMIE",
+          "TIME": "TEMPS",
+          "WELD x": "SOUDURE x",
+          "WILD SAVE": "JOKER SAUVEUR"
+        }
       }
     },
     "font": "russoone",

@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "1.0.3",
+  "version": "1.1.1",
   "tagline": "A ball only breaks the bricks of its own colour and one tap flips them all",
   "order": 30,
   "draft": false,
@@ -18,8 +18,8 @@
       "tagline": "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
       "tags": [
         "Tap inverseur",
-        "Casse-brique",
-        "Sol de lave"
+        "Casse-briques",
+        "Double briques"
       ]
     },
     "en": {
@@ -114,7 +114,52 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Une balle ne brise que les briques de <b class=\"w-wall\">sa couleur</b> et un <b class=\"w-tap\">TAP</b> les inverse toutes"
+        "tagline": "Une balle ne brise que les briques de sa <b class=\"w-wall\">couleur</b> et un <b class=\"w-tap\">TAP</b> les inverse toutes",
+        "strings": {
+          " BRICKS CHARGED": " BRIQUES CHARGÉES",
+          "+3 BALLS IN FLIGHT": "+3 BILLES EN JEU",
+          "BALLS": "BILLES",
+          "BALLS FIRED": "BILLES LANCÉES",
+          "BEST CHAIN": "MEILLEURE CHAÎNE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "BLUE": "BLEUES",
+          "BOMB": "BOMBE",
+          "BONUS": "BONUS",
+          "BRICKS": "BRIQUES",
+          "BRICKS SMASHED": "BRIQUES BRISÉES",
+          "CHAIN x": "CHAÎNE x",
+          "CHAIN x10": "CHAÎNE x10",
+          "CHAIN x15": "CHAÎNE x15",
+          "CHAIN x5": "CHAÎNE x5",
+          "CLEARS ITS COLUMN": "NETTOIE SA COLONNE",
+          "CLEARS ITS ROW": "NETTOIE SA RANGÉE",
+          "COLUMN": "COLONNE",
+          "COLUMN BLAST": "SOUFFLE DE COLONNE",
+          "DEALING YOUR ROUND BONUS": "DISTRIBUTION DU BONUS DE MANCHE",
+          "FINAL SCORE": "SCORE FINAL",
+          "HOT!": "CHAUD !",
+          "HUGE RUN!": "ÉNORME PARTIE !",
+          "INSTALL NOW": "INSTALLER",
+          "LAST BALL": "DERNIÈRE BILLE",
+          "MIXED BAG": "SAC SURPRISE",
+          "MULTIBALL": "MULTIBILLE",
+          "NICE RUN!": "BELLE PARTIE !",
+          "OUT OF BALLS!": "PLUS DE BILLES !",
+          "PERFECT CLEAR": "TABLEAU PARFAIT",
+          "PERFECT CLEAR!": "TABLEAU PARFAIT !",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "RED": "ROUGES",
+          "ROW": "RANGÉE",
+          "ROW BLAST": "SOUFFLE DE RANGÉE",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SMASH!": "FRACAS !",
+          "TAKES THE NEIGHBOURS": "EMPORTE LES VOISINES",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "THE LAVA PULLS": "LA LAVE ATTIRE",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !"
+        }
       }
     },
     "font": "bungee",
@@ -126,7 +171,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> off the wall",
-        "fr": "Marque <b>{n}</b> sur le mur"
+        "fr": "Marque <b>{n}</b> pour progresser"
       },
       "tune": {
         "rows": [

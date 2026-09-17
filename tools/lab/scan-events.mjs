@@ -72,7 +72,7 @@ const BEAT_GAP = 4;
    marks every character as code or not; everything below reads that mask.
    Regex literals are not tracked: the games hold none, and a `/` here is
    always division. */
-function codeMask(src) {
+export function codeMask(src) {
   const mask = new Uint8Array(src.length);
   let i = 0;
   while (i < src.length) {
@@ -92,7 +92,7 @@ function codeMask(src) {
 /* The same pass, the other way round: comments blanked, strings kept. A game
    may leave an example key commented out next to the real ones, and a regex
    over the raw text would embed the example. */
-function stripComments(src) {
+export function stripComments(src) {
   const out = src.split('');
   let i = 0;
   while (i < src.length) {

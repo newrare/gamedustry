@@ -538,7 +538,7 @@
         var big = CAT_ORDER[ev.cat] >= CAT_ORDER.flush;
         Pop.show(big ? "ultra" : CAT_ORDER[ev.cat] >= CAT_ORDER.trips ? "combo" : "score",
                  { word: ev.name, sub: "+" + gain });
-        if (combo > 1) Pop.show("streak", { word: "x" + combo + " CHAIN", at:"upperRight" });
+        if (combo > 1) Pop.show("streak", { word: "x" + combo + Lang.t(" CHAIN"), at:"upperRight" });
 
         Fx.ring(cx, cy, { from:60, to:520, color:GOLD, width:9, life:0.5 });
         for (i = 0; i < HAND_SIZE; i++) {
@@ -848,7 +848,7 @@
       ctx.textAlign = "right"; ctx.textBaseline = "middle";
       ctx.font = font(22, 900);
       ctx.fillStyle = chute >= CHUTE_DEPTH ? BIN_COL : "rgba(255,255,255,.42)";
-      ctx.fillText("CHUTE", x0 - 16, L.chuteY);
+      ctx.fillText(Lang.t("CHUTE"), x0 - 16, L.chuteY);
 
       for (var i = 0; i < CHUTE_DEPTH; i++) {
         var x = x0 + i * (pipW + gap), full = i < chute;
@@ -863,7 +863,7 @@
         ctx.textAlign = "left";
         ctx.font = font(20, 900);
         ctx.fillStyle = BIN_COL;
-        ctx.fillText("FULL", x0 + total + 16, L.chuteY);
+        ctx.fillText(Lang.t("FULL"), x0 + total + 16, L.chuteY);
       }
     }
 
@@ -886,15 +886,15 @@
       var full = next.length >= HAND_SIZE, txt, col;
 
       if (full) {
-        txt = ev.pay > 0 ? "KEEP → " + ev.name : "KEEP → BUST";
+        txt = ev.pay > 0 ? Lang.t("KEEP → ") + Lang.t(ev.name) : Lang.t("KEEP → BUST");
         col = ev.pay > 0 ? KEEP_COL : BIN_COL;
       } else if (ev.cat !== "high") {
-        txt = "KEEP → " + ev.name; col = GOLD;
+        txt = Lang.t("KEEP → ") + Lang.t(ev.name); col = GOLD;
       } else if (!hand.length) {
-        txt = "KEEP → OPENS THE HAND"; col = CYAN;
+        txt = Lang.t("KEEP → OPENS THE HAND"); col = CYAN;
       } else {
         var ln = lineOf(next);
-        txt = "KEEP → " + (ln || "DEAD CARD");
+        txt = Lang.t("KEEP → ") + Lang.t(ln || "DEAD CARD");
         col = ln ? CYAN : "rgba(255,255,255,.45)";
       }
 
@@ -936,12 +936,12 @@
       }
 
       ev = evalHand(hand);
-      if (!hand.length)            { label = "EMPTY HAND"; col = "rgba(255,255,255,.35)"; }
-      else if (ev.cat !== "high")  { label = ev.name;      col = GOLD; }
-      else if (hand.length === 1) { label = "HAND OPEN"; col = CYAN; }
+      if (!hand.length)            { label = Lang.t("EMPTY HAND"); col = "rgba(255,255,255,.35)"; }
+      else if (ev.cat !== "high")  { label = Lang.t(ev.name);      col = GOLD; }
+      else if (hand.length === 1) { label = Lang.t("HAND OPEN"); col = CYAN; }
       else {
         var ln = lineOf(hand);
-        label = ln || "NOTHING YET";
+        label = Lang.t(ln || "NOTHING YET");
         col = ln ? CYAN : "rgba(255,255,255,.55)";
       }
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -961,8 +961,8 @@
       }
 
       var pull = cur ? clamp(Math.abs(cur.x) / SWIPE_DIST, 0, 1) : 0;
-      drawGate(L.gateLX, BIN_COL,  "BIN",  cur && cur.x < 0 ? pull : 0);
-      drawGate(L.gateRX, KEEP_COL, "KEEP", cur && cur.x > 0 ? pull : 0);
+      drawGate(L.gateLX, BIN_COL,  Lang.t("BIN"),  cur && cur.x < 0 ? pull : 0);
+      drawGate(L.gateRX, KEEP_COL, Lang.t("KEEP"), cur && cur.x > 0 ? pull : 0);
 
       drawChute();
       drawHand();
@@ -1011,7 +1011,7 @@
          has to be earned — a deliberate player lands two stars, not three. */
       var stars = score >= 4000 ? 3 : score >= 1200 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? "SHARP EYE!" : title,
+        title: stars === 3 ? Lang.t("SHARP EYE!") : title,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,

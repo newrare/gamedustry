@@ -253,12 +253,32 @@ button, not a level.
 
 Three thresholds on one number are worth nothing to a player who cannot see
 where they stand against them — that is an endless run with a score to
-remember. So the round wears a small pill **under** the HUD, centred on the
-score it is measured against: the level number, the three stars lighting as
-they are crossed, the next threshold, and a bar walking toward it. Not *in* the
-HUD: the top band is the game's, all of it, and the thirteen fill it
-differently — the same reasoning that put MENU and OPTIONS in the opposite
-corner. `--hud-h` and `Layout` are untouched.
+remember. So the round wears a pill in the **bottom-left corner**: the level
+number, the three stars lighting as they are crossed, the next threshold, and a
+bar walking toward it. Not *in* the HUD: the top band is the game's, all of it,
+and the thirteen fill it differently. `--hud-h` and `Layout` are untouched — the
+pill is an overlay, the world runs under it.
+
+It hung under the HUD, centred, until it was read against real frames of all
+thirteen: that is the one place every game puts something (the first row of a
+bubble wall, the ceiling of a shaft, an incoming rope), and being tucked there
+also kept it small — 18 px against the HUD's own 28 px pills and its 78 px
+score, so the number that says how the run is going was the smallest thing on
+the screen. The bottom-left corner is free in twelve of the thirteen and
+mirrors MENU / OPTIONS in the opposite one, which is what lets it be read at
+size.
+
+The two corners are therefore the SHELL's, and a game anchors no instrument and
+no word in either. Two games had to answer for it:
+
+| game             | what was in the corner                            | what moved                                                        |
+| ---------------- | ------------------------------------------------- | ----------------------------------------------------------------- |
+| `games/arcider`  | the shield rail down the left flank, and the km/h | the game: both to the right flank, above MENU / OPTIONS           |
+| `games/slipdeck` | the five-card hand, edge to edge, and its worth   | the pill: `--lv-hud-bottom:392px` in its SKIN, onto the free felt |
+
+`--lv-hud-left` and `--lv-hud-bottom` are the escape, and they are a SKIN's to
+set. Read the corner off a real frame before writing a number
+(`assets/image/screen/<slug>-NN.jpg` is the web build, not the playable).
 
 What it reads is `Game.levelProgress()` when the game has one and the HUD score
 otherwise — **the same rule as `levelScore`**, so a level can never be scored on
@@ -268,7 +288,8 @@ one number and shown against another.
 The objective stays the measure and a level is still cleared by meeting it — the
 hook only ever takes stars away, never hands one out that the value did not
 reach. It is for a round whose result is not a quantity: arcider's board is a
-race, so the flag has to be crossed before the distance pays in full (below).
+race, so the flag has to be crossed before the distance pays in full (below),
+and echomaze's is a door, so the gate has to be found (below too).
 The cap runs on the live pill as well as on the result, so the stars a round
 wears are the stars it will be paid; the bar under them keeps walking the raw
 bands, because the distance to the next threshold is the same either way.
@@ -322,21 +343,21 @@ available before a bench exists. The flavour objectives stay on the table for
 when one does — the machinery takes them unchanged, through `levelProgress()`
 and `levelScore`.
 
-| game          | round shape          | measured on | the objective a level sets | what the thirty levels move (`L1 → L30`)                                                                                                 |
-| ------------- | -------------------- | ----------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **arcider**   | a race, to the arch  | metres      | `200 → 1 300 m`            | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                       |
-| **blight**    | 60 s, bubble shooter | score       | `350 → 2 300`              | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                      |
-| **bouncetry** | ends with the balls  | score       | `350 → 2 300`              | `rows 7→11`, `startBalls 8→4`, `multiBalls 3→2`, `bonusBricks 4→1`, `pullAfter 7→4`                                                      |
-| **chainring** | timed, on the beat   | score       | `700 → 4 600`              | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`          |
-| **echomaze**  | ends with the pulses | score       | `500 → 3 500`              | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 1.4→0.55`, `bounceJitter .03→.09`                           |
-| **gearball**  | 45 s, fill the ring  | score       | `1 100 → 7 300`            | `ring.gears 6→12`, `ring.speed 240→420`, `ring.accel 3→9`, `ring.magSize 4→2`, `ring.reload .34→.60`, `ring.lives 5→2`                   |
-| **marshmelt** | endless, rising lava | score       | `125 → 850`                | `riseSeconds 110→45`, `lavaEnd .22→.45`, `spawnEvery .9→.45`, `fastChance .2→.65`, `rampSeconds 90→40`, `airShots 2→1`                   |
-| **orbinity**  | 30 s, orbits         | score       | `250 → 1 700`              | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`      |
-| **radiam**    | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                           |
-| **slipdeck**  | 30 s, poker swipe    | score       | `475 → 3 100`              | `play.chuteDepth 4→2`, `play.shoeBias .85→.40`, `play.fuse 4.6→2.2`, `play.fuseRamp .06→.18`, `play.fuseFloor 1.6→0.9`, `play.lives 4→2` |
-| **spinshock** | endless, top battle  | score       | `350 → 2 300`              | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                |
-| **triverse**  | endless, 3 lanes     | metres      | `180 → 1 200 m`            | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`           |
-| **vipera**    | endless, the burrow  | metres      | `100 → 650 m`              | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`      |
+| game          | round shape          | measured on | the objective a level sets | what the thirty levels move (`L1 → L30`)                                                                                                                                  |
+| ------------- | -------------------- | ----------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **arcider**   | a race, to the arch  | metres      | `200 → 1 300 m`            | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                                                        |
+| **blight**    | 60 s, bubble shooter | score       | `350 → 2 300`              | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                                                       |
+| **bouncetry** | ends with the balls  | score       | `350 → 2 300`              | `rows 7→11`, `startBalls 8→4`, `multiBalls 3→2`, `bonusBricks 4→1`, `pullAfter 7→4`                                                                                       |
+| **chainring** | timed, on the beat   | score       | `700 → 4 600`              | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`                                           |
+| **echomaze**  | ends with the pulses | score       | `500 → 3 500`              | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 2.6→1.5`, `bounceJitter .03→.09`, `surgePeriod 1.15→0.85` — **and one rule per band**, below |
+| **gearball**  | 45 s, fill the ring  | score       | `1 100 → 7 300`            | `ring.gears 6→12`, `ring.speed 240→420`, `ring.accel 3→9`, `ring.magSize 4→2`, `ring.reload .34→.60`, `ring.lives 5→2`                                                    |
+| **marshmelt** | endless, rising lava | score       | `125 → 850`                | `riseSeconds 110→45`, `lavaEnd .22→.45`, `spawnEvery .9→.45`, `fastChance .2→.65`, `rampSeconds 90→40`, `airShots 2→1`                                                    |
+| **orbinity**  | 30 s, orbits         | score       | `250 → 1 700`              | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`                                       |
+| **radiam**    | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                                                            |
+| **slipdeck**  | 30 s, poker swipe    | score       | `475 → 3 100`              | `play.chuteDepth 4→2`, `play.shoeBias .85→.40`, `play.fuse 4.6→2.2`, `play.fuseRamp .06→.18`, `play.fuseFloor 1.6→0.9`, `play.lives 4→2`                                  |
+| **spinshock** | endless, top battle  | score       | `350 → 2 300`              | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                                                 |
+| **triverse**  | endless, 3 lanes     | metres      | `180 → 1 200 m`            | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`                                            |
+| **vipera**    | endless, the burrow  | metres      | `100 → 650 m`              | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`                                       |
 
 The three distance ranges are calibrated on **duration**, not on a threshold:
 their speed ramps are known, so a target in metres converts straight to a round
@@ -642,6 +663,135 @@ ends it early when it is earned. The board-clear objective is still the better
 one, and it is still one `levelProgress()` away whenever a bench can calibrate
 it.
 
+### echomaze — the stars are the gate, and the rack is the score
+
+Its objective stays the score, but a run that empties the rack into five dead
+ends was worth three stars for the walls it mapped — which is the same lie
+arcider's distance told about its race. The board has one question, and it is
+the door, so `Game.levelStars` caps the bands onto it:
+
+| the run                                              | stars |
+| ---------------------------------------------------- | ----- |
+| the gate found for the **fewest pulses it can cost** | 3     |
+| the gate found, whatever the rack cost               | 2     |
+| no way out, objective covered                        | 1     |
+| no way out, short of the objective                   | 0     |
+
+The top band is `shotPar`, not a constant: one pulse on most boards, **two on a
+board whose crystal stands in a dead end**, because the key is a whole shot
+there and three stars has to keep meaning "as cheap as this board can be"
+rather than "impossible".
+
+The third band is a cap over a value the score has to reach anyway, so the
+escape had to become worth reaching it with. **A pulse left in the rack pays
+`spareBonus` (1500), and a pulse spent can never farm that much** — a whole
+extra run through the maze is a few hundred points of walls, bounces and rows.
+So the maximum score of a board *is* the first-shot escape, the two rules agree
+by construction, and trying the six doors by elimination is paid for out of the
+total. `escapeBonus` (3500) plus the rows a climb pays is the floor of an
+escape: it clears 1.5x the objective at level 30, so finding the gate is worth
+its two stars however long it took.
+
+The cap holds the live pill to one star until the gate, so the shell's
+three-star slow motion can only ever land on an escape — where the game was
+already holding the frame for its own callout.
+
+The playable has no objective to cover, so it reads the same ladder against
+`CONFIG.parScore` instead. It is benched, not guessed: on the shipped board a
+rack emptied into wrong doors scores 5 600-6 800 over six seeds and a single
+pulse scores ~2 300, so **5 000** is a rack spent reading the maze rather than
+one lucky shot. The same bench prices the rest of the ladder — a first-shot
+escape is ~13 500 against a last-pulse escape's ~9 500, which is the 1 500 a
+pulse is worth, five times over.
+
+### echomaze — one rule per band, and the band comes off `d`
+
+The lerped knobs above only ever make the same board bigger, darker and shorter
+on pulses: a ramp of PERCEPTION, and by level 30 the player is doing nothing
+new, only faster. So each of the five bands of `CONFIG.bands` now carries the
+RULE that arrives with it, declared on the band and read through `applyLevel`:
+
+| band        | rule               | what it adds to the read                                                                                                                                                                                                                                                                                 |
+| ----------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Warm-up   | —                  | the board, and nothing else                                                                                                                                                                                                                                                                              |
+| 2 Pressure  | `decoys: 2`        | three gates in the ceiling, one drawing at every moment of the round; the only tell is the beacon that pulses out of the true one while the board is powered up — a thing that HAPPENS on it, never a thing the other two lack; a pulse that climbs into a false one is eaten and takes the gate with it |
+| 3 Squeeze   | `crystal: "split"` | the ceiling is barred until the crystal is shattered — in the bay (a ricochet) over the band's lower half, in a dead end (a whole pulse, and `shotPar` moves to 2) over its upper half                                                                                                                   |
+| 4 Overdrive | `surge: true`      | an electric fence along the mouth row with ONE gap in it, and the gap tours the doors a step a beat, in an order that is random per board and then repeats; a pulse that meets the fence is destroyed on it, and the door it struck BURNS OUT — open for the rest of the round and out of the tour       |
+| 5 Meltdown  | all three          | —                                                                                                                                                                                                                                                                                                        |
+
+Two things make this hold together rather than being five special cases:
+
+The fence is a TIMING instrument, not a second memory test. Nothing is shown up
+front and no phase is paused for it: the gap is lit, the cycle turns from the
+moment the lights go out, and what has to be worked out is the ORDER it tours
+in — a pulse takes the better part of a beat to climb out of the bay, so the
+shot is fired at the door the gap is about to reach and never at the one it is
+standing on. Its first shape was the opposite (one door sealed, a cycle
+rehearsed in a phase of its own before the round) and it was two memorisations
+stacked on one board; inverting it made the same knob a skill.
+
+A door only stops one pulse. It destroys that pulse and burns out: it stays
+open for the rest of the round and leaves the tour, which keeps turning over
+the doors that are left. So a mis-timed shot is paid for once and BUYS
+something — the door it was aimed at is free from then on — instead of being a
+toll the same door can charge again and again, and a board where the true
+corridor sits behind an unlucky door cannot become a war of attrition against
+the clock of the fence. The pulse dying on the wire is what holds the price up:
+one thrown back would rattle round the bay and take two or three more doors
+down on the ricochet, so a single bad shot would open the whole fence. One
+pulse, one door. A shot that goes through the gap costs nothing and changes
+nothing: the pulse is in the maze and the cycle turns on.
+
+What it measures as, on the same headless pilot: band 4 escapes 8/8 on **2.9
+shots** where the open board took 5.0, and scores ~35% more. That is not the
+fence being kind — it is the fence spacing the shots out. A pilot that fires
+whenever it is ready empties the rack into the same corridor; one that has to
+wait for the gap fires once, watches, and keeps the rest of the rack, which is
+what `spareBonus` pays for. The cost lands on a mis-timed shot instead.
+
+- **The band is `min(4, floor(d * 5))`, off the same `d` the knobs are lerped
+  with** — which is exactly what the map computes its own card from. Counting
+  levels six at a time looks like the same thing and is not: the map FORKS, so
+  a band is a stretch of rows and not six consecutive numbers, and the two
+  disagree at two of the four seams. `Game.applyLevel(d)` is how the game gets
+  it, which makes echomaze the third game to use that hook — for a board's
+  RULES rather than for a table of knobs.
+- **Nothing is placed on a cell a pulse cannot reach.** `carve()` is allowed to
+  leave a pocket sealed behind the main path, and those cells are `dead` like
+  any other — a key standing in one would be a board whose gate never opens. A
+  flood fill from the doors filters both the crystal and the false gates.
+
+The bar goes over **every** gate, not the true one alone: a bar on the real one
+would be a sign saying which of the three it is, and the false gates of the last
+band would stop being false.
+
+Measured on a headless pilot that knows the true door but searches blind for the
+crystal's corridor, 8 seeds a level: 8/8 escapes through bands 1, 2 and 4, 4-5/8
+on band 3's dead-end crystal, 1-3/8 on band 5 with four pulses and all three
+rules at once. A player reads both corridors off the reveal, which the pilot
+cannot, so the last band is the one to watch on a real run.
+
+### The name on the card
+
+The five generic bands — Warm-up, Pressure, Squeeze, Overdrive, Meltdown —
+describe a ladder and nothing else. A game names its own in
+`web.levels.bands`, in both languages, and four do today:
+
+| game     | the five                                                         | named after               |
+| -------- | ---------------------------------------------------------------- | ------------------------- |
+| arcider  | DUSK · DAY · MIST · OVERCAST · NIGHT                             | its skies                 |
+| radiam   | ATELIER · LAGOON · RELIQUARY · SUMI · CIRCUIT                    | its biomes                |
+| blight   | MARSH · RUINS · GORGE · CASTLE · THRONE                          | the descent               |
+| echomaze | DARK MAZE · FALSE EXITS · CRYSTAL LOCK · LIVE FENCE · FULL SURGE | the RULE each band brings |
+
+`from` is what keeps the name honest, and it is not decoration. The map's own
+bands are ROWS on a forking road, and three of the four turn their world over
+on the LEVEL NUMBER instead — radiam and arcider both say why in as many words:
+*two roads out of a fork have to be the same world, whatever they cost*. Those
+three list `"from": [1, 7, 13, 19, 25]` and the card names the world the round
+will actually build. echomaze reads its band off `d`, which is the map's own
+number, so it leaves `from` out.
+
 ### Two constraints worth knowing before tuning
 
 - **chainring cannot change tempo.** `bpm`, `beatOffset` and `loopBeats` belong
@@ -760,6 +910,34 @@ nothing, and that already holds: the webshell does not call `endRound` there.
   the progression away together — a best score with no stars behind it
   describes nothing. Without a map it is the old row, unchanged.
 
+### FORCE — the map walked out of order, locally only
+
+A level is tuned by playing it, and reaching level 27 through the gates it sits
+behind is twenty-six rounds of warm-up. So the map carries a **FORCE switch**,
+a dashed pill above the card, and it is three things and nothing more:
+
+- **it only EXISTS locally.** `localhost`, a loopback address, a `.local` host
+  or a `file://` build — anywhere else `levels.js` never builds the button, so
+  there is no flag in a URL that can arm it on a deployed site and nothing for
+  a player to find. It is not a cheat behind obscurity; on newrare.games the
+  code does not run.
+- **it never lies about the board.** `isOpen()` is untouched: the padlocks stay
+  shut, a wall stays a wall, the card still reads *locked*, the band on a gated
+  road still reads *Gated* and the goal still says how many stars it wants. All
+  the force changes is whether the button at the bottom is **allowed** to start
+  the round — `⚡ PLAY`, `⚡ GO THIS WAY` — and a shut wall lists the levels
+  behind it instead of the cheapest stars to go back for.
+- **it writes nothing of its own, and the round it starts is a real round.** A
+  forced level is armed, lerped and recorded like any other, which is what
+  makes it useful for tuning rather than a mode beside the game — and it also
+  means a forced clear genuinely unlocks its successors. Wipe the progression
+  in OPTIONS to get the gates back.
+
+Off by default, remembered per machine under one key for the thirteen
+(`dev:force` through `Store`) because it is a property of the desk and not of a
+game. `?force=1` arms one load without writing anything — what a headless bench
+passes — and `?force=0` disarms one load the same way.
+
 ______________________________________________________________________
 
 ## 4. Where it lands in the code
@@ -771,12 +949,13 @@ nothing about levels beyond a number in `CONFIG`.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `packages/webshell/levels.js` / `.css` | the map screen — a full-frame layer over the intro, published as `window.__LEVELS__` and mounted by `menu.js`        |
 | `manifest.json` → `web.levels`         | where a game declares its objective, its copy and its ranges, next to `web.modes` and `web.copy`                     |
+| `web.levels.bands`                     | optional: the five band names, `en` / `fr`, plus `from` when the game splits them on the LEVEL NUMBER (below)        |
 | `CONFIG.web.levels`                    | that same block on the page — the existing `web` injection already carries it, so there is no second mechanism       |
 | `CONFIG.slug`                          | injected by the web build; what scopes `prog:<slug>` and `best:<slug>`                                               |
 | `CONFIG.level`                         | the chosen level, written before `startGame()` — exactly how `CONFIG.mode` already works, and `0` for endless        |
 | `Game.applyLevel(d)`                   | optional hook for what a lerp cannot express (a maze seed, a brick blueprint, a win condition); `null` = endless     |
 | `Game.levelProgress()`                 | optional: what the objective is measured against while the round runs — the HUD score otherwise                      |
-| `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, not a distance         |
+| `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, echomaze's is a door   |
 | `Game.levelWon()`                      | optional: how the game ends its own round on the third star, so the end screen keeps its stat rows                   |
 | `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides           |
 | `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes |

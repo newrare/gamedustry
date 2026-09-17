@@ -319,7 +319,11 @@
 
    Nothing about the round moves for them: --hud-h and --cta-h are the game's
    own numbers and Layout is untouched. They do sit OVER the play area, which is
-   why they are small and dark rather than a bar. */
+   why they are small and dark rather than a bar.
+
+   The OTHER bottom corner is the level pill's, on the same terms and for the
+   same reasons (levels.css). Between them the two corners are the shell's, and
+   a game anchors no instrument and no word in either. */
 #web-ctls {
   position:absolute; right:0; bottom:0; z-index:22;
   padding:0 26px calc(var(--inset-bottom) + 26px) 0;

@@ -89,6 +89,7 @@
       objective: "OBJECTIVE", missed: "OBJECTIVE MISSED",
       threeStars: "THREE STARS!", cleared: "LEVEL CLEARED!",
       levelsEntry: "LEVELS", next: "NEXT LEVEL", retry: "RETRY", map: "MAP",
+      toHome: "Back to the title screen",
       resetProgress: "Erase the thirty levels",
       resetProgressAsk: "Tap again — thirty levels of stars are lost",
       resetProgressDone: "Progression erased"
@@ -122,6 +123,7 @@
       objective: "OBJECTIF", missed: "OBJECTIF MANQUÉ",
       threeStars: "TROIS ÉTOILES !", cleared: "NIVEAU RÉUSSI !",
       levelsEntry: "NIVEAUX", next: "NIVEAU SUIVANT", retry: "RECOMMENCER", map: "CARTE",
+      toHome: "Retour à l’écran titre",
       resetProgress: "Effacer les trente niveaux",
       resetProgressAsk: "Touchez à nouveau — trente niveaux d’étoiles sont perdus",
       resetProgressDone: "Progression effacée"
@@ -229,6 +231,29 @@
      each other instead of all feeling like level 1. */
   function dOf(n) { return Math.pow((NODE[n].pos - 1) / (ROWS - 1), 0.9); }
   function bandOf(n) { return Math.min(4, Math.floor(dOf(n) * 5)); }
+
+  /* THE NAME ON THE CARD. The five generic ones (Warm-up … Meltdown) describe
+     a ladder and nothing else, so a game may name its own bands in
+     `web.levels.bands` — its biomes, or the rule each band brings — in the two
+     languages, exactly like `web.levels.copy`.
+
+     `from` is what keeps that name honest. The map's own bands are ROWS on a
+     forking road (`bandOf`), and three of the thirteen deliberately turn their
+     world over on the LEVEL NUMBER instead — radiam and arcider both say so in
+     as many words: two roads out of a fork have to be the same world, whatever
+     they cost. A game that splits at 1/7/13/19/25 lists those numbers here and
+     the card names the world the round will actually build; a game that reads
+     its band off `d` (echomaze) leaves `from` out and gets the map's. */
+  function bandName(n) {
+    var b = (SPEC && SPEC.bands) || null, list, i = bandOf(n), j;
+    if (!b) return T.bands[i];
+    if (b.from && b.from.length) {
+      i = 0;
+      for (j = 0; j < b.from.length; j++) if (n >= b.from[j]) i = j;
+    }
+    list = b[LANG] || b.en;
+    return (list && list[i]) || T.bands[Math.min(i, T.bands.length - 1)];
+  }
 
   function preds(n) {
     var out = [];
@@ -386,6 +411,48 @@
 
   function wipe() { save = { v: 1, l: {} }; persist(); }
 
+  /* ── 3b. FORCE — the map walked out of order, on this machine only ─── */
+
+  /* A level is tuned by playing it, and reaching level 27 through the gates it
+     sits behind is twenty-six rounds of warm-up. FORCE is the door round that,
+     and it is three things and nothing more:
+
+       - it only EXISTS locally. `LOCAL` is localhost, a loopback address, a
+         `.local` host or a `file://` build — the switch is not built on a
+         deployed site, so there is no flag in a URL that can turn it on there
+         and nothing for a player to find.
+       - it never touches the save, and it never lies about the board.
+         `isOpen()` stays honest: the padlocks stay shut, a wall stays a wall,
+         the card still reads *locked*. All the force changes is whether the
+         button at the bottom is ALLOWED to start the round. A forced round
+         then records its stars like any other — which is what makes it useful
+         for tuning instead of a mode of its own.
+       - it is OFF by default and remembered per machine (one key for the
+         thirteen: it is a property of the desk, not of a game), so a session
+         spent testing the gating is not fighting it.
+
+     `?force=1` arms it for one load without writing anything, which is what a
+     headless bench passes; `?force=0` disarms one load the same way. */
+  var LOCAL = (function () {
+    try {
+      if (location.protocol === "file:") return true;
+      var h = location.hostname;
+      return h === "" || h === "localhost" || h === "127.0.0.1" ||
+             h === "::1" || h === "[::1]" || /\.local$/.test(h);
+    } catch (e) { return false; }
+  })();
+  var FORCE_KEY = "dev:force";
+  var force = false;
+  if (LOCAL) {
+    var qf = null;
+    try { qf = /[?&#]force=([01])\b/.exec(location.search + location.hash); } catch (e) {}
+    force = qf ? qf[1] === "1" : !!W.Store.get(FORCE_KEY, 0);
+  }
+
+  /* The one thing the rest of the file asks: may this level be started even
+     though the road has not reached it? */
+  function canPlay(n) { return isOpen(n) || force; }
+
   /* ── 4. handing the level to the game ─────────────────────────────────── */
 
   /* `d` is the only thing a game is handed. The manifest names the knobs and
@@ -473,7 +540,7 @@
        column takes four rows before it overflows the frame — so it goes in at
        the top and the game's own last row makes way. */
     var rows = [{ label: T.objective, value: num(goal),
-                  grade: st ? "accent" : "" }];
+                  grade: st === 3 ? "gold" : st ? "accent" : "" }];
     result.rows = rows.concat(result.rows || []).slice(0, 4);
 
     record(n, st, value);
@@ -490,9 +557,9 @@
      light as they are crossed.
 
      It is NOT in the HUD: the top band is the game's, all of it, and the
-     thirteen fill it differently. This is one small pill under it, centred
-     under the score it is measured against — the same reasoning that put the
-     MENU and OPTIONS controls in the bottom-right corner.
+     thirteen fill it differently. It is the bottom-LEFT corner, mirroring the
+     MENU and OPTIONS controls in the opposite one — the one corner eleven of
+     the thirteen leave empty, and the only place it can be read at size.
 
      The measure is the game's `levelProgress()` when it has one, and the HUD
      score otherwise — the same rule as `levelScore` at the end of the round,
@@ -559,24 +626,40 @@
      has already maxed a level should not have to die to be told so.
 
      The slow-down is `Loop.rate`, so the world, the round clock and the game's
-     own update ease off together and the frame keeps rendering at 60. */
-  var WIN_RAMP = 620, WIN_HOLD = 420;
+     own update ease off together and the frame keeps rendering at 60. It also
+     buys the time below: a game that schedules its own end (echomaze waits out
+     its hero callout before calling endRound) is slowed with everything else,
+     so the level layer stays the one that ends the round.
+
+     THREE STARS IS THE LAST THING THE ROUND SAYS, and it is a `record` — the
+     end-of-run peak, not one more milestone. It therefore WAITS for the game's
+     own callouts to play out first: echomaze lands PERFECT READ! on the very
+     frame the third star lights, and two hero callouts over one another read
+     as neither. `Pop.pending()` is how long that takes; the wait is capped so
+     a game that stacks several never leaves the player in slow motion. */
+  var WIN_RAMP = 620, WIN_WAIT = 1600, WIN_HOLD = 1100, WIN_ENTER = 620;
 
   function winRound(value) {
     won = true;
     W.Fx.flash("#ffd43b", 0.45, 2.2);
     W.Fx.shake(9, 0.3);
     W.Music.duck(0.4, 0.35);
-    W.Pop.show("perfect", { word: T.threeStars, at: "upper", hold: 1.1 });
     W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
 
+    // the world eases off straight away: that is the round stopping, not a word
     var t0 = performance.now();
     (function ramp(now) {
       var k = Math.min(1, ((now || performance.now()) - t0) / WIN_RAMP);
       W.Loop.rate(1 - 0.88 * k * k);                    // 1 -> 0.12, easing in
-      if (k < 1) { requestAnimationFrame(ramp); return; }
-      setTimeout(function () { finishWin(value); }, WIN_HOLD);
+      if (k < 1) requestAnimationFrame(ramp);
     })(t0);
+
+    var wait = Math.min(W.Pop.pending ? W.Pop.pending() : 0, WIN_WAIT);
+    setTimeout(function () {
+      if (W.state() !== "playing") return;              // it died on the way down
+      W.Pop.show("record", { word: T.threeStars, hold: WIN_HOLD });
+      setTimeout(function () { finishWin(value); }, WIN_ENTER + WIN_HOLD);
+    }, wait);
   }
 
   /* The game gets to end its own round when it can (`Game.levelWon`), because
@@ -803,7 +886,8 @@
   /* ── 7. the screen ────────────────────────────────────────────────────── */
 
   var API = null;                 // { el, icon, start } — handed in by menu.js
-  var box, scroll, canvasBox, svg, card, headTitle, headEyebrow, totalBox, totalN;
+  var box, scroll, canvasBox, svg, card, headTitle, headEyebrow, totalBox, totalN
+  var homeBtn, devBtn;
   var cName, cBand, cGoal, cNote, cChips, cDiff, cDiffN, cPlay;
   var picked = 1;                 // a level number, or { road: index }
 
@@ -824,6 +908,11 @@
     if (again) { tapOn = null; onPlay(); }
   }
   var built = false, shown = false;
+
+  /* What a forced button wears, so a screenshot of one is never mistaken for
+     a level the board actually opened. Not player copy: it is only ever built
+     on a local host. */
+  var FORCED = "\u26a1 ";
 
   var PADLOCK = '<svg class="padlock" viewBox="0 0 24 24" fill="none" ' +
     'stroke-linecap="round" stroke-linejoin="round">' +
@@ -858,7 +947,32 @@
     totalN = el("span"); totalN.id = "lv-total-n";
     totalBox.appendChild(totalN);
     head.appendChild(totalBox);
+    /* The map is a screen the player lives on, not a panel they fell into: the
+       back arrow walks one step, the house leaves for the title screen from
+       wherever they are — the help panel included. */
+    homeBtn = el("button", "web-back", API.icon("home"));
+    homeBtn.id = "lv-home";
+    homeBtn.setAttribute("aria-label", T.toHome);
+    homeBtn.addEventListener("click", hide);
+    head.appendChild(homeBtn);
     box.appendChild(head);
+
+    /* The force switch (section 3b) — the one piece of this screen that is
+       not the game. It is built on a local host and nowhere else, so there is
+       no branch to take on a deployed site and nothing to hide. It sits over
+       the foot of the map rather than in the header, which is four controls
+       wide already. */
+    if (LOCAL) {
+      devBtn = el("button"); devBtn.id = "lv-dev";
+      devBtn.addEventListener("click", function () {
+        force = !force;
+        W.Store.set(FORCE_KEY, force ? 1 : 0);
+        writeDev();
+        draw();
+      });
+      writeDev();
+      box.appendChild(devBtn);
+    }
 
     scroll = el("div"); scroll.id = "lv-scroll";
     canvasBox = el("div"); canvasBox.id = "lv-canvas";
@@ -894,13 +1008,23 @@
     W.Fit.room("lv-title", 400);
   }
 
+  function writeDev() {
+    if (!devBtn) return;
+    devBtn.className = force ? "on" : "";
+    devBtn.textContent = (force ? FORCED : "") + "FORCE " + (force ? "ON" : "OFF");
+  }
+
   /* The same backdrop the menu is dressed with, in the same order: the painted
      screen the motor already carries, then a picture the game embeds itself,
      then the gradient its SKIN paints the page with. Copied as a background
      rather than moved — the menu is still behind this layer and keeps its own
      scene. */
   function dressBackdrop(bg) {
-    var art = CONFIG.art && CONFIG.art.backgroundPhone;
+    /* Through Art rather than off CONFIG: a game whose scene changes per band
+       has no plain `backgroundPhone` key at all, and Art is what resolves the
+       default one (packages/shell/shell.js). The map keeps that default — it
+       shows all thirty levels, so it belongs to no single band. */
+    var art = W.Art ? W.Art.src(W.Art.sceneKey()) : (CONFIG.art && CONFIG.art.backgroundPhone);
     if (art) { bg.style.backgroundImage = "url(" + art + ")"; return; }
     var images = (W.ASSETS && W.ASSETS.images) || {};
     var src = images.bg || images.bg1 || null;
@@ -1047,15 +1171,19 @@
     if (picked && picked.road != null) roadCard(ROADS[picked.road]);
     else levelCard(picked);
     scroll.style.bottom = card.offsetHeight + "px";
+    /* The switch rides on the card's height like the scroll band does: a
+       wall's card is twice a level's, and a pill over the top of it would be
+       sitting on the explanation. */
+    if (devBtn) devBtn.style.bottom = (card.offsetHeight + 16) + "px";
   }
 
   function levelCard(n) {
     card.className = "";
     if (n === TUTO) return tutoCard();
     if (n === BONUS) return bonusCard();
-    var d = dOf(n), rec = save.l[n], can = isOpen(n);
+    var d = dOf(n), rec = save.l[n], can = isOpen(n), go = canPlay(n);
     cName.textContent = T.level + " " + n;
-    cBand.textContent = T.bands[bandOf(n)];
+    cBand.textContent = bandName(n);
     cGoal.innerHTML = goalText(n);
 
     cNote.innerHTML = rec
@@ -1069,8 +1197,11 @@
     cDiff.querySelector(".bar i").style.width = Math.round(d * 100) + "%";
     cDiffN.textContent = d.toFixed(2);
 
-    cPlay.disabled = !can;
-    cPlay.textContent = !can ? T.locked : rec ? T.replay : T.play;
+    /* A locked level the force opens keeps its note — the card says it is
+       gated, and the button says it is going anyway. */
+    cPlay.disabled = !go;
+    cPlay.textContent = !can ? (go ? FORCED + (rec ? T.replay : T.play) : T.locked)
+                       : rec ? T.replay : T.play;
   }
 
   /* Level 0 is not a level either: the button opens the Help panel instead of
@@ -1104,11 +1235,14 @@
   /* A road's card answers the two questions the fork asks: what is down there,
      and — if it is gated — where the missing stars are. */
   function roadCard(rd) {
-    var shut = roadShut(rd), have = totalStars(), short = rd.gate - have;
+    /* The band reads the real state and the body reads the reachable one: a
+       forced wall still says *gated*, and still lists the road behind it. */
+    var locked = roadShut(rd), shut = locked && !force;
+    var have = totalStars(), short = rd.gate - have;
     card.className = "is-wall";
     cName.textContent = rd.len + " " + (rd.len > 1 ? T.title.toLowerCase() : T.level.toLowerCase());
     cBand.textContent = (rd.side < 0 ? T.roadL : T.roadR) + " · " +
-      (rd.gate ? (shut ? T.gated : T.opened) : T.free);
+      (rd.gate ? (locked ? T.gated : T.opened) : T.free);
     cDiff.style.display = "none";
 
     var i;
@@ -1116,7 +1250,11 @@
     /* A gate says one thing and nothing else: what it costs, and what the
        player is holding. The road it opens is drawn on the map already. */
     if (!shut) {
-      cGoal.innerHTML = rd.gate ? fill(T.roadPaid, { n: rd.gate, have: have }) : "";
+      /* A wall the force walked through still owes its stars, so it says what
+         it wants rather than what it was paid. */
+      cGoal.innerHTML = !rd.gate ? ""
+        : locked ? fill(T.roadWants, { n: rd.gate, have: have, short: short })
+        : fill(T.roadPaid, { n: rd.gate, have: have });
       cNote.innerHTML = "";
       var chips = "";
       for (i = 0; i < rd.nodes.length; i++) {
@@ -1126,8 +1264,8 @@
       }
       cChips.innerHTML = chips;
       bindChips();
-      cPlay.disabled = !isOpen(rd.entry);
-      cPlay.textContent = T.takeRoad;
+      cPlay.disabled = !canPlay(rd.entry);
+      cPlay.textContent = (locked || !isOpen(rd.entry) ? FORCED : "") + T.takeRoad;
       return;
     }
 
@@ -1233,8 +1371,10 @@
     if (picked && picked.road != null) {
       var rd = ROADS[picked.road];
       // A shut wall's button goes to the cheapest star, not through the wall.
+      // Unless the force is on, in which case it goes through the wall.
       var chip = cChips.querySelector("button");
-      select(roadShut(rd) && chip ? +chip.getAttribute("data-lv") : rd.entry);
+      var stop = roadShut(rd) && !force;
+      select(stop && chip ? +chip.getAttribute("data-lv") : rd.entry);
       scrollTo(picked);
       return;
     }
@@ -1244,7 +1384,7 @@
   /* startGame() unlocks the audio itself, and this runs inside the click that
      asked for the round, so the gesture is still the player's. */
   function play(n) {
-    if (n !== BONUS && !isOpen(n)) return;
+    if (n !== BONUS && !canPlay(n)) return;
     arm(n);
     hide();
     W.start();
@@ -1330,6 +1470,7 @@
     setLang: function (code) {
       LANG = STRINGS[code] ? code : "en";
       T = STRINGS[LANG];
+      if (homeBtn) homeBtn.setAttribute("aria-label", T.toHome);
       if (shown) { headEyebrow.textContent = T.pick; draw(); }
       if (helpOn) fillHelp();
     },

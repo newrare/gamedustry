@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -115,7 +115,39 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b> et enchaîner les combos"
+        "tagline": "Tape pour lancer la <b class=\"w-comet\">comète</b><br>de <b class=\"w-planet\">planète</b> en <b class=\"w-planet\">planète</b> et enchaîner les combos",
+        "strings": {
+          " LOST": " PERDU",
+          "BEST COMBO": "MEILLEUR COMBO",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "CHAIN ALIVE": "CHAÎNE INTACTE",
+          "CHAIN COLD": "CHAÎNE REFROIDIE",
+          "COMBO": "COMBO",
+          "COMBO LOST": "COMBO PERDU",
+          "COMBO x": "COMBO x",
+          "COSMIC!": "COSMIQUE !",
+          "EVOLVED": "ÉVOLUTION",
+          "FINAL SCORE": "SCORE FINAL",
+          "INSTALL NOW": "INSTALLER",
+          "KEEP THE CHAIN ALIVE": "GARDE LA CHAÎNE EN VIE",
+          "LAST BREATH": "DERNIER SOUFFLE",
+          "LOST IN SPACE": "PERDU DANS L'ESPACE",
+          "OVERTIME": "PROLONGATION",
+          "OVERTIME OVER": "FIN DE PROLONGATION",
+          "PLANETS HOPPED": "PLANÈTES VISITÉES",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "RUN OVER — x": "PARTIE FINIE — x",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIER ": "PALIER ",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "TOO SLOW": "TROP LENT",
+          "WALL HIT": "MUR PERCUTÉ",
+          "WINDOW CLOSING": "LA FENÊTRE SE FERME",
+          "s PER HOP": "s PAR SAUT"
+        }
       }
     },
     "font": "exo2",

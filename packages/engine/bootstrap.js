@@ -30,6 +30,15 @@
   }
 
   function startGame() {
+    /* ONE ROUND AT A TIME. Every way in lands here — #btn-start, the replay
+       link, the web menu's PLAY, a level card on the map, SPACE — and nothing
+       used to assert that the last one had been taken down. Tear the previous
+       round down first, so a call arriving from inside a running round
+       replaces it instead of being laid on top of it. `Loop.start` is
+       idempotent on its own now (packages/engine/engine.js); this is the round
+       itself saying the same thing, and it is also what stops a clock that was
+       already counting from carrying into the new one. */
+    Loop.stop(); Round.stop();
     Sound.unlock();                       // must run inside a user gesture (iOS)
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it

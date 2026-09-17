@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.8.0",
+  "version": "1.9.3",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -15,11 +15,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de battle royale. Évite les pièges et les adversaires, et choisis entre santé et vitesse.",
+      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges et les adversaires puis choisis vitesse ou récupération.",
       "tags": [
-        "Maintiens pour incliner",
+        "Course",
         "Battle royale",
-        "1020 m"
+        "Turbo"
       ]
     },
     "en": {
@@ -62,11 +62,11 @@
         "lines": [
           {
             "kicker": "COURSE EN BATTLE ROYALE",
-            "line": "Reste en <b>vie</b> et gagne"
+            "line": "Reste en <b>vie</b> pour gagner"
           },
           {
             "kicker": "CHOIX",
-            "line": "Plus de vitesse ou reprise de <b>bouclier</b>"
+            "line": "Plus de <b>vitesse</b> ou récupération"
           },
           {
             "kicker": "RETRO",
@@ -115,7 +115,43 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Incline ton vaisseau à <b class=\"w-press\">droite ou à gauche</b> pour <b class=\"w-pass\">gagner des places</b> sans jamais casser ton <b class=\"w-shield\">bouclier</b>"
+        "tagline": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais casser ton <b class=\"w-shield\">bouclier</b>",
+        "strings": {
+          " IN ": " DANS ",
+          " PILOTS LEFT": " PILOTES EN LICE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "CUT TO ": "COUPERET À ",
+          "DISTANCE (M)": "DISTANCE (M)",
+          "ELIMINATED": "ÉLIMINÉ",
+          "FINAL ": "FINALE ",
+          "FINAL POSITION": "POSITION FINALE",
+          "FINAL SCORE": "SCORE FINAL",
+          "FINISH · ": "ARRIVÉE · ",
+          "FINISH · TAKE THE LEAD": "ARRIVÉE · PRENDS LA TÊTE",
+          "HULL CRITICAL": "COQUE CRITIQUE",
+          "INSTALL NOW": "INSTALLER",
+          "KM/H": "KM/H",
+          "LEADER": "EN TÊTE",
+          "ND": "e",
+          "NEXT CUT · TOP ": "PROCHAIN COUPERET · TOP ",
+          "ON THE PODIUM!": "SUR LE PODIUM !",
+          "PLACES TAKEN": "PLACES PRISES",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "RACE FINISHED!": "COURSE TERMINÉE !",
+          "RACE WON!": "COURSE GAGNÉE !",
+          "RD": "e",
+          "Race again": "Relancer la course",
+          "SCORE": "SCORE",
+          "SHIELD": "BOUCLIER",
+          "SHIELD DOWN": "BOUCLIER À ZÉRO",
+          "ST": "er",
+          "TAKE THE CHARGE LINE": "PRENDS LA LIGNE DE CHARGE",
+          "TAP TO RACE": "TAP POUR FONCER",
+          "TH": "e",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "TOP ": "TOP "
+        }
       }
     },
     "font": "orbitron",
@@ -128,7 +164,30 @@
       },
       "copy": {
         "en": "Reach <b>{n} m</b> before the cells run out",
-        "fr": "Atteins <b>{n} m</b> avant la panne de cellules"
+        "fr": "Gagne la course ou atteins <b>{n} m</b> avant la destruction"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "DUSK",
+          "DAY",
+          "MIST",
+          "OVERCAST",
+          "NIGHT"
+        ],
+        "fr": [
+          "CRÉPUSCULE",
+          "PLEIN JOUR",
+          "BRUME",
+          "CIEL COUVERT",
+          "NUIT"
+        ]
       },
       "tune": {
         "play.pilots": [
