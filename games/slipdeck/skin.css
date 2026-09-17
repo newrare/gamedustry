@@ -12,6 +12,16 @@
     --danger:#ff4a5e; --gold:#ffd43b; --good:#3ddc97;
     /* the two gates, shared by the DOM intro and the canvas */
     --bin:#ff4a5e; --keep:#3ddc97;
+
+    /* THE LEVEL PILL DOES NOT FIT THIS GAME'S BOTTOM-LEFT CORNER.
+       In the web build the five-card hand runs edge to edge at the foot of the
+       frame — its first slot is x 26→149 down to y 1200 — and what the hand is
+       worth is written under it at y 1234. The shell's default corner is on
+       both. So the pill goes up onto the empty felt between the keep/bin chip
+       and the CHUTE row, which is the one band this table leaves clear on the
+       left. Web target only; a playable has no pill.
+       (packages/webshell/levels.css) */
+    --lv-hud-bottom:392px;
   }
   html, body { background:radial-gradient(900px 860px at 50% 36%, #17402f 0%, #0b2419 56%, #040b08 100%); }
 

@@ -647,7 +647,7 @@
         var ko = f.type.score * CONFIG.koScore;
         score += ko; HUD.setScore(score);
         Pop.text(clamp(f.x, Layout.left + 90, Layout.right - 90 - GAUGE_BAND),
-          f.y - f.type.r, "KO +" + ko, { color: col, size: 22, life: 0.6, tier: 1 });
+          f.y - f.type.r, Lang.t("KO +") + ko, { color: col, size: 22, life: 0.6, tier: 1 });
       }
     }
 
@@ -815,8 +815,8 @@
       });
       if (hit.length > 1) {
         Pop.show("bonus", {
-          word: (hit.length > 2 ? "TRIPLE" : "DOUBLE") + " SHOCK",
-          sub: "+" + Math.round(boost * 100) + "% SPIN", at: farSpot(spot.y)
+          word: (hit.length > 2 ? Lang.t("TRIPLE") : Lang.t("DOUBLE")) + Lang.t(" SHOCK"),
+          sub: "+" + Math.round(boost * 100) + Lang.t("% SPIN"), at: farSpot(spot.y)
         });
         Sound.clip("chain", 0.6, 1.12);
       }
@@ -872,7 +872,7 @@
       score += bonus; HUD.setScore(score);
       pushSpin(CONFIG.comboSpin);
       Pop.show(combo >= 25 ? "ultra" : "combo", {
-        word: "COMBO x" + combo, sub: "+" + bonus, at: farSpot()
+        word: Lang.t("COMBO x") + combo, sub: "+" + bonus, at: farSpot()
       });
       Sound.clip("chain", 0.85, 1 + Math.min(combo, 20) * 0.012);
       Overlay.vignette("rgba(255,79,190,.75)", 1, 420);
@@ -888,7 +888,7 @@
       Fx.shake(3, 0.12);
       Sound.clip("miss", 0.45, 1.15);
       Pop.show("alert", {
-        word: "MISS", sub: "-" + Math.round(CONFIG.whiffCost * 100) + "% SPIN",
+        word: "MISS", sub: "-" + Math.round(CONFIG.whiffCost * 100) + Lang.t("% SPIN"),
         at: farSpot()
       });
       if (spin <= 0) fall();
@@ -1146,7 +1146,7 @@
       var best = Store.get("bestScore", 0);
       var stars = score >= 3000 ? 3 : score >= 900 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? "SPIN MASTER!" : CONFIG.copy.gameOver,
+        title: stars === 3 ? Lang.t("SPIN MASTER!") : CONFIG.copy.gameOver,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,

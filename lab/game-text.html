@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — game text</title>
+<style>
+/* ===========================================================================
+   COPY DESK — every word a game shows a player, read as COPY.
+
+   A game's copy is written where it is USED, which is the right place to write
+   it and the wrong place to proofread it. An intro sentence lives in three
+   files. A HUD label is the second argument of a call nine hundred lines down,
+   between the physics and the spawner. The French half of it all is in a
+   manifest nobody opens while writing gameplay. So the copy is never read AS
+   copy — it is read one call at a time, in English, next to the code that
+   fires it, which is how a game ends up saying LENGTH in one corner and BODY
+   in another.
+
+   This page is that list, and nothing else. Two sections, EN and FR, each cut
+   into the seven places a player reads something:
+
+     LISTING        the site, itch and the store cards — read before install
+     TITLE SCREEN   the one sentence that explains the game
+     SHELL          the buttons and labels the motor draws around the round
+     HUD            the two side slots of the top band
+     THE ROUND      callouts, floating values, what the canvas paints
+     END SCREEN     the title and the stat rows
+     LEVELS         the objective, one sentence with {n} in it
+
+   Every row is one string with an edit field, and APPLY writes the lot back
+   (tools/lab/apply-text.mjs) — into manifest.json, games/<slug>/game.js and
+   games/<slug>/page.html, whichever holds it — then rebuilds the game and the
+   two catalogues, so a proofreading pass leaves a tree that still passes
+   `node tools/update.mjs`.
+
+   Three things make a row honest, and they are the whole reason this is not a
+   find-and-replace:
+
+     ONE ROW, EVERY SITE.  "LENGTH" is the HUD's left label written at three
+     call sites. It is ONE row here, and applying it writes all three — editing
+     one of the three is exactly the bug the page exists to prevent. The count
+     is on the row.
+
+     A MIRROR IS NOT A SECOND STRING.  #intro-title and #intro-tagline in
+     page.html are rewritten from CONFIG at boot. They ride on the CONFIG row
+     and are written with it; they are never offered on their own, because
+     editing one alone changes nothing a player would see and desyncs the
+     source.
+
+     A FRAGMENT KEEPS ITS EXPRESSION.  A game writes
+     `st === 3 ? "APEX VIPER!" : CONFIG.copy.gameOver`. Both branches are copy,
+     so the unit here is the STRING LITERAL and not the argument: the row is
+     the literal, marked as a fragment, with the expression around it printed
+     under it. Nothing is ever reprinted — an edit splices one literal — so the
+     ternary, the concatenation and their comments come back as they were.
+
+   What is NOT here is as deliberate. The motor's own menu strings (PLAY,
+   OPTIONS, LEAVE?) belong to packages/webshell/menu.js and are the same for
+   the thirteen; a game that wants its own wording writes it under `web.copy`,
+   which IS listed. Copy a game assembles in a local variable before the call
+   is out of reach of a parser and is not listed either — tools/lab/scan-text.mjs
+   says so rather than half-listing it.
+
+   Served by `make text` (tools/lab/serve-text.mjs). The same list as text, no
+   browser: `node tools/lab/scan-text.mjs <slug>`.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden; display:flex; flex-direction:column;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* --- the bar ------------------------------------------------------------- */
+#head { padding:14px 18px; border-bottom:1px solid #23233a; background:#12121c; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+#head h1 { font-size:14px; letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap; }
+#head h1 small { display:block; font-weight:600; font-size:11px; letter-spacing:.4px; color:#8b8ba7; text-transform:none; }
+
+select, input[type=text], textarea {
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:7px;
+  font:inherit; padding:7px 9px;
+}
+select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; }
+#game-pick { font-weight:700; min-width:170px; }
+#filter { flex:1 1 200px; min-width:140px; }
+
+#stats { display:flex; gap:6px; font-size:11px; flex-wrap:wrap; }
+#stats span { padding:3px 8px; border-radius:20px; background:#1b1b2b; color:#9c9cba; white-space:nowrap; }
+#stats span b { color:#e8e6f5; }
+#stats span.warn { background:#3a2c14; color:#ffb648; }
+
+#modes { display:flex; gap:3px; padding:3px; background:#0b0b12; border:1px solid #2c2c47; border-radius:9px; }
+#modes button {
+  padding:6px 12px; border:0; border-radius:7px; background:none; color:#8b8ba7;
+  font:700 11px/1 inherit; letter-spacing:1.1px; cursor:pointer;
+}
+#modes button:hover { color:#e8e6f5; }
+#modes button.on { background:#2a2a44; color:#e8e6f5; }
+
+#apply {
+  padding:9px 16px; border:0; border-radius:8px; background:#2a2a44; color:#6f6f92;
+  font:700 11px/1 inherit; letter-spacing:1.2px; cursor:not-allowed; white-space:nowrap;
+}
+#apply.live { background:#7ea6ff; color:#0b0b12; cursor:pointer; }
+#apply.live:hover { background:#9dbaff; }
+#apply b { font-variant-numeric:tabular-nums; }
+
+/* --- the list ------------------------------------------------------------ */
+/* A column, not a page: copy is proofread at a readable measure, and a row
+   stretched across a 27-inch window puts the edit icon a foot from its text. */
+#list { flex:1; overflow:auto; padding:0 18px 80px; }
+#list > * { max-width:1120px; margin-left:auto; margin-right:auto; }
+#list::-webkit-scrollbar { width:10px; }
+#list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+
+.lang {
+  position:sticky; top:0; z-index:2; padding:10px 0 9px;
+  background:#0b0b12; border-bottom:1px solid #23233a;
+  font:800 12px/1 inherit; letter-spacing:2px; display:flex; align-items:center; gap:10px;
+}
+.lang i { font-style:normal; font-weight:600; font-size:11px; letter-spacing:.4px; color:#6f6f92; }
+
+.group { margin:18px 0 8px; display:flex; align-items:baseline; gap:10px; }
+.group b { font:700 10px/1 inherit; letter-spacing:1.3px; text-transform:uppercase; color:#7ea6ff; }
+.group i { font-style:normal; font-size:11px; color:#6f6f92; }
+
+.row { background:#151522; border:1px solid #22223a; border-left:3px solid #22223a; border-radius:9px; margin-bottom:7px; padding:8px 11px; }
+.row:hover { border-color:#2e2e4c; border-left-color:#2e2e4c; }
+.row.changed { border-left-color:#8fe0b8; background:#15201b; }
+.row.editing { border-left-color:#7ea6ff; }
+
+.meta { display:flex; align-items:center; gap:9px; font-size:11px; flex-wrap:wrap; }
+.meta .ctx { font-weight:700; color:#c9c9e0; }
+.meta .at { font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
+.meta .at:hover { text-decoration:underline; }
+.meta .pill { padding:2px 7px; border-radius:20px; background:#1b1b2b; color:#8b8ba7; font-size:10px; letter-spacing:.3px; }
+.meta .pill.frag { background:#2a2214; color:#c99a4a; }
+.meta .pill.sites { background:#1a2430; color:#7ea6ff; }
+.meta .pill.desync { background:#3a2c14; color:#ffb648; }
+.meta .hint { color:#5d5d7c; font-weight:600; }
+.meta .sp { flex:1; }
+
+.ico { width:24px; height:22px; border:0; border-radius:6px; background:#1f1f31; color:#8b8ba7; font-size:12px; line-height:1; cursor:pointer; }
+.ico:hover { background:#2a2a44; color:#e8e6f5; }
+.ico.hide { display:none; }
+
+.val { margin-top:5px; font-size:14px; font-weight:500; color:#e8e6f5; white-space:pre-wrap; word-break:break-word; cursor:text; }
+.val:empty::before { content:"(empty)"; color:#4f4f6b; font-style:italic; }
+.row.changed .val { color:#8fe0b8; }
+.row.changed .was { margin-top:3px; font-size:11px; color:#6f6f92; text-decoration:line-through; }
+
+textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-weight:500; resize:vertical; min-height:38px; }
+
+/* What the markup in a tagline or a store line actually reads as. The SKIN's
+   `w-…` colours are the game's, not this page's, so every <b> takes one accent
+   — the point is the GROUPING, which is what those spans are for. */
+.prev { margin-top:4px; font-size:13px; color:#9c9cba; }
+.prev b { color:#8fe0b8; font-weight:800; }
+.prev::before { content:"renders  "; font-size:10px; letter-spacing:1px; color:#4f4f6b; }
+
+.other { margin-top:4px; font-size:12px; color:#8b8ba7; }
+.other u { text-decoration:none; font:700 10px/1 inherit; letter-spacing:1px; color:#5d5d7c; margin-right:7px; }
+.expr { margin-top:4px; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; word-break:break-all; }
+.expr mark { background:none; color:#c99a4a; }
+
+.empty { padding:40px 0; text-align:center; color:#5d5d7c; }
+
+/* --- the report ---------------------------------------------------------- */
+#report {
+  position:fixed; right:18px; bottom:18px; width:420px; max-height:60vh; overflow:auto;
+  background:#151522; border:1px solid #2e2e4c; border-radius:10px; padding:12px 14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55); font-size:12px; z-index:5;
+}
+#report.hide { display:none; }
+#report h2 { font:800 11px/1 inherit; letter-spacing:1.4px; margin-bottom:9px; display:flex; align-items:center; gap:8px; }
+#report h2 button { margin-left:auto; }
+#report p { margin:4px 0; color:#9c9cba; }
+#report p.ok { color:#8fe0b8; }
+#report p.no { color:#ffb648; }
+#report p small { display:block; color:#6f6f92; }
+</style>
+</head>
+<body>
+
+<div id="head">
+  <h1>Copy desk<small id="sub">every word a game shows</small></h1>
+  <select id="game-pick"></select>
+  <div id="modes">
+    <button data-mode="all" class="on">ALL</button>
+    <button data-mode="en">EN</button>
+    <button data-mode="fr">FR</button>
+    <button data-mode="changed">CHANGED</button>
+  </div>
+  <input type="text" id="filter" placeholder="filter — a word, a context, a file  ( / )">
+  <div id="stats"></div>
+  <button id="apply">APPLY</button>
+</div>
+
+<div id="list"><div class="empty">loading…</div></div>
+<div id="report" class="hide"></div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   The page holds one scan and one PLAN: id → the new text. Nothing else is
+   state. Apply sends the plan with the value each row was READ at (`was`), so
+   a string the file changed under the page is refused by name instead of being
+   spliced over — see tools/lab/apply-text.mjs.
+   --------------------------------------------------------------------------- */
+var $ = function (id) { return document.getElementById(id); };
+var scan = null, plan = {}, mode = "all", filter = "";
+
+var LANGS = { en: "English", fr: "Français", all: "Every language" };
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* The markup a tagline or a store line carries, shown as it reads. Only the
+   handful of tags the copy actually uses is let through — this is a preview of
+   the game's own words, not a place to run whatever is typed into a row. */
+function preview(text) {
+  return esc(text)
+    .replace(/&lt;(\/?)(b|i|em|strong|br)(\s[^&]*?)?&gt;/g, function (m, close, tag) {
+      return "<" + close + (tag === "strong" ? "b" : tag === "em" ? "i" : tag) + ">";
+    })
+    .replace(/&amp;nbsp;/g, "&nbsp;");
+}
+
+function hasMarkup(text) { return /<[a-z/]/i.test(text); }
+
+function changed(row) {
+  if (!Object.prototype.hasOwnProperty.call(plan, row.id)) return false;
+  // A desynced mirror counts as a change at the value it already has: writing
+  // CONFIG's string into page.html IS the repair.
+  return plan[row.id] !== row.text || row.desync != null;
+}
+function valueOf(row) {
+  return Object.prototype.hasOwnProperty.call(plan, row.id) ? plan[row.id] : row.text;
+}
+function countChanged() {
+  return scan ? scan.rows.filter(changed).length : 0;
+}
+
+/* --- drawing ------------------------------------------------------------- */
+function where(row) {
+  if (row.where !== "game.js") return row.where;
+  var lines = row.lines || [row.line];
+  return "game.js:" + lines[0];
+}
+
+function drawRow(row) {
+  var el = document.createElement("div");
+  el.className = "row" + (changed(row) ? " changed" : "");
+  el.dataset.id = row.id;
+
+  var sites = row.targets.length;
+  var bits = [];
+  bits.push('<span class="ctx">' + esc(row.context) + "</span>");
+  bits.push('<span class="at" title="click to copy">' + esc(where(row)) + "</span>");
+  if (sites > 1) {
+    var extra = row.where === "game.js" && row.lines && row.lines.length > 1
+      ? row.lines.length + " call sites"
+      : "written in " + sites + " files";
+    bits.push('<span class="pill sites" title="applying this row writes all of them">' + extra + "</span>");
+  }
+  if (row.fragment) bits.push('<span class="pill frag" title="one literal inside a bigger expression">fragment</span>');
+  if (row.desync != null) {
+    bits.push('<span class="pill desync" title="page.html reads &ldquo;' + esc(row.desync) +
+      '&rdquo; — the shell overwrites it from CONFIG at boot, so the source lies">page.html drifted</span>');
+    bits.push('<button class="ico sync" title="write this string into page.html too">&#8646;</button>');
+  }
+  if (row.hint) bits.push('<span class="hint">' + esc(row.hint) + "</span>");
+  bits.push('<span class="sp"></span>');
+  bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
+  bits.push('<button class="ico undo' + (changed(row) ? "" : " hide") + '" title="Revert">&#8634;</button>');
+
+  var html = '<div class="meta">' + bits.join("") + "</div>";
+  html += '<div class="val">' + esc(valueOf(row)) + "</div>";
+  if (changed(row)) html += '<div class="was">' + esc(row.text) + "</div>";
+  if (hasMarkup(valueOf(row))) html += '<div class="prev">' + preview(valueOf(row)) + "</div>";
+  if (row.other != null) {
+    html += '<div class="other"><u>' + (row.lang === "fr" ? "EN" : "FR") + "</u>" + esc(row.other) + "</div>";
+  }
+  if (row.expr) html += '<div class="expr">' + esc(row.expr) + "</div>";
+
+  el.innerHTML = html;
+  return el;
+}
+
+function matches(row) {
+  if (mode === "changed") return changed(row);
+  if (mode !== "all" && row.lang !== mode) return false;
+  if (!filter) return true;
+  var hay = (row.context + " " + valueOf(row) + " " + where(row) + " " + (row.other || "")).toLowerCase();
+  return hay.indexOf(filter) >= 0;
+}
+
+function draw() {
+  var list = $("list");
+  list.innerHTML = "";
+  if (!scan) { list.innerHTML = '<div class="empty">loading…</div>'; return; }
+
+  var shown = 0;
+  ["en", "fr", "all"].forEach(function (lang) {
+    var mine = scan.rows.filter(function (r) { return r.lang === lang && matches(r); });
+    if (!mine.length) return;
+    var head = document.createElement("div");
+    head.className = "lang";
+    head.innerHTML = lang.toUpperCase() + " <i>" + LANGS[lang] + " · " + mine.length + "</i>";
+    list.appendChild(head);
+
+    scan.groups.forEach(function (g) {
+      var rows = mine.filter(function (r) { return r.group === g.key; });
+      if (!rows.length) return;
+      var gh = document.createElement("div");
+      gh.className = "group";
+      gh.innerHTML = "<b>" + esc(g.label) + "</b><i>" + esc(g.note) + "</i>";
+      list.appendChild(gh);
+      rows.forEach(function (r) { list.appendChild(drawRow(r)); shown++; });
+    });
+  });
+
+  if (!shown) list.innerHTML = '<div class="empty">nothing matches</div>';
+  drawHead();
+}
+
+function drawHead() {
+  var n = countChanged();
+  var btn = $("apply");
+  btn.className = n ? "live" : "";
+  btn.innerHTML = n ? "APPLY <b>" + n + "</b>" : "APPLY";
+  if (!scan) return;
+  var s = ['<span><b>' + scan.counts.en + "</b> EN</span>", '<span><b>' + scan.counts.fr + "</b> FR</span>"];
+  if (scan.counts.fragments) s.push("<span>" + scan.counts.fragments + " fragments</span>");
+  // The work left, not a number of rows: a game is done when it is 0.
+  s.push(scan.counts.untranslated
+    ? '<span class="warn" title="' + esc((scan.missing || []).join(" · ")) + '">' +
+      scan.counts.untranslated + " untranslated</span>"
+    : "<span>fully translated</span>");
+  (scan.warnings || []).forEach(function (w) { s.push('<span class="warn" title="' + esc(w) + '">' + esc(w.slice(0, 44)) + "…</span>"); });
+  $("stats").innerHTML = s.join("");
+  $("sub").textContent = scan.title + " · v" + scan.version;
+}
+
+/* --- editing ------------------------------------------------------------- */
+function rowById(id) {
+  for (var i = 0; i < scan.rows.length; i++) if (scan.rows[i].id === id) return scan.rows[i];
+  return null;
+}
+
+function edit(el) {
+  var row = rowById(el.dataset.id);
+  if (!row || el.querySelector("textarea")) return;
+  el.classList.add("editing");
+  var ta = document.createElement("textarea");
+  ta.className = "ed";
+  ta.value = valueOf(row);
+  var val = el.querySelector(".val");
+  val.style.display = "none";
+  val.parentNode.insertBefore(ta, val.nextSibling);
+  ta.style.height = Math.max(38, ta.scrollHeight) + "px";
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  function close(commit) {
+    if (commit) {
+      // A break is <br>, the way the taglines already write one: apply-text
+      // refuses a newline, so it never reaches the source as one.
+      var next = ta.value.replace(/[\r\n]+/g, " ");
+      if (next === row.text) delete plan[row.id]; else plan[row.id] = next;
+    }
+    el.classList.remove("editing");
+    draw();
+  }
+  ta.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { e.preventDefault(); close(false); }
+    else if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); close(true); }
+  });
+  ta.addEventListener("blur", function () { close(true); });
+  ta.addEventListener("input", function () {
+    ta.style.height = "auto";
+    ta.style.height = Math.max(38, ta.scrollHeight) + "px";
+  });
+}
+
+$("list").addEventListener("click", function (e) {
+  var el = e.target.closest(".row");
+  if (!el) return;
+  if (e.target.closest(".undo")) { delete plan[el.dataset.id]; draw(); return; }
+  if (e.target.closest(".sync")) { plan[el.dataset.id] = rowById(el.dataset.id).text; draw(); return; }
+  if (e.target.closest(".at")) {
+    var row = rowById(el.dataset.id);
+    var ref = "games/" + scan.slug + "/" + (row.where === "game.js" ? "game.js:" + row.line : row.where);
+    navigator.clipboard && navigator.clipboard.writeText(ref);
+    e.target.textContent = "copied";
+    setTimeout(draw, 600);
+    return;
+  }
+  if (e.target.closest(".edit") || e.target.closest(".val")) edit(el);
+});
+
+/* --- loading and applying ------------------------------------------------ */
+function load(slug) {
+  plan = {};
+  scan = null;
+  draw();
+  fetch("/api/text?game=" + encodeURIComponent(slug))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      scan = data;
+      localStorage.setItem("text:game", slug);
+      draw();
+    });
+}
+
+function report(res) {
+  var box = $("report");
+  var html = '<h2>APPLY <button class="ico" id="report-x">&times;</button></h2>';
+  if (res.error) html += '<p class="no">' + esc(res.error) + "</p>";
+  res.applied.forEach(function (a) {
+    html += '<p class="ok">' + esc(a.what) + "<small>&ldquo;" + esc(a.from) + "&rdquo; &rarr; &ldquo;" + esc(a.to) + "&rdquo; · " + esc(a.where) + "</small></p>";
+  });
+  res.skipped.forEach(function (s) { html += '<p class="no">' + esc(s) + "</p>"; });
+  if (!res.applied.length && !res.skipped.length && !res.error) html += "<p>nothing to apply</p>";
+  if (res.version) html += "<p>version &rarr; <b>" + esc(res.version) + "</b></p>";
+  if (res.rebuilt) html += "<p>rebuilt " + esc(res.rebuilt.join(", ")) + "</p>";
+  box.innerHTML = html;
+  box.classList.remove("hide");
+  $("report-x").addEventListener("click", function () { box.classList.add("hide"); });
+}
+
+$("apply").addEventListener("click", function () {
+  if (!countChanged()) return;
+  var edits = scan.rows.filter(changed).map(function (r) {
+    return { id: r.id, was: r.text, text: plan[r.id] };
+  });
+  $("apply").innerHTML = "APPLYING…";
+  fetch("/api/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ game: scan.slug, edits: edits })
+  }).then(function (r) { return r.json(); }).then(function (res) {
+    if (res.scan) { scan = res.scan; plan = {}; }
+    // A refused edit keeps its typing, so it can be looked at rather than lost.
+    (res.skipped || []).forEach(function (s) {
+      edits.forEach(function (e) { if (s.indexOf(e.id) === 0) plan[e.id] = e.text; });
+    });
+    draw();
+    report(res);
+  }).catch(function (e) { report({ applied: [], skipped: [], error: String(e) }); });
+});
+
+$("filter").addEventListener("input", function () { filter = this.value.trim().toLowerCase(); draw(); });
+$("game-pick").addEventListener("change", function () { load(this.value); });
+$("modes").addEventListener("click", function (e) {
+  var b = e.target.closest("button");
+  if (!b) return;
+  mode = b.dataset.mode;
+  [].forEach.call(this.children, function (c) { c.classList.toggle("on", c === b); });
+  draw();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "/" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement !== $("filter")) {
+    e.preventDefault(); $("filter").focus();
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); $("apply").click(); }
+});
+
+fetch("/api/games").then(function (r) { return r.json(); }).then(function (list) {
+  var pick = $("game-pick");
+  pick.innerHTML = list.map(function (g) {
+    return '<option value="' + g.slug + '">' + g.title + "  ·  " + g.counts.en + " EN / " + g.counts.fr + " FR" +
+      (g.counts.untranslated ? "  ·  " + g.counts.untranslated + " untranslated" : "") +
+      (g.warnings ? "  !" : "") + "</option>";
+  }).join("");
+  var saved = localStorage.getItem("text:game");
+  if (saved && list.some(function (g) { return g.slug === saved; })) pick.value = saved;
+  load(pick.value);
+});
+</script>
+</body>
+</html>

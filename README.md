@@ -141,6 +141,12 @@ gamedustry/
 │   │   │                        (make events — the list, inside the real build)
 │   │   ├── apply-events.mjs  ← write a beat changed on that bench back into
 │   │   │                        game.js; re-cuts a clip from assets/audio/sfx/
+│   │   ├── scan-text.mjs     ← every word a game shows a player, read off its
+│   │   │                        manifest, game.js and page.html (table, --json)
+│   │   ├── serve-text.mjs    ← the server lab/game-text.html proofreads over
+│   │   │                        (make text — EN and FR, every screen)
+│   │   ├── apply-text.mjs    ← write a corrected string back into whichever of
+│   │   │                        the three files holds it, mirrors included
 │   │   ├── bench-pop.mjs     ← what a callout costs, on an emulated phone
 │   │   ├── bench-raster.mjs  ← layer raster cost; and why it can't stand in
 │   │   │                       for a phone (use ?perf=bench for that)

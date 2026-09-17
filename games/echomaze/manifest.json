@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.0.3",
+  "version": "1.7.1",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -115,10 +115,53 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>"
+        "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
+        "strings": {
+          " OF ": " SUR ",
+          " PULSE": " IMPULSION",
+          " WALLS": " MURS",
+          "BREAK THE CRYSTAL": "BRISE LE CRISTAL",
+          "CRYSTAL DOWN!": "CRISTAL BRISÉ !",
+          "DEEP RUN!": "BELLE MONTÉE !",
+          "DOOR ": "PORTE ",
+          "DOOR FORCED": "PORTE FORCÉE",
+          "ESCAPED THE MAZE!": "LABYRINTHE VAINCU !",
+          "ESCAPED!": "ÉVADÉ !",
+          "EXIT": "SORTIE",
+          "EXIT SEALED": "SORTIE VERROUILLÉE",
+          "FALSE EXIT!": "FAUSSE SORTIE !",
+          "FINAL SCORE": "SCORE FINAL",
+          "FIRE AT THE GAP, NOT AT THE DOOR": "VISE L'OUVERTURE, PAS LA PORTE",
+          "FOUND": "REPÉRÉS",
+          "GATE UNLOCKED": "SORTIE OUVERTE",
+          "INSTALL NOW": "INSTALLER",
+          "LAST PULSE": "DERNIÈRE IMPULSION",
+          "LIGHTS OUT — FIRE!": "NOIR COMPLET — TIRE !",
+      "LIVE FENCE": "BARRIÈRE ACTIVE",
+          "ONE GAP, AND IT MOVES": "UNE SEULE OUVERTURE, ET ELLE BOUGE",
+          "ONE-WAY VALVE": "VALVE À SENS UNIQUE",
+          "OPEN FOR GOOD": "OUVERTE POUR DE BON",
+          "OUT OF PULSES!": "PLUS D'IMPULSIONS !",
+          "PERFECT READ!": "LECTURE PARFAITE !",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "PULSES": "IMPULSIONS",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SO CLOSE!": "SI PRÈS !",
+          "SPENT PULSE SEALS THE GAP": "L'IMPULSION USÉE SCELLE LE PASSAGE",
+          "SURGE!": "DÉCHARGE !",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "THE WAY OUT": "LA SORTIE",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "WALLS": "MURS",
+          "BONUS": "BONUS",
+          "VALVES": "VALVES"
+        }
       }
     },
     "font": "orbitron",
+    "music": "echomaze.mp3",
     "levels": {
       "objective": {
         "from": 500,
@@ -128,6 +171,22 @@
       "copy": {
         "en": "Score <b>{n}</b> reading the maze",
         "fr": "Marque <b>{n}</b> en lisant le labyrinthe"
+      },
+      "bands": {
+        "en": [
+          "DARK MAZE",
+          "FALSE EXITS",
+          "CRYSTAL LOCK",
+          "LIVE FENCE",
+          "FULL SURGE"
+        ],
+        "fr": [
+          "NOIR TOTAL",
+          "FAUSSES SORTIES",
+          "VERROU DE CRISTAL",
+          "BARRIÈRE ACTIVE",
+          "SURCHARGE"
+        ]
       },
       "tune": {
         "cols": [
@@ -147,12 +206,16 @@
           8
         ],
         "revealSeconds": [
-          1.4,
-          0.55
+          2.6,
+          1.5
         ],
         "bounceJitter": [
           0.03,
           0.09
+        ],
+        "surgePeriod": [
+          1.15,
+          0.85
         ]
       }
     }

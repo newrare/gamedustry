@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.5.6",
+  "version": "1.8.1",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -15,11 +15,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Bubble magique classique, mais avec un léger twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      "tagline": "Un Bubble magique classique, mais avec un léger Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
       "tags": [
         "Vise et tire",
-        "Trois d’affilée",
-        "Course à la pourriture"
+        "Par trois",
+        "Contamination"
       ]
     },
     "en": {
@@ -62,15 +62,15 @@
         "lines": [
           {
             "kicker": "BUBBLE TWIST",
-            "line": "Éclate vite, avant la <b>contamination</b>"
+            "line": "Eclate vite, avant la <b>contamination</b>"
           },
           {
             "kicker": "SUPER",
-            "line": "L’arc-en-ciel <b>détruit tout</b>"
+            "line": "L’arc-en-ciel est la <b>solution</b>"
           },
           {
             "kicker": "OBSCURE",
-            "line": "La contamination doit <b>perdre</b>"
+            "line": "La contamination doit être <b>contenue</b>"
           },
           {
             "kicker": "30 LEVELS",
@@ -115,10 +115,37 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire"
+        "tagline": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
+        "strings": {
+          " CLEANSED": " ASSAINIES",
+          " FELL": " TOMBÉES",
+          " POPPED": " ÉCLATÉES",
+          " STREAK": " D'AFFILÉE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "BUBBLES CLEARED": "BULLES ÉLIMINÉES",
+          "CASCADE": "CASCADE",
+          "FINAL SCORE": "SCORE FINAL",
+          "INSTALL NOW": "INSTALLER",
+          "JOKER": "JOKER",
+          "MAX CHAIN": "CHAÎNE MAX",
+          "NEXT": "SUIVANT",
+          "OVERRUN!": "ENVAHI !",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "POPPED": "ÉCLATÉES",
+          "PURIFIED!": "PURIFIÉ !",
+          "ROT": "INFECTION",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "THE ROT SPREADS": "L'INFECTION SE PROPAGE",
+          "THE ROT WINS!": "L'INFECTION L'EMPORTE !",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !"
+        }
       }
     },
     "font": "baloo2",
+    "music": "blight.mp3",
     "levels": {
       "objective": {
         "from": 350,
@@ -128,6 +155,29 @@
       "copy": {
         "en": "Score <b>{n}</b> before the wall is fully contaminated",
         "fr": "Marque <b>{n}</b> avant que la contamination soit totale"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "MARSH",
+          "RUINS",
+          "GORGE",
+          "CASTLE",
+          "THRONE"
+        ],
+        "fr": [
+          "MARAIS",
+          "RUINES",
+          "GORGE",
+          "CHÂTEAU",
+          "TRÔNE"
+        ]
       },
       "tune": {
         "blightInterval": [

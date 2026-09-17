@@ -561,7 +561,7 @@
           g = 40 * (chain / 5);
           pick += g;
           if (chain % 25 === 0) {
-            Pop.show("ultra", { word: "CHAIN x" + chain, sub: "+" + g, at: popSpot() });
+            Pop.show("ultra", { word: Lang.t("CHAIN x") + chain, sub: "+" + g, at: popSpot() });
           }
           Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
         }
@@ -637,7 +637,7 @@
          player cannot read off the frame is that the next thorn ends the run,
          and that is worth stopping them for. */
       if (lives === 1) {
-        Pop.show("danger", { word: "LAST LIFE", sub: lost > 0 ? "BODY LOST" : "BITTEN!",
+        Pop.show("danger", { word: "LAST LIFE", sub: lost > 0 ? Lang.t("BODY LOST") : Lang.t("BITTEN!"),
                              cls: "pop-bite", at: popSpot() });
       }
     }
@@ -858,7 +858,7 @@
       var d = Math.floor(dist), sc = pick + d;
       var st = sc >= 1800 ? 3 : sc >= 800 ? 2 : 1;
       endRound({
-        title: st === 3 ? "APEX VIPER!" : st === 2 ? "GREAT RUN!" : CONFIG.copy.gameOver,
+        title: st === 3 ? Lang.t("APEX VIPER!") : st === 2 ? Lang.t("GREAT RUN!") : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
         /* A level's objective is a DISTANCE, so the burrow says how far it got
@@ -868,7 +868,7 @@
         levelScore: d,
         stars: st,
         rows: [
-          { label: "LONGEST BODY", value: bestLen + " BLOCKS", grade: "accent" },
+          { label: "LONGEST BODY", value: bestLen + Lang.t(" BLOCKS"), grade: "accent" },
           { label: "DISTANCE (M)", value: d },
           { label: "BEST CHAIN", value: bestChain, grade: "accent" },
           { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }

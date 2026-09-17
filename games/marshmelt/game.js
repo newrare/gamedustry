@@ -474,7 +474,7 @@
       if (rocksHit >= nextMile) {
         nextMile += C.milestone;
         Pop.show(rocksHit >= 40 ? "ultra" : rocksHit >= 20 ? "combo" : "streak",
-                 { word: rocksHit + " ROCKS", sub:"keep climbing" });
+                 { word: rocksHit + Lang.t(" ROCKS"), sub:"keep climbing" });
         Sound.clip("climb", 0.5, 1 + Math.min(rocksHit / 60, 0.35));
       }
     }
@@ -487,7 +487,7 @@
       Fx.flash("#ff7a1a", 0.22, 3);
       Fx.shake(7, 0.2);
       Fx.burst(mallow.x, mallow.y, { color:["#ffd166", "#ff7a1a"], count:16, speed:330, life:.45, grav:-120 });
-      Pop.show("danger", { word: toast >= 3 ? "BURNT!" : "HOT!", sub:"jump", at:"upper" });
+      Pop.show("danger", { word: toast >= 3 ? Lang.t("BURNT!") : Lang.t("HOT!"), sub:"jump", at:"upper" });
     }
 
     /* A structure that touches the lava catches fire. It becomes a fireball —
@@ -605,7 +605,7 @@
     function finish() {
       var stars = score >= 1100 ? 3 : score >= 500 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? "SURVIVOR!" : CONFIG.copy.gameOver,
+        title: stars === 3 ? Lang.t("SURVIVOR!") : CONFIG.copy.gameOver,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,

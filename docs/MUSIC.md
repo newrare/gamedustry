@@ -4,8 +4,9 @@ How a game gets more than one bed out of a single music file: a different
 stretch of it per biome, per level band or per mode, and a quiet, slower window
 of the same track under the menus.
 
-`games/arcider` is the reference and the only game on it today. This document
-is the procedure for the other twelve — read it before touching a game's music,
+`games/arcider` is the reference; `games/blight`, `games/echomaze` and
+`games/radiam` followed.
+This document is the procedure for the other nine — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
 The API itself is in [ENGINE.md](ENGINE.md#music--the-background-bed); the asset
@@ -36,7 +37,7 @@ the motor loops a window of it.** Six beds, zero extra bytes.
 
 What loops is a **section**: `{ from, length, rate, gain }`, seconds into the
 file and how many of them. The default section is the whole file at speed,
-which is what the twelve other games play and why nothing changed for them.
+which is what the nine other games play and why nothing changed for them.
 
 ```js
 Music.play({ from: 76, length: 36 });                       // a stretch of it
@@ -95,7 +96,7 @@ ______________________________________________________________________
 
 ### 1. Check there is a track to cut
 
-The strategy needs a master longer than one loop. Ten of the thirteen masters
+The strategy needs a master longer than one loop. Seven of the thirteen masters
 are ~30 s, which is one bed and nothing else — those games need a **longer
 track from the music model first**, and that is a separate request.
 
@@ -137,7 +138,16 @@ ametadata=print:key=lavfi.astats.Overall.RMS_level:file=/tmp/tail.txt" -f null -
 Three rules for laying out the windows:
 
 - **one per look the game already has** — biome, level band, mode. Never invent
-  a musical structure the player cannot see.
+  a musical structure the player cannot see. A game with no biomes still has
+  five: the level map names them on its own card (`Warm-up`, `Pressure`,
+  `Squeeze`, `Overdrive`, `Meltdown`, six levels apiece). `games/echomaze` and
+  `games/blight` both ride those, and they go one better, which is the stronger
+  version of the same rule: one `CONFIG.bands` table carries the band's painted
+  scene AND its stretch of the track on the same line, indexed by the level in
+  `reset()`, so the picture and the bed can only ever turn over together.
+  `games/radiam` is the same table under its own name — its five worlds were
+  already a row apiece in `ladder.biomes`, so the scene and the window joined
+  the palette that was there rather than a second table being invented.
 - **the windows climb with the game.** arcider's five walk up the track as the
   map walks up the climb: DUSK enters at 12 s, NIGHT at 142 s.
 - **the menu gets the track's own opening.** It is the calmest stretch of
@@ -266,19 +276,19 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 | game        | master  | embedded cut | sections                                 |
 | ----------- | ------- | ------------ | ---------------------------------------- |
 | `arcider`   | 182.5 s | 36.1 s       | **5 biomes + menu**                      |
+| `blight`    | 179.1 s | 36.0 s       | **5 map bands + menu**, one scene apiece |
+| `echomaze`  | 171.4 s | 36.0 s       | **5 map bands + menu**, one hall apiece  |
 | `slipdeck`  | 115.8 s | 46.9 s       | none yet — the master is long enough     |
 | `marshmelt` | 54.0 s  | 35.0 s       | none yet — enough for two, plus the menu |
-| `blight`    | 30.8 s  | 30.8 s       | needs a longer master first              |
 | `bouncetry` | 30.7 s  | 30.8 s       | needs a longer master first              |
 | `chainring` | 30.8 s  | 30.8 s       | **no** — it is beat-locked (see Traps)   |
-| `echomaze`  | 30.8 s  | 30.8 s       | needs a longer master first              |
 | `gearball`  | 30.5 s  | 30.6 s       | needs a longer master first              |
 | `orbinity`  | 27.0 s  | 27.0 s       | needs a longer master first              |
-| `radiam`    | 30.8 s  | 30.8 s       | needs a longer master first              |
+| `radiam`    | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |
 | `spinshock` | 30.8 s  | 30.8 s       | needs a longer master first              |
 | `triverse`  | 30.8 s  | 30.8 s       | needs a longer master first              |
 | `vipera`    | 30.8 s  | 30.8 s       | needs a longer master first              |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,
-which is what the twelve do today. Nothing about them changed when the sections
+which is what the ten do today. Nothing about them changed when the sections
 landed, and nothing has to change all at once.

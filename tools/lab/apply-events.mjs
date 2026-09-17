@@ -284,7 +284,7 @@ function soundEntrySpan(src, entry) {
    Every change is a span splice, applied back to front so an offset never
    moves under the next one. Two edits that touch the same characters are a
    bug, not a merge: the second is refused and named.                        */
-function splice(src, edits, skip) {
+export function splice(src, edits, skip) {
   const sorted = [...edits].sort((a, b) => b.start - a.start || b.end - a.end);
   const kept = [];
   let out = src, last = Infinity;
@@ -310,7 +310,7 @@ function splice(src, edits, skip) {
   return out;
 }
 
-function bumpPatch(version) {
+export function bumpPatch(version) {
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(version || ''));
   return m ? `${m[1]}.${m[2]}.${Number(m[3]) + 1}` : null;
 }

@@ -178,6 +178,12 @@ function profileFor(role) {
      same panorama as `sky` and must not fall to the generic 320px box, which
      would squash a 3:1 picture into a portrait thumbnail. */
   if (role.indexOf("sky") === 0) return PROFILE.sky;
+  /* `background-phone-blue`, `background-phone-green`, ... — the same thing
+     one role up: a game whose SCENE changes per biome keeps one painting per
+     band (games/echomaze, five of them over the thirty levels). A variant is
+     shown exactly where the plain role is, so it is cut exactly like it. */
+  if (role.indexOf("background-phone") === 0) return PROFILE["background-phone"];
+  if (role.indexOf("background-desk") === 0) return PROFILE["background-desk"];
   return GENERIC;
 }
 
@@ -226,7 +232,7 @@ function masters(all) {
       profile: profileFor(role),
       known: !!PROFILE[role] || role.indexOf("card-") === 0 ||
              role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
-             role.indexOf("ball-") === 0
+             role.indexOf("ball-") === 0 || role.indexOf("background-") === 0
     });
   });
   return out;

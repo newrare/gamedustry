@@ -130,6 +130,9 @@ development pages and answer only to the short rules in their own sections.
    describe the game **once**, in `games/<slug>/manifest.json`: `title`,
    `version`, `order`, `draft`, `targets`, `theme`, `copy.fr` / `copy.en` (one
    tagline and three tags each) and `description` (the long English write-up).
+   Translate the game in the same file: `web.copy.fr.strings`, one entry per
+   English string it writes — `node tools/lab/scan-text.mjs <slug>` lists what is
+   missing and `make text` is the desk to fill it in.
    `version` is what the studio signature prints on the title screen — the mark,
    `NEWRARE` and `v<version>` in the bottom-left corner, injected as
    `CONFIG.brand` by the builder and drawn by the shell, so a game writes the
@@ -317,8 +320,15 @@ its `targets` and nothing else:
   All thirteen games declare a `web.levels` block today. The
   motor's only share of it is `onResult(fn)`, a filter over a round's result,
   and `Loop.rate(k)` — the stars become the level's without a line changing in
-  any `game.js`. **The round wears its three stars live**, in a pill under the
-  HUD (never *in* it), and **the third star ends it**: slow motion down to 12 %
+  any `game.js`. **The round wears its three stars live**, in a pill in the
+  **bottom-left corner** (never *in* the HUD, whose top band is the game's) —
+  mirroring MENU / OPTIONS in the opposite one. Neither corner takes a band out
+  of `Layout`: a game draws through them and anchors no instrument and no word
+  there. A game whose own layout owns that corner moves the pill from its SKIN
+  with `--lv-hud-bottom` / `--lv-hud-left` (`games/slipdeck`, whose five-card
+  hand fills the foot of the frame) — and `games/arcider` moved its shield rail
+  and speedometer to the right flank instead. **The third star ends the
+  round**: slow motion down to 12 %
   over ~0.6 s, then the end screen, because a player who has maxed a level
   should not have to die to be told so. A game refines that with three optional
   hooks — `Game.levelProgress()` (what the objective is measured against; the
@@ -342,6 +352,19 @@ reloading it. A game overrides any string — its tagline included — from a
 `CONFIG.web`; there is no second place to write game copy, and
 `web.copy.fr.tagline` is where a game's intro sentence is translated, its key
 words and their `<b class="w-…">` classes included.
+
+**The game itself is translated in the same block**, by
+`web.copy.<lang>.strings` — a dictionary whose key IS the English string a game
+writes, so there is no key to invent and a missing entry falls back to the
+English. The motor applies it where it WRITES a word (`CONFIG.copy`, `Pop.show`,
+`Pop.text`, `HUD.setLeft/setRight`, `endRound`'s title and rows), which is why
+no `game.js` had to change for the round, the HUD and the end screen to switch
+language with the menu. The one thing a game does itself is the string it
+BUILDS: `"x" + mult + " STREAK"` reaches the motor already assembled, so the
+game wraps its own literal — `Lang.t(" STREAK")` — and the same goes for
+anything it paints on the canvas. **`make text` is the gate**: it prints
+`N untranslated` per game and a game is done when it reads *fully translated*.
+See [docs/ENGINE.md](docs/ENGINE.md#lang--the-game-in-the-players-language).
 
 `packages/frame-web/frame.css` is the third web-only layer: on a window wider
 than the portrait frame it dresses the empty bands and draws a device bezel,
@@ -380,6 +403,7 @@ declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
 | `assets/image/master/<slug>-…`       | where it is used                                                     |
 | ------------------------------------ | -------------------------------------------------------------------- |
 | `-background-phone.png`              | behind the intro and the end screen — **never behind the round**     |
+| `-background-phone-<name>.png`       | the same, one per band of the climb (`echomaze`, `radiam`)           |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
 | `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0 / 1–2 / 3)        |
@@ -418,9 +442,11 @@ The two rules that hold this together:
   gameplays are balanced against the flat ground their SKIN paints, and a
   picture under the world costs them contrast. A game whose world reads over its
   scene sets `CONFIG.sceneArt = true` and then stops painting its own opaque
-  ground, asking `Art.scene()` in `render()` — `chainring`, `slipdeck` and
-  `marshmelt` are the three, and each of them replaced a purely decorative
-  ground (a radial gradient, a felt fill, a pre-rendered cavern). It is a CSS
+  ground, asking `Art.scene()` in `render()` — `chainring`, `slipdeck`,
+  `marshmelt` and `radiam` are the four, and each of them replaced a purely
+  decorative ground (a radial gradient, a felt fill, a pre-rendered cavern, a
+  wall of gears embedded as a JPEG). `radiam` is the one whose scene changes
+  per band, so its round wears the world it is playing. It is a CSS
   layer under the canvas, so it costs nothing per frame; the scrim over it is
   the `--scene-scrim` token a SKIN can raise. See
   [docs/ENGINE.md](docs/ENGINE.md#configart--the-painted-artwork).
@@ -590,9 +616,36 @@ over the frame rather than a notification — it carries no word, so there is
 nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
 because it is what holds a beat together.
 
-The events bench is the second lab page with a server of its own (`make events`,
-`tools/lab/serve-events.mjs`), for the same two reasons as the store composer
-plus one more: Apply writes.
+`game-text.html` is **the copy desk**: every word a game shows a player, in one
+list, split into an EN section and an FR one. A game's copy is written where it
+is used, which is the right place to write it and the wrong place to proofread
+it — the intro sentence lives in three files, a HUD label is the second argument
+of a call nine hundred lines down, and the French half of it all is in a manifest
+nobody opens while writing gameplay, which is how a game ends up saying LENGTH in
+one corner and BODY in another. So `tools/lab/scan-text.mjs` reads all four
+sources back and groups the result by the SCREEN a player reads it on — the
+listing, the title screen, the shell, the HUD, the round, the end screen, the
+level objective. Every row has an edit field and **APPLY writes it back**
+(`tools/lab/apply-text.mjs`) into whichever of `manifest.json`,
+`games/<slug>/game.js` and `games/<slug>/page.html` holds it, then rebuilds the
+game and both catalogues, so a proofreading pass leaves a tree that still passes
+`node tools/update.mjs`. Three rules make a row honest, and they are why this is
+not a find-and-replace: **one row is every site** — "LENGTH" written at three
+call sites is ONE row and applying it writes all three, which is the bug the
+page exists to prevent; **a mirror is not a second string** — `#intro-title` and
+`#intro-tagline` are rewritten from `CONFIG` at boot, so they ride on the CONFIG
+row and are written with it rather than being offered on their own; and **a
+fragment keeps its expression** — `st === 3 ? "APEX VIPER!" : CONFIG.copy.gameOver`
+is two pieces of copy, so the unit is the string LITERAL and not the argument,
+with the expression printed under it and spliced around untouched. The motor's
+own menu strings (PLAY, OPTIONS, LEAVE?) are not listed: they belong to the
+thirteen equally, and a game that wants its own wording writes it under
+`web.copy`, which IS listed. `node tools/lab/scan-text.mjs <slug>` is the same
+list as text, no browser.
+
+The events bench and the copy desk are the second and third lab pages with a
+server of their own (`make events`, `make text`), for the same two reasons as the
+store composer plus one more: Apply writes.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see
@@ -611,7 +664,16 @@ Frame & input (section 3):
   `view.dpr` is the design→device pixel ratio: size every cached canvas with it
   and never read `window.devicePixelRatio` in a game.
 - `Layout` — `top / bottom / left / right / w / h / cx / cy`: the band gameplay
-  may use, already clear of the HUD, the CTA bar and the device insets.
+  may use, already clear of the HUD, the CTA bar and the device insets, and
+  **never closer to the glass than the house margin** — `CONFIG.layout.safePad`,
+  26 design px, a FLOOR on the four edges and not an addition (a playable's
+  150px HUD and 112px CTA bar already exceed it; the edge it bites is the bottom
+  of the web and android builds, where `ctaHeight` is zeroed). Every instrument
+  and every readable word a game draws is anchored inside it — `Pop.show` and
+  `Pop.text` are clamped into it by the motor. It is **not a clip rect**: a lava
+  lake, a scrolling lane or an expanding shockwave is meant to bleed off an edge
+  and is drawn outside `Layout`, as it always was. See
+  [docs/ENGINE.md](docs/ENGINE.md).
 - `Input.on("down"|"move"|"up", fn)` — unified mouse+touch in design space.
 - `Input.swipe(dir, dist)` / `Input.at(type, x, y)` — synthesize a gesture. This
   is what the desktop keyboard rides on: SPACE starts, replays and — for
@@ -652,6 +714,11 @@ Frame & input (section 3):
   serves the thirteen from one origin, and a bare key there is one score for all
   of them. Ask for `"bestScore"` as before — never write the scoped name.
   `Rand.range/int/pick/chance`.
+- `Lang.t(str)` / `Lang.code()` — the FR/EN dictionary a game declares in
+  `web.copy.<lang>.strings`, keyed by the English. The motor already translates
+  every word it writes; a game calls `Lang.t` only on a literal it
+  CONCATENATES or paints on the canvas itself, never on a comparison or a
+  storage key. See [docs/ENGINE.md](docs/ENGINE.md#lang--the-game-in-the-players-language).
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
   the shared `assets/motor/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored

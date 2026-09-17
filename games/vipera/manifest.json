@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -115,7 +115,38 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">TAP</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour un maximum de bonus"
+        "tagline": "<b class=\"w-tap\">TAP</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour un maximum de bonus",
+        "strings": {
+          " BLOCKS": " BLOCS",
+          "ADDER": "ASPIC",
+          "APEX VIPER!": "VIPÈRE SUPRÊME !",
+          "BASILISK": "BASILIC",
+          "BEST CHAIN": "MEILLEURE CHAÎNE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "BITTEN!": "MORDU !",
+          "BODY LOST": "CORPS PERDU",
+          "CHAIN x": "CHAÎNE x",
+          "DEEPER": "PLUS PROFOND",
+          "DISTANCE (M)": "DISTANCE (M)",
+          "EVOLVED": "ÉVOLUTION",
+          "FINAL SCORE": "SCORE FINAL",
+          "GOLD EGG": "ŒUF D'OR",
+          "GREAT RUN!": "SUPERBE PARTIE !",
+          "INSTALL NOW": "INSTALLER",
+          "LAST LIFE": "DERNIÈRE VIE",
+          "LENGTH": "LONGUEUR",
+          "LIVES": "VIES",
+          "LONGEST BODY": "CORPS LE PLUS LONG",
+          "MAMBA": "MAMBA",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "SCORE": "SCORE",
+          "Slither again": "Ramper encore",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "TORN APART": "DÉCHIQUETÉ",
+          "VIPER": "VIPÈRE"
+        }
       }
     },
     "font": "baloo2",

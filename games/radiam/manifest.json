@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.1.0",
+  "version": "1.3.1",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -107,8 +107,8 @@
   },
   "android": {
     "appId": "com.newrare.radiam",
-    "versionName": "1.1.0",
-    "versionCode": 5,
+    "versionName": "1.3.0",
+    "versionCode": 8,
     "ads": {
       "rewarded": false,
       "interstitial": false
@@ -128,10 +128,46 @@
     ],
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-turn\">Tourne</b> un ou plusieurs anneaux pour aligner <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>"
+        "tagline": "<b class=\"w-turn\">Tourne</b> un ou plusieurs anneaux pour aligner <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>",
+        "strings": {
+          "  SCORE": "  SCORE",
+          " BEADS": " PERLES",
+          " RAYS": " RAYONS",
+          "BEST": "RECORD",
+          "BEST CHAIN": "MEILLEURE CHAÎNE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "BIGGEST BLAST": "PLUS GROSSE EXPLOSION",
+          "BLAST": "EXPLOSION",
+          "BLOCKED": "BLOQUÉ",
+          "COMBO": "COMBO",
+          "DOUBLE RAY": "DOUBLE RAYON",
+          "ECLIPSED!": "ÉCLIPSÉ !",
+          "FINAL SCORE": "SCORE FINAL",
+          "FROZEN": "GELÉ",
+          "INSTALL NOW": "INSTALLER",
+          "JAMMED!": "COINCÉ !",
+          "LEVEL": "NIVEAU",
+          "LEVEL ": "NIVEAU ",
+          "NEW COLOUR": "NOUVELLE COULEUR",
+          "NOVA": "NOVA",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "RADIANT!": "RADIEUX !",
+          "RAYS": "RAYONS",
+          "RAYS GET RARER": "LES RAYONS SE FONT RARES",
+          "RAYS POPPED": "RAYONS ÉCLATÉS",
+          "RING CLEARED": "ANNEAU NETTOYÉ",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SURVIVED": "SURVIE",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "TRIPLE RAY": "TRIPLE RAYON"
+        }
       }
     },
     "font": "russoone",
+    "music": "radiam.mp3",
     "levels": {
       "objective": {
         "from": 2100,
@@ -141,6 +177,29 @@
       "copy": {
         "en": "Score <b>{n}</b> before the eclipse",
         "fr": "Marque <b>{n}</b> avant l’éclipse"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "ATELIER",
+          "LAGOON",
+          "RELIQUARY",
+          "SUMI",
+          "CIRCUIT"
+        ],
+        "fr": [
+          "ATELIER",
+          "LAGON",
+          "RELIQUAIRE",
+          "SUMI",
+          "CIRCUIT"
+        ]
       },
       "tune": {
         "dial.startColours": [

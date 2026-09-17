@@ -47,7 +47,7 @@ window.GAMES = [
     accent: ["#ff3b57", "#2f86ff"],
     fr: {
       tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
-      tags: ["Tap inverseur", "Casse-brique", "Sol de lave"]
+      tags: ["Tap inverseur", "Casse-briques", "Double briques"]
     },
     en: {
       tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
@@ -59,8 +59,8 @@ window.GAMES = [
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
     fr: {
-      tagline: "Un Bubble magique classique, mais avec un léger twist : sois plus rapide et plus stratégique que la contamination des bulles.",
-      tags: ["Vise et tire", "Trois d’affilée", "Course à la pourriture"]
+      tagline: "Un Bubble magique classique, mais avec un léger Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      tags: ["Vise et tire", "Par trois", "Contamination"]
     },
     en: {
       tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
@@ -98,8 +98,8 @@ window.GAMES = [
     name: "Arcider",
     accent: ["#35e8ff", "#7a4dff"],
     fr: {
-      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de battle royale. Évite les pièges et les adversaires, et choisis entre santé et vitesse.",
-      tags: ["Maintiens pour incliner", "Battle royale", "1020 m"]
+      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges et les adversaires puis choisis vitesse ou récupération.",
+      tags: ["Course", "Battle royale", "Turbo"]
     },
     en: {
       tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",

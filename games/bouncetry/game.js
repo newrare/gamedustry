@@ -528,7 +528,7 @@
       spawnSparks(cannon.x + Math.cos(mid) * C.wheelRadius * 0.66,
                   wheelY() + Math.sin(mid) * C.wheelRadius * 0.66, deals, w.col);
       Pop.show(w.bonus === "mixed" ? "ultra" : "combo",
-               { word: w.label, sub: deals.length + " BRICKS CHARGED", at: popAt() });
+               { word: w.label, sub: deals.length + Lang.t(" BRICKS CHARGED"), at: popAt() });
     }
     function updateWheel(dt) {
       var segA = TAU / WHEEL.length, v = 0, s;
@@ -901,7 +901,7 @@
         Pop.show("combo", { word: "SMASH!", sub: "CHAIN x15", cls: "pop-blast", at: popAt() });
         Sound.clip("chain", 0.85, 1.25);
       } else if (chain >= 20 && chain % 10 === 0) {
-        Pop.show("ultra", { word: "CHAIN x" + chain, sub: "+" + gain, at: popAt() });
+        Pop.show("ultra", { word: Lang.t("CHAIN x") + chain, sub: "+" + gain, at: popAt() });
         Sound.clip("chain", 0.95, 1.4);
         Overlay.vignette("rgba(75,245,255,.85)", 1, 620);
       }
@@ -1002,7 +1002,7 @@
       Sound.clip("gold", 0.85);
       Fx.ring(cx, cy, { from: 10, to: 200, color: SIDE[side].core, width: 8, life: 0.45 });
       Overlay.vignette(rgba(SIDE[side].core, 0.7), 1, 420);
-      Pop.show("bonus", { word: "MULTIBALL", sub: "+" + C.multiBalls + " " + SIDE[side].name,
+      Pop.show("bonus", { word: "MULTIBALL", sub: "+" + C.multiBalls + " " + Lang.t(SIDE[side].name),
                           at: popAt() });
     }
 
@@ -1022,9 +1022,9 @@
       var ratio = total ? broken / total : 0;
       var stars = (cleared || ratio >= 0.55) ? 3 : ratio >= 0.3 ? 2 : broken > 0 ? 1 : 0;
       endRound({
-        title: cleared ? "PERFECT CLEAR!"
-             : ratio >= 0.55 ? "HUGE RUN!"
-             : ratio >= 0.3 ? "NICE RUN!" : C.copy.gameOver,
+        title: cleared ? Lang.t("PERFECT CLEAR!")
+             : ratio >= 0.55 ? Lang.t("HUGE RUN!")
+             : ratio >= 0.3 ? Lang.t("NICE RUN!") : C.copy.gameOver,
         variant: cleared ? "perfect" : ratio >= 0.3 ? "win" : "",
         score: score,
         stars: stars,
@@ -1361,7 +1361,7 @@
       ctx.fillStyle = col;
       ctx.font = "900 26px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("CHAIN x" + chain, x + w / 2, y + h / 2 + 1);
+      ctx.fillText(Lang.t("CHAIN x") + chain, x + w / 2, y + h / 2 + 1);
     }
 
     /* The wheel deals the powers, so its faces ARE the powers: one Lucide
@@ -1394,7 +1394,7 @@
       ctx.strokeStyle = "#4bf5ff"; ctx.lineWidth = 4; ctx.stroke();
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = "#4bf5ff"; ctx.font = "900 24px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.fillText("BONUS", cx, cy + 1);
+      ctx.fillText(Lang.t("BONUS"), cx, cy + 1);
 
       ctx.fillStyle = "#ffb44f";                   // the pointer
       ctx.beginPath();
@@ -1404,10 +1404,10 @@
       // One line, and only one: what the wheel is doing, never a spinner.
       ctx.font = "900 34px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.fillStyle = "rgba(255,255,255,.8)";
-      ctx.fillText("DEALING YOUR ROUND BONUS", cx, cy - R - 52);
+      ctx.fillText(Lang.t("DEALING YOUR ROUND BONUS"), cx, cy - R - 52);
       if (wheel.state === "done") {
         ctx.font = "900 42px -apple-system,Segoe UI,Roboto,sans-serif";
-        ctx.fillStyle = "#ffd43b"; ctx.fillText(WHEEL[wheel.seg].label, cx, cy + R + 72);
+        ctx.fillStyle = "#ffd43b"; ctx.fillText(Lang.t(WHEEL[wheel.seg].label), cx, cy + R + 72);
       }
       ctx.globalAlpha = 1;
     }

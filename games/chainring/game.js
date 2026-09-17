@@ -521,7 +521,7 @@
       // The grade and the gain ride out of the impact point as one comic pop,
       // tinted (and sized) by the timing tier — see the SKIN block. Kept under
       // one beat so two callouts never stack up while a chain is running.
-      Pop.show("score", { word: tier.name + " x" + combo, sub: "+" + gained, cls: tier.pop,
+      Pop.show("score", { word: Lang.t(tier.name) + " x" + combo, sub: "+" + gained, cls: tier.pop,
                           at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 },
                           enter: 200, hold: 150, exit: 320 });
       /* Flash and shake are deliberately NOT scaled by the combo: a chain lands
@@ -589,7 +589,7 @@
         // no ring lands on: name it, because reading the arc is the whole skill.
         combo = 0; stats.miss++;
         HUD.setLeft("x0", "COMBO");
-        Pop.show("score", { word: bestGap > 0.7 ? "EMPTY BEAT" : "MISS", cls: "pop-miss", hold: 180,
+        Pop.show("score", { word: bestGap > 0.7 ? Lang.t("EMPTY BEAT") : Lang.t("MISS"), cls: "pop-miss", hold: 180,
                             at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
         Fx.shake(5, 0.2);
         Sound.clip("miss", 0.6);
@@ -791,7 +791,7 @@
       var stars = score <= 0 ? 0 : score < 3000 ? 1 : score < 6000 ? 2 : 3;
       var perfect = maxScore > 0 && score >= maxScore;   // matched flawless play
       endRound({
-        title: perfect ? "PERFECT" : CONFIG.copy.gameOver,
+        title: perfect ? Lang.t("PERFECT") : CONFIG.copy.gameOver,
         variant: perfect ? "perfect" : "",
         score: score,
         stars: stars,

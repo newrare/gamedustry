@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -115,7 +115,43 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-swipe\">Swipe</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>"
+        "tagline": "<b class=\"w-swipe\">Swipe</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>",
+        "strings": {
+          " LIFE LEFT": " VIE RESTANTE",
+          " LIVES LEFT": " VIES RESTANTES",
+          "BEST CHAIN": "MEILLEURE CHAÎNE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "CHAIN LOST": "CHAÎNE PERDUE",
+          "CHAIN x": "CHAÎNE x",
+          "CRASH!": "CRASH !",
+          "CRASHED!": "CRASH !",
+          "DIST": "DIST",
+          "DISTANCE (M)": "DISTANCE (M)",
+          "FASTER": "PLUS VITE",
+          "FIGURE 8!": "HUIT !",
+          "FINAL SCORE": "SCORE FINAL",
+          "GEMS": "GEMMES",
+          "GREAT RUN!": "SUPERBE PARTIE !",
+          "INSTALL NOW": "INSTALLER",
+          "LAST LIFE": "DERNIÈRE VIE",
+          "LEGEND RUN!": "PARTIE DE LÉGENDE !",
+          "LIVES": "VIES",
+          "LOOP!": "BOUCLE !",
+          "MEGA GEM": "MÉGA GEMME",
+          "ONE CRASH": "UN CRASH",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Run it again": "Relancer",
+          "SCORE": "SCORE",
+          "SCORE x2": "SCORE x2",
+          "SHIELD": "BOUCLIER",
+          "SHIELD DOWN": "BOUCLIER TOMBÉ",
+          "SPIRAL!": "SPIRALE !",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "THREADED!": "AU MILLIMÈTRE !",
+          "TIME": "TEMPS",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "x2 OVER": "x2 TERMINÉ"
+        }
       }
     },
     "font": "orbitron",

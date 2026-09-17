@@ -532,26 +532,29 @@
                            // between two blockers and the wall is not a wall
       rampGate:    88,     // half the escape gate, when the wall keeps one
 
-      /* --- THE SHIELD RAIL down the left flank of the frame ----------------
+      /* --- THE SHIELD RAIL down the right flank of the frame ---------------
          Built like the spin rail in games/spinshock — smoked glass the road
          reads straight through, cells filled from the bottom, an arc and a
          chevron at the value — because the number this game is played on is
          the one the HUD pill is too small to make felt: cyan at full, cooling
          through gold to red as the hull comes apart, so a run going bad turns
-         the left edge of the frame red.
+         the right edge of the frame red.
 
-         The right flank used to carry a second rail, a ladder of the whole
-         field with the player's marker sliding up it. It is gone: the place
-         and the cut it has to be inside are already on the rank pill, the
-         cut's own line on the tarmac is green or red under the craft, and a
-         nineteen-cell ladder down the edge of a race the player is steering
-         through was a second thing to read at 400 km/h and never the one they
-         read. The road got its right-hand side back. */
+         That flank used to carry a second rail, a ladder of the whole field
+         with the player's marker sliding up it. It is gone: the place and the
+         cut it has to be inside are already on the rank pill, the cut's own
+         line on the tarmac is green or red under the craft, and a nineteen-cell
+         ladder down the edge of a race the player is steering through was a
+         second thing to read at 400 km/h and never the one they read. This
+         rail then took the side it left, because the left flank is the level
+         pill's in all thirteen games. */
       railW:        30,    // width of the rail
       railGap:       4,    // air between it and the frame's side margin
       railSegs:     20,    // cells in the shield rail (one per 5%)
       railPad:       3,    // air between two cells
-      railInset:    10     // air under Layout.top and above Layout.bottom
+      railInset:    10,    // air under Layout.top
+      railFoot:    142     // air under the rail: the speedo and, on the web
+                           // target, the round's two controls stack in it
     },
 
     /* ---- THE LADDER — what makes one level not another ------------------
@@ -1049,9 +1052,9 @@
        own anchors.
 
        Those outer columns are nevertheless held well off the edges: the shield
-       gauge lives down the left one (see drawShieldRail) and a callout is the
+       gauge lives down the right one (see drawShieldRail) and a callout is the
        one thing on screen wide enough to cover the shield running out. The
-       right column keeps the same inset, because a callout hanging off one
+       left column keeps the same inset, because a callout hanging off one
        edge of the frame and not the other reads as a layout bug. */
     var POP_SPOTS = [
       [0.22, 0.17], [0.50, 0.15], [0.78, 0.17],
@@ -2188,19 +2191,19 @@
        worth panicking about, the plain field size before that. */
     function ordinal(n) {
       var t = n % 100;
-      if (t >= 11 && t <= 13) return n + "TH";
-      return n + (["TH", "ST", "ND", "RD"][n % 10] || "TH");
+      if (t >= 11 && t <= 13) return n + Lang.t("TH");
+      return n + Lang.t(["TH", "ST", "ND", "RD"][n % 10] || "TH");
     }
     function showRank() {
-      var cut = T.cuts[cutI], need = "FINAL " + fieldSize, left, txt;
+      var cut = T.cuts[cutI], need = Lang.t("FINAL ") + fieldSize, left, txt;
       var flag = cut && atFlag();
       if (cut) {
         left = Math.max(0, Math.round(cut.at - dist));
         // The flag is a countdown and never an ask: nothing about the place is
         // at stake there but the win itself.
-        need = flag ? "FINISH · " + left + "M"
-             : left <= T.cutWarn ? "TOP " + cut.rank + " IN " + left + "M"
-                                 : "CUT TO " + cut.rank + " · " + left + "M";
+        need = flag ? Lang.t("FINISH · ") + left + "M"
+             : left <= T.cutWarn ? Lang.t("TOP ") + cut.rank + Lang.t(" IN ") + left + "M"
+                                 : Lang.t("CUT TO ") + cut.rank + " · " + left + "M";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
       // glance has to answer both "where am I" and "how many are left".
@@ -2502,9 +2505,9 @@
          pack thinning out on screen; what the player cannot see is the size of
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
-      Pop.show("combo", { word: fieldSize + " PILOTS LEFT",
-                          sub: atFlag() ? "FINISH · TAKE THE LEAD"
-                                        : "NEXT CUT · TOP " + T.cuts[cutI].rank,
+      Pop.show("combo", { word: fieldSize + Lang.t(" PILOTS LEFT"),
+                          sub: atFlag() ? Lang.t("FINISH · TAKE THE LEAD")
+                                        : Lang.t("NEXT CUT · TOP ") + T.cuts[cutI].rank,
                           at: "center" });
       showRank();
     }
@@ -2562,8 +2565,8 @@
       var st = raceStars();
       var sc = Math.floor(travel + pick) + 500;
       endRound({
-        title: rank === 1 ? "RACE WON!"
-             : rank <= 3 ? "ON THE PODIUM!" : "RACE FINISHED!",
+        title: rank === 1 ? Lang.t("RACE WON!")
+             : rank <= 3 ? Lang.t("ON THE PODIUM!") : Lang.t("RACE FINISHED!"),
         variant: st === 3 ? "perfect" : "win",
         score: sc,
         /* The METRES here too, for the same reason `die` reports them: on the
@@ -2693,15 +2696,22 @@
       skyBase = horizonY + Math.ceil(
         (span + T.hillAmp * 2) * T.camZ * (1 + T.fovKick) / T.zRoad) + 1;
 
-      /* The shield rail: full height of the play band, hard against the
-         frame's left margin. It is an overlay on the road rather than a band
-         cut out of it — the road is a perspective view whose interest is all
-         in the middle, and the rail is smoked glass, so nothing the player has
-         to read is lost under it. */
+      /* The shield rail, hard against the frame's RIGHT margin. It is an
+         overlay on the road rather than a band cut out of it — the road is a
+         perspective view whose interest is all in the middle, and the rail is
+         smoked glass, so nothing the player has to read is lost under it.
+
+         It is on the right because the bottom-LEFT corner is the level pill's
+         (packages/webshell/levels.css): the three stars of a run are read in
+         the same corner in all thirteen games, and arcider is the one that had
+         an instrument there. So this side of the frame is now the whole
+         instrument column, and it reads top to bottom — the rail, the
+         speedometer under its foot, and the round's MENU / OPTIONS controls
+         under that. `railFoot` is the air those two need. */
       shieldRail.w = T.railW;
-      shieldRail.x = Layout.left + T.railGap;
+      shieldRail.x = Layout.right - T.railGap - T.railW;
       shieldRail.y = Layout.top + T.railInset;
-      shieldRail.h = Layout.h - T.railInset * 2;
+      shieldRail.h = Layout.h - T.railInset - T.railFoot;
 
       // the sky, darkest overhead and hottest at the skyline. Four stops out
       // of the biome, so a build with no artwork is still the right weather.
@@ -3770,7 +3780,7 @@
     }
 
     /* ====================================================================
-       THE SHIELD RAIL — down the left flank of the frame
+       THE SHIELD RAIL — down the right flank of the frame
 
        The HUD pill says the same thing in eight point type at the top of the
        frame, where a player at 400 km/h is not looking. This says it in the
@@ -3952,12 +3962,12 @@
       ctx.restore();
     }
 
-    /* THE SPEEDOMETER — bottom-left of the play band, in the column the shield
-       rail already owns, because that side of the frame IS the instrument side
-       and the road's interest is all in the middle. It sits just clear of the
-       rail and just above `Layout.bottom`, so it is over the CTA bar on the
-       playable and over nothing on the web target, whose own two controls are
-       in the opposite corner.
+    /* THE SPEEDOMETER — right-hand column, under the shield rail's foot,
+       because that side of the frame IS the instrument side and the road's
+       interest is all in the middle. It is right-aligned on the rail's own
+       outer edge, so the two read as one column, and it clears the bottom of
+       the frame by `railFoot` — which is where the web target's MENU and
+       OPTIONS controls sit, and where the playable's CTA bar starts.
 
        No plate under it and no glow behind it: a box would be a second object
        to read and `shadowBlur` is banned per frame (see CLAUDE.md). What keeps
@@ -3969,8 +3979,8 @@
        rest of the time. That is the dial reading back the two things that move
        it, in the place the eye is already looking for the shield. */
     function drawSpeedo() {
-      var r = shieldRail, x = r.x + r.w + 14, y = Layout.bottom - 16;
-      var n = String(Math.max(0, Math.round(kmhShown))), col;
+      var r = shieldRail, right = r.x + r.w, y = r.y + r.h + 54;
+      var n = String(Math.max(0, Math.round(kmhShown))), col, unit = Lang.t("KM/H");
       col = boostT > 0 ? "#ffd43b" : mult < 0.9 ? "#ff2d55" : "#ffffff";
 
       ctx.save();
@@ -3982,17 +3992,25 @@
       ctx.lineWidth = 6;
       ctx.strokeStyle = "rgba(4,4,20,.72)";
 
+      /* Measured, then laid out from the right: the figure runs 1 to 3 digits
+         and the unit changes width with the language, so the pair is placed by
+         its own width rather than by a guessed x — otherwise the column's edge
+         moves every time the speed crosses 100. */
+      ctx.font = "900 20px " + speedoFont;
+      var unitW = ctx.measureText(unit).width;
       ctx.font = "900 52px " + speedoFont;
+      var x = right - unitW - 10 - ctx.measureText(n).width;
+
       ctx.strokeText(n, x, y);
       ctx.fillStyle = col;
       ctx.fillText(n, x, y);
 
-      x += ctx.measureText(n).width + 10;
+      x = right - unitW;
       ctx.font = "900 20px " + speedoFont;
       ctx.lineWidth = 5;
-      ctx.strokeText("KM/H", x, y);
+      ctx.strokeText(unit, x, y);
       ctx.fillStyle = rgba(col, 0.9);
-      ctx.fillText("KM/H", x, y);
+      ctx.fillText(unit, x, y);
       ctx.restore();
     }
 

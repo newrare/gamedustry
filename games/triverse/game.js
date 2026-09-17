@@ -656,7 +656,7 @@
         if (chain > 0 && chain % 6 === 0) {
           g = 50 * mult * (chain / 6);
           gainScore(g);
-          Pop.show(chain >= 24 ? "ultra" : "combo", { word: "CHAIN x" + chain, sub: "+" + g });
+          Pop.show(chain >= 24 ? "ultra" : "combo", { word: Lang.t("CHAIN x") + chain, sub: "+" + g });
           Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
         }
 
@@ -710,8 +710,8 @@
 
       if (lives <= 0) { die(); return; }
       invT = T.invTime;
-      Pop.show("danger", { word: lives === 1 ? "LAST LIFE" : "CRASH!",
-                           sub: lives + (lives === 1 ? " LIFE LEFT" : " LIVES LEFT") });
+      Pop.show("danger", { word: lives === 1 ? Lang.t("LAST LIFE") : Lang.t("CRASH!"),
+                           sub: lives + (lives === 1 ? Lang.t(" LIFE LEFT") : Lang.t(" LIVES LEFT")) });
     }
 
     /* Crossing a pair of mines through the one open rope is a skill beat, so it
@@ -915,7 +915,7 @@
       // to, it just gets there sooner.
       var st = sc >= 4700 ? 3 : sc >= 2200 ? 2 : 1;
       endRound({
-        title: st === 3 ? "LEGEND RUN!" : st === 2 ? "GREAT RUN!" : CONFIG.copy.gameOver,
+        title: st === 3 ? Lang.t("LEGEND RUN!") : st === 2 ? Lang.t("GREAT RUN!") : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
         // A level's objective is a distance: the metres, not the metres plus

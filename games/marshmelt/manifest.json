@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -87,7 +87,29 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">TAP</b> en visant pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>"
+        "tagline": "<b class=\"w-tap\">TAP</b> en visant pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>",
+        "strings": {
+          " ROCKS": " ROCHERS",
+          "BEST": "RECORD",
+          "BEST CHAIN": "MEILLEURE CHAÎNE",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "BURNT!": "BRÛLÉ !",
+          "CHAIN": "CHAÎNE",
+          "FINAL SCORE": "SCORE FINAL",
+          "HOT!": "CHAUD !",
+          "INSTALL NOW": "INSTALLER",
+          "MELTED": "FONDU",
+          "MELTED!": "FONDU !",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "ROCKS": "ROCHERS",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SURVIVOR!": "SURVIVANT !",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "jump": "saute",
+          "keep climbing": "continue à grimper"
+        }
       }
     },
     "font": "baloo2",

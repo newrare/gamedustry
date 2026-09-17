@@ -12,6 +12,7 @@
 #   make serve   the dev loop, with reload on save
 #   make store   the store card composer, at http://localhost:8091/
 #   make events  the callouts / cues bench, at http://localhost:8092/
+#   make text    the copy desk, at http://localhost:8093/
 #   make meta    the itch page copy, one file per game
 #   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
 #   make map   [GAME=<slug>]   just the eleventh, the level map
@@ -23,7 +24,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check push itch site serve store events meta shots map ng android
+.PHONY: help check push itch site serve store events text meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -79,6 +80,15 @@ store:
 # `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
 events:
 	node tools/lab/serve-events.mjs
+
+# Every word a game shows a player, EN and FR side by side, read off the four
+# sources instead of one call at a time. Same reason for a server as the two
+# above, plus the one that matters: APPLY writes the correction back into
+# manifest.json, game.js and page.html (tools/lab/apply-text.mjs), then rebuilds
+# the game and the catalogues so the tree still passes `make check`.
+# `node tools/lab/scan-text.mjs <slug>` is the same list as text, no browser.
+text:
+	node tools/lab/serve-text.mjs
 
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta

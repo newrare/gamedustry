@@ -19,6 +19,10 @@
        dial the player is about to touch, so a demo in the old palette would
        promise a different game. */
     --c1:#f63133; --c2:#feb82a; --c3:#29a0ff; --c4:#8831f6; --c5:#35f631;
+    /* The stop over the painted hall (CONFIG.sceneArt). It is the machine's
+       own black rather than the motor's default grey-blue, and the same .34
+       the game used to lay over its embedded texture by hand. */
+    --scene-scrim:rgba(7,5,18,.34);
   }
   html, body { background:radial-gradient(820px 900px at 50% 42%, #1a1440 0%, #0c0824 54%, #050310 100%); }
   .btn { box-shadow:0 10px 30px rgba(255,138,31,.42), inset 0 2px 6px rgba(255,255,255,.4); }

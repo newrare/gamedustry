@@ -203,11 +203,11 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
      does can change without touching the motor or this builder. ---- */
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
-    Store: Store, Sound: Sound, Music: Music, Pop: Pop,
+    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Lang: Lang,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
-    Fit: Fit, HUD: HUD, Decor: Decor,
+    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
-    endRound: endRound,
+    endRound: endRound, applyCopy: applyCopy,
     state: function () { return State; },
     render: frameRender,
     clearWorld: function () { ctx.clearRect(0, 0, view.w, view.h); }
@@ -326,10 +326,31 @@ const WEB_ONLY_ART = ['background-desk'];
    It is a RULE and not a list because a list of ninety filenames is a list
    nobody keeps in step with the artwork. */
 const WEB_ONLY_STYLE = /^ball-[a-z]+-(\d+)$/;
-function webOnlyArt(role) {
+
+/* And a SCENE SET, for the third time and the same reason: a game whose
+   painted scene changes per band of the climb keeps one picture per band
+   (`<slug>-background-phone-<name>.webp`, games/echomaze's five over thirty
+   levels). A playable is one round at level 0, so it can only ever show the
+   FIRST of them — the other four are ~390 KB of base64 for a scene the ad
+   never reaches. The first is decided here, alphabetically, and it is the one
+   the shell falls back to when there is no plain `background-phone`, so the
+   two agree without a manifest key to keep in step. A game therefore puts
+   that picture on its first band. */
+const SCENE_SET = /^background-phone-[a-z0-9]+$/;
+function firstScene(roles) {
+  const set = roles.filter((r) => SCENE_SET.test(r)).sort();
+  return set.length ? set[0] : null;
+}
+
+function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
-  return !!m && Number(m[1]) !== 1;
+  if (m && Number(m[1]) !== 1) return true;
+  if (SCENE_SET.test(role) && roles) {
+    const first = firstScene(roles);
+    return !roles.includes('background-phone') ? role !== first : true;
+  }
+  return false;
 }
 
 /* `background-phone` → backgroundPhone, and `decor-ball-01` → decorBall01: the
@@ -345,10 +366,11 @@ async function gameArt(slug, forWeb) {
   if (!slug || !existsSync(dir)) return '';
 
   const prefix = slug + '-';
-  const roles = readdirSync(dir)
+  const all = readdirSync(dir)
     .filter((f) => f.startsWith(prefix) && f.endsWith('.webp'))
-    .map((f) => f.slice(prefix.length, -'.webp'.length))
-    .filter((role) => forWeb || !webOnlyArt(role))
+    .map((f) => f.slice(prefix.length, -'.webp'.length));
+  const roles = all
+    .filter((role) => forWeb || !webOnlyArt(role, all))
     .sort();
   if (!roles.length) return '';
 

@@ -19,6 +19,24 @@
     $("hud").classList.toggle("hidden", s !== "playing");
     $("cta-bar").classList.toggle("hidden", s !== "playing");
     $("backdrop").classList.toggle("on", s === "end");
+    /* THE END SCREEN'S TWO BUTTONS GO WITH IT. `.show` is what makes them
+       visible AND `pointer-events:auto`, and until this line it was only ever
+       removed by the NEXT end screen — so from the second round on, a closed
+       #screen-end left two invisible, fully hit-testable rectangles sitting in
+       the middle of the play area. `pointer-events:none` on the screen does
+       not win against `auto` on a descendant, so a tap that landed on one of
+       them re-entered startGame (or Ad.openStore in a playable) from inside a
+       running round, and the frame carried another loop on top of the last.
+       The stylesheet says the same thing again at the same specificity; this
+       is the one that also takes the focus off a button nobody can see. */
+    if (s !== "end") {
+      EndScreen.clear();                  // the reveal's timers go with it
+      ["btn-install", "btn-replay"].forEach(function (id) {
+        var b = $(id);
+        b.classList.remove("show");
+        if (document.activeElement === b) b.blur();
+      });
+    }
     if (s !== "playing") Overlay.clear();
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
@@ -123,16 +141,28 @@
        game spent on its HUD: measured with tools/lab/bench-pop.mjs on the
        gameplay window alone (no callouts), orbinity went from 22 ms of style
        and 19 ms of layout per 3 s to vipera's numbers, which has no timer. */
-    var shownL = null, shownR = null;
+    var shownL = null, shownR = null, lastL = null, lastR = null;
     function setLeft(text, label, cls) {
-      var html = text == null ? "" : pill(text, label, cls);
+      lastL = [text, label, cls];
+      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
       if (html === shownL) return;
       shownL = html; $("hud-left").innerHTML = html;
     }
     function setRight(text, label, cls) {
-      var html = text == null ? "" : pill(text, label, cls);
+      lastR = [text, label, cls];
+      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
       if (html === shownR) return;
       shownR = html; $("hud-right").innerHTML = html;
+    }
+    /* A language changed from OPTIONS pauses the round, so the two pills are
+       not rewritten by the loop: they hold the English the game last wrote
+       until it writes again, which on a label like LIVES can be the whole
+       round. Re-running the last call with the new dictionary is the whole
+       fix — the arguments are the game's own and are kept untranslated. */
+    function relabel() {
+      shownL = shownR = null;
+      if (lastL) setLeft(lastL[0], lastL[1], lastL[2]);
+      if (lastR) setRight(lastR[0], lastR[1], lastR[2]);
     }
     function setTime(sec) {
       if (!CONFIG.hud.timer) return;
@@ -140,7 +170,7 @@
       setRight(s, CONFIG.copy.timeLabel, s <= 5 ? "warn" : "");
     }
     return { setScore: setScore, setScoreNow: setScoreNow, tick: tick, punch: punch,
-             setLeft: setLeft, setRight: setRight, setTime: setTime,
+             setLeft: setLeft, setRight: setRight, setTime: setTime, relabel: relabel,
              score: function () { return target; } };
   })();
 
@@ -241,6 +271,7 @@
   var Pop = (function () {
     var timers = [];
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+    function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
 
     /* Callouts currently on screen, oldest first, and a hard cap on them. Each
        one owns compositing layers, so a player mashing the screen could
@@ -364,9 +395,9 @@
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
-      var word = opt.word != null ? opt.word : st.word;
+      var word = Lang.t(opt.word != null ? opt.word : st.word);
       if (word == null) return null;
-      var sub = opt.sub != null ? opt.sub : st.sub;
+      var sub = Lang.t(opt.sub != null ? opt.sub : st.sub);
       var pos = resolve(opt.at != null ? opt.at : st.at);
       var enter = opt.enter != null ? opt.enter : (st.enter || 420);
       var hold  = opt.hold  != null ? opt.hold  : (st.hold == null ? 900 : st.hold);
@@ -421,8 +452,19 @@
       // frame ON PURPOSE and must keep bleeding off both edges.
       var ringEl = anim.querySelector(".pop-d-ring");
       var bodyW = Math.min(Math.max(body.offsetWidth, wordW), Layout.w);
-      var half = Math.min(Math.max(bodyW / 2 + 8, ringEl ? ringEl.offsetWidth / 2 : 0), view.w / 2);
-      pop.style.left = clamp(px, half, view.w - half) + "px";
+      /* Against LAYOUT, not against the frame: the callout is a word the player
+         reads, so it answers to the same house margin as everything else the
+         motor writes. The cap is half the play band rather than half the frame,
+         which is what keeps the two bounds in order — a word as wide as the
+         band lands dead centre instead of being pushed against one edge. */
+      var half = Math.min(Math.max(bodyW / 2 + 8, ringEl ? ringEl.offsetWidth / 2 : 0), Layout.w / 2);
+      pop.style.left = clamp(px, Layout.left + half, Layout.right - half) + "px";
+      /* The same, down the other axis, and it is the one a WORLD anchor breaks:
+         `at: {x, y}` follows an entity, and an entity at the foot of the band
+         printed its eulogy below Layout.bottom — half of it on the glass. The
+         named anchors resolve inside Layout already and are untouched by this. */
+      var halfH = Math.min(body.offsetHeight / 2 + 8, Layout.h / 2);
+      pop.style.top = clamp(py, Layout.top + halfH, Layout.bottom - halfH) + "px";
 
       // Full-frame impact, borrowed from the layers that own it. `opt.silent`
       // opts out: the prewarm pass below builds every style while the intro is
@@ -448,7 +490,10 @@
       }
       if (hold >= 0) close(enter + hold);
 
-      handle = { el: pop, close: function () { close(0); }, remove: remove };
+      handle = { el: pop, close: function () { close(0); }, remove: remove,
+                 // when this callout is off the screen, so a caller can wait
+                 // for the layer to go quiet before it speaks (see pending())
+                 until: now() + enter + Math.max(hold, 0) + exit };
       live.push(handle);
       // Over the cap: drop the oldest outright rather than play it out — under a
       // burst it is already faded, and an exit animation costs another frame.
@@ -542,18 +587,36 @@
        silences these too: they are the same feedback to the player.           */
     var floats = [];
 
+    /* A value hangs over the entity that paid it, so the anchor is the world's
+       and not the layout's — and an entity at the edge of the play band would
+       print its number on the glass. It is clamped into Layout like every other
+       word the motor writes, measured ONCE here rather than per frame: the
+       float is drawn ~40 times over its life and the string never changes.
+       `grow` is the headroom the tier scales add on the way out (drawText). */
     function text(x, y, str, opt) {
       if (!enabled) return;
       opt = opt || {};
-      floats.push({ x: x, y: y, text: String(str), color: opt.color || "#ffffff",
-        size: opt.size || 34, tier: opt.tier || 0, vy: opt.vy == null ? -70 : opt.vy,
+      var str2 = String(Lang.t(str));
+      var size = opt.size || 34, tier = opt.tier || 0;
+      var grow = tier >= 2 ? 1.45 : tier >= 1 ? 1.25 : 1.12;
+      var hw, hh = size * 0.5 * grow;
+      ctx.save();
+      ctx.font = "900 " + size + "px -apple-system,Segoe UI,Roboto,sans-serif";
+      hw = ctx.measureText(str2).width * 0.5 * grow;
+      ctx.restore();
+      floats.push({ x: clamp(x, Layout.left + hw, Layout.right - hw),
+        y: clamp(y, Layout.top + hh, Layout.bottom - hh),
+        hh: hh, text: str2, color: opt.color || "#ffffff",
+        size: size, tier: tier, vy: opt.vy == null ? -70 : opt.vy,
         life: opt.life || 0.9, maxLife: opt.life || 0.9 });
     }
 
     function tick(dt) {
       for (var i = floats.length - 1; i >= 0; i--) {
         var f = floats[i];
-        f.y += f.vy * dt; f.vy *= 0.9; f.life -= dt;
+        // The rise is what would take it out of the band on the other side.
+        f.y = Math.max(Layout.top + f.hh, f.y + f.vy * dt);
+        f.vy *= 0.9; f.life -= dt;
         if (f.life <= 0) floats.splice(i, 1);
       }
     }
@@ -612,8 +675,18 @@
       requestAnimationFrame(step);
     }
 
+    /* How long the callout layer is still busy, in ms — 0 when it is already
+       quiet. A caller that must not talk over the game (the level layer's
+       three-star finish lands on the same frame as the game's own hero
+       callout) waits this out instead of guessing a delay. */
+    function pending() {
+      var t = now(), i, ms = 0;
+      for (i = 0; i < live.length; i++) ms = Math.max(ms, live[i].until - t);
+      return Math.max(0, ms);
+    }
+
     return {
-      show: show, text: text, tick: tick, canvas: canvas,
+      show: show, text: text, tick: tick, canvas: canvas, pending: pending,
       clear: clear, prewarm: prewarm, styles: STYLES, anchors: ANCHORS,
       setEnabled: function (v) { enabled = !!v; if (!enabled) clear(); },
       isEnabled: function () { return enabled; }
@@ -645,6 +718,27 @@
   var Art = (function () {
     var art = CONFIG.art || {};
 
+    /* WHICH PICTURE IS "THE SCENE". Twelve games ship one painting and it is
+       `backgroundPhone`; a game whose scene changes per band of the climb
+       ships one per band instead (`<slug>-background-phone-<name>.webp` ->
+       `backgroundPhoneBlue`, games/echomaze), and then there is no plain key
+       at all. The FIRST variant is the default the screens are dressed with,
+       alphabetically — the same one the builder is left with when it strips
+       the other four out of a playable (tools/build/build.mjs, SCENE_SET), so
+       the two agree without a manifest key to keep in step. `Art.backdrop`
+       below is what a game moves it to for the band it is playing. */
+    function defaultScene() {
+      if (art.backgroundPhone) return "backgroundPhone";
+      var keys = [], k;
+      for (k in art)
+        if (art.hasOwnProperty(k) && k.indexOf("backgroundPhone") === 0) keys.push(k);
+      return keys.length ? keys.sort()[0] : null;
+    }
+    var baseKey = defaultScene();      // the game's own scene: the intro's, and the map's
+    var bandKey = baseKey;             // the band's, which only the end screen and a
+                                       // `CONFIG.sceneArt` round follow
+    function sceneSrc() { return bandKey ? art[bandKey] : null; }
+
     /* The painted layer, as the first child of a screen: `.screen-art` paints
        the picture and its own scrim (motor.css), and the marker class on the
        screen is what tells the stylesheet to drop the flat tint it used to
@@ -652,21 +746,23 @@
        the markup is one file per game, thirteen copies plus the template, and
        a layer nothing configures does not belong in any of them. */
     function dress(screenId) {
-      if (!art.backgroundPhone) return;
+      if (!sceneSrc()) return;
       var screen = $(screenId);
       if (!screen || screen.querySelector(".screen-art")) return;
       var layer = document.createElement("div");
       layer.className = "screen-art";
-      layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+      layer.style.backgroundImage = "url(" + sceneSrc() + ")";
       screen.insertBefore(layer, screen.firstChild);
       screen.classList.add("has-art");
     }
 
     /* The same painting behind the ROUND, for a game that sets
-       `CONFIG.sceneArt`. `games/chainring`, `games/slipdeck` and
-       `games/marshmelt` are the three: each of them painted its own decorative
-       ground — a radial gradient, a felt fill, a pre-rendered cavern — and the
-       scene replaces exactly that.
+       `CONFIG.sceneArt`. `games/chainring`, `games/slipdeck`,
+       `games/marshmelt` and `games/radiam` are the four: each of them painted
+       its own decorative ground — a radial gradient, a felt fill, a
+       pre-rendered cavern, a wall of gears embedded as a JPEG — and the scene
+       replaces exactly that. radiam is the one with a scene PER BAND, so
+       `backdrop` below moves the round's picture as well as the end screen's.
 
        IT IS A CSS LAYER BEHIND THE CANVAS, NOT A drawImage. Blitting a full
        720x1280 picture every frame is ~2.7 Mpixel on a 3x phone, for a
@@ -681,13 +777,13 @@
        means the SKIN's `html, body` gradient is the fallback for free — with no
        artwork on disk, `scene()` is false and the game paints as it always did. */
     function dressFrame() {
-      if (!CONFIG.sceneArt || !art.backgroundPhone) return false;
+      if (!CONFIG.sceneArt || !sceneSrc()) return false;
       var frame = $("frame");
       if (!frame) return false;
       if (!frame.querySelector(".frame-art")) {
         var layer = document.createElement("div");
         layer.className = "frame-art";
-        layer.style.backgroundImage = "url(" + art.backgroundPhone + ")";
+        layer.style.backgroundImage = "url(" + sceneSrc() + ")";
         frame.insertBefore(layer, frame.firstChild);
       }
       return true;
@@ -816,9 +912,36 @@
 
     var onScene = false;
 
+    /* MOVE THE SCENE. A game with one painting per band calls this from
+       `reset()` with the band's key, next to the `Music.play` that moves the
+       bed with it — the END SCREEN and, for a `CONFIG.sceneArt` game, the
+       round itself then wear the scene of the band just played, so the picture
+       turns over exactly where the music does.
+
+       The INTRO is deliberately left where it is, and with it the web menu
+       (which reuses that layer) and the level map (which reads the key back):
+       those screens belong to the game and not to a level, and a menu that
+       took the colour of whichever band was last played would be a different
+       game every visit. An unknown key is ignored rather than clearing the
+       screen, so a playable — which ships the first scene alone — keeps its
+       picture when the game asks for a band it does not carry. */
+    function backdrop(key) {
+      if (!key || !art[key] || key === bandKey) return;
+      bandKey = key;
+      var end = $("screen-end"), layer = end && end.querySelector(".screen-art");
+      if (layer) layer.style.backgroundImage = "url(" + art[key] + ")";
+      var frame = $("frame"), fl = frame && frame.querySelector(".frame-art");
+      if (fl) fl.style.backgroundImage = "url(" + art[key] + ")";
+    }
+
     return {
       has: function (key) { return !!art[key]; },
       src: function (key) { return art[key] || null; },
+      /* The game's OWN scene — the one the intro, the web menu and the level
+         map wear. It is the default one whatever band `backdrop` has moved the
+         end screen to, because none of those three screens belongs to a level. */
+      sceneKey: function () { return baseKey; },
+      backdrop: backdrop,
       /* True when the painted scene is behind the world, i.e. the game must
          NOT paint its own opaque ground this frame. Read it in render(). */
       scene: function () { return onScene; },
@@ -1093,12 +1216,21 @@
     $("intro-tagline").innerHTML = CONFIG.tagline;
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
-    $("btn-start").textContent = CONFIG.copy.start;
-    $("btn-cta").textContent = CONFIG.copy.ctaBar;
-    $("btn-install").textContent = CONFIG.copy.ctaEnd;
-    $("btn-replay").textContent = CONFIG.copy.replay;
-    $("hud-score-lbl").textContent = CONFIG.copy.scoreLabel;
-    $("eo-scorelbl").textContent = CONFIG.copy.endScore;
+    applyCopy();
+  }
+
+  /* The six fixed strings, written into the page. They are the one piece of a
+     game's copy that is NOT written at the moment it is read — the nodes are
+     filled once at boot and then sit there — so a language change has to come
+     back through here. The web shell calls it; a playable calls it once from
+     buildIntro and never again. */
+  function applyCopy() {
+    $("btn-start").textContent = Lang.t(CONFIG.copy.start);
+    $("btn-cta").textContent = Lang.t(CONFIG.copy.ctaBar);
+    $("btn-install").textContent = Lang.t(CONFIG.copy.ctaEnd);
+    $("btn-replay").textContent = Lang.t(CONFIG.copy.replay);
+    $("hud-score-lbl").textContent = Lang.t(CONFIG.copy.scoreLabel);
+    $("eo-scorelbl").textContent = Lang.t(CONFIG.copy.endScore);
   }
 
   // --- End screen: the cinematic reveal ----------------------------------
@@ -1130,7 +1262,7 @@
       function T(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
       var title = $("eo-title");
-      title.textContent = result.title || CONFIG.copy.gameOver;
+      title.textContent = Lang.t(result.title || CONFIG.copy.gameOver);
       Fit.one("eo-title");
       Fit.one("eo-score", String(result.score || 0));
       title.className = "eo-title" + (result.variant ? " " + result.variant : "");
@@ -1150,8 +1282,8 @@
       var box = $("eo-stats"), html = "";
       rows.forEach(function (r, i) {
         var label = r.grade === "gold"
-          ? '<span class="spark">✦</span> ' + r.label + ' <span class="spark">✦</span>'
-          : r.label;
+          ? '<span class="spark">✦</span> ' + Lang.t(r.label) + ' <span class="spark">✦</span>'
+          : Lang.t(r.label);
         html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
                 '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
       });
@@ -1215,7 +1347,7 @@
           settle();
           var el = $("eo-val-" + i);
           if (typeof r.value === "number") countUp(el, r.value, 450);
-          else el.textContent = r.value;
+          else el.textContent = Lang.t(r.value);
           Sound.cue("uiRow", 0.5, 1 + i * 0.07, 480 + i * 70, 0.05);
         }, afterStars + i * ROW_GAP);
       });
@@ -1225,7 +1357,19 @@
       T(function () { $("btn-install").classList.add("show"); settle(); }, ctaAt);
       T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
     }
-    return { show: show };
+
+    /* THE REVEAL IS A CASCADE OF TIMERS, AND IT HAS TO BE CANCELLABLE. A
+       player who taps PLAY AGAIN before the last stat row has landed leaves
+       a dozen setTimeouts in flight, and until this existed they went on
+       firing INSIDE the next round: confetti bursts, the star and row chimes,
+       the character settling, and — the one with teeth — `.show` put back on
+       the two buttons a moment after setState had taken it off. `show()`
+       cleared them, but only on the way into the NEXT end screen, which is
+       one round too late. The shell calls this whenever the state leaves
+       "end". */
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+
+    return { show: show, clear: clear };
   })();
 
   /* --- Perf: a readout on the device itself ------------------------------

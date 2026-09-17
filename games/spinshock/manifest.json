@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.0.3",
+  "version": "1.1.1",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -115,7 +115,40 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Éjecte puis détruis les toupies rivales avec un <b class=\"w-tap\">TAP</b> pile à l’<b class=\"w-hit\">impact</b>"
+        "tagline": "Éjecte puis détruis les toupies rivales avec un <b class=\"w-tap\">TAP</b> pile à l’<b class=\"w-hit\">impact</b>",
+        "strings": {
+          " SHOCK": " CHOC",
+          "% SPIN": "% DE ROTATION",
+          "BEARINGS WEARING OUT": "ROULEMENTS À BOUT",
+          "BEST": "RECORD",
+          "BEST COMBO": "MEILLEUR COMBO",
+          "BEST SCORE": "MEILLEUR SCORE",
+          "COMBO x": "COMBO x",
+          "DOUBLE": "DOUBLE",
+          "FINAL SCORE": "SCORE FINAL",
+          "GREAT": "SUPER",
+          "INSTALL NOW": "INSTALLER",
+          "KO +": "KO +",
+          "MISS": "RATÉ",
+          "OK": "OK",
+          "PERFECT": "PARFAIT",
+          "PERFECT HITS": "COUPS PARFAITS",
+          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Replay the demo": "Rejouer la démo",
+          "SCORE": "SCORE",
+          "SHOCK TO RECOVER": "CHOQUE POUR REMONTER",
+          "SHOCKWAVES": "ONDES DE CHOC",
+          "SPIN": "ROTATION",
+          "SPIN GONE": "PLUS DE ROTATION",
+          "SPIN LOST": "ROTATION PERDUE",
+          "SPIN MASTER!": "MAÎTRE DE LA TOUPIE !",
+          "SPINNING OUT": "ROTATION EN CHUTE",
+          "SPUN OUT!": "TOUPIE À TERRE !",
+          "TAP TO PLAY": "TAP POUR JOUER",
+          "TIME'S UP!": "TEMPS ÉCOULÉ !",
+          "TRIPLE": "TRIPLE",
+          "WRECKED": "FRACASSÉ"
+        }
       }
     },
     "font": "bungee",

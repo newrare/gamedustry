@@ -697,8 +697,14 @@
   /* =========================================================================
      SCREENS — loading / intro / end
      ========================================================================= */
+  /* The padding is the house margin at full size — 48 px of air down each side
+     and 70 at the ends — and it is written against the INSETS rather than
+     against the frame: on a phone with a notch the title used to start under
+     it and the replay link under the gesture bar, because the letterbox bars
+     only cover part of that overlap (see fitCanvas in section 3). */
   .screen {
-    position:absolute; inset:0; z-index:30; padding:70px 48px;
+    position:absolute; inset:0; z-index:30;
+    padding:calc(var(--inset-top) + 70px) 48px calc(var(--inset-bottom) + 70px);
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
     transition:opacity .25s ease;
   }
@@ -1083,3 +1089,13 @@
   #screen-end #btn-install, #screen-end #btn-replay { opacity:0; pointer-events:none; transition:opacity .5s ease; }
   #screen-end #btn-install { margin-top:34px; }
   #screen-end #btn-install.show, #screen-end #btn-replay.show { opacity:1; pointer-events:auto; }
+  /* ...and a CLOSED end screen takes them back. `pointer-events:none` on
+     .screen.hidden does NOT beat `auto` on a descendant — the property is
+     resolved per element, never inherited as a veto — so the two buttons of
+     the last end screen stayed hit-testable over the round that followed:
+     two invisible 420x84 rectangles in the middle of the play area, and a tap
+     on either one re-entered the round under the one already running. Written
+     with the same two ids as the rule above, so it wins on order and never on
+     a specificity trick. The shell strips `.show` on the way out as well
+     (setState); this is the belt to that pair of braces. */
+  #screen-end.hidden #btn-install, #screen-end.hidden #btn-replay { opacity:0; pointer-events:none; }

@@ -86,38 +86,53 @@ ______________________________________________________________________
 
 ## The web build
 
-- [ ] CODE — **a TAP reloads the game view at random, and the layers pile up.**
-  Reported from play: tapping somewhere re-enters the round instead of playing
-  it, and after a few of those the frame drags as if several views were alive
-  at once — a second canvas, a second `Loop`, a second set of `Input`
-  listeners, or an intro that was never torn down under the round. Reproduce it
-  first (which tap, which screen, which target), then find who re-mounts:
-  `startGame` is reachable from `#btn-start`, from PLAY AGAIN, from the map's
-  level cards and from SPACE, and nothing today asserts that a round is mounted
-  once. The fix is one guard plus a real teardown, in the shell or the
-  webshell — no `game.js` should need it.
+- [x] CODE — **a TAP reloaded the game view at random, and the layers piled
+  up.** Reproduced over CDP on the real builds, playable and web alike: it is
+  the END SCREEN'S TWO BUTTONS, still live over the round that follows. `.show`
+  is what makes `#btn-install` / `#btn-replay` visible AND `pointer-events:auto`,
+  and it was only ever taken off by the NEXT end screen — so from the second
+  round on, a closed `#screen-end` left two invisible 420x84 rectangles sitting
+  in the middle of the play area. `pointer-events:none` on `.screen.hidden`
+  does not beat `auto` on a descendant (the property is resolved per element,
+  never inherited as a veto), so a tap on either one reached `startGame` — or
+  `Ad.openStore` in a playable — from inside a running round. That was the
+  "random tap". The LAYERS were `Loop.start`: it scheduled a new `requestAnimationFrame`
+  chain every call, and the old chain only ever checked `running`, which start
+  had just set back to true — two chains, each calling update AND render, the
+  world at twice the rate and the frame drawn twice over itself. A third call
+  made three, which is the drag. Fixed in four places, none of them a `game.js`:
+  `Loop` holds its rAF handle, `start` is idempotent and `stop` cancels the
+  pending frame ([packages/engine/engine.js](packages/engine/engine.js));
+  `setState` strips `.show`, blurs the button and cancels the reveal's timers
+  on the way out of "end" ([packages/shell/shell.js](packages/shell/shell.js)),
+  which also stops the cascade firing confetti and star chimes inside the next
+  round; the stylesheet says the same at the same specificity
+  ([packages/shell/motor.css](packages/shell/motor.css)); and `startGame` tears
+  the previous round down before mounting a new one
+  ([packages/engine/bootstrap.js](packages/engine/bootstrap.js)). Measured
+  before and after with a tick-per-animation-frame counter: 2.00 then 1.00.
 
-- [ ] CODE — **changing the language does not translate the round.**
-  `setLang()` ([packages/webshell/menu.js:665](packages/webshell/menu.js))
-  rewrites the menu entries, the tagline, the two end-screen buttons and the
-  open panel, and stops there. Everything the motor writes out of
-  `CONFIG.copy` is set once at boot
-  ([packages/shell/shell.js:778-783](packages/shell/shell.js)) and never
-  revisited, so switching FR/EN leaves in English: the HUD labels (`SCORE`,
-  `TIME`), the end screen's `FINAL SCORE`, the game-over title and the replay
-  link. Two halves, and the second is the real work:
-
-  - `setLang()` has to re-apply `CONFIG.copy` — which means `web.copy.<lang>`
-    in the manifest must be able to carry the whole `copy` block, not just the
-    tagline, and the builder must inject both languages instead of one.
-  - the **end screen's rows and titles are hardcoded English literals inside
-    each game's section 6** (`{ label: "LONGEST BODY" }`, `"TORN APART"`,
-    `"SURVIVOR!"` …), so there is nothing to re-read. They have to move out of
-    `game.js` into the manifest's `web.copy`, thirteen games over, or gain a
-    key the shell resolves. Decide which before touching any game.
-  - a round in progress cannot be relabelled mid-flight for free: the language
-    switch already only happens from OPTIONS, which pauses, so re-applying on
-    resume is enough.
+- [x] CODE — **the thirteen games are translated, FR and EN.** Done with a
+  DICTIONARY rather than a key system: `web.copy.<lang>.strings` in each
+  `manifest.json`, whose key IS the English string the game writes, so there is
+  no key to invent, a missing entry falls back to the English, and the copy
+  desk's rule holds — one row is every call site. `Lang`
+  ([packages/engine/engine.js](packages/engine/engine.js)) applies it where the
+  motor WRITES a word — `CONFIG.copy`, `Pop.show`, `Pop.text`,
+  `HUD.setLeft/setRight`, `endRound`'s title and rows — so the round, the HUD
+  and the end screen changed language without a line of gameplay moving. The 84
+  strings a game BUILDS (`"x" + mult + " STREAK"`, anything it paints on the
+  canvas) wrap their own literal, `Lang.t(" STREAK")`, because no dictionary can
+  match a sentence assembled at runtime. `setLang()` re-applies the lot —
+  `Lang.set` + `applyCopy()` + `HUD.relabel()`, the two pills re-running the
+  game's last call rather than waiting for it to write again — so a switch from
+  OPTIONS repaints a paused round. `make text` is the gate: it lists the
+  dictionary under *Game words* and prints `N untranslated`, and the thirteen
+  read *fully translated*. Two blind spots were swept by hand on the way:
+  `scan-text.mjs` reads the call shapes it knows, so a stat row built with
+  `rows.push`, a word held in a table (`BONUS[k].word`, `CAT_NAME`,
+  `TIERS[i].name`) or assigned to a variable was never listed — some sixty
+  strings, now in the dictionaries but still invisible to the scanner.
 
 - [x] CODE — **OPTIONS "erase the best score" needs its own wording.** Done
   with the level layer: with `prog:<slug>` in play the row reads *erase the
@@ -211,19 +226,24 @@ ______________________________________________________________________
   the ultra congratulation the veil is a leftover of: the same screen as above
   in its gold state, fired once, and never again on a later visit.
 
-- [ ] CODE — **the round's home button, and the game-over buttons, all
-  thirteen.** Two halves of the same question: where a player goes when they
-  stop playing. In the round, the home control
-  ([packages/webshell/menu.js:645](packages/webshell/menu.js)) opens the leave
-  card and drops straight to the menu — on a levelled game the way back is the
-  MAP, not the title screen, so the card needs the choice (MAP / MENU /
-  RESUME) rather than one question. On the end screen the two buttons are
-  relabelled per case (PLAY AGAIN / MENU, NEXT LEVEL / MAP,
-  [packages/webshell/menu.js:842](packages/webshell/menu.js)) and were never
-  read side by side: decide the set once — retry, next, map, menu — which two
-  show in which case, and in what order. One pass in `packages/webshell/`, no
-  `game.js` touched, and it reaches the thirteen at once. Related: the
-  game-over *content* pass in *The games*.
+- [ ] CODE — **the leave card, and the game-over buttons, all thirteen.**
+  Where a player goes when they stop playing. The **icons now say it**: the
+  round's corner control wears the MAP pictogram on a levelled game and the
+  house on a level-less one
+  ([packages/webshell/menu.js:645](packages/webshell/menu.js)), because
+  `leave()` already dropped a levelled game on its map, and the map's own
+  header carries a house beside the star counter
+  ([packages/webshell/levels.js:867](packages/webshell/levels.js)) that leaves
+  for the title screen from anywhere, the help panel included. What is left is
+  the **wording**: the leave card still asks one question (RESUME / LEAVE)
+  where the destination is now two screens deep, so decide whether LEAVE reads
+  MAP on a levelled game or the card grows a third button. And on the end
+  screen the two buttons are relabelled per case (PLAY AGAIN / MENU, NEXT
+  LEVEL / MAP, [packages/webshell/menu.js:842](packages/webshell/menu.js)) and
+  were never read side by side: decide the set once — retry, next, map,
+  menu — which two show in which case, and in what order. One pass in
+  `packages/webshell/`, no `game.js` touched, and it reaches the thirteen at
+  once. Related: the game-over *content* pass in *The games*.
 
 - [ ] CODE — **a sticker collection, ten per game.** The cuts under
   `assets/image/object/` (414 of them across the thirteen) are the material: pick
@@ -271,7 +291,10 @@ ______________________________________________________________________
   by game — several of them read as a translation of the English rather than as
   a French sentence. The house rules hold (one sentence, never two, two or
   three key words wrapped in `<b class="w-…">`, `intro.caption` stays `""`),
-  and the manifest is the only place to write them.
+  and the manifest is the only place to write them. **`make text` is the bench
+  for this pass**: the copy desk lists every game's FR tagline next to its
+  English one and writes the rewrite straight into the manifest
+  (`lab/game-text.html`).
 
 - [ ] CODE — **the level-select copy on the map, all thirteen games.** A level
   card is one shared string table
@@ -299,7 +322,9 @@ ______________________________________________________________________
   use for while the one that describes the run is missing. Check each row
   earns its line (it says something about *this* run, not a constant), that
   the wording matches the game's own vocabulary, and that the title reads
-  differently on a win and on a loss. `endRound({ title, variant, score, stars, rows })` in section 6 is the only place to change.
+  differently on a win and on a loss. `endRound({ title, variant, score, stars, rows })` in section 6 is the only place to change, and **`make text` lists all
+  of it under END SCREEN** — the title's every branch, the four row labels and
+  what they print — with Apply writing the wording back.
 
 - [ ] CODE — **review the copy and the `Pop` callouts, all thirteen games.**
   Every score gain, combo and celebration beat goes through `Pop.show` and
@@ -312,7 +337,9 @@ ______________________________________________________________________
   (`lab/game-events.html`), under the *view* tab — and a re-styled callout is
   written back into `game.js` by **Apply**, so the pass is read, heard and
   landed in one place. A word the game builds at runtime is still changed by
-  hand: apply refuses it rather than paste the bench's stand-in.
+  hand: apply refuses it rather than paste the bench's stand-in. The WORDS
+  alone, all thirteen games' worth in one column and next to the manifest copy,
+  are **`make text`** — that is where a vocabulary is made consistent; `make events` is where a beat is heard.
 
 - [ ] CODE — **review the sfx, all thirteen games.** One clip per event out of
   `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships

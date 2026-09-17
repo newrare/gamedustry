@@ -99,7 +99,7 @@
       controls: "CONTROLS",
       tap: "TAP", hold: "HOLD", drag: "DRAG", swipe: "SWIPE", aim: "AIM",
       back: "BACK", again: "PLAY AGAIN", menu: "MENU",
-      toMenu: "Back to the menu", resume: "RESUME",
+      toMenu: "Back to the menu", toMap: "Back to the map", resume: "RESUME",
       leaveTitle: "LEAVE?",
       leaveNote: "The round ends here and its score is lost.",
       leaveYes: "LEAVE"
@@ -116,7 +116,7 @@
       controls: "CONTRÔLES",
       tap: "TAPER", hold: "MAINTENIR", drag: "GLISSER", swipe: "BALAYER", aim: "VISER",
       back: "RETOUR", again: "REJOUER", menu: "MENU",
-      toMenu: "Retour au menu", resume: "REPRENDRE",
+      toMenu: "Retour au menu", toMap: "Retour à la carte", resume: "REPRENDRE",
       leaveTitle: "QUITTER ?",
       leaveNote: "La partie s’arrête ici et son score est perdu.",
       leaveYes: "QUITTER"
@@ -156,6 +156,26 @@
     var over = (CONFIG.web && CONFIG.web.copy) || {};
     merge(over[lang] && typeof over[lang] === "object" ? over[lang] : over);
     return out;
+  }
+
+  /* The game's own words, in the player's language: a dictionary keyed by the
+     English string, written in the manifest under `web.copy.<lang>.strings`
+     and handed to the motor, which applies it wherever it writes a word (see
+     Lang in packages/engine). English is the source, so it has no dictionary
+     and needs none. */
+  function dictFor(lang) {
+    var over = (CONFIG.web && CONFIG.web.copy) || {};
+    var per = over[lang];
+    return (per && typeof per === "object" && per.strings) || null;
+  }
+
+  /* Everything the motor wrote once and would otherwise keep in English: the
+     six CONFIG.copy nodes and the two HUD pills. Callouts, the end screen and
+     the rest are translated as they are written, so they need nothing. */
+  function applyLang(lang) {
+    W.Lang.set(lang, dictFor(lang));
+    W.applyCopy();
+    W.HUD.relabel();
   }
 
   var LANG = pickLang();
@@ -298,6 +318,7 @@
     lang:  '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
     reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
     home:  '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    map:   '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
     gear:  '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
   };
   function icon(name, cls) {
@@ -642,7 +663,10 @@
     ctlBar = el("div"); ctlBar.id = "web-ctls";
     ctlBar.hidden = true;                        // a round is the only time it shows
 
-    ctlMenu = el("button", "web-ctl", icon("home"));
+    /* The pictogram is the DESTINATION, not the door: `leave` drops a levelled
+       game on its map and a level-less one on the title screen, so the corner
+       says map or house accordingly. */
+    ctlMenu = el("button", "web-ctl", icon(levelled() ? "map" : "home"));
     ctlMenu.addEventListener("click", function () { openPause("leave"); });
 
     ctlOptions = el("button", "web-ctl", icon("gear"));
@@ -655,7 +679,7 @@
   }
 
   function labelControls() {
-    if (ctlMenu) ctlMenu.setAttribute("aria-label", COPY.toMenu);
+    if (ctlMenu) ctlMenu.setAttribute("aria-label", levelled() ? COPY.toMap : COPY.toMenu);
     if (ctlOptions) ctlOptions.setAttribute("aria-label", COPY.options);
   }
 
@@ -780,6 +804,7 @@
     COPY = resolveCopy(code);
     W.Store.set(LANG_KEY, code);
     document.documentElement.lang = code;
+    applyLang(code);
 
     if (levelled()) LV.setLang(code);
     for (var i = 0; i < items.length; i++)
@@ -876,6 +901,9 @@
   // the time this runs buildIntro() has already written the copy we overwrite.
   function mount() {
     document.documentElement.lang = LANG;
+    /* Before buildIntro: the six CONFIG.copy nodes it writes go through the
+       dictionary, so the title screen is never in English for a frame. */
+    applyLang(LANG);
     Settings.apply();
     /* The level layer gets this file's dom helpers and its language, so the
        web shell has one `el`, one icon pack and one FR/EN mechanism rather
