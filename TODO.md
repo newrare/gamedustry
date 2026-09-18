@@ -7,8 +7,9 @@ holds the reasoning. A task is **removed** once it is verifiably done.
 - **AUTO** — a command; no code to write.
 - **CODE** — something to develop.
 
-Two scopes are tracked here: **android** and the **web build's own bugs**. The
-meta layer, the web portals and the ad measurement gate are parked, not done.
+Three scopes are tracked here: **android**, the **web build's own bugs** and
+**acquisition** — TikTok and the web portals, un-parked on 2026-09-18. The meta
+layer and the ad measurement gate are parked, not done.
 
 ______________________________________________________________________
 
@@ -375,6 +376,18 @@ ______________________________________________________________________
   is painted in. A special's badge is a white glyph on a double pass of ink over
   the bead's own hue, never instead of it — the colour is the gameplay.
 
+- [ ] CODE — **`arcider`, blow the craft up when the shield runs out.** The
+  four `die("SHIELD DOWN")` sites in section 6 go straight from the last hit to
+  `endRound`, so the run that the whole game is about protecting ends on a
+  screen swap. Play the destruction instead: `Loop.rate(k)` ramped down into
+  slow motion, `Fx.shake/flash/burst` and a `Overlay.vignette` over the wreck,
+  the craft coming apart and rolling off the road while the camera holds on it,
+  then the end screen — the same beat the three-star finish already uses on the
+  web target, spent on the loss. One explosion path shared by the four sites
+  (clip, cell, rough and crash), and the round is already dead when it starts,
+  so nothing may score or steer during it. Its cue comes out of
+  `assets/audio/sfx/` like every other event.
+
 - [ ] CODE — **`gearball`, rework the gameplay.** The closed-gear-loop redesign
   is in, but the loop itself is still thin over a full ladder.
 
@@ -388,6 +401,61 @@ ______________________________________________________________________
   hosts the fetch and talks to the iframe by `postMessage`, the game does not.
   Decide the identity model (a name typed once, stored in `Store`) and the
   anti-cheat stance before writing the schema.
+
+______________________________________________________________________
+
+## Acquisition — where the players come from
+
+[docs/MARKETING.md](docs/MARKETING.md) holds the reasoning. In short: Play's
+algorithm amplifies traction, it does not create it, so thirteen games only pay
+off once something feeds them. Two channels do, and neither needs a budget —
+short vertical video, and the web portals that bring their own traffic.
+
+### TikTok — the discovery channel
+
+The unit of the lottery is the **clip**, not the game: thirteen art directions
+are thirteen content angles, and a clip costs an hour. This is the one lever
+that moves the per-game odds; the portfolio only multiplies them.
+
+- [ ] MAIN — **open the studio account.** TikTok first, then the same captures
+  on Shorts and Reels — one capture, three uploads. The bio links the site and
+  not a store: the site is the single page that leads to all thirteen
+- [ ] CODE — **`tools/lab/shoot-clip.mjs`, a headless vertical capture.** The
+  same Chrome `tools/lab/encode-art.mjs` already drives, pointed at a game's web
+  build with the chrome hidden, recording 1080×1920 for N seconds. Filming a
+  phone by hand does not scale to a hundred clips, and starting mid-round
+  rather than on the menu *is* the format
+- [ ] MAIN — **write the clip recipe down once**: 15–30 s, vertical, the most
+  satisfying beat of the mechanic, no voice-over, cut so it loops. Then ten
+  variants of one game before judging any of them — what is being tested is the
+  clip, not the game
+- [ ] MAIN — **a cadence and a kill criterion.** A clip is dead at 48 h; one
+  that passes earns a second round of variants. Attribute the installs it sent:
+  `?from=` on a site link, the Play install referrer on a store link
+
+### The portals — traffic that is already reachable
+
+Un-parked on 2026-09-18. Thirteen finished web builds are an asset here and a
+liability on Play: a portal has no listing, no target API deadline, no reviews
+to collect and no store graphics to redo per locale. Detail in
+[docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), *Web portals*.
+
+- [ ] CODE — **`Platform.ads`, the fourth implementation of the slot MRAID
+  occupies.** All three portals monetize with their own SDK against a revenue
+  share, and all three want `gameplayStart()` / `gameplayStop()` so they know
+  when interrupting is safe. Build the abstraction in `packages/platform/`
+  before the first adapter, not after the second
+- [ ] CODE — **`packages/platform/newgrounds.js`** — open access, upload
+  immediately, SDK optional. It is where the adapter gets shaken down; it is
+  not the traffic
+- [ ] CODE — **`packages/platform/crazygames.js`** — the first real reachable
+  traffic. SDK required, QA review, and **no outbound links, no ads of your
+  own**: the target drops the site CTA and every cross-promo link, a build-time
+  decision of the same kind as zeroing `ctaHeight` on web
+- [ ] MAIN — **submit three games, not thirteen.** Wait for the QA notes and
+  apply them to the other ten in one pass
+- [ ] MAIN — Poki is a goal, not a checkbox: curated, strict QA, sometimes
+  exclusive. Revisit once CrazyGames has produced numbers
 
 ______________________________________________________________________
 

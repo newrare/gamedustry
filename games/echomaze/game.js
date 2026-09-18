@@ -232,8 +232,10 @@
                                      // a gate this way is still a loss
 
     /* --- the crystal (bands 3 and 5) ------------------------------------
-           The gate is barred, and the bar only comes off when the crystal
-           does. The crystal is the one object in this game that is lit in the
+           The gate is barred the moment the round starts — never during the
+           reveal, which is the look the player gets at the ceiling — and the
+           bar only comes off when the crystal does.
+           The crystal is the one object in this game that is lit in the
            dark from start to finish — it has to be, or a locked board would be
            a board with no way out at all — and where it stands is what it
            costs:
@@ -1362,6 +1364,32 @@
                           at: popAt(), hold: 800 });
     }
 
+    /* THE CEILING SHUTS — and it shuts when the round STARTS, never before.
+       The bar is drawn in the gap, which is exactly where the true gate's
+       beacon comes out of, so a board that was barred through the reveal spent
+       the one second the player has to read the ceiling showing three sealed
+       holes with nothing to tell them apart. On the last band, which is the
+       only one that carries a crystal AND false gates, that made the board
+       unreadable. The reveal is the LOOK at the board, so the board is open
+       for it; the crystal takes the ceiling the moment the lights go out, and
+       the shatter gives it back.
+
+       The bar goes over EVERY gate, and that is not decoration: a bar on the
+       true one alone would be a sign saying which of the three is the way out,
+       and the false gates of the last band would stop being false. So while
+       the crystal stands the ceiling is shut, all of it — no pulse can be
+       spent on a door before the key is taken — and the shatter lifts every
+       bar in the same frame. */
+    function sealGates() {
+      var i;
+      if (!crystal || !crystal.alive || lockWalls.length) return;
+      lockGate(exitCol);
+      for (i = 0; i < decoys.length; i++) lockGate(decoys[i].c);
+      if (!lockWalls.length) return;
+      lockFlare = 1;                               // they land lit, so the
+      Sound.clip("flap", 0.7, 0.72);               // player sees them land
+    }
+
     // One gate, barred. The wall is `found` from the start: the bar is the
     // crystal's, not a stretch of board to be discovered, and it must never
     // pay the map bonus.
@@ -1642,7 +1670,8 @@
     function goDark() {
       phase = "play"; darkT = 0;
       surgeI = 0; surgeT = 0; applySeal();
-      Sound.clip("dark", 0.7);
+      sealGates();                                 // the crystal takes the
+      Sound.clip("dark", 0.7);                     // ceiling, not before
       zapAll(0.5);                                 // the arena flashes once, and
       if (surgeSeq.length) {                       // that is the last of it
         jumpSurge(true);
@@ -1819,17 +1848,9 @@
          already `found` so it can never pay the map bonus; and the surge rolls
          the cycle this board will run. */
       placeCrystal();
-      /* THE BAR GOES OVER EVERY GATE, and that is not decoration: a bar on the
-         true one alone would be a sign saying which of the three is the way
-         out, and the false gates of the last band would stop being false. So
-         while the crystal stands the ceiling is shut, all of it — no pulse can
-         be spent on a door before the key is taken — and the shatter lifts
-         every bar in the same frame. */
+      /* The ceiling is OPEN through the reveal and is shut by goDark() — see
+         sealGates(). */
       lockWalls = []; lockFlare = 0; lockSaid = false;
-      if (crystal) {
-        lockGate(exitCol);
-        for (i = 0; i < decoys.length; i++) lockGate(decoys[i].c);
-      }
       // Two pulses is what a board costs when the key is not on the way in.
       shotPar = C.perfectShots + (crystal && crystal.home === "maze" ? 1 : 0);
       rollSurge();
@@ -2247,8 +2268,9 @@
        from while the grid is still up — and on a band with false gates there
        are three of them, drawn by this same function and identical the moment
        the lights go out. The one tell is the HUM: through the reveal the true
-       gate breathes hard, the false ones sit at a flat glow. That, and the bar
-       the crystal holds across the real one.
+       gate breathes hard, the false ones sit at a flat glow — and nothing is
+       barred yet, because the crystal's bar only lands with the lights going
+       out (see sealGates()).
 
        A gate a pulse burned out stays on screen, dark and welded shut: it is
        the run's own note, kept for the same reason the valves are. */

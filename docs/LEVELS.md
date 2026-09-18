@@ -777,18 +777,19 @@ The five generic bands — Warm-up, Pressure, Squeeze, Overdrive, Meltdown —
 describe a ladder and nothing else. A game names its own in
 `web.levels.bands`, in both languages, and four do today:
 
-| game     | the five                                                         | named after               |
-| -------- | ---------------------------------------------------------------- | ------------------------- |
-| arcider  | DUSK · DAY · MIST · OVERCAST · NIGHT                             | its skies                 |
-| radiam   | ATELIER · LAGOON · RELIQUARY · SUMI · CIRCUIT                    | its biomes                |
-| blight   | MARSH · RUINS · GORGE · CASTLE · THRONE                          | the descent               |
-| echomaze | DARK MAZE · FALSE EXITS · CRYSTAL LOCK · LIVE FENCE · FULL SURGE | the RULE each band brings |
+| game      | the five                                                         | named after                      |
+| --------- | ---------------------------------------------------------------- | -------------------------------- |
+| arcider   | DUSK · DAY · MIST · OVERCAST · NIGHT                             | its skies                        |
+| radiam    | ATELIER · LAGOON · RELIQUARY · SUMI · CIRCUIT                    | its biomes                       |
+| blight    | MARSH · RUINS · GORGE · CASTLE · THRONE                          | the descent                      |
+| echomaze  | DARK MAZE · FALSE EXITS · CRYSTAL LOCK · LIVE FENCE · FULL SURGE | the RULE each band brings        |
+| spinshock | SPARK · INSULATED · SPLIT · GROUNDED · OVERCHARGE                | the IMMUNITY each band brings in |
 
 `from` is what keeps the name honest, and it is not decoration. The map's own
-bands are ROWS on a forking road, and three of the four turn their world over
+bands are ROWS on a forking road, and four of the five turn their world over
 on the LEVEL NUMBER instead — radiam and arcider both say why in as many words:
 *two roads out of a fork have to be the same world, whatever they cost*. Those
-three list `"from": [1, 7, 13, 19, 25]` and the card names the world the round
+four list `"from": [1, 7, 13, 19, 25]` and the card names the world the round
 will actually build. echomaze reads its band off `d`, which is the map's own
 number, so it leaves `from` out.
 

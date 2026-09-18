@@ -21,11 +21,11 @@ window.GAMES = [
     accent: ["#40ecff", "#ff4fbe"],
     fr: {
       tagline: "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
-      tags: ["Tap rythmé", "Sans fin", "Physique"]
+      tags: ["Tap rythmé", "5 biomes", "Physique"]
     },
     en: {
       tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
-      tags: ["Timing tap", "Endless", "Physics"]
+      tags: ["Timing tap", "5 biomes", "Physics"]
     }
   },
   {
