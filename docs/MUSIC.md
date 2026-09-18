@@ -4,9 +4,9 @@ How a game gets more than one bed out of a single music file: a different
 stretch of it per biome, per level band or per mode, and a quiet, slower window
 of the same track under the menus.
 
-`games/arcider` is the reference; `games/blight`, `games/echomaze` and
-`games/radiam` followed.
-This document is the procedure for the other nine — read it before touching a game's music,
+`games/arcider` is the reference; `games/blight`, `games/echomaze`,
+`games/radiam` and `games/spinshock` followed.
+This document is the procedure for the other eight — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
 The API itself is in [ENGINE.md](ENGINE.md#music--the-background-bed); the asset
@@ -96,7 +96,7 @@ ______________________________________________________________________
 
 ### 1. Check there is a track to cut
 
-The strategy needs a master longer than one loop. Seven of the thirteen masters
+The strategy needs a master longer than one loop. Six of the thirteen masters
 are ~30 s, which is one bed and nothing else — those games need a **longer
 track from the music model first**, and that is a separate request.
 
@@ -285,7 +285,7 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 | `gearball`  | 30.5 s  | 30.6 s       | needs a longer master first              |
 | `orbinity`  | 27.0 s  | 27.0 s       | needs a longer master first              |
 | `radiam`    | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |
-| `spinshock` | 30.8 s  | 30.8 s       | needs a longer master first              |
+| `spinshock` | 182.0 s | 23.0 s       | **5 bands + menu**, one dish apiece      |
 | `triverse`  | 30.8 s  | 30.8 s       | needs a longer master first              |
 | `vipera`    | 30.8 s  | 30.8 s       | needs a longer master first              |
 

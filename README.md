@@ -160,7 +160,8 @@ gamedustry/
     ├── MUSIC.md              ← one track, several beds: the sections procedure
     ├── LEVELS.md             ← the 30-level map, the stars, the progression
     ├── AD_NETWORKS.md        ← MRAID, the CTA, per-network notes & QA
-    └── INDUSTRIALIZATION.md  ← the four targets, the build, the deploy, the phasing
+    ├── INDUSTRIALIZATION.md  ← the four targets, the build, the deploy, the phasing
+    └── MARKETING.md          ← what a game earns, and how it finds players
 ```
 
 The running task list is [TODO.md](TODO.md).

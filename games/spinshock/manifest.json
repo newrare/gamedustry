@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.1.1",
+  "version": "1.3.1",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -18,7 +18,7 @@
       "tagline": "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
       "tags": [
         "Tap rythmé",
-        "Sans fin",
+        "5 biomes",
         "Physique"
       ]
     },
@@ -26,12 +26,12 @@
       "tagline": "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
       "tags": [
         "Timing tap",
-        "Endless",
+        "5 biomes",
         "Physics"
       ]
     }
   },
-  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that launches them into the walls and winds your spin back up. They carry 3 to 5 shell points, so a top you blast away ricochets and comes back for more. The top's colour is the only gauge — the run ends when it blows apart.",
+  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that marks their shell, launches them into the electric walls and winds your spin back up. Their COLOUR is what they are immune to — blue shrugs off the fence, yellow shrugs off the crowd, red answers to the fence alone, black hands shell points back to the others and purple splits in two every time it breaks. Thirty levels across five dishes, each with its own fence colour, its own roster and its own stretch of the track, and a ten-point boss that nothing but a perfect tap can mark. The top's colour is the only gauge — the run ends when it blows apart.",
   "store": {
     "copy": {
       "en": {
@@ -123,6 +123,8 @@
           "BEST": "RECORD",
           "BEST COMBO": "MEILLEUR COMBO",
           "BEST SCORE": "MEILLEUR SCORE",
+          "BOSS DOWN!": "BOSS DÉTRUIT !",
+          "BOSS TOP": "TOUPIE BOSS",
           "COMBO x": "COMBO x",
           "DOUBLE": "DOUBLE",
           "FINAL SCORE": "SCORE FINAL",
@@ -133,6 +135,7 @@
           "OK": "OK",
           "PERFECT": "PARFAIT",
           "PERFECT HITS": "COUPS PARFAITS",
+          "PERFECT TAPS ONLY": "TAPS PARFAITS SEULEMENT",
           "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
           "Replay the demo": "Rejouer la démo",
           "SCORE": "SCORE",
@@ -152,10 +155,11 @@
       }
     },
     "font": "bungee",
+    "music": "spinshock.mp3",
     "levels": {
       "objective": {
-        "from": 350,
-        "to": 2300,
+        "from": 550,
+        "to": 4000,
         "step": 50
       },
       "copy": {
@@ -164,28 +168,47 @@
       },
       "tune": {
         "spawnEvery": [
-          1.8,
-          0.6
+          2.8,
+          1.3
         ],
         "spawnEveryEnd": [
-          0.9,
-          0.32
-        ],
-        "maxFoes": [
-          3,
-          7
+          1.8,
+          0.8
         ],
         "drainBase": [
-          0.03,
-          0.07
+          0.02,
+          0.05
         ],
         "drainRamp": [
-          0.035,
-          0.085
+          0.022,
+          0.062
         ],
         "spinStart": [
           1,
-          0.7
+          0.8
+        ]
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "SPARK",
+          "INSULATED",
+          "SPLIT",
+          "GROUNDED",
+          "OVERCHARGE"
+        ],
+        "fr": [
+          "ÉTINCELLE",
+          "ISOLÉES",
+          "SCISSION",
+          "MASSE",
+          "SURCHARGE"
         ]
       }
     }
