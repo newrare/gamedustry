@@ -955,7 +955,13 @@
      selector, and catching the layer would replace its own `position:absolute`
      with `relative` — the dressing would then stack in the flex column and push
      the whole end screen down. */
-  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer) { position:relative; z-index:1; }
+  /* `.eo-stars` is excluded for a third reason: it is pulled up under the
+     score and has to stay BEHIND it. Left in this rule it would take
+     `z-index:1` like its siblings and, being later in the DOM, paint over the
+     number — and a `z-index:0` of its own cannot beat a selector carrying two
+     ids. Out of the rule it is simply not positioned, so it stacks below every
+     figure on this screen. */
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer):not(.eo-stars) { position:relative; z-index:1; }
 
   /* ---- The character ------------------------------------------------------
      One of `assets/image/embed/<slug>-character-{sad,neutral,happy}.webp`, picked by
@@ -1024,7 +1030,7 @@
     0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
     50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
   }
-  .eo-scorelbl { margin-top:24px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
+  .eo-scorelbl { margin-top:12px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
     opacity:0; transition:opacity .4s ease; }
   .eo-scorelbl.show { opacity:1; }
   .eo-score {
@@ -1036,13 +1042,46 @@
   .eo-score.pop { animation:eopop .45s ease; }
   @keyframes eopop { 0%{transform:scale(1);} 40%{transform:scale(1.2);} 100%{transform:scale(1);} }
 
-  .eo-stars { margin-top:24px; display:flex; gap:22px; justify-content:center; align-items:center; }
+  /* THE THIRD STAR STANDS IN THE MIDDLE, and it is the biggest. Three stars
+     the same size in a row is a progress bar; a podium is what the last one
+     earned. The DOM order and the reveal are untouched — star-1, star-2,
+     star-3, lit one by one in that order (shell.js) — and only the `order`
+     property moves the third into the centre, so nothing about the cascade,
+     the chimes or the ids has to know about the arrangement.
+
+     The lift is `top` and never `transform`: the slam and the dim both animate
+     the transform, and a raise written there would be wiped by the first
+     keyframe of either. */
+  /* THEY TUCK UNDER THE SCORE, and behind it. Three stars standing in their
+     own band cost the column a sixth of the frame for a row that is read in
+     one glance — pulled up they sit just below the number, the tall middle one
+     rising into the space beside its digits, and the rows underneath gain the
+     the height. They are the one child of #screen-end left UNPOSITIONED (see
+     the rule above), which is what puts them behind the score and behind the
+     line that explains it — nothing overlapping can cover a figure. */
+  .eo-stars { margin-top:-26px; display:flex; gap:18px; justify-content:center; align-items:center; }
+  /* …unless something is written in that gap. The meta layer's conversion line
+     sits between the score and this row (packages/webshell/meta.js), and the
+     middle star reaches 20 px above the row's own top — gold working over a
+     gold star is not read at all. The row steps down by exactly what the line
+     needs, and only where there is a line. The score label gives the height
+     back (`.eo-scorelbl` above), so the column is no taller than it was. */
+  #screen-end.has-gain .eo-stars { margin-top:22px; }
   .eo-stars.hidden { display:none; }
-  .star { font-size:98px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
-    transition:opacity .2s ease; }
+  .star { font-size:112px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
+    position:relative; transition:opacity .2s ease; }
+  .eo-stars .star:nth-child(1) { order:1; }
+  .eo-stars .star:nth-child(3) { order:2; font-size:168px; top:-20px; }
+  .eo-stars .star:nth-child(2) { order:3; }
   .star.dim { opacity:1; transform:scale(.82); color:rgba(255,255,255,.12); }
+  /* `transform:scale(1)` is what the star RESTS at, and it has to be written
+     here: `starslam` carries no fill mode, so the moment it ends the element
+     falls back on its own rule — `.star`'s scale(.3), the not-yet-revealed
+     state. Every lit star has been landing and then shrinking to a third of
+     its size since the cascade was written; the dim ones sat at .82 beside
+     them, which is why an unearned star looked bigger than an earned one. */
   .star.on {
-    opacity:1; color:var(--gold);
+    opacity:1; color:var(--gold); transform:scale(1);
     background:linear-gradient(180deg,#fff6bf 0%,#ffd43b 55%,#ff9f1c 100%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
     animation:starslam .6s cubic-bezier(.2,1.8,.35,1), starglow 1.9s ease-in-out .6s infinite;

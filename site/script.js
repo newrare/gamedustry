@@ -46,10 +46,42 @@ function saveLang(value) {
   try { localStorage.setItem(LANG_KEY, value); } catch (e) { /* not fatal */ }
 }
 
+/* CAPITALS ARE A LOOK, NOT A SPELLING — the same rule the games play by
+   (`upper`, packages/engine). Every string on this site is written in normal
+   case, in `data-fr` / `data-en` and in games.js, and a line that reads in
+   capitals is a line the stylesheet SHOUTS. All this does is take the accents
+   off on the way, because `text-transform: uppercase` cannot: the eyebrow
+   would otherwise read STUDIO DE JEUX INDÉPENDANT, and a capital carries no
+   accent in this house.
+
+   What shouts is declared in style.css and nowhere else — the computed
+   `text-transform` is read here, so a new uppercase rule needs no second list
+   to be kept in step with. */
+var UP_FROM = '\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178';
+var UP_TO   = 'AAAAAACEEEEIIIINOOOOOOUUUUYY';
+var UP_PAIR = { '\u00C6': 'AE', '\u0152': 'OE', '\u00DF': 'SS' };
+
+function upper(text) {
+  var out = '', up = String(text).toUpperCase(), i, c, k;
+  for (i = 0; i < up.length; i++) {
+    c = up.charAt(i);
+    if (UP_PAIR[c]) { out += UP_PAIR[c]; continue; }
+    k = UP_FROM.indexOf(c);
+    out += k < 0 ? c : UP_TO.charAt(k);
+  }
+  return out;
+}
+
+function shouts(node) {
+  var cs = window.getComputedStyle ? window.getComputedStyle(node) : null;
+  return !!cs && cs.textTransform === 'uppercase';
+}
+
 function applyLang() {
   var nodes = document.querySelectorAll('[data-fr][data-en]');
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i].textContent = nodes[i].getAttribute('data-' + lang);
+    var text = nodes[i].getAttribute('data-' + lang);
+    nodes[i].textContent = shouts(nodes[i]) ? upper(text) : text;
   }
   document.documentElement.lang = lang;
 

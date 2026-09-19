@@ -344,7 +344,7 @@ function render(){
   if(!alive){
     ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(0,DES_H/2-140,DES_W,280);
     ctx.fillStyle = "#fff"; ctx.font = "bold 64px ui-monospace,monospace";
-    ctx.fillText("DROPPED", DES_W/2, DES_H/2-20);
+    ctx.fillText("Dropped", DES_W/2, DES_H/2-20);
     ctx.font = "26px ui-monospace,monospace";
     ctx.fillText(score+" spheres  /  "+shots+" shots", DES_W/2, DES_H/2+30);
     ctx.fillStyle = "rgba(255,255,255,.6)";
@@ -357,7 +357,7 @@ function render(){
     var sp = pill.flying ? Math.hypot(pill.vx,pill.vy) : 0;
     var lines = [
       "fps "+fps.toFixed(0)+"   sph "+spheres.length+"   t "+time.toFixed(1),
-      (pill.flying?"FLY":"STUCK")+"  v "+sp.toFixed(0)+"  ramp "+(1+time*DIFF_RAMP).toFixed(2),
+      (pill.flying?"Fly":"Stuck")+"  v "+sp.toFixed(0)+"  ramp "+(1+time*DIFF_RAMP).toFixed(2),
       "speed "+(POWER_DIST?"by dist":SHOT_SPEED)+"  air "+airLeft+"  grav "+GRAV,
       "keys: r=reset  d=debug"
     ];

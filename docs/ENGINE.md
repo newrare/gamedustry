@@ -7,17 +7,17 @@ default starting point for any new concept.
 
 A playable always needs the same things, so the motor owns them:
 
-| Layer          | What it is                                                                                                                        |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Frame**      | A portrait 720×1280 design space, letterbox-scaled to any screen. Canvas *and* DOM overlays share those coordinates.              |
-| **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                      |
-| **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                   |
-| **Overlay**    | Screen-space notification layer over the game view: toasts, combo banners, reward badges, dramatic edge glow.                     |
-| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats. The loud half of the notification layer.    |
-| **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                             |
-| **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                             |
-| **End screen** | Cinematic reveal: title, score count-up with confetti, star rating, cascading stat rows, big install CTA and a small replay link. |
-| **Ad glue**    | MRAID readiness, pause when not viewable, one `Ad.openStore()` for every CTA.                                                     |
+| Layer          | What it is                                                                                                                                                                                                                          |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frame**      | A portrait 720×1280 design space, letterbox-scaled to any screen. Canvas *and* DOM overlays share those coordinates.                                                                                                                |
+| **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                                                                                                                        |
+| **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                                                                                                                     |
+| **Overlay**    | Screen-space notification layer over the game view: toasts, combo banners, reward badges, dramatic edge glow.                                                                                                                       |
+| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats. The loud half of the notification layer.                                                                                                      |
+| **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                                                                                                                               |
+| **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                                                                                                                               |
+| **End screen** | Cinematic reveal: title, score count-up with confetti, the three stars on a podium (the third one in the middle, and bigger) tucked up under the score and behind it, cascading stat rows, big install CTA and a small replay link. |
+| **Ad glue**    | MRAID readiness, pause when not viewable, one `Ad.openStore()` for every CTA.                                                                                                                                                       |
 
 **A new game writes `CONFIG`, `ASSETS` and the `Game` module. Nothing else.**
 
@@ -216,9 +216,9 @@ var CONFIG = {
 
   // Every piece of user-facing copy, in one place.
   copy: {
-    start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-    replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"TIME",
-    endScore:"FINAL SCORE", gameOver:"GAME OVER", timeUp:"TIME'S UP!"
+    start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+    replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
+    endScore:"Final score", gameOver:"Game over", timeUp:"Time's up!"
   },
 
   // …then your own tunables: speeds, spawn rates, tolerances, palettes.
@@ -248,14 +248,14 @@ Ending a round — the only way:
 
 ```js
 endRound({
-  title:   "GAME OVER",          // defaults to CONFIG.copy.gameOver
+  title:   "Game over",          // defaults to CONFIG.copy.gameOver
   variant: "" | "win" | "perfect",
   score:   score,                // defaults to the HUD score
   stars:   2,                    // 0..3 — omit to hide the star row
   rows: [                        // stat rows, cascade in, numbers count up
-    { label:"HITS",       value: 23 },
-    { label:"MAX COMBO",  value: 9,  grade:"accent" },
-    { label:"BEST SCORE", value: 1840, grade:"gold" }
+    { label:"Hits",       value: 23 },
+    { label:"Max combo",  value: 9,  grade:"accent" },
+    { label:"Best score", value: 1840, grade:"gold" }
   ],
   levelScore: 1200,              // optional: what a level's objective measures,
                                  //   when the score is not it (web target only)
@@ -278,11 +278,28 @@ an empty list; the web target's level map is the one user, which is how a level'
 objective replaces a game's own `score >= 1800 ? 3 : …` thresholds without a line
 changing in any `game.js` (see [LEVELS.md](LEVELS.md)).
 
+**`onOutro(fn)` holds the frame between the two.** A round used to cut straight
+from its last frame to the end screen, and the one thing that cannot be played
+on either side of that cut is the world reacting to how the round went: slow
+motion is `Loop.rate`, so it needs a loop still turning, and the end screen has
+none. A hook registered here is handed the finished result and a `done`: the
+clock is already stopped, the loop is left running, and the end screen waits.
+The motor registers none — a playable keeps the cut it always had — and the web
+target's level layer is the one user (a missed objective burns, three stars open
+the bonus; see [LEVELS.md](LEVELS.md)). For as long as the outro plays the state
+is still `"playing"`, so `endRound` guards itself against a game that ends the
+same round twice.
+
 The reveal scores itself through `Sound.cue`, on three keys the games embed in
 `ASSETS.sounds`: `uiScore` (the count-up landing), `uiStar` (one chime per star,
 pitched up by `STAR_RATE`) and `uiRow` (the stat-row tick). Drop the keys and
 the same beats play as synthesized beeps — a new game sounds finished before it
 has an sfx pack, and re-themes just by swapping the three clips.
+
+It plays at **twice the speed it was authored at**: every delay in `EndScreen`
+is the timing the cascade was tuned with and `PACE` (0.5) is what the screen
+plays them at — one number rather than sixteen edited ones, so the rhythm
+between the beats is untouched and only the tempo moves.
 
 ### If the clock should not end the round
 
@@ -326,7 +343,7 @@ frameRender():
 HUD.setScore(v)          // set the target; the display eases toward it
 HUD.setScoreNow(v)       // set instantly (use in reset())
 HUD.punch(color)         // bump animation + brief colour tint on a gain
-HUD.setLeft(text, label, cls)    // left pill  ("x7" / "COMBO")
+HUD.setLeft(text, label, cls)    // left pill  ("x7" / "Combo" → COMBO)
 HUD.setRight(text, label, cls)   // right pill (the timer uses it)
 HUD.setTime(seconds)     // called by Round; turns red under 5 s
 HUD.score()              // current target score
@@ -490,9 +507,9 @@ what draws it.
 
 ```js
 Pop.show("score", { word:"+250", at:{ x:ball.x, y:ball.y - 50 } });   // impact point
-Pop.show("combo", { word:"COMBO x5", sub:"+120" });                   // milestone
-Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });                  // hero beat
-var h = Pop.show("danger", { word:"SUDDEN DEATH", hold:-1 });         // stays…
+Pop.show("combo", { word:"Combo x5", sub:"+120" });                   // milestone → COMBO x5
+Pop.show("ultra", { word:"Chain x20", sub:"+400" });                  // hero beat
+var h = Pop.show("danger", { word:"Sudden death", hold:-1 });         // stays…
 h.close();                                                            // …until closed
 Pop.clear();                                                          // wipe (Overlay.clear does it too)
 Pop.setEnabled(false);                                                // the web target's OPTIONS switch
@@ -698,6 +715,7 @@ Beat.beats() / next(div) / pulse(div)      // the musical clock (see below)
 Beat.period() / seconds(beats) / locked()
 Store.get(key, def) / Store.set(key, value)          // localStorage + memory fallback
 Lang.t(str) / Lang.code()                  // the FR/EN dictionary (see below)
+upper(str)                                 // capitals, accents off (see below)
 Rand.range(a,b) / int(a,b) / pick(arr) / chance(p)
 preloadImages(done) → Images[key]          // decoded embedded images
                     → ArtImages[key]       // …and the painted artwork (see below)
@@ -726,9 +744,9 @@ dictionary whose key is the English string itself:
 
 ```json
 "web": { "copy": { "fr": { "strings": {
-  "LAST LIFE": "DERNIÈRE VIE",
-  "CHAIN x":   "CHAÎNE x",
-  "TORN APART": "DÉCHIQUETÉ"
+  "Last life":  "Dernière vie",
+  "Chain x":    "Chaîne x",
+  "Torn apart": "Déchiqueté"
 } } } }
 ```
 
@@ -755,28 +773,84 @@ reaches the motor already assembled and no dictionary keyed on the finished
 sentence can match it, so the game wraps its own literal:
 
 ```js
-Pop.show("streak", { word: "x" + mult + Lang.t(" STREAK") });   // " STREAK" → " D'AFFILÉE"
-ctx.fillText(Lang.t("EXIT"), mid, top - 1);                     // ...and anything the game paints itself
+Pop.show("streak", { word: "x" + mult + Lang.t(" streak") });   // " streak" → " d'affilée"
+ctx.fillText(upper(Lang.t("Exit")), mid, top - 1);              // ...and anything the game paints itself
 ```
 
 `Lang.t` is evaluated at the call site, every round, which is what makes the
 switch live. Two rules follow: **never wrap a comparison or a key**
 (`reason === "jam"`, `Store.get("bestScore")` are code, not copy), and **keep
 the pieces translatable on their own** — an English plural built as
-`n + " PULSE" + (n > 1 ? "S" : "") + " SPARED"` only survives if the French
-pieces take that same S (" IMPULSION" + "S" + " D'AVANCE").
+`n + " pulse" + (n > 1 ? "s" : "") + " spared"` only survives if the French
+pieces take that same s (" impulsion" + "s" + " d'avance").
 
 `make text` is the gate: it reads all four sources back, lists the dictionary
 under *Game words*, and prints **`N untranslated`** — every string the game
 writes that has no FR entry. A game is done when it prints *fully translated*.
 
+### `upper` — capitals are a look, not a spelling
+
+**Every string in the repo is written in normal case** — a lowercase sentence
+with a capital on its first letter and on a proper noun. `"Best score"`,
+`"Time's up!"`, `"Chain x"`, `"Dernière vie"`. That is what a game's four
+sources hold, what `make text` proofreads and what a dictionary is keyed on.
+
+The screens that shout are the ones that ask for it, through `upper`:
+
+```js
+upper("Best score")    // "BEST SCORE"
+upper("Déjà vu")       // "DEJA VU"     — a capital carries no accent here
+upper("Chain x3")      // "CHAIN x3"    — a unit glued to a number keeps its case
+upper("1.2s per hop")  // "1.2s PER HOP"
+```
+
+Two rules beyond `toUpperCase`, and both are there because of what the games
+actually write.
+
+**Accents come off.** The display faces a playable uses are drawn for capitals
+without diacritics, and an É at 96px of Impact collides with the line above it.
+So `Ç` is `C`, `Œ` is `OE`, and the French of the thirteen reads CA MELANGE and
+MEILLEURE CHAINE. It is the whole reason a game cannot simply write its capitals
+by hand: nobody remembers to strip an accent, and `text-transform:uppercase`
+cannot.
+
+**A lowercase run touching a digit is a unit or a multiplier, not a word**, and
+it is left alone: `x3`, `12.3s`, `1er`. A game assembles those by concatenation,
+which is why the rule is applied to the FINISHED string at the sink rather than
+left to each call site. Markup is stepped over too, so a `<b class="w-tap">`
+cannot be shouted into a different class.
+
+**The motor shouts on its own** wherever it writes a word, right after `Lang.t`:
+
+| shouted                                                                                       | not shouted                                          |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `CONFIG.copy.start` / `ctaBar` / `ctaEnd` / `scoreLabel` / `endScore` / `gameOver` / `timeUp` | `CONFIG.copy.replay` — the replay link is a sentence |
+| `CONFIG.title` on the intro                                                                   | `CONFIG.tagline` — one sentence, in colour           |
+| `Pop.show` — `word` and `sub`                                                                 | the level objective                                  |
+| `Pop.text` — the floating value                                                               | the store listing and its card lines                 |
+| `HUD.setLeft` / `setRight` — both slots and both labels                                       |                                                      |
+| `endRound` — `title`, every row's `label` and string `value`                                  |                                                      |
+
+**A game calls it itself only for what it paints on the canvas** — `ctx.fillText`
+is the game's own draw and the motor never sees the string:
+
+```js
+ctx.fillText(upper(Lang.t("Chute")), x, y);
+```
+
+The web shell does the same with its own strings: `packages/webshell/*.js` each
+carry a `CAPS` list next to their `STRINGS` table naming the keys the screen
+shouts, and the table itself is written in normal case like everything else.
+
 ### `CONFIG.art` — the painted artwork
 
 A game declares nothing to get its painted screens. `tools/build/build.mjs`
-reads `assets/image/embed/<slug>-<role>.webp` — the shipping cut of
-`assets/image/master/<slug>-<role>.png`, written by `tools/lab/encode-art.mjs` — and
-injects what it finds as `CONFIG.art.<camelRole>`. **A file name is the whole
-declaration**; see [ASSETS.md](ASSETS.md#painted-artwork-comes-from-assetsimagemaster-re-encoded-into-assetsimageembed).
+reads `assets/image/embed/<slug>-<role>.webp` — the shipping cut written by
+`tools/lab/encode-art.mjs`, out of `assets/image/master/<slug>-<role>.png` for
+what the game owns and out of the cut its `art.objects` points at for an object
+— and injects what it finds as `CONFIG.art.<camelRole>`. **A file name is the
+whole declaration** for the first, a line in the manifest for the second; see
+[ASSETS.md](ASSETS.md#painted-artwork-comes-from-assetsimagemaster-re-encoded-into-assetsimageembed).
 
 ```js
 CONFIG.art = {
@@ -932,6 +1006,13 @@ so on the web target the signature and the menu take one bottom corner each,
 and a playable's corner is identical to its web build's. It is
 `pointer-events:none` at `z-index:4`, over the decor layer and under nothing
 the player touches.
+
+**On the web target it is the BARE title screen's and nothing else's.** A
+panel's card lands exactly where it sits, and a version number under OPTIONS or
+HELP reads as part of the panel, so `packages/webshell/menu.css` fades it out
+under `#screen-intro.web-open` — the class the panels already raise. The map,
+the album and the shop are layers of their own above this screen and cover it
+without a rule.
 
 ### `Decor` — the game's own objects, on the screens
 

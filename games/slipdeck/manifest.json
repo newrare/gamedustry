@@ -1,7 +1,7 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,
@@ -12,6 +12,17 @@
   "theme": {
     "accent": "#f5c451",
     "accent2": "#3ddc97"
+  },
+  "art": {
+    "objects": {
+      "card-jack": "slipdeck-card-jack",
+      "card-king": "slipdeck-card-king",
+      "card-queen": "slipdeck-card-queen",
+      "decor-01": "slipdeck-card-01",
+      "decor-05": "slipdeck-card-05",
+      "decor-10": "slipdeck-card-10",
+      "decor-13": "slipdeck-card-13"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +48,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "CHOICE",
+            "kicker": "Choice",
             "line": "Keep it or <b>bin</b> it"
           },
           {
-            "kicker": "FAST",
+            "kicker": "Fast",
             "line": "Choose <b>fast</b>"
           },
           {
-            "kicker": "THINKING",
+            "kicker": "Thinking",
             "line": "The timer is the <b>enemy</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +72,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "CHOIX",
+            "kicker": "Choix",
             "line": "Garde ou <b>jette</b>"
           },
           {
-            "kicker": "RAPIDE",
+            "kicker": "Rapide",
             "line": "Choisis <b>rapidement</b>"
           },
           {
-            "kicker": "RÉFLEXION",
+            "kicker": "Réflexion",
             "line": "Le timer est l’<b>ennemi</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -116,46 +127,46 @@
       "fr": {
         "tagline": "<b class=\"w-bin\">Jette</b> ou <b class=\"w-keep\">garde</b> la carte proposée pour compléter ta <b class=\"w-hand\">main</b>",
         "strings": {
-          " CHAIN": " EN SÉRIE",
-          "BEST CHAIN": "MEILLEURE SÉRIE",
-          "BEST HAND": "MEILLEURE MAIN",
-          "BIN": "JETER",
-          "BUST": "MAIN MORTE",
-          "CHUTE": "GOULOTTE",
-          "CHUTE FULL": "GOULOTTE PLEINE",
-          "DEAD CARD": "CARTE MORTE",
-          "DEAL ME IN": "DISTRIBUE",
+          " chain": " en série",
+          "Best chain": "Meilleure série",
+          "Best hand": "Meilleure main",
+          "Bin": "Jeter",
+          "Bust": "Main morte",
+          "Chute": "Goulotte",
+          "Chute full": "Goulotte pleine",
+          "Dead card": "Carte morte",
           "Deal another hand": "Distribuer une autre main",
-          "EMPTY HAND": "MAIN VIDE",
-          "FINAL SCORE": "SCORE FINAL",
-          "FLUSH": "COULEUR",
-          "FLUSH DRAW": "TIRAGE COULEUR",
-          "FOUR OF A KIND": "CARRÉ",
-          "FULL": "PLEINE",
-          "FULL HOUSE": "FULL",
-          "HAND OPEN": "MAIN OUVERTE",
-          "HANDS PAID": "MAINS PAYÉES",
-          "HIGH CARD": "CARTE HAUTE",
-          "INSTALL NOW": "INSTALLER",
-          "KEEP": "GARDER",
-          "KEEP → ": "GARDER → ",
-          "KEEP → BUST": "GARDER → MAIN MORTE",
-          "KEEP → OPENS THE HAND": "GARDER → OUVRE LA MAIN",
-          "LIVES": "VIES",
-          "NOTHING YET": "RIEN ENCORE",
-          "OUT OF LIVES": "PLUS DE VIES",
-          "PAIR": "PAIRE",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "SCORE": "SCORE",
-          "SHARP EYE!": "ŒIL DE LYNX !",
-          "STRAIGHT": "SUITE",
-          "STRAIGHT DRAW": "TIRAGE SUITE",
-          "STRAIGHT FLUSH": "QUINTE FLUSH",
-          "THREE OF A KIND": "BRELAN",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "TOO SLOW": "TROP LENT",
-          "TWO PAIR": "DEUX PAIRES"
+          "Deal me in": "Distribue",
+          "Empty hand": "Main vide",
+          "Final score": "Score final",
+          "Flush": "Couleur",
+          "Flush draw": "Tirage couleur",
+          "Four of a kind": "Carré",
+          "Full": "Pleine",
+          "Full house": "Full",
+          "Hand open": "Main ouverte",
+          "Hands paid": "Mains payées",
+          "High card": "Carte haute",
+          "Install now": "Installer",
+          "Keep": "Garder",
+          "Keep → ": "Garder → ",
+          "Keep → bust": "Garder → main morte",
+          "Keep → opens the hand": "Garder → ouvre la main",
+          "Lives": "Vies",
+          "Nothing yet": "Rien encore",
+          "Out of lives": "Plus de vies",
+          "Pair": "Paire",
+          "Play the full game": "Jouer au jeu complet",
+          "Score": "Score",
+          "Sharp eye!": "Œil de lynx !",
+          "Straight": "Suite",
+          "Straight draw": "Tirage suite",
+          "Straight flush": "Quinte flush",
+          "Three of a kind": "Brelan",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "Too slow": "Trop lent",
+          "Two pair": "Deux paires"
         }
       }
     },

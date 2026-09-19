@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#4bf5ff",
     "accent2": "#4263eb"
+  },
+  "art": {
+    "objects": {
+      "decor-01": "chainring-ring-01",
+      "decor-06": "chainring-ring-06",
+      "decor-12": "chainring-ring-12",
+      "decor-16": "chainring-ring-16"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "RHYTHM",
+            "kicker": "Rhythm",
             "line": "Tap on the <b>right beat</b>"
           },
           {
-            "kicker": "PERFECT",
+            "kicker": "Perfect",
             "line": "Chain <b>perfects</b> to the music"
           },
           {
-            "kicker": "SATISFYING",
+            "kicker": "Satisfying",
             "line": "<b>Endless</b> bounce"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "RYTHME",
+            "kicker": "Rythme",
             "line": "Tape au <b>bon moment</b>"
           },
           {
-            "kicker": "PARFAIT",
+            "kicker": "Parfait",
             "line": "Enchaîne les <b>perfect</b> en musique"
           },
           {
-            "kicker": "SATISFAISANT",
+            "kicker": "Satisfaisant",
             "line": "Rebond <b>infini</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,29 +125,29 @@
       "fr": {
         "tagline": "Tape en rythme, à l’instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>",
         "strings": {
-          "CLOSE": "PRESQUE",
-          "COMBO": "COMBO",
-          "DODGE THE SPIKES": "ÉVITE LES PIQUANTS",
-          "EMPTY BEAT": "TEMPS MORT",
-          "FEEL THE BEAT": "SENS LE RYTHME",
-          "FINAL SCORE": "SCORE FINAL",
-          "GAME OVER": "PARTIE TERMINÉE",
-          "GET READY": "PRÉPARE-TOI",
-          "GO!": "GO !",
-          "GOOD": "BIEN",
-          "INSTALL NOW": "INSTALLER",
-          "MAX COMBO": "COMBO MAX",
-          "MEGA BONUS": "MÉGA BONUS",
-          "MISS": "RATÉ",
+          "Close": "Presque",
+          "Combo": "Combo",
+          "Dodge the spikes": "Évite les piquants",
+          "Empty beat": "Temps mort",
+          "Feel the beat": "Sens le rythme",
+          "Final score": "Score final",
+          "Game over": "Partie terminée",
+          "Get ready": "Prépare-toi",
+          "Go!": "Go !",
+          "Good": "Bien",
+          "Install now": "Installer",
+          "Max combo": "Combo max",
+          "Mega bonus": "Méga bonus",
+          "Miss": "Raté",
           "OK": "OK",
-          "PERFECT": "PARFAIT",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Perfect": "Parfait",
+          "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "SUDDEN DEATH": "MORT SUBITE",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !"
+          "Score": "Score",
+          "Sudden death": "Mort subite",
+          "Tap to play": "Tap pour jouer",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !"
         }
       }
     },

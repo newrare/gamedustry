@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "ECHOMAZE",
+    title:   "Echomaze",
     /* One short sentence, and nothing else: bounce, the dark maze, the exit.
        The stage below plays exactly that. */
     tagline: "<b class=\"w-echo\">Find</b> and aim the right way through the <b class=\"w-maze\">maze</b> to&nbsp;the&nbsp;<b class=\"w-exit\">exit</b>",
@@ -27,9 +27,9 @@
        no level and no menu, so it ships one window and plays all of it. */
     music: { volume: 0.10, fade: 1.8, menu: { from: 0, length: 36, rate: 0.85, gain: 0.5 } },
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"TIME",
-      endScore:"FINAL SCORE", gameOver:"OUT OF PULSES!", timeUp:"TIME'S UP!"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
+      endScore:"Final score", gameOver:"Out of pulses!", timeUp:"Time's up!"
     },
 
     /* THE FIVE BANDS OF THE CLIMB — one per six levels, and the level map
@@ -1194,7 +1194,7 @@
         lockFlare = 1;
         if (!lockSaid) {
           lockSaid = true;
-          Pop.show("alert", { word: "EXIT SEALED", sub: "BREAK THE CRYSTAL",
+          Pop.show("alert", { word: "Exit sealed", sub: "Break the crystal",
                               at: popAt(), hold: 1400 });
         }
       }
@@ -1219,7 +1219,7 @@
         w.found = true;
         mapped++;
         score += C.mapScore;
-        HUD.setRight(mapped, "WALLS");
+        HUD.setRight(mapped, "Walls");
         Sound.clip("map", 0.34, Rand.range(0.96, 1.14));
         Fx.ring(x, y, { from: 3, to: 30 + 18 * power, color: ARC, width: 3, life: 0.22 });
         if (clock - lastText > 0.2) {
@@ -1227,7 +1227,7 @@
           Pop.text(x, y - 14, "+" + C.mapScore, { color: "#dffcff", size: 22, life: 0.6, tier: 1 });
         }
         if (mapped % 25 === 0) {
-          Pop.show("combo", { word: mapped + Lang.t(" WALLS"), sub: "FOUND", at: popAt() });
+          Pop.show("combo", { word: mapped + Lang.t(" walls"), sub: "Found", at: popAt() });
           Sound.clip("power", 0.3, 1.35);
         }
       }
@@ -1302,8 +1302,8 @@
       Fx.burst(mx, my, { color: [VALVE, "#ffffff"], count: 12, speed: 240, life: 0.4, size: 4 });
       // Discreet on purpose: a valve is a consolation, not a win. It says its
       // name once, the first time, and is a plain score callout after that.
-      Pop.show("score", { word: "ONE-WAY VALVE",
-                          sub: valves.length === 1 ? Lang.t("SPENT PULSE SEALS THE GAP")
+      Pop.show("score", { word: "One-way valve",
+                          sub: valves.length === 1 ? Lang.t("Spent pulse seals the gap")
                                                    : "+" + C.valveScore,
                           at: popAt(), hold: valves.length === 1 ? 620 : 240 });
     }
@@ -1360,7 +1360,7 @@
       Fx.burst(crystal.x, crystal.y, { color: [CRYSTAL, "#ffffff", "#ffd2f4"], count: 24,
                                        speed: 300, life: 0.55, size: 5 });
       Overlay.vignette(rgba(CRYSTAL, 0.8), 1, 900);
-      Pop.show("ultra", { word: "CRYSTAL DOWN!", sub: "GATE UNLOCKED",
+      Pop.show("ultra", { word: "Crystal down!", sub: "Gate unlocked",
                           at: popAt(), hold: 800 });
     }
 
@@ -1495,7 +1495,7 @@
       applySeal();
       Fx.ring(mx, M.y1, { from: 14, to: 130, color: SURGE, width: 5, life: 0.4 });
       Sound.clip("power", 0.45, 1.1);
-      Pop.show("alert", { word: "DOOR FORCED", sub: "OPEN FOR GOOD",
+      Pop.show("alert", { word: "Door forced", sub: "Open for good",
                           at: "top", hold: 1200 });
       surgeSaid = true;
     }
@@ -1504,8 +1504,8 @@
        EVENTS
        ================================================================= */
     function refreshHUD() {
-      HUD.setLeft(queue, "PULSES");
-      HUD.setRight(mapped, "WALLS");
+      HUD.setLeft(queue, "Pulses");
+      HUD.setRight(mapped, "Walls");
     }
     function onDepth(b) {
       var climbed = M.rows - deepest;
@@ -1544,7 +1544,7 @@
       Fx.flash("#ffffff", 0.5); Fx.shake(16, 0.42); Fx.freeze(0.05);
       Fx.ring(b.x, M.y0, { from: 20, to: 320, color: EXIT_COL, width: 10, life: 0.6 });
       Overlay.vignette(rgba(EXIT_COL, 0.9), 1, 1000);
-      Pop.show("ultra", { word: perfectRun() ? Lang.t("PERFECT READ!") : Lang.t("ESCAPED!"),
+      Pop.show("ultra", { word: perfectRun() ? Lang.t("Perfect read!") : Lang.t("Escaped!"),
                           sub: "+" + gain, hold: 900,
                           at: { x: Layout.cx, y: M.y0 + M.ch * M.rows * 0.42 } });
       // What the rack was worth is priced on the END SCREEN, on its own row
@@ -1574,7 +1574,7 @@
       Fx.burst(mx, my, { color: [PULSE.core, "#ffffff"], count: 12, speed: 380,
                          life: 0.3, angle: aimA, spread: 1.0 });
       Fx.ring(mx, my, { from: 10, to: 78, color: PULSE.core, width: 5, life: 0.26 });
-      if (queue === 1) Pop.show("alert", { word: "LAST PULSE", hold: 1400 });
+      if (queue === 1) Pop.show("alert", { word: "Last pulse", hold: 1400 });
     }
 
     function stepBall(b, h) {
@@ -1757,7 +1757,7 @@
       if (recapStep === 1 && recapT >= C.recapSurge + C.recapSweep) {
         recapStep = 2;
         Sound.clip("deep", 0.55, 0.82);
-        Pop.show("alert", { word: "THE WAY OUT", sub: Lang.t("DOOR ") + (entryMouth + 1) + Lang.t(" OF ") + MOUTHS,
+        Pop.show("alert", { word: "The way out", sub: Lang.t("Door ") + (entryMouth + 1) + Lang.t(" of ") + MOUTHS,
                             hold: 600, at: popAt() });
       }
       // 3. it lands on the gate — the shot that was never fired
@@ -1805,10 +1805,10 @@
     function finish() {
       var stars = starsEarned();
       endRound({
-        title: perfectRun() ? Lang.t("PERFECT READ!")
-             : escaped ? Lang.t("ESCAPED THE MAZE!")
-             : deepest <= 1 ? Lang.t("SO CLOSE!")
-             : deepest <= M.rows / 3 ? Lang.t("DEEP RUN!") : C.copy.gameOver,
+        title: perfectRun() ? Lang.t("Perfect read!")
+             : escaped ? Lang.t("Escaped the maze!")
+             : deepest <= 1 ? Lang.t("So close!")
+             : deepest <= M.rows / 3 ? Lang.t("Deep run!") : C.copy.gameOver,
         variant: escaped ? "perfect" : deepest <= 1 ? "win" : "",
         score: score,
         stars: stars,
@@ -1818,10 +1818,10 @@
           // reach the top row and still never find the gap in the ceiling.
           // The rack is most of the score, so it is priced as the BONUS it is —
           // gold only when nothing was left on the table, which is one shot.
-          { label: "BONUS", value: spare + Lang.t(" PULSE") + (spare > 1 ? "S" : ""),
+          { label: "Bonus", value: spare + Lang.t(" pulse") + (spare > 1 ? "S" : ""),
             grade: escaped && spare >= C.startBalls - 1 ? "gold" : spare > 0 ? "accent" : "" },
           // A valve is a pulse that died in there: none of them is the clean run.
-          { label: "VALVES", value: valves.length,
+          { label: "Valves", value: valves.length,
             grade: valves.length === 0 ? "gold" : "" }
         ]
       });
@@ -2348,7 +2348,7 @@
       ctx.fillStyle = rgba(core, 0.6 + 0.4 * k);
       ctx.font = "900 20px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(Lang.t("EXIT"), mid, top - 1);
+      ctx.fillText(upper(Lang.t("Exit")), mid, top - 1);
       if (tell && real) drawBeacon(mid, M.y0);
     }
 

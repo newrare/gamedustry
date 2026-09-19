@@ -61,8 +61,8 @@
 
   var STRINGS = {
     en: {
-      title: "LEVELS", pick: "SELECT A LEVEL",
-      level: "Level", locked: "Locked", play: "PLAY", replay: "REPLAY",
+      title: "Levels", pick: "Select a level",
+      level: "Level", locked: "Locked", play: "Play", replay: "Replay",
       never: "Never played", notTaken: "Not played yet",
       notTakenTag: "not played",
       gatedHere: "Locked",
@@ -74,29 +74,29 @@
       roadWants: "<b>★ {n}</b> to unlock — you have <b>{have}</b>, <b>{short} short</b>.",
       findHere: "The cheapest stars to go back for:",
       playOn: "The stars will come from playing on.",
-      takeRoad: "GO THIS WAY",
+      takeRoad: "Go this way",
       tutoBand: "Optional", tutoTag: "how to play",
       tutoGoal: "Start the tutorial to learn how to play.",
       tutoNote: "Level 1 is open from the start.",
       tutoNoteSeen: "Read · open it again whenever you want.",
-      tutoPlay: "HOW TO PLAY",
+      tutoPlay: "How to play",
       endless: "Endless", endlessSub: "Level 31 · the reward for a perfect board",
       endlessGoal: "Every level cleared with <b>three stars</b>. There is nothing " +
                    "left to unlock, so the run simply does not stop.",
       endlessNote: "No objective, no clock, no levels — <em>★ 90/90</em>.",
-      endlessPlay: "START THE ENDLESS RUN",
+      endlessPlay: "Start the endless run",
       bands: ["Warm-up", "Pressure", "Squeeze", "Overdrive", "Meltdown"],
-      objective: "OBJECTIVE", missed: "OBJECTIVE MISSED",
-      threeStars: "THREE STARS!", cleared: "LEVEL CLEARED!",
-      levelsEntry: "LEVELS", next: "NEXT LEVEL", retry: "RETRY", map: "MAP",
-      toHome: "Back to the title screen",
+      objective: "Objective", missed: "Objective missed",
+      scores: "Scores", almost: "Almost",
+      threeStars: "Three stars!", cleared: "Level cleared!",
+      levelsEntry: "Levels", map: "Map", next: "Next level",
       resetProgress: "Erase the thirty levels",
       resetProgressAsk: "Tap again — thirty levels of stars are lost",
       resetProgressDone: "Progression erased"
     },
     fr: {
-      title: "NIVEAUX", pick: "CHOISIS UN NIVEAU",
-      level: "Niveau", locked: "Verrouillé", play: "JOUER", replay: "REJOUER",
+      title: "Niveaux", pick: "Choisis un niveau",
+      level: "Niveau", locked: "Verrouillé", play: "Jouer", replay: "Rejouer",
       never: "Jamais joué", notTaken: "Pas encore joué",
       notTakenTag: "non joué",
       gatedHere: "Verrouillé",
@@ -108,27 +108,50 @@
       roadWants: "<b>★ {n}</b> pour déverrouiller — tu en as <b>{have}</b>, <b>il en manque {short}</b>.",
       findHere: "Les étoiles les moins chères à rattraper :",
       playOn: "Les étoiles viendront en continuant.",
-      takeRoad: "PASSER PAR LÀ",
+      takeRoad: "Passer par là",
       tutoBand: "Facultatif", tutoTag: "comment jouer",
       tutoGoal: "Lance le tutoriel pour savoir comment jouer.",
       tutoNote: "Le niveau 1 est ouvert dès le départ.",
       tutoNoteSeen: "Lu · à rouvrir quand tu veux.",
-      tutoPlay: "COMMENT JOUER",
+      tutoPlay: "Comment jouer",
       endless: "Sans fin", endlessSub: "Niveau 31 · la récompense d’un tableau parfait",
       endlessGoal: "Tous les niveaux finis à <b>trois étoiles</b>. Il n’y a plus " +
                    "rien à débloquer, alors la partie ne s’arrête plus.",
       endlessNote: "Pas d’objectif, pas de chrono, pas de niveaux — <em>★ 90/90</em>.",
-      endlessPlay: "LANCER LA PARTIE SANS FIN",
+      endlessPlay: "Lancer la partie sans fin",
       bands: ["Échauffement", "Pression", "Étau", "Surrégime", "Fusion"],
-      objective: "OBJECTIF", missed: "OBJECTIF MANQUÉ",
-      threeStars: "TROIS ÉTOILES !", cleared: "NIVEAU RÉUSSI !",
-      levelsEntry: "NIVEAUX", next: "NIVEAU SUIVANT", retry: "RECOMMENCER", map: "CARTE",
-      toHome: "Retour à l’écran titre",
+      objective: "Objectif", missed: "Objectif manqué",
+      scores: "Scores", almost: "Presque",
+      threeStars: "Trois étoiles !", cleared: "Niveau réussi !",
+      levelsEntry: "Niveaux", map: "Carte", next: "Niveau suivant",
       resetProgress: "Effacer les trente niveaux",
       resetProgressAsk: "Touchez à nouveau — trente niveaux d’étoiles sont perdus",
       resetProgressDone: "Progression effacée"
     }
   };
+
+  /* Which of them the screen SHOUTS. Every string above is written in normal
+     case, like the rest of the repo; the ones listed here are set in capitals
+     by the motor's `upper` (packages/engine), which also takes the accents
+     off — a capital carries none in this house. */
+  var up = W.upper;
+  var CAPS = ["title", "pick", "play", "replay", "takeRoad", "tutoPlay",
+    "endlessPlay", "objective", "missed", "scores", "almost",
+    "threeStars", "cleared", "levelsEntry", "map", "next", "locked", "tutoTag",
+    "notTakenTag"
+  ];
+  (function () {
+    function shout(v) {
+      if (typeof v === "string") return up(v);
+      if (v && v.length != null) { for (var i = 0; i < v.length; i++) v[i] = shout(v[i]); }
+      return v;
+    }
+    for (var lang in STRINGS) if (STRINGS.hasOwnProperty(lang)) {
+      for (var k = 0; k < CAPS.length; k++) {
+        if (STRINGS[lang][CAPS[k]] != null) STRINGS[lang][CAPS[k]] = shout(STRINGS[lang][CAPS[k]]);
+      }
+    }
+  })();
 
   var LANG = "en", T = STRINGS.en;
 
@@ -246,13 +269,25 @@
      its band off `d` (echomaze) leaves `from` out and gets the map's. */
   function bandName(n) {
     var b = (SPEC && SPEC.bands) || null, list, i = bandOf(n), j;
-    if (!b) return T.bands[i];
+    if (!b) return up(T.bands[i]);
     if (b.from && b.from.length) {
       i = 0;
       for (j = 0; j < b.from.length; j++) if (n >= b.from[j]) i = j;
     }
     list = b[LANG] || b.en;
-    return (list && list[i]) || T.bands[Math.min(i, T.bands.length - 1)];
+    return up((list && list[i]) || T.bands[Math.min(i, T.bands.length - 1)]);
+  }
+
+  /* The same name, asked for by BAND rather than by level — what the meta
+     layer needs to write "earned by clearing <band>" on a sticker's card. It
+     does not go through `from`, which only exists to map a LEVEL onto a band:
+     the index into the list of names is the band either way. */
+  function bandTitle(i) {
+    var b = (SPEC && SPEC.bands) || null, list;
+    i = Math.max(0, Math.min(T.bands.length - 1, i | 0));
+    if (!b) return up(T.bands[i]);
+    list = b[LANG] || b.en;
+    return up((list && list[i]) || T.bands[i]);
   }
 
   function preds(n) {
@@ -411,6 +446,52 @@
 
   function wipe() { save = { v: 1, l: {} }; persist(); }
 
+  /* ── 3c. the bands, as the meta layer collects them ───────────────────── */
+
+  /* packages/webshell/meta.js pays a sticker for a band of the climb, and the
+     bands are the MAP's — so the reading of them is here, where `bandOf` and
+     the save already are, rather than in a second file that would have to
+     re-derive both.
+
+     PASSED is the climb having gone past the band: a cleared level in a higher
+     band, or level 30 itself for the top one. It is deliberately not "every
+     level of the band cleared" — a fork's two roads share a band and missing
+     the road not taken is a choice this design protects (section 1), so a rule
+     that demanded both roads would be unreachable for a player who chose.
+     CLEAN is the same band with every level the player PLAYED in it standing
+     at three stars: the road they walked, walked perfectly. */
+  function bandsState() {
+    var b, n, st = [], topBand = -1, allCleared = true;
+    for (b = 0; b < 5; b++) st.push({ total: 0, played: 0, cleared: 0, three: 0, passed: false, clean: false });
+    for (n = 1; n <= LEVELS; n++) {
+      var s = st[bandOf(n)];
+      s.total++;
+      if (played(n)) s.played++;
+      if (cleared(n)) {
+        s.cleared++;
+        if (starsOf(n) >= 3) s.three++;
+        if (bandOf(n) > topBand) topBand = bandOf(n);
+      } else allCleared = false;
+    }
+    var last = bandOf(LEVELS);
+    for (b = 0; b < 5; b++) {
+      st[b].passed = b < topBand || (b === last && cleared(LEVELS));
+      // at least one level played, so an untouched band is never clean by vacancy
+      st[b].clean = st[b].passed && st[b].played > 0 && st[b].three === st[b].played;
+    }
+    return { bands: st, allCleared: allCleared, allPerfect: perfect() };
+  }
+
+  /* The meta layer, when the game declares one. Resolved on every use rather
+     than held: packages/webshell/meta.js is loaded AFTER this file — it reads
+     the map back, not the other way round — so there is nothing to hold at
+     load time. A game without it never enters any of the branches below and
+     its map is exactly what it was. */
+  function meta() {
+    var m = window.__META__;
+    return m && m.active() ? m : null;
+  }
+
   /* ── 3b. FORCE — the map walked out of order, on this machine only ─── */
 
   /* A level is tuned by playing it, and reaching level 27 through the gates it
@@ -528,13 +609,22 @@
     var goal = goalOf(dOf(n));
 
     result.stars = st;
-    /* A three-star round is ENDED BY THE LEVEL, not by the game losing, so the
-       game's own title ("TORN APART") would be a lie; a missed objective needs
-       saying out loud. One and two stars keep the game's flavour — the viper
-       really did die. */
-    if (!st) { result.title = T.missed; result.variant = ""; }
-    else if (st === 3) { result.title = T.threeStars; result.variant = "perfect"; }
-    else if (!result.variant) result.variant = "win";
+    /* THE END SCREEN OF A LEVEL SAYS ONE OF TWO THINGS, and neither of them is
+       the game's own flavour line. A round that met its objective is a SCORE
+       being read — the stars, the coins and the stat rows are the whole
+       screen, and "TORN APART" over them is a story about a viper that has
+       nothing to do with a level having been cleared. A round that missed it
+       is ALMOST: the same screen, one word, in red, because the only thing the
+       player needs told is which side of the objective they landed on.
+
+       The three-star round is ended by the LEVEL and not by the game losing,
+       which is what made a game's own title a lie there first; the two other
+       cases followed it once the screen became the doorway back to the map. */
+    /* The variant is the COLOUR the motor gives the title, and a missed
+       objective wants the one it paints by default: `.eo-title` with no
+       variant at all is the red one (packages/shell/motor.css). */
+    if (!st) { result.title = T.almost; result.variant = ""; }
+    else { result.title = T.scores; result.variant = st === 3 ? "perfect" : "win"; }
 
     /* The objective is the first thing the end screen has to answer, and the
        column takes four rows before it overflows the frame — so it goes in at
@@ -579,9 +669,15 @@
        principle start before mount() has handed the helpers over. */
     hudBox = document.createElement("div");
     hudBox.id = "lv-hud"; hudBox.hidden = true;
+    /* The pill's three stars are the map's, painted when the build has the
+       artwork. They are written empty — the glyph is `.st s:empty::before`,
+       so an <s> holding a picture drops it without a class of its own — and
+       paintHud only ever toggles `on`. */
+    var star = artOf("star", "lv-sti");
     hudBox.innerHTML =
       '<div class="top"><b class="n"></b><span class="st">' +
-      '<s></s><s></s><s></s></span><i class="goal"></i></div>' +
+      "<s>" + star + "</s><s>" + star + "</s><s>" + star + "</s>" +
+      '</span><i class="goal"></i></div>' +
       '<span class="bar"><u></u></span>';
     hudNum = hudBox.querySelector(".n");
     hudStars = hudBox.querySelectorAll(".st s");
@@ -639,20 +735,40 @@
      a game that stacks several never leaves the player in slow motion. */
   var WIN_RAMP = 620, WIN_WAIT = 1600, WIN_HOLD = 1100, WIN_ENTER = 620;
 
-  function winRound(value) {
-    won = true;
-    W.Fx.flash("#ffd43b", 0.45, 2.2);
-    W.Fx.shake(9, 0.3);
-    W.Music.duck(0.4, 0.35);
-    W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
-
-    // the world eases off straight away: that is the round stopping, not a word
-    var t0 = performance.now();
+  /* EASING THE WORLD OFF, one ramp shared by the three ways a round can end.
+     It reads the rate it is starting from rather than assuming 1, so a second
+     call lands on top of the first instead of snapping back up. */
+  function slowTo(to, ms) {
+    var t0 = performance.now(), from = W.Loop.rate();
     (function ramp(now) {
-      var k = Math.min(1, ((now || performance.now()) - t0) / WIN_RAMP);
-      W.Loop.rate(1 - 0.88 * k * k);                    // 1 -> 0.12, easing in
+      var k = Math.min(1, ((now || performance.now()) - t0) / ms);
+      W.Loop.rate(from + (to - from) * k * k);          // easing in
       if (k < 1) requestAnimationFrame(ramp);
     })(t0);
+  }
+
+  /* THE SHINE. Three stars is the one thing a level can pay that is worth a
+     full-frame reaction, and it is gold from end to end: the frame flashes,
+     two rings go out from the middle of the play area and the edges keep a
+     glow for as long as the slow motion lasts. There is no confetti — that
+     canvas lives inside #screen-end and is not over the round (see
+     packages/webshell/meta.js on the same point). */
+  function winBeat() {
+    W.Fx.flash("#ffd43b", 0.5, 2.0);
+    W.Fx.shake(9, 0.3);
+    W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 20, to: 620, color: "#ffd43b", width: 12, life: 0.7 });
+    W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 10, to: 420, color: "#ffffff", width: 6, life: 0.5 });
+    W.Overlay.vignette("#ffd43b", 0.85);
+    W.Music.duck(0.4, 0.35);
+    W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
+  }
+
+  function winRound(value) {
+    won = true;
+    winBeat();
+
+    // the world eases off straight away: that is the round stopping, not a word
+    slowTo(0.12, WIN_RAMP);
 
     var wait = Math.min(W.Pop.pending ? W.Pop.pending() : 0, WIN_WAIT);
     setTimeout(function () {
@@ -672,6 +788,103 @@
     if (W.Game && W.Game.levelWon) W.Game.levelWon();
     else W.endRound({ score: Math.round(W.HUD.score()), levelScore: value });
   }
+
+  /* ── 5c. the outro — the round's last word, before the end screen ─────── */
+
+  /* A ROUND ENDS IN ONE OF THREE WAYS AND THE WORLD SAYS SO ITSELF. Until the
+     motor grew `onOutro` (packages/shell/shell.js) the last frame of the round
+     and the first of the end screen were the same frame, so everything a level
+     had to say about how it went was said on a screen the world is no longer
+     on. The outro is the beat in between: the clock is already stopped, the
+     loop is still turning, and the end screen waits for `done`.
+
+       three stars  the shine has already played (winRound) and the world is
+                    held at a crawl while the BONUS is handed over — the three
+                    boxes open over the round that earned them, not over a
+                    score screen two beats later.
+       one or two   slow motion and nothing else. The objective was met; there
+                    is no ceremony owed, and a gold flash here would make a
+                    scrape read like a maximum.
+       none         the drama: the frame goes red, fire climbs the screen from
+                    below and the world grinds down into it.
+
+     Only a LEVEL has an outro. A free round and the endless run end the way
+     they always did — there is no objective to have missed. */
+  var OUT_RAMP = 480, CALM_RATE = 0.22, CALM_HOLD = 300;
+  var LOSS_RATE = 0.16, LOSS_HOLD = 1150, BONUS_RATE = 0.14;
+
+  /* The fire, spawned along the bottom edge of the frame and pulled UP by a
+     negative gravity, so it accelerates away from the glass the way a flame
+     does instead of arcing like a firework. Throttled to a puff every 60 ms:
+     the motor caps its particle pool at 260 and a per-frame emitter would
+     spend the whole budget in the first quarter of a second. */
+  var FIRE = ["#ff3b1f", "#ff6b35", "#ffa62b", "#ffd43b"];
+  var FIRE_GAP = 60;
+
+  function flames(ms) {
+    var t0 = performance.now(), lastPuff = -1e9;
+    (function puff(now) {
+      var t = (now || performance.now()) - t0;
+      if (t > ms || W.state() !== "playing") return;
+      if (t - lastPuff >= FIRE_GAP) {
+        lastPuff = t;
+        for (var i = 0; i < 4; i++) {
+          W.Fx.burst(Math.random() * W.view.w, W.view.h + 18, {
+            color: FIRE, count: 4, speed: 620, size: 13, life: 1.1,
+            grav: -520, angle: -Math.PI / 2, spread: 0.9
+          });
+        }
+      }
+      requestAnimationFrame(puff);
+    })(t0);
+  }
+
+  function lossBeat() {
+    W.Fx.flash("#ff2d2d", 0.3, 2.6);
+    W.Fx.shake(13, 0.45);
+    W.Overlay.vignette("#ff2d2d", 0.92);
+    W.Music.duck(0.3, 0.4);
+    W.Sound.cue("uiScore", 0.7, 0.55, 200, 0.45, "sawtooth");
+    flames(LOSS_HOLD);
+  }
+
+  /* The meta layer, when the game ships one. It is the only thing the outro
+     hands the frame over to, and a game without it simply holds the beat. */
+  function meta() {
+    return (window.__META__ && window.__META__.active()) ? window.__META__ : null;
+  }
+
+  function outro(result, done) {
+    if (!ON || !CONFIG.level) { done(); return; }
+    var st = result.stars || 0;
+
+    if (st >= 3) {
+      /* The shine normally played on the frame the third star lit; a game that
+         ended its own round on that same frame never went through winRound, so
+         the beat is played here instead of being skipped. */
+      var wait = 0;
+      if (!won) { won = true; winBeat(); slowTo(BONUS_RATE, WIN_RAMP); wait = WIN_ENTER; }
+      else W.Loop.rate(BONUS_RATE);
+      var MT = meta();
+      setTimeout(function () {
+        if (MT && MT.bonus) MT.bonus(done);
+        else done();
+      }, wait);
+      return;
+    }
+
+    if (st >= 1) {
+      slowTo(CALM_RATE, OUT_RAMP);
+      setTimeout(done, OUT_RAMP + CALM_HOLD);
+      return;
+    }
+
+    lossBeat();
+    slowTo(LOSS_RATE, OUT_RAMP);
+    setTimeout(done, LOSS_HOLD);
+  }
+
+  if (ON && W.onOutro) W.onOutro(outro);
 
   function watch() {
     if (!watching) return;
@@ -704,16 +917,6 @@
   if (ON) W.onState(function (state) {
     if (state === "playing") roundStarted(); else roundEnded();
   });
-
-  /* Where PLAY AGAIN goes after a level: on to the next one when there is a
-     single way out and it was cleared, back to the same level otherwise. A
-     fork has two ways out and neither is ours to pick. */
-  function nextAfter(n) {
-    if (!n || !cleared(n)) return 0;
-    var ss = succs(n);
-    if (ss.length !== 1) return 0;
-    return isOpen(ss[0]) ? ss[0] : 0;
-  }
 
   /* ── 6. geometry — an invisible grid, and roads that walk it ──────────── */
 
@@ -887,8 +1090,15 @@
 
   var API = null;                 // { el, icon, start } — handed in by menu.js
   var box, scroll, canvasBox, svg, card, headTitle, headEyebrow, totalBox, totalN
-  var homeBtn, devBtn;
-  var cName, cBand, cGoal, cNote, cChips, cDiff, cDiffN, cPlay;
+  var headBox, devBtn;
+  /* HOW MUCH OF THE ROAD IS UNDER SOMETHING. The scroll band is the whole
+     frame — the road runs beneath the header and beneath the card instead of
+     being cut at their edge — so the two bands are margins on the canvas
+     rather than insets on the viewport: the same gap at either end of the
+     climb, with nothing clipped in between. Everything that centres a level
+     measures the band from them (see scrollTo). */
+  var padTop = 0, padBot = 246;
+  var cName, cBand, cGoal, cNote, cChips, cDiff, cFlames, cPlay;
   var picked = 1;                 // a level number, or { road: index }
 
   /* A second tap on the node already selected starts it. The card's own button
@@ -901,6 +1111,8 @@
      (`select` below), so the node a tap starts is always the one the card is
      describing. */
   var tapOn = null;
+  /* `null` is a real selection: nothing. A tap on the empty map lands here and
+     the card goes away with it (`writeCard`). */
   function select(v) { tapOn = null; picked = v; writeCard(); }
   function tapped(n) {
     var again = tapOn === n && picked === n;
@@ -932,29 +1144,59 @@
     dressBackdrop(bg);
     box.appendChild(bg);
 
+    /* THE HEADER IS TWO ROWS. The first is navigation and what the player
+       owns, and it reads the way a phone's status bar does: the way back on
+       the left, the three numbers flush right. The second is the whole width,
+       because the xp bar is a bar and a bar wants the room.
+
+       There is no house. The back arrow is the only way out of this screen —
+       the map IS the place a player comes back to, so a second control that
+       leaves it was a control spending the one band a thumb never reaches. */
     var head = el("header"); head.id = "lv-head";
+    headBox = head;
+    var row = el("div"); row.id = "lv-hrow";
+    head.appendChild(row);
+
     var back = el("button", "web-back", API.icon("back", "back-ico"));
     back.addEventListener("click", close);
-    head.appendChild(back);
+    row.appendChild(back);
+
     var titles = el("div"); titles.id = "lv-titles";
     headEyebrow = el("div"); headEyebrow.id = "lv-eyebrow";
     headTitle = el("div"); headTitle.id = "lv-title";
     titles.appendChild(headEyebrow);
     titles.appendChild(headTitle);
-    head.appendChild(titles);
+    row.appendChild(titles);
+
+    /* WITH A META LAYER THE HEADER CHANGES HANDS. The game's own name and
+       "pick a level" are what the player read on the title screen one tap ago;
+       what they cannot read anywhere else is what they own. So the title block
+       is hidden (meta.css) and the wallet takes its width: coins, tickets and
+       the star total, in that order, with the player's own level bar on the
+       row below. The two doors are the two NUMBERS — coins open the shop,
+       tickets open the album (`doors`) — so the pair of destinations costs two
+       nodes instead of the four a pair of buttons beside them used to. */
+    var MT = meta(), wal = null;
+    if (MT) {
+      wal = el("div"); wal.id = "lv-wallet";
+      row.appendChild(wal);
+    }
+
+    /* The counter's own star, and the TROPHY once the board is finished: at
+       90/90 the number stops being a climb and becomes a result, so the piece
+       in front of it changes with it. Repainted by writeTotal, which is the
+       one place that knows the count. */
     totalBox = el("div"); totalBox.id = "lv-total";
-    totalBox.appendChild(el("span", "g", "&#9733;"));
+    totalBox.appendChild(el("span", "g", artOf("star", "lv-tot-i") || "&#9733;"));
     totalN = el("span"); totalN.id = "lv-total-n";
     totalBox.appendChild(totalN);
-    head.appendChild(totalBox);
-    /* The map is a screen the player lives on, not a panel they fell into: the
-       back arrow walks one step, the house leaves for the title screen from
-       wherever they are — the help panel included. */
-    homeBtn = el("button", "web-back", API.icon("home"));
-    homeBtn.id = "lv-home";
-    homeBtn.setAttribute("aria-label", T.toHome);
-    homeBtn.addEventListener("click", hide);
-    head.appendChild(homeBtn);
+    row.appendChild(totalBox);
+
+    if (MT) {
+      var xp = el("div"); xp.id = "lv-xp";
+      head.appendChild(xp);
+      MT.wallet(wal, { full: true, doors: true, lvHost: xp });
+    }
     box.appendChild(head);
 
     /* The force switch (section 3b) — the one piece of this screen that is
@@ -981,9 +1223,24 @@
     svg.setAttribute("preserveAspectRatio", "none");
     canvasBox.appendChild(svg);
     scroll.appendChild(canvasBox);
+    /* A TAP IN THE EMPTY puts the card away. The card is a third of the frame
+       and it is docked, so a player who wants to look at the road they are on
+       — or at the scene behind it — has nowhere to put it. The target is
+       tested rather than the coordinates: every node, wall and read-out is a
+       child of the canvas, so "the event stopped HERE" is exactly "nothing was
+       under the finger". The road itself is an svg with no pointer events, so
+       tapping the line between two levels counts as empty too. */
+    scroll.addEventListener("click", function (e) {
+      if (e.target === scroll || e.target === canvasBox) select(null);
+    });
     box.appendChild(scroll);
 
+    /* The card is what the level SAYS on the left and how hot it is on the
+       right: the words run in one column and the flames stand beside them,
+       out of the way of a line that wraps. */
     card = el("section"); card.id = "lv-card";
+    var body = el("div"); body.id = "lv-body";
+    var main = el("div"); main.id = "lv-main";
     var top = el("div", "top");
     cName = el("div"); cName.id = "lv-name";
     cBand = el("div"); cBand.id = "lv-band";
@@ -991,16 +1248,18 @@
     cGoal = el("div"); cGoal.id = "lv-goal";
     cNote = el("div"); cNote.id = "lv-note";
     cChips = el("div"); cChips.id = "lv-chips";
+    main.appendChild(top);
+    main.appendChild(cGoal);
+    main.appendChild(cNote);
+    main.appendChild(cChips);
     cDiff = el("div"); cDiff.id = "lv-diff";
-    cDiff.innerHTML = '<span class="lbl"></span><span class="bar"><i></i></span><b></b>';
-    cDiffN = cDiff.querySelector("b");
+    cDiff.innerHTML = '<span class="lbl"></span><span class="flames"></span>';
+    cFlames = cDiff.querySelector(".flames");
+    body.appendChild(main);
+    body.appendChild(cDiff);
     cPlay = el("button"); cPlay.id = "lv-play";
     cPlay.addEventListener("click", onPlay);
-    card.appendChild(top);
-    card.appendChild(cGoal);
-    card.appendChild(cNote);
-    card.appendChild(cChips);
-    card.appendChild(cDiff);
+    card.appendChild(body);
     card.appendChild(cPlay);
     box.appendChild(card);
 
@@ -1047,9 +1306,54 @@
     canvasBox.appendChild(tag);
   }
 
+  /* HOW HOT THE LEVEL IS — five flames, not a bar. Same `d` the tunables are
+     lerped with, spread over 1..5 rather than 0..5: level 1 is a level, so it
+     owns one flame, and only the last owns all five. A flame is FILLED up to
+     the count, the one the remainder stops on is drawn as an outline in its
+     own colour, and the rest are grey. The colours climb with the position
+     (green, gold, red) the way the bar's gradient did, so the row reads at a
+     glance from across the card. */
+  var FLAMES = 5;
+
+  function writeFlames(d) {
+    var v = 1 + (d < 0 ? 0 : d > 1 ? 1 : d) * (FLAMES - 1);
+    var out = "", i, cls;
+    for (i = 1; i <= FLAMES; i++) {
+      cls = v >= i ? "on" : v > i - 1 ? "half" : "off";
+      out += '<span class="lv-fl f' + i + " " + cls + '">' +
+             API.icon("flame", "fl-ico") + "</span>";
+    }
+    cFlames.innerHTML = out;
+    cDiff.setAttribute("aria-label", T.difficulty + " " + Math.round(v) + "/" + FLAMES);
+  }
+
+  /* ONE STAR, and the only place this file draws one. A build that carries
+     the shell's artwork (CONFIG.shellArt, a game with `web.meta`) paints it;
+     every other build keeps the glyph, and the two are the same box either
+     way, so nothing that measures a row of three has to know which it got.
+
+     An unearned star is the SAME picture, drained — `.lv-stars s.off img`
+     greys it. Drawing a second, empty piece would be a second file to ship
+     and a second thing to keep in step. */
+  /* The shell's own painted pieces (CONFIG.shellArt), read straight off CONFIG
+     rather than through `API.art`: the round's pill is built from a state hook
+     that can fire before mount() has handed the helpers over, and a pill that
+     came up one frame early must not be the one screen stuck with glyphs. */
+  function artOf(role, cls) {
+    var src = CONFIG.shellArt && CONFIG.shellArt[role];
+    if (!src) return "";
+    return '<img class="' + (cls || "ico") + ' art-i" src="' + src +
+           '" alt="" aria-hidden="true">';
+  }
+
+  function starArt(on) {
+    return '<s class="' + (on ? "on" : "off") + '">' +
+           (artOf("star", "lv-sti") || "&#9733;") + "</s>";
+  }
+
   function starRow(s) {
     var out = '<span class="lv-stars">', i;
-    for (i = 1; i <= 3; i++) out += '<s class="' + (i <= s ? "on" : "") + '">&#9733;</s>';
+    for (i = 1; i <= 3; i++) out += starArt(i <= s);
     return out + "</span>";
   }
 
@@ -1059,6 +1363,10 @@
     NEXT = frontier();
 
     canvasBox.style.height = geo.height + "px";
+    /* The header's real height, insets included, measured rather than
+       restated: it is the gap the climb starts under. */
+    padTop = headBox ? headBox.offsetHeight : 0;
+    canvasBox.style.marginTop = padTop + "px";
     if (full) canvasBox.className = "allstars"; else canvasBox.className = "";
     svg.setAttribute("viewBox", "0 0 720 " + geo.height);
     svg.style.height = geo.height + "px";
@@ -1143,8 +1451,14 @@
               : isNext(n) ? "next"
               : isGap(n) ? "gap"
               : isOpen(n) ? "open" : "lock";
-      var node = API.el("button", "lv-node " + cls,
-        '<span class="num">' + n + "</span>" + PADLOCK);
+      /* The endless node is a star, drawn by CSS as a clipped polygon. With
+         the artwork it is the painted starburst instead — the one node on this
+         map that is a reward rather than a level, so it wears the piece the
+         daily road's starred day wears. */
+      var face = '<span class="num">' + n + "</span>" + PADLOCK;
+      if (n === BONUS) face = artOf("starBurst", "lv-bonus-i") || face;
+      var node = API.el("button", "lv-node " + cls +
+        (n === BONUS && artOf("starBurst") ? " art" : ""), face);
       node.style.left = pt.x + "px";
       node.style.top = pt.y + "px";
       node.addEventListener("click", (function (m) {
@@ -1162,15 +1476,29 @@
 
     totalN.textContent = totalStars() + "/" + MAX_STARS;
     if (full) totalBox.className = "full"; else totalBox.className = "";
+    /* A finished board is not a bigger pile of stars, so the counter stops
+       showing one. Nothing to swap in a build with no artwork — the glyph is
+       the same glyph at 90 as at 12. */
+    var piece = artOf(full ? "trophy" : "star", "lv-tot-i");
+    if (piece) totalBox.firstChild.innerHTML = piece;
     writeCard();
   }
 
   /* ── 7b. the card, for a level or for a road ──────────────────────────── */
 
   function writeCard() {
+    /* Nothing selected: the card is gone and the map gets the whole frame. */
+    if (picked == null) {
+      card.className = "off";
+      padBot = 0;
+      canvasBox.style.marginBottom = "0px";
+      if (devBtn) devBtn.style.bottom = "16px";
+      return;
+    }
     if (picked && picked.road != null) roadCard(ROADS[picked.road]);
     else levelCard(picked);
-    scroll.style.bottom = card.offsetHeight + "px";
+    padBot = card.offsetHeight;
+    canvasBox.style.marginBottom = padBot + "px";
     /* The switch rides on the card's height like the scroll band does: a
        wall's card is twice a level's, and a pill over the top of it would be
        sitting on the explanation. */
@@ -1182,7 +1510,7 @@
     if (n === TUTO) return tutoCard();
     if (n === BONUS) return bonusCard();
     var d = dOf(n), rec = save.l[n], can = isOpen(n), go = canPlay(n);
-    cName.textContent = T.level + " " + n;
+    cName.textContent = up(T.level) + " " + n;
     cBand.textContent = bandName(n);
     cGoal.innerHTML = goalText(n);
 
@@ -1193,9 +1521,8 @@
 
     cChips.innerHTML = "";
     cDiff.style.display = "";
-    cDiff.querySelector(".lbl").textContent = T.difficulty;
-    cDiff.querySelector(".bar i").style.width = Math.round(d * 100) + "%";
-    cDiffN.textContent = d.toFixed(2);
+    cDiff.querySelector(".lbl").textContent = up(T.difficulty);
+    writeFlames(d);
 
     /* A locked level the force opens keeps its note — the card says it is
        gated, and the button says it is going anyway. */
@@ -1209,8 +1536,8 @@
      nothing — a tutorial a player is made to read is a tutorial they skim. */
   function tutoCard() {
     card.className = "is-tuto";
-    cName.textContent = T.level + " 0";
-    cBand.textContent = T.tutoBand;
+    cName.textContent = up(T.level) + " 0";
+    cBand.textContent = up(T.tutoBand);
     cGoal.innerHTML = T.tutoGoal;
     cNote.innerHTML = tutoSeen() ? T.tutoNoteSeen : T.tutoNote;
     cChips.innerHTML = "";
@@ -1222,7 +1549,7 @@
   /* Ninety of ninety opens one more node, and it is not a level: it is the
      game with the levels taken off. No objective, no stars, no end. */
   function bonusCard() {
-    cName.textContent = T.endless;
+    cName.textContent = up(T.endless);
     cBand.textContent = "";
     cGoal.innerHTML = T.endlessSub + " &mdash; " + T.endlessGoal;
     cNote.innerHTML = T.endlessNote;
@@ -1240,9 +1567,9 @@
     var locked = roadShut(rd), shut = locked && !force;
     var have = totalStars(), short = rd.gate - have;
     card.className = "is-wall";
-    cName.textContent = rd.len + " " + (rd.len > 1 ? T.title.toLowerCase() : T.level.toLowerCase());
-    cBand.textContent = (rd.side < 0 ? T.roadL : T.roadR) + " · " +
-      (rd.gate ? (locked ? T.gated : T.opened) : T.free);
+    cName.textContent = rd.len + " " + up(rd.len > 1 ? T.title : T.level);
+    cBand.textContent = up((rd.side < 0 ? T.roadL : T.roadR) + " · " +
+      (rd.gate ? (locked ? T.gated : T.opened) : T.free));
     cDiff.style.display = "none";
 
     var i;
@@ -1302,9 +1629,14 @@
     }
   }
 
+  /* Centred in what the player can SEE — the frame less the header and less
+     the card — and not in the scroll viewport, which is now the whole frame.
+     The two are the same number they always were; only where they are
+     subtracted moved. */
   function scrollTo(n) {
     var p = geo && geo.pts[n];
-    if (p) scroll.scrollTop = Math.max(0, p.y - scroll.clientHeight / 2);
+    if (p) scroll.scrollTop =
+      Math.max(0, p.y - (scroll.clientHeight - padTop - padBot) / 2);
   }
 
   /* ── 7b bis. the help panel, over the map ─────────────────────────────── */
@@ -1383,6 +1715,15 @@
 
   /* startGame() unlocks the audio itself, and this runs inside the click that
      asked for the round, so the gesture is still the player's. */
+  /* See `nextLevel` on the published object below for why it is `+ 1` and
+     for the three ways it comes back 0. */
+  function nextLevel() {
+    if (!last) return 0;
+    var n = last.level + 1;
+    if (n > LEVELS) return 0;
+    return canPlay(n) ? n : 0;
+  }
+
   function play(n) {
     if (n !== BONUS && !canPlay(n)) return;
     arm(n);
@@ -1397,11 +1738,23 @@
     /* On screen BEFORE anything is drawn: writeCard() insets the scroll band
        by the card's own height, and a card inside a `display:none` layer
        measures zero — which lets the map paint under it. */
-    box.className = "on";
+    var MT = meta();
+    box.className = MT ? "on meta" : "on";
     shown = true;
-    headEyebrow.textContent = T.pick;
-    headTitle.textContent = CONFIG.title || T.title;
-    W.Fit.one("lv-title");
+    if (!MT) {
+      headEyebrow.textContent = T.pick;
+      headTitle.textContent = CONFIG.title || T.title;
+      W.Fit.one("lv-title");
+    }
+    /* Whatever the climb now owes the collection, paid on arrival as well as
+       on the end screen: a milestone crossed by a run the player walked away
+       from is still a milestone crossed. */
+    if (MT) MT.sweep();
+    /* …and whatever the last round's XP owes the player, which only this
+       screen can pay: the map's header is the one wallet in the layer that
+       carries a level bar. The bar runs, then the card for a level crossed.
+       Called after `draw()` below would be a beat too late — it is queued on
+       the frame the map appears, not on the frame it finishes painting. */
     /* A board nobody has played yet opens ON level 0 — the map scrolled to its
        foot, the card offering the lesson. It is still one tap to level 1, and
        every later arrival lands on the level the player is actually at. */
@@ -1418,6 +1771,7 @@
     W.Decor.dress(box, {
       count: 2, spots: ["l", "r", "bl"], size: 140, opacity: 0.38, front: 0
     });
+    if (MT) MT.arrive();
   }
 
   function hide() {
@@ -1470,7 +1824,6 @@
     setLang: function (code) {
       LANG = STRINGS[code] ? code : "en";
       T = STRINGS[LANG];
-      if (homeBtn) homeBtn.setAttribute("aria-label", T.toHome);
       if (shown) { headEyebrow.textContent = T.pick; draw(); }
       if (helpOn) fillHelp();
     },
@@ -1485,19 +1838,34 @@
     close: close,
     isOpen: function () { return shown; },
 
-    /* Everything the menu needs to know about a finished round, so that PLAY
-       AGAIN can be NEXT LEVEL and MENU can be MAP. */
+    /* Everything the end screen needs to know about the round that just
+       ended: which level it was and how many stars it paid, which is what
+       decides whether the MAP or the REPLAY is the lit one (menu.js). */
     last: function () { return last; },
-    nextOf: function () { return last ? nextAfter(last.level) : 0; },
-    playNext: function () {
-      var n = last ? nextAfter(last.level) : 0;
-      if (n) play(n); else if (last) play(last.level);
-    },
     replayLast: function () { if (last) play(last.level); },
+
+    /* THE WAY ON, WITHOUT THE MAP. The end screen's third button, and it is
+       the level after the one just finished — `last.level + 1` and nothing
+       cleverer, because the map is where a FORK is chosen and this is the
+       button for the player who is not choosing.
+
+       It is 0 rather than a number in the three cases where there is no way
+       on: no level was played at all (a free round, a mode), the round did
+       not clear its objective so the next one is still shut (`canPlay`), or
+       the level just finished was the LAST. Level 31 is the endless star and
+       it belongs to the map — a board finished at 90/90 is a screen to be
+       shown, not a round to be dropped into. menu.js hides the button on 0,
+       which is also what keeps it out of the tab order. */
+    nextLevel: nextLevel,
+    playNext: function () { var n = nextLevel(); if (n) play(n); },
 
     text: function (key) { return T[key]; },
     perfect: function () { return ON && perfect(); },
     total: function () { return totalStars(); },
+    /* What packages/webshell/meta.js reads the climb back through — the five
+       bands and the two completions, nothing else. */
+    bands: bandsState,
+    bandTitle: bandTitle,
     max: function () { return MAX_STARS; },
     refreshVeil: dressPerfect,
 

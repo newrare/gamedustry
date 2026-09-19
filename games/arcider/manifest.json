@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -12,6 +12,20 @@
   "theme": {
     "accent": "#35e8ff",
     "accent2": "#7a4dff"
+  },
+  "art": {
+    "objects": {
+      "decor-05": "arcider-race-05",
+      "decor-08": "arcider-race-08",
+      "decor-21": "arcider-race-21",
+      "decor-27": "arcider-race-27",
+      "ship01": "arcider-ship-01",
+      "ship05": "arcider-ship-05",
+      "ship06": "arcider-ship-06",
+      "ship07": "arcider-ship-07",
+      "ship11": "arcider-ship-11",
+      "ship15": "arcider-ship-15"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +51,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "BATTLE ROYALE RACE",
+            "kicker": "Battle royale race",
             "line": "Stay <b>alive</b> and win"
           },
           {
-            "kicker": "CHOICE",
+            "kicker": "Choice",
             "line": "More speed, or a shield <b>refill</b>"
           },
           {
-            "kicker": "RETRO",
+            "kicker": "Retro",
             "line": "A <b>futuristic</b> race"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +75,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "COURSE EN BATTLE ROYALE",
+            "kicker": "Course en battle royale",
             "line": "Reste en <b>vie</b> pour gagner"
           },
           {
-            "kicker": "CHOIX",
+            "kicker": "Choix",
             "line": "Plus de <b>vitesse</b> ou récupération"
           },
           {
-            "kicker": "RETRO",
+            "kicker": "Rétro",
             "line": "Course <b>futuriste</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,40 +131,40 @@
       "fr": {
         "tagline": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais casser ton <b class=\"w-shield\">bouclier</b>",
         "strings": {
-          " IN ": " DANS ",
-          " PILOTS LEFT": " PILOTES EN LICE",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "CUT TO ": "COUPERET À ",
-          "DISTANCE (M)": "DISTANCE (M)",
-          "ELIMINATED": "ÉLIMINÉ",
-          "FINAL ": "FINALE ",
-          "FINAL POSITION": "POSITION FINALE",
-          "FINAL SCORE": "SCORE FINAL",
-          "FINISH · ": "ARRIVÉE · ",
-          "FINISH · TAKE THE LEAD": "ARRIVÉE · PRENDS LA TÊTE",
-          "HULL CRITICAL": "COQUE CRITIQUE",
-          "INSTALL NOW": "INSTALLER",
-          "KM/H": "KM/H",
-          "LEADER": "EN TÊTE",
+          " in ": " dans ",
+          " pilots left": " pilotes en lice",
+          "Best score": "Meilleur score",
+          "Cut to ": "Couperet à ",
+          "Distance (m)": "Distance (m)",
+          "Eliminated": "Éliminé",
+          "Final ": "Finale ",
+          "Final position": "Position finale",
+          "Final score": "Score final",
+          "Finish · ": "Arrivée · ",
+          "Finish · take the lead": "Arrivée · prends la tête",
+          "Hull critical": "Coque critique",
+          "Install now": "Installer",
+          "km/h": "km/h",
+          "Leader": "En tête",
           "ND": "e",
-          "NEXT CUT · TOP ": "PROCHAIN COUPERET · TOP ",
-          "ON THE PODIUM!": "SUR LE PODIUM !",
-          "PLACES TAKEN": "PLACES PRISES",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "RACE FINISHED!": "COURSE TERMINÉE !",
-          "RACE WON!": "COURSE GAGNÉE !",
-          "RD": "e",
+          "Next cut · top ": "Prochain couperet · top ",
+          "On the podium!": "Sur le podium !",
+          "Places taken": "Places prises",
+          "Play the full game": "Jouer au jeu complet",
           "Race again": "Relancer la course",
-          "SCORE": "SCORE",
-          "SHIELD": "BOUCLIER",
-          "SHIELD DOWN": "BOUCLIER À ZÉRO",
+          "Race finished!": "Course terminée !",
+          "Race won!": "Course gagnée !",
+          "RD": "e",
+          "Score": "Score",
+          "Shield": "Bouclier",
+          "Shield down": "Bouclier à zéro",
           "ST": "er",
-          "TAKE THE CHARGE LINE": "PRENDS LA LIGNE DE CHARGE",
-          "TAP TO RACE": "TAP POUR FONCER",
+          "Take the charge line": "Prends la ligne de charge",
+          "Tap to race": "Tap pour foncer",
           "TH": "e",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "TOP ": "TOP "
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "Top ": "Top "
         }
       }
     },
@@ -175,18 +189,18 @@
           25
         ],
         "en": [
-          "DUSK",
-          "DAY",
-          "MIST",
-          "OVERCAST",
-          "NIGHT"
+          "Dusk",
+          "Day",
+          "Mist",
+          "Overcast",
+          "Night"
         ],
         "fr": [
-          "CRÉPUSCULE",
-          "PLEIN JOUR",
-          "BRUME",
-          "CIEL COUVERT",
-          "NUIT"
+          "Crépuscule",
+          "Plein jour",
+          "Brume",
+          "Ciel couvert",
+          "Nuit"
         ]
       },
       "tune": {

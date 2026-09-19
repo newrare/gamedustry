@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "VIPERA",
+    title:   "Vipera",
     /* One sentence, and nothing else: the stage under it shows the viper
        turning right then left on two taps, so the line only has to name the
        gesture, the character and the reward. */
@@ -41,15 +41,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Slither again",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "TORN APART",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Torn apart",
+      timeUp:     "Time's up!"
     },
 
     /* ---- VIPERA tunables --------------------------------------------------
@@ -209,10 +209,10 @@
        time, so the reward lands on the character and not only in the HUD.
        `at` is the length the tier starts at. */
     var TIERS = [
-      { at: 3,  name: "VIPER",   stops: ["#eaffef", "#7dffbb", "#12b86a", "#0a6d4a"], glow: "#4dff9b", halo: "#8dffbf" },
-      { at: 7,  name: "ADDER",   stops: ["#f6ffe6", "#d3ff7a", "#7bc91a", "#2f6b12"], glow: "#b6ff5a", halo: "#d3ff7a" },
-      { at: 11, name: "MAMBA",   stops: ["#fffbe6", "#ffd43b", "#ff9f1c", "#8a4200"], glow: "#ffb703", halo: "#ffd43b" },
-      { at: 15, name: "BASILISK", stops: ["#ffffff", "#ffb0f2", "#ff2d95", "#6a0f66"], glow: "#ff2d95", halo: "#ff9ae6" }
+      { at: 3,  name: "Viper",   stops: ["#eaffef", "#7dffbb", "#12b86a", "#0a6d4a"], glow: "#4dff9b", halo: "#8dffbf" },
+      { at: 7,  name: "Adder",   stops: ["#f6ffe6", "#d3ff7a", "#7bc91a", "#2f6b12"], glow: "#b6ff5a", halo: "#d3ff7a" },
+      { at: 11, name: "Mamba",   stops: ["#fffbe6", "#ffd43b", "#ff9f1c", "#8a4200"], glow: "#ffb703", halo: "#ffd43b" },
+      { at: 15, name: "Basilisk", stops: ["#ffffff", "#ffb0f2", "#ff2d95", "#6a0f66"], glow: "#ff2d95", halo: "#ff9ae6" }
     ];
     // Extra class per tier for the score pops, so "+40" burns the same colour
     // as the body that earned it (palettes live in the SKIN block).
@@ -465,7 +465,7 @@
       // bestLen is also the pace reference (see CONFIG.play.lenSpeed): it only
       // ever climbs, so tearing blocks off never slows the burrow down
       if (len > bestLen) bestLen = len;
-      HUD.setLeft(len, "LENGTH");
+      HUD.setLeft(len, "Length");
       checkTier();
       /* The armour is paid for by the LAST BLOCK OF THE CLIMB, not by standing at
          the top: it is granted on the transition into maxLen and never again
@@ -501,7 +501,7 @@
     function showLives() {
       var s = "", i;
       for (i = 0; i < T.lives; i++) s += i < lives ? "◆" : "·";
-      HUD.setRight((shield ? "◈ " : "") + s, "LIVES",
+      HUD.setRight((shield ? "◈ " : "") + s, "Lives",
                    shield ? "on" : (lives <= 1 ? "warn" : ""));
     }
 
@@ -509,7 +509,7 @@
       var t = tierFor(len), T2;
       if (t <= tier) { tier = t; return; }
       tier = t; T2 = TIERS[tier];
-      Pop.show("bonus", { word: T2.name, sub: "EVOLVED", at: popSpot() });
+      Pop.show("bonus", { word: T2.name, sub: "Evolved", at: popSpot() });
       Overlay.vignette(rgba(T2.halo, 0.9), 1, 620);
       Fx.flash(T2.halo, 0.22);
       Fx.ring(headX, anchorY, { from: 24, to: 210, color: T2.halo, width: 8, life: 0.5 });
@@ -541,7 +541,7 @@
         // the impact point they read as feedback rather than as an interruption.
         if (it.type === "mega") {
           Fx.ring(x, y, { from: 18, to: 150, color: "#ffd43b", width: 6, life: 0.4 });
-          Pop.show("score", { word: "GOLD EGG", sub: "+" + g, at: { x: x, y: y }, cls: "pop-egg" });
+          Pop.show("score", { word: "Gold egg", sub: "+" + g, at: { x: x, y: y }, cls: "pop-egg" });
           Sound.clip("mega", 0.8);
         } else {
           // Orbs arrive faster than a callout can be read: one pop per quarter
@@ -561,7 +561,7 @@
           g = 40 * (chain / 5);
           pick += g;
           if (chain % 25 === 0) {
-            Pop.show("ultra", { word: Lang.t("CHAIN x") + chain, sub: "+" + g, at: popSpot() });
+            Pop.show("ultra", { word: Lang.t("Chain x") + chain, sub: "+" + g, at: popSpot() });
           }
           Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
         }
@@ -624,7 +624,7 @@
       lost = len - T.minLen;                             // everything but the stump
       len = T.minLen;
       tier = tierFor(len);
-      HUD.setLeft(len, "LENGTH");
+      HUD.setLeft(len, "Length");
       Fx.flash("#ff2d55", 0.5);
       Overlay.vignette("rgba(255,45,85,.9)", 1, 660);
 
@@ -637,7 +637,7 @@
          player cannot read off the frame is that the next thorn ends the run,
          and that is worth stopping them for. */
       if (lives === 1) {
-        Pop.show("danger", { word: "LAST LIFE", sub: lost > 0 ? Lang.t("BODY LOST") : Lang.t("BITTEN!"),
+        Pop.show("danger", { word: "Last life", sub: lost > 0 ? Lang.t("Body lost") : Lang.t("Bitten!"),
                              cls: "pop-bite", at: popSpot() });
       }
     }
@@ -684,7 +684,7 @@
       anchorY = anchorFor(len);
       layoutBody();
       HUD.setScoreNow(0);
-      HUD.setLeft(len, "LENGTH");
+      HUD.setLeft(len, "Length");
       showLives();
       Fx.reset();
     }
@@ -734,7 +734,7 @@
 
       if (dist >= nextMile) {
         nextMile += T.mileStep;
-        Pop.show("ribbon", { word: Math.round(dist) + " M", sub: "DEEPER", at: popSpot() });
+        Pop.show("ribbon", { word: Math.round(dist) + " m", sub: "Deeper", at: popSpot() });
         Overlay.vignette(rgba(TIERS[tier].halo, 0.7), 1, 420);
         Sound.clip("chain", 0.6, 0.82);
       }
@@ -858,7 +858,7 @@
       var d = Math.floor(dist), sc = pick + d;
       var st = sc >= 1800 ? 3 : sc >= 800 ? 2 : 1;
       endRound({
-        title: st === 3 ? Lang.t("APEX VIPER!") : st === 2 ? Lang.t("GREAT RUN!") : CONFIG.copy.gameOver,
+        title: st === 3 ? Lang.t("Apex viper!") : st === 2 ? Lang.t("Great run!") : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
         /* A level's objective is a DISTANCE, so the burrow says how far it got
@@ -868,10 +868,10 @@
         levelScore: d,
         stars: st,
         rows: [
-          { label: "LONGEST BODY", value: bestLen + Lang.t(" BLOCKS"), grade: "accent" },
-          { label: "DISTANCE (M)", value: d },
-          { label: "BEST CHAIN", value: bestChain, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }
+          { label: "Longest body", value: bestLen + Lang.t(" blocks"), grade: "accent" },
+          { label: "Distance (m)", value: d },
+          { label: "Best chain", value: bestChain, grade: "accent" },
+          { label: "Best score", value: Math.max(sc, best), grade: "gold" }
         ]
       });
     }

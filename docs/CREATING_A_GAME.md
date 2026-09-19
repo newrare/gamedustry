@@ -29,7 +29,7 @@ Identity, copy, clock, layout bands and the intro demo — then your own tunable
 
 ```js
 var CONFIG = {
-  title:   "MERGE FRUIT",
+  title:   "Merge fruit",
   tagline: "<b class=\"w-drag\">Drag</b> two <b class=\"w-fruit\">fruits</b> together to merge",
   gameSeconds: 30,                       // 0 = endless (ends on a fail state)
   storeUrl: { ios:"…", android:"…", fallback:"https://52-entertainment.com/our-games/" },
@@ -45,6 +45,17 @@ var CONFIG = {
 
 Pick `intro.demo` from `tap | hold | drag | swipe | aim` so the intro *shows* the
 mechanic instead of describing it.
+
+**Write every string in normal case** — `"Merge fruit"`, `"Time's up!"`,
+`"Best score"` — and never in capitals. The HUD, the callouts, the buttons and
+the end screen are SHOUTED by the motor's `upper()` on their way to the screen,
+which also takes the accents off, so a French "Dernière vie" reads DERNIERE VIE
+and not DERNIÈRE VIE. It is the rule for the whole repo and it has no exception:
+a word typed in capitals in a source is a bug, and so is a `toUpperCase` in a
+game. The only call a game makes itself is on what it paints with `ctx.fillText`
+— `ctx.fillText(upper(Lang.t("Exit")), x, y)` — because the motor never sees
+that string. See
+[ENGINE.md](ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
 
 **The intro screen obeys three rules, and every game in `games/` follows them:**
 
@@ -88,7 +99,7 @@ var Game = (function () {
     score = 0;
     /* create entities inside Layout, reset timers */
     HUD.setScoreNow(0);
-    HUD.setLeft(Store.get("bestScore", 0), "BEST");
+    HUD.setLeft(Store.get("bestScore", 0), "Best");
   }
 
   function onDown(p) { /* p.x, p.y in design coordinates */ }
@@ -105,10 +116,10 @@ var Game = (function () {
 
   function onTimeUp() {           // optional: the clock hit zero
     endRound({
-      title: "TIME'S UP!",
+      title: "Time's up!",
       score: score,
       stars: score >= 900 ? 3 : score >= 450 ? 2 : 1,
-      rows: [{ label:"BEST SCORE", value: Store.get("bestScore", 0), grade:"gold" }]
+      rows: [{ label:"Best score", value: Store.get("bestScore", 0), grade:"gold" }]
     });
   }
 
@@ -124,9 +135,9 @@ HUD.setScore(score); HUD.punch("#ffd43b");            // score reacts
 Fx.burst(x, y, { color:"#4bf5ff", count:14, speed:380 });
 Fx.shake(8, .22); Fx.flash("#ffffff", .3); Fx.freeze(.05);
 Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
-Pop.show("combo", { word:"COMBO x8", sub:"+160" });              // milestone
-Pop.show("ultra", { word:"CHAIN x20", sub:"+400" });             // hero beat
-Pop.show("alert", { word:"THE LAVA PULLS", hold:1400 });          // a status line
+Pop.show("combo", { word:"Combo x8", sub:"+160" });              // milestone → COMBO x8
+Pop.show("ultra", { word:"Chain x20", sub:"+400" });             // hero beat
+Pop.show("alert", { word:"The lava pulls", hold:1400 });          // a status line
 Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone

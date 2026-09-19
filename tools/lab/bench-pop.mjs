@@ -37,6 +37,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -439,29 +440,11 @@ function prepare(slug, tmpDir) {
 
 /* ---------- run ---------------------------------------------------------- */
 
-/* Chrome must die whatever happens next. SIGTERM is not enough — a headless
-   browser survives it here — and an exception thrown mid-run used to skip the
-   cleanup entirely, which is how a laptop ended up with thirty of these
-   looping a game at 40% CPU each. So: SIGKILL, once, from a handler that runs
-   on a normal exit, on a throw and on Ctrl-C alike. */
-function reap(child) {
-  var done = false;
-  const kill = () => {
-    if (done) return;
-    done = true;
-    try { child.kill("SIGKILL"); } catch (e) {}
-  };
-  process.on("exit", kill);
-  process.on("SIGINT", () => { kill(); process.exit(130); });
-  process.on("SIGTERM", () => { kill(); process.exit(143); });
-  process.on("uncaughtException", (e) => { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", (e) => { kill(); console.error(e); process.exit(1); });
-  return kill;
-}
 
+reportSweep(sweep("bench-pop-"));
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-pop-"));
 const chrome = await launchChrome(path.join(tmpDir, "profile"));
-reap(chrome.child);
+reap(chrome.child, { label: "bench-pop" });
 const client = await cdp(chrome.port);
 const sid = await openPage(client);
 const file = prepare(slug, tmpDir);

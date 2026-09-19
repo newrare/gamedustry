@@ -59,6 +59,15 @@ development pages and answer only to the short rules in their own sections.
    and may do as it likes; the games themselves never gain a build step.
 1. **English** for all code, comments, identifiers, and docs. Prompts may be in
    any language.
+1. **Every string is written in normal case, and CAPITALS are a look the motor
+   applies.** A source — `game.js`, `manifest.json`, `page.html`, the web
+   shell's own `STRINGS` — holds `"Best score"`, `"Time's up!"`, `"Chaîne x"`:
+   lowercase, with a capital on the first letter and on a proper noun. Where a
+   screen shouts, the motor's `upper()` is what shouts it, and **a capital
+   carries no accent** ("Déjà" reads DEJA). Never type a word in capitals to get
+   capitals on screen, and never `toUpperCase` — `upper` also leaves a unit
+   glued to a number alone, so `"Chain x" + 3` stays CHAIN x3. See
+   [docs/ENGINE.md](docs/ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
 1. **Keep the 7-section structure** (see
    [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Sections 3 (`ENGINE`),
    4 (`AD GLUE`), 5 (`SHELL`) and 7 (`BOOTSTRAP`) plus the motor stylesheet now
@@ -305,12 +314,24 @@ its `targets` and nothing else:
   writes no score. ESCAPE is that pause on a keyboard.
 - the how-to-play demo moves into the Help panel (the motor's own node, moved
   not copied, so a SKIN's dressing follows it), and the end screen is rewired to
-  **PLAY AGAIN** / **MENU**.
+  **PLAY AGAIN** / **MENU** — three icons and a level's own title once the game
+  declares `web.levels`, which all thirteen do (next bullet).
 - **a game that declares `web.levels` gets the LEVEL MAP instead**, and PLAY is
   what opens it: thirty levels on a forking road, the stars each was cleared
   with, one objective per level lerped out of the ranges the manifest names.
   `packages/webshell/levels.{js,css}` is the screen, `prog:<slug>` is the save,
-  and the end screen's two buttons become **NEXT LEVEL** / **MAP**. At 90/90
+  and the end screen becomes the level's: the title reads **SCORES** or, on a
+  missed objective, **ALMOST** in red, and the buttons become three icons —
+  **the map**, **the level again** and **the way on**. The round decides which
+  of the first two shines (three stars lights the map, no star lights the
+  replay, one or two leaves both plain); **NEXT is never dressed**, because a
+  third contender in that argument makes all three quieter. It is
+  `last.level + 1` and nothing cleverer — the map is where a fork is chosen —
+  and it is HIDDEN where there is no way on: a free round, a round that missed
+  its objective, or the last level. The third button is the shell's own node
+  and not the motor's: a playable has no next level and the motor must not
+  learn what one is.
+  At 90/90
   every road turns gold, a star above level 30 starts an endless run, and the
   title screen takes a golden veil. **Under level 1 there is an optional level
   0**, dashed and joined by a dotted spur: it starts no round and earns no
@@ -319,8 +340,10 @@ its `targets` and nothing else:
   never been played opens on it; everything else is unchanged, level 1 included.
   All thirteen games declare a `web.levels` block today. The
   motor's only share of it is `onResult(fn)`, a filter over a round's result,
-  and `Loop.rate(k)` — the stars become the level's without a line changing in
-  any `game.js`. **The round wears its three stars live**, in a pill in the
+  `Loop.rate(k)` and `onOutro(fn)` — the beat between the round and the end
+  screen, with the loop still turning for it, which is what a slow motion needs
+  and an end screen cannot give. The stars become the level's without a line
+  changing in any `game.js`. **The round wears its three stars live**, in a pill in the
   **bottom-left corner** (never *in* the HUD, whose top band is the game's) —
   mirroring MENU / OPTIONS in the opposite one. Neither corner takes a band out
   of `Layout`: a game draws through them and anchors no instrument and no word
@@ -330,13 +353,120 @@ its `targets` and nothing else:
   and speedometer to the right flank instead. **The third star ends the
   round**: slow motion down to 12 %
   over ~0.6 s, then the end screen, because a player who has maxed a level
-  should not have to die to be told so. A game refines that with three optional
+  should not have to die to be told so. **Every other ending gets its own outro
+  too**, on the same hook: one or two stars ease the world down and say nothing,
+  a missed objective turns the frame red and burns fire up from the bottom edge
+  before the screen that reads ALMOST. A game refines that with three optional
   hooks — `Game.levelProgress()` (what the objective is measured against; the
   HUD score otherwise), `Game.levelStars(stars, value)` (a CAP over what those
   bands pay, never a promotion: `games/arcider` is a race, so the third star
   is the chequered flag taken in first place and a run that never reached it
   is worth one) and `Game.levelWon()` (how it ends its own round, so the end
   screen keeps its stat rows). See [docs/LEVELS.md](docs/LEVELS.md).
+- **a game that declares `web.meta` gets the META LAYER on top of that** — a
+  wallet, a collection and a reason to open the game tomorrow. It is what the
+  map sends a cleared level's score to, AT THE PLAYER'S OWN LEVEL:
+  **14 800 pts → 14 coins, × the level** — a sum the end screen writes out in
+  three beats (`+14 × Lv 3 = +42`) rather than a total, because the level is
+  the one term the player owns; xp stays on the flat rate. It is written as
+  its own gold line under a score that STAYS on the screen and paid by a cascade
+  of coins that empties THAT line into a wallet pinned in the corner — which
+  writes the figure a third time when the last coin lands — plus the score on
+  the FLAT rate in xp, which is the player's own level and the bar the map's
+  header carries. `packages/webshell/meta.js` is the
+  state, `album.js` the collection + the gumball machine + the shop, `daily.js`
+  the **daily road**, which is a LINE OF THE MENU between the map and the
+  collection and not a banner over the title. It has no ends: today sits in the
+  SECOND column, the days still to come run past the seventh and into the week
+  after, and the frame cuts it on both sides — a day passing SLIDES it by one
+  pitch. The second column and not the first because the node to its left keeps
+  **what the last claim paid** — the sticker, the coins, the xp — greyed, beside
+  the box about to be opened. The rail is solid and gold behind, dotted in
+  front, the days stand ON it. **The road is the calendar and only counts up** —
+  day 7 is followed by day 8, not by day 1 — and **a day nobody opened stays on
+  it behind them, greyed and struck through**, still showing what it would have
+  paid; the run no longer resets. **Every day ahead wears its own reward, not a
+  question mark**: the week is a LADDER (xp, coins, ticket, xp, coins, a gift,
+  then a STARRED gift that pays ×5 on all three boxes), the kind is promised and
+  only the amount is kept back, and the painted box means a gift day and nothing
+  else. The three small days open the prize card straight onto their reward —
+  a choice between three identical things is not a choice. **Every day answers a
+  tap**: today's pays, a day ahead opens a NEXT GIFT card (what it will hand
+  over, at full size under a padlock, named, `×5` on a starred one, and how far
+  away it is), a day behind opens ALREADY COLLECTED — the reward greyed and its
+  figure, no sentence — or MISSED. Only today's is in
+  the tab order. A reward card is **dismissed by tapping it anywhere** — never
+  the three boxes and never the ad, because a tap must not stand in for a
+  choice. **Collecting flies the reward into the chip that holds it** — coins,
+  tickets, the level bar, or the album's door for a sticker — and the chip
+  counts up on the landing, because a number that changed behind a blurred
+  card changed nothing the player saw. **It carries no words at
+  all** — a heading there would read as a third menu entry; what it is and which
+  day of the run it is are the eyebrow of the card the tap opens. That tap opens
+  the LEVEL MAP and plays the gift over it, because the wallet the gift pays
+  into is that screen's own header; on `localhost` it pays on every tap and says
+  so with a DEV pill on that same card. `meta:<slug>` is the save, kept
+  apart from `prog:<slug>` because wiping a climb must not wipe a wallet.
+  **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
+  unowned one drawn as its own white silhouette, titled `???`, and told in the
+  IMPERATIVE what to do to earn it (a sticker owned says what was done; a
+  sticker's NAME is never translated — it is a proper noun) — **twelve of them earned off
+  the map** (a band passed, a band passed clean, the board, ninety of ninety →
+  the shiny one) and the rest out of the machine, **one to five tickets a
+  pull** — more tickets in one pull, better odds, shown as four bars that move
+  with the bet before a ball does, and **the legendary row is a dial rather than
+  a weight: one ticket is 1%, five tickets are 5%, exactly**, which also means a
+  game must leave one legendary OUT of `awards` or the machine can never roll
+  one — with doubles sold back in the shop for coins that buy the next ticket.
+  **A sixth pill on that row is the SUPER TICKET**: fifteen ordinary tickets'
+  worth of coins for one pull, and **four numbers that never move — legendary
+  30%, epic 25%, rare 20%, common the rest**. Its tiers are PINNED where the
+  five bets beside it share out a pool, and that is what it is sold on: the
+  ordinary odds drift with the board (the same five tickets read 47/33/16/5 on
+  a fresh one and 33/52/10/5 once the map has paid its milestones in), and a
+  premium pull that drifts is not a promise. An empty tier hands its share
+  back so the four still add to one. It branches inside the same `chances()`,
+  the one function the readout and the roll both go through. It is its own
+  currency (`save.st`) and it has **no chip in the wallet**: the wallet is
+  what can be spent anywhere, and this is spent in one place — the shop card
+  it is bought on and the pill it is spent from are where it is counted.
+  The wallet's two chips are the doors to the shop, here as on the map — and IN
+  the shop only the blue one is a door, back to the album, because the gold
+  one's door is the screen it is standing on; there is
+  no GET TICKETS button, because a button that only exists once the wallet is
+  empty teaches nothing before it is. **Every number that moves in a chip moves
+  through one engine**, `Meta.fx` — the end screen's cascade, a reward flying
+  out of its card, a purchase, a price, a shelf of doubles sold — so a screen
+  that pays says so the same way every other one does (see
+  [docs/META.md](docs/META.md)). The album is **one screen and does not scroll**: the
+  machine down the left, the bet and the odds beside it, the twenty tiles under
+  both. A sticker the player has never had arrives on a flash, a shockwave and a
+  plated gold NEW tag; a double **burns off** — embers out of a lava glow and a
+  tag that whispers. **Neither card closes itself and neither sells anything**:
+  a tap anywhere puts it away, and the one control left is DRAW AGAIN wearing
+  the ticket and what the pull costs — gone entirely when the wallet cannot pay
+  for it, since a control that cannot act is a wall. A perfect
+  round is offered three gift boxes ON THE ROUND ITSELF — the outro holds the
+  world in slow motion under them, so the end screen arrives with the prize
+  already in the wallet — and then one ad to pay **×5** what was in the one it
+  picked, offered on a button that NAMES WHAT IT MULTIPLIES and follows with
+  the price — `MULTIPLY YOUR COINS` and the shell's painted ×5 plate finishing
+  the sentence, `watch an ad` under it at the size a price is read at — beside
+  the END SCREEN'S OWN arrow, the same circle the way on wears there, which
+  walks past it; a sticker is redrawn rather than multiplied, so that one says
+  *one more* and wears no plate. Walking past it goes STRAIGHT to the end
+  screen: the token flies into a wallet that is a layer over the frame, so
+  nothing has to wait for it, and holding the outro for the flight showed a
+  second of the frozen round with nothing on it. Five and
+  not three because the plates the shell ships are x2, x5, x10, x20, x50 and
+  x100: an offer the player can SEE is worth more than a smaller one they have
+  to read. A round with a star is offered the boxes FOR an ad on the end screen;
+  a round with none is left alone. **The rewarded ad is a placeholder that says so on
+  screen** — the web target has no SDK, and wiring one in is replacing the body
+  of `Meta.ad`. The map's header stops writing the game's own name (read one tap
+  ago on the title screen) and carries the wallet instead. **Only `radiam`
+  declares it today**; a second game is a 5x4 sticker sheet and a manifest
+  block. See [docs/META.md](docs/META.md).
 
 It reads `window.__WEB__` — a plain list of motor references, never behaviour, so
 the motor knows nothing about the front end. An *online* leaderboard and
@@ -360,8 +490,8 @@ English. The motor applies it where it WRITES a word (`CONFIG.copy`, `Pop.show`,
 `Pop.text`, `HUD.setLeft/setRight`, `endRound`'s title and rows), which is why
 no `game.js` had to change for the round, the HUD and the end screen to switch
 language with the menu. The one thing a game does itself is the string it
-BUILDS: `"x" + mult + " STREAK"` reaches the motor already assembled, so the
-game wraps its own literal — `Lang.t(" STREAK")` — and the same goes for
+BUILDS: `"x" + mult + " streak"` reaches the motor already assembled, so the
+game wraps its own literal — `Lang.t(" streak")` — and the same goes for
 anything it paints on the canvas. **`make text` is the gate**: it prints
 `N untranslated` per game and a game is done when it reads *fully translated*.
 See [docs/ENGINE.md](docs/ENGINE.md#lang--the-game-in-the-players-language).
@@ -407,7 +537,36 @@ declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
 | `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0 / 1–2 / 3)        |
-| `-decor-NN.png`                      | the decor pool, scattered over the screens (below)                   |
+| `-object-<name>.png`                 | a **sheet to cut**, never a role — below                             |
+| `-sky-<name>.png`                    | a panorama a game draws on the canvas behind its round (`arcider`)   |
+
+**An OBJECT is not in there.** `assets/image/master/` holds what a game owns
+outright plus the raw sheets; every object cut out of a sheet — the decor pool,
+radiam's beads, the album's stickers, slipdeck's court cards — lives in
+`assets/image/object/` and is named by the game in `art.objects` of its
+`manifest.json`, because a folder of cuts cannot say which of two files with the
+same shape of name is the one that ships (below).
+
+**One prefix belongs to no game.** `assets/image/master/game-object-*.png` is a
+sheet the **web shell** owns, and there are five — the gift boxes the daily
+strip and the three-box ceremony draw, plus the shell's **instruments**: the
+coin a wallet counts, the ticket it spends on a pull, the bolt an xp bar fills
+with, the star a level is cleared with, the trophy a finished board earns, and
+the plate that says a seventh day pays five times over. Those were stroked pictograms
+and a stroked pictogram reads as a tool's chrome; the web shell is a game. A
+cut is **renamed** in `SHELL_CUTS` and the rename is the declaration —
+`reward-08` says nothing, `coin` is what the shell draws — and four of the
+roles are the names `menu.js` already calls its pictograms by, so `icon("coin")`
+finds the painted piece and falls back to the stroke in a build with no
+artwork. One swap, and the wallet, the shop, the album, the daily road, the
+level map and the end screen's three stars turn painted together. It cuts like
+any other sheet and it
+cannot be adopted (there is no manifest to write the choice into): the shell
+names its own pieces in `SHELL_CUTS` of `tools/lab/encode-art.mjs`, they land
+in `assets/image/shell/` rather than `assets/image/embed/`, and the builder
+injects them as `CONFIG.shellArt.<camelRole>` on the web target only. Same
+shape as `assets/image/brand/newrare.webp`, the studio mark every title screen
+signs itself with. Nothing may ever be called `game`.
 
 `assets/image/master/` is the **master**: what came out of the image model, up to
 2172 px and ~2 MB apiece, 121 MB in total. It ships nowhere. The shipping cut is
@@ -451,7 +610,7 @@ The two rules that hold this together:
   the `--scene-scrim` token a SKIN can raise. See
   [docs/ENGINE.md](docs/ENGINE.md#configart--the-painted-artwork).
 - **Four of those cuts are the decor pool, and the shell places them itself.**
-  `assets/image/master/<slug>-decor-NN.png` (adopted with `--as decor`) reaches
+  A cut adopted with `--as decor` takes the role `decor-NN` and reaches
   `CONFIG.art.decorNN` like any other picture, and `Decor` — a module of
   `packages/shell/shell.js` — scatters one to three of them over the end
   screen, the round's corners, the web menu's panels, the pause card and the
@@ -466,12 +625,17 @@ The two rules that hold this together:
   gear returns a wall of sixteen, so `assets/image/master/<slug>-object-<name>.png` is
   a **sheet to cut**: `encode-art.mjs` skips it and
   `node tools/lab/cut-objects.mjs <slug>` takes it apart into
-  `assets/image/object/<slug>-<name>-NN.png`, one transparent PNG per object (383 of
-  them across the thirteen games). Nothing ships from there until
-  `--adopt 1,4` promotes a cut into `assets/image/master/`, where it becomes a master
-  like any other — `CONFIG.art.<name>NN`, `ArtImages.gear01` on the canvas. The
-  adoption is manual on purpose: every file under `assets/image/embed/` is embedded in
-  every build of its game. **`--grid 5x4` is what several sheets of the same
+  `assets/image/object/<slug>-<name>-NN.png`, one transparent PNG per object (577 of
+  them across the thirteen games). **Nothing ships from there until the GAME
+  names it**: `--adopt 1,4` writes the role into `art.objects` of
+  `games/<slug>/manifest.json` — `"gear01": "radiam-gear-01"` — and from there
+  the usual pipeline gives `CONFIG.art.gear01`, `ArtImages.gear01` on the
+  canvas. Adopting moves no file and copies none: a cut exists once, and the
+  choice is a line in the game rather than a second name on disk, because
+  `radiam-ball-blue-01.png` ships while `radiam-ball-blue-09.png` beside it does
+  not and no rule over names can tell them apart. The adoption is manual on
+  purpose: every file under `assets/image/embed/` is embedded in every build of
+  its game. **`--grid 5x4` is what several sheets of the same
   picture need** — the cuts are ordered by AREA otherwise, and a recolour whose
   halo is a few pixels wider silently reorders every index after it; with a grid
   the CELL is the identity, so object 7 is the same design in all six sheets.
@@ -517,7 +681,10 @@ The rules, all of them:
 - **It may be ugly.** Placeholder colours, no juice. What has to be right is the
   mechanic and how it feels under a finger.
 - **Portrait if the idea is portrait**, but nothing here enforces 720x1280.
-- **English in the file**, like everywhere else in the repo.
+- **English in the file**, like everywhere else in the repo, and **normal
+  case** like everywhere else too — a debug line reads `Max height`, not
+  `MAX HEIGHT`. A prototype has no design to protect, so it does not carry an
+  `upper()`: what it writes is what it shows.
 
 Hand back the path to open, and stop there. Tuning, balancing and benchmarking
 are separate requests: a prototype that answers its question has done its job.
@@ -541,6 +708,20 @@ of the motor — `overlay-pop.html` is the `Pop` callout catalogue,
 `icon-card.html` composes an icon, `game-title.html` is a rack of ready-made
 `#intro-title` looks — one pick per game, rendered in that game's own name and
 palette, exported as the CSS block to paste into its SKIN,
+`gacha.html` is the rack of **sticker-draw ceremonies** — eleven ways to hand
+over one sticker (gumball, gashapon capsule, chest, foil pack, wheel, orb, then
+peel, blister, claw, hatch, press), each in the album's own chrome, in any of
+the thirteen palettes, with its duration printed beside it because a draw is
+watched dozens of times. **The gumball won the first round and it is a physics
+sim**, tuned from that page's own knobs (gravity, bounce, ball count and size,
+slosh) and ported into `packages/webshell/album.js`. The five added after it
+answer the criterion the first six surfaced: **a ceremony that plays the same
+keyframe every time stops being watched**, so a candidate now earns its place
+by having something that CHANGES (the crack, the cell, where the claw goes) or
+by being short enough that repetition costs nothing (`peel` and `press` are
+about a second). The ones that stand beside the winner are the record of what
+it beat, and the page's header also lists what was turned down and on which
+rule — a plinko board, a lottery blower, a slot reel.
 `gear-decor.html` draws the cogs `tools/lab/shoot-gears.mjs` shoots into
 `assets/image/gear/` as transparent PNGs to lay over a screenshot,
 `store-card.html` is the store listing composer — a real frame of play dressed
@@ -621,7 +802,7 @@ list, split into an EN section and an FR one. A game's copy is written where it
 is used, which is the right place to write it and the wrong place to proofread
 it — the intro sentence lives in three files, a HUD label is the second argument
 of a call nine hundred lines down, and the French half of it all is in a manifest
-nobody opens while writing gameplay, which is how a game ends up saying LENGTH in
+nobody opens while writing gameplay, which is how a game ends up saying "Length" in
 one corner and BODY in another. So `tools/lab/scan-text.mjs` reads all four
 sources back and groups the result by the SCREEN a player reads it on — the
 listing, the title screen, the shell, the HUD, the round, the end screen, the
@@ -630,12 +811,12 @@ level objective. Every row has an edit field and **APPLY writes it back**
 `games/<slug>/game.js` and `games/<slug>/page.html` holds it, then rebuilds the
 game and both catalogues, so a proofreading pass leaves a tree that still passes
 `node tools/update.mjs`. Three rules make a row honest, and they are why this is
-not a find-and-replace: **one row is every site** — "LENGTH" written at three
+not a find-and-replace: **one row is every site** — "Length" written at three
 call sites is ONE row and applying it writes all three, which is the bug the
 page exists to prevent; **a mirror is not a second string** — `#intro-title` and
 `#intro-tagline` are rewritten from `CONFIG` at boot, so they ride on the CONFIG
 row and are written with it rather than being offered on their own; and **a
-fragment keeps its expression** — `st === 3 ? "APEX VIPER!" : CONFIG.copy.gameOver`
+fragment keeps its expression** — `st === 3 ? "Apex viper!" : CONFIG.copy.gameOver`
 is two pieces of copy, so the unit is the string LITERAL and not the argument,
 with the expression printed under it and spliced around untouched. The motor's
 own menu strings (PLAY, OPTIONS, LEAVE?) are not listed: they belong to the
@@ -655,6 +836,31 @@ place in the repo allowed to load a file out of `assets/` by relative path.
 Start a new one from **`lab/_template.html`**: a single page, inline CSS and JS,
 a control panel on one side and the thing being tried on the other. Same
 anti-dependency rule as everywhere else — no framework, no CDN, no web font.
+And the same casing rule: the page's strings are written in normal case, and a
+page that MOCKS a game screen carries its own copy of `upper()` so its capitals
+lose their accents exactly as the motor's do — `overlay-pop.html` is the one to
+copy it from. A page that is only a control panel needs none: its buttons read
+*Apply* and *All*, which is what a tool's chrome should look like anyway.
+
+**A script that drives a headless Chrome imports `tools/lab/chrome.mjs`, and
+there is no second way to do it.** Ten tools launch a browser over the DevTools
+protocol, and the teardown at the bottom of the file is the one line a run never
+reaches when it matters — a throw mid-shoot, a Ctrl-C, a CDP call that never
+answers, a window closed on the node process itself. The cost is invisible and
+it compounds: a headless browser nobody can see still holds a GPU context and a
+few hundred megabytes, and a leftover profile is 50–180 MB of `TMPDIR` that
+nothing ever comes back for. The module is three mechanisms because no single
+one covers every way a script dies — `reap(child, {label, deadlineMs})` for the
+signals and the throws (SIGKILL, never SIGTERM, which a headless Chrome
+survives), a deadline for the hang that raises no exception, and
+`sweep(prefix)` for the one case no in-process handler can cover, a node that
+was itself SIGKILLed: the NEXT run adopts the corpse. Call `sweep` with the
+script's own mkdtemp prefix **before** its own `mkdtempSync`, so the run cannot
+eat the browser it is about to start. Two rules make the adoption safe and
+neither may be relaxed: a process is a candidate only if it is HEADLESS and its
+`--user-data-dir` sits under that prefix, and the disk pass removes a dead
+browser's PROFILE and nothing else — `bench-raster` leaves its `rows.json` in
+that same directory and prints the path.
 
 ## Motor APIs — use these instead of reinventing them
 
@@ -719,6 +925,12 @@ Frame & input (section 3):
   every word it writes; a game calls `Lang.t` only on a literal it
   CONCATENATES or paints on the canvas itself, never on a comparison or a
   storage key. See [docs/ENGINE.md](docs/ENGINE.md#lang--the-game-in-the-players-language).
+- `upper(str)` — capitals, the house way: accents come off and a lowercase run
+  glued to a digit (a unit, a multiplier) is left alone. The motor already
+  shouts everything it writes — `CONFIG.copy`, `Pop`, the HUD, the end screen —
+  so a game calls it only on what it paints itself with `ctx.fillText`. Every
+  string in the repo is written in normal case; this is the only way it reaches
+  a screen in capitals. See [docs/ENGINE.md](docs/ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
   the shared `assets/motor/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
@@ -773,6 +985,11 @@ Shell (section 5):
 - `endRound(result)` — the single way a round ends. `onResult(fn)` registers a
   filter that may rewrite the result before the end screen reads it; the motor
   registers none, and the web target's level layer is what uses it.
+  `onOutro(fn)` is the beat BETWEEN the round and the end screen: the clock is
+  stopped, the loop is left turning (which is what a slow motion needs), and the
+  screen waits for the `done` the hook is handed. Same rule — the motor
+  registers none, a playable keeps the straight cut, and the level layer is the
+  one user.
 
 ## Ad-network glue (section 4) — do not remove
 
@@ -846,6 +1063,12 @@ its own, deployed by Vercel from this repo.
   stays written and ready, the build holds it back, and deleting the flag
   publishes it. A game with no icon is dropped and *reported* — that is a missing
   asset, not a decision.
+- **Capitals come from `upper()` in `script.js`, not from the stylesheet
+  alone.** `applyLang` writes every `data-fr` / `data-en` node and, for a node
+  the CSS shouts, writes it already in capitals with the accents taken off —
+  the hero eyebrow reads STUDIO DE JEUX INDEPENDANT, which
+  `text-transform: uppercase` on its own cannot produce. The stylesheet still
+  decides WHAT shouts; this only decides HOW.
 - **Same anti-dependency discipline as the games**, for a different reason: no
   framework, no CDN, no web font. The site must stay a folder of files anyone can
   open, and it must stay fast on a phone.
@@ -866,6 +1089,18 @@ its own, deployed by Vercel from this repo.
 
 ## Conventions
 
+- **Normal case everywhere, capitals by method — the one rule with no
+  exception in this repo.** `games/`, `template/`, `packages/`, `site/`, `lab/`
+  and `prototype/` all write `"Best score"`, `"Time's up!"`, `"Dernière vie"`:
+  lowercase, a capital on the first letter and on a proper noun. A screen that
+  reads in capitals got them from `upper()` — the motor's
+  ([packages/engine](packages/engine/engine.js)), the site's
+  ([site/script.js](site/script.js)) or the lab page's own copy of it — and
+  **a capital carries no accent**: DEJA, CA MELANGE, MEILLEURE CHAINE. Never
+  type a word in capitals to get capitals on screen, and never `toUpperCase`,
+  which keeps the accent and shouts the `x` of a multiplier. On the site the
+  stylesheet stays the one place that says WHAT shouts: `applyLang` reads the
+  computed `text-transform`, so a new uppercase rule needs no second list.
 - Design resolution is `720×1280` (portrait). **Both canvas and DOM** are
   authored in these units — no `vw`, `vh` or `clamp()` inside `#frame`.
 - All timing is in **seconds** (`dt`), not frames.
@@ -893,4 +1128,7 @@ its own, deployed by Vercel from this repo.
 - [ ] `node tools/build/build-site.mjs` lists the game (not "skipped") and its card
   reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).
-- [ ] Code and comments in English.
+- [ ] Code and comments in English, and **every string in normal case** — no
+  word typed in capitals, no `toUpperCase`; the motor's `upper()` is what
+  shouts, and `node tools/lab/scan-text.mjs <slug>` is where the game's copy is
+  read back to check it.

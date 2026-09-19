@@ -68,13 +68,44 @@
    the grid and never sits between a finger and a level. */
 #lv-screen .decor-layer { z-index:1; }
 
+/* Two rows: `#lv-hrow` is navigation and what the player owns, `#lv-xp` is
+   the whole width under it (meta layer only — meta.css builds it). Without
+   the meta layer there is one row and the column simply centres it. */
 #lv-head {
   position:absolute; top:0; left:0; right:0; z-index:3;
   height:calc(var(--inset-top) + 150px);
   padding:calc(var(--inset-top) + 0px) 28px 0;
-  display:flex; align-items:center; gap:14px;
-  background:linear-gradient(180deg, rgba(0,0,0,.58) 0%, rgba(0,0,0,0) 100%);
+  display:flex; flex-direction:column; justify-content:center; gap:10px;
+  /* THE SCRIM UNDER THE HUD. The road runs beneath this band now, so what is
+     behind the wallet, the xp bar and the star counter is a live map — gears,
+     roads, a level's circle — and a chip read over that is a chip read twice.
+     It is nearly opaque at the top and eased out rather than ramped: the five
+     stops are a curve, because a straight two-stop fade shows its own middle
+     as a band across the picture. In PERCENTAGES, so the taller header the
+     meta layer builds (196 px against 150) gets the same curve and not a
+     compressed one. */
+  background:linear-gradient(180deg,
+    rgba(0,0,0,.94) 0%,
+    rgba(0,0,0,.9) 30%,
+    rgba(0,0,0,.8) 54%,
+    rgba(0,0,0,.62) 74%,
+    rgba(0,0,0,.4) 90%,
+    rgba(0,0,0,.28) 100%);
 }
+/* …and it does not stop at the header's own edge. The band is as tall as what
+   it holds, and a scrim that ends there ends ON something — the fade carries
+   on past it, over the map and nothing else, which is where the eye leaves the
+   chrome. It takes no taps: everything under here belongs to the map. */
+#lv-head::after {
+  content:""; position:absolute; left:0; right:0; top:100%; height:150px;
+  pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.18) 34%,
+    rgba(0,0,0,.09) 62%,
+    rgba(0,0,0,0) 100%);
+}
+#lv-hrow { display:flex; align-items:center; gap:14px; }
 #lv-titles { flex:1; min-width:0; }
 #lv-eyebrow {
   font-size:19px; letter-spacing:4px; text-transform:uppercase;
@@ -95,13 +126,8 @@
   background:rgba(0,0,0,.42); border:2px solid var(--panel-line);
   font-size:28px; font-weight:var(--web-fw, 900); font-variant-numeric:tabular-nums;
 }
-#lv-total .g { color:var(--gold); font-size:30px; }
-
-/* The way out of the map, beside the counter rather than in the level card: a
-   smaller .web-back than the arrow on the left, because the arrow is the step
-   back the player takes all the time and this one is the end of the session. */
-#lv-home { width:56px; height:56px; }
-#lv-home svg { width:28px; height:28px; }
+#lv-total .g { color:var(--gold); font-size:30px; display:flex; align-items:center; }
+.lv-tot-i { width:30px; height:30px; }
 
 /* ninety of ninety: the counter burns the way the levels do */
 #lv-total.full {
@@ -110,14 +136,26 @@
 }
 
 /* ---- the scrolling map -------------------------------------------------- */
+/* THE BAND IS THE WHOLE FRAME, and the road passes UNDER the header and under
+   the card. Cutting the viewport at their edge instead left the climb sliced
+   off mid-scroll — a node half drawn, a road stopping in the air at the top of
+   the screen, which reads as a rendering fault rather than as an edge. So the
+   two bands are MARGINS on the canvas: the climb still starts below the header
+   and ends above the card, and what scrolls past either of them slides
+   underneath. The margins are rewritten in js (levels.js, draw/writeCard) —
+   the header is measured, the card's height is whatever it has to say — and
+   the values here are what they start at. */
 #lv-scroll {
   position:absolute; left:0; right:0; z-index:2;
-  top:calc(var(--inset-top) + 150px); bottom:246px;
+  top:0; bottom:0;
   overflow-y:auto; overflow-x:hidden; scrollbar-width:none;
   -webkit-overflow-scrolling:touch;
 }
 #lv-scroll::-webkit-scrollbar { display:none; }
-#lv-canvas { position:relative; width:720px; }
+#lv-canvas {
+  position:relative; width:720px;
+  margin:calc(var(--inset-top) + 150px) 0 246px;
+}
 #lv-path { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
 /* A PERFECT BOARD. Every road turns gold — one filter over the svg, so no
@@ -242,6 +280,9 @@
                     50% 75%, 20% 98%, 31% 60%, 0% 38%, 38% 36%);
   background:linear-gradient(180deg, #fff6cc, var(--gold) 46%, #ff9a2e);
 }
+/* the painted starburst takes the node whole — no clipped polygon under it */
+.lv-node.bonus.art::before { display:none; }
+.lv-bonus-i { width:108px; height:108px; }
 .lv-node.bonus .num, .lv-node.bonus .padlock { display:none; }
 
 /* LEVEL 0 — the tutorial, off the climb.
@@ -275,6 +316,12 @@
             text-shadow:0 2px 4px rgba(0,0,0,.8); }
 .lv-stars s { text-decoration:none; color:rgba(255,255,255,.2); }
 .lv-stars s.on { color:var(--gold); }
+/* THE PAINTED STAR (CONFIG.shellArt, levels.js starArt). One picture for both
+   states: an unearned star is the same piece drained, which is what says "this
+   one is still there to take" — an empty outline says "there is nothing here".
+   The <s> keeps its box, so a row of three measures the same either way. */
+.lv-sti { width:22px; height:22px; }
+.lv-stars s.off .lv-sti { filter:grayscale(1) brightness(.55) opacity(.5); }
 .lv-tag em {
   font-style:normal; font-size:16px; letter-spacing:2.2px; text-transform:uppercase;
   color:rgba(255,255,255,.42);
@@ -313,9 +360,26 @@
   min-height:246px; max-height:452px; overflow:hidden;
   padding:22px 28px calc(var(--inset-bottom) + 26px);
   display:flex; flex-direction:column; gap:10px;
-  background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.74) 34%, rgba(0,0,0,.93) 100%);
+  /* THE CARD IS A PANEL, not a fade. It used to start at nothing and darken
+     down, which let the road and the gears through its top third — behind the
+     level's name and its objective, the two lines on this screen that have to
+     be read. It has a BORDER along its top edge, so it can simply be opaque:
+     the edge is what separates it from the map, and nothing is asking the
+     background to do that job. The slight gradient left is depth, not a
+     reveal. */
+  background:linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.95) 40%, rgba(0,0,0,.97) 100%);
   border-top:2px solid var(--panel-line);
 }
+/* A tap on the empty map clears the selection, and an unselected map has no
+   card: the scroll band is resized to the full frame in the same pass
+   (levels.js, writeCard). */
+#lv-card.off { display:none; }
+
+/* what the level says, and how hot it is, side by side. The flames hang from
+   the TOP of the card, level with the level's own name: centred, they drifted
+   with every card whose objective wrapped onto a second line. */
+#lv-body { display:flex; align-items:flex-start; gap:18px; }
+#lv-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; }
 #lv-card .top { display:flex; align-items:baseline; gap:14px; }
 #lv-name { font-size:40px; font-weight:var(--web-fw, 900); letter-spacing:1px; text-transform:uppercase; }
 #lv-band { font-size:19px; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
@@ -340,12 +404,29 @@
 }
 #lv-chips button s { text-decoration:none; color:var(--gold); font-size:16px; }
 
-/* the difficulty bar: the same d the tunables are lerped with */
-#lv-diff { display:flex; align-items:center; gap:12px; font-size:16px;
-           color:rgba(255,255,255,.5); letter-spacing:1.6px; text-transform:uppercase; }
-#lv-diff .bar { flex:1; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
-#lv-diff .bar i { display:block; height:100%; border-radius:6px;
-                  background:linear-gradient(90deg, var(--good), var(--gold), var(--danger)); }
+/* HOW HOT THE LEVEL IS — five flames down the right of the card, under their
+   own word. A bar read as a percentage of nothing in particular; five icons
+   read as a rating, which is the question a player actually asks the card. */
+#lv-diff {
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+  font-size:16px; color:rgba(255,255,255,.5);
+  letter-spacing:1.6px; text-transform:uppercase;
+}
+#lv-diff .flames { display:flex; align-items:center; gap:4px; }
+.lv-fl { display:flex; width:28px; height:28px; }
+.lv-fl .fl-ico { width:100%; height:100%; }
+
+/* three states: filled in its own colour, outlined in it, grey. The colour
+   climbs with the position — the same green → gold → red the bar ran, so the
+   row is read from its shape and its temperature at once. The grey comes
+   LAST: an unlit flame is grey whatever rung it sits on. */
+.lv-fl.f1, .lv-fl.f2 { color:var(--good); }
+.lv-fl.f3 { color:var(--gold); }
+.lv-fl.f4, .lv-fl.f5 { color:var(--danger); }
+.lv-fl.on .fl-ico { fill:currentColor; }
+.lv-fl.on { filter:drop-shadow(0 0 6px currentColor); }
+.lv-fl.half { opacity:.62; }
+.lv-fl.off { color:rgba(255,255,255,.16); }
 
 #lv-play {
   margin-top:auto; height:78px; border:0; border-radius:20px; cursor:pointer;
@@ -436,8 +517,16 @@
   text-decoration:none; font-size:25px; color:rgba(255,255,255,.22);
   transition:color .18s ease, text-shadow .18s ease, transform .18s ease;
 }
-#lv-hud .st s::before { content:"\2605"; }
+/* `:empty` is what makes the painted case free: an <s> holding a picture is
+   not empty, so the glyph drops out on its own and the pill needs no class of
+   its own to say which it got. */
+#lv-hud .st s:empty::before { content:"\2605"; }
 #lv-hud .st s.on { color:var(--gold); text-shadow:0 0 12px rgba(255,212,59,.9); }
+#lv-hud .st s .lv-sti { width:26px; height:26px; }
+#lv-hud .st s:not(.on) .lv-sti { filter:grayscale(1) brightness(.5) opacity(.45); }
+#lv-hud .st s.on .lv-sti {
+  filter:drop-shadow(0 0 7px rgba(255,212,59,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.6));
+}
 #lv-hud .goal {
   margin-left:auto; font-style:normal; font-size:21px; line-height:1;
   color:rgba(255,255,255,.6); font-variant-numeric:tabular-nums;

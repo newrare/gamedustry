@@ -238,8 +238,8 @@ is nearly free is exactly the window where you are small.
 Three moments convert, and they share one property — the player has just
 *received* something:
 
-1. **the end screen after a good run** — under PLAY AGAIN / MENU, filtered on
-   the star count so it never lands after a frustrating defeat;
+1. **the end screen after a good run** — under the two icons it ends on,
+   filtered on the star count so it never lands after a frustrating defeat;
 1. **a milestone on the level map** — level 10, 20, 30 is a closure, and all
    thirteen declare a `web.levels` block;
 1. **the exit** — leaving to the menu or closing. Free inventory, nobody is

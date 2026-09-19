@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#3ce0ff",
     "accent2": "#ff5ad4"
+  },
+  "art": {
+    "objects": {
+      "decor-10": "triverse-arrow-10",
+      "decor-14": "triverse-arrow-14",
+      "decor-18": "triverse-arrow-18",
+      "decor-33": "triverse-arrow-33"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "PATH",
+            "kicker": "Path",
             "line": "Fast <b>swipe</b>"
           },
           {
-            "kicker": "BONUS",
+            "kicker": "Bonus",
             "line": "Read what <b>comes next</b>"
           },
           {
-            "kicker": "LOOP",
+            "kicker": "Loop",
             "line": "Stay <b>focused</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "CHEMIN",
+            "kicker": "Chemin",
             "line": "<b>Swipe</b> rapide"
           },
           {
-            "kicker": "BONUS",
+            "kicker": "Bonus",
             "line": "Anticipe la <b>suite</b>"
           },
           {
-            "kicker": "LOOP",
+            "kicker": "Loop",
             "line": "Reste <b>focus</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,40 +125,40 @@
       "fr": {
         "tagline": "<b class=\"w-swipe\">Swipe</b> pour sauter de <b class=\"w-path\">voie</b> en <b class=\"w-path\">voie</b>",
         "strings": {
-          " LIFE LEFT": " VIE RESTANTE",
-          " LIVES LEFT": " VIES RESTANTES",
-          "BEST CHAIN": "MEILLEURE CHAÎNE",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "CHAIN LOST": "CHAÎNE PERDUE",
-          "CHAIN x": "CHAÎNE x",
-          "CRASH!": "CRASH !",
-          "CRASHED!": "CRASH !",
-          "DIST": "DIST",
-          "DISTANCE (M)": "DISTANCE (M)",
-          "FASTER": "PLUS VITE",
-          "FIGURE 8!": "HUIT !",
-          "FINAL SCORE": "SCORE FINAL",
-          "GEMS": "GEMMES",
-          "GREAT RUN!": "SUPERBE PARTIE !",
-          "INSTALL NOW": "INSTALLER",
-          "LAST LIFE": "DERNIÈRE VIE",
-          "LEGEND RUN!": "PARTIE DE LÉGENDE !",
-          "LIVES": "VIES",
-          "LOOP!": "BOUCLE !",
-          "MEGA GEM": "MÉGA GEMME",
-          "ONE CRASH": "UN CRASH",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          " life left": " vie restante",
+          " lives left": " vies restantes",
+          "Best chain": "Meilleure chaîne",
+          "Best score": "Meilleur score",
+          "Chain lost": "Chaîne perdue",
+          "Chain x": "Chaîne x",
+          "Crash!": "Crash !",
+          "Crashed!": "Crash !",
+          "Dist": "Dist",
+          "Distance (m)": "Distance (m)",
+          "Faster": "Plus vite",
+          "Figure 8!": "Huit !",
+          "Final score": "Score final",
+          "Gems": "Gemmes",
+          "Great run!": "Superbe partie !",
+          "Install now": "Installer",
+          "Last life": "Dernière vie",
+          "Legend run!": "Partie de légende !",
+          "Lives": "Vies",
+          "Loop!": "Boucle !",
+          "Mega gem": "Méga gemme",
+          "One crash": "Un crash",
+          "Play the full game": "Jouer au jeu complet",
           "Run it again": "Relancer",
-          "SCORE": "SCORE",
-          "SCORE x2": "SCORE x2",
-          "SHIELD": "BOUCLIER",
-          "SHIELD DOWN": "BOUCLIER TOMBÉ",
-          "SPIRAL!": "SPIRALE !",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "THREADED!": "AU MILLIMÈTRE !",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "x2 OVER": "x2 TERMINÉ"
+          "Score": "Score",
+          "Score x2": "Score x2",
+          "Shield": "Bouclier",
+          "Shield down": "Bouclier tombé",
+          "Spiral!": "Spirale !",
+          "Tap to play": "Tap pour jouer",
+          "Threaded!": "Au millimètre !",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "x2 over": "x2 terminé"
         }
       }
     },

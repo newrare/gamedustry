@@ -29,7 +29,10 @@
        running round, and the frame carried another loop on top of the last.
        The stylesheet says the same thing again at the same specificity; this
        is the one that also takes the focus off a button nobody can see. */
+    /* Any screen but the end one is a round that is not ending: the outro's
+       guard goes with it, so the next round can end at all. */
     if (s !== "end") {
+      ending = false;
       EndScreen.clear();                  // the reveal's timers go with it
       ["btn-install", "btn-replay"].forEach(function (id) {
         var b = $(id);
@@ -144,13 +147,13 @@
     var shownL = null, shownR = null, lastL = null, lastR = null;
     function setLeft(text, label, cls) {
       lastL = [text, label, cls];
-      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
+      var html = text == null ? "" : pill(upper(Lang.t(text)), upper(Lang.t(label)), cls);
       if (html === shownL) return;
       shownL = html; $("hud-left").innerHTML = html;
     }
     function setRight(text, label, cls) {
       lastR = [text, label, cls];
-      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
+      var html = text == null ? "" : pill(upper(Lang.t(text)), upper(Lang.t(label)), cls);
       if (html === shownR) return;
       shownR = html; $("hud-right").innerHTML = html;
     }
@@ -395,9 +398,9 @@
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
-      var word = Lang.t(opt.word != null ? opt.word : st.word);
+      var word = upper(Lang.t(opt.word != null ? opt.word : st.word));
       if (word == null) return null;
-      var sub = Lang.t(opt.sub != null ? opt.sub : st.sub);
+      var sub = upper(Lang.t(opt.sub != null ? opt.sub : st.sub));
       var pos = resolve(opt.at != null ? opt.at : st.at);
       var enter = opt.enter != null ? opt.enter : (st.enter || 420);
       var hold  = opt.hold  != null ? opt.hold  : (st.hold == null ? 900 : st.hold);
@@ -596,7 +599,7 @@
     function text(x, y, str, opt) {
       if (!enabled) return;
       opt = opt || {};
-      var str2 = String(Lang.t(str));
+      var str2 = String(upper(Lang.t(str)));
       var size = opt.size || 34, tier = opt.tier || 0;
       var grow = tier >= 2 ? 1.45 : tier >= 1 ? 1.25 : 1.12;
       var hw, hh = size * 0.5 * grow;
@@ -1212,7 +1215,7 @@
     var logo = !hasArtTitle && CONFIG.intro.logo && ASSETS.images[CONFIG.intro.logo];
     var img = $("app-icon");
     if (logo) { img.src = logo; img.alt = CONFIG.title; } else { img.style.display = "none"; }
-    if (!hasArtTitle) $("intro-title").textContent = CONFIG.title;
+    if (!hasArtTitle) $("intro-title").textContent = upper(CONFIG.title);
     $("intro-tagline").innerHTML = CONFIG.tagline;
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
@@ -1225,12 +1228,12 @@
      back through here. The web shell calls it; a playable calls it once from
      buildIntro and never again. */
   function applyCopy() {
-    $("btn-start").textContent = Lang.t(CONFIG.copy.start);
-    $("btn-cta").textContent = Lang.t(CONFIG.copy.ctaBar);
-    $("btn-install").textContent = Lang.t(CONFIG.copy.ctaEnd);
+    $("btn-start").textContent = upper(Lang.t(CONFIG.copy.start));
+    $("btn-cta").textContent = upper(Lang.t(CONFIG.copy.ctaBar));
+    $("btn-install").textContent = upper(Lang.t(CONFIG.copy.ctaEnd));
     $("btn-replay").textContent = Lang.t(CONFIG.copy.replay);
-    $("hud-score-lbl").textContent = Lang.t(CONFIG.copy.scoreLabel);
-    $("eo-scorelbl").textContent = Lang.t(CONFIG.copy.endScore);
+    $("hud-score-lbl").textContent = upper(Lang.t(CONFIG.copy.scoreLabel));
+    $("eo-scorelbl").textContent = upper(Lang.t(CONFIG.copy.endScore));
   }
 
   // --- End screen: the cinematic reveal ----------------------------------
@@ -1239,6 +1242,15 @@
     var timers = [];
     var T_TITLE = 120, T_SCORE = 560, T_STARS = 1950, STAR_GAP = 440,
         ROW_GAP = 250, T_CTA_AFTER = 1500;
+    /* THE REVEAL PLAYS AT TWICE THE SPEED IT WAS AUTHORED AT. Every delay in
+       this module is the timing the cascade was designed with and PACE is what
+       the screen actually plays it at — one number rather than sixteen edited
+       ones, so the RHYTHM between the beats is exactly the one that was tuned
+       and only the tempo moves. It was authored for a creative, where the end
+       screen is the last thing a viewer sees; in a game it is the doorway back
+       to the map, and a player who has just cleared a level reads the stars
+       long before the old cascade had finished landing them. */
+    var PACE = 0.5;
     // The reveal climbs: each star rings the same chime a step higher. RATE
     // drives the embedded "uiStar" clip, FREQ the synthesized fallback.
     var STAR_RATE = [1, 1.19, 1.42], STAR_FREQ = [660, 880, 1180];
@@ -1259,10 +1271,10 @@
     function show(result) {
       timers.forEach(clearTimeout); timers = [];
       Confetti.clear();
-      function T(fn, ms) { timers.push(setTimeout(fn, ms)); }
+      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms * PACE))); }
 
       var title = $("eo-title");
-      title.textContent = Lang.t(result.title || CONFIG.copy.gameOver);
+      title.textContent = upper(Lang.t(result.title || CONFIG.copy.gameOver));
       Fit.one("eo-title");
       Fit.one("eo-score", String(result.score || 0));
       title.className = "eo-title" + (result.variant ? " " + result.variant : "");
@@ -1282,8 +1294,8 @@
       var box = $("eo-stats"), html = "";
       rows.forEach(function (r, i) {
         var label = r.grade === "gold"
-          ? '<span class="spark">✦</span> ' + Lang.t(r.label) + ' <span class="spark">✦</span>'
-          : Lang.t(r.label);
+          ? '<span class="spark">✦</span> ' + upper(Lang.t(r.label)) + ' <span class="spark">✦</span>'
+          : upper(Lang.t(r.label));
         html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
                 '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
       });
@@ -1313,7 +1325,7 @@
         $("eo-score").classList.add("show");
         settle();
         Confetti.burst(70);
-        countUp($("eo-score"), result.score || 0, 1100, function () {
+        countUp($("eo-score"), result.score || 0, 1100 * PACE, function () {
           $("eo-score").classList.add("pop");
           Sound.cue("uiScore", 0.8, 1, 900, 0.14);
           Confetti.burst(90);
@@ -1346,8 +1358,8 @@
           $("eo-row-" + i).classList.add("show");
           settle();
           var el = $("eo-val-" + i);
-          if (typeof r.value === "number") countUp(el, r.value, 450);
-          else el.textContent = Lang.t(r.value);
+          if (typeof r.value === "number") countUp(el, r.value, 450 * PACE);
+          else el.textContent = upper(Lang.t(r.value));
           Sound.cue("uiRow", 0.5, 1 + i * 0.07, 480 + i * 70, 0.05);
         }, afterStars + i * ROW_GAP);
       });
@@ -1660,11 +1672,46 @@
   var resultHooks = [];
   function onResult(fn) { resultHooks.push(fn); }
 
+  /* THE OUTRO — the beat between the last frame of the round and the end
+     screen. A round used to cut straight from one to the other, and there is
+     one thing that cannot be played on either side of that cut: the world
+     itself reacting to how the round went. Slow motion is `Loop.rate`, so it
+     needs a loop still turning; the end screen has none, and the round is over.
+
+     So a layer above the motor may hold the frame for a beat: the clock is
+     stopped (the round IS over, whatever is drawn over it), the loop is left
+     running, and the end screen waits for the `done` the hook is handed. The
+     web target's level layer is the only registrant — three stars open the
+     bonus, a missed objective burns — and a playable registers none, which is
+     the cut it always had.
+
+     `ending` is the guard the delay makes necessary: for as long as the outro
+     plays, the state is still "playing" and a game whose own update calls
+     endRound again would end the round twice over. */
+  var outroHook = null, ending = false;
+  function onOutro(fn) { outroHook = fn; }
+
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
   function endRound(result) {
-    if (State === "end") return;
+    if (State === "end" || ending) return;
+    ending = true;
     result = result || {};
+    /* The clock stops at once — nothing about the outro is still the round —
+       but the LOOP is left turning for it, and `finishRound` is what takes it
+       down. */
+    Round.stop();
+    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
+    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
+    if (outroHook) { outroHook(result, function () { finishRound(result); }); return; }
+    finishRound(result);
+  }
+
+  function finishRound(result) {
+    /* Not "playing" any more means the outro was overtaken — the player left
+       the round from the pause card while it played, or a second `done` came
+       in after the first. Either way the end screen is no longer owed. */
+    if (State !== "playing") return;
     Loop.stop(); Round.stop();
     /* The bed steps WELL back for the end screen — 30 % of its level, not the
        55 % it used to be. What happens here is a reveal read in silence: the
@@ -1673,8 +1720,6 @@
        on top of all of it. `startGame` and the web shell's MENU both unduck,
        so nothing has to put it back. */
     Music.duck(0.3, 0.8);
-    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
-    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
     var score = result.score;
     var best = Math.max(score, Store.get("bestScore", 0));
     Store.set("bestScore", best);

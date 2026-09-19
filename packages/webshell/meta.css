@@ -1,0 +1,1931 @@
+/*
+  webshell — the META layer's stylesheet: the wallet, the album, the machine,
+  the shop, the daily strip and the two ceremonies (the gift, the ad).
+
+  Loaded only by `node tools/build/build.mjs --target=web`, LAST of the three
+  webshell stylesheets, which is what lets it re-cut the map's header without a
+  single `!important`. Inert for a game that declares no `web.meta`: nothing
+  below has a selector that matches when the nodes were never built.
+
+  Like the rest of the webshell this is the game as a player sees it, so every
+  length is a design pixel of the 720x1280 frame and every colour comes from a
+  theme token a SKIN already overrides. One layout, thirteen games.
+
+  The pieces, and the reason for each:
+
+    the wallet strip      coins and tickets, in one node, wherever the layer
+                          shows a number the player owns: the map's header, the
+                          album, the shop, and the end screen the coins fly to.
+    the album             a 4-wide grid of twenty tiles. An unowned sticker is
+                          the SAME picture through a black filter, so the shape
+                          is the tease and the game ships no placeholder.
+    the machine           a canvas, and a real one: sixteen spheres under
+                          gravity in a glass globe. Nothing of it is styled
+                          here any more — see album.js.
+    the shop              two cards, one trade each.
+    the daily strip       seven cells across the top of the title screen, the
+                          seventh bigger than the other six.
+    the modal             one card for the gift boxes, the reveal, the detail
+                          and the ad placeholder — four ceremonies, one frame.
+*/
+
+/* =========================================================================
+   THE RARITY LADDER
+   ========================================================================= */
+
+/* FOUR COLOURS THAT DO NOT MOVE WITH THE SKIN. Every other colour in this
+   layer is the game's, and this one is not: grey → blue → purple → gold is a
+   ladder the player reads as a ladder, and a game whose accent happens to be
+   gold would flatten rare against legendary. Same reasoning as `Pop.text`,
+   where the colour is data and the rest is style. */
+#frame {
+  --rar-0:#aab1c6;
+  --rar-1:#4dabf7;
+  --rar-2:#c77dff;
+  --rar-3:#ffd43b;
+}
+
+/* =========================================================================
+   THE WALLET STRIP
+   ========================================================================= */
+
+.mt-wallet {
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--web-font, inherit);
+  font-variant-numeric:tabular-nums;
+}
+.mt-wallet.full { flex-direction:column; align-items:stretch; gap:8px; flex:1; min-width:0; }
+
+.mt-chips { display:flex; align-items:center; gap:10px; }
+.mt-wallet.full .mt-chips { gap:8px; }
+
+.mt-chip {
+  display:flex; align-items:center; gap:7px;
+  height:52px; padding:0 16px; border-radius:30px;
+  background:rgba(0,0,0,.5); border:2px solid var(--panel-line);
+  font-size:26px; font-weight:var(--web-fw, 900); color:var(--text);
+  white-space:nowrap;
+}
+.mt-chip.coins { color:var(--gold); border-color:rgba(255,212,59,.34); }
+.mt-chip.tickets { color:var(--accent); border-color:rgba(255,255,255,.14); }
+.mt-ci { width:26px; height:26px; flex:0 0 auto; }
+
+/* A chip that IS a door (the map's header). Same pill, plus what a button
+   owes a finger — and the album's unseen dot, which has to hang off it.
+   `door` and not `link`: the motor already owns `.link` (the replay line under
+   the end screen's CTA), and its underline rode straight into the chip. */
+.mt-chip.door {
+  position:relative; cursor:pointer; font-family:var(--web-font, inherit);
+  transition:border-color .16s ease, transform .12s ease;
+}
+.mt-chip.door:hover { border-color:var(--accent); }
+.mt-chip.door:active { transform:scale(.94); }
+
+/* "There is something in there you have not seen" — never a count. A badge
+   that carries a number is a badge that has to be read. */
+.mt-badge { display:none; }
+.mt-badge.on {
+  display:block; position:absolute; top:-4px; right:-4px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--danger); border:2px solid rgba(0,0,0,.65);
+  animation:mt-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mt-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.28); } }
+
+/* The player's own climb. The bar is the whole readout — the numbers beside it
+   are for the player who wants them, at a size that says so. */
+.mt-lv { display:flex; align-items:center; gap:10px; font-size:19px; color:var(--muted); }
+/* the bolt in front of the level, at the height of the label and no taller */
+.mt-lvi { flex:0 0 auto; width:29px; height:29px; color:var(--good); }
+.mt-lv .lbl {
+  flex:0 0 auto; color:var(--gold); font-weight:var(--web-fw, 900);
+  font-size:22px; letter-spacing:1px;
+}
+.mt-lv .bar {
+  flex:1; min-width:0; height:12px; border-radius:8px; overflow:hidden;
+  background:rgba(0,0,0,.55); border:1px solid var(--panel-line);
+}
+.mt-lv .bar u {
+  display:block; height:100%; border-radius:8px;
+  background:linear-gradient(90deg, var(--cta-b), var(--cta-a));
+  box-shadow:0 0 12px var(--cta-a);
+  transition:width .5s cubic-bezier(.2,.8,.2,1);
+}
+.mt-lv .pc { flex:0 0 auto; font-size:17px; opacity:.75; }
+/* Held, or reset across a level: the width is put back where the player last
+   saw it and a transition there would BE the backwards slide the hold exists
+   to prevent (meta.js, flyReward and fillLv). */
+.mt-lv.no-anim .bar u { transition:none; }
+
+/* =========================================================================
+   THE MAP'S HEADER — re-cut for the wallet
+   ========================================================================= */
+
+/* The map used to spend its header on the game's own name, which the player
+   read on the title screen one tap ago. It is the one band on that screen a
+   thumb never has to reach, so it is where what the player OWNS belongs.
+
+   The title and its eyebrow are dropped outright (levels.js stops writing
+   them) and so is the house, which was a second way out of a screen that has
+   the back arrow. What is left reads as two rows: the arrow on the left and
+   COINS · TICKETS · STARS flush right, then the xp bar across the whole width
+   under them, because a bar wants the room and the top row does not. */
+#lv-screen.meta #lv-head {
+  height:calc(var(--inset-top) + 196px);
+  padding:calc(var(--inset-top) + 10px) 24px 0;
+  justify-content:flex-start; gap:12px;
+  /* The scrim is levels.css's, written in percentages so this taller band
+     wears the same curve — there is one answer to "what is behind the HUD"
+     and it is not two gradients to keep in step. */
+}
+#lv-screen.meta #lv-titles { display:none; }
+#lv-screen.meta #lv-total { height:52px; padding:0 16px; font-size:25px; }
+#lv-screen.meta #lv-total .g { font-size:26px; }
+/* The climb starts under the taller header — the band itself is still the
+   whole frame, so the road slides UNDER the header rather than being cut at
+   it (packages/webshell/levels.css). js measures this height and rewrites the
+   margin on every draw; this is where it starts. */
+#lv-screen.meta #lv-canvas { margin-top:calc(var(--inset-top) + 196px); }
+/* The two chips sit against the star total, and the three of them against the
+   right edge — the arrow keeps the left on its own. */
+#lv-wallet { flex:0 0 auto; margin-left:auto; min-width:0; }
+#lv-wallet .mt-chip { height:48px; padding:0 13px; font-size:24px; }
+#lv-wallet .mt-ci { width:23px; height:23px; }
+/* `split`: the level bar was handed to #lv-xp, so the strip itself is the
+   chips and nothing else. */
+.mt-wallet.full.split { flex-direction:row; align-items:center; flex:0 0 auto; }
+
+/* THE XP ROW IS A PILL LIKE THE REST. Flush at the same x as the row above is
+   not the same as LOOKING flush: the chips and the star total end in a pale
+   2px filet and the bar's own type is solid and bright, so at an identical
+   24/696 the second row read as if it stuck out of the first. Giving it the
+   family's chrome — same height as a chip, same filet, same 16px of inside —
+   settles it by making the two rows the same kind of object. */
+#lv-xp {
+  display:flex; align-items:center;
+  height:48px; padding:0 16px; border-radius:30px;
+  background:rgba(0,0,0,.42); border:2px solid var(--panel-line);
+}
+#lv-xp .mt-lv { flex:1; min-width:0; gap:12px; }
+
+/* =========================================================================
+   A SCREEN OF THIS LAYER — the album and the shop
+   ========================================================================= */
+
+/* Above the map (34) and below nothing: the album opens from the map's header
+   and from the title menu, so it has to cover either of them. */
+#al-screen, #sh-screen {
+  position:absolute; inset:0; z-index:36; display:none;
+  font-family:var(--web-font, inherit); color:var(--text);
+  isolation:isolate;
+}
+#al-screen.on, #sh-screen.on { display:block; animation:mt-in .2s ease both; }
+@keyframes mt-in {
+  from { opacity:0; transform:scale(.985); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+#al-bg, #sh-bg {
+  position:absolute; inset:0; z-index:0; background-color:var(--bg);
+  background-size:cover; background-position:center center;
+}
+#al-bg.flat, #sh-bg.flat { background-size:auto; }
+#al-bg::after, #sh-bg::after {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.7) 240px,
+             rgba(0,0,0,.6) 58%, rgba(0,0,0,.88) 100%);
+}
+#al-screen .decor-layer, #sh-screen .decor-layer { z-index:1; }
+
+/* One header for the two screens, and it is the map's shape without the
+   levels: the way back, what the screen is, and the wallet. */
+.mt-head {
+  position:absolute; top:0; left:0; right:0; z-index:3;
+  height:calc(var(--inset-top) + 150px);
+  padding:calc(var(--inset-top) + 0px) 24px 0;
+  display:flex; align-items:center; gap:14px;
+}
+.mt-titles { flex:0 0 auto; }
+.mt-eyebrow {
+  font-size:19px; letter-spacing:4px; text-transform:uppercase;
+  color:var(--accent); opacity:.85; margin-bottom:2px;
+}
+.mt-count {
+  font-weight:var(--web-fw, 900); font-size:40px; letter-spacing:1px;
+  line-height:1; font-variant-numeric:tabular-nums;
+  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
+}
+.mt-head-wallet { flex:1; display:flex; justify-content:flex-end; }
+
+/* =========================================================================
+   THE ALBUM
+   ========================================================================= */
+
+/* ONE SCREEN. The machine and its controls share a row, the twenty tiles take
+   whatever is left, and nothing scrolls: `flex:1` + `minmax(0,1fr)` rows are
+   what make the grid give the row above it its fixed height and then fit five
+   rows into the remainder, at whatever the device's insets leave. A collection
+   that has to be scrolled is a collection the player sees half of. */
+#al-scroll {
+  position:absolute; left:0; right:0; z-index:2;
+  top:calc(var(--inset-top) + 150px); bottom:0;
+  padding:0 24px calc(var(--inset-bottom) + 28px);
+  overflow:hidden;
+  display:flex; flex-direction:column; gap:18px;
+}
+
+#al-top {
+  flex:0 0 auto; display:flex; align-items:stretch; gap:18px;
+}
+
+#al-grid {
+  flex:1; min-height:0;
+  display:grid; grid-template-columns:repeat(4, 1fr);
+  grid-auto-rows:minmax(0, 1fr); gap:12px;
+}
+
+/* A tile is the picture and its name, and the frame around it is what says
+   whether it is yours. Nothing else changes between the two states — same
+   size, same place, same order — because the album is a shape the player
+   learns and then fills. */
+.al-tile {
+  position:relative; cursor:pointer; padding:8px 4px 6px; min-height:0;
+  border-radius:18px; border:2px solid var(--panel-line);
+  background:rgba(0,0,0,.42);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  transition:transform .12s ease, border-color .16s ease;
+}
+.al-tile:active { transform:scale(.95); }
+.al-tile .pic {
+  flex:1; min-height:0; width:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+.al-tile .pic img { max-width:100%; max-height:100%; display:block; }
+.al-tile .nm {
+  flex:0 0 auto;
+  font-size:15px; line-height:1.1; text-align:center; color:var(--muted);
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* NOT YOURS YET: the same picture, flattened to its own silhouette. No second
+   asset to cut, no placeholder to draw, and the outline is exactly the tease a
+   collection needs — there is a shape here and you do not know what it is.
+   It is a WHITE silhouette and not a black one: every screen of this shell is
+   dark, and a black shape on a black tile is not a tease, it is an empty
+   tile. `brightness(0) invert(1)` is what turns any painted cut into one flat
+   colour whatever it was painted in. */
+.al-tile.ghost { background:rgba(255,255,255,.03); }
+.al-tile.ghost .pic img { filter:brightness(0) invert(1) opacity(.26); }
+.al-tile.ghost .nm { opacity:.5; letter-spacing:2px; }
+
+.al-tile.have { background:rgba(255,255,255,.05); }
+.al-tile.have .nm { color:var(--text); }
+
+/* THE FRAME IS THE RANK. Twenty tiles in one grid were twenty identical grey
+   frames, so the only way to find out that cell 20 is a legendary was to open
+   it — and the rank is the one thing a collection is read for. It is on the
+   BORDER and not the fill: the sticker is painted artwork and the tile is its
+   frame, so the colour goes round it rather than under it.
+
+   An unowned tile carries it too, dimmer. It gives nothing away that the card
+   it opens did not already print, and a silhouette in a gold frame is the
+   best line this album has for "keep drawing". */
+.al-tile.r0 { border-color:rgba(170,177,198,.28); }
+.al-tile.r1 { border-color:rgba(77,171,247,.32); }
+.al-tile.r2 { border-color:rgba(199,125,255,.38); }
+.al-tile.r3 { border-color:rgba(255,212,59,.42); }
+.al-tile.have.r0 { border-color:rgba(170,177,198,.6); }
+.al-tile.have.r1 { border-color:rgba(77,171,247,.85); }
+.al-tile.have.r2 {
+  border-color:var(--rar-2);
+  background:linear-gradient(180deg, rgba(199,125,255,.16), rgba(255,255,255,.05) 62%);
+  box-shadow:0 0 16px rgba(199,125,255,.28);
+}
+.al-tile.have.r3 {
+  border-color:var(--rar-3);
+  background:linear-gradient(180deg, rgba(255,212,59,.18), rgba(255,255,255,.05) 62%);
+  box-shadow:0 0 18px rgba(255,212,59,.3);
+}
+
+/* The one piece of foil in the album: ninety of ninety. */
+.al-tile.shiny {
+  border-color:var(--gold);
+  background:
+    linear-gradient(135deg, rgba(255,212,59,.22), rgba(255,212,59,0) 60%),
+    rgba(30,20,0,.5);
+  box-shadow:0 0 22px rgba(255,212,59,.35);
+}
+
+.al-tile .dup {
+  position:absolute; top:-6px; right:-4px;
+  min-width:30px; height:26px; padding:0 6px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--danger); color:#fff; font-size:16px; font-weight:var(--web-fw, 900);
+  border:2px solid rgba(0,0,0,.6); font-style:normal;
+}
+
+/* =========================================================================
+   THE MACHINE
+   ========================================================================= */
+
+/* It is a CANVAS, and everything that used to be here — a dome, twelve balls,
+   a chute, four keyframes — went with it. A gumball machine is a pile of heavy
+   spheres sloshing and then one of them dropping, which is a simulation and not
+   a transition; the drawing and the physics both live in
+   packages/webshell/album.js, and a canvas loop can sleep once the pile has
+   settled, which a CSS animation cannot. `lab/gacha.html` is where it was
+   tuned. Nothing is left to style but the block it sits in. */
+
+#al-machine {
+  position:relative; flex:0 0 auto;
+  display:flex; align-items:flex-start; justify-content:center;
+}
+.al-cv { display:block; }
+
+/* THE PRICE AND THE PROMISE, beside the glass. The bet is the one number the
+   player sets, the four bars under it are what that number bought, and the
+   button says what it will cost. They are one column because they are one
+   sentence: this many tickets, these chances, pull. */
+#al-ctl {
+  flex:1; min-width:0; display:flex; flex-direction:column; gap:10px;
+  justify-content:flex-start;
+}
+.al-lbl {
+  font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--accent); opacity:.85;
+}
+.al-lbl.sub { color:var(--muted); margin-top:6px; }
+
+.al-bets { display:flex; gap:8px; }
+.al-bet {
+  flex:1; min-width:0; height:56px; padding:0; cursor:pointer;
+  border-radius:14px; border:2px solid var(--panel-line);
+  background:rgba(0,0,0,.45); color:var(--text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:26px; font-variant-numeric:tabular-nums;
+  transition:transform .12s ease, border-color .16s ease, background .16s ease;
+}
+.al-bet:active:not(:disabled) { transform:scale(.94); }
+/* A BET THE WALLET CANNOT PAY IS STILL SELECTABLE, and only says so — it is
+   how the player finds out what five tickets would do, which is the whole
+   reason to save five. The DRAW button is where the refusal belongs. */
+.al-bet.short { color:var(--muted); opacity:.6; }
+.al-bet.on {
+  border-color:var(--gold); color:#0b0b12; opacity:1;
+  background:linear-gradient(180deg, #ffe680, var(--gold));
+  box-shadow:0 0 18px rgba(255,212,59,.45);
+}
+
+/* THE SUPER PILL — the sixth one, and it is a PICTURE where the five before it
+   are numbers. It has to be: "30" beside 1 2 3 4 5 reads as thirty tickets,
+   which is neither what it costs nor what the player owns. The painted ticket
+   says what is being spent and the count beside it says how many are left.
+   Wider, because it carries two things; never lit gold when selected — the
+   piece is already the brightest object on this panel and a gold plate under a
+   rainbow is two celebrations in one pill. */
+.al-bet.sup { flex:1.5 1 0; display:flex; align-items:center; justify-content:center; gap:6px; }
+.al-supi { width:34px; height:34px; flex:0 0 auto; }
+.al-bet.sup i { font-style:normal; font-size:22px; opacity:.85; }
+.al-bet.sup.on {
+  background:rgba(0,0,0,.45); color:var(--text);
+  border-color:var(--rar-3); box-shadow:0 0 22px rgba(255,212,59,.5);
+}
+/* An empty pocket is greyed the way an unaffordable bet is, and for the same
+   reason: it must still be selectable, so the odds it buys can be read before
+   it is bought. */
+.al-bet.sup.short .al-supi { filter:grayscale(1) opacity(.55); }
+.al-draw.sup .mt-ci { width:34px; height:34px; }
+
+.al-odds { display:flex; flex-direction:column; gap:6px; }
+.al-odd {
+  display:flex; align-items:center; gap:9px;
+  font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
+}
+.al-odd .n { flex:0 0 116px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* A TIER THE POOL NO LONGER HOLDS is dimmed rather than dropped: radiam's two
+   legendaries are both milestone stickers, so until the map has paid one the
+   machine cannot roll one, and a row that vanished would read as a bug. */
+.al-odd.nil { opacity:.38; }
+.al-odd .bar {
+  flex:1; min-width:0; height:10px; border-radius:6px;
+  background:rgba(255,255,255,.08); overflow:hidden;
+}
+.al-odd .bar i {
+  display:block; height:100%; border-radius:6px;
+  background:currentColor; box-shadow:0 0 10px currentColor;
+  transition:width .28s cubic-bezier(.3,1,.4,1);
+}
+.al-odd .p {
+  flex:0 0 46px; text-align:right; font-weight:var(--web-fw, 900);
+  font-variant-numeric:tabular-nums;
+}
+.al-odd.r0 { color:var(--rar-0); }
+.al-odd.r1 { color:var(--rar-1); }
+.al-odd.r2 { color:var(--rar-2); }
+.al-odd.r3 { color:var(--rar-3); }
+
+.al-draw {
+  margin-top:auto; height:74px; width:100%; padding:0 18px;
+  border:0; border-radius:20px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:var(--cta-text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:30px; letter-spacing:3px; text-transform:uppercase;
+  box-shadow:0 8px 0 rgba(0,0,0,.4), 0 0 34px var(--cta-a);
+}
+.al-draw .c {
+  display:flex; align-items:center; gap:5px; font-size:24px;
+  padding:4px 12px; border-radius:20px; background:rgba(0,0,0,.2);
+}
+.al-draw:active:not(:disabled) { transform:translateY(3px); box-shadow:0 5px 0 rgba(0,0,0,.4); }
+/* DRAW AGAIN, on the reveal card, wears the price the machine's own button
+   wears — the same sunken chip, so what a pull costs is read the same way in
+   both places and never as part of the sentence beside it. */
+.al-again .c {
+  display:flex; align-items:center; gap:5px; font-size:22px;
+  padding:3px 11px; border-radius:20px; background:rgba(0,0,0,.2);
+}
+.al-draw.off, .al-draw:disabled {
+  background:rgba(255,255,255,.09); color:rgba(255,255,255,.34);
+  box-shadow:none; cursor:not-allowed;
+}
+/* There is no note under the button any more: the wallet's two chips are the
+   doors to the shop (packages/webshell/meta.js, `doors: "shop"`). */
+
+/* =========================================================================
+   THE SHOP
+   ========================================================================= */
+
+#sh-body {
+  position:absolute; left:0; right:0; z-index:2;
+  top:calc(var(--inset-top) + 150px); bottom:0;
+  padding:10px 24px calc(var(--inset-bottom) + 40px);
+  overflow-y:auto; scrollbar-width:none;
+  display:flex; flex-direction:column; gap:20px;
+}
+#sh-body::-webkit-scrollbar { display:none; }
+
+.sh-card {
+  display:flex; align-items:center; gap:18px;
+  padding:22px; border-radius:24px;
+  background:rgba(0,0,0,.66); border:1px solid var(--panel-line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.sh-card.col { flex-direction:column; align-items:stretch; gap:14px; }
+
+/* THE PRODUCT IS THE SUBJECT, so it gets the size — and the words go BESIDE it
+   rather than under it. Three full-width rows left a hole to the right of a
+   short title and a second one between the piece and its button; a column the
+   height of the piece has neither, and name / sentence / price is the order a
+   shelf is read in anyway. */
+.sh-card.buy { gap:22px; align-items:center; }
+.sh-ico {
+  flex:0 0 auto; width:86px; height:86px; border-radius:22px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.06); border:2px solid var(--panel-line);
+  color:var(--accent);
+}
+.sh-i { width:48px; height:48px; }
+.sh-card.buy > .sh-ico { width:158px; height:158px; border-radius:30px; }
+.sh-card.buy > .sh-ico .sh-i { width:112px; height:112px; }
+.sh-body {
+  flex:1; min-width:0; align-self:stretch;
+  display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+}
+/* The price sits at the foot of its own column, against the outer edge: it is
+   the last thing read and the only thing tapped. `margin-top:auto` is what
+   keeps it there whether the sentence runs to one line or three, so a card
+   with a count on it and a card without still line their buttons up. */
+.sh-buy { flex:0 0 auto; align-self:flex-end; margin-top:auto; }
+.sh-note {
+  margin:0; font-size:17px; line-height:1.35;
+  color:var(--muted); opacity:.6;
+}
+/* How many are in the pocket. Not muted like the sentence above it — it is a
+   number the player owns, and the one place in the shell that says so. */
+.sh-note.own { color:var(--gold); opacity:1; font-size:19px; letter-spacing:1px; }
+
+/* THE SECOND CARD. Same three rows as the ticket's, so the two can be read
+   against each other; what tells them apart is the piece, the price and the
+   ring around it, which goes to the legendary tier's own colour because that
+   is what this ticket is sold on. */
+.sh-card.super { border-color:rgba(255,212,59,.34); }
+.sh-card.super .sh-ico {
+  border-color:rgba(255,212,59,.45);
+  background:radial-gradient(circle at 50% 36%, rgba(255,212,59,.16), rgba(0,0,0,.5) 70%);
+}
+.sh-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.sh-txt b {
+  font-size:30px; font-weight:var(--web-fw, 900); letter-spacing:2px; text-transform:uppercase;
+}
+.sh-txt span { font-size:18px; color:var(--muted); line-height:1.3; }
+.sh-h {
+  margin:0; font-size:26px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--accent); font-weight:var(--web-fw, 900);
+}
+
+.sh-dupes { display:flex; flex-wrap:wrap; gap:10px; }
+.sh-dup {
+  position:relative; width:84px; height:84px; border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.05); border:2px solid var(--panel-line);
+}
+.sh-dup img { max-width:78%; max-height:78%; }
+.sh-dup i {
+  position:absolute; right:-4px; bottom:-4px;
+  min-width:28px; height:24px; padding:0 5px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; font-style:normal;
+  background:var(--danger); color:#fff; font-size:15px; font-weight:var(--web-fw, 900);
+  border:2px solid rgba(0,0,0,.6);
+}
+
+/* =========================================================================
+   THE BUTTON THIS LAYER USES EVERYWHERE
+   ========================================================================= */
+
+.mt-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:66px; padding:0 26px; border:0; border-radius:18px; cursor:pointer;
+  background:rgba(255,255,255,.1); color:var(--text);
+  border:2px solid var(--panel-line);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:26px; letter-spacing:2px; text-transform:uppercase;
+  transition:transform .12s ease, border-color .16s ease;
+}
+.mt-btn:active:not(:disabled) { transform:scale(.96); }
+.mt-btn.gold {
+  background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
+  color:var(--cta-text); border-color:transparent;
+  box-shadow:0 6px 0 rgba(0,0,0,.35), 0 0 26px var(--cta-a);
+}
+.mt-btn.ghost { background:transparent; color:var(--muted); }
+.mt-btn.small { height:54px; padding:0 18px; font-size:21px; }
+.mt-btn.off, .mt-btn:disabled {
+  background:rgba(255,255,255,.07); color:rgba(255,255,255,.34);
+  border-color:rgba(255,255,255,.08); box-shadow:none; cursor:not-allowed;
+}
+
+/* =========================================================================
+   THE LEADERBOARD'S EXTRA LINE
+   ========================================================================= */
+
+/* The player's own level, under the best score. It is the one number in this
+   shell that a second round of an old level still moves, which is exactly why
+   it belongs next to the one that does not. */
+.web-lvl {
+  display:flex; align-items:center; gap:14px; margin:14px 0 4px;
+  font-family:var(--web-font, inherit);
+}
+.web-lvl b {
+  flex:0 0 auto; color:var(--gold); font-weight:var(--web-fw, 900);
+  font-size:26px; letter-spacing:2px; text-transform:uppercase;
+}
+.web-lvl .bar {
+  flex:1; min-width:0; height:14px; border-radius:8px; overflow:hidden;
+  background:rgba(0,0,0,.55); border:1px solid var(--panel-line);
+}
+.web-lvl .bar u {
+  display:block; height:100%; border-radius:8px;
+  background:linear-gradient(90deg, var(--cta-b), var(--cta-a));
+  box-shadow:0 0 12px var(--cta-a);
+}
+
+/* =========================================================================
+   THE MODAL — the gift, the reveal, the detail, the ad
+   ========================================================================= */
+
+.mt-modal {
+  position:absolute; inset:0; z-index:44;
+  display:flex; align-items:center; justify-content:center;
+  padding:0 40px;
+  background:rgba(2,2,10,.78);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  opacity:0; transition:opacity .2s ease;
+  font-family:var(--web-font, inherit); color:var(--text);
+}
+.mt-modal.on { opacity:1; }
+
+.mt-card {
+  width:100%; max-width:600px; padding:34px 30px;
+  border-radius:30px; background:rgba(8,8,20,.94);
+  border:1px solid var(--panel-line);
+  box-shadow:0 26px 70px rgba(0,0,0,.7);
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  transform:translateY(22px) scale(.96);
+  transition:transform .26s cubic-bezier(.2,1.3,.4,1);
+}
+.mt-modal.on .mt-card { transform:translateY(0) scale(1); }
+
+.mt-h {
+  margin:0; text-align:center; font-size:38px; letter-spacing:3px;
+  text-transform:uppercase; font-weight:var(--web-fw, 900);
+  color:var(--accent); text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
+}
+/* THE EYEBROW — one line over the title, for the caller that has to say why
+   this card is open. The daily road is the one: it is drawn wordless inside
+   the menu, so what it is, which day of the run this is, and whether this
+   machine is paying on every tap are all written here instead. */
+.mt-eyebrow {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  margin:0; text-align:center;
+  font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  font-family:var(--web-font, inherit);
+}
+.mt-eyebrow b { color:var(--gold); font-weight:var(--web-fw, 900); }
+.mt-eyebrow span { color:var(--muted); }
+/* the separator belongs to the second half, so a card with only the first
+   half of the line never shows a dangling dot */
+.mt-eyebrow span::before { content:"·"; margin-right:12px; opacity:.55; }
+/* …and a card whose TITLE already names the thing keeps only the second half
+   (the day, the dev pill), so the dot has nothing to sit after either. */
+.mt-eyebrow span:first-child::before { content:none; margin-right:0; }
+/* A GIFT ON EVERY TAP, and it says so. Only a dev machine ever sees this —
+   localhost, a LAN address or a file:// page (packages/webshell/daily.js) —
+   and it is here rather than on the road because the road carries no words. */
+.mt-eyebrow .dl-dev {
+  font-size:12px; letter-spacing:2px; font-style:normal;
+  font-weight:var(--web-fw, 900); padding:2px 8px; border-radius:6px;
+  color:#0b0b12; background:var(--danger, #ff5d5d);
+}
+
+.mt-sub { margin:0; text-align:center; font-size:19px; color:var(--muted); line-height:1.4; }
+.mt-sub.small { font-size:16px; opacity:.7; }
+
+/* What came out of the box, at the one size this layer ever shows a sticker. */
+.mt-rw {
+  display:flex; align-items:center; justify-content:center;
+  width:300px; height:300px;
+  animation:mt-pop .4s cubic-bezier(.2,1.5,.4,1) both;
+}
+@keyframes mt-pop {
+  from { transform:scale(.4) rotate(-10deg); opacity:0; }
+  to   { transform:scale(1) rotate(0); opacity:1; }
+}
+.mt-rw-img { max-width:100%; max-height:100%; filter:drop-shadow(0 10px 22px rgba(0,0,0,.6)); }
+.mt-rw.ghost .mt-rw-img { filter:brightness(0) invert(1) opacity(.26); }
+.mt-rw.shiny {
+  border-radius:24px;
+  background:radial-gradient(circle at 40% 34%, rgba(255,212,59,.3), rgba(255,212,59,0) 68%);
+  animation:mt-pop .4s cubic-bezier(.2,1.5,.4,1) both, mt-foil 2.6s ease-in-out .4s infinite;
+}
+@keyframes mt-foil {
+  0%,100% { filter:saturate(1) brightness(1); }
+  50%     { filter:saturate(1.3) brightness(1.14); }
+}
+/* THE MULTIPLIER PLATE (CONFIG.shellArt, meta.js multArt). A row of its own
+   between the card's title and the sentence under it, because it is the SIZE
+   of what is being handed over and not an ornament on the heading. It carries
+   its own type, its own colour and its own stars — nothing here dresses it. */
+.mt-mult-row { display:flex; justify-content:center; margin:6px 0 2px; }
+.mt-mult {
+  width:230px; height:auto;
+  animation:mt-mult-in .5s cubic-bezier(.2,1.6,.35,1) both;
+}
+@keyframes mt-mult-in {
+  0%   { transform:scale(.4) rotate(-8deg); opacity:0; }
+  100% { transform:scale(1) rotate(0); opacity:1; }
+}
+
+.mt-rw-ico {
+  width:190px; height:190px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.06); border:3px solid var(--panel-line);
+}
+/* A PAINTED reward needs no dish under it. The ring and the tint were there to
+   give a stroked pictogram a body — a picture already has one, and a plate
+   around it reads as a second frame inside the card. The box stays, so the
+   card's layout does not move when a build has no artwork. */
+.mt-rw-ico.art { background:none; border-color:transparent; }
+.mt-rw-ico.art .mt-rwi { width:170px; height:170px; }
+/* A DAY AHEAD, and a day already spent — the two cards the daily road opens on
+   anything that is not today. Both show a picture that is deliberately NOT
+   celebrating: the locked one is the very box it will hand over, drained and
+   padlocked, because the answer to "what is in there" is "not yet" and not
+   "nothing"; the spent one is the reward itself, greyed, which is the same
+   receipt the road's own node carries. */
+.mt-rw.locked, .mt-rw.taken { position:relative; }
+.mt-rw.taken .mt-rw-img, .mt-rw.taken .mt-rw-ico { filter:grayscale(.6); opacity:.72; }
+
+/* THE DAY AHEAD GIVES ITS PRIZE THE WHOLE MIDDLE. What is in there is the one
+   reason to come back tomorrow, so the picture fills the box: the dish comes
+   off (a painted piece has a body of its own) and the pictogram is drawn at
+   the size the picture would be. Drained, because the answer is "not yet". */
+.mt-rw.locked { width:340px; height:340px; }
+.mt-rw.locked .mt-rw-ico { width:100%; height:100%; background:none; border-color:transparent; }
+.mt-rw.locked .mt-rw-ico .mt-rwi { width:84%; height:84%; }
+.mt-rw.locked .mt-rw-img,
+.mt-rw.locked .mt-rw-ico { filter:grayscale(1) brightness(1.05) contrast(.85) opacity(.5); }
+
+/* THE PADLOCK, BARE, OVER THE PICTURE. It used to sit on a dark disc, which
+   was a plate over a plate and read as a button the finger could press. A
+   glyph with a shadow under it is legible on anything the road pays out, and
+   it leaves the prize visible around it — which is the whole point of drawing
+   the prize at all. */
+.mt-lock {
+  position:absolute; left:50%; top:50%; width:126px; height:126px;
+  margin:-63px 0 0 -63px;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; filter:drop-shadow(0 8px 20px rgba(0,0,0,.9));
+}
+.mt-lock-i { width:100%; height:100%; stroke-width:1.5; }
+.mt-rw-ico.done { color:var(--good); border-color:rgba(81,207,102,.4); }
+
+.mt-rw-ico.coins { color:var(--gold); border-color:rgba(255,212,59,.4); }
+.mt-rw-ico.ticket { color:var(--accent); }
+.mt-rw-ico.xp { color:var(--good); }
+.mt-rwi { width:110px; height:110px; }
+
+.mt-rw-name {
+  text-align:center; font-size:32px; font-weight:var(--web-fw, 900);
+  letter-spacing:1px; line-height:1.15;
+}
+/* WHAT THE GIFT PAID, PLATED. The same white as every other caption in this
+   layer makes the figure read as a line of a receipt under the picture; the
+   prize IS that figure, so it gets gold through the glyphs, a light that
+   sweeps across them and a glow under it. Only the reveal wears it — a locked
+   day's "A ticket" is a sentence about a reward, not a reward. */
+.mt-rw-name.shine {
+  background:linear-gradient(100deg,
+    #fff3c9 0%, var(--gold, #ffd43b) 24%, #fffdf2 44%,
+    var(--gold, #ffd43b) 60%, #c8930f 100%);
+  background-size:280% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+  filter:drop-shadow(0 0 18px rgba(255,212,59,.5))
+         drop-shadow(0 3px 10px rgba(0,0,0,.85));
+  animation:mt-shine 2.8s ease-in-out infinite;
+}
+@keyframes mt-shine {
+  0%       { background-position:100% 0; }
+  55%,100% { background-position:0 0; }
+}
+/* THE ONE LINE THAT REPLACES THE BUTTON. A reward card has nothing left to
+   decide, so it carries no pill — this says what the tap does, and it is
+   written the size of a footnote because it is one. */
+.mt-tap {
+  margin:2px 0 0; text-align:center;
+  font-size:15px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); opacity:.6;
+  animation:mt-tap-breathe 2.2s ease-in-out infinite;
+}
+@keyframes mt-tap-breathe { 0%,100% { opacity:.38; } 50% { opacity:.75; } }
+/* THE RARITY IS A BADGE, not a caption. It was one line of coloured text under
+   the picture, which reads as a subtitle — and a subtitle is not what tells a
+   player they just pulled a legendary. Same pill for all four, lit by how far
+   up the ladder it is: the common one is flat and quiet, the legendary one is
+   plated and breathes. */
+.mt-rw-rar {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:7px 20px; border-radius:999px;
+  font-size:17px; letter-spacing:4px; text-transform:uppercase;
+  font-weight:var(--web-fw, 900);
+  color:var(--rar); border:2px solid var(--rar);
+  background:rgba(255,255,255,.05);
+}
+/* the two pips either side, so the pill reads as a rank and not as a word in
+   a box — they are the border's own colour, dimmed */
+.mt-rw-rar::before, .mt-rw-rar::after {
+  content:""; width:7px; height:7px; border-radius:50%;
+  background:currentColor; opacity:.7;
+}
+.mt-rw-rar.r0 { --rar:var(--rar-0); opacity:.8; }
+.mt-rw-rar.r1 {
+  --rar:var(--rar-1);
+  background:linear-gradient(180deg, rgba(77,171,247,.26), rgba(77,171,247,.08));
+  box-shadow:0 0 16px rgba(77,171,247,.3);
+}
+.mt-rw-rar.r2 {
+  --rar:var(--rar-2);
+  background:linear-gradient(180deg, rgba(199,125,255,.3), rgba(199,125,255,.09));
+  box-shadow:0 0 20px rgba(199,125,255,.4);
+  text-shadow:0 0 14px rgba(199,125,255,.8);
+}
+.mt-rw-rar.r3 {
+  --rar:var(--rar-3);
+  background:linear-gradient(180deg, rgba(255,212,59,.34), rgba(255,212,59,.1));
+  box-shadow:0 0 26px rgba(255,212,59,.5), inset 0 0 14px rgba(255,212,59,.25);
+  text-shadow:0 0 16px rgba(255,212,59,.9);
+  animation:mt-rar-breathe 2.4s ease-in-out infinite;
+}
+@keyframes mt-rar-breathe {
+  0%, 100% { box-shadow:0 0 26px rgba(255,212,59,.5), inset 0 0 14px rgba(255,212,59,.25); }
+  50%      { box-shadow:0 0 40px rgba(255,212,59,.8), inset 0 0 20px rgba(255,212,59,.4); }
+}
+/* WHAT THE PLAYER DID TO EARN IT — a whole sentence now ("EARNED BY A CLEAN
+   RUN THROUGH RELIQUARY"), so it is centred and allowed a second line rather
+   than tuned to the longest band name any game might one day pick. */
+.mt-rw-src {
+  font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); opacity:.75;
+  text-align:center; line-height:1.4; max-width:100%;
+}
+
+.mt-acts { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
+
+/* THE OFFER ROW — the ad, and beside it the way past it, on ONE line. It does
+   not wrap: two controls stacked read as two offers, and the second one is not
+   an offer. The gold button takes what it needs and gives it back, the arrow
+   never moves. */
+.mt-acts.offer { flex-wrap:nowrap; align-items:center; width:100%; }
+.mt-acts.offer .mt-btn.gold { flex:1 1 auto; min-width:0; padding:0 16px; }
+
+/* TWO LINES: the reward, then its price. The card is 624 design px wide and a
+   single line had to carry a verb, an object and a plate — it ran out of room
+   and ellipsed, which is the one thing a call to action may never do. Stacked,
+   the shouted half is four to ten characters and always fits. */
+.mt-btn.two { height:84px; line-height:1; }
+.mt-btn-txt {
+  display:flex; flex-direction:column; align-items:flex-start; gap:3px;
+  min-width:0; overflow:hidden;
+}
+/* THE SENTENCE HAS TO FIT, and this one is a verb, a noun and a plate on a
+   card 624 design px wide: "MULTIPLIER TES PIECES" beside the ×5 ran off the
+   end at 30px, and a call to action that ellipses is the one thing this layer
+   may never do. 25px with the spacing pulled in is what holds the longest of
+   the three nouns in both languages. */
+.mt-btn-txt b { font-size:24px; letter-spacing:.5px; white-space:nowrap; }
+/* The price is read, not shouted: normal case, and light enough to sit under
+   the thing it is the price of. */
+.mt-btn-txt i {
+  font-style:normal; font-size:18px; letter-spacing:.5px; text-transform:none;
+  opacity:.8; white-space:nowrap;
+}
+/* THE WAY PAST THE OFFER IS THE END SCREEN'S OWN BUTTON, brought down to the
+   height of the row it stands in — the circle, the hairline, the dark fill and
+   the arrow all come from `.eo-act` in menu.css, which this node now shares
+   the rule with. The way on is one control in this front end and a player
+   meets it twice within a couple of seconds. */
+.mt-acts .mt-nav { flex:0 0 auto; width:76px; height:76px; }
+.mt-acts .mt-nav .eo-ico { width:36px; height:36px; }
+
+/* THE PLATE INSIDE THE BUTTON. It is the number the ad pays and it sits where
+   a figure would, at the height of the type beside it — never bigger: a plate
+   that outgrows its own button stops being part of the sentence. */
+.mt-btn-mult { width:72px; height:auto; flex:0 0 auto; margin:-10px -2px -10px 4px; }
+/* what the plate falls back to where the build carries no artwork */
+.mt-btn-x { font-style:normal; font-weight:inherit; letter-spacing:1px; }
+
+/* ---- the three boxes ---------------------------------------------------- */
+
+/* THREE BOXES THAT ARE NOT THE SAME BOX. They were identical, three colours
+   apart, bobbing on one keyframe with two delays — which reads as one object
+   printed three times, and a choice between three copies of a thing is not a
+   choice. Each one now has its own size and its own idle: one floats, one
+   rocks on its corner, one is still until something inside it knocks. A player
+   reads that as three different packages, and looks at them before picking.
+
+   THE THREE LOOKS ARE DEALT, not nailed to the position. Fixed, they stopped
+   being three looks after the second card — what the player saw was one
+   picture they had already seen — so `gift()` shuffles which position wears
+   which class, shuffles the painted colour separately, and gives each box a
+   random negative `animation-delay` so the idles are never caught at the same
+   moment of themselves twice (meta.js, `deal3`).
+
+   IT LEAKS NOTHING, which is the rule the row is built on. Both deals come
+   from nothing but `Math.random`, and the three rewards are rolled per index
+   and separately (meta.js, `gift`). So the big one is not the good one, the
+   quiet one is not the empty one, and a player who decides otherwise has
+   invented a superstition rather than read a tell. What must never happen is
+   the reverse: a look taken FROM the reward would turn the ceremony into a
+   label. */
+.mt-gifts {
+  display:flex; gap:20px; justify-content:center; align-items:flex-end;
+  margin:6px 0;
+}
+.mt-gift {
+  position:relative; width:150px; height:150px; border:0; cursor:pointer;
+  background:transparent; transition:transform .18s ease, opacity .3s ease;
+}
+/* THE ONE THAT FLOATS — slow, even, the way a light box hangs. */
+.mt-gift.g0 { animation:mt-g-float 2.6s ease-in-out infinite; }
+/* THE ONE THAT ROCKS — on its own foot, so it looks impatient rather than
+   weightless. Faster, and on no multiple of the other two. */
+.mt-gift.g1 { animation:mt-g-rock 1.9s ease-in-out infinite; transform-origin:50% 92%; }
+/* THE ONE SOMETHING KNOCKS IN — still for two seconds, then one thump that
+   squashes it and settles. It is the piece that sells the whole idea: a box
+   that MOVES ON ITS OWN is a box with something in it. */
+.mt-gift.g2 { animation:mt-g-thump 3.1s ease-in-out infinite; transform-origin:50% 96%; }
+@keyframes mt-g-float {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-14px); }
+}
+@keyframes mt-g-rock {
+  0%,100% { transform:rotate(-3.4deg) translateY(0); }
+  50%     { transform:rotate(3.4deg) translateY(-5px); }
+}
+@keyframes mt-g-thump {
+  0%,58%   { transform:scale(1,1) translateY(0); }
+  66%      { transform:scale(1.09,.9) translateY(4px); }
+  74%      { transform:scale(.95,1.07) translateY(-9px); }
+  82%      { transform:scale(1.03,.97) translateY(0); }
+  90%,100% { transform:scale(1,1) translateY(0); }
+}
+.mt-gift:active { transform:scale(.94); }
+
+/* The box is three pieces: a body with a ribbon down it, a lid that overhangs
+   it, and a bow on top. The lid and the bow are what come off on the pick, so
+   they are the two that carry a transition. */
+.mt-gift .body {
+  position:absolute; left:16px; right:16px; bottom:2px; height:84px; border-radius:8px;
+  box-shadow:inset 0 -14px 20px rgba(0,0,0,.28), 0 10px 22px rgba(0,0,0,.5);
+}
+.mt-gift .body::after {
+  content:""; position:absolute; left:50%; top:0; bottom:0; width:20px;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.28));
+}
+.mt-gift .lid {
+  position:absolute; left:6px; right:6px; top:48px; height:26px; border-radius:7px;
+  box-shadow:0 6px 14px rgba(0,0,0,.45), inset 0 3px 0 rgba(255,255,255,.28);
+  transition:transform .4s cubic-bezier(.3,1.6,.5,1), opacity .4s ease;
+}
+.mt-gift .bow {
+  position:absolute; left:50%; top:22px; width:44px; height:30px;
+  transform:translateX(-50%); border-radius:50% 50% 40% 40%;
+  border:8px solid rgba(255,255,255,.92); border-bottom:0; background:transparent;
+  transition:transform .4s ease, opacity .4s ease;
+}
+.mt-gift.g0 .body, .mt-gift.g0 .lid { background:linear-gradient(180deg, #ff6b9d, #d6336c); }
+.mt-gift.g1 .body, .mt-gift.g1 .lid { background:linear-gradient(180deg, #4dd2ff, #1878d4); }
+.mt-gift.g2 .body, .mt-gift.g2 .lid { background:linear-gradient(180deg, #ffd43b, #f08c00); }
+
+/* The two that were not picked fade instead of opening: what was in them is
+   never shown, so there is nothing to regret. */
+.mt-gifts.chosen .mt-gift { animation:none; pointer-events:none; }
+.mt-gifts.art .mt-gift.open { z-index:2; }
+.mt-gifts.chosen .mt-gift:not(.open) { opacity:.18; transform:scale(.88); }
+.mt-gift.open .lid { transform:translateY(-60px) rotate(-14deg); opacity:0; }
+.mt-gift.open .bow { transform:translateX(-50%) translateY(-70px) rotate(20deg); opacity:0; }
+.mt-gift.open .body { animation:mt-burst .4s ease both; }
+@keyframes mt-burst {
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.14, .9); }
+  100% { transform:scale(1); }
+}
+
+/* ---- the three boxes, PAINTED ------------------------------------------ */
+
+/* When the build carries the shell's artwork (CONFIG.shellArt, from
+   assets/image/shell/) the three nodes above are replaced by the painted
+   boxes, and the ceremony changes shape with them: there is no lid to lift,
+   because the open picture has its own — so what plays here is the CUT
+   between two frames, hidden under a flash and thrown out on a sunburst.
+   Everything else — the bob, the two that fade, the pick that pays — is the
+   same, which is why `.mt-gift` keeps carrying it. */
+/* BIGGER, AND THREE SIZES. The boxes are what this card is for — the title
+   says the rest — so they take the width the sentence under it used to, and
+   the card gives up its side padding for them. The three widths are a fifth
+   apart at the extremes, which reads as three packages and not as one drawn at
+   three zooms; they stand on ONE floor (`align-items:flex-end` above), so a
+   taller box is taller and never merely higher up. */
+.mt-modal.gift .mt-card { padding-left:14px; padding-right:14px; }
+.mt-gifts.art { gap:0; }
+.mt-gifts.art .mt-gift { width:190px; height:200px; }
+.mt-gifts.art .mt-gift.g0 { width:204px; height:214px; }
+.mt-gifts.art .mt-gift.g1 { width:174px; height:184px; }
+.mt-gifts.art .mt-gift.g2 { width:190px; height:200px; }
+/* The picture follows the box instead of being a fixed 132 px, which is what
+   makes the three sizes sizes at all. */
+.mt-gifts.art .mt-gift .face { width:80%; }
+.mt-gift .face {
+  position:absolute; left:50%; top:50%; width:132px; z-index:2;
+  transform:translate(-50%, -50%);
+  filter:drop-shadow(0 12px 20px rgba(0,0,0,.6));
+  transition:transform .22s cubic-bezier(.3,1.6,.5,1);
+}
+.mt-gift:hover .face, .mt-gift:focus-visible .face {
+  transform:translate(-50%, -54%) scale(1.06);
+}
+.mt-gift:focus-visible { outline:none; }
+.mt-gift:focus-visible .rays { opacity:.5; }
+
+/* The sunburst. It is parked at nothing and thrown outward on the pick, so
+   the box the finger lands on is the only one the light ever comes out of. */
+/* The annulus the rays live in starts OUTSIDE the box, not at the centre: the
+   painted box is 132 px across and sits on top of this node, so a burst drawn
+   under it is a burst nobody sees. What reads is the light coming out from
+   BEHIND the lid and running past the card's own width. */
+.mt-gift .rays {
+  position:absolute; left:50%; top:52%; width:300px; height:300px;
+  margin:-150px 0 0 -150px; border-radius:50%;
+  opacity:0; transform:scale(.3); pointer-events:none; z-index:0;
+  background:
+    repeating-conic-gradient(from 0deg,
+      rgba(255,222,130,.85) 0 4deg, rgba(255,222,130,0) 4deg 18deg);
+  -webkit-mask-image:radial-gradient(circle, transparent 24%, #000 40% 62%, transparent 86%);
+  mask-image:radial-gradient(circle, transparent 24%, #000 40% 62%, transparent 86%);
+}
+
+/* The flash that covers the cut between the closed frame and the open one. */
+.mt-gift .flash {
+  position:absolute; left:50%; top:50%; width:190px; height:190px;
+  margin:-95px 0 0 -95px; border-radius:50%;
+  opacity:0; pointer-events:none; z-index:1;
+  background:radial-gradient(circle, #fff 0 22%, rgba(255,240,190,.75) 42%, rgba(255,212,59,0) 70%);
+}
+
+.mt-gift.open .rays { animation:mt-rays 1.1s cubic-bezier(.15,.9,.3,1) both; }
+.mt-gift.open .flash { animation:mt-flash .5s ease-out both; }
+.mt-gift.open .face { animation:mt-openpop .62s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes mt-rays {
+  0%   { opacity:0; transform:scale(.35) rotate(0deg); }
+  20%  { opacity:.62; }
+  100% { opacity:0; transform:scale(1.12) rotate(34deg); }
+}
+@keyframes mt-flash {
+  0%   { opacity:0; transform:scale(.4); }
+  26%  { opacity:1; transform:scale(1.05); }
+  100% { opacity:0; transform:scale(1.5); }
+}
+@keyframes mt-openpop {
+  0%   { transform:translate(-50%, -50%) scale(1); }
+  24%  { transform:translate(-50%, -54%) scale(1.16); }
+  55%  { transform:translate(-50%, -52%) scale(.98); }
+  100% { transform:translate(-50%, -52%) scale(1.04); }
+}
+
+/* ---- the reward, flown home --------------------------------------------- */
+
+/* One object, out of the card and into the chip that holds it. It sits ABOVE
+   the modal it left (which is still fading out behind it) and it shrinks on the
+   way, so the landing is a thing arriving somewhere small rather than a picture
+   sliding across the screen. */
+.mt-home {
+  position:absolute; z-index:60; width:120px; height:120px; margin:-60px 0 0 -60px;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+  transform:translate(0, 0) scale(1);
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));
+}
+.mt-home.go {
+  /* The curve overshoots upward before it dives: a straight line between two
+     corners of a phone reads as a slide, an arc reads as a throw. */
+  transition:transform 620ms cubic-bezier(.35,-.5,.25,1), opacity 180ms ease 470ms;
+  opacity:.1;
+}
+/* The reward markup is the card's, at the card's size — 300 px of picture and a
+   190 px icon disc. Here it is a token, so both are pulled down to the box. */
+.mt-home .mt-rw-img { max-width:120px; max-height:120px; }
+.mt-home .mt-rw-ico { width:100px; height:100px; border-width:2px; background:rgba(8,8,20,.9); }
+.mt-home .mt-rwi { width:58px; height:58px; }
+.mt-home .mt-rw-ico.art .mt-rwi { width:96px; height:96px; }
+
+/* THE PIECE A PURCHASE THROWS, at the size the reward cards use: what was just
+   bought is the subject of the animation, so it leaves the button as an object
+   and not as the chip it is about to become. */
+.mt-home.big { width:210px; height:210px; margin:-105px 0 0 -105px; }
+.mt-home.big .mt-rw-ico { width:100%; height:100%; background:none; border-color:transparent; }
+.mt-home.big .mt-rw-ico .mt-rwi { width:100%; height:100%; }
+
+/* WHAT MOVED, OVER THE CHIP IT MOVED IN. Money leaving reads red and falls,
+   a thing arriving reads gold and rises — a spree prints one per tap, jittered
+   sideways so two identical figures are never drawn on top of each other. */
+.mt-tag {
+  position:absolute; z-index:61; pointer-events:none;
+  display:flex; align-items:center; gap:6px;
+  transform:translate(-50%, -50%);
+  font-family:var(--web-font, inherit); font-variant-numeric:tabular-nums;
+  font-size:30px; font-weight:var(--web-fw, 900); letter-spacing:1px;
+  text-shadow:0 3px 10px rgba(0,0,0,.9);
+  animation:mt-tag-down 1.3s cubic-bezier(.2,.9,.3,1) both;
+}
+.mt-tag .mt-ci { width:24px; height:24px; }
+.mt-tag.down { color:var(--danger); }
+/* EXPERIENCE ARRIVING, and it is read for longer and larger than any other
+   figure this layer writes. A coin chip counts up beside its own label, so the
+   tag there is confirmation; a bar carries no number, so this IS the reading —
+   and on a level-up the bar is still running a second after the tag appeared.
+   So it falls a little, HOLDS while the bar catches up, and only then goes.
+
+   Green and falling, never gold and rising: a figure climbing off the level
+   row crosses the bar it is explaining and lands on the header, which is
+   exactly where it went unread. */
+.mt-tag.down.xp {
+  color:var(--good); font-size:36px;
+  text-shadow:0 0 20px rgba(81,207,102,.7), 0 3px 12px rgba(0,0,0,.95);
+  animation-name:mt-tag-xp; animation-duration:2.1s;
+}
+.mt-tag.down.xp .mt-ci { width:30px; height:30px; }
+@keyframes mt-tag-xp {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(.6); }
+  10%  { opacity:1; transform:translate(-50%, calc(-50% + 4px)) scale(1.18); }
+  20%  { transform:translate(-50%, calc(-50% + 8px)) scale(1); }
+  78%  { opacity:1; transform:translate(-50%, calc(-50% + 12px)) scale(1); }
+  100% { opacity:0; transform:translate(-50%, calc(-50% + 40px)) scale(.92); }
+}
+.mt-tag.up {
+  color:var(--gold); text-shadow:0 0 18px rgba(255,212,59,.7), 0 3px 10px rgba(0,0,0,.9);
+  animation-name:mt-tag-up;
+}
+@keyframes mt-tag-down {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(.7); }
+  16%  { opacity:1; transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px))) scale(1.12); }
+  30%  { transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px))) scale(1); }
+  100% { opacity:0; transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px) + 58px)) scale(.9); }
+}
+@keyframes mt-tag-up {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(.7); }
+  16%  { opacity:1; transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px))) scale(1.2); }
+  30%  { transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px))) scale(1); }
+  100% { opacity:0; transform:translate(calc(-50% + var(--jit, 0px)), calc(-50% + var(--jit-y, 0px) - 62px)) scale(.9); }
+}
+
+/* THE LANDING. The chip takes the hit, and the number climbs to the figure the
+   save has held all along (meta.js, flyReward). A reward that changed a number
+   while the card covered it changed nothing the player saw. */
+.mt-hit { animation:mt-hit .5s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes mt-hit {
+  0%   { transform:scale(1); }
+  28%  { transform:scale(1.28); }
+  60%  { transform:scale(.96); }
+  100% { transform:scale(1); }
+}
+
+/* ---- the reward badge --------------------------------------------------- */
+
+/* THE FRAME THAT MAKES A NUMBER A PRIZE. `.mt-rw` is the reward itself — a
+   sticker, a coin, an xp bolt — and on its own it lands looking like a line of
+   a receipt. The badge is a sunburst turning behind it and a ring around it,
+   tiered by what the reward is worth: the muted ring for a handful of coins,
+   the accent for a ticket or a common sticker, purple for an epic, gold for
+   the legendary. One shape, four colours, and no second piece of artwork. */
+.mt-badge-rw {
+  position:relative; display:flex; align-items:center; justify-content:center;
+  width:300px; height:300px;
+}
+.mt-badge-rw .rays, .mt-badge-rw .ring {
+  position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none;
+}
+.mt-badge-rw .rays {
+  width:380px; height:380px; margin:-190px 0 0 -190px;
+  background:
+    repeating-conic-gradient(from 0deg,
+      var(--bdg, rgba(255,255,255,.4)) 0 2.4deg, rgba(0,0,0,0) 2.4deg 18deg);
+  /* The rays CROSS the ring — they start inside it and run past it — so the
+     badge reads as one lit object rather than as a plate with a pattern on it.
+     Both ends fade, because a ray with a cut end is a rectangle. */
+  -webkit-mask-image:radial-gradient(circle, transparent 8%, #000 26% 48%, transparent 80%);
+  mask-image:radial-gradient(circle, transparent 8%, #000 26% 48%, transparent 80%);
+  opacity:.38;
+  animation:mt-rays-in .6s ease-out both, mt-spin 18s linear .6s infinite;
+}
+.mt-badge-rw .ring {
+  width:216px; height:216px; margin:-108px 0 0 -108px;
+  border:3px solid var(--bdg, rgba(255,255,255,.4));
+  box-shadow:0 0 26px var(--bdg, rgba(255,255,255,.3)), inset 0 0 26px rgba(0,0,0,.5);
+  background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.06), rgba(0,0,0,.42) 70%);
+  animation:mt-ring-in .5s cubic-bezier(.2,1.5,.4,1) both;
+}
+.mt-badge-rw .mt-rw { position:relative; z-index:2; width:236px; height:236px; }
+.mt-badge-rw.coins  { --bdg:var(--gold); }
+.mt-badge-rw.ticket { --bdg:var(--accent); }
+.mt-badge-rw.xp     { --bdg:var(--good); }
+.mt-badge-rw.t0 { --bdg:var(--rar-0); }
+.mt-badge-rw.t1 { --bdg:var(--rar-1); }
+.mt-badge-rw.t2 { --bdg:var(--rar-2); }
+.mt-badge-rw.t3 { --bdg:var(--rar-3); }
+/* One turn, shared by the badge's sunburst and the strip's. */
+@keyframes mt-spin { to { transform:rotate(360deg); } }
+@keyframes mt-rays-in {
+  from { opacity:0; transform:scale(.55); }
+  to   { opacity:.38; transform:scale(1); }
+}
+@keyframes mt-ring-in {
+  from { opacity:0; transform:scale(.6); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* ---- the machine's two reveals ------------------------------------------ */
+
+/* A STICKER THE PLAYER HAS NEVER HAD, AND ONE THEY ALREADY HAVE, and the card
+   they arrive on is not the same card. The first is the reason the machine
+   exists: it lands on a flash, throws a shockwave and sparks off the frame,
+   wears the reward badge's turning sunburst and waits to be dismissed. The
+   second is not news, so it BURNS OFF — two seconds of embers climbing the
+   card from below and it closes itself (packages/webshell/album.js). Both
+   effects are the same shape of thing: nodes the card is built with, animated
+   by this file, and no frame loop for a card that lives two seconds. */
+
+.mt-modal.sticker .mt-card { position:relative; overflow:hidden; }
+/* ...except the detail card, which has no ceremony to contain and a chip that
+   hangs off its corner. */
+.mt-modal.sticker.detail .mt-card { overflow:visible; }
+/* The ceremony is painted UNDER everything the card writes; the children have
+   to be positioned to sit over a positioned layer at all. `.al-own` is left
+   out because it places ITSELF on the card's corner, and this rule is four
+   classes deep — it was quietly winning and parking the chip in the column. */
+.mt-modal.sticker .mt-card > *:not(.al-fx):not(.al-own) { position:relative; z-index:2; }
+.al-fx {
+  position:absolute; inset:0; z-index:0; overflow:hidden;
+  border-radius:inherit; pointer-events:none;
+}
+
+/* ---- new: the flash, the shockwave, the sparks -------------------------- */
+
+.al-flash {
+  position:absolute; left:50%; top:46%; width:640px; height:640px;
+  margin:-320px 0 0 -320px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.85), rgba(255,255,255,.25) 32%, rgba(255,255,255,0) 66%);
+  animation:al-flash .55s ease-out both;
+}
+@keyframes al-flash {
+  0%   { opacity:0; transform:scale(.2); }
+  22%  { opacity:.95; }
+  100% { opacity:0; transform:scale(1.25); }
+}
+
+.al-shock {
+  position:absolute; left:50%; top:46%; width:260px; height:260px;
+  margin:-130px 0 0 -130px; border-radius:50%;
+  border:5px solid rgba(255,255,255,.65);
+  animation:al-shock .85s cubic-bezier(.15,.7,.3,1) both;
+}
+.al-shock.d2 { border-color:var(--gold); animation-delay:.14s; }
+@keyframes al-shock {
+  0%   { opacity:0; transform:scale(.3); }
+  14%  { opacity:.9; }
+  100% { opacity:0; transform:scale(2.8); border-width:1px; }
+}
+
+/* The sparks carry their own vector: album.js writes --dx/--dy per node, so
+   eighteen of them leave the middle in eighteen directions without eighteen
+   keyframes. */
+.al-sparks { position:absolute; inset:0; }
+.al-sparks i {
+  position:absolute; left:50%; top:46%; width:12px; height:12px;
+  margin:-6px 0 0 -6px; border-radius:50%;
+  background:radial-gradient(circle, #fff, var(--gold) 55%, rgba(255,212,59,0) 76%);
+  animation:al-spark .8s cubic-bezier(.1,.7,.3,1) both;
+}
+@keyframes al-spark {
+  0%   { opacity:0; transform:translate(0,0) scale(.4); }
+  12%  { opacity:1; }
+  100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(.15); }
+}
+
+/* the card itself is lit, so the burst reads as coming out of the sticker
+   rather than as a pattern printed behind it */
+.mt-modal.sticker.fresh .mt-card {
+  border-color:rgba(255,212,59,.5);
+  box-shadow:0 26px 70px rgba(0,0,0,.7), 0 0 70px rgba(255,212,59,.28);
+}
+
+/* ---- already owned: the lava under it ----------------------------------- */
+
+.al-lava {
+  position:absolute; left:-10%; right:-10%; bottom:-40px; height:200px;
+  background:linear-gradient(0deg,
+    rgba(255,92,0,.55) 0%, rgba(255,60,0,.3) 34%, rgba(120,20,0,0) 100%);
+  filter:blur(14px);
+  animation:al-lava 2s ease-out both;
+}
+@keyframes al-lava {
+  0%   { opacity:0; transform:translateY(40px); }
+  18%  { opacity:1; transform:translateY(0); }
+  100% { opacity:.25; transform:translateY(0); }
+}
+
+.al-embers { position:absolute; inset:0; }
+/* Each ember carries its own size, its own drift and its own clock, written
+   inline by album.js — twenty-six nodes on one keyframe, and the randomness is
+   in the values rather than in twenty-six rules. */
+.al-embers i {
+  position:absolute; bottom:-24px; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #fff3b0, #ff9a1f 40%, #ff3d00 72%, rgba(255,61,0,0) 82%);
+  box-shadow:0 0 12px rgba(255,120,0,.9);
+  animation-name:al-ember; animation-timing-function:ease-out;
+  animation-fill-mode:both; animation-iteration-count:1;
+}
+@keyframes al-ember {
+  0%   { opacity:0; transform:translate(0, 0) scale(.5); }
+  12%  { opacity:1; }
+  70%  { opacity:.9; }
+  100% { opacity:0; transform:translate(var(--sway), calc(var(--rise) * -1)) scale(.25); }
+}
+.mt-modal.sticker.seen .mt-card {
+  border-color:rgba(255,92,0,.35);
+  box-shadow:0 26px 70px rgba(0,0,0,.7), inset 0 -40px 60px rgba(255,80,0,.16);
+}
+/* a double keeps its picture, at the size the badge would have given it, and
+   nothing around it: the badge is what says "prize" */
+.mt-modal.sticker.seen .mt-rw { width:236px; height:236px; }
+
+/* ---- the detail card ---------------------------------------------------- */
+
+/* THE CARD TAKES THE RANK'S COLOUR. Twenty tiles open twenty cards that were
+   all the same near-black, and the one thing the player came to read — how
+   rare this one is — was a line of text under the picture. The tint is the
+   pill's own colour poured down the card, so the answer arrives before the
+   word is read. It is a wash and not a fill: the sticker is painted artwork
+   and has to stay the brightest thing on the card. */
+.mt-modal.sticker.detail .mt-card {
+  cursor:pointer;
+  background:
+    linear-gradient(180deg, var(--tint), rgba(0,0,0,0) 64%),
+    rgba(8,8,20,.95);
+  border-color:var(--edge);
+  box-shadow:0 26px 70px rgba(0,0,0,.7), 0 0 44px var(--halo);
+}
+.mt-modal.detail.r0 .mt-card { --tint:rgba(170,177,198,.14); --edge:rgba(170,177,198,.3);  --halo:rgba(170,177,198,.1); }
+.mt-modal.detail.r1 .mt-card { --tint:rgba(77,171,247,.24);  --edge:rgba(77,171,247,.45);  --halo:rgba(77,171,247,.2); }
+.mt-modal.detail.r2 .mt-card { --tint:rgba(199,125,255,.28); --edge:rgba(199,125,255,.5);  --halo:rgba(199,125,255,.28); }
+.mt-modal.detail.r3 .mt-card { --tint:rgba(255,212,59,.3);   --edge:rgba(255,212,59,.55);  --halo:rgba(255,212,59,.34); }
+
+/* The name takes the frame's own text colour here, not the accent: the card is
+   already washed in the rank's colour, and the motor's cyan title on a purple
+   card is two palettes arguing over one line. The pill says the rank. */
+.mt-modal.sticker.detail .mt-h {
+  color:var(--text); text-shadow:0 3px 14px rgba(0,0,0,.9);
+}
+
+/* HOW MANY, on the frame rather than in the column. Same chip as the tile's
+   own double badge, one size up, in the rank's colour instead of the danger
+   red — on a card that is already tinted, red would be the loudest thing on
+   it and it is only a count. */
+.al-own {
+  position:absolute; top:-14px; right:-8px; z-index:3;
+  min-width:56px; height:44px; padding:0 14px; border-radius:22px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(8,8,20,.96); border:3px solid var(--edge);
+  color:var(--text); font-family:var(--web-font, inherit);
+  font-weight:var(--web-fw, 900); font-size:26px; font-style:normal;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 6px 18px rgba(0,0,0,.6);
+}
+
+/* ---- the two tags -------------------------------------------------------- */
+
+/* THE HEADING IS A TAG, and the two do not shout at the same volume. NEW is
+   plated gold with a shine running across it, because it is the one line on
+   the card that had to travel across the room. ALREADY OWNED is an outline and
+   a whisper — it is a label, not an announcement, and a card that celebrates a
+   double teaches the player to stop reading the card. */
+.al-tag {
+  font-family:var(--web-font, inherit); text-transform:uppercase;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.al-tag.new {
+  position:relative; overflow:hidden;
+  padding:10px 30px; border-radius:999px;
+  background:linear-gradient(180deg, #fff6cc, var(--gold) 52%, #e79b00);
+  color:#141006; font-weight:var(--web-fw, 900);
+  font-size:34px; letter-spacing:3px;
+  border:3px solid rgba(255,255,255,.65);
+  box-shadow:0 0 34px rgba(255,212,59,.7), 0 8px 20px rgba(0,0,0,.5);
+  animation:al-tag-in .45s cubic-bezier(.2,1.6,.4,1) both, al-tag-beat 1.6s ease-in-out .45s infinite;
+}
+.al-tag.new b { font-weight:inherit; }
+/* the shine: one band sweeping the plate, on a loop slow enough to be a
+   material and not a strobe */
+.al-tag.new::after {
+  content:""; position:absolute; top:-60%; bottom:-60%; left:-40%; width:32%;
+  background:linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.85), rgba(255,255,255,0));
+  transform:skewX(-18deg);
+  animation:al-shine 2.2s ease-in-out .5s infinite;
+}
+@keyframes al-tag-in {
+  from { opacity:0; transform:scale(.5) translateY(-12px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+@keyframes al-tag-beat {
+  0%, 100% { transform:scale(1); }
+  50%      { transform:scale(1.045); }
+}
+@keyframes al-shine {
+  0%   { left:-40%; }
+  55%, 100% { left:120%; }
+}
+.al-tag.old {
+  padding:4px 14px; border-radius:8px;
+  border:1px solid var(--panel-line); background:rgba(255,255,255,.03);
+  color:var(--muted); font-size:15px; letter-spacing:4px; opacity:.6;
+}
+
+/* ---- the ad placeholder ------------------------------------------------- */
+
+/* It looks like a slot and it says it is one. Nothing here pretends to be an
+   ad: the label under it is the honest half of the stub. */
+.mt-adslot {
+  position:relative; width:100%; height:300px; border-radius:20px; overflow:hidden;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 18px, rgba(255,255,255,.02) 18px 36px),
+    rgba(255,255,255,.04);
+  border:2px dashed var(--panel-line);
+}
+.mt-adslot .bar {
+  position:absolute; left:-40%; top:0; bottom:0; width:40%;
+  background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.1), rgba(255,255,255,0));
+  animation:mt-sweep 1.6s linear infinite;
+}
+@keyframes mt-sweep { to { left:110%; } }
+
+/* =========================================================================
+   THE CALLOUT
+   ========================================================================= */
+
+/* The motor's Pop layer lives inside #overlay, under the screens; this is the
+   same voice one layer up, for a word said on a menu. */
+#mt-says {
+  position:absolute; left:0; right:0; top:calc(var(--inset-top) + 210px); z-index:48;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  pointer-events:none; font-family:var(--web-font, inherit);
+}
+.mt-say {
+  padding:12px 28px; border-radius:40px; text-align:center;
+  background:rgba(4,4,14,.92); border:2px solid var(--accent);
+  box-shadow:0 0 26px rgba(0,0,0,.6);
+  animation:mt-say-in .28s cubic-bezier(.2,1.4,.4,1) both;
+  transition:opacity .4s ease, transform .4s ease;
+}
+.mt-say b {
+  display:block; font-size:30px; font-weight:var(--web-fw, 900);
+  letter-spacing:2px; text-transform:uppercase; color:var(--gold);
+}
+.mt-say span { display:block; font-size:17px; color:var(--muted); margin-top:2px; }
+.mt-say.up { border-color:var(--gold); }
+.mt-say.out { opacity:0; transform:translateY(-14px); }
+@keyframes mt-say-in {
+  from { opacity:0; transform:translateY(16px) scale(.9); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* =========================================================================
+   THE END SCREEN — the score becomes coins
+   ========================================================================= */
+
+/* The wallet the coins fly INTO, pinned where nothing of the reveal lands:
+   the end screen writes its column down the middle and its buttons at the
+   foot, so the top-right corner is the one place a second number can sit
+   without the cascade having to move for it. */
+/* Over the screens (the motor stacks `.screen` at 30) and under the modals
+   this layer opens at 44: the wallet lives in #frame, not in #screen-end. */
+#mt-end-wallet {
+  position:absolute; top:calc(var(--inset-top) + 22px); right:26px; z-index:40;
+}
+#mt-end-wallet[hidden] { display:none; }
+#mt-end-wallet .mt-chip { height:46px; padding:0 14px; font-size:23px; }
+#mt-end-wallet .mt-ci { width:22px; height:22px; }
+
+/* A WALLET THAT IS ONLY THERE WHILE IT IS BEING PAID. The end screen's chips
+   hold their place in the layout — every flight is aimed at their rect
+   (meta.js, homeOf) — and carry no ink until the transfer layer lifts the veil
+   off the one it is paying into, then puts it back a beat after the figure over
+   it has been read. So a coin chip arrives with its own cascade and leaves with
+   its own tag, a ticket chip is only ever seen on a round that won one, and a
+   round that pays nothing shows an empty corner. `visibility` as well as
+   `opacity` so a veiled chip cannot be read out or tapped; it is kept out of
+   the transition's end, or the chip would pop in rather than fade. */
+.mt-wallet.transient .mt-chip {
+  opacity:0; visibility:hidden; transform:translateY(-10px) scale(.86);
+  transition:opacity .22s ease, transform .3s cubic-bezier(.2,1.5,.4,1),
+             visibility 0s linear .22s;
+}
+.mt-wallet.transient .mt-chip.shown {
+  opacity:1; visibility:visible; transform:none;
+  transition:opacity .22s ease, transform .3s cubic-bezier(.2,1.5,.4,1),
+             visibility 0s;
+}
+
+/* WHAT THE ROUND WAS WORTH, under the score it came out of. The score itself
+   is never touched — it is the number the player made and it stays on the
+   screen — so the conversion is its own line, in the coin's gold, and the line
+   is what the cascade empties: it fades on the first coin leaving it (`spent`)
+   and is written once more over the wallet when the last one lands. */
+.mt-gain {
+  /* A FIXED HEIGHT, and it is the point of this box. The slot is opened empty
+     before the reveal starts (meta.js, reserveEnd), filled at 34 px and then
+     shrunk to 21 px when it becomes the footnote — three states of one line,
+     and a box that measured its content would move the stars and every row
+     under them twice. */
+  height:52px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  margin-top:6px;
+  font-family:var(--web-font, inherit); font-variant-numeric:tabular-nums;
+  font-size:34px; font-weight:var(--web-fw, 900); letter-spacing:2px;
+  color:var(--gold); text-shadow:0 0 22px rgba(255,212,59,.6);
+  opacity:0; transform:translateY(-10px) scale(.9);
+  transition:opacity .22s ease, transform .3s cubic-bezier(.2,1.5,.4,1);
+}
+.mt-gain.on { opacity:1; transform:none; }
+/* ONCE THE COINS HAVE GONE the line stays, as a footnote under the score. It
+   used to fade out with them, which meant the one lever a player owns — their
+   own level, and what it multiplies — was on screen for about a second and
+   then gone. Small, the glow off, the gold turned down: it is no longer an
+   event, it is the receipt of one, and it holds the room the stars are about
+   to tuck into rather than leaving a hole. */
+.mt-gain.kept {
+  font-size:21px; letter-spacing:1px;
+  color:rgba(255,212,59,.72); text-shadow:none; opacity:.9;
+  transition:font-size .34s ease, opacity .34s ease;
+}
+.mt-gain.kept .mt-gp.base, .mt-gain.kept .mt-gp.mul { font-size:19px; }
+.mt-gain.kept .mt-gp.sum { font-size:22px; color:rgba(255,212,59,.95); }
+.mt-gain.kept .mt-ci { width:19px; height:19px; }
+.mt-gain.kept .mt-gp.base .mt-ci, .mt-gain.kept .mt-gp.mul .mt-ci { width:17px; height:17px; }
+.mt-gain .mt-ci { width:28px; height:28px; }
+
+/* THE SUM, IN THREE BEATS (meta.js gainLine). What the score converts to, the
+   player's own level, and what those two make — each part arrives on its own
+   so the "x" reads as a step and not as decoration. The first two are the
+   working and are drawn as working: smaller, and in the gold turned down. The
+   last one is the figure the wallet is paid, so it is the only one that gets
+   the full colour, the size and the glow. */
+.mt-gp {
+  display:flex; align-items:center; gap:6px;
+  opacity:0; transform:translateY(6px) scale(.82);
+  transition:opacity .2s ease, transform .3s cubic-bezier(.2,1.6,.4,1);
+}
+.mt-gp.on { opacity:1; transform:none; }
+/* THE LEVEL, AS A TAG. The one term of this sum the player owns, in the pill
+   the wallet already writes their level in — plain text between two coins made
+   it a third operand, which is the opposite of the point. `mt-lv` is the xp row
+   of the wallet and is a different thing entirely. */
+.mt-lvtag {
+  display:inline-flex; align-items:center;
+  padding:2px 11px; border-radius:999px;
+  border:2px solid rgba(255,212,59,.5);
+  background:rgba(255,212,59,.14);
+  color:var(--gold); font-weight:var(--web-fw, 900); letter-spacing:1.5px;
+}
+.mt-gain.kept .mt-lvtag { padding:1px 9px; border-width:1.5px; }
+.mt-gp.base, .mt-gp.mul {
+  font-size:25px; letter-spacing:1px;
+  color:rgba(255,212,59,.72); text-shadow:none;
+}
+.mt-gp.base .mt-ci, .mt-gp.mul .mt-ci { width:21px; height:21px; opacity:.8; }
+.mt-gp.sum { font-size:38px; }
+
+/* The same figure once the coins are in the wallet is `.mt-tag.up`, drawn on
+   the coin chip's own centre like every other figure this layer writes
+   (meta.js, walletGain). It used to be a variant of this line pinned to the
+   wallet's right edge, which is the TICKET chip. */
+
+#mt-end { display:flex; flex-direction:column; align-items:center; gap:10px; }
+/* THE OFFER'S OWN ROOM, held from the first frame of the end screen on the
+   rounds that will get one (meta.js, reserveEnd): 22 px of air plus a 54 px
+   button. It arrives with the navigation, and a button that arrives must not
+   push the three it arrives beside. */
+#mt-end.slot { min-height:76px; }
+/* THE OFFER IS THE BUTTON, and the row is only what carries it in. The plate
+   under it held a label beside the button, and with the label on the button
+   there is nothing left for a plate to group — a pill inside a pill reads as
+   two controls where there is one. */
+.mt-offer {
+  display:flex; align-items:center; justify-content:center;
+  /* AIR BETWEEN THE ROUND AND THE OFFER. The stat rows are what the run WAS;
+     this asks for the next one, and sitting it 10 px under the last row read
+     as a fifth row of the column. */
+  margin-top:22px;
+  animation:mt-say-in .3s cubic-bezier(.2,1.4,.4,1) both;
+}
+/* The painted box on the offer button — the thing being handed over, at the
+   size of the words beside it. */
+.mt-btn .mt-gift-i {
+  width:40px; height:40px; object-fit:contain; flex:0 0 auto;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));
+}
+
+/* One coin in flight. They are spawned into #frame, so they are in design
+   pixels like everything else and nothing has to convert a scale. */
+.mt-coin {
+  position:absolute; z-index:46; width:34px; height:34px; margin:-17px 0 0 -17px;
+  border-radius:50%; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 36% 30%, #fff3bf, var(--gold) 58%, #e8a000);
+  box-shadow:0 0 14px rgba(255,212,59,.7);
+  color:rgba(0,0,0,.45);
+}
+.mt-coin .mt-ci { width:20px; height:20px; }
+
+/* =========================================================================
+   THE DAILY ROAD — a line of the title screen's menu
+   ========================================================================= */
+
+/* It sits BETWEEN the map's entry and the collection's, and it is the one line
+   of that menu that is not a word. The top of the title screen belongs to the
+   logotype and the painted scene; a banner parked there was a second thing
+   competing with the one thing that sells the game. Down here it reads as what
+   it is — a place to go, like the two lines around it — and it is within a
+   thumb's reach of them.
+
+   IT IS FULL BLEED. `#web-view` insets the menu by 44 px on each side, and the
+   road undoes both: a road that stops short of the glass is a road with an
+   end, and the whole point of the layout below is that it has none. */
+#dl-strip {
+  align-self:stretch;
+  margin:6px -44px 14px;
+  font-family:var(--web-font, inherit);
+}
+
+/* The window on the road. Everything inside it is one translated track, so a
+   day passing SLIDES the road by one pitch rather than repainting it, and the
+   two ends are cut by the frame — which is what says it carries on. The mask
+   softens those cuts just enough that a node sliced in half does not read as a
+   bug; it never fades to nothing, because a road that fades out has ended. */
+.dl-win {
+  position:relative; display:block; width:100%; height:148px; overflow:hidden;
+  transition:opacity .25s ease;
+  -webkit-mask-image:linear-gradient(90deg,
+    rgba(0,0,0,.2) 0, #000 26px, #000 calc(100% - 24px), rgba(0,0,0,.4) 100%);
+  mask-image:linear-gradient(90deg,
+    rgba(0,0,0,.2) 0, #000 26px, #000 calc(100% - 24px), rgba(0,0,0,.4) 100%);
+}
+#dl-strip.taken .dl-win { opacity:.62; }
+
+.dl-track {
+  position:absolute; left:0; top:0; height:100%;
+  display:flex; align-items:flex-start; padding-right:96px;
+  transition:transform .55s cubic-bezier(.3,1,.4,1);
+  will-change:transform;
+}
+
+/* The rail the days stand on. It starts at the FIRST day's centre — that dot
+   is the left end of the road — and runs a whole pitch past the last day
+   drawn, so there is always dotted road heading off the right edge. */
+.dl-rail {
+  position:absolute; left:44px; right:0; top:94px; height:4px;
+  border-radius:2px; pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,
+      var(--panel-line) 0 8px, rgba(255,255,255,0) 8px 18px);
+}
+.dl-rail .done {
+  position:absolute; left:0; top:0; height:100%; border-radius:2px;
+  background:linear-gradient(90deg, var(--good), var(--gold));
+  box-shadow:0 0 12px rgba(255,212,59,.45);
+  transition:width .55s cubic-bezier(.3,1,.4,1);
+}
+
+/* One day. 88 design px of road, whatever is standing on it — and every one of
+   them answers a tap: today's pays, a day ahead explains that it is locked, a
+   day behind shows what it already paid. A day that did nothing when touched
+   would read as a broken control. */
+.dl-cell {
+  position:relative; flex:0 0 88px; width:88px; height:100%;
+  -webkit-appearance:none; appearance:none;
+  background:none; border:0; box-shadow:none; padding:0; margin:0;
+  font:inherit; color:inherit; cursor:pointer;
+  transition:transform .14s ease, opacity .3s ease;
+}
+.dl-cell:active { transform:scale(.94); }
+.dl-cell:focus-visible { outline:2px solid var(--accent); outline-offset:-4px; border-radius:14px; }
+@media (hover: hover) {
+  .dl-cell:hover { opacity:1; }
+  .dl-cell.soon:hover .mark { color:var(--text); }
+}
+
+/* The dot ON the rail, one per day: it is the road's own punctuation, and the
+   first one is the point the road starts from. */
+.dl-cell .dot {
+  position:absolute; left:50%; top:87px; width:12px; height:12px;
+  margin-left:-9px; border-radius:50%;
+  background:var(--bg, #0b0b12); border:3px solid var(--panel-line);
+  transition:border-color .3s ease, background .3s ease;
+}
+.dl-cell .d {
+  position:absolute; left:0; right:0; top:110px; text-align:center;
+  font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--muted); opacity:.75; white-space:nowrap;
+  text-shadow:0 2px 8px rgba(0,0,0,.9);
+}
+
+/* ---- one node, standing ON the rail ------------------------------------- */
+
+/* ABOVE the line, never through it. A road is a line with things standing on
+   it; a line drawn through a row of discs is a progress bar wearing beads. */
+.dl-node {
+  position:absolute; left:50%; bottom:62px; width:72px; height:72px;
+  margin-left:-36px;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* The medallion a day that is not the live one wears: a tick behind, a
+   question mark ahead. */
+.dl-node .disc {
+  position:absolute; left:8px; right:8px; top:8px; bottom:8px;
+  border-radius:50%; border:2px solid var(--panel-line);
+  background:radial-gradient(circle at 50% 34%, rgba(255,255,255,.07), rgba(0,0,0,.66) 70%);
+}
+.dl-node .mark {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:var(--web-fw, 900); color:var(--muted);
+}
+.dl-i { width:22px; height:22px; }
+
+/* The painted box (assets/image/shell/, injected as CONFIG.shellArt) — on a
+   GIFT day and on no other. The road used to be boxes end to end with a
+   question mark on each; now every day wears the thing it pays, so a box means
+   the three-box ceremony and nothing else does. */
+.dl-node .box {
+  position:absolute; left:50%; top:50%; width:54px;
+  transform:translate(-50%, -50%);
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.65));
+  display:block;
+}
+/* THE DAY'S OWN REWARD, on the road. This is what replaced the question mark:
+   experience, coins or a ticket, in the colour that pictogram is drawn in
+   everywhere else in this layer. What is still hidden is the AMOUNT, which is
+   the half worth hiding — "a ticket on Thursday" is a reason to come back and
+   "?" never was. */
+.dl-node .kind {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+}
+.dl-node .kind .dl-i { width:30px; height:30px; }
+.dl-node .kind.coins  { color:var(--gold); }
+.dl-node .kind.ticket { color:var(--accent); }
+.dl-node .kind.xp     { color:var(--good); }
+/* A gift day has a painted box standing where the medallion would be, so it
+   does not also get the medallion. A day already taken gets it back, because
+   the tick needs something to sit on. */
+.dl-cell.gift .disc { display:none; }
+.dl-cell.got .box, .dl-cell.got .kind { display:none; }
+.dl-cell.got .disc { display:block; }
+/* the fallback when a build carries no shell art: the box the CSS draws */
+.dl-node .box.css {
+  width:38px; height:32px; border-radius:6px;
+  background:linear-gradient(180deg, #ffd43b, #f08c00);
+  box-shadow:inset 0 -8px 12px rgba(0,0,0,.28);
+}
+
+/* The two layers only the live day gets: a slow sunburst behind it and a ring
+   breathing out of it. Both are a transform and an opacity, so the menu's one
+   animated node costs one composited layer. */
+.dl-node .burst, .dl-node .halo { position:absolute; display:none; }
+.dl-node .burst {
+  left:50%; top:50%; width:124px; height:124px; margin:-62px 0 0 -62px;
+  border-radius:50%; opacity:.5;
+  background:
+    repeating-conic-gradient(from 0deg,
+      rgba(255,212,59,.5) 0 3deg, rgba(255,212,59,0) 3deg 20deg);
+  -webkit-mask-image:radial-gradient(circle, #000 18%, rgba(0,0,0,.35) 46%, transparent 68%);
+  mask-image:radial-gradient(circle, #000 18%, rgba(0,0,0,.35) 46%, transparent 68%);
+  animation:mt-spin 14s linear infinite;
+}
+.dl-node .halo {
+  left:50%; top:50%; width:66px; height:66px; margin:-33px 0 0 -33px;
+  border-radius:50%; border:2px solid var(--gold);
+  animation:dl-halo 2.2s ease-out infinite;
+}
+@keyframes dl-halo {
+  0%   { transform:scale(.72); opacity:.85; }
+  70%  { transform:scale(1.34); opacity:0; }
+  100% { transform:scale(1.34); opacity:0; }
+}
+
+/* ---- the three states, and no fourth ---------------------------------- */
+
+/* TAKEN — the road behind. Dimmed, ticked, and out of the way. */
+.dl-cell.got { opacity:.5; }
+.dl-cell.got .disc {
+  border-color:rgba(81,207,102,.55);
+  background:radial-gradient(circle at 50% 34%, rgba(81,207,102,.22), rgba(0,0,0,.6) 70%);
+}
+.dl-cell.got .mark { color:var(--good); }
+.dl-cell.got .dot { border-color:var(--good); background:var(--good); }
+
+/* THE ONE DAY THAT KEPT ITS GIFT. The node to the left of today shows what the
+   last claim actually paid instead of a tick — the sticker's own picture, or
+   the coin / ticket / xp pictogram. Greyed, not hidden: it is a receipt, and it
+   sits beside the box about to be opened because that is what makes the box
+   worth opening. It carries a little more light than the rest of the road
+   behind it, or the thing it is there to show would not be readable. */
+.dl-cell.paid { opacity:.72; }
+.dl-cell.paid .disc {
+  border-color:rgba(255,212,59,.34);
+  background:radial-gradient(circle at 50% 34%, rgba(255,255,255,.08), rgba(0,0,0,.66) 70%);
+}
+.dl-node .rw {
+  display:flex; align-items:center; justify-content:center;
+  filter:grayscale(.45);
+}
+.dl-node img.rw { width:50px; height:50px; object-fit:contain; }
+/* bigger than the tick it replaces: a pictogram at a tick's size, drained of
+   half its colour, is a shape rather than a coin */
+.dl-node .rw .dl-i { width:30px; height:30px; }
+.dl-node .rw.coins  { color:var(--gold); }
+.dl-node .rw.ticket { color:var(--accent); }
+.dl-node .rw.xp     { color:var(--good); }
+
+/* STILL TO COME — named, and drained. A day the player cannot open yet must
+   not look like one they can: it keeps its SHAPE, which is what says a ticket
+   is coming on Thursday, and gives up its COLOUR, which is what a road of
+   seven lit pictograms was spending to say nothing. Four coloured icons ahead
+   of today competed with today, and today is the only node here a finger is
+   meant to find.
+
+   The star on every seventh is the one exception, and it is deliberate: it is
+   the single accent left in front of the player, so it is the thing the eye
+   lands on when it looks down the road. */
+.dl-cell.soon { opacity:.5; }
+.dl-cell.soon .kind, .dl-cell.soon .box { filter:grayscale(.9) brightness(.95); }
+.dl-cell.soon .disc { border-color:rgba(255,255,255,.09); }
+.dl-cell.soon .mark { color:var(--muted); opacity:.8; }
+.dl-cell.big.soon { opacity:.62; }
+
+/* A DAY THAT WENT BY. The road no longer throws a player who missed one back
+   to the start, so the day they walked past stays where it was: drained of its
+   colour, still showing what it would have paid. It is the only thing on this
+   strip that says a day is worth opening on the day it opens, and it says it
+   without a word or a penalty. */
+.dl-cell.miss { opacity:.4; }
+.dl-cell.miss .kind, .dl-cell.miss .box { filter:grayscale(1) brightness(.9); }
+.dl-cell.miss .disc { border-style:dashed; }
+.dl-cell.miss .dot { border-color:var(--panel-line); background:transparent; }
+.dl-cell.miss .d { text-decoration:line-through; }
+
+/* TODAY — pinned near the left edge, and the one thing here a finger is
+   looking for. A STATIC glow sits under the animated pair, because a ring that
+   breathes out to nothing is invisible for most of its cycle and the live day
+   must read at a glance, on a still frame, and with reduced motion on. */
+.dl-cell.live .dl-node::before {
+  content:""; position:absolute; left:50%; top:50%;
+  width:96px; height:96px; margin:-48px 0 0 -48px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,212,59,.42), rgba(255,212,59,.12) 46%, rgba(255,212,59,0) 70%);
+}
+.dl-cell.live .disc { display:none; }
+.dl-cell.live .box { width:74px; animation:dl-bob 2.4s ease-in-out infinite; }
+.dl-cell.live .kind .dl-i { width:40px; height:40px; }
+.dl-cell.live .kind { animation:dl-bob-i 2.4s ease-in-out infinite; }
+@keyframes dl-bob-i {
+  0%,100% { transform:translateY(0) scale(1); }
+  50%     { transform:translateY(-5px) scale(1.06); }
+}
+.dl-cell.live .burst, .dl-cell.live .halo { display:block; }
+.dl-cell.live .dot { border-color:var(--gold); background:var(--gold); }
+.dl-cell.live .d { color:var(--gold); font-weight:var(--web-fw, 900); opacity:1; }
+@keyframes dl-bob {
+  0%,100% { transform:translate(-50%, -50%) scale(1); }
+  50%     { transform:translate(-50%, -58%) scale(1.03); }
+}
+
+/* EVERY SEVENTH — the run's own prize, and it is visible from day one. It
+   keeps its painted box while it is still ahead, drained of colour behind a
+   gold star: the player can see what the week is for without being able to
+   touch it yet. It comes round again seven days later, which is what says the
+   road repeats rather than ending. */
+.dl-cell.big .box { width:58px; }
+/* The star is a BADGE on the box, and it stays on the day the box opens: a
+   seventh day that dropped its star the morning it came round would lose the
+   mark exactly when it pays the rich roll. */
+.dl-cell.big.soon .mark, .dl-cell.big.live .mark {
+  position:absolute; right:2px; top:4px; z-index:3;
+  width:24px; height:24px; border-radius:50%;
+  background:var(--gold); color:#0b0b12;
+  box-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+.dl-cell.big.soon .mark .dl-i, .dl-cell.big.live .mark .dl-i { width:14px; height:14px; }
+/* the painted mark IS the badge — no disc under it, and big enough to read */
+.dl-cell.big.soon .mark.art, .dl-cell.big.live .mark.art {
+  background:none; box-shadow:none; right:-2px; top:-2px; width:28px; height:28px;
+}
+.dl-cell.big.soon .mark.art .dl-i, .dl-cell.big.live .mark.art .dl-i {
+  width:28px; height:28px;
+}
+/* The ×5 plate is a WIDE mark where the star was square, so it takes a box of
+   its own and sits ACROSS the corner of the box rather than on it: a plate
+   cropped to 28 px would be the one thing on this road nobody can read. */
+.dl-cell.big.soon .mark.wide, .dl-cell.big.live .mark.wide {
+  right:-14px; top:-8px; width:auto; height:auto;
+}
+.dl-mult { width:56px; height:auto; }
+.dl-cell.big.live .dl-mult { width:66px; }
+.dl-cell.big.live .box { width:78px; }
+.dl-cell.big .dot { border-color:var(--gold); }
+.dl-cell.big .d { color:var(--gold); opacity:.85; }
+
+/* A panel open over the menu takes the whole band: the road goes with it
+   rather than showing through the card's margins. */
+#screen-intro.web-open #dl-strip { display:none; }
+
+/* =========================================================================
+   MOTION, FOR A PLAYER WHO ASKED FOR LESS OF IT
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-gift, .mt-gift.g0, .mt-gift.g1, .mt-gift.g2, .mt-badge.on, .mt-rw.shiny,
+  .mt-adslot .bar, .mt-rw-rar.r3,
+  .al-tag.new, .al-tag.new::after,
+  .dl-node .burst, .dl-node .halo, .dl-cell.live .box, .dl-cell.live .kind,
+  .mt-badge-rw .rays, .mt-badge-rw .ring,
+  .mt-gift .rays, .mt-gift .flash, .mt-gift.open .face,
+  .mt-hit { animation:none; }
+  .mt-home.go { transition:opacity 200ms ease; }
+  /* The figure still has to be READABLE — it is the only thing that says what
+     a purchase cost — so it holds still and fades instead of flying. */
+  .mt-tag { animation:mt-tag-hold 1.3s ease both; }
+  @keyframes mt-tag-hold { 0%,70% { opacity:1; } 100% { opacity:0; } }
+  .mt-gift.open .face { transform:translate(-50%, -52%); }
+  .dl-node .halo { opacity:.5; transform:scale(1); }
+  .dl-cell.live .box { transform:translate(-50%, -50%); }
+  .dl-track, .dl-rail .done { transition:none; }
+  .mt-rw { animation:none; }
+  .mt-card { transition:none; transform:none; }
+  /* The reveal's ceremony is HIDDEN rather than frozen: every one of these
+     nodes is invisible only because its animation holds it at zero, so
+     `animation:none` would leave a white disc and twenty-six embers parked on
+     the card. The card still says what it drew, and the double still closes
+     itself on its own timer. */
+  .al-fx { display:none; }
+}

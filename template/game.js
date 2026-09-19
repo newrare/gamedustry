@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "GAME TITLE",
+    title:   "Game title",
     /* ONE sentence teaching the core mechanic, never two, and the words that
        carry it wrapped in <b class="w-…"> so they read in colour. The animated
        stage below the line shows the same thing in motion — that is the pitch,
@@ -68,15 +68,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "GAME OVER",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Game over",
+      timeUp:     "Time's up!"
     }
   };
 
@@ -142,7 +142,7 @@
       best = Store.get("bestScore", 0);
       dot = { x: Layout.cx, y: Layout.cy, r: 78, vx: Rand.pick([-1, 1]) * 280, vy: 220 };
       HUD.setScoreNow(0);
-      HUD.setLeft(best, "BEST");
+      HUD.setLeft(best, "Best");
       Fx.reset();
     }
 
@@ -151,7 +151,7 @@
       if (dx * dx + dy * dy > dot.r * dot.r) {           // miss: break the chain
         combo = 0;
         Fx.shake(4, 0.15);
-        Pop.text(p.x, p.y, "MISS", { color: "#ff6b6b", size: 34 });
+        Pop.text(p.x, p.y, "Miss", { color: "#ff6b6b", size: 34 });
         return;
       }
       combo++; hits++;
@@ -171,11 +171,11 @@
 
       // Screen-space feedback: milestones get the dramatic treatment.
       if (combo > 0 && combo % 5 === 0) {
-        Pop.show(combo >= 15 ? "ultra" : "combo", { word: "COMBO x" + combo, sub: "+" + combo * 20 });
+        Pop.show(combo >= 15 ? "ultra" : "combo", { word: "Combo x" + combo, sub: "+" + combo * 20 });
         Sound.arp([523, 659, 784, 1046], 55, 0.14, "triangle");
         score += combo * 20; HUD.setScore(score);
       } else if (combo === 3) {
-        Pop.show("streak", { word: "NICE CHAIN" });
+        Pop.show("streak", { word: "Nice chain" });
       }
 
       // Teleport + speed up.
@@ -212,14 +212,14 @@
     function onTimeUp() {
       var stars = score >= 900 ? 3 : score >= 450 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? "PERFECT!" : CONFIG.copy.timeUp,
+        title: stars === 3 ? "Perfect!" : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,
         rows: [
-          { label: "HITS", value: hits },
-          { label: "BEST CHAIN", value: combo, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+          { label: "Hits", value: hits },
+          { label: "Best chain", value: combo, grade: "accent" },
+          { label: "Best score", value: Math.max(score, best), grade: "gold" }
         ]
       });
     }

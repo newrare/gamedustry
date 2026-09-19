@@ -297,12 +297,12 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
      line     the frontier: [wide glow alpha, thin line alpha, colour]. */
   const V = [
     {
-      key: "VOID", note: "The flat one. A dark sector with a hard edge — the baseline every other card has to beat.",
+      key: "Void", note: "The flat one. A dark sector with a hard edge — the baseline every other card has to beat.",
       edge: "straight", amp: 0, band: 0, line: ["#8b6cff", 0.0, 0.5],
       bake(g) { g.fillStyle = "rgba(5,3,16,0.88)"; g.fillRect(0, 0, W, H); }
     },
     {
-      key: "ROT", note: "Unlit, gone green at the joints: blooms of corrosion, banks of brume, spores. The gears are still there, nothing shines on them.",
+      key: "Rot", note: "Unlit, gone green at the joints: blooms of corrosion, banks of brume, spores. The gears are still there, nothing shines on them.",
       edge: "wave", amp: 0.13, band: 0.55, line: ["#8fe0c0", 0.07, 0.30], motes: "#9fe8cf",
       bake(g) {
         g.fillStyle = "rgba(3,9,8,0.80)"; g.fillRect(0, 0, W, H);
@@ -332,7 +332,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "BRUME", note: "Pale instead of dark: the machinery is not switched off, it is fogged out. Softest read, and the one that risks not looking dead enough.",
+      key: "Brume", note: "Pale instead of dark: the machinery is not switched off, it is fogged out. Softest read, and the one that risks not looking dead enough.",
       edge: "wave", amp: 0.16, band: 0.9, line: ["#dfeef0", 0.12, 0.34], motes: "#eaf4f6",
       bake(g) {
         g.fillStyle = "rgba(12,16,26,0.42)"; g.fillRect(0, 0, W, H);
@@ -350,7 +350,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "FROST", note: "Cold: the gears seize under ice. Shard edge, blue-white bloom, a few catchlights. Reads as stopped rather than rotten.",
+      key: "Frost", note: "Cold: the gears seize under ice. Shard edge, blue-white bloom, a few catchlights. Reads as stopped rather than rotten.",
       edge: "crystal", amp: 0.11, band: 0.4, line: ["#bfe9ff", 0.1, 0.42], motes: "#e6f7ff",
       bake(g) {
         g.fillStyle = "rgba(8,18,34,0.74)"; g.fillRect(0, 0, W, H);
@@ -376,7 +376,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "RUST", note: "The machine corroding: warm brown pitting, an eaten crumb of an edge. Fights the gold of the CTA and the bead colours — check that first.",
+      key: "Rust", note: "The machine corroding: warm brown pitting, an eaten crumb of an edge. Fights the gold of the CTA and the bead colours — check that first.",
       edge: "crumble", amp: 0.07, band: 0.3, line: ["#e0873f", 0.08, 0.34],
       bake(g) {
         g.fillStyle = "rgba(16,8,4,0.76)"; g.fillRect(0, 0, W, H);
@@ -397,7 +397,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "INK", note: "Ink soaking into paper: near black, big lazy blotches, one thin wet highlight on the rim. The most graphic of the ten.",
+      key: "Ink", note: "Ink soaking into paper: near black, big lazy blotches, one thin wet highlight on the rim. The most graphic of the ten.",
       edge: "blob", amp: 0.3, band: 0.2, line: ["#c9c2ff", 0.05, 0.55],
       bake(g) {
         g.fillStyle = "rgba(4,3,10,0.93)"; g.fillRect(0, 0, W, H);
@@ -413,7 +413,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "STATIC", note: "Dead signal: colour drained, scanlines, a frontier that will not hold still. Says 'this area is offline' louder than any of the others.",
+      key: "Static", note: "Dead signal: colour drained, scanlines, a frontier that will not hold still. Says 'this area is offline' louder than any of the others.",
       edge: "jitter", amp: 0.05, band: 0.15, line: ["#ffffff", 0.06, 0.5],
       bake(g) {
         g.globalCompositeOperation = "saturation";
@@ -431,7 +431,7 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "EMBER", note: "Burnt out: charcoal gears with embers still alive in them, and sparks drifting up. The only warm candidate that stays dark.",
+      key: "Ember", note: "Burnt out: charcoal gears with embers still alive in them, and sparks drifting up. The only warm candidate that stays dark.",
       edge: "wave", amp: 0.1, band: 0.45, line: ["#ff9a3c", 0.09, 0.36], sparks: true,
       bake(g) {
         g.fillStyle = "rgba(6,4,6,0.88)"; g.fillRect(0, 0, W, H);
@@ -457,12 +457,12 @@ figcaption span { display:block; margin-top:3px; font-weight:500; font-size:11px
       }
     },
     {
-      key: "CORONA", note: "A real eclipse: total black behind, and every bit of the light pushed into a burning rim. Cleanest silhouette, no texture at all.",
+      key: "Corona", note: "A real eclipse: total black behind, and every bit of the light pushed into a burning rim. Cleanest silhouette, no texture at all.",
       edge: "straight", amp: 0, band: 0, line: ["#ffe9b0", 0.3, 0.9], corona: true,
       bake(g) { g.fillStyle = "rgba(2,2,6,0.96)"; g.fillRect(0, 0, W, H); }
     },
     {
-      key: "SPORE", note: "Alive: veins creeping through the dark and bioluminescent seeds pulsing in it. Tendril edge — the frontier reaches before it arrives.",
+      key: "Spore", note: "Alive: veins creeping through the dark and bioluminescent seeds pulsing in it. Tendril edge — the frontier reaches before it arrives.",
       edge: "tendril", amp: 0.1, band: 0.5, line: ["#7bffcb", 0.09, 0.34], motes: "#7bffcb", pulse: true,
       bake(g) {
         g.fillStyle = "rgba(2,12,12,0.86)"; g.fillRect(0, 0, W, H);

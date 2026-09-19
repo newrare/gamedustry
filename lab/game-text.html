@@ -189,14 +189,14 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
   <h1>Copy desk<small id="sub">every word a game shows</small></h1>
   <select id="game-pick"></select>
   <div id="modes">
-    <button data-mode="all" class="on">ALL</button>
+    <button data-mode="all" class="on">All</button>
     <button data-mode="en">EN</button>
     <button data-mode="fr">FR</button>
-    <button data-mode="changed">CHANGED</button>
+    <button data-mode="changed">Changed</button>
   </div>
   <input type="text" id="filter" placeholder="filter — a word, a context, a file  ( / )">
   <div id="stats"></div>
-  <button id="apply">APPLY</button>
+  <button id="apply">Apply</button>
 </div>
 
 <div id="list"><div class="empty">loading…</div></div>
@@ -331,7 +331,7 @@ function drawHead() {
   var n = countChanged();
   var btn = $("apply");
   btn.className = n ? "live" : "";
-  btn.innerHTML = n ? "APPLY <b>" + n + "</b>" : "APPLY";
+  btn.innerHTML = n ? "Apply <b>" + n + "</b>" : "Apply";
   if (!scan) return;
   var s = ['<span><b>' + scan.counts.en + "</b> EN</span>", '<span><b>' + scan.counts.fr + "</b> FR</span>"];
   if (scan.counts.fragments) s.push("<span>" + scan.counts.fragments + " fragments</span>");
@@ -437,7 +437,7 @@ $("apply").addEventListener("click", function () {
   var edits = scan.rows.filter(changed).map(function (r) {
     return { id: r.id, was: r.text, text: plan[r.id] };
   });
-  $("apply").innerHTML = "APPLYING…";
+  $("apply").innerHTML = "Applying…";
   fetch("/api/apply", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#40ecff",
     "accent2": "#ff4fbe"
+  },
+  "art": {
+    "objects": {
+      "decor-01": "spinshock-spin-01",
+      "decor-04": "spinshock-spin-04",
+      "decor-08": "spinshock-spin-08",
+      "decor-10": "spinshock-spin-10"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "VERSUS",
+            "kicker": "Versus",
             "line": "Impact and <b>rhythm</b>"
           },
           {
-            "kicker": "SHOCKWAVE",
+            "kicker": "Shockwave",
             "line": "Smash the others into the <b>walls</b>"
           },
           {
-            "kicker": "SPIN",
+            "kicker": "Spin",
             "line": "Keep your <b>speed</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "VERSUS",
+            "kicker": "Versus",
             "line": "Impact et <b>rythme</b>"
           },
           {
-            "kicker": "ONDE DE CHOC",
+            "kicker": "Onde de choc",
             "line": "Explose les autres sur les <b>murs</b>"
           },
           {
-            "kicker": "ROTATION",
+            "kicker": "Rotation",
             "line": "Conserve la <b>vitesse</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,40 +125,40 @@
       "fr": {
         "tagline": "Éjecte puis détruis les toupies rivales avec un <b class=\"w-tap\">TAP</b> pile à l’<b class=\"w-hit\">impact</b>",
         "strings": {
-          " SHOCK": " CHOC",
-          "% SPIN": "% DE ROTATION",
-          "BEARINGS WEARING OUT": "ROULEMENTS À BOUT",
-          "BEST": "RECORD",
-          "BEST COMBO": "MEILLEUR COMBO",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "BOSS DOWN!": "BOSS DÉTRUIT !",
-          "BOSS TOP": "TOUPIE BOSS",
-          "COMBO x": "COMBO x",
-          "DOUBLE": "DOUBLE",
-          "FINAL SCORE": "SCORE FINAL",
-          "GREAT": "SUPER",
-          "INSTALL NOW": "INSTALLER",
+          " shock": " choc",
+          "% spin": "% de rotation",
+          "Bearings wearing out": "Roulements à bout",
+          "Best": "Record",
+          "Best combo": "Meilleur combo",
+          "Best score": "Meilleur score",
+          "Boss down!": "Boss détruit !",
+          "Boss top": "Toupie boss",
+          "Combo x": "Combo x",
+          "Double": "Double",
+          "Final score": "Score final",
+          "Great": "Super",
+          "Install now": "Installer",
           "KO +": "KO +",
-          "MISS": "RATÉ",
+          "Miss": "Raté",
           "OK": "OK",
-          "PERFECT": "PARFAIT",
-          "PERFECT HITS": "COUPS PARFAITS",
-          "PERFECT TAPS ONLY": "TAPS PARFAITS SEULEMENT",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          "Perfect": "Parfait",
+          "Perfect hits": "Coups parfaits",
+          "Perfect taps only": "Taps parfaits seulement",
+          "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "SHOCK TO RECOVER": "CHOQUE POUR REMONTER",
-          "SHOCKWAVES": "ONDES DE CHOC",
-          "SPIN": "ROTATION",
-          "SPIN GONE": "PLUS DE ROTATION",
-          "SPIN LOST": "ROTATION PERDUE",
-          "SPIN MASTER!": "MAÎTRE DE LA TOUPIE !",
-          "SPINNING OUT": "ROTATION EN CHUTE",
-          "SPUN OUT!": "TOUPIE À TERRE !",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "TRIPLE": "TRIPLE",
-          "WRECKED": "FRACASSÉ"
+          "Score": "Score",
+          "Shock to recover": "Choque pour remonter",
+          "Shockwaves": "Ondes de choc",
+          "Spin": "Rotation",
+          "Spin gone": "Plus de rotation",
+          "Spin lost": "Rotation perdue",
+          "Spin master!": "Maître de la toupie !",
+          "Spinning out": "Rotation en chute",
+          "Spun out!": "Toupie à terre !",
+          "Tap to play": "Tap pour jouer",
+          "Time's up!": "Temps écoulé !",
+          "Triple": "Triple",
+          "Wrecked": "Fracassé"
         }
       }
     },
@@ -197,18 +205,18 @@
           25
         ],
         "en": [
-          "SPARK",
-          "INSULATED",
-          "SPLIT",
-          "GROUNDED",
-          "OVERCHARGE"
+          "Spark",
+          "Insulated",
+          "Split",
+          "Grounded",
+          "Overcharge"
         ],
         "fr": [
-          "ÉTINCELLE",
-          "ISOLÉES",
-          "SCISSION",
-          "MASSE",
-          "SURCHARGE"
+          "Étincelle",
+          "Isolées",
+          "Scission",
+          "Masse",
+          "Surcharge"
         ]
       }
     }

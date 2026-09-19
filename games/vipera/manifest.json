@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#4dff9b",
     "accent2": "#12b86a"
+  },
+  "art": {
+    "objects": {
+      "decor-02": "vipera-jungle-02",
+      "decor-03": "vipera-jungle-03",
+      "decor-14": "vipera-jungle-14",
+      "decor-17": "vipera-jungle-17"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "TAP",
+            "kicker": "Tap",
             "line": "<b>Reptile</b> movement"
           },
           {
-            "kicker": "BONUS",
+            "kicker": "Bonus",
             "line": "Mutation and <b>evolution</b>"
           },
           {
-            "kicker": "TRAPS",
+            "kicker": "Traps",
             "line": "Watch out for <b>danger</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "TAP",
+            "kicker": "Tap",
             "line": "Déplacement <b>reptilien</b>"
           },
           {
-            "kicker": "BONUS",
+            "kicker": "Bonus",
             "line": "Mutation et <b>évolution</b>"
           },
           {
-            "kicker": "PIEGE",
+            "kicker": "Piège",
             "line": "Attention aux <b>dangers</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,35 +125,35 @@
       "fr": {
         "tagline": "<b class=\"w-tap\">TAP</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour un maximum de bonus",
         "strings": {
-          " BLOCKS": " BLOCS",
-          "ADDER": "ASPIC",
-          "APEX VIPER!": "VIPÈRE SUPRÊME !",
-          "BASILISK": "BASILIC",
-          "BEST CHAIN": "MEILLEURE CHAÎNE",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "BITTEN!": "MORDU !",
-          "BODY LOST": "CORPS PERDU",
-          "CHAIN x": "CHAÎNE x",
-          "DEEPER": "PLUS PROFOND",
-          "DISTANCE (M)": "DISTANCE (M)",
-          "EVOLVED": "ÉVOLUTION",
-          "FINAL SCORE": "SCORE FINAL",
-          "GOLD EGG": "ŒUF D'OR",
-          "GREAT RUN!": "SUPERBE PARTIE !",
-          "INSTALL NOW": "INSTALLER",
-          "LAST LIFE": "DERNIÈRE VIE",
-          "LENGTH": "LONGUEUR",
-          "LIVES": "VIES",
-          "LONGEST BODY": "CORPS LE PLUS LONG",
-          "MAMBA": "MAMBA",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "SCORE": "SCORE",
+          " blocks": " blocs",
+          "Adder": "Aspic",
+          "Apex viper!": "Vipère suprême !",
+          "Basilisk": "Basilic",
+          "Best chain": "Meilleure chaîne",
+          "Best score": "Meilleur score",
+          "Bitten!": "Mordu !",
+          "Body lost": "Corps perdu",
+          "Chain x": "Chaîne x",
+          "Deeper": "Plus profond",
+          "Distance (m)": "Distance (m)",
+          "Evolved": "Évolution",
+          "Final score": "Score final",
+          "Gold egg": "Œuf d'or",
+          "Great run!": "Superbe partie !",
+          "Install now": "Installer",
+          "Last life": "Dernière vie",
+          "Length": "Longueur",
+          "Lives": "Vies",
+          "Longest body": "Corps le plus long",
+          "Mamba": "Mamba",
+          "Play the full game": "Jouer au jeu complet",
+          "Score": "Score",
           "Slither again": "Ramper encore",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "TORN APART": "DÉCHIQUETÉ",
-          "VIPER": "VIPÈRE"
+          "Tap to play": "Tap pour jouer",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "Torn apart": "Déchiqueté",
+          "Viper": "Vipère"
         }
       }
     },

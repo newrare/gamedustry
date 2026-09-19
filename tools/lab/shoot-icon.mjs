@@ -21,6 +21,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -220,10 +221,12 @@ async function shoot(client, sid, slug, outPath) {
 // --- Run -----------------------------------------------------------------
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
+reportSweep(sweep("shoot-icon-"));
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-icon-"));
 var failed = 0;
 
 var chrome = await launchChrome(path.join(tmpDir, "profile"));
+var kill = reap(chrome.child, { label: "shoot-icon" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 
@@ -246,7 +249,7 @@ if (missing.length) {
 }
 
 client.close();
-chrome.child.kill();
+kill();
 await sleep(400);                                    // let Chrome release its profile
 if (!keep) fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
 else console.log("kept: " + tmpDir);

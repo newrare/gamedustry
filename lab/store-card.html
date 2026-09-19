@@ -584,7 +584,7 @@ function runsOf(text) {
 function textOf(it) {
   if (it.src === "free") return { line: it.line || "", kicker: it.kicker || "" };
   var lines = ((game().copy || {})[state.lang]) || [];
-  if (!lines.length) return { line: it.line || "TAGLINE", kicker: it.kicker || "" };
+  if (!lines.length) return { line: it.line || "Tagline", kicker: it.kicker || "" };
   var l = lines[((it.ref | 0) % lines.length + lines.length) % lines.length];
   return { line: l.line, kicker: l.kicker };
 }
@@ -618,12 +618,29 @@ function wrapRuns(g, runs, maxW) {
    measured before it is drawn, because every piece on this card is positioned
    by its centre. `letterSpacing` on a 2D context is Chrome-only and this is a
    lab page — it is what makes a kicker read as a kicker. */
+/* Capitals, the house way: the accents come off with them, exactly as the
+   motor's own `upper` does it (packages/engine). A card is composed out of a
+   game's manifest, which is written in normal case like everything else. */
+function caps(s) {
+  var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
+  var out = "", up = String(s || "").toUpperCase(), i, c, k;
+  for (i = 0; i < up.length; i++) {
+    c = up.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
+
 function layoutText(g, it) {
   var st = STYLES[it.style] || STYLES.hero;
   var f = fontStack();
   var t = textOf(it);
-  var line = st.caps ? (t.line || "").toUpperCase() : (t.line || "");
-  var kick = st.caps ? (t.kicker || "").toUpperCase() : (t.kicker || "");
+  var line = st.caps ? caps(t.line || "") : (t.line || "");
+  var kick = st.caps ? caps(t.kicker || "") : (t.kicker || "");
   var size = it.size;
   var boxW = it.w;
   var lines;

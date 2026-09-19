@@ -631,7 +631,7 @@ function land(atSpin) {
     score = Math.max(0, score - 40);
     shake = 13; flash = 1; flashCol = BADC;
     burst(p.x, p.y, 22, BADC, 330);
-    pop(p.x, p.y - 26, "JAM  -40", BADC);
+    pop(p.x, p.y - 26, upper("Jam  -40"), BADC);
     if (K.lives > 0) {
       lives--;
       if (lives <= 0) { over = true; shake = 20; }
@@ -747,11 +747,35 @@ function drawGhost() {
   ctx.lineTo(entry.x + 8, entry.y - 44); ctx.closePath(); ctx.fill();
 }
 
+/* Capitals, the house way: accents come off, and a lowercase run glued to a
+   digit (a unit, a multiplier) keeps its case. Every string in this repo is
+   written in normal case and the screens that shout ask for it here — the same
+   rule as the motor's `upper` (packages/engine, docs/ENGINE.md). */
+function upper(str) {
+  var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
+  var shouted = String(str == null ? "" : str).replace(
+    /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+  var out = "", i, c, k;
+  for (i = 0; i < shouted.length; i++) {
+    c = shouted.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
+
 function drawHud() {
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "rgba(255,255,255,.42)";
   ctx.font = "700 15px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
-  ctx.fillText("SCORE", 30, 48);
+  ctx.fillText(upper("Score"), 30, 48);
   ctx.fillStyle = "#ffffff";
   ctx.font = "900 46px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
   ctx.fillText(String(score), 30, 92);
@@ -764,7 +788,7 @@ function drawHud() {
   ctx.textAlign = "right";
   ctx.fillStyle = "rgba(255,255,255,.42)";
   ctx.font = "700 15px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
-  ctx.fillText(K.lives > 0 ? "LIVES" : "ENDLESS", DW - 30, 48);
+  ctx.fillText(upper(K.lives > 0 ? "Lives" : "Endless"), DW - 30, 48);
   if (K.lives > 0) {
     for (var i = 0; i < K.lives; i++) {
       ctx.beginPath();
@@ -775,7 +799,7 @@ function drawHud() {
   }
   ctx.fillStyle = "rgba(255,255,255,.42)";
   ctx.font = "700 14px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
-  ctx.fillText(balls.length + " / " + slotN + " SLOTS", DW - 30, 120);
+  ctx.fillText(upper(balls.length + " / " + slotN + " slots"), DW - 30, 120);
   ctx.textAlign = "left";
 }
 
@@ -784,7 +808,7 @@ function drawBanner(title, sub) {
   ctx.textAlign = "center";
   ctx.fillStyle = "#ffffff";
   ctx.font = "900 64px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
-  ctx.fillText(title, DW / 2, DH / 2 - 10);
+  ctx.fillText(upper(title), DW / 2, DH / 2 - 10);
   ctx.fillStyle = "rgba(255,255,255,.6)";
   ctx.font = "700 22px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif";
   ctx.fillText(sub, DW / 2, DH / 2 + 34);
@@ -860,8 +884,8 @@ function render() {
     ctx.fillRect(0, 0, DW, DH);
   }
   drawHud();
-  if (over) drawBanner("JAMMED", "click the board to run it again");
-  else if (paused) drawBanner("PAUSED", "P, or the button, resumes");
+  if (over) drawBanner("Jammed", "click the board to run it again");
+  else if (paused) drawBanner("Paused", "P, or the button, resumes");
 }
 
 /* ===========================================================================

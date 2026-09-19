@@ -121,8 +121,30 @@ body{
     steel: { light: "#eef4ff", core: "#93a5c4", edge: "#3d4c6b" }
   };
   var TYPES = ["none", "gold", "bomb", "row", "col", "plus", "steel"];
-  var TYPE_LBL = { none: "PLAIN", gold: "GOLD", bomb: "BOMB", row: "ROW",
-                   col: "COLUMN", plus: "+1 BALL", steel: "STEEL" };
+  /* Capitals, the house way: accents come off, and a lowercase run glued to a
+     digit keeps its case. Same rule as the motor's `upper` (packages/engine). */
+  function upper(str) {
+    var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  var TYPE_LBL = { none: "Plain", gold: "Gold", bomb: "Bomb", row: "Row",
+                   col: "Column", plus: "+1 ball", steel: "Steel" };
 
   /* ==================================================================
      SMALL HELPERS
@@ -884,7 +906,7 @@ body{
       typeX.fillStyle = "#6f6c8d";
       typeX.font = "800 10px -apple-system,Segoe UI,Roboto,sans-serif";
       typeX.textAlign = "center";
-      typeX.fillText(TYPE_LBL[TYPES[i]], px + bw / 2, py + bh + 16);
+      typeX.fillText(upper(TYPE_LBL[TYPES[i]]), px + bw / 2, py + bh + 16);
     }
   }
 

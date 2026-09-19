@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "ORBINITY",
+    title:   "Orbinity",
     /* One sentence, and nothing else: the demo caption is dropped in the SKIN
        because the stage below already plays the orbit / release / catch. */
     tagline: "Tap to fling the <b class=\"w-comet\">comet</b><br>from <b class=\"w-planet\">planet</b> to <b class=\"w-planet\">planet</b> and chain the combos",
@@ -37,15 +37,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "LOST IN SPACE",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Lost in space",
+      timeUp:     "Time's up!"
     },
 
     /* --- Orbinity tunables ------------------------------------------------
@@ -823,7 +823,7 @@
       comet.angle = na;
 
       // Stalling two whole turns on the same planet kills the chain.
-      if (orbitTurns >= C.maxOrbits && !comboBroken) breakCombo("TOO SLOW");
+      if (orbitTurns >= C.maxOrbits && !comboBroken) breakCombo("Too slow");
     }
 
     function updateFlight(dt) {
@@ -956,11 +956,11 @@
       if (tier > wasTier) {
         Fx.ring(comet.x, comet.y, { from: 18, to: 170, color: col, width: 9, life: 0.5 });
         Fx.burst(comet.x, comet.y, { color: [col, "#ffffff"], count: 18, speed: 330, size: 6, life: 0.55 });
-        Pop.show("perfect", { word: "EVOLVED", sub: Lang.t("TIER ") + (tier + 1),
+        Pop.show("perfect", { word: "Evolved", sub: Lang.t("Tier ") + (tier + 1),
                               at: "upper", hold: 380 });
         Sound.clip("evolve", 0.7);
       } else if (combo === 2) {
-        Pop.show("streak", { word: "CHAIN ALIVE", at: "upperLeft", hold: 300 });
+        Pop.show("streak", { word: "Chain alive", at: "upperLeft", hold: 300 });
       }
       if (combo % 5 === 0) {
         var bonus = CONFIG.score.milestone * Math.min(combo, CONFIG.score.maxMult);
@@ -968,7 +968,7 @@
         HUD.setScore(score);
         // Deep chains graduate from the sticker to the full hero callout.
         Pop.show(combo >= 15 ? "ultra" : "combo",
-                 { word: Lang.t("COMBO x") + combo, sub: "+" + bonus,
+                 { word: Lang.t("Combo x") + combo, sub: "+" + bonus,
                    hold: combo >= 15 ? 460 : 380 });
         Overlay.vignette(col, 1, 520);                   // edge glow in tier colour
         Sound.clip("milestone", 0.65);
@@ -983,7 +983,7 @@
       Fx.flash("#ff4d6d", 0.2, 3);
       Overlay.vignette("#ff4d6d", 0.85, 420);
       Sound.clip("wall", 0.6);
-      breakCombo("WALL HIT");
+      breakCombo("Wall hit");
     }
 
     function breakCombo(reason) {
@@ -997,13 +997,13 @@
         // A big chain deserves a loud eulogy; a small one just a toast.
         if (had >= 5 || overtime) {
           Pop.show("danger", { word: reason,
-                               sub: overtime ? Lang.t("RUN OVER — x") + had : Lang.t("COMBO x") + had + Lang.t(" LOST"),
+                               sub: overtime ? Lang.t("Run over — x") + had : Lang.t("Combo x") + had + Lang.t(" lost"),
                                hold: 420 });
         } else {
-          Pop.show("alert", { word: reason, sub: "COMBO LOST" });
+          Pop.show("alert", { word: reason, sub: "Combo lost" });
         }
         if (had >= 2) {
-          Pop.show("score", { word: "x" + had + Lang.t(" LOST"), cls: "pop-lost",
+          Pop.show("score", { word: "x" + had + Lang.t(" lost"), cls: "pop-lost",
                               at: { x: comet.x, y: comet.y - 48 } });
         }
         Sound.clip("lost", 0.55);
@@ -1015,7 +1015,7 @@
     // slide across the HUD.
     function showCombo() {
       refreshTier();
-      HUD.setLeft("x" + Math.max(1, combo), "COMBO",
+      HUD.setLeft("x" + Math.max(1, combo), "Combo",
                   tier >= 3 ? "blaze" : (tier >= 2 ? "hot" : ""));
     }
 
@@ -1310,7 +1310,7 @@
       // out of the play area, and it is gone in half a second.
       Overlay.vignette(TIERS[tier].halo, 0.7, 480);
       Fx.flash("#ffffff", 0.1, 3);
-      Pop.show("combo", { word: "OVERTIME", sub: "KEEP THE CHAIN ALIVE",
+      Pop.show("combo", { word: "Overtime", sub: "Keep the chain alive",
                           cls: "pop-ot", at: "top", hold: 300 });
       Sound.clip("milestone", 0.75, 0.82);
       Ad.track("overtime", { score: score, combo: combo });
@@ -1327,32 +1327,32 @@
       otT += dt;
       // The chain window went cold — a wall, a stall, or simply too slow for
       // the window overtime has left. This is the natural end of a great run.
-      if (comboT <= 0) { breakCombo("CHAIN COLD"); return; }
+      if (comboT <= 0) { breakCombo("Chain cold"); return; }
 
       // Call out the squeeze as it bites, twice, so losing never feels random:
       // the player is told the window is closing before it closes on them.
       var w = comboWindow();
       if (otWarn < 1 && w <= C.window * 0.5) {
         otWarn = 1;
-        Pop.show("danger", { word: "WINDOW CLOSING", sub: w.toFixed(1) + Lang.t("s PER HOP"),
+        Pop.show("danger", { word: "Window closing", sub: w.toFixed(1) + Lang.t("s per hop"),
                              at: "upperLeft", hold: 300 });
       } else if (otWarn < 2 && w <= C.window * 0.25) {
         otWarn = 2;
-        Pop.show("danger", { word: "LAST BREATH", sub: w.toFixed(1) + Lang.t("s PER HOP"),
+        Pop.show("danger", { word: "Last breath", sub: w.toFixed(1) + Lang.t("s per hop"),
                              at: "upperLeft", hold: 300 });
         Overlay.vignette("#ff4d6d", 0.7, 900);
       }
 
       // The timer slot counts the current window down, in tenths.
       var s = Math.ceil(comboT * 10) / 10;
-      if (s !== otShown) { otShown = s; HUD.setRight(s.toFixed(1), "OVERTIME", "warn"); }
+      if (s !== otShown) { otShown = s; HUD.setRight(s.toFixed(1), "Overtime", "warn"); }
     }
 
     // The chain that was holding the round open just died.
     function queueEnd() {
       overtime = false;
       endIn = OT.linger;
-      HUD.setRight("0.0", "OVERTIME", "warn");
+      HUD.setRight("0.0", "Overtime", "warn");
       Overlay.vignette("#ff4d6d", 1, 600);
       Fx.shake(11, 0.3);
     }
@@ -1360,17 +1360,17 @@
     function finishRound() {
       var stars = score >= 2200 ? 3 : score >= 1100 ? 2 : score > 0 ? 1 : 0;
       var rows = [
-        { label: "PLANETS HOPPED", value: hops },
-        { label: "BEST COMBO", value: bestCombo, grade: "accent" },
-        { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+        { label: "Planets hopped", value: hops },
+        { label: "Best combo", value: bestCombo, grade: "accent" },
+        { label: "Best score", value: Math.max(score, best), grade: "gold" }
       ];
       // Overtime is an achievement in itself: it leads the stats and renames
       // the screen. Green rather than gold — the BEST SCORE row keeps that.
       if (otT > 0) {
-        rows.unshift({ label: "OVERTIME", value: otT.toFixed(1) + "s", grade: "good" });
+        rows.unshift({ label: "Overtime", value: otT.toFixed(1) + "s", grade: "good" });
       }
       endRound({
-        title: stars === 3 ? Lang.t("COSMIC!") : otT > 0 ? Lang.t("OVERTIME OVER") : CONFIG.copy.timeUp,
+        title: stars === 3 ? Lang.t("Cosmic!") : otT > 0 ? Lang.t("Overtime over") : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,

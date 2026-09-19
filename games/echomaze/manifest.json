@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#7ef9ff",
     "accent2": "#4ade80"
+  },
+  "art": {
+    "objects": {
+      "decor-ball-01": "echomaze-ball-01",
+      "decor-bolt-03": "echomaze-electrical-03",
+      "decor-bolt-06": "echomaze-electrical-06",
+      "decor-bolt-17": "echomaze-electrical-17"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "TWO SECONDS",
+            "kicker": "Two seconds",
             "line": "<b>Fast</b> memorising"
           },
           {
-            "kicker": "ECHO",
+            "kicker": "Echo",
             "line": "The <b>bounces</b> can help"
           },
           {
-            "kicker": "SATISFYING",
+            "kicker": "Satisfying",
             "line": "A <b>joy</b> to run through"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "DEUX SECONDES",
+            "kicker": "Deux secondes",
             "line": "Mémorisation <b>rapide</b>"
           },
           {
-            "kicker": "ECHO",
+            "kicker": "Echo",
             "line": "Les <b>rebonds</b> peuvent aider"
           },
           {
-            "kicker": "SATISFAISANT",
+            "kicker": "Satisfaisant",
             "line": "Un <b>plaisir</b> à parcourir"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,46 +125,46 @@
       "fr": {
         "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
         "strings": {
-          " OF ": " SUR ",
-          " PULSE": " IMPULSION",
-          " WALLS": " MURS",
-          "BREAK THE CRYSTAL": "BRISE LE CRISTAL",
-          "CRYSTAL DOWN!": "CRISTAL BRISÉ !",
-          "DEEP RUN!": "BELLE MONTÉE !",
-          "DOOR ": "PORTE ",
-          "DOOR FORCED": "PORTE FORCÉE",
-          "ESCAPED THE MAZE!": "LABYRINTHE VAINCU !",
-          "ESCAPED!": "ÉVADÉ !",
-          "EXIT": "SORTIE",
-          "EXIT SEALED": "SORTIE VERROUILLÉE",
-          "FALSE EXIT!": "FAUSSE SORTIE !",
-          "FINAL SCORE": "SCORE FINAL",
-          "FIRE AT THE GAP, NOT AT THE DOOR": "VISE L'OUVERTURE, PAS LA PORTE",
-          "FOUND": "REPÉRÉS",
-          "GATE UNLOCKED": "SORTIE OUVERTE",
-          "INSTALL NOW": "INSTALLER",
-          "LAST PULSE": "DERNIÈRE IMPULSION",
-          "LIGHTS OUT — FIRE!": "NOIR COMPLET — TIRE !",
-      "LIVE FENCE": "BARRIÈRE ACTIVE",
-          "ONE GAP, AND IT MOVES": "UNE SEULE OUVERTURE, ET ELLE BOUGE",
-          "ONE-WAY VALVE": "VALVE À SENS UNIQUE",
-          "OPEN FOR GOOD": "OUVERTE POUR DE BON",
-          "OUT OF PULSES!": "PLUS D'IMPULSIONS !",
-          "PERFECT READ!": "LECTURE PARFAITE !",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "PULSES": "IMPULSIONS",
+          " of ": " sur ",
+          " pulse": " impulsion",
+          " walls": " murs",
+          "Bonus": "Bonus",
+          "Break the crystal": "Brise le cristal",
+          "Crystal down!": "Cristal brisé !",
+          "Deep run!": "Belle montée !",
+          "Door ": "Porte ",
+          "Door forced": "Porte forcée",
+          "Escaped the maze!": "Labyrinthe vaincu !",
+          "Escaped!": "Évadé !",
+          "Exit": "Sortie",
+          "Exit sealed": "Sortie verrouillée",
+          "False exit!": "Fausse sortie !",
+          "Final score": "Score final",
+          "Fire at the gap, not at the door": "Vise l'ouverture, pas la porte",
+          "Found": "Repérés",
+          "Gate unlocked": "Sortie ouverte",
+          "Install now": "Installer",
+          "Last pulse": "Dernière impulsion",
+          "Lights out — fire!": "Noir complet — tire !",
+          "Live fence": "Barrière active",
+          "One gap, and it moves": "Une seule ouverture, et elle bouge",
+          "One-way valve": "Valve à sens unique",
+          "Open for good": "Ouverte pour de bon",
+          "Out of pulses!": "Plus d'impulsions !",
+          "Perfect read!": "Lecture parfaite !",
+          "Play the full game": "Jouer au jeu complet",
+          "Pulses": "Impulsions",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "SO CLOSE!": "SI PRÈS !",
-          "SPENT PULSE SEALS THE GAP": "L'IMPULSION USÉE SCELLE LE PASSAGE",
-          "SURGE!": "DÉCHARGE !",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "THE WAY OUT": "LA SORTIE",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "WALLS": "MURS",
-          "BONUS": "BONUS",
-          "VALVES": "VALVES"
+          "Score": "Score",
+          "So close!": "Si près !",
+          "Spent pulse seals the gap": "L'impulsion usée scelle le passage",
+          "Surge!": "Décharge !",
+          "Tap to play": "Tap pour jouer",
+          "The way out": "La sortie",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "Valves": "Valves",
+          "Walls": "Murs"
         }
       }
     },
@@ -174,18 +182,18 @@
       },
       "bands": {
         "en": [
-          "DARK MAZE",
-          "FALSE EXITS",
-          "CRYSTAL LOCK",
-          "LIVE FENCE",
-          "FULL SURGE"
+          "Dark maze",
+          "False exits",
+          "Crystal lock",
+          "Live fence",
+          "Full surge"
         ],
         "fr": [
-          "NOIR TOTAL",
-          "FAUSSES SORTIES",
-          "VERROU DE CRISTAL",
-          "BARRIÈRE ACTIVE",
-          "SURCHARGE"
+          "Noir total",
+          "Fausses sorties",
+          "Verrou de cristal",
+          "Barrière active",
+          "Surcharge"
         ]
       },
       "tune": {

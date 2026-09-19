@@ -75,6 +75,7 @@
 */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -224,15 +225,6 @@ const DRIVER_JS = `<script>
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function reap(child) {
-  let done = false;
-  const kill = () => { if (!done) { done = true; try { child.kill("SIGKILL"); } catch (e) {} } };
-  process.on("exit", kill);
-  process.on("SIGINT", () => { kill(); process.exit(130); });
-  process.on("SIGTERM", () => { kill(); process.exit(143); });
-  process.on("uncaughtException", (e) => { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", (e) => { kill(); console.error(e); process.exit(1); });
-}
 
 async function launchChrome(profileDir) {
   /* Headless Chrome only advances animations while something consumes frames,
@@ -250,7 +242,7 @@ async function launchChrome(profileDir) {
        "--autoplay-policy=no-user-gesture-required", "--no-first-run",
        "--force-device-scale-factor=1", "--window-size=" + VW + "," + VH, "about:blank"];
   const child = spawn(CHROME, flags, { stdio: "ignore" });
-  reap(child);
+  reap(child, { label: "bench-raster" });
   const portFile = path.join(profileDir, "DevToolsActivePort");
   for (let i = 0; i < 100; i++) {
     if (fs.existsSync(portFile)) {
@@ -344,6 +336,7 @@ function prepare(tmpDir) {
   return out;
 }
 
+reportSweep(sweep("bench-raster-"));
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-raster-"));
 const chrome = await launchChrome(path.join(tmpDir, "profile"));
 const client = await cdp(chrome.port);

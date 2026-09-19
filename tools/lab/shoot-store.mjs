@@ -22,7 +22,7 @@
  * THE PUNCHLINE comes from the manifest and nowhere else:
  *
  *   "store": { "copy": { "en": { "lines": [
- *       { "kicker": "PUZZLE", "line": "Turn <b>one</b> ring" },
+ *       { "kicker": "Puzzle", "line": "Turn <b>one</b> ring" },
  *       "Three on a <b>ray</b>" ] } } }
  *
  * A line is a string or a { kicker, line } pair, and one word may be wrapped
@@ -44,6 +44,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -405,21 +406,6 @@ async function shoot(client, sid, info, job, lang, outPath) {
 
 // --- Run -----------------------------------------------------------------
 
-/* Chrome must die whatever happens next — a headless browser survives SIGTERM
-   here, and a throw mid-shoot would otherwise leave one running for nobody. */
-function reap(child) {
-  var done = false;
-  function kill() {
-    if (done) return;
-    done = true;
-    try { child.kill("SIGKILL"); } catch (e) {}
-  }
-  process.on("exit", kill);
-  process.on("SIGINT", function () { kill(); process.exit(130); });
-  process.on("SIGTERM", function () { kill(); process.exit(143); });
-  process.on("uncaughtException", function (e) { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", function (e) { kill(); console.error(e); process.exit(1); });
-}
 
 /* A listing image is not shot with a hole in it: the card would draw a dashed
    placeholder, and a placeholder that reaches a store page by accident is
@@ -441,9 +427,10 @@ function whyNot(slug, job) {
   return null;
 }
 
+reportSweep(sweep("shoot-store-"));
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-store-"));
 var chrome = await launchChrome(path.join(tmpDir, "profile"));
-reap(chrome.child);
+reap(chrome.child, { label: "shoot-store" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 

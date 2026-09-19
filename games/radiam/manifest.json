@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.3.1",
+  "version": "1.5.11",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -13,6 +13,130 @@
   "theme": {
     "accent": "#35e0ff",
     "accent2": "#8b6cff"
+  },
+  "art": {
+    "objects": {
+      "ball-blue-01": "radiam-ball-blue-01",
+      "ball-blue-02": "radiam-ball-blue-02",
+      "ball-blue-03": "radiam-ball-blue-03",
+      "ball-blue-04": "radiam-ball-blue-04",
+      "ball-blue-05": "radiam-ball-blue-05",
+      "ball-blue-06": "radiam-ball-blue-06",
+      "ball-blue-07": "radiam-ball-blue-07",
+      "ball-blue-08": "radiam-ball-blue-08",
+      "ball-blue-11": "radiam-ball-blue-11",
+      "ball-blue-12": "radiam-ball-blue-12",
+      "ball-blue-14": "radiam-ball-blue-14",
+      "ball-blue-15": "radiam-ball-blue-15",
+      "ball-blue-16": "radiam-ball-blue-16",
+      "ball-blue-17": "radiam-ball-blue-17",
+      "ball-blue-19": "radiam-ball-blue-19",
+      "ball-blue-20": "radiam-ball-blue-20",
+      "ball-green-01": "radiam-ball-green-01",
+      "ball-green-02": "radiam-ball-green-02",
+      "ball-green-03": "radiam-ball-green-03",
+      "ball-green-04": "radiam-ball-green-04",
+      "ball-green-05": "radiam-ball-green-05",
+      "ball-green-06": "radiam-ball-green-06",
+      "ball-green-07": "radiam-ball-green-07",
+      "ball-green-08": "radiam-ball-green-08",
+      "ball-green-11": "radiam-ball-green-11",
+      "ball-green-12": "radiam-ball-green-12",
+      "ball-green-14": "radiam-ball-green-14",
+      "ball-green-15": "radiam-ball-green-15",
+      "ball-green-16": "radiam-ball-green-16",
+      "ball-green-17": "radiam-ball-green-17",
+      "ball-green-19": "radiam-ball-green-19",
+      "ball-green-20": "radiam-ball-green-20",
+      "ball-purple-01": "radiam-ball-purple-01",
+      "ball-purple-02": "radiam-ball-purple-02",
+      "ball-purple-03": "radiam-ball-purple-03",
+      "ball-purple-04": "radiam-ball-purple-04",
+      "ball-purple-05": "radiam-ball-purple-05",
+      "ball-purple-06": "radiam-ball-purple-06",
+      "ball-purple-07": "radiam-ball-purple-07",
+      "ball-purple-08": "radiam-ball-purple-08",
+      "ball-purple-11": "radiam-ball-purple-11",
+      "ball-purple-12": "radiam-ball-purple-12",
+      "ball-purple-14": "radiam-ball-purple-14",
+      "ball-purple-15": "radiam-ball-purple-15",
+      "ball-purple-16": "radiam-ball-purple-16",
+      "ball-purple-17": "radiam-ball-purple-17",
+      "ball-purple-19": "radiam-ball-purple-19",
+      "ball-purple-20": "radiam-ball-purple-20",
+      "ball-rainbow-01": "radiam-ball-rainbow-01",
+      "ball-rainbow-02": "radiam-ball-rainbow-02",
+      "ball-rainbow-03": "radiam-ball-rainbow-03",
+      "ball-rainbow-04": "radiam-ball-rainbow-04",
+      "ball-rainbow-05": "radiam-ball-rainbow-05",
+      "ball-rainbow-06": "radiam-ball-rainbow-06",
+      "ball-rainbow-07": "radiam-ball-rainbow-07",
+      "ball-rainbow-08": "radiam-ball-rainbow-08",
+      "ball-rainbow-11": "radiam-ball-rainbow-11",
+      "ball-rainbow-12": "radiam-ball-rainbow-12",
+      "ball-rainbow-14": "radiam-ball-rainbow-14",
+      "ball-rainbow-15": "radiam-ball-rainbow-15",
+      "ball-rainbow-16": "radiam-ball-rainbow-16",
+      "ball-rainbow-17": "radiam-ball-rainbow-17",
+      "ball-rainbow-19": "radiam-ball-rainbow-19",
+      "ball-rainbow-20": "radiam-ball-rainbow-20",
+      "ball-red-01": "radiam-ball-red-01",
+      "ball-red-02": "radiam-ball-red-02",
+      "ball-red-03": "radiam-ball-red-03",
+      "ball-red-04": "radiam-ball-red-04",
+      "ball-red-05": "radiam-ball-red-05",
+      "ball-red-06": "radiam-ball-red-06",
+      "ball-red-07": "radiam-ball-red-07",
+      "ball-red-08": "radiam-ball-red-08",
+      "ball-red-11": "radiam-ball-red-11",
+      "ball-red-12": "radiam-ball-red-12",
+      "ball-red-14": "radiam-ball-red-14",
+      "ball-red-15": "radiam-ball-red-15",
+      "ball-red-16": "radiam-ball-red-16",
+      "ball-red-17": "radiam-ball-red-17",
+      "ball-red-19": "radiam-ball-red-19",
+      "ball-red-20": "radiam-ball-red-20",
+      "ball-yellow-01": "radiam-ball-yellow-01",
+      "ball-yellow-02": "radiam-ball-yellow-02",
+      "ball-yellow-03": "radiam-ball-yellow-03",
+      "ball-yellow-04": "radiam-ball-yellow-04",
+      "ball-yellow-05": "radiam-ball-yellow-05",
+      "ball-yellow-06": "radiam-ball-yellow-06",
+      "ball-yellow-07": "radiam-ball-yellow-07",
+      "ball-yellow-08": "radiam-ball-yellow-08",
+      "ball-yellow-11": "radiam-ball-yellow-11",
+      "ball-yellow-12": "radiam-ball-yellow-12",
+      "ball-yellow-14": "radiam-ball-yellow-14",
+      "ball-yellow-15": "radiam-ball-yellow-15",
+      "ball-yellow-16": "radiam-ball-yellow-16",
+      "ball-yellow-17": "radiam-ball-yellow-17",
+      "ball-yellow-19": "radiam-ball-yellow-19",
+      "ball-yellow-20": "radiam-ball-yellow-20",
+      "decor-ball-01": "radiam-ball-01",
+      "decor-ball-09": "radiam-ball-09",
+      "decor-gear-02": "radiam-gear-02",
+      "decor-gear-07": "radiam-gear-07",
+      "sticker01": "radiam-sticker-01",
+      "sticker02": "radiam-sticker-02",
+      "sticker03": "radiam-sticker-03",
+      "sticker04": "radiam-sticker-04",
+      "sticker05": "radiam-sticker-05",
+      "sticker06": "radiam-sticker-06",
+      "sticker07": "radiam-sticker-07",
+      "sticker08": "radiam-sticker-08",
+      "sticker09": "radiam-sticker-09",
+      "sticker10": "radiam-sticker-10",
+      "sticker11": "radiam-sticker-11",
+      "sticker12": "radiam-sticker-12",
+      "sticker13": "radiam-sticker-13",
+      "sticker14": "radiam-sticker-14",
+      "sticker15": "radiam-sticker-15",
+      "sticker16": "radiam-sticker-16",
+      "sticker17": "radiam-sticker-17",
+      "sticker18": "radiam-sticker-18",
+      "sticker19": "radiam-sticker-19",
+      "sticker20": "radiam-sticker-20"
+    }
   },
   "copy": {
     "fr": {
@@ -38,23 +162,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "GEAR",
+            "kicker": "Gear",
             "line": "Turn <b>3 rings</b>"
           },
           {
-            "kicker": "EXPLOSION",
+            "kicker": "Explosion",
             "line": "Maximise the <b>combinations</b>"
           },
           {
-            "kicker": "COMBO",
+            "kicker": "Combo",
             "line": "<b>Chain</b> reaction"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -62,23 +186,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "GEAR",
+            "kicker": "Gear",
             "line": "Tourne <b>3 anneaux</b>"
           },
           {
-            "kicker": "EXPLOSION",
+            "kicker": "Explosion",
             "line": "Maximise les <b>combinaisons</b>"
           },
           {
-            "kicker": "COMBO",
+            "kicker": "Combo",
             "line": "Réaction en <b>chaîne</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -107,8 +231,8 @@
   },
   "android": {
     "appId": "com.newrare.radiam",
-    "versionName": "1.3.0",
-    "versionCode": 8,
+    "versionName": "1.4.0",
+    "versionCode": 9,
     "ads": {
       "rewarded": false,
       "interstitial": false
@@ -130,39 +254,59 @@
       "fr": {
         "tagline": "<b class=\"w-turn\">Tourne</b> un ou plusieurs anneaux pour aligner <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>",
         "strings": {
-          "  SCORE": "  SCORE",
-          " BEADS": " PERLES",
-          " RAYS": " RAYONS",
-          "BEST": "RECORD",
-          "BEST CHAIN": "MEILLEURE CHAÎNE",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "BIGGEST BLAST": "PLUS GROSSE EXPLOSION",
-          "BLAST": "EXPLOSION",
-          "BLOCKED": "BLOQUÉ",
-          "COMBO": "COMBO",
-          "DOUBLE RAY": "DOUBLE RAYON",
-          "ECLIPSED!": "ÉCLIPSÉ !",
-          "FINAL SCORE": "SCORE FINAL",
-          "FROZEN": "GELÉ",
-          "INSTALL NOW": "INSTALLER",
-          "JAMMED!": "COINCÉ !",
-          "LEVEL": "NIVEAU",
-          "LEVEL ": "NIVEAU ",
-          "NEW COLOUR": "NOUVELLE COULEUR",
-          "NOVA": "NOVA",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "RADIANT!": "RADIEUX !",
-          "RAYS": "RAYONS",
-          "RAYS GET RARER": "LES RAYONS SE FONT RARES",
-          "RAYS POPPED": "RAYONS ÉCLATÉS",
-          "RING CLEARED": "ANNEAU NETTOYÉ",
+          "  score": "  score",
+          " beads": " perles",
+          " rays": " rayons",
+          "Bead Hug": "Câlin de bille",
+          "Best": "Record",
+          "Best chain": "Meilleure chaîne",
+          "Best score": "Meilleur score",
+          "Biggest blast": "Plus grosse explosion",
+          "Blast": "Explosion",
+          "Blocked": "Bloqué",
+          "Bright Idea": "Idée lumineuse",
+          "Combo": "Combo",
+          "Double ray": "Double rayon",
+          "Eclipsed!": "Éclipsé !",
+          "Final score": "Score final",
+          "Frozen": "Gelé",
+          "Full Hands": "Les bras pleins",
+          "Furious": "Furieuse",
+          "Gearhead": "Mécano",
+          "Gold Rush": "Bille d’or",
+          "Install now": "Installer",
+          "Jackpot": "Jackpot",
+          "Jammed!": "Coincé !",
+          "Level": "Niveau",
+          "Level ": "Niveau ",
+          "Make a Wish": "Fais un vœu",
+          "Nap Time": "Petite sieste",
+          "New colour": "Nouvelle couleur",
+          "Nice One": "Bien vu",
+          "No Clue": "Aucune idée",
+          "No Way!": "Pas possible !",
+          "Nova": "Nova",
+          "Peace Out": "Peace",
+          "Play the full game": "Jouer au jeu complet",
+          "Portal": "Portail",
+          "Radiam!": "Radiam !",
+          "Radiant!": "Radieux !",
+          "Rays": "Rayons",
+          "Rays get rarer": "Les rayons se font rares",
+          "Rays popped": "Rayons éclatés",
+          "Red Bead": "Bille rouge",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "SURVIVED": "SURVIE",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !",
-          "TRIPLE RAY": "TRIPLE RAYON"
+          "Ring cleared": "Anneau nettoyé",
+          "Score": "Score",
+          "Smitten": "Tout émue",
+          "Starstruck": "Des étoiles",
+          "Survived": "Survie",
+          "Tap to play": "Tap pour jouer",
+          "Teary": "Larme à l’œil",
+          "The Orbit": "L’orbite",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "Triple ray": "Triple rayon"
         }
       }
     },
@@ -187,18 +331,18 @@
           25
         ],
         "en": [
-          "ATELIER",
-          "LAGOON",
-          "RELIQUARY",
-          "SUMI",
-          "CIRCUIT"
+          "Atelier",
+          "Lagoon",
+          "Reliquary",
+          "Sumi",
+          "Circuit"
         ],
         "fr": [
-          "ATELIER",
-          "LAGON",
-          "RELIQUAIRE",
-          "SUMI",
-          "CIRCUIT"
+          "Atelier",
+          "Lagon",
+          "Reliquaire",
+          "Sumi",
+          "Circuit"
         ]
       },
       "tune": {
@@ -219,6 +363,106 @@
           2
         ]
       }
+    },
+    "meta": {
+      "coinsPer": 1000,
+      "ticketPrice": 250,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        19,
+        17
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Starstruck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Gold Rush",
+          "rarity": "rare"
+        },
+        {
+          "name": "Bead Hug",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Full Hands",
+          "rarity": "rare"
+        },
+        {
+          "name": "Portal",
+          "rarity": "epic"
+        },
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Make a Wish",
+          "rarity": "epic"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Red Bead",
+          "rarity": "common"
+        },
+        {
+          "name": "Jackpot",
+          "rarity": "rare"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Radiam!",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Bright Idea",
+          "rarity": "common"
+        },
+        {
+          "name": "Gearhead",
+          "rarity": "rare"
+        },
+        {
+          "name": "The Orbit",
+          "rarity": "legendary"
+        }
+      ]
     }
   }
 }

@@ -192,6 +192,15 @@
    take an explicit depth, because a positioned layer would otherwise paint
    over static siblings whatever its z-index says. */
 #web-panel { display:none; flex-direction:column; position:relative; }
+/* THE STUDIO SIGNATURE IS THE TITLE SCREEN'S, AND NOTHING ELSE'S. The motor
+   drops `#brand-sig` into `#screen-intro` (packages/shell/motor.css) and it is
+   right where a panel's card lands, so a version number ends up reading as
+   part of OPTIONS or HELP. `web-open` is already the class the panels raise —
+   the map, the album and the shop are layers of their own above this screen
+   and cover it on their own. */
+#screen-intro.web-open #brand-sig { opacity:0; }
+#brand-sig { transition:opacity .18s ease; }
+
 #web-panel.on { display:flex; animation:web-panel-in .22s ease both; }
 @keyframes web-panel-in {
   from { opacity:0; transform:translateY(14px); }
@@ -225,6 +234,34 @@
   -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
   max-height:640px; overflow-y:auto;
 }
+
+/* ---- the painted instrument --------------------------------------------
+   An <img> standing where a stroked <svg> did (menu.js, icon()). It keeps the
+   class the call site asked for, so every width/height rule in menu.css,
+   meta.css and levels.css still aims at it — this only says how a picture
+   fills that box. The shadow is what a flat pictogram never needed and a
+   painted one does: the boxes it sits in are dark, and without it the piece
+   floats rather than sits. */
+img.art-i {
+  display:block; object-fit:contain;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.65));
+}
+
+/* THE END SCREEN'S STARS, painted (menu.js, paintEndStars). The motor's own
+   nodes keep their ids, their classes and their reveal; this is only what the
+   picture inside them does with the three states the motor writes. Keyed off
+   the CHILD, never off a class on `.star`: shell.js rewrites that className on
+   every reveal. The gradient `.star.on` clips to text needs no undoing —
+   there is no text left for it to paint.
+   The lit state needs nothing of its own: `starglow` is a drop-shadow on the
+   star itself and a filter on a parent reaches the picture inside it, so the
+   piece breathes with exactly the light the glyph had. Only the DIM state does
+   — it was a colour, and a colour reaches no <img>. */
+/* The painted star, at the size its place on the podium calls for — the
+   arrangement itself is the motor's (packages/shell/motor.css). */
+.eo-sti { width:116px; height:116px; }
+.eo-stars .star:nth-child(3) .eo-sti { width:176px; height:176px; }
+.star.dim .eo-sti { filter:grayscale(1) brightness(.5) opacity(.45); }
 
 /* ---- rows shared by the panels ----------------------------------------- */
 .web-row {
@@ -410,3 +447,97 @@
 #screen-end #btn-replay { margin-top:14px; }
 #screen-end #btn-replay:hover { border-color:var(--accent); color:var(--accent); }
 #screen-end #btn-install:active, #screen-end #btn-replay:active { transform:scale(.98); }
+
+/* ── the end screen's two icons ──────────────────────────────────────────
+   On a map the two ways out are the MAP and THE LEVEL AGAIN, every round, so
+   they are drawn rather than written: two icons side by side, in a row of
+   their own (#web-endacts, built by menu.js out of the motor's own two
+   buttons). What the round earned decides which of them shines — `hero` is
+   the offer, `calm` is a plain alternative, `dim` is still there and no longer
+   asking. Written with both ids so it outweighs the block above, which sizes
+   the same two nodes as full-width buttons. */
+#web-endacts {
+  display:flex; align-items:center; justify-content:center; gap:30px;
+  margin-top:30px;
+}
+/* `.mt-acts .mt-nav` is the meta layer's copy of the same control — the way
+   past a reward card's ad offer (meta.js, reveal). It joins the rule rather
+   than restating it: the way on is one button in this front end, and a player
+   meets it on the reward card and again on the end screen a beat later. It is
+   not id-scoped because nothing there fights it for specificity; the three
+   above are, because `dress()` rewrites their className and the motor's own
+   `.btn` would otherwise win. */
+#screen-end #btn-install.eo-act, #screen-end #btn-replay.eo-act,
+#screen-end #btn-next.eo-act, .mt-acts .mt-nav {
+  width:104px; max-width:none; height:104px; margin:0; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; border:2px solid rgba(255,255,255,.2);
+  background:rgba(0,0,0,.46); color:var(--text);
+  box-shadow:none; animation:none;
+  /* A FINGER HAS NO CURSOR AND A MOUSE DOES. `dress()` rewrites className on
+     these nodes, which drops the motor's own `.btn` / `.link` — and with it
+     the `cursor:pointer` that said they were pressable at all. On a desk the
+     three of them read as decoration until the pointer changes over them. */
+  cursor:pointer;
+  transition:transform .16s ease, opacity .3s ease, border-color .16s ease,
+             background .16s ease, color .16s ease, box-shadow .3s ease;
+}
+#screen-end .eo-act .eo-ico { width:50px; height:50px; }
+#screen-end #btn-install.eo-act:active, #screen-end #btn-replay.eo-act:active,
+#screen-end #btn-next.eo-act:active, .mt-acts .mt-nav:active { transform:scale(.94); }
+
+/* THE WAY ON — the third button, and the only one on this screen the shell
+   owns outright (menu.js). It rides the motor's own reveal instead of a timer
+   of its own: the motor lights `#btn-replay` last, so this one follows it
+   through a sibling selector, appears with it and — the half that matters —
+   goes dark with it when setState strips `.show` on the way out of "end". A
+   button left invisible and clickable over the next round is a bug this
+   codebase has already paid for once (see TODO.md, the web build).
+
+   Never dressed `hero` / `calm` / `dim`: the other two trade the lit state
+   between them because the round decides whether "go on" or "try again" is
+   the offer, and a third contender in that argument makes all three quieter.
+   Hidden outright where there is no next level. */
+#screen-end #btn-next { opacity:0; pointer-events:none; transition:opacity .5s ease; }
+#screen-end #btn-replay.show ~ #btn-next { opacity:1; pointer-events:auto; }
+#screen-end.hidden #btn-next { opacity:0; pointer-events:none; }
+#screen-end #btn-next[hidden] { display:none; }
+#screen-end #btn-next.eo-act:hover,
+.mt-acts .mt-nav:hover { border-color:var(--accent); color:var(--accent); }
+
+/* THE LIT ONE. The accent fill the menu's own primary uses, plus the halo that
+   says it is the thing to press — and a slow breath so it reads as lit rather
+   than merely coloured, on a screen where nothing else moves once the cascade
+   is done. */
+/* SAME SIZE AS THE OTHER TWO. It used to be 116 px against 104, which made
+   the row read as two buttons and a button-and-a-half — and a control that
+   grows moves the two beside it every time the round changes its mind about
+   which one is the offer. The lit state is the FILL, the halo and the breath;
+   none of them costs a pixel of layout. */
+#screen-end #btn-install.eo-act.hero, #screen-end #btn-replay.eo-act.hero {
+  background:var(--accent); border-color:var(--accent); color:var(--cta-text);
+  box-shadow:0 0 0 6px rgba(255,255,255,.08), 0 0 34px 4px var(--accent);
+  animation:eo-act-breathe 2.4s ease-in-out infinite;
+}
+@keyframes eo-act-breathe {
+  0%,100% { box-shadow:0 0 0 6px rgba(255,255,255,.08), 0 0 26px 2px var(--accent); }
+  50%     { box-shadow:0 0 0 10px rgba(255,255,255,.05), 0 0 44px 8px var(--accent); }
+}
+
+/* THE QUIET ONE. Still a button, still 104 px of target, still in the tab
+   order — a way back that is merely not the one being offered.
+
+   AND STILL THE SAME SIZE. It used to shrink to 84 px with a 38 px glyph,
+   which — with `hero` growing at the other end — meant the row of three was a
+   different row at 0, 1, 2 and 3 stars: three widths, three gaps, three
+   positions for the same button. The state a round is in belongs in the
+   COLOUR, and the block never moves. */
+#screen-end #btn-install.eo-act.dim, #screen-end #btn-replay.eo-act.dim {
+  border-color:rgba(255,255,255,.12); color:var(--muted); background:rgba(0,0,0,.3);
+}
+#screen-end #btn-install.eo-act.dim:hover, #screen-end #btn-replay.eo-act.dim:hover {
+  color:var(--text); border-color:rgba(255,255,255,.3);
+}
+#screen-end #btn-install.eo-act.calm:hover, #screen-end #btn-replay.eo-act.calm:hover {
+  border-color:var(--accent); color:var(--accent);
+}

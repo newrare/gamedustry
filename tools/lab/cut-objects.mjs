@@ -18,22 +18,30 @@
  *   assets/image/object/<slug>-<name>-NN.png      one transparent object per file
  *      │  --adopt 1,4,7   (the ones worth keeping, and only those)
  *      ▼
- *   assets/image/master/<slug>-<name>NN.png        a master like any other
+ *   games/<slug>/manifest.json   "art": { "objects": { "<name>01": "<slug>-<name>-01" } }
  *      │  node tools/lab/encode-art.mjs
  *      ▼
  *   assets/image/embed/<slug>-<name>NN.webp   →  CONFIG.art.<name>NN  →  ArtImages
  *
- * …or `--adopt 1,4 --as decor`, which writes `<slug>-decor-NN.png` instead and
+ * …or `--adopt 1,4 --as decor`, which declares the role `decor-NN` instead and
  * lands the cut in the DECOR POOL: the shell scatters those over the end
  * screen, the round's corners and the web menu's panels without a game naming
  * one of them (packages/shell/shell.js, Decor).
  *
+ * ADOPTING MOVES NO FILE. A cut lives in `assets/image/object/` once, under the
+ * neutral name its sheet gave it, and what a game SHIPS is a line in that
+ * game's manifest. It used to be a copy into assets/image/master/, and the copy
+ * was the declaration — which put the same picture on disk twice and could not
+ * answer the one question a flat folder of cuts asks: `radiam-ball-blue-01.png`
+ * ships and `radiam-ball-blue-09.png`, beside it, does not, and the two names
+ * are the same shape. The game answers it, once.
+ *
  * The two-step is deliberate. Everything under `assets/image/embed/` is embedded in
- * every build of its game, so 383 objects nobody draws would be megabytes of
+ * every build of its game, so 577 objects nobody draws would be megabytes of
  * base64 in creatives capped at 5 MB. `assets/image/object/` is tracked material —
  * like `assets/image/master/`, because material that exists on one laptop is material
- * nobody else can build from — and it ships nowhere: cut everything, look at
- * the contact sheet, adopt the two you actually want.
+ * nobody else can build from — and it ships nowhere by itself: cut everything,
+ * look at the contact sheet, adopt the two you actually want.
  *
  * HOW THE CUT WORKS
  * -----------------
@@ -77,19 +85,24 @@
  * the alpha at which a pixel is the object rather than its glow, so it is
  * where the welds are cut — which is why the default is 110 and not 1.
  *
- * The glow is not lost, it is re-grown: each object's halo is followed OUT of
- * it, pixel by pixel, as far as --pad and never through another object's
- * label. A ring keeps its own light and none of its neighbour's, and a cut
- * ring is not a dead ring.
+ * The glow is not lost, and --solid is not where an object ends: once the
+ * objects are known, every pixel the bar left over is handed to the object it
+ * is NEAREST to, in one walk from all of them at once and never further than
+ * --pad. That is what makes the bar free to be raised as high as a sheet
+ * needs — radiam's stickers overlap outline on outline and nothing under 180
+ * tells two of them apart, yet each one still keeps the whole of its own glow
+ * and none of its neighbour's, and a speck too small to be an object is
+ * absorbed by the one it came off rather than blocking it.
  *
  *   node tools/lab/cut-objects.mjs chainring --solid 40   # softer objects
  *   node tools/lab/cut-objects.mjs slipdeck  --solid 8    # everything alpha says
+ *   node tools/lab/cut-objects.mjs radiam-object-sticker --grid 5x4 --keep-partial --solid 200
  *
  * Usage:
  *   node tools/lab/cut-objects.mjs radiam                  # every sheet of a game
  *   node tools/lab/cut-objects.mjs radiam-object-gear      # one sheet
  *   node tools/lab/cut-objects.mjs radiam --list           # what it would cut
- *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4
+ *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → art.objects
  *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4 --as decor
  *   node tools/lab/cut-objects.mjs radiam --step 18 --min 4000 --keep-partial
  *   node tools/lab/cut-objects.mjs radiam-object-ball-red --grid 5x4
@@ -114,6 +127,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -141,7 +155,7 @@ var pad = 20;           // px of margin, and how far an object's glow is followe
 var keepPartial = false;
 var listOnly = false;
 var adopt = null;
-var adoptAs = null;     // the role the adopted cuts take in assets/image/master/
+var adoptAs = null;     // the role the adopted cuts take in art.objects
 var grid = null;        // "5x4": the sheet is a regular grid, and the cell is the index
 
 for (var i = 0; i < argv.length; i++) {
@@ -163,10 +177,23 @@ for (var i = 0; i < argv.length; i++) {
   else targets.push(a);
 }
 
+/* THE SHELL'S OWN PREFIX. `game-object-<name>.png` is a sheet that belongs to
+   no game: the web shell draws it for every game that declares `web.meta`
+   (packages/webshell), the way `assets/image/brand/newrare.webp` is the
+   studio's mark on all thirteen title screens. `game` is not a slug and never
+   will be one — nothing may be called that — so it reads as "the sheet the
+   shell owns" and the cuts land in assets/image/object/ beside the rest.
+
+   It cannot be ADOPTED, because there is no manifest to write the choice into:
+   the shell names its own pieces, in tools/lab/encode-art.mjs (shellJobs), for
+   the same reason a game names its own — a folder of cuts cannot say which of
+   two files ships. */
+var SHELL_SLUG = "game";
+
 function knownSlugs() {
   return fs.readdirSync(GAMES_DIR).filter(function (d) {
     return fs.existsSync(path.join(GAMES_DIR, d, "manifest.json"));
-  }).sort();
+  }).concat([SHELL_SLUG]).sort();
 }
 
 /* The sheets to work on: a game's name takes all of its sheets, a sheet's own
@@ -383,13 +410,83 @@ function cutJs(b64, o) {
   const GRID = ${o.grid ? JSON.stringify(o.grid) : "null"};
   let empties = [];
   if (GRID) {
-    const cw = W / GRID.cols, ch = H / GRID.rows;
-    const cell = new Array(GRID.cols * GRID.rows).fill(null);
+    const cw = W / GRID.cols, ch = H / GRID.rows, CELLS = GRID.cols * GRID.rows;
+    const cellAt = (x, y) => Math.min(GRID.rows - 1, (y / ch) | 0) * GRID.cols +
+                             Math.min(GRID.cols - 1, (x / cw) | 0);
+    const cellCx = (k) => (k % GRID.cols + 0.5) * cw;
+    const cellCy = (k) => ((k / GRID.cols | 0) + 0.5) * ch;
+
+    /* A BLOB OVER TWO CELLS IS TWO OBJECTS. On a packed sheet the model lets
+       one object's glow touch the next one's, and an alpha mask then hands the
+       pair back as ONE component — which the filing below would resolve by
+       dropping one of them, leaving an empty cell and a cut twice as tall as
+       the rest. So a component carrying real weight in several cells is cut
+       along the grid, one piece per cell, and each piece is filed on its own.
+       Spilling over the line is not that: every object overflows its cell a
+       little, and a piece under the bar stays with the body it came from, so
+       an object always keeps its own overflow. */
+    const SPLIT = 0.18;                        // of the component, per cell
+    const weight = new Map();
+    for (let p = 0; p < W * H; p++) {
+      const id = label[p];
+      if (!id) continue;
+      let a = weight.get(id);
+      if (!a) { a = new Int32Array(CELLS); weight.set(id, a); }
+      a[cellAt(p % W, (p / W) | 0)]++;
+    }
+
+    let nextId = boxes.length + 1;
+    const owner = new Map();                   // old id -> the piece each cell joins
+    const pieces = [];
     for (const b of kept) {
-      const cxp = (b.x0 + b.x1) / 2, cyp = (b.y0 + b.y1) / 2;
-      const col = Math.min(GRID.cols - 1, Math.floor(cxp / cw));
-      const row = Math.min(GRID.rows - 1, Math.floor(cyp / ch));
-      const k = row * GRID.cols + col;
+      const a = weight.get(b.id);
+      if (!a) continue;
+      const hot = [];
+      for (let k = 0; k < CELLS; k++) if (a[k] >= b.area * SPLIT && a[k] >= ${o.minArea}) hot.push(k);
+      if (hot.length < 2) continue;
+      const ids = hot.map((k, i) => (i === 0 ? b.id : nextId++));
+      const map = new Int32Array(CELLS);
+      for (let k = 0; k < CELLS; k++) {
+        // a cold cell joins the hot one whose centre is nearest: the seam
+        // between two merged objects lands halfway between them
+        let best = 0, bd = Infinity;
+        hot.forEach((h, i) => {
+          const dx = cellCx(h) - cellCx(k), dy = cellCy(h) - cellCy(k);
+          const d = dx * dx + dy * dy;
+          if (d < bd) { bd = d; best = i; }
+        });
+        map[k] = ids[best];
+      }
+      owner.set(b.id, map);
+      ids.forEach((id) => pieces.push(id));
+    }
+
+    if (pieces.length) {
+      const fresh = new Map();
+      for (let p = 0; p < W * H; p++) {
+        const id = label[p];
+        if (!id) continue;
+        const map = owner.get(id);
+        const to = map ? map[cellAt(p % W, (p / W) | 0)] : id;
+        label[p] = to;
+        const x = p % W, y = (p / W) | 0;
+        const box = fresh.get(to);
+        if (!box) fresh.set(to, { id: to, area: 1, x0: x, y0: y, x1: x, y1: y, partial: false });
+        else {
+          box.area++;
+          if (x < box.x0) box.x0 = x; if (x > box.x1) box.x1 = x;
+          if (y < box.y0) box.y0 = y; if (y > box.y1) box.y1 = y;
+        }
+      }
+      kept = kept.filter((b) => !owner.has(b.id))
+        .concat(pieces.map((id) => fresh.get(id)).filter(Boolean))
+        .filter((b) => b.area >= ${o.minArea})
+        .sort((a, b) => b.area - a.area);
+    }
+
+    const cell = new Array(CELLS).fill(null);
+    for (const b of kept) {
+      const k = cellAt((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2);
       if (!cell[k] || b.area > cell[k].area) cell[k] = b;
     }
     kept = [];
@@ -399,9 +496,87 @@ function cutJs(b64, o) {
     });
   }
 
-  // 5. one canvas per object: alpha eroded by a pixel, then feathered by one.
-  const out = [];
   const pad = ${o.pad};
+
+  /* 5. THE FRINGE BELONGS TO THE NEAREST OBJECT.
+
+     --solid is the bar at which two objects come apart, and it is NOT where an
+     object ends. A packed sheet needs it high — radiam's stickers overlap
+     outline on outline, and the neck between two of them never drops under
+     alpha 170, so nothing under 180 tells them apart. But raise it and every
+     object loses the band of its own glow that sits below the bar, and that
+     band is then free ground: the next object's halo walks straight into it
+     and the cut comes back wearing a crumb of its neighbour's border.
+
+     So the two questions are answered separately. The labelling above says how
+     many objects there are; this pass says where each one ends — everything
+     the bar left over is handed to the object it is NEAREST to, in ONE walk
+     from all of them at once, never further than --pad. Two objects sharing a
+     fringe split it down the middle instead of racing for it, an object keeps
+     the whole of its own glow, and a speck too small to be an object is
+     absorbed by the one it came off rather than blocking it. */
+  if (byAlpha && pad > 0) {
+    const keep = new Set(kept.map((b) => b.id));
+
+    /* What is left over is of two kinds, and they are not treated alike. A
+       SATELLITE — the star beside a sticker, the loose ball over its head, a
+       speck of glow — is part of the picture its object is, so it is taken
+       WHOLE rather than nibbled at: growing pad px into a 60px star would
+       hand back a crescent, which is worse than either keeping it or dropping
+       it. An object the SHEET'S OWN EDGE cut in half is the other kind: it was
+       dropped on purpose, and it stays a barrier so no neighbour inherits it. */
+    const barrier = new Set();
+    ${o.keepPartial ? "" : "boxes.forEach((b) => { if (b.partial) barrier.add(b.id); });"}
+    const comp = Int32Array.from(label);
+    for (let p = 0; p < W * H; p++) {
+      if (label[p] && !keep.has(label[p]) && !barrier.has(label[p])) label[p] = 0;
+    }
+
+    const q = new Int32Array(W * H);
+    const reach = new Int16Array(W * H).fill(-1);
+    const taken = new Set();
+    let head = 0, tail = 0;
+    for (let p = 0; p < W * H; p++) if (label[p] && keep.has(label[p])) { reach[p] = 0; q[tail++] = p; }
+    while (head < tail) {
+      const p = q[head++];
+      if (reach[p] >= pad) continue;
+      const x = p % W, y = (p / W) | 0, id = label[p];
+      const test = (np) => {
+        if (reach[np] >= 0 || label[np]) return;   // already spoken for, or a barrier
+        if (px[np * 4 + 3] === 0) return;          // nothing to carry
+        reach[np] = reach[p] + 1;
+        label[np] = id;
+        q[tail++] = np;
+        const c = comp[np];
+        if (c && !taken.has(c)) {                  // a satellite, taken whole
+          taken.add(c);
+          for (let r = 0; r < W * H; r++) {
+            if (comp[r] !== c || label[r]) continue;
+            reach[r] = reach[np];
+            label[r] = id;
+            q[tail++] = r;
+          }
+        }
+      };
+      if (x > 0) test(p - 1);
+      if (x < W - 1) test(p + 1);
+      if (y > 0) test(p - W);
+      if (y < H - 1) test(p + W);
+    }
+
+    // a satellite is outside the box its object was labelled in
+    const box = new Map(kept.map((b) => [b.id, b]));
+    for (let p = 0; p < W * H; p++) {
+      const b = box.get(label[p]);
+      if (!b) continue;
+      const x = p % W, y = (p / W) | 0;
+      if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x;
+      if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y;
+    }
+  }
+
+  // 6. one canvas per object: alpha eroded by a pixel, then feathered by one.
+  const out = [];
   for (const b of kept) {
     const w = b.x1 - b.x0 + 1 + pad * 2;
     const h = b.y1 - b.y0 + 1 + pad * 2;
@@ -415,42 +590,6 @@ function cutJs(b64, o) {
       return label[y * W + x] === b.id ? 1 : 0;
     };
 
-    /* THE HALO, and only this object's.
-
-       Everything the labelling left unassigned is glow — below the --solid
-       bar — and a ring cut without its glow is a dead ring. But the sheet
-       packs objects a hundred pixels apart, so the box around one ring also
-       contains the tail of its neighbour's. So the glow is grown OUT of this
-       object, one pixel at a time, and never further than the padding: what
-       belongs to the ring is reachable from it, what belongs to the next one
-       is not. */
-    const halo = new Uint8Array(w * h);
-    if (byAlpha && pad > 0) {
-      const q = new Int32Array(w * h);
-      let head = 0, tail = 0;
-      const dist = new Int16Array(w * h).fill(-1);
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        if (inside(b.x0 - pad + x, b.y0 - pad + y)) { dist[y * w + x] = 0; q[tail++] = y * w + x; }
-      }
-      while (head < tail) {
-        const p = q[head++];
-        if (dist[p] >= pad) continue;
-        const x = p % w, y = (p / w) | 0;
-        const test = (nx, ny) => {
-          if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
-          const np = ny * w + nx;
-          if (dist[np] >= 0) return;
-          const sx = b.x0 - pad + nx, sy = b.y0 - pad + ny;
-          if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
-          if (label[sy * W + sx] !== 0) return;        // another object: stop
-          if (px[at(sx, sy) + 3] === 0) return;        // nothing to carry
-          dist[np] = dist[p] + 1;
-          halo[np] = 1;
-          q[tail++] = np;
-        };
-        test(x - 1, y); test(x + 1, y); test(x, y - 1); test(x, y + 1);
-      }
-    }
     /* Eroded, on a flood: an edge pixel is half object, half ground, and
        keeping it is what paints a cut with a rim of the sheet it came from.
        An alpha sheet needs none of that — the model already drew the edge. */
@@ -461,8 +600,9 @@ function cutJs(b64, o) {
       const sx = b.x0 - pad + x, sy = b.y0 - pad + y;
       let alpha;
       if (byAlpha) {
-        const own = inside(sx, sy) || halo[y * w + x];
-        alpha = own ? px[at(Math.min(W - 1, Math.max(0, sx)), Math.min(H - 1, Math.max(0, sy))) + 3] : 0;
+        alpha = inside(sx, sy)
+          ? px[at(Math.min(W - 1, Math.max(0, sx)), Math.min(H - 1, Math.max(0, sy))) + 3]
+          : 0;
       } else {
         let acc = 0;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) acc += solid(sx + dx, sy + dy);
@@ -530,44 +670,67 @@ function write(file, uri) {
   return fs.statSync(file).size;
 }
 
-/* --adopt promotes the cuts worth keeping into assets/image/master/, where they
-   become masters like any other: encode-art picks them up and the builder
-   injects them as CONFIG.art.<name>NN. Nothing is adopted automatically —
-   everything under assets/image/embed/ is embedded in every build of its game.
+/* --adopt is the SELECTION, and it writes it where the game keeps the rest of
+   what it is: `art.objects` in `games/<slug>/manifest.json`.
+
+     "art": { "objects": { "ship01": "arcider-ship-01" } }
+
+   The key is the ROLE the picture plays — `CONFIG.art.ship01`, and
+   `assets/image/embed/<slug>-ship01.webp` once `encode-art.mjs` has run — and
+   the value is the cut it is taken from, a file of `assets/image/object/`.
+
+   It used to COPY the cut into assets/image/master/ instead, and the copy was
+   the declaration. That put the same picture on disk twice under two names,
+   and it could not answer the one question a flat folder of cuts asks:
+   `radiam-ball-blue-01.png` ships and `radiam-ball-blue-09.png`, beside it,
+   does not — the names are the same shape, so nothing in them can say which.
+   The game says it, once, and re-cutting the sheet afterwards refreshes what
+   ships without a second adoption: the role points at a cut, not at a copy.
 
    --as renames the role on the way in, and it is what fills the DECOR pool:
-   `--as decor` writes `<slug>-decor-NN.png`, which reaches the motor as
+   `--as decor` declares `decor-NN`, which reaches the motor as
    `CONFIG.art.decorNN` and is scattered over the screens by the shell's Decor
    module (packages/shell/shell.js). A game whose objects come off two sheets
    keeps them apart with a role each — `--as decor-ball`, `--as decor-brick` —
    because the numbering restarts with every sheet and two `decor-01` would be
-   the same file twice. Without --as the cut keeps the sheet's own name, which
+   one role claimed twice. Without --as the role is the sheet's own name, which
    is the shape a game draws on its canvas (ArtImages.gear01). */
 function adoptCuts(sheet, picks, files) {
+  var file = path.join(GAMES_DIR, sheet.slug, "manifest.json");
+  var raw = fs.readFileSync(file, "utf8");
+  var manifest = JSON.parse(raw);
   var done = [];
+
   picks.split(",").map(function (s) { return parseInt(s.trim(), 10); }).forEach(function (n) {
     var src = files[n - 1];
     if (!src) throw new Error("--adopt " + n + ": there is no object " + n + " in this sheet");
-    var stem = adoptAs
-      ? adoptAs + "-" + String(n).padStart(2, "0")
-      : sheet.name + String(n).padStart(2, "0");
-    var dst = path.join(SRC_DIR, sheet.slug + "-" + stem + ".png");
-    fs.copyFileSync(src, dst);
-    done.push(path.relative(ROOT, dst));
+    var role = (adoptAs || sheet.name) + (adoptAs ? "-" : "") + String(n).padStart(2, "0");
+    var cut = path.basename(src).replace(/\.png$/i, "");
+    manifest.art = manifest.art || {};
+    manifest.art.objects = manifest.art.objects || {};
+    manifest.art.objects[role] = cut;
+    done.push(role + "  ←  assets/image/object/" + cut + ".png");
   });
+
+  /* the roles read in order, and `art` sits with `theme`: both of them are
+     what the game LOOKS like, and a diff that only ever moves one line is a
+     diff anyone can read. */
+  var sorted = {};
+  Object.keys(manifest.art.objects).sort().forEach(function (k) { sorted[k] = manifest.art.objects[k]; });
+  manifest.art.objects = sorted;
+  var ordered = {};
+  Object.keys(manifest).forEach(function (k) {
+    if (k === "art") return;
+    ordered[k] = manifest[k];
+    if (k === "theme") ordered.art = manifest.art;
+  });
+  if (!ordered.art) ordered.art = manifest.art;
+
+  fs.writeFileSync(file, JSON.stringify(ordered, null, 2) + "\n");
   return done;
 }
 
 // --- run -----------------------------------------------------------------
-function reap(child) {
-  var done = false;
-  function kill() { if (done) return; done = true; try { child.kill("SIGKILL"); } catch (e) {} }
-  process.on("exit", kill);
-  process.on("SIGINT", function () { kill(); process.exit(130); });
-  process.on("SIGTERM", function () { kill(); process.exit(143); });
-  process.on("uncaughtException", function (e) { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", function (e) { kill(); console.error(e); process.exit(1); });
-}
 
 async function main() {
   var list = sheets();
@@ -585,13 +748,19 @@ async function main() {
     console.error("--adopt works on one sheet at a time; name it explicitly");
     process.exit(1);
   }
+  if (adopt && list[0].slug === SHELL_SLUG) {
+    console.error("--adopt: " + SHELL_SLUG + "-* is the shell's own artwork and has no manifest.\n" +
+                  "Name the cuts in tools/lab/encode-art.mjs (shellJobs) instead.");
+    process.exit(1);
+  }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.mkdirSync(CONTACT_DIR, { recursive: true });
 
+  reportSweep(sweep("cut-objects-"));
   var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cut-objects-"));
   var chrome = await launchChrome(path.join(tmpDir, "profile"));
-  reap(chrome.child);
+  reap(chrome.child, { label: "cut-objects" });
   var client = await cdp(chrome.port);
   var sid = await openPage(client);
 
@@ -638,7 +807,8 @@ async function main() {
 
     if (adopt) {
       var done = adoptCuts(sheet, adopt, files);
-      console.log("\n  adopted → " + done.join("\n             "));
+      console.log("\n  declared in games/" + sheet.slug + "/manifest.json, art.objects:");
+      console.log("    " + done.join("\n    "));
       console.log("  then:  node tools/lab/encode-art.mjs " + sheet.slug);
     }
   }

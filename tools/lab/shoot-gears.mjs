@@ -34,6 +34,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -236,10 +237,12 @@ async function shoot(client, sid, name, finish, outPath) {
 // --- Run -----------------------------------------------------------------
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
+reportSweep(sweep("shoot-gears-"));
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-gears-"));
 var failed = 0, made = 0;
 
 var chrome = await launchChrome(path.join(tmpDir, "profile"));
+var kill = reap(chrome.child, { label: "shoot-gears" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 
@@ -263,7 +266,7 @@ for (var f = 0; f < finishes.length; f++) {
 }
 
 client.close();
-chrome.child.kill();
+kill();
 await sleep(400);                                    // let Chrome release its profile
 if (!keep) {
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* it will age out */ }
