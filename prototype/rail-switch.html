@@ -526,7 +526,7 @@ function killHunter() {
   hunter.boostT = 0;
   kills++;
   score += KILL_SCORE;
-  popText('+' + KILL_SCORE + ' HUNTER DOWN', hunter.x, hunter.y - 24, '#ff4a4a');
+  popText('+' + KILL_SCORE + ' hunter down', hunter.x, hunter.y - 24, '#ff4a4a');
 }
 
 function respawnHunter() {
@@ -652,12 +652,12 @@ function collect(tr, it) {
     // way the player gets to attack instead of only running.
     switch (it.k) {
       case 'tnt': killHunter(); break;
-      case 'stop': tr.stopT = STOP_TIME; popText('HUNTER STOPPED', tr.x, tr.y - 22, '#b9ff5a'); break;
-      case 'derail': tr.derailed = true; tr.rescueT = HUNT_FIX; popText('HUNTER OFF THE RAILS', tr.x, tr.y - 22, '#b9ff5a'); break;
-      case 'reverse': tr.stopT = 1; popText('HUNTER SPUN', tr.x, tr.y - 22, '#b9ff5a'); break;
-      case 'boost': tr.boostT = BOOST_TIME; popText('HUNTER BOOSTED', tr.x, tr.y - 22, '#ff8a2b'); break;
+      case 'stop': tr.stopT = STOP_TIME; popText('Hunter stopped', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'derail': tr.derailed = true; tr.rescueT = HUNT_FIX; popText('Hunter off the rails', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'reverse': tr.stopT = 1; popText('Hunter spun', tr.x, tr.y - 22, '#b9ff5a'); break;
+      case 'boost': tr.boostT = BOOST_TIME; popText('Hunter boosted', tr.x, tr.y - 22, '#ff8a2b'); break;
       case 'slow': slowT = SLOW_TIME; break;
-      default: popText('EATEN', tr.x, tr.y - 22, 'rgba(255,255,255,0.7)'); break;
+      default: popText('Eaten', tr.x, tr.y - 22, 'rgba(255,255,255,0.7)'); break;
     }
     return;
   }
@@ -666,14 +666,14 @@ function collect(tr, it) {
   switch (it.k) {
     case 'gem': addScore(120, tr); break;
     case 'ticket': addScore(60, tr); break;
-    case 'x2': multT = Math.max(multT, 0) + X2_TIME; popText('SCORE x2', tr.x, tr.y - 22, '#b9ff5a'); break;
-    case 'slow': slowT = SLOW_TIME; popText('SLOW', tr.x, tr.y - 22, '#a78bfa'); break;
-    case 'tnt': dead = 'BLOWN UP'; break;
-    case 'boost': tr.boostT = BOOST_TIME; popText('BOOST!', tr.x, tr.y - 22, '#ff8a2b'); break;
-    case 'reverse': tr.dir = -tr.dir; popText('REVERSE', tr.x, tr.y - 22, '#ffe14a'); break;
+    case 'x2': multT = Math.max(multT, 0) + X2_TIME; popText('Score x2', tr.x, tr.y - 22, '#b9ff5a'); break;
+    case 'slow': slowT = SLOW_TIME; popText('Slow', tr.x, tr.y - 22, '#a78bfa'); break;
+    case 'tnt': dead = 'Blown up'; break;
+    case 'boost': tr.boostT = BOOST_TIME; popText('Boost!', tr.x, tr.y - 22, '#ff8a2b'); break;
+    case 'reverse': tr.dir = -tr.dir; popText('Reverse', tr.x, tr.y - 22, '#ffe14a'); break;
     case 'derail': tr.derailed = true; tr.rescueT = RESCUE_TIME;
-      popText('DERAILED - TAP IT', tr.x, tr.y - 26, '#ff6ad5'); break;
-    case 'stop': tr.stopT = STOP_TIME; popText('STOP', tr.x, tr.y - 22, '#ff5252'); break;
+      popText('Derailed - tap it', tr.x, tr.y - 26, '#ff6ad5'); break;
+    case 'stop': tr.stopT = STOP_TIME; popText('Stop', tr.x, tr.y - 22, '#ff5252'); break;
   }
 }
 
@@ -757,7 +757,7 @@ function update(dt) {
       tr.rescueT -= dt;
       if (tr.rescueT <= 0) {
         if (tr === hunter) tr.derailed = false;
-        else { dead = 'TRAIN LOST'; best = Math.max(best, score); return 0; }
+        else { dead = 'Train lost'; best = Math.max(best, score); return 0; }
       }
     }
     tr.tilt += ((tr.derailed ? 0.5 : 0) - tr.tilt) * Math.min(1, dt * 8);
@@ -824,7 +824,7 @@ function update(dt) {
 
   threat = findThreat();
   var d = hunter.gone ? 999 : Math.hypot(player.x - hunter.x, player.y - hunter.y);
-  if (d < HIT) { dead = 'CAUGHT'; best = Math.max(best, score); }
+  if (d < HIT) { dead = 'Caught'; best = Math.max(best, score); }
   return d;
 }
 
@@ -1096,7 +1096,7 @@ function render(gap, fps) {
 
   // --- screen space: text stays unscaled and crisp
   if (player.derailed) {
-    line('TAP', sx(player.x), sy(player.y) - 34, 18,
+    line('Tap', sx(player.x), sy(player.y) - 34, 18,
          player.rescueT < 2 ? '#ff3b3b' : '#ff6ad5', 'center');
   }
   for (i = 0; i < floats.length; i++) {
@@ -1108,10 +1108,10 @@ function render(gap, fps) {
 
   line(String(score), 24, 58, 44, '#e8edf7');
   line('best ' + best + '   combo ' + combo + (multT > 0 ? '   x2 ' + multT.toFixed(1) + 's' : '') +
-       (slowT > 0 ? '   SLOW' : ''), 24, 88, 20, 'rgba(232,237,247,0.6)');
+       (slowT > 0 ? '   slow' : ''), 24, 88, 20, 'rgba(232,237,247,0.6)');
   line(t.toFixed(1) + 's', W - 24, 52, 32, 'rgba(232,237,247,0.75)', 'right');
-  var hs = hunter.gone ? 'BACK IN ' + hunter.backIn.toFixed(1) + 's'
-                       : 'HUNTER x' + huntRatio().toFixed(2);
+  var hs = hunter.gone ? 'Back in ' + hunter.backIn.toFixed(1) + 's'
+                       : 'Hunter x' + huntRatio().toFixed(2);
   line(hs + (kills ? '   kills ' + kills : ''), W - 24, 80, 20,
        hunter.gone ? '#b9ff5a' : '#ff6a6a', 'right');
 
@@ -1123,7 +1123,7 @@ function render(gap, fps) {
        W - 24, H - 94, 17, dbg, 'right');
   line('items ' + items.length + '  threat ' + (threat ? threat.kind + ' ' + threat.eta.toFixed(1) + 's' : '-'),
        W - 24, H - 72, 17, dbg, 'right');
-  line('TAP A CROSSING TO THROW THE NEXT TRAIN THROUGH IT', W / 2, H - 34, 17,
+  line('Tap a crossing to throw the next train through it', W / 2, H - 34, 17,
        'rgba(232,237,247,0.45)', 'center');
 
   if (dead) {
@@ -1151,7 +1151,7 @@ cv.addEventListener('pointerdown', function (e) {
     player.derailed = false;
     player.rescueT = 0;
     player.spd = SPD_MIN;
-    popText('BACK ON', player.x, player.y - 26, '#b9ff5a');
+    popText('Back on', player.x, player.y - 26, '#b9ff5a');
     return;
   }
   var hit = null, hd = TAP_R;

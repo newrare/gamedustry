@@ -341,8 +341,8 @@ function lineOf(cards) {
     if (cards[i].r < lo) lo = cards[i].r;
     if (cards[i].r > hi) hi = cards[i].r;
   }
-  if (sameSuit && n < K.handSize) return "FLUSH DRAW";
-  if ((hi - lo) <= K.handSize - 1 && n < K.handSize) return "STRAIGHT DRAW";
+  if (sameSuit && n < K.handSize) return "Flush draw";
+  if ((hi - lo) <= K.handSize - 1 && n < K.handSize) return "Straight draw";
   return "";
 }
 
@@ -379,9 +379,9 @@ var CAT_ORDER = {
   flush: 5, fullHouse: 6, quads: 7, straightFlush: 8
 };
 var CAT_NAME = {
-  high: "HIGH CARD", pair: "PAIR", twoPair: "TWO PAIR", trips: "THREE OF A KIND",
-  straight: "STRAIGHT", flush: "FLUSH", fullHouse: "FULL HOUSE",
-  quads: "FOUR OF A KIND", straightFlush: "STRAIGHT FLUSH"
+  high: "High card", pair: "Pair", twoPair: "Two pair", trips: "Three of a kind",
+  straight: "Straight", flush: "Flush", fullHouse: "Full house",
+  quads: "Four of a kind", straightFlush: "Straight flush"
 };
 
 /* Payouts. Bigger hands are rarer, so the same category pays more when it takes
@@ -480,6 +480,30 @@ function fuseNow() {
   return Math.max(0.55, f);
 }
 
+/* Capitals, the house way: accents come off, and a lowercase run glued to a
+   digit (a unit, a multiplier) keeps its case. Every string in this repo is
+   written in normal case and the screens that shout ask for it here — the same
+   rule as the motor's `upper` (packages/engine, docs/ENGINE.md). */
+function upper(str) {
+  var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
+  var shouted = String(str == null ? "" : str).replace(
+    /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+  var out = "", i, c, k;
+  for (i = 0; i < shouted.length; i++) {
+    c = shouted.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
+
 function loseLife(why, col) {
   lives--;
   combo = 0;
@@ -503,7 +527,7 @@ function decide(dir) {                                   // -1 bin, +1 keep
     flying.push({ card: c, x: restX, y: restY, vx: -1500, vy: -140, rot: -0.3, spin: -3.4, a: 1 });
     chuteGlow = 1;
     chute++;
-    if (chute > K.chuteDepth) { chute = 0; overflows++; loseLife("CHUTE FULL", "#ff4a5e"); }
+    if (chute > K.chuteDepth) { chute = 0; overflows++; loseLife("Chute full", "#ff4a5e"); }
     return;
   }
 
@@ -532,7 +556,7 @@ function resolveHand() {
     shake = 7;
   } else {
     busts++;
-    loseLife("BUST", "#ff4a5e");
+    loseLife("Bust", "#ff4a5e");
   }
   /* The kept cards leave the hand outwards, so the next hand starts clean. */
   for (i = 0; i < hand.length; i++) {
@@ -550,7 +574,7 @@ function burnout() {
   var c = cur.card;
   flying.push({ card: c, x: CARD.cx, y: CARD.cy, vx: 0, vy: 700, rot: 0, spin: 2.2, a: 1 });
   cur = null; dealWait = 0.16;
-  loseLife("TOO SLOW", "#ff8a3c");
+  loseLife("Too slow", "#ff8a3c");
 }
 
 /* --- juice --------------------------------------------------------------- */
@@ -646,7 +670,7 @@ function update(dt) {
   runT += dt;
   if (!T.endless) {
     timeLeft -= dt;
-    if (timeLeft <= 0) { timeLeft = 0; endRun("TIME UP"); return; }
+    if (timeLeft <= 0) { timeLeft = 0; endRun("Time up"); return; }
   }
 
   if (!cur) {
@@ -763,13 +787,13 @@ function drawHUD() {
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText("SCORE", 44, 74);
+  ctx.fillText(upper("Score"), 44, 74);
   ctx.fillStyle = "#f4f1ff"; ctx.font = f(50, 900);
   ctx.fillText(String(score), 44, 126);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText(T.endless ? "ELAPSED" : "TIME", 360, 74);
+  ctx.fillText(upper(T.endless ? "Elapsed" : "Time"), 360, 74);
   var tv = T.endless ? runT : timeLeft;
   ctx.fillStyle = (!T.endless && timeLeft < 6) ? "#ff8a3c" : "#f4f1ff";
   ctx.font = f(50, 900);
@@ -777,7 +801,7 @@ function drawHUD() {
 
   ctx.textAlign = "right";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText("LIVES", 676, 74);
+  ctx.fillText(upper("Lives"), 676, 74);
   for (var i = 0; i < K.lives; i++) {
     var x = 676 - i * 34, alive = (K.lives - i) <= lives;
     ctx.beginPath(); ctx.arc(x - 9, 110, 11, 0, PI2);
@@ -788,7 +812,7 @@ function drawHUD() {
   /* the chute meter: what a discard costs */
   ctx.textAlign = "left";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(17, 800);
-  ctx.fillText("CHUTE", 44, 176);
+  ctx.fillText(upper("Chute"), 44, 176);
   for (var j = 0; j < K.chuteDepth; j++) {
     var px = 128 + j * 26, full = j < chute;
     roundRect(px, 160, 18, 18, 5);
@@ -807,7 +831,7 @@ function drawHUD() {
   if (combo > 1) {
     ctx.textAlign = "right";
     ctx.fillStyle = "#7ef9ff"; ctx.font = f(30, 900);
-    ctx.fillText("x" + combo + " COMBO", 676, 178);
+    ctx.fillText(upper("x" + combo + " combo"), 676, 178);
   }
 }
 
@@ -816,8 +840,8 @@ function drawGates() {
   var pull = cur ? clamp(Math.abs(cur.x) / K.swipeDist, 0, 1) : 0;
   var left = cur && cur.x < 0 ? pull : 0, right = cur && cur.x > 0 ? pull : 0;
 
-  drawGate(GATE.pad, "#ff4a5e", "BIN", left);
-  drawGate(DW - GATE.pad - GATE.w, "#42e8b0", "KEEP", right);
+  drawGate(GATE.pad, "#ff4a5e", "Bin", left);
+  drawGate(DW - GATE.pad - GATE.w, "#42e8b0", "Keep", right);
 }
 function drawGate(x, col, label, lit) {
   roundRect(x, GATE.top, GATE.w, GATE.bot - GATE.top, 22);
@@ -831,7 +855,7 @@ function drawGate(x, col, label, lit) {
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillStyle = rgba(col, 0.42 + lit * 0.58);
   ctx.font = f(30, 900);
-  ctx.fillText(label, 0, 0);
+  ctx.fillText(upper(label), 0, 0);
   ctx.restore();
 }
 
@@ -855,15 +879,15 @@ function drawPreview() {
   var full = next.length >= K.handSize;
   var txt, col;
   if (full) {
-    txt = ev.pay > 0 ? "KEEP → " + ev.name : "KEEP → BUST";
+    txt = ev.pay > 0 ? "Keep → " + ev.name : "Keep → bust";
     col = ev.pay > 0 ? "#42e8b0" : "#ff4a5e";
   } else if (ev.cat !== "high") {
-    txt = "KEEP → " + ev.name; col = "#ffd166";
+    txt = "Keep → " + ev.name; col = "#ffd166";
   } else if (!hand.length) {
-    txt = "KEEP → OPENS THE HAND"; col = "#7ef9ff";
+    txt = "Keep → opens the hand"; col = "#7ef9ff";
   } else {
     var ln = lineOf(next);
-    txt = "KEEP → " + (ln || "DEAD CARD");
+    txt = "Keep → " + (ln || "Dead card");
     col = ln ? "#7ef9ff" : "#6f6c8d";
   }
 
@@ -874,7 +898,7 @@ function drawPreview() {
   ctx.fillStyle = rgba(col, 0.13); ctx.fill();
   ctx.strokeStyle = rgba(col, 0.45); ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = col;
-  ctx.fillText(txt, 360, 861);
+  ctx.fillText(upper(txt), 360, 861);
 }
 
 function drawHand() {
@@ -907,9 +931,9 @@ function drawHand() {
   ctx.fillStyle = hand.length === 0 ? "#4d4a66"
                 : ev.cat !== "high" ? "#ffd166"
                 : lineOf(hand) ? "#7ef9ff" : "#8a87a8";
-  var label = hand.length === 0 ? "EMPTY HAND"
-            : (ev.cat !== "high" ? ev.name : (lineOf(hand) || "NOTHING YET"));
-  ctx.fillText(label + "   " + hand.length + "/" + K.handSize, 360, SLOT.y + SLOT.h / 2 + 44);
+  var label = hand.length === 0 ? "Empty hand"
+            : (ev.cat !== "high" ? ev.name : (lineOf(hand) || "Nothing yet"));
+  ctx.fillText(upper(label) + "   " + hand.length + "/" + K.handSize, 360, SLOT.y + SLOT.h / 2 + 44);
 }
 
 function render() {
@@ -969,7 +993,7 @@ function render() {
     ctx.font = f(Math.round(p.size * (1 + (1 - k) * 0.18)), 900);
     ctx.lineWidth = 8; ctx.strokeStyle = "rgba(8,5,18,.75)";
     ctx.strokeText(p.txt, p.x, p.y);
-    ctx.fillStyle = p.col; ctx.fillText(p.txt, p.x, p.y);
+    ctx.fillStyle = p.col; ctx.fillText(upper(p.txt), p.x, p.y);
   }
   ctx.globalAlpha = 1;
 
@@ -982,7 +1006,7 @@ function render() {
   else if (paused) {
     ctx.fillStyle = "rgba(6,4,14,.7)"; ctx.fillRect(0, 0, DW, DH);
     ctx.fillStyle = "#f4f1ff"; ctx.font = f(56, 900);
-    ctx.fillText("PAUSED", 360, 640);
+    ctx.fillText(upper("Paused"), 360, 640);
   }
 
   ctx.restore();
@@ -992,14 +1016,14 @@ function drawEnd() {
   ctx.fillStyle = "rgba(6,4,14,.82)"; ctx.fillRect(0, 0, DW, DH);
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillStyle = "#ff8a3c"; ctx.font = f(34, 900);
-  ctx.fillText(overWhy, 360, 470);
+  ctx.fillText(upper(overWhy), 360, 470);
   ctx.fillStyle = "#f4f1ff"; ctx.font = f(96, 900);
   ctx.fillText(String(score), 360, 560);
   ctx.fillStyle = "#8a87a8"; ctx.font = f(26, 800);
   ctx.fillText(hands + " hands  ·  best " + bestName, 360, 640);
   ctx.fillText("x" + bestCombo + " best combo  ·  " + busts + " busts", 360, 682);
   ctx.fillStyle = "#ffbf5a"; ctx.font = f(28, 900);
-  ctx.fillText("PRESS R OR ← → TO REPLAY", 360, 780);
+  ctx.fillText(upper("Press R or ← → to replay"), 360, 780);
 }
 
 /* ===========================================================================

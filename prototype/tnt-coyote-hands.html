@@ -414,7 +414,7 @@ function drawRuler() {
     ctx.setLineDash([]);
     ctx.fillStyle = '#ffe27a'; ctx.font = '700 22px system-ui,sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('PEAK ' + S.maxH.toFixed(1) + ' m', W - 16, my - 16);
+    ctx.fillText('Peak ' + S.maxH.toFixed(1) + ' m', W - 16, my - 16);
   }
 }
 
@@ -457,7 +457,7 @@ function drawCrate(c) {
     } else {
       ctx.fillStyle = 'rgba(255,226,122,.9)';
       ctx.font = '700 20px system-ui,sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('FUSE', x, y - s / 2 - 26);
+      ctx.fillText('Fuse', x, y - s / 2 - 26);
     }
     ctx.setLineDash([]);
     if (!c.armed) {
@@ -602,7 +602,7 @@ function drawTray() {
   ctx.fillStyle = ready ? '#fff' : 'rgba(255,255,255,.35)';
   ctx.font = '800 38px system-ui,sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('BOOM', GO.x + GO.w / 2, GO.y + GO.h / 2 + 2);
+  ctx.fillText('Boom', GO.x + GO.w / 2, GO.y + GO.h / 2 + 2);
 }
 
 function drawHud() {
@@ -611,10 +611,10 @@ function drawHud() {
   ctx.fillStyle = '#fff'; ctx.font = '800 62px system-ui,sans-serif';
   ctx.fillText(S.maxH.toFixed(1) + ' m', 24, 26);
   ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
-  ctx.fillText('PEAK', 26, 96);
+  ctx.fillText('Peak', 26, 96);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
-  ctx.fillText(S.phase === 'place' ? 'HAND ' + S.hand.join('').toUpperCase()
+  ctx.fillText(S.phase === 'place' ? 'Hand ' + S.hand.join('').toUpperCase()
                                    : 'x' + (ppm / PPM).toFixed(2) + ' zoom', W - 24, 34);
   ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
   ctx.fillText(S.phase === 'fly' ? 'up ' + Math.max(0, S.coyote.vy).toFixed(0) + ' m/s'
@@ -656,7 +656,7 @@ function drawDebug() {
   ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '500 19px ui-monospace,monospace';
   ctx.fillText('fps ' + fps.toFixed(0) + '  ' + S.phase + '  t ' + S.t.toFixed(2) +
                '  ppm ' + ppm.toFixed(1) + '  view ' + (H / ppm).toFixed(0) + 'm', 12, y0 - 66);
-  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  R ' + BLAST_RADIUS +
+  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  r ' + BLAST_RADIUS +
                '  match ' + BOOST_MATCH + 'x' + BOOST_MAX, 12, y0 - 40);
   ctx.fillText('fuse ' + FIRST_FUSE + '  trig ' + TRIGGER_R + '  up ' + BLAST_UPBIAS +
                '  side ' + SIDE_DAMP + '  spread ' + SPREAD +

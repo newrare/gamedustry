@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "SPINSHOCK",
+    title:   "Spinshock",
     /* One sentence, and the stage below plays it: a top spinning in a dish, an
        enemy top charging in, the finger tapping on the impact. The title and
        the demo caption are hidden in the SKIN — the picture says the rest. */
@@ -29,9 +29,9 @@
     music: { volume: 0.10, fade: 1.8,
              menu: { from: 0, length: 12, rate: 0.85, gain: 0.5 } },
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"SPIN",
-      endScore:"FINAL SCORE", gameOver:"SPUN OUT!", timeUp:"TIME'S UP!"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Spin",
+      endScore:"Final score", gameOver:"Spun out!", timeUp:"Time's up!"
     },
 
     /* THE FIVE BANDS OF THE CLIMB — one per six levels, and the level map
@@ -122,7 +122,7 @@
     gapPerfect: 32,
     boost: [0.055, 0.100, 0.155],   // spin won by an OK / GREAT / PERFECT shock
     tierMult: [1, 2, 3],            // score multiplier of the same three tiers
-    tierName: ["OK", "GREAT", "PERFECT"],
+    tierName: ["OK", "Great", "Perfect"],
     multiBoost: 0.035,     // extra spin per extra top caught in the same wave
     whiffCost: 0.05,       // spin lost by a shockwave that hits nothing (a MISS)
     tapCooldown: 0.18,     // seconds between two taps, so mashing is not free
@@ -758,7 +758,7 @@
       var pct = Math.round(spin * 100);
       if (pct === shownPct) return;
       shownPct = pct;
-      HUD.setRight(pct + "%", "SPIN", spin <= CONFIG.warnAt * spinCap() ? "warn" : "");
+      HUD.setRight(pct + "%", "Spin", spin <= CONFIG.warnAt * spinCap() ? "warn" : "");
     }
 
 
@@ -1020,7 +1020,7 @@
       Fx.ring(f.x, f.y, { from: t.r * 0.5, to: t.r * 4, color: "#ffffff",
         width: 8, life: 0.5 });
       Overlay.vignette("rgba(255,212,59,.75)", 0.9, 900);
-      Pop.show("danger", { word: Lang.t("BOSS TOP"), sub: Lang.t("PERFECT TAPS ONLY"),
+      Pop.show("danger", { word: Lang.t("Boss top"), sub: Lang.t("Perfect taps only"),
         hold: 1400, at: farSpot() });
       return f;
     }
@@ -1214,7 +1214,7 @@
           f.y - f.type.r, Lang.t("KO +") + ko, { color: col, size: 22, life: 0.6, tier: 1 });
         if (f.type.perfectOnly) {
           Sound.clip("chain", 0.9, 0.86);
-          Pop.show("ultra", { word: Lang.t("BOSS DOWN!"), sub: "+" + ko, at: farSpot() });
+          Pop.show("ultra", { word: Lang.t("Boss down!"), sub: "+" + ko, at: farSpot() });
         }
       }
       split(f);
@@ -1391,7 +1391,7 @@
       if (ROW && ROW.boss) spawnBoss();
       zapAll(0.5);                       // the fence powers up, then goes dark
       HUD.setScoreNow(0);
-      HUD.setLeft(Store.get("bestScore", 0), "BEST");
+      HUD.setLeft(Store.get("bestScore", 0), "Best");
       setSpinPill();
       Fx.reset();
       /* THE BED. The band of the climb the level sits in names the stretch of
@@ -1473,8 +1473,8 @@
       });
       if (hit.length > 1) {
         Pop.show("bonus", {
-          word: (hit.length > 2 ? Lang.t("TRIPLE") : Lang.t("DOUBLE")) + Lang.t(" SHOCK"),
-          sub: "+" + Math.round(boost * 100) + Lang.t("% SPIN"), at: farSpot(spot.y)
+          word: (hit.length > 2 ? Lang.t("Triple") : Lang.t("Double")) + Lang.t(" shock"),
+          sub: "+" + Math.round(boost * 100) + Lang.t("% spin"), at: farSpot(spot.y)
         });
         Sound.clip("chain", 0.6, 1.12);
       }
@@ -1530,7 +1530,7 @@
       score += bonus; HUD.setScore(score);
       pushSpin(CONFIG.comboSpin);
       Pop.show(combo >= 25 ? "ultra" : "combo", {
-        word: Lang.t("COMBO x") + combo, sub: "+" + bonus, at: farSpot()
+        word: Lang.t("Combo x") + combo, sub: "+" + bonus, at: farSpot()
       });
       Sound.clip("chain", 0.85, 1 + Math.min(combo, 20) * 0.012);
       Overlay.vignette("rgba(255,79,190,.75)", 1, 420);
@@ -1546,7 +1546,7 @@
       Fx.shake(3, 0.12);
       Sound.clip("miss", 0.45, 1.15);
       Pop.show("alert", {
-        word: "MISS", sub: "-" + Math.round(CONFIG.whiffCost * 100) + Lang.t("% SPIN"),
+        word: "Miss", sub: "-" + Math.round(CONFIG.whiffCost * 100) + Lang.t("% spin"),
         at: farSpot()
       });
       if (spin <= 0) fall();
@@ -1594,7 +1594,7 @@
         { color: ["#ff2f6d", "#ffffff", "#ffd43b"], count: 22, speed: 520, size: 7, life: 0.55 });
       Fx.shake(18, 0.36); Fx.flash("#ff2f6d", 0.34, 2.6); Fx.freeze(0.06);
       Sound.clip("crash", 0.85, Rand.range(0.94, 1.06));
-      Pop.show("alert", { word: "SPIN LOST", at: farSpot(),
+      Pop.show("alert", { word: "Spin lost", at: farSpot(),
         sub: "-" + Math.round(f.type.cost * 100) + "%" });
       Overlay.vignette("rgba(255,47,109,.9)", 1, 520);
       if (spin <= 0) fall();
@@ -1723,7 +1723,7 @@
       Sound.clip("crash", 0.9, 0.58);
       Sound.clip("shock", 0.7, 0.5);
       Overlay.vignette("rgba(255,47,109,.95)", 1, 1500);
-      Pop.show("danger", { word: "WRECKED", sub: "SPIN GONE", hold: 900,
+      Pop.show("danger", { word: "Wrecked", sub: "Spin gone", hold: 900,
         at: farSpot() });
     }
 
@@ -1817,15 +1817,15 @@
       var best = Store.get("bestScore", 0);
       var stars = score >= 3000 ? 3 : score >= 900 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? Lang.t("SPIN MASTER!") : CONFIG.copy.gameOver,
+        title: stars === 3 ? Lang.t("Spin master!") : CONFIG.copy.gameOver,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,
         rows: [
-          { label: "SHOCKWAVES", value: shocks },
-          { label: "PERFECT HITS", value: perfects, grade: perfects > 0 ? "good" : "" },
-          { label: "BEST COMBO", value: bestCombo, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+          { label: "Shockwaves", value: shocks },
+          { label: "Perfect hits", value: perfects, grade: perfects > 0 ? "good" : "" },
+          { label: "Best combo", value: bestCombo, grade: "accent" },
+          { label: "Best score", value: Math.max(score, best), grade: "gold" }
         ]
       });
     }
@@ -1869,7 +1869,7 @@
       if (spin <= 0) { fall(); return; }
       if (!wornSaid && cap <= 0.62) {
         wornSaid = true;
-        Pop.show("alert", { word: "BEARINGS WEARING OUT", hold: 1600 });
+        Pop.show("alert", { word: "Bearings wearing out", hold: 1600 });
       }
 
       // Spinning-out alarm, armed once per dive into the red. The edge glow is
@@ -1877,7 +1877,7 @@
       if (warnArmed && spin <= CONFIG.warnAt * cap) {
         warnArmed = false;
         Sound.clip("warn", 0.6, 1);
-        Pop.show("danger", { word: "SPINNING OUT", sub: "SHOCK TO RECOVER",
+        Pop.show("danger", { word: "Spinning out", sub: "Shock to recover",
           hold: 900, at: farSpot() });
       } else if (!warnArmed && spin >= CONFIG.warnClear * cap) {
         warnArmed = true;

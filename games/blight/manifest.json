@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#ff8fab",
     "accent2": "#7048e8"
+  },
+  "art": {
+    "objects": {
+      "decor-01": "blight-ball-01",
+      "decor-03": "blight-ball-03",
+      "decor-06": "blight-ball-06",
+      "decor-09": "blight-ball-09"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "BUBBLE TWIST",
+            "kicker": "Bubble twist",
             "line": "Pop fast, before the <b>blight</b>"
           },
           {
-            "kicker": "SUPER",
+            "kicker": "Super",
             "line": "The rainbow <b>wipes it all</b>"
           },
           {
-            "kicker": "DARKNESS",
+            "kicker": "Darkness",
             "line": "The blight has to <b>lose</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "BUBBLE TWIST",
+            "kicker": "Bubble twist",
             "line": "Eclate vite, avant la <b>contamination</b>"
           },
           {
-            "kicker": "SUPER",
+            "kicker": "Super",
             "line": "L’arc-en-ciel est la <b>solution</b>"
           },
           {
-            "kicker": "OBSCURE",
+            "kicker": "Obscure",
             "line": "La contamination doit être <b>contenue</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -117,30 +125,30 @@
       "fr": {
         "tagline": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
         "strings": {
-          " CLEANSED": " ASSAINIES",
-          " FELL": " TOMBÉES",
-          " POPPED": " ÉCLATÉES",
-          " STREAK": " D'AFFILÉE",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "BUBBLES CLEARED": "BULLES ÉLIMINÉES",
-          "CASCADE": "CASCADE",
-          "FINAL SCORE": "SCORE FINAL",
-          "INSTALL NOW": "INSTALLER",
-          "JOKER": "JOKER",
-          "MAX CHAIN": "CHAÎNE MAX",
-          "NEXT": "SUIVANT",
-          "OVERRUN!": "ENVAHI !",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
-          "POPPED": "ÉCLATÉES",
-          "PURIFIED!": "PURIFIÉ !",
-          "ROT": "INFECTION",
+          " cleansed": " assainies",
+          " fell": " tombées",
+          " popped": " éclatées",
+          " streak": " d'affilée",
+          "Best score": "Meilleur score",
+          "Bubbles cleared": "Bulles éliminées",
+          "Cascade": "Cascade",
+          "Final score": "Score final",
+          "Install now": "Installer",
+          "Joker": "Joker",
+          "Max chain": "Chaîne max",
+          "Next": "Suivant",
+          "Overrun!": "Envahi !",
+          "Play the full game": "Jouer au jeu complet",
+          "Popped": "Éclatées",
+          "Purified!": "Purifié !",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "THE ROT SPREADS": "L'INFECTION SE PROPAGE",
-          "THE ROT WINS!": "L'INFECTION L'EMPORTE !",
-          "TIME": "TEMPS",
-          "TIME'S UP!": "TEMPS ÉCOULÉ !"
+          "Rot": "Infection",
+          "Score": "Score",
+          "Tap to play": "Tap pour jouer",
+          "The rot spreads": "L'infection se propage",
+          "The rot wins!": "L'infection l'emporte !",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !"
         }
       }
     },
@@ -165,18 +173,18 @@
           25
         ],
         "en": [
-          "MARSH",
-          "RUINS",
-          "GORGE",
-          "CASTLE",
-          "THRONE"
+          "Marsh",
+          "Ruins",
+          "Gorge",
+          "Castle",
+          "Throne"
         ],
         "fr": [
-          "MARAIS",
-          "RUINES",
-          "GORGE",
-          "CHÂTEAU",
-          "TRÔNE"
+          "Marais",
+          "Ruines",
+          "Gorge",
+          "Château",
+          "Trône"
         ]
       },
       "tune": {

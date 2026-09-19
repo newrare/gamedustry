@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
   "order": 100,
   "draft": false,
@@ -12,6 +12,14 @@
   "theme": {
     "accent": "#7ef9ff",
     "accent2": "#ffb44f"
+  },
+  "art": {
+    "objects": {
+      "decor-02": "gearball-gear-02",
+      "decor-06": "gearball-gear-06",
+      "decor-07": "gearball-gear-07",
+      "decor-09": "gearball-gear-09"
+    }
   },
   "copy": {
     "fr": {
@@ -37,23 +45,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "GEAR",
+            "kicker": "Gear",
             "line": "<b>Chain</b> electrification"
           },
           {
-            "kicker": "TIMING",
+            "kicker": "Timing",
             "line": "Lead the <b>rotation</b>"
           },
           {
-            "kicker": "SKILL",
+            "kicker": "Skill",
             "line": "Aim for the right <b>slot</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -61,23 +69,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "GEAR",
+            "kicker": "Gear",
             "line": "<b>Électrification</b> en chaîne"
           },
           {
-            "kicker": "TIMING",
+            "kicker": "Timing",
             "line": "Anticipe la <b>rotation</b>"
           },
           {
-            "kicker": "SKILL",
+            "kicker": "Skill",
             "line": "Vise le bon <b>espace</b>"
           },
           {
-            "kicker": "30 LEVELS",
+            "kicker": "30 levels",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "CHALLENGE",
+            "kicker": "Challenge",
             "line": "Obtiens le <b>meilleur score</b>"
           }
         ]
@@ -116,32 +124,32 @@
       "fr": {
         "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b> et <b class=\"w-fill\">enchaîne-les pour remplir la chaîne</b>",
         "strings": {
-          " SLOTS LEFT": " ENCOCHES RESTANTES",
-          "A BALL NEXT TO ANOTHER WELDS — THE WHOLE RUN PAYS": "UNE BILLE COLLÉE À UNE AUTRE SOUDE — TOUTE LA SÉRIE PAIE",
-          "BALLS SET": "BILLES POSÉES",
-          "BEST SCORE": "MEILLEUR SCORE",
-          "CHARGE x": "CHARGE x",
-          "CIRCUIT CLEARED!": "CIRCUIT BOUCLÉ !",
-          "CIRCUIT FULL": "CIRCUIT PLEIN",
-          "FINAL SCORE": "SCORE FINAL",
-          "INSTALL NOW": "INSTALLER",
-          "JAM": "BOURRAGE",
-          "JAMMED!": "ENRAYÉ !",
-          "JAMS": "BOURRAGES",
-          "LIVES": "VIES",
-          "LONGEST CHAIN": "PLUS LONGUE SÉRIE",
-          "PLAY THE FULL GAME": "JOUER AU JEU COMPLET",
+          " slots left": " encoches restantes",
+          "A ball next to another welds — the whole run pays": "Une bille collée à une autre soude — toute la série paie",
+          "Balls set": "Billes posées",
+          "Best score": "Meilleur score",
+          "Charge x": "Charge x",
+          "Circuit cleared!": "Circuit bouclé !",
+          "Circuit full": "Circuit plein",
+          "Final score": "Score final",
+          "Install now": "Installer",
+          "Jam": "Bourrage",
+          "Jammed!": "Enrayé !",
+          "Jams": "Bourrages",
+          "Lives": "Vies",
+          "Longest chain": "Plus longue série",
+          "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
-          "SCORE": "SCORE",
-          "SHIFT OVER": "FIN DE SERVICE",
-          "SPLICE": "RACCORD",
-          "SPLIT": "DOUBLÉ",
-          "STAGE BONUS": "BONUS DE TABLEAU",
-          "TAP TO PLAY": "TAP POUR JOUER",
-          "TAP WHEN A GAP REACHES THE HOPPER": "TAP QUAND UN TROU ARRIVE À LA TRÉMIE",
-          "TIME": "TEMPS",
-          "WELD x": "SOUDURE x",
-          "WILD SAVE": "JOKER SAUVEUR"
+          "Score": "Score",
+          "Shift over": "Fin de service",
+          "Splice": "Raccord",
+          "Split": "Doublé",
+          "Stage bonus": "Bonus de tableau",
+          "Tap to play": "Tap pour jouer",
+          "Tap when a gap reaches the hopper": "Tap quand un trou arrive à la trémie",
+          "Time": "Temps",
+          "Weld x": "Soudure x",
+          "Wild save": "Joker sauveur"
         }
       }
     },

@@ -735,7 +735,7 @@ function drawGauge() {
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.font = '600 18px system-ui,sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.fillText('PWR', g.x + g.w / 2, g.y - 26);
+  ctx.fillText('Pwr', g.x + g.w / 2, g.y - 26);
 }
 
 function fmt(m) {
@@ -748,7 +748,7 @@ function drawHud() {
   ctx.fillStyle = '#fff'; ctx.font = '800 62px system-ui,sans-serif';
   ctx.fillText(fmt(S.maxH), 24, 26);
   ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
-  ctx.fillText('MAX HEIGHT', 26, 96);
+  ctx.fillText('Max height', 26, 96);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
   ctx.fillText(S.phase === 'fly' ? S.pops + ' TNT' : 'angle ' +
@@ -770,7 +770,7 @@ function drawHud() {
     ctx.fillRect(BAR.x, BAR.y, BAR.w, BAR.h);
     ctx.fillStyle = '#fff'; ctx.font = '800 40px system-ui,sans-serif';
     ctx.textBaseline = 'middle';
-    ctx.fillText(hot ? 'RELEASE!' : 'HOLD TO LIGHT THE FUSE',
+    ctx.fillText(hot ? 'Release!' : 'Hold to light the fuse',
                  BAR.x + BAR.w / 2, BAR.y + BAR.h / 2 + 2);
   }
 
@@ -790,7 +790,7 @@ function drawHud() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.globalAlpha = Math.max(0, 1 - S.t / 1.2);
     ctx.fillStyle = '#9dff9d'; ctx.font = '800 64px system-ui,sans-serif';
-    ctx.fillText('PERFECT LIGHT', W / 2, 300);
+    ctx.fillText('Perfect light', W / 2, 300);
     ctx.globalAlpha = 1;
   }
 

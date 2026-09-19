@@ -2,7 +2,7 @@
      1. CONFIG
      =================================================================== */
   var CONFIG = {
-    title:   "BLIGHT",
+    title:   "Blight",
     /* One sentence, and nothing else: the demo caption is dropped in the SKIN
        because the stage below already plays the drag / release / match beat. */
     tagline: "<b class=\"w-aim\">Aim</b>, <b class=\"w-fire\">shoot</b> and match 3 bubbles to push the black magic back",
@@ -58,10 +58,10 @@
       { scene: "backgroundPhone05", music: { from: 132, length: 24 } }   // 25-30  Meltdown
     ],
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"TIME",
-      endScore:"FINAL SCORE", gameOver:"OVERRUN!", timeUp:"TIME'S UP!",
-      rotten:"THE ROT WINS!", rotLabel:"ROT"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
+      endScore:"Final score", gameOver:"Overrun!", timeUp:"Time's up!",
+      rotten:"The rot wins!", rotLabel:"Rot"
     },
 
     /* --- game tunables --- */
@@ -800,7 +800,7 @@
         if (rotCount < liveCount) {
           seedBlight(1);
           Fx.flash("rgba(150,40,255,0.35)", 0.2);
-          if (!rotCount) Pop.show("alert", { word: "THE ROT SPREADS", hold: 1400 });
+          if (!rotCount) Pop.show("alert", { word: "The rot spreads", hold: 1400 });
           Sound.clip("spread", 1, 0.55);
         }
         return;
@@ -845,7 +845,7 @@
     function comboTier(n) { return n >= 12 ? 3 : n >= 8 ? 2 : n >= 5 ? 1 : 0; }
     // Tier 0 is a plain 3-match: frequent, so it gets the score pop and nothing
     // else. The three tiers above it graduate to a hero callout.
-    var TIER_WORD = ["", "GREAT!", "AWESOME!", "UNREAL!"];
+    var TIER_WORD = ["", "Great!", "Awesome!", "Unreal!"];
     var TIER_POP  = ["", "streak", "combo", "ultra"];
     // Tints for the score pop, defined in the SKIN block: blue -> gold -> pink
     // -> blight violet, so the colour alone says how big the clear was.
@@ -894,7 +894,7 @@
         grid[r][c] = mine; sup[r][c] = false;
         x = cellX(r, c); y = cellY(r);
         prismFx(x, y, mine);
-        Pop.text(x, y - R * 0.9, "JOKER", { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
+        Pop.text(x, y - R * 0.9, "Joker", { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
         setWobble(r, c, 0.95, Math.atan2(cellY(cell.r) - y, cellX(cell.r, cell.c) - x), 0);
         chain.joker++;
       }
@@ -1095,7 +1095,7 @@
       score += dropGain; chain.gained += dropGain;
       cleared += dropped.length;
       totalCleared += cleared;
-      HUD.setLeft(totalCleared, "POPPED");
+      HUD.setLeft(totalCleared, "Popped");
 
       // --- scoring ---
       if (chain.popped) streak++;                    // a cure alone keeps the streak
@@ -1125,15 +1125,15 @@
                           at: { x: cx, y: Math.max(cy - R - 34, Layout.top + 100) } });
       // The hero line above it only fires once the clear is worth shouting
       // about; a lone streak with a small clear keeps the corner sticker.
-      var streakSub = mult > 1 ? "x" + mult + Lang.t(" STREAK") : cleared + Lang.t(" POPPED");
+      var streakSub = mult > 1 ? "x" + mult + Lang.t(" streak") : cleared + Lang.t(" popped");
       if (chain.cured) {
-        Pop.show("combo", { word: "PURIFIED!", sub: chain.cured + Lang.t(" CLEANSED"),
+        Pop.show("combo", { word: "Purified!", sub: chain.cured + Lang.t(" cleansed"),
                             hold: 420, cls: "pop-cure" });
       } else if (tier >= 1) {
         Pop.show(TIER_POP[tier], { word: TIER_WORD[tier], sub: streakSub,
                                    hold: tier >= 3 ? 420 : 300 });
       } else if (mult > 1) {
-        Pop.show("streak", { word: "x" + mult + Lang.t(" STREAK"), at: "topRight", hold: 260 });
+        Pop.show("streak", { word: "x" + mult + Lang.t(" streak"), at: "topRight", hold: 260 });
       }
 
       // --- audio ---
@@ -1151,7 +1151,7 @@
       spared = {};
       if (ended) return;
       if (shotCount > 0 && shotCount % ADD_SHOTS === 0) pushRow();
-      if (lowestBubbleBottom() >= DANGER_Y) { endRun("OVERRUN!"); return; }
+      if (lowestBubbleBottom() >= DANGER_Y) { endRun("Overrun!"); return; }
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
     }
 
@@ -1165,7 +1165,7 @@
       }
       Fx.flash(PAL[Rand.int(0, PAL.length - 1)].glow, 0.2);
       // Off in a corner: the cluster already owns the centre this frame.
-      Pop.show("bonus", { word: "CASCADE", sub: "+" + drops.length + Lang.t(" FELL"),
+      Pop.show("bonus", { word: "Cascade", sub: "+" + drops.length + Lang.t(" fell"),
                           at: "lowerLeft", hold: 320 });
       Sound.clip("cheer", 0.5, Rand.range(0.97, 1.05));
     }
@@ -1237,7 +1237,7 @@
       ball = newBall(pickShootColor(), Rand.chance(SHOT_SUP));
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
       HUD.setScoreNow(0);
-      HUD.setLeft(0, "POPPED");
+      HUD.setLeft(0, "Popped");
       HUD.setRight(0 + "%", CONFIG.copy.rotLabel, "");
       /* THE BED. The band names the stretch of the track the round rides, so
          replaying a level never restarts the music and crossing into the next
@@ -1409,7 +1409,7 @@
       if (chain) flushChain();
       if (ended) return;
       var cell = snapCell(ball.x, ball.y);
-      if (!cell) { endRun("OVERRUN!"); return; }
+      if (!cell) { endRun("Overrun!"); return; }
       var lx = cellX(cell.r, cell.c), ly = cellY(cell.r);
       var impactAng = Math.atan2(ball.vy, ball.vx);
       var ballCol = ball.sup ? PAL[0] : (PAL[ball.color] || PAL[0]);
@@ -2013,7 +2013,7 @@
       ctx.fillStyle = "rgba(255,255,255,0.55)";
       ctx.font = "bold 15px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(Lang.t("NEXT"), nx, ny - nr - 12);
+      ctx.fillText(upper(Lang.t("Next")), nx, ny - nr - 12);
       ctx.textAlign = "left";
       drawBubble(nx, ny, nr, nextColor, nextSuper, false, 1, 0, 0, 0,
                  1 + BREATHE * 1.4 * Math.sin(bgT * 1.9 + 1.1));
@@ -2046,9 +2046,9 @@
         score: score,
         stars: stars,
         rows: [
-          { label: "BUBBLES CLEARED", value: totalCleared },
-          { label: "MAX CHAIN",       value: maxCombo, grade: "accent" },
-          { label: "BEST SCORE",      value: best,     grade: "gold" }
+          { label: "Bubbles cleared", value: totalCleared },
+          { label: "Max chain",       value: maxCombo, grade: "accent" },
+          { label: "Best score",      value: best,     grade: "gold" }
         ],
         track: { score: score, reason: title, maxCombo: maxCombo, cleared: totalCleared }
       });

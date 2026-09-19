@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "MARSHMELT",
+    title:   "Marshmelt",
     /* One sentence, three coloured words: the gesture, the character, the
        threat — exactly what the stage below acts out. */
     tagline: "<b class=\"w-tap\">Tap</b> where you aim to fling the <b class=\"w-mallow\">marshmallow</b> from rock to rock over the <b class=\"w-lava\">lava</b>",
@@ -27,9 +27,9 @@
     hud: { score: true, timer: false },
     music: { volume: 0.11, fade: 1.6 },
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"CHAIN",
-      endScore:"FINAL SCORE", gameOver:"MELTED!", timeUp:"TIME'S UP!"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Chain",
+      endScore:"Final score", gameOver:"Melted!", timeUp:"Time's up!"
     },
 
     /* --- the marshmallow ---------------------------------------------------
@@ -467,14 +467,14 @@
       score += gain;
       HUD.setScore(score);
       HUD.punch(combo >= 5 ? "#ffd166" : "#fff3dd");
-      HUD.setRight(combo >= 2 ? "x" + combo : null, "CHAIN", combo >= 5 ? "on" : "");
+      HUD.setRight(combo >= 2 ? "x" + combo : null, "Chain", combo >= 5 ? "on" : "");
       Pop.show("score", { word:"+" + gain, at:{ x: mallow.x, y: mallow.y - 54 } });
       Fx.ring(rk.x, rk.y, { from: rk.r * 0.7, to: rk.r * 1.9, color:"#ffd9a0", width:5, life:.32 });
 
       if (rocksHit >= nextMile) {
         nextMile += C.milestone;
         Pop.show(rocksHit >= 40 ? "ultra" : rocksHit >= 20 ? "combo" : "streak",
-                 { word: rocksHit + Lang.t(" ROCKS"), sub:"keep climbing" });
+                 { word: rocksHit + Lang.t(" rocks"), sub:"Keep climbing" });
         Sound.clip("climb", 0.5, 1 + Math.min(rocksHit / 60, 0.35));
       }
     }
@@ -487,7 +487,7 @@
       Fx.flash("#ff7a1a", 0.22, 3);
       Fx.shake(7, 0.2);
       Fx.burst(mallow.x, mallow.y, { color:["#ffd166", "#ff7a1a"], count:16, speed:330, life:.45, grav:-120 });
-      Pop.show("danger", { word: toast >= 3 ? Lang.t("BURNT!") : Lang.t("HOT!"), sub:"jump", at:"upper" });
+      Pop.show("danger", { word: toast >= 3 ? Lang.t("Burnt!") : Lang.t("Hot!"), sub:"Jump", at:"upper" });
     }
 
     /* A structure that touches the lava catches fire. It becomes a fireball —
@@ -583,7 +583,7 @@
       for (i = 0; i < 7; i++) bubbles.push(newBubble());
 
       HUD.setScoreNow(0);
-      HUD.setLeft(best, "BEST");
+      HUD.setLeft(best, "Best");
       HUD.setRight(null);
       Fx.reset();
       buildSprites();
@@ -598,21 +598,21 @@
       Fx.shake(13, 0.5);
       Fx.freeze(0.08);
       splash(mallow.x, 26);
-      Pop.show("danger", { word:"MELTED", at:"center" });
+      Pop.show("danger", { word:"Melted", at:"center" });
       Overlay.vignette("#ff3b00", 0.55);
     }
 
     function finish() {
       var stars = score >= 1100 ? 3 : score >= 500 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? Lang.t("SURVIVOR!") : CONFIG.copy.gameOver,
+        title: stars === 3 ? Lang.t("Survivor!") : CONFIG.copy.gameOver,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,
         rows: [
-          { label:"ROCKS", value: rocksHit },
-          { label:"BEST CHAIN", value: bestCombo, grade:"accent" },
-          { label:"BEST SCORE", value: Math.max(score, best), grade:"gold" }
+          { label:"Rocks", value: rocksHit },
+          { label:"Best chain", value: bestCombo, grade:"accent" },
+          { label:"Best score", value: Math.max(score, best), grade:"gold" }
         ]
       });
     }

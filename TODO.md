@@ -87,6 +87,111 @@ ______________________________________________________________________
 
 ## The web build
 
+- [x] ART — **the shell's instruments are painted.** `game-object-reward.png`
+  (24 on a 6x4), `game-object-trophy.png` (10 on a 5x2),
+  `game-object-ticket.png` (12 on a 4x3) and `game-object-multiplicator.png`
+  (6 on a 3x2) cut into `assets/image/object/`, eight of the 52 adopted by
+  `SHELL_CUTS` under the names the shell calls them by — `star`, `star-burst`,
+  `coin`, `coin-pile`, `ticket`, `xp`, `trophy`, `mult-5`. The ×5 plate is what
+  the seventh day of the daily road wears, on the strip and on both its
+  cards; it is keyed by the NUMBER (`Meta.multArt(5)`), so x2, x10, x20, x50
+  and x100 are cut and one line away. The three sentences that said the same
+  thing in the card's own type are gone with it — the `×5` tag on the reward
+  name, the rule under the locked card and the star-day line over the three
+  boxes. What a card still writes is what no picture carries: how far away the
+  day is. Four of those are the names `menu.js` already gave its pictograms,
+  so the swap is ONE branch in `icon()` and the wallet, the LV row, the shop,
+  the album, the daily road, the level map's stars and counter, the round's
+  star pill and the end screen's three stars all turn painted at once; a build
+  with no artwork keeps the stroke with no branch anywhere else. Radiam is the
+  only game that carries it today, because the gate is `web.meta`.
+
+- [x] WEB — **the end screen has a third button: the way on.** Map · replay ·
+  next, and the third is the shell's own node rather than the motor's — a
+  playable has no next level and the motor must not learn what one is. It is
+  `last.level + 1`, hidden where there is none (a free round, a missed
+  objective, the last level), never dressed `hero`/`calm`/`dim`, and it rides
+  the motor's reveal through `#btn-replay.show ~ #btn-next` so it lights and
+  goes dark with it. All three now carry `cursor:pointer`: `dress()` rewrites
+  `className` and dropped the `.btn` / `.link` that used to carry it, so on a
+  desk they read as decoration.
+
+- [x] META — **the album and the shop are a STACK.** Both are layers over the
+  map with the same z-index, and the wallet's chips are doors both ways — so
+  DOM order decided which won, and DOM order is the order they were first
+  BUILT in. An album built before a shop could never be reopened from it: the
+  click landed, the screen turned on, and it turned on underneath. Opening one
+  now re-appends it to the end of the frame, which keeps BACK peeling layers
+  off without a z-index each.
+
+- [x] META — **every landing writes its figure.** The reward-card path passed
+  `tag: false`, so collecting a daily gift moved a chip with nothing to say it
+  had moved — no `+343`, no `+2`, no `+120 xp`. The reasoning (the card said
+  the amount already) stopped holding the day collecting CLOSED the card: the
+  piece lands 400 ms after it is gone. A sticker keeps it off — its `n` is an
+  index, so the tag could only read `+`.
+
+- [x] META — **a wallet is held the moment the state moves**, not the moment a
+  piece flies. A gift card grants before it can say what it paid, and
+  `persist` repaints every wallet on screen — so on the daily road, where the
+  map opens under the card, the header counted up for the quarter second the
+  card was still fading in. The player watched the money arrive and was then
+  asked to collect it.
+
+- [x] META — **a round's xp is read on the MAP.** `addXp` fired a callout from
+  inside itself: the arithmetic happens on the END screen, whose wallet has no
+  level bar, under a cascade of coins — so the line landed over a reveal, about
+  a bar nobody could see, announcing a reward that arrived before the screen
+  that holds it. The gain is granted at once and the READING waits:
+  `Meta.arrive()`, called from the map's `show()`, runs the bar from EMPTY to
+  where the player now stands, prints `+N` under it, and only then opens the
+  card — whose own title (*Level 2!*) is the announcement, so nothing is said
+  twice. The card carries `granted: true`; `addXp` already paid the ticket.
+
+- [x] META — **an xp reward is now visible when it lands.** It was the one
+  reward whose `before` was 0 and whose chip is a bar, so `grant()` moved the
+  bar behind the blurred card and the landing had nothing left to show. The
+  bar is held the way a coin chip is held, runs on the landing, and prints
+  `+N` under itself — a bar says how far along the player is, never how much
+  just arrived. A level crossed runs to the end, resets without a transition
+  and starts again, instead of sliding backwards.
+
+- [x] META — **the three gift boxes are dealt, not printed.** The size and the
+  idle (the floater, the rocker, the one something knocks in) were nailed to
+  the position, so the row was the same row every card — three looks in a fixed
+  order stop being three looks after the second one. Two independent shuffles
+  now, one for the look and one for the painted colour, plus a random negative
+  `animation-delay` so the idles are never caught at the same moment of
+  themselves twice. It still leaks nothing: both deals come from `Math.random`
+  alone and the three rewards are rolled per index and separately.
+
+- [x] META — **the shop sells a super ticket.** Fifteen ordinary tickets'
+  worth of coins (3 750) for one pull at **legendary 30 / epic 25 / rare 20 /
+  common the rest**. Its tiers are PINNED where an ordinary bet shares out a
+  pool — the five-ticket odds drift with the board (47/33/16/5 fresh,
+  33/52/10/5 once the milestones are paid in) and a premium pull that drifts
+  is not a promise. An empty tier hands its share back. It branches inside the
+  same `chances()`, so the bars the player reads are the bars the roll uses. Its own pocket (`save.st`, a field added to the save rather
+  than a version bump), no chip in the wallet — it is counted on the shop card
+  it is bought on and on the sixth bet pill it is spent from, which is the
+  only place it can be spent. The piece is the rainbow ticket of the twelve.
+
+- [x] META — **the ad offer pays ×5 and says so.** It multiplied by three,
+  which no plate can draw; five is the one the artwork states. The button
+  leads with the REWARD and follows with the price — `WIN ×5` over
+  `watch an ad` — and beside it, on the same line, a quiet ARROW walks past
+  the ad (a refusal written out reads as the other half of a decision, at the
+  weight of the thing it refuses). A tap anywhere on the card or the frame
+  collects too, and so does ENTER / SPACE / ESCAPE. A sticker is REDRAWN and
+  not multiplied, so that one wears no plate and reads *one more*.
+
+- [ ] ART — **the other twelve, and the motor.** The painted instruments reach
+  a game through `CONFIG.shellArt`, which the builder gates on `web.meta` — so
+  widening it is deciding what a game with no wallet should get (the stars, at
+  least: the level map and the end screen are all thirteen's). The playable and
+  the android builds still draw the glyph, which is the `template/` + motor
+  half of the same question.
+
 - [x] CODE — **a TAP reloaded the game view at random, and the layers piled
   up.** Reproduced over CDP on the real builds, playable and web alike: it is
   the END SCREEN'S TWO BUTTONS, still live over the round that follows. `.show`
@@ -246,6 +351,44 @@ ______________________________________________________________________
   `packages/webshell/`, no `game.js` touched, and it reaches the thirteen at
   once. Related: the game-over *content* pass in *The games*.
 
+- [ ] CODE — **one system for the views: intro, map, shop, album, round, end —
+  and the modal over them.** The web shell grew a screen at a time and each one
+  brought its own mount, its own backdrop, its own back arrow and its own way of
+  being stacked: the menu's panels are swapped inside the title band
+  ([packages/webshell/menu.js](packages/webshell/menu.js)), the map is a layer
+  ([packages/webshell/levels.js](packages/webshell/levels.js)), the album and the
+  shop are a stack re-appended to the end of the frame to decide who wins, and a
+  reward card, the pause card and the gift ceremony are each their own overlay.
+  Nothing says what a view IS, so every new screen re-decides it. Define one —
+  mount, show, hide, back, z-order, what the backdrop does, what the bed does —
+  and port the six screens plus the modal onto it, so a seventh is a declaration
+  rather than a precedent to copy. No `game.js` is touched.
+
+- [ ] CODE — **one HUD for every view: coins, tickets, xp.** The component is
+  already one — `MT.wallet(host, opts)`
+  ([packages/webshell/meta.js:755](packages/webshell/meta.js)), one `.mt-wallet`
+  block, a registry every write repaints and `Meta.fx` to land a figure in a
+  chip. What is not decided is WHERE it hangs: four hosts today (the map's
+  header, the shop, the album, the end screen's transient one) with four
+  opinions about which chips are doors, and the title screen and the round show
+  none of it — so a player who just earned coins in a round sees them only two
+  screens later. Decide what the player carries on screen and where, then mount
+  that one band from the view system rather than from each screen. It is the
+  same question the star pill and the MENU / OPTIONS corner already answer for
+  the round: the game owns the top band, the shell owns the corners.
+
+- [ ] CODE — **the navigation, and what a first launch shows.** Two halves of
+  one pass. The navigation: where every screen leads and what BACK means from
+  each — title → map → round → end → map is the spine, and the album, the shop,
+  the daily road and the panels hang off it, today with a back arrow per screen
+  and an ESCAPE that means three different things. The first launch: a board
+  that has never been played opens on level 0, which opens the help panel over
+  the map ([packages/webshell/levels.js](packages/webshell/levels.js)) — that is
+  the whole onboarding, and it is one panel of text in front of a player who has
+  not seen the game yet. Decide the first minute: what is explained, when, and
+  what stays hidden until it exists (a wallet with nothing in it, a shop with
+  nothing to sell). Related: the leave card and the game-over buttons above.
+
 - [ ] CODE — **a sticker collection, ten per game.** The cuts under
   `assets/image/object/` (414 of them across the thirteen) are the material: pick
   ten per game, adopt them like any other master, and unlock them against the
@@ -388,11 +531,68 @@ ______________________________________________________________________
   so nothing may score or steer during it. Its cue comes out of
   `assets/audio/sfx/` like every other event.
 
+  **Half of it now ships for every game**: `onOutro` holds the frame after a
+  missed objective and the shell plays the red frame, the fire and the slow
+  motion over it ([docs/LEVELS.md](docs/LEVELS.md)). What is left here is
+  arcider's own — the craft coming apart and rolling off the road — which is
+  the game's to draw inside that beat.
+
 - [ ] CODE — **`gearball`, rework the gameplay.** The closed-gear-loop redesign
   is in, but the loop itself is still thin over a full ladder.
 
 - [ ] CODE — **`slipdeck`, rework the gameplay.** Same call, and its seven
   tunables are already in `CONFIG.play`, so a new loop has the knobs it needs.
+
+- [ ] CODE — **`bouncetry`, rework the gameplay around a ghost.** The brick
+  breaker with two colours and one swap tap is thin over thirty levels, and the
+  swap is the only decision it offers. Rebuild the loop around a GHOST — the
+  ball, or a second body, that passes THROUGH what it cannot break instead of
+  bouncing off it — and re-decide what the tap does once that is true. The
+  mechanic is not settled: it is a `prototype/` question first
+  (one raw page, one answer), and porting the update / render / input into
+  `games/bouncetry/game.js` is the separate request that follows.
+
+- [ ] CODE — **`blight`, re-balance the rainbow and the rot.** The two halves
+  of the game argue with each other and neither was benched. The RAINBOW is
+  both the cure and the joker — thrown into the rot it gives blighted bubbles
+  back their colour, thrown at a clean wall it takes one — and `cureMin`,
+  `wallSuperChance` and how much one rainbow saves decide whether it is worth
+  holding or worth spending now; it reads as the right call almost always
+  today. The ROT is the clock: `blightInterval`, `rotBurst()` and how many
+  seeds an opening deals wind it up, and a board it has barely touched pays a
+  rainbow badly while a board it has taken pays it too well. Read the two
+  together over the ladder, one set of numbers, and check the third star is
+  still reachable at level 30.
+
+- [ ] CODE — **`arcider`, paint the charge cells and the mines.** Both are
+  drawn on the canvas today — the cell and the blocker are the stand-up sprite
+  of `games/arcider/game.js` — while the game's own object sheets are already
+  cut under `assets/image/object/`. Adopt one cut per role
+  (`cut-objects.mjs --adopt … `, `art.objects` in the manifest), read them off
+  `ArtImages` and draw the picture in place of the shape, keeping the same
+  footprint on the road so nothing about the collision or the sight line moves.
+
+- [ ] CODE — **roll the meta layer out to the other twelve.** It ships on
+  `radiam` only ([docs/META.md](docs/META.md)): wallet, twenty-sticker album,
+  gumball machine, shop, daily strip, the coin cascade on the end screen and the
+  gift boxes. Per game it is a 5x4 sticker sheet out of the image model
+  (`assets/image/master/<slug>-object-sticker.png`, cut with
+  `--grid 5x4 --keep-partial`) and a `web.meta` block naming the twenty and the
+  twelve milestone slots. Do it once `radiam` has been played enough to say the
+  economy's four numbers are right — `coinsPer`, `ticketPrice`, the sell prices
+  and the drop weights are guesses until someone has drawn fifty times.
+
+- [ ] CODE — **the advertising: a real rewarded ad, and where the ads are.**
+  `Meta.ad` is a placeholder card that says so on screen and the web target has
+  no SDK at all, so the first half is the body of one function — android first
+  (`android.ads.rewarded` is already a manifest flag), not the site. The second
+  half is the placement, which has never been decided: the ×5 offer on a perfect
+  round is the only ad in the game today. Name every slot the player may be
+  offered one — a second chance on a missed objective, a ticket or a coin top-up
+  in the shop, the daily road's own gift — with a rule for how often it may be
+  asked and never in the middle of a round, and put them all through `Meta.ad`
+  so there is one path to fill with an SDK. The offer must keep saying what it
+  multiplies and what it costs, and walking past it must stay one tap.
 
 - [ ] CODE — **an online leaderboard.** Phase 5 of `packages/meta`, still only
   the local `best:<slug>` the motor writes on `endRound`. The site is on

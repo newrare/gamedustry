@@ -203,12 +203,13 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
      does can change without touching the motor or this builder. ---- */
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
-    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Lang: Lang,
+    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Lang: Lang, upper: upper,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
-    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art,
+    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
-    endRound: endRound, applyCopy: applyCopy,
+    onOutro: onOutro, endRound: endRound, applyCopy: applyCopy,
     state: function () { return State; },
+    ending: function () { return ending; },
     render: frameRender,
     clearWorld: function () { ctx.clearRect(0, 0, view.w, view.h); }
   };
@@ -327,6 +328,15 @@ const WEB_ONLY_ART = ['background-desk'];
    nobody keeps in step with the artwork. */
 const WEB_ONLY_STYLE = /^ball-[a-z]+-(\d+)$/;
 
+/* THE STICKER ALBUM is web-only wholesale, and it is the largest of the four
+   exceptions: twenty cuts of one 5x4 sheet, ~730 KB, and a playable has no
+   collection to put them in — no album, no machine, no shop, no map to earn
+   one off (packages/webshell/meta.js). Left in, they would be ~975 KB of
+   base64 in a creative capped at 5 MB, to draw nothing at all. Unlike the bead
+   styles there is no first member to keep: the whole role belongs to the
+   target that has a player who comes back. */
+const WEB_ONLY_STICKER = /^sticker\d+$/;
+
 /* And a SCENE SET, for the third time and the same reason: a game whose
    painted scene changes per band of the climb keeps one picture per band
    (`<slug>-background-phone-<name>.webp`, games/echomaze's five over thirty
@@ -344,6 +354,7 @@ function firstScene(roles) {
 
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
+  if (WEB_ONLY_STICKER.test(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
   if (m && Number(m[1]) !== 1) return true;
   if (SCENE_SET.test(role) && roles) {
@@ -426,6 +437,54 @@ async function brandJs(manifest) {
     label: ${JSON.stringify(BRAND_LABEL)},
     version: ${JSON.stringify(version)},
     mark: "data:image/webp;base64,${buf.toString('base64')}"
+  };
+
+`;
+}
+
+/*
+  THE SHELL'S OWN ARTWORK — CONFIG.shellArt. Web target, and only for a game
+  that declares `web.meta`.
+
+  Six painted boxes — a gift closed and open, in three colours —
+  `assets/image/shell/gift-{close,open}-NN.webp`, cut by
+  tools/lab/cut-objects.mjs out of `assets/image/master/game-object-gift-*.png`
+  and encoded by tools/lab/encode-art.mjs. They are the shell's, not a game's:
+  the daily strip on the title screen and the three-box gift draw the same
+  boxes for every game that has a wallet to pay into, so they cannot live under
+  a slug the way `CONFIG.art` does. Same shape as CONFIG.brand, one directory
+  along.
+
+  It is gated on `web.meta` and not merely on the web target because the gift
+  is the meta layer's ceremony: a game with no wallet never opens a box, and
+  ~160 KB of base64 for a picture nothing draws is the one thing every art rule
+  in this file exists to prevent.
+*/
+const SHELL_ART_DIR = 'assets/image/shell';
+
+async function shellArtJs(manifest) {
+  const meta = manifest && manifest.web && manifest.web.meta;
+  if (!meta) return '';
+  const dir = path.join(ROOT, SHELL_ART_DIR);
+  if (!existsSync(dir)) return '';
+  const roles = readdirSync(dir)
+    .filter((f) => f.endsWith('.webp'))
+    .map((f) => f.slice(0, -'.webp'.length))
+    .sort();
+  if (!roles.length) return '';
+
+  const entries = [];
+  for (const role of roles) {
+    const buf = await readBin(path.join(SHELL_ART_DIR, role + '.webp'));
+    entries.push(`    ${camel(role)}: "data:image/webp;base64,${buf.toString('base64')}"`);
+  }
+
+  return `
+  /* ---- the web shell's own artwork, from ${SHELL_ART_DIR}/*.webp. Injected
+     by tools/build/build.mjs --target=web for a game with a `+ '`web.meta`' + ` block;
+     packages/webshell/{daily,meta}.js draw it. ---- */
+  CONFIG.shellArt = {
+${entries.join(',\n')}
   };
 
 `;
@@ -711,13 +770,28 @@ async function main() {
   }
 
   // the web target ships a layer of its own; load it once for the run.
-  /* The web layer is two files, and the order is the contract: levels.js
-     publishes window.__LEVELS__, menu.js mounts it. */
+  /* The web layer is five files and the ORDER IS THE CONTRACT, because each
+     one publishes the handle the next reads:
+
+       levels.js  window.__LEVELS__ — the map, and the bands meta.js collects
+       meta.js    window.__META__   — the wallet, and the map's result filter
+                                      runs AFTER the level layer's, so the
+                                      stars it reads are the level's
+       album.js   window.__ALBUM__  — the collection, the machine, the shop
+       daily.js   window.__DAILY__  — the strip on the title screen
+       menu.js    mounts all four
+
+     The stylesheets follow the same order for the same reason: meta.css re-cuts
+     the map's header, so it has to come after levels.css. */
   const web = WEBISH
     ? {
         css: await read('packages/webshell/menu.css') + '\n' +
-             await read('packages/webshell/levels.css'),
+             await read('packages/webshell/levels.css') + '\n' +
+             await read('packages/webshell/meta.css'),
         js: await read('packages/webshell/levels.js') + '\n' +
+            await read('packages/webshell/meta.js') + '\n' +
+            await read('packages/webshell/album.js') + '\n' +
+            await read('packages/webshell/daily.js') + '\n' +
             await read('packages/webshell/menu.js')
       }
     : null;
@@ -753,7 +827,8 @@ async function main() {
        template is a build unit with no slug, so it gets neither of those two. */
     const artCfg = await gameArt(unit.template ? null : unit.name, WEBISH);
     const webCfg = artCfg + await brandJs(manifest) +
-      (WEBISH ? slugJs(unit.template ? null : unit.name) + webConfigJs(manifest) : '');
+      (WEBISH ? slugJs(unit.template ? null : unit.name) + webConfigJs(manifest) +
+                await shellArtJs(manifest) : '');
     // The web target's own bed, swapped into the game's ASSETS in place of the
     // short cut a playable ships (THE FULL-LENGTH BED, above).
     if (WEBISH) src.config = await webMusic(src.config, manifest);

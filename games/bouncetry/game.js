@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "BOUNCETRY",
+    title:   "Bouncetry",
     /* One sentence, and nothing else — the one rule of the game and nothing
        around them. The stage below plays exactly that: the ball keeps its
        colour, the tap flips the whole wall of glass. */
@@ -23,9 +23,9 @@
     hud: { score: true, timer: false },
     music: { volume: 0.11, fade: 1.8 },
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"TIME",
-      endScore:"FINAL SCORE", gameOver:"OUT OF BALLS!", timeUp:"TIME'S UP!"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
+      endScore:"Final score", gameOver:"Out of balls!", timeUp:"Time's up!"
     },
 
     /* --- the wheel: which power it deals, and to how many bricks -------- */
@@ -183,24 +183,24 @@
     /* --- the two sides ------------------------------------------------ */
     var RED = 0, BLUE = 1;
     var SIDE = [
-      { key: "red",  light: "#ffd9dd", core: "#ff3b57", edge: "#8c0f22", name: "RED"  },
-      { key: "blue", light: "#d4e9ff", core: "#2f86ff", edge: "#0b3f8c", name: "BLUE" }
+      { key: "red",  light: "#ffd9dd", core: "#ff3b57", edge: "#8c0f22", name: "Red"  },
+      { key: "blue", light: "#d4e9ff", core: "#2f86ff", edge: "#0b3f8c", name: "Blue" }
     ];
 
     /* --- the bonuses the wheel hands out ------------------------------ */
     var B_ROW = "row", B_COL = "col", B_BOMB = "bomb", B_MULTI = "multi";
     var BONUS = {};
-    BONUS[B_ROW]   = { icon: "icoRow",   word: "ROW BLAST",    sub: "CLEARS ITS ROW" };
-    BONUS[B_COL]   = { icon: "icoCol",   word: "COLUMN BLAST", sub: "CLEARS ITS COLUMN" };
-    BONUS[B_BOMB]  = { icon: "icoBomb",  word: "BOMB",         sub: "TAKES THE NEIGHBOURS" };
-    BONUS[B_MULTI] = { icon: "icoMulti", word: "MULTIBALL",    sub: "+3 BALLS IN FLIGHT" };
+    BONUS[B_ROW]   = { icon: "icoRow",   word: "Row blast",    sub: "Clears its row" };
+    BONUS[B_COL]   = { icon: "icoCol",   word: "Column blast", sub: "Clears its column" };
+    BONUS[B_BOMB]  = { icon: "icoBomb",  word: "Bomb",         sub: "Takes the neighbours" };
+    BONUS[B_MULTI] = { icon: "icoMulti", word: "Multiball",    sub: "+3 balls in flight" };
     // The wheel's own faces: the four powers, then the mixed bag.
     var WHEEL = [
-      { bonus: B_ROW,   icon: "icoRow",   label: "ROW",       col: "#22d3ee" },
-      { bonus: B_MULTI, icon: "icoMulti", label: "MULTIBALL", col: "#4ade80" },
-      { bonus: B_COL,   icon: "icoCol",   label: "COLUMN",    col: "#a855f7" },
-      { bonus: B_BOMB,  icon: "icoBomb",  label: "BOMB",      col: "#ff8a1a" },
-      { bonus: "mixed", icon: "icoMixed", label: "MIXED BAG", col: "#ffd43b" }
+      { bonus: B_ROW,   icon: "icoRow",   label: "Row",       col: "#22d3ee" },
+      { bonus: B_MULTI, icon: "icoMulti", label: "Multiball", col: "#4ade80" },
+      { bonus: B_COL,   icon: "icoCol",   label: "Column",    col: "#a855f7" },
+      { bonus: B_BOMB,  icon: "icoBomb",  label: "Bomb",      col: "#ff8a1a" },
+      { bonus: "mixed", icon: "icoMixed", label: "Mixed bag", col: "#ffd43b" }
     ];
 
     /* --- the blueprints ------------------------------------------------
@@ -528,7 +528,7 @@
       spawnSparks(cannon.x + Math.cos(mid) * C.wheelRadius * 0.66,
                   wheelY() + Math.sin(mid) * C.wheelRadius * 0.66, deals, w.col);
       Pop.show(w.bonus === "mixed" ? "ultra" : "combo",
-               { word: w.label, sub: deals.length + Lang.t(" BRICKS CHARGED"), at: popAt() });
+               { word: w.label, sub: deals.length + Lang.t(" bricks charged"), at: popAt() });
     }
     function updateWheel(dt) {
       var segA = TAU / WHEEL.length, v = 0, s;
@@ -770,8 +770,8 @@
     /* --- the magazine -------------------------------------------------- */
     function ballsLeft() { return queue.length + balls.length; }
     function refreshHUD() {
-      HUD.setLeft(ballsLeft(), "BALLS");
-      HUD.setRight(total - broken, "BRICKS");
+      HUD.setLeft(ballsLeft(), "Balls");
+      HUD.setRight(total - broken, "Bricks");
     }
     /* --- the tap: the whole wall changes sides ---------------------------
        Every red pane turns blue and every blue pane turns red, instantly and
@@ -854,7 +854,7 @@
       if (broken >= total) { clearBoard(); return; }
       if (queue.length > 0) {
         phase = "aim"; aiming = false; idleT = 0; traceShot();
-        if (queue.length === 1) Pop.show("alert", { word: "LAST BALL", hold: 1400 });
+        if (queue.length === 1) Pop.show("alert", { word: "Last ball", hold: 1400 });
       } else {
         phase = "over"; endT = 0;
       }
@@ -892,16 +892,16 @@
     /* --- scoring ------------------------------------------------------ */
     function chainBeat(gain) {
       if (chain === 5) {
-        Pop.show("streak", { word: "HOT!", sub: "CHAIN x5", at: popAt() });
+        Pop.show("streak", { word: "Hot!", sub: "Chain x5", at: popAt() });
         Sound.clip("chain", 0.6, 1);
       } else if (chain === 10) {
-        Pop.show("combo", { word: "CHAIN x10", sub: "+" + gain, at: popAt() });
+        Pop.show("combo", { word: "Chain x10", sub: "+" + gain, at: popAt() });
         Sound.clip("chain", 0.75, 1.12); Fx.flash("#4bf5ff", 0.18);
       } else if (chain === 15) {
-        Pop.show("combo", { word: "SMASH!", sub: "CHAIN x15", cls: "pop-blast", at: popAt() });
+        Pop.show("combo", { word: "Smash!", sub: "Chain x15", cls: "pop-blast", at: popAt() });
         Sound.clip("chain", 0.85, 1.25);
       } else if (chain >= 20 && chain % 10 === 0) {
-        Pop.show("ultra", { word: Lang.t("CHAIN x") + chain, sub: "+" + gain, at: popAt() });
+        Pop.show("ultra", { word: Lang.t("Chain x") + chain, sub: "+" + gain, at: popAt() });
         Sound.clip("chain", 0.95, 1.4);
         Overlay.vignette("rgba(75,245,255,.85)", 1, 620);
       }
@@ -928,7 +928,7 @@
       score += gain;
       HUD.setScore(score);
       HUD.punch(chain >= 10 ? "#ffd43b" : p.core);
-      HUD.setRight(total - broken, "BRICKS");
+      HUD.setRight(total - broken, "Bricks");
 
       Fx.burst(cx, cy, { color: [p.core, p.light, "#ffffff"], count: 10,
                          speed: 280, life: 0.42, grav: 520 });
@@ -1002,7 +1002,7 @@
       Sound.clip("gold", 0.85);
       Fx.ring(cx, cy, { from: 10, to: 200, color: SIDE[side].core, width: 8, life: 0.45 });
       Overlay.vignette(rgba(SIDE[side].core, 0.7), 1, 420);
-      Pop.show("bonus", { word: "MULTIBALL", sub: "+" + C.multiBalls + " " + Lang.t(SIDE[side].name),
+      Pop.show("bonus", { word: "Multiball", sub: "+" + C.multiBalls + " " + Lang.t(SIDE[side].name),
                           at: popAt() });
     }
 
@@ -1013,7 +1013,7 @@
       score += bonus; HUD.setScore(score);
       Sound.clip("clear", 0.95);
       Confetti.burst(40);
-      Pop.show("ultra", { word: "PERFECT CLEAR", sub: "+" + bonus, hold: 900, at: popAt() });
+      Pop.show("ultra", { word: "Perfect clear", sub: "+" + bonus, hold: 900, at: popAt() });
       phase = "over"; endT = -0.7;                 // let the callout land first
       for (var i = 0; i < balls.length; i++) balls[i].alive = false;
     }
@@ -1022,17 +1022,17 @@
       var ratio = total ? broken / total : 0;
       var stars = (cleared || ratio >= 0.55) ? 3 : ratio >= 0.3 ? 2 : broken > 0 ? 1 : 0;
       endRound({
-        title: cleared ? Lang.t("PERFECT CLEAR!")
-             : ratio >= 0.55 ? Lang.t("HUGE RUN!")
-             : ratio >= 0.3 ? Lang.t("NICE RUN!") : C.copy.gameOver,
+        title: cleared ? Lang.t("Perfect clear!")
+             : ratio >= 0.55 ? Lang.t("Huge run!")
+             : ratio >= 0.3 ? Lang.t("Nice run!") : C.copy.gameOver,
         variant: cleared ? "perfect" : ratio >= 0.3 ? "win" : "",
         score: score,
         stars: stars,
         rows: [
-          { label: "BRICKS SMASHED", value: broken + " / " + total },
-          { label: "BEST CHAIN", value: bestChain, grade: bestChain >= 10 ? "accent" : "" },
-          { label: "BALLS FIRED", value: fired },
-          { label: "BEST SCORE", value: Math.max(score, Store.get("bestScore", 0)), grade: "gold" }
+          { label: "Bricks smashed", value: broken + " / " + total },
+          { label: "Best chain", value: bestChain, grade: bestChain >= 10 ? "accent" : "" },
+          { label: "Balls fired", value: fired },
+          { label: "Best score", value: Math.max(score, Store.get("bestScore", 0)), grade: "gold" }
         ]
       });
     }
@@ -1087,7 +1087,7 @@
       if (chain > 0) { chainT += dt; if (chainT > C.chainWindow) chain = 0; }
       if (!pulled && flightT > C.pullAfter) {      // every shot ends in the lake
         pulled = true;
-        Pop.show("alert", { word: "THE LAVA PULLS", hold: 1400 });
+        Pop.show("alert", { word: "The lava pulls", hold: 1400 });
         Overlay.vignette("rgba(255,106,0,.5)", 1, 900);
       }
 
@@ -1361,7 +1361,7 @@
       ctx.fillStyle = col;
       ctx.font = "900 26px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(Lang.t("CHAIN x") + chain, x + w / 2, y + h / 2 + 1);
+      ctx.fillText(upper(Lang.t("Chain x") + chain), x + w / 2, y + h / 2 + 1);
     }
 
     /* The wheel deals the powers, so its faces ARE the powers: one Lucide
@@ -1394,7 +1394,7 @@
       ctx.strokeStyle = "#4bf5ff"; ctx.lineWidth = 4; ctx.stroke();
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = "#4bf5ff"; ctx.font = "900 24px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.fillText(Lang.t("BONUS"), cx, cy + 1);
+      ctx.fillText(upper(Lang.t("Bonus")), cx, cy + 1);
 
       ctx.fillStyle = "#ffb44f";                   // the pointer
       ctx.beginPath();
@@ -1404,10 +1404,10 @@
       // One line, and only one: what the wheel is doing, never a spinner.
       ctx.font = "900 34px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.fillStyle = "rgba(255,255,255,.8)";
-      ctx.fillText(Lang.t("DEALING YOUR ROUND BONUS"), cx, cy - R - 52);
+      ctx.fillText(upper(Lang.t("Dealing your round bonus")), cx, cy - R - 52);
       if (wheel.state === "done") {
         ctx.font = "900 42px -apple-system,Segoe UI,Roboto,sans-serif";
-        ctx.fillStyle = "#ffd43b"; ctx.fillText(Lang.t(WHEEL[wheel.seg].label), cx, cy + R + 72);
+        ctx.fillStyle = "#ffd43b"; ctx.fillText(upper(Lang.t(WHEEL[wheel.seg].label)), cx, cy + R + 72);
       }
       ctx.globalAlpha = 1;
     }

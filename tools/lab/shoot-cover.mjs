@@ -45,6 +45,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -250,21 +251,6 @@ async function shootCover(client, sid, info, outPath, job) {
 
 // --- Run -----------------------------------------------------------------
 
-/* Chrome must die whatever happens next — a headless browser survives SIGTERM
-   here, and a throw mid-shoot would otherwise leave one running for nobody. */
-function reap(child) {
-  var done = false;
-  function kill() {
-    if (done) return;
-    done = true;
-    try { child.kill("SIGKILL"); } catch (e) {}
-  }
-  process.on("exit", kill);
-  process.on("SIGINT", function () { kill(); process.exit(130); });
-  process.on("SIGTERM", function () { kill(); process.exit(143); });
-  process.on("uncaughtException", function (e) { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", function (e) { kill(); console.error(e); process.exit(1); });
-}
 
 /* A cover is four pieces of artwork and it is not shot with a hole in it: the
    card would draw a dashed placeholder, and a placeholder that reaches an itch
@@ -295,11 +281,12 @@ if (skipped.length) console.error("skipped: " + skipped.join(", "));
 if (!slugs.length) process.exit(skipped.length ? 1 : 0);
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
+reportSweep(sweep("shoot-cover-"));
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-cover-"));
 var failed = 0;
 
 var chrome = await launchChrome(path.join(tmpDir, "profile"));
-reap(chrome.child);
+reap(chrome.child, { label: "shoot-cover" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 

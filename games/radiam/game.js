@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "RADIAM",
+    title:   "Radiam",
     /* One sentence, and the stage below plays it: the finger rocks the toothed
        outer ring one slot, the amber bead it carries joins the two ambers
        already sitting on the 12 o'clock ray, and the ray pays. */
@@ -74,16 +74,16 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "JAMMED!",
-      timeUp:     "TIME'S UP!",
-      eclipsed:   "ECLIPSED!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Jammed!",
+      timeUp:     "Time's up!",
+      eclipsed:   "Eclipsed!"
     },
 
     /* --- the dial ---------------------------------------------------------
@@ -501,14 +501,14 @@
        with no big special pays its big beats in small ones rather than
        reaching outside the level for something the player has not met. */
     var SPEC = {
-      charge: { bit: CHARGE, tier: 1, word: "CHARGE" },
-      fire:   { bit: FIRE,   tier: 1, word: "FIRE"   },
-      laser:  { bit: LASER,  tier: 1, word: "LASER"  },
-      score:  { bit: SCORE,  tier: 1, word: "SCORE"  },
-      slow:   { bit: SLOW,   tier: 1, word: "SLOW"   },
-      nova:   { bit: NOVA,   tier: 2, word: "NOVA"   },
-      bomb:   { bit: BOMB,   tier: 2, word: "BOMB"   },
-      ice:    { bit: ICE,    tier: 0, word: "FROZEN" }
+      charge: { bit: CHARGE, tier: 1, word: "Charge" },
+      fire:   { bit: FIRE,   tier: 1, word: "Fire"   },
+      laser:  { bit: LASER,  tier: 1, word: "Laser"  },
+      score:  { bit: SCORE,  tier: 1, word: "Score"  },
+      slow:   { bit: SLOW,   tier: 1, word: "Slow"   },
+      nova:   { bit: NOVA,   tier: 2, word: "Nova"   },
+      bomb:   { bit: BOMB,   tier: 2, word: "Bomb"   },
+      ice:    { bit: ICE,    tier: 0, word: "Frozen" }
     };
 
     // Geometry — every one of these is rebuilt from Layout by layout().
@@ -1107,7 +1107,7 @@
         hits[0] = hits[1] = hits[2] = 0;
         misses.length = 0;
         for (var s = 0; s < N; s++) { shade0[s] = false; missed[s] = -9; }
-        if (on) { recount(); HUD.setLeft(level, "LEVEL"); HUD.setRight(lines, "RAYS"); }
+        if (on) { recount(); HUD.setLeft(level, "Level"); HUD.setRight(lines, "Rays"); }
       }
 
       /* A SLOW bead does not stop the ink the way a single ray does — it puts
@@ -1254,7 +1254,7 @@
         cover = Math.max(0, cover - rays);
         flash = 0.7; shove = 1;
         recount();
-        if (word) Pop.show("bonus", { word: word, sub: "+" + rays + Lang.t(" RAYS"), at: "hudUnder" });
+        if (word) Pop.show("bonus", { word: word, sub: "+" + rays + Lang.t(" rays"), at: "hudUnder" });
         Sound.clip("charge", 0.55, 1.15);
         Fx.flash("#8b6cff", 0.16, 1.6);
       }
@@ -1274,11 +1274,11 @@
       function line() {
         if (!on) return;
         lines++;
-        HUD.setRight(lines, "RAYS");          // the round's running total
+        HUD.setRight(lines, "Rays");          // the round's running total
         if (lines % LINES) return;
         level++;
-        HUD.setLeft(level, "LEVEL");
-        Pop.show("alert", { word: Lang.t("LEVEL ") + level, at: "hudUnder" });
+        HUD.setLeft(level, "Level");
+        Pop.show("alert", { word: Lang.t("Level ") + level, at: "hudUnder" });
         Sound.clip("chain", 0.5, 1.18);
         Fx.flash("#ff4d6d", 0.14, 1.8);
         flash = 1;
@@ -1293,7 +1293,7 @@
         if (!on) return;
         var i, best = 0;
         for (i = 0; i < 3; i++) { if (hits[i] > best) best = hits[i]; hits[i] = 0; }
-        if (best >= N - 1) give(PUSH.ring, "RING CLEARED");
+        if (best >= N - 1) give(PUSH.ring, "Ring cleared");
       }
 
       /* A move that WOULD have paid, landing on a ray the shadow owns. Without
@@ -1310,7 +1310,7 @@
         misses.push({ s: s, life: 0.5 });
         Fx.burst(x, y, { color: ["#6f5ea8", "#2a2050"], count: 7, speed: 150,
                          life: 0.4, grav: 140, size: 4 });
-        Pop.text(x, y, "BLOCKED", { color: "#8b6cff", size: 22, life: 0.6, tier: 1 });
+        Pop.text(x, y, "Blocked", { color: "#8b6cff", size: 22, life: 0.6, tier: 1 });
         Sound.clip("tick", 0.4, 0.52);
       }
 
@@ -1551,7 +1551,7 @@
     function flushBlast() {
       if (blastRun > bestBlast) bestBlast = blastRun;
       if (blastRun >= D.blastCall)
-        Pop.show("combo", { word: "BLAST", sub: "+" + blastGain, cls: "blast",
+        Pop.show("combo", { word: "Blast", sub: "+" + blastGain, cls: "blast",
                             at: { x: cx, y: cy } });
       blastRun = 0; blastGain = 0;
       Eclipse.blast();                   // a plate emptied whole buys daylight
@@ -1627,7 +1627,7 @@
       Sound.clip("blast", 0.7, 0.68);
       Fx.shake(26, 0.55);
       Fx.flash("#ffffff", 0.34, 2.6);
-      specCall("BOMB", "#ffd43b");
+      specCall("Bomb", "#ffd43b");
     }
 
     /* FIRE — the two rays either side of its own. Both catch on the same beat:
@@ -1645,7 +1645,7 @@
       supers++;
       Sound.clip("blast", 0.5, 1.22);
       Fx.shake(11, 0.3);
-      specCall("FIRE", "#ff8a3d");
+      specCall("Fire", "#ff8a3d");
     }
 
     /* LASER — straight through the hub and out the far side. `N / 2` is the
@@ -1663,7 +1663,7 @@
       supers++;
       Sound.clip("nova", 0.5, 1.35);
       Fx.shake(9, 0.26);
-      specCall("LASER", D.colours[colour]);
+      specCall("Laser", D.colours[colour]);
     }
 
     /* SCORE — the one power that touches no bead at all. It arms a multiplier
@@ -1696,7 +1696,7 @@
       supers++;
       Sound.clip("multi", 0.6, 1 + tier * 0.08);
       Fx.flash("#ffd43b", 0.22, 1.9);
-      Pop.show("record", { word: "x" + face, sub: "SCORE", at: "hudUnder" });
+      Pop.show("record", { word: "x" + face, sub: "Score", at: "hudUnder" });
       specCallAt = clock;                 // ...and it counts as this beat's word
     }
 
@@ -1708,7 +1708,7 @@
       Eclipse.slow(D.slowTime);
       supers++;
       Sound.clip("charge", 0.55, 0.78);
-      specCall("SLOW", "#3ff0a0");
+      specCall("Slow", "#3ff0a0");
     }
 
     /* ICE — the hazard. Breaking it freezes the plate it sat on: that ring
@@ -1730,7 +1730,7 @@
       Fx.ring(cx, cy, { from: r.rad - r.band / 2, to: r.rad + r.band / 2,
                         color: "#9fdcff", width: r.band * 0.6, life: 0.35 });
       Overlay.vignette("#9fdcff", 0.7, 420);
-      Pop.show("danger", { word: "FROZEN", sub: r.cold + Lang.t(" RAYS"), at: "hudUnder" });
+      Pop.show("danger", { word: "Frozen", sub: r.cold + Lang.t(" rays"), at: "hudUnder" });
       specCallAt = clock;
     }
 
@@ -1915,14 +1915,14 @@
       if (cascade) {
         if (clock - comboCallAt >= D.comboCall) {
           comboCallAt = clock;
-          Pop.show("combo", { word: "COMBO", sub: "x" + combo, at: "hudUnder" });
+          Pop.show("combo", { word: "Combo", sub: "x" + combo, at: "hudUnder" });
         }
       } else if (hits.length >= 4)
-        Pop.show("ultra", { word: "NOVA", sub: "+" + gained, at: "bottom" });
+        Pop.show("ultra", { word: "Nova", sub: "+" + gained, at: "bottom" });
       else if (hits.length === 3)
-        Pop.show("ribbon", { word: "TRIPLE RAY", sub: "+" + gained, at: "hudUnder" });
+        Pop.show("ribbon", { word: "Triple ray", sub: "+" + gained, at: "hudUnder" });
       else if (hits.length === 2)
-        Pop.show("bonus", { word: "DOUBLE RAY", sub: "+" + gained, at: "hudUnder" });
+        Pop.show("bonus", { word: "Double ray", sub: "+" + gained, at: "hudUnder" });
 
       /* Every ray paid is a ray off a frozen plate's debt. It is counted per
          RAY and not per move, so a double unfreezes twice as fast as a single
@@ -1958,7 +1958,7 @@
     function addColour() {
       palette.push(palette.length);
       for (var i = 0; i < 3; i++) rings[i].bag.length = 0;   // re-deal with the newcomer in
-      Pop.show("bonus", { word: "NEW COLOUR", sub: "RAYS GET RARER", at: "bottom" });
+      Pop.show("bonus", { word: "New colour", sub: "Rays get rarer", at: "bottom" });
       Overlay.vignette(D.colours[palette.length - 1], 0.7, 500);
       Sound.clip("multi", 0.45, 0.9);
     }
@@ -1979,7 +1979,7 @@
          the plate is already drawn in frost, but a player reaching for it is
          reading their own thumb, not the dial. */
       if (r.cold > 0) {
-        Pop.text(p.x, p.y, "FROZEN", { color: "#9fdcff", size: 22, life: 0.6, tier: 1 });
+        Pop.text(p.x, p.y, "Frozen", { color: "#9fdcff", size: 22, life: 0.6, tier: 1 });
         Sound.clip("tick", 0.35, 0.48);
         return;
       }
@@ -2029,7 +2029,7 @@
       seed();
       best = Store.get("bestScore", 0);
       HUD.setScoreNow(0);
-      HUD.setLeft(best, "BEST");
+      HUD.setLeft(best, "Best");
       Fx.reset();
       Eclipse.reset();
     }
@@ -2648,7 +2648,7 @@
       ctx.font = "900 " + Math.round(h * 0.58) + "px " +
                  "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("x" + mulK + Lang.t("  SCORE"), cx, y + h / 2 + 1);
+      ctx.fillText(upper("x" + mulK + Lang.t("  score")), cx, y + h / 2 + 1);
     }
 
     function render() {
@@ -2825,19 +2825,19 @@
          what was popped, eclipse counts how long it was held off — and the
          chain and the best score close either of them. */
       var rows = Eclipse.on ? [
-        { label: "LEVEL", value: Eclipse.level(), grade: "gold" },
-        { label: "SURVIVED", value: Eclipse.survived() + "s", grade: "accent" }
+        { label: "Level", value: Eclipse.level(), grade: "gold" },
+        { label: "Survived", value: Eclipse.survived() + "s", grade: "accent" }
       ] : [
-        { label: "RAYS POPPED", value: matches },
-        { label: "BIGGEST BLAST", value: bestBlast + Lang.t(" BEADS"),
+        { label: "Rays popped", value: matches },
+        { label: "Biggest blast", value: bestBlast + Lang.t(" beads"),
           grade: bestBlast >= 8 ? "good" : "" }
       ];
       rows.push(
-        { label: "BEST CHAIN", value: "x" + bestCombo, grade: "accent" },
-        { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" });
+        { label: "Best chain", value: "x" + bestCombo, grade: "accent" },
+        { label: "Best score", value: Math.max(score, best), grade: "gold" });
       endRound({
         title: Eclipse.on ? CONFIG.copy.eclipsed
-                         : stars === 3 ? Lang.t("RADIANT!") : CONFIG.copy.timeUp,
+                         : stars === 3 ? Lang.t("Radiant!") : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : stars === 2 ? "win" : "",
         score: score,
         stars: stars,

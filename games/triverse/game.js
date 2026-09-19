@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "TRIVERSE",
+    title:   "Triverse",
     /* One sentence, and nothing else: the demo caption is dropped in the SKIN
        because the stage below already plays the two right hops and the left. */
     tagline: "<b class=\"w-swipe\">Swipe</b> to jump from <b class=\"w-path\">path</b> to <b class=\"w-path\">path</b>",
@@ -40,15 +40,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Run it again",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "CRASHED!",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Crashed!",
+      timeUp:     "Time's up!"
     },
 
     /* ---- TRIVERSE tunables ------------------------------------------------
@@ -470,7 +470,7 @@
       q = p0;
       for (i = 0; i < n; i++) {
         emitLoop(li, q, spans[i], r, kind === "eight" && (i % 2) ? -dir : dir, n,
-                 i === n - 1 ? (n === 1 ? "LOOP!" : kind === "eight" ? "FIGURE 8!" : "SPIRAL!")
+                 i === n - 1 ? (n === 1 ? "Loop!" : kind === "eight" ? "Figure 8!" : "Spiral!")
                              : null);
         q += spans[i];
       }
@@ -641,7 +641,7 @@
                          speed: it.type === "star" ? 420 : 280, life: 0.42, size: 5 });
         if (it.type === "star") {
           Fx.ring(x, y, { from: 16, to: 130, color: "#ffd43b", width: 6, life: 0.38 });
-          Pop.show("bonus", { word: "MEGA GEM", sub: "+" + g, at: "upperLeft" });
+          Pop.show("bonus", { word: "Mega gem", sub: "+" + g, at: "upperLeft" });
           Sound.clip("mega", 0.8);
         } else {
           // Gems arrive faster than a callout can be read: one pop per ~quarter
@@ -656,20 +656,20 @@
         if (chain > 0 && chain % 6 === 0) {
           g = 50 * mult * (chain / 6);
           gainScore(g);
-          Pop.show(chain >= 24 ? "ultra" : "combo", { word: Lang.t("CHAIN x") + chain, sub: "+" + g });
+          Pop.show(chain >= 24 ? "ultra" : "combo", { word: Lang.t("Chain x") + chain, sub: "+" + g });
           Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
         }
 
       } else if (it.type === "x2") {
         mult = 2; multT = T.multTime;
-        Pop.show("bonus", { word: "SCORE x2", sub: T.multTime + "s", at: "upperLeft" });
+        Pop.show("bonus", { word: "Score x2", sub: T.multTime + "s", at: "upperLeft" });
         Overlay.vignette("rgba(166,255,61,.8)", 1, 460);
         Fx.burst(x, y, { color: ["#a6ff3d", "#ffffff"], count: 18, speed: 340, life: 0.45 });
         Sound.clip("power", 0.8);
 
       } else if (it.type === "shield") {
         shield = true;
-        Pop.show("bonus", { word: "SHIELD", sub: "ONE CRASH", at: "upperLeft" });
+        Pop.show("bonus", { word: "Shield", sub: "One crash", at: "upperLeft" });
         Fx.ring(x, y, { from: 20, to: 120, color: "#8ffff2", width: 6, life: 0.4 });
         Sound.clip("power", 0.7, 1.22);
 
@@ -677,7 +677,7 @@
         g = Math.min(70 * mult, pick);
         pick -= g;
         chain = 0;
-        Pop.show("alert", { word: "-" + g, sub: "CHAIN LOST", cls: "pop-drain" });
+        Pop.show("alert", { word: "-" + g, sub: "Chain lost", cls: "pop-drain" });
         Fx.shake(7, 0.2);
         Fx.burst(x, y, { color: ["#a24bff", "#2b003f"], count: 16, speed: 300, life: 0.5 });
         Sound.clip("void", 0.75);
@@ -697,7 +697,7 @@
       if (shield) {
         shield = false; invT = 0.8;
         Fx.shake(9, 0.24); Fx.flash("#8ffff2", 0.3);
-        Pop.show("alert", { word: "SHIELD DOWN" });
+        Pop.show("alert", { word: "Shield down" });
         Sound.clip("crash", 0.5, 1.45);        // the same impact, shrugged off
         return;
       }
@@ -710,8 +710,8 @@
 
       if (lives <= 0) { die(); return; }
       invT = T.invTime;
-      Pop.show("danger", { word: lives === 1 ? Lang.t("LAST LIFE") : Lang.t("CRASH!"),
-                           sub: lives + (lives === 1 ? Lang.t(" LIFE LEFT") : Lang.t(" LIVES LEFT")) });
+      Pop.show("danger", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Crash!"),
+                           sub: lives + (lives === 1 ? Lang.t(" life left") : Lang.t(" lives left")) });
     }
 
     /* Crossing a pair of mines through the one open rope is a skill beat, so it
@@ -726,7 +726,7 @@
         if (lane !== g.free || invT > 0) continue;     // took the hit instead
         gain = 60 * mult;
         gainScore(gain);
-        Pop.show("streak", { word: "THREADED!", sub: "+" + gain });
+        Pop.show("streak", { word: "Threaded!", sub: "+" + gain });
         Fx.ring(arrowX, arrowY, { from: 26, to: 170, color: "#ffffff", width: 5, life: 0.36 });
         HUD.punch("#ffffff");
         Sound.clip("chain", 0.6, 1.28);
@@ -835,7 +835,7 @@
 
       arrowX = curX[1]; arrowY = anchorY; arrowAng = -Math.PI / 2;
       HUD.setScoreNow(0);
-      HUD.setLeft("0 M", "DIST");
+      HUD.setLeft("0 m", "Dist");
       drawLives();
       Fx.reset();
     }
@@ -843,7 +843,7 @@
     function drawLives() {
       var s = "", i;
       for (i = 0; i < T.lives; i++) s += i < lives ? "♥" : "·";
-      HUD.setRight(s, "LIVES", lives <= 1 ? "warn" : "");
+      HUD.setRight(s, "Lives", lives <= 1 ? "warn" : "");
     }
 
     function updateArrow() {
@@ -885,7 +885,7 @@
       if (invT > 0) invT -= dt;
       if (multT > 0) {
         multT -= dt;
-        if (multT <= 0) { mult = 1; Pop.show("alert", { word: "x2 OVER", hold: 1400 }); }
+        if (multT <= 0) { mult = 1; Pop.show("alert", { word: "x2 over", hold: 1400 }); }
       }
 
       updateArrow();
@@ -899,11 +899,11 @@
 
       distT -= dt;
       m = Math.floor(dist);
-      if (distT <= 0 && m !== distShown) { distShown = m; distT = 0.14; HUD.setLeft(m + " M", "DIST"); }
+      if (distT <= 0 && m !== distShown) { distShown = m; distT = 0.14; HUD.setLeft(m + " m", "Dist"); }
 
       if (dist >= nextMile) {
         nextMile += T.mileStep;
-        Pop.show("ribbon", { word: Math.round(dist) + " M", sub: "FASTER" });
+        Pop.show("ribbon", { word: Math.round(dist) + " m", sub: "Faster" });
         Overlay.vignette(rgba(paths[lane].color, 0.75), 1, 420);
         Sound.clip("chain", 0.7, 0.8);
       }
@@ -915,7 +915,7 @@
       // to, it just gets there sooner.
       var st = sc >= 4700 ? 3 : sc >= 2200 ? 2 : 1;
       endRound({
-        title: st === 3 ? Lang.t("LEGEND RUN!") : st === 2 ? Lang.t("GREAT RUN!") : CONFIG.copy.gameOver,
+        title: st === 3 ? Lang.t("Legend run!") : st === 2 ? Lang.t("Great run!") : CONFIG.copy.gameOver,
         variant: st === 3 ? "perfect" : st === 2 ? "win" : "",
         score: sc,
         // A level's objective is a distance: the metres, not the metres plus
@@ -923,10 +923,10 @@
         levelScore: d,
         stars: st,
         rows: [
-          { label: "DISTANCE (M)", value: d },
-          { label: "GEMS", value: gems },
-          { label: "BEST CHAIN", value: bestChain, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }
+          { label: "Distance (m)", value: d },
+          { label: "Gems", value: gems },
+          { label: "Best chain", value: bestChain, grade: "accent" },
+          { label: "Best score", value: Math.max(sc, best), grade: "gold" }
         ]
       });
     }

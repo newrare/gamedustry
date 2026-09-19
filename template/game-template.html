@@ -989,7 +989,13 @@
      selector, and catching the layer would replace its own `position:absolute`
      with `relative` — the dressing would then stack in the flex column and push
      the whole end screen down. */
-  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer) { position:relative; z-index:1; }
+  /* `.eo-stars` is excluded for a third reason: it is pulled up under the
+     score and has to stay BEHIND it. Left in this rule it would take
+     `z-index:1` like its siblings and, being later in the DOM, paint over the
+     number — and a `z-index:0` of its own cannot beat a selector carrying two
+     ids. Out of the rule it is simply not positioned, so it stacks below every
+     figure on this screen. */
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer):not(.eo-stars) { position:relative; z-index:1; }
 
   /* ---- The character ------------------------------------------------------
      One of `assets/image/embed/<slug>-character-{sad,neutral,happy}.webp`, picked by
@@ -1058,7 +1064,7 @@
     0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
     50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
   }
-  .eo-scorelbl { margin-top:24px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
+  .eo-scorelbl { margin-top:12px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
     opacity:0; transition:opacity .4s ease; }
   .eo-scorelbl.show { opacity:1; }
   .eo-score {
@@ -1070,13 +1076,46 @@
   .eo-score.pop { animation:eopop .45s ease; }
   @keyframes eopop { 0%{transform:scale(1);} 40%{transform:scale(1.2);} 100%{transform:scale(1);} }
 
-  .eo-stars { margin-top:24px; display:flex; gap:22px; justify-content:center; align-items:center; }
+  /* THE THIRD STAR STANDS IN THE MIDDLE, and it is the biggest. Three stars
+     the same size in a row is a progress bar; a podium is what the last one
+     earned. The DOM order and the reveal are untouched — star-1, star-2,
+     star-3, lit one by one in that order (shell.js) — and only the `order`
+     property moves the third into the centre, so nothing about the cascade,
+     the chimes or the ids has to know about the arrangement.
+
+     The lift is `top` and never `transform`: the slam and the dim both animate
+     the transform, and a raise written there would be wiped by the first
+     keyframe of either. */
+  /* THEY TUCK UNDER THE SCORE, and behind it. Three stars standing in their
+     own band cost the column a sixth of the frame for a row that is read in
+     one glance — pulled up they sit just below the number, the tall middle one
+     rising into the space beside its digits, and the rows underneath gain the
+     the height. They are the one child of #screen-end left UNPOSITIONED (see
+     the rule above), which is what puts them behind the score and behind the
+     line that explains it — nothing overlapping can cover a figure. */
+  .eo-stars { margin-top:-26px; display:flex; gap:18px; justify-content:center; align-items:center; }
+  /* …unless something is written in that gap. The meta layer's conversion line
+     sits between the score and this row (packages/webshell/meta.js), and the
+     middle star reaches 20 px above the row's own top — gold working over a
+     gold star is not read at all. The row steps down by exactly what the line
+     needs, and only where there is a line. The score label gives the height
+     back (`.eo-scorelbl` above), so the column is no taller than it was. */
+  #screen-end.has-gain .eo-stars { margin-top:22px; }
   .eo-stars.hidden { display:none; }
-  .star { font-size:98px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
-    transition:opacity .2s ease; }
+  .star { font-size:112px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
+    position:relative; transition:opacity .2s ease; }
+  .eo-stars .star:nth-child(1) { order:1; }
+  .eo-stars .star:nth-child(3) { order:2; font-size:168px; top:-20px; }
+  .eo-stars .star:nth-child(2) { order:3; }
   .star.dim { opacity:1; transform:scale(.82); color:rgba(255,255,255,.12); }
+  /* `transform:scale(1)` is what the star RESTS at, and it has to be written
+     here: `starslam` carries no fill mode, so the moment it ends the element
+     falls back on its own rule — `.star`'s scale(.3), the not-yet-revealed
+     state. Every lit star has been landing and then shrinking to a third of
+     its size since the cascade was written; the dim ones sat at .82 beside
+     them, which is why an unearned star looked bigger than an earned one. */
   .star.on {
-    opacity:1; color:var(--gold);
+    opacity:1; color:var(--gold); transform:scale(1);
     background:linear-gradient(180deg,#fff6bf 0%,#ffd43b 55%,#ff9f1c 100%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
     animation:starslam .6s cubic-bezier(.2,1.8,.35,1), starglow 1.9s ease-in-out .6s infinite;
@@ -1162,13 +1201,13 @@
     <!-- HUD: left slot / big centre score / right slot (timer by default) -->
     <div id="hud" class="hidden">
       <div id="hud-left"></div>
-      <div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl">SCORE</div></div>
+      <div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl">Score</div></div>
       <div id="hud-right"></div>
     </div>
 
     <!-- persistent install CTA, visible during play -->
     <div id="cta-bar" class="hidden">
-      <button class="btn sm" id="btn-cta">INSTALL NOW</button>
+      <button class="btn sm" id="btn-cta">Install now</button>
     </div>
 
     <!-- loading -->
@@ -1181,7 +1220,7 @@
          (both strings are rewritten from CONFIG at boot; keep them in sync) -->
     <div id="screen-intro" class="screen hidden">
       <img id="app-icon" alt="">
-      <div id="intro-title">GAME TITLE</div>
+      <div id="intro-title">Game title</div>
       <div id="intro-tagline"><b class="w-verb">Tap</b> to hit the <b class="w-target">target</b></div>
       <div id="intro-demo">
         <div class="demo-stage">
@@ -1193,14 +1232,14 @@
         </div>
         <div class="demo-caption" id="demo-caption"></div>
       </div>
-      <button class="btn lg" id="btn-start">TAP TO PLAY</button>
+      <button class="btn lg" id="btn-start">Tap to play</button>
     </div>
 
     <!-- end: cinematic score reveal + stars + stats + CTA + replay link -->
     <div id="screen-end" class="screen hidden">
       <canvas id="confetti" width="720" height="1280"></canvas>
-      <div class="eo-title" id="eo-title">GAME OVER</div>
-      <div class="eo-scorelbl" id="eo-scorelbl">FINAL SCORE</div>
+      <div class="eo-title" id="eo-title">Game over</div>
+      <div class="eo-scorelbl" id="eo-scorelbl">Final score</div>
       <div class="eo-score" id="eo-score">0</div>
       <div class="eo-stars" id="eo-stars">
         <span class="star" id="star-1">★</span>
@@ -1208,7 +1247,7 @@
         <span class="star" id="star-3">★</span>
       </div>
       <div class="eo-stats" id="eo-stats"></div>
-      <button class="btn lg" id="btn-install">PLAY THE FULL GAME</button>
+      <button class="btn lg" id="btn-install">Play the full game</button>
       <button class="link" id="btn-replay">Replay the demo</button>
     </div>
 
@@ -1223,7 +1262,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "GAME TITLE",
+    title:   "Game title",
     /* ONE sentence teaching the core mechanic, never two, and the words that
        carry it wrapped in <b class="w-…"> so they read in colour. The animated
        stage below the line shows the same thing in motion — that is the pitch,
@@ -1289,15 +1328,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "GAME OVER",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Game over",
+      timeUp:     "Time's up!"
     }
   };
 
@@ -2143,6 +2182,79 @@
     return { set: set, t: t, code: function () { return code; } };
   })();
 
+  /* --- upper: the one way a word is set in capitals -----------------------
+
+     Every string in this repo is WRITTEN in normal case — a lowercase
+     sentence with a capital on its first letter and on a proper noun ("Best
+     score", "Time's up!", "Chain x"). Capitals are a LOOK, not a spelling, so
+     the screens that want them ask for them here: the HUD, the callouts, the
+     buttons and the end screen pass what they write through `upper`, and the
+     copy desk shows a game's words the way a human would proofread them
+     rather than the way a title screen shouts them.
+
+     Two things it does that `toUpperCase` does not.
+
+     ACCENTS COME OFF. A capital carries no accent in this house — "Déjà" is
+     "DEJA", "Ça mélange" is "CA MELANGE" — because the display faces the games
+     use are drawn for capitals without diacritics, and an accent on a 96px
+     Impact collides with the line above it. Folding happens after the case
+     change, so only the uppercase forms need a table.
+
+     A UNIT GLUED TO A NUMBER KEEPS ITS CASE. "Chain x" + 3 is "CHAIN x3", not
+     "CHAIN X3"; "1.2s per hop" is "1.2s PER HOP". A run of lowercase letters
+     touching a digit is a multiplier or a unit, never a word, and a game
+     assembles those by concatenation — which is why the rule is applied here,
+     on the finished string, rather than left to each call site.
+
+     Markup is stepped over: a tag, an entity and a `{placeholder}` are copied
+     as they are, so a class name cannot be shouted into a different class and
+     a token cannot be shouted out of the one `fill` will look for. */
+  var upper = (function () {
+    // Uppercase letters an accent has to come off, and what they become.
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO   = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    // The ligatures, which fold to two letters instead of one.
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    /* A tag, an entity, or a {placeholder}: copied through untouched. The
+       placeholder is in here for the same reason a class name is — "Day {n}"
+       shouted to "DAY {N}" is a token `fill` no longer recognises, and the
+       screen then prints the braces. It cost a strip of the daily road reading
+       "J{N}" seven times over to find. */
+    var SKIP = /(<[^>]*>|&[a-zA-Z0-9#]+;|\{\w+\})/;
+    // A word: ASCII plus the Latin-1 lowercase letters and the oe ligature.
+    var WORD = /[a-zß-öø-ÿœ]+/g;
+    function digit(c) { return c >= "0" && c <= "9"; }
+
+    function shout(seg) {
+      return seg.replace(WORD, function (run, at) {
+        var before = at > 0 ? seg.charAt(at - 1) : "";
+        var after = seg.charAt(at + run.length);
+        if (digit(before) || digit(after)) return run;   // a unit or a multiplier
+        return run.toUpperCase();
+      });
+    }
+
+    function fold(seg) {
+      var out = "", i, c, k;
+      for (i = 0; i < seg.length; i++) {
+        c = seg.charAt(i);
+        if (PAIR[c]) { out += PAIR[c]; continue; }
+        k = FROM.indexOf(c);
+        out += k < 0 ? c : TO.charAt(k);
+      }
+      return out;
+    }
+
+    /* Anything that is not a string is handed back untouched: a HUD slot holds
+       a number more often than a word, and no caller should have to ask. */
+    return function (s) {
+      if (typeof s !== "string") return s;
+      var parts = s.split(SKIP), i;
+      for (i = 0; i < parts.length; i += 2) parts[i] = fold(shout(parts[i]));
+      return parts.join("");
+    };
+  })();
+
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },
@@ -2476,7 +2588,10 @@
        running round, and the frame carried another loop on top of the last.
        The stylesheet says the same thing again at the same specificity; this
        is the one that also takes the focus off a button nobody can see. */
+    /* Any screen but the end one is a round that is not ending: the outro's
+       guard goes with it, so the next round can end at all. */
     if (s !== "end") {
+      ending = false;
       EndScreen.clear();                  // the reveal's timers go with it
       ["btn-install", "btn-replay"].forEach(function (id) {
         var b = $(id);
@@ -2591,13 +2706,13 @@
     var shownL = null, shownR = null, lastL = null, lastR = null;
     function setLeft(text, label, cls) {
       lastL = [text, label, cls];
-      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
+      var html = text == null ? "" : pill(upper(Lang.t(text)), upper(Lang.t(label)), cls);
       if (html === shownL) return;
       shownL = html; $("hud-left").innerHTML = html;
     }
     function setRight(text, label, cls) {
       lastR = [text, label, cls];
-      var html = text == null ? "" : pill(Lang.t(text), Lang.t(label), cls);
+      var html = text == null ? "" : pill(upper(Lang.t(text)), upper(Lang.t(label)), cls);
       if (html === shownR) return;
       shownR = html; $("hud-right").innerHTML = html;
     }
@@ -2842,9 +2957,9 @@
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
-      var word = Lang.t(opt.word != null ? opt.word : st.word);
+      var word = upper(Lang.t(opt.word != null ? opt.word : st.word));
       if (word == null) return null;
-      var sub = Lang.t(opt.sub != null ? opt.sub : st.sub);
+      var sub = upper(Lang.t(opt.sub != null ? opt.sub : st.sub));
       var pos = resolve(opt.at != null ? opt.at : st.at);
       var enter = opt.enter != null ? opt.enter : (st.enter || 420);
       var hold  = opt.hold  != null ? opt.hold  : (st.hold == null ? 900 : st.hold);
@@ -3043,7 +3158,7 @@
     function text(x, y, str, opt) {
       if (!enabled) return;
       opt = opt || {};
-      var str2 = String(Lang.t(str));
+      var str2 = String(upper(Lang.t(str)));
       var size = opt.size || 34, tier = opt.tier || 0;
       var grow = tier >= 2 ? 1.45 : tier >= 1 ? 1.25 : 1.12;
       var hw, hh = size * 0.5 * grow;
@@ -3659,7 +3774,7 @@
     var logo = !hasArtTitle && CONFIG.intro.logo && ASSETS.images[CONFIG.intro.logo];
     var img = $("app-icon");
     if (logo) { img.src = logo; img.alt = CONFIG.title; } else { img.style.display = "none"; }
-    if (!hasArtTitle) $("intro-title").textContent = CONFIG.title;
+    if (!hasArtTitle) $("intro-title").textContent = upper(CONFIG.title);
     $("intro-tagline").innerHTML = CONFIG.tagline;
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
@@ -3672,12 +3787,12 @@
      back through here. The web shell calls it; a playable calls it once from
      buildIntro and never again. */
   function applyCopy() {
-    $("btn-start").textContent = Lang.t(CONFIG.copy.start);
-    $("btn-cta").textContent = Lang.t(CONFIG.copy.ctaBar);
-    $("btn-install").textContent = Lang.t(CONFIG.copy.ctaEnd);
+    $("btn-start").textContent = upper(Lang.t(CONFIG.copy.start));
+    $("btn-cta").textContent = upper(Lang.t(CONFIG.copy.ctaBar));
+    $("btn-install").textContent = upper(Lang.t(CONFIG.copy.ctaEnd));
     $("btn-replay").textContent = Lang.t(CONFIG.copy.replay);
-    $("hud-score-lbl").textContent = Lang.t(CONFIG.copy.scoreLabel);
-    $("eo-scorelbl").textContent = Lang.t(CONFIG.copy.endScore);
+    $("hud-score-lbl").textContent = upper(Lang.t(CONFIG.copy.scoreLabel));
+    $("eo-scorelbl").textContent = upper(Lang.t(CONFIG.copy.endScore));
   }
 
   // --- End screen: the cinematic reveal ----------------------------------
@@ -3686,6 +3801,15 @@
     var timers = [];
     var T_TITLE = 120, T_SCORE = 560, T_STARS = 1950, STAR_GAP = 440,
         ROW_GAP = 250, T_CTA_AFTER = 1500;
+    /* THE REVEAL PLAYS AT TWICE THE SPEED IT WAS AUTHORED AT. Every delay in
+       this module is the timing the cascade was designed with and PACE is what
+       the screen actually plays it at — one number rather than sixteen edited
+       ones, so the RHYTHM between the beats is exactly the one that was tuned
+       and only the tempo moves. It was authored for a creative, where the end
+       screen is the last thing a viewer sees; in a game it is the doorway back
+       to the map, and a player who has just cleared a level reads the stars
+       long before the old cascade had finished landing them. */
+    var PACE = 0.5;
     // The reveal climbs: each star rings the same chime a step higher. RATE
     // drives the embedded "uiStar" clip, FREQ the synthesized fallback.
     var STAR_RATE = [1, 1.19, 1.42], STAR_FREQ = [660, 880, 1180];
@@ -3706,10 +3830,10 @@
     function show(result) {
       timers.forEach(clearTimeout); timers = [];
       Confetti.clear();
-      function T(fn, ms) { timers.push(setTimeout(fn, ms)); }
+      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms * PACE))); }
 
       var title = $("eo-title");
-      title.textContent = Lang.t(result.title || CONFIG.copy.gameOver);
+      title.textContent = upper(Lang.t(result.title || CONFIG.copy.gameOver));
       Fit.one("eo-title");
       Fit.one("eo-score", String(result.score || 0));
       title.className = "eo-title" + (result.variant ? " " + result.variant : "");
@@ -3729,8 +3853,8 @@
       var box = $("eo-stats"), html = "";
       rows.forEach(function (r, i) {
         var label = r.grade === "gold"
-          ? '<span class="spark">✦</span> ' + Lang.t(r.label) + ' <span class="spark">✦</span>'
-          : Lang.t(r.label);
+          ? '<span class="spark">✦</span> ' + upper(Lang.t(r.label)) + ' <span class="spark">✦</span>'
+          : upper(Lang.t(r.label));
         html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
                 '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
       });
@@ -3760,7 +3884,7 @@
         $("eo-score").classList.add("show");
         settle();
         Confetti.burst(70);
-        countUp($("eo-score"), result.score || 0, 1100, function () {
+        countUp($("eo-score"), result.score || 0, 1100 * PACE, function () {
           $("eo-score").classList.add("pop");
           Sound.cue("uiScore", 0.8, 1, 900, 0.14);
           Confetti.burst(90);
@@ -3793,8 +3917,8 @@
           $("eo-row-" + i).classList.add("show");
           settle();
           var el = $("eo-val-" + i);
-          if (typeof r.value === "number") countUp(el, r.value, 450);
-          else el.textContent = Lang.t(r.value);
+          if (typeof r.value === "number") countUp(el, r.value, 450 * PACE);
+          else el.textContent = upper(Lang.t(r.value));
           Sound.cue("uiRow", 0.5, 1 + i * 0.07, 480 + i * 70, 0.05);
         }, afterStars + i * ROW_GAP);
       });
@@ -4107,11 +4231,46 @@
   var resultHooks = [];
   function onResult(fn) { resultHooks.push(fn); }
 
+  /* THE OUTRO — the beat between the last frame of the round and the end
+     screen. A round used to cut straight from one to the other, and there is
+     one thing that cannot be played on either side of that cut: the world
+     itself reacting to how the round went. Slow motion is `Loop.rate`, so it
+     needs a loop still turning; the end screen has none, and the round is over.
+
+     So a layer above the motor may hold the frame for a beat: the clock is
+     stopped (the round IS over, whatever is drawn over it), the loop is left
+     running, and the end screen waits for the `done` the hook is handed. The
+     web target's level layer is the only registrant — three stars open the
+     bonus, a missed objective burns — and a playable registers none, which is
+     the cut it always had.
+
+     `ending` is the guard the delay makes necessary: for as long as the outro
+     plays, the state is still "playing" and a game whose own update calls
+     endRound again would end the round twice over. */
+  var outroHook = null, ending = false;
+  function onOutro(fn) { outroHook = fn; }
+
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
   function endRound(result) {
-    if (State === "end") return;
+    if (State === "end" || ending) return;
+    ending = true;
     result = result || {};
+    /* The clock stops at once — nothing about the outro is still the round —
+       but the LOOP is left turning for it, and `finishRound` is what takes it
+       down. */
+    Round.stop();
+    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
+    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
+    if (outroHook) { outroHook(result, function () { finishRound(result); }); return; }
+    finishRound(result);
+  }
+
+  function finishRound(result) {
+    /* Not "playing" any more means the outro was overtaken — the player left
+       the round from the pause card while it played, or a second `done` came
+       in after the first. Either way the end screen is no longer owed. */
+    if (State !== "playing") return;
     Loop.stop(); Round.stop();
     /* The bed steps WELL back for the end screen — 30 % of its level, not the
        55 % it used to be. What happens here is a reveal read in silence: the
@@ -4120,8 +4279,6 @@
        on top of all of it. `startGame` and the web shell's MENU both unduck,
        so nothing has to put it back. */
     Music.duck(0.3, 0.8);
-    result.score = result.score == null ? Math.round(HUD.score()) : result.score;
-    for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
     var score = result.score;
     var best = Math.max(score, Store.get("bestScore", 0));
     Store.set("bestScore", best);
@@ -4158,7 +4315,7 @@
       best = Store.get("bestScore", 0);
       dot = { x: Layout.cx, y: Layout.cy, r: 78, vx: Rand.pick([-1, 1]) * 280, vy: 220 };
       HUD.setScoreNow(0);
-      HUD.setLeft(best, "BEST");
+      HUD.setLeft(best, "Best");
       Fx.reset();
     }
 
@@ -4167,7 +4324,7 @@
       if (dx * dx + dy * dy > dot.r * dot.r) {           // miss: break the chain
         combo = 0;
         Fx.shake(4, 0.15);
-        Pop.text(p.x, p.y, "MISS", { color: "#ff6b6b", size: 34 });
+        Pop.text(p.x, p.y, "Miss", { color: "#ff6b6b", size: 34 });
         return;
       }
       combo++; hits++;
@@ -4187,11 +4344,11 @@
 
       // Screen-space feedback: milestones get the dramatic treatment.
       if (combo > 0 && combo % 5 === 0) {
-        Pop.show(combo >= 15 ? "ultra" : "combo", { word: "COMBO x" + combo, sub: "+" + combo * 20 });
+        Pop.show(combo >= 15 ? "ultra" : "combo", { word: "Combo x" + combo, sub: "+" + combo * 20 });
         Sound.arp([523, 659, 784, 1046], 55, 0.14, "triangle");
         score += combo * 20; HUD.setScore(score);
       } else if (combo === 3) {
-        Pop.show("streak", { word: "NICE CHAIN" });
+        Pop.show("streak", { word: "Nice chain" });
       }
 
       // Teleport + speed up.
@@ -4228,14 +4385,14 @@
     function onTimeUp() {
       var stars = score >= 900 ? 3 : score >= 450 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? "PERFECT!" : CONFIG.copy.timeUp,
+        title: stars === 3 ? "Perfect!" : CONFIG.copy.timeUp,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,
         rows: [
-          { label: "HITS", value: hits },
-          { label: "BEST CHAIN", value: combo, grade: "accent" },
-          { label: "BEST SCORE", value: Math.max(score, best), grade: "gold" }
+          { label: "Hits", value: hits },
+          { label: "Best chain", value: combo, grade: "accent" },
+          { label: "Best score", value: Math.max(score, best), grade: "gold" }
         ]
       });
     }

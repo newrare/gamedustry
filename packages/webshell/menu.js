@@ -81,6 +81,15 @@
   var LV = window.__LEVELS__ || null;
   function levelled() { return !!(LV && LV.active()); }
 
+  /* The meta layer — what the player owns, and what brings them back
+     (packages/webshell/meta.js, album.js, daily.js). Published the same way
+     the map is, inert for a game with no `web.meta` block, and `metaed()` is
+     then false everywhere below: that game's menu is exactly what it was. */
+  var MT = window.__META__ || null;
+  var AL = window.__ALBUM__ || null;
+  var DL = window.__DAILY__ || null;
+  function metaed() { return !!(MT && MT.active()); }
+
   /* ── 0. strings ───────────────────────────────────────────────────────── */
 
   /* Every string the web shell adds, in the languages it ships. The motor's
@@ -88,40 +97,55 @@
      wording, and only what the web target adds is translated here. */
   var STRINGS = {
     en: {
-      play: "PLAY", leaderboard: "LEADERBOARD", options: "OPTIONS", help: "HELP",
-      scoresTitle: "LEADERBOARD", optionsTitle: "OPTIONS", helpTitle: "HOW TO PLAY",
-      best: "BEST SCORE", noScore: "No round played yet.",
+      play: "Play", leaderboard: "Leaderboard", options: "Options", help: "Help",
+      scoresTitle: "Leaderboard", optionsTitle: "Options", helpTitle: "How to play",
+      best: "Best score", noScore: "No round played yet.",
       soonScores: "An online leaderboard is coming with the next update.",
       music: "Music", sfx: "Sound effects", pops: "Score callouts", language: "Language",
       resetScores: "Reset the leaderboard",
       resetAsk: "Tap again to erase your best score",
       resetDone: "Leaderboard cleared",
-      controls: "CONTROLS",
-      tap: "TAP", hold: "HOLD", drag: "DRAG", swipe: "SWIPE", aim: "AIM",
-      back: "BACK", again: "PLAY AGAIN", menu: "MENU",
-      toMenu: "Back to the menu", toMap: "Back to the map", resume: "RESUME",
-      leaveTitle: "LEAVE?",
+      controls: "Controls",
+      tap: "Tap", hold: "Hold", drag: "Drag", swipe: "Swipe", aim: "Aim",
+      back: "Back", again: "Play again", menu: "Menu",
+      toMenu: "Back to the menu", toMap: "Back to the map", resume: "Resume",
+      leaveTitle: "Leave?",
       leaveNote: "The round ends here and its score is lost.",
-      leaveYes: "LEAVE"
+      leaveYes: "Leave"
     },
     fr: {
-      play: "JOUER", leaderboard: "CLASSEMENT", options: "OPTIONS", help: "AIDE",
-      scoresTitle: "CLASSEMENT", optionsTitle: "OPTIONS", helpTitle: "COMMENT JOUER",
-      best: "MEILLEUR SCORE", noScore: "Aucune partie jouée.",
+      play: "Jouer", leaderboard: "Classement", options: "Options", help: "Aide",
+      scoresTitle: "Classement", optionsTitle: "Options", helpTitle: "Comment jouer",
+      best: "Meilleur score", noScore: "Aucune partie jouée.",
       soonScores: "Un classement en ligne arrive avec la prochaine mise à jour.",
       music: "Musique", sfx: "Effets sonores", pops: "Messages de score", language: "Langue",
       resetScores: "Effacer le classement",
       resetAsk: "Touchez à nouveau pour effacer votre meilleur score",
       resetDone: "Classement effacé",
-      controls: "CONTRÔLES",
-      tap: "TAPER", hold: "MAINTENIR", drag: "GLISSER", swipe: "BALAYER", aim: "VISER",
-      back: "RETOUR", again: "REJOUER", menu: "MENU",
-      toMenu: "Retour au menu", toMap: "Retour à la carte", resume: "REPRENDRE",
-      leaveTitle: "QUITTER ?",
+      controls: "Contrôles",
+      tap: "Taper", hold: "Maintenir", drag: "Glisser", swipe: "Balayer", aim: "Viser",
+      back: "Retour", again: "Rejouer", menu: "Menu",
+      toMenu: "Retour au menu", toMap: "Retour à la carte", resume: "Reprendre",
+      leaveTitle: "Quitter ?",
       leaveNote: "La partie s’arrête ici et son score est perdu.",
-      leaveYes: "QUITTER"
+      leaveYes: "Quitter"
     }
   };
+
+  /* Which of them the screen SHOUTS. Every string above is written in normal
+     case, like the rest of the repo; the ones listed here are set in capitals
+     on their way out by the motor's `upper` (packages/engine), which also
+     takes the accents off — "Contrôles" reads CONTROLES, never CONTRÔLES. A
+     game's own override of one of these keys is shouted with it, and so is a
+     mode label, whose key the manifest spells `mode<Key>`. */
+  var CAPS = {
+    play: 1, leaderboard: 1, options: 1, help: 1,
+    scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1, controls: 1,
+    tap: 1, hold: 1, drag: 1, swipe: 1, aim: 1,
+    back: 1, again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
+  };
+  var up = W.upper;
+  function shouted(key) { return CAPS[key] || key.indexOf("mode") === 0; }
 
   var LANG_KEY = "webLang";
 
@@ -155,6 +179,7 @@
     merge(STRINGS[lang]);
     var over = (CONFIG.web && CONFIG.web.copy) || {};
     merge(over[lang] && typeof over[lang] === "object" ? over[lang] : over);
+    for (var k in out) if (out.hasOwnProperty(k) && shouted(k)) out[k] = up(out[k]);
     return out;
   }
 
@@ -312,6 +337,7 @@
      row's colour is the only thing that dresses them. */
   var ICON = {
     back:  '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+    next:  '<path d="m12 5 7 7-7 7"/><path d="M5 12h14"/>',
     music: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
     sfx:   '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
     pops:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
@@ -319,12 +345,67 @@
     reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
     home:  '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     map:   '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
-    gear:  '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
+    gear:  '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+
+    /* The meta layer's six. Same pack, same stroke: the album, the machine and
+       the shop are screens of this shell and not a product of their own, so
+       they are drawn with the pictograms the menu already uses. */
+    coin:   '<circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/>',
+    ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/>',
+    /* The super ticket is a PAINTED piece and nothing else — a rainbow one
+       where the ordinary ticket is blue (CONFIG.shellArt.ticketSuper). This
+       entry is only what a build with no artwork falls back to, and it falls
+       back to the same stroke: two tickets told apart by a colour cannot be
+       told apart by a line, and the shop card names both. */
+    ticketSuper: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/>',
+    sticker:'<path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/><path d="M8 13h.01"/><path d="M16 13h.01"/><path d="M9 17s1 1 3 1 3-1 3-1"/>',
+    store:  '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
+    gift:   '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+    xp:     '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    flame:  '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    play:   '<polygon points="6 3 20 12 6 21 6 3"/>',
+    check:  '<path d="M20 6 9 17l-5-5"/>',
+    lock:   '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    star:   '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'
   };
+
+  /* THE PAINTED INSTRUMENT, when the build carries one. A game with a
+     `web.meta` block ships the shell's own artwork as CONFIG.shellArt (see
+     tools/build/build.mjs), and four of those pieces are named after the
+     pictograms above — `coin`, `xp`, `star`, `ticket`. Where the art exists it
+     is drawn instead of the stroke, in the same box, so every width/height
+     rule in the three stylesheets still aims at it.
+
+     It is ONE swap, here, and not a call site each: the wallet, the shop, the
+     album, the daily road and the level map all ask for their pictogram
+     through this function, so they all turn painted together and a build with
+     no artwork — a playable, a game with no wallet — keeps the stroke without
+     a branch anywhere else.
+
+     `art-i` is what the stylesheets hang the painted case off, because an
+     <img> takes no `currentColor`: a row that USED to dress its pictogram by
+     colour now has one that carries its own. */
   function icon(name, cls) {
+    var art = CONFIG.shellArt && CONFIG.shellArt[name];
+    if (art) {
+      return '<img class="' + (cls || "ico") + ' art-i" src="' + art +
+             '" alt="" aria-hidden="true">';
+    }
     return '<svg class="' + (cls || "ico") + '" viewBox="0 0 24 24" fill="none" ' +
            'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
            'stroke-linejoin="round" aria-hidden="true">' + ICON[name] + "</svg>";
+  }
+
+  /* The pieces no pictogram is named after — a bag of coins, a starburst, a
+     trophy. A screen asks for one of these when the stroke it would replace
+     never existed: "an amount of money" is not the coin icon twice, and the
+     board a player finished is not a star. Null when the build has no artwork,
+     and every caller has something to fall back to. */
+  function artImg(role, cls) {
+    var src = CONFIG.shellArt && CONFIG.shellArt[role];
+    if (!src) return null;
+    return '<img class="' + (cls || "ico") + ' art-i" src="' + src +
+           '" alt="" aria-hidden="true">';
   }
 
   /* Drop every listener a node carries by replacing it with its own clone.
@@ -441,15 +522,42 @@
        inside the click that asked for a round. */
     MODES.slice(1).forEach(function (name) {
       var key = modeCopyKey(name);
-      var b = el("button", "web-item web-mode", COPY[key] || name.toUpperCase());
+      var b = el("button", "web-item web-mode", COPY[key] || up(name));
       b.addEventListener("click", function () {
         armMode(name);
         if (levelled()) LV.clear();      // a mode entry is a free run, not a level
         W.start();
       });
-      items.push({ node: b, key: key, alt: name.toUpperCase() });
+      items.push({ node: b, key: key, alt: up(name) });
       menu.appendChild(b);
     });
+
+    /* The collection, under PLAY and above the rest: it is a place the player
+       GOES, like the map, where the three below are panels that open over the
+       menu. A game with no `web.meta` does not have it.
+
+       THE SHOP IS NOT A TITLE ENTRY. It is a till, not a destination: it is
+       opened from the coins the player is looking at — the map's wallet chip —
+       and from the album, where a missing sticker is the reason to want a
+       ticket. A sixth line on the title screen selling something is the one
+       shape thirteen games in one voice should not take. */
+    /* THE DAILY ROAD, between the map and the collection. It is a line of this
+       menu and not a banner over the title: the title screen's top half is the
+       game's logotype and the scene behind it, and a strip parked there was a
+       second thing competing with the one thing that sells the game. Down
+       here it reads as what it is — a place to go, like the two lines it sits
+       between — and it is within a thumb's reach of them. */
+    if (metaed() && DL && DL.active()) {
+      var road = DL.node();
+      if (road) menu.appendChild(road);
+    }
+
+    if (metaed()) {
+      var b = el("button", "web-item web-meta", MT.text("stickersEntry"));
+      b.addEventListener("click", function () { AL.open(); });
+      items.push({ node: b, mt: "stickersEntry" });
+      menu.appendChild(b);
+    }
 
     [["scores", "leaderboard"], ["options", "options"], ["help", "help"]]
       .forEach(function (entry) {
@@ -618,6 +726,15 @@
         var best = Number(W.Store.get("bestScore", 0)) || 0;
         box.appendChild(el("div", "web-best-lbl", COPY.best));
         box.appendChild(el("div", "web-best", String(best)));
+        /* The player's own level, beside the score: it is what an online board
+           would rank them by alongside it, and it is the one number in this
+           shell that a second round of an old level still moves. */
+        if (metaed()) {
+          var p = MT.levelAt();
+          box.appendChild(el("div", "web-lvl",
+            '<b>' + MT.text("level") + " " + p.level + "</b>" +
+            '<span class="bar"><u style="width:' + (100 * p.into / p.need).toFixed(1) + '%"></u></span>'));
+        }
         box.appendChild(el("div", "web-note", best ? COPY.soonScores : COPY.noScore));
       }
     },
@@ -717,6 +834,10 @@
 
   function openPause(kind) {
     if (W.state() !== "playing") return;
+    /* The state is still "playing" while the outro plays (the loop is left
+       turning for the slow motion — packages/shell/shell.js), and a round that
+       is already over is not one to pause or to leave. */
+    if (W.ending && W.ending()) return;
     pause();
     pauseKind = kind;
     pauseTitle.textContent = kind === "leave" ? COPY.leaveTitle : COPY.optionsTitle;
@@ -807,8 +928,10 @@
     applyLang(code);
 
     if (levelled()) LV.setLang(code);
+    if (metaed()) { MT.setLang(code); AL.setLang(code); DL.setLang(code); }
     for (var i = 0; i < items.length; i++)
-      items[i].node.textContent = (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
+      items[i].node.textContent = (items[i].mt && metaed() ? MT.text(items[i].mt) : null) ||
+                                  (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
                                   COPY[items[i].key] || items[i].alt;
     if (COPY.tagline) $("intro-tagline").innerHTML = COPY.tagline;
     labelEnd();
@@ -837,34 +960,134 @@
 
   /* ── 7. the end screen ────────────────────────────────────────────────── */
 
-  var btnAgain, btnMenu;
+  /* THE END SCREEN'S TWO WAYS OUT, AND THEY ARE THE SAME TWO EVERY TIME. On a
+     map there is exactly one place to go — the map, which is where the next
+     level, the wallet and the collection all are — and exactly one thing to do
+     again, which is the level just played. Two icons say that in less room
+     than two sentences did, and neither of them has to be re-read after the
+     first round of the first session.
+
+     WHAT CHANGES IS WHICH ONE SHINES, and it is the round that decides:
+
+       three stars   the map is lit and the replay is a whisper — there is
+                     nothing left to earn here, so the way on is the offer.
+       one or two    both plain. Going on and going again are both reasonable
+                     and the screen does not have an opinion.
+       none          the replay is lit and the map is the whisper: the level
+                     was not cleared, and the obvious next move is this level
+                     again.
+
+     A game with no map keeps the two words it always had — PLAY AGAIN and
+     MENU — because neither of them is an icon anyone would read. */
+  var btnAgain, btnMenu, btnNext, endActs;
+
+  /* THE END SCREEN'S THREE STARS, painted. They are the motor's own nodes and
+     the motor writes a glyph into them (template/page.html), which every
+     playable keeps — this only swaps what is INSIDE them on a web build that
+     carries the artwork. The nodes, their ids, the reveal that lights them one
+     by one and the slam it plays are untouched, so shell.js needs no branch.
+
+     Once, at mount: the end screen is rebuilt every round but these three
+     spans are not. The painted case is styled off the CHILD (`.star .eo-sti`)
+     and never off a class on the star itself — shell.js rewrites `className`
+     on every reveal, so a marker put there would survive exactly one round. */
+  function paintEndStars() {
+    var img = artImg("star", "eo-sti");
+    if (!img) return;
+    for (var i = 1; i <= 3; i++) {
+      var n = $("star-" + i);
+      if (n) n.innerHTML = img;
+    }
+  }
 
   function rewireEnd() {
-    btnAgain = unbind("btn-install");
+    paintEndStars();
+    btnAgain = unbind("btn-install");     // the map, on a map; PLAY AGAIN otherwise
     btnAgain.addEventListener("click", function () {
-      /* On a map, the round that just ended has a successor — or it has to be
-         played again. The level layer knows which; the button only asks. */
-      if (levelled() && LV.last()) { LV.playNext(); return; }
+      if (levelled()) { toMenu(); return; }
       W.start();
     });
 
-    btnMenu = unbind("btn-replay");
+    btnMenu = unbind("btn-replay");       // the level again, on a map; MENU otherwise
     btnMenu.addEventListener("click", function () {
-      W.Music.unduck();          // endRound ducked the bed for the reveal
-      W.setState("intro");       // the state hook repaints the scene
-      if (levelled()) LV.open();
+      if (levelled() && LV.last()) { LV.replayLast(); return; }
+      if (levelled()) { W.start(); return; }
+      toMenu();
     });
+
+    /* The two are stacked by the motor and side by side here, so they are
+       moved into a row of their own — moved, never copied: they are the
+       motor's own nodes and everything it does to them (the `.show` that ends
+       the reveal, the blur on the way out) still lands. */
+    if (levelled()) {
+      endActs = el("div"); endActs.id = "web-endacts";
+      btnAgain.parentNode.insertBefore(endActs, btnAgain);
+      endActs.appendChild(btnAgain);
+      endActs.appendChild(btnMenu);
+
+      /* THE WAY ON — the third button, and the shell's own. The motor owns
+         exactly two nodes on this screen and a NEXT LEVEL belongs to the level
+         layer, not to the motor: a playable has no next level and the motor
+         must not learn what one is (it still knows nothing of this front end
+         but `onResult`). So it is built here, LAST in the row —
+         map · replay · next — and it rides the motor's own reveal through
+         CSS rather than a timer of its own: `#btn-replay.show ~ #btn-next` in
+         menu.css. That also means `setState` taking `.show` off the motor's
+         button on the way out of "end" takes this one with it, which is what
+         keeps a dead button from sitting invisible over the next round. */
+      btnNext = el("button", "eo-act"); btnNext.id = "btn-next";
+      btnNext.type = "button";
+      btnNext.addEventListener("click", function () { LV.playNext(); });
+      endActs.appendChild(btnNext);
+    }
     labelEnd();
   }
 
+  function toMenu() {
+    W.Music.unduck();            // endRound ducked the bed for the reveal
+    W.setState("intro");         // the state hook repaints the scene
+    if (levelled()) LV.open();
+  }
+
+  /* The motor owns `.show` on these two — it is what ends the reveal and what
+     makes them clickable at all — so the tone is written around it rather than
+     over it. */
+  function dress(btn, cls, tone) {
+    var shown = btn.classList.contains("show");
+    btn.className = cls + " " + tone + (shown ? " show" : "");
+  }
+
   function labelEnd() {
-    if (btnAgain) {
-      var last = levelled() ? LV.last() : null;
-      btnAgain.textContent = last
-        ? (LV.nextOf() ? LV.text("next") : LV.text("retry"))
-        : COPY.again;
+    if (!btnAgain) return;
+    if (!levelled()) {
+      btnAgain.textContent = COPY.again;
+      btnMenu.textContent = COPY.menu;
+      return;
     }
-    if (btnMenu) btnMenu.textContent = levelled() ? LV.text("map") : COPY.menu;
+    var last = LV.last();
+    var st = last ? last.stars : 0;
+    btnAgain.innerHTML = icon("map", "eo-ico");
+    btnAgain.setAttribute("aria-label", LV.text("map"));
+    btnMenu.innerHTML = icon("reset", "eo-ico");
+    btnMenu.setAttribute("aria-label", LV.text("replay"));
+    dress(btnAgain, "eo-act", st >= 3 ? "hero" : st >= 1 ? "calm" : "dim");
+    dress(btnMenu, "eo-act", st >= 3 ? "dim" : st >= 1 ? "calm" : "hero");
+    /* NEXT IS NEVER DRESSED. The other two trade the lit state between them
+       because what the round earned decides which of "go on" and "try again"
+       is the offer; this one is the same size and the same weight whatever
+       happened, so it never competes with the answer to that question.
+
+       It is HIDDEN rather than disabled where there is no next level — after
+       the last one, and after a round that did not clear its objective, where
+       the level ahead is still shut. A control that cannot do anything is
+       worse than one that is not there, and `hidden` also takes it out of the
+       tab order. */
+    if (btnNext) {
+      btnNext.innerHTML = icon("next", "eo-ico");
+      btnNext.setAttribute("aria-label", LV.text("next"));
+      btnNext.className = "eo-act";
+      btnNext.hidden = !LV.nextLevel();
+    }
   }
 
   /* ── 8. keys ──────────────────────────────────────────────────────────── */
@@ -877,9 +1100,16 @@
     window.addEventListener("keydown", function (e) {
       var esc = e.key === "Escape" || e.keyCode === 27;
       if (esc && pauseKind) { e.preventDefault(); closePause(); return; }
+      /* The album and the shop sit over the map, which sits over the menu:
+         ESCAPE walks that stack from the top down, one layer a press. */
+      if (esc && metaed() && AL.anyOpen()) { e.preventDefault(); AL.closeTop(); return; }
       if (esc && open) { e.preventDefault(); closePanel(); return; }
       /* ESCAPE during a round is the pause every game has: it opens the
-         options over the frozen world, and a second press resumes. */
+         options over the frozen world, and a second press resumes. Not over a
+         ceremony of the meta layer, though: the round is already over by then
+         (the outro is still "playing" — packages/shell/shell.js) and pausing a
+         finished round behind an open gift is a card over a card. */
+      if (esc && metaed() && MT.busy()) { e.preventDefault(); return; }
       if (esc && W.state() === "playing") { e.preventDefault(); openPause("options"); return; }
       if (esc && levelled() && LV.isOpen()) { e.preventDefault(); LV.close(); return; }
       /* SPACE from the intro is "start the round" in the bootstrap, and with a
@@ -889,7 +1119,8 @@
           W.state() === "intro" && !open && !LV.isOpen()) {
         e.preventDefault(); e.stopPropagation(); LV.open(); return;
       }
-      if (!open && !pauseKind && !(levelled() && LV.isOpen())) return;
+      if (!open && !pauseKind && !(levelled() && LV.isOpen()) &&
+          !(metaed() && AL.anyOpen())) return;
       e.preventDefault();
       e.stopPropagation();
     }, true);
@@ -909,8 +1140,19 @@
        web shell has one `el`, one icon pack and one FR/EN mechanism rather
        than two. It must be mounted before buildIntro(), which asks it for the
        PLAY entry's label. */
+    /* The meta layer gets the same three things the map does — this file's
+       `el`, its icon pack and the language — so the shell has one dom helper,
+       one pictogram set and one FR/EN mechanism rather than four. meta.js
+       first: the album, the daily strip and the map's own header all draw
+       through it. */
+    if (metaed()) {
+      var mapi = { el: el, icon: icon, art: artImg, lang: LANG };
+      MT.mount(mapi);
+      AL.mount(mapi);
+      DL.mount(mapi);
+    }
     if (LV) LV.mount({
-      el: el, icon: icon, lang: LANG,
+      el: el, icon: icon, art: artImg, lang: LANG,
       /* ...and the Help panel itself, so the map's level 0 opens the ONE help
          screen this shell has rather than a second copy of it: the same title,
          the same sentence, the same motor demo stage moved into whichever
@@ -946,8 +1188,9 @@
       if (state !== "playing") dropPause();
       /* Nothing to fit here any more: the motor sizes the end title and the
          score inside EndScreen.show, which runs after this hook. The two
-         buttons are relabelled though: after a level they read NEXT LEVEL or
-         RETRY, and which one depends on the round that just ended. */
+         buttons are dressed though: on a map they are the MAP and THE LEVEL
+         AGAIN, and which of the two shines depends on the round that just
+         ended (see rewireEnd). */
       if (state === "end") { labelEnd(); return; }
       if (state !== "intro") return;
       closePanel();

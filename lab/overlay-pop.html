@@ -417,7 +417,7 @@ body{
   --glow:rgba(90,140,255,.6); --band:#141033; --band-line:#5ce1ff; --band-h:210px; --band-skew:-5deg;
 }
 
-/* RÉVOLUTIONNAIRE — political-poster energy: red band, halftone, chroma split. */
+/* Révolutionnaire — political-poster energy: red band, halftone, chroma split. */
 .s-manifest{
   --sz:70px; --track:1px; --ink:#12000a; --stroke:11px;
   --fill:linear-gradient(180deg,#fff 0%,#ffe3e8 60%,#ffb3c1 100%);
@@ -447,7 +447,7 @@ body{
 }
 .s-ultra .pop-sub{ background:#0b0020; border-color:#a6e9ff; color:#a6e9ff; }
 
-/* SÉRIE x5 — chevrons pushing the eye sideways. */
+/* Série x5 — chevrons pushing the eye sideways. */
 .s-chevron{
   --sz:84px; --ink:#1a0018; --stroke:13px;
   --fill:linear-gradient(180deg,#fff 0%,#ffd9f2 50%,#ff5ecb 100%);
@@ -470,7 +470,7 @@ body{
 }
 .s-sticker .pop-sub{ background:#001a14; border-color:#7dffcf; color:#7dffcf; }
 
-/* DERNIÈRE CHANCE — hazard tape, blinking. */
+/* Dernière chance — hazard tape, blinking. */
 .s-hazard{
   --sz:62px; --track:4px; --ink:#14100a; --stroke:10px;
   --fill:linear-gradient(180deg,#fff 0%,#ffe9a8 100%);
@@ -543,10 +543,10 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
 
     <!-- fake game chrome, so the callouts can be judged in context -->
     <div class="chrome" id="hud">
-      <div class="pill"><span class="lbl">SCORE</span><span id="hud-score">0</span></div>
-      <div class="pill"><span class="lbl">TEMPS</span>18</div>
+      <div class="pill"><span class="lbl" data-up>Score</span><span id="hud-score">0</span></div>
+      <div class="pill"><span class="lbl" data-up>Temps</span>18</div>
     </div>
-    <div class="chrome" id="cta"><div>INSTALLER</div></div>
+    <div class="chrome" id="cta"><div data-up>Installer</div></div>
 
     <!-- the layers the Pop module drives -->
     <div id="tint"></div>
@@ -723,8 +723,14 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
 
     /* Build the word. Every glyph layer is expensive to rasterize — gradient
        face clipped to the text, thick stroke, extrusion — so a style can ask
-       for ONE layer with `letters:false` instead of one node per letter. */
+       for ONE layer with `letters:false` instead of one node per letter.
+
+       The word arrives in NORMAL case, like every string in the repo, and is
+       shouted here the way the motor shouts it (`upper`, packages/engine) —
+       accents off, so a catalogue shows DERNIERE CHANCE and not what
+       `text-transform: uppercase` alone would leave on the screen. */
     function buildWord(text, st) {
+      text = upper(text);
       var w = document.createElement("div");
       var vertical = !!st.vertical;
       w.className = "pop-word" + (vertical ? " vert" : "");
@@ -812,7 +818,7 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
       body.appendChild(buildWord(word, st));
       if (sub) {
         var s = document.createElement("div");
-        s.className = "pop-sub"; s.textContent = sub;
+        s.className = "pop-sub"; s.textContent = upper(sub);
         body.appendChild(s);
       }
       anim.appendChild(body);
@@ -938,6 +944,29 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     return { show: show, shake: shake, flash: flash, tint: tint, confetti: confetti, clear: clear };
   })();
 
+  /* Capitals, the house way: accents come off, and a lowercase run glued to a
+     digit (a unit, a multiplier) keeps its case. Same rule as the motor's
+     `upper` — see docs/ENGINE.md. */
+  function upper(str) {
+    var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
   /* -----------------------------------------------------------------------
      STYLES — the catalogue. Each entry is one visual language:
        cls                 CSS class carrying the palette tokens
@@ -950,61 +979,61 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
      ----------------------------------------------------------------------- */
   var STYLES = {
     combo: {
-      label: "COMBO x2", word: "COMBO x2", sub: "+40", cls: "s-combo",
+      label: "Combo x2", word: "Combo x2", sub: "+40", cls: "s-combo",
       anim: "chip", enter: 260, hold: 520, exit: 220,
       decor: ["ring", "dashes"], at: "upperRight", rot: -7,
       letters: false, shake: 4, sfx: "hit"
     },
     incredible: {
-      label: "INCROYABLE", word: "INCROYABLE", cls: "s-ribbon",
+      label: "Incroyable", word: "Incroyable", cls: "s-ribbon",
       anim: "swipe", enter: 520, hold: 900, exit: 420,
       decor: ["band", "lines"], at: "upper",
       shake: 5, sfx: "whoosh"
     },
     revolution: {
-      label: "RÉVOLUTIONNAIRE", word: "RÉVOLUTIONNAIRE", sub: "NIVEAU 12 DÉBLOQUÉ", cls: "s-manifest",
+      label: "Révolutionnaire", word: "Révolutionnaire", sub: "Niveau 12 débloqué", cls: "s-manifest",
       anim: "drop", enter: 640, hold: 1200, exit: 380,
       decor: ["dots", "band"], at: "center",
       shake: 12, tint: "rgba(214,27,60,.9)", tintMs: 700, sfx: "alarm"
     },
     ultra: {
-      label: "ULTRA", word: "ULTRA", sub: "x12", cls: "s-ultra",
+      label: "Ultra", word: "Ultra", sub: "x12", cls: "s-ultra",
       anim: "zoom", enter: 580, hold: 900, exit: 420,
       decor: ["rays", "flash"], at: "center",
       shake: 16, flash: "rgba(190,150,255,.9)", tint: "rgba(120,70,255,.85)", sfx: "hit"
     },
     streak: {
-      label: "SÉRIE x5", word: "SÉRIE x5", cls: "s-chevron",
+      label: "Série x5", word: "Série x5", cls: "s-chevron",
       anim: "punch", enter: 380, hold: 800, exit: 300,
       decor: ["chevrons"], at: "left", rot: -7,
       shake: 4, sfx: "sparkle"
     },
     perfect: {
-      label: "PARFAIT", word: "PARFAIT", sub: "SANS FAUTE", cls: "s-gold",
+      label: "Parfait", word: "Parfait", sub: "Sans faute", cls: "s-gold",
       anim: "punch", enter: 460, hold: 1100, exit: 340,
       decor: ["rays", "sparks"], at: "upper", rot: -3,
       tint: "rgba(255,190,60,.8)", sfx: "sparkle"
     },
     bonus: {
-      label: "MEGA BONUS", word: "MEGA BONUS", sub: "+1000", cls: "s-sticker",
+      label: "Mega bonus", word: "Mega bonus", sub: "+1000", cls: "s-sticker",
       anim: "drop", enter: 480, hold: 900, exit: 340,
       decor: ["dots"], at: "lower", rot: -4,
       sfx: "sparkle"
     },
     danger: {
-      label: "DERNIÈRE CHANCE", word: "DERNIÈRE CHANCE", cls: "s-hazard",
+      label: "Dernière chance", word: "Dernière chance", cls: "s-hazard",
       anim: "alarm", enter: 260, hold: 1800, exit: 300, pulse: true,
       decor: ["stripes"], at: "top",
       tint: "rgba(255,40,40,.85)", tintMs: 1800, sfx: "alarm"
     },
     record: {
-      label: "NOUVEAU RECORD", word: "NOUVEAU RECORD", sub: "18 420 PTS", cls: "s-record",
+      label: "Nouveau record", word: "Nouveau record", sub: "18 420 pts", cls: "s-record",
       anim: "drop", enter: 620, hold: 1500, exit: 380,
       decor: ["rays", "band", "sparks"], at: "center",
       shake: 8, confetti: true, sfx: "sparkle"
     },
     go: {
-      label: "GO GO GO (vertical)", word: "GOGOGO", cls: "s-vert", vertical: true,
+      label: "Go go go (vertical)", word: "Gogogo", cls: "s-vert", vertical: true,
       anim: "punch", enter: 400, hold: 800, exit: 320,
       decor: ["rays"], at: "edgeRight", rot: 4,
       sfx: "blip"
@@ -1174,6 +1203,12 @@ code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; co
     this.classList.toggle("on", Sfx.toggle());
   };
   $("btn-clear").onclick = function () { Pop.clear(); };
+
+  /* The fake chrome is written in normal case like every other string in the
+     repo; `data-up` is what shouts it, so the mock HUD follows the same rule
+     as the callouts above it. */
+  var ups = document.querySelectorAll("[data-up]"), u;
+  for (u = 0; u < ups.length; u++) ups[u].textContent = upper(ups[u].textContent);
 
   resize();
   // Opening beat so the page never looks empty.

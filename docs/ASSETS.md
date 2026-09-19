@@ -115,9 +115,13 @@ no `ASSETS` entry, no code:
 | `-title.png`                         | the logotype: replaces the app icon and the CSS `#intro-title`                    |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0 / 1–2 / 3)                                |
 | `-object-<name>.png`                 | **a sheet to cut, never a role** — see below; `encode-art` leaves it alone        |
-| `-decor-NN.png`                      | the decor pool: objects the shell scatters over the screens — see below           |
 | `-sky.png` / `-sky.jpg`              | a panorama a GAME draws on the CANVAS behind its round — `games/arcider`          |
 | anything else                        | `CONFIG.art.<camelName>`, for the game to use as it likes                         |
+
+**An object a game cut out of a sheet is not in there** — it stays in
+`assets/image/object/` and the game names it in `art.objects` of its
+`manifest.json`, which is the [next section](#a-sheet-of-objects-assetsimagemasterslug-object-namepng).
+The decor pool, the beads and the album's twenty stickers are all of that kind.
 
 **A scene per band.** A game whose look turns over with the climb keeps one
 painting per band instead of one for the whole game, and then there is no plain
@@ -186,22 +190,49 @@ node tools/lab/cut-objects.mjs --list              # what it would cut, and wher
 
 open dist/object/radiam-gear.png                   # the contact sheet: every cut, numbered
 
-node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → assets/image/master/
+node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → art.objects
 node tools/lab/encode-art.mjs radiam               # the adopted two become art
 ```
 
-| flag              | default | what it is                                                                   |
-| ----------------- | ------- | ---------------------------------------------------------------------------- |
-| `--solid <alpha>` | `110`   | the alpha at which a pixel is the object rather than its glow — see below    |
-| `--pad <px>`      | `20`    | the margin around a cut, and how far its own glow is followed                |
-| `--min <px²>`     | `2500`  | the speck floor: below it, paint rather than an object                       |
-| `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                           |
-| `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel            |
-| `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go     |
-| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area      |
-| `--adopt 1,4`     | —       | copy those cuts into `assets/image/master/` as masters (one sheet at a time) |
-| `--as <role>`     | —       | rename them on the way in: `--as decor` → `<slug>-decor-NN.png`              |
-| `--list`          | —       | name the sheets and stop                                                     |
+**Adopting moves no file.** A cut lives in `assets/image/object/` once, under
+the neutral name its sheet gave it, and what a game *ships* is a line in that
+game's `manifest.json`:
+
+```json
+"art": {
+  "objects": {
+    "gear01": "radiam-gear-01",
+    "gear04": "radiam-gear-04"
+  }
+}
+```
+
+The key is the **role** — `CONFIG.art.gear01`, and
+`assets/image/embed/radiam-gear01.webp` once `encode-art.mjs` has run, exactly
+as a file name in `assets/image/master/` would have given. The value is the cut
+it points at, extension implied.
+
+It used to be a *copy* into `assets/image/master/`, and the copy was the
+declaration. That wrote the same picture to disk twice under two names, and it
+could not answer the one question a folder of cuts asks:
+`radiam-ball-blue-01.png` ships and `radiam-ball-blue-09.png`, beside it, does
+not — sixteen of the twenty beads were kept — and the two names are the same
+shape, so nothing in them can say which. The game says it, once. Re-cutting the
+sheet afterwards refreshes what ships with no second adoption, because a role
+points at a cut and not at a copy.
+
+| flag              | default | what it is                                                                |
+| ----------------- | ------- | ------------------------------------------------------------------------- |
+| `--solid <alpha>` | `110`   | the alpha at which a pixel is the object rather than its glow — see below |
+| `--pad <px>`      | `20`    | the margin around a cut, and how far its own glow is followed             |
+| `--min <px²>`     | `2500`  | the speck floor: below it, paint rather than an object                    |
+| `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                        |
+| `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel         |
+| `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go  |
+| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area   |
+| `--adopt 1,4`     | —       | declare those cuts in the game's `art.objects` (one sheet at a time)      |
+| `--as <role>`     | —       | name the role instead: `--as decor` → `decor-NN`, the decor pool          |
+| `--list`          | —       | name the sheets and stop                                                  |
 
 #### `--grid` — when several sheets must be cut the same way
 
@@ -223,6 +254,22 @@ The mask is unchanged, alpha or flood exactly as above. The grid only decides
 which blobs survive and in what order, which is also why it rescues a sheet the
 flood struggles with: radiam's rainbow sheet breaks into 5 448 blobs because its
 background is a coloured haze, and the grid still picks the right twenty.
+
+**A blob across two cells is two objects, and the grid cuts it.** On a packed
+sheet the model routinely lets one object's glow touch the next one's, and an
+alpha mask then hands the pair back as a single component — which the cell
+filing used to resolve by dropping one of them, leaving an EMPTY CELL and a cut
+twice as tall as the rest. `radiam-object-sticker.png` did it three times over.
+So a component carrying real weight (18%) in several cells is split along the
+grid, one piece per cell, each filed on its own; the seam between two merged
+objects lands halfway between the two cell centres. Spilling over the line is
+NOT that — every object overflows its cell a little, and a piece under the bar
+stays with the body it came from, so an object always keeps its own overflow.
+
+**`--keep-partial` is usually what a 5x4 of characters needs**, because the top
+row's hair touches the sheet's own edge and is otherwise dropped as "cut by the
+edge". Look at `dist/object/<slug>-<name>.png` before adopting: it is the
+contact sheet, numbered, and it is the only way to see a cell went missing.
 
 ```bash
 for c in red yellow blue purple green rainbow; do
@@ -263,19 +310,19 @@ followed out of it as far as `--pad` and never through another object's
 label — so a ring keeps its own light and none of its neighbour's. Lower it
 (`--solid 8`) for soft objects that come back in pieces.
 
-**`assets/image/object/` is tracked (35 MB, 383 files) and ships nothing.** Tracked
-for the same reason `assets/image/master/` is — it is material, and material that only
-exists on one laptop is material nobody else can build from. Shipping nothing
-is the other half: everything under `assets/image/embed/` is embedded in every build of
-its game, so 383 objects would be megabytes of base64 in creatives capped at
-5 MB.
+**`assets/image/object/` is tracked (577 files) and ships nothing by itself.**
+Tracked for the same reason `assets/image/master/` is — it is material, and
+material that only exists on one laptop is material nobody else can build from.
+Shipping nothing is the other half: everything under `assets/image/embed/` is
+embedded in every build of its game, so 577 objects would be megabytes of
+base64 in creatives capped at 5 MB.
 
-`--adopt` is the step between the two, and it is deliberately manual: it copies
-the two or three cuts that earn it into `assets/image/master/` as masters like any
-other, and from there the usual pipeline names them `CONFIG.art.<name>NN` —
-`ArtImages.gear01` on the canvas, or a piece of a store screenshot.
+`--adopt` is the step between the two, and it is deliberately manual: it writes
+the two or three cuts that earn it into the game's `art.objects`, and from there
+the usual pipeline names them `CONFIG.art.<name>NN` — `ArtImages.gear01` on the
+canvas, or a piece of a store screenshot.
 
-### The decor pool: `assets/image/master/<slug>-decor-NN.png`
+### The decor pool: `art.objects` roles named `decor-NN`
 
 #### A style set: `<slug>-ball-<colour>-NN.png`
 
@@ -296,8 +343,28 @@ neither is obvious:
   rule that already holds back `background-desk`, and style 01 ships everywhere
   so the ad is painted too.
 
-One adopted role is not a game's to draw: `--as decor` renames a cut on its way
-into `assets/image/master/`, and every `CONFIG.art.decor*` key is the pool the shell
+#### The sticker album: `<slug>-stickerNN.png`
+
+The second adopted set, and the same two facts as the beads for the same two
+reasons. Twenty stickers cut from one 5x4 sheet fill the collection the META
+layer counts `x/20` ([META.md](META.md)); `STICKER` is a 400 px box at q 0.82,
+which covers the album's 128 px grid at a 3x device ratio and the 300 px reveal
+a draw ends on, and the twenty come to ~730 KB. They are **web-only wholesale**
+— not "everything past the first", the way the bead styles are: a playable has
+no album, no machine and no map to earn one off, so all twenty would be ~975 KB
+of base64 in a creative capped at 5 MB, to draw nothing at all.
+
+An unowned sticker is drawn as its own **white silhouette** by the album
+(`brightness(0) invert(1)`), so a game never ships a placeholder for one.
+
+```bash
+node tools/lab/cut-objects.mjs radiam-object-sticker --grid 5x4 --keep-partial \
+  --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+node tools/lab/encode-art.mjs radiam
+```
+
+One adopted role is not a game's to draw: `--as decor` declares a cut under the
+role `decor-NN`, and every `CONFIG.art.decor*` key is the pool the shell
 scatters over the screens — the end screen, the round's corners, the web menu's
 panels, the pause card, the level map. A game declares nothing and calls
 nothing; see [ENGINE.md](ENGINE.md#decor--the-games-own-objects-on-the-screens).
@@ -323,6 +390,108 @@ numbered, at a size where a fringe or a missing tooth shows. It is a build
 output like the rest of `dist/`, regenerated on every run, and it is the only
 honest way to check a cut: a list of pixel counts says nothing about whether a
 gear lost a tooth.
+
+### The shell's own artwork: `game-object-<name>.png` → `assets/image/shell/`
+
+One prefix belongs to no game. `assets/image/master/game-object-gift-close.png`
+and `game-object-gift-open.png` are a wall of three boxes each — red, blue,
+green — and the **web shell** draws them for every game that declares
+`web.meta`: the daily strip's live node, the seventh day's prize, and the three
+boxes of the gift ceremony ([META.md](META.md)). They cannot live under a slug,
+the way `assets/image/brand/newrare.webp` — the studio mark on all thirteen
+title screens — cannot.
+
+`game` is that prefix, and nothing may ever be called that. It cuts like any
+other sheet, on a **3x1 grid** so the cell is the identity: box 2 is the same
+blue box closed and open across the two sheets, which is the whole reason a lid
+can be lifted by swapping one `src`.
+
+```bash
+node tools/lab/cut-objects.mjs game-object-gift-close --grid 3x1
+node tools/lab/cut-objects.mjs game-object-gift-open  --grid 3x1
+node tools/lab/encode-art.mjs          # → assets/image/shell/gift-{close,open}-NN.webp
+```
+
+**The sheets after them are the shell's INSTRUMENTS**, where the gifts are its
+ceremony: `game-object-reward.png` is 24 rewards on a 6x4 grid — stars, coins,
+gems, chests, medals, a crown, an XP shield, a bolt — `game-object-trophy.png`
+is 10 trophies on a 5x2, `game-object-ticket.png` is 12 tickets on a 4x3, and
+`game-object-multiplicator.png` is 6 multiplier plates on a 3x2 — x2, x5, x10,
+x20, x50, x100.
+The coin a wallet counts, the ticket it spends on a pull, the bolt an xp bar
+fills with, the star a level is cleared with and the trophy a finished board
+earns were stroked pictograms out of `assets/motor/lucide/`, and a stroked
+pictogram reads as a tool's chrome. The web shell is a game.
+
+```bash
+node tools/lab/cut-objects.mjs game-object-reward --grid 6x4   # 24 cuts
+node tools/lab/cut-objects.mjs game-object-trophy --grid 5x2   # 10 cuts
+node tools/lab/cut-objects.mjs game-object-ticket --grid 4x3   # 12 cuts
+node tools/lab/cut-objects.mjs game-object-multiplicator --grid 3x2  # 6 cuts
+```
+
+It **cannot be adopted**, because there is no manifest to write the choice
+into: the shell names its own pieces in `SHELL_CUTS` of
+`tools/lab/encode-art.mjs`, for exactly the reason a game names its own — a
+folder of cuts cannot say which of two files ships. 360 px at q 0.82, ~26 KB
+apiece, ~160 KB of base64 for the six boxes and ~150 KB for the six
+instruments.
+
+**A cut is RENAMED there, and the rename is the declaration.** `reward-08` says
+nothing; `coin` is what the shell draws. Four of the roles are deliberately the
+names `packages/webshell/menu.js` already calls its pictograms by, so
+`icon("coin")` finds the painted piece with no table in between and falls back
+to the stroke in a build that carries no artwork — one swap, in `icon()`, and
+the wallet, the shop, the album, the daily road, the level map and the end
+screen's three stars all turn painted together:
+
+| cut                     | role         | what draws it                                        |
+| ----------------------- | ------------ | ---------------------------------------------------- |
+| `game-reward-01`        | `star`       | the level stars — map, round pill, end screen        |
+| `game-reward-03`        | `star-burst` | the endless node, the seventh day's badge            |
+| `game-reward-08`        | `coin`       | money, everywhere a wallet is shown                  |
+| `game-ticket-02`        | `ticket`     | a pull at the machine — the wallet, the shop, DRAW   |
+| `game-reward-18`        | `coin-pile`  | an AMOUNT of money — the reward card                 |
+| `game-reward-24`        | `xp`         | the bolt the xp bar and its LV row are labelled with |
+| `game-trophy-03`        | `trophy`     | the map's counter at ninety of ninety                |
+| `game-multiplicator-02` | `mult-5`     | the seventh day of the daily road — strip and cards  |
+
+The ticket is the BLUE one of the twelve, and the colour is the whole choice:
+it sits next to the coin in every wallet, and a gold ticket beside a gold coin
+is one number read twice. It is also the one piece whose tint no longer follows
+the game's accent — what being painted costs.
+
+**The multiplier is keyed by the NUMBER**, not by the place that draws it:
+`Meta.multArt(5)` finds `mult-5` and a shell that one day pays double asks for
+`2`. Only `mult-5` is shipped, because ×5 is the only multiplier the shell
+states — the other five plates are cut and one line in `SHELL_CUTS` away. It
+carries its own type, its own colour and its own stars, so a card that shows
+the plate drops every word that said the same thing: the `×5` tag on the reward
+name (`kindWord`), the line "every seventh day pays five times over" under the
+locked card, and "star day — every gift is worth five times as much" over the
+three boxes. What is left of the sentence is the answer to the tap — how far
+away the day is — which no picture carries. Its box is `{ w: 480 }` rather than the shell's
+360 — a plate across a modal's header, not a 26 px chip.
+
+**The ad offer wears it too.** The reward card after a perfect round used to
+multiply by three, which is a number nothing here can draw — the plates are x2,
+x5, x10, x20, x50 and x100. It pays ×5 now and the button says so with the
+plate: `WIN ×5` over `watch an ad`, the reward first and the price under it.
+A sticker is redrawn rather than multiplied, so that one loses the plate and
+reads *one more* — the whole reason the number is drawn rather than implied is
+that it cannot then promise what the card will not hand over.
+
+**There is no `ticket-pile` beside `coin-pile`.** A card hands over 148 coins
+and one to five tickets: a pile says "an amount" where a single ticket says the
+truth, and every file here is base64 in every build.
+
+`tools/build/build.mjs` injects them as **`CONFIG.shellArt.<camelRole>`** —
+`giftClose01`, `coinPile`, `starBurst` — on the **web target only, and only for a game
+with a `web.meta` block**. The gate is the meta block and not merely the target
+because the gift is that layer's ceremony: a game with no wallet never opens a
+box, and 160 KB of base64 for a picture nothing draws is the one thing every
+rule on this page exists to prevent. A build without it falls back to the CSS
+boxes the ceremony was drawn with before the painting arrived.
 
 ## The listing images come from `assets/image/google/` and `assets/image/itch/`
 
@@ -483,22 +652,25 @@ other string about a game lives — `games/<slug>/manifest.json`:
 "store": {
   "copy": {
     "en": { "lines": [
-      { "kicker": "TWELVE RAYS", "line": "Turn <b>one</b> ring" },
-      { "kicker": "THREE PER RAY", "line": "Line them up on a <b>ray</b>" }
+      { "kicker": "Twelve rays", "line": "Turn <b>one</b> ring" },
+      { "kicker": "Three per ray", "line": "Line them up on a <b>ray</b>" }
     ] },
     "fr": { "lines": [
-      { "kicker": "DOUZE RAYONS", "line": "Tourne <b>un</b> anneau" },
-      { "kicker": "TROIS PAR RAYON", "line": "Aligne-les sur un <b>rayon</b>" }
+      { "kicker": "Douze rayons", "line": "Tourne <b>un</b> anneau" },
+      { "kicker": "Trois par rayon", "line": "Aligne-les sur un <b>rayon</b>" }
     ] }
   }
 }
 ```
 
-- **A line is two to five words**, rendered in caps, in the game's own
-  `web.font`. It is auto-fitted: the same band holds `AIM & FIRE` and
-  `LES ÉCAILLES DEVIENNENT ARMURE`, so nothing is hand-tuned per game or per
-  language. Past ~44 % of the design size the fit gives up — a line that long is
-  not a punchline and should be rewritten, not shrunk.
+- **A line is two to five words**, written in normal case and rendered in caps,
+  in the game's own `web.font`. Like every string in the repo it is typed
+  `Aim & fire`, never `AIM & FIRE`: the composer shouts it on the way to the
+  card and takes the accents off with the capitals, so `Les écailles deviennent armure` prints LES ECAILLES DEVIENNENT ARMURE (see
+  [ENGINE.md](ENGINE.md#upper--capitals-are-a-look-not-a-spelling)). It is
+  auto-fitted, so nothing is hand-tuned per game or per language. Past ~44 % of
+  the design size the fit gives up — a line that long is not a punchline and
+  should be rewritten, not shrunk.
 - **One word wrapped in `<b>`** takes the game's accent and a glow. `<b>` is the
   only markup that survives; everything else is stripped.
 - `kicker` is the small spaced line above it, in the accent. It may be empty.

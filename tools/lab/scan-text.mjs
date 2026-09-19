@@ -43,8 +43,8 @@
   (`make text`); tools/lab/apply-text.mjs writes a change back.
 
   ── a literal, never an expression ───────────────────────────────────────────
-  A game writes `title: st === 3 ? "APEX VIPER!" : CONFIG.copy.gameOver` and
-  `HUD.setLeft("x" + combo, "COMBO")`. Those are copy too, so the unit here is
+  A game writes `title: st === 3 ? "Apex viper!" : CONFIG.copy.gameOver` and
+  `HUD.setLeft("x" + combo, "Combo")`. Those are copy too, so the unit here is
   the STRING LITERAL and not the argument: every literal inside a text position
   gets its own row and its own span, and the expression around it is printed as
   the row's context. Nothing is ever reprinted — an edit splices one literal —
@@ -339,7 +339,7 @@ function scanGameJs(src, out, push) {
        the page prints instead of a context.
 
        A whole argument written identically in the same place several times is
-       ONE row with several sites: "LENGTH" is the HUD's left label at three
+       ONE row with several sites: "Length" is the HUD's left label at three
        call sites, and editing one of the three would leave the label changing
        under the player. A fragment never merges — the expression around it is
        half of what it means, and two of them are rarely the same beat. */

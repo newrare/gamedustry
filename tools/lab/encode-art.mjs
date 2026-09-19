@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-/* Re-encode the painted artwork of assets/image/master/ into assets/image/embed/.
+/* Re-encode the painted artwork into assets/image/embed/ — out of
+ * assets/image/master/ for what a game owns, and out of assets/image/object/
+ * for the objects its manifest declares under `art.objects`.
  *
  * WHY THIS EXISTS
  * ---------------
@@ -39,11 +41,22 @@
  * runs in whatever WebView an ad network hands it. WebP has been in every
  * mobile browser since 2020, so WebP it is.
  *
+ * TWO SOURCES, AND WHY
+ * --------------------
+ * The six pieces a game OWNS are named in `assets/image/master/`, and a file
+ * name is the whole declaration there: `<slug>-<role>.png` becomes
+ * `CONFIG.art.<camelRole>`, injected by tools/build/build.mjs. There is one
+ * background, one title, three faces, and no question about which of them
+ * ships.
+ *
+ * The objects a game CUT OUT of a sheet cannot work that way, and they are
+ * declared instead in `art.objects` of `games/<slug>/manifest.json`, pointing
+ * at a file of `assets/image/object/` (see `objects()` below). Same roles, same
+ * `CONFIG.art.<camelRole>`, same WebP next door — only the place the choice is
+ * written moves, because a folder full of cuts cannot hold one.
+ *
  * THE ROLES, AND WHERE EACH ONE IS USED
  * -------------------------------------
- * A file name is the whole declaration — there is no manifest key to write and
- * no per-game list to keep in sync. `<slug>-<role>.png` becomes
- * `CONFIG.art.<camelRole>`, injected by tools/build/build.mjs:
  *
  *   background-phone   the portrait painting behind the intro and end screens
  *   background-desk    the same scene in landscape, for the empty bands around
@@ -58,8 +71,9 @@
  *   decor-NN           the decor pool: small painted objects the shell
  *                      scatters over the end screen, the round's corners and
  *                      the web menu's panels. They come out of a sheet with
- *                      `cut-objects.mjs --adopt 1,4 --as decor`, and no game
- *                      names one — see packages/shell/shell.js, Decor
+ *                      `cut-objects.mjs --adopt 1,4 --as decor`, which writes
+ *                      the role into the manifest, and no game names one —
+ *                      see packages/shell/shell.js, Decor
  *
  *   sky                a painted panorama a GAME draws on the CANVAS behind
  *                      its round, out of ArtImages — games/arcider stands its
@@ -80,8 +94,8 @@
  * gears on one canvas, as the image model returns them — and it is material to
  * cut, not artwork to ship. Encoding it would put 2 MB of wall into every
  * build of that game to draw one gear out of it. It is skipped here and taken
- * apart by `tools/lab/cut-objects.mjs`, whose adopted cuts come back through
- * this tool as masters of their own.
+ * apart by `tools/lab/cut-objects.mjs`, whose cuts come back through this tool
+ * by way of the manifest.
  *
  * Usage:
  *   node tools/lab/encode-art.mjs                 # every game, skipping fresh
@@ -91,12 +105,14 @@
  */
 
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
 var ROOT = path.resolve(new URL("../..", import.meta.url).pathname);
 var SRC_DIR = path.join(ROOT, "assets", "image", "master");
+var OBJ_DIR = path.join(ROOT, "assets", "image", "object");
 var OUT_DIR = path.join(ROOT, "assets", "image", "embed");
 var GAMES_DIR = path.join(ROOT, "games");
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -154,6 +170,16 @@ var DECOR = { w: 360, h: 360, q: 0.78 };
    ninety files in one build, so every kilobyte here is paid ninety times. */
 var BALL = { w: 256, h: 256, q: 0.84 };
 
+/* THE STICKER ALBUM: `<slug>-stickerNN.png`, adopted out of one 5x4 sheet with
+   `cut-objects.mjs --grid 5x4`. Twenty per game, and they are WEB-ONLY art
+   (tools/build/build.mjs) — a playable has no collection to fill. The album
+   shows them at 128 design px in its grid and at 300 on the reveal a draw
+   ends on, so 400 covers the grid at a 3x device ratio and the reveal at a
+   little under 1.5x, which is where painted art stops paying for itself.
+   Twenty files ride in every web build of the game, so the box is the budget
+   here exactly as it is for the beads. */
+var STICKER = { w: 400, h: 400, q: 0.82 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -173,6 +199,7 @@ function profileFor(role) {
   if (role.indexOf("card-") === 0) return CARDS;
   if (role.indexOf("decor") === 0) return DECOR;
   if (role.indexOf("ball-") === 0) return BALL;
+  if (role.indexOf("sticker") === 0) return STICKER;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
@@ -208,6 +235,64 @@ function knownSlugs() {
   }).sort();
 }
 
+/* THE OBJECTS A GAME SHIPS, out of `art.objects` in its manifest.
+
+   A picture in assets/image/master/ declares itself by its name, and that is
+   right for the six pieces a game owns outright — there is one background, one
+   title, three faces, and no question about which of them ships. A CUT cannot
+   work that way. `assets/image/object/` holds every object every sheet was
+   taken apart into, and `radiam-ball-blue-01.png` is one of the sixteen beads
+   that ship while `radiam-ball-blue-09.png`, next to it, is one of the four
+   that were passed over: the two names are the same shape, so no rule over
+   names can tell them apart. Nor should the folder: a cut is material, and
+   which material a game uses is the game's own business.
+
+   So the game says it, in its manifest:
+
+     "art": { "objects": { "ship01": "arcider-ship-01" } }
+
+   The key is the ROLE — `CONFIG.art.ship01`, `assets/image/embed/<slug>-ship01.webp`,
+   exactly as a master's name would have been — and the value is the file in
+   `assets/image/object/`, without its extension. `cut-objects.mjs --adopt`
+   writes those lines; nothing here is typed by hand. */
+function objects(all) {
+  var out = [];
+  all.forEach(function (slug) {
+    var manifest;
+    try { manifest = JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8")); }
+    catch (e) { return; }
+    var decl = (manifest.art && manifest.art.objects) || {};
+    Object.keys(decl).sort().forEach(function (role) {
+      var stem = decl[role];
+      var src = null, file = null;
+      [".png", ".jpg", ".jpeg"].forEach(function (ext) {
+        if (src) return;
+        if (fs.existsSync(path.join(OBJ_DIR, stem + ext))) { file = stem + ext; src = path.join(OBJ_DIR, file); }
+      });
+      if (!src) {
+        console.log("?     " + slug + " art.objects." + role + " → assets/image/object/" + stem +
+                    " — no such cut, left alone");
+        return;
+      }
+      out.push({
+        file: file, slug: slug, role: role, mime: mimeOf(file),
+        src: src,
+        out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
+        profile: profileFor(role),
+        known: knownRole(role)
+      });
+    });
+  });
+  return out;
+}
+
+function knownRole(role) {
+  return !!PROFILE[role] || role.indexOf("card-") === 0 ||
+         role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
+         role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
+         role.indexOf("background-") === 0;
+}
+
 function masters(all) {
   var out = [];
   fs.readdirSync(SRC_DIR).filter(function (f) {
@@ -218,6 +303,10 @@ function masters(all) {
     for (var i = 0; i < all.length; i++) {
       if (stem === all[i] || stem.indexOf(all[i] + "-") === 0) { slug = all[i]; break; }
     }
+    /* `game-object-*.png` is the SHELL's own sheet, not a game's: cut by
+       cut-objects.mjs and named by shellJobs() below, so it is neither a
+       master to encode nor a mistake to report. */
+    if (!slug && stem.indexOf("game-") === 0) return;
     if (!slug) { console.log("?     " + file + " — no game of that name, left alone"); return; }
     var role = stem.slice(slug.length + 1);
     if (!role) { console.log("?     " + file + " — no role in the name, left alone"); return; }
@@ -230,9 +319,7 @@ function masters(all) {
       src: path.join(SRC_DIR, file),
       out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
       profile: profileFor(role),
-      known: !!PROFILE[role] || role.indexOf("card-") === 0 ||
-             role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
-             role.indexOf("ball-") === 0 || role.indexOf("background-") === 0
+      known: knownRole(role)
     });
   });
   return out;
@@ -257,6 +344,100 @@ function brandJob() {
     src: BRAND_SRC, out: BRAND_OUT,
     profile: { w: 112, h: 112, q: 0.74 }, known: true
   }];
+}
+
+/* THE SHELL'S OWN ARTWORK — the second set of cuts in this tool that belongs
+   to no game, and it arrives the same way the games' objects do: a sheet in
+   assets/image/master/ under the pseudo-slug `game`, taken apart by
+   tools/lab/cut-objects.mjs into assets/image/object/.
+
+   `game-object-gift-close.png` and `game-object-gift-open.png` are one wall of
+   three boxes each — red, blue, green — cut on a 3x1 grid so the CELL is the
+   identity: box 2 is the same blue box closed and open, which is the whole
+   point of a pair of sheets. The web shell's daily strip and its three-box
+   gift draw them for EVERY game that declares `web.meta`, so they cannot live
+   under a slug and they cannot be adopted by a manifest: the shell names them
+   here, once, exactly as a game names its own in `art.objects`.
+
+   They land in assets/image/shell/ rather than assets/image/embed/, which is
+   keyed by slug and read by the builder per game — same reason the studio mark
+   lands in assets/image/brand/.
+
+   360px for a box shown at 150 design px in the picker and 44 in the strip: it
+   is drawn at 3x on a phone, and the picker's box is the one the player is
+   watching open.
+
+   `game-object-reward.png`, `game-object-trophy.png` and
+   `game-object-ticket.png` are the sheets after them, and they are the shell's
+   INSTRUMENTS rather than its ceremony: the coin a wallet counts, the ticket
+   it spends on a pull, the bolt an xp bar fills with, the star a level is
+   cleared with, the trophy a finished board earns. Those were stroked
+   pictograms out of assets/motor/lucide/ and they read as a tool's chrome; the
+   web shell is a game, and a game's currency is painted.
+
+   A CUT IS RENAMED HERE, and that rename is the declaration. `reward-08` says
+   nothing, `coin` is what the shell draws — and the role is deliberately the
+   NAME menu.js already calls its pictogram by (`coin`, `ticket`, `xp`,
+   `star`), so `icon("coin")` finds the painted piece with no table in between
+   and falls back to the stroke in a build that carries no artwork. The extra
+   roles (`coinPile`, `starBurst`, `trophy`) are the ones a screen asks for by
+   name, where a bag of coins says "an amount" and one coin says "a coin".
+
+   Picking is the same discipline as a game's `art.objects`: every file here is
+   base64 in every web build of every game with a wallet, so the twenty-four
+   rewards and the ten trophies are cut and only these are shipped. */
+var SHELL_DIR = path.join(ROOT, "assets", "image", "shell");
+var SHELL_CUTS = [
+  "game-gift-close-01", "game-gift-close-02", "game-gift-close-03",
+  "game-gift-open-01", "game-gift-open-02", "game-gift-open-03",
+
+  /* the instruments — `<cut>: <role>`, the role being what the shell calls it */
+  { cut: "game-reward-01", role: "star" },       // the level star, everywhere
+  { cut: "game-reward-03", role: "star-burst" }, // the starred day, the endless node
+  { cut: "game-reward-08", role: "coin" },       // money
+  /* the BLUE ticket of twelve, and the colour is the whole choice: it sits
+     next to the coin in every wallet, and a gold ticket beside a gold coin is
+     one number read twice. It is the one piece here whose tint no longer
+     follows the game's accent, which is what being painted costs. */
+  { cut: "game-ticket-02", role: "ticket" },    // a pull at the machine
+  /* THE SUPER TICKET — the rainbow one of the twelve, and it is the brightest
+     on the sheet on purpose: it is fifteen times the price of the blue one
+     beside it, and the two have to be told apart across a shop card, a bet
+     pill and a draw button. A colour is what does that; a size cannot. */
+  { cut: "game-ticket-08", role: "ticket-super" },
+  { cut: "game-reward-18", role: "coin-pile" },  // an AMOUNT of money
+  { cut: "game-reward-24", role: "xp" },         // the bolt the xp bar fills with
+  { cut: "game-trophy-03", role: "trophy" },     // ninety of ninety
+
+  /* THE MULTIPLIER, and the shell states exactly one: the seventh day of the
+     daily road pays five times over (`STAR` in packages/webshell/daily.js).
+     The sheet holds x2, x10, x20, x50 and x100 beside it and they are cut and
+     waiting — a line here is all any of them costs — but a badge nothing
+     draws is base64 in every build of every game with a wallet, which is the
+     rule this whole list exists for.
+
+     It gets a box of its own: the others are chips of 26 to 110 design px and
+     this one is a plate across a modal's header, so 360 would be upscaled
+     where they are downscaled. */
+  { cut: "game-multiplicator-02", role: "mult-5", w: 480, h: 480 }
+];
+
+function shellJobs() {
+  return SHELL_CUTS.map(function (entry) {
+    var stem = typeof entry === "string" ? entry : entry.cut;
+    var role = typeof entry === "string" ? stem.replace(/^game-/, "") : entry.role;
+    var src = path.join(OBJ_DIR, stem + ".png");
+    if (!fs.existsSync(src)) {
+      console.log("?     shell " + stem + " — no such cut in assets/image/object/, left alone");
+      return null;
+    }
+    return {
+      file: stem + ".png", slug: "shell", role: role,
+      mime: "image/png", src: src,
+      out: path.join(SHELL_DIR, role + ".webp"),
+      profile: { w: entry.w || 360, h: entry.h || 360, q: 0.82 }, known: true
+    };
+  }).filter(Boolean);
 }
 
 /* A cut is stale when its master is newer than it, which is the only question
@@ -378,8 +559,9 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   var all = knownSlugs();
-  var jobs = masters(all).concat(brandJob());
+  var jobs = masters(all).concat(objects(all)).concat(brandJob()).concat(shellJobs());
   fs.mkdirSync(path.dirname(BRAND_OUT), { recursive: true });
+  fs.mkdirSync(SHELL_DIR, { recursive: true });
   if (slugs.length) {
     var want = {};
     slugs.forEach(function (s) {
@@ -402,8 +584,16 @@ async function main() {
     return;
   }
 
+  reportSweep(sweep("encode-art-"));
   var profileDir = fs.mkdtempSync(path.join(os.tmpdir(), "encode-art-"));
   var chrome = await launchChrome(profileDir);
+  /* The deadline is per job, not per run: encoding the whole of assets/image/
+     is hundreds of images at ~1 s apiece and must not trip a watchdog that was
+     sized for one game. 20 s an image is a hang, at any batch size. */
+  var kill = reap(chrome.child, {
+    label: "encode-art",
+    deadlineMs: Math.max(10 * 60 * 1000, todo.length * 20 * 1000)
+  });
   var client, total = 0, count = 0;
   try {
     client = await cdp(chrome.port);
@@ -422,7 +612,7 @@ async function main() {
     }
   } finally {
     if (client) client.close();
-    chrome.child.kill();
+    kill();
     /* Chrome is still flushing its profile when the kill lands, so the first
        rm can hit a directory that grew a file back. `maxRetries` is what makes
        that a non-event; and a leftover temp dir must never fail a run that

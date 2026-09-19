@@ -124,7 +124,7 @@ gamedustry/
 │   │   ├── serve-site.mjs    ← the site, locally, rebuilt on save
 │   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
-│   │   ├── encode-art.mjs    ← assets/image/master/ masters → assets/image/embed/ (WebP)
+│   │   ├── encode-art.mjs    ← masters + the manifest's art.objects → assets/image/embed/ (WebP)
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/image/screen/
 │   │   ├── shoot-icon.mjs    ← shoot lab/icon-card.html into assets/image/icon/auto/
 │   │   ├── cut-objects.mjs   ← a sheet of objects → one transparent PNG each
@@ -374,7 +374,7 @@ node tools/lab/cut-objects.mjs                      # every sheet of every game
 node tools/lab/cut-objects.mjs radiam               # → assets/image/object/radiam-gear-NN.png
 node tools/lab/cut-objects.mjs --list               # what it would cut, and where
 open dist/object/radiam-gear.png                    # the contact sheet, numbered
-node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → assets/image/master/
+node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → the game's art.objects
 node tools/lab/encode-art.mjs radiam                # the adopted two become art
 ```
 
@@ -382,15 +382,18 @@ The knob that decides everything is `--solid` (default 110): the alpha at which
 a pixel is the object rather than its glow. A halo that reaches the next object
 welds the two — chainring's 31 rings came back as *one* object before it
 existed — and the glow is not lost, it is re-grown out of each object as far as
-`--pad`. The sixteen sheets give **383 objects**.
+`--pad`. The sixteen sheets give **577 objects**.
 
-`assets/image/object/` is tracked and ships nothing: everything under `assets/image/embed/`
-is embedded in every build of its game, so `--adopt` is where a cut earns its
-place. Flags, numbers and the reasoning:
+`assets/image/object/` is tracked and ships nothing by itself: everything under
+`assets/image/embed/` is embedded in every build of its game, so `--adopt` is
+where a cut earns its place — it writes the role into `art.objects` of
+`games/<slug>/manifest.json` and moves no file, because a cut exists once and
+the choice belongs to the game. Flags, numbers and the reasoning:
 [docs/ASSETS.md](docs/ASSETS.md#a-sheet-of-objects-assetsimagemasterslug-object-namepng).
 
 **Re-encode the painted artwork** — after adding or changing anything in
-`assets/image/master/`. It writes the WebP the build embeds; see
+`assets/image/master/`, or any object a manifest's `art.objects` points at. It
+writes the WebP the build embeds; see
 [docs/ASSETS.md](docs/ASSETS.md#painted-artwork-comes-from-assetsimagemaster-re-encoded-into-assetsimageembed):
 
 ```bash

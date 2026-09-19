@@ -2,7 +2,7 @@
      1. CONFIG
      =================================================================== */
   var CONFIG = {
-    title:   "CHAINRING",
+    title:   "Chainring",
     /* The intro carries one sentence and nothing else — the title, the second
        line of copy and the demo caption are hidden in the SKIN, because the
        animated stage below already shows the whole mechanic. */
@@ -32,9 +32,9 @@
        these three numbers if the track is ever re-cut or re-encoded.          */
     music: { volume: 0.10, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64 },
     copy: {
-      start:"TAP TO PLAY", ctaBar:"INSTALL NOW", ctaEnd:"PLAY THE FULL GAME",
-      replay:"Replay the demo", scoreLabel:"SCORE", timeLabel:"TIME",
-      endScore:"FINAL SCORE", gameOver:"GAME OVER", timeUp:"TIME'S UP!"
+      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
+      endScore:"Final score", gameOver:"Game over", timeUp:"Time's up!"
     },
 
     /* --- lead-in ---
@@ -160,10 +160,10 @@
     // `rate` pitches the "hit" sample: the tighter the tap, the brighter the
     // plink — the combo then pushes it further up (see popRing).
     var TIERS = [
-      { name:"PERFECT", win:0.19, mult:3,   color:"#ffd43b", parts:14, flash:0.60, shake:13, rate:1.30, fxTier:3, pop:"pop-p3" },
-      { name:"GOOD",    win:0.28, mult:2,   color:"#69db7c", parts:10, flash:0.38, shake:9,  rate:1.12, fxTier:2, pop:"pop-p2" },
+      { name:"Perfect", win:0.19, mult:3,   color:"#ffd43b", parts:14, flash:0.60, shake:13, rate:1.30, fxTier:3, pop:"pop-p3" },
+      { name:"Good",    win:0.28, mult:2,   color:"#69db7c", parts:10, flash:0.38, shake:9,  rate:1.12, fxTier:2, pop:"pop-p2" },
       { name:"OK",      win:0.37, mult:1.5, color:"#4dabf7", parts:8,  flash:0.24, shake:6,  rate:0.98, fxTier:1, pop:"pop-p1" },
-      { name:"CLOSE",   win:0.46, mult:1,   color:"#ffa94d", parts:6,  flash:0.14, shake:4,  rate:0.86, fxTier:0, pop:"pop-p0" }
+      { name:"Close",   win:0.46, mult:1,   color:"#ffa94d", parts:6,  flash:0.14, shake:4,  rate:0.86, fxTier:0, pop:"pop-p0" }
     ];
     var MAXWIN = TIERS[TIERS.length - 1].win;
     // Shortest hop the solver may pick, as an angle along the rim (~330 px of
@@ -198,7 +198,7 @@
       maxScore = 0; idealCombo = 0;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
       HUD.setScoreNow(0);
-      HUD.setLeft("x0", "COMBO");
+      HUD.setLeft("x0", "Combo");
     }
 
     function onResize() {
@@ -437,7 +437,7 @@
       Round.reset();
       if (!readyPop) {
         readyPop = true;
-        Pop.show("alert", { word: "GET READY", sub: "FEEL THE BEAT", hold: 700 });
+        Pop.show("alert", { word: "Get ready", sub: "Feel the beat", hold: 700 });
       }
       if (startAt === null && (Beat.locked() || heldT >= CONFIG.leadInMax)) {
         startAt = Beat.on() ? Beat.next(1) + CONFIG.leadInBeats : Beat.beats();
@@ -464,7 +464,7 @@
     function release() {
       held = false;
       Fx.flash("#ffffff", 0.18);
-      Pop.show("alert", { word: "GO!", hold: 200 });
+      Pop.show("alert", { word: "Go!", hold: 200 });
     }
 
     // Timer out: a spiked ring is released. It cannot be tapped away — when it
@@ -474,7 +474,7 @@
       // fixed speed and must not take a beat longer than the rings do.
       doom = { r: 750 };
       Sound.clip("doom", 0.85);                           // warm mallet taps, at pitch
-      Pop.show("danger", { word: "SUDDEN DEATH", sub: "DODGE THE SPIKES", hold: 1200 });
+      Pop.show("danger", { word: "Sudden death", sub: "Dodge the spikes", hold: 1200 });
       Overlay.vignette("#ff2d55", 1);                     // stays on until the end
     }
 
@@ -510,7 +510,7 @@
       // Juice scales with the combo: the deeper the chain, the bigger the bang.
       var cf = Math.min(2.4, 1 + combo * 0.14);
       Fx.burst(ball.x, ball.y, { color: ring.color, count: Math.round(tier.parts * cf), speed: 420, size: 6, life: 0.5 });
-      if (tier.name === "PERFECT") Fx.burst(ball.x, ball.y, { color: "#ffffff", count: Math.round(5 * cf), speed: 500, size: 5, life: 0.45 });
+      if (tier.name === "Perfect") Fx.burst(ball.x, ball.y, { color: "#ffffff", count: Math.round(5 * cf), speed: 500, size: 5, life: 0.45 });
       // The ring is not removed here: it is the surface the ball is about to
       // bounce on. It is marked spent, drawn as a ghost, and cleared the instant
       // the ball actually reaches it (see the ring pass in update).
@@ -534,7 +534,7 @@
       // the sample is pitched by the timing tier, then by the combo depth.
       Sound.clip("hit", 0.75, tier.rate + Math.min(combo, 14) * 0.045);
       // A PERFECT gets a bright confirmation layered on top of the plink.
-      if (tier.name === "PERFECT") Sound.clip("perfect", 0.55, 1 + Math.min(combo, 10) * 0.02);
+      if (tier.name === "Perfect") Sound.clip("perfect", 0.55, 1 + Math.min(combo, 10) * 0.02);
     }
 
     // Fired every `chainEvery` hits: stacked shockwaves, radial rays, an edge
@@ -554,7 +554,7 @@
       // One discreet reward sticker instead of a hero callout: the canvas juice
       // above already carries the impact, and the rings keep closing in while
       // the pop is up. It sits high, clear of the ball and of the score pops.
-      Pop.show("bonus", { word: "MEGA BONUS", sub: "x" + combo + "  +" + bonus,
+      Pop.show("bonus", { word: "Mega bonus", sub: "x" + combo + "  +" + bonus,
                           at: "upper", enter: 240, hold: 260, exit: 220 });
       Overlay.vignette(col, 1, 600);                     // edge glow in ball colour
       Sound.clip("chain", 0.8, 1 + Math.min(combo, 20) * 0.012);   // ascending run
@@ -581,15 +581,15 @@
         chance();
         var gained = Math.round(10 * combo * tier.mult);
         popRing(best, tier, gained);
-        HUD.setLeft("x" + combo, "COMBO", combo >= CONFIG.chainEvery ? "hot" : "");
+        HUD.setLeft("x" + combo, "Combo", combo >= CONFIG.chainEvery ? "hot" : "");
         if (combo % CONFIG.chainEvery === 0) triggerChain();
       } else {
         // Mistimed tap: break the chain (no score penalty — stay forgiving).
         // No ring within 0.7 of a beat means the ball is mid-flight over a beat
         // no ring lands on: name it, because reading the arc is the whole skill.
         combo = 0; stats.miss++;
-        HUD.setLeft("x0", "COMBO");
-        Pop.show("score", { word: bestGap > 0.7 ? Lang.t("EMPTY BEAT") : Lang.t("MISS"), cls: "pop-miss", hold: 180,
+        HUD.setLeft("x0", "Combo");
+        Pop.show("score", { word: bestGap > 0.7 ? Lang.t("Empty beat") : Lang.t("Miss"), cls: "pop-miss", hold: 180,
                             at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
         Fx.shake(5, 0.2);
         Sound.clip("miss", 0.6);
@@ -632,7 +632,7 @@
           Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
           rings.splice(i, 1);
           combo = 0; chance();                 // missed the beat (still a chance faced)
-          HUD.setLeft("x0", "COMBO");
+          HUD.setLeft("x0", "Combo");
           Sound.clip("miss", 0.45, 1.15);                 // quiet: the tap was never made
         }
       }
@@ -791,15 +791,15 @@
       var stars = score <= 0 ? 0 : score < 3000 ? 1 : score < 6000 ? 2 : 3;
       var perfect = maxScore > 0 && score >= maxScore;   // matched flawless play
       endRound({
-        title: perfect ? Lang.t("PERFECT") : CONFIG.copy.gameOver,
+        title: perfect ? Lang.t("Perfect") : CONFIG.copy.gameOver,
         variant: perfect ? "perfect" : "",
         score: score,
         stars: stars,
         rows: [
-          { label: "PERFECT",   value: stats.perfect, grade: "gold" },
-          { label: "GOOD",      value: stats.good,    grade: "good" },
-          { label: "MISS",      value: stats.miss,    grade: "bad" },
-          { label: "MAX COMBO", value: bestCombo,     grade: "accent" }
+          { label: "Perfect",   value: stats.perfect, grade: "gold" },
+          { label: "Good",      value: stats.good,    grade: "good" },
+          { label: "Miss",      value: stats.miss,    grade: "bad" },
+          { label: "Max combo", value: bestCombo,     grade: "accent" }
         ],
         track: { score: score, bestCombo: bestCombo, stars: stars, perfect: perfect, stats: stats }
       });

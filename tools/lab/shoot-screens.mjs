@@ -53,6 +53,7 @@
  */
 
 import { spawn, spawnSync } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -587,24 +588,6 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
 
 // --- Run -----------------------------------------------------------------
 
-/* Chrome must die whatever happens next. SIGTERM is not enough — a headless
-   browser survives it here — and a throw in the middle of a shoot used to skip
-   the teardown at the bottom of this file entirely, leaving a browser looping
-   a game at 40% CPU with nobody watching. So: SIGKILL, once, from a handler
-   that runs on a normal exit, on a throw and on Ctrl-C alike. */
-function reap(child) {
-  var done = false;
-  function kill() {
-    if (done) return;
-    done = true;
-    try { child.kill("SIGKILL"); } catch (e) {}
-  }
-  process.on("exit", kill);
-  process.on("SIGINT", function () { kill(); process.exit(130); });
-  process.on("SIGTERM", function () { kill(); process.exit(143); });
-  process.on("uncaughtException", function (e) { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", function (e) { kill(); console.error(e); process.exit(1); });
-}
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 if (!playable && build) buildWeb(slugs);
@@ -614,12 +597,13 @@ if (missing.length) {
     + (playable ? "" : "  (does its manifest list the web target?)"));
   slugs = slugs.filter(function (s) { return fs.existsSync(sourceOf(s)); });
 }
+reportSweep(sweep("shoot-screens-"));
 var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "shoot-screens-"));
 var profileDir = path.join(tmpDir, "profile");
 var failed = 0;
 
 var chrome = await launchChrome(profileDir);
-reap(chrome.child);
+reap(chrome.child, { label: "shoot-screens" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 

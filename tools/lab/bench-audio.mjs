@@ -6,6 +6,7 @@
  * of the audio thread as it goes.
  */
 import { spawn } from "node:child_process";
+import { reap, sweep, reportSweep } from "./chrome.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -128,29 +129,11 @@ async function cdp(port) {
     set on(fn) { onEvent = fn; }, close: () => ws.close() };
 }
 
-/* Chrome must die whatever happens next. SIGTERM is not enough — a headless
-   browser survives it here — and an exception thrown mid-run used to skip the
-   cleanup entirely, which is how a laptop ended up with thirty of these
-   looping a game at 40% CPU each. So: SIGKILL, once, from a handler that runs
-   on a normal exit, on a throw and on Ctrl-C alike. */
-function reap(child) {
-  var done = false;
-  const kill = () => {
-    if (done) return;
-    done = true;
-    try { child.kill("SIGKILL"); } catch (e) {}
-  };
-  process.on("exit", kill);
-  process.on("SIGINT", () => { kill(); process.exit(130); });
-  process.on("SIGTERM", () => { kill(); process.exit(143); });
-  process.on("uncaughtException", (e) => { kill(); console.error(e); process.exit(1); });
-  process.on("unhandledRejection", (e) => { kill(); console.error(e); process.exit(1); });
-  return kill;
-}
 
+reportSweep(sweep("bench-audio-"));
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bench-audio-"));
 const chrome = await launchChrome(path.join(tmpDir, "profile"));
-reap(chrome.child);
+reap(chrome.child, { label: "bench-audio", deadlineMs: Math.max(30 * 60 * 1000, (SECONDS + 180) * 1000) });
 const client = await cdp(chrome.port);
 const t = await client.send("Target.createTarget", { url: "about:blank" });
 const a = await client.send("Target.attachToTarget", { targetId: t.targetId, flatten: true });

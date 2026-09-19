@@ -790,6 +790,79 @@
     return { set: set, t: t, code: function () { return code; } };
   })();
 
+  /* --- upper: the one way a word is set in capitals -----------------------
+
+     Every string in this repo is WRITTEN in normal case — a lowercase
+     sentence with a capital on its first letter and on a proper noun ("Best
+     score", "Time's up!", "Chain x"). Capitals are a LOOK, not a spelling, so
+     the screens that want them ask for them here: the HUD, the callouts, the
+     buttons and the end screen pass what they write through `upper`, and the
+     copy desk shows a game's words the way a human would proofread them
+     rather than the way a title screen shouts them.
+
+     Two things it does that `toUpperCase` does not.
+
+     ACCENTS COME OFF. A capital carries no accent in this house — "Déjà" is
+     "DEJA", "Ça mélange" is "CA MELANGE" — because the display faces the games
+     use are drawn for capitals without diacritics, and an accent on a 96px
+     Impact collides with the line above it. Folding happens after the case
+     change, so only the uppercase forms need a table.
+
+     A UNIT GLUED TO A NUMBER KEEPS ITS CASE. "Chain x" + 3 is "CHAIN x3", not
+     "CHAIN X3"; "1.2s per hop" is "1.2s PER HOP". A run of lowercase letters
+     touching a digit is a multiplier or a unit, never a word, and a game
+     assembles those by concatenation — which is why the rule is applied here,
+     on the finished string, rather than left to each call site.
+
+     Markup is stepped over: a tag, an entity and a `{placeholder}` are copied
+     as they are, so a class name cannot be shouted into a different class and
+     a token cannot be shouted out of the one `fill` will look for. */
+  var upper = (function () {
+    // Uppercase letters an accent has to come off, and what they become.
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO   = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    // The ligatures, which fold to two letters instead of one.
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    /* A tag, an entity, or a {placeholder}: copied through untouched. The
+       placeholder is in here for the same reason a class name is — "Day {n}"
+       shouted to "DAY {N}" is a token `fill` no longer recognises, and the
+       screen then prints the braces. It cost a strip of the daily road reading
+       "J{N}" seven times over to find. */
+    var SKIP = /(<[^>]*>|&[a-zA-Z0-9#]+;|\{\w+\})/;
+    // A word: ASCII plus the Latin-1 lowercase letters and the oe ligature.
+    var WORD = /[a-zß-öø-ÿœ]+/g;
+    function digit(c) { return c >= "0" && c <= "9"; }
+
+    function shout(seg) {
+      return seg.replace(WORD, function (run, at) {
+        var before = at > 0 ? seg.charAt(at - 1) : "";
+        var after = seg.charAt(at + run.length);
+        if (digit(before) || digit(after)) return run;   // a unit or a multiplier
+        return run.toUpperCase();
+      });
+    }
+
+    function fold(seg) {
+      var out = "", i, c, k;
+      for (i = 0; i < seg.length; i++) {
+        c = seg.charAt(i);
+        if (PAIR[c]) { out += PAIR[c]; continue; }
+        k = FROM.indexOf(c);
+        out += k < 0 ? c : TO.charAt(k);
+      }
+      return out;
+    }
+
+    /* Anything that is not a string is handed back untouched: a HUD slot holds
+       a number more often than a word, and no caller should have to ask. */
+    return function (s) {
+      if (typeof s !== "string") return s;
+      var parts = s.split(SKIP), i;
+      for (i = 0; i < parts.length; i += 2) parts[i] = fold(shout(parts[i]));
+      return parts.join("");
+    };
+  })();
+
   var Rand = {
     range: function (a, b) { return a + Math.random() * (b - a); },
     int:   function (a, b) { return Math.floor(a + Math.random() * (b - a + 1)); },

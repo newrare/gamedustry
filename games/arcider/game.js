@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "ARCIDER",
+    title:   "Arcider",
     /* One sentence, and nothing else: the stage under it shows the finger
        pressing one side and the bike carving that way, so the line only has to
        name the gesture, the machine and the fuel. */
@@ -54,15 +54,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO RACE",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to race",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Race again",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "SHIELD DOWN",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Shield down",
+      timeUp:     "Time's up!"
     },
 
     /* ---- ARCIDER tunables -------------------------------------------------
@@ -1895,7 +1895,7 @@
       Pop.show("streak", { word: rank + "/" + need, sub: "+" + g, at: "top",
                            cls: safe ? "rank-in" : "rank-out" });
       if (rank === 1) {
-        Pop.show("ultra", { word: "LEADER", at: popSpot() });
+        Pop.show("ultra", { word: "Leader", at: popSpot() });
         Overlay.vignette("rgba(255,212,59,.85)", 1, 560);
       }
     }
@@ -1946,7 +1946,7 @@
                  size: 4, angle: dir > 0 ? 0 : Math.PI, spread: 1.1 });
       Overlay.vignette("rgba(255,120,60,.8)", 1, 460);
       Sound.clip("scrape", 0.8, 0.8);
-      if (shield <= 0) { showShield(); die("SHIELD DOWN"); return; }
+      if (shield <= 0) { showShield(); die("Shield down"); return; }
       dmgPop(cost);
     }
 
@@ -1977,7 +1977,7 @@
                  life: 0.45, size: 5, angle: dir > 0 ? 0 : Math.PI, spread: 1.1 });
       Overlay.vignette("rgba(255,90,45,.88)", 1, 560);
       Sound.clip("crash", 0.85, 0.72);
-      if (shield <= 0) { showShield(); die("SHIELD DOWN"); return; }
+      if (shield <= 0) { showShield(); die("Shield down"); return; }
       dmgPop(T.bombCost);
     }
 
@@ -2053,7 +2053,7 @@
         chain = 0; crashT = 0.35;
         Fx.shake(13, 0.26);
         Sound.clip("land", 0.85, 0.85);
-        if (shield <= 0) { showShield(); die("SHIELD DOWN"); return; }
+        if (shield <= 0) { showShield(); die("Shield down"); return; }
         dmgPop(T.roughCost);
         return;
       }
@@ -2135,7 +2135,7 @@
       Fx.ring(craftX(), craftY(), { from: 20, to: 200, color: "#ff2d55", width: 8, life: 0.42 });
       Overlay.vignette("rgba(255,45,85,.9)", 1, 620);
       Sound.clip("crash", 0.9);
-      if (shield <= 0) { showShield(); die("SHIELD DOWN"); return; }
+      if (shield <= 0) { showShield(); die("Shield down"); return; }
       dmgPop(T.crashCost);
     }
 
@@ -2182,7 +2182,7 @@
       var v = Math.ceil(shield);
       if (v === shownShield) return;
       shownShield = v;
-      HUD.setLeft(v + "%", "SHIELD", v <= T.lowAt ? "warn" : "");
+      HUD.setLeft(v + "%", "Shield", v <= T.lowAt ? "warn" : "");
     }
 
     /* THE RANK PILL, and the cut counting down under it. This is the pill the
@@ -2195,15 +2195,15 @@
       return n + Lang.t(["TH", "ST", "ND", "RD"][n % 10] || "TH");
     }
     function showRank() {
-      var cut = T.cuts[cutI], need = Lang.t("FINAL ") + fieldSize, left, txt;
+      var cut = T.cuts[cutI], need = Lang.t("Final ") + fieldSize, left, txt;
       var flag = cut && atFlag();
       if (cut) {
         left = Math.max(0, Math.round(cut.at - dist));
         // The flag is a countdown and never an ask: nothing about the place is
         // at stake there but the win itself.
-        need = flag ? Lang.t("FINISH · ") + left + "M"
-             : left <= T.cutWarn ? Lang.t("TOP ") + cut.rank + Lang.t(" IN ") + left + "M"
-                                 : Lang.t("CUT TO ") + cut.rank + " · " + left + "M";
+        need = flag ? Lang.t("Finish · ") + left + "M"
+             : left <= T.cutWarn ? Lang.t("Top ") + cut.rank + Lang.t(" in ") + left + "M"
+                                 : Lang.t("Cut to ") + cut.rank + " · " + left + "M";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
       // glance has to answer both "where am I" and "how many are left".
@@ -2412,7 +2412,7 @@
         }
         if (!lowShown) {
           lowShown = true;
-          Pop.show("danger", { word: "HULL CRITICAL", sub: "TAKE THE CHARGE LINE", at: popSpot() });
+          Pop.show("danger", { word: "Hull critical", sub: "Take the charge line", at: popSpot() });
         }
       } else { lowShown = false; warnT = 0; }
 
@@ -2485,7 +2485,7 @@
          under the star rule it now scores exactly what a crash at a third of
          the distance scores. The culling belongs to the checkpoints; the flag
          belongs to the race. */
-      if (!flag && rank > cut.rank) { die("ELIMINATED"); return; }
+      if (!flag && rank > cut.rank) { die("Eliminated"); return; }
 
       // Through it — and the field is REALLY trimmed. Everyone the cut took is
       // deleted from the road, so the pack the player is racing gets visibly
@@ -2505,9 +2505,9 @@
          pack thinning out on screen; what the player cannot see is the size of
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
-      Pop.show("combo", { word: fieldSize + Lang.t(" PILOTS LEFT"),
-                          sub: atFlag() ? Lang.t("FINISH · TAKE THE LEAD")
-                                        : Lang.t("NEXT CUT · TOP ") + T.cuts[cutI].rank,
+      Pop.show("combo", { word: fieldSize + Lang.t(" pilots left"),
+                          sub: atFlag() ? Lang.t("Finish · take the lead")
+                                        : Lang.t("Next cut · top ") + T.cuts[cutI].rank,
                           at: "center" });
       showRank();
     }
@@ -2528,10 +2528,10 @@
        run ended: what the board said, how far it got, and how it was driven. */
     function resultRows(sc) {
       return [
-        { label: "FINAL POSITION", value: ordinal(rank), grade: rank <= 3 ? "gold" : "accent" },
-        { label: "PLACES TAKEN", value: passed, grade: passed >= 10 ? "good" : "" },
-        { label: "DISTANCE (M)", value: Math.floor(dist) },
-        { label: "BEST SCORE", value: Math.max(sc, best), grade: "gold" }
+        { label: "Final position", value: ordinal(rank), grade: rank <= 3 ? "gold" : "accent" },
+        { label: "Places taken", value: passed, grade: passed >= 10 ? "good" : "" },
+        { label: "Distance (m)", value: Math.floor(dist) },
+        { label: "Best score", value: Math.max(sc, best), grade: "gold" }
       ];
     }
 
@@ -2565,8 +2565,8 @@
       var st = raceStars();
       var sc = Math.floor(travel + pick) + 500;
       endRound({
-        title: rank === 1 ? Lang.t("RACE WON!")
-             : rank <= 3 ? Lang.t("ON THE PODIUM!") : Lang.t("RACE FINISHED!"),
+        title: rank === 1 ? Lang.t("Race won!")
+             : rank <= 3 ? Lang.t("On the podium!") : Lang.t("Race finished!"),
         variant: st === 3 ? "perfect" : "win",
         score: sc,
         /* The METRES here too, for the same reason `die` reports them: on the
@@ -3980,7 +3980,7 @@
        it, in the place the eye is already looking for the shield. */
     function drawSpeedo() {
       var r = shieldRail, right = r.x + r.w, y = r.y + r.h + 54;
-      var n = String(Math.max(0, Math.round(kmhShown))), col, unit = Lang.t("KM/H");
+      var n = String(Math.max(0, Math.round(kmhShown))), col, unit = upper(Lang.t("km/h"));
       col = boostT > 0 ? "#ffd43b" : mult < 0.9 ? "#ff2d55" : "#ffffff";
 
       ctx.save();

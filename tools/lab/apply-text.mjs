@@ -20,7 +20,7 @@
                     not the other is the desync CLAUDE.md asks to avoid, and it
                     is the one thing a proofreading pass would never notice.
 
-  A row whose text appears at several call sites — "LENGTH", the HUD's left
+  A row whose text appears at several call sites — "Length", the HUD's left
   label, written at three — is written at all of them, which is the reason
   scan-text merges them into one row in the first place.
 

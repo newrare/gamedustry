@@ -17,6 +17,12 @@ title screen (the web menu)  ->  LEVEL MAP  ->  the round  ->  end screen
                                      +-------- back / next -------+
 ```
 
+**The climb also feeds the meta layer.** A game that declares `web.meta` turns
+a band passed, a band passed clean, the board and ninety of ninety into four
+kinds of sticker, and a level's score into coins — `bandsState()` in
+`levels.js` is what reads the bands back, and it lives here because the bands
+are the map's. See [META.md](META.md).
+
 ______________________________________________________________________
 
 ## 1. The model
@@ -163,6 +169,31 @@ top of it covers most of it.
 **A road is never seen behind a level.** The circles are opaque — a road
 crossing one would read as a road going *through* it.
 
+**The board slides UNDER the header and under the card.** The scrolling band is
+the whole frame, and the two chrome bands are margins on the canvas rather than
+insets on the viewport (`#lv-canvas`, rewritten in `draw` and `writeCard` from
+the header's measured height and the card's own): the climb still starts below
+the header and ends above the card, and what scrolls past either of them passes
+beneath it. Clipping the viewport at their edge instead cut the road in mid-air
+and sliced the top off a level's circle — an edge the eye reads as a rendering
+fault, not as an edge. Everything that centres a level measures the visible band
+back out of those two margins (`scrollTo`).
+
+**Which is what the two chrome bands then have to hold on their own.** Under the
+header the scrim runs from `rgba(0,0,0,.94)` to nothing over the band's own
+height **plus 150 px past its edge**, in five stops rather than two: what sits
+behind the wallet, the xp bar and the star counter is a live map, a number read
+over a road is read twice, a scrim that stops at the header's edge stops *on*
+something, and a straight two-stop fade shows its own middle as a band across
+the picture. It is written in percentages, so the taller header the meta layer
+builds (196 px against 150) wears the same curve and not a compressed one.
+
+The card at the foot is **opaque** instead of fading up from transparent. It has
+a border along its top edge, which is what separates it from the map, so nothing
+was asking its background to do that job as well — and the third of it that used
+to be see-through was exactly where the level's name and its objective are
+written.
+
 **Three stars makes a level burn**: gold rim, gold halo, a slow breath. The
 map is read at a glance and a perfect level has to be findable in that glance,
 which a change of border colour does not achieve.
@@ -222,6 +253,24 @@ the other way is worth, and — if it is gated — where the missing stars are.
 That last part names the cheapest levels to go back to (already cleared, short
 of three stars, easiest first) as tappable chips, and says plainly when the
 other road is open and waiting instead.
+
+**Tapping the empty map closes the card**, and the road gets the whole frame
+back. The card is docked and a third of the screen high, so a player who wants
+to look at the climb they are on — or at the scene behind it — had nowhere to
+put it. The target is tested rather than the coordinates: every node, wall and
+read-out is a child of the canvas, so "the event stopped at the canvas" is
+exactly "nothing was under the finger", and the road itself takes no pointer,
+so the line between two levels counts as empty too. Tapping any node brings the
+card back.
+
+**How hot a level is, is five flames** and not a bar. The same `d` the tunables
+are lerped with, spread over 1..5 rather than 0..5 — level 1 is a level, so it
+owns one flame, and only level 30 owns all five. A flame is filled up to the
+count, the one the remainder stops on is an outline, the rest are grey, and the
+colour climbs green → gold → red with the position. They stand down the right
+of the card, clear of a line that wraps. A bar said "42 %" of nothing in
+particular; five icons say how hot the level is, which is the question the card
+is actually asked.
 
 ### The objective, and the stars
 
@@ -310,6 +359,92 @@ the end screen's stat rows are the game's own and a result built outside would
 have none of them (`games/vipera` points it straight at its own `die()`).
 Without the hook the level layer ends it with what it knows: the score and the
 measure.
+
+### The outro — the round's last word, before the end screen
+
+A round used to cut straight from its last frame to the end screen, and the one
+thing that cannot be played on either side of that cut is **the world itself
+reacting to how the round went**: slow motion is `Loop.rate`, so it needs a loop
+still turning, and the end screen has none.
+
+`onOutro(fn)` is the motor's third addition (`packages/shell/shell.js`) and the
+level layer is its only registrant. The clock is stopped — the round is over
+whatever is drawn over it — the loop is left running, and the end screen waits
+for the `done` the hook is handed. A playable registers none and keeps the cut
+it always had.
+
+| the round ended with | what the outro plays                                                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **three stars**      | the shine has already played; the world is held at 14 % while the meta layer's BONUS is handed over        |
+| **one or two stars** | slow motion down to 22 % over ~0.5 s, a beat of hold, and nothing else                                     |
+| **none**             | the frame goes red, fire climbs it from the bottom edge, the world grinds down to 16 % — about 1.2 s of it |
+
+The three-star case is where the meta layer's gift now opens (see
+[META.md](META.md)): **over the round that earned it**, not on a score screen
+two beats later. A game with no `web.meta` block holds the beat and goes on.
+
+The shine itself is gold from end to end — a full-frame flash, two rings out of
+the middle of the play area, and a glow on the edges for as long as the slow
+motion lasts. There is no confetti: that canvas lives inside `#screen-end` and
+is not over the round.
+
+Only a LEVEL has an outro. A free round and the endless run end the way they
+always did, because there is no objective to have missed.
+
+### What the end screen says, and the two ways out of it
+
+The title is the LEVEL's, not the game's: a round that met its objective reads
+**SCORES** and a round that missed it reads **ALMOST**, in the red the motor
+paints an untitled end screen with. "TORN APART" over a cleared level is a story
+about a viper that has nothing to do with the level.
+
+There are **three** buttons, drawn rather than written — **the map**, **the
+level again** and **the way on**. The first two are the motor's own nodes,
+moved into a row of their own; the third is the shell's, because a NEXT LEVEL
+is a level-layer idea and the motor — which is also a playable's motor — must
+not learn what one is. What the round earned decides which of the first two
+shines:
+
+| the round ended with | the map | the replay |
+| -------------------- | ------- | ---------- |
+| **three stars**      | lit     | a whisper  |
+| **one or two stars** | plain   | plain      |
+| **none**             | whisper | lit        |
+
+**NEXT is never dressed** and never joins that argument: those two trade the lit
+state because the round decides whether *go on* or *try again* is the offer, and
+a third contender would make all three quieter. It is the same weight whatever
+happened.
+
+**All three are the same SIZE, at every star count.** The lit one used to grow
+to 116 px and the quiet one to shrink to 84 — so the row of three was a
+different row at 0, 1, 2 and 3 stars: three widths, three gaps, three positions
+for the same button, and a control that grows moves the two beside it every
+time the round changes its mind about which one is the offer. They are 104 px
+throughout; `hero` is the fill, the halo and the slow breath, `dim` is the
+colour turned down, and neither costs a pixel of layout. The one thing that
+changes the row's width is NEXT being HIDDEN, which is a button that is not
+there rather than a button of another size.
+
+It is **`last.level + 1` and nothing cleverer** — the map is where a FORK is
+chosen, and this is the button for the player who is not choosing. It is
+**hidden**, not disabled, in the three cases where there is no way on: no level
+was played (a free round, a mode), the round did not clear its objective so the
+level ahead is still shut, or the level just finished was the last one. Level 31
+is the endless star and it belongs to the map: a board finished at 90/90 is a
+screen to be shown, not a round to be dropped into.
+
+It rides the motor's own reveal rather than a timer of its own —
+`#btn-replay.show ~ #btn-next` in `menu.css` — so it lights with the button the
+motor lights last and, the half that matters, goes dark with it when `setState`
+strips `.show` on the way out of "end". A button left invisible and clickable
+over the next round is a bug this codebase has already paid for once.
+
+All three carry `cursor:pointer`: `dress()` rewrites `className` on the motor's
+two, which drops the `.btn` / `.link` that carried it, and on a desk they read
+as decoration until the pointer changes over them. The reveal itself also runs at **twice the speed it was
+authored at** (`PACE` in the motor's `EndScreen`) — it was tuned for a creative,
+where the end screen is the last thing a viewer sees.
 
 ______________________________________________________________________
 
@@ -563,7 +698,8 @@ the same idea as arcider's, `CONFIG.ladder.levels` is its `road` table, and
 
 - **the bead is a PAINTED BALL, and it turns over every two levels.** Twenty
   designs, each painted in the five game colours plus a rainbow for the wild
-  bead, out of six sheets in `assets/image/master/`. Fifteen of the twenty ship:
+  bead, out of six sheets in `assets/image/master/` and cut into
+  `assets/image/object/`. Fifteen of the twenty ship:
   one per pair of levels, so thirty levels are fifteen boards, and the sixteenth
   — the star — is held back for the endless run a perfect board unlocks,
   because that node on the map is drawn as a star and nothing else is.
@@ -959,6 +1095,7 @@ nothing about levels beyond a number in `CONFIG`.
 | `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, echomaze's is a door   |
 | `Game.levelWon()`                      | optional: how the game ends its own round on the third star, so the end screen keeps its stat rows                   |
 | `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides           |
+| `onOutro(fn)` in the shell             | the third motor addition — the beat between the round and the end screen, with the loop still turning for it         |
 | `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes |
 | the graph itself                       | one table for the thirteen — sections, forks and road gates are the studio's shape, not a game's                     |
 | `menu.js` → `LV.mount({ help })`       | the Help panel handed to the map, so level 0 opens the shell's one help screen instead of a second copy of it        |
@@ -990,11 +1127,10 @@ change without a line of its own. A pair of whole numbers stays whole — `lives
 `#btn-start` loses its listener and opens the screen instead, and the map's own
 PLAY button is the click that starts the round — still one click, so the audio
 unlock still happens inside the gesture that asked for it. SPACE from the intro
-opens the map for the same reason. Leaving a round through MENU, and the end
-screen's second button, both land back on the map rather than on the menu; the
-first button reads **NEXT LEVEL** when the level was cleared and there is a
-single way out, **RETRY** otherwise. A game with no `web.levels` takes none of
-these branches.
+opens the map for the same reason. Leaving a round through MENU lands back on
+the map rather than on the menu, and so does the end screen's map icon; the
+other icon plays the same level again (above). A game with no `web.levels` takes
+none of these branches.
 
 **Ninety of ninety reaches the title screen.** The map turns gold on its own,
 but the menu has to say it too, or a player who finished the game comes back to

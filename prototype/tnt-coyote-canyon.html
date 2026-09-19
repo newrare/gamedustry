@@ -400,7 +400,7 @@ function drawRuler() {
     ctx.setLineDash([]);
     ctx.fillStyle = '#ffe27a'; ctx.font = '700 22px system-ui,sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('BEST ' + S.maxH.toFixed(1) + ' m', W - 16, my - 16);
+    ctx.fillText('Best ' + S.maxH.toFixed(1) + ' m', W - 16, my - 16);
   }
 }
 
@@ -579,7 +579,7 @@ function drawGauge() {
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.font = '600 18px system-ui,sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.fillText('PWR', g.x + g.w / 2, g.y - 26);
+  ctx.fillText('Pwr', g.x + g.w / 2, g.y - 26);
 }
 
 function drawHud() {
@@ -588,7 +588,7 @@ function drawHud() {
   ctx.fillStyle = '#fff'; ctx.font = '800 62px system-ui,sans-serif';
   ctx.fillText(S.maxH.toFixed(1) + ' m', 24, 26);
   ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '600 22px system-ui,sans-serif';
-  ctx.fillText('MAX HEIGHT', 26, 96);
+  ctx.fillText('Max height', 26, 96);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui,sans-serif';
   ctx.fillText('TNT ' + S.pops + '/' + S.crates.length, W - 24, 34);
@@ -609,7 +609,7 @@ function drawHud() {
     ctx.fillRect(BAR.x, BAR.y, BAR.w, BAR.h);
     ctx.fillStyle = '#fff'; ctx.font = '800 40px system-ui,sans-serif';
     ctx.textBaseline = 'middle';
-    ctx.fillText(hot ? 'RELEASE!' : 'HOLD TO LIGHT THE FUSE',
+    ctx.fillText(hot ? 'Release!' : 'Hold to light the fuse',
                  BAR.x + BAR.w / 2, BAR.y + BAR.h / 2 + 2);
   }
 
@@ -617,7 +617,7 @@ function drawHud() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.globalAlpha = Math.max(0, 1 - S.t / 1.2);
     ctx.fillStyle = '#9dff9d'; ctx.font = '800 64px system-ui,sans-serif';
-    ctx.fillText('PERFECT LIGHT', W / 2, 320);
+    ctx.fillText('Perfect light', W / 2, 320);
     ctx.globalAlpha = 1;
   }
 
@@ -647,7 +647,7 @@ function drawDebug() {
   ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '500 19px ui-monospace,monospace';
   ctx.fillText('fps ' + fps.toFixed(0) + '  phase ' + S.phase + '  t ' + S.t.toFixed(2) +
                '  cam ' + S.camY.toFixed(1), 12, H - 162);
-  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  R ' + BLAST_RADIUS +
+  ctx.fillText('g ' + GRAVITY + '  power ' + BLAST_POWER + '  r ' + BLAST_RADIUS +
                '  fall ' + BLAST_FALLOFF + '  match ' + BOOST_MATCH + 'x' + BOOST_MAX,
                12, H - 136);
   ctx.fillText('thrust ' + THRUST + '  burn ' + BURN_T + '  power ' +

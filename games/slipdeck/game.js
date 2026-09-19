@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "SLIPDECK",
+    title:   "Slipdeck",
     /* One sentence, three words in colour: the two gestures and the prize. */
     tagline: "<b class=\"w-bin\">Bin</b> or <b class=\"w-keep\">keep</b> the card you are dealt to finish your <b class=\"w-hand\">hand</b>",
     gameSeconds: 30,                 // round length in seconds; 0 = endless
@@ -50,15 +50,15 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "DEAL ME IN",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Deal me in",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Deal another hand",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "OUT OF LIVES",
-      timeUp:     "TIME'S UP!"
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Out of lives",
+      timeUp:     "Time's up!"
     },
 
     /* ---- SLIPDECK tunables -------------------------------------------------
@@ -231,10 +231,10 @@
     /* Poker categories, weakest first. A hand of five can reach all of them. */
     var CAT_ORDER = { high:0, pair:1, twoPair:2, trips:3, straight:4,
                       flush:5, fullHouse:6, quads:7, straightFlush:8 };
-    var CAT_NAME = { high:"HIGH CARD", pair:"PAIR", twoPair:"TWO PAIR",
-                     trips:"THREE OF A KIND", straight:"STRAIGHT", flush:"FLUSH",
-                     fullHouse:"FULL HOUSE", quads:"FOUR OF A KIND",
-                     straightFlush:"STRAIGHT FLUSH" };
+    var CAT_NAME = { high:"High card", pair:"Pair", twoPair:"Two pair",
+                     trips:"Three of a kind", straight:"Straight", flush:"Flush",
+                     fullHouse:"Full house", quads:"Four of a kind",
+                     straightFlush:"Straight flush" };
     /* A bare pair pays. Dropping it to zero was benched and it does buy real
        jeopardy — busts go from 0.3 to 1.0 a run — but it costs a third of the
        payoffs (3.3 paying hands a run down to 2.3). A playable is twenty
@@ -272,13 +272,13 @@
         if (cards[i].r < lo) lo = cards[i].r;
         if (cards[i].r > hi) hi = cards[i].r;
       }
-      if (sameSuit && n < HAND_SIZE) return "FLUSH DRAW";
+      if (sameSuit && n < HAND_SIZE) return "Flush draw";
       var seen = {}, distinct = true;
       for (i = 0; i < n; i++) {
         if (seen[cards[i].r]) { distinct = false; break; }
         seen[cards[i].r] = 1;
       }
-      if (distinct && (hi - lo) <= HAND_SIZE - 1 && n < HAND_SIZE) return "STRAIGHT DRAW";
+      if (distinct && (hi - lo) <= HAND_SIZE - 1 && n < HAND_SIZE) return "Straight draw";
       return "";
     }
 
@@ -447,7 +447,7 @@
     function showLives() {
       var s = "", i;
       for (i = 0; i < LIVES; i++) s += (i < lives ? "♥" : "♡");
-      HUD.setLeft(s, "LIVES", lives <= 1 ? "warn" : "");
+      HUD.setLeft(s, "Lives", lives <= 1 ? "warn" : "");
     }
 
     /* Every hand opens on one card the player did not choose. It comes off the
@@ -482,7 +482,7 @@
       showLives();
       Fx.shake(14, 0.3);
       Fx.flash(col, 0.34, 2.2);
-      Pop.show(word === "BUST" ? "danger" : "alert", { word: word });
+      Pop.show(word === "Bust" ? "danger" : "alert", { word: word });
       if (lives <= 0) finish(CONFIG.copy.gameOver);
     }
 
@@ -504,7 +504,7 @@
         if (chute > CHUTE_DEPTH) {                         // the chute overflows
           chute = 0; overflows++;
           Sound.cue("warn", 0.55, 0.9, 180, 0.2, "square");
-          loseLife("CHUTE FULL", BIN_COL);
+          loseLife("Chute full", BIN_COL);
         } else {
           Fx.burst(L.gateLX + L.gateW / 2, L.cardCY, {
             color:[BIN_COL, "#ffffff"], count:8, speed:260, life:0.35, grav:400 });
@@ -538,7 +538,7 @@
         var big = CAT_ORDER[ev.cat] >= CAT_ORDER.flush;
         Pop.show(big ? "ultra" : CAT_ORDER[ev.cat] >= CAT_ORDER.trips ? "combo" : "score",
                  { word: ev.name, sub: "+" + gain });
-        if (combo > 1) Pop.show("streak", { word: "x" + combo + Lang.t(" CHAIN"), at:"upperRight" });
+        if (combo > 1) Pop.show("streak", { word: "x" + combo + Lang.t(" chain"), at:"upperRight" });
 
         Fx.ring(cx, cy, { from:60, to:520, color:GOLD, width:9, life:0.5 });
         for (i = 0; i < HAND_SIZE; i++) {
@@ -551,7 +551,7 @@
         busts++;
         Sound.cue("bust", 0.6, 1, 150, 0.3, "sawtooth");
         Fx.freeze(0.08);
-        loseLife("BUST", BIN_COL);
+        loseLife("Bust", BIN_COL);
       }
 
       chute = 0;              // the discard budget is reset by the next hand
@@ -575,7 +575,7 @@
                     rot:0, spin:2.4, a:1 });
       cur = null; dealWait = DEAL_IN;
       Sound.cue("bust", 0.5, 1.2, 200, 0.2, "sawtooth");
-      loseLife("TOO SLOW", "#ff8a3c");
+      loseLife("Too slow", "#ff8a3c");
     }
 
     /* ===================================================================
@@ -721,7 +721,8 @@
        convention — a framed panel, split across the middle, with the index and
        its pip mirrored top and bottom exactly like a double-headed court. */
     /* The painted illustrations of the three court cards, from
-       assets/image/master/slipdeck-card-{jack,queen,king}.png. They are drawn WITHOUT
+       assets/image/object/slipdeck-card-{jack,queen,king}.png, named by the
+       manifest's art.objects. They are drawn WITHOUT
        a suit — no heart, no spade anywhere in them — which is what lets three
        pictures dress all twelve court cards: the suit and the rank are already
        said by the mirrored corners and by the pip inside the panel. */
@@ -834,7 +835,7 @@
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = rgba(col, 0.72 + lit * 0.28);
       ctx.font = font(30, 900);
-      ctx.fillText(label, 0, 0);
+      ctx.fillText(upper(label), 0, 0);
       ctx.restore();
     }
 
@@ -848,7 +849,7 @@
       ctx.textAlign = "right"; ctx.textBaseline = "middle";
       ctx.font = font(22, 900);
       ctx.fillStyle = chute >= CHUTE_DEPTH ? BIN_COL : "rgba(255,255,255,.42)";
-      ctx.fillText(Lang.t("CHUTE"), x0 - 16, L.chuteY);
+      ctx.fillText(upper(Lang.t("Chute")), x0 - 16, L.chuteY);
 
       for (var i = 0; i < CHUTE_DEPTH; i++) {
         var x = x0 + i * (pipW + gap), full = i < chute;
@@ -863,7 +864,7 @@
         ctx.textAlign = "left";
         ctx.font = font(20, 900);
         ctx.fillStyle = BIN_COL;
-        ctx.fillText(Lang.t("FULL"), x0 + total + 16, L.chuteY);
+        ctx.fillText(upper(Lang.t("Full")), x0 + total + 16, L.chuteY);
       }
     }
 
@@ -886,18 +887,19 @@
       var full = next.length >= HAND_SIZE, txt, col;
 
       if (full) {
-        txt = ev.pay > 0 ? Lang.t("KEEP → ") + Lang.t(ev.name) : Lang.t("KEEP → BUST");
+        txt = ev.pay > 0 ? Lang.t("Keep → ") + Lang.t(ev.name) : Lang.t("Keep → bust");
         col = ev.pay > 0 ? KEEP_COL : BIN_COL;
       } else if (ev.cat !== "high") {
-        txt = Lang.t("KEEP → ") + Lang.t(ev.name); col = GOLD;
+        txt = Lang.t("Keep → ") + Lang.t(ev.name); col = GOLD;
       } else if (!hand.length) {
-        txt = Lang.t("KEEP → OPENS THE HAND"); col = CYAN;
+        txt = Lang.t("Keep → opens the hand"); col = CYAN;
       } else {
         var ln = lineOf(next);
-        txt = Lang.t("KEEP → ") + Lang.t(ln || "DEAD CARD");
+        txt = Lang.t("Keep → ") + Lang.t(ln || "Dead card");
         col = ln ? CYAN : "rgba(255,255,255,.45)";
       }
 
+      txt = upper(txt);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.font = font(26, 900);
       var w = ctx.measureText(txt).width + 44;
@@ -936,18 +938,18 @@
       }
 
       ev = evalHand(hand);
-      if (!hand.length)            { label = Lang.t("EMPTY HAND"); col = "rgba(255,255,255,.35)"; }
+      if (!hand.length)            { label = Lang.t("Empty hand"); col = "rgba(255,255,255,.35)"; }
       else if (ev.cat !== "high")  { label = Lang.t(ev.name);      col = GOLD; }
-      else if (hand.length === 1) { label = Lang.t("HAND OPEN"); col = CYAN; }
+      else if (hand.length === 1) { label = Lang.t("Hand open"); col = CYAN; }
       else {
         var ln = lineOf(hand);
-        label = Lang.t(ln || "NOTHING YET");
+        label = Lang.t(ln || "Nothing yet");
         col = ln ? CYAN : "rgba(255,255,255,.55)";
       }
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.font = font(28, 900);
       ctx.fillStyle = col;
-      ctx.fillText(label + "   " + hand.length + "/" + HAND_SIZE, Layout.cx, L.labelY);
+      ctx.fillText(upper(label) + "   " + hand.length + "/" + HAND_SIZE, Layout.cx, L.labelY);
     }
 
     function render() {
@@ -961,8 +963,8 @@
       }
 
       var pull = cur ? clamp(Math.abs(cur.x) / SWIPE_DIST, 0, 1) : 0;
-      drawGate(L.gateLX, BIN_COL,  Lang.t("BIN"),  cur && cur.x < 0 ? pull : 0);
-      drawGate(L.gateRX, KEEP_COL, Lang.t("KEEP"), cur && cur.x > 0 ? pull : 0);
+      drawGate(L.gateLX, BIN_COL,  Lang.t("Bin"),  cur && cur.x < 0 ? pull : 0);
+      drawGate(L.gateRX, KEEP_COL, Lang.t("Keep"), cur && cur.x > 0 ? pull : 0);
 
       drawChute();
       drawHand();
@@ -1011,14 +1013,14 @@
          has to be earned — a deliberate player lands two stars, not three. */
       var stars = score >= 4000 ? 3 : score >= 1200 ? 2 : score > 0 ? 1 : 0;
       endRound({
-        title: stars === 3 ? Lang.t("SHARP EYE!") : title,
+        title: stars === 3 ? Lang.t("Sharp eye!") : title,
         variant: stars === 3 ? "perfect" : "",
         score: score,
         stars: stars,
         rows: [
-          { label:"HANDS PAID", value:hands },
-          { label:"BEST HAND",  value:bestName, grade:"accent" },
-          { label:"BEST CHAIN", value:"x" + Math.max(1, bestCombo), grade:"gold" }
+          { label:"Hands paid", value:hands },
+          { label:"Best hand",  value:bestName, grade:"accent" },
+          { label:"Best chain", value:"x" + Math.max(1, bestCombo), grade:"gold" }
         ]
       });
     }

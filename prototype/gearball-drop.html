@@ -636,9 +636,9 @@ function render() {
   ctx.fillText(score, 40, 74);
   ctx.font = 'bold 24px system-ui, sans-serif';
   ctx.fillStyle = combo > 1 ? '#7ee0a0' : '#5a6580';
-  ctx.fillText('COMBO x' + combo + '  (' + (1 + combo * COMBO_STEP).toFixed(2) + ')', 40, 106);
+  ctx.fillText('Combo x' + combo + '  (' + (1 + combo * COMBO_STEP).toFixed(2) + ')', 40, 106);
   ctx.fillStyle = mult > 1 ? '#8fb5ff' : '#5a6580';
-  ctx.fillText('MULT x' + mult + (multT > 0 ? '  ' + multT.toFixed(1) + 's' : ''), 40, 134);
+  ctx.fillText('Mult x' + mult + (multT > 0 ? '  ' + multT.toFixed(1) + 's' : ''), 40, 134);
 
   ctx.textAlign = 'right';
   ctx.fillStyle = '#5a6580'; ctx.font = '22px system-ui, sans-serif';

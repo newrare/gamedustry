@@ -26,6 +26,13 @@
 
    Same anti-dependency rule as everywhere else: no framework, no CDN, no web
    font. It has to open on any machine, forever.
+
+   And the same casing rule: write every string in NORMAL case ("Best score",
+   "Dernière chance", accent and all), never in capitals. A control panel shows
+   them as they are. A page that mocks a game screen copies `upper()` out of
+   overlay-pop.html and shouts through it, so its capitals lose their accents
+   the way the motor's do — see docs/ENGINE.md, "capitals are a look, not a
+   spelling".
    =========================================================================== */
 
 * { box-sizing:border-box; margin:0; padding:0; }

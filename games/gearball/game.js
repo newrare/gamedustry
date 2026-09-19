@@ -2,7 +2,7 @@
      1. CONFIG — the knobs a new game changes first.
      =================================================================== */
   var CONFIG = {
-    title:   "GEARBALL",
+    title:   "Gearball",
     /* One sentence, and the stage below plays it: the loop turns, a gap comes
        round to the hopper, the finger taps and the ball takes the empty seat. */
     tagline: "<b class=\"w-drop\">Drop</b> a ball in an <b class=\"w-slot\">empty slot</b> and <b class=\"w-fill\">chain them to fill the loop</b>",
@@ -40,19 +40,19 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "TAP TO PLAY",
-      ctaBar:     "INSTALL NOW",
-      ctaEnd:     "PLAY THE FULL GAME",
+      start:      "Tap to play",
+      ctaBar:     "Install now",
+      ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
-      scoreLabel: "SCORE",
-      timeLabel:  "TIME",
-      endScore:   "FINAL SCORE",
-      gameOver:   "JAMMED!",
-      timeUp:     "SHIFT OVER",
-      cleared:    "CIRCUIT CLEARED!",
-      hint:       "TAP WHEN A GAP REACHES THE HOPPER",
+      scoreLabel: "Score",
+      timeLabel:  "Time",
+      endScore:   "Final score",
+      gameOver:   "Jammed!",
+      timeUp:     "Shift over",
+      cleared:    "Circuit cleared!",
+      hint:       "Tap when a gap reaches the hopper",
     // the second lesson, once the first ball is down: WHERE it lands pays
-    hintWeld:   "A BALL NEXT TO ANOTHER WELDS — THE WHOLE RUN PAYS"
+    hintWeld:   "A ball next to another welds — the whole run pays"
     },
 
     /* --- the ring ---------------------------------------------------------
@@ -939,8 +939,8 @@
       if (!quiet) {
         style = "score"; word = "+" + gain;
         sub_ = combo > 1 ? "x" + combo : ""; at = { x: p.x, y: p.y - 54 };
-        if (splice)        { style = "bonus";  word = "SPLICE";        sub_ = "+" + gain; at = "bottom"; }
-        else if (run >= 4) { style = "combo";  word = Lang.t("WELD x") + run;  sub_ = "+" + gain; at = "bottom"; }
+        if (splice)        { style = "bonus";  word = "Splice";        sub_ = "+" + gain; at = "bottom"; }
+        else if (run >= 4) { style = "combo";  word = Lang.t("Weld x") + run;  sub_ = "+" + gain; at = "bottom"; }
         else if (combo >= 6) { style = "streak"; at = "bottom"; }
         Pop.show(style, { word: word, sub: sub_, at: at });
         /* The chain is the one thing the opening hint cannot teach, because
@@ -993,7 +993,7 @@
             Fx.ring(p.x, p.y, { from: ballR, to: 96, color: R.wild, width: 4, life: 0.3 });
             Sound.clip("chain", 0.45, 1.3);
             run = seat(j, "wild", R.wildScore);
-            Pop.show("bonus", { word: "WILD SAVE", sub: "+" + R.wildScore, at: "bottom" });
+            Pop.show("bonus", { word: "Wild save", sub: "+" + R.wildScore, at: "bottom" });
             after();
             return;
           }
@@ -1007,7 +1007,7 @@
         Fx.shake(14, 0.3); Fx.flash("#ff3d6e", 0.3); Fx.freeze(0.06);
         Fx.burst(p.x, p.y, { count: 22, color: "#ff3d6e", speed: 340, grav: 500 });
         Fx.ring(p.x, p.y, { from: ballR, to: 120, color: "#ff3d6e", width: 5, life: 0.34 });
-        Pop.show("danger", { word: "JAM", at: "bottom" });
+        Pop.show("danger", { word: "Jam", at: "bottom" });
         lives--;
         showLives();
         if (lives <= 0) { Overlay.vignette("#ff3d6e", 0.9); finish("jam"); }
@@ -1022,13 +1022,13 @@
         j = splitTarget(k);
         if (j >= 0 && !occ[j]) {
           run = seat(j, "split", R.splitScore, true);
-          Pop.show("bonus", { word: "SPLIT", sub: "+" + R.splitScore, at: "bottom" });
+          Pop.show("bonus", { word: "Split", sub: "+" + R.splitScore, at: "bottom" });
         }
       } else if (type === "charge") {
         score += R.chargeScore * Math.min(run, R.weldMax);
         HUD.setScore(score);
         discharge(k, run);
-        Pop.show("ultra", { word: Lang.t("CHARGE x") + run,
+        Pop.show("ultra", { word: Lang.t("Charge x") + run,
                             sub: "+" + R.chargeScore * Math.min(run, R.weldMax),
                             at: "bottom" });
       }
@@ -1045,7 +1045,7 @@
            style, whose spot is under the HUD, well clear of the `bottom` band
            that callout lands in. */
         warnLeft = false;
-        Pop.show("alert", { word: (slotN - filled) + Lang.t(" SLOTS LEFT"), hold: 1600 });
+        Pop.show("alert", { word: (slotN - filled) + Lang.t(" slots left"), hold: 1600 });
       }
     }
 
@@ -1064,7 +1064,7 @@
       Fx.shake(9, 0.4); Fx.flash(R.slot, 0.34);
       Overlay.vignette(R.slot, 0.7);
       Confetti.burst(70);
-      Pop.show("manifest", { word: "CIRCUIT FULL", sub: "+" + stageBonus, at: "center" });
+      Pop.show("manifest", { word: "Circuit full", sub: "+" + stageBonus, at: "center" });
       var k, p = {};
       for (k = 0; k < slotN; k++) {
         if (!occ[k]) continue;
@@ -1100,7 +1100,7 @@
     function showLives() {
       var s = "", i;
       for (i = 0; i < R.lives; i++) s += i < lives ? "●" : "○";
-      HUD.setLeft(s, "LIVES", lives <= 1 ? "warn" : "");
+      HUD.setLeft(s, "Lives", lives <= 1 ? "warn" : "");
     }
 
     function finish(reason) {
@@ -1112,15 +1112,15 @@
       var st = cleared ? 3
              : score >= R.star3 ? 3 : score >= R.star2 ? 2 : score > 0 ? 1 : 0;
       var rows = [
-        { label: "BALLS SET", value: landed },
-        { label: "LONGEST CHAIN", value: bestRun, grade: "accent" }
+        { label: "Balls set", value: landed },
+        { label: "Longest chain", value: bestRun, grade: "accent" }
       ];
       // a cleared ring is the story of the shift; the jam count is only news
       // when the shift is what the jams ended
-      if (!cleared) rows.push({ label: "JAMS", value: jams });
+      if (!cleared) rows.push({ label: "Jams", value: jams });
       // a number, so the end screen counts it up like the score itself
-      if (cleared) rows.push({ label: "STAGE BONUS", value: stageBonus, grade: "accent" });
-      rows.push({ label: "BEST SCORE", value: Math.max(score, best), grade: "gold" });
+      if (cleared) rows.push({ label: "Stage bonus", value: stageBonus, grade: "accent" });
+      rows.push({ label: "Best score", value: Math.max(score, best), grade: "gold" });
       endRound({
         title: cleared ? CONFIG.copy.cleared
              : reason === "jam" ? CONFIG.copy.gameOver : CONFIG.copy.timeUp,

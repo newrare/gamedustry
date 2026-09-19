@@ -373,7 +373,9 @@ Settled the simplest way: the CTA has no destination on the web, so it does not
 ship. `packages/platform/web.js` zeroes `CONFIG.layout.ctaHeight` before the
 first layout, so the band goes back to `Layout`; the webshell hides the bar and
 rewires the end screen's install button to PLAY AGAIN and its replay link to
-MENU. Nothing in the motor branches on a target.
+MENU — the map and the level again, drawn as two icons, on a game that declares
+`web.levels` (see [LEVELS.md](LEVELS.md)). Nothing in the motor branches on a
+target.
 
 ### Delta 4 — a round with no way out — **done**
 
