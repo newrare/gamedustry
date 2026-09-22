@@ -462,7 +462,7 @@ h1 span { display: block; }
   max-width: 620px;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
@@ -491,15 +491,6 @@ h1 span { display: block; }
   letter-spacing: .8px;
   text-transform: uppercase;
   color: var(--dim);
-}
-
-/* A tile whose label is a sentence rather than a unit: uppercase tracking is
-   for two words, not for a list of titles. */
-.hero-stats .stat-wide span {
-  text-transform: none;
-  letter-spacing: .1px;
-  font-size: 12.5px;
-  line-height: 1.45;
 }
 
 /* ─────────────────────────────── buttons ─────────────────────────── */

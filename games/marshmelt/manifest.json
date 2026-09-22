@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.1.2",
+  "version": "1.2.5",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -15,10 +15,37 @@
   },
   "art": {
     "objects": {
+      "cloud-big-04": "game-cloud-big-04",
       "decor-01": "marshmelt-rock-01",
       "decor-05": "marshmelt-rock-05",
       "decor-17": "marshmelt-rock-17",
-      "decor-18": "marshmelt-rock-18"
+      "decor-18": "marshmelt-rock-18",
+      "home01": "marshmelt-home-01",
+      "home02": "marshmelt-home-02",
+      "home03": "marshmelt-home-03",
+      "home04": "marshmelt-home-04",
+      "home05": "marshmelt-home-05",
+      "home06": "marshmelt-home-06",
+      "sticker01": "marshmelt-sticker-01",
+      "sticker02": "marshmelt-sticker-02",
+      "sticker03": "marshmelt-sticker-03",
+      "sticker04": "marshmelt-sticker-04",
+      "sticker05": "marshmelt-sticker-05",
+      "sticker06": "marshmelt-sticker-06",
+      "sticker07": "marshmelt-sticker-07",
+      "sticker08": "marshmelt-sticker-08",
+      "sticker09": "marshmelt-sticker-09",
+      "sticker10": "marshmelt-sticker-10",
+      "sticker11": "marshmelt-sticker-11",
+      "sticker12": "marshmelt-sticker-12",
+      "sticker13": "marshmelt-sticker-13",
+      "sticker14": "marshmelt-sticker-14",
+      "sticker15": "marshmelt-sticker-15",
+      "sticker16": "marshmelt-sticker-16",
+      "sticker17": "marshmelt-sticker-17",
+      "sticker18": "marshmelt-sticker-18",
+      "sticker19": "marshmelt-sticker-19",
+      "sticker20": "marshmelt-sticker-20"
     }
   },
   "copy": {
@@ -156,6 +183,262 @@
           2,
           1
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 60,
+      "xpPer": 6,
+      "ticketPrice": 15,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        13,
+        15,
+        16,
+        19,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "All Smiles",
+          "rarity": "common"
+        },
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Big Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "Not Amused",
+          "rarity": "common"
+        },
+        {
+          "name": "Dizzy",
+          "rarity": "rare"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Close One",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "common"
+        },
+        {
+          "name": "Sweet Tooth",
+          "rarity": "rare"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Starstruck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Cooled Rock",
+          "rarity": "rare"
+        },
+        {
+          "name": "Lava Slab",
+          "rarity": "rare"
+        },
+        {
+          "name": "Fire Ball",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Spike Rock",
+          "rarity": "epic"
+        },
+        {
+          "name": "Lava Splash",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "decor18",
+          "role": "decor",
+          "x": 336,
+          "y": 182,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 424,
+          "y": 225,
+          "w": 94,
+          "badge": {
+            "dx": 0.4,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 58,
+          "y": 275,
+          "w": 200,
+          "rot": 2,
+          "halo": {
+            "w": 0.75,
+            "h": 0.9,
+            "dy": -0.1,
+            "color": "#dfc3a4"
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 190,
+          "y": 361,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.8
+          },
+          "light": "random"
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 545,
+          "y": 426,
+          "w": 200
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 187,
+          "y": 654,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.7
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 537,
+          "y": 699,
+          "w": 244
+        },
+        {
+          "art": "cloudBig04",
+          "role": "decor",
+          "x": 28,
+          "y": 818,
+          "w": 214,
+          "flip": true,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 186,
+          "y": 977,
+          "w": 200
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 553,
+          "y": 1020,
+          "w": 225
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 419,
+          "y": 1269,
+          "w": 200,
+          "halo": {
+            "w": 1.25,
+            "h": 0.75,
+            "dy": -0.1,
+            "color": "#f4e0ca"
+          },
+          "light": "flicker",
+          "lightEvery": 1.5,
+          "lightDelay": 2.8,
+          "always": true
+        },
+        {
+          "art": "cloudBig04",
+          "role": "decor",
+          "x": 109,
+          "y": 812,
+          "w": 93,
+          "layer": 1,
+          "notify": "float",
+          "every": 11.5,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.4,
+          "seconds": 210
+        }
       }
     }
   },

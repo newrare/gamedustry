@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.1.2",
+  "version": "1.2.6",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -18,7 +18,33 @@
       "decor-01": "chainring-ring-01",
       "decor-06": "chainring-ring-06",
       "decor-12": "chainring-ring-12",
-      "decor-16": "chainring-ring-16"
+      "decor-16": "chainring-ring-16",
+      "home01": "chainring-home-01",
+      "home02": "chainring-home-02",
+      "home03": "chainring-home-03",
+      "home04": "chainring-home-04",
+      "home05": "chainring-home-05",
+      "home06": "chainring-home-06",
+      "sticker01": "chainring-sticker-01",
+      "sticker02": "chainring-sticker-02",
+      "sticker03": "chainring-sticker-03",
+      "sticker04": "chainring-sticker-04",
+      "sticker05": "chainring-sticker-05",
+      "sticker06": "chainring-sticker-06",
+      "sticker07": "chainring-sticker-07",
+      "sticker08": "chainring-sticker-08",
+      "sticker09": "chainring-sticker-09",
+      "sticker10": "chainring-sticker-10",
+      "sticker11": "chainring-sticker-11",
+      "sticker12": "chainring-sticker-12",
+      "sticker13": "chainring-sticker-13",
+      "sticker14": "chainring-sticker-14",
+      "sticker15": "chainring-sticker-15",
+      "sticker16": "chainring-sticker-16",
+      "sticker17": "chainring-sticker-17",
+      "sticker18": "chainring-sticker-18",
+      "sticker19": "chainring-sticker-19",
+      "sticker20": "chainring-sticker-20"
     }
   },
   "copy": {
@@ -187,6 +213,222 @@
           4,
           2
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 350,
+      "xpPer": 35,
+      "ticketPrice": 90,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        11,
+        14,
+        15,
+        16,
+        20,
+        19
+      ],
+      "stickers": [
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Hooray",
+          "rarity": "common"
+        },
+        {
+          "name": "All Smiles",
+          "rarity": "common"
+        },
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Thinking",
+          "rarity": "common"
+        },
+        {
+          "name": "Off Beat",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Heart Eyes",
+          "rarity": "rare"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "High Five",
+          "rarity": "rare"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "rare"
+        },
+        {
+          "name": "Pink Streak",
+          "rarity": "rare"
+        },
+        {
+          "name": "Neon Ring",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Drop Beat",
+          "rarity": "rare"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Triple Speed",
+          "rarity": "epic"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 160,
+          "y": 320,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.78
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "sticker18",
+          "role": "daily",
+          "x": 596,
+          "y": 320,
+          "w": 69,
+          "badge": {
+            "dx": -0.3,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "sticker17",
+          "role": "decor",
+          "x": 534,
+          "y": 348,
+          "w": 70,
+          "notify": "float",
+          "delay": 2.2,
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 368,
+          "y": 616,
+          "w": 180,
+          "notify": "float",
+          "light": "flicker"
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 610,
+          "y": 660,
+          "w": 190,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0
+          },
+          "light": "random"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 130,
+          "y": 670,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.78
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 160,
+          "y": 930,
+          "w": 190,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.05
+          },
+          "light": "random"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 590,
+          "y": 940,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.35,
+          "seconds": 120
+        }
       }
     }
   }

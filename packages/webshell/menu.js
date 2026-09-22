@@ -81,6 +81,41 @@
   var LV = window.__LEVELS__ || null;
   function levelled() { return !!(LV && LV.active()); }
 
+  /* The village, published by packages/webshell/village.js — which the builder
+     loads immediately AFTER this file, so it is read lazily rather than
+     captured here. A game that declares no `web.village` never has one, and
+     everything below falls back to what it did before. */
+  function VG() { return window.__VILLAGE__ || null; }
+  function villaged() { return !!VG(); }
+
+  /* WHAT PLAY OPENS, IN ONE PLACE. Three answers and they are a chain, not a
+     switch: a village is the place the player lives, a map is what a levelled
+     game without one opens, and a round is what is left. The menu entry, the
+     SPACE key and the way back from a score all ask this. */
+  function front() {
+    if (villaged()) { VG().open(); return; }
+    if (levelled()) { LV.open(); return; }
+    W.start();
+  }
+  /* THE ENTRY IS NAMED AFTER WHERE IT GOES, which is why it says LEVELS on a
+     levelled game and PLAY everywhere else — and PLAY again where a village
+     is what it opens: the map is one building of that place and naming the
+     door after one room in it is worse than not naming it at all. */
+  function frontLabel() {
+    if (villaged()) return COPY.play;
+    if (levelled()) return LV.text("levelsEntry");
+    return COPY.play;
+  }
+
+  /* The view system — what a screen is, what a card is, and the stack both
+     live in (packages/webshell/view.js). It is loaded first of the web layer
+     and is never absent from a web build, so nothing below guards against it:
+     the title screen, the map, the album, the shop, the ranking and the score
+     are the six views, and options, help, leaving a round, a daily reward, an
+     ad and a prize are the six cards. */
+  var VW = window.__VIEW__;
+  var MD = window.__MODAL__;
+
   /* The meta layer — what the player owns, and what brings them back
      (packages/webshell/meta.js, album.js, daily.js). Published the same way
      the map is, inert for a game with no `web.meta` block, and `metaed()` is
@@ -102,12 +137,13 @@
       best: "Best score", noScore: "No round played yet.",
       soonScores: "An online leaderboard is coming with the next update.",
       music: "Music", sfx: "Sound effects", pops: "Score callouts", language: "Language",
-      resetScores: "Reset the leaderboard",
-      resetAsk: "Tap again to erase your best score",
-      resetDone: "Leaderboard cleared",
+      labels: "Name the buildings",
+      wipeData: "Erase all game data",
+      wipeAsk: "Tap again — progress, stickers and scores are lost",
+      wipeDone: "Game data erased",
       controls: "Controls",
       tap: "Tap", hold: "Hold", drag: "Drag", swipe: "Swipe", aim: "Aim",
-      back: "Back", again: "Play again", menu: "Menu",
+      close: "Close", again: "Play again", menu: "Menu",
       toMenu: "Back to the menu", toMap: "Back to the map", resume: "Resume",
       leaveTitle: "Leave?",
       leaveNote: "The round ends here and its score is lost.",
@@ -119,12 +155,13 @@
       best: "Meilleur score", noScore: "Aucune partie jouée.",
       soonScores: "Un classement en ligne arrive avec la prochaine mise à jour.",
       music: "Musique", sfx: "Effets sonores", pops: "Messages de score", language: "Langue",
-      resetScores: "Effacer le classement",
-      resetAsk: "Touchez à nouveau pour effacer votre meilleur score",
-      resetDone: "Classement effacé",
+      labels: "Nommer les bâtiments",
+      wipeData: "Effacer toutes les données du jeu",
+      wipeAsk: "Touchez à nouveau — progression, stickers et scores sont perdus",
+      wipeDone: "Données du jeu effacées",
       controls: "Contrôles",
       tap: "Taper", hold: "Maintenir", drag: "Glisser", swipe: "Balayer", aim: "Viser",
-      back: "Retour", again: "Rejouer", menu: "Menu",
+      close: "Fermer", again: "Rejouer", menu: "Menu",
       toMenu: "Retour au menu", toMap: "Retour à la carte", resume: "Reprendre",
       leaveTitle: "Quitter ?",
       leaveNote: "La partie s’arrête ici et son score est perdu.",
@@ -142,7 +179,7 @@
     play: 1, leaderboard: 1, options: 1, help: 1,
     scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1, controls: 1,
     tap: 1, hold: 1, drag: 1, swipe: 1, aim: 1,
-    back: 1, again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
+    again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
   };
   var up = W.upper;
   function shouted(key) { return CAPS[key] || key.indexOf("mode") === 0; }
@@ -208,20 +245,27 @@
 
   /* ── 1. settings ──────────────────────────────────────────────────────── */
 
-  /* Three switches and a language, in one Store key. Everything defaults to
-     ON: a player who never opens OPTIONS gets the game as designed, and the
-     stored object is only ever read through these accessors so an old key
-     missing a field cannot turn a feature off by accident. */
+  /* Four switches and a language, in one Store key. The three about sound and
+     callouts default to ON — a player who never opens OPTIONS gets the game as
+     designed — and the stored object is only ever read through these accessors
+     so an old key missing a field cannot turn a feature off by accident.
+
+     THE FOURTH IS THE ONE THAT DEFAULTS OFF. `labels` writes the role's word
+     under every building of a VILLAGE, and a village is meant to be read as a
+     place: six plates over six buildings turn it back into the list it
+     replaced. So it is asked for rather than given, and then it is kept. */
   var Settings = (function () {
     var KEY = "webSettings";
     var saved = W.Store.get(KEY, null) || {};
     var val = {
       music: saved.music !== false,
       sfx:   saved.sfx   !== false,
-      pops:  saved.pops  !== false
+      pops:  saved.pops  !== false,
+      labels: saved.labels === true
     };
     /* The motor holds the truth: these three calls are the whole integration,
-       and they are no-ops on a playable because nothing there ever calls them. */
+       and they are no-ops on a playable because nothing there ever calls them.
+       The fourth is the village's, and only a game that has one is listening. */
     function apply() {
       /* Armed before the switch, never after: a bed turned back ON from the
          menu has to come back on the menus' own section (section 1b) rather
@@ -231,6 +275,7 @@
       W.Sound.setMuted(!val.sfx);
       W.Music.setMuted(!val.music);
       W.Pop.setEnabled(val.pops);
+      if (window.__VILLAGE__) window.__VILLAGE__.setLabels(val.labels);
     }
     function set(key, on) {
       val[key] = !!on;
@@ -324,6 +369,7 @@
   /* ── 2. dom helpers ───────────────────────────────────────────────────── */
 
   function $(id) { return document.getElementById(id); }
+  function frame() { return $("frame"); }
 
   function el(tag, cls, html) {
     var n = document.createElement(tag);
@@ -345,6 +391,9 @@
     reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
     home:  '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     map:   '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+    close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    help:  '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    tag:   '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
     gear:  '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
 
     /* The meta layer's six. Same pack, same stroke: the album, the machine and
@@ -468,15 +517,98 @@
 
   /* ── 4. the intro: head, menu, panel band ─────────────────────────────── */
 
-  var view, menu, panel, panelTitle, panelBody, open = null;
+  /* THE TITLE SCREEN IS A SPLASH WHERE THERE IS A VILLAGE. A hub already shows
+     every door as a building standing on a painted scene, so the stacked menu
+     in front of it was the same list twice — read once, at speed, by a player
+     on their way somewhere else. What is left of the title screen is the one
+     thing it was always for: the logotype on the game's own scene, the studio
+     signature in the corner, and two seconds of it.
+
+     The menu's nodes are still BUILT — hidden, never removed. `#btn-start` is
+     the motor's own node and every binding this shell has ever put on it
+     (startGame, the SPACE key, Sound.unlock()'s gesture) rides on it being
+     where the motor put it, and a language change is still a loop over the
+     entries it wrote. Nothing but the display changes.
+
+     A game with no village keeps the menu it has: it has nowhere else to put
+     the doors, and the daily road it carries is a line of that menu. */
+  function splash() { return villaged(); }
+
+  /* How long the front door stands open. Two seconds is a look at the
+     logotype, not a wait: the village is where the session actually starts. */
+  var SPLASH_MS = 2000;
+
+  /* THE TWO SECONDS THEMSELVES. They are armed on the FIRST arrival on the
+     title screen — which is when the motor has finished preloading, not when
+     this file mounted — and never again: every later return to `intro` comes
+     out of a round and lands on the village that is still standing under it
+     (View.floor leaves the title screen alone, packages/webshell/view.js).
+
+     A player quicker than the timer is left where they went: SPACE already
+     opens the village from here, and the guard is the same three questions the
+     key asks — still on the title screen, no view open, no card open. */
+  var splashArmed = false;
+
+  function armSplash() {
+    if (!splash() || splashArmed) return;
+    splashArmed = true;
+    setTimeout(function () {
+      if (W.state() !== "intro" || VW.depth() || MD.any()) return;
+      front();
+    }, SPLASH_MS);
+  }
+
+  var view, menu;
   var items = [];              // the menu entries, so a language change is a loop
   var demoHome;                // where the motor's demo stage sleeps
+
+  /* ---- the face on the front door ----------------------------------------
+     THE THREE CHARACTERS ARE THE ONE PIECE OF A GAME'S ARTWORK THE TITLE
+     SCREEN NEVER SHOWED. They were painted for the end screen, where the star
+     count picks which of them the player gets — and that verdict is the whole
+     reason there are three. A title screen has no round behind it to judge, so
+     it has no verdict either: the face is picked AT RANDOM out of whichever of
+     the three the build ships, once per load.
+
+     Random and not "the happy one" on purpose. A splash is two seconds long
+     and a player opens the game hundreds of times; one fixed picture becomes
+     part of the logotype and stops being looked at, where three that take
+     turns keep the front door a place with somebody in it. And the sad face is
+     as true here as the happy one — nothing has happened yet.
+
+     It is read through the motor's own `Art`, so a game with no painted
+     character puts nothing on the screen and the title is exactly what it was
+     (the template, and any game whose artwork has not landed). */
+  var FACES = ["characterHappy", "characterNeutral", "characterSad"];
+
+  function faceNode() {
+    if (!W.Art) return null;
+    var pool = [], i, src;
+    for (i = 0; i < FACES.length; i++) {
+      src = W.Art.src(FACES[i]);
+      if (src) pool.push(src);
+    }
+    if (!pool.length) return null;
+    var img = document.createElement("img");
+    img.id = "web-char";
+    img.alt = "";
+    img.draggable = false;
+    img.src = pool[Math.floor(Math.random() * pool.length)];
+    return img;
+  }
 
   function buildIntro() {
     var intro = $("screen-intro");
 
     var bg = el("div"); bg.id = "web-bg";
     intro.appendChild(bg);
+
+    /* Straight after the backdrop and before everything else: the intro paints
+       its children in document order, so the logotype, the menu and the studio
+       signature all land ON the face rather than under it — the same rule the
+       end screen's character is placed by (packages/shell/shell.js). */
+    var face = faceNode();
+    if (face) intro.appendChild(face);
 
     /* The title keeps its own node — and therefore its SKIN — and gains a
        wrapper the stylesheet breathes. The icon rides along when a game has
@@ -496,12 +628,19 @@
 
     view = el("div"); view.id = "web-view";
     view.appendChild(buildMenu());
-    view.appendChild(buildPanel());
     intro.appendChild(view);
+
+    /* The scrim is cut for a menu down the right edge, and there is none here:
+       the class is what drops that band, so the scene keeps its own right
+       half under a title and a signature (menu.css). */
+    if (splash()) intro.classList.add("web-splash");
   }
 
   function buildMenu() {
     menu = el("nav"); menu.id = "web-menu";
+    /* Hidden rather than absent: see splash() above — the nodes below are what
+       the rest of this file, and the village, are written against. */
+    menu.hidden = splash();
 
     /* PLAY is the motor's node, restyled: keeping it is what keeps startGame,
        the SPACE key and Sound.unlock()'s user gesture exactly as they were.
@@ -510,11 +649,12 @@
        (docs/LEVELS.md), so the motor's own listener comes off and the map's
        PLAY button becomes the click that starts a round — still one click, so
        the audio unlock still happens inside the gesture that asked for it. */
-    var start = levelled() ? unbind("btn-start") : $("btn-start");
+    var takeover = levelled() || villaged();
+    var start = takeover ? unbind("btn-start") : $("btn-start");
     start.className = "web-item";
-    start.textContent = levelled() ? LV.text("levelsEntry") : COPY.play;
-    if (levelled()) start.addEventListener("click", function () { LV.open(); });
-    items.push({ node: start, key: "play", lv: "levelsEntry" });
+    start.textContent = frontLabel();
+    if (takeover) start.addEventListener("click", front);
+    items.push({ node: start, key: "play", lv: (!villaged() && levelled()) ? "levelsEntry" : null });
     menu.appendChild(start);
 
     /* The extra modes, one entry each, under PLAY: they arm their own key and
@@ -547,7 +687,11 @@
        second thing competing with the one thing that sells the game. Down
        here it reads as what it is — a place to go, like the two lines it sits
        between — and it is within a thumb's reach of them. */
-    if (metaed() && DL && DL.active()) {
+    /* ...AND NOT ON A SPLASH. A village has a BUILDING for the daily gift, so
+       the strip would be the road drawn twice, on a screen nobody stays on for
+       two seconds. daily.js needs no node on screen for the door to pay out
+       (DL.openToday), so it is simply never asked for one. */
+    if (metaed() && DL && DL.active() && !splash()) {
       var road = DL.node();
       if (road) menu.appendChild(road);
     }
@@ -559,63 +703,109 @@
       menu.appendChild(b);
     }
 
-    [["scores", "leaderboard"], ["options", "options"], ["help", "help"]]
+    /* THE RANKING IS A PLACE, THE OTHER TWO ARE CARDS. It was three panels of
+       this same band before, which made "where the player stands" the same
+       kind of thing as a volume switch. It is not: it is a screen with a
+       header, like the map and the album, and it is the only one of the three
+       that has anything to show. Options and help open over whatever is on
+       screen — here, and from the corner of every other surface. */
+    [["rank", "leaderboard", function () { VW.go("ranking"); }],
+     ["options", "options", function () { openOptions(true); }],
+     ["help", "help", openHelp]]
       .forEach(function (entry) {
         var b = el("button", "web-item", COPY[entry[1]]);
-        b.addEventListener("click", function () { openPanel(entry[0]); });
+        b.addEventListener("click", entry[2]);
         items.push({ node: b, key: entry[1] });
         menu.appendChild(b);
       });
     return menu;
   }
 
-  function buildPanel() {
-    panel = el("section"); panel.id = "web-panel";
+  /* ── 4b. the card every modal of this shell is drawn on ──────────────── */
 
+  /* ONE SHAPE. Options, help and the question that throws a round away were
+     three different things in two files — two panels swapped into the title
+     band and a card over the frozen world — and they are one thing now: a
+     head with a back arrow and a title, a body of rows, and the view system's
+     own modal under both (packages/webshell/view.js).
+
+     The body keeps `web-pbody` so every row, switch and segment already
+     written against it still lands, and `plain` drops the card-inside-a-card
+     the panel version needed when it stood on the scene rather than on a
+     modal of its own. */
+  function cardPanel(card, close, title, fill) {
+    /* THE WAY OUT IS A CROSS IN THE CORNER, and it is deliberately quiet. It
+       was a back arrow at the head of the card, the same 64 px circle the map
+       and the album wore — which made LEAVING the loudest thing on a card
+       whose subject is a list of switches, and said "back" about a card that
+       came from nowhere. A card is dismissed, not navigated: ESCAPE closes it,
+       and this is what a finger has when there is no keyboard. */
+    var shut = el("button", "web-close", icon("close", "close-ico"));
+    shut.setAttribute("aria-label", COPY.close);
+    shut.addEventListener("click", close);
+    card.appendChild(shut);
     var headRow = el("div", "web-phead");
-    var back = el("button", "web-back", icon("back", "back-ico"));
-    back.setAttribute("aria-label", COPY.back);
-    back.addEventListener("click", closePanel);
-    panelTitle = el("h2", "web-ptitle");
-    headRow.appendChild(back);
-    headRow.appendChild(panelTitle);
-
-    panelBody = el("div", "web-pbody");
-    panel.appendChild(headRow);
-    panel.appendChild(panelBody);
-    return panel;
+    headRow.appendChild(el("h2", "web-ptitle", title));
+    var body = el("div", "web-pbody plain");
+    fill(body);
+    card.appendChild(headRow);
+    card.appendChild(body);
   }
 
-  function openPanel(name) {
-    open = name;
-    panelTitle.textContent = PANELS[name].title();
-    panelBody.innerHTML = "";
-    PANELS[name].fill(panelBody);
-    menu.style.display = "none";
-    panel.classList.add("on");
-    $("screen-intro").classList.add("web-open");     // the scrim goes darker
-    /* Two of the game's own painted objects around the card. A panel is the
-       plainest thing this shell draws — a list of rows on a black card — and
-       the scene behind it is pushed back by the scrim precisely where the card
-       is, so this is where a picture is worth the most. Never bottom-right:
-       that corner is the back arrow's and the menu's. The motor draws them
-       (packages/shell/shell.js, Decor) and re-rolls on every opening, so the
-       game is dressed differently each time it is asked for. */
-    W.Decor.dress(panel, {
-      count: 2, spots: ["tl", "tr", "l", "bl"], size: 145, opacity: 0.5, front: 0.4
+  /* What is open, and how to build it again: a language change rewrites the
+     screen instead of reloading it, and a card is part of the screen. */
+  var openCard = null;
+
+  /* A card that opens OVER A ROUND pauses it, and a card that opens anywhere
+     else does not — same card either way, which is the point. The clock is the
+     loop's, so freezing the loop freezes the round, the world and the timer in
+     one call, and the game's own update never runs under an open card. */
+  function panelModal(kind, title, fill, again) {
+    var pausing = W.state() === "playing" && !(W.ending && W.ending());
+    if (pausing) pause();
+    var h = MD.open({
+      kind: "web-card " + kind,
+      /* NOT dismissed by a tap: every one of these cards has controls on it,
+         and a switch missed by a thumb would put the card away instead. The
+         key still closes it — that is what `esc` is for. */
+      dismiss: false, esc: true,
+      fill: function (card, close) {
+        cardPanel(card, close, title, fill);
+        /* One of the game's own painted objects beside the card. A card is the
+           plainest thing this shell draws — a list of rows — and the scene
+           behind it is pushed back by the scrim precisely where the card is,
+           so this is where a picture is worth the most. NOT top-left: the head
+           is inside the card now and that is where the back arrow is, so a
+           piece there is a picture over a control. Not bottom-right either —
+           that corner is the shell's own. */
+        W.Decor.dress(card, {
+          count: 1, spots: ["tr", "l", "bl"], size: 140, opacity: 0.45, front: 0.4
+        });
+      },
+      /* The demo stage is the MOTOR's node, borrowed rather than copied, and it
+         has to be handed back while the card is still in the document — a
+         detached node is one `getElementById` cannot find, and the stage would
+         be lost for the rest of the session. */
+      onHide: function () { if (kind.indexOf("help") >= 0) parkDemo(); },
+      onClose: function () {
+        if (openCard === h) openCard = null;
+        W.Decor.clear(h.card);
+        if (pausing) resume();
+      }
     });
+    h.again = again;
+    openCard = h;
+    return h;
   }
 
-  function closePanel() {
-    if (!open) return;
-    // The Help panel borrows the motor's demo stage; give it back so a second
-    // opening finds it where it was left.
-    if (open === "help") parkDemo();
-    open = null;
-    panel.classList.remove("on");
-    W.Decor.clear(panel);
-    $("screen-intro").classList.remove("web-open");
-    menu.style.display = "";
+  function openOptions(withReset) {
+    return panelModal("options", COPY.optionsTitle,
+      function (b) { fillOptions(b, withReset); },
+      function () { openOptions(withReset); });
+  }
+
+  function openHelp() {
+    return panelModal("help", COPY.helpTitle, fillHelp, openHelp);
   }
 
   /* ── 5. the three panels ──────────────────────────────────────────────── */
@@ -677,12 +867,16 @@
   /* The only destructive button in the game, so it asks twice and forgets the
      question after a few seconds rather than staying armed. */
   function resetButton() {
-    /* With a map, this throws away thirty levels of stars and not just a
-       number, so it says so: its own wording, and the same two taps. */
-    var lv = levelled();
-    var LBL = lv ? LV.text("resetProgress") : COPY.resetScores;
-    var ASK = lv ? LV.text("resetProgressAsk") : COPY.resetAsk;
-    var DONE = lv ? LV.text("resetProgressDone") : COPY.resetDone;
+    /* IT ERASES EVERYTHING THE PLAYER HAS, and it is one wording whatever the
+       game declares: a player asking to erase their data means all of it —
+       the best score, the thirty levels of stars, the wallet, the collection
+       and the daily road — and a button that wiped a climb while quietly
+       keeping a purse would be the one place in the shell where "erase" meant
+       "some of it". The switches above are settings, not data, so the music,
+       the callouts and the language survive. */
+    var LBL = COPY.wipeData;
+    var ASK = COPY.wipeAsk;
+    var DONE = COPY.wipeDone;
 
     var b = el("button", "web-danger", icon("reset") + '<span class="txt"></span>');
     var txt = b.querySelector(".txt");
@@ -700,124 +894,224 @@
       }
       clearTimeout(timer);
       W.Store.set("bestScore", 0);
-      if (lv) LV.wipe();
+      if (levelled()) LV.wipe();
+      if (metaed()) MT.wipe();
       armed = 0; b.classList.remove("armed"); txt.textContent = DONE;
       timer = setTimeout(rest, 1600);
     });
     return b;
   }
 
+  /* THE STUDIO SIGNATURE, AT THE FOOT OF THE CARD. The motor already draws it
+     in the bottom-left corner of the title screen out of CONFIG.brand — the
+     newrare mark, the studio's name and the build's version (packages/shell/
+     shell.js, Brand) — and that screen is two seconds long now. A version
+     number is what a player is asked for when something is wrong with a build,
+     so it has to sit where a player can go and READ it, and the options card is
+     the one surface that opens from everywhere.
+
+     Same mark, same two lines, same `brand-*` classes: only `#brand-sig` is
+     pinned to a corner, so the block laid out in the flow of a card inherits
+     the type, the colour and the discretion of the one on the title screen
+     without a second description of what a signature looks like.
+
+     It sits ABOVE the wipe and it is FLUSH LEFT (menu.css, `.web-sig`), which
+     is where every row of this card starts: a centred block in a column of
+     left-aligned rows reads as a footer, and this one is no longer at the
+     foot. */
+  function brandSig() {
+    var brand = CONFIG.brand;
+    if (!brand || !brand.mark) return null;
+
+    var sig = el("div", "web-sig");
+    var img = document.createElement("img");
+    img.className = "brand-mark";
+    img.src = brand.mark;
+    img.alt = "";
+    sig.appendChild(img);
+
+    var copy = el("div", "brand-copy");
+    copy.appendChild(el("div", "brand-line", brand.label || "Newrare"));
+    /* No number in the manifest is not an error, and the empty node collapses
+       on its own (.brand-ver:empty, packages/shell/motor.css). */
+    copy.appendChild(el("div", "brand-ver", brand.version ? "v" + brand.version : ""));
+    sig.appendChild(copy);
+    return sig;
+  }
+
   /* The four switches, and the wipe only where it belongs. The same rows serve
      the menu's OPTIONS and the card that opens over a paused round (section
-     5b) — one options screen, reached from two places — but erasing the
-     leaderboard mid-round is not an option a player is looking for there. */
+     5b) — one options screen, reached from two places — but erasing the whole
+     save mid-round is not an option a player is looking for there. */
   function fillOptions(box, withReset) {
     row(box, "music", COPY.music, toggle("music"));
     row(box, "sfx",   COPY.sfx,   toggle("sfx"));
     row(box, "pops",  COPY.pops,  toggle("pops"));
+    /* THE ONE ROW THAT IS NOT ALWAYS THERE. It names the buildings of a
+       VILLAGE, so a game that has none is not offered a switch for a screen it
+       does not own — and there is nowhere else this could sit, since a village
+       has no chrome of its own to hang it from. */
+    if (window.__VILLAGE__) row(box, "tag", COPY.labels, toggle("labels"));
     row(box, "lang",  COPY.language, langPair());
+    /* THE SIGNATURE COMES BEFORE THE WIPE, not after it. It sat at the very
+       foot of the card, which put the one DESTRUCTIVE control in the middle of
+       the list with a footer under it — a button that erases everything reads
+       as the end of a card, and anything printed below it reads as something
+       still to do. The signature closes the settings; the danger stands alone
+       under them, last, where a thumb scrolling down meets it deliberately. */
+    var sig = brandSig();
+    if (sig) box.appendChild(sig);
     if (withReset) box.appendChild(resetButton());
   }
 
-  var PANELS = {
-    scores: {
-      title: function () { return COPY.scoresTitle; },
-      fill: function (box) {
-        var best = Number(W.Store.get("bestScore", 0)) || 0;
-        box.appendChild(el("div", "web-best-lbl", COPY.best));
-        box.appendChild(el("div", "web-best", String(best)));
-        /* The player's own level, beside the score: it is what an online board
-           would rank them by alongside it, and it is the one number in this
-           shell that a second round of an old level still moves. */
-        if (metaed()) {
-          var p = MT.levelAt();
-          box.appendChild(el("div", "web-lvl",
-            '<b>' + MT.text("level") + " " + p.level + "</b>" +
-            '<span class="bar"><u style="width:' + (100 * p.into / p.need).toFixed(1) + '%"></u></span>'));
-        }
-        box.appendChild(el("div", "web-note", best ? COPY.soonScores : COPY.noScore));
-      }
-    },
-    options: {
-      title: function () { return COPY.optionsTitle; },
-      fill: function (box) { fillOptions(box, true); }
-    },
-    help: {
-      title: function () { return COPY.helpTitle; },
-      fill: function (box) {
-        box.appendChild(el("div", "web-help-line", COPY.tagline || CONFIG.tagline || ""));
-        var demo = $("intro-demo");
-        if (demo) box.appendChild(demo);           // moved, not cloned
-        var keys = controlHints(), keyRow = el("div", "web-keys");
-        for (var i = 0; i < keys.length; i++) keyRow.appendChild(el("span", "web-key", keys[i]));
-        box.appendChild(keyRow);
-        box.appendChild(el("div", "web-keys-lbl", COPY.controls));
-      }
+  /* HELP IS ONE SCREEN AND NOT TWO. The map's level 0 opens this same fill,
+     which is why the demo stage is MOVED into whichever body asked for it last
+     and handed back on the way out (parkDemo): a SKIN dresses `.demo-*` by
+     id-free selectors, so the game's own artwork follows the stage rather than
+     being copied with it. */
+  function fillHelp(box) {
+    box.appendChild(el("div", "web-help-line", COPY.tagline || CONFIG.tagline || ""));
+    var demo = $("intro-demo");
+    if (demo) box.appendChild(demo);           // moved, not cloned
+    var keys = controlHints(), keyRow = el("div", "web-keys");
+    for (var i = 0; i < keys.length; i++) keyRow.appendChild(el("span", "web-key", keys[i]));
+    box.appendChild(keyRow);
+    box.appendChild(el("div", "web-keys-lbl", COPY.controls));
+  }
+
+  /* ── 5a. the ranking, a view ──────────────────────────────────────────── */
+
+  /* WHERE THE PLAYER STANDS. Two numbers today — the best score the motor has
+     always written on endRound, and the level the meta layer counts — plus the
+     room an online board will take (phase 5 of packages/meta). It is a VIEW
+     and not a card because it is a place, and because it wears the same header
+     the map, the album and the shop wear: a back arrow, an eyebrow and a
+     title. The stack is what takes it away again. */
+  var rankBox, rankBody;
+
+  function buildRanking() {
+    rankBox = el("section"); rankBox.id = "web-rank";
+    var bg = el("div", "web-rank-bg");
+    dressBackdrop(bg);
+    rankBox.appendChild(bg);
+
+    /* No button in this header, like the map, the album and the shop: the band
+       over the screen is the navigation and its level chip is the way home.
+       Where there is no band there is no level chip, and the button is
+       (packages/webshell/view.js). */
+    var head = el("header", "mt-head");
+    if (!VW.banded()) head.appendChild(VW.homeButton(COPY.menu));
+    var titles = el("div", "mt-titles");
+    titles.appendChild(el("div", "mt-eyebrow", CONFIG.title || ""));
+    titles.appendChild(el("div", "mt-count", COPY.scoresTitle));
+    head.appendChild(titles);
+    rankBox.appendChild(head);
+
+    rankBody = el("div"); rankBody.id = "web-rank-body";
+    rankBox.appendChild(rankBody);
+    frame().appendChild(rankBox);
+  }
+
+  function paintRanking() {
+    var best = Number(W.Store.get("bestScore", 0)) || 0;
+    rankBody.innerHTML = "";
+    rankBody.appendChild(el("div", "web-best-lbl", COPY.best));
+    rankBody.appendChild(el("div", "web-best", String(best)));
+    /* The player's own level, beside the score: it is what an online board
+       would rank them by alongside it, and it is the one number in this shell
+       that a second round of an old level still moves. */
+    /* The band over this screen already shows the level and the bar; what it
+       does NOT show is the figure — `120 / 350` came off the chip when the
+       band became one line, because a band is read at a glance and this is the
+       screen that reads it properly. */
+    if (metaed()) {
+      var p = MT.levelAt();
+      rankBody.appendChild(el("div", "web-lvl",
+        "<b>" + MT.text("level") + " " + p.level + "</b>" +
+        '<span class="bar"><u style="width:' + (100 * p.into / p.need).toFixed(1) + '%"></u></span>' +
+        '<i>' + MT.num(p.into) + " / " + MT.num(p.need) + "</i>"));
     }
-  };
+    /* …and the climb itself, where there is one: thirty levels is a result a
+       board should carry, and it is the only one of these three numbers the
+       player earned a piece at a time. */
+    if (levelled()) {
+      rankBody.appendChild(el("div", "web-rank-stars",
+        icon("star", "web-rank-star") + "<b>" + LV.total() + "</b><i>/ " + LV.max() + "</i>"));
+    }
+    rankBody.appendChild(el("div", "web-note", best ? COPY.soonScores : COPY.noScore));
+  }
 
-  /* ── 5b. the game view: leave, and the options ────────────────────────── */
+  /* The backdrop a view stands on: THE HUB FIRST where the game has a village,
+     then the game's own painted scene, then the picture it embeds, and the
+     gradient its SKIN paints the page with as the last resort.
 
-  /* Two controls in the bottom-right corner of a round, and they are the whole
-     difference between a playable and a finished game: a playable has nowhere
-     to go and nothing to configure — the round IS the ad — while a game the
-     player owns must let them out and let them turn the music off without
-     finishing first.
+     The hub comes first for the same reason it does in the album and the shop
+     (packages/webshell/album.js, dressBackdrop): the ranking is a ROOM OF THAT
+     PLACE — the player walked into it off the hub, and every card that opens
+     over it shows the hub through its own veil — so a screen that swapped in
+     the picture the ROUND is played against was the one room with a different
+     view out of the window. A game with no village falls back to exactly what
+     this did before.
 
-     Not in the top band: the HUD is the game's, all of it, and the thirteen
-     fill it differently. The corner is where the menu's own entries are, so
-     leaving a round and coming back stay on the same side of the screen, and
-     nothing about the round has to move to make room.
+     `window.__VILLAGE__` is read here and not captured at load: village.js is
+     the last file of the web layer, and this runs on the first open of a
+     screen, long after all of it. */
+  function dressBackdrop(node) {
+    var VG = window.__VILLAGE__;
+    var hub = VG && VG.ground ? VG.ground() : null;
+    if (hub) { node.style.backgroundImage = "url(" + hub + ")"; return; }
+    var art = (CONFIG.art && (CONFIG.art.backgroundPhone || CONFIG.art.background)) || null;
+    var images = (W.ASSETS && W.ASSETS.images) || {};
+    var src = art || images.bg || images.bg1 || null;
+    if (src) { node.style.backgroundImage = "url(" + src + ")"; return; }
+    var cs = window.getComputedStyle(document.body);
+    if (cs.backgroundImage && cs.backgroundImage !== "none") node.style.backgroundImage = cs.backgroundImage;
+    node.style.backgroundColor = cs.backgroundColor;
+    node.classList.add("flat");
+  }
 
-     Either control PAUSES the round first. The clock is the loop's — Round.tick
-     is called from frameUpdate — so freezing the loop freezes the round, the
-     world and the timer in one call, and the game's own update never runs
-     underneath an open card. */
-  var ctlBar, ctlMenu, ctlOptions;
-  var pauseBox, pauseCard, pauseTitle, pauseBody, pauseKind = null, paused = false;
+  /* ── 5b. the corner: options and help, from anywhere ─────────────────── */
+
+  /* TWO CONTROLS IN THE BOTTOM-RIGHT CORNER OF EVERY SURFACE BUT THE TITLE
+     SCREEN, and a third one while a round is running.
+
+     They used to be the round's alone — a playable has nowhere to go and
+     nothing to configure, the round IS the ad — which left a player standing
+     on the map with no way to the options but the screen they had already
+     left, and the rules of the game written in a panel of that same screen.
+     So the pair moved into the view system (packages/webshell/view.js) and
+     follows the player: help, and the switches.
+
+     Not in the top band: that is the game's on a round and the wallet's on a
+     view. The corner is where the title menu's own entries are, so leaving a
+     screen and coming back stay on the same side, and nothing about a round
+     has to move to make room. The other bottom corner is the level pill's.
+
+     THE THIRD CONTROL IS THE WAY OUT, and it is the only button here whose
+     meaning depends on where the player is: the pictogram is the DESTINATION
+     rather than the door, so it is the map on a levelled game and the house on
+     a level-less one. */
+  var paused = false;
 
   function buildControls() {
-    ctlBar = el("div"); ctlBar.id = "web-ctls";
-    ctlBar.hidden = true;                        // a round is the only time it shows
-
-    /* The pictogram is the DESTINATION, not the door: `leave` drops a levelled
-       game on its map and a level-less one on the title screen, so the corner
-       says map or house accordingly. */
-    ctlMenu = el("button", "web-ctl", icon(levelled() ? "map" : "home"));
-    ctlMenu.addEventListener("click", function () { openPause("leave"); });
-
-    ctlOptions = el("button", "web-ctl", icon("gear"));
-    ctlOptions.addEventListener("click", function () { openPause("options"); });
-
-    ctlBar.appendChild(ctlMenu);
-    ctlBar.appendChild(ctlOptions);
+    VW.corner([
+      { name: "help",    icon: "help", label: COPY.help,    on: openHelp },
+      { name: "options", icon: "gear", label: COPY.options, on: function () { openOptions(false); } }
+    ]);
     labelControls();
-    $("frame").appendChild(ctlBar);
+  }
+
+  function roundControl(on) {
+    if (!on) { VW.cornerExtra(null); return; }
+    VW.cornerExtra({
+      icon: levelled() ? "map" : "home",
+      label: levelled() ? COPY.toMap : COPY.toMenu,
+      on: openLeave
+    });
   }
 
   function labelControls() {
-    if (ctlMenu) ctlMenu.setAttribute("aria-label", levelled() ? COPY.toMap : COPY.toMenu);
-    if (ctlOptions) ctlOptions.setAttribute("aria-label", COPY.options);
-  }
-
-  /* One card over the frozen world, in the head + body the intro's panels
-     already define: there is one panel design in this shell, not two. */
-  function buildPause() {
-    pauseBox = el("div"); pauseBox.id = "web-pause";
-    pauseCard = el("div", "web-pcard");
-    var card = pauseCard;
-    var headRow = el("div", "web-phead");
-    var back = el("button", "web-back", icon("back", "back-ico"));
-    back.setAttribute("aria-label", COPY.resume);
-    back.addEventListener("click", closePause);
-    pauseTitle = el("h2", "web-ptitle");
-    headRow.appendChild(back);
-    headRow.appendChild(pauseTitle);
-    pauseBody = el("div", "web-pbody");
-    card.appendChild(headRow);
-    card.appendChild(pauseBody);
-    pauseBox.appendChild(card);
-    $("frame").appendChild(pauseBox);
+    VW.cornerLabels({ help: COPY.help, options: COPY.options });
   }
 
   /* A pair of wide buttons under the body — RESUME alone for the options,
@@ -832,61 +1126,35 @@
     box.appendChild(bar);
   }
 
-  function openPause(kind) {
+  /* THE ONE QUESTION THAT THROWS A RUN AWAY. Same card as the options, and it
+     is the only card in this shell that asks something — which is why it is
+     the only one with a pair of buttons under it. */
+  function openLeave() {
     if (W.state() !== "playing") return;
     /* The state is still "playing" while the outro plays (the loop is left
        turning for the slow motion — packages/shell/shell.js), and a round that
        is already over is not one to pause or to leave. */
     if (W.ending && W.ending()) return;
-    pause();
-    pauseKind = kind;
-    pauseTitle.textContent = kind === "leave" ? COPY.leaveTitle : COPY.optionsTitle;
-    pauseBody.innerHTML = "";
-    if (kind === "leave") {
-      pauseBody.appendChild(el("div", "web-note", COPY.leaveNote));
-      actions(pauseBody, [[COPY.resume, "go", closePause], [COPY.leaveYes, "stop", leave]]);
-    } else {
-      fillOptions(pauseBody, false);
-      actions(pauseBody, [[COPY.resume, "go", closePause]]);
-    }
-    pauseBox.classList.add("on");
-    /* One piece only, and never at the bottom: the card opens over a frozen
-       round with the two controls still in the corner under it. */
-    W.Decor.dress(pauseCard, {
-      count: 1, spots: ["tl", "tr", "l"], size: 140, opacity: 0.45, front: 0
-    });
-  }
-
-  function closePause() {
-    if (!pauseKind) return;
-    pauseKind = null;
-    pauseBox.classList.remove("on");
-    W.Decor.clear(pauseCard);
-    resume();
-  }
-
-  /* The card goes with the round: time up, game over or a leave all land on a
-     state change, and by then the loop is already stopped — so this clears the
-     flags and the card without resuming anything. */
-  function dropPause() {
-    pauseKind = null;
-    paused = false;
-    if (pauseBox) pauseBox.classList.remove("on");
-    if (pauseCard) W.Decor.clear(pauseCard);
+    var h = panelModal("leave", COPY.leaveTitle, function (body) {
+      body.appendChild(el("div", "web-note", COPY.leaveNote));
+      actions(body, [
+        [COPY.resume, "go", function () { h.close(); }],
+        [COPY.leaveYes, "stop", function () { h.close(); leave(); }]
+      ]);
+    }, openLeave);
+    return h;
   }
 
   function pause() {
     if (paused) return;
     paused = true;
     W.Loop.pause();
-    W.Music.duck(0.35, 0.25);      // the bed stays, quietly: coming back is not a restart
   }
 
   function resume() {
     if (!paused) return;
     paused = false;
     W.Loop.resume();
-    W.Music.unduck();
   }
 
   /* Leaving is the one path that throws a round away, so the score is not
@@ -894,6 +1162,7 @@
      called here. The state hook does the rest — the card, the world and the
      armed mode all reset on the way into the menu. */
   function leave() {
+    paused = false;
     W.Loop.stop();
     W.Round.stop();
     W.Music.unduck();
@@ -936,8 +1205,16 @@
     if (COPY.tagline) $("intro-tagline").innerHTML = COPY.tagline;
     labelEnd();
     labelControls();
-    if (open) openPanel(open);                 // rebuild it in the new language
-    if (pauseKind) openPause(pauseKind);       // ...the paused card included
+    if (VW.isOpen("ranking")) paintRanking();
+    /* The open card is rebuilt in the new language rather than left in the old
+       one: it is part of the screen, and the screen is what a language change
+       rewrites. `again` is what each card handed the view system on the way
+       up — the call that opens it again. */
+    if (openCard && openCard.again) {
+      var again = openCard.again;
+      openCard.close();
+      again();
+    }
   }
 
   /* ── 6b. fitting the display type ─────────────────────────────────────── */
@@ -1043,10 +1320,21 @@
     labelEnd();
   }
 
+  /* THE WAY BACK FROM A SCORE, and it is the same chain PLAY is: the village
+     where there is one, the map where there is not, the title screen
+     otherwise. A score screen puts the player back where they live, not where
+     the round happened to start. */
+  /* The word for "where the player lives", out of the strings the shell
+     already writes: the meta layer's `home` where there is a wallet, the level
+     layer's otherwise. */
+  function MT_home() {
+    return metaed() ? MT.text("home") : LV.text("home");
+  }
+
   function toMenu() {
     W.Music.unduck();            // endRound ducked the bed for the reveal
     W.setState("intro");         // the state hook repaints the scene
-    if (levelled()) LV.open();
+    if (villaged() || levelled()) front();
   }
 
   /* The motor owns `.show` on these two — it is what ends the reveal and what
@@ -1066,8 +1354,12 @@
     }
     var last = LV.last();
     var st = last ? last.stars : 0;
-    btnAgain.innerHTML = icon("map", "eo-ico");
-    btnAgain.setAttribute("aria-label", LV.text("map"));
+    /* THE FIRST BUTTON IS WHERE THE PLAYER LIVES. On a village that is the
+       village — the map is one of its buildings — so the pictogram is the
+       house, and it is the same destination the band's home chip and ESCAPE
+       both mean. Without one it is still the map. */
+    btnAgain.innerHTML = icon(villaged() ? "home" : "map", "eo-ico");
+    btnAgain.setAttribute("aria-label", villaged() ? MT_home() : LV.text("map"));
     btnMenu.innerHTML = icon("reset", "eo-ico");
     btnMenu.setAttribute("aria-label", LV.text("replay"));
     dress(btnAgain, "eo-act", st >= 3 ? "hero" : st >= 1 ? "calm" : "dim");
@@ -1092,35 +1384,39 @@
 
   /* ── 8. keys ──────────────────────────────────────────────────────────── */
 
-  /* The bootstrap reads SPACE from the intro as "start the round". With a panel
-     open that would launch a game the player cannot see, so the web shell takes
-     the key first (capture runs before the bootstrap's own window listener) and
-     lets ESCAPE close the panel. */
+  /* ONE ORDER, AND THE STACK ALREADY KNOWS IT. ESCAPE used to mean five things
+     in four files, each guarded against the other four; the view system answers
+     it now — the top card, then the top view — and what is left here is the
+     part that is not a screen at all: the round's own pause, and the SPACE the
+     bootstrap reads as "start the round".
+
+     Capture runs before the bootstrap's own window listener, which is what
+     lets this file take a key the motor would otherwise act on. */
   function bindKeys() {
     window.addEventListener("keydown", function (e) {
       var esc = e.key === "Escape" || e.keyCode === 27;
-      if (esc && pauseKind) { e.preventDefault(); closePause(); return; }
-      /* The album and the shop sit over the map, which sits over the menu:
-         ESCAPE walks that stack from the top down, one layer a press. */
-      if (esc && metaed() && AL.anyOpen()) { e.preventDefault(); AL.closeTop(); return; }
-      if (esc && open) { e.preventDefault(); closePanel(); return; }
-      /* ESCAPE during a round is the pause every game has: it opens the
-         options over the frozen world, and a second press resumes. Not over a
-         ceremony of the meta layer, though: the round is already over by then
-         (the outro is still "playing" — packages/shell/shell.js) and pausing a
-         finished round behind an open gift is a card over a card. */
-      if (esc && metaed() && MT.busy()) { e.preventDefault(); return; }
-      if (esc && W.state() === "playing") { e.preventDefault(); openPause("options"); return; }
-      if (esc && levelled() && LV.isOpen()) { e.preventDefault(); LV.close(); return; }
-      /* SPACE from the intro is "start the round" in the bootstrap, and with a
-         map there is no round to start until a level is picked — so the key
-         opens the map and never reaches the motor's own listener. */
-      if ((e.key === " " || e.keyCode === 32) && levelled() &&
-          W.state() === "intro" && !open && !LV.isOpen()) {
-        e.preventDefault(); e.stopPropagation(); LV.open(); return;
+      if (esc) {
+        /* A card first, then a view, in the order they were opened. */
+        if (VW.escape()) { e.preventDefault(); return; }
+        /* ESCAPE during a round is the pause every game has: it opens the
+           options over the frozen world, and a second press resumes. Not over
+           a ceremony of the meta layer, though: the round is already over by
+           then (the outro is still "playing" — packages/shell/shell.js) and
+           pausing a finished round behind an open gift is a card over a card. */
+        if (metaed() && MT.busy()) { e.preventDefault(); return; }
+        if (W.state() === "playing") { e.preventDefault(); openOptions(false); return; }
+        return;
       }
-      if (!open && !pauseKind && !(levelled() && LV.isOpen()) &&
-          !(metaed() && AL.anyOpen())) return;
+      /* SPACE from the title screen is "start the round" in the bootstrap, and
+         with a map there is no round to start until a level is picked — so the
+         key opens the map and never reaches the motor's own listener. */
+      if ((e.key === " " || e.keyCode === 32) && (levelled() || villaged()) &&
+          W.state() === "intro" && !VW.depth() && !MD.any()) {
+        e.preventDefault(); e.stopPropagation(); front(); return;
+      }
+      /* Anything else, while a screen of this shell is in front of the game:
+         the motor must not act on it. */
+      if (!VW.depth() && !MD.any()) return;
       e.preventDefault();
       e.stopPropagation();
     }, true);
@@ -1145,6 +1441,10 @@
        one pictogram set and one FR/EN mechanism rather than four. meta.js
        first: the album, the daily strip and the map's own header all draw
        through it. */
+    /* The view system first of all: it is what every layer below defines its
+       screens and opens its cards through, so it gets this file's dom helpers
+       before any of them runs. */
+    VW.mount({ el: el, icon: icon, art: artImg, lang: LANG });
     if (metaed()) {
       var mapi = { el: el, icon: icon, art: artImg, lang: LANG };
       MT.mount(mapi);
@@ -1153,20 +1453,31 @@
     }
     if (LV) LV.mount({
       el: el, icon: icon, art: artImg, lang: LANG,
-      /* ...and the Help panel itself, so the map's level 0 opens the ONE help
-         screen this shell has rather than a second copy of it: the same title,
-         the same sentence, the same motor demo stage moved into whichever
-         body asked for it last, and `park` to hand the stage back. */
-      help: {
-        title: function () { return COPY.helpTitle; },
-        fill: function (body) { PANELS.help.fill(body); },
-        park: parkDemo
-      }
+      /* ...and the way to the Help CARD, so the map's level 0 opens the ONE
+         help screen this shell has rather than a second copy of it. The map
+         used to build its own panel for this, because a panel of the title
+         screen could not be raised over a map; a modal is over everything by
+         construction, so that whole second copy is gone. */
+      help: openHelp
     });
+
+    /* THE RANKING IS THIS FILE'S VIEW, the way the map is levels.js's and the
+       album is album.js's: whoever owns the content registers it, and the view
+       system owns the mounting, the stack, the back arrow and the bed. */
+    VW.define("ranking", {
+      build: buildRanking,
+      node: function () { return rankBox; },
+      show: paintRanking,
+      /* It carries the band like every other view: the level chip is what
+         opened it and the other three are the way on, which is the only way
+         off this screen now that nothing wears a back arrow. */
+      hud: true,
+      decor: { count: 2, spots: ["l", "r", "bl"], size: 140, opacity: 0.35, front: 0 }
+    });
+
     buildIntro();
     dressBackground();
     buildControls();
-    buildPause();
     rewireEnd();
     bindKeys();
     bindBed();
@@ -1182,10 +1493,16 @@
        round — closes whatever panel was open and wipes the last frame of the
        world off the canvas, so the background is what shows through. */
     W.onState(function (state) {
-      /* The controls belong to a round, and so does the card over it: both go
-         away on any other screen, whatever ended the round. */
-      ctlBar.hidden = state !== "playing";
-      if (state !== "playing") dropPause();
+      /* THE MOTOR'S STATE IS THE FLOOR EVERY VIEW STANDS ON: a round starting
+         or an end screen arriving closes every screen and every card that was
+         open in front of it, in one call, whatever opened them. */
+      VW.floor(state);
+      paused = false;
+      /* The way out belongs to a round; help and the switches belong
+         everywhere but the title screen, and the view system decides that on
+         its own (cornerSync). */
+      roundControl(state === "playing");
+      VW.cornerSync();
       /* Nothing to fit here any more: the motor sizes the end title and the
          score inside EndScreen.show, which runs after this hook. The two
          buttons are dressed though: on a map they are the MAP and THE LEVEL
@@ -1193,7 +1510,7 @@
          ended (see rewireEnd). */
       if (state === "end") { labelEnd(); return; }
       if (state !== "intro") return;
-      closePanel();
+      armSplash();               // ...once, on the first one (section 4)
       toMenuBed();               // the menus' own quiet section of the track
       armMode(MODES[0]);         // ...and PLAY is the default mode again
       /* Ninety of ninety is reached on an end screen, so the golden veil is
@@ -1202,7 +1519,7 @@
       W.clearWorld();
     });
     armMode(MODES[0]);
-    if (W.state() === "intro") W.clearWorld();
+    if (W.state() === "intro") { armSplash(); W.clearWorld(); }
 
     /* The title is sized off the game's own face, so it can only be measured
        once that face is really there: a data-URI @font-face is decoded
@@ -1213,6 +1530,49 @@
       document.fonts.ready.then(fitAll);
     }
   }
+
+  /* ── 10. the doors, for a front door that is not this one ─────────────── */
+
+  /* WHAT EVERY TITLE ENTRY DOES, NAMED. The list in section 4 is one way to
+     draw this screen and `packages/webshell/village.js` is the other — the
+     same doors as buildings on a painted hub — so the ACTIONS come out of the
+     markup that happens to hold them today.
+
+     `play` is not in here on purpose, and it is the whole reason this shell
+     still works: PLAY is the motor's own `#btn-start`, which is what keeps
+     `startGame`, the SPACE key and Sound.unlock()'s user gesture exactly as
+     they were. A village does not call a play function — it MOVES that node
+     into the house that opens the round, so the click path is unchanged.
+
+     It is published outside mount() because village.js reads it while it
+     mounts, and the two run in load order: menu.js first, always. */
+  window.__MENU__ = {
+    levelled: levelled,
+    doors: {
+      map: function () { if (levelled()) LV.open(); },
+      ranking: function () { VW.go("ranking"); },
+      shop: function () { if (metaed()) AL.openShop(); },
+      album: function () { if (metaed()) AL.open(); },
+      /* THE ROAD, over wherever the door was. A village has no menu for the
+         strip to be a line of, so the building opens it as a card and the
+         player picks their day on it — which is the week, where they are
+         inside it and what tomorrow pays, none of which a door straight to
+         today's reward ever showed (packages/webshell/daily.js, section 2b). */
+      daily: function () { if (metaed() && DL && DL.active()) DL.openRoad(); },
+      options: function () { openOptions(true); },
+      help: openHelp
+    },
+    /* The menu's own node and the head above it, so a village can put both
+       away rather than build a second intro of its own: everything the shell
+       does to this screen — the language, the bed, the end screen, the
+       keys — keeps working on nodes that are still there. */
+    node: function () { return menu; },
+    text: function (k) { return COPY[k]; },
+    /* One switch is read by a layer below rather than applied to the motor —
+       the village's labels — and it asks here rather than opening the Store key
+       a second time: there is one settings object and one place it is read. */
+    setting: function (k) { return Settings.get(k); }
+  };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();

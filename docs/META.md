@@ -9,10 +9,14 @@ holes in it, a machine that fills them, and a reason to open the game tomorrow.
 The playable keeps none of it. A creative is one round shown once: it has no
 wallet, no album and no tomorrow, which is why none of this is in the motor.
 
-**It ships, and it ships on one game.** `games/radiam` declares the block; the
-other twelve are unchanged and their builds are byte-identical apart from the
-shared webshell. Rolling it out is adding a `web.meta` block and a sticker
-sheet — see [Adding a game to it](#adding-a-game-to-it).
+**All thirteen games declare it.** A game gets the layer by carrying a
+`web.meta` block and a sheet of twenty stickers, and nothing else — see
+[Adding a game to it](#adding-a-game-to-it). The numbers a game writes there
+are scaled to what it scores: `coinsPer` is about a fourteenth of the top
+objective of its climb, `xpPer` a tenth of that and `ticketPrice` a quarter, so
+a maxed level pays ~14 coins and ~140 xp in every one of the thirteen and the
+shop's own prices — which are coins, and shared — mean the same thing
+everywhere.
 
 ```
 title screen ──► LEVEL MAP ──► the round ──► end screen
@@ -26,9 +30,10 @@ ______________________________________________________________________
 
 ## 1. The five things it holds
 
-One save, `meta:<slug>`, beside the map's own `prog:<slug>` and deliberately
-apart from it: erasing the progression from OPTIONS throws a climb away and
-must not also throw away a wallet. Wiping the two is two decisions.
+One save, `meta:<slug>`, beside the map's own `prog:<slug>` and apart from it
+because the two are read and written on different screens and at different
+rates — not because one outlives the other: OPTIONS erases all of a game's data
+in one row, this save and the climb together.
 
 | what      | where it comes from                                                                    | what it is for                            |
 | --------- | -------------------------------------------------------------------------------------- | ----------------------------------------- |
@@ -255,8 +260,13 @@ shows 0% and dims rather than vanishing, which would read as a bug.
 button refuses it. A player who can never *see* what five tickets would do has
 no reason to save five.
 
-**The wallet is the way to the shop**, here as on the map: both chips are doors
-(`Meta.wallet(host, { doors: "shop" })`). There used to be a GET TICKETS button
+**The wallet is the way to the shop**, here as on the map — and it is the same
+NODE on both, the band the view system puts over every screen that carries one
+(`packages/webshell/view.js`, section 5). Every chip of it is a door and every
+one leads to the same screen from every screen: the house home, the level to the
+ranking, the coins to the shop, the tickets to the collection, the stars to the
+map. A chip standing on its own screen goes inert rather than missing. There
+used to be a GET TICKETS button
 under the machine, and it only existed when the wallet was empty — so the one
 screen that had to teach the player where tickets come from was the one they
 reached *before* running out. The number they are short of is the thing to tap.
@@ -575,6 +585,20 @@ painted scene, and a strip parked there is a second thing competing with the one
 thing that sells the game. Down here it reads as what it is — a place to go,
 like the two lines it sits between — and it is within a thumb's reach of them.
 
+**Where the game has a VILLAGE the road is a BUILDING instead**: the title screen
+is a splash with no menu on it ([docs/VIEWS.md](VIEWS.md)), and the hub is where
+every door of this shell stands. That door opens **the strip itself, as a card
+over the hub** (`DL.openRoad()`), and the tap on a day inside it is the tap the
+road has always answered — pay it, say it was already collected, or say it was
+missed — so nothing of what follows changes.
+
+It opens the ROAD and not today's reward for the reason the road exists at all:
+a door straight to the gift showed the player none of the week, none of where
+they are inside it and none of what tomorrow pays, on the one game shape that
+has a building dedicated to them. `DL.openToday()` is still what that door did
+before, and it is the fallback for a build with no card system to open one on.
+Every game that ships a village today is in that case.
+
 **The road is the calendar, and it only ever counts up.** Day 7 is followed by
 day 8, not by day 1: the first day the strip was seen is day one and every day
 since has its own node, opened or not. It used to be a run of seven that wrapped,
@@ -796,9 +820,10 @@ coins — is the cascade, and the chip counts THROUGH it because the eighteen
 pieces are the reading. One thing changing hands is one piece, and the number
 it is worth belongs to the moment it arrives; one thing is what
 the card just showed. The target is taken off whichever wallet is actually on
-screen — several are built (the map's header, the album's, the shop's) and only
-one is visible, so a measured rect is the test. A screen with no wallet at all
-skips the flight rather than inventing a destination.
+screen — the band holds two, the standing one and the end screen's transient
+one, and only one of them is up at a time — so a measured rect is the test. A
+screen with no wallet at all skips the flight rather than inventing a
+destination.
 
 ### A reward card is dismissed by tapping it, and carries no button
 
@@ -843,12 +868,20 @@ card the tap opens, as an **eyebrow** over the title — what this is, which day
 of the run it is, and the DEV pill when one applies. There is room for them
 there, and a player is already reading.
 
-### It opens the map
+### It plays where a wallet is on screen
 
-Because the gift pays into the **wallet**, and the wallet is the map's own
-header. A reward granted on the title screen lands on a number the player cannot
-see, so the coins fly out of the box into nothing. One tap does what PLAY does,
-and the boxes open over the screen that shows what they paid.
+Because the gift pays into the **wallet**, and the title screen is the one
+surface that carries no band: it is the game's front door, and a front door
+sells the game rather than counting the money. A reward granted there lands on a
+number the player cannot see, so the coins fly out of the box into nothing.
+
+**On a village that screen is the hub itself.** The band is over it, the road
+was a card standing on it, and the player asked for the gift from there — so
+nothing is navigated: the road card steps aside and the boxes take its place.
+
+**Without one**, the strip is a line of the title menu and one tap does what
+PLAY does: the boxes open over the level map, which is the first screen that
+shows what they paid.
 
 ### The day, and the dev machine
 
@@ -1023,43 +1056,93 @@ ______________________________________________________________________
 
 ## 7. The files
 
-Five files, and the **order they load in is the contract**, because each one
+Six files, and the **order they load in is the contract**, because each one
 publishes the handle the next reads:
 
-| file                          | publishes           | what it is                                    |
-| ----------------------------- | ------------------- | --------------------------------------------- |
-| `packages/webshell/levels.js` | `window.__LEVELS__` | the map, and `bands()` — what a band is worth |
-| `packages/webshell/meta.js`   | `window.__META__`   | the state, the wallet strip, the gift, the ad |
-| `packages/webshell/album.js`  | `window.__ALBUM__`  | the collection, the machine, the shop         |
-| `packages/webshell/daily.js`  | `window.__DAILY__`  | the strip on the title screen                 |
-| `packages/webshell/menu.js`   | —                   | mounts all four                               |
+| file                          | publishes                            | what it is                                                  |
+| ----------------------------- | ------------------------------------ | ----------------------------------------------------------- |
+| `packages/webshell/view.js`   | `window.__VIEW__` `window.__MODAL__` | what a view is, what a card is, and the stack both live in  |
+| `packages/webshell/levels.js` | `window.__LEVELS__`                  | the map, and `bands()` — what a band is worth               |
+| `packages/webshell/meta.js`   | `window.__META__`                    | the state, the wallet band, the gift, the ad                |
+| `packages/webshell/album.js`  | `window.__ALBUM__`                   | the collection, the machine, the shop                       |
+| `packages/webshell/daily.js`  | `window.__DAILY__`                   | the daily road: a house of the village, a strip without one |
+| `packages/webshell/menu.js`   | —                                    | mounts all five                                             |
 
-`meta.css` is loaded **after** `levels.css` for the same reason: it re-cuts the
-map's header, and doing that after rather than louder is what keeps the whole
-layer free of `!important`.
+`view.css` is loaded **first** because it holds the base every card and every
+band of this front end is drawn on, and `meta.css` **after** `levels.css`
+because it re-cuts the map: doing that after rather than louder is what keeps
+the whole layer free of `!important`.
 
 Three rules hold the shape:
 
 - **The motor knows nothing about any of it.** Everything is read through
   `window.__WEB__`, the same plain list of references the menu and the map use.
   A target adds its own layer; it never patches the motor.
+
 - **The bands belong to the map.** `levels.js` exposes `bands()` and meta.js
   reads it — the alternative was a second file re-deriving `bandOf` and the
   save, which is two places to be wrong about the same thing.
-- **The wallet strip is one node, built wherever a number is shown.** The map's
-  header, the album, the shop and the end screen all show the same two numbers,
-  and they must never disagree by a frame. On the map the two numbers ARE the
-  two doors (`opts.doors`) — coins open the shop, tickets open the album, and
-  the ticket chip wears the unseen dot — so that header costs two nodes instead
-  of a pair of numbers beside a pair of buttons. It reads as two rows: the back
-  arrow alone on the left and coins · tickets · stars flush right, then the xp
-  bar across the whole width under them (`opts.lvHost`), **in a pill of its
-  own** — flush at the same x as the row above is not the same as looking
-  flush, and a bar wearing the chips' own chrome is what makes the two rows one
-  family. There is no house on it: the back arrow is the only way out of a
-  screen the player lives on. **The shop is not a title entry either**: it is
-  opened from the coins, and from the album where a missing sticker is the
-  reason to want a ticket.
+
+- **The wallet is ONE BAND, and it is the navigation.** The component was
+  always one (`Meta.wallet`); the hosts were four — the map's header, the
+  album's, the shop's and a layer pinned to the end screen's corner — so the
+  same numbers sat in four places and the screens in between showed none of
+  them. The band is `#web-hud` now: one node, filled once by `View.hudMount`,
+  and **one line, whose order is what the player learns** —
+  `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, and each chip is the door to the screen
+  it is the number of: home, the ranking, the shop, the collection, the
+  collection, the map. The order is the order it is read in — the way out
+  first, then what is earned by playing, then what is spent, then what those
+  two buy, then what the board itself is worth. The row never changes shape, and a chip standing
+  on its own screen goes inert rather than missing, so a number never has to be
+  found again. That is what made back arrows unnecessary and then wrong: these
+  six are the whole of it. **The house is the only chip that is not a number** —
+  the rest of the row is what the player owns, this is the way out of wherever
+  they own it — and a game with no band keeps a home button in its headers
+  instead, so there is always exactly one way home.
+
+  **The collection's count wears the four-leaf clover**, cut from
+  `assets/image/master/game-object-sticker.png` and adopted in `SHELL_CUTS` —
+  the one piece of that sheet the shell draws, and the only one on it that says
+  "a thing worth collecting" without being a star, a coin, a trophy or a
+  ticket, all four of which are already a chip of the same band.
+
+  **The count is on the band, and the album has no header left.** That
+  screen carried a name and an `x / 20` over a row already saying what the
+  player owns: the name is what they tapped to get here, and the count is one
+  of those numbers. The height the header was taking goes to the machine, the
+  odds and the twenty tiles.
+
+  **The level chip is an icon until it has something to say.** A bar standing
+  open on every screen is one nobody reads: it moves once a round, and the rest
+  of the time it is the widest thing on the band saying the number it said
+  yesterday. So it is the bolt alone, and `openXp` opens it for a few seconds
+  whenever the xp moves. Its figure (`120 / 350`) is on the ranking, which is
+  the screen that reads it properly.
+  **The shop is not a title entry**: it is opened from the coins, and from the
+  album where a missing sticker is the reason to want a ticket.
+
+  **The band holds a second row**, the end screen's, and the class on the band
+  says which is up (`hud-full` against `hud-auto`). It carries three of the
+  four — a level, coins and tickets, which are what a round can pay into — and
+  each of them holds its place in the layout (every flight aims at their rect)
+  while carrying no ink until a cascade lifts it. What the player sees on the
+  score screen is a chip that arrives with the reward, writes its figure and
+  goes. **The level chip is one of them**: xp was the one reward whose target
+  was a bar rather than a `.mt-chip`, so it had nowhere to land and the bar
+  moved behind a blurred card. **The title screen carries no band at all** —
+  it is the front door, and a front door sells the game rather than counting
+  the money.
+
+- **Every card this layer opens is a modal of the view system.** The note, the
+  three gift boxes, the prize, the ad and the two sticker reveals were five
+  builders that each made their own box, added their own `.on` on the next
+  frame and removed themselves on their own timer. They declare what they are
+  now — `dismiss` for a tap anywhere, `esc` for the key, `bed` for the music —
+  and `View` owns the scrim, the stack, the fade and the order a key is
+  answered in. The class names are unchanged: a card carries `wm-modal` AND
+  `mt-modal`, so every rule already written against these cards still finds
+  them.
 
 **One motor rule worth knowing about**, because it cost a round of debugging:
 `#screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer)`
@@ -1067,7 +1150,7 @@ forces `position:relative` on everything the end screen holds, at three ids and
 two classes of specificity. An id of your own cannot outweigh it, and that
 exclusion list is the *motor's* business. So the end screen's wallet lives in
 `#frame` and not in `#screen-end` — which is where a layer over the frame
-belongs anyway.
+belongs anyway, and where the band is.
 
 ______________________________________________________________________
 
@@ -1076,21 +1159,43 @@ ______________________________________________________________________
 Two things: a sheet of twenty stickers, and one manifest block.
 
 ```bash
-# 1. the sheet — one 5x4 grid of stickers out of the image model
+# 1. the sheet — one grid of stickers out of the image model
 #    assets/image/master/<slug>-object-sticker.png
-node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial \
-  --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 245
+open dist/object/<slug>-sticker.png          # ALWAYS look, then pick the twenty
+node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 245 \
+  --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 --seq
 node tools/lab/encode-art.mjs <slug>
 ```
 
-`--grid 5x4` is what makes the CELL the identity, so sticker 7 is the design in
-cell 7 whatever its halo weighs; `--keep-partial` keeps the ones the sheet's
-own edge clips, which on a packed 5x4 is usually the top row. The cut splits a
-blob that spans two cells — the model routinely lets one sticker's glow touch
-the next one's, and the alpha mask then hands the pair back as one component.
-Look at `dist/object/<slug>-sticker.png` before adopting. `--adopt` writes the
-twenty roles into `art.objects` of `games/<slug>/manifest.json`; it moves no
-file, the cuts stay in `assets/image/object/`.
+**A sheet of twenty stickers is rarely twenty objects.** Six of the thirteen
+came back with twenty-one, twenty-two, twenty-four and twenty-five, because the
+model fills the last row with whatever is left over and draws a logotype twice
+as wide as a face. So the cut is read, not assumed, and three flags carry it:
+
+- **`--grid`** makes the CELL the identity rather than the blob's area, and it
+  takes one column count PER ROW when the rows are not all equal — `--grid 5,5,5,6`. That is not cosmetic: a uniform grid over a six-object row puts two
+  stickers in one cell, drops one of them, and the fringe pass then hands the
+  loser to the object above as a satellite, which is how blight's witch came
+  back with a slime ball glued under her hat. A sheet holding one double-width
+  piece (echomaze's logotype, slipdeck's suits) is cut with NO grid instead —
+  the grid would saw the wide one in half, and area order is fine when only one
+  sheet has to be indexed.
+- **`--solid 245`** is where two stickers come apart. These sheets are drawn
+  with the pieces overlapping outline on outline, and the default 110 welds
+  whole rows together. It also takes **one bar per horizontal band** when the
+  sheet's halves disagree — `--solid 253,253,245,245` on arcider, whose six
+  faces to a row need nearly 255 and whose neon objects shred above 245 — and
+  a bar that high has to be paid for with a wider `--pad` (28 there), because
+  what separates two faces is the white outline they touch with and the fringe
+  pass is what hands each of them their own back.
+- **`--seq`** numbers the adopted roles 01…20 in the order given instead of
+  after the cut each one points at. The album reads `sticker01` to `sticker20`
+  and a hole in that run is a tile with no picture, so twenty-four cuts minus
+  four still has to land on a contiguous twenty.
+
+`--adopt` writes the roles into `art.objects` of `games/<slug>/manifest.json`;
+it moves no file, the cuts stay in `assets/image/object/`.
 
 The twenty adopted cuts become `CONFIG.art.sticker01…20`, and they are
 **web-only art** (`tools/build/build.mjs`, `WEB_ONLY_STICKER`): ~730 KB of
@@ -1115,15 +1220,25 @@ WebP, ~975 KB of base64, and a playable has no collection to put them in.
 `awards` exists because a sheet's reading order is the painter's: the game's
 logotype and its trophy piece are wherever they were drawn, and ninety of
 ninety should pay in one of *those* rather than in whatever landed in cell
-twelve. Leave it out and the first twelve are used in order. `coinsPer`,
-`xpPer`, `ticketPrice`, `superPrice`, `superOdds`, `sell`, `drop`, `maxBet`,
-`luck` and `legendaryPer` all have
+twelve. Leave it out and the first twelve are used in order. **The three rates are the one thing that is not a default**, because a point
+is worth a different amount in each of the thirteen: vipera's climb tops out at
+650 and gearball's at 7 300, and the same `coinsPer` over both would pay one
+player a coin a round and the other a hundred. They are read off the game's own
+`web.levels.objective.to` — `coinsPer` ≈ a fourteenth of it, rounded to
+something legible, `xpPer` a tenth of that and `ticketPrice` a quarter of it —
+so a maxed level pays ~14 coins and ~140 xp everywhere and the shop's shared
+coin prices mean one thing. `superPrice`, `superOdds`, `sell`, `drop`,
+`maxBet`, `luck` and `legendaryPer` all have
 defaults — a second game is the two required lines and nothing else, as long as
 **one legendary is left out of `awards`** (above).
 
-Then translate the names: they go through `Lang.t` like any other string a game
-writes, so one entry each under `web.copy.fr.strings`. `node tools/lab/scan-text.mjs <slug>`
-lists what is missing and `make text` is the desk to fill it in.
+**The names are not translated.** A sticker's name is a proper noun — the title
+the artwork was drawn under — and it reads the same on every board, which is
+what lets a player say *I got Starstruck* to someone playing in the other
+language (`nameOf` in `packages/webshell/meta.js`). Everything around it is
+already translated by the shell, so a game that ships an album adds no line to
+`web.copy.fr.strings`; `node tools/lab/scan-text.mjs <slug>` still has to read
+*fully translated* afterwards.
 
 ______________________________________________________________________
 

@@ -1,7 +1,7 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.1.4",
+  "version": "1.2.6",
   "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,
@@ -18,10 +18,39 @@
       "card-jack": "slipdeck-card-jack",
       "card-king": "slipdeck-card-king",
       "card-queen": "slipdeck-card-queen",
+      "card03": "slipdeck-card-03",
+      "cloud-flat-06": "game-cloud-flat-06",
+      "cloud-flat-07": "game-cloud-flat-07",
       "decor-01": "slipdeck-card-01",
       "decor-05": "slipdeck-card-05",
       "decor-10": "slipdeck-card-10",
-      "decor-13": "slipdeck-card-13"
+      "decor-13": "slipdeck-card-13",
+      "home01": "slipdeck-home-01",
+      "home02": "slipdeck-home-02",
+      "home03": "slipdeck-home-03",
+      "home04": "slipdeck-home-04",
+      "home05": "slipdeck-home-05",
+      "home06": "slipdeck-home-06",
+      "sticker01": "slipdeck-sticker-01",
+      "sticker02": "slipdeck-sticker-02",
+      "sticker03": "slipdeck-sticker-03",
+      "sticker04": "slipdeck-sticker-04",
+      "sticker05": "slipdeck-sticker-05",
+      "sticker06": "slipdeck-sticker-06",
+      "sticker07": "slipdeck-sticker-07",
+      "sticker08": "slipdeck-sticker-08",
+      "sticker09": "slipdeck-sticker-09",
+      "sticker10": "slipdeck-sticker-10",
+      "sticker11": "slipdeck-sticker-11",
+      "sticker12": "slipdeck-sticker-12",
+      "sticker13": "slipdeck-sticker-14",
+      "sticker14": "slipdeck-sticker-15",
+      "sticker15": "slipdeck-sticker-16",
+      "sticker16": "slipdeck-sticker-17",
+      "sticker17": "slipdeck-sticker-18",
+      "sticker18": "slipdeck-sticker-19",
+      "sticker19": "slipdeck-sticker-20",
+      "sticker20": "slipdeck-sticker-21"
     }
   },
   "copy": {
@@ -206,6 +235,241 @@
           4,
           2
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 250,
+      "xpPer": 25,
+      "ticketPrice": 60,
+      "awards": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        4,
+        7,
+        12,
+        13,
+        15,
+        14
+      ],
+      "stickers": [
+        {
+          "name": "Nice Hand",
+          "rarity": "common"
+        },
+        {
+          "name": "Belly Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "Thumbs Up",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "rare"
+        },
+        {
+          "name": "Sly Wink",
+          "rarity": "common"
+        },
+        {
+          "name": "Bad Beat",
+          "rarity": "common"
+        },
+        {
+          "name": "Steamed",
+          "rarity": "rare"
+        },
+        {
+          "name": "Poker Face",
+          "rarity": "epic"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Four Aces",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Full Fan",
+          "rarity": "rare"
+        },
+        {
+          "name": "The Deck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Star Card",
+          "rarity": "legendary"
+        },
+        {
+          "name": "The Crown",
+          "rarity": "epic"
+        },
+        {
+          "name": "Fast Ace",
+          "rarity": "rare"
+        },
+        {
+          "name": "Clubs",
+          "rarity": "common"
+        },
+        {
+          "name": "Hearts",
+          "rarity": "common"
+        },
+        {
+          "name": "Spades",
+          "rarity": "common"
+        },
+        {
+          "name": "Diamonds",
+          "rarity": "common"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 173,
+          "y": 420,
+          "w": 200,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 531,
+          "y": 443,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 359,
+          "y": 590,
+          "w": 200,
+          "halo": {
+            "w": 1,
+            "h": 0.8,
+            "dy": 0.04,
+            "color": "#32bafd"
+          },
+          "light": "flicker",
+          "lightEvery": 1.1,
+          "always": true
+        },
+        {
+          "art": "card03",
+          "role": "daily",
+          "x": 606,
+          "y": 730,
+          "w": 76,
+          "badge": {
+            "dx": -0.5,
+            "dy": -0.85
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor01",
+          "role": "decor",
+          "x": 534,
+          "y": 751,
+          "w": 70,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 148,
+          "y": 755,
+          "w": 190,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 207,
+          "y": 973,
+          "w": 177
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 539,
+          "y": 980,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 221,
+          "y": 1072,
+          "w": 200,
+          "halo": {
+            "w": 0.65,
+            "h": 0.55,
+            "dy": 0.04,
+            "color": "#51b5f5"
+          },
+          "light": "flicker",
+          "lightEvery": 0.2,
+          "lightDelay": 3.4,
+          "always": true
+        },
+        {
+          "art": "cloudFlat07",
+          "role": "decor",
+          "x": 270,
+          "y": 1110,
+          "w": 240,
+          "flip": true,
+          "notify": "cloud",
+          "every": 262,
+          "drift": "right",
+          "breathEvery": 8,
+          "always": true
+        },
+        {
+          "art": "cloudFlat06",
+          "role": "decor",
+          "x": 820,
+          "y": 1150,
+          "w": 200,
+          "notify": "cloud",
+          "delay": 7,
+          "breathEvery": 24,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.4,
+          "seconds": 155
+        }
       }
     }
   }

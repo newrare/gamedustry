@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.3.2",
+  "version": "1.4.4",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -15,10 +15,37 @@
   },
   "art": {
     "objects": {
+      "cloud-haze-05": "game-cloud-haze-05",
       "decor-01": "spinshock-spin-01",
       "decor-04": "spinshock-spin-04",
       "decor-08": "spinshock-spin-08",
-      "decor-10": "spinshock-spin-10"
+      "decor-10": "spinshock-spin-10",
+      "home01": "spinshock-home-01",
+      "home02": "spinshock-home-02",
+      "home03": "spinshock-home-03",
+      "home04": "spinshock-home-04",
+      "home05": "spinshock-home-05",
+      "home06": "spinshock-home-06",
+      "sticker01": "spinshock-sticker-01",
+      "sticker02": "spinshock-sticker-02",
+      "sticker03": "spinshock-sticker-03",
+      "sticker04": "spinshock-sticker-04",
+      "sticker05": "spinshock-sticker-05",
+      "sticker06": "spinshock-sticker-06",
+      "sticker07": "spinshock-sticker-07",
+      "sticker08": "spinshock-sticker-08",
+      "sticker09": "spinshock-sticker-09",
+      "sticker10": "spinshock-sticker-10",
+      "sticker11": "spinshock-sticker-11",
+      "sticker12": "spinshock-sticker-12",
+      "sticker13": "spinshock-sticker-13",
+      "sticker14": "spinshock-sticker-14",
+      "sticker15": "spinshock-sticker-15",
+      "sticker16": "spinshock-sticker-16",
+      "sticker17": "spinshock-sticker-17",
+      "sticker18": "spinshock-sticker-18",
+      "sticker19": "spinshock-sticker-19",
+      "sticker20": "spinshock-sticker-20"
     }
   },
   "copy": {
@@ -218,6 +245,282 @@
           "Masse",
           "Surcharge"
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 300,
+      "xpPer": 30,
+      "ticketPrice": 75,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        13,
+        15,
+        16,
+        17,
+        18,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "common"
+        },
+        {
+          "name": "Fired Up",
+          "rarity": "common"
+        },
+        {
+          "name": "Smug",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Victory V",
+          "rarity": "common"
+        },
+        {
+          "name": "Void Top",
+          "rarity": "rare"
+        },
+        {
+          "name": "Gold Top",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Spike Top",
+          "rarity": "rare"
+        },
+        {
+          "name": "Frost Top",
+          "rarity": "rare"
+        },
+        {
+          "name": "Blaze Top",
+          "rarity": "rare"
+        },
+        {
+          "name": "The Clash",
+          "rarity": "epic"
+        },
+        {
+          "name": "Thunder",
+          "rarity": "rare"
+        },
+        {
+          "name": "Spinshock!",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze05",
+          "role": "decor",
+          "x": 410,
+          "y": 220,
+          "w": 320,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "cloud",
+          "every": 199,
+          "breathEvery": 31,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 360,
+          "y": 340,
+          "w": 250
+        },
+        {
+          "art": "decor04",
+          "role": "daily",
+          "x": 160,
+          "y": 370,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.6,
+            "dy": -1.1
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor01",
+          "role": "decor",
+          "x": 90,
+          "y": 390,
+          "w": 60,
+          "notify": "float",
+          "every": 8.8,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 600,
+          "y": 410,
+          "w": 190,
+          "flip": true,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.76
+          },
+          "light": "random",
+          "lightEvery": 15,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 610,
+          "y": 520,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 8.4,
+          "lightDelay": 3.4
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 130,
+          "y": 540,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 10.7
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 590,
+          "w": 220,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 600,
+          "y": 750,
+          "w": 210
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 120,
+          "y": 750,
+          "w": 180,
+          "rot": -5,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.11
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 360,
+          "y": 890,
+          "w": 200,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.72
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 630,
+          "y": 910,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 5.7,
+          "lightDelay": 1.6
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#9f1c4f",
+          "cold": "#4f3765",
+          "amount": 0.4,
+          "seconds": 10
+        }
       }
     }
   }

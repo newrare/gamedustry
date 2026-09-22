@@ -1,0 +1,134 @@
+  /* =========================================================================
+     SKIN — PAWKO. Everything above is the shared motor stylesheet; the theme
+     lives in these tokens and the few overrides below. A cat's casino: red
+     velvet, brass and marquee gold, the pink of a paw pad.
+     ========================================================================= */
+  :root {
+    --bg:#2a0a14; --accent:#ffb830;
+    --cta-a:#ffd166; --cta-b:#ff8c1a; --cta-text:#2a0a14;
+    --danger:#ff4d6d; --gold:#ffcf5a;
+  }
+  html, body { background:radial-gradient(900px 900px at 50% 20%, #5a1020 0%, #2a0a14 60%, #12040a 100%); }
+  .btn { box-shadow:0 10px 30px rgba(255,140,26,.45), inset 0 2px 6px rgba(255,255,255,.4); }
+  #intro-title {
+    background:linear-gradient(180deg,#fff3c4 0%,#ffb830 55%,#ff8c1a 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 4px 30px rgba(255,184,48,.4);
+  }
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.55), 0 0 44px rgba(255,184,48,.4); }
+  #hud-score { text-shadow:0 0 14px rgba(255,184,48,.6); }
+  .eo-score { text-shadow:0 0 22px rgba(255,184,48,.8); }
+  #cta-bar { border-top:1px solid rgba(255,184,48,.25); }
+
+  /* ---- intro: one sentence, and a stage that drops one ball --------------
+     "Tap to drop a wave of balls" — the stage plays that beat alone: the
+     finger taps the top of a little pinboard, a ball appears under the tip
+     and rattles down three staggered rows of brass pegs, left, right, left,
+     and out at the foot. The motor's target ring becomes the ball; the
+     ripples mean nothing here and are dropped. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#ffe6c4; }
+  #intro-tagline .w-tap  { color:var(--accent); text-shadow:0 0 18px rgba(255,184,48,.75); }
+  #intro-tagline .w-wave { color:#ff4d6d; text-shadow:0 0 18px rgba(255,77,109,.75); }
+  #intro-tagline .w-card { color:#c46bff; text-shadow:0 0 18px rgba(196,107,255,.75); }
+  #intro-demo { margin-top:30px; }
+
+  .demo-stage {
+    width:420px; height:280px; overflow:hidden;
+    background:
+      radial-gradient(320px 220px at 50% 30%, rgba(120,20,50,.55), rgba(42,10,20,0) 72%),
+      linear-gradient(180deg, #3a0c1a 0%, #1a050c 100%);
+    border-color:rgba(255,184,48,.35);
+  }
+  /* three staggered rows of pegs, one radial gradient apiece — the same
+     brass sphere the round draws, with its highlight up and left */
+  .demo-stage::before {
+    content:""; position:absolute; inset:0; z-index:0;
+    --peg:radial-gradient(circle at 40% 35%, #fff4c8 0 2px, #ffcf5a 4px, #a8681a 9px, rgba(0,0,0,0) 10px);
+    background-image:
+      var(--peg), var(--peg), var(--peg), var(--peg), var(--peg), var(--peg),
+      var(--peg), var(--peg), var(--peg), var(--peg), var(--peg),
+      var(--peg), var(--peg), var(--peg), var(--peg), var(--peg), var(--peg);
+    background-size:20px 20px;
+    background-repeat:no-repeat;
+    background-position:
+      60px 80px, 120px 80px, 180px 80px, 240px 80px, 300px 80px, 360px 80px,
+      90px 140px, 150px 140px, 210px 140px, 270px 140px, 330px 140px,
+      60px 200px, 120px 200px, 180px 200px, 240px 200px, 300px 200px, 360px 200px;
+  }
+  /* the gate band at the foot: a row of cells, the middle one lit */
+  .demo-stage::after {
+    content:""; position:absolute; left:0; right:0; bottom:0; height:28px; z-index:0;
+    background:
+      linear-gradient(90deg, rgba(255,184,48,.14) 0 20%, rgba(255,184,48,0) 20% 40%,
+                              rgba(255,77,109,.35) 40% 60%, rgba(255,184,48,0) 60% 80%, rgba(255,184,48,.14) 80%);
+    border-top:2px solid rgba(255,184,48,.45);
+  }
+  /* the ball: the motor's target ring, restyled into a red paw ball */
+  .demo-tap .demo-target {
+    z-index:1; left:190px; top:30px; width:34px; height:34px; margin-left:-17px;
+    border:0; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffffff 0 3px, #ff6b6b 9px, #7a0f22 17px);
+    box-shadow:0 0 14px rgba(255,77,109,.6);
+    animation:demoBallFall 2.4s linear infinite;
+  }
+  .demo-tap .demo-ripple { display:none; }
+  /* every stop sits at its share of the path's length, so `linear` reads as
+     one fall with three knocks in it */
+  @keyframes demoBallFall {
+    0%,38%   { transform:translate(0,0) scale(.6); opacity:0; }
+    41%      { transform:translate(0,0) scale(1); opacity:1; }
+    50%      { transform:translate(0,42px); }
+    52%      { transform:translate(4px,46px) scale(1.12,.88); }
+    61%      { transform:translate(20px,103px); }
+    63%      { transform:translate(17px,108px) scale(1.12,.88); }
+    73%      { transform:translate(-8px,163px); }
+    75%      { transform:translate(-5px,168px) scale(1.12,.88); }
+    85%      { transform:translate(16px,225px); }
+    93%      { transform:translate(22px,272px); opacity:1; }
+    96%,100% { transform:translate(22px,272px); opacity:0; }
+  }
+  /* the finger: comes up to the chute, taps, and holds there while the ball
+     falls — a tap is the whole gesture, nothing to drag */
+  .demo-tap .demo-hand {
+    left:190px; margin-left:-37px; bottom:auto; top:36px; z-index:2;
+    animation:demoChuteTap 2.4s ease-in-out infinite;
+  }
+  @keyframes demoChuteTap {
+    0%       { transform:translate(-90px,40px); opacity:0; }
+    18%      { transform:translate(0,14px); opacity:1; }
+    34%      { transform:translate(0,14px); }
+    40%      { transform:translate(0,-4px); }
+    46%      { transform:translate(0,14px); }
+    80%      { transform:translate(0,14px); opacity:1; }
+    92%,100% { transform:translate(-90px,40px); opacity:0; }
+  }
+
+  /* ---- comic callouts -----------------------------------------------------
+     The shared Pop styles, retinted to the board: brass for a plain hit, the
+     heats above it, the paw pink of the jackpot and a velvet ribbon for the
+     wave. */
+  .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#ffcf5a 100%); --glow:rgba(255,207,90,.75); --ink:#2a1400; }
+  .pop-score.pop-t1 { --fill:linear-gradient(180deg,#fff1bd 0%,#ff8c1a 100%); --glow:rgba(255,140,26,.8);  --ink:#2a1400; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#ffd3dc 0%,#ff4d6d 100%); --glow:rgba(255,77,109,.8);  --ink:#2a0009; }
+  .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#e0c0ff 55%,#8a2be2 100%); --glow:rgba(138,43,226,.85); --ink:#16002e; }
+
+  /* WAVE 2/5 — the velvet ribbon */
+  .pop-ribbon { --fill:linear-gradient(180deg,#fff3c4 0%,#ffb830 100%); --band:#7a0f22; --ink:#2a0a14; }
+  /* BOOM! — the bomb's orange */
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffd166 40%,#ff7a1a 100%);
+    --chip:#2a0a14; --chip-line:#ff7a1a;
+  }
+  /* JACKPOT! — the paw pink */
+  .pop-bonus {
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffd3dc 40%,#ff4d6d 100%);
+    --glow:rgba(255,77,109,.8); --ink:#2a0009;
+  }
+  /* the card played — a poster in ivory and brass */
+  .pop-manifest {
+    --fill:linear-gradient(180deg,#fff8dd 0%,#ffcf5a 60%,#ff8c1a 100%);
+    --glow:rgba(255,184,48,.75); --ink:#2a1400;
+  }
+  /* OBJECTIVE REACHED — gold, as the gauge turns */
+  .pop-perfect { --fill:linear-gradient(180deg,#ffffff 0%,#ffe08a 45%,#ffb830 100%); --glow:rgba(255,184,48,.85); --ink:#2a1400; }

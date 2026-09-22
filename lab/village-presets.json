@@ -1,0 +1,2048 @@
+{
+  "version": 1,
+  "drafts": {
+    "arcider": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 525,
+          "y": 94,
+          "w": 200,
+          "halo": {
+            "w": 0.9,
+            "h": 0.25,
+            "dy": 0.04,
+            "color": "#fff5cb"
+          },
+          "light": "random",
+          "lightEvery": 20,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 206,
+          "y": 413,
+          "w": 173,
+          "rot": -2,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.8
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 523,
+          "y": 421,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 35,
+          "y": 443,
+          "w": 200,
+          "halo": {
+            "w": 0.4,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#3fd7fa"
+          },
+          "light": "random",
+          "lightEvery": 2.9,
+          "always": true
+        },
+        {
+          "art": "sticker24",
+          "role": "decor",
+          "x": 657,
+          "y": 572,
+          "w": 49,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 589,
+          "y": 616,
+          "w": 71,
+          "badge": {
+            "dx": -0.5,
+            "dy": -1.05
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 122,
+          "y": 629,
+          "w": 206,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 363,
+          "y": 676,
+          "w": 272
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 185,
+          "y": 843,
+          "w": 200
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 541,
+          "y": 854,
+          "w": 183
+        },
+        {
+          "art": "decor27",
+          "role": "decor",
+          "x": 368,
+          "y": 553,
+          "w": 103,
+          "layer": 1,
+          "halo": {
+            "w": 1.65,
+            "h": 0.65,
+            "dy": -0.35,
+            "color": "#f534fd"
+          },
+          "light": "blink"
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#fb87f7",
+          "cold": "#38569d",
+          "amount": 0.45,
+          "seconds": 110
+        }
+      }
+    },
+    "spinshock": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze05",
+          "role": "decor",
+          "x": 410,
+          "y": 220,
+          "w": 320,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "cloud",
+          "every": 199,
+          "breathEvery": 31,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 360,
+          "y": 340,
+          "w": 250
+        },
+        {
+          "art": "decor04",
+          "role": "daily",
+          "x": 160,
+          "y": 370,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.6,
+            "dy": -1.1
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor01",
+          "role": "decor",
+          "x": 90,
+          "y": 390,
+          "w": 60,
+          "notify": "float",
+          "every": 8.8,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 600,
+          "y": 410,
+          "w": 190,
+          "flip": true,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.76
+          },
+          "light": "random",
+          "lightEvery": 15,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 610,
+          "y": 520,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 8.4,
+          "lightDelay": 3.4
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 130,
+          "y": 540,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 10.7
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 590,
+          "w": 220,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 600,
+          "y": 750,
+          "w": 210
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 120,
+          "y": 750,
+          "w": 180,
+          "rot": -5,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.11
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 360,
+          "y": 890,
+          "w": 200,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.72
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 630,
+          "y": 910,
+          "w": 200,
+          "halo": {
+            "w": 1.05,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ed2070"
+          },
+          "light": "flicker",
+          "lightEvery": 5.7,
+          "lightDelay": 1.6
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#9f1c4f",
+          "cold": "#4f3765",
+          "amount": 0.4,
+          "seconds": 10
+        }
+      }
+    },
+    "chainring": {
+      "ground": "backgroundHome",
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.35,
+          "seconds": 120
+        }
+      },
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 160,
+          "y": 320,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.78
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "sticker18",
+          "role": "daily",
+          "x": 596,
+          "y": 320,
+          "w": 69,
+          "badge": {
+            "dx": -0.3,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "sticker17",
+          "role": "decor",
+          "x": 534,
+          "y": 348,
+          "w": 70,
+          "notify": "float",
+          "delay": 2.2,
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 368,
+          "y": 616,
+          "w": 180,
+          "light": "flicker",
+          "notify": "float"
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 610,
+          "y": 660,
+          "w": 190,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0
+          },
+          "light": "random"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 130,
+          "y": 670,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 160,
+          "y": 930,
+          "w": 190,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.05
+          },
+          "light": "random"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 590,
+          "y": 940,
+          "w": 180,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        }
+      ]
+    },
+    "bouncetry": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 270,
+          "y": 290,
+          "w": 170,
+          "badge": {
+            "dx": 0.34,
+            "dy": -0.82
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 625,
+          "y": 467,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ffc428"
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 170,
+          "y": 530,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.78
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 547,
+          "y": 676,
+          "w": 202
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 270,
+          "y": 800,
+          "w": 140,
+          "halo": {
+            "w": 1.7,
+            "h": 0.74,
+            "dy": 0.01
+          },
+          "light": "random"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 486,
+          "y": 932,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ffc428"
+          },
+          "light": "flicker",
+          "lightEvery": 1.3,
+          "lightDelay": 0.7
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 210,
+          "y": 970,
+          "w": 160,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "ball05",
+          "role": "daily",
+          "x": 508,
+          "y": 1136,
+          "w": 80,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.6,
+            "dy": -0.86
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decorBrick02",
+          "role": "decor",
+          "x": 429,
+          "y": 1151,
+          "w": 71,
+          "notify": "float",
+          "rot": -1
+        },
+        {
+          "art": "ball28",
+          "role": "play",
+          "x": 541,
+          "y": 361,
+          "w": 103,
+          "layer": 1,
+          "notify": "float"
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#c85019",
+          "cold": "#5a526c",
+          "amount": 0.6,
+          "seconds": 10
+        }
+      }
+    },
+    "blight": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze05",
+          "role": "decor",
+          "x": 236,
+          "y": 311,
+          "w": 200,
+          "notify": "cloud",
+          "every": 231,
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 480,
+          "w": 270
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 160,
+          "y": 510,
+          "w": 200,
+          "badge": {
+            "dx": 0.24,
+            "dy": -0.74
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 560,
+          "y": 540,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 465,
+          "y": 692,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 3.3,
+          "lightDelay": 2.2,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 270,
+          "y": 694,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 4.8,
+          "lightDelay": 1.6,
+          "always": true
+        },
+        {
+          "art": "decor03",
+          "role": "decor",
+          "x": 610,
+          "y": 700,
+          "w": 76,
+          "notify": "float"
+        },
+        {
+          "art": "bubble13",
+          "role": "daily",
+          "x": 530,
+          "y": 710,
+          "w": 78,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.04
+          },
+          "badge": {
+            "dx": 0.44,
+            "dy": -0.96
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 160,
+          "y": 730,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.1
+          },
+          "badge": {
+            "dx": 0.28,
+            "dy": -0.72
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 150,
+          "y": 920,
+          "w": 176
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 560,
+          "y": 950,
+          "w": 230
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 260,
+          "y": 1045,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 473,
+          "y": 1063,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 5.3,
+          "lightDelay": 2.5,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#faeb71",
+          "cold": "#202176",
+          "amount": 0.57,
+          "seconds": 160
+        }
+      }
+    },
+    "orbinity": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 530,
+          "y": 240,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.21
+          },
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.82
+          },
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 290,
+          "y": 400,
+          "w": 220,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.21
+          },
+          "notify": "float",
+          "delay": 4.5,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 150,
+          "y": 600,
+          "w": 200,
+          "halo": {
+            "w": 1.25,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.28,
+            "dy": -0.8
+          },
+          "notify": "float",
+          "every": 14.4,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 540,
+          "y": 750,
+          "w": 240,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.23
+          },
+          "notify": "float",
+          "every": 10.9,
+          "delay": 1.3,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 511,
+          "y": 800,
+          "w": 200,
+          "halo": {
+            "w": 0.6,
+            "h": 0.45,
+            "dy": 0.05,
+            "color": "#1957e7"
+          },
+          "light": "flicker",
+          "lightEvery": 0.7,
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 130,
+          "y": 890,
+          "w": 120,
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.88
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 400,
+          "y": 1040,
+          "w": 140,
+          "notify": "float",
+          "every": 9.5,
+          "delay": 7.4,
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 140,
+          "y": 1130,
+          "w": 150,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.18
+          },
+          "notify": "float",
+          "every": 9.6,
+          "delay": 4.6,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#d15dce",
+          "cold": "#a0e7ff",
+          "amount": 0.49,
+          "seconds": 100
+        }
+      }
+    },
+    "vipera": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 194,
+          "y": 238,
+          "w": 200,
+          "halo": {
+            "w": 0.8,
+            "h": 0.34,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2
+        },
+        {
+          "art": "sticker18",
+          "role": "daily",
+          "x": 376,
+          "y": 238,
+          "w": 68,
+          "notify": "alert",
+          "badge": {
+            "dx": -0.5,
+            "dy": -1.05
+          }
+        },
+        {
+          "art": "jungle12",
+          "role": "decor",
+          "x": 306,
+          "y": 245,
+          "w": 71,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "cloudFlat05",
+          "role": "decor",
+          "x": 71,
+          "y": 342,
+          "w": 200,
+          "notify": "cloud",
+          "drift": "right",
+          "always": true,
+          "every": 259,
+          "breathEvery": 9.5
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 568,
+          "y": 354,
+          "w": 168
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 204,
+          "y": 420,
+          "w": 184,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.85
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 624,
+          "y": 444,
+          "w": 200,
+          "halo": {
+            "w": 0.75,
+            "h": 0.34,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2,
+          "lightDelay": 1.8,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 120,
+          "y": 690,
+          "w": 170,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 555,
+          "y": 782,
+          "w": 211
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 214,
+          "y": 960,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 546,
+          "y": 1036,
+          "w": 200,
+          "halo": {
+            "w": 0.75,
+            "h": 0.2,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2,
+          "lightDelay": 1.8,
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 371,
+          "y": 1103,
+          "w": 200
+        }
+      ]
+    },
+    "marshmelt": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "decor18",
+          "role": "decor",
+          "x": 336,
+          "y": 182,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 424,
+          "y": 225,
+          "w": 94,
+          "badge": {
+            "dx": 0.4,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 58,
+          "y": 275,
+          "w": 200,
+          "rot": 2,
+          "halo": {
+            "w": 0.75,
+            "h": 0.9,
+            "dy": -0.1,
+            "color": "#dfc3a4"
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 190,
+          "y": 361,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.8
+          },
+          "light": "random"
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 545,
+          "y": 426,
+          "w": 200
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 187,
+          "y": 654,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.7
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 537,
+          "y": 699,
+          "w": 244
+        },
+        {
+          "art": "cloudBig04",
+          "role": "decor",
+          "x": 28,
+          "y": 818,
+          "w": 214,
+          "flip": true,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 186,
+          "y": 977,
+          "w": 200
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 553,
+          "y": 1020,
+          "w": 225
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 419,
+          "y": 1269,
+          "w": 200,
+          "halo": {
+            "w": 1.25,
+            "h": 0.75,
+            "dy": -0.1,
+            "color": "#f4e0ca"
+          },
+          "light": "flicker",
+          "lightEvery": 1.5,
+          "lightDelay": 2.8,
+          "always": true
+        },
+        {
+          "art": "cloudBig04",
+          "role": "decor",
+          "x": 109,
+          "y": 812,
+          "w": 93,
+          "layer": 1,
+          "notify": "float",
+          "every": 11.5,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.4,
+          "seconds": 210
+        }
+      }
+    },
+    "slipdeck": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 173,
+          "y": 420,
+          "w": 200,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 531,
+          "y": 443,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 359,
+          "y": 590,
+          "w": 200,
+          "halo": {
+            "w": 1,
+            "h": 0.8,
+            "dy": 0.04,
+            "color": "#32bafd"
+          },
+          "light": "flicker",
+          "lightEvery": 1.1,
+          "always": true
+        },
+        {
+          "art": "card03",
+          "role": "daily",
+          "x": 606,
+          "y": 730,
+          "w": 76,
+          "badge": {
+            "dx": -0.5,
+            "dy": -0.85
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor01",
+          "role": "decor",
+          "x": 534,
+          "y": 751,
+          "w": 70,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 148,
+          "y": 755,
+          "w": 190,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 207,
+          "y": 973,
+          "w": 177
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 539,
+          "y": 980,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 221,
+          "y": 1072,
+          "w": 200,
+          "halo": {
+            "w": 0.65,
+            "h": 0.55,
+            "dy": 0.04,
+            "color": "#51b5f5"
+          },
+          "light": "flicker",
+          "lightEvery": 0.2,
+          "lightDelay": 3.4,
+          "always": true
+        },
+        {
+          "art": "cloudFlat07",
+          "role": "decor",
+          "x": 270,
+          "y": 1110,
+          "w": 240,
+          "flip": true,
+          "notify": "cloud",
+          "every": 262,
+          "drift": "right",
+          "breathEvery": 8,
+          "always": true
+        },
+        {
+          "art": "cloudFlat06",
+          "role": "decor",
+          "x": 820,
+          "y": 1150,
+          "w": 200,
+          "notify": "cloud",
+          "delay": 7,
+          "breathEvery": 24,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.4,
+          "seconds": 155
+        }
+      }
+    },
+    "radiam": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 250,
+          "y": 240,
+          "w": 200,
+          "flip": true,
+          "notify": "cloud",
+          "drift": "right",
+          "breathEvery": 68,
+          "always": true
+        },
+        {
+          "art": "cloudFlat06",
+          "role": "decor",
+          "x": 260,
+          "y": 350,
+          "w": 200,
+          "notify": "cloud",
+          "every": 137,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 190,
+          "y": 474,
+          "w": 165,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 530,
+          "y": 494,
+          "w": 186
+        },
+        {
+          "art": "ballRainbow12",
+          "role": "daily",
+          "x": 633,
+          "y": 652,
+          "w": 60,
+          "badge": {
+            "dx": -0.6,
+            "dy": -0.9
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decorGear07",
+          "role": "decor",
+          "x": 557,
+          "y": 680,
+          "w": 76,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 700,
+          "w": 270
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 129,
+          "y": 705,
+          "w": 200,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 183,
+          "y": 928,
+          "w": 177
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 543,
+          "y": 958,
+          "w": 200
+        }
+      ]
+    },
+    "triverse": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 54,
+          "y": 178,
+          "w": 200,
+          "halo": {
+            "w": 0.7,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#42eef8"
+          },
+          "light": "random"
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 375,
+          "y": 183,
+          "w": 166,
+          "badge": {
+            "dx": -0.3,
+            "dy": -0.62
+          }
+        },
+        {
+          "art": "arrow16",
+          "role": "decor",
+          "x": 299,
+          "y": 408,
+          "w": 61,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 520,
+          "y": 439,
+          "w": 200,
+          "notify": "float"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 642,
+          "y": 448,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#f055fe"
+          },
+          "light": "flicker",
+          "lightEvery": 1.7
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 180,
+          "y": 464,
+          "w": 200,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "decor18",
+          "role": "decor",
+          "x": 381,
+          "y": 577,
+          "w": 102,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "rot": -23
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 529,
+          "y": 703,
+          "w": 200
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 170,
+          "y": 923,
+          "w": 200
+        },
+        {
+          "art": "decor33",
+          "role": "decor",
+          "x": 393,
+          "y": 962,
+          "w": 92,
+          "notify": "float"
+        },
+        {
+          "art": "arrow17",
+          "role": "decor",
+          "x": 452,
+          "y": 974,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "sticker20",
+          "role": "daily",
+          "x": 314,
+          "y": 1003,
+          "w": 84,
+          "notify": "alert",
+          "badge": {
+            "dx": 0.35,
+            "dy": -0.95
+          }
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 505,
+          "y": 1179,
+          "w": 179
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#a13cc8",
+          "cold": "#1b9cf3",
+          "amount": 0.35,
+          "seconds": 170
+        }
+      }
+    },
+    "gearball": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 384,
+          "y": 193,
+          "w": 200,
+          "halo": {
+            "w": 0.95,
+            "h": 0.55,
+            "dy": -0.05,
+            "color": "#edae43"
+          },
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 550,
+          "y": 350,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 170,
+          "y": 350,
+          "w": 180,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "sticker16",
+          "role": "daily",
+          "x": 623,
+          "y": 563,
+          "w": 89,
+          "badge": {
+            "dx": -0.4,
+            "dy": -0.9
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor09",
+          "role": "decor",
+          "x": 556,
+          "y": 596,
+          "w": 70,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 120,
+          "y": 610,
+          "w": 160,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.85
+          }
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 360,
+          "y": 630,
+          "w": 230
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 360,
+          "y": 770,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.75,
+            "dy": 0.04,
+            "color": "#ffe87c"
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 160,
+          "y": 930,
+          "w": 200
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 559,
+          "y": 940,
+          "w": 222
+        },
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 650,
+          "y": 965,
+          "w": 200,
+          "notify": "cloud",
+          "every": 207,
+          "breathEvery": 59,
+          "always": true
+        },
+        {
+          "art": "decor06",
+          "role": "decor",
+          "x": 361,
+          "y": 486,
+          "w": 89,
+          "layer": 1
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.45,
+          "seconds": 120
+        }
+      }
+    },
+    "pawko": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze07",
+          "role": "decor",
+          "x": 360,
+          "y": 34,
+          "w": 200,
+          "notify": "cloud",
+          "always": true,
+          "every": 146,
+          "breathEvery": 39
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 360,
+          "y": 130,
+          "w": 200,
+          "halo": {
+            "w": 0.6,
+            "h": 0.6,
+            "dy": 0.04,
+            "color": "#fff782"
+          },
+          "light": "random",
+          "lightEvery": 2.4,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 550,
+          "y": 480,
+          "w": 220
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 180,
+          "y": 500,
+          "w": 230,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.8
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 680,
+          "y": 660,
+          "w": 200,
+          "halo": {
+            "w": 0.65,
+            "h": 0.65,
+            "dy": 0.04,
+            "color": "#388ac9"
+          },
+          "light": "flicker",
+          "lightEvery": 2,
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 710,
+          "w": 260
+        },
+        {
+          "art": "decor02",
+          "role": "daily",
+          "x": 580,
+          "y": 790,
+          "w": 70,
+          "notify": "alert",
+          "badge": {
+            "dx": -0.45,
+            "dy": -0.9
+          }
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 160,
+          "y": 810,
+          "w": 220,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "icon04",
+          "role": "decor",
+          "x": 500,
+          "y": 820,
+          "w": 80,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 520,
+          "y": 1050,
+          "w": 200
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 180,
+          "y": 1080,
+          "w": 220
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 115,
+          "y": 1200,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.35,
+            "dy": 0.05,
+            "color": "#fff782"
+          },
+          "light": "random",
+          "always": true,
+          "lightEvery": 10
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 581,
+          "y": 1201,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.35,
+            "dy": 0.05,
+            "color": "#fff782"
+          },
+          "light": "random",
+          "always": true,
+          "lightEvery": 10,
+          "lightDelay": 1
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#fef677",
+          "cold": "#1d216a",
+          "amount": 0.35,
+          "seconds": 170
+        }
+      }
+    },
+    "stratideck": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 140,
+          "y": 79,
+          "w": 220,
+          "halo": {
+            "w": 0.45,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 1.6,
+          "always": true,
+          "lightDelay": 0.9
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 540,
+          "y": 250,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#7a9dc8"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "album",
+          "x": 370,
+          "y": 370,
+          "w": 170,
+          "badge": {
+            "dx": -0.2,
+            "dy": -0.8
+          },
+          "notify": "alert",
+          "every": 9,
+          "delay": 2
+        },
+        {
+          "art": "home04",
+          "role": "shop",
+          "x": 160,
+          "y": 420,
+          "w": 200,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.8
+          }
+        },
+        {
+          "art": "home06",
+          "role": "map",
+          "x": 570,
+          "y": 430,
+          "w": 160,
+          "flip": true
+        },
+        {
+          "art": "home05",
+          "role": "decor",
+          "x": 112,
+          "y": 625,
+          "w": 200
+        },
+        {
+          "art": "home08",
+          "role": "decor",
+          "x": 612,
+          "y": 640,
+          "w": 195,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "play",
+          "x": 360,
+          "y": 640,
+          "w": 200
+        },
+        {
+          "art": "home07",
+          "role": "decor",
+          "x": 360,
+          "y": 800,
+          "w": 210,
+          "halo": {
+            "w": 0.9,
+            "h": 0.45,
+            "dy": 0.02,
+            "color": "#ff5c5c"
+          },
+          "light": "random",
+          "lightEvery": 7,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "options",
+          "x": 150,
+          "y": 900,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 560,
+          "y": 900,
+          "w": 220
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 71,
+          "y": 957,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "always": true
+        },
+        {
+          "art": "piece03",
+          "role": "daily",
+          "x": 370,
+          "y": 970,
+          "w": 80,
+          "notify": "alert",
+          "badge": {
+            "dx": -0.45,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 251,
+          "y": 1015,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "always": true,
+          "lightDelay": 0.5
+        },
+        {
+          "art": "decor04",
+          "role": "decor",
+          "x": 340,
+          "y": 1030,
+          "w": 80,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 526,
+          "y": 1031,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 1,
+          "always": true,
+          "lightDelay": 0.9
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffd9a0",
+          "cold": "#1a2a5e",
+          "amount": 0.35,
+          "seconds": 150
+        }
+      }
+    }
+  }
+}

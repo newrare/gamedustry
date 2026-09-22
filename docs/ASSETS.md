@@ -112,6 +112,7 @@ no `ASSETS` entry, no code:
 | `-background-phone.png`              | behind the intro and the end screen — and behind the round with `CONFIG.sceneArt` |
 | `-background-phone-<name>.png`       | the same, ONE PER BAND of the climb — `games/echomaze`; see below                 |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**)              |
+| `-background-home.png`               | the ground the VILLAGE stands on (**web target only**); see below                 |
 | `-title.png`                         | the logotype: replaces the app icon and the CSS `#intro-title`                    |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, by star count (0 / 1–2 / 3)                                |
 | `-object-<name>.png`                 | **a sheet to cut, never a role** — see below; `encode-art` leaves it alone        |
@@ -221,18 +222,22 @@ shape, so nothing in them can say which. The game says it, once. Re-cutting the
 sheet afterwards refreshes what ships with no second adoption, because a role
 points at a cut and not at a copy.
 
-| flag              | default | what it is                                                                |
-| ----------------- | ------- | ------------------------------------------------------------------------- |
-| `--solid <alpha>` | `110`   | the alpha at which a pixel is the object rather than its glow — see below |
-| `--pad <px>`      | `20`    | the margin around a cut, and how far its own glow is followed             |
-| `--min <px²>`     | `2500`  | the speck floor: below it, paint rather than an object                    |
-| `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                        |
-| `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel         |
-| `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go  |
-| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area   |
-| `--adopt 1,4`     | —       | declare those cuts in the game's `art.objects` (one sheet at a time)      |
-| `--as <role>`     | —       | name the role instead: `--as decor` → `decor-NN`, the decor pool          |
-| `--list`          | —       | name the sheets and stop                                                  |
+| flag              | default | what it is                                                                 |
+| ----------------- | ------- | -------------------------------------------------------------------------- |
+| `--solid <alpha>` | `110`   | the alpha at which a pixel is the object rather than its glow — see below  |
+| `--solid a,b,c,d` | —       | …one bar per equal horizontal BAND of the sheet, when its halves differ    |
+| `--pad <px>`      | `20`    | the margin around a cut, and how far its own glow is followed              |
+| `--min <px²>`     | `2500`  | the speck floor: below it, paint rather than an object                     |
+| `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                         |
+| `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel          |
+| `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go   |
+| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area    |
+| `--grid 5,5,5,6`  | —       | …one column count PER ROW, when the rows are not all the same length       |
+| `--adopt 1,4`     | —       | declare those cuts in the game's `art.objects` (one sheet at a time)       |
+| `--as <role>`     | —       | name the role instead: `--as decor` → `decor-NN`, the decor pool           |
+| `--seq`           | off     | number the adopted roles 01…N in the order given, not after their cut      |
+| `--into <slug>`   | —       | which game adopts a SHARED `game-*` cut; meaningless on a game's own sheet |
+| `--list`          | —       | name the sheets and stop                                                   |
 
 #### `--grid` — when several sheets must be cut the same way
 
@@ -265,6 +270,28 @@ grid, one piece per cell, each filed on its own; the seam between two merged
 objects lands halfway between the two cell centres. Spilling over the line is
 NOT that — every object overflows its cell a little, and a piece under the bar
 stays with the body it came from, so an object always keeps its own overflow.
+
+**One bar per band when the sheet holds two kinds of picture.** A sticker
+sheet is chibi faces on top and neon objects underneath, and they want opposite
+bars: a face is ringed with an opaque white outline that welds to its
+neighbour's unless the bar is nearly 255, while a neon object's interior is
+genuinely semi-transparent and a bar that high shreds it into strips. So
+`--solid` also takes one value per equal horizontal band —
+`--solid 253,253,245,245`, which is `arcider-object-sticker.png` exactly: at a
+single 245 its six faces per row came back welded in pairs, and at a single 253
+its boost pad came back as three separate bars of light. **Raise `--pad` with
+it**: the bar that separates two faces also throws away the white outline they
+touch with, and the fringe pass is what gives each of them their own back — 28
+on arcider, where 20 left the characters die-cut with no sticker border at all.
+
+**A row is divided on its own when the rows differ.** `--grid 5,5,5,6` is one
+column count per row, and the sticker sheets are why it exists: the model fills
+the last row with whatever is left over, so six of the thirteen came back 5, 5,
+5 and then 6 or 7. A uniform grid over that row puts two objects in one cell and
+drops the loser — which the fringe pass then hands to the object ABOVE as a
+satellite, so blight's witch came out with a slime ball glued under her hat. A
+sheet holding one double-width piece is cut with no grid at all: echomaze's
+logotype is two cells wide, and the grid saws it into `ECH` and `OMAZE`.
 
 **`--keep-partial` is usually what a 5x4 of characters needs**, because the top
 row's hair touches the sheet's own edge and is otherwise dropped as "cut by the
@@ -358,10 +385,55 @@ An unowned sticker is drawn as its own **white silhouette** by the album
 (`brightness(0) invert(1)`), so a game never ships a placeholder for one.
 
 ```bash
-node tools/lab/cut-objects.mjs radiam-object-sticker --grid 5x4 --keep-partial \
-  --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+node tools/lab/cut-objects.mjs radiam-object-sticker --grid 5x4 --keep-partial --solid 245 \
+  --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 --seq
 node tools/lab/encode-art.mjs radiam
 ```
+
+The album reads `sticker01` to `sticker20` and a hole in that run is a tile with
+no picture, so **`--seq` is what a sheet of more than twenty needs**: it numbers
+the adopted roles in the order given instead of after the cut each one points
+at, and twenty-five cuts minus five still land on a contiguous twenty. Which cut
+a role points at is the value beside it, so nothing is lost by the role not
+repeating it.
+
+#### The village: `<slug>-background-home.png` + `<slug>-homeNN.png`
+
+The third adopted set, and the first one that is a SCREEN rather than a
+material. `-background-home.png` is a painted hub with empty pads on it — what
+an image model returns when asked for one — and `-object-home.png` is the sheet
+of buildings that stand on those pads: a shop, a podium, a globe, a garage, a
+showroom, a crowned board, six on a 3x2. Each one is the door to a screen the
+web shell already has, so the game's title screen becomes a PLACE instead of a
+list of words.
+
+```bash
+node tools/lab/cut-objects.mjs arcider-object-home --grid 3x2 --adopt 1,2,3,4,5,6
+node tools/lab/encode-art.mjs arcider
+make village          # lab/village.html — place them, say what each one opens
+```
+
+`HOUSE` is a 420 px box at q 0.84 — a house is dropped on the 720x1280 frame at
+between 150 and 280 design px wide, so 420 covers the biggest of them at a 3x
+device ratio with nothing spare — and the six come to ~280 KB.
+`background-home` takes the same 720x1280 box and the same q 0.72 as the intro
+backdrop, for the same reason: it fills the frame and nothing past it is ever
+shown.
+
+**Both are web-only** (`tools/build/build.mjs`, `WEB_ONLY_ART` and
+`WEB_ONLY_HOUSE`), and wholesale like the album rather than "everything past the
+first" like the bead styles: a playable's intro IS the ad's first screen — one
+title, one sentence and one button — and it has neither a map, nor a shop, nor a
+collection to be the door to. Left in, the seven pieces would be ~590 KB of
+base64 drawing nothing at all.
+
+**The composition is not in the file names.** Where each house stands, how big
+it is and what it opens is `web.village` in `games/<slug>/manifest.json`,
+written by `make village` — the same place `web.levels` and `web.meta` are
+written, for the same reason: it is what the game's front door IS, and the
+builder injects it as `CONFIG.web`. A house is placed by the middle of its BASE
+and the list is sorted by it, so a house whose feet are lower is drawn in front
+and there is no z-order anywhere.
 
 One adopted role is not a game's to draw: `--as decor` declares a cut under the
 role `decor-NN`, and every `CONFIG.art.decor*` key is the pool the shell
@@ -492,6 +564,64 @@ because the gift is that layer's ceremony: a game with no wallet never opens a
 box, and 160 KB of base64 for a picture nothing draws is the one thing every
 rule on this page exists to prevent. A build without it falls back to the CSS
 boxes the ceremony was drawn with before the painting arrived.
+
+### Shared material: `game-object-cloud-*.png` → the game's own `art.objects`
+
+**Not everything under that prefix is the shell's.** The sheets above are the
+shell's own pieces — it names them in `SHELL_CUTS`, encodes them into
+`assets/image/shell/` and draws them for every game with a wallet. The second
+kind is SHARED MATERIAL: scenery no game owns and any game may use, which the
+three cloud sheets are the first of.
+
+| sheet                        | grid      | cuts | what it is                    |
+| ---------------------------- | --------- | ---- | ----------------------------- |
+| `game-object-cloud-big.png`  | `4,3`     | 7    | one fat cumulus, seven tints  |
+| `game-object-cloud-flat.png` | `2,2,2,1` | 7    | a long flat bank, seven tints |
+| `game-object-cloud-haze.png` | `2x4`     | 8    | soft vapour, eight tints      |
+
+```bash
+node tools/lab/cut-objects.mjs game-object-cloud-big  --grid 4,3
+node tools/lab/cut-objects.mjs game-object-cloud-flat --grid 2,2,2,1 --solid 30
+node tools/lab/cut-objects.mjs game-object-cloud-haze --grid 2x4
+```
+
+The tints are the same seven in the three sheets and the grid is what keeps
+them in step, exactly as it does for `radiam`'s beads: cell 1 is the palest in
+all three. `--solid 30` on the flat sheet is the one knob that is not the
+default — its first cloud is genuinely semi-transparent and the 110 bar cut it
+down to the densest third of itself.
+
+**A cloud is adopted by a GAME, not named by the shell**, and that is the whole
+difference: it stands on ONE village, at a place that game chose, so it is
+declared like any other cut and only the villages that place one carry the
+bytes.
+
+```bash
+node tools/lab/cut-objects.mjs game-object-cloud-haze --adopt 3,6 --into chainring
+make village          # …or click it in the SHARED CUTS palette, which does both
+```
+
+`--into` is which game, and it means nothing for a game's own sheet; a sheet
+the shell names in `SHELL_CUTS` refuses to be adopted at all and says so.
+**The role is the cut's own name with the prefix taken off** —
+`game-cloud-haze-03` is `cloud-haze-03` — so it is the same word in all
+thirteen, it camel-cases to `CONFIG.art.cloudHaze03` the way `ball-blue-01`
+already does, and the dashes are what tell the encoder which box to use and the
+builder that it is village material.
+
+`CLOUD` is a **600x320 box at q 0.78**, ~17 KB a cut. It is wide and short
+because the material is: a haze cloud is 1060x190, five and a half to one, and
+the generic 320x400 portrait box would fit it to 320 px across — a quarter of
+the width it is drawn at. 600 covers a cloud placed at up to 400 design px at
+the same ~1.5x the houses and the stickers are cut at, and soft painted vapour
+with nothing to read in it takes the decor pool's quality rather than a house's.
+
+**Web-only** (`WEB_ONLY_CLOUD` in `tools/build/build.mjs`), for the same reason
+the houses are: the village is the web menu's own view and a playable has no
+screen to draw a sky on. In the composition it is a `decor` house like any
+other — a door that opens nothing — and the village's z-sort by the foot of the
+object puts a cloud dropped high behind every building without a z-index
+anywhere.
 
 ## The listing images come from `assets/image/google/` and `assets/image/itch/`
 

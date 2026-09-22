@@ -2653,10 +2653,30 @@
       if (had != null) n.textContent = had;
     }
 
+    /* `box` is the same shrink against the room a node ALREADY HAS, for a
+       panel whose width is decided by the layout rather than by the design
+       frame: the level card's name sits beside a column of flames that is not
+       always there, and its objective is one sentence per game per language.
+       Same rule as above — measure and scale DOWN, never up — and the same
+       requirement: the node is `nowrap`, or scrollWidth is not a one-line
+       width. A row of several nodes is fitted by giving the ROW the size and
+       writing its children in `em` (packages/webshell/levels.css). */
+    function box(n, min) {
+      if (!n) return;
+      n.style.fontSize = "";                  // back to the size the CSS asks for
+      var size = parseFloat(window.getComputedStyle(n).fontSize);
+      var room = n.clientWidth, floor = min || 12;
+      if (!size || !room) return;
+      for (var i = 0; i < 6 && n.scrollWidth > room && size > floor; i++) {
+        size = Math.max(floor, Math.floor(size * room / n.scrollWidth) - 1);
+        n.style.fontSize = size + "px";
+      }
+    }
+
     function all() { for (var id in ROOM) if (ROOM.hasOwnProperty(id)) one(id); }
     function room(id, px) { if (px != null) ROOM[id] = px; return ROOM[id]; }
 
-    return { one: one, all: all, room: room };
+    return { one: one, all: all, box: box, room: room };
   })();
 
   // --- HUD ---------------------------------------------------------------

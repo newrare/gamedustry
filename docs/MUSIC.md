@@ -273,21 +273,23 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 
 ## Where each game stands
 
-| game        | master  | embedded cut | sections                                 |
-| ----------- | ------- | ------------ | ---------------------------------------- |
-| `arcider`   | 182.5 s | 36.1 s       | **5 biomes + menu**                      |
-| `blight`    | 179.1 s | 36.0 s       | **5 map bands + menu**, one scene apiece |
-| `echomaze`  | 171.4 s | 36.0 s       | **5 map bands + menu**, one hall apiece  |
-| `slipdeck`  | 115.8 s | 46.9 s       | none yet — the master is long enough     |
-| `marshmelt` | 54.0 s  | 35.0 s       | none yet — enough for two, plus the menu |
-| `bouncetry` | 30.7 s  | 30.8 s       | needs a longer master first              |
-| `chainring` | 30.8 s  | 30.8 s       | **no** — it is beat-locked (see Traps)   |
-| `gearball`  | 30.5 s  | 30.6 s       | needs a longer master first              |
-| `orbinity`  | 27.0 s  | 27.0 s       | needs a longer master first              |
-| `radiam`    | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |
-| `spinshock` | 182.0 s | 23.0 s       | **5 bands + menu**, one dish apiece      |
-| `triverse`  | 30.8 s  | 30.8 s       | needs a longer master first              |
-| `vipera`    | 30.8 s  | 30.8 s       | needs a longer master first              |
+| game         | master  | embedded cut | sections                                 |
+| ------------ | ------- | ------------ | ---------------------------------------- |
+| `arcider`    | 182.5 s | 36.1 s       | **5 biomes + menu**                      |
+| `blight`     | 179.1 s | 36.0 s       | **5 map bands + menu**, one scene apiece |
+| `echomaze`   | 171.4 s | 36.0 s       | **5 map bands + menu**, one hall apiece  |
+| `slipdeck`   | 115.8 s | 46.9 s       | none yet — the master is long enough     |
+| `marshmelt`  | 54.0 s  | 35.0 s       | none yet — enough for two, plus the menu |
+| `bouncetry`  | 30.7 s  | 30.8 s       | needs a longer master first              |
+| `chainring`  | 30.8 s  | 30.8 s       | **no** — it is beat-locked (see Traps)   |
+| `gearball`   | 30.5 s  | 30.6 s       | needs a longer master first              |
+| `orbinity`   | 27.0 s  | 27.0 s       | needs a longer master first              |
+| `pawko`      | 179.3 s | 35.0 s       | **5 map bands + menu**, one scene apiece |
+| `radiam`     | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |
+| `spinshock`  | 182.0 s | 23.0 s       | **5 bands + menu**, one dish apiece      |
+| `stratideck` | 177.2 s | 30.0 s       | **5 map bands + menu**, one camp apiece  |
+| `triverse`   | 30.8 s  | 30.8 s       | needs a longer master first              |
+| `vipera`     | 30.8 s  | 30.8 s       | needs a longer master first              |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,
 which is what the ten do today. Nothing about them changed when the sections

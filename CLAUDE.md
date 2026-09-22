@@ -232,9 +232,36 @@ and `CONFIG.layout.ctaHeight` is zeroed before the first layout — the CTA bar'
 band goes back to `Layout`.
 
 On top of that the webshell replaces the playable's intro with **the menu of a
-finished game**, and it is one shape for all thirteen — the two files
-(`menu.css`, `menu.js`) are the template, so a game gets it by listing `web` in
-its `targets` and nothing else:
+finished game**, and it is one shape for all thirteen — the files of
+`packages/webshell/` are the template, so a game gets it by listing `web` in its
+`targets` and nothing else.
+
+**Everything that front end puts on screen is one of two things, and there are
+exactly two** — `packages/webshell/view.js` is the system and
+[docs/VIEWS.md](docs/VIEWS.md) is the plan of record. A **view** is a place the
+player goes: title, map, sticker, shop, ranking, score. They stack, and the view
+system — not the screen — owns the mounting, the z-order, the bed and the wallet
+band. A **card** is something that happens over wherever they are: options,
+help, leaving a round, a daily reward, an ad, a prize. It never replaces the
+screen under it and it is dismissed rather than navigated. ESCAPE walks that one
+stack top down, and `make test` is what holds the contract
+(`tools/test/views.mjs`, in a real build).
+
+**There is no back arrow in it.** A back arrow answers "where did I come from",
+and the player does not care — they care where they are going. The **wallet band
+IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, each chip the
+door to the screen it is the number of — home, the ranking, the shop, the
+collection, the collection, the map. The album has no header of its own: its count is
+that first chip, and the height it was taking went to the machine and the tiles. The row never changes shape and a chip standing on its own screen goes
+inert rather than missing, so a number is never one to find again; the level
+chip is the bolt alone and opens for a few seconds whenever the xp moves. A
+view's header carries no button; a card's way out is a discreet cross in its
+corner, and ESCAPE. The one branch: a game with no `web.meta` has no band, so
+its views keep a home button — there is always exactly one way home, never two.
+**The bottom-right corner belongs to the ROUND**, which is the one surface with
+nothing else on it: options, help and the way out.
+
+What a view brings:
 
 - **the game's own backdrop** — the painted scene the motor already put on the
   intro (`CONFIG.art.backgroundPhone`, see
@@ -275,7 +302,15 @@ its `targets` and nothing else:
 - **the menu bottom-right**, one entry per line, flush against the right edge:
   **PLAY / LEADERBOARD / OPTIONS / HELP**. PLAY *is* the motor's `#btn-start`,
   restyled — which is what keeps `startGame`, the SPACE key and the audio
-  unlock gesture exactly as they were.
+  unlock gesture exactly as they were. LEADERBOARD opens the **ranking view**;
+  the other two open **cards**, and the title screen is the one surface that
+  lists them as entries because a front door lists what is behind it.
+  **A game with a VILLAGE shows none of it**: the hub already draws every door
+  as a building, so the title screen is a SPLASH — the logotype on the game's
+  own scene, the studio signature in the corner, two seconds of it, and then
+  the village opens itself. The entries are still BUILT and simply hidden:
+  `#btn-start` is the node every binding of this shell rides on, and the
+  village is what it opens (`packages/webshell/menu.js`, `splash`).
 - **a game with several modes gets one more entry per mode**, under PLAY, from
   `web.modes` in its manifest — an ordered list of keys whose **first is the
   default**. The shell writes the chosen key to `CONFIG.mode` and starts the
@@ -294,26 +329,40 @@ its `targets` and nothing else:
   the motor. It starts on the first gesture (nothing may play before one) and
   crossfades into the round's bed on PLAY. A game that names no `menu` section
   keeps silent menus.
-- **the three panels open in that same band**: the title and the scene stay, the
-  menu is swapped out, and a back arrow returns (ESCAPE too).
+- **OPTIONS and HELP are cards, and they open from anywhere** — the title menu
+  where there is one, the village's own houses where there is a hub, and a pair
+  of controls in the **bottom-right corner** of every other surface
+  (`#web-ctls`). The OPTIONS card ends on the **studio signature** — the mark,
+  `NEWRARE` and `v<version>`, the same block the motor pins to the corner of
+  the title screen out of `CONFIG.brand`. A version number is what a player is
+  asked for when a build misbehaves, and a title screen two seconds long is not
+  where it can be read. A player standing on the map who wants the music off should not
+  have to walk back to the screen they came from, and the rules of the game
+  should not live in a panel of that screen either. Two surfaces show no corner:
+  the title screen, whose menu lists them, and the score screen, whose own way
+  on is the offer and whose corner is where the character lands.
 - **OPTIONS is real** — music, sound effects and score callouts are switches the
   motor now carries (`Sound.setMuted`, `Music.setMuted`, `Pop.setEnabled`), the
-  language is FR/EN live, and the best score can be wiped (it asks twice). All
-  of it persisted through `Store`.
-- **the round itself gets two controls**, MENU and OPTIONS, in the
-  **bottom-right corner** (`#web-ctls`). They are the difference between a
-  playable, where the round *is* the ad, and a game the player owns. Not in the
-  top band: the HUD is the game's, all of it, and the thirteen fill it
-  differently — the corner is where the menu's own entries are and where a thumb
-  already is, and nothing about the round has to move to make room (`--hud-h`,
-  `--cta-h` and `Layout` are all untouched). Either control **pauses the round**
-  (the clock is `Loop`'s, so freezing the loop freezes the world, the timer and
-  the game's update at once, and a tab coming back cannot un-pause it) and opens
-  one card over the frozen world: the same options rows, or the one question that
-  throws a run away — leaving does not call `endRound`, so an abandoned round
-  writes no score. ESCAPE is that pause on a keyboard.
-- the how-to-play demo moves into the Help panel (the motor's own node, moved
-  not copied, so a SKIN's dressing follows it), and the end screen is rewired to
+  language is FR/EN live, and **all the game's data can be erased in one row** —
+  the best score, the climb and the meta layer's wallet, collection and daily
+  road together (it asks twice, and not from a round). All of it persisted
+  through `Store`.
+- **the round gets a third control in front of that pair**: the way out. It is
+  the difference between a playable, where the round *is* the ad, and a game the
+  player owns, and the pictogram is the DESTINATION rather than the door — the
+  map on a levelled game, the house on a level-less one. Not in the top band:
+  the HUD is the game's, all of it, and the thirteen fill it differently —
+  nothing about the round has to move to make room (`--hud-h`, `--cta-h` and
+  `Layout` are all untouched). Any card over a round **pauses it** (the clock is
+  `Loop`'s, so freezing the loop freezes the world, the timer and the game's
+  update at once, and a tab coming back cannot un-pause it): the same options
+  rows, or the one question that throws a run away — leaving does not call
+  `endRound`, so an abandoned round writes no score. ESCAPE is that pause on a
+  keyboard.
+- the how-to-play demo moves into the Help card (the motor's own node, moved
+  not copied, so a SKIN's dressing follows it — and handed back while the card
+  is still in the document, or `getElementById` loses it), and the end screen is
+  rewired to
   **PLAY AGAIN** / **MENU** — three icons and a level's own title once the game
   declares `web.levels`, which all thirteen do (next bullet).
 - **a game that declares `web.levels` gets the LEVEL MAP instead**, and PLAY is
@@ -376,7 +425,11 @@ its `targets` and nothing else:
   header carries. `packages/webshell/meta.js` is the
   state, `album.js` the collection + the gumball machine + the shop, `daily.js`
   the **daily road**, which is a LINE OF THE MENU between the map and the
-  collection and not a banner over the title. It has no ends: today sits in the
+  collection and not a banner over the title — and a BUILDING on the hub where
+  the game has a village, which is every game that has one: the door then
+  opens the STRIP ITSELF as a card over the hub (`DL.openRoad()`), and the tap
+  on a day inside it is the tap the road has always answered. It has no
+  ends: today sits in the
   SECOND column, the days still to come run past the seventh and into the week
   after, and the frame cuts it on both sides — a day passing SLIDES it by one
   pitch. The second column and not the first because the node to its left keeps
@@ -402,11 +455,15 @@ its `targets` and nothing else:
   counts up on the landing, because a number that changed behind a blurred
   card changed nothing the player saw. **It carries no words at
   all** — a heading there would read as a third menu entry; what it is and which
-  day of the run it is are the eyebrow of the card the tap opens. That tap opens
-  the LEVEL MAP and plays the gift over it, because the wallet the gift pays
-  into is that screen's own header; on `localhost` it pays on every tap and says
+  day of the run it is are the eyebrow of the card the tap opens. THE GIFT
+  PLAYS WHERE A WALLET IS ON SCREEN, because coins flying into a band that is
+  not there land nowhere: on a village that is the hub the player is already
+  standing on — the road card steps aside and the boxes take its place, and the
+  map is never involved — and on a game with no hub the tap does what PLAY does
+  and opens the LEVEL MAP under it. On `localhost` it pays on every tap and says
   so with a DEV pill on that same card. `meta:<slug>` is the save, kept
-  apart from `prog:<slug>` because wiping a climb must not wipe a wallet.
+  apart from `prog:<slug>` because the two are written on different screens —
+  OPTIONS erases both in one row.
   **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
   unowned one drawn as its own white silhouette, titled `???`, and told in the
   IMPERATIVE what to do to earn it (a sticker owned says what was done; a
@@ -451,10 +508,12 @@ its `targets` and nothing else:
   already in the wallet — and then one ad to pay **×5** what was in the one it
   picked, offered on a button that NAMES WHAT IT MULTIPLIES and follows with
   the price — `MULTIPLY YOUR COINS` and the shell's painted ×5 plate finishing
-  the sentence, `watch an ad` under it at the size a price is read at — beside
-  the END SCREEN'S OWN arrow, the same circle the way on wears there, which
-  walks past it; a sticker is redrawn rather than multiplied, so that one says
-  *one more* and wears no plate. Walking past it goes STRAIGHT to the end
+  the sentence, `watch an ad` under it at the size a price is read at. It is the
+  card's ONLY control: the arrow beside it was a button for what a miss already
+  does, since a tap anywhere else — and ENTER, SPACE or ESCAPE — collects the
+  gift as it stands, and one footnote line says so. A sticker is redrawn rather
+  than multiplied, so that one says *one more* and wears no plate. Walking past
+  it goes STRAIGHT to the end
   screen: the token flies into a wallet that is a layer over the frame, so
   nothing has to wait for it, and holding the outro for the flight showed a
   second of the frozen round with nothing on it. Five and
@@ -463,10 +522,133 @@ its `targets` and nothing else:
   to read. A round with a star is offered the boxes FOR an ad on the end screen;
   a round with none is left alone. **The rewarded ad is a placeholder that says so on
   screen** — the web target has no SDK, and wiring one in is replacing the body
-  of `Meta.ad`. The map's header stops writing the game's own name (read one tap
-  ago on the title screen) and carries the wallet instead. **Only `radiam`
-  declares it today**; a second game is a 5x4 sticker sheet and a manifest
-  block. See [docs/META.md](docs/META.md).
+  of `Meta.ad`. What the player carries is **one band over the top of the
+  frame**, the view system's rather than any screen's
+  ([docs/VIEWS.md](docs/VIEWS.md)): the level, the coins, the tickets and the
+  board's stars on one line, up on the map, the collection, the shop and the
+  ranking, down on the title screen, and on the score screen only while a
+  reward is flying into it. **All thirteen declare it**; a game is a sheet of
+  twenty stickers and a manifest block, whose rates are scaled to what that
+  game scores. See [docs/META.md](docs/META.md).
+
+**A game that declares `web.village` gets the VILLAGE**, a view between the
+title screen and the map, and it is the place the player lives:
+
+```
+title  ->  VILLAGE  ->  map  ->  round  ->  score  ->  VILLAGE
+```
+
+The title screen becomes a **SPLASH**: the logotype, the signature, two seconds
+of them, and then the village opens on its own — the stacked menu in front of a
+hub was the same list twice, read at speed by a player on their way somewhere
+else. **PLAY is still the way in** and nothing about it moved: `#btn-start` is
+hidden rather than dropped, the SPACE key opens the village from the splash,
+and asking for a view already standing peels back to it instead of stacking a
+second one, so the button and the timer can never disagree. From there the map is a BUILDING, and so are the
+collection, the shop, the ranking, the daily road and the options: the painted
+hub of `assets/image/master/<slug>-background-home.png` with the game's own
+houses standing on it — **and the shop and the collection stand on that same
+picture**, because they are rooms of this place rather than screens over the
+round's backdrop, composed in `make village` (see [The lab](#the-lab)) and
+read out of `CONFIG.web.village` by `packages/webshell/village.{js,css}`.
+**Everything downstream then points back here** rather than at the map or the
+title — the band's house chip (`View.home`, whose base view this is, and which
+goes inert while it is on screen), the end screen's first button, and the
+ESCAPE that walks all the way out. The title screen becomes the front door a
+player comes through once a session, which is what a front door is. It never
+touches `#btn-start`: the motor's start button stays where the motor put it and
+menu.js binds it to this view, so `startGame`, the SPACE key and
+`Sound.unlock()`'s user gesture are the ones they have always been.
+
+**The manifest says HOW a house announces itself and the shell says WHETHER.**
+**A house moves and a house is lit, and they are TWO fields.** `notify` names
+what the BUILDING does — `float` (it hangs above its own light), `breath` (it
+swells out of its feet), `alert` (two hops and a wobble, then a long rest — the
+rude one, for one house at a time) and `fade` (it goes and comes back, down to
+a ghost and never to nothing, because a door that vanishes is a door nobody
+finds again) — and `light` names what its HALO does: `blink` on a beat,
+`flicker` like a failing tube, `random` on one long uneven cycle. A mill
+turning over a flickering pad is one of each, which one field of seven could
+not say. **A fifth pulse is not a signal at all**: `cloud` is WEATHER — it
+carries the object across the whole frame while it breathes and hazes, three
+motions at once on three rhythms divided out of the one number `every` names
+(the crossing, then it over 7 and over 5, coprime so they never come back into
+phase). `every` runs to **ten minutes** here and to a minute everywhere else,
+because a crossing is not a beat: a house that hopped once every ten minutes
+would read as broken, and a sky that crosses in ten seconds is a flock of
+birds. Two fields exist for this pulse and no other — `drift: "right"` sends it
+east instead of west, and `breathEvery` puts the vapour on its own clock when
+it should work faster than the wind carrying it. It is what the three shared
+cloud sheets are for, it wants `always` because nothing is ever waiting behind
+a cloud, it should carry no halo (light lying on a pad is the ground's, and a
+cloud has no pad), and a crossing that names no `delay` starts part-way through
+so the sky is never empty. Each carries its own two numbers — `every` / `delay`, `lightEvery` /
+`lightDelay` — where the first is how long one turn takes and **the second how
+late it starts**, which is what keeps two houses wearing the same pulse from
+beating as one object; that is a composer's judgement, so it is written per
+house rather than derived. `badge` names where a number sits, and **a badge is
+about the NUMBER**: the collection counts the tickets that pull the machine
+(ordinary plus super), the shop the sticker copies it would buy back, the daily
+road today's gift, the map a board nobody has opened. Not "is there something
+there" — a boolean written into a badge is the word "true" standing over a
+house. Neither half guesses the other —
+**except where the house declares `always`**, which takes the question away for
+both fields at once: that one runs because the composer wanted a building that
+moves, a beacon or a mill or a light that comes and goes, and it never waits on
+the meta layer for permission. Its badge still answers to what is waiting,
+because a number is about the number.
+
+**`layer` is the composer's hand on the painter's order.** The houses are drawn
+in the order the manifest lists them, sorted by `layer` first and by the FEET
+inside it: a house whose feet are lower is in front, which answers it on its own
+for everything standing on the ground. A cloud does not stand anywhere — its
+feet are up in the sky, which would put it behind every roof — so `layer` is a
+whole number, absent from almost every house, that says which plane it is on. It
+stays a **sort key and never a `z-index`**: a z-index would make every house its
+own stacking context and take the halo out of the ground's light
+(`packages/webshell/village.css`).
+
+**A house's halo carries its own colour**, `halo.color`, and a house that names
+none inherits the game's accent as every village did before it: a hub is a
+painted scene with its own lamps in it, and one accent under six buildings
+makes them read as six copies of one object. **The cheapest building is
+`art: "empty"`** — a box with no picture in it, laid over a lamp the hub was
+already painted with, carrying a halo, a badge and a door and drawing nothing.
+It is the one `art` that is not a role the game adopted.
+
+**The words are the player's, and they are off.** Every door wears its role's
+own name under its feet and every one of them is hidden, because a village is
+meant to be read as a place and six plates over six buildings turn it back into
+the list it replaced. One row in OPTIONS brings them all back at once
+(`Settings.labels`, persisted) — it is not a field of the composition, since a
+village where three buildings were named and three were not is the worst of
+both.
+
+**The scene is not a photograph: the light BREATHES.** `life.cycle` passes the
+hub through its own painted light, out into `warm`, back through it and out
+into `cold`, over `seconds` (two minutes by default) — and it is a CYCLE rather
+than a clock. Reading the player's real hour was the first answer and it was
+the wrong one: a difference nobody can SEE, because nothing moves while they
+are looking at it. A slow Ken Burns on the ground was the second, and it went
+for the opposite reason — the houses are placed in the design space and do not
+move, so a drifting backdrop under fixed buildings reads as the picture
+sliding. **Whatever moves here has to move all of it**, and a breath does: the
+brightness is on the ground and the tint is laid over the HOUSES too, in
+`soft-light`, because light that stops at the buildings is a filter on a
+picture. It passes through ZERO twice per cycle, which is where the hub is
+exactly as it was drawn. All of it is keyframes — no clock, no interval, no
+formula in JavaScript — so the cycle watched in the lab page is the cycle the
+player gets.
+
+**A door nobody built mostly does not matter**, because the band over this view
+is already the way to the ranking, the shop, the collection and the map, and
+**HELP is the map's** — level 0 opens it on every board, so a house for it would
+be a second way to one place and six buildings is what a sheet holds. The one
+hole worth plugging is OPTIONS, which nothing else carries, and where it is not
+a building it is the corner control it is on every other screen
+([docs/VIEWS.md](docs/VIEWS.md)). A game with no `web.village` keeps the menu it
+has today, byte for byte. Today `chainring` is the one village composed; the
+artwork is cut and adopted for all thirteen.
 
 It reads `window.__WEB__` — a plain list of motor references, never behaviour, so
 the motor knows nothing about the front end. An *online* leaderboard and
@@ -535,6 +717,7 @@ declaration** — no manifest key, no `ASSETS` edit, no per-game wiring:
 | `-background-phone.png`              | behind the intro and the end screen — **never behind the round**     |
 | `-background-phone-<name>.png`       | the same, one per band of the climb (`echomaze`, `radiam`)           |
 | `-background-desk.png`               | the bands around the frame on a desktop window (**web target only**) |
+| `-background-home.png`               | the ground the VILLAGE stands on (**web target only**)               |
 | `-title.png`                         | the logotype, replacing the app icon **and** the CSS `#intro-title`  |
 | `-character-{sad,neutral,happy}.png` | the end screen's face, picked by the star count (0 / 1–2 / 3)        |
 | `-object-<name>.png`                 | a **sheet to cut**, never a role — below                             |
@@ -548,14 +731,15 @@ radiam's beads, the album's stickers, slipdeck's court cards — lives in
 same shape of name is the one that ships (below).
 
 **One prefix belongs to no game.** `assets/image/master/game-object-*.png` is a
-sheet the **web shell** owns, and there are five — the gift boxes the daily
+sheet the **web shell** owns, and there are several — the gift boxes the daily
 strip and the three-box ceremony draw, plus the shell's **instruments**: the
 coin a wallet counts, the ticket it spends on a pull, the bolt an xp bar fills
-with, the star a level is cleared with, the trophy a finished board earns, and
-the plate that says a seventh day pays five times over. Those were stroked pictograms
+with, the star a level is cleared with, the trophy a finished board earns, the
+four-leaf clover the collection is counted with, and the plate that says a
+seventh day pays five times over. Those were stroked pictograms
 and a stroked pictogram reads as a tool's chrome; the web shell is a game. A
 cut is **renamed** in `SHELL_CUTS` and the rename is the declaration —
-`reward-08` says nothing, `coin` is what the shell draws — and four of the
+`reward-08` says nothing, `coin` is what the shell draws — and five of the
 roles are the names `menu.js` already calls its pictograms by, so `icon("coin")`
 finds the painted piece and falls back to the stroke in a build with no
 artwork. One swap, and the wallet, the shop, the album, the daily road, the
@@ -567,6 +751,24 @@ in `assets/image/shell/` rather than `assets/image/embed/`, and the builder
 injects them as `CONFIG.shellArt.<camelRole>` on the web target only. Same
 shape as `assets/image/brand/newrare.webp`, the studio mark every title screen
 signs itself with. Nothing may ever be called `game`.
+
+**Not every sheet under that prefix is the shell's, though, and the second kind
+is SHARED MATERIAL** — scenery no game owns and any game may use. The three
+cloud sheets (`game-object-cloud-{big,flat,haze}.png`, 22 cuts) are the first
+of it, and they exist for the village's sky. A cloud is not the shell's: it
+stands on ONE village, at a place that game chose, so it is adopted exactly
+like a cut of the game's own sheet — `art.objects` →
+`assets/image/embed/<slug>-<role>.webp` → `CONFIG.art.<camelRole>` — and only
+the villages that place one carry the bytes. **The role is the cut's own name
+with the prefix taken off**, so `game-cloud-haze-03` is `cloud-haze-03` in all
+thirteen and there is nothing to invent. It is a `decor` house like any other,
+and the village's z-sort by the foot of the object puts a cloud dropped high
+behind every building on its own. Adopt it by clicking it in the SHARED CUTS
+palette of `make village`, or
+`node tools/lab/cut-objects.mjs game-object-cloud-haze --adopt 3,6 --into <slug>`
+— `--into` is which game, and a sheet the shell names in `SHELL_CUTS` refuses
+it. Clouds are **web-only** art, for the same reason the houses are: the
+village is the web menu's own view.
 
 `assets/image/master/` is the **master**: what came out of the image model, up to
 2172 px and ~2 MB apiece, 121 MB in total. It ships nowhere. The shipping cut is
@@ -797,6 +999,96 @@ over the frame rather than a notification — it carries no word, so there is
 nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
 because it is what holds a beat together.
 
+`village.html` is **the village composer** (`make village`), and what it
+composes is a game's TITLE SCREEN drawn as a place instead of a list. It is
+**two layers**: the painted hub of
+`assets/image/master/<slug>-background-home.png`, and the six **houses** cut out
+of `<slug>-object-home.png` — a shop, a podium, a globe, a garage, a showroom, a
+crowned board — each one the door to a screen the web shell already has. **No
+logotype**: the hub IS the picture the title screen sells, and the drawn title
+belongs to whatever screen asks for it later.
+
+A house is placed **by the middle of its base**, because that is where it
+touches the ground, where its halo goes, what it turns around and what keeps it
+on its pad when it is made bigger; the list is **sorted by that point**, so a
+house whose feet are lower is drawn in front and nothing has a z-order to set.
+Four grips on the selection — move, turn, size, drop — ride inside the rotation
+and are sized in screen pixels, so they stay thumb-sized however far the frame
+is zoomed out.
+
+Three signals say three different things and never two: the **halo**, an ellipse
+lying on the pad in `screen` — the game's accent, or the colour the composer
+picked for this house — says THIS IS A DOOR; the **badge** says HOW MANY; the
+**animation** says THERE IS SOMETHING TO TAKE, and it is the one that must stay
+rare, which is what the NOTIFY preview is for. That last one is **two controls
+and not one**, because a building that is alive and a sign that is lit are not
+the same statement and a house may make both: the PULSE is its own section and
+moves the house (`float`, `breath`, `alert`, `fade`, and `cloud`, which is
+weather rather than a signal — it rode under the badge's heading while all four
+of them meant "something is waiting", and that heading said a pulse was a
+number), the LIGHT sits with the
+halo it works and moves nothing else (`blink` on a hard beat, `flicker` like a
+failing tube, `random` on one long uneven 7 s cycle every house enters at a
+different point of). It was one list picked one at a time, which meant a mill
+could be alive or lit and never both, for no reason but the shape of the field.
+A light with no halo has nothing to show and the inspector says so rather than
+going quiet; `random` is not random (CSS keyframes are deterministic) and the
+composer says that too. **The PLANE is not in the inspector, it is the STACK**
+— the panel the right column opens on, and the whole composition read as the
+order it is painted in: front at the top, grouped by the plane each object
+stands on, so the summary of the planes IS the grouping and nothing counts them
+twice. A row selects, which is the only way to reach a house standing behind
+another, and two arrows move that object a plane without selecting it. It is
+one place and not two because a plane only ever means something NEXT TO the
+objects that share it: a slider on the selected house would print a number with
+nothing to compare it against, which is what it did until this panel existed.
+`layer` is a whole number, sorted before the feet and never written as a
+`z-index` — the feet answer the order on their own for everything that stands
+on the ground, and a cloud's feet are up in the sky. A house's word is the ROLE'S, taken from the shell's own
+strings and never typed, like the store card's punchline — and it is previewed
+rather than composed, since in the build the names are a row in OPTIONS the
+player turns on.
+
+**Every slider is magnetic**, cut into segments at the round values — 10 design
+px for a position or a width, 5° for a turn, 0.05 for a ratio, a tenth of a
+second for a beat — and the snap runs on the MOVE and never on the draw, so a
+village holding numbers off that grid is not rewritten the moment a house is
+clicked. **The grid button IS the snap**: it draws exactly what the hand lands
+on, and turning it off turns the magnetism off with it. Every group of sliders
+is behind a **chevron**, shut, with its values on the header, so the panel reads
+as the list of decisions it is. **Every track is notched at the values its
+magnet lands on** — a slider that snaps to numbers nothing on it points at is a
+slider correcting the hand for no visible reason — and the notches thin up the
+1‑2‑5 ladder where a grid would draw too many of them to read. Every colour is
+picked in **the page's own picker** and never the OS's: a colour here is judged
+by watching it land on the scene, which cannot be done behind a platform dialog
+standing over the scene. **That picker opens on a PIPETTE**, because a colour
+on a painted hub is taken far more often than it is built out of a saturation
+square — the platform's `EyeDropper` where there is one, which samples the
+whole SCREEN, and the page's own canvas sampler where there is not (Firefox and
+Safari ship none), which samples the SCENE: the hub and the cuts, live under
+the pointer, kept on a click and put back on ESCAPE. The label names which of
+the two it is, because a tool that is narrower here must not be a tool that
+lies.
+
+The page is **DOM and not a canvas**, unlike the store composer: the halo, the
+badge and the breath are CSS, so what is tuned there is what ships — the block
+marked THE VILLAGE ITSELF is the one that moves into the webshell unchanged. It
+places only what the game has ADOPTED, since a cut no manifest names ships
+nowhere — and **a spare cut is adopted by clicking it**, which writes the role
+into `art.objects` and encodes it, because that decision is made looking at the
+picture. **A second palette holds the SHARED cuts** — the clouds, material no
+game owns and all thirteen are offered; same click, same `art.objects` line,
+and its own list because that is the one thing the picture cannot say. One
+palette entry is not a file — **empty**, the box with no
+picture in it, for a lamp the hub is already painted with. It writes in two
+places and the two mean different things: **Save draft** into
+`lab/village-presets.json`, which ships nothing and rebuilds nothing, and **Push** into `web.village` of `games/<slug>/manifest.json`, with
+the patch bump and the rebuild that touching a game's sources owes. The segment
+at the top says which of the three — manifest, draft, empty — is ON SCREEN, a
+source nothing is stored in is disabled rather than silent, and switching asks
+before it replaces unsaved work.
+
 `game-text.html` is **the copy desk**: every word a game shows a player, in one
 list, split into an EN section and an FR one. A game's copy is written where it
 is used, which is the right place to write it and the wrong place to proofread
@@ -824,9 +1116,10 @@ thirteen equally, and a game that wants its own wording writes it under
 `web.copy`, which IS listed. `node tools/lab/scan-text.mjs <slug>` is the same
 list as text, no browser.
 
-The events bench and the copy desk are the second and third lab pages with a
-server of their own (`make events`, `make text`), for the same two reasons as the
-store composer plus one more: Apply writes.
+The events bench, the copy desk and the village composer are the second, third
+and fourth lab pages with a server of their own (`make events`, `make text`,
+`make village`), for the same two reasons as the store composer plus one more:
+Apply writes.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see

@@ -286,6 +286,13 @@
   var API = null, strip, win, track, rail, cells = [], base = 0, built = false;
   function el(tag, cls, html) { return API.el(tag, cls, html); }
   function icon(name, cls) { return API.icon(name, cls); }
+
+  /* The two things the road has to know about the shell around it: whether the
+     player lives on a hub, and how to open a card. Both are read at the moment
+     they are used rather than captured — village.js is the LAST file of the
+     web layer, and daily.js is loaded well before it. */
+  function villaged() { return !!window.__VILLAGE__; }
+  function modal() { return window.__MODAL__; }
   function $(id) { return document.getElementById(id); }
 
   /* WHAT THE LAST CLAIM PAID, as the node wears it. The save keeps the reward
@@ -460,18 +467,89 @@
     }
   }
 
+  /* ── 2b. the road, as a card over the hub ─────────────────────────────── */
+
+  /* WHERE A VILLAGE PUTS THE ROAD. On a game with no hub this strip is a LINE
+     OF THE TITLE MENU: it sits between the map and the collection, it is read
+     on the way past, and tapping it is what opens the gift.
+
+     A village has no menu to be a line of — it has a BUILDING — and the
+     building used to hand the player straight to the day's reward, which meant
+     the road itself was never seen at all: the week, where the player is
+     inside it, and what tomorrow pays were all invisible on the one game shape
+     that has a door dedicated to them.
+
+     So the door opens the ROAD, over the hub, as a card: the village stays
+     exactly where it is behind the shell's own veil (packages/webshell/
+     view.css), the seven days are the whole of what the card holds, and the
+     tap that follows is the same tap the strip has always answered. Nothing is
+     navigated — the wallet band this pays into is the hub's own.
+
+     It is dismissed by a tap outside, like every card of this layer; the days
+     are `<button>`s, which is what keeps a finger landing on one from being
+     read as a tap on the scrim (packages/webshell/view.js, open). */
+  var roadCard = null;
+
+  function openRoad() {
+    if (roadCard) return;
+    if (!built) build();
+    paint();
+    var MD = modal();
+    /* No card system — a build older than view.js, or a playable: the door
+       still has to pay out, which is what it did before this card existed. */
+    if (!MD) return openToday();
+    roadCard = MD.open({
+      kind: "road",
+      onClose: function () { roadCard = null; },
+      fill: function (card) {
+        /* THE ONE WORD THE ROAD CANNOT CARRY. The strip is drawn wordless on
+           purpose — inside a menu a heading over it reads as a third menu
+           entry — but a card that opens on its own has to say what it is. */
+        card.appendChild(el("h2", "mt-h", T.title));
+        card.appendChild(strip);
+      }
+    });
+  }
+
+  /* CLOSES IT, AND SAYS HOW LONG TO WAIT. A reward card opening in the same
+     frame the road starts fading would stack two veils on the hub for a fifth
+     of a second, which reads as the screen going black. The number is the
+     modal layer's own fade, near enough; 0 when there was no card. */
+  function closeRoad() {
+    if (!roadCard) return 0;
+    roadCard.close();
+    roadCard = null;
+    return 200;
+  }
+
+  function after(ms, fn) { if (ms) setTimeout(fn, ms); else fn(); }
+
+  /* Today's cell, answered with no cell to tap: `onTapCell` on the live day,
+     and the same three answers — pay it, or say it was already collected. */
+  function openToday() {
+    if (!built) build();
+    var live = liveCell();
+    if (!claimed()) return claim(live);
+    return showTaken(live);
+  }
+
   /* ── 3. the tap ────────────────────────────────────────────── */
 
   /* Three answers, and which one a day gives is the only thing its position on
      the road decides. A day that did nothing when touched would read as a
-     broken control, and the road is nothing BUT days a finger can reach. */
+     broken control, and the road is nothing BUT days a finger can reach.
+
+     The road gets out of the way first: whichever of the three answers this
+     is, it is a card, and the card the player tapped it from is a card too. */
   function onTapCell(e) {
     var a = +(e.currentTarget.getAttribute("data-a"));
     var live = liveCell(), taken = claimed();
-    if (a === live && !taken) return claim(a);
-    if (a > live) return showLocked(a, live);
-    if (a === live || claimedAt(a)) return showTaken(a);
-    showMissed(a);
+    after(closeRoad(), function () {
+      if (a === live && !taken) return claim(a);
+      if (a > live) return showLocked(a, live);
+      if (a === live || claimedAt(a)) return showTaken(a);
+      showMissed(a);
+    });
   }
 
   /* The eyebrow every one of these cards wears: what this is, which day of the
@@ -487,12 +565,26 @@
            (DEV ? '<i class="dl-dev">' + T.dev + '</i>' : '');
   }
 
-  /* ---- today: the map, then the boxes over it -----------------------------
-     `LV.open()` is what PLAY does, so the strip leaves the player exactly
-     where PLAY would have — and the gift pays into the wallet in that screen's
-     own header, where they can watch it land. A game with no map (none today:
-     all thirteen declare `web.levels`) keeps the boxes over the title screen,
-     which is where they used to be. */
+  /* ---- today: the screen that shows a wallet, then the boxes over it -------
+     THE GIFT PAYS INTO THE WALLET, so the ceremony has to play somewhere the
+     wallet is on screen — a reward granted where the band is not is coins
+     flying into nothing.
+
+     ON A VILLAGE that screen is the hub the player is already standing on: the
+     band is over it, the road was a card on it, and the boxes simply take the
+     road's place. Nothing is navigated, and the map is never involved.
+
+     WITHOUT ONE the strip is a line of the title menu, which carries no band,
+     so the tap does what PLAY does — `LV.open()` — and the boxes open over the
+     map. A game with neither keeps them over the title screen, which is where
+     they used to be. */
+  function stage() {
+    if (villaged()) return 0;           // the road card has already stepped aside
+    var LV = window.__LEVELS__;
+    if (LV && LV.active() && !LV.isOpen()) { LV.open(); return 260; }
+    return 0;
+  }
+
   function claim(n) {
     var k = kindOf(n), star = isStar(n), d = dayOf(n);
     var c = (state().c || []).concat([n]);
@@ -504,8 +596,7 @@
     paint();
     W.Sound.cue("uiScore", 0.75, 1.15, 900, 0.12);
 
-    var LV = window.__LEVELS__;
-    if (LV && LV.active() && !LV.isOpen()) LV.open();
+    var hop = stage();
 
     /* The reward is written beside the day, not instead of it: the day is what
        the road is counted in, and `r` is what the node to the left of
@@ -517,8 +608,9 @@
     }
 
     /* One frame for the map to mount under the card, so nothing arrives over a
-       screen that is still being written. */
-    setTimeout(function () {
+       screen that is still being written. Zero on a village: the hub was
+       already there and the road took itself away before this ran. */
+    after(hop, function () {
       /* A GIFT DAY GETS THE THREE BOXES; the three small ones get the prize
          card straight away, because a choice between three things that are all
          the same thing is not a choice. No tripling on either: the daily gift
@@ -541,7 +633,7 @@
           done: done
         });
       }
-    }, LV && LV.active() ? 260 : 0);
+    });
   }
 
   /* THE PICTURE A DAY WEARS ON ITS CARD — the very box it hands over on a
@@ -657,6 +749,19 @@
        ask rather than on mount. */
     node: function () { return built ? strip : build(); },
     setLang: setLang,
+    text: function (k) { return T[k]; },
+
+    /* THE VILLAGE'S OWN DOOR: the road over the hub, as a card (section 2b).
+       It is what the daily BUILDING opens (packages/webshell/menu.js, doors),
+       and the tap on a day inside it is the same tap the strip has always
+       answered. */
+    openRoad: openRoad,
+
+    /* THE ROAD WITHOUT THE ROAD — today's cell, answered with no cell to tap.
+       It is what the village's door did before that door opened the road
+       itself, and it is still the fallback for a build with no card system to
+       open one on. */
+    openToday: openToday,
     /* Is there a gift waiting? The menu shows a dot on nothing else. */
     pending: function () { return !claimed(); }
   };

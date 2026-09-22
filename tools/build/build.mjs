@@ -314,7 +314,12 @@ async function gameFont(manifest, mode) {
   reason a playable ships no font.
 */
 const ART_DIR = 'assets/image/embed';
-const WEB_ONLY_ART = ['background-desk'];
+/* `background-home` is the VILLAGE'S GROUND, and it is web-only for the same
+   reason `background-desk` is: the menu the houses stand on only exists on the
+   web target. A playable's intro IS the ad's first screen — one title, one
+   sentence and one button — so it would carry 170 KB of a hub it can never
+   show. */
+const WEB_ONLY_ART = ['background-desk', 'background-home'];
 
 /* A STYLE SET beyond its first member is web-only too, for the same reason and
    at a much larger scale. `<slug>-ball-<colour>-NN.webp` is games/radiam's bead
@@ -337,6 +342,21 @@ const WEB_ONLY_STYLE = /^ball-[a-z]+-(\d+)$/;
    target that has a player who comes back. */
 const WEB_ONLY_STICKER = /^sticker\d+$/;
 
+/* THE VILLAGE'S HOUSES, for the third time and the same reason as the album:
+   `<slug>-homeNN.webp` is a door on the web menu — the map, the ranking, the
+   shop, the collection, the daily road, the options — and a playable has none
+   of those screens to be a door to. Six cuts, ~280 KB, drawing nothing at all
+   in a creative capped at 5 MB. Unlike the bead styles there is no first
+   member to keep: a village with one house is not a village. */
+const WEB_ONLY_HOUSE = /^home\d+$/;
+
+/* AND THE SKY OVER THEM. `<slug>-cloud-<style>-NN.webp` is scenery adopted out
+   of the shared cloud sheets and placed on the VILLAGE, which is the web
+   menu's own view — so it is web-only for exactly the reason the houses are,
+   and a playable that carried one would be paying for a picture it has no
+   screen to draw. */
+const WEB_ONLY_CLOUD = /^cloud-[a-z]+-\d+$/;
+
 /* And a SCENE SET, for the third time and the same reason: a game whose
    painted scene changes per band of the climb keeps one picture per band
    (`<slug>-background-phone-<name>.webp`, games/echomaze's five over thirty
@@ -355,6 +375,8 @@ function firstScene(roles) {
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;
+  if (WEB_ONLY_HOUSE.test(role)) return true;
+  if (WEB_ONLY_CLOUD.test(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
   if (m && Number(m[1]) !== 1) return true;
   if (SCENE_SET.test(role) && roles) {
@@ -770,29 +792,43 @@ async function main() {
   }
 
   // the web target ships a layer of its own; load it once for the run.
-  /* The web layer is five files and the ORDER IS THE CONTRACT, because each
+  /* The web layer is six files and the ORDER IS THE CONTRACT, because each
      one publishes the handle the next reads:
 
+       view.js    window.__VIEW__   — what a screen is, what a modal is, and
+                                      the stack both live in. First, because
+                                      every file below defines a view or opens
+                                      a card through it
        levels.js  window.__LEVELS__ — the map, and the bands meta.js collects
        meta.js    window.__META__   — the wallet, and the map's result filter
                                       runs AFTER the level layer's, so the
                                       stars it reads are the level's
        album.js   window.__ALBUM__  — the collection, the machine, the shop
        daily.js   window.__DAILY__  — the strip on the title screen
-       menu.js    mounts all four
+       menu.js    mounts all five, and publishes the DOORS
+       village.js window.__VILLAGE__ — the front door as a place, for a game
+                                      that declares `web.village`. LAST,
+                                      because it stands on menu.js: it reads
+                                      the doors that file publishes and puts
+                                      the list it drew away
 
-     The stylesheets follow the same order for the same reason: meta.css re-cuts
-     the map's header, so it has to come after levels.css. */
+     The stylesheets follow the same order for the same reason: view.css holds
+     the base every card and every band is drawn on, and meta.css re-cuts the
+     map's header, so it has to come after levels.css. */
   const web = WEBISH
     ? {
-        css: await read('packages/webshell/menu.css') + '\n' +
+        css: await read('packages/webshell/view.css') + '\n' +
+             await read('packages/webshell/menu.css') + '\n' +
              await read('packages/webshell/levels.css') + '\n' +
-             await read('packages/webshell/meta.css'),
-        js: await read('packages/webshell/levels.js') + '\n' +
+             await read('packages/webshell/meta.css') + '\n' +
+             await read('packages/webshell/village.css'),
+        js: await read('packages/webshell/view.js') + '\n' +
+            await read('packages/webshell/levels.js') + '\n' +
             await read('packages/webshell/meta.js') + '\n' +
             await read('packages/webshell/album.js') + '\n' +
             await read('packages/webshell/daily.js') + '\n' +
-            await read('packages/webshell/menu.js')
+            await read('packages/webshell/menu.js') + '\n' +
+            await read('packages/webshell/village.js')
       }
     : null;
 

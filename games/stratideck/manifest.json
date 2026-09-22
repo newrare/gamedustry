@@ -1,0 +1,578 @@
+{
+  "slug": "stratideck",
+  "title": "Stratideck",
+  "version": "0.1.1",
+  "tagline": "Send your cards against a hidden enemy camp, the higher rank wins",
+  "order": 150,
+  "draft": false,
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#f2c14e",
+    "accent2": "#5aa9ff"
+  },
+  "art": {
+    "objects": {
+      "decor-01": "stratideck-other-01",
+      "decor-02": "stratideck-other-02",
+      "decor-03": "stratideck-other-04",
+      "decor-04": "stratideck-other-15",
+      "home01": "stratideck-home-01",
+      "home02": "stratideck-home-02",
+      "home03": "stratideck-home-04",
+      "home04": "stratideck-home-07",
+      "home05": "stratideck-home-08",
+      "home06": "stratideck-home-09",
+      "home07": "stratideck-home-05",
+      "home08": "stratideck-home-06",
+      "piece-01": "stratideck-other-13",
+      "piece-02": "stratideck-other-09",
+      "piece-03": "stratideck-other-14",
+      "piece-04": "stratideck-other-18",
+      "piece-05": "stratideck-other-10",
+      "piece-06": "stratideck-other-25",
+      "piece-07": "stratideck-other-34",
+      "piece-08": "stratideck-other-37",
+      "piece-09": "stratideck-other-28",
+      "sticker01": "stratideck-sticker-01",
+      "sticker02": "stratideck-sticker-02",
+      "sticker03": "stratideck-sticker-03",
+      "sticker04": "stratideck-sticker-04",
+      "sticker05": "stratideck-sticker-05",
+      "sticker06": "stratideck-sticker-06",
+      "sticker07": "stratideck-sticker-07",
+      "sticker08": "stratideck-sticker-08",
+      "sticker09": "stratideck-sticker-09",
+      "sticker10": "stratideck-sticker-10",
+      "sticker11": "stratideck-sticker-11",
+      "sticker12": "stratideck-sticker-12",
+      "sticker13": "stratideck-sticker-13",
+      "sticker14": "stratideck-sticker-14",
+      "sticker15": "stratideck-sticker-15",
+      "sticker16": "stratideck-sticker-16",
+      "sticker17": "stratideck-sticker-17",
+      "sticker18": "stratideck-sticker-18",
+      "sticker19": "stratideck-sticker-19",
+      "sticker20": "stratideck-sticker-20"
+    }
+  },
+  "copy": {
+    "fr": {
+      "tagline": "Un Stratego de poche. Envoie tes cartes contre un camp ennemi caché et découvre qui bat qui.",
+      "tags": [
+        "Glisse pour attaquer",
+        "Cartes cachées",
+        "Le grade décide"
+      ]
+    },
+    "en": {
+      "tagline": "A pocket Stratego. Send your cards against a hidden enemy camp and find out who beats whom.",
+      "tags": [
+        "Drag to strike",
+        "Hidden cards",
+        "Rank decides"
+      ]
+    }
+  },
+  "description": "Stratideck is a battle of cards against a camp you cannot see. The enemy stands on a grid, every card face down; your own army is dealt four at a time under it. Drag a card onto an enemy you can reach — the front row at first, then whatever stands next to a cell you have already emptied, so the camp opens corridor by corridor. The enemy turns over and the ranks decide: the higher one wins, equal ranks both fall, and three specials bend the rule the way Stratego does. The Spy kills the Marshal. The Sapper is the only card that clears a Trap. The Scout does not fight at all: it reveals the card it is sent at and comes back to the deck. A card that wins returns to the bottom of your deck; a card that loses is gone, and an army with no cards left has lost. Somewhere on the top row hides the enemy Flag, and taking it ends the battle in a capture. Kills pay by the rank they take down, a precise kill — the tightest card that could do it — pays double, and a streak of wins multiplies everything, so a reveal is worth points on its own. The camp grows over thirty levels, and a level's camp is always laid out the same way, so a second try is played with what the first one learned.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Stratego",
+            "line": "The higher <b>rank</b> wins"
+          },
+          {
+            "kicker": "Hidden",
+            "line": "Find out what is <b>hiding</b>"
+          },
+          {
+            "kicker": "Specials",
+            "line": "<b>Spy</b>, sapper and scout"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "A camp that <b>grows</b>"
+          },
+          {
+            "kicker": "Challenge",
+            "line": "Capture the <b>flag</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Stratego",
+            "line": "Le plus haut <b>grade</b> gagne"
+          },
+          {
+            "kicker": "Caché",
+            "line": "Découvre ce qui se <b>cache</b>"
+          },
+          {
+            "kicker": "Spéciales",
+            "line": "<b>Espion</b>, sapeur et éclaireur"
+          },
+          {
+            "kicker": "30 niveaux",
+            "line": "Un camp qui <b>grandit</b>"
+          },
+          {
+            "kicker": "Défi",
+            "line": "Capture le <b>drapeau</b>"
+          }
+        ]
+      }
+    }
+  },
+  "itch": {
+    "user": "newrare",
+    "project": "stratideck",
+    "channel": "html5",
+    "tags": [
+      "strategy",
+      "casual",
+      "singleplayer",
+      "2d",
+      "cards",
+      "card-game",
+      "turn-based",
+      "high-score"
+    ],
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "android": {
+    "appId": "com.newrare.stratideck",
+    "ads": {
+      "rewarded": false,
+      "interstitial": false
+    }
+  },
+  "web": {
+    "copy": {
+      "fr": {
+        "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b>, le plus haut <b class=\"w-rank\">grade</b> gagne",
+        "strings": {
+          " streak": " d'affilée",
+          "Army lost": "Armée perdue",
+          "Beaten": "Battu",
+          "Best score": "Meilleur score",
+          "Best streak": "Meilleure série",
+          "Both fall": "Les deux tombent",
+          "Camp taken!": "Camp pris !",
+          "Captain": "Capitaine",
+          "Cards": "Cartes",
+          "Colonel": "Colonel",
+          "Deck": "Pioche",
+          "Fight again": "Rejouer la bataille",
+          "Final score": "Score final",
+          "Flag": "Drapeau",
+          "Flag captured!": "Drapeau capturé !",
+          "Foes": "Ennemis",
+          "Foes beaten": "Ennemis battus",
+          "General": "Général",
+          "Holds": "Tient",
+          "Install now": "Installer",
+          "Lieutenant": "Lieutenant",
+          "Major": "Major",
+          "Marshal": "Maréchal",
+          "Out of reach": "Hors de portée",
+          "Overkill": "Trop fort",
+          "Pick a card": "Choisis une carte",
+          "Play the full game": "Jouer au jeu complet",
+          "Precise hits": "Coups précis",
+          "Precise!": "Précis !",
+          "Sapper": "Sapeur",
+          "Score": "Score",
+          "Scout": "Éclaireur",
+          "Sergeant": "Sergent",
+          "Spotted": "Repéré",
+          "Spy": "Espion",
+          "Strike the front row": "Frappe la première ligne",
+          "Taken": "Pris",
+          "Time": "Temps",
+          "Time's up!": "Temps écoulé !",
+          "To battle": "À l'assaut",
+          "Trap": "Piège",
+          "Trap cleared": "Piège désamorcé",
+          "Trap!": "Piège !",
+          "holds": "tient",
+          "streak": "d'affilée"
+        }
+      }
+    },
+    "font": "russoone",
+    "music": "stratideck.mp3",
+    "levels": {
+      "objective": {
+        "from": 700,
+        "to": 3000,
+        "step": 50
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> against the camp",
+        "fr": "Marque <b>{n}</b> contre le camp"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "Outpost",
+          "Palisade",
+          "Warcamp",
+          "Siege",
+          "Citadel"
+        ],
+        "fr": [
+          "Avant-poste",
+          "Palissade",
+          "Camp de guerre",
+          "Siège",
+          "Citadelle"
+        ]
+      },
+      "tune": {
+        "play.cols": [
+          4,
+          8
+        ],
+        "play.rows": [
+          3,
+          6
+        ],
+        "play.traps": [
+          0,
+          5
+        ],
+        "play.deckRatio": [
+          1.1,
+          0.6
+        ],
+        "play.enemyBias": [
+          -1,
+          1.2
+        ],
+        "play.deckBias": [
+          0.6,
+          -0.2
+        ]
+      }
+    },
+    "meta": {
+      "coinsPer": 200,
+      "xpPer": 20,
+      "ticketPrice": 50,
+      "awards": [
+        1,
+        4,
+        5,
+        8,
+        10,
+        3,
+        9,
+        13,
+        18,
+        14,
+        19,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Hey There",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "En Garde",
+          "rarity": "rare"
+        },
+        {
+          "name": "Thumbs Up",
+          "rarity": "common"
+        },
+        {
+          "name": "Salute",
+          "rarity": "common"
+        },
+        {
+          "name": "Puzzled",
+          "rarity": "rare"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Waving",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheer",
+          "rarity": "rare"
+        },
+        {
+          "name": "Grateful",
+          "rarity": "common"
+        },
+        {
+          "name": "Warcry",
+          "rarity": "common"
+        },
+        {
+          "name": "Smirk",
+          "rarity": "rare"
+        },
+        {
+          "name": "Fuming",
+          "rarity": "rare"
+        },
+        {
+          "name": "Taunt",
+          "rarity": "common"
+        },
+        {
+          "name": "Baffled",
+          "rarity": "common"
+        },
+        {
+          "name": "Blue Banner",
+          "rarity": "epic"
+        },
+        {
+          "name": "Full Deck",
+          "rarity": "legendary"
+        },
+        {
+          "name": "War Map",
+          "rarity": "rare"
+        },
+        {
+          "name": "Lion Guard",
+          "rarity": "epic"
+        },
+        {
+          "name": "Base Camp",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 140,
+          "y": 79,
+          "w": 220,
+          "halo": {
+            "w": 0.45,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 1.6,
+          "lightDelay": 0.9,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 540,
+          "y": 250,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#7a9dc8"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "album",
+          "x": 370,
+          "y": 370,
+          "w": 170,
+          "badge": {
+            "dx": -0.2,
+            "dy": -0.8
+          },
+          "notify": "alert",
+          "every": 9,
+          "delay": 2
+        },
+        {
+          "art": "home04",
+          "role": "shop",
+          "x": 160,
+          "y": 420,
+          "w": 200,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.8
+          }
+        },
+        {
+          "art": "home06",
+          "role": "map",
+          "x": 570,
+          "y": 430,
+          "w": 160,
+          "flip": true
+        },
+        {
+          "art": "home05",
+          "role": "decor",
+          "x": 112,
+          "y": 625,
+          "w": 200
+        },
+        {
+          "art": "home08",
+          "role": "decor",
+          "x": 612,
+          "y": 640,
+          "w": 195
+        },
+        {
+          "art": "empty",
+          "role": "play",
+          "x": 360,
+          "y": 640,
+          "w": 200
+        },
+        {
+          "art": "home07",
+          "role": "decor",
+          "x": 360,
+          "y": 800,
+          "w": 210,
+          "halo": {
+            "w": 0.9,
+            "h": 0.45,
+            "dy": 0.02,
+            "color": "#ff5c5c"
+          },
+          "light": "random",
+          "lightEvery": 7,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "options",
+          "x": 150,
+          "y": 900,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 560,
+          "y": 900,
+          "w": 220
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 71,
+          "y": 957,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "always": true
+        },
+        {
+          "art": "piece03",
+          "role": "daily",
+          "x": 370,
+          "y": 970,
+          "w": 80,
+          "badge": {
+            "dx": -0.45,
+            "dy": -0.7
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 251,
+          "y": 1015,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 0.9,
+          "lightDelay": 0.5,
+          "always": true
+        },
+        {
+          "art": "decor04",
+          "role": "decor",
+          "x": 340,
+          "y": 1030,
+          "w": 80,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 526,
+          "y": 1031,
+          "w": 220,
+          "halo": {
+            "w": 0.55,
+            "h": 0.4,
+            "dy": 0.02,
+            "color": "#fcd060"
+          },
+          "light": "flicker",
+          "lightEvery": 1,
+          "lightDelay": 0.9,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffd9a0",
+          "cold": "#1a2a5e",
+          "amount": 0.35,
+          "seconds": 150
+        }
+      }
+    }
+  }
+}

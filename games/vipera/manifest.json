@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.1.2",
+  "version": "1.2.2",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -15,10 +15,38 @@
   },
   "art": {
     "objects": {
+      "cloud-flat-05": "game-cloud-flat-05",
       "decor-02": "vipera-jungle-02",
       "decor-03": "vipera-jungle-03",
       "decor-14": "vipera-jungle-14",
-      "decor-17": "vipera-jungle-17"
+      "decor-17": "vipera-jungle-17",
+      "home01": "vipera-home-01",
+      "home02": "vipera-home-02",
+      "home03": "vipera-home-03",
+      "home04": "vipera-home-04",
+      "home05": "vipera-home-05",
+      "home06": "vipera-home-06",
+      "jungle12": "vipera-jungle-12",
+      "sticker01": "vipera-sticker-01",
+      "sticker02": "vipera-sticker-02",
+      "sticker03": "vipera-sticker-03",
+      "sticker04": "vipera-sticker-04",
+      "sticker05": "vipera-sticker-05",
+      "sticker06": "vipera-sticker-06",
+      "sticker07": "vipera-sticker-07",
+      "sticker08": "vipera-sticker-08",
+      "sticker09": "vipera-sticker-09",
+      "sticker10": "vipera-sticker-10",
+      "sticker11": "vipera-sticker-12",
+      "sticker12": "vipera-sticker-13",
+      "sticker13": "vipera-sticker-14",
+      "sticker14": "vipera-sticker-15",
+      "sticker15": "vipera-sticker-16",
+      "sticker16": "vipera-sticker-17",
+      "sticker17": "vipera-sticker-18",
+      "sticker18": "vipera-sticker-19",
+      "sticker19": "vipera-sticker-20",
+      "sticker20": "vipera-sticker-21"
     }
   },
   "copy": {
@@ -198,6 +226,249 @@
           540
         ]
       }
+    },
+    "meta": {
+      "coinsPer": 50,
+      "xpPer": 5,
+      "ticketPrice": 15,
+      "awards": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        3,
+        12,
+        15,
+        17,
+        20,
+        13
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "common"
+        },
+        {
+          "name": "Starstruck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Big Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Slurp",
+          "rarity": "common"
+        },
+        {
+          "name": "Sly One",
+          "rarity": "rare"
+        },
+        {
+          "name": "King Viper",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Hibiscus",
+          "rarity": "rare"
+        },
+        {
+          "name": "Thicket",
+          "rarity": "common"
+        },
+        {
+          "name": "Mossy Rock",
+          "rarity": "rare"
+        },
+        {
+          "name": "Leaf Coin",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Berry",
+          "rarity": "rare"
+        },
+        {
+          "name": "Jungle Vine",
+          "rarity": "epic"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 194,
+          "y": 238,
+          "w": 200,
+          "halo": {
+            "w": 0.8,
+            "h": 0.34,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2
+        },
+        {
+          "art": "sticker18",
+          "role": "daily",
+          "x": 376,
+          "y": 238,
+          "w": 68,
+          "badge": {
+            "dx": -0.5,
+            "dy": -1.05
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "jungle12",
+          "role": "decor",
+          "x": 306,
+          "y": 245,
+          "w": 71,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "cloudFlat05",
+          "role": "decor",
+          "x": 71,
+          "y": 342,
+          "w": 200,
+          "notify": "cloud",
+          "every": 259,
+          "drift": "right",
+          "breathEvery": 9.5,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 568,
+          "y": 354,
+          "w": 168
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 204,
+          "y": 420,
+          "w": 184,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.85
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 624,
+          "y": 444,
+          "w": 200,
+          "halo": {
+            "w": 0.75,
+            "h": 0.34,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2,
+          "lightDelay": 1.8,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 120,
+          "y": 690,
+          "w": 170,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 555,
+          "y": 782,
+          "w": 211
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 214,
+          "y": 960,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 546,
+          "y": 1036,
+          "w": 200,
+          "halo": {
+            "w": 0.75,
+            "h": 0.2,
+            "dy": 0,
+            "color": "#d0fafb"
+          },
+          "light": "flicker",
+          "lightEvery": 2,
+          "lightDelay": 1.8,
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 371,
+          "y": 1103,
+          "w": 200
+        }
+      ]
     }
   }
 }

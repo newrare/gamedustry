@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Pawko</title>
+
+<!--
+  PAWKO — built on the PLAYABLE MOTOR (template/game-template.html).
+  Sections 3/4/5/7 are the shared engine, byte-identical across games: do not
+  fork them, extend them.
+
+  Mechanic: a pachinko board of brass pegs under a chute, five cards dealt
+  above it. A round is five waves of balls. Before each wave the player plays
+  ONE card — fire, ice, bumpers, magnets or bombs on random pegs, double
+  classic pegs, double gates, fatter waves — and a card played is gone, so
+  the order is the strategy. A tap on the board picks where the wave falls.
+  Every peg touched pays, a ball on fire or frozen pays more, a charged one
+  pays double, and the gate it ends in adds (or takes) a bonus. The objective
+  gauge fills the board behind the pegs; the round ends with the last ball.
+-->
+
+<style>{{MOTOR_CSS}}{{SKIN_CSS}}</style>
+</head>
+<body>
+
+<div id="safe-probe"></div>
+<div id="backdrop"></div>
+
+<div id="stage">
+  <div id="frame">
+
+    <canvas id="game" width="720" height="1280"></canvas>
+
+    <div id="overlay">
+      <div id="ov-toasts"></div>
+      <div id="ov-banner"><div id="ov-banner-main"></div><div id="ov-banner-sub"></div></div>
+      <div id="ov-reward"></div>
+      <div id="ov-vignette"></div>
+      <div id="ov-pops"></div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div id="hud-left"></div>
+      <div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl">Score</div></div>
+      <div id="hud-right"></div>
+    </div>
+
+    <div id="cta-bar" class="hidden">
+      <button class="btn sm" id="btn-cta">Install now</button>
+    </div>
+
+    <div id="screen-loading" class="screen">
+      <div class="spinner"></div>
+      <div class="loading-lbl">Loading…</div>
+    </div>
+
+    <div id="screen-intro" class="screen hidden">
+      <img id="app-icon" alt="">
+      <div id="intro-title">Pawko</div>
+      <div id="intro-tagline"><b class="w-tap">Tap</b> to drop a <b class="w-wave">wave of balls</b>, play a <b class="w-card">card</b> between waves</div>
+      <div id="intro-demo">
+        <div class="demo-stage">
+          <div class="demo-track"></div>
+          <div class="demo-beam"></div>
+          <div class="demo-target"><span class="demo-ripple"></span><span class="demo-ripple d2"></span></div>
+          <div class="demo-hand"></div>
+          <div class="demo-arrow"></div>
+        </div>
+        <div class="demo-caption" id="demo-caption"></div>
+      </div>
+      <button class="btn lg" id="btn-start">Tap to play</button>
+    </div>
+
+    <div id="screen-end" class="screen hidden">
+      <canvas id="confetti" width="720" height="1280"></canvas>
+      <div class="eo-title" id="eo-title">Round over</div>
+      <div class="eo-scorelbl" id="eo-scorelbl">Final score</div>
+      <div class="eo-score" id="eo-score">0</div>
+      <div class="eo-stars" id="eo-stars">
+        <span class="star" id="star-1">★</span>
+        <span class="star" id="star-2">★</span>
+        <span class="star" id="star-3">★</span>
+      </div>
+      <div class="eo-stats" id="eo-stats"></div>
+      <button class="btn lg" id="btn-install">Play the full game</button>
+      <button class="link" id="btn-replay">Replay the demo</button>
+    </div>
+
+  </div>
+</div>
+
+{{SCRIPT}}

@@ -47,6 +47,7 @@
   "use strict";
 
   var W = window.__WEB__;
+  var VW = window.__VIEW__;
   if (!W) return;                       // not a web build
 
   var CONFIG = W.CONFIG;
@@ -61,7 +62,6 @@
 
   var STRINGS = {
     en: {
-      title: "Levels", pick: "Select a level",
       level: "Level", locked: "Locked", play: "Play", replay: "Replay",
       never: "Never played", notTaken: "Not played yet",
       notTakenTag: "not played",
@@ -89,13 +89,9 @@
       objective: "Objective", missed: "Objective missed",
       scores: "Scores", almost: "Almost",
       threeStars: "Three stars!", cleared: "Level cleared!",
-      levelsEntry: "Levels", map: "Map", next: "Next level",
-      resetProgress: "Erase the thirty levels",
-      resetProgressAsk: "Tap again — thirty levels of stars are lost",
-      resetProgressDone: "Progression erased"
+      levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home"
     },
     fr: {
-      title: "Niveaux", pick: "Choisis un niveau",
       level: "Niveau", locked: "Verrouillé", play: "Jouer", replay: "Rejouer",
       never: "Jamais joué", notTaken: "Pas encore joué",
       notTakenTag: "non joué",
@@ -123,10 +119,7 @@
       objective: "Objectif", missed: "Objectif manqué",
       scores: "Scores", almost: "Presque",
       threeStars: "Trois étoiles !", cleared: "Niveau réussi !",
-      levelsEntry: "Niveaux", map: "Carte", next: "Niveau suivant",
-      resetProgress: "Effacer les trente niveaux",
-      resetProgressAsk: "Touchez à nouveau — trente niveaux d’étoiles sont perdus",
-      resetProgressDone: "Progression effacée"
+      levelsEntry: "Niveaux", map: "Carte", next: "Niveau suivant", home: "Accueil"
     }
   };
 
@@ -1089,7 +1082,7 @@
   /* ── 7. the screen ────────────────────────────────────────────────────── */
 
   var API = null;                 // { el, icon, start } — handed in by menu.js
-  var box, scroll, canvasBox, svg, card, headTitle, headEyebrow, totalBox, totalN
+  var box, scroll, canvasBox, svg, card, totalBox, totalN
   var headBox, devBtn;
   /* HOW MUCH OF THE ROAD IS UNDER SOMETHING. The scroll band is the whole
      frame — the road runs beneath the header and beneath the card instead of
@@ -1098,7 +1091,7 @@
      climb, with nothing clipped in between. Everything that centres a level
      measures the band from them (see scrollTo). */
   var padTop = 0, padBot = 246;
-  var cName, cBand, cGoal, cNote, cChips, cDiff, cFlames, cPlay;
+  var cTop, cName, cBand, cGoal, cNote, cChips, cDiff, cFlames, cPlay;
   var picked = 1;                 // a level number, or { road: index }
 
   /* A second tap on the node already selected starts it. The card's own button
@@ -1119,7 +1112,7 @@
     tapOn = n; picked = n; writeCard();
     if (again) { tapOn = null; onPlay(); }
   }
-  var built = false, shown = false;
+  var built = false;
 
   /* What a forced button wears, so a screenshot of one is never mistaken for
      a level the board actually opened. Not player copy: it is only ever built
@@ -1157,46 +1150,38 @@
     var row = el("div"); row.id = "lv-hrow";
     head.appendChild(row);
 
-    var back = el("button", "web-back", API.icon("back", "back-ico"));
-    back.addEventListener("click", close);
-    row.appendChild(back);
-
-    var titles = el("div"); titles.id = "lv-titles";
-    headEyebrow = el("div"); headEyebrow.id = "lv-eyebrow";
-    headTitle = el("div"); headTitle.id = "lv-title";
-    titles.appendChild(headEyebrow);
-    titles.appendChild(headTitle);
-    row.appendChild(titles);
-
-    /* WITH A META LAYER THE HEADER CHANGES HANDS. The game's own name and
-       "pick a level" are what the player read on the title screen one tap ago;
-       what they cannot read anywhere else is what they own. So the title block
-       is hidden (meta.css) and the wallet takes its width: coins, tickets and
-       the star total, in that order, with the player's own level bar on the
-       row below. The two doors are the two NUMBERS — coins open the shop,
-       tickets open the album (`doors`) — so the pair of destinations costs two
-       nodes instead of the four a pair of buttons beside them used to. */
-    var MT = meta(), wal = null;
-    if (MT) {
-      wal = el("div"); wal.id = "lv-wallet";
-      row.appendChild(wal);
-    }
+    /* NOTHING IN THIS HEADER BUT THE COUNT, and on a game with a band not even
+       that. It held the game's own name and "pick a level" under it — read on
+       the title screen one tap ago — and then a home button, which the band's
+       own level chip does better: it is first in the row, it is on every
+       screen, and it is where the player is already looking. Where there is no
+       band there is no level chip, and the button is the way home
+       (packages/webshell/view.js). */
+    if (!VW.banded()) row.appendChild(VW.homeButton(T.home));
 
     /* The counter's own star, and the TROPHY once the board is finished: at
        90/90 the number stops being a climb and becomes a result, so the piece
        in front of it changes with it. Repainted by writeTotal, which is the
-       one place that knows the count. */
+       one place that knows the count.
+
+       IT IS ONLY BUILT INTO THIS HEADER WHERE THERE IS NO BAND. With a wallet
+       over the screen the stars are the band's last chip, beside the coins and
+       the tickets — they are what the player owns on this game, and the map is
+       where they come from, so the chip is the door back here from everywhere
+       else (packages/webshell/meta.js). A game with no `web.meta` has no band
+       at all, and then this is the only place the count can be. */
     totalBox = el("div"); totalBox.id = "lv-total";
     totalBox.appendChild(el("span", "g", artOf("star", "lv-tot-i") || "&#9733;"));
     totalN = el("span"); totalN.id = "lv-total-n";
     totalBox.appendChild(totalN);
-    row.appendChild(totalBox);
+    if (!meta()) row.appendChild(totalBox);
 
-    if (MT) {
-      var xp = el("div"); xp.id = "lv-xp";
-      head.appendChild(xp);
-      MT.wallet(wal, { full: true, doors: true, lvHost: xp });
-    }
+    /* NOTHING LEFT IN IT on a game with a band: no name, no home button, and
+       the count is the band's last chip. The header is then the scrim under
+       the band and nothing else, so it stops reserving a title's worth of
+       height — `padTop` is measured off it and the road starts that much
+       higher. */
+    head.classList.toggle("bare", !row.firstChild);
     box.appendChild(head);
 
     /* The force switch (section 3b) — the one piece of this screen that is
@@ -1241,7 +1226,7 @@
     card = el("section"); card.id = "lv-card";
     var body = el("div"); body.id = "lv-body";
     var main = el("div"); main.id = "lv-main";
-    var top = el("div", "top");
+    var top = cTop = el("div", "top");
     cName = el("div"); cName.id = "lv-name";
     cBand = el("div"); cBand.id = "lv-band";
     top.appendChild(cName); top.appendChild(cBand);
@@ -1264,7 +1249,6 @@
     box.appendChild(card);
 
     $("frame").appendChild(box);
-    W.Fit.room("lv-title", 400);
   }
 
   function writeDev() {
@@ -1497,12 +1481,28 @@
     }
     if (picked && picked.road != null) roadCard(ROADS[picked.road]);
     else levelCard(picked);
+    fitCard();
     padBot = card.offsetHeight;
     canvasBox.style.marginBottom = padBot + "px";
     /* The switch rides on the card's height like the scroll band does: a
        wall's card is twice a level's, and a pill over the top of it would be
        sitting on the explanation. */
     if (devBtn) devBtn.style.bottom = (card.offsetHeight + 16) + "px";
+  }
+
+  /* The card's three statements are ONE LINE EACH — a name, an objective, a
+     note — and none of the three has a width anyone can write down: the
+     objective is a sentence per game per language, the game's own face moves
+     every width again (Orbitron's digits +24%, Bebas Neue -40%), and the room
+     itself changes with the column of flames, which a wall's card hides. So
+     they are `nowrap` in the stylesheet and measured here, shrunk until they
+     fit the room they already have. The floors are what a line stops being
+     worth reading under; nothing reaches them today. */
+  function fitCard() {
+    if (!W.Fit || !W.Fit.box) return;
+    W.Fit.box(cTop, 24);                    // the row: the name and its band together
+    W.Fit.box(cGoal, 18);
+    W.Fit.box(cNote, 15);
   }
 
   function levelCard(n) {
@@ -1549,6 +1549,7 @@
   /* Ninety of ninety opens one more node, and it is not a level: it is the
      game with the levels taken off. No objective, no stars, no end. */
   function bonusCard() {
+    card.className = "is-endless";
     cName.textContent = up(T.endless);
     cBand.textContent = "";
     cGoal.innerHTML = T.endlessSub + " &mdash; " + T.endlessGoal;
@@ -1567,7 +1568,9 @@
     var locked = roadShut(rd), shut = locked && !force;
     var have = totalStars(), short = rd.gate - have;
     card.className = "is-wall";
-    cName.textContent = rd.len + " " + up(rd.len > 1 ? T.title : T.level);
+    /* `levelsEntry` is the plural — the menu entry's own word, rather than a
+       second string saying the same thing. */
+    cName.textContent = rd.len + " " + up(rd.len > 1 ? T.levelsEntry : T.level);
     cBand.textContent = up((rd.side < 0 ? T.roadL : T.roadR) + " · " +
       (rd.gate ? (locked ? T.gated : T.opened) : T.free));
     cDiff.style.display = "none";
@@ -1641,59 +1644,17 @@
 
   /* ── 7b bis. the help panel, over the map ─────────────────────────────── */
 
-  /* The Help panel is menu.js's, handed over on mount: one help screen in this
-     shell, not two — the same title, the same sentence in the player's own
-     language and the motor's own demo stage, MOVED here and given back on the
-     way out.
-
-     It opens over the map rather than under it: `#screen-intro` is a stacking
-     context of its own (z-index 30 in the motor stylesheet) and the map sits
-     at 34, so the menu's panel cannot be raised above it — and sending the
-     player back to the menu to read two lines would lose the map they were
-     standing on. */
-  var helpBox, helpBody, helpTitle, helpOn = false;
-
-  function buildHelp() {
-    if (helpBox) return;
-    helpBox = API.el("section"); helpBox.id = "lv-help";
-    var head = API.el("div", "web-phead");
-    var back = API.el("button", "web-back", API.icon("back", "back-ico"));
-    back.addEventListener("click", closeHelp);
-    helpTitle = API.el("h2", "web-ptitle");
-    head.appendChild(back);
-    head.appendChild(helpTitle);
-    helpBody = API.el("div", "web-pbody");
-    helpBox.appendChild(head);
-    helpBox.appendChild(helpBody);
-    box.appendChild(helpBox);
-  }
-
-  function fillHelp() {
-    helpTitle.textContent = API.help.title();
-    helpBody.innerHTML = "";
-    API.help.fill(helpBody);
-  }
-
+  /* THE HELP SCREEN IS THE SHELL'S ONE CARD, and this file no longer owns a
+     copy of it. It used to: a panel of the title menu could not be raised over
+     the map (`#screen-intro` is a stacking context of its own and the map sits
+     above it), so level 0 built a second head, a second body and a second back
+     arrow to say the same three things. Help is a MODAL now — over every view
+     by construction — so opening it is one call into menu.js, which owns the
+     wording and the motor's demo stage. */
   function openHelp() {
     if (!API.help) return;
-    buildHelp();
-    fillHelp();
-    helpBox.className = "on";
-    helpOn = true;
-    // one object beside the card, like the menu's own panels
-    W.Decor.dress(helpBox, {
-      count: 1, spots: ["tl", "l", "bl"], size: 140, opacity: 0.45, front: 0.4
-    });
+    API.help();
     if (!tutoSeen()) { markTuto(); draw(); }     // the node stops being dashed
-  }
-
-  function closeHelp() {
-    if (!helpOn) return;
-    helpOn = false;
-    helpBox.className = "";
-    W.Decor.clear(helpBox);
-    // the demo stage belongs to the menu's Help panel; give it back
-    if (API.help.park) API.help.park();
   }
 
   /* ── 7c. playing ──────────────────────────────────────────────────────── */
@@ -1727,25 +1688,24 @@
   function play(n) {
     if (n !== BONUS && !canPlay(n)) return;
     arm(n);
-    hide();
+    /* Down to the floor, and not just this screen: a round starts with nothing
+       of the shell in front of it, whatever the player had opened on the way
+       here. The state hook says the same thing again a beat later (menu.js),
+       which is the belt to this one's braces. */
+    VW.home();
     W.start();
   }
 
   /* ── 8. open / close ──────────────────────────────────────────────────── */
 
+  /* WHAT THE VIEW SYSTEM CALLS, and it is the only thing this file does about
+     being on screen: no class to add, no node to append, no decor to clear, no
+     bed to duck and no back arrow to route. See packages/webshell/view.js. */
   function show() {
-    build();
     /* On screen BEFORE anything is drawn: writeCard() insets the scroll band
        by the card's own height, and a card inside a `display:none` layer
        measures zero — which lets the map paint under it. */
     var MT = meta();
-    box.className = MT ? "on meta" : "on";
-    shown = true;
-    if (!MT) {
-      headEyebrow.textContent = T.pick;
-      headTitle.textContent = CONFIG.title || T.title;
-      W.Fit.one("lv-title");
-    }
     /* Whatever the climb now owes the collection, paid on arrival as well as
        on the end screen: a milestone crossed by a run the player walked away
        from is still a milestone crossed. */
@@ -1764,29 +1724,7 @@
            : (frontier()[0] || LEVELS);
     draw();
     scrollTo(picked);
-    /* Two of the game's own objects down the empty sides of the map, behind
-       the road and the card (levels.css gives the layer its depth). The map is
-       a long scroll of nodes on a backdrop, and the margins either side of the
-       six-column grid are exactly the room this has been waiting for. */
-    W.Decor.dress(box, {
-      count: 2, spots: ["l", "r", "bl"], size: 140, opacity: 0.38, front: 0
-    });
     if (MT) MT.arrive();
-  }
-
-  function hide() {
-    if (!box) return;
-    closeHelp();
-    box.className = "";
-    shown = false;
-    W.Decor.clear(box);
-  }
-
-  // The back arrow — and ESCAPE, which menu.js routes here: the help panel is
-  // what closes first when it is the thing on screen.
-  function close() {
-    if (helpOn) { closeHelp(); return; }
-    hide();
   }
 
   /* ── 9. the golden title screen ───────────────────────────────────────── */
@@ -1818,14 +1756,27 @@
       LANG = STRINGS[api.lang] ? api.lang : "en";
       T = STRINGS[LANG];
       if (!ON) return;
+      /* THE MAP IS A VIEW, declared here and mounted by nobody: what this file
+         hands over is the content — build it, paint it, stop it — and the view
+         system owns the node's place in the stack, the class, the decor, the
+         bed and the way back. */
+      VW.define("map", {
+        build: build,
+        node: function () { return box; },
+        show: show,
+        /* The wallet band is up over the map, the album and the shop: the
+           three screens where what the player owns is what they are looking
+           at, or one tap from it. */
+        hud: true,
+        decor: { count: 2, spots: ["l", "r", "bl"], size: 140, opacity: 0.38, front: 0 }
+      });
       dressPerfect();
     },
 
     setLang: function (code) {
       LANG = STRINGS[code] ? code : "en";
       T = STRINGS[LANG];
-      if (shown) { headEyebrow.textContent = T.pick; draw(); }
-      if (helpOn) fillHelp();
+      if (VW.isOpen("map")) draw();
     },
 
     /* A game with several modes keeps its extra menu entries, and they start a
@@ -1834,9 +1785,9 @@
        a mode launch: CONFIG.level is a field, not a screen. */
     clear: function () { if (ON) { CONFIG.level = 0; tune(null); } },
 
-    open: function () { if (ON) show(); },
-    close: close,
-    isOpen: function () { return shown; },
+    open: function () { if (ON) VW.go("map"); },
+    close: function () { if (VW.isOpen("map")) VW.back(); },
+    isOpen: function () { return VW.isOpen("map"); },
 
     /* Everything the end screen needs to know about the round that just
        ended: which level it was and how many stars it paid, which is what
@@ -1869,9 +1820,9 @@
     max: function () { return MAX_STARS; },
     refreshVeil: dressPerfect,
 
-    /* OPTIONS wipes more than it used to: "erase the best score" now throws
-       away thirty levels of stars, so it gets its own row and its own
-       confirmation over there. */
-    wipe: function () { wipe(); dressPerfect(); if (shown) draw(); }
+    /* OPTIONS erases the whole save in one button — the best score, this
+       climb and the meta layer's wallet — so this is the map's share of it,
+       and the confirmation lives over there. */
+    wipe: function () { wipe(); dressPerfect(); if (VW.isOpen("map")) draw(); }
   };
 })();

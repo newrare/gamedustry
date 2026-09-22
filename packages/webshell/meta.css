@@ -111,7 +111,6 @@
   box-shadow:0 0 12px var(--cta-a);
   transition:width .5s cubic-bezier(.2,.8,.2,1);
 }
-.mt-lv .pc { flex:0 0 auto; font-size:17px; opacity:.75; }
 /* Held, or reset across a level: the width is put back where the player last
    saw it and a transition there would BE the backwards slide the hold exists
    to prevent (meta.js, flyReward and fillLv). */
@@ -138,35 +137,9 @@
      wears the same curve — there is one answer to "what is behind the HUD"
      and it is not two gradients to keep in step. */
 }
-#lv-screen.meta #lv-titles { display:none; }
-#lv-screen.meta #lv-total { height:52px; padding:0 16px; font-size:25px; }
-#lv-screen.meta #lv-total .g { font-size:26px; }
-/* The climb starts under the taller header — the band itself is still the
-   whole frame, so the road slides UNDER the header rather than being cut at
-   it (packages/webshell/levels.css). js measures this height and rewrites the
-   margin on every draw; this is where it starts. */
-#lv-screen.meta #lv-canvas { margin-top:calc(var(--inset-top) + 196px); }
-/* The two chips sit against the star total, and the three of them against the
-   right edge — the arrow keeps the left on its own. */
-#lv-wallet { flex:0 0 auto; margin-left:auto; min-width:0; }
-#lv-wallet .mt-chip { height:48px; padding:0 13px; font-size:24px; }
-#lv-wallet .mt-ci { width:23px; height:23px; }
-/* `split`: the level bar was handed to #lv-xp, so the strip itself is the
-   chips and nothing else. */
+/* `split`: the level bar is handed to a host of its own, so the strip itself
+   is the chips and nothing else. */
 .mt-wallet.full.split { flex-direction:row; align-items:center; flex:0 0 auto; }
-
-/* THE XP ROW IS A PILL LIKE THE REST. Flush at the same x as the row above is
-   not the same as LOOKING flush: the chips and the star total end in a pale
-   2px filet and the bar's own type is solid and bright, so at an identical
-   24/696 the second row read as if it stuck out of the first. Giving it the
-   family's chrome — same height as a chip, same filet, same 16px of inside —
-   settles it by making the two rows the same kind of object. */
-#lv-xp {
-  display:flex; align-items:center;
-  height:48px; padding:0 16px; border-radius:30px;
-  background:rgba(0,0,0,.42); border:2px solid var(--panel-line);
-}
-#lv-xp .mt-lv { flex:1; min-width:0; gap:12px; }
 
 /* =========================================================================
    A SCREEN OF THIS LAYER — the album and the shop
@@ -190,19 +163,29 @@
   background-size:cover; background-position:center center;
 }
 #al-bg.flat, #sh-bg.flat { background-size:auto; }
+/* THE ONE VEIL, from the view system (packages/webshell/view.css). These two
+   screens and the ranking used to carry a gradient apiece, each cut for its own
+   layout, so the hub read at a different strength on every room of the place
+   the player is walking through. The COLLECTION is the declared exception: it
+   asks the player to read twenty small pictures, so the scene behind it goes a
+   step further back. */
 #al-bg::after, #sh-bg::after {
   content:""; position:absolute; inset:0;
-  background:linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.7) 240px,
-             rgba(0,0,0,.6) 58%, rgba(0,0,0,.88) 100%);
+  background:var(--web-veil);
+  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
 }
+#al-bg::after { background:var(--web-veil-strong); }
 #al-screen .decor-layer, #sh-screen .decor-layer { z-index:1; }
 
 /* One header for the two screens, and it is the map's shape without the
    levels: the way back, what the screen is, and the wallet. */
+/* It starts UNDER the band, which is a layer over the frame and takes no room
+   of its own (view.css): `--wh-band` is that room, and it is 0 on a game with
+   no wallet, where there is no band to clear. */
 .mt-head {
   position:absolute; top:0; left:0; right:0; z-index:3;
-  height:calc(var(--inset-top) + 150px);
-  padding:calc(var(--inset-top) + 0px) 24px 0;
+  height:calc(var(--inset-top) + 150px + var(--wh-band, 0px));
+  padding:calc(var(--inset-top) + var(--wh-band, 0px)) 24px 0;
   display:flex; align-items:center; gap:14px;
 }
 .mt-titles { flex:0 0 auto; }
@@ -215,7 +198,6 @@
   line-height:1; font-variant-numeric:tabular-nums;
   text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
 }
-.mt-head-wallet { flex:1; display:flex; justify-content:flex-end; }
 
 /* =========================================================================
    THE ALBUM
@@ -226,10 +208,17 @@
    what make the grid give the row above it its fixed height and then fit five
    rows into the remainder, at whatever the device's insets leave. A collection
    that has to be scrolled is a collection the player sees half of. */
+/* IT GOES DOWN TO THE FOOT OF THE FRAME. It used to stop 108 px short of it,
+   to clear the shell's two corner controls — which belong to a round now and
+   to nothing else (view.css), so the room they were holding goes back to the
+   tiles: twenty stickers with nothing under them. */
 #al-scroll {
   position:absolute; left:0; right:0; z-index:2;
-  top:calc(var(--inset-top) + 150px); bottom:0;
-  padding:0 24px calc(var(--inset-bottom) + 28px);
+  /* NO HEADER OVER IT ANY MORE: the name and the count are the band's
+     (album.js), so the machine, the odds and the twenty tiles start straight
+     under it. */
+  top:calc(var(--inset-top) + var(--wh-band, 0px) + 26px); bottom:0;
+  padding:0 24px calc(var(--inset-bottom) + 26px);
   overflow:hidden;
   display:flex; flex-direction:column; gap:18px;
 }
@@ -458,7 +447,7 @@
 
 #sh-body {
   position:absolute; left:0; right:0; z-index:2;
-  top:calc(var(--inset-top) + 150px); bottom:0;
+  top:calc(var(--inset-top) + 150px + var(--wh-band, 0px)); bottom:0;
   padding:10px 24px calc(var(--inset-bottom) + 40px);
   overflow-y:auto; scrollbar-width:none;
   display:flex; flex-direction:column; gap:20px;
@@ -589,67 +578,12 @@
   background:linear-gradient(90deg, var(--cta-b), var(--cta-a));
   box-shadow:0 0 12px var(--cta-a);
 }
-
-/* =========================================================================
-   THE MODAL — the gift, the reveal, the detail, the ad
-   ========================================================================= */
-
-.mt-modal {
-  position:absolute; inset:0; z-index:44;
-  display:flex; align-items:center; justify-content:center;
-  padding:0 40px;
-  background:rgba(2,2,10,.78);
-  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-  opacity:0; transition:opacity .2s ease;
-  font-family:var(--web-font, inherit); color:var(--text);
+/* The figure the band's chip does not carry — this is the screen that reads
+   it, so it is written out rather than glanced at. */
+.web-lvl i {
+  flex:0 0 auto; font-style:normal; font-size:21px; color:var(--muted);
+  font-variant-numeric:tabular-nums;
 }
-.mt-modal.on { opacity:1; }
-
-.mt-card {
-  width:100%; max-width:600px; padding:34px 30px;
-  border-radius:30px; background:rgba(8,8,20,.94);
-  border:1px solid var(--panel-line);
-  box-shadow:0 26px 70px rgba(0,0,0,.7);
-  display:flex; flex-direction:column; align-items:center; gap:16px;
-  transform:translateY(22px) scale(.96);
-  transition:transform .26s cubic-bezier(.2,1.3,.4,1);
-}
-.mt-modal.on .mt-card { transform:translateY(0) scale(1); }
-
-.mt-h {
-  margin:0; text-align:center; font-size:38px; letter-spacing:3px;
-  text-transform:uppercase; font-weight:var(--web-fw, 900);
-  color:var(--accent); text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
-}
-/* THE EYEBROW — one line over the title, for the caller that has to say why
-   this card is open. The daily road is the one: it is drawn wordless inside
-   the menu, so what it is, which day of the run this is, and whether this
-   machine is paying on every tap are all written here instead. */
-.mt-eyebrow {
-  display:flex; align-items:center; justify-content:center; gap:12px;
-  margin:0; text-align:center;
-  font-size:16px; letter-spacing:3px; text-transform:uppercase;
-  font-family:var(--web-font, inherit);
-}
-.mt-eyebrow b { color:var(--gold); font-weight:var(--web-fw, 900); }
-.mt-eyebrow span { color:var(--muted); }
-/* the separator belongs to the second half, so a card with only the first
-   half of the line never shows a dangling dot */
-.mt-eyebrow span::before { content:"·"; margin-right:12px; opacity:.55; }
-/* …and a card whose TITLE already names the thing keeps only the second half
-   (the day, the dev pill), so the dot has nothing to sit after either. */
-.mt-eyebrow span:first-child::before { content:none; margin-right:0; }
-/* A GIFT ON EVERY TAP, and it says so. Only a dev machine ever sees this —
-   localhost, a LAN address or a file:// page (packages/webshell/daily.js) —
-   and it is here rather than on the road because the road carries no words. */
-.mt-eyebrow .dl-dev {
-  font-size:12px; letter-spacing:2px; font-style:normal;
-  font-weight:var(--web-fw, 900); padding:2px 8px; border-radius:6px;
-  color:#0b0b12; background:var(--danger, #ff5d5d);
-}
-
-.mt-sub { margin:0; text-align:center; font-size:19px; color:var(--muted); line-height:1.4; }
-.mt-sub.small { font-size:16px; opacity:.7; }
 
 /* What came out of the box, at the one size this layer ever shows a sticker. */
 .mt-rw {
@@ -759,16 +693,6 @@
   0%       { background-position:100% 0; }
   55%,100% { background-position:0 0; }
 }
-/* THE ONE LINE THAT REPLACES THE BUTTON. A reward card has nothing left to
-   decide, so it carries no pill — this says what the tap does, and it is
-   written the size of a footnote because it is one. */
-.mt-tap {
-  margin:2px 0 0; text-align:center;
-  font-size:15px; letter-spacing:3px; text-transform:uppercase;
-  color:var(--muted); opacity:.6;
-  animation:mt-tap-breathe 2.2s ease-in-out infinite;
-}
-@keyframes mt-tap-breathe { 0%,100% { opacity:.38; } 50% { opacity:.75; } }
 /* THE RARITY IS A BADGE, not a caption. It was one line of coloured text under
    the picture, which reads as a subtitle — and a subtitle is not what tells a
    player they just pulled a legendary. Same pill for all four, lit by how far
@@ -1453,18 +1377,11 @@
    THE END SCREEN — the score becomes coins
    ========================================================================= */
 
-/* The wallet the coins fly INTO, pinned where nothing of the reveal lands:
-   the end screen writes its column down the middle and its buttons at the
-   foot, so the top-right corner is the one place a second number can sit
-   without the cascade having to move for it. */
-/* Over the screens (the motor stacks `.screen` at 30) and under the modals
-   this layer opens at 44: the wallet lives in #frame, not in #screen-end. */
-#mt-end-wallet {
-  position:absolute; top:calc(var(--inset-top) + 22px); right:26px; z-index:40;
-}
-#mt-end-wallet[hidden] { display:none; }
-#mt-end-wallet .mt-chip { height:46px; padding:0 14px; font-size:23px; }
-#mt-end-wallet .mt-ci { width:22px; height:22px; }
+/* The wallet the coins fly INTO is the BAND's transient half (view.css): the
+   end screen writes its column down the middle and its buttons at the foot, so
+   the top of the frame is where a second number can sit without the cascade
+   having to move for it — which is where the band already is on every other
+   screen. One instrument, in one place, on all four. */
 
 /* A WALLET THAT IS ONLY THERE WHILE IT IS BEING PAID. The end screen's chips
    hold their place in the layout — every flight is aimed at their rect
@@ -1475,12 +1392,17 @@
    round that pays nothing shows an empty corner. `visibility` as well as
    `opacity` so a veiled chip cannot be read out or tapped; it is kept out of
    the transition's end, or the chip would pop in rather than fade. */
-.mt-wallet.transient .mt-chip {
+/* THE LEVEL CHIP IS VEILED LIKE THE OTHERS. It is a reward like the other
+   three — an xp gain lands on it — and it used to be the one with nowhere to
+   land, because a bar is not a `.mt-chip`. Both selectors, one rule. */
+.mt-wallet.transient .mt-chip,
+.mt-band.transient .mt-lv {
   opacity:0; visibility:hidden; transform:translateY(-10px) scale(.86);
   transition:opacity .22s ease, transform .3s cubic-bezier(.2,1.5,.4,1),
              visibility 0s linear .22s;
 }
-.mt-wallet.transient .mt-chip.shown {
+.mt-wallet.transient .mt-chip.shown,
+.mt-band.transient .mt-lv.shown {
   opacity:1; visibility:visible; transform:none;
   transition:opacity .22s ease, transform .3s cubic-bezier(.2,1.5,.4,1),
              visibility 0s;
@@ -1616,6 +1538,14 @@
   margin:6px -44px 14px;
   font-family:var(--web-font, inherit);
 }
+
+/* THE SAME ROAD, INSIDE A CARD. A village opens it as a card over the hub
+   rather than carrying it as a line of a menu (packages/webshell/daily.js,
+   section 2b), and the only thing that changes is the bleed: those negative
+   margins are the menu's own 44px gutter being taken back, and inside a card
+   they would hang the road off both edges of it. Here the card's padding is
+   what the two ends are cut by, which is the frame the window wanted. */
+.wm-card #dl-strip { margin:2px -30px 0; width:auto; }
 
 /* The window on the road. Everything inside it is one translated track, so a
    day passing SLIDES the road by one pitch rather than repainting it, and the
@@ -1894,10 +1824,6 @@
 .dl-cell.big.live .box { width:78px; }
 .dl-cell.big .dot { border-color:var(--gold); }
 .dl-cell.big .d { color:var(--gold); opacity:.85; }
-
-/* A panel open over the menu takes the whole band: the road goes with it
-   rather than showing through the card's margins. */
-#screen-intro.web-open #dl-strip { display:none; }
 
 /* =========================================================================
    MOTION, FOR A PLAYER WHO ASKED FOR LESS OF IT

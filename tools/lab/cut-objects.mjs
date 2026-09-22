@@ -98,12 +98,21 @@
  *   node tools/lab/cut-objects.mjs slipdeck  --solid 8    # everything alpha says
  *   node tools/lab/cut-objects.mjs radiam-object-sticker --grid 5x4 --keep-partial --solid 200
  *
+ * ONE BAR PER BAND. A sticker sheet is two kinds of picture stacked: chibi
+ * faces with an opaque white outline, which weld to each other unless the bar
+ * is nearly 255, and neon objects whose interiors are genuinely
+ * semi-transparent, which a bar that high shreds into strips. `--solid
+ * 253,253,245,245` is one value per equal horizontal band of the sheet, and
+ * arcider's is exactly that sheet.
+ *
  * Usage:
  *   node tools/lab/cut-objects.mjs radiam                  # every sheet of a game
  *   node tools/lab/cut-objects.mjs radiam-object-gear      # one sheet
  *   node tools/lab/cut-objects.mjs radiam --list           # what it would cut
  *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4   # → art.objects
  *   node tools/lab/cut-objects.mjs radiam-object-gear --adopt 1,4 --as decor
+ *   node tools/lab/cut-objects.mjs game-object-cloud-haze --adopt 3,6 --into vipera
+ *   node tools/lab/cut-objects.mjs vipera-object-sticker --adopt 1,2,4 --seq
  *   node tools/lab/cut-objects.mjs radiam --step 18 --min 4000 --keep-partial
  *   node tools/lab/cut-objects.mjs radiam-object-ball-red --grid 5x4
  *
@@ -122,12 +131,20 @@
  * would shift every index after it, which is the one thing the grid is there
  * to stop.
  *
+ * A sheet whose rows are not all the same length writes them out instead:
+ * `--grid 5,5,5,6` is one column count per row, and each row is divided on its
+ * own. That is what a sheet of twenty stickers usually is — the model fills
+ * the last row with whatever is left over — and a uniform grid over it puts
+ * two objects in one cell, drops one of them and then hands the loser to the
+ * object above as a satellite.
+ *
  * The mask itself is unchanged — alpha or flood exactly as below. The grid
  * only decides which blobs are kept and in what order.
  */
 
 import { spawn } from "node:child_process";
 import { reap, sweep, reportSweep } from "./chrome.mjs";
+import { SHELL_CUTS } from "./encode-art.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -150,30 +167,65 @@ var targets = [];
 var step = 14;          // local tolerance of the flood fill, 0-255 per channel
 var envelope = 90;      // how far from the border colour the fill may ever go
 var minArea = 2500;     // a speck below this is paint, not an object
-var solid = 110;        // alpha at which a pixel is the object rather than its glow
+var solid = [110];      // alpha at which a pixel is the object rather than its glow
 var pad = 20;           // px of margin, and how far an object's glow is followed
 var keepPartial = false;
 var listOnly = false;
 var adopt = null;
 var adoptAs = null;     // the role the adopted cuts take in art.objects
-var grid = null;        // "5x4": the sheet is a regular grid, and the cell is the index
+var adoptSeq = false;   // number the roles in the order given, not by the cut
+var grid = null;        // "5x4" or "5,5,5,6": the cell is the index, not the blob
+var into = null;        // the game a SHARED sheet's cuts are adopted into
+
+/* --grid reads two ways, and the second one exists because a sheet of twenty
+   stickers is rarely twenty: the model fills the last row with whatever is
+   left over, so `blight-object-sticker.png` is 5, 5, 5 and then 6. A uniform
+   COLSxROWS cannot describe that — its sixth object shares a cell with the
+   fifth, one of the two is dropped, and the fringe pass then hands the loser
+   to the object above it as a satellite, which is how a witch came back with
+   a slime ball glued under her hat. So a grid may also be written as one
+   column count PER ROW, and every row is then divided on its own. */
+/* --solid reads two ways for the same reason --grid does: one sheet is rarely
+   one kind of picture. A sticker sheet is characters on top, drawn with an
+   opaque white outline that welds to its neighbour's unless the bar is nearly
+   255, and NEON OBJECTS underneath, whose interiors are genuinely
+   semi-transparent — a bar that high shreds a glowing panel into strips. So
+   the bar may be written as one value PER HORIZONTAL BAND of the sheet,
+   `--solid 253,253,245,245`, and the bands are equal slices of its height. */
+function parseSolid(spec) {
+  if (!/^\d+(\s*,\s*\d+)*$/.test(spec)) throw new Error("--solid wants an alpha, or one per band (253,253,245,245)");
+  return spec.split(",").map(function (v) { return parseInt(v.trim(), 10); });
+}
+
+function parseGrid(spec) {
+  var gm = /^(\d+)x(\d+)$/i.exec(spec);
+  if (gm) {
+    var cols = parseInt(gm[1], 10), n = parseInt(gm[2], 10), rows = [];
+    for (var r = 0; r < n; r++) rows.push(cols);
+    return { rows: rows };
+  }
+  if (/^\d+(\s*,\s*\d+)*$/.test(spec)) {
+    return { rows: spec.split(",").map(function (s) { return parseInt(s.trim(), 10); }) };
+  }
+  throw new Error("--grid wants COLSxROWS (5x4) or one column count per row (5,5,5,6)");
+}
 
 for (var i = 0; i < argv.length; i++) {
   var a = argv[i];
   if (a === "--step") step = parseInt(argv[++i], 10);
+  else if (a === "--solid") solid = parseSolid(argv[++i] || "");
   else if (a === "--envelope") envelope = parseInt(argv[++i], 10);
   else if (a === "--min") minArea = parseInt(argv[++i], 10);
-  else if (a === "--solid") solid = parseInt(argv[++i], 10);
   else if (a === "--pad") pad = parseInt(argv[++i], 10);
   else if (a === "--keep-partial") keepPartial = true;
   else if (a === "--list") listOnly = true;
   else if (a === "--grid") {
-    var gm = /^(\d+)x(\d+)$/i.exec(argv[++i] || "");
-    if (!gm) throw new Error("--grid wants COLSxROWS, e.g. --grid 5x4");
-    grid = { cols: parseInt(gm[1], 10), rows: parseInt(gm[2], 10) };
+    grid = parseGrid(argv[++i] || "");
   }
   else if (a === "--adopt") adopt = argv[++i];
+  else if (a === "--seq") adoptSeq = true;
   else if (a === "--as") adoptAs = argv[++i];
+  else if (a === "--into") into = argv[++i];
   else targets.push(a);
 }
 
@@ -184,11 +236,33 @@ for (var i = 0; i < argv.length; i++) {
    will be one — nothing may be called that — so it reads as "the sheet the
    shell owns" and the cuts land in assets/image/object/ beside the rest.
 
-   It cannot be ADOPTED, because there is no manifest to write the choice into:
-   the shell names its own pieces, in tools/lab/encode-art.mjs (shellJobs), for
-   the same reason a game names its own — a folder of cuts cannot say which of
-   two files ships. */
+   TWO KINDS OF SHEET SHARE THAT PREFIX, and only one of them is the shell's.
+
+   The shell's own PIECES — the coin, the ticket, the gift boxes, the star —
+   cannot be adopted, because there is no manifest to write the choice into:
+   the shell names them in tools/lab/encode-art.mjs (SHELL_CUTS), for the same
+   reason a game names its own — a folder of cuts cannot say which of two files
+   ships. They are encoded once into assets/image/shell/ and drawn for every
+   game with a wallet.
+
+   Everything else under the prefix is SHARED MATERIAL — scenery no game owns
+   and any game may use, the three cloud sheets being the first of it. A cloud
+   stands on ONE village, at a place that game chose, so it is adopted exactly
+   like a cut of the game's own sheet and `--into <slug>` is which game:
+
+     node tools/lab/cut-objects.mjs game-object-cloud-haze --adopt 3,6 --into chainring
+
+   The role keeps the cut's own name — `cloud-haze-03`, the same word in all
+   thirteen — so there is nothing to invent and nothing to keep in step. Only
+   the villages that place a cloud carry its bytes. */
 var SHELL_SLUG = "game";
+
+/* Which sheets are the shell's, read off the list that already names them
+   rather than written down a second time here. */
+var SHELL_SHEETS = SHELL_CUTS.map(function (e) {
+  var stem = typeof e === "string" ? e : e.cut;
+  return stem.replace(/^game-/, "").replace(/-\d+$/, "");
+});
 
 function knownSlugs() {
   return fs.readdirSync(GAMES_DIR).filter(function (d) {
@@ -343,7 +417,16 @@ function cutJs(b64, o) {
   const push = (p) => { if (!bg[p]) { bg[p] = 1; stack[top++] = p; } };
 
   if (byAlpha) {
-    for (let p = 0; p < W * H; p++) if (px[p * 4 + 3] < ${o.solid}) bg[p] = 1;
+    /* ONE BAR PER BAND. The sheet is sliced into as many equal bands as the
+       flag named values, and a pixel is read against its own band's bar:
+       characters need one near 255 to come apart, a neon object needs a low
+       one to stay in one piece. One value is the whole sheet, as before. */
+    const SOLID = ${JSON.stringify(o.solid)};
+    const bandH = H / SOLID.length;
+    for (let p = 0; p < W * H; p++) {
+      const band = Math.min(SOLID.length - 1, (((p / W) | 0) / bandH) | 0);
+      if (px[p * 4 + 3] < SOLID[band]) bg[p] = 1;
+    }
   } else {
     for (let x = 0; x < W; x++) for (const y of [0, H - 1]) {
       const p = y * W + x; if (fromGround(p * 4) <= ${o.envelope}) push(p);
@@ -410,11 +493,19 @@ function cutJs(b64, o) {
   const GRID = ${o.grid ? JSON.stringify(o.grid) : "null"};
   let empties = [];
   if (GRID) {
-    const cw = W / GRID.cols, ch = H / GRID.rows, CELLS = GRID.cols * GRID.rows;
-    const cellAt = (x, y) => Math.min(GRID.rows - 1, (y / ch) | 0) * GRID.cols +
-                             Math.min(GRID.cols - 1, (x / cw) | 0);
-    const cellCx = (k) => (k % GRID.cols + 0.5) * cw;
-    const cellCy = (k) => ((k / GRID.cols | 0) + 0.5) * ch;
+    /* A ROW IS DIVIDED ON ITS OWN: one column count per row, so a sheet
+       whose last row holds six objects under three rows of five is described
+       exactly; a uniform grid is the same thing with every row equal. */
+    const ROWS = GRID.rows, NR = ROWS.length, ch = H / NR;
+    const OFF = []; let CELLS = 0;
+    for (let r = 0; r < NR; r++) { OFF.push(CELLS); CELLS += ROWS[r]; }
+    const rowOf = (k) => { let r = NR - 1; while (r > 0 && k < OFF[r]) r--; return r; };
+    const cellAt = (x, y) => {
+      const r = Math.min(NR - 1, (y / ch) | 0);
+      return OFF[r] + Math.min(ROWS[r] - 1, (x / (W / ROWS[r])) | 0);
+    };
+    const cellCx = (k) => { const r = rowOf(k); return (k - OFF[r] + 0.5) * (W / ROWS[r]); };
+    const cellCy = (k) => (rowOf(k) + 0.5) * ch;
 
     /* A BLOB OVER TWO CELLS IS TWO OBJECTS. On a packed sheet the model lets
        one object's glow touch the next one's, and an alpha mask then hands the
@@ -492,7 +583,7 @@ function cutJs(b64, o) {
     kept = [];
     cell.forEach((b, k) => {
       if (b) kept.push(b);
-      else empties.push("r" + ((k / GRID.cols | 0) + 1) + "c" + (k % GRID.cols + 1));
+      else { const r = rowOf(k); empties.push("r" + (r + 1) + "c" + (k - OFF[r] + 1)); }
     });
   }
 
@@ -687,6 +778,13 @@ function write(file, uri) {
    The game says it, once, and re-cutting the sheet afterwards refreshes what
    ships without a second adoption: the role points at a cut, not at a copy.
 
+   --seq numbers the roles 01, 02, 03… in the ORDER GIVEN instead of after the
+   cut each one points at, and the album is what it exists for: the collection
+   reads `sticker01` to `sticker20` and a hole in that run is a tile with no
+   picture, while a sheet of twenty stickers is regularly twenty-one or
+   twenty-four objects. Which cut a role points at is still written down — it
+   is the value beside it — so nothing is lost by the role not repeating it.
+
    --as renames the role on the way in, and it is what fills the DECOR pool:
    `--as decor` declares `decor-NN`, which reaches the motor as
    `CONFIG.art.decorNN` and is scattered over the screens by the shell's Decor
@@ -696,7 +794,13 @@ function write(file, uri) {
    one role claimed twice. Without --as the role is the sheet's own name, which
    is the shape a game draws on its canvas (ArtImages.gear01). */
 function adoptCuts(sheet, picks, files) {
-  var file = path.join(GAMES_DIR, sheet.slug, "manifest.json");
+  /* A SHARED SHEET HAS NO GAME OF ITS OWN, so --into names one; a game's sheet
+     is its own game's and --into has nothing to say about it. And a shared cut
+     keeps its own name as its role — `cloud-haze-03` — which is what makes it
+     the same word in every village that places one. */
+  var shared = sheet.slug === SHELL_SLUG;
+  var slug = shared ? into : sheet.slug;
+  var file = path.join(GAMES_DIR, slug, "manifest.json");
   var raw = fs.readFileSync(file, "utf8");
   var manifest = JSON.parse(raw);
   var done = [];
@@ -704,7 +808,9 @@ function adoptCuts(sheet, picks, files) {
   picks.split(",").map(function (s) { return parseInt(s.trim(), 10); }).forEach(function (n) {
     var src = files[n - 1];
     if (!src) throw new Error("--adopt " + n + ": there is no object " + n + " in this sheet");
-    var role = (adoptAs || sheet.name) + (adoptAs ? "-" : "") + String(n).padStart(2, "0");
+    var num = adoptSeq ? done.length + 1 : n;
+    var join = (adoptAs || shared) ? "-" : "";
+    var role = (adoptAs || sheet.name) + join + String(num).padStart(2, "0");
     var cut = path.basename(src).replace(/\.png$/i, "");
     manifest.art = manifest.art || {};
     manifest.art.objects = manifest.art.objects || {};
@@ -749,8 +855,24 @@ async function main() {
     process.exit(1);
   }
   if (adopt && list[0].slug === SHELL_SLUG) {
-    console.error("--adopt: " + SHELL_SLUG + "-* is the shell's own artwork and has no manifest.\n" +
-                  "Name the cuts in tools/lab/encode-art.mjs (shellJobs) instead.");
+    if (SHELL_SHEETS.indexOf(list[0].name) >= 0) {
+      console.error("--adopt: " + list[0].stem + " is the shell's OWN artwork and has no manifest.\n" +
+                    "Name the cuts in tools/lab/encode-art.mjs (SHELL_CUTS) instead — they ship\n" +
+                    "from assets/image/shell/ for every game with a wallet.");
+      process.exit(1);
+    }
+    if (!into) {
+      console.error("--adopt: " + list[0].stem + " is SHARED material and belongs to no game.\n" +
+                    "Say which one adopts it:  --into <slug>   (or click it in `make village`)");
+      process.exit(1);
+    }
+    if (!fs.existsSync(path.join(GAMES_DIR, into, "manifest.json"))) {
+      console.error("--into " + into + ": no such game");
+      process.exit(1);
+    }
+  } else if (into) {
+    console.error("--into only means something for a shared " + SHELL_SLUG + "-* sheet; " +
+                  "a game's own sheet is already its game's");
     process.exit(1);
   }
 
@@ -807,9 +929,10 @@ async function main() {
 
     if (adopt) {
       var done = adoptCuts(sheet, adopt, files);
-      console.log("\n  declared in games/" + sheet.slug + "/manifest.json, art.objects:");
+      var owner = sheet.slug === SHELL_SLUG ? into : sheet.slug;
+      console.log("\n  declared in games/" + owner + "/manifest.json, art.objects:");
       console.log("    " + done.join("\n    "));
-      console.log("  then:  node tools/lab/encode-art.mjs " + sheet.slug);
+      console.log("  then:  node tools/lab/encode-art.mjs " + owner);
     }
   }
 

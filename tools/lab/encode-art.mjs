@@ -130,6 +130,13 @@ var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
    across a whole desktop window, not across 720 design px. */
 var PROFILE = {
   "background-phone": { w: 720, h: 1280, q: 0.72 },
+
+  /* THE VILLAGE'S GROUND: the painted hub the web menu stands the houses on
+     (packages/webshell, the title view). Same box as the intro backdrop for
+     the same reason — it fills the 720x1280 frame and nothing past it is ever
+     shown — and the same quality, because it is soft painted art with the
+     houses, the halos and the type reading over it rather than in it. */
+  "background-home": { w: 720, h: 1280, q: 0.72 },
   "background-desk": { w: 1600, h: 900, q: 0.70 },
   "title": { w: 640, h: 280, q: 0.86 },
   "character-sad": { w: 460, h: 560, q: 0.80 },
@@ -180,6 +187,33 @@ var BALL = { w: 256, h: 256, q: 0.84 };
    here exactly as it is for the beads. */
 var STICKER = { w: 400, h: 400, q: 0.82 };
 
+/* THE VILLAGE'S HOUSES: `<slug>-homeNN.png`, adopted out of one
+   `<slug>-object-home.png` sheet with `cut-objects.mjs --grid 3x2`. They are
+   WEB-ONLY art (tools/build/build.mjs) like the stickers — a playable has one
+   round and no menu to stand a village on.
+
+   The box is the one measurement that matters here: a house is dropped on the
+   720x1280 frame at between 150 and 280 design px wide, so 420 covers the
+   biggest of them at a 3x device ratio with nothing spare. Six ride in every
+   web build of the game, which is what keeps this under a sticker sheet. */
+var HOUSE = { w: 420, h: 420, q: 0.84 };
+
+/* THE SKY OVER THE VILLAGE: `cloud-<style>-NN`, adopted out of the SHARED
+   sheets `assets/image/master/game-object-cloud-{big,flat,haze}.png` — the one
+   material in this pipeline that belongs to no game and is still named by one
+   (see SHELL_CUTS below for the other half of that story, the pieces the shell
+   names itself). A cloud is scenery: it is dropped on the village like a house,
+   it takes the `decor` door, and the z-sort by the foot of the object puts a
+   cloud placed high behind every building.
+
+   The box is WIDE and short because the material is: a haze cloud is 1060x190,
+   five and a half to one, and the generic 320x400 portrait box would fit it to
+   320 px across — a quarter of the width it is drawn at. It is placed between
+   150 and 400 design px wide, so 600 covers the biggest of them at the same
+   ~1.5x the houses and the stickers are cut at, and soft painted vapour with
+   nothing to read in it takes the decor pool's quality rather than a house's. */
+var CLOUD = { w: 600, h: 320, q: 0.78 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -200,6 +234,8 @@ function profileFor(role) {
   if (role.indexOf("decor") === 0) return DECOR;
   if (role.indexOf("ball-") === 0) return BALL;
   if (role.indexOf("sticker") === 0) return STICKER;
+  if (/^home\d+$/.test(role)) return HOUSE;
+  if (role.indexOf("cloud-") === 0) return CLOUD;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
@@ -290,7 +326,8 @@ function knownRole(role) {
   return !!PROFILE[role] || role.indexOf("card-") === 0 ||
          role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
          role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
-         role.indexOf("background-") === 0;
+         role.indexOf("background-") === 0 || /^home\d+$/.test(role) ||
+         role.indexOf("cloud-") === 0;
 }
 
 function masters(all) {
@@ -387,7 +424,12 @@ function brandJob() {
    base64 in every web build of every game with a wallet, so the twenty-four
    rewards and the ten trophies are cut and only these are shipped. */
 var SHELL_DIR = path.join(ROOT, "assets", "image", "shell");
-var SHELL_CUTS = [
+/* EXPORTED, because the composer has to tell the shell's own sheets from the
+   SHARED material beside them: `assets/image/object/` holds both, under the
+   same `game-` prefix, and only the second kind may be adopted by a game
+   (tools/lab/serve-village.mjs). The sheet a cut came out of is what separates
+   them, and this list is where that is already written down. */
+export var SHELL_CUTS = [
   "game-gift-close-01", "game-gift-close-02", "game-gift-close-03",
   "game-gift-open-01", "game-gift-open-02", "game-gift-open-03",
 
@@ -408,6 +450,13 @@ var SHELL_CUTS = [
   { cut: "game-reward-18", role: "coin-pile" },  // an AMOUNT of money
   { cut: "game-reward-24", role: "xp" },         // the bolt the xp bar fills with
   { cut: "game-trophy-03", role: "trophy" },     // ninety of ninety
+  /* THE COLLECTION, and it is the four-leaf clover of the twenty on
+     `game-object-sticker.png` — the one piece on that sheet that says
+     "a thing worth collecting" without being a star, a coin, a trophy or a
+     ticket, all four of which are already a chip of their own on the same
+     band. The sheet is otherwise the shell's sticker vocabulary; this cut is
+     the only one of it the shell draws. */
+  { cut: "game-sticker-15", role: "sticker" },   // the collection's count
 
   /* THE MULTIPLIER, and the shell states exactly one: the seventh day of the
      daily road pays five times over (`STAR` in packages/webshell/daily.js).
@@ -629,7 +678,12 @@ async function main() {
   console.log("Now run:  node tools/update.mjs");
 }
 
-main().catch(function (err) {
-  console.error("encode-art failed: " + err.message);
-  process.exit(1);
-});
+/* Run only when this file IS the command. It is also imported — for
+   SHELL_CUTS alone — by tools/lab/serve-village.mjs, the same way
+   apply-events.mjs is imported for `bumpPatch`. */
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(function (err) {
+    console.error("encode-art failed: " + err.message);
+    process.exit(1);
+  });
+}

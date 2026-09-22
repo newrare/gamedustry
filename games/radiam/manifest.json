@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.5.11",
+  "version": "1.5.14",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -112,10 +112,19 @@
       "ball-yellow-17": "radiam-ball-yellow-17",
       "ball-yellow-19": "radiam-ball-yellow-19",
       "ball-yellow-20": "radiam-ball-yellow-20",
+      "cloud-flat-06": "game-cloud-flat-06",
+      "cloud-flat-07": "game-cloud-flat-07",
+      "cloud-haze-02": "game-cloud-haze-02",
       "decor-ball-01": "radiam-ball-01",
       "decor-ball-09": "radiam-ball-09",
       "decor-gear-02": "radiam-gear-02",
       "decor-gear-07": "radiam-gear-07",
+      "home01": "radiam-home-01",
+      "home02": "radiam-home-02",
+      "home03": "radiam-home-03",
+      "home04": "radiam-home-04",
+      "home05": "radiam-home-05",
+      "home06": "radiam-home-06",
       "sticker01": "radiam-sticker-01",
       "sticker02": "radiam-sticker-02",
       "sticker03": "radiam-sticker-03",
@@ -461,6 +470,104 @@
         {
           "name": "The Orbit",
           "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 250,
+          "y": 240,
+          "w": 200,
+          "flip": true,
+          "notify": "cloud",
+          "drift": "right",
+          "breathEvery": 68,
+          "always": true
+        },
+        {
+          "art": "cloudFlat06",
+          "role": "decor",
+          "x": 260,
+          "y": 350,
+          "w": 200,
+          "notify": "cloud",
+          "every": 137,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 190,
+          "y": 474,
+          "w": 165,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 530,
+          "y": 494,
+          "w": 186
+        },
+        {
+          "art": "ballRainbow12",
+          "role": "daily",
+          "x": 633,
+          "y": 652,
+          "w": 60,
+          "badge": {
+            "dx": -0.6,
+            "dy": -0.9
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decorGear07",
+          "role": "decor",
+          "x": 557,
+          "y": 680,
+          "w": 76,
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 700,
+          "w": 270
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 129,
+          "y": 705,
+          "w": 200,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 183,
+          "y": 928,
+          "w": 177
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 543,
+          "y": 958,
+          "w": 200
         }
       ]
     }

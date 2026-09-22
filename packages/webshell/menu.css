@@ -87,6 +87,17 @@
     rgba(0,0,0,.22);
   transition:background .22s ease;
 }
+/* A SPLASH HAS NOTHING DOWN THE RIGHT EDGE. Two of those three gradients are
+   there to carry text — the entries on the right, the panel band at the foot —
+   and a title screen that is only a logotype and a signature needs neither: the
+   picture keeps its own scene and the top band alone holds the title up. */
+#screen-intro.web-splash::before {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.20) 30%, rgba(0,0,0,0) 50%),
+    linear-gradient(0deg,   rgba(0,0,0,.66) 0%, rgba(0,0,0,.24) 20%, rgba(0,0,0,0) 40%),
+    rgba(0,0,0,.18);
+}
+
 /* A gradient backdrop needs far less: it is dark and even by design, and the
    full wash would only flatten what the SKIN composed. */
 #screen-intro.web-flat::before {
@@ -97,16 +108,38 @@
 
 /* A panel is text, not four words: with one open, the lower half of the scene
    goes further back so a leaderboard or an options list reads at a glance. */
-#screen-intro.web-open::before {
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.70) 0%, rgba(0,0,0,.30) 30%, rgba(0,0,0,.10) 46%),
-    linear-gradient(0deg,   rgba(0,0,0,.92) 0%, rgba(0,0,0,.80) 34%, rgba(0,0,0,.34) 58%, rgba(0,0,0,0) 74%),
-    rgba(0,0,0,.30);
-}
 
 /* the intro's own tagline belongs to the Help panel now */
 #screen-intro #intro-tagline { display:none; }
 #screen-intro #app-icon { width:150px; margin-bottom:10px; }
+
+/* ---- the face, in the middle of the front door --------------------------
+   One of the game's three painted characters, picked at random per load
+   (menu.js, faceNode). It stands in the MIDDLE of the frame and nothing is
+   moved to make room for it: the logotype is a band at the top, the menu a
+   column down the right edge and the signature a corner, so the middle was the
+   one part of this screen with nothing in it.
+
+   It takes no tap and it is never the tallest thing here — 620 design px of a
+   1280 frame, so the feet clear the menu's first entry and the head clears the
+   title. `object-fit:contain` is what keeps a wide character and a narrow one
+   the same HEIGHT rather than the same box: these are six paintings per game
+   at whatever aspect the model returned them.
+
+   The float is the same breath the title wears, half a beat slower so the two
+   never swing together — one composited transform, no layout, no repaint. */
+#web-char {
+  position:absolute; left:50%; top:50%; z-index:0;
+  width:520px; height:620px; object-fit:contain; object-position:center bottom;
+  transform:translate(-50%, -50%);
+  pointer-events:none; user-select:none;
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
+  animation:web-char-float 5.6s ease-in-out infinite;
+}
+@keyframes web-char-float {
+  0%, 100% { transform:translate(-50%, -50%); }
+  50%      { transform:translate(-50%, calc(-50% - 14px)); }
+}
 
 #web-head {
   position:absolute; left:44px; right:44px; top:calc(var(--inset-top) + 118px);
@@ -139,6 +172,11 @@
    to ask for: 800 from a variable family, 400 from a single-weight one, which
    is the difference between a heavy face and a browser-smeared fake bold. */
 #web-menu { display:flex; flex-direction:column; align-items:flex-end; }
+/* A SPLASH STILL BUILDS ITS MENU (menu.js, splash): the nodes are what this
+   shell and the village are written against — `#btn-start` first of all — so
+   they are hidden rather than dropped. An id carries `display:flex`, which the
+   UA's own `[hidden]` rule cannot beat: this is the line that hides it. */
+#web-menu[hidden] { display:none; }
 
 /* One row per entry. PLAY is the motor's own #btn-start — same node, same
    click, so SPACE still starts the game — with the CTA pill styling dropped:
@@ -191,34 +229,15 @@
    against the frame (see packages/shell/shell.js). The two blocks below then
    take an explicit depth, because a positioned layer would otherwise paint
    over static siblings whatever its z-index says. */
-#web-panel { display:none; flex-direction:column; position:relative; }
 /* THE STUDIO SIGNATURE IS THE TITLE SCREEN'S, AND NOTHING ELSE'S. The motor
-   drops `#brand-sig` into `#screen-intro` (packages/shell/motor.css) and it is
-   right where a panel's card lands, so a version number ends up reading as
-   part of OPTIONS or HELP. `web-open` is already the class the panels raise —
-   the map, the album and the shop are layers of their own above this screen
-   and cover it on their own. */
-#screen-intro.web-open #brand-sig { opacity:0; }
+   drops `#brand-sig` into `#screen-intro` (packages/shell/motor.css). Nothing
+   has to hide it any more: options and help are cards over the frame now, with
+   a scrim and a blur of their own, and the map, the album, the shop and the
+   ranking are opaque views above this screen. */
 #brand-sig { transition:opacity .18s ease; }
-
-#web-panel.on { display:flex; animation:web-panel-in .22s ease both; }
-@keyframes web-panel-in {
-  from { opacity:0; transform:translateY(14px); }
-  to   { opacity:1; transform:translateY(0); }
-}
 
 .web-phead, .web-pbody { position:relative; z-index:1; }
 .web-phead { display:flex; align-items:center; gap:18px; margin-bottom:16px; }
-.web-back {
-  flex:0 0 auto; width:64px; height:64px; border-radius:50%; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--text); background:rgba(0,0,0,.42);
-  border:2px solid var(--panel-line);
-  transition:color .16s ease, border-color .16s ease, transform .16s ease;
-}
-.web-back svg { width:34px; height:34px; }
-.web-back:hover { color:var(--accent); border-color:var(--accent); }
-.web-back:active { transform:scale(.94); }
 .web-ptitle {
   flex:1; text-align:right; text-transform:uppercase;
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
@@ -234,6 +253,42 @@
   -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
   max-height:640px; overflow-y:auto;
 }
+/* …and NOT a second card when the modal already is one. Options, help and the
+   question that loses a run are cards of the view system now (view.css), so
+   the body inside them is a list of rows and nothing else. */
+.web-pbody.plain {
+  border-radius:0; padding:0; background:none; border:0; box-shadow:none;
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+  width:100%; max-height:700px;
+}
+/* The card is the panel's frame now, so the head sits inside it and the title
+   reads left to right with the back arrow, instead of being pushed to the far
+   edge of a band the scene showed through. */
+.wm-modal.web-card .mt-card {
+  position:relative; max-width:640px; padding:26px 28px; align-items:stretch;
+}
+.wm-modal.web-card .web-phead { margin-bottom:12px; }
+/* The title is centred now that nothing stands beside it: the cross is a
+   corner mark rather than a member of the row, so a title pushed to one edge
+   would be reading against nothing. */
+.wm-modal.web-card .web-ptitle { text-align:center; font-size:34px; }
+
+/* THE DISCREET CROSS, top-left of the card. Quiet on purpose — it is the way
+   out of a card, not the subject of it — and big enough under a thumb: the
+   mark is 30 px and the tap area is grown to 62 by a transparent
+   pseudo-element, exactly as the corner controls do it (view.css). */
+.web-close {
+  position:absolute; top:14px; left:14px; z-index:2; cursor:pointer;
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:none; border:0; padding:0;
+  color:var(--muted); opacity:.65;
+  transition:color .16s ease, opacity .16s ease, transform .16s ease;
+}
+.web-close::before { content:""; position:absolute; inset:-12px; border-radius:50%; }
+.close-ico { width:30px; height:30px; }
+.web-close:hover, .web-close:focus-visible { color:var(--text); opacity:1; outline:none; }
+.web-close:active { transform:scale(.92); }
 
 /* ---- the painted instrument --------------------------------------------
    An <img> standing where a stroked <svg> did (menu.js, icon()). It keeps the
@@ -317,6 +372,26 @@ img.art-i {
 .web-danger.armed { border-color:var(--danger); background:rgba(255,45,85,.18); color:#fff; }
 .web-danger:active { transform:scale(.98); }
 
+/* ---- the studio signature, under the settings --------------------------- */
+/* The same block the motor pins to the corner of the title screen, laid out in
+   the flow of a card instead (menu.js, brandSig). Everything it looks like —
+   the mark, the two lines, the muted colour, the opacity — is the motor's
+   (packages/shell/motor.css, `.brand-*`); only `#brand-sig` was positioned,
+   so this rule is the row and nothing else. Under a hairline, and inert: a
+   signature is read, never tapped.
+
+   FLUSH LEFT, like every row above it. It was centred while it was the last
+   thing on the card — a footer, and a footer is centred — and it is not the
+   last thing any more: the wipe is, below it. A centred block in a column of
+   left-aligned rows only reads as a footer, so it takes the column's own
+   margin instead. */
+.web-sig {
+  display:flex; align-items:center; justify-content:flex-start; gap:12px;
+  margin:18px 0 2px; padding-top:16px;
+  border-top:2px solid var(--panel-line); pointer-events:none;
+}
+.web-sig .brand-copy { text-align:left; }
+
 /* ---- leaderboard ------------------------------------------------------- */
 .web-best-lbl { font-size:26px; letter-spacing:2px; color:var(--muted); text-align:center; margin-top:14px; }
 .web-best {
@@ -361,45 +436,9 @@ img.art-i {
    The OTHER bottom corner is the level pill's, on the same terms and for the
    same reasons (levels.css). Between them the two corners are the shell's, and
    a game anchors no instrument and no word in either. */
-#web-ctls {
-  position:absolute; right:0; bottom:0; z-index:22;
-  padding:0 26px calc(var(--inset-bottom) + 26px) 0;
-  display:flex; align-items:center; gap:14px;
-  pointer-events:none;                 /* only the two buttons take a tap */
-}
-/* `display:flex` above beats the browser's own [hidden] rule, so the row says
-   it again: it is only ever on screen during a round. */
-#web-ctls[hidden] { display:none; }
-
-.web-ctl {
-  position:relative; pointer-events:auto; cursor:pointer;
-  flex:0 0 auto; width:58px; height:58px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--text); background:rgba(0,0,0,.42);
-  border:2px solid var(--panel-line);
-  transition:color .16s ease, border-color .16s ease, transform .16s ease;
-}
-/* The circle is 58 design px, which is about 32 real px on a phone — under any
-   thumb. The TAP AREA is grown to 82 by a transparent pseudo-element instead,
-   so the control stays discreet over the game and the finger still lands. */
-.web-ctl::before { content:""; position:absolute; inset:-12px; border-radius:50%; }
-.web-ctl svg { width:31px; height:31px; }
-.web-ctl:hover, .web-ctl:focus-visible { color:var(--accent); border-color:var(--accent); outline:none; }
-.web-ctl:active { transform:scale(.94); }
-
-/* ---- the paused card --------------------------------------------------- */
-/* Either control pauses the round and puts one card over the frozen world —
-   the options, or the one question that loses a run. Same head, same body and
-   the same rows as the intro's panels: there is one panel design. */
-#web-pause {
-  position:absolute; inset:0; z-index:28; display:none;
-  align-items:center; justify-content:center; padding:0 44px;
-  background:rgba(3,4,12,.78);
-  -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
-}
-#web-pause.on { display:flex; animation:web-panel-in .2s ease both; }
-.web-pcard { width:100%; position:relative; }
-
+/* ---- the two wide buttons under a card --------------------------------- */
+/* The one card in this shell that ASKS something — leave this round? — is the
+   one card with a pair of buttons under it. Every other one is dismissed. */
 .web-actions { display:flex; gap:16px; margin:18px 0 6px; }
 .web-btn {
   flex:1; padding:19px 10px; border-radius:16px; cursor:pointer;
@@ -541,3 +580,59 @@ img.art-i {
 #screen-end #btn-install.eo-act.calm:hover, #screen-end #btn-replay.eo-act.calm:hover {
   border-color:var(--accent); color:var(--accent);
 }
+
+/* =========================================================================
+   THE RANKING — a view, with the header the map and the album wear
+   ========================================================================= */
+
+/* Z-INDEX 35, between the map (34) and the album (36): it is a view like them,
+   it opens from the title screen and it never has to argue with either — the
+   view system re-appends whatever is opened, so DOM order settles any tie
+   (packages/webshell/view.js). */
+#web-rank {
+  position:absolute; inset:0; z-index:35; display:none;
+  flex-direction:column;
+  font-family:var(--web-font, inherit); color:var(--text);
+}
+#web-rank.on { display:flex; animation:web-rank-in .22s ease both; }
+@keyframes web-rank-in {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* The place the player lives, pushed back by the one veil every surface over
+   it wears (packages/webshell/view.css). It was a gradient of its own, cut for
+   this layout — and so were the collection's and the shop's, which is three
+   answers to one question. */
+.web-rank-bg {
+  position:absolute; inset:0; z-index:0;
+  background-size:cover; background-position:center;
+}
+.web-rank-bg.flat { background-size:auto; }
+.web-rank-bg::after {
+  content:""; position:absolute; inset:0;
+  background:var(--web-veil);
+  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
+}
+#web-rank .decor-layer { z-index:1; }
+
+#web-rank-body {
+  position:relative; z-index:2;
+  margin-top:calc(var(--inset-top) + 150px + var(--wh-band, 0px));
+  padding:30px 46px calc(var(--inset-bottom) + 130px);
+  display:flex; flex-direction:column; justify-content:center; gap:6px;
+  flex:1;
+}
+
+/* The climb, where there is one: thirty levels is a result a board should
+   carry, and the only one of these figures the player earned a piece at a
+   time. */
+.web-rank-stars {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  margin:18px 0 6px;
+  font-size:44px; font-weight:var(--web-fw, 900); line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.web-rank-stars b { color:var(--gold); }
+.web-rank-stars i { font-style:normal; font-size:28px; color:var(--muted); }
+.web-rank-star { width:46px; height:46px; color:var(--gold); }

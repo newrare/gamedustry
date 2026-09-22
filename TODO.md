@@ -9,7 +9,8 @@ holds the reasoning. A task is **removed** once it is verifiably done.
 
 Three scopes are tracked here: **android**, the **web build's own bugs** and
 **acquisition** — TikTok and the web portals, un-parked on 2026-09-18. The meta
-layer and the ad measurement gate are parked, not done.
+layer now ships on all thirteen games; the ad measurement gate is parked, not
+done.
 
 ______________________________________________________________________
 
@@ -87,6 +88,75 @@ ______________________________________________________________________
 
 ## The web build
 
+- [ ] CODE — **the village: the title screen as a place.** The composer ships
+  (`make village`, `lab/village.html`, `tools/lab/serve-village.mjs`) and so
+  does the art pipeline under it: `<slug>-background-home.png` is a role like
+  any other, `<slug>-object-home.png` is a 3x2 sheet cut into `homeNN`, both
+  web-only. A village is composed on the real 720x1280 frame — houses placed by
+  their FEET, sorted by them, each one given the door it opens — and saved as a
+  draft in `lab/village-presets.json` or pushed into `web.village` of the
+  manifest, with the patch bump and the rebuild. **All thirteen have the
+  artwork** — thirteen hubs and thirteen 3x2 sheets cut and adopted, ~440 KB a
+  game, web-only — and no village is composed yet: the hubs are NOT one layout
+  in thirteen palettes (six pads in a cross for five of them, a 2x3 grid for
+  echomaze, scattered islands for bouncetry, chainring and marshmelt, four
+  along a path for triverse, and no pad at all for orbinity and vipera), so a
+  placement is made per game and none of it transposes.
+
+  **The view ships** — `packages/webshell/village.{js,css}`, and the village is
+  a VIEW rather than a replacement of the title screen:
+  `title -> village -> map -> round -> score -> village`. PLAY opens it, it is
+  `View.base`, so the band's house chip, the end screen's first button and
+  ESCAPE all mean it; `#btn-start` is untouched on the title screen, so
+  `startGame`, SPACE and the audio unlock gesture are unchanged. The manifest
+  says HOW a house announces itself — a `notify` pulse on the BUILDING and a
+  `light` on its halo, two fields so a mill can turn over a flickering pad —
+  and the shell says WHEN, out of what a badge COUNTS — the tickets that pull
+  the machine, the sticker copies the shop buys back, today's gift, a board
+  nobody opened — or `always` takes the question away for both. A halo carries its own
+  `color`, and `art: "empty"` is a box with no picture in it for a lamp the hub
+  was already painted with. Every door wears its role's word under its feet,
+  hidden until the player asks for it in OPTIONS. HELP is the map's level 0 and
+  never a house; OPTIONS is a house or the corner control, never neither and
+  never both, which `make test` asserts. A game with no `web.village` is
+  byte-identical to what it was.
+
+  **What is left is twelve compositions**: `chainring` is the one village laid
+  out. Each is half an hour in `make village` — and two of them need a decision
+  first, since `orbinity` and `vipera` have no pads painted on their hub and
+  `triverse` has four for six houses. A **living backdrop** ships
+  for `chainring`: `life.daylight`, which lights the scene toward the real hour
+  as a DIFFERENCE from the hour the hub was painted at. A slow Ken Burns on the
+  hub shipped with it and was taken out the same day — the houses are placed in
+  the design space and do not move, so a drifting backdrop under fixed
+  buildings reads as the picture sliding. **Whatever moves here has to move all
+  of it**, and what meets that is `life.cycle`: the light breathes, passing
+  through the hub's own painted light out into warm, back through it and out
+  into cold, over two minutes. All keyframes — no clock, no interval, no
+  formula. Two answers were tried and removed before it: the player's real hour
+  (a difference nobody can see) and hand-placed CSS effects — mist, beams,
+  particles, glows — which read as decoration stuck onto a picture rather than
+  as a place. Still on the table: the hub going gold at 90/90 the way the map's
+  roads already do, the only idea left that would SAY something.
+  One known limit: daylight is ONE dimension, so eight in the morning and eight
+  in the evening are the same light. They are, physically; if a game ever wants
+  a red dusk against a blue dawn, the formula grows a second term.
+
+- [x] ART — **a sky for the villages.** `game-object-cloud-big.png` (7 on a
+  `4,3`), `game-object-cloud-flat.png` (7 on a `2,2,2,1`) and
+  `game-object-cloud-haze.png` (8 on a `2x4`) cut into `assets/image/object/` —
+  22 clouds, the same seven tints across the three styles, the grid keeping
+  them in step. They are the first SHARED material in the repo: a `game-` sheet
+  that is NOT the shell's, so a cloud is adopted by a game rather than named in
+  `SHELL_CUTS` — it stands on one village, at a place that game chose, and only
+  the villages that place one carry the bytes. The role is the cut's own name
+  minus the prefix (`cloud-haze-03` → `CONFIG.art.cloudHaze03`), the box is
+  600x320 at q 0.78 (~17 KB, wide because a haze cloud is 5.5:1), and it is
+  web-only like the houses. Adopted by clicking the **shared cuts** palette of
+  `make village`, or `--adopt 3,6 --into <slug>` on the command line; a sheet
+  the shell names refuses. **No village has placed one yet** — that is a
+  composition, and it belongs with the twelve above.
+
 - [x] ART — **the shell's instruments are painted.** `game-object-reward.png`
   (24 on a 6x4), `game-object-trophy.png` (10 on a 5x2),
   `game-object-ticket.png` (12 on a 4x3) and `game-object-multiplicator.png`
@@ -103,8 +173,21 @@ ______________________________________________________________________
   so the swap is ONE branch in `icon()` and the wallet, the LV row, the shop,
   the album, the daily road, the level map's stars and counter, the round's
   star pill and the end screen's three stars all turn painted at once; a build
-  with no artwork keeps the stroke with no branch anywhere else. Radiam is the
-  only game that carries it today, because the gate is `web.meta`.
+  with no artwork keeps the stroke with no branch anywhere else. All thirteen
+  carry it, because the gate is `web.meta` and all thirteen declare one.
+
+- [x] META — **the layer ships on all thirteen games.** Twelve sticker sheets
+  cut, twenty stickers adopted each, and a `web.meta` block per manifest whose
+  three rates are read off that game's own climb — `coinsPer` a fourteenth of
+  `levels.objective.to`, `xpPer` a tenth of that, `ticketPrice` a quarter — so
+  a maxed level pays ~14 coins and ~140 xp in every one of them and the shop's
+  shared coin prices mean one thing. Every board keeps one legendary, one epic,
+  one rare and five commons OUT of its twelve milestones, or the machine has a
+  tier it can never roll. The cut tool grew what those sheets needed: a `--grid`
+  written as one column count per row (the model fills the last row with
+  whatever is left over) and `--seq`, which numbers the adopted roles 01…20 in
+  the order given — the album reads a contiguous run and four of the sheets
+  held more than twenty objects.
 
 - [x] WEB — **the end screen has a third button: the way on.** Map · replay ·
   next, and the third is the shell's own node rather than the motor's — a
@@ -179,11 +262,14 @@ ______________________________________________________________________
 - [x] META — **the ad offer pays ×5 and says so.** It multiplied by three,
   which no plate can draw; five is the one the artwork states. The button
   leads with the REWARD and follows with the price — `WIN ×5` over
-  `watch an ad` — and beside it, on the same line, a quiet ARROW walks past
-  the ad (a refusal written out reads as the other half of a decision, at the
-  weight of the thing it refuses). A tap anywhere on the card or the frame
-  collects too, and so does ENTER / SPACE / ESCAPE. A sticker is REDRAWN and
-  not multiplied, so that one wears no plate and reads *one more*.
+  `watch an ad` — and it is the card's ONLY control. There was a quiet arrow
+  beside it, the way past; it was a button for what a miss already does, since
+  a tap anywhere on the card or the frame collects the gift as it stands, and
+  so does ENTER / SPACE / ESCAPE. Two controls where one of them is "do
+  nothing" halved the weight of the only thing on the card worth reading, so
+  the arrow is gone and the footnote line under the button is what says the ad
+  can be walked past. A sticker is REDRAWN and not multiplied, so that one
+  wears no plate and reads *one more*.
 
 - [ ] ART — **the other twelve, and the motor.** The painted instruments reach
   a game through `CONFIG.shellArt`, which the builder gates on `web.meta` — so
@@ -289,25 +375,24 @@ ______________________________________________________________________
   level cannot set the level that clock starts at. Promoting them to
   `CONFIG.dial` is the whole job (see [docs/LEVELS.md](docs/LEVELS.md) §2).
 
-- [ ] CODE — **the studio signature shows behind the menus.** `buildBrand()`
-  ([packages/shell/shell.js:966](packages/shell/shell.js)) appends `#brand-sig`
-  to `#screen-intro`, and the web menu appends to that same node instead of
-  rebuilding it, so the mark, `NEWRARE` and `v<version>` keep the bottom-left
-  corner under the OPTIONS, HELP and LEADERBOARD panels, under the pause card
-  and under the level map. The signature belongs to the title screen alone:
-  hide it whenever the band is swapped out and bring it back on the way home.
-  One shell-level rule, all thirteen at once — no `game.js` and no SKIN is
-  touched.
+- [x] CODE — **the studio signature shows behind the menus.** Answered by the
+  view system rather than by a rule: the map, the album, the shop and the
+  ranking are opaque views over the title screen and cover it, and options,
+  help and the leave question are cards with a scrim and a blur of their own —
+  so the mark, `NEWRARE` and `v<version>` are behind the same blur as
+  everything else on the screen they belong to. The `web-open` class that used
+  to hide them, and the panel band it belonged to, are gone.
 
-- [ ] CODE — **the music stays too loud once the round is over.** The two
-  ducks that exist were never listened to side by side: the map ramps to `0.4`
-  ([packages/webshell/levels.js:568](packages/webshell/levels.js)), a panel to
-  `0.35` ([packages/webshell/menu.js:674](packages/webshell/menu.js)), and the
-  end screen only rides the duck `endRound` applied for the reveal — which
-  `btn-replay` and PLAY AGAIN then undo
-  ([packages/webshell/menu.js:765](packages/webshell/menu.js)). Halve the bed
-  on the level map and on the end screen, hold it for as long as the screen is
-  up, and settle on **one** factor rather than three.
+- [x] CODE — **the music stays too loud once the round is over.** Settled by
+  the view system: **one factor** (`DUCK`, 0.4) for every screen and every card
+  this layer opens, and it is COUNTED rather than toggled — `Music.duck` is a
+  single global level with no stack of its own, so two screens that both duck
+  and both unduck raised the bed the moment the first of them closed. When the
+  count reaches zero the floor is read off the motor's state rather than
+  assumed: on the end screen it is the motor's own 0.3, so a gift card closing
+  over it no longer hands the player a bed at full volume under a screen that
+  is still being read. The three numbers that disagreed (0.4 on the map, 0.35
+  on a panel, nothing on the end screen) are one.
 
 - [ ] CODE — **the HUD does not say which level is being played.** A round
   opened from the map is level 12 or level 29 and looks the same either way.
@@ -351,43 +436,81 @@ ______________________________________________________________________
   `packages/webshell/`, no `game.js` touched, and it reaches the thirteen at
   once. Related: the game-over *content* pass in *The games*.
 
-- [ ] CODE — **one system for the views: intro, map, shop, album, round, end —
-  and the modal over them.** The web shell grew a screen at a time and each one
-  brought its own mount, its own backdrop, its own back arrow and its own way of
-  being stacked: the menu's panels are swapped inside the title band
-  ([packages/webshell/menu.js](packages/webshell/menu.js)), the map is a layer
-  ([packages/webshell/levels.js](packages/webshell/levels.js)), the album and the
-  shop are a stack re-appended to the end of the frame to decide who wins, and a
-  reward card, the pause card and the gift ceremony are each their own overlay.
-  Nothing says what a view IS, so every new screen re-decides it. Define one —
-  mount, show, hide, back, z-order, what the backdrop does, what the bed does —
-  and port the six screens plus the modal onto it, so a seventh is a declaration
-  rather than a precedent to copy. No `game.js` is touched.
+- [x] CODE — **one system for the views, and one for the cards.**
+  `packages/webshell/view.js` + `view.css`, loaded first of the web layer and
+  published as `window.__VIEW__` / `window.__MODAL__`. Two kinds of thing and
+  exactly two: a **view** is a place the player goes — title, map, sticker,
+  shop, **ranking** (new: the leaderboard was a panel of the title band and is
+  a screen with the map's own header now), score — and a **card** is something
+  that happens over wherever they are: options, help, leaving a round, a daily
+  reward, an ad, a prize. Six screens' worth of mounting, back arrows, z-order,
+  decor, music ducks and ESCAPE branches came out of the four files and into
+  one. What that retires, each of which was a bug or a comment apologising for
+  one: the album could not be reopened from the shop (DOM order decided which
+  of two equal z-indexes won, and DOM order was the order they were first
+  BUILT in — the stack re-appends on every open now); ESCAPE meant five things
+  in four files, each guarding against the other four; the map carried its own
+  copy of the Help panel because a panel of the title screen could not be
+  raised over a map; the bed was ducked to 0.4 by the map, 0.35 by a panel and
+  not at all by the end screen. Options and help now open **from anywhere** —
+  a pair of controls in the bottom-right corner of every surface but the title
+  screen. The corner is the ROUND'S and only the round's — every other surface
+  has somewhere of its own to say the same things, and a round is the one with
+  nothing else on it at all. **No screen wears a back arrow and no header wears
+  a button**: the band's level chip is the way home, a card's way out is a
+  discreet cross, and the other three chips are the rest. One branch, and it is
+  not cosmetic: a game with no wallet has no band, so its views keep a home
+  button — there is always exactly one way home and never two, which is what
+  the test counts. The five card builders of the
+  meta layer are one `Modal.open`, and the class names are unchanged
+  (`wm-modal mt-modal`), so no rule in the three stylesheets moved.
+  [docs/VIEWS.md](docs/VIEWS.md) is the plan of record, and
+  **`make test` is the gate**: `tools/test/views.mjs` drives a real web build
+  over CDP and asserts the stack, the cards, the band and the keys — 70
+  assertions on radiam, 50 on a game with no wallet. No `game.js`, no SKIN and
+  no manifest changed, and the playable and android builds are untouched.
 
-- [ ] CODE — **one HUD for every view: coins, tickets, xp.** The component is
-  already one — `MT.wallet(host, opts)`
-  ([packages/webshell/meta.js:755](packages/webshell/meta.js)), one `.mt-wallet`
-  block, a registry every write repaints and `Meta.fx` to land a figure in a
-  chip. What is not decided is WHERE it hangs: four hosts today (the map's
-  header, the shop, the album, the end screen's transient one) with four
-  opinions about which chips are doors, and the title screen and the round show
-  none of it — so a player who just earned coins in a round sees them only two
-  screens later. Decide what the player carries on screen and where, then mount
-  that one band from the view system rather than from each screen. It is the
-  same question the star pill and the MENU / OPTIONS corner already answer for
-  the round: the game owns the top band, the shell owns the corners.
+- [x] CODE — **one HUD for every view, and it is the navigation.** `#web-hud`,
+  one node, owned by the view system and filled once by whoever knows what a
+  wallet is (`View.hudMount`). The component was already one (`Meta.wallet`);
+  the HOSTS were four — the map's header, the album's, the shop's and a layer
+  pinned to the end screen's corner — so the same numbers sat in four places
+  with four opinions about which chips were doors. It is **one line now, and
+  the order is what the player learns**: `LV 4 · 1 240 · 3 · 12/90`, each chip
+  the door to the screen it is the number of — home, the ranking, the shop, the
+  collection, the collection, the map. The order is the order it is read in:
+  the way out, then what is earned by playing, then what is spent, then what
+  those two buy, then what the board is worth. The row never changes shape and a
+  chip standing on its own screen goes INERT rather than missing, so a number
+  is never one to find again. **The album has no header of its own**: its
+  `x / 20` is the band's first chip, and the height a title was taking went to
+  the machine, the odds and the twenty tiles. That is what let **every back arrow come off**: the house is the only
+  chip that is not a number and it is the way home, and a card's way out is a
+  discreet cross in its corner. The LEVEL CHIP IS AN ICON until it has
+  something to say — a bar standing open on every screen is one nobody reads —
+  and it opens for a few seconds whenever the xp moves. **The stack owns the
+  z-order**, written from the depth on every open: the four screens were
+  authored with three different z-indexes, so the map reached from the album
+  arrived underneath it however it was appended. A view declares `hud: true` (map, sticker, shop, ranking) or
+  `hud: "auto"` (the score screen, where the row is down until a reward flies
+  into it — and it carries the LEVEL chip now, which is what xp had been
+  missing: its target was a bar and not a chip, so the one reward the player
+  never saw arrive was the one the map's header was built to show). The title
+  screen carries none and the ROUND carries none — the top band is the game's,
+  all of it. The map's header lost the game's own name and "pick a level" with
+  it, and `#lv-wallet` / `#lv-xp` / `#mt-end-wallet` are gone.
 
-- [ ] CODE — **the navigation, and what a first launch shows.** Two halves of
-  one pass. The navigation: where every screen leads and what BACK means from
-  each — title → map → round → end → map is the spine, and the album, the shop,
-  the daily road and the panels hang off it, today with a back arrow per screen
-  and an ESCAPE that means three different things. The first launch: a board
-  that has never been played opens on level 0, which opens the help panel over
-  the map ([packages/webshell/levels.js](packages/webshell/levels.js)) — that is
-  the whole onboarding, and it is one panel of text in front of a player who has
-  not seen the game yet. Decide the first minute: what is explained, when, and
-  what stays hidden until it exists (a wallet with nothing in it, a shop with
-  nothing to sell). Related: the leave card and the game-over buttons above.
+- [ ] CODE — **what a first launch shows.** The MECHANICS of the navigation
+  are settled — one stack, one BACK, one ESCAPE, and where every screen leads
+  ([docs/VIEWS.md](docs/VIEWS.md)) — so what is left is the CONTENT of the
+  first minute. A board that has never been played opens on level 0, which
+  opens the help card over the map
+  ([packages/webshell/levels.js](packages/webshell/levels.js)): that is the
+  whole onboarding, and it is one card of text in front of a player who has not
+  seen the game yet. Decide what is explained, when, and what stays hidden
+  until it exists — a wallet with nothing in it, a shop with nothing to sell, a
+  collection with twenty silhouettes. Related: the leave card and the
+  game-over buttons above.
 
 - [ ] CODE — **a sticker collection, ten per game.** The cuts under
   `assets/image/object/` (414 of them across the thirteen) are the material: pick
@@ -409,6 +532,49 @@ ______________________________________________________________________
 ______________________________________________________________________
 
 ## The games — content pass on the thirteen
+
+- [ ] MAIN — **`pawko`, compose the village.** The six houses are cut and
+  adopted (`home01`–`home06`) and `pawko-background-home.png` is encoded, but
+  the game declares no `web.village` until `make village` places them and
+  pushes the block: its title screen is the stacked menu until then.
+
+- [ ] TUNE — **`pawko`, play it by hand.** The five-wave round, the two kinds
+  of card (pegs turned for good, multipliers for one wave) and the ladder
+  (`17 000 → 45 000`, `play.pegValue 10→20`, `play.balls 10→14`) were set off
+  a headless bench of a random pilot (transform-first play beats
+  multipliers-first by ~20%; L1 random play lands 2–3 stars, L30 random play
+  1–2). Nothing has checked the FEEL: gravity 1300, peg restitution .45, the
+  bumper kick 760, a wave of ~11 s, and whether the one-wave cards read as
+  one-wave on screen.
+
+- [ ] MAIN — **`pawko`, listen to the six music windows** (`CONFIG.bands`,
+  `CONFIG.music.menu`): the seams were placed on the RMS profile of
+  `assets/audio/music/pawko.mp3` (body at 10 s, breaks at 45–55, 95–110 and
+  130–135, end at 176) and never by ear.
+
+- [ ] TUNE — **`stratideck`, play it by hand.** The camp, the army and the
+  ladder (`700 → 3 000`, `play.cols 4→8`, `play.rows 3→6`, `play.traps 0→5`,
+  `play.deckRatio 1.1→.6`) were set off a headless bench of two scripted
+  pilots — a careful one lands two stars on every level, a pilot throwing its
+  biggest card blind loses every level-30 camp — and the payout by MARGIN
+  (precise ×2, overkill ×½) is what broke the brute-force line. Nothing has
+  checked the FEEL: a turn of ~1.5 s (fly, flip, clash, settle), a level-30
+  battle of ~70 turns, and whether the 8×6 camp's 74 px cards are still a
+  thumb's target.
+
+- [ ] MAIN — **`stratideck`, review the village in `make village`.** The
+  `web.village` block was written by hand off a gridded capture of the hub
+  (eight tents on the eight pads, a flickering halo on the monument), not
+  composed in the page; open it there and Push what the eye corrects.
+
+- [ ] MAIN — **`stratideck`, listen to the six music windows** (`CONFIG.bands`,
+  `CONFIG.music.menu`): the seams were placed on the RMS profile of
+  `assets/audio/music/stratideck.mp3` (quiet intro to 30 s, breaks at 75–80
+  and 115–125, outro from 155, fade from 173) and never by ear.
+
+- [ ] MAIN — **delete the old `stratideck/` project folder** at the repo root
+  once nothing more is wanted from it: the game was rebuilt on the motor and
+  reads nothing out of it.
 
 - [ ] TUNE — **rethink the difficulty ramp level by level, all thirteen
   games.** The ladder is a formula today, never played end to end: see the two
@@ -661,33 +827,42 @@ ______________________________________________________________________
 
 ## The codebase
 
-- [ ] CODE — **a full code audit: dead code, architecture, security.** Nothing
-  has ever been read end to end since the motor was split into `packages/` and
-  the web, itch and android targets were layered on top. One pass over
-  `packages/`, `games/*/game.js`, `tools/` and `site/`, three questions:
-
-  - **dead code** — helpers nobody calls any more, `ASSETS` entries nothing
-    plays or draws (`make events` already named one: `bouncetry` embeds `drop`
-    and never plays it), motor APIs no game uses (`Overlay.toast/banner/reward`
-    is the known case), `CONFIG` keys read nowhere, and the leftovers of the
-    single-file era — `tools/build/extract.mjs` among them. Every byte of a
-    game's sources ships in its creative, so a dead clip or a dead image is
-    paid for thirteen times.
-  - **structure** — is the `engine / ad glue / shell / webshell / platform`
-    split still where the seams are? What a game has to copy into section 6 to
-    work, what a target has to know about the motor (`window.__WEB__`), and
-    which of the thirteen `game.js` hold the same code written thirteen times
-    are the three things that say it is not. Anything shared by construction
-    belongs in `packages/`.
-  - **security** — the games are third-party HTML served in an iframe (the
-    site, itch, an ad network), so: no `eval`, no `new Function`, no
-    `innerHTML` fed by anything a player or a URL can write (`?lang=`,
-    `?mode=`, `?level=` are parsed today), the `Store` keys and the saved
-    progression treated as untrusted input on read, the site's own
-    `postMessage` origin-checked, and no key, token or personal data in any
-    committed file. `tools/` runs on the machine, not in a browser, but a
-    command built out of a file name still needs to be quoted.
-
-  Write the findings down before fixing anything: what is dead, what moves, and
-  what is a real hole, so the fixes land as separate changes rather than one
-  sweep nobody can review.
+- [x] CODE — **the code audit is written**: [docs/AUDIT.md](docs/AUDIT.md)
+  (2026-09-21) — security, architecture, JS and CSS factorization, every
+  finding with its `file:line` and its fix, and the order to take them in. A
+  finding leaves that file when its fix lands; the actions below are that
+  file's section 5, and they are separate changes on purpose, so each one can
+  be reviewed on its own.
+- [ ] CODE — **audit, step 1 — the lab servers** (AUDIT 1.1–1.5, 3.4): one
+  `tools/lib/serve.mjs` that binds `127.0.0.1`, checks `Host`, wraps the URL
+  decode, answers 404 in plain text and reads a JSON body once; the five
+  `serve-*.mjs` on it; numeric validation and `\x3c` escaping in
+  `apply-events.mjs` / `apply-text.mjs`; a CSP with `frame-ancestors` in
+  `vercel.json`
+- [ ] CODE — **audit, step 2 — the byte wins** (AUDIT 2.4, 3.1, 3.2, 3.3):
+  a comment strip in `build.mjs` (sources keep theirs; the thirteen
+  `index.html` regenerate once), `tools/lib/repo.mjs` for `ROOT` / `games()`
+  / `manifestOf` / `bumpPatch`, `chrome.mjs` growing `launch` / `connect` /
+  `openPage` / `evaluate` so the eleven copies go, and the end screen's three
+  clips moved into the shell so all thirteen games sound the same there
+- [ ] CODE — **audit, step 3 — one motor + skins pass** (AUDIT 4.1–4.3, 2.6):
+  `--accent-rgb` / `--danger-rgb` / `--gold-rgb` tokens, the `#cta-bar`
+  border and the `.demo-stage` size in the motor, `.pop-sub` on tokens, the
+  dead `Overlay.toast/banner/reward` deleted with its CSS — one commit,
+  thirteen patch bumps
+- [ ] CODE — **audit, step 4 — the engine gains its helpers** (AUDIT 3.7–3.9,
+  2.7): `Sprite.canvas` pre-scaled by `view.dpr` (nine games size their caches
+  at design px today), `CONFIG.stars` + the Best-score row in `endRound`,
+  `mix` / `shade` / `Draw.roundRect` / `TAU` / `lerp` / `ease` beside `clamp`,
+  `CONFIG.band` written by the level layer so no game recomputes its biome;
+  each game bumps as it is touched
+- [ ] CODE — **audit, step 5 — the webshell tidies itself** (AUDIT 4.4, 4.5,
+  3.10, 2.1): `wm-in` / `wm-bump` / `wm-float` / `wm-sheen` keyframes and
+  `.wm-view` / `.wm-pill` / `.wm-cta` in `view.css`, `el` / `$` / `num` /
+  `tween` / `onLang` out of `view.js`, then every screen registered through
+  `VW.define` so no module reads another's `window.__X__` at call time
+- [ ] CODE — **audit, step 6 — tooling and docs** (AUDIT 2.2, 2.3, 2.5, 2.8,
+  3.5, 3.6, 4.7): an ES5 check and a manifest shape check in `update.mjs`,
+  engine tests under `vm`, `lab/_catalogue.js` generated beside
+  `site/games.js`, one `upper` for the lab and the site, `lab/_lab.css`, and
+  the two docs that still describe `build.mjs --fix`

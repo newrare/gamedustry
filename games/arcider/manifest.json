@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.9.4",
+  "version": "1.10.7",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -19,12 +19,40 @@
       "decor-08": "arcider-race-08",
       "decor-21": "arcider-race-21",
       "decor-27": "arcider-race-27",
+      "home01": "arcider-home-01",
+      "home02": "arcider-home-02",
+      "home03": "arcider-home-03",
+      "home04": "arcider-home-04",
+      "home05": "arcider-home-05",
+      "home06": "arcider-home-06",
+      "race04": "arcider-race-04",
       "ship01": "arcider-ship-01",
       "ship05": "arcider-ship-05",
       "ship06": "arcider-ship-06",
       "ship07": "arcider-ship-07",
       "ship11": "arcider-ship-11",
-      "ship15": "arcider-ship-15"
+      "ship15": "arcider-ship-15",
+      "sticker01": "arcider-sticker-01",
+      "sticker02": "arcider-sticker-02",
+      "sticker03": "arcider-sticker-03",
+      "sticker04": "arcider-sticker-05",
+      "sticker05": "arcider-sticker-06",
+      "sticker06": "arcider-sticker-07",
+      "sticker07": "arcider-sticker-08",
+      "sticker08": "arcider-sticker-11",
+      "sticker09": "arcider-sticker-12",
+      "sticker10": "arcider-sticker-13",
+      "sticker11": "arcider-sticker-14",
+      "sticker12": "arcider-sticker-15",
+      "sticker13": "arcider-sticker-16",
+      "sticker14": "arcider-sticker-17",
+      "sticker15": "arcider-sticker-18",
+      "sticker16": "arcider-sticker-19",
+      "sticker17": "arcider-sticker-20",
+      "sticker18": "arcider-sticker-21",
+      "sticker19": "arcider-sticker-23",
+      "sticker20": "arcider-sticker-25",
+      "sticker24": "arcider-sticker-24"
     }
   },
   "copy": {
@@ -177,8 +205,8 @@
         "step": 25
       },
       "copy": {
-        "en": "Reach <b>{n} m</b> before the cells run out",
-        "fr": "Gagne la course ou atteins <b>{n} m</b> avant la destruction"
+        "en": "Win the race or reach <b>{n} m</b>",
+        "fr": "Gagne la course ou atteins <b>{n} m</b>"
       },
       "bands": {
         "from": [
@@ -312,6 +340,244 @@
           26,
           44
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 100,
+      "xpPer": 10,
+      "ticketPrice": 25,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        5,
+        7,
+        12,
+        14,
+        9,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Clean Lap",
+          "rarity": "common"
+        },
+        {
+          "name": "Secret Line",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "common"
+        },
+        {
+          "name": "Silver Arrow",
+          "rarity": "rare"
+        },
+        {
+          "name": "Victory V",
+          "rarity": "common"
+        },
+        {
+          "name": "Void Runner",
+          "rarity": "rare"
+        },
+        {
+          "name": "Full Throttle",
+          "rarity": "common"
+        },
+        {
+          "name": "Gold Blaze",
+          "rarity": "epic"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Sweet Talk",
+          "rarity": "common"
+        },
+        {
+          "name": "Shield Up",
+          "rarity": "rare"
+        },
+        {
+          "name": "Grid Rage",
+          "rarity": "common"
+        },
+        {
+          "name": "Green Machine",
+          "rarity": "rare"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Wiped Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Star Pilot",
+          "rarity": "epic"
+        },
+        {
+          "name": "Mine Field",
+          "rarity": "rare"
+        },
+        {
+          "name": "Wormhole",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 525,
+          "y": 94,
+          "w": 200,
+          "halo": {
+            "w": 0.9,
+            "h": 0.25,
+            "dy": 0.04,
+            "color": "#fff5cb"
+          },
+          "light": "random",
+          "lightEvery": 20,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 206,
+          "y": 413,
+          "w": 173,
+          "rot": -2,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.8
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 523,
+          "y": 421,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 35,
+          "y": 443,
+          "w": 200,
+          "halo": {
+            "w": 0.4,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#3fd7fa"
+          },
+          "light": "random",
+          "lightEvery": 2.9,
+          "always": true
+        },
+        {
+          "art": "sticker24",
+          "role": "decor",
+          "x": 657,
+          "y": 572,
+          "w": 49,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 589,
+          "y": 616,
+          "w": 71,
+          "badge": {
+            "dx": -0.5,
+            "dy": -1.05
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 122,
+          "y": 629,
+          "w": 206,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 363,
+          "y": 676,
+          "w": 272
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 185,
+          "y": 843,
+          "w": 200
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 541,
+          "y": 854,
+          "w": 183
+        },
+        {
+          "art": "decor27",
+          "role": "decor",
+          "x": 368,
+          "y": 553,
+          "w": 103,
+          "layer": 1,
+          "halo": {
+            "w": 1.65,
+            "h": 0.65,
+            "dy": -0.35,
+            "color": "#f534fd"
+          },
+          "light": "blink"
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#fb87f7",
+          "cold": "#38569d",
+          "amount": 0.45,
+          "seconds": 110
+        }
       }
     }
   }
