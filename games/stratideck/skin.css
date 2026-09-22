@@ -1,0 +1,129 @@
+
+  /* =========================================================================
+     SKIN — STRATIDECK. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     A war camp at night: royal blue for the player's army, blood red for the
+     enemy camp, and gold leaf on everything that is a card.
+     ========================================================================= */
+  :root {
+    --bg:#0a1026; --text:#f6f1e4; --muted:#a9b4d0;
+    --accent:#f2c14e; --cta-a:#ffe08a; --cta-b:#e0a52a; --cta-text:#2a1a02;
+    --danger:#e23b3b; --gold:#ffd43b; --good:#5aa9ff;
+    /* the two armies, shared by the DOM intro and the canvas */
+    --army:#5aa9ff; --camp:#ff5c5c;
+    /* the painted camp is busy; the round reads over a slightly darker scrim */
+    --scene-scrim: rgba(4,5,14,.42);
+  }
+  html, body { background:radial-gradient(900px 860px at 50% 30%, #1a2b5e 0%, #0c1636 52%, #05081a 100%); }
+
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(242,193,78,.32); }
+
+  #intro-title {
+    font-size:92px; letter-spacing:6px;
+    background:linear-gradient(180deg,#ffffff 0%,#ffe9a8 46%,#e0a52a 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:none; filter:drop-shadow(0 6px 18px rgba(0,0,0,.55));
+  }
+  #cta-bar { border-top:1px solid rgba(242,193,78,.18); }
+  #hud-score { text-shadow:0 0 16px rgba(242,193,78,.5); }
+  .btn { box-shadow:0 0 22px rgba(242,193,78,.42); }
+  /* the cards-left pill, and its last-cards state */
+  #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
+     The motor's "drag" variant lends its sliding hand; the track becomes the
+     hand of blue cards at the foot of the stage, the target becomes one
+     face-down red card in the enemy row, the stage's ::before the rest of
+     that row and its ::after the flash of the clash.
+
+     One 3.2 s loop: the finger picks the middle card up, carries it to the
+     red one, which turns over on a 7 against the 9 it was struck with, flashes
+     and falls; the finger fades and comes back for the next one. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#dfe6f5; }
+  #intro-tagline .w-drag   { color:var(--army); text-shadow:0 0 18px rgba(90,169,255,.75); }
+  #intro-tagline .w-hidden { color:var(--camp); text-shadow:0 0 18px rgba(255,92,92,.75); }
+  #intro-tagline .w-rank   { color:var(--accent); text-shadow:0 0 18px rgba(242,193,78,.8); }
+
+  .demo-stage {
+    width:420px; height:270px; overflow:hidden;
+    background:radial-gradient(320px 240px at 50% 30%, rgba(30,48,110,.55), rgba(8,12,30,.6));
+    border-color:rgba(242,193,78,.22);
+  }
+  /* the rest of the enemy row: two more face-down red cards beside the target */
+  .demo-stage::before {
+    content:""; position:absolute; left:50%; top:22px; width:268px; height:92px; margin-left:-134px;
+    background:
+      linear-gradient(180deg,#7a1b1b,#2c0707) 0 0 / 76px 92px no-repeat,
+      linear-gradient(180deg,#7a1b1b,#2c0707) 100% 0 / 76px 92px no-repeat;
+    border-radius:9px; opacity:.85;
+  }
+  /* the clash: a burst of gold on the target */
+  .demo-stage::after {
+    content:""; position:absolute; left:50%; top:22px; width:76px; height:92px; margin-left:-38px;
+    border-radius:50%; background:radial-gradient(circle, rgba(242,193,78,.95), rgba(242,193,78,0) 70%);
+    opacity:0; animation:demoFlash 3.2s ease-out infinite; pointer-events:none;
+  }
+  @keyframes demoFlash {
+    0%,44%  { opacity:0; transform:scale(.6); }
+    48%     { opacity:1; transform:scale(1.7); }
+    60%,100%{ opacity:0; transform:scale(2.1); }
+  }
+
+  /* the hand: the two cards still on the table, and the empty slot between */
+  .demo-drag .demo-track {
+    left:50%; right:auto; bottom:16px; width:204px; height:64px; margin-left:-102px; border:0;
+    background:
+      linear-gradient(180deg,#2a56b8,#112a66) 0 0 / 56px 64px no-repeat,
+      linear-gradient(180deg,#2a56b8,#112a66) 100% 0 / 56px 64px no-repeat,
+      repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px) 74px 0 / 56px 2px no-repeat,
+      repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px) 74px 100% / 56px 2px no-repeat;
+    border-radius:7px;
+  }
+
+  /* the target: one face-down red card that turns over and falls */
+  .demo-drag .demo-target {
+    display:block; left:50%; top:22px; width:76px; height:92px; margin-left:-38px;
+    border:3px solid rgba(217,164,65,.75); border-radius:9px; box-shadow:0 8px 20px rgba(0,0,0,.5);
+    background:linear-gradient(180deg,#a32626,#4a0d0d);
+    animation:demoFoe 3.2s ease-in-out infinite;
+  }
+  .demo-drag .demo-ripple { display:none; }
+  .demo-drag .demo-target::before, .demo-drag .demo-target::after {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:#f6f1e4;
+  }
+  .demo-drag .demo-target::before { content:"?"; font-size:40px; animation:demoFoeQ 3.2s linear infinite; }
+  .demo-drag .demo-target::after  { content:"7"; font-size:46px; opacity:0; animation:demoFoeN 3.2s linear infinite; }
+  @keyframes demoFoe {
+    0%,40%   { transform:rotateY(0) translateY(0) rotate(0); opacity:1; }
+    46%      { transform:rotateY(90deg); opacity:1; }
+    52%,58%  { transform:rotateY(0) scale(1.08); opacity:1; }
+    72%,96%  { transform:translateY(26px) rotate(14deg) scale(.8); opacity:0; }
+    100%     { transform:translateY(0) rotate(0) scale(1); opacity:1; }
+  }
+  @keyframes demoFoeQ { 0%,45%{opacity:1;} 46%,96%{opacity:0;} 100%{opacity:1;} }
+  @keyframes demoFoeN { 0%,46%{opacity:0;} 47%,100%{opacity:1;} }
+
+  /* the finger, carrying the card it picked up */
+  .demo-drag .demo-hand { z-index:3; animation:demoCarry 3.2s ease-in-out infinite; }
+  .demo-drag .demo-hand::before {
+    content:"9"; position:absolute; left:50%; top:-54px; width:56px; height:68px; margin-left:-28px;
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:32px; color:#f6f1e4;
+    background:linear-gradient(180deg,#2a56b8,#112a66); border:3px solid rgba(242,193,78,.85); border-radius:8px;
+    box-shadow:0 10px 22px rgba(0,0,0,.55), 0 0 18px rgba(242,193,78,.35);
+    animation:demoCarried 3.2s ease-in-out infinite;
+  }
+  @keyframes demoCarry {
+    0%,12%   { transform:translateY(0);     opacity:1; }
+    40%,58%  { transform:translateY(-96px); opacity:1; }
+    66%      { transform:translateY(-96px); opacity:0; }
+    67%,92%  { transform:translateY(0);     opacity:0; }
+    100%     { transform:translateY(0);     opacity:1; }
+  }
+  @keyframes demoCarried {
+    0%,44%   { transform:scale(1);    opacity:1; }
+    50%      { transform:scale(1.18); opacity:1; }
+    58%      { transform:scale(1);    opacity:1; }
+    66%,100% { opacity:0; }
+  }

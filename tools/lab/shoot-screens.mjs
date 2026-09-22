@@ -88,6 +88,7 @@ var SPAN = {
   echomaze: 18,
   gearball: 20,     // clock 45
   marshmelt: 13,    // with its SWEEP entry below; every seed reaches 12.9 s
+  pawko: 50,        // five waves, clockless; the RACK pilot plays them all in ~55 s
   slipdeck: 15,     // clock 30
   spinshock: 27,
   triverse: 15
@@ -111,6 +112,18 @@ var SPAN = {
    w     - radians of sweep per frame. */
 var SWEEP = {
   marshmelt: { every: 30, y: 0.10, amp: 0.42, w: 0.03 }
+};
+
+/* Games with a RACK of cards to play before each drop. pawko deals five cards
+   under the HUD and refuses a drop until one is played, so the blind pilot
+   taps the five slots in turn — a used card, and a slot tapped while the wave
+   is falling, are both ignored by the game — and then taps the board.
+
+   slots - how many cards.  x0 / dx - the first slot's centre and the pitch, in
+   fractions of the band's width.  y - the slot's centre under the band's top,
+   in design px.  board - where the drop goes, as a fraction of the band. */
+var RACK = {
+  pawko: { slots: 5, x0: 0.106, dx: 0.197, y: 83, board: 0.4 }
 };
 
 // --- CLI -----------------------------------------------------------------
@@ -260,6 +273,14 @@ var DRIVER_JS = `<script>
       if (k === 0) H.Input.at("down", ax, ay);
       else if (k < 20) H.Input.at("move", ax + (tx - ax) * (k / 20), ay + (ty - ay) * (k / 20));
       else if (k === 20) H.Input.at("up", tx, ty);
+      return;
+    }
+    // "tap" with a rack of cards over the board: a card, then the board (see RACK).
+    var R = window.__RACK;
+    if (R) {
+      var kk = n % 60;
+      if (kk < R.slots) tap(H, L.left + L.w * (R.x0 + R.dx * kk), L.top + R.y);
+      else if (kk === 30) tap(H, L.cx, L.top + L.h * R.board);
       return;
     }
     // "tap" whose point is the aim: sweep the top of the band (see SWEEP).
@@ -454,7 +475,10 @@ function prepare(slug, tmpDir) {
   var sweep = SWEEP[slug]
     ? "<script>window.__SWEEP = " + JSON.stringify(SWEEP[slug]) + ";</script>\n"
     : "";
-  src = src.replace("</body>", sweep + DRIVER_JS + "\n</body>");
+  var rack = RACK[slug]
+    ? "<script>window.__RACK = " + JSON.stringify(RACK[slug]) + ";</script>\n"
+    : "";
+  src = src.replace("</body>", sweep + rack + DRIVER_JS + "\n</body>");
 
   var out = path.join(tmpDir, slug + ".html");
   fs.writeFileSync(out, src);

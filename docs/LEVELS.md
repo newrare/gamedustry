@@ -188,11 +188,28 @@ something, and a straight two-stop fade shows its own middle as a band across
 the picture. It is written in percentages, so the taller header the meta layer
 builds (196 px against 150) wears the same curve and not a compressed one.
 
-The card at the foot is **opaque** instead of fading up from transparent. It has
-a border along its top edge, which is what separates it from the map, so nothing
-was asking its background to do that job as well — and the third of it that used
-to be see-through was exactly where the level's name and its objective are
-written.
+The card at the foot is a **panel** instead of a fade. It has a border along its
+top edge, which is what separates it from the map, so nothing is asking its
+background to do that job as well — and the third of it that used to fade up
+from nothing was exactly where the level's name and its objective are written.
+It sits at ~80 % black rather than ~95: the road is still read through it, which
+is what a panel sliding over a map should let happen, and the border plus a
+line that never wraps is what carries the text over it.
+
+**Its three statements are one line each, measured.** The name and its band, the
+objective and the note are single statements, and a statement that wraps reads
+as two and pushes the card up the map. None of the three has a width anyone can
+write down — the objective is a sentence per game per language, each game's own
+face moves every width again, and the room itself changes with the column of
+flames a wall's card hides — so they are `nowrap` and scaled DOWN to the room
+they have by `Fit.box` (`packages/shell/shell.js`), the same measure-and-shrink
+the intro and end titles ride on. The title row carries the size and its two
+nodes are written in `em` of it, so the name and the band shrink together. Over
+the thirteen games, both languages and every card, the fit bites at 26 → 23 px
+at worst; a copy that needed more than that was shortened instead (`arcider`,
+`blight`, `echomaze`). The endless card is the one exception: it is a paragraph
+about what a perfect board just earned, not an objective, and a paragraph fitted
+onto one line is unreadable long before it fits.
 
 **Three stars makes a level burn**: gold rim, gold halo, a slow breath. The
 map is read at a glance and a perfect level has to be findable in that glance,
@@ -478,21 +495,23 @@ available before a bench exists. The flavour objectives stay on the table for
 when one does — the machinery takes them unchanged, through `levelProgress()`
 and `levelScore`.
 
-| game          | round shape          | measured on | the objective a level sets | what the thirty levels move (`L1 → L30`)                                                                                                                                  |
-| ------------- | -------------------- | ----------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **arcider**   | a race, to the arch  | metres      | `200 → 1 300 m`            | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                                                        |
-| **blight**    | 60 s, bubble shooter | score       | `350 → 2 300`              | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                                                       |
-| **bouncetry** | ends with the balls  | score       | `350 → 2 300`              | `rows 7→11`, `startBalls 8→4`, `multiBalls 3→2`, `bonusBricks 4→1`, `pullAfter 7→4`                                                                                       |
-| **chainring** | timed, on the beat   | score       | `700 → 4 600`              | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`                                           |
-| **echomaze**  | ends with the pulses | score       | `500 → 3 500`              | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 2.6→1.5`, `bounceJitter .03→.09`, `surgePeriod 1.15→0.85` — **and one rule per band**, below |
-| **gearball**  | 45 s, fill the ring  | score       | `1 100 → 7 300`            | `ring.gears 6→12`, `ring.speed 240→420`, `ring.accel 3→9`, `ring.magSize 4→2`, `ring.reload .34→.60`, `ring.lives 5→2`                                                    |
-| **marshmelt** | endless, rising lava | score       | `125 → 850`                | `riseSeconds 110→45`, `lavaEnd .22→.45`, `spawnEvery .9→.45`, `fastChance .2→.65`, `rampSeconds 90→40`, `airShots 2→1`                                                    |
-| **orbinity**  | 30 s, orbits         | score       | `250 → 1 700`              | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`                                       |
-| **radiam**    | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                                                            |
-| **slipdeck**  | 30 s, poker swipe    | score       | `475 → 3 100`              | `play.chuteDepth 4→2`, `play.shoeBias .85→.40`, `play.fuse 4.6→2.2`, `play.fuseRamp .06→.18`, `play.fuseFloor 1.6→0.9`, `play.lives 4→2`                                  |
-| **spinshock** | endless, top battle  | score       | `350 → 2 300`              | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                                                 |
-| **triverse**  | endless, 3 lanes     | metres      | `180 → 1 200 m`            | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`                                            |
-| **vipera**    | endless, the burrow  | metres      | `100 → 650 m`              | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`                                       |
+| game           | round shape          | measured on | the objective a level sets | what the thirty levels move (`L1 → L30`)                                                                                                                                                                                           |
+| -------------- | -------------------- | ----------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **arcider**    | a race, to the arch  | metres      | `200 → 1 300 m`            | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                                                                                                                 |
+| **blight**     | 60 s, bubble shooter | score       | `350 → 2 300`              | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                                                                                                                |
+| **bouncetry**  | ends with the balls  | score       | `350 → 2 300`              | `rows 7→11`, `startBalls 8→4`, `multiBalls 3→2`, `bonusBricks 4→1`, `pullAfter 7→4`                                                                                                                                                |
+| **chainring**  | timed, on the beat   | score       | `700 → 4 600`              | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`                                                                                                    |
+| **echomaze**   | ends with the pulses | score       | `500 → 3 500`              | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 2.6→1.5`, `bounceJitter .03→.09`, `surgePeriod 1.15→0.85` — **and one rule per band**, below                                                          |
+| **gearball**   | 45 s, fill the ring  | score       | `1 100 → 7 300`            | `ring.gears 6→12`, `ring.speed 240→420`, `ring.accel 3→9`, `ring.magSize 4→2`, `ring.reload .34→.60`, `ring.lives 5→2`                                                                                                             |
+| **marshmelt**  | endless, rising lava | score       | `125 → 850`                | `riseSeconds 110→45`, `lavaEnd .22→.45`, `spawnEvery .9→.45`, `fastChance .2→.65`, `rampSeconds 90→40`, `airShots 2→1`                                                                                                             |
+| **orbinity**   | 30 s, orbits         | score       | `250 → 1 700`              | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`                                                                                                |
+| **pawko**      | five waves of balls  | score       | `17 000 → 45 000`          | `play.balls 10→14`, `play.specials 8→2`, `play.malusGates 0→2`, `play.pegValue 10→20`, the four `play.gate.*` values ×3 — the board pays more as the level climbs, and opens poorer                                                |
+| **radiam**     | 40 s dial / eclipse  | score       | `2 100 → 13 900`           | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                                                                                                                     |
+| **slipdeck**   | 30 s, poker swipe    | score       | `475 → 3 100`              | `play.chuteDepth 4→2`, `play.shoeBias .85→.40`, `play.fuse 4.6→2.2`, `play.fuseRamp .06→.18`, `play.fuseFloor 1.6→0.9`, `play.lives 4→2`                                                                                           |
+| **spinshock**  | endless, top battle  | score       | `350 → 2 300`              | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                                                                                                          |
+| **stratideck** | a battle, turn-based | score       | `700 → 3 000`              | `play.cols 4→8`, `play.rows 3→6`, `play.traps 0→5`, `play.deckRatio 1.1→.6`, `play.enemyBias -1→1.2`, `play.deckBias .6→-.2` — the camp grows, the deck shrinks against it, and a lost battle is capped at one star (`levelStars`) |
+| **triverse**   | endless, 3 lanes     | metres      | `180 → 1 200 m`            | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`                                                                                                     |
+| **vipera**     | endless, the burrow  | metres      | `100 → 650 m`              | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`                                                                                                |
 
 The three distance ranges are calibrated on **duration**, not on a threshold:
 their speed ramps are known, so a target in metres converts straight to a round
@@ -1042,10 +1061,13 @@ nothing, and that already holds: the webshell does not call `endRound` there.
   storage, so there is exactly one game's key in it, and an uninstall takes the
   progression with it. Play's auto-backup can carry it, which is a manifest
   decision, not a code one.
-- **OPTIONS wipes more than it used to.** With a map the row reads *erase the
-  thirty levels*, asks twice with that wording, and throws the best score and
-  the progression away together — a best score with no stars behind it
-  describes nothing. Without a map it is the old row, unchanged.
+- **OPTIONS erases everything the player has.** One row, one wording whatever
+  the game declares — *erase all game data* — asked twice, and it throws the
+  best score, the thirty levels of stars and the meta layer's save (wallet,
+  tickets, collection, daily road) away together: a best score with no stars
+  behind it describes nothing, and a purse that outlived the climb that filled
+  it describes less. The switches above it are settings, not data, so the
+  music, the callouts and the language survive.
 
 ### FORCE — the map walked out of order, locally only
 
@@ -1082,23 +1104,23 @@ ______________________________________________________________________
 Nothing here belongs to the motor: a playable has no map, and the games know
 nothing about levels beyond a number in `CONFIG`.
 
-| piece                                  | what it is                                                                                                           |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `packages/webshell/levels.js` / `.css` | the map screen — a full-frame layer over the intro, published as `window.__LEVELS__` and mounted by `menu.js`        |
-| `manifest.json` → `web.levels`         | where a game declares its objective, its copy and its ranges, next to `web.modes` and `web.copy`                     |
-| `web.levels.bands`                     | optional: the five band names, `en` / `fr`, plus `from` when the game splits them on the LEVEL NUMBER (below)        |
-| `CONFIG.web.levels`                    | that same block on the page — the existing `web` injection already carries it, so there is no second mechanism       |
-| `CONFIG.slug`                          | injected by the web build; what scopes `prog:<slug>` and `best:<slug>`                                               |
-| `CONFIG.level`                         | the chosen level, written before `startGame()` — exactly how `CONFIG.mode` already works, and `0` for endless        |
-| `Game.applyLevel(d)`                   | optional hook for what a lerp cannot express (a maze seed, a brick blueprint, a win condition); `null` = endless     |
-| `Game.levelProgress()`                 | optional: what the objective is measured against while the round runs — the HUD score otherwise                      |
-| `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, echomaze's is a door   |
-| `Game.levelWon()`                      | optional: how the game ends its own round on the third star, so the end screen keeps its stat rows                   |
-| `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides           |
-| `onOutro(fn)` in the shell             | the third motor addition — the beat between the round and the end screen, with the loop still turning for it         |
-| `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes |
-| the graph itself                       | one table for the thirteen — sections, forks and road gates are the studio's shape, not a game's                     |
-| `menu.js` → `LV.mount({ help })`       | the Help panel handed to the map, so level 0 opens the shell's one help screen instead of a second copy of it        |
+| piece                                  | what it is                                                                                                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/webshell/levels.js` / `.css` | the map's CONTENT — the road, the cards, the stars. It declares itself a VIEW (`View.define("map", …)`) and the view system owns the rest: the node's place in the stack, the class, the decor, the bed and the way back                                |
+| `manifest.json` → `web.levels`         | where a game declares its objective, its copy and its ranges, next to `web.modes` and `web.copy`                                                                                                                                                        |
+| `web.levels.bands`                     | optional: the five band names, `en` / `fr`, plus `from` when the game splits them on the LEVEL NUMBER (below)                                                                                                                                           |
+| `CONFIG.web.levels`                    | that same block on the page — the existing `web` injection already carries it, so there is no second mechanism                                                                                                                                          |
+| `CONFIG.slug`                          | injected by the web build; what scopes `prog:<slug>` and `best:<slug>`                                                                                                                                                                                  |
+| `CONFIG.level`                         | the chosen level, written before `startGame()` — exactly how `CONFIG.mode` already works, and `0` for endless                                                                                                                                           |
+| `Game.applyLevel(d)`                   | optional hook for what a lerp cannot express (a maze seed, a brick blueprint, a win condition); `null` = endless                                                                                                                                        |
+| `Game.levelProgress()`                 | optional: what the objective is measured against while the round runs — the HUD score otherwise                                                                                                                                                         |
+| `Game.levelStars(stars, value)`        | optional: a CAP over what the three bands pay, never a promotion — arcider's board is a race, echomaze's is a door                                                                                                                                      |
+| `Game.levelWon()`                      | optional: how the game ends its own round on the third star, so the end screen keeps its stat rows                                                                                                                                                      |
+| `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides                                                                                                                                              |
+| `onOutro(fn)` in the shell             | the third motor addition — the beat between the round and the end screen, with the loop still turning for it                                                                                                                                            |
+| `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes                                                                                                                                    |
+| the graph itself                       | one table for the thirteen — sections, forks and road gates are the studio's shape, not a game's                                                                                                                                                        |
+| `menu.js` → `LV.mount({ help })`       | the way to the shell's one help CARD, so level 0 opens it instead of a second copy. The map used to build its own panel, because a panel of the title screen could not be raised over a map; help is a modal now and is over every view by construction |
 
 A game declares the block and nothing else. This is vipera's, in full:
 

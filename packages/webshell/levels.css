@@ -63,18 +63,25 @@
 }
 
 /* ---- the header band ---------------------------------------------------- */
+#lv-head.bare { height:calc(var(--inset-top) + var(--wh-band, 0px) + 26px); }
+
 /* The decor the motor scatters here (packages/shell/shell.js, Decor): above
    the backdrop, below the road and the card, so a piece dresses the margins of
    the grid and never sits between a finger and a level. */
 #lv-screen .decor-layer { z-index:1; }
 
-/* Two rows: `#lv-hrow` is navigation and what the player owns, `#lv-xp` is
-   the whole width under it (meta layer only — meta.css builds it). Without
-   the meta layer there is one row and the column simply centres it. */
+/* The way back and what the screen is. What the player OWNS is no longer in
+   here: it is the band the view system puts over this screen, the album and
+   the shop alike (packages/webshell/view.css). */
 #lv-head {
   position:absolute; top:0; left:0; right:0; z-index:3;
-  height:calc(var(--inset-top) + 150px);
-  padding:calc(var(--inset-top) + 0px) 28px 0;
+  /* Under the band, which is a layer over the frame and takes no room of its
+     own (view.css); `--wh-band` is 0 on a game with no wallet. js measures
+     this height and insets the road by it on every draw. */
+  height:calc(var(--inset-top) + 150px + var(--wh-band, 0px));
+  padding:calc(var(--inset-top) + var(--wh-band, 0px)) 28px 0;
+  /* Nothing in the row: the band above is the whole header, so the scrim is
+     cut to it (levels.js writes the class). */
   display:flex; flex-direction:column; justify-content:center; gap:10px;
   /* THE SCRIM UNDER THE HUD. The road runs beneath this band now, so what is
      behind the wallet, the xp bar and the star counter is a live map — gears,
@@ -106,22 +113,12 @@
     rgba(0,0,0,0) 100%);
 }
 #lv-hrow { display:flex; align-items:center; gap:14px; }
-#lv-titles { flex:1; min-width:0; }
-#lv-eyebrow {
-  font-size:19px; letter-spacing:4px; text-transform:uppercase;
-  color:var(--accent); opacity:.85; margin-bottom:3px;
-}
-#lv-title {
-  font-weight:var(--web-fw, 900); font-size:46px; letter-spacing:2px;
-  text-transform:uppercase; line-height:1; white-space:nowrap; overflow:hidden;
-  /* No coloured halo here. A 26px glow in a bright accent — vipera's mint,
-     radiam's cyan — saturates into a filled rectangle behind the caps instead
-     of lighting them; the eyebrow above carries the accent, and the header's
-     own gradient is what the type needs to sit on. */
-  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
-}
+/* Only built into this header where there is no band (levels.js): with a
+   wallet over the screen the stars are the band's last chip. Against the home
+   button rather than against the right edge, which is where the band is. */
 #lv-total {
-  flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  flex:0 0 auto; margin-right:auto;
+  display:flex; align-items:center; gap:8px;
   padding:10px 18px; border-radius:40px;
   background:rgba(0,0,0,.42); border:2px solid var(--panel-line);
   font-size:28px; font-weight:var(--web-fw, 900); font-variant-numeric:tabular-nums;
@@ -339,7 +336,10 @@
 #lv-dev {
   /* `bottom` is rewritten with the card's measured height on every render
      (levels.js, writeCard) — this is only where it starts. */
-  position:absolute; z-index:5; right:22px; bottom:262px;
+  /* LEFT, not right: the right of this foot is the shell's two corner
+     controls (view.css), and a dev pill under them is a pill nobody can read
+     and a button nobody can press. */
+  position:absolute; z-index:5; left:22px; bottom:262px;
   padding:7px 14px; border-radius:8px;
   border:2px dashed rgba(255,255,255,.34);
   background:rgba(0,0,0,.62); color:rgba(255,255,255,.62);
@@ -363,11 +363,13 @@
   /* THE CARD IS A PANEL, not a fade. It used to start at nothing and darken
      down, which let the road and the gears through its top third — behind the
      level's name and its objective, the two lines on this screen that have to
-     be read. It has a BORDER along its top edge, so it can simply be opaque:
-     the edge is what separates it from the map, and nothing is asking the
-     background to do that job. The slight gradient left is depth, not a
-     reveal. */
-  background:linear-gradient(180deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.95) 40%, rgba(0,0,0,.97) 100%);
+     be read. It has a BORDER along its top edge, so it does not have to be
+     opaque to be a panel: the edge is what separates it from the map, and
+     nothing is asking the background to do that job. It sits at ~.8 rather
+     than ~.95 — the map is still read through it, which is the point of a
+     panel that slides over a road, and the text over it still carries. The
+     slight gradient left is depth, not a reveal. */
+  background:linear-gradient(180deg, rgba(0,0,0,.76) 0%, rgba(0,0,0,.81) 40%, rgba(0,0,0,.83) 100%);
   border-top:2px solid var(--panel-line);
 }
 /* A tap on the empty map clears the selection, and an unselected map has no
@@ -380,16 +382,34 @@
    with every card whose objective wrapped onto a second line. */
 #lv-body { display:flex; align-items:flex-start; gap:18px; }
 #lv-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; }
-#lv-card .top { display:flex; align-items:baseline; gap:14px; }
-#lv-name { font-size:40px; font-weight:var(--web-fw, 900); letter-spacing:1px; text-transform:uppercase; }
-#lv-band { font-size:19px; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
-#lv-goal { font-size:26px; line-height:1.35; color:rgba(255,255,255,.92); }
+
+/* ONE LINE EACH, MEASURED. The name, the objective and the note are single
+   statements, and a statement that wraps onto a second line pushes the card
+   up the map and reads as two. They are therefore `nowrap` and scaled DOWN to
+   the room they have by Fit.box (packages/shell/shell.js) — thirteen games,
+   two languages and a different face each is not a set of sizes anyone can
+   hand-tune, and the room itself moves with the column of flames beside it.
+   The title row is fitted as a ROW: it carries the size and its two nodes are
+   written in em of it, so the name and the band shrink together and keep
+   their ratio. Its children never shrink, or the row's scrollWidth would be
+   the shrunk boxes instead of the text. */
+#lv-card .top { display:flex; align-items:baseline; gap:14px; font-size:40px; white-space:nowrap; }
+#lv-card .top > * { flex:0 0 auto; }
+#lv-name { font-size:1em; font-weight:var(--web-fw, 900); letter-spacing:1px; text-transform:uppercase; }
+#lv-band { font-size:.475em; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
+#lv-goal { font-size:26px; line-height:1.35; color:rgba(255,255,255,.92); white-space:nowrap; }
 /* the wall's explanation and level 0's both run longer than an objective, and
    a game's own face is what decides how long */
 #lv-card.is-wall #lv-goal,
 #lv-card.is-tuto #lv-goal { font-size:23px; }
+/* The endless card is the one exception, and it is not an objective: it is a
+   paragraph about what a perfect board just earned. A paragraph fitted onto
+   one line is unreadable long before it fits. */
+#lv-card.is-endless #lv-goal { white-space:normal; font-size:23px; }
 #lv-goal b { color:var(--accent); font-weight:var(--web-fw, 900); }
-#lv-note { font-size:19px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums; }
+#lv-note { font-size:19px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums;
+           white-space:nowrap; }
+#lv-card.is-endless #lv-note { white-space:normal; }
 #lv-note em { font-style:normal; color:var(--gold); }
 
 /* the wall card's suggestions: the cheapest places to find the missing stars */
@@ -440,30 +460,6 @@
   box-shadow:none; cursor:not-allowed;
 }
 #lv-play:active:not(:disabled) { transform:translateY(3px); box-shadow:0 5px 0 rgba(0,0,0,.4); }
-
-/* ---- the help panel, over the map --------------------------------------- */
-/* Level 0's button opens menu.js's own Help panel here rather than back on the
-   menu: `#screen-intro` is a stacking context of its own (z-index 30 in the
-   motor stylesheet) and this screen sits at 34, so the menu's panel cannot be
-   raised above the map — and sending the player back to the menu to read two
-   lines would lose the map they were standing on.
-
-   The head, the body and the rows inside are menu.css's: there is one panel
-   design in this shell, and this is the third place it is used after the
-   intro's panels and the card over a paused round. */
-#lv-help {
-  position:absolute; inset:0; z-index:6; display:none;
-  flex-direction:column; justify-content:center; padding:0 40px;
-  background:rgba(3,4,12,.82);
-  -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
-}
-#lv-help.on { display:flex; animation:lv-in .2s ease both; }
-/* The help card gets one object too, and it is dressed against its own
-   stacking context (z-index 6 above): the head and the body are already
-   raised to 1 by the menu stylesheet, so the layer behind them has to be 0
-   here rather than the 1 the map's own margins use. */
-#lv-help .decor-layer { z-index:0; }
-#lv-help .decor-layer.front { z-index:2; }
 
 /* =========================================================================
    THE ROUND — the three stars, as they are earned

@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.1.2",
+  "version": "1.2.3",
   "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
   "order": 100,
   "draft": false,
@@ -15,10 +15,37 @@
   },
   "art": {
     "objects": {
+      "cloud-haze-02": "game-cloud-haze-02",
       "decor-02": "gearball-gear-02",
       "decor-06": "gearball-gear-06",
       "decor-07": "gearball-gear-07",
-      "decor-09": "gearball-gear-09"
+      "decor-09": "gearball-gear-09",
+      "home01": "gearball-home-01",
+      "home02": "gearball-home-02",
+      "home03": "gearball-home-03",
+      "home04": "gearball-home-04",
+      "home05": "gearball-home-05",
+      "home06": "gearball-home-06",
+      "sticker01": "gearball-sticker-01",
+      "sticker02": "gearball-sticker-02",
+      "sticker03": "gearball-sticker-03",
+      "sticker04": "gearball-sticker-04",
+      "sticker05": "gearball-sticker-05",
+      "sticker06": "gearball-sticker-06",
+      "sticker07": "gearball-sticker-07",
+      "sticker08": "gearball-sticker-08",
+      "sticker09": "gearball-sticker-09",
+      "sticker10": "gearball-sticker-10",
+      "sticker11": "gearball-sticker-11",
+      "sticker12": "gearball-sticker-12",
+      "sticker13": "gearball-sticker-13",
+      "sticker14": "gearball-sticker-14",
+      "sticker15": "gearball-sticker-15",
+      "sticker16": "gearball-sticker-16",
+      "sticker17": "gearball-sticker-17",
+      "sticker18": "gearball-sticker-18",
+      "sticker19": "gearball-sticker-19",
+      "sticker20": "gearball-sticker-20"
     }
   },
   "copy": {
@@ -189,6 +216,240 @@
           5,
           2
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 500,
+      "xpPer": 50,
+      "ticketPrice": 125,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        12,
+        14,
+        15,
+        16,
+        19,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Thumbs Up",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Hooray",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Big Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Steamed",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Bright Idea",
+          "rarity": "rare"
+        },
+        {
+          "name": "Hello There",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "rare"
+        },
+        {
+          "name": "Dizzy",
+          "rarity": "rare"
+        },
+        {
+          "name": "Ringed Ball",
+          "rarity": "rare"
+        },
+        {
+          "name": "The Gear",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Triple Ball",
+          "rarity": "rare"
+        },
+        {
+          "name": "Power Surge",
+          "rarity": "epic"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 384,
+          "y": 193,
+          "w": 200,
+          "halo": {
+            "w": 0.95,
+            "h": 0.55,
+            "dy": -0.05,
+            "color": "#edae43"
+          },
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 550,
+          "y": 350,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 170,
+          "y": 350,
+          "w": 180,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "sticker16",
+          "role": "daily",
+          "x": 623,
+          "y": 563,
+          "w": 89,
+          "badge": {
+            "dx": -0.4,
+            "dy": -0.9
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decor09",
+          "role": "decor",
+          "x": 556,
+          "y": 596,
+          "w": 70,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 120,
+          "y": 610,
+          "w": 160,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.85
+          }
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 360,
+          "y": 630,
+          "w": 230
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 360,
+          "y": 770,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.75,
+            "dy": 0.04,
+            "color": "#ffe87c"
+          },
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 160,
+          "y": 930,
+          "w": 200
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 559,
+          "y": 940,
+          "w": 222
+        },
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 650,
+          "y": 965,
+          "w": 200,
+          "notify": "cloud",
+          "every": 207,
+          "breathEvery": 59,
+          "always": true
+        },
+        {
+          "art": "decor06",
+          "role": "decor",
+          "x": 361,
+          "y": 486,
+          "w": 89,
+          "layer": 1
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.45,
+          "seconds": 120
+        }
       }
     }
   }

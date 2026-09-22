@@ -41,6 +41,8 @@
   "use strict";
 
   var W = window.__WEB__;
+  var VW = window.__VIEW__;
+  var MD = window.__MODAL__;
   if (!W) return;
 
   var MT = window.__META__;
@@ -123,8 +125,8 @@
 
   /* ── 2. the album screen ──────────────────────────────────────────────── */
 
-  var box, scroll, grid, counter, machine, drawBtn, ctl, betRow, oddsBox;
-  var built = false, shown = false, drawing = false;
+  var box, scroll, grid, machine, drawBtn, ctl, betRow, oddsBox;
+  var built = false, drawing = false;
   /* How many tickets the next pull eats. It is the player's standing choice,
      not a per-draw question, so it survives a reveal and a trip to the shop —
      only a wallet that can no longer pay for it moves it. */
@@ -140,24 +142,19 @@
     dressBackdrop(bg);
     box.appendChild(bg);
 
-    var head = el("header", "mt-head");
-    var back = el("button", "web-back", icon("back", "back-ico"));
-    back.addEventListener("click", close);
-    head.appendChild(back);
-    var titles = el("div", "mt-titles");
-    titles.appendChild(el("div", "mt-eyebrow", T.album));
-    counter = el("div", "mt-count");
-    titles.appendChild(counter);
-    head.appendChild(titles);
-    var walletHost = el("div", "mt-head-wallet");
-    head.appendChild(walletHost);
-    box.appendChild(head);
-    /* THE WALLET IS THE WAY TO THE SHOP, here as on the map: both chips are
-       doors. There used to be a GET TICKETS button under the machine, which
-       only existed when the wallet was empty — so the one screen that had to
-       teach the player where tickets come from was the one they reached
-       BEFORE running out. The number they are short of is the thing to tap. */
-    MT.wallet(walletHost, { doors: "shop" });
+    /* NO HEADER AT ALL. It carried the way back, then only a name and a count,
+       and both of those went the same way the wallet did: the name is what the
+       player tapped to get here, and the COUNT is what they own — which is the
+       band's subject, not a title's (packages/webshell/view.js, section 5). So
+       `x / 20` is the band's first chip, on every screen rather than on this
+       one, and the height a header was taking goes to the machine, the odds
+       and the twenty tiles. */
+    /* THE WALLET IS NOT IN THIS HEADER ANY MORE. It is the band the view
+       system puts over every screen that carries one (packages/webshell/
+       view.js, section 5), and its chips are still the doors they were here:
+       there is no GET TICKETS button under the machine, because a button that
+       only exists once the wallet is empty teaches nothing before it is — the
+       number the player is short of is the thing to tap. */
 
     /* ONE SCREEN AND NO SCROLL: the machine on the left, what it costs and
        what it pays on the right, the twenty tiles under both. A collection the
@@ -175,9 +172,21 @@
     frame().appendChild(box);
   }
 
-  /* The same backdrop the map and the menu are dressed with, in the same
-     order, so nothing of the game's look changes on the way in. */
+  /* THE HUB'S OWN GROUND FIRST, where the game has a village: these two
+     screens are ROOMS OF THAT PLACE — the collection is a door on the hub and
+     the shop is the till inside it — so they stand on the picture the player
+     just walked off, not on the backdrop the ROUND is played against. A game
+     with no village falls back to what this always did: the same backdrop the
+     map and the menu are dressed with, in the same order, so nothing of its
+     look changes on the way in.
+
+     `window.__VILLAGE__` is read here rather than captured at load: village.js
+     is the last file of the web layer, and this runs on the first open of a
+     screen, long after all of it. */
   function dressBackdrop(bg) {
+    var VG = window.__VILLAGE__;
+    var hub = VG && VG.ground ? VG.ground() : null;
+    if (hub) { bg.style.backgroundImage = "url(" + hub + ")"; return; }
     var art = W.Art ? W.Art.src(W.Art.sceneKey()) : null;
     if (art) { bg.style.backgroundImage = "url(" + art + ")"; return; }
     var images = (W.ASSETS && W.ASSETS.images) || {};
@@ -807,8 +816,12 @@
   }
 
   function reveal(n, isNew) {
-    var modal = el("div", "mt-modal sticker " + (isNew ? "fresh" : "seen"));
-    var card = el("div", "mt-card");
+    /* The card is a modal of the view system (packages/webshell/view.js); what
+       is left here is what is IN it. `dismiss` is off because DRAW AGAIN is on
+       it and a real control must never be what a thumb lands on by missing —
+       the tap-out below is the one that knows to spare it. */
+    var h = MD.open({ kind: "sticker " + (isNew ? "fresh" : "seen"), dismiss: false, esc: false });
+    var modal = h.box, card = h.card;
     card.appendChild(fx(isNew));
     card.appendChild(el("div", "al-tag " + (isNew ? "new" : "old"),
       isNew ? '<b>' + T.newSticker + "</b>" : T.dupe));
@@ -845,14 +858,11 @@
       acts.appendChild(ok);
       card.appendChild(acts);
     }
-    modal.appendChild(card);
-    frame().appendChild(modal);
     W.Sound.cue("uiStar", 0.85, isNew ? 1.5 : 1.05, isNew ? 1180 : 720, 0.18, "triangle");
     /* No Confetti here, for the reason meta.js gives on its own gift card: the
        motor's burst draws on the END SCREEN's canvas, which is not over this
        one. The sunburst and the shockwave are the celebration. */
     if (isNew) W.Sound.cue("uiScore", 0.6, 1.6, 1480, 0.22, "triangle");
-    requestAnimationFrame(function () { modal.classList.add("on"); });
 
     /* A tap anywhere puts it away — everywhere but on DRAW AGAIN, which is a
        real control and must never be what a thumb lands on by missing. ENTER,
@@ -865,8 +875,7 @@
       if (gone) return;
       gone = true;
       if (unkey) unkey();
-      modal.classList.remove("on");
-      setTimeout(function () { if (modal.parentNode) modal.parentNode.removeChild(modal); }, 200);
+      h.close();
     }
   }
 
@@ -889,7 +898,6 @@
 
   function paintGrid() {
     var total = MT.total(), owned = MT.owned(), i, html = "";
-    counter.textContent = owned + " / " + total;
     for (var k = 0; k < ORDER.length; k++) {
       i = ORDER[k];
       var c = MT.count(i);
@@ -927,8 +935,8 @@
      milestones are explained to the player. */
   function detail(n) {
     var have = MT.count(n), rar = MT.rarityOf(n);
-    var modal = el("div", "mt-modal sticker detail r" + rar);
-    var card = el("div", "mt-card");
+    var h = MD.open({ kind: "sticker detail r" + rar, dismiss: true });
+    var card = h.card;
     /* HOW MANY, in the corner and as a number alone. "OWNED x3" spelled out
        under the picture read as a caption and pushed the card taller; a chip
        on the frame is what a count is everywhere else in this layer. */
@@ -946,23 +954,11 @@
     card.appendChild(el("div", "mt-rw-src", MT.isMilestone(n)
       ? (MT.milestoneLabel(n, !have) || (have ? T.fromMap : T.toMap))
       : (have ? T.fromMachine : T.toMachine)));
-    modal.appendChild(card);
-    modal.addEventListener("click", shut);
-    frame().appendChild(modal);
-    requestAnimationFrame(function () { modal.classList.add("on"); });
-
-    var gone = false;
-    function shut() {
-      if (gone) return;
-      gone = true;
-      modal.classList.remove("on");
-      setTimeout(function () { if (modal.parentNode) modal.parentNode.removeChild(modal); }, 200);
-    }
   }
 
   /* ── 6. the shop ──────────────────────────────────────────────────────── */
 
-  var shop, shopBody, shopBuilt = false, shopOn = false;
+  var shop, shopBody, shopBuilt = false;
 
   function buildShop() {
     if (shopBuilt) return;
@@ -974,24 +970,19 @@
     shop.appendChild(bg);
 
     var head = el("header", "mt-head");
-    var back = el("button", "web-back", icon("back", "back-ico"));
-    back.addEventListener("click", closeShop);
-    head.appendChild(back);
     /* The shop has no x/20 to carry, so its name takes the big slot the album
        spends on the count — one header, two readings of it. */
     var titles = el("div", "mt-titles");
     titles.appendChild(el("div", "mt-eyebrow", ""));
     titles.appendChild(el("div", "mt-count", T.shop));
     head.appendChild(titles);
-    var walletHost = el("div", "mt-head-wallet");
-    head.appendChild(walletHost);
     shop.appendChild(head);
-    /* THE TICKET CHIP IS THE DOOR BACK TO THE COLLECTION. Both chips are doors
-       everywhere else in this layer and here the coin one has nowhere to go —
-       its door is the screen it is standing on — so only the blue one opens,
-       onto the album, which is where a ticket is spent. A player who has just
-       bought one is one tap from using it. */
-    MT.wallet(walletHost, { doors: "album" });
+    /* THE TICKET CHIP IS THE DOOR BACK TO THE COLLECTION, and it is in the
+       band over this screen rather than in this header (packages/webshell/
+       view.js). The rule the band reads is the one that was written here: a
+       chip's door is the OTHER screen, so on the shop the coin chip has
+       nowhere to go — its door is the screen it is standing on — and only the
+       blue one opens, onto the album, which is where a ticket is spent. */
 
     shopBody = el("div"); shopBody.id = "sh-body";
     shop.appendChild(shopBody);
@@ -1146,73 +1137,68 @@
      Re-appending is what fixes it rather than a z-index each, because BACK
      peels one layer off and expects to find whatever was under it — a stack
      that only ever grows at the end is a stack that needs no bookkeeping. */
-  function open() {
-    build();
-    frame().appendChild(box);
-    box.className = "on";
-    shown = true;
+  /* WHAT THE VIEW SYSTEM CALLS. The re-append that used to be written out here
+     twice — with the paragraph above explaining why DOM order decided which of
+     two equal z-indexes won — is the view system's, and it does it for every
+     screen rather than for these two (packages/webshell/view.js). */
+  function showAlbum() {
     paintMachine();
     paintGrid();
     Machine.refresh();                // the frame may have been resized under it
     MT.markSeen();
-    /* Two of the game's own painted objects down the sides, behind the grid:
-       the album is a long scroll of tiles on a backdrop, exactly the shape the
-       map is, so it is dressed exactly the way the map is. */
-    W.Decor.dress(box, { count: 2, spots: ["l", "r"], size: 130, opacity: 0.3, front: 0 });
   }
 
-  function close() {
-    if (!box) return;
-    box.className = "";
-    shown = false;
+  function hideAlbum() {
     Machine.sleep();                  // a machine nobody is looking at draws nothing
-    W.Decor.clear(box);
-  }
-
-  function openShop() {
-    buildShop();
-    frame().appendChild(shop);              // to the top of the stack — see open()
-    shop.className = "on";
-    shopOn = true;
-    paintShop();
-    W.Decor.dress(shop, { count: 2, spots: ["l", "r"], size: 130, opacity: 0.3, front: 0 });
-  }
-
-  function closeShop() {
-    if (!shop) return;
-    shop.className = "";
-    shopOn = false;
-    W.Decor.clear(shop);
   }
 
   /* One repaint for the two screens whenever the wallet moves under them —
      a ticket bought in the shop has to grey the machine's button in, and a
      sticker earned on the end screen has to fill its tile. */
   MT.onChange(function () {
-    if (shown) { paintMachine(); paintGrid(); }
-    if (shopOn) paintShop();
+    if (VW.isOpen("sticker")) { paintMachine(); paintGrid(); }
+    if (VW.isOpen("shop")) paintShop();
   });
 
   /* ── 8. the module ────────────────────────────────────────────────────── */
 
   window.__ALBUM__ = {
     active: function () { return true; },
-    mount: function (api) { API = api; if (api.lang) setLang(api.lang); },
+
+    mount: function (api) {
+      API = api;
+      if (api.lang) setLang(api.lang);
+      /* TWO VIEWS, declared here and stacked by the view system. They are the
+         pair that taught this shell it needed one: the album's tickets open
+         the shop and the shop's coins open the album, so either can be under
+         the other, and the answer used to be whichever had been BUILT first. */
+      var decor = { count: 2, spots: ["l", "r"], size: 130, opacity: 0.3, front: 0 };
+      VW.define("sticker", {
+        build: build,
+        node: function () { return box; },
+        show: showAlbum, hide: hideAlbum, hud: true, decor: decor
+      });
+      VW.define("shop", {
+        build: buildShop,
+        node: function () { return shop; },
+        show: paintShop, hud: true, decor: decor
+      });
+    },
+
     setLang: setLang,
-    open: open, close: close, isOpen: function () { return shown; },
-    openShop: openShop, closeShop: closeShop, isShopOpen: function () { return shopOn; },
-    text: function (k) { return T[k]; },
-    /* The one thing the shell asks of this file: is anything of it on screen?
-       ESCAPE and the back arrow need to know which layer they are closing. */
-    anyOpen: function () { return shown || shopOn; },
-    closeTop: function () { if (shopOn) closeShop(); else if (shown) close(); }
+    open: function () { VW.go("sticker"); },
+    close: function () { if (VW.isOpen("sticker")) VW.back(); },
+    isOpen: function () { return VW.isOpen("sticker"); },
+    openShop: function () { VW.go("shop"); },
+    closeShop: function () { if (VW.isOpen("shop")) VW.back(); },
+    isShopOpen: function () { return VW.isOpen("shop"); },
+    text: function (k) { return T[k]; }
   };
 
   function setLang(code) {
     LANG = STRINGS[code] ? code : "en";
     T = STRINGS[LANG];
     if (built) {
-      box.querySelector(".mt-eyebrow").textContent = T.album;
       var labels = ctl.querySelectorAll(".al-lbl");
       labels[0].textContent = T.perDraw;
       labels[1].textContent = T.chances;

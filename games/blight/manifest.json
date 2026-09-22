@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.8.2",
+  "version": "1.9.3",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -15,10 +15,38 @@
   },
   "art": {
     "objects": {
+      "bubble13": "blight-bubble-13",
+      "cloud-haze-05": "game-cloud-haze-05",
       "decor-01": "blight-ball-01",
       "decor-03": "blight-ball-03",
       "decor-06": "blight-ball-06",
-      "decor-09": "blight-ball-09"
+      "decor-09": "blight-ball-09",
+      "home01": "blight-home-01",
+      "home02": "blight-home-02",
+      "home03": "blight-home-03",
+      "home04": "blight-home-04",
+      "home05": "blight-home-05",
+      "home06": "blight-home-06",
+      "sticker01": "blight-sticker-01",
+      "sticker02": "blight-sticker-02",
+      "sticker03": "blight-sticker-03",
+      "sticker04": "blight-sticker-04",
+      "sticker05": "blight-sticker-05",
+      "sticker06": "blight-sticker-06",
+      "sticker07": "blight-sticker-07",
+      "sticker08": "blight-sticker-08",
+      "sticker09": "blight-sticker-09",
+      "sticker10": "blight-sticker-10",
+      "sticker11": "blight-sticker-11",
+      "sticker12": "blight-sticker-12",
+      "sticker13": "blight-sticker-14",
+      "sticker14": "blight-sticker-15",
+      "sticker15": "blight-sticker-16",
+      "sticker16": "blight-sticker-17",
+      "sticker17": "blight-sticker-18",
+      "sticker18": "blight-sticker-19",
+      "sticker19": "blight-sticker-20",
+      "sticker20": "blight-sticker-21"
     }
   },
   "copy": {
@@ -161,8 +189,8 @@
         "step": 50
       },
       "copy": {
-        "en": "Score <b>{n}</b> before the wall is fully contaminated",
-        "fr": "Marque <b>{n}</b> avant que la contamination soit totale"
+        "en": "Score <b>{n}</b> before the blight takes the wall",
+        "fr": "Marque <b>{n}</b> avant la contamination totale"
       },
       "bands": {
         "from": [
@@ -204,6 +232,280 @@
           0.1,
           0.03
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 150,
+      "xpPer": 15,
+      "ticketPrice": 40,
+      "awards": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        3,
+        13,
+        15,
+        17,
+        14,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Sweet Spell",
+          "rarity": "common"
+        },
+        {
+          "name": "Starstruck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Orb Hug",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Peekaboo",
+          "rarity": "common"
+        },
+        {
+          "name": "Wink Wink",
+          "rarity": "common"
+        },
+        {
+          "name": "Hooray",
+          "rarity": "rare"
+        },
+        {
+          "name": "Crystal Ball",
+          "rarity": "epic"
+        },
+        {
+          "name": "Triple Pop",
+          "rarity": "rare"
+        },
+        {
+          "name": "Rainbow Ball",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Blight Ball",
+          "rarity": "rare"
+        },
+        {
+          "name": "Spike Ball",
+          "rarity": "epic"
+        },
+        {
+          "name": "Comet Shot",
+          "rarity": "rare"
+        },
+        {
+          "name": "Full Board",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze05",
+          "role": "decor",
+          "x": 236,
+          "y": 311,
+          "w": 200,
+          "notify": "cloud",
+          "every": 231,
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 360,
+          "y": 480,
+          "w": 270
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 160,
+          "y": 510,
+          "w": 200,
+          "badge": {
+            "dx": 0.24,
+            "dy": -0.74
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 560,
+          "y": 540,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 465,
+          "y": 692,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 3.3,
+          "lightDelay": 2.2,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 270,
+          "y": 694,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 4.8,
+          "lightDelay": 1.6,
+          "always": true
+        },
+        {
+          "art": "decor03",
+          "role": "decor",
+          "x": 610,
+          "y": 700,
+          "w": 76,
+          "notify": "float"
+        },
+        {
+          "art": "bubble13",
+          "role": "daily",
+          "x": 530,
+          "y": 710,
+          "w": 78,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.04
+          },
+          "badge": {
+            "dx": 0.44,
+            "dy": -0.96
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 160,
+          "y": 730,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.1
+          },
+          "badge": {
+            "dx": 0.28,
+            "dy": -0.72
+          }
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 150,
+          "y": 920,
+          "w": 176
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 560,
+          "y": 950,
+          "w": 230
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 260,
+          "y": 1045,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 473,
+          "y": 1063,
+          "w": 200,
+          "rot": 3,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": -0.4,
+            "color": "#d644ff"
+          },
+          "light": "random",
+          "lightEvery": 5.3,
+          "lightDelay": 2.5,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#faeb71",
+          "cold": "#202176",
+          "amount": 0.57,
+          "seconds": 160
+        }
       }
     }
   }

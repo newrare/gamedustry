@@ -270,8 +270,21 @@ function renderGames() {
 
   grid.innerHTML = html;
 
-  var count = document.getElementById('statGames');
-  if (count) count.textContent = String(games.length);
+  setStat('statGames', games.length);
+  setStat('statLevels', games.length * LEVELS_PER_GAME);
+  setStat('statStickers', games.length * STICKERS_PER_GAME);
+}
+
+/* The web shell gives every game the same board and the same sheet: 30 levels
+   on the map, 20 stickers in the album. They are the shell's contract, not a
+   per-game figure, so the hero multiplies them by what the catalogue shipped
+   rather than carrying three numbers nobody would remember to update. */
+var LEVELS_PER_GAME = 30;
+var STICKERS_PER_GAME = 20;
+
+function setStat(id, value) {
+  var node = document.getElementById(id);
+  if (node) node.textContent = String(value);
 }
 
 function escapeHtml(s) {

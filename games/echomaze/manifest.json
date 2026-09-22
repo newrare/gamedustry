@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.7.3",
+  "version": "1.8.2",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -15,10 +15,38 @@
   },
   "art": {
     "objects": {
+      "ball13": "echomaze-ball-13",
+      "cloud-haze-02": "game-cloud-haze-02",
       "decor-ball-01": "echomaze-ball-01",
       "decor-bolt-03": "echomaze-electrical-03",
       "decor-bolt-06": "echomaze-electrical-06",
-      "decor-bolt-17": "echomaze-electrical-17"
+      "decor-bolt-17": "echomaze-electrical-17",
+      "home01": "echomaze-home-01",
+      "home02": "echomaze-home-02",
+      "home03": "echomaze-home-03",
+      "home04": "echomaze-home-04",
+      "home05": "echomaze-home-05",
+      "home06": "echomaze-home-06",
+      "sticker01": "echomaze-sticker-01",
+      "sticker02": "echomaze-sticker-02",
+      "sticker03": "echomaze-sticker-03",
+      "sticker04": "echomaze-sticker-04",
+      "sticker05": "echomaze-sticker-05",
+      "sticker06": "echomaze-sticker-06",
+      "sticker07": "echomaze-sticker-07",
+      "sticker08": "echomaze-sticker-08",
+      "sticker09": "echomaze-sticker-10",
+      "sticker10": "echomaze-sticker-12",
+      "sticker11": "echomaze-sticker-13",
+      "sticker12": "echomaze-sticker-14",
+      "sticker13": "echomaze-sticker-15",
+      "sticker14": "echomaze-sticker-16",
+      "sticker15": "echomaze-sticker-17",
+      "sticker16": "echomaze-sticker-18",
+      "sticker17": "echomaze-sticker-19",
+      "sticker18": "echomaze-sticker-21",
+      "sticker19": "echomaze-sticker-22",
+      "sticker20": "echomaze-sticker-24"
     }
   },
   "copy": {
@@ -178,7 +206,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> reading the maze",
-        "fr": "Marque <b>{n}</b> en lisant le labyrinthe"
+        "fr": "Marque <b>{n}</b> dans le labyrinthe"
       },
       "bands": {
         "en": [
@@ -225,6 +253,250 @@
           1.15,
           0.85
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 250,
+      "xpPer": 25,
+      "ticketPrice": 60,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        6,
+        11,
+        14,
+        15,
+        16,
+        12
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Thumbs Up",
+          "rarity": "common"
+        },
+        {
+          "name": "Heart Beat",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Steamed",
+          "rarity": "common"
+        },
+        {
+          "name": "Bright Idea",
+          "rarity": "rare"
+        },
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Panic",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "common"
+        },
+        {
+          "name": "Blueprint",
+          "rarity": "rare"
+        },
+        {
+          "name": "Echomaze!",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Way Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Lab Rig",
+          "rarity": "rare"
+        },
+        {
+          "name": "Comet",
+          "rarity": "rare"
+        },
+        {
+          "name": "Shockwave",
+          "rarity": "epic"
+        },
+        {
+          "name": "Static",
+          "rarity": "rare"
+        },
+        {
+          "name": "Orbit",
+          "rarity": "epic"
+        },
+        {
+          "name": "Dead End",
+          "rarity": "common"
+        },
+        {
+          "name": "Echo Crystal",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 366,
+          "y": 216,
+          "w": 205
+        },
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 298,
+          "y": 241,
+          "w": 200,
+          "notify": "cloud",
+          "every": 368,
+          "breathEvery": 37,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 157,
+          "y": 400,
+          "w": 213,
+          "flip": true,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 563,
+          "y": 404,
+          "w": 200
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 569,
+          "y": 490,
+          "w": 200,
+          "halo": {
+            "w": 0.65,
+            "h": 0.65,
+            "dy": 0.04,
+            "color": "#2fa5e8"
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "ball13",
+          "role": "daily",
+          "x": 597,
+          "y": 653,
+          "w": 88,
+          "badge": {
+            "dx": -0.35,
+            "dy": -0.8
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decorBolt03",
+          "role": "decor",
+          "x": 518,
+          "y": 688,
+          "w": 87,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 168,
+          "y": 703,
+          "w": 226,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 183,
+          "y": 812,
+          "w": 200,
+          "halo": {
+            "w": 0.45,
+            "h": 0.75,
+            "dy": 0.04,
+            "color": "#2ba1e1"
+          },
+          "light": "random"
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 168,
+          "y": 1047,
+          "w": 177,
+          "flip": true
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 559,
+          "y": 1067,
+          "w": 233
+        },
+        {
+          "art": "decorBall01",
+          "role": "decor",
+          "x": 366,
+          "y": 115,
+          "w": 120,
+          "layer": 1,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#fffef6",
+          "cold": "#1da3ee",
+          "amount": 0.4,
+          "seconds": 205
+        }
       }
     }
   }

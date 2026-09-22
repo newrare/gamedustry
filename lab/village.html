@@ -1,0 +1,3121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — village</title>
+<style>
+/* ===========================================================================
+   VILLAGE — a game's title screen laid out as a PLACE instead of a list.
+
+   The web shell's front door is four words stacked in a corner — PLAY,
+   LEADERBOARD, OPTIONS, HELP, plus a line per screen the meta layer adds. It
+   works, and it looks like a menu. A village is the same doors drawn as
+   buildings standing on a painted hub: the player does not read where to go,
+   they look at it.
+
+   THE MODEL IS TWO LAYERS, and the whole page is that idea:
+
+     1  the ground     one painting, `<slug>-background-home.webp` — a hub with
+                       empty pads on it, which is what the image model returns
+                       when asked for one. Any of the game's other backdrops
+                       can stand in. It BREATHES: see THE LIGHT below.
+     2  the houses     the game's own cuts, `<slug>-homeNN.webp`, out of one
+                       `<slug>-object-home.png` sheet. Dropped on the ground,
+                       moved, turned, scaled, flipped, deleted.
+   THE DOOR IS THE POINT. Each house OPENS something — the map, the ranking,
+   the shop, the collection, the daily road, the options, the help — so that is
+   the first field of the inspector, and the right column counts the ones still
+   missing rather than listing what exists.
+
+   FOUR RULES HOLD THE REST, and they are why this page is not a free canvas.
+
+   THE FEET ARE THE ANCHOR. A house is placed by the middle of its BASE, never
+   by its box: that is where it touches the ground, where its halo goes, what
+   it turns around, and what makes a house keep standing on its pad when it is
+   made bigger. `x` and `y` in the saved composition are that point, in the
+   720x1280 design space the whole repo thinks in.
+
+   THE PAINTER'S ORDER IS THE GROUND'S. A village is drawn in perspective, so a
+   house whose feet are LOWER is in front of one whose feet are higher. Nothing
+   here has a z-order to set, and the saved list is sorted by `y` — so the
+   declaration reads in the order it is drawn and the shell needs no second
+   opinion about it.
+
+   THREE SIGNALS, THREE MEANINGS, and never one doing two jobs:
+
+     the HALO    an ellipse on the GROUND, under the feet, in the game's accent
+                 — not a rectangle around the sprite, which would trace the
+                 cut's bounding box and read as a selection. It says THIS IS A
+                 DOOR, so it is on for every house that opens something and off
+                 for one placed as scenery.
+     the BADGE   a plated disc with a count. It says HOW MANY — three stickers
+                 to draw, two levels unlocked — and it is the only one of the
+                 three that carries a number.
+     the PULSE   what a house does when it has something to give RIGHT NOW,
+                 and it is one of four rather than one thing: BREATH swells the
+                 house itself 4%, origin at the feet, so it grows out of the
+                 ground; BLINK, FLICKER and RANDOM leave the house still and
+                 work the LIGHT under it — a regular beat, a failing tube, and
+                 one long uneven cycle every house enters at a different point
+                 of. A building that is alive and a sign that is lit are not
+                 the same statement, which is why they are not four styles of
+                 one animation. It is the signal that must stay rare: a village
+                 where everything pulses is a village where nothing does. Turn
+                 NOTIFY on in the right column to judge exactly that, one house
+                 at a time or all at once.
+
+   THE LABEL IS THE ROLE'S, NEVER TYPED. A house carrying a word takes it from
+   the shell's own strings, in both languages, shouted by this page's own copy
+   of the motor's `upper()` — so a label cannot say something the real screen
+   will not. Switch FR/EN under the frame: a French word is wider and this is
+   where that is found out.
+
+   IT IS DOM AND NOT A CANVAS, unlike the store composer next door, and that is
+   deliberate: the halo, the badge and the pulses are CSS, so what is tuned
+   here is literally what the view ships. The block marked THE VILLAGE ITSELF
+   below IS `packages/webshell/village.css`, verbatim — and nothing enforces
+   that, because a lab page cannot `@import` a file the builder inlines. So
+   `tools/lab/serve-village.mjs` compares the two on every boot and says so
+   when they have drifted: an edit to one and not the other is silent, and the
+   page then lies about the one thing it exists to show.
+
+   WHAT SAVE WRITES — two places, two meanings, and the segment at the top of
+   the left column is which of them is ON SCREEN rather than a switch with a
+   hidden cost:
+
+     SAVE DRAFT   → lab/village-presets.json, keyed by slug. Ships nothing,
+                    rebuilds nothing. The sketch you leave half-placed.
+     PUSH         → `web.village` in games/<slug>/manifest.json, the same place
+                    `web.levels` and `web.meta` are written, plus a patch
+                    version bump and a rebuild. The decision.
+
+   Needs its server — `make village` — for the three things a file:// page
+   cannot do: list what a game owns, adopt a spare cut, and write either file.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+html, body {
+  height:100%;
+  background:#07070e;
+  color:#e8e6f5;
+  font:600 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow:hidden;
+}
+
+#app { display:flex; height:100vh; }
+
+.col {
+  flex:0 0 272px;
+  padding:16px 14px 40px;
+  background:#12121c;
+  overflow-y:auto;
+}
+.col.left { border-right:1px solid #23233a; }
+.col.right { border-left:1px solid #23233a; flex-basis:296px; }
+
+h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+p.hint { margin:6px 0 16px; font-weight:500; font-size:11px; line-height:1.45; color:#8b8ba7; }
+p.hint code { color:#b9b9d8; }
+p.hint.tight { margin:6px 0 4px; }
+p.hint.offline {
+  padding:8px 10px; border:1px solid #5a2c34; border-radius:6px;
+  background:#2a1419; color:#ffc4c4;
+}
+p.hint.offline b, p.hint.offline code { color:#fff; }
+
+h2 {
+  margin:20px 0 8px; padding-top:14px;
+  border-top:1px solid #23233a;
+  font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:#7ea6ff;
+}
+h2:first-of-type { border-top:0; padding-top:0; }
+h2 span { color:#4d4d6b; letter-spacing:0; text-transform:none; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; font-size:11px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row select, .row input[type=text] {
+  width:100%; margin-top:5px; padding:5px 7px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-size:12px;
+}
+/* THE TRACK IS DRAWN HERE AND NOT BY THE PLATFORM, because the GRADUATIONS
+   have to land exactly where the magnetism does. A native range paints its own
+   track over the element's background, so a tick drawn under it is a tick
+   nobody sees — and `accent-color` gives no way in.
+
+   The notches are a repeating gradient inset by HALF A THUMB at each end,
+   which is the whole trick: the thumb's centre travels from 6px to width-6px,
+   so a gradient across the full width would drift from it by that much at the
+   ends and the slider would look like it was lying. `--tick` is one graduation
+   as a percentage of that inset box, written per input by `graduate()`. */
+.row input[type=range] {
+  width:100%; margin-top:6px; height:15px; cursor:pointer;
+  -webkit-appearance:none; appearance:none; background:none;
+}
+.row input[type=range]::-webkit-slider-runnable-track {
+  height:4px; border-radius:3px; background:#23233a;
+}
+.row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:12px; height:12px; margin-top:-4px;
+  box-sizing:border-box; border-radius:50%; background:#7ea6ff; border:2px solid #12121c;
+}
+.row input[type=range]:focus-visible { outline:2px solid #7ea6ff; outline-offset:2px; border-radius:4px; }
+.row input[type=range].ticked {
+  background-image: repeating-linear-gradient(90deg, #6f6f92 0 1px, transparent 1px var(--tick, 25%));
+  background-size: calc(100% - 12px) 5px;
+  background-position: 6px 100%;
+  background-repeat: no-repeat;
+}
+.row input[type=color] {
+  width:100%; height:28px; margin-top:5px; padding:2px;
+  background:#0b0b12; border:1px solid #2c2c47; border-radius:6px; cursor:pointer;
+}
+.two { display:flex; gap:8px; }
+.two > * { flex:1; min-width:0; }
+
+/* ---------------------------------------------------------------------------
+   THE FOLD — a chevron over a group of sliders.
+
+   A selected house has eleven numbers on it and a composer touches two of them
+   per session: the panel was a wall of tracks, and the three things that are
+   actually PICKED — what the house opens, whether it is lit, what it does —
+   were lost in the middle of it. So every group of sliders lives behind a
+   chevron, shut by default, with its values printed on the header: the reading
+   stays, the tuning is one click away, and the panel is a list of decisions
+   again.
+   --------------------------------------------------------------------------- */
+.fold { margin:6px 0 10px; border:1px solid #23233a; border-radius:6px; overflow:hidden; }
+.fold > .head {
+  display:flex; align-items:center; gap:7px;
+  padding:6px 8px;
+  background:#0f0f18; color:#9c9cba;
+  font-size:11px; cursor:pointer; user-select:none;
+}
+.fold > .head:hover { background:#16162a; }
+.fold > .head b { margin-left:auto; color:#e8e6f5; font-variant-numeric:tabular-nums; font-weight:600; }
+/* The chevron IS the state: pointing down while the group is shut, up while it
+   is open, and it turns rather than being swapped — two glyphs in one place is
+   how an icon stops being read. */
+.fold > .head i {
+  flex:0 0 10px; font-style:normal; color:#7ea6ff;
+  transition:transform .16s ease;
+}
+.fold.open > .head i { transform:rotate(180deg); }
+.fold > .body { padding:8px; border-top:1px solid #23233a; }
+.fold:not(.open) > .body { display:none; }
+.fold > .body .row:last-child { margin-bottom:0; }
+
+/* ---------------------------------------------------------------------------
+   THE COLOUR PICKER — ours, not the OS's.
+
+   `<input type=color>` opens the platform's own dialog: a floating window that
+   covers the frame, takes the focus, and on macOS carries a magnifier, five
+   tabs and an opacity slider for a value that is written back as six hex
+   digits. What this page is for is watching a colour LAND on a scene, and none
+   of that can be done behind a modal that hides it.
+
+   So it is a swatch that opens a small board in the column: a square for
+   saturation and value, a bar for the hue, the hex, and the game's own two
+   theme colours as presets — because the first thing a halo is tried in is the
+   accent it would have had anyway.
+   --------------------------------------------------------------------------- */
+.cpick {
+  width:100%; height:28px; margin-top:5px;
+  display:flex; align-items:center; gap:7px;
+  padding:0 8px;
+  background:#0b0b12; border:1px solid #2c2c47; border-radius:6px;
+  color:#e8e6f5; font:inherit; font-size:11px; cursor:pointer;
+}
+.cpick:hover { border-color:#7ea6ff; }
+.cpick .sw {
+  flex:0 0 16px; height:16px; border-radius:4px;
+  box-shadow:0 0 0 1px #0008 inset, 0 0 0 1px #ffffff1f;
+}
+.cpick .hx { font-variant-numeric:tabular-nums; letter-spacing:.4px; }
+
+.cpop {
+  position:fixed; z-index:9000;
+  width:214px; padding:10px;
+  background:#12121c; border:1px solid #2c2c47; border-radius:8px;
+  box-shadow:0 18px 44px #000c;
+}
+.cpop .sv {
+  position:relative; height:118px; border-radius:6px; cursor:crosshair;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, transparent),
+    var(--hue, #f00);
+}
+.cpop .hue {
+  position:relative; height:12px; margin-top:9px; border-radius:6px; cursor:ew-resize;
+  background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+}
+.cpop .dot {
+  position:absolute; width:12px; height:12px; margin:-6px 0 0 -6px;
+  border-radius:50%; border:2px solid #fff;
+  box-shadow:0 0 0 1px #0009, 0 1px 3px #0009;
+  pointer-events:none;
+}
+.cpop .hue .dot { top:50%; }
+/* THE PIPETTE — a button and not a mode: it hands the sampling to the
+   platform, which draws its own magnifier over the whole screen. Full width
+   and at the top of the board, because taking a colour off the painted hub is
+   the common gesture here and building one on the square is the rare one. */
+.cpop button.drop {
+  display:block; width:100%; margin-bottom:9px; padding:6px 8px;
+  background:#1b1b2b; color:#cfcfe8; border:1px solid #2c2c47; border-radius:5px;
+  font:inherit; font-size:11px; font-weight:600; cursor:pointer;
+}
+.cpop button.drop::before { content:"\25C9  "; color:#7ea6ff; }
+.cpop button.drop:hover { background:#24243a; border-color:#7ea6ff; }
+/* AN AUTHOR `display` BEATS THE UA'S `[hidden]`, so the attribute has to be
+   said again here or a button hidden in JavaScript stays on screen — which is
+   exactly what a browser with no screen picker showed: a control that looked
+   live, changed no cursor and answered no click. */
+.cpop button.drop[hidden] { display:none; }
+/* THE FRAME WHILE A COLOUR IS BEING TAKEN OFF IT. The houses carry a button
+   and four grips, each with a cursor of its own, so the crosshair is written
+   over all of them: the one gesture available here is the sample. */
+#frame.picking, #frame.picking * { cursor:crosshair; }
+.cpop input.hex {
+  width:100%; margin-top:9px; padding:4px 6px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:5px;
+  font:600 11px/1 ui-monospace, Menlo, monospace; letter-spacing:.6px;
+  text-transform:uppercase;
+}
+.cpop .presets { display:flex; gap:5px; margin-top:8px; }
+.cpop .presets span {
+  flex:1; height:18px; border-radius:4px; cursor:pointer;
+  box-shadow:0 0 0 1px #0008 inset, 0 0 0 1px #ffffff1f;
+}
+.cpop .presets span:hover { box-shadow:0 0 0 1px #0008 inset, 0 0 0 2px #7ea6ff; }
+
+.seg { display:flex; margin-top:5px; border:1px solid #2c2c47; border-radius:6px; overflow:hidden; }
+.seg button {
+  flex:1; padding:5px 0; border:0; background:#0b0b12; color:#9c9cba;
+  font:inherit; font-size:11px; cursor:pointer; white-space:nowrap;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+.seg button:disabled { color:#3d3d55; cursor:not-allowed; }
+/* Six entries, wrapped: a pulse is picked by comparing them, so they have to
+   be side by side rather than in a dropdown that shows one at a time — and
+   past five on one line the labels stop being readable. */
+.seg.tiny { flex-wrap:wrap; }
+.seg.tiny button { flex:1 0 30%; padding:5px 2px; font-size:10px; letter-spacing:0;
+                   border-top:1px solid #2c2c47; }
+
+button.act {
+  width:100%; margin-top:6px; padding:7px 8px;
+  background:#1b1b2b; color:#cfcfe8; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-size:11px; cursor:pointer;
+}
+button.act:hover { background:#24243a; }
+button.act.go { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; font-weight:700; }
+button.act.go:hover { background:#96b7ff; }
+button.act:disabled { opacity:.4; cursor:not-allowed; }
+button.act.warn { color:#ffb4b4; }
+
+/* ---------------------------------------------------------------------------
+   THE PALETTES. Every thumbnail is a file on disk. Clicking one drops it at
+   the middle of the ground — dragging it from here would be a second way to do
+   the one thing that is easy to do afterwards, which is move it.
+   --------------------------------------------------------------------------- */
+.pal { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.pal .thumb {
+  position:relative;
+  width:58px; height:58px;
+  display:flex; align-items:center; justify-content:center;
+  background:#07070e; border:1px solid #2c2c47; border-radius:6px;
+  cursor:pointer; overflow:hidden;
+}
+.pal .thumb:hover { border-color:#7ea6ff; }
+.pal .thumb.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+.pal .thumb img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:none; }
+.pal .thumb i {
+  position:absolute; left:3px; top:2px;
+  font:700 9px/1 -apple-system, sans-serif; font-style:normal;
+  color:#fff; text-shadow:0 1px 2px #000; pointer-events:none;
+}
+.pal.wide .thumb { width:78px; height:104px; }
+/* A SPARE CUT IS DIMMED, NOT DISABLED. It is one click from being adopted, and
+   the dimming says which side of that line it is on. */
+.pal.spare .thumb { opacity:.45; }
+.pal.spare .thumb:hover { opacity:1; border-color:#7fe6a6; }
+.pal.spare .thumb::after {
+  content:"+";
+  position:absolute; right:2px; bottom:0;
+  font:800 14px/1 -apple-system, sans-serif; color:#7fe6a6;
+  text-shadow:0 1px 3px #000; opacity:0;
+}
+.pal.spare .thumb:hover::after { opacity:1; }
+.pal.spare .thumb.busy { opacity:.3; cursor:wait; }
+
+/* THE EMPTY TILE — the one entry in the palettes that is not a file. A hub is
+   painted with lamps, fires and lit windows already in it, and the cheapest
+   building in a village is a box laid over one of them: no cut, no encode, a
+   halo and a door. It is drawn as what it is — a dashed square with nothing in
+   it — rather than as a picture of an absence. */
+.pal .thumb.blank {
+  border-style:dashed;
+  color:#7ea6ff;
+  font:700 10px/1.3 -apple-system, sans-serif;
+  text-align:center;
+}
+
+/* Duplicate and delete belong to the HOUSE, not to the end of a form: they are
+   what is done to the thing named in the header, so they sit in it. */
+.headrow { display:flex; gap:6px; margin:2px 0 10px; }
+.headrow button { margin-top:0; }
+
+pre.cmd {
+  margin-top:6px; padding:7px 8px;
+  background:#0b0b12; border:1px solid #2c2c47; border-radius:6px;
+  font:500 10px/1.5 ui-monospace, Menlo, monospace; color:#9c9cba;
+  white-space:pre-wrap; word-break:break-all;
+  user-select:all;
+}
+
+/* The doors still missing — the one list that says whether this village is
+   finished, so it is a list and not a sentence. */
+ul.doors { list-style:none; margin-top:6px; }
+ul.doors li {
+  display:flex; align-items:center; gap:7px;
+  padding:4px 0; font-size:11px; font-weight:500; color:#9c9cba;
+}
+ul.doors li s { flex:0 0 14px; font-style:normal; text-decoration:none; text-align:center; }
+ul.doors li.ok { color:#7fe6a6; }
+ul.doors li.ok s::before { content:"✓"; }
+ul.doors li.no s::before { content:"·"; color:#4d4d6b; }
+ul.doors li.dup { color:#ffcf8a; }
+ul.doors li.dup s::before { content:"!"; }
+ul.doors li em { margin-left:auto; font-style:normal; color:#4d4d6b; }
+
+/* THE STACK — every object in the order it is painted, front at the top,
+   under the plane it stands on. A row is a target for the thumb, so it is
+   padded and it highlights; the arrows sit inside it and stop the click from
+   reaching it, or raising a plane would also select the thing that moved and
+   the two gestures would be one. */
+ul.stack { list-style:none; margin-top:6px; }
+ul.stack li.plane {
+  display:flex; align-items:center; gap:8px; margin-top:9px;
+  font-size:10px; font-weight:700; letter-spacing:1px; color:#6f6f92;
+}
+ul.stack li.plane:first-child { margin-top:2px; }
+ul.stack li.plane s { flex:1; height:1px; background:#23233a; text-decoration:none; }
+ul.stack li.plane em { font-style:normal; color:#4d4d6b; letter-spacing:0; }
+ul.stack li.item {
+  display:flex; align-items:center; gap:6px;
+  padding:3px 5px; border-radius:5px; cursor:pointer;
+  font-size:11px; font-weight:500; color:#9c9cba;
+}
+ul.stack li.item:hover { background:#16162a; }
+ul.stack li.item.on { background:#7ea6ff; color:#0b0b12; font-weight:700; }
+ul.stack li.item b { font-weight:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ul.stack li.item em { margin-left:auto; font-style:normal; color:#4d4d6b; }
+ul.stack li.item.on em { color:#0b0b12; opacity:.55; }
+ul.stack li.item i {
+  flex:0 0 15px; text-align:center; font-style:normal; font-size:9px;
+  color:#4d4d6b; border-radius:4px;
+}
+ul.stack li.item i:hover { color:#cfcfe8; background:#24243a; }
+ul.stack li.item.on i { color:#0b0b12; }
+ul.stack li.item i.off { opacity:.25; cursor:default; }
+ul.stack li.item i.off:hover { background:none; color:#4d4d6b; }
+ul.stack li.none { padding:4px 0; font-size:11px; color:#4d4d6b; }
+
+/* ---------------------------------------------------------------------------
+   THE STAGE — the 720x1280 frame, scaled to whatever room is left.
+   --------------------------------------------------------------------------- */
+.stage {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:14px;
+  background:#07070e;
+  background-image:
+    linear-gradient(#0d0d16 1px, transparent 1px),
+    linear-gradient(90deg, #0d0d16 1px, transparent 1px);
+  background-size:32px 32px;
+}
+
+#scaler { transform-origin:0 0; }
+
+#frame {
+  position:relative;
+  width:720px; height:1280px;
+  overflow:hidden;
+  border-radius:26px;
+  background:#05050a;
+  box-shadow:0 24px 70px #000c, 0 0 0 1px #2c2c47;
+  user-select:none;
+  touch-action:none;
+  /* THE BLEND STOPS HERE. The halo is painted in `screen`, which blends with
+     whatever is behind it up to the nearest stacking context — without this it
+     would reach past the frame and light up the page. */
+  isolation:isolate;
+  /* One screen pixel, in design units. The frame is drawn at 720x1280 and
+     scaled down, so a grip sized in design px would shrink with it; every one
+     of them is multiplied by this instead and stays the same size on screen at
+     any zoom. Set by fitStage(). */
+  --vg-u:1;
+}
+
+/* THE LIGHT, BREATHING — the same keyframes village.css ships, so the cycle
+   watched here is the cycle the player gets. */
+#ground {
+  position:absolute; inset:0;
+  background-size:cover; background-position:center;
+  animation:vg-light var(--vg-cycle, 120s) ease-in-out infinite;
+}
+@keyframes vg-light {
+  0%, 100% { filter:brightness(calc(1 - var(--vg-amp, 0))) saturate(calc(1 - var(--vg-amp, 0) * 0.4)); }
+  50%      { filter:brightness(calc(1 + var(--vg-amp, 0))) saturate(calc(1 + var(--vg-amp, 0) * 0.4)); }
+}
+/* THE SKY — over the whole village and not just the ground: light that stops
+   at the buildings is a filter on a picture, light that crosses them is
+   weather. `soft-light` is what makes it read as light. It passes through ZERO
+   twice, which is where the hub's own painted light is. */
+#sky {
+  position:absolute; inset:0;
+  background-color:var(--vg-cold, #16234f);
+  mix-blend-mode:soft-light;
+  pointer-events:none;
+  opacity:0;
+  animation:vg-sky var(--vg-cycle, 120s) ease-in-out infinite;
+}
+@keyframes vg-sky {
+  0%      { background-color:var(--vg-cold, #16234f); opacity:var(--vg-amp-c, 0); }
+  24.999% { background-color:var(--vg-cold, #16234f); opacity:0; }
+  25%     { background-color:var(--vg-warm, #ffcf8f); opacity:0; }
+  50%     { background-color:var(--vg-warm, #ffcf8f); opacity:var(--vg-amp-c, 0); }
+  74.999% { background-color:var(--vg-warm, #ffcf8f); opacity:0; }
+  75%     { background-color:var(--vg-cold, #16234f); opacity:0; }
+  100%    { background-color:var(--vg-cold, #16234f); opacity:var(--vg-amp-c, 0); }
+}
+#ground.none { background:repeating-linear-gradient(45deg,#14141f 0 18px,#101019 18px 36px); }
+
+
+/* ===========================================================================
+   THE VILLAGE ITSELF — this block is the one that moves into
+   packages/webshell/village.css unchanged. Everything above it is the lab's
+   chrome; everything here is what a player sees.
+
+   The tokens come from the game's theme: --vg-accent is `theme.accent`.
+   =========================================================================== */
+
+/* NO Z-INDEX ON A HOUSE, and it is not an omission. The manifest lists them
+   sorted by their feet, so DOM order already IS the painter's order — and a
+   `z-index` would make every house its own stacking context, which is exactly
+   what stops the halo below from blending with the ground it lies on. */
+.vg-house {
+  position: absolute;                  /* left/top = THE FEET, in design px */
+  --vg-accent: var(--accent, #4dff9b);
+  --vg-rot: 0deg;
+}
+
+/* THE HALO — an ellipse ON THE GROUND. Two stacked radial gradients rather
+   than one: the inner is a tight bright core that reads as light landing on
+   the pad, the outer a wide soft bleed that lifts the house off a busy
+   painting. One gradient does one or the other and looks like a sticker.
+
+   It does not turn with the house: light on the ground is the ground's.
+
+   ITS COLOUR IS ITS OWN, and the game's accent is only where it starts. A hub
+   is a painted scene with its own lamps in it, and one accent under six
+   buildings makes them read as six copies of one object — a forge wants an
+   ember, a shop a warm window, a board a cold one. `--vg-halo` is that choice,
+   written per house by the composer; a house that names none inherits the
+   accent it always had. */
+.vg-halo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--vg-halo, var(--vg-accent)) 72%, transparent), transparent 70%),
+    radial-gradient(closest-side, color-mix(in srgb, var(--vg-halo, var(--vg-accent)) 34%, transparent), transparent 100%);
+  filter: blur(7px);
+  /* SCREEN, because this is LIGHT landing on a painted ground and not a decal
+     laid over it. Normal blending puts a flat tinted patch on a scene that is
+     already lit; screen adds to what is under it, so the halo brightens the
+     pad and disappears into the sky it never reaches. It is also why the
+     village isolates, and why a house carries no z-index. */
+  mix-blend-mode: screen;
+  opacity: .9;
+  pointer-events: none;
+}
+
+.vg-body {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* THREE NESTED TRANSFORMS, and each one owns exactly one thing, because they
+   would otherwise overwrite each other on the same property:
+     .vg-body  puts the box's middle on the feet
+     .vg-rot   turns the house AROUND the feet
+     .vg-in    breathes, also around the feet
+   Flattening any two of them means a turned house stops breathing, or a
+   breathing one snaps back to 0deg. */
+.vg-rot {
+  position: relative;
+  transform: rotate(var(--vg-rot));
+  transform-origin: 50% 100%;
+}
+
+.vg-in {
+  transform-origin: 50% 100%;          /* the feet: a house swells out of the
+                                          ground, never off it */
+  will-change: transform;
+}
+
+.vg-body img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The cut carries its own painted light; this is only what separates it from
+     a background of the same value. */
+  filter: drop-shadow(0 6px 10px #0009);
+}
+
+/* A HOUSE WITH A HALO DROPS ITS SHADOW. The two are painted in this order —
+   halo, then house — so the shadow lands on top of the light and cancels
+   exactly the pixels the halo was lit for. What decouples a lit house from the
+   ground is the light; the shadow is for the ones that have none. */
+.vg-house.lit .vg-body img { filter: none; }
+.vg-body img.flip { transform: scaleX(-1); }
+
+/* AN EMPTY HOUSE — a box with no picture in it, placed for its LIGHT. A hub is
+   painted with lamps, fires and windows already in it, and a halo laid on one
+   of them is the cheapest building in the village: nothing is drawn, nothing is
+   cut, and the pad glows. It carries a halo, a badge and a door like any other
+   house; its size is its hit area and the shell writes it inline, because
+   without an image there is no height for the box to take. */
+.vg-house.empty .vg-body { pointer-events: none; }
+.vg-house.empty .vg-hit { pointer-events: auto; }
+
+/* THE DOOR — a button stretched over the house, one per building. It is a real
+   button and not a click handler on the picture so that every door is reached
+   by TAB and fired by ENTER, exactly as the menu entry it stands for is: a
+   village must not cost a player their keyboard. */
+.vg-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  font: inherit;
+  color: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* The picture is the target: a house is an irregular silhouette and its box
+     is a rectangle, so the box under the feet is where a neighbour's tap would
+     be stolen. It is close enough at these sizes, and the alternative is a hit
+     mask per cut. */
+  appearance: none;
+}
+.vg-hit:focus-visible {
+  outline: 3px solid var(--vg-accent, #fff);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+/* THE BADGE — outside .vg-in and outside .vg-rot on purpose: a number that
+   swells with the breath is a number being read while it moves, and one that
+   leans with a tilted house is a number nobody put there. */
+.vg-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(#ff5b6e, #d21f3c);
+  box-shadow: 0 0 0 4px #ffffff1f, 0 4px 10px #000a;
+  color: #fff;
+  font: 800 24px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.vg-badge[hidden] { display: none; }
+
+/* THE LABEL — the role's own word, under the feet. It is OFF by default and a
+   switch in OPTIONS is what brings it back (menu.js, Settings.labels): a
+   village is meant to be read as a place, and six plates over six buildings
+   turn it back into the list it replaced. A player who cannot tell the shop
+   from the forge asks for the words once and keeps them.
+
+   Under the feet and not over the roof: a house is as tall as its cut and the
+   roofs are all at different heights, so a word above one lands somewhere
+   different on every building — while the feet are the line they all stand on.
+   Outside `.vg-in` and `.vg-rot`, like the badge: a word does not lean and does
+   not breathe. */
+.vg-label {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  transform: translate(-50%, 0);
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: #0a0a12cc;
+  box-shadow: 0 0 0 1px #ffffff24, 0 4px 10px #0007;
+  color: #fff;
+  font: 800 21px/1 var(--web-font, inherit);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.vg-label[hidden] { display: none; }
+
+/* ---------------------------------------------------------------------------
+   TWO ANIMATIONS, AND THEY ARE NOT ONE CHOICE. A building that MOVES and a
+   light that is LIT are two statements, and a village wants to make both at
+   once — a mill turning over a lit pad, a beacon that hangs and flickers — so
+   they are two fields of the composition and two families of class here:
+
+     n-*   the PULSE, on the house. `float` hangs it above its own light,
+           `breath` swells it out of its feet, `alert` hops twice and rests,
+           `fade` takes it away and brings it back, and `cloud` is the odd one
+           out — three motions at once, and weather rather than a signal.
+     l-*   the LIGHT, on the halo alone. `blink` is a hard regular beat,
+           `flicker` a failing tube, `random` one long uneven cycle. A house
+           with no halo has nothing for them to work, which is why they live
+           with the halo in the composer rather than with the pulse.
+
+   They were one list of seven, picked one at a time, and that was the bug: a
+   house could be alive or lit and never both, for no reason but the shape of
+   the field.
+
+   WHEN EITHER RUNS IS A THIRD QUESTION, and it is not the manifest's. `.beat`
+   says something is running right now, and it is on either because something
+   is waiting behind that door — the SHELL's answer — or because the house was
+   told to pulse all the time. The `n-*` and `l-*` classes are how it would say
+   so, which is the MANIFEST's and never the shell's. Neither half guesses the
+   other (village.js, DOORS).
+
+   HOW FAST AND HOW LATE ARE THE MANIFEST'S TOO, once per family:
+   `--pulse-dur` / `--pulse-delay` for the house, `--light-dur` /
+   `--light-delay` for the halo. The delay is why this is per house rather than
+   a constant: two houses wearing the same pulse start on the same frame and
+   beat as one object, which reads as a screen effect rather than as two
+   buildings. A second between them is what makes them two things, and which
+   pair looks wrong together is something only a composer can see.
+   --------------------------------------------------------------------------- */
+
+.vg-house {
+  --pulse-dur: 2.6s;
+  --pulse-delay: 0s;
+  --light-dur: 2.4s;
+  --light-delay: 0s;
+  /* A THIRD RHYTHM, AND IT IS DERIVED UNTIL IT IS NAMED. `cloud` breathes
+     while it crosses, and a breath the length of the crossing is a cloud
+     changing shape once — so the default is the crossing over seven, and
+     `breathEvery` in the composition overwrites it when a composer wants the
+     vapour to work faster or slower than the wind. */
+  --breath-dur: calc(var(--pulse-dur) / 7);
+}
+
+/* THE HOUSE. On `breath` and `alert` the halo is lent the same beat, so a house
+   that names no light of its own still moves as one object rather than as a
+   building sliding over a fixed puddle. */
+.vg-house.beat.n-breath .vg-halo { animation: vg-pulse var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-breath .vg-in   { animation: vg-breathe var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-float .vg-in     { animation: vg-float var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-alert .vg-in     { animation: vg-alert var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-alert .vg-halo   { animation: vg-pulse calc(var(--pulse-dur) / 2) ease-in-out infinite var(--pulse-delay); }
+
+/* FADE — the house goes and comes back. It is on the BODY and the HALO as two
+   animations rather than on the house as one, and that is not a detail: an
+   `opacity` under 1 on `.vg-house` would make it a stacking context, and the
+   halo's `screen` would stop blending with the ground and start blending with
+   the house. They share `--pulse-dur` and `--pulse-delay`, so they stay
+   together to the frame — until the composer names a light, which is the next
+   rule and takes the halo back. */
+.vg-house.beat.n-fade .vg-body,
+.vg-house.beat.n-fade .vg-halo { animation: vg-fade var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+
+/* CLOUD — THREE MOTIONS AT ONCE, and the one pulse that is not a signal. The
+   other four say "something is waiting behind this door"; a cloud says nothing
+   at all and is WEATHER. It crosses the frame right to left, it thickens and
+   thins, and it breathes while it goes.
+
+   Three effects means THREE PROPERTIES ON TWO ELEMENTS, because two animations
+   on one property is a fight the last one declared wins:
+
+     .vg-body   transform — the crossing, linear, the whole width of the frame
+     .vg-in     transform — the breath
+     .vg-in     opacity   — the haze
+
+   THE CROSSING IS ON `.vg-body` AND NOT ON `.vg-house`, which is the obvious
+   place and the wrong one: a transform on the house makes it a stacking
+   context, and the halo under it stops blending with the ground it is supposed
+   to be lying on — the same trap the z-index note at the top of this block is
+   about. The body is the halo's SIBLING, so moving it moves nothing else.
+
+   THE HALO STAYS WHERE IT WAS PUT, and that is not an oversight either: light
+   lying on a pad is the ground's, and a cloud has no pad. A house wearing this
+   should carry no halo at all — the composer says so where the pulse is
+   picked.
+
+   THE THREE PERIODS COME FROM ONE NUMBER. `--pulse-dur` is how long the
+   crossing takes; the breath and the haze are divided out of it by 7 and by 5,
+   which are coprime, so the three never come back into phase and the cloud
+   never repeats a shape it has already shown. A composer tunes one slider —
+   and `--breath-dur` is there for the one case that wants two, vapour that
+   works faster than the wind carrying it. */
+.vg-house.beat.n-cloud .vg-body {
+  animation: vg-drift var(--pulse-dur) linear infinite var(--pulse-delay);
+}
+.vg-house.beat.n-cloud .vg-in {
+  animation:
+    vg-breathe var(--breath-dur) ease-in-out infinite var(--pulse-delay),
+    vg-haze calc(var(--pulse-dur) / 5) ease-in-out infinite var(--pulse-delay);
+}
+/* THE OTHER WAY, AND IT IS ONE LINE RATHER THAN A SECOND KEYFRAME. `reverse`
+   plays `vg-drift` from its end to its start, which is the same crossing read
+   backwards — west to east instead of east to west. A second `@keyframes` for
+   it would be the same six values written again, to go out of step the first
+   time one of them moved. Only the body is reversed: a breath and a haze read
+   the same either way round. */
+.vg-house.beat.n-cloud.d-right .vg-body { animation-direction: reverse; }
+
+/* THE LIGHT, AFTER THE HOUSE AND ON PURPOSE. Both families reach `.vg-halo` at
+   the same specificity, so the order in this file is what decides: a light the
+   composer NAMED wins over the beat `breath` and `alert` lend it. Saying it
+   twice with an `:not()` would be the same rule written to be read wrong. */
+.vg-house.beat.l-blink .vg-halo   { animation: vg-blink var(--light-dur) steps(1, end) infinite var(--light-delay); }
+.vg-house.beat.l-flicker .vg-halo { animation: vg-flicker var(--light-dur) linear infinite var(--light-delay); }
+.vg-house.beat.l-random .vg-halo  { animation: vg-random var(--light-dur) ease-in-out infinite var(--light-delay); }
+
+/* FADE — out to almost nothing and back. The floor is not zero: a door that
+   vanishes completely is a door the player cannot find again, and the ghost at
+   12% is what keeps the building in the scene while it is away. */
+@keyframes vg-fade {
+  0%, 100% { opacity: .12; }
+  50%      { opacity: 1; }
+}
+/* FLOAT — the house leaves the ground and hangs there, and its HALO does not
+   follow: light stays on the pad, which is what makes the lift read as a lift
+   rather than as the whole building being scaled. The gentlest of the six, and
+   the only one that is pleasant to leave running on several houses at once. */
+@keyframes vg-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-11px); }
+}
+/* ALERT — the one that is meant to be rude. It is two HOPS with a wobble, and
+   then it stops: two thirds of the cycle is dead rest, which is what makes the
+   burst read as an interruption instead of as an idle. An animation with no
+   rest in it becomes wallpaper within seconds, and then it is louder than
+   everything else on the hub while saying nothing. One house at a time. */
+@keyframes vg-alert {
+  0%, 62%   { transform: translateY(0) rotate(0deg) scale(1); }
+  66%       { transform: translateY(-26px) rotate(-5deg) scale(1.06); }
+  70%       { transform: translateY(0) rotate(3deg) scale(.97); }
+  74%       { transform: translateY(-16px) rotate(4deg) scale(1.04); }
+  78%       { transform: translateY(0) rotate(-2deg) scale(.99); }
+  82%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+@keyframes vg-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+/* DRIFT — off one edge to off the other, whatever the house was placed at.
+   `--vg-x` and `--vg-w` are the feet and the width, written inline beside
+   `left` and `top`, and they are here to CANCEL the placement: the cloud
+   enters fully off the right of the 720 px frame and leaves fully off the left
+   of it, so where it was dropped decides its height in the sky and its place
+   in the painter's order, never where its crossing starts. It also replaces
+   `.vg-body`'s own `translateX(-50%)`, which is the one thing an animation on
+   that element must not lose. */
+@keyframes vg-drift {
+  from { transform: translateX(calc(720px - var(--vg-x, 0px))); }
+  to   { transform: translateX(calc(0px - var(--vg-x, 0px) - var(--vg-w, 0px))); }
+}
+/* HAZE — vapour thickening and thinning. It never reaches zero and never
+   reaches full: a cloud that disappears is a cut that blinked, and one that
+   sits at full opacity has stopped being vapour and gone back to being an
+   object. */
+@keyframes vg-haze {
+  0%, 100% { opacity: .55; }
+  35%      { opacity: .95; }
+  70%      { opacity: .4; }
+}
+@keyframes vg-pulse {
+  0%, 100% { opacity: .8; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 1;  transform: translate(-50%, -50%) scale(1.09); }
+}
+/* BLINK — a regular beat, and HARD: `steps(1, end)` is what makes it a sign
+   switching on and off rather than a third kind of breathing. It reads across
+   a whole village at a glance, and tires the eye fastest, which is why it is
+   not the default. */
+@keyframes vg-blink {
+  0%, 54%  { opacity: 1; }
+  55%, 99% { opacity: .18; }
+}
+/* FLICKER — a failing tube. The pattern is uneven on purpose and it always
+   comes back to full: a light that stutters reads as broken, which is what
+   makes it catch the eye, and a light that stutters EVENLY reads as an
+   animation. */
+@keyframes vg-flicker {
+  0%, 17%, 21%, 55%, 59%, 100% { opacity: 1; }
+  18%, 20%                     { opacity: .12; }
+  19%                          { opacity: .7; }
+  22%, 24%                     { opacity: .5; }
+  23%                          { opacity: .95; }
+  56%, 58%                     { opacity: .25; }
+  57%                          { opacity: .85; }
+}
+/* RANDOM — and it is NOT random: CSS keyframes are deterministic. It is one
+   LONG uneven cycle — 7s, so the beat never lines up with a glance — and every
+   house is started at a different point in it with a negative delay
+   (village.js). Six of them on one hub look unsynchronised, which is the whole
+   of what "random" means here. */
+@keyframes vg-random {
+  0%   { opacity: .5; }
+  8%   { opacity: 1; }
+  14%  { opacity: .32; }
+  23%  { opacity: .82; }
+  31%  { opacity: .45; }
+  44%  { opacity: 1; }
+  52%  { opacity: .28; }
+  58%  { opacity: .9; }
+  70%  { opacity: .4; }
+  79%  { opacity: 1; }
+  88%  { opacity: .55; }
+  100% { opacity: .5; }
+}
+
+/* A player who asked for less movement gets the door and not the dance: the
+   badge still says how many, the light stops, and the scene stops breathing. */
+/* END OF THE BLOCK THAT SHIPS
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   THE GRIPS — the lab's own furniture, on the selected house only.
+
+   Four of them, and each is the one gesture it looks like: MOVE at the feet,
+   TURN above the roof, SIZE at the bottom-right corner, DROP at the top-right.
+   They ride inside .vg-rot so they follow a turned house, and each one
+   counter-turns its own glyph so the arrow still points where it says.
+
+   They are sized in --vg-u — screen pixels — so a grip is the same size to the
+   thumb whatever the stage is zoomed to.
+   --------------------------------------------------------------------------- */
+.vg-grips { position:absolute; inset:0; pointer-events:none; }
+.vg-house:not(.sel) .vg-grips { display:none; }
+
+.vg-grip {
+  position:absolute;
+  width:calc(26px * var(--vg-u)); height:calc(26px * var(--vg-u));
+  margin:calc(-13px * var(--vg-u)) 0 0 calc(-13px * var(--vg-u));
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%;
+  background:#7ea6ff; color:#0b0b12;
+  border:calc(2px * var(--vg-u)) solid #0b0b12cc;
+  font:800 calc(14px * var(--vg-u))/1 -apple-system, sans-serif;
+  cursor:pointer; pointer-events:auto;
+}
+.vg-grip span { transform:rotate(calc(-1 * var(--vg-rot))); }
+.vg-grip.move { left:50%; top:100%; cursor:move; }
+.vg-grip.turn { left:50%; top:calc(-28px * var(--vg-u)); cursor:grab; }
+.vg-grip.size { left:100%; top:100%; cursor:nwse-resize; }
+.vg-grip.drop { left:100%; top:0; background:#ff6b7d; }
+/* The stalk that says the top grip belongs to this house and is not floating
+   over the one behind it. */
+.vg-grips::before {
+  content:"";
+  position:absolute; left:50%; top:calc(-28px * var(--vg-u)); height:calc(28px * var(--vg-u));
+  border-left:calc(1.5px * var(--vg-u)) solid #7ea6ff;
+}
+.vg-house.sel .vg-body::after {
+  content:"";
+  position:absolute; inset:calc(-5px * var(--vg-u));
+  border:calc(1.5px * var(--vg-u)) dashed #7ea6ff;
+  border-radius:calc(8px * var(--vg-u));
+  pointer-events:none;
+}
+
+.vg-house { cursor:grab; }
+.vg-house.dragging { cursor:grabbing; }
+/* THE GRID IS THE SNAP, so it draws exactly what the hand lands on: a fine
+   line every 10 design px, which is the step, and a brighter one every 40 to
+   count them by. Turning it off turns the snap off with it — a magnetism the
+   composer cannot SEE is a placement they cannot explain, which is why the two
+   were never really two buttons. */
+#frame.grid::before {
+  content:"";
+  position:absolute; inset:0; z-index:8000; pointer-events:none;
+  background-image:
+    linear-gradient(#7ea6ff10 1px, transparent 1px),
+    linear-gradient(90deg, #7ea6ff10 1px, transparent 1px),
+    linear-gradient(#7ea6ff24 1px, transparent 1px),
+    linear-gradient(90deg, #7ea6ff24 1px, transparent 1px);
+  background-size:10px 10px, 10px 10px, 40px 40px, 40px 40px;
+}
+
+/* AN EMPTY HOUSE HAS NOTHING TO SEE, which is the point on the player's screen
+   and useless on the composer's. Here it wears its own box so it can be found,
+   grabbed and sized; the shipped stylesheet draws none of this. */
+.vg-house.empty .vg-body::before {
+  content:"";
+  position:absolute; inset:0;
+  border:calc(1.5px * var(--vg-u)) dashed #7ea6ff66;
+  border-radius:calc(6px * var(--vg-u));
+}
+
+
+.bar {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
+  font-size:11px; font-weight:600; color:#8b8ba7;
+}
+.bar b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.bar .sep { width:1px; height:14px; background:#23233a; }
+.bar button {
+  padding:4px 9px;
+  background:#12121c; color:#9c9cba; border:1px solid #2c2c47; border-radius:5px;
+  font:inherit; font-size:11px; cursor:pointer;
+}
+.bar button.on { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+
+#say {
+  min-height:15px; margin-top:8px;
+  font-size:11px; font-weight:500; line-height:1.45; color:#8b8ba7;
+}
+#say.ok { color:#7fe6a6; }
+#say.bad { color:#ffb4b4; }
+#say.busy { color:#ffcf8a; }
+
+/* Unsaved work, said once and where the saving is. */
+#dirty {
+  margin-top:6px; padding:6px 8px;
+  border:1px solid #5a4a2c; border-radius:6px;
+  background:#2a2314; color:#ffcf8a;
+  font-size:11px; font-weight:600;
+}
+#dirty[hidden] { display:none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ─ left: the game, the ground, the houses ─────────────────────────── -->
+  <div class="col left">
+    <h1>Village</h1>
+    <p class="hint" id="lead">
+      A title screen as a place. Click a house to drop it, drag it onto a pad,
+      then say which door it is.
+    </p>
+
+    <h2>Game</h2>
+    <div class="row"><select id="game"></select></div>
+
+    <h2>Showing <span id="sourceName"></span></h2>
+    <p class="hint tight">
+      Three places a village can come from, and this is which one is on screen.
+      <b>Manifest</b> is what the build ships, <b>draft</b> is the sketch in
+      <code>lab/village-presets.json</code>, <b>empty</b> starts over. Picking
+      one REPLACES what is on screen.
+    </p>
+    <div class="row"><div class="seg" id="source"></div></div>
+
+    <h2>Ground <span id="groundName"></span></h2>
+    <div class="pal wide" id="grounds"></div>
+
+    <h2>Light <span>the scene, breathing</span></h2>
+    <p class="hint tight">
+      The scene passes through its own painted light, out into warm, back
+      through it and out into cold. Watch it: it is running now.
+    </p>
+    <div class="row"><div class="seg"><button id="fCycle">Breathing</button></div></div>
+    <div id="cycleFields">
+      <div class="row two">
+        <div><label>Warm</label><div id="cWarm"></div></div>
+        <div><label>Cold</label><div id="cCold"></div></div>
+      </div>
+      <div class="row two">
+        <div><label>Travel <b id="vCA">0.35</b></label><input id="cAmt" type="range" min="0.02" max="1" step="0.01" data-grid="0.05"></div>
+        <div><label>Seconds <b id="vCS">120</b></label><input id="cSec" type="range" min="10" max="480" step="5" data-grid="10"></div>
+      </div>
+    </div>
+
+    <h2>Houses</h2>
+    <div class="pal" id="houses"></div>
+    <p class="hint" id="noHouses" hidden></p>
+
+    <h2>Anything else it owns</h2>
+    <p class="hint tight">
+      <b>Empty</b> is not a file: it is a box with no picture in it, placed over
+      a lamp the hub was already painted with. It carries a halo, a badge and a
+      door like any other house and draws nothing of its own.
+    </p>
+    <div class="pal" id="other"></div>
+
+    <h2>Cut but not adopted</h2>
+    <p class="hint tight">
+      A cut ships only once the game names it. <b>Click one to adopt it</b> —
+      the role goes into <code>art.objects</code> and the cut is encoded, which
+      takes a few seconds — then it moves up into the palettes above.
+    </p>
+    <div class="pal spare" id="spare"></div>
+
+    <h2>Shared cuts</h2>
+    <p class="hint tight">
+      Material no game owns, offered to all thirteen — the three cloud sheets
+      are the first of it. Adopted by the same click and the same
+      <code>art.objects</code> line, under the cut's own name
+      (<code>cloud-haze-03</code>). A cloud is scenery, not a door: drop it
+      high, size it wide and leave it on <b>decor</b> — a house standing lower
+      is drawn in front of it on its own.
+    </p>
+    <div class="pal spare" id="shared"></div>
+  </div>
+
+  <!-- ─ centre: the frame ──────────────────────────────────────────────── -->
+  <div class="stage">
+    <div id="scaler">
+      <div id="frame">
+        <div id="ground" class="none"></div>
+        <div id="sky"></div>
+      </div>
+    </div>
+    <div class="bar">
+      <span><b id="count">0</b> houses</span>
+      <span class="sep"></span>
+      <button id="bGrid" class="on" title="The 10 px grid, and the snap that lands on it">Grid</button>
+      <span class="sep"></span>
+      <button id="bLabels" title="What a player sees with the OPTIONS switch on">Labels</button>
+      <button id="bNotifyAll">Notify all</button>
+    </div>
+  </div>
+
+  <!-- ─ right: the door, the house, the save ───────────────────────────── -->
+  <div class="col right">
+    <!-- THE STACK — the whole composition as the ORDER it is painted in, which
+         is the one thing the frame cannot show: a house behind another is a
+         house you cannot click, and until this panel existed the only way to
+         reach it was to drag the one in front off it and put it back.
+
+         Front at the TOP, because that is what a layer list means everywhere
+         else, and grouped by the plane each object stands on — the summary of
+         the planes IS the grouping, so there is no second place that counts
+         them. A row selects; the two arrows move that object a plane, which is
+         the same field the inspector's slider writes. -->
+    <h2>Layers <span id="planeCount"></span></h2>
+    <ul class="stack" id="stack"></ul>
+
+    <h2>The doors</h2>
+    <ul class="doors" id="doors"></ul>
+
+    <h2>Selected house <span id="selName"></span></h2>
+    <div id="inspector">
+      <p class="hint" id="noSel">Nothing selected. Click a house on the ground.</p>
+
+      <div id="fields" hidden>
+        <!-- WHAT IS DONE TO THIS HOUSE, at the top of what describes it: a copy
+             and a removal act on the thing the header just named, and they were
+             at the bottom of a column the sliders had made long enough to
+             scroll. -->
+        <div class="headrow">
+          <button class="act" id="bDupe">Duplicate</button>
+          <button class="act warn" id="bDel">Delete</button>
+        </div>
+
+        <div class="row">
+          <label>Opens</label>
+          <select id="fRole"></select>
+        </div>
+
+        <div class="fold" id="foldPlace">
+          <div class="head"><i>▾</i>Place and size<b id="sumPlace"></b></div>
+          <div class="body">
+            <div class="row two">
+              <div><label>x <b id="vX">0</b></label><input id="fX" type="range" min="-100" max="820" step="1" data-grid="10"></div>
+              <div><label>y <b id="vY">0</b></label><input id="fY" type="range" min="-100" max="1380" step="1" data-grid="10"></div>
+            </div>
+            <div class="row two">
+              <div><label>Width <b id="vW">200</b></label><input id="fW" type="range" min="60" max="460" step="1" data-grid="10"></div>
+              <div><label>Turn <b id="vR">0</b></label><input id="fR" type="range" min="-45" max="45" step="1" data-grid="5"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row"><div class="seg"><button id="fFlip">Flip</button></div></div>
+
+        <!-- THE HALO AND ITS LIGHT, one section. Blink, flicker and random work
+             the halo and nothing else, so they belong where the halo is turned
+             on rather than in a list of pulses they could not be compared
+             against: a house is now free to be lit AND moving. -->
+        <h2>Halo <span>the light on the pad</span></h2>
+        <div class="row"><div class="seg"><button id="fHalo">Halo on</button></div></div>
+        <div id="haloFields">
+          <div class="row"><label>Colour</label><div id="fHC"></div></div>
+          <div class="fold" id="foldHalo">
+            <div class="head"><i>▾</i>Shape<b id="sumHalo"></b></div>
+            <div class="body">
+              <div class="row two">
+                <div><label>Width <b id="vHW">1.1</b></label><input id="fHW" type="range" min="0.3" max="2.4" step="0.01" data-grid="0.05"></div>
+                <div><label>Height <b id="vHH">0.34</b></label><input id="fHH" type="range" min="0.06" max="1" step="0.01" data-grid="0.05"></div>
+              </div>
+              <div class="row"><label>Lift <b id="vHD">0.04</b></label><input id="fHD" type="range" min="-0.4" max="0.4" step="0.01" data-grid="0.05"></div>
+            </div>
+          </div>
+          <div class="row"><div class="seg" id="fLight"></div></div>
+          <p class="hint tight" id="lightNote"></p>
+          <div class="fold" id="foldLight">
+            <div class="head"><i>▾</i>Beat<b id="sumLight"></b></div>
+            <div class="body">
+              <div class="row two">
+                <div><label>Every <b id="vLE">2.4</b></label><input id="fLightEvery" type="range" min="0.2" max="20" step="0.05" data-grid="0.1"></div>
+                <div><label>Start after <b id="vLD">0</b></label><input id="fLightDelay" type="range" min="0" max="12" step="0.05" data-grid="0.1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Badge <span>how many are waiting</span></h2>
+        <div class="row"><div class="seg"><button id="fBadge">Badge on</button></div></div>
+        <div id="badgeFields">
+          <div class="fold" id="foldBadge">
+            <div class="head"><i>▾</i>Where<b id="sumBadge"></b></div>
+            <div class="body">
+              <div class="row two">
+                <div><label>Across <b id="vBX">0.32</b></label><input id="fBX" type="range" min="-0.9" max="0.9" step="0.01" data-grid="0.05"></div>
+                <div><label>Up <b id="vBY">-0.62</b></label><input id="fBY" type="range" min="-1.4" max="0.2" step="0.01" data-grid="0.05"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- THE PULSE IS ITS OWN SECTION. It rode under the badge's heading
+             while there were four of them and they all said the same thing —
+             "something is waiting behind this door". `cloud` is not that: it
+             is weather, it never waits on the meta layer, and a heading that
+             reads "badge and pulse" is a heading that says a pulse is a
+             number. -->
+        <h2>Pulse <span>what the building does</span></h2>
+        <div class="row"><div class="seg tiny" id="fPulse"></div></div>
+        <p class="hint tight" id="pulseNote"></p>
+        <div class="fold" id="foldPulse">
+          <div class="head"><i>▾</i>Beat<b id="sumPulse"></b></div>
+          <div class="body">
+            <div class="row two">
+              <div><label>Every <b id="vPE">2.6</b></label><input id="fEvery" type="range" min="0.2" max="20" step="0.05" data-grid="0.1"></div>
+              <div><label>Start after <b id="vPD">0</b></label><input id="fDelay" type="range" min="0" max="12" step="0.05" data-grid="0.1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- THE TWO THINGS ONLY A CLOUD HAS. They are a block of their own
+             rather than two more rows in the beat above, because they answer
+             to one pulse out of five: which way the weather goes, and how fast
+             the vapour works inside it. Hidden for every other pulse instead of
+             greyed, since a control that can never apply is not a disabled
+             control, it is a control that is not there. -->
+        <div id="cloudFields" hidden>
+          <div class="row"><label>Drift</label><div class="seg" id="fDrift"></div></div>
+          <div class="row"><label>Breath every <b id="vBE">6.9</b></label><input id="fBreath" type="range" min="0.5" max="120" step="0.1" data-grid="0.5"></div>
+          <p class="hint tight" id="breathNote"></p>
+        </div>
+
+        <!-- WHEN EITHER OF THEM RUNS, asked once for both: a beacon is a beacon
+             whether what moves is the tower or the lamp. -->
+        <h2>When <span>and what it looks like</span></h2>
+        <div class="row"><div class="seg" id="fWhen"></div></div>
+        <div class="row"><div class="seg"><button id="fNotify">Preview it</button></div></div>
+      </div>
+    </div>
+
+    <h2>Save</h2>
+    <div id="dirty" hidden>Unsaved changes on screen.</div>
+    <button class="act" id="bDraft">Save draft</button>
+    <button class="act go" id="bPush">Push to the manifest</button>
+    <button class="act" id="bReload">Reload from disk</button>
+    <button class="act warn" id="bClear">Clear the village</button>
+    <div id="say"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   0. the page's own upper()
+
+   This page MOCKS a game screen — a house label is drawn exactly as the shell
+   will draw it — so it carries the motor's rule rather than
+   `text-transform: uppercase`: a capital carries no accent, and a lowercase
+   run glued to a digit is a unit and is left alone. Copied from
+   lab/overlay-pop.html, which is where a lab page takes it from.
+   --------------------------------------------------------------------------- */
+function upper(str) {
+  var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+  var shouted = String(str == null ? "" : str).replace(
+    /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+  var out = "", i, c, k;
+  for (i = 0; i < shouted.length; i++) {
+    c = shouted.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------------------------
+   1. the doors
+
+   THE LABELS ARE THE SHELL'S OWN STRINGS, not this page's. Every word below is
+   already written in packages/webshell — menu.js for the leaderboard, the
+   options and the help, levels.js for the map, meta.js for the shop and the
+   collection, daily.js for the gift — and it is repeated here only because a
+   lab page cannot import an ES5 IIFE. The view will read the real ones; if one
+   of these ever disagrees with its source, the source is right.
+
+   `need` is what makes the right column a checklist rather than a legend: a
+   door a game does not have is not a door it is missing. `meta` means the game
+   declares `web.meta`, `levels` means `web.levels`, `always` means every game.
+   --------------------------------------------------------------------------- */
+var DOORS = [
+  { key: "map",     need: "levels", en: "Levels",     fr: "Niveaux" },
+  { key: "play",    need: "flat",   en: "Play",       fr: "Jouer" },
+  { key: "daily",   need: "meta",   en: "Daily gift", fr: "Cadeau du jour" },
+  { key: "album",   need: "meta",   en: "Stickers",   fr: "Stickers" },
+  { key: "shop",    need: "meta",   en: "Shop",       fr: "Boutique" },
+  { key: "ranking", need: "always", en: "Leaderboard", fr: "Classement" },
+  { key: "options", need: "always", en: "Options",    fr: "Options" },
+  /* HELP IS THE MAP'S. Level 0 opens it on every board, so a village that
+     builds a house for it is a second way to one place — and six buildings is
+     what a sheet holds, which makes a wasted one expensive. It stays in the
+     list so an existing village that has one still reads, and it is never
+     counted as missing. */
+  { key: "help",    need: "never",  en: "Help",       fr: "Aide" },
+  { key: "decor",   need: "never",  en: "",           fr: "" }
+];
+
+function door(key) {
+  for (var i = 0; i < DOORS.length; i++) if (DOORS[i].key === key) return DOORS[i];
+  return DOORS[DOORS.length - 1];
+}
+
+/* The shape a house takes the moment it lands, before anything is tuned. The
+   numbers are one composition's worth of looking, not a computation: 200
+   design px is a little over a quarter of the frame's width, which is what
+   fits six houses on a hub without them touching. */
+var DEFAULTS = {
+  w: 200,
+  halo: { w: 1.1, h: 0.34, dy: 0.04 },
+  badge: { dx: 0.32, dy: -0.62 }
+};
+
+/* TWO LISTS, BECAUSE THERE ARE TWO THINGS TO SAY AND A HOUSE MAY SAY BOTH.
+
+   The PULSE moves the building — it hangs, it swells, it hops, it goes and
+   comes back. The LIGHT works the halo under it and nothing else. They were
+   one list of seven picked one at a time, which meant a mill could be alive or
+   lit and never both for no reason but the shape of the field; now the light
+   sits with the halo it needs and the pulse with the badge, and a house wears
+   one of each.
+
+   `sec` is how long one turn takes when the composition names no number. They
+   are not one value because they are not one gesture: a blink that took as
+   long as a breath would not read as a blink, and `random` is long on purpose
+   so its beat never lines up with a glance. */
+/* `min`, `max` and `grid` are the BEAT slider's own, per pulse, because the
+   last of them is not a beat at all: a float takes three seconds and a cloud
+   takes fifty, and one track from 0.2 to 60 would put every pulse but that one
+   inside its first millimetre. The slider is re-ranged when a pulse is picked
+   and the numbers the hand lands on follow it — tenths of a second for a
+   gesture, whole seconds for a crossing. */
+var PULSES = [
+  { key: "",        label: "None",   sec: 2.6 },
+  { key: "float",   label: "Float",  sec: 3.4 },
+  { key: "breath",  label: "Breath", sec: 2.6 },
+  { key: "alert",   label: "Alert",  sec: 3.2 },
+  { key: "fade",    label: "Fade",   sec: 4 },
+  { key: "cloud",   label: "Cloud",  sec: 48, min: 8, max: 600, grid: 1, wait: 120 }
+];
+
+var LIGHTS = [
+  { key: "",        label: "Steady",  sec: 2.4 },
+  { key: "blink",   label: "Blink",   sec: 1.5 },
+  { key: "flicker", label: "Flicker", sec: 2.4 },
+  { key: "random",  label: "Random",  sec: 7 }
+];
+
+function specOf(list, key) {
+  for (var i = 0; i < list.length; i++) if (list[i].key === (key || "")) return list[i];
+  return list[0];
+}
+
+/* THE TWO OLD SPELLINGS STILL READ, here as in the shell and the server.
+   `breath: true` was the first, and `notify: "flicker"` the second — where the
+   house and its light shared one field. A village written either way opens on
+   what it named, in the field that owns it now. */
+function pulseOf(h) {
+  var k = h.notify || (h.breath ? "breath" : "");
+  return specOf(PULSES, k).key;
+}
+
+function lightOf(h) {
+  var k = h.light || h.notify || "";
+  return specOf(LIGHTS, k).key;
+}
+
+/* THE EMPTY HOUSE — the one `art` that names no file. */
+var EMPTY_ART = "empty";
+
+/* ---------------------------------------------------------------------------
+   1b. the colour picker
+
+   OURS, AND NOT THE OPERATING SYSTEM'S. `<input type=color>` opens the
+   platform's own dialog — on macOS a floating window with a magnifier, five
+   tabs and an opacity slider, for a value that comes back as six hex digits —
+   and it covers the very thing this page exists to look at. A colour here is
+   judged by watching it LAND on a painted scene, which cannot be done behind a
+   modal standing over the scene.
+
+   So: a swatch in the column that opens a small board under itself. A square
+   for saturation and value, a bar for the hue, the hex to type or paste, and
+   the game's own theme colours as presets — the first thing a halo is tried in
+   is the accent it would have had anyway. It writes on every move, so the
+   frame follows the thumb.
+   --------------------------------------------------------------------------- */
+function hex2rgb(hex) {
+  var h = String(hex || "").replace("#", "");
+  if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return { r: 255, g: 255, b: 255 };
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+function rgb2hex(r, g, b) {
+  function two(v) { var x = Math.round(Math.max(0, Math.min(255, v))).toString(16); return x.length < 2 ? "0" + x : x; }
+  return "#" + two(r) + two(g) + two(b);
+}
+
+function rgb2hsv(c) {
+  var r = c.r / 255, g = c.g / 255, b = c.b / 255;
+  var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0;
+  if (d) {
+    if (mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h: h, s: mx ? d / mx : 0, v: mx };
+}
+
+function hsv2hex(h, s, v) {
+  var i = Math.floor(h / 60) % 6, f = h / 60 - Math.floor(h / 60);
+  var p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  var r = [v, q, p, p, t, v][i], g = [t, v, v, q, p, p][i], b = [p, p, t, v, v, q][i];
+  return rgb2hex(r * 255, g * 255, b * 255);
+}
+
+/* One popover for the whole page: two open at once is two colours being edited
+   and no way to tell which swatch the board belongs to. */
+var POP = null;
+
+function closePop() {
+  if (!POP) return;
+  document.body.removeChild(POP.node);
+  POP = null;
+}
+
+document.addEventListener("pointerdown", function (e) {
+  if (!POP) return;
+  if (POP.node.contains(e.target) || POP.owner.contains(e.target)) return;
+  closePop();
+}, true);
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closePop(); });
+window.addEventListener("resize", closePop);
+
+/* A swatch, wired to one value. `read` hands back the colour to show and
+   `write` takes the one the hand chose — so the picker never holds a copy of
+   the state and cannot be one edit behind it. */
+function colourField(node, read, write, presets) {
+  node.className = "cpick";
+  node.innerHTML = '<span class="sw"></span><span class="hx"></span>';
+  var sw = node.querySelector(".sw"), hx = node.querySelector(".hx");
+
+  function show() {
+    var v = read() || "#ffffff";
+    sw.style.background = v;
+    hx.textContent = v.toUpperCase();
+  }
+  node._show = show;
+
+  node.addEventListener("click", function () {
+    if (POP && POP.owner === node) return closePop();
+    closePop();
+    open();
+  });
+
+  function open() {
+    var hsv = rgb2hsv(hex2rgb(read()));
+    var box = document.createElement("div");
+    box.className = "cpop";
+    /* THE PIPETTE IS THE FIRST THING IN THE BOARD, not a glyph tucked beside
+       the hex field where it was and where nobody found it. A colour on a
+       painted scene is TAKEN far more often than it is built out of a
+       saturation square, so the tool that takes one comes before the tools
+       that build one. */
+    box.innerHTML =
+      '<button class="drop" type="button"></button>' +
+      '<div class="sv"><div class="dot"></div></div>' +
+      '<div class="hue"><div class="dot"></div></div>' +
+      '<input class="hex" maxlength="7" spellcheck="false">' +
+      '<div class="presets"></div>';
+    document.body.appendChild(box);
+
+    var sv = box.querySelector(".sv"), hue = box.querySelector(".hue");
+    var svDot = sv.querySelector(".dot"), hueDot = hue.querySelector(".dot");
+    var hexIn = box.querySelector(".hex");
+
+    function paint(push) {
+      sv.style.setProperty("--hue", hsv2hex(hsv.h, 1, 1));
+      svDot.style.left = (hsv.s * 100) + "%";
+      svDot.style.top = ((1 - hsv.v) * 100) + "%";
+      hueDot.style.left = (hsv.h / 360 * 100) + "%";
+      var v = hsv2hex(hsv.h, hsv.s, hsv.v);
+      if (document.activeElement !== hexIn) hexIn.value = v.toUpperCase();
+      if (push) { write(v); show(); }
+    }
+
+    /* Both boards are dragged, which is the only way a colour is chosen: a
+       click that only fired on release would make the scene under it jump
+       instead of follow. */
+    function track(surface, fn) {
+      surface.addEventListener("pointerdown", function (e) {
+        surface.setPointerCapture(e.pointerId);
+        var rr = surface.getBoundingClientRect();
+        function at(ev) {
+          fn(Math.max(0, Math.min(1, (ev.clientX - rr.left) / rr.width)),
+             Math.max(0, Math.min(1, (ev.clientY - rr.top) / rr.height)));
+          paint(true);
+        }
+        function up() {
+          surface.removeEventListener("pointermove", at);
+          surface.removeEventListener("pointerup", up);
+        }
+        surface.addEventListener("pointermove", at);
+        surface.addEventListener("pointerup", up);
+        at(e);
+        e.preventDefault();
+      });
+    }
+    track(sv, function (x, y) { hsv.s = x; hsv.v = 1 - y; });
+    track(hue, function (x) { hsv.h = x * 360; });
+
+    hexIn.addEventListener("input", function () {
+      var v = hexIn.value.trim();
+      if (!/^#?[0-9a-fA-F]{6}$/.test(v)) return;
+      if (v.charAt(0) !== "#") v = "#" + v;
+      hsv = rgb2hsv(hex2rgb(v));
+      paint(true);
+    });
+
+    /* THE PIPETTE, AND IT IS THE PLATFORM'S. `EyeDropper` samples what is
+       actually ON THE SCREEN, which is the only sampling worth having here: a
+       hub is a painted picture under a breathing light, with halos and houses
+       over it, and a colour read off the ground FILE would be a colour the
+       composer never saw. It also reaches outside the frame — a reference open
+       in another window is fair game.
+
+       Hidden rather than disabled where the browser has none: a disabled
+       control asks what would turn it on, and nothing on this page would. */
+    /* ONE BUTTON, TWO MECHANISMS, AND THE LABEL SAYS WHICH. Where the platform
+       has `EyeDropper` it is used, because it samples the whole SCREEN —
+       halos, breathing light, a reference open in another window. Where it has
+       not, the page samples its own SCENE off a canvas (Pipette above), which
+       is narrower and still the picture a colour is taken off. Naming them
+       apart is the difference between a tool that is smaller here and a tool
+       that is lying. */
+    var drop = box.querySelector("button.drop");
+    var take = function (c) { hsv = rgb2hsv(hex2rgb(c)); paint(true); };
+
+    if (window.EyeDropper) {
+      drop.textContent = "Pick a colour from the screen";
+      drop.title = "Take a colour from anywhere on the screen";
+      drop.addEventListener("click", function () {
+        /* The board stands between the column and the frame, so it goes away
+           for the sampling and comes back with the answer: the one thing a
+           composer wants to point at is the picture. */
+        box.style.visibility = "hidden";
+        var back = function () { box.style.visibility = ""; };
+        new window.EyeDropper().open().then(function (r) {
+          back();
+          take(r.sRGBHex);
+        }, function (e) {
+          back();
+          /* ESCAPE out of the picker is a composer changing their mind, not a
+             failure. Anything else is one, and it is said out loud rather than
+             swallowed — a pipette that refuses in silence is the same wall as
+             a button that was never wired. */
+          if (e && e.name !== "AbortError") say("The screen picker refused: " + (e.message || e.name), "bad");
+        });
+      });
+    } else {
+      drop.textContent = "Pick a colour from the scene";
+      drop.title = "Take a colour off the hub and the houses";
+      drop.addEventListener("click", function () {
+        /* THE COLOUR FOLLOWS THE POINTER, because that is how a colour on a
+           painted scene is judged: the halo under the house changes while the
+           hand moves, and the click is the moment it is kept. What was there
+           before is restored on ESCAPE, so a walk over the picture costs
+           nothing. */
+        var was = hsv2hex(hsv.h, hsv.s, hsv.v);
+        Pipette.start(take,
+          function (c) { take(c || was); },
+          function () { take(was); });
+      });
+    }
+
+    var pres = box.querySelector(".presets");
+    (presets() || []).forEach(function (c) {
+      var b = document.createElement("span");
+      b.style.background = c;
+      b.title = c;
+      b.addEventListener("click", function () { hsv = rgb2hsv(hex2rgb(c)); paint(true); });
+      pres.appendChild(b);
+    });
+
+    paint(false);
+
+    /* PLACED LAST, BECAUSE IT IS ONLY NOW AS TALL AS IT WILL BE. It used to be
+       positioned the moment it was appended — before the presets were in it —
+       so the clamp was measuring a board 26 px shorter than the one it put on
+       screen, and the bottom row fell off the window. That is how the pipette
+       came to be a control nobody could find.
+
+       Below the swatch when there is room and ABOVE it when there is not: a
+       board squeezed against the bottom edge would cover the field it belongs
+       to, and the field is what says which colour is being picked. */
+    var r = node.getBoundingClientRect();
+    box.style.left = Math.min(window.innerWidth - box.offsetWidth - 6, Math.max(6, r.left)) + "px";
+    box.style.top = (r.bottom + 6) + "px";
+
+    /* AND THEN MEASURED WHERE IT LANDED, rather than guessed at beforehand.
+       The board used to be positioned the moment it was appended — before the
+       presets were in it — so the clamp worked from a height 26 px short of
+       the real one and the bottom row fell off the window. That is how the
+       pipette came to be a control nobody could find.
+
+       Three steps and the last one is the one that cannot be argued with:
+       below the swatch, ABOVE it when there is no room below, and then clamped
+       into the window whatever the swatch's own position was — a field the
+       column has scrolled half out of sight would otherwise hang the board off
+       the same edge. */
+    var h = box.getBoundingClientRect().height;
+    var top = r.bottom + 6;
+    if (top + h + 6 > window.innerHeight) top = r.top - h - 6;
+    box.style.top = Math.max(6, Math.min(window.innerHeight - h - 6, top)) + "px";
+
+    POP = { node: box, owner: node };
+  }
+
+  show();
+  return node;
+}
+
+/* ---------------------------------------------------------------------------
+   2. state
+   --------------------------------------------------------------------------- */
+var SERVED = location.protocol === "http:" || location.protocol === "https:";
+var BASE = SERVED ? "/assets/" : "../assets/";
+
+var CAT = { games: {}, roles: [], drafts: {} };
+var state = {
+  slug: null,
+  comp: { ground: null, houses: [] },
+  source: "new",              // new | draft | manifest
+  /* WHAT IS SELECTED: `null`, or `{ list: "houses", i: n }`. It is a pair
+     rather than a bare index because the frame has held more than one kind of
+     thing before and may again; every path that moves, sizes, duplicates or
+     deletes asks the same question once. */
+  sel: null,
+  dirty: false,
+  /* The doors are checked off and the labels previewed in ENGLISH. The words
+     themselves are the shell's, in both languages, and nothing on this page
+     writes one — so a switch here would only re-read a dictionary the composer
+     is not editing. What a French word does to a layout is a question for the
+     build, where the label is a player's option rather than a composition. */
+  lang: "en",
+  /* ONE BUTTON, NOT TWO. The grid draws what the snap lands on, so they are
+     the same decision: a magnetism nobody can see is a placement nobody can
+     explain. On by default, because 10 px is how a village is laid out. */
+  grid: true,
+  snap: 10,
+  labels: false,              // a PREVIEW of the player's own OPTIONS switch
+  notifyAll: false,
+  /* The hour being LOOKED at. It is the real one until the slider is touched,
+     and it is never saved: what a village declares is the hour its picture was
+     painted at, not the hour somebody happened to compose it. */
+  hour: null,
+  notified: {}                // index → bool, a PREVIEW flag, never saved
+};
+
+function game() { return CAT.games[state.slug] || null; }
+function accent() { return (game() && game().accent) || "#4dff9b"; }
+function $(id) { return document.getElementById(id); }
+
+function say(msg, kind) {
+  var n = $("say");
+  n.textContent = msg || "";
+  n.className = kind || "";
+}
+
+/* A composition travels between the page, a draft and a manifest, so it is
+   cloned on every handover: the draft the catalogue handed back is not the one
+   being edited, or reloading would show the edits it was meant to discard. */
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+/* EVERY EDIT GOES THROUGH HERE, which is what makes "unsaved" a fact rather
+   than a guess — and what lets loading another village ask before it throws
+   this one away. */
+function touched() {
+  state.dirty = true;
+  $("dirty").hidden = false;
+}
+
+function settled() {
+  state.dirty = false;
+  $("dirty").hidden = true;
+}
+
+/* ---------------------------------------------------------------------------
+   3. the palettes
+   --------------------------------------------------------------------------- */
+function artUrl(file) { return BASE + "image/embed/" + file; }
+function cutUrl(file) { return BASE + "image/object/" + file; }
+
+function fileOf(role) {
+  var g = game();
+  if (!g || role === EMPTY_ART) return null;
+  var lists = [g.grounds, g.houses, g.other], i, j;
+  for (i = 0; i < lists.length; i++) {
+    for (j = 0; j < lists[i].length; j++) if (lists[i][j].role === role) return lists[i][j].file;
+  }
+  return null;
+}
+
+function paintPalettes() {
+  var g = game();
+  var grounds = $("grounds"), houses = $("houses"), other = $("other");
+  var spare = $("spare"), shared = $("shared");
+  grounds.innerHTML = houses.innerHTML = other.innerHTML = "";
+  spare.innerHTML = shared.innerHTML = "";
+  if (!g) return;
+
+  /* THE GROUND IS A CHOICE OF ONE, so its palette is radio-shaped: the picked
+     one carries the border. "None" is a real entry and not an empty state — a
+     village on the game's own SKIN gradient is what a game with no painted hub
+     gets, and it has to be possible to look at. */
+  var none = thumb(null, "none", state.comp.ground === null);
+  none.addEventListener("click", function () { pickGround(null); });
+  grounds.appendChild(none);
+  g.grounds.forEach(function (it) {
+    var t = thumb(artUrl(it.file), it.role.replace(/^background/, ""), state.comp.ground === it.role);
+    t.addEventListener("click", function () { pickGround(it.role); });
+    grounds.appendChild(t);
+  });
+
+  g.houses.forEach(function (it) {
+    var t = thumb(artUrl(it.file), it.role.replace(/^home/, ""), false);
+    t.addEventListener("click", function () { drop(it.role); });
+    houses.appendChild(t);
+  });
+  $("noHouses").hidden = g.houses.length > 0;
+  $("noHouses").innerHTML = "No house sheet cut yet. Put one at " +
+    "<code>assets/image/master/" + g.slug + "-object-home.png</code>, then " +
+    "<code>node tools/lab/cut-objects.mjs " + g.slug + "-object-home --grid 3x2</code> " +
+    "and adopt the cuts below.";
+
+  /* THE ONE TILE THAT IS NOT A FILE, and it comes first because it is the one
+     entry a hub with painted lamps on it always has a use for. */
+  var blank = thumb(null, "", false);
+  blank.className += " blank";
+  blank.textContent = "empty";
+  blank.title = "A box with no picture in it — a halo, a badge and a door";
+  blank.addEventListener("click", function () { drop(EMPTY_ART); });
+  other.appendChild(blank);
+
+  g.other.forEach(function (it) {
+    var t = thumb(artUrl(it.file), it.role, false);
+    t.addEventListener("click", function () { drop(it.role); });
+    other.appendChild(t);
+  });
+
+  /* A SPARE CUT IS ONE CLICK FROM THE PALETTE ABOVE. Everything under
+     assets/image/embed/ rides in every build of its game, so a cut no manifest
+     names cannot be placed — but the decision to name it is made HERE, looking
+     at the picture, so the click makes it: the role goes into `art.objects`
+     and the cut is encoded, and only then does the house exist. */
+  fillCuts(spare, g.spare);
+
+  /* THE SHARED CUTS ARE THE SAME OFFER OUT OF A SHEET NO GAME OWNS. They sit
+     in their own palette rather than among the game's because that is the one
+     thing the picture cannot say: a cloud looks like any other cut, and the
+     question a composer asks of it — "do the other twelve villages have this
+     too?" — is answered by which list it is in. The click is identical. */
+  fillCuts(shared, g.shared);
+}
+
+function fillCuts(into, groups) {
+  Object.keys(groups || {}).sort().forEach(function (name) {
+    groups[name].sort(function (a, b) { return a.n - b.n; }).forEach(function (c) {
+      var t = thumb(cutUrl(c.file), name + " " + c.n, false);
+      t.title = c.file + " — click to adopt";
+      t.addEventListener("click", function () { adopt(c.file, t); });
+      into.appendChild(t);
+    });
+  });
+}
+
+function thumb(src, tag, on) {
+  var t = document.createElement("div");
+  t.className = "thumb" + (on ? " on" : "");
+  if (src) {
+    var img = document.createElement("img");
+    img.src = src; img.alt = "";
+    t.appendChild(img);
+  }
+  if (tag) {
+    var i = document.createElement("i");
+    i.textContent = tag;
+    t.appendChild(i);
+  }
+  return t;
+}
+
+/* Adopting is a write to the game's manifest and an encode, so it is slow
+   enough to need saying so — and the newly adopted cut is dropped straight
+   onto the ground, because wanting it there is why it was clicked. */
+function adopt(file, node) {
+  if (node.classList.contains("busy")) return;
+  node.classList.add("busy");
+  say("Adopting " + file + " and encoding it…", "busy");
+  put("/api/adopt", { slug: state.slug, file: file }, function (r) {
+    node.classList.remove("busy");
+    if (r.error) return say(r.error, "bad");
+    refresh(function () {
+      paintPalettes();
+      drop(r.role);
+      say((r.key || r.role) + " adopted in games/" + state.slug + "/manifest.json and encoded.", "ok");
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   4. the ground and the light
+   --------------------------------------------------------------------------- */
+function pickGround(role) {
+  state.comp.ground = role;
+  touched();
+  paintPalettes();
+  paintGround();
+}
+
+function paintGround() {
+  var n = $("ground");
+  var file = state.comp.ground && fileOf(state.comp.ground);
+  if (file) {
+    n.className = "";
+    n.style.backgroundImage = "url(" + artUrl(file) + ")";
+  } else {
+    n.className = "none";
+    n.style.backgroundImage = "";
+  }
+  $("groundName").textContent = state.comp.ground ? "· " + state.comp.ground : "· none";
+  paintLife();
+}
+
+function life() { return state.comp.life || {}; }
+function cycle() { return life().cycle || null; }
+
+var CYCLE_DEFAULT = { warm: "#ffcf8f", cold: "#16234f", amount: 0.35, seconds: 120 };
+
+/* THE LIGHT IS WATCHED, NOT SCRUBBED. Reading the player's real clock was the
+   first answer here and it was the wrong one: a difference nobody can SEE,
+   because nothing moves while they are looking at it — which also made this
+   page need an hour slider to judge a village by. A breath needs none. The
+   keyframes are the ones village.css ships, so what runs here is what runs in
+   the build; all this does is write the four properties they read. */
+function paintLife() {
+  var c = cycle();
+  seg("fCycle", !!c);
+  $("cycleFields").style.opacity = c ? 1 : 0.35;
+  var v = c || CYCLE_DEFAULT;
+  if ($("cWarm")._show) { $("cWarm")._show(); $("cCold")._show(); }
+  $("cAmt").value = v.amount; $("vCA").textContent = v.amount;
+  $("cSec").value = v.seconds; $("vCS").textContent = v.seconds;
+
+  [$("ground"), $("sky")].forEach(function (n) {
+    n.style.setProperty("--vg-cycle", (c ? v.seconds : 0) + "s");
+    n.style.setProperty("--vg-amp", c ? (v.amount * 0.5).toFixed(3) : 0);
+    n.style.setProperty("--vg-amp-c", c ? v.amount.toFixed(3) : 0);
+    n.style.setProperty("--vg-warm", v.warm);
+    n.style.setProperty("--vg-cold", v.cold);
+  });
+}
+
+function cycleEdit(fn) {
+  var v = clone(cycle() || CYCLE_DEFAULT);
+  fn(v);
+  state.comp.life = { cycle: v };
+  touched();
+  paintLife();
+}
+
+/* A house lands in the middle of the frame rather than on a free pad: the pads
+   are painted into the ground and this page cannot see them, and a rule that
+   guessed one would be wrong on the first village whose hub is not a ring. */
+function drop(role) {
+  var h = {
+    art: role, role: "decor",
+    x: 360, y: 700, w: DEFAULTS.w,
+    halo: clone(DEFAULTS.halo)
+  };
+  state.comp.houses.push(h);
+  state.sel = { list: "houses", i: state.comp.houses.length - 1 };
+  touched();
+  paintScene();
+  paintInspector();
+}
+
+/* THE PAINTER'S ORDER IS THE GROUND'S, and the composer's where the ground
+   cannot answer: the list is sorted by `layer` and then by the feet before it
+   is drawn — exactly as tools/lab/serve-village.mjs sorts it on the way into
+   the manifest, so what is on screen is what will ship. The selection follows
+   its own house through the sort rather than staying on an index. */
+function sortHouses() {
+  var keep = selIs("houses") ? sel() : null;
+  state.comp.houses.sort(function (a, b) {
+    return ((a.layer || 0) - (b.layer || 0)) || (a.y - b.y);
+  });
+  if (keep) state.sel = { list: "houses", i: state.comp.houses.indexOf(keep) };
+}
+
+/* ONE PASS, AND THE ORDER ON SCREEN IS THE ORDER HERE: the ground, then the
+   houses sorted by their feet, then the sky over all of it. */
+function paintScene() {
+  sortHouses();
+  var frame = $("frame");
+  Array.prototype.slice.call(frame.querySelectorAll(".vg-house")).forEach(function (n) {
+    n.parentNode.removeChild(n);
+  });
+
+  state.comp.houses.forEach(function (h, i) { frame.appendChild(houseNode(h, i)); });
+  /* THE SKY LAST, as village.js appends it: the light is over everything,
+     houses included — light that stops at part of the scene is a filter on
+     that part. It lives in the static markup here, so it is moved rather than
+     rebuilt. */
+  frame.appendChild($("sky"));
+
+  $("count").textContent = state.comp.houses.length;
+  paintStack();
+  paintDoors();
+}
+
+/* The four grips on the selection: move, turn, size, drop. They ride inside
+   the rotation so they follow a turned house, and each one's glyph
+   counter-turns in CSS so the arrow still points where it says. */
+function grips() {
+  var g = document.createElement("div");
+  g.className = "vg-grips";
+  [["move", "\u2725"], ["turn", "\u27F3"], ["size", "\u2921"], ["drop", "\u00D7"]].forEach(function (e) {
+    var b = document.createElement("div");
+    b.className = "vg-grip " + e[0];
+    b.dataset.grip = e[0];
+    b.innerHTML = "<span>" + e[1] + "</span>";
+    g.appendChild(b);
+  });
+  return g;
+}
+
+function houseNode(h, i) {
+  var empty = h.art === EMPTY_ART;
+  var file = fileOf(h.art);
+  var pulse = pulseOf(h), lit = lightOf(h);
+
+  var n = document.createElement("div");
+  n.className = "vg-house" + (selIs("houses") && state.sel.i === i ? " sel" : "") +
+               (h.role === "decor" ? " decor" : "") +
+               (empty ? " empty" : "") +
+               (h.halo ? " lit" : "");
+  /* THE TWO ANIMATIONS ARE THE COMPOSITION'S, WHETHER THEY FIRE IS THE
+     SHELL'S — except where the composition says ALWAYS, which takes the
+     question away. Here the preview stands in for the shell: NOTIFY on a house
+     is "something is waiting behind this door right now". */
+  if (pulse) {
+    n.className += " n-" + pulse;
+    var turn = h.every || specOf(PULSES, pulse).sec;
+    n.style.setProperty("--pulse-dur", turn + "s");
+    /* A CLOUD THAT NAMES NO DELAY IS ALREADY ON ITS WAY. Every crossing starts
+       fully off the right edge, so a sky composed without delays opens empty
+       and stays that way for most of a minute — which reads as a broken
+       preview. The negative lead is `l-random`'s trick one field along: an
+       irrational stride so no two clouds share a point, and negative so the
+       cycle is under way rather than starting on the first frame. */
+    var lead = h.delay || (pulse === "cloud" ? -((i * 0.618) % 1) * turn : 0);
+    if (lead) n.style.setProperty("--pulse-delay", lead.toFixed(2) + "s");
+    /* THE CLOUD'S TWO EXTRA FIELDS, and neither exists for any other pulse:
+       `drift` is which way it goes and `breathEvery` is the vapour working on
+       its own clock instead of the crossing's over seven. */
+    if (pulse === "cloud") {
+      if (h.drift === "right") n.className += " d-right";
+      if (h.breathEvery) n.style.setProperty("--breath-dur", h.breathEvery + "s");
+    }
+  }
+  if (lit) {
+    n.className += " l-" + lit;
+    n.style.setProperty("--light-dur", (h.lightEvery || specOf(LIGHTS, lit).sec) + "s");
+    /* RANDOM's whole trick: one deterministic cycle, entered at a different
+       point per house. The stride is irrational so six houses never share one,
+       and it is negative so the cycle is already under way rather than
+       starting on the first frame. */
+    var lag = h.lightDelay || (lit === "random" ? -(i * 1.618 % 7) : 0);
+    if (lag) n.style.setProperty("--light-delay", lag.toFixed(2) + "s");
+  }
+  if ((pulse || lit) && (h.always || state.notifyAll || state.notified[i])) n.className += " beat";
+  n.style.left = h.x + "px";
+  n.style.top = h.y + "px";
+  /* THE PLACEMENT AGAIN, AS TWO NUMBERS CSS CAN READ. `left` and `top` cannot
+     be reached from a keyframe, and `vg-drift` has to cancel them to carry a
+     cloud across the frame from wherever it was dropped. Written for every
+     house so a pulse picked later needs no second pass. */
+  n.style.setProperty("--vg-x", h.x + "px");
+  n.style.setProperty("--vg-w", h.w + "px");
+  n.style.setProperty("--vg-accent", accent());
+  n.style.setProperty("--vg-rot", (h.rot || 0) + "deg");
+  n.dataset.list = "houses";
+  n.dataset.i = i;
+
+  if (h.halo) {
+    var halo = h.halo === true ? DEFAULTS.halo : h.halo;
+    var e = document.createElement("div");
+    e.className = "vg-halo";
+    e.style.width = (h.w * halo.w) + "px";
+    e.style.height = (h.w * halo.h) + "px";
+    e.style.marginTop = (h.w * (halo.dy || 0)) + "px";
+    if (halo.color) e.style.setProperty("--vg-halo", halo.color);
+    n.appendChild(e);
+  }
+
+  var body = document.createElement("div");
+  body.className = "vg-body";
+  body.style.width = h.w + "px";
+  /* With no picture there is nothing to give the box a height, so the empty
+     one is square: its size IS its hit area, and the composer sizes it by
+     looking at the pad it covers. */
+  if (empty) body.style.height = h.w + "px";
+
+  var rot = document.createElement("div");
+  rot.className = "vg-rot";
+
+  var inner = document.createElement("div");
+  inner.className = "vg-in";
+  if (!empty) {
+    var img = document.createElement("img");
+    img.src = file ? artUrl(file) : "";
+    img.alt = "";
+    img.draggable = false;
+    if (h.flip) img.className = "flip";
+    inner.appendChild(img);
+  }
+  rot.appendChild(inner);
+
+  /* The grips ride INSIDE the rotation so they follow a turned house; each
+     one's glyph counter-turns in CSS so the arrow still points where it says. */
+  rot.appendChild(grips());
+  body.appendChild(rot);
+
+  if (h.badge) {
+    var b = h.badge === true ? DEFAULTS.badge : h.badge;
+    var badge = document.createElement("div");
+    badge.className = "vg-badge";
+    /* A preview count, never saved: what the shell will write there is a real
+       number and the only thing this page decides is where it sits. */
+    badge.textContent = "3";
+    badge.style.left = (50 + b.dx * 100) + "%";
+    badge.style.top = (100 + b.dy * 100) + "%";
+    body.appendChild(badge);
+  }
+  n.appendChild(body);
+
+  /* THE WORD IS THE PLAYER'S SWITCH AND NOT A FIELD OF THE COMPOSITION. Every
+     door carries one, all of them are off until OPTIONS says otherwise, and
+     the button under the frame is that switch — so what is judged here is the
+     village as a player who asked for the names would see it, never a village
+     where three buildings were named and three were not. */
+  if (h.role !== "decor") {
+    var lab = document.createElement("div");
+    lab.className = "vg-label";
+    lab.textContent = upper(door(h.role)[state.lang]);
+    lab.hidden = !state.labels;
+    n.appendChild(lab);
+  }
+  return n;
+}
+
+/* ---------------------------------------------------------------------------
+   5. the stack and the checklist
+   --------------------------------------------------------------------------- */
+
+/* THE STACK IS THE COMPOSITION READ AS AN ORDER. The list is already sorted by
+   plane and then by the feet — that is what `paintScene` draws — so the panel
+   is that same list REVERSED: last drawn is nearest the eye, and nearest the
+   eye belongs at the top of a layer list.
+
+   It exists for the two things the frame cannot do. A house standing behind
+   another cannot be clicked, so without a list the only way to reach it is to
+   drag the one in front off it and put it back; and a plane is a number with
+   nothing on screen that says which objects share it. The grouping IS the
+   summary — counting the planes anywhere else would be a second answer to keep
+   in step with this one. */
+var PLANE_LIMIT = 9;
+
+function planeWord(l) {
+  return l === 0 ? "Ground" : l > 0 ? "Plane +" + l : "Plane " + l;
+}
+
+function paintStack() {
+  var ul = $("stack");
+  ul.innerHTML = "";
+  var houses = state.comp.houses;
+
+  if (!houses.length) {
+    var li = document.createElement("li");
+    li.className = "none";
+    li.textContent = "Nothing placed yet.";
+    ul.appendChild(li);
+    $("planeCount").textContent = "";
+    return;
+  }
+
+  var per = {};
+  houses.forEach(function (h) { var l = h.layer || 0; per[l] = (per[l] || 0) + 1; });
+  var planes = Object.keys(per).length;
+  $("planeCount").textContent = planes === 1 ? "one plane" : planes + " planes";
+
+  var front = houses.slice().reverse();
+  var last = null;
+  front.forEach(function (h) {
+    var l = h.layer || 0;
+    if (l !== last) {
+      last = l;
+      var head = document.createElement("li");
+      head.className = "plane";
+      head.innerHTML = "<span>" + planeWord(l) + "</span><s></s><em>" + per[l] + "</em>";
+      ul.appendChild(head);
+    }
+    ul.appendChild(stackRow(h, l));
+  });
+}
+
+function stackRow(h, l) {
+  var i = state.comp.houses.indexOf(h);
+  var li = document.createElement("li");
+  li.className = "item" + (selIs("houses") && state.sel.i === i ? " on" : "");
+  li.title = "Click to select \u00b7 arrows move it a plane";
+
+  var name = document.createElement("b");
+  name.textContent = h.art === EMPTY_ART ? "empty" : h.art;
+  li.appendChild(name);
+
+  var word = document.createElement("em");
+  word.textContent = h.role === "decor" ? "scenery" : door(h.role)[state.lang];
+  li.appendChild(word);
+
+  /* UP IS FORWARD, and it is the direction the list is read in: the top of
+     this panel is what the player sees first, so an object walking up the list
+     is an object coming toward them. */
+  [["\u25b2", 1], ["\u25bc", -1]].forEach(function (e) {
+    var b = document.createElement("i");
+    b.textContent = e[0];
+    var at = e[1] > 0 ? PLANE_LIMIT : -PLANE_LIMIT;
+    if (l === at) b.className = "off";
+    b.addEventListener("click", function (ev) {
+      /* The arrow is inside the row, so the click has to stop here: moving a
+         plane and selecting what moved are two gestures and a composer asked
+         for one of them. */
+      ev.stopPropagation();
+      if (l === at) return;
+      var v = l + e[1];
+      if (v) h.layer = v; else delete h.layer;
+      touched();
+      paintScene();
+      paintInspector();
+    });
+    li.appendChild(b);
+  });
+
+  li.addEventListener("click", function () {
+    state.sel = { list: "houses", i: state.comp.houses.indexOf(h) };
+    paintScene();
+    paintInspector();
+  });
+  return li;
+}
+
+function paintDoors() {
+  var g = game(), ul = $("doors");
+  ul.innerHTML = "";
+  if (!g) return;
+  var counted = {};
+  state.comp.houses.forEach(function (h) { counted[h.role] = (counted[h.role] || 0) + 1; });
+
+  DOORS.forEach(function (d) {
+    if (d.need === "never") return;
+    if (d.need === "levels" && !g.levels) return;
+    if (d.need === "flat" && g.levels) return;     // PLAY is the map's, on a levelled game
+    if (d.need === "meta" && !g.meta) return;
+    var n = counted[d.key] || 0;
+    var li = document.createElement("li");
+    li.className = n === 1 ? "ok" : n === 0 ? "no" : "dup";
+    li.innerHTML = "<s></s>" + d[state.lang] +
+      (n > 1 ? "<em>" + n + " houses</em>" : "");
+    ul.appendChild(li);
+  });
+
+  var loose = state.comp.houses.filter(function (h) { return h.role === "decor"; }).length;
+  if (loose) {
+    var li = document.createElement("li");
+    li.innerHTML = "<s></s>scenery<em>" + loose + "</em>";
+    ul.appendChild(li);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   6. the inspector
+   --------------------------------------------------------------------------- */
+function list(name) { return state.comp[name] || (state.comp[name] = []); }
+
+function sel() { return state.sel ? list(state.sel.list)[state.sel.i] : null; }
+function selIs(name) { return !!state.sel && state.sel.list === name; }
+function house() { return selIs("houses") ? sel() : null; }
+
+function paintInspector() {
+  var h = house();
+  $("noSel").hidden = !!h;
+  $("fields").hidden = !h;
+  $("selName").textContent = h ? "\u00b7 " + h.art : "";
+  /* The stack is painted here and not only in `paintScene`, because a
+     selection changes it and changes nothing on the ground. */
+  paintStack();
+  if (!h) return;
+
+  $("fRole").value = h.role;
+  $("fX").value = h.x; $("vX").textContent = Math.round(h.x);
+  $("fY").value = h.y; $("vY").textContent = Math.round(h.y);
+  $("fW").value = h.w; $("vW").textContent = Math.round(h.w);
+  $("fR").value = h.rot || 0; $("vR").textContent = (h.rot || 0) + "\u00b0";
+  $("sumPlace").textContent = Math.round(h.x) + ", " + Math.round(h.y) +
+    "  \u00b7  " + Math.round(h.w) + " px" + (h.rot ? "  \u00b7  " + h.rot + "\u00b0" : "");
+
+  /* An empty house has no picture to mirror, so the control that would do it
+     is disabled rather than missing: a row that comes and goes as houses are
+     clicked through is a panel that moves under the hand. */
+  seg("fFlip", !!h.flip);
+  $("fFlip").disabled = h.art === EMPTY_ART;
+  seg("fNotify", !!state.notified[state.sel.i] || state.notifyAll);
+  seg("fHalo", !!h.halo);
+  seg("fBadge", !!h.badge);
+
+  var halo = h.halo === true ? DEFAULTS.halo : (h.halo || DEFAULTS.halo);
+  $("fHW").value = halo.w; $("vHW").textContent = halo.w;
+  $("fHH").value = halo.h; $("vHH").textContent = halo.h;
+  $("fHD").value = halo.dy || 0; $("vHD").textContent = halo.dy || 0;
+  $("sumHalo").textContent = halo.w + " \u00d7 " + halo.h;
+  $("fHC")._show();
+  $("haloFields").style.opacity = h.halo ? 1 : 0.35;
+
+  var b = h.badge === true ? DEFAULTS.badge : (h.badge || DEFAULTS.badge);
+  $("fBX").value = b.dx; $("vBX").textContent = b.dx;
+  $("fBY").value = b.dy; $("vBY").textContent = b.dy;
+  $("sumBadge").textContent = b.dx + ", " + b.dy;
+  $("badgeFields").style.opacity = h.badge ? 1 : 0.35;
+
+  paintLight(h);
+  paintPulse(h);
+  paintWhen(h);
+}
+
+function seg(id, on) { $(id).classList.toggle("on", !!on); }
+
+/* ---------------------------------------------------------------------------
+   THE LIGHT — three ways for the halo to move, and one sentence about the one
+   thing that can stop any of them showing: there is no halo to work.
+
+   It lives with the halo rather than with the pulse because that is what it
+   acts on. A house is now free to move AND be lit, which is what a mill over a
+   flickering pad is; before this the two were one list and the composer had to
+   choose which half of the building was alive.
+   --------------------------------------------------------------------------- */
+function paintLight(h) {
+  var box = $("fLight");
+  var picked = lightOf(h);
+  box.innerHTML = "";
+  LIGHTS.forEach(function (p) {
+    var b = document.createElement("button");
+    b.textContent = p.label;
+    b.className = picked === p.key ? "on" : "";
+    b.addEventListener("click", function () {
+      edit(function (x) {
+        /* The old one-field spelling is rewritten the moment either half is
+           touched, so a village saved from this page carries the two fields
+           and never the one that meant both. */
+        x.notify = pulseOf(x) || undefined;
+        if (!x.notify) delete x.notify;
+        delete x.breath;
+        if (p.key) x.light = p.key; else { delete x.light; delete x.lightEvery; delete x.lightDelay; }
+      });
+    });
+    box.appendChild(b);
+  });
+
+  $("foldLight").hidden = !picked;
+  $("lightNote").textContent =
+    !picked ? "The pad is simply lit: nothing about it moves." :
+    !h.halo ? "This works the HALO \u2014 turn it on above or nothing will show." :
+    picked === "blink" ? "The pad switches on and off on a fixed beat." :
+    picked === "flicker" ? "The pad stutters like a failing tube, and comes back." :
+    "One long uneven cycle, every house entering it somewhere else.";
+
+  if (!picked) return;
+  var every = h.lightEvery || specOf(LIGHTS, picked).sec;
+  $("fLightEvery").value = every; $("vLE").textContent = every + "s";
+  $("fLightDelay").value = h.lightDelay || 0; $("vLD").textContent = (h.lightDelay || 0) + "s";
+  $("sumLight").textContent = every + "s" + (h.lightDelay ? "  \u00b7  +" + h.lightDelay + "s" : "");
+}
+
+/* THE PULSE — what the BUILDING does. Four, in the order they escalate:
+   nothing, a lift, a swell, a burst, and a house that goes away. */
+function paintPulse(h) {
+  var box = $("fPulse");
+  var picked = pulseOf(h);
+  box.innerHTML = "";
+  PULSES.forEach(function (p) {
+    var b = document.createElement("button");
+    b.textContent = p.label;
+    b.className = picked === p.key ? "on" : "";
+    b.addEventListener("click", function () {
+      edit(function (x) {
+        x.light = lightOf(x) || undefined;
+        if (!x.light) delete x.light;
+        delete x.breath;
+        if (p.key) {
+          x.notify = p.key;
+          /* A BEAT DOES NOT FOLLOW A PULSE ACROSS. Each one has its own track
+             — tenths of a second for a gesture, tens of seconds for a
+             crossing — so a number the last pulse was tuned with is dropped
+             when it falls off the new one's, and the pulse's own default takes
+             over. Keeping it would leave the house carrying a figure its
+             slider cannot even show. */
+          var lo = p.min || 0.2, hi = p.max || 20;
+          if (x.every && (x.every < lo || x.every > hi)) delete x.every;
+        } else { delete x.notify; delete x.every; delete x.delay; }
+      });
+    });
+    box.appendChild(b);
+  });
+
+  $("foldPulse").hidden = !picked;
+  $("pulseNote").textContent =
+    !picked ? "The building stands still; only its light can speak." :
+    picked === "float" ? "The house hangs above its own light. The gentlest one \u2014 the only one several houses can wear at once." :
+    picked === "breath" ? "The house swells out of its feet; the halo beats with it unless a light of its own is picked." :
+    picked === "alert" ? "Two hops and a wobble, then a long rest. The rudest one: give it to one house, never to two." :
+    picked === "cloud" ? "Weather, not a signal: it crosses the frame right to left while it breathes and hazes, on three rhythms out of one number. Give it ALWAYS \u2014 nothing is ever waiting behind a cloud \u2014 and a plane above the roofs if it should pass in front of them. A halo does not travel with it, so turn it off." :
+    "The house goes and comes back, down to a ghost and never to nothing \u2014 a door that vanishes is a door nobody finds again.";
+
+  if (!picked) return;
+  /* THE TRACK BEFORE THE VALUE, and in that order: a slider whose `max` is
+     still 20 clamps a 48-second crossing to 20 the moment the value is
+     written, and the house would lose the number it was composed with. */
+  var spec = specOf(PULSES, picked);
+  var track = $("fEvery");
+  track.min = spec.min || 0.2;
+  track.max = spec.max || 20;
+  track.dataset.grid = spec.grid || 0.1;
+  var every = h.every || spec.sec;
+  $("fEvery").value = every; $("vPE").textContent = every + "s";
+  var wait = $("fDelay");
+  wait.max = spec.wait || 12;
+  wait.dataset.grid = spec.grid || 0.1;
+  /* Both tracks changed shape, so their notches have to be counted again. */
+  graduate(track);
+  graduate(wait);
+  $("fDelay").value = h.delay || 0; $("vPD").textContent = (h.delay || 0) + "s";
+  $("sumPulse").textContent = every + "s" + (h.delay ? "  \u00b7  +" + h.delay + "s" : "");
+  paintCloud(h, picked, every);
+}
+
+/* THE CLOUD'S OWN TWO, and they only exist while a cloud is picked. The breath
+   is printed against what it would have been — the crossing over seven — so a
+   composer moving it can see what they are leaving, which is the one number
+   the default was chosen for. */
+function paintCloud(h, picked, every) {
+  var on = picked === "cloud";
+  $("cloudFields").hidden = !on;
+  if (!on) return;
+
+  var box = $("fDrift");
+  box.innerHTML = "";
+  [["", "\u2190 west"], ["right", "east \u2192"]].forEach(function (e) {
+    var b = document.createElement("button");
+    b.textContent = e[1];
+    b.className = (h.drift === "right" ? "right" : "") === e[0] ? "on" : "";
+    b.addEventListener("click", function () {
+      edit(function (x) { if (e[0]) x.drift = "right"; else delete x.drift; });
+    });
+    box.appendChild(b);
+  });
+
+  var free = Math.round(every / 7 * 10) / 10;
+  var br = h.breathEvery || free;
+  $("fBreath").value = br; $("vBE").textContent = br + "s";
+  $("breathNote").textContent = h.breathEvery
+    ? "The vapour works on its own clock. Off the crossing it would be " + free + "s."
+    : "The crossing over seven, which is what keeps the two out of phase.";
+}
+
+/* WHETHER IT WAITS, asked once for both: a beacon is a beacon whether what
+   moves is the tower or the lamp. A house with neither a pulse nor a light has
+   nothing to say, so the question is put away rather than answered. */
+function paintWhen(h) {
+  var on = !!(pulseOf(h) || lightOf(h));
+  $("fWhen").parentNode.style.opacity = on ? 1 : 0.35;
+  $("fNotify").disabled = !on;
+
+  var box = $("fWhen");
+  box.innerHTML = "";
+  [["", "On a notification"], ["always", "Always, in a loop"]].forEach(function (e) {
+    var b = document.createElement("button");
+    b.textContent = e[1];
+    b.className = (h.always ? "always" : "") === e[0] ? "on" : "";
+    b.disabled = !on;
+    b.addEventListener("click", function () {
+      edit(function (x) { if (e[0]) x.always = true; else delete x.always; });
+    });
+    box.appendChild(b);
+  });
+}
+
+/* Every field writes the house and repaints: one path in, so a value cannot be
+   on screen without being in the composition. */
+function edit(fn) {
+  var h = sel();
+  if (!h) return;
+  fn(h);
+  touched();
+  paintScene();
+  paintInspector();
+}
+
+/* ---------------------------------------------------------------------------
+   THE MAGNETIC SLIDERS — every track on this page is cut into segments, and
+   the round values are the ones the hand lands on.
+
+   `data-grid` is what each one snaps to: 10 design px for a position and a
+   width, 5 degrees for a turn, 0.05 for a ratio, a tenth of a second for a
+   beat. The snap is applied on the MOVE and never on the draw — a village
+   written before this page had a grid holds numbers that are not on it (a
+   width of 173, a lift of 0.04), and a slider whose `step` was the grid would
+   rewrite them the moment the house was clicked. That is a change nobody asked
+   for, in a tool whose whole job is to write changes back. So the input is
+   free and the handler rounds what the hand moves: the first drag of 173 lands
+   on 170, which the hand did ask for.
+
+   Position and width are the exception that proves it: their grid is the
+   FRAME's, so turning the grid off turns their magnetism off with it.
+   --------------------------------------------------------------------------- */
+function magnet(input, v) {
+  var grid = Number(input.dataset.grid) || 0;
+  if (!grid) return v;
+  /* The three that are the frame's own: no grid on screen, no snap under the
+     hand — the same rule the drag handler follows. */
+  if (grid === 10 && !state.snap) return Math.round(v);
+  if (grid === 5 && !state.snap) return Math.round(v);
+  return Math.round(Math.round(v / grid) * grid * 1000) / 1000;
+}
+
+/* THE NOTCHES UNDER A TRACK, and they are the SAME number the magnet rounds
+   to: a slider that snaps to values nothing on it points at is a slider
+   correcting the hand for no visible reason, which is the complaint this
+   answers. One notch per grid step, coarsened up the 1-2-5 ladder until there
+   are few enough of them to be read — a crossing of 8 to 600 seconds is 592
+   steps and 592 hairlines is a grey band, so it draws one every 20.
+
+   The three tracks whose grid is the FRAME's lose their notches with the grid
+   button, exactly as they lose their magnetism: a graduation that does not
+   catch is a lie about what the track will do. */
+function graduate(input) {
+  var grid = Number(input.dataset.grid) || 0;
+  var span = Number(input.max) - Number(input.min);
+  var frames = grid === 10 || grid === 5;
+  if (!grid || !span || (frames && !state.snap)) {
+    input.classList.remove("ticked");
+    return;
+  }
+  var ladder = [1, 2, 5], i = 0, k = 1;
+  while (span / (grid * k) > 30) { i++; k = ladder[i % 3] * Math.pow(10, Math.floor(i / 3)); }
+  input.style.setProperty("--tick", (grid * k / span * 100) + "%");
+  input.classList.add("ticked");
+}
+
+function graduateAll() {
+  Array.prototype.forEach.call(document.querySelectorAll("input[type=range]"), graduate);
+}
+
+function bindRange(id, write) {
+  var input = $(id);
+  input.addEventListener("input", function () {
+    if (!selIs("houses")) return;
+    var v = magnet(input, Number(input.value));
+    if (String(v) !== input.value) input.value = v;
+    edit(function (h) { write(h, v); });
+  });
+}
+
+/* A group of sliders behind a chevron: shut by default, its values printed on
+   the header, and what it remembers is the GROUP rather than the house — a
+   composer who opened the halo's shape is tuning halos, and having it shut
+   itself on the next house would be the panel arguing with them. */
+function bindFold(id) {
+  var box = $(id);
+  box.querySelector(".head").addEventListener("click", function () {
+    box.classList.toggle("open");
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   7. dragging and the grips
+
+   The frame is drawn at 720x1280 and SCALED to whatever room the window left,
+   so every pointer reading is divided by that scale before it becomes a design
+   coordinate. Reading the scale off the variable the transform was set from is
+   what keeps a resize mid-drag honest.
+
+   FOUR GESTURES, ONE HANDLER. A grip says which of them is starting; the house
+   itself is a move, which is the one a thumb reaches for without aiming. All
+   of them measure from THE FEET, because that is what the house is placed by:
+   a turn is around them, and a resize grows the house upward out of them
+   instead of sliding it off its pad.
+   --------------------------------------------------------------------------- */
+var SCALE = 1;
+
+function fitStage() {
+  var stage = document.querySelector(".stage");
+  var room = Math.min(stage.clientHeight - 60, 1280);
+  SCALE = Math.max(0.2, Math.min(1, room / 1280));
+  $("scaler").style.transform = "scale(" + SCALE + ")";
+  /* The scaler keeps the frame's own box, so the flex row has to be told what
+     the picture now measures or the columns float in empty space. */
+  $("scaler").style.width = (720 * SCALE) + "px";
+  $("scaler").style.height = (1280 * SCALE) + "px";
+  /* And the grips are told how much to grow back by, so they stay thumb-sized
+     however far the frame is zoomed out. */
+  $("frame").style.setProperty("--vg-u", (1 / SCALE).toFixed(3));
+}
+
+function snap(v) { return state.snap ? Math.round(v / state.snap) * state.snap : Math.round(v); }
+
+/* ---------------------------------------------------------------------------
+   THE PIPETTE THE PAGE DRAWS ITSELF
+
+   `EyeDropper` is Chrome's and Edge's. Firefox has never shipped it and Safari
+   has not either — Firefox's own eyedropper lives in its developer tools,
+   which a page cannot reach. So where the platform has none, the page samples
+   its OWN scene: the hub and the cuts are files served from this origin, so
+   they can be drawn into a canvas and read back a pixel at a time.
+
+   It is NARROWER than the platform's and the button says which one it is —
+   this one sees the SCENE, the native one sees the SCREEN. What it cannot see
+   is what CSS composites rather than paints: the halos, the badges, the label
+   plates and the light breathing over all of it. What it can see is the
+   picture, which is what a colour is taken off.
+
+   The canvas is redrawn on every pick and never cached: a composer reaches for
+   this after moving something, and a scene from before that is a colour taken
+   off a house that is no longer there.
+   --------------------------------------------------------------------------- */
+var Pipette = (function () {
+  var cv = document.createElement("canvas");
+  cv.width = 720; cv.height = 1280;
+  var ctx = cv.getContext("2d", { willReadFrequently: true });
+  var live = null;
+
+  function compose(then) {
+    var file = state.comp.ground && fileOf(state.comp.ground);
+    var nodes = Array.prototype.slice.call($("frame").querySelectorAll(".vg-house"));
+    ctx.clearRect(0, 0, 720, 1280);
+
+    /* THE HOUSES ARE DRAWN FROM THE NODES THAT ARE ON SCREEN, in their order,
+       so the painter's order is the one the frame already settled — and the
+       <img> is the one the browser has already decoded. */
+    function houses() {
+      nodes.forEach(function (n) {
+        var img = n.querySelector("img");
+        if (!img || !img.naturalWidth) return;
+        var h = state.comp.houses[Number(n.dataset.i)];
+        if (!h) return;
+        var hh = h.w * img.naturalHeight / img.naturalWidth;
+        ctx.save();
+        /* The feet are the anchor here exactly as they are in the CSS: the box
+           is centred on x and its BOTTOM sits on y, and a turn is around that
+           point. */
+        ctx.translate(h.x, h.y);
+        if (h.rot) ctx.rotate(h.rot * Math.PI / 180);
+        if (h.flip) ctx.scale(-1, 1);
+        ctx.drawImage(img, -h.w / 2, -hh, h.w, hh);
+        ctx.restore();
+      });
+      then();
+    }
+
+    if (!file) return houses();
+    var bg = new Image();
+    /* `cover`, the same word the stylesheet uses, worked out here because a
+       canvas has no such shorthand. */
+    bg.onload = function () {
+      var k = Math.max(720 / bg.naturalWidth, 1280 / bg.naturalHeight);
+      var w = bg.naturalWidth * k, hgt = bg.naturalHeight * k;
+      ctx.drawImage(bg, (720 - w) / 2, (1280 - hgt) / 2, w, hgt);
+      houses();
+    };
+    bg.onerror = houses;
+    bg.src = artUrl(file);
+  }
+
+  function design(e) {
+    var r = $("frame").getBoundingClientRect();
+    return { x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE };
+  }
+
+  /* A TRANSPARENT PIXEL IS NOT A COLOUR. Between two houses on a village with
+     no painted hub there is nothing to take, so the answer is null and the
+     preview keeps whatever it had rather than jumping to black. */
+  function read(p) {
+    var x = Math.round(p.x), y = Math.round(p.y);
+    if (x < 0 || y < 0 || x > 719 || y > 1279) return null;
+    var d = ctx.getImageData(x, y, 1, 1).data;
+    return d[3] ? rgb2hex(d[0], d[1], d[2]) : null;
+  }
+
+  function stop() {
+    if (!live) return;
+    live = null;
+    $("frame").classList.remove("picking");
+    say("");
+  }
+
+  function start(onMove, onPick, onCancel) {
+    stop();
+    compose(function () {
+      live = { move: onMove, pick: onPick, cancel: onCancel };
+      $("frame").classList.add("picking");
+      say("Click the scene to take its colour \u2014 ESCAPE to cancel.", "busy");
+    });
+  }
+
+  /* CAPTURED ON THE FRAME, so the sample runs BEFORE the drag handler and the
+     houses' own buttons: while the pipette is live the frame has one gesture
+     and moving a building is not it. */
+  $("frame").addEventListener("pointermove", function (e) {
+    if (!live) return;
+    var c = read(design(e));
+    if (c) live.move(c);
+  }, true);
+  $("frame").addEventListener("pointerdown", function (e) {
+    if (!live) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var c = read(design(e)), f = live.pick;
+    stop();
+    f(c);
+  }, true);
+  document.addEventListener("keydown", function (e) {
+    if (!live || e.key !== "Escape") return;
+    /* Stopped here, or the ESCAPE that cancels the sample would also shut the
+       board the colour was being picked for. */
+    e.preventDefault();
+    e.stopPropagation();
+    var f = live.cancel;
+    stop();
+    f();
+  }, true);
+
+  return { start: start, stop: stop };
+})();
+
+(function bindDrag() {
+  var frame = $("frame");
+  var drag = null;
+
+  function at(e) {
+    var r = frame.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE };
+  }
+
+  frame.addEventListener("pointerdown", function (e) {
+    var node = e.target.closest ? e.target.closest(".vg-house") : null;
+    if (!node) { state.sel = null; paintScene(); paintInspector(); return; }
+    var which = { list: node.dataset.list, i: Number(node.dataset.i) };
+    var h = list(which.list)[which.i];
+    var p = at(e);
+    var grip = e.target.closest(".vg-grip");
+    var kind = grip ? grip.dataset.grip : "move";
+
+    state.sel = which;
+    if (kind === "drop") { remove(); return; }
+
+    if (kind === "turn") {
+      drag = { h: h, mode: "turn", a0: Math.atan2(p.y - h.y, p.x - h.x), r0: h.rot || 0 };
+    } else if (kind === "size") {
+      /* MEASURED FROM THE FEET, which is where a house is anchored — so the
+         grip grows it out of the point it was placed by instead of sliding it
+         off its pad. */
+      drag = { h: h, mode: "size",
+               d0: Math.max(1, Math.hypot(p.x - h.x, p.y - h.y)),
+               w0: h.w };
+    } else {
+      drag = { h: h, mode: "move", dx: h.x - p.x, dy: h.y - p.y };
+    }
+    node.setPointerCapture(e.pointerId);
+    node.classList.add("dragging");
+    paintScene();
+    paintInspector();
+    e.preventDefault();
+  });
+
+  frame.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var p = at(e);
+    var h = drag.h;
+    if (drag.mode === "move") {
+      h.x = snap(p.x + drag.dx);
+      h.y = snap(p.y + drag.dy);
+    } else if (drag.mode === "turn") {
+      var deg = drag.r0 + (Math.atan2(p.y - h.y, p.x - h.x) - drag.a0) * 180 / Math.PI;
+      /* Snap turns rotation magnetic too, at 5°, which is what keeps a row of
+         houses from looking hand-shaken; shift puts it back upright. */
+      h.rot = e.shiftKey ? 0 : (state.snap ? Math.round(deg / 5) * 5 : Math.round(deg));
+      h.rot = Math.max(-180, Math.min(180, h.rot));
+      if (!h.rot) delete h.rot;
+    } else if (drag.mode === "size") {
+      var k = Math.hypot(p.x - h.x, p.y - h.y) / drag.d0;
+      h.w = Math.max(40, Math.min(720, state.snap ? snap(drag.w0 * k) : Math.round(drag.w0 * k)));
+    }
+    touched();
+    paintScene();
+    paintInspector();
+  });
+
+  function end() { drag = null; }
+  frame.addEventListener("pointerup", end);
+  frame.addEventListener("pointercancel", end);
+})();
+
+/* Arrows nudge the selection by one design pixel, ten with shift — the two
+   values a placement is ever off by. Ignored while a field has the focus, or
+   a slider could not be walked with the keyboard. */
+document.addEventListener("keydown", function (e) {
+  var t = e.target.tagName;
+  if (t === "INPUT" || t === "SELECT" || t === "TEXTAREA") return;
+  var h = sel();
+  if (!h) return;
+  var step = e.shiftKey ? 10 : 1;
+  if (e.key === "ArrowLeft") h.x -= step;
+  else if (e.key === "ArrowRight") h.x += step;
+  else if (e.key === "ArrowUp") h.y -= step;
+  else if (e.key === "ArrowDown") h.y += step;
+  else if (e.key === "Delete" || e.key === "Backspace") { remove(); return; }
+  else if (e.key === "d" || e.key === "D") { duplicate(); return; }
+  else return;
+  e.preventDefault();
+  touched();
+  paintScene();
+  paintInspector();
+});
+
+function remove() {
+  if (!state.sel) return;
+  list(state.sel.list).splice(state.sel.i, 1);
+  state.notified = {};
+  state.sel = null;
+  touched();
+  paintScene();
+  paintInspector();
+}
+
+function duplicate() {
+  var it = sel();
+  if (!it) return;
+  var c = clone(it);
+  c.x += 40; c.y += 40;
+  var L = list(state.sel.list);
+  L.push(c);
+  state.sel = { list: state.sel.list, i: L.length - 1 };
+  touched();
+  paintScene();
+  paintInspector();
+}
+
+/* ---------------------------------------------------------------------------
+   8. loading and saving
+
+   THREE PLACES A VILLAGE CAN COME FROM, and the segment says which one is on
+   screen rather than being a switch with a hidden cost. Picking one replaces
+   what is there, so it ASKS when there is unsaved work — losing a placed
+   village to a mis-click is the one mistake this page can make that nothing
+   undoes.
+   --------------------------------------------------------------------------- */
+function loadGame(slug) {
+  state.slug = slug;
+  state.sel = null;
+  state.notified = {};
+  var g = game();
+  /* THE MANIFEST WINS ON ARRIVAL. The draft is a sketch and the declaration is
+     what the build already ships, so a village that was pushed opens on what
+     the player would see. */
+  if (g && g.village) fromSource("manifest", true);
+  else if (CAT.drafts[slug]) fromSource("draft", true);
+  else fromSource("new", true);
+}
+
+function fromSource(which, forced) {
+  if (!forced && state.dirty &&
+      !window.confirm("There are unsaved changes on screen. Replace them with the " +
+                      which + " village?")) {
+    paintSource();
+    return;
+  }
+  var g = game();
+  state.source = which;
+  if (which === "manifest" && g && g.village) state.comp = clone(g.village);
+  else if (which === "draft" && CAT.drafts[state.slug]) state.comp = clone(CAT.drafts[state.slug]);
+  else {
+    state.source = "new";
+    /* A new village opens on the game's painted hub when it has one: the
+       picture is the reason the screen exists. */
+    var hub = g && g.grounds.filter(function (i) { return i.role === "backgroundHome"; })[0];
+    state.comp = { ground: hub ? hub.role : null, houses: [] };
+  }
+  /* TWO OLD SPELLINGS, REWRITTEN ON THE WAY IN so nothing below has to know
+     they existed. `breath: true` is what the first villages were written with,
+     before there was anything to choose between; `notify: "flicker"` is the
+     second, where the house and its light shared one field. Each is read as
+     what it named and put in the field that owns it now. */
+  state.comp.houses.forEach(function (h) {
+    if (h.breath && !h.notify) h.notify = "breath";
+    delete h.breath;
+    var lit = lightOf(h), pulse = pulseOf(h);
+    /* ...and the two numbers travel with the field they belonged to: a house
+       written as `notify: "flicker", every: 3` was naming the light's beat, so
+       it becomes the light's here rather than being left on a pulse the house
+       no longer has. */
+    if (lit && !pulse) {
+      if (h.every && !h.lightEvery) h.lightEvery = h.every;
+      if (h.delay && !h.lightDelay) h.lightDelay = h.delay;
+      delete h.every; delete h.delay;
+    }
+    if (lit) h.light = lit; else delete h.light;
+    if (pulse) h.notify = pulse; else delete h.notify;
+  });
+  state.sel = null;
+  settled();
+  paintSource();
+  paintPalettes();
+  paintGround();
+  paintScene();
+  paintInspector();
+}
+
+/* A source nothing is stored in is DISABLED and says so, rather than being a
+   button that answers a click with nothing — which is what "draft does not
+   work" looks like from the outside. */
+function paintSource() {
+  var g = game(), box = $("source");
+  box.innerHTML = "";
+  var names = { manifest: "Manifest", draft: "Draft", "new": "Empty" };
+  [["manifest", !!(g && g.village)],
+   ["draft", !!CAT.drafts[state.slug]],
+   ["new", true]].forEach(function (e) {
+    var b = document.createElement("button");
+    b.textContent = names[e[0]] + (e[1] || e[0] === "new" ? "" : " · none");
+    b.className = state.source === e[0] ? "on" : "";
+    b.disabled = !e[1];
+    b.title = e[1] ? "" : "nothing saved there yet";
+    b.addEventListener("click", function () { fromSource(e[0]); });
+    box.appendChild(b);
+  });
+  $("sourceName").textContent = "· " + names[state.source].toLowerCase();
+}
+
+function put(path, payload, done) {
+  fetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).then(function (r) { return r.json(); }).then(done)
+    .catch(function (e) { say(String(e.message || e), "bad"); });
+}
+
+function refresh(then) {
+  fetch("/api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
+    CAT = c;
+    if (then) then();
+  }).catch(function () {
+    $("lead").className = "hint offline";
+    $("lead").innerHTML = "This page needs its server: <code>make village</code>. " +
+      "Over <code>file://</code> it cannot list what a game owns, adopt a cut, " +
+      "nor write anything.";
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   9. wiring
+   --------------------------------------------------------------------------- */
+function boot() {
+  DOORS.forEach(function (d) {
+    var o = document.createElement("option");
+    o.value = d.key;
+    o.textContent = d.key === "decor" ? "(nothing)" : d.en;
+    $("fRole").appendChild(o);
+  });
+
+  $("game").addEventListener("change", function () {
+    if (state.dirty && !window.confirm("There are unsaved changes on screen. Leave them?")) {
+      $("game").value = state.slug;
+      return;
+    }
+    settled();
+    loadGame($("game").value);
+  });
+
+  /* NAMING THE DOOR CHANGES THE DOOR AND NOTHING ELSE. It used to delete the
+     halo of a house turned back into scenery, then — once that was wrong — to
+     hand a fresh default one to a house turned into a door. Both were the same
+     mistake in two sizes: a composer who shaped a halo, placed a badge and
+     picked a pulse, and only THEN said which screen the building opens, found
+     the panel under this select had moved. The order those decisions are taken
+     in is the composer's, and every field below is one they set on purpose. */
+  $("fRole").addEventListener("change", function () {
+    edit(function (h) { h.role = $("fRole").value; });
+  });
+
+  bindRange("fX", function (h, v) { h.x = v; });
+  bindRange("fY", function (h, v) { h.y = v; });
+  bindRange("fW", function (h, v) { h.w = v; });
+  bindRange("fR", function (h, v) { if (v) h.rot = v; else delete h.rot; });
+  bindRange("fHW", function (h, v) { h.halo = haloOf(h); h.halo.w = v; });
+  bindRange("fHH", function (h, v) { h.halo = haloOf(h); h.halo.h = v; });
+  bindRange("fHD", function (h, v) { h.halo = haloOf(h); h.halo.dy = v; });
+  /* A breath back on the crossing over seven is written as nothing, the same
+     rule the beat itself follows: a house that took the default carries no
+     number to keep in step with it. */
+  bindRange("fBreath", function (h, v) {
+    var free = Math.round((h.every || specOf(PULSES, pulseOf(h)).sec) / 7 * 10) / 10;
+    if (v === free) delete h.breathEvery; else h.breathEvery = v;
+  });
+  bindRange("fBX", function (h, v) { h.badge = badgeOf(h); h.badge.dx = v; });
+  bindRange("fBY", function (h, v) { h.badge = badgeOf(h); h.badge.dy = v; });
+  /* An `every` back on the pulse's own default is written as nothing, so a
+     house that took the pulse as it comes carries no number to keep in step. */
+  bindRange("fEvery", function (h, v) {
+    if (v === specOf(PULSES, pulseOf(h)).sec) delete h.every; else h.every = v;
+  });
+  bindRange("fDelay", function (h, v) { if (v) h.delay = v; else delete h.delay; });
+  bindRange("fLightEvery", function (h, v) {
+    if (v === specOf(LIGHTS, lightOf(h)).sec) delete h.lightEvery; else h.lightEvery = v;
+  });
+  bindRange("fLightDelay", function (h, v) { if (v) h.lightDelay = v; else delete h.lightDelay; });
+
+  ["foldPlace", "foldHalo", "foldLight", "foldBadge", "foldPulse"].forEach(bindFold);
+
+  /* THE HALO'S OWN COLOUR. The presets are the game's two theme colours and
+     white, which is where a light on a painted scene is tried first: an accent
+     under six buildings makes them read as six copies of one object. */
+  colourField($("fHC"),
+    function () { var h = house(); return (h && h.halo && h.halo.color) || accent(); },
+    function (v) { edit(function (h) { h.halo = haloOf(h); h.halo.color = v; }); },
+    function () {
+      var g = game();
+      return [accent(), (g && g.accent2) || accent(), "#ffffff", "#ffcf8f", "#7ea6ff", "#ff6b7d"];
+    });
+
+  $("fFlip").addEventListener("click", function () {
+    edit(function (h) { if (h.flip) delete h.flip; else h.flip = true; });
+  });
+  $("fHalo").addEventListener("click", function () {
+    edit(function (h) { if (h.halo) delete h.halo; else h.halo = clone(DEFAULTS.halo); });
+  });
+  $("fBadge").addEventListener("click", function () {
+    edit(function (h) { if (h.badge) delete h.badge; else h.badge = clone(DEFAULTS.badge); });
+  });
+  /* NOTIFY IS A PREVIEW AND NOT A FIELD. Whether a house has something to say
+     is the shell's answer at runtime — a daily gift waiting, a sticker to
+     draw — so this only turns the look on to be judged, and never touches the
+     composition. */
+  $("fNotify").addEventListener("click", function () {
+    if (!selIs("houses")) return;
+    state.notified[state.sel.i] = !state.notified[state.sel.i];
+    paintScene();
+    paintInspector();
+  });
+
+  $("fCycle").addEventListener("click", function () {
+    state.comp.life = cycle() ? null : { cycle: clone(CYCLE_DEFAULT) };
+    touched();
+    paintLife();
+  });
+  colourField($("cWarm"),
+    function () { return (cycle() || CYCLE_DEFAULT).warm; },
+    function (v) { cycleEdit(function (c) { c.warm = v; }); },
+    function () { return ["#ffcf8f", "#ffe3b8", "#ff9d5c", "#fff2d0"]; });
+  colourField($("cCold"),
+    function () { return (cycle() || CYCLE_DEFAULT).cold; },
+    function (v) { cycleEdit(function (c) { c.cold = v; }); },
+    function () { return ["#16234f", "#0d1430", "#2a3f7a", "#123a4a"]; });
+  /* THE LIGHT'S TWO TRACKS ARE MAGNETIC LIKE EVERY OTHER ONE. They were the
+     only pair on the page that was not, because they write the scene rather
+     than a house and so never went through `bindRange` — which is where the
+     magnet lived. It is the input's own now, so a track is magnetic because it
+     carries a grid and not because of which handler happens to read it. */
+  function bindCycle(id, write) {
+    var input = $(id);
+    input.addEventListener("input", function () {
+      var v = magnet(input, Number(input.value));
+      if (String(v) !== input.value) input.value = v;
+      cycleEdit(function (c) { write(c, v); });
+    });
+  }
+  bindCycle("cAmt", function (c, v) { c.amount = v; });
+  bindCycle("cSec", function (c, v) { c.seconds = v; });
+
+  $("bDupe").addEventListener("click", duplicate);
+  $("bDel").addEventListener("click", remove);
+
+  /* ONE BUTTON FOR THE GRID AND THE SNAP. They were two, and the pair could be
+     set to the one state that makes no sense — a magnetism running under a
+     frame with nothing drawn on it, which reads as a placement the page keeps
+     correcting for no reason. The grid draws exactly what the snap lands on,
+     so it IS the snap. */
+  $("bGrid").addEventListener("click", function () {
+    state.grid = !state.grid;
+    state.snap = state.grid ? 10 : 0;
+    $("frame").classList.toggle("grid", state.grid);
+    /* The three tracks whose grid is the frame's lose their notches with it. */
+    graduateAll();
+    seg("bGrid", state.grid);
+  });
+  /* THE LABELS ARE THE PLAYER'S SWITCH, previewed. In the build they are a row
+     in OPTIONS and they are off until it is asked for (menu.js,
+     Settings.labels) — so this is what a player who asked sees, and the
+     village is composed against the state they get by default. */
+  $("bLabels").addEventListener("click", function () {
+    state.labels = !state.labels;
+    seg("bLabels", state.labels);
+    paintScene();
+  });
+  $("bNotifyAll").addEventListener("click", function () {
+    state.notifyAll = !state.notifyAll;
+    seg("bNotifyAll", state.notifyAll);
+    paintScene();
+    paintInspector();
+  });
+
+  $("bDraft").addEventListener("click", function () {
+    put("/api/draft", { slug: state.slug, comp: state.comp }, function (r) {
+      if (r.error) return say(r.error, "bad");
+      CAT.drafts[state.slug] = clone(state.comp);
+      state.source = "draft";
+      settled();
+      paintSource();
+      say("Draft saved in lab/village-presets.json — nothing built, nothing shipped.", "ok");
+    });
+  });
+
+  $("bPush").addEventListener("click", function () {
+    if (!state.comp.houses.length) return say("Nothing to push: the village is empty.", "bad");
+    say("Writing the manifest and rebuilding…", "busy");
+    put("/api/manifest", { slug: state.slug, comp: state.comp }, function (r) {
+      if (r.error) return say(r.error + (r.dropped && r.dropped.length ? " — " + r.dropped.join("; ") : ""), "bad");
+      var msg = "web.village written" + (r.version ? ", version → " + r.version : "") +
+                ". Rebuilt: " + (r.rebuilt || []).join(", ") + ".";
+      if (r.dropped && r.dropped.length) msg += " Dropped: " + r.dropped.join("; ") + ".";
+      say(msg, r.dropped && r.dropped.length ? "bad" : "ok");
+      settled();
+      refresh(function () { state.source = "manifest"; paintSource(); });
+    });
+  });
+
+  $("bReload").addEventListener("click", function () {
+    refresh(function () { loadGame(state.slug); say("Reloaded from disk.", "ok"); });
+  });
+
+  $("bClear").addEventListener("click", function () {
+    if (state.comp.houses.length && !window.confirm("Remove every house from the frame?")) return;
+    state.comp.houses = [];
+    state.sel = null;
+    state.notified = {};
+    touched();
+    paintScene();
+    paintInspector();
+    say("Cleared on screen only — nothing is written until Save or Push.");
+  });
+
+  $("frame").classList.toggle("grid", state.grid);
+
+  window.addEventListener("resize", fitStage);
+
+  /* Every track is notched from its own `data-grid`, once, here — the two that
+     are re-ranged when a pulse is picked say so again themselves. */
+  graduateAll();
+  fitStage();
+
+  refresh(function () {
+    var slugs = Object.keys(CAT.games).sort(function (a, b) {
+      return CAT.games[a].order - CAT.games[b].order || a.localeCompare(b);
+    });
+    var pick = $("game");
+    pick.innerHTML = "";
+    slugs.forEach(function (s) {
+      var o = document.createElement("option");
+      o.value = s;
+      o.textContent = CAT.games[s].title + (CAT.games[s].houses.length ? "  ·  " + CAT.games[s].houses.length : "");
+      pick.appendChild(o);
+    });
+    /* The game to open on is the one with a house sheet already cut: on a repo
+       where twelve of the thirteen have no artwork yet, opening on the first
+       slug alphabetically shows an empty page and says nothing. */
+    var ready = slugs.filter(function (s) { return CAT.games[s].houses.length; });
+    pick.value = ready[0] || slugs[0];
+    loadGame(pick.value);
+  });
+}
+
+function haloOf(h) { return h.halo === true || !h.halo ? clone(DEFAULTS.halo) : h.halo; }
+function badgeOf(h) { return h.badge === true || !h.badge ? clone(DEFAULTS.badge) : h.badge; }
+
+boot();
+</script>
+</body>
+</html>

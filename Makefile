@@ -6,6 +6,7 @@
 # integration on every push to main, and needs nothing from this file.
 #
 #   make check   the three build gates, before a commit
+#   make test [GAME=<slug>]     the web shell's view system, in a real build
 #   make push    check, push, then publish the 13 to itch
 #   make itch    re-publish to itch without pushing
 #   make site    assemble dist/site locally
@@ -13,6 +14,7 @@
 #   make store   the store card composer, at http://localhost:8091/
 #   make events  the callouts / cues bench, at http://localhost:8092/
 #   make text    the copy desk, at http://localhost:8093/
+#   make village the village composer, at http://localhost:8094/
 #   make meta    the itch page copy, one file per game
 #   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
 #   make map   [GAME=<slug>]   just the eleventh, the level map
@@ -24,12 +26,19 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check push itch site serve store events text meta shots map ng android
+.PHONY: help check test push itch site serve store events text village meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
 help:
 	@grep -E '^#   make ' Makefile | sed 's/^# \{0,1\}//'
+
+# The one thing in this repo that is checked by running it rather than by
+# comparing bytes: the view stack, the modal layer, the wallet band and what
+# ESCAPE does are all what the DOM does, and none of it can be read off a
+# source file. It builds the game it drives, so it needs nothing else first.
+test:
+	node tools/test/views.mjs $(GAME)
 
 # `update.mjs` builds every artifact and both catalogues, then runs the three
 # checks Actions used to run: the artifacts match their sources, the catalogues
@@ -89,6 +98,15 @@ events:
 # `node tools/lab/scan-text.mjs <slug>` is the same list as text, no browser.
 text:
 	node tools/lab/serve-text.mjs
+
+# A game's title screen laid out as a PLACE: a painted hub, and the game's own
+# houses standing on it, each one the door to a screen the web shell already
+# has. Same two reasons for a server as the three above — it lists what a game
+# owns, and APPLY writes: a draft into lab/village-presets.json, or `web.village`
+# into games/<slug>/manifest.json, with the patch bump and the rebuild that
+# touching a game's sources owes (CLAUDE.md).
+village:
+	node tools/lab/serve-village.mjs
 
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta

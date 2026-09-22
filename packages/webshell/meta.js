@@ -72,6 +72,8 @@
   "use strict";
 
   var W = window.__WEB__;
+  var VW = window.__VIEW__;
+  var MD = window.__MODAL__;
   if (!W) return;                       // not a web build
 
   var CONFIG = W.CONFIG;
@@ -88,7 +90,7 @@
     en: {
       coins: "Coins", tickets: "Tickets", level: "Level", lvShort: "Lv {n}",
       stickersEntry: "Stickers",
-      album: "Stickers", shop: "Shop",
+      album: "Stickers", shop: "Shop", map: "Levels", home: "Home", scores: "Leaderboard",
       owned: "{n}/{t}", newSticker: "New sticker!", dupe: "Double",
       gotCoins: "+{n} coins", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
       gotXp: "+{n} xp", levelUp: "Level {n}!", levelUpNote: "A free ticket for the machine.",
@@ -96,7 +98,6 @@
       bonusTitle: "Three-star bonus",
       boostMul: "Multiply your {k}", boostMore: "One more", boostCost: "Watch an ad",
       mulXp: "xp", mulCoins: "coins", mulTicket: "tickets",
-      boostNo: "No thanks",
       adOfferBtn: "Watch an ad",
       adTitle: "Advertisement", adNote: "No ad network is wired in yet — this is a placeholder.",
       adSkip: "Claim", adWait: "{n}",
@@ -112,7 +113,7 @@
     fr: {
       coins: "Pièces", tickets: "Tickets", level: "Niveau", lvShort: "Nv {n}",
       stickersEntry: "Stickers",
-      album: "Stickers", shop: "Boutique",
+      album: "Stickers", shop: "Boutique", map: "Niveaux", home: "Accueil", scores: "Classement",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
       gotCoins: "+{n} pièces", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
       gotXp: "+{n} xp", levelUp: "Niveau {n} !", levelUpNote: "Un ticket offert pour la machine.",
@@ -120,7 +121,6 @@
       bonusTitle: "Bonus trois étoiles",
       boostMul: "Multiplier tes {k}", boostMore: "Un de plus", boostCost: "Voir une pub",
       mulXp: "xp", mulCoins: "pièces", mulTicket: "tickets",
-      boostNo: "Non merci",
       adOfferBtn: "Voir une pub",
       adTitle: "Publicité", adNote: "Aucune régie n’est branchée — ceci est un substitut.",
       adSkip: "Récupérer", adWait: "{n}",
@@ -142,7 +142,7 @@
   var up = W.upper;
   var CAPS = ["coins", "tickets", "level", "lvShort", "stickersEntry", "album",
     "shop", "newSticker", "dupe", "gotCoins", "gotTickets", "gotTicketsN",
-    "gotXp", "levelUp", "pickOne", "bonusTitle", "boostMul", "boostMore", "boostNo",
+    "gotXp", "levelUp", "pickOne", "bonusTitle", "boostMul", "boostMore",
     "mulXp", "mulCoins", "mulTicket",
     "adOfferBtn", "adTitle", "adSkip", "giftGot", "collect", "tapCollect",
     "rarity1", "rarity2", "rarity3", "rarity4", "wonBand", "wonClean",
@@ -292,9 +292,9 @@
   /* ── 2. the save ──────────────────────────────────────────────────────── */
 
   /* One key per game, beside the map's own `prog:<slug>`, and kept apart from
-     it for one concrete reason: erasing the progression from OPTIONS throws a
-     climb away, and it must not also throw away a wallet the player may have
-     paid attention to. Wiping the two is two decisions.
+     it because the two are read and written on different screens and at
+     different rates — not because one outlives the other: OPTIONS erases both
+     at once, and a wallet is no more precious than the climb that filled it.
 
      c coins · t tickets · x xp · s stickers {index: count} · a milestones
      already paid, by key · d the daily strip's own state (daily.js writes it
@@ -392,6 +392,7 @@
     var after = playerLevel();
     if (after > before) save.t += (after - before);
     persist();
+    openXp();
     return after - before;
   }
 
@@ -756,44 +757,38 @@
                         (opts.lvHost ? " split" : "") +
                         (opts.transient ? " transient" : ""));
 
-    /* WHICH CHIP IS A DOOR, AND TO WHERE, is the SCREEN's business — the
-       wallet is the same two numbers on four of them and what a tap should do
-       is not the same question twice:
+    /* WHICH CHIP IS A DOOR, AND TO WHERE. Every chip of the band is one, and
+       every one of them leads to the same screen from every screen:
 
-         undefined   neither is a door (the end screen: nothing to leave for)
-         true        coins → the shop, tickets → the album (the map's header)
-         "shop"      both → the shop (the album, where "go to the album" is not
-                     a door and the unseen dot has nothing left to announce)
-         "album"     tickets → the album, coins inert (the shop, where the coin
-                     chip's door is the screen it is standing on)
+         LV     → HOME, the title screen    COIN  → the shop
+         TICKET → the collection            STAR  → the map
 
-       A chip that is not a door is a `div`: a button that does nothing is a
-       tap the player learns to stop making. */
+       which is the whole of this front end's navigation — there is no back
+       arrow and no home button anywhere, because the four numbers the player
+       is already reading are the four ways to go. THE LEVEL CHIP IS THE WAY
+       OUT: it is the one number on the band that is about the player rather
+       than about what they can spend, it is first in the row, and it goes
+       where a home button would have. A chip whose destination is the screen
+       it is standing on is INERT rather than missing: the row must not change
+       shape as the player walks it, and a number that moved between screens
+       would be a number to find again.
+
+       `doors: "auto"` is the band's mode and the only one left. The end
+       screen's transient wallet has no doors at all — it is a target for a
+       flight, not a menu. */
     var chips = el("div", "mt-chips");
-    var shopOnly = opts.doors === "shop";
-    var albumOnly = opts.doors === "album";
-    var coinDoor = !!opts.doors && !albumOnly;
-    var tickDoor = !!opts.doors;
+    var auto = opts.doors === "auto";
+
     function chip(kind, pic, door) {
       return el(door ? "button" : "div", "mt-chip " + kind + (door ? " door" : ""),
                 icon(pic, "mt-ci") + '<b></b>');
     }
-    var cCoins = chip("coins", "coin", coinDoor);
-    var cTick = chip("tickets", "ticket", tickDoor);
-    function toShop() { if (window.__ALBUM__) window.__ALBUM__.openShop(); }
-    function toAlbum() { if (window.__ALBUM__) window.__ALBUM__.open(); }
-    if (coinDoor) {
-      cCoins.setAttribute("aria-label", T.shop);
-      cCoins.addEventListener("click", toShop);
-    }
-    if (tickDoor) {
-      cTick.setAttribute("aria-label", shopOnly ? T.shop : T.album);
-      if (shopOnly) {
-        cTick.addEventListener("click", toShop);
-      } else {
-        cTick.appendChild(el("i", "mt-badge"));
-        cTick.addEventListener("click", toAlbum);
-      }
+    var cCoins = chip("coins", "coin", auto);
+    var cTick = chip("tickets", "ticket", auto);
+    if (auto) {
+      cTick.appendChild(el("i", "mt-badge"));
+      cCoins.addEventListener("click", function () { goTo("shop"); });
+      cTick.addEventListener("click", function () { goTo("sticker"); });
     }
     chips.appendChild(cCoins);
     chips.appendChild(cTick);
@@ -801,32 +796,105 @@
     var lvBox = null;
     if (opts.full) {
       /* The bolt in front of "LV 7" is the same one an xp reward hands over,
-         which is what ties the number to the bar under it: the row is read as
-         "this is what experience buys" rather than as a second score. */
-      lvBox = el("div", "mt-lv",
+         which is what ties the number to the bar beside it: the chip is read
+         as "this is what experience buys" rather than as a second score. It
+         is FIRST in the row and it is the door to the ranking, because the
+         player's own level is the one number on this band that is about them
+         rather than about what they can spend. */
+      lvBox = el(auto ? "button" : "div", "mt-lv" + (auto ? " door" : ""),
         icon("xp", "mt-lvi") +
-        '<span class="lbl"></span><span class="bar"><u></u></span><span class="pc"></span>');
+        '<span class="lbl"></span><span class="bar"><u></u></span>');
+      if (auto) lvBox.addEventListener("click", function () { goTo("ranking"); });
+    }
+
+    /* THE COLLECTION'S COUNT, and it is the album's own header moved into the
+       band. That screen carried a name and an `x / 20` over a row that was
+       already saying what the player owns: the name is what they tapped to get
+       here, and the count is one of those numbers. So it is a chip like the
+       rest, the album has no header left at all, and the height it was taking
+       goes to the machine, the odds and the twenty tiles. */
+    var cCount = null;
+    if (opts.countHost) {
+      cCount = chip("collection", "sticker", auto);
+      if (auto) cCount.addEventListener("click", function () { goTo("sticker"); });
+      opts.countHost.appendChild(cCount);
+    }
+
+    /* THE BOARD'S OWN STARS, last in the row. They are not spent and not
+       earned by the wallet, which is why they sit at the far end of it — but
+       they are what the player owns on THIS game, and the map is where they
+       come from. A game with no levels has none and the chip is not built. */
+    var cStars = null;
+    if (opts.stars && window.__LEVELS__ && window.__LEVELS__.active()) {
+      cStars = chip("stars", "star", auto);
+      if (auto) cStars.addEventListener("click", function () { goTo("map"); });
     }
 
     bar.appendChild(chips);
     if (lvBox) (opts.lvHost || bar).appendChild(lvBox);
+    if (cStars) (opts.starHost || bar).appendChild(cStars);
     box.appendChild(bar);
 
     var w = {
       node: bar,
+      /* The row the chips, the level and the stars all sit in — they are
+         siblings rather than children, because the row's ORDER is the
+         navigation and `wallet` does not own it. `veilAll` sweeps from here. */
+      root: opts.root || box,
       transient: !!opts.transient,
+      /* The house chip is built by the ROW and not here — it is not a number —
+         but `bandDoors` greys it with the others, so it travels along. */
+      home: opts.homeHost || null,
       lvBox: lvBox,
       coins: cCoins.querySelector("b"),
       tickets: cTick.querySelector("b"),
       badge: cTick.querySelector(".mt-badge"),
+      count: cCount,
+      countN: cCount ? cCount.querySelector("b") : null,
+      stars: cStars,
+      starN: cStars ? cStars.querySelector("b") : null,
       lvl: lvBox ? lvBox.querySelector(".lbl") : null,
-      bar: lvBox ? lvBox.querySelector(".bar u") : null,
-      pc: lvBox ? lvBox.querySelector(".pc") : null
+      bar: lvBox ? lvBox.querySelector(".bar u") : null
     };
     wallets.push(w);
     paintWallet(w);
     return w;
   }
+
+  /* THE LEVEL CHIP IS AN ICON UNTIL IT HAS SOMETHING TO SAY. A bar standing
+     open on every screen is a bar nobody reads — it moves once a round, and
+     the rest of the time it is the widest thing on the band saying the same
+     number it said yesterday. So it is the bolt alone, and it OPENS for a few
+     seconds when the xp moves: the moment it is worth the width is the moment
+     it has just changed.
+
+     The end screen's row is not collapsed at all — it is veiled instead, and a
+     chip that arrives with the reward it is being paid has nothing to open. */
+  var xpShut = null;
+  var XP_OPEN_MS = 3400;
+
+  function openXp() {
+    if (!band || !band.lvBox) return;
+    band.lvBox.classList.add("wide");
+    clearTimeout(xpShut);
+    xpShut = setTimeout(function () {
+      if (band && band.lvBox) band.lvBox.classList.remove("wide");
+    }, XP_OPEN_MS);
+  }
+
+  /* A chip's destination, and the one rule about it: a chip standing on its
+     own screen does nothing. Written once here rather than four times above,
+     because the inert state and the tap are the same question. */
+  function goTo(view) {
+    if (VW.top() === view) return;
+    if (view === "shop") { if (window.__ALBUM__) window.__ALBUM__.openShop(); return; }
+    if (view === "sticker") { if (window.__ALBUM__) window.__ALBUM__.open(); return; }
+    if (view === "map") { if (window.__LEVELS__) window.__LEVELS__.open(); return; }
+    VW.go(view);
+  }
+
+  /* The star chip leads to the map on a game that has one, and is not built at
+     all on a game that does not. */
 
   /* What the wallet holds NOW, by kind — read before a gift is granted, so
      the landing has something to count up from. xp is in here because its
@@ -850,7 +918,6 @@
     if (a.level === b.level) { paintWallet(w); return; }
 
     w.lvl.textContent = "LV " + a.level;
-    w.pc.textContent = num(a.need) + " / " + num(a.need);
     w.bar.style.width = "100%";
     setTimeout(function () {
       /* Back to nothing WITHOUT a transition, or the reset is the same
@@ -883,7 +950,15 @@
       var p = levelAt(w.holdXp == null ? save.x : w.holdXp);
       w.lvl.textContent = "LV " + p.level;
       w.bar.style.width = (100 * p.into / p.need).toFixed(1) + "%";
-      w.pc.textContent = num(p.into) + " / " + num(p.need);
+    }
+    if (w.countN) w.countN.textContent = ownedCount() + "/" + TOTAL;
+    /* THE BOARD, x / 90 — and it burns the way the map's own roads do once it
+       is finished: at that point the number stops being a climb and becomes a
+       result. */
+    if (w.starN && window.__LEVELS__) {
+      var LV = window.__LEVELS__;
+      w.starN.textContent = LV.total() + "/" + LV.max();
+      w.stars.classList.toggle("full", LV.perfect());
     }
   }
   function paintWallets() {
@@ -1037,7 +1112,7 @@
      chip off the next round's screen. */
   function veilAll(w) {
     if (!w || !w.node) return;
-    var all = w.node.querySelectorAll(".mt-chip");
+    var all = (w.root || w.node).querySelectorAll(".mt-chip, .mt-lv");
     for (var i = 0; i < all.length; i++) {
       all[i].mtSeen = 0;
       all[i].classList.remove("shown");
@@ -1336,12 +1411,12 @@
 
   function runLv(w, before, done) {
     if (!w || !w.lvBox) { if (done) done(); return; }
+    openXp();                            // the bar is about to move: show it
     var a = levelAt(before), b = levelAt(save.x);
 
     function step(label, need, into, next) {
       w.lvBox.classList.add("no-anim");
       w.lvl.textContent = "LV " + label;
-      w.pc.textContent = num(into) + " / " + num(need);
       w.bar.style.width = "0%";
       void w.lvBox.offsetWidth;              // the empty state, resolved
       w.lvBox.classList.remove("no-anim");
@@ -1413,6 +1488,13 @@
      be what a thumb lands on by missing. The walk up to the box is manual
      rather than `closest("button")`, which is the same reason everything else
      here is ES5-ish. */
+  /* WHY THIS SURVIVED THE VIEW SYSTEM. A modal declares `dismiss` and `esc`
+     when it opens (packages/webshell/view.js), which is right for every card
+     in this shell but one: the ceremony's card CHANGES CHARACTER halfway
+     through. Three boxes are a choice and answer to neither a tap nor a key;
+     the reward that replaces them has nothing left to decide and answers to
+     both. So the card opens closed to both and arms itself here, on the beat
+     it stops asking. */
   function tapToDismiss(box, fn) {
     box.addEventListener("click", function (e) {
       var n = e.target;
@@ -1454,35 +1536,27 @@
      `art` is a node the caller built, because what goes in the middle is the
      one thing these cards do not agree on. It is dismissed by tapping it
      anywhere, and carries no button at all — see below. */
+  /* NO BUTTON. This card asks nothing and offers no choice — it explains — so
+     the whole of it is the way out, exactly like the prize card next to it. A
+     CLOSE button under a card that already closes on any tap is a control that
+     does what a miss does, and it takes the eye off the one thing the card is
+     there to show. `dismiss` is what says that to the view system, which owns
+     the scrim, the stack, the fade and the key (packages/webshell/view.js). */
   function note(opts) {
-    var box = el("div", "mt-modal note");
-    var card = el("div", "mt-card");
-    if (opts.eyebrow) card.appendChild(el("div", "mt-eyebrow", opts.eyebrow));
-    card.appendChild(el("h3", "mt-h", opts.title));
-    if (opts.art) card.appendChild(opts.art);
-    var plate = multArt(opts.mult);
-    if (plate) card.appendChild(el("div", "mt-mult-row", plate));
-    if (opts.name) card.appendChild(el("div", "mt-rw-name", opts.name));
-    if (opts.sub) card.appendChild(el("p", "mt-sub", opts.sub));
-
-    function close() {
-      box.classList.remove("on");
-      setTimeout(function () {
-        if (box.parentNode) box.parentNode.removeChild(box);
-        if (opts.done) opts.done();
-      }, 200);
-    }
-
-    /* NO BUTTON. This card asks nothing and offers no choice — it explains —
-       so the whole of it is the way out, exactly like the prize card next to
-       it. A CLOSE button under a card that already closes on any tap is a
-       control that does what a miss does, and it takes the eye off the one
-       thing the card is there to show. */
-    box.appendChild(card);
-    tapToDismiss(box, close);
-    keyOut(close);
-    frame().appendChild(box);
-    requestAnimationFrame(function () { box.classList.add("on"); });
+    return MD.open({
+      kind: "note",
+      dismiss: true,
+      onClose: opts.done || null,
+      fill: function (card) {
+        if (opts.eyebrow) card.appendChild(el("div", "mt-eyebrow", opts.eyebrow));
+        card.appendChild(el("h3", "mt-h", opts.title));
+        if (opts.art) card.appendChild(opts.art);
+        var plate = multArt(opts.mult);
+        if (plate) card.appendChild(el("div", "mt-mult-row", plate));
+        if (opts.name) card.appendChild(el("div", "mt-rw-name", opts.name));
+        if (opts.sub) card.appendChild(el("p", "mt-sub", opts.sub));
+      }
+    });
   }
 
   /* ── 9. the three-box gift ────────────────────────────────────────────── */
@@ -1495,7 +1569,13 @@
      The rewards are rolled BEFORE the boxes are drawn and the pick is an
      index, so the box the finger lands on is the box that pays: a reward
      decided after the tap is a slot machine wearing a choice. */
-  var giftBox = null;
+  /* The ceremony's card is a modal of the view system like every other one
+     (packages/webshell/view.js); `giftM` is its handle and `giftBox` is the
+     node, which the two helpers above watch to know the card they were bound
+     to is still the card on screen. Neither dismissed nor escaped while the
+     THREE BOXES are up — a choice has no default — and both are armed by the
+     reveal, which has nothing left to decide. */
+  var giftM = null, giftBox = null;
 
   /* The painted boxes, injected by the builder for a game with `web.meta`
      (CONFIG.shellArt, out of assets/image/shell/). Three colours, and each one
@@ -1540,8 +1620,9 @@
     var rewards = [randomReward(rich), randomReward(rich), randomReward(rich)], gi;
     if (mult > 1) for (gi = 0; gi < 3; gi++) rewards[gi] = multiply(rewards[gi], mult);
 
-    giftBox = el("div", "mt-modal gift");
-    var card = el("div", "mt-card");
+    giftM = MD.open({ kind: "gift", dismiss: false, esc: false });
+    giftBox = giftM.box;
+    var card = giftM.card;
     /* An EYEBROW over the title, for the caller that has something to say
        about WHY this card is open. The daily strip is the one: it is drawn
        wordless inside the menu, so what it is and which day of the run this is
@@ -1615,9 +1696,6 @@
       row.appendChild(b);
     });
     card.appendChild(row);
-    giftBox.appendChild(card);
-    frame().appendChild(giftBox);
-    requestAnimationFrame(function () { giftBox.classList.add("on"); });
   }
 
   /* ONE PRIZE, NO CHOICE — the same card the boxes end on, opened straight
@@ -1628,12 +1706,9 @@
   function prize(opts) {
     opts = opts || {};
     closeGift();
-    giftBox = el("div", "mt-modal gift");
-    var card = el("div", "mt-card");
-    giftBox.appendChild(card);
-    frame().appendChild(giftBox);
-    requestAnimationFrame(function () { giftBox.classList.add("on"); });
-    reveal(card, opts.reward, opts);
+    giftM = MD.open({ kind: "gift", dismiss: false, esc: false });
+    giftBox = giftM.box;
+    reveal(giftM.card, opts.reward, opts);
   }
 
   /* What was in the box, then the one offer that follows it. The tripling is
@@ -1782,45 +1857,26 @@
        card that will not close. The tap on the card IS the collect, and one
        line says so.
 
-       WHERE AN OFFER IS STILL ON THE TABLE the pair stays, on ONE line: the
-       ad, and beside it a way past it. That second control is an ARROW and no
-       longer the words "no thanks" — a refusal written out reads as the other
-       half of a decision, at the same weight as the thing it refuses, and
-       this is not a decision the card should be dressing up. It is the way
-       on, it is the same arrow the end screen uses for the way on, and it is
-       quiet. The words survive as its label for a screen reader, where a bare
-       arrow says nothing.
-
-       It is not the only way past: a tap anywhere on the card or on the frame
-       around it collects the gift as it stands, and so does ENTER, SPACE or
-       ESCAPE. The arrow is what SAYS so — nothing else on the card admits
-       that the ad can simply be walked past. */
-    if (opts.boost !== false) {
-      /* IT IS THE END SCREEN'S OWN BUTTON. Same circle, same hairline, same
-         dark fill, same arrow — the way on is one control in this front end
-         and a player meets it twice within a couple of seconds. `eo-act` is
-         what carries that look (menu.css); `mt-nav` only brings it down to
-         the height of the row it stands in. */
-      var no = el("button", "eo-act mt-nav", icon("next", "eo-ico"));
-      no.setAttribute("aria-label", T.boostNo);
-      no.addEventListener("click", take);
-      acts.appendChild(no);
-      card.appendChild(acts);
-      keyOut(take);
-    } else {
-      card.appendChild(el("p", "mt-tap", T.tapCollect));
-      keyOut(take);
-    }
+       WHERE AN OFFER IS STILL ON THE TABLE there is ONE control and it is the
+       ad. There used to be a second beside it — an arrow, the way past — and
+       it was a control for what a miss already does: a tap anywhere on the
+       card or on the frame around it collects the gift as it stands, and so
+       does ENTER, SPACE or ESCAPE. Two controls where one of them is "do
+       nothing" is a decision the card was dressing up, and it halved the
+       weight of the only thing on it worth reading. The line under it is what
+       says the ad can be walked past, and a line is not a control. */
+    if (acts.firstChild) card.appendChild(acts);
+    card.appendChild(el("p", "mt-tap", T.tapCollect));
+    keyOut(take);
     /* The reward is open: from here a tap anywhere collects it. Never during
        the pick — three boxes are a choice, and a choice has no default. */
     if (giftBox) tapToDismiss(giftBox, take);
   }
 
   function closeGift() {
-    if (!giftBox) return;
-    var n = giftBox; giftBox = null;
-    n.classList.remove("on");
-    setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 220);
+    if (!giftM) return;
+    var m = giftM; giftM = null; giftBox = null;
+    m.close();
   }
 
   /* ── 10. the rewarded ad — a placeholder that says so ─────────────────── */
@@ -1833,38 +1889,43 @@
   var AD_SECONDS = 4;
 
   function ad(cb) {
-    var box = el("div", "mt-modal ad");
-    var card = el("div", "mt-card");
-    card.appendChild(el("h3", "mt-h", T.adTitle));
-    var slot = el("div", "mt-adslot", '<span class="bar"></span>');
-    card.appendChild(slot);
-    card.appendChild(el("p", "mt-sub small", T.adNote));
-    var acts = el("div", "mt-acts");
-    var go = el("button", "mt-btn");
-    go.disabled = true;
-    acts.appendChild(go);
-    card.appendChild(acts);
-    box.appendChild(card);
-    frame().appendChild(box);
-    requestAnimationFrame(function () { box.classList.add("on"); });
+    var iv = null;
+    /* NEITHER DISMISSED NOR ESCAPED: an ad is a contract — it pays when it has
+       been watched — so the one way out is the button under it, which is shut
+       until the countdown says otherwise. And it does not touch the bed: the
+       screen it opens over already ducked it, and a placeholder that raised
+       the music for four seconds and dropped it again would be the loudest
+       thing in the game. */
+    var h = MD.open({
+      kind: "ad", dismiss: false, esc: false, bed: false,
+      onClose: function () { if (iv) clearInterval(iv); },
+      fill: function (card) {
+        card.appendChild(el("h3", "mt-h", T.adTitle));
+        card.appendChild(el("div", "mt-adslot", '<span class="bar"></span>'));
+        card.appendChild(el("p", "mt-sub small", T.adNote));
+        var acts = el("div", "mt-acts");
+        var go = el("button", "mt-btn");
+        go.disabled = true;
+        acts.appendChild(go);
+        card.appendChild(acts);
 
-    var left = AD_SECONDS;
-    go.textContent = fill(T.adWait, { n: left });
-    var iv = setInterval(function () {
-      left--;
-      if (left > 0) { go.textContent = fill(T.adWait, { n: left }); return; }
-      clearInterval(iv);
-      go.disabled = false;
-      go.className = "mt-btn gold";
-      go.textContent = T.adSkip;
-    }, 1000);
+        var left = AD_SECONDS;
+        go.textContent = fill(T.adWait, { n: left });
+        iv = setInterval(function () {
+          left--;
+          if (left > 0) { go.textContent = fill(T.adWait, { n: left }); return; }
+          clearInterval(iv); iv = null;
+          go.disabled = false;
+          go.className = "mt-btn gold";
+          go.textContent = T.adSkip;
+        }, 1000);
 
-    go.addEventListener("click", function () {
-      if (go.disabled) return;
-      clearInterval(iv);
-      box.classList.remove("on");
-      setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 200);
-      cb(true);
+        go.addEventListener("click", function () {
+          if (go.disabled) return;
+          h.close();
+          cb(true);
+        });
+      }
     });
   }
 
@@ -1878,6 +1939,116 @@
      first time a game shipped a fifth stat row. */
   var endWallet = null, endBox = null, watching = null;
 
+  /* ── 11a. the band the view system shows ──────────────────────────────── */
+
+  /* WHAT THE PLAYER CARRIES, IN ONE NODE. The component was already one
+     (`wallet` above) and the HOSTS were four: the map's header, the album's,
+     the shop's and a layer pinned to the corner of the end screen. Four places
+     for the same three numbers, and two screens in between that showed none of
+     them.
+
+     The band is the view system's now (packages/webshell/view.js, section 5)
+     and this is the one function that fills it. It holds BOTH wallets,
+     because the end screen's is not the same instrument:
+
+       the full one    coins, tickets and the level bar under them, standing
+                       for as long as the view does. The map, the album and
+                       the shop declare `hud: true` and get it.
+       the transient   the same two chips, veiled, holding their place in the
+                       layout so a flight has a rect to aim at, and showing
+                       only the chip a cascade is paying into. The score
+                       screen is `hud: "auto"`: what the player sees there is
+                       a chip that arrives with the coins, writes its figure
+                       and goes.
+
+     Which of the two is up is the band's own class, written by syncHud. */
+  var band = null;
+
+  /* ONE LINE, AND THE ORDER IS THE NAVIGATION:
+
+       LV 4  ·  1 240 coins  ·  3 tickets  ·  12/90 stars
+
+     left to right, the same four on every screen that carries the band, each
+     one a door to the screen it is the number of — the ranking, the shop, the
+     collection, the map. That is why the row never changes shape: a player who
+     learns where the coins are has learnt where the shop is, on every screen
+     they will ever see it. The level bar used to be a second row under the
+     chips; it is the first chip now, and its figure (`0 / 350`) moved to the
+     ranking, which is the screen that reads it. */
+  function bandRow(cls, home) {
+    var row = el("div", "mt-band " + cls);
+    var lv = el("div", "mt-band-lv");
+    var chips = el("div", "mt-band-chips");
+    var star = el("div", "mt-band-star");
+    /* THE ORDER OF THE ROW, and it is the order the player reads it in:
+
+         ⌂  ·  ⚡ xp  ·  coins  ·  tickets  ·  stickers  ·  stars
+
+       the way out first, then what is EARNED by playing (xp), then what is
+       SPENT (coins, tickets), then what those two buy (the collection), then
+       what the board itself is worth. Home is the only chip here that is not a
+       number — the rest of the row is what the player owns, this is the way
+       out of wherever they own it.
+
+       The two counts hang in hosts the wallet fills: they are numbers it
+       paints, like the coins between them. */
+    var cnt = el("div", "mt-band-count");
+    var h = null;
+    if (home) {
+      h = el("button", "mt-chip home door", icon("home", "mt-ci"));
+      h.setAttribute("aria-label", T.home);
+      h.addEventListener("click", function () { VW.home(); });
+      row.appendChild(h);
+    }
+    row.appendChild(lv);
+    row.appendChild(chips);
+    row.appendChild(cnt);
+    row.appendChild(star);
+    return { row: row, lv: lv, chips: chips, star: star, count: cnt, home: h };
+  }
+
+  function mountBand(host) {
+    var a = bandRow("full", true), b = bandRow("transient", false);
+    host.appendChild(a.row);
+    host.appendChild(b.row);
+    var full = a.chips, trans = b.chips;
+    band = wallet(full, { full: true, doors: "auto", lvHost: a.lv, stars: true,
+                          starHost: a.star, countHost: a.count, root: a.row,
+                          homeHost: a.home });
+    /* The end screen's own, and it is the SAME four chips — veiled, holding
+       their place in the layout so a flight has a rect to aim at, and lifted
+       one at a time by whatever is being paid in. It carries the level chip
+       too, because xp is a reward like the other three and the bar was the one
+       of them with nowhere to land. */
+    endWallet = wallet(trans, { full: true, transient: true, lvHost: b.lv, root: b.row });
+    VW.onChange(bandDoors);
+    bandDoors();
+  }
+
+  /* A chip standing on its own screen goes quiet: it still counts, it just
+     stops offering. Re-read on every move of the stack. */
+  function bandDoors() {
+    if (!band) return;
+    var top = VW.top();
+    /* The house chip means whatever `View.home` means — the title screen, or
+       the VILLAGE on a game that has one — so it goes quiet on the village for
+       exactly the reason every other chip does: it is standing on the screen
+       it is the door to. */
+    mark(band.home, "village", top, T.home);
+    mark(band.count, "sticker", top, T.album);
+    mark(band.lvBox, "ranking", top, T.scores);
+    mark(band.coins.parentNode, "shop", top, T.shop);
+    mark(band.tickets.parentNode, "sticker", top, T.album);
+    mark(band.stars, "map", top, T.map);
+  }
+
+  function mark(node, view, top, label) {
+    if (!node) return;
+    var here = top === view;
+    node.classList.toggle("inert", here);
+    node.setAttribute("aria-label", here ? "" : (label || ""));
+  }
+
   function buildEnd() {
     var screen = $("screen-end");
     if (!endBox) {
@@ -1890,25 +2061,10 @@
       var ref = cta.parentNode === screen ? cta : cta.parentNode;
       screen.insertBefore(endBox, ref);
     }
-    if (!endWallet) {
-      /* Into #frame and not into #screen-end, which is the one screen the
-         motor puts back into flow wholesale:
-         `#screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer)`
-         is three ids and two classes of specificity and it sets
-         `position:relative` — a rule an id of our own cannot outweigh, and the
-         list of exceptions is the MOTOR's business, not this layer's. The
-         wallet is a layer over the frame like the callout above, so it belongs
-         there anyway; it is shown on the end screen and nowhere else. */
-      var host = el("div"); host.id = "mt-end-wallet"; host.hidden = true;
-      frame().appendChild(host);
-      /* TRANSIENT: the two chips are in the layout from here — every flight
-         aims at their rect — and out of sight until one of them is paid into
-         (see `wallet`). What the player sees is a coin chip that arrives with
-         the cascade, writes its figure and goes; a round with nothing to pay
-         shows an empty corner. */
-      endWallet = wallet(host, { transient: true });
-    }
-    endWallet.node.parentNode.hidden = false;
+    /* The band itself belongs to the view system and is built with it; all
+       this screen does is ask for it. `hud: "auto"` is what keeps it down
+       until something flies into it. */
+    VW.hudShow();
   }
 
   /* What the round paid, and the order it pays in: the coins first — they are
@@ -2131,25 +2287,22 @@
   }
 
   function stickerCard(n, done) {
-    var box = el("div", "mt-modal sticker");
-    var card = el("div", "mt-card");
-    card.appendChild(el("h3", "mt-h", T.newSticker));
-    card.appendChild(el("div", "mt-rw" + (shiny(n) ? " shiny" : ""),
-      '<img class="mt-rw-img" src="' + artOf(n) + '" alt="">'));
-    card.appendChild(el("div", "mt-rw-name", nameOf(n)));
-    card.appendChild(el("div", "mt-rw-rar r" + rarityOf(n), rarityName(n)));
-    var acts = el("div", "mt-acts");
-    var ok = el("button", "mt-btn gold", T.collect);
-    ok.addEventListener("click", function () {
-      box.classList.remove("on");
-      setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); done(); }, 200);
+    var h = MD.open({
+      kind: "sticker", dismiss: false, esc: false, onClose: done,
+      fill: function (card) {
+        card.appendChild(el("h3", "mt-h", T.newSticker));
+        card.appendChild(el("div", "mt-rw" + (shiny(n) ? " shiny" : ""),
+          '<img class="mt-rw-img" src="' + artOf(n) + '" alt="">'));
+        card.appendChild(el("div", "mt-rw-name", nameOf(n)));
+        card.appendChild(el("div", "mt-rw-rar r" + rarityOf(n), rarityName(n)));
+        var acts = el("div", "mt-acts");
+        var ok = el("button", "mt-btn gold", T.collect);
+        ok.addEventListener("click", function () { h.close(); });
+        acts.appendChild(ok);
+        card.appendChild(acts);
+      }
     });
-    acts.appendChild(ok);
-    card.appendChild(acts);
-    box.appendChild(card);
-    frame().appendChild(box);
     W.Sound.cue("uiStar", 0.85, 1.5, 1180, 0.2, "triangle");
-    requestAnimationFrame(function () { box.classList.add("on"); });
   }
 
   /* THE THREE-STAR BONUS, HANDED OVER ON THE ROUND THAT EARNED IT. It used to
@@ -2271,10 +2424,8 @@
         g.parentNode.classList.remove("has-gain");
         g.parentNode.removeChild(g);
       }
-      if (endWallet) {
-        endWallet.node.parentNode.hidden = true;
-        veilAll(endWallet);
-      }
+      VW.hudHide();
+      if (endWallet) veilAll(endWallet);
     });
   }
 
@@ -2282,7 +2433,14 @@
 
   window.__META__ = {
     active: function () { return ON; },
-    mount: function (api) { API = api; if (api.lang) setLang(api.lang); },
+    mount: function (api) {
+      API = api;
+      if (api.lang) setLang(api.lang);
+      /* The one thing this layer hands the view system: what goes in the band.
+         The band's node, where it sits, which views carry it and when it is
+         up are all the view system's (packages/webshell/view.js). */
+      VW.hudMount(mountBand);
+    },
     setLang: setLang,
     text: function (k) { return T[k]; },
     fill: fill,
@@ -2342,8 +2500,11 @@
     daily: function () { return save.d; },
     setDaily: function (d) { save.d = d; persist(); },
 
+    /* OPTIONS erases the whole save and this is its share of it: the wallet,
+       the tickets, the collection, the milestones already paid and the daily
+       road, back to the shape `load` hands a first-time player. */
     wipe: function () {
-      save = { v: 1, c: 0, t: 1, x: 0, s: {}, a: {}, d: null };
+      save = { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null };
       persist();
     }
   };

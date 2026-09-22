@@ -1,0 +1,497 @@
+/* ===========================================================================
+   VILLAGE — the front door as a place. packages/webshell/village.js is the
+   behaviour; this is what a player sees.
+
+   THE BLOCK FROM `.vg-house` DOWN IS THE ONE `lab/village.html` TUNES, and it
+   is the same block, unchanged. That page composes in the DOM rather than on a
+   canvas for exactly this reason: the halo, the badge and the pulses are CSS,
+   so what is looked at while a village is being laid out is what ships.
+
+   Everything is in the 720x1280 design space, like every other rule inside
+   `#frame`: no vw, no vh, no clamp.
+   =========================================================================== */
+
+/* THE SCREEN — a view like the map, opened from PLAY and gone into by the
+   band's house chip from anywhere. `display:none` until the view system opens
+   it, exactly as `#lv-screen` does: the stack writes the z-index, the class
+   says it is up. */
+#web-village {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  font-family: var(--web-font, inherit);
+  color: var(--text);
+  background: var(--bg);
+  /* THE BLEND STOPS HERE. The halo is painted in `screen`, which blends with
+     whatever is behind it up to the nearest stacking context — without this it
+     would reach out of the village and light the frame. */
+  isolation: isolate;
+}
+#web-village.on { display: block; animation: vg-in .22s ease both; }
+@keyframes vg-in {
+  from { opacity: 0; transform: scale(.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* The hub, over the backdrop the motor already dressed the intro with: the end
+   screen reads that same node, so it keeps the painting it was composed
+   against and the village keeps the one it was composed on. */
+#vg-ground {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  /* THE LIGHT ON THE SCENE, and it is a CYCLE rather than a clock.
+
+     Reading the player's real hour was the first answer and it was the wrong
+     one: it is a difference nobody can SEE, because nothing moves while they
+     are looking at it — a village opened at noon and the same village opened
+     at midnight are two pictures the player never holds side by side. A slow
+     breath does what that was for and can be watched: the scene passes through
+     its own painted light, out into warm, back through it and out into cold,
+     on `--vg-cycle` (two minutes by default).
+
+     Both halves are keyframes, so there is no clock, no interval and no
+     formula in JavaScript — village.js writes four custom properties and CSS
+     does the rest. */
+  animation: vg-light var(--vg-cycle, 120s) ease-in-out infinite;
+}
+
+@keyframes vg-light {
+  0%, 100% { filter: brightness(calc(1 - var(--vg-amp, 0))) saturate(calc(1 - var(--vg-amp, 0) * 0.4)); }
+  50%      { filter: brightness(calc(1 + var(--vg-amp, 0))) saturate(calc(1 + var(--vg-amp, 0) * 0.4)); }
+}
+
+/* THE SKY — the colour of that light, laid over the WHOLE village and not just
+   the ground: light that stops at the buildings is a filter on a picture, and
+   light that crosses them is weather. `soft-light` is what makes it read as
+   light rather than as a sheet of colour — it darkens what is dark and warms
+   what is bright, instead of flattening both toward the tint.
+
+   IT PASSES THROUGH ZERO TWICE, at a quarter and at three quarters of the
+   cycle, and that is where the hub's own painted light is: the scene is left
+   exactly as it was drawn for an instant on the way out and on the way back.
+   The two colours swap at those points, which is why the keyframe names them
+   twice — a colour interpolated straight from cold to warm would cross grey in
+   the middle, and grey is the one thing light never does. */
+#vg-sky {
+  position: absolute;
+  inset: 0;
+  background-color: var(--vg-cold, #16234f);
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  opacity: 0;
+  animation: vg-sky var(--vg-cycle, 120s) ease-in-out infinite;
+}
+
+@keyframes vg-sky {
+  0%      { background-color: var(--vg-cold, #16234f); opacity: var(--vg-amp-c, 0); }
+  24.999% { background-color: var(--vg-cold, #16234f); opacity: 0; }
+  25%     { background-color: var(--vg-warm, #ffcf8f); opacity: 0; }
+  50%     { background-color: var(--vg-warm, #ffcf8f); opacity: var(--vg-amp-c, 0); }
+  74.999% { background-color: var(--vg-warm, #ffcf8f); opacity: 0; }
+  75%     { background-color: var(--vg-cold, #16234f); opacity: 0; }
+  100%    { background-color: var(--vg-cold, #16234f); opacity: var(--vg-amp-c, 0); }
+}
+
+/* NO Z-INDEX ON A HOUSE, and it is not an omission. The manifest lists them
+   sorted by their feet, so DOM order already IS the painter's order — and a
+   `z-index` would make every house its own stacking context, which is exactly
+   what stops the halo below from blending with the ground it lies on. */
+.vg-house {
+  position: absolute;                  /* left/top = THE FEET, in design px */
+  --vg-accent: var(--accent, #4dff9b);
+  --vg-rot: 0deg;
+}
+
+/* THE HALO — an ellipse ON THE GROUND. Two stacked radial gradients rather
+   than one: the inner is a tight bright core that reads as light landing on
+   the pad, the outer a wide soft bleed that lifts the house off a busy
+   painting. One gradient does one or the other and looks like a sticker.
+
+   It does not turn with the house: light on the ground is the ground's.
+
+   ITS COLOUR IS ITS OWN, and the game's accent is only where it starts. A hub
+   is a painted scene with its own lamps in it, and one accent under six
+   buildings makes them read as six copies of one object — a forge wants an
+   ember, a shop a warm window, a board a cold one. `--vg-halo` is that choice,
+   written per house by the composer; a house that names none inherits the
+   accent it always had. */
+.vg-halo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--vg-halo, var(--vg-accent)) 72%, transparent), transparent 70%),
+    radial-gradient(closest-side, color-mix(in srgb, var(--vg-halo, var(--vg-accent)) 34%, transparent), transparent 100%);
+  filter: blur(7px);
+  /* SCREEN, because this is LIGHT landing on a painted ground and not a decal
+     laid over it. Normal blending puts a flat tinted patch on a scene that is
+     already lit; screen adds to what is under it, so the halo brightens the
+     pad and disappears into the sky it never reaches. It is also why the
+     village isolates, and why a house carries no z-index. */
+  mix-blend-mode: screen;
+  opacity: .9;
+  pointer-events: none;
+}
+
+.vg-body {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* THREE NESTED TRANSFORMS, and each one owns exactly one thing, because they
+   would otherwise overwrite each other on the same property:
+     .vg-body  puts the box's middle on the feet
+     .vg-rot   turns the house AROUND the feet
+     .vg-in    breathes, also around the feet
+   Flattening any two of them means a turned house stops breathing, or a
+   breathing one snaps back to 0deg. */
+.vg-rot {
+  position: relative;
+  transform: rotate(var(--vg-rot));
+  transform-origin: 50% 100%;
+}
+
+.vg-in {
+  transform-origin: 50% 100%;          /* the feet: a house swells out of the
+                                          ground, never off it */
+  will-change: transform;
+}
+
+.vg-body img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The cut carries its own painted light; this is only what separates it from
+     a background of the same value. */
+  filter: drop-shadow(0 6px 10px #0009);
+}
+
+/* A HOUSE WITH A HALO DROPS ITS SHADOW. The two are painted in this order —
+   halo, then house — so the shadow lands on top of the light and cancels
+   exactly the pixels the halo was lit for. What decouples a lit house from the
+   ground is the light; the shadow is for the ones that have none. */
+.vg-house.lit .vg-body img { filter: none; }
+.vg-body img.flip { transform: scaleX(-1); }
+
+/* AN EMPTY HOUSE — a box with no picture in it, placed for its LIGHT. A hub is
+   painted with lamps, fires and windows already in it, and a halo laid on one
+   of them is the cheapest building in the village: nothing is drawn, nothing is
+   cut, and the pad glows. It carries a halo, a badge and a door like any other
+   house; its size is its hit area and the shell writes it inline, because
+   without an image there is no height for the box to take. */
+.vg-house.empty .vg-body { pointer-events: none; }
+.vg-house.empty .vg-hit { pointer-events: auto; }
+
+/* THE DOOR — a button stretched over the house, one per building. It is a real
+   button and not a click handler on the picture so that every door is reached
+   by TAB and fired by ENTER, exactly as the menu entry it stands for is: a
+   village must not cost a player their keyboard. */
+.vg-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  font: inherit;
+  color: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* The picture is the target: a house is an irregular silhouette and its box
+     is a rectangle, so the box under the feet is where a neighbour's tap would
+     be stolen. It is close enough at these sizes, and the alternative is a hit
+     mask per cut. */
+  appearance: none;
+}
+.vg-hit:focus-visible {
+  outline: 3px solid var(--vg-accent, #fff);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+/* THE BADGE — outside .vg-in and outside .vg-rot on purpose: a number that
+   swells with the breath is a number being read while it moves, and one that
+   leans with a tilted house is a number nobody put there. */
+.vg-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(#ff5b6e, #d21f3c);
+  box-shadow: 0 0 0 4px #ffffff1f, 0 4px 10px #000a;
+  color: #fff;
+  font: 800 24px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.vg-badge[hidden] { display: none; }
+
+/* THE LABEL — the role's own word, under the feet. It is OFF by default and a
+   switch in OPTIONS is what brings it back (menu.js, Settings.labels): a
+   village is meant to be read as a place, and six plates over six buildings
+   turn it back into the list it replaced. A player who cannot tell the shop
+   from the forge asks for the words once and keeps them.
+
+   Under the feet and not over the roof: a house is as tall as its cut and the
+   roofs are all at different heights, so a word above one lands somewhere
+   different on every building — while the feet are the line they all stand on.
+   Outside `.vg-in` and `.vg-rot`, like the badge: a word does not lean and does
+   not breathe. */
+.vg-label {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  transform: translate(-50%, 0);
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: #0a0a12cc;
+  box-shadow: 0 0 0 1px #ffffff24, 0 4px 10px #0007;
+  color: #fff;
+  font: 800 21px/1 var(--web-font, inherit);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.vg-label[hidden] { display: none; }
+
+/* ---------------------------------------------------------------------------
+   TWO ANIMATIONS, AND THEY ARE NOT ONE CHOICE. A building that MOVES and a
+   light that is LIT are two statements, and a village wants to make both at
+   once — a mill turning over a lit pad, a beacon that hangs and flickers — so
+   they are two fields of the composition and two families of class here:
+
+     n-*   the PULSE, on the house. `float` hangs it above its own light,
+           `breath` swells it out of its feet, `alert` hops twice and rests,
+           `fade` takes it away and brings it back, and `cloud` is the odd one
+           out — three motions at once, and weather rather than a signal.
+     l-*   the LIGHT, on the halo alone. `blink` is a hard regular beat,
+           `flicker` a failing tube, `random` one long uneven cycle. A house
+           with no halo has nothing for them to work, which is why they live
+           with the halo in the composer rather than with the pulse.
+
+   They were one list of seven, picked one at a time, and that was the bug: a
+   house could be alive or lit and never both, for no reason but the shape of
+   the field.
+
+   WHEN EITHER RUNS IS A THIRD QUESTION, and it is not the manifest's. `.beat`
+   says something is running right now, and it is on either because something
+   is waiting behind that door — the SHELL's answer — or because the house was
+   told to pulse all the time. The `n-*` and `l-*` classes are how it would say
+   so, which is the MANIFEST's and never the shell's. Neither half guesses the
+   other (village.js, DOORS).
+
+   HOW FAST AND HOW LATE ARE THE MANIFEST'S TOO, once per family:
+   `--pulse-dur` / `--pulse-delay` for the house, `--light-dur` /
+   `--light-delay` for the halo. The delay is why this is per house rather than
+   a constant: two houses wearing the same pulse start on the same frame and
+   beat as one object, which reads as a screen effect rather than as two
+   buildings. A second between them is what makes them two things, and which
+   pair looks wrong together is something only a composer can see.
+   --------------------------------------------------------------------------- */
+
+.vg-house {
+  --pulse-dur: 2.6s;
+  --pulse-delay: 0s;
+  --light-dur: 2.4s;
+  --light-delay: 0s;
+  /* A THIRD RHYTHM, AND IT IS DERIVED UNTIL IT IS NAMED. `cloud` breathes
+     while it crosses, and a breath the length of the crossing is a cloud
+     changing shape once — so the default is the crossing over seven, and
+     `breathEvery` in the composition overwrites it when a composer wants the
+     vapour to work faster or slower than the wind. */
+  --breath-dur: calc(var(--pulse-dur) / 7);
+}
+
+/* THE HOUSE. On `breath` and `alert` the halo is lent the same beat, so a house
+   that names no light of its own still moves as one object rather than as a
+   building sliding over a fixed puddle. */
+.vg-house.beat.n-breath .vg-halo { animation: vg-pulse var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-breath .vg-in   { animation: vg-breathe var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-float .vg-in     { animation: vg-float var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-alert .vg-in     { animation: vg-alert var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+.vg-house.beat.n-alert .vg-halo   { animation: vg-pulse calc(var(--pulse-dur) / 2) ease-in-out infinite var(--pulse-delay); }
+
+/* FADE — the house goes and comes back. It is on the BODY and the HALO as two
+   animations rather than on the house as one, and that is not a detail: an
+   `opacity` under 1 on `.vg-house` would make it a stacking context, and the
+   halo's `screen` would stop blending with the ground and start blending with
+   the house. They share `--pulse-dur` and `--pulse-delay`, so they stay
+   together to the frame — until the composer names a light, which is the next
+   rule and takes the halo back. */
+.vg-house.beat.n-fade .vg-body,
+.vg-house.beat.n-fade .vg-halo { animation: vg-fade var(--pulse-dur) ease-in-out infinite var(--pulse-delay); }
+
+/* CLOUD — THREE MOTIONS AT ONCE, and the one pulse that is not a signal. The
+   other four say "something is waiting behind this door"; a cloud says nothing
+   at all and is WEATHER. It crosses the frame right to left, it thickens and
+   thins, and it breathes while it goes.
+
+   Three effects means THREE PROPERTIES ON TWO ELEMENTS, because two animations
+   on one property is a fight the last one declared wins:
+
+     .vg-body   transform — the crossing, linear, the whole width of the frame
+     .vg-in     transform — the breath
+     .vg-in     opacity   — the haze
+
+   THE CROSSING IS ON `.vg-body` AND NOT ON `.vg-house`, which is the obvious
+   place and the wrong one: a transform on the house makes it a stacking
+   context, and the halo under it stops blending with the ground it is supposed
+   to be lying on — the same trap the z-index note at the top of this block is
+   about. The body is the halo's SIBLING, so moving it moves nothing else.
+
+   THE HALO STAYS WHERE IT WAS PUT, and that is not an oversight either: light
+   lying on a pad is the ground's, and a cloud has no pad. A house wearing this
+   should carry no halo at all — the composer says so where the pulse is
+   picked.
+
+   THE THREE PERIODS COME FROM ONE NUMBER. `--pulse-dur` is how long the
+   crossing takes; the breath and the haze are divided out of it by 7 and by 5,
+   which are coprime, so the three never come back into phase and the cloud
+   never repeats a shape it has already shown. A composer tunes one slider —
+   and `--breath-dur` is there for the one case that wants two, vapour that
+   works faster than the wind carrying it. */
+.vg-house.beat.n-cloud .vg-body {
+  animation: vg-drift var(--pulse-dur) linear infinite var(--pulse-delay);
+}
+.vg-house.beat.n-cloud .vg-in {
+  animation:
+    vg-breathe var(--breath-dur) ease-in-out infinite var(--pulse-delay),
+    vg-haze calc(var(--pulse-dur) / 5) ease-in-out infinite var(--pulse-delay);
+}
+/* THE OTHER WAY, AND IT IS ONE LINE RATHER THAN A SECOND KEYFRAME. `reverse`
+   plays `vg-drift` from its end to its start, which is the same crossing read
+   backwards — west to east instead of east to west. A second `@keyframes` for
+   it would be the same six values written again, to go out of step the first
+   time one of them moved. Only the body is reversed: a breath and a haze read
+   the same either way round. */
+.vg-house.beat.n-cloud.d-right .vg-body { animation-direction: reverse; }
+
+/* THE LIGHT, AFTER THE HOUSE AND ON PURPOSE. Both families reach `.vg-halo` at
+   the same specificity, so the order in this file is what decides: a light the
+   composer NAMED wins over the beat `breath` and `alert` lend it. Saying it
+   twice with an `:not()` would be the same rule written to be read wrong. */
+.vg-house.beat.l-blink .vg-halo   { animation: vg-blink var(--light-dur) steps(1, end) infinite var(--light-delay); }
+.vg-house.beat.l-flicker .vg-halo { animation: vg-flicker var(--light-dur) linear infinite var(--light-delay); }
+.vg-house.beat.l-random .vg-halo  { animation: vg-random var(--light-dur) ease-in-out infinite var(--light-delay); }
+
+/* FADE — out to almost nothing and back. The floor is not zero: a door that
+   vanishes completely is a door the player cannot find again, and the ghost at
+   12% is what keeps the building in the scene while it is away. */
+@keyframes vg-fade {
+  0%, 100% { opacity: .12; }
+  50%      { opacity: 1; }
+}
+/* FLOAT — the house leaves the ground and hangs there, and its HALO does not
+   follow: light stays on the pad, which is what makes the lift read as a lift
+   rather than as the whole building being scaled. The gentlest of the six, and
+   the only one that is pleasant to leave running on several houses at once. */
+@keyframes vg-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-11px); }
+}
+/* ALERT — the one that is meant to be rude. It is two HOPS with a wobble, and
+   then it stops: two thirds of the cycle is dead rest, which is what makes the
+   burst read as an interruption instead of as an idle. An animation with no
+   rest in it becomes wallpaper within seconds, and then it is louder than
+   everything else on the hub while saying nothing. One house at a time. */
+@keyframes vg-alert {
+  0%, 62%   { transform: translateY(0) rotate(0deg) scale(1); }
+  66%       { transform: translateY(-26px) rotate(-5deg) scale(1.06); }
+  70%       { transform: translateY(0) rotate(3deg) scale(.97); }
+  74%       { transform: translateY(-16px) rotate(4deg) scale(1.04); }
+  78%       { transform: translateY(0) rotate(-2deg) scale(.99); }
+  82%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+@keyframes vg-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+/* DRIFT — off one edge to off the other, whatever the house was placed at.
+   `--vg-x` and `--vg-w` are the feet and the width, written inline beside
+   `left` and `top`, and they are here to CANCEL the placement: the cloud
+   enters fully off the right of the 720 px frame and leaves fully off the left
+   of it, so where it was dropped decides its height in the sky and its place
+   in the painter's order, never where its crossing starts. It also replaces
+   `.vg-body`'s own `translateX(-50%)`, which is the one thing an animation on
+   that element must not lose. */
+@keyframes vg-drift {
+  from { transform: translateX(calc(720px - var(--vg-x, 0px))); }
+  to   { transform: translateX(calc(0px - var(--vg-x, 0px) - var(--vg-w, 0px))); }
+}
+/* HAZE — vapour thickening and thinning. It never reaches zero and never
+   reaches full: a cloud that disappears is a cut that blinked, and one that
+   sits at full opacity has stopped being vapour and gone back to being an
+   object. */
+@keyframes vg-haze {
+  0%, 100% { opacity: .55; }
+  35%      { opacity: .95; }
+  70%      { opacity: .4; }
+}
+@keyframes vg-pulse {
+  0%, 100% { opacity: .8; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 1;  transform: translate(-50%, -50%) scale(1.09); }
+}
+/* BLINK — a regular beat, and HARD: `steps(1, end)` is what makes it a sign
+   switching on and off rather than a third kind of breathing. It reads across
+   a whole village at a glance, and tires the eye fastest, which is why it is
+   not the default. */
+@keyframes vg-blink {
+  0%, 54%  { opacity: 1; }
+  55%, 99% { opacity: .18; }
+}
+/* FLICKER — a failing tube. The pattern is uneven on purpose and it always
+   comes back to full: a light that stutters reads as broken, which is what
+   makes it catch the eye, and a light that stutters EVENLY reads as an
+   animation. */
+@keyframes vg-flicker {
+  0%, 17%, 21%, 55%, 59%, 100% { opacity: 1; }
+  18%, 20%                     { opacity: .12; }
+  19%                          { opacity: .7; }
+  22%, 24%                     { opacity: .5; }
+  23%                          { opacity: .95; }
+  56%, 58%                     { opacity: .25; }
+  57%                          { opacity: .85; }
+}
+/* RANDOM — and it is NOT random: CSS keyframes are deterministic. It is one
+   LONG uneven cycle — 7s, so the beat never lines up with a glance — and every
+   house is started at a different point in it with a negative delay
+   (village.js). Six of them on one hub look unsynchronised, which is the whole
+   of what "random" means here. */
+@keyframes vg-random {
+  0%   { opacity: .5; }
+  8%   { opacity: 1; }
+  14%  { opacity: .32; }
+  23%  { opacity: .82; }
+  31%  { opacity: .45; }
+  44%  { opacity: 1; }
+  52%  { opacity: .28; }
+  58%  { opacity: .9; }
+  70%  { opacity: .4; }
+  79%  { opacity: 1; }
+  88%  { opacity: .55; }
+  100% { opacity: .5; }
+}
+
+/* A player who asked for less movement gets the door and not the dance: the
+   badge still says how many, the light stops, and the scene stops breathing. */
+@media (prefers-reduced-motion: reduce) {
+  .vg-house.beat .vg-halo,
+  .vg-house.beat .vg-in,
+  .vg-house.beat .vg-body,
+  #vg-ground, #vg-sky { animation: none; }
+}

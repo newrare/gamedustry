@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "1.1.2",
+  "version": "1.2.3",
   "tagline": "A ball only breaks the bricks of its own colour and one tap flips them all",
   "order": 30,
   "draft": false,
@@ -15,10 +15,41 @@
   },
   "art": {
     "objects": {
+      "ball05": "bouncetry-ball-05",
+      "ball24": "bouncetry-ball-24",
+      "ball28": "bouncetry-ball-28",
+      "brick03": "bouncetry-brick-03",
+      "cloud-big-04": "game-cloud-big-04",
       "decor-ball-01": "bouncetry-ball-01",
       "decor-ball-34": "bouncetry-ball-34",
       "decor-brick-02": "bouncetry-brick-02",
-      "decor-brick-22": "bouncetry-brick-22"
+      "decor-brick-22": "bouncetry-brick-22",
+      "home01": "bouncetry-home-01",
+      "home02": "bouncetry-home-02",
+      "home03": "bouncetry-home-03",
+      "home04": "bouncetry-home-04",
+      "home05": "bouncetry-home-05",
+      "home06": "bouncetry-home-06",
+      "sticker01": "bouncetry-sticker-01",
+      "sticker02": "bouncetry-sticker-02",
+      "sticker03": "bouncetry-sticker-03",
+      "sticker04": "bouncetry-sticker-04",
+      "sticker05": "bouncetry-sticker-05",
+      "sticker06": "bouncetry-sticker-06",
+      "sticker07": "bouncetry-sticker-07",
+      "sticker08": "bouncetry-sticker-08",
+      "sticker09": "bouncetry-sticker-09",
+      "sticker10": "bouncetry-sticker-10",
+      "sticker11": "bouncetry-sticker-11",
+      "sticker12": "bouncetry-sticker-12",
+      "sticker13": "bouncetry-sticker-13",
+      "sticker14": "bouncetry-sticker-14",
+      "sticker15": "bouncetry-sticker-15",
+      "sticker16": "bouncetry-sticker-16",
+      "sticker17": "bouncetry-sticker-17",
+      "sticker18": "bouncetry-sticker-18",
+      "sticker19": "bouncetry-sticker-19",
+      "sticker20": "bouncetry-sticker-20"
     }
   },
   "copy": {
@@ -202,6 +233,244 @@
           7,
           4
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 150,
+      "xpPer": 15,
+      "ticketPrice": 40,
+      "awards": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        11,
+        14,
+        15,
+        18,
+        16,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Big Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "No Clue",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Steamed",
+          "rarity": "common"
+        },
+        {
+          "name": "Close One",
+          "rarity": "common"
+        },
+        {
+          "name": "Heart Held",
+          "rarity": "rare"
+        },
+        {
+          "name": "Peace Out",
+          "rarity": "common"
+        },
+        {
+          "name": "Hooray",
+          "rarity": "common"
+        },
+        {
+          "name": "Dizzy",
+          "rarity": "rare"
+        },
+        {
+          "name": "Spot On",
+          "rarity": "rare"
+        },
+        {
+          "name": "Frost Ball",
+          "rarity": "epic"
+        },
+        {
+          "name": "Fire Ball",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Red Brick",
+          "rarity": "rare"
+        },
+        {
+          "name": "Blue Brick",
+          "rarity": "rare"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 270,
+          "y": 290,
+          "w": 170,
+          "badge": {
+            "dx": 0.34,
+            "dy": -0.82
+          }
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 625,
+          "y": 467,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ffc428"
+          },
+          "light": "flicker"
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 170,
+          "y": 530,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.78
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 547,
+          "y": 676,
+          "w": 202
+        },
+        {
+          "art": "home06",
+          "role": "ranking",
+          "x": 270,
+          "y": 800,
+          "w": 140,
+          "halo": {
+            "w": 1.7,
+            "h": 0.74,
+            "dy": 0.01
+          },
+          "light": "random"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 486,
+          "y": 932,
+          "w": 200,
+          "halo": {
+            "w": 0.55,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#ffc428"
+          },
+          "light": "flicker",
+          "lightEvery": 1.3,
+          "lightDelay": 0.7
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 210,
+          "y": 970,
+          "w": 160,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "ball05",
+          "role": "daily",
+          "x": 508,
+          "y": 1136,
+          "w": 80,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "badge": {
+            "dx": 0.6,
+            "dy": -0.86
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "decorBrick02",
+          "role": "decor",
+          "x": 429,
+          "y": 1151,
+          "w": 71,
+          "rot": -1,
+          "notify": "float"
+        },
+        {
+          "art": "ball28",
+          "role": "play",
+          "x": 541,
+          "y": 361,
+          "w": 103,
+          "layer": 1,
+          "notify": "float"
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#c85019",
+          "cold": "#5a526c",
+          "amount": 0.6,
+          "seconds": 10
+        }
       }
     }
   }

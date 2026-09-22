@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.1.2",
+  "version": "1.2.4",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -15,10 +15,38 @@
   },
   "art": {
     "objects": {
+      "arrow16": "triverse-arrow-16",
+      "arrow17": "triverse-arrow-17",
       "decor-10": "triverse-arrow-10",
       "decor-14": "triverse-arrow-14",
       "decor-18": "triverse-arrow-18",
-      "decor-33": "triverse-arrow-33"
+      "decor-33": "triverse-arrow-33",
+      "home01": "triverse-home-01",
+      "home02": "triverse-home-02",
+      "home03": "triverse-home-03",
+      "home04": "triverse-home-04",
+      "home05": "triverse-home-05",
+      "home06": "triverse-home-06",
+      "sticker01": "triverse-sticker-01",
+      "sticker02": "triverse-sticker-02",
+      "sticker03": "triverse-sticker-03",
+      "sticker04": "triverse-sticker-04",
+      "sticker05": "triverse-sticker-05",
+      "sticker06": "triverse-sticker-06",
+      "sticker07": "triverse-sticker-07",
+      "sticker08": "triverse-sticker-08",
+      "sticker09": "triverse-sticker-09",
+      "sticker10": "triverse-sticker-10",
+      "sticker11": "triverse-sticker-11",
+      "sticker12": "triverse-sticker-12",
+      "sticker13": "triverse-sticker-13",
+      "sticker14": "triverse-sticker-14",
+      "sticker15": "triverse-sticker-15",
+      "sticker16": "triverse-sticker-16",
+      "sticker17": "triverse-sticker-17",
+      "sticker18": "triverse-sticker-18",
+      "sticker19": "triverse-sticker-19",
+      "sticker20": "triverse-sticker-21"
     }
   },
   "copy": {
@@ -202,6 +230,257 @@
           4,
           2
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 90,
+      "xpPer": 9,
+      "ticketPrice": 25,
+      "awards": [
+        1,
+        2,
+        4,
+        6,
+        7,
+        8,
+        3,
+        12,
+        13,
+        16,
+        17,
+        14
+      ],
+      "stickers": [
+        {
+          "name": "All Smiles",
+          "rarity": "common"
+        },
+        {
+          "name": "Cheeky",
+          "rarity": "common"
+        },
+        {
+          "name": "Starstruck",
+          "rarity": "rare"
+        },
+        {
+          "name": "Big Laugh",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "Furious",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Swerve",
+          "rarity": "common"
+        },
+        {
+          "name": "Dash",
+          "rarity": "rare"
+        },
+        {
+          "name": "Slipstream",
+          "rarity": "rare"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        },
+        {
+          "name": "The Gem",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Triple Speed",
+          "rarity": "rare"
+        },
+        {
+          "name": "Black Hole",
+          "rarity": "epic"
+        },
+        {
+          "name": "Hazard",
+          "rarity": "common"
+        },
+        {
+          "name": "Shield Up",
+          "rarity": "rare"
+        },
+        {
+          "name": "Patch Up",
+          "rarity": "common"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 54,
+          "y": 178,
+          "w": 200,
+          "halo": {
+            "w": 0.7,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#42eef8"
+          },
+          "light": "random"
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 375,
+          "y": 183,
+          "w": 166,
+          "badge": {
+            "dx": -0.3,
+            "dy": -0.62
+          }
+        },
+        {
+          "art": "arrow16",
+          "role": "decor",
+          "x": 299,
+          "y": 408,
+          "w": 61,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 520,
+          "y": 439,
+          "w": 200,
+          "notify": "float"
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 642,
+          "y": 448,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#f055fe"
+          },
+          "light": "flicker",
+          "lightEvery": 1.7
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 180,
+          "y": 464,
+          "w": 200,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "decor18",
+          "role": "decor",
+          "x": 381,
+          "y": 577,
+          "w": 102,
+          "rot": -23,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 529,
+          "y": 703,
+          "w": 200
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 170,
+          "y": 923,
+          "w": 200
+        },
+        {
+          "art": "decor33",
+          "role": "decor",
+          "x": 393,
+          "y": 962,
+          "w": 92,
+          "notify": "float"
+        },
+        {
+          "art": "arrow17",
+          "role": "decor",
+          "x": 452,
+          "y": 974,
+          "w": 70,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          }
+        },
+        {
+          "art": "sticker20",
+          "role": "daily",
+          "x": 314,
+          "y": 1003,
+          "w": 84,
+          "badge": {
+            "dx": 0.35,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 505,
+          "y": 1179,
+          "w": 179
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#a13cc8",
+          "cold": "#1b9cf3",
+          "amount": 0.35,
+          "seconds": 170
+        }
       }
     }
   }

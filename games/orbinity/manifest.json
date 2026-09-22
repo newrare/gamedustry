@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.1.2",
+  "version": "1.2.4",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -18,7 +18,33 @@
       "decor-02": "orbinity-planet-02",
       "decor-05": "orbinity-planet-05",
       "decor-13": "orbinity-planet-13",
-      "decor-14": "orbinity-planet-14"
+      "decor-14": "orbinity-planet-14",
+      "home01": "orbinity-home-01",
+      "home02": "orbinity-home-02",
+      "home03": "orbinity-home-03",
+      "home04": "orbinity-home-04",
+      "home05": "orbinity-home-05",
+      "home06": "orbinity-home-06",
+      "sticker01": "orbinity-sticker-01",
+      "sticker02": "orbinity-sticker-02",
+      "sticker03": "orbinity-sticker-03",
+      "sticker04": "orbinity-sticker-04",
+      "sticker05": "orbinity-sticker-05",
+      "sticker06": "orbinity-sticker-06",
+      "sticker07": "orbinity-sticker-07",
+      "sticker08": "orbinity-sticker-08",
+      "sticker09": "orbinity-sticker-09",
+      "sticker10": "orbinity-sticker-10",
+      "sticker11": "orbinity-sticker-11",
+      "sticker12": "orbinity-sticker-12",
+      "sticker13": "orbinity-sticker-13",
+      "sticker14": "orbinity-sticker-14",
+      "sticker15": "orbinity-sticker-15",
+      "sticker16": "orbinity-sticker-16",
+      "sticker17": "orbinity-sticker-17",
+      "sticker18": "orbinity-sticker-18",
+      "sticker19": "orbinity-sticker-19",
+      "sticker20": "orbinity-sticker-20"
     }
   },
   "copy": {
@@ -194,6 +220,243 @@
           2.4,
           1.2
         ]
+      }
+    },
+    "meta": {
+      "coinsPer": 125,
+      "xpPer": 12,
+      "ticketPrice": 30,
+      "awards": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        10,
+        12,
+        13,
+        15,
+        18,
+        16
+      ],
+      "stickers": [
+        {
+          "name": "Nice One",
+          "rarity": "common"
+        },
+        {
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "All Smiles",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
+          "rarity": "common"
+        },
+        {
+          "name": "No Way!",
+          "rarity": "common"
+        },
+        {
+          "name": "Too Cool",
+          "rarity": "epic"
+        },
+        {
+          "name": "Nap Time",
+          "rarity": "common"
+        },
+        {
+          "name": "Dizzy",
+          "rarity": "common"
+        },
+        {
+          "name": "Lucky Star",
+          "rarity": "common"
+        },
+        {
+          "name": "Sunburn",
+          "rarity": "rare"
+        },
+        {
+          "name": "Blue Moon",
+          "rarity": "common"
+        },
+        {
+          "name": "Ringed One",
+          "rarity": "rare"
+        },
+        {
+          "name": "Molten",
+          "rarity": "rare"
+        },
+        {
+          "name": "Verdant",
+          "rarity": "common"
+        },
+        {
+          "name": "Frostbite",
+          "rarity": "rare"
+        },
+        {
+          "name": "The Galaxy",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Fire Comet",
+          "rarity": "rare"
+        },
+        {
+          "name": "Ice Comet",
+          "rarity": "epic"
+        },
+        {
+          "name": "Rubble",
+          "rarity": "common"
+        },
+        {
+          "name": "Gold Star",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 530,
+          "y": 240,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.21
+          },
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.82
+          },
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "play",
+          "x": 290,
+          "y": 400,
+          "w": 220,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.21
+          },
+          "notify": "float",
+          "delay": 4.5,
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 150,
+          "y": 600,
+          "w": 200,
+          "halo": {
+            "w": 1.25,
+            "h": 0.34,
+            "dy": -0.2
+          },
+          "badge": {
+            "dx": 0.28,
+            "dy": -0.8
+          },
+          "notify": "float",
+          "every": 14.4,
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 540,
+          "y": 750,
+          "w": 240,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.23
+          },
+          "notify": "float",
+          "every": 10.9,
+          "delay": 1.3,
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 511,
+          "y": 800,
+          "w": 200,
+          "halo": {
+            "w": 0.6,
+            "h": 0.45,
+            "dy": 0.05,
+            "color": "#1957e7"
+          },
+          "light": "flicker",
+          "lightEvery": 0.7,
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "daily",
+          "x": 130,
+          "y": 890,
+          "w": 120,
+          "badge": {
+            "dx": 0.32,
+            "dy": -0.88
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 400,
+          "y": 1040,
+          "w": 140,
+          "notify": "float",
+          "every": 9.5,
+          "delay": 7.4,
+          "always": true
+        },
+        {
+          "art": "home04",
+          "role": "options",
+          "x": 140,
+          "y": 1130,
+          "w": 150,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": -0.18
+          },
+          "notify": "float",
+          "every": 9.6,
+          "delay": 4.6,
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#d15dce",
+          "cold": "#a0e7ff",
+          "amount": 0.49,
+          "seconds": 100
+        }
       }
     }
   }

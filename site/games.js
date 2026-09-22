@@ -183,5 +183,31 @@ window.GAMES = [
       tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
       tags: ["Tap to jump", "Endless", "Lava"]
     }
+  },
+  {
+    slug: "pawko",
+    name: "Pawko",
+    accent: ["#ffb830", "#ff4d6d"],
+    fr: {
+      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
+      tags: ["Tap pour lâcher", "Une carte entre les vagues", "Score à battre"]
+    },
+    en: {
+      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
+      tags: ["Tap to drop", "A card between waves", "Score to beat"]
+    }
+  },
+  {
+    slug: "stratideck",
+    name: "Stratideck",
+    accent: ["#f2c14e", "#5aa9ff"],
+    fr: {
+      tagline: "Un Stratego de poche. Envoie tes cartes contre un camp ennemi caché et découvre qui bat qui.",
+      tags: ["Glisse pour attaquer", "Cartes cachées", "Le grade décide"]
+    },
+    en: {
+      tagline: "A pocket Stratego. Send your cards against a hidden enemy camp and find out who beats whom.",
+      tags: ["Drag to strike", "Hidden cards", "Rank decides"]
+    }
   }
 ];
