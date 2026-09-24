@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.3",
+  "version": "1.9.5",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -235,9 +235,9 @@
       }
     },
     "meta": {
-      "coinsPer": 150,
+      "coinsPer": 100,
       "xpPer": 15,
-      "ticketPrice": 40,
+      "ticketPrice": 60,
       "awards": [
         1,
         2,

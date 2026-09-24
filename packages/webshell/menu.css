@@ -114,31 +114,28 @@
 #screen-intro #app-icon { width:150px; margin-bottom:10px; }
 
 /* ---- the face, in the middle of the front door --------------------------
-   One of the game's three painted characters, picked at random per load
-   (menu.js, faceNode). It stands in the MIDDLE of the frame and nothing is
-   moved to make room for it: the logotype is a band at the top, the menu a
-   column down the right edge and the signature a corner, so the middle was the
-   one part of this screen with nothing in it.
+   One of the game's painted characters — the happy or the neutral one, picked
+   at random per load (menu.js, faceNode). It stands in the MIDDLE of the frame
+   and nothing is moved to make room for it: the logotype is a band at the top,
+   the menu a column down the right edge and the signature a corner, so the
+   middle was the one part of this screen with nothing in it.
 
    It takes no tap and it is never the tallest thing here — 620 design px of a
-   1280 frame, so the feet clear the menu's first entry and the head clears the
-   title. `object-fit:contain` is what keeps a wide character and a narrow one
-   the same HEIGHT rather than the same box: these are six paintings per game
-   at whatever aspect the model returned them.
+   1280 frame, centred 100px under the middle so the head leaves the logotype
+   room, and the feet still clear the menu's first entry. `object-fit:contain`
+   is what keeps a wide character and a narrow one the same HEIGHT rather than
+   the same box: these are six paintings per game at whatever aspect the model
+   returned them.
 
-   The float is the same breath the title wears, half a beat slower so the two
-   never swing together — one composited transform, no layout, no repaint. */
+   IT STANDS STILL. The logotype above it already breathes (#web-title-wrap),
+   and a second picture moving on the same screen — floating or breathing —
+   read as one motion slightly out of step. A still figure under a breathing
+   title keeps the two apart. */
 #web-char {
-  position:absolute; left:50%; top:50%; z-index:0;
+  position:absolute; left:calc(50% - 260px); top:calc(50% - 310px + 100px); z-index:0;
   width:520px; height:620px; object-fit:contain; object-position:center bottom;
-  transform:translate(-50%, -50%);
   pointer-events:none; user-select:none;
   filter:drop-shadow(0 18px 40px rgba(0,0,0,.55));
-  animation:web-char-float 5.6s ease-in-out infinite;
-}
-@keyframes web-char-float {
-  0%, 100% { transform:translate(-50%, -50%); }
-  50%      { transform:translate(-50%, calc(-50% - 14px)); }
 }
 
 #web-head {
@@ -359,11 +356,20 @@ img.art-i {
 .web-chip.on { color:var(--cta-text); background:var(--accent); border-color:var(--accent); }
 .web-chip:active { transform:scale(.96); }
 
-/* the one destructive action in the panel, so it asks twice */
+/* THE FOOT OF A CARD MODAL, and it is the modal's: pinned to the bottom of
+   the frame, clear of the home indicator, under the card rather than in it
+   (menu.js, panelModal). The corner controls sit under every card (z 40 < 44),
+   so the band is free. */
+.web-pfoot {
+  position:absolute; left:0; right:0; bottom:calc(var(--inset-bottom) + 26px);
+  padding:0 26px; display:flex; justify-content:center;
+}
+
+/* the one destructive action of the options, so it asks twice */
 .web-danger {
-  width:100%; margin:16px 0 6px; padding:17px 18px; border-radius:15px; cursor:pointer;
+  width:100%; max-width:668px; margin:0; padding:17px 18px; border-radius:15px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; gap:14px;
-  background:rgba(0,0,0,.4); border:2px solid var(--panel-line); color:var(--danger);
+  background:rgba(8,8,20,.94); border:2px solid var(--panel-line); color:var(--danger);
   font-family:var(--web-font, inherit); font-size:25px;
   font-weight:var(--web-fw, 800); letter-spacing:.5px;
   text-align:center; line-height:1.25;
@@ -380,9 +386,7 @@ img.art-i {
    so this rule is the row and nothing else. Under a hairline, and inert: a
    signature is read, never tapped.
 
-   FLUSH LEFT, like every row above it. It was centred while it was the last
-   thing on the card — a footer, and a footer is centred — and it is not the
-   last thing any more: the wipe is, below it. A centred block in a column of
+   FLUSH LEFT, like every row above it: a centred block in a column of
    left-aligned rows only reads as a footer, so it takes the column's own
    margin instead. */
 .web-sig {
@@ -406,6 +410,24 @@ img.art-i {
    re-dressed .demo-* for the intro keeps working here with no extra rule. */
 .web-help-line { font-size:29px; line-height:1.4; color:var(--text); text-align:center; padding:16px 0 4px; }
 .web-help-line b { font-weight:900; color:var(--accent); text-shadow:0 0 16px currentColor; }
+
+/* THE RULES UNDER THE DEMO. Smaller than the headline sentence and quieter than
+   it, because they are read second: the line above says what the game IS and
+   these say what a fight COSTS. A game that declares no `web.copy.help` never
+   builds the list (menu.js, fillHelp). */
+.web-help-rules {
+  margin:10px 0 0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:8px;
+}
+.web-help-rules li {
+  font-size:21px; line-height:1.35; color:var(--muted); text-align:left;
+  padding-left:20px; position:relative;
+}
+.web-help-rules li::before {
+  content:""; position:absolute; left:4px; top:.55em;
+  width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.7;
+}
+.web-help-rules b { color:var(--text); font-weight:900; }
 #screen-intro #intro-demo { margin:0 auto; }
 .web-keys { margin-top:20px; display:flex; align-items:center; justify-content:center; gap:12px; }
 .web-key {

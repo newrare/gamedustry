@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -228,9 +228,9 @@
       }
     },
     "meta": {
-      "coinsPer": 50,
+      "coinsPer": 100,
       "xpPer": 5,
-      "ticketPrice": 15,
+      "ticketPrice": 8,
       "awards": [
         1,
         2,

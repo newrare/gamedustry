@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.7",
+  "version": "1.10.11",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,

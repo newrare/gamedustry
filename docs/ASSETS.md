@@ -25,16 +25,16 @@ Play asks the same question in its own form. The answer is not per game, it is
 per *kind of asset*, and this table is the record of it. Keep it true: it is
 what the disclosure on thirteen store pages is copied from.
 
-| asset                                                | where it comes from            | generative AI |
-| ---------------------------------------------------- | ------------------------------ | ------------- |
-| the code, all of it                                  | written with an LLM            | **yes**       |
-| the game names                                       | generated                      | **yes**       |
-| app icons — `assets/image/icon/<slug>.png`           | an image model                 | **yes**       |
-| painted artwork — `assets/image/master/<slug>-*.png` | an image model                 | **yes**       |
-| background music — `ASSETS.sounds.music`             | a music model                  | **yes**       |
-| sound effects — `assets/audio/sfx/`                  | the ZapSplat library, licensed | no            |
-| pictograms — `assets/motor/lucide/`                  | Lucide, ISC                    | no            |
-| type — `assets/motor/font/`                          | six OFL families               | no            |
+| asset                                                | where it comes from               | generative AI |
+| ---------------------------------------------------- | --------------------------------- | ------------- |
+| the code, all of it                                  | written with an LLM               | **yes**       |
+| the game names                                       | generated                         | **yes**       |
+| app icons — `assets/image/icon/<slug>.png`           | an image model                    | **yes**       |
+| painted artwork — `assets/image/master/<slug>-*.png` | an image model                    | **yes**       |
+| background music — `ASSETS.sounds.music`             | a music model                     | **yes**       |
+| sound effects — `assets/audio/sfx/`                  | ZapSplat (licensed), Kenney (CC0) | no            |
+| pictograms — `assets/motor/lucide/`                  | Lucide, ISC                       | no            |
+| type — `assets/motor/font/`                          | six OFL families                  | no            |
 
 So the answer on a store form is **yes**, for all thirteen. What that costs is
 a place on itch's *AI Assisted* browse page; what not saying it costs is the
@@ -43,30 +43,90 @@ the rest of the form.
 
 ## Sound effects always come from `assets/audio/sfx/`
 
-`assets/audio/sfx/` is the shared sfx library of the repo (~125 clips, ZapSplat
-licence in the folder). Every game picks from it, so the whole catalogue sounds
-like one product instead of one synth per game.
+`assets/audio/sfx/` is the shared sfx library of the repo: **871 files** from
+two vendors — the ZapSplat "multimedia" set (UI chimes, mallets, clicks; standard
+licence, PDF in the folder) and ten Kenney packs (impacts, footsteps, cards and
+chips, lasers and power-ups, interface, RPG foley, jingles, two voice packs;
+CC0). Every game picks from it, so the whole catalogue sounds like one product
+instead of one synth per game. `LICENSES.md` in the folder is the record of the
+packs and `sources.tsv` the record of every file: pack, licence, the vendor's
+original name.
 
-The recipe per event:
+### The name is the classification
 
-1. **Pick a clip.** The file names describe the sound (`..._alert_ping_chime_…`,
-   `..._game_sound_mallets_negative_error_…`, `..._ui_percussive_clicks_…`).
-   Check the useful length first — most clips are mostly tail:
+Every file is named
+
+```
+<category>-<descriptor>-<NN>.<ext>     impact-metal-heavy-01.ogg
+                                       chime-ping-correct-01.mp3
+                                       step-grass-03.ogg
+                                       voice-female-level-up.ogg
+```
+
+kebab-case, the **category first** — what the sound IS: `impact`, `hit`, `step`,
+`click`, `ui`, `chime`, `bell`, `mallet`, `harp`, `pop`, `error`, `success`,
+`tone`, `beep`, `whoosh`, `card`, `chip`, `dice`, `laser`, `phaser`, `zap`,
+`powerup`, `explosion`, `loop`, `door`, `book`, `cloth`, `knife`, `coins`,
+`metal`, `leather`, `jingle`, `voice`… — then what describes it, then a
+two-digit take where the vendor shipped several. A voice line carries its word
+instead of a number. The vendor's order and marketing words are gone
+(`zapsplat_multimedia_alert_ping_chime_correct_answer_check_positive_009_70198`
+is `chime-ping-correct-01`), because a list of 871 names is grouped and searched
+on nothing but the name, and a provenance comment is read by a person.
+
+`tools/lab/rename-sfx.mjs` is the one-shot that did it, and the record of every
+rule and every hand-picked ZapSplat name. A pack added later is named to the
+scheme by hand and declared in `sources.tsv` before `make sfx` — see
+`assets/audio/sfx/LICENSES.md`.
+
+### Browsing it
+
+- **`make events` → `http://localhost:8092/library`** — every file on one page,
+  grouped by category, with its length, mono or stereo, its pack and which game
+  already cuts a clip from it; search, facets; **hover plays, click copies the
+  name**. The bench's own file menu (`make events`, a clip's file button) is the
+  same list grouped the same way, cut to the clip's length on hover.
+- **`node tools/lab/index-sfx.mjs --list metal heavy`** — the same list as text,
+  AND of the terms over name, category and pack; `--json` for a tool.
+- **`assets/audio/sfx/index.json`** is what both read: one entry per file —
+  `file, stem, category, name, variant, ext, seconds, channels, rate, bytes, pack, license, source` — written by `node tools/lab/index-sfx.mjs`
+  (`make sfx`, ~40 s of ffprobe). It is **committed**, like
+  `assets/image/embed/`: an input the tools read, never a build output, so
+  `tools/update.mjs` stays fast. Re-run it after adding, removing or renaming a
+  file; it reports a file with no line in `sources.tsv` and two files that
+  would share a name.
+
+### The recipe per event
+
+1. **Pick a clip**, by ear, from the library page or the bench. Check the
+   useful length — most clips are mostly tail:
    ```bash
-   ffprobe -v error -show_entries format=duration -of csv=p=0 assets/audio/sfx/<clip>.mp3
-   ffmpeg -i assets/audio/sfx/<clip>.mp3 -af "silencedetect=noise=-42dB:d=0.04" -f null -
+   node tools/lab/index-sfx.mjs --list chime ping         # what there is, with lengths
+   ffmpeg -i assets/audio/sfx/chime-ping-correct-01.mp3 -af "silencedetect=noise=-42dB:d=0.04" -f null -
    ```
 1. **Trim and re-encode small.** Mono, 32 kHz, 64 kbps, with a short fade so the
-   cut does not click. An sfx costs ~8 KB per second at that setting:
+   cut does not click. An sfx costs ~8 KB per second at that setting. **The
+   source format does not matter** — half the library is ogg, the other half
+   mp3, and every clip ships as the same mono mp3:
    ```bash
-   ffmpeg -i assets/audio/sfx/<clip>.mp3 -t 0.4 -af "afade=t=out:st=0.33:d=0.07" \
+   ffmpeg -i assets/audio/sfx/impact-metal-heavy-01.ogg -t 0.4 -af "afade=t=out:st=0.33:d=0.07" \
           -ac 1 -ar 32000 -b:a 64k gem.mp3
    ```
-1. **Embed it** under a short game-side key, and keep a comment naming the
-   source clip so the choice can be revisited:
+1. **Embed it** under a short game-side key, and **write the file's name above
+   it, without its extension** — that comment is the only record `make events`
+   has of where a clip came from, and what Apply rewrites when the clip is
+   re-cut from another file:
+   ```js
+   sounds: {
+     // gem: impact-metal-heavy-01   (pitched by the chain)
+     gem: "data:audio/mpeg;base64,…",
+   ```
    ```bash
    node tools/lab/embed-asset.mjs gem.mp3 --key gem
    ```
+   Or skip the hand work: on the bench, the clip's file button opens the
+   library, hovering auditions each file at the cut length, and **Apply**
+   re-cuts, embeds and writes the comment in one go (`tools/lab/apply-events.mjs`).
 1. **Pitch, don't duplicate.** One sample covers a whole family of events
    through `rate` — a rising chain, a direction, a weaker variant:
    ```js
@@ -76,7 +136,9 @@ The recipe per event:
    ```
 
 Triverse is the reference: eight events (gem, mega, chain, loop, power, swipe,
-void, crash) for ~58 KB of mp3.
+void, crash) for ~33 KB of mp3. Half of that came off when its pack was recast
+out of the Kenney material: the cue that fires hardest is the one to cut short,
+and a gem is 0.13 s.
 
 ## Icons come from `assets/motor/lucide/`
 

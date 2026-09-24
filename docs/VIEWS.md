@@ -19,15 +19,19 @@ ______________________________________________________________________
 **A VIEW is a place the player goes.** One at a time is what they are looking
 at, they stack, and BACK peels one off.
 
-| view      | whose content it is            | carries the band              |
-| --------- | ------------------------------ | ----------------------------- |
-| `title`   | the motor's `#screen-intro`    | no                            |
-| `village` | `packages/webshell/village.js` | yes, and it is the FLOOR      |
-| `map`     | `packages/webshell/levels.js`  | yes                           |
-| `sticker` | `packages/webshell/album.js`   | yes, and no header of its own |
-| `shop`    | `packages/webshell/album.js`   | yes                           |
-| `ranking` | `packages/webshell/menu.js`    | yes                           |
-| `score`   | the motor's `#screen-end`      | while it is paid              |
+| view        | whose content it is            | carries the band              |
+| ----------- | ------------------------------ | ----------------------------- |
+| `title`     | the motor's `#screen-intro`    | no                            |
+| `village`   | `packages/webshell/village.js` | yes, and it is the FLOOR      |
+| `map`       | `packages/webshell/levels.js`  | yes                           |
+| `sticker`   | `packages/webshell/album.js`   | yes, and no header of its own |
+| `shop`      | `packages/webshell/album.js`   | yes                           |
+| `ranking`   | `packages/webshell/menu.js`    | yes                           |
+| `deck`      | `packages/webshell/army.js`    | yes                           |
+| `infirmary` | `packages/webshell/army.js`    | yes                           |
+| `prison`    | `packages/webshell/army.js`    | yes                           |
+| `recruit`   | `packages/webshell/army.js`    | yes                           |
+| `score`     | the motor's `#screen-end`      | while it is paid              |
 
 **A CARD (a modal) is something that happens over wherever they are.** It never
 replaces the screen under it, it is always on top of every view, and it is
@@ -43,6 +47,15 @@ dismissed rather than navigated.
 | prize   | a box that was opened               | yes        | yes           |
 | ad      | the ×5 offer                        | no         | no            |
 | sticker | a pull, a tile of the album         | varies     | varies        |
+| captive | a won battle with an enemy standing | no         | no            |
+
+**The barracks' four are views and the prisoner is a card, and the rule is the
+one above rather than a judgement**: a deck being composed, a list of wounds and
+a shelf of recruits are all places with something to finish, so a stray tap must
+not take them away; a prisoner offered at the end of a battle is a CHOICE over
+wherever the player happens to be, so it is a card — and, like the three gift
+boxes, one that answers to neither a tap nor a key, because a choice has no
+default. See [docs/ARMY.md](ARMY.md).
 
 The two tables are the whole model. **The title screen and the score screen are
 the floor**, not stacked views: they are the motor's own states, and the stack
@@ -56,16 +69,18 @@ binds the village to; the SPACE key opens it too, and `View.go` peels back to a
 view already standing rather than stacking a second one, so the key and the
 timer cannot disagree.
 
-**And there is somebody standing on it.** One of the game's three painted
-characters is drawn in the MIDDLE of that screen, picked at random per load
-(`menu.js`, `faceNode`): the logotype is a band at the top, the menu a column
-down the right edge and the signature a corner, so the middle was the one part
-of this screen with nothing in it. Random and not "the happy one", because the
-three faces exist to carry the END SCREEN'S verdict and a front door has no
-round behind it to judge — a fixed picture becomes part of the logotype and
-stops being looked at, three that take turns keep the door a place with
-somebody in it. A game with no painted character shows nothing, and the screen
-is exactly what it was.
+**And there is somebody standing on it.** One of the game's painted
+characters — the happy or the neutral one — is drawn in the MIDDLE of that
+screen, 100px under the centre, picked at random per load (`menu.js`,
+`faceNode`): the logotype is a band at the top, the menu a column down the right
+edge and the signature a corner, so the middle was the one part of this screen
+with nothing in it. Random and not "the happy one", because a fixed picture
+becomes part of the logotype and stops being looked at, two that take turns keep
+the door a place with somebody in it; never the sad one, which is the END
+SCREEN'S verdict on a lost round and a front door has no round behind it to
+judge. The face stands STILL: the logotype above it already breathes, and a
+second picture moving on one screen reads as one motion out of step. A game
+with no painted character shows nothing, and the screen is exactly what it was.
 
 ______________________________________________________________________
 
@@ -206,13 +221,12 @@ makes it tight (Orbitron's digits are 24% wider than the system stack's).
 `tools/test/views.mjs` forces those strings and asserts the row still fits the
 frame; if it ever fails, the fix is one padding in `view.css`.
 
-**The level chip is an icon until it has something to say.** A bar standing open
-on every screen is a bar nobody reads — it moves once a round, and the rest of
-the time it is the widest thing on the band saying the number it said yesterday.
-So it is the bolt alone, and it OPENS for a few seconds when the xp moves
-(`openXp`, `meta.js`): the moment it is worth the width is the moment it has
-just changed. The band is right-aligned, so what the opening pushes is the
-house, and every number on the row stays where it was.
+**The row runs edge to edge, and the level chip is the spring.** The house is
+glued to the left gutter, the counts to the right one, and the level chip —
+the bolt, the level and the xp bar — takes every pixel between them, always
+open. A band that was right-aligned left a strip of empty band in front of the
+house; that room is the bar's now, which makes it long enough to read at a
+glance.
 
 The wallet COMPONENT was always one (`Meta.wallet`); the HOSTS were four — the
 map's header, the album's, the shop's and a layer pinned to the end screen's

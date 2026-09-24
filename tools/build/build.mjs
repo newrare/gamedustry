@@ -149,6 +149,23 @@ async function manifestOf(unit) {
   if (!existsSync(path.join(ROOT, file))) return null;
   const m = JSON.parse(await read(file));
   if (m.slug !== unit.name) throw new Error(`${file}: slug says "${m.slug}", folder says "${unit.name}"`);
+  /* A round pays its score with the last two or three digits dropped, times
+     the player's level, and the end screen dims the dropped digits to show it
+     (docs/META.md). Any other rate is a sum the player cannot do by eye. */
+  const per = m.web && m.web.meta && m.web.meta.coinsPer;
+  if (per != null && per !== 100 && per !== 1000) {
+    throw new Error(`${file}: web.meta.coinsPer is ${per} — it must be 100 or 1000`);
+  }
+  /* A double sold back for a ticket or more makes the machine pay for itself:
+     every pull costs at least one ticket and hands over one sticker. The
+     default is a share of the ticket (packages/webshell/meta.js, SELL). */
+  const sell = m.web && m.web.meta && m.web.meta.sell;
+  if (sell) {
+    const price = m.web.meta.ticketPrice != null ? m.web.meta.ticketPrice : 250;
+    if (sell.some((v) => v >= price)) {
+      throw new Error(`${file}: web.meta.sell ${JSON.stringify(sell)} — every price must stay under the ticket (${price})`);
+    }
+  }
   return m;
 }
 
@@ -203,7 +220,7 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
      does can change without touching the motor or this builder. ---- */
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
-    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Lang: Lang, upper: upper,
+    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, upper: upper,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
     Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
@@ -357,6 +374,14 @@ const WEB_ONLY_HOUSE = /^home\d+$/;
    screen to draw. */
 const WEB_ONLY_CLOUD = /^cloud-[a-z]+-\d+$/;
 
+/* AND THE CAST: games/stratideck's 180 portraits, one per army, grade and
+   tier plus every red officer in the blue uniform (`cast-blue-04-c`,
+   `cast-turn-04-c`, adopted by tools/lab/cast-sheets.mjs). They are the
+   barracks' — the deck, the collection, the card turned over to read who it
+   is — and a playable has none of those screens. It deals its own deck and
+   keeps its twenty grade faces. */
+const WEB_ONLY_CAST = /^cast-(blue|red|turn)-\d\d-[a-z]$/;
+
 /* And a SCENE SET, for the third time and the same reason: a game whose
    painted scene changes per band of the climb keeps one picture per band
    (`<slug>-background-phone-<name>.webp`, games/echomaze's five over thirty
@@ -377,6 +402,7 @@ function webOnlyArt(role, roles) {
   if (WEB_ONLY_STICKER.test(role)) return true;
   if (WEB_ONLY_HOUSE.test(role)) return true;
   if (WEB_ONLY_CLOUD.test(role)) return true;
+  if (WEB_ONLY_CAST.test(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
   if (m && Number(m[1]) !== 1) return true;
   if (SCENE_SET.test(role) && roles) {
@@ -538,8 +564,22 @@ function slugJs(slug) {
   language) and its default language (`lang`) — so a game is translated in the
   manifest, next to the site copy, and never in a second place.
 */
+/* THE CAST'S `desc` IS FOR THE IMAGE MODEL, not the player: it is the line
+   tools/lab/cast-sheets.mjs writes each portrait's prompt from, 120 of them,
+   ~30 KB the page would carry and never read. The name, the age, the gender
+   and the lore stay — those are what the barracks prints on a card's back. */
+function shippedWeb(web) {
+  const army = web.army;
+  if (!army || !Array.isArray(army.cast)) return web;
+  const cast = army.cast.map((c) => {
+    const { desc, ...kept } = c;
+    return kept;
+  });
+  return { ...web, army: { ...army, cast } };
+}
+
 function webConfigJs(manifest) {
-  const web = manifest && manifest.web;
+  const web = manifest && manifest.web && shippedWeb(manifest.web);
   if (!web || typeof web !== 'object') return '';
   return `
   /* ---- web target: the manifest's own web block. Injected by
@@ -805,7 +845,13 @@ async function main() {
                                       stars it reads are the level's
        album.js   window.__ALBUM__  — the collection, the machine, the shop
        daily.js   window.__DAILY__  — the strip on the title screen
-       menu.js    mounts all five, and publishes the DOORS
+       army.js    window.__ARMY__   — the roster, the infirmary, the prison and
+                                      the recruiting tent, for a game that
+                                      declares `web.army`. After meta.js, whose
+                                      save it writes through and whose wallet it
+                                      spends, and BEFORE menu.js and village.js,
+                                      which list its four doors
+       menu.js    mounts all six, and publishes the DOORS
        village.js window.__VILLAGE__ — the front door as a place, for a game
                                       that declares `web.village`. LAST,
                                       because it stands on menu.js: it reads
@@ -821,12 +867,14 @@ async function main() {
              await read('packages/webshell/menu.css') + '\n' +
              await read('packages/webshell/levels.css') + '\n' +
              await read('packages/webshell/meta.css') + '\n' +
+             await read('packages/webshell/army.css') + '\n' +
              await read('packages/webshell/village.css'),
         js: await read('packages/webshell/view.js') + '\n' +
             await read('packages/webshell/levels.js') + '\n' +
             await read('packages/webshell/meta.js') + '\n' +
             await read('packages/webshell/album.js') + '\n' +
             await read('packages/webshell/daily.js') + '\n' +
+            await read('packages/webshell/army.js') + '\n' +
             await read('packages/webshell/menu.js') + '\n' +
             await read('packages/webshell/village.js')
       }

@@ -88,6 +88,13 @@
   function VG() { return window.__VILLAGE__ || null; }
   function villaged() { return !!VG(); }
 
+  /* The barracks, published by packages/webshell/army.js, which the builder
+     loads after this file for the same reason the village is — so it is read
+     lazily too. A game that declares no `web.army` never has one, and its four
+     doors are simply never built. */
+  function AR() { return window.__ARMY__ || null; }
+  function armied() { var a = AR(); return !!(a && a.active()); }
+
   /* WHAT PLAY OPENS, IN ONE PLACE. Three answers and they are a chain, not a
      switch: a village is the place the player lives, a map is what a levelled
      game without one opens, and a round is what is left. The menu entry, the
@@ -144,7 +151,7 @@
       controls: "Controls",
       tap: "Tap", hold: "Hold", drag: "Drag", swipe: "Swipe", aim: "Aim",
       close: "Close", again: "Play again", menu: "Menu",
-      toMenu: "Back to the menu", toMap: "Back to the map", resume: "Resume",
+      toMenu: "Back to the menu", toVillage: "Back to the village", resume: "Resume",
       leaveTitle: "Leave?",
       leaveNote: "The round ends here and its score is lost.",
       leaveYes: "Leave"
@@ -162,7 +169,7 @@
       controls: "Contrôles",
       tap: "Taper", hold: "Maintenir", drag: "Glisser", swipe: "Balayer", aim: "Viser",
       close: "Fermer", again: "Rejouer", menu: "Menu",
-      toMenu: "Retour au menu", toMap: "Retour à la carte", resume: "Reprendre",
+      toMenu: "Retour au menu", toVillage: "Retour au village", resume: "Reprendre",
       leaveTitle: "Quitter ?",
       leaveNote: "La partie s’arrête ici et son score est perdu.",
       leaveYes: "Quitter"
@@ -415,7 +422,17 @@
     play:   '<polygon points="6 3 20 12 6 21 6 3"/>',
     check:  '<path d="M20 6 9 17l-5-5"/>',
     lock:   '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
-    star:   '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'
+    star:   '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+
+    /* THE BARRACKS' OWN FOUR (packages/webshell/army.js). Same pack and the
+       same stroke as the rest of them: a roster, an infirmary, a prison and a
+       recruiting tent are screens of this shell, not a product of their own. */
+    deck:   '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    heal:   '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+    clock:  '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+    recruit:'<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>',
+    /* an officer's FILE — the card turned over to read who it is */
+    file:   '<path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/>'
   };
 
   /* THE PAINTED INSTRUMENT, when the build carries one. A game with a
@@ -567,19 +584,20 @@
      SCREEN NEVER SHOWED. They were painted for the end screen, where the star
      count picks which of them the player gets — and that verdict is the whole
      reason there are three. A title screen has no round behind it to judge, so
-     it has no verdict either: the face is picked AT RANDOM out of whichever of
-     the three the build ships, once per load.
+     it has no verdict either: the face is picked AT RANDOM between the happy
+     and the neutral one, once per load.
 
      Random and not "the happy one" on purpose. A splash is two seconds long
      and a player opens the game hundreds of times; one fixed picture becomes
-     part of the logotype and stops being looked at, where three that take
-     turns keep the front door a place with somebody in it. And the sad face is
-     as true here as the happy one — nothing has happened yet.
+     part of the logotype and stops being looked at, where two that take turns
+     keep the front door a place with somebody in it. The sad face stays the
+     end screen's: it is the verdict on a lost round, and a door that greets a
+     player with it reads as a reproach for something they have not done yet.
 
      It is read through the motor's own `Art`, so a game with no painted
      character puts nothing on the screen and the title is exactly what it was
      (the template, and any game whose artwork has not landed). */
-  var FACES = ["characterHappy", "characterNeutral", "characterSad"];
+  var FACES = ["characterHappy", "characterNeutral"];
 
   function faceNode() {
     if (!W.Art) return null;
@@ -760,7 +778,7 @@
      else does not — same card either way, which is the point. The clock is the
      loop's, so freezing the loop freezes the round, the world and the timer in
      one call, and the game's own update never runs under an open card. */
-  function panelModal(kind, title, fill, again) {
+  function panelModal(kind, title, fill, again, foot) {
     var pausing = W.state() === "playing" && !(W.ending && W.ending());
     if (pausing) pause();
     var h = MD.open({
@@ -793,15 +811,28 @@
         if (pausing) resume();
       }
     });
+    /* THE FOOT IS THE MODAL'S, NOT THE CARD'S: a node pinned to the bottom of
+       the frame, under the card and apart from it (menu.css, `.web-pfoot`). */
+    if (foot) {
+      var f = el("div", "web-pfoot");
+      f.appendChild(foot);
+      h.box.appendChild(f);
+    }
     h.again = again;
     openCard = h;
     return h;
   }
 
+  /* THE WIPE STANDS OUTSIDE THE CARD, at the bottom of the frame. Inside it,
+     the one DESTRUCTIVE control read as one more row of a list of settings —
+     a switch the thumb was already running down. Out of the card it is a
+     separate decision, reached on purpose, and the card is only settings.
+     Only where it belongs: erasing the whole save mid-round is not an option
+     a player is looking for over a paused round. */
   function openOptions(withReset) {
-    return panelModal("options", COPY.optionsTitle,
-      function (b) { fillOptions(b, withReset); },
-      function () { openOptions(withReset); });
+    return panelModal("options", COPY.optionsTitle, fillOptions,
+      function () { openOptions(withReset); },
+      withReset ? resetButton() : null);
   }
 
   function openHelp() {
@@ -896,8 +927,11 @@
       W.Store.set("bestScore", 0);
       if (levelled()) LV.wipe();
       if (metaed()) MT.wipe();
-      armed = 0; b.classList.remove("armed"); txt.textContent = DONE;
-      timer = setTimeout(rest, 1600);
+      /* The question was the button's own (it is the control, asking), and
+         the answer is information: it is said the way every other one is,
+         and the button goes back to being what it was. */
+      rest();
+      W.Notify.say(DONE, { kind: "loss", icon: "trash" });
     });
     return b;
   }
@@ -915,10 +949,10 @@
      the type, the colour and the discretion of the one on the title screen
      without a second description of what a signature looks like.
 
-     It sits ABOVE the wipe and it is FLUSH LEFT (menu.css, `.web-sig`), which
-     is where every row of this card starts: a centred block in a column of
-     left-aligned rows reads as a footer, and this one is no longer at the
-     foot. */
+     It is FLUSH LEFT (menu.css, `.web-sig`), which is where every row of this
+     card starts: a centred block in a column of left-aligned rows reads as a
+     footer, and the card's foot belongs to nothing — the wipe stands under
+     the card, not in it. */
   function brandSig() {
     var brand = CONFIG.brand;
     if (!brand || !brand.mark) return null;
@@ -939,11 +973,11 @@
     return sig;
   }
 
-  /* The four switches, and the wipe only where it belongs. The same rows serve
-     the menu's OPTIONS and the card that opens over a paused round (section
-     5b) — one options screen, reached from two places — but erasing the whole
-     save mid-round is not an option a player is looking for there. */
-  function fillOptions(box, withReset) {
+  /* The four switches and the signature. The same rows serve the menu's
+     OPTIONS and the card that opens over a paused round (section 5b) — one
+     options screen, reached from two places. The wipe is not one of them: it
+     is openOptions' foot, under the card. */
+  function fillOptions(box) {
     row(box, "music", COPY.music, toggle("music"));
     row(box, "sfx",   COPY.sfx,   toggle("sfx"));
     row(box, "pops",  COPY.pops,  toggle("pops"));
@@ -953,15 +987,9 @@
        has no chrome of its own to hang it from. */
     if (window.__VILLAGE__) row(box, "tag", COPY.labels, toggle("labels"));
     row(box, "lang",  COPY.language, langPair());
-    /* THE SIGNATURE COMES BEFORE THE WIPE, not after it. It sat at the very
-       foot of the card, which put the one DESTRUCTIVE control in the middle of
-       the list with a footer under it — a button that erases everything reads
-       as the end of a card, and anything printed below it reads as something
-       still to do. The signature closes the settings; the danger stands alone
-       under them, last, where a thumb scrolling down meets it deliberately. */
+    /* The signature closes the settings. */
     var sig = brandSig();
     if (sig) box.appendChild(sig);
-    if (withReset) box.appendChild(resetButton());
   }
 
   /* HELP IS ONE SCREEN AND NOT TWO. The map's level 0 opens this same fill,
@@ -973,6 +1001,25 @@
     box.appendChild(el("div", "web-help-line", COPY.tagline || CONFIG.tagline || ""));
     var demo = $("intro-demo");
     if (demo) box.appendChild(demo);           // moved, not cloned
+    /* THE RULES A SENTENCE CANNOT HOLD. The intro is one line and must stay one
+       line — it is read by a player who has not started yet — but a game whose
+       fight has a second term in it (games/stratideck's tier) has somewhere to
+       say so exactly once: `web.copy.<lang>.help`, a short list, under the demo
+       that has just shown the gesture. It is the manifest's like every other
+       string a game writes, so there is no second place to look and no game
+       named in this file. A game that declares none gets the card it has
+       today, byte for byte.
+
+       NOT `help`: that key is this menu's own word for the HELP entry, and a
+       game that wrote a list into it replaced the button's label with five
+       sentences. The rules have a key of their own. */
+    if (COPY.helpRules && COPY.helpRules.length) {
+      var rules = el("ul", "web-help-rules");
+      for (var r = 0; r < COPY.helpRules.length; r++) {
+        rules.appendChild(el("li", "", COPY.helpRules[r]));
+      }
+      box.appendChild(rules);
+    }
     var keys = controlHints(), keyRow = el("div", "web-keys");
     for (var i = 0; i < keys.length; i++) keyRow.appendChild(el("span", "web-key", keys[i]));
     box.appendChild(keyRow);
@@ -1087,10 +1134,11 @@
      screen and coming back stay on the same side, and nothing about a round
      has to move to make room. The other bottom corner is the level pill's.
 
-     THE THIRD CONTROL IS THE WAY OUT, and it is the only button here whose
-     meaning depends on where the player is: the pictogram is the DESTINATION
-     rather than the door, so it is the map on a levelled game and the house on
-     a level-less one. */
+     THE THIRD CONTROL IS THE WAY OUT, and the pictogram is the DESTINATION
+     rather than the door: the house, because leaving a round goes back to
+     where the player lives — the village where there is one, the title screen
+     otherwise — the same place the band's home chip and ESCAPE both mean. The
+     map is one building of that place, not where a way out should land. */
   var paused = false;
 
   function buildControls() {
@@ -1104,8 +1152,8 @@
   function roundControl(on) {
     if (!on) { VW.cornerExtra(null); return; }
     VW.cornerExtra({
-      icon: levelled() ? "map" : "home",
-      label: levelled() ? COPY.toMap : COPY.toMenu,
+      icon: "home",
+      label: villaged() ? COPY.toVillage : COPY.toMenu,
       on: openLeave
     });
   }
@@ -1167,9 +1215,9 @@
     W.Round.stop();
     W.Music.unduck();
     W.setState("intro");
-    /* With a map, the screen a round came from is the map — the menu is one
-       back arrow further. */
-    if (levelled()) LV.open();
+    /* Home, not the map: the village where there is one — the map is one of
+       its buildings — and the title screen otherwise. */
+    if (villaged()) VG().open();
   }
 
   /* The motor pauses the loop when the tab goes away and resumes it when it
@@ -1198,6 +1246,7 @@
 
     if (levelled()) LV.setLang(code);
     if (metaed()) { MT.setLang(code); AL.setLang(code); DL.setLang(code); }
+    if (armied()) AR().setLang(code);
     for (var i = 0; i < items.length; i++)
       items[i].node.textContent = (items[i].mt && metaed() ? MT.text(items[i].mt) : null) ||
                                   (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
@@ -1450,6 +1499,10 @@
       MT.mount(mapi);
       AL.mount(mapi);
       DL.mount(mapi);
+      /* The barracks is a room of the meta layer like the shop is: it spends
+         that wallet and it writes that save, so it is mounted with it and
+         never without it. */
+      if (armied()) AR().mount(mapi);
     }
     if (LV) LV.mount({
       el: el, icon: icon, art: artImg, lang: LANG,
@@ -1559,6 +1612,14 @@
          inside it and what tomorrow pays, none of which a door straight to
          today's reward ever showed (packages/webshell/daily.js, section 2b). */
       daily: function () { if (metaed() && DL && DL.active()) DL.openRoad(); },
+      /* THE BARRACKS' FOUR. Every one of them is a place with a list to manage,
+         so every one of them is a VIEW and not a card — and they are reached
+         only from the hub, because the wallet band is the navigation and a
+         roster is not a number the band carries. */
+      deck: function () { if (armied()) AR().open("deck"); },
+      infirmary: function () { if (armied()) AR().open("infirmary"); },
+      prison: function () { if (armied()) AR().open("prison"); },
+      recruit: function () { if (armied()) AR().open("recruit"); },
       options: function () { openOptions(true); },
       help: openHelp
     },

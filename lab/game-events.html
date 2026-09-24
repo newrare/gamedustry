@@ -162,7 +162,7 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
   padding:1px 7px; border-radius:5px; background:#22223a; color:#9c9cba; white-space:nowrap;
 }
 .k-pop     .tag { background:#3a2350; color:#dcb6ff; }
-.k-overlay .tag { background:#1f3550; color:#9fd0ff; }
+.k-notify .tag { background:#1f3550; color:#9fd0ff; }
 .k-sound   .tag { background:#1d3d31; color:#8fe0b8; }
 
 .call input, .call select { padding:3px 7px; border-radius:6px; font:700 12px/1.4 inherit; }
@@ -299,6 +299,10 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
 #filemenu .fm-row .sz { color:#5f5f80; font-size:9px; }
 #filemenu .fm-row.used .sz { color:#8fe0b8; }
 #filemenu .fm-none { padding:14px; text-align:center; color:#6f6f92; font-size:11px; }
+#filemenu .fm-cat { padding:8px 8px 2px; font:700 9px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#6f6f92; }
+#filemenu .fm-cat[hidden] { display:none; }
+#head .lib { display:inline-block; margin-top:6px; font-size:11px; color:#7ea6ff; text-decoration:none; }
+#head .lib:hover { text-decoration:underline; }
 
 
 /* The two icons every changeable element carries. Dim until there is something
@@ -374,6 +378,7 @@ details.src pre {
   <div id="head">
     <h1>Events <small id="sub">what the game says, and what it plays</small></h1>
     <select id="game-pick"></select>
+    <a class="lib" href="/library" target="_blank" title="every file of assets/audio/sfx/ by category — hover to hear, click to copy the name">Sound library ↗</a>
     <div id="tabs">
       <button data-view="view">View <b></b></button>
       <button data-view="sound">Sound <b></b></button>
@@ -419,7 +424,7 @@ const ANCHORS = ["topLeft","top","topRight","upperLeft","upper","upperRight",
 /* The two sides of the list. Canvas juice (Fx.*, HUD.punch) is scanned but
    listed by neither — see the head. */
 const VIEWS = {
-  view:  { kinds: { pop: 1, overlay: 1 }, label: "what the game says" },
+  view:  { kinds: { pop: 1, notify: 1 }, label: "what the game says" },
   sound: { kinds: { sound: 1 },           label: "what the game plays" }
 };
 
@@ -595,9 +600,12 @@ function argsFor(call, row) {
   } else if (call.kind === "sound") {
     args[1] = num(get("input.vol"), args[1]);
     args[2] = num(get("input.rate"), args[2]);
-  } else if (call.kind === "overlay") {
+  } else if (call.kind === "notify") {
     const w = get("input.w");
     if (w) args[0] = w.value;
+    const o = args[1] = Object.assign({}, args[1] || {});
+    const sub = get("input.s") ? get("input.s").value : "";
+    if (sub) o.sub = sub; else delete o.sub;
   }
   return args;
 }
@@ -687,11 +695,23 @@ function openFileMenu(btn, key) {
 
   const list = box.querySelector(".fm-list");
   list.innerHTML = "";
-  fileMenu.rows = (state.sfx || []).map((f) => {
+  // Grouped by the category a file's name starts with — the folder is sorted
+  // by name, so the groups fall out of the order it comes in.
+  fileMenu.rows = [];
+  const cats = [];
+  let lastCat = null;
+  (state.sfx || []).forEach((f) => {
+    const cat = f.category || "other";
+    if (cat !== lastCat) {
+      const h = document.createElement("div");
+      h.className = "fm-cat"; h.textContent = cat; h.dataset.cat = cat;
+      list.appendChild(h); cats.push(h); lastCat = cat;
+    }
     const row = document.createElement("button");
     row.className = "fm-row" + (used[f.file] ? " used" : "") + (f.file === btn.value ? " cur" : "");
-    row.innerHTML = `${esc(f.label)}<br><span class="sz">${Math.round(f.size / 1024)} KB` +
-      (used[f.file] ? " · " + esc(used[f.file]) : "") + `</span>`;
+    row.innerHTML = `${esc(f.label)}<br><span class="sz">` +
+      (f.seconds != null ? f.seconds.toFixed(2) + " s · " : "") + `${Math.round(f.size / 1024)} KB` +
+      (f.pack ? " · " + esc(f.pack) : "") + (used[f.file] ? " · " + esc(used[f.file]) : "") + `</span>`;
     // A short intent delay, so sweeping the list does not fire every file it
     // crosses on the way to the one being aimed at.
     row.onmouseenter = () => {
@@ -701,7 +721,7 @@ function openFileMenu(btn, key) {
     row.onmouseleave = () => clearTimeout(fileMenu.hover);
     row.onclick = () => { pickFile(btn, key, f.file); closeFileMenu(); };
     list.appendChild(row);
-    return { node: row, file: f.file, hay: (f.file + " " + f.label).toLowerCase() };
+    fileMenu.rows.push({ node: row, file: f.file, cat, hay: (f.file + " " + f.label + " " + cat + " " + (f.pack || "")).toLowerCase() });
   });
   const none = document.createElement("div");
   none.className = "fm-none";
@@ -720,6 +740,7 @@ function openFileMenu(btn, key) {
       r.node.hidden = !hit;
       if (hit) n++;
     });
+    cats.forEach((h) => { h.hidden = !fileMenu.rows.some((r) => r.cat === h.dataset.cat && !r.node.hidden); });
     none.hidden = !!n;
     fileMenu.idx = -1;
   };
@@ -1066,10 +1087,13 @@ function callRow(call) {
     bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it"));
     bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
       "the pitch — one sample covers a whole family of events through this, instead of a clip each"));
-  } else if (call.kind === "overlay") {
-    // toast / banner / reward — the ones that carry a word. The vignette is
+  } else if (call.kind === "notify") {
+    // Notify.say — one look, so a word and a sub and no style. The vignette is
     // scanned as juice (scan-events.mjs) and never reaches this list.
+    const o = call.preview.args[1] || {};
+    bits.push(`<span class="style">notify</span>`);
     bits.push(`<input class="w" value="${esc(String(call.preview.args[0]))}">`);
+    bits.push(`<input class="s" placeholder="sub" value="${esc(o.sub == null ? "" : o.sub)}">`);
   }
 
   /* The marker holds its cell whether or not it has anything to say: a cue row
@@ -1116,8 +1140,9 @@ function callRow(call) {
     bind("input.rate", editable ? "rate" : null, call.args[2]);
     row.dataset.key = String(call.preview.args[0]);
     row.querySelector(".ln").onclick = () => copy(state.data.where + ":" + call.line);
-  } else if (call.kind === "overlay") {
+  } else if (call.kind === "notify") {
     bind("input.w", "word", call.args[0]);
+    bind("input.s", "sub", opts.sub);
   }
   return row;
 }
@@ -1273,7 +1298,7 @@ function render() {
   const dead = d.sounds.filter((x) => !x.music && !x.plays.length).map((x) => x.key);
   el("stats").innerHTML =
     `<span><b>${d.counts.pop}</b> callouts</span>` +
-    `<span><b>${d.counts.overlay}</b> notifications</span>` +
+    `<span><b>${d.counts.notify}</b> notifications</span>` +
     `<span><b>${d.counts.sound}</b> cues</span>` +
     `<span><b>${d.sounds.length}</b> clips</span>` +
     (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "");

@@ -3,7 +3,7 @@
   apply-events — write a change made on the bench back into the game's source.
 
     node tools/lab/apply-events.mjs vipera --pop 551:style=ultra
-    node tools/lab/apply-events.mjs vipera --sfx orb=zapsplat_..._105003.mp3 --len 0.5
+    node tools/lab/apply-events.mjs vipera --sfx orb=mallet-plink-01.mp3 --len 0.5
     node tools/lab/apply-events.mjs vipera --sfx orb=... --dry
 
   lab/game-events.html is where a callout is re-styled and a clip is swapped by
@@ -56,9 +56,7 @@ const q = (s) => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '
 const FIELDS = {
   'Pop.show':        { style: { arg: 0, str: 1 }, word: { opt: 1 }, sub: { opt: 1 }, at: { opt: 1 }, cls: { opt: 1 } },
   'Pop.text':        { word: { arg: 2, str: 1 } },
-  'Overlay.toast':   { word: { arg: 0, str: 1 } },
-  'Overlay.banner':  { word: { arg: 0, str: 1 }, sub: { arg: 1, str: 1 } },
-  'Overlay.reward':  { word: { arg: 0, str: 1 } },
+  'Notify.say':      { word: { arg: 0, str: 1 }, sub: { opt: 1 } },
   'Sound.clip':      { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } },
   'Sound.cue':       { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } }
 };

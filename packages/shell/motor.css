@@ -122,54 +122,111 @@
   #hud-left:empty, #hud-right:empty { display:none; }
 
   /* =========================================================================
-     OVERLAY — the game-view notification layer: score toasts, combo banners,
-     rewards, dramatic edge glow. Screen-space and pointer-transparent.
-     World-space juice (particles, floating "+120") belongs to Fx on canvas.
+     OVERLAY — the dramatic edge glow, and the host of the Pop layer below.
+     Screen-space and pointer-transparent. World-space juice (particles, the
+     floating "+120") is drawn on the canvas by Fx and Pop.text.
      ========================================================================= */
   #overlay { position:absolute; inset:0; z-index:16; pointer-events:none; overflow:hidden; }
 
-  #ov-toasts {
-    position:absolute; left:0; right:0; top:calc(var(--inset-top) + var(--hud-h) + 10px);
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-  }
-  .ov-toast {
-    padding:12px 26px; border-radius:999px; font-size:28px; font-weight:900; letter-spacing:.5px;
-    background:rgba(8,10,24,.78); border:1px solid var(--panel-line);
-    box-shadow:0 8px 24px rgba(0,0,0,.4);
-    animation:toastIn .28s cubic-bezier(.2,1.7,.4,1);
-  }
-  .ov-toast.out { animation:toastOut .3s ease forwards; }
-  @keyframes toastIn  { from{opacity:0; transform:translateY(-18px) scale(.9);} to{opacity:1; transform:none;} }
-  @keyframes toastOut { to{opacity:0; transform:translateY(-14px) scale(.95);} }
+  /* =========================================================================
+     NOTIFY — the one voice for information (shell.js, Notify). Chosen in
+     lab/notify.html: the `chip` look, top-right, newest on top, merged, a
+     slide in and a flight out into the chip it is about.
 
-  #ov-banner { position:absolute; left:0; right:0; top:42%; text-align:center; opacity:0; }
-  #ov-banner.show { animation:bannerPunch var(--ov-banner-dur, 1s) cubic-bezier(.2,1.6,.4,1) forwards; }
-  @keyframes bannerPunch {
-    0%   { opacity:0; transform:scale(.5); }
-    18%  { opacity:1; transform:scale(1.08); }
-    30%  { transform:scale(1); }
-    76%  { opacity:1; transform:scale(1); }
-    100% { opacity:0; transform:scale(1.12); }
-  }
-  #ov-banner-main { font-size:74px; font-weight:900; letter-spacing:2px; text-shadow:0 0 26px rgba(0,0,0,.55); }
-  #ov-banner-sub  { margin-top:6px; font-size:36px; font-weight:900; color:#fff; text-shadow:0 0 18px rgba(0,0,0,.6); }
+     Four nodes a notice, one transform each so they never fight:
+       .nt      the FLIP reflow of the stack       (translate)
+       .nt-a    entry / exit                       (keyframes)
+       .nt-b    the look; its kind is a colour token, --k
+       .nt-b >  icon, word, sub, ×N counter, shine, timer line
 
-  /* Reward badge: the "you earned something" moment (combo chest, bonus…). */
-  #ov-reward {
-    position:absolute; left:50%; top:34%; transform:translate(-50%,-50%) scale(.4);
-    padding:20px 34px; border-radius:26px; opacity:0;
-    background:linear-gradient(180deg, rgba(255,232,150,.22), rgba(255,175,40,.16));
-    border:1px solid rgba(255,215,110,.6); box-shadow:0 0 34px rgba(255,200,60,.35);
-    font-size:40px; font-weight:900; color:#ffe58a; text-shadow:0 0 14px rgba(255,205,70,.7);
+     Over the views, the band and a card (z 48), under the wallet's flying
+     pieces. Under the band on a view (`--wh-band`, view.js), under the HUD
+     in a round — and pointer-transparent there (.round), so a notice never
+     takes a tap the game was waiting for.
+     ========================================================================= */
+  #nt-layer {
+    position:absolute; right:26px; left:26px; z-index:48; pointer-events:none;
+    top:calc(var(--inset-top) + var(--wh-band, 0px) + 28px);
+    display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+    font-family:var(--web-font, inherit);
   }
-  #ov-reward.show { animation:rewardPop 1.7s cubic-bezier(.2,1.7,.4,1) forwards; }
-  @keyframes rewardPop {
-    0%{opacity:0; transform:translate(-50%,-50%) scale(.4);}
-    14%{opacity:1; transform:translate(-50%,-50%) scale(1.1);}
-    24%{transform:translate(-50%,-50%) scale(1);}
-    78%{opacity:1;}
-    100%{opacity:0; transform:translate(-50%,-70%) scale(1.02);}
+  #nt-layer.round { top:calc(var(--inset-top) + var(--hud-h) + 10px); }
+  /* CONFIG.notify.round = "bottom": a game whose board fills the top of the
+     frame (bouncetry's bricks, echomaze's maze) has its round's notices over
+     the foot of the frame instead, clear of the CTA bar and of the corner
+     controls, the newest nearest the edge. The one knob; nothing else about
+     a notice is a game's to change. */
+  #nt-layer.round.dock-bottom {
+    top:auto; bottom:calc(var(--inset-bottom) + var(--cta-h) + 100px);
+    flex-direction:column-reverse;
   }
+  .nt { position:relative; max-width:100%; will-change:transform; }
+  .nt-a { position:relative; }
+  .nt-b {
+    --k:var(--accent);
+    position:relative; display:flex; align-items:center; gap:10px;
+    min-height:56px; padding:8px 20px 8px 12px; border-radius:30px;
+    background:rgba(0,0,0,.72); border:2px solid rgba(255,255,255,.14);
+    border-color:color-mix(in srgb, var(--k) 60%, transparent);
+    box-shadow:0 8px 20px rgba(0,0,0,.45);
+    pointer-events:auto; cursor:pointer;
+    animation:nt-shake .42s ease both; animation-delay:260ms; animation-play-state:paused;
+  }
+  #nt-layer.round .nt-b { pointer-events:none; }
+  .nt-b.k-info { --k:var(--accent); }
+  .nt-b.k-gain { --k:var(--gold); }
+  .nt-b.k-good { --k:var(--good); }
+  .nt-b.k-warn { --k:#ff9f1c; }
+  .nt-b.k-loss { --k:var(--danger); }
+  .nt-b.k-rare { --k:#e7b6ff; }
+  /* a warning or a loss shakes once it has landed; the others hold still */
+  .nt-b.k-warn, .nt-b.k-loss { animation-play-state:running; }
+
+  .nt-ic {
+    flex:0 0 auto; width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    animation:nt-icon .5s cubic-bezier(.2,1.8,.4,1) both; animation-delay:130ms;
+  }
+  .nt-ic img { width:100%; height:100%; object-fit:contain; }
+  .nt-ic svg { width:84%; height:84%; fill:none; stroke:var(--k); stroke-width:2.4;
+    stroke-linecap:round; stroke-linejoin:round; }
+  .nt-tx { min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; }
+  .nt-w {
+    font-size:24px; line-height:1.15; letter-spacing:1.5px; color:var(--k);
+    font-weight:var(--web-fw, 900);
+  }
+  .nt-s {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:17px; font-weight:600; line-height:1.2; color:var(--muted);
+  }
+  .nt-n {
+    position:absolute; top:-14px; right:-10px; min-width:36px; height:36px; padding:0 8px;
+    border-radius:18px; display:none; align-items:center; justify-content:center;
+    background:var(--k); color:#0b0b14; font-size:18px; font-weight:900;
+    box-shadow:0 3px 0 rgba(0,0,0,.4);
+  }
+  .nt-n.on { display:flex; }
+  .nt-n.punch, .nt-hit { animation:nt-punch .35s cubic-bezier(.2,1.6,.4,1); }
+  .nt-sh { position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; }
+  .nt-sh::before {
+    content:""; position:absolute; top:0; bottom:0; left:-40%; width:30%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+    animation:nt-shine .7s ease-out both; animation-delay:160ms;
+  }
+  .nt-bar {
+    position:absolute; left:22px; right:22px; bottom:4px; height:3px; border-radius:2px;
+    background:var(--k); opacity:.75; transform-origin:left center;
+  }
+
+  @keyframes nt-in       { from { opacity:0; transform:translateX(760px); } to { opacity:1; transform:none; } }
+  @keyframes nt-out-lift { to { opacity:0; transform:translateY(-30px); } }
+  @keyframes nt-out-fly  { to { opacity:.2; transform:translate(var(--nt-fx), var(--nt-fy)) scale(.12); } }
+  @keyframes nt-shake {
+    0%, 100% { translate:0 0; } 15% { translate:-10px 0; } 35% { translate:9px 0; }
+    55% { translate:-6px 0; } 75% { translate:3px 0; }
+  }
+  @keyframes nt-icon  { from { scale:0; rotate:-30deg; } to { scale:1; rotate:0deg; } }
+  @keyframes nt-shine { to { left:120%; } }
+  @keyframes nt-punch { 40% { transform:scale(1.18); } }
 
   /* Dramatic edge glow — pulse it on a milestone or a near-death moment. */
   #ov-vignette { position:absolute; inset:0; opacity:0; transition:opacity .5s ease;

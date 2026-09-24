@@ -333,8 +333,21 @@
      stars a round wears are the stars it will be paid; the BAR under them
      keeps walking the raw bands, because what it counts down is the distance
      to the next threshold and that is the same distance either way. */
+  /* A GAME THAT COUNTS ITS OWN STARS. Some rounds are not won by piling up a
+     number at all: games/stratideck pays one star for the flag, one for a
+     battle without a wound and one for a capture, and nothing for a battle
+     lost. `Game.levelTally()` is that count, 0 to 3, read live and at the end;
+     where a game has it, it REPLACES the score bands — the pill lights what it
+     says, the bar shows the tally out of three and the end screen writes no
+     objective number, since there is none. The score still pays the wallet. */
+  function tally() {
+    if (!W.Game || !W.Game.levelTally) return null;
+    return Math.max(0, Math.min(3, W.Game.levelTally() | 0));
+  }
+
   function starsEarned(n, value) {
-    var st = starsFor(n, value);
+    var t = tally();
+    var st = t != null ? t : starsFor(n, value);
     if (W.Game && W.Game.levelStars) {
       st = Math.max(0, Math.min(st, W.Game.levelStars(st, value) | 0));
     }
@@ -622,7 +635,7 @@
     /* The objective is the first thing the end screen has to answer, and the
        column takes four rows before it overflows the frame — so it goes in at
        the top and the game's own last row makes way. */
-    var rows = [{ label: T.objective, value: num(goal),
+    var rows = tally() != null ? [] : [{ label: T.objective, value: num(goal),
                   grade: st === 3 ? "gold" : st ? "accent" : "" }];
     result.rows = rows.concat(result.rows || []).slice(0, 4);
 
@@ -686,12 +699,18 @@
     var n = CONFIG.level, g = goalOf(dOf(n));
     // The bar walks the raw bands and the stars are what they earn — the two
     // differ only for a game that caps them (see starsEarned).
-    var raw = starsFor(n, value), st = starsEarned(n, value);
-    var lo = raw === 0 ? 0 : raw === 1 ? g : g * 1.5;
-    var hi = raw === 0 ? g : raw === 1 ? g * 1.5 : g * 2.2;
-    var k = raw >= 3 ? 1 : Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
-    hudFill.style.width = (k * 100).toFixed(1) + "%";
-    hudGoal.textContent = num(Math.round(raw >= 3 ? value : hi));
+    var t = tally();
+    var raw = t != null ? t : starsFor(n, value), st = starsEarned(n, value);
+    if (t != null) {
+      hudFill.style.width = (t / 3 * 100).toFixed(1) + "%";
+      hudGoal.textContent = t + "/3";
+    } else {
+      var lo = raw === 0 ? 0 : raw === 1 ? g : g * 1.5;
+      var hi = raw === 0 ? g : raw === 1 ? g * 1.5 : g * 2.2;
+      var k = raw >= 3 ? 1 : Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
+      hudFill.style.width = (k * 100).toFixed(1) + "%";
+      hudGoal.textContent = num(Math.round(raw >= 3 ? value : hi));
+    }
     if (st === litStars) return;
     /* A star landing is a beat of its own: the pill punches, the star burns in
        and the chime goes up a step. */
@@ -1685,6 +1704,16 @@
     return canPlay(n) ? n : 0;
   }
 
+  /* THE HIGHEST LEVEL THE BOARD HAS OPENED, of the thirty. What the village's
+     PLAY house starts: a round from there is always a real level, and the one
+     furthest up the climb the player has earned. Read off `isOpen` and not
+     `canPlay`, so the dev force that unlocks every button does not send PLAY to
+     level 30 — and never the endless star, which is the map's to offer. */
+  function topOpen() {
+    for (var n = LEVELS; n > 1; n--) if (isOpen(n)) return n;
+    return 1;
+  }
+
   function play(n) {
     if (n !== BONUS && !canPlay(n)) return;
     arm(n);
@@ -1809,6 +1838,8 @@
        which is also what keeps it out of the tab order. */
     nextLevel: nextLevel,
     playNext: function () { var n = nextLevel(); if (n) play(n); },
+    topOpen: topOpen,
+    playTop: function () { if (ON) play(topOpen()); },
 
     text: function (key) { return T[key]; },
     perfect: function () { return ON && perfect(); },

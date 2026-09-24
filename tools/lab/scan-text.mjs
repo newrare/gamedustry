@@ -21,7 +21,7 @@
                     web menu takes (web.copy)
     game.js         CONFIG.title / .tagline / .intro.caption and the whole of
                     CONFIG.copy, then every literal the round itself writes —
-                    Pop.show word and sub, Pop.text, the Overlay notifications,
+                    Pop.show word and sub, Pop.text, Notify.say word and sub,
                     the HUD slots, the end screen's title and stat rows, and
                     what a game paints with ctx.fillText
     page.html       #intro-title and #intro-tagline, which are MIRRORS: the
@@ -240,9 +240,7 @@ function manifestRow(entry) {
 const TEXT_CALLS = {
   'Pop.show':       { opts: { word: 'Callout', sub: 'Callout sub' }, group: 'round', style: 0 },
   'Pop.text':       { args: { 2: 'Floating value' }, group: 'round' },
-  'Overlay.toast':  { args: { 0: 'Toast' }, group: 'round' },
-  'Overlay.banner': { args: { 0: 'Banner', 1: 'Banner sub' }, group: 'round' },
-  'Overlay.reward': { args: { 0: 'Reward' }, group: 'round' },
+  'Notify.say':     { args: { 0: 'Notice' }, opts: { sub: 'Notice sub' }, group: 'round' },
   'HUD.setLeft':    { args: { 0: 'HUD left value', 1: 'HUD left label' }, group: 'hud' },
   'HUD.setRight':   { args: { 0: 'HUD right value', 1: 'HUD right label' }, group: 'hud' },
   'fillText':       { args: { 0: 'Canvas text' }, group: 'round' }

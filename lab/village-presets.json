@@ -1171,6 +1171,13 @@
       "ground": "backgroundHome",
       "houses": [
         {
+          "art": "empty",
+          "role": "play",
+          "x": 230,
+          "y": 210,
+          "w": 200
+        },
+        {
           "art": "home01",
           "role": "shop",
           "x": 173,
@@ -1859,8 +1866,8 @@
           },
           "light": "flicker",
           "lightEvery": 1.6,
-          "always": true,
-          "lightDelay": 0.9
+          "lightDelay": 0.9,
+          "always": true
         },
         {
           "art": "empty",
@@ -1881,16 +1888,13 @@
         {
           "art": "home02",
           "role": "album",
-          "x": 370,
+          "x": 360,
           "y": 370,
           "w": 170,
           "badge": {
             "dx": -0.2,
             "dy": -0.8
-          },
-          "notify": "alert",
-          "every": 9,
-          "delay": 2
+          }
         },
         {
           "art": "home04",
@@ -1912,42 +1916,69 @@
           "flip": true
         },
         {
-          "art": "home05",
-          "role": "decor",
-          "x": 112,
-          "y": 625,
+          "art": "empty",
+          "role": "play",
+          "x": 370,
+          "y": 580,
           "w": 200
+        },
+        {
+          "art": "home05",
+          "role": "infirmary",
+          "x": 110,
+          "y": 630,
+          "w": 210,
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#ff8a8a"
+          },
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.78
+          },
+          "notify": "breath",
+          "every": 5.5,
+          "delay": 1.4
         },
         {
           "art": "home08",
-          "role": "decor",
-          "x": 612,
-          "y": 640,
+          "role": "prison",
+          "x": 610,
+          "y": 650,
           "w": 195,
-          "always": true
-        },
-        {
-          "art": "empty",
-          "role": "play",
-          "x": 360,
-          "y": 640,
-          "w": 200
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#8b93a8"
+          },
+          "badge": {
+            "dx": -0.18,
+            "dy": -0.78
+          },
+          "light": "flicker",
+          "lightEvery": 2.8,
+          "lightDelay": 1.1
         },
         {
           "art": "home07",
-          "role": "decor",
+          "role": "deck",
           "x": 360,
-          "y": 800,
-          "w": 210,
-          "halo": {
-            "w": 0.9,
-            "h": 0.45,
-            "dy": 0.02,
-            "color": "#ff5c5c"
-          },
-          "light": "random",
-          "lightEvery": 7,
-          "always": true
+          "y": 770,
+          "w": 180,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 560,
+          "y": 890,
+          "w": 230
         },
         {
           "art": "home03",
@@ -1955,13 +1986,6 @@
           "x": 150,
           "y": 900,
           "w": 200
-        },
-        {
-          "art": "home01",
-          "role": "ranking",
-          "x": 560,
-          "y": 900,
-          "w": 220
         },
         {
           "art": "empty",
@@ -1980,15 +2004,20 @@
           "always": true
         },
         {
-          "art": "piece03",
-          "role": "daily",
-          "x": 370,
-          "y": 970,
-          "w": 80,
-          "notify": "alert",
+          "art": "home09",
+          "role": "recruit",
+          "x": 360,
+          "y": 980,
+          "w": 220,
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#f2c14e"
+          },
           "badge": {
-            "dx": -0.45,
-            "dy": -0.7
+            "dx": -0.16,
+            "dy": -0.78
           }
         },
         {
@@ -2005,16 +2034,7 @@
           },
           "light": "flicker",
           "lightEvery": 0.9,
-          "always": true,
-          "lightDelay": 0.5
-        },
-        {
-          "art": "decor04",
-          "role": "decor",
-          "x": 340,
-          "y": 1030,
-          "w": 80,
-          "notify": "breath",
+          "lightDelay": 0.5,
           "always": true
         },
         {
@@ -2031,16 +2051,37 @@
           },
           "light": "flicker",
           "lightEvery": 1,
-          "always": true,
-          "lightDelay": 0.9
+          "lightDelay": 0.9,
+          "always": true
+        },
+        {
+          "art": "decor04",
+          "role": "daily",
+          "x": 270,
+          "y": 1230,
+          "w": 80,
+          "notify": "alert",
+          "badge": {
+            "dx": -0.4,
+            "dy": -0.9
+          }
+        },
+        {
+          "art": "piece03",
+          "role": "decor",
+          "x": 160,
+          "y": 1230,
+          "w": 80,
+          "notify": "breath",
+          "always": true
         }
       ],
       "life": {
         "cycle": {
-          "warm": "#ffd9a0",
-          "cold": "#1a2a5e",
+          "warm": "#ffcf8f",
+          "cold": "#66b1ec",
           "amount": 0.35,
-          "seconds": 150
+          "seconds": 90
         }
       }
     }

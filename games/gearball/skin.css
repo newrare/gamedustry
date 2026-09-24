@@ -31,7 +31,6 @@
     box-shadow:0 0 18px rgba(255,61,110,.5); }
   .eo-score { text-shadow:0 0 22px rgba(126,249,255,.7); }
   #cta-bar { border-top:1px solid rgba(255,154,68,.24); }
-  /* the ring sits low in the frame, so a toast belongs just under the HUD */
   .pop-score { --chip:#1d1405; --chip-line:#ffd9a2;
     --fill:linear-gradient(180deg,#fff4e0,#ffb44f); }
   .pop-combo { --chip:#04202a; --chip-line:#bff6ff;

@@ -24,12 +24,6 @@
   /* The exit gate sits right under the HUD, so the scrim stays: it is what
      keeps the score legible over a lit gate. */
   #hud::before { background:linear-gradient(180deg, rgba(4,6,16,.78), rgba(4,6,16,0)); }
-  /* Every screen-space message lands in the launch bay, under the maze — the
-     maze itself is what the player is reading. */
-  #ov-toasts {
-    top:auto; bottom:calc(var(--inset-bottom) + var(--cta-h) + 18px);
-    flex-direction:column-reverse;
-  }
   .eo-score { text-shadow:0 0 22px rgba(126,249,255,.75); }
   #cta-bar { border-top:1px solid rgba(192,38,211,.26); }
 

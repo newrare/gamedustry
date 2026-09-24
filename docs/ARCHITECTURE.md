@@ -28,7 +28,7 @@ anatomy of the *output*.
   #backdrop                  ← full-viewport tint behind the end screen
   #stage > #frame            ← the 720×1280 design-space block (scaled as one)
       canvas#game            ← the world
-      #overlay               ← toasts / banners / rewards / edge glow
+      #overlay               ← edge glow + comic pops (Notify adds #nt-layer at boot)
       #hud                   ← score, timer, free slots
       #cta-bar               ← persistent install button
       .screen ×3             ← loading / intro / end
@@ -108,8 +108,10 @@ Everything that makes a playable a playable, minus the game:
 
 - `setState(name)` — `loading → intro → playing → end`, toggling HUD/CTA/screens.
 - `HUD` — eased score, punch animation, timer, two free slots.
-- `Overlay` — toasts, banners, reward badges, edge glow.
-- `Pop` — comic / manga callouts for score gains, combos and hero beats.
+- `Overlay` — the edge glow.
+- `Pop` — comic / manga callouts for score gains, combos and hero beats: the MOMENT.
+- `Notify` — the one voice for information (a state, a refusal, a lesson), on
+  every screen, round and menus alike.
 - `buildIntro()` — writes the logo, copy and picks the animated how-to-play demo.
 - `EndScreen` — the staggered reveal (title → score count-up + confetti → stars
   → stat rows → install CTA → replay link).

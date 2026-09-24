@@ -549,6 +549,11 @@
 }
 .mt-btn.ghost { background:transparent; color:var(--muted); }
 .mt-btn.small { height:54px; padding:0 18px; font-size:21px; }
+/* INSIDE A CARD the button is the card's one control and the card has the
+   frame's width (view.css): it is sized like the end screen's, not like a
+   chip of the shop's header. */
+.mt-card .mt-btn { height:80px; padding:0 36px; font-size:30px; border-radius:22px; }
+.mt-card .mt-btn.small { height:62px; padding:0 22px; font-size:24px; }
 .mt-btn.off, .mt-btn:disabled {
   background:rgba(255,255,255,.07); color:rgba(255,255,255,.34);
   border-color:rgba(255,255,255,.08); box-shadow:none; cursor:not-allowed;
@@ -588,7 +593,7 @@
 /* What came out of the box, at the one size this layer ever shows a sticker. */
 .mt-rw {
   display:flex; align-items:center; justify-content:center;
-  width:300px; height:300px;
+  width:340px; height:340px;
   animation:mt-pop .4s cubic-bezier(.2,1.5,.4,1) both;
 }
 @keyframes mt-pop {
@@ -644,7 +649,7 @@
    reason to come back tomorrow, so the picture fills the box: the dish comes
    off (a painted piece has a body of its own) and the pictogram is drawn at
    the size the picture would be. Drained, because the answer is "not yet". */
-.mt-rw.locked { width:340px; height:340px; }
+.mt-rw.locked { width:380px; height:380px; }
 .mt-rw.locked .mt-rw-ico { width:100%; height:100%; background:none; border-color:transparent; }
 .mt-rw.locked .mt-rw-ico .mt-rwi { width:84%; height:84%; }
 .mt-rw.locked .mt-rw-img,
@@ -670,7 +675,7 @@
 .mt-rwi { width:110px; height:110px; }
 
 .mt-rw-name {
-  text-align:center; font-size:32px; font-weight:var(--web-fw, 900);
+  text-align:center; font-size:42px; font-weight:var(--web-fw, 900);
   letter-spacing:1px; line-height:1.15;
 }
 /* WHAT THE GIFT PAID, PLATED. The same white as every other caption in this
@@ -700,8 +705,8 @@
    plated and breathes. */
 .mt-rw-rar {
   display:inline-flex; align-items:center; gap:10px;
-  padding:7px 20px; border-radius:999px;
-  font-size:17px; letter-spacing:4px; text-transform:uppercase;
+  padding:9px 26px; border-radius:999px;
+  font-size:21px; letter-spacing:4px; text-transform:uppercase;
   font-weight:var(--web-fw, 900);
   color:var(--rar); border:2px solid var(--rar);
   background:rgba(255,255,255,.05);
@@ -739,7 +744,7 @@
    RUN THROUGH RELIQUARY"), so it is centred and allowed a second line rather
    than tuned to the longest band name any game might one day pick. */
 .mt-rw-src {
-  font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  font-size:20px; letter-spacing:3px; text-transform:uppercase;
   color:var(--muted); opacity:.75;
   text-align:center; line-height:1.4; max-width:100%;
 }
@@ -757,7 +762,7 @@
    single line had to carry a verb, an object and a plate — it ran out of room
    and ellipsed, which is the one thing a call to action may never do. Stacked,
    the shouted half is four to ten characters and always fits. */
-.mt-btn.two { height:84px; line-height:1; }
+.mt-btn.two, .mt-card .mt-btn.two { height:98px; line-height:1; }
 .mt-btn-txt {
   display:flex; flex-direction:column; align-items:flex-start; gap:3px;
   min-width:0; overflow:hidden;
@@ -767,11 +772,11 @@
    end at 30px, and a call to action that ellipses is the one thing this layer
    may never do. 25px with the spacing pulled in is what holds the longest of
    the three nouns in both languages. */
-.mt-btn-txt b { font-size:24px; letter-spacing:.5px; white-space:nowrap; }
+.mt-btn-txt b { font-size:29px; letter-spacing:.5px; white-space:nowrap; }
 /* The price is read, not shouted: normal case, and light enough to sit under
    the thing it is the price of. */
 .mt-btn-txt i {
-  font-style:normal; font-size:18px; letter-spacing:.5px; text-transform:none;
+  font-style:normal; font-size:21px; letter-spacing:.5px; text-transform:none;
   opacity:.8; white-space:nowrap;
 }
 /* THE WAY PAST THE OFFER IS THE END SCREEN'S OWN BUTTON, brought down to the
@@ -779,13 +784,13 @@
    the arrow all come from `.eo-act` in menu.css, which this node now shares
    the rule with. The way on is one control in this front end and a player
    meets it twice within a couple of seconds. */
-.mt-acts .mt-nav { flex:0 0 auto; width:76px; height:76px; }
+.mt-acts .mt-nav { flex:0 0 auto; width:88px; height:88px; }
 .mt-acts .mt-nav .eo-ico { width:36px; height:36px; }
 
 /* THE PLATE INSIDE THE BUTTON. It is the number the ad pays and it sits where
    a figure would, at the height of the type beside it — never bigger: a plate
    that outgrows its own button stops being part of the sentence. */
-.mt-btn-mult { width:72px; height:auto; flex:0 0 auto; margin:-10px -2px -10px 4px; }
+.mt-btn-mult { width:84px; height:auto; flex:0 0 auto; margin:-10px -2px -10px 4px; }
 /* what the plate falls back to where the build carries no artwork */
 .mt-btn-x { font-style:normal; font-weight:inherit; letter-spacing:1px; }
 
@@ -904,13 +909,13 @@
    taller box is taller and never merely higher up. */
 .mt-modal.gift .mt-card { padding-left:14px; padding-right:14px; }
 .mt-gifts.art { gap:0; }
-.mt-gifts.art .mt-gift { width:190px; height:200px; }
-.mt-gifts.art .mt-gift.g0 { width:204px; height:214px; }
-.mt-gifts.art .mt-gift.g1 { width:174px; height:184px; }
-.mt-gifts.art .mt-gift.g2 { width:190px; height:200px; }
+.mt-gifts.art .mt-gift { width:212px; height:224px; }
+.mt-gifts.art .mt-gift.g0 { width:228px; height:240px; }
+.mt-gifts.art .mt-gift.g1 { width:194px; height:206px; }
+.mt-gifts.art .mt-gift.g2 { width:212px; height:224px; }
 /* The picture follows the box instead of being a fixed 132 px, which is what
    makes the three sizes sizes at all. */
-.mt-gifts.art .mt-gift .face { width:80%; }
+.mt-gifts.art .mt-gift .face { width:86%; }
 .mt-gift .face {
   position:absolute; left:50%; top:50%; width:132px; z-index:2;
   transform:translate(-50%, -50%);
@@ -1330,7 +1335,7 @@
 /* It looks like a slot and it says it is one. Nothing here pretends to be an
    ad: the label under it is the honest half of the stub. */
 .mt-adslot {
-  position:relative; width:100%; height:300px; border-radius:20px; overflow:hidden;
+  position:relative; width:100%; height:400px; border-radius:22px; overflow:hidden;
   background:
     repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 18px, rgba(255,255,255,.02) 18px 36px),
     rgba(255,255,255,.04);
@@ -1342,36 +1347,6 @@
   animation:mt-sweep 1.6s linear infinite;
 }
 @keyframes mt-sweep { to { left:110%; } }
-
-/* =========================================================================
-   THE CALLOUT
-   ========================================================================= */
-
-/* The motor's Pop layer lives inside #overlay, under the screens; this is the
-   same voice one layer up, for a word said on a menu. */
-#mt-says {
-  position:absolute; left:0; right:0; top:calc(var(--inset-top) + 210px); z-index:48;
-  display:flex; flex-direction:column; align-items:center; gap:10px;
-  pointer-events:none; font-family:var(--web-font, inherit);
-}
-.mt-say {
-  padding:12px 28px; border-radius:40px; text-align:center;
-  background:rgba(4,4,14,.92); border:2px solid var(--accent);
-  box-shadow:0 0 26px rgba(0,0,0,.6);
-  animation:mt-say-in .28s cubic-bezier(.2,1.4,.4,1) both;
-  transition:opacity .4s ease, transform .4s ease;
-}
-.mt-say b {
-  display:block; font-size:30px; font-weight:var(--web-fw, 900);
-  letter-spacing:2px; text-transform:uppercase; color:var(--gold);
-}
-.mt-say span { display:block; font-size:17px; color:var(--muted); margin-top:2px; }
-.mt-say.up { border-color:var(--gold); }
-.mt-say.out { opacity:0; transform:translateY(-14px); }
-@keyframes mt-say-in {
-  from { opacity:0; transform:translateY(16px) scale(.9); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
-}
 
 /* =========================================================================
    THE END SCREEN — the score becomes coins
@@ -1476,6 +1451,12 @@
 }
 .mt-gp.base .mt-ci, .mt-gp.mul .mt-ci { width:21px; height:21px; opacity:.8; }
 .mt-gp.sum { font-size:38px; }
+/* THE SCORE, SPLIT AT THE RATE (meta.js gainLine): the digits that become
+   coins take the gold of the `+14` under them, the two or three the rate drops
+   fade back. Lit on the first beat of the sum, so the two read as one step. */
+#eo-score .mt-keep, #eo-score .mt-cut { transition:color .3s ease, opacity .3s ease; }
+#eo-score.cut .mt-keep { color:var(--gold); }
+#eo-score.cut .mt-cut { opacity:.3; }
 
 /* The same figure once the coins are in the wallet is `.mt-tag.up`, drawn on
    the coin chip's own centre like every other figure this layer writes
@@ -1492,13 +1473,17 @@
    under it held a label beside the button, and with the label on the button
    there is nothing left for a plate to group — a pill inside a pill reads as
    two controls where there is one. */
+@keyframes mt-offer-in {
+  from { opacity:0; transform:translateY(16px) scale(.9); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
 .mt-offer {
   display:flex; align-items:center; justify-content:center;
   /* AIR BETWEEN THE ROUND AND THE OFFER. The stat rows are what the run WAS;
      this asks for the next one, and sitting it 10 px under the last row read
      as a fifth row of the column. */
   margin-top:22px;
-  animation:mt-say-in .3s cubic-bezier(.2,1.4,.4,1) both;
+  animation:mt-offer-in .3s cubic-bezier(.2,1.4,.4,1) both;
 }
 /* The painted box on the offer button — the thing being handed over, at the
    size of the words beside it. */
@@ -1545,7 +1530,15 @@
    margins are the menu's own 44px gutter being taken back, and inside a card
    they would hang the road off both edges of it. Here the card's padding is
    what the two ends are cut by, which is the frame the window wanted. */
-.wm-card #dl-strip { margin:2px -30px 0; width:auto; }
+.wm-card #dl-strip { margin:2px -34px 0; width:auto; }
+/* …and bigger. The strip is laid out in its own px (a day is 88 of them, and
+   daily.js slides the track by that pitch), so it is ZOOMED as one object
+   rather than re-measured: the pitch, the nodes and the day numbers grow
+   together and the arithmetic in daily.js still holds, in the strip's own
+   units. The card is the road's whole screen there — seven small beads
+   across a 668 px card was a progress bar — and fewer, bigger days still
+   run off both edges, which is what says the road carries on. */
+.wm-card #dl-strip { zoom:1.3; margin-left:calc(-34px / 1.3); margin-right:calc(-34px / 1.3); }
 
 /* The window on the road. Everything inside it is one translated track, so a
    day passing SLIDES the road by one pitch rather than repainting it, and the

@@ -16,6 +16,58 @@
 */
 window.GAMES = [
   {
+    slug: "arcider",
+    name: "Arcider",
+    accent: ["#35e8ff", "#7a4dff"],
+    fr: {
+      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges et les adversaires puis choisis vitesse ou récupération.",
+      tags: ["Course", "Battle royale", "Turbo"]
+    },
+    en: {
+      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
+      tags: ["Hold to lean", "Battle royale", "1020 m"]
+    }
+  },
+  {
+    slug: "blight",
+    name: "Blight",
+    accent: ["#ff8fab", "#7048e8"],
+    fr: {
+      tagline: "Un Bubble magique classique, mais avec un léger Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      tags: ["Vise et tire", "Par trois", "Contamination"]
+    },
+    en: {
+      tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
+      tags: ["Aim & shoot", "Match three", "Race the rot"]
+    }
+  },
+  {
+    slug: "echomaze",
+    name: "Echomaze",
+    accent: ["#7ef9ff", "#4ade80"],
+    fr: {
+      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin à l’écho des balles.",
+      tags: ["Vise et tire", "Écholocation", "1 sortie sur 6"]
+    },
+    en: {
+      tagline: "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
+      tags: ["Aim & fire", "Echolocation", "1 way out of 6"]
+    }
+  },
+  {
+    slug: "radiam",
+    name: "Radiam",
+    accent: ["#35e0ff", "#8b6cff"],
+    fr: {
+      tagline: "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
+      tags: ["Glisse un anneau", "Trois par rayon", "8 billes spéciales"]
+    },
+    en: {
+      tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
+      tags: ["Drag a ring", "Three per ray", "8 special beads"]
+    }
+  },
+  {
     slug: "spinshock",
     name: "Spinshock",
     accent: ["#40ecff", "#ff4fbe"],
@@ -26,6 +78,19 @@ window.GAMES = [
     en: {
       tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
       tags: ["Timing tap", "5 biomes", "Physics"]
+    }
+  },
+  {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
+      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+    },
+    en: {
+      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
+      tags: ["Swipe to sort", "Three discards", "Poker hands"]
     }
   },
   {
@@ -42,29 +107,16 @@ window.GAMES = [
     }
   },
   {
-    slug: "bouncetry",
-    name: "Bouncetry",
-    accent: ["#ff3b57", "#2f86ff"],
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
-      tags: ["Tap inverseur", "Casse-briques", "Double briques"]
+      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
     },
     en: {
-      tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
-      tags: ["Tap to swap", "Breakout", "Lava floor"]
-    }
-  },
-  {
-    slug: "blight",
-    name: "Blight",
-    accent: ["#ff8fab", "#7048e8"],
-    fr: {
-      tagline: "Un Bubble magique classique, mais avec un léger Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
-      tags: ["Vise et tire", "Par trois", "Contamination"]
-    },
-    en: {
-      tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
-      tags: ["Aim & shoot", "Match three", "Race the rot"]
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
+      tags: ["Tap to jump", "Endless", "Lava"]
     }
   },
   {
@@ -94,42 +146,16 @@ window.GAMES = [
     }
   },
   {
-    slug: "arcider",
-    name: "Arcider",
-    accent: ["#35e8ff", "#7a4dff"],
+    slug: "bouncetry",
+    name: "Bouncetry",
+    accent: ["#ff3b57", "#2f86ff"],
     fr: {
-      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges et les adversaires puis choisis vitesse ou récupération.",
-      tags: ["Course", "Battle royale", "Turbo"]
+      tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
+      tags: ["Tap inverseur", "Casse-briques", "Double briques"]
     },
     en: {
-      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
-      tags: ["Hold to lean", "Battle royale", "1020 m"]
-    }
-  },
-  {
-    slug: "vipera",
-    name: "Vipera",
-    accent: ["#4dff9b", "#12b86a"],
-    fr: {
-      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
-      tags: ["Tap pour dévier", "Sans fin", "Armure"]
-    },
-    en: {
-      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
-      tags: ["Tap to swerve", "Endless", "Armour"]
-    }
-  },
-  {
-    slug: "echomaze",
-    name: "Echomaze",
-    accent: ["#7ef9ff", "#4ade80"],
-    fr: {
-      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin à l’écho des balles.",
-      tags: ["Vise et tire", "Écholocation", "1 sortie sur 6"]
-    },
-    en: {
-      tagline: "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
-      tags: ["Aim & fire", "Echolocation", "1 way out of 6"]
+      tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
+      tags: ["Tap to swap", "Breakout", "Lava floor"]
     }
   },
   {
@@ -146,42 +172,29 @@ window.GAMES = [
     }
   },
   {
-    slug: "radiam",
-    name: "Radiam",
-    accent: ["#35e0ff", "#8b6cff"],
+    slug: "vipera",
+    name: "Vipera",
+    accent: ["#4dff9b", "#12b86a"],
     fr: {
-      tagline: "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
-      tags: ["Glisse un anneau", "Trois par rayon", "8 billes spéciales"]
+      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
+      tags: ["Tap pour dévier", "Sans fin", "Armure"]
     },
     en: {
-      tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
-      tags: ["Drag a ring", "Three per ray", "8 special beads"]
+      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
+      tags: ["Tap to swerve", "Endless", "Armour"]
     }
   },
   {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
+    slug: "stratideck",
+    name: "Stratideck",
+    accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
-      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
+      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
     },
     en: {
-      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
-      tags: ["Swipe to sort", "Three discards", "Poker hands"]
-    }
-  },
-  {
-    slug: "marshmelt",
-    name: "Marshmelt",
-    accent: ["#ff9d2e", "#ff7a1a"],
-    fr: {
-      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
-    },
-    en: {
-      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
+      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
+      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
     }
   },
   {
@@ -195,19 +208,6 @@ window.GAMES = [
     en: {
       tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
       tags: ["Tap to drop", "A card between waves", "Score to beat"]
-    }
-  },
-  {
-    slug: "stratideck",
-    name: "Stratideck",
-    accent: ["#f2c14e", "#5aa9ff"],
-    fr: {
-      tagline: "Un Stratego de poche. Envoie tes cartes contre un camp ennemi caché et découvre qui bat qui.",
-      tags: ["Glisse pour attaquer", "Cartes cachées", "Le grade décide"]
-    },
-    en: {
-      tagline: "A pocket Stratego. Send your cards against a hidden enemy camp and find out who beats whom.",
-      tags: ["Drag to strike", "Hidden cards", "Rank decides"]
     }
   }
 ];

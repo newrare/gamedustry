@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — sound library</title>
+<style>
+/* ===========================================================================
+   SOUND LIBRARY — every file of assets/audio/sfx/, by ear.
+
+   A game's clip is a cut of one file in that folder, and the folder holds
+   ~870 of them. A name says what a sound is (`impact-metal-heavy-01`); it does
+   not say how long it is, whether it is mono, which pack it came from, or
+   which game already cuts a clip from it — and no name says how it SOUNDS.
+   So this page is the folder read back: one row per file, grouped by the
+   category its name starts with, with its length, its pack and its users;
+   a search box and the categories and packs as facets to narrow the list;
+   hover plays it, click copies its name — the name is what a provenance
+   comment writes and what apply-events re-cuts from.
+
+   It is served by `make events` (tools/lab/serve-events.mjs) at /library,
+   beside the bench, because both read the same index (assets/audio/sfx/
+   index.json, written by tools/lab/index-sfx.mjs) and play the same files off
+   /sfx/. Over file:// it has nothing to read and says so.
+
+   Same rules as every lab page: one file, no framework, no CDN, no web font,
+   strings in normal case.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  height:100vh; display:flex; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel {
+  flex:0 0 300px; display:flex; flex-direction:column; gap:14px;
+  padding:20px 18px; background:#12121c; border-right:1px solid #23233a; overflow:auto;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel h1 small { display:block; margin-top:4px; font-size:11px; font-weight:500; color:#8b8ba7; letter-spacing:0; text-transform:none; }
+#panel input[type=text] {
+  width:100%; padding:8px 10px; background:#0b0b12; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:8px; font:inherit;
+}
+#panel input[type=text]:focus { outline:0; border-color:#7ea6ff; }
+#panel h2 { display:flex; justify-content:space-between; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; }
+#panel h2 a { color:#7ea6ff; text-decoration:none; font-weight:600; cursor:pointer; text-transform:none; letter-spacing:0; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip {
+  padding:3px 8px; border:1px solid #2c2c47; border-radius:20px; background:none;
+  color:#b9b9d6; font:600 11px/1.3 inherit; cursor:pointer;
+}
+.chip b { color:#6f6f92; font-weight:600; margin-left:3px; }
+.chip:hover { border-color:#7ea6ff; }
+.chip.on { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+.chip.on b { color:#0b0b12; }
+.row { display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#9c9cba; }
+.row input[type=range] { width:130px; accent-color:#7ea6ff; }
+#hint { font-size:11px; font-weight:500; color:#6f6f92; }
+#hint kbd { font:600 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; padding:1px 4px; border:1px solid #2c2c47; border-radius:4px; color:#b9b9d6; }
+
+#main { flex:1; display:flex; flex-direction:column; min-width:0; }
+#bar {
+  display:flex; align-items:center; gap:12px; padding:12px 18px;
+  border-bottom:1px solid #23233a; font-size:12px; color:#8b8ba7;
+}
+#bar b { color:#e8e6f5; }
+#toast { margin-left:auto; color:#8fe0b8; opacity:0; transition:opacity .2s; }
+#toast.on { opacity:1; }
+#list { flex:1; overflow:auto; padding:8px 18px 40px; }
+#list::-webkit-scrollbar { width:10px; }
+#list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+.cat {
+  position:sticky; top:0; z-index:1; padding:12px 8px 5px;
+  background:linear-gradient(#0b0b12 70%, rgba(11,11,18,0));
+  font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6f92;
+}
+.cat b { color:#4f4f70; font-weight:600; margin-left:6px; letter-spacing:0; }
+.file {
+  display:grid; grid-template-columns:minmax(220px, 1.2fr) 70px 60px 150px 1fr; gap:14px; align-items:baseline;
+  width:100%; padding:6px 8px; border:0; border-radius:7px; background:none; color:#b9b9d6; text-align:left; cursor:pointer;
+  font:600 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.file:hover, .file.on { background:#1e2740; color:#e8e6f5; }
+.file .sec, .file .ch { color:#7d7d9d; font-size:11px; font-variant-numeric:tabular-nums; }
+.file .pack { color:#5f5f80; font-size:11px; }
+.file .used { color:#8fe0b8; font-size:11px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.file.playing .stem { color:#ffd08a; }
+#empty { padding:40px; text-align:center; color:#6f6f92; }
+#offline { padding:60px 40px; color:#9c9cba; font-weight:500; max-width:560px; line-height:1.6; }
+#offline code { color:#7ea6ff; }
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <h1>Sound library <small>assets/audio/sfx/, every file, by ear</small></h1>
+  <input id="q" type="text" placeholder="search — metal heavy, chime correct, voice…" autocomplete="off">
+  <div class="row"><span>volume</span><input id="vol" type="range" min="0" max="1" step="0.05"></div>
+  <div>
+    <h2>Categories <a id="cat-all">all</a></h2>
+    <div class="chips" id="cats"></div>
+  </div>
+  <div>
+    <h2>Packs <a id="pack-all">all</a></h2>
+    <div class="chips" id="packs"></div>
+  </div>
+  <div>
+    <h2>Length</h2>
+    <div class="chips" id="lens"></div>
+  </div>
+  <p id="hint">Hover a row to hear it, click to copy its name. <kbd>↑</kbd> <kbd>↓</kbd> walk the list and play, <kbd>enter</kbd> copies, <kbd>/</kbd> searches, <kbd>esc</kbd> clears.</p>
+</aside>
+
+<div id="main">
+  <div id="bar"><span id="count"></span><span id="toast"></span></div>
+  <div id="list"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const el = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* Length buckets — what a game asks first: is it a tick or a tail? */
+  const LENS = [
+    { key: "tick", label: "≤ 0.25 s", test: (s) => s <= 0.25 },
+    { key: "short", label: "≤ 0.5 s", test: (s) => s > 0.25 && s <= 0.5 },
+    { key: "mid", label: "≤ 1 s", test: (s) => s > 0.5 && s <= 1 },
+    { key: "long", label: "≤ 2 s", test: (s) => s > 1 && s <= 2 },
+    { key: "tail", label: "> 2 s", test: (s) => s > 2 }
+  ];
+
+  const S = { files: [], usage: {}, cats: new Set(), packs: new Set(), lens: new Set(), q: "", rows: [], idx: -1 };
+
+  // ---- audio -----------------------------------------------------------
+  const audio = {};
+  let playing = null, hover = null, playingRow = null;
+  function vol() { const v = parseFloat(localStorage.getItem("library:vol")); return isNaN(v) ? 0.8 : v; }
+  el("vol").value = vol();
+  el("vol").oninput = () => localStorage.setItem("library:vol", el("vol").value);
+
+  function play(f, row) {
+    if (playing) playing.pause();
+    if (playingRow) playingRow.classList.remove("playing");
+    const a = audio[f.file] || (audio[f.file] = new Audio("/sfx/" + encodeURIComponent(f.file)));
+    a.volume = vol();
+    try { a.currentTime = 0; } catch (e) {}
+    a.play().catch(() => toast("cannot play " + f.file));
+    playing = a; playingRow = row; row.classList.add("playing");
+    a.onended = () => row.classList.remove("playing");
+  }
+
+  let toastT = null;
+  function toast(msg) {
+    const t = el("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1400);
+  }
+  function copy(f) {
+    navigator.clipboard.writeText(f.stem).then(() => toast("copied " + f.stem), () => toast("could not copy"));
+  }
+
+  // ---- facets ------------------------------------------------------------
+  function chips(node, items, set, onChange) {
+    node.innerHTML = "";
+    items.forEach(([key, label, n]) => {
+      const b = document.createElement("button");
+      b.className = "chip" + (set.has(key) ? " on" : "");
+      b.innerHTML = esc(label) + (n != null ? `<b>${n}</b>` : "");
+      b.onclick = () => { if (set.has(key)) set.delete(key); else set.add(key); onChange(); };
+      node.appendChild(b);
+    });
+  }
+  function count(key) {
+    const m = {};
+    S.files.forEach((f) => { const k = f[key] || "?"; m[k] = (m[k] || 0) + 1; });
+    return Object.keys(m).sort().map((k) => [k, k, m[k]]);
+  }
+  function drawFacets() {
+    chips(el("cats"), count("category"), S.cats, refresh);
+    chips(el("packs"), count("pack"), S.packs, refresh);
+    chips(el("lens"), LENS.map((l) => [l.key, l.label, null]), S.lens, refresh);
+  }
+  el("cat-all").onclick = () => { S.cats.clear(); refresh(); };
+  el("pack-all").onclick = () => { S.packs.clear(); refresh(); };
+
+  // ---- the list ------------------------------------------------------------
+  function visible(f) {
+    if (S.cats.size && !S.cats.has(f.category)) return false;
+    if (S.packs.size && !S.packs.has(f.pack || "?")) return false;
+    if (S.lens.size && !LENS.some((l) => S.lens.has(l.key) && l.test(f.seconds))) return false;
+    if (S.q) {
+      const hay = `${f.stem} ${f.category} ${f.pack || ""} ${f.source || ""} ${(S.usage[f.file] || []).join(" ")}`.toLowerCase();
+      if (!S.q.split(/\s+/).filter(Boolean).every((t) => hay.includes(t))) return false;
+    }
+    return true;
+  }
+
+  function refresh() {
+    drawFacets();
+    const list = el("list");
+    list.innerHTML = "";
+    S.rows = []; S.idx = -1;
+    let cat = null, shown = 0;
+    S.files.forEach((f) => {
+      if (!visible(f)) return;
+      shown++;
+      if (f.category !== cat) {
+        cat = f.category;
+        const h = document.createElement("div");
+        h.className = "cat";
+        h.innerHTML = esc(cat) + `<b>${S.files.filter((x) => x.category === cat && visible(x)).length}</b>`;
+        list.appendChild(h);
+      }
+      const row = document.createElement("button");
+      row.className = "file";
+      const used = S.usage[f.file] || [];
+      row.innerHTML =
+        `<span class="stem">${esc(f.stem)}</span>` +
+        `<span class="sec">${f.seconds.toFixed(2)} s</span>` +
+        `<span class="ch">${f.channels === 1 ? "mono" : "stereo"} · ${f.ext}</span>` +
+        `<span class="pack" title="${esc(f.license || "")}${f.source ? " — " + esc(f.source) : ""}">${esc(f.pack || "?")}</span>` +
+        `<span class="used" title="${esc(used.join(", "))}">${esc(used.join(" · "))}</span>`;
+      // A short intent delay, so sweeping the list does not fire every row it crosses.
+      row.onmouseenter = () => { clearTimeout(hover); hover = setTimeout(() => play(f, row), 110); };
+      row.onmouseleave = () => clearTimeout(hover);
+      row.onclick = () => copy(f);
+      list.appendChild(row);
+      S.rows.push({ node: row, f });
+    });
+    if (!shown) { const e = document.createElement("div"); e.id = "empty"; e.textContent = "nothing matches"; list.appendChild(e); }
+    el("count").innerHTML = `<b>${shown}</b> of ${S.files.length} files · ${Object.keys(S.files.reduce((m, f) => (m[f.category] = 1, m), {})).length} categories`;
+  }
+
+  el("q").oninput = () => { S.q = el("q").value.toLowerCase(); refresh(); };
+
+  document.addEventListener("keydown", (e) => {
+    const inSearch = document.activeElement === el("q");
+    if (e.key === "/" && !inSearch) { e.preventDefault(); el("q").focus(); return; }
+    if (e.key === "Escape") { el("q").value = ""; S.q = ""; S.cats.clear(); S.packs.clear(); S.lens.clear(); refresh(); return; }
+    if (e.key === "Enter" && S.idx >= 0) { copy(S.rows[S.idx].f); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    if (!S.rows.length) return;
+    e.preventDefault();
+    S.idx = Math.max(0, Math.min(S.rows.length - 1, S.idx + (e.key === "ArrowDown" ? 1 : -1)));
+    S.rows.forEach((r) => r.node.classList.remove("on"));
+    const r = S.rows[S.idx];
+    r.node.classList.add("on");
+    r.node.scrollIntoView({ block: "nearest" });
+    play(r.f, r.node);
+  });
+
+  // ---- load -----------------------------------------------------------------
+  if (location.protocol === "file:") {
+    el("list").innerHTML = `<div id="offline">This page reads the library off the events server. Run <code>make events</code> and open <code>http://localhost:8092/library</code>.</div>`;
+    el("count").textContent = "no server";
+    return;
+  }
+  Promise.all([
+    fetch("/api/sfx").then((r) => r.json()),
+    fetch("/api/sfx-usage").then((r) => r.json()).catch(() => ({}))
+  ]).then(([files, usage]) => {
+    S.files = files.filter((f) => f.seconds != null).map((f) => ({ ...f, stem: f.stem || f.label })).sort((a, b) => a.file.localeCompare(b.file));
+    S.usage = usage;
+    if (files.length && !S.files.length) toast("no index.json — run make sfx");
+    refresh();
+  }).catch(() => { el("count").textContent = "cannot reach the server"; });
+})();
+</script>
+</body>
+</html>

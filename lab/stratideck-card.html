@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Stratideck cards</title>
+<style>
+/* ===========================================================================
+   STRATIDECK CARDS — the bench for the painted card faces.
+
+   One question: how does a painted officer become a CARD? The 20 cut-outs of
+   assets/image/master/stratideck-card-<side>-<rank>.png are the material; this
+   page dresses each one three ways — the FULL card (a 5:7 playing card, for
+   the hand, the reveal and the collection), the MID square (the grid, face up)
+   and the TINY square (menus, the deck strip, a row of the end screen) — and
+   offers ten frame styles and ten badge shapes to mix.
+
+   Two more kinds of card are shown under the army, both asked for by the
+   barracks' COLLECTION and OBJECTS tabs (packages/webshell/army.js): the
+   OBJECTS — the flag, the trap and the six pieces of scenery a camp is built
+   of, cards with no grade and no tier, cut out of stratideck-object-other.png
+   and adopted as `piece-03/04` and `item-*` — and the GHOST, the shadow a
+   card wears until the player has had it (an officer owned, an object turned
+   over in battle): its piece as a white silhouette, named ???, its grade and
+   tier badges kept in slate.
+
+   What a card is made of, bottom to top:
+     1. the SCENE — the band's own phone background, zoomed on one patch of the
+        camp and blurred, so the officer stands in his own world;
+     2. the WATERMARK — the rank as one huge digit, a filigree, slid left or
+        right (`--mx`) so it does not sit behind the officer's face;
+     3. the HERO — the painted officer, sharp, three quarters of the card. On
+        the two squares he is a CROP, free to be cut by the card on all four
+        sides: the image hangs from the middle of the square and is moved from
+        there, so a zoom of 3 and a push down frames the face alone.
+        `--midz` / `--midx` / `--midy` and `--tinyz` / `--tinyx` / `--tinyy`
+        are the multiplier and the two offsets, in percents of the square;
+     4. two BADGES, each an SVG shape with its own shadow and its own PLACE on
+        the card — and they always hang a little OVER the edge, which is what
+        makes them read as objects laid on the card rather than printed on it:
+        a crown sitting on top, a seal biting a corner, a dog tag hung from the
+        edge. The RANK badge carries the number 1–10 with a soft glow; the TIER
+        badge carries the letter S, A, B, C, D or E with a hard offset shadow —
+        and the tier is what decides the card's rarity and therefore its colour
+        (S legendary, A epic, B rare, C uncommon, D common, E basic). Seven
+        designs, each with a default spot for each role and a placement
+        override; independent of the frame — a card style and a badge design
+        are two decisions. What lets them overflow is `.c-body`: the clipped
+        box the scene, the hero and the plate live in, while the badges are its
+        siblings, above it in z;
+     5. the CREST — which army, top-right;
+     6. the PLATE — the name, and the tier under it;
+     7. the FRAME — the style: foil, holo, ember and its two variations forge
+        and ash, chamfer and its two variations hex and steel, parchment, stone.
+
+   Sizing trick: a card sets `font-size: calc(var(--w) / 100)`, so inside it
+   1em is 1% of the card's width and the three formats share one stylesheet.
+   Anything that carries a big font-size of its own (the watermark's digit, a
+   badge's number) is a CHILD, so an em on the positioned box still means 1%.
+
+   The block marked THE CARD ITSELF is what ships: it is pasted verbatim into
+   games/stratideck/skin.css, and the game builds the same nodes as build()
+   below (game.js, THE CARD FACES) as DOM under its canvas. The panel's
+   choices travel separately, as `CONFIG.cards` in game.js — "Copy the card
+   settings" writes that block, under the same names as the knobs here.
+
+   Lab rules: one file, no framework, no font, no CDN; allowed to read
+   ../assets/ by relative path because it never ships. Every string is written
+   in normal case, and the card shouts through its own copy of upper().
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  min-height:100vh; display:flex;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 290px; padding:20px 18px; overflow-y:auto; height:100vh;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 16px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:18px 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6f6a90; }
+
+.row { margin-bottom:12px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#f2c14e; }
+.row select {
+  width:100%; margin-top:4px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.seg { display:flex; gap:4px; margin-top:4px; }
+.seg.wrap { flex-wrap:wrap; }
+.seg.wrap button { flex:1 0 30%; }
+.seg button {
+  flex:1; padding:7px 4px; background:#0b0b12; color:#9c9cba;
+  border:1px solid #2c2c47; border-radius:6px; font:700 12px/1 inherit; cursor:pointer;
+}
+.seg button.on { background:#f2c14e; color:#1a1200; border-color:#f2c14e; }
+.seg.lv button.on { background:#c8d3e6; border-color:#c8d3e6; }
+#tiers b { color:#e8e6f5; margin-right:4px; }
+.chk { display:flex; align-items:center; gap:8px; font-size:12px; color:#9c9cba; margin-bottom:8px; cursor:pointer; }
+.chk input { accent-color:#f2c14e; }
+button.act {
+  width:100%; margin-top:6px; padding:9px 10px;
+  background:#f2c14e; color:#1a1200; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.act.quiet { background:#23233a; color:#e8e6f5; }
+#tiers { font-size:11px; color:#9c9cba; line-height:1.9; }
+#tiers i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; padding:28px 32px 60px; overflow:auto; height:100vh;
+  background:radial-gradient(900px 600px at 50% 0%, #1a2b5e 0%, #0c1636 52%, #05081a 100%);
+}
+#stage.checker {
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px; background-position:0 0, 16px 16px; background-color:#0b0b12;
+}
+.sec { margin-bottom:36px; }
+.sec h3 { font-size:11px; letter-spacing:2.4px; text-transform:uppercase; color:#8b8ba7; margin-bottom:14px; }
+.sec h3 span { color:#4f4f6a; letter-spacing:0; text-transform:none; font-weight:500; margin-left:10px; }
+.shelf { display:flex; flex-wrap:wrap; align-items:flex-end; gap:34px; padding:26px 14px 6px; }
+.shelf .slot { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.shelf .slot small { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
+.grid { display:flex; flex-wrap:wrap; gap:34px 30px; padding:20px 14px 6px; }
+/* THE CAST: a row per grade, the six tiers along it. A portrait not painted
+   yet shows its grade's face, greyed, so a hole reads at a glance. */
+.castrow { display:flex; align-items:flex-start; gap:18px; padding:14px 14px 0; }
+.castrow > small { flex:0 0 86px; padding-top:10px; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
+.castrow .grid { padding:6px 0 6px; gap:26px 22px; }
+.cslot { display:flex; flex-direction:column; align-items:center; gap:8px; }
+/* ALL THREE: the full card over the grid square and the token, so one
+   officer's three sizes are read side by side, as the barracks and the round
+   deal them */
+.cslot .cfmts { display:flex; flex-direction:column; align-items:center; gap:22px; }
+.cslot .csmall { display:flex; align-items:center; gap:22px; }
+#cast.only-painted .cslot.nocast { display:none; }
+#cast.only-painted .castrow:not(:has(.cslot:not(.nocast))) { display:none; }
+.cast-none { padding:18px 14px; font-size:12px; color:#6f6a90; }
+.cslot small { font-size:10px; letter-spacing:1px; color:#6f6a90; font-family:ui-monospace,Menlo,monospace; }
+.cslot.nocast small { color:#4a4666; }
+.card.nocast .c-hero img { filter:grayscale(1) brightness(.55) opacity(.45); }
+.fmtrow > small { display:block; padding:14px 14px 0; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
+.stylerow { display:flex; flex-wrap:wrap; gap:34px 30px; padding:20px 14px 6px; }
+/* a badge sample: the pair, standing on a dark tile, in card units */
+.bsample {
+  position:relative; width:210px; height:150px; font-size:3px; border-radius:10px;
+  background:linear-gradient(180deg, #1b2140, #0d1128); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  --rar:#ffd43b; --gold:#f2c14e; --gold2:#ffe9a8; --gold3:#a8731a; color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+/* the macaron legend: the disc on its own, at a reading size (1em = 4px) */
+.psample { --gold:#f2c14e; width:150px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+.psample .c-perk { position:relative; left:auto; bottom:auto; font-size:4px; margin:10px 0 6px; transform:none; }
+.psample b { font-size:13px; }
+.psample span { font-size:12px; opacity:.75; line-height:1.3; }
+.psample small { font-size:10px; opacity:.45; letter-spacing:.5px; }
+.bsample .c-badge { position:absolute; --tx:0; --ty2:0; }
+.bsample .c-badge.rank { left:8em; top:8em; bottom:auto; right:auto; --tx:0; --ty2:0; }
+.bsample .c-badge.tier { right:8em; top:12em; bottom:auto; left:auto; --tx:0; --ty2:0; }
+.bsample .c-badge.rank.d-dogtag { top:-4em; }
+.bsample .c-badge.tier.d-dogtag { top:2em; }
+.bsample .c-badge.rank.d-medal { top:0; }
+.bsample.on { box-shadow:inset 0 0 0 2px #f2c14e; }
+.bsample:hover { cursor:pointer; box-shadow:inset 0 0 0 2px rgba(242,193,78,.5); }
+.bsample b { position:absolute; left:0; right:0; bottom:6px; text-align:center; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
+
+/* ===========================================================================
+   THE CARD ITSELF — from here to the END OF THE CARD marker is what ships.
+   =========================================================================== */
+.card {
+  /* the numbers a card is told: its size, its rarity, its scene */
+  --w:300px; --h:420px;
+  --rar:#ffd43b;                 /* the rarity colour */
+  --team:#5aa9ff;                /* the side's colour */
+  --gold:#f2c14e; --gold2:#ffe9a8; --gold3:#a8731a;
+  --zoom:2.6; --fx:50%; --fy:40%; --blur:6px;
+  --mark:.5; --mx:0%; --hero:78%;
+  --midz:1.35; --midx:0%; --midy:16%; --tinyz:1.8; --tinyx:0%; --tinyy:26%;
+  --rx:0deg; --ry:0deg;
+  position:relative; width:var(--w); height:var(--h);
+  font-size:calc(var(--w) / 100);     /* 1em = 1% of the card's width */
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:#f6f1e4; border-radius:6em; isolation:isolate; user-select:none;
+  transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  /* NOT preserve-3d: in a 3D context the children are sorted by their depth
+     and z-index stops deciding, which put a badge BEHIND the body it is
+     meant to hang over. The tilt only needs the perspective above. */
+  transform-style:flat; transition:transform .12s ease-out;
+}
+/* the body: everything that is the card proper, clipped to its outline; the
+   badges are siblings of it, which is what lets them hang over the edge */
+.c-body { inset:0; border-radius:inherit; overflow:hidden; z-index:1; box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.6); }
+.card > *, .c-body > * { position:absolute; pointer-events:none; }
+.c-back { display:none; }
+.card.static { transform:none; }
+
+/* 1. the scene: the band's own backdrop, zoomed on one patch and blurred */
+.c-scene { inset:3em; border-radius:4em; overflow:hidden; z-index:1; background:#0a1026; }
+.c-scene::before {
+  content:""; position:absolute; inset:-6%;
+  background-image:var(--bgi); background-size:calc(100% * var(--zoom)) auto;
+  background-position:var(--fx) var(--fy);
+  filter:blur(var(--blur)) saturate(1.15) brightness(.9);
+}
+/* a scrim: dark at the foot so the plate reads, the rarity leaking in at the head */
+.c-scene::after {
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 32%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%),
+    radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--rar) 26%, transparent), transparent 70%);
+}
+
+/* 2. the watermark: the rank, huge, as a filigree. The box is placed in card
+   units; the digit is the <b>, which is where the big font-size goes. */
+.c-mark { left:0; right:0; top:2em; text-align:center; z-index:2; line-height:1; opacity:var(--mark); mix-blend-mode:overlay;
+  transform:translateX(var(--mx)); }
+.c-mark b {
+  display:inline-block; font-size:92em; font-weight:900; line-height:1; letter-spacing:-.06em;
+  color:#fff; -webkit-text-stroke:.006em rgba(255,255,255,.5);
+}
+.c-mark.two { top:8em; }
+.c-mark.two b { font-size:70em; }
+.card.mark-over .c-mark { z-index:4; }
+
+/* 3. the hero: the officer, sharp, three quarters of the card */
+.c-hero { left:0; right:0; bottom:14%; height:var(--hero); z-index:3; display:flex; align-items:flex-end; justify-content:center; }
+.c-hero img {
+  /* the band's full height, not the file's: a card opened big (the
+     barracks' file, 540px) must grow the officer with it, and a picture
+     wider than the band is contained rather than stretched */
+  height:100%; width:auto; max-width:104%; object-fit:contain; object-position:50% 100%;
+  filter:drop-shadow(0 1.5em 2em rgba(0,0,0,.6)) drop-shadow(0 0 1.5em color-mix(in srgb, var(--rar) 45%, transparent));
+}
+.c-hero.missing { align-items:center; }
+.c-hero.missing::before { content:attr(data-missing); font-size:5em; letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
+
+/* 4. the badges. An SVG shape, a number over it, a shadow on the box. The
+   colour is `--bc`: the card's rarity, for both roles. `.f` is
+   the coloured body of the shape, `.f2` its darker second colour, `.x` its
+   neutral parts (a blade, a chain, a plate), `.g` the gloss. Every design
+   has a default place for each role and hangs a little over the card's edge;
+   the `at-*` classes override the place. z-index 20: above the body, always. */
+.c-badge {
+  z-index:20; --bc:var(--rar); --rim2:var(--gold); --rim3:var(--gold3); --rot:0deg; --bs:1; --tx:0; --ty2:0; --ty:50%;
+  transform:translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bs));
+  filter:drop-shadow(0 .8em 1.4em rgba(0,0,0,.6)) drop-shadow(0 0 1.2em color-mix(in srgb, var(--bc) 55%, transparent));
+}
+/* the tier badge: same rarity colour, but a dark steel rim and a hard shadow */
+.c-badge.tier { --rim2:#1a1d24; --rim3:#0b0d12; filter:drop-shadow(.7em .9em 0 rgba(0,0,0,.78)); }
+.c-badge svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.c-badge .f  { fill:var(--bc); stroke:var(--rim2); stroke-width:4; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .f2 { fill:color-mix(in srgb, var(--bc) 62%, #000); stroke:var(--rim3); stroke-width:3; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .x  { fill:url(#bx-steel); stroke:#0b0d12; stroke-width:2.5; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .g  { fill:url(#bx-gloss); pointer-events:none; }
+.c-badge .d  { fill:url(#bx-shade); pointer-events:none; }
+.c-badge span {
+  position:absolute; left:50%; top:var(--ty); transform:translate(-50%, -50%);
+  font-size:10em; font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
+  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.45), 0 0 .5em rgba(0,0,0,.4);
+}
+.c-badge span small { font-size:.36em; font-weight:800; letter-spacing:.15em; margin-right:.25em; vertical-align:.25em; }
+.c-badge.tier span { font-size:9em; color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
+.card:not(.rank-on) .c-badge.rank { display:none; }
+.card:not(.tier-on) .c-badge.tier { display:none; }
+
+/* the seven designs: a size, a place for the rank, a place for the tier.
+   Every one of them hangs past the edge by about a fifth of its own size —
+   enough to read as an object laid on the card, not enough to look dropped. */
+.d-shield.rank  { width:24em; height:26em; left:-5em; top:-4em; --rot:-8deg; }
+.d-shield.tier  { width:17em; height:18.5em; right:-4em; bottom:24em; --rot:9deg; }
+.d-crown.rank   { width:38em; height:25em; left:50%; top:-8em; --tx:-50%; --ty:70%; }
+.d-crown.tier   { width:24em; height:16em; right:-5em; bottom:26em; --rot:14deg; --ty:70%; }
+.d-seal.rank    { width:26em; height:28em; left:-5em; bottom:-5em; --rot:-10deg; --ty:40%; }
+.d-seal.tier    { width:19em; height:20.5em; right:-4em; bottom:20em; --rot:12deg; --ty:40%; }
+.d-medal.rank   { width:20em; height:28em; left:-4em; top:-6em; --ty:67%; --rot:-12deg; }
+.d-medal.tier   { width:15em; height:21em; right:-3.5em; bottom:22em; --ty:67%; --rot:10deg; }
+.d-dogtag.rank  { width:16em; height:32em; left:3em; top:-8em; --rot:-7deg; --ty:68%; }
+.d-dogtag.tier  { width:12em; height:24em; right:-2.5em; top:-6em; --rot:9deg; --ty:68%; }
+.d-dogtag.tier span { font-size:6.5em; }
+.d-burst.rank   { width:27em; height:27em; left:-6em; top:-6em; --rot:-12deg; }
+.d-burst.tier   { width:19em; height:19em; right:-4em; bottom:24em; --rot:10deg; }
+.d-scroll.rank  { width:46em; height:16em; left:50%; top:-5em; --tx:-50%; }
+.d-scroll.rank span { font-size:8.5em; }
+.d-scroll.tier  { width:30em; height:11em; left:50%; bottom:-3.5em; --tx:-50%; }
+
+/* the placement override */
+.card .c-badge.at-tl { left:-4em; top:-4em; right:auto; bottom:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-t  { left:50%; top:-4em; right:auto; bottom:auto; --tx:-50%; --ty2:0; }
+.card .c-badge.at-tr { right:-4em; top:-4em; left:auto; bottom:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-r  { right:-4em; top:50%; left:auto; bottom:auto; --tx:0; --ty2:-50%; }
+.card .c-badge.at-br { right:-4em; bottom:-4em; left:auto; top:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-b  { left:50%; bottom:-4em; right:auto; top:auto; --tx:-50%; --ty2:0; }
+.card .c-badge.at-bl { left:-4em; bottom:-4em; right:auto; top:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-l  { left:-4em; top:50%; right:auto; bottom:auto; --tx:0; --ty2:-50%; }
+
+/* 5. the crest: which army, top-right */
+.c-crest { right:4.5em; top:4.5em; width:17em; height:20em; z-index:5; object-fit:contain; filter:drop-shadow(0 .6em 1em rgba(0,0,0,.6)); }
+
+/* 5b. the macaron: what the grade is FOR (game.js, PERK) — a dark disc in
+   the badges' gold rim, a Lucide pictogram stroked on it, on the army's
+   cards only. THE SAME THREE CORNERS ON EVERY FORMAT: the grade top-left,
+   the tier bottom-right, the macaron bottom-left — a card read small in a
+   list and the same card opened big must not move a badge between them.
+   `--ps` is its scale, which the game raises with the badges on a card
+   dealt small; it grows out of its own corner. */
+.c-perk {
+  z-index:21; left:-4em; bottom:-4em; width:19em; height:19em; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
+  box-shadow:0 0 0 1.3em var(--gold), 0 0 0 2em #0b0d12, 0 .9em 1.6em rgba(0,0,0,.6);
+  transform:scale(var(--ps, 1)); transform-origin:0 100%;
+}
+.c-perk svg {
+  width:60%; height:60%; overflow:visible;
+  fill:none; stroke:#f6e6b4; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
+  filter:drop-shadow(0 .5em 0 rgba(0,0,0,.55));
+}
+.fmt-mid .c-perk { --ps:.8; }
+.fmt-tiny .c-perk {
+  left:-5em; bottom:-5em; width:34em; height:34em;
+  box-shadow:0 0 0 2.2em var(--gold), 0 0 0 3.2em #0b0d12, 0 1.2em 2em rgba(0,0,0,.6);
+}
+.card.back .c-perk { display:none; }
+.card.ghost .c-perk { filter:grayscale(1) brightness(.7); }
+
+/* 6. the plate: the name and the tier */
+.c-plate {
+  left:0; right:0; bottom:5.5em; z-index:6; text-align:center; padding:2.2em 6em 1.6em;
+  background:linear-gradient(90deg, transparent, rgba(4,5,14,.85) 14%, rgba(4,5,14,.85) 86%, transparent);
+}
+.c-plate::before, .c-plate::after {
+  content:""; position:absolute; left:12%; right:12%; height:.7em;
+  background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold2) 50%, var(--gold) 80%, transparent);
+}
+.c-plate::before { top:0; } .c-plate::after { bottom:0; }
+.c-name {
+  display:block; font-size:9em; font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
+  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.6), 0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
+}
+.c-tier { display:block; margin-top:.6em; font-size:4.2em; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
+.c-pips { left:0; right:0; bottom:1.6em; z-index:6; display:flex; justify-content:center; gap:1.4em; }
+.c-pips i {
+  width:2.6em; height:2.6em; transform:rotate(45deg); border-radius:.4em;
+  background:linear-gradient(135deg, #fff, var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000)); box-shadow:0 0 .8em var(--rar);
+}
+
+/* 7. the frame: the style's own layer, under everything but the scene */
+.c-frame { inset:0; border-radius:6em; z-index:0; }
+
+/* ---- STYLE: foil — gold leaf, bevelled, a rarity rim, a slow shimmer ------ */
+.style-foil .c-frame { background:linear-gradient(160deg, var(--gold2) 0%, var(--gold) 22%, var(--gold3) 48%, var(--gold) 70%, var(--gold2) 100%); }
+.style-foil .c-frame::before {
+  content:""; position:absolute; inset:2em; border-radius:4.6em;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--rar) 80%, #fff), var(--rar) 50%, color-mix(in srgb, var(--rar) 50%, #000));
+}
+.style-foil .c-frame::after {
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, rgba(255,255,255,.1) 52%, transparent 70%);
+  background-size:300% 100%; mix-blend-mode:screen; animation:foilShine 4.5s ease-in-out infinite;
+}
+@keyframes foilShine { 0%,55% { background-position:120% 0; } 100% { background-position:-120% 0; } }
+.style-foil .c-scene { inset:3.2em; }
+
+/* ---- STYLE: holo — a rainbow ring turning under the rarity ---------------- */
+.style-holo .c-frame { background:#0b0d1a; overflow:hidden; }
+.style-holo .c-frame::before {
+  content:""; position:absolute; left:50%; top:50%; width:220%; height:220%; margin:-110% 0 0 -110%;
+  background:conic-gradient(from 0deg, var(--rar), #ff6ec7, #ffd166, #7cffb2, #5ad1ff, #b56cff, var(--rar));
+  animation:holoTurn 7s linear infinite;
+}
+.style-holo .c-frame::after {
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 45%, transparent), transparent 40%, color-mix(in srgb, var(--rar) 45%, transparent)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.14) 0 .5em, transparent .5em 1.4em);
+  mix-blend-mode:soft-light;
+}
+@keyframes holoTurn { to { transform:rotate(360deg); } }
+.style-holo .c-scene::before { filter:blur(var(--blur)) saturate(1.4) hue-rotate(-10deg); }
+.style-holo .c-body { box-shadow:0 12px 30px rgba(0,0,0,.6), 0 0 2.4em color-mix(in srgb, var(--rar) 40%, transparent); }
+
+/* ---- STYLE: ember — black iron, the rarity burning through the joints ----- */
+.style-ember .c-frame {
+  background:
+    radial-gradient(circle at 6% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 94% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 6% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 94% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
+    linear-gradient(180deg, #2a2d36, #141620 40%, #1e2029 100%);
+  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.7), inset 0 0 0 .9em #3a3f4a;
+}
+.style-ember .c-frame::before {
+  content:""; position:absolute; inset:2.2em; border-radius:4.4em;
+  box-shadow:0 0 1.6em var(--rar), inset 0 0 1.4em var(--rar); border:.5em solid var(--rar);
+  animation:emberBreath 2.6s ease-in-out infinite;
+}
+@keyframes emberBreath { 50% { filter:brightness(1.35); } }
+.style-ember .c-body { box-shadow:0 12px 30px rgba(0,0,0,.7), 0 0 3em color-mix(in srgb, var(--rar) 45%, transparent); }
+.style-ember.tier-legendary .c-frame::before { animation:emberFlicker 1.1s steps(1) infinite; }
+@keyframes emberFlicker { 0%,100% { opacity:1; } 30% { opacity:.75; } 34% { opacity:1; } 62% { opacity:.85; } 66% { opacity:1; } }
+
+/* ---- STYLE: forge — ember's cousin: basalt cracked open on lava ----------- */
+.style-forge .c-frame {
+  --lava:color-mix(in srgb, var(--rar) 55%, #ff6a00);
+  background:
+    repeating-linear-gradient(112deg, transparent 0 4.2em, var(--lava) 4.2em 4.5em, transparent 4.5em 9em),
+    repeating-linear-gradient(-68deg, transparent 0 6em, color-mix(in srgb, var(--lava) 70%, transparent) 6em 6.25em, transparent 6.25em 13em),
+    linear-gradient(180deg, #221a17, #0e0b0a 45%, #1a1210 100%);
+  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.8), inset 0 0 2.6em rgba(0,0,0,.9);
+}
+.style-forge .c-frame::before {          /* the molten seam */
+  content:""; position:absolute; inset:2.4em; border-radius:4.2em; border:.4em solid var(--lava);
+  box-shadow:0 0 1.4em var(--lava), inset 0 0 1.6em color-mix(in srgb, var(--lava) 70%, transparent);
+  animation:forgeHeat 1.8s ease-in-out infinite;
+}
+@keyframes forgeHeat { 50% { filter:brightness(1.5) saturate(1.2); } }
+.style-forge .c-frame::after {           /* the sparks */
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 8% 30%, #ffd27a 0 .35em, transparent .6em),
+    radial-gradient(circle at 93% 62%, #ffb347 0 .3em, transparent .55em),
+    radial-gradient(circle at 5% 78%, #ff8a3d 0 .3em, transparent .5em),
+    radial-gradient(circle at 95% 18%, #ffe0a0 0 .25em, transparent .5em),
+    radial-gradient(circle at 50% 97%, #ffb347 0 .35em, transparent .6em),
+    radial-gradient(circle at 30% 3%, #ff9a4d 0 .3em, transparent .5em);
+  animation:sparkle 1.3s steps(2) infinite;
+}
+@keyframes sparkle { 50% { opacity:.35; } }
+.style-forge .c-body { box-shadow:0 12px 30px rgba(0,0,0,.75), 0 0 3em rgba(255,110,20,.45); }
+.style-forge .c-scene::before { filter:blur(var(--blur)) sepia(.35) saturate(1.5) hue-rotate(-18deg) brightness(.8); }
+.style-forge .c-scene::after {
+  background:
+    linear-gradient(180deg, rgba(255,120,30,.25) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(20,6,2,.95) 0%, rgba(40,10,4,.6) 20%, transparent 48%),
+    radial-gradient(80% 40% at 50% 100%, rgba(255,110,20,.55), transparent 70%);
+}
+.style-forge .c-tier { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
+.style-forge .c-pips i { background:linear-gradient(135deg, #fff, #ff9a3d 40%, #7a2a00); box-shadow:0 0 .8em #ff8a3d; }
+
+/* ---- STYLE: ash — ember's other cousin: charred wood, the last embers ----- */
+.style-ash .c-frame {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 .3em, transparent .3em 1.6em),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 .15em, transparent .15em 3.4em),
+    linear-gradient(180deg, #2b2523, #17130f 50%, #221c18);
+  box-shadow:inset 0 0 0 .4em #0a0806, inset 0 0 3em rgba(0,0,0,.9);
+}
+.style-ash .c-frame::before {            /* the edge still burning: a broken line of glow */
+  content:""; position:absolute; inset:2.4em; border-radius:4.2em;
+  border:.45em dashed color-mix(in srgb, var(--rar) 60%, #ff5a1a);
+  box-shadow:0 0 1.2em color-mix(in srgb, var(--rar) 50%, #ff5a1a), inset 0 0 1em rgba(255,90,26,.35);
+  animation:ashGlow 3.4s ease-in-out infinite;
+}
+@keyframes ashGlow { 50% { opacity:.55; filter:brightness(.7); } }
+.style-ash .c-frame::after {             /* embers in the corners, and the smoke */
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:
+    radial-gradient(circle at 4% 96%, #ff7a2a 0 .4em, transparent .7em),
+    radial-gradient(circle at 9% 92%, #ffb26a 0 .25em, transparent .5em),
+    radial-gradient(circle at 96% 95%, #ff7a2a 0 .35em, transparent .65em),
+    radial-gradient(circle at 92% 89%, #ff9a4d 0 .2em, transparent .45em),
+    radial-gradient(circle at 3% 6%, #ff8a3d 0 .25em, transparent .5em),
+    radial-gradient(70% 30% at 50% 0, rgba(200,200,200,.18), transparent 70%);
+  animation:sparkle 2.2s steps(3) infinite;
+}
+.style-ash .c-body { box-shadow:0 12px 30px rgba(0,0,0,.8), 0 0 2em rgba(255,90,26,.25); }
+.style-ash .c-scene::before { filter:blur(var(--blur)) grayscale(.65) brightness(.55) contrast(1.1); }
+.style-ash .c-scene::after {
+  background:
+    linear-gradient(180deg, rgba(180,180,180,.16) 0%, transparent 35%),
+    linear-gradient(0deg, rgba(8,6,5,.95) 0%, rgba(20,12,8,.6) 22%, transparent 50%),
+    radial-gradient(60% 30% at 50% 100%, rgba(255,90,26,.35), transparent 70%);
+}
+.style-ash .c-plate::before, .style-ash .c-plate::after { background:linear-gradient(90deg, transparent, #ff7a2a 30%, #ffd0a0 50%, #ff7a2a 70%, transparent); }
+.style-ash .c-name { color:#e8e2d8; }
+.style-ash .c-pips i { background:linear-gradient(135deg, #fff, #ff7a2a 40%, #3a1200); box-shadow:0 0 .8em #ff7a2a; }
+
+/* ---- STYLE: chamfer — cut corners, brackets, a tactical readout ----------- */
+.style-chamfer .c-body, .style-chamfer .c-frame { border-radius:0; }
+.style-chamfer .c-body { clip-path:polygon(8em 0, 100% 0, 100% calc(100% - 8em), calc(100% - 8em) 100%, 0 100%, 0 8em); }
+.style-chamfer .c-frame {
+  background:linear-gradient(180deg, #0f1220, #080a14);
+  box-shadow:inset 0 0 0 .7em var(--rar), inset 0 0 0 1em rgba(0,0,0,.8), inset 0 0 0 1.4em color-mix(in srgb, var(--rar) 40%, transparent);
+}
+.style-chamfer .c-frame::before {
+  content:""; position:absolute; inset:2.4em;
+  background:
+    linear-gradient(var(--rar), var(--rar)) 0 0 / 10em .8em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 0 0 / .8em 10em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 100% 100% / 10em .8em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 100% 100% / .8em 10em no-repeat;
+}
+.style-chamfer .c-scene { inset:3.6em; border-radius:0; }
+.style-chamfer .c-scene::after {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 .4em, transparent .4em 1.2em),
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 30%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%);
+}
+.style-chamfer .c-plate::before, .style-chamfer .c-plate::after { background:linear-gradient(90deg, transparent, var(--rar) 20%, #fff 50%, var(--rar) 80%, transparent); }
+.style-chamfer .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.2em; }
+
+/* ---- STYLE: hex — chamfer's cousin: eight sides, ticks, a turning reticle -- */
+.style-hex .c-body, .style-hex .c-frame { border-radius:0; }
+.style-hex .c-body { clip-path:polygon(12em 0, calc(100% - 12em) 0, 100% 9em, 100% calc(100% - 9em), calc(100% - 12em) 100%, 12em 100%, 0 calc(100% - 9em), 0 9em); }
+.style-hex .c-frame {
+  background:linear-gradient(180deg, #0c1420, #070b12);
+  box-shadow:inset 0 0 0 .5em var(--rar), inset 0 0 0 1.2em #070b12, inset 0 0 0 1.5em color-mix(in srgb, var(--rar) 55%, transparent);
+}
+.style-hex .c-frame::before {            /* the ticks: a ruler along the top and the bottom */
+  content:""; position:absolute; inset:2.2em;
+  background:
+    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 0 / 56% .9em no-repeat,
+    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 100% / 56% .9em no-repeat,
+    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 0 50% / .9em 40% no-repeat,
+    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 100% 50% / .9em 40% no-repeat;
+  opacity:.8;
+}
+.style-hex .c-frame::after {             /* the reticle, behind the hero */
+  content:""; position:absolute; left:50%; top:38%; width:64em; height:64em; margin:-32em 0 0 -32em; border-radius:50%;
+  border:.5em dashed color-mix(in srgb, var(--rar) 70%, transparent);
+  box-shadow:inset 0 0 0 3em transparent, inset 0 0 0 3.4em color-mix(in srgb, var(--rar) 30%, transparent);
+  animation:reticle 18s linear infinite; z-index:2;
+}
+@keyframes reticle { to { transform:rotate(360deg); } }
+.style-hex .c-scene { inset:3.8em; border-radius:0; clip-path:polygon(9em 0, calc(100% - 9em) 0, 100% 6.5em, 100% calc(100% - 6.5em), calc(100% - 9em) 100%, 9em 100%, 0 calc(100% - 6.5em), 0 6.5em); }
+.style-hex .c-scene::before { filter:blur(var(--blur)) saturate(.7) hue-rotate(15deg) brightness(.75); }
+.style-hex .c-scene::after {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--rar) 45%, transparent) 0 .3em, transparent .4em) 0 0 / 4em 4em,
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 25%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,6,12,.94) 0%, rgba(3,6,12,.55) 18%, transparent 46%);
+}
+.style-hex .c-plate { clip-path:polygon(4em 0, calc(100% - 4em) 0, 100% 50%, calc(100% - 4em) 100%, 4em 100%, 0 50%); left:4em; right:4em; background:rgba(4,8,16,.85); }
+.style-hex .c-plate::before, .style-hex .c-plate::after { left:8%; right:8%; background:var(--rar); height:.35em; }
+.style-hex .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.24em; }
+.style-hex .c-pips i { transform:none; border-radius:0; clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+
+/* ---- STYLE: steel — chamfer's other cousin: a bolted plate, hazard tape --- */
+.style-steel .c-body, .style-steel .c-frame { border-radius:0; }
+.style-steel .c-body { clip-path:polygon(10em 0, 100% 0, 100% calc(100% - 10em), calc(100% - 10em) 100%, 0 100%, 0 10em); }
+.style-steel .c-frame {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 .2em, transparent .2em .6em),
+    linear-gradient(160deg, #8a9098, #4e545c 45%, #6b727b 70%, #3b4048);
+  box-shadow:inset 0 0 0 .3em #1c1f24, inset 0 .5em 0 .3em rgba(255,255,255,.2), inset 0 -.6em 0 .3em rgba(0,0,0,.5);
+}
+.style-steel .c-frame::before {          /* the bolts */
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 14em 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at calc(100% - 4em) 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at 4em calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at calc(100% - 14em) calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em);
+}
+.style-steel .c-frame::after {           /* the tape: a band of hazard stripes under the plate */
+  content:""; position:absolute; left:4.5em; right:4.5em; bottom:4.5em; height:3em;
+  background:repeating-linear-gradient(-45deg, var(--rar) 0 2.2em, #14110f 2.2em 4.4em);
+  box-shadow:0 0 0 .3em #1c1f24;
+}
+.style-steel .c-scene { inset:4.5em 4.5em 7.5em; border-radius:0; }
+.style-steel .c-scene::before { filter:blur(var(--blur)) saturate(.85) brightness(.8); }
+.style-steel .c-scene::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 26%, transparent) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(10,12,16,.95) 0%, rgba(10,12,16,.6) 18%, transparent 46%);
+}
+.style-steel .c-hero { bottom:16%; }
+.style-steel .c-plate { left:4.5em; right:4.5em; bottom:9em; padding:1.6em 4em 1.2em; background:linear-gradient(180deg, #2a2e35, #171a1f); box-shadow:inset 0 .3em 0 rgba(255,255,255,.1), 0 .3em 0 #0a0b0d; }
+.style-steel .c-plate::before { background:var(--rar); left:0; right:0; height:.6em; }
+.style-steel .c-plate::after { display:none; }
+.style-steel .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.3em; color:#e9edf2; text-shadow:0 .08em 0 #000; }
+.style-steel .c-tier { color:var(--rar); letter-spacing:.5em; }
+.style-steel .c-pips { display:none; }
+.style-steel .c-crest { top:6em; right:6em; }
+
+/* ---- STYLE: parchment — a war map, ink and wax, the rank stamped on it --- */
+.style-parchment .c-body, .style-parchment .c-frame { border-radius:2.5em; }
+.style-parchment .c-frame {
+  background:
+    repeating-linear-gradient(0deg, rgba(120,80,20,.06) 0 .3em, transparent .3em 1.1em),
+    repeating-linear-gradient(90deg, rgba(120,80,20,.05) 0 .2em, transparent .2em 1.7em),
+    radial-gradient(120% 90% at 50% 40%, #ecd9a9, #cdb27a 70%, #9c7a45);
+  box-shadow:inset 0 0 5em rgba(70,35,0,.55), inset 0 0 1.2em rgba(50,25,0,.6);
+}
+.style-parchment .c-frame::before { content:""; position:absolute; inset:2.4em; border:.5em double #4a2e12; border-radius:1.4em; opacity:.85; }
+.style-parchment .c-frame::after {       /* the wax seal, bottom-right */
+  content:""; position:absolute; right:3em; bottom:3em; width:12em; height:12em; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--rar) 70%, #fff), var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000) 90%);
+  box-shadow:0 .4em .8em rgba(40,20,0,.5), inset 0 0 0 1.4em rgba(0,0,0,.18), inset 0 0 0 2.2em rgba(255,255,255,.18);
+  z-index:8;
+}
+.style-parchment .c-scene { inset:5em; border-radius:1em; }
+.style-parchment .c-scene::before { filter:blur(var(--blur)) sepia(.75) contrast(.9) brightness(.85); }
+.style-parchment .c-scene::after {
+  background:
+    linear-gradient(0deg, rgba(70,40,10,.9) 0%, rgba(70,40,10,.45) 22%, transparent 50%),
+    radial-gradient(110% 90% at 50% 40%, transparent 55%, rgba(60,30,0,.55));
+}
+.style-parchment .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:6em; }
+.style-parchment .c-mark b {             /* the stamp: ink, tilted, ringed */
+  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:66em; padding:0 .12em;
+  color:var(--rar); transform:rotate(-12deg); -webkit-text-stroke:0;
+  border:.05em solid var(--rar); border-radius:.16em; box-shadow:inset 0 0 0 .015em #fff2d0, 0 0 0 .015em #fff2d0;
+}
+.style-parchment .c-mark.two { top:9em; }
+.style-parchment .c-mark.two b { font-size:56em; }
+.style-parchment .c-plate { background:linear-gradient(90deg, transparent, #3a2412 12%, #4a2e12 50%, #3a2412 88%, transparent); bottom:7em; }
+.style-parchment .c-plate::before, .style-parchment .c-plate::after { background:linear-gradient(90deg, transparent, #b07a2a 30%, #e8c27a 50%, #b07a2a 70%, transparent); height:.4em; }
+.style-parchment .c-name { font-family:Georgia,"Times New Roman",serif; color:#f2e3bf; letter-spacing:.1em; text-shadow:0 .06em 0 rgba(0,0,0,.6); }
+.style-parchment .c-tier { font-family:Georgia,serif; color:#e8c27a; text-shadow:none; }
+.style-parchment .c-pips { bottom:3em; }
+.style-parchment .c-pips i { background:#4a2e12; box-shadow:none; }
+.style-parchment .c-hero img { filter:drop-shadow(0 1em 1.4em rgba(40,20,0,.55)) sepia(.12); }
+
+/* ---- STYLE: stone — a slab, chiselled, runes lit in the rarity ----------- */
+.style-stone .c-body, .style-stone .c-frame { border-radius:1.6em; }
+.style-stone .c-frame {
+  background:
+    repeating-linear-gradient(37deg, rgba(255,255,255,.04) 0 .4em, transparent .4em 1.8em),
+    repeating-linear-gradient(-23deg, rgba(0,0,0,.12) 0 .3em, transparent .3em 2.4em),
+    linear-gradient(180deg, #5c626b, #3a3f47 50%, #2b2f36);
+  box-shadow:inset 0 .6em 0 rgba(255,255,255,.14), inset 0 -.8em 0 rgba(0,0,0,.6), inset .5em 0 0 rgba(255,255,255,.05), inset -.5em 0 0 rgba(0,0,0,.35);
+}
+.style-stone .c-frame::before {
+  content:""; position:absolute; inset:2.6em; border-radius:1em; border:.6em solid rgba(0,0,0,.5);
+  box-shadow:0 0 0 .3em rgba(255,255,255,.12), inset 0 0 0 .3em rgba(255,255,255,.08);
+}
+.style-stone .c-frame::after {
+  content:"\16A0 \16A2 \16A6 \16A8 \16B1 \16B7 \16B9 \16BE"; position:absolute; left:0; right:0; top:.8em; text-align:center;
+  font-size:2.6em; letter-spacing:.9em; color:var(--rar); text-shadow:0 0 .5em var(--rar);
+  animation:runeGlow 4s ease-in-out infinite;
+}
+@keyframes runeGlow { 50% { opacity:.55; } }
+.style-stone .c-scene { inset:4.6em; border-radius:.6em; }
+.style-stone .c-scene::before { filter:blur(var(--blur)) grayscale(.55) brightness(.65) contrast(1.1); }
+.style-stone .c-scene::after {
+  background:
+    linear-gradient(0deg, rgba(20,24,20,.9) 0%, rgba(20,24,20,.4) 22%, transparent 48%),
+    radial-gradient(60% 30% at 20% 100%, rgba(60,110,50,.55), transparent 70%),
+    radial-gradient(50% 24% at 85% 100%, rgba(60,110,50,.45), transparent 70%),
+    linear-gradient(112deg, transparent 47.6%, rgba(0,0,0,.55) 48%, rgba(255,255,255,.12) 48.4%, transparent 48.8%),
+    linear-gradient(74deg, transparent 71.6%, rgba(0,0,0,.5) 72%, rgba(255,255,255,.1) 72.4%, transparent 72.8%),
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 22%, transparent), transparent 40%);
+}
+.style-stone .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:4em; }
+.style-stone .c-mark b {                 /* the carving: a chiselled edge, the stone showing through */
+  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:80em;
+  color:transparent; -webkit-text-stroke:.012em rgba(235,238,245,.9);
+  text-shadow:.02em .025em 0 rgba(0,0,0,.75), -.008em -.008em 0 rgba(255,255,255,.35);
+}
+.style-stone .c-mark.two { top:8em; }
+.style-stone .c-mark.two b { font-size:64em; }
+.style-stone .c-plate {
+  left:5em; right:5em; bottom:6em; padding:1.6em 3em 1.2em;
+  background:linear-gradient(180deg, #2e323a, #1e2126); border:.5em solid #4a4f57; border-radius:.8em;
+  box-shadow:inset 0 .3em 0 rgba(255,255,255,.08), inset 0 -.4em 0 rgba(0,0,0,.5);
+}
+.style-stone .c-plate::before, .style-stone .c-plate::after { display:none; }
+.style-stone .c-name { font-family:Georgia,"Times New Roman",serif; color:#c9ccd2; letter-spacing:.16em; text-shadow:0 -.05em 0 #000, 0 .05em 0 rgba(255,255,255,.18); }
+.style-stone .c-tier { color:var(--rar); text-shadow:0 0 .6em var(--rar); font-family:Georgia,serif; }
+.style-stone .c-pips { bottom:2.6em; }
+.style-stone .c-pips i { border-radius:0; background:var(--rar); box-shadow:0 0 .6em var(--rar), inset 0 0 0 .3em rgba(0,0,0,.35); }
+.style-stone .c-hero img { filter:drop-shadow(0 1.2em 1.2em rgba(0,0,0,.7)) saturate(.9); }
+
+/* ---- FORMAT: mid — the grid's face-up square ----------------------------- */
+.fmt-mid { --h:var(--w); }
+.fmt-mid .c-body, .fmt-mid .c-frame { border-radius:5em; }
+.fmt-mid .c-badge { --bs:.8; }
+.fmt-mid .c-badge.tier { bottom:12em; }
+.fmt-mid .d-scroll.tier, .fmt-mid .d-seal.rank { bottom:-6em; }
+.fmt-mid .c-scene { inset:3em; border-radius:3.5em; }
+.fmt-mid .c-mark { top:-6em; left:0; right:0; text-align:center; }
+.fmt-mid .c-mark b { font-size:78em; transform:none; }
+.fmt-mid .c-mark.two { top:-3em; }
+.fmt-mid .c-mark.two b { font-size:64em; }
+.fmt-mid.rank-on .c-mark { display:none; }
+/* the crop: the whole square is the window, the officer free to be cut by any
+   of its four edges. The image hangs from the MIDDLE of the square (left/top
+   50% and a -50% translate) and is moved from there in percents of the square,
+   so a zoom keeps looking at the same point instead of growing out of a
+   corner. Its height is the square's, times the zoom. */
+.fmt-mid .c-hero, .fmt-tiny .c-hero {
+  width:auto; height:auto; display:block; overflow:hidden; border-radius:inherit;
+}
+.fmt-mid .c-hero img, .fmt-tiny .c-hero img {
+  position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+  width:auto; max-width:none; max-height:none;
+}
+.fmt-mid .c-hero  { inset:3em; border-radius:3.5em; }
+.fmt-mid .c-hero img  { height:calc(100% * var(--midz));  margin-left:var(--midx);  margin-top:var(--midy); }
+.fmt-mid.style-chamfer .c-hero, .fmt-mid.style-hex .c-hero, .fmt-mid.style-steel .c-hero { border-radius:0; }
+.fmt-mid.style-steel .c-hero { inset:4.5em 4.5em 7.5em; }
+.fmt-mid .c-hero.missing, .fmt-tiny .c-hero.missing { display:flex; align-items:center; justify-content:center; }
+.fmt-mid .c-crest { right:3.5em; top:3.5em; width:18em; height:20em; }
+.fmt-mid .c-plate { bottom:4em; padding:1.6em 4em 1.2em; }
+.fmt-mid .c-name { font-size:10em; letter-spacing:.1em; }
+.fmt-mid .c-tier, .fmt-mid .c-pips { display:none; }
+.fmt-mid.style-steel .c-scene { inset:4.5em 4.5em 7.5em; }
+.fmt-mid.style-steel .c-plate { bottom:9em; }
+.fmt-mid.style-stone .c-frame::after { display:none; }
+.fmt-mid.style-stone .c-plate, .fmt-mid.style-parchment .c-plate { bottom:4em; }
+.fmt-mid.style-parchment .c-frame::after { width:8em; height:8em; right:2em; bottom:2em; }
+.fmt-mid.style-hex .c-frame::after { width:50em; height:50em; margin:-25em 0 0 -25em; top:40%; }
+
+/* ---- FORMAT: tiny — a token for the menus --------------------------------- */
+.fmt-tiny { --h:var(--w); }
+.fmt-tiny .c-body, .fmt-tiny .c-frame { border-radius:16em; }
+.fmt-tiny .c-scene { inset:6em; border-radius:11em; }
+/* the token's rank: one digit in the corner, over the bust, whatever the style */
+.fmt-tiny .c-mark { z-index:7; left:auto; right:4em; top:auto; bottom:-2em; text-align:right; opacity:1; mix-blend-mode:normal; }
+.fmt-tiny .c-mark b {
+  font-size:58em; font-weight:900; font-family:inherit; letter-spacing:-.05em; transform:none; animation:none; padding:0; border:0; box-shadow:none;
+  color:#fff; -webkit-text-stroke:.035em #0b0b12; text-shadow:0 .05em .25em rgba(0,0,0,.85);
+}
+.fmt-tiny .c-mark.two { right:3em; bottom:0; }
+.fmt-tiny .c-mark.two b { font-size:46em; }
+.fmt-tiny.rank-on .c-mark { display:none; }
+.fmt-tiny .c-hero { inset:6em; border-radius:11em; }
+.fmt-tiny .c-hero img { height:calc(100% * var(--tinyz)); margin-left:var(--tinyx); margin-top:var(--tinyy); filter:none; }
+/* the token: the number on the top-left corner, the tier letter on the
+   bottom-right one — the corners every format gives them — both straight
+   and both SIZED FOR THE TOKEN — a design's own
+   size is a fraction of a 300px card and reads as a speck on a 64px one, so
+   every shape is re-measured here rather than scaled. */
+.fmt-tiny .c-badge { --bs:1; --rot:0deg; --tx:0; --ty2:0; }
+.fmt-tiny .c-badge span { font-size:23em; }
+.fmt-tiny .c-badge.tier span { font-size:19em; }
+.fmt-tiny .c-badge.rank { right:auto; bottom:auto; left:-4em; top:-4em; }
+.fmt-tiny .d-shield.rank { width:46em; height:50em; }
+.fmt-tiny .d-crown.rank  { width:54em; height:36em; left:-5em; top:-3em; }
+.fmt-tiny .d-seal.rank   { width:46em; height:50em; }
+.fmt-tiny .d-medal.rank  { width:38em; height:53em; left:-3em; top:-7em; }
+.fmt-tiny .d-dogtag.rank { width:30em; height:60em; left:-2em; top:-9em; }
+.fmt-tiny .d-burst.rank  { width:52em; height:52em; left:-6em; top:-6em; }
+.fmt-tiny .d-scroll.rank { width:62em; height:22em; left:-6em; top:-4em; }
+.fmt-tiny .c-badge.tier { left:auto; top:auto; right:-4em; bottom:-4em; }
+.fmt-tiny .d-shield.tier { width:33em; height:36em; }
+.fmt-tiny .d-crown.tier  { width:40em; height:27em; right:-5em; bottom:-3em; }
+.fmt-tiny .d-seal.tier   { width:33em; height:36em; }
+.fmt-tiny .d-medal.tier  { width:27em; height:38em; right:-3em; bottom:-9em; }
+.fmt-tiny .d-dogtag.tier { width:22em; height:44em; right:-2em; bottom:-11em; }
+.fmt-tiny .d-burst.tier  { width:38em; height:38em; right:-5em; bottom:-5em; }
+.fmt-tiny .d-scroll.tier { width:46em; height:17em; right:-4em; bottom:-3em; }
+.fmt-tiny .c-crest, .fmt-tiny .c-plate, .fmt-tiny .c-pips { display:none; }
+.fmt-tiny .c-frame::after { display:none; }
+.fmt-tiny.style-foil .c-frame::after, .fmt-tiny.style-holo .c-frame::after { display:block; }
+.fmt-tiny:not(.style-holo) .c-frame::before { inset:3em; border-radius:13em; }
+.fmt-tiny.style-chamfer .c-body, .fmt-tiny.style-steel .c-body { clip-path:polygon(18em 0, 100% 0, 100% calc(100% - 18em), calc(100% - 18em) 100%, 0 100%, 0 18em); }
+.fmt-tiny.style-hex .c-body { clip-path:polygon(22em 0, calc(100% - 22em) 0, 100% 18em, 100% calc(100% - 18em), calc(100% - 22em) 100%, 22em 100%, 0 calc(100% - 18em), 0 18em); }
+.fmt-tiny.style-chamfer .c-scene, .fmt-tiny.style-hex .c-scene, .fmt-tiny.style-steel .c-scene { inset:7em; border-radius:0; clip-path:none; }
+.fmt-tiny.style-chamfer .c-hero, .fmt-tiny.style-hex .c-hero, .fmt-tiny.style-steel .c-hero { inset:7em; border-radius:0; }
+.fmt-tiny.style-chamfer .c-frame::before, .fmt-tiny.style-hex .c-frame::before, .fmt-tiny.style-steel .c-frame::before { display:none; }
+.fmt-tiny.style-parchment .c-scene, .fmt-tiny.style-stone .c-scene { inset:6em; border-radius:11em; }
+
+/* ---- the BACK: the crest on the team's cloth, for the face-down grid ------ */
+.card.back .c-scene::before {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
+    radial-gradient(80% 70% at 50% 40%, color-mix(in srgb, var(--team) 80%, #000), color-mix(in srgb, var(--team) 25%, #000));
+  background-size:auto; background-position:0 0; filter:none;
+}
+.card.back .c-scene::after { background:radial-gradient(70% 70% at 50% 100%, rgba(0,0,0,.5), transparent); }
+.card.back .c-mark, .card.back .c-hero, .card.back .c-badge, .card.back .c-plate, .card.back .c-pips, .card.back .c-crest, .card.back .c-frame::after { display:none; }
+.card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
+.card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
+.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:14em; font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
+.card.back.fmt-tiny .c-back img { width:70%; }
+.card.back.fmt-tiny .c-back::after { display:none; }
+
+/* an OBJECT: a card with no grade and no tier — the flag, a trap, the
+   ground a camp is built on. No badge, no watermark, no pips, and the plate
+   says what kind of card it is where a rarity would be. The piece is a
+   standing prop rather than a figure, so it is centred rather than stood on
+   the plate, and a touch smaller. */
+.card.object .c-badge, .card.object .c-mark, .card.object .c-pips { display:none; }
+.card.object .c-hero { align-items:center; }
+.card.object .c-hero img { max-width:82%; max-height:82%; }
+.fmt-mid.object .c-hero img, .fmt-tiny.object .c-hero img { height:74%; margin:0; }
+.fmt-mid.object .c-name { font-size:8.5em; }
+
+/* a GHOST: a card the player has never had — never owned for an officer,
+   never met for an object. The painted piece flattened to its own WHITE
+   silhouette, the way an unowned sticker is (packages/webshell/meta.css),
+   the scene drained, no pips, no crest, the name a ???. The grade and the
+   tier badges stay — the grade names the slot, the tier says at what rank
+   the card is shown — drawn in the ghost's slate rather than a rarity. */
+.card.ghost .c-hero img { filter:brightness(0) invert(1) opacity(.26); }
+.card.ghost .c-scene { filter:grayscale(1) brightness(.55); }
+.card.ghost .c-pips, .card.ghost .c-tier, .card.ghost .c-crest { display:none; }
+.card.ghost .c-name { opacity:.6; letter-spacing:.3em; }
+
+/* motion off: a still card for a screenshot */
+.still .c-frame::before, .still .c-frame::after, .still .c-mark b { animation:none !important; }
+/* ============================ END OF THE CARD ============================== */
+</style>
+</head>
+<body>
+
+<!-- the gradients every badge shape refers to: a gloss, a shade, brushed steel -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="bx-gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bx-shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/>
+    </linearGradient>
+    <linearGradient id="bx-steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2f5f9"/><stop offset=".45" stop-color="#a7b0bd"/><stop offset=".55" stop-color="#6d7683"/><stop offset="1" stop-color="#c9d1db"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="panel">
+  <h1>Stratideck cards</h1>
+  <p class="hint">Dress the painted officers as cards: full, grid square, tiny token.</p>
+
+  <h2>Card</h2>
+  <div class="row">
+    <label for="rank">rank <b id="rank-v"></b></label>
+    <select id="rank"></select>
+  </div>
+  <div class="row">
+    <label>side</label>
+    <div class="seg" data-key="side">
+      <button data-v="blue">Blue army</button><button data-v="red">Red camp</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>frame style</label>
+    <div class="seg wrap" data-key="style">
+      <button data-v="foil">Foil</button><button data-v="holo">Holo</button><button data-v="ember">Ember</button>
+      <button data-v="forge">Forge</button><button data-v="ash">Ash</button><button data-v="chamfer">Chamfer</button>
+      <button data-v="hex">Hex</button><button data-v="steel">Steel</button><button data-v="parchment">Parchment</button>
+      <button data-v="stone">Stone</button>
+    </div>
+  </div>
+
+  <h2>Badges</h2>
+  <div class="row">
+    <label for="tier">tier <b id="tier-v"></b></label>
+    <select id="tier">
+      <option value="auto">By rank (the table below)</option>
+      <option value="S">S · legendary</option><option value="A">A · epic</option><option value="B">B · rare</option>
+      <option value="C">C · uncommon</option><option value="D">D · common</option><option value="E">E · basic</option>
+    </select>
+  </div>
+  <label class="chk"><input id="rankOn" type="checkbox" checked> rank badge, the number, soft glow</label>
+  <div class="row">
+    <label>rank badge design</label>
+    <div class="seg wrap" data-key="brank">
+      <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
+      <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
+      <button data-v="scroll">Scroll</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>rank badge place</label>
+    <div class="seg wrap" data-key="arank">
+      <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
+      <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
+      <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+    </div>
+  </div>
+  <label class="chk"><input id="perkOn" type="checkbox" checked> macaron, what the grade is for (blue army)</label>
+  <label class="chk"><input id="tierOn" type="checkbox" checked> tier badge, the letter, dark rim, hard shadow</label>
+  <div class="row">
+    <label>tier badge design</label>
+    <div class="seg wrap lv" data-key="btier">
+      <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
+      <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
+      <button data-v="scroll">Scroll</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>tier badge place</label>
+    <div class="seg wrap lv" data-key="atier">
+      <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
+      <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
+      <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+    </div>
+  </div>
+
+  <h2>Scene</h2>
+  <div class="row">
+    <label for="band">band backdrop <b id="band-v">1</b></label>
+    <input id="band" type="range" min="1" max="5" value="1">
+  </div>
+  <div class="row">
+    <label for="zoom">zoom <b id="zoom-v">2.6</b></label>
+    <input id="zoom" type="range" min="10" max="50" value="26">
+  </div>
+  <div class="row">
+    <label for="blur">blur <b id="blur-v">6</b></label>
+    <input id="blur" type="range" min="0" max="16" value="6">
+  </div>
+  <div class="row">
+    <label for="fx">focus x <b id="fx-v">50</b></label>
+    <input id="fx" type="range" min="0" max="100" value="50">
+  </div>
+  <div class="row">
+    <label for="fy">focus y <b id="fy-v">40</b></label>
+    <input id="fy" type="range" min="0" max="100" value="40">
+  </div>
+  <label class="chk"><input id="vary" type="checkbox" checked> each rank looks at a different patch</label>
+
+  <h2>Dressing</h2>
+  <div class="row">
+    <label for="hero">hero height <b id="hero-v">78</b>%</label>
+    <input id="hero" type="range" min="50" max="95" value="78">
+  </div>
+  <div class="row">
+    <label for="mark">watermark opacity <b id="mark-v">.5</b></label>
+    <input id="mark" type="range" min="0" max="100" value="50">
+  </div>
+  <div class="row">
+    <label for="mx">watermark x <b id="mx-v">0</b>%</label>
+    <input id="mx" type="range" min="-40" max="40" value="0">
+  </div>
+  <label class="chk"><input id="markover" type="checkbox" checked> watermark over the hero</label>
+  <label class="chk"><input id="tilt" type="checkbox" checked> tilt on hover</label>
+  <label class="chk"><input id="motion" type="checkbox" checked> frame animations</label>
+  <label class="chk"><input id="checker" type="checkbox"> checkerboard stage</label>
+
+  <h2>Bust framing</h2>
+  <p class="hint" style="margin:0 0 10px">The two squares crop the officer, and he may be cut by the card. Zoom in and push him down to frame the face alone.</p>
+  <div class="row">
+    <label for="midz">mid zoom <b id="midz-v">1.35</b>×</label>
+    <input id="midz" type="range" min="80" max="500" value="135">
+  </div>
+  <div class="row">
+    <label for="midx">mid x <b id="midx-v">0</b>%</label>
+    <input id="midx" type="range" min="-100" max="100" value="0">
+  </div>
+  <div class="row">
+    <label for="midy">mid y <b id="midy-v">16</b>%</label>
+    <input id="midy" type="range" min="-100" max="150" value="16">
+  </div>
+  <div class="row">
+    <label for="tinyz">tiny zoom <b id="tinyz-v">1.8</b>×</label>
+    <input id="tinyz" type="range" min="80" max="600" value="180">
+  </div>
+  <div class="row">
+    <label for="tinyx">tiny x <b id="tinyx-v">0</b>%</label>
+    <input id="tinyx" type="range" min="-100" max="100" value="0">
+  </div>
+  <div class="row">
+    <label for="tinyy">tiny y <b id="tinyy-v">26</b>%</label>
+    <input id="tinyy" type="range" min="-100" max="200" value="26">
+  </div>
+
+  <h2>Sizes</h2>
+  <div class="row">
+    <label for="wfull">full <b id="wfull-v">300</b>px</label>
+    <input id="wfull" type="range" min="160" max="420" value="300">
+  </div>
+  <div class="row">
+    <label for="wmid">mid <b id="wmid-v">170</b>px</label>
+    <input id="wmid" type="range" min="90" max="260" value="170">
+  </div>
+  <div class="row">
+    <label for="wtiny">tiny <b id="wtiny-v">64</b>px</label>
+    <input id="wtiny" type="range" min="36" max="120" value="64">
+  </div>
+
+  <h2>Gallery</h2>
+  <div class="row">
+    <label>format</label>
+    <div class="seg" data-key="gfmt">
+      <button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+    </div>
+  </div>
+
+  <h2>Cast</h2>
+  <div class="row">
+    <label>army</label>
+    <div class="seg" data-key="cside">
+      <button data-v="blue">Blue</button><button data-v="red">Red</button><button data-v="turn">Turncoats</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>format</label>
+    <div class="seg" data-key="cfmt">
+      <button data-v="all">All</button><button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+    </div>
+  </div>
+  <label class="chk"><input id="cpainted" type="checkbox" checked> painted only — hide the officers still wearing their grade's face</label>
+
+  <h2>Tier by rank</h2>
+  <div id="tiers"></div>
+
+  <button class="act" id="copy-cfg">Copy the card settings</button>
+  <p class="hint" style="margin-top:8px">The frame, the badges and the numbers above, as the <code>cards</code> block of CONFIG in games/stratideck/game.js.</p>
+  <button class="act quiet" id="copy">Copy the card CSS</button>
+  <p class="hint" style="margin-top:8px">The block marked “the card itself”, which is pasted as it is into games/stratideck/skin.css.</p>
+</div>
+
+<div id="stage">
+  <div class="sec">
+    <h3>The three formats <span>full 5:7 · mid square · tiny token · and the back</span></h3>
+    <div class="shelf" id="hero-shelf"></div>
+  </div>
+  <div class="sec">
+    <h3>The seven badges <span>the number on the left, the tier letter on the right — click one to use it for the rank, shift-click for the tier; each design brings its own spot on the card</span></h3>
+    <div class="grid" id="badges"></div>
+  </div>
+  <div class="sec">
+    <h3>The ten styles <span>same card, one frame each</span></h3>
+    <div class="stylerow" id="styles"></div>
+  </div>
+  <div class="sec">
+    <h3>The macarons <span>what each grade of the blue army is for — the camp's red cards wear none, since the camp never strikes</span></h3>
+    <div class="grid" id="perks"></div>
+  </div>
+  <div class="sec">
+    <h3>The army <span id="gal-sub">every rank, in the chosen format</span></h3>
+    <div class="grid" id="gallery"></div>
+  </div>
+  <div class="sec">
+    <h3>The cast <span id="cast-sub">one officer per army, grade and tier — the portrait cut out of a sheet, or what the game falls back on, greyed, until it is painted</span></h3>
+    <div id="cast"></div>
+  </div>
+  <div class="sec">
+    <h3>The objects <span>no grade, no tier, no army — the barracks' objects tab, in the three formats</span></h3>
+    <div id="objects"></div>
+  </div>
+  <div class="sec">
+    <h3>Never had <span>the shadow a card wears in the collection until it is owned — or, for an object, turned over in battle</span></h3>
+    <div class="grid" id="ghosts"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- the material -------------------------------------------------------
+     Paths are relative to lab/, which is allowed here and nowhere else. */
+  const MASTER = "../assets/image/master/";
+  const EMBED  = "../assets/image/embed/";
+  const CREST  = { blue: EMBED + "stratideck-piece-01.webp", red: EMBED + "stratideck-piece-02.webp" };
+  const TEAM   = { blue: "#5aa9ff", red: "#ff5c5c" };
+  const STYLES = ["foil", "holo", "ember", "forge", "ash", "chamfer", "hex", "steel", "parchment", "stone"];
+  const BADGES = ["shield", "crown", "seal", "medal", "dogtag", "burst", "scroll"];
+
+  /* The seven badge designs: an SVG each. `.f` is the coloured body, `.f2` its
+     darker second colour, `.x` the neutral metal parts, `.g` the gloss, `.d`
+     the shade. The number is HTML laid over it (`--ty` in the CSS says where). */
+  const DESIGN = {
+    shield:  { vb: "0 0 100 110", svg:
+      '<path class="f" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="d" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="g" d="M50 10 L86 22 V50 C86 62 78 72 66 80 C58 66 46 60 14 52 V22 Z"/>' },
+    crown:   { vb: "0 0 120 90", svg:
+      '<path class="f" d="M12 80 L4 24 L36 48 L60 6 L84 48 L116 24 L108 80 Z"/>' +
+      '<path class="d" d="M12 80 L4 24 L36 48 L60 6 L84 48 L116 24 L108 80 Z"/>' +
+      '<path class="g" d="M16 36 L36 54 L60 16 L84 54 L104 36 L100 56 L20 56 Z"/>' +
+      '<rect class="f2" x="10" y="76" width="100" height="10" rx="3"/>' +
+      '<circle class="x" cx="24" cy="66" r="3.5"/><circle class="x" cx="96" cy="66" r="3.5"/>' },
+    seal:    { vb: "0 0 120 130", svg:
+      '<path class="f2" d="M44 72 L22 128 L38 118 L48 130 L62 86 Z"/><path class="f2" d="M76 72 L98 128 L82 118 L72 130 L58 86 Z"/>' +
+      '<circle class="f" cx="60" cy="52" r="44" style="stroke-width:9; stroke-dasharray:5 4.2"/>' +
+      '<circle class="f" cx="60" cy="52" r="40" style="stroke:none"/>' +
+      '<circle class="d" cx="60" cy="52" r="40"/><ellipse class="g" cx="60" cy="38" rx="30" ry="18"/>' +
+      '<circle cx="60" cy="52" r="33" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/>' },
+    medal:   { vb: "0 0 100 140", svg:
+      '<path class="f2" d="M28 0 H72 L62 54 H38 Z"/><path class="x" d="M46 0 H54 L53 54 H47 Z" style="fill:rgba(255,255,255,.55); stroke:none"/>' +
+      '<circle class="f" cx="50" cy="94" r="42"/><circle class="d" cx="50" cy="94" r="42"/>' +
+      '<circle cx="50" cy="94" r="34" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="3"/><ellipse class="g" cx="50" cy="78" rx="30" ry="18"/>' },
+    dogtag:  { vb: "0 0 70 140", svg:
+      '<path d="M35 0 V44" fill="none" stroke="#9aa3b0" stroke-width="4" stroke-dasharray="5 4"/>' +
+      '<rect class="f" x="6" y="44" width="58" height="90" rx="12"/><rect class="d" x="6" y="44" width="58" height="90" rx="12"/>' +
+      '<rect class="g" x="8" y="46" width="54" height="40" rx="10"/>' +
+      '<circle cx="35" cy="57" r="5" fill="#0b0d12"/><path d="M6 64 L14 70 L6 76 Z" fill="rgba(0,0,0,.35)"/>' +
+      '<rect x="18" y="118" width="34" height="3" fill="rgba(0,0,0,.35)"/><rect x="24" y="124" width="22" height="3" fill="rgba(0,0,0,.35)"/>' },
+    burst:   { vb: "0 0 100 100", svg:
+      '<path class="f" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<path class="d" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<ellipse class="g" cx="50" cy="38" rx="26" ry="16"/>' },
+    scroll:  { vb: "0 0 180 60", svg:
+      '<rect class="f" x="18" y="14" width="144" height="32"/><rect class="d" x="18" y="14" width="144" height="32"/>' +
+      '<rect class="g" x="18" y="14" width="144" height="14"/>' +
+      '<rect class="f2" x="3" y="5" width="24" height="50" rx="11"/><rect class="f2" x="153" y="5" width="24" height="50" rx="11"/>' +
+      '<rect x="9" y="12" width="6" height="36" rx="3" fill="rgba(0,0,0,.3)"/><rect x="165" y="12" width="6" height="36" rx="3" fill="rgba(0,0,0,.3)"/>' },
+  };
+
+  /* The TIER is the letter on the second badge, and it is what decides the
+     rarity — and so the colour — of the whole card: S legendary, A epic,
+     B rare, C uncommon, D common, E basic (bronze, so the bottom step never
+     reads as a second grey). The colours are the game's own ladder
+     (games/stratideck/game.js TIER_COLOR, packages/webshell/army.css), so
+     what this page shows is the colour the round deals. */
+  const TIER = {
+    S: { label: "Legendary", color: "#ffd43b", pips: 5, cls: "legendary" },
+    A: { label: "Epic",      color: "#c77dff", pips: 4, cls: "epic" },
+    B: { label: "Rare",      color: "#4dabf7", pips: 3, cls: "rare" },
+    C: { label: "Uncommon",  color: "#51cf66", pips: 2, cls: "uncommon" },
+    D: { label: "Common",    color: "#aab1c6", pips: 1, cls: "common" },
+    E: { label: "Basic",     color: "#c8773f", pips: 1, cls: "basic" }
+  };
+  /* The ranks, as the game names them (games/stratideck/game.js, RANKS), and
+     the tier each one wears by default. A proposal, made to be argued over:
+     the spy is an A because it is the one card that kills the marshal, the
+     sapper a B because it is the only answer to a trap, the scout a C. */
+  const RANKS = [
+    { n: 10, key: "marshal",    name: "Marshal",    tier: "S" },
+    { n: 9,  key: "general",    name: "General",    tier: "A" },
+    { n: 8,  key: "colonel",    name: "Colonel",    tier: "B" },
+    { n: 7,  key: "major",      name: "Major",      tier: "C" },
+    { n: 6,  key: "captain",    name: "Captain",    tier: "C" },
+    { n: 5,  key: "lieutenant", name: "Lieutenant", tier: "D" },
+    { n: 4,  key: "sergeant",   name: "Sergeant",   tier: "E" },
+    { n: 3,  key: "sapper",     name: "Sapper",     tier: "B" },
+    { n: 2,  key: "scout",      name: "Scout",      tier: "C" },
+    { n: 1,  key: "spy",        name: "Spy",        tier: "A" }
+  ];
+  /* The OBJECTS, as the game names them (RANKS 11–18 in game.js, and
+     `web.army.objects` in the manifest, in this order): the embedded cut each
+     one is drawn from. `obj` is what tells build() it has no grade and no
+     tier. */
+  const OBJECTS = [
+    { n: 12, name: "Flag",         file: "stratideck-piece-03.webp" },
+    { n: 11, name: "Trap",         file: "stratideck-piece-04.webp" },
+    { n: 13, name: "Straw man",    file: "stratideck-item-straw.webp" },
+    { n: 14, name: "Wooden fence", file: "stratideck-item-fence.webp" },
+    { n: 15, name: "Rock",         file: "stratideck-item-rock.webp" },
+    { n: 16, name: "Forest",       file: "stratideck-item-forest.webp" },
+    { n: 17, name: "Skull",        file: "stratideck-item-skull.webp" },
+    { n: 18, name: "Book",         file: "stratideck-item-book.webp" }
+  ].map((o) => Object.assign({ obj: true }, o));
+  /* THE MACARON: what each grade is FOR, the game's own table (PERK in
+     games/stratideck/game.js) — the Lucide pictogram named on each line, from
+     assets/motor/lucide/. `says` is the legend under it on this page. Drawn
+     on the blue army only, as in the game: the camp never strikes. */
+  const PERK = {
+    1: { svg: '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>', icon: "sword", says: "kills the marshal" },
+    2: { svg: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>', icon: "eye", says: "reveals without fighting" },
+    3: { svg: '<circle cx="11" cy="13" r="9"/><path d="M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95"/><path d="m22 2-1.5 1.5"/>', icon: "bomb", says: "clears a trap" },
+    4: { svg: '<path d="m2 22 10-10"/><path d="m16 8-1.17 1.17"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="m8 8-.53.53a3.5 3.5 0 0 0 0 4.94L9 15l1.53-1.53c.55-.55.88-1.25.98-1.97"/><path d="M10.91 5.26c.15-.26.34-.51.56-.73L13 3l1.53 1.53a3.5 3.5 0 0 1 .28 4.62"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/><path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="m16 16-.53.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.49 3.49 0 0 1 1.97-.98"/><path d="M18.74 13.09c.26-.15.51-.34.73-.56L21 11l-1.53-1.53a3.5 3.5 0 0 0-4.62-.28"/><path d="m2 2 20 20"/>', icon: "wheat-off", says: "tears the straw man down" },
+    5: { svg: '<path d="m14 12-8.381 8.38a1 1 0 0 1-3.001-3L11 9"/><path d="M15 15.5a.5.5 0 0 0 .5.5A6.5 6.5 0 0 0 22 9.5a.5.5 0 0 0-.5-.5h-1.672a2 2 0 0 1-1.414-.586l-5.062-5.062a1.205 1.205 0 0 0-1.704 0L9.352 5.648a1.205 1.205 0 0 0 0 1.704l5.062 5.062A2 2 0 0 1 15 13.828z"/>', icon: "axe", says: "chops the wooden fence" },
+    6: { svg: '<path d="m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999"/><path d="M15.973 4.027A13 13 0 0 0 5.902 2.373c-1.398.342-1.092 2.158.277 2.601a19.9 19.9 0 0 1 5.822 3.024"/><path d="M16.001 11.999a19.9 19.9 0 0 1 3.024 5.824c.444 1.369 2.26 1.676 2.603.278A13 13 0 0 0 20 8.069"/><path d="M18.352 3.352a1.205 1.205 0 0 0-1.704 0l-5.296 5.296a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l5.296-5.296a1.205 1.205 0 0 0 0-1.704z"/>', icon: "pickaxe", says: "smashes the rock" },
+    7: { svg: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>', icon: "compass", says: "finds the way through the forest" },
+    8: { svg: '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>', icon: "hand-fist", says: "is not afraid of the skull" },
+    9: { svg: '<path d="M18 6V4a2 2 0 1 0-4 0v2"/><path d="M20 15v6a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H10"/><rect x="12" y="6" width="8" height="5" rx="1"/>', icon: "book-lock", says: "burns the book, never a traitor" },
+    10: { svg: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>', icon: "crown", says: "the highest grade, breaks nothing" }
+  };
+  /* the rims of a card with no tier (game.js, OBJECT_RIM / GHOST_RIM) */
+  const OBJECT_RIM = "#c9a86a", GHOST_RIM = "#69718a";
+
+  /* the tier a card wears: the override from the panel, else the rank's own */
+  function tierOf(r) { return P.tier !== "auto" ? P.tier : r.tier; }
+  /* where each rank's scene looks, when "vary" is on */
+  const FOCUS = { 10: [50, 30], 9: [22, 46], 8: [78, 44], 7: [36, 62], 6: [66, 66], 5: [50, 74], 4: [16, 78], 3: [84, 80], 2: [30, 24], 1: [72, 22],
+                  11: [40, 50], 12: [60, 36], 13: [26, 70], 14: [70, 58], 15: [44, 82], 16: [18, 34], 17: [80, 28], 18: [56, 52] };
+
+  /* The capitals, the house way: accents come off, a run glued to a digit is
+     left alone. Copied from lab/overlay-pop.html, itself the motor's. */
+  function upper(str) {
+    const FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    const TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    const PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    const shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, (run, at, whole) => {
+        const b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    let out = "";
+    for (let i = 0; i < shouted.length; i++) {
+      const c = shouted.charAt(i), k = FROM.indexOf(c);
+      out += PAIR[c] ? PAIR[c] : k >= 0 ? TO.charAt(k) : c;
+    }
+    return out;
+  }
+
+  /* ---- the knobs ----------------------------------------------------------- */
+  /* The defaults are the look the game ships (CONFIG.cards in
+     games/stratideck/game.js), so the page opens on what the round deals. */
+  const P = {
+    rank: 10, side: "blue", style: "forge", band: 1,
+    tier: "auto", brank: "shield", btier: "burst", arank: "auto", atier: "br", rankOn: true, tierOn: true, perkOn: true,
+    zoom: 2.6, blur: 2, fx: 50, fy: 40, vary: true,
+    hero: 95, mark: 0.5, mx: -28, markover: false, tilt: true, motion: true, checker: false,
+    midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65,
+    wfull: 300, wmid: 170, wtiny: 64, gfmt: "mid", cfmt: "all", cside: "blue", cpainted: true
+  };
+  /* THE PANEL REMEMBERS. A composition made here used to live in the tab and
+     nowhere else: close it, and the only record of the look was a screenshot.
+     Every change is kept in this browser's storage and read back on load —
+     the URL still wins, so a link or a headless shot pins its own state. */
+  const SAVE = "lab:stratideck-card";
+  try {
+    const kept = JSON.parse(localStorage.getItem(SAVE) || "{}");
+    Object.keys(kept).forEach((k) => { if (k in P && typeof kept[k] === typeof P[k]) P[k] = kept[k]; });
+  } catch (e) { /* no storage: the defaults stand */ }
+  function keep() { try { localStorage.setItem(SAVE, JSON.stringify(P)); } catch (e) { /* ignore */ } }
+  /* ?side=red&style=hex&brank=crown&btier=seal&tier=S&gfmt=full&rank=1 pins a state, for a link or a headless shot */
+  new URLSearchParams(location.search).forEach((v, k) => {
+    if (!(k in P)) return;
+    P[k] = typeof P[k] === "number" ? +v : typeof P[k] === "boolean" ? v !== "0" : v;
+  });
+
+  /* ---- one badge ----------------------------------------------------------- */
+  function badge(role, design, value, at) {
+    const d = DESIGN[design];
+    return '<div class="c-badge ' + role + " d-" + design + (at && at !== "auto" ? " at-" + at : "") + '">' +
+      '<svg viewBox="' + d.vb + '" preserveAspectRatio="none">' + d.svg + "</svg>" +
+      "<span>" + value + "</span></div>";
+  }
+
+  /* ---- one macaron --------------------------------------------------------- */
+  function perk(n) {
+    return '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[n].svg + "</svg></div>";
+  }
+
+  /* ---- one card ------------------------------------------------------------
+     build(rank, side, fmt, style, opt) returns the node; every number it needs
+     is a CSS variable, so a knob change is a restyle and never a rebuild. */
+  /* opt.ghost draws the card never had; an OBJECTS entry (r.obj) draws a
+     card with no grade, no tier and no crest — game.js faceNode, the same two
+     shapes. */
+  function build(r, side, fmt, style, opt) {
+    opt = opt || {};
+    const ghost = !!opt.ghost, obj = !!r.obj, tiered = !obj && !ghost;
+    const letter = obj ? "E" : opt.tier || tierOf(r), tier = TIER[letter];
+    const el = document.createElement("div");
+    el.className = "card fmt-" + fmt + " style-" + style + " tier-" + tier.cls + (opt.back ? " back" : "") +
+      (obj ? " object" : "") + (ghost ? " ghost" : "");
+    el.style.setProperty("--rar", ghost ? GHOST_RIM : obj ? OBJECT_RIM : tier.color);
+    el.style.setProperty("--team", TEAM[side]);
+    el.dataset.rank = r.n; el.dataset.side = side; el.dataset.fmt = fmt;
+
+    const pips = [];
+    for (let i = 0; tiered && i < tier.pips; i++) pips.push("<i></i>");
+    const name = ghost ? "???" : upper(r.name);
+    el.innerHTML =
+      '<div class="c-body">' +
+      '<div class="c-frame"></div>' +
+      '<div class="c-scene"></div>' +
+      '<div class="c-mark' + (r.n >= 10 ? " two" : "") + '"><b>' + (obj ? "" : r.n) + "</b></div>" +
+      '<div class="c-hero" data-missing="no art"><img alt=""></div>' +
+      badge("rank", P.brank, obj ? "" : r.n, P.arank) +
+      badge("tier", P.btier, letter, P.atier) +
+      (!obj && side === "blue" && P.perkOn && PERK[r.n] ? perk(r.n) : "") +
+      '<div class="c-plate"><span class="c-name">' + name + '</span><span class="c-tier">' +
+        (ghost ? "" : upper(obj ? "Object" : tier.label)) + "</span></div>" +
+      '<div class="c-pips">' + pips.join("") + "</div>" +
+      '<div class="c-back"><img alt="" src="' + CREST[side] + '"></div>' +
+      "</div>";
+
+    const img = el.querySelector(".c-hero img");
+    img.onerror = () => { img.remove(); el.querySelector(".c-hero").classList.add("missing"); };
+    const face = MASTER + "stratideck-card-" + side + "-" + r.key + ".png";
+    if (opt.cast) {
+      /* the cast portrait (tools/lab/cast-sheets.mjs → encode-art), then what
+         the game falls back on where the sheet has not landed yet: a
+         turncoat on its red self, anyone on the grade's face (game.js,
+         castArt). The first miss marks the card as not painted. */
+      const kind = opt.castKind || side, tail = (r.n < 10 ? "0" : "") + r.n + "-" + letter.toLowerCase() + ".webp";
+      const chain = [EMBED + "stratideck-cast-" + kind + "-" + tail];
+      if (kind === "turn") chain.push(EMBED + "stratideck-cast-red-" + tail, MASTER + "stratideck-card-red-" + r.key + ".png");
+      else chain.push(face);
+      let at = 0;
+      img.onerror = () => {
+        if (!at) { el.classList.add("nocast"); opt.cast(false); }
+        if (++at < chain.length) img.src = chain[at]; else img.onerror = null;
+      };
+      img.onload = () => { if (!at) opt.cast(true); img.onload = null; };
+      img.src = chain[0];
+    } else {
+      img.src = obj ? EMBED + r.file : face;
+    }
+
+    // the tilt: the card turns toward the pointer, and no glare rides on it
+    el.addEventListener("pointermove", (e) => {
+      if (!P.tilt) return;
+      const b = el.getBoundingClientRect();
+      const px = (e.clientX - b.left) / b.width, py = (e.clientY - b.top) / b.height;
+      el.style.setProperty("--ry", ((px - 0.5) * 22).toFixed(2) + "deg");
+      el.style.setProperty("--rx", ((0.5 - py) * 22).toFixed(2) + "deg");
+    });
+    el.addEventListener("pointerleave", () => {
+      el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg");
+    });
+    return el;
+  }
+
+  /* the knobs every card on the page shares */
+  function dress(el) {
+    const r = +el.dataset.rank, fmt = el.dataset.fmt;
+    const f = P.vary && FOCUS[r] ? FOCUS[r] : [P.fx, P.fy];
+    el.style.setProperty("--bgi", 'url("' + EMBED + "stratideck-background-phone-0" + P.band + '.webp")');
+    el.style.setProperty("--zoom", P.zoom);
+    el.style.setProperty("--blur", P.blur + "px");
+    el.style.setProperty("--fx", f[0] + "%");
+    el.style.setProperty("--fy", f[1] + "%");
+    el.style.setProperty("--hero", P.hero + "%");
+    el.style.setProperty("--mark", P.mark);
+    el.style.setProperty("--mx", P.mx + "%");
+    el.style.setProperty("--midz", P.midz);
+    el.style.setProperty("--midx", P.midx + "%");
+    el.style.setProperty("--midy", P.midy + "%");
+    el.style.setProperty("--tinyz", P.tinyz);
+    el.style.setProperty("--tinyx", P.tinyx + "%");
+    el.style.setProperty("--tinyy", P.tinyy + "%");
+    const w = el.dataset.cmp ? Math.round(P.wfull * 0.62) : fmt === "full" ? P.wfull : fmt === "mid" ? P.wmid : P.wtiny;
+    el.style.setProperty("--w", w + "px");
+    if (fmt === "full") el.style.setProperty("--h", Math.round(w * 1.4) + "px");
+    el.classList.toggle("mark-over", P.markover);
+    el.classList.toggle("rank-on", P.rankOn);
+    el.classList.toggle("tier-on", P.tierOn);
+    el.classList.toggle("still", !P.motion);
+  }
+
+  /* ---- the shelves --------------------------------------------------------- */
+  const heroShelf = document.getElementById("hero-shelf");
+  const badgeRow  = document.getElementById("badges");
+  const styleRow  = document.getElementById("styles");
+  const gallery   = document.getElementById("gallery");
+  const objRow    = document.getElementById("objects");
+  const ghostRow  = document.getElementById("ghosts");
+  const perkRow   = document.getElementById("perks");
+
+  function slot(node, label) {
+    const s = document.createElement("div"); s.className = "slot";
+    s.appendChild(node);
+    const t = document.createElement("small"); t.textContent = label; s.appendChild(t);
+    return s;
+  }
+  function rankOf(n) { return RANKS.find((r) => r.n === n); }
+
+  function rebuild() {
+    const r = rankOf(P.rank);
+    heroShelf.innerHTML = "";
+    heroShelf.appendChild(slot(build(r, P.side, "full", P.style), "full · " + P.wfull + "×" + Math.round(P.wfull * 1.4)));
+    heroShelf.appendChild(slot(build(r, P.side, "mid", P.style), "mid · " + P.wmid));
+    heroShelf.appendChild(slot(build(r, P.side, "tiny", P.style), "tiny · " + P.wtiny));
+    heroShelf.appendChild(slot(build(r, P.side, "mid", P.style, { back: true }), "back · mid"));
+    heroShelf.appendChild(slot(build(r, P.side, "tiny", P.style, { back: true }), "back · tiny"));
+
+    // the badge rack: every shape, as the pair, in the current card's rarity
+    badgeRow.innerHTML = "";
+    BADGES.forEach((sh) => {
+      const t = document.createElement("div");
+      t.className = "bsample" + (sh === P.brank ? " on" : "");
+      t.style.setProperty("--rar", TIER[tierOf(r)].color);
+      t.innerHTML = badge("rank", sh, r.n) + badge("tier", sh, tierOf(r)) + "<b>" + sh + (sh === P.btier ? " · tier" : "") + "</b>";
+      t.addEventListener("click", (e) => { if (e.shiftKey) P.btier = sh; else P.brank = sh; paintSegs(); rebuild(); });
+      badgeRow.appendChild(t);
+    });
+
+    styleRow.innerHTML = "";
+    STYLES.forEach((st) => {
+      const c = build(r, P.side, "full", st); c.dataset.cmp = "1";
+      styleRow.appendChild(slot(c, st));
+    });
+
+    // the macarons: each grade's disc at a reading size, with what it means
+    perkRow.innerHTML = "";
+    RANKS.slice().reverse().forEach((rk) => {
+      const t = document.createElement("div");
+      t.className = "psample";
+      t.innerHTML = perk(rk.n) + "<b>" + rk.n + " · " + rk.name + "</b><span>" + PERK[rk.n].says + "</span><small>" + PERK[rk.n].icon + "</small>";
+      perkRow.appendChild(t);
+    });
+
+    gallery.innerHTML = "";
+    RANKS.forEach((rk) => gallery.appendChild(build(rk, P.side, P.gfmt, P.style)));
+    document.getElementById("gal-sub").textContent = "every rank of the " + (P.side === "blue" ? "blue army" : "red camp") + ", " + P.gfmt;
+
+    // the cast: ten rows of six, the chosen side, in its own format — or all
+    // three of them per officer
+    const castBox = document.getElementById("cast"), castSub = document.getElementById("cast-sub");
+    castBox.innerHTML = "";
+    castBox.classList.toggle("only-painted", P.cpainted);
+    const fmts = P.cfmt === "all" ? ["full", "mid", "tiny"] : [P.cfmt];
+    let painted = 0, seen = 0;
+    const tally = (ok) => {
+      seen++; if (ok) painted++;
+      if (seen < 60) return;
+      castSub.textContent = painted + " / 60 painted for the " +
+        ({ blue: "blue army", red: "red camp", turn: "turncoats (red officers in blue)" })[P.cside] +
+        (P.cpainted ? "" : " — the rest wear their grade's face, greyed") + " · " + (P.cfmt === "all" ? "full, mid, tiny" : P.cfmt);
+      if (P.cpainted && !painted) castBox.insertAdjacentHTML("beforeend", '<p class="cast-none">No portrait painted for this side yet.</p>');
+    };
+    const quiet = () => {};
+    RANKS.forEach((rk) => {
+      const row = document.createElement("div"); row.className = "castrow";
+      const t = document.createElement("small"); t.textContent = rk.n + " · " + rk.name; row.appendChild(t);
+      const grid = document.createElement("div"); grid.className = "grid";
+      ["E", "D", "C", "B", "A", "S"].forEach((L) => {
+        // one card per format; the first one alone answers the tally
+        // a turncoat is dealt as a card of the blue army: its frame, crest and macaron
+        const team = P.cside === "red" ? "red" : "blue";
+        const cards = fmts.map((f, i) => build(rk, team, f, P.style, { tier: L, castKind: P.cside, cast: i ? quiet : tally }));
+        const c = cards[0];
+        const s = document.createElement("div"); s.className = "cslot";
+        if (cards.length > 1) {
+          const box = document.createElement("div"); box.className = "cfmts";
+          box.appendChild(cards[0]);
+          const small = document.createElement("div"); small.className = "csmall";
+          cards.slice(1).forEach((k) => small.appendChild(k));
+          box.appendChild(small);
+          s.appendChild(box);
+        } else {
+          s.appendChild(c);
+        }
+        const k = document.createElement("small");
+        k.textContent = "cast-" + P.cside + "-" + (rk.n < 10 ? "0" : "") + rk.n + "-" + L.toLowerCase();
+        s.appendChild(k);
+        grid.appendChild(s);
+        // the label follows the card's state once the image has answered
+        new MutationObserver(() => s.classList.toggle("nocast", c.classList.contains("nocast")))
+          .observe(c, { attributes: true, attributeFilter: ["class"] });
+      });
+      row.appendChild(grid);
+      castBox.appendChild(row);
+    });
+
+    // every object in each of the three formats, one row per format
+    objRow.innerHTML = "";
+    [["full", P.wfull + "×" + Math.round(P.wfull * 1.4)], ["mid", P.wmid], ["tiny", P.wtiny]].forEach(([fmt, size]) => {
+      const row = document.createElement("div"); row.className = "fmtrow";
+      const t = document.createElement("small"); t.textContent = fmt + " · " + size; row.appendChild(t);
+      const grid = document.createElement("div"); grid.className = "grid";
+      OBJECTS.forEach((o) => grid.appendChild(build(o, P.side, fmt, P.style)));
+      row.appendChild(grid);
+      objRow.appendChild(row);
+    });
+
+    // the shadows: three officers of the chosen side, then every object
+    ghostRow.innerHTML = "";
+    RANKS.slice(0, 3).concat(OBJECTS).forEach((r) => ghostRow.appendChild(build(r, P.side, P.gfmt, P.style, { ghost: true })));
+    restyle();
+  }
+  function restyle() {
+    keep();
+    document.querySelectorAll(".card").forEach(dress);
+    document.getElementById("stage").classList.toggle("checker", P.checker);
+  }
+
+  /* ---- panel wiring -------------------------------------------------------- */
+  function range(id, key, scale, digits, then) {
+    const el = document.getElementById(id), out = document.getElementById(id + "-v");
+    el.value = Math.round(P[key] / scale);
+    const write = () => {
+      P[key] = el.value * scale;
+      out.textContent = digits ? P[key].toFixed(digits).replace(/^0\./, ".") : P[key];
+      then();
+    };
+    el.addEventListener("input", write); write();
+  }
+  function check(id, key, then) {
+    const el = document.getElementById(id);
+    el.checked = P[key];
+    const write = () => { P[key] = el.checked; then(); };
+    el.addEventListener("change", write); write();
+  }
+  const segs = [];
+  function seg(key, then) {
+    const box = document.querySelector('.seg[data-key="' + key + '"]');
+    const paint = () => box.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === P[key]));
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      P[key] = b.dataset.v; paint(); then();
+    });
+    paint(); segs.push(paint);
+  }
+  function paintSegs() { segs.forEach((f) => f()); }
+
+  const rankSel = document.getElementById("rank");
+  RANKS.forEach((r) => {
+    const o = document.createElement("option"); o.value = r.n; o.textContent = r.n + " · " + r.name; rankSel.appendChild(o);
+  });
+  rankSel.value = P.rank;
+  const tierSel = document.getElementById("tier");
+  function paintTier() {
+    const r = rankOf(P.rank), t = tierOf(r);
+    document.getElementById("rank-v").textContent = t + " · " + TIER[t].label;
+    document.getElementById("tier-v").textContent = P.tier === "auto" ? "by rank" : TIER[P.tier].label;
+  }
+  rankSel.addEventListener("change", () => { P.rank = +rankSel.value; paintTier(); rebuild(); });
+  tierSel.value = P.tier;
+  tierSel.addEventListener("change", () => { P.tier = tierSel.value; paintTier(); rebuild(); });
+  paintTier();
+
+  seg("side", rebuild); seg("style", rebuild); seg("gfmt", rebuild); seg("cfmt", rebuild); seg("cside", rebuild);
+  seg("brank", rebuild); seg("btier", rebuild); seg("arank", rebuild); seg("atier", rebuild);
+  range("band", "band", 1, 0, restyle);
+  range("zoom", "zoom", 0.1, 1, restyle);
+  range("blur", "blur", 1, 0, restyle);
+  range("fx", "fx", 1, 0, restyle);
+  range("fy", "fy", 1, 0, restyle);
+  range("hero", "hero", 1, 0, restyle);
+  range("mark", "mark", 0.01, 2, restyle);
+  range("mx", "mx", 1, 0, restyle);
+  range("midz", "midz", 0.01, 2, restyle);
+  range("midx", "midx", 1, 0, restyle);
+  range("midy", "midy", 1, 0, restyle);
+  range("tinyz", "tinyz", 0.01, 2, restyle);
+  range("tinyx", "tinyx", 1, 0, restyle);
+  range("tinyy", "tinyy", 1, 0, restyle);
+  range("wfull", "wfull", 1, 0, rebuild);
+  range("wmid", "wmid", 1, 0, rebuild);
+  range("wtiny", "wtiny", 1, 0, rebuild);
+  check("vary", "vary", restyle);
+  check("markover", "markover", restyle);
+  check("rankOn", "rankOn", restyle);
+  check("tierOn", "tierOn", restyle);
+  check("perkOn", "perkOn", rebuild);
+  check("tilt", "tilt", restyle);
+  check("motion", "motion", restyle);
+  check("checker", "checker", restyle);
+  check("cpainted", "cpainted", rebuild);
+
+  // the tier legend: rank → letter → rarity
+  const tiers = document.getElementById("tiers");
+  RANKS.forEach((r) => {
+    const t = TIER[r.tier];
+    const d = document.createElement("div");
+    d.innerHTML = '<i style="background:' + t.color + '"></i>' + r.n + " " + r.name + " <b>" + r.tier + '</b><span style="color:' + t.color + '">' + t.label + "</span>";
+    tiers.appendChild(d);
+  });
+
+  /* copy the card block out of this page's own stylesheet. The two markers
+     are searched WITH their banner punctuation: the page's header names both
+     of them in prose first, and a bare indexOf found the prose — the button
+     used to copy the header and the panel's own CSS, and not one card rule. */
+  function copied(id, label) {
+    const btn = document.getElementById(id); btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = label; }, 1200);
+  }
+  document.getElementById("copy").addEventListener("click", () => {
+    const css = document.querySelector("style").textContent;
+    const a = css.indexOf("THE CARD ITSELF —"), b = css.indexOf(" END OF THE CARD =");
+    const block = css.slice(css.lastIndexOf("/*", a), css.indexOf("*/", b) + 2);
+    navigator.clipboard.writeText(block).then(() => copied("copy", "Copy the card CSS"));
+  });
+  /* the panel's choices, as the `cards` block of CONFIG in the game — the
+     same names as P, so the paste needs no renaming */
+  document.getElementById("copy-cfg").addEventListener("click", () => {
+    const keys = ["style", "brank", "btier", "arank", "atier", "rankOn", "tierOn", "zoom", "blur", "vary",
+                  "hero", "mark", "mx", "markover", "midz", "midx", "midy", "tinyz", "tinyx", "tinyy"];
+    const num = (v) => typeof v === "number" ? String(Math.round(v * 100) / 100) : JSON.stringify(v);
+    const txt = "    cards: {\n" + keys.map((k) => "      " + k + ": " + num(P[k])).join(",\n") + "\n    }";
+    navigator.clipboard.writeText(txt).then(() => copied("copy-cfg", "Copy the card settings"));
+  });
+
+  rebuild();
+})();
+</script>
+</body>
+</html>

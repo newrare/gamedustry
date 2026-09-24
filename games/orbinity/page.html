@@ -23,7 +23,7 @@
     intro           →  logo, title, one-line pitch, an ANIMATED how-to-play
                        demo, and the start button.
     playing         →  canvas world + HUD (top, notch-safe) + free-form
-                       overlay (toasts / banners / rewards) + CTA bar (bottom).
+                       overlay (edge glow, comic pops) + CTA bar (bottom).
     end             →  cinematic score reveal, stars, stat rows, a big install
                        CTA and a small replay link.
 
@@ -48,11 +48,8 @@
 
     <canvas id="game" width="720" height="1280"></canvas>
 
-    <!-- game-view overlay: toasts, banners, rewards, dramatic glow -->
+    <!-- game-view overlay: the edge glow and the comic pops -->
     <div id="overlay">
-      <div id="ov-toasts"></div>
-      <div id="ov-banner"><div id="ov-banner-main"></div><div id="ov-banner-sub"></div></div>
-      <div id="ov-reward"></div>
       <div id="ov-vignette"></div>
       <!-- comic callouts sit last: they are the loudest layer of the overlay -->
       <div id="ov-pops"></div>

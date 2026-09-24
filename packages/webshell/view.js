@@ -165,7 +165,16 @@
     /* One frame on screen at opacity 0, so the transition has a start state to
        run from: a node appended and classed in the same frame animates from
        nothing at all in every engine this shell runs in. */
-    requestAnimationFrame(function () { box.classList.add("on"); });
+    requestAnimationFrame(function () { fitTitles(box); box.classList.add("on"); });
+    /* A card is rewritten in place more than once — the gift's boxes become
+       the reveal, a reward card changes its title — so the fit follows the
+       card's children rather than running once. */
+    if (card && window.MutationObserver) {
+      handle.watch = new MutationObserver(function () {
+        requestAnimationFrame(function () { fitTitles(box); });
+      });
+      handle.watch.observe(card, { childList: true });
+    }
 
     if (handle.dismiss) {
       box.addEventListener("click", function (e) {
@@ -182,10 +191,29 @@
     return handle;
   }
 
+  /* THE TITLE IS ONE LINE, AT THE SIZE THE CARD LEAVES IT. The motor's own
+     `Fit.box` — measure and scale DOWN, never up — against the width the card
+     gives the heading, so the stylesheet can ask for a title's size and not
+     for the size the longest title in the longest language happens to fit at.
+     Under the floor a title wraps instead: two lines read, a clipped one does
+     not. */
+  var TITLE_FLOOR = 32;
+  function fitTitles(box) {
+    if (!W.Fit || !box.parentNode) return;
+    var hs = box.querySelectorAll(".mt-h");
+    for (var i = 0; i < hs.length; i++) {
+      var n = hs[i];
+      n.classList.remove("wrap");
+      W.Fit.box(n, TITLE_FLOOR);
+      if (n.scrollWidth > n.clientWidth + 1) n.classList.add("wrap");
+    }
+  }
+
   function shut(handle) {
     var i = modals.indexOf(handle);
     if (i < 0) return;                  // already closed: closing twice is a no-op
     modals.splice(i, 1);
+    if (handle.watch) { handle.watch.disconnect(); handle.watch = null; }
     if (handle.bed) bedUp();
     /* While it is still in the document: see `onHide` above. */
     if (handle.onHide) handle.onHide();
@@ -590,6 +618,8 @@
     closeTop: closeTopModal,
     any: anyModal,
     top: topModal,
-    count: function () { return modals.length; }
+    count: function () { return modals.length; },
+    /* For a caller that rewrites a title outside the card's own children. */
+    fit: function (h) { if (h && h.box) fitTitles(h.box); }
   };
 })();

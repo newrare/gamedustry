@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.2.3",
+  "version": "1.2.5",
   "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
   "order": 100,
   "draft": false,
@@ -219,9 +219,9 @@
       }
     },
     "meta": {
-      "coinsPer": 500,
+      "coinsPer": 100,
       "xpPer": 50,
-      "ticketPrice": 125,
+      "ticketPrice": 625,
       "awards": [
         1,
         2,

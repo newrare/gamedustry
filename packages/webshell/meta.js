@@ -182,7 +182,10 @@
 
   /* WHAT A POINT IS WORTH, and the player's own level is the multiplier on it:
      a round pays `score / coinsPer` coins PER LEVEL, so 14 565 points is 14
-     coins at level 1 and 140 at level 10. The level was a bar that only ever
+     coins at level 1 and 140 at level 10. `coinsPer` is 100 or 1000 and
+     nothing else, so the conversion is the score with its last two or three
+     digits dropped — a sum the player does by eye, and the one the end screen
+     draws on the score itself (`gainLine`). The level was a bar that only ever
      handed out a ticket; it is now the rate the whole game pays at, which is
      what makes the climb worth watching and what the end screen writes out as
      a sum rather than a total (`gainLine`).
@@ -196,10 +199,24 @@
   var POINTS_PER_COIN = opt("coinsPer", 1000);
   var POINTS_PER_XP = opt("xpPer", 100);
   var TICKET_PRICE = opt("ticketPrice", 250);
-  /* What a double is bought back for, by rarity. It is well under the ticket
-     price on purpose: selling doubles is what keeps a dry streak moving, not
-     an income. Four commons for a ticket. */
-  var SELL = opt("sell", [60, 110, 200, 420]);
+  /* What a double is bought back for, by rarity — A SHARE OF THIS GAME'S
+     TICKET, never a fixed sum. It is well under the ticket price on purpose:
+     selling doubles is what keeps a dry streak moving, not an income. Four
+     commons for a ticket, and even a legendary double buys back less than one.
+
+     It used to be 60 / 110 / 200 / 420 coins in every game, while the ticket
+     is priced per game (8 coins on vipera, 625 on gearball): on seven boards a
+     pull sold back for more than it cost, and the machine paid for itself for
+     ever. Since every pull costs at least one ticket and hands over exactly
+     one sticker, a price held under one ticket closes that loop at every bet
+     and on the super ticket alike — `tools/build/build.mjs` refuses a
+     manifest `sell` that breaks it. */
+  var SELL_SHARE = [0.25, 0.4, 0.6, 0.9];
+  var SELL = opt("sell", SELL_SHARE.map(function (f) {
+    var v = f * TICKET_PRICE;
+    v = v < 20 ? Math.round(v) : Math.round(v / 5) * 5;   // a legible price
+    return Math.max(1, Math.min(TICKET_PRICE - 1, v));
+  }));
   /* The machine's odds, by rarity. They are weights and not percentages, so a
      game can add a fifth tier without redoing the other four — except for the
      TOP one, whose weight only ever splits that tier between several stickers
@@ -297,13 +314,14 @@
      at once, and a wallet is no more precious than the climb that filled it.
 
      c coins · t tickets · x xp · s stickers {index: count} · a milestones
-     already paid, by key · d the daily strip's own state (daily.js writes it
-     through here so there is one save and one schema). */
+     already paid, by key · d the daily strip's own state · ar the barracks
+     (army.js) — both of those write through here so there is one save and one
+     schema. */
   var KEY = "meta:" + (CONFIG.slug || "game");
   var save = (function load() {
     var s = ON ? W.Store.get(KEY, null) : null;
     if (!s || s.v !== 1 || typeof s.s !== "object" || !s.s) {
-      return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null };
+      return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null };
     }
     if (!s.a) s.a = {};
     /* `st` arrived after the save did. A field added rather than a version
@@ -392,7 +410,6 @@
     var after = playerLevel();
     if (after > before) save.t += (after - before);
     persist();
-    openXp();
     return after - before;
   }
 
@@ -861,27 +878,6 @@
     return w;
   }
 
-  /* THE LEVEL CHIP IS AN ICON UNTIL IT HAS SOMETHING TO SAY. A bar standing
-     open on every screen is a bar nobody reads — it moves once a round, and
-     the rest of the time it is the widest thing on the band saying the same
-     number it said yesterday. So it is the bolt alone, and it OPENS for a few
-     seconds when the xp moves: the moment it is worth the width is the moment
-     it has just changed.
-
-     The end screen's row is not collapsed at all — it is veiled instead, and a
-     chip that arrives with the reward it is being paid has nothing to open. */
-  var xpShut = null;
-  var XP_OPEN_MS = 3400;
-
-  function openXp() {
-    if (!band || !band.lvBox) return;
-    band.lvBox.classList.add("wide");
-    clearTimeout(xpShut);
-    xpShut = setTimeout(function () {
-      if (band && band.lvBox) band.lvBox.classList.remove("wide");
-    }, XP_OPEN_MS);
-  }
-
   /* A chip's destination, and the one rule about it: a chip standing on its
      own screen does nothing. Written once here rather than four times above,
      because the inert state and the tap are the same question. */
@@ -974,25 +970,20 @@
   function markSeen() { if (save.n) { save.n = 0; persist(); } }
   function bumpUnseen() { save.n = (save.n || 0) + 1; persist(); }
 
-  /* ── 7b. the callout ──────────────────────────────────────────────────── */
+  /* ── 7b. where a notice lands ────────────────────────────────────────
 
-  /* The motor's Pop layer draws inside #overlay, which sits UNDER the screens
-     — so a word said on the map or in the album would land behind it. This is
-     the same voice one layer up: one line, one sub-line, gone in three
-     seconds, never stacked more than three deep. */
-  var sayBox = null;
-  function say(word, sub, cls) {
-    if (!sayBox) {
-      sayBox = el("div"); sayBox.id = "mt-says";
-      frame().appendChild(sayBox);
-    }
-    var n = el("div", "mt-say" + (cls ? " " + cls : ""),
-      '<b>' + word + '</b>' + (sub ? '<span>' + sub + '</span>' : ''));
-    sayBox.appendChild(n);
-    while (sayBox.children.length > 3) sayBox.removeChild(sayBox.firstChild);
-    setTimeout(function () { n.classList.add("out"); }, 2200);
-    setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 2700);
-  }
+     The words this layer says (a purchase refused, a card enlisted) are the
+     motor's Notify, the one voice for information on every screen — there
+     used to be a second one here, `say`, and it was the same idea one layer
+     up. What this layer adds is WHERE a notice goes when it leaves: into the
+     chip it is about, the one the wallet's own pieces fly into (homeOf), so
+     "+1 ticket" ends in the ticket chip exactly as the ticket itself does. */
+  if (W.Notify) W.Notify.target(function (icon) {
+    var kind = icon === "coin" ? "coins" : icon === "xp" ? "xp"
+             : (icon === "ticket" || icon === "super" || icon === "sticker") ? "ticket" : null;
+    var home = kind && homeOf(kind);
+    return home ? home.node : null;
+  });
 
   /* ── 8. the transfer layer — the one way a wallet number ever moves ──── */
 
@@ -1411,7 +1402,6 @@
 
   function runLv(w, before, done) {
     if (!w || !w.lvBox) { if (done) done(); return; }
-    openXp();                            // the bar is about to move: show it
     var a = levelAt(before), b = levelAt(save.x);
 
     function step(label, need, into, next) {
@@ -2031,9 +2021,16 @@
     if (!band) return;
     var top = VW.top();
     /* The house chip means whatever `View.home` means — the title screen, or
-       the VILLAGE on a game that has one — so it goes quiet on the village for
-       exactly the reason every other chip does: it is standing on the screen
-       it is the door to. */
+       the VILLAGE on a game that has one. On the bare village it is not quiet
+       but GONE: the other chips are numbers and keep counting where their
+       door is shut, this one is only a door, and a door home drawn over home
+       is nothing but a greyed house. The level bar takes the room it leaves.
+       A card over the village brings it back, since from there it is a way
+       out again. */
+    if (band.home) {
+      var M = window.__MODAL__;
+      band.home.classList.toggle("gone", top === "village" && !(M && M.any()));
+    }
     mark(band.home, "village", top, T.home);
     mark(band.count, "sticker", top, T.album);
     mark(band.lvBox, "ranking", top, T.scores);
@@ -2097,6 +2094,7 @@
     var old = $("mt-gain");
     if (old && old.parentNode) old.parentNode.removeChild(old);
     screen.classList.remove("has-gain");
+    $("eo-score").classList.remove("cut");
 
     var score = Math.max(0, Math.round(result.score || 0));
     var earn = Math.floor(score / POINTS_PER_COIN) * playerLevel();
@@ -2220,6 +2218,19 @@
       sc0.parentNode.classList.add("has-gain");
     }
     g.innerHTML = "";
+    /* THE RATE IS READ ON THE SCORE ITSELF. A rate is always 100 or 1000
+       (tools/build/build.mjs refuses anything else), so what a round pays is
+       the score with its last two or three digits dropped: 14 798 is 14. The
+       digits that stay turn gold, like the `+14` under them, and the ones that
+       go fade — the player sees which part of their number became coins
+       without being told a rate. The motor rewrites the node as plain text on
+       the next round, so nothing has to undo it. */
+    var sc = $("eo-score"), txt = sc.textContent;
+    var cut = String(POINTS_PER_COIN).length - 1;
+    if (/^\d+$/.test(txt) && txt.length > cut) {
+      sc.innerHTML = "<span class=\"mt-keep\">" + txt.slice(0, -cut) +
+        "</span><span class=\"mt-cut\">" + txt.slice(-cut) + "</span>";
+    }
     var parts = [
       el("span", "mt-gp base", "+" + num(base) + icon("coin", "mt-ci")),
       /* THE LEVEL IS A TAG. It is the one term of this sum the player owns,
@@ -2240,6 +2251,7 @@
     step(2, 0.8, 1.45);
     function step(i, vol, rate) {
       setTimeout(function () {
+        if (i === 0) sc.classList.add("cut");
         parts[i].classList.add("on");
         W.Sound.cue("uiRow", vol, rate, 620 + i * 220, 0.08);
       }, i * GAIN_MS);
@@ -2474,7 +2486,7 @@
     dayReward: dayReward,
     rewardLabel: rewardLabel, rewardArt: rewardArt,
 
-    wallet: wallet, repaint: paintWallets, say: say,
+    wallet: wallet, repaint: paintWallets,
     gift: gift, prize: prize, ad: ad, stickerCard: stickerCard, note: note,
     /* THE TRANSFER LAYER — the one way a screen of this front end makes a
        wallet number move (section 8). `buyFx` and `spendFx` are two named
@@ -2500,11 +2512,18 @@
     daily: function () { return save.d; },
     setDaily: function (d) { save.d = d; persist(); },
 
+    /* THE BARRACKS, in the same save and for the same reason: a roster is
+       bought with the coins this wallet holds, and a second key would be a
+       second thing for OPTIONS to erase and a second thing to forget
+       (packages/webshell/army.js). */
+    army: function () { return save.ar || null; },
+    setArmy: function (a) { save.ar = a; persist(); },
+
     /* OPTIONS erases the whole save and this is its share of it: the wallet,
        the tickets, the collection, the milestones already paid and the daily
        road, back to the shape `load` hands a first-time player. */
     wipe: function () {
-      save = { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null };
+      save = { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null };
       persist();
     }
   };

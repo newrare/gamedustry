@@ -80,8 +80,10 @@ const MIME = {
    (packages/webshell/view.js, docs/VIEWS.md) and not a list this tool
    invented: a village is the TITLE VIEW, so what a house opens is what a menu
    entry opened. `decor` is the one that opens nothing — a house placed for the
-   picture. */
-const ROLES = ['play', 'map', 'ranking', 'shop', 'album', 'daily', 'options', 'help', 'decor'];
+   picture. The last four are the BARRACKS' (packages/webshell/army.js), and
+   only a game that declares `web.army` owes them. */
+const ROLES = ['play', 'map', 'ranking', 'shop', 'album', 'daily', 'options', 'help',
+  'deck', 'infirmary', 'prison', 'recruit', 'decor'];
 
 /* SHARED MATERIAL — `game-<sheet>-NN.png`, the cuts that belong to no game.
    `assets/image/object/` holds two kinds of them under that one prefix and
@@ -194,6 +196,7 @@ function catalogue() {
          no daily road to stand a house in front of. */
       levels: !!(m.web && m.web.levels),
       meta: !!(m.web && m.web.meta),
+      army: !!(m.web && m.web.army),
       /* The grounds and the houses, split out of the roles because they are
          the two palettes the page shows first — everything else is in the
          "anything else it owns" reel. */

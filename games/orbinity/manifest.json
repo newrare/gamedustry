@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.2.4",
+  "version": "1.2.7",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -223,9 +223,9 @@
       }
     },
     "meta": {
-      "coinsPer": 125,
+      "coinsPer": 100,
       "xpPer": 12,
-      "ticketPrice": 30,
+      "ticketPrice": 38,
       "awards": [
         1,
         2,

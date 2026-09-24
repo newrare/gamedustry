@@ -119,12 +119,18 @@ development pages and answer only to the short rules in their own sections.
      the screen writes (see [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what
      picks the face — 3 → happy, 2 or 1 → neutral, 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
-   `Fx.burst/ring/shake/flash/freeze`, `Pop.show` for **every word the game
-   writes** — a status line included, which is what the `alert` style is for —
-   `Pop.text` for a value floating in the world, `Overlay.vignette` for the
-   glow, `Sound.clip`.
+   `Fx.burst/ring/shake/flash/freeze`, `Pop.show` for **every MOMENT the game
+   writes** (a mistake as it happens is the `alert` style), **`Notify.say` for
+   every piece of INFORMATION** — a state that changed, an input refused, a
+   hint, a warning — `Pop.text` for a value floating in the world,
+   `Overlay.vignette` for the glow, `Sound.clip`. Never paint a status line on
+   the canvas and never build a message node of your own.
 1. Give every event a sound **picked from `assets/audio/sfx/`**, trimmed and embedded
-   in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Never invent a synth
+   in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Every file there is
+   named `<category>-<descriptor>-<NN>` — browse it by ear at `make events` →
+   `/library`, or `node tools/lab/index-sfx.mjs --list metal heavy` — and the
+   comment above the clip names the file it was cut from (`// hit: mallet-plink-01`),
+   which is the only record `make events` has of it. Never invent a synth
    voice for a game: `Sound.beep/arp` is only the fallback for an event with no
    clip.
 1. **Never create the app icon, and never create the painted artwork.** Both are
@@ -253,8 +259,11 @@ IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, each
 door to the screen it is the number of — home, the ranking, the shop, the
 collection, the collection, the map. The album has no header of its own: its count is
 that first chip, and the height it was taking went to the machine and the tiles. The row never changes shape and a chip standing on its own screen goes
-inert rather than missing, so a number is never one to find again; the level
-chip is the bolt alone and opens for a few seconds whenever the xp moves. A
+inert rather than missing, so a number is never one to find again — the house
+alone is dropped on the bare village, since it is only a door and that door is
+the screen under it (a card over the village brings it back); the row
+runs edge to edge, the house against the left gutter, and the level chip's xp
+bar fills all the room the counts leave free. A
 view's header carries no button; a card's way out is a discreet cross in its
 corner, and ESCAPE. The one branch: a game with no `web.meta` has no band, so
 its views keep a home button — there is always exactly one way home, never two.
@@ -350,7 +359,8 @@ What a view brings:
 - **the round gets a third control in front of that pair**: the way out. It is
   the difference between a playable, where the round *is* the ad, and a game the
   player owns, and the pictogram is the DESTINATION rather than the door — the
-  map on a levelled game, the house on a level-less one. Not in the top band:
+  house, and it leads to the village (the title screen on a game without one),
+  never to the map, which is one building of that place. Not in the top band:
   the HUD is the game's, all of it, and the thirteen fill it differently —
   nothing about the round has to move to make room (`--hud-h`, `--cta-h` and
   `Layout` are all untouched). Any card over a round **pauses it** (the clock is
@@ -411,7 +421,9 @@ What a view brings:
   bands pay, never a promotion: `games/arcider` is a race, so the third star
   is the chequered flag taken in first place and a run that never reached it
   is worth one) and `Game.levelWon()` (how it ends its own round, so the end
-  screen keeps its stat rows). See [docs/LEVELS.md](docs/LEVELS.md).
+  screen keeps its stat rows). `Game.levelTally()` goes further for a round won on objectives rather than a
+  quantity: it IS the star count, 0 to 3, and replaces the bands
+  (`games/stratideck`: the flag, no wound, a prisoner). See [docs/LEVELS.md](docs/LEVELS.md).
 - **a game that declares `web.meta` gets the META LAYER on top of that** — a
   wallet, a collection and a reason to open the game tomorrow. It is what the
   map sends a cleared level's score to, AT THE PLAYER'S OWN LEVEL:
@@ -530,6 +542,39 @@ What a view brings:
   reward is flying into it. **All thirteen declare it**; a game is a sheet of
   twenty stickers and a manifest block, whose rates are scaled to what that
   game scores. See [docs/META.md](docs/META.md).
+- **a game that declares `web.army` gets the BARRACKS on top of that** — the
+  cards the player OWNS, and what a battle costs them. A round that deals a
+  fresh random deck every time has nothing at stake; this makes the deck the
+  player's and then gives a fight a price. Every card is two numbers read in
+  that order — a **grade** and a **tier** (`E D C B A S`, the collection's own
+  rarity ladder with one step under it) — and the tier settles a fight between
+  two equal grades, so the one DRAW left in the game is two cards that match on
+  both. The tier GAP is what the fight costs: the loser's tier standing above
+  the winner's **WOUNDS** the winner, which takes the cell, pins the card in its
+  hand slot for a turn and sends it to the INFIRMARY for two real days; the
+  winner's standing above the loser's leaves the loser **STANDING**, and a won
+  battle offers one of those as a PRISONER, who turns after five real days and
+  then enlists. Both waits are bought out with the shell's rewarded-ad
+  placeholder, because a player whose three best cards are in bandages has
+  nothing to do for two days, which is not a mechanic. Four more doors on the
+  hub — DECK, INFIRMARY, PRISON and RECRUITS — and every one of them is a VIEW
+  and not a card, because each is a place with a list to manage and a screen a
+  stray tap can close is not a screen anything is composed on. Recruiting
+  spends the meta layer's own coins and never sells the three specials: a spy, a
+  scout and a sapper are ANSWERS to something, and a tent that sold them would
+  be selling the solution rather than the army. The layer says exactly one thing
+  to the game — `CONFIG.army.deck`, read fresh by `Game.reset()` — and the
+  battle hands back exactly one thing, `result.army`, which rides on `endRound`
+  like the game's own stat rows; the motor knows none of it. A deck short of
+  cards is filled with CONSCRIPTS rather than left short, since a battle the
+  player cannot start is a closed door and not a cost. `packages/webshell/army.js`
+  is the layer, `save.ar` inside `meta:<slug>` is the save, and `games/stratideck`
+  is the one game that declares it. **Every card is a person**: `web.army.cast`
+  names one officer per army, grade and tier (120), whose name, age, gender and
+  lore are read on the back of the card, and whose portrait is cut four to a
+  sheet by `tools/lab/cast-sheets.mjs` — plus each red officer again in the
+  blue uniform, for a prisoner who enlisted (180 portraits); web-only, never
+  preloaded (`CONFIG.artLazy`). See [docs/ARMY.md](docs/ARMY.md).
 
 **A game that declares `web.village` gets the VILLAGE**, a view between the
 title screen and the map, and it is the place the player lives:
@@ -553,7 +598,7 @@ round's backdrop, composed in `make village` (see [The lab](#the-lab)) and
 read out of `CONFIG.web.village` by `packages/webshell/village.{js,css}`.
 **Everything downstream then points back here** rather than at the map or the
 title — the band's house chip (`View.home`, whose base view this is, and which
-goes inert while it is on screen), the end screen's first button, and the
+is gone from the band while the village stands bare), the end screen's first button, and the
 ESCAPE that walks all the way out. The title screen becomes the front door a
 player comes through once a session, which is what a front door is. It never
 touches `#btn-start`: the motor's start button stays where the motor put it and
@@ -939,7 +984,7 @@ image it composed into `assets/image/<store>/<lang>/`, neither of which a
 can do; `tools/lab/shoot-store.mjs` shoots the same page for the batch,
 `game-events.html` is **the bench for what a game says and plays**, and the
 list has the two sides that question has: **VIEW** is every `Pop.show`,
-`Pop.text` and `Overlay.toast/banner/reward` of the `game.js` in source order,
+`Pop.text` and `Notify.say` of the `game.js` in source order,
 grouped into the beat they fire together on; **SOUND** is the background bed with its
 `CONFIG.music`, then **one card per clip** — the file of `assets/audio/sfx/` it
 is cut from and how long the cut is at the top, and under it every line of the
@@ -1089,6 +1134,40 @@ at the top says which of the three — manifest, draft, empty — is ON SCREEN, 
 source nothing is stored in is disabled rather than silent, and switching asks
 before it replaces unsaved work.
 
+`notify.html` is **the notification catalogue**, and it is where the look of
+`Notify` was chosen: seven styles (pill, card, ribbon, plate, stamp, glass,
+chip), five slots, four ways a crowd behaves (stack, replace, queue, merge),
+the entries, the exits — `fly` into the wallet chip among them — and the
+timings, all tried on a 720×1280 frame in any of the games' palettes and faces,
+over a live round, the village, the map and a card, with the repo's real
+messages. **`D · Chip` is what ships**; the other presets are the record of
+what it beat. A new look is tried there first and copied into the NOTIFY block
+of `packages/shell/motor.css` by hand — *Copy settings* is the panel's state as
+JSON, which a CSS copy does not carry.
+
+`sound-library.html` is **the sfx library, by ear** (`make events` →
+`http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
+page, grouped by the CATEGORY its name starts with, with its length, whether it
+is mono, its pack and which game already cuts a clip from it (`chainring.hit`);
+a search box, the categories, the packs and the length as facets; hover plays,
+click copies the name. The library is ~870 files from two vendors — the
+ZapSplat "multimedia" set and ten Kenney CC0 packs — and **every file is named
+`<category>-<descriptor>-<NN>.<ext>`**: `impact-metal-heavy-01.ogg`,
+`chime-ping-correct-01.mp3`, `voice-female-level-up.ogg`, the category first
+because it is what a list groups by, the vendor's word order and marketing words
+gone. `assets/audio/sfx/sources.tsv` keeps each file's pack, licence and
+original name, `LICENSES.md` beside it says what the packs are, and
+`node tools/lab/index-sfx.mjs` (`make sfx`) reads the folder back into
+`index.json` — durations, channels, categories, packs — which is what the
+bench's file menu (grouped by category since) and this page read; `--list <terms>` is the same list as text, for a hand or a model that wants a metal
+impact under 0.3 s without opening a browser. A provenance comment writes the
+file's name without its extension and nothing else, and the source format does
+not matter: `apply-events` re-cuts every clip through ffmpeg, so an ogg source
+ships as the same mono 32 kHz mp3 an mp3 source does. `tools/lab/rename-sfx.mjs`
+is the one-shot that did the naming and rewrote every game's provenance comment
+with it; it is a record, like `extract.mjs`, and a new pack is named to the
+scheme by hand and declared in `sources.tsv` (see `LICENSES.md`).
+
 `game-text.html` is **the copy desk**: every word a game shows a player, in one
 list, split into an EN section and an FR one. A game's copy is written where it
 is used, which is the right place to write it and the wrong place to proofread
@@ -1230,22 +1309,17 @@ Frame & input (section 3):
   white, so never `drawImage` the raw SVG.
 - `Fx.burst/ring/shake/flash/freeze` — the canvas juice layer; the frame
   pipeline updates and draws it for you. It holds no text: every word a game
-  writes is `Pop`.
+  writes is `Pop` or `Notify`.
 - `Confetti.burst(n)`.
 
 Shell (section 5):
 
 - `HUD.setScore/setScoreNow/punch/setLeft/setRight` — the top band.
 - `Pop.show(style, {word, sub, at, rot, cls, hold})` — the comic / manga callout
-  layer, and **the only place a game writes a word on the round**: score gains,
-  combos, every beat that celebrates a player action, and the status lines too —
-  `alert` exists for exactly that, sitting where a toast used to and styled like
-  the rest of the callouts instead of a leftover pill. **No game calls
-  `Overlay.toast/banner/reward` any more**, and a new one should not start:
-  thirteen games speaking in one voice is the point, and a pill in its own layer
-  reads as another product. A status line that must not fight a celebration
-  landing on the same frame is answered by the ANCHOR, not by a second system —
-  `alert` sits at `hudUnder`, callouts at `bottom` or in the world.
+  layer, and **the place a game writes a MOMENT**: score gains, combos, every
+  beat that celebrates a player action, a mistake as it happens (`alert`:
+  "Combo lost", "Miss") and an alarm (`danger`). A word the player has to READ
+  rather than feel is not a moment and goes to `Notify.say` below.
   Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`; what a
   given game already fires, in that game's own build: `make events`.
 - `Pop.text(x, y, str, {color, size, tier:0..3, life, vy})` — **the same
@@ -1257,10 +1331,28 @@ Shell (section 5):
   running. **The thirteen share one look for it** — `size: 22, life: 0.6, tier: 1`, taken from blight's JOKER — and only the `color` is the game's,
   because the colour is data (the brick that was hit, rot against clean) and the
   rest is style.
+- `Notify.say(word, {sub, kind, icon, key, hold})` — **the one voice for
+  INFORMATION, on every screen**: a state that changed and stays changed
+  ("Shield down", "Wounded"), an input refused ("Out of reach", "Not enough
+  coins"), a hint or a lesson, a warning of what is coming ("Last ball"), and
+  anything at all said outside a round — the village, the map, a view, a card
+  (the web shell's army, OPTIONS and meta layer call it through
+  `window.__WEB__.Notify`). `kind` is `info gain good warn loss rare`, a colour
+  and a default icon; `icon` is a shell piece (`coin ticket super xp star sticker trophy`, painted where the build has `CONFIG.shellArt`) or a
+  pictogram (`info warn lock unlock heart user check x hourglass sparkles eye trash`). **One look, and none of it is a game's**: a chip of the wallet
+  band's family pinned top-right — under the band on a view, under the HUD in
+  a round — newest on top, four at most, the same notice twice bumps a `×N`
+  instead of stacking, a warn or a loss shakes, a timer line drains for 2.2 s,
+  and it leaves by flying into the chip it is about (`Notify.target(fn)`,
+  registered by meta.js) or lifting away. Tap dismisses, press holds — except
+  in a round, where the layer is pointer-transparent so it never eats the
+  game's tap. The one knob is `CONFIG.notify = { round: "bottom" }` for a board
+  that fills the top of the frame (bouncetry, echomaze). Chosen in
+  `lab/notify.html`; see
+  [docs/ENGINE.md](docs/ENGINE.md#notify--the-one-voice-for-information).
 - `Overlay.vignette/clear` — the dramatic full-frame glow, and the way to wipe
-  the layer. `Overlay.toast/banner/reward` are still in the motor and no game
-  calls them: their words moved to `Pop.show` above, which is where a word
-  belongs.
+  the layer. It carries no word: the motor's old `toast/banner/reward` were
+  deleted when `Notify` took the informative words.
 - `Decor.dress(node, {count, spots, size, opacity, front})` / `Decor.clear(node)`
   — one to three of the game's own painted objects around a screen, out of
   `assets/image/embed/<slug>-decor-NN.webp`. The motor dresses the end screen and the
@@ -1314,6 +1406,11 @@ its own, deployed by Vercel from this repo.
   string in the markup, and never add a third mechanism.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
+- **The cards are ordered by release, freshest first**: the day the manifest's
+  `version` last moved in git, newest first, then the higher version on a tie.
+  `gen-catalogues.mjs` reads it from git and bakes the order into `games.js`
+  (a bump not committed yet counts as today), because the Vercel build clones
+  shallow. `order` in the manifest now sorts the developer gallery only.
 - **The hero is dressed with the games' own characters.** `build-site.mjs` copies
   each game's `assets/image/embed/<slug>-character-happy.webp` to
   `image/games/<slug>/character.webp` and marks `character: true`;
@@ -1421,6 +1518,9 @@ its own, deployed by Vercel from this repo.
 - [ ] `node tools/build/build-site.mjs` lists the game (not "skipped") and its card
   reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).
+- [ ] Every status line, refusal, hint and warning is a `Notify.say` — no
+  message painted on the canvas, no message node of the game's own, no
+  `Pop.show("alert")` carrying anything but a mistake as it happens.
 - [ ] Code and comments in English, and **every string in normal case** — no
   word typed in capitals, no `toUpperCase`; the motor's `upper()` is what
   shouts, and `node tools/lab/scan-text.mjs <slug>` is where the game's copy is

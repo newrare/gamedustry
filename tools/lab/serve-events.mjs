@@ -26,13 +26,14 @@ import { readFile, stat } from 'node:fs/promises';
 import { existsSync, watch } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { games, scanGame, clearCache, sfxFiles, SFX_DIR, ROOT } from './scan-events.mjs';
+import { games, scanGame, clearCache, sfxFiles, soundPack, fileForNote, SFX_DIR, ROOT } from './scan-events.mjs';
 import { applyEdits } from './apply-events.mjs';
 
 const argv = process.argv.slice(2);
 const PORT = Number((argv.find((a) => a.startsWith('--port=')) || '--port=8092').split('=')[1]);
 const BUILD = path.join(ROOT, 'dist', 'web');
 const PAGE = path.join(ROOT, 'lab', 'game-events.html');
+const LIBRARY = path.join(ROOT, 'lab', 'sound-library.html');
 const SFX = SFX_DIR;
 
 const MIME = {
@@ -127,6 +128,14 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // The library page: every file of assets/audio/sfx/, by ear, beside the bench.
+    if (p === '/library') {
+      const html = await readFile(LIBRARY, 'utf8');
+      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-store' });
+      res.end(html.replace('</body>', RELOAD + '</body>'));
+      return;
+    }
+
     if (p === '/api/games') {
       const out = [];
       for (const slug of await games()) {
@@ -148,15 +157,37 @@ const server = createServer(async (req, res) => {
     }
 
     /* The sfx library — every file in assets/audio/sfx/, whether a game uses
-       it or not. The label is the name stripped of the vendor prefix and of
-       the trailing id, which is exactly how a game writes its provenance
+       it or not, with what index.json knows about each (category, seconds,
+       pack — tools/lab/index-sfx.mjs). The label is the file's name without
+       its extension, which is exactly how a game writes its provenance
        comment, so a card can be pasted straight into an ASSETS block, and it
        is also how a clip is matched back to the file it was cut from. */
     if (p === '/api/sfx') {
       const out = [];
       for (const f of await sfxFiles()) {
         const st = await stat(path.join(SFX, f.file));
-        out.push({ ...f, size: st.size });
+        const { re, ...rest } = f;
+        out.push({ ...rest, size: st.size });
+      }
+      json(res, out);
+      return;
+    }
+
+    /* Which game cuts a clip from which file — "chainring.hit" — read off the
+       provenance notes alone, so the library page can say who already uses a
+       sound without scanning every call of every game. */
+    if (p === '/api/sfx-usage') {
+      const lib = await sfxFiles();
+      const out = {};
+      for (const slug of await games()) {
+        let src;
+        try { src = await readFile(path.join(ROOT, 'games', slug, 'game.js'), 'utf8'); } catch { continue; }
+        const pack = soundPack(src);
+        for (const k of pack.keys) {
+          if (k.key === 'music') continue;
+          const file = fileForNote(pack.notes[k.key], lib);
+          if (file) (out[file] = out[file] || []).push(`${slug}.${k.key}`);
+        }
       }
       json(res, out);
       return;

@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — notifications</title>
+<style>
+/* ===========================================================================
+   NOTIFY LAB — one notification system for every surface.
+
+   The question this page answers: what does the ONE way a game or the web
+   shell says "something happened" look like, how do several of them stack,
+   how do they leave, and does the same look hold over a live round, the
+   village, the map and a card?
+
+   It was chosen here on 2026-09-23 — preset "D · Chip" with shine, icon pop
+   and the timer line on — and SHIPS as the motor's `Notify`
+   (packages/shell/shell.js + the NOTIFY block of packages/shell/motor.css),
+   which replaced Meta.say's `#mt-says` pill and every `Pop.show("alert")`
+   that was a status line rather than a moment. The other presets stay as
+   the record of what it beat. A change of look is made here first, then
+   copied into the motor by hand: "Copy settings" hands back the JSON of the
+   panel, which the CSS alone does not carry.
+
+   Assets are loaded by relative path out of ../assets/, which only lab/ may
+   do. Everything on the stage is authored in the 720x1280 design space.
+   =========================================================================== */
+
+@font-face { font-family:"Orbitron";   src:url(../assets/motor/font/orbitron.woff2) format("woff2"); font-weight:400 900; }
+@font-face { font-family:"Exo 2";      src:url(../assets/motor/font/exo2.woff2) format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Baloo 2";    src:url(../assets/motor/font/baloo2.woff2) format("woff2"); font-weight:400 800; }
+@font-face { font-family:"Bungee";     src:url(../assets/motor/font/bungee.woff2) format("woff2"); }
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+@font-face { font-family:"Russo One";  src:url(../assets/motor/font/russoone.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; min-height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 330px; height:100vh; overflow-y:auto;
+  padding:18px 18px 40px; background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 {
+  margin:18px 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:#6f6a90;
+}
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:4px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.seg { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.seg button {
+  flex:1 1 auto; padding:6px 8px; border-radius:6px; cursor:pointer;
+  background:#0b0b12; color:#b9b9d6; border:1px solid #2c2c47; font:600 12px/1 inherit;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.checks { display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; }
+.checks label { display:flex; gap:6px; align-items:center; font-size:12px; color:#b9b9d6; cursor:pointer; }
+.btn {
+  width:100%; margin-top:6px; padding:8px 10px; cursor:pointer;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px; font:700 12px/1 inherit;
+}
+.btn.ghost { background:#1c1c2c; color:#e8e6f5; border:1px solid #2c2c47; }
+.presets { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.presets button {
+  padding:8px; text-align:left; cursor:pointer; border-radius:8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; font:700 12px/1.2 inherit;
+}
+.presets button small { display:block; font-weight:500; color:#8b8ba7; margin-top:3px; }
+.presets button.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+.scen { display:flex; flex-direction:column; gap:3px; }
+.scen .grp { margin-top:8px; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:#6f6a90; }
+.scen button {
+  display:flex; justify-content:space-between; gap:8px; padding:6px 8px; cursor:pointer; text-align:left;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #23233a; border-radius:6px; font:600 12px/1.25 inherit;
+}
+.scen button:hover { border-color:#7ea6ff; }
+.scen button.sel { border-color:#7ea6ff; background:#18203a; }
+.scen button i { font-style:normal; color:#8b8ba7; font-weight:500; white-space:nowrap; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:0; }
+#out {
+  width:100%; height:170px; margin-top:6px; padding:8px; resize:vertical;
+  background:#0b0b12; color:#b7d0ff; border:1px solid #2c2c47; border-radius:6px;
+  font:500 11px/1.4 ui-monospace,Menlo,monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   STAGE — the 720x1280 frame, scaled to fit. #fit owns the scale, #frame the
+   design space.
+   --------------------------------------------------------------------------- */
+#stage { flex:1; position:relative; display:flex; align-items:center; justify-content:center; }
+#stage-note {
+  position:absolute; left:0; right:0; bottom:10px; text-align:center;
+  font-size:11px; color:#6f6a90; pointer-events:none;
+}
+#fit { transform-origin:top left; position:absolute; left:0; top:0; }
+#frame {
+  position:relative; width:720px; height:1280px; overflow:hidden; border-radius:30px;
+  box-shadow:0 30px 80px rgba(0,0,0,.65);
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font); font-weight:var(--fw);
+
+  /* the motor's tokens, rewritten per game by the palette select */
+  --bg:#0a0a18; --text:#eafcff; --muted:#9fb0e0; --gold:#ffd43b; --good:#69db7c;
+  --warn:#ff9f1c; --danger:#ff2d55; --panel-line:rgba(255,255,255,.09);
+  --accent:#35e8ff; --accent2:#7a4dff;
+  --font:-apple-system,sans-serif; --fw:900;
+  --inset-top:0px;
+}
+#frame.notch { --inset-top:54px; }
+#frame.notch::after {
+  content:""; position:absolute; left:50%; top:14px; width:210px; height:58px; margin-left:-105px;
+  border-radius:40px; background:#000; z-index:99; pointer-events:none;
+}
+
+/* the scene: a painted picture and a scrim, then whatever the screen is */
+#scene { position:absolute; inset:0; background-size:cover; background-position:center; }
+#scene::after { content:""; position:absolute; inset:0; background:rgba(4,4,14,var(--scrim,.25)); }
+#world { position:absolute; inset:0; }
+
+/* ---- the round's chrome ------------------------------------------------ */
+#hud {
+  position:absolute; left:0; right:0; top:0; height:calc(var(--inset-top) + 150px); z-index:15;
+  padding:calc(var(--inset-top) + 18px) 26px 0; display:flex; justify-content:space-between;
+}
+.hud-pill {
+  min-width:130px; padding:10px 18px; border-radius:20px; text-align:center;
+  background:rgba(0,0,0,.42); border:1px solid var(--panel-line);
+  font-size:34px; line-height:1; font-variant-numeric:tabular-nums;
+}
+.hud-pill small { display:block; font-size:14px; letter-spacing:2px; opacity:.6; margin-bottom:4px; }
+#ctls { position:absolute; right:22px; bottom:26px; z-index:40; display:flex; gap:12px; }
+#ctls span {
+  width:58px; height:58px; border-radius:50%; background:rgba(0,0,0,.5);
+  border:2px solid var(--panel-line);
+}
+#lvhud {
+  position:absolute; left:22px; bottom:26px; z-index:40; height:58px; padding:0 18px;
+  display:flex; align-items:center; gap:6px; border-radius:30px;
+  background:rgba(0,0,0,.5); border:2px solid var(--panel-line);
+}
+#lvhud img { width:34px; height:34px; }
+#lvhud img.off { opacity:.25; filter:grayscale(1); }
+
+/* ---- the view's chrome: the wallet band -------------------------------- */
+#band {
+  position:absolute; left:0; right:0; top:0; z-index:41;
+  padding:calc(var(--inset-top) + 18px) 26px 0; display:flex; gap:7px; align-items:center;
+}
+.chip {
+  display:flex; align-items:center; gap:6px; height:48px; padding:0 10px; border-radius:30px;
+  background:rgba(0,0,0,.5); border:2px solid var(--panel-line);
+  font-size:22px; white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.chip img { width:24px; height:24px; }
+.chip.coins { color:var(--gold); border-color:rgba(255,212,59,.34); }
+.chip.tickets { color:var(--accent); }
+.chip.lv { flex:1 1 auto; gap:10px; }
+.chip.lv .bar { flex:1; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
+.chip.lv .bar i { display:block; width:62%; height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
+.chip.punch { animation:chip-punch .35s cubic-bezier(.2,1.6,.4,1); }
+@keyframes chip-punch { 40% { transform:scale(1.18); } }
+
+/* ---- the map ----------------------------------------------------------- */
+.lvnode {
+  position:absolute; width:86px; height:86px; margin:-43px 0 0 -43px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:30px;
+  background:rgba(0,0,0,.55); border:4px solid var(--accent); cursor:pointer;
+}
+.lvnode.lock { border-color:rgba(255,255,255,.2); color:rgba(255,255,255,.35); }
+
+/* ---- a card over the view ---------------------------------------------- */
+#card {
+  position:absolute; left:60px; right:60px; top:360px; z-index:44; padding:34px 34px 30px;
+  border-radius:30px; background:rgba(10,10,24,.94); border:2px solid var(--panel-line);
+  box-shadow:0 30px 70px rgba(0,0,0,.6); text-align:center;
+}
+#card h3 { font-size:40px; letter-spacing:2px; margin-bottom:8px; }
+#card p { font-family:-apple-system,sans-serif; font-weight:600; font-size:22px; color:var(--muted); margin-bottom:24px; }
+#card .cbtn {
+  display:block; width:100%; margin-top:14px; padding:20px; border-radius:20px; cursor:pointer;
+  font:inherit; font-size:28px; letter-spacing:1px; color:#081018; border:0;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+#veil { position:absolute; inset:0; z-index:43; background:rgba(0,0,0,.5); }
+
+/* ===========================================================================
+   THE NOTIFICATION LAYER — this block is the candidate for the port.
+
+   Four nodes per notification, one transform each so they never fight:
+     .nt       placement + the FLIP reflow of a stack      (translate)
+     .nt-a     entry / exit                                  (keyframes)
+     .nt-b     the LOOK — one class per style, one per kind  (static)
+     .nt-b > * icon, word, sub, counter, timer
+   Kind is a colour token (--k), so a style never lists the kinds.
+   =========================================================================== */
+#nt-layer {
+  position:absolute; inset:0; z-index:48; pointer-events:none; overflow:hidden;
+  font-family:var(--font);
+}
+.nt-slot { position:absolute; left:0; right:0; display:flex; flex-direction:column; align-items:center; }
+.nt-slot.top    { top:var(--slot-top); }
+.nt-slot.center { top:50%; transform:translateY(-50%); }
+.nt-slot.bottom { bottom:var(--slot-bottom); flex-direction:column-reverse; }
+.nt-slot.right  { top:var(--slot-top); align-items:flex-end; padding-right:18px; }
+
+.nt { position:relative; will-change:transform; }
+.nt + .nt { margin-top:var(--gap); }
+.nt-slot.bottom .nt + .nt { margin-top:0; margin-bottom:var(--gap); }
+.nt.free { position:absolute; transform:translate(-50%,-100%); }
+
+.nt-a {
+  animation-duration:var(--in); animation-fill-mode:both;
+  animation-timing-function:cubic-bezier(.2,1.35,.4,1);
+}
+.nt-a.leaving { animation-duration:var(--out); animation-timing-function:cubic-bezier(.5,0,.8,.4); }
+
+.nt-b {
+  --k:var(--accent);
+  position:relative; display:flex; align-items:center; gap:16px;
+  transform:scale(var(--scale));
+  pointer-events:none; overflow:visible;
+}
+.tap .nt-b { pointer-events:auto; cursor:pointer; }
+.nt-b.k-info { --k:var(--accent); }
+.nt-b.k-gain { --k:var(--gold); }
+.nt-b.k-good { --k:var(--good); }
+.nt-b.k-warn { --k:var(--warn); }
+.nt-b.k-loss { --k:var(--danger); }
+.nt-b.k-rare { --k:#e7b6ff; }
+
+.nt-ic { flex:0 0 auto; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+.nt-ic img { width:100%; height:100%; object-fit:contain; }
+.nt-ic svg { width:80%; height:80%; stroke:var(--k); fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.nt-tx { min-width:0; }
+.nt-w { display:block; font-size:30px; line-height:1.05; letter-spacing:1.5px; color:var(--k); white-space:nowrap; }
+.nt-s {
+  display:block; margin-top:3px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-weight:600; font-size:18px; color:var(--muted); white-space:nowrap;
+}
+.nt-n {
+  position:absolute; top:-14px; right:-12px; min-width:40px; height:40px; padding:0 8px;
+  border-radius:20px; display:none; align-items:center; justify-content:center;
+  background:var(--k); color:#0b0b14; font-size:20px; box-shadow:0 3px 0 rgba(0,0,0,.4);
+}
+.nt-n.on { display:flex; }
+.nt-n.punch { animation:chip-punch .3s cubic-bezier(.2,1.6,.4,1); }
+.nt-bar {
+  position:absolute; left:18%; right:18%; bottom:6px; height:4px; border-radius:2px;
+  background:var(--k); opacity:.75; transform-origin:left center; display:none;
+}
+.bar .nt-bar { display:block; }
+.nt-x { display:none; }
+
+/* ---- style 1: pill — today's #mt-says, the baseline -------------------- */
+.st-pill {
+  padding:12px 30px; border-radius:40px; text-align:center; justify-content:center;
+  background:rgba(4,4,14,.92); border:2px solid var(--k); box-shadow:0 0 26px rgba(0,0,0,.6);
+}
+.st-pill .nt-ic { display:none; }
+.st-pill .nt-w { color:var(--gold); }
+.st-pill.k-warn .nt-w, .st-pill.k-loss .nt-w { color:var(--k); }
+
+/* ---- style 2: card — an icon tile, a stripe, the words left-aligned ---- */
+.st-card {
+  width:600px; padding:16px 26px 16px 18px; border-radius:24px;
+  background:linear-gradient(180deg, rgba(22,24,44,.97), rgba(10,10,24,.97));
+  border:2px solid rgba(255,255,255,.08); box-shadow:0 16px 40px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+.st-card::before {
+  content:""; position:absolute; left:0; top:0; bottom:0; width:8px; background:var(--k);
+}
+.st-card .nt-ic {
+  width:66px; height:66px; margin-left:8px; border-radius:50%; padding:9px;
+  background:color-mix(in srgb, var(--k) 18%, transparent);
+  border:2px solid color-mix(in srgb, var(--k) 55%, transparent);
+}
+.st-card .nt-w { color:var(--text); font-size:28px; }
+.st-card .nt-s { color:var(--k); opacity:.9; }
+.st-card .nt-bar { left:0; right:auto; width:100%; bottom:0; height:4px; border-radius:0; }
+
+/* ---- style 3: ribbon — a banner across the frame ----------------------- */
+.st-ribbon {
+  width:720px; justify-content:center; padding:18px 80px; text-align:center;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--k) 88%, #fff) 0%, var(--k) 45%, color-mix(in srgb, var(--k) 62%, #000) 100%);
+  clip-path:polygon(0 0, 100% 0, calc(100% - 34px) 50%, 100% 100%, 0 100%, 34px 50%);
+  filter:drop-shadow(0 10px 0 rgba(0,0,0,.35));
+}
+.st-ribbon .nt-w {
+  color:#fff; font-size:34px;
+  /* an outline that holds on a pale accent (stratideck's gold, slipdeck's) */
+  text-shadow:2px 2px 0 #0b0a1e, -2px 2px 0 #0b0a1e, 2px -2px 0 #0b0a1e, -2px -2px 0 #0b0a1e,
+              0 3px 0 #0b0a1e, 0 6px 0 rgba(0,0,0,.35);
+}
+.st-ribbon .nt-s { color:#0b0a1e; font-weight:800; }
+.st-ribbon .nt-ic { width:52px; height:52px; }
+.st-ribbon .nt-ic svg { stroke:#fff; }
+.st-ribbon .nt-bar { background:#fff; }
+
+/* ---- style 4: plate — the game's own chunky plaque --------------------- */
+.st-plate {
+  padding:14px 34px 16px 96px; border-radius:26px; width:560px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--k) 32%, #1a1a30) 0%, #121226 58%, #0c0c1c 100%);
+  border:4px solid #05050c;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.18), inset 0 0 0 2px color-mix(in srgb, var(--k) 60%, transparent),
+             0 9px 0 #05050c, 0 16px 26px rgba(0,0,0,.5);
+}
+.st-plate .nt-ic {
+  position:absolute; left:-18px; top:50%; width:104px; height:104px; margin-top:-52px;
+  filter:drop-shadow(0 6px 0 rgba(0,0,0,.45));
+}
+.st-plate .nt-ic.lu {
+  border-radius:50%; background:#0c0c1c; border:4px solid #05050c; padding:20px;
+  box-shadow:inset 0 0 0 3px var(--k);
+}
+.st-plate .nt-w { color:#fff; font-size:34px; text-shadow:0 3px 0 #05050c, 0 0 14px color-mix(in srgb, var(--k) 70%, transparent); }
+.st-plate .nt-s { color:var(--k); }
+
+/* ---- style 5: stamp — a rubber stamp, for a verdict -------------------- */
+.st-stamp {
+  padding:12px 30px; border-radius:14px; text-align:center; justify-content:center;
+  transform:rotate(-5deg) scale(var(--scale));
+  border:5px solid var(--k); background:rgba(6,6,16,.78);
+  box-shadow:inset 0 0 0 3px rgba(6,6,16,.78), inset 0 0 0 5px var(--k), 0 12px 30px rgba(0,0,0,.5);
+}
+.st-stamp .nt-w { font-size:38px; letter-spacing:5px; }
+.st-stamp .nt-s { color:var(--text); opacity:.75; }
+.st-stamp .nt-ic { display:none; }
+
+/* ---- style 6: glass — frosted (costs a blur per frame on a phone) ------ */
+.st-glass {
+  padding:14px 30px 14px 18px; border-radius:30px;
+  background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.28);
+  -webkit-backdrop-filter:blur(16px) saturate(1.4); backdrop-filter:blur(16px) saturate(1.4);
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+.st-glass .nt-w { color:#fff; }
+.st-glass .nt-s { color:rgba(255,255,255,.75); }
+
+/* ---- style 7: chip — the band's own chrome, a notice that IS a chip ---- */
+.st-chip {
+  height:56px; padding:0 20px 0 12px; gap:10px; border-radius:30px;
+  background:rgba(0,0,0,.72); border:2px solid color-mix(in srgb, var(--k) 60%, transparent);
+  box-shadow:0 8px 20px rgba(0,0,0,.45);
+}
+.st-chip .nt-ic { width:32px; height:32px; }
+.st-chip .nt-tx { display:flex; align-items:baseline; gap:10px; }
+.st-chip .nt-w { font-size:24px; }
+.st-chip .nt-s { font-size:17px; margin:0; }
+.st-chip .nt-bar { left:22px; right:22px; bottom:4px; height:3px; }
+
+/* ---- effects ------------------------------------------------------------ */
+.fx-flash .nt-b::after {
+  content:""; position:absolute; left:50%; top:50%; width:140%; height:320%; z-index:-1;
+  transform:translate(-50%,-50%) scale(.3); border-radius:50%; pointer-events:none;
+  background:radial-gradient(closest-side, color-mix(in srgb, var(--k) 70%, transparent), transparent);
+  animation:fx-flash .55s ease-out both;
+}
+@keyframes fx-flash { 0% { opacity:0; } 25% { opacity:1; } 100% { opacity:0; transform:translate(-50%,-50%) scale(1.15); } }
+.fx-shine .nt-sh {
+  position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none;
+}
+.st-ribbon .nt-sh, .st-stamp .nt-sh { display:none; }
+.fx-shine .nt-sh::before {
+  content:""; position:absolute; top:0; bottom:0; left:-40%; width:30%;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+  animation:fx-shine .7s ease-out both; animation-delay:calc(var(--in) * .6);
+}
+@keyframes fx-shine { to { left:120%; } }
+.fx-shake .k-warn, .fx-shake .k-loss { animation:fx-shake .42s ease both; animation-delay:var(--in); }
+@keyframes fx-shake {
+  15% { translate:-10px 0; } 35% { translate:9px 0; } 55% { translate:-6px 0; } 75% { translate:3px 0; } 100% { translate:0 0; }
+}
+.fx-icon .nt-ic { animation:fx-icon .5s cubic-bezier(.2,1.8,.4,1) both; animation-delay:calc(var(--in) * .5); }
+@keyframes fx-icon { from { scale:0; rotate:-30deg; } to { scale:1; rotate:0deg; } }
+
+/* ---- entries ------------------------------------------------------------ */
+@keyframes in-drop  { from { opacity:0; transform:translateY(-50px); } to { opacity:1; transform:none; } }
+@keyframes in-rise  { from { opacity:0; transform:translateY(50px); } to { opacity:1; transform:none; } }
+@keyframes in-pop   { 0% { opacity:0; transform:scale(.35); } 60% { opacity:1; transform:scale(1.08); } 100% { transform:scale(1); } }
+@keyframes in-slide { from { opacity:0; transform:translateX(760px); } to { opacity:1; transform:none; } }
+@keyframes in-slam  { 0% { opacity:0; transform:scale(2.4) rotate(8deg); } 55% { opacity:1; transform:scale(.94) rotate(-1deg); } 100% { transform:none; } }
+@keyframes in-fade  { from { opacity:0; } to { opacity:1; } }
+@keyframes in-unfold{ from { opacity:0; transform:scaleY(0); } 70% { opacity:1; transform:scaleY(1.12); } to { transform:none; } }
+/* ---- exits -------------------------------------------------------------- */
+@keyframes out-fade   { from { opacity:1; } to { opacity:0; } }
+@keyframes out-lift   { to { opacity:0; transform:translateY(-30px); } }
+@keyframes out-shrink { to { opacity:0; transform:scale(.55); } }
+@keyframes out-slide  { to { opacity:0; transform:translateX(-760px); } }
+@keyframes out-blur   { to { opacity:0; transform:scale(1.12); filter:blur(12px); } }
+@keyframes out-fold   { to { opacity:0; transform:scaleY(0); } }
+@keyframes out-fly    { to { opacity:.2; transform:translate(var(--fx),var(--fy)) scale(.12); } }
+/* #still=1: every animation lands on its last frame — for a headless shot */
+.still #nt-layer * { animation-delay:0s !important; animation-duration:1ms !important; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Notifications</h1>
+  <p class="hint">One voice for every "something happened": over a round, the village, the map, a card. "D · Chip" is what ships (the motor's Notify); the rest is what it beat.</p>
+
+  <h2>Proposals</h2>
+  <div class="presets" id="presets"></div>
+
+  <h2>Context</h2>
+  <div class="row"><label>Game</label><select id="game"></select></div>
+  <div class="row"><label>Screen</label><div class="seg" data-k="screen"></div></div>
+  <div class="row"><label>Language</label><div class="seg" data-k="lang"></div></div>
+  <div class="checks"><label><input type="checkbox" data-k="notch"> Dynamic Island</label></div>
+
+  <h2>Look</h2>
+  <div class="row"><label>Style</label><div class="seg" data-k="style"></div></div>
+  <div class="row"><label>Size <b id="scale-v"></b></label><input type="range" data-k="scale" min="70" max="130" step="5"></div>
+
+  <h2>Placement &amp; stacking</h2>
+  <div class="row"><label>Slot</label><div class="seg" data-k="slot"></div></div>
+  <div class="row"><label>Stacking</label><div class="seg" data-k="stack"></div></div>
+  <div class="row"><label>Newest</label><div class="seg" data-k="order"></div></div>
+  <div class="row"><label>Visible at once <b id="max-v"></b></label><input type="range" data-k="max" min="1" max="5" step="1"></div>
+  <div class="row"><label>Gap <b id="gap-v"></b></label><input type="range" data-k="gap" min="0" max="30" step="2"></div>
+
+  <h2>Motion</h2>
+  <div class="row"><label>Entry</label><div class="seg" data-k="enter"></div></div>
+  <div class="row"><label>Exit</label><div class="seg" data-k="exit"></div></div>
+  <div class="row"><label>Entry <b id="inMs-v"></b></label><input type="range" data-k="inMs" min="120" max="700" step="20"></div>
+  <div class="row"><label>Hold <b id="hold-v"></b></label><input type="range" data-k="hold" min="800" max="6000" step="100"></div>
+  <div class="row"><label>Exit <b id="outMs-v"></b></label><input type="range" data-k="outMs" min="120" max="700" step="20"></div>
+
+  <h2>Effects &amp; behaviour</h2>
+  <div class="checks">
+    <label><input type="checkbox" data-k="flash"> Flash</label>
+    <label><input type="checkbox" data-k="shine"> Shine</label>
+    <label><input type="checkbox" data-k="shake"> Shake on warn</label>
+    <label><input type="checkbox" data-k="iconPop"> Icon pop</label>
+    <label><input type="checkbox" data-k="bar"> Timer bar</label>
+    <label><input type="checkbox" data-k="tap"> Tap dismisses</label>
+    <label><input type="checkbox" data-k="hover"> Press pauses</label>
+    <label><input type="checkbox" data-k="icons"> Icons</label>
+  </div>
+
+  <h2>Fire</h2>
+  <p class="hint" style="margin:0 0 6px">A click on the stage fires the selected message from that point (the "source" slot uses it).</p>
+  <button class="btn" id="burst">Burst — five different</button>
+  <button class="btn ghost" id="same">Same message ×4 — merge test</button>
+  <button class="btn ghost" id="demo">Play a session (12 s)</button>
+  <button class="btn ghost" id="clear">Clear</button>
+  <div class="scen" id="scen"></div>
+
+  <h2>Settings</h2>
+  <button class="btn" id="copy">Copy settings</button>
+  <textarea id="out" readonly></textarea>
+</div>
+
+<div id="stage">
+  <div id="fit">
+    <div id="frame">
+      <div id="scene"></div>
+      <canvas id="world" width="720" height="1280"></canvas>
+      <div id="chrome"></div>
+      <div id="nt-layer"></div>
+    </div>
+  </div>
+  <div id="stage-note">720×1280 design space · click the stage to fire the selected message</div>
+</div>
+
+<script>
+/* ===========================================================================
+   Plain ES6 in the page; the Notify module itself is kept ES5 so the port to
+   packages/ is a copy.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  /* ---- the motor's upper(), copied from overlay-pop.html --------------- */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* ---- the thirteen (fifteen) palettes: manifest theme + web.font ------- */
+  const FONTS = {
+    orbitron: ['"Orbitron"', 800], exo2: ['"Exo 2"', 800], baloo2: ['"Baloo 2"', 800],
+    bungee: ['"Bungee"', 400], bebasneue: ['"Bebas Neue"', 400], russoone: ['"Russo One"', 400]
+  };
+  const GAMES = {
+    arcider:    { accent:"#35e8ff", accent2:"#7a4dff", font:"orbitron",  phone:"" },
+    blight:     { accent:"#ff8fab", accent2:"#7048e8", font:"baloo2",    phone:"-01" },
+    bouncetry:  { accent:"#ff3b57", accent2:"#2f86ff", font:"bungee",    phone:"" },
+    chainring:  { accent:"#4bf5ff", accent2:"#4263eb", font:"exo2",      phone:"" },
+    echomaze:   { accent:"#7ef9ff", accent2:"#4ade80", font:"orbitron",  phone:"-blue" },
+    gearball:   { accent:"#7ef9ff", accent2:"#ffb44f", font:"russoone",  phone:"" },
+    marshmelt:  { accent:"#ff9d2e", accent2:"#ff7a1a", font:"baloo2",    phone:"" },
+    orbinity:   { accent:"#7cf5ff", accent2:"#6d5cff", font:"exo2",      phone:"" },
+    pawko:      { accent:"#ffb830", accent2:"#ff4d6d", font:"baloo2",    phone:"-01" },
+    radiam:     { accent:"#35e0ff", accent2:"#8b6cff", font:"russoone",  phone:"-01" },
+    slipdeck:   { accent:"#f5c451", accent2:"#3ddc97", font:"bebasneue", phone:"" },
+    spinshock:  { accent:"#40ecff", accent2:"#ff4fbe", font:"bungee",    phone:"-blue" },
+    stratideck: { accent:"#f2c14e", accent2:"#5aa9ff", font:"russoone",  phone:"-01" },
+    triverse:   { accent:"#3ce0ff", accent2:"#ff5ad4", font:"orbitron",  phone:"" },
+    vipera:     { accent:"#4dff9b", accent2:"#12b86a", font:"baloo2",    phone:"" }
+  };
+  const ART = "../assets/image/";
+  const SHELL = { coin:"coin", ticket:"ticket", xp:"xp", star:"star", sticker:"sticker", trophy:"trophy", gift:"gift-close-01", super:"ticket-super" };
+  const LUCIDE = {
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    user: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    hourglass: '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+    sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>'
+  };
+  /* the icon a kind wears when the message names none */
+  const KIND_ICON = { info:"info", gain:"coin", good:"check", warn:"warn", loss:"x", rare:"sparkles" };
+  const KIND_COLOR = { info:"var(--accent)", gain:"var(--gold)", good:"var(--good)", warn:"var(--warn)", loss:"var(--danger)", rare:"#e7b6ff" };
+  /* which band chip a piece flies to on the "fly" exit */
+  const FLY_TO = { coin:"coins", ticket:"tickets", super:"tickets", xp:"lv", star:"stars", sticker:"album", trophy:"stars" };
+
+  /* ---- the messages: the real strings of the repo ------------------------
+     `where` is the surface it fires on today; `now` is how it is shown today,
+     so the page is also the record of what the port replaces. */
+  const SCEN = [
+    { g:"Army (stratideck)", kind:"info", icon:"lock", where:"captive card", now:"Meta.say",
+      en:["Taken to the prison", "Captain · A"], fr:["Emmené en prison", "Capitaine · A"] },
+    { g:"Army (stratideck)", kind:"warn", icon:"warn", where:"deck", now:"Meta.say",
+      en:["The deck is full", ""], fr:["Le deck est plein", ""] },
+    { g:"Army (stratideck)", kind:"good", icon:"heart", where:"infirmary", now:"Meta.say",
+      en:["Back on their feet", ""], fr:["De nouveau sur pied", ""] },
+    { g:"Army (stratideck)", kind:"gain", icon:"user", where:"prison", now:"Meta.say",
+      en:["Sergeant · B joins your army", ""], fr:["Sergent · B rejoint ton armée", ""] },
+    { g:"Army (stratideck)", kind:"gain", icon:"user", where:"recruits", now:"Meta.say",
+      en:["Scout · C recruited", ""], fr:["Éclaireur · C recruté", ""] },
+    { g:"Army (stratideck)", kind:"warn", icon:"coin", where:"recruits", now:"Meta.say",
+      en:["Not enough coins", ""], fr:["Pas assez de pièces", ""] },
+    { g:"Shell (every game)", kind:"loss", icon:"check", where:"options", now:"button text",
+      en:["Game data erased", ""], fr:["Données du jeu effacées", ""] },
+    { g:"Shell (every game)", kind:"warn", icon:"ticket", where:"album", now:"nothing (unused key)",
+      en:["No ticket", ""], fr:["Aucun ticket", ""] },
+    { g:"Shell (every game)", kind:"info", icon:"lock", where:"map", now:"inline in card",
+      en:["Locked", "Clear level 7 first"], fr:["Verrouillé", "Termine d'abord le niveau 7"] },
+    { g:"Shell (every game)", kind:"gain", icon:"coin", where:"shop", now:"Meta.fx tag",
+      en:["+42 coins", "Lv 3 × 14"], fr:["+42 pièces", "Nv 3 × 14"] },
+    { g:"Round (Pop alert today)", kind:"loss", icon:"x", where:"stratideck", now:"Pop alert",
+      en:["Wounded", "Captain · A"], fr:["Blessé", "Capitaine · A"] },
+    { g:"Round (Pop alert today)", kind:"warn", icon:"warn", where:"stratideck", now:"Pop alert",
+      en:["Out of reach", ""], fr:["Hors de portée", ""] },
+    { g:"Round (Pop alert today)", kind:"info", icon:"info", where:"stratideck", now:"Pop alert",
+      en:["Still wounded", ""], fr:["Encore blessé", ""] },
+    { g:"Round (Pop alert today)", kind:"warn", icon:"hourglass", where:"bouncetry", now:"Pop alert",
+      en:["Last ball", ""], fr:["Dernière balle", ""] },
+    { g:"Round (Pop alert today)", kind:"info", icon:"lock", where:"echomaze", now:"Pop alert",
+      en:["Exit sealed", "Break the crystal"], fr:["Sortie scellée", "Brise le cristal"] },
+    { g:"Round (Pop alert today)", kind:"loss", icon:"x", where:"spinshock", now:"Pop alert",
+      en:["Spin lost", "-12%"], fr:["Rotation perdue", "-12%"] },
+    { g:"Round (Pop alert today)", kind:"info", icon:"info", where:"gearball", now:"Pop alert",
+      en:["Tap when a gap reaches the hopper", ""], fr:["Touche quand un trou arrive à la trémie", ""] }
+  ];
+
+  /* ---- the settings, and the proposals --------------------------------- */
+  const CHOICES = {
+    screen: ["round", "village", "map", "card"],
+    lang: ["en", "fr"],
+    style: ["pill", "card", "ribbon", "plate", "stamp", "glass", "chip"],
+    slot: ["top", "center", "bottom", "right", "source"],
+    stack: ["stack", "replace", "queue", "merge"],
+    order: ["first", "last"],
+    enter: ["drop", "rise", "pop", "slide", "slam", "unfold", "fade"],
+    exit: ["lift", "fade", "shrink", "slide", "blur", "fold", "fly"]
+  };
+  const BASE = {
+    game:"stratideck", screen:"village", lang:"fr", notch:false,
+    style:"chip", scale:100, slot:"right", stack:"merge", order:"first", max:4, gap:8,
+    enter:"slide", exit:"fly", inMs:260, hold:2200, outMs:380,
+    flash:false, shine:true, shake:true, iconPop:true, bar:true, tap:true, hover:true, icons:true
+  };
+  const PRESETS = [
+    { id:"today", name:"Before", note:"#mt-says, retired",
+      set:{ style:"pill", slot:"top", stack:"stack", order:"last", max:3, enter:"pop", exit:"lift", inMs:280, hold:2200, outMs:400, flash:false, shine:false, shake:false, iconPop:false, bar:false, tap:false, hover:false } },
+    { id:"card", name:"A · Card", note:"icon tile, stack of 3, merge",
+      set:{ style:"card", slot:"top", stack:"merge", order:"first", max:3, gap:10, enter:"drop", exit:"lift", inMs:320, hold:2600, outMs:320, flash:false, shine:true, shake:true, iconPop:true, bar:true, tap:true, hover:true } },
+    { id:"plate", name:"B · Plate", note:"game plaque, painted icon",
+      set:{ style:"plate", slot:"top", stack:"merge", order:"first", max:3, gap:16, enter:"pop", exit:"fly", inMs:340, hold:2400, outMs:420, flash:true, shine:true, shake:true, iconPop:true, bar:false, tap:true, hover:true } },
+    { id:"ribbon", name:"C · Ribbon", note:"one at a time, queued",
+      set:{ style:"ribbon", slot:"center", stack:"queue", order:"last", max:1, enter:"unfold", exit:"fold", inMs:300, hold:1600, outMs:260, flash:false, shine:false, shake:true, iconPop:true, bar:false, tap:true, hover:false } },
+    { id:"chip", name:"D · Chip — shipped", note:"the motor's Notify",
+      set:{ style:"chip", slot:"right", stack:"merge", order:"first", max:4, gap:8, enter:"slide", exit:"fly", inMs:260, hold:2200, outMs:380, flash:false, shine:true, shake:true, iconPop:true, bar:true, tap:true, hover:true } },
+    { id:"stamp", name:"E · Stamp", note:"a verdict, where it happened",
+      set:{ style:"stamp", slot:"source", stack:"stack", order:"last", max:3, enter:"slam", exit:"blur", inMs:300, hold:1800, outMs:360, flash:true, shine:false, shake:true, iconPop:false, bar:false, tap:false, hover:false } }
+  ];
+
+  let S;
+  try { S = Object.assign({}, BASE, JSON.parse(localStorage.getItem("lab-notify") || "{}")); }
+  catch (e) { S = Object.assign({}, BASE); }
+  function save() { try { localStorage.setItem("lab-notify", JSON.stringify(S)); } catch (e) {} }
+
+  const $ = (id) => document.getElementById(id);
+  const frame = $("frame"), layer = $("nt-layer"), chrome = $("chrome");
+  let selected = 0;
+
+  /* ---- fit the frame into the stage ------------------------------------ */
+  let SCALE = 1;
+  function fit() {
+    const st = $("stage"), r = st.getBoundingClientRect();
+    SCALE = Math.min((r.width - 40) / 720, (r.height - 50) / 1280);
+    const f = $("fit");
+    f.style.transform = "scale(" + SCALE + ")";
+    f.style.left = ((r.width - 720 * SCALE) / 2) + "px";
+    f.style.top = ((r.height - 1280 * SCALE) / 2 - 8) + "px";
+  }
+  window.addEventListener("resize", fit);
+
+  /* ---- the screens ----------------------------------------------------- */
+  function img(name) { return '<img src="' + ART + "shell/" + SHELL[name] + '.webp" alt="">'; }
+  function band() {
+    return '<div id="band">' +
+      '<div class="chip" data-c="home">⌂</div>' +
+      '<div class="chip lv" data-c="lv">' + img("xp") + 'LV 4<span class="bar"><i></i></span></div>' +
+      '<div class="chip coins" data-c="coins">' + img("coin") + '1 240</div>' +
+      '<div class="chip tickets" data-c="tickets">' + img("ticket") + '3</div>' +
+      '<div class="chip" data-c="album">' + img("sticker") + '3/20</div>' +
+      '<div class="chip" data-c="stars">' + img("star") + '12/90</div>' +
+      '</div>';
+  }
+  function paintScreen() {
+    const g = GAMES[S.game], sc = $("scene");
+    const phone = ART + "embed/" + S.game + "-background-phone" + g.phone + ".webp";
+    const home = ART + "embed/" + S.game + "-background-home.webp";
+    let html = "";
+    frame.style.setProperty("--scrim", ".25");
+    if (S.screen === "round") {
+      sc.style.backgroundImage = "url(" + phone + ")";
+      frame.style.setProperty("--scrim", ".55");
+      html = '<div id="hud"><div class="hud-pill"><small>' + upper(S.lang === "fr" ? "Score" : "Score") + '</small>1 240</div>' +
+        '<div class="hud-pill"><small>' + upper(S.lang === "fr" ? "Temps" : "Time") + '</small>42</div></div>' +
+        '<div id="lvhud">' + img("star") + img("star") + '<img class="off" src="' + ART + 'shell/star.webp" alt=""></div>' +
+        '<div id="ctls"><span></span><span></span><span></span></div>';
+    } else if (S.screen === "map") {
+      sc.style.backgroundImage = "url(" + phone + ")";
+      frame.style.setProperty("--scrim", ".45");
+      html = band();
+      const pts = [[360,1080],[230,940],[420,820],[300,690],[470,560],[330,430],[200,300]];
+      pts.forEach((p, i) => {
+        html += '<div class="lvnode' + (i > 3 ? " lock" : "") + '" style="left:' + p[0] + 'px;top:' + p[1] + 'px">' + (i + 1) + '</div>';
+      });
+      html += '<div id="ctls"><span></span><span></span></div>';
+    } else {
+      sc.style.backgroundImage = "url(" + home + ")";
+      html = band() + '<div id="ctls"><span></span></div>';
+      if (S.screen === "card") {
+        const fr = S.lang === "fr";
+        html += '<div id="veil"></div><div id="card"><h3>' + upper(fr ? "Recrues" : "Recruits") + '</h3>' +
+          '<p>' + (fr ? "La tente de recrutement de ce jour" : "Today's recruiting tent") + '</p>' +
+          '<button class="cbtn" data-fire="4">' + upper(fr ? "Recruter · 250" : "Recruit · 250") + '</button>' +
+          '<button class="cbtn" data-fire="5">' + upper(fr ? "Recruter · 9 999" : "Recruit · 9 999") + '</button>' +
+          '<button class="cbtn" data-fire="1">' + upper(fr ? "Ajouter au deck" : "Add to deck") + '</button></div>';
+      }
+    }
+    chrome.innerHTML = html;
+  }
+
+  /* a live world under the round, so a notice is read over moving things */
+  const ctx = $("world").getContext("2d");
+  const dots = Array.from({ length: 26 }, () => ({
+    x: Math.random() * 720, y: 200 + Math.random() * 900, r: 14 + Math.random() * 34,
+    vx: (Math.random() - .5) * 90, vy: (Math.random() - .5) * 90, c: Math.random() < .5 ? 0 : 1
+  }));
+  let last = performance.now();
+  function world(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    ctx.clearRect(0, 0, 720, 1280);
+    if (S.screen === "round") {
+      const g = GAMES[S.game];
+      for (const d of dots) {
+        d.x += d.vx * dt; d.y += d.vy * dt;
+        if (d.x < d.r || d.x > 720 - d.r) d.vx *= -1;
+        if (d.y < 170 + d.r || d.y > 1180 - d.r) d.vy *= -1;
+        ctx.fillStyle = d.c ? g.accent : g.accent2;
+        ctx.globalAlpha = .8;
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    Notify.tick(dt * 1000);
+    requestAnimationFrame(world);
+  }
+
+  /* =========================================================================
+     NOTIFY — the candidate module. ES5 on purpose.
+
+       Notify.say(word, { sub, kind, icon, at, key, hold })
+
+       word  the line, in NORMAL case — the look shouts it through upper()
+       sub   the second line, normal case, never shouted
+       kind  info | gain | good | warn | loss | rare  (a colour, nothing more)
+       icon  a shell piece (coin ticket xp star sticker trophy gift super)
+             or a pictogram (info warn lock heart user check x hourglass
+             sparkles); default: the kind's own
+       at    {x,y} in design px — only read by the "source" slot
+       key   what "merge" compares; default word + sub
+     ========================================================================= */
+  var Notify = (function () {
+    var live = [], waiting = [], slots = {};
+
+    function slot(name) {
+      if (!slots[name]) {
+        var n = document.createElement("div");
+        n.className = "nt-slot " + name;
+        layer.appendChild(n);
+        slots[name] = n;
+      }
+      return slots[name];
+    }
+    function reset() {
+      live.slice().forEach(function (it) { if (it.node.parentNode) it.node.parentNode.removeChild(it.node); });
+      live = []; waiting = [];
+      layer.innerHTML = ""; slots = {};
+    }
+
+    /* FLIP: measure every notice of a slot, change the DOM, then animate each
+       from where it was to where it now is — a stack never jumps. */
+    function measure(host) {
+      var m = [];
+      for (var i = 0; i < host.children.length; i++) {
+        var c = host.children[i];
+        m.push([c, c.getBoundingClientRect().top]);
+      }
+      return m;
+    }
+    function play(before) {
+      before.forEach(function (p) {
+        var c = p[0]; if (!c.parentNode) return;
+        var dy = (p[1] - c.getBoundingClientRect().top) / SCALE;
+        if (Math.abs(dy) < 0.5) return;
+        c.style.transition = "none";
+        c.style.transform = "translateY(" + dy + "px)";
+        void c.offsetHeight;
+        c.style.transition = "transform .32s cubic-bezier(.2,1,.3,1)";
+        c.style.transform = "";
+      });
+    }
+
+    function iconHtml(name) {
+      if (!name) return "";
+      if (SHELL[name]) return '<span class="nt-ic">' + img(name) + '</span>';
+      if (LUCIDE[name]) return '<span class="nt-ic lu"><svg viewBox="0 0 24 24">' + LUCIDE[name] + '</svg></span>';
+      return "";
+    }
+
+    function build(m) {
+      var n = document.createElement("div");
+      n.className = "nt";
+      var a = document.createElement("div");
+      a.className = "nt-a";
+      a.style.animationName = "in-" + S.enter;
+      var b = document.createElement("div");
+      b.className = "nt-b st-" + S.style + " k-" + m.kind;
+      b.innerHTML = (S.icons ? iconHtml(m.icon) : "") +
+        '<span class="nt-tx"><b class="nt-w">' + upper(m.word) + '</b>' +
+        (m.sub ? '<span class="nt-s">' + m.sub + '</span>' : '') + '</span>' +
+        '<span class="nt-n"></span><span class="nt-sh"></span><span class="nt-bar"></span>';
+      a.appendChild(b); n.appendChild(a);
+      var it = { node: n, anim: a, body: b, m: m, left: m.hold, count: 1, held: false, gone: false,
+                 bar: b.querySelector(".nt-bar"), n: b.querySelector(".nt-n") };
+      b.addEventListener("pointerdown", function (e) {
+        e.stopPropagation();
+        if (S.hover) it.held = true;
+      });
+      b.addEventListener("pointerup", function (e) {
+        e.stopPropagation();
+        it.held = false;
+        if (S.tap) leave(it);
+      });
+      b.addEventListener("pointerleave", function () { it.held = false; });
+      return it;
+    }
+
+    function show(m) {
+      var it = build(m);
+      if (S.slot === "source") {
+        var p = m.at || { x: 360, y: 640 };
+        it.node.classList.add("free");
+        it.node.style.left = p.x + "px";
+        layer.appendChild(it.node);
+        /* one fired where another already stands goes on top of it, never over it */
+        var y = p.y - 20;
+        live.forEach(function (o) {
+          if (o.gone || !o.src || Math.abs(o.src.x - p.x) > 200 || Math.abs(o.src.y - p.y) > 200) return;
+          y = Math.min(y, o.y - o.node.offsetHeight - S.gap);
+        });
+        it.src = p; it.y = y;
+        it.node.style.top = y + "px";
+      } else {
+        var host = slot(S.slot);
+        var before = measure(host);
+        if (S.order === "first") host.insertBefore(it.node, host.firstChild);
+        else host.appendChild(it.node);
+        play(before);
+      }
+      live.push(it);
+      return it;
+    }
+
+    function leave(it, fast) {
+      if (it.gone) return;
+      it.gone = true;
+      var a = it.anim, name = S.exit;
+      if (name === "fly") {
+        var target = chipFor(it.m.icon);
+        if (target) {
+          var r1 = it.body.getBoundingClientRect(), r2 = target.getBoundingClientRect();
+          a.style.setProperty("--fx", ((r2.left + r2.width / 2) - (r1.left + r1.width / 2)) / SCALE + "px");
+          a.style.setProperty("--fy", ((r2.top + r2.height / 2) - (r1.top + r1.height / 2)) / SCALE + "px");
+          setTimeout(function () {
+            target.classList.remove("punch"); void target.offsetWidth; target.classList.add("punch");
+          }, S.outMs * .9);
+        } else name = "lift";
+      }
+      a.classList.add("leaving");
+      if (fast) a.style.animationDuration = "160ms";
+      a.style.animationName = "out-" + name;
+      a.addEventListener("animationend", function done(e) {
+        if (e.target !== a) return;
+        a.removeEventListener("animationend", done);
+        var host = it.node.parentNode;
+        var before = host && host !== layer ? measure(host) : null;
+        if (host) host.removeChild(it.node);
+        if (before) play(before);
+        live.splice(live.indexOf(it), 1);
+        if (waiting.length && !visible().length) show(waiting.shift());
+      });
+    }
+    function visible() { return live.filter(function (x) { return !x.gone; }); }
+    function chipFor(icon) {
+      var c = FLY_TO[icon];
+      return c ? chrome.querySelector('[data-c="' + c + '"]') : null;
+    }
+
+    function say(word, o) {
+      o = o || {};
+      var m = {
+        word: word, sub: o.sub || "", kind: o.kind || "info",
+        icon: o.icon === undefined ? KIND_ICON[o.kind || "info"] : o.icon,
+        at: o.at, hold: o.hold || S.hold, key: o.key || (word + "|" + (o.sub || ""))
+      };
+      var vis = visible();
+      if (S.stack === "merge") {
+        for (var i = 0; i < vis.length; i++) {
+          if (vis[i].m.key === m.key) {
+            var it = vis[i];
+            it.count++; it.left = m.hold;
+            it.n.textContent = "×" + it.count;
+            it.n.classList.add("on");
+            it.n.classList.remove("punch"); void it.n.offsetWidth; it.n.classList.add("punch");
+            return;
+          }
+        }
+      }
+      if (S.stack === "queue") {
+        if (vis.length) { waiting.push(m); return; }
+        show(m); return;
+      }
+      if (S.stack === "replace") {
+        vis.forEach(function (x) { leave(x, true); });
+        show(m); return;
+      }
+      /* stack / merge: the oldest goes early rather than the stack growing */
+      while (vis.length >= S.max) { leave(vis.shift(), true); }
+      show(m);
+    }
+
+    function tick(ms) {
+      live.forEach(function (it) {
+        if (it.gone || it.held) return;
+        it.left -= ms;
+        if (it.bar) it.bar.style.transform = "scaleX(" + Math.max(0, it.left / it.m.hold) + ")";
+        if (it.left <= 0) leave(it);
+      });
+    }
+
+    return { say: say, tick: tick, reset: reset };
+  })();
+
+  /* ---- firing ----------------------------------------------------------- */
+  function fire(i, at) {
+    const s = SCEN[i], t = s[S.lang];
+    Notify.say(t[0], { sub: t[1], kind: s.kind, icon: s.icon, at: at });
+  }
+  frame.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-fire]");
+    const r = frame.getBoundingClientRect();
+    const at = { x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE };
+    fire(b ? +b.dataset.fire : selected, at);
+  });
+  $("burst").onclick = () => {
+    [0, 5, 9, 1, 6].forEach((k, j) => setTimeout(() => fire(k, { x: 200 + j * 80, y: 700 - j * 60 }), j * 260));
+  };
+  $("same").onclick = () => {
+    for (let j = 0; j < 4; j++) setTimeout(() => fire(5, { x: 360, y: 760 }), j * 420);
+  };
+  $("clear").onclick = () => Notify.reset();
+  let demoT = [];
+  $("demo").onclick = () => {
+    demoT.forEach(clearTimeout); demoT = [];
+    const seq = [[0,400],[3,2400],[5,4200],[5,4700],[9,6000],[4,6600],[8,8600],[1,10400]];
+    seq.forEach(([k, t]) => demoT.push(setTimeout(() => fire(k, { x: 360, y: 820 }), t)));
+  };
+  $("copy").onclick = () => {
+    const o = $("out"); o.select();
+    try { navigator.clipboard.writeText(o.value); } catch (e) { document.execCommand("copy"); }
+  };
+
+  /* ---- the panel -------------------------------------------------------- */
+  function paintOut() {
+    const keys = ["style","scale","slot","stack","order","max","gap","enter","exit","inMs","hold","outMs",
+                  "flash","shine","shake","iconPop","bar","tap","hover","icons"];
+    const o = {}; keys.forEach((k) => o[k] = S[k]);
+    $("out").value = JSON.stringify({ notify: o, seenOn: { game: S.game, screen: S.screen, lang: S.lang } }, null, 2);
+  }
+  function apply() {
+    const g = GAMES[S.game], f = FONTS[g.font];
+    frame.style.setProperty("--accent", g.accent);
+    frame.style.setProperty("--accent2", g.accent2);
+    frame.style.setProperty("--font", f[0] + ",-apple-system,sans-serif");
+    frame.style.setProperty("--fw", f[1]);
+    frame.classList.toggle("notch", !!S.notch);
+    const top = S.screen === "round" ? "calc(var(--inset-top) + 162px)" : "calc(var(--inset-top) + 84px)";
+    layer.style.setProperty("--slot-top", top);
+    layer.style.setProperty("--slot-bottom", "104px");
+    layer.style.setProperty("--gap", S.gap + "px");
+    layer.style.setProperty("--scale", S.scale / 100);
+    layer.style.setProperty("--in", S.inMs + "ms");
+    layer.style.setProperty("--out", S.outMs + "ms");
+    ["flash","shine","shake","iconPop","bar","tap"].forEach((k) => {
+      const cls = { flash:"fx-flash", shine:"fx-shine", shake:"fx-shake", iconPop:"fx-icon", bar:"bar", tap:"tap" }[k];
+      layer.classList.toggle(cls, !!S[k]);
+    });
+    document.querySelectorAll(".seg").forEach((sg) => {
+      sg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", S[sg.dataset.k] === b.dataset.v));
+    });
+    document.querySelectorAll("input[data-k]").forEach((i) => {
+      if (i.type === "checkbox") i.checked = !!S[i.dataset.k];
+      else i.value = S[i.dataset.k];
+    });
+    $("scale-v").textContent = S.scale + "%";
+    $("max-v").textContent = S.max;
+    $("gap-v").textContent = S.gap + "px";
+    ["inMs","hold","outMs"].forEach((k) => $(k + "-v").textContent = (S[k] / 1000).toFixed(2) + " s");
+    $("game").value = S.game;
+    document.querySelectorAll("#presets button").forEach((b) => {
+      const p = PRESETS.find((x) => x.id === b.dataset.id);
+      b.classList.toggle("on", Object.keys(p.set).every((k) => S[k] === p.set[k]));
+    });
+    paintOut();
+    save();
+  }
+  function build() {
+    Object.keys(GAMES).forEach((k) => {
+      const o = document.createElement("option"); o.value = k; o.textContent = k; $("game").appendChild(o);
+    });
+    $("game").onchange = (e) => { S.game = e.target.value; apply(); paintScreen(); };
+    document.querySelectorAll(".seg").forEach((sg) => {
+      CHOICES[sg.dataset.k].forEach((v) => {
+        const b = document.createElement("button"); b.textContent = v; b.dataset.v = v;
+        b.onclick = () => {
+          S[sg.dataset.k] = v;
+          if (sg.dataset.k === "slot" || sg.dataset.k === "style") Notify.reset();
+          apply();
+          if (sg.dataset.k === "screen" || sg.dataset.k === "lang") paintScreen();
+        };
+        sg.appendChild(b);
+      });
+    });
+    document.querySelectorAll("input[data-k]").forEach((i) => {
+      i.addEventListener("input", () => {
+        S[i.dataset.k] = i.type === "checkbox" ? i.checked : +i.value;
+        apply();
+      });
+    });
+    PRESETS.forEach((p) => {
+      const b = document.createElement("button"); b.dataset.id = p.id;
+      b.innerHTML = p.name + "<small>" + p.note + "</small>";
+      b.onclick = () => { Object.assign(S, p.set); Notify.reset(); apply(); };
+      $("presets").appendChild(b);
+    });
+    let grp = "";
+    SCEN.forEach((s, i) => {
+      if (s.g !== grp) {
+        grp = s.g;
+        const h = document.createElement("div"); h.className = "grp"; h.textContent = grp; $("scen").appendChild(h);
+      }
+      const b = document.createElement("button");
+      b.innerHTML = '<span><span class="dot" style="background:' + KIND_COLOR[s.kind] + '"></span>' + s.en[0] + '</span><i>' + s.where + " · " + s.now + '</i>';
+      b.onclick = () => {
+        selected = i;
+        document.querySelectorAll(".scen button").forEach((x) => x.classList.remove("sel"));
+        b.classList.add("sel");
+        fire(i, { x: 360, y: 760 });
+      };
+      if (i === 0) b.classList.add("sel");
+      $("scen").appendChild(b);
+    });
+  }
+
+  /* #preset=card&screen=map&game=vipera&lang=en&fire=0,5,9 — a state that can
+     be linked, and what a headless shot of one proposal is taken with. */
+  const H = {};
+  location.hash.slice(1).split("&").forEach((kv) => { const p = kv.split("="); if (p[0]) H[p[0]] = decodeURIComponent(p[1] || ""); });
+  if (H.still) document.body.classList.add("still");
+  if (H.preset) { const p = PRESETS.find((x) => x.id === H.preset); if (p) Object.assign(S, p.set); }
+  ["screen", "game", "lang", "style", "slot", "stack"].forEach((k) => { if (H[k]) S[k] = H[k]; });
+
+  build();
+  apply();
+  paintScreen();
+  fit();
+  requestAnimationFrame(world);
+  if (H.fire) H.fire.split(",").forEach((k) => fire(+k, { x: 360, y: 760 }));
+})();
+</script>
+</body>
+</html>
