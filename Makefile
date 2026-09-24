@@ -12,7 +12,8 @@
 #   make site    assemble dist/site locally
 #   make serve   the dev loop, with reload on save
 #   make store   the store card composer, at http://localhost:8091/
-#   make events  the callouts / cues bench, at http://localhost:8092/
+#   make events  the callouts / cues bench, at http://localhost:8092/ (and /library, the sfx by ear)
+#   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
 #   make text    the copy desk, at http://localhost:8093/
 #   make village the village composer, at http://localhost:8094/
 #   make meta    the itch page copy, one file per game
@@ -26,7 +27,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve store events text village meta shots map ng android
+.PHONY: help check test push itch site serve store events sfx text village meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -89,6 +90,14 @@ store:
 # `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
 events:
 	node tools/lab/serve-events.mjs
+
+# The sfx folder read back into assets/audio/sfx/index.json — durations,
+# channels, packs, licences — which the bench's file menu and the library page
+# (`make events` → /library) read instead of listing 870 names. It is an input,
+# committed like assets/image/embed/: tools/update.mjs never runs ffprobe, so
+# this is run by hand when a file is added, removed or renamed.
+sfx:
+	node tools/lab/index-sfx.mjs
 
 # Every word a game shows a player, EN and FR side by side, read off the four
 # sources instead of one call at a time. Same reason for a server as the two

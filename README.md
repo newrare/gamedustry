@@ -21,8 +21,9 @@ Every playable has the same skeleton, so the skeleton is written once:
   (`tap` / `hold` / `drag` / `swipe` / `aim`).
 - **HUD** — big eased score, timer, two free slots, kept clear of notches and
   camera cut-outs.
-- **Game-view overlay** — toasts, combo banners, reward badges, dramatic edge
-  glow.
+- **Game-view overlay** — comic callouts for the moments, a dramatic edge
+  glow, and `Notify`, the one notification chip every game and every screen
+  informs with.
 - **Persistent CTA bar** — install button on screen for the whole round, lifted
   above the home indicator.
 - **Fx layer** — particles, rings, screen shake, flash, hit-stop.
@@ -149,6 +150,10 @@ gamedustry/
 │   │   │                        (make events — the list, inside the real build)
 │   │   ├── apply-events.mjs  ← write a beat changed on that bench back into
 │   │   │                        game.js; re-cuts a clip from assets/audio/sfx/
+│   │   ├── index-sfx.mjs     ← assets/audio/sfx/ read back into index.json —
+│   │   │                        durations, categories, packs (make sfx; --list)
+│   │   ├── rename-sfx.mjs    ← the one-shot that named the library
+│   │   │                        <category>-<descriptor>-<NN> (a record, like extract)
 │   │   ├── scan-text.mjs     ← every word a game shows a player, read off its
 │   │   │                        manifest, game.js and page.html (table, --json)
 │   │   ├── serve-text.mjs    ← the server lab/game-text.html proofreads over
@@ -169,8 +174,9 @@ gamedustry/
     ├── ASSETS.md             ← embedding images/sounds, staying under 5 MB
     ├── MUSIC.md              ← one track, several beds: the sections procedure
     ├── LEVELS.md             ← the 30-level map, the stars, the progression
-    ├── VIEWS.md              ← the web shell: six views, six cards, one band
+    ├── VIEWS.md              ← the web shell: the views, the cards, one band
     ├── META.md               ← the wallet, the album, the shop, the daily road
+    ├── ARMY.md               ← the barracks: the cards a player owns, and what a battle costs
     ├── AD_NETWORKS.md        ← MRAID, the CTA, per-network notes & QA
     ├── INDUSTRIALIZATION.md  ← the four targets, the build, the deploy, the phasing
     ├── MARKETING.md          ← what a game earns, and how it finds players
@@ -324,14 +330,15 @@ and under it every line of the game that plays it. Each row is fired **inside th
 game's own web build**, on the game's own painted backdrop with the menu hidden:
 the real `Pop` styles, the real SKIN, the real samples at their own volume and
 pitch. The list has two sides — **view** (the `Pop` callouts and the
-`Overlay.toast/banner/reward` notifications) and **sound** (the bed, the sfx
+`Notify.say` notifications) and **sound** (the bed, the sfx
 pack, the library and the cues). The juice carries no word and is scanned but
 not listed: `Fx.*`, `HUD.punch`, and `Overlay.vignette`, which is a glow over
 the frame rather than a notification.
 
 Each row is editable — the pop's style, the word, the anchor, the file a clip is
 cut from and how long the cut is (the whole of `assets/audio/sfx/` opens from
-that button, and hovering a row plays it, trimmed to that length), the volume,
+that button, grouped by category, and hovering a row plays it, trimmed to that
+length — `/library` on the same server is the whole folder on its own page), the volume,
 the pitch — and **Apply
 writes it back into `games/<slug>/game.js`**: the argument is spliced in place,
 a changed file is re-cut with ffmpeg into `ASSETS.sounds` with its provenance

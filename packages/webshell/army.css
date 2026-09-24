@@ -1,0 +1,518 @@
+/*
+  webshell — THE BARRACKS (packages/webshell/army.js).
+
+  Four screens of one shape: the deck, the infirmary, the prison and the
+  recruiting tent. They are VIEWS, so they stand where the album and the shop
+  stand — on the hub's own ground, under the wallet band, with the view system
+  owning the z-order — and everything here is the dressing of a list.
+
+  IT LOADS AFTER meta.css AND BEFORE village.css, which is what lets it reuse
+  the rarity ladder declared there without redeclaring it, and what keeps the
+  village's own rules last.
+
+  ONE TILE IS THE WHOLE OF IT. `.ar-card` is a card drawn in the DOM, and it is
+  the same statement the round paints on the canvas: the TIER owns the edge and
+  the corner plate, the GRADE owns the face and the small number. Six colours,
+  from the collection's own four plus one step under and one over, so a card in
+  the deck screen and a sticker in the album are read on one ladder.
+*/
+
+/* =========================================================================
+   THE SIX-STEP LADDER
+   ========================================================================= */
+
+/* The collection's four are grey → blue → purple → gold (meta.css). A card has
+   six steps over six families, so one bronze goes under the ladder (E, basic)
+   and one green goes between common and rare. Bronze and not a darker grey:
+   two greys read as one colour across a grid. Like the four
+   it descends from, none of it is the SKIN's: a game whose accent happened to
+   be gold would flatten epic against legendary. */
+#frame {
+  --ar-t0:#c8773f;
+  --ar-t1:#aab1c6;
+  --ar-t2:#51cf66;
+  --ar-t3:#4dabf7;
+  --ar-t4:#c77dff;
+  --ar-t5:#ffd43b;
+}
+
+/* =========================================================================
+   THE SCREEN
+   ========================================================================= */
+
+/* Above the map and the album, because every one of these opens from the hub
+   and from nothing else — there is no path that puts one of them under the
+   collection. The view system writes the real depth as they stack (view.js);
+   this is what makes each of them a stacking context of its own. */
+.ar-screen {
+  position:absolute; inset:0; z-index:36; display:none;
+  font-family:var(--web-font, inherit); color:var(--text);
+  isolation:isolate;
+}
+.ar-screen.on { display:block; animation:mt-in .2s ease both; }
+
+.ar-bg {
+  position:absolute; inset:0; z-index:0; background-color:var(--bg);
+  background-size:cover; background-position:center center;
+}
+.ar-bg.flat { background-size:auto; }
+/* The one veil, the view system's, like every other room of this place. */
+.ar-bg::after {
+  content:""; position:absolute; inset:0;
+  background:var(--web-veil-strong);
+  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
+}
+.ar-screen .decor-layer { z-index:1; }
+
+/* THE HEADER CARRIES NO BUTTON. A view's way out is the band's house chip,
+   first in the row and on every screen; the home button below it exists only
+   for a game with no wallet, where there is no band to be it (view.js). */
+.ar-head {
+  position:absolute; top:0; left:0; right:0; z-index:3;
+  padding:calc(var(--inset-top) + var(--wh-band, 0px) + 18px) 24px 0;
+  display:flex; flex-direction:column; gap:2px;
+}
+.ar-title {
+  margin:0; font-weight:var(--web-fw, 900); font-size:38px; letter-spacing:1px;
+  line-height:1;
+  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
+}
+.ar-sub { margin:0; font-size:19px; color:var(--muted); line-height:1.25; }
+/* The clock is a second per hour on a machine that is plainly not a player's
+   (army.js, DEV), and a screenshot must never be mistaken for the real thing. */
+.ar-dev {
+  position:absolute; right:24px; top:calc(var(--inset-top) + var(--wh-band, 0px) + 18px);
+  font-style:normal; font-size:15px; font-weight:900; letter-spacing:2px;
+  color:#0a0d1e; background:var(--accent); border-radius:6px; padding:3px 8px;
+}
+
+.ar-body {
+  position:absolute; left:0; right:0; z-index:2;
+  top:calc(var(--inset-top) + var(--wh-band, 0px) + 96px); bottom:0;
+  padding:0 20px calc(var(--inset-bottom) + 24px);
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  display:flex; flex-direction:column; gap:16px;
+}
+
+/* =========================================================================
+   ONE CARD
+   ========================================================================= */
+
+.ar-card {
+  position:relative;
+  border-radius:12px; overflow:hidden;
+  background:linear-gradient(180deg, #2a56b8, #112a66);
+  border:2px solid var(--ar, var(--ar-t1));
+  box-shadow:0 4px 12px rgba(0,0,0,.45);
+  display:flex; flex-direction:column; align-items:center;
+  padding:6px 4px 4px;
+}
+.ar-card.foe { background:linear-gradient(180deg, #a32626, #4a0d0d); }
+.ar-card.dim { filter:grayscale(.7) brightness(.62); }
+
+.ar-card.t0 { --ar:var(--ar-t0); }
+.ar-card.t1 { --ar:var(--ar-t1); }
+.ar-card.t2 { --ar:var(--ar-t2); }
+.ar-card.t3 { --ar:var(--ar-t3); }
+.ar-card.t4 { --ar:var(--ar-t4); }
+.ar-card.t5 { --ar:var(--ar-t5); }
+/* THE TOP TWO STEPS WEAR A GLOW, and only the top two. A ladder where every
+   rung is decorated is a ladder with no top: the point of an S is that it
+   looks different from across the screen. */
+.ar-card.t4, .ar-card.t5 { box-shadow:0 4px 12px rgba(0,0,0,.45), 0 0 16px var(--ar); }
+
+.ar-face {
+  flex:1; min-height:0; width:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+.ar-face img { max-width:78%; max-height:100%; object-fit:contain; }
+.ar-num { font-weight:900; font-size:30px; line-height:1; }
+
+/* The tier, top right, on a plate of its own colour — opposite the grade, so
+   the two numbers a fight is decided on are the two top corners of the card
+   and never one under the other. The round paints exactly this (game.js). */
+.ar-tier {
+  position:absolute; top:4px; right:4px;
+  width:20px; height:20px; border-radius:50%;
+  background:var(--ar); color:#0a0d1e;
+  font-style:normal; font-weight:900; font-size:13px; line-height:20px;
+  text-align:center;
+  border:1px solid rgba(0,0,0,.35);
+}
+.ar-grade {
+  position:absolute; top:5px; left:6px;
+  font-style:normal; font-weight:900; font-size:14px; line-height:1;
+  color:var(--text); text-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.ar-name {
+  flex:0 0 auto; width:100%;
+  font-size:11px; font-weight:800; letter-spacing:.5px;
+  text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  opacity:.9;
+}
+.ar-tag {
+  position:absolute; left:0; right:0; bottom:0;
+  font-size:11px; font-weight:800; text-align:center;
+  padding:2px 0; background:rgba(6,9,26,.85);
+}
+.ar-tag.hurt { color:var(--danger, #ff5c5c); }
+.ar-tag.in   { color:var(--accent); }
+
+/* THE GAME'S OWN CARD (army.js, PAINTED). The wrapper keeps the `ar-card`
+   class for the dim and the tag and gives up everything else: the card it
+   holds is sized in design px by the game (`--w`), draws its own frame and
+   lets its badges hang over its edge, so the wrapper clips nothing and
+   stretches nothing. */
+.ar-card.painted {
+  display:block; padding:0; border:0; border-radius:0; overflow:visible;
+  background:none; box-shadow:none;
+}
+.ar-card.painted .ar-tag { left:8%; right:8%; bottom:4%; border-radius:6px; z-index:30; }
+
+/* =========================================================================
+   THE DECK
+   ========================================================================= */
+
+.ar-slots, .ar-pool {
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:9px;
+}
+.ar-slot {
+  appearance:none; -webkit-appearance:none;
+  background:none; border:0; padding:0; margin:0; cursor:pointer;
+  aspect-ratio:3 / 4;
+  display:block;
+}
+.ar-slot .ar-card { height:100%; }
+.ar-slot:active .ar-card { transform:scale(.95); }
+.ar-slot.empty {
+  border:2px dashed rgba(255,255,255,.2); border-radius:12px;
+  background:rgba(255,255,255,.035);
+  display:flex; align-items:center; justify-content:center;
+}
+.ar-plus { font-size:26px; font-weight:900; color:rgba(255,255,255,.28); }
+/* A card already in the deck is dimmed in the roster rather than hidden: a
+   pool that shuffles itself every time a card is taken is a pool the player
+   loses their place in. */
+.ar-slot.pool.on .ar-card { opacity:.42; }
+
+/* THE PAINTED DECK: the deck is a strip of TOKENS (the lab's tiny square,
+   seven to a row, so fourteen cards are two rows), the roster a shelf of
+   full cards, four to a row. Fixed columns rather than fractions: the card
+   is sized in px by the game, and a fluid column would only be a gap that
+   changes. The row gap leaves room for the badges hanging over each edge. */
+.ar-slots.painted { grid-template-columns:repeat(7, 86px); gap:14px 10px; justify-content:center; padding-top:6px; }
+.ar-pool.painted  { grid-template-columns:repeat(4, 156px); gap:26px 18px; justify-content:center; padding-top:12px; }
+.ar-slots.painted .ar-slot, .ar-pool.painted .ar-slot { aspect-ratio:auto; }
+.ar-slots.painted .ar-slot .ar-card, .ar-pool.painted .ar-slot .ar-card { height:auto; }
+.ar-slots.painted .ar-slot.empty { width:86px; height:86px; border-radius:16px; }
+
+/* THE THREE TABS — deck, collection, objects (army.js, TABS). A segmented
+   bar pinned to the top of the scrolling body, so the way to the other two
+   is never scrolled away; the lit one wears the accent the counts wear. */
+.ar-tabs {
+  position:sticky; top:0; z-index:40; flex:0 0 auto;
+  display:flex; gap:6px; padding:5px; margin-bottom:2px;
+  background:rgba(6,9,26,.78); border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.ar-tab {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  flex:1 1 0; height:50px; border:0; border-radius:12px;
+  background:none; color:var(--muted);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:19px; letter-spacing:1px;
+}
+.ar-tab.on {
+  background:linear-gradient(180deg, var(--cta-a, var(--accent)), var(--cta-b, var(--accent)));
+  color:#10142c;
+}
+.ar-tab:active { transform:scale(.97); }
+.ar-pane { display:flex; flex-direction:column; gap:16px; }
+
+/* A record, not a control: a slot of it answers a tap only where it turns
+   a card over (the cast, the objects — below). */
+.ar-slot.book { cursor:default; }
+.ar-slot.book:active .ar-card { transform:none; }
+/* The plain tile (a build with no painted card) says the same two things:
+   an object is brass-edged and has no tier, a ghost is a white silhouette
+   named ???, as an unowned sticker is (meta.css). */
+.ar-card.obj { --ar:#c9a86a; background:linear-gradient(180deg, #4a3f2a, #1e1a12); }
+.ar-card.ghost { --ar:#69718a; background:linear-gradient(180deg, #262b3a, #10131c); box-shadow:none; }
+.ar-card.ghost .ar-face img { filter:brightness(0) invert(1) opacity(.26); }
+.ar-card.ghost .ar-name, .ar-card.ghost .ar-grade { opacity:.55; }
+
+/* The line over each grid. Quiet, because it is a label and not a headline —
+   the screen already has one — and the COUNT on it is the loud half, since
+   that is the number the player came in to change. */
+.ar-sec {
+  margin:2px 0 -4px; font-size:17px; font-weight:800; letter-spacing:2px;
+  color:var(--muted);
+}
+.ar-sec b { color:var(--accent); font-variant-numeric:tabular-nums; }
+
+.ar-note {
+  font-size:17px; color:var(--muted); text-align:center; line-height:1.3;
+}
+.ar-note.warn { color:var(--accent); }
+
+/* A card of the roster and the control that turns it over (army.js,
+   poolTile): the corner is a door of its own, hung over the card's edge so
+   it is never mistaken for the card's own tap. */
+.ar-slot-w { position:relative; }
+.ar-file-btn {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  position:absolute; right:-10px; top:-10px; z-index:35;
+  width:46px; height:46px; border-radius:50%; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
+  border:3px solid var(--gold, #d9a441); color:#f6e6b4;
+  box-shadow:0 4px 10px rgba(0,0,0,.6);
+}
+.ar-file-btn .ar-ci { width:24px; height:24px; }
+.ar-file-btn:active { transform:scale(.92); }
+
+/* THE CAST — the collection tab (army.js, castBook): one line per grade, the
+   six tiers along it, so a column is a rarity and a row is a rank. Every face
+   the player has had answers a tap, so this grid does look like it would —
+   and a shadow answers too, with how it is earned. */
+.ar-cast { display:flex; flex-direction:column; gap:14px; padding-top:6px; }
+.ar-crow { display:flex; flex-direction:column; gap:10px; }
+.ar-crow-h { font-size:15px; font-weight:800; letter-spacing:2px; color:var(--muted); padding-left:6px; }
+.ar-crow-g { display:grid; grid-template-columns:repeat(6, 88px); gap:10px; justify-content:center; }
+.ar-cast .ar-slot { aspect-ratio:auto; }
+.ar-cast .ar-slot .ar-card { height:auto; }
+.ar-cast .ar-slot.book, .ar-book .ar-slot.book { cursor:pointer; }
+.ar-cast .ar-slot.book:active .ar-card, .ar-book .ar-slot.book:active .ar-card { transform:scale(.95); }
+.ar-cast .ar-slot.none { opacity:.8; }
+
+/* =========================================================================
+   AN OFFICER'S FILE — the card, turned over (army.js, openFile)
+   ========================================================================= */
+
+/* No panel behind it: the card IS the card, on the veil, and a box drawn
+   round a card reads as a frame around a picture of one. */
+.ar-filecard .mt-card { background:none; border:0; box-shadow:none; padding:20px 0 16px; gap:22px; }
+.ar-file-hint { margin:0; transition:opacity .2s ease; }
+.ar-flip.fly ~ .ar-file-hint { opacity:0; }   /* said once the card has landed */
+
+.ar-flip {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:none; border:0; padding:0; margin:0;
+  width:540px; height:756px; perspective:2200px;   /* army.js writes both, from FILE_W */
+}
+/* The angle is army.js's (`turn`): it only grows, half a turn at a time, so
+   the card always turns the same way. */
+.ar-flip-in {
+  position:relative; width:100%; height:100%;
+  transform-style:preserve-3d; transition:transform .62s cubic-bezier(.3,1.25,.45,1);
+}
+/* THE OPENING (army.js, fly): the card grows out of the small one while it
+   makes one whole turn — the two on one clock (FLY_MS), so it lands face
+   up exactly as it arrives. */
+.ar-flip { transform-origin:50% 50%; transition:transform .56s cubic-bezier(.2,.8,.25,1); }
+.ar-flip.fly .ar-flip-in { transition-duration:.56s; transition-timing-function:cubic-bezier(.4,0,.3,1); }
+/* the card is the one thing moving: the modal's own rise would be a second */
+.ar-filecard .mt-card { transform:none; transition:none; }
+.ar-flip-f, .ar-flip-b {
+  position:absolute; inset:0;
+  -webkit-backface-visibility:hidden; backface-visibility:hidden;
+}
+.ar-flip-f { transform:rotateY(0deg); }
+.ar-flip-b { transform:rotateY(180deg); }
+
+/* The plain back, for a game that draws no card of its own: the army's
+   cloth, the tier's rim — the two things the face says first, said again so
+   the back is visibly the same card. */
+.ar-fb {
+  box-sizing:border-box; border-radius:20px; padding:24px 26px 20px;
+  display:flex; flex-direction:column; gap:8px; text-align:left;
+  color:#f6f1e4; border:4px solid var(--ar, var(--ar-t1));
+  background:linear-gradient(170deg, #22468f, #0c1a42 72%);
+  box-shadow:0 0 0 2px #0b0d12, 0 18px 40px rgba(0,0,0,.6), inset 0 0 44px rgba(0,0,0,.35);
+}
+.ar-fb.red { background:linear-gradient(170deg, #8f2222, #3a0b0b 72%); }
+.ar-fb.t0 { --ar:var(--ar-t0); }
+.ar-fb.t1 { --ar:var(--ar-t1); }
+.ar-fb.t2 { --ar:var(--ar-t2); }
+.ar-fb.t3 { --ar:var(--ar-t3); }
+.ar-fb.t4 { --ar:var(--ar-t4); }
+.ar-fb.t5 { --ar:var(--ar-t5); }
+.ar-fb.t4, .ar-fb.t5 {
+  box-shadow:0 0 0 2px #0b0d12, 0 18px 40px rgba(0,0,0,.6), 0 0 26px var(--ar), inset 0 0 44px rgba(0,0,0,.35);
+}
+.ar-fb-top {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:17px; font-weight:900; letter-spacing:3px; color:rgba(255,255,255,.72);
+}
+.ar-fb-tier {
+  width:42px; height:42px; border-radius:50%; flex:0 0 auto;
+  background:var(--ar); color:#0a0d1e; border:2px solid rgba(0,0,0,.35);
+  font-size:22px; line-height:38px; text-align:center; letter-spacing:0;
+}
+.ar-fb-first { margin-top:6px; font-size:22px; font-weight:800; letter-spacing:2px; opacity:.85; }
+.ar-fb-last {
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:40px; line-height:1.05; white-space:nowrap; overflow:hidden;
+  color:var(--ar); text-shadow:0 3px 0 rgba(0,0,0,.55);
+}
+.ar-fb-facts { display:flex; gap:8px; margin-top:4px; }
+.ar-fb-facts span {
+  padding:4px 13px; border-radius:999px; background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.14); font-size:17px; font-weight:800;
+}
+.ar-fb-lore { flex:1; margin:8px 0 0; font-size:20px; line-height:1.4; color:rgba(246,241,228,.92); }
+.ar-fb-foot {
+  display:flex; justify-content:space-between; gap:8px;
+  padding-top:10px; border-top:1px solid rgba(255,255,255,.18);
+  font-size:14px; font-weight:900; letter-spacing:2px; color:rgba(255,255,255,.7);
+}
+.ar-fb-foot .turn { color:#ff9a9a; }
+
+/* =========================================================================
+   A LIST — the infirmary and the prison
+   ========================================================================= */
+
+.ar-list { display:flex; flex-direction:column; gap:10px; }
+.ar-row {
+  display:flex; align-items:center; gap:14px;
+  background:rgba(6,9,26,.55); border:1px solid rgba(255,255,255,.1);
+  border-radius:14px; padding:10px 12px;
+}
+.ar-row.ready { border-color:var(--accent); background:rgba(242,193,78,.1); }
+.ar-row .ar-card { width:62px; height:82px; flex:0 0 auto; }
+.ar-row .ar-card.painted { width:auto; height:auto; }
+.ar-row-card {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:none; border:0; padding:0; margin:0; flex:0 0 auto; color:inherit;
+}
+.ar-row-card:active .ar-card { transform:scale(.95); }
+.ar-mid { flex:1; min-width:0; }
+.ar-rowname {
+  font-weight:var(--web-fw, 900); font-size:21px; letter-spacing:.5px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ar-rowsub { font-size:15px; font-weight:800; letter-spacing:1.5px; color:var(--muted); margin:1px 0 3px; }
+.ar-when {
+  display:flex; align-items:center; gap:6px;
+  font-size:17px; color:var(--muted); font-variant-numeric:tabular-nums;
+}
+.ar-when.ok { color:var(--accent); }
+.ar-ci { width:17px; height:17px; flex:0 0 auto; }
+/* a bed or a cell nobody is in (army.js, freeRow): the tile's footprint */
+.ar-row.free { background:rgba(6,9,26,.3); border-style:dashed; }
+.ar-free-slot {
+  width:76px; height:76px; flex:0 0 auto; border-radius:14px;
+  border:2px dashed rgba(255,255,255,.18);
+}
+.ar-none {
+  margin:24px 0 0; text-align:center; font-size:19px; color:var(--muted);
+  line-height:1.4;
+}
+
+/* =========================================================================
+   THE RECRUITING TENT
+   ========================================================================= */
+
+.ar-offers { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+.ar-offer {
+  display:flex; flex-direction:column; gap:9px; align-items:stretch;
+  background:rgba(6,9,26,.55); border:1px solid rgba(255,255,255,.1);
+  border-radius:14px; padding:10px;
+}
+.ar-offer .ar-card { aspect-ratio:3 / 4; }
+.ar-offer .ar-card.painted { aspect-ratio:auto; align-self:center; margin-top:6px; }
+.ar-offer.sold { opacity:.5; }
+.ar-sold {
+  text-align:center; font-size:16px; font-weight:800; letter-spacing:1px;
+  color:var(--muted); padding:8px 0;
+}
+
+/* =========================================================================
+   THE CONTROLS
+   ========================================================================= */
+
+/* One button, the meta layer's shape at the meta layer's sizes — this layer
+   adds no second look for a thing the player has already learned to tap. */
+.ar-acts { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.ar-btn {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:54px; padding:0 18px;
+  border:0; border-radius:14px;
+  background:rgba(255,255,255,.12); color:var(--text);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:20px; letter-spacing:.5px;
+  font-variant-numeric:tabular-nums;
+}
+.ar-btn:active { transform:scale(.96); }
+.ar-btn.gold {
+  background:linear-gradient(180deg, var(--cta-a, var(--accent)), var(--cta-b, var(--accent)));
+  color:#10142c;
+}
+.ar-btn.off { opacity:.55; }
+.ar-btn.small { height:44px; padding:0 14px; font-size:17px; flex:0 0 auto; }
+
+/* =========================================================================
+   THE PRISONER, OFFERED
+   ========================================================================= */
+
+.ar-pick { display:flex; gap:22px; justify-content:center; margin:4px 0 0; }
+/* `--pw` is the tile's width, worked out in army.js from how many stand in
+   the row; the heights follow it, so a lone pair and a row of three are the
+   same card at two sizes rather than two layouts. */
+.ar-pick-t {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:none; border:0; padding:0; margin:0;
+  width:var(--pw, 96px); display:flex; flex-direction:column; gap:10px;
+}
+.ar-pick-t .ar-card { height:calc(var(--pw, 96px) * 1.33); }
+.ar-pick.painted { margin-top:8px; }
+.ar-pick-t .ar-card.painted { height:auto; }
+.ar-pick-t:active .ar-card { transform:scale(.95); }
+/* THE SPOILS, beside a lone prisoner: a card-shaped plate the reward's own
+   picture stands on, so the two halves of the choice weigh the same. */
+.ar-pick { align-items:flex-start; }
+.ar-pick-or {
+  flex:0 0 auto; width:44px; margin:0 -11px; text-align:center;
+  align-self:center; margin-top:-30px; font-size:26px; font-weight:800;
+  color:var(--muted); letter-spacing:1px;
+}
+.ar-spoils-art {
+  width:100%; height:calc(var(--pw, 96px) * 1.33); border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(90% 70% at 50% 45%, rgba(242,193,78,.22), rgba(8,12,30,.85));
+  box-shadow:inset 0 0 0 2px rgba(242,193,78,.45);
+}
+.ar-pick.painted .ar-spoils-art { height:calc(var(--pw, 118px) * 1.4); }
+.ar-spoils-art .mt-rw-img { max-width:84%; max-height:84%; }
+.ar-spoils-art .mt-rw-ico { transform:scale(var(--pw-n, .62)); }
+.ar-pick-t:active .ar-spoils-art { transform:scale(.95); }
+.ar-pick-when {
+  font-family:var(--web-font, inherit);
+  font-size:22px; color:var(--muted); text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+/* THE WAY PAST IT IS A LINE AND NOT A SECOND BUTTON. Three cards is a choice,
+   and a fourth control shaped like the three halves the weight of all of them
+   (the same rule the gift card's footnote is written under, meta.js). */
+.ar-skip {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:none; border:0; margin:6px auto 0; padding:10px 18px; display:block;
+  font-family:var(--web-font, inherit); font-size:24px; color:var(--muted);
+  text-decoration:underline; text-underline-offset:4px;
+}
+
+/* =========================================================================
+   NARROW FRAMES
+   ========================================================================= */
+
+/* The design space is 720x1280 and everything above is authored in it, so
+   there is nothing here that a viewport query would fix. What this does cover
+   is the one axis the design space does not fix: a roster long enough to need
+   more than five columns still has to fit five, so the tiles shrink with the
+   grid and the name is what goes first. */
+@media (max-height:1100px) {
+  .ar-body { top:calc(var(--inset-top) + var(--wh-band, 0px) + 86px); }
+  .ar-title { font-size:34px; }
+}

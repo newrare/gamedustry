@@ -88,6 +88,24 @@ ______________________________________________________________________
 
 ## The web build
 
+- [ ] CODE — **the barracks, beyond `games/stratideck`.** The layer ships
+  (`packages/webshell/army.{js,css}`, `docs/ARMY.md`): a roster the player
+  owns, a deck they compose, an infirmary a wounded card rests in for two real
+  days, a prison a captured enemy turns in after five, and a recruiting tent
+  that spends the meta layer's coins. It is gated on `web.army` and stratideck
+  is the only game that declares it. **What it needs before a second game
+  takes it** is the one thing only play can settle: whether two real days is
+  the right wait. It was picked because it is long enough to be felt and short
+  enough that a weekend player is not locked out, and nothing has measured it.
+  The ad that buys it out is the shell's placeholder, so the choice costs
+  nothing today and will cost a real impression the moment an SDK lands.
+
+  The composition on the hub is also a `make village` decision that was made
+  with a measuring tape rather than an eye: the recruiting tent was placed at
+  the one spot on stratideck's hub that overlapped nothing, and it stands on
+  the path rather than on a painted pad. Open the composer and put it where it
+  belongs.
+
 - [ ] CODE — **the village: the title screen as a place.** The composer ships
   (`make village`, `lab/village.html`, `tools/lab/serve-village.mjs`) and so
   does the art pipeline under it: `<slug>-background-home.png` is a role like
@@ -178,10 +196,11 @@ ______________________________________________________________________
 
 - [x] META — **the layer ships on all thirteen games.** Twelve sticker sheets
   cut, twenty stickers adopted each, and a `web.meta` block per manifest whose
-  three rates are read off that game's own climb — `coinsPer` a fourteenth of
-  `levels.objective.to`, `xpPer` a tenth of that, `ticketPrice` a quarter — so
-  a maxed level pays ~14 coins and ~140 xp in every one of them and the shop's
-  shared coin prices mean one thing. Every board keeps one legendary, one epic,
+  three rates are read off that game's own climb. `coinsPer` is 100 or 1000
+  and nothing else (the build refuses the rest): 1000 where the first objective
+  is 2 000 points or more, 100 elsewhere, so a round's coins are its score with
+  the last digits dropped, times the level, and the end score dims the digits
+  it drops. `ticketPrice` keeps a ticket at the same price in points. Every board keeps one legendary, one epic,
   one rare and five commons OUT of its twelve milestones, or the machine has a
   tier it can never roll. The cut tool grew what those sheets needed: a `--grid`
   written as one column count per row (the model fills the last row with
@@ -533,6 +552,14 @@ ______________________________________________________________________
 
 ## The games — content pass on the thirteen
 
+- [ ] MAIN — **check every sticker cut, all thirteen games.** Some of the
+  twenty adopted stickers per game are badly cut: a sticker sawn flat by the
+  grid, a crumb of its neighbour's outline left in a corner. Look at each cut
+  under `assets/image/object/<slug>-sticker-NN.png` (the album in the web build
+  shows them at their real size), and re-cut the sheets that fail. `pawko` is
+  the known case: its sheet welds at the default `--solid 245` and needs a
+  banded `--solid` plus two hand repairs that a re-cut undoes.
+
 - [ ] MAIN — **`pawko`, compose the village.** The six houses are cut and
   adopted (`home01`–`home06`) and `pawko-background-home.png` is encoded, but
   the game declares no `web.village` until `make village` places them and
@@ -558,9 +585,70 @@ ______________________________________________________________________
   pilots — a careful one lands two stars on every level, a pilot throwing its
   biggest card blind loses every level-30 camp — and the payout by MARGIN
   (precise ×2, overkill ×½) is what broke the brute-force line. Nothing has
-  checked the FEEL: a turn of ~1.5 s (fly, flip, clash, settle), a level-30
+  checked the FEEL: a turn of ~3 s since 0.9.0 (fly, flip, the big duel,
+  settle, then the camp's reply), a level-30
   battle of ~70 turns, and whether the 8×6 camp's 74 px cards are still a
   thumb's target.
+
+- [ ] TUNE — **`stratideck`, re-bench the ladder since 0.4.0.** The camp is
+  now a FORMATION per level (keep, wall, flank, deep, decoy — `buildGrid`),
+  the flag can stand one row above the front, and only the LAST enemy turned
+  over stays face up (the rest go back down, dog-eared), and since 0.6.0 the
+  camp answers every turn by sliding one soldier a cell (`enemyTurn`: ~25 % of
+  turns on a greedy pilot, rising with the level). All of it makes the game
+  harder and none of it was benched. Since 0.10.0 the stars are no longer the
+  score's (`700 → 2 700` is unused): one for the flag, one for no wound, one
+  for a prisoner, none for a lost battle (`tally`, `levelTally`). A greedy
+  pilot takes 14 of 30 levels, mostly on two stars — whether a careful player
+  can make the unwounded star and the prisoner star BOTH reachable is the
+  question a bench has to answer, and the capture needs a better tier than the
+  enemy's, which the deck may simply not have.
+
+- [ ] TUNE — **`stratideck`, check the painted cards on a phone.** The lab's
+  card is what the game deals — its CSS pasted verbatim into `skin.css`, the
+  cards DOM under the canvas (`game.js`, THE TABLE), the barracks through
+  `Game.cardNode` — in the look picked in the lab (forge, shield, burst;
+  `CONFIG.cards`, and the lab now opens on it and keeps its panel in
+  `localStorage`). Check that the badges read at 125 px (a five-card hand) —
+  `--fit` scales them up under 220 px (`sizeNode`) — and that thirty-six token
+  nodes on a 6×6 camp hold the frame rate (`?perf=1`).
+
+- [x] CODE — **`stratideck`, the six scenery objects are in the camp (0.12.0).**
+  Each answers to one grade and does its effect to every other: the straw man
+  sends the card back to the deck (sergeant breaks it), the fence and the rock
+  back to the hand (lieutenant, captain), the forest takes it out of the
+  battle (major), the skull stuns it in its slot for good (colonel), the book
+  turns it on an ally of the hand in a real fight (general). Dealt from the
+  level each kind unlocks at (1, 1, 4, 8, 13, 18), `play.objects 1→7`, never
+  next to the flag, the costly three never on the front row. Every army card
+  wears a macaron naming what it is for (`PERK`). See `docs/ARMY.md` §2.
+
+- [ ] TUNE — **`stratideck`, play the objects by hand.** Only a BLIND pilot has
+  played them (random card, random target, 40 camps a level): no error and
+  no stuck battle, and it wins fewer level-20 and level-30 camps with the
+  objects in (0/40 and 2/40, against 3/40 and 6/40 without) — mostly because
+  it strikes a skull it has already seen again and again, until a hand of
+  stunned cards ends the battle. Whether a player who remembers the skull
+  finds it fair, and whether seven objects at level 30 is too many next to
+  five traps, is for a hand to say.
+
+- [x] CODE — **`stratideck`, the cast: 120 officers (0.13.0).** One person per
+  army, grade and tier in `web.army.cast` — name, age, gender, lore in FR/EN,
+  and a `desc` line for the image model. The collection lists all 120, and a
+  card turns over to its file (tap in the collection, the ID-card button on a
+  roster card). A prisoner who enlists keeps their red portrait on a blue card
+  and wears a turncoat crest. See `docs/ARMY.md` §3b.
+
+- [x] MAIN — **`stratideck`, the 45 cast sheets are painted (0.13.4).** 180 /
+  180 portraits: 15 blue sheets, 30 red ones (the camp's officers and the
+  same creatures as turncoats), cut and adopted by `tools/lab/cast-sheets.mjs`.
+  Re-painting one sheet: save it over its master, then
+  `node tools/lab/cast-sheets.mjs <sheet>` (add `--keep-partial` when a weapon
+  or a plume touches the image's edge) and `node tools/lab/encode-art.mjs stratideck`.
+
+- [ ] MAIN — **`stratideck`, paint the red scout.** `stratideck-card-red-scout.png`
+  is the one officer missing from the sheet (the camp never attacks, so the
+  game deals it no scout today, but the card bench shows a hole).
 
 - [ ] MAIN — **`stratideck`, review the village in `make village`.** The
   `web.village` block was written by hand off a gridded capture of the hub
@@ -637,8 +725,8 @@ ______________________________________________________________________
   what they print — with Apply writing the wording back.
 
 - [ ] CODE — **review the copy and the `Pop` callouts, all thirteen games.**
-  Every score gain, combo and celebration beat goes through `Pop.show` and
-  `Overlay.toast/banner`; the words, the styles and when they fire were written
+  Every score gain, combo and celebration beat goes through `Pop.show`, and
+  every status line through `Notify.say`; the words, the styles and when they fire were written
   game by game and have never been read side by side. Check they say something,
   that two callouts never stack on the same beat, and that the FR strings exist
   (the copy still lives in section 6 for the end screen — see the language TODO
@@ -656,16 +744,30 @@ ______________________________________________________________________
   (levels, pitch via `rate`, events still falling back to `Sound.beep`) and
   even out the loudness between games. The *sound* tab of `make events` already
   does the audit — it names every clip, its provenance, how many beats play it
-  and at what volume — the *sfx library* under it auditions the 127 files of
-  `assets/audio/sfx/` on hover, and a clip's **file is a dropdown over the whole
-  folder**: pick another one, set the cut length, and Apply re-encodes it into
-  `ASSETS.sounds` with its provenance comment. What it found on the first run:
-  **`bouncetry` embeds `drop` and never plays it** (dead bytes in every build),
-  and callouts still fire with no cue under them — `gearball` ×5, `arcider` ×4,
-  `blight` ×3, `bouncetry` ×3, `chainring` ×3, `radiam` ×3, `spinshock` ×2, one
-  each in `orbinity`, `slipdeck`, `triverse` and `vipera`. Several of those are
-  the former `Overlay.toast` status lines, which never had a sound and now read
-  as the silent callouts they always were.
+  and at what volume — and a clip's **file is a dropdown over the whole
+  library**, grouped by category: pick another one, set the cut length, and
+  Apply re-encodes it into `ASSETS.sounds` with its provenance comment. What it
+  found on the first run: **`bouncetry` embeds `drop` and never plays it** (dead
+  bytes in every build), and callouts still fire with no cue under them —
+  `gearball` ×5, `arcider` ×4, `blight` ×3, `bouncetry` ×3, `chainring` ×3,
+  `radiam` ×3, `spinshock` ×2, one each in `orbinity`, `slipdeck`, `triverse`
+  and `vipera`. Several of those are the former `Overlay.toast` status lines,
+  which never had a sound — most of them are `Notify.say` now, and a notice
+  still plays no sound of its own.
+
+  **The library itself landed on 2026-09-22**: the 127 ZapSplat UI chimes were
+  joined by ten Kenney CC0 packs (impacts, footsteps, cards and chips, lasers,
+  interface, RPG foley, jingles, two voice packs — 871 files) and **every file
+  was renamed `<category>-<descriptor>-<NN>`** (`tools/lab/rename-sfx.mjs`),
+  the provenance comment of every clip in the fifteen games rewritten with it
+  (patch bump each). `make sfx` indexes the folder (`index.json`), `make events`
+  → `/library` browses it by ear, `sources.tsv` and `LICENSES.md` record where
+  each file came from. Still to do, and now possible: the pass above, game by
+  game — the thirteen were scored out of the UI-chime set because that was the
+  set, and `hit-wall-01` is the "impact" of nine games where the impact pack
+  now holds sixty. Seven `hit-*` / `shoot-*` files predate the ZapSplat drop
+  and carry no licence record (`legacy` in `sources.tsv`); find where they came
+  from or replace them.
 
 - [ ] CODE — **add bonus and gameplay elements, twelve games.** The web target
   gave every game a 30-level ladder against a loop that was designed for a
@@ -847,9 +949,9 @@ ______________________________________________________________________
   clips moved into the shell so all thirteen games sound the same there
 - [ ] CODE — **audit, step 3 — one motor + skins pass** (AUDIT 4.1–4.3, 2.6):
   `--accent-rgb` / `--danger-rgb` / `--gold-rgb` tokens, the `#cta-bar`
-  border and the `.demo-stage` size in the motor, `.pop-sub` on tokens, the
-  dead `Overlay.toast/banner/reward` deleted with its CSS — one commit,
-  thirteen patch bumps
+  border and the `.demo-stage` size in the motor, `.pop-sub` on tokens — one commit,
+  thirteen patch bumps (the dead `Overlay.toast/banner/reward` already went
+  with the `Notify` port)
 - [ ] CODE — **audit, step 4 — the engine gains its helpers** (AUDIT 3.7–3.9,
   2.7): `Sprite.canvas` pre-scaled by `view.dpr` (nine games size their caches
   at design px today), `CONFIG.stars` + the Best-score row in `endRound`,

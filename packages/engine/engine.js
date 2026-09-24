@@ -893,7 +893,14 @@
   var ArtImages = {};
   function preloadImages(done) {
     var keys = Object.keys(ASSETS.images);
-    var art = CONFIG.art ? Object.keys(CONFIG.art) : [];
+    /* `CONFIG.artLazy` (a RegExp over the camel keys) is art the page only
+       ever hands to an <img>, in numbers no loading screen should wait on —
+       games/stratideck's 180 portraits. It stays in CONFIG.art, unloaded
+       until a screen asks for it; it is simply never in `ArtImages`. */
+    var lazy = CONFIG.artLazy || null;
+    var art = CONFIG.art ? Object.keys(CONFIG.art).filter(function (k) {
+      return !(lazy && lazy.test(k));
+    }) : [];
     var left = keys.length + art.length;
     if (left === 0) return done();
     function tick() { if (--left === 0) done(); }

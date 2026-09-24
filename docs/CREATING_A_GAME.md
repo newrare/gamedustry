@@ -137,7 +137,7 @@ Fx.shake(8, .22); Fx.flash("#ffffff", .3); Fx.freeze(.05);
 Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
 Pop.show("combo", { word:"Combo x8", sub:"+160" });              // milestone → COMBO x8
 Pop.show("ultra", { word:"Chain x20", sub:"+400" });             // hero beat
-Pop.show("alert", { word:"The lava pulls", hold:1400 });          // a status line
+Notify.say("The lava pulls", { kind: "warn" });                   // a status line
 Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone
@@ -145,12 +145,19 @@ Sound.clip("chain", .85);                                // the milestone
 
 `Pop` is the comic callout layer (see [ENGINE.md](ENGINE.md) and the live
 catalogue in [`lab/overlay-pop.html`](../lab/overlay-pop.html)), and it carries
-**every word the game writes on the round** — the beats that celebrate a player
-action, and the status lines too, which take the `alert` style. No game calls
-`Overlay.toast/banner/reward` any more, and a new one should not start. The
+**every MOMENT the game writes on the round** — the beats that celebrate a
+player action, and a mistake as it happens, which takes the `alert` style. Its
 other half is `Pop.text`, the canvas one, for a number at a world point; the
 thirteen give it the same look (`size: 22, life: 0.6, tier: 1`) and vary only
 its colour. Retint a style from the SKIN block, never inline.
+
+**Information is `Notify.say`, never a callout**: a state that changed ("Shield
+down"), an input refused ("Out of reach"), a hint, a warning of what is coming.
+It is one chip, top-right, with one look for all the games (chosen in
+[`lab/notify.html`](../lab/notify.html)) — pass a `kind` and, if it helps, an
+`icon`, and nothing else. Never paint a status line on the canvas and never
+build a message node of your own. See
+[ENGINE.md](ENGINE.md#notify--the-one-voice-for-information).
 
 ### 5. Update the intro markup
 
@@ -160,13 +167,16 @@ file reads correctly), `<b class="w-…">` markers included.
 
 ### 6. Sound, and the assets you truly need
 
-**Every sound effect comes from the shared `assets/audio/sfx/` library** — pick a clip
-per event, trim it, re-encode it mono 32 kHz / 64 kbps and embed it in
-`ASSETS.sounds` under a short key. The full recipe (and the ffmpeg one-liners) is
-in [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetsaudiosfx):
+**Every sound effect comes from the shared `assets/audio/sfx/` library** — ~870
+files named `<category>-<descriptor>-<NN>`, browsed by ear at `make events` →
+`/library` or listed with `node tools/lab/index-sfx.mjs --list <terms>`. Pick a
+clip per event, trim it, re-encode it mono 32 kHz / 64 kbps and embed it in
+`ASSETS.sounds` under a short key, with a comment naming the file. The full
+recipe (and the ffmpeg one-liners) is in
+[ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetsaudiosfx):
 
 ```bash
-ffmpeg -i assets/audio/sfx/<clip>.mp3 -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
+ffmpeg -i assets/audio/sfx/<clip>.<ext> -t 0.4 -ac 1 -ar 32000 -b:a 64k gem.mp3
 node tools/lab/embed-asset.mjs gem.mp3 --key gem
 ```
 

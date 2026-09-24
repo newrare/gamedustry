@@ -41,6 +41,7 @@
       });
     }
     if (s !== "playing") Overlay.clear();
+    Notify.state(s);
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
   }
@@ -197,43 +198,14 @@
              score: function () { return target; } };
   })();
 
-  // --- Overlay: screen-space notifications over the game view -------------
+  // --- Overlay: the full-frame glow over the game view ---------------------
+  /* It held three notification voices once — a toast, a banner, a reward
+     badge — and no game called any of them after `Pop` took the loud words
+     and `Notify` (below) the informative ones. What is left is the one layer
+     that carries no word at all. */
   var Overlay = (function () {
     var timers = [];
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-    // A short pill sliding in below the HUD ("+1 LIFE", "2 SHOTS LEFT"…).
-    function toast(text, opt) {
-      opt = opt || {};
-      var el = document.createElement("div");
-      el.className = "ov-toast";
-      el.textContent = text;
-      if (opt.color) el.style.color = opt.color;
-      $("ov-toasts").appendChild(el);
-      var dur = opt.dur || 1400;
-      later(function () { el.classList.add("out"); }, dur);
-      later(function () { if (el.parentNode) el.parentNode.removeChild(el); }, dur + 400);
-    }
-
-    // The big dramatic mid-screen callout ("COMBO x8", "LAST CHANCE").
-    function banner(main, sub, opt) {
-      opt = opt || {};
-      var box = $("ov-banner");
-      $("ov-banner-main").textContent = main;
-      $("ov-banner-main").style.color = opt.color || "var(--accent)";
-      $("ov-banner-sub").textContent = sub || "";
-      box.style.setProperty("--ov-banner-dur", (opt.dur || 1000) + "ms");
-      box.classList.remove("show"); void box.offsetWidth; box.classList.add("show");
-    }
-
-    // A reward badge that pops and floats away (combo chest, bonus coins…).
-    function reward(text, opt) {
-      opt = opt || {};
-      var el = $("ov-reward");
-      el.textContent = text;
-      if (opt.color) el.style.color = opt.color;
-      el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
-    }
 
     // Edge glow — hold it on during danger, or pulse it on a milestone.
     /* The edge glow is a blurred inset shadow over the WHOLE frame, so writing
@@ -258,19 +230,245 @@
 
     function clear() {
       timers.forEach(clearTimeout); timers = [];
-      $("ov-toasts").innerHTML = "";
-      $("ov-banner").classList.remove("show");
-      $("ov-reward").classList.remove("show");
       $("ov-vignette").style.opacity = 0;
       Pop.clear();
     }
-    return { toast: toast, banner: banner, reward: reward, vignette: vignette, clear: clear };
+    return { vignette: vignette, clear: clear };
+  })();
+
+  /* --- Notify: the one voice for INFORMATION ---------------------------
+
+     Two layers write words, and they say two different things:
+
+       Pop     the MOMENT — a word as loud as the action it lands on: a
+               score, a combo, a mistake as it happens, an alarm.
+       Notify  the INFORMATION — something the player should know and could
+               read a second later: a state that changed and stays changed
+               ("Shield down", "Wounded"), an input refused ("Out of reach",
+               "Not enough coins"), a lesson, and anything at all said
+               outside a round, on a menu, the map, the village or a card.
+
+         Notify.say("Taken to the prison", { sub: "Captain · A", kind: "info", icon: "lock" })
+
+       word  the line, in NORMAL case, translated (Lang.t) and shouted here
+       sub   the second line: translated, never shouted
+       kind  info | gain | good | warn | loss | rare — a colour, nothing more
+       icon  a shell piece (coin ticket super xp star sticker trophy), painted
+             when the build ships CONFIG.shellArt, or a pictogram (info warn
+             lock unlock heart user check x hourglass sparkles eye trash).
+             Default: the kind's own. `null` for none.
+       key   what two notices are compared on; default word + sub
+       hold  ms fully readable, when a line needs longer than the house 2.2 s
+
+     ONE LOOK, ONE PLACE, ONE RULE FOR A CROWD — chosen in lab/notify.html
+     (the `chip` preset, tuned) and written here as constants, because a
+     notice that varied per game would be thirteen products again:
+
+       - a CHIP of the wallet band's own family, pinned top-right, under the
+         band on a view and under the HUD in a round;
+       - newest on top, four at most — a fifth sends the oldest out early;
+       - the SAME notice again does not stack: it bumps a ×N counter on the
+         one already there and restarts its clock;
+       - it slides in from the right edge, shines once, shakes when it is a
+         warning or a loss, and a timer line drains under it;
+       - it leaves by FLYING INTO the chip it is about (a coin notice into
+         the coins) when the web shell has registered one (`target`), and by
+         lifting away otherwise;
+       - a tap dismisses it and a press holds it — EXCEPT in a round, where
+         the layer is pointer-transparent: a notice must never eat the tap
+         the game was waiting for.
+
+     The one thing a game may say about it: `CONFIG.notify = { round:
+     "bottom" }` when its board fills the top of the frame, which docks the
+     round's notices over the foot of it instead (motor.css, .dock-bottom).
+
+     It is not cleared on a change of screen: a notice fired as a round ends
+     ("Taken to the prison") is exactly the one the next screen must still
+     show. It lives over everything but the flying wallet pieces (z 48), so
+     the same call reads over a round, a view and a card.
+     -------------------------------------------------------------------- */
+  var Notify = (function () {
+    var HOLD = 2200, IN = 260, OUT = 380, MAX = 4;
+    var KIND_ICON = { info: "info", gain: "coin", good: "check", warn: "warn", loss: "x", rare: "sparkles" };
+    /* The shell's painted pieces, by the name a caller uses → CONFIG.shellArt. */
+    var ART = { coin: "coin", ticket: "ticket", "super": "ticketSuper", xp: "xp",
+                star: "star", sticker: "sticker", trophy: "trophy" };
+    /* Lucide strokes (assets/motor/lucide), inlined: a notice cannot wait on a
+       decode, and a playable ships no shell art at all. */
+    var SVG = {
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      unlock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+      heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+      user: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      hourglass: '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+      sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>',
+      eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+      trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+      coin: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/>',
+      ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+      xp: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+      star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'
+    };
+    SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
+
+    var live = [], box = null, raf = 0, last = 0, targetOf = null;
+
+    function host() {
+      if (box && box.parentNode) return box;
+      var frame = $("frame"); if (!frame) return null;
+      box = document.createElement("div");
+      box.id = "nt-layer";
+      frame.appendChild(box);
+      state(State);
+      return box;
+    }
+    function iconHtml(name) {
+      if (!name) return "";
+      var src = ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
+      if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
+      if (!SVG[name]) return "";
+      return '<span class="nt-ic lu"><svg viewBox="0 0 24 24" aria-hidden="true">' + SVG[name] + '</svg></span>';
+    }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    /* A stack never jumps: every notice is measured, the DOM changes, and
+       each one is played from where it was to where it now is. The frame is
+       scaled to the window, so a rect is divided back into design px. */
+    function measure() {
+      var m = [], i, c;
+      for (i = 0; i < box.children.length; i++) {
+        c = box.children[i];
+        m.push([c, c.getBoundingClientRect().top]);
+      }
+      return m;
+    }
+    /* CSS px per design px, read off the frame itself — the same measure the
+       wallet's flights use (meta.js, frameXY), so a bezel or a framePad never
+       skews it. */
+    function px() {
+      var f = $("frame"), w = f ? f.getBoundingClientRect().width : 0;
+      return w ? w / 720 : 1;
+    }
+    function play(before) {
+      var k = px();
+      before.forEach(function (p) {
+        var c = p[0]; if (!c.parentNode) return;
+        var dy = (p[1] - c.getBoundingClientRect().top) / k;
+        if (Math.abs(dy) < 0.5) return;
+        c.style.transition = "none";
+        c.style.transform = "translateY(" + dy + "px)";
+        void c.offsetHeight;
+        c.style.transition = "transform .32s cubic-bezier(.2,1,.3,1)";
+        c.style.transform = "";
+      });
+    }
+
+    function tick(t) {
+      var dt = last ? Math.min(100, t - last) : 16;
+      last = t;
+      live.forEach(function (it) {
+        if (it.gone || it.held) return;
+        it.left -= dt;
+        it.bar.style.transform = "scaleX(" + Math.max(0, it.left / it.hold) + ")";
+        if (it.left <= 0) leave(it);
+      });
+      raf = live.length ? requestAnimationFrame(tick) : 0;
+      if (!raf) last = 0;
+    }
+
+    function leave(it, fast) {
+      if (it.gone) return;
+      it.gone = true;
+      var a = it.anim, name = "lift", to = targetOf && targetOf(it.icon);
+      if (to && to.getBoundingClientRect().width > 0 && !fast) {
+        var k = px();
+        var r1 = it.body.getBoundingClientRect(), r2 = to.getBoundingClientRect();
+        a.style.setProperty("--nt-fx", ((r2.left + r2.width / 2) - (r1.left + r1.width / 2)) / k + "px");
+        a.style.setProperty("--nt-fy", ((r2.top + r2.height / 2) - (r1.top + r1.height / 2)) / k + "px");
+        name = "fly";
+        setTimeout(function () {
+          to.classList.remove("nt-hit"); void to.offsetWidth; to.classList.add("nt-hit");
+        }, OUT * 0.9);
+      }
+      a.style.animation = "nt-out-" + name + " " + (fast ? 160 : OUT) + "ms cubic-bezier(.5,0,.8,.4) forwards";
+      setTimeout(function () {
+        var before = it.node.parentNode ? measure() : [];
+        if (it.node.parentNode) it.node.parentNode.removeChild(it.node);
+        var i = live.indexOf(it); if (i >= 0) live.splice(i, 1);
+        play(before);
+      }, (fast ? 160 : OUT) + 20);
+    }
+
+    function say(word, opt) {
+      opt = opt || {};
+      if (word == null || word === "" || !host()) return;
+      var kind = KIND_ICON[opt.kind] ? opt.kind : "info";
+      var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
+      var key = opt.key || (w + "|" + sub);
+      var hold = opt.hold || HOLD, i, it;
+
+      for (i = 0; i < live.length; i++) {
+        it = live[i];
+        if (it.gone || it.key !== key) continue;
+        it.count++; it.left = it.hold;
+        it.n.textContent = "×" + it.count;
+        it.n.classList.add("on");
+        it.n.classList.remove("punch"); void it.n.offsetWidth; it.n.classList.add("punch");
+        return;
+      }
+      var vis = live.filter(function (x) { return !x.gone; });
+      while (vis.length >= MAX) leave(vis.shift(), true);
+
+      var icon = opt.icon === undefined ? KIND_ICON[kind] : opt.icon;
+      var node = document.createElement("div"); node.className = "nt";
+      var anim = document.createElement("div"); anim.className = "nt-a";
+      var body = document.createElement("div"); body.className = "nt-b k-" + kind;
+      body.innerHTML = iconHtml(icon) +
+        '<span class="nt-tx"><b class="nt-w">' + esc(w) + '</b>' +
+        (sub ? '<span class="nt-s">' + esc(sub) + '</span>' : '') + '</span>' +
+        '<span class="nt-n"></span><span class="nt-sh"></span><span class="nt-bar"></span>';
+      anim.style.animation = "nt-in " + IN + "ms cubic-bezier(.2,1.35,.4,1) both";
+      anim.appendChild(body); node.appendChild(anim);
+      it = { node: node, anim: anim, body: body, key: key, icon: icon, hold: hold, left: hold,
+             count: 1, held: false, gone: false,
+             n: body.querySelector(".nt-n"), bar: body.querySelector(".nt-bar") };
+      body.addEventListener("pointerdown", function (e) { e.stopPropagation(); it.held = true; });
+      body.addEventListener("pointerup", function (e) { e.stopPropagation(); it.held = false; leave(it); });
+      body.addEventListener("pointerleave", function () { it.held = false; });
+
+      var before = measure();
+      box.insertBefore(node, box.firstChild);
+      play(before);
+      live.push(it);
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function clear() {
+      live.forEach(function (it) { if (it.node.parentNode) it.node.parentNode.removeChild(it.node); });
+      live = [];
+    }
+    /* The web shell's hook: which chip a notice about `icon` flies into. */
+    function target(fn) { targetOf = fn; }
+    /* Called by setState: a round makes the layer pointer-transparent. */
+    function state(s) {
+      if (!box) return;
+      box.classList.toggle("round", s === "playing");
+      box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
+    }
+
+    return { say: say, clear: clear, target: target, state: state };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------
-     The loud half of the overlay: score gains, combo milestones, hero beats.
-     Prefer it over Overlay.banner/toast for anything that celebrates a player
-     action — a playable sells on how big the feedback feels.
+     The loud half of the words: score gains, combo milestones, hero beats,
+     a mistake as it happens. A word the player has to READ rather than feel
+     — a state, a refusal, a lesson — is Notify's (above), not a callout.
 
          Pop.show("combo", { word: "COMBO x5", sub: "+120", at: "topRight" })
 
@@ -289,7 +487,7 @@
      never a second shake system. Sound stays with the caller: a game knows
      which of its own samples belongs on the beat.
 
-     Design reference and live catalogue: lab/overlay-comic.html
+     Design reference and live catalogue: lab/overlay-pop.html
      -------------------------------------------------------------------- */
   var Pop = (function () {
     var timers = [];
@@ -539,8 +737,8 @@
     var STYLES = {
       // the tiny frequent one, spawned at the impact point
       score:    { anim:"float", enter:240, hold:240, exit:420, decor:[], at:"center", rot:-5 },
-      // a mistake: chain lost, wall hit. Sits where a toast would, but styled
-      // like the rest of the callouts instead of looking like a leftover pill.
+      // a mistake AS IT HAPPENS: chain lost, a whiff, a fight lost. A state the
+      // mistake leaves behind ("Shield down") is Notify's, not this.
       alert:    { anim:"punch", enter:220, hold:320, exit:220, decor:[], at:"hudUnder", rot:-2 },
       // a scoring milestone: a compact chip with a shockwave, off to one side.
       // This is the one callout a good run fires over and over, so it is built

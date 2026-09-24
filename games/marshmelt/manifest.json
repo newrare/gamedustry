@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.2.5",
+  "version": "1.2.8",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -186,9 +186,9 @@
       }
     },
     "meta": {
-      "coinsPer": 60,
+      "coinsPer": 100,
       "xpPer": 6,
-      "ticketPrice": 15,
+      "ticketPrice": 9,
       "awards": [
         1,
         2,

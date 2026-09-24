@@ -235,7 +235,7 @@ function render(m) {
          docs/ASSETS.md, which is the record this line is read off. itch
          enforces the disclosure and can delist a page that omits it. */
       'AI disclosure: **Yes** — the code, the name, the icon, the background art'
-        + ' and the music bed; not the sfx (ZapSplat), the pictograms (Lucide)'
+        + ' and the music bed; not the sfx (ZapSplat, Kenney), the pictograms (Lucide)'
         + ' or the type (OFL)'
     ].join('  \n'))
   ].join('\n');
@@ -369,7 +369,7 @@ function renderPlay(m) {
       'Content guidelines and US export laws: tick both.',
       'News app: **no**  ·  COVID-19 app: **no**.',
       'AI disclosure: the code, the name, the icon, the background art and the',
-      'music bed are AI-generated; the sfx (ZapSplat), the pictograms (Lucide)',
+      'music bed are AI-generated; the sfx (ZapSplat, Kenney), the pictograms (Lucide)',
       'and the type (OFL) are not — see docs/ASSETS.md.'
     ].join('  \n')),
     section('Release', [

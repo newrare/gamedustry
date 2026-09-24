@@ -51,7 +51,7 @@ const opt = (k, d) => {
   return a ? a.split("=").slice(1).join("=") : d;
 };
 const slug = argv.find((a) => !a.startsWith("--")) || "vipera";
-const STYLES = opt("styles", "none,score,alert,combo,streak,ribbon,perfect,ultra,manifest,danger,toast,banner").split(",");
+const STYLES = opt("styles", "none,score,alert,combo,streak,ribbon,perfect,ultra,manifest,danger,notify").split(",");
 const VARIANTS = opt("variants", "base").split(",");
 const CPU = parseFloat(opt("cpu", "4"));
 const MS = parseInt(opt("ms", "2600"), 10);
@@ -107,7 +107,7 @@ const SEED_JS = `<script>(function(){var s=1013904223;Math.random=function(){s=s
 
 const HOOK_JS = `
   window.__H = { startGame: startGame, Loop: Loop, Input: Input, Layout: Layout,
-    CONFIG: CONFIG, Beat: Beat, Pop: Pop, Overlay: Overlay, Fx: Fx,
+    CONFIG: CONFIG, Beat: Beat, Pop: Pop, Notify: Notify, Overlay: Overlay, Fx: Fx,
     HUD: HUD, Sound: Sound, ASSETS: ASSETS,
     endRound: endRound, state: function () { return State; } };
 `;
@@ -182,7 +182,7 @@ const BENCH_JS = `<script>
       H.Pop.show("score", { word: "+" + (n * 7), at: { x: H.Layout.cx, y: H.Layout.cy - 60 } });
       return;
     }
-    if (kind === "toast") { H.Overlay.toast("+120", 900); return; }
+    if (kind === "notify") { H.Notify.say("Out of reach", { kind: n % 2 ? "warn" : "info" }); return; }
     if (kind === "vignette") {
       var col = n % 2 ? "rgba(255,60,60,.85)" : "rgba(60,140,255,.85)";
       document.documentElement.style.setProperty("--vig", col);   // for the variants
@@ -207,7 +207,6 @@ const BENCH_JS = `<script>
                { label: "COMBO", value: "x7" }] });
       return;
     }
-    if (kind === "banner") { H.Overlay.banner("COMBO", "x5", 900); return; }
     H.Pop.show(kind, { word: "COMBO X5", sub: "+120" });
   }
 

@@ -53,7 +53,7 @@
   var STRINGS = {
     en: {
       album: "Stickers", shop: "Shop",
-      draw: "Draw", drawCost: "1 ticket", noTicket: "No ticket",
+      draw: "Draw", drawCost: "1 ticket",
       mixing: "Mixing…",
       perDraw: "Tickets per draw", chances: "Chances",
       newSticker: "New sticker!", dupe: "Already owned",
@@ -70,7 +70,7 @@
     },
     fr: {
       album: "Stickers", shop: "Boutique",
-      draw: "Tirer", drawCost: "1 ticket", noTicket: "Aucun ticket",
+      draw: "Tirer", drawCost: "1 ticket",
       mixing: "Ça mélange…",
       perDraw: "Tickets par tirage", chances: "Chances",
       newSticker: "Nouveau sticker !", dupe: "Déjà obtenu",
@@ -92,7 +92,7 @@
      by the motor's `upper` (packages/engine), which also takes the accents
      off — a capital carries none in this house. */
   var up = W.upper;
-  var CAPS = ["album", "shop", "draw", "drawCost", "noTicket", "mixing",
+  var CAPS = ["album", "shop", "draw", "drawCost", "mixing",
     "perDraw", "chances", "newSticker", "dupe", "sell",
     "again", "buyTitle", "superTitle",
     "sellTitle", "sellAll", "fromMap", "fromMachine",

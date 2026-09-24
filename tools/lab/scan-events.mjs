@@ -14,7 +14,7 @@
   game does not ship (Sound.clip returns silently on an unknown name, so a typo
   is inaudible rather than broken).
 
-  So this reads the sources back: every Pop / Overlay / Sound call in
+  So this reads the sources back: every Pop / Notify / Sound call in
   games/<slug>/game.js, grouped into BEATS — calls close enough together to be
   one moment of the game, which is how a callout and its sound end up on the
   same card — plus the sfx pack with its provenance comments and what plays it.
@@ -37,9 +37,10 @@ const WATCHED = {
   /* Pop's other half: the number floating in the world. Same system, same
      namespace, drawn on the canvas instead of in the DOM (packages/shell). */
   'Pop.text':        { kind: 'pop' },
-  'Overlay.toast':   { kind: 'overlay' },
-  'Overlay.banner':  { kind: 'overlay' },
-  'Overlay.reward':  { kind: 'overlay' },
+  /* The other voice: information rather than a moment — a state, a refusal,
+     a lesson (packages/shell, Notify). One look, so the bench offers its word
+     and its sub, never a style. */
+  'Notify.say':      { kind: 'notify' },
   /* Not messages, but the same beat: a callout is designed with the shake and
      the flash under it, so a card that hid them would review half a moment.
      `Overlay.vignette` sits here and not with the notifications above because
@@ -237,9 +238,7 @@ function jsonish(expr) {
 const DEFAULTS = {
   'Pop.show':         ['combo', {}],
   'Pop.text':         [360, 560, 'TEXT', {}],
-  'Overlay.toast':    ['TOAST', {}],
-  'Overlay.banner':   ['BANNER', '', {}],
-  'Overlay.reward':   ['+100', {}],
+  'Notify.say':       ['Notice', {}],
   'Overlay.vignette': ['rgba(255,255,255,.85)', 1, 700],
   'Fx.burst':         [360, 640, { count: 22, speed: 420, life: 0.55, size: 6, color: '#ffffff' }],
   'Fx.ring':          [360, 640, { from: 24, to: 210, width: 8, life: 0.5, color: '#ffffff' }],
@@ -329,9 +328,10 @@ function previewOf(call) {
     if (o.at == null) delete o.at;                       // let the style decide
   } else if (call.name === 'Pop.text') {
     if (literal(call.args[2]) == null) args[2] = stubWord(call.wordExpr, 'TEXT');
-  } else if (call.module === 'Overlay' && call.method !== 'vignette') {
+  } else if (call.name === 'Notify.say') {
     if (typeof args[0] !== 'string' || literal(call.args[0]) == null) args[0] = stubWord(call.wordExpr, base[0]);
-    if (call.name === 'Overlay.banner' && call.subExpr && literal(call.args[1]) == null) args[1] = stubWord(call.subExpr, '');
+    const o = args[1] && typeof args[1] === 'object' ? args[1] : (args[1] = {});
+    if (o.sub == null && call.subExpr) o.sub = stubWord(call.subExpr, '');
   }
   return { fn: call.name, args, exact };
 }
@@ -354,7 +354,7 @@ function enclosing(lines, line) {
    is also what tells a game's own beat from one the motor fires for it. */
 export function scanCalls(src, where) {
   const mask = codeMask(src), lineOf = lineIndex(src), lines = src.split('\n');
-  const re = /\b(Pop|Overlay|Fx|Sound|Music|HUD|Confetti)\.(\w+)\s*\(/g;
+  const re = /\b(Pop|Notify|Overlay|Fx|Sound|Music|HUD|Confetti)\.(\w+)\s*\(/g;
   const calls = [];
   let m;
   while ((m = re.exec(src))) {
@@ -404,11 +404,14 @@ export function scanCalls(src, where) {
       call.soundLiteral = literal(args[0]) != null;
       call.vol = args[1] || null;
       call.rate = args[2] || null;
-    } else if (call.module === 'Overlay') {
+    } else if (name === 'Notify.say') {
+      const o = objectFields(args[1]) || {};
+      call.opts = o;
+      call.optSpans = spans[1] ? objectFieldSpans(spans[1].text, spans[1].start) : null;
       call.word = literal(args[0]);
       call.wordExpr = args[0] || null;
-      call.sub = call.method === 'banner' ? literal(args[1]) : undefined;
-      call.subExpr = call.method === 'banner' ? args[1] || null : null;
+      call.sub = literal(o.sub) ?? (o.sub ? null : undefined);
+      call.subExpr = o.sub || null;
     }
     call.preview = previewOf(call);
     calls.push(call);
@@ -498,38 +501,55 @@ export function soundPack(src) {
 }
 
 /* ── the sfx library ──────────────────────────────────────────────────────
-   assets/audio/sfx/ as it is on disk. A game's clip is a CUT of one of these
-   files, and the only record of which one is the provenance comment, written
-   in the stripped form below — so the same function names a file for the bench
-   and resolves a note back to a file for tools/lab/apply-events.mjs.
+   assets/audio/sfx/ as it is on disk: one flat folder, every file named
+   `<category>-<descriptor>-<NN>.<ext>` (tools/lab/rename-sfx.mjs is the
+   record of how), plus index.json beside them — durations, channels, packs,
+   licences — written by tools/lab/index-sfx.mjs. A game's clip is a CUT of
+   one of these files, and the only record of which one is the provenance
+   comment, which writes the file's name without its extension:
 
-   "zapsplat_multimedia_ui_mallet_tone_single_plink_generic_002_105003.mp3"
-   becomes "ui_mallet_tone_single_plink_generic_002".                        */
+       // hit: mallet-plink-01   (pitched by tier + combo)
+
+   So the label IS the stem, and the same function names a file for the bench
+   and resolves a note back to a file for tools/lab/apply-events.mjs.        */
 export function sfxLabel(file) {
-  return file.replace(/\.[^.]+$/, '')
-    .replace(/^zapsplat_multimedia_/, '')
-    .replace(/^zapsplat_/, '')
-    .replace(/_\d{4,}$/, '');
+  return file.replace(/\.[^.]+$/, '');
 }
 
 export const SFX_DIR = path.join(ROOT, 'assets', 'audio', 'sfx');
+export const SFX_INDEX = path.join(SFX_DIR, 'index.json');
 
 let SFX = null;
 export async function sfxFiles() {
   if (SFX) return SFX;
   const names = (await readdir(SFX_DIR)).filter((f) => /\.(mp3|ogg|wav|m4a)$/i.test(f)).sort();
-  SFX = names.map((file) => ({ file, label: sfxLabel(file) }));
+  // What the index knows about each file, when there is one; the folder alone otherwise.
+  const index = {};
+  try { for (const e of JSON.parse(await readFile(SFX_INDEX, 'utf8')).files) index[e.file] = e; } catch {}
+  SFX = names.map((file) => {
+    const e = index[file] || {};
+    const label = sfxLabel(file);
+    return {
+      file, label, stem: label, ext: e.ext || file.slice(file.lastIndexOf('.') + 1).toLowerCase(),
+      category: e.category || label.split('-')[0], name: e.name || null, variant: e.variant || null,
+      seconds: e.seconds != null ? e.seconds : null, channels: e.channels || null,
+      pack: e.pack || null, license: e.license || null, source: e.source || null
+    };
+  });
   return SFX;
 }
 
-/* The file a note was cut from. The longest label that appears in the note
-   wins, because several clips share a prefix ("alert_chime_bright_airy_positive
-   _002" is inside nothing, but "sfx_hit_01_sport" and "sfx_hit_01" would be). */
+/* The file a note was cut from: its stem, whole, on a token boundary — a
+   hyphen counts as part of the token, so `click-01` is not found inside
+   `ui-click-01`. Longest wins where one stem happens to sit inside another,
+   which the naming scheme should never produce but nothing forbids. */
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function fileForNote(note, files) {
   if (!note) return null;
   let best = null;
   for (const f of files) {
-    if (note.indexOf(f.label) < 0) continue;
+    if (!f.re) f.re = new RegExp('(^|[^\\w-])' + esc(f.label) + '(?![\\w-])');
+    if (!f.re.test(note)) continue;
     if (!best || f.label.length > best.label.length) best = f;
   }
   return best ? best.file : null;
@@ -655,7 +675,7 @@ export async function scanGame(slug) {
       pop: calls.filter((c) => c.kind === 'pop').length,
       fx: calls.filter((c) => c.kind === 'fx').length,
       sound: calls.filter((c) => c.kind === 'sound').length,
-      overlay: calls.filter((c) => c.kind === 'overlay').length,
+      notify: calls.filter((c) => c.kind === 'notify').length,
       beats: beats.length
     }
   };

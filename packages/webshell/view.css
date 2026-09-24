@@ -57,10 +57,18 @@
    THE MODAL — the gift, the reveal, the detail, the ad
    ========================================================================= */
 
+/* THE CARD TAKES THE FRAME. It was sized like a dialog on a desktop — 600 px
+   at most, 40 px of scrim either side, a 38 px title and a 19 px sentence —
+   and on a phone that left a strip of small type in the middle of a screen
+   that had nothing else to show: the veil is up, the round is stopped, the
+   card is the ONLY thing to read. So the defaults are the phone's: the card
+   runs to the gutter, the type is the size of the end screen's, and what a
+   card holds (the boxes, the prisoners, the reward) is sized from the room the
+   card has rather than from a number picked for the smallest case. */
 .mt-modal {
   position:absolute; inset:0; z-index:44;
   display:flex; align-items:center; justify-content:center;
-  padding:0 40px;
+  padding:0 26px;
   background:var(--web-veil);
   -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
   opacity:0; transition:opacity .2s ease;
@@ -69,21 +77,28 @@
 .mt-modal.on { opacity:1; }
 
 .mt-card {
-  width:100%; max-width:600px; padding:34px 30px;
-  border-radius:30px; background:rgba(8,8,20,.94);
+  width:100%; max-width:668px; padding:44px 34px;
+  border-radius:34px; background:rgba(8,8,20,.94);
   border:1px solid var(--panel-line);
   box-shadow:0 26px 70px rgba(0,0,0,.7);
-  display:flex; flex-direction:column; align-items:center; gap:16px;
+  display:flex; flex-direction:column; align-items:center; gap:24px;
   transform:translateY(22px) scale(.96);
   transition:transform .26s cubic-bezier(.2,1.3,.4,1);
 }
 .mt-modal.on .mt-card { transform:translateY(0) scale(1); }
 
+/* ONE LINE, MEASURED. The title is written at the size a title is read at and
+   the view system shrinks it to the card's width once the card is filled
+   (view.js, `fitTitles`) — "Fais un prisonnier" and "Pick one" are not the
+   same width, in two languages and thirteen faces. A title that still does
+   not fit at the floor gets its wrap back (`.wrap`) rather than overflowing. */
 .mt-h {
-  margin:0; text-align:center; font-size:38px; letter-spacing:3px;
+  margin:0; text-align:center; font-size:54px; letter-spacing:3px; line-height:1.1;
+  white-space:nowrap; max-width:100%;
   text-transform:uppercase; font-weight:var(--web-fw, 900);
   color:var(--accent); text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
 }
+.mt-h.wrap { white-space:normal; }
 /* THE EYEBROW — one line over the title, for the caller that has to say why
    this card is open. The daily road is the one: it is drawn wordless inside
    the menu, so what it is, which day of the run this is, and whether this
@@ -96,7 +111,7 @@
 .wm-card .mt-eyebrow {
   display:flex; align-items:center; justify-content:center; gap:12px;
   margin:0; text-align:center;
-  font-size:16px; letter-spacing:3px; text-transform:uppercase;
+  font-size:20px; letter-spacing:3px; text-transform:uppercase;
   font-family:var(--web-font, inherit); opacity:1;
   color:var(--text);
 }
@@ -117,8 +132,8 @@
   color:#0b0b12; background:var(--danger, #ff5d5d);
 }
 
-.mt-sub { margin:0; text-align:center; font-size:19px; color:var(--muted); line-height:1.4; }
-.mt-sub.small { font-size:16px; opacity:.7; }
+.mt-sub { margin:0; text-align:center; font-size:26px; color:var(--muted); line-height:1.35; }
+.mt-sub.small { font-size:20px; opacity:.7; }
 
 
 /* THE ONE LINE THAT REPLACES THE BUTTON. A reward card has nothing left to
@@ -126,7 +141,7 @@
    written the size of a footnote because it is one. */
 .mt-tap {
   margin:2px 0 0; text-align:center;
-  font-size:15px; letter-spacing:3px; text-transform:uppercase;
+  font-size:18px; letter-spacing:3px; text-transform:uppercase;
   color:var(--muted); opacity:.6;
   animation:mt-tap-breathe 2.2s ease-in-out infinite;
 }
@@ -234,6 +249,16 @@
    chip OPEN: `20/20 · ⌂ · LV 99 [bar] · 99 999 · 99 · 90/90`. Measured, not
    guessed — tools/test/views.mjs asserts it, with every number at its widest. */
 #web-hud .mt-band { display:none; align-items:center; gap:7px; }
+/* THE STANDING ROW RUNS EDGE TO EDGE. Home is glued to the left gutter, the
+   counts to the right one, and the level chip is the SPRING between them: the
+   room the numbers do not use is the xp bar's, so the bar is as long as the
+   frame allows instead of a strip of empty band in front of the house. */
+#web-hud .mt-band.full { align-self:stretch; }
+#web-hud .mt-band.full .mt-band-lv { flex:1 1 auto; min-width:0; display:flex; }
+/* ...and the spring is what gives when the counts are at their widest
+   (`99 999 · 99 · 20/20 · 90/90`): the bar goes first, then the chip clips its
+   own label behind the bolt — never over the coins beside it. */
+#web-hud .mt-band.full .mt-lv { flex:1 1 auto; min-width:0; overflow:hidden; }
 #web-hud.hud-full .mt-band.full,
 #web-hud.hud-auto .mt-band.transient { display:flex; }
 
@@ -256,30 +281,21 @@
 #web-hud .mt-lv.door:hover { border-color:var(--accent); }
 #web-hud .mt-lv.door:active { transform:scale(.94); }
 
-/* ---- the level chip is an icon until it has something to say -------------
-   A bar standing open on every screen is a bar nobody reads: it moves once a
-   round, and the rest of the time it is the widest thing on the band saying
-   the number it said yesterday. So it is the bolt alone, and meta.js opens it
-   for a few seconds when the xp moves — the moment it is worth the width is
-   the moment it has just changed.
-
-   `max-width` and not `display`, because the point is the OPENING: a chip that
-   appeared at its full size would be a second chip rather than this one having
-   something to say. The end screen's row is never collapsed — it is veiled
-   instead, and a chip that arrives with the reward has nothing to open. */
-#web-hud .mt-band.full .mt-lv .lbl,
-#web-hud .mt-band.full .mt-lv .bar {
-  max-width:0; opacity:0; margin-left:0; overflow:hidden;
-  transition:max-width .3s ease, opacity .2s ease, margin-left .3s ease;
-}
-#web-hud .mt-band.full .mt-lv.wide .lbl { max-width:120px; opacity:1; margin-left:8px; }
-#web-hud .mt-band.full .mt-lv.wide .bar { max-width:56px; opacity:1; margin-left:7px; }
+/* ---- the level chip is always open on the standing row -------------------
+   It is the one chip with room to take, so it takes it: the level, then a bar
+   that stretches over whatever the counts leave free. It never shuts — a bar
+   that fills the band is read at a glance, which a bolt that opened for three
+   seconds once a round was not. */
+#web-hud .mt-band.full .mt-lv .bar { flex:1 1 auto; width:auto; min-width:0; }
 /* The transient row keeps its gap, since nothing there collapses. */
 #web-hud .mt-band.transient .mt-lv { gap:10px; padding:0 14px; }
 
 /* The one chip on the row that is not a number: the way out of wherever the
    player is. Round, icon only, and it is the first thing in the row. */
 #web-hud .mt-chip.home { padding:0 12px; }
+/* Gone rather than inert on the bare village, which it is the door to
+   (packages/webshell/meta.js, `bandDoors`). */
+#web-hud .mt-chip.home.gone { display:none; }
 /* A chip whose door is the screen it is standing on: it still counts, it just
    stops offering. A control that cannot act is a tap the player learns to stop
    making — but it must not go MISSING either, or the row changes shape as the

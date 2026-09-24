@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.2",
+  "version": "1.8.4",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -256,9 +256,9 @@
       }
     },
     "meta": {
-      "coinsPer": 250,
+      "coinsPer": 100,
       "xpPer": 25,
-      "ticketPrice": 60,
+      "ticketPrice": 150,
       "awards": [
         1,
         2,

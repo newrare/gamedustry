@@ -85,9 +85,14 @@
   var LV = window.__LEVELS__ || null;
   var MT = window.__META__ || null;
   var DL = window.__DAILY__ || null;
+  /* The barracks is loaded BEFORE this file (the builder's order) for exactly
+     one reason: a village lists its doors and has to know which of them
+     answer. A game with no `web.army` never publishes it. */
+  var AR = window.__ARMY__ || null;
 
   function levelled() { return !!(LV && LV.active()); }
   function metaed() { return !!(MT && MT.active()); }
+  function armied() { return !!(AR && AR.active()); }
 
   function $(id) { return document.getElementById(id); }
 
@@ -132,7 +137,20 @@
        really true that there is something there the player has not had. After
        the first star it is the loudest building on the hub saying what the
        player already knows. */
-    map: function () { return (levelled() && !LV.total()) ? 1 : 0; }
+    map: function () { return (levelled() && !LV.total()) ? 1 : 0; },
+    /* THE BARRACKS' FOUR, and every one of them counts what the player would
+       walk in and ACT on rather than what is merely in the room. The deck says
+       how many slots are empty — a deck that is not full is the one thing on
+       that screen that has to be finished before a battle; the infirmary and
+       the prison count who is IN them, the cards the screen behind the door
+       lists, because both rooms have six places and a full one is the news;
+       the tent the recruits
+       the wallet can actually pay for. A roster of forty cards sitting quietly
+       is not news, and a badge that reported it would never go out. */
+    deck:      function () { return armied() ? AR.deckShort() : 0; },
+    infirmary: function () { return armied() ? AR.inInfirmary() : 0; },
+    prison:    function () { return armied() ? AR.inPrison() : 0; },
+    recruit:   function () { return armied() ? AR.affordable() : 0; }
   };
 
   /* How many stickers the shop would buy back: the EXTRA copies, which is what
@@ -372,8 +390,9 @@
     /* THE DOOR — a button of its own, stretched over the house, so every one
        of them is reached by TAB and fired by ENTER exactly as the menu entry
        it stands for is. `play` is the one role with no entry in the door list:
-       on a game with no levels it starts the round, which is the motor's, so
-       it goes through the shell's own start. */
+       on a levelled game it starts the HIGHEST LEVEL the board has opened —
+       never a free round nobody picked — and on a game with no levels it
+       starts the round, which is the motor's, through the shell's own start. */
     var word = null;
     if (h.role !== "decor") {
       var hit = el("button", "vg-hit");
@@ -398,7 +417,7 @@
   }
 
   function doorOf(role) {
-    if (role === "play") return function () { W.start(); };
+    if (role === "play") return function () { if (levelled()) LV.playTop(); else W.start(); };
     return MENU.doors[role] || function () {};
   }
 
@@ -417,6 +436,9 @@
     if (role === "ranking") return MENU.text("leaderboard");
     if (role === "options") return MENU.text("options");
     if (role === "help") return MENU.text("help");
+    /* The barracks names its own four, out of its own strings — a house's word
+       is the ROLE'S and nothing in a village is typed twice. */
+    if (armied() && AR.label(role)) return AR.label(role);
     if (!metaed()) return "";
     if (role === "album") return MT.text("stickersEntry");
     if (role === "shop") return MT.text("shop");
@@ -470,9 +492,9 @@
 
     /* THE VIEW. It carries the band like every other one — which is also what
        makes it reachable from everywhere, since the house chip in that band is
-       `View.home` and this file is what home now means. Its own chip goes
-       inert while it is on screen, like every chip standing on its own
-       destination. */
+       `View.home` and this file is what home now means. Its own chip is
+       dropped while it stands bare (packages/webshell/meta.js, `bandDoors`),
+       and comes back under a card. */
     /* The player's own switch, read once on the way up: menu.js applies it too,
        but only a village that was already loaded hears that call. */
     if (MENU.setting) setLabels(MENU.setting("labels"));

@@ -1,8 +1,8 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.1.1",
-  "tagline": "Send your cards against a hidden enemy camp, the higher rank wins",
+  "version": "0.13.5",
+  "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
   "targets": [
@@ -15,6 +15,186 @@
   },
   "art": {
     "objects": {
+      "cast-blue-01-a": "stratideck-cast-blue-03-01",
+      "cast-blue-01-b": "stratideck-cast-blue-02-02",
+      "cast-blue-01-c": "stratideck-cast-blue-02-01",
+      "cast-blue-01-d": "stratideck-cast-blue-01-02",
+      "cast-blue-01-e": "stratideck-cast-blue-01-01",
+      "cast-blue-01-s": "stratideck-cast-blue-03-02",
+      "cast-blue-02-a": "stratideck-cast-blue-03-03",
+      "cast-blue-02-b": "stratideck-cast-blue-02-04",
+      "cast-blue-02-c": "stratideck-cast-blue-02-03",
+      "cast-blue-02-d": "stratideck-cast-blue-01-04",
+      "cast-blue-02-e": "stratideck-cast-blue-01-03",
+      "cast-blue-02-s": "stratideck-cast-blue-03-04",
+      "cast-blue-03-a": "stratideck-cast-blue-06-01",
+      "cast-blue-03-b": "stratideck-cast-blue-05-02",
+      "cast-blue-03-c": "stratideck-cast-blue-05-01",
+      "cast-blue-03-d": "stratideck-cast-blue-04-02",
+      "cast-blue-03-e": "stratideck-cast-blue-04-01",
+      "cast-blue-03-s": "stratideck-cast-blue-06-02",
+      "cast-blue-04-a": "stratideck-cast-blue-06-03",
+      "cast-blue-04-b": "stratideck-cast-blue-05-04",
+      "cast-blue-04-c": "stratideck-cast-blue-05-03",
+      "cast-blue-04-d": "stratideck-cast-blue-04-04",
+      "cast-blue-04-e": "stratideck-cast-blue-04-03",
+      "cast-blue-04-s": "stratideck-cast-blue-06-04",
+      "cast-blue-05-a": "stratideck-cast-blue-09-01",
+      "cast-blue-05-b": "stratideck-cast-blue-08-02",
+      "cast-blue-05-c": "stratideck-cast-blue-08-01",
+      "cast-blue-05-d": "stratideck-cast-blue-07-02",
+      "cast-blue-05-e": "stratideck-cast-blue-07-01",
+      "cast-blue-05-s": "stratideck-cast-blue-09-02",
+      "cast-blue-06-a": "stratideck-cast-blue-09-03",
+      "cast-blue-06-b": "stratideck-cast-blue-08-04",
+      "cast-blue-06-c": "stratideck-cast-blue-08-03",
+      "cast-blue-06-d": "stratideck-cast-blue-07-04",
+      "cast-blue-06-e": "stratideck-cast-blue-07-03",
+      "cast-blue-06-s": "stratideck-cast-blue-09-04",
+      "cast-blue-07-a": "stratideck-cast-blue-12-01",
+      "cast-blue-07-b": "stratideck-cast-blue-11-02",
+      "cast-blue-07-c": "stratideck-cast-blue-11-01",
+      "cast-blue-07-d": "stratideck-cast-blue-10-02",
+      "cast-blue-07-e": "stratideck-cast-blue-10-01",
+      "cast-blue-07-s": "stratideck-cast-blue-12-02",
+      "cast-blue-08-a": "stratideck-cast-blue-12-03",
+      "cast-blue-08-b": "stratideck-cast-blue-11-04",
+      "cast-blue-08-c": "stratideck-cast-blue-11-03",
+      "cast-blue-08-d": "stratideck-cast-blue-10-04",
+      "cast-blue-08-e": "stratideck-cast-blue-10-03",
+      "cast-blue-08-s": "stratideck-cast-blue-12-04",
+      "cast-blue-09-a": "stratideck-cast-blue-15-01",
+      "cast-blue-09-b": "stratideck-cast-blue-14-02",
+      "cast-blue-09-c": "stratideck-cast-blue-14-01",
+      "cast-blue-09-d": "stratideck-cast-blue-13-02",
+      "cast-blue-09-e": "stratideck-cast-blue-13-01",
+      "cast-blue-09-s": "stratideck-cast-blue-15-02",
+      "cast-blue-10-a": "stratideck-cast-blue-15-03",
+      "cast-blue-10-b": "stratideck-cast-blue-14-04",
+      "cast-blue-10-c": "stratideck-cast-blue-14-03",
+      "cast-blue-10-d": "stratideck-cast-blue-13-04",
+      "cast-blue-10-e": "stratideck-cast-blue-13-03",
+      "cast-blue-10-s": "stratideck-cast-blue-15-04",
+      "cast-red-01-a": "stratideck-cast-red-03-01",
+      "cast-red-01-b": "stratideck-cast-red-02-02",
+      "cast-red-01-c": "stratideck-cast-red-02-01",
+      "cast-red-01-d": "stratideck-cast-red-01-02",
+      "cast-red-01-e": "stratideck-cast-red-01-01",
+      "cast-red-01-s": "stratideck-cast-red-03-02",
+      "cast-red-02-a": "stratideck-cast-red-06-01",
+      "cast-red-02-b": "stratideck-cast-red-05-02",
+      "cast-red-02-c": "stratideck-cast-red-05-01",
+      "cast-red-02-d": "stratideck-cast-red-04-02",
+      "cast-red-02-e": "stratideck-cast-red-04-01",
+      "cast-red-02-s": "stratideck-cast-red-06-02",
+      "cast-red-03-a": "stratideck-cast-red-09-01",
+      "cast-red-03-b": "stratideck-cast-red-08-02",
+      "cast-red-03-c": "stratideck-cast-red-08-01",
+      "cast-red-03-d": "stratideck-cast-red-07-02",
+      "cast-red-03-e": "stratideck-cast-red-07-01",
+      "cast-red-03-s": "stratideck-cast-red-09-02",
+      "cast-red-04-a": "stratideck-cast-red-12-01",
+      "cast-red-04-b": "stratideck-cast-red-11-02",
+      "cast-red-04-c": "stratideck-cast-red-11-01",
+      "cast-red-04-d": "stratideck-cast-red-10-02",
+      "cast-red-04-e": "stratideck-cast-red-10-01",
+      "cast-red-04-s": "stratideck-cast-red-12-02",
+      "cast-red-05-a": "stratideck-cast-red-15-01",
+      "cast-red-05-b": "stratideck-cast-red-14-02",
+      "cast-red-05-c": "stratideck-cast-red-14-01",
+      "cast-red-05-d": "stratideck-cast-red-13-02",
+      "cast-red-05-e": "stratideck-cast-red-13-01",
+      "cast-red-05-s": "stratideck-cast-red-15-02",
+      "cast-red-06-a": "stratideck-cast-red-18-01",
+      "cast-red-06-b": "stratideck-cast-red-17-02",
+      "cast-red-06-c": "stratideck-cast-red-17-01",
+      "cast-red-06-d": "stratideck-cast-red-16-02",
+      "cast-red-06-e": "stratideck-cast-red-16-01",
+      "cast-red-06-s": "stratideck-cast-red-18-02",
+      "cast-red-07-a": "stratideck-cast-red-21-01",
+      "cast-red-07-b": "stratideck-cast-red-20-02",
+      "cast-red-07-c": "stratideck-cast-red-20-01",
+      "cast-red-07-d": "stratideck-cast-red-19-02",
+      "cast-red-07-e": "stratideck-cast-red-19-01",
+      "cast-red-07-s": "stratideck-cast-red-21-02",
+      "cast-red-08-a": "stratideck-cast-red-24-01",
+      "cast-red-08-b": "stratideck-cast-red-23-02",
+      "cast-red-08-c": "stratideck-cast-red-23-01",
+      "cast-red-08-d": "stratideck-cast-red-22-02",
+      "cast-red-08-e": "stratideck-cast-red-22-01",
+      "cast-red-08-s": "stratideck-cast-red-24-02",
+      "cast-red-09-a": "stratideck-cast-red-27-01",
+      "cast-red-09-b": "stratideck-cast-red-26-02",
+      "cast-red-09-c": "stratideck-cast-red-26-01",
+      "cast-red-09-d": "stratideck-cast-red-25-02",
+      "cast-red-09-e": "stratideck-cast-red-25-01",
+      "cast-red-09-s": "stratideck-cast-red-27-02",
+      "cast-red-10-a": "stratideck-cast-red-30-01",
+      "cast-red-10-b": "stratideck-cast-red-29-02",
+      "cast-red-10-c": "stratideck-cast-red-29-01",
+      "cast-red-10-d": "stratideck-cast-red-28-02",
+      "cast-red-10-e": "stratideck-cast-red-28-01",
+      "cast-red-10-s": "stratideck-cast-red-30-02",
+      "cast-turn-01-a": "stratideck-cast-red-03-03",
+      "cast-turn-01-b": "stratideck-cast-red-02-04",
+      "cast-turn-01-c": "stratideck-cast-red-02-03",
+      "cast-turn-01-d": "stratideck-cast-red-01-04",
+      "cast-turn-01-e": "stratideck-cast-red-01-03",
+      "cast-turn-01-s": "stratideck-cast-red-03-04",
+      "cast-turn-02-a": "stratideck-cast-red-06-03",
+      "cast-turn-02-b": "stratideck-cast-red-05-04",
+      "cast-turn-02-c": "stratideck-cast-red-05-03",
+      "cast-turn-02-d": "stratideck-cast-red-04-04",
+      "cast-turn-02-e": "stratideck-cast-red-04-03",
+      "cast-turn-02-s": "stratideck-cast-red-06-04",
+      "cast-turn-03-a": "stratideck-cast-red-09-03",
+      "cast-turn-03-b": "stratideck-cast-red-08-04",
+      "cast-turn-03-c": "stratideck-cast-red-08-03",
+      "cast-turn-03-d": "stratideck-cast-red-07-04",
+      "cast-turn-03-e": "stratideck-cast-red-07-03",
+      "cast-turn-03-s": "stratideck-cast-red-09-04",
+      "cast-turn-04-a": "stratideck-cast-red-12-03",
+      "cast-turn-04-b": "stratideck-cast-red-11-04",
+      "cast-turn-04-c": "stratideck-cast-red-11-03",
+      "cast-turn-04-d": "stratideck-cast-red-10-04",
+      "cast-turn-04-e": "stratideck-cast-red-10-03",
+      "cast-turn-04-s": "stratideck-cast-red-12-04",
+      "cast-turn-05-a": "stratideck-cast-red-15-03",
+      "cast-turn-05-b": "stratideck-cast-red-14-04",
+      "cast-turn-05-c": "stratideck-cast-red-14-03",
+      "cast-turn-05-d": "stratideck-cast-red-13-04",
+      "cast-turn-05-e": "stratideck-cast-red-13-03",
+      "cast-turn-05-s": "stratideck-cast-red-15-04",
+      "cast-turn-06-a": "stratideck-cast-red-18-03",
+      "cast-turn-06-b": "stratideck-cast-red-17-04",
+      "cast-turn-06-c": "stratideck-cast-red-17-03",
+      "cast-turn-06-d": "stratideck-cast-red-16-04",
+      "cast-turn-06-e": "stratideck-cast-red-16-03",
+      "cast-turn-06-s": "stratideck-cast-red-18-04",
+      "cast-turn-07-a": "stratideck-cast-red-21-03",
+      "cast-turn-07-b": "stratideck-cast-red-20-04",
+      "cast-turn-07-c": "stratideck-cast-red-20-03",
+      "cast-turn-07-d": "stratideck-cast-red-19-04",
+      "cast-turn-07-e": "stratideck-cast-red-19-03",
+      "cast-turn-07-s": "stratideck-cast-red-21-04",
+      "cast-turn-08-a": "stratideck-cast-red-24-03",
+      "cast-turn-08-b": "stratideck-cast-red-23-04",
+      "cast-turn-08-c": "stratideck-cast-red-23-03",
+      "cast-turn-08-d": "stratideck-cast-red-22-04",
+      "cast-turn-08-e": "stratideck-cast-red-22-03",
+      "cast-turn-08-s": "stratideck-cast-red-24-04",
+      "cast-turn-09-a": "stratideck-cast-red-27-03",
+      "cast-turn-09-b": "stratideck-cast-red-26-04",
+      "cast-turn-09-c": "stratideck-cast-red-26-03",
+      "cast-turn-09-d": "stratideck-cast-red-25-04",
+      "cast-turn-09-e": "stratideck-cast-red-25-03",
+      "cast-turn-09-s": "stratideck-cast-red-27-04",
+      "cast-turn-10-a": "stratideck-cast-red-30-03",
+      "cast-turn-10-b": "stratideck-cast-red-29-04",
+      "cast-turn-10-c": "stratideck-cast-red-29-03",
+      "cast-turn-10-d": "stratideck-cast-red-28-04",
+      "cast-turn-10-e": "stratideck-cast-red-28-03",
+      "cast-turn-10-s": "stratideck-cast-red-30-04",
       "decor-01": "stratideck-other-01",
       "decor-02": "stratideck-other-02",
       "decor-03": "stratideck-other-04",
@@ -27,6 +207,14 @@
       "home06": "stratideck-home-09",
       "home07": "stratideck-home-05",
       "home08": "stratideck-home-06",
+      "home09": "stratideck-home-03",
+      "infirmary": "stratideck-home-08",
+      "item-book": "stratideck-other-17",
+      "item-fence": "stratideck-other-26",
+      "item-forest": "stratideck-other-11",
+      "item-rock": "stratideck-other-12",
+      "item-skull": "stratideck-other-30",
+      "item-straw": "stratideck-other-33",
       "piece-01": "stratideck-other-13",
       "piece-02": "stratideck-other-09",
       "piece-03": "stratideck-other-14",
@@ -36,6 +224,7 @@
       "piece-07": "stratideck-other-34",
       "piece-08": "stratideck-other-37",
       "piece-09": "stratideck-other-28",
+      "prison": "stratideck-home-06",
       "sticker01": "stratideck-sticker-01",
       "sticker02": "stratideck-sticker-02",
       "sticker03": "stratideck-sticker-03",
@@ -60,23 +249,23 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Stratego de poche. Envoie tes cartes contre un camp ennemi caché et découvre qui bat qui.",
+      "tagline": "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
       "tags": [
         "Glisse pour attaquer",
-        "Cartes cachées",
-        "Le grade décide"
+        "Grade et rang",
+        "Tes propres cartes"
       ]
     },
     "en": {
-      "tagline": "A pocket Stratego. Send your cards against a hidden enemy camp and find out who beats whom.",
+      "tagline": "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
       "tags": [
         "Drag to strike",
-        "Hidden cards",
-        "Rank decides"
+        "Grade and tier",
+        "Own your cards"
       ]
     }
   },
-  "description": "Stratideck is a battle of cards against a camp you cannot see. The enemy stands on a grid, every card face down; your own army is dealt four at a time under it. Drag a card onto an enemy you can reach — the front row at first, then whatever stands next to a cell you have already emptied, so the camp opens corridor by corridor. The enemy turns over and the ranks decide: the higher one wins, equal ranks both fall, and three specials bend the rule the way Stratego does. The Spy kills the Marshal. The Sapper is the only card that clears a Trap. The Scout does not fight at all: it reveals the card it is sent at and comes back to the deck. A card that wins returns to the bottom of your deck; a card that loses is gone, and an army with no cards left has lost. Somewhere on the top row hides the enemy Flag, and taking it ends the battle in a capture. Kills pay by the rank they take down, a precise kill — the tightest card that could do it — pays double, and a streak of wins multiplies everything, so a reveal is worth points on its own. The camp grows over thirty levels, and a level's camp is always laid out the same way, so a second try is played with what the first one learned.",
+  "description": "Stratideck is a battle of cards against a camp you cannot see. The enemy stands on a grid, every card face down; your own army is dealt four at a time under it, and you drag one onto whatever you can reach. The card turns over and two numbers decide it: the GRADE, 1 to 10, and the TIER, E to S. The higher grade wins; when the grades match the better tier wins; and only two cards that match on both bring each other down. The tier gap is what the fight COSTS — beat something better equipped than your card and your card limps away wounded, sits out a turn and spends two days in the infirmary; beat something plainly worse and the enemy is left standing, and a won battle lets you march one of them off to your prison, where five days later they change sides. Three specials bend the rule the way Stratego does and none of them cares about tiers: the spy kills the marshal, the sapper is the only card that clears a trap, and the scout does not fight at all — it reveals what is hiding and comes back. Every other grade has an object of its own to break: the camp is also built of straw men, fences, rocks, forests, skulls and books, which send a card back, hold it up, lose it in the trees, stun it for the battle or turn it against its own hand — except for the one grade each of them answers to, from the sergeant too naive to fall for a straw man to the general who can never be bewitched into treason. Between battles the village is where the army lives: compose the deck you take in, visit the wounded, enlist who turned, and see what the recruiting tent is offering today. Thirty levels of a camp that grows deeper and better equipped as you climb.",
   "store": {
     "copy": {
       "en": {
@@ -90,16 +279,16 @@
             "line": "Find out what is <b>hiding</b>"
           },
           {
-            "kicker": "Specials",
-            "line": "<b>Spy</b>, sapper and scout"
+            "kicker": "Two numbers",
+            "line": "Grade wins, <b>tier</b> settles it"
           },
           {
             "kicker": "30 levels",
             "line": "A camp that <b>grows</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Capture the <b>flag</b>"
+            "kicker": "It costs",
+            "line": "Wounded, or taken <b>prisoner</b>"
           }
         ]
       },
@@ -114,16 +303,16 @@
             "line": "Découvre ce qui se <b>cache</b>"
           },
           {
-            "kicker": "Spéciales",
-            "line": "<b>Espion</b>, sapeur et éclaireur"
+            "kicker": "Deux nombres",
+            "line": "Le grade gagne, le <b>rang</b> tranche"
           },
           {
             "kicker": "30 niveaux",
             "line": "Un camp qui <b>grandit</b>"
           },
           {
-            "kicker": "Défi",
-            "line": "Capture le <b>drapeau</b>"
+            "kicker": "Ça coûte",
+            "line": "Blessé, ou fait <b>prisonnier</b>"
           }
         ]
       }
@@ -164,32 +353,28 @@
         "strings": {
           " streak": " d'affilée",
           "Army lost": "Armée perdue",
-          "Beaten": "Battu",
           "Best score": "Meilleur score",
-          "Best streak": "Meilleure série",
           "Both fall": "Les deux tombent",
           "Camp taken!": "Camp pris !",
           "Captain": "Capitaine",
+          "Captive": "Prisonnier",
+          "Captives": "Prisonniers",
           "Cards": "Cartes",
           "Colonel": "Colonel",
-          "Deck": "Pioche",
           "Fight again": "Rejouer la bataille",
           "Final score": "Score final",
           "Flag": "Drapeau",
           "Flag captured!": "Drapeau capturé !",
           "Foes": "Ennemis",
-          "Foes beaten": "Ennemis battus",
+          "Foes beaten": "Ennemis vaincus",
           "General": "Général",
-          "Holds": "Tient",
           "Install now": "Installer",
           "Lieutenant": "Lieutenant",
           "Major": "Major",
           "Marshal": "Maréchal",
           "Out of reach": "Hors de portée",
           "Overkill": "Trop fort",
-          "Pick a card": "Choisis une carte",
           "Play the full game": "Jouer au jeu complet",
-          "Precise hits": "Coups précis",
           "Precise!": "Précis !",
           "Sapper": "Sapeur",
           "Score": "Score",
@@ -197,17 +382,92 @@
           "Sergeant": "Sergent",
           "Spotted": "Repéré",
           "Spy": "Espion",
-          "Strike the front row": "Frappe la première ligne",
-          "Taken": "Pris",
+          "Still wounded": "Encore blessé",
+          "The wounded are back": "Les blessés repartent",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "To battle": "À l'assaut",
           "Trap": "Piège",
           "Trap cleared": "Piège désamorcé",
           "Trap!": "Piège !",
+          "Wounded": "Blessé",
+          "Infirmary full": "Infirmerie pleine",
+          "card lost": "carte perdue",
+          "Prison full": "Prison pleine",
+          "walks free": "repart libre",
           "holds": "tient",
-          "streak": "d'affilée"
-        }
+          "Basic": "Basique",
+          "Common": "Commun",
+          "Uncommon": "Peu commun",
+          "Rare": "Rare",
+          "Epic": "Épique",
+          "Legendary": "Légendaire",
+          "Infirmary": "Infirmerie",
+          "Prison": "Prison",
+          "Nobody wounded yet": "Aucun blessé",
+          "No prisoners yet": "Aucun prisonnier",
+          "No foe beaten yet": "Aucun ennemi vaincu",
+          "Tap to close": "Touche pour fermer",
+          "Enemy camp": "Camp ennemi",
+          "At the start of the battle": "Au début de la bataille",
+          "Your army": "Ton armée",
+          "Alive": "Vivants",
+          "Lost": "Perdus",
+          "No card lost yet": "Aucune carte perdue",
+          "Flag captured": "Drapeau pris",
+          "No wounds": "Aucune blessure",
+          "Prisoner taken": "Prisonnier fait",
+          "Unscathed": "Indemne",
+          "Straw man": "Homme de paille",
+          "Wooden fence": "Barrière de bois",
+          "Rock": "Rocher",
+          "Forest": "Forêt",
+          "Skull": "Crâne",
+          "Book": "Livre",
+          "Object": "Objet",
+          "Straw man!": "Homme de paille !",
+          "Fence!": "Barrière !",
+          "Rock!": "Rocher !",
+          "Lost in the forest": "Perdu en forêt",
+          "Stunned!": "Étourdi !",
+          "Bewitched!": "Ensorcelé !",
+          "Straw man torn": "Homme de paille déchiré",
+          "Fence chopped": "Barrière abattue",
+          "Rock smashed": "Rocher brisé",
+          "Forest crossed": "Forêt traversée",
+          "Skull shattered": "Crâne brisé",
+          "Book burnt": "Livre brûlé",
+          "Only a sergeant is too naive to fall for it": "Seul un sergent est trop naïf pour s'y laisser prendre",
+          "Only a lieutenant carries an axe": "Seul un lieutenant porte une hache",
+          "Only a captain carries a pickaxe": "Seul un capitaine porte une pioche",
+          "Only a major finds his way through": "Seul un major y trouve son chemin",
+          "Only a colonel is not afraid of it": "Seul un colonel n'en a pas peur",
+          "Only a general can never turn traitor": "Seul un général ne trahit jamais",
+          "Out of the battle": "Hors du combat",
+          "Stunned for the battle": "Étourdi pour la bataille",
+          "The spell finds no one": "Le sort ne trouve personne",
+          "An ally falls": "Un allié tombe",
+          "Struck down by an ally": "Abattu par un allié",
+          "An ally is wounded": "Un allié est blessé",
+          "Wounded by an ally": "Blessé par un allié",
+          "No card can move": "Plus aucune carte ne bouge"
+        },
+        "helpRules": [
+          "Chaque carte est un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le grade le plus haut gagne.",
+          "Grade égal ? Le meilleur <b>rang</b> l'emporte. Grade ET rang identiques : les deux tombent.",
+          "Gagner contre un meilleur rang <b>blesse</b> ta carte — elle saute un tour, puis part à l'infirmerie.",
+          "Battre une carte d'un rang inférieur au tien la laisse <b>debout</b> : une bataille gagnée te permet de faire un prisonnier.",
+          "L'<b>espion</b> tue le maréchal, le <b>sapeur</b> désamorce un piège, l'<b>éclaireur</b> révèle et revient. Les rangs n'y changent rien."
+        ]
+      },
+      "en": {
+        "helpRules": [
+          "Every card is a <b>grade</b> (1 to 10) and a <b>tier</b> (E to S). The higher grade wins.",
+          "Same grade? The better <b>tier</b> wins. Same grade AND same tier: both fall.",
+          "Win against a better tier and your card is <b>wounded</b> — it sits out a turn, then rests in the infirmary.",
+          "Beat a card with a better tier than its own and the enemy is left <b>standing</b>: a won battle lets you take one prisoner.",
+          "<b>Spy</b> kills the marshal, <b>sapper</b> clears a trap, <b>scout</b> reveals and comes back. Tiers change none of it."
+        ]
       }
     },
     "font": "russoone",
@@ -215,12 +475,12 @@
     "levels": {
       "objective": {
         "from": 700,
-        "to": 3000,
+        "to": 2700,
         "step": 50
       },
       "copy": {
-        "en": "Score <b>{n}</b> against the camp",
-        "fr": "Marque <b>{n}</b> contre le camp"
+        "en": "A star each: the <b>flag</b>, <b>no wounds</b>, a <b>prisoner</b>",
+        "fr": "Une étoile chacun : le <b>drapeau</b>, <b>aucune blessure</b>, un <b>prisonnier</b>"
       },
       "bands": {
         "from": [
@@ -248,7 +508,7 @@
       "tune": {
         "play.cols": [
           4,
-          8
+          6
         ],
         "play.rows": [
           3,
@@ -258,24 +518,28 @@
           0,
           5
         ],
-        "play.deckRatio": [
-          1.1,
-          0.6
+        "play.objects": [
+          1,
+          7
         ],
         "play.enemyBias": [
           -1,
           1.2
         ],
-        "play.deckBias": [
-          0.6,
-          -0.2
+        "play.enemyTier": [
+          0.05,
+          0.7
+        ],
+        "play.handSize": [
+          4,
+          5
         ]
       }
     },
     "meta": {
-      "coinsPer": 200,
+      "coinsPer": 100,
       "xpPer": 20,
-      "ticketPrice": 50,
+      "ticketPrice": 100,
       "awards": [
         1,
         4,
@@ -412,16 +676,13 @@
         {
           "art": "home02",
           "role": "album",
-          "x": 370,
+          "x": 360,
           "y": 370,
           "w": 170,
           "badge": {
             "dx": -0.2,
             "dy": -0.8
-          },
-          "notify": "alert",
-          "every": 9,
-          "delay": 2
+          }
         },
         {
           "art": "home04",
@@ -443,41 +704,69 @@
           "flip": true
         },
         {
-          "art": "home05",
-          "role": "decor",
-          "x": 112,
-          "y": 625,
+          "art": "empty",
+          "role": "play",
+          "x": 370,
+          "y": 580,
           "w": 200
+        },
+        {
+          "art": "home05",
+          "role": "infirmary",
+          "x": 110,
+          "y": 630,
+          "w": 210,
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#ff8a8a"
+          },
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.78
+          },
+          "notify": "breath",
+          "every": 5.5,
+          "delay": 1.4
         },
         {
           "art": "home08",
-          "role": "decor",
-          "x": 612,
-          "y": 640,
-          "w": 195
-        },
-        {
-          "art": "empty",
-          "role": "play",
-          "x": 360,
-          "y": 640,
-          "w": 200
+          "role": "prison",
+          "x": 610,
+          "y": 650,
+          "w": 195,
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#8b93a8"
+          },
+          "badge": {
+            "dx": -0.18,
+            "dy": -0.78
+          },
+          "light": "flicker",
+          "lightEvery": 2.8,
+          "lightDelay": 1.1
         },
         {
           "art": "home07",
-          "role": "decor",
+          "role": "deck",
           "x": 360,
-          "y": 800,
-          "w": 210,
-          "halo": {
-            "w": 0.9,
-            "h": 0.45,
-            "dy": 0.02,
-            "color": "#ff5c5c"
-          },
-          "light": "random",
-          "lightEvery": 7,
-          "always": true
+          "y": 770,
+          "w": 180,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 560,
+          "y": 890,
+          "w": 230
         },
         {
           "art": "home03",
@@ -485,13 +774,6 @@
           "x": 150,
           "y": 900,
           "w": 200
-        },
-        {
-          "art": "home01",
-          "role": "ranking",
-          "x": 560,
-          "y": 900,
-          "w": 220
         },
         {
           "art": "empty",
@@ -510,16 +792,21 @@
           "always": true
         },
         {
-          "art": "piece03",
-          "role": "daily",
-          "x": 370,
-          "y": 970,
-          "w": 80,
-          "badge": {
-            "dx": -0.45,
-            "dy": -0.7
+          "art": "home09",
+          "role": "recruit",
+          "x": 360,
+          "y": 980,
+          "w": 220,
+          "halo": {
+            "w": 0.6,
+            "h": 0.42,
+            "dy": 0.02,
+            "color": "#f2c14e"
           },
-          "notify": "alert"
+          "badge": {
+            "dx": -0.16,
+            "dy": -0.78
+          }
         },
         {
           "art": "empty",
@@ -539,15 +826,6 @@
           "always": true
         },
         {
-          "art": "decor04",
-          "role": "decor",
-          "x": 340,
-          "y": 1030,
-          "w": 80,
-          "notify": "breath",
-          "always": true
-        },
-        {
           "art": "empty",
           "role": "decor",
           "x": 526,
@@ -563,16 +841,1902 @@
           "lightEvery": 1,
           "lightDelay": 0.9,
           "always": true
+        },
+        {
+          "art": "decor04",
+          "role": "daily",
+          "x": 270,
+          "y": 1230,
+          "w": 80,
+          "badge": {
+            "dx": -0.4,
+            "dy": -0.9
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "piece03",
+          "role": "decor",
+          "x": 160,
+          "y": 1230,
+          "w": 80,
+          "notify": "breath",
+          "always": true
         }
       ],
       "life": {
         "cycle": {
-          "warm": "#ffd9a0",
-          "cold": "#1a2a5e",
+          "warm": "#ffcf8f",
+          "cold": "#66b1ec",
           "amount": 0.35,
-          "seconds": 150
+          "seconds": 90
         }
       }
+    },
+    "army": {
+      "deckSize": 14,
+      "infirmaryHours": 48,
+      "prisonHours": 120,
+      "infirmaryBeds": 6,
+      "prisonCells": 6,
+      "capturePick": 3,
+      "conscript": {
+        "r": 4,
+        "t": 0
+      },
+      "tiers": [
+        "E",
+        "D",
+        "C",
+        "B",
+        "A",
+        "S"
+      ],
+      "grades": [
+        {
+          "r": 1,
+          "name": "Spy",
+          "art": "cardBlueSpy",
+          "foe": "cardRedSpy"
+        },
+        {
+          "r": 2,
+          "name": "Scout",
+          "art": "cardBlueScout",
+          "foe": "cardRedScout"
+        },
+        {
+          "r": 3,
+          "name": "Sapper",
+          "art": "cardBlueSapper",
+          "foe": "cardRedSapper"
+        },
+        {
+          "r": 4,
+          "name": "Sergeant",
+          "art": "cardBlueSergeant",
+          "foe": "cardRedSergeant"
+        },
+        {
+          "r": 5,
+          "name": "Lieutenant",
+          "art": "cardBlueLieutenant",
+          "foe": "cardRedLieutenant"
+        },
+        {
+          "r": 6,
+          "name": "Captain",
+          "art": "cardBlueCaptain",
+          "foe": "cardRedCaptain"
+        },
+        {
+          "r": 7,
+          "name": "Major",
+          "art": "cardBlueMajor",
+          "foe": "cardRedMajor"
+        },
+        {
+          "r": 8,
+          "name": "Colonel",
+          "art": "cardBlueColonel",
+          "foe": "cardRedColonel"
+        },
+        {
+          "r": 9,
+          "name": "General",
+          "art": "cardBlueGeneral",
+          "foe": "cardRedGeneral"
+        },
+        {
+          "r": 10,
+          "name": "Marshal",
+          "art": "cardBlueMarshal",
+          "foe": "cardRedMarshal"
+        }
+      ],
+      "objects": [
+        {
+          "r": 12,
+          "name": "Flag",
+          "art": "piece03"
+        },
+        {
+          "r": 11,
+          "name": "Trap",
+          "art": "piece04"
+        },
+        {
+          "r": 13,
+          "name": "Straw man",
+          "art": "itemStraw"
+        },
+        {
+          "r": 14,
+          "name": "Wooden fence",
+          "art": "itemFence"
+        },
+        {
+          "r": 15,
+          "name": "Rock",
+          "art": "itemRock"
+        },
+        {
+          "r": 16,
+          "name": "Forest",
+          "art": "itemForest"
+        },
+        {
+          "r": 17,
+          "name": "Skull",
+          "art": "itemSkull"
+        },
+        {
+          "r": 18,
+          "name": "Book",
+          "art": "itemBook"
+        }
+      ],
+      "recruit": {
+        "slots": 3,
+        "refreshHours": 6,
+        "base": 90,
+        "gradeStep": 0.22,
+        "tierStep": 1.9
+      },
+      "start": [
+        {
+          "r": 10,
+          "t": 1,
+          "n": 1
+        },
+        {
+          "r": 9,
+          "t": 1,
+          "n": 1
+        },
+        {
+          "r": 8,
+          "t": 1,
+          "n": 1
+        },
+        {
+          "r": 7,
+          "t": 1,
+          "n": 2
+        },
+        {
+          "r": 6,
+          "t": 0,
+          "n": 3
+        },
+        {
+          "r": 5,
+          "t": 0,
+          "n": 3
+        },
+        {
+          "r": 4,
+          "t": 0,
+          "n": 3
+        },
+        {
+          "r": 3,
+          "t": 0,
+          "n": 1
+        },
+        {
+          "r": 2,
+          "t": 0,
+          "n": 2
+        },
+        {
+          "r": 1,
+          "t": 1,
+          "n": 1
+        }
+      ],
+      "cast": [
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 0,
+          "first": "Hugh",
+          "last": "Dunnit",
+          "age": 23,
+          "gender": "man",
+          "desc": "skinny young man with messy black hair, an oversized dark-blue hood slipping over his eyes, patched plain cloak, holding one small rusty dagger backwards, tiptoeing pose with a nervous grin",
+          "lore": {
+            "en": "A kitchen boy who read too many spy novels. He hides behind curtains that are far too short and has never once been spotted — mostly because nobody ever looks at him.",
+            "fr": "Un commis de cuisine qui a lu trop de romans d'espionnage. Il se cache derrière des rideaux bien trop courts et n'a jamais été repéré — surtout parce que personne ne le regarde jamais."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 1,
+          "first": "Mae",
+          "last": "Sterious",
+          "age": 29,
+          "gender": "woman",
+          "desc": "slim young woman with a short auburn bob, a dark-blue scarf over the lower half of her face, simple navy leather outfit, two plain daggers, crouched on one knee and winking",
+          "lore": {
+            "en": "Mae learned to vanish in a crowded market by stealing apples. Now she steals battle plans, and still leaves an apple core where they used to be.",
+            "fr": "Mae a appris à disparaître dans la foule d'un marché en volant des pommes. Aujourd'hui elle vole des plans de bataille, et laisse toujours un trognon à leur place."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 2,
+          "first": "Otto",
+          "last": "Sight",
+          "age": 34,
+          "gender": "man",
+          "desc": "lean man with slicked-back hair and a thin curled moustache, long dark-blue coat with a high collar, black half-mask, a slender short sword, sidestepping sneakily",
+          "lore": {
+            "en": "A master of disguise who owns forty false moustaches and one real one. Nobody, not even Otto, remembers which one it is.",
+            "fr": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne, pas même Otto, ne se souvient laquelle."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 3,
+          "first": "Nova",
+          "last": "Trace",
+          "age": 38,
+          "gender": "woman",
+          "desc": "athletic woman with a long black braid, hooded navy cloak with gold trim, fitted blue leather armour, two curved daggers, leaping forward with the cloak flaring",
+          "lore": {
+            "en": "Nova crosses enemy camps like smoke through a keyhole. Her reports are signed with a single gold thread, pulled from the cloak of whoever she just robbed.",
+            "fr": "Nova traverse les camps ennemis comme la fumée passe une serrure. Ses rapports sont signés d'un simple fil d'or, arraché à la cape de sa dernière victime."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 4,
+          "first": "Rob",
+          "last": "Emblind",
+          "age": 51,
+          "gender": "man",
+          "desc": "dashing man with grey temples and a sharp goatee, elegant black and navy leather coat with gold filigree, a gold-hilted rapier and a hidden wrist blade, bowing theatrically with a sly smile",
+          "lore": {
+            "en": "Once the king's pickpocket, now his most trusted blade. He has shaken the hand of every enemy Marshal — and counted his own rings afterwards.",
+            "fr": "Jadis pickpocket du roi, aujourd'hui sa lame la plus fidèle. Il a serré la main de tous les Maréchaux ennemis — et recompté ses bagues juste après."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 1,
+          "t": 5,
+          "first": "Shay",
+          "last": "Dough",
+          "age": 60,
+          "gender": "woman",
+          "desc": "elegant silver-haired woman, hooded navy cloak lined with gold constellations, jewelled blue mask, legendary sapphire dagger glowing blue, two ghostly translucent afterimages of herself behind her",
+          "lore": {
+            "en": "No portrait of Shay Dough exists, which is why this one is priceless. Legend says three Marshals fell to the same whisper: hers.",
+            "fr": "Il n'existe aucun portrait de Shay Dough, et c'est pourquoi celui-ci n'a pas de prix. La légende dit que trois Maréchaux sont tombés sous le même murmure : le sien."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 0,
+          "first": "Seymour",
+          "last": "Moore",
+          "age": 20,
+          "gender": "man",
+          "desc": "freckled young man in a blue tricorn far too big for him, simple blue tunic, a cheap wooden spyglass, standing on tiptoe on a small rock with his tongue out in concentration",
+          "lore": {
+            "en": "Seymour climbs every tree he meets to see what is behind it. Usually it is another tree. He writes them all down anyway.",
+            "fr": "Seymour grimpe à chaque arbre qu'il croise pour voir ce qu'il y a derrière. En général, un autre arbre. Il les note tous quand même."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 1,
+          "first": "Luke",
+          "last": "Out",
+          "age": 24,
+          "gender": "man",
+          "desc": "lanky young man with sandy hair, blue scarf, short bow on his back, holding a brass spyglass to one eye, balancing on one leg on a fence post",
+          "lore": {
+            "en": "His only job is to shout his own name. It took the army a whole week to understand he was warning them.",
+            "fr": "Son seul travail consiste à crier son propre nom. Il a fallu une semaine entière à l'armée pour comprendre qu'il la prévenait."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 2,
+          "first": "Ella",
+          "last": "Vation",
+          "age": 30,
+          "gender": "woman",
+          "desc": "sturdy woman with a red ponytail, blue feathered tricorn, rope coiled over her shoulder, a climbing hook on her belt, peering through a brass telescope",
+          "lore": {
+            "en": "Ella has never met a cliff she could not climb or a map she could not correct. She sleeps on the highest point of every camp, for the view.",
+            "fr": "Ella n'a jamais croisé de falaise qu'elle ne pouvait escalader, ni de carte qu'elle ne pouvait corriger. Elle dort sur le point le plus haut de chaque camp, pour la vue."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 3,
+          "first": "Wanda",
+          "last": "Far",
+          "age": 35,
+          "gender": "woman",
+          "desc": "tall dark-skinned woman with short curly hair, long blue ranger coat with gold trim, a long brass telescope, a hawk perched on her leather glove",
+          "lore": {
+            "en": "Wanda and her hawk Pip see everything within three valleys. Pip does the looking; Wanda takes the credit, and shares the sausages.",
+            "fr": "Wanda et son faucon Pip voient tout à trois vallées à la ronde. Pip regarde, Wanda prend le mérite et partage les saucisses."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 4,
+          "first": "Rick",
+          "last": "Onnaissance",
+          "age": 44,
+          "gender": "man",
+          "desc": "weathered bearded man with an eyepatch pushed up on his forehead, ornate blue and gold scout uniform, a map case, kneeling on a rock and pointing ahead with an engraved folding spyglass",
+          "lore": {
+            "en": "Rick has scouted every border of the kingdom twice, the second time to check the first. He can tell a trap from a pebble by the way it sits.",
+            "fr": "Rick a exploré chaque frontière du royaume deux fois, la seconde pour vérifier la première. Il distingue un piège d'un caillou rien qu'à la façon dont il est posé."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 2,
+          "t": 5,
+          "first": "Clara",
+          "last": "Voyant",
+          "age": 67,
+          "gender": "woman",
+          "desc": "elderly woman with long white hair braided with blue ribbons, a monocle glowing blue, flowing blue and gold cape, a legendary golden spyglass with a crystal lens, a small owl on her shoulder",
+          "lore": {
+            "en": "They say Clara Voyant can read a card before it is turned. She says she simply pays attention — then winks with the eye behind the glowing lens.",
+            "fr": "On dit que Clara Voyant lit une carte avant qu'elle soit retournée. Elle répond qu'elle fait juste attention — puis cligne de l'œil derrière sa lentille lumineuse."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 0,
+          "first": "Dinah",
+          "last": "Mite",
+          "age": 22,
+          "gender": "woman",
+          "desc": "young woman with a soot-smudged face and singed brown pigtails, an oversized blue helmet, holding pliers in one hand and a smoking fuse she has not noticed in the other, wide-eyed",
+          "lore": {
+            "en": "Dinah defuses traps by asking them nicely first. It has worked once. Her eyebrows are still growing back.",
+            "fr": "Dinah désamorce les pièges en leur demandant gentiment d'abord. Ça a marché une fois. Ses sourcils sont encore en train de repousser."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 1,
+          "first": "Justin",
+          "last": "Case",
+          "age": 31,
+          "gender": "man",
+          "desc": "stocky man with round spectacles, blue tricorn with brass goggles strapped on it, a huge backpack full of tools, carefully snipping a wire on a small round mine with pliers",
+          "lore": {
+            "en": "Justin carries a spare of everything, just in case. His backpack weighs more than he does, and it has saved the regiment eleven times.",
+            "fr": "Justin emporte un double de tout, au cas où. Son sac pèse plus lourd que lui, et il a sauvé le régiment onze fois."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 2,
+          "first": "Kay",
+          "last": "Boom",
+          "age": 33,
+          "gender": "woman",
+          "desc": "strong woman with black hair tied up in a blue bandana, leather apron with many pouches, a pickaxe on her back, holding a defused round bomb up triumphantly",
+          "lore": {
+            "en": "Kay can hear a buried trap tick from twenty paces. She disarms it, keeps the powder, and uses it to light the regiment's birthday cakes.",
+            "fr": "Kay entend un piège enterré faire tic-tac à vingt pas. Elle le désamorce, garde la poudre et s'en sert pour allumer les gâteaux d'anniversaire du régiment."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 3,
+          "first": "Sol",
+          "last": "Dering",
+          "age": 39,
+          "gender": "man",
+          "desc": "brown-haired man in a blue tricorn with a white feather, heavy backpack with a lantern and rope, crouching over a mine with pliers in one hand and a bundle of dynamite in the other",
+          "lore": {
+            "en": "Sol has defused three hundred traps and built four hundred, for practice. He talks to every fuse he cuts, and none has ever answered back.",
+            "fr": "Sol a désamorcé trois cents pièges et en a fabriqué quatre cents, pour s'entraîner. Il parle à chaque mèche qu'il coupe, et aucune ne lui a jamais répondu."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 4,
+          "first": "Mina",
+          "last": "Field",
+          "age": 47,
+          "gender": "woman",
+          "desc": "mature woman with short grey-streaked hair and a small burn scar on her cheek, heavy blue and gold armoured apron, brass goggles, holding an ornate defusing kit and a mine-detecting rod",
+          "lore": {
+            "en": "Mina walks through minefields humming, and the minefields go quiet. The engineers swear that is not how it works. Mina swears it is.",
+            "fr": "Mina traverse les champs de mines en fredonnant, et les mines se taisent. Les ingénieurs jurent que ça ne marche pas comme ça. Mina jure que si."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 3,
+          "t": 5,
+          "first": "Gus",
+          "last": "Powder",
+          "age": 72,
+          "gender": "man",
+          "desc": "old man with a huge white moustache and round cracked goggles, legendary golden armoured sapper suit with blue plates, cradling a glowing blue bomb like a pet, sparks dancing around him",
+          "lore": {
+            "en": "Gus has been blown up so many times that the bombs now respect him. At seventy-two he defuses traps with his eyes shut, and often does, during his nap.",
+            "fr": "Gus a sauté tant de fois que les bombes le respectent désormais. À soixante-douze ans, il désamorce les pièges les yeux fermés, et souvent pendant sa sieste."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 0,
+          "first": "Hugo",
+          "last": "First",
+          "age": 21,
+          "gender": "man",
+          "desc": "round-faced young man in a blue tricorn too big for him, a wooden practice sword and a dented plain shield, marching with his knees high and an earnest grin",
+          "lore": {
+            "en": "Hugo believes everything he is told, except scarecrows. A scarecrow is a man made of straw, and Hugo does not believe in men made of straw.",
+            "fr": "Hugo croit tout ce qu'on lui dit, sauf aux épouvantails. Un épouvantail est un homme en paille, et Hugo ne croit pas aux hommes en paille."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 1,
+          "first": "Marcia",
+          "last": "Long",
+          "age": 26,
+          "gender": "woman",
+          "desc": "tall young woman with a blonde braid, blue tunic, a round shield with a gold lion, short sword raised, shouting a battle cry mid-stride",
+          "lore": {
+            "en": "Marcia marches in a straight line, whatever is in the way. Usually it is a straw man, and usually it loses.",
+            "fr": "Marcia marche en ligne droite, quoi qu'il y ait devant elle. En général, c'est un homme de paille, et en général il perd."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 2,
+          "first": "Hal",
+          "last": "Berd",
+          "age": 33,
+          "gender": "man",
+          "desc": "broad-shouldered man with black hair under a blue tricorn, a halberd in one hand and a lion shield in the other, a torn straw dummy at his feet",
+          "lore": {
+            "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half — out of principle.",
+            "fr": "Hal a passé une nuit entière à surveiller un homme de paille en attendant qu'il bouge le premier. À l'aube, il l'a coupé en deux — par principe."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 3,
+          "first": "Frank",
+          "last": "Lee",
+          "age": 37,
+          "gender": "man",
+          "desc": "cheerful blond man in a blue tricorn with a white feather, blue cape with a gold lion, a raised steel sword and a lion shield, big confident smile",
+          "lore": {
+            "en": "Frank Lee says exactly what he thinks, and what he thinks is \"charge\". His honesty is so complete that no decoy has ever fooled him.",
+            "fr": "Frank Lee dit exactement ce qu'il pense, et ce qu'il pense, c'est « chargez ». Son honnêteté est si totale qu'aucun leurre ne l'a jamais trompé."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 4,
+          "first": "Sal",
+          "last": "Ute",
+          "age": 46,
+          "gender": "woman",
+          "desc": "muscular woman with cropped grey hair and a square jaw, polished blue and gold breastplate, a sergeant's baton and a sword, standing at attention and saluting",
+          "lore": {
+            "en": "Sergeant Sal Ute has shouted at three generations of recruits. They all complain, and they all come home.",
+            "fr": "Le sergent Sal Ute a hurlé sur trois générations de recrues. Elles s'en plaignent toutes, et elles rentrent toutes à la maison."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 4,
+          "t": 5,
+          "first": "Stan",
+          "last": "Firm",
+          "age": 70,
+          "gender": "man",
+          "desc": "burly old man with a huge white beard and an eyepatch, gleaming legendary golden armour with a blue lion cape, a giant greatsword planted in the ground, shredded straw dummies around his boots",
+          "lore": {
+            "en": "Fifty years a sergeant, and proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
+            "fr": "Cinquante ans sergent, et fier de n'avoir jamais été promu. Stan Firm a abattu plus d'hommes de paille qu'il n'y a de champs dans le royaume."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 0,
+          "first": "Tim",
+          "last": "Burr",
+          "age": 22,
+          "gender": "man",
+          "desc": "skinny young man with messy black hair, plain blue tunic, a small hatchet, chopping at a wooden plank with a determined frown",
+          "lore": {
+            "en": "Tim was a woodcutter's son who joined up to escape the woodcutting. The army handed him an axe on the very first day.",
+            "fr": "Tim était fils de bûcheron et s'est engagé pour échapper au bois. L'armée lui a tendu une hache dès le premier jour."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 1,
+          "first": "Axel",
+          "last": "Rhodes",
+          "age": 27,
+          "gender": "man",
+          "desc": "cocky young man with spiky brown hair and a blue tricorn, an axe resting on his shoulder, smirking with one boot on a broken fence",
+          "lore": {
+            "en": "Axel says the shortest road goes through the fence. He has not used a gate since he was nine.",
+            "fr": "Axel dit que le plus court chemin passe par la palissade. Il n'a plus franchi un portail depuis ses neuf ans."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 2,
+          "first": "Holly",
+          "last": "Wood",
+          "age": 31,
+          "gender": "woman",
+          "desc": "woman with black hair in a bun, blue officer coat with gold buttons, swinging a curved battle axe, splinters of wood flying around",
+          "lore": {
+            "en": "Holly can fell a palisade in three strokes and rebuild it in four. She calls it redecorating the enemy camp.",
+            "fr": "Holly abat une palissade en trois coups et la reconstruit en quatre. Elle appelle ça redécorer le camp ennemi."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 3,
+          "first": "Buck",
+          "last": "Saw",
+          "age": 36,
+          "gender": "man",
+          "desc": "grinning black-haired man in a blue tricorn with a white plume, blue lion cape, holding a heavy double-bitted axe high above his head",
+          "lore": {
+            "en": "Buck has never met a wooden wall he liked. He knocks politely on every barrier — once, with the axe.",
+            "fr": "Buck n'a jamais aimé un mur de bois. Il frappe poliment à chaque barrière — une fois, avec la hache."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 4,
+          "first": "Hattie",
+          "last": "Chet",
+          "age": 49,
+          "gender": "woman",
+          "desc": "sturdy freckled woman with braided red hair, ornate blue and gold officer coat, a hand axe in each hand, wood chips swirling around her",
+          "lore": {
+            "en": "Hattie throws axes the way other officers throw orders: fast, straight, and at whatever is in the way. Wooden walls have learned to fear her whistle.",
+            "fr": "Hattie lance les haches comme d'autres officiers lancent des ordres : vite, droit, et sur tout ce qui gêne. Les murs de bois ont appris à craindre son sifflet."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 5,
+          "t": 5,
+          "first": "Ash",
+          "last": "Cleaver",
+          "age": 64,
+          "gender": "man",
+          "desc": "older man with a long grey braided beard, legendary golden armour with a blue cape, a massive rune-engraved axe glowing blue, a splintered wooden gate behind him",
+          "lore": {
+            "en": "Ash Cleaver once split a fortress gate with a single swing and apologised to the carpenter. His axe has a name, a pension and a tent of its own.",
+            "fr": "Ash Cleaver a fendu la porte d'une forteresse d'un seul coup, puis s'est excusé auprès du charpentier. Sa hache a un nom, une pension et sa propre tente."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 0,
+          "first": "Doug",
+          "last": "Hole",
+          "age": 23,
+          "gender": "man",
+          "desc": "chubby young man with a dirty face and a plain blue cap, a small pickaxe, sitting on a boulder he failed to break, sweating",
+          "lore": {
+            "en": "Doug was made a captain because he could dig a trench faster than anyone. Nobody told him captains stop digging.",
+            "fr": "Doug a été nommé capitaine parce qu'il creusait une tranchée plus vite que tout le monde. Personne ne lui a dit que les capitaines arrêtent de creuser."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 1,
+          "first": "Gemma",
+          "last": "Stone",
+          "age": 28,
+          "gender": "woman",
+          "desc": "young woman with a brown ponytail, blue captain's coat, a lantern on her belt, cracking a boulder with a miner's pickaxe",
+          "lore": {
+            "en": "Gemma grew up in the mines under the capital. She finds the weak line in any rock by tapping it twice and listening.",
+            "fr": "Gemma a grandi dans les mines sous la capitale. Elle trouve la faille de n'importe quel rocher en le tapotant deux fois et en écoutant."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 2,
+          "first": "Cliff",
+          "last": "Hanger",
+          "age": 34,
+          "gender": "man",
+          "desc": "rugged stubbled man with his blue coat sleeves rolled up, a heavy pickaxe raised overhead, rock shards flying",
+          "lore": {
+            "en": "Cliff has split boulders, cliffs and one very stubborn statue of a general. He keeps a pebble from each in his pockets, which is why he clinks.",
+            "fr": "Cliff a fendu des rochers, des falaises et une statue de général très têtue. Il garde un caillou de chacun dans ses poches, c'est pour ça qu'il tinte."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 3,
+          "first": "Rocco",
+          "last": "Rubble",
+          "age": 42,
+          "gender": "man",
+          "desc": "bald burly man with a thick beard, blue tricorn, broad chest in a blue coat with a lion cape, a giant pickaxe on his shoulder",
+          "lore": {
+            "en": "Rocco walks through rocks, not around them. The quartermaster gave up ordering him new pickaxes; now he orders new rocks, for practice.",
+            "fr": "Rocco passe à travers les rochers, pas autour. L'intendant a renoncé à lui commander des pioches ; il commande des rochers, pour l'entraînement."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 4,
+          "first": "Flint",
+          "last": "Eastwood",
+          "age": 51,
+          "gender": "man",
+          "desc": "tall weathered man squinting, grey stubble, long blue duster coat with gold trim, a pickaxe slung over his back like a rifle, chewing a piece of straw",
+          "lore": {
+            "en": "Flint Eastwood speaks four words a day and wastes none of them. The rocks hear \"move\", and somehow they do.",
+            "fr": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « bouge », et bizarrement, ils bougent."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 6,
+          "t": 5,
+          "first": "Gran",
+          "last": "Knight",
+          "age": 78,
+          "gender": "woman",
+          "desc": "tiny elderly woman with a white bun and round glasses, legendary golden captain's armour with a blue cape, a huge crystal-headed pickaxe twice her size glowing blue, a boulder cracked in half behind her",
+          "lore": {
+            "en": "Captain Gran Knight has broken mountains since before the war had a name. She is small, she is ancient, and no rock in the kingdom dares to stand in her way.",
+            "fr": "La capitaine Gran Knight brise des montagnes depuis avant que la guerre ait un nom. Elle est petite, elle est très vieille, et aucun rocher du royaume n'ose se mettre en travers de sa route."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 0,
+          "first": "Wayne",
+          "last": "Dering",
+          "age": 24,
+          "gender": "man",
+          "desc": "confused young man with leaves in his hair, plain blue coat, holding a map upside down and a cheap brass compass",
+          "lore": {
+            "en": "Wayne holds his map upside down and still finds the way. The forest has never understood how, and neither has Wayne.",
+            "fr": "Wayne tient sa carte à l'envers et trouve quand même son chemin. La forêt n'a jamais compris comment, et Wayne non plus."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 1,
+          "first": "Tracy",
+          "last": "Path",
+          "age": 29,
+          "gender": "woman",
+          "desc": "young woman with short black hair, blue major's coat, a brass compass on a chain, a walking stick, striding confidently through ferns",
+          "lore": {
+            "en": "Tracy leaves chalk arrows on every tree she passes. Enemy scouts follow them for hours and end up right back in her camp.",
+            "fr": "Tracy trace des flèches à la craie sur chaque arbre qu'elle croise. Les éclaireurs ennemis les suivent pendant des heures et finissent dans son camp."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 2,
+          "first": "Miles",
+          "last": "Walker",
+          "age": 35,
+          "gender": "man",
+          "desc": "fit man with an auburn beard, blue coat, a backpack stuffed with rolled maps, holding a big brass compass and pointing ahead",
+          "lore": {
+            "en": "Miles has walked every road of the kingdom and most of the ones that are not there. In a forest he is never lost; the forest is.",
+            "fr": "Miles a parcouru toutes les routes du royaume, et la plupart de celles qui n'existent pas. Dans une forêt, ce n'est jamais lui qui est perdu : c'est la forêt."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 3,
+          "first": "Hector",
+          "last": "Vane",
+          "age": 55,
+          "gender": "man",
+          "desc": "older man with white hair and a neat white beard, blue major's uniform with gold, a large ornate compass in one hand, a sword at his hip, calm smile",
+          "lore": {
+            "en": "Major Hector Vane has never been lost, although he once misplaced a regiment for a weekend. They were found exactly where he had left them.",
+            "fr": "Le major Hector Vane ne s'est jamais perdu, même s'il a égaré un régiment le temps d'un week-end. On l'a retrouvé exactement là où il l'avait laissé."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 4,
+          "first": "Rosa",
+          "last": "Winds",
+          "age": 47,
+          "gender": "woman",
+          "desc": "elegant woman with long dark wavy hair, blue and gold major's coat with a compass-rose brooch, holding a golden compass, cape swirling as if in the wind",
+          "lore": {
+            "en": "Rosa Winds reads the sky, the moss and the ants, and the forest opens like a book. She has led armies through woods that were on no map.",
+            "fr": "Rosa Winds lit le ciel, la mousse et les fourmis, et la forêt s'ouvre comme un livre. Elle a guidé des armées dans des bois qui n'étaient sur aucune carte."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 7,
+          "t": 5,
+          "first": "Magnus",
+          "last": "North",
+          "age": 82,
+          "gender": "man",
+          "desc": "very old man with a white beard down to his belt, cloak of blue and gold embroidered with a star map, a legendary golden compass floating and glowing above his palm, a staff topped with a star",
+          "lore": {
+            "en": "Magnus North is said to have drawn the first map of the world, then walked it to check. At eighty-two, the forests still part before him out of respect.",
+            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. À quatre-vingt-deux ans, les forêts s'écartent encore devant lui par respect."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 0,
+          "first": "Knox",
+          "last": "Hardy",
+          "age": 22,
+          "gender": "man",
+          "desc": "scrappy young man with bandaged knuckles and a bruised cheek, blue coat with torn sleeves, fists raised in a boxing stance, grinning",
+          "lore": {
+            "en": "Knox has lost every fight he ever started, and started every fight he ever saw. He is not brave; he simply never learned to be afraid.",
+            "fr": "Knox a perdu toutes les bagarres qu'il a commencées, et commencé toutes celles qu'il a vues. Il n'est pas courageux : il n'a juste jamais appris à avoir peur."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 1,
+          "first": "Val",
+          "last": "Ore",
+          "age": 27,
+          "gender": "woman",
+          "desc": "young woman with short platinum hair, blue colonel's coat, brass knuckle gauntlets, fierce stare, one boot resting on a cracked skull",
+          "lore": {
+            "en": "Val Ore was dared to spend a night in the haunted crypt. She came out at dawn with the ghost's hat and a strongly worded complaint.",
+            "fr": "On a mis Val Ore au défi de passer une nuit dans la crypte hantée. Elle en est sortie à l'aube avec le chapeau du fantôme et une réclamation bien sentie."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 2,
+          "first": "Duke",
+          "last": "Upps",
+          "age": 34,
+          "gender": "man",
+          "desc": "burly man with a broken nose and curly dark hair, blue coat, steel gauntlets, cracking his knuckles with a confident smirk",
+          "lore": {
+            "en": "Colonel Duke Upps settles every argument with one punch, then apologises politely. Skulls, bones and curses do not scare him; paperwork does.",
+            "fr": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas ; la paperasse, si."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 3,
+          "first": "Lionel",
+          "last": "Hart",
+          "age": 44,
+          "gender": "man",
+          "desc": "long brown-haired man with a full beard, blue colonel's uniform with gold, a lion banner in one hand and an armoured gauntlet fist raised in the other",
+          "lore": {
+            "en": "Lionel Hart has walked into the Skull Pass five times, whistling all the way. The skulls rattle; Lionel rattles back.",
+            "fr": "Lionel Hart est entré cinq fois dans le col des Crânes en sifflotant tout du long. Les crânes claquent des dents ; Lionel leur claque des dents en retour."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 4,
+          "first": "Mae",
+          "last": "Hem",
+          "age": 52,
+          "gender": "woman",
+          "desc": "tall muscular woman with a grey mohawk and a scar across one eye, blue and gold armoured colonel, massive gauntlets, shattering a skull with a punch",
+          "lore": {
+            "en": "Mae Hem once punched a cursed skull so hard it apologised. Her regiment follows her anywhere, mostly to see what she will hit next.",
+            "fr": "Mae Hem a frappé un crâne maudit si fort qu'il s'est excusé. Son régiment la suit partout, surtout pour voir ce qu'elle va frapper ensuite."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 8,
+          "t": 5,
+          "first": "Noah",
+          "last": "Fear",
+          "age": 69,
+          "gender": "man",
+          "desc": "gigantic old man, bald with a braided white beard, legendary golden gauntlets glowing blue, blue lion cape, arms crossed, broken skulls at his feet",
+          "lore": {
+            "en": "Noah Fear has never been afraid of anything, dragons, ghosts and his mother-in-law included. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
+            "fr": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, ni de sa belle-mère. À soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 0,
+          "first": "Constance",
+          "last": "Faith",
+          "age": 24,
+          "gender": "woman",
+          "desc": "earnest young woman with a neat brown bun, a blue general's coat too big for her, clutching a small padlocked book to her chest",
+          "lore": {
+            "en": "Constance swore her oath on a book with a lock, then lost the key. She has kept every promise since, just to be safe.",
+            "fr": "Constance a prêté serment sur un livre à cadenas, puis en a perdu la clé. Depuis, elle tient toutes ses promesses, par précaution."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 1,
+          "first": "Keith",
+          "last": "Keeper",
+          "age": 31,
+          "gender": "man",
+          "desc": "young man with glasses and neatly parted hair, blue general's coat, a heavy book chained to his wrist, a ring of keys on his belt",
+          "lore": {
+            "en": "Keith guards the army's secret orders in a book chained to his wrist. He sleeps with it, eats with it, and once swam a river with it.",
+            "fr": "Keith garde les ordres secrets de l'armée dans un livre enchaîné à son poignet. Il dort avec, mange avec, et a même traversé une rivière à la nage avec."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 2,
+          "first": "Faye",
+          "last": "Thful",
+          "age": 38,
+          "gender": "woman",
+          "desc": "calm woman with short silver-blonde hair, blue general's coat, a sword and a padlocked leather tome on her belt, one hand on her heart",
+          "lore": {
+            "en": "Faye Thful has been offered gold, castles and a very nice horse to betray the crown. She kept the horse's apple and refused the rest.",
+            "fr": "On a offert à Faye Thful de l'or, des châteaux et un très beau cheval pour trahir la couronne. Elle a gardé la pomme du cheval et refusé le reste."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 3,
+          "first": "Ruby",
+          "last": "Pledge",
+          "age": 43,
+          "gender": "woman",
+          "desc": "woman with long curly red hair, blue tricorn with a white plume, sword raised, a padlocked golden book at her hip, confident smile",
+          "lore": {
+            "en": "Ruby Pledge's word is worth more than the royal treasury, and the treasury knows it. Enemy spies have tried every lie on her; she writes them all down and locks the book.",
+            "fr": "La parole de Ruby Pledge vaut plus que le trésor royal, et le trésor le sait. Les espions ennemis ont tout essayé ; elle note chaque mensonge et verrouille le livre."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 4,
+          "first": "Sterling",
+          "last": "True",
+          "age": 57,
+          "gender": "man",
+          "desc": "distinguished man with silver hair and a neat moustache, ornate blue and gold general's uniform with medals, a large book sealed with a gold padlock, his hand resting on it",
+          "lore": {
+            "en": "General Sterling True has never told a lie, not even to be polite. His locked book holds the kingdom's greatest secret, and he forgot the combination on purpose.",
+            "fr": "Le général Sterling True n'a jamais menti, même par politesse. Son livre verrouillé garde le plus grand secret du royaume, et il en a oublié la combinaison exprès."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 9,
+          "t": 5,
+          "first": "Verity",
+          "last": "Bond",
+          "age": 85,
+          "gender": "woman",
+          "desc": "very old dignified woman with silver hair in a crown braid, legendary golden general's armour with a blue mantle, a glowing book floating beside her, bound by golden chains and a padlock",
+          "lore": {
+            "en": "Verity Bond has served five kings and betrayed none of them, not even the unbearable one. The book she guards is locked by her word alone, and it has never opened.",
+            "fr": "Verity Bond a servi cinq rois et n'en a trahi aucun, pas même l'insupportable. Le livre qu'elle garde n'est fermé que par sa parole, et il ne s'est jamais ouvert."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 0,
+          "first": "Kingsley",
+          "last": "Small",
+          "age": 20,
+          "gender": "man",
+          "desc": "very young man with an oversized golden crown slipping over his eyes, blue marshal's coat with sleeves too long, a wooden baton, puffing out his chest",
+          "lore": {
+            "en": "Kingsley was made Marshal because his grandmother was one. He is still growing into the crown, into the coat, and into the job.",
+            "fr": "Kingsley a été nommé Maréchal parce que sa grand-mère l'était. Il grandit encore pour remplir la couronne, le manteau et le poste."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 1,
+          "first": "Regina",
+          "last": "Royce",
+          "age": 27,
+          "gender": "woman",
+          "desc": "young woman with blonde curls and a small crown, blue marshal's coat with gold braid, a marshal's baton, hand on her hip in a commanding pose",
+          "lore": {
+            "en": "Regina gives orders so confidently that people obey before they notice she is not their officer. Sometimes she is not even in the army.",
+            "fr": "Regina donne des ordres avec une telle assurance qu'on obéit avant de remarquer qu'elle n'est pas notre officier. Parfois, elle n'est même pas dans l'armée."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 2,
+          "first": "Max",
+          "last": "Power",
+          "age": 36,
+          "gender": "man",
+          "desc": "muscular man with slicked-back black hair and a gold circlet, blue marshal's greatcoat, sword raised as he leads a charge",
+          "lore": {
+            "en": "Max Power believes every problem can be solved with a louder speech. He is right more often than the generals would like to admit.",
+            "fr": "Max Power pense que tout problème se règle avec un discours plus fort. Il a raison plus souvent que les généraux ne voudraient l'admettre."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 3,
+          "first": "Victor",
+          "last": "Ious",
+          "age": 41,
+          "gender": "man",
+          "desc": "slender blond man with a small golden crown, white and blue marshal's coat with gold epaulettes, pointing forward with a golden baton, noble expression",
+          "lore": {
+            "en": "Marshal Victor Ious has won so many battles that he now loses the odd game of cards on purpose, to stay humble. It does not work.",
+            "fr": "Le maréchal Victor Ious a gagné tant de batailles qu'il perd exprès quelques parties de cartes pour rester humble. Ça ne marche pas."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 4,
+          "first": "Reigna",
+          "last": "Supreme",
+          "age": 55,
+          "gender": "woman",
+          "desc": "regal woman with long dark hair streaked with grey, tall golden crown set with sapphires, blue and gold ceremonial armour, ermine-trimmed cape, marshal's baton raised",
+          "lore": {
+            "en": "Reigna Supreme commands from the front, crown on and cape dragging in the mud. She says a crown that has never been dented is just a hat.",
+            "fr": "Reigna Supreme commande en première ligne, couronne sur la tête et cape traînant dans la boue. Elle dit qu'une couronne jamais cabossée n'est qu'un chapeau."
+          }
+        },
+        {
+          "side": "blue",
+          "r": 10,
+          "t": 5,
+          "first": "Rex",
+          "last": "Maximus",
+          "age": 88,
+          "gender": "man",
+          "desc": "very old king-like man with long white hair and beard, legendary giant golden crown glowing, blue and gold royal armour, ermine cape, a golden lion sceptre, a spectral golden lion behind him",
+          "lore": {
+            "en": "Rex Maximus has led the blue army for sixty years and lost only to his grandchildren, at chess. Where his crown shines, the whole army stands a little straighter.",
+            "fr": "Rex Maximus mène l'armée bleue depuis soixante ans et n'a perdu que contre ses petits-enfants, aux échecs. Là où brille sa couronne, toute l'armée se tient un peu plus droite."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 0,
+          "first": "Ima",
+          "last": "Lurker",
+          "age": 21,
+          "gender": "female",
+          "desc": "tiny scrawny imp girl with big red eyes, an oversized red hood swallowing her, a tiny rusty dagger, peeking out from behind her own cape",
+          "lore": {
+            "en": "Ima is so small she hides inside her own hood. The camp sends her to steal secrets; so far she has stolen three spoons and a sock.",
+            "fr": "Ima est si petite qu'elle se cache dans sa propre capuche. Le camp l'envoie voler des secrets ; pour l'instant, elle a volé trois cuillères et une chaussette."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 1,
+          "first": "Mort",
+          "last": "Tally",
+          "age": 26,
+          "gender": "male",
+          "desc": "lean imp with spiky black hair and a red scarf mask, simple black leather, two jagged daggers, crouched on top of a crate",
+          "lore": {
+            "en": "Mort keeps a tally of every tent he has sneaked into, scratched on his own dagger. The dagger is getting shorter.",
+            "fr": "Mort compte chaque tente où il s'est faufilé en gravant une encoche sur sa dague. La dague raccourcit."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 2,
+          "first": "Vi",
+          "last": "Perr",
+          "age": 33,
+          "gender": "female",
+          "desc": "slender dark-elf woman with a long red ponytail, black and red leather, a curved dagger dripping green poison, a grin with too many fangs",
+          "lore": {
+            "en": "Vi Perr smiles with too many teeth and whispers with a forked tongue. Nobody in the camp trusts her, which she takes as a compliment.",
+            "fr": "Vi Perr sourit avec trop de dents et chuchote avec une langue fourchue. Personne au camp ne lui fait confiance, ce qu'elle prend pour un compliment."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 3,
+          "first": "Hal",
+          "last": "O'Ween",
+          "age": 39,
+          "gender": "male",
+          "desc": "hooded imp whose red eyes glow in the shadow of a black and red hood, crimson face mask, twin serrated daggers, lunging from a crouch",
+          "lore": {
+            "en": "Hal O'Ween only works at night, and only on the darkest ones. He has slipped into three blue camps without leaving a footprint — or a pumpkin.",
+            "fr": "Hal O'Ween ne travaille que la nuit, et seulement les plus noires. Il s'est glissé dans trois camps bleus sans laisser une empreinte — ni une citrouille."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 4,
+          "first": "Bella",
+          "last": "Donna",
+          "age": 52,
+          "gender": "female",
+          "desc": "elegant dark-elf woman with white hair in a sharp bob, ornate black and red assassin armour with gold filigree, poison vials on her belt, twin golden daggers, sly smile",
+          "lore": {
+            "en": "Bella Donna poisons with charm first and daggers second. Her invitations to tea are the most feared letters in the blue army.",
+            "fr": "Bella Donna empoisonne d'abord avec son charme, ensuite avec ses dagues. Ses invitations à prendre le thé sont les lettres les plus redoutées de l'armée bleue."
+          }
+        },
+        {
+          "side": "red",
+          "r": 1,
+          "t": 5,
+          "first": "Mortimer",
+          "last": "Dread",
+          "age": 78,
+          "gender": "male",
+          "desc": "ancient hunched imp with a long white beard, legendary black and gold cloak dissolving into smoke, a glowing crimson dagger, burning red eyes, ghostly shadow hands curling around him",
+          "lore": {
+            "en": "Mortimer Dread has been dead once and found it boring. The blue Marshals sleep with a candle lit, because his shadow is the one thing a crown cannot outrank.",
+            "fr": "Mortimer Dread est déjà mort une fois et a trouvé ça ennuyeux. Les Maréchaux bleus dorment avec une bougie allumée, car son ombre est la seule chose qu'une couronne ne commande pas."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 0,
+          "first": "Iris",
+          "last": "Squint",
+          "age": 20,
+          "gender": "female",
+          "desc": "tiny imp girl squinting one huge red eye through a cracked red monocle, oversized red cap, holding a spyglass made from a cardboard tube",
+          "lore": {
+            "en": "Iris squints so hard at the enemy that she gives herself headaches. She once reported an army that turned out to be a row of mushrooms.",
+            "fr": "Iris plisse tellement les yeux vers l'ennemi qu'elle s'en donne la migraine. Elle a un jour signalé une armée qui s'est révélée être une rangée de champignons."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 1,
+          "first": "Ogle",
+          "last": "Thorne",
+          "age": 25,
+          "gender": "male",
+          "desc": "gangly goblin-like imp with huge ears, red hood, short bow on his back, standing on tiptoe on a dead stump with a hand shading his eyes",
+          "lore": {
+            "en": "Ogle's ears are even better than his eyes. He hears the blue army's boots a league away, and their snoring from two.",
+            "fr": "Les oreilles d'Ogle sont encore meilleures que ses yeux. Il entend les bottes de l'armée bleue à une lieue, et ses ronflements à deux."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 2,
+          "first": "Raven",
+          "last": "Crowley",
+          "age": 31,
+          "gender": "female",
+          "desc": "dark-elf woman with black feathered hair, red cloak trimmed with crow feathers, a spyglass carved from bone, a crow perched on her shoulder",
+          "lore": {
+            "en": "Raven's crows fly over the blue camp every morning and gossip to her every evening. She knows who snores, who cheats at cards and where the traps are.",
+            "fr": "Les corbeaux de Raven survolent le camp bleu chaque matin et lui racontent tout chaque soir. Elle sait qui ronfle, qui triche aux cartes et où sont les pièges."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 3,
+          "first": "Bo",
+          "last": "Stringer",
+          "age": 40,
+          "gender": "male",
+          "desc": "imp with a huge red feather crest, red and gold light armour, drawing a jagged longbow, glowing red eyes taking aim",
+          "lore": {
+            "en": "Bo Stringer can put an arrow through a keyhole and read the letter on the other side. He never shoots first; he just looks, and that is worse.",
+            "fr": "Bo Stringer peut planter une flèche dans un trou de serrure et lire la lettre de l'autre côté. Il ne tire jamais le premier : il regarde, et c'est pire."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 4,
+          "first": "Morgana",
+          "last": "Gaze",
+          "age": 54,
+          "gender": "female",
+          "desc": "tall dark-elf woman with silver hair streaked red, a third red eye glowing on her forehead, ornate red and gold scout armour, holding a crystal spyglass",
+          "lore": {
+            "en": "Morgana Gaze painted a third eye on her forehead as a joke, and then it opened. Now nothing hidden stays hidden on any field she looks at.",
+            "fr": "Morgana Gaze s'est peint un troisième œil sur le front pour plaisanter, et il s'est ouvert. Désormais, rien de caché ne le reste sur un champ qu'elle regarde."
+          }
+        },
+        {
+          "side": "red",
+          "r": 2,
+          "t": 5,
+          "first": "I.C.",
+          "last": "Everything",
+          "age": 81,
+          "gender": "male",
+          "desc": "ancient imp elder with long white eyebrows, a legendary golden headdress set with a giant glowing red crystal eye, small floating eyeballs orbiting him, a golden telescope staff",
+          "lore": {
+            "en": "I.C. Everything has watched this war since before it started. He sees through fog, walls and lies, and he is terribly bored by all of it.",
+            "fr": "I.C. Everything observe cette guerre depuis avant qu'elle commence. Il voit à travers le brouillard, les murs et les mensonges, et tout cela l'ennuie terriblement."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 0,
+          "first": "Fizzle",
+          "last": "Wickett",
+          "age": 21,
+          "gender": "male",
+          "desc": "small imp with singed smoking hair, a dented red helmet, holding a sputtering tiny round bomb with a worried grin",
+          "lore": {
+            "en": "Fizzle's bombs never go off when they should, and always go off when they should not. The camp keeps him downwind.",
+            "fr": "Les bombes de Fizzle n'explosent jamais quand il faut, et toujours quand il ne faut pas. Le camp le garde sous le vent."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 1,
+          "first": "Cinder",
+          "last": "Ella",
+          "age": 26,
+          "gender": "female",
+          "desc": "imp girl with sooty red pigtails, red apron with pockets full of black powder, a round bomb in each hand, cheeky fanged grin, one shoe missing",
+          "lore": {
+            "en": "Cinder Ella lost a shoe in every explosion she ever caused. She owns forty left shoes and lives in hope.",
+            "fr": "Cinder Ella a perdu une chaussure à chaque explosion qu'elle a provoquée. Elle possède quarante chaussures gauches et garde espoir."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 2,
+          "first": "Tick",
+          "last": "Tockley",
+          "age": 34,
+          "gender": "male",
+          "desc": "stocky goblin-like imp with brass goggles, red coat, a big alarm-clock bomb strapped to his back, pliers and coloured wires in hand",
+          "lore": {
+            "en": "Tick Tockley builds bombs that play a little tune before they go off. He says it is only polite to warn people.",
+            "fr": "Tick Tockley fabrique des bombes qui jouent un petit air avant d'exploser. Il dit que c'est la moindre des politesses de prévenir."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 3,
+          "first": "Barry",
+          "last": "D. Alive",
+          "age": 40,
+          "gender": "male",
+          "desc": "grinning imp with a red plumed helmet and goggles, red and gold armour, holding a lit round bomb, a bundle of dynamite on his belt and a small shovel",
+          "lore": {
+            "en": "Barry D. Alive digs the traps, fills the traps, then forgets where he put them. The whole camp walks on tiptoe, just in case.",
+            "fr": "Barry D. Alive creuse les pièges, remplit les pièges, puis oublie où il les a mis. Tout le camp marche sur la pointe des pieds, au cas où."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 4,
+          "first": "Nitro",
+          "last": "Glyss",
+          "age": 49,
+          "gender": "female",
+          "desc": "dark-elf woman with wild white hair standing on end, red and gold demolition armour, glass vials of glowing red liquid on bandoliers, a detonator plunger",
+          "lore": {
+            "en": "Nitro Glyss mixes her powders by candlelight and hums while she works. The blue sappers have learned to fear her humming more than her bombs.",
+            "fr": "Nitro Glyss mélange ses poudres à la bougie en fredonnant. Les sapeurs bleus ont appris à craindre son fredonnement plus que ses bombes."
+          }
+        },
+        {
+          "side": "red",
+          "r": 3,
+          "t": 5,
+          "first": "Baron",
+          "last": "Von Kaboom",
+          "age": 84,
+          "gender": "male",
+          "desc": "ancient imp with a huge white moustache and a monocle, legendary golden and crimson armour, sitting on a giant glowing red bomb like a throne, holding a lit fuse like a cigar",
+          "lore": {
+            "en": "Baron Von Kaboom has blown up more bridges than the kingdom ever built. At eighty-four he lights his pipe on his own fuses and has never once flinched.",
+            "fr": "Le baron Von Kaboom a fait sauter plus de ponts que le royaume n'en a construit. À quatre-vingt-quatre ans, il allume sa pipe sur ses propres mèches sans jamais sourciller."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 0,
+          "first": "Grunt",
+          "last": "Mudworth",
+          "age": 22,
+          "gender": "male",
+          "desc": "pudgy imp in a red helmet too big for him, a rusty short sword, tripping over his own cape",
+          "lore": {
+            "en": "Grunt is the loudest recruit in the camp and the easiest to fool — except by scarecrows, which he attacks on sight because they look shifty.",
+            "fr": "Grunt est la recrue la plus bruyante du camp et la plus facile à duper — sauf par les épouvantails, qu'il attaque à vue parce qu'ils ont l'air louches."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 1,
+          "first": "Snarla",
+          "last": "Grit",
+          "age": 27,
+          "gender": "female",
+          "desc": "sturdy imp woman with braided red hair, dented red breastplate, a notched sword, snarling fiercely",
+          "lore": {
+            "en": "Snarla has never understood a joke, a trick or a decoy. She sees a straw man, she sees an enemy, and the straw man loses.",
+            "fr": "Snarla n'a jamais compris une blague, une ruse ou un leurre. Elle voit un homme de paille, elle voit un ennemi, et l'homme de paille perd."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 2,
+          "first": "Barb",
+          "last": "Wire",
+          "age": 33,
+          "gender": "female",
+          "desc": "tough imp woman with spiky red hair, spiked red armour with barbed wire wrapped around her forearms, a sword and a spiked shield",
+          "lore": {
+            "en": "Barb Wire hugs her recruits once a year, and they all dread it. On the field she tears through straw men like paper.",
+            "fr": "Barb Wire serre ses recrues dans ses bras une fois par an, et toutes redoutent ce jour. Sur le terrain, elle déchire les hommes de paille comme du papier."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 3,
+          "first": "Chuck",
+          "last": "Le",
+          "age": 40,
+          "gender": "male",
+          "desc": "laughing imp with eyes squeezed shut, red and gold plumed hat, raising a jagged sword, red cape flowing",
+          "lore": {
+            "en": "Chuck Le laughs at everything: orders, danger, his own reflection. He laughed so hard at the blue scarecrows that he cut them all down by accident.",
+            "fr": "Chuck Le rit de tout : des ordres, du danger, de son propre reflet. Il a tellement ri des épouvantails bleus qu'il les a tous abattus par accident."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 4,
+          "first": "Ruth",
+          "last": "Less",
+          "age": 51,
+          "gender": "female",
+          "desc": "tall muscular imp woman with a grey buzz cut and a scar, ornate spiked red and gold sergeant's armour, a big serrated falchion, a whistle around her neck",
+          "lore": {
+            "en": "Ruth Less wakes the camp at four with a whistle and puts it to bed at midnight with a louder one. No straw man has ever survived her inspection.",
+            "fr": "Ruth Less réveille le camp à quatre heures d'un coup de sifflet et le couche à minuit d'un coup plus fort encore. Aucun homme de paille n'a survécu à son inspection."
+          }
+        },
+        {
+          "side": "red",
+          "r": 4,
+          "t": 5,
+          "first": "Gore",
+          "last": "Don",
+          "age": 76,
+          "gender": "male",
+          "desc": "huge old imp with a long white braided beard and small tusks, legendary gold and crimson armour, a giant flaming cleaver, burning straw dummies behind him",
+          "lore": {
+            "en": "Gore Don has trained every red soldier alive, and a few who are not. His bellow alone can flatten a field of straw men.",
+            "fr": "Gore Don a entraîné tous les soldats rouges vivants, et quelques-uns qui ne le sont plus. Son seul rugissement peut coucher un champ entier d'hommes de paille."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 0,
+          "first": "Hackett",
+          "last": "Splint",
+          "age": 22,
+          "gender": "male",
+          "desc": "skinny imp with spiky blond hair and splinters in it, plain red tunic, a cracked hatchet, eager grin",
+          "lore": {
+            "en": "Hackett chops everything that looks wooden: fences, doors, and once the colonel's leg, which was wooden. They are no longer on speaking terms.",
+            "fr": "Hackett coupe tout ce qui ressemble à du bois : palissades, portes, et une fois la jambe du colonel, qui était en bois. Ils ne se parlent plus."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 1,
+          "first": "Axelle",
+          "last": "Rott",
+          "age": 27,
+          "gender": "female",
+          "desc": "imp woman with a messy blond ponytail, red tunic, dragging a notched battle axe behind her, smirking",
+          "lore": {
+            "en": "Axelle drags her axe everywhere, so the whole camp hears her coming. The blue fences hear it too, and shiver.",
+            "fr": "Axelle traîne sa hache partout, si bien que tout le camp l'entend arriver. Les palissades bleues l'entendent aussi, et frissonnent."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 2,
+          "first": "Timber",
+          "last": "Wolfe",
+          "age": 34,
+          "gender": "male",
+          "desc": "wolfish imp with a grey fur collar, red and black armour, a double-bladed axe, sharp fangs bared, a splintered palisade stake beside him",
+          "lore": {
+            "en": "Timber Wolfe howls before he chops. Nobody has told him it spoils the surprise, because nobody wants to be chopped.",
+            "fr": "Timber Wolfe hurle avant de frapper. Personne ne lui a dit que ça gâche la surprise, parce que personne ne veut être coupé en deux."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 3,
+          "first": "Sally",
+          "last": "Splinters",
+          "age": 38,
+          "gender": "female",
+          "desc": "imp woman with spiky blond hair, red and gold plumed lieutenant's hat, fierce fanged grin, a heavy bearded axe raised and a round red shield",
+          "lore": {
+            "en": "Sally Splinters built a throne out of every fence she ever broke. It is terribly uncomfortable, and she sits on it every day.",
+            "fr": "Sally Splinters s'est construit un trône avec chaque palissade qu'elle a brisée. Il est affreusement inconfortable, et elle s'y assoit tous les jours."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 4,
+          "first": "Hew",
+          "last": "Gore",
+          "age": 48,
+          "gender": "male",
+          "desc": "broad imp with a black beard in braids, ornate red and gold armour, twin hand axes with glowing red edges, wood chips flying",
+          "lore": {
+            "en": "Hew Gore can clear a palisade faster than the blue army can build one. He keeps the best splinter of each as a toothpick.",
+            "fr": "Hew Gore abat une palissade plus vite que l'armée bleue n'en construit une. Il garde la plus belle écharde de chacune comme cure-dent."
+          }
+        },
+        {
+          "side": "red",
+          "r": 5,
+          "t": 5,
+          "first": "Granny",
+          "last": "Guillotine",
+          "age": 83,
+          "gender": "female",
+          "desc": "tiny ancient imp woman with a white hair bun and knitting needles in it, legendary gold and crimson armour, a massive glowing executioner's axe far bigger than her",
+          "lore": {
+            "en": "Granny Guillotine knits in the evenings and chops in the mornings. Every wooden wall in this war has felt her gentle smile, and then her axe.",
+            "fr": "Granny Guillotine tricote le soir et tranche le matin. Chaque mur de bois de cette guerre a connu son doux sourire, puis sa hache."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 0,
+          "first": "Pebble",
+          "last": "Grubb",
+          "age": 21,
+          "gender": "male",
+          "desc": "stubby goblin-like imp in an oversized red miner's helmet with a candle on it, a tiny pickaxe, sitting on a rock and sulking",
+          "lore": {
+            "en": "Pebble has been hitting the same rock for three weeks. The rock is winning, but Pebble has promised it a rematch.",
+            "fr": "Pebble frappe le même rocher depuis trois semaines. Le rocher mène, mais Pebble lui a promis une revanche."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 1,
+          "first": "Gerty",
+          "last": "Gravel",
+          "age": 26,
+          "gender": "female",
+          "desc": "dust-covered imp woman with a red bandana, red miner's coat, a pickaxe over her shoulder, grinning with a chipped fang",
+          "lore": {
+            "en": "Gerty Gravel eats pebbles to keep her teeth sharp. At least, that is what she tells the recruits, and they believe her.",
+            "fr": "Gerty Gravel mange des cailloux pour garder les dents pointues. C'est du moins ce qu'elle raconte aux recrues, et elles la croient."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 2,
+          "first": "Rock",
+          "last": "Bottom",
+          "age": 35,
+          "gender": "male",
+          "desc": "hulking bald goblin-like imp with bare arms and red armour plates, a heavy iron pickaxe, cracking a boulder",
+          "lore": {
+            "en": "Rock Bottom has hit rocks so often he has become a bit like one: slow to move, hard to stop, and very difficult to lift.",
+            "fr": "Rock Bottom a tant frappé de rochers qu'il a fini par leur ressembler : lent à se mettre en route, dur à arrêter, et très difficile à soulever."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 3,
+          "first": "Scarlett",
+          "last": "Quarry",
+          "age": 41,
+          "gender": "female",
+          "desc": "imp woman with long flowing red hair, red and gold plumed captain's hat, fierce fanged grin, a war pickaxe held high",
+          "lore": {
+            "en": "Captain Scarlett Quarry sings to the rocks before she breaks them. Most of them crack on the high notes, which saves her a lot of swinging.",
+            "fr": "La capitaine Scarlett Quarry chante pour les rochers avant de les briser. La plupart se fendent dans les aigus, ce qui lui épargne bien des coups."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 4,
+          "first": "Obi",
+          "last": "Sidian",
+          "age": 52,
+          "gender": "male",
+          "desc": "tall imp with black stone-like tattoos, ornate red and gold armour, a pickaxe with a glowing obsidian head, cracked rocks around him",
+          "lore": {
+            "en": "Obi Sidian's pickaxe was carved from a volcano's heart. It sings when it strikes, and rocks crumble just to make it stop.",
+            "fr": "La pioche d'Obi Sidian a été taillée dans le cœur d'un volcan. Elle chante quand elle frappe, et les rochers s'effritent rien que pour la faire taire."
+          }
+        },
+        {
+          "side": "red",
+          "r": 6,
+          "t": 5,
+          "first": "Mother",
+          "last": "Lode",
+          "age": 80,
+          "gender": "female",
+          "desc": "ancient hunched imp woman with white hair and a crystal-studded crown, legendary gold and crimson armour, a colossal jewelled pickaxe glowing red, sitting on a split pile of gems",
+          "lore": {
+            "en": "Mother Lode has dug through more mountains than this war has soldiers. The rocks of the red country call her grandmother, and step aside when she asks.",
+            "fr": "Mother Lode a percé plus de montagnes que cette guerre ne compte de soldats. Les rochers du pays rouge l'appellent grand-mère et s'écartent quand elle le demande."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 0,
+          "first": "Wendell",
+          "last": "Wrongway",
+          "age": 23,
+          "gender": "male",
+          "desc": "skinny imp tangled in a map, leaves in his hair, plain red coat, a cracked compass spinning wildly in his hand",
+          "lore": {
+            "en": "Wendell's compass points wherever he is not. He trusts it completely, and has visited the whole red country by accident.",
+            "fr": "La boussole de Wendell indique toujours là où il n'est pas. Il lui fait entièrement confiance, et a visité tout le pays rouge par accident."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 1,
+          "first": "Fern",
+          "last": "Gloom",
+          "age": 28,
+          "gender": "female",
+          "desc": "imp woman with moss-green streaks in her hair, hooded red coat with twigs caught in it, a bone compass on a string, sniffing the air",
+          "lore": {
+            "en": "Fern finds her way by the smell of the moss. The forest tried to swallow her once, and spat her out for being too clever.",
+            "fr": "Fern trouve son chemin à l'odeur de la mousse. La forêt a essayé de l'avaler une fois, puis l'a recrachée : elle était trop maligne."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 2,
+          "first": "Trek",
+          "last": "Morrow",
+          "age": 36,
+          "gender": "male",
+          "desc": "imp with long pointed ears, red greatcoat with many pockets, a brass compass and a lantern, marching with a walking stick",
+          "lore": {
+            "en": "Trek Morrow has walked into the Black Forest nine times and back out eight. Nobody asks about the ninth.",
+            "fr": "Trek Morrow est entré neuf fois dans la Forêt Noire et en est ressorti huit fois. Personne ne pose de question sur la neuvième."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 3,
+          "first": "Marga",
+          "last": "Gellan",
+          "age": 58,
+          "gender": "female",
+          "desc": "old dark-elf woman with white hair in a high bun and gold-rimmed glasses, red and gold robes, a golden compass in one hand and an old map book in the other",
+          "lore": {
+            "en": "Major Marga Gellan has charted every wood of the red country and scolded most of them. Trees are said to straighten their branches when she walks by.",
+            "fr": "La major Marga Gellan a cartographié chaque bois du pays rouge et en a sermonné la plupart. On dit que les arbres redressent leurs branches à son passage."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 4,
+          "first": "Merid",
+          "last": "Ian",
+          "age": 50,
+          "gender": "male",
+          "desc": "tall dark-elf man with long black hair and a silver streak, ornate red and gold major's armour, a golden compass spinning in the air above his hand, cape embroidered with a star chart",
+          "lore": {
+            "en": "Merid Ian navigates by the stars, even at noon; he simply knows where they are. No forest has ever kept him longer than a lunch break.",
+            "fr": "Merid Ian se guide aux étoiles, même à midi : il sait simplement où elles sont. Aucune forêt ne l'a jamais retenu plus longtemps qu'une pause déjeuner."
+          }
+        },
+        {
+          "side": "red",
+          "r": 7,
+          "t": 5,
+          "first": "Lady",
+          "last": "Longitude",
+          "age": 87,
+          "gender": "female",
+          "desc": "ancient dark-elf woman with floor-length white hair, legendary golden crown shaped like compass points, crimson robes embroidered with maps, a giant glowing compass rose floating behind her",
+          "lore": {
+            "en": "Lady Longitude drew the borders of the red country with her own quill. Forests that are not on her maps are not allowed to exist, and many have quietly stopped.",
+            "fr": "Lady Longitude a tracé les frontières du pays rouge de sa propre plume. Les forêts absentes de ses cartes n'ont pas le droit d'exister, et beaucoup ont discrètement cessé."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 0,
+          "first": "Scrappy",
+          "last": "Doolittle",
+          "age": 22,
+          "gender": "male",
+          "desc": "scrawny imp with a black eye, red headband, oversized red boxing gloves, bouncing in a fighting stance",
+          "lore": {
+            "en": "Scrappy challenges anyone to a fight, including the wind. He has lost to the wind twice, but he says it cheated.",
+            "fr": "Scrappy provoque tout le monde en duel, y compris le vent. Il a perdu deux fois contre le vent, mais il affirme qu'il a triché."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 1,
+          "first": "Brawla",
+          "last": "Fang",
+          "age": 27,
+          "gender": "female",
+          "desc": "imp woman with white pigtails, torn red coat, spiked red knuckle-dusters, fanged grin, cracking a skull with one punch",
+          "lore": {
+            "en": "Brawla keeps a skull on her bedside table and says good morning to it. It has never said good morning back, and she finds that rude.",
+            "fr": "Brawla garde un crâne sur sa table de nuit et lui dit bonjour chaque matin. Il ne lui a jamais répondu, et elle trouve ça impoli."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 2,
+          "first": "Mack",
+          "last": "Maul",
+          "age": 36,
+          "gender": "male",
+          "desc": "burly goblin-like imp with a shaved head and small tusks, red and black armour, iron gauntlets, one foot on a pile of skulls",
+          "lore": {
+            "en": "Mack Maul fears nothing except running out of things to punch. He once punched a ghost; the ghost left the camp the next morning.",
+            "fr": "Mack Maul ne craint rien, sauf de manquer de choses à frapper. Il a un jour cogné un fantôme ; le fantôme a quitté le camp le lendemain matin."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 3,
+          "first": "Blanche",
+          "last": "Fury",
+          "age": 44,
+          "gender": "female",
+          "desc": "imp woman with long wild white hair, red and gold plumed armour, massive spiked gauntlets, snarling, a smashed skull under her boot",
+          "lore": {
+            "en": "Colonel Blanche Fury went white overnight — not from fright, from anger. She has cracked every cursed skull the blue army ever planted.",
+            "fr": "La colonelle Blanche Fury a blanchi en une nuit — pas de peur, de colère. Elle a fendu chaque crâne maudit que l'armée bleue a planté."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 4,
+          "first": "Crusher",
+          "last": "Morgue",
+          "age": 55,
+          "gender": "male",
+          "desc": "towering bald imp with red war paint shaped like a skull on his face, ornate red and gold armour, huge glowing red gauntlets, fist raised",
+          "lore": {
+            "en": "Crusher Morgue paints a skull on his face so the real ones know who is in charge. They never argue; he punches them anyway.",
+            "fr": "Crusher Morgue se peint un crâne sur le visage pour que les vrais sachent qui commande. Ils ne discutent jamais ; il les frappe quand même."
+          }
+        },
+        {
+          "side": "red",
+          "r": 8,
+          "t": 5,
+          "first": "Dread",
+          "last": "Naught",
+          "age": 88,
+          "gender": "male",
+          "desc": "gigantic ancient imp with a long white beard braided with small bones, legendary gold and crimson armour, colossal fiery gauntlets, a heap of broken skulls behind him",
+          "lore": {
+            "en": "Dread Naught fears nothing, because he is what everything else fears. At eighty-eight he still opens the Skull Gate with a single knock.",
+            "fr": "Dread Naught ne craint rien, car c'est lui que tout le reste craint. À quatre-vingt-huit ans, il ouvre encore la porte des Crânes d'un seul coup de poing."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 0,
+          "first": "Penny",
+          "last": "Padlock",
+          "age": 22,
+          "gender": "female",
+          "desc": "small imp girl in a red beret, carrying a huge padlocked book she can barely lift, keys jingling on her belt, determined pout",
+          "lore": {
+            "en": "Penny was given the camp's secret book to carry and has not put it down since. She does not know what is inside, and has decided that is what makes her loyal.",
+            "fr": "On a confié à Penny le livre secret du camp, et elle ne l'a plus lâché. Elle ignore ce qu'il contient, et a décidé que c'est ce qui la rend loyale."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 1,
+          "first": "Tomas",
+          "last": "Tome",
+          "age": 30,
+          "gender": "male",
+          "desc": "bookish imp with round spectacles, red general's coat, a chained book on his belt, a quill behind his pointed ear",
+          "lore": {
+            "en": "Tomas Tome has read the camp's secret book a thousand times and never told a soul. When blue spies ask, he recites the recipe for turnip soup.",
+            "fr": "Tomas Tome a lu mille fois le livre secret du camp sans jamais rien en dire. Quand les espions bleus l'interrogent, il récite la recette de la soupe de navets."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 2,
+          "first": "Bonnie",
+          "last": "Bound",
+          "age": 38,
+          "gender": "female",
+          "desc": "dark-elf woman with dark braids wrapped in chains, red and black general's coat, a heavy book sealed with red wax and a padlock, stern look",
+          "lore": {
+            "en": "Bonnie Bound wraps her promises in chains, literally. The blue army once offered her a castle to open her book; she used the letter to light a fire.",
+            "fr": "Bonnie Bound enchaîne ses promesses, au sens propre. L'armée bleue lui a offert un château pour ouvrir son livre ; elle a allumé le feu avec la lettre."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 3,
+          "first": "Garth",
+          "last": "Sworn",
+          "age": 45,
+          "gender": "male",
+          "desc": "massive imp in heavy red and gold armour, ferocious grin, gauntleted fist raised, a huge padlocked tome chained to his back",
+          "lore": {
+            "en": "General Garth Sworn swore loyalty to the red crown with his fist on the book, and dented it. He has never broken his word, only the odd table.",
+            "fr": "Le général Garth Sworn a juré fidélité à la couronne rouge le poing sur le livre, et l'a cabossé. Il n'a jamais trahi sa parole, seulement quelques tables."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 4,
+          "first": "Fidelia",
+          "last": "Chains",
+          "age": 56,
+          "gender": "female",
+          "desc": "tall dark-elf woman with silver hair in an elegant crown braid, ornate red and gold general's armour with medals, carrying a golden padlocked grimoire, commanding gaze",
+          "lore": {
+            "en": "Fidelia Chains has refused every bribe with the same smile and the same sentence: \"The book stays shut.\" Some say the book itself obeys her.",
+            "fr": "Fidelia Chains a refusé chaque pot-de-vin avec le même sourire et la même phrase : « Le livre reste fermé. » Certains disent que le livre lui-même lui obéit."
+          }
+        },
+        {
+          "side": "red",
+          "r": 9,
+          "t": 5,
+          "first": "Ever",
+          "last": "Sworn",
+          "age": 89,
+          "gender": "male",
+          "desc": "ancient imp elder with a long white beard, legendary gold and crimson armour, a giant floating tome locked with glowing red chains and a golden skull-shaped padlock",
+          "lore": {
+            "en": "Ever Sworn has kept the red country's oldest secret for seventy years. He has forgotten his birthday, and his own name twice, but never a word he gave.",
+            "fr": "Ever Sworn garde le plus vieux secret du pays rouge depuis soixante-dix ans. Il a oublié son anniversaire, et deux fois son propre nom, mais jamais une parole donnée."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 0,
+          "first": "Pip",
+          "last": "Squeak",
+          "age": 20,
+          "gender": "male",
+          "desc": "tiny imp boy with a huge red crown sliding over his eyes, red cape dragging on the ground, a wooden sceptre, pouting",
+          "lore": {
+            "en": "Pip Squeak is next in line for the red throne, after forty-two cousins. He practises his royal wave on the pigeons.",
+            "fr": "Pip Squeak est l'héritier du trône rouge, juste après quarante-deux cousins. Il s'entraîne à faire le salut royal aux pigeons."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 1,
+          "first": "Tiara",
+          "last": "Tantrum",
+          "age": 25,
+          "gender": "female",
+          "desc": "imp girl with red curls and a small spiky crown, red and gold gown over light armour, stamping her foot and pointing a sceptre",
+          "lore": {
+            "en": "Tiara gives an order, and if nobody obeys, she gives it again, louder. She has never needed a third time.",
+            "fr": "Tiara donne un ordre, et si personne n'obéit, elle le redonne, plus fort. Elle n'a jamais eu besoin d'une troisième fois."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 2,
+          "first": "Count",
+          "last": "Less",
+          "age": 38,
+          "gender": "male",
+          "desc": "tall imp noble with slicked black hair and a widow's peak, high-collared red and black cape, a spiky crown, sly fanged smile",
+          "lore": {
+            "en": "Count Less has so many titles he has lost count. He introduces himself for twenty minutes before every battle, which is, in fact, his strategy.",
+            "fr": "Count Less a tant de titres qu'il en a perdu le compte. Il se présente pendant vingt minutes avant chaque bataille, et c'est en réalité sa stratégie."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 3,
+          "first": "Mordred",
+          "last": "Monarch",
+          "age": 62,
+          "gender": "male",
+          "desc": "old imp with a white beard and gold glasses, a tall red and gold crown-hat, red robes, red magic swirling from one hand, a ledger book in the other",
+          "lore": {
+            "en": "Mordred Monarch rules the camp with a spell in one hand and a ledger in the other. He knows the price of every soldier and the name of none.",
+            "fr": "Mordred Monarch dirige le camp avec un sort dans une main et un registre dans l'autre. Il connaît le prix de chaque soldat, et le nom d'aucun."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 4,
+          "first": "Vexa",
+          "last": "Throne",
+          "age": 61,
+          "gender": "female",
+          "desc": "imposing dark-elf queen with long black hair streaked white, a tall jagged crimson crown set with rubies, red and gold ceremonial armour, bat-wing cape, a sceptre with a glowing gem",
+          "lore": {
+            "en": "Vexa Throne took the crown at a banquet and nobody remembers how. She rules with a smile so cold that the camp fires burn blue when she passes.",
+            "fr": "Vexa Throne a pris la couronne pendant un banquet, et personne ne se souvient comment. Elle règne avec un sourire si froid que les feux du camp bleuissent à son passage."
+          }
+        },
+        {
+          "side": "red",
+          "r": 10,
+          "t": 5,
+          "first": "Rex",
+          "last": "Mortis",
+          "age": 90,
+          "gender": "male",
+          "desc": "ancient towering imp emperor with a very long white beard, legendary colossal golden crown with a burning red gem, crimson and gold robes, a skull sceptre, red flames and bats swirling around him",
+          "lore": {
+            "en": "Rex Mortis has worn the red crown so long it has grown into his head. He is ninety, he is terrible, and he is the one card every blue spy dreams of reaching.",
+            "fr": "Rex Mortis porte la couronne rouge depuis si longtemps qu'elle a poussé dans sa tête. Il a quatre-vingt-dix ans, il est terrible, et c'est la seule carte que tout espion bleu rêve d'atteindre."
+          }
+        }
+      ]
     }
   }
 }

@@ -158,6 +158,20 @@ var PROFILE = {
    close to their master's 650px. */
 var CARDS = { w: 560, h: 700, q: 0.84 };
 
+/* ...AND IT IS NOT ONE BOX, BECAUSE "A CARD" IS NOT ONE SIZE. The rule above
+   is slipdeck's, whose one big card is 357 design px wide and is what the
+   player stares at. games/stratideck draws TWENTY of them — an officer per
+   grade, per side — at 118 design px in the hand and never wider on the grid,
+   which is 355 device pixels on a 3x phone. The slipdeck box is three times
+   that, and twenty pictures at three times the size they are shown at is 2.3 MB
+   of base64 in a creative with a 5 MB ceiling.
+
+   Keyed by slug, because nothing about the ROLE can say it: `card-red-major`
+   and `card-king` are the same name for a prop drawn at a third of the size. */
+var CARD_BY_SLUG = {
+  stratideck: { w: 380, h: 470, q: 0.82 }
+};
+
 /* The DECOR POOL: `<slug>-decor-NN.png`, adopted out of a sheet with
    `cut-objects.mjs --adopt 1,4 --as decor`. These are the small objects the
    shell scatters over the end screen, the round's corners and the web menu's
@@ -214,6 +228,18 @@ var HOUSE = { w: 420, h: 420, q: 0.84 };
    nothing to read in it takes the decor pool's quality rather than a house's. */
 var CLOUD = { w: 600, h: 320, q: 0.78 };
 
+/* THE CAST: games/stratideck's officers, one portrait per army, grade and
+   tier — `cast-<blue|red|turn>-NN-<tier>`, cut four to a sheet and adopted by
+   tools/lab/cast-sheets.mjs. WEB-ONLY art (tools/build/build.mjs), loaded
+   lazily (`CONFIG.artLazy`). The box is the CUT, not a display size: the
+   barracks opens a card at 540 design px wide, whose officer stands ~720
+   design px tall — well over a thousand device pixels on a phone — and the
+   cut out of a 1024x1536 sheet is ~810 px tall to begin with. At the old
+   320x380 box every big card was a 2x upscale of a thumbnail, which is the
+   blur the lab showed on the whole cast. So nothing is thrown away; the
+   quality is what keeps a hundred and eighty of them affordable. */
+var CAST = { w: 600, h: 830, q: 0.8 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -228,14 +254,15 @@ function mimeOf(file) {
   return /\.png$/i.test(file) ? "image/png" : "image/jpeg";
 }
 
-function profileFor(role) {
+function profileFor(role, slug) {
   if (PROFILE[role]) return PROFILE[role];
-  if (role.indexOf("card-") === 0) return CARDS;
+  if (role.indexOf("card-") === 0) return CARD_BY_SLUG[slug] || CARDS;
   if (role.indexOf("decor") === 0) return DECOR;
   if (role.indexOf("ball-") === 0) return BALL;
   if (role.indexOf("sticker") === 0) return STICKER;
   if (/^home\d+$/.test(role)) return HOUSE;
   if (role.indexOf("cloud-") === 0) return CLOUD;
+  if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
@@ -247,6 +274,11 @@ function profileFor(role) {
      shown exactly where the plain role is, so it is cut exactly like it. */
   if (role.indexOf("background-phone") === 0) return PROFILE["background-phone"];
   if (role.indexOf("background-desk") === 0) return PROFILE["background-desk"];
+  /* `enemy-sad`, `enemy-neutral`, `enemy-happy` — the other side's face, a
+     character like the end screen's and cut like one: games/stratideck stands
+     its commander 260 design px wide over the camp, and the generic 320px box
+     was a blur at that size on a 3x phone. */
+  if (role.indexOf("enemy-") === 0) return PROFILE["character-neutral"];
   return GENERIC;
 }
 
@@ -314,7 +346,7 @@ function objects(all) {
         file: file, slug: slug, role: role, mime: mimeOf(file),
         src: src,
         out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
-        profile: profileFor(role),
+        profile: profileFor(role, slug),
         known: knownRole(role)
       });
     });
@@ -327,7 +359,7 @@ function knownRole(role) {
          role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
          role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
          role.indexOf("background-") === 0 || /^home\d+$/.test(role) ||
-         role.indexOf("cloud-") === 0;
+         role.indexOf("cloud-") === 0 || /^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role);
 }
 
 function masters(all) {
@@ -355,7 +387,7 @@ function masters(all) {
       file: file, slug: slug, role: role, mime: mimeOf(file),
       src: path.join(SRC_DIR, file),
       out: path.join(OUT_DIR, slug + "-" + role + ".webp"),
-      profile: profileFor(role),
+      profile: profileFor(role, slug),
       known: knownRole(role)
     });
   });

@@ -22,12 +22,6 @@
   #hud::before { display:none; }
   #hud-score { text-shadow:0 0 14px rgba(75,245,255,.6), 0 3px 10px rgba(4,6,20,.9); }
   .hud-pill { background:rgba(6,9,26,.62); }
-  /* Every screen-space message lands in the band between the turret and the
-     CTA — never over the bricks the player is reading. */
-  #ov-toasts {
-    top:auto; bottom:calc(var(--inset-bottom) + var(--cta-h) + 18px);
-    flex-direction:column-reverse;
-  }
   .eo-score { text-shadow:0 0 22px rgba(75,245,255,.75); }
   #cta-bar { border-top:1px solid rgba(255,138,26,.22); }
 

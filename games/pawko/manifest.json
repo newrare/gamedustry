@@ -1,7 +1,7 @@
 {
   "slug": "pawko",
   "title": "Pawko",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "tagline": "Drop waves of balls down a pinboard of pegs and play a card between waves",
   "order": 140,
   "draft": false,
@@ -274,9 +274,9 @@
       }
     },
     "meta": {
-      "coinsPer": 7500,
+      "coinsPer": 1000,
       "xpPer": 750,
-      "ticketPrice": 1900,
+      "ticketPrice": 14250,
       "awards": [
         1,
         3,

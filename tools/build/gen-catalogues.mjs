@@ -13,13 +13,21 @@
     index.html      the developer gallery: name, icon, the long English
                     write-up, tags, accent — inside the marked GAMES block
 
-  Order follows each manifest's `order` field (a curated sequence, in steps of ten
-  so a game can be slipped between two others); manifests without one fall to the
-  end, alphabetically.
+  The developer gallery follows each manifest's `order` field (a curated
+  sequence, in steps of ten so a game can be slipped between two others);
+  manifests without one fall to the end, alphabetically.
+
+  The public site shows the freshest game first instead: sorted by the day its
+  `version` last moved, newest first, then by the higher version on a tie. That
+  day is read from git here, where the history is whole, and baked into the
+  order of site/games.js — the Vercel build clones shallow and never asks git.
+  A version that differs from HEAD's (a bump not committed yet, or a game HEAD
+  has never seen) counts as today, which is the day that commit will carry.
 */
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { readdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,6 +60,48 @@ async function manifests() {
     const ob = typeof b.order === 'number' ? b.order : Infinity;
     return oa - ob || a.slug.localeCompare(b.slug);
   });
+}
+
+// ── release order, for the site ─────────────────────────────────────────────
+function git(args) {
+  try {
+    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function localDay(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// YYYY-MM-DD of the commit that last moved this manifest's `version`.
+function releaseDay(m) {
+  const file = `games/${m.slug}/manifest.json`;
+  let committed = null;
+  try { committed = JSON.parse(git(['show', `HEAD:${file}`])).version; } catch { /* not in HEAD */ }
+  if (committed !== m.version) return localDay(new Date());
+  return git(['log', '-1', '--format=%cs', '-G', '^[[:space:]]*"version"[[:space:]]*:', '--', file]) || localDay(new Date());
+}
+
+function compareVersions(a, b) {
+  const pa = String(a || '0').split('.').map(Number);
+  const pb = String(b || '0').split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+// Newest release day first, then the higher version, then the slug.
+function byRelease(list) {
+  const day = new Map(list.map((m) => [m.slug, releaseDay(m)]));
+  return [...list].sort((a, b) =>
+    day.get(b.slug).localeCompare(day.get(a.slug)) ||
+    compareVersions(b.version, a.version) ||
+    a.slug.localeCompare(b.slug));
 }
 
 // ── site/games.js ──────────────────────────────────────────────────────────
@@ -127,7 +177,7 @@ async function main() {
   const list = await manifests();
 
   const targets = [
-    { file: 'site/games.js', text: siteCatalogue(list) },
+    { file: 'site/games.js', text: siteCatalogue(byRelease(list)) },
     { file: 'index.html', text: null }  // patched in place, below
   ];
 

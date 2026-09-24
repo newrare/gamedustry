@@ -1290,7 +1290,8 @@ function upper(str) {
 
    `need` is what makes the right column a checklist rather than a legend: a
    door a game does not have is not a door it is missing. `meta` means the game
-   declares `web.meta`, `levels` means `web.levels`, `always` means every game.
+   declares `web.meta`, `levels` means `web.levels`, `army` means `web.army`,
+   `always` means every game.
    --------------------------------------------------------------------------- */
 var DOORS = [
   { key: "map",     need: "levels", en: "Levels",     fr: "Niveaux" },
@@ -1300,6 +1301,11 @@ var DOORS = [
   { key: "shop",    need: "meta",   en: "Shop",       fr: "Boutique" },
   { key: "ranking", need: "always", en: "Leaderboard", fr: "Classement" },
   { key: "options", need: "always", en: "Options",    fr: "Options" },
+  /* THE BARRACKS — army.js, `T.deck` and its three neighbours. */
+  { key: "deck",      need: "army", en: "Deck",       fr: "Deck" },
+  { key: "infirmary", need: "army", en: "Infirmary",  fr: "Infirmerie" },
+  { key: "prison",    need: "army", en: "Prison",     fr: "Prison" },
+  { key: "recruit",   need: "army", en: "Recruits",   fr: "Recrues" },
   /* HELP IS THE MAP'S. Level 0 opens it on every board, so a village that
      builds a house for it is a second way to one place — and six buildings is
      what a sheet holds, which makes a wasted one expensive. It stays in the
@@ -2186,6 +2192,7 @@ function paintDoors() {
     if (d.need === "levels" && !g.levels) return;
     if (d.need === "flat" && g.levels) return;     // PLAY is the map's, on a levelled game
     if (d.need === "meta" && !g.meta) return;
+    if (d.need === "army" && !g.army) return;
     var n = counted[d.key] || 0;
     var li = document.createElement("li");
     li.className = n === 1 ? "ok" : n === 0 ? "no" : "dup";

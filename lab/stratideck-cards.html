@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Stratideck, every card</title>
+<!-- THE GAME'S OWN CARD STYLESHEET, not a copy of it: the card block of
+     games/stratideck/skin.css is what the round and the barracks draw with,
+     so what this page shows cannot drift from what ships. The rest of that
+     file only styles the game's own ids (#intro-title, #hud-score…), which a
+     page like this one does not have. -->
+<link rel="stylesheet" href="../games/stratideck/skin.css">
+<style>
+/* ===========================================================================
+   STRATIDECK — EVERY CARD. One page, nothing to tune: the blue army, the red
+   camp, the turncoats and the objects, sixty officers a side on a grid of
+   ten grades by six tiers, in the three formats the game deals — the token
+   (tiny, the deck strip and the camp), the square (mid, the grid) and the
+   full card (big, the hand and the roster).
+
+   The cards are built by the game's own `faceNode` (games/stratideck/game.js,
+   THE CARD FACES), ported here with CONFIG.cards' numbers, and drawn with the
+   game's stylesheet (the <link> above). The portraits come out of
+   ../assets/image/embed/ — the shipping cuts — and a portrait not encoded
+   falls back exactly as the game does: a turncoat on its red self, anyone on
+   the grade's face.
+
+   Names: served over HTTP, the page reads games/stratideck/manifest.json and
+   writes each officer's name under their card; over file:// that read is
+   blocked by the browser and the role key is written instead.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:#0b0b12; }
+body {
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#bar {
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:14px 24px; background:rgba(18,18,28,.94); border-bottom:1px solid #23233a;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+#bar h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; margin-right:8px; }
+.seg { display:flex; gap:4px; background:#1a1a28; border:1px solid #2c2c44; border-radius:10px; padding:3px; }
+.seg button {
+  appearance:none; border:0; background:none; color:#8b8ba7; cursor:pointer;
+  font:inherit; padding:6px 14px; border-radius:7px;
+}
+.seg button.on { background:#f2c14e; color:#2a1a02; }
+#jump { display:flex; gap:12px; }
+#jump a { color:#8b8ba7; text-decoration:none; font-size:13px; }
+#jump a:hover { color:#f2c14e; }
+#count { margin-left:auto; font-size:12px; color:#6f6a90; }
+
+main { padding:10px 24px 60px; }
+section { margin-top:26px; }
+section > h2 {
+  font-size:13px; letter-spacing:2px; text-transform:uppercase; color:#f2c14e;
+  padding:10px 0 4px; border-bottom:1px solid #23233a; margin-bottom:6px;
+}
+section > h2 span { color:#6f6a90; letter-spacing:.5px; text-transform:none; font-weight:500; margin-left:10px; }
+.grade { display:flex; align-items:flex-start; gap:20px; padding:18px 0 4px; }
+.grade > small {
+  flex:0 0 96px; padding-top:8px; font-size:10px; letter-spacing:1.5px;
+  text-transform:uppercase; color:#6f6a90;
+}
+.row { display:flex; flex-wrap:wrap; gap:30px 22px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.cell small {
+  max-width:var(--cw); text-align:center; font-size:11px; line-height:1.3; color:#a9b4d0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.cell small i { display:block; font-style:normal; font-size:10px; color:#5c5878; font-family:ui-monospace,Menlo,monospace; }
+.cell.fallback small { color:#5c5878; }
+.cell.fallback .card { opacity:.55; }
+.objects { padding-top:18px; }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <h1>Stratideck cards</h1>
+  <div class="seg" id="fmt">
+    <button data-v="tiny">Tiny</button><button data-v="mid">Medium</button><button data-v="full">Big</button>
+  </div>
+  <nav id="jump">
+    <a href="#blue">Blue army</a><a href="#red">Red camp</a><a href="#turn">Turncoats</a><a href="#objects">Objects</a>
+  </nav>
+  <span id="count"></span>
+</div>
+
+<main id="main"></main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- the material, relative to lab/ (allowed here and nowhere else) ---- */
+  var EMBED = "../assets/image/embed/";
+  var SCENE = EMBED + "stratideck-background-phone-01.webp";
+  var CREST = { blue: EMBED + "stratideck-piece-01.webp", red: EMBED + "stratideck-piece-02.webp" };
+
+  /* ---- CONFIG.cards, verbatim from games/stratideck/game.js ---- */
+  var K = {
+    style: "forge", brank: "shield", btier: "burst", arank: "auto", atier: "auto",
+    rankOn: true, tierOn: true,
+    zoom: 2.6, blur: 2, vary: true,
+    hero: 95, mark: 0.5, mx: -28, markover: false,
+    midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65
+  };
+  /* the three formats, at the sizes the game deals them */
+  var SIZE = { tiny: 86, mid: 150, full: 190 };
+
+  var TIERS = ["E", "D", "C", "B", "A", "S"];
+  var TIER_COLOR = ["#c8773f", "#aab1c6", "#51cf66", "#4dabf7", "#c77dff", "#ffd43b"];
+  var TIER_CLS   = ["basic", "common", "uncommon", "rare", "epic", "legendary"];
+  var TIER_LABEL = ["Basic", "Common", "Uncommon", "Rare", "Epic", "Legendary"];
+  var TIER_PIPS  = [1, 1, 2, 3, 4, 5];
+  var BLUE = "#5aa9ff", RED = "#ff5c5c", OBJECT_RIM = "#c9a86a";
+
+  var GRADES = [
+    { r: 10, key: "marshal", name: "Marshal" }, { r: 9, key: "general", name: "General" },
+    { r: 8, key: "colonel", name: "Colonel" }, { r: 7, key: "major", name: "Major" },
+    { r: 6, key: "captain", name: "Captain" }, { r: 5, key: "lieutenant", name: "Lieutenant" },
+    { r: 4, key: "sergeant", name: "Sergeant" }, { r: 3, key: "sapper", name: "Sapper" },
+    { r: 2, key: "scout", name: "Scout" }, { r: 1, key: "spy", name: "Spy" }
+  ];
+  var OBJECTS = [
+    { r: 12, name: "Flag", file: "piece-03" }, { r: 11, name: "Trap", file: "piece-04" },
+    { r: 13, name: "Straw man", file: "item-straw" }, { r: 14, name: "Wooden fence", file: "item-fence" },
+    { r: 15, name: "Rock", file: "item-rock" }, { r: 16, name: "Forest", file: "item-forest" },
+    { r: 17, name: "Skull", file: "item-skull" }, { r: 18, name: "Book", file: "item-book" }
+  ];
+
+  /* ---- ported from games/stratideck/game.js ---- */
+  var PERK = {
+    1:  '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',   // sword
+    2:  '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',   // eye
+    3:  '<circle cx="11" cy="13" r="9"/><path d="M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95"/><path d="m22 2-1.5 1.5"/>',   // bomb
+    4:  '<path d="m2 22 10-10"/><path d="m16 8-1.17 1.17"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="m8 8-.53.53a3.5 3.5 0 0 0 0 4.94L9 15l1.53-1.53c.55-.55.88-1.25.98-1.97"/><path d="M10.91 5.26c.15-.26.34-.51.56-.73L13 3l1.53 1.53a3.5 3.5 0 0 1 .28 4.62"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/><path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="m16 16-.53.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.49 3.49 0 0 1 1.97-.98"/><path d="M18.74 13.09c.26-.15.51-.34.73-.56L21 11l-1.53-1.53a3.5 3.5 0 0 0-4.62-.28"/><path d="m2 2 20 20"/>',   // wheat-off
+    5:  '<path d="m14 12-8.381 8.38a1 1 0 0 1-3.001-3L11 9"/><path d="M15 15.5a.5.5 0 0 0 .5.5A6.5 6.5 0 0 0 22 9.5a.5.5 0 0 0-.5-.5h-1.672a2 2 0 0 1-1.414-.586l-5.062-5.062a1.205 1.205 0 0 0-1.704 0L9.352 5.648a1.205 1.205 0 0 0 0 1.704l5.062 5.062A2 2 0 0 1 15 13.828z"/>',   // axe
+    6:  '<path d="m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999"/><path d="M15.973 4.027A13 13 0 0 0 5.902 2.373c-1.398.342-1.092 2.158.277 2.601a19.9 19.9 0 0 1 5.822 3.024"/><path d="M16.001 11.999a19.9 19.9 0 0 1 3.024 5.824c.444 1.369 2.26 1.676 2.603.278A13 13 0 0 0 20 8.069"/><path d="M18.352 3.352a1.205 1.205 0 0 0-1.704 0l-5.296 5.296a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l5.296-5.296a1.205 1.205 0 0 0 0-1.704z"/>',   // pickaxe
+    7:  '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',   // compass
+    8:  '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>',   // hand-fist
+    9:  '<path d="M18 6V4a2 2 0 1 0-4 0v2"/><path d="M20 15v6a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H10"/><rect x="12" y="6" width="8" height="5" rx="1"/>',   // book-lock
+    10: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>'   // crown
+  };
+
+  var FOCUS = { 1: [72, 22], 2: [30, 24], 3: [84, 80], 4: [16, 78], 5: [50, 74], 6: [66, 66],
+                7: [36, 62], 8: [78, 44], 9: [22, 46], 10: [50, 30], 11: [40, 50], 12: [60, 36],
+                13: [26, 70], 14: [70, 58], 15: [44, 82], 16: [18, 34], 17: [80, 28], 18: [56, 52] };
+
+  var BADGE = {
+    shield:  { vb: "0 0 100 110", svg:
+      '<path class="f" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="d" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="g" d="M50 10 L86 22 V50 C86 62 78 72 66 80 C58 66 46 60 14 52 V22 Z"/>' },
+    crown:   { vb: "0 0 120 90", svg:
+      '<path class="f" d="M12 80 L4 24 L36 48 L60 6 L84 48 L116 24 L108 80 Z"/>' +
+      '<path class="d" d="M12 80 L4 24 L36 48 L60 6 L84 48 L116 24 L108 80 Z"/>' +
+      '<path class="g" d="M16 36 L36 54 L60 16 L84 54 L104 36 L100 56 L20 56 Z"/>' +
+      '<rect class="f2" x="10" y="76" width="100" height="10" rx="3"/>' +
+      '<circle class="x" cx="24" cy="66" r="3.5"/><circle class="x" cx="96" cy="66" r="3.5"/>' },
+    seal:    { vb: "0 0 120 130", svg:
+      '<path class="f2" d="M44 72 L22 128 L38 118 L48 130 L62 86 Z"/><path class="f2" d="M76 72 L98 128 L82 118 L72 130 L58 86 Z"/>' +
+      '<circle class="f" cx="60" cy="52" r="44" style="stroke-width:9; stroke-dasharray:5 4.2"/>' +
+      '<circle class="f" cx="60" cy="52" r="40" style="stroke:none"/>' +
+      '<circle class="d" cx="60" cy="52" r="40"/><ellipse class="g" cx="60" cy="38" rx="30" ry="18"/>' +
+      '<circle cx="60" cy="52" r="33" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/>' },
+    medal:   { vb: "0 0 100 140", svg:
+      '<path class="f2" d="M28 0 H72 L62 54 H38 Z"/><path class="x" d="M46 0 H54 L53 54 H47 Z" style="fill:rgba(255,255,255,.55); stroke:none"/>' +
+      '<circle class="f" cx="50" cy="94" r="42"/><circle class="d" cx="50" cy="94" r="42"/>' +
+      '<circle cx="50" cy="94" r="34" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="3"/><ellipse class="g" cx="50" cy="78" rx="30" ry="18"/>' },
+    dogtag:  { vb: "0 0 70 140", svg:
+      '<path d="M35 0 V44" fill="none" stroke="#9aa3b0" stroke-width="4" stroke-dasharray="5 4"/>' +
+      '<rect class="f" x="6" y="44" width="58" height="90" rx="12"/><rect class="d" x="6" y="44" width="58" height="90" rx="12"/>' +
+      '<rect class="g" x="8" y="46" width="54" height="40" rx="10"/>' +
+      '<circle cx="35" cy="57" r="5" fill="#0b0d12"/><path d="M6 64 L14 70 L6 76 Z" fill="rgba(0,0,0,.35)"/>' +
+      '<rect x="18" y="118" width="34" height="3" fill="rgba(0,0,0,.35)"/><rect x="24" y="124" width="22" height="3" fill="rgba(0,0,0,.35)"/>' },
+    burst:   { vb: "0 0 100 100", svg:
+      '<path class="f" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<path class="d" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<ellipse class="g" cx="50" cy="38" rx="26" ry="16"/>' },
+    scroll:  { vb: "0 0 180 60", svg:
+      '<rect class="f" x="18" y="14" width="144" height="32"/><rect class="d" x="18" y="14" width="144" height="32"/>' +
+      '<rect class="g" x="18" y="14" width="144" height="14"/>' +
+      '<rect class="f2" x="3" y="5" width="24" height="50" rx="11"/><rect class="f2" x="153" y="5" width="24" height="50" rx="11"/>' +
+      '<rect x="9" y="12" width="6" height="36" rx="3" fill="rgba(0,0,0,.3)"/><rect x="165" y="12" width="6" height="36" rx="3" fill="rgba(0,0,0,.3)"/>' }
+  };
+
+  function badgeDefs() {
+    if (document.getElementById("bx-defs")) return;
+    var box = document.createElement("div");
+    box.innerHTML =
+      '<svg id="bx-defs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
+      '<linearGradient id="bx-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="bx-shade" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>' +
+      '<linearGradient id="bx-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f5f9"/><stop offset=".45" stop-color="#a7b0bd"/><stop offset=".55" stop-color="#6d7683"/><stop offset="1" stop-color="#c9d1db"/></linearGradient>' +
+      "</defs></svg>";
+    document.body.appendChild(box.firstChild);
+  }
+  function badgeHTML(role, design, value, at) {
+    var d = BADGE[design] || BADGE.shield;
+    return '<div class="c-badge ' + role + " d-" + (BADGE[design] ? design : "shield") +
+      (at && at !== "auto" ? " at-" + at : "") + '">' +
+      '<svg viewBox="' + d.vb + '" preserveAspectRatio="none">' + d.svg + "</svg>" +
+      "<span>" + value + "</span></div>";
+  }
+
+  /* upper(), the motor's: capitals are a look, and a capital carries no accent */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  /* what the game draws, first to last: the cast portrait, then its fallback
+     (game.js, castArt / faceNode) */
+  function faces(kind, g, t) {
+    var tail = pad(g) + "-" + TIERS[t].toLowerCase() + ".webp";
+    var grade = GRADES.filter(function (x) { return x.r === g; })[0].key;
+    var list = [EMBED + "stratideck-cast-" + kind + "-" + tail];
+    if (kind === "turn") list.push(EMBED + "stratideck-cast-red-" + tail);
+    list.push(EMBED + "stratideck-card-" + (kind === "blue" ? "blue" : "red") + "-" + grade + ".webp");
+    return list;
+  }
+
+  /* ONE CARD — faceNode's markup. `c` is { rank, tier } (tier null: an
+     object), `side` blue / red / none, `srcs` the pictures to try in turn,
+     `turn` the turncoat's crest disc. */
+  function card(c, fmt, side, srcs, turn, onFallback) {
+    var t = c.tier == null ? 0 : c.tier, officer = c.rank <= 10, tiered = c.tier != null;
+    var n = document.createElement("div");
+    n.className = "card static still fmt-" + fmt + " style-" + K.style + " tier-" + TIER_CLS[t] +
+      (K.markover ? " mark-over" : "") + (K.rankOn && officer ? " rank-on" : "") +
+      (K.tierOn && tiered ? " tier-on" : "") + (officer ? "" : " object");
+    n.style.setProperty("--rar", tiered ? TIER_COLOR[t] : OBJECT_RIM);
+    n.style.setProperty("--team", side === "red" ? RED : BLUE);
+    var f = K.vary && FOCUS[c.rank] ? FOCUS[c.rank] : [50, 40];
+    n.style.setProperty("--fx", f[0] + "%");
+    n.style.setProperty("--fy", f[1] + "%");
+    n.style.setProperty("--zoom", K.zoom);
+    n.style.setProperty("--hero", K.hero + "%");
+    n.style.setProperty("--mark", K.mark);
+    n.style.setProperty("--mx", K.mx + "%");
+    n.style.setProperty("--midz", K.midz);
+    n.style.setProperty("--midx", K.midx + "%");
+    n.style.setProperty("--midy", K.midy + "%");
+    n.style.setProperty("--tinyz", K.tinyz);
+    n.style.setProperty("--tinyx", K.tinyx + "%");
+    n.style.setProperty("--tinyy", K.tinyy + "%");
+    n.style.setProperty("--bgi", 'url("' + SCENE + '")');
+
+    var crest = CREST[side] || "";
+    var pips = "";
+    for (var i = 0; tiered && i < TIER_PIPS[t]; i++) pips += "<i></i>";
+    var name = upper(officer ? GRADES.filter(function (x) { return x.r === c.rank; })[0].name
+                             : OBJECTS.filter(function (x) { return x.r === c.rank; })[0].name);
+    n.innerHTML =
+      '<div class="c-body"><div class="c-frame"></div><div class="c-scene"></div>' +
+      '<div class="c-mark' + (c.rank >= 10 ? " two" : "") + '"><b>' + (officer ? c.rank : "") + "</b></div>" +
+      '<div class="c-hero"><img alt=""></div>' +
+      badgeHTML("rank", K.brank, officer ? c.rank : "", K.arank) +
+      badgeHTML("tier", K.btier, TIERS[t], K.atier) +
+      (officer && side !== "red" && PERK[c.rank]
+        ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg></div>" : "") +
+      (crest ? '<img class="c-crest" alt="" src="' + crest + '">' : "") +
+      (turn ? '<div class="c-turn"><img alt="" src="' + CREST.red + '"></div>' : "") +
+      '<div class="c-plate"><span class="c-name">' + name + '</span><span class="c-tier">' +
+        upper(tiered ? TIER_LABEL[t] : "Object") + "</span></div>" +
+      '<div class="c-pips">' + pips + "</div>" +
+      '<div class="c-back"></div><div class="c-shine"></div></div>';
+
+    var img = n.querySelector(".c-hero img"), at = 0;
+    img.onerror = function () {
+      if (++at === 1 && onFallback) onFallback();
+      if (at < srcs.length) img.src = srcs[at]; else img.onerror = null;
+    };
+    img.src = srcs[0];
+
+    // sizeNode, the game's
+    var w = SIZE[fmt];
+    n.style.setProperty("--w", w + "px");
+    n.style.setProperty("--h", (fmt === "full" ? Math.round(w * 1.4) : w) + "px");
+    n.style.setProperty("--blur", (K.blur * w / 300).toFixed(2) + "px");
+    var FIT_AT = { full: 220, mid: 200 }, fit = FIT_AT[fmt] ? Math.min(1.7, Math.max(1, FIT_AT[fmt] / w)) : 1;
+    n.style.setProperty("--fit", fit.toFixed(2));
+    n.classList.toggle("fit", fit > 1.01);
+    return n;
+  }
+
+  /* ---- the page ------------------------------------------------------------ */
+  var FMT = "mid";
+  try { FMT = localStorage.getItem("lab:stratideck-cards") || FMT; } catch (e) { /* no storage */ }
+  var CAST = null;                      // "blue4.2" -> { first, last }, when served
+
+  var ARMIES = [
+    { id: "blue", title: "Blue army", sub: "the player's own, recruited in the tent", kind: "blue", side: "blue" },
+    { id: "red",  title: "Red camp",  sub: "the enemy, met in battle",                kind: "red",  side: "red" },
+    { id: "turn", title: "Turncoats", sub: "red officers who enlisted, in the blue army's uniform", kind: "turn", side: "blue" }
+  ];
+
+  function label(kind, g, t) {
+    var key = "cast-" + kind + "-" + pad(g) + "-" + TIERS[t].toLowerCase();
+    var p = CAST && CAST[(kind === "blue" ? "blue" : "red") + g + "." + t];
+    return (p ? p.first + " " + p.last : TIERS[t]) + "<i>" + key + "</i>";
+  }
+
+  function render() {
+    var main = document.getElementById("main"), painted = 0, total = 0;
+    main.innerHTML = "";
+    main.style.setProperty("--cw", SIZE[FMT] + "px");
+    ARMIES.forEach(function (a) {
+      var sec = document.createElement("section"); sec.id = a.id;
+      sec.innerHTML = "<h2>" + a.title + "<span>" + a.sub + "</span></h2>";
+      GRADES.forEach(function (g) {
+        var line = document.createElement("div"); line.className = "grade";
+        line.innerHTML = "<small>" + g.r + " · " + g.name + "</small>";
+        var row = document.createElement("div"); row.className = "row";
+        for (var t = 0; t < 6; t++) {
+          var cell = document.createElement("div"); cell.className = "cell";
+          total++; painted++;
+          cell.appendChild(card({ rank: g.r, tier: t }, FMT, a.side, faces(a.kind, g.r, t), a.kind === "turn",
+            (function (c) { return function () { c.classList.add("fallback"); painted--; count(); }; })(cell)));
+          var s = document.createElement("small"); s.innerHTML = label(a.kind, g.r, t);
+          cell.appendChild(s);
+          row.appendChild(cell);
+        }
+        line.appendChild(row);
+        sec.appendChild(line);
+      });
+      main.appendChild(sec);
+    });
+    var obj = document.createElement("section"); obj.id = "objects";
+    obj.innerHTML = "<h2>Objects<span>no grade, no tier, no army</span></h2>";
+    var row = document.createElement("div"); row.className = "row objects";
+    OBJECTS.forEach(function (o) {
+      var cell = document.createElement("div"); cell.className = "cell";
+      cell.appendChild(card({ rank: o.r, tier: null }, FMT, "none", [EMBED + "stratideck-" + o.file + ".webp"], false));
+      var s = document.createElement("small"); s.textContent = o.name; cell.appendChild(s);
+      row.appendChild(cell);
+    });
+    obj.appendChild(row);
+    main.appendChild(obj);
+    function count() {
+      document.getElementById("count").textContent = painted + " / " + total + " portraits painted" +
+        (CAST ? "" : " · names need the page served over HTTP");
+    }
+    count();
+  }
+
+  var seg = document.getElementById("fmt");
+  function paintSeg() {
+    seg.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === FMT); });
+  }
+  seg.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || b.dataset.v === FMT) return;
+    FMT = b.dataset.v;
+    try { localStorage.setItem("lab:stratideck-cards", FMT); } catch (err) { /* ignore */ }
+    paintSeg(); render();
+  });
+
+  badgeDefs();
+  paintSeg();
+  render();
+  /* the names, where the browser lets the page read the manifest */
+  fetch("../games/stratideck/manifest.json").then(function (r) { return r.json(); }).then(function (m) {
+    CAST = {};
+    (m.web.army.cast || []).forEach(function (c) { CAST[c.side + c.r + "." + c.t] = c; });
+    render();
+  }).catch(function () { /* file:// — the role keys stay */ });
+})();
+</script>
+</body>
+</html>

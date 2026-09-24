@@ -127,3 +127,867 @@
     58%      { transform:scale(1);    opacity:1; }
     66%,100% { opacity:0; }
   }
+
+  /* ---- THE CARDS -----------------------------------------------------------
+     What follows, between THE CARD ITSELF and END OF THE CARD, is the block
+     "Copy the card CSS" takes out of lab/stratideck-card.html, pasted as it
+     comes and left unindented so the next paste is a clean diff. Which frame
+     and which badges it wears is CONFIG.cards in game.js ("Copy the card
+     settings", same page). Nothing in it is edited here: a card is tuned in
+     the lab and the lab is what ships. */
+/* ===========================================================================
+   THE CARD ITSELF — from here to the END OF THE CARD marker is what ships.
+   =========================================================================== */
+.card {
+  /* the numbers a card is told: its size, its rarity, its scene */
+  --w:300px; --h:420px;
+  --rar:#ffd43b;                 /* the rarity colour */
+  --team:#5aa9ff;                /* the side's colour */
+  --gold:#f2c14e; --gold2:#ffe9a8; --gold3:#a8731a;
+  --zoom:2.6; --fx:50%; --fy:40%; --blur:6px;
+  --mark:.5; --mx:0%; --hero:78%;
+  --midz:1.35; --midx:0%; --midy:16%; --tinyz:1.8; --tinyx:0%; --tinyy:26%;
+  --rx:0deg; --ry:0deg;
+  position:relative; width:var(--w); height:var(--h);
+  font-size:calc(var(--w) / 100);     /* 1em = 1% of the card's width */
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:#f6f1e4; border-radius:6em; isolation:isolate; user-select:none;
+  transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  /* NOT preserve-3d: in a 3D context the children are sorted by their depth
+     and z-index stops deciding, which put a badge BEHIND the body it is
+     meant to hang over. The tilt only needs the perspective above. */
+  transform-style:flat; transition:transform .12s ease-out;
+}
+/* the body: everything that is the card proper, clipped to its outline; the
+   badges are siblings of it, which is what lets them hang over the edge */
+.c-body { inset:0; border-radius:inherit; overflow:hidden; z-index:1; box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.6); }
+.card > *, .c-body > * { position:absolute; pointer-events:none; }
+.c-back { display:none; }
+.card.static { transform:none; }
+
+/* 1. the scene: the band's own backdrop, zoomed on one patch and blurred */
+.c-scene { inset:3em; border-radius:4em; overflow:hidden; z-index:1; background:#0a1026; }
+.c-scene::before {
+  content:""; position:absolute; inset:-6%;
+  background-image:var(--bgi); background-size:calc(100% * var(--zoom)) auto;
+  background-position:var(--fx) var(--fy);
+  filter:blur(var(--blur)) saturate(1.15) brightness(.9);
+}
+/* a scrim: dark at the foot so the plate reads, the rarity leaking in at the head */
+.c-scene::after {
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 32%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%),
+    radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--rar) 26%, transparent), transparent 70%);
+}
+
+/* 2. the watermark: the rank, huge, as a filigree. The box is placed in card
+   units; the digit is the <b>, which is where the big font-size goes. */
+.c-mark { left:0; right:0; top:2em; text-align:center; z-index:2; line-height:1; opacity:var(--mark); mix-blend-mode:overlay;
+  transform:translateX(var(--mx)); }
+.c-mark b {
+  display:inline-block; font-size:92em; font-weight:900; line-height:1; letter-spacing:-.06em;
+  color:#fff; -webkit-text-stroke:.006em rgba(255,255,255,.5);
+}
+.c-mark.two { top:8em; }
+.c-mark.two b { font-size:70em; }
+.card.mark-over .c-mark { z-index:4; }
+
+/* 3. the hero: the officer, sharp, three quarters of the card */
+.c-hero { left:0; right:0; bottom:14%; height:var(--hero); z-index:3; display:flex; align-items:flex-end; justify-content:center; }
+.c-hero img {
+  /* the band's full height, not the file's: a card opened big (the
+     barracks' file, 540px) must grow the officer with it, and a picture
+     wider than the band is contained rather than stretched */
+  height:100%; width:auto; max-width:104%; object-fit:contain; object-position:50% 100%;
+  filter:drop-shadow(0 1.5em 2em rgba(0,0,0,.6)) drop-shadow(0 0 1.5em color-mix(in srgb, var(--rar) 45%, transparent));
+}
+.c-hero.missing { align-items:center; }
+.c-hero.missing::before { content:attr(data-missing); font-size:5em; letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
+
+/* 4. the badges. An SVG shape, a number over it, a shadow on the box. The
+   colour is `--bc`: the card's rarity, for both roles. `.f` is
+   the coloured body of the shape, `.f2` its darker second colour, `.x` its
+   neutral parts (a blade, a chain, a plate), `.g` the gloss. Every design
+   has a default place for each role and hangs a little over the card's edge;
+   the `at-*` classes override the place. z-index 20: above the body, always. */
+.c-badge {
+  z-index:20; --bc:var(--rar); --rim2:var(--gold); --rim3:var(--gold3); --rot:0deg; --bs:1; --tx:0; --ty2:0; --ty:50%;
+  transform:translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bs));
+  filter:drop-shadow(0 .8em 1.4em rgba(0,0,0,.6)) drop-shadow(0 0 1.2em color-mix(in srgb, var(--bc) 55%, transparent));
+}
+/* the tier badge: same rarity colour, but a dark steel rim and a hard shadow */
+.c-badge.tier { --rim2:#1a1d24; --rim3:#0b0d12; filter:drop-shadow(.7em .9em 0 rgba(0,0,0,.78)); }
+.c-badge svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.c-badge .f  { fill:var(--bc); stroke:var(--rim2); stroke-width:4; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .f2 { fill:color-mix(in srgb, var(--bc) 62%, #000); stroke:var(--rim3); stroke-width:3; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .x  { fill:url(#bx-steel); stroke:#0b0d12; stroke-width:2.5; paint-order:stroke; stroke-linejoin:round; }
+.c-badge .g  { fill:url(#bx-gloss); pointer-events:none; }
+.c-badge .d  { fill:url(#bx-shade); pointer-events:none; }
+.c-badge span {
+  position:absolute; left:50%; top:var(--ty); transform:translate(-50%, -50%);
+  font-size:10em; font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
+  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.45), 0 0 .5em rgba(0,0,0,.4);
+}
+.c-badge span small { font-size:.36em; font-weight:800; letter-spacing:.15em; margin-right:.25em; vertical-align:.25em; }
+.c-badge.tier span { font-size:9em; color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
+.card:not(.rank-on) .c-badge.rank { display:none; }
+.card:not(.tier-on) .c-badge.tier { display:none; }
+
+/* the seven designs: a size, a place for the rank, a place for the tier.
+   Every one of them hangs past the edge by about a fifth of its own size —
+   enough to read as an object laid on the card, not enough to look dropped. */
+.d-shield.rank  { width:24em; height:26em; left:-5em; top:-4em; --rot:-8deg; }
+.d-shield.tier  { width:17em; height:18.5em; right:-4em; bottom:24em; --rot:9deg; }
+.d-crown.rank   { width:38em; height:25em; left:50%; top:-8em; --tx:-50%; --ty:70%; }
+.d-crown.tier   { width:24em; height:16em; right:-5em; bottom:26em; --rot:14deg; --ty:70%; }
+.d-seal.rank    { width:26em; height:28em; left:-5em; bottom:-5em; --rot:-10deg; --ty:40%; }
+.d-seal.tier    { width:19em; height:20.5em; right:-4em; bottom:20em; --rot:12deg; --ty:40%; }
+.d-medal.rank   { width:20em; height:28em; left:-4em; top:-6em; --ty:67%; --rot:-12deg; }
+.d-medal.tier   { width:15em; height:21em; right:-3.5em; bottom:22em; --ty:67%; --rot:10deg; }
+.d-dogtag.rank  { width:16em; height:32em; left:3em; top:-8em; --rot:-7deg; --ty:68%; }
+.d-dogtag.tier  { width:12em; height:24em; right:-2.5em; top:-6em; --rot:9deg; --ty:68%; }
+.d-dogtag.tier span { font-size:6.5em; }
+.d-burst.rank   { width:27em; height:27em; left:-6em; top:-6em; --rot:-12deg; }
+.d-burst.tier   { width:19em; height:19em; right:-4em; bottom:24em; --rot:10deg; }
+.d-scroll.rank  { width:46em; height:16em; left:50%; top:-5em; --tx:-50%; }
+.d-scroll.rank span { font-size:8.5em; }
+.d-scroll.tier  { width:30em; height:11em; left:50%; bottom:-3.5em; --tx:-50%; }
+
+/* the placement override */
+.card .c-badge.at-tl { left:-4em; top:-4em; right:auto; bottom:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-t  { left:50%; top:-4em; right:auto; bottom:auto; --tx:-50%; --ty2:0; }
+.card .c-badge.at-tr { right:-4em; top:-4em; left:auto; bottom:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-r  { right:-4em; top:50%; left:auto; bottom:auto; --tx:0; --ty2:-50%; }
+.card .c-badge.at-br { right:-4em; bottom:-4em; left:auto; top:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-b  { left:50%; bottom:-4em; right:auto; top:auto; --tx:-50%; --ty2:0; }
+.card .c-badge.at-bl { left:-4em; bottom:-4em; right:auto; top:auto; --tx:0; --ty2:0; }
+.card .c-badge.at-l  { left:-4em; top:50%; right:auto; bottom:auto; --tx:0; --ty2:-50%; }
+
+/* 5. the crest: which army, top-right */
+.c-crest { right:4.5em; top:4.5em; width:17em; height:20em; z-index:5; object-fit:contain; filter:drop-shadow(0 .6em 1em rgba(0,0,0,.6)); }
+
+/* 5b. the macaron: what the grade is FOR (game.js, PERK) — a dark disc in
+   the badges' gold rim, a Lucide pictogram stroked on it, on the army's
+   cards only. THE SAME THREE CORNERS ON EVERY FORMAT: the grade top-left,
+   the tier bottom-right, the macaron bottom-left — a card read small in a
+   list and the same card opened big must not move a badge between them.
+   `--ps` is its scale, which the game raises with the badges on a card
+   dealt small; it grows out of its own corner. */
+.c-perk {
+  z-index:21; left:-4em; bottom:-4em; width:19em; height:19em; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
+  box-shadow:0 0 0 1.3em var(--gold), 0 0 0 2em #0b0d12, 0 .9em 1.6em rgba(0,0,0,.6);
+  transform:scale(var(--ps, 1)); transform-origin:0 100%;
+}
+.c-perk svg {
+  width:60%; height:60%; overflow:visible;
+  fill:none; stroke:#f6e6b4; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
+  filter:drop-shadow(0 .5em 0 rgba(0,0,0,.55));
+}
+.fmt-mid .c-perk { --ps:.8; }
+.fmt-tiny .c-perk {
+  left:-5em; bottom:-5em; width:34em; height:34em;
+  box-shadow:0 0 0 2.2em var(--gold), 0 0 0 3.2em #0b0d12, 0 1.2em 2em rgba(0,0,0,.6);
+}
+.card.back .c-perk { display:none; }
+.card.ghost .c-perk { filter:grayscale(1) brightness(.7); }
+
+/* 6. the plate: the name and the tier */
+.c-plate {
+  left:0; right:0; bottom:5.5em; z-index:6; text-align:center; padding:2.2em 6em 1.6em;
+  background:linear-gradient(90deg, transparent, rgba(4,5,14,.85) 14%, rgba(4,5,14,.85) 86%, transparent);
+}
+.c-plate::before, .c-plate::after {
+  content:""; position:absolute; left:12%; right:12%; height:.7em;
+  background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold2) 50%, var(--gold) 80%, transparent);
+}
+.c-plate::before { top:0; } .c-plate::after { bottom:0; }
+.c-name {
+  display:block; font-size:9em; font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
+  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.6), 0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
+}
+.c-tier { display:block; margin-top:.6em; font-size:4.2em; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
+.c-pips { left:0; right:0; bottom:1.6em; z-index:6; display:flex; justify-content:center; gap:1.4em; }
+.c-pips i {
+  width:2.6em; height:2.6em; transform:rotate(45deg); border-radius:.4em;
+  background:linear-gradient(135deg, #fff, var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000)); box-shadow:0 0 .8em var(--rar);
+}
+
+/* 7. the frame: the style's own layer, under everything but the scene */
+.c-frame { inset:0; border-radius:6em; z-index:0; }
+
+/* ---- STYLE: foil — gold leaf, bevelled, a rarity rim, a slow shimmer ------ */
+.style-foil .c-frame { background:linear-gradient(160deg, var(--gold2) 0%, var(--gold) 22%, var(--gold3) 48%, var(--gold) 70%, var(--gold2) 100%); }
+.style-foil .c-frame::before {
+  content:""; position:absolute; inset:2em; border-radius:4.6em;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--rar) 80%, #fff), var(--rar) 50%, color-mix(in srgb, var(--rar) 50%, #000));
+}
+.style-foil .c-frame::after {
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, rgba(255,255,255,.1) 52%, transparent 70%);
+  background-size:300% 100%; mix-blend-mode:screen; animation:foilShine 4.5s ease-in-out infinite;
+}
+@keyframes foilShine { 0%,55% { background-position:120% 0; } 100% { background-position:-120% 0; } }
+.style-foil .c-scene { inset:3.2em; }
+
+/* ---- STYLE: holo — a rainbow ring turning under the rarity ---------------- */
+.style-holo .c-frame { background:#0b0d1a; overflow:hidden; }
+.style-holo .c-frame::before {
+  content:""; position:absolute; left:50%; top:50%; width:220%; height:220%; margin:-110% 0 0 -110%;
+  background:conic-gradient(from 0deg, var(--rar), #ff6ec7, #ffd166, #7cffb2, #5ad1ff, #b56cff, var(--rar));
+  animation:holoTurn 7s linear infinite;
+}
+.style-holo .c-frame::after {
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 45%, transparent), transparent 40%, color-mix(in srgb, var(--rar) 45%, transparent)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.14) 0 .5em, transparent .5em 1.4em);
+  mix-blend-mode:soft-light;
+}
+@keyframes holoTurn { to { transform:rotate(360deg); } }
+.style-holo .c-scene::before { filter:blur(var(--blur)) saturate(1.4) hue-rotate(-10deg); }
+.style-holo .c-body { box-shadow:0 12px 30px rgba(0,0,0,.6), 0 0 2.4em color-mix(in srgb, var(--rar) 40%, transparent); }
+
+/* ---- STYLE: ember — black iron, the rarity burning through the joints ----- */
+.style-ember .c-frame {
+  background:
+    radial-gradient(circle at 6% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 94% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 6% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
+    radial-gradient(circle at 94% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
+    linear-gradient(180deg, #2a2d36, #141620 40%, #1e2029 100%);
+  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.7), inset 0 0 0 .9em #3a3f4a;
+}
+.style-ember .c-frame::before {
+  content:""; position:absolute; inset:2.2em; border-radius:4.4em;
+  box-shadow:0 0 1.6em var(--rar), inset 0 0 1.4em var(--rar); border:.5em solid var(--rar);
+  animation:emberBreath 2.6s ease-in-out infinite;
+}
+@keyframes emberBreath { 50% { filter:brightness(1.35); } }
+.style-ember .c-body { box-shadow:0 12px 30px rgba(0,0,0,.7), 0 0 3em color-mix(in srgb, var(--rar) 45%, transparent); }
+.style-ember.tier-legendary .c-frame::before { animation:emberFlicker 1.1s steps(1) infinite; }
+@keyframes emberFlicker { 0%,100% { opacity:1; } 30% { opacity:.75; } 34% { opacity:1; } 62% { opacity:.85; } 66% { opacity:1; } }
+
+/* ---- STYLE: forge — ember's cousin: basalt cracked open on lava ----------- */
+.style-forge .c-frame {
+  --lava:color-mix(in srgb, var(--rar) 55%, #ff6a00);
+  background:
+    repeating-linear-gradient(112deg, transparent 0 4.2em, var(--lava) 4.2em 4.5em, transparent 4.5em 9em),
+    repeating-linear-gradient(-68deg, transparent 0 6em, color-mix(in srgb, var(--lava) 70%, transparent) 6em 6.25em, transparent 6.25em 13em),
+    linear-gradient(180deg, #221a17, #0e0b0a 45%, #1a1210 100%);
+  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.8), inset 0 0 2.6em rgba(0,0,0,.9);
+}
+.style-forge .c-frame::before {          /* the molten seam */
+  content:""; position:absolute; inset:2.4em; border-radius:4.2em; border:.4em solid var(--lava);
+  box-shadow:0 0 1.4em var(--lava), inset 0 0 1.6em color-mix(in srgb, var(--lava) 70%, transparent);
+  animation:forgeHeat 1.8s ease-in-out infinite;
+}
+@keyframes forgeHeat { 50% { filter:brightness(1.5) saturate(1.2); } }
+.style-forge .c-frame::after {           /* the sparks */
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 8% 30%, #ffd27a 0 .35em, transparent .6em),
+    radial-gradient(circle at 93% 62%, #ffb347 0 .3em, transparent .55em),
+    radial-gradient(circle at 5% 78%, #ff8a3d 0 .3em, transparent .5em),
+    radial-gradient(circle at 95% 18%, #ffe0a0 0 .25em, transparent .5em),
+    radial-gradient(circle at 50% 97%, #ffb347 0 .35em, transparent .6em),
+    radial-gradient(circle at 30% 3%, #ff9a4d 0 .3em, transparent .5em);
+  animation:sparkle 1.3s steps(2) infinite;
+}
+@keyframes sparkle { 50% { opacity:.35; } }
+.style-forge .c-body { box-shadow:0 12px 30px rgba(0,0,0,.75), 0 0 3em rgba(255,110,20,.45); }
+.style-forge .c-scene::before { filter:blur(var(--blur)) sepia(.35) saturate(1.5) hue-rotate(-18deg) brightness(.8); }
+.style-forge .c-scene::after {
+  background:
+    linear-gradient(180deg, rgba(255,120,30,.25) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(20,6,2,.95) 0%, rgba(40,10,4,.6) 20%, transparent 48%),
+    radial-gradient(80% 40% at 50% 100%, rgba(255,110,20,.55), transparent 70%);
+}
+.style-forge .c-tier { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
+.style-forge .c-pips i { background:linear-gradient(135deg, #fff, #ff9a3d 40%, #7a2a00); box-shadow:0 0 .8em #ff8a3d; }
+
+/* ---- STYLE: ash — ember's other cousin: charred wood, the last embers ----- */
+.style-ash .c-frame {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 .3em, transparent .3em 1.6em),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 .15em, transparent .15em 3.4em),
+    linear-gradient(180deg, #2b2523, #17130f 50%, #221c18);
+  box-shadow:inset 0 0 0 .4em #0a0806, inset 0 0 3em rgba(0,0,0,.9);
+}
+.style-ash .c-frame::before {            /* the edge still burning: a broken line of glow */
+  content:""; position:absolute; inset:2.4em; border-radius:4.2em;
+  border:.45em dashed color-mix(in srgb, var(--rar) 60%, #ff5a1a);
+  box-shadow:0 0 1.2em color-mix(in srgb, var(--rar) 50%, #ff5a1a), inset 0 0 1em rgba(255,90,26,.35);
+  animation:ashGlow 3.4s ease-in-out infinite;
+}
+@keyframes ashGlow { 50% { opacity:.55; filter:brightness(.7); } }
+.style-ash .c-frame::after {             /* embers in the corners, and the smoke */
+  content:""; position:absolute; inset:0; border-radius:6em;
+  background:
+    radial-gradient(circle at 4% 96%, #ff7a2a 0 .4em, transparent .7em),
+    radial-gradient(circle at 9% 92%, #ffb26a 0 .25em, transparent .5em),
+    radial-gradient(circle at 96% 95%, #ff7a2a 0 .35em, transparent .65em),
+    radial-gradient(circle at 92% 89%, #ff9a4d 0 .2em, transparent .45em),
+    radial-gradient(circle at 3% 6%, #ff8a3d 0 .25em, transparent .5em),
+    radial-gradient(70% 30% at 50% 0, rgba(200,200,200,.18), transparent 70%);
+  animation:sparkle 2.2s steps(3) infinite;
+}
+.style-ash .c-body { box-shadow:0 12px 30px rgba(0,0,0,.8), 0 0 2em rgba(255,90,26,.25); }
+.style-ash .c-scene::before { filter:blur(var(--blur)) grayscale(.65) brightness(.55) contrast(1.1); }
+.style-ash .c-scene::after {
+  background:
+    linear-gradient(180deg, rgba(180,180,180,.16) 0%, transparent 35%),
+    linear-gradient(0deg, rgba(8,6,5,.95) 0%, rgba(20,12,8,.6) 22%, transparent 50%),
+    radial-gradient(60% 30% at 50% 100%, rgba(255,90,26,.35), transparent 70%);
+}
+.style-ash .c-plate::before, .style-ash .c-plate::after { background:linear-gradient(90deg, transparent, #ff7a2a 30%, #ffd0a0 50%, #ff7a2a 70%, transparent); }
+.style-ash .c-name { color:#e8e2d8; }
+.style-ash .c-pips i { background:linear-gradient(135deg, #fff, #ff7a2a 40%, #3a1200); box-shadow:0 0 .8em #ff7a2a; }
+
+/* ---- STYLE: chamfer — cut corners, brackets, a tactical readout ----------- */
+.style-chamfer .c-body, .style-chamfer .c-frame { border-radius:0; }
+.style-chamfer .c-body { clip-path:polygon(8em 0, 100% 0, 100% calc(100% - 8em), calc(100% - 8em) 100%, 0 100%, 0 8em); }
+.style-chamfer .c-frame {
+  background:linear-gradient(180deg, #0f1220, #080a14);
+  box-shadow:inset 0 0 0 .7em var(--rar), inset 0 0 0 1em rgba(0,0,0,.8), inset 0 0 0 1.4em color-mix(in srgb, var(--rar) 40%, transparent);
+}
+.style-chamfer .c-frame::before {
+  content:""; position:absolute; inset:2.4em;
+  background:
+    linear-gradient(var(--rar), var(--rar)) 0 0 / 10em .8em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 0 0 / .8em 10em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 100% 100% / 10em .8em no-repeat,
+    linear-gradient(var(--rar), var(--rar)) 100% 100% / .8em 10em no-repeat;
+}
+.style-chamfer .c-scene { inset:3.6em; border-radius:0; }
+.style-chamfer .c-scene::after {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 .4em, transparent .4em 1.2em),
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 30%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%);
+}
+.style-chamfer .c-plate::before, .style-chamfer .c-plate::after { background:linear-gradient(90deg, transparent, var(--rar) 20%, #fff 50%, var(--rar) 80%, transparent); }
+.style-chamfer .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.2em; }
+
+/* ---- STYLE: hex — chamfer's cousin: eight sides, ticks, a turning reticle -- */
+.style-hex .c-body, .style-hex .c-frame { border-radius:0; }
+.style-hex .c-body { clip-path:polygon(12em 0, calc(100% - 12em) 0, 100% 9em, 100% calc(100% - 9em), calc(100% - 12em) 100%, 12em 100%, 0 calc(100% - 9em), 0 9em); }
+.style-hex .c-frame {
+  background:linear-gradient(180deg, #0c1420, #070b12);
+  box-shadow:inset 0 0 0 .5em var(--rar), inset 0 0 0 1.2em #070b12, inset 0 0 0 1.5em color-mix(in srgb, var(--rar) 55%, transparent);
+}
+.style-hex .c-frame::before {            /* the ticks: a ruler along the top and the bottom */
+  content:""; position:absolute; inset:2.2em;
+  background:
+    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 0 / 56% .9em no-repeat,
+    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 100% / 56% .9em no-repeat,
+    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 0 50% / .9em 40% no-repeat,
+    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 100% 50% / .9em 40% no-repeat;
+  opacity:.8;
+}
+.style-hex .c-frame::after {             /* the reticle, behind the hero */
+  content:""; position:absolute; left:50%; top:38%; width:64em; height:64em; margin:-32em 0 0 -32em; border-radius:50%;
+  border:.5em dashed color-mix(in srgb, var(--rar) 70%, transparent);
+  box-shadow:inset 0 0 0 3em transparent, inset 0 0 0 3.4em color-mix(in srgb, var(--rar) 30%, transparent);
+  animation:reticle 18s linear infinite; z-index:2;
+}
+@keyframes reticle { to { transform:rotate(360deg); } }
+.style-hex .c-scene { inset:3.8em; border-radius:0; clip-path:polygon(9em 0, calc(100% - 9em) 0, 100% 6.5em, 100% calc(100% - 6.5em), calc(100% - 9em) 100%, 9em 100%, 0 calc(100% - 6.5em), 0 6.5em); }
+.style-hex .c-scene::before { filter:blur(var(--blur)) saturate(.7) hue-rotate(15deg) brightness(.75); }
+.style-hex .c-scene::after {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--rar) 45%, transparent) 0 .3em, transparent .4em) 0 0 / 4em 4em,
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 25%, transparent) 0%, transparent 34%),
+    linear-gradient(0deg, rgba(3,6,12,.94) 0%, rgba(3,6,12,.55) 18%, transparent 46%);
+}
+.style-hex .c-plate { clip-path:polygon(4em 0, calc(100% - 4em) 0, 100% 50%, calc(100% - 4em) 100%, 4em 100%, 0 50%); left:4em; right:4em; background:rgba(4,8,16,.85); }
+.style-hex .c-plate::before, .style-hex .c-plate::after { left:8%; right:8%; background:var(--rar); height:.35em; }
+.style-hex .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.24em; }
+.style-hex .c-pips i { transform:none; border-radius:0; clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+
+/* ---- STYLE: steel — chamfer's other cousin: a bolted plate, hazard tape --- */
+.style-steel .c-body, .style-steel .c-frame { border-radius:0; }
+.style-steel .c-body { clip-path:polygon(10em 0, 100% 0, 100% calc(100% - 10em), calc(100% - 10em) 100%, 0 100%, 0 10em); }
+.style-steel .c-frame {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 .2em, transparent .2em .6em),
+    linear-gradient(160deg, #8a9098, #4e545c 45%, #6b727b 70%, #3b4048);
+  box-shadow:inset 0 0 0 .3em #1c1f24, inset 0 .5em 0 .3em rgba(255,255,255,.2), inset 0 -.6em 0 .3em rgba(0,0,0,.5);
+}
+.style-steel .c-frame::before {          /* the bolts */
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 14em 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at calc(100% - 4em) 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at 4em calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
+    radial-gradient(circle at calc(100% - 14em) calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em);
+}
+.style-steel .c-frame::after {           /* the tape: a band of hazard stripes under the plate */
+  content:""; position:absolute; left:4.5em; right:4.5em; bottom:4.5em; height:3em;
+  background:repeating-linear-gradient(-45deg, var(--rar) 0 2.2em, #14110f 2.2em 4.4em);
+  box-shadow:0 0 0 .3em #1c1f24;
+}
+.style-steel .c-scene { inset:4.5em 4.5em 7.5em; border-radius:0; }
+.style-steel .c-scene::before { filter:blur(var(--blur)) saturate(.85) brightness(.8); }
+.style-steel .c-scene::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 26%, transparent) 0%, transparent 30%),
+    linear-gradient(0deg, rgba(10,12,16,.95) 0%, rgba(10,12,16,.6) 18%, transparent 46%);
+}
+.style-steel .c-hero { bottom:16%; }
+.style-steel .c-plate { left:4.5em; right:4.5em; bottom:9em; padding:1.6em 4em 1.2em; background:linear-gradient(180deg, #2a2e35, #171a1f); box-shadow:inset 0 .3em 0 rgba(255,255,255,.1), 0 .3em 0 #0a0b0d; }
+.style-steel .c-plate::before { background:var(--rar); left:0; right:0; height:.6em; }
+.style-steel .c-plate::after { display:none; }
+.style-steel .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.3em; color:#e9edf2; text-shadow:0 .08em 0 #000; }
+.style-steel .c-tier { color:var(--rar); letter-spacing:.5em; }
+.style-steel .c-pips { display:none; }
+.style-steel .c-crest { top:6em; right:6em; }
+
+/* ---- STYLE: parchment — a war map, ink and wax, the rank stamped on it --- */
+.style-parchment .c-body, .style-parchment .c-frame { border-radius:2.5em; }
+.style-parchment .c-frame {
+  background:
+    repeating-linear-gradient(0deg, rgba(120,80,20,.06) 0 .3em, transparent .3em 1.1em),
+    repeating-linear-gradient(90deg, rgba(120,80,20,.05) 0 .2em, transparent .2em 1.7em),
+    radial-gradient(120% 90% at 50% 40%, #ecd9a9, #cdb27a 70%, #9c7a45);
+  box-shadow:inset 0 0 5em rgba(70,35,0,.55), inset 0 0 1.2em rgba(50,25,0,.6);
+}
+.style-parchment .c-frame::before { content:""; position:absolute; inset:2.4em; border:.5em double #4a2e12; border-radius:1.4em; opacity:.85; }
+.style-parchment .c-frame::after {       /* the wax seal, bottom-right */
+  content:""; position:absolute; right:3em; bottom:3em; width:12em; height:12em; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--rar) 70%, #fff), var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000) 90%);
+  box-shadow:0 .4em .8em rgba(40,20,0,.5), inset 0 0 0 1.4em rgba(0,0,0,.18), inset 0 0 0 2.2em rgba(255,255,255,.18);
+  z-index:8;
+}
+.style-parchment .c-scene { inset:5em; border-radius:1em; }
+.style-parchment .c-scene::before { filter:blur(var(--blur)) sepia(.75) contrast(.9) brightness(.85); }
+.style-parchment .c-scene::after {
+  background:
+    linear-gradient(0deg, rgba(70,40,10,.9) 0%, rgba(70,40,10,.45) 22%, transparent 50%),
+    radial-gradient(110% 90% at 50% 40%, transparent 55%, rgba(60,30,0,.55));
+}
+.style-parchment .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:6em; }
+.style-parchment .c-mark b {             /* the stamp: ink, tilted, ringed */
+  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:66em; padding:0 .12em;
+  color:var(--rar); transform:rotate(-12deg); -webkit-text-stroke:0;
+  border:.05em solid var(--rar); border-radius:.16em; box-shadow:inset 0 0 0 .015em #fff2d0, 0 0 0 .015em #fff2d0;
+}
+.style-parchment .c-mark.two { top:9em; }
+.style-parchment .c-mark.two b { font-size:56em; }
+.style-parchment .c-plate { background:linear-gradient(90deg, transparent, #3a2412 12%, #4a2e12 50%, #3a2412 88%, transparent); bottom:7em; }
+.style-parchment .c-plate::before, .style-parchment .c-plate::after { background:linear-gradient(90deg, transparent, #b07a2a 30%, #e8c27a 50%, #b07a2a 70%, transparent); height:.4em; }
+.style-parchment .c-name { font-family:Georgia,"Times New Roman",serif; color:#f2e3bf; letter-spacing:.1em; text-shadow:0 .06em 0 rgba(0,0,0,.6); }
+.style-parchment .c-tier { font-family:Georgia,serif; color:#e8c27a; text-shadow:none; }
+.style-parchment .c-pips { bottom:3em; }
+.style-parchment .c-pips i { background:#4a2e12; box-shadow:none; }
+.style-parchment .c-hero img { filter:drop-shadow(0 1em 1.4em rgba(40,20,0,.55)) sepia(.12); }
+
+/* ---- STYLE: stone — a slab, chiselled, runes lit in the rarity ----------- */
+.style-stone .c-body, .style-stone .c-frame { border-radius:1.6em; }
+.style-stone .c-frame {
+  background:
+    repeating-linear-gradient(37deg, rgba(255,255,255,.04) 0 .4em, transparent .4em 1.8em),
+    repeating-linear-gradient(-23deg, rgba(0,0,0,.12) 0 .3em, transparent .3em 2.4em),
+    linear-gradient(180deg, #5c626b, #3a3f47 50%, #2b2f36);
+  box-shadow:inset 0 .6em 0 rgba(255,255,255,.14), inset 0 -.8em 0 rgba(0,0,0,.6), inset .5em 0 0 rgba(255,255,255,.05), inset -.5em 0 0 rgba(0,0,0,.35);
+}
+.style-stone .c-frame::before {
+  content:""; position:absolute; inset:2.6em; border-radius:1em; border:.6em solid rgba(0,0,0,.5);
+  box-shadow:0 0 0 .3em rgba(255,255,255,.12), inset 0 0 0 .3em rgba(255,255,255,.08);
+}
+.style-stone .c-frame::after {
+  content:"\16A0 \16A2 \16A6 \16A8 \16B1 \16B7 \16B9 \16BE"; position:absolute; left:0; right:0; top:.8em; text-align:center;
+  font-size:2.6em; letter-spacing:.9em; color:var(--rar); text-shadow:0 0 .5em var(--rar);
+  animation:runeGlow 4s ease-in-out infinite;
+}
+@keyframes runeGlow { 50% { opacity:.55; } }
+.style-stone .c-scene { inset:4.6em; border-radius:.6em; }
+.style-stone .c-scene::before { filter:blur(var(--blur)) grayscale(.55) brightness(.65) contrast(1.1); }
+.style-stone .c-scene::after {
+  background:
+    linear-gradient(0deg, rgba(20,24,20,.9) 0%, rgba(20,24,20,.4) 22%, transparent 48%),
+    radial-gradient(60% 30% at 20% 100%, rgba(60,110,50,.55), transparent 70%),
+    radial-gradient(50% 24% at 85% 100%, rgba(60,110,50,.45), transparent 70%),
+    linear-gradient(112deg, transparent 47.6%, rgba(0,0,0,.55) 48%, rgba(255,255,255,.12) 48.4%, transparent 48.8%),
+    linear-gradient(74deg, transparent 71.6%, rgba(0,0,0,.5) 72%, rgba(255,255,255,.1) 72.4%, transparent 72.8%),
+    linear-gradient(180deg, color-mix(in srgb, var(--rar) 22%, transparent), transparent 40%);
+}
+.style-stone .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:4em; }
+.style-stone .c-mark b {                 /* the carving: a chiselled edge, the stone showing through */
+  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:80em;
+  color:transparent; -webkit-text-stroke:.012em rgba(235,238,245,.9);
+  text-shadow:.02em .025em 0 rgba(0,0,0,.75), -.008em -.008em 0 rgba(255,255,255,.35);
+}
+.style-stone .c-mark.two { top:8em; }
+.style-stone .c-mark.two b { font-size:64em; }
+.style-stone .c-plate {
+  left:5em; right:5em; bottom:6em; padding:1.6em 3em 1.2em;
+  background:linear-gradient(180deg, #2e323a, #1e2126); border:.5em solid #4a4f57; border-radius:.8em;
+  box-shadow:inset 0 .3em 0 rgba(255,255,255,.08), inset 0 -.4em 0 rgba(0,0,0,.5);
+}
+.style-stone .c-plate::before, .style-stone .c-plate::after { display:none; }
+.style-stone .c-name { font-family:Georgia,"Times New Roman",serif; color:#c9ccd2; letter-spacing:.16em; text-shadow:0 -.05em 0 #000, 0 .05em 0 rgba(255,255,255,.18); }
+.style-stone .c-tier { color:var(--rar); text-shadow:0 0 .6em var(--rar); font-family:Georgia,serif; }
+.style-stone .c-pips { bottom:2.6em; }
+.style-stone .c-pips i { border-radius:0; background:var(--rar); box-shadow:0 0 .6em var(--rar), inset 0 0 0 .3em rgba(0,0,0,.35); }
+.style-stone .c-hero img { filter:drop-shadow(0 1.2em 1.2em rgba(0,0,0,.7)) saturate(.9); }
+
+/* ---- FORMAT: mid — the grid's face-up square ----------------------------- */
+.fmt-mid { --h:var(--w); }
+.fmt-mid .c-body, .fmt-mid .c-frame { border-radius:5em; }
+.fmt-mid .c-badge { --bs:.8; }
+.fmt-mid .c-badge.tier { bottom:12em; }
+.fmt-mid .d-scroll.tier, .fmt-mid .d-seal.rank { bottom:-6em; }
+.fmt-mid .c-scene { inset:3em; border-radius:3.5em; }
+.fmt-mid .c-mark { top:-6em; left:0; right:0; text-align:center; }
+.fmt-mid .c-mark b { font-size:78em; transform:none; }
+.fmt-mid .c-mark.two { top:-3em; }
+.fmt-mid .c-mark.two b { font-size:64em; }
+.fmt-mid.rank-on .c-mark { display:none; }
+/* the crop: the whole square is the window, the officer free to be cut by any
+   of its four edges. The image hangs from the MIDDLE of the square (left/top
+   50% and a -50% translate) and is moved from there in percents of the square,
+   so a zoom keeps looking at the same point instead of growing out of a
+   corner. Its height is the square's, times the zoom. */
+.fmt-mid .c-hero, .fmt-tiny .c-hero {
+  width:auto; height:auto; display:block; overflow:hidden; border-radius:inherit;
+}
+.fmt-mid .c-hero img, .fmt-tiny .c-hero img {
+  position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+  width:auto; max-width:none; max-height:none;
+}
+.fmt-mid .c-hero  { inset:3em; border-radius:3.5em; }
+.fmt-mid .c-hero img  { height:calc(100% * var(--midz));  margin-left:var(--midx);  margin-top:var(--midy); }
+.fmt-mid.style-chamfer .c-hero, .fmt-mid.style-hex .c-hero, .fmt-mid.style-steel .c-hero { border-radius:0; }
+.fmt-mid.style-steel .c-hero { inset:4.5em 4.5em 7.5em; }
+.fmt-mid .c-hero.missing, .fmt-tiny .c-hero.missing { display:flex; align-items:center; justify-content:center; }
+.fmt-mid .c-crest { right:3.5em; top:3.5em; width:18em; height:20em; }
+.fmt-mid .c-plate { bottom:4em; padding:1.6em 4em 1.2em; }
+.fmt-mid .c-name { font-size:10em; letter-spacing:.1em; }
+.fmt-mid .c-tier, .fmt-mid .c-pips { display:none; }
+.fmt-mid.style-steel .c-scene { inset:4.5em 4.5em 7.5em; }
+.fmt-mid.style-steel .c-plate { bottom:9em; }
+.fmt-mid.style-stone .c-frame::after { display:none; }
+.fmt-mid.style-stone .c-plate, .fmt-mid.style-parchment .c-plate { bottom:4em; }
+.fmt-mid.style-parchment .c-frame::after { width:8em; height:8em; right:2em; bottom:2em; }
+.fmt-mid.style-hex .c-frame::after { width:50em; height:50em; margin:-25em 0 0 -25em; top:40%; }
+
+/* ---- FORMAT: tiny — a token for the menus --------------------------------- */
+.fmt-tiny { --h:var(--w); }
+.fmt-tiny .c-body, .fmt-tiny .c-frame { border-radius:16em; }
+.fmt-tiny .c-scene { inset:6em; border-radius:11em; }
+/* the token's rank: one digit in the corner, over the bust, whatever the style */
+.fmt-tiny .c-mark { z-index:7; left:auto; right:4em; top:auto; bottom:-2em; text-align:right; opacity:1; mix-blend-mode:normal; }
+.fmt-tiny .c-mark b {
+  font-size:58em; font-weight:900; font-family:inherit; letter-spacing:-.05em; transform:none; animation:none; padding:0; border:0; box-shadow:none;
+  color:#fff; -webkit-text-stroke:.035em #0b0b12; text-shadow:0 .05em .25em rgba(0,0,0,.85);
+}
+.fmt-tiny .c-mark.two { right:3em; bottom:0; }
+.fmt-tiny .c-mark.two b { font-size:46em; }
+.fmt-tiny.rank-on .c-mark { display:none; }
+.fmt-tiny .c-hero { inset:6em; border-radius:11em; }
+.fmt-tiny .c-hero img { height:calc(100% * var(--tinyz)); margin-left:var(--tinyx); margin-top:var(--tinyy); filter:none; }
+/* the token: the number on the top-left corner, the tier letter on the
+   bottom-right one — the corners every format gives them — both straight
+   and both SIZED FOR THE TOKEN — a design's own
+   size is a fraction of a 300px card and reads as a speck on a 64px one, so
+   every shape is re-measured here rather than scaled. */
+.fmt-tiny .c-badge { --bs:1; --rot:0deg; --tx:0; --ty2:0; }
+.fmt-tiny .c-badge span { font-size:23em; }
+.fmt-tiny .c-badge.tier span { font-size:19em; }
+.fmt-tiny .c-badge.rank { right:auto; bottom:auto; left:-4em; top:-4em; }
+.fmt-tiny .d-shield.rank { width:46em; height:50em; }
+.fmt-tiny .d-crown.rank  { width:54em; height:36em; left:-5em; top:-3em; }
+.fmt-tiny .d-seal.rank   { width:46em; height:50em; }
+.fmt-tiny .d-medal.rank  { width:38em; height:53em; left:-3em; top:-7em; }
+.fmt-tiny .d-dogtag.rank { width:30em; height:60em; left:-2em; top:-9em; }
+.fmt-tiny .d-burst.rank  { width:52em; height:52em; left:-6em; top:-6em; }
+.fmt-tiny .d-scroll.rank { width:62em; height:22em; left:-6em; top:-4em; }
+.fmt-tiny .c-badge.tier { left:auto; top:auto; right:-4em; bottom:-4em; }
+.fmt-tiny .d-shield.tier { width:33em; height:36em; }
+.fmt-tiny .d-crown.tier  { width:40em; height:27em; right:-5em; bottom:-3em; }
+.fmt-tiny .d-seal.tier   { width:33em; height:36em; }
+.fmt-tiny .d-medal.tier  { width:27em; height:38em; right:-3em; bottom:-9em; }
+.fmt-tiny .d-dogtag.tier { width:22em; height:44em; right:-2em; bottom:-11em; }
+.fmt-tiny .d-burst.tier  { width:38em; height:38em; right:-5em; bottom:-5em; }
+.fmt-tiny .d-scroll.tier { width:46em; height:17em; right:-4em; bottom:-3em; }
+.fmt-tiny .c-crest, .fmt-tiny .c-plate, .fmt-tiny .c-pips { display:none; }
+.fmt-tiny .c-frame::after { display:none; }
+.fmt-tiny.style-foil .c-frame::after, .fmt-tiny.style-holo .c-frame::after { display:block; }
+.fmt-tiny:not(.style-holo) .c-frame::before { inset:3em; border-radius:13em; }
+.fmt-tiny.style-chamfer .c-body, .fmt-tiny.style-steel .c-body { clip-path:polygon(18em 0, 100% 0, 100% calc(100% - 18em), calc(100% - 18em) 100%, 0 100%, 0 18em); }
+.fmt-tiny.style-hex .c-body { clip-path:polygon(22em 0, calc(100% - 22em) 0, 100% 18em, 100% calc(100% - 18em), calc(100% - 22em) 100%, 22em 100%, 0 calc(100% - 18em), 0 18em); }
+.fmt-tiny.style-chamfer .c-scene, .fmt-tiny.style-hex .c-scene, .fmt-tiny.style-steel .c-scene { inset:7em; border-radius:0; clip-path:none; }
+.fmt-tiny.style-chamfer .c-hero, .fmt-tiny.style-hex .c-hero, .fmt-tiny.style-steel .c-hero { inset:7em; border-radius:0; }
+.fmt-tiny.style-chamfer .c-frame::before, .fmt-tiny.style-hex .c-frame::before, .fmt-tiny.style-steel .c-frame::before { display:none; }
+.fmt-tiny.style-parchment .c-scene, .fmt-tiny.style-stone .c-scene { inset:6em; border-radius:11em; }
+
+/* ---- the BACK: the crest on the team's cloth, for the face-down grid ------ */
+.card.back .c-scene::before {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
+    radial-gradient(80% 70% at 50% 40%, color-mix(in srgb, var(--team) 80%, #000), color-mix(in srgb, var(--team) 25%, #000));
+  background-size:auto; background-position:0 0; filter:none;
+}
+.card.back .c-scene::after { background:radial-gradient(70% 70% at 50% 100%, rgba(0,0,0,.5), transparent); }
+.card.back .c-mark, .card.back .c-hero, .card.back .c-badge, .card.back .c-plate, .card.back .c-pips, .card.back .c-crest, .card.back .c-frame::after { display:none; }
+.card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
+.card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
+.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:14em; font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
+.card.back.fmt-tiny .c-back img { width:70%; }
+.card.back.fmt-tiny .c-back::after { display:none; }
+
+/* an OBJECT: a card with no grade and no tier — the flag, a trap, the
+   ground a camp is built on. No badge, no watermark, no pips, and the plate
+   says what kind of card it is where a rarity would be. The piece is a
+   standing prop rather than a figure, so it is centred rather than stood on
+   the plate, and a touch smaller. */
+.card.object .c-badge, .card.object .c-mark, .card.object .c-pips { display:none; }
+.card.object .c-hero { align-items:center; }
+.card.object .c-hero img { max-width:82%; max-height:82%; }
+.fmt-mid.object .c-hero img, .fmt-tiny.object .c-hero img { height:74%; margin:0; }
+.fmt-mid.object .c-name { font-size:8.5em; }
+
+/* a GHOST: a card the player has never had — never owned for an officer,
+   never met for an object. The painted piece flattened to its own WHITE
+   silhouette, the way an unowned sticker is (packages/webshell/meta.css),
+   the scene drained, no pips, no crest, the name a ???. The grade and the
+   tier badges stay — the grade names the slot, the tier says at what rank
+   the card is shown — drawn in the ghost's slate rather than a rarity. */
+.card.ghost .c-hero img { filter:brightness(0) invert(1) opacity(.26); }
+.card.ghost .c-scene { filter:grayscale(1) brightness(.55); }
+.card.ghost .c-pips, .card.ghost .c-tier, .card.ghost .c-crest { display:none; }
+.card.ghost .c-name { opacity:.6; letter-spacing:.3em; }
+
+/* motion off: a still card for a screenshot */
+.still .c-frame::before, .still .c-frame::after, .still .c-mark b { animation:none !important; }
+/* ============================ END OF THE CARD ============================== */
+
+  /* ---- THE TABLE: the round's cards, as a layer under the canvas ----------
+     game.js (THE TABLE) places one node per slot and writes its transform;
+     the canvas above still paints the halos, the bandages, the words and the
+     Fx. z-index -1 after .frame-art: behind the canvas, in front of the scene
+     (#frame is already a stacking context, motor.css). */
+  .cd-layer { position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+  .cd-layer.flat { background:linear-gradient(180deg,#132048,#070a18); }
+  .cd-layer .card { position:absolute; left:0; top:0; transition:none; }
+  /* the one card over the canvas: the token under a dragging finger */
+  .cd-layer.cd-top { z-index:5; }
+  /* the camp's panel, under the cards rather than a veil over them */
+  .cd-panel {
+    position:absolute; border-radius:22px;
+    background:rgba(6,9,26,.58); box-shadow:inset 0 0 0 2px rgba(242,193,78,.35);
+  }
+
+  /* THE BADGES AT A PLAYING SIZE (game.js, sizeNode): a card dealt smaller
+     than the lab composed it keeps its grade and its tier readable — and the
+     macaron with them, read at the same glance. */
+  .card.fit .c-badge { --bs:var(--fit); }
+  .card.fit.fmt-mid .c-badge { --bs:calc(.8 * var(--fit)); }
+
+  .card.fit .c-perk { --ps:var(--fit); }
+  .card.fit.fmt-mid .c-perk { --ps:calc(.8 * var(--fit)); }
+
+  /* A CARD ALREADY TURNED OVER ONCE, back face down: the same cloth with a
+     dog-eared corner and no question mark. It says "you have seen this one"
+     and nothing about what it was — that part is the player's memory.
+
+     THE FOLD IS THE CORNER IT CAME FROM. A folded corner is the card's own
+     corner mirrored across the crease, so its tip carries the card's own
+     radius (`--cr`, per format) — a sharp tip on a round-cornered card reads
+     as a sticker. ::before is the gap the fold leaves, in the panel's dark;
+     ::after is the flap, with its shadow following its shape. */
+  .card.back.seen { --cr:6em; --dog:32em; }
+  .card.back.seen.fmt-mid  { --cr:5em;  --dog:28em; }
+  .card.back.seen.fmt-tiny { --cr:16em; --dog:42em; }
+  .card.back.seen .c-scene::before { filter:saturate(.7) brightness(1.12); }
+  .card.back.seen .c-back::before,
+  .card.back.seen .c-back::after {
+    content:""; display:block; position:absolute; top:0; right:0; bottom:auto; left:auto;
+    width:var(--dog); height:var(--dog); font-size:1em; text-shadow:none;
+  }
+  .card.back.seen .c-back::before {
+    background:linear-gradient(225deg, rgba(6,9,26,.97) 0 50%, transparent 50%);
+  }
+  .card.back.seen .c-back::after {
+    border-bottom-left-radius:var(--cr);
+    background:linear-gradient(225deg, transparent 50%, #f6e6b4 50%, #d9b263 72%, #a87a26 100%);
+    filter:drop-shadow(-.5em .5em .9em rgba(0,0,0,.55));
+  }
+  .card.back.seen .c-back img { opacity:.72; }
+
+  /* THE DECK PILE carries no word and no question mark: its count is the
+     watermark across its top card (game.js, countOn). The camp's losses in
+     the top-right corner carry theirs as a badge. */
+  .card.back.pile .c-back::after { display:none; }
+  .card.back.pile .c-back img { opacity:.55; }
+  .c-count {
+    position:absolute; inset:0; z-index:9; display:flex; align-items:center; justify-content:center;
+    font-size:50em; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+    color:rgba(255,255,255,.55); text-shadow:0 .03em .12em rgba(0,0,0,.85); pointer-events:none;
+  }
+  .c-count:empty { display:none; }
+  /* the deck's count is the one number the player plans on: as big as the
+     pile, and free to run past its edges — a watermark, not a label */
+  .c-count.wm {
+    font-size:112em; font-weight:900; letter-spacing:-.08em; line-height:1;
+    color:rgba(255,255,255,.42); text-shadow:none; -webkit-text-stroke:0;
+  }
+  .c-count.warn { color:rgba(255,110,110,.6); }
+  .c-count.badge {
+    inset:auto; right:-10%; top:-10%; width:auto; min-width:38%; height:38%; padding:0 6%;
+    font-size:24em; letter-spacing:0; border-radius:99em; color:#fff;
+    background:#ff5c5c; box-shadow:0 0 0 .12em rgba(8,10,22,.85); text-shadow:none;
+  }
+
+  /* THE ENEMY'S CORNER, over the HUD's gradient (game.js, drawCrown). */
+  .cd-layer.cd-crown { z-index:15; overflow:visible; }
+  .cd-foe { position:absolute; left:0; top:0; object-fit:contain; object-position:50% 0;
+            filter:drop-shadow(0 6px 12px rgba(0,0,0,.6)); }
+
+  /* THE DUEL (game.js, drawDuel): the two big cards of a fight over the
+     table, on their own dim; the loser is greyed once it is hit. */
+  .cd-layer.cd-duel { z-index:12; }
+  .cd-duel-back { position:absolute; inset:0; opacity:0; pointer-events:none;
+                  background:radial-gradient(70% 45% at 50% 45%, rgba(4,6,18,.55), rgba(4,6,18,.92)); }
+  .card.dim { filter:grayscale(.8) brightness(.6); }
+
+  /* THE LISTS: the infirmary, the prison, the camp's losses. */
+  .cd-layer.cd-sheet { z-index:17; display:none; }
+  .cd-layer.cd-sheet.on { display:flex; align-items:center; justify-content:center; background:rgba(4,6,18,.72); }
+  .sh-box {
+    width:640px; max-height:1080px; padding:26px 22px 20px; border-radius:26px; box-sizing:border-box;
+    background:linear-gradient(180deg, rgba(20,28,64,.96), rgba(8,12,30,.96));
+    box-shadow:inset 0 0 0 2px rgba(242,193,78,.45), 0 20px 50px rgba(0,0,0,.6);
+    display:flex; flex-direction:column; align-items:center; gap:18px; color:#f6f1e4;
+  }
+  .sh-title { font-size:30px; font-weight:900; letter-spacing:2px; color:var(--gold, #f2c14e); }
+  .sh-title span { color:#f6f1e4; opacity:.7; margin-left:6px; }
+  .sh-infirmary .sh-title { color:#ff8a8a; }
+  .sh-prison .sh-title { color:#8fc2ff; }
+  .sh-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; overflow:hidden; }
+  .sh-cell { position:relative; }
+  .sh-cell .card { position:relative; }
+  .sh-drop { position:absolute; right:-6px; top:-8px; width:34px; height:34px; z-index:10;
+             fill:#d61f2c; stroke:rgba(20,0,4,.85); stroke-width:1.3; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  .sh-sub { margin-top:-10px; font-size:15px; font-weight:800; letter-spacing:2px; opacity:.6; }
+  .sh-n { text-align:center; margin-top:6px; font-size:22px; font-weight:900; color:#ffb4b4; white-space:nowrap; }
+  .card.no-tier .c-badge.tier { display:none; }
+  .sh-sec { align-self:stretch; font-size:17px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
+            border-bottom:1px solid rgba(143,194,255,.3); padding-bottom:6px; margin-bottom:-6px; }
+  .sh-sec span { color:#f6f1e4; opacity:.7; margin-left:4px; }
+  .sh-sec.lost { color:#ff8a8a; border-color:rgba(255,138,138,.3); }
+  .sh-grid.lost .card { filter:grayscale(.75) brightness(.75); }
+  .sh-empty { font-size:20px; font-weight:800; opacity:.6; padding:30px 0; }
+  .sh-foot { font-size:14px; font-weight:800; letter-spacing:2px; opacity:.45; }
+
+  /* AN OFFICER'S FILE, the card turned over (game.js, cardBack — shown by
+     the barracks, packages/webshell/army.js, openFile). The face's own frame,
+     rim, badges and pips, so the back is the same object; what the
+     face spends on the portrait goes to the person. Every size is in card
+     units (1em = 1% of its width), like the face, so the back is drawn at
+     whatever size the file opens at. Top to bottom: the officer standing in
+     a window, a name plate cut like the face's, the facts, the story on its
+     own dark panel under the army's crest, the army along the foot. */
+  .card.file .c-mark, .card.file .c-plate { display:none; }
+  .card.file .c-hero { top:4em; bottom:auto; height:48em; }
+  .card.file .c-scene::after {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--rar) 34%, transparent) 0%, transparent 22%),
+      linear-gradient(180deg, transparent 30%, rgba(3,4,12,.84) 40%, rgba(3,4,12,.94) 100%),
+      radial-gradient(90% 40% at 50% 100%, color-mix(in srgb, var(--rar) 22%, transparent), transparent 70%);
+  }
+  /* one column from the plate down, so the story takes what the name and
+     the facts leave rather than a height guessed for the longest one */
+  .cf-file {
+    left:0; right:0; top:51em; bottom:8.5em; z-index:6;
+    display:flex; flex-direction:column; gap:2.4em;
+  }
+  .cf-plate {
+    position:relative; flex:0 0 auto; text-align:center; padding:2.2em 7em 1.8em;
+    background:linear-gradient(90deg, transparent, rgba(4,5,14,.9) 14%, rgba(4,5,14,.9) 86%, transparent);
+  }
+  .cf-plate::before, .cf-plate::after {
+    content:""; position:absolute; left:10%; right:10%; height:.7em;
+    background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold2) 50%, var(--gold) 80%, transparent);
+  }
+  .cf-plate::before { top:0; } .cf-plate::after { bottom:0; }
+  .cf-first {
+    display:block; font-size:4.4em; font-weight:800; letter-spacing:.34em; line-height:1.2;
+    color:var(--gold2); text-shadow:0 .1em 0 rgba(0,0,0,.6);
+  }
+  .cf-last {
+    display:block; font-size:10.5em; font-weight:900; letter-spacing:.06em; line-height:1.08;
+    white-space:nowrap; overflow:hidden; color:#fff;
+    text-shadow:0 .07em 0 rgba(0,0,0,.6), 0 0 .6em color-mix(in srgb, var(--rar) 70%, transparent);
+  }
+  .cf-grade {
+    display:block; margin-top:.5em; font-size:4em; font-weight:800; letter-spacing:.42em;
+    color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
+  }
+  .style-forge .cf-grade { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
+  .cf-facts, .cf-lore { margin:0 8em; }
+  .cf-facts { display:flex; justify-content:center; gap:1.8em; }
+  .cf-facts span {
+    font-size:3.6em; font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
+    border-radius:99em; color:var(--gold2); background:rgba(4,5,14,.72);
+    box-shadow:inset 0 0 0 .1em color-mix(in srgb, var(--gold) 70%, transparent), 0 .2em .5em rgba(0,0,0,.5);
+  }
+  .cf-lore {
+    position:relative; flex:1; min-height:0; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    padding:3.4em 4.4em; border-radius:3.6em;
+    background:linear-gradient(180deg, rgba(14,10,8,.82), rgba(4,4,12,.9));
+    box-shadow:inset 0 0 0 .45em color-mix(in srgb, var(--gold) 55%, transparent),
+               inset 0 0 0 1.1em rgba(0,0,0,.5), inset 0 0 4em rgba(0,0,0,.7);
+  }
+  /* the opening quote, in the gold of the frame */
+  .cf-lore::before {
+    content:"\201C"; position:absolute; left:2em; top:-2.4em;
+    font:900 22em/1 Georgia,"Times New Roman",serif; color:var(--gold); opacity:.35;
+  }
+  .cf-wm {
+    position:absolute; left:50%; top:50%; height:78%; width:auto; transform:translate(-50%, -50%);
+    opacity:.1; filter:grayscale(1) brightness(1.6);
+  }
+  .cf-lore p {
+    position:relative; margin:0; font-size:4em; line-height:1.42; font-style:italic;
+    color:#f3ead6; text-shadow:0 .08em .2em rgba(0,0,0,.8);
+  }
+  .cf-foot {
+    display:flex; align-items:center; justify-content:center; gap:1.6em;
+    margin:0 2.5em;   /* 8 card units, in the foot's own 3.2 */
+    font-size:3.2em; font-weight:900; letter-spacing:.34em; line-height:1; color:rgba(246,230,180,.8);
+  }
+  .cf-foot::before, .cf-foot::after {
+    content:""; flex:1; height:.14em;
+    background:linear-gradient(90deg, transparent, var(--gold));
+  }
+  .cf-foot::after { background:linear-gradient(90deg, var(--gold), transparent); }
+  .cf-foot .turn { color:#ff9a9a; }
+
+  /* A TARGET CATCHES THE LIGHT. The cards the player may strike wear a gloss
+     swept across them, in a wave down the camp (`--sd`, per cell), and a thin
+     gold edge; once a card is picked (`hot`) the sweep runs twice as fast and
+     the edge brightens. A transform on one pseudo-element, so the compositor
+     moves it and the card is never repainted. */
+  .c-shine { display:none; inset:0; z-index:8; overflow:hidden; border-radius:inherit; }
+  .card.lit .c-shine { display:block; }
+  .card.lit .c-shine::before {
+    content:""; position:absolute; top:-25%; bottom:-25%; left:-70%; width:45%;
+    background:linear-gradient(90deg, rgba(255,244,205,0) 0%, rgba(255,244,205,.18) 30%, rgba(255,250,235,.62) 50%, rgba(255,244,205,.18) 70%, rgba(255,244,205,0) 100%);
+    mix-blend-mode:screen; will-change:transform;
+    transform:translateX(0) skewX(-20deg);
+    animation:cdShine 2.8s ease-in-out infinite; animation-delay:var(--sd, 0s);
+  }
+  .card.lit.hot .c-shine::before { animation-duration:1.4s; }
+  @keyframes cdShine {
+    0%        { transform:translateX(0) skewX(-20deg); }
+    55%, 100% { transform:translateX(440%) skewX(-20deg); }
+  }
+  .card.lit .c-body { box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 2px rgba(242,193,78,.45), 0 0 16px rgba(242,193,78,.25); }
+  .card.lit.hot .c-body { box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 3px rgba(255,214,110,.85), 0 0 22px rgba(242,193,78,.5); }

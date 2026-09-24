@@ -9,14 +9,22 @@ holes in it, a machine that fills them, and a reason to open the game tomorrow.
 The playable keeps none of it. A creative is one round shown once: it has no
 wallet, no album and no tomorrow, which is why none of this is in the motor.
 
+**One more layer stands on this one.** A game that declares `web.army` gets the
+BARRACKS — a roster of cards the player owns, an infirmary, a prison and a
+recruiting tent that spends the coins this wallet holds. It keeps its state in
+this save (`save.ar`) for exactly that reason, and OPTIONS erases the two
+together. See [docs/ARMY.md](ARMY.md).
+
 **All thirteen games declare it.** A game gets the layer by carrying a
 `web.meta` block and a sheet of twenty stickers, and nothing else — see
 [Adding a game to it](#adding-a-game-to-it). The numbers a game writes there
-are scaled to what it scores: `coinsPer` is about a fourteenth of the top
-objective of its climb, `xpPer` a tenth of that and `ticketPrice` a quarter, so
-a maxed level pays ~14 coins and ~140 xp in every one of the thirteen and the
-shop's own prices — which are coins, and shared — mean the same thing
-everywhere.
+are scaled to what it scores, and the coin rate is one of exactly two:
+`coinsPer` is **1000** for a climb whose first objective is 2 000 points or
+more (`radiam`, `pawko`) and **100** for every other game, so the coins of a
+round are always its score with the last three or two digits dropped, times the
+player's level — a sum a player does by eye. `ticketPrice` is set so that a
+ticket costs the same number of POINTS it did when the rates were free-form,
+and `xpPer` is untouched.
 
 ```
 title screen ──► LEVEL MAP ──► the round ──► end screen
@@ -48,6 +56,11 @@ in one row, this save and the climb together.
 and 140 at level 10. The level used to be a bar that handed out a ticket and
 nothing else — a number with no consequence is a number nobody watches — and it
 is now the one term in the payout the player owns.
+
+**The score shows the rate.** `coinsPer` is 100 or 1000 and nothing else —
+`tools/build/build.mjs` refuses any other value — so on the first beat of the
+sum the end score splits in two: the digits that become coins turn gold, the
+two or three the rate drops fade (`14 798` → **14**798 → `+14`).
 
 **So the end screen writes the sum, not the total.** `+145` is a figure handed
 down; `+14 × Lv 3 = +42` is a figure with a lever in the middle of it. The
@@ -265,7 +278,9 @@ NODE on both, the band the view system puts over every screen that carries one
 (`packages/webshell/view.js`, section 5). Every chip of it is a door and every
 one leads to the same screen from every screen: the house home, the level to the
 ranking, the coins to the shop, the tickets to the collection, the stars to the
-map. A chip standing on its own screen goes inert rather than missing. There
+map. A chip standing on its own screen goes inert rather than missing — except
+the house on the bare village, which is dropped: it is only a door, and a card
+over the village brings it back. There
 used to be a GET TICKETS button
 under the machine, and it only existed when the wallet was empty — so the one
 screen that had to teach the player where tickets come from was the one they
@@ -498,18 +513,30 @@ reward instead would turn the ceremony into a label.
 
 Rarity is per sticker, in the manifest, and it drives two numbers:
 
-| rarity    | drop weight  | a double sells for |
-| --------- | ------------ | ------------------ |
-| common    | 60           | 60                 |
-| rare      | 25           | 110                |
-| epic      | 12           | 200                |
-| legendary | *pinned* (3) | 420                |
+| rarity    | drop weight  | a double sells for     |
+| --------- | ------------ | ---------------------- |
+| common    | 60           | 25 % of a ticket (65)  |
+| rare      | 25           | 40 % of a ticket (100) |
+| epic      | 12           | 60 % of a ticket (150) |
+| legendary | *pinned* (3) | 90 % of a ticket (225) |
 
 They are **weights, not percentages**, so a game can add a fifth tier without
 redoing the other four. The legendary weight is the one exception: its tier's
 share is `bet * legendaryPer` (above), so 3 only ever splits that share between
-several legendaries. A ticket costs 250, so four common doubles buy one draw:
-selling doubles is what keeps a dry streak moving, never an income.
+several legendaries. The figures in brackets are radiam's, whose ticket costs
+250: four common doubles buy one draw, and selling doubles is what keeps a dry
+streak moving, never an income.
+
+**A double never sells for a ticket.** The sell prices are a SHARE of the game's
+own `ticketPrice` (`SELL_SHARE` in `packages/webshell/meta.js`, rounded to 5
+above 20 coins and held under the ticket) and not a fixed sum, because the
+ticket is priced per game. They were 60 / 110 / 200 / 420 in all thirteen, and
+on seven boards — vipera's ticket costs 8 — a pull sold back for up to nine
+times what it cost, so the machine paid for itself for ever. Every pull costs at
+least one ticket and hands over one sticker, so a price under one ticket closes
+that loop at every bet and on the super ticket: a pull sold back now returns
+about 30 % of its cost on every board. A manifest may still set `sell`, and
+`tools/build/build.mjs` refuses one that reaches the ticket.
 
 ### The shop is one product, and the product is the subject
 
@@ -1095,7 +1122,8 @@ Three rules hold the shape:
   first, then what is earned by playing, then what is spent, then what those
   two buy, then what the board itself is worth. The row never changes shape, and a chip standing
   on its own screen goes inert rather than missing, so a number never has to be
-  found again. That is what made back arrows unnecessary and then wrong: these
+  found again. The house is the exception: on the bare village it is dropped,
+  because it counts nothing and the door it is stands under it. That is what made back arrows unnecessary and then wrong: these
   six are the whole of it. **The house is the only chip that is not a number** —
   the rest of the row is what the player owns, this is the way out of wherever
   they own it — and a game with no band keeps a home button in its headers
@@ -1113,12 +1141,10 @@ Three rules hold the shape:
   of those numbers. The height the header was taking goes to the machine, the
   odds and the twenty tiles.
 
-  **The level chip is an icon until it has something to say.** A bar standing
-  open on every screen is one nobody reads: it moves once a round, and the rest
-  of the time it is the widest thing on the band saying the number it said
-  yesterday. So it is the bolt alone, and `openXp` opens it for a few seconds
-  whenever the xp moves. Its figure (`120 / 350`) is on the ranking, which is
-  the screen that reads it properly.
+  **The level chip fills the band.** The house sits against the left gutter,
+  the counts against the right one, and the level chip stretches its xp bar
+  over all the room between them, always open. Its figure (`120 / 350`) is on
+  the ranking, which is the screen that reads it properly.
   **The shop is not a title entry**: it is opened from the coins, and from the
   album where a missing sticker is the reason to want a ticket.
 
@@ -1204,10 +1230,11 @@ WebP, ~975 KB of base64, and a playable has no collection to put them in.
 ```jsonc
 // games/<slug>/manifest.json — inside "web", after "levels"
 "meta": {
-  "coinsPer": 1000,         // points per coin, PER PLAYER LEVEL
+  "coinsPer": 1000,         // points per coin, PER PLAYER LEVEL — 100 or 1000 only
   "xpPer": 100,             // points per xp, flat
   "ticketPrice": 250,       // coins per draw
   "superPrice": 3750,       // the super ticket — default: ticketPrice * 15
+  "sell": [65, 100, 150, 225], // a double, by rarity — default: 25/40/60/90 % of the ticket
   "superOdds": [20, 25, 30],// …its rare / epic / legendary, pinned; common takes the rest
   "awards": [1,2,3,4,5,6,7,8,9,10,20,17],   // the twelve milestones, in order
   "stickers": [
@@ -1222,12 +1249,13 @@ logotype and its trophy piece are wherever they were drawn, and ninety of
 ninety should pay in one of *those* rather than in whatever landed in cell
 twelve. Leave it out and the first twelve are used in order. **The three rates are the one thing that is not a default**, because a point
 is worth a different amount in each of the thirteen: vipera's climb tops out at
-650 and gearball's at 7 300, and the same `coinsPer` over both would pay one
-player a coin a round and the other a hundred. They are read off the game's own
-`web.levels.objective.to` — `coinsPer` ≈ a fourteenth of it, rounded to
-something legible, `xpPer` a tenth of that and `ticketPrice` a quarter of it —
-so a maxed level pays ~14 coins and ~140 xp everywhere and the shop's shared
-coin prices mean one thing. `superPrice`, `superOdds`, `sell`, `drop`,
+650 and pawko's at 45 000, and a rate of 1000 over vipera would pay nothing
+at all. `coinsPer` is **1000**
+when `web.levels.objective.from` is 2 000 or more and **100** otherwise — a
+cleared level then always pays at least a couple of coins at level 1, and the
+conversion stays "drop the last digits", which is what the end screen shows.
+`ticketPrice` is what a ticket costs in points divided by that rate, and
+`xpPer` is read off the climb (a tenth of `objective.to` / 14). `superPrice`, `superOdds`, `sell`, `drop`,
 `maxBet`, `luck` and `legendaryPer` all have
 defaults — a second game is the two required lines and nothing else, as long as
 **one legendary is left out of `awards`** (above).

@@ -242,6 +242,39 @@ async function run(url) {
       })()`, 1);
     await check("home means the village, from anywhere",
       `(function () { __VIEW__.home(); return __VILLAGE__.isOpen() && __VIEW__.depth() === 1; })()`, true);
+    /* THE HOUSE CHIP IS GONE ON THE BARE VILLAGE, not greyed: it is the one
+       chip that is only a door, and the door it is stands under it. A card
+       over the village makes it a way out again, so it comes back. */
+    if (metaed) {
+      await check("the bare village carries no house chip",
+        "getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display", "none");
+      await check("...and a card over it brings the chip back",
+        `(function () {
+          var m = __MODAL__.open({ kind: "test" });
+          var d = getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display;
+          m.close();
+          return d !== "none";
+        })()`, true);
+    }
+    /* THE PLAY HOUSE STARTS A REAL LEVEL — the highest the board has opened —
+       and never a free round nobody picked. The round is then thrown away the
+       way the corner's way out throws it: no endRound, so no score is written
+       and the board the rest of this run reads is still a fresh one — and the
+       armed level is cleared, since the rounds below are free ones. */
+    if (levelled) {
+      const hasPlay = await evalJs("return !!document.querySelector('#web-village [data-role=play] .vg-hit');");
+      if (hasPlay) {
+        await evalJs("document.querySelector('#web-village [data-role=play] .vg-hit').click(); return 1;");
+        await sleep(400);
+        await check("the play house starts a round", "__WEB__.state()", "playing");
+        await check("...on the highest level the board has opened",
+          "__WEB__.CONFIG.level >= 1 && __WEB__.CONFIG.level === __LEVELS__.topOpen()", true);
+        await evalJs("__WEB__.Loop.stop(); __WEB__.Round.stop(); __WEB__.Music.unduck();" +
+                     " __WEB__.setState('intro'); __LEVELS__.clear(); __VIEW__.home(); return 1;");
+        await sleep(400);
+        await check("...and the village is back once it is thrown away", "__VILLAGE__.isOpen()", true);
+      }
+    }
   }
 
   if (levelled) {
@@ -297,7 +330,7 @@ async function run(url) {
     /* THE ORDER IS THE NAVIGATION, so it is what the test reads: level, coins,
        tickets, stars, left to right, on every screen that carries the band. */
     /* IT HAS TO FIT AT ITS WIDEST, and the widest is not what a fresh save
-       shows: six chips with every number full AND the level chip open is the
+       shows: six chips with every number full, the level bar at its floor, is the
        case the paddings in view.css were measured against. A game's own face
        is what makes this worth asserting rather than eyeballing — Orbitron's
        digits are 24% wider than the system stack's. */
@@ -315,7 +348,6 @@ async function run(url) {
       "  b.querySelector('.mt-chip.tickets b').textContent = '99';" +
       "  b.querySelector('.mt-chip.stars b').textContent = '90/90';" +
       "  lv.querySelector('.lbl').textContent = 'LV 99';" +
-      "  lv.classList.add('wide');" +
       "  var f = document.getElementById('frame').getBoundingClientRect();" +
       "  var r = b.getBoundingClientRect();" +
       "  var room = f.width - 52 * f.width / 720;" +   /* the band's own 26px gutters */
@@ -354,20 +386,25 @@ async function run(url) {
       " !!document.querySelector('#web-hud .mt-chip.collection.inert')", true);
     await check("...and the others are not",
       "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 2);
-    /* THE LEVEL CHIP IS AN ICON UNTIL IT HAS SOMETHING TO SAY. A bar that
-       stands open on every screen is one nobody reads; it opens for a few
-       seconds when the xp moves and shuts again. */
-    await check("the level chip is shut",
-      "document.querySelector('#web-hud .mt-band.full .mt-lv')" +
-      " .classList.contains('wide')", false);
-    await evalJs("__META__.addXp(40); return 1;"); await sleep(200);
-    await check("...and opens on a gain",
-      "document.querySelector('#web-hud .mt-band.full .mt-lv')" +
-      " .classList.contains('wide')", true);
-    await sleep(3600);
-    await check("...then shuts again on its own",
-      "document.querySelector('#web-hud .mt-band.full .mt-lv')" +
-      " .classList.contains('wide')", false);
+    /* THE ROW RUNS EDGE TO EDGE, and the level chip is the spring: the house
+       against the left gutter, the counts against the right one, and the xp
+       bar over everything between them — no empty band in front of the house. */
+    await check("the house sits against the left gutter",
+      "(function () {" +
+      "  var f = document.getElementById('frame').getBoundingClientRect();" +
+      "  var h = document.querySelector('#web-hud .mt-band.full .mt-chip.home').getBoundingClientRect();" +
+      "  return Math.abs(h.left - f.left - 26 * f.width / 720) < 1;" +
+      "})()", true);
+    await check("...and the level chip fills the room up to the counts",
+      "(function () {" +
+      "  var b = document.querySelector('#web-hud .mt-band.full');" +
+      "  var h = b.querySelector('.mt-chip.home').getBoundingClientRect();" +
+      "  var lv = b.querySelector('.mt-lv').getBoundingClientRect();" +
+      "  var c = b.querySelector('.mt-band-chips').getBoundingClientRect();" +
+      "  var bar = b.querySelector('.mt-lv .bar').getBoundingClientRect();" +
+      "  var k = document.getElementById('frame').getBoundingClientRect().width / 720;" +
+      "  return lv.left - h.right < 12 * k && c.left - lv.right < 12 * k && bar.width > 40 * k;" +
+      "})()", true);
   }
 
   if (metaed) {
@@ -520,6 +557,9 @@ async function run(url) {
   await check("the corner is up", "document.getElementById('web-ctls').hidden", false);
   await check("...with the way out in front of the pair",
     "document.querySelectorAll('#web-ctls .web-ctl-extra .web-ctl').length", 1);
+  await check("...and it is the way home, never the way to the map",
+    "/village|menu/i.test(document.querySelector('#web-ctls .web-ctl-extra .web-ctl')" +
+    ".getAttribute('aria-label'))", true);
   await check("the band is down over a round — the top is the game's",
     "!document.getElementById('web-hud') || document.getElementById('web-hud').hidden", true);
 
@@ -539,9 +579,9 @@ async function run(url) {
   await evalJs("document.querySelector('.wm-modal .web-btn.stop').click(); return 1;");
   await sleep(500);
   await check("leaving goes back to the shell", "__WEB__.state()", "intro");
-  await check("...and to the map where there is one",
-    "__VIEW__.top()", levelled ? "map" : null);
-  if (levelled) { await key("Escape"); }
+  await check("...and to the village where there is one",
+    "__VIEW__.top()", villaged ? "village" : null);
+  if (villaged) { await key("Escape"); }
 
   if (metaed && villaged) {
     /* A VILLAGE HAS A BUILDING FOR IT, and that door opens the STRIP ITSELF
@@ -638,8 +678,14 @@ async function run(url) {
   if (levelled) { await evalJs("__VIEW__.home(); return 1;"); await sleep(300); }
 
   console.log("\nno view is a dead end, and none carries a button of its own");
+  /* THE BARRACKS' FOUR ARE VIEWS LIKE THE REST (packages/webshell/army.js), so
+     they answer the same three questions: no corner controls, exactly one way
+     home, and that way home lands on the floor. They are asked only of a game
+     that declares `web.army` — the handle is what says so. */
+  var armied = await evalJs("return !!(window.__ARMY__ && __ARMY__.active());");
   var views = ["ranking"].concat(levelled ? ["map"] : [])
-                         .concat(metaed ? ["sticker", "shop"] : []);
+                         .concat(metaed ? ["sticker", "shop"] : [])
+                         .concat(armied ? ["deck", "infirmary", "prison", "recruit"] : []);
   for (var v = 0; v < views.length; v++) {
     await evalJs("__VIEW__.home(); __VIEW__.go(" + JSON.stringify(views[v]) + "); return 1;");
     await sleep(400);
@@ -659,6 +705,38 @@ async function run(url) {
   await check("no back arrow anywhere in the frame",
     "document.querySelectorAll('.web-back').length", 0);
 
+  if (armied) {
+    console.log("\nthe barracks — four doors on the hub, and a deck the round reads");
+    /* THE LAYER IS DRAINED FIRST. The sections above leave the meta layer's own
+       gift card on screen, and an ESCAPE asserted here would close THAT — the
+       stack is walked top down, which is the point of it, so a test of a view's
+       key has to start with nothing over the view. */
+    await evalJs("while (__MODAL__.closeTop());  __VIEW__.home(); return 1;");
+    await sleep(400);
+    /* Every door of the hub is a house, and the four new ones have to BE on it:
+       a view nothing opens is a screen the player never reaches. */
+    var doors = ["deck", "infirmary", "prison", "recruit"];
+    for (var q = 0; q < doors.length; q++) {
+      await check("the " + doors[q] + " is a house on the hub",
+        "!!document.querySelector('#web-village [data-role=\"" + doors[q] + "\"] .vg-hit')", true);
+      await evalJs("document.querySelector('#web-village [data-role=\"" + doors[q] +
+                   "\"] .vg-hit').click(); return 1;");
+      await sleep(350);
+      await check("...and it opens its own view", "__VIEW__.top()", doors[q]);
+      await key("Escape"); await sleep(300);
+      await check("...and escape peels it back to the hub", "__VIEW__.top()", "village");
+    }
+    /* THE ONE THING THE BARRACKS SAYS TO THE GAME. `CONFIG.army.deck` is what
+       `Game.reset()` reads, and a deck that is short is filled with conscripts
+       rather than left short — a battle the player cannot start is not a cost,
+       it is a closed door. */
+    await check("the round is handed a full deck",
+      "__WEB__.CONFIG.army.deck.length === __ARMY__.size()", true);
+    await check("...and every card in it is a grade and a tier",
+      "__WEB__.CONFIG.army.deck.every(function (c) {" +
+      " return typeof c.r === 'number' && typeof c.t === 'number'; })", true);
+  }
+
   console.log("\nthe floor wins — a round clears everything in front of it");
   await evalJs("if (window.__LEVELS__ && __LEVELS__.active()) __LEVELS__.open();" +
                " __MODAL__.open({ kind: 'test', dismiss: true }); return 1;");
@@ -669,7 +747,8 @@ async function run(url) {
   await check("no card survives it", "__MODAL__.count()", 0);
   await check("...and nothing of them is left in the frame",
     "document.querySelectorAll('.wm-modal').length + " +
-    "document.querySelectorAll('#lv-screen.on, #al-screen.on, #sh-screen.on, #web-rank.on').length", 0);
+    "document.querySelectorAll('#lv-screen.on, #al-screen.on, #sh-screen.on, #web-rank.on').length + " +
+    "document.querySelectorAll('.ar-screen.on').length", 0);
 }
 
 /* ---------- main --------------------------------------------------------- */

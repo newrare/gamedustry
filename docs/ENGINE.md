@@ -12,8 +12,9 @@ A playable always needs the same things, so the motor owns them:
 | **Frame**      | A portrait 720×1280 design space, letterbox-scaled to any screen. Canvas *and* DOM overlays share those coordinates.                                                                                                                |
 | **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                                                                                                                        |
 | **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                                                                                                                     |
-| **Overlay**    | Screen-space notification layer over the game view: toasts, combo banners, reward badges, dramatic edge glow.                                                                                                                       |
-| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats. The loud half of the notification layer.                                                                                                      |
+| **Overlay**    | The dramatic edge glow over the game view, and the host of the Pop layer.                                                                                                                                                           |
+| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats, a mistake as it happens. The MOMENT.                                                                                                          |
+| **Notify**     | The one voice for INFORMATION, on every screen: a state that changed, an input refused, a lesson, anything said on a menu. A chip pinned top-right.                                                                                 |
 | **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                                                                                                                               |
 | **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                                                                                                                               |
 | **End screen** | Cinematic reveal: title, score count-up with confetti, the three stars on a podium (the third one in the middle, and bigger) tucked up under the score and behind it, cascading stat rows, big install CTA and a small replay link. |
@@ -359,14 +360,77 @@ Overlay.vignette("#ff2d55", 0.9, 600);   // edge glow (ms = auto-off)
 Overlay.clear();                         // wipe everything
 ```
 
-`Overlay.toast`, `Overlay.banner` and `Overlay.reward` are still here and **no
-game calls them**: every word a game writes goes through `Pop` (below), which is
-what makes thirteen games sound like one product instead of thirteen. A toast
-was a coloured pill in a layer of its own; `Pop.show("alert", …)` sits in the
-same place, under the HUD, and is styled like every other callout.
+It carries no word. `Overlay.toast`, `Overlay.banner` and `Overlay.reward` were
+the motor's first three notification voices; no game called them once `Pop` took
+the loud words, and they were deleted with their CSS and their three nodes when
+`Notify` (below) took the informative ones.
 
-Use `Overlay` for UI-level feedback and `Pop` for anything the player reads as
-a reward — `Pop.show` at a screen anchor, `Pop.text` at a world position.
+### `Notify` — the one voice for information
+
+```js
+Notify.say("Out of reach", { kind: "warn" });
+Notify.say("Taken to the prison", { sub: "Captain · A", kind: "info", icon: "lock" });
+```
+
+**Two layers write words, and they say two different things.** `Pop` is the
+MOMENT — a word as loud as the action it lands on: a score, a combo, a mistake
+as it happens ("Combo lost", "Miss", "Both fall"), an alarm. `Notify` is the
+INFORMATION — something the player should know and could read a second later:
+
+- a state that changed and stays changed — "Shield down", "Wounded", "x2 over";
+- an input refused — "Out of reach", "Not enough coins", "The deck is full";
+- a lesson or a hint — gearball's "Tap when a gap reaches the hopper",
+  radiam's power names;
+- a warning of what is coming — "Last ball", "The lava pulls";
+- **anything at all said outside a round** — the village, the map, a view, a
+  card. `Pop` lives in `#overlay`, under the screens, so it cannot speak there;
+  `Notify` is one layer (z 48) over the round, every view, the wallet band and
+  a card, so the same call reads everywhere.
+
+When in doubt: if the word is the beat, it is `Pop`; if the player would be
+annoyed to have missed it, it is `Notify`. A refusal said AT the finger in the
+world stays `Pop.text` (radiam's "Frozen", "Blocked"): its whole point is where
+it is drawn.
+
+| field  | what it is                                                                                                                                                                                                            |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `word` | the line, in normal case. Translated (`Lang.t`, so a key of `web.copy.<lang>.strings`) and shouted through `upper()`                                                                                                  |
+| `sub`  | the second line, translated, never shouted                                                                                                                                                                            |
+| `kind` | `info` (accent) · `gain` (gold) · `good` (green) · `warn` (orange) · `loss` (danger) · `rare` (lilac). A colour and a default icon, nothing more                                                                      |
+| `icon` | a shell piece — `coin ticket super xp star sticker trophy`, painted when the build ships `CONFIG.shellArt` — or a pictogram: `info warn lock unlock heart user check x hourglass sparkles eye trash`. `null` for none |
+| `key`  | what two notices are compared on (default: word + sub)                                                                                                                                                                |
+| `hold` | ms fully readable, for a long sentence (gearball's hints take 3200); the house value is 2200                                                                                                                          |
+
+**One look, and nothing about it is a game's.** It was chosen in
+[`lab/notify.html`](../lab/notify.html) — the `D · Chip` preset — and is written
+into the motor as constants, because a notice that varied per game would be
+thirteen products again:
+
+- a chip of the wallet band's own family, **pinned top-right**: under the band
+  on a view (`--wh-band`), under the HUD in a round;
+- **newest on top, four at most** — a fifth sends the oldest out early;
+- **the same notice again does not stack**: it bumps a `×N` counter on the one
+  already there and restarts its clock;
+- it slides in from the right edge, shines once, **shakes when it is a `warn`
+  or a `loss`**, and a timer line drains under it for 2.2 s;
+- it **leaves by flying into the chip it is about** — a coin notice into the
+  coins, a ticket into the tickets, xp into the level bar — when the web shell
+  has registered where those are (`Notify.target(fn)`, meta.js), and by lifting
+  away otherwise;
+- a tap dismisses it and a press holds it — **except in a round**, where the
+  layer is pointer-transparent: a notice must never eat the tap the game was
+  waiting for.
+
+It is not cleared on a change of screen — the notice fired as a round ends is
+the one the next screen must still show.
+
+**The one knob** is `CONFIG.notify = { round: "bottom" }`, for a game whose board
+fills the top of the frame (`bouncetry`'s bricks, `echomaze`'s maze): the
+round's notices dock over the foot of it instead, clear of the CTA bar and the
+corner controls. Everything else is the motor's.
+
+`make events` lists every `Notify.say` next to the callouts (word and sub
+editable, fired in the game's own build), and `make text` lists their words.
 
 ### Canvas resolution — `view.dpr`, and why it is not `devicePixelRatio`
 
@@ -474,11 +538,10 @@ what is currently off, so a reading can never be misattributed.
 
 ### `Pop` — comic callouts
 
-**Every word a game writes goes through `Pop`**, and it has two halves for two
-jobs — the beats that celebrate a player action (score gains, combo milestones,
-tier-ups, hero beats) and the status lines that used to be `Overlay.toast`,
-which the `alert` style now carries. Nothing a player reads mid-round is left
-outside this module. The DOM half is designed and previewed in
+**Every MOMENT a game writes goes through `Pop`** — the beats that celebrate a
+player action (score gains, combo milestones, tier-ups, hero beats) and the
+mistakes as they happen, which the `alert` style carries. A status line — a
+state, a refusal, a lesson — is not a moment and goes to `Notify` (above). The DOM half is designed and previewed in
 [`lab/overlay-pop.html`](../lab/overlay-pop.html); what a given game already
 fires, in that game's own build, is `make events`. The WORDS themselves — every
 one of them, next to the manifest's FR and EN copy and the rest of what the game
@@ -868,6 +931,12 @@ CONFIG.art = {
 Each value is a data URI in the single-file builds and a hashed file path in the
 split site build — the same source, nothing target-aware in the art itself,
 because the splitter externalizes data URIs out of the config region.
+
+Everything in `CONFIG.art` is decoded by `preloadImages` before the intro shows
+(`ArtImages`), **except the keys `CONFIG.artLazy` matches** — a RegExp a game
+sets for art it only ever hands to an `<img>` and in numbers no loading screen
+should wait on. `games/stratideck` sets `/^cast/` for its 120 portraits; they
+stay in `CONFIG.art` and load when a screen draws one.
 
 **Where each piece is consumed.** `packages/shell/shell.js` holds an `Art`
 module that inserts `.screen-art` on the intro and the end screen, swaps the
