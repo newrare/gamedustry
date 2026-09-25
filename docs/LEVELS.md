@@ -394,8 +394,9 @@ thing that cannot be played on either side of that cut is **the world itself
 reacting to how the round went**: slow motion is `Loop.rate`, so it needs a loop
 still turning, and the end screen has none.
 
-`onOutro(fn)` is the motor's third addition (`packages/shell/shell.js`) and the
-level layer is its only registrant. The clock is stopped — the round is over
+`onOutro(fn)` is the motor's third addition (`packages/shell/shell.js`), and
+the level layer registers first: hooks run in registration order, each handed
+the next as its `done` (the army layer's prisoner offer comes after it). The clock is stopped — the round is over
 whatever is drawn over it — the loop is left running, and the end screen waits
 for the `done` the hook is handed. A playable registers none and keeps the cut
 it always had.

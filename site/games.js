@@ -16,6 +16,19 @@
 */
 window.GAMES = [
   {
+    slug: "stratideck",
+    name: "Stratideck",
+    accent: ["#f2c14e", "#5aa9ff"],
+    fr: {
+      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
+      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
+    },
+    en: {
+      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
+      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
+    }
+  },
+  {
     slug: "arcider",
     name: "Arcider",
     accent: ["#35e8ff", "#7a4dff"],
@@ -182,19 +195,6 @@ window.GAMES = [
     en: {
       tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
       tags: ["Tap to swerve", "Endless", "Armour"]
-    }
-  },
-  {
-    slug: "stratideck",
-    name: "Stratideck",
-    accent: ["#f2c14e", "#5aa9ff"],
-    fr: {
-      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
-      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
-    },
-    en: {
-      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
-      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
     }
   },
   {

@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — view frame</title>
+<style>
+/* ===========================================================================
+   VIEW FRAME LAB — one frame for every view of the web shell.
+
+   The question this page answers: what does a VIEW look like once the shop,
+   the collection, the deck, the camp and the prison all stand in the SAME
+   frame, and how does a view with several pages switch between them?
+
+   The structure is fixed and it is the proposal. Every view is the same five
+   layers, bottom to top, and only the pane changes:
+
+     .scene      the village's own painted hub (<slug>-background-home)
+     .vf-veil    ONE layer over it — a colour, a blur, flat or faded
+     .vf-card    the transparent card that holds the content
+       .vf-head    the title and one line under it   (on the card or the scene)
+       .vf-body    the pane — the one free region, and the one that scrolls
+     .vf-foot    the TAB BAR at the bottom of the frame, plus the corner
+                 controls (options, help) the view system already pins there
+
+   Two rules hold it together. A view with one page has no tab bar — a single
+   tab is a label, not a choice. And the tab bar shares the bottom band with
+   the corner controls rather than fighting them: the panel's "corner" row is
+   the four ways the two can share it.
+
+   What is tried here is the MATERIAL (veil, card), the HEADER, the TAB BAR, the
+   page transition and the OPENING. The six proposals are starting points; the
+   "Proposals" view puts them side by side on one view, the "Views" view puts
+   the five views side by side in one look, because a frame is judged on its
+   coherence and not on one screen. The design is deliberately neutral — the
+   only per-game colour is the accent on the active tab and, optionally, the
+   title — so it holds in all fifteen palettes.
+
+   Nothing here ships. The chosen look is copied into packages/webshell/
+   view.css by hand; "Copy settings" hands back the panel as JSON, which a CSS
+   copy does not carry.
+
+   Assets are loaded by relative path out of ../assets/, which only lab/ may
+   do. Everything on the stage is authored in the 720x1280 design space.
+   =========================================================================== */
+
+@font-face { font-family:"Orbitron";   src:url(../assets/motor/font/orbitron.woff2) format("woff2"); font-weight:400 900; }
+@font-face { font-family:"Exo 2";      src:url(../assets/motor/font/exo2.woff2) format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Baloo 2";    src:url(../assets/motor/font/baloo2.woff2) format("woff2"); font-weight:400 800; }
+@font-face { font-family:"Bungee";     src:url(../assets/motor/font/bungee.woff2) format("woff2"); }
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+@font-face { font-family:"Russo One";  src:url(../assets/motor/font/russoone.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; min-height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 340px; height:100vh; overflow-y:auto;
+  padding:18px 18px 40px; background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 10px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 {
+  margin:18px 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:#6f6a90;
+}
+.row { margin-bottom:10px; }
+.row > label, .row > .lbl { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:4px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.row.chk label { justify-content:flex-start; gap:8px; cursor:pointer; color:#b9b9d6; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.seg button {
+  flex:1 1 auto; padding:6px 8px; border-radius:6px; cursor:pointer;
+  background:#0b0b12; color:#b9b9d6; border:1px solid #2c2c47; font:600 12px/1 inherit;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.btn {
+  width:100%; margin-top:6px; padding:8px 10px; cursor:pointer;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px; font:700 12px/1 inherit;
+}
+.btn.ghost { background:#1c1c2c; color:#e8e6f5; border:1px solid #2c2c47; }
+.presets { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.presets button {
+  padding:8px; text-align:left; cursor:pointer; border-radius:8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; font:700 12px/1.2 inherit;
+}
+.presets button small { display:block; font-weight:500; color:#8b8ba7; margin-top:3px; }
+.presets button.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+#why { margin-top:8px; font-weight:500; font-size:12px; color:#9c9cba; }
+#out {
+  width:100%; height:150px; margin-top:6px; padding:8px; resize:vertical;
+  background:#0b0b12; color:#b7d0ff; border:1px solid #2c2c47; border-radius:6px;
+  font:500 11px/1.4 ui-monospace,Menlo,monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   STAGE — one frame, or several side by side, scaled to fit.
+   --------------------------------------------------------------------------- */
+#stage { flex:1; position:relative; overflow:hidden; }
+#stage-note {
+  position:absolute; left:0; right:0; bottom:8px; text-align:center;
+  font-size:11px; color:#6f6a90; pointer-events:none;
+}
+#grid { position:absolute; inset:0; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:40px 18px; padding:20px 20px 48px; }
+.slot { position:relative; }
+.slot > .cap {
+  position:absolute; left:0; right:0; bottom:-24px; text-align:center;
+  font-size:11px; color:#8b8ba7; white-space:nowrap;
+}
+.slot > .cap button {
+  background:none; border:0; color:#b9b9d6; font:600 11px/1 inherit; cursor:pointer;
+  padding:3px 8px; border-radius:5px;
+}
+.slot > .cap button:hover { background:#1c1c2c; color:#fff; }
+.slot.sel > .cap button { color:#7ea6ff; }
+.slot > .fit { position:absolute; left:0; top:0; transform-origin:top left; }
+
+.frame {
+  position:relative; width:720px; height:1280px; overflow:hidden; border-radius:30px;
+  box-shadow:0 30px 80px rgba(0,0,0,.65);
+  background:var(--bg); color:var(--text);
+  font-family:var(--web-font); font-weight:var(--web-fw);
+
+  /* the motor's tokens, rewritten per game by the palette select */
+  --bg:#0a0a18; --text:#f3f1ff; --muted:#9aa0c0; --gold:#ffd43b; --good:#69db7c;
+  --danger:#ff2d55; --panel-line:rgba(255,255,255,.09);
+  --accent:#35e8ff; --accent2:#7a4dff; --accent-rgb:53,232,255;
+  --web-font:-apple-system,sans-serif; --web-fw:900;
+
+  /* the device: the band's height and the insets a notch would add */
+  --it:0px; --ib:0px;
+  --band:86px;                          /* 18 px of air + a 48 px chip + 20 */
+  --safe:26px;                          /* CONFIG.layout.safePad */
+}
+.frame.ins { --it:48px; --ib:34px; }
+.scene { position:absolute; inset:0; background-size:cover; background-position:center; }
+
+/* =========================================================================
+   THE WALLET BAND — a mock of the shipped one (view.css, #web-hud). It is the
+   view system's and not the view's, so it stands over every frame unchanged.
+   ========================================================================= */
+.vf-band {
+  position:absolute; left:0; right:0; top:0; z-index:41;
+  padding:calc(var(--it) + 18px) 26px 0;
+  display:flex; align-items:center; gap:7px;
+}
+.vf-band .ch {
+  flex:0 0 auto; display:flex; align-items:center; gap:6px;
+  height:48px; padding:0 12px; border-radius:30px;
+  background:rgba(8,8,20,.82); border:1.5px solid rgba(255,255,255,.12);
+  font-size:22px; font-style:normal; color:var(--text); font-variant-numeric:tabular-nums;
+}
+.vf-band .ch img { width:26px; height:26px; object-fit:contain; }
+.vf-band .ch svg { width:24px; height:24px; }
+.vf-band .ch.home { width:48px; padding:0; justify-content:center; }
+.vf-band .ch.lv { flex:1 1 auto; min-width:0; }
+.vf-band .ch.lv .bar { flex:1 1 auto; height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; }
+.vf-band .ch.lv .bar s { display:block; width:38%; height:100%; background:var(--gold); }
+.vf-band .ch.coin { color:var(--gold); border-color:rgba(255,212,59,.35); }
+
+/* =========================================================================
+   THE FRAME — what would move into view.css
+   ========================================================================= */
+
+/* ---- the veil: one layer, flat or faded ------------------------------- */
+.vf-veil {
+  position:absolute; inset:0;
+  background:rgba(2,2,10,var(--veil));
+  -webkit-backdrop-filter:blur(var(--blur)); backdrop-filter:blur(var(--blur));
+}
+/* FADED: the picture keeps its middle and loses its two ends, which is where
+   the band and the tab bar are read. The mid value is half the top one, so
+   one knob still drives it. */
+.vf-veil.fade {
+  background:linear-gradient(180deg,
+    rgba(2,2,10,var(--veil)) 0,
+    rgba(2,2,10,calc(var(--veil) * .55)) 32%,
+    rgba(2,2,10,calc(var(--veil) * .55)) 64%,
+    rgba(2,2,10,var(--veil)) 100%);
+}
+
+/* ---- the view: a column between the band and the bottom edge ----------- */
+.vf-view {
+  position:absolute; left:0; right:0; top:calc(var(--it) + var(--band)); bottom:0; z-index:2;
+  display:flex; flex-direction:column;
+  padding:0 var(--gutter) calc(var(--ib) + var(--safe));
+}
+
+/* ---- the header ------------------------------------------------------- */
+.vf-head {
+  flex:0 0 auto; display:flex; flex-direction:column; gap:6px;
+  padding:0 var(--head-pad) 18px;
+}
+.al-center .vf-head { align-items:center; text-align:center; }
+.vf-title {
+  white-space:nowrap; max-width:100%; overflow:hidden;
+  font-size:58px; line-height:1.05; letter-spacing:2px;
+  font-weight:var(--web-fw); color:var(--title-c);
+  text-shadow:0 3px 14px rgba(0,0,0,.85);
+}
+.tt-text   { --title-c:var(--text); }
+.tt-accent { --title-c:var(--accent); }
+.tt-gold   { --title-c:var(--gold); }
+.vf-sub { font:600 22px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--muted); }
+.hd-none .vf-head { display:none; }
+.hd-card .vf-head { padding:var(--pad) var(--pad) 16px; }
+
+/* ---- the card --------------------------------------------------------- */
+.vf-card {
+  position:relative; flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column; overflow:hidden;
+  border-radius:var(--radius);
+  background:var(--card-bg);
+}
+.cs-none  { --card-bg:transparent; --pad:0px; }
+.cs-glass { --card-bg:rgba(255,255,255,var(--ca)); --pad:26px; }
+.cs-plate { --card-bg:rgba(8,8,20,var(--ca)); --pad:26px; }
+.cs-sheet { --card-bg:rgba(8,8,20,var(--ca)); --pad:26px; }
+.cs-glass .vf-card {
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+}
+.cs-plate .vf-card { border:1px solid var(--panel-line); box-shadow:0 24px 70px rgba(0,0,0,.6); }
+/* THE SHEET runs to the glass: no gutter, no bottom corners, and the tab bar
+   is its own bottom edge rather than a thing standing under it. */
+.cs-sheet .vf-view { padding:0; }
+.cs-sheet .vf-card {
+  border-radius:var(--radius) var(--radius) 0 0;
+  border:1px solid var(--panel-line); border-bottom:0;
+  box-shadow:0 -18px 60px rgba(0,0,0,.5);
+}
+.cs-sheet .vf-card::before {
+  content:""; position:absolute; top:12px; left:50%; width:76px; height:6px; margin-left:-38px;
+  border-radius:3px; background:rgba(255,255,255,.22);
+}
+.cs-sheet.hd-card .vf-head { padding-top:calc(var(--pad) + 12px); }
+
+.vf-body {
+  flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+  padding:var(--pad);
+  scrollbar-width:none;
+}
+.vf-body::-webkit-scrollbar { display:none; }
+.hd-card .vf-body { padding-top:4px; }
+/* a pane that runs past the card fades under its edge instead of being cut */
+.sf .vf-body {
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 46px), transparent 100%);
+          mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 46px), transparent 100%);
+}
+
+/* ---- the foot: the tab bar and the corner controls -------------------- */
+.vf-foot {
+  flex:0 0 auto; display:flex; align-items:center; justify-content:flex-end; gap:14px;
+  margin-top:16px;
+}
+.vf-foot > .vf-tabs { flex:1 1 auto; min-width:0; }
+.ct-above .vf-foot { flex-direction:column; align-items:stretch; }
+.ct-above .vf-foot > .vf-ctls { align-self:flex-end; }
+.cs-sheet .vf-foot {
+  margin-top:0; padding:10px 20px calc(var(--ib) + 20px);
+  background:var(--card-bg);
+  border-top:1px solid var(--panel-line);
+}
+
+/* the corner controls, as the view system already draws them */
+.vf-ctls { display:flex; gap:14px; flex:0 0 auto; }
+.vf-ctl {
+  width:58px; height:58px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(8,8,20,.72); border:2px solid var(--panel-line); color:var(--text);
+}
+.vf-ctl svg { width:31px; height:31px; }
+/* INSIDE the bar they are two more icons after a filet, never a tab: they open
+   a card, they do not change the page. */
+.vf-tabs .vf-sep { flex:0 0 auto; width:1px; height:44px; align-self:center; background:rgba(255,255,255,.16); margin:0 4px; }
+.vf-tabs .vf-ctl.in {
+  flex:0 0 auto; width:56px; height:auto; align-self:stretch;
+  background:none; border:0; border-radius:16px; color:var(--muted);
+}
+.vf-tabs .vf-ctl.in svg { width:30px; height:30px; }
+
+/* ---- the tabs: one markup, six looks ---------------------------------- */
+.vf-tabs { position:relative; display:flex; align-items:stretch; }
+.vf-tab {
+  appearance:none; -webkit-appearance:none; position:relative; z-index:1;
+  flex:1 1 0; min-width:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:none; border:0; color:var(--muted);
+  font-family:var(--web-font); font-weight:var(--web-fw);
+  font-size:20px; letter-spacing:1.5px; white-space:nowrap;
+  transition:color .2s ease, background .2s ease;
+}
+.vf-tab .ic { display:flex; }
+.vf-tab .ic svg { width:28px; height:28px; }
+.vf-tab .lb { overflow:hidden; text-overflow:ellipsis; }
+.vf-tab.on { color:var(--on-c); }
+.ac-tint { --on-c:var(--accent); --thumb:linear-gradient(180deg, var(--accent), var(--accent2)); --thumb-c:#0b0b12; }
+.ac-mono { --on-c:var(--text);   --thumb:rgba(255,255,255,.16); --thumb-c:var(--text); }
+.tc-label .vf-tab .ic { display:none; }
+.tc-icon  .vf-tab .lb { display:none; }
+.tc-active .vf-tab:not(.on) .lb { display:none; }
+.tc-active .vf-tab { flex:1 1 auto; }
+.tc-active .vf-tab.on { flex:3 1 auto; }
+
+.vf-thumb { display:none; position:absolute; z-index:0; pointer-events:none; }
+
+/* SEGMENTED — the camp's and the deck's tabs today, moved to the bottom */
+.ts-seg .vf-tabs {
+  height:78px; padding:6px; border-radius:39px;
+  background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.12);
+}
+.ts-seg .vf-thumb {
+  display:block; top:6px; bottom:6px; left:6px;
+  width:calc((100% - 12px) / var(--tn)); border-radius:33px;
+  background:var(--thumb);
+  transform:translateX(calc(100% * var(--ti)));
+  transition:transform .28s cubic-bezier(.3,1.2,.4,1);
+}
+.ts-seg .vf-tab.on { color:var(--thumb-c); }
+.ts-seg .vf-tabs .vf-ctl.in { border-radius:33px; }
+
+/* DOCK — a plate of its own, icon over label */
+.ts-dock .vf-tabs {
+  height:96px; padding:8px; gap:6px; border-radius:30px;
+  background:rgba(8,8,20,.86); border:1px solid var(--panel-line);
+  box-shadow:0 14px 40px rgba(0,0,0,.5);
+}
+.ts-dock .vf-tab { flex-direction:column; gap:4px; border-radius:22px; font-size:16px; }
+.ts-dock .vf-tab.on { background:rgba(255,255,255,.08); }
+.ts-dock .vf-tab.on::after {
+  content:""; position:absolute; top:6px; left:50%; width:28px; height:4px; margin-left:-14px;
+  border-radius:2px; background:var(--on-c);
+}
+
+/* BAR — the system tab bar, the width of the frame */
+.ts-bar .vf-tabs { height:92px; gap:4px; }
+.ts-bar .vf-tab { flex-direction:column; gap:4px; font-size:16px; border-radius:18px; }
+.ts-bar .vf-tab.on::before {
+  content:""; position:absolute; top:-10px; left:22%; right:22%; height:4px;
+  border-radius:0 0 3px 3px; background:var(--on-c);
+}
+.ts-bar:not(.cs-sheet) .vf-foot {
+  margin:16px calc(0px - var(--gutter)) calc(0px - var(--ib) - var(--safe));
+  padding:10px 20px calc(var(--ib) + 20px);
+  background:rgba(8,8,20,.9); border-top:1px solid var(--panel-line);
+}
+
+/* LINE — words and a rule, no plate at all */
+.ts-line .vf-tabs { height:72px; border-top:1px solid rgba(255,255,255,.14); }
+.ts-line .vf-thumb {
+  display:block; top:-1px; left:0; height:4px; border-radius:0 0 3px 3px;
+  width:calc(100% / var(--tn)); background:var(--on-c);
+  transform:translateX(calc(100% * var(--ti)));
+  transition:transform .28s cubic-bezier(.3,1.2,.4,1);
+}
+/* with the controls inside, the thumb has to leave them its share */
+.ts-line.ct-inside .vf-thumb { width:calc((100% - 190px) / var(--tn)); }
+.ts-seg.ct-inside .vf-thumb { width:calc((100% - 202px) / var(--tn)); }
+
+/* FOLDER — the tabs hang off the card's bottom edge */
+.ts-folder .vf-foot { margin-top:0; align-items:flex-start; }
+.ts-folder.has-tabs .vf-card { border-bottom-left-radius:0; border-bottom-right-radius:0; }
+.ts-folder .vf-tabs { gap:8px; }
+.ts-folder .vf-tab {
+  height:74px; border-radius:0 0 24px 24px;
+  background:rgba(0,0,0,.55); border:1px solid var(--panel-line); border-top:0;
+}
+.ts-folder .vf-tab.on { height:88px; background:var(--card-bg); color:var(--on-c); }
+.ts-folder.cs-none .vf-tab.on { background:rgba(255,255,255,.08); }
+.ts-folder .vf-ctls { margin-top:10px; }
+.ts-folder .vf-tabs .vf-ctl.in { height:74px; }
+
+/* FLOAT — a capsule over the bottom of the card, the page it is on named */
+.ts-float.has-tabs .vf-foot {
+  position:absolute; left:0; right:0; bottom:calc(var(--ib) + var(--safe) + 18px); z-index:3;
+  margin:0; justify-content:center; pointer-events:none;
+}
+.ts-float .vf-foot > * { pointer-events:auto; }
+.ts-float .vf-foot > .vf-tabs { flex:0 1 auto; }
+.ts-float.has-tabs .vf-body { padding-bottom:120px; }
+.ts-float .vf-tabs {
+  height:80px; padding:8px; gap:4px; border-radius:40px;
+  background:rgba(12,12,24,.94); border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 16px 44px rgba(0,0,0,.65);
+}
+.ts-float .vf-tab { flex:0 0 auto; padding:0 20px; border-radius:32px; }
+.ts-float .vf-tab.on { background:var(--thumb); color:var(--thumb-c); }
+.ts-float .vf-tabs .vf-ctl.in { border-radius:32px; }
+
+/* ---- the opening: one entrance for every view ------------------------- */
+.go.op-rise  .vf-veil, .go.op-fade .vf-veil, .go.op-sheet .vf-veil, .go.op-zoom .vf-veil { animation:vfFade .25s ease both; }
+.go.op-rise  .vf-head { animation:vfRise .34s cubic-bezier(.2,1.1,.4,1) both; }
+.go.op-rise  .vf-card { animation:vfRise .38s .04s cubic-bezier(.2,1.1,.4,1) both; }
+.go.op-rise  .vf-foot { animation:vfUp .38s .1s cubic-bezier(.2,1.1,.4,1) both; }
+.go.op-fade  .vf-view { animation:vfFade .3s ease both; }
+.go.op-sheet .vf-view { animation:vfSheet .46s cubic-bezier(.2,1,.3,1) both; }
+.go.op-zoom  .vf-view { animation:vfZoom .32s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes vfFade  { from { opacity:0; } }
+@keyframes vfRise  { from { opacity:0; transform:translateY(46px); } }
+@keyframes vfUp    { from { opacity:0; transform:translateY(80px); } }
+@keyframes vfSheet { from { transform:translateY(100%); } }
+@keyframes vfZoom  { from { opacity:0; transform:scale(.94); } }
+
+/* ---- a page change ---------------------------------------------------- */
+.vf-body.tr-fade  { animation:vfFade .22s ease both; }
+.vf-body.tr-left  { animation:vfFromR .26s cubic-bezier(.2,1,.4,1) both; }
+.vf-body.tr-right { animation:vfFromL .26s cubic-bezier(.2,1,.4,1) both; }
+@keyframes vfFromR { from { opacity:0; transform:translateX(70px); } }
+@keyframes vfFromL { from { opacity:0; transform:translateX(-70px); } }
+
+/* =========================================================================
+   THE PANES — mocks of what each view holds, in neutral primitives. They are
+   here to load the frame with real weight, not to be designed.
+   ========================================================================= */
+.cx { display:flex; flex-direction:column; gap:14px; }
+.cx-sec { font-size:20px; letter-spacing:2px; color:var(--muted); margin-top:6px; }
+.cx-sec b { color:var(--text); font-variant-numeric:tabular-nums; }
+.cx-row {
+  display:flex; align-items:center; gap:18px; padding:16px;
+  border-radius:22px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+}
+.cx-row.dash { background:none; border:2px dashed rgba(255,255,255,.16); }
+.cx-ic {
+  flex:0 0 auto; width:96px; height:96px; border-radius:18px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.1); color:var(--muted);
+}
+.cx-row.dash .cx-ic { border:2px dashed rgba(255,255,255,.22); background:none; }
+.cx-ic img { width:78%; height:78%; object-fit:contain; }
+.cx-ic svg { width:40px; height:40px; }
+.cx-tx { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.cx-tx b { font-size:24px; letter-spacing:1.5px; font-weight:var(--web-fw); }
+.cx-tx span { font:500 19px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--muted); }
+.cx-btn {
+  flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:62px; padding:0 22px; border-radius:18px;
+  background:linear-gradient(180deg, #f7d77a, #d9a93a); color:#241800;
+  font-size:24px; font-weight:var(--web-fw); letter-spacing:1px;
+}
+.cx-btn img { width:28px; height:28px; }
+.cx-btn.off { background:rgba(255,255,255,.08); color:var(--muted); }
+.cx-btn.wide { width:100%; }
+.cx-btn.ghost { background:rgba(255,255,255,.1); color:var(--text); }
+.cx-note { text-align:center; font:500 20px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--muted); padding:10px 0; }
+.cx-grid { display:grid; gap:12px; }
+.cx-grid.c3 { grid-template-columns:repeat(3,1fr); }
+.cx-grid.c4 { grid-template-columns:repeat(4,1fr); }
+.cx-grid.c5 { grid-template-columns:repeat(5,1fr); }
+.cx-grid.c7 { grid-template-columns:repeat(7,1fr); gap:8px; }
+.cx-tile {
+  position:relative; aspect-ratio:1/1.12; border-radius:18px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  background:rgba(0,0,0,.3); border:2px solid rgba(255,255,255,.14);
+  font:600 17px/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--text);
+}
+.cx-tile img { width:74%; height:66%; object-fit:contain; }
+.cx-tile.ghost img { filter:brightness(0) invert(1); opacity:.16; }
+.cx-tile.ghost span { color:var(--muted); }
+.cx-tile.r1 { border-color:rgba(90,169,255,.6); }
+.cx-tile.r2 { border-color:rgba(190,110,255,.6); }
+.cx-tile.r3 { border-color:rgba(255,212,59,.6); }
+.cx-tile i {
+  position:absolute; top:-8px; right:-8px; min-width:34px; height:30px; padding:0 8px; border-radius:15px;
+  background:var(--danger); color:#fff; font:800 17px/30px -apple-system,sans-serif; font-style:normal; text-align:center;
+}
+.cx-card {
+  position:relative; aspect-ratio:3/4; border-radius:14px; overflow:hidden;
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.3));
+  border:2px solid rgba(255,255,255,.18);
+  display:flex; align-items:center; justify-content:center;
+}
+.cx-card img { width:88%; height:80%; object-fit:contain; }
+.cx-card .g, .cx-card .t {
+  position:absolute; min-width:34px; height:34px; padding:0 6px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:var(--web-fw); background:rgba(0,0,0,.65); color:var(--text);
+}
+.cx-card .g { top:6px; left:6px; }
+.cx-card .t { bottom:6px; right:6px; color:var(--gold); }
+.cx-card.empty { border-style:dashed; background:none; color:var(--muted); font-size:30px; }
+.cx-card.dim img { opacity:.35; }
+.cx-grid.c7 .cx-card .g, .cx-grid.c7 .cx-card .t { min-width:26px; height:26px; font-size:15px; border-radius:8px; }
+.cx-pill { display:flex; gap:8px; }
+.cx-pill span {
+  flex:1 1 0; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); font-size:26px; color:var(--muted);
+}
+.cx-pill span.on { background:var(--gold); color:#241800; border-color:var(--gold); }
+.cx-odds { display:grid; grid-template-columns:auto 1fr auto; gap:10px 14px; align-items:center; font-size:18px; letter-spacing:1px; }
+.cx-odds s { display:block; height:12px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; }
+.cx-odds s b { display:block; height:100%; background:currentColor; }
+.cx-machine { display:flex; gap:22px; align-items:center; }
+.cx-globe {
+  flex:0 0 auto; position:relative; width:250px; height:250px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.18), rgba(255,255,255,.03) 60%);
+  border:4px solid rgba(255,255,255,.4); overflow:hidden;
+}
+.cx-globe i { position:absolute; width:52px; height:52px; border-radius:50%; box-shadow:inset -6px -8px 12px rgba(0,0,0,.35); }
+.cx-rank { display:flex; align-items:center; gap:18px; padding:14px 18px; border-radius:18px; background:rgba(255,255,255,.04); font-size:24px; }
+.cx-rank b { width:44px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.cx-rank span { flex:1 1 auto; }
+.cx-rank em { font-style:normal; color:var(--gold); font-variant-numeric:tabular-nums; }
+.cx-rank.me { background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.4); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>View frame</h1>
+  <p class="hint">One frame for every view — the village behind, a veil, a card for the content and a tab bar at the bottom — in a look neutral enough for all fifteen games.</p>
+
+  <h2>Show</h2>
+  <div class="row"><div class="seg" data-k="mode" data-opts="compare:Proposals,views:Views,single:Single"></div></div>
+  <div class="row"><div class="lbl">view</div><div class="seg" data-k="view" data-opts="shop:Shop,album:Album,deck:Deck,camp:Camp,prison:Prison"></div></div>
+  <div class="row"><label for="game">game</label><select id="game"></select></div>
+  <div class="row"><div class="lbl">language</div><div class="seg" data-k="lang" data-opts="fr:FR,en:EN"></div></div>
+
+  <h2>Proposal</h2>
+  <div class="presets" id="presets"></div>
+  <p id="why"></p>
+
+  <h2>Veil</h2>
+  <div class="row" data-range="veil" data-min="0" data-max="1" data-step="0.05" data-label="strength"></div>
+  <div class="row" data-range="blur" data-min="0" data-max="20" data-step="1" data-label="blur px"></div>
+  <div class="row"><div class="seg" data-k="veilShape" data-opts="flat:Flat,fade:Faded"></div></div>
+
+  <h2>Card</h2>
+  <div class="row"><div class="seg" data-k="card" data-opts="none:None,glass:Glass,plate:Plate,sheet:Sheet"></div></div>
+  <div class="row" data-range="ca" data-min="0" data-max="1" data-step="0.02" data-label="opacity"></div>
+  <div class="row" data-range="radius" data-min="0" data-max="48" data-step="2" data-label="radius"></div>
+  <div class="row" data-range="gutter" data-min="0" data-max="40" data-step="2" data-label="gutter"></div>
+  <div class="row chk" data-check="fade" data-label="fade the pane under the card's edges"></div>
+
+  <h2>Header</h2>
+  <div class="row"><div class="lbl">placement</div><div class="seg" data-k="head" data-opts="scene:On the scene,card:In the card,none:None"></div></div>
+  <div class="row"><div class="lbl">align</div><div class="seg" data-k="align" data-opts="left:Left,center:Center"></div></div>
+  <div class="row"><div class="lbl">title colour</div><div class="seg" data-k="titleColor" data-opts="text:Text,accent:Accent,gold:Gold"></div></div>
+
+  <h2>Tabs</h2>
+  <div class="row"><div class="seg" data-k="tabStyle" data-opts="seg:Segmented,dock:Dock,bar:Bar,line:Line,folder:Folder,float:Float"></div></div>
+  <div class="row"><div class="lbl">content</div><div class="seg" data-k="tabContent" data-opts="both:Icon + label,label:Label,icon:Icon,active:Active named"></div></div>
+  <div class="row"><div class="lbl">active tab</div><div class="seg" data-k="accentUse" data-opts="tint:Accent,mono:Neutral"></div></div>
+  <div class="row"><div class="lbl">count</div><div class="seg" data-k="count" data-opts="auto:View's,0:None,2:2,3:3,4:4,5:5"></div></div>
+  <div class="row"><div class="lbl">page change</div><div class="seg" data-k="trans" data-opts="none:Cut,fade:Fade,slide:Slide"></div></div>
+
+  <h2>Corner controls</h2>
+  <div class="row"><div class="seg" data-k="ctls" data-opts="beside:Beside,inside:In the bar,above:Above,hidden:Hidden"></div></div>
+
+  <h2>Opening</h2>
+  <div class="row"><div class="seg" data-k="open" data-opts="rise:Rise,fade:Fade,sheet:Sheet up,zoom:Zoom,none:None"></div></div>
+  <div class="row"><button class="btn ghost" id="replay">Replay the opening</button></div>
+
+  <h2>Device</h2>
+  <div class="row chk" data-check="insets" data-label="notch and home bar (48 / 34 px)"></div>
+
+  <h2>Export</h2>
+  <div class="row"><button class="btn" id="copy">Copy settings</button><textarea id="out" readonly></textarea></div>
+</div>
+
+<div id="stage">
+  <div id="grid"></div>
+  <div id="stage-note"></div>
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code — plain ES6, it runs in your browser and not in a
+   mobile WebView.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+
+  /* ---- the motor's upper(), copied from overlay-pop.html --------------- */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* ---- the fifteen palettes: manifest theme + web.font ------------------ */
+  const FONTS = {
+    orbitron: ['"Orbitron"', 800], exo2: ['"Exo 2"', 800], baloo2: ['"Baloo 2"', 800],
+    bungee: ['"Bungee"', 400], bebasneue: ['"Bebas Neue"', 400], russoone: ['"Russo One"', 400]
+  };
+  const GAMES = {
+    arcider:    { accent:"#35e8ff", accent2:"#7a4dff", font:"orbitron"  },
+    blight:     { accent:"#ff8fab", accent2:"#7048e8", font:"baloo2"    },
+    bouncetry:  { accent:"#ff3b57", accent2:"#2f86ff", font:"bungee"    },
+    chainring:  { accent:"#4bf5ff", accent2:"#4263eb", font:"exo2"      },
+    echomaze:   { accent:"#7ef9ff", accent2:"#4ade80", font:"orbitron"  },
+    gearball:   { accent:"#7ef9ff", accent2:"#ffb44f", font:"russoone"  },
+    marshmelt:  { accent:"#ff9d2e", accent2:"#ff7a1a", font:"baloo2"    },
+    orbinity:   { accent:"#7cf5ff", accent2:"#6d5cff", font:"exo2"      },
+    pawko:      { accent:"#ffb830", accent2:"#ff4d6d", font:"baloo2"    },
+    radiam:     { accent:"#35e0ff", accent2:"#8b6cff", font:"russoone"  },
+    slipdeck:   { accent:"#f5c451", accent2:"#3ddc97", font:"bebasneue" },
+    spinshock:  { accent:"#40ecff", accent2:"#ff4fbe", font:"bungee"    },
+    stratideck: { accent:"#f2c14e", accent2:"#5aa9ff", font:"russoone"  },
+    triverse:   { accent:"#3ce0ff", accent2:"#ff5ad4", font:"orbitron"  },
+    vipera:     { accent:"#4dff9b", accent2:"#12b86a", font:"baloo2"    }
+  };
+  const ART = "../assets/image/";
+  const embed = (g, name) => ART + "embed/" + g + "-" + name + ".webp";
+  const shell = (name) => ART + "shell/" + name + ".webp";
+  const sticker = (g, n) => embed(g, "sticker" + String(n).padStart(2, "0"));
+  const img = (src, cls) => '<img' + (cls ? ' class="' + cls + '"' : "") + ' src="' + src + '" alt="" onerror="this.style.visibility=\'hidden\'">';
+
+  /* ---- lucide pictograms (assets/motor/lucide/) -------------------------- */
+  const SVG = {
+    house: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+    gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+    layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    map: '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+    lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+    calendar: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>'
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + SVG[k] + "</svg>";
+
+  /* ---- the pane primitives --------------------------------------------- */
+  const row = (ic, title, sub, right, cls) =>
+    '<div class="cx-row' + (cls ? " " + cls : "") + '"><div class="cx-ic">' + ic + '</div>' +
+    '<div class="cx-tx"><b>' + upper(title) + "</b>" + (sub ? "<span>" + sub + "</span>" : "") + "</div>" + (right || "") + "</div>";
+  const price = (n, off) => '<span class="cx-btn' + (off ? " off" : "") + '">' + img(shell("coin")) + n + "</span>";
+  const sec = (label, n) => '<p class="cx-sec">' + upper(label) + (n != null ? " <b>" + n + "</b>" : "") + "</p>";
+  const grade = (i) => [8, 10, 7, 6, 6, 3, 10, 9, 1, 6, 5, 4, 9, 7, 2, 8][i % 16];
+  const tier = (i) => "EDCBAS".charAt([1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 2, 0, 1, 3, 0][i % 16]);
+  const cardTile = (g, i, cls) =>
+    '<div class="cx-card' + (cls ? " " + cls : "") + '">' + img(sticker(g, (i % 20) + 1)) +
+    '<span class="g">' + grade(i) + '</span><span class="t">' + tier(i) + "</span></div>";
+
+  /* ---- the pages: one pane per tab, whatever view it lands in ---------- */
+  const TABS = {
+    tickets: { icon:"ticket", fr:"Tickets", en:"Tickets", pane: (g, L) => '<div class="cx">' +
+      row(img(shell("ticket")), "Ticket", L === "fr" ? "Un tirage à la machine à stickers." : "One pull of the sticker machine.", price(100)) +
+      row(img(shell("ticket-super")), L === "fr" ? "Super ticket" : "Super ticket", L === "fr" ? "Un tirage, et un légendaire environ une fois sur trois." : "One pull, and a legendary about one time in three.", price("1 500", true)) +
+      '<p class="cx-note">' + (L === "fr" ? "Un ticket de plus, de meilleures chances." : "One more ticket, better odds.") + "</p></div>" },
+    doubles: { icon:"copy", fr:"Doublons", en:"Doubles", pane: (g, L) => {
+      let t = "";
+      [4, 8, 9, 2, 13, 6, 11].forEach((n, i) => { t += '<div class="cx-tile">' + img(sticker(g, n)) + "<i>x" + (i % 3 + 1) + "</i></div>"; });
+      return '<div class="cx">' + sec(L === "fr" ? "Tes doublons" : "Your doubles", 7) + '<div class="cx-grid c5">' + t + "</div>" +
+        '<span class="cx-btn wide">' + upper(L === "fr" ? "Tout vendre" : "Sell all") + " " + img(shell("coin")) + "175</span></div>"; } },
+    stickers: { icon:"grid", fr:"Stickers", en:"Stickers", pane: (g, L) => {
+      const owned = [1, 2, 5, 8, 10, 12, 14], names = ["Hey there", "Smitten", "???", "???", "Teary", "???", "???", "Warcry", "???", "Baffled", "???", "Puzzled", "???", "Smirk"];
+      let t = "";
+      for (let n = 1; n <= 20; n++) {
+        const own = owned.indexOf(n) >= 0, r = n > 18 ? 3 : n > 16 ? 2 : n > 12 ? 1 : 0;
+        t += '<div class="cx-tile' + (own ? "" : " ghost") + (r ? " r" + r : "") + '">' + img(sticker(g, n)) + "<span>" + (own ? names[n - 1] || "Grin" : "???") + "</span></div>";
+      }
+      return '<div class="cx-grid c4">' + t + "</div>"; } },
+    machine: { icon:"gift", fr:"Machine", en:"Machine", pane: (g, L) => {
+      const cols = ["#f5c451", "#8f8cff", "#ff5d5d", "#f5c451", "#f0d27a"];
+      let balls = "";
+      for (let i = 0; i < 17; i++) balls += '<i style="left:' + (18 + (i * 37) % 170) + "px;top:" + (70 + Math.floor(i / 4.3) * 38 + (i % 2) * 8) + "px;background:" + cols[i % 5] + '"></i>';
+      const L4 = L === "fr" ? ["Commun", "Rare", "Épique", "Légendaire"] : ["Common", "Rare", "Epic", "Legendary"];
+      const odd = (c, n, v) => '<span style="color:' + c + '">' + upper(n) + '</span><s style="color:' + c + '"><b style="width:' + v + '%"></b></s><span>' + v + "%</span>";
+      return '<div class="cx"><div class="cx-machine"><div class="cx-globe">' + balls + '</div><div class="cx" style="flex:1">' +
+        sec(L === "fr" ? "Tickets par tirage" : "Tickets per pull") +
+        '<div class="cx-pill"><span class="on">1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div></div>' +
+        sec(L === "fr" ? "Chances" : "Odds") +
+        '<div class="cx-odds">' + odd("#c8cde0", L4[0], 82) + odd("#5aa9ff", L4[1], 14) + odd("#be6eff", L4[2], 3) + odd("#ffd43b", L4[3], 1) + "</div>" +
+        '<span class="cx-btn wide off">' + upper(L === "fr" ? "Tirer" : "Draw") + " " + img(shell("ticket")) + "1</span></div>"; } },
+    deck: { icon:"layers", fr:"Deck", en:"Deck", pane: (g, L) => {
+      let t = "", c = "";
+      for (let i = 0; i < 14; i++) t += i < 11 ? cardTile(g, i) : '<div class="cx-card empty">+</div>';
+      for (let i = 0; i < 12; i++) c += cardTile(g, i + 3, i % 3 === 0 ? "dim" : "");
+      return '<div class="cx">' + sec(L === "fr" ? "Dans la bataille" : "In the battle", "11 / 14") + '<div class="cx-grid c7">' + t + "</div>" +
+        '<p class="cx-note">' + (L === "fr" ? "3 emplacements vides — la bataille les remplit avec des conscrits." : "3 empty slots — the battle fills them with conscripts.") + "</p>" +
+        sec(L === "fr" ? "Tes cartes" : "Your cards", 29) + '<div class="cx-grid c4">' + c + "</div></div>"; } },
+    cards: { icon:"book", fr:"Collection", en:"Collection", pane: (g, L) => {
+      let c = "";
+      for (let i = 0; i < 16; i++) c += cardTile(g, i * 3, i % 5 === 4 ? "dim" : "");
+      return '<div class="cx">' + sec(L === "fr" ? "Officiers" : "Officers", "42 / 120") + '<div class="cx-grid c4">' + c + "</div></div>"; } },
+    objects: { icon:"package", fr:"Objets", en:"Objects", pane: (g, L) => '<div class="cx">' +
+      row(svg("package"), L === "fr" ? "Trousse de soin" : "Med kit", L === "fr" ? "Soigne un blessé tout de suite." : "Heals one wounded card at once.", '<span class="cx-btn ghost">x2</span>') +
+      row(svg("map"), L === "fr" ? "Carte d'état-major" : "Staff map", L === "fr" ? "Révèle une carte ennemie." : "Reveals one enemy card.", '<span class="cx-btn ghost">x1</span>') +
+      row(svg("lock"), L === "fr" ? "Menottes" : "Shackles", L === "fr" ? "Un prisonnier de plus." : "One more prisoner.", '<span class="cx-btn ghost">x0</span>') + "</div>" },
+    recruits: { icon:"users", fr:"Recrues", en:"Recruits", pane: (g, L) => {
+      let c = "";
+      [[2, 360], [7, 250], [11, 150]].forEach((p) => { c += '<div class="cx">' + cardTile(g, p[0]) + price(p[1]) + "</div>"; });
+      return '<div class="cx"><div class="cx-grid c3">' + c + '</div><span class="cx-btn ghost wide">' + (L === "fr" ? "De nouvelles têtes" : "New faces") + "</span></div>"; } },
+    missions: { icon:"map", fr:"Missions", en:"Missions", pane: (g, L) => '<div class="cx">' +
+      row(svg("map"), L === "fr" ? "Le gué du moulin" : "The mill ford", L === "fr" ? "4 h · 2 à 3 cartes · 68 % de réussite" : "4 h · 2 to 3 cards · 68% success", '<span class="cx-btn">' + upper(L === "fr" ? "Envoyer" : "Send") + "</span>") +
+      row(svg("map"), L === "fr" ? "La tour de guet" : "The watchtower", L === "fr" ? "12 h · 3 à 5 cartes · 41 %" : "12 h · 3 to 5 cards · 41%", '<span class="cx-btn">' + upper(L === "fr" ? "Envoyer" : "Send") + "</span>") +
+      row(svg("map"), L === "fr" ? "Le convoi" : "The convoy", L === "fr" ? "En route · retour dans 3 h 12" : "Out · back in 3 h 12", '<span class="cx-btn off">3:12</span>') +
+      row(svg("map"), L === "fr" ? "Le col enneigé" : "The snowy pass", L === "fr" ? "48 h · 5 cartes · 22 %" : "48 h · 5 cards · 22%", '<span class="cx-btn">' + upper(L === "fr" ? "Envoyer" : "Send") + "</span>") + "</div>" },
+    prison: { icon:"lock", fr:"Prison", en:"Prison", pane: (g, L) => {
+      let r = "";
+      for (let i = 0; i < 6; i++) r += row("", L === "fr" ? "Cellule libre" : "Free cell", "", "", "dash");
+      return '<div class="cx">' + r + '<p class="cx-note">' + (L === "fr" ? "Une bataille gagnée t'offre un ennemi laissé debout." : "A won battle offers you an enemy left standing.") + "</p></div>"; } },
+    infirmary: { icon:"heart", fr:"Infirmerie", en:"Infirmary", pane: (g, L) => '<div class="cx">' +
+      row('<div class="cx-card" style="width:80px;border:0">' + img(sticker(g, 3)) + "</div>", "Capitaine D", L === "fr" ? "Sur pied dans 1 j 14 h" : "Back on its feet in 1 d 14 h", '<span class="cx-btn ghost">▷</span>') +
+      row('<div class="cx-card" style="width:80px;border:0">' + img(sticker(g, 9)) + "</div>", "Sergent E", L === "fr" ? "Sur pied dans 6 h" : "Back on its feet in 6 h", '<span class="cx-btn ghost">▷</span>') +
+      row("", L === "fr" ? "Lit libre" : "Free bed", "", "", "dash") + "</div>" },
+    ranking: { icon:"trophy", fr:"Classement", en:"Ranking", pane: (g, L) => {
+      let r = "";
+      [["Ana", 48200], ["Tom", 41950], [L === "fr" ? "Toi" : "You", 39900], ["Lea", 31200], ["Max", 29870], ["Zoe", 21040], ["Sam", 18300]].forEach((p, i) => {
+        r += '<div class="cx-rank' + (i === 2 ? " me" : "") + '"><b>' + (i + 1) + "</b><span>" + p[0] + "</span><em>" + p[1].toLocaleString("fr-FR") + "</em></div>";
+      });
+      return '<div class="cx">' + r + "</div>"; } },
+    daily: { icon:"calendar", fr:"Jour", en:"Daily", pane: (g, L) => '<div class="cx">' +
+      row(img(shell("gift-close-01")), L === "fr" ? "Jour 6" : "Day 6", L === "fr" ? "Un cadeau, demain." : "A gift, tomorrow.", "") +
+      row(img(shell("gift-close-02")), L === "fr" ? "Jour 7" : "Day 7", L === "fr" ? "Tout est multiplié par cinq." : "Everything times five.", "") + "</div>" }
+  };
+  /* what a count override borrows once a view has run out of its own pages */
+  const SPARE = ["infirmary", "prison", "ranking", "daily", "missions", "objects"];
+
+  /* ---- the five views as they stand in the build today ------------------ */
+  const VIEWS = {
+    shop:   { label:"Shop",   tabs:["tickets", "doubles"],
+              fr:{ title:"Boutique", sub:"Des tickets pour la machine" },   en:{ title:"Shop", sub:"Tickets for the machine" } },
+    album:  { label:"Album",  tabs:["stickers", "machine"],
+              fr:{ title:"Collection", sub:"7 / 20 stickers" },              en:{ title:"Collection", sub:"7 / 20 stickers" } },
+    deck:   { label:"Deck",   tabs:["deck", "cards", "objects"],
+              fr:{ title:"Ton deck", sub:"Touche une carte pour l'emmener" }, en:{ title:"Your deck", sub:"Tap a card to take it along" } },
+    camp:   { label:"Camp",   tabs:["recruits", "missions"],
+              fr:{ title:"Tente de recrutement", sub:"De nouvelles têtes dans 1 min" }, en:{ title:"Recruiting tent", sub:"New faces in 1 min" } },
+    prison: { label:"Prison", tabs:["prison"],
+              fr:{ title:"Prison", sub:"0 / 6 cellules occupées" },         en:{ title:"Prison", sub:"0 / 6 cells taken" } }
+  };
+
+  /* ---- the six proposals ------------------------------------------------ */
+  const SET_KEYS = ["veil", "blur", "veilShape", "card", "ca", "radius", "gutter", "fade", "head", "align", "titleColor",
+                    "tabStyle", "tabContent", "accentUse", "count", "trans", "ctls", "open"];
+  const PRESETS = {
+    glass: { label:"A · Glass", small:"light veil, glass card, segmented",
+      why:"The lightest: the village stays readable through a faded veil and a glass card; the segmented control the camp and the deck already use moves to the bottom, the corner controls keep their place beside it.",
+      s:{ veil:.45, blur:12, veilShape:"fade", card:"glass", ca:.07, radius:36, gutter:20, fade:true, head:"card", align:"left", titleColor:"text",
+          tabStyle:"seg", tabContent:"label", accentUse:"tint", count:"auto", trans:"fade", ctls:"beside", open:"rise" } },
+    plate: { label:"B · Plate", small:"shipped veil, dark card, dock",
+      why:"Today's veil (.78, 6 px) under an opaque plate, title on the scene; the tabs are a dock of their own with icon and label, and options / help join it as two icons after a filet.",
+      s:{ veil:.7, blur:6, veilShape:"flat", card:"plate", ca:.72, radius:28, gutter:18, fade:true, head:"scene", align:"left", titleColor:"text",
+          tabStyle:"dock", tabContent:"both", accentUse:"tint", count:"auto", trans:"slide", ctls:"inside", open:"rise" } },
+    sheet: { label:"C · Sheet", small:"what ships — bottom sheet, system bar",
+      why:"What ships (packages/webshell/view.css, THE SHEET). A phone's own grammar: the view is a sheet that rises out of the bottom edge, the village shows above it, and the tab bar is the sheet's bottom edge, the width of the frame.",
+      s:{ veil:.5, blur:2, veilShape:"flat", card:"sheet", ca:.76, radius:40, gutter:0, fade:true, head:"card", align:"center", titleColor:"text",
+          tabStyle:"bar", tabContent:"both", accentUse:"tint", count:"auto", trans:"slide", ctls:"inside", open:"sheet" } },
+    bare: { label:"D · Bare", small:"no card, veil only, line tabs",
+      why:"The minimum: no card at all, a strong faded veil does the separating, and the tabs are words over a rule. Cheapest to paint on a phone, and the one that asks the least of each game's palette.",
+      s:{ veil:.82, blur:8, veilShape:"fade", card:"none", ca:0, radius:0, gutter:26, fade:true, head:"scene", align:"left", titleColor:"text",
+          tabStyle:"line", tabContent:"label", accentUse:"tint", count:"auto", trans:"fade", ctls:"beside", open:"fade" } },
+    folder: { label:"E · Folder", small:"card with hanging tabs",
+      why:"The tabs hang off the card's bottom edge, and the active one is cut from the card itself — which page is open is read as a shape, not a colour.",
+      s:{ veil:.6, blur:6, veilShape:"flat", card:"plate", ca:.8, radius:30, gutter:18, fade:true, head:"scene", align:"left", titleColor:"gold",
+          tabStyle:"folder", tabContent:"both", accentUse:"mono", count:"auto", trans:"fade", ctls:"beside", open:"zoom" } },
+    float: { label:"F · Float", small:"glass card, floating capsule",
+      why:"The card takes the whole column and a capsule floats over its foot; only the active page is named, the others are icons, so five tabs and the two controls still fit one line.",
+      s:{ veil:.55, blur:10, veilShape:"flat", card:"glass", ca:.06, radius:34, gutter:18, fade:true, head:"card", align:"center", titleColor:"text",
+          tabStyle:"float", tabContent:"active", accentUse:"tint", count:"auto", trans:"slide", ctls:"inside", open:"rise" } }
+  };
+
+  /* ---- state ------------------------------------------------------------ */
+  const P = Object.assign({ mode:"compare", view:"shop", game:"stratideck", lang:"fr", preset:"sheet", tab:0, insets:false },
+    JSON.parse(JSON.stringify(PRESETS.sheet.s)));
+  /* ?mode=views&view=deck&preset=plate&game=pawko&lang=en — a headless shot
+     or a shared link opens on the same stage */
+  (function () {
+    const q = new URLSearchParams(location.search);
+    if (PRESETS[q.get("preset")]) { P.preset = q.get("preset"); Object.assign(P, PRESETS[P.preset].s); }
+    ["mode", "view", "game", "lang"].forEach((k) => { if (q.get(k)) P[k] = q.get(k); });
+  })();
+
+  function tabsFor(viewKey, count) {
+    const own = VIEWS[viewKey].tabs.slice();
+    if (count === "auto") return own;
+    const n = +count;
+    if (n === 0) return [];
+    const out = own.slice(0, n);
+    for (let i = 0; out.length < n && i < SPARE.length; i++) if (out.indexOf(SPARE[i]) < 0) out.push(SPARE[i]);
+    return out;
+  }
+
+  function hexRgb(h) {
+    const n = parseInt(h.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(",");
+  }
+
+  /* ---- one frame -------------------------------------------------------- */
+  function build(viewKey, S, tabIndex) {
+    const V = VIEWS[viewKey], T = V[S.lang], g = GAMES[S.game], f = FONTS[g.font];
+    const tabs = tabsFor(viewKey, S.count);
+    const showTabs = tabs.length > 1;             // one tab is a label, not a choice
+    const pages = tabs.length ? tabs : V.tabs;
+    let ti = Math.min(Math.max(tabIndex | 0, 0), pages.length - 1);
+
+    const fr = document.createElement("div");
+    fr.className = ["frame", "cs-" + S.card, "ts-" + S.tabStyle, "tc-" + S.tabContent, "hd-" + S.head, "al-" + S.align,
+      "tt-" + S.titleColor, "ac-" + S.accentUse, "ct-" + S.ctls, "op-" + S.open,
+      S.fade ? "sf" : "", S.insets ? "ins" : "", showTabs ? "has-tabs" : ""].join(" ");
+    fr.style.cssText =
+      "--accent:" + g.accent + ";--accent2:" + g.accent2 + ";--accent-rgb:" + hexRgb(g.accent) +
+      ";--web-font:" + f[0] + ",sans-serif;--web-fw:" + f[1] +
+      ";--veil:" + S.veil + ";--blur:" + S.blur + "px;--ca:" + S.ca + ";--radius:" + S.radius +
+      "px;--gutter:" + (S.card === "sheet" ? 0 : S.gutter) + "px;--head-pad:" + Math.max(0, 26 - (S.card === "sheet" ? 0 : S.gutter)) + "px";
+
+    /* home, help, options — the order that ships; the house is the sheet's
+       and the band drops its own over it */
+    const ctlsOut = '<div class="vf-ctls"><span class="vf-ctl">' + svg("house") + '</span><span class="vf-ctl">' + svg("help") + '</span><span class="vf-ctl">' + svg("settings") + "</span></div>";
+    const ctlsIn = '<i class="vf-sep"></i><span class="vf-ctl in">' + svg("house") + '</span><span class="vf-ctl in">' + svg("help") + '</span><span class="vf-ctl in">' + svg("settings") + "</span>";
+    let nav = "";
+    if (showTabs) {
+      nav = '<nav class="vf-tabs" style="--tn:' + tabs.length + ";--ti:" + ti + '"><i class="vf-thumb"></i>';
+      tabs.forEach((k, i) => {
+        nav += '<button class="vf-tab' + (i === ti ? " on" : "") + '" data-i="' + i + '"><span class="ic">' + svg(TABS[k].icon) + '</span><span class="lb">' + upper(TABS[k][S.lang]) + "</span></button>";
+      });
+      nav += (S.ctls === "inside" ? ctlsIn : "") + "</nav>";
+    }
+    /* without a bar the controls go back to the corner, as today */
+    let foot = "";
+    if (!showTabs) foot = S.ctls === "hidden" ? "" : ctlsOut;
+    else if (S.ctls === "above") foot = ctlsOut + nav;
+    else if (S.ctls === "beside") foot = nav + ctlsOut;
+    else foot = nav;
+
+    const head = '<div class="vf-head"><h2 class="vf-title">' + upper(T.title) + '</h2><p class="vf-sub">' + T.sub + "</p></div>";
+    const band =
+      '<div class="vf-band">' + (S.ctls === "hidden" ? '<i class="ch home">' + svg("house") + "</i>" : "") +
+      '<i class="ch lv">' + img(shell("xp")) + 'LV 3<span class="bar"><s></s></span></i>' +
+      '<i class="ch coin">' + img(shell("coin")) + "797</i>" +
+      '<i class="ch">' + img(shell("ticket")) + "0</i>" +
+      '<i class="ch">' + img(shell("sticker")) + "7/20</i>" +
+      '<i class="ch">' + img(shell("star")) + "13/90</i></div>";
+
+    fr.innerHTML =
+      '<div class="scene" style="background-image:url(' + embed(S.game, "background-home") + ')"></div>' +
+      '<div class="vf-veil' + (S.veilShape === "fade" ? " fade" : "") + '"></div>' +
+      band +
+      '<div class="vf-view">' +
+        (S.head === "scene" ? head : "") +
+        '<div class="vf-card">' + (S.head === "card" ? head : "") +
+          '<div class="vf-body">' + TABS[pages[ti]].pane(S.game, S.lang) + "</div></div>" +
+        (foot ? '<div class="vf-foot">' + foot + "</div>" : "") +
+      "</div>";
+
+    /* the tabs work in every mode: a bar is judged by using it */
+    fr.addEventListener("click", (e) => {
+      const b = e.target.closest(".vf-tab");
+      if (!b) return;
+      const i = +b.dataset.i;
+      if (i === ti) return;
+      const dir = i > ti ? "left" : "right";
+      ti = i;
+      if (fr.dataset.single) P.tab = i;
+      fr.querySelectorAll(".vf-tab").forEach((t, k) => t.classList.toggle("on", k === i));
+      fr.querySelector(".vf-tabs").style.setProperty("--ti", i);
+      const old = fr.querySelector(".vf-body"), nb = document.createElement("div");
+      nb.className = "vf-body" + (S.trans === "fade" ? " tr-fade" : S.trans === "slide" ? " tr-" + dir : "");
+      nb.innerHTML = TABS[pages[i]].pane(S.game, S.lang);
+      old.replaceWith(nb);
+    });
+    return fr;
+  }
+
+  /* ONE LINE, MEASURED — the shipped rule (view.js, fitTitles) */
+  function fitTitles(root) {
+    root.querySelectorAll(".vf-title").forEach((t) => {
+      t.style.fontSize = "";
+      let s = parseFloat(getComputedStyle(t).fontSize);
+      while (t.scrollWidth > t.clientWidth + 1 && s > 26) { s -= 2; t.style.fontSize = s + "px"; }
+    });
+  }
+
+  function settings(base) {
+    const S = { game:P.game, lang:P.lang, insets:P.insets };
+    SET_KEYS.forEach((k) => { S[k] = base[k]; });
+    return S;
+  }
+
+  /* ---- the stage -------------------------------------------------------- */
+  function render() {
+    const grid = $("grid");
+    grid.innerHTML = "";
+    let items;
+    if (P.mode === "compare") items = Object.keys(PRESETS).map((k) => ({ view:P.view, S:settings(PRESETS[k].s), cap:PRESETS[k].label, preset:k }));
+    else if (P.mode === "views") items = Object.keys(VIEWS).map((k) => ({ view:k, S:settings(P), cap:VIEWS[k].label, viewKey:k }));
+    else items = [{ view:P.view, S:settings(P), single:true }];
+
+    const W = grid.clientWidth - 40, H = grid.clientHeight - 68;
+    let sc;
+    if (items.length === 1) sc = Math.min(W / 720, H / 1280);
+    else {
+      let best = 0;
+      for (let c = 1; c <= items.length; c++) {
+        const rows = Math.ceil(items.length / c);
+        const s = Math.min((W - (c - 1) * 18) / c / 720, (H - (rows - 1) * 40) / rows / 1280);
+        if (s > best) best = s;
+      }
+      sc = best;
+    }
+    items.forEach((it) => {
+      const slot = document.createElement("div");
+      slot.className = "slot" + (it.preset && it.preset === P.preset ? " sel" : "");
+      slot.style.width = 720 * sc + "px";
+      slot.style.height = 1280 * sc + "px";
+      const fit = document.createElement("div");
+      fit.className = "fit";
+      fit.style.transform = "scale(" + sc + ")";
+      const fr = build(it.view, it.S, it.single ? P.tab : 0);
+      if (it.single) fr.dataset.single = "1";
+      fit.appendChild(fr);
+      slot.appendChild(fit);
+      if (!it.single) {
+        const cap = document.createElement("div");
+        cap.className = "cap";
+        const b = document.createElement("button");
+        b.textContent = it.cap + " — open alone";
+        b.addEventListener("click", () => {
+          if (it.preset) applyPreset(it.preset);
+          if (it.viewKey) P.view = it.viewKey;
+          P.mode = "single"; P.tab = 0;
+          sync(); render();
+        });
+        cap.appendChild(b);
+        slot.appendChild(cap);
+      }
+      grid.appendChild(slot);
+      fitTitles(fr);
+      requestAnimationFrame(() => fr.classList.add("go"));
+    });
+    $("stage-note").textContent =
+      P.mode === "compare" ? "720×1280 · the six proposals as they are, on the " + VIEWS[P.view].label.toLowerCase() + " · the tabs work · the panel edits the Single view" :
+      P.mode === "views" ? "720×1280 · every view in the panel's look · the tabs work" :
+      "720×1280 · " + VIEWS[P.view].label + " · " + PRESETS[P.preset].label + (dirty() ? " (edited)" : "");
+  }
+
+  function dirty() {
+    const s = PRESETS[P.preset].s;
+    return SET_KEYS.some((k) => s[k] !== P[k]);
+  }
+
+  function applyPreset(k) {
+    P.preset = k;
+    SET_KEYS.forEach((key) => { P[key] = PRESETS[k].s[key]; });
+  }
+
+  /* ---- the panel -------------------------------------------------------- */
+  const sel = $("game");
+  Object.keys(GAMES).forEach((k) => { const o = document.createElement("option"); o.value = o.textContent = k; sel.appendChild(o); });
+  sel.addEventListener("change", () => { P.game = sel.value; render(); });
+
+  document.querySelectorAll(".seg[data-k]").forEach((seg) => {
+    seg.dataset.opts.split(",").forEach((pair) => {
+      const [v, label] = pair.split(":");
+      const b = document.createElement("button");
+      b.dataset.v = v; b.textContent = label;
+      b.addEventListener("click", () => {
+        const k = seg.dataset.k;
+        P[k] = v;
+        if (k === "view") P.tab = 0;
+        if (SET_KEYS.indexOf(k) >= 0 && P.mode === "compare") P.mode = "single";
+        sync(); render();
+      });
+      seg.appendChild(b);
+    });
+  });
+  document.querySelectorAll("[data-range]").forEach((r) => {
+    const k = r.dataset.range;
+    r.innerHTML = '<label>' + r.dataset.label + ' <b></b></label><input type="range" min="' + r.dataset.min + '" max="' + r.dataset.max + '" step="' + r.dataset.step + '">';
+    r.querySelector("input").addEventListener("input", (e) => {
+      P[k] = +e.target.value;
+      if (P.mode === "compare") P.mode = "single";
+      sync(); render();
+    });
+  });
+  document.querySelectorAll("[data-check]").forEach((r) => {
+    const k = r.dataset.check;
+    r.innerHTML = '<label><input type="checkbox"> ' + r.dataset.label + "</label>";
+    r.querySelector("input").addEventListener("change", (e) => { P[k] = e.target.checked; sync(); render(); });
+  });
+  const pr = $("presets");
+  Object.keys(PRESETS).forEach((k) => {
+    const b = document.createElement("button");
+    b.dataset.v = k;
+    b.innerHTML = PRESETS[k].label + "<small>" + PRESETS[k].small + "</small>";
+    b.addEventListener("click", () => { applyPreset(k); if (P.mode === "compare") P.mode = "single"; sync(); render(); });
+    pr.appendChild(b);
+  });
+
+  function sync() {
+    sel.value = P.game;
+    document.querySelectorAll(".seg[data-k]").forEach((seg) => {
+      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", String(P[seg.dataset.k]) === b.dataset.v));
+    });
+    document.querySelectorAll("[data-range]").forEach((r) => {
+      const k = r.dataset.range;
+      r.querySelector("input").value = P[k];
+      r.querySelector("b").textContent = P[k];
+    });
+    document.querySelectorAll("[data-check]").forEach((r) => { r.querySelector("input").checked = !!P[r.dataset.check]; });
+    pr.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === P.preset));
+    $("why").textContent = PRESETS[P.preset].why;
+    const out = { preset:P.preset };
+    SET_KEYS.forEach((k) => { out[k] = P[k]; });
+    $("out").value = JSON.stringify(out, null, 2);
+  }
+
+  $("replay").addEventListener("click", render);
+  $("copy").addEventListener("click", () => {
+    $("out").select();
+    try { navigator.clipboard.writeText($("out").value); } catch (e) { document.execCommand("copy"); }
+  });
+
+  window.addEventListener("resize", render);
+  sync();
+  render();
+  if (document.fonts) document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>

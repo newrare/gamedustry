@@ -91,8 +91,13 @@ reward that arrived before the screen that holds it.
 
 So the gain is granted at once — it has to be, the end screen's own arithmetic
 reads it back — and the **reading** waits, exactly the way a coin chip's figure
-waits for its piece to land. `levels.js` calls `Meta.arrive()` from `show()`,
-beside `sweep()`, and the map plays it in the one order that reads:
+waits for its piece to land. `village.js` calls `Meta.arrive()` from its
+`show()` — the village is where the end screen sends the player back, and an
+event of the player's own climb is announced there, not on the map they open
+to pick a level (`levels.js` calls it only for a game with no village). Rounds
+played back to back without passing through the village add up: the bar runs
+from where the player last saw it, and every level crossed is paid. It plays in
+the one order that reads:
 
 1. **the bar runs**, and it comes up EMPTY and fills to where the player now
    stands rather than sliding from the old figure to the new one. After a round
@@ -110,8 +115,10 @@ beside `sweep()`, and the map plays it in the one order that reads:
    left under a blurred backdrop is a number nobody reads.
 1. **then the card**, and only then. A level crossed is handed over the way
    every other reward in this layer is — its own title says what happened
-   (*Level 2!*), its eyebrow says what it pays, and the ticket flies into the
-   chip. It carries `granted: true`, because `addXp` already paid it: the card
+   (*Level up!* / *Niveau supérieur !*), its eyebrow names the level reached
+   as the PLAYER's (*Player level 2 reached*), and the ticket flies into the
+   chip. It never titles itself *Level 2!*: one door away from a map of thirty
+   numbered levels, a bare number reads as a level of the map. It carries `granted: true`, because `addXp` already paid it: the card
    reads the state, it does not move it a second time.
 
 **A level crossed is still played in two**: the bar runs to the end of the
@@ -1237,6 +1244,7 @@ WebP, ~975 KB of base64, and a playable has no collection to put them in.
   "sell": [65, 100, 150, 225], // a double, by rarity — default: 25/40/60/90 % of the ticket
   "superOdds": [20, 25, 30],// …its rare / epic / legendary, pinned; common takes the rest
   "awards": [1,2,3,4,5,6,7,8,9,10,20,17],   // the twelve milestones, in order
+  "more": ["army"],         // optional: the band's fold, below
   "stickers": [
     { "name": "Nice One", "rarity": "common" },
     …twenty of them, in the sheet's own reading order
@@ -1259,6 +1267,17 @@ conversion stays "drop the last digits", which is what the end screen shows.
 `maxBet`, `luck` and `legendaryPer` all have
 defaults — a second game is the two required lines and nothing else, as long as
 **one legendary is left out of `awards`** (above).
+
+**`more` is the band's fold**, and the one key here that is not the meta
+layer's own figures. A game with more to count than the wallet lists the
+layers that fill it, in order, and the band grows ONE chip — a sword, between
+the level and the coins (`⌂ · ⚡ xp · ⚔ · coins · …`), the level bar giving up
+the room. A mouse unfolds it on hover, a tap pins it open, and each row of the
+fold is a door to the screen that prints that figure at full size. A layer
+fills its share with `MT.moreAdd(key, { title, rows })` (`meta.js`, section
+11b); the chip is there only when the manifest names a key AND that layer
+registered it, so a game that declares nothing keeps the row it has, byte for
+byte. `army` is the one key today ([docs/ARMY.md](ARMY.md)).
 
 **The names are not translated.** A sticker's name is a proper noun — the title
 the artwork was drawn under — and it reads the same on every board, which is

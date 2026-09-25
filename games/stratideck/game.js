@@ -348,6 +348,27 @@
       return a ? { text: Lang.t(a.text), by: a.by } : null;
     }
 
+    /* WHAT THE BACK OF AN OFFICER SAYS ABOUT THEIR GRADE: the one thing that
+       makes it useful, which the macaron on the face only draws — the three
+       specials' rule, the object each of the next six breaks, the crown. It
+       is the grade's and not the officer's, so it is read on every card of
+       that grade, a stranger's or a turncoat's included (army.js, fileBack). */
+    var SKILL = {
+      1:  "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.",
+      2:  "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.",
+      3:  "The only grade that clears a trap without being lost with it.",
+      4:  "The only grade that tears down the straw man.",
+      5:  "The only grade that chops down the wooden fence.",
+      6:  "The only grade that smashes the rock.",
+      7:  "The only grade that crosses the forest without getting lost.",
+      8:  "The only grade that shatters the skull without being stunned.",
+      9:  "The only grade that burns the book without being bewitched.",
+      10: "The highest grade: no soldier outranks it, but the spy kills it."
+    };
+    function gradeInfo(r) {
+      return SKILL[r] ? Lang.t(SKILL[r]) : "";
+    }
+
     /* --- the macaron ------------------------------------------------------
        EVERY GRADE WEARS WHAT MAKES IT USEFUL, in a round macaron in the
        bottom-left corner of the army's cards: the ability of the three
@@ -1024,7 +1045,7 @@
        above. A finger never sees it. */
     var cursorOn = false;
     function hover(p) {
-      var on = sheet ? !!sheetFileAt(p) : !drag && !!zoneAt(p);
+      var on = sheet ? !!sheetFileAt(p) : !drag && (!!zoneAt(p) || !!foeUpAt(p));
       if (on === cursorOn) return;
       cursorOn = on;
       var cv = document.getElementById("game");
@@ -1057,16 +1078,36 @@
         Sound.clip("pick", 0.45, 1 + i * 0.03);
         return;
       }
-      var cell = cellAt(p);
-      if (cell && selected >= 0 && pickable(selected)) {
-        if (isTarget(cell.r, cell.c)) attack(selected, cell.r, cell.c);
-        else if (grid[cell.r][cell.c]) {
+      var cell = cellAt(p), armed = selected >= 0 && pickable(selected);
+      if (cell && armed && isTarget(cell.r, cell.c)) { attack(selected, cell.r, cell.c); return; }
+      /* a card picked and a target in reach is a strike; anything else on
+         the one enemy face up is a question about it */
+      if (foeUpAt(p)) { foeOpen(cell); return; }
+      if (cell && armed) {
+        if (grid[cell.r][cell.c]) {
           Sound.clip("warn", 0.35, 1.2);
           Notify.say("Out of reach", { kind: "warn" });
         }
         return;
       }
       selected = -1;
+    }
+    /* THE ENEMY FACE UP IS A DOOR TOO. The camp is played from memory and
+       the card just turned over is the one the player is reading, so a tap
+       on it opens it at full size, the way a card of the lists does — its
+       file, or what an object does and who breaks it. Between turns only:
+       a card mid-fight or mid-march is not standing where it is drawn. Only
+       where the web shell's barracks is there to show it. */
+    function foeUpAt(p) {
+      if (turn || march || !lastFoe || !window.__ARMY__ || !window.__ARMY__.file) return null;
+      var cell = cellAt(p);
+      return cell && grid[cell.r][cell.c] === lastFoe ? cell : null;
+    }
+    function foeOpen(cell) {
+      var f = fileOf(lastFoe, "red");
+      if (cursorOn) { cursorOn = false; document.getElementById("game").style.cursor = ""; }
+      drag = null;
+      window.__ARMY__.file(f, f.team, Table.nodes[cellKey(cell.r, cell.c)]);
     }
     function onMove(p) {
       if (!ended && State === "playing") hover(p);
@@ -1842,7 +1883,7 @@
        back is visibly the same object — with the officer standing small in a
        window at its head and their file under it. `info` is written by the
        barracks, already in the player's language and already in capitals
-       where it shouts: { grade, first, last, facts: [], lore, army, turn }.
+       where it shouts: { grade, first, last, facts: [], skill, lore, army, turn }.
        Every line is text written into a node, never markup — a name like
        O'Ween and a lore with quotes in it are data. */
     function cardBack(c, opt, info) {
@@ -1865,6 +1906,12 @@
       if (info.facts && info.facts.length) {
         var facts = line(sheet, "div", "cf-facts");
         for (var i = 0; i < info.facts.length; i++) line(facts, "span", "", info.facts[i]);
+      }
+      /* the grade's ability, under the macaron's own pictogram */
+      if (info.skill) {
+        var skill = line(sheet, "div", "cf-skill");
+        if (PERK[c.rank]) skill.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg>";
+        line(skill, "p", "", info.skill);
       }
       var lore = line(sheet, "div", "cf-lore");
       var crest = CONFIG.art && CREST[opt.side] && CONFIG.art[CREST[opt.side]];
@@ -2598,17 +2645,40 @@
       }
       return grid;
     }
+    /* THE MOTOR'S CARD (packages/shell/motor.css, CARD): the count on the
+       corner, the eyebrow, the title, a body, and the line that says what the
+       tap does — the same six slots every card of the web shell is built on,
+       so a list over the round reads as one of them. */
+    function sheetCard(kind, title, count, sub) {
+      var box = document.createElement("div");
+      box.className = "mt-card sh-box sh-" + kind;
+      box.innerHTML = (count != null ? '<i class="mt-pin">' + count + "</i>" : "") +
+        (sub ? '<div class="mt-eyebrow">' + upper(Lang.t(sub)) + "</div>" : "") +
+        '<h3 class="mt-h">' + upper(Lang.t(title)) + "</h3>";
+      var body = document.createElement("div");
+      body.className = "mt-body";
+      box.appendChild(body);
+      return { box: box, body: body };
+    }
+    function sheetShow(box) {
+      box.insertAdjacentHTML("beforeend", '<p class="mt-tap">' + upper(Lang.t("Tap to close")) + "</p>");
+      Table.sheet.innerHTML = "";
+      Table.sheet.appendChild(box);
+      Table.sheet.classList.add("on");
+      Fit.box(box.querySelector(".mt-h"), 32);
+      sheet = { kind: box.getAttribute("data-kind") };
+      drag = null;
+      Sound.clip("pick", 0.4, 0.8);
+    }
+
     function armySheet() {
       var alive = [], i;
       for (i = 0; i < army0.length; i++) {
         if (lostCards.indexOf(army0[i]) < 0 && strayed.indexOf(army0[i]) < 0) alive.push(army0[i]);
       }
       var n = army0.length, w = n > 24 ? 76 : n > 14 ? 88 : 100;
-      var box = document.createElement("div");
-      box.className = "sh-box sh-army";
-      box.innerHTML = '<div class="sh-title">' + upper(Lang.t("Your army")) + " <span>" + n + "</span></div>" +
-        '<div class="sh-sub">' + upper(Lang.t("At the start of the battle")) + "</div>" +
-        '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>";
+      var c = sheetCard("army", "Your army", n, "At the start of the battle"), box = c.body;
+      box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
       box.appendChild(armyTiles(alive, w));
       box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
       if (lostCards.length) box.appendChild(armyTiles(lostCards, w, true));
@@ -2617,7 +2687,7 @@
         box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost in the forest")) + " <span>" + strayed.length + "</span></div>");
         box.appendChild(armyTiles(strayed, w, true));
       }
-      return box;
+      return c.box;
     }
 
     /* A CARD OF A LIST IS A DOOR TO WHO IT IS. The sheet takes no pointer —
@@ -2631,12 +2701,15 @@
        destroys it (ABOUT); and a tile of the camp's muster (`blind`) opens
        the card at full size and nothing more — it counts grades and hides
        the tiers, and a file would say both. */
+    function fileOf(c, side, blind) {
+      if (c.rank > MARSHAL) return { g: c.rank, obj: true, team: "none" };
+      if (blind) return { o: side, g: c.rank, t: c.tier, blind: true, team: side };
+      return { o: c.o || side, g: c.rank, t: c.tier, team: side };
+    }
     function fileDoor(cell, c, side, blind) {
       var AR = window.__ARMY__;
       if (!AR || !AR.file || !c) return;
-      if (c.rank > MARSHAL) cell._file = { g: c.rank, obj: true, team: "none" };
-      else if (blind) cell._file = { o: side, g: c.rank, t: c.tier, blind: true, team: side };
-      else cell._file = { o: c.o || side, g: c.rank, t: c.tier, team: side };
+      cell._file = fileOf(c, side, blind);
       cell.classList.add("file");
     }
     function sheetFileAt(p) {
@@ -2661,19 +2734,12 @@
         if (kind === "army") cbox = armySheet();
         else {
           var cg = campGrid();
-          cbox = document.createElement("div");
-          cbox.className = "sh-box sh-camp";
-          cbox.innerHTML = '<div class="sh-title">' + upper(Lang.t("Enemy camp")) + " <span>" + cg.total + "</span></div>" +
-            '<div class="sh-sub">' + upper(Lang.t("At the start of the battle")) + "</div>";
-          cbox.appendChild(cg.node);
+          var cc = sheetCard("camp", "Enemy camp", cg.total, "At the start of the battle");
+          cc.body.appendChild(cg.node);
+          cbox = cc.box;
         }
-        cbox.insertAdjacentHTML("beforeend", '<div class="sh-foot">' + upper(Lang.t("Tap to close")) + "</div>");
-        Table.sheet.innerHTML = "";
-        Table.sheet.appendChild(cbox);
-        Table.sheet.classList.add("on");
-        sheet = { kind: kind };
-        drag = null;
-        Sound.clip("pick", 0.4, 0.8);
+        cbox.setAttribute("data-kind", kind);
+        sheetShow(cbox);
         return;
       }
       if (kind === "infirmary") { list = hurtCards; side = "blue"; title = "Infirmary"; empty = "Nobody wounded yet"; }
@@ -2681,11 +2747,8 @@
         for (i = 0; i < captives.length; i++) list.push(card(captives[i].r, captives[i].t));
         title = "Prison"; empty = "No prisoners yet";
       } else { list = fallen; title = "Foes beaten"; empty = "No foe beaten yet"; }
-      var el = Table.sheet;
-      el.innerHTML = "";
-      var box = document.createElement("div");
-      box.className = "sh-box sh-" + kind;
-      box.innerHTML = '<div class="sh-title">' + upper(Lang.t(title)) + (list.length ? ' <span>' + list.length + "</span>" : "") + "</div>";
+      var sc = sheetCard(kind, title, list.length || null), box = sc.body;
+      sc.box.setAttribute("data-kind", kind);
       if (!list.length) {
         box.innerHTML += '<div class="sh-empty">' + upper(Lang.t(empty)) + "</div>";
       } else {
@@ -2706,12 +2769,7 @@
         }
         box.appendChild(grid);
       }
-      box.insertAdjacentHTML("beforeend", '<div class="sh-foot">' + upper(Lang.t("Tap to close")) + "</div>");
-      el.appendChild(box);
-      el.classList.add("on");
-      sheet = { kind: kind };
-      drag = null;
-      Sound.clip("pick", 0.4, 0.8);
+      sheetShow(sc.box);
     }
     function sheetClose() {
       sheet = null;
@@ -2835,5 +2893,5 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally,
-             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo };
+             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo };
   })();

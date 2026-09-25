@@ -163,6 +163,95 @@
   #overlay { position:absolute; inset:0; z-index:16; pointer-events:none; overflow:hidden; }
 
   /* =========================================================================
+     CARD — the one card every game opens. Chosen in lab/modal.html (bevel
+     skin, centred, gold title, corner pill, shimmering tap line, pop entry).
+
+     One structure, six nodes, and only the body changes from card to card:
+       .mt-card     the box: a dark plate inside a rim in the game's colours
+       .mt-pin      a number or a tag on the corner          (optional)
+       .mt-eyebrow  one line over the title, never its colour (optional)
+       .mt-h        the title, one line, measured to fit
+       .mt-body     the content
+       .mt-tap      what a tap does — every card carries one
+
+     THERE IS NO CROSS. A card says in its last line what the tap does
+     ("Tap to close", "Tap a box", "Tap outside to close"), and that line is
+     the way out: a cross in a corner was a second answer to a question the
+     line already answers, and the one control on the card nobody aimed at.
+
+     It lives in the motor and not in the web shell because a game's own
+     sheets are cards too (stratideck's camp, over a round, in a playable):
+     the web shell's modal (packages/webshell/view.js) positions the card and
+     builds the slots, this block is how every one of them looks.
+     ========================================================================= */
+  :root {
+    --card-rim-a: var(--accent);
+    --card-rim-b: var(--cta-b);
+  }
+  .mt-card {
+    position:relative; width:100%;
+    padding:44px 35px; border-radius:30px;
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+    color:var(--text);
+    border:4px solid transparent;
+    background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
+               linear-gradient(180deg,var(--card-rim-a),var(--card-rim-b)) border-box;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
+    font-family:var(--web-font, inherit);
+  }
+  .mt-card .mt-body {
+    width:100%; display:flex; flex-direction:column; align-items:center; gap:24px;
+  }
+  .mt-card .mt-body:empty { display:none; }
+  .mt-card .mt-h {
+    margin:0; max-width:100%; text-align:center; white-space:nowrap;
+    font-size:54px; letter-spacing:3px; line-height:1.1;
+    font-weight:var(--web-fw, 900);
+    color:var(--gold);
+    text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
+  }
+  .mt-card .mt-h.wrap { white-space:normal; }
+  /* NEVER THE TITLE'S COLOUR: gold over gold read as one heading in two
+     sizes, and the eyebrow is a different thing — which day, why, where
+     from. The text colour, turned down, is the one that is not a palette's. */
+  .mt-card .mt-eyebrow {
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    margin:0 0 -10px; text-align:center;
+    font-size:20px; letter-spacing:3px; line-height:1.2;
+    font-weight:var(--web-fw, 900);
+    color:var(--text); opacity:.72;
+  }
+  .mt-card .mt-eyebrow .dl-dev {
+    font-size:12px; letter-spacing:2px; font-style:normal; opacity:1;
+    padding:2px 8px; border-radius:6px; color:#0b0b12; background:var(--danger);
+  }
+  /* A NUMBER ON THE CORNER — how many owned, how many in the camp. A tag,
+     never a sentence. */
+  .mt-card .mt-pin {
+    position:absolute; top:-22px; right:-16px; z-index:3;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:8px 20px; border-radius:999px;
+    background:#0b0e1a; border:3px solid var(--accent);
+    box-shadow:0 6px 18px rgba(0,0,0,.6);
+    color:var(--text); font-size:30px; line-height:1; font-style:normal;
+    font-weight:var(--web-fw, 900); font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .mt-card .mt-tap {
+    margin:0; text-align:center;
+    font-size:18px; letter-spacing:3px; line-height:1.3;
+    font-weight:var(--web-fw, 900);
+    color:transparent;
+    background:linear-gradient(100deg,var(--muted) 0 40%,#fff 50%,var(--muted) 60% 100%);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    animation:mt-tap-shine 2.6s linear infinite;
+  }
+  @keyframes mt-tap-shine { from { background-position:100% 0; } to { background-position:0 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .mt-card .mt-tap { animation:none; color:var(--muted); background:none; }
+  }
+
+  /* =========================================================================
      NOTIFY — the one voice for information (shell.js, Notify). Chosen in
      lab/notify.html: the `chip` look, top-right, newest on top, merged, a
      slide in and a flight out into the chip it is about.
@@ -4745,15 +4834,22 @@
      So a layer above the motor may hold the frame for a beat: the clock is
      stopped (the round IS over, whatever is drawn over it), the loop is left
      running, and the end screen waits for the `done` the hook is handed. The
-     web target's level layer is the only registrant — three stars open the
-     bonus, a missed objective burns — and a playable registers none, which is
-     the cut it always had.
+     web target's level layer registers one — three stars open the bonus, a
+     missed objective burns — and the army layer another, the prisoner a won
+     battle offers. They run IN ORDER OF REGISTRATION, each handed the next as
+     its `done`, so the world has had its say before a card is laid over it. A
+     playable registers none, which is the cut it always had.
 
      `ending` is the guard the delay makes necessary: for as long as the outro
      plays, the state is still "playing" and a game whose own update calls
      endRound again would end the round twice over. */
-  var outroHook = null, ending = false;
-  function onOutro(fn) { outroHook = fn; }
+  var outroHooks = [], ending = false;
+  function onOutro(fn) { outroHooks.push(fn); }
+  function runOutro(result, i) {
+    if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
+    var called = false;                 // a second `done` from one hook is dropped
+    outroHooks[i](result, function () { if (!called) { called = true; runOutro(result, i + 1); } });
+  }
 
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
@@ -4767,8 +4863,7 @@
     Round.stop();
     result.score = result.score == null ? Math.round(HUD.score()) : result.score;
     for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
-    if (outroHook) { outroHook(result, function () { finishRound(result); }); return; }
-    finishRound(result);
+    runOutro(result, 0);
   }
 
   function finishRound(result) {

@@ -48,9 +48,9 @@
    detail out of the picture instead of the light, so the hub still reads as
    the place the player is standing in. */
 #frame {
-  --web-veil: rgba(2,2,10,.78);
+  --web-veil: rgba(2,2,10,.7);
   --web-veil-strong: rgba(2,2,10,.9);
-  --web-veil-blur: 6px;
+  --web-veil-blur: 2px;
 }
 
 /* =========================================================================
@@ -68,7 +68,7 @@
 .mt-modal {
   position:absolute; inset:0; z-index:44;
   display:flex; align-items:center; justify-content:center;
-  padding:0 26px;
+  padding:0 20px;
   background:var(--web-veil);
   -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
   opacity:0; transition:opacity .2s ease;
@@ -76,76 +76,23 @@
 }
 .mt-modal.on { opacity:1; }
 
-.mt-card {
-  width:100%; max-width:668px; padding:44px 34px;
-  border-radius:34px; background:rgba(8,8,20,.94);
-  border:1px solid var(--panel-line);
-  box-shadow:0 26px 70px rgba(0,0,0,.7);
-  display:flex; flex-direction:column; align-items:center; gap:24px;
-  transform:translateY(22px) scale(.96);
-  transition:transform .26s cubic-bezier(.2,1.3,.4,1);
+/* THE CARD ITSELF IS THE MOTOR'S (packages/shell/motor.css, CARD): the rim,
+   the six slots, the gold title, the tag, the tap line. What is here is what
+   only a modal has — where it stands and how it arrives. */
+.mt-modal .mt-card {
+  transform:scale(.7);
+  transition:transform .36s cubic-bezier(.2,1.6,.4,1);
 }
-.mt-modal.on .mt-card { transform:translateY(0) scale(1); }
+.mt-modal.on .mt-card { transform:scale(1); }
 
 /* ONE LINE, MEASURED. The title is written at the size a title is read at and
    the view system shrinks it to the card's width once the card is filled
    (view.js, `fitTitles`) — "Fais un prisonnier" and "Pick one" are not the
    same width, in two languages and thirteen faces. A title that still does
    not fit at the floor gets its wrap back (`.wrap`) rather than overflowing. */
-.mt-h {
-  margin:0; text-align:center; font-size:54px; letter-spacing:3px; line-height:1.1;
-  white-space:nowrap; max-width:100%;
-  text-transform:uppercase; font-weight:var(--web-fw, 900);
-  color:var(--accent); text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
-}
-.mt-h.wrap { white-space:normal; }
-/* THE EYEBROW — one line over the title, for the caller that has to say why
-   this card is open. The daily road is the one: it is drawn wordless inside
-   the menu, so what it is, which day of the run this is, and whether this
-   machine is paying on every tap are all written here instead. */
-/* SCOPED TO THE CARD, and it has to be: `.mt-eyebrow` is also the album's and
-   the shop's header line (meta.css), which is a different thing at a different
-   size. The two used to be told apart by ORDER — this block sat later in
-   meta.css and quietly won on both — and order is exactly what moving the
-   modal base into its own stylesheet takes away. */
-.wm-card .mt-eyebrow {
-  display:flex; align-items:center; justify-content:center; gap:12px;
-  margin:0; text-align:center;
-  font-size:20px; letter-spacing:3px; text-transform:uppercase;
-  font-family:var(--web-font, inherit); opacity:1;
-  color:var(--text);
-}
-.wm-card .mt-eyebrow b { color:var(--gold); font-weight:var(--web-fw, 900); }
-.wm-card .mt-eyebrow span { color:var(--muted); }
-/* the separator belongs to the second half, so a card with only the first
-   half of the line never shows a dangling dot */
-.wm-card .mt-eyebrow span::before { content:"·"; margin-right:12px; opacity:.55; }
-/* …and a card whose TITLE already names the thing keeps only the second half
-   (the day, the dev pill), so the dot has nothing to sit after either. */
-.wm-card .mt-eyebrow span:first-child::before { content:none; margin-right:0; }
-/* A GIFT ON EVERY TAP, and it says so. Only a dev machine ever sees this —
-   localhost, a LAN address or a file:// page (packages/webshell/daily.js) —
-   and it is here rather than on the road because the road carries no words. */
-.wm-card .mt-eyebrow .dl-dev {
-  font-size:12px; letter-spacing:2px; font-style:normal;
-  font-weight:var(--web-fw, 900); padding:2px 8px; border-radius:6px;
-  color:#0b0b12; background:var(--danger, #ff5d5d);
-}
 
 .mt-sub { margin:0; text-align:center; font-size:26px; color:var(--muted); line-height:1.35; }
 .mt-sub.small { font-size:20px; opacity:.7; }
-
-
-/* THE ONE LINE THAT REPLACES THE BUTTON. A reward card has nothing left to
-   decide, so it carries no pill — this says what the tap does, and it is
-   written the size of a footnote because it is one. */
-.mt-tap {
-  margin:2px 0 0; text-align:center;
-  font-size:18px; letter-spacing:3px; text-transform:uppercase;
-  color:var(--muted); opacity:.6;
-  animation:mt-tap-breathe 2.2s ease-in-out infinite;
-}
-@keyframes mt-tap-breathe { 0%,100% { opacity:.38; } 50% { opacity:.75; } }
 
 /* =========================================================================
    THE CORNER CONTROLS — options and help, from anywhere
@@ -301,3 +248,194 @@
    making — but it must not go MISSING either, or the row changes shape as the
    player walks it. */
 #web-hud .mt-chip.inert, #web-hud .mt-lv.inert { cursor:default; opacity:.72; }
+
+/* ---- the fold: what a game adds to the band -----------------------------
+   One chip between the level and the coins (meta.js, section 11b), on a game
+   whose manifest declares `web.meta.more` — absent otherwise, and the level
+   bar takes the room back. Hover unfolds it, a tap pins it; each row of the
+   fold is a door. */
+#web-hud .mt-band-more { position:relative; flex:0 0 auto; display:flex; }
+#web-hud .mt-band-more[hidden] { display:none; }
+#web-hud .mt-chip.more { padding:0 12px; color:var(--accent); }
+#web-hud .mt-chip.more.open { border-color:var(--accent); }
+#web-hud .mt-more {
+  position:absolute; top:calc(100% + 10px); left:0; z-index:1;
+  width:max-content; min-width:320px; box-sizing:border-box; padding:10px;
+  display:flex; flex-direction:column; gap:2px;
+  border-radius:22px; border:2px solid var(--panel-line);
+  background:rgba(6,8,18,.9);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  box-shadow:0 14px 34px rgba(0,0,0,.55);
+  font-family:var(--web-font, inherit); font-variant-numeric:tabular-nums;
+  animation:mt-more-in .16s ease both;
+}
+#web-hud .mt-more[hidden] { display:none; }
+/* The 10px between the chip and the fold is still the fold's, or a mouse
+   crossing it would fold it on the way down. */
+#web-hud .mt-more::before { content:""; position:absolute; left:0; right:0; top:-12px; height:12px; }
+@keyframes mt-more-in { from { opacity:0; transform:translateY(-6px); } }
+#web-hud .mt-more-h {
+  padding:6px 12px 8px; font-size:16px; letter-spacing:2px; color:var(--muted);
+}
+#web-hud .mt-more-row {
+  display:flex; align-items:center; gap:12px; width:100%;
+  height:50px; padding:0 12px; box-sizing:border-box;
+  border:0; border-radius:14px; background:transparent; cursor:pointer;
+  font:inherit; font-size:20px; color:var(--text); text-align:left;
+}
+#web-hud .mt-more-row:hover { background:rgba(255,255,255,.08); }
+#web-hud .mt-more-row:active { transform:scale(.98); }
+#web-hud .mt-more-pic { width:26px; flex:0 0 auto; display:flex; justify-content:center; }
+#web-hud .mt-more-lbl { flex:1 1 auto; min-width:0; padding-right:18px; white-space:nowrap; }
+#web-hud .mt-more-row b { font-size:22px; font-weight:var(--web-fw, 900); }
+
+/* =========================================================================
+   THE SHEET — one frame for every view that is a room of the place
+   ========================================================================= */
+
+/* The collection, the shop, the ranking and the barracks' four all stand in
+   this frame, and only their body differs (view.js, section 6b). Chosen in
+   lab/view-frame.html — proposal C, "sheet", with its veil turned down to
+   let the hub through:
+
+     veil .5 · blur 2 · sheet .76 · radius 40 · no gutter · title in the
+     sheet, centred · bar with icon and label · page change slides ·
+     home / help / options in the bar · the sheet rises on the way in
+
+   The veil is its own and not --web-veil: a card is read over whatever is
+   under it and needs the scene pushed back; a view has its own sheet to be
+   read on, so the hub only has to be quieted. */
+#frame {
+  --wv-veil: rgba(2,2,10,.5);
+  --wv-blur: 2px;
+  --wv-sheet: rgba(8,8,20,.76);
+  --wv-radius: 40px;
+}
+
+.wv-screen {
+  position:absolute; inset:0; z-index:36; display:none;
+  font-family:var(--web-font, inherit); color:var(--text);
+  isolation:isolate;
+}
+.wv-screen.on { display:block; }
+
+.wv-bg {
+  position:absolute; inset:0; z-index:0; background-color:var(--bg);
+  background-size:cover; background-position:center center;
+}
+.wv-bg.flat { background-size:auto; }
+.wv-bg::after {
+  content:""; position:absolute; inset:0;
+  background:var(--wv-veil);
+  -webkit-backdrop-filter:blur(var(--wv-blur)); backdrop-filter:blur(var(--wv-blur));
+}
+.wv-screen .decor-layer { z-index:1; }
+
+/* UNDER THE BAND, AND DOWN TO THE GLASS. `--wh-band` is 0 on a game with no
+   wallet, where the sheet starts at the top of the frame instead. */
+.wv-sheet {
+  position:absolute; left:0; right:0; bottom:0; z-index:2;
+  top:calc(var(--inset-top) + var(--wh-band, 0px) + 30px);
+  display:flex; flex-direction:column; overflow:hidden;
+  border-radius:var(--wv-radius) var(--wv-radius) 0 0;
+  background:var(--wv-sheet);
+  border:1px solid var(--panel-line); border-bottom:0;
+  box-shadow:0 -18px 60px rgba(0,0,0,.5);
+}
+/* the grip says what the thing is — a sheet over the place, not a page */
+.wv-sheet::before {
+  content:""; position:absolute; top:12px; left:50%; z-index:1;
+  width:76px; height:6px; margin-left:-38px; border-radius:3px;
+  background:rgba(255,255,255,.22);
+}
+
+/* The veil comes up, then the sheet rises out of the bottom edge. It replays
+   on every open because the screen goes from display:none to block. */
+.wv-screen.on .wv-bg::after { animation:wv-fade .25s ease both; }
+.wv-screen.on .wv-sheet { animation:wv-rise .46s cubic-bezier(.2,1,.3,1) both; }
+@keyframes wv-fade { from { opacity:0; } }
+@keyframes wv-rise { from { transform:translateY(100%); } }
+
+/* ---- the header ------------------------------------------------------ */
+.wv-head {
+  position:relative; flex:0 0 auto;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:38px 26px 16px; text-align:center;
+}
+/* ONE LINE, MEASURED: written at the size a title is read at and shrunk to
+   the sheet's width once it is on screen (view.js, fitTitle). */
+.wv-title {
+  margin:0; max-width:100%; white-space:nowrap;
+  font-size:58px; line-height:1.05; letter-spacing:2px;
+  font-weight:var(--web-fw, 900); color:var(--text);
+  text-shadow:0 3px 14px rgba(0,0,0,.85);
+}
+.wv-sub { margin:0; font-size:22px; line-height:1.3; color:var(--muted); }
+.wv-sub[hidden] { display:none; }
+
+/* ---- the body -------------------------------------------------------- */
+/* The one region that scrolls, and it fades under the sheet's two edges
+   instead of being cut by them. */
+.wv-body {
+  position:relative; flex:1 1 auto; min-height:0;
+  overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:4px 26px 26px;
+  scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 46px), transparent 100%);
+          mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 46px), transparent 100%);
+}
+.wv-body::-webkit-scrollbar { display:none; }
+/* A body that fits by construction has no edge to fade under. */
+.wv-body.fixed { overflow:hidden; -webkit-mask-image:none; mask-image:none; }
+
+.wv-body.wv-in-l { animation:wv-from-r .26s cubic-bezier(.2,1,.4,1) both; }
+.wv-body.wv-in-r { animation:wv-from-l .26s cubic-bezier(.2,1,.4,1) both; }
+@keyframes wv-from-r { from { opacity:0; transform:translateX(70px); } }
+@keyframes wv-from-l { from { opacity:0; transform:translateX(-70px); } }
+
+/* ---- the bar: the pages, then the pair ------------------------------- */
+.wv-bar {
+  flex:0 0 auto; display:flex; align-items:stretch; justify-content:flex-end; gap:4px;
+  padding:10px 20px calc(var(--inset-bottom) + 20px);
+  border-top:1px solid var(--panel-line);
+}
+.wv-bar[hidden] { display:none; }
+.wv-tabs { flex:1 1 auto; min-width:0; display:flex; gap:4px; }
+.wv-tabs:empty { display:none; }
+
+.wv-tab {
+  appearance:none; -webkit-appearance:none; position:relative;
+  flex:1 1 0; min-width:0; height:92px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  background:none; border:0; border-radius:18px; color:var(--muted);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:16px; letter-spacing:1.5px; white-space:nowrap;
+  transition:color .2s ease;
+}
+.wv-tab .wv-ti { width:28px; height:28px; flex:0 0 auto; }
+.wv-tab .wv-tl { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+.wv-tab:not(.on):hover { color:var(--text); }
+.wv-tab:active { transform:scale(.96); }
+/* the page it is on, and the rule over it touches the bar's top edge */
+.wv-tab.on { color:var(--accent); }
+.wv-tab.on::before {
+  content:""; position:absolute; top:-10px; left:22%; right:22%; height:4px;
+  border-radius:0 0 3px 3px; background:var(--accent);
+}
+
+/* HOME, HELP AND OPTIONS, AFTER A FILET: three more icons, never three more
+   tabs — they leave the view or open a card, they do not change the page. */
+.wv-ctls { flex:0 0 auto; display:flex; align-items:stretch; gap:4px; }
+.wv-bar.tabbed .wv-ctls::before {
+  content:""; flex:0 0 auto; width:1px; height:44px; align-self:center;
+  margin:0 6px 0 4px; background:rgba(255,255,255,.16);
+}
+.wv-ctl {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  flex:0 0 auto; width:58px; min-height:72px;
+  display:flex; align-items:center; justify-content:center;
+  background:none; border:0; border-radius:16px; color:var(--muted);
+}
+.wv-ctl svg { width:30px; height:30px; }
+.wv-ctl:hover, .wv-ctl:focus-visible { color:var(--text); outline:none; }
+.wv-ctl:active { transform:scale(.94); }

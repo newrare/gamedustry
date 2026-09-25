@@ -60,7 +60,7 @@
 
   var STRINGS = {
     en: {
-      title: "Daily gift", day: "D{n}", dayLong: "Day {n}",
+      title: "Daily gift", day: "D{n}", dayLong: "Day {n}", tapDay: "Tap a day",
       pick: "Pick one",
       dev: "Dev",
       locked: "Locked", next: "Next gift",
@@ -74,7 +74,7 @@
       starTag: "×5"
     },
     fr: {
-      title: "Cadeau du jour", day: "J{n}", dayLong: "Jour {n}",
+      title: "Cadeau du jour", day: "J{n}", dayLong: "Jour {n}", tapDay: "Touche un jour",
       pick: "Choisis",
       dev: "Dev",
       locked: "Verrouillé", next: "Prochain cadeau",
@@ -498,14 +498,14 @@
     /* No card system — a build older than view.js, or a playable: the door
        still has to pay out, which is what it did before this card existed. */
     if (!MD) return openToday();
+    /* THE ONE WORD THE ROAD CANNOT CARRY. The strip is drawn wordless on
+       purpose — inside a menu a heading over it reads as a third menu entry —
+       but a card that opens on its own has to say what it is. */
     roadCard = MD.open({
       kind: "road",
+      title: T.title, tap: T.tapDay,
       onClose: function () { roadCard = null; },
       fill: function (card) {
-        /* THE ONE WORD THE ROAD CANNOT CARRY. The strip is drawn wordless on
-           purpose — inside a menu a heading over it reads as a third menu
-           entry — but a card that opens on its own has to say what it is. */
-        card.appendChild(el("h2", "mt-h", T.title));
         card.appendChild(strip);
       }
     });
@@ -552,17 +552,18 @@
     });
   }
 
-  /* The eyebrow every one of these cards wears: what this is, which day of the
-     run, and the DEV pill when this machine is paying on every tap. The road
-     itself carries no words, so this line is where all of them live. */
-  function eyebrow(a, brief) {
-    /* BRIEF drops the name of the thing: the card the claim opens is titled
-       "Daily gift" itself, and a line repeating the title over the title is
-       one word said twice. The day and the dev pill stay — they are what the
-       title does not say. */
-    return (brief ? '' : '<b>' + T.title + '</b>') +
-           '<span>' + MT.fill(T.dayLong, { n: a }) + '</span>' +
-           (DEV ? '<i class="dl-dev">' + T.dev + '</i>' : '');
+  /* The eyebrow every one of these cards wears: which day of the run, and the
+     DEV pill when this machine is paying on every tap. Only the day — "Daily
+     gift" over a title that names the gift, or over "Next gift", is one word
+     said twice. A plain string where there is no pill, so the modal writes it
+     like any other eyebrow; a node where there is one. */
+  function eyebrow(a) {
+    var day = MT.fill(T.dayLong, { n: a });
+    if (!DEV) return day;
+    var f = document.createDocumentFragment();
+    f.appendChild(document.createTextNode(up(day)));
+    f.appendChild(el("i", "dl-dev", T.dev));
+    return f;
   }
 
   /* ---- today: the screen that shows a wallet, then the boxes over it -------
@@ -619,7 +620,7 @@
       if (k === "gift") {
         MT.gift({
           rich: star, mult: star ? STAR : 1, boost: false,
-          eyebrow: eyebrow(n), got: T.title, gotEyebrow: eyebrow(n, true),
+          eyebrow: eyebrow(n), got: T.title,
           /* Same on the ceremony: the ×5 plate is what a starred day is told
              by, and there is no sentence under the title any more — the three
              boxes are the instruction (packages/webshell/meta.js). */
@@ -628,7 +629,7 @@
         });
       } else {
         MT.prize({
-          eyebrow: eyebrow(n, true), boost: false, got: T.title,
+          eyebrow: eyebrow(n), boost: false, got: T.title,
           reward: MT.dayReward(k, d, star ? STAR : 1),
           done: done
         });

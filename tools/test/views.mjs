@@ -323,8 +323,8 @@ async function run(url) {
       "document.querySelectorAll('.mt-head-wallet').length", 0);
     await check("the band is up over the album",
       "document.getElementById('web-hud').className", "on hud-full");
-    await check("...and the album's own header is gone with its title",
-      "!document.querySelector('#al-screen .mt-head')", true);
+    await check("...and the album stands in the one sheet every view wears",
+      "!!document.querySelector('#al-screen.wv-screen .wv-sheet .wv-title')", true);
     await check("...the count being a chip of the band now",
       "!!document.querySelector('#web-hud .mt-chip.collection')", true);
     /* THE ORDER IS THE NAVIGATION, so it is what the test reads: level, coins,
@@ -363,7 +363,7 @@ async function run(url) {
 
     await check("six chips, in that order",
       "[].map.call(document.querySelectorAll('#web-hud .mt-band.full .mt-lv," +
-      " #web-hud .mt-band.full .mt-chip'), function (n) {" +
+      " #web-hud .mt-band.full .mt-chip:not(.more)'), function (n) {" +
       "   return n.className.split(' ').filter(function (c) {" +
       "     return /^(collection|home|mt-lv|coins|tickets|stars)$/.test(c); })[0]; })",
       ["home", "mt-lv", "coins", "tickets", "collection", "stars"]);
@@ -386,21 +386,34 @@ async function run(url) {
       " !!document.querySelector('#web-hud .mt-chip.collection.inert')", true);
     await check("...and the others are not",
       "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 2);
+    /* A SHEET CARRIES THE HOUSE IN ITS OWN BAR, bottom right, so the band's
+       stands down over it — one way home, never two (view.js, `sheet`). */
+    await check("over a sheet the band's house stands down",
+      "getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display", "none");
+    await check("...and the sheet's bar carries it, first of home / help / options",
+      "[].map.call(document.querySelectorAll('.wv-screen.on .wv-ctls [data-ctl]')," +
+      " function (b) { return b.getAttribute('data-ctl'); }).join()", "home,help,options");
+    /* The geometry is read where the house is up: the map, which is not a
+       sheet. */
+    if (levelled) { await evalJs("__LEVELS__.open(); return 1;"); await sleep(400); }
     /* THE ROW RUNS EDGE TO EDGE, and the level chip is the spring: the house
        against the left gutter, the counts against the right one, and the xp
        bar over everything between them — no empty band in front of the house. */
-    await check("the house sits against the left gutter",
+    if (levelled) await check("the house sits against the left gutter",
       "(function () {" +
       "  var f = document.getElementById('frame').getBoundingClientRect();" +
       "  var h = document.querySelector('#web-hud .mt-band.full .mt-chip.home').getBoundingClientRect();" +
       "  return Math.abs(h.left - f.left - 26 * f.width / 720) < 1;" +
       "})()", true);
-    await check("...and the level chip fills the room up to the counts",
+    /* ...or up to the fold's chip, on a game that declares one: it stands
+       between the level and the coins. */
+    if (levelled) await check("...and the level chip fills the room up to the counts",
       "(function () {" +
       "  var b = document.querySelector('#web-hud .mt-band.full');" +
       "  var h = b.querySelector('.mt-chip.home').getBoundingClientRect();" +
       "  var lv = b.querySelector('.mt-lv').getBoundingClientRect();" +
-      "  var c = b.querySelector('.mt-band-chips').getBoundingClientRect();" +
+      "  var m = b.querySelector('.mt-band-more');" +
+      "  var c = (m && !m.hidden ? m : b.querySelector('.mt-band-chips')).getBoundingClientRect();" +
       "  var bar = b.querySelector('.mt-lv .bar').getBoundingClientRect();" +
       "  var k = document.getElementById('frame').getBoundingClientRect().width / 720;" +
       "  return lv.left - h.right < 12 * k && c.left - lv.right < 12 * k && bar.width > 40 * k;" +
@@ -440,9 +453,9 @@ async function run(url) {
                  " .click(); return 1;");
     await sleep(400);
     await check("the level chip opens the ranking", "__VIEW__.top()", "ranking");
-    await evalJs("document.querySelector('#web-hud .mt-chip.home').click(); return 1;");
+    await evalJs("document.querySelector('.wv-screen.on .wv-ctls .web-home').click(); return 1;");
     await sleep(400);
-    await check("the house chip is the way home", "__VIEW__.depth()", FLOOR);
+    await check("the sheet's house is the way home", "__VIEW__.depth()", FLOOR);
   }
 
   console.log("\nESCAPE — one order, top down");
@@ -476,9 +489,11 @@ async function run(url) {
     "!!document.querySelector('.wm-modal .web-sig .brand-mark') &&" +
     " /^v\\d/.test((document.querySelector('.wm-modal .web-sig .brand-ver') || {}).textContent || '')",
     true);
-  await check("the way out is a cross, not a back arrow",
-    "!!document.querySelector('.wm-modal .web-close') &&" +
-    " !document.querySelector('.wm-modal .web-back')", true);
+  /* NO CROSS: every card ends on the line that says what the tap does, and
+     a card with switches on it is closed by a tap AROUND it. */
+  await check("the way out is the tap line, not a cross",
+    "!!document.querySelector('.wm-modal .mt-card > .mt-tap') &&" +
+    " !document.querySelector('.wm-modal .web-close, .wm-modal .web-back')", true);
   await key("Escape");
   await check("escape closes it", "__MODAL__.count()", 0);
 
@@ -543,8 +558,8 @@ async function run(url) {
   await check("the ranking is the top view", "__VIEW__.top()", "ranking");
   await check("it writes the best score",
     "!!document.querySelector('#web-rank .web-best')", true);
-  await check("it wears the same header as the map",
-    "!!document.querySelector('#web-rank .mt-head')", true);
+  await check("it stands in the same sheet as the album and the shop",
+    "!!document.querySelector('#web-rank.wv-screen .wv-sheet .wv-title')", true);
   await key("Escape");
   /* Same as above: the ranking was opened from the title menu, not from the
      village, so peeling it leaves nothing. */
@@ -691,13 +706,17 @@ async function run(url) {
     await sleep(400);
     await check(views[v] + " shows no corner controls",
       "document.getElementById('web-ctls').hidden", true);
+    if (views[v] !== "map") {
+      await check("...its sheet's bar carries home, help and options instead",
+        "document.querySelectorAll('.wv-screen.on .wv-ctls [data-ctl]').length", 3);
+    }
     /* EXACTLY ONE WAY HOME on every view, and never two: the band's level
        chip where there is a band, a home button where there is not. */
     await check("...and exactly one way home on it",
       "document.querySelectorAll(" +
-      "'#web-hud.hud-full .mt-chip.home, .on .web-home').length", 1);
+      "'#web-hud.hud-full .mt-chip.home:not(.gone), .on .web-home').length", 1);
     await evalJs("document.querySelector(" +
-      "'#web-hud.hud-full .mt-chip.home, .on .web-home').click(); return 1;");
+      "'#web-hud.hud-full .mt-chip.home:not(.gone), .on .web-home').click(); return 1;");
     await sleep(400);
     await check(villaged ? "...which lands on the village" : "...which lands on the title screen",
       "__VIEW__.depth()", FLOOR);
@@ -726,6 +745,25 @@ async function run(url) {
       await key("Escape"); await sleep(300);
       await check("...and escape peels it back to the hub", "__VIEW__.top()", "village");
     }
+    /* THE BAND'S FOLD: one sword chip between the level and the coins,
+       the army's figures under it, each one a door. */
+    await check("the band carries the fold's chip, after the level",
+      "(function (c) { return !!c && !c.closest('.mt-band-more').hidden && " +
+      "c.closest('.mt-band-more').previousElementSibling.className; })" +
+      "(document.querySelector('#web-hud .mt-band.full .mt-chip.more'))", "mt-band-lv");
+    await evalJs("document.querySelector('#web-hud .mt-chip.more').click(); return 1;");
+    await sleep(200);
+    await check("...a tap unfolds the army's figures",
+      "document.querySelectorAll('#web-hud .mt-more:not([hidden]) .mt-more-row').length", 5);
+    await check("...inside the frame",
+      "(function (p, f) { return p.right <= f.right + 0.5 && p.left >= f.left - 0.5; })" +
+      "(document.querySelector('#web-hud .mt-more').getBoundingClientRect()," +
+      " document.getElementById('frame').getBoundingClientRect())", true);
+    await evalJs("document.querySelectorAll('#web-hud .mt-more-row')[3].click(); return 1;");
+    await sleep(350);
+    await check("...its prison row is the prison's door", "__VIEW__.top()", "prison");
+    await check("...and the fold is put away", "document.querySelector('#web-hud .mt-more').hidden", true);
+    await key("Escape"); await sleep(300);
     /* THE ONE THING THE BARRACKS SAYS TO THE GAME. `CONFIG.army.deck` is what
        `Game.reset()` reads, and a deck that is short is filled with conscripts
        rather than left short — a battle the player cannot start is not a cost,
@@ -735,6 +773,55 @@ async function run(url) {
     await check("...and every card in it is a grade and a tier",
       "__WEB__.CONFIG.army.deck.every(function (c) {" +
       " return typeof c.r === 'number' && typeof c.t === 'number'; })", true);
+
+    /* THE CAMP'S MISSIONS (army.js, section 8d'): a squad picked on the
+       briefing leaves the round's deck until it is back, and its report
+       pays or costs on the tap that closes it. Asked only of a manifest
+       that names missions — the tab bar is what says so. */
+    var missioned = await evalJs("return !!(__WEB__.CONFIG.web.army.missions &&" +
+      " __WEB__.CONFIG.web.army.missions.list.length);");
+    if (missioned) {
+      await evalJs("__VIEW__.home(); __ARMY__.open('recruit'); return 1;");
+      await sleep(350);
+      await check("the camp carries two tabs",
+        "document.querySelectorAll('#ar-recruit .wv-tab').length", 2);
+      await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
+      await sleep(250);
+      await check("...and the missions tab shows the board",
+        "document.querySelectorAll('#ar-recruit .ar-mis').length > 0", true);
+      await evalJs("document.querySelector('#ar-recruit .ar-mis .ar-btn.gold').click(); return 1;");
+      await sleep(250);
+      await check("prepare opens the briefing, with its odds",
+        "!!document.querySelector('#ar-recruit .ar-gauge')", true);
+      await check("...at 0% before a card is taken",
+        "document.querySelector('#ar-recruit .ar-gauge-p').textContent", "0%");
+      var need = await evalJs("var m = __WEB__.CONFIG.web.army.missions.list.filter(function (x) {" +
+        " return x.id === __ARMY__.missions().o[0]; })[0]; return m ? m.squad[0] : 2;");
+      for (var p = 0; p < need; p++) {
+        await evalJs("document.querySelectorAll('#ar-recruit .ar-pool .ar-slot.pool:not(.on)')[0].click(); return 1;");
+        await sleep(120);
+      }
+      await check("...and the odds move with the squad",
+        "document.querySelector('#ar-recruit .ar-gauge-p').textContent !== '0%'", true);
+      await evalJs("document.querySelector('#ar-recruit .ar-acts .ar-btn.gold').click(); return 1;");
+      await sleep(250);
+      await check("the squad is away", "__ARMY__.missions().r.length", 1);
+      await check("...and out of the round's deck",
+        "(function () { var away = __ARMY__.missions().r[0].c;" +
+        " return __WEB__.CONFIG.army.deck.every(function (c) { return away.indexOf(c.id) < 0; }); })()", true);
+      await evalJs("__ARMY__.missions().r[0].e = 0;" +
+        " document.querySelectorAll('#ar-recruit .wv-tab')[0].click();" +
+        " document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
+      await sleep(250);
+      await evalJs("document.querySelector('#ar-recruit .ar-run .ar-btn.gold').click(); return 1;");
+      await sleep(400);
+      await check("a squad back opens its report", "__MODAL__.top()", "ar-report");
+      await check("...written and kept until collected", "__ARMY__.missions().q.length", 1);
+      await evalJs("document.querySelector('.ar-report .ar-rep-text').click(); return 1;");
+      await sleep(400);
+      await check("a tap collects it", "__ARMY__.missions().q.length + __MODAL__.count()", 0);
+      await key("Escape"); await sleep(300);
+    }
   }
 
   console.log("\nthe floor wins — a round clears everything in front of it");

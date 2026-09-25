@@ -132,34 +132,22 @@
      only a wallet that can no longer pay for it moves it. */
   var bet = 1;
 
+  var S = null;                         // the album's sheet (view.js)
+
   function build() {
     if (built) return;
     built = true;
 
-    box = el("div"); box.id = "al-screen";
-
-    var bg = el("div"); bg.id = "al-bg";
-    dressBackdrop(bg);
-    box.appendChild(bg);
-
-    /* NO HEADER AT ALL. It carried the way back, then only a name and a count,
-       and both of those went the same way the wallet did: the name is what the
-       player tapped to get here, and the COUNT is what they own — which is the
-       band's subject, not a title's (packages/webshell/view.js, section 5). So
-       `x / 20` is the band's first chip, on every screen rather than on this
-       one, and the height a header was taking goes to the machine, the odds
-       and the twenty tiles. */
-    /* THE WALLET IS NOT IN THIS HEADER ANY MORE. It is the band the view
-       system puts over every screen that carries one (packages/webshell/
-       view.js, section 5), and its chips are still the doors they were here:
-       there is no GET TICKETS button under the machine, because a button that
-       only exists once the wallet is empty teaches nothing before it is — the
-       number the player is short of is the thing to tap. */
-
+    /* THE SHEET EVERY ROOM OF THE PLACE STANDS IN (packages/webshell/
+       view.js, section 6b): the hub, the veil, the title, and the bar that
+       carries options and help. The COUNT stays the band's first chip — it is
+       what the player owns, which is the band's subject — so the title is the
+       room's name and nothing more. */
     /* ONE SCREEN AND NO SCROLL: the machine on the left, what it costs and
        what it pays on the right, the twenty tiles under both. A collection the
        player has to scroll to see is a collection they see half of, and the
-       machine standing over it is what the whole screen is for. */
+       machine standing over it is what the whole screen is for. The body is
+       `fixed` for it: the sheet's own fade would eat the bottom row. */
     scroll = el("div"); scroll.id = "al-scroll";
     var top = el("div"); top.id = "al-top";
     top.appendChild(buildMachine());
@@ -167,35 +155,10 @@
     scroll.appendChild(top);
     grid = el("div"); grid.id = "al-grid";
     scroll.appendChild(grid);
-    box.appendChild(scroll);
 
-    frame().appendChild(box);
-  }
-
-  /* THE HUB'S OWN GROUND FIRST, where the game has a village: these two
-     screens are ROOMS OF THAT PLACE — the collection is a door on the hub and
-     the shop is the till inside it — so they stand on the picture the player
-     just walked off, not on the backdrop the ROUND is played against. A game
-     with no village falls back to what this always did: the same backdrop the
-     map and the menu are dressed with, in the same order, so nothing of its
-     look changes on the way in.
-
-     `window.__VILLAGE__` is read here rather than captured at load: village.js
-     is the last file of the web layer, and this runs on the first open of a
-     screen, long after all of it. */
-  function dressBackdrop(bg) {
-    var VG = window.__VILLAGE__;
-    var hub = VG && VG.ground ? VG.ground() : null;
-    if (hub) { bg.style.backgroundImage = "url(" + hub + ")"; return; }
-    var art = W.Art ? W.Art.src(W.Art.sceneKey()) : null;
-    if (art) { bg.style.backgroundImage = "url(" + art + ")"; return; }
-    var images = (W.ASSETS && W.ASSETS.images) || {};
-    var src = images.bg || images.bg1 || null;
-    if (src) { bg.style.backgroundImage = "url(" + src + ")"; return; }
-    var cs = window.getComputedStyle(document.body);
-    if (cs.backgroundImage && cs.backgroundImage !== "none") bg.style.backgroundImage = cs.backgroundImage;
-    bg.style.backgroundColor = cs.backgroundColor;
-    bg.className = "flat";
+    S = VW.sheet({ id: "al-screen", body: scroll, fixed: true });
+    box = S.box;
+    S.setHead(T.album, "");
   }
 
   /* ── 3. the machine ───────────────────────────────────────────────────── */
@@ -820,11 +783,16 @@
        is left here is what is IN it. `dismiss` is off because DRAW AGAIN is on
        it and a real control must never be what a thumb lands on by missing —
        the tap-out below is the one that knows to spare it. */
-    var h = MD.open({ kind: "sticker " + (isNew ? "fresh" : "seen"), dismiss: false, esc: false });
-    var modal = h.box, card = h.card;
-    card.appendChild(fx(isNew));
-    card.appendChild(el("div", "al-tag " + (isNew ? "new" : "old"),
-      isNew ? '<b>' + T.newSticker + "</b>" : T.dupe));
+    /* The title is the card's own slot, gold like every card's — the plated
+       NEW tag it used to wear was a second kind of heading on one card. The
+       tap line is the default one: a tap anywhere but DRAW AGAIN closes it. */
+    var h = MD.open({
+      kind: "sticker " + (isNew ? "fresh" : "seen"), dismiss: false, esc: false,
+      title: isNew ? T.newSticker : T.dupe
+    });
+    var modal = h.box, card = h.body;
+    /* the ceremony is painted under all of the card, slots included */
+    h.card.appendChild(fx(isNew));
     /* A NEW one gets the layer's own reward badge — the turning sunburst and
        the ring, already coloured by rarity (packages/webshell/meta.css), the
        same frame the gift card puts a prize in. A double gets the picture
@@ -935,17 +903,19 @@
      milestones are explained to the player. */
   function detail(n) {
     var have = MT.count(n), rar = MT.rarityOf(n);
-    var h = MD.open({ kind: "sticker detail r" + rar, dismiss: true });
-    var card = h.card;
-    /* HOW MANY, in the corner and as a number alone. "OWNED x3" spelled out
-       under the picture read as a caption and pushed the card taller; a chip
-       on the frame is what a count is everywhere else in this layer. */
-    if (have) card.appendChild(el("i", "al-own", "x" + have));
-    /* NOT YET IS NOT A TITLE. A card whose picture is already a silhouette does
+    /* HOW MANY, in the corner and as a number alone — the card's tag. "OWNED
+       x3" spelled out under the picture read as a caption and pushed the card
+       taller.
+       NOT YET IS NOT A TITLE. A card whose picture is already a silhouette does
        not need a sentence at the top saying so: the three marks ARE the name it
        does not have, they are what the tile under it reads, and the line under
        the picture is where "how do I get it" is answered. */
-    card.appendChild(el("h3", "mt-h", have ? MT.name(n) : T.unknown));
+    var h = MD.open({
+      kind: "sticker detail r" + rar, dismiss: true,
+      badge: have ? "x" + have : undefined,
+      title: have ? MT.name(n) : T.unknown
+    });
+    var card = h.body;
     card.appendChild(el("div", "mt-rw" + (have ? (MT.shiny(n) ? " shiny" : "") : " ghost"),
       '<img class="mt-rw-img" src="' + MT.art(n) + '" alt="">'));
     card.appendChild(el("div", "mt-rw-rar r" + rar, MT.rarityName(n)));
@@ -958,35 +928,22 @@
 
   /* ── 6. the shop ──────────────────────────────────────────────────────── */
 
-  var shop, shopBody, shopBuilt = false;
+  var shop, shopBody, shopBuilt = false, SH = null;
 
   function buildShop() {
     if (shopBuilt) return;
     shopBuilt = true;
-    shop = el("div"); shop.id = "sh-screen";
-
-    var bg = el("div"); bg.id = "sh-bg";
-    dressBackdrop(bg);
-    shop.appendChild(bg);
-
-    var head = el("header", "mt-head");
-    /* The shop has no x/20 to carry, so its name takes the big slot the album
-       spends on the count — one header, two readings of it. */
-    var titles = el("div", "mt-titles");
-    titles.appendChild(el("div", "mt-eyebrow", ""));
-    titles.appendChild(el("div", "mt-count", T.shop));
-    head.appendChild(titles);
-    shop.appendChild(head);
+    /* The same sheet as the album's, and the shop's name is its title. */
     /* THE TICKET CHIP IS THE DOOR BACK TO THE COLLECTION, and it is in the
        band over this screen rather than in this header (packages/webshell/
        view.js). The rule the band reads is the one that was written here: a
        chip's door is the OTHER screen, so on the shop the coin chip has
        nowhere to go — its door is the screen it is standing on — and only the
        blue one opens, onto the album, which is where a ticket is spent. */
-
     shopBody = el("div"); shopBody.id = "sh-body";
-    shop.appendChild(shopBody);
-    frame().appendChild(shop);
+    SH = VW.sheet({ id: "sh-screen", body: shopBody });
+    shop = SH.box;
+    SH.setHead(T.shop, "");
   }
 
   function paintShop() {
@@ -1199,6 +1156,7 @@
     LANG = STRINGS[code] ? code : "en";
     T = STRINGS[LANG];
     if (built) {
+      S.setHead(T.album, "");
       var labels = ctl.querySelectorAll(".al-lbl");
       labels[0].textContent = T.perDraw;
       labels[1].textContent = T.chances;
@@ -1206,7 +1164,7 @@
       paintGrid();
     }
     if (shopBuilt) {
-      shop.querySelector(".mt-count").textContent = T.shop;
+      SH.setHead(T.shop, "");
       paintShop();
     }
   }

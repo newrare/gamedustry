@@ -144,13 +144,14 @@
        that screen that has to be finished before a battle; the infirmary and
        the prison count who is IN them, the cards the screen behind the door
        lists, because both rooms have six places and a full one is the news;
-       the tent the recruits
-       the wallet can actually pay for. A roster of forty cards sitting quietly
-       is not news, and a badge that reported it would never go out. */
+       the camp the recruits
+       the wallet can actually pay for plus the squads back from a mission with
+       a report to read. A roster of forty cards sitting quietly is not news,
+       and a badge that reported it would never go out. */
     deck:      function () { return armied() ? AR.deckShort() : 0; },
     infirmary: function () { return armied() ? AR.inInfirmary() : 0; },
     prison:    function () { return armied() ? AR.inPrison() : 0; },
-    recruit:   function () { return armied() ? AR.affordable() : 0; }
+    recruit:   function () { return armied() ? (AR.camp ? AR.camp() : AR.affordable()) : 0; }
   };
 
   /* How many stickers the shop would buy back: the EXTRA copies, which is what
@@ -502,7 +503,15 @@
     VW.define("village", {
       build: build,
       node: function () { return box; },
-      show: function () { refresh(); relabel(); },
+      show: function () {
+        refresh(); relabel();
+        /* WHAT THE LAST ROUNDS' XP OWES THE PLAYER — the bar runs, then the
+           card for a player level crossed (packages/webshell/meta.js,
+           `arrive`). Deferred a tick: the view system raises the band AFTER
+           `show` returns, and a bar that is not on screen yet measures zero
+           and would swallow the reading. */
+        if (metaed()) setTimeout(function () { if (VW.isOpen("village")) MT.arrive(); }, 0);
+      },
       hud: true
     });
     VW.base("village");
@@ -538,7 +547,7 @@
     /* THE GROUND, FOR THE SCREENS THAT STAND ON IT. The shop and the collection
        are rooms of this place — the album is a door on the hub and the shop is
        the till inside it — so they wear the hub's own picture rather than the
-       game's round backdrop (packages/webshell/album.js, dressBackdrop). It is
+       game's round backdrop (packages/webshell/view.js, `ground`). It is
        a SOURCE and not the node: the ground layer here carries the breathing
        light, which belongs to the village and to nothing else. */
     ground: function () { return (SPEC.ground && art(SPEC.ground)) || null; },

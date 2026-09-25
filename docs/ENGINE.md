@@ -285,9 +285,11 @@ on either side of that cut is the world reacting to how the round went: slow
 motion is `Loop.rate`, so it needs a loop still turning, and the end screen has
 none. A hook registered here is handed the finished result and a `done`: the
 clock is already stopped, the loop is left running, and the end screen waits.
-The motor registers none — a playable keeps the cut it always had — and the web
-target's level layer is the one user (a missed objective burns, three stars open
-the bonus; see [LEVELS.md](LEVELS.md)). For as long as the outro plays the state
+The motor registers none — a playable keeps the cut it always had. Hooks run in
+the order they were registered, each handed the next as its `done`: the web
+target's level layer first (a missed objective burns, three stars open the
+bonus; see [LEVELS.md](LEVELS.md)), then the army layer's prisoner offer (see
+[ARMY.md](ARMY.md)). For as long as the outro plays the state
 is still `"playing"`, so `endRound` guards itself against a game that ends the
 same round twice.
 

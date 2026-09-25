@@ -36,16 +36,19 @@
                 camp is built of), a shadow for what was never had
     infirmary   what a battle cost, and how long until it comes back
     prison      who was taken, and how long until they turn
-    recruit     what the tent is offering today, and what it costs
+    recruit     the CAMP, two tabs: the RECRUITS (what the tent is offering
+                today, and what it costs) and the MISSIONS (a squad of two to
+                five cards sent away for hours or days, on odds the squad
+                itself decides, and the report it comes back with)
 
   THE SAVE IS META'S. `save.ar`, written through MT.army/setArmy, for the same
   reason the daily road's is: it is bought with that wallet, and a second key
   would be a second thing for OPTIONS to erase and a second thing to forget.
 
   THE CARD MODEL IS THE MANIFEST'S. The grades, their names and their painted
-  faces, the tier ladder, the deck size, the two waits and what a recruit costs
-  are all `web.army` — this file knows that a card is a grade and a tier and
-  nothing else about what either means.
+  faces, the tier ladder, the deck size, the two waits, what a recruit costs
+  and the fifty missions are all `web.army` — this file knows that a card is a
+  grade and a tier and nothing else about what either means.
 
   AND A CARD IS A PERSON. `web.army.cast` names one officer per army, grade
   and tier — 2 × 10 × 6, so every combination is exactly one of them and the
@@ -161,6 +164,48 @@
     return Math.round(R_BASE * (1 + R_GRADE * (g - 1)) * Math.pow(R_TIER, t) / 5) * 5;
   }
 
+  /* THE MISSIONS, out of `web.army.missions`: the board's shape and the list
+     of scenarios, each one a pretext, a difficulty, a length in real hours, a
+     squad size, what it pays and what a failure costs — plus the two reports,
+     one per outcome. A mission this file does not know (a save naming one the
+     manifest has since dropped) resolves as a plain failure with no cost. */
+  var MS = SPEC.missions || {};
+  var MISSIONS = MS.list || [];
+  var MISSION = {};
+  (function () {
+    for (var i = 0; i < MISSIONS.length; i++) MISSION[MISSIONS[i].id] = MISSIONS[i];
+  })();
+  var M_OFFERS = Math.max(1, MS.offers || 3);
+  var M_RUN = Math.max(1, MS.running || 3);
+
+  /* WHAT A SQUAD IS WORTH, and it is the same two numbers a fight is read in:
+     every card brings its grade plus its tier times `tierWeight`, and the one
+     grade a mission favours brings `favorBonus` more — which is what gives a
+     spy, a scout and a sapper something to do off the grid, where a marshal
+     would otherwise be the answer to everything. A squad worth exactly the
+     difficulty's `need` reads `par` (70 %); the odds are linear around it and
+     never 0 or 100, since a mission that cannot fail is a wait, and one that
+     cannot succeed is a trap. */
+  var M_NEED = MS.need || [10, 20, 32, 46, 64];
+  var M_PAR = MS.par || 0.7;
+  var M_TIER = MS.tierWeight != null ? MS.tierWeight : 2;
+  var M_FAVOR = MS.favorBonus != null ? MS.favorBonus : 10;
+  var M_LO = MS.floor != null ? MS.floor : 0.05, M_HI = MS.ceil != null ? MS.ceil : 0.95;
+
+  function cardPower(c, m) {
+    return c.g + M_TIER * c.t + (m && m.favor === c.g ? M_FAVOR : 0);
+  }
+  function needOf(m) { return M_NEED[clamp((m.d | 0) - 1, 0, M_NEED.length - 1)]; }
+  function chanceOf(cards, m) {
+    if (!cards.length) return 0;
+    var sum = 0;
+    for (var i = 0; i < cards.length; i++) sum += cardPower(cards[i], m);
+    return clamp(M_PAR * sum / needOf(m), M_LO, M_HI);
+  }
+  function pct(p) { return Math.round(p * 100) + "%"; }
+  /* A mission's text, in the player's language. */
+  function loc(o) { return o ? (o[LANG] || o.en || "") : ""; }
+
   /* ── 1b. the clock ────────────────────────────────────────────────────── */
 
   /* THE ONE THING THIS LAYER CANNOT BE WORKED ON IS THE THING IT IS MADE OF: a
@@ -180,6 +225,7 @@
   var HEAL_MS = (SPEC.infirmaryHours || 48) * HOUR;
   var FREE_MS = (SPEC.prisonHours || 120) * HOUR;
   var TENT_MS = (RC.refreshHours || 6) * HOUR;
+  var BOARD_MS = (MS.refreshHours || 8) * HOUR;
 
   /* SIX BEDS AND SIX CELLS. A room that holds everything is a room nobody
      empties: with a ceiling, a wound the infirmary has no bed for is a card
@@ -220,6 +266,12 @@
        p  the prison: { g, t, u the moment the prisoner turns }
        k  the recruiting tent: { t when the shelf was rolled, o what is on it,
           b which of those have been bought }
+       ms the missions: { t when the board was rolled, o the mission ids on
+          it, r the squads away { m mission, c card ids, e when they are back,
+          p the odds they left on, z the roll that decides it — drawn at the
+          departure, so no reload re-rolls a report }, q the reports written
+          and not yet collected, h mission → how many times it was run,
+          w how many of those came back a success — the village's band }
        c  the collection, and it only ever grows: { h officer → 1 once OWNED,
           m officer → 1 once MET in a battle or held in the prison, o object →
           1 once one was turned over }. An officer is `ck()`'s key — "b4.2",
@@ -324,6 +376,16 @@
   function inDeck(id) { return save.d.indexOf(id) >= 0; }
   function deckShort() { return Math.max(0, DECK_SIZE - save.d.length); }
 
+  /* A CARD AWAY ON A MISSION is fit and still in the deck — the deck is the
+     player's standing choice — and it is out of every battle until it is
+     back, the same rule a wound follows. */
+  function awayRun(id) {
+    var r = save.ms ? save.ms.r : null, i;
+    if (!r) return null;
+    for (i = 0; i < r.length; i++) if (r[i].c.indexOf(id) >= 0) return r[i];
+    return null;
+  }
+
   /* ── 4. the deck the round is handed ──────────────────────────────────── */
 
   /* THE ONE THING THIS FILE SAYS TO THE GAME, and it says it by writing a
@@ -332,7 +394,8 @@
      enough and there is no start hook to keep in step with the map, the
      village and the end screen's PLAY AGAIN.
 
-     A WOUNDED CARD IS NOT IN IT, whatever the deck screen says: the deck is
+     A WOUNDED CARD IS NOT IN IT, nor one away on a mission, whatever the
+     deck screen says: the deck is
      the player's standing choice and the infirmary is a fact about today, so a
      card healing is left in the deck and taken out of the battle. And what is
      missing is made up with CONSCRIPTS — the bottom of the ladder, no id, and
@@ -345,7 +408,7 @@
     var out = [], i, c;
     for (i = 0; i < save.d.length; i++) {
       c = byId(save.d[i]);
-      if (c && fit(c)) out.push({ r: c.g, t: c.t, id: c.i, o: c.o || null });
+      if (c && fit(c) && !awayRun(c.i)) out.push({ r: c.g, t: c.t, id: c.i, o: c.o || null });
     }
     while (out.length < DECK_SIZE) out.push({ r: CONSCRIPT.r, t: CONSCRIPT.t, id: null });
     return out;
@@ -365,6 +428,7 @@
      written the moment they are known, and the prisoners are kept for a screen
      to offer them on. */
   var offer = null;                     // captives waiting to be offered
+  var offerCoins = false;               // the spoils beside it are coins only
 
   function absorb(result) {
     var a = result && result.army;
@@ -396,8 +460,23 @@
       else if (OBJECT[c.r] && !save.c.o[c.r]) save.c.o[c.r] = 1;
       n++;
     }
-    offer = (a.won && a.captives && a.captives.length) ? a.captives.slice(0, PICK) : null;
+    offer = (a.won && a.captives && a.captives.length) ? distinct(a.captives).slice(0, PICK) : null;
+    /* TWO OF THE SAME CARD IS NOT A CHOICE. The round hands its captives over
+       best first, and two sappers of one tier are one card offered twice — so
+       the list keeps one of each, and where that leaves a single prisoner out
+       of several the other side of the pick is the COINS the second would have
+       been worth, not a roll of the spoils. */
+    offerCoins = !!(offer && offer.length === 1 && a.captives.length > 1);
     if (n) persist();
+  }
+
+  function distinct(list) {
+    var out = [], seen = {}, i, k;
+    for (i = 0; i < list.length; i++) {
+      k = list[i].r + ":" + list[i].t;
+      if (!seen[k]) { seen[k] = 1; out.push(list[i]); }
+    }
+    return out;
   }
 
   function retire(c) {
@@ -409,32 +488,26 @@
   /* ── 6. the prisoner, offered once ────────────────────────────────────── */
 
   /* WHERE IT OPENS, AND WHY IT IS TWO PLACES. The choice belongs to the battle
-     that won it, so the end screen is where it is offered — but the end screen
-     is a busy place: the motor is still revealing it, the meta layer is
-     counting coins into a wallet on it, and a round that earned a star is
-     being offered an ad. So the card waits for the install CTA to land and for
-     the layer to be empty, and if the player has walked off by then it is
-     offered on the next arrival at the hub instead. One function, two doors,
-     and the offer is never silently dropped. */
-  var watching = null;
-
+     that won it, so it is offered on the battle itself, in the OUTRO — the
+     beat between the round and the end screen (packages/shell/shell.js) —
+     after the level layer's own outro, the three-star gift included, has had
+     its say. The end screen then arrives with the prisoner already in a cell
+     or the spoils already in the wallet, and its reveal is not interrupted by
+     a card. A player who left the round while the outro played is offered it
+     on the next arrival at the hub instead. One function, two doors, and the
+     offer is never silently dropped. */
   /* The row's room: the card's content width (view.css, .mt-card — 668 less
      two 34 px paddings), the gap between two tiles and the "or" between a
      lone prisoner and the spoils (army.css, .ar-pick). */
   var PICK_ROOM = 600, PICK_GAP = 22, PICK_OR = 44, PICK_MAX = 240;
 
-  function armOffer() {
-    if (!offer) return;
-    if (watching) clearInterval(watching);
-    var tries = 0;
-    watching = setInterval(function () {
-      var cta = document.getElementById("btn-install");
-      if (++tries > 200 || W.state() !== "end") { clearInterval(watching); watching = null; return; }
-      if (!cta || !cta.classList.contains("show")) return;
-      if (MD.count()) return;           // a gift is being handed over: wait it out
-      clearInterval(watching); watching = null;
-      openOffer();
-    }, 150);
+  /* The outro's share: the card over the frozen round, and the end screen
+     once it is put away. The wallet comes up with it, because the spoils fly
+     into a chip and a flight measures a VISIBLE one. */
+  function outro(result, done) {
+    if (!offer || W.state() !== "playing") { done(); return; }
+    if (MT && MT.active && MT.active()) VW.hudShow();
+    openOffer(done);
   }
 
   /* THE CHOICE IS ALWAYS A CHOICE. Two prisoners or more is a pick between
@@ -443,24 +516,26 @@
      a single card with a line under it is a yes-or-no and not a decision.
      The coins are sized on the prisoner (grade and tier), so turning down a
      marshal is worth more than turning down a sergeant. */
-  function spoilsFor(c) {
+  function spoilsFor(c, coinsOnly) {
     if (!MT || !MT.active || !MT.active()) return null;
-    var r = Math.random();
+    var r = coinsOnly ? 0 : Math.random();
     if (r < 0.45) return MT.reward("coins", Math.round((80 + c.r * 18 + c.t * 25) / 10) * 10);
     if (r < 0.8) return MT.reward("ticket", 1);
     return MT.reward("sticker", MT.roll());
   }
 
-  function openOffer() {
-    if (!offer || !offer.length) { offer = null; return; }
+  function openOffer(then) {
+    then = then || function () {};
+    if (!offer || !offer.length) { offer = null; then(); return; }
     if (inPrison() >= CELLS) {
       offer = null;
       say(T.prisonFull, fill(T.prisonFullSub, { n: CELLS }), "warn", "lock");
+      then();
       return;
     }
     var list = offer.slice(0);
     offer = null;
-    var spoils = list.length === 1 ? spoilsFor(list[0]) : null;
+    var spoils = list.length === 1 ? spoilsFor(list[0], offerCoins) : null;
     var taken = false;
     /* THE TILES TAKE THE CARD'S WIDTH. A prisoner is a card the player is
        asked to read — its grade, its tier, its face — and 118 px of it in the
@@ -480,9 +555,9 @@
        built with it held `undefined` — the prisoner was written, the close
        threw, and the card stayed on screen taking a prisoner per tap. */
     MD.open({
-      kind: "captive", dismiss: false, esc: false,
+      kind: "captive", dismiss: false, esc: false, onClose: then,
+      title: T.captiveTitle, tap: T.captiveTap,
       fill: function (card, close) {
-        card.appendChild(el("h3", "mt-h", T.captiveTitle));
         card.appendChild(el("p", "mt-sub", spoils ? T.captiveSubOr : T.captiveSub));
         var row = el("div", "ar-pick" + (PAINTED ? " painted" : ""));
         row.style.setProperty("--pw", tileW + "px");
@@ -591,47 +666,20 @@
 
   /* ── 8. the screens ───────────────────────────────────────────────────── */
 
-  /* THE SAME FRAME FOR ALL FOUR, and only the body differs. Each one is a
-     backdrop, a header that clears the wallet band, and a scrolling body — the
-     album's shape, for the same reason: they are rooms of the same place. */
+  /* THE SAME FRAME FOR ALL FOUR, and it is the view system's: the sheet
+     every room of the place stands in (packages/webshell/view.js, section
+     6b). What is left here is the body, and the pages a screen names. */
   function screen(id, key) {
-    var box = el("div", "ar-screen"); box.id = id;
-    var bg = el("div", "ar-bg");
-    dressBackdrop(bg);
-    box.appendChild(bg);
-
-    var head = el("div", "ar-head");
-    head.appendChild(el("h2", "ar-title", ""));
-    head.appendChild(el("p", "ar-sub", ""));
-    if (DEV) head.appendChild(el("i", "ar-dev", "DEV"));
-    /* THE WAY HOME, WHERE THE BAND IS NOT THERE TO BE IT. A game with a wallet
-       carries the band and its house chip, and a header that added a second
-       button would be two ways to one place (packages/webshell/view.js). */
-    if (!VW.banded()) head.appendChild(VW.homeButton(""));
-    box.appendChild(head);
-
-    var body = el("div", "ar-body");
-    box.appendChild(body);
-    frame().appendChild(box);
-    return { box: box, head: head, body: body, key: key };
+    var S = VW.sheet({ id: id, cls: "ar-screen" });
+    /* The clock is a second per hour on a machine that is plainly not a
+       player's, and a screenshot must never be mistaken for the real thing. */
+    if (DEV) S.head.appendChild(el("i", "ar-dev", "DEV"));
+    S.body.classList.add("ar-body");
+    S.key = key;
+    return S;
   }
 
-  /* The hub's own ground: these four are rooms of the village, like the album
-     and the shop, so they stand on the picture the player just walked off.
-     Read lazily — village.js is the last file of the web layer. */
-  function dressBackdrop(bg) {
-    var VG = window.__VILLAGE__;
-    var hub = VG && VG.ground ? VG.ground() : null;
-    if (hub) { bg.style.backgroundImage = "url(" + hub + ")"; return; }
-    var art = W.Art ? W.Art.src(W.Art.sceneKey()) : null;
-    if (art) { bg.style.backgroundImage = "url(" + art + ")"; return; }
-    bg.className = "ar-bg flat";
-  }
-
-  function head(S, title, sub) {
-    S.head.querySelector(".ar-title").textContent = W.upper(title);
-    S.head.querySelector(".ar-sub").textContent = sub;
-  }
+  function head(S, title, sub) { S.setHead(title, sub); }
 
   /* ── 8a. the deck ─────────────────────────────────────────────────────── */
 
@@ -653,10 +701,8 @@
   function buildDeck() {
     DK = screen("ar-deck", "deck");
     DK.tab = "deck";
-    DK.tabs = el("div", "ar-tabs");
-    DK.tabBtn = {};
-    for (var i = 0; i < TABS.length; i++) DK.tabs.appendChild(tabButton(TABS[i]));
-    DK.body.appendChild(DK.tabs);
+    DK.pages(tabList(TABS), pickTab(DK, paintDeck));
+    var i;
 
     var d = DK.pane = {};
     d.deck = el("div", "ar-pane");
@@ -690,27 +736,37 @@
     for (i = 0; i < TABS.length; i++) DK.body.appendChild(d[TABS[i]]);
   }
 
-  function tabButton(key) {
-    var b = el("button", "ar-tab");
-    b.addEventListener("click", function () {
-      if (DK.tab === key) return;
-      DK.tab = key;
-      DK.body.scrollTop = 0;
-      paintDeck();
+  /* THE PAGES ARE THE SHEET'S BAR, at the foot of the screen — the deck's
+     three, the camp's two. A tap on the page already lit does nothing,
+     unless the screen says it is not at the top of that page (`S.deep`: the
+     camp's briefing, which its tab leaves). */
+  var TAB_ICON = { deck: "deck", coll: "file", obj: "tag", tent: "recruit", mis: "compass" };
+
+  function tabList(keys) {
+    var out = [];
+    for (var i = 0; i < keys.length; i++) out.push({ key: keys[i], label: T["tab_" + keys[i]], icon: TAB_ICON[keys[i]] });
+    return out;
+  }
+
+  function pickTab(S, paint) {
+    return function (key) {
+      if (S.tab === key && !(S.deep && S.deep())) return;
+      S.tab = key;
+      if (S.leave) S.leave();
+      S.body.scrollTop = 0;
+      paint();
       W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
-    });
-    DK.tabBtn[key] = b;
-    return b;
+    };
+  }
+
+  function paintTabs(S, keys) {
+    S.relabel(tabList(keys));
+    S.light(S.tab);
+    for (var i = 0; i < keys.length; i++) S.pane[keys[i]].style.display = S.tab === keys[i] ? "" : "none";
   }
 
   function paintDeck() {
-    for (var i = 0; i < TABS.length; i++) {
-      var k = TABS[i], on = DK.tab === k;
-      DK.tabBtn[k].textContent = W.upper(T["tab_" + k]);
-      DK.tabBtn[k].classList.toggle("on", on);
-      DK.tabBtn[k].setAttribute("aria-pressed", on ? "true" : "false");
-      DK.pane[k].style.display = on ? "" : "none";
-    }
+    paintTabs(DK, TABS);
     if (DK.tab === "coll") paintCollection();
     else if (DK.tab === "obj") paintObjects();
     else paintRoster();
@@ -831,10 +887,10 @@
 
   function deckSlot(c) {
     var b = el("button", "ar-slot");
-    var hurt = !fit(c);
+    var hurt = !fit(c), away = awayRun(c.i);
     b.appendChild(cardTile({ g: c.g, t: c.t, o: c.o }, {
-      dim: hurt, tag: hurt ? untilText(c.w - now()) : null, tagClass: "hurt",
-      fmt: "tiny", w: 86
+      dim: hurt || !!away, tag: hurt ? untilText(c.w - now()) : away ? T.away : null,
+      tagClass: hurt ? "hurt" : "away", fmt: "tiny", w: 86
     }));
     b.setAttribute("aria-label", T.deckDrop);
     b.addEventListener("click", function () {
@@ -859,11 +915,12 @@
   function poolTile(c) {
     var w = el("div", "ar-slot-w");
     var b = el("button", "ar-slot pool");
-    var on = inDeck(c.i), hurt = !fit(c);
+    var on = inDeck(c.i), hurt = !fit(c), away = awayRun(c.i);
     if (on) b.className += " on";
     b.appendChild(cardTile({ g: c.g, t: c.t, o: c.o }, {
-      dim: hurt, tag: hurt ? untilText(c.w - now()) : (on ? T.inDeck : null),
-      tagClass: hurt ? "hurt" : "in", fmt: "full", w: 156
+      dim: hurt || !!away,
+      tag: hurt ? untilText(c.w - now()) : away ? T.away : (on ? T.inDeck : null),
+      tagClass: hurt ? "hurt" : away ? "away" : "in", fmt: "full", w: 156
     }));
     b.addEventListener("click", function () {
       var at = save.d.indexOf(c.i);
@@ -1008,16 +1065,35 @@
     return row;
   }
 
-  /* ── 8d. the recruiting tent ──────────────────────────────────────────── */
+  /* ── 8d. the camp: the recruiting tent ────────────────────────────────── */
 
+  /* THE CAMP IS ONE HOUSE WITH TWO TABS, the tent and the missions, because
+     both are the same question asked two ways — what can this army get that
+     it does not have — and both are paid in something the player owns: the
+     tent in coins, a mission in cards sent away. A game whose manifest names
+     no mission keeps the tent alone, with no bar over it. */
   var RT = null;
+  var CAMP_TABS = MISSIONS.length ? ["tent", "mis"] : ["tent"];
 
   function buildRecruit() {
     RT = screen("ar-recruit", "recruit");
+    RT.tab = "tent";
+    RT.brief = null;
+    RT.pane = {};
+    /* The briefing is one level under the missions tab, so the tab is a way
+       back to the board from it. */
+    RT.deep = function () { return !!RT.brief; };
+    RT.leave = function () { RT.brief = null; };
+    RT.pages(tabList(CAMP_TABS), pickTab(RT, paintRecruit));
+    var tent = RT.pane.tent = el("div", "ar-pane");
     RT.list = el("div", "ar-offers");
-    RT.body.appendChild(RT.list);
+    tent.appendChild(RT.list);
     RT.acts = el("div", "ar-acts");
-    RT.body.appendChild(RT.acts);
+    tent.appendChild(RT.acts);
+    RT.body.appendChild(tent);
+    RT.pane.mis = el("div", "ar-pane ar-mis-pane");
+    RT.body.appendChild(RT.pane.mis);
+    if (CAMP_TABS.length < 2) RT.pane.mis.style.display = "none";
   }
 
   /* WHAT THE TENT IS OFFERING, AND IT IS ROLLED ON A CLOCK RATHER THAN ON
@@ -1058,6 +1134,12 @@
   }
 
   function paintRecruit() {
+    if (CAMP_TABS.length > 1) paintTabs(RT, CAMP_TABS);
+    if (RT.tab === "mis") { paintMissions(); return; }
+    paintTent();
+  }
+
+  function paintTent() {
     var k = shelf(), i;
     head(RT, T.recruitTitle, fill(T.recruitSub, { t: untilText(k.t + TENT_MS - now()) }));
     RT.list.innerHTML = "";
@@ -1105,6 +1187,586 @@
     }
     return n;
   }
+
+  /* ── 8d'. the camp: the missions ──────────────────────────────────────── */
+
+  /* A MISSION IS A BET MADE WITH CARDS. The board offers a few scenarios —
+     a pretext, a difficulty, a length in real hours — and the player answers
+     one with a squad of two to five cards, read on the odds that squad earns
+     (`chanceOf`). The squad is away for the whole wait, out of every battle,
+     and it comes back with a REPORT written in the logic of that scenario:
+     what it paid, or what it cost — wounds, cards that never came back, coins.
+
+     THE BOARD IS ROLLED ON A CLOCK, like the tent's shelf and for the same
+     reason: a board that re-rolls on every visit is a board the player
+     re-rolls until the easy one turns up. It leans on the missions played the
+     least, and it spreads the difficulties before it repeats one.
+
+     THE OUTCOME IS DRAWN AT THE DEPARTURE (`z`), and the report is written
+     the moment it is opened — the wounds and the losses land on the roster
+     then, and are kept in the save with it — while what it pays is granted
+     on the tap that collects it, so the chips count up in front of the
+     player rather than behind the card. Neither step can be re-rolled by
+     closing the game in between. */
+  function mstate() {
+    var s = save.ms;
+    if (!s) s = save.ms = { t: 0, o: [], r: [], q: [], h: {} };
+    if (!s.o) s.o = [];
+    if (!s.r) s.r = [];
+    if (!s.q) s.q = [];
+    if (!s.h) s.h = {};
+    if (typeof s.w !== "number") s.w = 0;
+    return s;
+  }
+
+  function board() {
+    var s = mstate(), i;
+    if (!s.t || now() - s.t >= BOARD_MS) rollBoard();
+    /* a mission the manifest has since dropped is not offered */
+    for (i = s.o.length - 1; i >= 0; i--) if (!MISSION[s.o[i]]) s.o.splice(i, 1);
+    return s;
+  }
+
+  /* Written and not persisted, like the tent's `roll`: the screen drawing
+     the board is what rolls it, and `persist` would repaint that screen. */
+  function rollBoard() {
+    var s = mstate(), busy = {}, pool = [], out = [], seen = {}, i, j, tmp;
+    for (i = 0; i < s.r.length; i++) busy[s.r[i].m] = 1;
+    for (i = 0; i < MISSIONS.length; i++) if (!busy[MISSIONS[i].id]) pool.push(MISSIONS[i]);
+    for (i = pool.length - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    /* The least played first — a stable sort over a shuffle, so missions run
+       as often as each other stay in random order — then one per difficulty
+       before a difficulty is offered twice. */
+    pool = stable(pool, function (a, b) { return (s.h[a.id] || 0) - (s.h[b.id] || 0); });
+    for (i = 0; i < pool.length && out.length < M_OFFERS; i++) {
+      if (!seen[pool[i].d]) { seen[pool[i].d] = 1; out.push(pool[i]); }
+    }
+    for (i = 0; i < pool.length && out.length < M_OFFERS; i++) {
+      if (out.indexOf(pool[i]) < 0) out.push(pool[i]);
+    }
+    out.sort(function (a, b) { return a.d - b.d || a.hours - b.hours; });
+    s.t = now();
+    s.o = [];
+    for (i = 0; i < out.length; i++) s.o.push(out[i].id);
+    MT.setArmy(save);
+  }
+
+  /* Array.prototype.sort is not stable in every WebView this shell runs in. */
+  function stable(list, cmp) {
+    var tagged = [], i;
+    for (i = 0; i < list.length; i++) tagged.push({ v: list[i], i: i });
+    tagged.sort(function (a, b) { return cmp(a.v, b.v) || a.i - b.i; });
+    for (i = 0; i < tagged.length; i++) list[i] = tagged[i].v;
+    return list;
+  }
+
+  /* WHO CAN BE SENT: fit, and not away already. Best first, the order every
+     list of this layer reads in. */
+  function available() {
+    var out = [], i, c;
+    for (i = 0; i < save.r.length; i++) {
+      c = save.r[i];
+      if (fit(c) && !awayRun(c.i)) out.push(c);
+    }
+    return out.sort(cmpCard);
+  }
+
+  function launch(m, ids) {
+    var s = mstate(), cards = [], i, c;
+    for (i = 0; i < ids.length; i++) { c = byId(ids[i]); if (c) cards.push(c); }
+    var at = s.o.indexOf(m.id);
+    if (at >= 0) s.o.splice(at, 1);
+    s.r.push({ m: m.id, c: ids.slice(0), e: now() + m.hours * HOUR,
+               p: chanceOf(cards, m), z: Math.random() });
+    persist();
+  }
+
+  function isBack(run) { return run.e <= now(); }
+
+  /* THE REPORT, written. The squad is read best first, and the first of
+     them is the officer the report is about ({leader}). */
+  function resolve(run) {
+    var s = mstate(), m = MISSION[run.m] || null, sq = [], i, c;
+    s.r.splice(s.r.indexOf(run), 1);
+    for (i = 0; i < run.c.length; i++) {
+      c = byId(run.c[i]);
+      if (c) sq.push({ i: c.i, g: c.g, t: c.t, o: c.o || null, f: "" });
+    }
+    sq.sort(cmpCard);
+    var ok = !!m && run.z < run.p;
+    var rep = { m: run.m, ok: ok, p: run.p, sq: sq, rw: [], pen: [] };
+    if (m && ok) {
+      for (i = 0; i < (m.reward || []).length; i++) rep.rw.push(rollReward(m.reward[i]));
+    } else if (m) {
+      for (i = 0; i < (m.fail || []).length; i++) {
+        var f = m.fail[i];
+        if (f.kind === "coins") rep.pen.push({ kind: "coins", n: f.n | 0 });
+        else strike(sq, f.kind, f.n | 0);
+      }
+    }
+    s.h[run.m] = (s.h[run.m] || 0) + 1;
+    if (ok) s.w++;
+    s.q.push(rep);
+    persist();
+    return rep;
+  }
+
+  /* WHAT A FAILURE COSTS IN CARDS, drawn out of the squad. A wound is the
+     infirmary's like every other one — and a wound it has no bed for is a
+     card lost, the rule the round keeps (section 1b). */
+  function strike(sq, kind, n) {
+    var left = [], k, pick, c;
+    for (k = 0; k < sq.length; k++) if (!sq[k].f) left.push(sq[k]);
+    for (k = 0; k < n && left.length; k++) {
+      pick = left.splice(Math.floor(Math.random() * left.length), 1)[0];
+      c = byId(pick.i);
+      if (!c) continue;
+      if (kind === "wound" && inInfirmary() < BEDS) { c.w = now() + HEAL_MS; pick.f = "hurt"; }
+      else { retire(c); pick.f = "lost"; }
+    }
+  }
+
+  /* What a success pays, decided when the report is written so the card
+     shows the very sticker and the very officer the tap will hand over. */
+  function rollReward(rw) {
+    if (rw.kind === "sticker") return { kind: "sticker", n: MT.roll() };
+    if (rw.kind === "card") {
+      var r = rw.r || [4, 6], t = rw.t || [0, 1];
+      var g = r[0] + Math.floor(Math.random() * (r[1] - r[0] + 1));
+      if (!GRADE[g]) g = CONSCRIPT.r;
+      return { kind: "card", g: g,
+               t: clamp(t[0] + Math.floor(Math.random() * (t[1] - t[0] + 1)), 0, TOP) };
+    }
+    return { kind: rw.kind, n: rw.n | 0 };
+  }
+
+  /* THE TAP THAT COLLECTS: the state moves first, the card goes, and then
+     every piece flies into the chip that counts it (`Meta.fx`) — measured
+     from the card while it is still on screen. */
+  function collect(rep, card) {
+    var s = mstate(), at = s.q.indexOf(rep), fly = [], i, rw, node, before, got;
+    if (at < 0) return null;
+    s.q.splice(at, 1);
+    for (i = 0; i < rep.rw.length; i++) {
+      rw = rep.rw[i];
+      node = card.querySelector('[data-rw="' + i + '"]');
+      if (rw.kind === "card") {
+        got = enrol(save, rw.g, rw.t);
+        if (save.d.length < DECK_SIZE) save.d.push(got.i);
+        say(fill(T.recruited, { c: whoName("blue", rw.g, rw.t) }),
+            W.Lang.t(gradeName(rw.g)) + " · " + tierName(rw.t), "gain", "user");
+      } else if (rw.kind === "super") {
+        MT.addSupers(rw.n);
+        say(rewardText(rw), "", "rare", "super");
+      } else {
+        before = rw.kind === "coins" ? MT.coins() : rw.kind === "ticket" ? MT.tickets() : rw.kind === "xp" ? MT.xp() : 0;
+        MT.grant(rw);
+        fly.push({ rw: rw, from: node ? node.getBoundingClientRect() : null,
+                   before: before, tag: rw.kind !== "sticker" });
+      }
+    }
+    var fine = 0, had = MT.coins();
+    for (i = 0; i < rep.pen.length; i++) if (rep.pen[i].kind === "coins") fine += rep.pen[i].n;
+    fine = Math.min(fine, had);
+    if (fine) MT.spend(fine);
+    persist();
+    return function () {
+      for (var k = 0; k < fly.length; k++) MT.fx(fly[k]);
+      if (fine) MT.spendFx(had, had - fine);
+    };
+  }
+
+  /* ── the words and the chips a mission is read in ── */
+
+  function hoursText(h) {
+    if (h < 24) return h + T.uH;
+    var d = Math.floor(h / 24), r = h - d * 24;
+    return d + T.uD + (r ? " " + pad(r) + T.uH : "");
+  }
+
+  function rewardText(rw) {
+    if (rw.kind === "super") return fill(T.rwSuper, { n: rw.n || 1 });
+    if (rw.kind === "sticker") return rw.n != null ? MT.name(rw.n) : T.rwSticker;
+    if (rw.kind === "card") {
+      if (rw.g != null) return whoName("blue", rw.g, rw.t);
+      return fill(T.rwCard, { g: span(rw.r, function (g) { return W.Lang.t(gradeName(g)); }),
+                              t: span(rw.t, tierName) });
+    }
+    return MT.rewardLabel(rw);
+  }
+  function span(pair, name) {
+    pair = pair || [0, 0];
+    return pair[0] === pair[1] ? name(pair[0]) : name(pair[0]) + "–" + name(pair[1]);
+  }
+  function rewardIcon(rw) {
+    return rw.kind === "coins" ? "coin" : rw.kind === "ticket" ? "ticket"
+         : rw.kind === "super" ? "ticketSuper" : rw.kind === "sticker" ? "sticker"
+         : rw.kind === "xp" ? "xp" : "file";
+  }
+  function penText(f) {
+    if (f.kind === "coins") return fill(T.penCoins, { n: MT.num(f.n) });
+    if (f.kind === "lose") return fill(f.n > 1 ? T.penLoseN : T.penLose1, { n: f.n });
+    return fill(f.n > 1 ? T.penWoundN : T.penWound1, { n: f.n });
+  }
+  function penIcon(f) { return f.kind === "coins" ? "coin" : f.kind === "lose" ? "skull" : "heal"; }
+
+  /* The words go in as text: a sticker's name or an officer's is data. */
+  function mkChip(ico, txt, cls) {
+    var n = el("span", "ar-chip" + (cls ? " " + cls : ""), icon(ico, "ar-ci") + "<span></span>");
+    n.lastChild.textContent = txt;
+    return n;
+  }
+
+  /* THE DIFFICULTY IS FIVE PIPS, the lit ones in the danger colour: a number
+     out of five is read, a row of five is seen. */
+  function pips(d) {
+    var n = el("span", "ar-pips d" + d), i;
+    n.setAttribute("aria-label", fill(T.diff, { n: d }));
+    for (i = 1; i <= 5; i++) n.appendChild(el("i", i <= d ? "on" : ""));
+    return n;
+  }
+
+  /* What a mission says about itself before anyone is sent: how long, how
+     many, which grade it favours, what it pays, what it risks. */
+  function facts(m) {
+    var row = el("div", "ar-chips");
+    row.appendChild(mkChip("clock", hoursText(m.hours)));
+    var sq = m.squad || [2, 5];
+    row.appendChild(mkChip("deck", fill(sq[0] === sq[1] ? T.squadN : T.squadRange, { a: sq[0], b: sq[1] })));
+    if (m.favor && GRADE[m.favor]) {
+      row.appendChild(mkChip("star", fill(T.favor, { g: W.Lang.t(gradeName(m.favor)), n: M_FAVOR }), "favor"));
+    }
+    return row;
+  }
+  function stakes(m) {
+    var row = el("div", "ar-chips"), i;
+    for (i = 0; i < (m.reward || []).length; i++) row.appendChild(mkChip(rewardIcon(m.reward[i]), rewardText(m.reward[i]), "gain"));
+    for (i = 0; i < (m.fail || []).length; i++) row.appendChild(mkChip(penIcon(m.fail[i]), penText(m.fail[i]), "risk"));
+    return row;
+  }
+
+  function oddsClass(p) {
+    return p >= 0.65 ? "hi" : p >= 0.35 ? "mid" : "lo";
+  }
+
+  /* ── the tab ── */
+
+  function paintMissions() {
+    var s = board(), box = RT.pane.mis, i;
+    box.innerHTML = "";
+    if (RT.brief && !MISSION[RT.brief.m]) RT.brief = null;
+    if (RT.brief) { paintBrief(box); return; }
+    head(RT, T.misTitle, fill(T.misSub, { n: s.r.length, m: M_RUN }));
+
+    /* WHAT IS OUT THERE: the reports written and not collected, then the
+       squads away, the first back first. */
+    var runs = s.r.slice().sort(function (a, b) { return a.e - b.e; });
+    if (s.q.length || runs.length) {
+      box.appendChild(sec(T.misAway, s.r.length + " / " + M_RUN));
+      var list = el("div", "ar-list");
+      for (i = 0; i < s.q.length; i++) list.appendChild(reportRow(s.q[i]));
+      for (i = 0; i < runs.length; i++) list.appendChild(runRow(runs[i]));
+      box.appendChild(list);
+    }
+
+    box.appendChild(sec(T.misBoard, ""));
+    if (!s.o.length) box.appendChild(el("p", "ar-none", T.boardEmpty));
+    for (i = 0; i < s.o.length; i++) box.appendChild(missionTile(MISSION[s.o[i]]));
+    var note = el("div", "ar-note");
+    note.textContent = fill(T.boardNext, { t: untilText(s.t + BOARD_MS - now()) });
+    box.appendChild(note);
+    var acts = el("div", "ar-acts");
+    acts.appendChild(adButton(T.boardReroll, function () { rollBoard(); persist(); }));
+    box.appendChild(acts);
+  }
+
+  function sec(label, count) {
+    var h = el("h3", "ar-sec");
+    h.innerHTML = W.upper(label) + (count !== "" ? ' <b>' + count + '</b>' : "");
+    return h;
+  }
+
+  function missionTile(m) {
+    var n = el("div", "ar-mis");
+    var top = el("div", "ar-mis-top");
+    top.appendChild(text("h4", "ar-mis-title", W.upper(loc(m.title))));
+    top.appendChild(pips(m.d));
+    n.appendChild(top);
+    n.appendChild(text("p", "ar-mis-brief", loc(m.brief)));
+    n.appendChild(facts(m));
+    n.appendChild(stakes(m));
+    var full = mstate().r.length >= M_RUN;
+    var b = el("button", "ar-btn" + (full ? " off" : " gold"), icon("compass", "ar-ci") + "<span>" + T.prepare + "</span>");
+    b.addEventListener("click", function () {
+      if (mstate().r.length >= M_RUN) { say(T.runFull, fill(T.runFullSub, { n: M_RUN }), "warn", "clock"); return; }
+      RT.brief = { m: m.id, pick: [] };
+      RT.body.scrollTop = 0;
+      paintRecruit();
+      W.Sound.cue("uiRow", 0.45, 1.1, 420, 0.08);
+    });
+    n.appendChild(b);
+    return n;
+  }
+
+  /* A squad away: its leader's token, where it went, the odds it left on and
+     how long until it is back — then the report, or the ad that brings it
+     home now. */
+  function runRow(run) {
+    var m = MISSION[run.m], back = isBack(run);
+    var row = el("div", "ar-row ar-run" + (back ? " ready" : ""));
+    row.appendChild(squadStack(run.c));
+    var mid = el("div", "ar-mid");
+    mid.appendChild(text("div", "ar-rowname", W.upper(m ? loc(m.title) : "???")));
+    var sub = el("div", "ar-rowsub");
+    if (m) sub.appendChild(pips(m.d));
+    sub.appendChild(text("span", "ar-odds " + oddsClass(run.p), fill(T.oddsShort, { p: pct(run.p) })));
+    mid.appendChild(sub);
+    mid.appendChild(el("div", "ar-when" + (back ? " ok" : ""),
+      icon(back ? "check" : "clock", "ar-ci") + "<span>" + (back ? T.runBack : untilText(run.e - now())) + "</span>"));
+    row.appendChild(mid);
+    if (back) {
+      var b = el("button", "ar-btn gold small", icon("file", "ar-ci") + "<span>" + T.readReport + "</span>");
+      b.addEventListener("click", function () {
+        if (mstate().r.indexOf(run) < 0) return;
+        openReport(resolve(run));
+      });
+      row.appendChild(b);
+    } else {
+      row.appendChild(adButton(T.runNow, function () { run.e = 0; persist(); }, "small"));
+    }
+    return row;
+  }
+
+  /* A report written and not yet collected — the game was closed on it. */
+  function reportRow(rep) {
+    var m = MISSION[rep.m];
+    var row = el("div", "ar-row ar-run ready");
+    var ids = [];
+    for (var i = 0; i < rep.sq.length; i++) ids.push(rep.sq[i].i);
+    row.appendChild(squadStack(ids, rep.sq));
+    var mid = el("div", "ar-mid");
+    mid.appendChild(text("div", "ar-rowname", W.upper(m ? loc(m.title) : "???")));
+    mid.appendChild(el("div", "ar-when ok", icon("check", "ar-ci") + "<span>" + T.runBack + "</span>"));
+    row.appendChild(mid);
+    var b = el("button", "ar-btn gold small", icon("file", "ar-ci") + "<span>" + T.readReport + "</span>");
+    b.addEventListener("click", function () { openReport(rep); });
+    row.appendChild(b);
+    return row;
+  }
+
+  /* The squad as a small stack: the leader's token and how many follow. */
+  function squadStack(ids, known) {
+    var box = el("div", "ar-stack"), best = null, i, c;
+    for (i = 0; i < ids.length; i++) {
+      c = byId(ids[i]) || (known && known[i]) || null;
+      if (c && (!best || cmpCard(c, best) < 0)) best = c;
+    }
+    if (best) box.appendChild(cardTile({ g: best.g, t: best.t, o: best.o }, { fmt: "tiny", w: 76 }));
+    else box.appendChild(el("div", "ar-free-slot"));
+    if (ids.length > 1) box.appendChild(el("i", "ar-stack-n", "+" + (ids.length - 1)));
+    return box;
+  }
+
+  /* ── the briefing: the squad, picked ── */
+
+  /* ONE LEVEL UNDER THE TAB AND NOT A VIEW OF ITS OWN. It is composed, so it
+     is not a card a stray tap can close; and a view of its own would have no
+     way back to the board but the band's house, which leads out of the camp
+     altogether. The tab is that way back, and CANCEL says it in words. */
+  function paintBrief(box) {
+    var m = MISSION[RT.brief.m], sq = m.squad || [2, 5], i, c;
+    var pool = available(), pick = [], picked = {};
+    /* a card that stopped being available since it was picked is let go */
+    for (i = 0; i < RT.brief.pick.length; i++) {
+      c = byId(RT.brief.pick[i]);
+      if (c && fit(c) && !awayRun(c.i)) { pick.push(c); picked[c.i] = 1; }
+    }
+    RT.brief.pick = [];
+    for (i = 0; i < pick.length; i++) RT.brief.pick.push(pick[i].i);
+    head(RT, T.briefTitle, fill(sq[0] === sq[1] ? T.briefSubN : T.briefSub, { a: sq[0], b: sq[1] }));
+
+    var card = el("div", "ar-mis brief");
+    var top = el("div", "ar-mis-top");
+    top.appendChild(text("h4", "ar-mis-title", W.upper(loc(m.title))));
+    top.appendChild(pips(m.d));
+    card.appendChild(top);
+    card.appendChild(text("p", "ar-mis-brief", loc(m.brief)));
+    card.appendChild(facts(m));
+    card.appendChild(stakes(m));
+    box.appendChild(card);
+
+    box.appendChild(sec(T.squadSec, pick.length + " / " + sq[1]));
+    var slots = el("div", "ar-slots ar-squad" + (PAINTED ? " painted" : ""));
+    for (i = 0; i < sq[1]; i++) slots.appendChild(i < pick.length ? squadSlot(pick[i], m) : needSlot(i < sq[0]));
+    box.appendChild(slots);
+
+    /* THE ODDS, live: every card taken or left moves them, which is the
+       whole of what the player is weighing up on this screen. */
+    var p = chanceOf(pick, m);
+    var g = el("div", "ar-gauge " + oddsClass(p));
+    var gl = el("div", "ar-gauge-top");
+    gl.appendChild(text("span", "ar-gauge-l", W.upper(T.oddsLabel)));
+    gl.appendChild(text("b", "ar-gauge-p", pct(p)));
+    g.appendChild(gl);
+    var bar = el("div", "ar-gauge-bar");
+    var fillBar = el("i");
+    fillBar.style.width = Math.round(p * 100) + "%";
+    bar.appendChild(fillBar);
+    g.appendChild(bar);
+    box.appendChild(g);
+
+    var short = sq[0] - pick.length;
+    var acts = el("div", "ar-acts");
+    var go = el("button", "ar-btn" + (short > 0 ? " off" : " gold"),
+                icon("compass", "ar-ci") + "<span>" + T.send + "</span>");
+    go.addEventListener("click", function () {
+      if (short > 0) { say(fill(short === 1 ? T.needMore1 : T.needMoreN, { n: short }), "", "warn", "info"); return; }
+      if (mstate().r.length >= M_RUN) { say(T.runFull, fill(T.runFullSub, { n: M_RUN }), "warn", "clock"); return; }
+      launch(m, RT.brief.pick);
+      RT.brief = null;
+      RT.body.scrollTop = 0;
+      paintRecruit();
+      say(T.sent, fill(T.sentSub, { t: hoursText(m.hours) }), "info", "clock");
+      W.Sound.cue("uiWin", 0.8, 0.9, 520, 0.2, "triangle");
+    });
+    acts.appendChild(go);
+    var no = el("button", "ar-btn", "<span>" + T.cancel + "</span>");
+    no.addEventListener("click", function () {
+      RT.brief = null;
+      RT.body.scrollTop = 0;
+      paintRecruit();
+    });
+    acts.appendChild(no);
+    box.appendChild(acts);
+
+    box.appendChild(sec(T.availSec, String(pool.length)));
+    if (!pool.length) { box.appendChild(el("p", "ar-none", T.availNone)); return; }
+    var grid = el("div", "ar-pool" + (PAINTED ? " painted" : ""));
+    for (i = 0; i < pool.length; i++) grid.appendChild(pickTile(pool[i], m, !!picked[pool[i].i], pick.length >= sq[1]));
+    box.appendChild(grid);
+  }
+
+  function squadSlot(c, m) {
+    var b = el("button", "ar-slot");
+    b.appendChild(cardTile({ g: c.g, t: c.t, o: c.o }, {
+      fmt: "tiny", w: 86, tag: m.favor === c.g ? "+" + M_FAVOR : null, tagClass: "in"
+    }));
+    b.setAttribute("aria-label", T.deckDrop);
+    b.addEventListener("click", function () { togglePick(c.i); });
+    return b;
+  }
+  function needSlot(need) {
+    var n = el("div", "ar-slot empty" + (need ? " need" : ""));
+    n.appendChild(el("span", "ar-plus", "+"));
+    return n;
+  }
+
+  /* A card of the pool: a toggle, like the deck's, with the one fact that
+     matters here on its tag — taken, favoured by this mission, or in the
+     deck (and so about to miss the battles it would have fought). */
+  function pickTile(c, m, on, full) {
+    var w = el("div", "ar-slot-w");
+    var b = el("button", "ar-slot pool" + (on ? " on" : ""));
+    var fav = m.favor === c.g;
+    b.appendChild(cardTile({ g: c.g, t: c.t, o: c.o }, {
+      fmt: "full", w: 156,
+      tag: on ? T.inSquad : fav ? "+" + M_FAVOR : inDeck(c.i) ? T.inDeck : null,
+      tagClass: on || fav ? "in" : ""
+    }));
+    b.addEventListener("click", function () {
+      if (!on && full) { say(T.squadFull, "", "warn"); return; }
+      togglePick(c.i);
+    });
+    w.appendChild(b);
+    var f = el("button", "ar-file-btn", icon("file", "ar-ci"));
+    f.setAttribute("aria-label", T.fileOpen);
+    f.addEventListener("click", function () { openFile({ o: c.o || "blue", g: c.g, t: c.t }, "blue", b); });
+    w.appendChild(f);
+    return w;
+  }
+
+  function togglePick(id) {
+    var at = RT.brief.pick.indexOf(id);
+    if (at >= 0) RT.brief.pick.splice(at, 1);
+    else RT.brief.pick.push(id);
+    paintRecruit();
+    W.Sound.cue("uiRow", 0.4, at >= 0 ? 0.9 : 1.1, 400, 0.06);
+  }
+
+  /* ── the report ── */
+
+  /* A CARD, NOT A VIEW: it is read and put away, and the tap that puts it
+     away is the tap that collects — the rule every reward card of this shell
+     is dismissed under. Neither the scrim nor ESCAPE skips it without
+     collecting, since what it pays is only granted on that tap. */
+  function openReport(rep) {
+    var m = MISSION[rep.m] || null, done = false, off = null;
+    var lead = rep.sq[0] || null;
+    var leader = lead ? whoName(lead.o || "blue", lead.g, lead.t) : T.theSquad;
+    MD.open({
+      kind: "ar-report", dismiss: false, esc: false,
+      eyebrow: T.repEyebrow, title: m ? loc(m.title) : T.misTitle,
+      tap: rep.rw.length ? T.repCollect : T.repClose,
+      fill: function (card, close, handle) {
+        card.appendChild(el("div", "ar-stamp " + (rep.ok ? "ok" : "ko"), W.upper(rep.ok ? T.repWin : T.repLose)));
+        card.appendChild(text("p", "ar-rep-text",
+          fill(m ? loc(rep.ok ? m.win : m.lose) : "", { leader: leader })));
+
+        var row = el("div", "ar-rep-squad" + (PAINTED ? " painted" : ""));
+        for (var i = 0; i < rep.sq.length; i++) {
+          var q = rep.sq[i];
+          row.appendChild(cardTile({ g: q.g, t: q.t, o: q.o }, {
+            fmt: "tiny", w: 76, dim: q.f === "lost",
+            tag: q.f === "hurt" ? T.fateHurt : q.f === "lost" ? T.fateLost : null,
+            tagClass: q.f === "hurt" ? "hurt" : "lost"
+          }));
+        }
+        card.appendChild(row);
+
+        var out = el("div", "ar-rep-out");
+        for (i = 0; i < rep.rw.length; i++) {
+          var rw = rep.rw[i], cell = el("div", "ar-rep-rw " + rw.kind);
+          cell.setAttribute("data-rw", String(i));
+          if (rw.kind === "card") cell.appendChild(cardTile({ g: rw.g, t: rw.t }, { fmt: "tiny", w: 96 }));
+          else if (rw.kind === "super") cell.innerHTML = '<span class="ar-rep-ico">' + icon("ticketSuper", "ar-rep-i") + "</span>";
+          else cell.innerHTML = MT.rewardArt(rw);
+          cell.appendChild(text("div", "ar-rep-lbl", rewardText(rw)));
+          out.appendChild(cell);
+        }
+        for (i = 0; i < rep.pen.length; i++) {
+          out.appendChild(mkChip(penIcon(rep.pen[i]), penText(rep.pen[i]), "risk"));
+        }
+        if (out.childNodes.length) card.appendChild(out);
+
+        function finish() {
+          if (done) return;
+          done = true;
+          if (off) off();
+          var fly = collect(rep, card);
+          close();
+          if (fly) fly();
+          if (rep.ok) W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+        }
+        MT.tapOut(handle.box, finish);
+        off = MT.keyOut(finish);
+      }
+    });
+    W.Sound.cue(rep.ok ? "uiStar" : "uiRow", 0.8, rep.ok ? 1.2 : 0.7, rep.ok ? 880 : 220, 0.18, "triangle");
+  }
+
+  /* WHAT THE CAMP'S BADGE COUNTS: the recruits the wallet can pay for, plus
+     every squad that is back with a report to read. */
+  function missionsBack() {
+    var s = save.ms, n = 0, i;
+    if (!s) return 0;
+    n = (s.q || []).length;
+    for (i = 0; i < (s.r || []).length; i++) if (isBack(s.r[i])) n++;
+    return n;
+  }
+  function campNews() { return affordable() + missionsBack(); }
 
   /* ── 8e. an officer's file: the card, turned over ─────────────────────── */
 
@@ -1173,7 +1835,10 @@
         front.appendChild(face);
         inner.appendChild(front);
         if (back) inner.appendChild(back);
-        flip.appendChild(inner);
+        var tilt = el("div", "ar-tilt");
+        tilt.appendChild(inner);
+        flip.appendChild(tilt);
+        if (HOVER) armTilt(flip, tilt);
         if (back) {
           flip.addEventListener("click", function () {
             if (flip.classList.contains("fly")) return;   // let it land first
@@ -1195,6 +1860,39 @@
          and has a width to be measured against. */
       var last = m && m.box && m.box.querySelector(".ar-fb-last, .cf-last");
       if (last && W.Fit) W.Fit.box(last, 24);
+    });
+  }
+
+  /* THE TILT, ON A DESK: the card leans toward the mouse, as a card held in
+     the hand leans toward the eye. It is its own layer between the flipper and the turn, so neither
+     the flight (on `.ar-flip`) nor the half-turns (on `.ar-flip-in`) share a
+     transform with it, and both faces lean the same way. A mouse only: a
+     finger has no hover, and a card that tilts under a tap and then stays
+     tilted reads as broken. Idle during the flight, back flat on the way out. */
+  var HOVER = !!(window.matchMedia &&
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var TILT_DEG = 11;
+  function armTilt(flip, tilt) {
+    var raf = 0, px = 0.5, py = 0.5;
+    function paint() {
+      raf = 0;
+      var rx = (0.5 - py) * 2 * TILT_DEG, ry = (px - 0.5) * 2 * TILT_DEG;
+      tilt.style.transform = "rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg)";
+    }
+    flip.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "mouse" || flip.classList.contains("fly")) return;
+      var r = flip.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      px = clamp((e.clientX - r.left) / r.width, 0, 1);
+      py = clamp((e.clientY - r.top) / r.height, 0, 1);
+      flip.classList.add("tilting");
+      if (!raf) raf = requestAnimationFrame(paint);
+    });
+    flip.addEventListener("pointerleave", function () {
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      flip.classList.remove("tilting");
+      tilt.style.transform = "";
     });
   }
 
@@ -1236,6 +1934,7 @@
           first: p ? W.upper(p.first) : "",
           last: p ? W.upper(p.last) : "???",
           facts: p ? [fill(T.age, { n: p.age }), T["g_" + p.gender] || p.gender] : [],
+          skill: gradeSkill(who.g),
           lore: lore[LANG] || lore.en || "",
           army: W.upper(who.o === "red" ? T.armyRed : T.armyBlue),
           turn: who.o !== team ? W.upper(T.turncoat) : ""
@@ -1243,6 +1942,11 @@
       return wrap;
     }
     return plainBack(who, p, team);
+  }
+  /* What the grade is FOR, in the player's language — the game's words
+     (`Game.gradeInfo`), since the game is what knows the rule. */
+  function gradeSkill(g) {
+    return W.Game && W.Game.gradeInfo ? W.Game.gradeInfo(g) : "";
   }
 
   /* THE BACK OF AN OBJECT: its name, what it does to whoever strikes it,
@@ -1289,6 +1993,7 @@
     b.appendChild(top);
     if (!p) {
       b.appendChild(text("div", "ar-fb-last", "???"));
+      if (gradeSkill(who.g)) b.appendChild(text("p", "ar-fb-skill", gradeSkill(who.g)));
       return b;
     }
     b.appendChild(text("div", "ar-fb-first", W.upper(p.first)));
@@ -1297,6 +2002,8 @@
     facts.appendChild(text("span", "", fill(T.age, { n: p.age })));
     facts.appendChild(text("span", "", T["g_" + p.gender] || p.gender));
     b.appendChild(facts);
+    var skill = gradeSkill(who.g);
+    if (skill) b.appendChild(text("p", "ar-fb-skill", skill));
     var lore = p.lore || {};
     b.appendChild(text("p", "ar-fb-lore", lore[LANG] || lore.en || ""));
     var foot = el("div", "ar-fb-foot");
@@ -1352,6 +2059,7 @@
   var beat = null;
 
   function repaint() {
+    if (MT.moreRepaint) MT.moreRepaint();
     var top = VW.top();
     if (top === "deck" && DK) paintDeck();
     else if (top === "infirmary" && IN) paintInfirmary();
@@ -1361,6 +2069,9 @@
 
   function tick() {
     var top = VW.top();
+    /* The briefing holds no clock, and a squad half picked must not be
+       redrawn under the finger picking it. */
+    if (top === "recruit" && RT && RT.brief) return;
     if (top === "deck" || top === "infirmary" || top === "prison" || top === "recruit") {
       repaint();
       return;
@@ -1369,6 +2080,36 @@
   }
   function startBeat() { if (!beat) beat = setInterval(tick, DEV ? 1000 : 20000); }
   function stopBeat() { if (beat) { clearInterval(beat); beat = null; } }
+
+  /* ── 10b. the army's figures, in the band's fold ──────────────────────── */
+
+  /* WHAT THE PLAYER COMMANDS, behind the band's sword (meta.js, section
+     11b): the missions brought home, how much of the war's cast has served,
+     and the three kinds of card on hand — the army's own, the camp's in the
+     cells, and the camp's who changed sides. Each row is a door to the room
+     that prints that list at full size. The three counts wear a small card in
+     the side's colour rather than a pictogram, since the colour is the one
+     thing that tells those cards apart on the table. */
+  function bandRows() {
+    var blue = 0, turn = 0, own = 0, i, k, rows = [];
+    for (i = 0; i < save.r.length; i++) { if (save.r[i].o === "red") turn++; else blue++; }
+    for (k in save.c.h) if (save.c.h.hasOwnProperty(k)) own++;
+    var all = 2 * GRADES.length * TIERS.length;
+    if (MISSIONS.length) {
+      rows.push({ pic: icon("compass", "mt-ci"), label: T.bandMissions,
+                  value: MT.num((save.ms && save.ms.w) || 0),
+                  go: function () { VW.go("recruit", { tab: "mis" }); } });
+    }
+    rows.push({ pic: icon("file", "mt-ci"), label: T.bandOwned, value: own + "/" + all,
+                go: function () { VW.go("deck", { tab: "coll" }); } });
+    rows.push({ pic: '<i class="ar-hc blue"></i>', label: T.bandBlue, value: MT.num(blue),
+                go: function () { VW.go("deck"); } });
+    rows.push({ pic: '<i class="ar-hc red"></i>', label: T.bandRed, value: MT.num(inPrison()),
+                go: function () { VW.go("prison"); } });
+    rows.push({ pic: '<i class="ar-hc turn"></i>', label: T.bandTurn, value: MT.num(turn),
+                go: function () { VW.go("deck"); } });
+    return rows;
+  }
 
   /* ── 11. mount ────────────────────────────────────────────────────────── */
 
@@ -1380,7 +2121,7 @@
 
     VW.define("deck", {
       build: buildDeck, node: function () { return DK.box; },
-      show: function () { DK.tab = "deck"; DK.body.scrollTop = 0; paintDeck(); startBeat(); }, hide: stopBeat,
+      show: function (o) { DK.tab = (o && o.tab) || "deck"; DK.body.scrollTop = 0; paintDeck(); startBeat(); }, hide: stopBeat,
       hud: true, decor: DECOR
     });
     VW.define("infirmary", {
@@ -1395,16 +2136,25 @@
     });
     VW.define("recruit", {
       build: buildRecruit, node: function () { return RT.box; },
-      show: function () { paintRecruit(); startBeat(); }, hide: stopBeat,
+      /* A squad back with a report is the news, so the camp opens on the
+         missions then; on the tent otherwise, as it always did. */
+      show: function (o) {
+        RT.brief = null;
+        RT.tab = (o && o.tab) || (CAMP_TABS.length > 1 && missionsBack() ? "mis" : "tent");
+        RT.body.scrollTop = 0;
+        paintRecruit(); startBeat();
+      }, hide: stopBeat,
       hud: true, decor: DECOR
     });
+
+    /* The icons need `API`, which is why the fold is filled at mount. */
+    if (MT.moreAdd) MT.moreAdd("army", { title: function () { return T.bandTitle; }, rows: bandRows });
   }
 
   W.onResult(absorb);
-  W.onState(function (s) {
-    if (s === "end") { armOffer(); return; }
-    if (watching) { clearInterval(watching); watching = null; }
-  });
+  /* After levels.js, which registered its own outro first: the world reacts,
+     then the card is laid over it. */
+  if (W.onOutro) W.onOutro(outro);
   /* THE SECOND DOOR THE OFFER CAN COME THROUGH: a player who tapped past the
      end screen still gets their prisoner, on the hub, where the prison they
      are about to fill is a building they can see. */
@@ -1425,7 +2175,9 @@
 
   var STRINGS = {
     en: {
-      deck: "Deck", infirmary: "Infirmary", prison: "Prison", recruit: "Recruits",
+      deck: "Deck", infirmary: "Infirmary", prison: "Prison", recruit: "Camp",
+      bandTitle: "Your army", bandMissions: "Missions accomplished", bandOwned: "Officers owned",
+      bandBlue: "Blue cards", bandRed: "Red cards in the prison", bandTurn: "Turncoats",
       deckTitle: "Your deck", deckSub: "Tap a card to take it, tap it again to leave it behind",
       deckSection: "Into the battle", poolSection: "Your cards",
       deckGap1: "1 empty slot — the battle fills it with a conscript ({c} E)",
@@ -1459,10 +2211,41 @@
       captiveTitle: "Take a prisoner", captiveSub: "One of the enemies you left standing",
       captiveSubOr: "The enemy you left standing, or the spoils instead", or: "or",
       captiveSkip: "Leave them", captiveTaken: "Taken to the prison",
-      ready: "Ready", soon: "Any moment", uD: "d", uH: "h", uM: "m"
+      captiveTap: "Tap a card to take it",
+      ready: "Ready", soon: "Any moment", uD: "d", uH: "h", uM: "m",
+      away: "On mission",
+      tab_tent: "Recruits", tab_mis: "Missions",
+      misTitle: "Missions", misSub: "{n} / {m} squads away",
+      misAway: "Squads away", misBoard: "Mission board",
+      boardEmpty: "Every mission on the board is under way.",
+      boardNext: "New missions in {t}", boardReroll: "New missions now",
+      prepare: "Prepare", runFull: "Every squad is out",
+      runFullSub: "{n} missions at once — wait for one to come back",
+      runBack: "Back at camp", runNow: "Bring back now", readReport: "Report",
+      oddsShort: "{p} success", oddsLabel: "Chance of success",
+      diff: "Difficulty {n} of 5",
+      squadN: "{a} cards", squadRange: "{a} to {b} cards",
+      favor: "{g} +{n}",
+      rwSuper: "+{n} super ticket", rwSticker: "A sticker", rwCard: "An officer · {g} · {t}",
+      penCoins: "-{n} coins",
+      penWound1: "1 card wounded", penWoundN: "{n} cards wounded",
+      penLose1: "1 card lost", penLoseN: "{n} cards lost",
+      briefTitle: "Briefing", briefSub: "Send {a} to {b} cards — the stronger the squad, the better the odds",
+      briefSubN: "Send {a} cards — the stronger the squad, the better the odds",
+      squadSec: "The squad", availSec: "Available",
+      availNone: "No card is free: every one is wounded or already away.",
+      inSquad: "In squad", squadFull: "The squad is full",
+      needMore1: "1 more card to send the squad", needMoreN: "{n} more cards to send the squad",
+      send: "Send the squad", cancel: "Cancel",
+      sent: "Squad on its way", sentSub: "Back in {t}",
+      repEyebrow: "Mission report", repWin: "Success", repLose: "Failure",
+      fateHurt: "Wounded", fateLost: "Lost", theSquad: "The squad",
+      repCollect: "Tap anywhere to collect", repClose: "Tap anywhere to close"
     },
     fr: {
-      deck: "Deck", infirmary: "Infirmerie", prison: "Prison", recruit: "Recrues",
+      deck: "Deck", infirmary: "Infirmerie", prison: "Prison", recruit: "Camp",
+      bandTitle: "Ton armée", bandMissions: "Missions réussies", bandOwned: "Officiers possédés",
+      bandBlue: "Cartes bleues", bandRed: "Cartes rouges en prison", bandTurn: "Transfuges",
       deckTitle: "Ton deck", deckSub: "Touche une carte pour l'emmener, touche-la encore pour la laisser",
       deckSection: "Dans la bataille", poolSection: "Tes cartes",
       deckGap1: "1 emplacement vide — la bataille le remplit avec un conscrit ({c} E)",
@@ -1496,7 +2279,36 @@
       captiveTitle: "Fais un prisonnier", captiveSub: "Un des ennemis que tu as laissés debout",
       captiveSubOr: "L'ennemi que tu as laissé debout, ou le butin à la place", or: "ou",
       captiveSkip: "Les laisser partir", captiveTaken: "Emmené en prison",
-      ready: "Prêt", soon: "D'un instant à l'autre", uD: "j", uH: "h", uM: "min"
+      captiveTap: "Touche une carte pour la prendre",
+      ready: "Prêt", soon: "D'un instant à l'autre", uD: "j", uH: "h", uM: "min",
+      away: "En mission",
+      tab_tent: "Recrues", tab_mis: "Missions",
+      misTitle: "Missions", misSub: "{n} / {m} escouades en mission",
+      misAway: "Escouades en mission", misBoard: "Tableau des missions",
+      boardEmpty: "Toutes les missions du tableau sont en cours.",
+      boardNext: "Nouvelles missions dans {t}", boardReroll: "Nouvelles missions",
+      prepare: "Préparer", runFull: "Toutes les escouades sont dehors",
+      runFullSub: "{n} missions à la fois — attends qu'une rentre",
+      runBack: "De retour au camp", runNow: "Rentrer maintenant", readReport: "Rapport",
+      oddsShort: "{p} de réussite", oddsLabel: "Chances de réussite",
+      diff: "Difficulté {n} sur 5",
+      squadN: "{a} cartes", squadRange: "{a} à {b} cartes",
+      favor: "{g} +{n}",
+      rwSuper: "+{n} super ticket", rwSticker: "Un sticker", rwCard: "Un officier · {g} · {t}",
+      penCoins: "-{n} pièces",
+      penWound1: "1 carte blessée", penWoundN: "{n} cartes blessées",
+      penLose1: "1 carte perdue", penLoseN: "{n} cartes perdues",
+      briefTitle: "Briefing", briefSub: "Envoie {a} à {b} cartes — plus l'escouade est forte, meilleures sont les chances",
+      briefSubN: "Envoie {a} cartes — plus l'escouade est forte, meilleures sont les chances",
+      squadSec: "L'escouade", availSec: "Disponibles",
+      availNone: "Aucune carte n'est libre : toutes sont blessées ou déjà en mission.",
+      inSquad: "Dans l'escouade", squadFull: "L'escouade est complète",
+      needMore1: "Encore 1 carte pour envoyer l'escouade", needMoreN: "Encore {n} cartes pour envoyer l'escouade",
+      send: "Envoyer l'escouade", cancel: "Annuler",
+      sent: "Escouade en route", sentSub: "De retour dans {t}",
+      repEyebrow: "Rapport de mission", repWin: "Réussite", repLose: "Échec",
+      fateHurt: "Blessée", fateLost: "Perdue", theSquad: "L'escouade",
+      repCollect: "Touche n'importe où pour récupérer", repClose: "Touche n'importe où pour fermer"
     }
   };
   var LANG = "en", T = STRINGS.en;
@@ -1530,6 +2342,11 @@
        that names a card in what it says (games/stratideck, cardName). */
     who: whoName,
     affordable: affordable,
+    /* The camp's badge: the recruits the wallet can pay for and the squads
+       back with a report. */
+    camp: campNews,
+    /* The missions' own state, read by tools/test/views.mjs. */
+    missions: function () { return mstate(); },
 
     onChange: function (fn) { hooks.push(fn); },
     deck: roundDeck,

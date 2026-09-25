@@ -91,9 +91,10 @@
       coins: "Coins", tickets: "Tickets", level: "Level", lvShort: "Lv {n}",
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Shop", map: "Levels", home: "Home", scores: "Leaderboard",
+      more: "More",
       owned: "{n}/{t}", newSticker: "New sticker!", dupe: "Double",
       gotCoins: "+{n} coins", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
-      gotXp: "+{n} xp", levelUp: "Level {n}!", levelUpNote: "A free ticket for the machine.",
+      gotXp: "+{n} xp", levelUp: "Level up!", levelUpNote: "Player level {n} reached",
       pickOne: "Pick one",
       bonusTitle: "Three-star bonus",
       boostMul: "Multiply your {k}", boostMore: "One more", boostCost: "Watch an ad",
@@ -101,22 +102,27 @@
       adOfferBtn: "Watch an ad",
       adTitle: "Advertisement", adNote: "No ad network is wired in yet — this is a placeholder.",
       adSkip: "Claim", adWait: "{n}",
+      adEyebrow: "Reward", adTapWait: "Reward in {n}",
       giftGot: "Your gift", collect: "Collect",
-      tapCollect: "Tap to collect",
+      tapCollect: "Tap to collect", tapPick: "Tap a box",
       rarity1: "Common", rarity2: "Rare", rarity3: "Epic", rarity4: "Legendary",
       wonBand: "Earned by clearing {b}", wonClean: "Earned by a clean run through {b}",
       wonAll: "Earned by clearing all 30 levels", wonPerfect: "Earned with a perfect 90/90",
       toBand: "Clear {b}", toClean: "Make a clean run through {b}",
       toAll: "Clear all 30 levels", toPerfect: "Get a perfect 90/90",
+      awEyebrow: "Level map reward",
+      awBand: "{b} cleared!", awClean: "Clean run through {b}!",
+      awAll: "All 30 levels cleared!", awPerfect: "Perfect 90/90!",
       close: "Close", back: "Back"
     },
     fr: {
       coins: "Pièces", tickets: "Tickets", level: "Niveau", lvShort: "Nv {n}",
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Boutique", map: "Niveaux", home: "Accueil", scores: "Classement",
+      more: "Plus",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
       gotCoins: "+{n} pièces", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
-      gotXp: "+{n} xp", levelUp: "Niveau {n} !", levelUpNote: "Un ticket offert pour la machine.",
+      gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau de joueur {n} atteint",
       pickOne: "Choisis",
       bonusTitle: "Bonus trois étoiles",
       boostMul: "Multiplier tes {k}", boostMore: "Un de plus", boostCost: "Voir une pub",
@@ -124,13 +130,17 @@
       adOfferBtn: "Voir une pub",
       adTitle: "Publicité", adNote: "Aucune régie n’est branchée — ceci est un substitut.",
       adSkip: "Récupérer", adWait: "{n}",
+      adEyebrow: "Récompense", adTapWait: "Récompense dans {n}",
       giftGot: "Ton cadeau", collect: "Récupérer",
-      tapCollect: "Touche pour récupérer",
+      tapCollect: "Touche pour récupérer", tapPick: "Touche une boîte",
       rarity1: "Commun", rarity2: "Rare", rarity3: "Épique", rarity4: "Légendaire",
       wonBand: "Gagné en terminant {b}", wonClean: "Gagné par un sans-faute sur {b}",
       wonAll: "Gagné en terminant les 30 niveaux", wonPerfect: "Gagné avec un 90/90 parfait",
       toBand: "Termine {b}", toClean: "Réussis un sans-faute sur {b}",
       toAll: "Termine les 30 niveaux", toPerfect: "Obtiens un 90/90 parfait",
+      awEyebrow: "Récompense de la carte",
+      awBand: "{b} terminé !", awClean: "Sans-faute sur {b} !",
+      awAll: "30 niveaux terminés !", awPerfect: "90/90 parfait !",
       close: "Fermer", back: "Retour"
     }
   };
@@ -147,6 +157,7 @@
     "adOfferBtn", "adTitle", "adSkip", "giftGot", "collect", "tapCollect",
     "rarity1", "rarity2", "rarity3", "rarity4", "wonBand", "wonClean",
     "wonAll", "wonPerfect", "toBand", "toClean", "toAll", "toPerfect",
+    "awEyebrow", "awBand", "awClean", "awAll", "awPerfect",
     "close", "back"
   ];
   (function () {
@@ -370,7 +381,10 @@
      ON. The state moves at once — it has to, the end screen's own arithmetic
      reads it back — but the READING waits, the same way a coin chip's figure
      waits for its piece to land. The end screen cannot show it (no bar), so
-     the map does, on arrival: the bar first, then the card. */
+     the VILLAGE does, on arrival: the bar first, then the card. Rounds played
+     back to back without passing through it (NEXT, a replay) ADD UP here
+     rather than overwrite each other — the bar runs from where the player
+     stood the last time they saw it, and every level crossed is paid. */
   var pendXp = null;                 // { before, levels }
 
   function addCoins(n) { save.c = Math.max(0, save.c + Math.round(n)); persist(); }
@@ -1431,8 +1445,13 @@
      reverse — a callout fired on the end screen, seconds before the screen
      that could show what it was talking about.
 
-     `levels.js` calls this from `show()`, beside `sweep()`: the map is the one
-     screen in this layer whose wallet carries a level bar. */
+     THE VILLAGE IS WHERE IT PLAYS. It was the map, when the map's header was
+     the one wallet with a level bar; the band is the view system's now and
+     carries the bar on every view, and the village is where the end screen
+     sends the player back — the place an event of the player's own climb is
+     announced, rather than a screen they open to pick a level.
+     `village.js` calls this from its `show()`; `levels.js` only does for a
+     game with no village. */
   function arrive() {
     if (!pendXp) return;
     var p = pendXp; pendXp = null;
@@ -1451,16 +1470,20 @@
          that hold — a number left sitting under a blurred backdrop is a number
          nobody reads and a smear on the card that replaced it. */
       if (tag && tag.parentNode) tag.parentNode.removeChild(tag);
-      /* THE CARD IS THE ANNOUNCEMENT. Its own title says what happened — the
-         level reached — so nothing has to be said twice, and the ticket a
-         level pays is handed over the way every other reward in this layer is.
+      /* THE CARD IS THE ANNOUNCEMENT. Its own title says what happened — a
+         level up — so nothing has to be said twice, and the ticket a level
+         pays is handed over the way every other reward in this layer is.
          `granted` because `addXp` already paid it: the card reads the state,
-         it does not move it a second time. */
+         it does not move it a second time.
+         The title is LEVEL UP and never "Level 5!": one door away from a map
+         of thirty numbered levels, a bare number read as a level of the map,
+         and the reward had no cause the player could name. The eyebrow writes
+         the level reached, and calls it the PLAYER's. */
       prize({
         reward: { kind: "ticket", n: p.levels },
         boost: false, granted: true,
-        eyebrow: T.levelUpNote,
-        got: fill(T.levelUp, { n: playerLevel() })
+        eyebrow: fill(T.levelUpNote, { n: playerLevel() }),
+        got: T.levelUp
       });
     });
   }
@@ -1537,9 +1560,8 @@
       kind: "note",
       dismiss: true,
       onClose: opts.done || null,
+      eyebrow: opts.eyebrow, title: opts.title,
       fill: function (card) {
-        if (opts.eyebrow) card.appendChild(el("div", "mt-eyebrow", opts.eyebrow));
-        card.appendChild(el("h3", "mt-h", opts.title));
         if (opts.art) card.appendChild(opts.art);
         var plate = multArt(opts.mult);
         if (plate) card.appendChild(el("div", "mt-mult-row", plate));
@@ -1610,15 +1632,17 @@
     var rewards = [randomReward(rich), randomReward(rich), randomReward(rich)], gi;
     if (mult > 1) for (gi = 0; gi < 3; gi++) rewards[gi] = multiply(rewards[gi], mult);
 
-    giftM = MD.open({ kind: "gift", dismiss: false, esc: false });
-    giftBox = giftM.box;
-    var card = giftM.card;
     /* An EYEBROW over the title, for the caller that has something to say
        about WHY this card is open. The daily strip is the one: it is drawn
-       wordless inside the menu, so what it is and which day of the run this is
-       are written here instead (packages/webshell/daily.js). */
-    if (opts.eyebrow) card.appendChild(el("div", "mt-eyebrow", opts.eyebrow));
-    card.appendChild(el("h3", "mt-h", opts.title || T.pickOne));
+       wordless inside the menu, so which day of the run this is is written
+       here instead (packages/webshell/daily.js). The tap line is the
+       instruction, since a choice closes nothing. */
+    giftM = MD.open({
+      kind: "gift", dismiss: false, esc: false,
+      eyebrow: opts.eyebrow, title: opts.title || T.pickOne, tap: T.tapPick
+    });
+    giftBox = giftM.box;
+    var hand = giftM, card = giftM.body;
     /* The plate sits between the title and the sentence that explains it,
        which is where the eye already is: it is not decoration on the card, it
        is the size of what the three boxes are about to pay. */
@@ -1681,7 +1705,7 @@
         }, 180);
         W.Sound.cue("uiScore", 0.75, 1.1, 900, 0.14);
         W.Sound.cue("uiStar", 0.55, 1.5, 1400, 0.1, "triangle");
-        setTimeout(function () { reveal(card, rewards[i], opts); }, 760);
+        setTimeout(function () { reveal(hand, rewards[i], opts); }, 760);
       });
       row.appendChild(b);
     });
@@ -1698,13 +1722,14 @@
     closeGift();
     giftM = MD.open({ kind: "gift", dismiss: false, esc: false });
     giftBox = giftM.box;
-    reveal(giftM.card, opts.reward, opts);
+    reveal(giftM, opts.reward, opts);
   }
 
   /* What was in the box, then the one offer that follows it. The tripling is
      only ever offered once and only on a reward worth tripling — a sticker
      redraws instead, because three copies of one picture is not a prize. */
-  function reveal(card, rw, opts) {
+  function reveal(hand, rw, opts) {
+    var card = hand.body;
     /* What the wallet said BEFORE this gift, kept so the chip can climb to the
        new figure when the reward lands in it rather than having changed behind
        the card (see flyReward). */
@@ -1719,19 +1744,21 @@
        the player has not been handed yet. */
     holdKind(rw.kind, before);
     card.innerHTML = "";
-    /* The eyebrow survives the reveal: "Daily gift · Day 12" is what says which
-       card this is, and losing it the moment the box opens leaves a prize with
-       no provenance on it. */
+    /* The eyebrow survives the reveal: "Day 12" is what says which card this
+       is, and losing it the moment the box opens leaves a prize with no
+       provenance on it. */
     /* `gotEyebrow` is the line for THIS half of the ceremony: the pick card
        has to name what is being opened, the reward card has that name in its
        own title, so the daily road hands over a shorter one. */
     var eb = opts.gotEyebrow || opts.eyebrow;
-    if (eb) card.appendChild(el("div", "mt-eyebrow", eb));
     var isNew = rw.kind === "sticker" && count(rw.n) === 1;
     /* `got` is what the CALLER calls this card — "Daily gift" for the road, so
        the title says which gift this is and the eyebrow stops repeating it. */
-    card.appendChild(el("h3", "mt-h", rw.kind === "sticker"
-      ? (isNew ? T.newSticker : T.dupe) : (opts.got || T.giftGot)));
+    hand.set({
+      eyebrow: eb || null,
+      title: rw.kind === "sticker" ? (isNew ? T.newSticker : T.dupe) : (opts.got || T.giftGot),
+      tap: T.tapCollect
+    });
     /* THE BADGE. What a gift pays is a number or a picture, and both of them
        arrive on their own looking like a line of a receipt. The badge is the
        frame that makes it a prize: a sunburst turning behind it and a ring
@@ -1804,7 +1831,7 @@
           var before3 = walletOf(more.kind);
           grant(more);
           card.innerHTML = "";
-          card.appendChild(el("h3", "mt-h", opts.got || T.giftGot));
+          hand.set({ title: opts.got || T.giftGot, tap: T.tapCollect });
           /* The plate again, and it is the only thing on this card that says
              the gift grew: the heading is the same heading and the figure
              under the badge is just a bigger figure. Not over a sticker —
@@ -1823,7 +1850,6 @@
           }
           /* Nothing left to choose here either, so no button: the tap that
              closes the card is the one that collects (see below). */
-          card.appendChild(el("p", "mt-tap", T.tapCollect));
           if (giftBox) { tapToDismiss(giftBox, take3); keyOut(take3); }
         });
       });
@@ -1856,7 +1882,6 @@
        weight of the only thing on it worth reading. The line under it is what
        says the ad can be walked past, and a line is not a control. */
     if (acts.firstChild) card.appendChild(acts);
-    card.appendChild(el("p", "mt-tap", T.tapCollect));
     keyOut(take);
     /* The reward is open: from here a tap anywhere collects it. Never during
        the pick — three boxes are a choice, and a choice has no default. */
@@ -1879,44 +1904,51 @@
   var AD_SECONDS = 4;
 
   function ad(cb) {
-    var iv = null;
-    /* NEITHER DISMISSED NOR ESCAPED: an ad is a contract — it pays when it has
-       been watched — so the one way out is the button under it, which is shut
-       until the countdown says otherwise. And it does not touch the bed: the
-       screen it opens over already ducked it, and a placeholder that raised
-       the music for four seconds and dropped it again would be the loudest
-       thing in the game. */
+    var iv = null, ready = false, done = false;
+    /* NEITHER DISMISSED NOR ESCAPED until it has been watched: an ad is a
+       contract — it pays when the countdown is over — so the tap line counts
+       it down and only then says the tap collects, and from that beat a tap
+       anywhere (or ENTER / SPACE) is the claim. There is no button: a card
+       whose last line says what the tap does needs no second control to do
+       it. And it does not touch the bed: the screen it opens over already
+       ducked it, and a placeholder that raised the music for four seconds and
+       dropped it again would be the loudest thing in the game. */
+    function claim() {
+      if (!ready || done) return;
+      done = true;
+      window.removeEventListener("keydown", onKey, true);
+      h.close();
+      cb(true);
+    }
+    function onKey(e) {
+      if (!ready) return;
+      if (e.key !== "Enter" && e.key !== " " && e.keyCode !== 13 && e.keyCode !== 32) return;
+      e.preventDefault(); e.stopPropagation();
+      claim();
+    }
+    var left = AD_SECONDS;
     var h = MD.open({
       kind: "ad", dismiss: false, esc: false, bed: false,
-      onClose: function () { if (iv) clearInterval(iv); },
+      eyebrow: T.adEyebrow, title: T.adTitle,
+      tap: fill(T.adTapWait, { n: left }),
+      onClose: function () {
+        if (iv) clearInterval(iv);
+        window.removeEventListener("keydown", onKey, true);
+      },
       fill: function (card) {
-        card.appendChild(el("h3", "mt-h", T.adTitle));
         card.appendChild(el("div", "mt-adslot", '<span class="bar"></span>'));
         card.appendChild(el("p", "mt-sub small", T.adNote));
-        var acts = el("div", "mt-acts");
-        var go = el("button", "mt-btn");
-        go.disabled = true;
-        acts.appendChild(go);
-        card.appendChild(acts);
-
-        var left = AD_SECONDS;
-        go.textContent = fill(T.adWait, { n: left });
-        iv = setInterval(function () {
-          left--;
-          if (left > 0) { go.textContent = fill(T.adWait, { n: left }); return; }
-          clearInterval(iv); iv = null;
-          go.disabled = false;
-          go.className = "mt-btn gold";
-          go.textContent = T.adSkip;
-        }, 1000);
-
-        go.addEventListener("click", function () {
-          if (go.disabled) return;
-          h.close();
-          cb(true);
-        });
       }
     });
+    iv = setInterval(function () {
+      left--;
+      if (left > 0) { h.set({ tap: fill(T.adTapWait, { n: left }) }); return; }
+      clearInterval(iv); iv = null;
+      ready = true;
+      h.set({ tap: T.tapCollect });
+    }, 1000);
+    h.box.addEventListener("click", claim);
+    window.addEventListener("keydown", onKey, true);
   }
 
   /* ── 11. the end screen: the score becomes coins ──────────────────────── */
@@ -1968,6 +2000,9 @@
   function bandRow(cls, home) {
     var row = el("div", "mt-band " + cls);
     var lv = el("div", "mt-band-lv");
+    /* The game's own figures, folded behind one chip (section 11b) — on the
+       standing row only, since the end screen's is a target for a flight. */
+    var more = home ? buildMore() : null;
     var chips = el("div", "mt-band-chips");
     var star = el("div", "mt-band-star");
     /* THE ORDER OF THE ROW, and it is the order the player reads it in:
@@ -1991,6 +2026,7 @@
       row.appendChild(h);
     }
     row.appendChild(lv);
+    if (more) row.appendChild(more);
     row.appendChild(chips);
     row.appendChild(cnt);
     row.appendChild(star);
@@ -2027,9 +2063,13 @@
        is nothing but a greyed house. The level bar takes the room it leaves.
        A card over the village brings it back, since from there it is a way
        out again. */
+    /* ...and on every SHEET, for the same reason from the other side: the
+       sheet's own bar carries the house, bottom right, and a second one up
+       here would be two ways to one place (packages/webshell/view.js). */
     if (band.home) {
       var M = window.__MODAL__;
-      band.home.classList.toggle("gone", top === "village" && !(M && M.any()));
+      var bare = top === "village" || (!!top && VW.sheeted(top));
+      band.home.classList.toggle("gone", bare && !(M && M.any()));
     }
     mark(band.home, "village", top, T.home);
     mark(band.count, "sticker", top, T.album);
@@ -2137,7 +2177,9 @@
          because that is the figure the bar has to come back to. */
       var x0 = save.x;
       var got = addXp(xpGain);
-      if (xpGain > 0) pendXp = { before: x0, levels: got };
+      if (xpGain > 0) pendXp = pendXp
+        ? { before: pendXp.before, levels: pendXp.levels + got }
+        : { before: x0, levels: got };
       var won = sweep();
       showAwards(won, function () {});
     }
@@ -2293,25 +2335,44 @@
     function next() {
       if (i >= list.length) { done(); return; }
       var a = list[i++];
-      stickerCard(a.sticker, next);
+      stickerCard(a.sticker, next, a);
     }
     next();
   }
 
-  function stickerCard(n, done) {
-    var h = MD.open({
-      kind: "sticker", dismiss: false, esc: false, onClose: done,
+  /* WHY THE MAP PAID, as the card's title. "New sticker!" over a sticker said
+     what the picture already shows and nothing of where it came from: the card
+     lands on the end screen of an ordinary round, and the player could not tell
+     it from a gift. The milestone is read off the award's own key ("band2",
+     "clean0", "all", "perfect"), the same key `award` pays once on. */
+  function awardTitle(key) {
+    if (key === "perfect") return T.awPerfect;
+    if (key === "all") return T.awAll;
+    var m = /^(band|clean)(\d+)$/.exec(key || "");
+    var LV = window.__LEVELS__;
+    var name = m && LV && LV.bandTitle ? LV.bandTitle(+m[2]) : null;
+    if (!name) return null;
+    return fill(m[1] === "band" ? T.awBand : T.awClean, { b: name });
+  }
+
+  /* `a` is the award when the map is the one paying (see `showAwards`): the
+     title then names the milestone and the eyebrow says it is the map's, with
+     new-or-double kept as its second half. Without it the card is the plain
+     sticker reveal it always was. */
+  function stickerCard(n, done, a) {
+    var why = a ? awardTitle(a.key) : null;
+    /* Nothing to decide, so no button: a tap anywhere collects it, and the
+       tap line says so. */
+    MD.open({
+      kind: "sticker", onClose: done,
+      eyebrow: why ? T.awEyebrow + " · " + (a.isNew ? T.newSticker : T.dupe) : undefined,
+      title: why || T.newSticker,
+      tap: T.tapCollect,
       fill: function (card) {
-        card.appendChild(el("h3", "mt-h", T.newSticker));
         card.appendChild(el("div", "mt-rw" + (shiny(n) ? " shiny" : ""),
           '<img class="mt-rw-img" src="' + artOf(n) + '" alt="">'));
         card.appendChild(el("div", "mt-rw-name", nameOf(n)));
         card.appendChild(el("div", "mt-rw-rar r" + rarityOf(n), rarityName(n)));
-        var acts = el("div", "mt-acts");
-        var ok = el("button", "mt-btn gold", T.collect);
-        ok.addEventListener("click", function () { h.close(); });
-        acts.appendChild(ok);
-        card.appendChild(acts);
       }
     });
     W.Sound.cue("uiStar", 0.85, 1.5, 1180, 0.2, "triangle");
@@ -2441,6 +2502,132 @@
     });
   }
 
+  /* ── 11b. the band's fold: what a game adds to it ─────────────────────── */
+
+  /* A GAME WITH MORE TO COUNT THAN THE WALLET — the barracks' missions and
+     cards — gets ONE chip for all of it, and not a row: a second line under
+     the band was a second band, over the top of every screen, for figures the
+     player reads once in a while. The chip sits between the level and the
+     coins (`⌂ · ⚡ xp · ⚔ · coins · …`), the level bar gives it the room, and
+     a hover or a tap unfolds the figures under it, each one a door.
+
+     TWO KEYS TURN IT ON, and neither alone: the manifest names what goes in
+     it (`web.meta.more: ["army"]`, in that order), and the layer that owns
+     those figures registers them (`moreAdd`). A game that declares nothing
+     has no chip, and the bar takes the room back.
+
+       moreAdd(key, { title: fn -> string,
+                      rows:  fn -> [{ pic, label, value, go }] })
+
+     `pic` is markup (a pictogram of the shell's, or the layer's own), `go` is
+     what a tap on the row opens. The fold paints only while it is open —
+     `moreRepaint()` is free otherwise. */
+  var MORE = (SPEC && SPEC.more) || [];
+  var moreProv = {}, moreBox = null, moreBtn = null, morePanel = null;
+  var moreOpen = false, morePinned = false;
+
+  function buildMore() {
+    if (!MORE.length) return null;
+    moreBox = el("div", "mt-band-more");
+    moreBtn = el("button", "mt-chip more door", icon("sword", "mt-ci"));
+    moreBtn.setAttribute("aria-haspopup", "true");
+    moreBtn.setAttribute("aria-expanded", "false");
+    morePanel = el("div", "mt-more");
+    morePanel.hidden = true;
+    moreBox.appendChild(moreBtn);
+    moreBox.appendChild(morePanel);
+    moreBox.hidden = !moreFilled();         // until a layer fills it
+
+    /* HOVER OPENS, A CLICK PINS. A mouse unfolds it on the way past and folds
+       it when it leaves; a tap — and a click after a hover — pins it open,
+       and a second one folds it. A finger has no hover, so a tap is the
+       whole gesture there. */
+    moreBox.addEventListener("pointerenter", function (e) {
+      if (e.pointerType === "mouse") setMore(true);
+    });
+    moreBox.addEventListener("pointerleave", function (e) {
+      if (e.pointerType === "mouse" && !morePinned) setMore(false);
+    });
+    moreBtn.addEventListener("click", function () {
+      if (morePinned) { morePinned = false; setMore(false); return; }
+      morePinned = true;
+      setMore(true);
+    });
+    /* Anywhere else folds it, and so does walking to another screen. */
+    document.addEventListener("pointerdown", function (e) {
+      if (moreOpen && !moreBox.contains(e.target)) { morePinned = false; setMore(false); }
+    }, true);
+    VW.onChange(function () { morePinned = false; setMore(false); });
+    paintMoreBtn();
+    return moreBox;
+  }
+
+  /* A layer may register before the band is built, or after: both orders
+     end on the same answer. */
+  function moreAdd(key, prov) {
+    moreProv[key] = prov;
+    if (moreBox) moreBox.hidden = !moreFilled();
+  }
+  function moreFilled() {
+    for (var i = 0; i < MORE.length; i++) if (moreProv[MORE[i]]) return true;
+    return false;
+  }
+
+  function setMore(on) {
+    if (!moreBox || on === moreOpen) return;
+    moreOpen = on;
+    moreBtn.classList.toggle("open", on);
+    moreBtn.setAttribute("aria-expanded", on ? "true" : "false");
+    morePanel.hidden = !on;
+    if (on) { paintMore(); placeMore(); }
+  }
+
+  function paintMoreBtn() {
+    if (moreBtn) moreBtn.setAttribute("aria-label", T.more);
+  }
+
+  function paintMore() {
+    if (!moreOpen) return;
+    morePanel.innerHTML = "";
+    for (var i = 0; i < MORE.length; i++) {
+      var p = moreProv[MORE[i]];
+      if (!p) continue;
+      var t = p.title ? p.title() : "";
+      if (t) morePanel.appendChild(el("div", "mt-more-h", W.upper(t)));
+      var rows = p.rows();
+      for (var j = 0; j < rows.length; j++) morePanel.appendChild(moreRow(rows[j]));
+    }
+  }
+
+  function moreRow(r) {
+    var b = el("button", "mt-more-row",
+               '<span class="mt-more-pic">' + (r.pic || "") + "</span>" +
+               '<span class="mt-more-lbl"></span><b></b>');
+    b.querySelector(".mt-more-lbl").textContent = r.label;
+    b.querySelector("b").textContent = r.value;
+    b.addEventListener("click", function () {
+      morePinned = false;
+      setMore(false);
+      if (r.go) r.go();
+    });
+    return b;
+  }
+
+  /* UNDER THE CHIP, INSIDE THE FRAME. The chip moves along the row with the
+     width of the counts beside it, so the fold is laid under it and then
+     pulled back left by whatever it would spill past the right gutter. */
+  function placeMore() {
+    morePanel.style.left = "0px";
+    var f = frame();
+    if (!f) return;
+    var fr = f.getBoundingClientRect(), pr = morePanel.getBoundingClientRect();
+    var k = fr.width / 720 || 1;
+    var over = pr.right - (fr.right - 26 * k);
+    if (over > 0) morePanel.style.left = (-over / k) + "px";
+  }
+
+  function moreRepaint() { paintMore(); }
+
   /* ── 12. the module ───────────────────────────────────────────────────── */
 
   window.__META__ = {
@@ -2487,6 +2674,7 @@
     rewardLabel: rewardLabel, rewardArt: rewardArt,
 
     wallet: wallet, repaint: paintWallets,
+    moreAdd: moreAdd, moreRepaint: moreRepaint,
     gift: gift, prize: prize, ad: ad, stickerCard: stickerCard, note: note,
     /* THE TRANSFER LAYER — the one way a screen of this front end makes a
        wallet number move (section 8). `buyFx` and `spendFx` are two named
@@ -2532,5 +2720,7 @@
     LANG = STRINGS[code] ? code : "en";
     T = STRINGS[LANG];
     paintWallets();
+    paintMoreBtn();
+    paintMore();
   }
 })();

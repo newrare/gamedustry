@@ -15,10 +15,12 @@ so it has no infirmary.
         the VILLAGE (the hub)
    ┌────────┬────────┬────────┬────────┐
    ▼        ▼        ▼        ▼        ▼
- DECK   INFIRMARY  PRISON  RECRUITS   map ──► the round ──► end screen
-   │        ▲         ▲        │                                │
-   │        │         │        └── coins ◄── the meta layer     │
-   └────────┴─────────┴──────────── wounded, captives ◄─────────┘
+ DECK   INFIRMARY  PRISON    CAMP     map ──► the round ──► end screen
+   │        ▲         ▲   recruits ·     │                          │
+   │        │         │   missions       │                          │
+   │        │         │        │                                     │
+   │        │         │        └── coins, cards away ◄── meta layer  │
+   └────────┴─────────┴──────────── wounded, captives ◄──────────────┘
 ```
 
 ______________________________________________________________________
@@ -122,12 +124,12 @@ screen a stray tap can close is not a screen anything is composed on. They
 stack over the village like the album and the shop, they carry the wallet band,
 and ESCAPE peels them. `tools/test/views.mjs` holds that contract for all four.
 
-| the door  | what is on it                                                             |
-| --------- | ------------------------------------------------------------------------- |
-| DECK      | the roster and the next battle's cards — plus COLLECTION and OBJECTS tabs |
-| INFIRMARY | what the last battles cost, and how long until each card is back          |
-| PRISON    | who was taken, how long until they turn, and the button that enlists them |
-| RECRUITS  | what the tent is offering, and what each one costs in coins               |
+| the door  | what is on it                                                              |
+| --------- | -------------------------------------------------------------------------- |
+| DECK      | the roster and the next battle's cards — plus COLLECTION and OBJECTS tabs  |
+| INFIRMARY | what the last battles cost, and how long until each card is back           |
+| PRISON    | who was taken, how long until they turn, and the button that enlists them  |
+| CAMP      | two tabs: RECRUITS (the tent) and MISSIONS (a squad sent away, section 7b) |
 
 **The deck screen has three tabs, and the other two are the same cards read
 another way.** DECK is the screen as it was and the one it always opens on.
@@ -146,10 +148,22 @@ deals one and the player turns it over (section 2). Tabs and not doors,
 because a building each would turn the hub into a shelf of reference books.
 
 **Every badge counts what the player would walk in and ACT on**: the deck badge
-is how many slots are still EMPTY and the tent's is how many of its offers the
-wallet can actually pay for. The infirmary and the prison count who is IN them
+is how many slots are still EMPTY and the camp's is how many of the tent's
+offers the wallet can actually pay for, plus every squad back from a mission
+with a report to read. The infirmary and the prison count who is IN them
 — the same list the screen behind the door draws — because both rooms have six
 places and a room filling up is the news.
+
+**The army's figures are in the band's fold** — the sword chip between the
+level and the coins, which `web.meta.more: ["army"]` turns on
+([docs/META.md](META.md)). Five rows, each a door: the missions brought home a
+success (`save.ms.w`, to the camp's MISSIONS tab), the officers ever OWNED out
+of the whole cast (both armies, 120, to the deck's COLLECTION tab), then the
+cards on hand by kind — the army's own in the roster (the deck), the camp's in
+the prison (the prison) and the turncoats who enlisted (the deck). The three
+counts wear a small card in the side's colour (`--army`, `--camp`, split on
+the diagonal for a turncoat) rather than a pictogram. `bandRows` in `army.js`
+is the whole of it.
 
 **The card on every screen is the game's own.** `games/stratideck` publishes
 its card builder as `Game.cardNode(card, { fmt, w, side, ghost })` — a
@@ -269,12 +283,13 @@ ENDS**, not when the wound landed, or a card hurt on the first turn of a long
 round would come back sooner than one hurt on the last — a rule about the
 length of a battle rather than about the wound.
 
-**The prisoner is offered on the end screen**, but the end screen is a busy
-place: the motor is still revealing it, the meta layer is counting coins into a
-wallet on it, and a round that earned a star is being offered an ad. So the
-card waits for the install CTA to land and for the modal layer to be empty, and
-if the player has walked off by then it is offered on the next arrival at the
-hub instead. One function, two doors, and the offer is never silently dropped.
+**The prisoner is offered on the battle itself, before the end screen** — in
+the motor's outro (`onOutro`), after the level layer's own outro, the
+three-star gift included. The end screen then arrives with the prisoner already
+in a cell or the spoils already in the wallet, and its reveal is not cut by a
+card. A player who left the round while the outro played is offered it on the
+next arrival at the hub instead. One function, two doors, and the offer is
+never silently dropped.
 
 It is **neither dismissed nor escaped** — the tiles are a choice and a choice
 has no default, the same rule the three gift boxes are opened under. The way
@@ -288,6 +303,11 @@ the machine's own draw, dealt out of the meta layer's rewards and flown into
 the chip that counts them (`Meta.fx`). A single card with a line under it was a
 yes-or-no, not a decision. A build with no meta layer has nothing to pay the
 spoils in and keeps the lone card.
+
+**Two identical cards are one card.** The captives are kept one per grade and
+tier before the pick is cut, so two sappers of the same tier are never offered
+side by side; where that leaves a single prisoner out of several, the spoils
+beside it are always the coins.
 
 `fill` is handed the modal's `close`, and the tiles use THAT one: the handle
 `MD.open` returns does not exist yet while `fill` runs, and a tile built with it
@@ -331,6 +351,53 @@ them would be selling the solution rather than the army.
 A card bought goes **straight into the deck** if there is room: a purchase the
 player then has to visit a second screen to use is a purchase they do not feel.
 
+## 7b. Missions — a bet made with cards
+
+The camp's second tab. The board offers a few scenarios out of
+`web.army.missions.list` (fifty in `games/stratideck`) — a pretext, a
+difficulty from 1 to 5, a length of 4 to 48 real hours, a squad of two to five
+cards, what it pays and what a failure costs. The player answers one with a
+squad picked on a **briefing**, one level under the tab (the tab and CANCEL
+lead back to the board), and the odds are printed live as each card is taken
+or left:
+
+```
+power  = grade + tierWeight × tier   (+ favorBonus on the grade the mission favours)
+chance = clamp(par × Σ power / need[difficulty], floor, ceil)
+```
+
+A squad worth exactly `need` reads `par` (70 %), and the odds never reach 0 or
+100: a mission that cannot fail is a wait, one that cannot succeed is a trap.
+**A mission may favour one grade** (`favor`), and the specials are what most of
+them favour — a reconnaissance wants a scout, a stolen letter a spy, a
+trapped bridge a sapper — which gives the three cards the tent never sells a
+use off the grid.
+
+**The squad is away for the whole wait**: still in the deck, since the deck is
+the player's standing choice, and out of every battle until it is back — the
+rule a wound follows, and the deck screen tags it ON MISSION. At most
+`running` squads are out at once, and the board is rolled on a clock
+(`refreshHours`) like the tent's shelf, the missions run least first and one
+per difficulty before a difficulty repeats; an ad rolls it early, and an ad
+brings a squad home now.
+
+**The outcome is drawn at the departure** (`z` in the save), so no reload
+re-rolls it. The report is written when it is opened — a wound goes to the
+infirmary (and a wound with no bed is a card lost, the round's rule), a loss
+leaves the roster — and what it pays is granted on the tap that closes it, so
+the chips count up in front of the player. The report is the scenario's own:
+`win` or `lose`, with `{leader}` replaced by the name of the squad's
+highest-ranking officer, then the squad as it came back and what it paid or
+cost. The French texts never make a word agree with `{leader}`, who may be a
+man or a woman.
+
+| reward (`reward`)             | penalty (`fail`)                    |
+| ----------------------------- | ----------------------------------- |
+| `coins`, `xp`, `ticket` (`n`) | `wound` — n of the squad            |
+| `super` — super tickets       | `lose` — n of the squad             |
+| `sticker` — one machine draw  | `coins` — n coins, never below zero |
+| `card` — `r` and `t` ranges   |                                     |
+
 ## 8. Where the save lives
 
 `save.ar`, inside the meta layer's own `meta:<slug>` key, written through
@@ -346,6 +413,9 @@ r  the roster   { i id, g grade, t tier, w when its wound heals (0 = fit),
 d  the deck     ids, in the order the player put them in
 p  the prison   { g, t, u when the prisoner turns }
 k  the tent     { t when the shelf was rolled, o the offers, b the ones bought }
+ms the missions { t when the board was rolled, o its mission ids,
+                 r the squads away { m, c card ids, e back at, p odds, z roll },
+                 q reports written and not collected, h mission → times run }
 c  the collection, which only grows: { h officer → 1 once owned,
    m officer → 1 once met, o object → 1 once turned over }, an officer
    being the cast's key, "b4.2" = the blue sergeant at C
@@ -377,6 +447,14 @@ about what either means.
   ],
   "recruit": { "slots": 3, "refreshHours": 6,
                "base": 90, "gradeStep": 0.22, "tierStep": 1.9 },
+  "missions": { "offers": 3, "running": 3, "refreshHours": 8,
+                "need": [10, 20, 32, 46, 64], "par": 0.7,
+                "tierWeight": 2, "favorBonus": 10,
+                "list": [ { "id": "m01", "d": 1, "hours": 4, "squad": [2, 3],
+                            "favor": 2, "reward": [ { "kind": "coins", "n": 150 } ],
+                            "fail": [ { "kind": "wound", "n": 1 } ],
+                            "title": { "en": "…", "fr": "…" }, "brief": { … },
+                            "win": { … }, "lose": { … } } ] },
   "start": [ { "r": 10, "t": 1, "n": 1 } ]
 }
 ```
@@ -395,7 +473,9 @@ an empty deck screen they had no reason to open.
 
 The game also needs **four more doors on its hub** — `deck`, `infirmary`,
 `prison` and `recruit` roles in `web.village` — and the word under each one is
-this layer's, not the composition's ([docs/VIEWS.md](VIEWS.md)).
+this layer's, not the composition's ([docs/VIEWS.md](VIEWS.md)): the `recruit`
+role is the CAMP, and a game with no `missions` block keeps the tent alone on
+it, with no tab bar.
 
 ## 10. What it does not do
 

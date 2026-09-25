@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Stratideck collection views</title>
+<!-- THE GAME'S OWN CARD STYLESHEET, like lab/stratideck-cards.html: what this
+     page draws is the card the barracks and the round draw. -->
+<link rel="stylesheet" href="../games/stratideck/skin.css">
+<style>
+/* ===========================================================================
+   STRATIDECK — COLLECTION VIEWS. Five layouts for the COLLECTION tab of the
+   barracks (packages/webshell/army.js, paintCollection), on one mock book.
+
+   Today the tab is one scrolling page: the blue army then the red camp, each
+   ten grades by six tiers of tokens (tiny, 88 px) — 120 cards on one scroll,
+   a shadow for every officer never had, a tap on a face to turn it over.
+   The five views below give up "the whole war at once" in a different way to
+   buy bigger cards, and all of them put the two armies behind one switch:
+
+     1. GRADE BOOK   one grade per page, its six tiers as full cards; a strip
+                     of ten progress rings is the index, and a swipe turns
+     2. RARITY TABS  one tab per tier, E to S, in the rarity's own colour; the
+                     ten grades of that tier as full cards, three a row
+     3. BINDER       a sticker album: nine numbered sleeves a page, #01 to
+                     #60, a page stamped once it is complete
+     4. CODEX        one officer at a time, full size, turned like a carousel,
+                     with the whole of their story written under the card
+     5. RIVALS       the same grade and tier on both sides of the war, face to
+                     face — the blue officer, the red one, and the tier between
+
+   A face the player has had opens its FILE — a mock of the barracks' own
+   (army.js, openFile): the card, large, turned over on a tap to who they are.
+   A shadow says how it is earned. Nothing here ships and nothing is written
+   back: the book is a mock, rebuilt from a preset.
+
+   The cards come out of the game's own markup (games/stratideck/game.js,
+   faceNode, ported here with CONFIG.cards' numbers) and its stylesheet (the
+   <link> above); the portraits out of ../assets/image/embed/. Served over
+   HTTP, the page also reads games/stratideck/manifest.json for each
+   officer's name, age, gender and story; over file:// that read is blocked
+   and the grade and tier are written instead.
+   =========================================================================== */
+
+@font-face { font-family:"Russo One"; src:url("../assets/motor/font/russoone.woff2") format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:#0b0b12; }
+body {
+  display:flex; overflow:hidden;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 310px; overflow-y:auto;
+  padding:22px 20px 30px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 20px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; margin:22px 0 8px; }
+.vpick {
+  display:block; width:100%; text-align:left; cursor:pointer;
+  margin-bottom:8px; padding:10px 12px 11px;
+  background:#171726; color:#e8e6f5; border:1px solid #2a2a42; border-radius:10px;
+  font:inherit;
+}
+.vpick b { display:block; font-size:14px; }
+.vpick b i { font-style:normal; color:#6f6a90; margin-right:8px; font-variant-numeric:tabular-nums; }
+.vpick span { display:block; margin-top:2px; font-weight:500; font-size:12px; line-height:1.35; color:#8b8ba7; }
+.vpick.on { border-color:#f2c14e; background:#241f12; }
+.vpick.on b i { color:#f2c14e; }
+select, .pbtn {
+  width:100%; padding:8px 10px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:inherit;
+}
+.pbtn { margin-top:8px; background:#7ea6ff; color:#0b0b12; border:0; font-weight:700; cursor:pointer; }
+#panel ul { list-style:none; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel li { margin-bottom:6px; padding-left:12px; position:relative; }
+#panel li::before { content:""; position:absolute; left:0; top:7px; width:5px; height:5px; border-radius:50%; background:#3c3c5c; }
+#panel kbd { font:600 11px ui-monospace,Menlo,monospace; background:#23233a; border-radius:4px; padding:1px 5px; color:#c9c9e0; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — a 720×1280 frame, scaled to fit, authored in design px
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; display:flex; align-items:center; justify-content:center; padding:24px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px; background-position:0 0, 16px 16px;
+}
+#device { position:relative; border-radius:34px; overflow:hidden; box-shadow:0 22px 70px rgba(0,0,0,.6), 0 0 0 2px #262638; }
+#frame {
+  --web-font:"Russo One"; --web-fw:400;
+  position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0;
+  overflow:hidden; isolation:isolate;
+  font-family:var(--web-font); font-weight:var(--web-fw); color:var(--text);
+}
+#frame button { font-family:inherit; font-weight:inherit; color:inherit; }
+
+.f-bg { position:absolute; inset:0; z-index:0; background:#0a1026 url("../assets/image/embed/stratideck-background-home.webp") center / cover; }
+.f-bg::after { content:""; position:absolute; inset:0; background:rgba(5,8,22,.74); -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px); }
+
+/* the wallet band — a mock, only so the room it takes is the room it takes */
+.f-band {
+  position:absolute; left:0; right:0; top:0; height:84px; z-index:5;
+  display:flex; align-items:center; gap:10px; padding:16px 18px 0;
+}
+.f-chip {
+  height:52px; display:flex; align-items:center; gap:8px; padding:0 16px;
+  background:rgba(6,9,26,.72); border:1px solid rgba(255,255,255,.12); border-radius:26px;
+  font-size:21px; color:#f6f1e4;
+}
+.f-chip svg { width:26px; height:26px; }
+.f-chip .dot { width:24px; height:24px; border-radius:50%; flex:0 0 auto; }
+.f-chip.lv { flex:1; }
+.f-chip.lv .bar { flex:1; height:10px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; }
+.f-chip.lv .bar i { display:block; height:100%; width:58%; background:linear-gradient(90deg,#7ea6ff,#5aa9ff); }
+
+/* the three tabs are the header (see lab/stratideck-deck.html) */
+.f-tabs {
+  position:absolute; left:20px; right:20px; top:98px; height:62px; z-index:5;
+  display:flex; gap:6px; padding:5px;
+  background:rgba(6,9,26,.78); border:1px solid rgba(255,255,255,.12); border-radius:18px;
+}
+.f-tabs button {
+  flex:1; border:0; border-radius:13px; background:none; color:var(--muted) !important;
+  font-size:21px; letter-spacing:1px; cursor:default;
+}
+.f-tabs button.on { background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:#10142c !important; }
+
+.f-body { position:absolute; left:0; right:0; top:174px; bottom:0; z-index:2; }
+
+.f-toast {
+  position:absolute; right:20px; top:178px; z-index:50; max-width:560px;
+  padding:12px 20px; border-radius:26px; font-size:19px; line-height:1.25;
+  background:rgba(12,16,38,.95); border:2px solid var(--accent); color:var(--accent);
+  box-shadow:0 8px 24px rgba(0,0,0,.6);
+  opacity:0; transform:translateY(-10px); transition:opacity .2s, transform .2s; pointer-events:none;
+}
+.f-toast.on { opacity:1; transform:none; }
+
+/* ---------------------------------------------------------------------------
+   SHARED PIECES
+   --------------------------------------------------------------------------- */
+.dk { position:relative; flex:0 0 auto; cursor:pointer; transition:transform .14s ease; }
+.dk:active { transform:scale(.96); }
+.dk.none { opacity:.85; }
+.dk-new {
+  position:absolute; left:50%; top:-14px; z-index:40; transform:translateX(-50%);
+  padding:3px 14px; border-radius:14px; font-size:17px; letter-spacing:1px;
+  background:linear-gradient(180deg,#ff8a5c,#e23b3b); color:#fff; border:3px solid #0a1026;
+  box-shadow:0 4px 10px rgba(0,0,0,.6);
+}
+.muted { color:var(--muted); }
+.gold  { color:var(--accent); }
+.perk-ico { width:1.1em; height:1.1em; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+.chips { display:flex; gap:10px; }
+.chip {
+  height:48px; padding:0 18px; border-radius:24px; cursor:pointer;
+  background:rgba(6,9,26,.66); border:1px solid rgba(255,255,255,.14);
+  font-size:18px; color:var(--muted) !important; white-space:nowrap;
+}
+.chip i { font-style:normal; color:rgba(255,255,255,.4); margin-left:6px; }
+.chip.on { background:rgba(242,193,78,.16); border-color:var(--accent); color:var(--accent) !important; }
+.chip.on i { color:var(--accent); }
+
+/* THE ONE SWITCH BETWEEN THE TWO ARMIES — each half is also its progress */
+.army { display:flex; gap:14px; padding:0 20px; }
+.army-b {
+  flex:1; height:92px; cursor:pointer; border-radius:22px; text-align:left; padding:10px 20px 0;
+  background:rgba(6,9,26,.62); border:2px solid rgba(255,255,255,.12);
+  display:flex; flex-direction:column; --c:#5aa9ff;
+}
+.army-b.red { --c:#ff5c5c; }
+.army-b span { font-size:17px; letter-spacing:1px; color:var(--muted); }
+.army-b b { font-size:30px; font-weight:400; line-height:1.15; }
+.army-b b i { font-style:normal; font-size:20px; color:var(--muted); }
+.army-b em { display:block; height:8px; margin-top:6px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
+.army-b em u { display:block; height:100%; background:var(--c); }
+.army-b.on { border-color:var(--c); background:linear-gradient(180deg, color-mix(in srgb, var(--c) 24%, transparent), rgba(6,9,26,.62)); }
+.army-b.on b { color:var(--c); }
+.army.slim .army-b { height:64px; flex-direction:row; align-items:center; gap:12px; padding:0 18px; }
+.army.slim .army-b b { font-size:24px; margin-left:auto; }
+.army.slim .army-b em { display:none; }
+
+/* the index of ten grades: a ring each, filled by what is had */
+.strip { display:flex; justify-content:space-between; padding:0 20px; }
+.ring {
+  width:60px; height:60px; border-radius:50%; cursor:pointer; border:0; position:relative;
+  background:conic-gradient(var(--c) calc(var(--p) * 1turn), rgba(255,255,255,.12) 0);
+  display:flex; align-items:center; justify-content:center; transition:transform .15s;
+}
+.ring::before { content:""; position:absolute; inset:6px; border-radius:50%; background:#0c1230; }
+.ring b { position:relative; font-size:22px; font-weight:400; color:#f6f1e4; }
+.ring.full::before { background:radial-gradient(circle at 50% 35%, #4a3a12, #1a1406); }
+.ring.full b { color:var(--accent); }
+.ring.on { transform:scale(1.14); box-shadow:0 0 0 3px #fff, 0 0 18px rgba(255,255,255,.4); }
+
+.fly { position:fixed; z-index:9999; pointer-events:none; }
+
+/* ---------------------------------------------------------------------------
+   THE FILE — a mock of army.js openFile: the card, large, turned over
+   --------------------------------------------------------------------------- */
+.file {
+  position:absolute; inset:0; z-index:90; display:none; flex-direction:column; align-items:center; justify-content:center; gap:26px;
+  background:rgba(3,5,14,.82); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+.file.on { display:flex; animation:fileIn .25s ease both; }
+@keyframes fileIn { from { opacity:0; } }
+.file-flip { width:380px; height:532px; perspective:1600px; cursor:pointer; }
+.file.on .file-flip { animation:fileCard .42s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes fileCard { from { transform:scale(.55) translateY(80px); } }
+.file-in { position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .55s cubic-bezier(.3,.7,.3,1); }
+.file-in.turned { transform:rotateY(180deg); }
+.file-face, .file-back { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.file-back {
+  transform:rotateY(180deg); border-radius:23px; overflow:hidden;
+  background:linear-gradient(180deg,#1a2350,#0a0f26 70%); border:9px solid var(--rar);
+  box-shadow:0 18px 40px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.5);
+  display:flex; flex-direction:column; padding:24px 26px 20px; gap:8px;
+}
+.file-back.red { background:linear-gradient(180deg,#4a1216,#1a0508 70%); }
+.fb-grade { font-size:18px; letter-spacing:1.5px; color:var(--rar); }
+.fb-first { font-size:26px; line-height:1; color:var(--muted); }
+.fb-last { font-size:44px; line-height:1; }
+.fb-facts { display:flex; gap:10px; margin-top:6px; }
+.fb-facts span { font-size:16px; padding:4px 12px; border-radius:14px; background:rgba(255,255,255,.1); }
+.fb-perk { display:flex; align-items:center; gap:10px; font-size:18px; color:#f6e6b4; margin-top:6px; }
+.fb-lore {
+  flex:1; min-height:0; overflow:hidden; margin-top:8px; padding-top:12px; border-top:1px solid rgba(255,255,255,.14);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-weight:500; font-size:17px; line-height:1.45; color:rgba(246,241,228,.82);
+}
+.fb-crest { position:absolute; right:18px; bottom:14px; width:64px; opacity:.5; }
+.file-hint { font-size:19px; color:var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   1. GRADE BOOK
+   --------------------------------------------------------------------------- */
+.v1 { height:100%; display:flex; flex-direction:column; gap:18px; }
+.v1-pager { flex:1; min-height:0; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.v1-pager::-webkit-scrollbar { display:none; }
+.v1-page { flex:0 0 720px; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; }
+.v1-head { width:680px; display:flex; align-items:center; gap:16px; padding:6px 10px 0; }
+.v1-head .disc {
+  width:64px; height:64px; border-radius:50%; flex:0 0 auto; color:#f6e6b4; font-size:30px;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%); border:3px solid var(--accent);
+}
+.v1-head .t { flex:1; }
+.v1-head .t b { display:block; font-size:34px; font-weight:400; line-height:1.05; }
+.v1-head .t small { display:block; font-size:18px; color:var(--muted); }
+.v1-head .n { font-size:26px; color:var(--muted); }
+.v1-head .n b { font-weight:400; color:var(--accent); }
+.v1-grid { display:grid; grid-template-columns:repeat(3, 196px); gap:44px 26px; padding-top:34px; }
+.v1-foot { font-size:17px; color:var(--muted); margin-top:30px; }
+
+/* ---------------------------------------------------------------------------
+   2. RARITY TABS
+   --------------------------------------------------------------------------- */
+.v2 { height:100%; display:flex; flex-direction:column; gap:16px; }
+.v2-tiers { display:flex; gap:8px; padding:0 20px; }
+.v2-tiers button {
+  flex:1; height:78px; cursor:pointer; border-radius:18px; --c:#fff;
+  background:rgba(6,9,26,.66); border:2px solid color-mix(in srgb, var(--c) 35%, transparent);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.v2-tiers b { font-size:30px; font-weight:400; line-height:1; color:var(--c); }
+.v2-tiers small { font-size:15px; color:var(--muted); margin-top:4px; }
+.v2-tiers button.on { background:color-mix(in srgb, var(--c) 26%, rgba(6,9,26,.8)); border-color:var(--c); box-shadow:0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
+.v2-tiers button.on small { color:#fff; }
+.v2-banner {
+  margin:0 20px; padding:14px 22px; border-radius:20px; display:flex; align-items:center; gap:16px;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, transparent), rgba(6,9,26,.5));
+  border-left:6px solid var(--c);
+}
+.v2-banner b { font-size:30px; font-weight:400; color:var(--c); }
+.v2-banner .pips { display:flex; gap:6px; }
+.v2-banner .pips i { width:16px; height:16px; transform:rotate(45deg); background:var(--c); border-radius:3px; }
+.v2-banner span { margin-left:auto; font-size:20px; color:var(--muted); }
+.v2-grid {
+  flex:1; min-height:0; overflow-y:auto;
+  display:grid; grid-template-columns:repeat(3, 200px); gap:44px 24px; justify-content:center; align-content:start;
+  padding:24px 20px 60px;
+}
+
+/* ---------------------------------------------------------------------------
+   3. BINDER
+   --------------------------------------------------------------------------- */
+.v3 { height:100%; display:flex; flex-direction:column; gap:16px; }
+.v3-book { position:relative; flex:1; min-height:0; margin:0 20px; perspective:1800px; touch-action:pan-y; }
+.v3-page {
+  position:absolute; inset:0; border-radius:26px; padding:26px 24px 20px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 2px, transparent 2px 6px),
+    linear-gradient(160deg, #23305e, #121a3a 60%, #0c1128);
+  border:2px solid rgba(242,193,78,.35);
+  box-shadow:inset 22px 0 30px -18px rgba(0,0,0,.8), 0 16px 40px rgba(0,0,0,.55);
+  display:flex; flex-direction:column;
+}
+.v3-page.red { background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 2px, transparent 2px 6px), linear-gradient(160deg, #5a1e24, #2a0d12 60%, #16070a); border-color:rgba(255,92,92,.4); }
+.v3-page.in-r { animation:pageR .42s cubic-bezier(.2,.8,.2,1) both; transform-origin:left center; }
+.v3-page.in-l { animation:pageL .42s cubic-bezier(.2,.8,.2,1) both; transform-origin:right center; }
+@keyframes pageR { from { transform:rotateY(-28deg) translateX(120px); opacity:0; } }
+@keyframes pageL { from { transform:rotateY(28deg) translateX(-120px); opacity:0; } }
+.v3-ph { display:flex; justify-content:space-between; align-items:baseline; font-size:19px; color:var(--muted); letter-spacing:1px; padding:0 4px 14px; }
+.v3-ph b { color:var(--accent); font-weight:400; }
+.v3-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px 18px; }
+.sleeve {
+  position:relative; height:236px; border-radius:18px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:14px;
+  background:rgba(0,0,0,.28); box-shadow:inset 0 0 0 2px rgba(255,255,255,.08), inset 0 6px 14px rgba(0,0,0,.5);
+}
+.sleeve::after {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:45;
+  background:linear-gradient(125deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 62%, rgba(255,255,255,.08) 80%, rgba(255,255,255,0) 100%);
+}
+.sleeve .num { margin-top:10px; font-size:16px; color:rgba(255,255,255,.45); letter-spacing:1px; }
+.sleeve.had .num { color:#f6e6b4; }
+.sleeve .dk:active { transform:none; }
+.sleeve:active { transform:scale(.97); }
+.v3-stamp {
+  position:absolute; right:24px; top:14px; z-index:60; transform:rotate(-10deg);
+  padding:6px 18px; border:4px solid var(--accent); border-radius:12px; color:var(--accent);
+  font-size:22px; letter-spacing:2px; background:rgba(20,14,2,.7); box-shadow:0 0 20px rgba(242,193,78,.4);
+}
+.v3-nav { display:flex; align-items:center; justify-content:center; gap:20px; padding-bottom:26px; }
+.v3-nav button {
+  width:74px; height:74px; border-radius:50%; cursor:pointer; font-size:34px;
+  background:rgba(6,9,26,.78); border:2px solid rgba(242,193,78,.55); color:var(--accent) !important;
+}
+.v3-nav button:disabled { opacity:.3; cursor:default; }
+.v3-dots { display:flex; gap:10px; min-width:220px; justify-content:center; }
+.v3-dots i { width:16px; height:16px; border-radius:50%; background:rgba(255,255,255,.2); }
+.v3-dots i.done { background:rgba(242,193,78,.5); }
+.v3-dots i.on { background:#fff; transform:scale(1.25); }
+
+/* ---------------------------------------------------------------------------
+   4. CODEX
+   --------------------------------------------------------------------------- */
+.v4 { height:100%; display:flex; flex-direction:column; gap:12px; }
+.v4 .chips { padding:0 20px; }
+.v4-stage { position:relative; height:486px; flex:0 0 auto; overflow:hidden; touch-action:pan-y; cursor:grab; }
+.v4-stage.drag { cursor:grabbing; }
+.v4-stage .dk { position:absolute; left:50%; top:30px; margin-left:-150px; transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .38s; }
+.v4-stage.drag .dk, .v4-stage .dk.nt { transition:none; }
+.v4-stage .dk:active { transform:none; }
+.v4-arrow {
+  position:absolute; top:212px; z-index:200; width:66px; height:66px; border-radius:50%; cursor:pointer;
+  background:rgba(6,9,26,.78); border:2px solid rgba(242,193,78,.55); color:var(--accent) !important; font-size:30px;
+}
+.v4-arrow.l { left:14px; } .v4-arrow.r { right:14px; }
+.v4-info { flex:1; min-height:0; margin:0 20px 24px; padding:20px 26px; border-radius:24px; background:rgba(8,12,32,.78); border:1px solid rgba(255,255,255,.1); display:flex; flex-direction:column; }
+.v4-name { font-size:38px; line-height:1.05; }
+.v4-meta { margin-top:6px; font-size:19px; color:var(--muted); }
+.v4-perk { margin-top:10px; display:flex; align-items:center; gap:10px; font-size:19px; color:#f6e6b4; }
+.v4-lore {
+  flex:1; min-height:0; overflow-y:auto; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-weight:500; font-size:19px; line-height:1.5; color:rgba(246,241,228,.82);
+}
+.v4-lock { margin-top:18px; display:flex; align-items:center; gap:14px; font-size:20px; color:var(--muted); line-height:1.3; }
+.v4-lock svg { width:40px; height:40px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2; }
+.v4-none { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--muted); }
+
+/* ---------------------------------------------------------------------------
+   5. RIVALS
+   --------------------------------------------------------------------------- */
+.v5 { height:100%; display:flex; flex-direction:column; gap:16px; }
+.v5-head { display:flex; align-items:center; gap:14px; padding:0 26px; }
+.v5-head b { font-size:32px; font-weight:400; }
+.v5-head small { font-size:18px; color:var(--muted); }
+.v5-head .sc { margin-left:auto; font-size:22px; }
+.v5-head .sc .bl { color:#5aa9ff; } .v5-head .sc .rd { color:#ff5c5c; }
+.v5-list { flex:1; min-height:0; overflow-y:auto; padding:6px 20px 60px; display:flex; flex-direction:column; gap:18px; }
+.v5-pair {
+  display:grid; grid-template-columns:1fr 96px 1fr; align-items:center; padding:24px 10px 16px; border-radius:26px;
+  background:linear-gradient(90deg, rgba(90,169,255,.18), rgba(8,12,32,.7) 40%, rgba(8,12,32,.7) 60%, rgba(255,92,92,.18));
+  border:1px solid rgba(255,255,255,.08);
+}
+.v5-side { display:flex; flex-direction:column; align-items:center; gap:14px; }
+.v5-side small { font-size:18px; max-width:220px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.v5-side.blue small { color:#9fcbff; } .v5-side.red small { color:#ffa3a3; }
+.v5-side small.q { color:rgba(255,255,255,.35); }
+.v5-mid { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.v5-mid .t {
+  width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:34px; color:#10142c; background:var(--c); box-shadow:0 0 20px color-mix(in srgb, var(--c) 60%, transparent), inset 0 -4px 0 rgba(0,0,0,.25);
+}
+.v5-mid small { font-size:18px; color:var(--muted); letter-spacing:2px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Stratideck collection views</h1>
+  <p class="hint">Five layouts for the barracks' COLLECTION tab, all bigger than today's. Same book in all five: switch and compare. Tap a face to open its file, tap a shadow to hear how it is earned — nothing is saved.</p>
+
+  <h2>View</h2>
+  <div id="picks"></div>
+
+  <h2>Book</h2>
+  <select id="preset">
+    <option value="mid">Mid game — 27 blue, 20 red, 3 new</option>
+    <option value="early">First launch — the starting roster only</option>
+    <option value="late">Late game — nearly complete</option>
+  </select>
+  <button class="pbtn" id="reset">Reset the book</button>
+
+  <h2>Today</h2>
+  <ul>
+    <li>One scrolling page: the blue army, then the red camp, each 10 grades × 6 tiers of tokens at 88 px — 120 cards stacked.</li>
+    <li>The two armies are two headings on that page; every view here puts them behind one switch, which is also the progress.</li>
+  </ul>
+
+  <h2>Keys</h2>
+  <ul>
+    <li><kbd>1</kbd>–<kbd>5</kbd> switch view</li>
+    <li><kbd>←</kbd> <kbd>→</kbd> turn the page / the codex</li>
+    <li><kbd>Esc</kbd> closes a file</li>
+  </ul>
+  <p class="hint" id="names" style="margin-top:18px"></p>
+</div>
+
+<div id="stage">
+  <div id="device">
+    <div id="frame">
+      <div class="f-bg"></div>
+      <div class="f-band">
+        <div class="f-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#f6f1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></div>
+        <div class="f-chip lv"><span class="dot" style="background:#5aa9ff"></span>7<span class="bar"><i></i></span></div>
+        <div class="f-chip"><span class="dot" style="background:radial-gradient(circle at 40% 35%,#fff3b0,#e0a52a 60%,#8a5a12)"></span>1 240</div>
+        <div class="f-chip"><span class="dot" style="background:#4dabf7;border-radius:6px"></span>3</div>
+        <div class="f-chip"><span class="dot" style="background:#ffd43b;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></span>38</div>
+      </div>
+      <div class="f-tabs"><button>Deck</button><button class="on">Collection</button><button>Objects</button></div>
+      <div class="f-body" id="body"></div>
+      <div class="file" id="file"></div>
+      <div class="f-toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ======================================================================
+     THE CARD — games/stratideck/game.js, faceNode + sizeNode, ported
+     ====================================================================== */
+
+  const EMBED = "../assets/image/embed/";
+  const SCENE = EMBED + "stratideck-background-phone-01.webp";
+  const CREST = { blue: EMBED + "stratideck-piece-01.webp", red: EMBED + "stratideck-piece-02.webp" };
+
+  /* CONFIG.cards, verbatim from games/stratideck/game.js */
+  const K = {
+    style: "forge", brank: "shield", btier: "burst", arank: "auto", atier: "auto",
+    rankOn: true, tierOn: true, zoom: 2.6, blur: 2, vary: true,
+    hero: 95, mark: 0.5, mx: -28, markover: false,
+    midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65
+  };
+
+  const TIERS = ["E", "D", "C", "B", "A", "S"];
+  const TIER_COLOR = ["#c8773f", "#aab1c6", "#51cf66", "#4dabf7", "#c77dff", "#ffd43b"];
+  const TIER_CLS = ["basic", "common", "uncommon", "rare", "epic", "legendary"];
+  const TIER_LABEL = ["Basic", "Common", "Uncommon", "Rare", "Epic", "Legendary"];
+  const TIER_PIPS = [1, 1, 2, 3, 4, 5];
+  const BLUE = "#5aa9ff", RED = "#ff5c5c", GHOST_RIM = "#69718a";
+
+  const GRADE = {
+    1: { key: "spy", name: "Spy", perk: "Takes down the marshal" },
+    2: { key: "scout", name: "Scout", perk: "Reveals what it strikes" },
+    3: { key: "sapper", name: "Sapper", perk: "Clears a trap" },
+    4: { key: "sergeant", name: "Sergeant", perk: "Breaks the straw man" },
+    5: { key: "lieutenant", name: "Lieutenant", perk: "Breaks the wooden fence" },
+    6: { key: "captain", name: "Captain", perk: "Breaks the rock" },
+    7: { key: "major", name: "Major", perk: "Clears the forest" },
+    8: { key: "colonel", name: "Colonel", perk: "Breaks the skull" },
+    9: { key: "general", name: "General", perk: "Breaks the book" },
+    10: { key: "marshal", name: "Marshal", perk: "The highest grade there is" }
+  };
+
+  const PERK = {
+    1:  '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
+    2:  '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+    3:  '<circle cx="11" cy="13" r="9"/><path d="M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95"/><path d="m22 2-1.5 1.5"/>',
+    4:  '<path d="m2 22 10-10"/><path d="m16 8-1.17 1.17"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="m8 8-.53.53a3.5 3.5 0 0 0 0 4.94L9 15l1.53-1.53c.55-.55.88-1.25.98-1.97"/><path d="M10.91 5.26c.15-.26.34-.51.56-.73L13 3l1.53 1.53a3.5 3.5 0 0 1 .28 4.62"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/><path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="m16 16-.53.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.49 3.49 0 0 1 1.97-.98"/><path d="M18.74 13.09c.26-.15.51-.34.73-.56L21 11l-1.53-1.53a3.5 3.5 0 0 0-4.62-.28"/><path d="m2 2 20 20"/>',
+    5:  '<path d="m14 12-8.381 8.38a1 1 0 0 1-3.001-3L11 9"/><path d="M15 15.5a.5.5 0 0 0 .5.5A6.5 6.5 0 0 0 22 9.5a.5.5 0 0 0-.5-.5h-1.672a2 2 0 0 1-1.414-.586l-5.062-5.062a1.205 1.205 0 0 0-1.704 0L9.352 5.648a1.205 1.205 0 0 0 0 1.704l5.062 5.062A2 2 0 0 1 15 13.828z"/>',
+    6:  '<path d="m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999"/><path d="M15.973 4.027A13 13 0 0 0 5.902 2.373c-1.398.342-1.092 2.158.277 2.601a19.9 19.9 0 0 1 5.822 3.024"/><path d="M16.001 11.999a19.9 19.9 0 0 1 3.024 5.824c.444 1.369 2.26 1.676 2.603.278A13 13 0 0 0 20 8.069"/><path d="M18.352 3.352a1.205 1.205 0 0 0-1.704 0l-5.296 5.296a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l5.296-5.296a1.205 1.205 0 0 0 0-1.704z"/>',
+    7:  '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
+    8:  '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>',
+    9:  '<path d="M18 6V4a2 2 0 1 0-4 0v2"/><path d="M20 15v6a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H10"/><rect x="12" y="6" width="8" height="5" rx="1"/>',
+    10: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>'
+  };
+  const FOCUS = { 1: [72, 22], 2: [30, 24], 3: [84, 80], 4: [16, 78], 5: [50, 74], 6: [66, 66],
+                  7: [36, 62], 8: [78, 44], 9: [22, 46], 10: [50, 30] };
+
+  const BADGE = {
+    shield: { vb: "0 0 100 110", svg:
+      '<path class="f" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="d" d="M50 4 L92 18 V52 C92 78 72 96 50 106 C28 96 8 78 8 52 V18 Z"/>' +
+      '<path class="g" d="M50 10 L86 22 V50 C86 62 78 72 66 80 C58 66 46 60 14 52 V22 Z"/>' },
+    burst: { vb: "0 0 100 100", svg:
+      '<path class="f" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<path class="d" d="M50.0 5.4 L55.7 25.1 L70.5 7.5 L65.4 30.7 L86.2 21.1 L74.9 38.0 L91.4 40.6 L79.1 50.0 L91.2 59.4 L75.5 62.3 L83.3 76.5 L65.5 69.5 L69.7 90.9 L57.2 81.5 L50.0 93.0 L44.2 75.6 L29.6 92.4 L29.1 76.2 L13.6 79.1 L24.8 62.1 L1.4 61.1 L25.5 50.0 L2.4 39.1 L25.8 38.3 L16.3 23.1 L34.3 30.3 L30.7 9.9 L42.8 18.6 Z"/>' +
+      '<ellipse class="g" cx="50" cy="38" rx="26" ry="16"/>' }
+  };
+  function badgeDefs() {
+    const box = document.createElement("div");
+    box.innerHTML =
+      '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
+      '<linearGradient id="bx-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="bx-shade" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>' +
+      '<linearGradient id="bx-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f5f9"/><stop offset=".45" stop-color="#a7b0bd"/><stop offset=".55" stop-color="#6d7683"/><stop offset="1" stop-color="#c9d1db"/></linearGradient>' +
+      "</defs></svg>";
+    document.body.appendChild(box.firstChild);
+  }
+  function badgeHTML(role, design, value) {
+    const d = BADGE[design];
+    return '<div class="c-badge ' + role + " d-" + design + '">' +
+      '<svg viewBox="' + d.vb + '" preserveAspectRatio="none">' + d.svg + "</svg><span>" + value + "</span></div>";
+  }
+
+  /* upper(), the motor's: capitals are a look, and a capital carries no accent */
+  function upper(str) {
+    const FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    const PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    const shouted = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      const b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+    let out = "";
+    for (const c of shouted) {
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      const k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+  const pad = n => (n < 10 ? "0" : "") + n;
+
+  /* the portraits to try in turn — castArt, then the grade's face */
+  function faces(c, side) {
+    const turn = side === "blue" && c.o === "red";
+    const kind = turn ? "turn" : side;
+    const tail = pad(c.g) + "-" + TIERS[c.t].toLowerCase() + ".webp";
+    const list = [EMBED + "stratideck-cast-" + kind + "-" + tail];
+    if (turn) list.push(EMBED + "stratideck-cast-red-" + tail);
+    list.push(EMBED + "stratideck-card-" + (side === "red" || c.o === "red" ? "red" : "blue") + "-" + GRADE[c.g].key + ".webp");
+    return list;
+  }
+
+  /* ONE CARD: `c` is a roster entry { g, t, o }, `fmt` full / mid / tiny,
+     `w` in design px. */
+  function card(c, fmt, w, opt) {
+    opt = opt || {};
+    const side = opt.side || "blue", ghost = !!opt.ghost, t = c.t, tiered = !ghost;
+    const n = document.createElement("div");
+    n.className = "card static still fmt-" + fmt + " style-" + K.style + " tier-" + TIER_CLS[t] +
+      " rank-on tier-on" + (ghost ? " ghost" : "");
+    const f = FOCUS[c.g] || [50, 40];
+    const vars = {
+      "--rar": ghost ? GHOST_RIM : TIER_COLOR[t], "--team": side === "red" ? RED : BLUE,
+      "--fx": f[0] + "%", "--fy": f[1] + "%", "--zoom": K.zoom, "--hero": K.hero + "%",
+      "--mark": K.mark, "--mx": K.mx + "%",
+      "--midz": K.midz, "--midx": K.midx + "%", "--midy": K.midy + "%",
+      "--tinyz": K.tinyz, "--tinyx": K.tinyx + "%", "--tinyy": K.tinyy + "%",
+      "--bgi": 'url("' + SCENE + '")'
+    };
+    for (const k in vars) n.style.setProperty(k, vars[k]);
+    let pips = "";
+    for (let i = 0; tiered && i < TIER_PIPS[t]; i++) pips += "<i></i>";
+    const name = ghost ? "???" : upper(GRADE[c.g].name);
+    n.innerHTML =
+      '<div class="c-body"><div class="c-frame"></div><div class="c-scene"></div>' +
+      '<div class="c-mark' + (c.g >= 10 ? " two" : "") + '"><b>' + c.g + "</b></div>" +
+      '<div class="c-hero"><img alt="" draggable="false"></div>' +
+      badgeHTML("rank", K.brank, c.g) + badgeHTML("tier", K.btier, TIERS[t]) +
+      (side !== "red" && PERK[c.g] ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.g] + "</svg></div>" : "") +
+      '<div class="c-plate"><span class="c-name">' + name + '</span><span class="c-tier">' +
+        (ghost ? "" : upper(TIER_LABEL[t])) + "</span></div>" +
+      '<div class="c-pips">' + pips + "</div>" +
+      '<div class="c-back"><img alt="" src="' + CREST[side] + '"></div><div class="c-shine"></div></div>';
+    const img = n.querySelector(".c-hero img"), srcs = faces(c, side);
+    let at = 0;
+    img.onerror = function () { if (++at < srcs.length) img.src = srcs[at]; else img.onerror = null; };
+    img.src = srcs[0];
+    // sizeNode
+    n.style.setProperty("--w", w + "px");
+    n.style.setProperty("--h", (fmt === "full" ? Math.round(w * 1.4) : w) + "px");
+    n.style.setProperty("--blur", (K.blur * w / 300).toFixed(2) + "px");
+    const FIT_AT = { full: 220, mid: 200 };
+    const fit = FIT_AT[fmt] ? Math.min(1.7, Math.max(1, FIT_AT[fmt] / w)) : 1;
+    n.style.setProperty("--fit", fit.toFixed(2));
+    n.classList.toggle("fit", fit > 1.01);
+    return n;
+  }
+
+  /* ======================================================================
+     THE MOCK BOOK — which officers are had: owned (blue), met (red)
+     ====================================================================== */
+
+  const START = [[10, 1], [9, 1], [8, 1], [7, 1], [6, 0], [5, 0], [4, 0], [3, 0], [2, 0], [1, 1]];
+  const PRESET = {
+    early: { blue: () => 0, red: t => (t <= 1 ? 0.12 : 0) },
+    mid:   { blue: t => 0.8 - 0.14 * t, red: t => 0.62 - 0.11 * t, fresh: 3 },
+    late:  { blue: t => 0.98 - 0.04 * t, red: t => 0.94 - 0.06 * t }
+  };
+
+  let S = null, CAST = null;
+
+  /* the same book every time for a preset: a hash, not Math.random */
+  function hash(side, g, t) {
+    let x = (side === "red" ? 7919 : 104729) ^ Math.imul(g, 73856093) ^ Math.imul(t + 1, 19349663);
+    x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  }
+  function build(name) {
+    const P = PRESET[name], book = { blue: {}, red: {} }, fresh = {};
+    for (let g = 1; g <= 10; g++) for (let t = 0; t < 6; t++) {
+      if (hash("blue", g, t) < P.blue(t)) book.blue[g + "." + t] = 1;
+      if (hash("red", g, t) < P.red(t)) book.red[g + "." + t] = 1;
+    }
+    START.forEach(([g, t]) => { book.blue[g + "." + t] = 1; });
+    if (P.fresh) {
+      Object.keys(book.blue).filter(k => +k.split(".")[1] >= 2).slice(0, P.fresh).forEach(k => { fresh["blue" + k] = 1; });
+    }
+    const keep = S || {};
+    S = { book, fresh, view: keep.view || 0, army: keep.army || "blue", v1g: 10, v2t: 0, v3p: 0, v4f: "all", v4ix: null, v5g: 10, file: null };
+  }
+  const had = (side, g, t) => !!S.book[side][g + "." + t];
+  const isNew = (side, g, t) => !!S.fresh[side + g + "." + t];
+  const count = (side, test) => {
+    let n = 0;
+    for (let g = 1; g <= 10; g++) for (let t = 0; t < 6; t++) if (had(side, g, t) && (!test || test(g, t))) n++;
+    return n;
+  };
+
+  function who(side, g, t) {
+    const p = CAST && CAST[side + g + "." + t];
+    return p ? { first: p.first, last: p.last, name: p.first + " " + p.last, age: p.age, gender: p.gender, lore: p.lore && p.lore.en }
+             : { first: GRADE[g].name, last: TIERS[t], name: GRADE[g].name + " " + TIERS[t], age: null, gender: null, lore: null };
+  }
+  const GENDER = { man: "Man", woman: "Woman", male: "Male", female: "Female" };
+  const perkSvg = g => '<svg class="perk-ico" viewBox="0 0 24 24">' + PERK[g] + "</svg>";
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  /* ======================================================================
+     SHARED PIECES
+     ====================================================================== */
+
+  function h(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  /* one officer of the book: its face if had, its shadow if not */
+  function tile(side, g, t, fmt, w) {
+    const got = had(side, g, t);
+    const wrap = h("div", "dk" + (got ? "" : " none"));
+    wrap.appendChild(card({ g, t }, fmt, w, { side, ghost: !got }));
+    if (got && isNew(side, g, t)) wrap.appendChild(h("div", "dk-new", upper("New")));
+    wrap.onclick = () => tapOfficer(side, g, t, wrap);
+    return wrap;
+  }
+  function tapOfficer(side, g, t, from) {
+    if (!had(side, g, t)) {
+      toast(side === "red" ? "Meet this officer in battle to read their file" : "Recruit this officer to read their file");
+      return;
+    }
+    delete S.fresh[side + g + "." + t];
+    openFile(side, g, t);
+  }
+  function armyToggle(slim) {
+    const row = h("div", "army" + (slim ? " slim" : ""));
+    [["blue", "Your army"], ["red", "Enemy camp"]].forEach(([k, l]) => {
+      const n = count(k);
+      const b = h("button", "army-b " + k + (S.army === k ? " on" : ""),
+        "<span>" + upper(l) + "</span><b>" + n + "<i> / 60</i></b><em><u style='width:" + (n / 60 * 100).toFixed(1) + "%'></u></em>");
+      b.onclick = () => { if (S.army !== k) { S.army = k; S.v4ix = null; render(); } };
+      row.appendChild(b);
+    });
+    return row;
+  }
+  /* ten rings, one per grade; `score(g)` is 0..1 */
+  function gradeStrip(cur, score, pick) {
+    const row = h("div", "strip");
+    for (let g = 1; g <= 10; g++) {
+      const p = score(g);
+      const b = h("button", "ring" + (g === cur ? " on" : "") + (p >= 1 ? " full" : ""), "<b>" + g + "</b>");
+      b.style.setProperty("--p", p);
+      b.style.setProperty("--c", S.army === "red" && !pick.both ? "#ff5c5c" : "#f2c14e");
+      b.title = GRADE[g].name;
+      b.onclick = () => pick(g);
+      row.appendChild(b);
+    }
+    return row;
+  }
+  function chipRow(items, cur, pick) {
+    const row = h("div", "chips");
+    items.forEach(([key, label, n]) => {
+      const b = h("button", "chip" + (key === cur ? " on" : ""), upper(label) + (n != null ? "<i>" + n + "</i>" : ""));
+      b.onclick = () => pick(key);
+      row.appendChild(b);
+    });
+    return row;
+  }
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = upper(msg);
+    t.className = "f-toast on";
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => { t.className = "f-toast"; }, 2000);
+  }
+
+  /* THE FILE: the card large, then turned over to who they are */
+  function openFile(side, g, t) {
+    const box = document.getElementById("file"), p = who(side, g, t);
+    box.innerHTML = "";
+    const flip = h("div", "file-flip"), inner = h("div", "file-in");
+    const face = h("div", "file-face");
+    face.appendChild(card({ g, t }, "full", 380, { side }));
+    const back = h("div", "file-back" + (side === "red" ? " red" : ""));
+    back.style.setProperty("--rar", TIER_COLOR[t]);
+    back.innerHTML =
+      "<div class='fb-grade'>" + upper(GRADE[g].name + " · " + TIER_LABEL[t] + " " + TIERS[t]) + "</div>" +
+      "<div class='fb-first'>" + upper(esc(p.first)) + "</div><div class='fb-last'>" + upper(esc(p.last)) + "</div>" +
+      "<div class='fb-facts'>" + (p.age ? "<span>Age " + p.age + "</span>" : "") + (p.gender ? "<span>" + GENDER[p.gender] + "</span>" : "") +
+        "<span>" + (side === "red" ? "Enemy camp" : "Your army") + "</span></div>" +
+      (side === "red" ? "" : "<div class='fb-perk'>" + perkSvg(g) + GRADE[g].perk + "</div>") +
+      "<div class='fb-lore'>" + (p.lore ? esc(p.lore) : "<span class='muted'>Their story is read from the manifest — serve the page over HTTP.</span>") + "</div>" +
+      "<img class='fb-crest' alt='' src='" + CREST[side] + "'>";
+    inner.appendChild(face); inner.appendChild(back);
+    flip.appendChild(inner);
+    flip.onclick = e => { e.stopPropagation(); inner.classList.toggle("turned"); };
+    box.appendChild(flip);
+    box.appendChild(h("div", "file-hint", "Tap the card to turn it over — anywhere else to close"));
+    box.onclick = closeFile;
+    box.classList.add("on");
+    setTimeout(() => inner.classList.add("turned"), 520);
+    S.file = true;
+  }
+  function closeFile() {
+    const box = document.getElementById("file");
+    if (!box.classList.contains("on")) return;
+    box.classList.remove("on");
+    S.file = null;
+    render();                            // a NEW tag read is a NEW tag gone
+  }
+
+  /* the carousel of the codex (the showcase of lab/stratideck-deck.html) */
+  function carousel(stage, list, ix, onPick, cleanup) {
+    const nodes = list.map((o, i) => {
+      const w = tile(o.side, o.g, o.t, "full", 300);
+      w.classList.add("nt");
+      const open = w.onclick;
+      w.onclick = e => { if (moved) return; if (i !== cur) { onPick(i); } else open(e); };
+      stage.appendChild(w);
+      return w;
+    });
+    let cur = ix;
+    function spread(a) { return a <= 1 ? 230 * a : a <= 2 ? 230 + 125 * (a - 1) : 355 + 80 * (a - 2); }
+    function place(pos) {
+      nodes.forEach((n, i) => {
+        const d = i - pos, a = Math.abs(d), s = Math.sign(d);
+        const sc = a <= 1 ? 1 - 0.3 * a : Math.max(0.3, 0.7 - 0.18 * (a - 1));
+        n.style.transform = "translateX(" + (s * spread(a)) + "px) translateY(" + (a * 26) + "px) scale(" + sc + ") rotate(" + (s * Math.min(a, 2) * 4) + "deg)";
+        n.style.opacity = a > 3.2 ? 0 : a < 0.5 ? 1 : Math.max(0, 1 - 0.28 * a);
+        n.style.zIndex = 100 - Math.round(a * 10);
+        n.style.pointerEvents = a > 2.5 ? "none" : "";
+      });
+    }
+    place(cur);
+    requestAnimationFrame(() => requestAnimationFrame(() => nodes.forEach(n => n.classList.remove("nt"))));
+    let x0 = null, moved = false, base = 0;
+    stage.addEventListener("pointerdown", e => { x0 = e.clientX; base = cur; moved = false; });
+    const onMove = e => {
+      if (x0 == null) return;
+      const dx = (e.clientX - x0) / SCALE;
+      if (Math.abs(dx) > 8) { moved = true; stage.classList.add("drag"); }
+      if (moved) place(Math.max(-0.4, Math.min(list.length - 0.6, base - dx / 230)));
+    };
+    const onUp = e => {
+      if (x0 == null) return;
+      const dx = (e.clientX - x0) / SCALE;
+      x0 = null;
+      stage.classList.remove("drag");
+      if (moved) { onPick(Math.max(0, Math.min(list.length - 1, Math.round(base - dx / 230)))); setTimeout(() => { moved = false; }, 0); }
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    cleanup.push(() => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); });
+    return { go(i) { cur = i; place(i); } };
+  }
+
+  /* ======================================================================
+     1. GRADE BOOK — one grade per page
+     ====================================================================== */
+
+  function v1(root) {
+    const side = S.army, el = h("div", "v1");
+    el.appendChild(armyToggle());
+    const strip = gradeStrip(S.v1g, g => count(side, (gg) => gg === g) / 6, g => {
+      pager.scrollTo({ left: (10 - g) * 720, behavior: "smooth" });
+    });
+    el.appendChild(strip);
+    const pager = h("div", "v1-pager");
+    for (let g = 10; g >= 1; g--) {
+      const page = h("div", "v1-page"), n = count(side, gg => gg === g);
+      const head = h("div", "v1-head");
+      head.innerHTML = "<div class='disc'>" + perkSvg(g) + "</div><div class='t'><b>" + upper(GRADE[g].name) +
+        " <span class='muted'>· " + g + "</span></b><small>" + (side === "red" ? "The camp's " + GRADE[g].name.toLowerCase() + "s" : GRADE[g].perk) +
+        "</small></div><div class='n'><b>" + n + "</b> / 6</div>";
+      page.appendChild(head);
+      const grid = h("div", "v1-grid");
+      for (let t = 0; t < 6; t++) grid.appendChild(tile(side, g, t, "full", 196));
+      page.appendChild(grid);
+      page.appendChild(h("div", "v1-foot", g > 1 ? "Swipe for the " + GRADE[g - 1].name.toLowerCase() + "s ›" : "‹ Swipe back to the " + GRADE[2].name.toLowerCase() + "s"));
+      pager.appendChild(page);
+    }
+    pager.addEventListener("scroll", () => {
+      const g = 10 - Math.round(pager.scrollLeft / 720);
+      if (g === S.v1g) return;
+      S.v1g = g;
+      [...strip.children].forEach((b, i) => b.classList.toggle("on", i + 1 === g));
+    });
+    el.appendChild(pager);
+    root.appendChild(el);
+    pager.scrollLeft = (10 - S.v1g) * 720;
+    keyHook = e => {
+      if (e.key === "ArrowRight" && S.v1g > 1) pager.scrollTo({ left: (11 - S.v1g) * 720, behavior: "smooth" });
+      if (e.key === "ArrowLeft" && S.v1g < 10) pager.scrollTo({ left: (9 - S.v1g) * 720, behavior: "smooth" });
+    };
+  }
+
+  /* ======================================================================
+     2. RARITY TABS — one tab per tier
+     ====================================================================== */
+
+  function v2(root) {
+    const side = S.army, el = h("div", "v2");
+    el.appendChild(armyToggle(true));
+    const tabs = h("div", "v2-tiers");
+    for (let t = 0; t < 6; t++) {
+      const b = h("button", t === S.v2t ? "on" : "", "<b>" + TIERS[t] + "</b><small>" + count(side, (g, tt) => tt === t) + " / 10</small>");
+      b.style.setProperty("--c", TIER_COLOR[t]);
+      b.onclick = () => { S.v2t = t; render(); };
+      tabs.appendChild(b);
+    }
+    el.appendChild(tabs);
+    const t = S.v2t;
+    const ban = h("div", "v2-banner");
+    ban.style.setProperty("--c", TIER_COLOR[t]);
+    let pips = "";
+    for (let i = 0; i < TIER_PIPS[t]; i++) pips += "<i></i>";
+    ban.innerHTML = "<b>" + upper(TIER_LABEL[t]) + "</b><div class='pips'>" + pips + "</div><span>" +
+      count(side, (g, tt) => tt === t) + " / 10 " + (side === "red" ? "met" : "owned") + "</span>";
+    el.appendChild(ban);
+    const grid = h("div", "v2-grid");
+    grid.dataset.sk = "v2" + side + t;
+    for (let g = 10; g >= 1; g--) grid.appendChild(tile(side, g, t, "full", 200));
+    el.appendChild(grid);
+    root.appendChild(el);
+  }
+
+  /* ======================================================================
+     3. BINDER — nine numbered sleeves a page
+     ====================================================================== */
+
+  const PER = 9, PAGES = Math.ceil(60 / PER);
+  const numOf = (g, t) => (g - 1) * 6 + t + 1;          // #01 the spy E … #60 the marshal S
+  const atNum = n => ({ g: Math.floor((n - 1) / 6) + 1, t: (n - 1) % 6 });
+
+  function v3(root, dir) {
+    const side = S.army, el = h("div", "v3");
+    el.appendChild(armyToggle(true));
+    const book = h("div", "v3-book");
+    const page = h("div", "v3-page" + (side === "red" ? " red" : "") + (dir ? " in-" + dir : ""));
+    const from = S.v3p * PER + 1, to = Math.min(60, from + PER - 1);
+    let got = 0;
+    const grid = h("div", "v3-grid");
+    for (let n = from; n <= to; n++) {
+      const { g, t } = atNum(n), yes = had(side, g, t);
+      if (yes) got++;
+      const sl = h("div", "sleeve" + (yes ? " had" : ""));
+      const tl = tile(side, g, t, "mid", 168);
+      sl.appendChild(tl);
+      sl.appendChild(h("div", "num", "#" + pad(n) + (yes ? " · " + esc(who(side, g, t).last) : "")));
+      sl.onclick = () => tl.onclick();
+      tl.onclick = e => { if (e) e.stopPropagation(); tapOfficer(side, g, t, tl); };
+      grid.appendChild(sl);
+    }
+    const g0 = atNum(from).g, g1 = atNum(to).g;
+    page.appendChild(h("div", "v3-ph", "<span>" + upper(GRADE[g0].name + (g1 !== g0 ? " – " + GRADE[g1].name : "")) + "</span><span><b>" + got + "</b> / " + (to - from + 1) + "</span>"));
+    page.appendChild(grid);
+    if (got === to - from + 1) page.appendChild(h("div", "v3-stamp", upper("Page complete")));
+    book.appendChild(page);
+    el.appendChild(book);
+
+    /* a swipe turns the page */
+    let x0 = null;
+    book.addEventListener("pointerdown", e => { x0 = e.clientX; });
+    book.addEventListener("pointerup", e => {
+      if (x0 == null) return;
+      const dx = (e.clientX - x0) / SCALE;
+      x0 = null;
+      if (dx < -70) turn(1); else if (dx > 70) turn(-1);
+    });
+
+    const nav = h("div", "v3-nav");
+    const prev = h("button", "", "‹"), next = h("button", "", "›");
+    prev.disabled = S.v3p === 0; next.disabled = S.v3p === PAGES - 1;
+    prev.onclick = () => turn(-1); next.onclick = () => turn(1);
+    const dots = h("div", "v3-dots");
+    for (let p = 0; p < PAGES; p++) {
+      let all = true;
+      for (let n = p * PER + 1; n <= Math.min(60, p * PER + PER); n++) { const a = atNum(n); if (!had(side, a.g, a.t)) all = false; }
+      dots.appendChild(h("i", (p === S.v3p ? "on" : "") + (all ? " done" : "")));
+    }
+    nav.appendChild(prev); nav.appendChild(dots); nav.appendChild(next);
+    el.appendChild(nav);
+    root.appendChild(el);
+    function turn(k) {
+      const p = Math.max(0, Math.min(PAGES - 1, S.v3p + k));
+      if (p === S.v3p) return;
+      S.v3p = p;
+      render(k > 0 ? "r" : "l");
+    }
+    keyHook = e => { if (e.key === "ArrowLeft") turn(-1); if (e.key === "ArrowRight") turn(1); };
+  }
+
+  /* ======================================================================
+     4. CODEX — one officer at a time, and their whole story
+     ====================================================================== */
+
+  function v4(root) {
+    const side = S.army, el = h("div", "v4");
+    el.appendChild(armyToggle(true));
+    const all = [];
+    for (let g = 10; g >= 1; g--) for (let t = 5; t >= 0; t--) all.push({ side, g, t });
+    const nHad = all.filter(o => had(side, o.g, o.t)).length;
+    el.appendChild(chipRow([["all", "All", 60], ["had", side === "red" ? "Met" : "Owned", nHad], ["miss", "Missing", 60 - nHad]], S.v4f,
+      k => { S.v4f = k; S.v4ix = null; render(); }));
+    const list = all.filter(o => S.v4f === "all" || (S.v4f === "had") === had(side, o.g, o.t));
+    /* it opens on the best officer HAD, not on a shadow */
+    if (S.v4ix == null) S.v4ix = Math.max(0, list.findIndex(o => had(side, o.g, o.t)));
+    S.v4ix = Math.max(0, Math.min(S.v4ix, list.length - 1));
+
+    const stage = h("div", "v4-stage");
+    const info = h("div", "v4-info");
+    let car = null;
+    if (list.length) {
+      car = carousel(stage, list, S.v4ix, i => { S.v4ix = i; car.go(i); paint(); }, cleanup);
+      const l = h("button", "v4-arrow l", "‹"), r = h("button", "v4-arrow r", "›");
+      const go = k => { const i = Math.max(0, Math.min(list.length - 1, S.v4ix + k)); S.v4ix = i; car.go(i); paint(); };
+      l.onclick = () => go(-1); r.onclick = () => go(1);
+      stage.appendChild(l); stage.appendChild(r);
+      keyHook = e => { if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); };
+    } else {
+      stage.appendChild(h("div", "v4-none", upper("Nobody here")));
+    }
+    el.appendChild(stage);
+    el.appendChild(info);
+    root.appendChild(el);
+
+    function paint() {
+      info.innerHTML = "";
+      const o = list[S.v4ix];
+      if (!o) return;
+      const yes = had(side, o.g, o.t), p = who(side, o.g, o.t);
+      info.appendChild(h("div", "v4-name", yes ? upper(esc(p.name)) : "???"));
+      info.appendChild(h("div", "v4-meta", GRADE[o.g].name + " · <span style='color:" + TIER_COLOR[o.t] + "'>" + TIER_LABEL[o.t] + "</span>" +
+        (yes && p.age ? " · " + p.age + " years old" : "") + (yes && p.gender ? " · " + GENDER[p.gender] : "") + " · #" + pad(numOf(o.g, o.t))));
+      if (side !== "red") info.appendChild(h("div", "v4-perk", perkSvg(o.g) + GRADE[o.g].perk));
+      if (yes) {
+        info.appendChild(h("div", "v4-lore", p.lore ? esc(p.lore) : "<span class='muted'>Their story is read from the manifest — serve the page over HTTP.</span>"));
+      } else {
+        info.appendChild(h("div", "v4-lock",
+          '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>' +
+          (side === "red" ? "Meet this officer in battle to read their file" : "Recruit this officer in the tent to read their file")));
+      }
+    }
+    paint();
+  }
+
+  /* ======================================================================
+     5. RIVALS — both sides of the war, face to face
+     ====================================================================== */
+
+  function v5(root) {
+    const el = h("div", "v5");
+    const pick = g => { S.v5g = g; render(); };
+    pick.both = true;
+    el.appendChild(gradeStrip(S.v5g, g => (count("blue", gg => gg === g) + count("red", gg => gg === g)) / 12, pick));
+    const g = S.v5g;
+    const head = h("div", "v5-head");
+    head.innerHTML = "<b>" + upper(GRADE[g].name) + "</b><small>· " + g + "</small><span class='sc'><span class='bl'>" +
+      count("blue", gg => gg === g) + " " + upper("blue") + "</span> <span class='muted'>·</span> <span class='rd'>" + count("red", gg => gg === g) + " " + upper("red") + "</span> <span class='muted'>/ 6</span></span>";
+    el.appendChild(head);
+    const list = h("div", "v5-list");
+    list.dataset.sk = "v5" + g;
+    for (let t = 5; t >= 0; t--) {
+      const row = h("div", "v5-pair");
+      ["blue", "red"].forEach((side, k) => {
+        const s = h("div", "v5-side " + side), yes = had(side, g, t);
+        s.appendChild(tile(side, g, t, "mid", 190));
+        s.appendChild(h("small", yes ? "" : "q", yes ? upper(esc(who(side, g, t).name)) : "???"));
+        if (k === 0) row.appendChild(s);
+        else {
+          const mid = h("div", "v5-mid", "<div class='t'>" + TIERS[t] + "</div><small>" + upper("vs") + "</small>");
+          mid.firstChild.style.setProperty("--c", TIER_COLOR[t]);
+          row.appendChild(mid);
+          row.appendChild(s);
+        }
+      });
+      list.appendChild(row);
+    }
+    el.appendChild(list);
+    root.appendChild(el);
+    keyHook = e => { if (e.key === "ArrowLeft" && g > 1) pick(g - 1); if (e.key === "ArrowRight" && g < 10) pick(g + 1); };
+  }
+
+  /* ======================================================================
+     THE PAGE
+     ====================================================================== */
+
+  const VIEWS = [
+    { name: "Grade book", line: "One grade per page, its six tiers as full cards (196 px). Ten progress rings are the index; a swipe turns to the next grade.", draw: v1 },
+    { name: "Rarity tabs", line: "One tab per tier, E to S, in the rarity's colour. The ten grades of that tier as full cards, three a row (200 px).", draw: v2 },
+    { name: "Binder", line: "A sticker album: nine numbered sleeves a page, #01 to #60, turned like pages. A full page gets its stamp.", draw: v3 },
+    { name: "Codex", line: "One officer at a time, full size (300 px), with their whole story written under the card — the file, without opening it.", draw: v4 },
+    { name: "Rivals", line: "Both armies at once: for one grade, the blue officer and the red one face to face, tier by tier.", draw: v5 }
+  ];
+
+  let cleanup = [], keyHook = null, SCALE = 1;
+
+  function render(dir) {
+    const body = document.getElementById("body");
+    const keep = {};
+    body.querySelectorAll("[data-sk]").forEach(n => { keep[n.dataset.sk] = [n.scrollLeft, n.scrollTop]; });
+    cleanup.forEach(f => f()); cleanup = []; keyHook = null;
+    body.innerHTML = "";
+    VIEWS[S.view].draw(body, dir);
+    body.querySelectorAll("[data-sk]").forEach(n => {
+      const k = keep[n.dataset.sk];
+      if (k) { n.scrollLeft = k[0]; n.scrollTop = k[1]; }
+    });
+    document.querySelectorAll(".vpick").forEach((b, i) => b.classList.toggle("on", i === S.view));
+  }
+
+  function pickView(i) {
+    S.view = i;
+    try { localStorage.setItem("lab:stratideck-collection", String(i)); } catch (e) { /* no storage */ }
+    render();
+  }
+
+  const picks = document.getElementById("picks");
+  VIEWS.forEach((v, i) => {
+    const b = h("button", "vpick", "<b><i>" + (i + 1) + "</i>" + v.name + "</b><span>" + v.line + "</span>");
+    b.onclick = () => pickView(i);
+    picks.appendChild(b);
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "SELECT") return;
+    if (e.key === "Escape") { closeFile(); return; }
+    if (S.file) return;
+    if (e.key >= "1" && e.key <= "5") pickView(+e.key - 1);
+    else if (keyHook) keyHook(e);
+  });
+
+  const preset = document.getElementById("preset");
+  preset.onchange = () => { build(preset.value); render(); };
+  document.getElementById("reset").onclick = () => { build(preset.value); render(); };
+
+  function fitFrame() {
+    const st = document.getElementById("stage"), dev = document.getElementById("device");
+    SCALE = Math.min((st.clientWidth - 48) / 720, (st.clientHeight - 48) / 1280);
+    dev.style.width = 720 * SCALE + "px";
+    dev.style.height = 1280 * SCALE + "px";
+    document.getElementById("frame").style.transform = "scale(" + SCALE + ")";
+  }
+  window.addEventListener("resize", fitFrame);
+
+  badgeDefs();
+  build("mid");
+  try { const v = +localStorage.getItem("lab:stratideck-collection"); if (v >= 0 && v < VIEWS.length) S.view = v; } catch (e) { /* no storage */ }
+  fitFrame();
+  render();
+
+  const namesNote = document.getElementById("names");
+  namesNote.textContent = "Names: served over HTTP the page reads the manifest for each officer's name, age, gender and story; over file:// the grade and tier are written instead.";
+  fetch("../games/stratideck/manifest.json").then(r => r.json()).then(m => {
+    CAST = {};
+    (m.web.army.cast || []).forEach(c => { CAST[c.side + c.r + "." + c.t] = c; });
+    namesNote.textContent = "Names, ages, genders and stories read from games/stratideck/manifest.json.";
+    render();
+  }).catch(() => { /* file:// — grade and tier stay */ });
+})();
+</script>
+</body>
+</html>

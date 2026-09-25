@@ -1899,15 +1899,22 @@
      So a layer above the motor may hold the frame for a beat: the clock is
      stopped (the round IS over, whatever is drawn over it), the loop is left
      running, and the end screen waits for the `done` the hook is handed. The
-     web target's level layer is the only registrant — three stars open the
-     bonus, a missed objective burns — and a playable registers none, which is
-     the cut it always had.
+     web target's level layer registers one — three stars open the bonus, a
+     missed objective burns — and the army layer another, the prisoner a won
+     battle offers. They run IN ORDER OF REGISTRATION, each handed the next as
+     its `done`, so the world has had its say before a card is laid over it. A
+     playable registers none, which is the cut it always had.
 
      `ending` is the guard the delay makes necessary: for as long as the outro
      plays, the state is still "playing" and a game whose own update calls
      endRound again would end the round twice over. */
-  var outroHook = null, ending = false;
-  function onOutro(fn) { outroHook = fn; }
+  var outroHooks = [], ending = false;
+  function onOutro(fn) { outroHooks.push(fn); }
+  function runOutro(result, i) {
+    if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
+    var called = false;                 // a second `done` from one hook is dropped
+    outroHooks[i](result, function () { if (!called) { called = true; runOutro(result, i + 1); } });
+  }
 
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
@@ -1921,8 +1928,7 @@
     Round.stop();
     result.score = result.score == null ? Math.round(HUD.score()) : result.score;
     for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
-    if (outroHook) { outroHook(result, function () { finishRound(result); }); return; }
-    finishRound(result);
+    runOutro(result, 0);
   }
 
   function finishRound(result) {

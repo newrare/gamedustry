@@ -432,7 +432,15 @@
     clock:  '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
     recruit:'<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>',
     /* an officer's FILE — the card turned over to read who it is */
-    file:   '<path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/>'
+    file:   '<path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/>',
+    /* the camp's MISSIONS: where a squad goes, the odds it comes back, and
+       what a failure costs */
+    compass:'<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
+    target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    /* the band's fold (meta.js, section 11b): what a game adds to the
+       wallet, behind one chip */
+    sword:  '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
+    skull:  '<path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/>'
   };
 
   /* THE PAINTED INSTRUMENT, when the build carries one. A game with a
@@ -751,23 +759,14 @@
      written against it still lands, and `plain` drops the card-inside-a-card
      the panel version needed when it stood on the scene rather than on a
      modal of its own. */
-  function cardPanel(card, close, title, fill) {
-    /* THE WAY OUT IS A CROSS IN THE CORNER, and it is deliberately quiet. It
-       was a back arrow at the head of the card, the same 64 px circle the map
-       and the album wore — which made LEAVING the loudest thing on a card
-       whose subject is a list of switches, and said "back" about a card that
-       came from nowhere. A card is dismissed, not navigated: ESCAPE closes it,
-       and this is what a finger has when there is no keyboard. */
-    var shut = el("button", "web-close", icon("close", "close-ico"));
-    shut.setAttribute("aria-label", COPY.close);
-    shut.addEventListener("click", close);
-    card.appendChild(shut);
-    var headRow = el("div", "web-phead");
-    headRow.appendChild(el("h2", "web-ptitle", title));
-    var body = el("div", "web-pbody plain");
-    fill(body);
-    card.appendChild(headRow);
-    card.appendChild(body);
+  function cardPanel(body, fill) {
+    /* NO CROSS, and no head: the title is the card's own slot and the way out
+       is the tap line under the rows, which says a tap beside the card closes
+       it (packages/webshell/view.js, `dismiss: "outside"`). A cross was a
+       second answer to a question that line already answers. */
+    var rows = el("div", "web-pbody plain");
+    fill(rows);
+    body.appendChild(rows);
   }
 
   /* What is open, and how to build it again: a language change rewrites the
@@ -783,12 +782,15 @@
     if (pausing) pause();
     var h = MD.open({
       kind: "web-card " + kind,
-      /* NOT dismissed by a tap: every one of these cards has controls on it,
-         and a switch missed by a thumb would put the card away instead. The
-         key still closes it — that is what `esc` is for. */
-      dismiss: false, esc: true,
-      fill: function (card, close) {
-        cardPanel(card, close, title, fill);
+      title: title,
+      /* NOT dismissed by a tap ON it: every one of these cards has controls
+         on it, and a switch missed by a thumb would put the card away
+         instead. A tap AROUND it does, and the tap line says so; the key
+         closes it too — that is what `esc` is for. */
+      dismiss: "outside", esc: true,
+      fill: function (body, close, handle) {
+        cardPanel(body, fill);
+        var card = handle.card;
         /* One of the game's own painted objects beside the card. A card is the
            plainest thing this shell draws — a list of rows — and the scene
            behind it is pushed back by the scrim precisely where the card is,
@@ -1001,6 +1003,14 @@
     box.appendChild(el("div", "web-help-line", COPY.tagline || CONFIG.tagline || ""));
     var demo = $("intro-demo");
     if (demo) box.appendChild(demo);           // moved, not cloned
+    /* THE PAINTED HAND. The motor's stroked finger is the playable's; a build
+       that carries the shell's artwork acts the gesture out with the painted
+       one (CONFIG.shellArt.hand, same pose: cuff down, fingertip up). Only the
+       picture is swapped — the box, the drop shadow and every SKIN's
+       choreography stay on `.demo-hand` as they were. */
+    var handArt = CONFIG.shellArt && CONFIG.shellArt.hand;
+    var hand = demo && demo.querySelector(".demo-hand");
+    if (hand && handArt) hand.style.backgroundImage = 'url("' + handArt + '")';
     /* THE RULES A SENTENCE CANNOT HOLD. The intro is one line and must stay one
        line — it is read by a player who has not started yet — but a game whose
        fight has a second term in it (games/stratideck's tier) has somewhere to
@@ -1034,33 +1044,21 @@
      and not a card because it is a place, and because it wears the same header
      the map, the album and the shop wear: a back arrow, an eyebrow and a
      title. The stack is what takes it away again. */
-  var rankBox, rankBody;
+  var rankBox, rankBody, RK = null;
 
   function buildRanking() {
-    rankBox = el("section"); rankBox.id = "web-rank";
-    var bg = el("div", "web-rank-bg");
-    dressBackdrop(bg);
-    rankBox.appendChild(bg);
-
-    /* No button in this header, like the map, the album and the shop: the band
-       over the screen is the navigation and its level chip is the way home.
-       Where there is no band there is no level chip, and the button is
-       (packages/webshell/view.js). */
-    var head = el("header", "mt-head");
-    if (!VW.banded()) head.appendChild(VW.homeButton(COPY.menu));
-    var titles = el("div", "mt-titles");
-    titles.appendChild(el("div", "mt-eyebrow", CONFIG.title || ""));
-    titles.appendChild(el("div", "mt-count", COPY.scoresTitle));
-    head.appendChild(titles);
-    rankBox.appendChild(head);
-
+    /* THE SHEET EVERY ROOM OF THE PLACE STANDS IN (packages/webshell/
+       view.js, section 6b) — the hub, the veil, the title and the bar. No
+       button in its header where the band is the way home; the sheet adds
+       one where there is no band (view.js). */
     rankBody = el("div"); rankBody.id = "web-rank-body";
-    rankBox.appendChild(rankBody);
-    frame().appendChild(rankBox);
+    RK = VW.sheet({ id: "web-rank", tag: "section", body: rankBody, home: COPY.menu });
+    rankBox = RK.box;
   }
 
   function paintRanking() {
     var best = Number(W.Store.get("bestScore", 0)) || 0;
+    RK.setHead(COPY.scoresTitle, CONFIG.title || "");
     rankBody.innerHTML = "";
     rankBody.appendChild(el("div", "web-best-lbl", COPY.best));
     rankBody.appendChild(el("div", "web-best", String(best)));
@@ -1086,35 +1084,6 @@
         icon("star", "web-rank-star") + "<b>" + LV.total() + "</b><i>/ " + LV.max() + "</i>"));
     }
     rankBody.appendChild(el("div", "web-note", best ? COPY.soonScores : COPY.noScore));
-  }
-
-  /* The backdrop a view stands on: THE HUB FIRST where the game has a village,
-     then the game's own painted scene, then the picture it embeds, and the
-     gradient its SKIN paints the page with as the last resort.
-
-     The hub comes first for the same reason it does in the album and the shop
-     (packages/webshell/album.js, dressBackdrop): the ranking is a ROOM OF THAT
-     PLACE — the player walked into it off the hub, and every card that opens
-     over it shows the hub through its own veil — so a screen that swapped in
-     the picture the ROUND is played against was the one room with a different
-     view out of the window. A game with no village falls back to exactly what
-     this did before.
-
-     `window.__VILLAGE__` is read here and not captured at load: village.js is
-     the last file of the web layer, and this runs on the first open of a
-     screen, long after all of it. */
-  function dressBackdrop(node) {
-    var VG = window.__VILLAGE__;
-    var hub = VG && VG.ground ? VG.ground() : null;
-    if (hub) { node.style.backgroundImage = "url(" + hub + ")"; return; }
-    var art = (CONFIG.art && (CONFIG.art.backgroundPhone || CONFIG.art.background)) || null;
-    var images = (W.ASSETS && W.ASSETS.images) || {};
-    var src = art || images.bg || images.bg1 || null;
-    if (src) { node.style.backgroundImage = "url(" + src + ")"; return; }
-    var cs = window.getComputedStyle(document.body);
-    if (cs.backgroundImage && cs.backgroundImage !== "none") node.style.backgroundImage = cs.backgroundImage;
-    node.style.backgroundColor = cs.backgroundColor;
-    node.classList.add("flat");
   }
 
   /* ── 5b. the corner: options and help, from anywhere ─────────────────── */
@@ -1159,7 +1128,8 @@
   }
 
   function labelControls() {
-    VW.cornerLabels({ help: COPY.help, options: COPY.options });
+    VW.cornerLabels({ help: COPY.help, options: COPY.options,
+                      home: villaged() ? COPY.toVillage : COPY.toMenu });
   }
 
   /* A pair of wide buttons under the body — RESUME alone for the options,
@@ -1242,6 +1212,7 @@
     COPY = resolveCopy(code);
     W.Store.set(LANG_KEY, code);
     document.documentElement.lang = code;
+    if (MD.setLang) MD.setLang(code);
     applyLang(code);
 
     if (levelled()) LV.setLang(code);
@@ -1494,6 +1465,7 @@
        screens and opens its cards through, so it gets this file's dom helpers
        before any of them runs. */
     VW.mount({ el: el, icon: icon, art: artImg, lang: LANG });
+    if (MD.setLang) MD.setLang(LANG);
     if (metaed()) {
       var mapi = { el: el, icon: icon, art: artImg, lang: LANG };
       MT.mount(mapi);
