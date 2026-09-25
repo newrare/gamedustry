@@ -19,40 +19,41 @@ ______________________________________________________________________
 **A VIEW is a place the player goes.** One at a time is what they are looking
 at, they stack, and BACK peels one off.
 
-| view        | whose content it is            | carries the band              |
-| ----------- | ------------------------------ | ----------------------------- |
-| `title`     | the motor's `#screen-intro`    | no                            |
-| `village`   | `packages/webshell/village.js` | yes, and it is the FLOOR      |
-| `map`       | `packages/webshell/levels.js`  | yes                           |
-| `sticker`   | `packages/webshell/album.js`   | yes, and no header of its own |
-| `shop`      | `packages/webshell/album.js`   | yes                           |
-| `ranking`   | `packages/webshell/menu.js`    | yes                           |
-| `deck`      | `packages/webshell/army.js`    | yes                           |
-| `infirmary` | `packages/webshell/army.js`    | yes                           |
-| `prison`    | `packages/webshell/army.js`    | yes                           |
-| `recruit`   | `packages/webshell/army.js`    | yes                           |
-| `score`     | the motor's `#screen-end`      | while it is paid              |
+| view        | whose content it is            | carries the band         |
+| ----------- | ------------------------------ | ------------------------ |
+| `title`     | the motor's `#screen-intro`    | no                       |
+| `village`   | `packages/webshell/village.js` | yes, and it is the FLOOR |
+| `map`       | `packages/webshell/levels.js`  | yes                      |
+| `sticker`   | `packages/webshell/album.js`   | yes                      |
+| `shop`      | `packages/webshell/album.js`   | yes                      |
+| `ranking`   | `packages/webshell/menu.js`    | yes                      |
+| `deck`      | `packages/webshell/army.js`    | yes                      |
+| `infirmary` | `packages/webshell/army.js`    | yes                      |
+| `prison`    | `packages/webshell/army.js`    | yes                      |
+| `recruit`   | `packages/webshell/army.js`    | yes — the camp, two tabs |
+| `score`     | the motor's `#screen-end`      | while it is paid         |
 
 **A CARD (a modal) is something that happens over wherever they are.** It never
 replaces the screen under it, it is always on top of every view, and it is
 dismissed rather than navigated.
 
-| card    | opened from                         | tap closes | ESCAPE closes |
-| ------- | ----------------------------------- | ---------- | ------------- |
-| options | a house, the title menu, the corner | no         | yes           |
-| help    | the title menu, the corner, L0      | no         | yes           |
-| leave   | the round's corner control          | no         | yes           |
-| daily   | a day of the strip, a house         | yes        | yes           |
-| gift    | a perfect round, a daily gift       | no         | no            |
-| prize   | a box that was opened               | yes        | yes           |
-| ad      | the ×5 offer                        | no         | no            |
-| sticker | a pull, a tile of the album         | varies     | varies        |
-| captive | a won battle with an enemy standing | no         | no            |
+| card    | opened from                                        | tap closes | ESCAPE closes |
+| ------- | -------------------------------------------------- | ---------- | ------------- |
+| options | a house, the title menu, the corner, a sheet's bar | no         | yes           |
+| help    | the title menu, the corner, a sheet's bar, L0      | no         | yes           |
+| leave   | the round's corner control                         | no         | yes           |
+| daily   | a day of the strip, a house                        | yes        | yes           |
+| gift    | a perfect round, a daily gift                      | no         | no            |
+| prize   | a box that was opened                              | yes        | yes           |
+| ad      | the ×5 offer                                       | no         | no            |
+| sticker | a pull, a tile of the album                        | varies     | varies        |
+| captive | a won battle with an enemy standing                | no         | no            |
+| report  | a squad back from a mission                        | collects   | collects      |
 
 **The barracks' four are views and the prisoner is a card, and the rule is the
 one above rather than a judgement**: a deck being composed, a list of wounds and
-a shelf of recruits are all places with something to finish, so a stray tap must
-not take them away; a prisoner offered at the end of a battle is a CHOICE over
+a shelf of recruits or a squad being picked for a mission are all places with
+something to finish, so a stray tap must not take them away; a prisoner offered at the end of a battle is a CHOICE over
 wherever the player happens to be, so it is a card — and, like the three gift
 boxes, one that answers to neither a tap nor a key, because a choice has no
 default. See [docs/ARMY.md](ARMY.md).
@@ -148,11 +149,19 @@ the motor ducks it itself, so a gift card closing over it used to hand the playe
 a bed at full volume under a screen still being read. When the count reaches
 zero the floor is read off the motor's state rather than assumed.
 
-**The way out of a card.** A discreet cross in its top-left corner, and ESCAPE.
-It was a back arrow at the head of the card, the same 64 px circle the map wore,
-which made LEAVING the loudest thing on a card whose subject is a list of
-switches — and said "back" about a card that came from nowhere. A card is
-dismissed, not navigated.
+**The way out of a card.** Its last line, and ESCAPE. Every card is the motor's
+one component (`packages/shell/motor.css`, CARD — chosen in `lab/modal.html`):
+an optional tag on the corner, an optional eyebrow never in the title's colour,
+the gold title, the body, and a **tap line that is mandatory** — it says what
+the tap does ("Tap to close", "Tap a box", "Tap to collect", "Tap outside to
+close"). `Modal.open` builds those slots itself from `eyebrow`, `title`,
+`badge` and `tap`, so a caller writes the body and nothing else, and
+`handle.set({...})` rewrites them. There is no cross: it was a second answer to
+the question the line already answers, and before it a back arrow, which said
+"back" about a card that came from nowhere. A card is dismissed, not navigated
+— by a tap anywhere (`dismiss: true`), a tap AROUND it for a card with controls
+on it (`dismiss: "outside"`: options, help, leaving a round), or by the choice
+it asks for (`dismiss: false`).
 
 **The corner controls.** Options, help and the way out — and they are the
 ROUND'S, not a view's. Every other surface has somewhere of its own to say the
@@ -173,6 +182,28 @@ on ONE named view carrying only what it is given, gated on the TOP of the stack
 rather than on the motor's state, which stays `intro` under every view. A door
 with a building AND a corner button would be the two ways to one place this file
 exists to forbid, and `tools/test/views.mjs` asserts it is exactly one.
+
+**The sheet — one frame for every room of the place.** The collection, the
+shop, the ranking and the barracks' four are the same five layers, and only
+their body differs: the hub's own ground under ONE veil (`--wv-veil`, .5 with a
+2 px blur), a SHEET risen out of the bottom edge under the band (`--wv-sheet`,
+.76, 40 px corners), its title — one line, centred, measured to the width — and
+one line under it, the body, which is the one region that scrolls, and a BAR at
+the foot of the sheet. The bar carries the view's PAGES — icon and label, the
+lit one in the accent with a rule over it, the body sliding in from the side the
+page is on — and, after a filet, HOME, HELP and OPTIONS in that order. Help and
+options are the same two items as the round's corner, drawn into the sheet
+rather than into `#web-ctls`, so a player on the collection who wants the music
+off does not walk back to the village for it. The house is `View.home`, the
+village where there is one and the title screen otherwise, and it is THE way
+home on a sheet: the band's own house chip stands down over every sheet, the way
+it does over the bare village (`bandDoors`), and comes back when a card is over
+it. A view with one page has no tabs — a single tab is a label, not a choice —
+and keeps the three alone at the right of the bar. `View.sheet(spec)` builds it
+and the owner fills `body`, calls `setHead(title, sub)` and names its pages with
+`pages([{ key, label, icon }], pick)` / `light(key)`; the map and the village
+are not rooms and keep their own screens. Chosen in `lab/view-frame.html`
+(proposal C).
 
 **The wallet band.** See below.
 
@@ -211,8 +242,8 @@ the player owns; this is the way out of wherever they own it.
 **The count came off the album's header, and took the header with it.** That
 screen carried a name and an `x / 20` over a band already saying what the player
 owns: the name is what they tapped to get here, and the count is one of those
-numbers. So the album has no header at all now, and the height it was taking
-goes to the machine, the odds and the twenty tiles.
+numbers. So the album's header lost the count, and since the sheet it carries
+the room's name and nothing else, like every other room of the place.
 
 **Six chips on one line is a measurement, not a hope.** The worst case is every
 number at its widest with the level chip OPEN —
@@ -262,6 +293,11 @@ purpose** — xp was the one reward whose target was a bar rather than a
 frame, so `--wh-band` is what every header and scroll band starts below — 0 on
 a game with no wallet, where there is no band to clear.
 
+**A game with more to count folds it into one chip**, a sword between the
+level and the coins, declared by `web.meta.more` and filled by the layer that
+owns the figures ([docs/META.md](META.md)). It is a chip of this row and not a
+second row: the band keeps its one line and its one height.
+
 **The round shows no band.** The top band is the game's, all of it, and the
 thirteen fill it differently.
 
@@ -308,13 +344,13 @@ ______________________________________________________________________
 
 ## 5. Where it lands in the code
 
-| piece                        | what it is                                                                                                                    |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `packages/webshell/view.js`  | the stack, the modal layer, the band, the corner, ESCAPE, the bed                                                             |
-| `packages/webshell/view.css` | the modal base, the band, the corner bar                                                                                      |
-| `window.__VIEW__`            | `define · go · back · home · floor · escape · top · depth · isOpen · onChange · hudMount · hudShow · hudHide · corner · lift` |
-| `window.__MODAL__`           | `open · closeTop · any · top · count`                                                                                         |
-| `tools/test/views.mjs`       | the contract, asserted in a real build (`make test`)                                                                          |
+| piece                        | what it is                                                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/webshell/view.js`  | the stack, the modal layer, the band, the corner, the sheet, ESCAPE, the bed                                                                   |
+| `packages/webshell/view.css` | the modal base, the band, the corner bar, the sheet                                                                                            |
+| `window.__VIEW__`            | `define · go · back · home · floor · escape · top · depth · isOpen · onChange · hudMount · hudShow · hudHide · corner · lift · sheet · ground` |
+| `window.__MODAL__`           | `open · closeTop · any · top · count`                                                                                                          |
+| `tools/test/views.mjs`       | the contract, asserted in a real build (`make test`)                                                                                           |
 
 **The class names of a card are unchanged.** A modal is `wm-modal` AND
 `mt-modal`, its card is `wm-card` AND `mt-card`: the first pair is what

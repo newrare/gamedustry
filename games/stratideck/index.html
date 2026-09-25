@@ -163,6 +163,95 @@
   #overlay { position:absolute; inset:0; z-index:16; pointer-events:none; overflow:hidden; }
 
   /* =========================================================================
+     CARD — the one card every game opens. Chosen in lab/modal.html (bevel
+     skin, centred, gold title, corner pill, shimmering tap line, pop entry).
+
+     One structure, six nodes, and only the body changes from card to card:
+       .mt-card     the box: a dark plate inside a rim in the game's colours
+       .mt-pin      a number or a tag on the corner          (optional)
+       .mt-eyebrow  one line over the title, never its colour (optional)
+       .mt-h        the title, one line, measured to fit
+       .mt-body     the content
+       .mt-tap      what a tap does — every card carries one
+
+     THERE IS NO CROSS. A card says in its last line what the tap does
+     ("Tap to close", "Tap a box", "Tap outside to close"), and that line is
+     the way out: a cross in a corner was a second answer to a question the
+     line already answers, and the one control on the card nobody aimed at.
+
+     It lives in the motor and not in the web shell because a game's own
+     sheets are cards too (stratideck's camp, over a round, in a playable):
+     the web shell's modal (packages/webshell/view.js) positions the card and
+     builds the slots, this block is how every one of them looks.
+     ========================================================================= */
+  :root {
+    --card-rim-a: var(--accent);
+    --card-rim-b: var(--cta-b);
+  }
+  .mt-card {
+    position:relative; width:100%;
+    padding:44px 35px; border-radius:30px;
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+    color:var(--text);
+    border:4px solid transparent;
+    background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
+               linear-gradient(180deg,var(--card-rim-a),var(--card-rim-b)) border-box;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
+    font-family:var(--web-font, inherit);
+  }
+  .mt-card .mt-body {
+    width:100%; display:flex; flex-direction:column; align-items:center; gap:24px;
+  }
+  .mt-card .mt-body:empty { display:none; }
+  .mt-card .mt-h {
+    margin:0; max-width:100%; text-align:center; white-space:nowrap;
+    font-size:54px; letter-spacing:3px; line-height:1.1;
+    font-weight:var(--web-fw, 900);
+    color:var(--gold);
+    text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
+  }
+  .mt-card .mt-h.wrap { white-space:normal; }
+  /* NEVER THE TITLE'S COLOUR: gold over gold read as one heading in two
+     sizes, and the eyebrow is a different thing — which day, why, where
+     from. The text colour, turned down, is the one that is not a palette's. */
+  .mt-card .mt-eyebrow {
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    margin:0 0 -10px; text-align:center;
+    font-size:20px; letter-spacing:3px; line-height:1.2;
+    font-weight:var(--web-fw, 900);
+    color:var(--text); opacity:.72;
+  }
+  .mt-card .mt-eyebrow .dl-dev {
+    font-size:12px; letter-spacing:2px; font-style:normal; opacity:1;
+    padding:2px 8px; border-radius:6px; color:#0b0b12; background:var(--danger);
+  }
+  /* A NUMBER ON THE CORNER — how many owned, how many in the camp. A tag,
+     never a sentence. */
+  .mt-card .mt-pin {
+    position:absolute; top:-22px; right:-16px; z-index:3;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:8px 20px; border-radius:999px;
+    background:#0b0e1a; border:3px solid var(--accent);
+    box-shadow:0 6px 18px rgba(0,0,0,.6);
+    color:var(--text); font-size:30px; line-height:1; font-style:normal;
+    font-weight:var(--web-fw, 900); font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .mt-card .mt-tap {
+    margin:0; text-align:center;
+    font-size:18px; letter-spacing:3px; line-height:1.3;
+    font-weight:var(--web-fw, 900);
+    color:transparent;
+    background:linear-gradient(100deg,var(--muted) 0 40%,#fff 50%,var(--muted) 60% 100%);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text;
+    animation:mt-tap-shine 2.6s linear infinite;
+  }
+  @keyframes mt-tap-shine { from { background-position:100% 0; } to { background-position:0 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .mt-card .mt-tap { animation:none; color:var(--muted); background:none; }
+  }
+
+  /* =========================================================================
      NOTIFY — the one voice for information (shell.js, Notify). Chosen in
      lab/notify.html: the `chip` look, top-right, newest on top, merged, a
      slide in and a flight out into the chip it is about.
@@ -2088,23 +2177,17 @@
 
   /* THE LISTS: the infirmary, the prison, the camp's losses. */
   .cd-layer.cd-sheet { z-index:17; display:none; }
-  .cd-layer.cd-sheet.on { display:flex; align-items:center; justify-content:center; background:rgba(4,6,18,.72); }
-  .sh-box {
-    width:640px; max-height:1080px; padding:26px 22px 20px; border-radius:26px; box-sizing:border-box;
-    background:linear-gradient(180deg, rgba(20,28,64,.96), rgba(8,12,30,.96));
-    box-shadow:inset 0 0 0 2px rgba(242,193,78,.45), 0 20px 50px rgba(0,0,0,.6);
-    display:flex; flex-direction:column; align-items:center; gap:18px; color:#f6f1e4;
-  }
-  .sh-title { font-size:30px; font-weight:900; letter-spacing:2px; color:var(--gold, #f2c14e); }
-  .sh-title span { color:#f6f1e4; opacity:.7; margin-left:6px; }
-  .sh-infirmary .sh-title { color:#ff8a8a; }
-  .sh-prison .sh-title { color:#8fc2ff; }
+  /* The card is the motor's (packages/shell/motor.css, CARD), the one every
+     card of the web shell wears: this only says how much of the frame it may
+     take, since an army of forty is a tall list. */
+  .cd-layer.cd-sheet.on { display:flex; align-items:center; justify-content:center; padding:0 20px; background:rgba(2,2,10,.7); }
+  .sh-box { max-height:1140px; }
+  .sh-box .mt-body { gap:18px; min-height:0; }
   .sh-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; overflow:hidden; }
   .sh-cell { position:relative; }
   .sh-cell .card { position:relative; }
   .sh-drop { position:absolute; right:-6px; top:-8px; width:34px; height:34px; z-index:10;
              fill:#d61f2c; stroke:rgba(20,0,4,.85); stroke-width:1.3; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
-  .sh-sub { margin-top:-10px; font-size:15px; font-weight:800; letter-spacing:2px; opacity:.6; }
   .sh-n { text-align:center; margin-top:6px; font-size:22px; font-weight:900; color:#ffb4b4; white-space:nowrap; }
   .card.no-tier .c-badge.tier { display:none; }
   .sh-sec { align-self:stretch; font-size:17px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
@@ -2113,7 +2196,6 @@
   .sh-sec.lost { color:#ff8a8a; border-color:rgba(255,138,138,.3); }
   .sh-grid.lost .card { filter:grayscale(.75) brightness(.75); }
   .sh-empty { font-size:20px; font-weight:800; opacity:.6; padding:30px 0; }
-  .sh-foot { font-size:14px; font-weight:800; letter-spacing:2px; opacity:.45; }
 
   /* AN OFFICER'S FILE, the card turned over (game.js, cardBack — shown by
      the barracks, packages/webshell/army.js, openFile). The face's own frame,
@@ -2124,18 +2206,18 @@
      a window, a name plate cut like the face's, the facts, the story on its
      own dark panel under the army's crest, the army along the foot. */
   .card.file .c-mark, .card.file .c-plate { display:none; }
-  .card.file .c-hero { top:4em; bottom:auto; height:48em; }
+  .card.file .c-hero { top:4em; bottom:auto; height:36em; }
   .card.file .c-scene::after {
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--rar) 34%, transparent) 0%, transparent 22%),
-      linear-gradient(180deg, transparent 30%, rgba(3,4,12,.84) 40%, rgba(3,4,12,.94) 100%),
+      linear-gradient(180deg, transparent 21%, rgba(3,4,12,.84) 30%, rgba(3,4,12,.94) 100%),
       radial-gradient(90% 40% at 50% 100%, color-mix(in srgb, var(--rar) 22%, transparent), transparent 70%);
   }
   /* one column from the plate down, so the story takes what the name and
      the facts leave rather than a height guessed for the longest one */
   .cf-file {
-    left:0; right:0; top:51em; bottom:8.5em; z-index:6;
-    display:flex; flex-direction:column; gap:2.4em;
+    left:0; right:0; top:39em; bottom:8.5em; z-index:6;
+    display:flex; flex-direction:column; gap:2em;
   }
   .cf-plate {
     position:relative; flex:0 0 auto; text-align:center; padding:2.2em 7em 1.8em;
@@ -2166,6 +2248,22 @@
     font-size:3.6em; font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
     border-radius:99em; color:var(--gold2); background:rgba(4,5,14,.72);
     box-shadow:inset 0 0 0 .1em color-mix(in srgb, var(--gold) 70%, transparent), 0 .2em .5em rgba(0,0,0,.5);
+  }
+  /* the grade's ability (game.js, SKILL): the macaron's pictogram and one
+     line, in the gold of the frame — a rule, so it is read upright, unlike
+     the story under it */
+  .cf-skill {
+    flex:0 0 auto; margin:0 8em; display:flex; align-items:center; gap:2.4em;
+    padding:1.4em 3em 1.4em 2.6em; border-radius:2.4em; background:rgba(4,5,14,.78);
+    box-shadow:inset 0 0 0 .3em color-mix(in srgb, var(--gold) 60%, transparent);
+  }
+  .cf-skill svg {
+    flex:0 0 auto; width:6.5em; height:6.5em;
+    fill:none; stroke:var(--gold2); stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .cf-skill p {
+    margin:0; font-size:3.5em; font-weight:800; line-height:1.3; color:#f6e6b4;
+    text-shadow:0 .08em .2em rgba(0,0,0,.8);
   }
   .cf-lore {
     position:relative; flex:1; min-height:0; overflow:hidden;
@@ -2556,7 +2654,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "0.13.5",
+    version: "0.14.1",
     mark: "data:image/webp;base64,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"
   };
 
@@ -5635,15 +5733,22 @@
      So a layer above the motor may hold the frame for a beat: the clock is
      stopped (the round IS over, whatever is drawn over it), the loop is left
      running, and the end screen waits for the `done` the hook is handed. The
-     web target's level layer is the only registrant — three stars open the
-     bonus, a missed objective burns — and a playable registers none, which is
-     the cut it always had.
+     web target's level layer registers one — three stars open the bonus, a
+     missed objective burns — and the army layer another, the prisoner a won
+     battle offers. They run IN ORDER OF REGISTRATION, each handed the next as
+     its `done`, so the world has had its say before a card is laid over it. A
+     playable registers none, which is the cut it always had.
 
      `ending` is the guard the delay makes necessary: for as long as the outro
      plays, the state is still "playing" and a game whose own update calls
      endRound again would end the round twice over. */
-  var outroHook = null, ending = false;
-  function onOutro(fn) { outroHook = fn; }
+  var outroHooks = [], ending = false;
+  function onOutro(fn) { outroHooks.push(fn); }
+  function runOutro(result, i) {
+    if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
+    var called = false;                 // a second `done` from one hook is dropped
+    outroHooks[i](result, function () { if (!called) { called = true; runOutro(result, i + 1); } });
+  }
 
   // --- The single way a round ends ---------------------------------------
   // result: { title, variant, score, stars, rows, track }
@@ -5657,8 +5762,7 @@
     Round.stop();
     result.score = result.score == null ? Math.round(HUD.score()) : result.score;
     for (var i = 0; i < resultHooks.length; i++) resultHooks[i](result);
-    if (outroHook) { outroHook(result, function () { finishRound(result); }); return; }
-    finishRound(result);
+    runOutro(result, 0);
   }
 
   function finishRound(result) {
@@ -5851,6 +5955,27 @@
     function objectInfo(r) {
       var a = ABOUT[r];
       return a ? { text: Lang.t(a.text), by: a.by } : null;
+    }
+
+    /* WHAT THE BACK OF AN OFFICER SAYS ABOUT THEIR GRADE: the one thing that
+       makes it useful, which the macaron on the face only draws — the three
+       specials' rule, the object each of the next six breaks, the crown. It
+       is the grade's and not the officer's, so it is read on every card of
+       that grade, a stranger's or a turncoat's included (army.js, fileBack). */
+    var SKILL = {
+      1:  "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.",
+      2:  "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.",
+      3:  "The only grade that clears a trap without being lost with it.",
+      4:  "The only grade that tears down the straw man.",
+      5:  "The only grade that chops down the wooden fence.",
+      6:  "The only grade that smashes the rock.",
+      7:  "The only grade that crosses the forest without getting lost.",
+      8:  "The only grade that shatters the skull without being stunned.",
+      9:  "The only grade that burns the book without being bewitched.",
+      10: "The highest grade: no soldier outranks it, but the spy kills it."
+    };
+    function gradeInfo(r) {
+      return SKILL[r] ? Lang.t(SKILL[r]) : "";
     }
 
     /* --- the macaron ------------------------------------------------------
@@ -6529,7 +6654,7 @@
        above. A finger never sees it. */
     var cursorOn = false;
     function hover(p) {
-      var on = sheet ? !!sheetFileAt(p) : !drag && !!zoneAt(p);
+      var on = sheet ? !!sheetFileAt(p) : !drag && (!!zoneAt(p) || !!foeUpAt(p));
       if (on === cursorOn) return;
       cursorOn = on;
       var cv = document.getElementById("game");
@@ -6562,16 +6687,36 @@
         Sound.clip("pick", 0.45, 1 + i * 0.03);
         return;
       }
-      var cell = cellAt(p);
-      if (cell && selected >= 0 && pickable(selected)) {
-        if (isTarget(cell.r, cell.c)) attack(selected, cell.r, cell.c);
-        else if (grid[cell.r][cell.c]) {
+      var cell = cellAt(p), armed = selected >= 0 && pickable(selected);
+      if (cell && armed && isTarget(cell.r, cell.c)) { attack(selected, cell.r, cell.c); return; }
+      /* a card picked and a target in reach is a strike; anything else on
+         the one enemy face up is a question about it */
+      if (foeUpAt(p)) { foeOpen(cell); return; }
+      if (cell && armed) {
+        if (grid[cell.r][cell.c]) {
           Sound.clip("warn", 0.35, 1.2);
           Notify.say("Out of reach", { kind: "warn" });
         }
         return;
       }
       selected = -1;
+    }
+    /* THE ENEMY FACE UP IS A DOOR TOO. The camp is played from memory and
+       the card just turned over is the one the player is reading, so a tap
+       on it opens it at full size, the way a card of the lists does — its
+       file, or what an object does and who breaks it. Between turns only:
+       a card mid-fight or mid-march is not standing where it is drawn. Only
+       where the web shell's barracks is there to show it. */
+    function foeUpAt(p) {
+      if (turn || march || !lastFoe || !window.__ARMY__ || !window.__ARMY__.file) return null;
+      var cell = cellAt(p);
+      return cell && grid[cell.r][cell.c] === lastFoe ? cell : null;
+    }
+    function foeOpen(cell) {
+      var f = fileOf(lastFoe, "red");
+      if (cursorOn) { cursorOn = false; document.getElementById("game").style.cursor = ""; }
+      drag = null;
+      window.__ARMY__.file(f, f.team, Table.nodes[cellKey(cell.r, cell.c)]);
     }
     function onMove(p) {
       if (!ended && State === "playing") hover(p);
@@ -7347,7 +7492,7 @@
        back is visibly the same object — with the officer standing small in a
        window at its head and their file under it. `info` is written by the
        barracks, already in the player's language and already in capitals
-       where it shouts: { grade, first, last, facts: [], lore, army, turn }.
+       where it shouts: { grade, first, last, facts: [], skill, lore, army, turn }.
        Every line is text written into a node, never markup — a name like
        O'Ween and a lore with quotes in it are data. */
     function cardBack(c, opt, info) {
@@ -7370,6 +7515,12 @@
       if (info.facts && info.facts.length) {
         var facts = line(sheet, "div", "cf-facts");
         for (var i = 0; i < info.facts.length; i++) line(facts, "span", "", info.facts[i]);
+      }
+      /* the grade's ability, under the macaron's own pictogram */
+      if (info.skill) {
+        var skill = line(sheet, "div", "cf-skill");
+        if (PERK[c.rank]) skill.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg>";
+        line(skill, "p", "", info.skill);
       }
       var lore = line(sheet, "div", "cf-lore");
       var crest = CONFIG.art && CREST[opt.side] && CONFIG.art[CREST[opt.side]];
@@ -8103,17 +8254,40 @@
       }
       return grid;
     }
+    /* THE MOTOR'S CARD (packages/shell/motor.css, CARD): the count on the
+       corner, the eyebrow, the title, a body, and the line that says what the
+       tap does — the same six slots every card of the web shell is built on,
+       so a list over the round reads as one of them. */
+    function sheetCard(kind, title, count, sub) {
+      var box = document.createElement("div");
+      box.className = "mt-card sh-box sh-" + kind;
+      box.innerHTML = (count != null ? '<i class="mt-pin">' + count + "</i>" : "") +
+        (sub ? '<div class="mt-eyebrow">' + upper(Lang.t(sub)) + "</div>" : "") +
+        '<h3 class="mt-h">' + upper(Lang.t(title)) + "</h3>";
+      var body = document.createElement("div");
+      body.className = "mt-body";
+      box.appendChild(body);
+      return { box: box, body: body };
+    }
+    function sheetShow(box) {
+      box.insertAdjacentHTML("beforeend", '<p class="mt-tap">' + upper(Lang.t("Tap to close")) + "</p>");
+      Table.sheet.innerHTML = "";
+      Table.sheet.appendChild(box);
+      Table.sheet.classList.add("on");
+      Fit.box(box.querySelector(".mt-h"), 32);
+      sheet = { kind: box.getAttribute("data-kind") };
+      drag = null;
+      Sound.clip("pick", 0.4, 0.8);
+    }
+
     function armySheet() {
       var alive = [], i;
       for (i = 0; i < army0.length; i++) {
         if (lostCards.indexOf(army0[i]) < 0 && strayed.indexOf(army0[i]) < 0) alive.push(army0[i]);
       }
       var n = army0.length, w = n > 24 ? 76 : n > 14 ? 88 : 100;
-      var box = document.createElement("div");
-      box.className = "sh-box sh-army";
-      box.innerHTML = '<div class="sh-title">' + upper(Lang.t("Your army")) + " <span>" + n + "</span></div>" +
-        '<div class="sh-sub">' + upper(Lang.t("At the start of the battle")) + "</div>" +
-        '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>";
+      var c = sheetCard("army", "Your army", n, "At the start of the battle"), box = c.body;
+      box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
       box.appendChild(armyTiles(alive, w));
       box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
       if (lostCards.length) box.appendChild(armyTiles(lostCards, w, true));
@@ -8122,7 +8296,7 @@
         box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost in the forest")) + " <span>" + strayed.length + "</span></div>");
         box.appendChild(armyTiles(strayed, w, true));
       }
-      return box;
+      return c.box;
     }
 
     /* A CARD OF A LIST IS A DOOR TO WHO IT IS. The sheet takes no pointer —
@@ -8136,12 +8310,15 @@
        destroys it (ABOUT); and a tile of the camp's muster (`blind`) opens
        the card at full size and nothing more — it counts grades and hides
        the tiers, and a file would say both. */
+    function fileOf(c, side, blind) {
+      if (c.rank > MARSHAL) return { g: c.rank, obj: true, team: "none" };
+      if (blind) return { o: side, g: c.rank, t: c.tier, blind: true, team: side };
+      return { o: c.o || side, g: c.rank, t: c.tier, team: side };
+    }
     function fileDoor(cell, c, side, blind) {
       var AR = window.__ARMY__;
       if (!AR || !AR.file || !c) return;
-      if (c.rank > MARSHAL) cell._file = { g: c.rank, obj: true, team: "none" };
-      else if (blind) cell._file = { o: side, g: c.rank, t: c.tier, blind: true, team: side };
-      else cell._file = { o: c.o || side, g: c.rank, t: c.tier, team: side };
+      cell._file = fileOf(c, side, blind);
       cell.classList.add("file");
     }
     function sheetFileAt(p) {
@@ -8166,19 +8343,12 @@
         if (kind === "army") cbox = armySheet();
         else {
           var cg = campGrid();
-          cbox = document.createElement("div");
-          cbox.className = "sh-box sh-camp";
-          cbox.innerHTML = '<div class="sh-title">' + upper(Lang.t("Enemy camp")) + " <span>" + cg.total + "</span></div>" +
-            '<div class="sh-sub">' + upper(Lang.t("At the start of the battle")) + "</div>";
-          cbox.appendChild(cg.node);
+          var cc = sheetCard("camp", "Enemy camp", cg.total, "At the start of the battle");
+          cc.body.appendChild(cg.node);
+          cbox = cc.box;
         }
-        cbox.insertAdjacentHTML("beforeend", '<div class="sh-foot">' + upper(Lang.t("Tap to close")) + "</div>");
-        Table.sheet.innerHTML = "";
-        Table.sheet.appendChild(cbox);
-        Table.sheet.classList.add("on");
-        sheet = { kind: kind };
-        drag = null;
-        Sound.clip("pick", 0.4, 0.8);
+        cbox.setAttribute("data-kind", kind);
+        sheetShow(cbox);
         return;
       }
       if (kind === "infirmary") { list = hurtCards; side = "blue"; title = "Infirmary"; empty = "Nobody wounded yet"; }
@@ -8186,11 +8356,8 @@
         for (i = 0; i < captives.length; i++) list.push(card(captives[i].r, captives[i].t));
         title = "Prison"; empty = "No prisoners yet";
       } else { list = fallen; title = "Foes beaten"; empty = "No foe beaten yet"; }
-      var el = Table.sheet;
-      el.innerHTML = "";
-      var box = document.createElement("div");
-      box.className = "sh-box sh-" + kind;
-      box.innerHTML = '<div class="sh-title">' + upper(Lang.t(title)) + (list.length ? ' <span>' + list.length + "</span>" : "") + "</div>";
+      var sc = sheetCard(kind, title, list.length || null), box = sc.body;
+      sc.box.setAttribute("data-kind", kind);
       if (!list.length) {
         box.innerHTML += '<div class="sh-empty">' + upper(Lang.t(empty)) + "</div>";
       } else {
@@ -8211,12 +8378,7 @@
         }
         box.appendChild(grid);
       }
-      box.insertAdjacentHTML("beforeend", '<div class="sh-foot">' + upper(Lang.t("Tap to close")) + "</div>");
-      el.appendChild(box);
-      el.classList.add("on");
-      sheet = { kind: kind };
-      drag = null;
-      Sound.clip("pick", 0.4, 0.8);
+      sheetShow(sc.box);
     }
     function sheetClose() {
       sheet = null;
@@ -8340,7 +8502,7 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally,
-             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo };
+             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo };
   })();
   /* ===================================================================
      7. BOOTSTRAP — wiring. Rarely edited.

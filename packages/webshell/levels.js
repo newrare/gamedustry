@@ -1740,10 +1740,9 @@
        from is still a milestone crossed. */
     if (MT) MT.sweep();
     /* …and whatever the last round's XP owes the player, which only this
-       screen can pay: the map's header is the one wallet in the layer that
-       carries a level bar. The bar runs, then the card for a level crossed.
-       Called after `draw()` below would be a beat too late — it is queued on
-       the frame the map appears, not on the frame it finishes painting. */
+       screen can pay — but only on a game with no VILLAGE: where there is one,
+       the village is where the end screen sends the player and where the card
+       for a level crossed belongs (packages/webshell/village.js). */
     /* A board nobody has played yet opens ON level 0 — the map scrolled to its
        foot, the card offering the lesson. It is still one tap to level 1, and
        every later arrival lands on the level the player is actually at. */
@@ -1753,7 +1752,7 @@
            : (frontier()[0] || LEVELS);
     draw();
     scrollTo(picked);
-    if (MT) MT.arrive();
+    if (MT && !window.__VILLAGE__) MT.arrive();
   }
 
   /* ── 9. the golden title screen ───────────────────────────────────────── */

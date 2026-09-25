@@ -116,17 +116,87 @@
 
   var FADE = 220;                       // the one teardown delay
 
+  /* THE LAST LINE OF EVERY CARD. A card has no cross (packages/shell/
+     motor.css, CARD): it says what the tap does, and when the caller has
+     nothing more precise to say it is one of these two. */
+  var STRINGS = {
+    en: { tapClose: "Tap to close", tapOutside: "Tap outside to close" },
+    fr: { tapClose: "Touche pour fermer", tapOutside: "Touche à côté pour fermer" }
+  };
+  var LANG = "en";
+  function tapCopy(key) { return (STRINGS[LANG] || STRINGS.en)[key]; }
+
+  /* THE SIX SLOTS (motor.css, CARD): the tag, the eyebrow, the title, the
+     body the caller fills, the tap line. The first three and the last are
+     written HERE, in this order, so no card can put its title under its
+     content or forget the line that says how it goes away. `undefined`
+     leaves a slot as it is, `null` or "" takes it off. A string is written
+     as text and shouted through the motor's `upper`; a node is taken as it
+     is (the daily road's DEV pill rides in its eyebrow). */
+  function child(card, cls) {
+    for (var c = card.firstChild; c; c = c.nextSibling) {
+      if (c.classList && c.classList.contains(cls)) return c;
+    }
+    return null;
+  }
+
+  function slot(card, cls, tag, value, place) {
+    var n = child(card, cls);
+    if (value === undefined) return n;
+    if (value === null || value === "") {
+      if (n) card.removeChild(n);
+      return null;
+    }
+    if (!n) {
+      n = el(tag, cls);
+      place(n);
+    }
+    if (typeof value === "string" || typeof value === "number") {
+      n.textContent = cls === "mt-pin" ? String(value) : W.upper(String(value));
+    } else {
+      /* a copy, so one node can dress a card twice (the gift keeps its
+         eyebrow through the reveal) */
+      n.innerHTML = "";
+      n.appendChild(value.cloneNode(true));
+    }
+    return n;
+  }
+
+  function setSlots(h, s) {
+    var card = h.card;
+    if (!card || !s) return;
+    var body = h.body;
+    function before(ref) { return function (n) { card.insertBefore(n, ref()); }; }
+    function titleOrBody() { return child(card, "mt-h") || body; }
+    slot(card, "mt-pin", "i", s.badge, function (n) { card.insertBefore(n, card.firstChild); });
+    slot(card, "mt-h", "h3", s.title, before(function () { return body; }));
+    slot(card, "mt-eyebrow", "div", s.eyebrow, before(titleOrBody));
+    slot(card, "mt-tap", "p", s.tap, function (n) { card.appendChild(n); });
+    requestAnimationFrame(function () { fitTitles(h.box); });
+  }
+
   /* `spec`:
        kind      a class on the box — `options`, `help`, `gift`, `ad`… It is
                  what the stylesheets dress, and what `Modal.top()` reports.
-       fill      fill(card, close) — the caller writes its own content, which
-                 is the one thing a card does not share with the next.
+       eyebrow   the line over the title                         (optional)
+       title     the title
+       badge     the tag on the corner, a number                 (optional)
+       tap       the last line, what a tap does. Every card carries one:
+                 left out, it is "Tap to close" (or "Tap outside to close"
+                 for `dismiss: "outside"`); a card whose tap does something
+                 else says its own ("Tap a box", "Tap to collect").
+                 All four are rewritten later with `handle.set({...})`.
+       fill      fill(body, close, handle) — the caller writes the card's
+                 BODY, which is the one thing a card does not share with the
+                 next. `handle.body` is the same node; `handle.card` is the
+                 card around the slots, for a layer painted under all of it.
        card      false for a caller that wants the scrim and nothing else
                  (the gift ceremony deals its own three boxes over the frame).
-       dismiss   true when a TAP ANYWHERE puts it away. A card that asks a
-                 question sets it false: a tap must never stand in for a
-                 choice, and a card with switches on it must not close under
-                 the finger that reached for one.
+       dismiss   true when a TAP ANYWHERE puts it away. "outside" when only a
+                 tap AROUND the card does: a card with switches on it must not
+                 close under the finger that reached for one, and since there
+                 is no cross, the scrim is its way out. false for a card that
+                 asks a question: a tap must never stand in for a choice.
        esc       whether ESCAPE closes it. It defaults to `dismiss` and is
                  named apart because the two are not the same question: the
                  options card is not dismissed by a tap and IS closed by the
@@ -142,22 +212,33 @@
   function open(spec) {
     spec = spec || {};
     var box = el("div", "wm-modal mt-modal " + (spec.kind || ""));
-    var card = null;
+    var card = null, body = null;
     if (spec.card !== false) {
       card = el("div", "wm-card mt-card");
+      body = el("div", "mt-body");
+      card.appendChild(body);
       box.appendChild(card);
     }
 
+    var mode = spec.dismiss === "outside" ? "outside" : spec.dismiss !== false;
     var handle = {
       kind: spec.kind || "",
       box: box,
       card: card,
-      dismiss: spec.dismiss !== false,
+      body: body,
+      dismiss: mode,
       esc: spec.esc != null ? !!spec.esc : spec.dismiss !== false,
-      close: function () { shut(handle); }
+      close: function () { shut(handle); },
+      set: function (s) { setSlots(handle, s); }
     };
 
-    if (spec.fill) spec.fill(card || box, handle.close);
+    setSlots(handle, {
+      eyebrow: spec.eyebrow, title: spec.title, badge: spec.badge,
+      tap: spec.tap !== undefined ? spec.tap
+         : tapCopy(mode === "outside" ? "tapOutside" : "tapClose")
+    });
+
+    if (spec.fill) spec.fill(body || box, handle.close, handle);
 
     frame().appendChild(box);
     modals.push(handle);
@@ -176,7 +257,13 @@
       handle.watch.observe(card, { childList: true });
     }
 
-    if (handle.dismiss) {
+    if (handle.dismiss === "outside") {
+      box.addEventListener("click", function (e) {
+        /* Only the scrim: everything on the card is something to touch. */
+        if (card && card.contains(e.target)) return;
+        handle.close();
+      });
+    } else if (handle.dismiss) {
       box.addEventListener("click", function (e) {
         /* A control inside the card answers for itself; the rest of the card,
            and the scrim around it, is the way out. */
@@ -309,6 +396,7 @@
        Re-appended as well, so the DOM says the same thing the z-index does. */
     frame().appendChild(node);
     node.style.zIndex = String(Z_BASE + stack.length);
+    if (node.__sheet) arrive(node.__sheet);
     node.classList.add("on");
     stack.push(name);
     if (spec.bed !== false) bedDown();
@@ -477,8 +565,12 @@
      corner a playable has nothing to put in, and the whole difference between
      the round being an ad and the round being a game the player owns. */
   var ctlBar = null, ctlExtra = null;
+  var ctlItems = [];                    // what buildCorner was given, in order
+  var ctlLabels = {};                   // the latest cornerLabels, by name
 
   function buildCorner(items) {
+    ctlItems = ctlItems.concat(items);
+    for (var s = 0; s < sheets.length; s++) fillCtls(sheets[s]);
     if (!ctlBar) {
       ctlBar = el("div"); ctlBar.id = "web-ctls";
       frame().appendChild(ctlBar);
@@ -511,9 +603,13 @@
     ctlExtra.appendChild(b);
   }
 
+  /* Frame-wide, because the pair is drawn twice: once in this corner, and
+     once in the bar of every sheet (section 6b). */
   function cornerLabels(map) {
-    if (!ctlBar) return;
-    var all = ctlBar.querySelectorAll("[data-ctl]");
+    for (var k in map) if (map.hasOwnProperty(k)) ctlLabels[k] = map[k];
+    var f = frame();
+    if (!f) return;
+    var all = f.querySelectorAll("[data-ctl]");
     for (var i = 0; i < all.length; i++) {
       var k = all[i].getAttribute("data-ctl");
       if (map[k]) all[i].setAttribute("aria-label", map[k]);
@@ -576,6 +672,213 @@
     }
   }
 
+  /* ── 6b. the sheet ────────────────────────────────────────────────────── */
+
+  /* ONE FRAME FOR EVERY VIEW THAT IS A ROOM OF THE PLACE — the collection, the
+     shop, the ranking and the barracks' four. They were seven screens with
+     seven headers: a title at 38 px here and 40 there, a count where a title
+     was, a segmented bar under the band on two of them and nothing on the
+     rest, and three copies of the function that dresses the hub behind them.
+     Chosen in lab/view-frame.html (proposal C, "sheet"), and it is five layers
+     and nothing else:
+
+       .wv-bg       the hub's own ground, under ONE veil (--wv-veil)
+       .wv-sheet    a sheet risen out of the bottom edge, under the band
+         .wv-head     the title, one line, measured — and one line under it
+         .wv-body     the owner's content, the one region that scrolls
+         .wv-bar      the TABS, and the options / help pair after a filet
+
+     The owner fills the body and names its pages; this file owns the rest.
+     A view with one page has no tab bar — a single tab is a label, not a
+     choice — and keeps home, help and options on their own at the right of
+     the bar.
+
+     THE PAIR IS NOT THE CORNER. #web-ctls is still the round's (section 6);
+     what a sheet carries is the same two items, drawn into its own bar,
+     because a player on the collection who wants the music off should not
+     have to walk back to the village for it. */
+  var sheets = [];
+
+  /* THE HUB FIRST, where the game has a village: these are rooms of that
+     place, so they stand on the picture the player just walked off. Then the
+     scene the menu is dressed with, then a picture the game embeds, then the
+     gradient its SKIN paints the page with. `window.__VILLAGE__` is read here
+     rather than captured at load: village.js is the last file of the web
+     layer, and this runs on a view's first open, long after all of it. */
+  function ground(bg) {
+    var VG = window.__VILLAGE__;
+    var hub = VG && VG.ground ? VG.ground() : null;
+    if (hub) { bg.style.backgroundImage = "url(" + hub + ")"; return; }
+    var art = W.Art ? W.Art.src(W.Art.sceneKey()) : null;
+    if (art) { bg.style.backgroundImage = "url(" + art + ")"; return; }
+    var images = (W.ASSETS && W.ASSETS.images) || {};
+    var src = images.bg || images.bg1 || null;
+    if (src) { bg.style.backgroundImage = "url(" + src + ")"; return; }
+    var cs = window.getComputedStyle(document.body);
+    if (cs.backgroundImage && cs.backgroundImage !== "none") bg.style.backgroundImage = cs.backgroundImage;
+    bg.style.backgroundColor = cs.backgroundColor;
+    bg.classList.add("flat");
+  }
+
+  /* `spec`:
+       id, cls   the view's own id and class, which its stylesheet dresses
+       tag       the element, `div` by default
+       body      an element of the owner's to be the body, or nothing
+       fixed     true for a body that must not scroll (the album is ONE
+                 screen: the machine over twenty tiles)
+       home      the label of the home button a game with no band gets
+  */
+  function sheet(spec) {
+    spec = spec || {};
+    var box = el(spec.tag || "div", "wv-screen" + (spec.cls ? " " + spec.cls : ""));
+    if (spec.id) box.id = spec.id;
+    var bg = el("div", "wv-bg");
+    box.appendChild(bg);
+
+    var pane = el("div", "wv-sheet");
+    var head = el("header", "wv-head");
+    var title = el("h2", "wv-title", "");
+    var sub = el("p", "wv-sub", "");
+    head.appendChild(title);
+    head.appendChild(sub);
+    pane.appendChild(head);
+
+    var body = spec.body || el("div");
+    body.classList.add("wv-body");
+    if (spec.fixed) body.classList.add("fixed");
+    pane.appendChild(body);
+
+    var bar = el("nav", "wv-bar");
+    var tabs = el("div", "wv-tabs");
+    var ctls = el("div", "wv-ctls");
+    /* THE ONE WAY HOME, and on a sheet it is here rather than in the band:
+       the house first, then help, then options — the bottom-right corner is
+       where a thumb already is, and the band's own house chip stands down
+       over every sheet (packages/webshell/meta.js, `bandDoors`), so there is
+       still exactly one. It is `web-home` like the button a bandless view
+       wears, because it is the same door: View.home, the village where there
+       is one and the title screen otherwise. */
+    var hb = el("button", "wv-ctl web-home", API ? API.icon("home") : "");
+    hb.setAttribute("aria-label", ctlLabels.home || spec.home || "");
+    hb.setAttribute("data-ctl", "home");
+    hb.addEventListener("click", home);
+    ctls.appendChild(hb);
+    bar.appendChild(tabs);
+    bar.appendChild(ctls);
+    pane.appendChild(bar);
+    box.appendChild(pane);
+
+    var S = {
+      box: box, bg: bg, sheet: pane, head: head, title: title, sub: sub,
+      body: body, nav: bar, tabsBox: tabs, ctls: ctls,
+      btn: {}, order: [], cur: null, grounded: false,
+
+      /* The title is shouted here, the line under it is written as it is. */
+      setHead: function (t, s) {
+        title.textContent = W.upper(t || "");
+        sub.textContent = s || "";
+        sub.hidden = !s;
+        fitTitle(S);
+      },
+
+      /* `list` is [{ key, label, icon }], in the order they read; `pick`
+         answers a tap with the key, and the owner repaints — which is what
+         calls `light` below, so the bar never says a page the body is not on. */
+      pages: function (list, pick) {
+        tabs.innerHTML = "";
+        S.btn = {}; S.order = [];
+        if (list.length > 1) {
+          for (var i = 0; i < list.length; i++) tabs.appendChild(tabButton(S, list[i], pick));
+        }
+        syncBar(S);
+      },
+
+      relabel: function (list) {
+        for (var i = 0; i < list.length; i++) {
+          var b = S.btn[list[i].key];
+          if (b) b.querySelector(".wv-tl").textContent = W.upper(list[i].label);
+        }
+      },
+
+      /* Lights one page, and slides the body in from the side it is on. Not
+         on the first call after an open: a view arriving on another page than
+         the one it was left on is an arrival, not a page change. */
+      light: function (key) {
+        var prev = S.cur;
+        S.cur = key;
+        for (var k in S.btn) if (S.btn.hasOwnProperty(k)) {
+          S.btn[k].classList.toggle("on", k === key);
+          S.btn[k].setAttribute("aria-pressed", k === key ? "true" : "false");
+        }
+        if (prev == null || prev === key) return;
+        var dir = S.order.indexOf(key) > S.order.indexOf(prev) ? "l" : "r";
+        body.classList.remove("wv-in-l", "wv-in-r");
+        void body.offsetWidth;          // restart the animation
+        body.classList.add("wv-in-" + dir);
+      }
+    };
+    box.__sheet = S;
+    sheets.push(S);
+    fillCtls(S);
+    frame().appendChild(box);
+    return S;
+  }
+
+  function tabButton(S, item, pick) {
+    var b = el("button", "wv-tab",
+      (API ? API.icon(item.icon, "wv-ti") : "") + '<span class="wv-tl">' + W.upper(item.label) + "</span>");
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function () { pick(item.key); });
+    S.btn[item.key] = b;
+    S.order.push(item.key);
+    return b;
+  }
+
+  /* The same items the corner was given, and the same handlers: one options
+     card and one help card, whichever of the two bars opened it. */
+  function fillCtls(S) {
+    if (S.itemsIn || !ctlItems.length || !API) { syncBar(S); return; }
+    S.itemsIn = true;
+    for (var i = 0; i < ctlItems.length; i++) {
+      var item = ctlItems[i], name = item.name || item.icon;
+      var b = el("button", "wv-ctl", API.icon(item.icon));
+      b.setAttribute("aria-label", ctlLabels[name] || item.label || "");
+      b.setAttribute("data-ctl", name);
+      b.addEventListener("click", item.on);
+      S.ctls.appendChild(b);
+    }
+    syncBar(S);
+  }
+
+  function syncBar(S) {
+    S.nav.classList.toggle("tabbed", S.order.length > 1);
+  }
+
+  /* Whether a view stands in a sheet — what the band asks before it drops its
+     house chip, since the sheet's bar carries the house instead. */
+  function sheeted(name) {
+    var s = defs[name];
+    var n = s && s.built !== false && s.node ? s.node() : null;
+    return !!(n && n.__sheet);
+  }
+
+  var TITLE_SHEET_FLOOR = 30;
+  function fitTitle(S) {
+    if (!W.Fit || !S.box.classList.contains("on")) return;
+    W.Fit.box(S.title, TITLE_SHEET_FLOOR);
+  }
+
+  /* What go() does to a sheet before its owner paints: the hub is read once,
+     the pair is drawn if the corner came after the build, and the page the
+     view is left on stops being the one a slide is measured from. */
+  function arrive(S) {
+    if (!S.grounded) { S.grounded = true; ground(S.bg); }
+    fillCtls(S);
+    S.cur = null;
+    S.body.classList.remove("wv-in-l", "wv-in-r");
+    requestAnimationFrame(function () { fitTitle(S); });
+  }
+
   /* ── 7. the module ────────────────────────────────────────────────────── */
 
   watchers.push(syncCorner);
@@ -601,6 +904,9 @@
 
     banded: banded,
     homeButton: homeButton,
+    sheet: sheet,
+    sheeted: sheeted,
+    ground: ground,
 
     hudMount: hudMount,
     hudShow: hudShow,
@@ -619,6 +925,9 @@
     any: anyModal,
     top: topModal,
     count: function () { return modals.length; },
+    /* the language of the two default tap lines; menu.js calls it with the
+       rest of the shell */
+    setLang: function (code) { if (STRINGS[code]) LANG = code; },
     /* For a caller that rewrites a title outside the card's own children. */
     fit: function (h) { if (h && h.box) fitTitles(h.box); }
   };

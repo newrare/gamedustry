@@ -95,7 +95,9 @@ development pages and answer only to the short rules in their own sections.
    and `intro.caption` stays `""`), its two or three key words wrapped in
    `<b class="w-…">` so they read in colour, and a demo stage that illustrates
    *this* game — keep the motor's shared finger (`assets/motor/svg/finger.svg`, already
-   inlined in `.demo-hand`; never draw another hand) and re-dress the target /
+   inlined in `.demo-hand`; never draw another hand — the web Help card swaps its picture for the shell's
+   painted one, `CONFIG.shellArt.hand`, cut from `assets/image/master/game-object-hand.png`,
+   and keeps the box and the SKIN's choreography) and re-dress the target /
    track / beam and the stage's `::before` / `::after` from the SKIN.
    `games/vipera` and `games/orbinity` are the reference.
 1. Retheme in `games/<slug>/skin.css`, which is the `SKIN — <GAME>` block and
@@ -253,19 +255,32 @@ screen under it and it is dismissed rather than navigated. ESCAPE walks that one
 stack top down, and `make test` is what holds the contract
 (`tools/test/views.mjs`, in a real build).
 
+**Every view that is a room of the place stands in ONE frame, the SHEET** —
+the collection, the shop, the ranking and the barracks' four
+(`View.sheet`, packages/webshell/view.js). The hub's own ground under one
+veil, a sheet risen out of the bottom edge under the band, its title and one
+line under it, the body — the one region that scrolls — and a bar at the foot
+carrying the view's pages as tabs, then home, help and options after a filet — that house is the way home there, so the band drops its own over a sheet. A view
+with one page has no tabs. A view writes its body and names its pages; the
+ground, the veil, the header, the bar and the entrance are the sheet's, so a
+new room is never a new screen structure. Chosen in `lab/view-frame.html`; see
+[docs/VIEWS.md](docs/VIEWS.md).
+
 **There is no back arrow in it.** A back arrow answers "where did I come from",
 and the player does not care — they care where they are going. The **wallet band
 IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, each chip the
 door to the screen it is the number of — home, the ranking, the shop, the
-collection, the collection, the map. The album has no header of its own: its count is
-that first chip, and the height it was taking went to the machine and the tiles. The row never changes shape and a chip standing on its own screen goes
+collection, the collection, the map. The album's count is that first chip and not its
+title, which names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
 inert rather than missing, so a number is never one to find again — the house
 alone is dropped on the bare village, since it is only a door and that door is
-the screen under it (a card over the village brings it back); the row
+the screen under it, and over every sheet, whose own bar carries it bottom right
+(a card over either brings it back); the row
 runs edge to edge, the house against the left gutter, and the level chip's xp
 bar fills all the room the counts leave free. A
-view's header carries no button; a card's way out is a discreet cross in its
-corner, and ESCAPE. The one branch: a game with no `web.meta` has no band, so
+view's header carries no button; a card's way out is its tap line — every card
+ends on one ("Tap to close", "Tap outside to close") — and ESCAPE: no card
+carries a cross. The one branch: a game with no `web.meta` has no band, so
 its views keep a home button — there is always exactly one way home, never two.
 **The bottom-right corner belongs to the ROUND**, which is the one surface with
 nothing else on it: options, help and the way out.
@@ -339,9 +354,9 @@ What a view brings:
   crossfades into the round's bed on PLAY. A game that names no `menu` section
   keeps silent menus.
 - **OPTIONS and HELP are cards, and they open from anywhere** — the title menu
-  where there is one, the village's own houses where there is a hub, and a pair
-  of controls in the **bottom-right corner** of every other surface
-  (`#web-ctls`). The OPTIONS card ends on the **studio signature** — the mark,
+  where there is one, the village's own houses where there is a hub, the bar
+  at the foot of every view's sheet (below), and a pair of controls in the
+  **bottom-right corner** of a round (`#web-ctls`). The OPTIONS card ends on the **studio signature** — the mark,
   `NEWRARE` and `v<version>`, the same block the motor pins to the corner of
   the title screen out of `CONFIG.brand`. A version number is what a player is
   asked for when a build misbehaves, and a title screen two seconds long is not
@@ -557,12 +572,19 @@ What a view brings:
   then enlists. Both waits are bought out with the shell's rewarded-ad
   placeholder, because a player whose three best cards are in bandages has
   nothing to do for two days, which is not a mechanic. Four more doors on the
-  hub — DECK, INFIRMARY, PRISON and RECRUITS — and every one of them is a VIEW
+  hub — DECK, INFIRMARY, PRISON and the CAMP — and every one of them is a VIEW
   and not a card, because each is a place with a list to manage and a screen a
-  stray tap can close is not a screen anything is composed on. Recruiting
-  spends the meta layer's own coins and never sells the three specials: a spy, a
-  scout and a sapper are ANSWERS to something, and a tent that sold them would
-  be selling the solution rather than the army. The layer says exactly one thing
+  stray tap can close is not a screen anything is composed on. The camp has two
+  tabs. RECRUITS spends the meta layer's own coins and never sells the three
+  specials: a spy, a scout and a sapper are ANSWERS to something, and a tent
+  that sold them would be selling the solution rather than the army. MISSIONS
+  sends a squad of two to five cards away for 4 to 48 real hours on one of
+  `web.army.missions.list` (fifty scenarios), on odds the squad's grades and
+  tiers decide and the briefing prints live; the squad is out of every battle
+  until it is back, the outcome is drawn at the departure, and it comes back
+  with a report written in the scenario's own words — what it paid (coins, xp,
+  tickets, a sticker, an officer) or what it cost (wounds, cards lost, coins).
+  The layer says exactly one thing
   to the game — `CONFIG.army.deck`, read fresh by `Game.reset()` — and the
   battle hands back exactly one thing, `result.army`, which rides on `endRound`
   like the game's own stat rows; the motor knows none of it. A deck short of
@@ -780,8 +802,9 @@ sheet the **web shell** owns, and there are several — the gift boxes the daily
 strip and the three-box ceremony draw, plus the shell's **instruments**: the
 coin a wallet counts, the ticket it spends on a pull, the bolt an xp bar fills
 with, the star a level is cleared with, the trophy a finished board earns, the
-four-leaf clover the collection is counted with, and the plate that says a
-seventh day pays five times over. Those were stroked pictograms
+four-leaf clover the collection is counted with, the plate that says a
+seventh day pays five times over, and the hand the Help card acts a gesture
+out with. Those were stroked pictograms
 and a stroked pictogram reads as a tool's chrome; the web shell is a game. A
 cut is **renamed** in `SHELL_CUTS` and the rename is the declaration —
 `reward-08` says nothing, `coin` is what the shell draws — and five of the
@@ -1134,6 +1157,13 @@ at the top says which of the three — manifest, draft, empty — is ON SCREEN, 
 source nothing is stored in is disabled rather than silent, and switching asks
 before it replaces unsaved work.
 
+`view-frame.html` is **the view frame bench**: the one frame every room of the
+place stands in — veil, card, header, the tab bar at the foot and how it shares
+the bottom band with options and help, the page change and the entrance — as
+six proposals over the five views, in any of the games' palettes. **C · Sheet**
+is what ships (packages/webshell/view.css, THE SHEET); the others are the record
+of what it beat.
+
 `notify.html` is **the notification catalogue**, and it is where the look of
 `Notify` was chosen: seven styles (pill, card, ribbon, plate, stamp, glass,
 chip), five slots, four ways a crowd behaves (stack, replace, queue, merge),
@@ -1144,6 +1174,23 @@ messages. **`D · Chip` is what ships**; the other presets are the record of
 what it beat. A new look is tried there first and copied into the NOTIFY block
 of `packages/shell/motor.css` by hand — *Copy settings* is the panel's state as
 JSON, which a CSS copy does not carry.
+
+`modal.html` is **the card catalogue**, and it is where the ONE card component
+every game opens was chosen. The structure is fixed — a tag on the corner, an
+eyebrow, a title measured to one line, the content and a tap line, the tag and
+the eyebrow optional and the tap line mandatory — and what was tried is the
+skin (seven materials), the presentation (center, header, band, tab, ribbon),
+where the tag sits and how the card moves. **All seven** puts the real cards
+side by side in one look — options, the daily road, the three boxes, a
+sticker's detail, a new sticker, the ad, the enemy camp — because a look is
+judged on its coherence, in any of the fifteen palettes and both languages.
+`#view=gallery&preset=0&game=vipera` opens a state without the panel. **Preset
+`A · Chosen` is what ships** — bevel, centred, gold title, corner pill,
+shimmering tap line, pop — as the CARD block of `packages/shell/motor.css`,
+which is the motor's so a game's own sheets wear it too (`games/stratideck`'s
+camp and army lists over a round); `packages/webshell/view.js` builds the slots
+and `view.css` only places the card. The other presets are the record of what
+it beat.
 
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
@@ -1373,8 +1420,9 @@ Shell (section 5):
   `onOutro(fn)` is the beat BETWEEN the round and the end screen: the clock is
   stopped, the loop is left turning (which is what a slow motion needs), and the
   screen waits for the `done` the hook is handed. Same rule — the motor
-  registers none, a playable keeps the straight cut, and the level layer is the
-  one user.
+  registers none, a playable keeps the straight cut. Hooks CHAIN in the order
+  they were registered: the level layer's first, then the army layer's prisoner
+  offer.
 
 ## Ad-network glue (section 4) — do not remove
 

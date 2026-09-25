@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — modals</title>
+<style>
+/* ===========================================================================
+   MODAL LAB — one card component for every game.
+
+   The question this page answers: what does the ONE card the web shell opens
+   look like — options, the daily road, the three boxes, a sticker's detail, a
+   new sticker, the ad, the enemy camp — once they all share one structure and
+   one neutral look that holds in all fifteen palettes?
+
+   The structure is fixed: every card has the same five slots, and only the
+   content changes.
+
+     .md-badge    a tag / medallion on the card         (optional)
+     .md-eyebrow  a line over the title, never its colour (optional)
+     .md-title    the title, one line, measured to fit
+     .md-body     the content — the only free region
+     .md-tap      what a tap does                       (always)
+
+   There is no close cross: the tap line says what the tap does, and that is
+   the way out.
+
+   CHOSEN on 2026-09-25 — preset "A · Chosen" (bevel, centred, gold title,
+   corner pill, shimmering tap line, pop) — and SHIPPED as the CARD block of
+   packages/shell/motor.css, with the slots built by packages/webshell/view.js.
+   The other presets stay as the record of what it beat.
+
+   What is tried here is the SKIN (the card's material), the PRESENTATION
+   (where the title, the cross and the badge sit) and the motion. The
+   gallery view puts the seven real cards side by side in the same look,
+   because a look is judged on its coherence and not on one card.
+
+   Nothing here ships. A new look is tried here first and copied into the
+   motor by hand; "Copy settings" hands back the panel as JSON, which a CSS
+   copy does not carry.
+
+   Assets are loaded by relative path out of ../assets/, which only lab/ may
+   do. Everything on the stage is authored in the 720x1280 design space.
+   =========================================================================== */
+
+@font-face { font-family:"Orbitron";   src:url(../assets/motor/font/orbitron.woff2) format("woff2"); font-weight:400 900; }
+@font-face { font-family:"Exo 2";      src:url(../assets/motor/font/exo2.woff2) format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Baloo 2";    src:url(../assets/motor/font/baloo2.woff2) format("woff2"); font-weight:400 800; }
+@font-face { font-family:"Bungee";     src:url(../assets/motor/font/bungee.woff2) format("woff2"); }
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+@font-face { font-family:"Russo One";  src:url(../assets/motor/font/russoone.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; min-height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 340px; height:100vh; overflow-y:auto;
+  padding:18px 18px 40px; background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 10px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 {
+  margin:18px 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:#6f6a90;
+}
+.row { margin-bottom:10px; }
+.row > label, .row > .lbl { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:4px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.seg { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.seg button {
+  flex:1 1 auto; padding:6px 8px; border-radius:6px; cursor:pointer;
+  background:#0b0b12; color:#b9b9d6; border:1px solid #2c2c47; font:600 12px/1 inherit;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.checks { display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; margin-top:6px; }
+.checks label { display:flex; gap:6px; align-items:center; font-size:12px; color:#b9b9d6; cursor:pointer; }
+.checks.off { opacity:.4; pointer-events:none; }
+.btn {
+  width:100%; margin-top:6px; padding:8px 10px; cursor:pointer;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px; font:700 12px/1 inherit;
+}
+.btn.ghost { background:#1c1c2c; color:#e8e6f5; border:1px solid #2c2c47; }
+.presets { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.presets button {
+  padding:8px; text-align:left; cursor:pointer; border-radius:8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; font:700 12px/1.2 inherit;
+}
+.presets button small { display:block; font-weight:500; color:#8b8ba7; margin-top:3px; }
+.presets button.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff inset; }
+#out {
+  width:100%; height:150px; margin-top:6px; padding:8px; resize:vertical;
+  background:#0b0b12; color:#b7d0ff; border:1px solid #2c2c47; border-radius:6px;
+  font:500 11px/1.4 ui-monospace,Menlo,monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   STAGE — one frame (single) or the seven cards (gallery), scaled to fit.
+   --------------------------------------------------------------------------- */
+#stage { flex:1; position:relative; overflow:hidden; }
+#stage-note {
+  position:absolute; left:0; right:0; bottom:8px; text-align:center;
+  font-size:11px; color:#6f6a90; pointer-events:none;
+}
+#grid { position:absolute; inset:0; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:34px 18px; padding:20px 20px 44px; }
+.slot { position:relative; }
+.slot > .cap {
+  position:absolute; left:0; right:0; bottom:-18px; text-align:center;
+  font-size:11px; color:#8b8ba7; white-space:nowrap;
+}
+.slot > .fit { position:absolute; left:0; top:0; transform-origin:top left; }
+
+.frame {
+  position:relative; width:720px; height:1280px; overflow:hidden; border-radius:30px;
+  box-shadow:0 30px 80px rgba(0,0,0,.65);
+  background:var(--bg); color:var(--text);
+  font-family:var(--web-font); font-weight:var(--web-fw);
+
+  /* the motor's tokens, rewritten per game by the palette select */
+  --bg:#0a0a18; --text:#f3f1ff; --muted:#9aa0c0; --gold:#ffd43b; --good:#69db7c;
+  --danger:#ff2d55; --panel-line:rgba(255,255,255,.09);
+  --accent:#35e8ff; --accent2:#7a4dff; --accent-rgb:53,232,255;
+  --web-font:-apple-system,sans-serif; --web-fw:900;
+}
+.scene { position:absolute; inset:0; background-size:cover; background-position:center; }
+
+/* =========================================================================
+   THE COMPONENT — what would move into view.css
+   ========================================================================= */
+
+/* the veil: the shipped one, one number and one blur */
+.md-veil {
+  position:absolute; inset:0; z-index:44;
+  display:flex; align-items:center; justify-content:center;
+  padding:0 var(--md-gutter, 26px);
+  background:rgba(2,2,10,var(--md-veil, .78));
+  -webkit-backdrop-filter:blur(var(--md-blur, 6px)); backdrop-filter:blur(var(--md-blur, 6px));
+}
+
+.md {
+  position:relative; width:100%;
+  padding:var(--md-pad, 44px) calc(var(--md-pad, 44px) * .8);
+  border-radius:var(--md-radius, 34px);
+  display:flex; flex-direction:column; align-items:center; gap:var(--md-gap, 24px);
+  color:var(--text);
+  --md-plate:#0e1020;
+}
+
+/* ---- the six slots ----------------------------------------------------- */
+.md-top { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
+.md-titlerow { display:flex; align-items:center; justify-content:center; gap:14px; max-width:100%; }
+.md-title {
+  flex:0 1 auto; min-width:0; white-space:nowrap;
+  font-size:var(--md-title, 54px); letter-spacing:3px; line-height:1.1;
+  font-weight:var(--web-fw);
+  color:var(--md-title-c, var(--accent));
+  text-shadow:0 0 24px var(--md-title-glow, currentColor), 0 3px 12px rgba(0,0,0,.9);
+}
+.md.tc-text  { --md-title-c:var(--text);  --md-title-glow:rgba(0,0,0,0); }
+.md.tc-gold  { --md-title-c:var(--gold); }
+.md.tc-grad .md-title {
+  color:transparent; background:linear-gradient(180deg,#fff 0%,var(--accent) 55%,var(--accent2) 100%);
+  -webkit-background-clip:text; background-clip:text; text-shadow:none;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.8));
+}
+/* never the title's colour: the text colour, turned down */
+.md-eyebrow {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  font-size:20px; letter-spacing:3px; color:var(--text); opacity:.72;
+}
+.md-eyebrow .dev {
+  font-size:12px; letter-spacing:2px; padding:2px 8px; border-radius:6px;
+  color:#0b0b12; background:var(--danger);
+}
+.md-body { width:100%; display:flex; flex-direction:column; align-items:center; }
+.md-tap { font-size:18px; letter-spacing:3px; color:var(--muted); text-align:center; }
+
+/* the badge: a number or a tag, never a sentence */
+.md-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:30px; line-height:1; font-weight:var(--web-fw); font-variant-numeric:tabular-nums;
+  white-space:nowrap; z-index:3;
+}
+.md-badge.corner { position:absolute; top:-22px; }
+.md-badge.corner.right { right:-16px; }
+.md-badge.corner.left  { left:-16px; }
+.md-badge.pill {
+  padding:8px 20px; border-radius:999px; background:#0b0e1a; color:var(--text);
+  border:3px solid rgba(var(--accent-rgb),.55); box-shadow:0 6px 18px rgba(0,0,0,.6);
+}
+.md-badge.disc {
+  min-width:66px; height:66px; padding:0 14px; border-radius:33px; color:#0b0b12;
+  background:linear-gradient(180deg,#fff 0%,var(--accent) 60%); border:3px solid rgba(0,0,0,.35);
+  box-shadow:0 6px 18px rgba(0,0,0,.6), 0 0 18px rgba(var(--accent-rgb),.5);
+}
+.md-badge.shield {
+  width:70px; height:78px; padding-bottom:8px; color:#fff; text-shadow:0 2px 3px rgba(0,0,0,.6);
+  background:linear-gradient(180deg,#d9a36a,#8a5528);
+  clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));
+}
+.md-badge.inline.pill { padding:4px 14px; font-size:26px; border-width:2px; box-shadow:none; }
+.md-badge.inline.disc { min-width:54px; height:54px; font-size:26px; }
+.md-badge.inline.shield { width:56px; height:62px; font-size:24px; }
+.md-badge.inline.num { font-size:.8em; color:var(--muted); }
+
+/* ---- the tap line's motion -------------------------------------------- */
+.ta-breathe { animation:md-breathe 2.2s ease-in-out infinite; }
+.ta-blink   { animation:md-blink 1.1s steps(1) infinite; }
+.ta-pulse   { animation:md-pulse 1.4s ease-in-out infinite; }
+.ta-shimmer {
+  color:transparent;
+  background:linear-gradient(100deg,var(--muted) 0 40%,#fff 50%,var(--muted) 60% 100%);
+  background-size:300% 100%; -webkit-background-clip:text; background-clip:text;
+  animation:md-shim 2.6s linear infinite;
+}
+.ta-none { opacity:.6; }
+@keyframes md-breathe { 0%,100% { opacity:.38; } 50% { opacity:.75; } }
+@keyframes md-blink   { 0% { opacity:.85; } 50% { opacity:.2; } }
+@keyframes md-pulse   { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:.95; transform:scale(1.06); } }
+@keyframes md-shim    { from { background-position:100% 0; } to { background-position:0 0; } }
+
+/* ---- the entry --------------------------------------------------------- */
+.in-rise { animation:md-rise .26s cubic-bezier(.2,1.3,.4,1) both; }
+.in-pop  { animation:md-pop .36s cubic-bezier(.2,1.6,.4,1) both; }
+.in-drop { animation:md-drop .42s cubic-bezier(.2,1.25,.4,1) both; }
+.in-fade { animation:md-fade .22s ease both; }
+@keyframes md-rise { from { transform:translateY(22px) scale(.96); opacity:0; } }
+@keyframes md-pop  { from { transform:scale(.7); opacity:0; } }
+@keyframes md-drop { from { transform:translateY(-140px); opacity:0; } }
+@keyframes md-fade { from { opacity:0; } }
+
+/* =========================================================================
+   SKINS — the card's material. All of them are dark and neutral enough to
+   sit over any of the fifteen hubs; they differ in edge and depth.
+   ========================================================================= */
+
+/* night — what ships today (view.css, .mt-card) */
+.sk-night {
+  background:rgba(8,8,20,.94); border:1px solid var(--panel-line);
+  box-shadow:0 26px 70px rgba(0,0,0,.7);
+}
+/* frame — a hairline inner frame, a lit top edge */
+.sk-frame {
+  background:linear-gradient(180deg,#151a2a 0%,#0b0d18 42%,#090b14 100%);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),
+             inset 0 0 0 8px rgba(0,0,0,.28), inset 0 0 0 9px rgba(255,255,255,.06),
+             0 26px 70px rgba(0,0,0,.75);
+  --md-plate:#151a2a;
+}
+/* glass — frosted, lets the hub's colour through (a second blur on a phone) */
+.sk-glass {
+  background:linear-gradient(180deg,rgba(40,46,72,.62),rgba(14,16,30,.72));
+  -webkit-backdrop-filter:blur(18px) saturate(1.3); backdrop-filter:blur(18px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 26px 70px rgba(0,0,0,.55);
+  --md-plate:rgba(30,34,56,.95);
+}
+/* slate — solid, lighter, a bevel instead of a border */
+.sk-slate {
+  background:#171c2a;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07), inset 0 -5px 0 rgba(0,0,0,.35),
+             0 0 0 2px rgba(0,0,0,.55), 0 26px 70px rgba(0,0,0,.7);
+  --md-plate:#1f2536;
+}
+/* neon — the game's accent as a thin lit edge */
+.sk-neon {
+  background:rgba(6,8,18,.95);
+  border:2px solid rgba(var(--accent-rgb),.55);
+  box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 30px rgba(var(--accent-rgb),.28),
+             inset 0 0 40px rgba(var(--accent-rgb),.08), 0 26px 70px rgba(0,0,0,.7);
+  --md-plate:#0a0e1c;
+}
+/* bevel — a thick gradient rim in the game's two colours */
+.sk-bevel {
+  border:4px solid transparent;
+  background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
+             linear-gradient(180deg,var(--accent),var(--accent2)) border-box;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
+  --md-plate:#121628;
+}
+/* gilded — a gold rim, the enemy camp's look, made the rule */
+.sk-gilded {
+  border:3px solid transparent;
+  background:radial-gradient(120% 80% at 50% 0%,#1a2446 0%,#0d1428 60%,#0a0f20 100%) padding-box,
+             linear-gradient(180deg,#f7dc8c,#a8792f 55%,#e9c56e) border-box;
+  box-shadow:inset 0 0 0 6px rgba(0,0,0,.25), inset 0 0 0 7px rgba(247,220,140,.18),
+             0 26px 70px rgba(0,0,0,.75);
+  --md-plate:#16203c;
+}
+
+/* =========================================================================
+   PRESENTATIONS — where the title, the cross and the badge sit
+   ========================================================================= */
+
+/* center: eyebrow over title, both centered; the cross in a corner */
+.ly-center .md-top { padding:0 20px; }
+
+/* header: a left-aligned header row over a rule, like a sheet */
+.ly-header .md-top { align-items:flex-start; padding-bottom:20px; border-bottom:1px solid var(--panel-line); }
+.ly-header .md-titlerow { justify-content:flex-start; }
+.ly-header .md-eyebrow { justify-content:flex-start; }
+.ly-header .md-title { --md-title:calc(var(--md-title-base, 54px) * .82); }
+
+/* band: the header is a darker band bled to the card's edges */
+.ly-band .md-top {
+  margin:calc(-1 * var(--md-pad, 44px)) calc(-.8 * var(--md-pad, 44px)) 0;
+  width:calc(100% + 1.6 * var(--md-pad, 44px));
+  padding:30px 56px 24px;
+  border-radius:var(--md-radius, 34px) var(--md-radius, 34px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.28));
+  border-bottom:1px solid rgba(255,255,255,.1);
+  box-shadow:0 1px 0 rgba(0,0,0,.5);
+}
+
+/* tab: the title on a plate that straddles the card's top edge */
+.ly-tab { padding-top:calc(var(--md-pad, 44px) + 34px); margin-top:40px; }
+.ly-tab .md-titlerow {
+  position:absolute; left:50%; top:0; transform:translate(-50%,-55%);
+  max-width:calc(100% - 150px);
+  padding:14px 38px; border-radius:24px;
+  background:var(--md-plate); border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ly-tab.sk-neon .md-titlerow  { border:2px solid rgba(var(--accent-rgb),.55); }
+.ly-tab.sk-bevel .md-titlerow { border:3px solid var(--accent); }
+.ly-tab.sk-gilded .md-titlerow { border:3px solid #d8b25f; }
+.ly-tab .md-title { --md-title:calc(var(--md-title-base, 54px) * .78); }
+.ly-tab .md-top:not(.has-eyebrow) { display:contents; }
+
+/* ribbon: the title on a banner that runs past both edges */
+.ly-ribbon .md-titlerow {
+  position:relative; align-self:stretch; max-width:none;
+  margin:calc(-1 * var(--md-pad, 44px) - 26px) calc(-.8 * var(--md-pad, 44px) - 22px) 0;
+  padding:16px 70px;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(0,0,0,.18)),
+             linear-gradient(90deg,var(--accent2),var(--accent) 50%,var(--accent2));
+  box-shadow:0 8px 20px rgba(0,0,0,.55), inset 0 -3px 0 rgba(0,0,0,.25);
+}
+.ly-ribbon .md-titlerow::before, .ly-ribbon .md-titlerow::after {
+  content:""; position:absolute; bottom:-18px; border-top:18px solid rgba(0,0,0,.65);
+}
+.ly-ribbon .md-titlerow::before { left:0;  border-left:22px solid transparent; }
+.ly-ribbon .md-titlerow::after  { right:0; border-right:22px solid transparent; }
+.ly-ribbon .md-title { --md-title-c:#fff; --md-title-glow:rgba(0,0,0,.4); --md-title:calc(var(--md-title-base, 54px) * .8); }
+.ly-ribbon.tc-grad .md-title { color:#fff; background:none; filter:none; text-shadow:0 3px 8px rgba(0,0,0,.6); }
+.ly-ribbon { margin-top:30px; }
+.ly-ribbon .md-top { order:0; }
+.ly-ribbon .md-eyebrow { order:2; margin-top:6px; }
+
+/* =========================================================================
+   SAMPLES — the content of the seven cards, rebuilt from the shipped ones
+   ========================================================================= */
+
+/* options */
+.sx-rows { width:100%; }
+.sx-row {
+  display:flex; align-items:center; gap:20px; padding:20px 0;
+  border-bottom:1px solid var(--panel-line); font-size:30px; font-family:var(--web-font);
+}
+.sx-row svg { width:38px; height:38px; flex:none; color:var(--muted); }
+.sx-row span { flex:1; }
+.sx-tg { width:118px; height:60px; border-radius:30px; background:#1b1f2e; border:2px solid var(--accent); position:relative; flex:none; }
+.sx-tg::after { content:""; position:absolute; right:6px; top:6px; width:44px; height:44px; border-radius:50%; background:var(--accent); }
+.sx-lang { display:flex; gap:10px; }
+.sx-lang i { font-style:normal; width:96px; height:66px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:28px; border:2px solid var(--panel-line); color:var(--muted); }
+.sx-lang i.on { background:var(--accent); color:#0b0b12; border-color:var(--accent); }
+.sx-sign { display:flex; align-items:center; gap:14px; align-self:flex-start; padding-top:20px; font-size:24px; letter-spacing:2px; color:var(--muted); line-height:1.1; }
+.sx-sign img { width:50px; height:50px; }
+.sx-sign small { display:block; font-size:18px; letter-spacing:0; opacity:.8; }
+
+/* daily road */
+.sx-road { position:relative; width:100%; height:200px; }
+.sx-road::before { content:""; position:absolute; left:0; right:0; top:124px; border-top:6px dashed rgba(255,255,255,.18); }
+.sx-road::after { content:""; position:absolute; left:0; width:40%; top:124px; height:6px; background:linear-gradient(90deg,#8fb3ff,var(--gold)); }
+.sx-day { position:absolute; top:0; width:110px; margin-left:-55px; display:flex; flex-direction:column; align-items:center; }
+.sx-day .n { width:96px; height:96px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid rgba(255,255,255,.12); background:rgba(0,0,0,.35); }
+.sx-day .n img { width:62px; height:62px; }
+.sx-day .n.big { border:0; background:none; }
+.sx-day .n.big img { width:110px; height:110px; }
+.sx-day .n.done { border-color:rgba(105,219,124,.55); color:var(--good); }
+.sx-day .n.done svg { width:40px; height:40px; }
+.sx-day .n.today { border-color:var(--gold); box-shadow:0 0 22px rgba(255,212,59,.35); }
+.sx-day .p { width:20px; height:20px; border-radius:50%; margin-top:18px; background:#0b0b12; border:4px solid rgba(255,255,255,.3); position:relative; z-index:1; }
+.sx-day .p.on { background:#8fb3ff; border-color:#8fb3ff; }
+.sx-day .l { margin-top:16px; font-size:24px; letter-spacing:2px; color:var(--muted); }
+.sx-day .l.gold { color:var(--gold); }
+.sx-day .mult { position:absolute; top:-18px; right:-14px; width:84px; }
+
+/* the three boxes */
+.sx-gifts { display:flex; align-items:flex-end; justify-content:center; gap:10px; width:100%; }
+.sx-gifts img { width:30%; filter:drop-shadow(0 14px 18px rgba(0,0,0,.6)); }
+.sx-gifts img:nth-child(2) { width:34%; transform:translateY(-24px); }
+
+/* a sticker: detail and reveal */
+.sx-stk { width:330px; height:330px; object-fit:contain; filter:drop-shadow(0 12px 20px rgba(0,0,0,.6)); }
+.sx-rar {
+  margin-top:20px; padding:10px 34px; border-radius:999px; font-size:26px; letter-spacing:4px;
+  border:2px solid currentColor; box-shadow:0 0 18px rgba(0,0,0,.5);
+}
+.sx-rar::before, .sx-rar::after { content:"•"; margin:0 12px; opacity:.6; }
+.sx-rar.rare { color:#6fb1ff; box-shadow:0 0 22px rgba(111,177,255,.3); }
+.sx-rar.common { color:#a4a9c2; }
+.sx-note { margin-top:18px; font-size:22px; letter-spacing:3px; color:var(--muted); }
+.sx-rays { position:relative; width:440px; height:440px; display:flex; align-items:center; justify-content:center; }
+.sx-rays::before {
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.16) 0deg 2.5deg, transparent 2.5deg 15deg);
+  -webkit-mask:radial-gradient(circle, transparent 34%, #000 36%, #000 60%, transparent 71%);
+          mask:radial-gradient(circle, transparent 34%, #000 36%, #000 60%, transparent 71%);
+  animation:sx-spin 30s linear infinite;
+}
+@keyframes sx-spin { to { transform:rotate(360deg); } }
+.sx-rays .disc {
+  position:relative; width:270px; height:270px; border-radius:50%; overflow:hidden;
+  background:#fff; border:5px solid rgba(255,255,255,.85);
+  box-shadow:0 0 40px rgba(255,255,255,.35);
+  display:flex; align-items:center; justify-content:center;
+}
+.sx-rays .disc img { width:108%; height:108%; object-fit:cover; }
+.sx-name { font-size:46px; margin-top:4px; font-family:var(--web-font); }
+
+/* the ad placeholder */
+.sx-ad {
+  width:100%; aspect-ratio:3/2; border-radius:26px; border:2px dashed rgba(255,255,255,.14);
+  background:repeating-linear-gradient(45deg,#1b1c26 0 30px,#16171f 30px 60px);
+}
+.sx-adnote { margin-top:26px; font:600 22px/1.35 -apple-system,sans-serif; color:var(--muted); text-align:center; }
+.sx-cta {
+  margin-top:30px; padding:22px 50px; border-radius:22px; font-size:34px; letter-spacing:2px; color:#2a1a02;
+  background:linear-gradient(180deg,#f8dd8e,#e2ac43); box-shadow:0 6px 0 #9c6a1d, 0 0 30px rgba(248,221,142,.35);
+}
+
+/* the enemy camp */
+.sx-camp { display:grid; grid-template-columns:repeat(5, 1fr); gap:22px 14px; width:100%; }
+.sx-cell { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.sx-tile {
+  position:relative; width:100%; aspect-ratio:1; border-radius:18px; overflow:visible;
+  background:linear-gradient(180deg,#5b3a22,#2e1d10); border:3px solid #6b4526;
+  box-shadow:0 0 0 2px #1a0f06, 0 6px 12px rgba(0,0,0,.5);
+}
+.sx-tile img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 12%; border-radius:14px; }
+.sx-tile.item img { object-fit:contain; padding:10px; }
+.sx-tile .gr {
+  position:absolute; left:-8px; top:-10px; width:40px; height:46px; padding-bottom:6px;
+  display:flex; align-items:center; justify-content:center; font-size:20px; color:#fff;
+  background:linear-gradient(180deg,#d9a36a,#8a5528); clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+}
+.sx-cell b { font-size:24px; color:#e7a7b5; font-weight:var(--web-fw); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Lab · modals</h1>
+  <p class="hint">One card component for every game: pick a look and a presentation, and judge it on the seven real cards at once. No cross — the tap line, always there, is the way out.</p>
+
+  <h2>Presets</h2>
+  <div class="presets" id="presets"></div>
+
+  <h2>Scene</h2>
+  <div class="row"><div class="lbl">view</div><div class="seg" id="seg-view"></div></div>
+  <div class="row"><label for="game">game</label><select id="game"></select></div>
+  <div class="row"><div class="lbl">language</div><div class="seg" id="seg-lang"></div></div>
+  <div class="row" id="row-sample"><label for="sample">card</label><select id="sample"></select></div>
+
+  <h2>Look</h2>
+  <div class="row"><div class="lbl">skin</div><div class="seg" id="seg-skin"></div></div>
+  <div class="row"><div class="lbl">presentation</div><div class="seg" id="seg-layout"></div></div>
+  <div class="row"><div class="lbl">title colour</div><div class="seg" id="seg-titleColor"></div></div>
+
+  <h2>Slots</h2>
+  <div class="row"><div class="lbl">which slots show</div><div class="seg" id="seg-slots"></div>
+    <div class="checks" id="checks">
+      <label><input type="checkbox" data-k="eyebrow"> eyebrow</label>
+      <label><input type="checkbox" data-k="badge"> badge</label>
+    </div>
+  </div>
+  <div class="row"><div class="lbl">badge · place</div><div class="seg" id="seg-badgePos"></div></div>
+  <div class="row"><div class="lbl">badge · shape</div><div class="seg" id="seg-badgeShape"></div></div>
+
+  <h2>Motion</h2>
+  <div class="row"><div class="lbl">tap line</div><div class="seg" id="seg-tapAnim"></div></div>
+  <div class="row"><div class="lbl">entry</div><div class="seg" id="seg-entry"></div></div>
+  <button class="btn ghost" id="replay">Replay entry</button>
+
+  <h2>Metrics</h2>
+  <div id="ranges"></div>
+
+  <h2>Settings</h2>
+  <button class="btn" id="copy">Copy settings</button>
+  <textarea id="out" readonly></textarea>
+</div>
+
+<div id="stage">
+  <div id="grid"></div>
+  <div id="stage-note">720×1280 design space</div>
+</div>
+
+<script>
+/* ===========================================================================
+   Plain ES6 — a lab page runs in the author's browser, not in a WebView.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+
+  /* ---- the motor's upper(), copied from overlay-pop.html --------------- */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* ---- the fifteen palettes: manifest theme + web.font ------------------ */
+  const FONTS = {
+    orbitron: ['"Orbitron"', 800], exo2: ['"Exo 2"', 800], baloo2: ['"Baloo 2"', 800],
+    bungee: ['"Bungee"', 400], bebasneue: ['"Bebas Neue"', 400], russoone: ['"Russo One"', 400]
+  };
+  const GAMES = {
+    arcider:    { accent:"#35e8ff", accent2:"#7a4dff", font:"orbitron"  },
+    blight:     { accent:"#ff8fab", accent2:"#7048e8", font:"baloo2"    },
+    bouncetry:  { accent:"#ff3b57", accent2:"#2f86ff", font:"bungee"    },
+    chainring:  { accent:"#4bf5ff", accent2:"#4263eb", font:"exo2"      },
+    echomaze:   { accent:"#7ef9ff", accent2:"#4ade80", font:"orbitron"  },
+    gearball:   { accent:"#7ef9ff", accent2:"#ffb44f", font:"russoone"  },
+    marshmelt:  { accent:"#ff9d2e", accent2:"#ff7a1a", font:"baloo2"    },
+    orbinity:   { accent:"#7cf5ff", accent2:"#6d5cff", font:"exo2"      },
+    pawko:      { accent:"#ffb830", accent2:"#ff4d6d", font:"baloo2"    },
+    radiam:     { accent:"#35e0ff", accent2:"#8b6cff", font:"russoone"  },
+    slipdeck:   { accent:"#f5c451", accent2:"#3ddc97", font:"bebasneue" },
+    spinshock:  { accent:"#40ecff", accent2:"#ff4fbe", font:"bungee"    },
+    stratideck: { accent:"#f2c14e", accent2:"#5aa9ff", font:"russoone"  },
+    triverse:   { accent:"#3ce0ff", accent2:"#ff5ad4", font:"orbitron"  },
+    vipera:     { accent:"#4dff9b", accent2:"#12b86a", font:"baloo2"    }
+  };
+  const ART = "../assets/image/";
+  const embed = (g, name) => ART + "embed/" + g + "-" + name + ".webp";
+  const shell = (name) => ART + "shell/" + name + ".webp";
+
+  const SVG = {
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    volume: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+    zap: '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+    sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    flag: '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>'
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + SVG[k] + "</svg>";
+
+  /* ---- the seven cards --------------------------------------------------
+     Each one fills the same six slots: `on` is which optional slots the card
+     would wear today, the rest is its copy in the shell's own words. */
+  const SAMPLES = {
+    options: {
+      label: "Options", on: { eyebrow:0, badge:0 },
+      fr: { title:"Options", tap:"Touche à côté pour fermer" }, en: { title:"Options", tap:"Tap outside to close" },
+      body: (g, L) => {
+        const t = L === "fr"
+          ? ["Musique", "Effets sonores", "Messages de score", "Langue"]
+          : ["Music", "Sound effects", "Score callouts", "Language"];
+        const row = (ic, s, right) => '<div class="sx-row">' + svg(ic) + "<span>" + s + "</span>" + right + "</div>";
+        return '<div class="sx-rows">' +
+          row("volume", t[0], '<i class="sx-tg"></i>') +
+          row("zap", t[1], '<i class="sx-tg"></i>') +
+          row("sparkles", t[2], '<i class="sx-tg"></i>') +
+          row("flag", t[3], '<div class="sx-lang"><i class="' + (L === "fr" ? "on" : "") + '">FR</i><i class="' + (L === "en" ? "on" : "") + '">EN</i></div>') +
+          "</div>" +
+          '<div class="sx-sign"><img src="' + ART + 'brand/newrare.webp" alt=""><div>NEWRARE<small>v0.14.0</small></div></div>';
+      }
+    },
+    daily: {
+      label: "Daily road", on: { eyebrow:0, badge:0 },
+      fr: { title:"Cadeau du jour", tap:"Touche un jour" }, en: { title:"Daily gift", tap:"Tap a day" },
+      body: (g, L) => {
+        const D = L === "fr" ? "J" : "D";
+        const day = (x, n, inner, cls, pin, lbl) =>
+          '<div class="sx-day" style="left:' + x + '%"><div class="n ' + cls + '">' + inner + '</div>' +
+          '<i class="p ' + pin + '"></i><div class="l ' + lbl + '">' + D + n + "</div></div>";
+        return '<div class="sx-road">' +
+          day(10, 3, svg("check"), "done", "on", "") +
+          day(30, 4, '<img src="' + shell("xp") + '">', "today", "on", "gold") +
+          day(50, 5, '<img src="' + shell("coin") + '">', "", "", "") +
+          day(70, 6, '<img src="' + shell("gift-close-01") + '">', "big", "", "") +
+          day(90, 7, '<img src="' + shell("gift-close-02") + '"><img class="mult" src="' + shell("mult-5") + '">', "big", "", "gold") +
+          "</div>";
+      }
+    },
+    gifts: {
+      label: "Pick a gift", on: { eyebrow:1, badge:0 },
+      fr: { eyebrow:"Jour 6", title:"Choisis", tap:"Touche une boîte" },
+      en: { eyebrow:"Day 6", title:"Pick one", tap:"Tap a box" },
+      dev: true,
+      body: () => '<div class="sx-gifts">' +
+        '<img src="' + shell("gift-close-01") + '"><img src="' + shell("gift-close-02") + '"><img src="' + shell("gift-close-03") + '"></div>'
+    },
+    sticker: {
+      label: "Sticker detail", on: { eyebrow:0, badge:1 },
+      fr: { title:"Puzzled", badge:"x1", tap:"Touche pour fermer", eyebrow:"Sticker 3/20" },
+      en: { title:"Puzzled", badge:"x1", tap:"Tap to close", eyebrow:"Sticker 3/20" },
+      body: (g, L) => '<img class="sx-stk" src="' + embed(g, "sticker03") + '">' +
+        '<div class="sx-rar rare">' + upper("Rare") + "</div>" +
+        '<div class="sx-note">' + upper(L === "fr" ? "Obtenu par tirage" : "Drawn from the machine") + "</div>"
+    },
+    reveal: {
+      label: "New sticker", on: { eyebrow:0, badge:0 },
+      fr: { title:"Nouveau sticker !", tap:"Touche pour fermer", eyebrow:"Obtenu par tirage", badge:"4/20" },
+      en: { title:"New sticker!", tap:"Tap to close", eyebrow:"Drawn from the machine", badge:"4/20" },
+      body: (g, L) => '<div class="sx-rays"><div class="disc"><img src="' + embed(g, "sticker05") + '"></div></div>' +
+        '<div class="sx-name">Smitten</div>' +
+        '<div class="sx-rar common">' + upper(L === "fr" ? "Commun" : "Common") + "</div>"
+    },
+    ad: {
+      label: "Ad", on: { eyebrow:1, badge:0 },
+      fr: { title:"Publicité", tap:"Touche pour récupérer", eyebrow:"Récompense", badge:"x5" },
+      en: { title:"Advertisement", tap:"Tap to collect", eyebrow:"Reward", badge:"x5" },
+      /* no button: the tap line counts down, then says the tap collects */
+      body: (g, L) => '<div class="sx-ad"></div>' +
+        '<div class="sx-adnote">' + (L === "fr" ? "Aucune régie n’est branchée — ceci est un substitut." : "No ad network is wired in yet — this is a placeholder.") + "</div>"
+    },
+    camp: {
+      label: "Enemy camp", on: { eyebrow:1, badge:1 },
+      fr: { title:"Camp ennemi", badge:"20", eyebrow:"Au début de la bataille", tap:"Touche pour fermer" },
+      en: { title:"Enemy camp", badge:"20", eyebrow:"At the start of the battle", tap:"Tap to close" },
+      body: () => {
+        const cell = (inner, n, cls) => '<div class="sx-cell"><div class="sx-tile ' + cls + '">' + inner + "</div><b>x" + n + "</b></div>";
+        const items = [["straw", 1], ["skull", 2], ["fence", 1], ["rock", 1], ["forest", 1]];
+        const men = [[10, 1], [9, 3], [8, 2], [7, 1], [6, 1], [5, 1], [4, 1], [3, 3]];
+        let h = '<div class="sx-camp">';
+        items.forEach(([k, n]) => { h += cell('<img src="' + embed("stratideck", "item-" + k) + '">', n, "item"); });
+        men.forEach(([gr, n]) => {
+          h += cell('<img src="' + embed("stratideck", "cast-red-" + String(gr).padStart(2, "0") + "-b") + '"><i class="gr">' + gr + "</i>", n, "");
+        });
+        return h + "</div>";
+      }
+    }
+  };
+
+  /* ---- the choices ------------------------------------------------------ */
+  const OPT = {
+    view:       [["single", "One card"], ["gallery", "All seven"]],
+    lang:       [["fr", "FR"], ["en", "EN"]],
+    skin:       [["night", "Night (now)"], ["frame", "Frame"], ["glass", "Glass"], ["slate", "Slate"], ["neon", "Neon"], ["bevel", "Bevel"], ["gilded", "Gilded"]],
+    layout:     [["center", "Center"], ["header", "Header"], ["band", "Band"], ["tab", "Tab"], ["ribbon", "Ribbon"]],
+    titleColor: [["accent", "Accent"], ["gold", "Gold"], ["text", "White"], ["grad", "Gradient"]],
+    slots:      [["sample", "As the card"], ["all", "All on"], ["custom", "Custom"]],
+    badgePos:   [["corner", "Corner right"], ["cornerl", "Corner left"], ["inline", "By the title"]],
+    badgeShape: [["pill", "Pill"], ["disc", "Disc"], ["shield", "Shield"], ["num", "Plain"]],
+    tapAnim:    [["breathe", "Breathe"], ["blink", "Blink"], ["pulse", "Pulse"], ["shimmer", "Shimmer"], ["none", "Still"]],
+    entry:      [["rise", "Rise (now)"], ["pop", "Pop"], ["drop", "Drop"], ["fade", "Fade"], ["none", "None"]]
+  };
+  const RANGES = [
+    ["gutter",    "gutter",      16, 90, 2, 0],
+    ["radius",    "radius",       0, 60, 2, 0],
+    ["pad",       "padding",     20, 70, 2, 0],
+    ["gap",       "gap",          8, 48, 2, 0],
+    ["titleSize", "title size",  32, 80, 2, 0],
+    ["veil",      "veil",         0,  1, .02, 2],
+    ["blur",      "veil blur",    0, 16, 1, 0]
+  ];
+
+  /* what ships (packages/shell/motor.css, CARD) */
+  const BASE = {
+    view:"gallery", game:"pawko", lang:"fr", sample:"camp",
+    skin:"bevel", layout:"center", titleColor:"gold",
+    slots:"sample", show:{ eyebrow:1, badge:1 },
+    badgePos:"corner", badgeShape:"pill",
+    tapAnim:"shimmer", entry:"pop",
+    gutter:20, radius:30, pad:44, gap:24, titleSize:54, veil:.7, blur:2, preset:0
+  };
+  /* A preset is a look, never a scene: it leaves the game, language, card and
+     view alone, so switching presets compares like with like. */
+  const PRESETS = [
+    { name:"A · Chosen", note:"what ships", set:{ skin:"bevel", layout:"center", titleColor:"gold", badgePos:"corner", badgeShape:"pill", tapAnim:"shimmer", entry:"pop", gutter:20, radius:30, pad:44, gap:24, titleSize:54, veil:.7, blur:2 } },
+    { name:"B · Frame", note:"inner hairline, a lit edge", set:{ skin:"frame", layout:"center", titleColor:"gold", badgePos:"corner", badgeShape:"pill", tapAnim:"breathe", entry:"pop", gutter:30, radius:30, pad:44, gap:24, titleSize:54 } },
+    { name:"C · Sheet", note:"left header over a rule", set:{ skin:"slate", layout:"header", titleColor:"text", badgePos:"inline", badgeShape:"pill", tapAnim:"breathe", entry:"rise", gutter:26, radius:24, pad:40, gap:24, titleSize:54 } },
+    { name:"D · Band", note:"a header band bled to the edge", set:{ skin:"frame", layout:"band", titleColor:"accent", badgePos:"corner", badgeShape:"disc", tapAnim:"pulse", entry:"pop", gutter:28, radius:30, pad:40, gap:26, titleSize:50 } },
+    { name:"E · Tab", note:"title on a plate over the edge", set:{ skin:"neon", layout:"tab", titleColor:"accent", badgePos:"corner", badgeShape:"pill", tapAnim:"breathe", entry:"drop", gutter:30, radius:30, pad:44, gap:24, titleSize:54 } },
+    { name:"F · Ribbon", note:"a banner, the most game-like", set:{ skin:"bevel", layout:"ribbon", titleColor:"text", badgePos:"cornerl", badgeShape:"shield", tapAnim:"blink", entry:"pop", gutter:40, radius:30, pad:40, gap:24, titleSize:56 } },
+    { name:"G · Gilded", note:"the enemy camp made the rule", set:{ skin:"gilded", layout:"center", titleColor:"gold", badgePos:"corner", badgeShape:"shield", tapAnim:"shimmer", entry:"pop", gutter:26, radius:30, pad:44, gap:24, titleSize:54 } },
+    { name:"I · Before", note:"the look it replaced", set:{ skin:"night", layout:"center", titleColor:"accent", badgePos:"corner", badgeShape:"pill", tapAnim:"breathe", entry:"rise", gutter:26, radius:34, pad:44, gap:24, titleSize:54, veil:.78, blur:6 } },
+    { name:"H · Glass", note:"frosted, the hub shows through", set:{ skin:"glass", layout:"center", titleColor:"text", badgePos:"corner", badgeShape:"disc", tapAnim:"breathe", entry:"rise", gutter:30, radius:40, pad:44, gap:24, titleSize:54 } }
+  ];
+
+  const KEY = "lab-modal";
+  let P = JSON.parse(JSON.stringify(BASE));
+  try { Object.assign(P, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { /* private window */ }
+  /* `#view=gallery&preset=3&game=vipera` — a shot of one state without the
+     panel, for a headless capture or a link to a choice. It wins over the
+     remembered state and is not written back. */
+  const HASH = new URLSearchParams(location.hash.slice(1));
+  let fromHash = false;
+  HASH.forEach((v, k) => {
+    fromHash = true;
+    if (k === "preset") { const pr = PRESETS[+v]; if (pr) { Object.assign(P, pr.set); P.preset = +v; } }
+    else if (k in P) P[k] = typeof BASE[k] === "number" ? +v : v;
+  });
+  const save = () => { if (fromHash) return; try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { /* ignore */ } };
+
+  /* ---- panel wiring ----------------------------------------------------- */
+  function seg(key) {
+    const box = $("seg-" + key);
+    OPT[key].forEach(([v, label]) => {
+      const b = document.createElement("button");
+      b.textContent = label; b.dataset.v = v;
+      b.addEventListener("click", () => { P[key] = v; P.preset = null; sync(); render(); });
+      box.appendChild(b);
+    });
+  }
+  Object.keys(OPT).forEach(seg);
+
+  Object.keys(GAMES).forEach((g) => { $("game").add(new Option(g, g)); });
+  Object.keys(SAMPLES).forEach((k) => { $("sample").add(new Option(SAMPLES[k].label, k)); });
+  $("game").addEventListener("change", (e) => { P.game = e.target.value; sync(); render(); });
+  $("sample").addEventListener("change", (e) => { P.sample = e.target.value; sync(); render(); });
+
+  document.querySelectorAll("#checks input").forEach((c) => {
+    c.addEventListener("change", () => { P.show[c.dataset.k] = c.checked ? 1 : 0; sync(); render(); });
+  });
+
+  RANGES.forEach(([k, label, min, max, step, digits]) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = '<label>' + label + ' <b id="v-' + k + '"></b></label>' +
+      '<input type="range" id="r-' + k + '" min="' + min + '" max="' + max + '" step="' + step + '">';
+    $("ranges").appendChild(row);
+    const r = row.querySelector("input");
+    r.addEventListener("input", () => { P[k] = +r.value; P.preset = null; sync(); render(); });
+    r.dataset.digits = digits;
+  });
+
+  PRESETS.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = p.name + "<small>" + p.note + "</small>";
+    b.addEventListener("click", () => { Object.assign(P, p.set); P.preset = i; sync(); render(); });
+    $("presets").appendChild(b);
+  });
+
+  $("replay").addEventListener("click", render);
+  $("copy").addEventListener("click", () => {
+    const t = $("out");
+    t.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).catch(() => document.execCommand("copy"));
+  });
+
+  function sync() {
+    Object.keys(OPT).forEach((k) => {
+      $("seg-" + k).querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === P[k]));
+    });
+    $("game").value = P.game;
+    $("sample").value = P.sample;
+    $("row-sample").style.display = P.view === "single" ? "" : "none";
+    const S = SAMPLES[P.sample];
+    document.querySelectorAll("#checks input").forEach((c) => {
+      const k = c.dataset.k;
+      c.checked = !!(P.slots === "custom" ? P.show[k] : P.slots === "all" ? 1 : S.on[k]);
+    });
+    $("checks").classList.toggle("off", P.slots !== "custom");
+    RANGES.forEach(([k]) => {
+      $("r-" + k).value = P[k];
+      $("v-" + k).textContent = (+P[k]).toFixed(+$("r-" + k).dataset.digits);
+    });
+    $("presets").querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", P.preset === i));
+    const out = Object.assign({}, P);
+    delete out.view; delete out.sample; delete out.preset;
+    if (out.slots !== "custom") delete out.show;
+    $("out").value = JSON.stringify(out, null, 2);
+    save();
+  }
+
+  /* ---- one card --------------------------------------------------------- */
+  function slotsFor(key) {
+    if (P.slots === "all") return { eyebrow:1, badge:1 };
+    if (P.slots === "custom") return P.show;
+    return SAMPLES[key].on;
+  }
+
+  function hexRgb(h) {
+    const n = parseInt(h.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(",");
+  }
+
+  function card(key) {
+    const S = SAMPLES[key], T = S[P.lang], on = slotsFor(key), g = GAMES[P.game];
+    const f = FONTS[g.font];
+
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    frame.style.cssText =
+      "--accent:" + g.accent + ";--accent2:" + g.accent2 + ";--accent-rgb:" + hexRgb(g.accent) +
+      ";--web-font:" + f[0] + ",sans-serif;--web-fw:" + f[1] +
+      ";--md-gutter:" + P.gutter + "px;--md-radius:" + P.radius + "px;--md-pad:" + P.pad +
+      "px;--md-gap:" + P.gap + "px;--md-title-base:" + P.titleSize + "px;--md-title:" + P.titleSize +
+      "px;--md-veil:" + P.veil + ";--md-blur:" + P.blur + "px";
+
+    const eyebrow = on.eyebrow && T.eyebrow
+      ? '<p class="md-eyebrow">' + upper(T.eyebrow) + (S.dev ? '<i class="dev">DEV</i>' : "") + "</p>"
+      : "";
+    const bPos = P.badgePos === "inline" ? "inline" : "corner " + (P.badgePos === "cornerl" ? "left" : "right");
+    const badge = on.badge && T.badge ? '<span class="md-badge ' + bPos + " " + P.badgeShape + '">' + T.badge + "</span>" : "";
+    const topCls = "md-top" + (eyebrow ? " has-eyebrow" : "");
+
+    frame.innerHTML =
+      '<div class="scene" style="background-image:url(' + embed(P.game, "background-home") + ')"></div>' +
+      '<div class="md-veil"><div class="md sk-' + P.skin + " ly-" + P.layout + " tc-" + P.titleColor + " in-" + P.entry + '">' +
+        '<div class="' + topCls + '">' +
+          (P.layout === "ribbon" ? "" : eyebrow) +
+          '<div class="md-titlerow"><h2 class="md-title">' + upper(T.title) + "</h2>" +
+            (P.badgePos === "inline" ? badge : "") + "</div>" +
+          (P.layout === "ribbon" ? eyebrow : "") +
+        "</div>" +
+        '<div class="md-body">' + S.body(P.game, P.lang) + "</div>" +
+        '<p class="md-tap ta-' + P.tapAnim + '">' + upper(T.tap) + "</p>" +
+        (P.badgePos !== "inline" ? badge : "") +
+      "</div></div>";
+    return frame;
+  }
+
+  /* ONE LINE, MEASURED — the shipped rule (view.js, fitTitles): the title is
+     written at its size and shrunk until it fits the room it has. */
+  function fitTitles(root) {
+    root.querySelectorAll(".md-title").forEach((t) => {
+      t.style.fontSize = "";
+      let s = parseFloat(getComputedStyle(t).fontSize);
+      while (t.scrollWidth > t.clientWidth + 1 && s > 24) { s -= 2; t.style.fontSize = s + "px"; }
+    });
+  }
+
+  /* ---- the stage -------------------------------------------------------- */
+  function render() {
+    const grid = $("grid");
+    grid.innerHTML = "";
+    const keys = P.view === "single" ? [P.sample] : Object.keys(SAMPLES);
+    const W = grid.clientWidth - 40, H = grid.clientHeight - 64;
+    let cols = 1, sc;
+    if (keys.length === 1) sc = Math.min(W / 720, H / 1280);
+    else {
+      /* the column count that makes the seven frames biggest */
+      let best = 0;
+      for (let c = 1; c <= keys.length; c++) {
+        const rows = Math.ceil(keys.length / c);
+        const s = Math.min((W - (c - 1) * 18) / c / 720, (H - (rows - 1) * 34) / rows / 1280);
+        if (s > best) { best = s; cols = c; }
+      }
+      sc = best;
+    }
+    keys.forEach((k) => {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.style.width = 720 * sc + "px";
+      slot.style.height = 1280 * sc + "px";
+      const fit = document.createElement("div");
+      fit.className = "fit";
+      fit.style.transform = "scale(" + sc + ")";
+      const fr = card(k);
+      fit.appendChild(fr);
+      slot.appendChild(fit);
+      if (keys.length > 1) {
+        const cap = document.createElement("div");
+        cap.className = "cap";
+        cap.textContent = SAMPLES[k].label;
+        slot.appendChild(cap);
+        slot.style.cursor = "pointer";
+        slot.addEventListener("click", () => { P.sample = k; P.view = "single"; sync(); render(); });
+      }
+      grid.appendChild(slot);
+      fitTitles(fr);
+    });
+    $("stage-note").textContent = keys.length > 1
+      ? "720×1280 design space · click a card to open it alone"
+      : "720×1280 design space · " + SAMPLES[P.sample].label;
+  }
+
+  window.addEventListener("resize", render);
+  sync();
+  render();
+  if (document.fonts) document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>

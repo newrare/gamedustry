@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.13.5",
+  "version": "0.14.1",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -450,7 +450,25 @@
           "Struck down by an ally": "Abattu par un allié",
           "An ally is wounded": "Un allié est blessé",
           "Wounded by an ally": "Blessé par un allié",
-          "No card can move": "Plus aucune carte ne bouge"
+          "No card can move": "Plus aucune carte ne bouge",
+          "A mine hidden among the soldiers. Any card that strikes it is lost with it.": "Une mine cachée parmi les soldats. Toute carte qui la frappe saute avec elle.",
+          "The enemy's standard. Capture it and the battle is won on the spot, whatever still stands in the camp.": "L'étendard ennemi. Prends-le et la bataille est gagnée sur-le-champ, quoi qu'il reste debout dans le camp.",
+          "A decoy dressed as a soldier. A card that strikes it is fooled and goes back to the bottom of the deck.": "Un leurre habillé en soldat. La carte qui le frappe est dupée et retourne sous le paquet.",
+          "A wall of stakes. A card that strikes it goes back to its place in the hand: the turn is wasted.": "Une palissade de pieux. La carte qui la frappe retourne à sa place dans la main : le tour est perdu.",
+          "A boulder in the way. A card that strikes it goes back to its place in the hand: the turn is wasted.": "Un bloc en travers du chemin. La carte qui le frappe retourne à sa place dans la main : le tour est perdu.",
+          "A card that walks into it gets lost: out of the battle until the end, neither wounded nor dead.": "La carte qui s'y aventure s'y perd : hors du combat jusqu'à la fin, ni blessée ni morte.",
+          "A card that strikes it is frozen with fear: it goes back to its place in the hand and never leaves it again this battle.": "La carte qui le frappe est glacée d'effroi : elle retourne à sa place dans la main et ne la quitte plus de la bataille.",
+          "A card that opens it is bewitched: it turns round and strikes a card of its own hand.": "La carte qui l'ouvre est ensorcelée : elle se retourne et frappe une carte de sa propre main.",
+          "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": "Tue le maréchal, quel que soit son rang. Contre toute autre carte, c'est la plus faible de toutes.",
+          "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": "Ne combat pas une carte cachée : il la révèle et retourne sous le paquet.",
+          "The only grade that clears a trap without being lost with it.": "Le seul grade qui désamorce un piège sans sauter avec lui.",
+          "The only grade that tears down the straw man.": "Le seul grade qui déchire l'homme de paille.",
+          "The only grade that chops down the wooden fence.": "Le seul grade qui abat la barrière de bois.",
+          "The only grade that smashes the rock.": "Le seul grade qui brise le rocher.",
+          "The only grade that crosses the forest without getting lost.": "Le seul grade qui traverse la forêt sans s'y perdre.",
+          "The only grade that shatters the skull without being stunned.": "Le seul grade qui brise le crâne sans être étourdi.",
+          "The only grade that burns the book without being bewitched.": "Le seul grade qui brûle le livre sans être ensorcelé.",
+          "The highest grade: no soldier outranks it, but the spy kills it.": "Le plus haut grade : aucun soldat ne le surpasse, mais l'espion le tue."
         },
         "helpRules": [
           "Chaque carte est un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le grade le plus haut gagne.",
@@ -635,6 +653,9 @@
           "name": "Base Camp",
           "rarity": "legendary"
         }
+      ],
+      "more": [
+        "army"
       ]
     },
     "village": {
@@ -1002,6 +1023,2098 @@
         "base": 90,
         "gradeStep": 0.22,
         "tierStep": 1.9
+      },
+      "missions": {
+        "offers": 3,
+        "running": 3,
+        "refreshHours": 8,
+        "need": [
+          10,
+          20,
+          32,
+          46,
+          64
+        ],
+        "par": 0.7,
+        "tierWeight": 2,
+        "favorBonus": 10,
+        "floor": 0.05,
+        "ceil": 0.95,
+        "list": [
+          {
+            "id": "m01",
+            "d": 1,
+            "hours": 4,
+            "squad": [
+              2,
+              2
+            ],
+            "favor": 2,
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 120
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 60
+              }
+            ],
+            "title": {
+              "en": "The lost goat",
+              "fr": "La chèvre perdue"
+            },
+            "brief": {
+              "en": "The quartermaster's goat, Bernadette, chewed through her rope and trotted off towards the red forest with the pantry key on her collar. A scout who can read hoof prints should find her before the goblins find the pantry.",
+              "fr": "Bernadette, la chèvre de l'intendant, a rongé sa corde et file vers la forêt rouge avec la clé du garde-manger au collier. Un éclaireur qui sait lire les traces de sabots doit la retrouver avant que les gobelins ne trouvent le garde-manger."
+            },
+            "win": {
+              "en": "{leader} tracked Bernadette by the trail of half-eaten red banners. She was found asleep in a goblin's hammock, key intact, and walked home at her own pace, which is to say slowly.",
+              "fr": "{leader} a suivi Bernadette à la trace des bannières rouges à moitié mâchées. On l'a trouvée endormie dans le hamac d'un gobelin, clé intacte, et elle est rentrée à son rythme, c'est-à-dire lentement."
+            },
+            "lose": {
+              "en": "The squad found the goat, but the goat had found a goblin with carrots first. Bernadette chose the carrots, and the squad had to pay the goblin a fine for trampling his vegetable patch.",
+              "fr": "L'escouade a bien trouvé la chèvre, mais la chèvre avait trouvé avant elle un gobelin plein de carottes. Bernadette a choisi les carottes, et il a fallu payer au gobelin une amende pour son potager piétiné."
+            }
+          },
+          {
+            "id": "m02",
+            "d": 1,
+            "hours": 5,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 4,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 120
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Straw men at dawn",
+              "fr": "Hommes de paille à l'aube"
+            },
+            "brief": {
+              "en": "The red camp has planted a row of straw men on the ridge so their army looks twice as big. A sergeant has knocked over more straw men in drill than anyone alive. Go and flatten the lot before breakfast.",
+              "fr": "Le camp rouge a planté une rangée d'hommes de paille sur la crête pour paraître deux fois plus nombreux. Un sergent en a renversé plus que quiconque à l'exercice. Allez tous les aplatir avant le petit-déjeuner."
+            },
+            "win": {
+              "en": "The squad of {leader} flattened every straw man on the ridge and sold the straw to a farmer on the way back. The red camp now looks exactly as small as it really is.",
+              "fr": "L'escouade de {leader} a aplati tous les hommes de paille de la crête et revendu la paille à un fermier au retour. Le camp rouge paraît désormais aussi petit qu'il l'est vraiment."
+            },
+            "lose": {
+              "en": "One of the straw men turned out to be a very patient goblin. He kicked a shin, shouted for help, and the squad retreated limping, with straw in its boots and in its pride.",
+              "fr": "L'un des hommes de paille était en fait un gobelin très patient. Il a donné un coup de pied dans un tibia, crié à l'aide, et l'escouade a battu en retraite en boitant, de la paille plein les bottes."
+            }
+          },
+          {
+            "id": "m03",
+            "d": 1,
+            "hours": 6,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 2,
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 150
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Prowlers to the north",
+              "fr": "Rôdeurs au nord"
+            },
+            "brief": {
+              "en": "Our spies say a group of four or five figures has been prowling a few miles north of the camp. Nobody knows who they are. Send a scout to get close unseen and find out what is really going on up there.",
+              "fr": "Nos espions nous indiquent qu'un groupe de quatre ou cinq personnes rôde à quelques kilomètres au nord du camp. Personne ne sait qui ils sont. Il faut un éclaireur pour enquêter sur place sans être vu et voir ce qu'il en est réellement."
+            },
+            "win": {
+              "en": "{leader} crept up on the prowlers and found five red cartographers arguing over which way was north. The squad copied their map, which was wrong, and learned a great deal from exactly how.",
+              "fr": "{leader} a surpris les rôdeurs : cinq cartographes rouges qui se disputaient pour savoir où était le nord. L'escouade a recopié leur carte, fausse, et appris beaucoup en voyant à quel point."
+            },
+            "lose": {
+              "en": "The prowlers were a red patrol after all, and a bored one. They chased the squad of {leader} across three fields just for fun, and not everyone cleared the last hedge cleanly.",
+              "fr": "Les rôdeurs étaient bel et bien une patrouille rouge, et qui s'ennuyait. Elle a poursuivi l'escouade de {leader} à travers trois champs pour s'amuser, et tout le monde n'a pas franchi la dernière haie proprement."
+            }
+          },
+          {
+            "id": "m04",
+            "d": 1,
+            "hours": 6,
+            "squad": [
+              2,
+              2
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 150
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 80
+              }
+            ],
+            "title": {
+              "en": "The mail cart",
+              "fr": "La charrette du courrier"
+            },
+            "brief": {
+              "en": "The mail cart leaves for Little Puddling at noon with the soldiers' letters and the pay for the village baker. The road runs close to the red lines. Two of ours should ride beside it and keep an eye on the ditches.",
+              "fr": "La charrette du courrier part pour Petit-Flaque à midi avec les lettres des soldats et la paie du boulanger du village. La route longe les lignes rouges. Deux des nôtres doivent l'escorter et surveiller les fossés."
+            },
+            "win": {
+              "en": "The cart reached Little Puddling without a single wet letter. The baker was so pleased with his pay that he thanked the escort in pies and coins, and {leader} signed the receipt for both.",
+              "fr": "La charrette est arrivée à Petit-Flaque sans une lettre mouillée. Le boulanger, ravi de sa paie, a remercié l'escorte en tartes et en pièces, et {leader} a signé le reçu pour les deux."
+            },
+            "lose": {
+              "en": "A goblin disguised as a pothole flagged down the cart and demanded a toll. The escort of {leader} paid rather than argue with a pothole, and the camp has been asked never to mention it.",
+              "fr": "Un gobelin déguisé en nid-de-poule a arrêté la charrette pour réclamer un péage. L'escorte de {leader} a préféré payer plutôt que discuter avec un nid-de-poule, et le camp est prié de ne jamais en parler."
+            }
+          },
+          {
+            "id": "m05",
+            "d": 1,
+            "hours": 4,
+            "squad": [
+              2,
+              2
+            ],
+            "favor": 3,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 130
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Fizzle's first fuse",
+              "fr": "La première mèche de Fizzle"
+            },
+            "brief": {
+              "en": "Fizzle Wickett has left one of his bombs by our well again. His bombs never go off on time: this one could fizzle out tonight or bang next spring. Send a sapper, someone who knows a fuse from a shoelace.",
+              "fr": "Fizzle Wickett a encore laissé une de ses bombes près de notre puits. Ses bombes n'explosent jamais à l'heure : celle-ci peut s'éteindre ce soir ou sauter au printemps prochain. Envoyez un sapeur, quelqu'un qui distingue une mèche d'un lacet."
+            },
+            "win": {
+              "en": "{leader} unscrewed the bomb, emptied it and found it stuffed with coins Fizzle had been hiding from his own camp. The well is safe and the camp's purse is heavier.",
+              "fr": "{leader} a dévissé la bombe, l'a vidée et l'a trouvée pleine de pièces que Fizzle cachait à son propre camp. Le puits est sauf et la bourse du camp s'est alourdie."
+            },
+            "lose": {
+              "en": "The bomb went off exactly on time, which surprised everyone, Fizzle most of all. Nothing serious, but the squad came back with singed eyebrows and at least one ear that will not stop ringing.",
+              "fr": "Pour une fois, la bombe a explosé pile à l'heure, ce qui a surpris tout le monde, Fizzle le premier. Rien de grave, mais l'escouade est revenue les sourcils roussis et au moins une oreille qui siffle encore."
+            }
+          },
+          {
+            "id": "m06",
+            "d": 1,
+            "hours": 5,
+            "squad": [
+              2,
+              3
+            ],
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 130
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 50
+              }
+            ],
+            "title": {
+              "en": "The goblin picnic",
+              "fr": "Le pique-nique gobelin"
+            },
+            "brief": {
+              "en": "A band of goblins is having a picnic in the meadow by the old oak, with a basket the size of a wagon. Our cooks swear there are berry pies in it. Go and watch them closely, and learn what goblins eat when nobody is looking.",
+              "fr": "Une bande de gobelins pique-nique dans le pré du vieux chêne, avec un panier gros comme une charrette. Nos cuisiniers jurent qu'il contient des tartes aux baies. Allez les observer de près et découvrez ce que mangent les gobelins quand personne ne regarde."
+            },
+            "win": {
+              "en": "The squad watched the picnic from a bush for three hours and took careful notes: goblins eat the pie first and the basket after. {leader} brought back the notes and the last slice.",
+              "fr": "L'escouade a observé le pique-nique depuis un buisson pendant trois heures et pris des notes : les gobelins mangent la tarte d'abord, le panier ensuite. {leader} a rapporté les notes et la dernière part."
+            },
+            "lose": {
+              "en": "The bush the squad hid in was the goblins' dessert. Our soldiers were found, invited to share, and asked to pay for their portion afterwards, as is the custom at goblin picnics.",
+              "fr": "Le buisson où se cachait l'escouade était le dessert des gobelins. Elle a été découverte, invitée à partager, puis priée de payer sa part, comme le veut la coutume des pique-niques gobelins."
+            }
+          },
+          {
+            "id": "m07",
+            "d": 1,
+            "hours": 7,
+            "squad": [
+              2,
+              3
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 100
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Mushroom harvest",
+              "fr": "La cueillette des champignons"
+            },
+            "brief": {
+              "en": "The cook needs a basket of golden mushrooms for the officers' stew, and they only grow at the edge of the red forest. Pick the golden ones, not the spotted ones. The cook was very firm about the spotted ones.",
+              "fr": "Le cuisinier a besoin d'un panier de champignons dorés pour le ragoût des officiers, et ils ne poussent qu'à l'orée de la forêt rouge. Les dorés, pas les tachetés. Le cuisinier a beaucoup insisté sur les tachetés."
+            },
+            "win": {
+              "en": "{leader} brought back two full baskets. The first went into the stew, the second was sold to a passing merchant who called them the finest he had seen this side of the river.",
+              "fr": "{leader} a ramené deux paniers pleins. Le premier a fini dans le ragoût, le second a été vendu à un marchand de passage qui les a déclarés les plus beaux de ce côté de la rivière."
+            },
+            "lose": {
+              "en": "Someone tasted a spotted one, just to check. It was a spotted one. The squad came home early, carrying a comrade who could not stop hiccuping and insisted the trees were singing.",
+              "fr": "Quelqu'un a goûté un tacheté, pour vérifier. C'était bien un tacheté. L'escouade est rentrée tôt en portant un camarade pris de hoquet, qui jurait que les arbres chantaient."
+            }
+          },
+          {
+            "id": "m08",
+            "d": 1,
+            "hours": 8,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 5,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 160
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 90
+              }
+            ],
+            "title": {
+              "en": "The fence that moved",
+              "fr": "La clôture baladeuse"
+            },
+            "brief": {
+              "en": "Overnight the red camp moved its wooden fence fifty paces into our meadow, and claims it has always been there. A lieutenant can take a fence apart plank by plank without a sound. Put it back where it belongs.",
+              "fr": "Pendant la nuit, le camp rouge a déplacé sa clôture de bois de cinquante pas dans notre pré, et prétend qu'elle a toujours été là. Un lieutenant sait démonter une clôture planche par planche sans un bruit. Remettez-la à sa place."
+            },
+            "win": {
+              "en": "The squad of {leader} took the fence apart plank by plank and rebuilt it fifty paces back, with ten planks to spare. The village carpenter bought the spares on the spot.",
+              "fr": "L'escouade de {leader} a démonté la clôture planche par planche et l'a remontée cinquante pas plus loin, avec dix planches en trop. Le menuisier du village les a achetées sur-le-champ."
+            },
+            "lose": {
+              "en": "The squad of {leader} moved the fence back, then again when an imp moved it forward, and so on until dawn. At sunrise the bill for the broken planks was sent, naturally, to us.",
+              "fr": "L'escouade de {leader} a reculé la clôture, puis encore quand un diablotin l'a avancée, et ainsi de suite jusqu'à l'aube. Au lever du soleil, la facture des planches cassées nous a été envoyée, naturellement."
+            }
+          },
+          {
+            "id": "m09",
+            "d": 1,
+            "hours": 8,
+            "squad": [
+              2,
+              2
+            ],
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 180
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Wayne's shortcut",
+              "fr": "Le raccourci de Wayne"
+            },
+            "brief": {
+              "en": "Wayne Dering swears he has found a shortcut to the river that saves half a day. Wayne reads his maps upside down. Go with him, and check that the river is where he says it is before the army follows.",
+              "fr": "Wayne Dering jure avoir trouvé un raccourci vers la rivière qui fait gagner une demi-journée. Wayne lit ses cartes à l'envers. Accompagnez-le et vérifiez que la rivière est bien là où il le dit avant que l'armée ne suive."
+            },
+            "win": {
+              "en": "The shortcut led to a completely different river, which turned out to be even closer. {leader} turned the map the right way up, redrew the road, and Wayne took all the credit.",
+              "fr": "Le raccourci menait à une tout autre rivière, qui s'est révélée encore plus proche. {leader} a remis la carte à l'endroit, redessiné la route, et Wayne s'est attribué tout le mérite."
+            },
+            "lose": {
+              "en": "The shortcut went through a bramble patch, a bog and a goblin's garden, in that order. Wayne was delighted. Somebody twisted an ankle in the bog and everyone came back scratched.",
+              "fr": "Le raccourci traversait des ronces, une tourbière et le jardin d'un gobelin, dans cet ordre. Wayne était ravi. Quelqu'un s'est tordu la cheville dans la tourbière et tout le monde est rentré griffé."
+            }
+          },
+          {
+            "id": "m10",
+            "d": 1,
+            "hours": 6,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 1,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 200
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 100
+              }
+            ],
+            "title": {
+              "en": "Ima's spoons",
+              "fr": "Les cuillères d'Ima"
+            },
+            "brief": {
+              "en": "Ima Lurker, the smallest spy of the red camp, sneaked into our mess tent and stole every silver spoon. The officers are eating soup with forks. It takes a spy to catch a spy: find her hiding place and bring the cutlery home.",
+              "fr": "Ima Lurker, la plus petite espionne du camp rouge, s'est glissée dans notre cantine et a volé toutes les cuillères en argent. Les officiers mangent la soupe à la fourchette. Il faut un espion pour attraper une espionne : trouvez sa cachette et rapportez les couverts."
+            },
+            "win": {
+              "en": "{leader} found Ima's stash under a tree root: our spoons, three teapots and a sugar bowl nobody had missed. The silverware came home, and the rest was sold at the fair.",
+              "fr": "{leader} a trouvé la cachette d'Ima sous une racine : nos cuillères, trois théières et un sucrier que personne ne réclamait. L'argenterie est rentrée, le reste a été vendu à la foire."
+            },
+            "lose": {
+              "en": "While the squad searched Ima's hiding place, Ima searched the squad's packs. Our soldiers came home without the spoons, and without the purse they had taken along to buy lunch.",
+              "fr": "Pendant que l'escouade fouillait la cachette d'Ima, Ima fouillait ses sacs. Nos soldats sont rentrés sans les cuillères, et sans la bourse emportée pour acheter le déjeuner."
+            }
+          },
+          {
+            "id": "m11",
+            "d": 2,
+            "hours": 8,
+            "squad": [
+              2,
+              3
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 250
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 150
+              }
+            ],
+            "title": {
+              "en": "Grubnik's bet",
+              "fr": "Le pari de Grubnik"
+            },
+            "brief": {
+              "en": "A goblin named Grubnik has bet a purse of silver that nobody in blue can cross the Sloshy Swamp before sundown. The staff has accepted on your behalf. Please do not lose: the staff has also bet its lunch.",
+              "fr": "Un gobelin nommé Grubnik a parié une bourse d'argent qu'aucun soldat bleu ne traverserait le marais de Clapotis avant le coucher du soleil. L'état-major a accepté pour vous. Ne perdez pas : il a aussi parié son déjeuner."
+            },
+            "win": {
+              "en": "{leader} crossed the swamp with an hour to spare by hopping from log to log, one of which was a sleeping crocodile. Grubnik paid up at once and asked for a rematch.",
+              "fr": "{leader} a traversé le marais avec une heure d'avance en sautant de tronc en tronc, dont l'un était un crocodile endormi. Grubnik a payé aussitôt et réclamé une revanche."
+            },
+            "lose": {
+              "en": "{leader} reached the far bank just as the sun touched the hills. Grubnik produced a sundial of his own making, an hour fast, and all the judges turned out to be goblins.",
+              "fr": "{leader} a atteint l'autre rive au moment où le soleil touchait les collines. Grubnik a sorti un cadran solaire de sa fabrication, en avance d'une heure, et tous les juges étaient des gobelins."
+            }
+          },
+          {
+            "id": "m12",
+            "d": 2,
+            "hours": 10,
+            "squad": [
+              2,
+              4
+            ],
+            "favor": 3,
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 240
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The rope bridge",
+              "fr": "Le pont de cordes"
+            },
+            "brief": {
+              "en": "The rope bridge over Gulp Gorge has been gnawed halfway through, and the red camp swears it was the squirrels. Our supplies cross there every week. A sapper should check every knot and rebuild what the squirrels left.",
+              "fr": "Le pont de cordes au-dessus de la gorge de Glouglou a été rongé à moitié, et le camp rouge jure que ce sont les écureuils. Nos vivres y passent chaque semaine. Un sapeur doit vérifier chaque nœud et refaire ce que les écureuils ont laissé."
+            },
+            "win": {
+              "en": "The squad of {leader} rebuilt the bridge knot by knot and found the squirrels: two imps with pliers shaped like teeth. Everyone learned a great deal about knots, the imps included.",
+              "fr": "L'escouade de {leader} a refait le pont nœud par nœud et trouvé les écureuils : deux diablotins armés de pinces en forme de dents. Tout le monde a beaucoup appris sur les nœuds, les diablotins compris."
+            },
+            "lose": {
+              "en": "The new knots held perfectly. The old plank everyone stood on to admire them did not. The squad climbed back out of the gorge on the rope, soaked, bruised and very quiet.",
+              "fr": "Les nouveaux nœuds ont parfaitement tenu. La vieille planche où tout le monde s'était posté pour les admirer, beaucoup moins. L'escouade est remontée de la gorge à la corde, trempée, couverte de bleus et très silencieuse."
+            }
+          },
+          {
+            "id": "m13",
+            "d": 2,
+            "hours": 12,
+            "squad": [
+              2,
+              3
+            ],
+            "reward": [
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 140
+              }
+            ],
+            "title": {
+              "en": "The peddler's map",
+              "fr": "La carte du colporteur"
+            },
+            "brief": {
+              "en": "A goblin peddler sold our quartermaster a treasure map for a very reasonable price, which is suspicious. The cross is on a hill two valleys away. Go and dig. If it is a fake, at least bring the shovel back.",
+              "fr": "Un colporteur gobelin a vendu une carte au trésor à notre intendant pour un prix très raisonnable, ce qui est louche. La croix est sur une colline à deux vallées d'ici. Allez creuser. Si c'est un faux, rapportez au moins la pelle."
+            },
+            "win": {
+              "en": "{leader} dug under the cross and found nothing, then dug where the cross would be if the map were upside down, and struck a little iron box. It held a golden ticket and no explanation.",
+              "fr": "{leader} a creusé sous la croix sans rien trouver, puis là où serait la croix si la carte était à l'envers, et a déterré une petite boîte en fer. Elle contenait un ticket doré, et aucune explication."
+            },
+            "lose": {
+              "en": "The hill was already full of holes, each dug by someone holding the same map. The peddler stood at the top selling shovels, and {leader} had to buy one after the squad broke its own.",
+              "fr": "La colline était déjà criblée de trous, chacun creusé par quelqu'un qui tenait la même carte. Le colporteur vendait des pelles au sommet, et {leader} a dû en acheter une après que l'escouade a cassé la sienne."
+            }
+          },
+          {
+            "id": "m14",
+            "d": 2,
+            "hours": 9,
+            "squad": [
+              2,
+              4
+            ],
+            "favor": 2,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 280
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The wandering convoy",
+              "fr": "Le convoi égaré"
+            },
+            "brief": {
+              "en": "A red supply convoy left this morning under Wendell Wrongway, who has never once arrived where he meant to go. It could be anywhere by now. Send a scout to pick up the wheel tracks, then relieve him of his cargo.",
+              "fr": "Un convoi de ravitaillement rouge est parti ce matin sous les ordres de Wendell Wrongway, qui n'est jamais arrivé là où il voulait aller. Il peut être n'importe où. Envoyez un éclaireur relever les traces de roues, puis soulagez-le de sa cargaison."
+            },
+            "win": {
+              "en": "The tracks went twice around the camp in a perfect circle. {leader} waited at the spot Wendell was bound to pass a third time and took the payroll chest without a fight.",
+              "fr": "Les traces faisaient deux fois le tour du camp en un cercle parfait. {leader} a attendu à l'endroit où Wendell allait forcément repasser et a pris le coffre de la solde sans combat."
+            },
+            "lose": {
+              "en": "For once Wendell went the right way, straight into the squad's hiding place. Both sides were so surprised that they collided, and ours came back with more dents than the convoy.",
+              "fr": "Pour une fois, Wendell a pris la bonne route, droit sur la cachette de l'escouade. Les deux camps ont été si surpris qu'ils se sont percutés, et les nôtres sont rentrés plus cabossés que le convoi."
+            }
+          },
+          {
+            "id": "m15",
+            "d": 2,
+            "hours": 7,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 1,
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 220
+              },
+              {
+                "kind": "coins",
+                "n": 180
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The tavern council",
+              "fr": "Le conseil de la taverne"
+            },
+            "brief": {
+              "en": "Three red officers meet every week in the back room of the Crooked Cauldron to plan the next raid. The walls are thin and the ale is cheap. A spy at the next table could hear everything, and even order something.",
+              "fr": "Trois officiers rouges se retrouvent chaque semaine dans l'arrière-salle du Chaudron Tordu pour préparer le prochain raid. Les murs sont fins et la bière bon marché. Un espion à la table voisine entendrait tout, et pourrait même commander."
+            },
+            "win": {
+              "en": "{leader} heard the whole plan, the officers' birthdays and a very good recipe for mushroom pie. The raid is off, and the squad won the tavern's darts contest on the way out.",
+              "fr": "{leader} a entendu tout le plan, les anniversaires des officiers et une excellente recette de tourte aux champignons. Le raid est annulé, et l'escouade a gagné le concours de fléchettes de la taverne en sortant."
+            },
+            "lose": {
+              "en": "Our spy sneezed at the worst moment of the plan. The officers turned round, the whole tavern turned round, and a very long brawl followed, fought mostly with stools and pies.",
+              "fr": "Notre espion a éternué au pire moment du plan. Les officiers se sont retournés, la taverne entière aussi, et une très longue bagarre a suivi, menée surtout à coups de tabourets et de tartes."
+            }
+          },
+          {
+            "id": "m16",
+            "d": 2,
+            "hours": 12,
+            "squad": [
+              2,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 300
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Storm on the pass",
+              "fr": "Tempête sur le col"
+            },
+            "brief": {
+              "en": "The mules carrying the outpost's winter blankets are stuck at the foot of Windy Pass, and a storm is rolling in. The muleteer refuses to go any further without an escort. Get them over the top before the snow does.",
+              "fr": "Les mules qui portent les couvertures d'hiver de l'avant-poste sont bloquées au pied du col Venteux, et un orage arrive. Le muletier refuse d'aller plus loin sans escorte. Faites-les passer avant la neige."
+            },
+            "win": {
+              "en": "The squad of {leader} walked the mules over the pass in a blizzard, singing to keep them moving. The outpost paid a bonus for every blanket that arrived dry, and every one of them did.",
+              "fr": "L'escouade de {leader} a fait passer les mules en pleine tempête, en chantant pour qu'elles avancent. L'avant-poste a payé une prime pour chaque couverture arrivée sèche, et toutes l'étaient."
+            },
+            "lose": {
+              "en": "Halfway up, the mules sat down in the snow and would not budge. {leader} ordered the squad to push, and pushing a sitting mule up a mountain is harder than it sounds, as somebody's back can confirm.",
+              "fr": "À mi-pente, les mules se sont assises dans la neige et n'ont plus bougé. {leader} a ordonné de pousser, et pousser une mule assise en haut d'une montagne est plus dur qu'il n'y paraît, comme en témoigne le dos de quelqu'un."
+            }
+          },
+          {
+            "id": "m17",
+            "d": 2,
+            "hours": 10,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 6,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 220
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Rocks on the road",
+              "fr": "Des rochers sur la route"
+            },
+            "brief": {
+              "en": "The red camp has rolled a heap of rocks across the King's Road, and the merchants are stuck on the far side. A captain can tell at a glance which rock holds up all the others. Clear the road and the merchants will be grateful.",
+              "fr": "Le camp rouge a fait rouler un tas de rochers sur la route du Roi, et les marchands sont coincés de l'autre côté. Un capitaine voit d'un coup d'œil quel rocher tient tous les autres. Dégagez la route et les marchands sauront se montrer reconnaissants."
+            },
+            "win": {
+              "en": "{leader} studied the heap for an hour, pulled out a single pebble, and the whole pile rolled politely into the ditch. The merchants passed a hat around and it came back full.",
+              "fr": "{leader} a étudié le tas pendant une heure, retiré un seul caillou, et toute la pile a roulé poliment dans le fossé. Les marchands ont fait passer un chapeau qui est revenu plein."
+            },
+            "lose": {
+              "en": "The squad pulled out the wrong rock first. The pile rearranged itself across the road, a little higher than before, and a soldier who was standing too close came back limping.",
+              "fr": "L'escouade a d'abord retiré le mauvais rocher. Le tas s'est réorganisé en travers de la route, un peu plus haut qu'avant, et un soldat qui se tenait trop près est rentré en boitant."
+            }
+          },
+          {
+            "id": "m18",
+            "d": 2,
+            "hours": 8,
+            "squad": [
+              2,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 300
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 160
+              }
+            ],
+            "title": {
+              "en": "The harvest festival",
+              "fr": "La fête des moissons"
+            },
+            "brief": {
+              "en": "Little Puddling holds its harvest festival tomorrow, and our spies say the red camp plans to crash it and steal the prize pumpkin. The mayor has asked for guards who can blend in. Wear something festive.",
+              "fr": "Petit-Flaque fête ses moissons demain, et nos espions disent que le camp rouge compte gâcher la fête et voler la citrouille primée. Le maire demande des gardes capables de passer inaperçus. Mettez quelque chose de festif."
+            },
+            "win": {
+              "en": "The imps arrived disguised as a dancing troupe and danced so badly they gave themselves away. The squad of {leader} chased them off, guarded the pumpkin and learned three new folk dances.",
+              "fr": "Les diablotins sont arrivés déguisés en troupe de danseurs et ont si mal dansé qu'ils se sont trahis. L'escouade de {leader} les a chassés, a gardé la citrouille et appris trois danses folkloriques."
+            },
+            "lose": {
+              "en": "The squad of {leader} was so festive that nobody noticed the pumpkin rolling away down the hill. The mayor sent us the bill for a new one, and for the tent it rolled through.",
+              "fr": "L'escouade de {leader} était si festive que personne n'a vu la citrouille dévaler la colline. Le maire nous a envoyé la facture d'une nouvelle, et celle de la tente qu'elle a traversée."
+            }
+          },
+          {
+            "id": "m19",
+            "d": 2,
+            "hours": 6,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 2,
+            "reward": [
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Penny's keyring",
+              "fr": "Le trousseau de Penny"
+            },
+            "brief": {
+              "en": "Penny Padlock, keeper of every lock in the red camp, dropped her keyring somewhere near our outposts. She is out looking for it right now. A sharp-eyed scout could find it first and see what it opens.",
+              "fr": "Penny Padlock, gardienne de toutes les serrures du camp rouge, a perdu son trousseau quelque part près de nos avant-postes. Elle le cherche en ce moment même. Un éclaireur à l'œil vif pourrait le trouver avant elle et voir ce qu'il ouvre."
+            },
+            "win": {
+              "en": "{leader} spotted the keyring glinting in a molehill, an hour ahead of Penny. One small key opened a strongbox hidden in a hollow tree, and inside lay a single stamped ticket.",
+              "fr": "{leader} a repéré le trousseau qui brillait dans une taupinière, une heure avant Penny. Une petite clé ouvrait un coffret caché dans un arbre creux, qui ne contenait qu'un ticket tamponné."
+            },
+            "lose": {
+              "en": "Penny found the keyring at the same moment as the squad, and Penny is very attached to her keys. She swung them like a flail, and ours came home with a bump the shape of a key.",
+              "fr": "Penny a trouvé le trousseau au même instant que l'escouade, et Penny tient beaucoup à ses clés. Elle les a fait tournoyer comme un fléau, et les nôtres sont rentrés avec une bosse en forme de clé."
+            }
+          },
+          {
+            "id": "m20",
+            "d": 2,
+            "hours": 11,
+            "squad": [
+              2,
+              3
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 200
+              },
+              {
+                "kind": "xp",
+                "n": 200
+              }
+            ],
+            "fail": [
+              {
+                "kind": "coins",
+                "n": 180
+              }
+            ],
+            "title": {
+              "en": "A cake for the chief",
+              "fr": "Un gâteau pour le chef"
+            },
+            "brief": {
+              "en": "Our envoy offered the goblin chief a cake shaped like a boot, which in goblin means you smell. Talks have stopped. Bring the chief a proper apology cake and try to explain without making things worse.",
+              "fr": "Notre émissaire a offert au chef gobelin un gâteau en forme de botte, ce qui en gobelin veut dire « tu sens mauvais ». Les pourparlers sont rompus. Apportez au chef un vrai gâteau d'excuse et expliquez-vous sans aggraver les choses."
+            },
+            "win": {
+              "en": "{leader} presented a cake shaped like a crown, which in goblin means you smell of roses. The chief wept, reopened the trade road and tipped the squad very generously.",
+              "fr": "{leader} a présenté un gâteau en forme de couronne, ce qui en gobelin veut dire « tu sens la rose ». Le chef a pleuré, rouvert la route du commerce et laissé un généreux pourboire à l'escouade."
+            },
+            "lose": {
+              "en": "The apology cake was shaped like a hat, which in goblin is a proposal of marriage. The chief has said yes to {leader}, and the camp is paying for the engagement party while the misunderstanding is cleared up.",
+              "fr": "Le gâteau d'excuse avait la forme d'un chapeau, ce qui en gobelin est une demande en mariage. Le chef a dit oui à {leader}, et le camp paie la fête de fiançailles le temps de dissiper le malentendu."
+            }
+          },
+          {
+            "id": "m21",
+            "d": 2,
+            "hours": 12,
+            "squad": [
+              2,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "xp",
+                "n": 280
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The haunted mill",
+              "fr": "Le moulin hanté"
+            },
+            "brief": {
+              "en": "The old mill by the river has been haunted for a week: moans at night, flour flying, a white shape at the window. The millers refuse to go back. Spend the night there and find out what the ghost wants.",
+              "fr": "Le vieux moulin près de la rivière est hanté depuis une semaine : des gémissements la nuit, de la farine qui vole, une forme blanche à la fenêtre. Les meuniers refusent d'y retourner. Passez-y la nuit et découvrez ce que veut le fantôme."
+            },
+            "win": {
+              "en": "The ghost was two goblins under a flour sack, living in the mill because it was warm. The squad of {leader} caught them at midnight and learned more about ghost tricks than anyone should.",
+              "fr": "Le fantôme, c'étaient deux gobelins sous un sac de farine, installés au moulin parce qu'il y faisait chaud. L'escouade de {leader} les a pris sur le fait à minuit et en a appris plus sur les fantômes que nécessaire."
+            },
+            "lose": {
+              "en": "The ghost was two goblins under a flour sack, but nobody found that out until the millstone started turning in the dark. The squad tumbled down the flour chute and came back very white and rather bruised.",
+              "fr": "Le fantôme, c'étaient deux gobelins sous un sac de farine, mais personne ne l'a su avant que la meule ne se mette à tourner dans le noir. L'escouade a dégringolé dans la goulotte et est rentrée toute blanche et bien contusionnée."
+            }
+          },
+          {
+            "id": "m22",
+            "d": 2,
+            "hours": 9,
+            "squad": [
+              2,
+              3
+            ],
+            "favor": 7,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 320
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Tim Burr's axe",
+              "fr": "La hache de Tim Burr"
+            },
+            "brief": {
+              "en": "Tim Burr threw his axe at a red banner, missed, and it stuck in the oldest tree of the Tangle Wood, deep in red country. It was his grandfather's. A major has led columns through thicker woods than this and can bring it back unseen.",
+              "fr": "Tim Burr a lancé sa hache sur une bannière rouge, l'a ratée, et elle s'est plantée dans le plus vieil arbre du bois de l'Emmêle, en plein pays rouge. C'était celle de son grand-père. Un major, qui a mené des colonnes dans des bois plus touffus, saura la rapporter."
+            },
+            "win": {
+              "en": "{leader} led the squad through the wood by paths no goblin knew. The axe had split the old tree open, revealing the hollow where the imps kept their savings. Tim got his axe back, the camp got the savings.",
+              "fr": "{leader} a guidé l'escouade par des sentiers qu'aucun gobelin ne connaissait. La hache avait fendu le vieil arbre, révélant le creux où les diablotins gardaient leurs économies. Tim a récupéré sa hache, le camp les économies."
+            },
+            "lose": {
+              "en": "{leader} was pulling the axe free when the tree, offended, dropped a branch full of angry wasps on the squad. Everyone ran home without the axe, with a few stings as souvenirs.",
+              "fr": "{leader} tirait sur la hache quand l'arbre, vexé, a lâché sur l'escouade une branche pleine de guêpes furieuses. Tout le monde a couru jusqu'au camp sans la hache, avec quelques piqûres en souvenir."
+            }
+          },
+          {
+            "id": "m23",
+            "d": 3,
+            "hours": 16,
+            "squad": [
+              3,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  4,
+                  6
+                ],
+                "t": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The cooking school",
+              "fr": "L'école de cuisine"
+            },
+            "brief": {
+              "en": "One of our officers deserted last month and was last seen at a goblin cooking school in Stewpot Hollow, wearing a very tall hat. We would like our officer back. The goblins would like to keep their best pupil.",
+              "fr": "Un de nos officiers a déserté le mois dernier et a été aperçu dans une école de cuisine gobeline, au creux de la Marmite, coiffé d'une très haute toque. Nous aimerions le récupérer. Les gobelins aimeraient garder leur meilleur élève."
+            },
+            "win": {
+              "en": "{leader} walked into the kitchen, tasted the deserter's soup and pronounced it excellent but too salty. Stung, our officer came home to prove otherwise, and now cooks for the whole squad.",
+              "fr": "{leader} a poussé la porte des cuisines, goûté la soupe du déserteur et l'a jugée excellente mais trop salée. Piqué au vif, notre officier est rentré au camp pour prouver le contraire, et cuisine désormais pour toute l'escouade."
+            },
+            "lose": {
+              "en": "The goblin head chef challenged {leader} to a cook-off, and the squad burned the stew, the pot and part of the stove. Everyone came home singed and humbled, and the deserter stayed on for the next lesson.",
+              "fr": "Le chef gobelin a défié {leader} dans un concours de cuisine, et l'escouade a brûlé le ragoût, la marmite et un bout du fourneau. Tout le monde est rentré roussi et humilié, et le déserteur est resté pour le cours suivant."
+            }
+          },
+          {
+            "id": "m24",
+            "d": 3,
+            "hours": 18,
+            "squad": [
+              3,
+              4
+            ],
+            "favor": 3,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 400
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The valley of snares",
+              "fr": "Le val des Collets"
+            },
+            "brief": {
+              "en": "The quickest way to the red supply depot runs through Snare Valley, where the imps have set a trap under every third stone. Beyond the traps the depot is barely guarded. This is a job for a sapper with patient hands.",
+              "fr": "Le plus court chemin vers le dépôt rouge passe par le val des Collets, où les diablotins ont posé un piège sous une pierre sur trois. Au-delà, le dépôt est à peine gardé. C'est un travail pour un sapeur aux mains patientes."
+            },
+            "win": {
+              "en": "The squad of {leader} disarmed forty-one traps and stepped around the forty-second, which was a nest of very small, very loud birds. The depot's cashbox came home, with a ticket clipped to its lid.",
+              "fr": "L'escouade de {leader} a désamorcé quarante et un pièges et contourné le quarante-deuxième, un nid de tout petits oiseaux très bruyants. La caisse du dépôt est rentrée, avec un ticket agrafé au couvercle."
+            },
+            "lose": {
+              "en": "Trap forty-two was a net, and it caught the soldier walking in front. The imps carried their catch off to their camp, very proud of it, while the rest of the squad could only watch from the ridge.",
+              "fr": "Le piège numéro quarante-deux était un filet, qui a attrapé le soldat de tête. Les diablotins ont emporté leur prise au camp, très fiers, pendant que le reste de l'escouade regardait, impuissant, depuis la crête."
+            }
+          },
+          {
+            "id": "m25",
+            "d": 3,
+            "hours": 20,
+            "squad": [
+              2,
+              4
+            ],
+            "favor": 8,
+            "reward": [
+              {
+                "kind": "sticker"
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The skull shrine",
+              "fr": "L'autel des crânes"
+            },
+            "brief": {
+              "en": "At the Crossroads of Bones the red camp keeps a shrine of painted skulls, and something on the altar glows green at night. A colonel has faced so many skull banners that nothing there will make one blink. Find out what is glowing and bring it back.",
+              "fr": "Au carrefour des Os, le camp rouge entretient un autel de crânes peints, et quelque chose y luit en vert la nuit. Un colonel a affronté tant d'étendards à tête de mort que rien là-bas ne le fera ciller. Découvrez ce qui brille et rapportez-le."
+            },
+            "win": {
+              "en": "{leader} walked past the grinning skulls without a shiver and lifted the glowing thing off the altar: a little enamel charm shaped like a winking moon. Nobody knows what it does. It is very pretty.",
+              "fr": "{leader} a longé les crânes grimaçants sans un frisson et soulevé l'objet lumineux posé sur l'autel : un petit charme émaillé en forme de lune qui fait un clin d'œil. Personne ne sait à quoi il sert. Il est très joli."
+            },
+            "lose": {
+              "en": "The skulls were only painted gourds, but the imps behind the altar were real and had slingshots. {leader} sounded the retreat, and the squad left at a run, well bruised and without the charm.",
+              "fr": "Les crânes n'étaient que des courges peintes, mais les diablotins cachés derrière l'autel étaient bien réels, et armés de lance-pierres. {leader} a sonné la retraite, et l'escouade est partie en courant, couverte de bleus et sans le charme."
+            }
+          },
+          {
+            "id": "m26",
+            "d": 3,
+            "hours": 14,
+            "squad": [
+              3,
+              4
+            ],
+            "favor": 9,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 350
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              },
+              {
+                "kind": "coins",
+                "n": 200
+              }
+            ],
+            "title": {
+              "en": "The padlocked ledger",
+              "fr": "Le registre cadenassé"
+            },
+            "brief": {
+              "en": "The red quartermaster keeps his accounts in a padlocked book, chained to a desk in the supply tent. A general has opened more locked books than anyone in the army. Read this one, and find out where the red camp hides its money.",
+              "fr": "L'intendant rouge tient ses comptes dans un livre cadenassé, enchaîné à un bureau de la tente des vivres. Un général a ouvert plus de livres verrouillés que quiconque dans l'armée. Lisez celui-ci et découvrez où le camp rouge cache son argent."
+            },
+            "win": {
+              "en": "{leader} opened the book with a hairpin and a sigh. The ledger led the squad to a chest buried under the latrines, where nobody ever looks, and a ticket was tucked inside as a bookmark.",
+              "fr": "{leader} a ouvert le livre avec une épingle à cheveux et un soupir. Le registre a mené l'escouade à un coffre enterré sous les latrines, où personne ne cherche jamais, et un ticket servait de marque-page."
+            },
+            "lose": {
+              "en": "The padlock was a decoy, and the real lock was on the tent flap, which rang a bell. The squad left in a hurry, one of them nursing an elbow, and dropped the camp's purse while climbing the fence.",
+              "fr": "Le cadenas était un leurre, et la vraie serrure était sur le rabat de la tente, qui a fait sonner une cloche. L'escouade a filé en vitesse, un coude en compote, et a perdu la bourse du camp en escaladant la palissade."
+            }
+          },
+          {
+            "id": "m27",
+            "d": 3,
+            "hours": 24,
+            "squad": [
+              3,
+              4
+            ],
+            "favor": 5,
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  4,
+                  6
+                ],
+                "t": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Behind three fences",
+              "fr": "Derrière trois clôtures"
+            },
+            "brief": {
+              "en": "Our scouts have found the red camp's prisoner pen, ringed by three wooden fences, one inside the other. At least one of our officers is held there. A lieutenant knows fences better than anyone: take them apart quietly and bring our people home.",
+              "fr": "Nos éclaireurs ont repéré l'enclos des prisonniers du camp rouge, entouré de trois clôtures de bois emboîtées. Au moins un de nos officiers y est retenu. Un lieutenant connaît les clôtures mieux que personne : démontez-les en silence et ramenez les nôtres."
+            },
+            "win": {
+              "en": "The squad of {leader} slipped through the three fences by lifting one plank in each and putting it back behind them. The guards woke up to a pen with every fence intact and one prisoner fewer.",
+              "fr": "L'escouade de {leader} a franchi les trois clôtures en soulevant une planche dans chacune et en la remettant derrière elle. Les gardes se sont réveillés devant un enclos intact, avec un prisonnier en moins."
+            },
+            "lose": {
+              "en": "The third fence had just been painted. Whoever went through first stuck to it, and by the time the paint dried the guards were awake. The pen now holds one more of ours, slightly red.",
+              "fr": "La troisième clôture venait d'être repeinte. Le premier à passer y est resté collé, et le temps que la peinture sèche, les gardes étaient réveillés. L'enclos compte désormais un des nôtres de plus, un peu rouge."
+            }
+          },
+          {
+            "id": "m28",
+            "d": 3,
+            "hours": 20,
+            "squad": [
+              3,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 480
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The silver cart",
+              "fr": "La charrette d'argent"
+            },
+            "brief": {
+              "en": "Every full moon a cart of silver leaves the red treasury for the front, drawn by two sleepy oxen and guarded by four even sleepier goblins. The full moon is tonight. You know what to do.",
+              "fr": "À chaque pleine lune, une charrette d'argent quitte le trésor rouge pour le front, tirée par deux bœufs somnolents et gardée par quatre gobelins plus somnolents encore. La pleine lune, c'est ce soir. Vous savez ce qu'il vous reste à faire."
+            },
+            "win": {
+              "en": "{leader} swapped the oxen for our own without waking anyone, and the cart rolled into the blue camp with its guards still snoring on top. They were sent home at dawn; the silver, and a ticket found under the seat, stayed.",
+              "fr": "{leader} a échangé les bœufs contre les nôtres sans réveiller personne, et la charrette est entrée au camp bleu avec ses gardes qui ronflaient dessus. On les a renvoyés à l'aube ; l'argent, et un ticket trouvé sous le siège, sont restés."
+            },
+            "lose": {
+              "en": "The oxen were not sleepy, only thinking. When {leader} tried to lead them away they made up their minds at once and charged. Nothing serious, but hoof prints take a long time to fade.",
+              "fr": "Les bœufs n'étaient pas somnolents, ils réfléchissaient. Quand {leader} a voulu les emmener, ils se sont décidés d'un coup et ont chargé. Rien de grave, mais des traces de sabots, ça met longtemps à s'effacer."
+            }
+          },
+          {
+            "id": "m29",
+            "d": 3,
+            "hours": 12,
+            "squad": [
+              2,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 420
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 1
+              },
+              {
+                "kind": "coins",
+                "n": 200
+              }
+            ],
+            "title": {
+              "en": "Constance at the parley",
+              "fr": "Constance parlemente"
+            },
+            "brief": {
+              "en": "Constance Faith has been chosen to meet the red envoys under a white flag at the Old Stump, and she insists on a small escort to show good faith. Keep her safe, keep her calm, and keep the goblins away from the refreshments.",
+              "fr": "Constance Faith a été désignée pour rencontrer les émissaires rouges sous drapeau blanc, à la Vieille Souche, et elle tient à une petite escorte par bonne foi. Protégez-la, gardez-la calme, et éloignez les gobelins du buffet."
+            },
+            "win": {
+              "en": "{leader} kept the peace at the buffet while Constance talked for six hours without stopping. The red envoys signed a trade deal just to be allowed to leave, and paid the first instalment on the spot.",
+              "fr": "{leader} a veillé au calme du buffet pendant que Constance parlait six heures d'affilée. Les émissaires rouges ont signé un accord commercial rien que pour pouvoir partir, et versé le premier acompte sur place."
+            },
+            "lose": {
+              "en": "The goblins brought a buffet of their own, and a food fight broke out over the last meringue. The escort shielded Constance with a tablecloth, one of ours took a teapot to the knee, and the camp paid for the crockery.",
+              "fr": "Les gobelins avaient apporté leur propre buffet, et une bataille de nourriture a éclaté pour la dernière meringue. L'escorte a protégé Constance avec une nappe, l'un des nôtres a pris une théière dans le genou, et le camp a payé la vaisselle."
+            }
+          },
+          {
+            "id": "m30",
+            "d": 3,
+            "hours": 15,
+            "squad": [
+              2,
+              4
+            ],
+            "favor": 2,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 380
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Fog on the moor",
+              "fr": "Brouillard sur la lande"
+            },
+            "brief": {
+              "en": "A thick fog has settled on the Moanmoor, and a red patrol carrying its pay went in yesterday and never came out. Somewhere in there are lost goblins and their purse. A good scout can find a trail even where the eye sees nothing.",
+              "fr": "Un épais brouillard est tombé sur la lande des Soupirs, et une patrouille rouge qui transportait sa solde y est entrée hier sans en ressortir. Quelque part là-dedans, il y a des gobelins perdus et leur bourse. Un bon éclaireur trouve une piste même là où l'œil ne voit rien."
+            },
+            "win": {
+              "en": "{leader} followed the sound of goblins arguing about the way out and found them sitting on their purse. The squad offered to lead them out in exchange for it, and they took the deal gratefully.",
+              "fr": "{leader} a suivi le bruit de gobelins qui se disputaient sur la sortie et les a trouvés assis sur leur bourse. L'escouade a proposé de les guider dehors en échange de celle-ci, et ils ont accepté avec gratitude."
+            },
+            "lose": {
+              "en": "The fog was so thick that the squad walked out of it one soldier short. The missing one turned up a week later in a frog choir on the far side of the moor, and refuses to leave the baritones.",
+              "fr": "Le brouillard était si épais que l'escouade en est ressortie avec un soldat de moins. Le disparu a été retrouvé une semaine plus tard dans une chorale de grenouilles, de l'autre côté de la lande, et refuse de quitter les barytons."
+            }
+          },
+          {
+            "id": "m31",
+            "d": 3,
+            "hours": 18,
+            "squad": [
+              3,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "sticker"
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "Fizzle's workshop",
+              "fr": "L'atelier de Fizzle"
+            },
+            "brief": {
+              "en": "Fizzle Wickett is building something in a shed behind the red camp: bangs at odd hours, purple smoke, and once a flying chicken. Nobody knows whether it is a weapon or a hobby. Go and find out, and step lightly.",
+              "fr": "Fizzle Wickett construit quelque chose dans une cabane derrière le camp rouge : des détonations à des heures bizarres, une fumée violette, et une fois une poule volante. Personne ne sait si c'est une arme ou un passe-temps. Allez voir, et marchez doucement."
+            },
+            "win": {
+              "en": "The shed was full of fireworks that go off whenever they please. {leader} brought back the only finished one: a little brass rocket that hums a tune and has not yet decided when to fly.",
+              "fr": "La cabane était pleine de feux d'artifice qui partent quand bon leur semble. {leader} a rapporté le seul terminé : une petite fusée en laiton qui fredonne un air et n'a pas encore décidé quand décoller."
+            },
+            "lose": {
+              "en": "{leader} opened the shed door at the very moment Fizzle's fireworks decided to go off, for once on time. The whole squad came back purple, half deaf and smelling of burnt sugar.",
+              "fr": "{leader} a ouvert la porte de la cabane pile au moment où les feux d'artifice de Fizzle ont décidé de partir, pour une fois à l'heure. Toute l'escouade est rentrée violette, à moitié sourde et sentant le sucre brûlé."
+            }
+          },
+          {
+            "id": "m32",
+            "d": 3,
+            "hours": 20,
+            "squad": [
+              3,
+              4
+            ],
+            "favor": 1,
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  4,
+                  6
+                ],
+                "t": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The masked ball",
+              "fr": "Le bal masqué"
+            },
+            "brief": {
+              "en": "The red camp holds its masked ball on Saturday, and a red officer has sent word of wanting to change sides. This is a spy's work: wear a mask, dance a little, and slip out at midnight with our new friend.",
+              "fr": "Le camp rouge donne son bal masqué samedi, et un officier rouge nous a fait savoir qu'il veut changer de camp. C'est un travail d'espion : porter un masque, danser un peu et s'éclipser à minuit avec notre nouvel ami."
+            },
+            "win": {
+              "en": "{leader} danced three waltzes with the wrong goblin, the fourth with the right one, and slipped out through the kitchens at midnight. Our new recruit changed into blue in the wagon, still humming the waltz.",
+              "fr": "{leader} a dansé trois valses avec le mauvais gobelin, la quatrième avec le bon, puis a filé par les cuisines à minuit. Notre nouvelle recrue a enfilé l'uniforme bleu dans la charrette, en fredonnant encore la valse."
+            },
+            "lose": {
+              "en": "The squad danced so well that the queen of the ball refused to let one of ours go. Every ball in the red camp now fights over that talent, and a postcard arrives from time to time.",
+              "fr": "L'escouade a si bien dansé que la reine du bal a refusé de laisser partir l'un des nôtres. Depuis, tous les bals du camp rouge se disputent ce talent, et une carte postale arrive de temps en temps."
+            }
+          },
+          {
+            "id": "m33",
+            "d": 3,
+            "hours": 16,
+            "squad": [
+              3,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 450
+              },
+              {
+                "kind": "ticket",
+                "n": 1
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The bell of Grumblecot",
+              "fr": "La cloche de Grognebourg"
+            },
+            "brief": {
+              "en": "Goblins have stolen the bronze bell of Grumblecot's chapel and hung it in their watchtower, where they ring it whenever they are bored, which is always. The villagers cannot sleep. Bring the bell home.",
+              "fr": "Des gobelins ont volé la cloche de bronze de la chapelle de Grognebourg et l'ont pendue dans leur tour de guet, où ils la sonnent dès qu'ils s'ennuient, c'est-à-dire tout le temps. Les villageois ne dorment plus. Ramenez la cloche."
+            },
+            "win": {
+              "en": "The squad of {leader} stuffed the clapper with socks, lowered the bell on a rope and rolled it home through the night in total silence. Grumblecot slept for two days, then paid us handsomely.",
+              "fr": "L'escouade de {leader} a bourré le battant de chaussettes, descendu la cloche à la corde et l'a roulée jusqu'au village dans un silence total. Grognebourg a dormi deux jours, puis nous a généreusement payés."
+            },
+            "lose": {
+              "en": "Somebody forgot the socks. The bell rang all the way down the tower, the whole red camp woke up, and {leader} brought the squad home half deaf, well chased, rather battered and without the bell.",
+              "fr": "Quelqu'un avait oublié les chaussettes. La cloche a sonné tout le long de la tour, le camp rouge s'est réveillé en entier, et {leader} a ramené l'escouade à moitié sourde, bien cabossée et sans la cloche."
+            }
+          },
+          {
+            "id": "m34",
+            "d": 3,
+            "hours": 22,
+            "squad": [
+              3,
+              4
+            ],
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  4,
+                  6
+                ],
+                "t": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The Whispering Wood",
+              "fr": "Le bois des Murmures"
+            },
+            "brief": {
+              "en": "A blue patrol went into the Whispering Wood to cut a shortcut and has not been heard of since. The trees there are said to whisper wrong directions to anyone who listens. Go in, bring out whoever you find, and do not listen.",
+              "fr": "Une patrouille bleue est entrée dans le bois des Murmures pour tailler un raccourci, et on n'en a plus de nouvelles. On dit que les arbres y soufflent de mauvaises directions à qui les écoute. Entrez, ramenez qui vous trouverez, et n'écoutez pas."
+            },
+            "win": {
+              "en": "{leader} stuffed everyone's ears with moss and marched in a straight line until the wood gave up. The squad found an officer of the lost patrol living in a tree house, glad of the company, who came home with them.",
+              "fr": "{leader} a bouché les oreilles de tous avec de la mousse et marché tout droit jusqu'à ce que le bois abandonne. L'escouade a trouvé un officier de la patrouille perdue installé dans une cabane perchée, ravi de la compagnie, qui l'a suivie au camp."
+            },
+            "lose": {
+              "en": "One of the squad took the moss out to hear the trees better, just for a moment. The trees suggested a path to the left. Nobody has seen that soldier since, though the wood seems very pleased.",
+              "fr": "Un membre de l'escouade a retiré sa mousse pour mieux entendre les arbres, juste un instant. Les arbres lui ont conseillé un chemin sur la gauche. Personne ne l'a revu depuis, mais le bois a l'air très content."
+            }
+          },
+          {
+            "id": "m35",
+            "d": 4,
+            "hours": 30,
+            "squad": [
+              3,
+              5
+            ],
+            "favor": 1,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 750
+              },
+              {
+                "kind": "card",
+                "r": [
+                  5,
+                  8
+                ],
+                "t": [
+                  1,
+                  3
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The red treasury",
+              "fr": "Le trésor rouge"
+            },
+            "brief": {
+              "en": "The red treasury sits in a tent guarded by a goblin who counts the coins every hour and gets a different total every time. A spy could slip in between two counts. Bring back the treasury, and anyone in there who fancies a change of job.",
+              "fr": "Le trésor rouge est gardé sous une tente par un gobelin qui compte les pièces toutes les heures, et trouve un total différent à chaque fois. Un espion pourrait se glisser entre deux comptages. Rapportez le trésor, et quiconque voudrait changer de métier."
+            },
+            "win": {
+              "en": "{leader} used the lull between two counts to empty the chests. The treasury's officer, tired of totals that never matched, packed a bag and walked out with the squad.",
+              "fr": "{leader} a profité d'un creux entre deux comptages pour vider les coffres. L'officier du trésor, lassé de totaux qui ne tombaient jamais juste, a fait son sac et suivi l'escouade."
+            },
+            "lose": {
+              "en": "The guard counted the squad along with the coins and came up with one too many. The alarm went up: one of ours was caught red-handed with a coin in each fist, and another sprained a wrist in the escape.",
+              "fr": "Le garde a compté l'escouade avec les pièces et en a trouvé un de trop. L'alarme a retenti : l'un des nôtres a été pris la main dans le sac, une pièce dans chaque poing, et un autre s'est foulé le poignet dans la fuite."
+            }
+          },
+          {
+            "id": "m36",
+            "d": 4,
+            "hours": 24,
+            "squad": [
+              3,
+              5
+            ],
+            "favor": 3,
+            "reward": [
+              {
+                "kind": "sticker"
+              },
+              {
+                "kind": "coins",
+                "n": 580
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 3
+              }
+            ],
+            "title": {
+              "en": "The stone bridge",
+              "fr": "Le pont de pierre"
+            },
+            "brief": {
+              "en": "The red army is massing on the far bank of the Grumble and will cross by the stone bridge at dawn. It must not be standing by then. A sapper knows which stone to pull; everyone else keeps the goblins busy.",
+              "fr": "L'armée rouge se masse sur l'autre rive de la Grogne et passera le pont de pierre à l'aube. D'ici là, il ne doit plus tenir debout. Un sapeur sait quelle pierre retirer ; les autres occupent les gobelins."
+            },
+            "win": {
+              "en": "{leader} pulled the keystone, and the bridge sat down in the river with a long, tired sigh. The red army spent the morning staring at it. The keystone, carved with a strange rune, now sits in our camp.",
+              "fr": "{leader} a retiré la clé de voûte, et le pont s'est assis dans la rivière avec un long soupir fatigué. L'armée rouge a passé la matinée à le contempler. La clé de voûte, gravée d'une rune étrange, trône désormais au camp."
+            },
+            "lose": {
+              "en": "The bridge came down beautifully, a little earlier than {leader} had planned, with the squad still on it. Everyone swam back to our bank, but the river knocked them about on the way.",
+              "fr": "Le pont s'est effondré magnifiquement, un peu plus tôt que {leader} ne l'avait prévu, avec l'escouade encore dessus. Tout le monde a regagné notre rive à la nage, mais la rivière ne les a pas ménagés en chemin."
+            }
+          },
+          {
+            "id": "m37",
+            "d": 4,
+            "hours": 28,
+            "squad": [
+              3,
+              5
+            ],
+            "favor": 6,
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 600
+              },
+              {
+                "kind": "card",
+                "r": [
+                  5,
+                  8
+                ],
+                "t": [
+                  1,
+                  3
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The rock fort",
+              "fr": "Le fort de rochers"
+            },
+            "brief": {
+              "en": "The red camp has built an outpost of piled rocks on Crag Hill and holds one of our officers inside. A captain knows rocks better than anyone: which will roll, which will hold, which will come down if you whistle. Take the outpost apart.",
+              "fr": "Le camp rouge a bâti un avant-poste de rochers empilés sur la colline du Rocher et y retient un de nos officiers. Un capitaine connaît les rochers mieux que quiconque : ceux qui roulent, ceux qui tiennent, ceux qui tombent si on siffle. Démontez l'avant-poste."
+            },
+            "win": {
+              "en": "The squad of {leader} whistled at the right rock. The walls rolled politely downhill, the goblins rolled after them, and our officer strolled out of the rubble with the outpost's pay chest under one arm.",
+              "fr": "L'escouade de {leader} a sifflé devant le bon rocher. Les murs ont roulé poliment en bas de la pente, les gobelins derrière eux, et notre officier est sorti des décombres avec le coffre de la solde sous le bras."
+            },
+            "lose": {
+              "en": "The squad whistled at the wrong rock, and the outpost grew a brand new wall around it. One of ours was kept inside as a guest, and another came home with a bump the shape of a pebble.",
+              "fr": "L'escouade a sifflé devant le mauvais rocher, et l'avant-poste s'est doté d'un nouveau mur tout autour d'elle. L'un des nôtres a été retenu à l'intérieur comme invité, un autre est rentré avec une bosse en forme de caillou."
+            }
+          },
+          {
+            "id": "m38",
+            "d": 4,
+            "hours": 20,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "ticket",
+                "n": 2
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 3
+              }
+            ],
+            "title": {
+              "en": "The general's map",
+              "fr": "La carte du général"
+            },
+            "brief": {
+              "en": "The red general carries the only copy of the campaign map in a tube strapped to his back, even while he sleeps. He is camping tonight at Weeping Ford with a light escort. We want that tube, map included.",
+              "fr": "Le général rouge porte l'unique exemplaire de la carte de campagne dans un étui sanglé sur son dos, même quand il dort. Il campe ce soir au gué des Pleurs avec une escorte légère. Nous voulons cet étui, carte comprise."
+            },
+            "win": {
+              "en": "{leader} swapped the tube for an identical one holding a drawing of a duck. The real map showed every red camp in the region, and two curious tickets were rolled up inside it.",
+              "fr": "{leader} a échangé l'étui contre un identique contenant un dessin de canard. La vraie carte montrait tous les camps rouges de la région, et deux curieux tickets étaient roulés à l'intérieur."
+            },
+            "lose": {
+              "en": "The general, it turns out, sleeps with one eye open and snores to hide it. His escort woke at the first shout, and {leader} had to fight back across the ford; the squad came home soaked and battered.",
+              "fr": "Il se trouve que le général dort d'un œil et ronfle pour le cacher. Son escorte s'est réveillée au premier cri, et {leader} a dû repasser le gué en se battant ; l'escouade est rentrée trempée et rossée."
+            }
+          },
+          {
+            "id": "m39",
+            "d": 4,
+            "hours": 18,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "sticker"
+              },
+              {
+                "kind": "coins",
+                "n": 550
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The goblin wedding",
+              "fr": "Le mariage gobelin"
+            },
+            "brief": {
+              "en": "The goblin chief's daughter is getting married and, by a clerical error, the blue camp has been invited. Refusing would be an insult, attending could be a trap. Send a delegation with a present, good manners and strong stomachs.",
+              "fr": "La fille du chef gobelin se marie et, par une erreur de secrétariat, le camp bleu est invité. Refuser serait une insulte, y aller pourrait être un piège. Envoyez une délégation avec un cadeau, de bonnes manières et un estomac solide."
+            },
+            "win": {
+              "en": "The squad of {leader} ate the eel cake, danced the stomping dance and caught the bride's bouquet, a live toad in a tiny silver crown. The crown came home, along with the gifts the guests pressed on us.",
+              "fr": "L'escouade de {leader} a mangé le gâteau d'anguille, dansé la danse du piétinement et attrapé le bouquet de la mariée, un crapaud vivant coiffé d'une minuscule couronne d'argent. La couronne est rentrée au camp, avec les cadeaux des invités."
+            },
+            "lose": {
+              "en": "The stomping dance lasted nine hours and flattened a good many blue toes. One of ours danced so well that the bride's cousin proposed on the spot, and the answer, to everyone's surprise, was yes.",
+              "fr": "La danse du piétinement a duré neuf heures et écrasé bon nombre d'orteils bleus. L'un des nôtres a si bien dansé que le cousin de la mariée l'a demandé en mariage sur-le-champ, et la réponse, à la surprise générale, a été oui."
+            }
+          },
+          {
+            "id": "m40",
+            "d": 4,
+            "hours": 32,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "ticket",
+                "n": 3
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 3
+              }
+            ],
+            "title": {
+              "en": "Penny's vault",
+              "fr": "La chambre forte de Penny"
+            },
+            "brief": {
+              "en": "Penny Padlock has finished her masterpiece: a vault under the red camp with seven locks, three riddles and a door that opens only on Tuesdays. Everything the red camp wins at the fair is kept there. Today is Tuesday.",
+              "fr": "Penny Padlock a achevé son chef-d'œuvre : une chambre forte sous le camp rouge, sept serrures, trois énigmes et une porte qui ne s'ouvre que le mardi. Tout ce que le camp rouge gagne à la foire y est rangé. Nous sommes mardi."
+            },
+            "win": {
+              "en": "{leader} solved the three riddles, picked six locks and found the seventh had never been closed. Inside, among a great many prize ribbons, lay a neat stack of the fair's golden tickets.",
+              "fr": "{leader} a résolu les trois énigmes, crocheté six serrures et découvert que la septième n'avait jamais été fermée. À l'intérieur, parmi une foule de rubans de concours, attendait une pile de tickets dorés de la foire."
+            },
+            "lose": {
+              "en": "{leader} took so long over the third riddle that Tuesday ended, and the door shut on the squad halfway through. A very amused Penny let them out on Wednesday, stiff, sore and slightly squashed.",
+              "fr": "{leader} a tant séché sur la troisième énigme que le mardi s'est achevé, et la porte s'est refermée sur l'escouade à moitié passée. Une Penny très amusée les a libérés le mercredi, courbatus, endoloris et un peu aplatis."
+            }
+          },
+          {
+            "id": "m41",
+            "d": 4,
+            "hours": 26,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "ticket",
+                "n": 2
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The scarecrow army",
+              "fr": "L'armée de paille"
+            },
+            "brief": {
+              "en": "A red army of three hundred has been sighted on the western hills, standing very still for three days. Our staff suspects straw. Go and count how many of them are breathing, and find out where the real army has gone.",
+              "fr": "Une armée rouge de trois cents soldats a été aperçue sur les collines de l'ouest, immobile depuis trois jours. L'état-major soupçonne de la paille. Allez compter combien respirent, et découvrez où est passée la vraie armée."
+            },
+            "win": {
+              "en": "Two hundred and ninety-eight were straw, two were goblins asleep. {leader} woke them politely and traded their breakfast for the real army's marching orders, scribbled on the back of two raffle tickets.",
+              "fr": "Deux cent quatre-vingt-dix-huit étaient en paille, deux étaient des gobelins endormis. {leader} les a réveillés poliment et a échangé leur petit-déjeuner contre les ordres de marche de la vraie armée, griffonnés au dos de deux tickets de tombola."
+            },
+            "lose": {
+              "en": "Two hundred and ninety-nine were straw. The last one was the red general, waiting. One of ours was taken off to the real army to answer a great many questions, and another tumbled down the hill in the scramble.",
+              "fr": "Deux cent quatre-vingt-dix-neuf étaient en paille. Le dernier était le général rouge, qui attendait. L'un des nôtres a été emmené auprès de la vraie armée pour répondre à beaucoup de questions, et un autre a dégringolé de la colline dans la cohue."
+            }
+          },
+          {
+            "id": "m42",
+            "d": 4,
+            "hours": 36,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 620
+              },
+              {
+                "kind": "card",
+                "r": [
+                  5,
+                  8
+                ],
+                "t": [
+                  1,
+                  3
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "wound",
+                "n": 3
+              }
+            ],
+            "title": {
+              "en": "Coats for the north",
+              "fr": "Des manteaux pour le nord"
+            },
+            "brief": {
+              "en": "The snow has cut off our northern outpost, and they have run out of coats, firewood and patience. A sledge is loaded and waiting. Get it through the drifts, and keep an eye out for anyone stranded along the way.",
+              "fr": "La neige a coupé notre avant-poste du nord, qui manque de manteaux, de bois et de patience. Un traîneau chargé attend. Faites-le passer à travers les congères, et ouvrez l'œil pour quiconque serait bloqué en chemin."
+            },
+            "win": {
+              "en": "{leader} hauled the sledge through two days of drifts and found a hermit officer snowed into a hut, who had given up the war for knitting. The outpost paid for the coats, and the hermit enlisted for the scarves.",
+              "fr": "{leader} a tiré le traîneau pendant deux jours de congères et trouvé, bloqué par la neige dans une cabane, un officier ermite qui avait lâché la guerre pour le tricot. L'avant-poste a payé les manteaux, et l'ermite s'est engagé pour les écharpes."
+            },
+            "lose": {
+              "en": "The sledge found a frozen lake before {leader} did, and the squad found out by following the sledge. Everyone was fished out, but they came home frozen to the bone and sneezed for a week.",
+              "fr": "Le traîneau a trouvé un lac gelé avant {leader}, et l'escouade l'a appris en suivant le traîneau. Tout le monde a été repêché, mais ils sont rentrés gelés jusqu'aux os et ont éternué toute la semaine."
+            }
+          },
+          {
+            "id": "m43",
+            "d": 4,
+            "hours": 34,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "coins",
+                "n": 580
+              },
+              {
+                "kind": "card",
+                "r": [
+                  5,
+                  8
+                ],
+                "t": [
+                  1,
+                  3
+                ]
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "Wayne's grand tour",
+              "fr": "Le grand tour de Wayne"
+            },
+            "brief": {
+              "en": "Wayne Dering led a patrol out on Monday, map in hand and upside down, and it is now Thursday. Postcards have arrived from three different valleys. Follow the postcards and bring back whoever is still with him.",
+              "fr": "Wayne Dering est parti lundi en patrouille, carte en main et à l'envers, et nous sommes jeudi. Des cartes postales sont arrivées de trois vallées différentes. Suivez les cartes postales et ramenez ceux qui sont encore avec lui."
+            },
+            "win": {
+              "en": "The squad of {leader} found Wayne in a fourth valley, selling his upside-down maps to a band of puzzled imps. They brought back Wayne, his last travelling companion and a satchel of imp coins.",
+              "fr": "L'escouade de {leader} a retrouvé Wayne dans une quatrième vallée, en train de vendre ses cartes à l'envers à des diablotins perplexes. Elle a ramené Wayne, son dernier compagnon de route et une sacoche de pièces diablotines."
+            },
+            "lose": {
+              "en": "Wayne insisted on leading the way home. One of the rescuers is now also sending postcards from a valley nobody can find, and another sprained an ankle reading one of them while walking.",
+              "fr": "Wayne a tenu à guider le retour. L'un des sauveteurs envoie désormais lui aussi des cartes postales d'une vallée introuvable, et un autre s'est foulé la cheville en en lisant une en marchant."
+            }
+          },
+          {
+            "id": "m44",
+            "d": 4,
+            "hours": 22,
+            "squad": [
+              3,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "sticker"
+              },
+              {
+                "kind": "coins",
+                "n": 560
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 1
+              }
+            ],
+            "title": {
+              "en": "The kidnapped cook",
+              "fr": "La cuisinière enlevée"
+            },
+            "brief": {
+              "en": "The red camp has kidnapped our cook, Old Marrow, for her pies, and the whole army is eating turnips. She is held in their kitchen tent and, our spies say, has already improved their soup. Bring her home before they get used to it.",
+              "fr": "Le camp rouge a enlevé notre cuisinière, la vieille Moelle, pour ses tartes, et toute l'armée mange des navets. Elle est retenue sous leur tente-cuisine et, d'après nos espions, a déjà amélioré leur soupe. Ramenez-la avant qu'ils ne s'y habituent."
+            },
+            "win": {
+              "en": "{leader} smuggled Old Marrow out of the red kitchen inside a soup cauldron. She brought her lucky ladle, carved with a tiny dragon, and the purse the goblins had paid her for lessons.",
+              "fr": "{leader} a sorti la vieille Moelle de la cuisine rouge cachée dans un chaudron à soupe. Elle a emporté sa louche porte-bonheur, gravée d'un minuscule dragon, et la bourse que les gobelins lui avaient versée pour ses leçons."
+            },
+            "lose": {
+              "en": "Old Marrow refused to leave until the pies were out of the oven, and the pies took their time. The goblins came back for dinner: one of ours was put to peeling potatoes for good, and another burned a hand on a tray.",
+              "fr": "La vieille Moelle a refusé de partir avant que les tartes ne sortent du four, et les tartes ont pris leur temps. Les gobelins sont revenus dîner : l'un des nôtres a été mis aux épluchures pour de bon, un autre s'est brûlé la main sur une plaque."
+            }
+          },
+          {
+            "id": "m45",
+            "d": 5,
+            "hours": 48,
+            "squad": [
+              4,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "super",
+                "n": 1
+              },
+              {
+                "kind": "coins",
+                "n": 900
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The red flag",
+              "fr": "Le drapeau rouge"
+            },
+            "brief": {
+              "en": "The red camp's flag flies over their command tent beyond Skull Ridge, and whoever holds it holds the season. It is guarded day and night by their finest. We are sending our best, and we would very much like them back.",
+              "fr": "Le drapeau du camp rouge flotte sur leur tente de commandement, au-delà de la crête des Crânes, et qui le tient tient la saison. Leurs meilleurs soldats le gardent jour et nuit. Nous envoyons les nôtres, et nous aimerions beaucoup les revoir."
+            },
+            "win": {
+              "en": "{leader} took the flag at the changing of the guard, when the old guard had gone and the new one was still pulling its boots on. The pole was hollow and full of gold, and a shining super ticket rolled out of its tip.",
+              "fr": "{leader} a pris le drapeau à la relève de la garde, quand l'ancienne était partie et que la nouvelle enfilait encore ses bottes. La hampe creuse était pleine d'or, et un super ticket étincelant est tombé de son extrémité."
+            },
+            "lose": {
+              "en": "The flag was a decoy and the command tent a very large net. {leader} cut the squad out, but some of ours stayed tangled behind, and the red camp now asks an outrageous ransom that nobody means to pay.",
+              "fr": "Le drapeau était un leurre et la tente de commandement un immense filet. {leader} a taillé une sortie à l'escouade, mais certains des nôtres sont restés empêtrés, et le camp rouge réclame une rançon extravagante que personne ne compte payer."
+            }
+          },
+          {
+            "id": "m46",
+            "d": 5,
+            "hours": 36,
+            "squad": [
+              4,
+              5
+            ],
+            "favor": 1,
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  7,
+                  10
+                ],
+                "t": [
+                  2,
+                  4
+                ]
+              },
+              {
+                "kind": "coins",
+                "n": 850
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The marshal's letters",
+              "fr": "Les lettres du maréchal"
+            },
+            "brief": {
+              "en": "The red marshal writes to his officers every night, and the letters travel with a courier imp who stops at every inn. A spy who swapped the satchel could read the whole red war. Some of those letters, our staff believes, are full of complaints.",
+              "fr": "Le maréchal rouge écrit chaque soir à ses officiers, et les lettres voyagent avec un diablotin coursier qui s'arrête à chaque auberge. Un espion qui échangerait la sacoche pourrait lire toute la guerre rouge. Selon l'état-major, certaines lettres sont pleines de griefs."
+            },
+            "win": {
+              "en": "{leader} swapped the satchel at the third inn. One letter came from a senior red officer begging for a transfer anywhere; our reply offered one, and the officer arrived at our gate with the regiment's cashbox as a welcome gift.",
+              "fr": "{leader} a échangé la sacoche à la troisième auberge. Une lettre venait d'un haut officier rouge qui suppliait qu'on le mute n'importe où ; notre réponse lui en a proposé une, et l'officier s'est présenté à notre porte avec la caisse du régiment en cadeau de bienvenue."
+            },
+            "lose": {
+              "en": "The courier imp was a light sleeper and a heavy puncher. The swap turned into a brawl across three inns; one of ours left in the mail coach and was never seen again, and others came home black and blue.",
+              "fr": "Le diablotin coursier avait le sommeil léger et le poing lourd. L'échange a tourné à la bagarre à travers trois auberges : l'un des nôtres est parti dans la diligence du courrier sans jamais revenir, et d'autres sont rentrés couverts de bleus."
+            }
+          },
+          {
+            "id": "m47",
+            "d": 5,
+            "hours": 42,
+            "squad": [
+              4,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "super",
+                "n": 1
+              },
+              {
+                "kind": "coins",
+                "n": 800
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The wicker dragon",
+              "fr": "Un dragon en osier"
+            },
+            "brief": {
+              "en": "A dragon has been terrorising the southern villages, roaring at night and demanding tribute. Our scouts noticed that it has goblin feet, about twenty of them. Put an end to the dragon, whatever it turns out to be made of.",
+              "fr": "Un dragon terrorise les villages du sud, rugit la nuit et exige un tribut. Nos éclaireurs ont remarqué qu'il a des pieds de gobelin, une vingtaine. Mettez fin au dragon, quelle que soit la matière dont il est fait."
+            },
+            "win": {
+              "en": "The dragon was cloth and wicker over twenty goblins, and it fell apart when {leader} tickled its front legs. Inside lay the whole hoard of tribute and, on top of the hoard, a super ticket.",
+              "fr": "Le dragon était en toile et en osier, porté par vingt gobelins, et il s'est effondré quand {leader} a chatouillé ses pattes avant. À l'intérieur se trouvait tout le tribut et, posé dessus, un super ticket."
+            },
+            "lose": {
+              "en": "The dragon was cloth and wicker, but its belly held a real furnace. {leader} ordered the retreat in scorched boots, and some of ours were so impressed that they joined the crew as puppeteers.",
+              "fr": "Le dragon était en toile et en osier, mais son ventre abritait une vraie chaudière. {leader} a ordonné la retraite, bottes roussies, et certains des nôtres ont été si impressionnés qu'ils ont rejoint la troupe comme marionnettistes."
+            }
+          },
+          {
+            "id": "m48",
+            "d": 5,
+            "hours": 40,
+            "squad": [
+              4,
+              5
+            ],
+            "favor": 3,
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  7,
+                  10
+                ],
+                "t": [
+                  2,
+                  4
+                ]
+              },
+              {
+                "kind": "coins",
+                "n": 950
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "Fizzle's grand finale",
+              "fr": "Le bouquet final de Fizzle"
+            },
+            "brief": {
+              "en": "Fizzle Wickett has buried the biggest bomb of his career under our camp and written to say it will go off soon. His bombs are never on time, so it could be any minute. Find it, and send the finest sappers we have.",
+              "fr": "Fizzle Wickett a enterré sous notre camp la plus grosse bombe de sa carrière, et nous a écrit qu'elle sauterait bientôt. Ses bombes ne sont jamais à l'heure, donc ce peut être à tout instant. Trouvez-la, et envoyez nos meilleurs sapeurs."
+            },
+            "win": {
+              "en": "{leader} found the bomb under the mess tent and cut the right wire with a moment to spare. The next morning the red engineer who had built its casing came over, impressed, with a sack of red gold and a request to enlist.",
+              "fr": "{leader} a trouvé la bombe sous la cantine et coupé le bon fil avec un instant d'avance. Le lendemain, l'ingénieur rouge qui en avait forgé l'enveloppe s'est présenté, admiratif, avec un sac d'or rouge et une demande d'engagement."
+            },
+            "lose": {
+              "en": "The squad dug up a bomb, then a second, then a third, all decoys. The real one went off at teatime behind the wrong tent. The camp stands, but one of ours was blown clean over the red lines and kept there, and the diggers came back sooty and bruised.",
+              "fr": "L'escouade a déterré une bombe, puis une deuxième, puis une troisième, toutes des leurres. La vraie a sauté à l'heure du thé, derrière la mauvaise tente. Le camp tient debout, mais l'un des nôtres a été soufflé par-dessus les lignes rouges, où on le garde, et les autres sont rentrés couverts de suie et de bosses."
+            }
+          },
+          {
+            "id": "m49",
+            "d": 5,
+            "hours": 44,
+            "squad": [
+              4,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "super",
+                "n": 1
+              },
+              {
+                "kind": "coins",
+                "n": 1000
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The Grime Fair",
+              "fr": "La foire de la Crasse"
+            },
+            "brief": {
+              "en": "Every autumn the goblins hold the Grime Fair deep under the mountain, where everything is for sale, rare tickets and the red camp's pay included. The stakes are high and the dice are loaded. Send a squad with deep pockets and steady nerves.",
+              "fr": "Chaque automne, les gobelins tiennent la foire de la Crasse sous la montagne, où tout se vend, y compris des tickets rares et la solde du camp rouge. Les mises sont hautes et les dés pipés. Envoyez une escouade aux poches profondes et aux nerfs solides."
+            },
+            "win": {
+              "en": "{leader} beat the goblins at their own game with dice loaded the other way and broke the bank before midnight. The grand prize, a super ticket in a velvet box, came home with a sack of winnings.",
+              "fr": "{leader} a battu les gobelins à leur propre jeu avec des dés pipés dans l'autre sens et fait sauter la banque avant minuit. Le gros lot, un super ticket dans un écrin de velours, est rentré avec un sac de gains."
+            },
+            "lose": {
+              "en": "The goblins' dice were loaded, and so were ours, the other way. {leader} lost track of which were which, and some of ours are now working off the debt as croupiers under the mountain.",
+              "fr": "Les dés des gobelins étaient pipés, les nôtres aussi, dans l'autre sens. {leader} a fini par ne plus savoir lesquels étaient lesquels, et certains des nôtres remboursent la dette comme croupiers sous la montagne."
+            }
+          },
+          {
+            "id": "m50",
+            "d": 5,
+            "hours": 46,
+            "squad": [
+              4,
+              5
+            ],
+            "reward": [
+              {
+                "kind": "card",
+                "r": [
+                  7,
+                  10
+                ],
+                "t": [
+                  2,
+                  4
+                ]
+              },
+              {
+                "kind": "coins",
+                "n": 1000
+              }
+            ],
+            "fail": [
+              {
+                "kind": "lose",
+                "n": 1
+              },
+              {
+                "kind": "wound",
+                "n": 2
+              }
+            ],
+            "title": {
+              "en": "The summit at Old Rock",
+              "fr": "Le sommet du Vieux Rocher"
+            },
+            "brief": {
+              "en": "After a long season, the red marshal proposes a summit at Old Rock to end the war, or at least the part of it that happens at weekends. It may be a trap. It may be peace. Send an escort worthy of either.",
+              "fr": "Après une longue saison, le maréchal rouge propose un sommet au Vieux Rocher pour finir la guerre, ou du moins la partie qui a lieu le week-end. C'est peut-être un piège. C'est peut-être la paix. Envoyez une escorte digne des deux."
+            },
+            "win": {
+              "en": "{leader} negotiated a weekend truce, a shared bakery and the return of every stolen spoon. As a token of good faith, a seasoned red officer was sent to serve in our camp, with the first payment of war damages.",
+              "fr": "{leader} a négocié une trêve du week-end, une boulangerie commune et la restitution de toutes les cuillères volées. En gage de bonne foi, un officier rouge chevronné a été envoyé servir dans notre camp, avec le premier versement des dommages de guerre."
+            },
+            "lose": {
+              "en": "The summit went well until someone brought up the spoons. Talks collapsed into a shoving match around the table; one of ours was kept as a hostage of goodwill, and others came home with bruised shins and pride.",
+              "fr": "Le sommet se passait bien jusqu'à ce que quelqu'un évoque les cuillères. Les pourparlers ont tourné à la bousculade autour de la table : l'un des nôtres a été gardé en otage de bonne volonté, et d'autres sont rentrés les tibias et l'amour-propre meurtris."
+            }
+          }
+        ]
       },
       "start": [
         {

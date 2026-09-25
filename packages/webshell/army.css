@@ -2,7 +2,7 @@
   webshell — THE BARRACKS (packages/webshell/army.js).
 
   Four screens of one shape: the deck, the infirmary, the prison and the
-  recruiting tent. They are VIEWS, so they stand where the album and the shop
+  camp — the recruiting tent and the missions, two tabs of one screen. They are VIEWS, so they stand where the album and the shop
   stand — on the hub's own ground, under the wallet band, with the view system
   owning the z-order — and everything here is the dressing of a list.
 
@@ -40,58 +40,18 @@
    THE SCREEN
    ========================================================================= */
 
-/* Above the map and the album, because every one of these opens from the hub
-   and from nothing else — there is no path that puts one of them under the
-   collection. The view system writes the real depth as they stack (view.js);
-   this is what makes each of them a stacking context of its own. */
-.ar-screen {
-  position:absolute; inset:0; z-index:36; display:none;
-  font-family:var(--web-font, inherit); color:var(--text);
-  isolation:isolate;
-}
-.ar-screen.on { display:block; animation:mt-in .2s ease both; }
+/* THE FRAME IS THE VIEW SYSTEM'S. The four stand in the sheet every room of
+   the place stands in (packages/webshell/view.css, THE SHEET): the hub, the
+   veil, the title and the bar with the pages in it. What is left here is the
+   body's own rhythm, and the DEV pill. */
+.ar-body { display:flex; flex-direction:column; gap:16px; }
 
-.ar-bg {
-  position:absolute; inset:0; z-index:0; background-color:var(--bg);
-  background-size:cover; background-position:center center;
-}
-.ar-bg.flat { background-size:auto; }
-/* The one veil, the view system's, like every other room of this place. */
-.ar-bg::after {
-  content:""; position:absolute; inset:0;
-  background:var(--web-veil-strong);
-  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
-}
-.ar-screen .decor-layer { z-index:1; }
-
-/* THE HEADER CARRIES NO BUTTON. A view's way out is the band's house chip,
-   first in the row and on every screen; the home button below it exists only
-   for a game with no wallet, where there is no band to be it (view.js). */
-.ar-head {
-  position:absolute; top:0; left:0; right:0; z-index:3;
-  padding:calc(var(--inset-top) + var(--wh-band, 0px) + 18px) 24px 0;
-  display:flex; flex-direction:column; gap:2px;
-}
-.ar-title {
-  margin:0; font-weight:var(--web-fw, 900); font-size:38px; letter-spacing:1px;
-  line-height:1;
-  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
-}
-.ar-sub { margin:0; font-size:19px; color:var(--muted); line-height:1.25; }
 /* The clock is a second per hour on a machine that is plainly not a player's
    (army.js, DEV), and a screenshot must never be mistaken for the real thing. */
 .ar-dev {
-  position:absolute; right:24px; top:calc(var(--inset-top) + var(--wh-band, 0px) + 18px);
+  position:absolute; right:26px; top:8px;
   font-style:normal; font-size:15px; font-weight:900; letter-spacing:2px;
   color:#0a0d1e; background:var(--accent); border-radius:6px; padding:3px 8px;
-}
-
-.ar-body {
-  position:absolute; left:0; right:0; z-index:2;
-  top:calc(var(--inset-top) + var(--wh-band, 0px) + 96px); bottom:0;
-  padding:0 20px calc(var(--inset-bottom) + 24px);
-  overflow-y:auto; -webkit-overflow-scrolling:touch;
-  display:flex; flex-direction:column; gap:16px;
 }
 
 /* =========================================================================
@@ -206,28 +166,8 @@
 .ar-slots.painted .ar-slot .ar-card, .ar-pool.painted .ar-slot .ar-card { height:auto; }
 .ar-slots.painted .ar-slot.empty { width:86px; height:86px; border-radius:16px; }
 
-/* THE THREE TABS — deck, collection, objects (army.js, TABS). A segmented
-   bar pinned to the top of the scrolling body, so the way to the other two
-   is never scrolled away; the lit one wears the accent the counts wear. */
-.ar-tabs {
-  position:sticky; top:0; z-index:40; flex:0 0 auto;
-  display:flex; gap:6px; padding:5px; margin-bottom:2px;
-  background:rgba(6,9,26,.78); border:1px solid rgba(255,255,255,.12);
-  border-radius:16px;
-  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-}
-.ar-tab {
-  appearance:none; -webkit-appearance:none; cursor:pointer;
-  flex:1 1 0; height:50px; border:0; border-radius:12px;
-  background:none; color:var(--muted);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:19px; letter-spacing:1px;
-}
-.ar-tab.on {
-  background:linear-gradient(180deg, var(--cta-a, var(--accent)), var(--cta-b, var(--accent)));
-  color:#10142c;
-}
-.ar-tab:active { transform:scale(.97); }
+/* ONE PAGE OF A SCREEN — the deck's three, the camp's two. The pages are
+   named in the sheet's bar (view.js, section 6b), so a pane is only a column. */
 .ar-pane { display:flex; flex-direction:column; gap:16px; }
 
 /* A record, not a control: a slot of it answers a tap only where it turns
@@ -314,6 +254,14 @@
 .ar-flip.fly .ar-flip-in { transition-duration:.56s; transition-timing-function:cubic-bezier(.4,0,.3,1); }
 /* the card is the one thing moving: the modal's own rise would be a second */
 .ar-filecard .mt-card { transform:none; transition:none; }
+/* THE TILT (army.js, armTilt): the one layer the mouse moves. It keeps the
+   3D context the flipper's perspective opens, or the back would stop hiding
+   behind the face. Quick while it follows, slow when it settles back. */
+.ar-tilt {
+  position:relative; width:100%; height:100%;
+  transform-style:preserve-3d; transition:transform .5s cubic-bezier(.2,.8,.25,1);
+}
+.ar-flip.tilting .ar-tilt { transition-duration:.12s; transition-timing-function:ease-out; }
 .ar-flip-f, .ar-flip-b {
   position:absolute; inset:0;
   -webkit-backface-visibility:hidden; backface-visibility:hidden;
@@ -360,6 +308,10 @@
 .ar-fb-facts span {
   padding:4px 13px; border-radius:999px; background:rgba(0,0,0,.35);
   border:1px solid rgba(255,255,255,.14); font-size:17px; font-weight:800;
+}
+.ar-fb-skill {
+  margin:10px 0 0; padding:8px 12px; border-radius:10px; background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.14); font-size:18px; font-weight:800; line-height:1.3;
 }
 .ar-fb-lore { flex:1; margin:8px 0 0; font-size:20px; line-height:1.4; color:rgba(246,241,228,.92); }
 .ar-fb-foot {
@@ -427,6 +379,111 @@
   text-align:center; font-size:16px; font-weight:800; letter-spacing:1px;
   color:var(--muted); padding:8px 0;
 }
+
+/* =========================================================================
+   THE CAMP'S MISSIONS (army.js, section 8d')
+   ========================================================================= */
+
+/* A mission on the board: a panel of the tent's family, its title and its
+   five pips on one line, the pretext under them, then two rows of chips —
+   what it is (length, squad, favoured grade) and what is at stake. */
+.ar-mis {
+  display:flex; flex-direction:column; gap:10px;
+  background:rgba(6,9,26,.62); border:1px solid rgba(255,255,255,.12);
+  border-radius:16px; padding:16px 16px 14px;
+}
+.ar-mis.brief { border-color:rgba(242,193,78,.45); }
+.ar-mis > .ar-btn { align-self:flex-end; }
+.ar-mis-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.ar-mis-title {
+  margin:0; min-width:0; font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:23px; letter-spacing:.5px; line-height:1.1;
+}
+.ar-mis-brief { margin:0; font-size:18px; line-height:1.4; color:rgba(246,241,228,.9); }
+
+.ar-pips { display:inline-flex; gap:4px; flex:0 0 auto; }
+.ar-pips i {
+  width:12px; height:12px; border-radius:3px; transform:rotate(45deg);
+  background:rgba(255,255,255,.14);
+}
+.ar-pips i.on { background:var(--danger, #ff5c5c); box-shadow:0 0 6px var(--danger, #ff5c5c); }
+.ar-pips.d1 i.on, .ar-pips.d2 i.on { background:var(--accent); box-shadow:none; }
+
+.ar-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.ar-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 11px 4px 8px; border-radius:999px;
+  background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14);
+  font-size:15px; font-weight:800; line-height:1.2; color:var(--text);
+}
+.ar-chip .ar-ci { width:18px; height:18px; }
+.ar-chip.favor { color:var(--accent); border-color:rgba(242,193,78,.4); }
+.ar-chip.gain  { color:#9be7a8; border-color:rgba(81,207,102,.4); }
+.ar-chip.risk  { color:#ffb0b0; border-color:rgba(255,92,92,.4); }
+
+/* A squad away (army.js, runRow): the leader's token and how many follow. */
+.ar-stack { position:relative; flex:0 0 auto; }
+.ar-stack-n {
+  position:absolute; right:-8px; bottom:-6px; z-index:31;
+  min-width:30px; height:30px; border-radius:15px; padding:0 6px;
+  background:var(--accent); color:#10142c; border:2px solid #0b0d12;
+  font-style:normal; font-weight:900; font-size:15px; line-height:26px; text-align:center;
+}
+.ar-run .ar-rowsub { display:flex; align-items:center; gap:10px; }
+.ar-odds { letter-spacing:.5px; }
+.ar-odds.hi  { color:#51cf66; }
+.ar-odds.mid { color:var(--accent); }
+.ar-odds.lo  { color:var(--danger, #ff5c5c); }
+
+/* THE BRIEFING: the squad's slots — a required one dashed in the accent,
+   an optional one in grey — and the odds under them, live. */
+.ar-squad.painted { grid-template-columns:repeat(5, 86px); }
+.ar-slot.empty.need { border-color:rgba(242,193,78,.55); }
+.ar-slot.empty.need .ar-plus { color:rgba(242,193,78,.7); }
+.ar-gauge {
+  display:flex; flex-direction:column; gap:8px;
+  background:rgba(6,9,26,.62); border:1px solid rgba(255,255,255,.12);
+  border-radius:16px; padding:12px 16px 14px;
+  --ar-odds:var(--danger, #ff5c5c);
+}
+.ar-gauge.mid { --ar-odds:var(--accent); }
+.ar-gauge.hi  { --ar-odds:#51cf66; }
+.ar-gauge-top { display:flex; align-items:baseline; justify-content:space-between; }
+.ar-gauge-l { font-size:16px; font-weight:800; letter-spacing:2px; color:var(--muted); }
+.ar-gauge-p {
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:44px; line-height:1; color:var(--ar-odds); font-variant-numeric:tabular-nums;
+  text-shadow:0 3px 0 rgba(0,0,0,.55);
+}
+.ar-gauge-bar { height:12px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; }
+.ar-gauge-bar i {
+  display:block; height:100%; border-radius:6px; background:var(--ar-odds);
+  transition:width .25s ease;
+}
+
+/* THE REPORT: a stamp, the story, the squad as it came back, and what it
+   paid or cost. */
+.ar-report .mt-card { gap:16px; }
+.ar-stamp {
+  align-self:center; padding:6px 22px; border-radius:10px;
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:30px; letter-spacing:4px; transform:rotate(-4deg);
+  border:4px solid currentColor;
+}
+.ar-stamp.ok { color:#51cf66; }
+.ar-stamp.ko { color:var(--danger, #ff5c5c); }
+.ar-rep-text { margin:0; font-size:20px; line-height:1.45; color:rgba(246,241,228,.94); text-align:left; }
+.ar-rep-squad { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.ar-rep-squad .ar-card { width:62px; height:82px; }
+.ar-rep-squad .ar-card.painted { width:auto; height:auto; }
+.ar-tag.lost { color:var(--danger, #ff5c5c); }
+.ar-tag.away { color:var(--accent2, #5aa9ff); }
+.ar-rep-out { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap:18px; }
+.ar-rep-rw { display:flex; flex-direction:column; align-items:center; gap:6px; max-width:180px; }
+.ar-rep-rw .mt-rw-ico { transform:scale(.6); margin:-38px; }
+.ar-rep-rw .mt-rw-img { width:110px; height:110px; object-fit:contain; }
+.ar-rep-i { width:70px; height:70px; }
+.ar-rep-lbl { font-size:18px; font-weight:800; text-align:center; color:var(--accent); }
 
 /* =========================================================================
    THE CONTROLS
@@ -504,15 +561,18 @@
 }
 
 /* =========================================================================
-   NARROW FRAMES
+   THE ARMY'S FIGURES IN THE BAND'S FOLD (army.js, `bandRows`)
    ========================================================================= */
 
-/* The design space is 720x1280 and everything above is authored in it, so
-   there is nothing here that a viewport query would fix. What this does cover
-   is the one axis the design space does not fix: a roster long enough to need
-   more than five columns still has to fit five, so the tiles shrink with the
-   grid and the name is what goes first. */
-@media (max-height:1100px) {
-  .ar-body { top:calc(var(--inset-top) + var(--wh-band, 0px) + 86px); }
-  .ar-title { font-size:34px; }
+/* THE CARD IS THE PICTOGRAM. Three counts of cards told apart by the one
+   thing that tells the cards apart on the table: the side's colour. A
+   turncoat is both, split on the diagonal — raised in the camp, fighting for
+   the army. */
+.ar-hc {
+  display:block; width:17px; height:24px; border-radius:4px;
+  border:2px solid rgba(255,255,255,.78); box-sizing:border-box;
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
 }
+.ar-hc.blue { background:var(--army, #5aa9ff); }
+.ar-hc.red { background:var(--camp, #ff5c5c); }
+.ar-hc.turn { background:linear-gradient(135deg, var(--camp, #ff5c5c) 50%, var(--army, #5aa9ff) 50%); }

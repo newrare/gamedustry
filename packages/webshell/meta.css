@@ -145,58 +145,13 @@
    A SCREEN OF THIS LAYER — the album and the shop
    ========================================================================= */
 
-/* Above the map (34) and below nothing: the album opens from the map's header
-   and from the title menu, so it has to cover either of them. */
-#al-screen, #sh-screen {
-  position:absolute; inset:0; z-index:36; display:none;
-  font-family:var(--web-font, inherit); color:var(--text);
-  isolation:isolate;
-}
-#al-screen.on, #sh-screen.on { display:block; animation:mt-in .2s ease both; }
-@keyframes mt-in {
-  from { opacity:0; transform:scale(.985); }
-  to   { opacity:1; transform:scale(1); }
-}
+/* THE FRAME IS THE VIEW SYSTEM'S: both stand in the sheet every room of the
+   place stands in (packages/webshell/view.css, THE SHEET) — the hub, the veil,
+   the title and the bar. What is left here is their bodies. */
 
-#al-bg, #sh-bg {
-  position:absolute; inset:0; z-index:0; background-color:var(--bg);
-  background-size:cover; background-position:center center;
-}
-#al-bg.flat, #sh-bg.flat { background-size:auto; }
-/* THE ONE VEIL, from the view system (packages/webshell/view.css). These two
-   screens and the ranking used to carry a gradient apiece, each cut for its own
-   layout, so the hub read at a different strength on every room of the place
-   the player is walking through. The COLLECTION is the declared exception: it
-   asks the player to read twenty small pictures, so the scene behind it goes a
-   step further back. */
-#al-bg::after, #sh-bg::after {
-  content:""; position:absolute; inset:0;
-  background:var(--web-veil);
-  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
-}
-#al-bg::after { background:var(--web-veil-strong); }
-#al-screen .decor-layer, #sh-screen .decor-layer { z-index:1; }
-
-/* One header for the two screens, and it is the map's shape without the
-   levels: the way back, what the screen is, and the wallet. */
-/* It starts UNDER the band, which is a layer over the frame and takes no room
-   of its own (view.css): `--wh-band` is that room, and it is 0 on a game with
-   no wallet, where there is no band to clear. */
-.mt-head {
-  position:absolute; top:0; left:0; right:0; z-index:3;
-  height:calc(var(--inset-top) + 150px + var(--wh-band, 0px));
-  padding:calc(var(--inset-top) + var(--wh-band, 0px)) 24px 0;
-  display:flex; align-items:center; gap:14px;
-}
-.mt-titles { flex:0 0 auto; }
 .mt-eyebrow {
   font-size:19px; letter-spacing:4px; text-transform:uppercase;
   color:var(--accent); opacity:.85; margin-bottom:2px;
-}
-.mt-count {
-  font-weight:var(--web-fw, 900); font-size:40px; letter-spacing:1px;
-  line-height:1; font-variant-numeric:tabular-nums;
-  text-shadow:0 3px 0 rgba(0,0,0,.55), 0 6px 18px rgba(0,0,0,.85);
 }
 
 /* =========================================================================
@@ -208,20 +163,10 @@
    what make the grid give the row above it its fixed height and then fit five
    rows into the remainder, at whatever the device's insets leave. A collection
    that has to be scrolled is a collection the player sees half of. */
-/* IT GOES DOWN TO THE FOOT OF THE FRAME. It used to stop 108 px short of it,
-   to clear the shell's two corner controls — which belong to a round now and
-   to nothing else (view.css), so the room they were holding goes back to the
-   tiles: twenty stickers with nothing under them. */
-#al-scroll {
-  position:absolute; left:0; right:0; z-index:2;
-  /* NO HEADER OVER IT ANY MORE: the name and the count are the band's
-     (album.js), so the machine, the odds and the twenty tiles start straight
-     under it. */
-  top:calc(var(--inset-top) + var(--wh-band, 0px) + 26px); bottom:0;
-  padding:0 24px calc(var(--inset-bottom) + 26px);
-  overflow:hidden;
-  display:flex; flex-direction:column; gap:18px;
-}
+/* IT IS THE SHEET'S BODY, and the one body there that does not scroll
+   (album.js, `fixed`): the height the sheet's title and bar take is what the
+   five rows of tiles give back. */
+#al-scroll { display:flex; flex-direction:column; gap:18px; }
 
 #al-top {
   flex:0 0 auto; display:flex; align-items:stretch; gap:18px;
@@ -445,14 +390,7 @@
    THE SHOP
    ========================================================================= */
 
-#sh-body {
-  position:absolute; left:0; right:0; z-index:2;
-  top:calc(var(--inset-top) + 150px + var(--wh-band, 0px)); bottom:0;
-  padding:10px 24px calc(var(--inset-bottom) + 40px);
-  overflow-y:auto; scrollbar-width:none;
-  display:flex; flex-direction:column; gap:20px;
-}
-#sh-body::-webkit-scrollbar { display:none; }
+#sh-body { display:flex; flex-direction:column; gap:20px; }
 
 .sh-card {
   display:flex; align-items:center; gap:18px;
@@ -1140,10 +1078,10 @@
    hangs off its corner. */
 .mt-modal.sticker.detail .mt-card { overflow:visible; }
 /* The ceremony is painted UNDER everything the card writes; the children have
-   to be positioned to sit over a positioned layer at all. `.al-own` is left
-   out because it places ITSELF on the card's corner, and this rule is four
-   classes deep — it was quietly winning and parking the chip in the column. */
-.mt-modal.sticker .mt-card > *:not(.al-fx):not(.al-own) { position:relative; z-index:2; }
+   to be positioned to sit over a positioned layer at all. The corner tag
+   (`.mt-pin`) is left out because it places ITSELF on the card's corner, and
+   this rule is four classes deep — it would win and park it in the column. */
+.mt-modal.sticker .mt-card > *:not(.al-fx):not(.mt-pin) { position:relative; z-index:2; }
 .al-fx {
   position:absolute; inset:0; z-index:0; overflow:hidden;
   border-radius:inherit; pointer-events:none;
@@ -1192,13 +1130,6 @@
   100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(.15); }
 }
 
-/* the card itself is lit, so the burst reads as coming out of the sticker
-   rather than as a pattern printed behind it */
-.mt-modal.sticker.fresh .mt-card {
-  border-color:rgba(255,212,59,.5);
-  box-shadow:0 26px 70px rgba(0,0,0,.7), 0 0 70px rgba(255,212,59,.28);
-}
-
 /* ---- already owned: the lava under it ----------------------------------- */
 
 .al-lava {
@@ -1231,104 +1162,17 @@
   70%  { opacity:.9; }
   100% { opacity:0; transform:translate(var(--sway), calc(var(--rise) * -1)) scale(.25); }
 }
-.mt-modal.sticker.seen .mt-card {
-  border-color:rgba(255,92,0,.35);
-  box-shadow:0 26px 70px rgba(0,0,0,.7), inset 0 -40px 60px rgba(255,80,0,.16);
-}
 /* a double keeps its picture, at the size the badge would have given it, and
    nothing around it: the badge is what says "prize" */
 .mt-modal.sticker.seen .mt-rw { width:236px; height:236px; }
 
 /* ---- the detail card ---------------------------------------------------- */
 
-/* THE CARD TAKES THE RANK'S COLOUR. Twenty tiles open twenty cards that were
-   all the same near-black, and the one thing the player came to read — how
-   rare this one is — was a line of text under the picture. The tint is the
-   pill's own colour poured down the card, so the answer arrives before the
-   word is read. It is a wash and not a fill: the sticker is painted artwork
-   and has to stay the brightest thing on the card. */
-.mt-modal.sticker.detail .mt-card {
-  cursor:pointer;
-  background:
-    linear-gradient(180deg, var(--tint), rgba(0,0,0,0) 64%),
-    rgba(8,8,20,.95);
-  border-color:var(--edge);
-  box-shadow:0 26px 70px rgba(0,0,0,.7), 0 0 44px var(--halo);
-}
-.mt-modal.detail.r0 .mt-card { --tint:rgba(170,177,198,.14); --edge:rgba(170,177,198,.3);  --halo:rgba(170,177,198,.1); }
-.mt-modal.detail.r1 .mt-card { --tint:rgba(77,171,247,.24);  --edge:rgba(77,171,247,.45);  --halo:rgba(77,171,247,.2); }
-.mt-modal.detail.r2 .mt-card { --tint:rgba(199,125,255,.28); --edge:rgba(199,125,255,.5);  --halo:rgba(199,125,255,.28); }
-.mt-modal.detail.r3 .mt-card { --tint:rgba(255,212,59,.3);   --edge:rgba(255,212,59,.55);  --halo:rgba(255,212,59,.34); }
-
-/* The name takes the frame's own text colour here, not the accent: the card is
-   already washed in the rank's colour, and the motor's cyan title on a purple
-   card is two palettes arguing over one line. The pill says the rank. */
-.mt-modal.sticker.detail .mt-h {
-  color:var(--text); text-shadow:0 3px 14px rgba(0,0,0,.9);
-}
-
-/* HOW MANY, on the frame rather than in the column. Same chip as the tile's
-   own double badge, one size up, in the rank's colour instead of the danger
-   red — on a card that is already tinted, red would be the loudest thing on
-   it and it is only a count. */
-.al-own {
-  position:absolute; top:-14px; right:-8px; z-index:3;
-  min-width:56px; height:44px; padding:0 14px; border-radius:22px;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(8,8,20,.96); border:3px solid var(--edge);
-  color:var(--text); font-family:var(--web-font, inherit);
-  font-weight:var(--web-fw, 900); font-size:26px; font-style:normal;
-  font-variant-numeric:tabular-nums;
-  box-shadow:0 6px 18px rgba(0,0,0,.6);
-}
-
-/* ---- the two tags -------------------------------------------------------- */
-
-/* THE HEADING IS A TAG, and the two do not shout at the same volume. NEW is
-   plated gold with a shine running across it, because it is the one line on
-   the card that had to travel across the room. ALREADY OWNED is an outline and
-   a whisper — it is a label, not an announcement, and a card that celebrates a
-   double teaches the player to stop reading the card. */
-.al-tag {
-  font-family:var(--web-font, inherit); text-transform:uppercase;
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.al-tag.new {
-  position:relative; overflow:hidden;
-  padding:10px 30px; border-radius:999px;
-  background:linear-gradient(180deg, #fff6cc, var(--gold) 52%, #e79b00);
-  color:#141006; font-weight:var(--web-fw, 900);
-  font-size:34px; letter-spacing:3px;
-  border:3px solid rgba(255,255,255,.65);
-  box-shadow:0 0 34px rgba(255,212,59,.7), 0 8px 20px rgba(0,0,0,.5);
-  animation:al-tag-in .45s cubic-bezier(.2,1.6,.4,1) both, al-tag-beat 1.6s ease-in-out .45s infinite;
-}
-.al-tag.new b { font-weight:inherit; }
-/* the shine: one band sweeping the plate, on a loop slow enough to be a
-   material and not a strobe */
-.al-tag.new::after {
-  content:""; position:absolute; top:-60%; bottom:-60%; left:-40%; width:32%;
-  background:linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.85), rgba(255,255,255,0));
-  transform:skewX(-18deg);
-  animation:al-shine 2.2s ease-in-out .5s infinite;
-}
-@keyframes al-tag-in {
-  from { opacity:0; transform:scale(.5) translateY(-12px); }
-  to   { opacity:1; transform:scale(1) translateY(0); }
-}
-@keyframes al-tag-beat {
-  0%, 100% { transform:scale(1); }
-  50%      { transform:scale(1.045); }
-}
-@keyframes al-shine {
-  0%   { left:-40%; }
-  55%, 100% { left:120%; }
-}
-.al-tag.old {
-  padding:4px 14px; border-radius:8px;
-  border:1px solid var(--panel-line); background:rgba(255,255,255,.03);
-  color:var(--muted); font-size:15px; letter-spacing:4px; opacity:.6;
-}
+/* THE CARD IS EVERY CARD. It wore its rank's colour poured down it, a rim of
+   that colour and a white title, and it was the one card of the shell with a
+   look of its own; the rank is the pill under the picture, and the card is
+   the motor's (packages/shell/motor.css, CARD). */
+.mt-modal.sticker.detail .mt-card { cursor:pointer; }
 
 /* ---- the ad placeholder ------------------------------------------------- */
 
@@ -1825,7 +1669,6 @@
 @media (prefers-reduced-motion: reduce) {
   .mt-gift, .mt-gift.g0, .mt-gift.g1, .mt-gift.g2, .mt-badge.on, .mt-rw.shiny,
   .mt-adslot .bar, .mt-rw-rar.r3,
-  .al-tag.new, .al-tag.new::after,
   .dl-node .burst, .dl-node .halo, .dl-cell.live .box, .dl-cell.live .kind,
   .mt-badge-rw .rays, .mt-badge-rw .ring,
   .mt-gift .rays, .mt-gift .flash, .mt-gift.open .face,
@@ -1840,7 +1683,7 @@
   .dl-cell.live .box { transform:translate(-50%, -50%); }
   .dl-track, .dl-rail .done { transition:none; }
   .mt-rw { animation:none; }
-  .mt-card { transition:none; transform:none; }
+  .mt-modal .mt-card, .mt-modal.on .mt-card { transition:none; transform:none; }
   /* The reveal's ceremony is HIDDEN rather than frozen: every one of these
      nodes is invisible only because its animation holds it at zero, so
      `animation:none` would leave a white disc and twenty-six embers parked on

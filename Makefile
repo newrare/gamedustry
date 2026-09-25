@@ -121,9 +121,12 @@ meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta
 
 # A scripted pilot replays every game's web build in headless Chrome and writes
-# eleven pictures per game: ten of the round, from its first seconds to the end
-# screen, and the level map. Two minutes a game, so GAME=<slug> is how one is
-# redone; `make map` is the eleventh alone, and it renumbers none of the ten.
+# twelve pictures per game: ten of the round, from its first seconds to the end
+# screen, the level map (-11) and the village (-12) — plus, for a game with an
+# army (stratideck), five officers at full size, face then back (-13 to -22).
+# Two minutes a game, so GAME=<slug> is how one is redone; `make map` is the
+# eleventh alone, and it renumbers none of the ten (so do --village-only and
+# --cards-only on the tool itself).
 #
 # The images are an input, like the painted art: nothing rebuilds them, and the
 # site picks them up on its next build — `make check && make site` after a run.

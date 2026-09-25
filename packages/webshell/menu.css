@@ -233,14 +233,7 @@
    ranking are opaque views above this screen. */
 #brand-sig { transition:opacity .18s ease; }
 
-.web-phead, .web-pbody { position:relative; z-index:1; }
-.web-phead { display:flex; align-items:center; gap:18px; margin-bottom:16px; }
-.web-ptitle {
-  flex:1; text-align:right; text-transform:uppercase;
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:38px; letter-spacing:3px;
-  color:var(--accent); text-shadow:0 0 22px currentColor, 0 3px 12px rgba(0,0,0,.9);
-}
+.web-pbody { position:relative; z-index:1; }
 
 /* One card for every panel: the scene shows around it, not through the text. */
 .web-pbody {
@@ -258,34 +251,8 @@
   -webkit-backdrop-filter:none; backdrop-filter:none;
   width:100%; max-height:700px;
 }
-/* The card is the panel's frame now, so the head sits inside it and the title
-   reads left to right with the back arrow, instead of being pushed to the far
-   edge of a band the scene showed through. */
-.wm-modal.web-card .mt-card {
-  position:relative; max-width:640px; padding:26px 28px; align-items:stretch;
-}
-.wm-modal.web-card .web-phead { margin-bottom:12px; }
-/* The title is centred now that nothing stands beside it: the cross is a
-   corner mark rather than a member of the row, so a title pushed to one edge
-   would be reading against nothing. */
-.wm-modal.web-card .web-ptitle { text-align:center; font-size:34px; }
-
-/* THE DISCREET CROSS, top-left of the card. Quiet on purpose — it is the way
-   out of a card, not the subject of it — and big enough under a thumb: the
-   mark is 30 px and the tap area is grown to 62 by a transparent
-   pseudo-element, exactly as the corner controls do it (view.css). */
-.web-close {
-  position:absolute; top:14px; left:14px; z-index:2; cursor:pointer;
-  width:38px; height:38px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  background:none; border:0; padding:0;
-  color:var(--muted); opacity:.65;
-  transition:color .16s ease, opacity .16s ease, transform .16s ease;
-}
-.web-close::before { content:""; position:absolute; inset:-12px; border-radius:50%; }
-.close-ico { width:30px; height:30px; }
-.web-close:hover, .web-close:focus-visible { color:var(--text); opacity:1; outline:none; }
-.web-close:active { transform:scale(.92); }
+/* The rows run the card's width: a switch sits against the right edge. */
+.wm-modal.web-card .mt-body { align-items:stretch; }
 
 /* ---- the painted instrument --------------------------------------------
    An <img> standing where a stroked <svg> did (menu.js, icon()). It keeps the
@@ -607,43 +574,11 @@ img.art-i {
    THE RANKING — a view, with the header the map and the album wear
    ========================================================================= */
 
-/* Z-INDEX 35, between the map (34) and the album (36): it is a view like them,
-   it opens from the title screen and it never has to argue with either — the
-   view system re-appends whatever is opened, so DOM order settles any tie
-   (packages/webshell/view.js). */
-#web-rank {
-  position:absolute; inset:0; z-index:35; display:none;
-  flex-direction:column;
-  font-family:var(--web-font, inherit); color:var(--text);
-}
-#web-rank.on { display:flex; animation:web-rank-in .22s ease both; }
-@keyframes web-rank-in {
-  from { opacity:0; transform:translateY(12px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-
-/* The place the player lives, pushed back by the one veil every surface over
-   it wears (packages/webshell/view.css). It was a gradient of its own, cut for
-   this layout — and so were the collection's and the shop's, which is three
-   answers to one question. */
-.web-rank-bg {
-  position:absolute; inset:0; z-index:0;
-  background-size:cover; background-position:center;
-}
-.web-rank-bg.flat { background-size:auto; }
-.web-rank-bg::after {
-  content:""; position:absolute; inset:0;
-  background:var(--web-veil);
-  -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
-}
-#web-rank .decor-layer { z-index:1; }
-
+/* THE FRAME IS THE VIEW SYSTEM'S (packages/webshell/view.css, THE SHEET).
+   What is left here is the body: three figures, centred in the sheet. */
 #web-rank-body {
-  position:relative; z-index:2;
-  margin-top:calc(var(--inset-top) + 150px + var(--wh-band, 0px));
-  padding:30px 46px calc(var(--inset-bottom) + 130px);
   display:flex; flex-direction:column; justify-content:center; gap:6px;
-  flex:1;
+  padding:30px 46px 46px;
 }
 
 /* The climb, where there is one: thirty levels is a result a board should

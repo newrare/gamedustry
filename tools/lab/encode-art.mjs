@@ -500,7 +500,14 @@ export var SHELL_CUTS = [
      It gets a box of its own: the others are chips of 26 to 110 design px and
      this one is a plate across a modal's header, so 360 would be upscaled
      where they are downscaled. */
-  { cut: "game-multiplicator-02", role: "mult-5", w: 480, h: 480 }
+  { cut: "game-multiplicator-02", role: "mult-5", w: 480, h: 480 },
+
+  /* THE HAND the Help card acts the gesture out with — the pointing index of
+     the twenty-four on `game-object-hand.png`, cuff down and fingertip up,
+     which is the pose of the motor's stroked finger (assets/motor/svg/finger.svg)
+     and therefore drops into every SKIN's `.demo-hand` choreography unchanged.
+     A playable keeps the stroked one: it has no shellArt to paint it with. */
+  { cut: "game-hand-01", role: "hand" }
 ];
 
 function shellJobs() {

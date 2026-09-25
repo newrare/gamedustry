@@ -49,6 +49,8 @@
  *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
  *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -11
  *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
+ *   node tools/lab/shoot-screens.mjs --village-only        # just the village, -12
+ *   node tools/lab/shoot-screens.mjs stratideck --cards-only   # the officers, -13…
  *   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera  # what each shot caught
  */
 
@@ -91,6 +93,7 @@ var SPAN = {
   pawko: 50,        // five waves, clockless; the RACK pilot plays them all in ~55 s
   slipdeck: 15,     // clock 30
   spinshock: 27,
+  stratideck: 24,   // clockless; the GAME_PILOT below takes the flag at ~27 s
   triverse: 15
 };
 
@@ -126,6 +129,84 @@ var RACK = {
   pawko: { slots: 5, x0: 0.106, dx: 0.197, y: 83, board: 0.4 }
 };
 
+/* Games no blind gesture can play. stratideck is a turn-based grid: a card is
+   sent at one of the few cells its reach opens, and a drag aimed anywhere else
+   is refused with an "Out of reach" notice — the generic drag pilot filled
+   every shot with those and never took a cell. So the pilot is the game's own:
+   a hook written inside its Game module, in front of the module's `return`,
+   plays one move through the game's own `attack()` — the same call a drop
+   makes — and `play()` says whether it did.
+
+   It picks what a decent player would: the tightest win it can see on the
+   board (judge() reads a hidden card, which is fine for a camera and would not
+   be for a bench), and when nothing wins, the smallest card it holds at a
+   random target, so a loss costs little and the board still moves. The flag
+   comes LAST: seeing through the cards, the pilot found it in a few turns and
+   the late shots were all end screens. And after a win it walks past the
+   army layer's prisoner offer, a choice with no default that otherwise holds
+   the outro, and the round, forever.
+
+   anchor - the text the hook is written in front of, inside the first script
+            block.  every - frames between two moves, the pause a turn reads in. */
+var GAME_PILOT = {
+  stratideck: {
+    every: 45,
+    anchor: "return { reset: reset, update: update, render: render,",
+    js: `
+    window.__G = { play: function () {
+      if (ended && !window.__endAt) window.__endAt = window.__progress;   // SHOOT_DEBUG
+      var skip = document.querySelector(".ar-skip");  // the prisoner offer holds the outro
+      if (skip) { skip.click(); return true; }
+      if (ended || turn || march || sheet || State !== "playing") return false;
+      var best = null, low = -1, keys = [], i, k;
+      for (k in targets) if (targets.hasOwnProperty(k)) keys.push(k);
+      if (!keys.length) return false;
+      for (i = 0; i < handSize; i++) {
+        if (!pickable(i)) continue;
+        if (low < 0 || hand[i].rank < hand[low].rank) low = i;
+        for (var j = 0; j < keys.length; j++) {
+          var rc = keys[j].split(","), foe = grid[+rc[0]][+rc[1]];
+          var v = judge(hand[i], foe);
+          var sc = v.kind === "flag" ? 1 : v.kind === "win" ? 50 - (v.margin | 0) - (v.hurt === "a" ? 5 : 0)
+                 : v.kind === "scout" ? 20 : -1;
+          if (sc >= 0 && (!best || sc > best.sc)) best = { sc: sc, i: i, r: +rc[0], c: +rc[1] };
+        }
+      }
+      if (!best) {
+        if (low < 0) return false;
+        var pick = keys[Math.floor(Math.random() * keys.length)].split(",");
+        best = { i: low, r: +pick[0], c: +pick[1] };
+      }
+      attack(best.i, best.r, best.c);
+      return true;
+    } };
+    `
+  }
+};
+
+/* Officers shot at full size, a picture per FACE. A game that declares
+   `web.army` draws every card as a person — a portrait on the front, a name,
+   an age and a story on the back — and that file is the one screen of the
+   game a store gallery cannot show off a round, where the cards are a hand
+   wide. Each entry is shot twice, face then back, through the army layer's own
+   `file()`: the same card the deck and the round's lists open.
+
+   The five are chosen to read as a range rather than a sample: both armies,
+   the top of the ladder and the bottom of it, one of each special, and five
+   different tiers, so no two badges on the page match.
+
+   o - the army the officer was raised in.  g - the grade (1 spy … 10 marshal).
+   t - the tier, 0 (E) to 5 (S). */
+var CARDS = {
+  stratideck: [
+    { o: "blue", g: 10, t: 5 },     // Rex Maximus, the blue marshal
+    { o: "red",  g: 9,  t: 4 },     // Fidelia Chains, a red general
+    { o: "blue", g: 1,  t: 3 },     // Nova Trace, a spy
+    { o: "red",  g: 3,  t: 2 },     // Tick Tockley, a sapper
+    { o: "blue", g: 6,  t: 1 }      // Gemma Stone, a captain
+  ]
+};
+
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
 var slugs = [];
@@ -137,6 +218,10 @@ var playable = false;
 var withEnd = true;
 var withMap = true;
 var mapOnly = false;
+var withVillage = true;
+var villageOnly = false;
+var withCards = true;
+var cardsOnly = false;
 var ctls = false;
 var lang = "en";
 for (var i = 0; i < argv.length; i++) {
@@ -148,13 +233,25 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--no-end") withEnd = false;
   else if (argv[i] === "--no-map") withMap = false;
   else if (argv[i] === "--map-only") mapOnly = true;
+  else if (argv[i] === "--no-village") withVillage = false;
+  else if (argv[i] === "--village-only") villageOnly = true;
+  else if (argv[i] === "--no-cards") withCards = false;
+  else if (argv[i] === "--cards-only") cardsOnly = true;
   else if (argv[i] === "--ctls") ctls = true;
   else if (argv[i] === "--lang") lang = argv[++i];
   else slugs.push(argv[i]);
 }
 /* The map lives in the web shell, which a playable does not ship. */
-if (playable) withMap = false;
-if (mapOnly) { withEnd = false; }
+if (playable) { withMap = false; withVillage = false; withCards = false; }
+/* An -only flag keeps its own screen and drops everything else, so it
+   renumbers nothing already on disk. */
+var only = mapOnly || villageOnly || cardsOnly;
+if (only) {
+  withEnd = false;
+  withMap = withMap && mapOnly;
+  withVillage = withVillage && villageOnly;
+  withCards = withCards && cardsOnly;
+}
 if (!slugs.length) {
   slugs = fs.readdirSync(GAMES_DIR).filter(function (d) {
     return fs.existsSync(path.join(GAMES_DIR, d, "manifest.json"));
@@ -169,16 +266,24 @@ if (!slugs.length) {
    Every aim carries the NUMBER it is written under, so the map is always
    `<slug>-11.jpg` whether or not the round was reshot with it: `--map-only`
    must not renumber the ten pictures already on the itch page. */
-function plan(n) {
+function plan(n, slug) {
   var out = [];
   var g = withEnd ? n - 1 : n;                       // gameplay shots
-  if (!mapOnly) {
+  if (!only) {
     for (var k = 0; k < g; k++) {
       out.push({ n: k + 1, seed: k + 1, p: g < 2 ? 0.5 : 0.08 + 0.88 * (k / (g - 1)) });
     }
     if (withEnd) out.push({ n: n, seed: n, end: true });
   }
   if (withMap) out.push({ n: n + 1, seed: n + 1, map: true });
+  /* The village, and the officers after it: fixed numbers too, the cards
+     front then back, so -13 and -14 are one card's two faces. */
+  if (withVillage) out.push({ n: n + 2, seed: n + 2, village: true });
+  var cards = withCards ? CARDS[slug] || [] : [];
+  for (var c = 0; c < cards.length; c++) {
+    out.push({ n: n + 3 + c * 2, seed: 1, card: c, back: false });
+    out.push({ n: n + 4 + c * 2, seed: 1, card: c, back: true });
+  }
   return out;
 }
 
@@ -226,6 +331,9 @@ var DRIVER_JS = `<script>
   var P = parseFloat(q.get("p"));                    // progression, 0..1
   var END = q.get("end") === "1";                    // shoot the end screen
   var MAP = q.get("map") === "1";                    // shoot the level map
+  var VILLAGE = q.get("village") === "1";            // shoot the village
+  var CARD = q.has("card") ? parseInt(q.get("card"), 10) : -1;   // an officer, by CARDS index
+  var BACK = q.get("back") === "1";                  // ...turned over
   var SPAN = parseInt(q.get("span"), 10) || 0;       // measured reach, 0 = none
   var ENDLESS = parseInt(q.get("endless"), 10) || 30;
   var DT = 1 / 60;
@@ -256,6 +364,10 @@ var DRIVER_JS = `<script>
      it only has to keep a round alive and busy long enough to be worth a shot. */
   function pilot(H, n) {
     var L = H.Layout, demo = (H.CONFIG.intro && H.CONFIG.intro.demo) || "tap";
+    if (window.__G && window.__G.play) {             // the game's own pilot (GAME_PILOT)
+      if (n % window.__GEVERY === 0) window.__G.play();
+      return;
+    }
     if (demo === "swipe") {                          // one flick every ~0.6 s
       if (n % 36 === 0) H.Input.swipe(n % 72 === 0 ? 1 : -1);
       return;
@@ -370,18 +482,73 @@ var DRIVER_JS = `<script>
     if (!started) {
       if (H.state() !== "intro" || !window.__LV) return;
       if (!window.__LEVELS__ || !window.__LEVELS__.active()) { window.__skip = 1; return; }
-      var LV = window.__LV;
-      LV.save.h = 1;                                  // the tutorial is read
-      for (var i = 0; i < CLIMB.length; i++) {
-        var n = CLIMB[i][0], stars = CLIMB[i][1];
-        LV.record(n, stars, Math.round(LV.goalOf(LV.dOf(n)) * WORTH[stars]));
-      }
+      climb();
       document.getElementById("btn-start").click();   // the player's own click
       started = true;
       endedAt = Date.now();
     }
     window.__progress = (window.__progress || 0) + 1;  // the host watches this
+    /* A game with a VILLAGE opens the hub on PLAY, and the map is one of its
+       buildings: the player's second click, through the house's own door. */
+    if (!window.__viaVillage) {
+      var door = document.querySelector('[data-role="map"] .vg-hit');
+      if (door) { door.click(); window.__viaVillage = 1; endedAt = Date.now(); }
+    }
     if (Date.now() - endedAt >= MAP_MS) window.__shot = 1;
+  }
+
+  /* The board with a history on it, through the layer's own record() — the
+     map needs it to be worth a picture, and the village wears it in its band. */
+  function climb() {
+    var LV = window.__LV;
+    LV.save.h = 1;                                    // the tutorial is read
+    for (var i = 0; i < CLIMB.length; i++) {
+      var n = CLIMB[i][0], stars = CLIMB[i][1];
+      LV.record(n, stars, Math.round(LV.goalOf(LV.dOf(n)) * WORTH[stars]));
+    }
+  }
+
+  /* The village is a DOM view, like the map: the climb is written, PLAY is
+     clicked — which is what opens the hub — and the wall clock settles its
+     houses in. A game with no village has none to shoot and says so. */
+  var VILLAGE_MS = 2600;
+  function tickVillage(H) {
+    if (!started) {
+      if (H.state() !== "intro") return;
+      if (!(H.CONFIG.web && H.CONFIG.web.village)) { window.__skip = 1; return; }
+      if (window.__LV && window.__LEVELS__ && window.__LEVELS__.active()) climb();
+      document.getElementById("btn-start").click();
+      started = true;
+      endedAt = Date.now();
+    }
+    window.__progress = (window.__progress || 0) + 1;
+    if (Date.now() - endedAt >= VILLAGE_MS) window.__shot = 1;
+  }
+
+  /* An officer's file opens over the village, which is where the deck it is
+     read from stands; it flies in and lands face up (army.js, openFile), and
+     the back is one tap on the card after that — the player's own tap. */
+  var FILE_MS = 1500, TURN_MS = 1100;
+  var phase = 0;
+  function tickCard(H) {
+    var C = (window.__CARDS || [])[CARD];
+    if (!started) {
+      if (H.state() !== "intro") return;
+      if (!C || !window.__ARMY__) { window.__skip = 1; return; }
+      document.getElementById("btn-start").click();
+      started = true;
+      endedAt = Date.now();
+    }
+    window.__progress = (window.__progress || 0) + 1;
+    var t = Date.now() - endedAt;
+    if (phase === 0 && t >= 1200) {
+      window.__ARMY__.file({ o: C.o, g: C.g, t: C.t }, C.o, null);
+      phase = 1; endedAt = Date.now();
+    } else if (phase === 1 && t >= FILE_MS) {
+      var flip = document.querySelector(".ar-flip");
+      if (BACK && flip) { flip.click(); phase = 2; endedAt = Date.now(); }
+      else window.__shot = 1;
+    } else if (phase === 2 && t >= TURN_MS) window.__shot = 1;
   }
 
   function tick() {
@@ -389,6 +556,8 @@ var DRIVER_JS = `<script>
     requestAnimationFrame(tick);
     if (!H) return;
     if (MAP) { tickMap(H); return; }
+    if (VILLAGE) { tickVillage(H); return; }
+    if (CARD >= 0) { tickCard(H); return; }
     if (!started) {
       if (H.state() !== "intro") return;              // still loading
       H.startGame();
@@ -461,6 +630,13 @@ function prepare(slug, tmpDir) {
   if (close < 0) throw new Error(slug + ": no IIFE close");
   src = src.slice(0, close) + HOOK_JS + src.slice(close);
 
+  var gp = GAME_PILOT[slug];
+  if (gp) {
+    var at = src.indexOf(gp.anchor);
+    if (at < 0 || at > src.indexOf("</script>")) throw new Error(slug + ": no pilot anchor");
+    src = src.slice(0, at) + gp.js + "\n    " + src.slice(at);
+  }
+
   var head = src.indexOf("<head>");
   if (head < 0) throw new Error(slug + ": no <head>");
   src = src.slice(0, head + 6) + "\n" + SEED_JS
@@ -478,7 +654,11 @@ function prepare(slug, tmpDir) {
   var rack = RACK[slug]
     ? "<script>window.__RACK = " + JSON.stringify(RACK[slug]) + ";</script>\n"
     : "";
-  src = src.replace("</body>", sweep + rack + DRIVER_JS + "\n</body>");
+  var cards = CARDS[slug]
+    ? "<script>window.__CARDS = " + JSON.stringify(CARDS[slug]) + ";</script>\n"
+    : "";
+  var every = gp ? "<script>window.__GEVERY = " + gp.every + ";</script>\n" : "";
+  src = src.replace("</body>", sweep + rack + every + cards + DRIVER_JS + "\n</body>");
 
   var out = path.join(tmpDir, slug + ".html");
   fs.writeFileSync(out, src);
@@ -576,7 +756,9 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
      the replay button of every screenshot. */
   var url = "file://" + file + "?seed=" + seed + "&span=" + span
     + "&endless=" + SPAN._endless + "&lang=" + lang
-    + (aim.map ? "&map=1" : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
+    + (aim.map ? "&map=1" : aim.village ? "&village=1"
+      : aim.card != null ? "&card=" + aim.card + (aim.back ? "&back=1" : "")
+      : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
   await client.send("Page.navigate", { url: url }, sid);
 
   var deadline = Date.now() + 120000;
@@ -602,10 +784,11 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   // and the late shots are duplicates of the middle ones.
   if (process.env.SHOOT_DEBUG) {
     process.stdout.write("  " + path.basename(outPath) + " "
-      + (aim.map ? "map" : aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " "
+      + (aim.map ? "map" : aim.village ? "village" : aim.card != null ? "card" + aim.card + (aim.back ? "b" : "f")
+        : aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " "
       + await evaluate(client, sid,
       'JSON.stringify({ frames: window.__progress, reached: +(window.__reached || 1).toFixed(2),' +
-      ' state: window.__H.state(), score: document.getElementById("hud-score").textContent })') + "\n");
+      ' endAt: window.__endAt || 0, state: window.__H.state(), score: document.getElementById("hud-score").textContent })') + "\n");
   }
   return true;
 }
@@ -631,12 +814,12 @@ reap(chrome.child, { label: "shoot-screens" });
 var client = await cdp(chrome.port);
 var sid = await openPage(client);
 
-var aims = plan(shots);
 
 for (var s = 0; s < slugs.length; s++) {
   var slug = slugs[s];
   var file = prepare(slug, tmpDir);
   var span = SPAN[slug] || 0;
+  var aims = plan(shots, slug);
   var line = [];
   for (var a = 0; a < aims.length; a++) {
     var aim = aims[a];
