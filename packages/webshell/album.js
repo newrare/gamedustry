@@ -15,25 +15,28 @@
                      something here and I do not know what". No second asset,
                      no placeholder to draw, and the album is legible the
                      minute a game's sheet is cut.
-    THE MACHINE      down the LEFT of the album, where the thing it fills is,
-                     with the bet and the odds in the column beside it and the
-                     twenty tiles under both — one screen, and it does not
-                     scroll. A REAL gumball machine on a canvas: sixteen
+    THE MACHINE      at the top of the album, at half its drawn size, with
+                     the bet and DRAW beside it and the four SHELVES under it
+                     — one per rarity, each opening on its own odds (section
+                     5). A REAL gumball machine on a canvas: sixteen
                      spheres under gravity in a glass globe, sloshed by the
                      globe itself and then one of them dropped down the chute
                      into the tray (section 3). A gumball machine and not a
                      slot reel — the player is not betting, they are
                      collecting. One pull eats ONE TO FIVE tickets and the
                      odds move with the bet, shown before they are rolled.
-    THE SHOP         a ticket against coins, and doubles against coins. Those
-                     are the only two trades, and they are the two ends of the
-                     same loop — the machine pays doubles, the shop turns them
-                     back into draws.
+    THE SHOP         a grid of six tiles bought with coins — the ticket, the
+                     super ticket, the mystery gift, the xp pack and the two
+                     boosts — plus a missed day of the daily road while it can
+                     still be caught up, and the doubles sold back. Every price
+                     is derived from the ticket or from the rates a round pays
+                     at (packages/webshell/meta.js, section 1).
 
   WHAT THE SHOP IS NOT: there is no money in it, and there is no bundle, no
-  timer and no offer. It is the sink the coins a round pays need in order to
-  mean anything, and nothing else. Real-money purchases would be a different
-  conversation and a different file (docs/INDUSTRIALIZATION.md).
+  timer and no offer — a boost is counted in rounds, never in minutes. It is
+  the sink the coins a round pays need in order to mean anything, and nothing
+  else. Real-money purchases would be a different conversation and a different
+  file (docs/INDUSTRIALIZATION.md).
 
   ES5-ish, same WebViews as the rest.
 */
@@ -55,15 +58,20 @@
       album: "Stickers", shop: "Shop",
       draw: "Draw", drawCost: "1 ticket",
       mixing: "Mixing…",
-      perDraw: "Tickets per draw", chances: "Chances",
+      perDraw: "Tickets per draw",
       newSticker: "New sticker!", dupe: "Already owned",
-      sell: "Sell",
+      sell: "Sell", buy: "Buy",
       again: "Draw again",
       buyTitle: "Ticket", buyNote: "One draw at the sticker machine.",
       superTitle: "Super ticket",
       superNote: "One draw, and a legendary about one time in three.",
       superOwn: "You have {n}",
-      sellTitle: "Your doubles", sellAll: "Sell all",
+      giftTitle: "Mystery gift", giftNote: "Three boxes: tickets, xp or a sticker.",
+      xpTitle: "Xp pack", xpNote: "{n} xp at once. The price follows your level.",
+      coinBoostTitle: "Double coins", coinBoostNote: "Your next round pays twice the coins.",
+      xpBoostTitle: "Double xp", xpBoostNote: "Your next {n} rounds pay twice the xp.",
+      activeN: "Active · {n} rounds", active1: "Active · 1 round",
+      sell1: "Sell 1 double", sellN: "Sell {n} doubles",
       fromMap: "Reward earned", fromMachine: "Won from a draw",
       toMap: "A reward to earn", toMachine: "Will come from a draw",
       unknown: "???"
@@ -72,15 +80,20 @@
       album: "Stickers", shop: "Boutique",
       draw: "Tirer", drawCost: "1 ticket",
       mixing: "Ça mélange…",
-      perDraw: "Tickets par tirage", chances: "Chances",
+      perDraw: "Tickets par tirage",
       newSticker: "Nouveau sticker !", dupe: "Déjà obtenu",
-      sell: "Vendre",
+      sell: "Vendre", buy: "Acheter",
       again: "Tirer encore",
       buyTitle: "Ticket", buyNote: "Un tirage à la machine à stickers.",
       superTitle: "Super ticket",
       superNote: "Un tirage, et un légendaire environ une fois sur trois.",
       superOwn: "Tu en as {n}",
-      sellTitle: "Tes doublons", sellAll: "Tout vendre",
+      giftTitle: "Cadeau mystère", giftNote: "Trois boîtes : tickets, xp ou un sticker.",
+      xpTitle: "Pack d’xp", xpNote: "{n} xp d’un coup. Le prix suit ton niveau.",
+      coinBoostTitle: "Pièces doublées", coinBoostNote: "Ta prochaine partie rapporte deux fois plus de pièces.",
+      xpBoostTitle: "Xp doublée", xpBoostNote: "Tes {n} prochaines parties rapportent deux fois plus d’xp.",
+      activeN: "Actif · {n} parties", active1: "Actif · 1 partie",
+      sell1: "Vendre 1 doublon", sellN: "Vendre {n} doublons",
       fromMap: "Récompense gagnée", fromMachine: "Obtenu par tirage",
       toMap: "Une récompense à gagner", toMachine: "S’obtiendra par tirage",
       unknown: "???"
@@ -93,9 +106,10 @@
      off — a capital carries none in this house. */
   var up = W.upper;
   var CAPS = ["album", "shop", "draw", "drawCost", "mixing",
-    "perDraw", "chances", "newSticker", "dupe", "sell",
-    "again", "buyTitle", "superTitle",
-    "sellTitle", "sellAll", "fromMap", "fromMachine",
+    "perDraw", "newSticker", "dupe", "sell", "buy",
+    "again", "buyTitle", "superTitle", "giftTitle", "xpTitle",
+    "coinBoostTitle", "xpBoostTitle",
+    "fromMap", "fromMachine",
     "toMap", "toMachine"
   ];
   (function () {
@@ -125,7 +139,7 @@
 
   /* ── 2. the album screen ──────────────────────────────────────────────── */
 
-  var box, scroll, grid, machine, drawBtn, ctl, betRow, oddsBox;
+  var box, scroll, machine, drawBtn, ctl, betRow;
   var built = false, drawing = false;
   /* How many tickets the next pull eats. It is the player's standing choice,
      not a per-draw question, so it survives a reveal and a trip to the shop —
@@ -143,20 +157,19 @@
        carries options and help. The COUNT stays the band's first chip — it is
        what the player owns, which is the band's subject — so the title is the
        room's name and nothing more. */
-    /* ONE SCREEN AND NO SCROLL: the machine on the left, what it costs and
-       what it pays on the right, the twenty tiles under both. A collection the
-       player has to scroll to see is a collection they see half of, and the
-       machine standing over it is what the whole screen is for. The body is
-       `fixed` for it: the sheet's own fade would eat the bottom row. */
+    /* THE MACHINE OVER THE SHELVES: what a pull costs in a band at the top,
+       and under it one shelf per rarity, each opening on its own odds
+       (section 5). The body is allowed to scroll: on a tall phone the four
+       shelves fit and nothing moves, and on a short one the legendary shelf
+       — the one worth drawing for — is scrolled to rather than cut off. */
     scroll = el("div"); scroll.id = "al-scroll";
     var top = el("div"); top.id = "al-top";
     top.appendChild(buildMachine());
     top.appendChild(buildControls());
     scroll.appendChild(top);
-    grid = el("div"); grid.id = "al-grid";
-    scroll.appendChild(grid);
+    scroll.appendChild(buildShelves());
 
-    S = VW.sheet({ id: "al-screen", body: scroll, fixed: true });
+    S = VW.sheet({ id: "al-screen", body: scroll });
     box = S.box;
     S.setHead(T.album, "");
   }
@@ -222,11 +235,11 @@
      the chute is wider than the hole, the tray is wider than the chute, and the
      FOOT is wider than the globe — a machine whose glass overhangs its base
      reads as about to fall over, which is the one thing furniture may not do. */
-  /* The machine is drawn at its own size and SHOWN at four fifths of it: the
-     album gives it the left column and keeps the right one for what it costs,
-     so the geometry below stays the geometry it was tuned with in
+  /* The machine is drawn at its own size and SHOWN at half of it: the album
+     gives it the top band and keeps the height for the shelves under it, so
+     the geometry below stays the geometry it was tuned with in
      `lab/gacha.html` and only the transform out of it changes. */
-  var SCALE = 0.8;
+  var SCALE = 0.5;
   var G_W = 300, G_H = 424;
   var CX = 150, CY = 146, R = 120;
   var HOLE = 30, NECK = 46;
@@ -583,12 +596,13 @@
     return machine;
   }
 
-  /* THE OTHER HALF OF THE MACHINE: how many tickets this pull eats, and what
-     that buys. The odds are drawn from `MT.odds(bet)` — the same weights the
-     roll uses — so raising the bet moves the bars the player is looking at and
-     not a promise written beside them. Every pill is selectable even when the
-     wallet cannot pay for it: a player who can never SEE what five tickets
-     would do has no reason to save for five. */
+  /* THE OTHER HALF OF THE MACHINE: how many tickets this pull eats. What
+     that buys is read on the shelves under it (section 5), out of
+     `MT.odds(bet)` — the same weights the roll uses — so raising the bet
+     moves the tracks the player is looking at and not a promise written
+     beside them. Every pill is selectable even when the wallet cannot pay for
+     it: a player who can never SEE what five tickets would do has no reason
+     to save for five. */
   function buildControls() {
     ctl = el("div"); ctl.id = "al-ctl";
 
@@ -602,11 +616,11 @@
        currency it is paid in, which is the one branch below. */
     var i, b;
     for (i = 1; i <= MT.maxBet(); i++) {
-      b = el("button", "al-bet", String(i));
+      b = el("button", "btn btn-sm btn-plate al-bet", String(i));
       b.setAttribute("data-b", i);
       betRow.appendChild(b);
     }
-    b = el("button", "al-bet sup", icon("ticketSuper", "al-supi") + '<i></i>');
+    b = el("button", "btn btn-sm btn-plate al-bet sup", icon("ticketSuper", "al-supi") + '<i></i>');
     b.setAttribute("data-b", MT.superBet());
     b.setAttribute("aria-label", T.superTitle);
     betRow.appendChild(b);
@@ -627,11 +641,7 @@
     }
     ctl.appendChild(betRow);
 
-    ctl.appendChild(el("div", "al-lbl sub", T.chances));
-    oddsBox = el("div", "al-odds");
-    ctl.appendChild(oddsBox);
-
-    drawBtn = el("button", "al-draw");
+    drawBtn = el("button", "btn btn-buy btn-lg btn-wide al-draw");
     drawBtn.addEventListener("click", onDraw);
     ctl.appendChild(drawBtn);
     return ctl;
@@ -657,8 +667,10 @@
       var n = +pills[i].getAttribute("data-b");
       var s = n === sup;
       var lacks = s ? supers < 1 : n > have;
-      pills[i].className = "al-bet" + (s ? " sup" : "") + (n === bet ? " on" : "") +
+      /* the bet in play is the button, the others its plate */
+      pills[i].className = "btn btn-sm al-bet" + (s ? " sup" : "") + (n === bet ? "" : " btn-plate") +
                            (lacks ? " short" : "");
+      pills[i].setAttribute("aria-pressed", n === bet ? "true" : "false");
       pills[i].disabled = drawing;
       /* The count rides ON the pill because the wallet has no chip for it: a
          player who bought one has to see it somewhere, and this is the only
@@ -667,21 +679,12 @@
       if (s) pills[i].querySelector("i").textContent = supers > 0 ? supers : "";
     }
 
-    var o = MT.odds(bet), html = "";
-    for (i = 0; i < o.length; i++) {
-      var pc = Math.round(o[i] * 100);
-      html += '<div class="al-odd r' + i + (o[i] ? "" : " nil") + '">' +
-        '<span class="n">' + MT.text("rarity" + (i + 1)) + "</span>" +
-        '<span class="bar"><i style="width:' + (o[i] ? Math.max(1.5, o[i] * 100).toFixed(1) : 0) + '%"></i></span>' +
-        '<span class="p">' + (pc < 1 && o[i] > 0 ? "<1%" : pc + "%") + "</span></div>";
-    }
-    oddsBox.innerHTML = html;
+    paintOdds();
 
     drawBtn.disabled = drawing || !ok;
-    drawBtn.className = "al-draw" + (ok ? "" : " off") + (isSuper ? " sup" : "");
-    drawBtn.innerHTML = '<span class="w">' + (drawing ? T.mixing : T.draw) + '</span>' +
-      '<span class="c">' + icon(isSuper ? "ticketSuper" : "ticket", "mt-ci") +
-      (drawing || isSuper ? "" : bet) + '</span>';
+    drawBtn.innerHTML = "<span>" + (drawing ? T.mixing : T.draw) + "</span>" +
+      '<span class="btn-badge">' + icon(isSuper ? "ticketSuper" : "ticket") +
+      (drawing || isSuper ? "" : bet) + "</span>";
   }
 
   /* The draw. The sticker is decided BEFORE a ball moves, like the gift boxes:
@@ -715,7 +718,7 @@
         if (isNew) MT.bumpUnseen();
         drawing = false;
         paintMachine();
-        paintGrid();
+        paintShelves();
         setTimeout(function () { reveal(n, isNew); }, 240);
       }
       Machine.release(landed);
@@ -816,9 +819,9 @@
        slider, and a player about to spend it again should see it leave. */
     if (MT.tickets() >= bet) {
       var acts = el("div", "mt-acts");
-      var ok = el("button", "mt-btn gold al-again",
+      var ok = el("button", "btn btn-buy al-again",
         "<span>" + T.again + "</span>" +
-        '<span class="c">' + icon("ticket", "mt-ci") + num(bet) + "</span>");
+        '<span class="btn-badge">' + icon("ticket") + num(bet) + "</span>");
       ok.addEventListener("click", function () {
         shut();
         setTimeout(onDraw, 260);
@@ -847,42 +850,124 @@
     }
   }
 
-  /* ── 5. the grid ──────────────────────────────────────────────────────── */
+  /* ── 5. the shelves ───────────────────────────────────────────────────── */
 
-  /* READING ORDER IS RANK ORDER, commons first and the legendaries last, and
-     within a rank the sheet's own order. It is worked out once: the album is a
-     shape the player learns and then fills, so a tile may not move because
-     something was drawn — only because the rank ladder says where it belongs.
+  /* ONE SHELF PER RARITY, commons first and the legendaries last, and within a
+     rank the sheet's own order. It is worked out once: the album is a shape
+     the player learns and then fills, so a tile may not move because
+     something was drawn — only because the rank ladder says where it
+     belongs. The epic and legendary shelves share a row, two tiles each.
 
-     Up the ladder rather than down it, because the four odds bars standing
-     directly over the grid are written the same way round, and the last row
-     being the one worth drawing for is the better page to end on. */
-  var ORDER = (function () {
-    var out = [], i;
-    for (i = 1; i <= MT.total(); i++) out.push(i);
-    out.sort(function (a, b) { return (MT.rarityOf(a) - MT.rarityOf(b)) || (a - b); });
+     EVERY SHELF OPENS ON ITS OWN ODDS, and on what ONE ticket would give.
+     A row of pills reading 1 2 3 4 5 reads as a quantity — "draw five
+     times?" — and four percentages in a column of their own were too far from
+     it to answer. So each shelf starts with one line: a track notched where a
+     single ticket stands, the gain the bet buys HATCHED past the notch (or,
+     on the common shelf, the share it gives up), then the chance itself in a
+     pill. The track is scaled to the most an ordinary bet can reach on that
+     rarity, so five tickets fill it; the super ticket runs past it and is
+     clamped, which is the truth — it is the one bet that is not on the
+     ladder. The rarity's name and the count sign the shelf in its
+     bottom-right corner, under the stickers they count.
+
+     Chosen in lab/sticker-album.html, round 2, VERSUS ONE: the round-1
+     layouts it came out of and the three other ways of saying "more tickets,
+     rarer stickers" it beat are still on that page. */
+  var SHELF_COLS = [8, 6, 2, 2];
+  var SHELF_MAX = [0, 80, 84, 84];                // px a tile may grow to; 0 = the column
+  var TIERS = (function () {
+    var out = [[], [], [], []], i;
+    for (i = 1; i <= MT.total(); i++) out[MT.rarityOf(i)].push(i);
     return out;
   })();
+  var shelves = [];
 
-  function paintGrid() {
-    var total = MT.total(), owned = MT.owned(), i, html = "";
-    for (var k = 0; k < ORDER.length; k++) {
-      i = ORDER[k];
-      var c = MT.count(i);
-      var cls = "al-tile r" + MT.rarityOf(i) + (c ? " have" : " ghost") +
-        (MT.shiny(i) && c ? " shiny" : "");
-      html += '<button class="' + cls + '" data-n="' + i + '">' +
-        '<span class="pic"><img src="' + MT.art(i) + '" alt=""></span>' +
-        '<span class="nm">' + (c ? MT.name(i) : "???") + "</span>" +
-        (c > 1 ? '<i class="dup">x' + c + "</i>" : "") +
-        "</button>";
+  function buildShelves() {
+    var wrap = el("div"); wrap.id = "al-shelves";
+    var pair = el("div", "al-pair"), r;
+    for (r = 0; r < 4; r++) {
+      var node = el("div", "al-sh r" + r,
+        '<div class="al-vs"><span class="al-tk"><span class="b"></span><span class="g"></span><s></s></span>' +
+        '<span class="al-ch"><u></u><b></b></span></div>' +
+        '<div class="al-row"></div>' +
+        '<div class="al-ft"><span class="nm"></span><span class="ct"></span></div>');
+      var row = node.querySelector(".al-row");
+      row.style.setProperty("--cols", SHELF_COLS[r]);
+      if (SHELF_MAX[r]) row.style.setProperty("--max", SHELF_MAX[r] + "px");
+      shelves.push({
+        node: node, row: row, ch: node.querySelector(".al-ch"),
+        fill: node.querySelector(".al-ch u"), pc: node.querySelector(".al-ch b"),
+        base: node.querySelector(".al-tk .b"), gain: node.querySelector(".al-tk .g"),
+        notch: node.querySelector(".al-tk s"),
+        nm: node.querySelector(".al-ft .nm"), ct: node.querySelector(".al-ft .ct"),
+        last: null
+      });
+      (r < 2 ? wrap : pair).appendChild(node);
     }
-    grid.innerHTML = html;
-    var nodes = grid.querySelectorAll(".al-tile");
-    for (i = 0; i < nodes.length; i++) {
-      nodes[i].addEventListener("click", (function (node) {
-        return function () { detail(+node.getAttribute("data-n")); };
-      })(nodes[i]));
+    wrap.appendChild(pair);
+    return wrap;
+  }
+
+  function pctText(v) {
+    var pc = Math.round(v * 100);
+    return pc < 1 && v > 0 ? "<1%" : pc + "%";
+  }
+
+  /* The four lines, for the bet on the machine. Written in place rather than
+     rebuilt, so a bet that moves a chance ANIMATES it — the track slides, and
+     the pill swells when the bet bought it and shrinks when it took it
+     away. */
+  function paintOdds() {
+    var now = MT.odds(bet), one = MT.odds(1), full = [0, 0, 0, 0], b, r, o;
+    for (b = 1; b <= MT.maxBet(); b++) {
+      o = MT.odds(b);
+      for (r = 0; r < 4; r++) if (o[r] > full[r]) full[r] = o[r];
+    }
+    for (r = 0; r < 4; r++) {
+      var sh = shelves[r], v = now[r], v1 = one[r], f = full[r] || 1;
+      var lo = Math.min(v1, v), hi = Math.max(v1, v);
+      var at = function (x) { return Math.min(100, x / f * 100); };
+      sh.base.style.width = at(lo).toFixed(1) + "%";
+      sh.gain.style.left = at(lo).toFixed(1) + "%";
+      sh.gain.style.width = (at(hi) - at(lo)).toFixed(1) + "%";
+      sh.gain.className = "g" + (v < v1 ? " loss" : "");
+      sh.notch.style.left = at(v1).toFixed(1) + "%";
+      sh.fill.style.width = (v * 100).toFixed(1) + "%";
+      sh.pc.textContent = pctText(v);
+      sh.ch.className = "al-ch" + (v ? "" : " nil");
+      if (sh.last != null && Math.abs(v - sh.last) > 1e-9) {
+        void sh.ch.offsetWidth;                  // restart the pulse on a second change
+        sh.ch.className += v > sh.last ? " up" : " down";
+      }
+      sh.last = v;
+    }
+  }
+
+  function paintShelves() {
+    var r, k, i, c, html, have;
+    for (r = 0; r < 4; r++) {
+      var sh = shelves[r], list = TIERS[r];
+      /* a game with no sticker of a rarity has no shelf for it */
+      sh.node.style.display = list.length ? "" : "none";
+      html = ""; have = 0;
+      for (k = 0; k < list.length; k++) {
+        i = list[k];
+        c = MT.count(i);
+        if (c) have++;
+        html += '<button class="al-tile r' + r + (c ? " have" : " ghost") + (MT.shiny(i) && c ? " shiny" : "") +
+          '" data-n="' + i + '" aria-label="' + (c ? MT.name(i) : T.unknown) + '">' +
+          '<img src="' + MT.art(i) + '" alt="">' +
+          (c > 1 ? '<i class="dup">x' + c + "</i>" : "") + "</button>";
+      }
+      sh.row.innerHTML = html;
+      sh.nm.textContent = MT.text("rarity" + (r + 1));
+      sh.ct.textContent = have + "/" + list.length;
+      var nodes = sh.row.querySelectorAll(".al-tile");
+      for (k = 0; k < nodes.length; k++) {
+        nodes[k].addEventListener("click", (function (node) {
+          return function () { detail(+node.getAttribute("data-n")); };
+        })(nodes[k]));
+      }
     }
   }
 
@@ -946,119 +1031,259 @@
     SH.setHead(T.shop, "");
   }
 
-  function paintShop() {
-    shopBody.innerHTML = "";
+  /* ONE TILE, the shape every product of the grid is sold in: the piece on
+     its own light, the name, what the player already holds of it, and the
+     price at the foot. NO SENTENCE: the shelf is read by its pieces, names
+     and prices, and what a product does is read on its card (`product`),
+     where it is set large enough to be read at all. Two columns of these and not a column of
+     rows — a shelf of six is read across as well as down, and a tile the
+     height of its piece has no hole in it. The tone is the piece's own
+     colour (the ticket's blue, the super's gold, the xp's green…), so the
+     light under it says what kind of thing it is before the name does.
 
-    /* 1. THE TICKET, AND THE TICKET IS THE SUBJECT. Two columns and not three
-       rows: the piece down the left at the size of the thing being sold, and
-       beside it a column that reads top to bottom — the name, the sentence
-       that explains it, the price to pay. Three full-width rows left a hole
-       beside a short title and a second one between the piece and the button;
-       a column the height of the piece has neither, and it is the order a
-       player reads a shelf in anyway.
+     The price is the button, and a dead button is the whole of "not enough
+     coins": the wallet is one row above it (see the ticket's note below). */
+  function tile(o) {
+    var t = el("section", "sh-tile " + o.tone);
+    t.appendChild(piece(o));
+    t.appendChild(el("h3", "sh-h", o.title));
+    var b = buyButton(o, null);
+    if (b.disabled) t.classList.add("off");
+    t.appendChild(b);
+    /* THE REST OF THE TILE IS A DOOR to the product at full size, which is
+       the one place its sentence is written. The price keeps its own tap. */
+    t.setAttribute("role", "button");
+    t.setAttribute("tabindex", "0");
+    t.setAttribute("aria-label", o.title);
+    t.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("button")) return;
+      product(o);
+    });
+    t.addEventListener("keydown", function (e) {
+      if (e.target === t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); product(o); }
+    });
+    return t;
+  }
 
-       The sentence is turned right down: someone who has been here twice is
-       not reading it again, and it must not compete with what they came for.
-       There is NO "not enough coins" line — the price is on the button, the
-       wallet is one row above it, and a card that tells the player off for
-       being poor says nothing the two numbers do not. The dead button is the
-       whole message. */
-    var price = MT.ticketPrice();
-    var can = MT.coins() >= price;
+  /* The piece on its light, its tag, and what the player holds of it — which
+     rides on the piece, so a tile is the same height whether it has a count
+     or not. */
+  function piece(o) {
+    var pic = el("div", "sh-pic", '<span class="sh-glow"></span>' + o.pic);
+    if (o.tag) pic.appendChild(el("b", "sh-tag", o.tag));
+    if (o.own) pic.appendChild(el("b", "sh-own", o.own));
+    return pic;
+  }
 
-    var buy = el("section", "sh-card buy");
-    buy.appendChild(el("div", "sh-ico", icon("ticket", "sh-i")));
-
-    var deal = el("div", "sh-body");
-    deal.appendChild(el("h3", "sh-h", T.buyTitle));
-    deal.appendChild(el("p", "sh-note", T.buyNote));
-    var b = el("button", "mt-btn sh-buy" + (can ? " gold" : " off"),
-      icon("coin", "mt-ci") + "<span>" + num(price) + "</span>");
-    b.disabled = !can;
+  /* The price, and the purchase behind it. `h` is the product card it sits
+     on, if any: that card goes as the coins leave, so what the purchase
+     opens or throws lands on the shop and its band. */
+  function buyButton(o, h) {
+    var b = el("button", "btn btn-buy btn-sm btn-wide sh-buy",
+      "<span>" + T.buy + '</span><span class="btn-badge">' + icon("coin") + num(o.price) + "</span>");
+    b.disabled = MT.coins() < o.price;
     b.addEventListener("click", function () {
       /* THE RECT IS TAKEN BEFORE THE TRANSACTION. Paying moves the wallet,
          every wallet repaints its screen (`MT.onChange` below) and this very
          button is one of the nodes that repaint replaces — a detached node
-         measures zero, and the ticket would be thrown from the frame's top
+         measures zero, and the piece would be thrown from the frame's top
          left corner instead of from under the finger. */
-      var from = b.getBoundingClientRect();
-      if (!MT.spend(price)) return;
-      MT.addTickets(1);
-      MT.buyFx({ cost: price, kind: "ticket", n: 1, from: from });
-      W.Sound.cue("uiScore", 0.7, 1.2, 900, 0.12);
+      var from = b.getBoundingClientRect(), before = MT.coins();
+      if (!MT.spend(o.price)) return;
+      if (h) h.close();
+      o.buy(from, before);
       paintShop();
       if (built) paintMachine();
     });
-    deal.appendChild(b);
-    buy.appendChild(deal);
-    shopBody.appendChild(buy);
+    return b;
+  }
 
-    /* 1b. THE SUPER TICKET, the same card with the one number that matters
+  /* ONE PRODUCT AT FULL SIZE: the piece, the name, the sentence the tile
+     leaves out, and the same price. Put away by a tap anywhere but the price. */
+  function product(o) {
+    MD.open({
+      kind: "sh-product " + o.tone, dismiss: true,
+      eyebrow: T.shop, title: o.title,
+      fill: function (body, close, h) {
+        body.appendChild(piece(o));
+        body.appendChild(el("p", "sh-note", o.note));
+        var b = buyButton(o, h);
+        b.classList.remove("btn-sm");         // the card's one control, at full size
+        body.appendChild(b);
+      }
+    });
+    W.Sound.cue("uiRow", 0.4, 1.05, 400, 0.06);
+  }
+
+  function roundsLeft(n) {
+    return n > 1 ? fill(T.activeN, { n: n }) : T.active1;
+  }
+
+  function paintShop() {
+    shopBody.innerHTML = "";
+    var DL = window.__DAILY__;
+
+    /* 0. A MISSED DAY, while it can still be caught up — the one thing on this
+       screen that goes away on its own, so it is the first thing on it. Full
+       width because it is not a product of the shelf: it is a day of the road,
+       with its own face and its own name. No missed day, no card. */
+    var miss = DL && DL.active() && DL.lastMissed ? DL.lastMissed() : 0;
+    if (miss) {
+      var cPrice = DL.catchUpPrice(miss);
+      var cBox = el("section", "sh-card sh-catch");
+      cBox.appendChild(el("div", "sh-pic", '<span class="sh-glow"></span>' + DL.face(miss)));
+      var cCol = el("div", "sh-body");
+      cCol.appendChild(el("h3", "sh-h", DL.text("catchTitle")));
+      cCol.appendChild(el("p", "sh-note", DL.dayLabel(miss) + " · " + DL.kindWord(miss)));
+      var cb = el("button", "btn btn-buy btn-sm sh-buy",
+        "<span>" + DL.text("catchUp") + '</span><span class="btn-badge">' + icon("coin") + num(cPrice) + "</span>");
+      cb.disabled = MT.coins() < cPrice;
+      cb.addEventListener("click", function () {
+        /* The road pays it the way it pays today — the prize card, or the
+           three boxes on a gift day — over this screen, whose band is where
+           the reward lands. */
+        if (DL.recover(miss)) paintShop();
+      });
+      cCol.appendChild(cb);
+      cBox.appendChild(cCol);
+      shopBody.appendChild(cBox);
+    }
+
+    var grid = el("div", "sh-grid");
+
+    /* 1. THE TICKET, AND THE TICKET IS THE SUBJECT: the first tile, the one
+       the coins were always for. The sentence is turned right down: someone
+       who has been here twice is not reading it again, and it must not
+       compete with what they came for.
+
+       There is NO "not enough coins" line — the price is on the button, the
+       wallet is one row above it, and a card that tells the player off for
+       being poor says nothing the two numbers do not. The dead button is the
+       whole message. */
+    grid.appendChild(tile({
+      tone: "ticket", pic: icon("ticket", "sh-i"),
+      title: T.buyTitle, note: T.buyNote, price: MT.ticketPrice(),
+      buy: function (from) {
+        MT.addTickets(1);
+        MT.buyFx({ cost: MT.ticketPrice(), kind: "ticket", n: 1, from: from });
+        W.Sound.cue("uiScore", 0.7, 1.2, 900, 0.12);
+      }
+    }));
+
+    /* 1b. THE SUPER TICKET, the same tile with the one number that matters
        changed. Fifteen ordinary tickets' worth of coins for one pull, and a
        legendary about one time in three — a price nobody reaches by accident,
        for the one thing in this shop a player can want after they own most of
-       the board. It is the same two columns as the ticket above it on purpose:
-       two cards that differ only in their piece, their price and their
-       sentence are two cards a player can compare at a glance, which is the
-       whole job of a shop with two things in it.
+       the board. Beside the ticket on purpose: two tiles that differ only in
+       their piece, their price and their sentence are compared at a glance.
 
-       HOW MANY YOU OWN IS ON THE CARD. There is no chip for it in the wallet —
+       HOW MANY YOU OWN IS ON THE TILE. There is no chip for it in the wallet —
        it is spent in one place — so the count lives where it is bought and
-       where it is spent, and nowhere else. It rides in the column with the
-       sentence, where an extra row under the card would have opened the hole
-       this layout exists to close. */
-    var sPrice = MT.superPrice();
-    var sCan = MT.coins() >= sPrice;
+       where it is spent, and nowhere else. */
+    grid.appendChild(tile({
+      tone: "super", pic: icon("ticketSuper", "sh-i"),
+      title: T.superTitle, note: T.superNote, price: MT.superPrice(),
+      own: MT.supers() > 0 ? fill(T.superOwn, { n: MT.supers() }) : "",
+      buy: function (from, before) {
+        MT.addSupers(1);
+        /* No flight: `buyFx` throws the piece into the wallet chip that holds
+           it, and this one has no chip. What the player watches instead is the
+           coins leaving and the count on this tile going up under their
+           finger, which is the same beat without a destination invented. */
+        MT.spendFx(before, MT.coins());
+        W.Sound.cue("uiStar", 0.8, 1.45, 1180, 0.16, "triangle");
+      }
+    }));
 
-    var sBuy = el("section", "sh-card buy super");
-    sBuy.appendChild(el("div", "sh-ico", icon("ticketSuper", "sh-i")));
+    /* 2. THE MYSTERY GIFT — the three-box ceremony, bought. The boxes hold
+       tickets, xp or a sticker and never coins (`MT.mysteryReward`), and the
+       ad that multiplies a gift is not offered on one: the price is what was
+       paid for it. The card opens over this screen, so what it pays flies
+       into the band above. */
+    var art = W.CONFIG.shellArt || {};
+    grid.appendChild(tile({
+      tone: "gift",
+      pic: art.giftClose02 ? '<img class="sh-i art-i" alt="" src="' + art.giftClose02 + '">' : icon("gift", "sh-i"),
+      tag: "?", title: T.giftTitle, note: T.giftNote, price: MT.giftPrice(),
+      buy: function (from, before) {
+        MT.spendFx(before, MT.coins());
+        W.Sound.cue("uiScore", 0.75, 1.1, 900, 0.14);
+        setTimeout(function () {
+          MT.gift({ roll: MT.mysteryReward, boost: false,
+                    eyebrow: T.giftTitle, gotEyebrow: T.giftTitle });
+        }, 260);
+      }
+    }));
 
-    var sDeal = el("div", "sh-body");
-    sDeal.appendChild(el("h3", "sh-h", T.superTitle));
-    sDeal.appendChild(el("p", "sh-note", T.superNote));
-    if (MT.supers() > 0) {
-      sDeal.appendChild(el("p", "sh-note own", fill(T.superOwn, { n: MT.supers() })));
-    }
-    var sb = el("button", "mt-btn sh-buy" + (sCan ? " gold" : " off"),
-      icon("coin", "mt-ci") + "<span>" + num(sPrice) + "</span>");
-    sb.disabled = !sCan;
-    sb.addEventListener("click", function () {
-      if (!MT.spend(sPrice)) return;
-      MT.addSupers(1);
-      /* No flight: `buyFx` throws the piece into the wallet chip that holds
-         it, and this one has no chip. What the player watches instead is the
-         coins leaving and the count on this card going up under their finger,
-         which is the same beat without a destination invented for it. */
-      MT.spendFx(MT.coins() + sPrice, MT.coins());
-      W.Sound.cue("uiStar", 0.8, 1.45, 1180, 0.16, "triangle");
-      paintShop();
-      if (built) paintMachine();
-    });
-    sDeal.appendChild(sb);
-    sBuy.appendChild(sDeal);
-    shopBody.appendChild(sBuy);
+    /* 3. THE XP PACK — a fixed amount, at a price that follows the level
+       (meta.js, section 1). The bar in the band runs on the spot, and a level
+       crossed is handed over here with its card, since this is where it was
+       bought — the village has nothing left to announce. */
+    var pack = MT.xpPack();
+    grid.appendChild(tile({
+      tone: "xp", pic: icon("xp", "sh-i"), tag: "+" + num(pack),
+      title: T.xpTitle, note: fill(T.xpNote, { n: num(pack) }), price: MT.xpPrice(),
+      buy: function (from, before) {
+        var x0 = MT.xp(), levels = MT.addXp(pack);
+        MT.spendFx(before, MT.coins());
+        W.Sound.cue("uiStar", 0.7, 1.3, 1040, 0.14, "triangle");
+        setTimeout(function () {
+          MT.fx({ kind: "xp", n: pack, from: from, before: x0, big: true, spread: 75,
+                  done: function () { if (levels) setTimeout(function () { MT.levelUp(levels); }, 700); } });
+        }, 170);
+      }
+    }));
 
-    /* 2. the doubles. The list is the inventory and the button is the whole
-       trade: a player with eleven doubles is not going to tap eleven times.
+    /* 4. THE BOOSTS, counted in rounds and never in minutes. What is left of
+       one is written on its tile, because that is the only place it is read
+       before the round spends it. */
+    var bo = MT.boosts(), bPrice = MT.boostPrice();
+    grid.appendChild(tile({
+      tone: "coins", pic: icon("coin", "sh-i"), tag: "×2",
+      title: T.coinBoostTitle, note: T.coinBoostNote, price: bPrice,
+      own: bo.coins ? roundsLeft(bo.coins) : "",
+      buy: function (from, before) {
+        MT.addBoost("coins");
+        MT.spendFx(before, MT.coins());
+        W.Sound.cue("uiStar", 0.75, 1.2, 980, 0.14, "triangle");
+      }
+    }));
+    grid.appendChild(tile({
+      tone: "xp", pic: icon("xp", "sh-i"), tag: "×2",
+      title: T.xpBoostTitle, note: fill(T.xpBoostNote, { n: MT.boostXpRounds() }), price: bPrice,
+      own: bo.xp ? roundsLeft(bo.xp) : "",
+      buy: function (from, before) {
+        MT.addBoost("xp");
+        MT.spendFx(before, MT.coins());
+        W.Sound.cue("uiStar", 0.75, 1.2, 980, 0.14, "triangle");
+      }
+    }));
 
-       A PLAYER WITH NO DOUBLES GETS NO CARD. An empty frame explaining its own
-       emptiness is a second product on a screen that sells one, and it is the
-       first thing a new player sees here — the shop should look like a shop
-       with one thing in it, not like a shop that is broken. */
+    shopBody.appendChild(grid);
+    /* 5. the doubles, AS ONE BUTTON: the stickers it sells are drawn in it,
+       each with its count, then the word and what it pays. The button is
+       the whole trade — a player with eleven doubles is not going to tap
+       eleven times — and a card with a heading around it was the height
+       that pushed the sale under the fold.
+
+       A PLAYER WITH NO DOUBLES GETS NO BUTTON. An empty frame explaining its
+       own emptiness is a second product on a screen that sells one, and it
+       is the first thing a new player sees here — the shop should look like
+       a shop with one thing in it, not like a shop that is broken. */
     var list = MT.dupes();
     if (list.length) {
-      var sellBox = el("section", "sh-card col");
-      sellBox.appendChild(el("h3", "sh-h", T.sellTitle));
-      var row = el("div", "sh-dupes"), total = 0, i;
+      var total = 0, copies = 0, i, pics = "";
       for (i = 0; i < list.length; i++) {
         var n = list[i], extra = MT.count(n) - 1;
         total += MT.sellPrice(n) * extra;
-        row.innerHTML += '<span class="sh-dup"><img src="' + MT.art(n) + '" alt="">' +
-          '<i>x' + extra + "</i></span>";
+        copies += extra;
+        if (i < SELL_SHOWN) pics += '<img class="sh-dup" src="' + MT.art(n) + '" alt="">';
       }
-      sellBox.appendChild(row);
-      var all = el("button", "mt-btn gold",
-        "<span>" + T.sellAll + "</span>" + icon("coin", "mt-ci") + "<span>" + num(total) + "</span>");
+      var word = up(fill(copies === 1 ? T.sell1 : T.sellN, { n: copies }));
+      var all = el("button", "btn btn-buy btn-wide sh-sell",
+        '<span class="sh-dupes">' + pics + "</span><span>" + word +
+        '</span><span class="btn-badge">' + icon("coin") + num(total) + "</span>");
+      all.setAttribute("aria-label", word);
       all.addEventListener("click", function () {
         /* THE COINS ARE WATCHED INTO THE WALLET, not announced in a pill. A
            shelf of doubles becoming money is a TRANSFER — the same shape as a
@@ -1074,12 +1299,12 @@
           W.Sound.cue("uiScore", 0.7, 1.35, 1000, 0.12);
         }
         paintShop();
-        if (built) paintGrid();
+        if (built) paintShelves();
       });
-      sellBox.appendChild(all);
-      shopBody.appendChild(sellBox);
+      shopBody.appendChild(all);
     }
   }
+  var SELL_SHOWN = 4;                       // stickers fanned in the sale button
 
   /* ── 7. open / close ──────────────────────────────────────────────────── */
 
@@ -1100,7 +1325,7 @@
      screen rather than for these two (packages/webshell/view.js). */
   function showAlbum() {
     paintMachine();
-    paintGrid();
+    paintShelves();
     Machine.refresh();                // the frame may have been resized under it
     MT.markSeen();
   }
@@ -1113,7 +1338,7 @@
      a ticket bought in the shop has to grey the machine's button in, and a
      sticker earned on the end screen has to fill its tile. */
   MT.onChange(function () {
-    if (VW.isOpen("sticker")) { paintMachine(); paintGrid(); }
+    if (VW.isOpen("sticker")) { paintMachine(); paintShelves(); }
     if (VW.isOpen("shop")) paintShop();
   });
 
@@ -1157,11 +1382,9 @@
     T = STRINGS[LANG];
     if (built) {
       S.setHead(T.album, "");
-      var labels = ctl.querySelectorAll(".al-lbl");
-      labels[0].textContent = T.perDraw;
-      labels[1].textContent = T.chances;
+      ctl.querySelector(".al-lbl").textContent = T.perDraw;
       paintMachine();
-      paintGrid();
+      paintShelves();
     }
     if (shopBuilt) {
       SH.setHead(T.shop, "");

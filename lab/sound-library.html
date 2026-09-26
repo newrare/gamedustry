@@ -144,7 +144,7 @@ body {
   function play(f, row) {
     if (playing) playing.pause();
     if (playingRow) playingRow.classList.remove("playing");
-    const a = audio[f.file] || (audio[f.file] = new Audio("/sfx/" + encodeURIComponent(f.file)));
+    const a = audio[f.file] || (audio[f.file] = new Audio("sfx/" + encodeURIComponent(f.file)));
     a.volume = vol();
     try { a.currentTime = 0; } catch (e) {}
     a.play().catch(() => toast("cannot play " + f.file));
@@ -254,13 +254,13 @@ body {
 
   // ---- load -----------------------------------------------------------------
   if (location.protocol === "file:") {
-    el("list").innerHTML = `<div id="offline">This page reads the library off the events server. Run <code>make events</code> and open <code>http://localhost:8092/library</code>.</div>`;
+    el("list").innerHTML = `<div id="offline">This page reads the library off the events server. Run <code>make lab</code> and open <code>http://localhost:8095/events/library</code>.</div>`;
     el("count").textContent = "no server";
     return;
   }
   Promise.all([
-    fetch("/api/sfx").then((r) => r.json()),
-    fetch("/api/sfx-usage").then((r) => r.json()).catch(() => ({}))
+    fetch("api/sfx").then((r) => r.json()),
+    fetch("api/sfx-usage").then((r) => r.json()).catch(() => ({}))
   ]).then(([files, usage]) => {
     S.files = files.filter((f) => f.seconds != null).map((f) => ({ ...f, stem: f.stem || f.label })).sort((a, b) => a.file.localeCompare(b.file));
     S.usage = usage;

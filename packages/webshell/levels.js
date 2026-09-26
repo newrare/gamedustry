@@ -260,13 +260,17 @@
      they cost. A game that splits at 1/7/13/19/25 lists those numbers here and
      the card names the world the round will actually build; a game that reads
      its band off `d` (echomaze) leaves `from` out and gets the map's. */
-  function bandName(n) {
-    var b = (SPEC && SPEC.bands) || null, list, i = bandOf(n), j;
-    if (!b) return up(T.bands[i]);
-    if (b.from && b.from.length) {
+  function bandIndex(n) {
+    var b = (SPEC && SPEC.bands) || null, i = bandOf(n), j;
+    if (b && b.from && b.from.length) {
       i = 0;
       for (j = 0; j < b.from.length; j++) if (n >= b.from[j]) i = j;
     }
+    return i;
+  }
+  function bandName(n) {
+    var b = (SPEC && SPEC.bands) || null, list, i = bandIndex(n);
+    if (!b) return up(T.bands[i]);
     list = b[LANG] || b.en;
     return up((list && list[i]) || T.bands[Math.min(i, T.bands.length - 1)]);
   }
@@ -431,10 +435,16 @@
   /* One write, on endRound, merge-max: a bad replay never takes a star away.
      Nothing records what got unlocked — clearing the level is what unlocks its
      successors, and isOpen() reads it back. */
-  function record(n, stars, value) {
+  /* `r` is the round's SCORE, kept beside `b` because the two part ways on
+     the three games whose objective is a distance (arcider, triverse,
+     vipera): `b` is what the stars are read against, `r` is what the ranking
+     adds up. It arrived after the save did, so a record written before it has
+     none, and `scoreOf` falls back to the measure. */
+  function record(n, stars, value, score) {
     var rec = save.l[n] || { s: 0, b: 0, p: 0 };
     rec.s = Math.max(rec.s, stars);
     rec.b = Math.max(rec.b, value);
+    rec.r = Math.max(rec.r || 0, score || 0);
     rec.p++;
     save.l[n] = rec;
     persist();
@@ -451,6 +461,31 @@
   }
 
   function wipe() { save = { v: 1, l: {} }; persist(); }
+
+  function scoreOf(rec) { return rec.r != null ? rec.r : rec.b; }
+
+  /* THE BOARD, AS THE RANKING READS IT (packages/webshell/menu.js, 5a): one
+     row per level of the climb, then level 0 and the endless star as flags
+     beside them. A snapshot and never a reference into the save, so the
+     screen that reads it cannot write it. */
+  function board() {
+    var rows = [], n, rec, sum = 0, tries = 0, done = 0;
+    for (n = 1; n <= LEVELS; n++) {
+      rec = save.l[n];
+      rows.push({
+        n: n, band: bandIndex(n), bandName: bandName(n),
+        stars: rec ? rec.s : 0, best: rec ? scoreOf(rec) : 0, tries: rec ? rec.p : 0,
+        played: !!rec, open: isOpen(n), playable: canPlay(n)
+      });
+      if (rec) { sum += scoreOf(rec); tries += rec.p; if (rec.s > 0) done++; }
+    }
+    return {
+      rows: rows, levels: LEVELS, stars: totalStars(), max: MAX_STARS,
+      cleared: done, sum: sum + (save.e || 0), tries: tries + (save.ep || 0),
+      tuto: tutoSeen(), bonus: perfect(), bonusN: BONUS,
+      endless: save.e || 0, endlessTries: save.ep || 0
+    };
+  }
 
   /* ── 3c. the bands, as the meta layer collects them ───────────────────── */
 
@@ -589,7 +624,9 @@
      already works: the level is written before startGame() and the game reads
      it when it resets. A game that never looks at it still gets its tuned
      knobs. */
+  var endless = false;
   function arm(n) {
+    endless = n === BONUS;
     CONFIG.level = n === BONUS ? 0 : n;
     tune(n === BONUS ? null : dOf(n));
   }
@@ -609,6 +646,14 @@
   function onResult(result) {
     var n = CONFIG.level;
     last = null;
+    /* The endless run earns no star, but it is the thirty-first line of the
+       ranking, so its best score and its tries are kept — beside the levels
+       rather than among them, since nothing on the map is derived from it. */
+    if (ON && !n && endless) {
+      save.e = Math.max(save.e || 0, result.score || 0);
+      save.ep = (save.ep || 0) + 1;
+      persist();
+    }
     if (!ON || !n) return;                      // the endless run scores nothing
     var value = result.levelScore == null ? result.score : result.levelScore;
     var st = starsEarned(n, value);
@@ -639,7 +684,7 @@
                   grade: st === 3 ? "gold" : st ? "accent" : "" }];
     result.rows = rows.concat(result.rows || []).slice(0, 4);
 
-    record(n, st, value);
+    record(n, st, value, result.score);
     last = { level: n, stars: st, cleared: st > 0 };
   }
 
@@ -1261,7 +1306,7 @@
     cFlames = cDiff.querySelector(".flames");
     body.appendChild(main);
     body.appendChild(cDiff);
-    cPlay = el("button"); cPlay.id = "lv-play";
+    cPlay = el("button", "btn btn-lg btn-wide btn-shiny"); cPlay.id = "lv-play";
     cPlay.addEventListener("click", onPlay);
     card.appendChild(body);
     card.appendChild(cPlay);
@@ -1608,7 +1653,7 @@
       var chips = "";
       for (i = 0; i < rd.nodes.length; i++) {
         var m = rd.nodes[i];
-        chips += '<button data-lv="' + m + '">' + m +
+        chips += '<button class="btn btn-sm btn-plate" data-lv="' + m + '">' + m +
           (played(m) ? " <s>" + starsOf(m) + "&#9733;</s>" : "") + "</button>";
       }
       cChips.innerHTML = chips;
@@ -1633,7 +1678,7 @@
     cNote.innerHTML = take.length ? T.findHere : T.playOn;
     var out = "";
     for (i = 0; i < take.length && i < 4; i++)
-      out += '<button data-lv="' + take[i].n + '">' + take[i].n +
+      out += '<button class="btn btn-sm btn-plate" data-lv="' + take[i].n + '">' + take[i].n +
              ' <s>+' + take[i].gain + "&#9733;</s></button>";
     cChips.innerHTML = out;
     bindChips();
@@ -1811,7 +1856,7 @@
        FREE round rather than a level — the map belongs to the default mode.
        Clearing is what stops the level armed by the last round from following
        a mode launch: CONFIG.level is a field, not a screen. */
-    clear: function () { if (ON) { CONFIG.level = 0; tune(null); } },
+    clear: function () { if (ON) { endless = false; CONFIG.level = 0; tune(null); } },
 
     open: function () { if (ON) VW.go("map"); },
     close: function () { if (VW.isOpen("map")) VW.back(); },
@@ -1843,6 +1888,11 @@
     text: function (key) { return T[key]; },
     perfect: function () { return ON && perfect(); },
     total: function () { return totalStars(); },
+    /* Every level's stars, best score and tries, for the ranking. */
+    board: function () { return ON ? board() : null; },
+    /* A level started from somewhere else than the map — the ranking's table.
+       Same gate as a tap on its node: a shut level does not start. */
+    play: function (n) { if (ON) play(n); },
     /* What packages/webshell/meta.js reads the climb back through — the five
        bands and the two completions, nothing else. */
     bands: bandsState,

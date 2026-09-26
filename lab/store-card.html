@@ -70,6 +70,7 @@
    That needs the small local server, which is also what lists the palettes:
 
      node tools/lab/serve-store.mjs      →  http://localhost:8091/
+     make lab                            →  http://localhost:8095/store/
 
    Opened over file:// the page still composes and previews (that is how
    tools/lab/shoot-store.mjs drives it for the batch shoot), but the palettes
@@ -354,7 +355,7 @@ if (SHOOT) document.body.classList.add("shoot");
    Over file:// neither is possible, so the palettes are guessed and Save is
    off — see the header comment. */
 var SERVED = location.protocol === "http:" || location.protocol === "https:";
-var BASE = SERVED ? "/assets/" : "../assets/";
+var BASE = SERVED ? "assets/" : "../assets/";
 
 /* `panels` is how many images one card is cut into on the way out: three for
    the triptych, one — and unstated — for everything else. The authored width
@@ -2044,7 +2045,7 @@ function adoptComp(c) {
 
 function savePreset(key, comp, thenSay) {
   if (!SERVED) { said(""); warn("no server — a layout cannot be saved over file://"); return; }
-  fetch("/api/preset", {
+  fetch("api/preset", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key: key, comp: comp })
@@ -2110,7 +2111,7 @@ function exportDataURI(panel) {
    tools/lab/serve-store.mjs). It only reads, so asking to show the name costs
    nothing and the answer is the same one the save uses. */
 function nextNames(slug) {
-  return fetch("/api/next?slug=" + encodeURIComponent(slug) +
+  return fetch("api/next?slug=" + encodeURIComponent(slug) +
     "&format=" + state.format + "&count=" + panels())
     .then(function (r) { return r.json(); })
     .then(function (r) {
@@ -2131,7 +2132,7 @@ function showNext() {
 }
 
 function postImage(slug, lang, name, data) {
-  return fetch("/api/save", {
+  return fetch("api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -2423,11 +2424,11 @@ function boot() {
       "image into <code>assets/image/&lt;store&gt;/</code>, <b>EN and FR</b>."
     : "<b>Opened over file://</b> — the manifests cannot be read from here, so " +
       "there is <b>no tagline to pick</b> and no other game's assets, and Save " +
-      "is off. Run <code>make store</code> and open " +
-      "<code>http://localhost:8091/</code>.";
+      "is off. Run <code>make lab</code> and open " +
+      "<code>http://localhost:8095/store/</code>.";
 
   var got = SHOOT ? shootCatalogue()
-    : SERVED ? fetch("/api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
+    : SERVED ? fetch("api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
         CAT = c;
         if (!CAT.presets) CAT.presets = { presets: {} };
       }).catch(function () { return guessCatalogue(); })

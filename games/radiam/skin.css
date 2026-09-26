@@ -25,7 +25,6 @@
     --scene-scrim:rgba(7,5,18,.34);
   }
   html, body { background:radial-gradient(820px 900px at 50% 42%, #1a1440 0%, #0c0824 54%, #050310 100%); }
-  .btn { box-shadow:0 10px 30px rgba(255,138,31,.42), inset 0 2px 6px rgba(255,255,255,.4); }
   #intro-title {
     background:linear-gradient(180deg,#ffffff,#8b6cff);
     -webkit-background-clip:text; background-clip:text; color:transparent;

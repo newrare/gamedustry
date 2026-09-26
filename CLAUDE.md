@@ -263,15 +263,20 @@ line under it, the body — the one region that scrolls — and a bar at the foo
 carrying the view's pages as tabs, then home, help and options after a filet — that house is the way home there, so the band drops its own over a sheet. A view
 with one page has no tabs. A view writes its body and names its pages; the
 ground, the veil, the header, the bar and the entrance are the sheet's, so a
-new room is never a new screen structure. Chosen in `lab/view-frame.html`; see
+new room is never a new screen structure. **Pulled down, a sheet goes** — by
+finger or by mouse, from the header or from a body scrolled to its top, and it
+is `back()`, the same answer as ESCAPE; a control that drags on its own opts
+out with `data-nopull`. Chosen in `lab/view-frame.html`; see
 [docs/VIEWS.md](docs/VIEWS.md).
 
 **There is no back arrow in it.** A back arrow answers "where did I come from",
 and the player does not care — they care where they are going. The **wallet band
-IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, each chip the
+IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 | 3/20 · 12/90`, each chip the
 door to the screen it is the number of — home, the ranking, the shop, the
-collection, the collection, the map. The album's count is that first chip and not its
-title, which names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
+collection, the map. The tickets and the album's count are ONE chip, two figures
+behind one filet, because both open the collection and two chips leading to one
+screen read as two places; the count lives there and not in the album's title,
+which names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
 inert rather than missing, so a number is never one to find again — the house
 alone is dropped on the bare village, since it is only a door and that door is
 the screen under it, and over every sheet, whose own bar carries it bottom right
@@ -326,7 +331,12 @@ What a view brings:
 - **the menu bottom-right**, one entry per line, flush against the right edge:
   **PLAY / LEADERBOARD / OPTIONS / HELP**. PLAY *is* the motor's `#btn-start`,
   restyled — which is what keeps `startGame`, the SPACE key and the audio
-  unlock gesture exactly as they were. LEADERBOARD opens the **ranking view**;
+  unlock gesture exactly as they were. LEADERBOARD opens the **ranking view**
+  — two tabs until an online board exists: RECORDS, one screen with no scroll
+  (the summed best score of every level under the trophy, the player level,
+  stars, stickers and levels cleared, the climb's figures opening LEVELS on a
+  tap) and LEVELS (level 0, the thirty in their bands, the endless star),
+  both ending on the line that says online rankings come in a future update;
   the other two open **cards**, and the title screen is the one surface that
   lists them as entries because a front door lists what is behind it.
   **A game with a VILLAGE shows none of it**: the hub already draws every door
@@ -487,8 +497,9 @@ What a view brings:
   not there land nowhere: on a village that is the hub the player is already
   standing on — the road card steps aside and the boxes take its place, and the
   map is never involved — and on a game with no hub the tap does what PLAY does
-  and opens the LEVEL MAP under it. On `localhost` it pays on every tap and says
-  so with a DEV pill on that same card. `meta:<slug>` is the save, kept
+  and opens the LEVEL MAP under it. On `localhost` it pays on every tap, and
+  the wallet band says so with a DEV pill in front of the level chip — the one
+  DEV pill the front end draws. `meta:<slug>` is the save, kept
   apart from `prog:<slug>` because the two are written on different screens —
   OPTIONS erases both in one row.
   **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
@@ -514,6 +525,13 @@ What a view brings:
   currency (`save.st`) and it has **no chip in the wallet**: the wallet is
   what can be spent anywhere, and this is spent in one place — the shop card
   it is bought on and the pill it is spent from are where it is counted.
+  **The shop around it is a grid of six tiles** — the ticket, the super
+  ticket, a mystery gift (the three boxes, which never pay coins), an xp pack
+  priced at the player's own level, and two boosts counted in ROUNDS and never
+  in minutes (double coins on the next round, double xp on the next three) —
+  plus, over the grid, a missed day of the daily road, caught up for a week at
+  a share of its average worth. Every price is derived from the ticket or from
+  the rates a round pays at (`packages/webshell/meta.js`, section 1).
   The wallet's two chips are the doors to the shop, here as on the map — and IN
   the shop only the blue one is a door, back to the album, because the gold
   one's door is the screen it is standing on; there is
@@ -522,9 +540,13 @@ What a view brings:
   through one engine**, `Meta.fx` — the end screen's cascade, a reward flying
   out of its card, a purchase, a price, a shelf of doubles sold — so a screen
   that pays says so the same way every other one does (see
-  [docs/META.md](docs/META.md)). The album is **one screen and does not scroll**: the
-  machine down the left, the bet and the odds beside it, the twenty tiles under
-  both. A sticker the player has never had arrives on a flash, a shockwave and a
+  [docs/META.md](docs/META.md)). The album is **the machine over the shelves**:
+  the machine and the bet in a band at the top, then one shelf per rarity, and
+  every shelf **opens on its own odds read against ONE ticket** — a track
+  notched where a single ticket stands, the gain the bet buys hatched past it,
+  the chance in a pill, the rarity and its count in the shelf's corner — so
+  "more tickets, rarer stickers" is read before a ball moves
+  (`lab/sticker-album.html`). A sticker the player has never had arrives on a flash, a shockwave and a
   plated gold NEW tag; a double **burns off** — embers out of a lava glow and a
   tag that whispers. **Neither card closes itself and neither sells anything**:
   a tap anywhere puts it away, and the one control left is DRAW AGAIN wearing
@@ -569,12 +591,14 @@ What a view brings:
   hand slot for a turn and sends it to the INFIRMARY for two real days; the
   winner's standing above the loser's leaves the loser **STANDING**, and a won
   battle offers one of those as a PRISONER, who turns after five real days and
-  then enlists. Both waits are bought out with the shell's rewarded-ad
+  then enlists. The wound is bought out with the shell's rewarded-ad
   placeholder, because a player whose three best cards are in bandages has
-  nothing to do for two days, which is not a mechanic. Four more doors on the
+  nothing to do for two days, which is not a mechanic; the prisoner's five days
+  and a squad's mission are not, because a wait that blocks nothing is the
+  reason to come back. Four more doors on the
   hub — DECK, INFIRMARY, PRISON and the CAMP — and every one of them is a VIEW
   and not a card, because each is a place with a list to manage and a screen a
-  stray tap can close is not a screen anything is composed on. The camp has two
+  stray tap can close is not a screen anything is composed on. The camp has four
   tabs. RECRUITS spends the meta layer's own coins and never sells the three
   specials: a spy, a scout and a sapper are ANSWERS to something, and a tent
   that sold them would be selling the solution rather than the army. MISSIONS
@@ -584,6 +608,10 @@ What a view brings:
   until it is back, the outcome is drawn at the departure, and it comes back
   with a report written in the scenario's own words — what it paid (coins, xp,
   tickets, a sticker, an officer) or what it cost (wounds, cards lost, coins).
+  CAMP holds five posts (infirmary, prison, formation, missions, camp), filled
+  with the deck's own picker — a card at a post is out of the deck, the squads
+  and every battle — over the roll of every card the camp holds and what it is
+  doing; REGISTER lists every card lost, with where and when.
   The layer says exactly one thing
   to the game — `CONFIG.army.deck`, read fresh by `Game.reset()` — and the
   battle hands back exactly one thing, `result.army`, which rides on `endRound`
@@ -596,7 +624,15 @@ What a view brings:
   lore are read on the back of the card, and whose portrait is cut four to a
   sheet by `tools/lab/cast-sheets.mjs` — plus each red officer again in the
   blue uniform, for a prisoner who enlisted (180 portraits); web-only, never
-  preloaded (`CONFIG.artLazy`). See [docs/ARMY.md](docs/ARMY.md).
+  preloaded (`CONFIG.artLazy`). **And every officer is ONE person**: the camp
+  never holds the same one twice, whatever door they came through. A card
+  played in a battle, sent on a mission or holding a post counts a service,
+  and a victory rolls it up one tier (about one chance in five,
+  `web.army.promotion`) — the face climbs, the portrait and the back of the
+  card keep the tier it was raised at, and a card says so on a PROMOTION card.
+  A card lost is written in the register with its cause, told once on an IN
+  MEMORIAM card at the village, and the tent may find it alive again. See
+  [docs/ARMY.md](docs/ARMY.md).
 
 **A game that declares `web.village` gets the VILLAGE**, a view between the
 title screen and the map, and it is the place the player lives:
@@ -1185,12 +1221,22 @@ side by side in one look — options, the daily road, the three boxes, a
 sticker's detail, a new sticker, the ad, the enemy camp — because a look is
 judged on its coherence, in any of the fifteen palettes and both languages.
 `#view=gallery&preset=0&game=vipera` opens a state without the panel. **Preset
-`A · Chosen` is what ships** — bevel, centred, gold title, corner pill,
-shimmering tap line, pop — as the CARD block of `packages/shell/motor.css`,
+`A · Chosen` is what ships** — bevel with a 1 px rim over a 70 % fill,
+centred, accent title, corner pill, shimmering tap line, pop — as the CARD block of `packages/shell/motor.css`,
 which is the motor's so a game's own sheets wear it too (`games/stratideck`'s
 camp and army lists over a round); `packages/webshell/view.js` builds the slots
 and `view.css` only places the card. The other presets are the record of what
 it beat.
+
+`button.html` is **the button catalogue**, and it is where the ONE button
+every game draws was chosen: a short list and nothing outside it — the button
+(rest, hover, pressed, shiny, off), three sizes, danger, the icon, the switch,
+the ad (`.btn-pub`: the play glyph, the line, "watch an ad", the reward) and
+the purchase (`.btn-buy`: a word and the price on a macaron) — in ten styles
+that can be mixed field by field, in any of the palettes. **`Chosen` is what
+ships** — "Jelly" mixed flat — as the BUTTON block of
+`packages/shell/motor.css`, so no SKIN writes a button rule of its own; see
+[docs/ENGINE.md](docs/ENGINE.md#the-button--one-component-and-a-skin-never-restyles-it).
 
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
@@ -1246,6 +1292,24 @@ The events bench, the copy desk and the village composer are the second, third
 and fourth lab pages with a server of their own (`make events`, `make text`,
 `make village`), for the same two reasons as the store composer plus one more:
 Apply writes.
+
+**`make lab` puts all of them on one port, behind a back office**
+(`tools/lab/serve-lab.mjs`, `http://localhost:8095/`). `lab/index.html` lists
+every page of `lab/`, read off the pages themselves (the `<title>` and the
+headline of the header comment, so a new page is listed with nothing to
+register), and opens each one in a frame beside the list; the hash is the
+location, so a reload comes back to the same page. The four tools with a server
+are **proxied under a prefix** — `/events/` (and `/events/library`), `/text/`,
+`/store/`, `/village/` — each one the same script its own target runs, started
+in **its own process** the first time it is opened: the copy desk's scan is
+~18 s of synchronous CPU, and in a shared process it froze every other tool.
+That prefix is why a page served by a tool **addresses it with relative urls**
+(`api/games`, never `/api/games`) — a new tool page must too. Every other page
+is served as a file under `/lab/`, with `assets/`, `games/` and `packages/`
+read-only beside it, which is what its `../` paths already reach. All of these
+servers sit on `tools/lib/serve.mjs`: they bind `127.0.0.1`, answer only a
+`Host` naming this machine, and a new lab server starts from it rather than
+from `createServer`.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see

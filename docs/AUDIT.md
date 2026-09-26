@@ -16,31 +16,18 @@ not.
 The real attack surface is small: there is no server in production (Vercel
 serves static files, itch serves one HTML file), no third-party dependency
 (no `package.json`, no `node_modules`), and no external URL in the games or
-the site beyond the store links. What is exposed is the **five lab servers
+the site beyond the store links. What is exposed is the **lab servers
 while they run** — and what they are allowed to write into the repo.
 
-### 1.1 The lab servers bind every interface, with no auth and no Origin check — HIGH
+### 1.1 The site loop binds every interface — MEDIUM
 
-`tools/lab/serve-site.mjs:151`, `serve-store.mjs:305`, `serve-events.mjs:231`,
-`serve-text.mjs:170`, `serve-village.mjs:613` all call `listen(PORT)` with no
-host, which binds `::` — reachable from the whole LAN. Only
-`tools/test/views.mjs:66` binds `127.0.0.1`.
+The four lab tools and `make lab` now run on `tools/lib/serve.mjs`, which
+binds `127.0.0.1` and refuses any request whose `Host` is not this machine.
+`tools/lab/serve-site.mjs:158` is the one left: `listen(PORT)` with no host
+binds `::`, reachable from the whole LAN. It writes nothing, so what it
+exposes is the built site, not the repo.
 
-None of them reads `Origin` or `Host`, and every `POST` body is `JSON.parse`d
-whatever its `Content-Type`. A `POST` sent as `text/plain` is a CORS "simple
-request": the browser sends it without a preflight, so **any web page open in
-the developer's browser** can reach the write endpoints:
-
-| server          | route             | writes                                                    |
-| --------------- | ----------------- | --------------------------------------------------------- |
-| `serve-events`  | `POST /api/apply` | `games/<slug>/game.js`, bumps `manifest.json`, rebuilds   |
-| `serve-text`    | `POST /api/apply` | `game.js`, `page.html`, `manifest.json`, rebuilds         |
-| `serve-store`   | `POST /api/save`  | up to 64 MB as `assets/image/{google,itch}/{en,fr}/*.jpg` |
-| `serve-village` | `PUT /api/*`      | `lab/village-presets.json`, `manifest.json` (preflighted) |
-
-**Fix.** `listen(PORT, "127.0.0.1")` in all five, and refuse a write whose
-`Host` header is not `localhost:<PORT>` / `127.0.0.1:<PORT>`. One shared
-helper (see 3.4) does it once.
+**Fix.** Put it on `tools/lib/serve.mjs` (`listen`, `guard`), like the others.
 
 ### 1.2 `apply-events.mjs` splices request values into `game.js` unvalidated — HIGH
 
@@ -62,22 +49,20 @@ the tagline accepts `<b class="w-…">` and text nodes only.
 
 ### 1.3 One malformed request kills every dev server — MEDIUM
 
-`decodeURIComponent(url.pathname)` sits outside the `try` in all five handlers
-(`serve-site.mjs:120`, `serve-store.mjs:236`, `serve-events.mjs:112`,
-`serve-text.mjs:94`, `serve-village.mjs:535`). `GET /%` throws `URIError`,
+`decodeURIComponent(url.pathname)` sits outside the `try` in
+`serve-site.mjs:127` (the lab tools decode inside `guard()` of
+`tools/lib/serve.mjs` and answer 400). `GET /%` throws `URIError`,
 the rejection is unhandled, the process exits. An `<img src="http://localhost:8090/%">` in any page stops the dev loop.
 
 **Fix.** Wrap the decode; answer `400`.
 
-### 1.4 Reflected XSS in three 404 pages — MEDIUM
+### 1.4 Reflected XSS in the site loop's 404 — LOW
 
-`serve-site.mjs:148`, `serve-events.mjs:207`, `serve-text.mjs:153` echo the
-decoded path into `text/html` unescaped. Same origin as `/api/apply`, so a
-crafted link chains into 1.2 from the developer's own browser and bypasses
-any CORS or Private Network Access protection. `serve-store.mjs:294` and
-`serve-village.mjs:606` already answer in `text/plain`.
+`serve-site.mjs:156` echoes the decoded path into `text/html` unescaped. The
+lab tools answer in `text/plain` since they moved onto `tools/lib/serve.mjs`,
+so it no longer shares an origin with a write route.
 
-**Fix.** `text/plain` 404s everywhere.
+**Fix.** `text/plain`, through `notFound()`.
 
 ### 1.5 `vercel.json` has no CSP and no `frame-ancestors` — MEDIUM
 
@@ -104,10 +89,10 @@ any origin.
   `native/<slug>/android/keystore.properties`. `native/` is ignored and nothing
   under it is tracked, but any tool that syncs the tree ships it. Pass the
   values as `ORG_GRADLE_PROJECT_*` env from the Makefile, or `chmod 600`.
-- **Prefix check without separator.** `serve-site.mjs:136` and
-  `serve-events.mjs:197` test `file.startsWith(ROOT)` without `path.sep`;
-  `serve-store.mjs:291` and `serve-village.mjs:599` do it right. Not
-  exploitable today (no sibling `dist/site*`), fix for consistency.
+- **Prefix check without separator.** `serve-site.mjs:143` tests
+  `file.startsWith(OUT)` without `path.sep`; the lab tools go through
+  `inside()` of `tools/lib/serve.mjs`. Not exploitable today (no sibling
+  `dist/site*`), fix for consistency.
 
 ### 1.7 Checked and clean
 
@@ -285,16 +270,14 @@ from every `ASSETS.sounds`. In the split build it lands in the shared
 `manifestOf(slug)`, `hasTarget(m, t)`, `camel()`, `bumpPatch()`, on the model
 of `tools/lib/parts.mjs`. Ties in with 2.3.
 
-### 3.4 `serve-*.mjs`: HTTP boilerplate ×4 (~130 lines)
+### 3.4 `serve-site.mjs`: the one server left off `tools/lib/serve.mjs`
 
-Four `MIME` tables (each a different subset), four `json()` with two
-signatures, four body readers with three caps and two return types, two
-identical `safeSlug`, three copies of the SSE `__reload` endpoint + client
-script + `broadcast()`, four static fall-throughs with a path-escape check.
+The four lab tools share `tools/lib/serve.mjs` — `MIME`, `json`, `readJson`,
+`sendFile`, `reloadHub`, `guard`, `listen` — and `make lab` proxies them.
+`serve-site.mjs` still carries its own MIME table, SSE channel, static
+fall-through and `listen`.
 
-**Fix.** `tools/lib/serve.mjs` → `MIME`, `sendFile(res, file, root)`,
-`json(res, code, obj)`, `readJsonBody(req, cap)`, `sse()`, `localOnly(req)`.
-This is also where 1.1, 1.3 and 1.4 are fixed once.
+**Fix.** Move it onto the module; that is also where 1.1, 1.3 and 1.4 close.
 
 ### 3.5 Lab palettes hand-copied and already wrong (~110 lines + drift)
 
@@ -504,10 +487,9 @@ palette — not worth sharing.
 
 ## 5. Recommended order
 
-1. **Security, half a day, no design risk.** 1.1 bind `127.0.0.1` + `Host`
-   check, 1.3 `try` around the decode, 1.2 value validation and `\x3c`
-   escaping, 1.4 plain-text 404s, 1.5 CSP. Best done together with 3.4, which
-   is the one file they all become.
+1. **Security, half a day, no design risk.** 1.2 value validation and
+   `\x3c` escaping, 1.5 CSP, and `serve-site.mjs` onto `tools/lib/serve.mjs`
+   (3.4), which closes what is left of 1.1, 1.3 and 1.4.
 1. **Three zero-risk byte wins.** 2.4 comment strip in the build; 3.3
    `tools/lib/repo.mjs` + 3.1 `chrome.mjs` growing the launch; 3.2 the end
    screen's clips into the shell.

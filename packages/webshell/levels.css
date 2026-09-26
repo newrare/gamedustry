@@ -415,13 +415,7 @@
 /* the wall card's suggestions: the cheapest places to find the missing stars */
 #lv-chips { display:flex; gap:10px; flex-wrap:wrap; }
 #lv-chips:empty { display:none; }
-#lv-chips button {
-  display:flex; align-items:center; gap:7px; cursor:pointer;
-  padding:9px 15px; border-radius:26px; font:inherit; font-size:19px;
-  font-family:var(--web-font, inherit);
-  background:rgba(255,255,255,.08); border:2px solid var(--panel-line);
-  color:var(--text);
-}
+/* the motor's button, the plate (levels.js) */
 #lv-chips button s { text-decoration:none; color:var(--gold); font-size:16px; }
 
 /* HOW HOT THE LEVEL IS — five flames down the right of the card, under their
@@ -448,18 +442,9 @@
 .lv-fl.half { opacity:.62; }
 .lv-fl.off { color:rgba(255,255,255,.16); }
 
-#lv-play {
-  margin-top:auto; height:78px; border:0; border-radius:20px; cursor:pointer;
-  background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:var(--cta-text);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:32px; letter-spacing:3px; text-transform:uppercase;
-  box-shadow:0 8px 0 rgba(0,0,0,.4), 0 0 34px var(--cta-a);
-}
-#lv-play:disabled {
-  background:rgba(255,255,255,.09); color:rgba(255,255,255,.32);
-  box-shadow:none; cursor:not-allowed;
-}
-#lv-play:active:not(:disabled) { transform:translateY(3px); box-shadow:0 5px 0 rgba(0,0,0,.4); }
+/* the card's one action: the motor's button, large, wide and shiny
+   (levels.js); disabled when the level is shut */
+#lv-play { margin-top:auto; }
 
 /* =========================================================================
    THE ROUND — the three stars, as they are earned

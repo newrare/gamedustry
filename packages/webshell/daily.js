@@ -62,7 +62,6 @@
     en: {
       title: "Daily gift", day: "D{n}", dayLong: "Day {n}", tapDay: "Tap a day",
       pick: "Pick one",
-      dev: "Dev",
       locked: "Locked", next: "Next gift",
       lockedOne: "One gift a day. This one opens tomorrow.",
       lockedN: "One gift a day. This one opens in {n} days.",
@@ -71,12 +70,14 @@
       missed: "Missed",
       missedNote: "This day went by without being opened. It does not come back — but tomorrow does.",
       willXp: "Experience", willCoins: "Coins", willTicket: "A ticket", willGift: "A gift",
-      starTag: "×5"
+      starTag: "×5",
+      catchUp: "Catch up",
+      catchNote: "This day went by without being opened. It can still be caught up, up to a week late.",
+      catchTitle: "Missed day"
     },
     fr: {
       title: "Cadeau du jour", day: "J{n}", dayLong: "Jour {n}", tapDay: "Touche un jour",
       pick: "Choisis",
-      dev: "Dev",
       locked: "Verrouillé", next: "Prochain cadeau",
       lockedOne: "Un cadeau par jour. Celui-ci s’ouvre demain.",
       lockedN: "Un cadeau par jour. Celui-ci s’ouvre dans {n} jours.",
@@ -85,7 +86,10 @@
       missed: "Manqué",
       missedNote: "Ce jour est passé sans être ouvert. Il ne revient pas — demain, si.",
       willXp: "De l’expérience", willCoins: "Des pièces", willTicket: "Un ticket", willGift: "Un cadeau",
-      starTag: "×5"
+      starTag: "×5",
+      catchUp: "Rattraper",
+      catchNote: "Ce jour est passé sans être ouvert. Il se rattrape encore, jusqu’à une semaine plus tard.",
+      catchTitle: "Jour manqué"
     }
   };
 
@@ -94,8 +98,9 @@
      by the motor's `upper` (packages/engine), which also takes the accents
      off — a capital carries none in this house. */
   var up = W.upper;
-  var CAPS = ["title", "day", "dayLong", "pick", "dev", "locked", "next",
-    "taken", "missed", "willXp", "willCoins", "willTicket", "willGift"
+  var CAPS = ["title", "day", "dayLong", "pick", "locked", "next",
+    "taken", "missed", "willXp", "willCoins", "willTicket", "willGift",
+    "catchUp", "catchTitle"
   ];
   (function () {
     function shout(v) {
@@ -125,8 +130,8 @@
      address, or a file:// page — the date stops being a gate: the run still
      advances a cell per claim, the save is still written, and only "you have
      had today's" is lifted. Nothing here reaches a deployed site, whose
-     hostname is none of those, and the strip wears a DEV pill so a screenshot
-     can never be mistaken for the real thing. */
+     hostname is none of those, and the band wears a DEV pill (meta.js) so a
+     screenshot can never be mistaken for the real thing. */
   var DEV = (function () {
     var h = location.hostname;
     return h === "localhost" || h === "127.0.0.1" || h === "" ||
@@ -552,18 +557,12 @@
     });
   }
 
-  /* The eyebrow every one of these cards wears: which day of the run, and the
-     DEV pill when this machine is paying on every tap. Only the day — "Daily
-     gift" over a title that names the gift, or over "Next gift", is one word
-     said twice. A plain string where there is no pill, so the modal writes it
-     like any other eyebrow; a node where there is one. */
+  /* The eyebrow every one of these cards wears: which day of the run. Only
+     the day — "Daily gift" over a title that names the gift, or over "Next
+     gift", is one word said twice. That this machine pays on every tap is the
+     band's DEV pill to say (packages/webshell/meta.js), not each card's. */
   function eyebrow(a) {
-    var day = MT.fill(T.dayLong, { n: a });
-    if (!DEV) return day;
-    var f = document.createDocumentFragment();
-    f.appendChild(document.createTextNode(up(day)));
-    f.appendChild(el("i", "dl-dev", T.dev));
-    return f;
+    return MT.fill(T.dayLong, { n: a });
   }
 
   /* ---- today: the screen that shows a wallet, then the boxes over it -------
@@ -586,27 +585,75 @@
     return 0;
   }
 
-  function claim(n) {
-    var k = kindOf(n), star = isStar(n), d = dayOf(n);
+  /* Sixteen days of memory, which is a fortnight of road and twelve more
+     cells than the window ever shows. What it is for is the greyed-out days
+     behind today; a year of them is a year of integers nobody reads. */
+  function claimedWith(n) {
     var c = (state().c || []).concat([n]);
-    /* Sixteen days of memory, which is a fortnight of road and twelve more
-       cells than the window ever shows. What it is for is the greyed-out days
-       behind today; a year of them is a year of integers nobody reads. */
-    if (c.length > 16) c = c.slice(c.length - 16);
-    write({ s: state().s || today(), d: today(), k: n, c: c });
+    return c.length > 16 ? c.slice(c.length - 16) : c;
+  }
+
+  function claim(n) {
+    write({ s: state().s || today(), d: today(), k: n, c: claimedWith(n) });
     paint();
     W.Sound.cue("uiScore", 0.75, 1.15, 900, 0.12);
-
-    var hop = stage();
 
     /* The reward is written beside the day, not instead of it: the day is what
        the road is counted in, and `r` is what the node to the left of
        tomorrow's box will show. It is saved on the way OUT of the card because
        that is the first moment it is known. */
-    function done(rw) {
+    pay(n, stage(), function (rw) {
       if (rw) write({ r: { kind: rw.kind, n: rw.n } });
       paint();
+    });
+  }
+
+  /* ---- a missed day, bought back ------------------------------------------
+     A day that went by unopened can be CAUGHT UP for coins, for a week
+     (`MT.catchDays`), at a share of what it would have paid on average
+     (`MT.catchUpPrice`). It pays exactly what it would have: the same kind,
+     the same ladder, the ×5 of a starred day. Opening the game on the day
+     stays free, which is what keeps a catch-up the worse of the two deals.
+
+     It writes the day into the claimed list and NOTHING ELSE: `d` is today's
+     gate and `k`/`r` are what the last claim paid, and a day bought back a
+     week late is neither today nor the gift the road should show beside it. */
+  function recoverable(a) {
+    var live = liveCell();
+    return a >= 1 && a < live && a >= live - MT.catchDays() && !claimedAt(a);
+  }
+
+  function lastMissed() {
+    var live = liveCell(), a;
+    for (a = live - 1; a >= Math.max(1, live - MT.catchDays()); a--) {
+      if (!claimedAt(a)) return a;
     }
+    return 0;
+  }
+
+  function priceOf(a) {
+    return MT.catchUpPrice(kindOf(a), dayOf(a), isStar(a) ? STAR : 1);
+  }
+
+  /* `here` is the caller saying the wallet is already on screen — the shop —
+     so nothing is staged under the card. */
+  function recover(a, here) {
+    if (!recoverable(a)) return false;
+    var price = priceOf(a), before = MT.coins();
+    if (!MT.spend(price)) return false;
+    MT.spendFx(before, MT.coins());
+    write({ c: claimedWith(a) });
+    paint();
+    W.Sound.cue("uiScore", 0.75, 1.15, 900, 0.12);
+    pay(a, here ? 0 : stage(), function () { paint(); });
+    return true;
+  }
+
+  /* What a day hands over, once it has been written as claimed: the three
+     boxes on a gift day, the prize card on the three small ones. `hop` is how
+     long the screen under the card needs to mount. */
+  function pay(n, hop, done) {
+    var k = kindOf(n), star = isStar(n), d = dayOf(n);
 
     /* One frame for the map to mount under the card, so nothing arrives over a
        screen that is still being written. Zero on a village: the hub was
@@ -700,11 +747,28 @@
      reward and never the loss of one, and a day that simply vanished would
      not even be that. */
   function showMissed(a) {
-    MT.note({
+    /* INSIDE THE CATCH-UP WEEK the card carries the one control that changes
+       its answer: the day, bought back, at its price. The button is dead
+       rather than missing when the wallet cannot pay — the price is still
+       what the player needs to read. Past the week the day is simply gone. */
+    var can = recoverable(a), act = null, card = null;
+    if (can) {
+      var price = priceOf(a);
+      act = el("button", "btn btn-buy",
+        "<span>" + T.catchUp + '</span><span class="btn-badge">' + icon("coin") +
+        MT.num(price) + "</span>");
+      act.disabled = MT.coins() < price;
+      act.addEventListener("click", function () {
+        if (card) card.close();
+        after(200, function () { recover(a); });
+      });
+    }
+    card = MT.note({
       eyebrow: eyebrow(a), title: T.missed,
       art: el("div", "mt-rw taken", faceHtml(a)),
       mult: isStar(a) ? STAR : 1,
-      name: kindWord(a), sub: T.missedNote
+      name: kindWord(a), sub: can ? T.catchNote : T.missedNote,
+      act: act
     });
     W.Sound.cue("uiRow", 0.45, 0.72, 260, 0.1);
   }
@@ -763,6 +827,16 @@
        itself, and it is still the fallback for a build with no card system to
        open one on. */
     openToday: openToday,
+    /* THE SHOP'S SHELF FOR A MISSED DAY: the latest one still inside the
+       catch-up week (0 when there is none), what it costs, what it wears, and
+       the purchase itself — played over the shop, whose band is already on
+       screen. */
+    lastMissed: lastMissed,
+    catchUpPrice: priceOf,
+    face: faceHtml,
+    dayLabel: function (a) { return MT.fill(T.dayLong, { n: a }); },
+    kindWord: kindWord,
+    recover: function (a) { return recover(a, true); },
     /* Is there a gift waiting? The menu shows a dot on nothing else. */
     pending: function () { return !claimed(); }
   };

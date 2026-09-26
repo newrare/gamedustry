@@ -1344,6 +1344,33 @@ by the engine at runtime; never set them by hand.
 Keep the block header starting with `SKIN — ` : that marker is what
 the build uses to tell your CSS from the motor's.
 
+### The button — one component, and a skin never restyles it
+
+Every button of the motor and of the web shell is the BUTTON block of
+`packages/shell/motor.css`, chosen in `lab/button.html`: a pill in the SKIN's
+own `--cta-a` / `--cta-b` / `--cta-text`, no depth, a squash under the finger,
+a ring around the one to press. A game gets its colours for free and writes no
+button rule of its own — the per-game `.btn { box-shadow }` lines were removed
+when it landed.
+
+| class             | what it is                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `.btn`            | the button: rest, hover, pressed, `disabled` (off)                                     |
+| `.btn-sm/.btn-lg` | the sizes; medium is the default                                                       |
+| `.btn-shiny`      | the one to press — a ring leaves its edge                                              |
+| `.btn-danger`     | the destructive one                                                                    |
+| `.btn-icon`       | an icon alone: a dark plate, filled when `.btn-shiny`                                  |
+| `.btn-plate`      | that plate on a word — the choice that is not the offer (MENU, CANCEL, a bet)          |
+| `.btn-switch`     | off / on, read off `aria-pressed`                                                      |
+| `.btn-pub`        | an ad: the play glyph, `.btn-txt` (`<b>` the line, `<i>` "watch an ad"), `.btn-reward` |
+| `.btn-buy`        | a purchase: a word, then `.btn-badge` — the currency and the figure on a macaron       |
+| `.btn-wide`       | the width of its column; a long label may take a second line                           |
+| `.is-off`         | looks off and still answers, so the refusal can be said by `Notify`                    |
+
+The component never transforms the case: a label is written in normal case and
+reaches the button through `upper()` like every other word on screen. The
+height is the unit (`--btn-h`, 74px) and everything else is a fraction of it.
+
 ## Keeping the motor shared
 
 ```bash

@@ -993,18 +993,21 @@ localStorage with an in-memory map behind it.
 
 ```
 key    prog:<slug>
-value  { "v":1, "l":{ "7":{"s":3,"b":4210,"p":5} }, "h":1, "t":1757577600 }
+value  { "v":1, "l":{ "7":{"s":3,"b":4210,"r":5120,"p":5} }, "h":1, "e":18200, "ep":3, "t":1757577600 }
 ```
 
-| field | what it is                                                                  |
-| ----- | --------------------------------------------------------------------------- |
-| `v`   | schema version. Read it first; an unknown one is **reset**, not guessed     |
-| `l`   | only the levels that were played — key is the level number                  |
-| `l.s` | stars, 0..3                                                                 |
-| `l.b` | best score on that level                                                    |
-| `l.p` | plays, so a "hard level" can be spotted in the numbers later                |
-| `h`   | level 0 was read. One flag — it earns nothing, so there is nothing to merge |
-| `t`   | epoch seconds of the last write                                             |
+| field | what it is                                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `v`   | schema version. Read it first; an unknown one is **reset**, not guessed                                                           |
+| `l`   | only the levels that were played — key is the level number                                                                        |
+| `l.s` | stars, 0..3                                                                                                                       |
+| `l.b` | best value of the level's MEASURE — what the stars are read against (the score, or the metres of arcider, triverse and vipera)    |
+| `l.r` | best SCORE of the round on that level — what the ranking sums. Absent from a record written before it; the ranking then reads `b` |
+| `l.p` | plays, so a "hard level" can be spotted in the numbers later                                                                      |
+| `h`   | level 0 was read. One flag — it earns nothing, so there is nothing to merge                                                       |
+| `e`   | best score of the endless run (level 31), which earns no star                                                                     |
+| `ep`  | endless runs played                                                                                                               |
+| `t`   | epoch seconds of the last write                                                                                                   |
 
 Thirty entries is under 1 KB, and the thirteen share one origin on the site, so
 the whole studio's progression is ~12 KB of a 5 MB budget.
@@ -1037,7 +1040,8 @@ disagree with the levels it sums.
 ```js
 var rec = save.l[n] || { s: 0, b: 0, p: 0 };
 rec.s = Math.max(rec.s, stars);      // a bad replay never takes a star away
-rec.b = Math.max(rec.b, score);
+rec.b = Math.max(rec.b, value);      // the objective's measure
+rec.r = Math.max(rec.r || 0, score); // the round's score, for the ranking
 rec.p++;
 ```
 

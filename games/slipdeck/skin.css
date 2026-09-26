@@ -35,7 +35,6 @@
   }
   #cta-bar { border-top:1px solid rgba(245,196,81,.18); }
   #hud-score { text-shadow:0 0 16px rgba(245,196,81,.5); }
-  .btn { box-shadow:0 0 22px rgba(245,196,81,.42); }
   /* the lives pill, and its last-life state */
   #hud-left .hud-pill { letter-spacing:2px; color:#ff9aad; }
   #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }

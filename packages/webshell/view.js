@@ -132,7 +132,7 @@
      content or forget the line that says how it goes away. `undefined`
      leaves a slot as it is, `null` or "" takes it off. A string is written
      as text and shouted through the motor's `upper`; a node is taken as it
-     is (the daily road's DEV pill rides in its eyebrow). */
+     is. */
   function child(card, cls) {
     for (var c = card.firstChild; c; c = c.nextSibling) {
       if (c.classList && c.classList.contains(cls)) return c;
@@ -190,6 +190,11 @@
                  BODY, which is the one thing a card does not share with the
                  next. `handle.body` is the same node; `handle.card` is the
                  card around the slots, for a layer painted under all of it.
+       height    the card's height in design px, for a card whose content
+                 changes under the finger (a filter, a page) and must not
+                 make the card jump. Left out — the default, and almost every
+                 card — the card is the height of what it holds. With it, the
+                 body takes the room the slots leave and scrolls inside it.
        card      false for a caller that wants the scrim and nothing else
                  (the gift ceremony deals its own three boxes over the frame).
        dismiss   true when a TAP ANYWHERE puts it away. "outside" when only a
@@ -214,7 +219,8 @@
     var box = el("div", "wm-modal mt-modal " + (spec.kind || ""));
     var card = null, body = null;
     if (spec.card !== false) {
-      card = el("div", "wm-card mt-card");
+      card = el("div", "wm-card mt-card" + (spec.height ? " fixed" : ""));
+      if (spec.height) card.style.height = spec.height + "px";
       body = el("div", "mt-body");
       card.appendChild(body);
       box.appendChild(card);
@@ -259,8 +265,11 @@
 
     if (handle.dismiss === "outside") {
       box.addEventListener("click", function (e) {
-        /* Only the scrim: everything on the card is something to touch. */
+        /* Only the scrim: everything on the card is something to touch — and
+           so is a control standing on the scrim (the wipe under the options,
+           which asks twice and would otherwise close the card on the first). */
         if (card && card.contains(e.target)) return;
+        if (e.target.closest && e.target.closest("button")) return;
         handle.close();
       });
     } else if (handle.dismiss) {
@@ -582,7 +591,7 @@
   }
 
   function addCtl(item) {
-    var b = el("button", "web-ctl", API ? API.icon(item.icon) : "");
+    var b = el("button", "btn btn-icon btn-sm web-ctl", API ? API.icon(item.icon) : "");
     b.setAttribute("aria-label", item.label || "");
     b.addEventListener("click", item.on);
     b.setAttribute("data-ctl", item.name || item.icon);
@@ -597,7 +606,7 @@
     if (!ctlBar) return;
     ctlExtra.innerHTML = "";
     if (!item) return;
-    var b = el("button", "web-ctl", API ? API.icon(item.icon) : "");
+    var b = el("button", "btn btn-icon btn-sm web-ctl", API ? API.icon(item.icon) : "");
     b.setAttribute("aria-label", item.label || "");
     b.addEventListener("click", item.on);
     ctlExtra.appendChild(b);
@@ -629,7 +638,7 @@
   function banded() { return !!hudFill; }
 
   function homeButton(label) {
-    var b = el("button", "web-home", API ? API.icon("home", "home-ico") : "");
+    var b = el("button", "btn btn-icon btn-sm web-home", API ? API.icon("home") : "");
     b.setAttribute("aria-label", label || "");
     b.addEventListener("click", home);
     return b;
@@ -819,6 +828,7 @@
     };
     box.__sheet = S;
     sheets.push(S);
+    pull(S);
     fillCtls(S);
     frame().appendChild(box);
     return S;
@@ -873,10 +883,165 @@
      view is left on stops being the one a slide is measured from. */
   function arrive(S) {
     if (!S.grounded) { S.grounded = true; ground(S.bg); }
+    unpull(S);
     fillCtls(S);
     S.cur = null;
     S.body.classList.remove("wv-in-l", "wv-in-r");
     requestAnimationFrame(function () { fitTitle(S); });
+  }
+
+  /* ── 6c. the pull ─────────────────────────────────────────────────────── */
+
+  /* THE GRIP IS A PROMISE, AND THIS KEEPS IT. A sheet rises out of the bottom
+     edge with a grip on its top rim, which is how a phone says "pull me down
+     to put me away" — so a sheet pulled down goes, and the screen under it
+     comes back: the same back() as ESCAPE, one view peeled off.
+
+     Where the pull may start: the header always (it scrolls nothing), the
+     body only while it is scrolled to its top — a finger going down a list
+     that is not at its top is reading the list. An upward or a sideways move
+     is never the sheet's (the list scrolls, a carousel turns), and the bar is
+     left out: it is a row of buttons, and nothing under a thumb there should
+     move. A control that drags on its own opts out with `data-nopull`.
+
+     TOUCH EVENTS AND NOT POINTER EVENTS, on purpose. Inside the body the
+     browser owns vertical panning, and the moment it decides a finger is a
+     scroll it CANCELS the pointer — a pull that works on the header and dies
+     on the list. A touchmove, prevented before the browser decides, keeps the
+     gesture. The mouse gets the same gesture on a desktop, so a sheet can be
+     dragged away there too. */
+  var PULL_SLOP = 10;                   // design px before a move is a gesture
+  var PULL_SHUT = 0.22;                 // share of the sheet's height that puts it away
+  var PULL_FLICK = 1;                   // design px per ms that puts it away at any depth
+  var PULL_BACK = 300, PULL_GONE = 220; // ms: the snap back, the exit
+
+  function now() { return new Date().getTime(); }
+
+  /* The view on top IS this sheet: a pull on anything under it never runs. */
+  function onTop(S) {
+    var name = stack[stack.length - 1];
+    return !!name && defs[name].node() === S.box && !modals.length;
+  }
+
+  function pull(S) {
+    var pane = S.sheet, g = null, swallow = false;
+
+    function scrolled(n) {
+      for (; n && n !== pane; n = n.parentNode) if (n.scrollTop > 0) return true;
+      return false;
+    }
+
+    function begin(x, y, target) {
+      if (g || !target || !target.closest || !onTop(S)) return;
+      if (target.closest(".wv-bar, input, select, textarea, [data-nopull]")) return;
+      if (!target.closest(".wv-head") && scrolled(target)) return;
+      var r = pane.getBoundingClientRect();
+      g = {
+        x: x, y: y, k: pane.offsetHeight ? r.height / pane.offsetHeight : 1,
+        on: false, dy: 0, t: now(), v: 0
+      };
+    }
+
+    /* True while the move is the sheet's, so the caller prevents it. */
+    function track(x, y) {
+      if (!g) return false;
+      var dx = (x - g.x) / g.k, dy = (y - g.y) / g.k;
+      if (!g.on) {
+        if (Math.abs(dx) > PULL_SLOP && Math.abs(dx) > Math.abs(dy)) { g = null; return false; }
+        if (dy < -PULL_SLOP) { g = null; return false; }
+        /* Claimed from the first pixel down, before the browser can make it
+           an overscroll; it only MOVES the sheet past the slop. */
+        if (dy <= PULL_SLOP) return dy > 0;
+        g.on = true;
+        S.box.classList.remove("wv-settle");
+        S.box.classList.add("wv-held", "wv-pulling");
+      }
+      var d = Math.max(0, dy), t = now();
+      if (t > g.t) g.v = g.v * 0.4 + ((d - g.dy) / (t - g.t)) * 0.6;
+      g.dy = d; g.t = t;
+      place(d);
+      return true;
+    }
+
+    function finish() {
+      if (!g) return;
+      var was = g;
+      g = null;
+      if (!was.on) return;
+      S.box.classList.remove("wv-pulling");
+      swallow = true;
+      setTimeout(function () { swallow = false; }, 0);
+      var h = pane.offsetHeight || 1;
+      /* a finger that stopped before letting go is not flicking */
+      var v = now() - was.t > 90 ? 0 : was.v;
+      var shut = was.dy > h * PULL_SHUT || (v > PULL_FLICK && was.dy > PULL_SLOP * 3);
+      S.box.classList.add("wv-settle");
+      if (!shut) {
+        place(0);
+        setTimeout(function () { S.box.classList.remove("wv-settle"); }, PULL_BACK);
+        return;
+      }
+      S.box.classList.add("wv-gone");
+      place(h);
+      setTimeout(function () {
+        if (onTop(S)) back();
+        unpull(S);
+      }, PULL_GONE);
+    }
+
+    /* The sheet follows the finger and the ground under it thins with the
+       distance, so the screen the pull goes back to is already showing
+       through by the time the finger lets go. */
+    function place(d) {
+      var h = pane.offsetHeight || 1;
+      pane.style.transform = d ? "translate3d(0," + d + "px,0)" : "";
+      var a = d ? String(Math.max(0, 1 - d / h)) : "";
+      for (var n = S.box.firstChild; n; n = n.nextSibling) {
+        if (n !== pane && n.style) n.style.opacity = a;
+      }
+    }
+    S.place = place;
+
+    pane.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) { g = null; return; }
+      begin(e.touches[0].clientX, e.touches[0].clientY, e.target);
+    }, { passive: true });
+    pane.addEventListener("touchmove", function (e) {
+      if (e.touches.length !== 1) { if (g && g.on) finish(); g = null; return; }
+      if (track(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault();
+    }, { passive: false });
+    pane.addEventListener("touchend", finish);
+    pane.addEventListener("touchcancel", finish);
+
+    function mmove(e) { if (track(e.clientX, e.clientY)) e.preventDefault(); }
+    function mup() {
+      window.removeEventListener("mousemove", mmove);
+      window.removeEventListener("mouseup", mup);
+      finish();
+    }
+    pane.addEventListener("mousedown", function (e) {
+      if (e.button !== 0) return;
+      begin(e.clientX, e.clientY, e.target);
+      if (!g) return;
+      window.addEventListener("mousemove", mmove);
+      window.addEventListener("mouseup", mup);
+    });
+
+    /* The button a pull started on is not pressed by the pull letting go. */
+    S.box.addEventListener("click", function (e) {
+      if (!swallow) return;
+      swallow = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+  }
+
+  /* Back to rest, with no motion: what a sheet is before it rises again.
+     `wv-held` is what stopped the rise from replaying under the finger, and
+     taking it off here is what lets the next open rise. */
+  function unpull(S) {
+    S.box.classList.remove("wv-held", "wv-pulling", "wv-settle", "wv-gone");
+    if (S.place) S.place(0);
   }
 
   /* ── 7. the module ────────────────────────────────────────────────────── */

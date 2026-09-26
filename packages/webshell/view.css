@@ -48,7 +48,7 @@
    detail out of the picture instead of the light, so the hub still reads as
    the place the player is standing in. */
 #frame {
-  --web-veil: rgba(2,2,10,.7);
+  --web-veil: rgba(2,2,10,.78);
   --web-veil-strong: rgba(2,2,10,.9);
   --web-veil-blur: 2px;
 }
@@ -68,7 +68,7 @@
 .mt-modal {
   position:absolute; inset:0; z-index:44;
   display:flex; align-items:center; justify-content:center;
-  padding:0 20px;
+  padding:0 44px;
   background:var(--web-veil);
   -webkit-backdrop-filter:blur(var(--web-veil-blur)); backdrop-filter:blur(var(--web-veil-blur));
   opacity:0; transition:opacity .2s ease;
@@ -77,7 +77,7 @@
 .mt-modal.on { opacity:1; }
 
 /* THE CARD ITSELF IS THE MOTOR'S (packages/shell/motor.css, CARD): the rim,
-   the six slots, the gold title, the tag, the tap line. What is here is what
+   the six slots, the title, the tag, the tap line. What is here is what
    only a modal has — where it stands and how it arrives. */
 .mt-modal .mt-card {
   transform:scale(.7);
@@ -118,21 +118,13 @@
    not build (view.js, cornerOnIntro), which hides the others one by one. */
 .web-ctl[hidden] { display:none; }
 
-.web-ctl {
-  position:relative; pointer-events:auto; cursor:pointer;
-  flex:0 0 auto; width:58px; height:58px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--text); background:rgba(0,0,0,.42);
-  border:2px solid var(--panel-line);
-  transition:color .16s ease, border-color .16s ease, transform .16s ease;
-}
-/* The circle is 58 design px, which is about 32 real px on a phone — under any
-   thumb. The TAP AREA is grown to 82 by a transparent pseudo-element instead,
+/* The three are the motor's button, small and alone (.btn .btn-icon .btn-sm,
+   view.js): what is left here is that the bar takes no tap and they do. */
+.web-ctl { pointer-events:auto; }
+/* The circle is ~55 design px, which is about 32 real px on a phone — under
+   any thumb. The TAP AREA is grown by a transparent pseudo-element instead,
    so the control stays discreet over the game and the finger still lands. */
 .web-ctl::before { content:""; position:absolute; inset:-12px; border-radius:50%; }
-.web-ctl svg { width:31px; height:31px; }
-.web-ctl:hover, .web-ctl:focus-visible { color:var(--accent); border-color:var(--accent); outline:none; }
-.web-ctl:active { transform:scale(.94); }
 
 
 
@@ -191,9 +183,10 @@
    Both are built once and neither is thrown away between screens: a chip the
    coins are flying towards may not be re-created mid-flight. */
 #web-hud { flex-direction:column; align-items:flex-end; gap:8px; }
-/* SIX CHIPS ON ONE LINE, and the line is 668 design px. The gap and the
+/* FIVE CHIPS ON ONE LINE, and the line is 668 design px. The gap and the
    padding are what they are because the worst case has to fit with the level
-   chip OPEN: `20/20 · ⌂ · LV 99 [bar] · 99 999 · 99 · 90/90`. Measured, not
+   chip OPEN: `⌂ · LV 99 [bar] · 99 999 · 99 | 20/20 · 90/90` — the tickets
+   and the collection's count share one chip, since both open the album. Measured, not
    guessed — tools/test/views.mjs asserts it, with every number at its widest. */
 #web-hud .mt-band { display:none; align-items:center; gap:7px; }
 /* THE STANDING ROW RUNS EDGE TO EDGE. Home is glued to the left gutter, the
@@ -243,6 +236,15 @@
 /* Gone rather than inert on the bare village, which it is the door to
    (packages/webshell/meta.js, `bandDoors`). */
 #web-hud .mt-chip.home.gone { display:none; }
+/* The DEV pill, between the house and the level chip, on a local machine only
+   (meta.js, DEV). Not a chip and not a door: a flat tag in the danger colour,
+   so it can never read as a number the player owns. It takes its width out of
+   the xp bar, which is the spring of the row. */
+#web-hud .mt-dev {
+  flex:0 0 auto; font-style:normal; font-size:14px; font-weight:900;
+  letter-spacing:2px; line-height:1; padding:6px 8px; border-radius:6px;
+  color:#0b0b12; background:var(--danger); pointer-events:none;
+}
 /* A chip whose door is the screen it is standing on: it still counts, it just
    stops offering. A control that cannot act is a tap the player learns to stop
    making — but it must not go MISSING either, or the row changes shape as the
@@ -356,21 +358,36 @@
 @keyframes wv-fade { from { opacity:0; } }
 @keyframes wv-rise { from { transform:translateY(100%); } }
 
+/* PULLED DOWN, IT GOES (view.js, section 6c). The finger writes the sheet's
+   transform and the ground's opacity inline; these classes only say how the
+   hand-off moves. `wv-held` takes the rise off, since an animation holding its
+   last frame would out-rank the finger — and the header, which is where the
+   pull always starts, owns every touch that lands on it. */
+.wv-screen.wv-held .wv-sheet { animation:none; }
+.wv-head { touch-action:none; cursor:grab; }
+.wv-screen.wv-pulling, .wv-screen.wv-pulling * { cursor:grabbing; }
+.wv-screen.wv-pulling .wv-sheet::before { background:rgba(255,255,255,.5); }
+.wv-screen.wv-settle .wv-sheet { transition:transform .3s cubic-bezier(.2,1,.3,1); }
+.wv-screen.wv-settle > :not(.wv-sheet) { transition:opacity .3s ease; }
+.wv-screen.wv-gone .wv-sheet { transition:transform .22s cubic-bezier(.4,0,1,1); }
+.wv-screen.wv-gone > :not(.wv-sheet) { transition:opacity .22s ease-in; }
+.wv-body { overscroll-behavior-y:contain; }
+
 /* ---- the header ------------------------------------------------------ */
 .wv-head {
   position:relative; flex:0 0 auto;
   display:flex; flex-direction:column; align-items:center; gap:6px;
-  padding:38px 26px 16px; text-align:center;
+  padding:28px 26px 12px; text-align:center;
 }
 /* ONE LINE, MEASURED: written at the size a title is read at and shrunk to
    the sheet's width once it is on screen (view.js, fitTitle). */
 .wv-title {
   margin:0; max-width:100%; white-space:nowrap;
-  font-size:58px; line-height:1.05; letter-spacing:2px;
+  font-size:42px; line-height:1.05; letter-spacing:2px;
   font-weight:var(--web-fw, 900); color:var(--text);
   text-shadow:0 3px 14px rgba(0,0,0,.85);
 }
-.wv-sub { margin:0; font-size:22px; line-height:1.3; color:var(--muted); }
+.wv-sub { margin:0; font-size:19px; line-height:1.3; color:var(--muted); }
 .wv-sub[hidden] { display:none; }
 
 /* ---- the body -------------------------------------------------------- */

@@ -407,7 +407,7 @@ function load(slug) {
   plan = {};
   scan = null;
   draw();
-  fetch("/api/text?game=" + encodeURIComponent(slug))
+  fetch("api/text?game=" + encodeURIComponent(slug))
     .then(function (r) { return r.json(); })
     .then(function (data) {
       scan = data;
@@ -438,7 +438,7 @@ $("apply").addEventListener("click", function () {
     return { id: r.id, was: r.text, text: plan[r.id] };
   });
   $("apply").innerHTML = "Applying…";
-  fetch("/api/apply", {
+  fetch("api/apply", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ game: scan.slug, edits: edits })
@@ -470,7 +470,7 @@ document.addEventListener("keydown", function (e) {
   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); $("apply").click(); }
 });
 
-fetch("/api/games").then(function (r) { return r.json(); }).then(function (list) {
+fetch("api/games").then(function (r) { return r.json(); }).then(function (list) {
   var pick = $("game-pick");
   pick.innerHTML = list.map(function (g) {
     return '<option value="' + g.slug + '">' + g.title + "  ·  " + g.counts.en + " EN / " + g.counts.fr + " FR" +

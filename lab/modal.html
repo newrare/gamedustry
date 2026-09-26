@@ -25,8 +25,9 @@
    There is no close cross: the tap line says what the tap does, and that is
    the way out.
 
-   CHOSEN on 2026-09-25 — preset "A · Chosen" (bevel, centred, gold title,
-   corner pill, shimmering tap line, pop) — and SHIPPED as the CARD block of
+   CHOSEN on 2026-09-25 and retuned on 2026-09-26 — preset "A · Chosen"
+   (bevel with a 1 px rim over a 70 % fill, centred, accent title, corner
+   pill, shimmering tap line, pop, a 44 px gutter) — and SHIPPED as the CARD block of
    packages/shell/motor.css, with the slots built by packages/webshell/view.js.
    The other presets stay as the record of what it beat.
 
@@ -247,15 +248,20 @@ body {
    sit over any of the fifteen hubs; they differ in edge and depth.
    ========================================================================= */
 
+/* Two knobs every skin reads: --md-border is the rim's thickness and --md-fill
+   the opacity of the card's own fill (never of its content). Each skin keeps
+   its own values as the fallbacks, and the panel re-arms them on a skin
+   change (SKIN_DEFAULTS in the script). */
+
 /* night — what ships today (view.css, .mt-card) */
 .sk-night {
-  background:rgba(8,8,20,.94); border:1px solid var(--panel-line);
+  background:rgb(8 8 20 / var(--md-fill, .94)); border:var(--md-border, 1px) solid var(--panel-line);
   box-shadow:0 26px 70px rgba(0,0,0,.7);
 }
 /* frame — a hairline inner frame, a lit top edge */
 .sk-frame {
-  background:linear-gradient(180deg,#151a2a 0%,#0b0d18 42%,#090b14 100%);
-  border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(180deg,rgb(21 26 42 / var(--md-fill, 1)) 0%,rgb(11 13 24 / var(--md-fill, 1)) 42%,rgb(9 11 20 / var(--md-fill, 1)) 100%);
+  border:var(--md-border, 1px) solid rgba(255,255,255,.14);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12),
              inset 0 0 0 8px rgba(0,0,0,.28), inset 0 0 0 9px rgba(255,255,255,.06),
              0 26px 70px rgba(0,0,0,.75);
@@ -263,40 +269,56 @@ body {
 }
 /* glass — frosted, lets the hub's colour through (a second blur on a phone) */
 .sk-glass {
-  background:linear-gradient(180deg,rgba(40,46,72,.62),rgba(14,16,30,.72));
+  background:linear-gradient(180deg,rgb(40 46 72 / var(--md-fill, .62)),rgb(14 16 30 / calc(var(--md-fill, .62) + .1)));
   -webkit-backdrop-filter:blur(18px) saturate(1.3); backdrop-filter:blur(18px) saturate(1.3);
-  border:1px solid rgba(255,255,255,.2);
+  border:var(--md-border, 1px) solid rgba(255,255,255,.2);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 26px 70px rgba(0,0,0,.55);
   --md-plate:rgba(30,34,56,.95);
 }
-/* slate — solid, lighter, a bevel instead of a border */
+/* slate — solid, lighter, a bevel instead of a border (the rim is a dark
+   edge, 0 by default) */
 .sk-slate {
-  background:#171c2a;
+  background:rgb(23 28 42 / var(--md-fill, 1));
+  border:var(--md-border, 0px) solid rgba(0,0,0,.55);
   box-shadow:inset 0 2px 0 rgba(255,255,255,.07), inset 0 -5px 0 rgba(0,0,0,.35),
              0 0 0 2px rgba(0,0,0,.55), 0 26px 70px rgba(0,0,0,.7);
   --md-plate:#1f2536;
 }
 /* neon — the game's accent as a thin lit edge */
 .sk-neon {
-  background:rgba(6,8,18,.95);
-  border:2px solid rgba(var(--accent-rgb),.55);
+  background:rgb(6 8 18 / var(--md-fill, .95));
+  border:var(--md-border, 2px) solid rgba(var(--accent-rgb),.55);
   box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 30px rgba(var(--accent-rgb),.28),
              inset 0 0 40px rgba(var(--accent-rgb),.08), 0 26px 70px rgba(0,0,0,.7);
   --md-plate:#0a0e1c;
 }
+/* bevel and gilded paint a GRADIENT rim. It is a ring on ::before, masked to
+   the border band, rather than a border-box background under a padding-box
+   one: with a see-through fill, that second background would show through
+   the whole card. */
+.sk-bevel::before, .sk-gilded::before {
+  content:""; position:absolute; inset:calc(-1 * var(--md-bw)); z-index:0;
+  border-radius:inherit; padding:var(--md-bw); pointer-events:none;
+  background:var(--md-rim);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
 /* bevel — a thick gradient rim in the game's two colours */
 .sk-bevel {
-  border:4px solid transparent;
-  background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
-             linear-gradient(180deg,var(--accent),var(--accent2)) border-box;
+  --md-bw:var(--md-border, 4px);
+  border:var(--md-bw) solid transparent;
+  background:linear-gradient(180deg,rgb(18 22 40 / var(--md-fill, 1)),rgb(10 12 22 / var(--md-fill, 1))) padding-box;
+  --md-rim:linear-gradient(180deg,var(--accent),var(--accent2));
   box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
   --md-plate:#121628;
 }
 /* gilded — a gold rim, the enemy camp's look, made the rule */
 .sk-gilded {
-  border:3px solid transparent;
-  background:radial-gradient(120% 80% at 50% 0%,#1a2446 0%,#0d1428 60%,#0a0f20 100%) padding-box,
-             linear-gradient(180deg,#f7dc8c,#a8792f 55%,#e9c56e) border-box;
+  --md-bw:var(--md-border, 3px);
+  border:var(--md-bw) solid transparent;
+  background:radial-gradient(120% 80% at 50% 0%,rgb(26 36 70 / var(--md-fill, 1)) 0%,rgb(13 20 40 / var(--md-fill, 1)) 60%,rgb(10 15 32 / var(--md-fill, 1)) 100%) padding-box;
+  --md-rim:linear-gradient(180deg,#f7dc8c,#a8792f 55%,#e9c56e);
   box-shadow:inset 0 0 0 6px rgba(0,0,0,.25), inset 0 0 0 7px rgba(247,220,140,.18),
              0 26px 70px rgba(0,0,0,.75);
   --md-plate:#16203c;
@@ -683,23 +705,33 @@ body {
     ["pad",       "padding",     20, 70, 2, 0],
     ["gap",       "gap",          8, 48, 2, 0],
     ["titleSize", "title size",  32, 80, 2, 0],
+    ["border",    "border",       0, 12, 1, 0],
+    ["fill",      "fill opacity", 0,  1, .02, 2],
     ["veil",      "veil",         0,  1, .02, 2],
     ["blur",      "veil blur",    0, 16, 1, 0]
   ];
 
+  /* each skin's own rim and fill, re-armed whenever the skin changes, so a
+     knob tuned on one material is never carried onto another */
+  const SKIN_DEFAULTS = {
+    night:  { border:1, fill:.94 }, frame: { border:1, fill:1 }, glass:  { border:1, fill:.62 },
+    slate:  { border:0, fill:1 },   neon:  { border:2, fill:.95 }, bevel: { border:4, fill:1 },
+    gilded: { border:3, fill:1 }
+  };
+
   /* what ships (packages/shell/motor.css, CARD) */
   const BASE = {
-    view:"gallery", game:"pawko", lang:"fr", sample:"camp",
-    skin:"bevel", layout:"center", titleColor:"gold",
+    view:"gallery", game:"stratideck", lang:"fr", sample:"camp",
+    skin:"bevel", layout:"center", titleColor:"accent",
     slots:"sample", show:{ eyebrow:1, badge:1 },
     badgePos:"corner", badgeShape:"pill",
     tapAnim:"shimmer", entry:"pop",
-    gutter:20, radius:30, pad:44, gap:24, titleSize:54, veil:.7, blur:2, preset:0
+    gutter:44, radius:30, pad:44, gap:24, titleSize:50, border:1, fill:.7, veil:.78, blur:2, preset:0
   };
   /* A preset is a look, never a scene: it leaves the game, language, card and
      view alone, so switching presets compares like with like. */
   const PRESETS = [
-    { name:"A · Chosen", note:"what ships", set:{ skin:"bevel", layout:"center", titleColor:"gold", badgePos:"corner", badgeShape:"pill", tapAnim:"shimmer", entry:"pop", gutter:20, radius:30, pad:44, gap:24, titleSize:54, veil:.7, blur:2 } },
+    { name:"A · Chosen", note:"what ships", set:{ skin:"bevel", layout:"center", titleColor:"accent", badgePos:"corner", badgeShape:"pill", tapAnim:"shimmer", entry:"pop", gutter:44, radius:30, pad:44, gap:24, titleSize:50, border:1, fill:.7, veil:.78, blur:2 } },
     { name:"B · Frame", note:"inner hairline, a lit edge", set:{ skin:"frame", layout:"center", titleColor:"gold", badgePos:"corner", badgeShape:"pill", tapAnim:"breathe", entry:"pop", gutter:30, radius:30, pad:44, gap:24, titleSize:54 } },
     { name:"C · Sheet", note:"left header over a rule", set:{ skin:"slate", layout:"header", titleColor:"text", badgePos:"inline", badgeShape:"pill", tapAnim:"breathe", entry:"rise", gutter:26, radius:24, pad:40, gap:24, titleSize:54 } },
     { name:"D · Band", note:"a header band bled to the edge", set:{ skin:"frame", layout:"band", titleColor:"accent", badgePos:"corner", badgeShape:"disc", tapAnim:"pulse", entry:"pop", gutter:28, radius:30, pad:40, gap:26, titleSize:50 } },
@@ -712,7 +744,15 @@ body {
 
   const KEY = "lab-modal";
   let P = JSON.parse(JSON.stringify(BASE));
-  try { Object.assign(P, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { /* private window */ }
+  try {
+    const stored = JSON.parse(localStorage.getItem(KEY) || "{}");
+    Object.assign(P, stored);
+    /* a state saved before the two knobs existed takes its skin's values */
+    if (!("border" in stored) && SKIN_DEFAULTS[P.skin]) Object.assign(P, SKIN_DEFAULTS[P.skin]);
+  } catch (e) { /* private window */ }
+  /* a preset carries a skin, and with it that skin's rim and fill unless it
+     names its own */
+  const applyPreset = (pr) => { Object.assign(P, SKIN_DEFAULTS[pr.set.skin], pr.set); };
   /* `#view=gallery&preset=3&game=vipera` — a shot of one state without the
      panel, for a headless capture or a link to a choice. It wins over the
      remembered state and is not written back. */
@@ -720,7 +760,7 @@ body {
   let fromHash = false;
   HASH.forEach((v, k) => {
     fromHash = true;
-    if (k === "preset") { const pr = PRESETS[+v]; if (pr) { Object.assign(P, pr.set); P.preset = +v; } }
+    if (k === "preset") { const pr = PRESETS[+v]; if (pr) { applyPreset(pr); P.preset = +v; } }
     else if (k in P) P[k] = typeof BASE[k] === "number" ? +v : v;
   });
   const save = () => { if (fromHash) return; try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { /* ignore */ } };
@@ -731,7 +771,11 @@ body {
     OPT[key].forEach(([v, label]) => {
       const b = document.createElement("button");
       b.textContent = label; b.dataset.v = v;
-      b.addEventListener("click", () => { P[key] = v; P.preset = null; sync(); render(); });
+      b.addEventListener("click", () => {
+        P[key] = v; P.preset = null;
+        if (key === "skin") Object.assign(P, SKIN_DEFAULTS[v]);
+        sync(); render();
+      });
       box.appendChild(b);
     });
   }
@@ -760,7 +804,7 @@ body {
   PRESETS.forEach((p, i) => {
     const b = document.createElement("button");
     b.innerHTML = p.name + "<small>" + p.note + "</small>";
-    b.addEventListener("click", () => { Object.assign(P, p.set); P.preset = i; sync(); render(); });
+    b.addEventListener("click", () => { applyPreset(p); P.preset = i; sync(); render(); });
     $("presets").appendChild(b);
   });
 
@@ -819,7 +863,8 @@ body {
       ";--web-font:" + f[0] + ",sans-serif;--web-fw:" + f[1] +
       ";--md-gutter:" + P.gutter + "px;--md-radius:" + P.radius + "px;--md-pad:" + P.pad +
       "px;--md-gap:" + P.gap + "px;--md-title-base:" + P.titleSize + "px;--md-title:" + P.titleSize +
-      "px;--md-veil:" + P.veil + ";--md-blur:" + P.blur + "px";
+      "px;--md-border:" + P.border + "px;--md-fill:" + P.fill +
+      ";--md-veil:" + P.veil + ";--md-blur:" + P.blur + "px";
 
     const eyebrow = on.eyebrow && T.eyebrow
       ? '<p class="md-eyebrow">' + upper(T.eyebrow) + (S.dev ? '<i class="dev">DEV</i>' : "") + "</p>"

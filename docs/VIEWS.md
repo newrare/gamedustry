@@ -26,7 +26,7 @@ at, they stack, and BACK peels one off.
 | `map`       | `packages/webshell/levels.js`  | yes                      |
 | `sticker`   | `packages/webshell/album.js`   | yes                      |
 | `shop`      | `packages/webshell/album.js`   | yes                      |
-| `ranking`   | `packages/webshell/menu.js`    | yes                      |
+| `ranking`   | `packages/webshell/menu.js`    | yes — two tabs           |
 | `deck`      | `packages/webshell/army.js`    | yes                      |
 | `infirmary` | `packages/webshell/army.js`    | yes                      |
 | `prison`    | `packages/webshell/army.js`    | yes                      |
@@ -152,7 +152,7 @@ zero the floor is read off the motor's state rather than assumed.
 **The way out of a card.** Its last line, and ESCAPE. Every card is the motor's
 one component (`packages/shell/motor.css`, CARD — chosen in `lab/modal.html`):
 an optional tag on the corner, an optional eyebrow never in the title's colour,
-the gold title, the body, and a **tap line that is mandatory** — it says what
+the title in the accent, the body, and a **tap line that is mandatory** — it says what
 the tap does ("Tap to close", "Tap a box", "Tap to collect", "Tap outside to
 close"). `Modal.open` builds those slots itself from `eyebrow`, `title`,
 `badge` and `tap`, so a caller writes the body and nothing else, and
@@ -205,6 +205,17 @@ and the owner fills `body`, calls `setHead(title, sub)` and names its pages with
 are not rooms and keep their own screens. Chosen in `lab/view-frame.html`
 (proposal C).
 
+**A sheet pulled down goes.** The grip on its rim promises it, so a finger —
+or a mouse on a desktop — that drags the sheet down carries it, the ground
+thinning under it until the screen beneath shows through; let go past a fifth
+of its height, or flicked, it slides out and `back()` peels it, the same
+answer as ESCAPE. Short of that it springs back. The pull starts anywhere on
+the header, and on the body only while it is scrolled to its top: an upward or
+a sideways move stays the list's or the carousel's, the bar never starts one,
+and a control that drags on its own opts out with `data-nopull`. Touch events
+rather than pointer events, because inside a scroller the browser cancels a
+pointer the moment it calls the move a scroll (`view.js`, section 6c).
+
 **The wallet band.** See below.
 
 ______________________________________________________________________
@@ -215,9 +226,9 @@ ______________________________________________________________________
 what the player learns**:
 
 ```
-  ⌂   ·   ⚡   ·  1 240 coins  ·  3 tickets  ·  3/20 stickers  ·  12/90 stars
-  ↓       ↓           ↓              ↓              ↓                ↓
-HOME  ranking       shop        collection     collection           map
+  ⌂   ·   ⚡   ·  1 240 coins  ·  3 tickets | 3/20 stickers  ·  12/90 stars
+  ↓       ↓           ↓                     ↓                       ↓
+HOME  ranking       shop               collection                  map
 ```
 
 The way out first, then what is EARNED by playing, then what is SPENT, then
@@ -230,11 +241,12 @@ screen it is standing on is INERT rather than missing**: a number that moved
 between screens would be a number to find again, and the greyed chip is the one
 thing on the row that says a tap will do nothing.
 
-That is what makes back arrows unnecessary and then wrong. These six are the
+That is what makes back arrows unnecessary and then wrong. These five are the
 whole of this front end's navigation, and they are the same everywhere the band
-is up. Two of them lead to the collection — the tickets, which are spent there,
-and the count, which is of it — so standing on it greys both; different numbers,
-same destination, and neither is a better door than the other.
+is up. **The tickets and the sticker count are ONE chip**, two figures behind a
+filet: the tickets are spent in the collection and the count is of it, and two
+chips leading to one screen read as two places where one macaron reads as the
+place and what the player has there.
 
 **The house is the only chip that is not a number.** The rest of the row is what
 the player owns; this is the way out of wherever they own it.
@@ -298,6 +310,15 @@ level and the coins, declared by `web.meta.more` and filled by the layer that
 owns the figures ([docs/META.md](META.md)). It is a chip of this row and not a
 second row: the band keeps its one line and its one height.
 
+**On a dev machine the row carries a DEV pill**, between the house and the
+level chip — localhost, a loopback or a LAN address, where the daily road pays
+on every tap and the army's clock runs an hour a second. A `file://` page bends
+those two rules too but shows no pill, because it is how
+`tools/lab/shoot-screens.mjs` opens a build and a store screenshot must never
+wear it. It is the one place that says so: no card and no sheet wears a
+pill of its own. It is not a chip and not a door, and its width comes out of
+the xp bar, the row's spring. A deployed site never builds the node.
+
 **The round shows no band.** The top band is the game's, all of it, and the
 thirteen fill it differently.
 
@@ -329,12 +350,19 @@ MD.open({
   dismiss: false,        // a tap anywhere — false when the card asks something
   esc: true,             // the key; defaults to `dismiss`
   bed: true,             // whether it ducks the music
+  height: 880,           // optional, design px — left out, the card is the
+                         // height of its content; set, the body scrolls
   fill: function (card, close) { /* your content */ },
   onHide: fn,            // as it starts to go, while its node is still in the
                          // document — for anything taken BACK out of the card
   onClose: fn            // after it is gone
 });
 ```
+
+**A card is the height of what it holds**, and `height` is the exception, for a
+card whose content changes under the finger and must not make it jump — the
+army's card picker, whose grade filter would otherwise resize it on every tap.
+The body then takes what the slots leave and scrolls inside it.
 
 `onHide` is not a nicety: the help card borrows the motor's demo stage, and
 `getElementById` cannot find a node inside a card that has already been

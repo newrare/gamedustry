@@ -15,7 +15,6 @@
     --slot:#7ef9ff;   /* an empty seat waiting for one */
   }
   html, body { background:radial-gradient(880px 940px at 50% 26%, #2a2058 0%, #140e2e 52%, #05040e 100%); }
-  .btn { box-shadow:0 10px 30px rgba(224,54,44,.45), inset 0 2px 6px rgba(255,255,255,.35); }
   #intro-title {
     background:linear-gradient(180deg,#ffffff,#8fa6d8);
     -webkit-background-clip:text; background-clip:text; color:transparent;

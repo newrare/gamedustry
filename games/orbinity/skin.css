@@ -123,7 +123,6 @@
   /* the combo pill follows the comet's tier: gold, then blazing pink */
   .hud-pill.hot { color:var(--gold); border-color:rgba(255,212,59,.55); background:rgba(60,40,0,.42); }
   .hud-pill.blaze { color:#ff9ae6; border-color:rgba(255,45,149,.6); background:rgba(60,0,40,.45); }
-  .btn { box-shadow:0 0 22px rgba(140,120,255,.55); }
 
   /* ---- comic callouts (Pop) -------------------------------------------------
      The catalogue lives in the motor; only the palettes are retuned here so a

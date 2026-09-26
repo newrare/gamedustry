@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — back office</title>
+<link rel="icon" href="data:,">
+<style>
+/* ===========================================================================
+   BACK OFFICE — every lab page in one list, and the one it opens beside it.
+
+   Served by `make lab` (tools/lab/serve-lab.mjs) at http://localhost:8095/,
+   and only there: the list is read off lab/*.html by the server, so over
+   file:// the page says so and stops. Nothing here is a lab of its own — it is
+   the door to all of them.
+
+   The pages are OPENED IN A FRAME rather than navigated to, so the list stays
+   on screen and the next page is one click away. Each one is still the page it
+   always was, on the same origin: the four that need a server are mounted
+   under their prefix (/events/, /text/, /store/, /village/), the others are
+   served as files under /lab/. `↗` opens the current one in a tab of its own,
+   which is what a page wanting the whole window (or a platform EyeDropper
+   that refuses a frame) asks for.
+
+   The location is the hash — `#/events/`, `#/lab/button.html` — so a reload
+   comes back to the same page, and a page that navigates inside the frame
+   moves the hash with it.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+:root {
+  --bg:#0b0b12; --panel:#12121c; --line:#23233a; --field:#2c2c47;
+  --ink:#e8e6f5; --dim:#8b8ba7; --soft:#9c9cba; --accent:#7ea6ff; --warn:#ffb86b;
+}
+
+html, body { height:100%; }
+body {
+  display:flex;
+  background:var(--bg);
+  color:var(--ink);
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — the list.
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 272px;
+  display:flex; flex-direction:column;
+  background:var(--panel);
+  border-right:1px solid var(--line);
+  min-width:0;
+  transition:margin-left .18s ease;
+}
+body.shut #panel { margin-left:-272px; }
+
+#panel header { padding:18px 16px 10px; }
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+#panel h1 small { font-size:11px; letter-spacing:0; text-transform:none; color:var(--dim); font-weight:500; margin-left:6px; }
+#filter {
+  width:100%; margin-top:10px; padding:6px 8px;
+  background:var(--bg); color:var(--ink); border:1px solid var(--field); border-radius:6px;
+  font:inherit; font-weight:500;
+}
+#filter:focus { outline:none; border-color:var(--accent); }
+
+#list { flex:1; overflow-y:auto; padding:4px 8px 16px; }
+#list h2 {
+  margin:14px 8px 4px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim);
+}
+#list a {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 8px; border-radius:6px;
+  color:var(--soft); text-decoration:none; font-weight:500;
+}
+#list a:hover { background:#1a1a29; color:var(--ink); }
+#list a.on { background:#1e2340; color:var(--ink); }
+#list a span { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.pill {
+  flex:none;
+  padding:1px 6px; border-radius:99px;
+  font-size:10px; font-weight:700; letter-spacing:.3px;
+  background:#1f1f33; color:var(--dim);
+}
+.pill.writes { background:rgba(255,184,107,.14); color:var(--warn); }
+.pill.game { background:rgba(126,166,255,.12); color:var(--accent); }
+
+#panel footer { padding:10px 16px 14px; font-size:11px; font-weight:500; color:var(--dim); border-top:1px solid var(--line); }
+#panel footer code { color:var(--soft); }
+
+/* ---------------------------------------------------------------------------
+   MAIN — the bar over the page, the page, or the home grid.
+   --------------------------------------------------------------------------- */
+#main { flex:1; display:flex; flex-direction:column; min-width:0; }
+
+#bar {
+  flex:none; display:flex; align-items:center; gap:10px;
+  height:38px; padding:0 10px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+}
+#bar b { font-size:13px; }
+#bar code { font-size:11px; color:var(--dim); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#bar .grow { flex:1; }
+#bar button, #bar a.btn {
+  flex:none;
+  height:26px; min-width:26px; padding:0 8px;
+  background:transparent; color:var(--soft); border:1px solid var(--field); border-radius:6px;
+  font:600 13px/24px inherit; text-decoration:none; text-align:center; cursor:pointer;
+}
+#bar button:hover, #bar a.btn:hover { color:var(--ink); border-color:var(--accent); }
+body.home #bar .page-only { display:none; }
+
+#frame { flex:1; width:100%; border:0; background:var(--bg); }
+body.home #frame { display:none; }
+
+#home { flex:1; overflow-y:auto; padding:26px 28px 40px; display:none; }
+body.home #home { display:block; }
+#home h2 { margin:22px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); }
+#home h2:first-child { margin-top:0; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+.card {
+  display:flex; flex-direction:column; gap:6px;
+  padding:14px 14px 12px; border-radius:10px;
+  background:var(--panel); border:1px solid var(--line);
+  color:var(--ink); text-decoration:none;
+}
+.card:hover { border-color:var(--accent); }
+.card .top { display:flex; align-items:center; gap:6px; }
+.card .top b { flex:1; font-size:14px; }
+.card p { font-size:12px; font-weight:500; color:var(--soft); line-height:1.45; }
+.card code { font-size:11px; color:var(--dim); font-weight:500; margin-top:auto; }
+
+#offline { max-width:520px; margin:12vh auto; padding:0 20px; font-weight:500; color:var(--soft); }
+#offline h1 { font-size:18px; color:var(--ink); margin-bottom:10px; }
+#offline code { color:var(--ink); }
+</style>
+</head>
+<body class="home">
+
+<aside id="panel">
+  <header>
+    <h1 id="to-home" title="Home">Lab <small id="where"></small></h1>
+    <input id="filter" type="search" placeholder="Filter  ( / )" autocomplete="off">
+  </header>
+  <nav id="list"></nav>
+  <footer>Localhost only — <code>make lab</code><br>A tool's server starts the first time it is opened.</footer>
+</aside>
+
+<main id="main">
+  <div id="bar">
+    <button id="toggle" title="Hide the list  ( \ )">☰</button>
+    <b id="cur-name">All labs</b>
+    <code id="cur-file"></code>
+    <span class="grow"></span>
+    <button id="reload" class="page-only" title="Reload the page">↻</button>
+    <a id="open" class="btn page-only" target="_blank" title="Open in a tab of its own">↗</a>
+  </div>
+  <iframe id="frame" title="Lab page"></iframe>
+  <section id="home"></section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var LABS = [];
+  var frame = $("frame");
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  }
+
+  function pills(l) {
+    var h = "";
+    if (l.game) h += '<i class="pill game">' + esc(l.game) + "</i>";
+    if (l.server) h += '<i class="pill writes" title="Served by /' + esc(l.server) + '/, which writes into the repo">server</i>';
+    return h;
+  }
+
+  function groups() {
+    var q = $("filter").value.trim().toLowerCase();
+    var hit = LABS.filter(function (l) {
+      return !q || (l.name + " " + l.file + " " + (l.game || "") + " " + l.summary).toLowerCase().indexOf(q) >= 0;
+    });
+    return [
+      ["Tools", hit.filter(function (l) { return l.server; })],
+      ["Pages", hit.filter(function (l) { return !l.server; })]
+    ].filter(function (g) { return g[1].length; });
+  }
+
+  function renderList() {
+    var cur = current();
+    $("list").innerHTML = groups().map(function (g) {
+      return "<h2>" + g[0] + "</h2>" + g[1].map(function (l) {
+        return '<a href="#' + esc(l.url) + '"' + (cur && cur.url === l.url ? ' class="on"' : "") +
+          ' title="' + esc(l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>";
+      }).join("");
+    }).join("") || '<h2>Nothing matches</h2>';
+  }
+
+  function renderHome() {
+    $("home").innerHTML = groups().map(function (g) {
+      return "<h2>" + g[0] + '</h2><div class="grid">' + g[1].map(function (l) {
+        return '<a class="card" href="#' + esc(l.url) + '"><div class="top"><b>' + esc(l.name) + "</b>" + pills(l) +
+          "</div><p>" + esc(l.summary) + "</p><code>lab/" + esc(l.file) + "</code></a>";
+      }).join("") + "</div>";
+    }).join("");
+  }
+
+  /* The lab the hash points at. `/events/library` is the sound library and
+     `/events/` the bench, so the longest url that prefixes the path wins. */
+  function current() {
+    var p = location.hash.slice(1);
+    if (!p) return null;
+    var best = null;
+    LABS.forEach(function (l) {
+      var u = l.url.replace(/\/$/, "");
+      if ((p === l.url || p === u || p.indexOf(u + "/") === 0 || p.indexOf(l.url + "?") === 0) &&
+          (!best || l.url.length > best.url.length)) best = l;
+    });
+    return best;
+  }
+
+  function route() {
+    var p = location.hash.slice(1);
+    var home = !p;
+    document.body.classList.toggle("home", home);
+    var l = current();
+    $("cur-name").textContent = home ? "All labs" : (l ? l.name : p);
+    $("cur-file").textContent = home ? LABS.length + " pages" : (l ? "lab/" + l.file : "");
+    document.title = home ? "Lab — back office" : "Lab — " + (l ? l.name : p);
+    $("open").href = p || "/";
+    if (!home && framePath() !== p) frame.src = p;
+    if (home) frame.removeAttribute("src");
+    renderList();
+    if (home) renderHome();
+  }
+
+  function framePath() {
+    try {
+      var loc = frame.contentWindow.location;
+      return loc.href === "about:blank" ? "" : loc.pathname + loc.search;
+    } catch (e) { return ""; }
+  }
+
+  // A page that navigates inside the frame takes the hash with it.
+  frame.addEventListener("load", function () {
+    var p = framePath();
+    if (p && p !== location.hash.slice(1)) {
+      history.replaceState(null, "", "#" + p);
+      route();
+    }
+  });
+
+  window.addEventListener("hashchange", route);
+  $("filter").addEventListener("input", function () { renderList(); if (!location.hash.slice(1)) renderHome(); });
+  $("to-home").addEventListener("click", function () { location.hash = ""; });
+  $("reload").addEventListener("click", function () {
+    try { frame.contentWindow.location.reload(); } catch (e) { frame.src = frame.src; }
+  });
+
+  function toggle() {
+    document.body.classList.toggle("shut");
+    try { localStorage.setItem("lab:shut", document.body.classList.contains("shut") ? "1" : ""); } catch (e) {}
+  }
+  $("toggle").addEventListener("click", toggle);
+  try { if (localStorage.getItem("lab:shut")) document.body.classList.add("shut"); } catch (e) {}
+
+  document.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "INPUT") {
+      if (e.key === "Escape") { e.target.value = ""; e.target.blur(); renderList(); renderHome(); }
+      return;
+    }
+    if (e.key === "/") { e.preventDefault(); if (document.body.classList.contains("shut")) toggle(); $("filter").focus(); }
+    else if (e.key === "\\") toggle();
+  });
+
+  $("where").textContent = location.host;
+
+  fetch("api/labs").then(function (r) { return r.json(); }).then(function (list) {
+    LABS = list;
+    route();
+  }).catch(function () {
+    document.body.innerHTML = '<div id="offline"><h1>The back office needs its server</h1>' +
+      "<p>The list is read off <code>lab/*.html</code> by <code>tools/lab/serve-lab.mjs</code>. " +
+      "Run <code>make lab</code> and open <code>http://localhost:8095/</code>.</p></div>";
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.14.1",
+  "version": "0.16.0",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -1022,7 +1022,8 @@
         "refreshHours": 6,
         "base": 90,
         "gradeStep": 0.22,
-        "tierStep": 1.9
+        "tierStep": 1.9,
+        "fallen": 0.4
       },
       "missions": {
         "offers": 3,
@@ -3119,55 +3120,74 @@
       "start": [
         {
           "r": 10,
-          "t": 1,
-          "n": 1
+          "t": 1
         },
         {
           "r": 9,
-          "t": 1,
-          "n": 1
+          "t": 1
         },
         {
           "r": 8,
-          "t": 1,
-          "n": 1
+          "t": 1
         },
         {
           "r": 7,
-          "t": 1,
-          "n": 2
+          "t": 1
+        },
+        {
+          "r": 7,
+          "t": 0
         },
         {
           "r": 6,
-          "t": 0,
-          "n": 3
+          "t": 0
+        },
+        {
+          "r": 6,
+          "t": 1
         },
         {
           "r": 5,
-          "t": 0,
-          "n": 3
+          "t": 0
+        },
+        {
+          "r": 5,
+          "t": 1
         },
         {
           "r": 4,
-          "t": 0,
-          "n": 3
+          "t": 0
+        },
+        {
+          "r": 4,
+          "t": 1
+        },
+        {
+          "r": 4,
+          "t": 2
         },
         {
           "r": 3,
-          "t": 0,
-          "n": 1
+          "t": 0
         },
         {
           "r": 2,
-          "t": 0,
-          "n": 2
+          "t": 0
+        },
+        {
+          "r": 2,
+          "t": 1
         },
         {
           "r": 1,
-          "t": 1,
-          "n": 1
+          "t": 1
         }
       ],
+      "promotion": {
+        "base": 0.15,
+        "step": 0.01,
+        "max": 0.3
+      },
       "cast": [
         {
           "side": "blue",

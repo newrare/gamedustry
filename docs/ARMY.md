@@ -107,9 +107,12 @@ of the player's own wounded when every bed is taken is **refused, and a wound
 nobody can treat is a card lost** — it leaves the battle, the barracks strikes
 it off the roster (`result.army.dead`), and a `Notify` says so as it happens. A
 prisoner with no cell is not taken either (said once per battle), and the
-end-of-battle offer does not open on a full prison. Both screens draw every bed
-and every cell, taken or free, because a ceiling that only shows once it bites
-is a card lost by surprise. A conscript has no id and never reaches a bed, so
+end-of-battle offer does not open on a full prison. Both screens are ROOMS
+rather than lists: every bed and every cell, taken or free, as the deck's
+medium card three to a row, with a gauge of the wait under each card (green in
+the infirmary, red turning blue in the prison, where a prisoner stands behind
+bars until they turn), because a ceiling that only shows once it bites is a
+card lost by surprise. A conscript has no id and never reaches a bed, so
 it is always taken in.
 
 One case is answered rather than allowed: a hand of nothing but bandages would
@@ -124,28 +127,49 @@ screen a stray tap can close is not a screen anything is composed on. They
 stack over the village like the album and the shop, they carry the wallet band,
 and ESCAPE peels them. `tools/test/views.mjs` holds that contract for all four.
 
-| the door  | what is on it                                                              |
-| --------- | -------------------------------------------------------------------------- |
-| DECK      | the roster and the next battle's cards — plus COLLECTION and OBJECTS tabs  |
-| INFIRMARY | what the last battles cost, and how long until each card is back           |
-| PRISON    | who was taken, how long until they turn, and the button that enlists them  |
-| CAMP      | two tabs: RECRUITS (the tent) and MISSIONS (a squad sent away, section 7b) |
+| the door  | what is on it                                                             |
+| --------- | ------------------------------------------------------------------------- |
+| DECK      | the next battle's cards, slot by slot — plus a COLLECTION tab             |
+| INFIRMARY | what the last battles cost, and how long until each card is back          |
+| PRISON    | who was taken, how long until they turn, and the button that enlists them |
+| CAMP      | four tabs: RECRUITS (the tent), MISSIONS (7b), CAMP and REGISTER (7c)     |
 
-**The deck screen has three tabs, and the other two are the same cards read
-another way.** DECK is the screen as it was and the one it always opens on.
-COLLECTION is the whole CAST (section 3b): sixty officers a side, one line per
-grade and the six tiers along it, the player's army first. A blue officer is
-lit once OWNED (the first roster, the tent), a red one once MET — turned over
-in a battle or held in the prison. OBJECTS is `web.army.objects`: the flag, the trap and the six
-pieces of scenery a camp is built of (straw man, wooden fence, rock, forest,
-skull, book), cards with no grade and no tier, lit once one has been turned
-over in battle. A card never had is its **shadow** — the piece as a white
-silhouette named ???, the way an unowned sticker is drawn — and an officer's
-shadow keeps its grade and tier badges, in slate: the grade names the slot, the
-tier is E, the floor a first copy starts from. The six pieces
-of scenery light up the way the flag and the trap do, the first time a camp
-deals one and the player turns it over (section 2). Tabs and not doors,
-because a building each would turn the hub into a shelf of reference books.
+**The deck screen has two tabs, and the second is the same cards read another
+way.** DECK is the FORMATION and the one it always opens on
+(`lab/stratideck-deck.html`, "two lists"): every slot the battle has, as
+medium cards four a row, the empty ones included — one page, nothing to
+scroll, no line under the title and none about the gaps (an empty slot says it
+is empty). A tap on a card in a slot opens its file
+at full size, and the red `−` on its corner sends it back to the reserve; an empty slot is a `+`, and it opens the
+**picker** — a card over the screen listing the reserve that can fight today
+(every card owned, not in the deck, neither wounded nor away on a mission) as
+tokens five a row, in a region of one fixed height so the card never changes
+size. Its one filter is the grade, since a spy, a scout or a sapper is looked
+for by name; a grade with no card ready is greyed and does nothing. A tap on a
+token reads its file, the `+` on its corner takes it into the first gap.
+*Auto-fill* completes a short deck with the best fit cards in one tap; it
+stays on screen, disabled, when the deck is full or no fit card is left.
+
+COLLECTION is a **codex** (`lab/stratideck-collection.html`, "codex"): four
+books behind one switch, each quarter of it also its progress — BLUE (sixty
+officers, lit once OWNED: the first roster, the tent), RED (sixty, lit once MET
+— turned over in a battle or held in the prison), TURNCOATS (the same sixty red
+officers in the blue cloth, lit once one enlisted) and OBJECTS
+(`web.army.objects`: the flag, the trap and the six pieces of scenery a camp is
+built of — straw man, wooden fence, rock, forest, skull, book — cards with no
+grade and no tier, lit once one has been turned over in battle). The screen
+carries no line under its title, so the room goes to the card. One card at a
+time, at full size, turned like a carousel (a swipe, the arrows, ← / →), and
+who they are written under it: name, grade, tier, age, gender, their story —
+or, for an object, what it does and what destroys it. What the grade breaks is
+not repeated there: the card wears it as a pictogram and the file's back says
+it. The three filters — all, had, missing — are pictograms with their count on
+a tag, riding the seam between the carousel and that panel. The card in the
+middle turns over to its file on a tap. A card never had is its **shadow** —
+the piece as a white silhouette named ???, the way an unowned sticker is drawn
+— and an officer's shadow keeps its grade and tier badges, in slate; its line
+under the card says how it is earned. Tabs and not doors, because a building
+each would turn the hub into a shelf of reference books.
 
 **Every badge counts what the player would walk in and ACT on**: the deck badge
 is how many slots are still EMPTY and the camp's is how many of the tent's
@@ -173,7 +197,7 @@ composed in `lab/stratideck-card.html`, whose stylesheet is pasted verbatim into
 the game's SKIN — and `cardTile` in `army.js` asks it for one at the size each
 screen needs: the deck as a strip of tokens (the lab's `tiny`, 86 px, seven to a
 row), the roster as full 5:7 cards four to a row, the infirmary and the prison
-as tokens, the tent and the prisoner offer as full cards. A game that publishes
+as medium cards three to a row, the tent and the prisoner offer as full cards. A game that publishes
 no builder keeps the plain tile of `army.css`. The round deals the same nodes
 (`game.js`, THE TABLE), so a card picked in the deck screen and the card that
 lands on the grid are one object.
@@ -182,7 +206,25 @@ lands on the grid are one object.
 
 `web.army.cast` names **one officer per army, grade and tier**: 2 × 10 × 6 =
 120, so every combination is exactly one person and the identity is never
-stored — the army a card was raised in, its grade and its tier ARE who it is.
+stored — the army a card was raised in, its grade and the tier it was RAISED
+at ARE who it is. A promotion (§5b) moves the tier a card fights at and never
+that one.
+
+**Every officer is one person, so the camp never holds one twice.** The
+roster and the prison together hold each identity at most once (`idKey` in
+`army.js`, a turncoat under the camp's key, a promoted card under its base
+tier), and `enrol` — the one way into the roster — refuses a second copy.
+Every door keeps to it: the first roster takes the nearest free tier of a
+grade the manifest asks twice for, the tent never shelves an officer already
+held (and a shelf rolled before one joined by another door shows them as
+already in the camp), a mission's `card` reward is drawn among the free faces
+of its ranges — and paid in the officer's tent price when none is left, or when
+the officer joined in the meantime — and a captive the camp already holds, in a
+cell or enlisted, is not offered. A save written before the rule is repaired
+on load: each copy after the first becomes the nearest free officer of its
+grade UNDER its tier (so it reads as already promoted and keeps its strength),
+or is bought back at the tent's price when there is none; a duplicate prisoner
+is let go. Nothing of it reaches the register.
 
 ```json
 { "side": "red", "r": 7, "t": 3, "first": "Marga", "last": "Gellan",
@@ -267,9 +309,13 @@ stops; a battle they start badly equipped is a game that costs them.
 On the same `endRound` result the game already writes its stat rows into:
 
 ```js
-army: { won: true, hurt: ["3", "11"], met: [ { r: 6, t: 1 }, { r: 12, t: 5 }, … ],
-        captives: [ { r: 8, t: 4 }, … ] }
+army: { won: true, hurt: ["3", "11"], dead: ["7"], used: ["3", "5", "11"],
+        met: [ { r: 6, t: 1 }, { r: 12, t: 5 }, … ], captives: [ { r: 8, t: 4 }, … ] }
 ```
+
+`used` is every card of the barracks the battle PLAYED, by id — what a
+promotion is earned with (§5b). A game that sends none has its whole deck
+counted instead.
 
 `met` is every enemy card the battle turned over, once each, won or lost — an
 officer or an object (the flag is 12, a trap 11). It is what fills the
@@ -315,20 +361,54 @@ wrote its prisoner and then threw, leaving the card on screen and taking a
 prisoner per tap. One tap is also the only one that counts — the card stays
 in the document for its fade.
 
+## 5b. Promotions — a card that serves climbs
+
+**A service** is a battle a card was played in, a mission it was sent on, or a
+battle fought while it held a post (`s` on the card, counted since its last
+promotion). **A victory** — a battle won, a mission brought home — rolls every
+card that served it for one step up the ladder, E to D, D to C… S has nowhere
+left to go:
+
+```
+chance = min(max, base + step × (services − 1))      web.army.promotion: 0.15, 0.01, 0.30
+```
+
+A fresh card climbs one win in six or seven, a veteran of a dozen services one
+in five, and the chance goes back to `base` once it has climbed — each rank is
+earned again. A lost battle or a failed mission still counts the service and
+rolls nothing; the dead roll nothing.
+
+**The face climbs, the person does not.** The card keeps the tier it was
+raised at in `b` (written the first time it climbs), and that is the tier its
+name, its portrait and the BACK of its card are read at: the recto wears the
+current tier — frame, badge, pips, plate — and the verso keeps its original
+style, so turning a card over always shows where it started, with one fact
+more on it (`Promotion : C`). The round gets both (`CONFIG.army.deck[i].b`,
+`card.base` in `game.js`) and fights at `t`.
+
+**Every promotion is told, on a card of its own** (`openPromos`): the officer
+before and after at the medium size, the name, the step and what earned it. A
+battle's promotions wait for the next arrival at the village; a mission's
+follow its report the moment it is put away. Several are one card whose pages
+a tap turns — neither the scrim nor a stray key skips a page nobody read.
+
 ## 6. The two waits, and the way out of them
 
-Two real days in the infirmary, five in the prison. Both can be bought out with
-the shell's **rewarded-ad placeholder** (`Meta.ad`, [docs/META.md](META.md)) —
-one button for all the bandages at once, because an ad per wound is four ads
-for one battle and a price nobody pays twice.
+Two real days in the infirmary, five in the prison. **Only the first can be
+bought out**, with the shell's **rewarded-ad placeholder** (`Meta.ad`,
+[docs/META.md](META.md)) — one button for all the bandages at once, and none per
+bed, because an ad per wound is four ads for one battle and a price nobody pays
+twice. The prison has no ad at all: a prisoner is a bonus that blocks nothing,
+so the five days are a reason to come back, like a squad on a mission.
 
 Without that button a player whose three best cards are in bandages has nothing
 to do for two days, which is not a mechanic, it is a closed door.
 
 **On a machine that is plainly not a player's an hour is a second**, the same
 fence the daily road keeps (`army.js`, `DEV`): localhost, a LAN address or a
-`file://` page. The screens wear a DEV pill so a screenshot can never be
-mistaken for the real thing, and nothing of it reaches a deployed site.
+`file://` page. The band's DEV pill ([VIEWS.md](VIEWS.md)) says so, so a
+screenshot can never be mistaken for the real thing, and nothing of it reaches
+a deployed site.
 
 ## 7. Recruiting
 
@@ -342,11 +422,20 @@ price = base × (1 + gradeStep × (grade − 1)) × tierStep ^ tier      (rounde
 
 **The shelf is rolled on a clock, not on arrival.** A shelf that re-rolls every
 time the player walks in is a shelf they re-roll instead of buying from, and
-the price stops meaning anything. It can be re-rolled early for an ad.
+the price stops meaning anything. Nothing re-rolls it early — the ad that
+did was removed in 0.15.0.
 
 **The tent never sells the three specials.** A spy, a scout and a sapper are
 ANSWERS to something — the marshal, the fog, the traps — and a tent that sold
 them would be selling the solution rather than the army.
+
+**The tent is also where the dead come back.** A shelf rolled while the
+register holds an officer the camp no longer has keeps one place for one of
+them `recruit.fallen` of the time (40 %), tagged BACK ALIVE, at the tier they
+were raised at — the rank they had earned died with the file — and a special
+is no exception: that is buying back what the army had, not the answer to a
+question. Recruited, the register's line stays and says they are back in
+service.
 
 A card bought goes **straight into the deck** if there is room: a purchase the
 player then has to visit a second screen to use is a purchase they do not feel.
@@ -356,10 +445,18 @@ player then has to visit a second screen to use is a purchase they do not feel.
 The camp's second tab. The board offers a few scenarios out of
 `web.army.missions.list` (fifty in `games/stratideck`) — a pretext, a
 difficulty from 1 to 5, a length of 4 to 48 real hours, a squad of two to five
-cards, what it pays and what a failure costs. The player answers one with a
-squad picked on a **briefing**, one level under the tab (the tab and CANCEL
-lead back to the board), and the odds are printed live as each card is taken
-or left:
+cards, what it pays and what a failure costs. On the board each is **one
+line** and a door: the token of the grade it favours, the title and its pips,
+then the length, the squad and the first reward — the pretext and the full
+stakes are the briefing's. The player answers one with a squad picked on a
+**briefing**, one level under the tab (the tab and CANCEL
+lead back to the board). Its slots work as the deck's do: a `+` opens the
+deck's own picker over the cards free to go (a token tagged with the mission's
+favour), a card taken is a door to its file with a `−` on its
+corner. The odds are printed live as each card is taken or left, drawn as a
+shelf of the album draws its own — a track and the chance in a pill, the
+notch where the squad stands on its own merits and the hatch what the favoured
+grade adds past it:
 
 ```
 power  = grade + tierWeight × tier   (+ favorBonus on the grade the mission favours)
@@ -378,16 +475,25 @@ the player's standing choice, and out of every battle until it is back — the
 rule a wound follows, and the deck screen tags it ON MISSION. At most
 `running` squads are out at once, and the board is rolled on a clock
 (`refreshHours`) like the tent's shelf, the missions run least first and one
-per difficulty before a difficulty repeats; an ad rolls it early, and an ad
-brings a squad home now.
+per difficulty before a difficulty repeats. **No ad rolls it early and no ad
+brings a squad home**: a board bought again is a board shopped for the easy
+mission, and the wait is the reason to come back to the game later.
+
+**The tab is three sections and no subtitle**, in the order they are read.
+THE BOARD first, `offers` slots, and a mission sent leaves its slot empty
+until the clock rolls the board again. UNDER WAY is `running` slots — the
+squads away, a report not yet collected, and a dashed slot per squad the camp
+could still send. REPORTS is the history: every report collected, newest
+first and at most twenty, each row stamped success or failure and re-opened
+on a tap, as it was written and paying nothing.
 
 **The outcome is drawn at the departure** (`z` in the save), so no reload
 re-rolls it. The report is written when it is opened — a wound goes to the
 infirmary (and a wound with no bed is a card lost, the round's rule), a loss
 leaves the roster — and what it pays is granted on the tap that closes it, so
 the chips count up in front of the player. The report is the scenario's own:
-`win` or `lose`, with `{leader}` replaced by the name of the squad's
-highest-ranking officer, then the squad as it came back and what it paid or
+its `brief` first, the pretext the squad left on, then `win` or `lose`, with
+`{leader}` replaced by the name of the squad's highest-ranking officer, then the squad as it came back and what it paid or
 cost. The French texts never make a word agree with `{leader}`, who may be a
 man or a woman.
 
@@ -397,6 +503,40 @@ man or a woman.
 | `super` — super tickets       | `lose` — n of the squad             |
 | `sticker` — one machine draw  | `coins` — n coins, never below zero |
 | `card` — `r` and `t` ranges   |                                     |
+
+## 7c. The camp and the register
+
+The camp's third and fourth tabs read the army as a whole.
+
+**CAMP is two halves on one page.** First the **five posts** — infirmary,
+prison, formation, missions, camp — one officer each, filled with the deck's
+own picker (`pickCard`, the same reserve, the same grade strip) and emptied
+with the same `−`. **A post is exclusive**: the picker offers only a free card
+out of the reserve, and a card at a post is out of the deck picker, the squads
+and the round's deck (`free()` in `army.js`) until it is relieved. A post has
+**no effect yet** — it is the slot and the lock, nothing reads it. Then the
+**roll**: every card the camp holds, the prisoners included, four a row, each
+with what it is doing — at a post (its role: infirmary manager, prison warden,
+drill instructor, mission officer, in command), in formation, on a mission,
+wounded, in prison, or in reserve — with the wait under it where there is one.
+The section's count is the number of cards listed.
+
+**REGISTER is every card lost**, newest first: a wound the infirmary had no
+bed for (in a battle or on a mission) or a squad member who did not come back.
+A card leaves the roster through `retire()` and nowhere else, and `retire()`
+writes the entry, so the list cannot miss one. It starts empty on a save
+written before 0.15.0 — the losses before it were never kept. **Each cause
+wears its pictogram**, on the card's corner and before the line that says it:
+a sword for a battle, a compass for a squad that never came back, a heart for
+a mission's wound with no bed to lay it in (`why`: `battle`, `mission`,
+`wounds`).
+
+**A death is told once, on a card that does not celebrate** (`openFallen`, IN
+MEMORIAM): every death since the last one told, however many — one card, the
+causes one line each, then the medium card for a single loss or the tokens for
+several, each a door to this tab. It opens on the next arrival at the village,
+before any promotion, and after a mission's report when that is where the loss
+came from. An entry is `nw` until it has been shown.
 
 ## 8. Where the save lives
 
@@ -409,13 +549,21 @@ second thing for OPTIONS to erase and a second thing to forget.
 n  the next id to hand out — ids are NEVER reused, because the deck, the
    infirmary and a battle's wound list are three lists pointing at one card
 r  the roster   { i id, g grade, t tier, w when its wound heals (0 = fit),
-                 o "red" on a prisoner who enlisted — absent otherwise }
+                 o "red" on a prisoner who enlisted — absent otherwise,
+                 b the tier it was raised at, once promoted,
+                 s services since its last promotion }
+up promotions not yet told { i, g, o, b, f from, t to, why "battle" | "mission" | "post" }
 d  the deck     ids, in the order the player put them in
 p  the prison   { g, t, u when the prisoner turns }
+po the posts    { post key → card id }: inf, pri, drill, ops, cmd
+x  the register every card lost, newest first, 200 at most
+                 { g, t, b, o, why "battle" | "mission" | "wounds", m mission id, at,
+                   nw not told yet, back when the tent found them alive }
 k  the tent     { t when the shelf was rolled, o the offers, b the ones bought }
 ms the missions { t when the board was rolled, o its mission ids,
                  r the squads away { m, c card ids, e back at, p odds, z roll },
-                 q reports written and not collected, h mission → times run }
+                 q reports written and not collected, l reports collected
+                 (newest first, 20 at most), h mission → times run }
 c  the collection, which only grows: { h officer → 1 once owned,
    m officer → 1 once met, o object → 1 once turned over }, an officer
    being the cast's key, "b4.2" = the blue sergeant at C
@@ -446,7 +594,8 @@ about what either means.
     { "r": 1, "name": "Spy", "art": "cardBlueSpy", "foe": "cardRedSpy" }
   ],
   "recruit": { "slots": 3, "refreshHours": 6,
-               "base": 90, "gradeStep": 0.22, "tierStep": 1.9 },
+               "base": 90, "gradeStep": 0.22, "tierStep": 1.9, "fallen": 0.4 },
+  "promotion": { "base": 0.15, "step": 0.01, "max": 0.3 },
   "missions": { "offers": 3, "running": 3, "refreshHours": 8,
                 "need": [10, 20, 32, 46, 64], "par": 0.7,
                 "tierWeight": 2, "favorBonus": 10,
@@ -455,7 +604,7 @@ about what either means.
                             "fail": [ { "kind": "wound", "n": 1 } ],
                             "title": { "en": "…", "fr": "…" }, "brief": { … },
                             "win": { … }, "lose": { … } } ] },
-  "start": [ { "r": 10, "t": 1, "n": 1 } ]
+  "start": [ { "r": 10, "t": 1 }, { "r": 7, "t": 1 }, { "r": 7, "t": 0 } ]
 }
 ```
 
@@ -466,8 +615,10 @@ screen visibly the card that was just fighting back. Both are keys of
 ([docs/ASSETS.md](ASSETS.md)); a build with none of it falls back to the
 grade's number.
 
-`start` is the roster a first-time player is handed, and **their first deck is
-filled for them, best first**: a player who opens a brand new game, walks past
+`start` is the roster a first-time player is handed — one entry per officer,
+since every officer is one person (an `n` above 1 takes the nearest free tier
+of that grade for each copy) — and **their first deck is filled for them, best
+first**: a player who opens a brand new game, walks past
 a hub they have never seen and presses PLAY must not lose their first battle to
 an empty deck screen they had no reason to open.
 
@@ -484,6 +635,7 @@ it, with no tab bar.
 - **No trading, no packs, no second currency.** Recruiting spends the coins the
   score already pays; a currency that only buys cards would be a second economy
   to balance for one screen.
-- **No card levels.** A card is a grade and a tier and it never changes: a
-  roster that can be upgraded is a roster where the tier stops meaning anything,
-  and the tier is what the whole fight rule stands on.
+- **No bought levels.** A card climbs a tier by serving and winning (§5b), and
+  by nothing else: no coins, no ad, no duplicate fed to it. A roster that could
+  be upgraded at will is a roster where the tier stops meaning anything, and
+  the tier is what the whole fight rule stands on.

@@ -11,6 +11,8 @@
 #   make itch    re-publish to itch without pushing
 #   make site    assemble dist/site locally
 #   make serve   the dev loop, with reload on save
+#   make preview the same site built once, no reload — restart it to rebuild
+#   make lab     every lab page behind one back office, at http://localhost:8095/
 #   make store   the store card composer, at http://localhost:8091/
 #   make events  the callouts / cues bench, at http://localhost:8092/ (and /library, the sfx by ear)
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
@@ -27,7 +29,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve store events sfx text village meta shots map ng android
+.PHONY: help check test push itch site serve preview lab store events sfx text village meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -76,6 +78,18 @@ site:
 
 serve:
 	node tools/lab/serve-site.mjs
+
+# Same server, frozen: one build at start, no watcher, no reload. For testing
+# by hand while an agent is editing the sources.
+preview:
+	node tools/lab/serve-site.mjs --no-watch
+
+# Every page of lab/ on one port, localhost only: a back office that lists them
+# and opens each beside the list. The four tools below are started the first
+# time they are opened, each in its own process under its own prefix
+# (/events/, /text/, /store/, /village/); their own targets still work alone.
+lab:
+	node tools/lab/serve-lab.mjs
 
 # lab/store-card.html needs a server for two things it cannot do over file://:
 # list what a game owns, and write the image it composed into assets/image/<store>/.

@@ -468,6 +468,9 @@
        ids of the player's cards that were wounded, and the enemies left
        standing. Both are empty and inert for a playable. */
     var wounded, captives, roster, met;
+    /* every card of the barracks played this battle, by id: each is a
+       service, and a won battle may promote it (packages/webshell/army.js) */
+    var used = {};
     /* WHAT THE ROUND KEEPS TO SHOW, in the order it happened: the player's
        cards wounded (the infirmary icon), the enemies beaten (the pile in the
        top-right corner) — the captives are `captives` above (the prison). */
@@ -545,17 +548,21 @@
     function cardName(card, side) {
       var AR = window.__ARMY__;
       if (AR && AR.who && card.rank <= MARSHAL) {
-        return AR.who(side === "red" ? "red" : (card.o || "blue"), card.rank, card.tier);
+        return AR.who(side === "red" ? "red" : (card.o || "blue"), card.rank, card.base != null ? card.base : card.tier);
       }
       return Lang.t(rankName(card.rank)) + "·" + tierName(card.tier);
     }
     /* `o` is the army the officer was RAISED in, when it is not the one they
        fight for: "red" on a prisoner who turned (packages/webshell/army.js).
        It changes the face and nothing else — a turncoat is a card of the
-       player's army in every rule of the round. */
-    function card(rank, tier, id, o) {
+       player's army in every rule of the round. `base` is the tier the
+       officer was RAISED at, on a card the barracks has promoted since: the
+       portrait and the name are read there, every rule and the frame at
+       `tier`. */
+    function card(rank, tier, id, o, base) {
       var c = { rank: rank, tier: clamp(tier | 0, 0, TOP_TIER), id: id || null, hurt: 0 };
       if (o) c.o = o;
+      if (base != null && (base | 0) !== c.tier) c.base = clamp(base | 0, 0, TOP_TIER);
       return c;
     }
 
@@ -779,7 +786,7 @@
              ? CONFIG.army.deck : null;
       if (roster) {
         for (i = 0; i < roster.length; i++) {
-          deck.push(card(roster[i].r, roster[i].t, roster[i].id, roster[i].o));
+          deck.push(card(roster[i].r, roster[i].t, roster[i].id, roster[i].o, roster[i].b));
         }
       } else {
         var n = Math.max(6, Math.round(cols * rows * P.deckRatio));
@@ -988,6 +995,7 @@
       tableClear();
       refills = [];
       wounded = {}; captives = []; hurtCards = []; fallen = []; lostCards = []; met = []; refused = []; prisonWarned = false;
+      used = {};
       strayed = []; smashed = 0; taught = {};
       sheetClose();
       buildGrid();
@@ -1249,6 +1257,7 @@
       var a = hand[i], foe = grid[r][c];
       if (a == null || a.hurt || a.stun || !foe) return;
       selected = -1;
+      if (a.id) used[a.id] = 1;               // a service, for the barracks (`ledger`)
       var verdict = judge(a, foe);
       if (verdict.kind === "spell") verdict = bewitch(a, i);
       turn = {
@@ -1819,7 +1828,9 @@
         var kind = turn ? "turn" : (c.o || side);
         var key = side === "red" ? def.red : def.blue;
         if (c.o === "red") key = def.red;
-        var src = (officer && castArt(kind, c.rank, t)) ||
+        /* the portrait is the officer's, at the tier they were raised at:
+           a promotion changes the frame and never the face */
+        var src = (officer && castArt(kind, c.rank, c.base != null ? clamp(c.base | 0, 0, TOP_TIER) : t)) ||
                   (key && CONFIG.art && CONFIG.art[key]) || (def.art && CONFIG.art && CONFIG.art[def.art]) || "";
         var pips = "";
         for (var i = 0; tiered && i < TIER_PIPS[t]; i++) pips += "<i></i>";
@@ -2601,7 +2612,7 @@
        the muster does not say it. */
     function campGrid() {
       var grid = document.createElement("div"), g, total = 0;
-      grid.className = "sh-grid";
+      grid.className = "sh-tiles";
       var order = [FLAG, TRAP, STRAW, FENCE, ROCK, FOREST, SKULL, BOOK, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
       for (var i = 0; i < order.length; i++) {
         g = order[i];
@@ -2629,7 +2640,7 @@
        the rest of the battle. */
     function armyTiles(list, w, lost) {
       var grid = document.createElement("div");
-      grid.className = "sh-grid" + (lost ? " lost" : "");
+      grid.className = "sh-tiles" + (lost ? " lost" : "");
       list = list.slice().sort(function (a, b) { return (b.rank - a.rank) || (b.tier - a.tier); });
       for (var i = 0; i < list.length; i++) {
         var cell = document.createElement("div");
@@ -2704,7 +2715,7 @@
     function fileOf(c, side, blind) {
       if (c.rank > MARSHAL) return { g: c.rank, obj: true, team: "none" };
       if (blind) return { o: side, g: c.rank, t: c.tier, blind: true, team: side };
-      return { o: c.o || side, g: c.rank, t: c.tier, team: side };
+      return { o: c.o || side, g: c.rank, t: c.tier, b: c.base != null ? c.base : null, team: side };
     }
     function fileDoor(cell, c, side, blind) {
       var AR = window.__ARMY__;
@@ -2753,7 +2764,7 @@
         box.innerHTML += '<div class="sh-empty">' + upper(Lang.t(empty)) + "</div>";
       } else {
         var grid = document.createElement("div");
-        grid.className = "sh-grid";
+        grid.className = "sh-tiles";
         var w = list.length > 20 ? 88 : 104;
         for (i = list.length - 1; i >= 0; i--) {
           var cell = document.createElement("div");
@@ -2815,7 +2826,9 @@
       });
       var dead = [];
       for (k = 0; k < refused.length; k++) if (refused[k].id) dead.push(refused[k].id);
-      return { hurt: out, dead: dead, met: met.slice(0),
+      var played = [];
+      for (k in used) if (used.hasOwnProperty(k)) played.push(k);
+      return { hurt: out, dead: dead, met: met.slice(0), used: played,
                captives: best.slice(0, 8).map(function (q) { return { r: q.r, t: q.t }; }) };
     }
 
@@ -2869,7 +2882,7 @@
         /* The barracks reads this and nothing else of the round
            (packages/webshell/army.js). `won` is what decides whether a
            prisoner is offered at all. */
-        army: { won: won, hurt: led.hurt, dead: led.dead, met: led.met, captives: led.captives },
+        army: { won: won, hurt: led.hurt, dead: led.dead, met: led.met, captives: led.captives, used: led.used },
         track: { score: score, kills: kills, losses: losses, ties: ties, scouted: scouted, traps: trapsCleared,
                  objects: smashed, strayed: strayed.length, won: won }
       });

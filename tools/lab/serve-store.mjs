@@ -4,6 +4,7 @@
 
     node tools/lab/serve-store.mjs
     node tools/lab/serve-store.mjs --port=4000
+    make lab                           → http://localhost:8095/store/
 
   lab/store-card.html is a lab page like any other and opens over file:// just
   fine, but two things it now has to do are impossible from there: LIST what a
@@ -28,14 +29,12 @@
   layouts), the same two places shoot-store.mjs reads.
 */
 
-import { createServer } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain, portArg, listen, json, notFound, readBody, sendFile } from '../lib/serve.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const argv = process.argv.slice(2);
-const PORT = Number((argv.find((a) => a.startsWith('--port=')) || '--port=8091').split('=')[1]);
 
 const GAMES_DIR = path.join(ROOT, 'games');
 const ART_DIR = path.join(ROOT, 'assets', 'image', 'embed');
@@ -44,16 +43,6 @@ const OBJECT_DIR = path.join(ROOT, 'assets', 'image', 'object');
 const STORE_DIR = path.join(ROOT, 'assets', 'image');
 const PRESETS = path.join(ROOT, 'lab', 'store-presets.json');
 
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp', '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2'
-};
 
 // ── what a game owns ───────────────────────────────────────────────────────
 /* Everything here is read off the disk rather than declared: a listing image
@@ -199,24 +188,6 @@ function nextNames(slug, format, count) {
 
 // ── serving ────────────────────────────────────────────────────────────────
 
-function body(req) {
-  return new Promise((res, rej) => {
-    let b = '';
-    req.on('data', (d) => {
-      b += d;
-      if (b.length > 64 * 1024 * 1024) { rej(new Error('body too large')); req.destroy(); }
-    });
-    req.on('end', () => res(b));
-    req.on('error', rej);
-  });
-}
-
-function json(res, code, obj) {
-  const s = JSON.stringify(obj);
-  res.writeHead(code, { 'Content-Type': MIME['.json'], 'Cache-Control': 'no-store' });
-  res.end(s);
-}
-
 /* A save writes one file and only under assets/image/<store>/<lang>/. The name
    is the one /api/next handed out, but it still arrives over HTTP, so it is
    scrubbed to the shape the store images already have rather than trusted. The
@@ -231,80 +202,69 @@ function safeSlug(slug) {
   return /^[a-z0-9-]{1,40}$/.test(String(slug || '')) ? String(slug) : '';
 }
 
-createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  const p = decodeURIComponent(url.pathname);
+export async function handle(req, res, p, url) {
+  if (p === '/api/catalogue') return json(res, 200, catalogue());
 
-  try {
-    if (p === '/api/catalogue') return json(res, 200, catalogue());
-
-    if (p === '/api/next') {
-      const slug = safeSlug(url.searchParams.get('slug'));
-      if (!slug) return json(res, 400, { error: 'bad slug' });
-      const asked = url.searchParams.get('format');
-      const format = ['phone', 'desk', 'thumb', 'multi'].includes(asked) ? asked : 'phone';
-      const count = Math.max(1, Math.min(8, Number(url.searchParams.get('count')) || 1));
-      return json(res, 200, nextNames(slug, format, count));
-    }
-
-    if (p === '/api/preset' && req.method === 'PUT') {
-      const b = JSON.parse(await body(req));
-      if (!b.key || !/^[\w.-]+\/[\w-]+$/.test(b.key)) return json(res, 400, { error: 'bad key' });
-      const n = writePreset(b.key, b.comp === null ? null : b.comp);
-      console.log(`  layout  ${b.comp === null ? 'removed' : 'saved'}  ${b.key}   (${n} in lab/store-presets.json)`);
-      return json(res, 200, { ok: true, count: n });
-    }
-
-    if (p === '/api/save' && req.method === 'POST') {
-      const b = JSON.parse(await body(req));
-      const lang = b.lang === 'fr' ? 'fr' : 'en';
-      const name = safeName(b.name);
-      if (!name) return json(res, 400, { error: 'no name' });
-      const comma = String(b.data || '').indexOf(',');
-      if (comma < 0) return json(res, 400, { error: 'no image' });
-
-      /* JPEG, always: 182 pictures of painted artwork over a capture is 34 MB
-         as JPEG and 450 MB as PNG, and a store listing has no use for a
-         lossless one — see docs/ASSETS.md. */
-      const out = path.join(STORE_DIR, /-thumb/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
-      /* A slot is written once. The name came from /api/next, so a collision
-         here means two saves raced or a stale page asked — either way the
-         picture on disk is somebody's and is not overwritten. */
-      if (fs.existsSync(out)) {
-        return json(res, 409, { error: path.relative(ROOT, out) + ' already exists — reload the page' });
-      }
-      fs.mkdirSync(path.dirname(out), { recursive: true });
-      fs.writeFileSync(out, Buffer.from(b.data.slice(comma + 1), 'base64'));
-      const kb = Math.round(fs.statSync(out).size / 1024);
-      const rel = path.relative(ROOT, out);
-      console.log(`  wrote   ${rel}  (${kb} KB)`);
-      return json(res, 200, { ok: true, path: rel, kb });
-    }
-
-    // static: the page itself, and the two directories it is allowed to read.
-    let file;
-    if (p === '/' || p === '/store-card.html') file = path.join(ROOT, 'lab', 'store-card.html');
-    else if (p.startsWith('/assets/')) file = path.join(ROOT, p.slice(1));
-    else if (p.startsWith('/lab/')) file = path.join(ROOT, p.slice(1));
-    else file = null;
-
-    const inside = file && (file.startsWith(path.join(ROOT, 'assets') + path.sep)
-      || file.startsWith(path.join(ROOT, 'lab') + path.sep));
-    if (!inside || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-      res.writeHead(404, { 'Content-Type': MIME['.txt'] });
-      return res.end('not found: ' + p + '\n');
-    }
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-store'
-    });
-    fs.createReadStream(file).pipe(res);
-  } catch (e) {
-    json(res, 500, { error: String(e && e.message || e) });
+  if (p === '/api/next') {
+    const slug = safeSlug(url.searchParams.get('slug'));
+    if (!slug) return json(res, 400, { error: 'bad slug' });
+    const asked = url.searchParams.get('format');
+    const format = ['phone', 'desk', 'thumb', 'multi'].includes(asked) ? asked : 'phone';
+    const count = Math.max(1, Math.min(8, Number(url.searchParams.get('count')) || 1));
+    return json(res, 200, nextNames(slug, format, count));
   }
-}).listen(PORT, () => {
+
+  if (p === '/api/preset' && req.method === 'PUT') {
+    const b = JSON.parse(await readBody(req, 64 * 1024 * 1024));
+    if (!b.key || !/^[\w.-]+\/[\w-]+$/.test(b.key)) return json(res, 400, { error: 'bad key' });
+    const n = writePreset(b.key, b.comp === null ? null : b.comp);
+    console.log(`  layout  ${b.comp === null ? 'removed' : 'saved'}  ${b.key}   (${n} in lab/store-presets.json)`);
+    return json(res, 200, { ok: true, count: n });
+  }
+
+  if (p === '/api/save' && req.method === 'POST') {
+    const b = JSON.parse(await readBody(req, 64 * 1024 * 1024));
+    const lang = b.lang === 'fr' ? 'fr' : 'en';
+    const name = safeName(b.name);
+    if (!name) return json(res, 400, { error: 'no name' });
+    const comma = String(b.data || '').indexOf(',');
+    if (comma < 0) return json(res, 400, { error: 'no image' });
+
+    /* JPEG, always: 182 pictures of painted artwork over a capture is 34 MB
+       as JPEG and 450 MB as PNG, and a store listing has no use for a
+       lossless one — see docs/ASSETS.md. */
+    const out = path.join(STORE_DIR, /-thumb/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
+    /* A slot is written once. The name came from /api/next, so a collision
+       here means two saves raced or a stale page asked — either way the
+       picture on disk is somebody's and is not overwritten. */
+    if (fs.existsSync(out)) {
+      return json(res, 409, { error: path.relative(ROOT, out) + ' already exists — reload the page' });
+    }
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, Buffer.from(b.data.slice(comma + 1), 'base64'));
+    const kb = Math.round(fs.statSync(out).size / 1024);
+    const rel = path.relative(ROOT, out);
+    console.log(`  wrote   ${rel}  (${kb} KB)`);
+    return json(res, 200, { ok: true, path: rel, kb });
+  }
+
+  // static: the page itself, and the two directories it is allowed to read.
+  let file = null;
+  if (p === '/' || p === '/store-card.html') file = path.join(ROOT, 'lab', 'store-card.html');
+  else if (p.startsWith('/assets/') || p.startsWith('/lab/')) file = path.join(ROOT, p.slice(1));
+  if (sendFile(res, file, [path.join(ROOT, 'assets'), path.join(ROOT, 'lab')])) return;
+  notFound(res, p);
+}
+
+function start() {
   const n = Object.keys(catalogue().games).length;
-  console.log(`\n  store composer   http://localhost:${PORT}/`);
   console.log(`  ${n} games, assets/ served live, saves land in assets/image/<store>/<lang>/`);
-  console.log('  layouts in lab/store-presets.json — shoot-store.mjs reads them\n');
-});
+  console.log('  layouts in lab/store-presets.json — shoot-store.mjs reads them');
+}
+
+if (isMain(import.meta.url)) {
+  listen(handle, {
+    port: portArg(8091), label: 'store composer', restart: 'pkill -f serve-store.mjs && make store',
+    ready(url) { console.log(`\n  store composer   ${url}`); start(); console.log(''); }
+  });
+}

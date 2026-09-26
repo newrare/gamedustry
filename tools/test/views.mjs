@@ -325,8 +325,8 @@ async function run(url) {
       "document.getElementById('web-hud').className", "on hud-full");
     await check("...and the album stands in the one sheet every view wears",
       "!!document.querySelector('#al-screen.wv-screen .wv-sheet .wv-title')", true);
-    await check("...the count being a chip of the band now",
-      "!!document.querySelector('#web-hud .mt-chip.collection')", true);
+    await check("...the count riding in the ticket chip, one door for both",
+      "!!document.querySelector('#web-hud .mt-chip.tickets.collection .mt-cnt')", true);
     /* THE ORDER IS THE NAVIGATION, so it is what the test reads: level, coins,
        tickets, stars, left to right, on every screen that carries the band. */
     /* IT HAS TO FIT AT ITS WIDEST, and the widest is not what a fresh save
@@ -338,12 +338,12 @@ async function run(url) {
       "(function () {" +
       "  var b = document.querySelector('#web-hud .mt-band.full');" +
       "  var lv = b.querySelector('.mt-lv');" +
-      "  var was = [b.querySelector('.mt-chip.collection b').textContent," +
+      "  var was = [b.querySelector('.mt-chip.tickets .mt-cnt').textContent," +
       "             b.querySelector('.mt-chip.coins b').textContent," +
       "             b.querySelector('.mt-chip.tickets b').textContent," +
       "             b.querySelector('.mt-chip.stars b').textContent," +
       "             lv.querySelector('.lbl').textContent, lv.className];" +
-      "  b.querySelector('.mt-chip.collection b').textContent = '20/20';" +
+      "  b.querySelector('.mt-chip.tickets .mt-cnt').textContent = '20/20';" +
       "  b.querySelector('.mt-chip.coins b').textContent = '99 999';" +
       "  b.querySelector('.mt-chip.tickets b').textContent = '99';" +
       "  b.querySelector('.mt-chip.stars b').textContent = '90/90';" +
@@ -352,7 +352,7 @@ async function run(url) {
       "  var r = b.getBoundingClientRect();" +
       "  var room = f.width - 52 * f.width / 720;" +   /* the band's own 26px gutters */
       "  var fits = r.width <= room + 0.5 && r.left >= f.left - 0.5;" +
-      "  b.querySelector('.mt-chip.collection b').textContent = was[0];" +
+      "  b.querySelector('.mt-chip.tickets .mt-cnt').textContent = was[0];" +
       "  b.querySelector('.mt-chip.coins b').textContent = was[1];" +
       "  b.querySelector('.mt-chip.tickets b').textContent = was[2];" +
       "  b.querySelector('.mt-chip.stars b').textContent = was[3];" +
@@ -361,12 +361,12 @@ async function run(url) {
       "  return fits;" +
       "})()", true);
 
-    await check("six chips, in that order",
+    await check("five chips, in that order",
       "[].map.call(document.querySelectorAll('#web-hud .mt-band.full .mt-lv," +
       " #web-hud .mt-band.full .mt-chip:not(.more)'), function (n) {" +
       "   return n.className.split(' ').filter(function (c) {" +
-      "     return /^(collection|home|mt-lv|coins|tickets|stars)$/.test(c); })[0]; })",
-      ["home", "mt-lv", "coins", "tickets", "collection", "stars"]);
+      "     return /^(home|mt-lv|coins|tickets|stars)$/.test(c); })[0]; })",
+      ["home", "mt-lv", "coins", "tickets", "stars"]);
     /* A door answers a pointer and an inert chip does not — which is the only
        thing on the row that says a tap will do nothing. The level chip used to
        fail this: it is a button and it opens a screen, and it looked like a
@@ -377,15 +377,12 @@ async function run(url) {
       "   return getComputedStyle(n).cursor === 'pointer' ===" +
       "          !n.classList.contains('inert'); })" +
       " .every(function (v) { return v; })", true);
-    /* TWO CHIPS LEAD TO THE COLLECTION — the tickets, which are spent there,
-       and the count, which is of it — so standing on it greys both. Different
-       numbers, same destination, and neither of them is a better door than the
-       other. */
-    await check("the chips of the screen we are standing on are inert",
-      "!!document.querySelector('#web-hud .mt-chip.tickets.inert') &&" +
-      " !!document.querySelector('#web-hud .mt-chip.collection.inert')", true);
+    /* ONE CHIP LEADS TO THE COLLECTION, and it carries both of its numbers —
+       the tickets, which are spent there, and the count, which is of it. */
+    await check("the chip of the screen we are standing on is inert",
+      "!!document.querySelector('#web-hud .mt-chip.tickets.collection.inert')", true);
     await check("...and the others are not",
-      "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 2);
+      "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 1);
     /* A SHEET CARRIES THE HOUSE IN ITS OWN BAR, bottom right, so the band's
        stands down over it — one way home, never two (view.js, `sheet`). */
     await check("over a sheet the band's house stands down",
@@ -406,11 +403,13 @@ async function run(url) {
       "  return Math.abs(h.left - f.left - 26 * f.width / 720) < 1;" +
       "})()", true);
     /* ...or up to the fold's chip, on a game that declares one: it stands
-       between the level and the coins. */
+       between the level and the coins. The DEV pill this server's 127.0.0.1
+       earns sits between the house and the level (meta.js, DEV), so the gap
+       is measured from whichever of the two is last. */
     if (levelled) await check("...and the level chip fills the room up to the counts",
       "(function () {" +
       "  var b = document.querySelector('#web-hud .mt-band.full');" +
-      "  var h = b.querySelector('.mt-chip.home').getBoundingClientRect();" +
+      "  var h = (b.querySelector('.mt-dev') || b.querySelector('.mt-chip.home')).getBoundingClientRect();" +
       "  var lv = b.querySelector('.mt-lv').getBoundingClientRect();" +
       "  var m = b.querySelector('.mt-band-more');" +
       "  var c = (m && !m.hidden ? m : b.querySelector('.mt-band-chips')).getBoundingClientRect();" +
@@ -418,6 +417,13 @@ async function run(url) {
       "  var k = document.getElementById('frame').getBoundingClientRect().width / 720;" +
       "  return lv.left - h.right < 12 * k && c.left - lv.right < 12 * k && bar.width > 40 * k;" +
       "})()", true);
+    /* ONE DEV PILL, in the band, on a local host — this server is one. */
+    await check("the DEV pill stands between the house and the level chip",
+      "(function () { var d = document.querySelector('#web-hud .mt-band.full .mt-dev');" +
+      " return !!d && d.previousElementSibling.classList.contains('home') &&" +
+      " d.nextElementSibling.classList.contains('mt-band-lv'); })()", true);
+    await check("...and nowhere else",
+      "document.querySelectorAll('.mt-dev, .dl-dev, .ar-dev').length", 1);
   }
 
   if (metaed) {
@@ -481,7 +487,7 @@ async function run(url) {
      that brings the buildings' words back is the one option that is about a
      screen the game may not own (menu.js, fillOptions). */
   await check("the switches are on it",
-    "document.querySelectorAll('.wm-modal .web-sw').length", villaged ? 4 : 3);
+    "document.querySelectorAll('.wm-modal .btn-switch').length", villaged ? 4 : 3);
   /* WHICH BUILD THIS IS, WHERE IT CAN BE READ. The title screen signs itself
      in the corner and is two seconds long; the card is the surface a player
      can stand on and read a version number off. */
@@ -515,8 +521,9 @@ async function run(url) {
   /* A row label and not the title: OPTIONS is OPTIONS in both languages, so
      the title is the one string on this card that proves nothing. */
   var before = await evalJs("return document.querySelector('.wm-modal .web-row .lbl').textContent;");
-  await evalJs("var c = document.querySelectorAll('.wm-modal .web-chip');" +
-               " for (var i = 0; i < c.length; i++) if (!c[i].classList.contains('on'))" +
+  /* the language on screen is the button, the other one its plate */
+  await evalJs("var c = document.querySelectorAll('.wm-modal .web-seg .btn');" +
+               " for (var i = 0; i < c.length; i++) if (c[i].classList.contains('btn-plate'))" +
                "   { c[i].click(); break; } return 1;");
   await sleep(500);
   await check("the card is still open after the switch", "__MODAL__.count()", 1);
@@ -526,8 +533,9 @@ async function run(url) {
   await check("...and there is only one of it",
     "document.querySelectorAll('.wm-modal').length", 1);
   /* Back to where it was, so the rest of the run reads the same words. */
-  await evalJs("var c = document.querySelectorAll('.wm-modal .web-chip');" +
-               " for (var i = 0; i < c.length; i++) if (!c[i].classList.contains('on'))" +
+  /* the language on screen is the button, the other one its plate */
+  await evalJs("var c = document.querySelectorAll('.wm-modal .web-seg .btn');" +
+               " for (var i = 0; i < c.length; i++) if (c[i].classList.contains('btn-plate'))" +
                "   { c[i].click(); break; } return 1;");
   await sleep(500);
   await key("Escape");
@@ -560,10 +568,42 @@ async function run(url) {
     "!!document.querySelector('#web-rank .web-best')", true);
   await check("it stands in the same sheet as the album and the shop",
     "!!document.querySelector('#web-rank.wv-screen .wv-sheet .wv-title')", true);
+  /* RECORDS is one screen, and the figures of the climb are the door to the
+     table they sum. */
+  await check("its first page does not scroll",
+    "(function () { var b = document.getElementById('web-rank-body');" +
+    " return b.classList.contains('fixed') && b.scrollHeight <= b.clientHeight + 1; })()", true);
+  if (await evalJs("return !!(window.__LEVELS__ && __LEVELS__.active());")) {
+    await evalJs("document.querySelector('#web-rank .rk-hero').click(); return 1;");
+    await sleep(200);
+    await check("a tap on the board's score opens the levels table",
+      "!!document.querySelector('#web-rank .rk-table')", true);
+  }
+  if (await evalJs("return !!(window.__META__ && __META__.active());")) {
+    await evalJs("__VIEW__.back(); __VIEW__.go('ranking'); return 1;");
+    await sleep(300);
+    await evalJs("document.querySelector('#web-rank .rk-tile.k-sticker').click(); return 1;");
+    await sleep(300);
+    await check("a tap on the stickers opens the collection", "__VIEW__.top()", "sticker");
+    await key("Escape");
+    await check("...and escape comes back to the ranking", "__VIEW__.top()", "ranking");
+  }
   await key("Escape");
   /* Same as above: the ranking was opened from the title menu, not from the
      village, so peeling it leaves nothing. */
   await check("escape closes it", "__VIEW__.depth()", 0);
+  /* A row of the table is a shortcut: level 1 is open on every board. */
+  if (await evalJs("return !!(window.__LEVELS__ && __LEVELS__.active());")) {
+    await evalJs("__VIEW__.go('ranking'); return 1;"); await sleep(300);
+    await evalJs("document.querySelectorAll('#web-rank .wv-tab')[1].click(); return 1;"); await sleep(200);
+    await evalJs("document.querySelector('#web-rank .rk-band .rk-row.rk-go').click(); return 1;");
+    await sleep(400);
+    await check("a row of the levels table starts its level", "__WEB__.state()", "playing");
+    await check("...level 1, with nothing of the shell in front", "__WEB__.CONFIG.level + ':' + __VIEW__.depth()", "1:0");
+    await evalJs("__WEB__.Loop.stop(); __WEB__.Round.stop(); __WEB__.Music.unduck();" +
+                 " __WEB__.setState('intro'); __LEVELS__.clear(); __VIEW__.home(); return 1;");
+    await sleep(400);
+  }
 
   console.log("\nthe round — the corner grows a way out");
   await evalJs("__WEB__.start(); return 1;"); await sleep(700);
@@ -590,8 +630,8 @@ async function run(url) {
   await sleep(300);
   await check("the way out asks first", "__MODAL__.top()", "web-card leave");
   await check("...with two answers and not one",
-    "document.querySelectorAll('.wm-modal .web-btn').length", 2);
-  await evalJs("document.querySelector('.wm-modal .web-btn.stop').click(); return 1;");
+    "document.querySelectorAll('.wm-modal .web-actions .btn').length", 2);
+  await evalJs("document.querySelector('.wm-modal .web-actions .btn-danger').click(); return 1;");
   await sleep(500);
   await check("leaving goes back to the shell", "__WEB__.state()", "intro");
   await check("...and to the village where there is one",
@@ -783,27 +823,39 @@ async function run(url) {
     if (missioned) {
       await evalJs("__VIEW__.home(); __ARMY__.open('recruit'); return 1;");
       await sleep(350);
-      await check("the camp carries two tabs",
-        "document.querySelectorAll('#ar-recruit .wv-tab').length", 2);
+      await check("the camp carries four tabs",
+        "document.querySelectorAll('#ar-recruit .wv-tab').length", 4);
       await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
       await sleep(250);
       await check("...and the missions tab shows the board",
         "document.querySelectorAll('#ar-recruit .ar-mis').length > 0", true);
-      await evalJs("document.querySelector('#ar-recruit .ar-mis .ar-btn.gold').click(); return 1;");
+      await check("...its squads as slots, taken or free",
+        "document.querySelectorAll('#ar-recruit .ar-mis-pane .ar-run').length", 3);
+      /* a mission on the board is one line, and the line is the door */
+      await evalJs("document.querySelector('#ar-recruit .ar-mis.row:not(.off)').click(); return 1;");
       await sleep(250);
-      await check("prepare opens the briefing, with its odds",
+      await check("a mission opens its briefing, with its odds",
         "!!document.querySelector('#ar-recruit .ar-gauge')", true);
       await check("...at 0% before a card is taken",
-        "document.querySelector('#ar-recruit .ar-gauge-p').textContent", "0%");
+        "document.querySelector('#ar-recruit .ar-gauge .al-ch b').textContent", "0%");
       var need = await evalJs("var m = __WEB__.CONFIG.web.army.missions.list.filter(function (x) {" +
         " return x.id === __ARMY__.missions().o[0]; })[0]; return m ? m.squad[0] : 2;");
+      /* a squad slot is a deck slot: its `+` opens the deck's own picker */
+      await evalJs("document.querySelector('#ar-recruit .ar-squad .ar-slot.empty').click(); return 1;");
+      await sleep(350);
+      await check("...a squad's `+` opens the picker", "__MODAL__.top()", "ar-picker");
+      await key("Escape"); await sleep(300);
       for (var p = 0; p < need; p++) {
-        await evalJs("document.querySelectorAll('#ar-recruit .ar-pool .ar-slot.pool:not(.on)')[0].click(); return 1;");
-        await sleep(120);
+        await evalJs("document.querySelector('#ar-recruit .ar-squad .ar-slot.empty').click(); return 1;");
+        await sleep(350);
+        await evalJs("document.querySelector('.ar-picker .ar-act.add').click(); return 1;");
+        await sleep(350);
       }
+      await check("...the card it takes fills the squad",
+        "document.querySelectorAll('#ar-recruit .ar-squad .ar-slot-w').length", need);
       await check("...and the odds move with the squad",
-        "document.querySelector('#ar-recruit .ar-gauge-p').textContent !== '0%'", true);
-      await evalJs("document.querySelector('#ar-recruit .ar-acts .ar-btn.gold').click(); return 1;");
+        "document.querySelector('#ar-recruit .ar-gauge .al-ch b').textContent !== '0%'", true);
+      await evalJs("document.querySelector('#ar-recruit .ar-acts .btn:not(.is-off):not(.btn-plate):not(.btn-pub)').click(); return 1;");
       await sleep(250);
       await check("the squad is away", "__ARMY__.missions().r.length", 1);
       await check("...and out of the round's deck",
@@ -813,15 +865,54 @@ async function run(url) {
         " document.querySelectorAll('#ar-recruit .wv-tab')[0].click();" +
         " document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
       await sleep(250);
-      await evalJs("document.querySelector('#ar-recruit .ar-run .ar-btn.gold').click(); return 1;");
+      await evalJs("document.querySelector('#ar-recruit .ar-run .btn:not(.btn-pub)').click(); return 1;");
       await sleep(400);
       await check("a squad back opens its report", "__MODAL__.top()", "ar-report");
       await check("...written and kept until collected", "__ARMY__.missions().q.length", 1);
       await evalJs("document.querySelector('.ar-report .ar-rep-text').click(); return 1;");
       await sleep(400);
       await check("a tap collects it", "__ARMY__.missions().q.length + __MODAL__.count()", 0);
+      await check("...into the history, re-read on a tap", "__ARMY__.missions().l.length", 1);
+      await check("the missions tab sells no ad",
+        "document.querySelectorAll('#ar-recruit .ar-mis-pane .btn-pub').length", 0);
       await key("Escape"); await sleep(300);
     }
+
+    /* THE CAMP'S POSTS (army.js, section 8d''): a card put at a post by the
+       deck's own picker is out of the reserve and of the round's deck, and
+       the roll under the posts lists every card the camp holds. */
+    await evalJs("__VIEW__.home(); __ARMY__.open('recruit'); return 1;");
+    await sleep(350);
+    await check("the tent sells no ad",
+      "document.querySelectorAll('#ar-recruit .btn-pub').length", 0);
+    await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[" +
+      "document.querySelectorAll('#ar-recruit .wv-tab').length - 2].click(); return 1;");
+    await sleep(250);
+    await check("the camp tab shows its five posts",
+      "document.querySelectorAll('#ar-recruit .ar-post').length", 5);
+    await check("...and the roll lists the cards the camp holds",
+      "document.querySelectorAll('#ar-recruit .ar-roll .ar-cell').length > 0", true);
+    await evalJs("document.querySelector('#ar-recruit .ar-post .ar-slot.empty').click(); return 1;");
+    await sleep(350);
+    await check("an empty post opens the picker", "__MODAL__.top()", "ar-picker");
+    var offered = await evalJs("return document.querySelectorAll('.ar-picker .ar-act.add').length;");
+    if (offered) {
+      await evalJs("document.querySelector('.ar-picker .ar-act.add').click(); return 1;");
+      await sleep(350);
+      await check("the card takes the post",
+        "Object.keys(__ARMY__.posts()).length", 1);
+      await check("...and is out of the round's deck",
+        "(function () { var id = __ARMY__.posts()[Object.keys(__ARMY__.posts())[0]];" +
+        " return __WEB__.CONFIG.army.deck.every(function (c) { return c.id !== id; }); })()", true);
+    } else {
+      await key("Escape"); await sleep(250);
+    }
+    await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[" +
+      "document.querySelectorAll('#ar-recruit .wv-tab').length - 1].click(); return 1;");
+    await sleep(250);
+    await check("the register lists every card lost",
+      "document.querySelectorAll('#ar-recruit .ar-reg-pane .ar-reg').length === __ARMY__.register().length", true);
+    await key("Escape"); await sleep(300);
   }
 
   console.log("\nthe floor wins — a round clears everything in front of it");

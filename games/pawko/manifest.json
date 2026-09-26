@@ -1,7 +1,7 @@
 {
   "slug": "pawko",
   "title": "Pawko",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "tagline": "Drop waves of balls down a pinboard of pegs and play a card between waves",
   "order": 140,
   "draft": false,

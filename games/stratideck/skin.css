@@ -26,7 +26,6 @@
   }
   #cta-bar { border-top:1px solid rgba(242,193,78,.18); }
   #hud-score { text-shadow:0 0 16px rgba(242,193,78,.5); }
-  .btn { box-shadow:0 0 22px rgba(242,193,78,.42); }
   /* the cards-left pill, and its last-cards state */
   #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
 
@@ -791,6 +790,10 @@
 
   .card.fit .c-perk { --ps:var(--fit); }
   .card.fit.fmt-mid .c-perk { --ps:calc(.8 * var(--fit)); }
+  /* ...and what those badges take from the plate, the name gives back: the
+     longest grade (LIEUTENANT) runs under the macaron on a square under
+     200 px, so the square's name is drawn smaller and tighter there. */
+  .card.fit.fmt-mid .c-name { font-size:7.6em; letter-spacing:.05em; }
 
   /* A CARD ALREADY TURNED OVER ONCE, back face down: the same cloth with a
      dog-eared corner and no question mark. It says "you have seen this one"
@@ -864,7 +867,8 @@
   .cd-layer.cd-sheet.on { display:flex; align-items:center; justify-content:center; padding:0 20px; background:rgba(2,2,10,.7); }
   .sh-box { max-height:1140px; }
   .sh-box .mt-body { gap:18px; min-height:0; }
-  .sh-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; overflow:hidden; }
+  /* not .sh-grid: that is the shop's two-column grid (packages/webshell/meta.css), loaded after the SKIN on the web target */
+  .sh-tiles { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; overflow:hidden; }
   .sh-cell { position:relative; }
   .sh-cell .card { position:relative; }
   .sh-drop { position:absolute; right:-6px; top:-8px; width:34px; height:34px; z-index:10;
@@ -875,7 +879,7 @@
             border-bottom:1px solid rgba(143,194,255,.3); padding-bottom:6px; margin-bottom:-6px; }
   .sh-sec span { color:#f6f1e4; opacity:.7; margin-left:4px; }
   .sh-sec.lost { color:#ff8a8a; border-color:rgba(255,138,138,.3); }
-  .sh-grid.lost .card { filter:grayscale(.75) brightness(.75); }
+  .sh-tiles.lost .card { filter:grayscale(.75) brightness(.75); }
   .sh-empty { font-size:20px; font-weight:800; opacity:.6; padding:30px 0; }
 
   /* AN OFFICER'S FILE, the card turned over (game.js, cardBack — shown by

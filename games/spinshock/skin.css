@@ -17,7 +17,6 @@
   }
   html, body { background:radial-gradient(1000px 900px at 50% 40%, #221c5e 0%, #0b0a26 56%, #05040f 100%); }
   #cta-bar { border-top:1px solid rgba(126,244,255,.18); }
-  .btn { box-shadow:0 0 22px rgba(64,236,255,.6); }
   #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.6), 0 0 46px rgba(255,79,190,.34); }
   #hud-score { text-shadow:0 0 16px rgba(126,244,255,.6); }
 

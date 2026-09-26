@@ -69,6 +69,14 @@
 .mt-chip.coins { color:var(--gold); border-color:rgba(255,212,59,.34); }
 .mt-chip.tickets { color:var(--accent); border-color:rgba(255,255,255,.14); }
 .mt-ci { width:26px; height:26px; flex:0 0 auto; }
+/* The band's ticket chip carries the collection's count as its second half —
+   one door, two figures (meta.js, `wallet`). A filet splits them, and the
+   count keeps the text colour so the two numbers never read as one. */
+.mt-csep {
+  align-self:stretch; width:2px; margin:10px 4px; flex:0 0 auto;
+  background:rgba(255,255,255,.18);
+}
+.mt-chip .mt-cnt { color:var(--text); }
 
 /* A chip that IS a door (the map's header). Same pill, plus what a button
    owes a finger — and the album's unseen dot, which has to hang off it.
@@ -158,48 +166,112 @@
    THE ALBUM
    ========================================================================= */
 
-/* ONE SCREEN. The machine and its controls share a row, the twenty tiles take
-   whatever is left, and nothing scrolls: `flex:1` + `minmax(0,1fr)` rows are
-   what make the grid give the row above it its fixed height and then fit five
-   rows into the remainder, at whatever the device's insets leave. A collection
-   that has to be scrolled is a collection the player sees half of. */
-/* IT IS THE SHEET'S BODY, and the one body there that does not scroll
-   (album.js, `fixed`): the height the sheet's title and bar take is what the
-   five rows of tiles give back. */
-#al-scroll { display:flex; flex-direction:column; gap:18px; }
+/* THE MACHINE OVER THE SHELVES. A band at the top — the machine at half its
+   drawn size, and beside it what a pull costs — and under it one shelf per
+   rarity (packages/webshell/album.js, section 5). The body scrolls only when
+   the device is too short for the four shelves; on a tall phone it all
+   stands still. */
+#al-scroll { display:flex; flex-direction:column; gap:12px; }
 
 #al-top {
-  flex:0 0 auto; display:flex; align-items:stretch; gap:18px;
+  flex:0 0 auto; display:flex; align-items:center; gap:20px;
 }
 
-#al-grid {
-  flex:1; min-height:0;
-  display:grid; grid-template-columns:repeat(4, 1fr);
-  grid-auto-rows:minmax(0, 1fr); gap:12px;
+/* ---- the shelves ---------------------------------------------------------- */
+
+/* THE COLOUR IS THE RARITY'S, and its two washes are written out rather than
+   mixed: a WebView this shell runs in may predate `color-mix`. */
+.al-sh.r0 { --c:var(--rar-0); --c-lo:rgba(170,177,198,.34); --c-hi:rgba(170,177,198,.45); }
+.al-sh.r1 { --c:var(--rar-1); --c-lo:rgba(77,171,247,.34);  --c-hi:rgba(77,171,247,.45); }
+.al-sh.r2 { --c:var(--rar-2); --c-lo:rgba(199,125,255,.34); --c-hi:rgba(199,125,255,.45); }
+.al-sh.r3 { --c:var(--rar-3); --c-lo:rgba(255,212,59,.34);  --c-hi:rgba(255,212,59,.45); }
+
+#al-shelves { display:flex; flex-direction:column; gap:12px; }
+.al-pair { display:flex; gap:14px; }
+.al-pair .al-sh { flex:1; min-width:0; }
+.al-sh {
+  padding:12px 14px 8px; border-radius:20px;
+  background:rgba(0,0,0,.34); border:2px solid var(--c-lo);
 }
 
-/* A tile is the picture and its name, and the frame around it is what says
-   whether it is yours. Nothing else changes between the two states — same
-   size, same place, same order — because the album is a shape the player
-   learns and then fills. */
+/* VERSUS ONE: the track and the chance on one line. The notch is where ONE
+   ticket stands, the hatch is what the bet bought past it — or, on the common
+   shelf, what it gave up. */
+.al-vs { display:flex; align-items:center; gap:12px; height:32px; }
+.al-tk {
+  flex:1; min-width:0; position:relative; height:10px; border-radius:5px;
+  background:rgba(255,255,255,.08);
+}
+.al-tk .b {
+  position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:var(--c);
+  transition:width .35s cubic-bezier(.3,1,.4,1);
+}
+.al-tk .g {
+  position:absolute; top:0; bottom:0; border-radius:0 5px 5px 0;
+  background:repeating-linear-gradient(-45deg, var(--c) 0 5px, var(--c-lo) 5px 10px);
+  box-shadow:0 0 10px var(--c);
+  transition:left .35s cubic-bezier(.3,1,.4,1), width .35s cubic-bezier(.3,1,.4,1);
+}
+.al-tk .g.loss {
+  background:repeating-linear-gradient(-45deg, rgba(255,255,255,.2) 0 4px, rgba(0,0,0,0) 4px 8px);
+  box-shadow:none;
+}
+.al-tk s {
+  position:absolute; top:-5px; bottom:-5px; width:3px; margin-left:-1.5px;
+  border-radius:2px; background:#fff; opacity:.85; transition:left .35s;
+}
+.al-ch {
+  flex:0 0 auto; position:relative; overflow:hidden; min-width:92px; height:32px; padding:0 12px;
+  display:flex; align-items:center; justify-content:flex-end;
+  border-radius:16px; background:rgba(255,255,255,.06); border:1px solid var(--c-hi);
+  font-size:18px; letter-spacing:2px; font-weight:var(--web-fw, 900);
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.al-ch u {
+  position:absolute; left:0; top:0; bottom:0; background:var(--c-lo);
+  transition:width .3s cubic-bezier(.3,1,.4,1);
+}
+.al-ch b { position:relative; font-weight:inherit; color:var(--text); }
+/* A TIER THE POOL NO LONGER HOLDS is dimmed rather than dropped: radiam's two
+   legendaries are both milestone stickers, so until the map has paid one the
+   machine cannot roll one, and a shelf with no odds would read as a bug. */
+.al-ch.nil { opacity:.4; }
+/* the chance that moved says so: it swells when the bet bought it, it shrinks
+   when the bet took it away */
+.al-ch.up { animation:al-ch-up .6s cubic-bezier(.2,1.5,.4,1) both; }
+.al-ch.down { animation:al-ch-down .45s ease both; }
+@keyframes al-ch-up { 35% { transform:scale(1.16); box-shadow:0 0 20px var(--c); } }
+@keyframes al-ch-down { 35% { transform:scale(.9); opacity:.55; } }
+
+.al-row {
+  display:grid; grid-template-columns:repeat(var(--cols), minmax(0, var(--max, 1fr)));
+  gap:8px; margin-top:10px;
+}
+/* the rarity signs its shelf, bottom right, under what it counts */
+.al-ft {
+  display:flex; justify-content:flex-end; gap:10px; margin-top:6px;
+  font-size:15px; letter-spacing:2px; line-height:1.3; white-space:nowrap;
+  font-weight:var(--web-fw, 900);
+}
+.al-ft .nm { color:var(--c); }
+.al-ft .ct { color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ---- the tiles ------------------------------------------------------------ */
+
+/* A tile is the picture, and the frame around it is what says whether it is
+   yours. Nothing else changes between the two states — same size, same place,
+   same order — because the album is a shape the player learns and then
+   fills. The name is the card's, one tap away: at a shelf's size it only ever
+   read as an ellipsis. */
 .al-tile {
-  position:relative; cursor:pointer; padding:8px 4px 6px; min-height:0;
-  border-radius:18px; border:2px solid var(--panel-line);
-  background:rgba(0,0,0,.42);
-  display:flex; flex-direction:column; align-items:center; gap:4px;
+  position:relative; cursor:pointer; min-width:0; aspect-ratio:1; padding:6px;
+  border-radius:16px; border:2px solid var(--panel-line);
+  background:rgba(255,255,255,.03);
+  display:flex; align-items:center; justify-content:center;
   transition:transform .12s ease, border-color .16s ease;
 }
 .al-tile:active { transform:scale(.95); }
-.al-tile .pic {
-  flex:1; min-height:0; width:100%;
-  display:flex; align-items:center; justify-content:center;
-}
-.al-tile .pic img { max-width:100%; max-height:100%; display:block; }
-.al-tile .nm {
-  flex:0 0 auto;
-  font-size:15px; line-height:1.1; text-align:center; color:var(--muted);
-  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
+.al-tile img { max-width:100%; max-height:100%; display:block; }
 
 /* NOT YOURS YET: the same picture, flattened to its own silhouette. No second
    asset to cut, no placeholder to draw, and the outline is exactly the tease a
@@ -208,37 +280,27 @@
    dark, and a black shape on a black tile is not a tease, it is an empty
    tile. `brightness(0) invert(1)` is what turns any painted cut into one flat
    colour whatever it was painted in. */
-.al-tile.ghost { background:rgba(255,255,255,.03); }
-.al-tile.ghost .pic img { filter:brightness(0) invert(1) opacity(.26); }
-.al-tile.ghost .nm { opacity:.5; letter-spacing:2px; }
+.al-tile.ghost img { filter:brightness(0) invert(1) opacity(.24); }
+.al-tile.have { background:rgba(255,255,255,.06); }
 
-.al-tile.have { background:rgba(255,255,255,.05); }
-.al-tile.have .nm { color:var(--text); }
-
-/* THE FRAME IS THE RANK. Twenty tiles in one grid were twenty identical grey
-   frames, so the only way to find out that cell 20 is a legendary was to open
-   it — and the rank is the one thing a collection is read for. It is on the
-   BORDER and not the fill: the sticker is painted artwork and the tile is its
-   frame, so the colour goes round it rather than under it.
-
-   An unowned tile carries it too, dimmer. It gives nothing away that the card
-   it opens did not already print, and a silhouette in a gold frame is the
-   best line this album has for "keep drawing". */
+/* THE FRAME IS THE RANK, on the border and not the fill: the sticker is
+   painted artwork and the tile is its frame. An unowned tile carries it too,
+   dimmer — it gives nothing away that its shelf does not already print. */
 .al-tile.r0 { border-color:rgba(170,177,198,.28); }
 .al-tile.r1 { border-color:rgba(77,171,247,.32); }
 .al-tile.r2 { border-color:rgba(199,125,255,.38); }
 .al-tile.r3 { border-color:rgba(255,212,59,.42); }
-.al-tile.have.r0 { border-color:rgba(170,177,198,.6); }
+.al-tile.have.r0 { border-color:rgba(170,177,198,.85); }
 .al-tile.have.r1 { border-color:rgba(77,171,247,.85); }
 .al-tile.have.r2 {
   border-color:var(--rar-2);
-  background:linear-gradient(180deg, rgba(199,125,255,.16), rgba(255,255,255,.05) 62%);
-  box-shadow:0 0 16px rgba(199,125,255,.28);
+  background:linear-gradient(180deg, rgba(199,125,255,.18), rgba(255,255,255,.05) 62%);
+  box-shadow:0 0 16px rgba(199,125,255,.3);
 }
 .al-tile.have.r3 {
   border-color:var(--rar-3);
   background:linear-gradient(180deg, rgba(255,212,59,.18), rgba(255,255,255,.05) 62%);
-  box-shadow:0 0 18px rgba(255,212,59,.3);
+  box-shadow:0 0 16px rgba(255,212,59,.3);
 }
 
 /* The one piece of foil in the album: ninety of ninety. */
@@ -251,7 +313,7 @@
 }
 
 .al-tile .dup {
-  position:absolute; top:-6px; right:-4px;
+  position:absolute; top:-6px; right:-4px; z-index:1;
   min-width:30px; height:26px; padding:0 6px; border-radius:14px;
   display:flex; align-items:center; justify-content:center;
   background:var(--danger); color:#fff; font-size:16px; font-weight:var(--web-fw, 900);
@@ -276,113 +338,44 @@
 }
 .al-cv { display:block; }
 
-/* THE PRICE AND THE PROMISE, beside the glass. The bet is the one number the
-   player sets, the four bars under it are what that number bought, and the
-   button says what it will cost. They are one column because they are one
-   sentence: this many tickets, these chances, pull. */
+/* THE PRICE, beside the glass. The bet is the one number the player sets and
+   the button says what it will cost; what that number buys is read on the
+   shelves under both. */
 #al-ctl {
-  flex:1; min-width:0; display:flex; flex-direction:column; gap:10px;
+  flex:1; min-width:0; display:flex; flex-direction:column; gap:14px;
   justify-content:flex-start;
 }
 .al-lbl {
   font-size:16px; letter-spacing:3px; text-transform:uppercase;
   color:var(--accent); opacity:.85;
 }
-.al-lbl.sub { color:var(--muted); margin-top:6px; }
 
+/* THE BETS ARE THE MOTOR'S BUTTON (motor.css, BUTTON), small, in a row of
+   equal widths: the bet in play is the button, the others the plate
+   (album.js, paintMachine). */
 .al-bets { display:flex; gap:8px; }
-.al-bet {
-  flex:1; min-width:0; height:56px; padding:0; cursor:pointer;
-  border-radius:14px; border:2px solid var(--panel-line);
-  background:rgba(0,0,0,.45); color:var(--text);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:26px; font-variant-numeric:tabular-nums;
-  transition:transform .12s ease, border-color .16s ease, background .16s ease;
-}
-.al-bet:active:not(:disabled) { transform:scale(.94); }
+.al-bet { flex:1 1 0; min-width:0; padding:0; }
 /* A BET THE WALLET CANNOT PAY IS STILL SELECTABLE, and only says so — it is
    how the player finds out what five tickets would do, which is the whole
    reason to save five. The DRAW button is where the refusal belongs. */
-.al-bet.short { color:var(--muted); opacity:.6; }
-.al-bet.on {
-  border-color:var(--gold); color:#0b0b12; opacity:1;
-  background:linear-gradient(180deg, #ffe680, var(--gold));
-  box-shadow:0 0 18px rgba(255,212,59,.45);
-}
+.al-bet.short:not([aria-pressed="true"]) { --b-ink:var(--muted); opacity:.6; }
 
 /* THE SUPER PILL — the sixth one, and it is a PICTURE where the five before it
    are numbers. It has to be: "30" beside 1 2 3 4 5 reads as thirty tickets,
    which is neither what it costs nor what the player owns. The painted ticket
-   says what is being spent and the count beside it says how many are left.
-   Wider, because it carries two things; never lit gold when selected — the
-   piece is already the brightest object on this panel and a gold plate under a
-   rainbow is two celebrations in one pill. */
-.al-bet.sup { flex:1.5 1 0; display:flex; align-items:center; justify-content:center; gap:6px; }
-.al-supi { width:34px; height:34px; flex:0 0 auto; }
+   says what is being spent and the count beside it says how many are left. */
+.al-bet.sup { flex:1.5 1 0; gap:6px; }
+.al-bet .al-supi { width:34px; height:34px; }
 .al-bet.sup i { font-style:normal; font-size:22px; opacity:.85; }
-.al-bet.sup.on {
-  background:rgba(0,0,0,.45); color:var(--text);
-  border-color:var(--rar-3); box-shadow:0 0 22px rgba(255,212,59,.5);
-}
 /* An empty pocket is greyed the way an unaffordable bet is, and for the same
    reason: it must still be selectable, so the odds it buys can be read before
    it is bought. */
 .al-bet.sup.short .al-supi { filter:grayscale(1) opacity(.55); }
-.al-draw.sup .mt-ci { width:34px; height:34px; }
 
-.al-odds { display:flex; flex-direction:column; gap:6px; }
-.al-odd {
-  display:flex; align-items:center; gap:9px;
-  font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
-}
-.al-odd .n { flex:0 0 116px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-/* A TIER THE POOL NO LONGER HOLDS is dimmed rather than dropped: radiam's two
-   legendaries are both milestone stickers, so until the map has paid one the
-   machine cannot roll one, and a row that vanished would read as a bug. */
-.al-odd.nil { opacity:.38; }
-.al-odd .bar {
-  flex:1; min-width:0; height:10px; border-radius:6px;
-  background:rgba(255,255,255,.08); overflow:hidden;
-}
-.al-odd .bar i {
-  display:block; height:100%; border-radius:6px;
-  background:currentColor; box-shadow:0 0 10px currentColor;
-  transition:width .28s cubic-bezier(.3,1,.4,1);
-}
-.al-odd .p {
-  flex:0 0 46px; text-align:right; font-weight:var(--web-fw, 900);
-  font-variant-numeric:tabular-nums;
-}
-.al-odd.r0 { color:var(--rar-0); }
-.al-odd.r1 { color:var(--rar-1); }
-.al-odd.r2 { color:var(--rar-2); }
-.al-odd.r3 { color:var(--rar-3); }
-
-.al-draw {
-  margin-top:auto; height:74px; width:100%; padding:0 18px;
-  border:0; border-radius:20px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:12px;
-  background:linear-gradient(180deg, var(--cta-a), var(--cta-b)); color:var(--cta-text);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:30px; letter-spacing:3px; text-transform:uppercase;
-  box-shadow:0 8px 0 rgba(0,0,0,.4), 0 0 34px var(--cta-a);
-}
-.al-draw .c {
-  display:flex; align-items:center; gap:5px; font-size:24px;
-  padding:4px 12px; border-radius:20px; background:rgba(0,0,0,.2);
-}
-.al-draw:active:not(:disabled) { transform:translateY(3px); box-shadow:0 5px 0 rgba(0,0,0,.4); }
-/* DRAW AGAIN, on the reveal card, wears the price the machine's own button
-   wears — the same sunken chip, so what a pull costs is read the same way in
-   both places and never as part of the sentence beside it. */
-.al-again .c {
-  display:flex; align-items:center; gap:5px; font-size:22px;
-  padding:3px 11px; border-radius:20px; background:rgba(0,0,0,.2);
-}
-.al-draw.off, .al-draw:disabled {
-  background:rgba(255,255,255,.09); color:rgba(255,255,255,.34);
-  box-shadow:none; cursor:not-allowed;
-}
+/* DRAW is the machine's purchase: the motor's .btn-buy, the ticket on its
+   macaron; DRAW AGAIN on the reveal card is the same button, so what a pull
+   costs is read the same way in both places. */
+.al-draw { margin-top:auto; }
 /* There is no note under the button any more: the wallet's two chips are the
    doors to the shop (packages/webshell/meta.js, `doors: "shop"`). */
 
@@ -390,7 +383,9 @@
    THE SHOP
    ========================================================================= */
 
-#sh-body { display:flex; flex-direction:column; gap:20px; }
+#sh-body { display:flex; flex-direction:column; gap:16px; }
+/* the body is the sheet's scroller: nothing in it may be squeezed to fit */
+#sh-body > * { flex-shrink:0; }
 
 .sh-card {
   display:flex; align-items:center; gap:18px;
@@ -400,133 +395,141 @@
 }
 .sh-card.col { flex-direction:column; align-items:stretch; gap:14px; }
 
-/* THE PRODUCT IS THE SUBJECT, so it gets the size — and the words go BESIDE it
-   rather than under it. Three full-width rows left a hole to the right of a
-   short title and a second one between the piece and its button; a column the
-   height of the piece has neither, and name / sentence / price is the order a
-   shelf is read in anyway. */
-.sh-card.buy { gap:22px; align-items:center; }
-.sh-ico {
-  flex:0 0 auto; width:86px; height:86px; border-radius:22px;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,.06); border:2px solid var(--panel-line);
-  color:var(--accent);
+/* THE SHELF IS A GRID OF TILES, two columns: a shelf of six is read across
+   as well as down, and a tile the height of its piece has no hole in it.
+   Every tile is one column — the piece on its own light, the name, the
+   count, the price — and the price is pinned to the foot (`margin-top:auto`),
+   so a row of two tiles lines its buttons up whether their names run to one
+   line or two. No sentence: it is read on the product card (album.js). */
+.sh-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+.sh-tile {
+  --tone:var(--accent);
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:12px 14px 14px; border-radius:24px; text-align:center;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tone) 20%, transparent), transparent 70%),
+    rgba(0,0,0,.66);
+  border:1.5px solid color-mix(in srgb, var(--tone) 34%, var(--panel-line));
+  box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
 }
-.sh-i { width:48px; height:48px; }
-.sh-card.buy > .sh-ico { width:158px; height:158px; border-radius:30px; }
-.sh-card.buy > .sh-ico .sh-i { width:112px; height:112px; }
+.sh-tile.ticket { --tone:#4ea8ff; }
+.sh-tile.super  { --tone:var(--gold); }
+.sh-tile.gift   { --tone:var(--accent); }
+.sh-tile.xp     { --tone:var(--good); }
+.sh-tile.coins  { --tone:var(--gold); }
+
+/* THE PIECE STANDS ON ITS OWN LIGHT — the halo the village lays under a
+   door, in the tone of the thing sold — and it breathes, slowly, out of
+   phase with its neighbours (the delay is per column). It is the one moving
+   thing on a tile, and it moves little: a shelf where six things bounce is a
+   shelf nobody reads. */
+.sh-pic {
+  position:relative; width:92px; height:92px; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--tone);
+}
+.sh-glow {
+  position:absolute; left:6%; right:6%; bottom:4%; height:30%; border-radius:50%;
+  background:radial-gradient(closest-side, color-mix(in srgb, var(--tone) 55%, transparent), transparent);
+  filter:blur(2px);
+}
+.sh-pic .sh-i {
+  position:relative; width:74px; height:74px;
+  animation:sh-float 3.2s ease-in-out infinite;
+  filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));
+}
+.sh-grid > .sh-tile:nth-child(2n) .sh-i { animation-delay:-1.6s; }
+@keyframes sh-float {
+  0%, 100% { transform:translateY(0) rotate(-2deg); }
+  50%      { transform:translateY(-8px) rotate(2deg); }
+}
+@media (prefers-reduced-motion: reduce) { .sh-pic .sh-i { animation:none; } }
+
+/* What the piece is worth, on its corner: ×2, +250, ? — the one figure a
+   tile is told apart from its twin by (the two ×2 boosts, the two tickets). */
+.sh-tag {
+  position:absolute; right:-30px; top:0;
+  min-width:44px; height:34px; padding:0 10px; border-radius:17px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:21px; font-weight:var(--web-fw, 900); letter-spacing:1px; font-style:normal;
+  color:#10131c; background:var(--tone);
+  border:2px solid rgba(0,0,0,.45);
+  box-shadow:0 6px 14px rgba(0,0,0,.4);
+}
+
+.sh-tile .sh-h { font-size:21px; letter-spacing:2px; color:var(--tone); }
+.sh-tile .sh-buy { align-self:stretch; margin-top:auto; }
+/* what the player holds of it, pinned under the piece (album.js, tile) */
+.sh-own {
+  position:absolute; left:50%; bottom:-4px; z-index:1; transform:translateX(-50%);
+  padding:3px 10px; border-radius:12px; white-space:nowrap;
+  font-size:14px; font-weight:var(--web-fw, 900); letter-spacing:.5px; font-style:normal;
+  color:var(--tone); background:rgba(0,0,0,.78);
+  border:1.5px solid color-mix(in srgb, var(--tone) 55%, transparent);
+}
+
+/* A DEAD TILE IS DIMMED, NOT HIDDEN: what the coins will buy next is the
+   reason to go and earn them. */
+.sh-tile.off .sh-pic { filter:saturate(.35); opacity:.7; }
+
+/* The missed day, full width over the grid: a day of the road rather than a
+   product, with the road's own face on the left. */
+.sh-card.sh-catch { --tone:var(--accent); gap:20px; align-items:center; }
+.sh-catch .sh-pic { width:120px; height:120px; }
+.sh-catch .sh-pic > :not(.sh-glow) { position:relative; max-width:100px; max-height:100px; }
 .sh-body {
   flex:1; min-width:0; align-self:stretch;
   display:flex; flex-direction:column; align-items:flex-start; gap:10px;
 }
-/* The price sits at the foot of its own column, against the outer edge: it is
-   the last thing read and the only thing tapped. `margin-top:auto` is what
-   keeps it there whether the sentence runs to one line or three, so a card
-   with a count on it and a card without still line their buttons up. */
 .sh-buy { flex:0 0 auto; align-self:flex-end; margin-top:auto; }
 .sh-note {
   margin:0; font-size:17px; line-height:1.35;
   color:var(--muted); opacity:.6;
 }
-/* How many are in the pocket. Not muted like the sentence above it — it is a
-   number the player owns, and the one place in the shell that says so. */
+/* How many are in the pocket, or how many rounds a boost has left. Not muted
+   like the sentence above it — it is a number the player owns. */
 .sh-note.own { color:var(--gold); opacity:1; font-size:19px; letter-spacing:1px; }
-
-/* THE SECOND CARD. Same three rows as the ticket's, so the two can be read
-   against each other; what tells them apart is the piece, the price and the
-   ring around it, which goes to the legendary tier's own colour because that
-   is what this ticket is sold on. */
-.sh-card.super { border-color:rgba(255,212,59,.34); }
-.sh-card.super .sh-ico {
-  border-color:rgba(255,212,59,.45);
-  background:radial-gradient(circle at 50% 36%, rgba(255,212,59,.16), rgba(0,0,0,.5) 70%);
-}
-.sh-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
-.sh-txt b {
-  font-size:30px; font-weight:var(--web-fw, 900); letter-spacing:2px; text-transform:uppercase;
-}
-.sh-txt span { font-size:18px; color:var(--muted); line-height:1.3; }
 .sh-h {
   margin:0; font-size:26px; letter-spacing:3px; text-transform:uppercase;
   color:var(--accent); font-weight:var(--web-fw, 900);
 }
 
-.sh-dupes { display:flex; flex-wrap:wrap; gap:10px; }
+/* THE SALE: the doubles are drawn IN the button, fanned one over the next
+   with no frame, then what it sells and the macaron (album.js, section 5).
+   Set apart from the shelf: it is not a seventh product. */
+.sh-sell { justify-content:flex-start; gap:20px; padding-left:calc(var(--h) * .3); margin-top:18px; }
+.sh-dupes { display:flex; flex:0 0 auto; padding-left:26px; }
+.sh-sell > span:not(.sh-dupes):not(.btn-badge) { white-space:nowrap; }
 .sh-dup {
-  position:relative; width:84px; height:84px; border-radius:16px;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,.05); border:2px solid var(--panel-line);
+  width:60px; height:60px; object-fit:contain; margin-left:-26px;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));
 }
-.sh-dup img { max-width:78%; max-height:78%; }
-.sh-dup i {
-  position:absolute; right:-4px; bottom:-4px;
-  min-width:28px; height:24px; padding:0 5px; border-radius:12px;
-  display:flex; align-items:center; justify-content:center; font-style:normal;
-  background:var(--danger); color:#fff; font-size:15px; font-weight:var(--web-fw, 900);
-  border:2px solid rgba(0,0,0,.6);
-}
+.sh-dup:nth-child(odd)  { transform:rotate(-8deg); }
+.sh-dup:nth-child(even) { transform:rotate(7deg) translateY(-2px); }
 
-/* =========================================================================
-   THE BUTTON THIS LAYER USES EVERYWHERE
-   ========================================================================= */
+/* A TILE IS A DOOR to its product card (album.js, product) */
+.sh-tile { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.sh-tile:active:not(:has(.btn:active)) { transform:scale(.98); }
+.sh-tile:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+/* the product card: the piece at full size, the sentence the tile leaves
+   out — set large, since this is the one place it is read — and the price */
+.sh-product { --tone:var(--accent); }
+.sh-product.ticket { --tone:#4ea8ff; }
+.sh-product.super, .sh-product.coins { --tone:var(--gold); }
+.sh-product.xp { --tone:var(--good); }
+.sh-product .mt-h { color:var(--tone); }
+.sh-product .mt-body { align-items:center; gap:18px; }
+.sh-product .sh-pic { width:190px; height:190px; }
+.sh-product .sh-pic .sh-i { width:150px; height:150px; }
+.sh-product .sh-tag { right:-18px; top:6px; height:42px; min-width:54px; border-radius:21px; font-size:25px; }
+.sh-product .sh-own { font-size:17px; bottom:-8px; }
+.sh-product .sh-note { margin:0; font-size:27px; line-height:1.35; text-align:center; color:var(--text); opacity:.92; max-width:520px; }
+.sh-product .sh-buy { align-self:stretch; margin-top:6px; }
 
-.mt-btn {
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  height:66px; padding:0 26px; border:0; border-radius:18px; cursor:pointer;
-  background:rgba(255,255,255,.1); color:var(--text);
-  border:2px solid var(--panel-line);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:26px; letter-spacing:2px; text-transform:uppercase;
-  transition:transform .12s ease, border-color .16s ease;
-}
-.mt-btn:active:not(:disabled) { transform:scale(.96); }
-.mt-btn.gold {
-  background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
-  color:var(--cta-text); border-color:transparent;
-  box-shadow:0 6px 0 rgba(0,0,0,.35), 0 0 26px var(--cta-a);
-}
-.mt-btn.ghost { background:transparent; color:var(--muted); }
-.mt-btn.small { height:54px; padding:0 18px; font-size:21px; }
-/* INSIDE A CARD the button is the card's one control and the card has the
-   frame's width (view.css): it is sized like the end screen's, not like a
-   chip of the shop's header. */
-.mt-card .mt-btn { height:80px; padding:0 36px; font-size:30px; border-radius:22px; }
-.mt-card .mt-btn.small { height:62px; padding:0 22px; font-size:24px; }
-.mt-btn.off, .mt-btn:disabled {
-  background:rgba(255,255,255,.07); color:rgba(255,255,255,.34);
-  border-color:rgba(255,255,255,.08); box-shadow:none; cursor:not-allowed;
-}
-
-/* =========================================================================
-   THE LEADERBOARD'S EXTRA LINE
-   ========================================================================= */
-
-/* The player's own level, under the best score. It is the one number in this
-   shell that a second round of an old level still moves, which is exactly why
-   it belongs next to the one that does not. */
-.web-lvl {
-  display:flex; align-items:center; gap:14px; margin:14px 0 4px;
-  font-family:var(--web-font, inherit);
-}
-.web-lvl b {
-  flex:0 0 auto; color:var(--gold); font-weight:var(--web-fw, 900);
-  font-size:26px; letter-spacing:2px; text-transform:uppercase;
-}
-.web-lvl .bar {
-  flex:1; min-width:0; height:14px; border-radius:8px; overflow:hidden;
-  background:rgba(0,0,0,.55); border:1px solid var(--panel-line);
-}
-.web-lvl .bar u {
-  display:block; height:100%; border-radius:8px;
-  background:linear-gradient(90deg, var(--cta-b), var(--cta-a));
-  box-shadow:0 0 12px var(--cta-a);
-}
-/* The figure the band's chip does not carry — this is the screen that reads
-   it, so it is written out rather than glanced at. */
-.web-lvl i {
-  flex:0 0 auto; font-style:normal; font-size:21px; color:var(--muted);
-  font-variant-numeric:tabular-nums;
-}
+/* THE BUTTON THIS LAYER USES EVERYWHERE is the motor's (motor.css, BUTTON):
+   a purchase is .btn-buy, an ad .btn-pub, the rest .btn. */
 
 /* What came out of the box, at the one size this layer ever shows a sticker. */
 .mt-rw {
@@ -694,42 +697,8 @@
    an offer. The gold button takes what it needs and gives it back, the arrow
    never moves. */
 .mt-acts.offer { flex-wrap:nowrap; align-items:center; width:100%; }
-.mt-acts.offer .mt-btn.gold { flex:1 1 auto; min-width:0; padding:0 16px; }
-
-/* TWO LINES: the reward, then its price. The card is 624 design px wide and a
-   single line had to carry a verb, an object and a plate — it ran out of room
-   and ellipsed, which is the one thing a call to action may never do. Stacked,
-   the shouted half is four to ten characters and always fits. */
-.mt-btn.two, .mt-card .mt-btn.two { height:98px; line-height:1; }
-.mt-btn-txt {
-  display:flex; flex-direction:column; align-items:flex-start; gap:3px;
-  min-width:0; overflow:hidden;
-}
-/* THE SENTENCE HAS TO FIT, and this one is a verb, a noun and a plate on a
-   card 624 design px wide: "MULTIPLIER TES PIECES" beside the ×5 ran off the
-   end at 30px, and a call to action that ellipses is the one thing this layer
-   may never do. 25px with the spacing pulled in is what holds the longest of
-   the three nouns in both languages. */
-.mt-btn-txt b { font-size:29px; letter-spacing:.5px; white-space:nowrap; }
-/* The price is read, not shouted: normal case, and light enough to sit under
-   the thing it is the price of. */
-.mt-btn-txt i {
-  font-style:normal; font-size:21px; letter-spacing:.5px; text-transform:none;
-  opacity:.8; white-space:nowrap;
-}
-/* THE WAY PAST THE OFFER IS THE END SCREEN'S OWN BUTTON, brought down to the
-   height of the row it stands in — the circle, the hairline, the dark fill and
-   the arrow all come from `.eo-act` in menu.css, which this node now shares
-   the rule with. The way on is one control in this front end and a player
-   meets it twice within a couple of seconds. */
-.mt-acts .mt-nav { flex:0 0 auto; width:88px; height:88px; }
-.mt-acts .mt-nav .eo-ico { width:36px; height:36px; }
-
-/* THE PLATE INSIDE THE BUTTON. It is the number the ad pays and it sits where
-   a figure would, at the height of the type beside it — never bigger: a plate
-   that outgrows its own button stops being part of the sentence. */
-.mt-btn-mult { width:84px; height:auto; flex:0 0 auto; margin:-10px -2px -10px 4px; }
-/* what the plate falls back to where the build carries no artwork */
+.mt-acts.offer .btn { flex:1 1 auto; min-width:0; }
+/* what the ×5 plate falls back to where the build carries no artwork */
 .mt-btn-x { font-style:normal; font-weight:inherit; letter-spacing:1px; }
 
 /* ---- the three boxes ---------------------------------------------------- */
@@ -1289,6 +1258,9 @@
   color:var(--gold); font-weight:var(--web-fw, 900); letter-spacing:1.5px;
 }
 .mt-gain.kept .mt-lvtag { padding:1px 9px; border-width:1.5px; }
+/* The shop's coin boost, the fourth term: the level's pill, lit. */
+.mt-lvtag.mt-bst { gap:2px; border-color:rgba(255,140,40,.7); background:rgba(255,140,40,.18); color:#ffb35a; }
+.mt-lvtag.mt-bst .mt-ci { width:22px; height:22px; }
 .mt-gp.base, .mt-gp.mul {
   font-size:25px; letter-spacing:1px;
   color:rgba(255,212,59,.72); text-shadow:none;
@@ -1329,13 +1301,6 @@
   margin-top:22px;
   animation:mt-offer-in .3s cubic-bezier(.2,1.4,.4,1) both;
 }
-/* The painted box on the offer button — the thing being handed over, at the
-   size of the words beside it. */
-.mt-btn .mt-gift-i {
-  width:40px; height:40px; object-fit:contain; flex:0 0 auto;
-  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));
-}
-
 /* One coin in flight. They are spawned into #frame, so they are in design
    pixels like everything else and nothing has to convert a scale. */
 .mt-coin {
@@ -1672,7 +1637,7 @@
   .dl-node .burst, .dl-node .halo, .dl-cell.live .box, .dl-cell.live .kind,
   .mt-badge-rw .rays, .mt-badge-rw .ring,
   .mt-gift .rays, .mt-gift .flash, .mt-gift.open .face,
-  .mt-hit { animation:none; }
+  .mt-hit, .al-ch.up, .al-ch.down { animation:none; }
   .mt-home.go { transition:opacity 200ms ease; }
   /* The figure still has to be READABLE — it is the only thing that says what
      a purchase cost — so it holds still and fades instead of flying. */
