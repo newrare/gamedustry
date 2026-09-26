@@ -12,7 +12,6 @@
     --exit:#4ade80;
   }
   html, body { background:radial-gradient(820px 900px at 50% 30%, #101a4a 0%, #080d28 48%, #04060f 100%); }
-  .btn { box-shadow:0 10px 30px rgba(192,38,211,.5), inset 0 2px 6px rgba(255,255,255,.35); }
   #intro-title {
     background:linear-gradient(180deg,#ffffff,#7ef9ff);
     -webkit-background-clip:text; background-clip:text; color:transparent;

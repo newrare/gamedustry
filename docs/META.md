@@ -174,11 +174,26 @@ with the curved wall, on a canvas. It is a **gumball machine and not a slot
 reel**: no reels, no spin blur, nothing that reads as a bet — the player is not
 gambling, they are collecting.
 
-**The album is one screen and it does not scroll.** The machine takes the left
-column at four fifths of its drawn size, what it costs and what it pays takes
-the right one, and the twenty tiles take everything under both — a collection
-the player has to scroll is a collection they see half of, and the machine
-standing over it is what the whole screen is for.
+**The machine stands over the shelves.** A band at the top holds the machine
+at half its drawn size and, beside it, the bet and DRAW; under it the twenty
+stickers stand on **one shelf per rarity** — common, rare, then epic and
+legendary side by side — and every shelf **opens on its own odds** (below). On
+a tall phone it is one screen; on a short one the body scrolls rather than cut
+the legendary shelf off, since that is the shelf worth drawing for.
+
+**A shelf reads as a comparison with ONE ticket.** A row of pills reading
+1 2 3 4 5 reads as a quantity — *draw five times?* — and the four percentages
+that answer it stood in a column of their own, too far from it to be read as
+the answer. So each shelf starts with one line: a track **notched where a
+single ticket stands**, the gain the bet buys **hatched** past the notch (on
+the common shelf, the share it gives up), then the chance in a pill; the
+rarity's name and the owned count sign the shelf in its bottom-right corner.
+The track is scaled to the most an ordinary bet reaches on that rarity, so
+five tickets fill it and the super ticket runs past it, clamped. A chance that
+moves swells when the bet bought it and shrinks when it took it away. Chosen in
+`lab/sticker-album.html` — round 1 picked the shelves over four other layouts,
+round 2 picked this *versus one* line over a staircase of bet pills and a
+glass of balls coloured by the odds.
 
 ### What a draw eats, and what that buys
 
@@ -240,7 +255,7 @@ would land silently on the last sticker in the bag. The shares are renormalised
 over the tiers that have members.
 
 **It branches inside `chances()`**, the one function the readout and the roll
-both go through — so the bars the player reads before they spend stay the bars
+both go through — so the odds the player reads before they spend stay the odds
 the machine rolls. That rule is what the whole machine is built on.
 
 `SUPER_BET` is a **sentinel, not a quantity**: it is what `bet` is set to while
@@ -430,15 +445,15 @@ A build with `web.meta` and no `web.levels` has no band to name, so
 `Meta.milestoneLabel` returns null and the card falls back to the plain *REWARD
 EARNED* — inventing a band name is worse than saying less.
 
-### The grid wears the ranks
+### The shelves wear the ranks
 
-**The grid is sorted by rank**, commons first and the legendaries last, and
-within a rank the sheet's own order. Up the ladder and not down it, because the
-four odds bars stand directly over the grid and are written the same way round,
-and the last row being the one worth drawing for is the better page to end on.
-The order is worked out once and never moves: the album is a shape the player
-learns and then fills, so a tile changes place because the ladder says where it
-belongs and never because something was just drawn.
+**The shelves run up the ladder**, commons first and the legendaries last, and
+within a shelf the sheet's own order — the last shelf being the one worth
+drawing for is the better page to end on. The order is worked out once and
+never moves: the album is a shape the player learns and then fills, so a tile
+changes place because the ladder says where it belongs and never because
+something was just drawn. A tile is the picture alone; the name is the card's,
+one tap away — at a shelf's size it only ever read as an ellipsis.
 
 **A tile's border is its rarity**, dimmer on one not owned yet. Twenty tiles in
 one grid were twenty identical grey frames, so the only way to find out that
@@ -545,23 +560,64 @@ that loop at every bet and on the super ticket: a pull sold back now returns
 about 30 % of its cost on every board. A manifest may still set `sell`, and
 `tools/build/build.mjs` refuses one that reaches the ticket.
 
-### The shop is one product, and the product is the subject
+### The shop is a shelf of six, and every one of them is priced off the ticket
 
-**Two columns, not three rows.** The piece down the left at the size of the
-thing being sold, and beside it a column read top to bottom: the name, the
-sentence, the price. The piece is what grew — 86 px of pictogram in a row of
-text is an icon, 158 px of its own is the product — and the words moved beside
-it because three full-width rows left a hole to the right of a short title and
-a second one between the piece and its button. A column the height of the piece
-has neither, and name / sentence / price is the order a shelf is read in anyway.
-The sentence is turned right down: someone who has been here twice is not
-reading it again.
+**What it sells**, in the order of the grid — and a missed day over it while
+one can still be caught up:
 
-**The button is the width of its own price**, at the foot of its column and
-against the outer edge — the last thing read and the only thing tapped.
-`margin-top:auto` is what holds it there whether the sentence runs to one line
-or three, so the card with a count on it and the card without still line their
-buttons up.
+| tile           | what it pays                                                  | price (default, manifest key)                      |
+| -------------- | ------------------------------------------------------------- | -------------------------------------------------- |
+| ticket         | one draw                                                      | `ticketPrice`                                      |
+| super ticket   | one draw on the pinned odds                                   | 15 tickets (`superPrice`)                          |
+| mystery gift   | the three-box ceremony: 2–4 tickets, xp or a sticker          | 3 tickets (`giftPrice`)                            |
+| xp pack        | 250 xp (`xpPack`)                                             | 2 × what 250 xp pay in coins at the player's level |
+| double coins   | the next round that pays any coins pays twice                 | 2 tickets (`boostPrice`)                           |
+| double xp      | the next three rounds that pay any xp pay twice               | 2 tickets (`boostPrice`)                           |
+| **missed day** | exactly what that day of the road would have paid, ×5 starred | 60 % of the day's average worth                    |
+
+**The xp pack's price follows the level**, and it is the one price that
+moves. A round pays xp flat and coins times the level, so a flat price would
+get cheaper with every level bought and buying the climb would soon beat
+playing it. At the round's own rate, times two, a coin turned into xp is always
+worth half what the round it came from paid in xp.
+
+**The boosts are counted in rounds, never in minutes** — a timer is the one
+thing section 9 refuses. A round spends one only when it has something to
+double (`takeBoost`), so a round that paid nothing does not eat a purchase;
+buying one while it runs adds rounds rather than stacking the multiplier. The
+coin boost is a fourth term of the sum the end screen writes out
+(`+12 × Lv 2 × 🔥2 = +48`); the xp boost has no line on that screen, so a
+`Notify` says it was used and how many rounds it has left. Their price is fixed
+while what they pay grows with the level: a boost is a bet on the player's own
+lever.
+
+**The mystery gift never pays coins** (`mysteryReward`) — coins bought with
+coins is a slot machine with a bow on it — and every box is worth about its
+price: tickets around the three it costs, a sticker drawn at a three-ticket
+bet, xp at the pack's own rate capped at four packs (pawko's ticket is priced
+far above its xp, and an uncapped box handed a season of levels over). Where
+that rate makes the xp not worth half a pack, the box pays tickets instead.
+The ad that multiplies a gift is not offered on one: the price was paid.
+
+**A missed day is caught up for a week** (`catchDays`), from its own card on
+the road or from the shop, and it pays what it would have: the same kind, the
+same ladder, the three boxes on a gift day. Its price is a share of the day's
+AVERAGE worth at this game's rates (`dayValue`), never of the roll, so the size
+a day keeps secret stays secret; and opening the game on the day stays free, so
+a catch-up is always the worse of the two deals. It writes the day into the
+claimed list and nothing else — `d` is today's gate and `k`/`r` the last claim,
+and a day bought back a week late is neither.
+
+**A tile is one column**: the piece on its own light (the halo a village lays
+under a door, in the tone of the thing sold — the ticket's blue, the super's
+gold, the xp's green), the name, what the player holds of it, and the
+price pinned to the foot so two tiles side by side line their buttons
+up. The piece breathes, out of phase with its neighbour; it is the only moving
+thing on a tile. **A tile carries no sentence**: the shelf is read by its
+pieces, names and prices, and what a product does is written once, large, on
+its card. The figure on its corner (`×2`, `+250`, `?`) is what tells two
+twins apart. A tile the wallet cannot pay is dimmed, not hidden — what the
+coins will buy next is the reason to go and earn them.
 
 **There is no "not enough coins" line.** The price is on the button, the wallet
 is one row above it, and a card that tells the player off for being poor says
@@ -580,9 +636,16 @@ ticket is spent, and the gold one is an inert `div` — a button that does nothi
 is a tap the player learns to stop making. Which chip is a door is the SCREEN's
 business (`opts.doors`: `true` · `"shop"` · `"album"` · nothing at all).
 
-**A player with no doubles gets no second card.** An empty frame explaining its
-own emptiness is a second product on a screen that sells one, and it is the
-first thing a new player sees here.
+**The doubles are ONE BUTTON under the shelf**, set apart from it: up to four
+of the stickers it sells fanned one over the next with no frame, then SELL N
+DOUBLES (the copies it sells) and the macaron — no card and no heading around
+it, and the six tiles are compact enough that the shelf and the sale stand on
+one page of the sheet without a scroll. **A tile is a door**: a tap anywhere
+but its price opens the product as a card — the piece at full size, the
+sentence the tile leaves out, set large, and the same price. **A player
+with no doubles gets no button**, and a player with no missed day no catch-up
+card. An empty frame explaining its own emptiness is a product
+on a shelf that has none, and it is the first thing a new player sees here.
 
 **A purchase is two movements and the shop used to show neither.** Tapping BUY
 rewrote two numbers in a header: the money left without being seen to leave and
@@ -884,7 +947,7 @@ refuses.
 
 The card's heading is the CALLER's word for it — the daily road passes *Daily
 gift*, so the eyebrow over it drops the same words and keeps only what the
-title does not say: which day of the run this is, and the DEV pill. A line
+title does not say: which day of the run this is. A line
 repeating the title over the title is one word said twice.
 
 What the gift PAID is set in gold with a light sweeping across it
@@ -899,7 +962,7 @@ Not a title, not a note, not a state line. It sits between two lines of a menu,
 and a heading over it would read as a third entry; the gift box lit on a dotted
 road says *daily gift* without one. Every word it might have carried is in the
 card the tap opens, as an **eyebrow** over the title — what this is, which day
-of the run it is, and the DEV pill when one applies. There is room for them
+of the run it is. There is room for them
 there, and a player is already reading.
 
 ### It plays where a wallet is on screen
@@ -929,9 +992,10 @@ twenty-four hours takes a week to look at seven times, and the alternative —
 moving the machine's clock — is worse than no test. So on `localhost`, a LAN
 address or a `file://` page the date stops being a gate: the run still advances
 a node per claim and the save is still written, and only *you have had today's*
-is lifted. The card then carries a red **DEV** pill, so a screenshot of a dev
-machine can never pass for the real thing, and a deployed site — whose hostname
-is none of those — is untouched.
+is lifted. The band then carries a red **DEV** pill in front of the level chip
+([VIEWS.md](VIEWS.md)), so a screenshot of a dev machine can never pass for the
+real thing, and a deployed site — whose hostname is none of those — is
+untouched.
 
 ______________________________________________________________________
 
@@ -1123,15 +1187,16 @@ Three rules hold the shape:
   same numbers sat in four places and the screens in between showed none of
   them. The band is `#web-hud` now: one node, filled once by `View.hudMount`,
   and **one line, whose order is what the player learns** —
-  `⌂ · ⚡ · 1 240 · 3 · 3/20 · 12/90`, and each chip is the door to the screen
-  it is the number of: home, the ranking, the shop, the collection, the
-  collection, the map. The order is the order it is read in — the way out
+  `⌂ · ⚡ · 1 240 · 3 | 3/20 · 12/90`, and each chip is the door to the screen
+  it is the number of: home, the ranking, the shop, the collection, the map —
+  the tickets and the sticker count sharing one chip, since both open the
+  collection. The order is the order it is read in — the way out
   first, then what is earned by playing, then what is spent, then what those
   two buy, then what the board itself is worth. The row never changes shape, and a chip standing
   on its own screen goes inert rather than missing, so a number never has to be
   found again. The house is the exception: on the bare village it is dropped,
   because it counts nothing and the door it is stands under it. That is what made back arrows unnecessary and then wrong: these
-  six are the whole of it. **The house is the only chip that is not a number** —
+  five are the whole of it. **The house is the only chip that is not a number** —
   the rest of the row is what the player owns, this is the way out of wherever
   they own it — and a game with no band keeps a home button in its headers
   instead, so there is always exactly one way home.
@@ -1291,10 +1356,12 @@ ______________________________________________________________________
 
 ## 9. What is deliberately not here
 
-- **No real money.** The shop has two trades and neither of them is a purchase.
-  IAP is a different conversation and a different file.
+- **No real money.** Everything in the shop is bought with coins the rounds
+  paid. IAP is a different conversation and a different file.
 - **No timer, no bundle, no offer.** The shop is the sink the coins need in
-  order to mean anything, and nothing else.
+  order to mean anything, and nothing else: a boost is counted in rounds, a
+  catch-up is a day of the road and not a countdown, and no price moves with
+  the clock.
 - **No energy, no lives, no wall.** Nothing in this layer stops a player from
   playing; every piece of it only pays.
 - **No account.** All of it is `Store`, which is localStorage with an in-memory

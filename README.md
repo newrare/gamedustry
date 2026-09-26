@@ -97,6 +97,7 @@ gamedustry/
 │   └── slipdeck/index.html        ← Slipdeck (swipe to sort, poker hands)
 ├── prototype/                ← one raw HTML page per idea: no motor, no build
 ├── lab/                      ← standalone tools; a new one starts from _template
+│                                (index.html is the back office: make lab)
 ├── assets/                   ← source art & audio (not shipped; embed instead)
 │   ├── audio/                ← one medium, two roles
 │   │   ├── music/            ← one looping background bed per game
@@ -119,6 +120,7 @@ gamedustry/
 │       └── svg/              ← finger.svg, the demo hand every intro uses
 ├── tools/
 │   ├── lib/parts.mjs         ← the single definition of the file's regions
+│   ├── lib/serve.mjs         ← the lab servers' HTTP plumbing: 127.0.0.1, Host check
 │   ├── build/                ← assemble
 │   │   ├── build.mjs         ← a game: --target=playable|web, --check
 │   │   ├── build-site.mjs    ← site/ + the web builds into dist/site/
@@ -131,6 +133,8 @@ gamedustry/
 │   │   └── store-meta.mjs    ← the itch page copy, generated from the manifest
 │   ├── lab/                  ← author and inspect
 │   │   ├── serve-site.mjs    ← the site, locally, rebuilt on save
+│   │   ├── serve-lab.mjs     ← every lab page on one port, behind a back office
+│   │   │                        (make lab — the four tools below proxied, localhost only)
 │   │   ├── embed-asset.mjs   ← encode an image/sound into a data URI
 │   │   ├── embed-icon.mjs    ← encode a lucide icon into ASSETS.images
 │   │   ├── encode-art.mjs    ← masters + the manifest's art.objects → assets/image/embed/ (WebP)
@@ -198,6 +202,7 @@ make push      # check, refuse a dirty tree, git push, publish the 13 to itch
 make itch      # re-publish to itch without pushing
 make site      # assemble dist/site locally
 make serve     # the dev loop, reload on save
+make lab       # every lab page behind one back office, http://localhost:8095/
 make meta      # the itch page copy, one file per game
 make shots     # the eleven captures of every game — add GAME=radiam for one
 make map       # just the eleventh, the level map — renumbers none of the ten

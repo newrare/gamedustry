@@ -142,7 +142,16 @@
       play: "Play", leaderboard: "Leaderboard", options: "Options", help: "Help",
       scoresTitle: "Leaderboard", optionsTitle: "Options", helpTitle: "How to play",
       best: "Best score", noScore: "No round played yet.",
-      soonScores: "An online leaderboard is coming with the next update.",
+      soonTitle: "Online rankings",
+      soonScores: "Coming in a future update — your scores against players from all over the world.",
+      rankRecords: "Records", rankLevels: "Levels",
+      rankPlayer: "Level", rankXpAll: "{n} xp in all", rankXpNext: "{n} xp to level {l}",
+      rankStars: "Stars", rankStickers: "Stickers", rankCleared: "Levels cleared",
+      rankSum: "Total score", rankRounds: "{n} rounds played", rankRound: "1 round played",
+      rankLevel: "Level", rankBest: "Best", rankTries: "Tries",
+      rankTuto: "How to play", rankTutoSeen: "Read", rankTutoNew: "Not read yet",
+      rankEndless: "Endless", rankEndlessLock: "★ {t} to unlock", rankEndlessOpen: "Unlocked",
+      rankTop: "Your best level",
       music: "Music", sfx: "Sound effects", pops: "Score callouts", language: "Language",
       labels: "Name the buildings",
       wipeData: "Erase all game data",
@@ -160,7 +169,16 @@
       play: "Jouer", leaderboard: "Classement", options: "Options", help: "Aide",
       scoresTitle: "Classement", optionsTitle: "Options", helpTitle: "Comment jouer",
       best: "Meilleur score", noScore: "Aucune partie jouée.",
-      soonScores: "Un classement en ligne arrive avec la prochaine mise à jour.",
+      soonTitle: "Classements en ligne",
+      soonScores: "Ils arrivent dans une future mise à jour — tes scores face aux joueurs du monde entier.",
+      rankRecords: "Records", rankLevels: "Niveaux",
+      rankPlayer: "Niveau", rankXpAll: "{n} xp au total", rankXpNext: "{n} xp avant le niveau {l}",
+      rankStars: "Étoiles", rankStickers: "Stickers", rankCleared: "Niveaux réussis",
+      rankSum: "Score cumulé", rankRounds: "{n} parties jouées", rankRound: "1 partie jouée",
+      rankLevel: "Niveau", rankBest: "Record", rankTries: "Essais",
+      rankTuto: "Comment jouer", rankTutoSeen: "Lu", rankTutoNew: "Pas encore lu",
+      rankEndless: "Sans fin", rankEndlessLock: "★ {t} pour débloquer", rankEndlessOpen: "Débloqué",
+      rankTop: "Ton meilleur niveau",
       music: "Musique", sfx: "Effets sonores", pops: "Messages de score", language: "Langue",
       labels: "Nommer les bâtiments",
       wipeData: "Effacer toutes les données du jeu",
@@ -185,6 +203,8 @@
   var CAPS = {
     play: 1, leaderboard: 1, options: 1, help: 1,
     scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1, controls: 1,
+    soonTitle: 1, rankPlayer: 1, rankStars: 1, rankStickers: 1, rankCleared: 1,
+    rankSum: 1, rankLevel: 1, rankBest: 1, rankTries: 1, rankTuto: 1, rankEndless: 1,
     tap: 1, hold: 1, drag: 1, swipe: 1, aim: 1,
     again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
   };
@@ -422,6 +442,12 @@
     play:   '<polygon points="6 3 20 12 6 21 6 3"/>',
     check:  '<path d="M20 6 9 17l-5-5"/>',
     lock:   '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    /* the ranking's own three: the podium's cup (the painted trophy where
+       the build has one), the crown on the player's best level, and the
+       rocket of a feature on its way */
+    trophy: '<path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/>',
+    rocket: '<path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/>',
+    crown:  '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>',
     star:   '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
 
     /* THE BARRACKS' OWN FOUR (packages/webshell/army.js). Same pack and the
@@ -875,7 +901,7 @@
   }
 
   function toggle(key) {
-    var b = el("button", "web-sw", '<span class="knob"></span>');
+    var b = el("button", "btn-switch");
     b.setAttribute("aria-pressed", Settings.get(key) ? "true" : "false");
     b.addEventListener("click", function () {
       var on = !Settings.get(key);
@@ -890,7 +916,9 @@
   function langPair() {
     var seg = el("div", "web-seg");
     ["fr", "en"].forEach(function (code) {
-      var c = el("button", "web-chip" + (code === LANG ? " on" : ""), code.toUpperCase());
+      /* the language on screen is the lit one, the other is the plate */
+      var c = el("button", "btn btn-sm" + (code === LANG ? "" : " btn-plate"), up(code));
+      c.setAttribute("aria-pressed", code === LANG ? "true" : "false");
       c.addEventListener("click", function () { setLang(code); });
       seg.appendChild(c);
     });
@@ -911,16 +939,16 @@
     var ASK = COPY.wipeAsk;
     var DONE = COPY.wipeDone;
 
-    var b = el("button", "web-danger", icon("reset") + '<span class="txt"></span>');
+    var b = el("button", "btn btn-danger btn-sm web-danger", icon("reset") + '<span class="txt"></span>');
     var txt = b.querySelector(".txt");
     var armed = 0, timer = null;
     txt.textContent = LBL;
     function rest() {
-      armed = 0; b.classList.remove("armed"); txt.textContent = LBL;
+      armed = 0; b.classList.remove("btn-shiny"); txt.textContent = LBL;
     }
     b.addEventListener("click", function () {
       if (!armed) {
-        armed = 1; b.classList.add("armed"); txt.textContent = ASK;
+        armed = 1; b.classList.add("btn-shiny"); txt.textContent = ASK;
         clearTimeout(timer);
         timer = setTimeout(rest, 4000);
         return;
@@ -1038,13 +1066,35 @@
 
   /* ── 5a. the ranking, a view ──────────────────────────────────────────── */
 
-  /* WHERE THE PLAYER STANDS. Two numbers today — the best score the motor has
-     always written on endRound, and the level the meta layer counts — plus the
-     room an online board will take (phase 5 of packages/meta). It is a VIEW
-     and not a card because it is a place, and because it wears the same header
-     the map, the album and the shop wear: a back arrow, an eyebrow and a
-     title. The stack is what takes it away again. */
+  /* WHERE THE PLAYER STANDS, until there is a board to stand on. An online
+     ranking is phase 5 of packages/meta; what this screen has today is the
+     player's own save, and it is worth a screen of its own — thirty levels
+     cleared a star at a time, a level earned a round at a time, a collection
+     earned a pull at a time. So it is TWO PAGES of one sheet:
+
+       RECORDS   ONE SCREEN, no scroll: the score of the board (every
+                 level's best, summed) under the trophy, the player's level
+                 and its bar, three figures out of a total — stars, stickers,
+                 levels cleared — and the line that says the online board is
+                 on its way. The figures of the climb open LEVELS on a tap, and
+                 the stickers open the collection
+       LEVELS    the climb as a table: level 0, the thirty in their bands
+                 (each band's own stars on a bar in its header), then the
+                 endless star — the stars, the best score and the tries of
+                 each, and a crown on the one the player scored best on
+
+     It is a VIEW and not a card because it is a place, and it stands in the
+     same sheet as the album and the shop. It opens on RECORDS every time: the
+     screen is read top down, and the table is the detail under the summary.
+     A game with no map keeps the first page alone, and a game with no wallet
+     keeps it without the level and the stickers — the best score is the one
+     figure every build has. */
   var rankBox, rankBody, RK = null;
+
+  function rankTabs() {
+    return [{ key: "rec", label: COPY.rankRecords, icon: "trophy" },
+            { key: "lv", label: COPY.rankLevels, icon: "star" }];
+  }
 
   function buildRanking() {
     /* THE SHEET EVERY ROOM OF THE PLACE STANDS IN (packages/webshell/
@@ -1054,36 +1104,279 @@
     rankBody = el("div"); rankBody.id = "web-rank-body";
     RK = VW.sheet({ id: "web-rank", tag: "section", body: rankBody, home: COPY.menu });
     rankBox = RK.box;
+    RK.tab = "rec";
+    if (levelled()) RK.pages(rankTabs(), rankPick);
+  }
+
+  function rankPick(key) {
+    if (RK.tab === key) return;
+    RK.tab = key;
+    rankBody.scrollTop = 0;
+    paintRanking();
+    W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
+  }
+
+  /* A FIGURE IS A DOOR TO WHAT IT COUNTS. The figures of the climb open
+     LEVELS, the table they sum — where the player goes to see which level to
+     go back to — and the stickers open the collection, the machine that
+     draws the missing ones. */
+  function door(node, label, go) {
+    node.classList.add("rk-go");
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("aria-label", label);
+    node.addEventListener("click", go);
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); go(); }
+    });
+  }
+  function toLevels(node) { door(node, COPY.rankLevels, function () { rankPick("lv"); }); }
+  function toAlbum(node) { door(node, MT.text("album"), function () { AL.open(); }); }
+
+  function showRanking() {
+    RK.tab = "rec";
+    RK.cur = null;                  // an arrival, not a page change (view.js, light)
+    paintRanking();
+  }
+
+  function rkNum(v) { return Number(v || 0).toLocaleString(LANG === "fr" ? "fr-FR" : "en-US"); }
+  function rkFill(str, vars) {
+    return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
+  }
+  /* The painted piece where the build has one, the stroke otherwise. */
+  function rkArt(role, stroke, cls) { return artImg(role, cls) || icon(stroke, cls); }
+
+  /* THE FIGURES COUNT UP as the sheet settles, because a number that is
+     simply there is a number nobody looks at — and this screen has nothing
+     else to do but be looked at. One clock for all of them, cut short by a
+     repaint (a page change, the language), which writes the final figures. */
+  var rkTick = 0;
+  function countUp(nodes) {
+    var id = ++rkTick, t0 = 0, DUR = 0.9, DELAY = 0.25;
+    function step(now) {
+      if (id !== rkTick) return;
+      if (!t0) t0 = now;
+      var t = Math.max(0, (now - t0) / 1000 - DELAY) / DUR, k = 1 - Math.pow(1 - Math.min(1, t), 3);
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].textContent = rkNum(Math.round(nodes[i].__to * k));
+      }
+      if (t < 1) requestAnimationFrame(step);
+    }
+    for (var i = 0; i < nodes.length; i++) nodes[i].textContent = rkNum(0);
+    requestAnimationFrame(step);
   }
 
   function paintRanking() {
-    var best = Number(W.Store.get("bestScore", 0)) || 0;
-    RK.setHead(COPY.scoresTitle, CONFIG.title || "");
-    rankBody.innerHTML = "";
-    rankBody.appendChild(el("div", "web-best-lbl", COPY.best));
-    rankBody.appendChild(el("div", "web-best", String(best)));
-    /* The player's own level, beside the score: it is what an online board
-       would rank them by alongside it, and it is the one number in this shell
-       that a second round of an old level still moves. */
-    /* The band over this screen already shows the level and the bar; what it
-       does NOT show is the figure — `120 / 350` came off the chip when the
-       band became one line, because a band is read at a glance and this is the
-       screen that reads it properly. */
-    if (metaed()) {
-      var p = MT.levelAt();
-      rankBody.appendChild(el("div", "web-lvl",
-        "<b>" + MT.text("level") + " " + p.level + "</b>" +
-        '<span class="bar"><u style="width:' + (100 * p.into / p.need).toFixed(1) + '%"></u></span>' +
-        '<i>' + MT.num(p.into) + " / " + MT.num(p.need) + "</i>"));
-    }
-    /* …and the climb itself, where there is one: thirty levels is a result a
-       board should carry, and it is the only one of these three numbers the
-       player earned a piece at a time. */
+    RK.setHead(COPY.scoresTitle, "");
     if (levelled()) {
-      rankBody.appendChild(el("div", "web-rank-stars",
-        icon("star", "web-rank-star") + "<b>" + LV.total() + "</b><i>/ " + LV.max() + "</i>"));
+      RK.relabel(rankTabs());
+      RK.light(RK.tab);
     }
-    rankBody.appendChild(el("div", "web-note", best ? COPY.soonScores : COPY.noScore));
+    rankBody.innerHTML = "";
+    rankBody.classList.toggle("rk-lv", RK.tab === "lv");
+    /* RECORDS is ONE SCREEN and never scrolls (view.js, `fixed`): it is a
+       summary, and a summary read half at a time is not one. */
+    rankBody.classList.toggle("fixed", RK.tab !== "lv");
+    var counters = [];
+    if (RK.tab === "lv" && levelled()) paintRankLevels(counters);
+    else paintRankRecords(counters);
+    countUp(counters);
+  }
+
+  /* A figure the clock counts up to. */
+  function counted(cls, to) {
+    var n = el("b", cls, rkNum(to));
+    n.__to = to;
+    return n;
+  }
+
+  function paintRankRecords(counters) {
+    var best = Number(W.Store.get("bestScore", 0)) || 0;
+    var BD = levelled() ? LV.board() : null;
+
+    /* THE TROPHY AND THE ONE NUMBER UNDER IT. The painted cup where there is
+       one, standing in a sunburst, and under it the SCORE OF THE BOARD — the
+       best score of every level, added up — because it is the one figure
+       that grows with every level played rather than with one lucky round.
+       A game with no map has no board, and keeps the best score the motor
+       writes on endRound. `.web-best` is the node tools/test/views.mjs asks
+       for. */
+    var hero = el("div", "rk-hero",
+      '<span class="rk-cup"><span class="rk-rays"></span>' + rkArt("trophy", "trophy", "rk-cup-i") + "</span>" +
+      '<span class="rk-lbl">' + (BD ? COPY.rankSum : COPY.best) + "</span>");
+    var bestN = counted("web-best", BD ? BD.sum : best);
+    hero.appendChild(bestN);
+    counters.push(bestN);
+    var tries = BD ? BD.tries : 0;
+    if (tries) hero.appendChild(el("span", "rk-rounds",
+      tries === 1 ? COPY.rankRound : rkFill(COPY.rankRounds, { n: rkNum(tries) })));
+    else if (!best) hero.appendChild(el("span", "rk-rounds", COPY.noScore));
+    if (BD) toLevels(hero);
+    rankBody.appendChild(hero);
+
+    /* THE PLAYER'S LEVEL, at the size the band over this screen cannot give
+       it: a ring round the number, the bar, and the two figures the chip
+       dropped when the band became one line — how far into this level, and
+       how much xp the whole account holds. */
+    if (metaed()) {
+      var p = MT.levelAt(), pc = Math.max(0, Math.min(100, 100 * p.into / p.need));
+      var card = el("div", "rk-player rk-in",
+        '<span class="rk-ring" style="--p:' + pc.toFixed(1) + '"><b>' + p.level + "</b></span>" +
+        '<span class="rk-pl">' +
+          '<span class="rk-pl-t">' + COPY.rankPlayer + "</span>" +
+          '<span class="rk-bar"><u style="width:' + pc.toFixed(1) + '%"></u></span>' +
+          '<span class="rk-pl-n">' + rkArt("xp", "xp", "rk-xp-i") +
+            "<i>" + rkNum(p.into) + " / " + rkNum(p.need) + "</i>" +
+            "<em>" + rkFill(COPY.rankXpNext, { n: rkNum(p.need - p.into), l: p.level + 1 }) + "</em>" +
+          "</span>" +
+          '<span class="rk-pl-all">' + rkFill(COPY.rankXpAll, { n: rkNum(MT.xp()) }) + "</span>" +
+        "</span>");
+      rankBody.appendChild(card);
+    }
+
+    /* THREE FIGURES OUT OF A TOTAL, one row, each on its own bar. The sum
+       has no tile: it is the number under the cup. */
+    var tiles = [];
+    if (BD) {
+      tiles.push({ k: "star", art: rkArt("star", "star", "rk-t-i"), v: BD.stars, of: BD.max, lbl: COPY.rankStars });
+    }
+    if (metaed()) {
+      tiles.push({ k: "sticker", art: rkArt("sticker", "sticker", "rk-t-i"), v: MT.owned(), of: MT.total(), lbl: COPY.rankStickers });
+    }
+    if (BD) {
+      tiles.push({ k: "cleared", art: icon("check", "rk-t-i"), v: BD.cleared, of: BD.levels, lbl: COPY.rankCleared });
+    }
+    if (tiles.length) {
+      var grid = el("div", "rk-grid n" + tiles.length);
+      for (var i = 0; i < tiles.length; i++) {
+        var t = tiles[i];
+        var tile = el("div", "rk-tile rk-in k-" + t.k);
+        tile.style.setProperty("--i", i + 1);
+        tile.appendChild(el("span", "rk-t-ico", t.art));
+        var fig = el("span", "rk-t-fig");
+        var v = counted("", t.v);
+        fig.appendChild(v);
+        counters.push(v);
+        if (t.of) fig.appendChild(el("i", "", "/ " + rkNum(t.of)));
+        tile.appendChild(fig);
+        tile.appendChild(el("span", "rk-t-lbl", t.lbl));
+        if (t.of) {
+          tile.appendChild(el("span", "rk-bar",
+            '<u style="width:' + (100 * Math.min(1, t.v / t.of)).toFixed(1) + '%"></u>'));
+        }
+        if (t.of && t.v >= t.of) tile.classList.add("full");
+        if (t.k === "sticker") toAlbum(tile);
+        else toLevels(tile);
+        grid.appendChild(tile);
+      }
+      rankBody.appendChild(grid);
+    }
+
+    rankBody.appendChild(soonNote());
+  }
+
+  /* THE PROMISE, said once and at the foot of both pages: there is a board
+     coming, and this is what it will be about. */
+  function soonNote() {
+    return el("div", "rk-soon rk-in",
+      '<span class="rk-soon-i">' + icon("rocket") + "</span>" +
+      '<span class="rk-soon-t"><b>' + COPY.soonTitle + "</b><i>" + COPY.soonScores + "</i></span>");
+  }
+
+  function starsHtml(s) {
+    var out = '<span class="rk-stars">';
+    for (var i = 1; i <= 3; i++) out += '<span class="rk-s' + (i <= s ? " on" : "") + '">' + icon("star", "rk-s-i") + "</span>";
+    return out + "</span>";
+  }
+
+  function paintRankLevels(counters) {
+    var BD = LV.board(), i, r;
+
+    /* The crown goes on the ONE level the player scored best on — the only
+       answer this page can give to "which one am I good at" before a board
+       tells them against whom. */
+    var topN = 0, topV = 0;
+    for (i = 0; i < BD.rows.length; i++) if (BD.rows[i].best > topV) { topV = BD.rows[i].best; topN = BD.rows[i].n; }
+
+    var sum = el("div", "rk-sum rk-in"), fig = el("span", "rk-sum-s", rkArt("star", "star", "rk-sum-i"));
+    var sb = counted("", BD.stars);
+    fig.appendChild(sb);
+    fig.appendChild(el("i", "", "/ " + BD.max));
+    sum.appendChild(fig);
+    sum.appendChild(el("span", "rk-bar", '<u style="width:' + (100 * BD.stars / BD.max).toFixed(1) + '%"></u>'));
+    counters.push(sb);
+    rankBody.appendChild(sum);
+
+    var table = el("div", "rk-table");
+    table.appendChild(el("div", "rk-row rk-colhead",
+      "<span>" + COPY.rankLevel + "</span><span></span><span>" + COPY.rankBest +
+      "</span><span>" + COPY.rankTries + "</span>"));
+
+    /* EVERY ROW THAT CAN BE PLAYED IS A SHORTCUT: a tap starts that level,
+       the way its node on the map would. A shut level stays inert. Level 0
+       opens the Help card, which is what its node on the map does too. */
+    function playRow(row, n, label) {
+      door(row, label, function () { LV.play(n); });
+    }
+
+    /* LEVEL 0 — no star and no score, only whether it was read. */
+    var tuto = el("div", "rk-row rk-tuto" + (BD.tuto ? " seen" : ""),
+      '<span class="rk-n">?</span>' +
+      '<span class="rk-name">' + COPY.rankTuto + "</span>" +
+      '<span class="rk-note">' + (BD.tuto ? icon("check", "rk-ok") + COPY.rankTutoSeen : COPY.rankTutoNew) + "</span>");
+    door(tuto, COPY.rankTuto, openHelp);
+    table.appendChild(tuto);
+
+    /* THE THIRTY, in their bands. A band is a run of consecutive levels
+       sharing a name, which is what `from` already guarantees and what the
+       map's own rows give when it is left out. */
+    var band = null, bandBox = null, bandStars = 0, bandMax = 0, bandHead = null;
+    function closeBand() {
+      if (!bandHead) return;
+      bandHead.querySelector(".rk-bs").innerHTML = rkArt("star", "star", "rk-bs-i") + bandStars + "<i>/ " + bandMax + "</i>";
+      bandHead.querySelector("u").style.width = (100 * bandStars / bandMax).toFixed(1) + "%";
+      if (bandStars >= bandMax) bandHead.classList.add("full");
+    }
+    for (i = 0; i < BD.rows.length; i++) {
+      r = BD.rows[i];
+      if (r.band !== band) {
+        closeBand();
+        band = r.band; bandStars = 0; bandMax = 0;
+        bandBox = el("div", "rk-band");
+        bandHead = el("div", "rk-bandhead",
+          '<span class="rk-bn">' + r.bandName + "</span>" +
+          '<span class="rk-bar"><u></u></span><span class="rk-bs"></span>');
+        bandBox.appendChild(bandHead);
+        table.appendChild(bandBox);
+      }
+      bandStars += r.stars; bandMax += 3;
+      var state = r.stars === 3 ? "perfect" : r.stars ? "done" : r.played ? "tried" : r.open ? "open" : "lock";
+      var row = el("div", "rk-row st-" + state + (r.n === topN ? " top" : ""),
+        '<span class="rk-n">' + r.n + "</span>" +
+        starsHtml(r.stars) +
+        '<span class="rk-best">' + (r.n === topN ? icon("crown", "rk-crown") : "") +
+          (r.played ? rkNum(r.best) : state === "lock" ? icon("lock", "rk-lock") : "—") + "</span>" +
+        '<span class="rk-tries">' + (r.tries || "") + "</span>");
+      if (r.n === topN) row.title = COPY.rankTop;
+      if (r.playable) playRow(row, r.n, COPY.rankLevel + " " + r.n);
+      bandBox.appendChild(row);
+    }
+    closeBand();
+
+    /* LEVEL 31 — the endless star: shut until the board is perfect, then a
+       best score like any level, without stars to wear. */
+    var endless = el("div", "rk-row rk-endless" + (BD.bonus ? " open" : ""),
+      '<span class="rk-n">' + rkArt("starBurst", "star", "rk-burst") + "</span>" +
+      '<span class="rk-name">' + COPY.rankEndless + "</span>" +
+      (BD.bonus
+        ? '<span class="rk-best">' + (BD.endlessTries ? rkNum(BD.endless) : COPY.rankEndlessOpen) + "</span>" +
+          '<span class="rk-tries">' + (BD.endlessTries || "") + "</span>"
+        : '<span class="rk-note">' + rkFill(COPY.rankEndlessLock, { t: BD.max }) + "</span>"));
+    if (BD.bonus) playRow(endless, BD.bonusN, COPY.rankEndless);
+    table.appendChild(endless);
+
+    rankBody.appendChild(table);
+    rankBody.appendChild(soonNote());
   }
 
   /* ── 5b. the corner: options and help, from anywhere ─────────────────── */
@@ -1137,7 +1430,7 @@
   function actions(box, list) {
     var bar = el("div", "web-actions");
     for (var i = 0; i < list.length; i++) {
-      var b = el("button", "web-btn " + list[i][1], list[i][0]);
+      var b = el("button", "btn " + list[i][1], list[i][0]);
       b.addEventListener("click", list[i][2]);
       bar.appendChild(b);
     }
@@ -1156,8 +1449,8 @@
     var h = panelModal("leave", COPY.leaveTitle, function (body) {
       body.appendChild(el("div", "web-note", COPY.leaveNote));
       actions(body, [
-        [COPY.resume, "go", function () { h.close(); }],
-        [COPY.leaveYes, "stop", function () { h.close(); leave(); }]
+        [COPY.resume, "", function () { h.close(); }],
+        [COPY.leaveYes, "btn-danger", function () { h.close(); leave(); }]
       ]);
     }, openLeave);
     return h;
@@ -1297,6 +1590,13 @@
     }
   }
 
+  /* THE THREE ICONS ARE THE MOTOR'S BUTTON (motor.css, BUTTON), large and
+     alone: the one the round offers is `btn-shiny`, filled and ringed; the
+     other two are the plate, and `eo-dim` turns a plate down to the muted
+     ink — still a target, no longer asking. */
+  var ACT = "btn btn-icon btn-lg eo-act";
+  var TONE = { hero: "btn-shiny", calm: "", dim: "eo-dim" };
+
   function rewireEnd() {
     paintEndStars();
     btnAgain = unbind("btn-install");     // the map, on a map; PLAY AGAIN otherwise
@@ -1332,7 +1632,7 @@
          menu.css. That also means `setState` taking `.show` off the motor's
          button on the way out of "end" takes this one with it, which is what
          keeps a dead button from sitting invisible over the next round. */
-      btnNext = el("button", "eo-act"); btnNext.id = "btn-next";
+      btnNext = el("button", ACT); btnNext.id = "btn-next";
       btnNext.type = "button";
       btnNext.addEventListener("click", function () { LV.playNext(); });
       endActs.appendChild(btnNext);
@@ -1362,7 +1662,7 @@
      over it. */
   function dress(btn, cls, tone) {
     var shown = btn.classList.contains("show");
-    btn.className = cls + " " + tone + (shown ? " show" : "");
+    btn.className = cls + (tone ? " " + tone : "") + (shown ? " show" : "");
   }
 
   function labelEnd() {
@@ -1370,6 +1670,8 @@
     if (!levelled()) {
       btnAgain.textContent = COPY.again;
       btnMenu.textContent = COPY.menu;
+      dress(btnAgain, "btn btn-lg", "");
+      dress(btnMenu, "btn btn-lg", "btn-plate");
       return;
     }
     var last = LV.last();
@@ -1378,12 +1680,12 @@
        village — the map is one of its buildings — so the pictogram is the
        house, and it is the same destination the band's home chip and ESCAPE
        both mean. Without one it is still the map. */
-    btnAgain.innerHTML = icon(villaged() ? "home" : "map", "eo-ico");
+    btnAgain.innerHTML = icon(villaged() ? "home" : "map");
     btnAgain.setAttribute("aria-label", villaged() ? MT_home() : LV.text("map"));
-    btnMenu.innerHTML = icon("reset", "eo-ico");
+    btnMenu.innerHTML = icon("reset");
     btnMenu.setAttribute("aria-label", LV.text("replay"));
-    dress(btnAgain, "eo-act", st >= 3 ? "hero" : st >= 1 ? "calm" : "dim");
-    dress(btnMenu, "eo-act", st >= 3 ? "dim" : st >= 1 ? "calm" : "hero");
+    dress(btnAgain, ACT, TONE[st >= 3 ? "hero" : st >= 1 ? "calm" : "dim"]);
+    dress(btnMenu, ACT, TONE[st >= 3 ? "dim" : st >= 1 ? "calm" : "hero"]);
     /* NEXT IS NEVER DRESSED. The other two trade the lit state between them
        because what the round earned decides which of "go on" and "try again"
        is the offer; this one is the same size and the same weight whatever
@@ -1395,9 +1697,9 @@
        worse than one that is not there, and `hidden` also takes it out of the
        tab order. */
     if (btnNext) {
-      btnNext.innerHTML = icon("next", "eo-ico");
+      btnNext.innerHTML = icon("next");
       btnNext.setAttribute("aria-label", LV.text("next"));
-      btnNext.className = "eo-act";
+      btnNext.className = ACT;
       btnNext.hidden = !LV.nextLevel();
     }
   }
@@ -1492,7 +1794,7 @@
     VW.define("ranking", {
       build: buildRanking,
       node: function () { return rankBox; },
-      show: paintRanking,
+      show: showRanking,
       /* It carries the band like every other view: the level chip is what
          opened it and the other three are the way on, which is the only way
          off this screen now that nothing wears a back arrow. */

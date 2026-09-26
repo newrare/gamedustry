@@ -32,7 +32,6 @@
   /* "POWER DOWN" and "ARC LEGEND!" both have to fit on one line */
   .eo-title { font-size:80px; letter-spacing:3px; }
   #hud-score { text-shadow:0 0 16px rgba(53,232,255,.6); }
-  .btn { box-shadow:0 0 22px rgba(53,232,255,.45); }
   /* left pill: the battery — the only gauge that can end the run */
   #hud-left .hud-pill { color:#a9ffdc; letter-spacing:1px; }
   #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); border-color:rgba(255,45,85,.5); }

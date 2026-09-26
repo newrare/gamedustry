@@ -4,6 +4,7 @@
 
     node tools/lab/serve-village.mjs
     node tools/lab/serve-village.mjs --port=4000
+    make lab                             → http://localhost:8095/village/
 
   lab/village.html is where a game's TITLE SCREEN is laid out as a place
   rather than as a list: a painted hub, and the game's own houses standing on
@@ -45,7 +46,6 @@
   disk, written by tools/lab/cut-objects.mjs and tools/lab/encode-art.mjs.
 */
 
-import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
@@ -53,28 +53,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bumpPatch } from './apply-events.mjs';
 import { SHELL_CUTS } from './encode-art.mjs';
+import { isMain, portArg, listen, json, notFound, readBody, sendFile } from '../lib/serve.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const run = promisify(execFile);
-
-const argv = process.argv.slice(2);
-const PORT = Number((argv.find((a) => a.startsWith('--port=')) || '--port=8094').split('=')[1]);
 
 const GAMES_DIR = path.join(ROOT, 'games');
 const ART_DIR = path.join(ROOT, 'assets', 'image', 'embed');
 const OBJECT_DIR = path.join(ROOT, 'assets', 'image', 'object');
 const DRAFTS = path.join(ROOT, 'lab', 'village-presets.json');
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp', '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2'
-};
 
 /* The doors a house can be. They are the web shell's own screens and cards
    (packages/webshell/view.js, docs/VIEWS.md) and not a list this tool
@@ -508,23 +495,6 @@ async function rebuild(slug) {
 
 // ── serving ────────────────────────────────────────────────────────────────
 
-function body(req) {
-  return new Promise((res, rej) => {
-    let b = '';
-    req.on('data', (d) => {
-      b += d;
-      if (b.length > 4 * 1024 * 1024) { rej(new Error('body too large')); req.destroy(); }
-    });
-    req.on('end', () => res(b));
-    req.on('error', rej);
-  });
-}
-
-function json(res, code, obj) {
-  res.writeHead(code, { 'Content-Type': MIME['.json'], 'Cache-Control': 'no-store' });
-  res.end(JSON.stringify(obj));
-}
-
 function safeSlug(slug) {
   return /^[a-z0-9-]{1,40}$/.test(String(slug || '')) ? String(slug) : '';
 }
@@ -561,92 +531,81 @@ function checkStyleCopy() {
 }
 
 
-createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  const p = decodeURIComponent(url.pathname);
+export async function handle(req, res, p, url) {
+  if (p === '/api/catalogue') return json(res, 200, catalogue());
 
-  try {
-    if (p === '/api/catalogue') return json(res, 200, catalogue());
-
-    if (p === '/api/draft' && req.method === 'PUT') {
-      const b = JSON.parse(await body(req));
-      const slug = safeSlug(b.slug);
-      if (!slug) return json(res, 400, { error: 'bad slug' });
-      const n = writeDraft(slug, b.comp === null ? null : b.comp);
-      console.log(`  draft   ${b.comp === null ? 'removed' : 'saved'}  ${slug}   (${n} in lab/village-presets.json)`);
-      return json(res, 200, { ok: true, count: n });
-    }
-
-    if (p === '/api/adopt' && req.method === 'PUT') {
-      const b = JSON.parse(await body(req));
-      const slug = safeSlug(b.slug);
-      if (!slug || !catalogue().games[slug]) return json(res, 400, { error: 'unknown game' });
-      const file = String(b.file || '');
-      if (!/^[a-z0-9.-]+\.png$/.test(file)) return json(res, 400, { error: 'bad file' });
-      const r = adoptCut(slug, file);
-      if (r.error) return json(res, 400, r);
-      /* The encode is what makes the role real: the build reads
-         assets/image/embed/ and never encodes, so a role with no WebP beside it
-         is a house the village can place and no build can draw. */
-      try { await run(process.execPath, ['tools/lab/encode-art.mjs', slug], { cwd: ROOT }); }
-      catch (e) { return json(res, 500, { error: 'encode-art failed — ' + String(e.stderr || e.message).trim().split('\n')[0] }); }
-      console.log(`  adopted ${r.role}  ←  ${file}   (games/${slug}/manifest.json, encoded)`);
-      /* TWO SPELLINGS OF ONE THING, and the page needs both: `key` is what the
-         manifest and the WebP are named, `role` is what CONFIG.art will call it
-         and therefore what a house in the village is placed under. They are the
-         same word for `home07` and differ the moment a role carries a dash
-         (`cloud-haze-03` → cloudHaze03), which is why neither is derived twice. */
-      return json(res, 200, { ok: true, key: r.role, role: camel(r.role), file: slug + '-' + r.role + '.webp' });
-    }
-
-    if (p === '/api/manifest' && req.method === 'PUT') {
-      const b = JSON.parse(await body(req));
-      const slug = safeSlug(b.slug);
-      const game = catalogue().games[slug];
-      if (!game) return json(res, 400, { error: 'unknown game' });
-
-      let village = null, dropped = [];
-      if (b.comp !== null) ({ village, dropped } = cleanVillage(b.comp, game));
-      if (village && !village.houses.length) {
-        return json(res, 400, { error: 'no house survived the check', dropped });
-      }
-
-      const version = pushVillage(slug, village, b.bump !== false);
-      const rebuilt = await rebuild(slug);
-      console.log(`  pushed  games/${slug}/manifest.json  web.village` +
-                  (village ? ` — ${village.houses.length} houses` : ' removed') +
-                  (version ? `, v${version}` : ''));
-      if (dropped.length) dropped.forEach((d) => console.log('    dropped: ' + d));
-      return json(res, 200, { ok: true, version, dropped, rebuilt, village });
-    }
-
-    // static: the page itself, and the two directories it is allowed to read.
-    let file;
-    if (p === '/' || p === '/village.html') file = path.join(ROOT, 'lab', 'village.html');
-    else if (p.startsWith('/assets/')) file = path.join(ROOT, p.slice(1));
-    else if (p.startsWith('/lab/')) file = path.join(ROOT, p.slice(1));
-    else file = null;
-
-    const inside = file && (file.startsWith(path.join(ROOT, 'assets') + path.sep)
-      || file.startsWith(path.join(ROOT, 'lab') + path.sep));
-    if (!inside || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-      res.writeHead(404, { 'Content-Type': MIME['.txt'] });
-      return res.end('not found: ' + p + '\n');
-    }
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-store'
-    });
-    fs.createReadStream(file).pipe(res);
-  } catch (e) {
-    json(res, 500, { error: String(e && e.message || e) });
+  if (p === '/api/draft' && req.method === 'PUT') {
+    const b = JSON.parse(await readBody(req, 4 * 1024 * 1024));
+    const slug = safeSlug(b.slug);
+    if (!slug) return json(res, 400, { error: 'bad slug' });
+    const n = writeDraft(slug, b.comp === null ? null : b.comp);
+    console.log(`  draft   ${b.comp === null ? 'removed' : 'saved'}  ${slug}   (${n} in lab/village-presets.json)`);
+    return json(res, 200, { ok: true, count: n });
   }
-}).listen(PORT, () => {
+
+  if (p === '/api/adopt' && req.method === 'PUT') {
+    const b = JSON.parse(await readBody(req, 4 * 1024 * 1024));
+    const slug = safeSlug(b.slug);
+    if (!slug || !catalogue().games[slug]) return json(res, 400, { error: 'unknown game' });
+    const file = String(b.file || '');
+    if (!/^[a-z0-9.-]+\.png$/.test(file)) return json(res, 400, { error: 'bad file' });
+    const r = adoptCut(slug, file);
+    if (r.error) return json(res, 400, r);
+    /* The encode is what makes the role real: the build reads
+       assets/image/embed/ and never encodes, so a role with no WebP beside it
+       is a house the village can place and no build can draw. */
+    try { await run(process.execPath, ['tools/lab/encode-art.mjs', slug], { cwd: ROOT }); }
+    catch (e) { return json(res, 500, { error: 'encode-art failed — ' + String(e.stderr || e.message).trim().split('\n')[0] }); }
+    console.log(`  adopted ${r.role}  ←  ${file}   (games/${slug}/manifest.json, encoded)`);
+    /* TWO SPELLINGS OF ONE THING, and the page needs both: `key` is what the
+       manifest and the WebP are named, `role` is what CONFIG.art will call it
+       and therefore what a house in the village is placed under. They are the
+       same word for `home07` and differ the moment a role carries a dash
+       (`cloud-haze-03` → cloudHaze03), which is why neither is derived twice. */
+    return json(res, 200, { ok: true, key: r.role, role: camel(r.role), file: slug + '-' + r.role + '.webp' });
+  }
+
+  if (p === '/api/manifest' && req.method === 'PUT') {
+    const b = JSON.parse(await readBody(req, 4 * 1024 * 1024));
+    const slug = safeSlug(b.slug);
+    const game = catalogue().games[slug];
+    if (!game) return json(res, 400, { error: 'unknown game' });
+
+    let village = null, dropped = [];
+    if (b.comp !== null) ({ village, dropped } = cleanVillage(b.comp, game));
+    if (village && !village.houses.length) {
+      return json(res, 400, { error: 'no house survived the check', dropped });
+    }
+
+    const version = pushVillage(slug, village, b.bump !== false);
+    const rebuilt = await rebuild(slug);
+    console.log(`  pushed  games/${slug}/manifest.json  web.village` +
+                (village ? ` — ${village.houses.length} houses` : ' removed') +
+                (version ? `, v${version}` : ''));
+    if (dropped.length) dropped.forEach((d) => console.log('    dropped: ' + d));
+    return json(res, 200, { ok: true, version, dropped, rebuilt, village });
+  }
+
+  // static: the page itself, and the two directories it is allowed to read.
+  let file = null;
+  if (p === '/' || p === '/village.html') file = path.join(ROOT, 'lab', 'village.html');
+  else if (p.startsWith('/assets/') || p.startsWith('/lab/')) file = path.join(ROOT, p.slice(1));
+  if (sendFile(res, file, [path.join(ROOT, 'assets'), path.join(ROOT, 'lab')])) return;
+  notFound(res, p);
+}
+
+function start() {
   const cat = catalogue();
   const withArt = Object.values(cat.games).filter((g) => g.houses.length).length;
-  console.log(`\n  village composer   http://localhost:${PORT}/`);
   console.log(`  ${Object.keys(cat.games).length} games, ${withArt} with a house sheet already cut`);
   console.log('  drafts in lab/village-presets.json — push writes web.village and rebuilds');
   const drift = checkStyleCopy();
-  console.log(drift ? '\n  !! ' + drift + '\n' : '');
-});
+  if (drift) console.log('\n  !! ' + drift + '\n');
+}
+
+if (isMain(import.meta.url)) {
+  listen(handle, {
+    port: portArg(8094), label: 'village composer', restart: 'pkill -f serve-village.mjs && make village',
+    ready(url) { console.log(`\n  village composer   ${url}`); start(); console.log(''); }
+  });
+}

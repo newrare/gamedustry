@@ -30,7 +30,6 @@
   #intro-tagline .w-eat   { color:#4bf0ff; }
   #cta-bar { border-top:1px solid rgba(77,255,155,.16); }
   #hud-score { text-shadow:0 0 16px rgba(77,255,155,.55); }
-  .btn { box-shadow:0 0 22px rgba(77,255,155,.45); }
   /* left pill: the body length, the stat the whole game is about */
   #hud-left .hud-pill { color:#b6ffd6; letter-spacing:1px; }
   /* right pill: the lives, with the armour glyph in front of them — lit while

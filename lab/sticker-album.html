@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Sticker album views</title>
+<!-- THE META LAYER'S OWN STYLESHEET: the tiles, the bet pills, the odds bars,
+     the DRAW button and both reveal ceremonies are the classes the album
+     ships (packages/webshell/meta.css), so view 1 IS today's screen and the
+     other four are measured against it. -->
+<link rel="stylesheet" href="../packages/webshell/meta.css">
+<style>
+/* ===========================================================================
+   STICKER ALBUM — ROUND 2. The collection room of the web shell
+   (packages/webshell/album.js): the twenty stickers and the gumball machine
+   that fills them, on one mock save.
+
+   Round 1 put five layouts side by side — today's screen, a STAGE with the
+   album as a drawer, the SHELVES, a sticker BOOK with a dispenser, and TWO
+   PAGES behind tabs — and the SHELVES won: one shelf per rarity, and the
+   shelf's header is the chance of drawing it. What round 1 also showed is the
+   one sentence the screen still does not say on its own: MORE TICKETS IN ONE
+   PULL BUY RARER STICKERS. The bet row reads as a quantity ("draw five
+   times?") and the four percentages that answer it are far away from it.
+
+   So every view below IS the shelves, and each tries one way to say it:
+
+     1. SHELVES      round 1's pick, unchanged — the baseline
+     2. VERSUS ONE   every shelf opens on ONE line: a track notched at what
+                     one ticket would give, the gain hatched past it, then the
+                     chance — the bet is read as a comparison; the rarity's
+                     name and count sign the card in its bottom-right corner
+     3. STAIRCASE    the bet pills ARE the odds: each is a column of the four
+                     rarities stacked, so the row of six reads as colour
+                     rising from 1 to 5 to the super ticket, before a tap
+     4. GUMBALLS     the glass holds the odds: twenty balls, one per 5%,
+                     coloured by rarity, and raising the bet swaps grey balls
+                     for coloured ones in front of the player; the ball that
+                     drops is the rarity that was drawn
+     5. TOGETHER     2, 3 and 4 on one screen, to judge whether they add up
+                     or talk over each other
+
+   The machine is album.js's own simulation, ported verbatim (section 3 of
+   that file) and made a factory, so a view can show it at any scale. The
+   odds are meta.js's `chances()`, fed with each game's own `web.meta`. Every
+   draw is real against the mock save; nothing is written anywhere — the
+   book is rebuilt from a preset.
+
+   The sticker names and rarities are a SNAPSHOT of each game's manifest,
+   inlined so the page works over file://; served over HTTP, the page reads
+   games/<slug>/manifest.json and takes the live list instead. The pictures
+   are ../assets/image/embed/<slug>-stickerNN.webp.
+   =========================================================================== */
+
+@font-face { font-family:"Orbitron";   src:url("../assets/motor/font/orbitron.woff2") format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Exo 2";      src:url("../assets/motor/font/exo2.woff2") format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Baloo 2";    src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:100 900; }
+@font-face { font-family:"Bungee";     src:url("../assets/motor/font/bungee.woff2") format("woff2"); }
+@font-face { font-family:"Bebas Neue"; src:url("../assets/motor/font/bebasneue.woff2") format("woff2"); }
+@font-face { font-family:"Russo One";  src:url("../assets/motor/font/russoone.woff2") format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:#0b0b12; }
+body {
+  display:flex; overflow:hidden;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 310px; overflow-y:auto;
+  padding:22px 20px 30px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 20px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; margin:22px 0 8px; }
+.vpick {
+  display:block; width:100%; text-align:left; cursor:pointer;
+  margin-bottom:8px; padding:10px 12px 11px;
+  background:#171726; color:#e8e6f5; border:1px solid #2a2a42; border-radius:10px;
+  font:inherit;
+}
+.vpick b { display:block; font-size:14px; }
+.vpick b i { font-style:normal; color:#6f6a90; margin-right:8px; font-variant-numeric:tabular-nums; }
+.vpick span { display:block; margin-top:2px; font-weight:500; font-size:12px; line-height:1.35; color:#8b8ba7; }
+.vpick.on { border-color:#f2c14e; background:#241f12; }
+.vpick.on b i { color:#f2c14e; }
+select, .pbtn {
+  width:100%; padding:8px 10px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:inherit;
+}
+.prow { display:flex; gap:8px; margin-top:8px; }
+.prow .pbtn { margin-top:0; }
+.pbtn { margin-top:8px; background:#7ea6ff; color:#0b0b12; border:0; font-weight:700; cursor:pointer; }
+.pbtn.alt { background:#23233a; color:#e8e6f5; }
+.pbtn.alt.on { background:#f2c14e; color:#0b0b12; }
+#panel ul { list-style:none; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel li { margin-bottom:6px; padding-left:12px; position:relative; }
+#panel li::before { content:""; position:absolute; left:0; top:7px; width:5px; height:5px; border-radius:50%; background:#3c3c5c; }
+#panel kbd { font:600 11px ui-monospace,Menlo,monospace; background:#23233a; border-radius:4px; padding:1px 5px; color:#c9c9e0; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — a 720×1280 frame, scaled to fit, authored in design px
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; display:flex; align-items:center; justify-content:center; padding:24px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px; background-position:0 0, 16px 16px;
+}
+#device { position:relative; border-radius:34px; overflow:hidden; box-shadow:0 22px 70px rgba(0,0,0,.6), 0 0 0 2px #262638; }
+#frame {
+  --panel-line:rgba(255,255,255,.09); --good:#51cf66;
+  --inset-top:0px; --inset-bottom:0px;
+  position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0;
+  overflow:hidden; isolation:isolate; background:var(--bg);
+  font-family:var(--web-font); font-weight:var(--web-fw); color:var(--text);
+  -webkit-user-select:none; user-select:none;
+}
+#frame button { font-family:inherit; font-weight:inherit; }
+
+/* the hub under a veil — the sheet's own (packages/webshell/view.css) */
+.f-bg { position:absolute; inset:0; z-index:0; background:var(--bg) center / cover no-repeat; }
+.f-bg::after { content:""; position:absolute; inset:0; background:rgba(2,2,10,.5); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+
+/* the wallet band — a mock, so the room it takes is the room it takes. The
+   house is dropped over a sheet: the sheet's own bar carries it. */
+.f-band {
+  position:absolute; left:0; right:0; top:0; height:84px; z-index:5;
+  display:flex; align-items:center; gap:8px; padding:22px 18px 0;
+}
+.f-chip {
+  height:52px; display:flex; align-items:center; gap:7px; padding:0 14px 0 8px;
+  background:rgba(0,0,0,.5); border:2px solid var(--panel-line); border-radius:30px;
+  font-size:24px; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.f-chip img { width:36px; height:36px; object-fit:contain; }
+.f-chip.lv { flex:1; min-width:0; }
+.f-chip.lv .bar { flex:1; height:10px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; }
+.f-chip.lv .bar i { display:block; height:100%; width:58%; background:linear-gradient(90deg, var(--cta-b), var(--cta-a)); }
+.f-chip.coins { color:var(--gold); }
+.f-chip.here { opacity:.55; }
+.f-chip.hit { animation:mt-hit .5s cubic-bezier(.2,1.5,.4,1) both; }
+
+/* THE SHEET — view.css, THE SHEET: veil .5, sheet .76, radius 40 */
+.sheet {
+  position:absolute; left:0; right:0; bottom:0; top:114px; z-index:2;
+  display:flex; flex-direction:column; overflow:hidden;
+  border-radius:40px 40px 0 0; background:rgba(8,8,20,.76);
+  border:1px solid var(--panel-line); border-bottom:0;
+  box-shadow:0 -18px 60px rgba(0,0,0,.5);
+}
+.sheet::before {
+  content:""; position:absolute; top:12px; left:50%; z-index:1;
+  width:76px; height:6px; margin-left:-38px; border-radius:3px; background:rgba(255,255,255,.22);
+}
+.s-head { flex:0 0 auto; padding:38px 26px 16px; text-align:center; }
+.s-title {
+  font-size:58px; line-height:1.05; letter-spacing:2px; white-space:nowrap;
+  font-weight:var(--web-fw); color:var(--text); text-shadow:0 3px 14px rgba(0,0,0,.85);
+}
+.s-body { position:relative; flex:1 1 auto; min-height:0; padding:4px 26px 26px; overflow:hidden; }
+.s-bar {
+  flex:0 0 auto; display:flex; align-items:stretch; gap:4px;
+  padding:10px 20px 20px; border-top:1px solid var(--panel-line);
+}
+.s-tabs { flex:1 1 auto; min-width:0; display:flex; gap:4px; }
+.s-btn {
+  flex:0 0 96px; height:92px; border:0; border-radius:18px; background:none; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  color:var(--muted); font-size:15px; letter-spacing:1.5px; white-space:nowrap;
+}
+.s-btn svg { width:36px; height:36px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.s-tabs .s-btn { flex:1 1 0; }
+.s-btn.on { color:var(--text); background:rgba(255,255,255,.07); }
+.s-btn.hit { animation:mt-hit .5s cubic-bezier(.2,1.5,.4,1) both; }
+.s-tabs:not(:empty) + .s-filet { flex:0 0 1px; margin:16px 6px; background:var(--panel-line); }
+.s-btn .dot { position:absolute; }
+
+/* ---------------------------------------------------------------------------
+   THE CARDS — the motor's CARD block (packages/shell/motor.css), ported
+   --------------------------------------------------------------------------- */
+.lab-modal {
+  position:absolute; inset:0; z-index:90;
+  display:flex; align-items:center; justify-content:center; padding:0 40px;
+  background:rgba(2,2,10,.62); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  animation:lm-in .22s ease both;
+}
+.lab-modal.out { animation:lm-out .2s ease both; }
+@keyframes lm-in { from { opacity:0; } }
+@keyframes lm-out { to { opacity:0; } }
+.lab-modal .mt-card { animation:lm-pop .34s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes lm-pop { from { transform:scale(.86); opacity:0; } }
+.mt-card {
+  position:relative; width:100%;
+  padding:44px 35px; border-radius:30px;
+  display:flex; flex-direction:column; align-items:center; gap:24px;
+  color:var(--text); border:4px solid transparent;
+  background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
+             linear-gradient(180deg,var(--accent),var(--cta-b)) border-box;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
+}
+.mt-card .mt-body { width:100%; display:flex; flex-direction:column; align-items:center; gap:24px; }
+.mt-card .mt-h {
+  margin:0; max-width:100%; text-align:center; white-space:nowrap;
+  font-size:54px; letter-spacing:3px; line-height:1.1; font-weight:var(--web-fw);
+  color:var(--gold); text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
+}
+.mt-card .mt-pin {
+  position:absolute; top:-22px; right:-16px; z-index:3;
+  padding:8px 20px; border-radius:999px;
+  background:#0b0e1a; border:3px solid var(--accent); box-shadow:0 6px 18px rgba(0,0,0,.6);
+  color:var(--text); font-size:30px; line-height:1; font-variant-numeric:tabular-nums;
+}
+.mt-card .mt-tap {
+  margin:0; text-align:center; font-size:18px; letter-spacing:3px; line-height:1.3;
+  color:transparent;
+  background:linear-gradient(100deg,var(--muted) 0 40%,#fff 50%,var(--muted) 60% 100%);
+  background-size:300% 100%; -webkit-background-clip:text; background-clip:text;
+  animation:mt-tap-shine 2.6s linear infinite;
+}
+@keyframes mt-tap-shine { from { background-position:100% 0; } to { background-position:0 0; } }
+.mt-acts { display:flex; gap:14px; justify-content:center; }
+.mt-card.mach { padding:40px 28px 34px; gap:20px; }
+.mt-card.mach #al-top { width:100%; }
+
+/* the sticker flying home after a reveal */
+.fly {
+  position:absolute; z-index:95; pointer-events:none; object-fit:contain;
+  filter:drop-shadow(0 12px 22px rgba(0,0,0,.6));
+  transition:transform .6s cubic-bezier(.5,0,.25,1), opacity .6s ease;
+}
+.lab-hit { animation:lab-hit .55s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes lab-hit {
+  0%   { transform:scale(1); }
+  30%  { transform:scale(1.18); box-shadow:0 0 34px var(--gold); }
+  100% { transform:scale(1); }
+}
+
+/* ---------------------------------------------------------------------------
+   SHARED PIECES
+   --------------------------------------------------------------------------- */
+.al-tile.pend .pic img { filter:brightness(0) invert(1) opacity(.26); }
+.muted { color:var(--muted); }
+.r0 { --c:var(--rar-0); } .r1 { --c:var(--rar-1); } .r2 { --c:var(--rar-2); } .r3 { --c:var(--rar-3); }
+.dupb {
+  position:absolute; top:-6px; right:-4px; z-index:3;
+  min-width:30px; height:26px; padding:0 6px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--danger); color:#fff; font-size:16px; font-style:normal;
+  border:2px solid rgba(0,0,0,.6);
+}
+.pips { display:flex; gap:3px; }
+.pips i { width:7px; height:7px; border-radius:50%; background:var(--c); box-shadow:0 0 6px var(--c); }
+
+/* A generic square tile, for the views that are not today's */
+.lt {
+  position:relative; cursor:pointer; min-width:0; min-height:0;
+  border-radius:16px; border:2px solid color-mix(in srgb, var(--c) 32%, transparent);
+  background:rgba(255,255,255,.03);
+  display:flex; align-items:center; justify-content:center; padding:6px;
+  transition:transform .12s ease;
+}
+.lt:active { transform:scale(.95); }
+.lt img { max-width:100%; max-height:100%; display:block; }
+.lt.ghost img { filter:brightness(0) invert(1) opacity(.24); }
+.lt.have { border-color:color-mix(in srgb, var(--c) 85%, transparent); background:rgba(255,255,255,.06); }
+.lt.have.r2, .lt.have.r3 {
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 18%, transparent), rgba(255,255,255,.05) 62%);
+  box-shadow:0 0 16px color-mix(in srgb, var(--c) 30%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   THE SHELVES — round 1's pick, the frame all five views share
+   --------------------------------------------------------------------------- */
+.sv { height:100%; display:flex; flex-direction:column; gap:12px; overflow-y:auto; scrollbar-width:none; }
+.sv::-webkit-scrollbar { display:none; }
+.sv-top { flex:0 0 auto; display:flex; align-items:center; gap:20px; }
+.sv-mc { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.sv-leg { font-size:14px; letter-spacing:1.5px; color:var(--muted); white-space:nowrap; display:flex; align-items:center; gap:6px; }
+.sv-leg i { width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #fff, var(--rar-1) 55%, #123 100%); }
+.sv-ctl { flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
+.sv-ctl .al-draw { margin-top:0; }
+.v3-shelves { display:flex; flex-direction:column; gap:12px; }
+.v3-shelf {
+  border-radius:20px; background:rgba(0,0,0,.34); padding:10px 14px 14px;
+  border:2px solid color-mix(in srgb, var(--c) 34%, transparent);
+}
+.v3-hd { display:flex; align-items:center; gap:10px; font-size:18px; letter-spacing:2px; white-space:nowrap; }
+.v3-hd .nm { color:var(--c); }
+.v3-hd .ct { color:var(--muted); font-variant-numeric:tabular-nums; }
+.v3-shelf .ch {
+  margin-left:auto; position:relative; overflow:hidden; min-width:92px; height:32px; padding:0 12px;
+  display:flex; align-items:center; justify-content:flex-end; gap:6px;
+  border-radius:16px; background:rgba(255,255,255,.06); border:1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  font-variant-numeric:tabular-nums;
+}
+.v3-shelf .ch u { position:absolute; left:0; top:0; bottom:0; background:color-mix(in srgb, var(--c) 34%, transparent); transition:width .3s cubic-bezier(.3,1,.4,1); }
+.v3-shelf .ch b { position:relative; font-weight:inherit; color:var(--text); }
+.v3-shelf .ch em { position:relative; font-style:normal; font-size:13px; color:var(--muted); }
+.v3-shelf .ch em:empty { display:none; }
+.v3-shelf .ch.nil { opacity:.4; }
+/* the chance that moved says so: it swells when the bet bought it, it
+   shrinks when the bet took it away */
+.v3-shelf .ch.pulse-up { animation:ch-up .6s cubic-bezier(.2,1.5,.4,1) both; }
+.v3-shelf .ch.pulse-down { animation:ch-down .45s ease both; }
+@keyframes ch-up { 35% { transform:scale(1.16); box-shadow:0 0 20px var(--c); } }
+@keyframes ch-down { 35% { transform:scale(.9); opacity:.55; } }
+.v3-row { display:grid; grid-template-columns:repeat(var(--cols), minmax(0, var(--max, 1fr))); gap:8px; margin-top:10px; }
+.v3-row .lt { aspect-ratio:1; }
+.v3-pair { display:flex; gap:14px; }
+.v3-pair .v3-shelf { flex:1; min-width:0; }
+
+/* ---------------------------------------------------------------------------
+   2. VERSUS ONE — the track under each shelf's header
+   --------------------------------------------------------------------------- */
+.dl { display:flex; align-items:center; gap:12px; height:32px; font-size:18px; letter-spacing:2px; white-space:nowrap; }
+.dl .ch { margin-left:0; flex:0 0 auto; }
+.v3-shelf.vs { padding-top:12px; padding-bottom:8px; }
+.v3-shelf.vs .v3-row { margin-top:10px; }
+/* the rarity signs the card, bottom right */
+.v3-hd.ft { justify-content:flex-end; margin-top:6px; font-size:15px; letter-spacing:2px; }
+.dl .tk { flex:1; min-width:0; position:relative; height:10px; border-radius:5px; background:rgba(255,255,255,.08); }
+.dl .tk .b { position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:var(--c); transition:width .35s cubic-bezier(.3,1,.4,1); }
+.dl .tk .g {
+  position:absolute; top:0; bottom:0; border-radius:0 5px 5px 0;
+  background:repeating-linear-gradient(-45deg, var(--c) 0 5px, color-mix(in srgb, var(--c) 40%, transparent) 5px 10px);
+  box-shadow:0 0 10px var(--c); transition:left .35s cubic-bezier(.3,1,.4,1), width .35s cubic-bezier(.3,1,.4,1);
+}
+.dl .tk .g.loss { background:repeating-linear-gradient(-45deg, rgba(255,255,255,.2) 0 4px, transparent 4px 8px); box-shadow:none; }
+.dl .tk s { position:absolute; top:-5px; bottom:-5px; width:3px; margin-left:-1.5px; border-radius:2px; background:#fff; opacity:.85; transition:left .35s; }
+
+/* ---------------------------------------------------------------------------
+   3. STAIRCASE — a bet pill is a column of the four rarities
+   --------------------------------------------------------------------------- */
+.st { display:flex; gap:8px; align-items:flex-end; padding-top:6px; }
+.st-b {
+  flex:1; min-width:0; cursor:pointer; padding:6px 6px 4px;
+  border:2px solid var(--panel-line); border-radius:14px; background:rgba(0,0,0,.45); color:var(--text);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  transition:transform .16s ease, border-color .16s ease, opacity .16s ease;
+}
+.st-b.sup { flex:1.25 1 0; }
+/* common on top, legendary at the foot: the colour RISES as the bet does */
+.st-b .col { width:100%; height:var(--sth, 74px); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; background:rgba(255,255,255,.05); }
+.st-b .col i { display:block; flex:0 1 0; min-height:0; background:var(--c); transition:flex-grow .3s cubic-bezier(.3,1,.4,1); }
+.st-b .col i.nz { min-height:3px; }
+.st-b .col i.r0 { opacity:.55; }
+.st-b .n { display:flex; align-items:center; justify-content:center; gap:4px; height:30px; }
+.st-b b { font-weight:inherit; font-size:24px; line-height:1; font-variant-numeric:tabular-nums; }
+.st-b.sup b { font-size:19px; opacity:.85; }
+.st-b img { width:30px; height:30px; }
+.st-b.short { opacity:.5; }
+.st-b.on { opacity:1; border-color:var(--gold); background:rgba(255,212,59,.12); transform:translateY(-6px); box-shadow:0 0 18px rgba(255,212,59,.45); }
+.st-cap { display:flex; align-items:center; gap:12px; margin-top:-4px; font-size:14px; letter-spacing:1.5px; color:var(--muted); white-space:nowrap; }
+.st-cap .ar { flex:1; min-width:30px; height:4px; border-radius:2px; position:relative; background:linear-gradient(90deg, var(--rar-0), var(--rar-1), var(--rar-2), var(--rar-3)); }
+.st-cap .ar::after {
+  content:""; position:absolute; right:0; top:50%; width:10px; height:10px; margin-top:-6px;
+  border-top:4px solid var(--rar-3); border-right:4px solid var(--rar-3); transform:rotate(45deg);
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Sticker album views</h1>
+  <p class="hint">Round 2: the Shelves, five times, each with its own way of saying that more tickets buy rarer stickers. Change the bet and watch. Same save in all five; the machine is the album's own physics and every draw is real — nothing is saved.</p>
+
+  <h2>View</h2>
+  <div id="picks"></div>
+
+  <h2>Game</h2>
+  <select id="game"></select>
+
+  <h2>Save</h2>
+  <select id="preset">
+    <option value="mid">Mid game — about 9/20, a few doubles</option>
+    <option value="fresh">First visit — nothing owned</option>
+    <option value="late">Late game — 18/20</option>
+  </select>
+  <div class="prow">
+    <button class="pbtn alt" id="addT">+5 tickets</button>
+    <button class="pbtn alt" id="addS">+1 super</button>
+  </div>
+  <button class="pbtn" id="reset">Reset the save</button>
+
+  <h2>Language</h2>
+  <div class="prow">
+    <button class="pbtn alt" data-lang="en">English</button>
+    <button class="pbtn alt" data-lang="fr">Français</button>
+  </div>
+
+  <h2>Round 1</h2>
+  <ul>
+    <li>Shelves won against today's screen, Stage (album as a drawer), Book (die-cut stickers + dispenser) and Two pages (tabs).</li>
+    <li>What it still does not say: more tickets in one pull buy rarer stickers. The bet row reads as a quantity, and the answer is four percentages away from it.</li>
+  </ul>
+
+  <h2>Keys</h2>
+  <ul>
+    <li><kbd>1</kbd>–<kbd>5</kbd> switch view</li>
+    <li><kbd>D</kbd> draw</li>
+    <li><kbd>←</kbd> <kbd>→</kbd> the bet</li>
+    <li><kbd>Esc</kbd> closes a card</li>
+  </ul>
+  <p class="hint" id="names" style="margin-top:18px"></p>
+</div>
+
+<div id="stage">
+  <div id="device">
+    <div id="frame">
+      <div class="f-bg" id="bg"></div>
+      <div class="f-band" id="band"></div>
+      <div class="sheet">
+        <div class="s-head"><div class="s-title" id="title"></div></div>
+        <div class="s-body" id="body"></div>
+        <div class="s-bar"><div class="s-tabs" id="tabs"></div><div class="s-filet"></div><div id="pair" style="display:flex;gap:4px"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ======================================================================
+     DATA — a snapshot of every game's web.meta and SKIN tokens
+     ====================================================================== */
+
+  const GAMES = {
+    "arcider": {"title":"Arcider","font":"orbitron","tok":{"bg":"#05041a","text":"#eafcff","muted":"#95a6de","accent":"#35e8ff","cta-a":"#7cf9ff","cta-b":"#7a4dff","cta-text":"#03041a","danger":"#ff2d55","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,6,8,5,7,12,14,9,20],"st":[["Clean Lap",0],["Secret Line",0],["No Way!",0],["Too Cool",0],["Silver Arrow",1],["Victory V",0],["Void Runner",1],["Full Throttle",0],["Gold Blaze",2],["Smitten",0],["Sweet Talk",0],["Shield Up",1],["Grid Rage",0],["Green Machine",1],["Nap Time",0],["Wiped Out",0],["Star Pilot",2],["Mine Field",1],["Wormhole",3],["Gold Star",3]]},
+    "blight": {"title":"Blight","font":"baloo2","tok":{"bg":"#0a0e24","accent":"#3aa0ff","cta-a":"#ff8fab","cta-b":"#ff3d6b","cta-text":"#ffffff","danger":"#ff4d6d"},"home":true,"awards":[1,2,4,5,6,7,3,13,15,17,14,20],"st":[["Nice One",0],["Sweet Spell",0],["Starstruck",1],["Peace Out",0],["Orb Hug",0],["Teary",0],["Furious",0],["No Clue",0],["Nap Time",0],["No Way!",0],["Peekaboo",0],["Wink Wink",0],["Hooray",1],["Crystal Ball",2],["Triple Pop",1],["Rainbow Ball",3],["Blight Ball",1],["Spike Ball",2],["Comet Shot",1],["Full Board",3]]},
+    "bouncetry": {"title":"Bouncetry","font":"bungee","tok":{"bg":"#070a1e","accent":"#4bf5ff","cta-a":"#ffc061","cta-b":"#ff8a1a","cta-text":"#2a1400","danger":"#ff2d78","gold":"#ffd43b"},"home":true,"awards":[1,2,3,5,6,7,11,14,15,18,16,20],"st":[["Nice One",0],["Cheeky",0],["Smitten",0],["Too Cool",2],["Big Laugh",0],["No Way!",0],["No Clue",0],["Nap Time",0],["Steamed",0],["Close One",0],["Heart Held",1],["Peace Out",0],["Hooray",0],["Dizzy",1],["Spot On",1],["Frost Ball",2],["Fire Ball",3],["Red Brick",1],["Blue Brick",1],["Gold Star",3]]},
+    "chainring": {"title":"Chainring","font":"exo2","tok":{},"home":true,"awards":[1,2,3,4,5,6,11,14,15,16,20,19],"st":[["Peace Out",0],["Hooray",0],["All Smiles",0],["Nice One",0],["Smitten",0],["No Clue",0],["Thinking",0],["Off Beat",0],["Furious",0],["No Way!",0],["Heart Eyes",1],["Too Cool",2],["Nap Time",0],["High Five",1],["Cheeky",1],["Pink Streak",1],["Neon Ring",3],["Drop Beat",1],["Gold Star",3],["Triple Speed",2]]},
+    "echomaze": {"title":"Echomaze","font":"orbitron","tok":{"bg":"#04060f","accent":"#7ef9ff","cta-a":"#ff9ae8","cta-b":"#c026d3","cta-text":"#2b0033","danger":"#ff2d78","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,5,7,6,11,14,15,16,12],"st":[["Nice One",0],["Thumbs Up",0],["Heart Beat",0],["Nap Time",0],["Steamed",0],["Bright Idea",1],["Peace Out",0],["Panic",0],["Teary",0],["Too Cool",0],["Blueprint",1],["Echomaze!",3],["Way Out",0],["Lab Rig",1],["Comet",1],["Shockwave",2],["Static",1],["Orbit",2],["Dead End",0],["Echo Crystal",3]]},
+    "gearball": {"title":"Gearball","font":"russoone","tok":{"bg":"#0a0718","text":"#f0f4ff","muted":"#a99cc6","accent":"#7ef9ff","cta-a":"#ff9a44","cta-b":"#e0362c","cta-text":"#2c0900","danger":"#ff3d6e","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,6,7,12,14,15,16,19,20],"st":[["Nice One",0],["Thumbs Up",0],["Smitten",0],["Hooray",0],["Too Cool",2],["No Clue",0],["Big Laugh",0],["Teary",0],["Steamed",0],["No Way!",0],["Nap Time",0],["Bright Idea",1],["Hello There",0],["Cheeky",1],["Dizzy",1],["Ringed Ball",1],["The Gear",3],["Triple Ball",1],["Power Surge",2],["Gold Star",3]]},
+    "marshmelt": {"title":"Marshmelt","font":"baloo2","tok":{"bg":"#180a10","text":"#fff3e4","muted":"#c79f8a","accent":"#ff9d2e","cta-a":"#ffd166","cta-b":"#ff7a1a","cta-text":"#2a1000","danger":"#ff3b30","gold":"#ffd166"},"home":true,"awards":[1,2,3,4,5,6,9,13,15,16,19,20],"st":[["All Smiles",0],["Nice One",0],["Smitten",0],["Big Laugh",0],["No Way!",0],["Teary",0],["Furious",0],["Not Amused",0],["Dizzy",1],["Nap Time",0],["Close One",0],["Cheeky",0],["Sweet Tooth",1],["Too Cool",2],["Starstruck",1],["Cooled Rock",1],["Lava Slab",1],["Fire Ball",3],["Spike Rock",2],["Lava Splash",3]]},
+    "orbinity": {"title":"Orbinity","font":"exo2","tok":{"bg":"#05061a","text":"#eaf6ff","muted":"#a9b3e8","accent":"#7cf5ff","cta-a":"#b39bff","cta-b":"#6d5cff","cta-text":"#0b0620","danger":"#ff4d6d","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,5,7,10,12,13,15,18,16],"st":[["Nice One",0],["Smitten",0],["All Smiles",0],["Teary",0],["No Way!",0],["Too Cool",2],["Nap Time",0],["Dizzy",0],["Lucky Star",0],["Sunburn",1],["Blue Moon",0],["Ringed One",1],["Molten",1],["Verdant",0],["Frostbite",1],["The Galaxy",3],["Fire Comet",1],["Ice Comet",2],["Rubble",0],["Gold Star",3]]},
+    "pawko": {"title":"Pawko","font":"baloo2","tok":{"bg":"#2a0a14","accent":"#ffb830","cta-a":"#ffd166","cta-b":"#ff8c1a","cta-text":"#2a0a14","danger":"#ff4d6d","gold":"#ffcf5a"},"home":true,"awards":[1,3,4,6,7,2,5,10,9,14,15,18],"st":[["Nice One",0],["Starstruck",1],["Big Laugh",0],["Smitten",0],["Thumbs Up",1],["Teary",0],["Steamed",0],["No Way!",0],["Nap Time",0],["High Five",1],["No Clue",0],["Sweet Smile",0],["Too Cool",2],["Cheeky",0],["Party Cat",1],["Paw Coin",0],["Paw Chip",0],["Paw Chest",3],["Lucky Fish",2],["Card Hand",3]]},
+    "radiam": {"title":"Radiam","font":"russoone","tok":{"bg":"#070512","text":"#f4f0ff","muted":"#a293cf","accent":"#35e0ff","cta-a":"#ffcf4d","cta-b":"#ff8a1f","cta-text":"#2a1400","danger":"#ff3d6e","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,5,6,7,8,9,10,19,17],"st":[["Nice One",0],["Smitten",0],["Starstruck",1],["Gold Rush",1],["Bead Hug",0],["No Clue",0],["Furious",0],["Teary",0],["Full Hands",1],["Portal",2],["Peace Out",0],["Make a Wish",2],["No Way!",0],["Red Bead",0],["Jackpot",1],["Nap Time",0],["Radiam!",3],["Bright Idea",0],["Gearhead",1],["The Orbit",3]]},
+    "slipdeck": {"title":"Slipdeck","font":"bebasneue","tok":{"bg":"#050d0a","text":"#f3fbf6","muted":"#8fb8a4","accent":"#f5c451","cta-a":"#ffe08a","cta-b":"#f0b429","cta-text":"#241703","danger":"#ff4a5e","gold":"#ffd43b"},"home":true,"awards":[1,2,3,5,6,9,4,7,12,13,15,14],"st":[["Nice Hand",0],["Belly Laugh",0],["Thumbs Up",0],["Smitten",1],["Sly Wink",0],["Bad Beat",0],["Steamed",1],["Poker Face",2],["No Clue",0],["Nap Time",0],["Four Aces",3],["Full Fan",1],["The Deck",1],["Star Card",3],["The Crown",2],["Fast Ace",1],["Clubs",0],["Hearts",0],["Spades",0],["Diamonds",0]]},
+    "spinshock": {"title":"Spinshock","font":"bungee","tok":{"bg":"#08081c","text":"#eafcff","muted":"#a3b2e6","accent":"#40ecff","cta-a":"#7ef4ff","cta-b":"#00bfff","cta-text":"#02121c","danger":"#ff2f6d","gold":"#ffd43b"},"home":true,"awards":[1,2,3,4,5,6,13,15,16,17,18,20],"st":[["Nice One",0],["Cheeky",0],["Fired Up",0],["Smug",0],["Furious",0],["No Way!",0],["Teary",0],["Nap Time",0],["No Clue",0],["Peace Out",0],["Too Cool",2],["Victory V",0],["Void Top",1],["Gold Top",3],["Spike Top",1],["Frost Top",1],["Blaze Top",1],["The Clash",2],["Thunder",1],["Spinshock!",3]]},
+    "stratideck": {"title":"Stratideck","font":"russoone","tok":{"bg":"#0a1026","text":"#f6f1e4","muted":"#a9b4d0","accent":"#f2c14e","cta-a":"#ffe08a","cta-b":"#e0a52a","cta-text":"#2a1a02","danger":"#e23b3b","gold":"#ffd43b"},"home":true,"awards":[1,4,5,8,10,3,9,13,18,14,19,20],"st":[["Hey There",0],["Smitten",0],["En Garde",1],["Thumbs Up",0],["Salute",0],["Puzzled",1],["Teary",0],["Waving",0],["Cheer",1],["Grateful",0],["Warcry",0],["Smirk",1],["Fuming",1],["Taunt",0],["Baffled",0],["Blue Banner",2],["Full Deck",3],["War Map",1],["Lion Guard",2],["Base Camp",3]]},
+    "triverse": {"title":"Triverse","font":"orbitron","tok":{"bg":"#04050f","text":"#eaf4ff","muted":"#93a4d8","accent":"#3ce0ff","cta-a":"#8ffff2","cta-b":"#2f9cff","cta-text":"#01121d","danger":"#ff2d55","gold":"#ffd43b"},"home":true,"awards":[1,2,4,6,7,8,3,12,13,16,17,14],"st":[["All Smiles",0],["Cheeky",0],["Starstruck",1],["Big Laugh",0],["Too Cool",2],["Teary",0],["Furious",0],["No Way!",0],["Nap Time",0],["Nice One",0],["Swerve",0],["Dash",1],["Slipstream",1],["Gold Star",3],["The Gem",3],["Triple Speed",1],["Black Hole",2],["Hazard",0],["Shield Up",1],["Patch Up",0]]},
+    "vipera": {"title":"Vipera","font":"baloo2","tok":{"bg":"#03110c","text":"#eafff2","muted":"#8dc4a8","accent":"#4dff9b","cta-a":"#c6ff6b","cta-b":"#12b86a","cta-text":"#04220f","danger":"#ff2d55","gold":"#ffd43b"},"home":true,"awards":[1,2,4,5,6,7,3,12,15,17,20,13],"st":[["Nice One",0],["Cheeky",0],["Starstruck",1],["Big Laugh",0],["Smitten",0],["Teary",0],["Furious",0],["Nap Time",0],["No Clue",0],["No Way!",0],["Slurp",0],["Sly One",1],["King Viper",3],["Too Cool",2],["Hibiscus",1],["Thicket",0],["Mossy Rock",1],["Leaf Coin",3],["Berry",1],["Jungle Vine",2]]}
+  };
+
+  const DEF_TOK = { bg: "#0a0a1c", text: "#eafcff", muted: "#9fb0e0", accent: "#00e5ff", "cta-a": "#4bf5ff",
+    "cta-b": "#00d0ff", "cta-text": "#04040c", danger: "#ff2d55", gold: "#ffd43b" };
+  const FONTS = { orbitron: ["Orbitron", 800], exo2: ["Exo 2", 800], baloo2: ["Baloo 2", 800],
+    bungee: ["Bungee", 400], bebasneue: ["Bebas Neue", 400], russoone: ["Russo One", 400] };
+  const EMBED = "../assets/image/embed/", SHELL = "../assets/image/shell/";
+
+  /* album.js + meta.js strings, the ones these screens write */
+  const STRINGS = {
+    en: {
+      album: "Stickers", perDraw: "Tickets per draw", chances: "Chances", draw: "Draw", mixing: "Mixing…",
+      newSticker: "New sticker!", dupe: "Already owned", again: "Draw again", unknown: "???",
+      fromMap: "Reward earned", fromMachine: "Won from a draw", toMap: "A reward to earn", toMachine: "Will come from a draw",
+      rarity1: "Common", rarity2: "Rare", rarity3: "Epic", rarity4: "Legendary",
+      wonBand: "Earned by clearing {b}", wonClean: "Earned by a clean run through {b}",
+      wonAll: "Earned by clearing all 30 levels", wonPerfect: "Earned with a perfect 90/90",
+      toBand: "Clear {b}", toClean: "Make a clean run through {b}",
+      toAll: "Clear all 30 levels", toPerfect: "Get a perfect 90/90", band: "band {n}",
+      tapClose: "Tap to close", tapOut: "Tap outside to close",
+      home: "Home", help: "Help", options: "Options", machine: "Machine", collection: "Collection",
+      lastPulls: "Last pulls", each: "each", superT: "Super ticket",
+      ballIs: "1 ball ≈ 5%", moreRare: "More tickets, rarer stickers"
+    },
+    fr: {
+      album: "Stickers", perDraw: "Tickets par tirage", chances: "Chances", draw: "Tirer", mixing: "Ça mélange…",
+      newSticker: "Nouveau sticker !", dupe: "Déjà obtenu", again: "Tirer encore", unknown: "???",
+      fromMap: "Récompense gagnée", fromMachine: "Obtenu par tirage", toMap: "Une récompense à gagner", toMachine: "S’obtiendra par tirage",
+      rarity1: "Commun", rarity2: "Rare", rarity3: "Épique", rarity4: "Légendaire",
+      wonBand: "Gagné en terminant {b}", wonClean: "Gagné par un sans-faute sur {b}",
+      wonAll: "Gagné en terminant les 30 niveaux", wonPerfect: "Gagné avec un 90/90 parfait",
+      toBand: "Termine {b}", toClean: "Réussis un sans-faute sur {b}",
+      toAll: "Termine les 30 niveaux", toPerfect: "Obtiens un 90/90 parfait", band: "la zone {n}",
+      tapClose: "Touche pour fermer", tapOut: "Touche à côté pour fermer",
+      home: "Accueil", help: "Aide", options: "Options", machine: "Machine", collection: "Collection",
+      lastPulls: "Derniers tirages", each: "chacun", superT: "Super ticket",
+      ballIs: "1 bille ≈ 5 %", moreRare: "Plus de tickets, plus rare"
+    }
+  };
+
+  const ICON = {
+    home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    gum: '<circle cx="12" cy="9" r="6.5"/><path d="M8 15.5 7 21h10l-1-5.5"/><path d="M11 18h2"/>',
+    sticker: '<path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/><path d="M8 13h.01"/><path d="M16 13h.01"/><path d="M9 17s1 1 3 1 3-1 3-1"/>',
+    chev: '<path d="m18 15-6-6-6 6"/>'
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24">' + ICON[k] + "</svg>";
+
+  /* upper(), the motor's: capitals are a look, and a capital carries no accent */
+  function upper(str) {
+    const FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    const PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    const shouted = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      const b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+    let out = "";
+    for (const c of shouted) {
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      const k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+  const pad = n => (n < 10 ? "0" : "") + n;
+  const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m));
+  const num = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+  let T = STRINGS.en;
+  const U = k => upper(T[k]);
+
+  /* ======================================================================
+     THE SAVE — a mock of meta.js: the stickers, the tickets, the odds
+     ====================================================================== */
+
+  const S = { view: 0, game: "vipera", lang: "en", own: {}, tickets: 12, supers: 1, bet: 1,
+    drawing: false, pending: 0, pulls: [], preset: "mid" };
+  let G = null, AWARDS = [], MILE = {}, ORDER = [];
+  const SUP = -1, MAX_BET = 5;
+
+  function spec() {
+    G = GAMES[S.game];
+    AWARDS = G.awards && G.awards.length === 12 ? G.awards : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    MILE = {};
+    AWARDS.forEach(a => { MILE[a] = true; });
+    ORDER = G.st.map((s, i) => i + 1).sort((a, b) => (rar(a) - rar(b)) || (a - b));
+  }
+  const total = () => G.st.length;
+  const rar = i => G.st[i - 1][1];
+  const nameOf = i => G.st[i - 1][0];
+  const art = i => EMBED + S.game + "-sticker" + pad(i) + ".webp";
+  const count = i => (S.pending === i ? 0 : S.own[i] || 0);
+  const owned = () => ORDER.filter(i => count(i) > 0).length;
+  const shiny = i => i === AWARDS[11];
+  const rarName = i => U("rarity" + (rar(i) + 1));
+  const inTier = r => ORDER.filter(i => rar(i) === r);
+
+  function pool() {
+    const out = [];
+    for (let i = 1; i <= total(); i++) if (!(MILE[i] && !S.own[i])) out.push(i);
+    return out.length ? out : [1];
+  }
+  /* meta.js, chances() and superChances(), fed with this game's web.meta */
+  function chances(list, bet) {
+    const DROP = G.drop || [60, 25, 12, 3], LUCK = G.luck || 1.7, LEG = (G.legendaryPer || 1) / 100;
+    if (bet === SUP) {
+      const top = G.superOdds || [20, 25, 30];
+      const want = [0, top[0] / 100, top[1] / 100, top[2] / 100];
+      want[0] = Math.max(0, 1 - want[1] - want[2] - want[3]);
+      const n = [0, 0, 0, 0];
+      let live = 0;
+      list.forEach(i => n[rar(i)]++);
+      for (let r = 0; r < 4; r++) { if (!n[r]) want[r] = 0; live += want[r]; }
+      return list.map(i => (live > 0 ? (want[rar(i)] / live) / n[rar(i)] : 1 / list.length));
+    }
+    const b = Math.max(1, bet | 0), k = Math.pow(LUCK, Math.min(b, MAX_BET) - 1);
+    let top = 0, rest = 0;
+    const w = list.map(i => {
+      const r = rar(i), v = (DROP[r] || 1) * (r > 0 ? k : 1);
+      if (r === 3) top += v; else rest += v;
+      return v;
+    });
+    const pTop = top > 0 ? (rest > 0 ? Math.min(0.95, b * LEG) : 1) : 0;
+    return list.map((i, j) => (rar(i) === 3 ? (w[j] / top) * pTop : (rest ? (w[j] / rest) * (1 - pTop) : 0)));
+  }
+  function odds(bet) {
+    const list = pool(), p = chances(list, bet), out = [0, 0, 0, 0];
+    list.forEach((i, j) => { out[rar(i)] += p[j]; });
+    return out;
+  }
+  function roll(bet) {
+    const list = pool(), p = chances(list, bet);
+    let r = Math.random();
+    for (let j = 0; j < list.length; j++) { r -= p[j]; if (r <= 0) return list[j]; }
+    return list[list.length - 1];
+  }
+  const pct = v => { const p = Math.round(v * 100); return p < 1 && v > 0 ? "<1%" : p + "%"; };
+
+  /* the line under a sticker: what was done, or what to do */
+  function srcLine(n, have) {
+    const mi = AWARDS.indexOf(n);
+    if (mi < 0) return have ? T.fromMachine : T.toMachine;
+    if (mi === 11) return have ? T.wonPerfect : T.toPerfect;
+    if (mi === 10) return have ? T.wonAll : T.toAll;
+    const b = fill(T.band, { n: (mi % 5) + 1 });
+    return fill(have ? (mi < 5 ? T.wonBand : T.wonClean) : (mi < 5 ? T.toBand : T.toClean), { b });
+  }
+
+  function build(preset) {
+    S.preset = preset; S.own = {}; S.pulls = []; S.pending = 0; S.bet = 1;
+    const machineOnly = ORDER.filter(i => !MILE[i]);
+    const c = machineOnly.filter(i => rar(i) === 0), r = machineOnly.filter(i => rar(i) === 1);
+    if (preset === "fresh") { S.tickets = 5; S.supers = 0; return; }
+    if (preset === "mid") {
+      [AWARDS[0], AWARDS[1], AWARDS[5]].forEach(i => { S.own[i] = 1; });
+      c.slice(0, 5).forEach((i, k) => { S.own[i] = k === 0 ? 3 : k === 2 ? 2 : 1; });
+      if (r[0]) S.own[r[0]] = 1;
+      S.tickets = 12; S.supers = 1;
+    } else {
+      ORDER.forEach(i => { S.own[i] = 1; });
+      const leg = ORDER.filter(i => rar(i) === 3 && !MILE[i]), ep = ORDER.filter(i => rar(i) === 2);
+      delete S.own[leg[0] || AWARDS[11]];
+      delete S.own[ep[ep.length - 1]];
+      c.slice(0, 4).forEach((i, k) => { S.own[i] = 2 + k; });
+      S.tickets = 30; S.supers = 2;
+    }
+    for (let k = 0; k < 5; k++) {
+      const had = ORDER.filter(i => S.own[i]);
+      if (had.length) S.pulls.push({ n: had[(k * 7) % had.length], isNew: false });
+    }
+  }
+
+  /* ======================================================================
+     THE MACHINE — packages/webshell/album.js section 3, ported as a factory
+     ====================================================================== */
+
+  const GUM = { balls: 16, r: 19, gravity: 2100, bounce: 0.42, ballBounce: 0.26, drag: 0.9975,
+    wallFriction: 0.965, shake: 34, shakeMs: 620 };
+  const G_W = 300, G_H = 424, CX = 150, CY = 146, R = 120, HOLE = 30, NECK = 46, GLOBE_BOT = CY + R;
+  const BODY_TOP = 266, BODY_BOT = 384, BODY_TW = 74, BODY_BW = 116, TRAY_FLOOR = 372, TRAY_HALF = 64;
+  const STEP = 1 / 240, LAND_MAX = 2200;
+  let FRAME_SCALE = 1;
+  const LIVE = new Set();
+
+  function hexOf(v) {
+    v = String(v).replace(/\s/g, "");
+    if (v.charAt(0) !== "#") return [200, 200, 200];
+    if (v.length === 4) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+    return [parseInt(v.substr(1, 2), 16), parseInt(v.substr(3, 2), 16), parseInt(v.substr(5, 2), 16)];
+  }
+  function mixc(c, t, k) {
+    const a = hexOf(c), b = hexOf(t);
+    return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * k) + "," + Math.round(a[1] + (b[1] - a[1]) * k) + "," +
+      Math.round(a[2] + (b[2] - a[2]) * k) + ")";
+  }
+
+  /* HOW MANY BALLS OF EACH RARITY a glass of `N` shows for the odds `o`:
+     largest remainder, and a tier the machine can roll is never shown
+     empty — one ball over-states a 1% legendary, zero balls would say the
+     machine cannot give one, which is the worse lie. */
+  function split(o, N) {
+    const raw = o.map(v => v * N), c = raw.map(Math.floor);
+    o.forEach((v, r) => { if (v > 0 && !c[r]) c[r] = 1; });
+    let sum = c.reduce((a, b) => a + b, 0);
+    const byFrac = [0, 1, 2, 3].sort((a, b) => (raw[b] - c[b]) - (raw[a] - c[a]));
+    for (let k = 0; sum < N; k = (k + 1) % 4) if (o[byFrac[k]] > 0) { c[byFrac[k]]++; sum++; }
+    while (sum > N) { c[c.indexOf(Math.max(...c))]--; sum--; }
+    return c;
+  }
+  const RAR = ["#aab1c6", "#4dabf7", "#c77dff", "#ffd43b"];
+
+  /* `opt.tiers`: the balls are the ODDS rather than the SKIN's palette —
+     each one a rarity, `recolor` swaps them when the bet moves, and
+     `release` drops a ball of the rarity that was drawn. */
+  function makeMachine(scale, opt) {
+    opt = opt || {};
+    const NB = opt.balls || GUM.balls, BR = opt.r || GUM.r;
+    const cv = document.createElement("canvas");
+    cv.className = "al-cv";
+    const ctx = cv.getContext("2d");
+    let dpr = 1, colours = [], balls = [], winner = null, hatch = 0, crank = 0;
+    let shakeT = 0, shakeDur = 0, offX = 0, running = false, quiet = 0, onLanded = null, dead = false;
+
+    function readColours() {
+      const cs = getComputedStyle(document.getElementById("frame"));
+      colours = ["--accent", "--gold", "--danger", "--cta-a", "--accent2", "--cta-b"].map(n =>
+        (cs.getPropertyValue(n) || "").replace(/\s/g, "") || cs.getPropertyValue("--accent").trim() || "#8888ff");
+    }
+    function size() {
+      dpr = Math.min(4, scale * FRAME_SCALE * (window.devicePixelRatio || 1));
+      cv.width = Math.round(G_W * dpr); cv.height = Math.round(G_H * dpr);
+      cv.style.width = G_W * scale + "px"; cv.style.height = G_H * scale + "px";
+    }
+    function fillBalls() {
+      balls = []; winner = null; hatch = 0;
+      const want = opt.tiers ? split(opt.odds || [1, 0, 0, 0], NB) : null;
+      for (let i = 0, t = 0; i < NB; i++) {
+        const a = Math.random() * Math.PI * 2, d = Math.random() * (R - BR - 6);
+        if (want) while (!want[t]) t++;
+        balls.push({ x: CX + Math.cos(a) * d, y: CY + Math.sin(a) * d * 0.8 - 30, vx: (Math.random() - 0.5) * 40, vy: 0,
+          r: BR, c: want ? RAR[t] : colours[i % colours.length], t: want ? t : 0, out: false, flash: 0 });
+        if (want) want[t]--;
+      }
+      if (want) balls.sort(() => Math.random() - 0.5);
+    }
+    function step() {
+      if (shakeT > 0) {
+        shakeT -= STEP;
+        const k = Math.max(0, shakeT / shakeDur);
+        offX = Math.sin((shakeDur - shakeT) * 34) * GUM.shake * k * k;
+        crank += STEP * 7.5;
+      } else offX = 0;
+      const cx = CX + offX;
+      for (const b of balls) { if (b.flash > 0) b.flash = Math.max(0, b.flash - STEP * 1.4); b.vy += GUM.gravity * STEP; b.vx *= GUM.drag; b.vy *= GUM.drag; b.x += b.vx * STEP; b.y += b.vy * STEP; }
+      for (let i = 0; i < balls.length; i++) for (let j = i + 1; j < balls.length; j++) {
+        const a = balls[i], c = balls[j], dx = c.x - a.x, dy = c.y - a.y, min = a.r + c.r, d2 = dx * dx + dy * dy;
+        if (d2 > min * min || d2 < 1e-6) continue;
+        const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, push = (min - d) * 0.5;
+        a.x -= nx * push; a.y -= ny * push; c.x += nx * push; c.y += ny * push;
+        const rv = (c.vx - a.vx) * nx + (c.vy - a.vy) * ny;
+        if (rv > 0) continue;
+        const imp = -(1 + GUM.ballBounce) * rv * 0.5;
+        a.vx -= imp * nx; a.vy -= imp * ny; c.vx += imp * nx; c.vy += imp * ny;
+      }
+      for (const b of balls) confine(b, cx);
+    }
+    function confine(b, cx) {
+      const dx = b.x - cx, dy = b.y - CY, d = Math.sqrt(dx * dx + dy * dy) || 1e-6, lim = R - b.r;
+      const mine = b === winner, open = mine && hatch > 0.5;
+      const inGap = open && dy > 0 && Math.abs(dx) < HOLE - b.r * 0.35;
+      if (d > lim && !inGap && !b.out) {
+        const nx = dx / d, ny = dy / d;
+        b.x = cx + nx * lim; b.y = CY + ny * lim;
+        const vn = b.vx * nx + b.vy * ny;
+        if (vn > 0) { b.vx -= (1 + GUM.bounce) * vn * nx; b.vy -= (1 + GUM.bounce) * vn * ny; }
+        b.vx *= GUM.wallFriction; b.vy *= GUM.wallFriction;
+      }
+      if (!mine) return;
+      if (!b.out && open && b.y > CY) { b.vx += (cx - b.x) * 6 * STEP; if (b.y > GLOBE_BOT - b.r) b.out = true; }
+      if (!b.out) return;
+      if (hatch > 0 && b.y > GLOBE_BOT + 8) hatch = Math.max(0, hatch - 4 * STEP);
+      if (b.x < CX - NECK + b.r) { b.x = CX - NECK + b.r; b.vx = -b.vx * GUM.bounce; }
+      if (b.x > CX + NECK - b.r) { b.x = CX + NECK - b.r; b.vx = -b.vx * GUM.bounce; }
+      if (b.y + b.r > TRAY_FLOOR) {
+        b.y = TRAY_FLOOR - b.r; b.vy = -b.vy * GUM.bounce; b.vx *= 0.88;
+        if (Math.abs(b.vy) < 60) { b.vy = 0; if (onLanded) { const f = onLanded; onLanded = null; f(); } }
+      }
+      if (b.x < CX - TRAY_HALF + b.r) { b.x = CX - TRAY_HALF + b.r; b.vx = -b.vx * 0.5; }
+      if (b.x > CX + TRAY_HALF - b.r) { b.x = CX + TRAY_HALF - b.r; b.vx = -b.vx * 0.5; }
+    }
+    function sphere(x, y, r, c) {
+      const g = ctx.createRadialGradient(x - r * 0.34, y - r * 0.4, r * 0.12, x, y, r * 1.05);
+      g.addColorStop(0, mixc(c, "#ffffff", 0.72)); g.addColorStop(0.42, c); g.addColorStop(1, mixc(c, "#000000", 0.55));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.75)";
+      ctx.beginPath(); ctx.ellipse(x - r * 0.34, y - r * 0.42, r * 0.22, r * 0.15, -0.7, 0, 6.2832); ctx.fill();
+    }
+    function rr(x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+    function bodyPath() {
+      const r = 14;
+      ctx.beginPath(); ctx.moveTo(CX - BODY_TW, BODY_TOP); ctx.lineTo(CX + BODY_TW, BODY_TOP);
+      ctx.lineTo(CX + BODY_BW, BODY_BOT - r); ctx.arcTo(CX + BODY_BW, BODY_BOT, CX + BODY_BW - r, BODY_BOT, r);
+      ctx.lineTo(CX - BODY_BW + r, BODY_BOT); ctx.arcTo(CX - BODY_BW, BODY_BOT, CX - BODY_BW, BODY_BOT - r, r);
+      ctx.closePath();
+    }
+    function draw() {
+      const cx = CX + offX;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, G_W, G_H);
+      ctx.fillStyle = "rgba(8,10,24,.95)"; rr(CX - 128, BODY_BOT - 6, 256, 26, 9); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.16)"; ctx.lineWidth = 3; rr(CX - 128, BODY_BOT - 6, 256, 26, 9); ctx.stroke();
+      const ped = ctx.createLinearGradient(CX - BODY_BW, BODY_TOP, CX + BODY_BW, BODY_BOT);
+      ped.addColorStop(0, "rgba(150,170,220,.30)"); ped.addColorStop(0.45, "rgba(30,36,64,.94)"); ped.addColorStop(1, "rgba(8,10,24,.96)");
+      ctx.fillStyle = ped; bodyPath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.26)"; ctx.lineWidth = 3; bodyPath(); ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.78)"; rr(CX - NECK, 262, NECK * 2, 126, 12); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; rr(CX - NECK, 262, NECK * 2, 126, 12); ctx.stroke();
+      const col = ctx.createLinearGradient(0, 252, 0, 278);
+      col.addColorStop(0, "rgba(226,238,255,.7)"); col.addColorStop(1, "rgba(120,140,190,.45)");
+      ctx.fillStyle = col; rr(CX - 60, 252, 120, 24, 9); ctx.fill();
+      const back = ctx.createRadialGradient(cx - R * 0.3, CY - R * 0.35, R * 0.1, cx, CY, R);
+      back.addColorStop(0, "rgba(150,175,225,.16)"); back.addColorStop(1, "rgba(6,8,22,.74)");
+      ctx.fillStyle = back; ctx.beginPath(); ctx.arc(cx, CY, R, 0, 6.2832); ctx.fill();
+      for (const b of balls) {
+        if (b === winner) continue;
+        sphere(b.x, b.y, b.r, b.c);
+        if (b.flash > 0) {
+          ctx.strokeStyle = "rgba(255,255,255," + b.flash.toFixed(2) + ")"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3 + (1 - b.flash) * 10, 0, 6.2832); ctx.stroke();
+        }
+      }
+      ctx.save(); ctx.translate(cx - HOLE, GLOBE_BOT - 10); ctx.rotate(hatch * 1.35);
+      ctx.fillStyle = "rgba(226,238,255,.9)"; rr(0, -5, HOLE * 2, 10, 5); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, CY, R, 0, 6.2832); ctx.clip();
+      const gl = ctx.createLinearGradient(cx - R, CY - R, cx + R * 0.4, CY + R);
+      gl.addColorStop(0, "rgba(255,255,255,.3)"); gl.addColorStop(0.34, "rgba(255,255,255,.05)"); gl.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = gl; ctx.fillRect(cx - R, CY - R, R * 2, R * 2);
+      ctx.strokeStyle = "rgba(255,255,255,.34)"; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(cx, CY, R - 8, -0.55, 1.0); ctx.stroke(); ctx.restore();
+      ctx.strokeStyle = "rgba(226,238,255,.66)"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(cx, CY, R - 3, 0, 6.2832); ctx.stroke();
+      ctx.fillStyle = "rgba(226,238,255,.72)"; rr(cx - 18, CY - R - 15, 36, 22, 9); ctx.fill();
+      if (winner) sphere(winner.x, winner.y, winner.r, winner.c);
+      const tr = ctx.createLinearGradient(0, TRAY_FLOOR - 6, 0, TRAY_FLOOR + 22);
+      tr.addColorStop(0, "rgba(150,170,220,.34)"); tr.addColorStop(1, "rgba(6,8,20,.98)");
+      ctx.fillStyle = tr; rr(CX - TRAY_HALF - 14, TRAY_FLOOR - 4, (TRAY_HALF + 14) * 2, 24, 9); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.26)"; ctx.lineWidth = 3;
+      rr(CX - TRAY_HALF - 14, TRAY_FLOOR - 4, (TRAY_HALF + 14) * 2, 24, 9); ctx.stroke();
+      ctx.save(); ctx.translate(CX + 66, 318); ctx.rotate(crank);
+      ctx.strokeStyle = colours[1]; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 6.2832); ctx.stroke();
+      ctx.fillStyle = colours[1]; rr(-4, -16, 8, 13, 4); ctx.fill(); ctx.restore();
+    }
+    function frame() {
+      if (!running || dead) return;
+      let e = 0;
+      for (let i = 0; i < 4; i++) step();
+      draw();
+      for (const b of balls) e += Math.abs(b.vx) + Math.abs(b.vy) + b.flash * 100;
+      if (e < 12 && shakeT <= 0) quiet++; else quiet = 0;
+      if (quiet > 24) { running = false; return; }
+      requestAnimationFrame(frame);
+    }
+    function wake() { quiet = 0; if (running || dead) return; running = true; requestAnimationFrame(frame); }
+
+    readColours(); size(); fillBalls(); wake();
+    const api = {
+      el: cv,
+      refresh() { if (dead) return; size(); draw(); wake(); },
+      kill() { dead = true; running = false; LIVE.delete(api); },
+      shake() {
+        if (winner) {
+          balls.splice(balls.indexOf(winner), 1);
+          balls.push({ x: CX + (Math.random() - 0.5) * 60, y: CY - R + BR + 4, vx: (Math.random() - 0.5) * 60, vy: 120, r: BR,
+            c: opt.tiers ? winner.c : colours[Math.floor(Math.random() * colours.length)], t: winner.t, out: false, flash: 0 });
+          winner = null; hatch = 0;
+        }
+        shakeDur = shakeT = GUM.shakeMs / 1000;
+        wake();
+      },
+      recolor(o) {
+        if (!opt.tiers || dead) return;
+        const glass = balls.filter(b => b !== winner), want = split(o, glass.length), have = [0, 0, 0, 0];
+        glass.forEach(b => have[b.t]++);
+        const spare = [];
+        for (let r = 0; r < 4; r++) {
+          const mine = glass.filter(b => b.t === r).sort(() => Math.random() - 0.5);
+          for (let k = 0; k < have[r] - want[r]; k++) spare.push(mine[k]);
+        }
+        if (!spare.length) return;
+        for (let r = 0; r < 4; r++) {
+          for (let k = 0; k < want[r] - have[r] && spare.length; k++) {
+            const b = spare.pop();
+            b.t = r; b.c = RAR[r]; b.flash = 1;
+            b.vy -= 260 + Math.random() * 220; b.vx += (Math.random() - 0.5) * 180;
+          }
+        }
+        wake();
+      },
+      release(done, tier) {
+        let best = null, bd = 1e9;
+        const pick = opt.tiers && tier != null && balls.some(b => b.t === tier) ? balls.filter(b => b.t === tier) : balls;
+        for (const b of pick) {
+          const d = Math.hypot(b.x - CX, b.y - (CY + R));
+          if (d < bd) { bd = d; best = b; }
+        }
+        winner = best; hatch = 0; onLanded = done;
+        const t0 = performance.now();
+        (function open(now) { hatch = Math.min(1, ((now || t0) - t0) / 220); if (hatch < 1) requestAnimationFrame(open); })(t0);
+        wake();
+      }
+    };
+    LIVE.add(api);
+    return api;
+  }
+
+  /* ======================================================================
+     THE CONTROLS — album.js buildControls / paintMachine, on meta.css
+     ====================================================================== */
+
+  function h(tag, cls, html) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  const canPay = () => (S.bet === SUP ? S.supers >= 1 : S.tickets >= S.bet);
+
+  function onBet(e) {
+    const b = e.target.closest("[data-b]");
+    if (!b || S.drawing) return;
+    S.bet = +b.dataset.b;
+    refresh();
+  }
+  function betRow() {
+    const row = h("div", "al-bets");
+    for (let i = 1; i <= MAX_BET; i++) { const b = h("button", "al-bet", String(i)); b.dataset.b = i; row.appendChild(b); }
+    const s = h("button", "al-bet sup", '<img class="al-supi" src="' + SHELL + 'ticket-super.webp" alt=""><i></i>');
+    s.dataset.b = SUP; s.setAttribute("aria-label", T.superT);
+    row.appendChild(s);
+    row.addEventListener("click", onBet);
+    row.paint = () => {
+      row.querySelectorAll(".al-bet").forEach(p => {
+        const n = +p.dataset.b, sup = n === SUP, lacks = sup ? S.supers < 1 : n > S.tickets;
+        p.className = "al-bet" + (sup ? " sup" : "") + (n === S.bet ? " on" : "") + (lacks ? " short" : "");
+        p.disabled = S.drawing;
+        if (sup) p.querySelector("i").textContent = S.supers > 0 ? S.supers : "";
+      });
+    };
+    return row;
+  }
+  /* 3. THE STAIRCASE: the same six bets, each pill a column of what it buys */
+  function stairRow() {
+    const row = h("div", "st");
+    [1, 2, 3, 4, 5, SUP].forEach(n => {
+      const b = h("button", "st-b" + (n === SUP ? " sup" : ""),
+        '<span class="col">' + [0, 1, 2, 3].map(r => '<i class="r' + r + '"></i>').join("") + '</span><span class="n">' +
+        (n === SUP ? '<img src="' + SHELL + 'ticket-super.webp" alt=""><b></b>' : "<b>" + n + "</b>") + "</span>");
+      b.dataset.b = n;
+      if (n === SUP) b.setAttribute("aria-label", T.superT);
+      row.appendChild(b);
+    });
+    row.addEventListener("click", onBet);
+    row.paint = () => {
+      row.querySelectorAll(".st-b").forEach(p => {
+        const n = +p.dataset.b, sup = n === SUP, lacks = sup ? S.supers < 1 : n > S.tickets, o = odds(n);
+        p.className = "st-b" + (sup ? " sup" : "") + (n === S.bet ? " on" : "") + (lacks ? " short" : "");
+        p.disabled = S.drawing;
+        p.querySelectorAll(".col i").forEach((i, r) => { i.style.flexGrow = o[r]; i.classList.toggle("nz", o[r] > 0); });
+        if (sup) p.querySelector("b").textContent = S.supers > 0 ? S.supers : "";
+      });
+    };
+    return row;
+  }
+  function drawBtn(machine) {
+    const b = h("button", "al-draw");
+    b.addEventListener("click", () => pull(machine()));
+    b.paint = () => {
+      const sup = S.bet === SUP, ok = canPay();
+      b.disabled = S.drawing || !ok;
+      b.className = "al-draw" + (ok ? "" : " off") + (sup ? " sup" : "");
+      b.innerHTML = '<span class="w">' + (S.drawing ? U("mixing") : U("draw")) + '</span><span class="c"><img class="mt-ci" src="' +
+        SHELL + (sup ? "ticket-super" : "ticket") + '.webp" alt="">' + (S.drawing || sup ? "" : S.bet) + "</span>";
+    };
+    return b;
+  }
+  function ltTile(n, cls) {
+    const c = count(n);
+    const t = h("button", "lt r" + rar(n) + (c ? " have" : " ghost") + (cls ? " " + cls : ""),
+      '<img src="' + art(n) + '" alt="">' + (c > 1 ? '<i class="dupb">x' + c + "</i>" : ""));
+    t.dataset.n = n;
+    t.onclick = () => detail(n);
+    return t;
+  }
+  const pips = r => '<span class="pips r' + r + '">' + "<i></i>".repeat(r + 1) + "</span>";
+
+  /* ======================================================================
+     THE DRAW — album.js onDraw: decided before a ball moves
+     ====================================================================== */
+
+  function pull(machine, hooks) {
+    if (!machine || S.drawing || !canPay()) return;
+    if (S.bet === SUP) S.supers--; else S.tickets -= S.bet;
+    S.drawing = true;
+    refresh();
+    const n = roll(S.bet);
+    machine.shake();
+    setTimeout(() => {
+      let done = false;
+      const landed = () => {
+        if (done) return;
+        done = true;
+        const isNew = !S.own[n];
+        S.own[n] = (S.own[n] || 0) + 1;
+        if (isNew) S.pending = n;
+        S.pulls.unshift({ n, isNew });
+        S.pulls.length = Math.min(S.pulls.length, 8);
+        S.drawing = false;
+        refresh();
+        setTimeout(() => { if (hooks && hooks.landed) hooks.landed(); reveal(n, isNew); }, 240);
+      };
+      machine.release(landed, rar(n));
+      setTimeout(landed, LAND_MAX);
+    }, GUM.shakeMs + 140);
+  }
+
+  /* ======================================================================
+     THE CARDS — the reveal, the detail, and view 4's machine
+     ====================================================================== */
+
+  const STACK = [];
+  function card(opts) {
+    const box = h("div", "lab-modal");
+    const c = h("div", "mt-card" + (opts.cls ? " " + opts.cls : ""));
+    if (opts.pin) c.appendChild(h("span", "mt-pin", opts.pin));
+    if (opts.title) c.appendChild(h("h2", "mt-h", opts.title));
+    const body = h("div", "mt-body");
+    c.appendChild(body);
+    c.appendChild(h("p", "mt-tap", opts.tap || U("tapClose")));
+    box.appendChild(c);
+    document.getElementById("frame").appendChild(box);
+    let gone = false;
+    const api = {
+      box, card: c, body,
+      close() {
+        if (gone) return;
+        gone = true;
+        STACK.splice(STACK.indexOf(api), 1);
+        box.classList.add("out");
+        setTimeout(() => box.remove(), 200);
+        if (opts.onClose) opts.onClose();
+      }
+    };
+    box.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      if (opts.outside && c.contains(e.target)) return;
+      if (opts.guard && !opts.guard()) return;
+      api.close();
+    });
+    STACK.push(api);
+    return api;
+  }
+
+  function fx(isNew) {
+    const f = h("div", "al-fx");
+    let html = "";
+    if (isNew) {
+      f.append(h("div", "al-flash"), h("div", "al-shock"), h("div", "al-shock d2"));
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * 6.2832 + Math.random() * 0.3, d = 180 + Math.random() * 140;
+        html += '<i style="--dx:' + Math.round(Math.cos(a) * d) + "px;--dy:" + Math.round(Math.sin(a) * d) +
+          "px;animation-delay:" + (Math.random() * 0.22).toFixed(2) + 's"></i>';
+      }
+      f.appendChild(h("div", "al-sparks", html));
+    } else {
+      f.appendChild(h("div", "al-lava"));
+      for (let i = 0; i < 26; i++) {
+        const sz = Math.round(5 + Math.random() * 13);
+        html += '<i style="left:' + (Math.random() * 100).toFixed(1) + "%;width:" + sz + "px;height:" + sz + "px;--rise:" +
+          Math.round(230 + Math.random() * 280) + "px;--sway:" + Math.round((Math.random() - 0.5) * 90) + "px;animation-duration:" +
+          (1 + Math.random() * 0.9).toFixed(2) + "s;animation-delay:" + (Math.random() * 0.65).toFixed(2) + 's"></i>';
+      }
+      f.appendChild(h("div", "al-embers", html));
+    }
+    return f;
+  }
+
+  function reveal(n, isNew) {
+    let again = false;
+    const k = card({ title: isNew ? U("newSticker") : U("dupe"), onClose: () => flyHome(n, again) });
+    k.box.classList.add("mt-modal", "sticker", isNew ? "fresh" : "seen");
+    k.card.insertBefore(fx(isNew), k.card.firstChild);
+    const pic = h("div", "mt-rw" + (shiny(n) ? " shiny" : ""), '<img class="mt-rw-img" src="' + art(n) + '" alt="">');
+    if (isNew) {
+      const b = h("div", "mt-badge-rw t" + rar(n), '<span class="rays"></span><span class="ring"></span>');
+      b.appendChild(pic);
+      k.body.appendChild(b);
+    } else k.body.appendChild(pic);
+    k.body.append(h("div", "mt-rw-name", nameOf(n)), h("div", "mt-rw-rar r" + rar(n), rarName(n)));
+    if (canPay()) {
+      const sup = S.bet === SUP;
+      const acts = h("div", "mt-acts");
+      const b = h("button", "mt-btn gold al-again", "<span>" + U("again") + '</span><span class="c"><img class="mt-ci" src="' +
+        SHELL + (sup ? "ticket-super" : "ticket") + '.webp" alt="">' + (sup ? "" : num(S.bet)) + "</span>");
+      b.onclick = () => { again = true; k.close(); };
+      acts.appendChild(b);
+      k.body.appendChild(acts);
+    }
+  }
+
+  function detail(n) {
+    const have = count(n);
+    const k = card({ title: have ? nameOf(n) : U("unknown"), pin: have ? "x" + have : "" });
+    k.box.classList.add("mt-modal", "sticker", "detail", "r" + rar(n));
+    k.body.append(
+      h("div", "mt-rw" + (have ? (shiny(n) ? " shiny" : "") : " ghost"), '<img class="mt-rw-img" src="' + art(n) + '" alt="">'),
+      h("div", "mt-rw-rar r" + rar(n), rarName(n)),
+      h("div", "mt-rw-src", srcLine(n, !!have)));
+  }
+
+  /* After the reveal: the sticker flies from the card to wherever the view
+     keeps it — a tile, a slot, a bead, a tab — and the tile turns over on the
+     landing, not before. A double flies too, to the same place: it is the
+     count that moves. */
+  function flyHome(n, again) {
+    const fr = document.getElementById("frame");
+    const target = CUR && CUR.target ? CUR.target(n) : null;
+    const finish = () => {
+      S.pending = 0;
+      refresh();
+      const t = CUR && CUR.target ? CUR.target(n) : null;
+      if (t) { t.classList.remove("lab-hit", "slap"); void t.offsetWidth; t.classList.add(t.classList.contains("v4-slot") ? "slap" : "lab-hit"); }
+      const chip = document.getElementById("chip-col");
+      if (chip) { chip.classList.remove("hit"); void chip.offsetWidth; chip.classList.add("hit"); }
+      if (again) setTimeout(() => (CUR.again ? CUR.again() : pull(CUR.machine && CUR.machine())), 120);
+    };
+    if (!target) { finish(); return; }
+    const f = fr.getBoundingClientRect(), r = target.getBoundingClientRect();
+    const tx = (r.left - f.left + r.width / 2) / FRAME_SCALE, ty = (r.top - f.top + r.height / 2) / FRAME_SCALE;
+    const tw = Math.max(40, Math.min(r.width, r.height) / FRAME_SCALE * 0.8);
+    const img = h("img", "fly");
+    img.src = art(n);
+    const S0 = 236, x0 = 360, y0 = 600;
+    img.style.cssText = "left:" + (x0 - S0 / 2) + "px;top:" + (y0 - S0 / 2) + "px;width:" + S0 + "px;height:" + S0 + "px";
+    fr.appendChild(img);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      img.style.transform = "translate(" + (tx - x0) + "px," + (ty - y0) + "px) scale(" + (tw / S0) + ")";
+    }));
+    setTimeout(() => { img.remove(); finish(); }, 620);
+  }
+
+  /* ======================================================================
+     THE SHELVES — one component, five views. Each builds once and paints on
+     every change, so the machine's canvas (and the ball in its tray)
+     survives a draw, and a chance that moves ANIMATES rather than being
+     redrawn in place
+     ====================================================================== */
+
+  /* o.delta: the VERSUS ONE track under every header. o.cols / o.max: the
+     columns of each shelf and the largest a tile may grow, so the denser
+     views still fit the sheet without a scroll. */
+  function shelves(o) {
+    const el = h("div", "v3-shelves"), parts = [];
+    const COLS = o.cols || [6, 6, 2, 2], MAX = o.max || [];
+    /* VERSUS ONE reads top down as the answer and then the question: the
+       track and the chance on ONE line over the tiles, the rarity's name and
+       count signed in the card's bottom-right corner */
+    function mk(r) {
+      const sh = h("div", "v3-shelf r" + r + (o.delta ? " vs" : ""));
+      const title = '<span class="nm">' + U("rarity" + (r + 1)) + '</span><span class="ct"></span>';
+      const pill = '<span class="ch"><u></u><em></em><b></b></span>';
+      const row = h("div", "v3-row");
+      row.style.setProperty("--cols", COLS[r]);
+      if (MAX[r]) row.style.setProperty("--max", MAX[r] + "px");
+      let hd, dl = null;
+      if (o.delta) {
+        dl = h("div", "dl", '<span class="tk"><span class="b"></span><span class="g"></span><s></s></span>' + pill);
+        hd = h("div", "v3-hd ft", title);
+        sh.append(dl, row, hd);
+      } else {
+        hd = h("div", "v3-hd", title + pill);
+        sh.append(hd, row);
+      }
+      parts[r] = { ct: sh.querySelector(".ct"), ch: sh.querySelector(".ch"), dl, row, last: null };
+      return sh;
+    }
+    el.append(mk(0), mk(1));
+    const pair = h("div", "v3-pair");
+    pair.append(mk(2), mk(3));
+    el.appendChild(pair);
+
+    function paint() {
+      const now = odds(S.bet), base = odds(1), pl = pool();
+      /* the track's full width is the most an ORDINARY bet can reach on this
+         tier; the super ticket runs past it and is clamped, which is the
+         point — it is the one bet that does not fit the ladder */
+      const top = [0, 0, 0, 0];
+      for (let b = 1; b <= MAX_BET; b++) odds(b).forEach((v, r) => { top[r] = Math.max(top[r], v); });
+      for (let r = 0; r < 4; r++) {
+        const p = parts[r], v = now[r], list = inTier(r), inPool = pl.filter(i => rar(i) === r).length;
+        p.ct.textContent = list.filter(count).length + "/" + list.length;
+        p.ch.classList.toggle("nil", !v);
+        p.ch.querySelector("u").style.width = (v * 100).toFixed(1) + "%";
+        p.ch.querySelector("b").textContent = pct(v);
+        const each = !o.delta && r && inPool > 1 ? v / inPool : 0;
+        p.ch.querySelector("em").textContent = each ? pct(each) + " " + T.each : "";
+        if (p.last != null && Math.abs(v - p.last) > 1e-9) {
+          p.ch.classList.remove("pulse-up", "pulse-down");
+          void p.ch.offsetWidth;
+          p.ch.classList.add(v > p.last ? "pulse-up" : "pulse-down");
+        }
+        p.last = v;
+        if (p.dl) {
+          const full = top[r] || 1, W = x => Math.min(100, x / full * 100);
+          const b0 = base[r], lo = Math.min(b0, v), hi = Math.max(b0, v);
+          const g = p.dl.querySelector(".g");
+          p.dl.querySelector(".b").style.width = W(lo) + "%";
+          g.style.left = W(lo) + "%";
+          g.style.width = (W(hi) - W(lo)) + "%";
+          g.className = "g" + (v < b0 ? " loss" : "");
+          p.dl.querySelector("s").style.left = W(b0) + "%";
+        }
+        p.row.innerHTML = "";
+        list.forEach(n => p.row.appendChild(ltTile(n)));
+      }
+    }
+    return { el, paint };
+  }
+
+  function shelvesView(root, o) {
+    const wrap = h("div", "sv");
+    const m = makeMachine(o.scale, o.tiers ? { tiers: true, balls: 20, r: 17, odds: odds(S.bet) } : null);
+    const top = h("div", "sv-top"), mc = h("div", "sv-mc"), ctl = h("div", "sv-ctl");
+    mc.appendChild(m.el);
+    if (o.tiers) mc.appendChild(h("div", "sv-leg", "<i></i>" + U("ballIs")));
+    const bets = o.stair ? stairRow() : betRow(), dr = drawBtn(() => m);
+    if (o.sth) bets.style.setProperty("--sth", o.sth + "px");
+    ctl.append(h("div", "al-lbl", U("perDraw")), bets);
+    if (o.stair) ctl.appendChild(h("div", "st-cap", "<span>" + U("moreRare") + '</span><span class="ar"></span>'));
+    ctl.appendChild(dr);
+    top.append(mc, ctl);
+    const sh = shelves(o);
+    wrap.append(top, sh.el);
+    root.appendChild(wrap);
+    return {
+      machine: () => m,
+      paint() { bets.paint(); dr.paint(); if (o.tiers) m.recolor(odds(S.bet)); sh.paint(); },
+      target: n => sh.el.querySelector('[data-n="' + n + '"]')
+    };
+  }
+
+  const VIEWS = [
+    { name: "Shelves", line: "Round 1's pick, unchanged: one shelf per rarity, and its header is the chance of drawing it. The baseline.",
+      draw: root => shelvesView(root, { scale: 0.5, max: [0, 0, 122, 122] }) },
+    { name: "Versus one", line: "Every shelf opens on one line — a track notched at what ONE ticket gives, the gain hatched past it, then the chance. The rarity signs the card bottom right.",
+      draw: root => shelvesView(root, { scale: 0.5, delta: true, cols: [8, 6, 2, 2], max: [0, 80, 84, 84] }) },
+    { name: "Staircase", line: "The bet pills ARE the odds: each one a column of the four rarities, so the row reads as colour rising from 1 to 5 to the super ticket — before a tap.",
+      draw: root => shelvesView(root, { scale: 0.5, stair: true, cols: [8, 6, 2, 2], max: [0, 80, 90, 90] }) },
+    { name: "Gumballs", line: "The glass holds the odds: 20 balls, one per 5%, in rarity colours. A higher bet swaps grey balls for coloured ones; the ball that drops is the rarity drawn.",
+      draw: root => shelvesView(root, { scale: 0.62, tiers: true, cols: [8, 6, 2, 2], max: [0, 80, 90, 90] }) },
+    { name: "Together", line: "Versus one, staircase and gumballs on one screen — do they add up, or talk over each other?",
+      draw: root => shelvesView(root, { scale: 0.52, tiers: true, stair: true, delta: true, sth: 58, cols: [8, 6, 2, 2], max: [0, 70, 72, 72] }) }
+  ];
+
+  let CUR = null;
+
+  function pair() {
+    document.getElementById("pair").innerHTML = [["home", "home"], ["help", "help"], ["gear", "options"]].map(p =>
+      '<button class="s-btn">' + svg(p[0]) + "<span>" + U(p[1]) + "</span></button>").join("");
+  }
+
+  function paintBand() {
+    const had = owned();
+    document.getElementById("band").innerHTML =
+      '<div class="f-chip lv"><img src="' + SHELL + 'xp.webp" alt="">7<span class="bar"><i></i></span></div>' +
+      '<div class="f-chip coins"><img src="' + SHELL + 'coin.webp" alt="">1 240</div>' +
+      '<div class="f-chip"><img src="' + SHELL + 'ticket.webp" alt="">' + S.tickets + "</div>" +
+      '<div class="f-chip here" id="chip-col"><img src="' + SHELL + 'sticker.webp" alt="">' + had + "/" + total() + "</div>" +
+      '<div class="f-chip"><img src="' + SHELL + 'star.webp" alt="">38/90</div>';
+  }
+
+  function refresh() {
+    paintBand();
+    if (CUR) CUR.paint();
+  }
+
+  function render() {
+    STACK.slice().forEach(k => k.close());
+    if (CUR && CUR.destroy) CUR.destroy();
+    LIVE.forEach(m => m.kill());
+    const body = document.getElementById("body");
+    body.innerHTML = "";
+    document.getElementById("tabs").innerHTML = "";
+    document.getElementById("title").textContent = U("album");
+    pair();
+    CUR = VIEWS[S.view].draw(body);
+    refresh();
+    document.querySelectorAll(".vpick").forEach((b, i) => b.classList.toggle("on", i === S.view));
+  }
+
+  function theme() {
+    const fr = document.getElementById("frame"), tok = Object.assign({}, DEF_TOK, G.tok);
+    Object.keys(tok).forEach(k => fr.style.setProperty("--" + k, tok[k]));
+    fr.style.setProperty("--accent2", tok.accent2 || tok["cta-a"]);
+    const f = FONTS[G.font] || ["Russo One", 400];
+    fr.style.setProperty("--web-font", '"' + f[0] + '"');
+    fr.style.setProperty("--web-fw", f[1]);
+    const bg = G.home ? "background-home" : "background-phone";
+    document.getElementById("bg").style.backgroundImage = "url(" + EMBED + S.game + "-" + bg + ".webp)";
+  }
+
+  function save() {
+    try { localStorage.setItem("lab:sticker-album-2", JSON.stringify({ view: S.view, game: S.game, lang: S.lang })); } catch (e) { /* no storage */ }
+  }
+  function pickView(i) { S.view = i; save(); render(); }
+  function pickGame(g) {
+    S.game = g; save();
+    spec(); theme(); build(S.preset);
+    document.fonts && document.fonts.ready.then(() => { LIVE.forEach(m => m.refresh()); });
+    render();
+    refreshFromManifest();
+  }
+  function pickLang(l) {
+    S.lang = l; T = STRINGS[l]; save();
+    document.querySelectorAll("[data-lang]").forEach(b => b.classList.toggle("on", b.dataset.lang === l));
+    render();
+  }
+
+  /* served over HTTP the live manifest wins over the snapshot */
+  const namesNote = document.getElementById("names");
+  function refreshFromManifest() {
+    const g = S.game;
+    namesNote.textContent = "Names and rarities: the snapshot inlined in this page. Served over HTTP, the page reads games/" + g + "/manifest.json instead.";
+    if (location.protocol === "file:") return;
+    fetch("../games/" + g + "/manifest.json").then(r => r.json()).then(m => {
+      const meta = m.web && m.web.meta;
+      if (!meta || g !== S.game) return;
+      const K = ["common", "rare", "epic", "legendary"];
+      GAMES[g].st = meta.stickers.map(s => [s.name, Math.max(0, K.indexOf(s.rarity || "common"))]);
+      ["awards", "drop", "luck", "legendaryPer", "superOdds"].forEach(k => { GAMES[g][k] = meta[k] || null; });
+      spec();
+      namesNote.textContent = "Names, rarities and odds read live from games/" + g + "/manifest.json.";
+      refresh();
+    }).catch(() => { /* file:// — the snapshot stays */ });
+  }
+
+  const picks = document.getElementById("picks");
+  VIEWS.forEach((v, i) => {
+    const b = h("button", "vpick", "<b><i>" + (i + 1) + "</i>" + v.name + "</b><span>" + v.line + "</span>");
+    b.onclick = () => pickView(i);
+    picks.appendChild(b);
+  });
+  const gsel = document.getElementById("game");
+  Object.keys(GAMES).forEach(g => { const o = h("option", null, GAMES[g].title || g); o.value = g; gsel.appendChild(o); });
+  gsel.onchange = () => pickGame(gsel.value);
+  const preset = document.getElementById("preset");
+  preset.onchange = () => { build(preset.value); render(); };
+  document.getElementById("reset").onclick = () => { build(preset.value); render(); };
+  document.getElementById("addT").onclick = () => { S.tickets += 5; refresh(); };
+  document.getElementById("addS").onclick = () => { S.supers += 1; refresh(); };
+  document.querySelectorAll("[data-lang]").forEach(b => { b.onclick = () => pickLang(b.dataset.lang); });
+
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "SELECT") return;
+    if (e.key === "Escape") { const top = STACK[STACK.length - 1]; if (top && !S.drawing) top.close(); return; }
+    if (STACK.length) return;
+    if (e.key >= "1" && e.key <= "5") { pickView(+e.key - 1); return; }
+    if (e.key === "d" || e.key === "D") {
+      const m = CUR.machine && CUR.machine();
+      if (m) pull(m);
+      return;
+    }
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !S.drawing) {
+      const seq = [1, 2, 3, 4, 5, SUP], k = seq.indexOf(S.bet) + (e.key === "ArrowRight" ? 1 : -1);
+      if (k >= 0 && k < seq.length) { S.bet = seq[k]; refresh(); }
+    }
+  });
+
+  function fitFrame() {
+    const st = document.getElementById("stage"), dev = document.getElementById("device");
+    FRAME_SCALE = Math.min((st.clientWidth - 48) / 720, (st.clientHeight - 48) / 1280);
+    dev.style.width = 720 * FRAME_SCALE + "px";
+    dev.style.height = 1280 * FRAME_SCALE + "px";
+    document.getElementById("frame").style.transform = "scale(" + FRAME_SCALE + ")";
+    LIVE.forEach(m => m.refresh());
+  }
+  window.addEventListener("resize", fitFrame);
+
+  try {
+    const s = JSON.parse(localStorage.getItem("lab:sticker-album-2") || "{}");
+    if (s.view >= 0 && s.view < VIEWS.length) S.view = s.view;
+    if (GAMES[s.game]) S.game = s.game;
+    if (STRINGS[s.lang]) { S.lang = s.lang; T = STRINGS[s.lang]; }
+  } catch (e) { /* no storage */ }
+  gsel.value = S.game;
+  document.querySelectorAll("[data-lang]").forEach(b => b.classList.toggle("on", b.dataset.lang === S.lang));
+  fitFrame();
+  spec(); theme(); build("mid");
+  render();
+  refreshFromManifest();
+})();
+</script>
+</body>
+</html>

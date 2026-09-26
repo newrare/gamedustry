@@ -4,6 +4,7 @@
 
     node tools/lab/serve-site.mjs
     node tools/lab/serve-site.mjs --port=4000
+    node tools/lab/serve-site.mjs --no-watch     # build once, never reload
 
   It serves dist/site, and it gets there by running tools/build/build-site.mjs —
   the very command Vercel runs. That is deliberate: a dev server that assembled
@@ -14,6 +15,11 @@
   Save any file under site/, packages/, games/ or tools/ and the page reloads:
   one Node process, fs.watch, and a Server-Sent Events channel injected at serve
   time, so the built artifact stays clean.
+
+  --no-watch (`make preview`) builds once at start and then leaves the page
+  alone: no watcher, no reload channel. It is for testing by hand while an agent
+  edits the sources — every save of theirs would otherwise reload your tab.
+  Restart the server to pick their changes up.
 
   What you are looking at is the WEB build of each game (menu, no install CTA),
   because that is what the site ships — see tools/build/build.mjs --target=web.
@@ -30,6 +36,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const argv = process.argv.slice(2);
 const PORT = Number((argv.find((a) => a.startsWith('--port=')) || '--port=8090').split('=')[1]);
 const OUT = path.join(ROOT, 'dist', 'site');
+const LIVE = !argv.includes('--no-watch');
 
 const RELOAD_CLIENT = `<script>
 /* serve-site.mjs: reload when the build says something changed. */
@@ -93,7 +100,7 @@ function broadcast(msg) {
 // ── watching ──
 // Not assets/: 52 MB of artwork that changes when a human adds a file, not
 // while they are editing. Restart the server after adding an icon.
-const WATCH = ['site', 'packages', 'games', 'tools'];
+const WATCH = LIVE ? ['site', 'packages', 'games', 'tools'] : [];
 let timer = null;
 
 function onChange(file) {
@@ -139,7 +146,7 @@ createServer(async (req, res) => {
     await stat(file);
     let body = await readFile(file);
     const ext = path.extname(file);
-    if (ext === '.html') {
+    if (ext === '.html' && LIVE) {
       body = Buffer.from(body.toString('utf8').replace('</body>', RELOAD_CLIENT + '</body>'));
     }
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'no-store' });
@@ -150,6 +157,6 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log(`site server   http://localhost:${PORT}/`);
-  console.log(`watching      ${WATCH.join('  ')}`);
+  console.log(LIVE ? `watching      ${WATCH.join('  ')}` : 'watching      nothing (--no-watch): restart to rebuild');
   build();
 });

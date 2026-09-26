@@ -1,7 +1,7 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,

@@ -164,7 +164,8 @@
 
   /* =========================================================================
      CARD — the one card every game opens. Chosen in lab/modal.html (bevel
-     skin, centred, gold title, corner pill, shimmering tap line, pop entry).
+     skin with a 1 px rim over a 70 % fill, centred, accent title, corner
+     pill, shimmering tap line, pop entry).
 
      One structure, six nodes, and only the body changes from card to card:
        .mt-card     the box: a dark plate inside a rim in the game's colours
@@ -187,31 +188,48 @@
   :root {
     --card-rim-a: var(--accent);
     --card-rim-b: var(--cta-b);
+    --card-rim: 1px;
+    --card-fill: .7;
   }
   .mt-card {
     position:relative; width:100%;
     padding:44px 35px; border-radius:30px;
     display:flex; flex-direction:column; align-items:center; gap:24px;
     color:var(--text);
-    border:4px solid transparent;
-    background:linear-gradient(180deg,#121628,#0a0c16) padding-box,
-               linear-gradient(180deg,var(--card-rim-a),var(--card-rim-b)) border-box;
+    background:linear-gradient(180deg,rgb(18 22 40 / var(--card-fill)),rgb(10 12 22 / var(--card-fill)));
     box-shadow:inset 0 2px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.7);
     font-family:var(--web-font, inherit);
+  }
+  /* THE RIM IS A RING, NOT A BORDER. A gradient border is a border-box
+     background under the padding-box one, and a see-through fill shows it
+     across the whole card. So it is drawn on ::before, masked to a band
+     --card-rim wide INSIDE the box — inside, because a card that clips its
+     content (the sticker reveal) would clip a ring standing outside it. */
+  .mt-card::before {
+    content:""; position:absolute; inset:0; z-index:0;
+    border-radius:inherit; padding:var(--card-rim); pointer-events:none;
+    background:linear-gradient(180deg,var(--card-rim-a),var(--card-rim-b));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   }
   .mt-card .mt-body {
     width:100%; display:flex; flex-direction:column; align-items:center; gap:24px;
   }
   .mt-card .mt-body:empty { display:none; }
+  /* A CARD OF A FIXED HEIGHT (the modal's `height` option): the slots keep
+     their size and the body takes what is left, scrolling inside it. Every
+     other card is the height of what it holds. */
+  .mt-card.fixed .mt-body { flex:1 1 auto; min-height:0; overflow-x:hidden; overflow-y:auto; }
   .mt-card .mt-h {
     margin:0; max-width:100%; text-align:center; white-space:nowrap;
-    font-size:54px; letter-spacing:3px; line-height:1.1;
+    font-size:50px; letter-spacing:3px; line-height:1.1;
     font-weight:var(--web-fw, 900);
-    color:var(--gold);
+    color:var(--accent);
     text-shadow:0 0 24px currentColor, 0 3px 12px rgba(0,0,0,.9);
   }
   .mt-card .mt-h.wrap { white-space:normal; }
-  /* NEVER THE TITLE'S COLOUR: gold over gold read as one heading in two
+  /* NEVER THE TITLE'S COLOUR: one colour twice read as one heading in two
      sizes, and the eyebrow is a different thing — which day, why, where
      from. The text colour, turned down, is the one that is not a palette's. */
   .mt-card .mt-eyebrow {
@@ -220,10 +238,6 @@
     font-size:20px; letter-spacing:3px; line-height:1.2;
     font-weight:var(--web-fw, 900);
     color:var(--text); opacity:.72;
-  }
-  .mt-card .mt-eyebrow .dl-dev {
-    font-size:12px; letter-spacing:2px; font-style:normal; opacity:1;
-    padding:2px 8px; border-radius:6px; color:#0b0b12; background:var(--danger);
   }
   /* A NUMBER ON THE CORNER — how many owned, how many in the camp. A tag,
      never a sentence. */
@@ -853,20 +867,190 @@
   #cta-bar.hidden { opacity:0; pointer-events:none; }
 
   /* =========================================================================
-     BUTTONS
+     BUTTON — the one button of the motor and of the web shell. Chosen in
+     lab/button.html: the "Jelly" style mixed flat — a pill in the SKIN's CTA
+     gradient, no depth, a squash under the finger, a ring around the shiny
+     one, and the price of a purchase on a macaron.
+
+     The list, and nothing outside it:
+       .btn               the button: rest, :hover (a desk), :active (a finger),
+                          .btn-shiny (the one to press), :disabled (off)
+       .btn-sm / .btn-lg  the sizes; medium is the default
+       .btn-danger        the destructive one
+       .btn-icon          an icon alone: a dark plate, filled when .btn-shiny
+       .btn-plate         that plate on a word — the choice that is not the offer
+       .btn-switch        off / on, read off aria-pressed
+       .btn-pub           a rewarded ad: ALWAYS the play glyph, .btn-txt (the
+                          line shouted, "watch an ad" under it), .btn-reward
+       .btn-buy           a purchase: ALWAYS a word, then .btn-badge (the
+                          currency's picture and the figure)
+       .btn-wide          the width of its column
+       .is-off            looks off and still answers — the tap is refused by
+                          a Notify rather than by a dead control
+     A label is written in normal case and shouted by upper(); this block
+     never transforms the case. The height is the unit: radius, padding, icon,
+     reward and badge are fractions of it, so the three sizes are one object at
+     three scales. The colours are the SKIN's --cta-a / --cta-b / --cta-text,
+     so every game wears it in its own palette without a line of its own.
      ========================================================================= */
-  .btn {
-    border:2px solid rgba(255,255,255,.8); border-radius:999px; cursor:pointer;
-    font-family:inherit; font-weight:900; letter-spacing:.5px; color:var(--cta-text);
-    background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
-    box-shadow:0 0 20px rgba(0,229,255,.6);
-    padding:22px 52px; font-size:34px;
-    animation:pulse 1.4s ease-in-out infinite;
+  :root {
+    --btn-h:         74px;                  /* medium height                 */
+    --btn-fs:        28px;                  /* medium type size              */
+    --btn-ls:        1.5px;
+    --btn-edge:      3px;
+    --btn-plate:     rgba(6,8,18,.5);       /* an icon at rest, .btn-plate   */
+    --btn-plate-line:rgba(255,255,255,.16);
   }
-  .btn:active { transform:scale(.96); }
-  .btn.sm { padding:14px 36px; font-size:30px; }
-  .btn.lg { padding:26px 62px; font-size:38px; }
-  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+  .btn {
+    --h:var(--btn-h); --fs:var(--btn-fs);
+    --b-a:var(--cta-a); --b-b:var(--cta-b); --b-ink:var(--cta-text);
+    --b-fill:linear-gradient(180deg, var(--b-a), var(--b-b));
+    --b-edge:transparent; --b-halo:var(--b-a);
+    position:relative; box-sizing:border-box; flex:0 0 auto;
+    display:inline-flex; align-items:center; justify-content:center; gap:calc(var(--h) * .17);
+    height:var(--h); min-width:var(--h); margin:0; padding:0 calc(var(--h) * .42);
+    border-radius:calc(var(--h) * .5);
+    border:var(--btn-edge) solid var(--b-edge);
+    /* ONE PAINT OVER THE WHOLE BOX, border included, and the edge drawn over
+       it. It was the fill in the padding box and a rim in the border box:
+       two gradients that meet at a seam, and — worse — a fill of two layers
+       (the danger's sheen over its colour) whose top layer had no box of its
+       own, so it tiled into the 3 px border and drew a dark line along the
+       top and a light one along the bottom. */
+    background:var(--b-fill);
+    background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
+    color:var(--b-ink);
+    font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900); font-size:var(--fs);
+    letter-spacing:var(--btn-ls); line-height:1; white-space:nowrap; text-decoration:none;
+    font-variant-numeric:tabular-nums;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; outline:none;
+    -webkit-appearance:none; appearance:none;
+    transition:transform .09s ease, filter .14s ease;
+  }
+  .btn:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+  @media (hover:hover) {
+    .btn:hover { filter:brightness(1.12); }
+    .btn-plate:hover, .btn-icon:not(.btn-shiny):hover { --b-edge:var(--accent); }
+  }
+  .btn:active:not(:disabled) { transform:scale(1.04, .9); }
+
+  .btn-sm { --h:calc(var(--btn-h) * .74); --fs:calc(var(--btn-fs) * .78); }
+  .btn-lg { --h:calc(var(--btn-h) * 1.22); --fs:calc(var(--btn-fs) * 1.18); }
+  /* A wide button's width is its column's, not its label's, so a long label
+     may take a second line rather than run off. */
+  .btn-wide {
+    display:flex; width:100%; height:auto; min-height:var(--h);
+    padding-top:calc(var(--h) * .14); padding-bottom:calc(var(--h) * .14);
+    white-space:normal; text-align:center; line-height:1.15;
+  }
+
+  .btn-danger {
+    --b-fill:linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.34)), linear-gradient(var(--danger), var(--danger));
+    --b-ink:#fff; --b-halo:var(--danger);
+  }
+  .btn-plate, .btn-icon:not(.btn-shiny) {
+    --b-fill:linear-gradient(var(--btn-plate), var(--btn-plate));
+    --b-edge:var(--btn-plate-line); --b-ink:var(--text); --b-halo:transparent;
+  }
+
+  /* the pictogram, and the icon alone */
+  .btn > svg, .btn > .ico { width:calc(var(--h) * .44); height:calc(var(--h) * .44); flex:0 0 auto; }
+  .btn-icon { padding:0; width:var(--h); }
+  .btn-icon > svg, .btn-icon > .ico { width:calc(var(--h) * .48); height:calc(var(--h) * .48); }
+
+  /* THE SHINY ONE — a ring leaves its edge and fades, on a loop: the one
+     button on a screen that is the offer. */
+  .btn-shiny::after {
+    content:""; position:absolute; inset:calc(var(--btn-edge) * -1); border-radius:inherit;
+    pointer-events:none; border:3px solid var(--b-halo);
+    animation:btn-ring 1.8s ease-out infinite;
+  }
+  .btn-icon.btn-shiny::after { animation-name:btn-ring-round; }
+  @keyframes btn-ring { 0% { transform:scale(1); opacity:.9; } 100% { transform:scale(1.2, 1.45); opacity:0; } }
+  @keyframes btn-ring-round { 0% { transform:scale(1); opacity:.9; } 100% { transform:scale(1.4); opacity:0; } }
+
+  /* the ad: play · the line and "watch an ad" · what it pays */
+  .btn-pub { --h:calc(var(--btn-h) * 1.3); }
+  .btn-pub.btn-sm { --h:calc(var(--btn-h) * .96); }
+  .btn-pub > svg:first-child { width:calc(var(--h) * .34); height:calc(var(--h) * .34); }
+  .btn-txt { display:flex; flex-direction:column; align-items:flex-start; gap:calc(var(--h) * .06);
+             flex:0 1 auto; min-width:0; white-space:nowrap; text-align:left; }
+  .btn-txt b { font-weight:inherit; }
+  /* the sub line is READ, not shouted: normal case, lighter, under the verb */
+  .btn-txt i { font-style:normal; font-size:.72em; letter-spacing:.5px; opacity:.82; }
+  .btn > .btn-reward {
+    height:calc(var(--h) * .78); width:auto; flex:0 0 auto;
+    margin:calc(var(--h) * -.12) calc(var(--h) * -.1) calc(var(--h) * -.12) calc(var(--h) * .04);
+    transform:rotate(-6deg); filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));
+  }
+  .btn > svg.btn-reward { height:calc(var(--h) * .5); width:calc(var(--h) * .5); margin:0; }
+
+  /* the purchase: a word, then the MACARON — a medallion pinned on the right
+     edge, the currency over the figure */
+  .btn-buy { padding-right:calc(var(--h) * .98); }
+  .btn-badge {
+    position:absolute; z-index:2; right:calc(var(--h) * -.18); top:50%;
+    width:calc(var(--h) * 1.02); height:calc(var(--h) * 1.02); margin-top:calc(var(--h) * -.51);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:50%; font-size:.66em; line-height:1; letter-spacing:.5px; white-space:nowrap;
+    color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.5);
+    background:radial-gradient(circle at 50% 30%, #2a3358, #10142a 70%);
+    border:calc(var(--h) * .05) solid var(--gold);
+    box-shadow:0 4px 0 rgba(0,0,0,.35), 0 0 0 calc(var(--h) * .03) rgba(0,0,0,.5);
+    transform:rotate(8deg);
+  }
+  .btn-badge img, .btn-badge svg {
+    width:calc(var(--h) * .44); height:calc(var(--h) * .44); object-fit:contain;
+    margin-bottom:calc(var(--h) * -.02);
+  }
+
+  /* OFF — a control that cannot act right now. The badge goes out with it:
+     a gold ring would still say "this one". */
+  .btn:disabled, .btn.is-off {
+    --b-fill:linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,.08));
+    --b-edge:rgba(255,255,255,.1); --b-ink:rgba(255,255,255,.36); --b-halo:transparent;
+    filter:none;
+  }
+  .btn:disabled { cursor:not-allowed; }
+  .btn:disabled img, .btn.is-off img { filter:grayscale(1) opacity(.5); }
+  .btn:disabled::after, .btn.is-off::after { display:none; }
+  .btn:disabled .btn-badge, .btn.is-off .btn-badge {
+    color:rgba(255,255,255,.4); text-shadow:none;
+    background:radial-gradient(circle at 50% 30%, #3a3e4c, #1d2029 70%);
+    border-color:rgba(255,255,255,.2);
+    box-shadow:0 3px 0 rgba(0,0,0,.3), 0 0 0 calc(var(--h) * .03) rgba(0,0,0,.4);
+  }
+
+  /* the switch — the same material, never the fill of a button */
+  .btn-switch {
+    --h:calc(var(--btn-h) * .66);
+    position:relative; flex:0 0 auto; box-sizing:border-box; margin:0; padding:0;
+    width:calc(var(--h) * 1.9); height:var(--h); border-radius:calc(var(--h) * .5);
+    border:2px solid var(--btn-plate-line); background:var(--btn-plate); cursor:pointer;
+    -webkit-tap-highlight-color:transparent; -webkit-appearance:none; appearance:none;
+    transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .btn-switch::before {
+    content:""; position:absolute; top:50%; left:calc(var(--h) * .1);
+    width:calc(var(--h) * .7); height:calc(var(--h) * .7); margin-top:calc(var(--h) * -.35);
+    border-radius:50%; background:var(--muted); box-shadow:0 2px 4px rgba(0,0,0,.4);
+    transition:transform .18s ease, background .18s ease;
+  }
+  /* ON is the CTA colour held down, not lit: no halo, and a shade over the
+     gradient, because a column of four switches that glow outshouts the one
+     button of the screen. */
+  .btn-switch[aria-pressed="true"] {
+    border-color:transparent;
+    background:linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), linear-gradient(180deg, var(--cta-a), var(--cta-b));
+  }
+  .btn-switch[aria-pressed="true"]::before { transform:translateX(calc(var(--h) * .92)); background:#fff; }
+  .btn-switch:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-shiny::after { animation:none; }
+  }
+
+  /* not a button: a line of text that can be tapped (the playable's replay) */
   .link {
     margin-top:22px; background:none; border:none; cursor:pointer; font-family:inherit;
     color:var(--muted); font-size:26px; font-weight:700; text-decoration:underline;
@@ -1350,7 +1534,7 @@
 
     <!-- persistent install CTA, visible during play -->
     <div id="cta-bar" class="hidden">
-      <button class="btn sm" id="btn-cta">Install now</button>
+      <button class="btn btn-sm" id="btn-cta">Install now</button>
     </div>
 
     <!-- loading -->
@@ -1375,7 +1559,7 @@
         </div>
         <div class="demo-caption" id="demo-caption"></div>
       </div>
-      <button class="btn lg" id="btn-start">Tap to play</button>
+      <button class="btn btn-lg btn-shiny" id="btn-start">Tap to play</button>
     </div>
 
     <!-- end: cinematic score reveal + stars + stats + CTA + replay link -->
@@ -1390,7 +1574,7 @@
         <span class="star" id="star-3">★</span>
       </div>
       <div class="eo-stats" id="eo-stats"></div>
-      <button class="btn lg" id="btn-install">Play the full game</button>
+      <button class="btn btn-lg btn-shiny" id="btn-install">Play the full game</button>
       <button class="link" id="btn-replay">Replay the demo</button>
     </div>
 

@@ -1644,7 +1644,7 @@ function colourField(node, read, write, presets) {
    2. state
    --------------------------------------------------------------------------- */
 var SERVED = location.protocol === "http:" || location.protocol === "https:";
-var BASE = SERVED ? "/assets/" : "../assets/";
+var BASE = SERVED ? "assets/" : "../assets/";
 
 var CAT = { games: {}, roles: [], drafts: {} };
 var state = {
@@ -1817,7 +1817,7 @@ function adopt(file, node) {
   if (node.classList.contains("busy")) return;
   node.classList.add("busy");
   say("Adopting " + file + " and encoding it…", "busy");
-  put("/api/adopt", { slug: state.slug, file: file }, function (r) {
+  put("api/adopt", { slug: state.slug, file: file }, function (r) {
     node.classList.remove("busy");
     if (r.error) return say(r.error, "bad");
     refresh(function () {
@@ -2886,7 +2886,7 @@ function put(path, payload, done) {
 }
 
 function refresh(then) {
-  fetch("/api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
+  fetch("api/catalogue").then(function (r) { return r.json(); }).then(function (c) {
     CAT = c;
     if (then) then();
   }).catch(function () {
@@ -3050,7 +3050,7 @@ function boot() {
   });
 
   $("bDraft").addEventListener("click", function () {
-    put("/api/draft", { slug: state.slug, comp: state.comp }, function (r) {
+    put("api/draft", { slug: state.slug, comp: state.comp }, function (r) {
       if (r.error) return say(r.error, "bad");
       CAT.drafts[state.slug] = clone(state.comp);
       state.source = "draft";
@@ -3063,7 +3063,7 @@ function boot() {
   $("bPush").addEventListener("click", function () {
     if (!state.comp.houses.length) return say("Nothing to push: the village is empty.", "bad");
     say("Writing the manifest and rebuilding…", "busy");
-    put("/api/manifest", { slug: state.slug, comp: state.comp }, function (r) {
+    put("api/manifest", { slug: state.slug, comp: state.comp }, function (r) {
       if (r.error) return say(r.error + (r.dropped && r.dropped.length ? " — " + r.dropped.join("; ") : ""), "bad");
       var msg = "web.village written" + (r.version ? ", version → " + r.version : "") +
                 ". Rebuilt: " + (r.rebuilt || []).join(", ") + ".";

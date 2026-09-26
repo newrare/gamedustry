@@ -113,7 +113,6 @@
       awEyebrow: "Level map reward",
       awBand: "{b} cleared!", awClean: "Clean run through {b}!",
       awAll: "All 30 levels cleared!", awPerfect: "Perfect 90/90!",
-      boostXpOn: "Double xp", boostLeft: "{n} more rounds", boostOne: "One more round", boostDone: "Boost used up",
       close: "Close", back: "Back"
     },
     fr: {
@@ -142,7 +141,6 @@
       awEyebrow: "Récompense de la carte",
       awBand: "{b} terminé !", awClean: "Sans-faute sur {b} !",
       awAll: "30 niveaux terminés !", awPerfect: "90/90 parfait !",
-      boostXpOn: "Xp doublée", boostLeft: "Encore {n} parties", boostOne: "Encore une partie", boostDone: "Boost épuisé",
       close: "Fermer", back: "Retour"
     }
   };
@@ -225,15 +223,10 @@
      and on the super ticket alike — `tools/build/build.mjs` refuses a
      manifest `sell` that breaks it. */
   var SELL_SHARE = [0.25, 0.4, 0.6, 0.9];
-  /* A LEGIBLE PRICE: the exact figure under twenty, a multiple of five above
-     it. Every price this layer derives goes through here, so no card ever asks
-     for 1 237 coins. */
-  function legible(v) {
-    v = v < 20 ? Math.round(v) : Math.round(v / 5) * 5;
-    return Math.max(1, v);
-  }
   var SELL = opt("sell", SELL_SHARE.map(function (f) {
-    return Math.min(TICKET_PRICE - 1, legible(f * TICKET_PRICE));
+    var v = f * TICKET_PRICE;
+    v = v < 20 ? Math.round(v) : Math.round(v / 5) * 5;   // a legible price
+    return Math.max(1, Math.min(TICKET_PRICE - 1, v));
   }));
   /* The machine's odds, by rarity. They are weights and not percentages, so a
      game can add a fifth tier without redoing the other four — except for the
@@ -288,37 +281,6 @@
   var SUPER_PRICE = opt("superPrice", TICKET_PRICE * 15);
   var SUPER_TOP = opt("superOdds", [20, 25, 30]);   // rare, epic, legendary
   var SUPER_BET = -1;
-
-  /* THE REST OF THE SHELF — four more things the coins buy, and every one of
-     them priced off a number this layer already owns rather than off a figure
-     typed per game. Each has a manifest override, like the ticket.
-
-     THE XP PACK is a fixed amount, and its PRICE FOLLOWS THE LEVEL. A round
-     pays `score / xpPer` xp flat and `score / coinsPer` coins times the level,
-     so at level L one xp comes with `L * xpPer / coinsPer` coins — the pack
-     costs twice that. At a flat price it would get cheaper with every level
-     the player bought (the coins scale, the price would not), and buying the
-     climb would soon beat playing it; at the round's own rate, times two, a
-     coin turned into xp is always worth half what the round it came from was
-     worth in xp. */
-  var XP_PACK = opt("xpPack", 250);
-  var XP_MARKUP = 2;
-  /* THE BOOSTS are counted in ROUNDS, never in minutes — a timer is the one
-     thing this layer refuses (docs/META.md, section 9). Double coins on the
-     next round that pays any, double xp on the next three. A price fixed on
-     the ticket while what it pays grows with the level: the boost is a bet on
-     the player's own lever, worth more the further up the climb they are. */
-  var BOOST_PRICE = opt("boostPrice", TICKET_PRICE * 2);
-  var BOOST_XP_ROUNDS = 3;
-  /* THE MYSTERY GIFT is three tickets' worth of coins for the three-box
-     ceremony, and what the boxes hold is rolled by `mysteryReward` below —
-     never coins, because coins bought with coins is a slot machine. */
-  var GIFT_PRICE = opt("giftPrice", TICKET_PRICE * 3);
-  /* A MISSED DAY of the daily road is bought back at a SHARE of what it would
-     have paid (`catchUpPrice`), for a week. Opening the game on the day stays
-     free, so a catch-up can never be the better deal. */
-  var CATCH_SHARE = 0.6;
-  var CATCH_DAYS = 7;
   var STICKERS = SPEC ? SPEC.stickers : [];
   var TOTAL = STICKERS.length;
 
@@ -370,20 +332,15 @@
   var save = (function load() {
     var s = ON ? W.Store.get(KEY, null) : null;
     if (!s || s.v !== 1 || typeof s.s !== "object" || !s.s) {
-      return fresh();
+      return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null };
     }
     if (!s.a) s.a = {};
     /* `st` arrived after the save did. A field added rather than a version
        bumped: a board with a climb and a collection in it must not be thrown
-       away to make room for a counter that starts at zero. `b` (the boosts,
-       rounds left on each) is the same story. */
+       away to make room for a counter that starts at zero. */
     if (typeof s.st !== "number") s.st = 0;
-    if (!s.b || typeof s.b !== "object") s.b = { c: 0, x: 0 };
     return s;
   })();
-  function fresh() {
-    return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null, b: { c: 0, x: 0 } };
-  }
 
   var hooks = [];
   function changed() {
@@ -449,29 +406,6 @@
     if (save.st < 1) return false;
     save.st -= 1; persist();
     return true;
-  }
-
-  /* The boosts: ROUNDS LEFT on each, and buying one while it runs adds its
-     rounds rather than stacking the multiplier — two coin boosts are two
-     doubled rounds, never one quadrupled. `take` is the end screen spending
-     one, and only on a round the boost has something to double: a round that
-     paid nothing does not eat the player's purchase. */
-  function boosts() { return { coins: save.b.c, xp: save.b.x }; }
-  function addBoost(kind) {
-    if (kind === "coins") save.b.c += 1;
-    else save.b.x += BOOST_XP_ROUNDS;
-    persist();
-  }
-  function takeBoost(kind) {
-    var k = kind === "coins" ? "c" : "x";
-    if (save.b[k] < 1) return false;
-    save.b[k] -= 1;
-    persist();
-    return true;
-  }
-
-  function xpPrice() {
-    return legible(XP_PACK * POINTS_PER_XP / POINTS_PER_COIN * playerLevel() * XP_MARKUP);
   }
 
   /* XP is the one thing that can pay something else back: every player level
@@ -738,55 +672,6 @@
     return randomReward(g > 2);
   }
 
-  /* WHAT A MYSTERY GIFT'S BOX HOLDS — tickets, xp or a sticker, and never
-     coins: a gift bought with coins that paid coins back would be a slot
-     machine with a bow on it.
-
-     Every outcome is worth about the price. Two to four tickets around the
-     three the gift costs; a sticker drawn at a THREE-ticket bet, the odds the
-     same coins would have bought at the machine; and xp worth the price at the
-     xp pack's own rate, capped at four packs — the tickets of some boards are
-     priced far above their xp (pawko's is 14 250 coins against a 375-coin
-     pack), and an uncapped box would hand a whole season of levels over. Where
-     that rate makes the xp not worth half a pack (a low ticket on a high
-     level) the box pays tickets instead of a figure nobody would want. */
-  function mysteryReward() {
-    var r = Math.random();
-    if (r < 0.3) {
-      var worth = XP_PACK * GIFT_PRICE / xpPrice();
-      if (worth >= XP_PACK / 2) {
-        var xpN = Math.min(XP_PACK * 4, worth) * (0.8 + Math.random() * 0.45);
-        return reward("xp", Math.max(1, Math.round(xpN / 5) * 5));
-      }
-    } else if (r < 0.55) {
-      return reward("sticker", roll(Math.min(3, MAX_BET)));
-    }
-    return reward("ticket", 2 + Math.floor(Math.random() * 3));
-  }
-
-  /* WHAT A DAY OF THE ROAD IS WORTH, in coins — the mean of what
-     `dayReward` or the three boxes would have handed over, read at this
-     game's own rates: a ticket at its price, a sticker as the ticket it took
-     to draw one, xp at the rate a round pays it at this level. It is only ever
-     read to PRICE a catch-up, so the amount a day keeps secret stays secret —
-     the price is a share of the average, never of the roll. */
-  function xpWorth(n) { return n * POINTS_PER_XP / POINTS_PER_COIN * playerLevel(); }
-  function dayValue(kind, day, mult) {
-    var g = (1 + (Math.max(1, day || 1) - 1) * 0.25) * (mult || 1);
-    if (kind === "coins")  return 155 * g;
-    if (kind === "xp")     return xpWorth(165 * g);
-    if (kind === "ticket") return Math.max(1, Math.round(g)) * TICKET_PRICE;
-    /* A gift day: `randomReward` weighted by its own odds, times the ×5 of a
-       starred day. */
-    var rich = (mult || 1) > 1;
-    var v = 0.34 * (rich ? 370 : 155) + 0.24 * xpWorth(rich ? 380 : 165) +
-            0.24 * (rich ? 2 : 1) * TICKET_PRICE + 0.18 * TICKET_PRICE;
-    return v * (mult || 1);
-  }
-  function catchUpPrice(kind, day, mult) {
-    return legible(dayValue(kind, day, mult) * CATCH_SHARE);
-  }
-
   /* WHAT THE AD PAYS. It was three, which is a number nothing in this layer
      can draw: the shell's multiplier plates are x2, x5, x10, x20, x50 and
      x100 (tools/lab/encode-art.mjs), so a ×3 offer could only ever be set in
@@ -956,21 +841,14 @@
     /* THE COLLECTION'S COUNT, and it is the album's own header moved into the
        band. That screen carried a name and an `x / 20` over a row that was
        already saying what the player owns: the name is what they tapped to get
-       here, and the count is one of those numbers. The album has no header
-       left at all, and the height it was taking goes to the machine, the odds
-       and the twenty tiles.
-
-       It is the SECOND HALF OF THE TICKET CHIP rather than a chip of its own,
-       because a chip is a door and both numbers open the same one: the tickets
-       are spent in the collection, the count is of it. Two chips side by side
-       leading to one screen read as two places; one macaron with two figures
-       reads as the one place and what the player has there. */
+       here, and the count is one of those numbers. So it is a chip like the
+       rest, the album has no header left at all, and the height it was taking
+       goes to the machine, the odds and the twenty tiles. */
     var cCount = null;
-    if (opts.count) {
-      cTick.classList.add("collection");
-      cTick.appendChild(el("i", "mt-csep"));
-      cTick.insertAdjacentHTML("beforeend", icon("sticker", "mt-ci") + '<b class="mt-cnt"></b>');
-      cCount = cTick;
+    if (opts.countHost) {
+      cCount = chip("collection", "sticker", auto);
+      if (auto) cCount.addEventListener("click", function () { goTo("sticker"); });
+      opts.countHost.appendChild(cCount);
     }
 
     /* THE BOARD'S OWN STARS, last in the row. They are not spent and not
@@ -1003,7 +881,7 @@
       tickets: cTick.querySelector("b"),
       badge: cTick.querySelector(".mt-badge"),
       count: cCount,
-      countN: cCount ? cCount.querySelector("b.mt-cnt") : null,
+      countN: cCount ? cCount.querySelector("b") : null,
       stars: cStars,
       starN: cStars ? cStars.querySelector("b") : null,
       lvl: lvBox ? lvBox.querySelector(".lbl") : null,
@@ -1592,26 +1470,21 @@
          that hold — a number left sitting under a blurred backdrop is a number
          nobody reads and a smear on the card that replaced it. */
       if (tag && tag.parentNode) tag.parentNode.removeChild(tag);
-      levelUp(p.levels);
-    });
-  }
-
-  /* THE CARD IS THE ANNOUNCEMENT. Its own title says what happened — a level
-     up — so nothing has to be said twice, and the ticket a level pays is
-     handed over the way every other reward in this layer is. `granted`
-     because `addXp` already paid it: the card reads the state, it does not
-     move it a second time. Two callers: the village's arrival above, and the
-     shop's xp pack, whose bar runs where it was bought.
-     The title is LEVEL UP and never "Level 5!": one door away from a map of
-     thirty numbered levels, a bare number read as a level of the map, and the
-     reward had no cause the player could name. The eyebrow writes the level
-     reached, and calls it the PLAYER's. */
-  function levelUp(levels) {
-    prize({
-      reward: { kind: "ticket", n: levels },
-      boost: false, granted: true,
-      eyebrow: fill(T.levelUpNote, { n: playerLevel() }),
-      got: T.levelUp
+      /* THE CARD IS THE ANNOUNCEMENT. Its own title says what happened — a
+         level up — so nothing has to be said twice, and the ticket a level
+         pays is handed over the way every other reward in this layer is.
+         `granted` because `addXp` already paid it: the card reads the state,
+         it does not move it a second time.
+         The title is LEVEL UP and never "Level 5!": one door away from a map
+         of thirty numbered levels, a bare number read as a level of the map,
+         and the reward had no cause the player could name. The eyebrow writes
+         the level reached, and calls it the PLAYER's. */
+      prize({
+        reward: { kind: "ticket", n: p.levels },
+        boost: false, granted: true,
+        eyebrow: fill(T.levelUpNote, { n: playerLevel() }),
+        got: T.levelUp
+      });
     });
   }
 
@@ -1694,9 +1567,6 @@
         if (plate) card.appendChild(el("div", "mt-mult-row", plate));
         if (opts.name) card.appendChild(el("div", "mt-rw-name", opts.name));
         if (opts.sub) card.appendChild(el("p", "mt-sub", opts.sub));
-        /* One control at most — a missed day's catch-up. A button inside a
-           card that a tap dismisses keeps its own click (view.js). */
-        if (opts.act) card.appendChild(el("div", "mt-acts", "")).appendChild(opts.act);
       }
     });
   }
@@ -1759,10 +1629,7 @@
        re-rolled rather than multiplied (see `multiply`): five copies of one
        picture is not five times a prize. */
     var mult = opts.mult || 1;
-    /* `roll` is the caller's own table — the shop's mystery gift, which pays
-       no coins — and the daily roll otherwise. */
-    var draw = opts.roll || function () { return randomReward(rich); };
-    var rewards = [draw(), draw(), draw()], gi;
+    var rewards = [randomReward(rich), randomReward(rich), randomReward(rich)], gi;
     if (mult > 1) for (gi = 0; gi < 3; gi++) rewards[gi] = multiply(rewards[gi], mult);
 
     /* An EYEBROW over the title, for the caller that has something to say
@@ -2158,18 +2025,17 @@
     var star = el("div", "mt-band-star");
     /* THE ORDER OF THE ROW, and it is the order the player reads it in:
 
-         ⌂  ·  ⚡ xp  ·  coins  ·  tickets | stickers  ·  stars
+         ⌂  ·  ⚡ xp  ·  coins  ·  tickets  ·  stickers  ·  stars
 
        the way out first, then what is EARNED by playing (xp), then what is
-       SPENT (coins, tickets), then what those two buy (the collection, in the
-       same macaron as the tickets since both open it), then
+       SPENT (coins, tickets), then what those two buy (the collection), then
        what the board itself is worth. Home is the only chip here that is not a
        number — the rest of the row is what the player owns, this is the way
        out of wherever they own it.
 
-       The collection's count rides in the ticket chip (both open the album),
-       and the stars hang in a host the wallet fills: a number it paints, like
-       the coins. */
+       The two counts hang in hosts the wallet fills: they are numbers it
+       paints, like the coins between them. */
+    var cnt = el("div", "mt-band-count");
     var h = null;
     if (home) {
       h = el("button", "mt-chip home door", icon("home", "mt-ci"));
@@ -2182,8 +2048,9 @@
     row.appendChild(lv);
     if (more) row.appendChild(more);
     row.appendChild(chips);
+    row.appendChild(cnt);
     row.appendChild(star);
-    return { row: row, lv: lv, chips: chips, star: star, home: h };
+    return { row: row, lv: lv, chips: chips, star: star, count: cnt, home: h };
   }
 
   function mountBand(host) {
@@ -2192,7 +2059,7 @@
     host.appendChild(b.row);
     var full = a.chips, trans = b.chips;
     band = wallet(full, { full: true, doors: "auto", lvHost: a.lv, stars: true,
-                          starHost: a.star, count: true, root: a.row,
+                          starHost: a.star, countHost: a.count, root: a.row,
                           homeHost: a.home });
     /* The end screen's own, and it is the SAME four chips — veiled, holding
        their place in the layout so a flight has a rect to aim at, and lifted
@@ -2225,6 +2092,7 @@
       band.home.classList.toggle("gone", bare && !(M && M.any()));
     }
     mark(band.home, "village", top, T.home);
+    mark(band.count, "sticker", top, T.album);
     mark(band.lvBox, "ranking", top, T.scores);
     mark(band.coins.parentNode, "shop", top, T.shop);
     mark(band.tickets.parentNode, "sticker", top, T.album);
@@ -2319,14 +2187,6 @@
     var earn = base * lvl;
     var xpGain = Math.floor(score / POINTS_PER_XP);
     var stars = result.stars || 0;
-    /* THE SHOP'S BOOSTS, spent here and only on a round they have something to
-       double (`takeBoost`). The coin one is a fourth term of the sum the line
-       writes out; the xp one has no line on this screen, so a notice says it
-       was used and how many rounds it has left. */
-    var coinBoost = earn > 0 && takeBoost("coins");
-    if (coinBoost) earn *= 2;
-    var xpBoost = xpGain > 0 && takeBoost("xp");
-    if (xpBoost) xpGain *= 2;
 
     function afterCoins() {
       /* The coins themselves are already IN — they are paid on the frame the
@@ -2340,13 +2200,6 @@
       if (xpGain > 0) pendXp = pendXp
         ? { before: pendXp.before, levels: pendXp.levels + got }
         : { before: x0, levels: got };
-      if (xpBoost && W.Notify) {
-        var left = save.b.x;
-        W.Notify.say(T.boostXpOn, {
-          sub: left > 1 ? fill(T.boostLeft, { n: left }) : left ? T.boostOne : T.boostDone,
-          kind: "gain", icon: "xp", key: "boost-xp"
-        });
-      }
       var won = sweep();
       showAwards(won, function () {});
     }
@@ -2361,7 +2214,7 @@
     offer(stars);
 
     if (earn > 0) {
-      var gain = gainLine(base, lvl, earn, coinBoost);
+      var gain = gainLine(base, lvl, earn);
       /* The sum is READ before it is spent. The coins used to leave the moment
          the figure landed, which is fine for one number and wrong for three:
          what the level is worth is the thing this beat exists to say, and a
@@ -2392,7 +2245,7 @@
          /* …and it is READ before it is spent: the sum lands, then a beat of
             nothing, then the coins leave. 260 ms was the figure arriving and
             being emptied in the same breath. */
-      }, GAIN_MS * (coinBoost ? 3 : 2) + 620);
+      }, GAIN_MS * 2 + 620);
     } else {
       afterCoins();
     }
@@ -2413,7 +2266,7 @@
      one number; the pause between them is what makes the "x" a step. */
   var GAIN_MS = 340;
 
-  function gainLine(base, lvl, total, boosted) {
+  function gainLine(base, lvl, total) {
     /* The node is ALREADY in the column — `reserveEnd` put it there, empty and
        at its full height, before the motor's reveal began (see below). Filling
        a box that is already standing moves nothing; creating one here pushed
@@ -2447,23 +2300,17 @@
          operand. In a pill it reads as a THING — the same shape the wallet
          puts around a number, which is where they last saw their level. */
       el("span", "mt-gp mul", "\u00d7 <b class=\"mt-lvtag\">" +
-        fill(T.lvShort, { n: lvl }) + "</b>")
+        fill(T.lvShort, { n: lvl }) + "</b>"),
+      el("span", "mt-gp sum", "= +" + num(total) + icon("coin", "mt-ci"))
     ];
-    /* A COIN BOOST IS ONE MORE TERM, in a pill of its own: it is a lever the
-       player pulled in the shop, and it is read exactly like the level \u2014 a
-       thing between two operands, not a bigger total. */
-    if (boosted) parts.push(el("span", "mt-gp mul", "\u00d7 <b class=\"mt-lvtag mt-bst\">" +
-      icon("flame", "mt-ci") + "2</b>"));
-    parts.push(el("span", "mt-gp sum", "= +" + num(total) + icon("coin", "mt-ci")));
     for (var i = 0; i < parts.length; i++) g.appendChild(parts[i]);
     requestAnimationFrame(function () { g.classList.add("on"); });
 
     /* Each beat has its own small cue, and the sum's is the one that rings:
        it is the figure the wallet is about to be paid. */
-    for (i = 0; i < parts.length; i++) {
-      var last = i === parts.length - 1;
-      step(i, last ? 0.8 : 0.5 + (i === 0 ? 0.05 : 0), last ? 1.45 : 0.9 + i * 0.25);
-    }
+    step(0, 0.55, 0.9);
+    step(1, 0.5, 1.15);
+    step(2, 0.8, 1.45);
     function step(i, vol, rate) {
       setTimeout(function () {
         if (i === 0) sc.classList.add("cut");
@@ -2842,18 +2689,6 @@
     maxBet: function () { return MAX_BET; },
     superPrice: function () { return SUPER_PRICE; },
     superBet: function () { return SUPER_BET; },
-    /* The rest of the shelf (section 1): the xp pack, the two boosts, the
-       mystery gift and the price of a missed day. */
-    xpPack: function () { return XP_PACK; },
-    xpPrice: xpPrice,
-    boostPrice: function () { return BOOST_PRICE; },
-    boostXpRounds: function () { return BOOST_XP_ROUNDS; },
-    boosts: boosts, addBoost: addBoost,
-    giftPrice: function () { return GIFT_PRICE; },
-    mysteryReward: mysteryReward,
-    catchUpPrice: catchUpPrice,
-    catchDays: function () { return CATCH_DAYS; },
-    levelUp: levelUp,
     reward: reward, randomReward: randomReward, grant: grant,
     dayReward: dayReward,
     rewardLabel: rewardLabel, rewardArt: rewardArt,
@@ -2896,7 +2731,7 @@
        the tickets, the collection, the milestones already paid and the daily
        road, back to the shape `load` hands a first-time player. */
     wipe: function () {
-      save = fresh();
+      save = { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null };
       persist();
     }
   };

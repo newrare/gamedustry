@@ -267,6 +267,20 @@ ______________________________________________________________________
   themselves twice. It still leaks nothing: both deals come from `Math.random`
   alone and the three rewards are rolled per index and separately.
 
+- [x] META — **the shop is a grid of six, plus a missed day.** Ticket, super
+  ticket, mystery gift (three boxes: 2–4 tickets, xp or a sticker, never
+  coins; 3 tickets), xp pack (250 xp at 2× what they pay in coins at the
+  player's level), double coins (next paying round) and double xp (next three),
+  2 tickets each, in `save.b`. A missed day of the road is caught up for a week
+  at 60 % of its average worth, from its card or from the shop. Benched
+  headless on radiam: purchases, a level-up off the pack, the boosted sum
+  `+12 × Lv 2 × 2 = +48`, the catch-up.
+
+- [ ] MAIN — tune the new shop prices per game if the defaults read wrong
+  (`giftPrice`, `boostPrice`, `xpPack` in `web.meta`): they are derived from
+  `ticketPrice`, whose weight against a round's coins differs a lot between
+  games (vipera 8, pawko 14 250).
+
 - [x] META — **the shop sells a super ticket.** Fifteen ordinary tickets'
   worth of coins (3 750) for one pull at **legendary 30 / epic 25 / rare 20 /
   common the rest**. Its tiers are PINNED where an ordinary bet shares out a
@@ -646,6 +660,52 @@ ______________________________________________________________________
   `node tools/lab/cast-sheets.mjs <sheet>` (add `--keep-partial` when a weapon
   or a plume touches the image's edge) and `node tools/lab/encode-art.mjs stratideck`.
 
+- [x] CODE — **`stratideck`, the deck house is two tabs (0.14.2).** DECK is the
+  formation of `lab/stratideck-deck.html` ("two lists"): every slot as a
+  medium card, four a row, on one page with no scroll, `−` to leave a card, `+` to open a picker over the reserve
+  (0.14.4: ready cards only, as tokens under a `+`, one fixed height, grade 1–10 greyed where nothing is ready)
+  and *Auto-fill*. A squad on a mission can no longer be brought back by an ad.
+  0.14.8: the mission board is one line per mission, the infirmary and the prison are rooms (medium cards
+  three a row, a gauge of the wait, no ad in the prison) and the shop's six tiles plus the doubles button fit one page.
+  COLLECTION is the codex of `lab/stratideck-collection.html`: blue, red,
+  turncoats and objects behind one switch, one card at a time with who they
+  are under it, the three filters as pictograms on the seam between the two.
+  The OBJECTS tab is gone into it. Every sheet's title is smaller (42 px, was
+  58), for every game. See
+  `docs/ARMY.md` §3.
+
+- [x] CODE — **`stratideck`, the camp house is four tabs (0.15.0).** The
+  tent lost its reroll ad. CAMP: five posts (infirmary, prison, formation,
+  missions, camp), each filled with the deck's picker — a card at a post is
+  out of the deck, the squads and the round's deck — then the roll of every
+  card the camp holds, prisoners included, with what each is doing and a
+  count. REGISTER: every card lost from now on (a wound with no bed, a squad
+  that did not come back), with where and when. See `docs/ARMY.md` §7c.
+
+- [x] CODE — **`stratideck`, cards are people and they climb (0.16.0).** The
+  camp never holds one officer twice (roster and prison; old saves repaired on
+  load, a copy with no free tier under it bought back). A card played, sent on
+  a mission or at a post counts a service; a victory rolls it one tier up
+  (`web.army.promotion`, 15 % + 1 % a service, 30 % at most). The recto wears
+  the new tier, the verso keeps the original one; a PROMOTION card tells each
+  step. The register marks each cause (battle, mission, wounds) and an IN
+  MEMORIAM card tells the deaths at the village; the tent can offer a fallen
+  officer back. See `docs/ARMY.md` §3b, §5b, §7, §7c.
+
+- [ ] TUNE — **`stratideck`, how fast does the army climb?** Every card played
+  in a won battle and every officer at a post rolls, so a won battle promotes
+  about two cards. Play a week of it by hand: if the roster reaches A and S
+  too fast, lower `promotion.base` or stop rolling the posts on every battle.
+
+- [ ] DESIGN — **`stratideck`, give the five posts an effect.** A post only
+  takes a card out of play today; nothing reads `save.po`. Candidates: the
+  infirmary manager shortens the heal, the prison warden the turn, the drill
+  instructor adds a deck slot, the mission officer adds odds, the commander
+  a recruit slot — each scaled on the officer's grade and tier.
+
+- [ ] TUNE — **`stratideck`, try the new deck house on a phone.** The picker's
+  grade strip (52 px circles) and the codex swipe were only checked headless.
+
 - [ ] MAIN — **`stratideck`, paint the red scout.** `stratideck-card-red-scout.png`
   is the one officer missing from the sheet (the camp never attacks, so the
   game deals it no scout today, but the card bench shows a hole).
@@ -862,8 +922,12 @@ ______________________________________________________________________
   so there is one path to fill with an SDK. The offer must keep saying what it
   multiplies and what it costs, and walking past it must stay one tap.
 
-- [ ] CODE — **an online leaderboard.** Phase 5 of `packages/meta`, still only
-  the local `best:<slug>` the motor writes on `endRound`. The site is on
+- [ ] CODE — **an online leaderboard.** Phase 5 of `packages/meta`. Until then
+  the ranking view reads the player's own save (menu.js, 5a): RECORDS — the
+  summed best score of every level under the trophy, the player level, stars,
+  stickers and levels cleared, on one screen — and LEVELS, the table of level
+  0, the thirty and the endless star, with a line saying the online board
+  comes in a future update. The site is on
   Vercel, so a Vercel store (Postgres or KV) behind a route under the site's
   own origin keeps the games' zero-external-request rule intact — the page
   hosts the fetch and talks to the iframe by `postMessage`, the game does not.
@@ -935,12 +999,17 @@ ______________________________________________________________________
   finding leaves that file when its fix lands; the actions below are that
   file's section 5, and they are separate changes on purpose, so each one can
   be reviewed on its own.
-- [ ] CODE — **audit, step 1 — the lab servers** (AUDIT 1.1–1.5, 3.4): one
-  `tools/lib/serve.mjs` that binds `127.0.0.1`, checks `Host`, wraps the URL
-  decode, answers 404 in plain text and reads a JSON body once; the five
-  `serve-*.mjs` on it; numeric validation and `\x3c` escaping in
-  `apply-events.mjs` / `apply-text.mjs`; a CSP with `frame-ancestors` in
-  `vercel.json`
+- [x] CODE — **one lab server, one back office** (`make lab`,
+  `tools/lab/serve-lab.mjs`, `lab/index.html`): every page of `lab/` on
+  `localhost:8095`, listed beside a frame; the four tools proxied under
+  `/events/`, `/text/`, `/store/`, `/village/`, one process each, started on
+  first use. Their shared plumbing is `tools/lib/serve.mjs`, which binds
+  `127.0.0.1`, checks `Host`, decodes inside a `try` and answers 404 in plain
+  text — AUDIT 1.1, 1.3, 1.4 and 3.4 for the four of them.
+- [ ] CODE — **audit, step 1 — what is left of the servers** (AUDIT 1.1–1.5,
+  3.4): `serve-site.mjs` onto `tools/lib/serve.mjs`; numeric validation and
+  `\x3c` escaping in `apply-events.mjs` / `apply-text.mjs`; a CSP with
+  `frame-ancestors` in `vercel.json`
 - [ ] CODE — **audit, step 2 — the byte wins** (AUDIT 2.4, 3.1, 3.2, 3.3):
   a comment strip in `build.mjs` (sources keep theirs; the thirteen
   `index.html` regenerate once), `tools/lib/repo.mjs` for `ROOT` / `games()`

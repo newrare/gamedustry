@@ -31,7 +31,6 @@
 
   #cta-bar { border-top:1px solid rgba(255,157,46,.18); }
   #hud-score { text-shadow:0 0 16px rgba(255,157,46,.55); }
-  .btn { box-shadow:0 0 22px rgba(255,122,26,.45); }
   /* left pill: the best score. right pill: the chain, lit once it is worth
      protecting — there is no clock in this game, the lava is the clock. */
   #hud-left .hud-pill  { color:#ffd9a0; letter-spacing:1px; }
