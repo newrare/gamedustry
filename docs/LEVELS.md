@@ -343,7 +343,15 @@ no word in either. Two games had to answer for it:
 | `games/slipdeck` | the five-card hand, edge to edge, and its worth   | the pill: `--lv-hud-bottom:392px` in its SKIN, onto the free felt |
 
 `--lv-hud-left` and `--lv-hud-bottom` are the escape, and they are a SKIN's to
-set. Read the corner off a real frame before writing a number
+set.
+
+**The pill carries the round's "!"**, just to its right: the wallet band's
+notification log (packages/webshell/meta.js, section 11c), since the band is
+down over a round. It is a child of `#lv-hud`, so it goes wherever the pill
+goes, and it shows once something has been said. A game whose own instrument
+stands right of the pill stands it on top instead, with
+`--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)` in its SKIN — `games/blight`
+(the launcher) and `games/echomaze` (the cannon) are the two. Read the corner off a real frame before writing a number
 (`assets/image/screen/<slug>-NN.jpg` is the web build, not the playable).
 
 What it reads is `Game.levelProgress()` when the game has one and the HUD score

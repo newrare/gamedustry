@@ -19,23 +19,32 @@ ______________________________________________________________________
 **A VIEW is a place the player goes.** One at a time is what they are looking
 at, they stack, and BACK peels one off.
 
-| view        | whose content it is            | carries the band         |
-| ----------- | ------------------------------ | ------------------------ |
-| `title`     | the motor's `#screen-intro`    | no                       |
-| `village`   | `packages/webshell/village.js` | yes, and it is the FLOOR |
-| `map`       | `packages/webshell/levels.js`  | yes                      |
-| `sticker`   | `packages/webshell/album.js`   | yes                      |
-| `shop`      | `packages/webshell/album.js`   | yes                      |
-| `ranking`   | `packages/webshell/menu.js`    | yes — two tabs           |
-| `deck`      | `packages/webshell/army.js`    | yes                      |
-| `infirmary` | `packages/webshell/army.js`    | yes                      |
-| `prison`    | `packages/webshell/army.js`    | yes                      |
-| `recruit`   | `packages/webshell/army.js`    | yes — the camp, two tabs |
-| `score`     | the motor's `#screen-end`      | while it is paid         |
+| view        | whose content it is            | carries the band          |
+| ----------- | ------------------------------ | ------------------------- |
+| `title`     | the motor's `#screen-intro`    | no                        |
+| `village`   | `packages/webshell/village.js` | yes, and it is the FLOOR  |
+| `map`       | `packages/webshell/levels.js`  | yes                       |
+| `sticker`   | `packages/webshell/album.js`   | yes                       |
+| `shop`      | `packages/webshell/album.js`   | yes                       |
+| `ranking`   | `packages/webshell/menu.js`    | yes — two tabs            |
+| `deck`      | `packages/webshell/army.js`    | yes — the cards, 3 tabs   |
+| `infirmary` | `packages/webshell/army.js`    | yes                       |
+| `prison`    | `packages/webshell/army.js`    | yes                       |
+| `recruit`   | `packages/webshell/army.js`    | yes — the command, 4 tabs |
+| `defense`   | `packages/webshell/army.js`    | yes — the camp's grid     |
+| `score`     | the motor's `#screen-end`      | while it is paid          |
 
 **A CARD (a modal) is something that happens over wherever they are.** It never
 replaces the screen under it, it is always on top of every view, and it is
 dismissed rather than navigated.
+
+**A card over a round pauses it, whatever opened it.** The pause belongs to
+`Modal.open`, not to the caller: the first card over a round freezes the loop —
+the world, the clock and the game's update at once — and the last one to go
+resumes it, counted like the bed. The outro counts as the round (its slow motion
+is the loop still turning), so the three gift boxes and the prisoner's offer
+freeze it too. A state change (the round ending, a new one starting) drops the
+count, since the motor has stopped or restarted the loop by then.
 
 | card    | opened from                                        | tap closes | ESCAPE closes |
 | ------- | -------------------------------------------------- | ---------- | ------------- |
@@ -153,15 +162,16 @@ zero the floor is read off the motor's state rather than assumed.
 one component (`packages/shell/motor.css`, CARD — chosen in `lab/modal.html`):
 an optional tag on the corner, an optional eyebrow never in the title's colour,
 the title in the accent, the body, and a **tap line that is mandatory** — it says what
-the tap does ("Tap to close", "Tap a box", "Tap to collect", "Tap outside to
-close"). `Modal.open` builds those slots itself from `eyebrow`, `title`,
+the tap does ("Tap to close", "Tap a box", "Tap to collect"). `Modal.open` builds those slots itself from `eyebrow`, `title`,
 `badge` and `tap`, so a caller writes the body and nothing else, and
 `handle.set({...})` rewrites them. There is no cross: it was a second answer to
 the question the line already answers, and before it a back arrow, which said
 "back" about a card that came from nowhere. A card is dismissed, not navigated
-— by a tap anywhere (`dismiss: true`), a tap AROUND it for a card with controls
-on it (`dismiss: "outside"`: options, help, leaving a round), or by the choice
-it asks for (`dismiss: false`).
+— by a tap anywhere (`dismiss: true`, the default: the scrim, the card and the
+tap line itself, everything but a control, which answers for itself — options,
+help and leaving a round included), or by the choice it asks for
+(`dismiss: false`). Whatever the line says a tap does, a tap on the card, around
+it or on the line does it.
 
 **The corner controls.** Options, help and the way out — and they are the
 ROUND'S, not a view's. Every other surface has somewhere of its own to say the
@@ -243,12 +253,20 @@ thing on the row that says a tap will do nothing.
 
 That is what makes back arrows unnecessary and then wrong. These five are the
 whole of this front end's navigation, and they are the same everywhere the band
-is up. **The tickets and the sticker count are ONE chip**, two figures behind a
-filet: the tickets are spent in the collection and the count is of it, and two
-chips leading to one screen read as two places where one macaron reads as the
-place and what the player has there.
+is up. **The collection's chip carries the sticker count and no ticket**: the
+band needed the room, and a ticket is only ever spent in one place. The tickets,
+the super tickets and the boosts are counted in the header of the shop (four
+pills) and of the album (two), the sheets they are bought and spent on — and a
+ticket earned or bought still flies into the collection's chip and writes its
+`+N` there.
 
-**The house is the only chip that is not a number.** The rest of the row is what
+**The "!" closes the row, and it is not a door to a screen**: it is hidden
+until the first notice of the session (the motor's `Notify`), wears the unseen
+dot while something new has been said, and opens a CARD with the last ten
+notices, the newest on top — each in the notice's own dress, with how long ago
+it was said. A notice lives 2.2 s; this is the way back to one.
+
+**The house is the only DOOR that is not a number.** The rest of the row is what
 the player owns; this is the way out of wherever they own it.
 
 **The count came off the album's header, and took the header with it.** That
@@ -317,7 +335,10 @@ those two rules too but shows no pill, because it is how
 `tools/lab/shoot-screens.mjs` opens a build and a store screenshot must never
 wear it. It is the one place that says so: no card and no sheet wears a
 pill of its own. It is not a chip and not a door, and its width comes out of
-the xp bar, the row's spring. A deployed site never builds the node.
+the xp bar, the row's spring. A deployed site never builds the node. **It is
+also the switch**: both rules are OFF when the game opens and the pill is
+hollow; a tap turns them on for the session (`W.Dev.set`, never persisted) and
+fills it, a second tap turns them off again.
 
 **The round shows no band.** The top band is the game's, all of it, and the
 thirteen fill it differently.

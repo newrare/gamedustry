@@ -2011,7 +2011,7 @@
     function drawNextPreview() {
       var nx = NEXT_X, ny = LY, nr = R * 0.6;
       ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = "bold 15px -apple-system,Segoe UI,Roboto,sans-serif";
+      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(upper(Lang.t("Next")), nx, ny - nr - 12);
       ctx.textAlign = "left";

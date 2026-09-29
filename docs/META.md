@@ -264,10 +264,12 @@ tickets can take (`-1`). It was 30 for one afternoon — a number that meant 30%
 through the ordinary dial — which read as thirty tickets on a row of 1 2 3 4 5
 and would have gone quietly wrong the day the odds changed. They did.
 
-**It has no chip in the wallet.** The wallet is what can be spent anywhere; this
-is spent in exactly one place. So the count lives where it is bought (the shop's
-second card) and where it is spent (the sixth pill on the bet row, which carries
-the painted ticket and the number beside it) — and nowhere else. `save.st` is
+**It has no figure in the wallet band**, and neither has the ordinary ticket:
+both are spent in exactly one place. So the count lives where it is bought (the
+shop's header, and its second card) and where it is spent (the album's header,
+and the sixth pill on the bet row, which carries the painted ticket and the
+number beside it). Bought or won, it flies into the band's collection chip and
+writes `+1` with its own painted ticket there, like an ordinary one. `save.st` is
 the pocket, added to the save as a FIELD rather than a version bump: a board
 with a climb and a collection in it must not be thrown away to make room for a
 counter that starts at zero.
@@ -629,7 +631,7 @@ the money is not a message, it is a number in a chip two inches away. The coins
 fly out of the button that was tapped and into the chip that counts them — the
 same `Meta.fx` the end screen uses, `burst` and all.
 
-**Only the ticket chip is a door here.** Both chips are doors everywhere else in
+**Only the collection chip is a door here.** Both chips are doors everywhere else in
 this layer, and on the shop the coin one has nowhere to go: its door is the
 screen it is standing on. So the blue one opens the album, which is where a
 ticket is spent, and the gold one is an inert `div` — a button that does nothing
@@ -851,7 +853,7 @@ four places a fix lands in three of.
 
 ```js
 Meta.fx({
-  kind,    // which chip, and what flies: coins | ticket | xp | sticker
+  kind,    // which chip, and what flies: coins | ticket | super | xp | sticker
   n,       // what moved, SIGNED: -250 charged, +280 earned
   from,    // a node or a rect the pieces leave; without one nothing flies
   rw,      // a reward object to draw instead of the kind's own piece
@@ -874,12 +876,18 @@ the caller measures first and closes second. The same trap catches any screen
 that repaints on the transaction — the shop's buy and sell buttons are both
 replaced by the repaint their own click triggers, so both measure first.
 
-| reward  | where it lands                                     |
-| ------- | -------------------------------------------------- |
-| coins   | the coins chip, counting up                        |
-| ticket  | the tickets chip, counting up                      |
-| xp      | the level bar, filling — and `+N` printed under it |
-| sticker | the tickets chip — the album's own door            |
+| reward  | where it lands                                                 |
+| ------- | -------------------------------------------------------------- |
+| coins   | the coins chip, counting up                                    |
+| ticket  | the collection chip, `+N` and the ticket written over it       |
+| super   | the collection chip, `+N` and the super ticket written over it |
+| xp      | the level bar, filling — and `+N` printed under it             |
+| sticker | the collection chip — the album's own door                     |
+
+The band counts no ticket: the collection chip holds the album's count and
+nothing else. The tickets, the super tickets and the rounds left on both boosts
+are counted in the header of the shop (four pills) and of the album (the two
+tickets) — `paintStock` in `packages/webshell/album.js`.
 
 **Every landing writes its figure.** The reward-card path used to turn the tag
 off, on the grounds that the card had already said the amount twice — but the
@@ -1013,8 +1021,8 @@ level 1 too — that is the only place a player ever learns the lever is there.
 Eighteen coins then fly out of *that* line and into the wallet, which counts up
 by exactly what the line said; the line fades as they leave, and the same figure
 is written once more **under the coin chip itself** when the last one lands — on
-the chip that was paid and not on the wallet's edge, which is the ticket chip
-and the one number the round never moved. Three readings of one number, none of
+the chip that was paid and not on the wallet's edge, which is the collection
+chip and the one number the round never moved. Three readings of one number, none of
 them arithmetic to trust.
 
 (It used to be the SCORE that drained to zero. It read beautifully and it cost
@@ -1030,8 +1038,8 @@ of the frame for the whole reveal. So that one wallet is built `transient`
 aimed at its rect and needs one — and veiled, `fx` lifts the veil off the chip
 it is about to pay into on its way in and puts it back a beat after the figure
 over it has been read. A chip therefore arrives with its own cascade, counts,
-writes its figure and goes; the ticket chip is only ever seen on a round that
-won one, and a round that pays nothing shows an empty corner. The two are
+writes its figure and goes; the collection chip is only ever seen on a round
+that won a ticket or a sticker, and a round that pays nothing shows an empty corner. The two are
 counted, not toggled: a round that pays the same chip twice — the cascade, then
 a gift — is put away by the last transfer to finish.
 
@@ -1099,8 +1107,9 @@ sticker), and one offer:
 
 The boxes used to be the end screen's last beat, three screens' worth of reveal
 after the third star lit. They are now the **outro's** (see
-[LEVELS.md](LEVELS.md)): the world is still there, crawling in slow motion under
-a blur, the card reads BONUS THREE STARS, and the end screen arrives with the
+[LEVELS.md](LEVELS.md)): the world is still there, frozen under a blur on the
+frame the slow motion had reached (every card over a round pauses it —
+`packages/webshell/view.js`, section 1b), the card reads BONUS THREE STARS, and the end screen arrives with the
 prize already in the wallet.
 
 The wallet comes with it — a reward that flies has to have somewhere to fly to,
@@ -1187,16 +1196,16 @@ Three rules hold the shape:
   same numbers sat in four places and the screens in between showed none of
   them. The band is `#web-hud` now: one node, filled once by `View.hudMount`,
   and **one line, whose order is what the player learns** —
-  `⌂ · ⚡ · 1 240 · 3 | 3/20 · 12/90`, and each chip is the door to the screen
+  `⌂ · ⚡ · 1 240 · 3/20 · 12/90 · !`, and each chip is the door to the screen
   it is the number of: home, the ranking, the shop, the collection, the map —
-  the tickets and the sticker count sharing one chip, since both open the
-  collection. The order is the order it is read in — the way out
+  the collection's chip carrying the sticker count only, since the tickets are
+  counted in the shop's and the album's own headers. The order is the order it is read in — the way out
   first, then what is earned by playing, then what is spent, then what those
   two buy, then what the board itself is worth. The row never changes shape, and a chip standing
   on its own screen goes inert rather than missing, so a number never has to be
   found again. The house is the exception: on the bare village it is dropped,
   because it counts nothing and the door it is stands under it. That is what made back arrows unnecessary and then wrong: these
-  five are the whole of it. **The house is the only chip that is not a number** —
+  five are the whole of it. **The house is the only door that is not a number** —
   the rest of the row is what the player owns, this is the way out of wherever
   they own it — and a game with no band keeps a home button in its headers
   instead, so there is always exactly one way home.
@@ -1259,9 +1268,9 @@ Two things: a sheet of twenty stickers, and one manifest block.
 ```bash
 # 1. the sheet — one grid of stickers out of the image model
 #    assets/image/master/<slug>-object-sticker.png
-node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 245
+node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 250 --pad 30 --neck
 open dist/object/<slug>-sticker.png          # ALWAYS look, then pick the twenty
-node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 245 \
+node tools/lab/cut-objects.mjs <slug>-object-sticker --grid 5x4 --keep-partial --solid 250 --pad 30 --neck \
   --adopt 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 --seq
 node tools/lab/encode-art.mjs <slug>
 ```
@@ -1279,7 +1288,10 @@ as wide as a face. So the cut is read, not assumed, and three flags carry it:
   piece (echomaze's logotype, slipdeck's suits) is cut with NO grid instead —
   the grid would saw the wide one in half, and area order is fine when only one
   sheet has to be indexed.
-- **`--solid 245`** is where two stickers come apart. These sheets are drawn
+- **`--solid 250`** is where two stickers come apart, and `--neck` is how two
+  that still touch are parted (see [ASSETS.md](ASSETS.md#the-sticker-album-slug-stickernnpng):
+  the sheets' alpha stops at 252–253, so a bar above 250 eats the outline).
+  The history: `--solid 245` was the first answer. These sheets are drawn
   with the pieces overlapping outline on outline, and the default 110 welds
   whole rows together. It also takes **one bar per horizontal band** when the
   sheet's halves disagree — `--solid 253,253,245,245` on arcider, whose six

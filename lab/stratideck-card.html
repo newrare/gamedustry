@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lab — Stratideck cards</title>
+<!-- THE GAME'S OWN CARD STYLESHEET, not a copy of it: skin.css is what the
+     round and the barracks draw with, so what this bench shows is what ships
+     and cannot drift from it. The rest of that file only styles the game's own
+     ids (#intro-title, #hud-score, .demo-*), which this page does not have. -->
+<link rel="stylesheet" href="../games/stratideck/skin.css">
 <style>
 /* ===========================================================================
    STRATIDECK CARDS — the bench for the painted card faces.
@@ -58,11 +63,25 @@
    Anything that carries a big font-size of its own (the watermark's digit, a
    badge's number) is a CHILD, so an em on the positioned box still means 1%.
 
-   The block marked THE CARD ITSELF is what ships: it is pasted verbatim into
-   games/stratideck/skin.css, and the game builds the same nodes as build()
-   below (game.js, THE CARD FACES) as DOM under its canvas. The panel's
-   choices travel separately, as `CONFIG.cards` in game.js — "Copy the card
-   settings" writes that block, under the same names as the knobs here.
+   ISO WITH THE GAME, by construction rather than by care. The card rules are
+   not on this page: it links games/stratideck/skin.css, the block between
+   THE CARD ITSELF and END OF THE CARD and the rules after it (the badges at
+   a playing size, the plate that goes on a small card). A card rule is
+   therefore edited THERE, and a reload shows it. build() below is the game's
+   faceNode (games/stratideck/game.js, THE CARD FACES) and dress() its
+   sizeNode — the painted cast portrait at the card's tier, the badges and
+   the macaron as siblings of the body, and ONE card per format: composed
+   at its reference width and shown at any other as a whole, the text
+   floors scaled with it — so a card at a width here is the card the game
+   deals at that width. The widths the
+   game deals at are listed (SPOTS) and drawn side by side in AS DEALT IN THE
+   GAME.
+
+   The panel's choices travel as `CONFIG.cards` in game.js — "Copy the card
+   settings" writes that block, under the same names as the knobs here. Over
+   HTTP (`make lab`) the page reads that block back out of game.js and says
+   whether the panel still matches it; the panel is kept in this browser, so
+   a knob moved last week and never pasted is exactly what it catches.
 
    Lab rules: one file, no framework, no font, no CDN; allowed to read
    ../assets/ by relative path because it never ships. Every string is written
@@ -87,6 +106,26 @@ body {
 #panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
 #panel p.hint { margin:6px 0 16px; font-weight:500; font-size:12px; color:#8b8ba7; }
 #panel h2 { margin:18px 0 8px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6f6a90; }
+/* THE PANEL'S SECTIONS: one theme each, behind a chevron, and the page
+   remembers which are open */
+details.grp { border-top:1px solid #23233a; }
+details.grp:last-of-type { border-bottom:1px solid #23233a; }
+details.grp > summary {
+  list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; gap:8px;
+  padding:12px 2px; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#8b8ba7;
+}
+details.grp > summary::-webkit-details-marker { display:none; }
+details.grp > summary::before {
+  content:""; width:6px; height:6px; flex:none; margin:0 3px 0 1px;
+  border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+  transform:rotate(-45deg); transition:transform .15s ease;
+}
+details.grp[open] > summary::before { transform:rotate(45deg); }
+details.grp > summary:hover { color:#e8e6f5; }
+details.grp[open] > summary { color:#f2c14e; }
+details.grp > *:last-child { margin-bottom:14px; }
+details.grp .hint { margin:0 0 10px !important; }
+details.grp p.sub { margin:14px 0 6px; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
 
 .row { margin-bottom:12px; }
 .row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
@@ -178,638 +217,17 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
 .bsample.on { box-shadow:inset 0 0 0 2px #f2c14e; }
 .bsample:hover { cursor:pointer; box-shadow:inset 0 0 0 2px rgba(242,193,78,.5); }
 .bsample b { position:absolute; left:0; right:0; bottom:6px; text-align:center; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
-
-/* ===========================================================================
-   THE CARD ITSELF — from here to the END OF THE CARD marker is what ships.
-   =========================================================================== */
-.card {
-  /* the numbers a card is told: its size, its rarity, its scene */
-  --w:300px; --h:420px;
-  --rar:#ffd43b;                 /* the rarity colour */
-  --team:#5aa9ff;                /* the side's colour */
-  --gold:#f2c14e; --gold2:#ffe9a8; --gold3:#a8731a;
-  --zoom:2.6; --fx:50%; --fy:40%; --blur:6px;
-  --mark:.5; --mx:0%; --hero:78%;
-  --midz:1.35; --midx:0%; --midy:16%; --tinyz:1.8; --tinyx:0%; --tinyy:26%;
-  --rx:0deg; --ry:0deg;
-  position:relative; width:var(--w); height:var(--h);
-  font-size:calc(var(--w) / 100);     /* 1em = 1% of the card's width */
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  color:#f6f1e4; border-radius:6em; isolation:isolate; user-select:none;
-  transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
-  /* NOT preserve-3d: in a 3D context the children are sorted by their depth
-     and z-index stops deciding, which put a badge BEHIND the body it is
-     meant to hang over. The tilt only needs the perspective above. */
-  transform-style:flat; transition:transform .12s ease-out;
-}
-/* the body: everything that is the card proper, clipped to its outline; the
-   badges are siblings of it, which is what lets them hang over the edge */
-.c-body { inset:0; border-radius:inherit; overflow:hidden; z-index:1; box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.6); }
-.card > *, .c-body > * { position:absolute; pointer-events:none; }
-.c-back { display:none; }
-.card.static { transform:none; }
-
-/* 1. the scene: the band's own backdrop, zoomed on one patch and blurred */
-.c-scene { inset:3em; border-radius:4em; overflow:hidden; z-index:1; background:#0a1026; }
-.c-scene::before {
-  content:""; position:absolute; inset:-6%;
-  background-image:var(--bgi); background-size:calc(100% * var(--zoom)) auto;
-  background-position:var(--fx) var(--fy);
-  filter:blur(var(--blur)) saturate(1.15) brightness(.9);
-}
-/* a scrim: dark at the foot so the plate reads, the rarity leaking in at the head */
-.c-scene::after {
-  content:""; position:absolute; inset:0;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 32%, transparent) 0%, transparent 34%),
-    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%),
-    radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--rar) 26%, transparent), transparent 70%);
-}
-
-/* 2. the watermark: the rank, huge, as a filigree. The box is placed in card
-   units; the digit is the <b>, which is where the big font-size goes. */
-.c-mark { left:0; right:0; top:2em; text-align:center; z-index:2; line-height:1; opacity:var(--mark); mix-blend-mode:overlay;
-  transform:translateX(var(--mx)); }
-.c-mark b {
-  display:inline-block; font-size:92em; font-weight:900; line-height:1; letter-spacing:-.06em;
-  color:#fff; -webkit-text-stroke:.006em rgba(255,255,255,.5);
-}
-.c-mark.two { top:8em; }
-.c-mark.two b { font-size:70em; }
-.card.mark-over .c-mark { z-index:4; }
-
-/* 3. the hero: the officer, sharp, three quarters of the card */
-.c-hero { left:0; right:0; bottom:14%; height:var(--hero); z-index:3; display:flex; align-items:flex-end; justify-content:center; }
-.c-hero img {
-  /* the band's full height, not the file's: a card opened big (the
-     barracks' file, 540px) must grow the officer with it, and a picture
-     wider than the band is contained rather than stretched */
-  height:100%; width:auto; max-width:104%; object-fit:contain; object-position:50% 100%;
-  filter:drop-shadow(0 1.5em 2em rgba(0,0,0,.6)) drop-shadow(0 0 1.5em color-mix(in srgb, var(--rar) 45%, transparent));
-}
-.c-hero.missing { align-items:center; }
-.c-hero.missing::before { content:attr(data-missing); font-size:5em; letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
-
-/* 4. the badges. An SVG shape, a number over it, a shadow on the box. The
-   colour is `--bc`: the card's rarity, for both roles. `.f` is
-   the coloured body of the shape, `.f2` its darker second colour, `.x` its
-   neutral parts (a blade, a chain, a plate), `.g` the gloss. Every design
-   has a default place for each role and hangs a little over the card's edge;
-   the `at-*` classes override the place. z-index 20: above the body, always. */
-.c-badge {
-  z-index:20; --bc:var(--rar); --rim2:var(--gold); --rim3:var(--gold3); --rot:0deg; --bs:1; --tx:0; --ty2:0; --ty:50%;
-  transform:translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bs));
-  filter:drop-shadow(0 .8em 1.4em rgba(0,0,0,.6)) drop-shadow(0 0 1.2em color-mix(in srgb, var(--bc) 55%, transparent));
-}
-/* the tier badge: same rarity colour, but a dark steel rim and a hard shadow */
-.c-badge.tier { --rim2:#1a1d24; --rim3:#0b0d12; filter:drop-shadow(.7em .9em 0 rgba(0,0,0,.78)); }
-.c-badge svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-.c-badge .f  { fill:var(--bc); stroke:var(--rim2); stroke-width:4; paint-order:stroke; stroke-linejoin:round; }
-.c-badge .f2 { fill:color-mix(in srgb, var(--bc) 62%, #000); stroke:var(--rim3); stroke-width:3; paint-order:stroke; stroke-linejoin:round; }
-.c-badge .x  { fill:url(#bx-steel); stroke:#0b0d12; stroke-width:2.5; paint-order:stroke; stroke-linejoin:round; }
-.c-badge .g  { fill:url(#bx-gloss); pointer-events:none; }
-.c-badge .d  { fill:url(#bx-shade); pointer-events:none; }
-.c-badge span {
-  position:absolute; left:50%; top:var(--ty); transform:translate(-50%, -50%);
-  font-size:10em; font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
-  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.45), 0 0 .5em rgba(0,0,0,.4);
-}
-.c-badge span small { font-size:.36em; font-weight:800; letter-spacing:.15em; margin-right:.25em; vertical-align:.25em; }
-.c-badge.tier span { font-size:9em; color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
-.card:not(.rank-on) .c-badge.rank { display:none; }
-.card:not(.tier-on) .c-badge.tier { display:none; }
-
-/* the seven designs: a size, a place for the rank, a place for the tier.
-   Every one of them hangs past the edge by about a fifth of its own size —
-   enough to read as an object laid on the card, not enough to look dropped. */
-.d-shield.rank  { width:24em; height:26em; left:-5em; top:-4em; --rot:-8deg; }
-.d-shield.tier  { width:17em; height:18.5em; right:-4em; bottom:24em; --rot:9deg; }
-.d-crown.rank   { width:38em; height:25em; left:50%; top:-8em; --tx:-50%; --ty:70%; }
-.d-crown.tier   { width:24em; height:16em; right:-5em; bottom:26em; --rot:14deg; --ty:70%; }
-.d-seal.rank    { width:26em; height:28em; left:-5em; bottom:-5em; --rot:-10deg; --ty:40%; }
-.d-seal.tier    { width:19em; height:20.5em; right:-4em; bottom:20em; --rot:12deg; --ty:40%; }
-.d-medal.rank   { width:20em; height:28em; left:-4em; top:-6em; --ty:67%; --rot:-12deg; }
-.d-medal.tier   { width:15em; height:21em; right:-3.5em; bottom:22em; --ty:67%; --rot:10deg; }
-.d-dogtag.rank  { width:16em; height:32em; left:3em; top:-8em; --rot:-7deg; --ty:68%; }
-.d-dogtag.tier  { width:12em; height:24em; right:-2.5em; top:-6em; --rot:9deg; --ty:68%; }
-.d-dogtag.tier span { font-size:6.5em; }
-.d-burst.rank   { width:27em; height:27em; left:-6em; top:-6em; --rot:-12deg; }
-.d-burst.tier   { width:19em; height:19em; right:-4em; bottom:24em; --rot:10deg; }
-.d-scroll.rank  { width:46em; height:16em; left:50%; top:-5em; --tx:-50%; }
-.d-scroll.rank span { font-size:8.5em; }
-.d-scroll.tier  { width:30em; height:11em; left:50%; bottom:-3.5em; --tx:-50%; }
-
-/* the placement override */
-.card .c-badge.at-tl { left:-4em; top:-4em; right:auto; bottom:auto; --tx:0; --ty2:0; }
-.card .c-badge.at-t  { left:50%; top:-4em; right:auto; bottom:auto; --tx:-50%; --ty2:0; }
-.card .c-badge.at-tr { right:-4em; top:-4em; left:auto; bottom:auto; --tx:0; --ty2:0; }
-.card .c-badge.at-r  { right:-4em; top:50%; left:auto; bottom:auto; --tx:0; --ty2:-50%; }
-.card .c-badge.at-br { right:-4em; bottom:-4em; left:auto; top:auto; --tx:0; --ty2:0; }
-.card .c-badge.at-b  { left:50%; bottom:-4em; right:auto; top:auto; --tx:-50%; --ty2:0; }
-.card .c-badge.at-bl { left:-4em; bottom:-4em; right:auto; top:auto; --tx:0; --ty2:0; }
-.card .c-badge.at-l  { left:-4em; top:50%; right:auto; bottom:auto; --tx:0; --ty2:-50%; }
-
-/* 5. the crest: which army, top-right */
-.c-crest { right:4.5em; top:4.5em; width:17em; height:20em; z-index:5; object-fit:contain; filter:drop-shadow(0 .6em 1em rgba(0,0,0,.6)); }
-
-/* 5b. the macaron: what the grade is FOR (game.js, PERK) — a dark disc in
-   the badges' gold rim, a Lucide pictogram stroked on it, on the army's
-   cards only. THE SAME THREE CORNERS ON EVERY FORMAT: the grade top-left,
-   the tier bottom-right, the macaron bottom-left — a card read small in a
-   list and the same card opened big must not move a badge between them.
-   `--ps` is its scale, which the game raises with the badges on a card
-   dealt small; it grows out of its own corner. */
-.c-perk {
-  z-index:21; left:-4em; bottom:-4em; width:19em; height:19em; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
-  box-shadow:0 0 0 1.3em var(--gold), 0 0 0 2em #0b0d12, 0 .9em 1.6em rgba(0,0,0,.6);
-  transform:scale(var(--ps, 1)); transform-origin:0 100%;
-}
-.c-perk svg {
-  width:60%; height:60%; overflow:visible;
-  fill:none; stroke:#f6e6b4; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
-  filter:drop-shadow(0 .5em 0 rgba(0,0,0,.55));
-}
-.fmt-mid .c-perk { --ps:.8; }
-.fmt-tiny .c-perk {
-  left:-5em; bottom:-5em; width:34em; height:34em;
-  box-shadow:0 0 0 2.2em var(--gold), 0 0 0 3.2em #0b0d12, 0 1.2em 2em rgba(0,0,0,.6);
-}
-.card.back .c-perk { display:none; }
-.card.ghost .c-perk { filter:grayscale(1) brightness(.7); }
-
-/* 6. the plate: the name and the tier */
-.c-plate {
-  left:0; right:0; bottom:5.5em; z-index:6; text-align:center; padding:2.2em 6em 1.6em;
-  background:linear-gradient(90deg, transparent, rgba(4,5,14,.85) 14%, rgba(4,5,14,.85) 86%, transparent);
-}
-.c-plate::before, .c-plate::after {
-  content:""; position:absolute; left:12%; right:12%; height:.7em;
-  background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold2) 50%, var(--gold) 80%, transparent);
-}
-.c-plate::before { top:0; } .c-plate::after { bottom:0; }
-.c-name {
-  display:block; font-size:9em; font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
-  color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.6), 0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
-}
-.c-tier { display:block; margin-top:.6em; font-size:4.2em; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
-.c-pips { left:0; right:0; bottom:1.6em; z-index:6; display:flex; justify-content:center; gap:1.4em; }
-.c-pips i {
-  width:2.6em; height:2.6em; transform:rotate(45deg); border-radius:.4em;
-  background:linear-gradient(135deg, #fff, var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000)); box-shadow:0 0 .8em var(--rar);
-}
-
-/* 7. the frame: the style's own layer, under everything but the scene */
-.c-frame { inset:0; border-radius:6em; z-index:0; }
-
-/* ---- STYLE: foil — gold leaf, bevelled, a rarity rim, a slow shimmer ------ */
-.style-foil .c-frame { background:linear-gradient(160deg, var(--gold2) 0%, var(--gold) 22%, var(--gold3) 48%, var(--gold) 70%, var(--gold2) 100%); }
-.style-foil .c-frame::before {
-  content:""; position:absolute; inset:2em; border-radius:4.6em;
-  background:linear-gradient(180deg, color-mix(in srgb, var(--rar) 80%, #fff), var(--rar) 50%, color-mix(in srgb, var(--rar) 50%, #000));
-}
-.style-foil .c-frame::after {
-  content:""; position:absolute; inset:0; border-radius:6em;
-  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, rgba(255,255,255,.1) 52%, transparent 70%);
-  background-size:300% 100%; mix-blend-mode:screen; animation:foilShine 4.5s ease-in-out infinite;
-}
-@keyframes foilShine { 0%,55% { background-position:120% 0; } 100% { background-position:-120% 0; } }
-.style-foil .c-scene { inset:3.2em; }
-
-/* ---- STYLE: holo — a rainbow ring turning under the rarity ---------------- */
-.style-holo .c-frame { background:#0b0d1a; overflow:hidden; }
-.style-holo .c-frame::before {
-  content:""; position:absolute; left:50%; top:50%; width:220%; height:220%; margin:-110% 0 0 -110%;
-  background:conic-gradient(from 0deg, var(--rar), #ff6ec7, #ffd166, #7cffb2, #5ad1ff, #b56cff, var(--rar));
-  animation:holoTurn 7s linear infinite;
-}
-.style-holo .c-frame::after {
-  content:""; position:absolute; inset:0; border-radius:6em;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 45%, transparent), transparent 40%, color-mix(in srgb, var(--rar) 45%, transparent)),
-    repeating-linear-gradient(135deg, rgba(255,255,255,.14) 0 .5em, transparent .5em 1.4em);
-  mix-blend-mode:soft-light;
-}
-@keyframes holoTurn { to { transform:rotate(360deg); } }
-.style-holo .c-scene::before { filter:blur(var(--blur)) saturate(1.4) hue-rotate(-10deg); }
-.style-holo .c-body { box-shadow:0 12px 30px rgba(0,0,0,.6), 0 0 2.4em color-mix(in srgb, var(--rar) 40%, transparent); }
-
-/* ---- STYLE: ember — black iron, the rarity burning through the joints ----- */
-.style-ember .c-frame {
-  background:
-    radial-gradient(circle at 6% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
-    radial-gradient(circle at 94% 5%, #6a6f7a 0 1.2em, transparent 1.3em),
-    radial-gradient(circle at 6% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
-    radial-gradient(circle at 94% 95%, #6a6f7a 0 1.2em, transparent 1.3em),
-    linear-gradient(180deg, #2a2d36, #141620 40%, #1e2029 100%);
-  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.7), inset 0 0 0 .9em #3a3f4a;
-}
-.style-ember .c-frame::before {
-  content:""; position:absolute; inset:2.2em; border-radius:4.4em;
-  box-shadow:0 0 1.6em var(--rar), inset 0 0 1.4em var(--rar); border:.5em solid var(--rar);
-  animation:emberBreath 2.6s ease-in-out infinite;
-}
-@keyframes emberBreath { 50% { filter:brightness(1.35); } }
-.style-ember .c-body { box-shadow:0 12px 30px rgba(0,0,0,.7), 0 0 3em color-mix(in srgb, var(--rar) 45%, transparent); }
-.style-ember.tier-legendary .c-frame::before { animation:emberFlicker 1.1s steps(1) infinite; }
-@keyframes emberFlicker { 0%,100% { opacity:1; } 30% { opacity:.75; } 34% { opacity:1; } 62% { opacity:.85; } 66% { opacity:1; } }
-
-/* ---- STYLE: forge — ember's cousin: basalt cracked open on lava ----------- */
-.style-forge .c-frame {
-  --lava:color-mix(in srgb, var(--rar) 55%, #ff6a00);
-  background:
-    repeating-linear-gradient(112deg, transparent 0 4.2em, var(--lava) 4.2em 4.5em, transparent 4.5em 9em),
-    repeating-linear-gradient(-68deg, transparent 0 6em, color-mix(in srgb, var(--lava) 70%, transparent) 6em 6.25em, transparent 6.25em 13em),
-    linear-gradient(180deg, #221a17, #0e0b0a 45%, #1a1210 100%);
-  box-shadow:inset 0 0 0 .5em rgba(0,0,0,.8), inset 0 0 2.6em rgba(0,0,0,.9);
-}
-.style-forge .c-frame::before {          /* the molten seam */
-  content:""; position:absolute; inset:2.4em; border-radius:4.2em; border:.4em solid var(--lava);
-  box-shadow:0 0 1.4em var(--lava), inset 0 0 1.6em color-mix(in srgb, var(--lava) 70%, transparent);
-  animation:forgeHeat 1.8s ease-in-out infinite;
-}
-@keyframes forgeHeat { 50% { filter:brightness(1.5) saturate(1.2); } }
-.style-forge .c-frame::after {           /* the sparks */
-  content:""; position:absolute; inset:0;
-  background:
-    radial-gradient(circle at 8% 30%, #ffd27a 0 .35em, transparent .6em),
-    radial-gradient(circle at 93% 62%, #ffb347 0 .3em, transparent .55em),
-    radial-gradient(circle at 5% 78%, #ff8a3d 0 .3em, transparent .5em),
-    radial-gradient(circle at 95% 18%, #ffe0a0 0 .25em, transparent .5em),
-    radial-gradient(circle at 50% 97%, #ffb347 0 .35em, transparent .6em),
-    radial-gradient(circle at 30% 3%, #ff9a4d 0 .3em, transparent .5em);
-  animation:sparkle 1.3s steps(2) infinite;
-}
-@keyframes sparkle { 50% { opacity:.35; } }
-.style-forge .c-body { box-shadow:0 12px 30px rgba(0,0,0,.75), 0 0 3em rgba(255,110,20,.45); }
-.style-forge .c-scene::before { filter:blur(var(--blur)) sepia(.35) saturate(1.5) hue-rotate(-18deg) brightness(.8); }
-.style-forge .c-scene::after {
-  background:
-    linear-gradient(180deg, rgba(255,120,30,.25) 0%, transparent 30%),
-    linear-gradient(0deg, rgba(20,6,2,.95) 0%, rgba(40,10,4,.6) 20%, transparent 48%),
-    radial-gradient(80% 40% at 50% 100%, rgba(255,110,20,.55), transparent 70%);
-}
-.style-forge .c-tier { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
-.style-forge .c-pips i { background:linear-gradient(135deg, #fff, #ff9a3d 40%, #7a2a00); box-shadow:0 0 .8em #ff8a3d; }
-
-/* ---- STYLE: ash — ember's other cousin: charred wood, the last embers ----- */
-.style-ash .c-frame {
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 .3em, transparent .3em 1.6em),
-    repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 .15em, transparent .15em 3.4em),
-    linear-gradient(180deg, #2b2523, #17130f 50%, #221c18);
-  box-shadow:inset 0 0 0 .4em #0a0806, inset 0 0 3em rgba(0,0,0,.9);
-}
-.style-ash .c-frame::before {            /* the edge still burning: a broken line of glow */
-  content:""; position:absolute; inset:2.4em; border-radius:4.2em;
-  border:.45em dashed color-mix(in srgb, var(--rar) 60%, #ff5a1a);
-  box-shadow:0 0 1.2em color-mix(in srgb, var(--rar) 50%, #ff5a1a), inset 0 0 1em rgba(255,90,26,.35);
-  animation:ashGlow 3.4s ease-in-out infinite;
-}
-@keyframes ashGlow { 50% { opacity:.55; filter:brightness(.7); } }
-.style-ash .c-frame::after {             /* embers in the corners, and the smoke */
-  content:""; position:absolute; inset:0; border-radius:6em;
-  background:
-    radial-gradient(circle at 4% 96%, #ff7a2a 0 .4em, transparent .7em),
-    radial-gradient(circle at 9% 92%, #ffb26a 0 .25em, transparent .5em),
-    radial-gradient(circle at 96% 95%, #ff7a2a 0 .35em, transparent .65em),
-    radial-gradient(circle at 92% 89%, #ff9a4d 0 .2em, transparent .45em),
-    radial-gradient(circle at 3% 6%, #ff8a3d 0 .25em, transparent .5em),
-    radial-gradient(70% 30% at 50% 0, rgba(200,200,200,.18), transparent 70%);
-  animation:sparkle 2.2s steps(3) infinite;
-}
-.style-ash .c-body { box-shadow:0 12px 30px rgba(0,0,0,.8), 0 0 2em rgba(255,90,26,.25); }
-.style-ash .c-scene::before { filter:blur(var(--blur)) grayscale(.65) brightness(.55) contrast(1.1); }
-.style-ash .c-scene::after {
-  background:
-    linear-gradient(180deg, rgba(180,180,180,.16) 0%, transparent 35%),
-    linear-gradient(0deg, rgba(8,6,5,.95) 0%, rgba(20,12,8,.6) 22%, transparent 50%),
-    radial-gradient(60% 30% at 50% 100%, rgba(255,90,26,.35), transparent 70%);
-}
-.style-ash .c-plate::before, .style-ash .c-plate::after { background:linear-gradient(90deg, transparent, #ff7a2a 30%, #ffd0a0 50%, #ff7a2a 70%, transparent); }
-.style-ash .c-name { color:#e8e2d8; }
-.style-ash .c-pips i { background:linear-gradient(135deg, #fff, #ff7a2a 40%, #3a1200); box-shadow:0 0 .8em #ff7a2a; }
-
-/* ---- STYLE: chamfer — cut corners, brackets, a tactical readout ----------- */
-.style-chamfer .c-body, .style-chamfer .c-frame { border-radius:0; }
-.style-chamfer .c-body { clip-path:polygon(8em 0, 100% 0, 100% calc(100% - 8em), calc(100% - 8em) 100%, 0 100%, 0 8em); }
-.style-chamfer .c-frame {
-  background:linear-gradient(180deg, #0f1220, #080a14);
-  box-shadow:inset 0 0 0 .7em var(--rar), inset 0 0 0 1em rgba(0,0,0,.8), inset 0 0 0 1.4em color-mix(in srgb, var(--rar) 40%, transparent);
-}
-.style-chamfer .c-frame::before {
-  content:""; position:absolute; inset:2.4em;
-  background:
-    linear-gradient(var(--rar), var(--rar)) 0 0 / 10em .8em no-repeat,
-    linear-gradient(var(--rar), var(--rar)) 0 0 / .8em 10em no-repeat,
-    linear-gradient(var(--rar), var(--rar)) 100% 100% / 10em .8em no-repeat,
-    linear-gradient(var(--rar), var(--rar)) 100% 100% / .8em 10em no-repeat;
-}
-.style-chamfer .c-scene { inset:3.6em; border-radius:0; }
-.style-chamfer .c-scene::after {
-  background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 .4em, transparent .4em 1.2em),
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 30%, transparent) 0%, transparent 34%),
-    linear-gradient(0deg, rgba(3,4,12,.92) 0%, rgba(3,4,12,.55) 18%, transparent 46%);
-}
-.style-chamfer .c-plate::before, .style-chamfer .c-plate::after { background:linear-gradient(90deg, transparent, var(--rar) 20%, #fff 50%, var(--rar) 80%, transparent); }
-.style-chamfer .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.2em; }
-
-/* ---- STYLE: hex — chamfer's cousin: eight sides, ticks, a turning reticle -- */
-.style-hex .c-body, .style-hex .c-frame { border-radius:0; }
-.style-hex .c-body { clip-path:polygon(12em 0, calc(100% - 12em) 0, 100% 9em, 100% calc(100% - 9em), calc(100% - 12em) 100%, 12em 100%, 0 calc(100% - 9em), 0 9em); }
-.style-hex .c-frame {
-  background:linear-gradient(180deg, #0c1420, #070b12);
-  box-shadow:inset 0 0 0 .5em var(--rar), inset 0 0 0 1.2em #070b12, inset 0 0 0 1.5em color-mix(in srgb, var(--rar) 55%, transparent);
-}
-.style-hex .c-frame::before {            /* the ticks: a ruler along the top and the bottom */
-  content:""; position:absolute; inset:2.2em;
-  background:
-    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 0 / 56% .9em no-repeat,
-    repeating-linear-gradient(90deg, var(--rar) 0 .35em, transparent .35em 2.4em) 50% 100% / 56% .9em no-repeat,
-    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 0 50% / .9em 40% no-repeat,
-    repeating-linear-gradient(0deg, var(--rar) 0 .35em, transparent .35em 2.4em) 100% 50% / .9em 40% no-repeat;
-  opacity:.8;
-}
-.style-hex .c-frame::after {             /* the reticle, behind the hero */
-  content:""; position:absolute; left:50%; top:38%; width:64em; height:64em; margin:-32em 0 0 -32em; border-radius:50%;
-  border:.5em dashed color-mix(in srgb, var(--rar) 70%, transparent);
-  box-shadow:inset 0 0 0 3em transparent, inset 0 0 0 3.4em color-mix(in srgb, var(--rar) 30%, transparent);
-  animation:reticle 18s linear infinite; z-index:2;
-}
-@keyframes reticle { to { transform:rotate(360deg); } }
-.style-hex .c-scene { inset:3.8em; border-radius:0; clip-path:polygon(9em 0, calc(100% - 9em) 0, 100% 6.5em, 100% calc(100% - 6.5em), calc(100% - 9em) 100%, 9em 100%, 0 calc(100% - 6.5em), 0 6.5em); }
-.style-hex .c-scene::before { filter:blur(var(--blur)) saturate(.7) hue-rotate(15deg) brightness(.75); }
-.style-hex .c-scene::after {
-  background:
-    radial-gradient(circle, color-mix(in srgb, var(--rar) 45%, transparent) 0 .3em, transparent .4em) 0 0 / 4em 4em,
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 25%, transparent) 0%, transparent 34%),
-    linear-gradient(0deg, rgba(3,6,12,.94) 0%, rgba(3,6,12,.55) 18%, transparent 46%);
-}
-.style-hex .c-plate { clip-path:polygon(4em 0, calc(100% - 4em) 0, 100% 50%, calc(100% - 4em) 100%, 4em 100%, 0 50%); left:4em; right:4em; background:rgba(4,8,16,.85); }
-.style-hex .c-plate::before, .style-hex .c-plate::after { left:8%; right:8%; background:var(--rar); height:.35em; }
-.style-hex .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.24em; }
-.style-hex .c-pips i { transform:none; border-radius:0; clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
-
-/* ---- STYLE: steel — chamfer's other cousin: a bolted plate, hazard tape --- */
-.style-steel .c-body, .style-steel .c-frame { border-radius:0; }
-.style-steel .c-body { clip-path:polygon(10em 0, 100% 0, 100% calc(100% - 10em), calc(100% - 10em) 100%, 0 100%, 0 10em); }
-.style-steel .c-frame {
-  background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 .2em, transparent .2em .6em),
-    linear-gradient(160deg, #8a9098, #4e545c 45%, #6b727b 70%, #3b4048);
-  box-shadow:inset 0 0 0 .3em #1c1f24, inset 0 .5em 0 .3em rgba(255,255,255,.2), inset 0 -.6em 0 .3em rgba(0,0,0,.5);
-}
-.style-steel .c-frame::before {          /* the bolts */
-  content:""; position:absolute; inset:0;
-  background:
-    radial-gradient(circle at 14em 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
-    radial-gradient(circle at calc(100% - 4em) 4em, #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
-    radial-gradient(circle at 4em calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em),
-    radial-gradient(circle at calc(100% - 14em) calc(100% - 4em), #e9edf2 0 .9em, #55606d 1em 1.7em, #1c1f24 1.8em 2em, transparent 2.1em);
-}
-.style-steel .c-frame::after {           /* the tape: a band of hazard stripes under the plate */
-  content:""; position:absolute; left:4.5em; right:4.5em; bottom:4.5em; height:3em;
-  background:repeating-linear-gradient(-45deg, var(--rar) 0 2.2em, #14110f 2.2em 4.4em);
-  box-shadow:0 0 0 .3em #1c1f24;
-}
-.style-steel .c-scene { inset:4.5em 4.5em 7.5em; border-radius:0; }
-.style-steel .c-scene::before { filter:blur(var(--blur)) saturate(.85) brightness(.8); }
-.style-steel .c-scene::after {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 26%, transparent) 0%, transparent 30%),
-    linear-gradient(0deg, rgba(10,12,16,.95) 0%, rgba(10,12,16,.6) 18%, transparent 46%);
-}
-.style-steel .c-hero { bottom:16%; }
-.style-steel .c-plate { left:4.5em; right:4.5em; bottom:9em; padding:1.6em 4em 1.2em; background:linear-gradient(180deg, #2a2e35, #171a1f); box-shadow:inset 0 .3em 0 rgba(255,255,255,.1), 0 .3em 0 #0a0b0d; }
-.style-steel .c-plate::before { background:var(--rar); left:0; right:0; height:.6em; }
-.style-steel .c-plate::after { display:none; }
-.style-steel .c-name { font-family:"SF Mono",Menlo,Consolas,monospace; letter-spacing:.3em; color:#e9edf2; text-shadow:0 .08em 0 #000; }
-.style-steel .c-tier { color:var(--rar); letter-spacing:.5em; }
-.style-steel .c-pips { display:none; }
-.style-steel .c-crest { top:6em; right:6em; }
-
-/* ---- STYLE: parchment — a war map, ink and wax, the rank stamped on it --- */
-.style-parchment .c-body, .style-parchment .c-frame { border-radius:2.5em; }
-.style-parchment .c-frame {
-  background:
-    repeating-linear-gradient(0deg, rgba(120,80,20,.06) 0 .3em, transparent .3em 1.1em),
-    repeating-linear-gradient(90deg, rgba(120,80,20,.05) 0 .2em, transparent .2em 1.7em),
-    radial-gradient(120% 90% at 50% 40%, #ecd9a9, #cdb27a 70%, #9c7a45);
-  box-shadow:inset 0 0 5em rgba(70,35,0,.55), inset 0 0 1.2em rgba(50,25,0,.6);
-}
-.style-parchment .c-frame::before { content:""; position:absolute; inset:2.4em; border:.5em double #4a2e12; border-radius:1.4em; opacity:.85; }
-.style-parchment .c-frame::after {       /* the wax seal, bottom-right */
-  content:""; position:absolute; right:3em; bottom:3em; width:12em; height:12em; border-radius:50%;
-  background:radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--rar) 70%, #fff), var(--rar) 40%, color-mix(in srgb, var(--rar) 50%, #000) 90%);
-  box-shadow:0 .4em .8em rgba(40,20,0,.5), inset 0 0 0 1.4em rgba(0,0,0,.18), inset 0 0 0 2.2em rgba(255,255,255,.18);
-  z-index:8;
-}
-.style-parchment .c-scene { inset:5em; border-radius:1em; }
-.style-parchment .c-scene::before { filter:blur(var(--blur)) sepia(.75) contrast(.9) brightness(.85); }
-.style-parchment .c-scene::after {
-  background:
-    linear-gradient(0deg, rgba(70,40,10,.9) 0%, rgba(70,40,10,.45) 22%, transparent 50%),
-    radial-gradient(110% 90% at 50% 40%, transparent 55%, rgba(60,30,0,.55));
-}
-.style-parchment .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:6em; }
-.style-parchment .c-mark b {             /* the stamp: ink, tilted, ringed */
-  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:66em; padding:0 .12em;
-  color:var(--rar); transform:rotate(-12deg); -webkit-text-stroke:0;
-  border:.05em solid var(--rar); border-radius:.16em; box-shadow:inset 0 0 0 .015em #fff2d0, 0 0 0 .015em #fff2d0;
-}
-.style-parchment .c-mark.two { top:9em; }
-.style-parchment .c-mark.two b { font-size:56em; }
-.style-parchment .c-plate { background:linear-gradient(90deg, transparent, #3a2412 12%, #4a2e12 50%, #3a2412 88%, transparent); bottom:7em; }
-.style-parchment .c-plate::before, .style-parchment .c-plate::after { background:linear-gradient(90deg, transparent, #b07a2a 30%, #e8c27a 50%, #b07a2a 70%, transparent); height:.4em; }
-.style-parchment .c-name { font-family:Georgia,"Times New Roman",serif; color:#f2e3bf; letter-spacing:.1em; text-shadow:0 .06em 0 rgba(0,0,0,.6); }
-.style-parchment .c-tier { font-family:Georgia,serif; color:#e8c27a; text-shadow:none; }
-.style-parchment .c-pips { bottom:3em; }
-.style-parchment .c-pips i { background:#4a2e12; box-shadow:none; }
-.style-parchment .c-hero img { filter:drop-shadow(0 1em 1.4em rgba(40,20,0,.55)) sepia(.12); }
-
-/* ---- STYLE: stone — a slab, chiselled, runes lit in the rarity ----------- */
-.style-stone .c-body, .style-stone .c-frame { border-radius:1.6em; }
-.style-stone .c-frame {
-  background:
-    repeating-linear-gradient(37deg, rgba(255,255,255,.04) 0 .4em, transparent .4em 1.8em),
-    repeating-linear-gradient(-23deg, rgba(0,0,0,.12) 0 .3em, transparent .3em 2.4em),
-    linear-gradient(180deg, #5c626b, #3a3f47 50%, #2b2f36);
-  box-shadow:inset 0 .6em 0 rgba(255,255,255,.14), inset 0 -.8em 0 rgba(0,0,0,.6), inset .5em 0 0 rgba(255,255,255,.05), inset -.5em 0 0 rgba(0,0,0,.35);
-}
-.style-stone .c-frame::before {
-  content:""; position:absolute; inset:2.6em; border-radius:1em; border:.6em solid rgba(0,0,0,.5);
-  box-shadow:0 0 0 .3em rgba(255,255,255,.12), inset 0 0 0 .3em rgba(255,255,255,.08);
-}
-.style-stone .c-frame::after {
-  content:"\16A0 \16A2 \16A6 \16A8 \16B1 \16B7 \16B9 \16BE"; position:absolute; left:0; right:0; top:.8em; text-align:center;
-  font-size:2.6em; letter-spacing:.9em; color:var(--rar); text-shadow:0 0 .5em var(--rar);
-  animation:runeGlow 4s ease-in-out infinite;
-}
-@keyframes runeGlow { 50% { opacity:.55; } }
-.style-stone .c-scene { inset:4.6em; border-radius:.6em; }
-.style-stone .c-scene::before { filter:blur(var(--blur)) grayscale(.55) brightness(.65) contrast(1.1); }
-.style-stone .c-scene::after {
-  background:
-    linear-gradient(0deg, rgba(20,24,20,.9) 0%, rgba(20,24,20,.4) 22%, transparent 48%),
-    radial-gradient(60% 30% at 20% 100%, rgba(60,110,50,.55), transparent 70%),
-    radial-gradient(50% 24% at 85% 100%, rgba(60,110,50,.45), transparent 70%),
-    linear-gradient(112deg, transparent 47.6%, rgba(0,0,0,.55) 48%, rgba(255,255,255,.12) 48.4%, transparent 48.8%),
-    linear-gradient(74deg, transparent 71.6%, rgba(0,0,0,.5) 72%, rgba(255,255,255,.1) 72.4%, transparent 72.8%),
-    linear-gradient(180deg, color-mix(in srgb, var(--rar) 22%, transparent), transparent 40%);
-}
-.style-stone .c-mark { z-index:4; mix-blend-mode:normal; opacity:min(1, calc(var(--mark) * 1.6)); top:4em; }
-.style-stone .c-mark b {                 /* the carving: a chiselled edge, the stone showing through */
-  font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:80em;
-  color:transparent; -webkit-text-stroke:.012em rgba(235,238,245,.9);
-  text-shadow:.02em .025em 0 rgba(0,0,0,.75), -.008em -.008em 0 rgba(255,255,255,.35);
-}
-.style-stone .c-mark.two { top:8em; }
-.style-stone .c-mark.two b { font-size:64em; }
-.style-stone .c-plate {
-  left:5em; right:5em; bottom:6em; padding:1.6em 3em 1.2em;
-  background:linear-gradient(180deg, #2e323a, #1e2126); border:.5em solid #4a4f57; border-radius:.8em;
-  box-shadow:inset 0 .3em 0 rgba(255,255,255,.08), inset 0 -.4em 0 rgba(0,0,0,.5);
-}
-.style-stone .c-plate::before, .style-stone .c-plate::after { display:none; }
-.style-stone .c-name { font-family:Georgia,"Times New Roman",serif; color:#c9ccd2; letter-spacing:.16em; text-shadow:0 -.05em 0 #000, 0 .05em 0 rgba(255,255,255,.18); }
-.style-stone .c-tier { color:var(--rar); text-shadow:0 0 .6em var(--rar); font-family:Georgia,serif; }
-.style-stone .c-pips { bottom:2.6em; }
-.style-stone .c-pips i { border-radius:0; background:var(--rar); box-shadow:0 0 .6em var(--rar), inset 0 0 0 .3em rgba(0,0,0,.35); }
-.style-stone .c-hero img { filter:drop-shadow(0 1.2em 1.2em rgba(0,0,0,.7)) saturate(.9); }
-
-/* ---- FORMAT: mid — the grid's face-up square ----------------------------- */
-.fmt-mid { --h:var(--w); }
-.fmt-mid .c-body, .fmt-mid .c-frame { border-radius:5em; }
-.fmt-mid .c-badge { --bs:.8; }
-.fmt-mid .c-badge.tier { bottom:12em; }
-.fmt-mid .d-scroll.tier, .fmt-mid .d-seal.rank { bottom:-6em; }
-.fmt-mid .c-scene { inset:3em; border-radius:3.5em; }
-.fmt-mid .c-mark { top:-6em; left:0; right:0; text-align:center; }
-.fmt-mid .c-mark b { font-size:78em; transform:none; }
-.fmt-mid .c-mark.two { top:-3em; }
-.fmt-mid .c-mark.two b { font-size:64em; }
-.fmt-mid.rank-on .c-mark { display:none; }
-/* the crop: the whole square is the window, the officer free to be cut by any
-   of its four edges. The image hangs from the MIDDLE of the square (left/top
-   50% and a -50% translate) and is moved from there in percents of the square,
-   so a zoom keeps looking at the same point instead of growing out of a
-   corner. Its height is the square's, times the zoom. */
-.fmt-mid .c-hero, .fmt-tiny .c-hero {
-  width:auto; height:auto; display:block; overflow:hidden; border-radius:inherit;
-}
-.fmt-mid .c-hero img, .fmt-tiny .c-hero img {
-  position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
-  width:auto; max-width:none; max-height:none;
-}
-.fmt-mid .c-hero  { inset:3em; border-radius:3.5em; }
-.fmt-mid .c-hero img  { height:calc(100% * var(--midz));  margin-left:var(--midx);  margin-top:var(--midy); }
-.fmt-mid.style-chamfer .c-hero, .fmt-mid.style-hex .c-hero, .fmt-mid.style-steel .c-hero { border-radius:0; }
-.fmt-mid.style-steel .c-hero { inset:4.5em 4.5em 7.5em; }
-.fmt-mid .c-hero.missing, .fmt-tiny .c-hero.missing { display:flex; align-items:center; justify-content:center; }
-.fmt-mid .c-crest { right:3.5em; top:3.5em; width:18em; height:20em; }
-.fmt-mid .c-plate { bottom:4em; padding:1.6em 4em 1.2em; }
-.fmt-mid .c-name { font-size:10em; letter-spacing:.1em; }
-.fmt-mid .c-tier, .fmt-mid .c-pips { display:none; }
-.fmt-mid.style-steel .c-scene { inset:4.5em 4.5em 7.5em; }
-.fmt-mid.style-steel .c-plate { bottom:9em; }
-.fmt-mid.style-stone .c-frame::after { display:none; }
-.fmt-mid.style-stone .c-plate, .fmt-mid.style-parchment .c-plate { bottom:4em; }
-.fmt-mid.style-parchment .c-frame::after { width:8em; height:8em; right:2em; bottom:2em; }
-.fmt-mid.style-hex .c-frame::after { width:50em; height:50em; margin:-25em 0 0 -25em; top:40%; }
-
-/* ---- FORMAT: tiny — a token for the menus --------------------------------- */
-.fmt-tiny { --h:var(--w); }
-.fmt-tiny .c-body, .fmt-tiny .c-frame { border-radius:16em; }
-.fmt-tiny .c-scene { inset:6em; border-radius:11em; }
-/* the token's rank: one digit in the corner, over the bust, whatever the style */
-.fmt-tiny .c-mark { z-index:7; left:auto; right:4em; top:auto; bottom:-2em; text-align:right; opacity:1; mix-blend-mode:normal; }
-.fmt-tiny .c-mark b {
-  font-size:58em; font-weight:900; font-family:inherit; letter-spacing:-.05em; transform:none; animation:none; padding:0; border:0; box-shadow:none;
-  color:#fff; -webkit-text-stroke:.035em #0b0b12; text-shadow:0 .05em .25em rgba(0,0,0,.85);
-}
-.fmt-tiny .c-mark.two { right:3em; bottom:0; }
-.fmt-tiny .c-mark.two b { font-size:46em; }
-.fmt-tiny.rank-on .c-mark { display:none; }
-.fmt-tiny .c-hero { inset:6em; border-radius:11em; }
-.fmt-tiny .c-hero img { height:calc(100% * var(--tinyz)); margin-left:var(--tinyx); margin-top:var(--tinyy); filter:none; }
-/* the token: the number on the top-left corner, the tier letter on the
-   bottom-right one — the corners every format gives them — both straight
-   and both SIZED FOR THE TOKEN — a design's own
-   size is a fraction of a 300px card and reads as a speck on a 64px one, so
-   every shape is re-measured here rather than scaled. */
-.fmt-tiny .c-badge { --bs:1; --rot:0deg; --tx:0; --ty2:0; }
-.fmt-tiny .c-badge span { font-size:23em; }
-.fmt-tiny .c-badge.tier span { font-size:19em; }
-.fmt-tiny .c-badge.rank { right:auto; bottom:auto; left:-4em; top:-4em; }
-.fmt-tiny .d-shield.rank { width:46em; height:50em; }
-.fmt-tiny .d-crown.rank  { width:54em; height:36em; left:-5em; top:-3em; }
-.fmt-tiny .d-seal.rank   { width:46em; height:50em; }
-.fmt-tiny .d-medal.rank  { width:38em; height:53em; left:-3em; top:-7em; }
-.fmt-tiny .d-dogtag.rank { width:30em; height:60em; left:-2em; top:-9em; }
-.fmt-tiny .d-burst.rank  { width:52em; height:52em; left:-6em; top:-6em; }
-.fmt-tiny .d-scroll.rank { width:62em; height:22em; left:-6em; top:-4em; }
-.fmt-tiny .c-badge.tier { left:auto; top:auto; right:-4em; bottom:-4em; }
-.fmt-tiny .d-shield.tier { width:33em; height:36em; }
-.fmt-tiny .d-crown.tier  { width:40em; height:27em; right:-5em; bottom:-3em; }
-.fmt-tiny .d-seal.tier   { width:33em; height:36em; }
-.fmt-tiny .d-medal.tier  { width:27em; height:38em; right:-3em; bottom:-9em; }
-.fmt-tiny .d-dogtag.tier { width:22em; height:44em; right:-2em; bottom:-11em; }
-.fmt-tiny .d-burst.tier  { width:38em; height:38em; right:-5em; bottom:-5em; }
-.fmt-tiny .d-scroll.tier { width:46em; height:17em; right:-4em; bottom:-3em; }
-.fmt-tiny .c-crest, .fmt-tiny .c-plate, .fmt-tiny .c-pips { display:none; }
-.fmt-tiny .c-frame::after { display:none; }
-.fmt-tiny.style-foil .c-frame::after, .fmt-tiny.style-holo .c-frame::after { display:block; }
-.fmt-tiny:not(.style-holo) .c-frame::before { inset:3em; border-radius:13em; }
-.fmt-tiny.style-chamfer .c-body, .fmt-tiny.style-steel .c-body { clip-path:polygon(18em 0, 100% 0, 100% calc(100% - 18em), calc(100% - 18em) 100%, 0 100%, 0 18em); }
-.fmt-tiny.style-hex .c-body { clip-path:polygon(22em 0, calc(100% - 22em) 0, 100% 18em, 100% calc(100% - 18em), calc(100% - 22em) 100%, 22em 100%, 0 calc(100% - 18em), 0 18em); }
-.fmt-tiny.style-chamfer .c-scene, .fmt-tiny.style-hex .c-scene, .fmt-tiny.style-steel .c-scene { inset:7em; border-radius:0; clip-path:none; }
-.fmt-tiny.style-chamfer .c-hero, .fmt-tiny.style-hex .c-hero, .fmt-tiny.style-steel .c-hero { inset:7em; border-radius:0; }
-.fmt-tiny.style-chamfer .c-frame::before, .fmt-tiny.style-hex .c-frame::before, .fmt-tiny.style-steel .c-frame::before { display:none; }
-.fmt-tiny.style-parchment .c-scene, .fmt-tiny.style-stone .c-scene { inset:6em; border-radius:11em; }
-
-/* ---- the BACK: the crest on the team's cloth, for the face-down grid ------ */
-.card.back .c-scene::before {
-  background-image:
-    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
-    repeating-linear-gradient(-45deg, rgba(255,255,255,.06) 0 .6em, transparent .6em 2.4em),
-    radial-gradient(80% 70% at 50% 40%, color-mix(in srgb, var(--team) 80%, #000), color-mix(in srgb, var(--team) 25%, #000));
-  background-size:auto; background-position:0 0; filter:none;
-}
-.card.back .c-scene::after { background:radial-gradient(70% 70% at 50% 100%, rgba(0,0,0,.5), transparent); }
-.card.back .c-mark, .card.back .c-hero, .card.back .c-badge, .card.back .c-plate, .card.back .c-pips, .card.back .c-crest, .card.back .c-frame::after { display:none; }
-.card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
-.card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
-.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:14em; font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
-.card.back.fmt-tiny .c-back img { width:70%; }
-.card.back.fmt-tiny .c-back::after { display:none; }
-
-/* an OBJECT: a card with no grade and no tier — the flag, a trap, the
-   ground a camp is built on. No badge, no watermark, no pips, and the plate
-   says what kind of card it is where a rarity would be. The piece is a
-   standing prop rather than a figure, so it is centred rather than stood on
-   the plate, and a touch smaller. */
-.card.object .c-badge, .card.object .c-mark, .card.object .c-pips { display:none; }
-.card.object .c-hero { align-items:center; }
-.card.object .c-hero img { max-width:82%; max-height:82%; }
-.fmt-mid.object .c-hero img, .fmt-tiny.object .c-hero img { height:74%; margin:0; }
-.fmt-mid.object .c-name { font-size:8.5em; }
-
-/* a GHOST: a card the player has never had — never owned for an officer,
-   never met for an object. The painted piece flattened to its own WHITE
-   silhouette, the way an unowned sticker is (packages/webshell/meta.css),
-   the scene drained, no pips, no crest, the name a ???. The grade and the
-   tier badges stay — the grade names the slot, the tier says at what rank
-   the card is shown — drawn in the ghost's slate rather than a rarity. */
-.card.ghost .c-hero img { filter:brightness(0) invert(1) opacity(.26); }
-.card.ghost .c-scene { filter:grayscale(1) brightness(.55); }
-.card.ghost .c-pips, .card.ghost .c-tier, .card.ghost .c-crest { display:none; }
-.card.ghost .c-name { opacity:.6; letter-spacing:.3em; }
-
-/* motion off: a still card for a screenshot */
-.still .c-frame::before, .still .c-frame::after, .still .c-mark b { animation:none !important; }
-/* ============================ END OF THE CARD ============================== */
+.shelf .slot small.under { color:#ff8a8a; }
+/* the panel against CONFIG.cards */
+.sync { font-size:12px; font-weight:500; line-height:1.5; color:#9c9cba; padding:8px 10px; border-radius:8px; background:#1a1a28; border:1px solid #2c2c44; }
+.sync.same { color:#8fd19e; border-color:#2f5a3a; }
+.sync.diff { color:#f2c14e; border-color:#6b5520; }
+.sync code { font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+/* AS DEALT IN THE GAME: one row per format, one card per place */
+.dealt-row { display:flex; align-items:flex-start; gap:18px; padding:14px 14px 0; }
+.dealt-row > small { flex:0 0 86px; padding-top:10px; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f6a90; }
+.dealt-row .shelf { padding:12px 0 6px; gap:30px 26px; }
+.slot .src { display:block; font-size:9px; letter-spacing:1px; opacity:.6; }
 </style>
 </head>
 <body>
@@ -833,190 +251,342 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
   <h1>Stratideck cards</h1>
   <p class="hint">Dress the painted officers as cards: full, grid square, tiny token.</p>
 
-  <h2>Card</h2>
-  <div class="row">
-    <label for="rank">rank <b id="rank-v"></b></label>
-    <select id="rank"></select>
-  </div>
-  <div class="row">
-    <label>side</label>
-    <div class="seg" data-key="side">
-      <button data-v="blue">Blue army</button><button data-v="red">Red camp</button>
-    </div>
-  </div>
-  <div class="row">
-    <label>frame style</label>
-    <div class="seg wrap" data-key="style">
-      <button data-v="foil">Foil</button><button data-v="holo">Holo</button><button data-v="ember">Ember</button>
-      <button data-v="forge">Forge</button><button data-v="ash">Ash</button><button data-v="chamfer">Chamfer</button>
-      <button data-v="hex">Hex</button><button data-v="steel">Steel</button><button data-v="parchment">Parchment</button>
-      <button data-v="stone">Stone</button>
-    </div>
-  </div>
+  <details class="grp" data-grp="game" open>
+    <summary>The game</summary>
+    <div id="sync" class="sync">Reading CONFIG.cards out of game.js…</div>
+    <button class="act quiet" id="reset-game">Reset to the game</button>
+    <button class="act" id="copy-cfg">Copy the card settings</button>
+    <p class="hint" style="margin-top:8px">The frame, the badges and the numbers above, as the <code>cards</code> block of CONFIG in games/stratideck/game.js. The card's CSS is not copied from here any more: it is games/stratideck/skin.css itself, linked by this page.</p>
+  </details>
 
-  <h2>Badges</h2>
-  <div class="row">
-    <label for="tier">tier <b id="tier-v"></b></label>
-    <select id="tier">
-      <option value="auto">By rank (the table below)</option>
-      <option value="S">S · legendary</option><option value="A">A · epic</option><option value="B">B · rare</option>
-      <option value="C">C · uncommon</option><option value="D">D · common</option><option value="E">E · basic</option>
-    </select>
-  </div>
-  <label class="chk"><input id="rankOn" type="checkbox" checked> rank badge, the number, soft glow</label>
-  <div class="row">
-    <label>rank badge design</label>
-    <div class="seg wrap" data-key="brank">
-      <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
-      <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
-      <button data-v="scroll">Scroll</button>
+  <details class="grp" data-grp="card" open>
+    <summary>Card</summary>
+    <div class="row">
+      <label for="rank">rank <b id="rank-v"></b></label>
+      <select id="rank"></select>
     </div>
-  </div>
-  <div class="row">
-    <label>rank badge place</label>
-    <div class="seg wrap" data-key="arank">
-      <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
-      <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
-      <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+    <div class="row">
+      <label>side</label>
+      <div class="seg" data-key="side">
+        <button data-v="blue">Blue army</button><button data-v="red">Red camp</button>
+      </div>
     </div>
-  </div>
-  <label class="chk"><input id="perkOn" type="checkbox" checked> macaron, what the grade is for (blue army)</label>
-  <label class="chk"><input id="tierOn" type="checkbox" checked> tier badge, the letter, dark rim, hard shadow</label>
-  <div class="row">
-    <label>tier badge design</label>
-    <div class="seg wrap lv" data-key="btier">
-      <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
-      <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
-      <button data-v="scroll">Scroll</button>
+    <div class="row">
+      <label>frame style</label>
+      <div class="seg wrap" data-key="style">
+        <button data-v="foil">Foil</button><button data-v="holo">Holo</button><button data-v="ember">Ember</button>
+        <button data-v="forge">Forge</button><button data-v="ash">Ash</button><button data-v="chamfer">Chamfer</button>
+        <button data-v="hex">Hex</button><button data-v="steel">Steel</button><button data-v="parchment">Parchment</button>
+        <button data-v="stone">Stone</button>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <label>tier badge place</label>
-    <div class="seg wrap lv" data-key="atier">
-      <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
-      <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
-      <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+    <div class="row">
+      <label>language <b id="lang-v"></b></label>
+      <div class="seg" data-key="lang">
+        <button data-v="en">English</button><button data-v="fr">Français</button>
+      </div>
     </div>
-  </div>
+  </details>
 
-  <h2>Scene</h2>
-  <div class="row">
-    <label for="band">band backdrop <b id="band-v">1</b></label>
-    <input id="band" type="range" min="1" max="5" value="1">
-  </div>
-  <div class="row">
-    <label for="zoom">zoom <b id="zoom-v">2.6</b></label>
-    <input id="zoom" type="range" min="10" max="50" value="26">
-  </div>
-  <div class="row">
-    <label for="blur">blur <b id="blur-v">6</b></label>
-    <input id="blur" type="range" min="0" max="16" value="6">
-  </div>
-  <div class="row">
-    <label for="fx">focus x <b id="fx-v">50</b></label>
-    <input id="fx" type="range" min="0" max="100" value="50">
-  </div>
-  <div class="row">
-    <label for="fy">focus y <b id="fy-v">40</b></label>
-    <input id="fy" type="range" min="0" max="100" value="40">
-  </div>
-  <label class="chk"><input id="vary" type="checkbox" checked> each rank looks at a different patch</label>
-
-  <h2>Dressing</h2>
-  <div class="row">
-    <label for="hero">hero height <b id="hero-v">78</b>%</label>
-    <input id="hero" type="range" min="50" max="95" value="78">
-  </div>
-  <div class="row">
-    <label for="mark">watermark opacity <b id="mark-v">.5</b></label>
-    <input id="mark" type="range" min="0" max="100" value="50">
-  </div>
-  <div class="row">
-    <label for="mx">watermark x <b id="mx-v">0</b>%</label>
-    <input id="mx" type="range" min="-40" max="40" value="0">
-  </div>
-  <label class="chk"><input id="markover" type="checkbox" checked> watermark over the hero</label>
-  <label class="chk"><input id="tilt" type="checkbox" checked> tilt on hover</label>
-  <label class="chk"><input id="motion" type="checkbox" checked> frame animations</label>
-  <label class="chk"><input id="checker" type="checkbox"> checkerboard stage</label>
-
-  <h2>Bust framing</h2>
-  <p class="hint" style="margin:0 0 10px">The two squares crop the officer, and he may be cut by the card. Zoom in and push him down to frame the face alone.</p>
-  <div class="row">
-    <label for="midz">mid zoom <b id="midz-v">1.35</b>×</label>
-    <input id="midz" type="range" min="80" max="500" value="135">
-  </div>
-  <div class="row">
-    <label for="midx">mid x <b id="midx-v">0</b>%</label>
-    <input id="midx" type="range" min="-100" max="100" value="0">
-  </div>
-  <div class="row">
-    <label for="midy">mid y <b id="midy-v">16</b>%</label>
-    <input id="midy" type="range" min="-100" max="150" value="16">
-  </div>
-  <div class="row">
-    <label for="tinyz">tiny zoom <b id="tinyz-v">1.8</b>×</label>
-    <input id="tinyz" type="range" min="80" max="600" value="180">
-  </div>
-  <div class="row">
-    <label for="tinyx">tiny x <b id="tinyx-v">0</b>%</label>
-    <input id="tinyx" type="range" min="-100" max="100" value="0">
-  </div>
-  <div class="row">
-    <label for="tinyy">tiny y <b id="tinyy-v">26</b>%</label>
-    <input id="tinyy" type="range" min="-100" max="200" value="26">
-  </div>
-
-  <h2>Sizes</h2>
-  <div class="row">
-    <label for="wfull">full <b id="wfull-v">300</b>px</label>
-    <input id="wfull" type="range" min="160" max="420" value="300">
-  </div>
-  <div class="row">
-    <label for="wmid">mid <b id="wmid-v">170</b>px</label>
-    <input id="wmid" type="range" min="90" max="260" value="170">
-  </div>
-  <div class="row">
-    <label for="wtiny">tiny <b id="wtiny-v">64</b>px</label>
-    <input id="wtiny" type="range" min="36" max="120" value="64">
-  </div>
-
-  <h2>Gallery</h2>
-  <div class="row">
-    <label>format</label>
-    <div class="seg" data-key="gfmt">
-      <button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+  <details class="grp" data-grp="full" open>
+    <summary>Full card · 5:7</summary>
+    <div class="row">
+        <label for="rfull">full reference <b id="rfull-v">125</b>px</label>
+        <input id="rfull" type="range" min="100" max="320" value="125">
+      </div>
+    <div class="row">
+      <label for="hero">hero height <b id="hero-v">78</b>%</label>
+      <input id="hero" type="range" min="50" max="95" value="78">
     </div>
-  </div>
-
-  <h2>Cast</h2>
-  <div class="row">
-    <label>army</label>
-    <div class="seg" data-key="cside">
-      <button data-v="blue">Blue</button><button data-v="red">Red</button><button data-v="turn">Turncoats</button>
+    <p class="sub">grade badge</p>
+    <div class="row">
+      <label for="rankFull">size <b id="rankFull-v">1</b>×</label>
+      <input id="rankFull" type="range" min="40" max="250" value="100">
     </div>
-  </div>
-  <div class="row">
-    <label>format</label>
-    <div class="seg" data-key="cfmt">
-      <button data-v="all">All</button><button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+    <div class="row">
+      <label for="rankFullX">x <b id="rankFullX-v">0</b>%</label>
+      <input id="rankFullX" type="range" min="-40" max="40" value="0">
     </div>
-  </div>
-  <label class="chk"><input id="cpainted" type="checkbox" checked> painted only — hide the officers still wearing their grade's face</label>
+    <div class="row">
+      <label for="rankFullY">y <b id="rankFullY-v">0</b>%</label>
+      <input id="rankFullY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">tier badge</p>
+    <div class="row">
+      <label for="tierFull">size <b id="tierFull-v">1</b>×</label>
+      <input id="tierFull" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="tierFullX">x <b id="tierFullX-v">0</b>%</label>
+      <input id="tierFullX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="tierFullY">y <b id="tierFullY-v">0</b>%</label>
+      <input id="tierFullY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">macaron</p>
+    <div class="row">
+      <label for="perkFull">size <b id="perkFull-v">1</b>×</label>
+      <input id="perkFull" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="perkFullX">x <b id="perkFullX-v">0</b>%</label>
+      <input id="perkFullX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="perkFullY">y <b id="perkFullY-v">0</b>%</label>
+      <input id="perkFullY" type="range" min="-40" max="40" value="0">
+    </div>
+  </details>
 
-  <h2>Tier by rank</h2>
-  <div id="tiers"></div>
+  <details class="grp" data-grp="mid" open>
+    <summary>Mid square</summary>
+    <div class="row">
+        <label for="rmid">mid reference <b id="rmid-v">112</b>px</label>
+        <input id="rmid" type="range" min="80" max="220" value="112">
+      </div>
+    <p class="hint">The two squares crop the officer, and he may be cut by the card. Zoom in and push him down to frame the face alone.</p>
+    <div class="row">
+      <label for="midz">mid zoom <b id="midz-v">1.35</b>×</label>
+      <input id="midz" type="range" min="80" max="500" value="135">
+    </div>
+    <div class="row">
+      <label for="midx">mid x <b id="midx-v">0</b>%</label>
+      <input id="midx" type="range" min="-100" max="100" value="0">
+    </div>
+    <div class="row">
+      <label for="midy">mid y <b id="midy-v">16</b>%</label>
+      <input id="midy" type="range" min="-100" max="150" value="16">
+    </div>
+    <p class="sub">grade badge</p>
+    <div class="row">
+      <label for="rankMid">size <b id="rankMid-v">1</b>×</label>
+      <input id="rankMid" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="rankMidX">x <b id="rankMidX-v">0</b>%</label>
+      <input id="rankMidX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="rankMidY">y <b id="rankMidY-v">0</b>%</label>
+      <input id="rankMidY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">tier badge</p>
+    <div class="row">
+      <label for="tierMid">size <b id="tierMid-v">1</b>×</label>
+      <input id="tierMid" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="tierMidX">x <b id="tierMidX-v">0</b>%</label>
+      <input id="tierMidX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="tierMidY">y <b id="tierMidY-v">0</b>%</label>
+      <input id="tierMidY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">macaron</p>
+    <div class="row">
+      <label for="perkMid">size <b id="perkMid-v">1</b>×</label>
+      <input id="perkMid" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="perkMidX">x <b id="perkMidX-v">0</b>%</label>
+      <input id="perkMidX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="perkMidY">y <b id="perkMidY-v">0</b>%</label>
+      <input id="perkMidY" type="range" min="-40" max="40" value="0">
+    </div>
+  </details>
 
-  <button class="act" id="copy-cfg">Copy the card settings</button>
-  <p class="hint" style="margin-top:8px">The frame, the badges and the numbers above, as the <code>cards</code> block of CONFIG in games/stratideck/game.js.</p>
-  <button class="act quiet" id="copy">Copy the card CSS</button>
-  <p class="hint" style="margin-top:8px">The block marked “the card itself”, which is pasted as it is into games/stratideck/skin.css.</p>
+  <details class="grp" data-grp="tiny" open>
+    <summary>Tiny token</summary>
+    <div class="row">
+        <label for="rtiny">tiny reference <b id="rtiny-v">58</b>px</label>
+        <input id="rtiny" type="range" min="40" max="140" value="58">
+      </div>
+    <div class="row">
+      <label for="tinyz">tiny zoom <b id="tinyz-v">1.8</b>×</label>
+      <input id="tinyz" type="range" min="80" max="600" value="180">
+    </div>
+    <div class="row">
+      <label for="tinyx">tiny x <b id="tinyx-v">0</b>%</label>
+      <input id="tinyx" type="range" min="-100" max="100" value="0">
+    </div>
+    <div class="row">
+      <label for="tinyy">tiny y <b id="tinyy-v">26</b>%</label>
+      <input id="tinyy" type="range" min="-100" max="200" value="26">
+    </div>
+    <p class="sub">grade badge</p>
+    <div class="row">
+      <label for="rankTiny">size <b id="rankTiny-v">1</b>×</label>
+      <input id="rankTiny" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="rankTinyX">x <b id="rankTinyX-v">0</b>%</label>
+      <input id="rankTinyX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="rankTinyY">y <b id="rankTinyY-v">0</b>%</label>
+      <input id="rankTinyY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">tier badge</p>
+    <div class="row">
+      <label for="tierTiny">size <b id="tierTiny-v">1</b>×</label>
+      <input id="tierTiny" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="tierTinyX">x <b id="tierTinyX-v">0</b>%</label>
+      <input id="tierTinyX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="tierTinyY">y <b id="tierTinyY-v">0</b>%</label>
+      <input id="tierTinyY" type="range" min="-40" max="40" value="0">
+    </div>
+    <p class="sub">macaron</p>
+    <div class="row">
+      <label for="perkTiny">size <b id="perkTiny-v">1</b>×</label>
+      <input id="perkTiny" type="range" min="40" max="250" value="100">
+    </div>
+    <div class="row">
+      <label for="perkTinyX">x <b id="perkTinyX-v">0</b>%</label>
+      <input id="perkTinyX" type="range" min="-40" max="40" value="0">
+    </div>
+    <div class="row">
+      <label for="perkTinyY">y <b id="perkTinyY-v">0</b>%</label>
+      <input id="perkTinyY" type="range" min="-40" max="40" value="0">
+    </div>
+  </details>
+
+  <details class="grp" data-grp="badges">
+    <summary>Badges and macaron</summary>
+    <div class="row">
+      <label for="tier">tier <b id="tier-v"></b></label>
+      <select id="tier">
+        <option value="auto">By rank (the table below)</option>
+        <option value="S">S · legendary</option><option value="A">A · epic</option><option value="B">B · rare</option>
+        <option value="C">C · uncommon</option><option value="D">D · common</option><option value="E">E · basic</option>
+      </select>
+    </div>
+    <label class="chk"><input id="rankOn" type="checkbox" checked> rank badge, the number, soft glow</label>
+    <div class="row">
+      <label>rank badge design</label>
+      <div class="seg wrap" data-key="brank">
+        <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
+        <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
+        <button data-v="scroll">Scroll</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>rank badge place</label>
+      <div class="seg wrap" data-key="arank">
+        <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
+        <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
+        <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+      </div>
+    </div>
+    <label class="chk"><input id="tierOn" type="checkbox" checked> tier badge, the letter, dark rim, hard shadow</label>
+    <div class="row">
+      <label>tier badge design</label>
+      <div class="seg wrap lv" data-key="btier">
+        <button data-v="shield">Shield</button><button data-v="crown">Crown</button><button data-v="seal">Seal</button>
+        <button data-v="medal">Medal</button><button data-v="dogtag">Dog tag</button><button data-v="burst">Burst</button>
+        <button data-v="scroll">Scroll</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>tier badge place</label>
+      <div class="seg wrap lv" data-key="atier">
+        <button data-v="auto">Design</button><button data-v="tl">Top left</button><button data-v="t">Top</button>
+        <button data-v="tr">Top right</button><button data-v="r">Right</button><button data-v="br">Bottom right</button>
+        <button data-v="b">Bottom</button><button data-v="bl">Bottom left</button><button data-v="l">Left</button>
+      </div>
+    </div>
+    <label class="chk"><input id="perkOn" type="checkbox" checked> macaron, what the grade is for (blue army)</label>
+  </details>
+
+  <details class="grp" data-grp="scene">
+    <summary>Scene</summary>
+    <div class="row">
+      <label for="band">band backdrop <b id="band-v">1</b></label>
+      <input id="band" type="range" min="1" max="5" value="1">
+    </div>
+    <div class="row">
+      <label for="zoom">zoom <b id="zoom-v">2.6</b></label>
+      <input id="zoom" type="range" min="10" max="50" value="26">
+    </div>
+    <div class="row">
+      <label for="blur">blur <b id="blur-v">6</b></label>
+      <input id="blur" type="range" min="0" max="16" value="6">
+    </div>
+    <div class="row">
+      <label for="fx">focus x <b id="fx-v">50</b></label>
+      <input id="fx" type="range" min="0" max="100" value="50">
+    </div>
+    <div class="row">
+      <label for="fy">focus y <b id="fy-v">40</b></label>
+      <input id="fy" type="range" min="0" max="100" value="40">
+    </div>
+    <label class="chk"><input id="vary" type="checkbox" checked> each rank looks at a different patch</label>
+  </details>
+
+  <details class="grp" data-grp="dressing">
+    <summary>Watermark and page</summary>
+    <div class="row">
+      <label for="mark">watermark opacity <b id="mark-v">.5</b></label>
+      <input id="mark" type="range" min="0" max="100" value="50">
+    </div>
+    <div class="row">
+      <label for="mx">watermark x <b id="mx-v">0</b>%</label>
+      <input id="mx" type="range" min="-40" max="40" value="0">
+    </div>
+    <label class="chk"><input id="markover" type="checkbox" checked> watermark over the hero</label>
+    <label class="chk"><input id="tilt" type="checkbox" checked> tilt on hover</label>
+    <label class="chk"><input id="motion" type="checkbox" checked> frame animations</label>
+    <label class="chk"><input id="checker" type="checkbox"> checkerboard stage</label>
+  </details>
+
+  <details class="grp" data-grp="gallery">
+    <summary>Gallery</summary>
+    <div class="row">
+      <label>format</label>
+      <div class="seg" data-key="gfmt">
+        <button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="grp" data-grp="cast">
+    <summary>Cast</summary>
+    <div class="row">
+      <label>army</label>
+      <div class="seg" data-key="cside">
+        <button data-v="blue">Blue</button><button data-v="red">Red</button><button data-v="turn">Turncoats</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>format</label>
+      <div class="seg" data-key="cfmt">
+        <button data-v="all">All</button><button data-v="full">Full</button><button data-v="mid">Mid</button><button data-v="tiny">Tiny</button>
+      </div>
+    </div>
+    <label class="chk"><input id="cpainted" type="checkbox" checked> painted only — hide the officers still wearing their grade's face</label>
+  </details>
+
+  <details class="grp" data-grp="tiers">
+    <summary>Tier by rank</summary>
+    <div id="tiers"></div>
+  </details>
 </div>
 
 <div id="stage">
   <div class="sec">
     <h3>The three formats <span>full 5:7 · mid square · tiny token · and the back</span></h3>
     <div class="shelf" id="hero-shelf"></div>
+  </div>
+  <div class="sec">
+    <h3>As dealt in the game <span id="dealt-sub"></span></h3>
+    <div id="dealt"></div>
   </div>
   <div class="sec">
     <h3>The seven badges <span>the number on the left, the tier letter on the right — click one to use it for the rank, shift-click for the tier; each design brings its own spot on the card</span></h3>
@@ -1054,8 +624,10 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
 
   /* ---- the material -------------------------------------------------------
      Paths are relative to lab/, which is allowed here and nowhere else. */
-  const MASTER = "../assets/image/master/";
-  const EMBED  = "../assets/image/embed/";
+  /* ABSOLUTE, because a url() written into a custom property (`--bgi`) is
+     resolved against the stylesheet that USES it — games/stratideck/skin.css
+     — and not against this page: "../assets/" read from there is games/assets/. */
+  const EMBED  = new URL("../assets/image/embed/", location.href).href;
   const CREST  = { blue: EMBED + "stratideck-piece-01.webp", red: EMBED + "stratideck-piece-02.webp" };
   const TEAM   = { blue: "#5aa9ff", red: "#ff5c5c" };
   const STYLES = ["foil", "holo", "ember", "forge", "ash", "chamfer", "hex", "steel", "parchment", "stone"];
@@ -1165,6 +737,62 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
   /* the rims of a card with no tier (game.js, OBJECT_RIM / GHOST_RIM) */
   const OBJECT_RIM = "#c9a86a", GHOST_RIM = "#69718a";
 
+  /* WHERE THE GAME DEALS A CARD, and at what width. Worked out of the
+     sources for the 720×1280 web frame with no device inset (Layout.w 668):
+     the round's out of geometry() in games/stratideck/game.js (HAND_W, the
+     grid's cell, TOKEN, DUEL_W, the crown's pile), the barracks' out of the
+     constants of packages/webshell/army.js. The grid's cell shrinks as the
+     level adds columns and rows, so it is listed at both ends. A number here
+     moves when one of those constants does — it is a reading, not a tunable. */
+  const SPOTS = {
+    full: [
+      { w: 159, where: "Hand, 4 cards",       src: "round" },
+      { w: 125, where: "Hand, 5 cards",       src: "round" },
+      { w: 312, where: "Duel",                src: "round" },
+      { w: 186, where: "Recruit tent",        src: "barracks" },
+      { w: 240, where: "Prisoner, 1 or 2",    src: "barracks" },
+      { w: 185, where: "Prisoners, 3",        src: "barracks" },
+      { w: 300, where: "Codex",               src: "barracks" },
+      { w: 540, where: "File, face",          src: "barracks" }
+    ],
+    mid: [
+      { w: 155, where: "Grid, 4 × 3",         src: "round" },
+      { w: 200, where: "Promotion",           src: "barracks" },
+      { w: 150, where: "Deck, ward, roll",    src: "barracks" },
+      { w: 112, where: "Camp post",           src: "barracks" }
+    ],
+    tiny: [
+      { w: 121, where: "Grid, 5 columns",     src: "round" },
+      { w: 97,  where: "Grid, 6 × 6",         src: "round" },
+      { w: 112, where: "Token on a 4 × 3",    src: "round" },
+      { w: 70,  where: "Token on a 6 × 6",    src: "round" },
+      { w: 58,  where: "Crown's pile",        src: "round" },
+      { w: 100, where: "Card picker",         src: "barracks" },
+      { w: 96,  where: "Report, reward",      src: "barracks" },
+      { w: 86,  where: "Squad slot",          src: "barracks" },
+      { w: 76,  where: "Squad, report",       src: "barracks" },
+      { w: 72,  where: "Mission's favourite", src: "barracks" }
+    ]
+  };
+  /* the names in the player's language: web.copy.fr.strings of the manifest,
+     keyed by the English, read over HTTP (a file:// page cannot) */
+  let FR = null;
+  /* CONFIG.cards as game.js has it (read over HTTP), and the keys it carries */
+  let GAME = null;
+  const CFG_KEYS = ["style", "brank", "btier", "arank", "atier", "rankOn", "tierOn", "zoom", "blur", "vary",
+                    "hero", "mark", "mx", "markover", "midz", "midx", "midy", "tinyz", "tinyx", "tinyy",
+                    "rfull", "rmid", "rtiny",
+                    "rankFull", "tierFull", "perkFull", "rankMid", "tierMid", "perkMid", "rankTiny", "tierTiny", "perkTiny"];
+  /* ...and where each one sits: an offset from its design's own place, in
+     percents of the card's width, x to the right and y down */
+  ["Full", "Mid", "Tiny"].forEach((F) => ["rank", "tier", "perk"].forEach((k) => CFG_KEYS.push(k + F + "X", k + F + "Y")));
+  /* what a key the game does not carry yet stands for there: the badges and
+     the macaron at their format's own size, a scale of 1 */
+  const CFG_DEFAULT = { rankFull: 1, tierFull: 1, perkFull: 1, rankMid: 1, tierMid: 1, perkMid: 1, rankTiny: 1, tierTiny: 1, perkTiny: 1 };
+  CFG_KEYS.forEach((k) => { if (/[XY]$/.test(k)) CFG_DEFAULT[k] = 0; });
+  const round2 = (v) => typeof v === "number" ? Math.round(v * 100) / 100 : v;
+  function tr(s) { return P.lang === "fr" && FR && FR[s] ? FR[s] : s; }
+
   /* the tier a card wears: the override from the panel, else the rank's own */
   function tierOf(r) { return P.tier !== "auto" ? P.tier : r.tier; }
   /* where each rank's scene looks, when "vary" is on */
@@ -1196,11 +824,16 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
      games/stratideck/game.js), so the page opens on what the round deals. */
   const P = {
     rank: 10, side: "blue", style: "forge", band: 1,
-    tier: "auto", brank: "shield", btier: "burst", arank: "auto", atier: "br", rankOn: true, tierOn: true, perkOn: true,
+    tier: "auto", brank: "shield", btier: "seal", arank: "tl", atier: "br", rankOn: true, tierOn: true, perkOn: true,
     zoom: 2.6, blur: 2, fx: 50, fy: 40, vary: true,
     hero: 95, mark: 0.5, mx: -28, markover: false, tilt: true, motion: true, checker: false,
-    midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65,
-    wfull: 300, wmid: 170, wtiny: 64, gfmt: "mid", cfmt: "all", cside: "blue", cpainted: true
+    midz: 1.49, midx: -4, midy: 16, tinyz: 2.23, tinyx: -11, tinyy: 59,
+    rfull: 125, rmid: 112, rtiny: 58,
+    rankFull: 1, tierFull: 1.3, perkFull: 0.86, rankMid: 1.6, tierMid: 2.19, perkMid: 1.42, rankTiny: 1.21, tierTiny: 1.5, perkTiny: 1.09,
+    rankFullX: 0, rankFullY: 0, tierFullX: 0, tierFullY: -17, perkFullX: 5, perkFullY: -4,
+    rankMidX: 2, rankMidY: 4, tierMidX: 2, tierMidY: -8, perkMidX: 1, perkMidY: -26,
+    rankTinyX: -1, rankTinyY: 0, tierTinyX: -1, tierTinyY: -6, perkTinyX: 0, perkTinyY: -2,
+    gfmt: "mid", cfmt: "all", cside: "blue", cpainted: true, lang: "en"
   };
   /* THE PANEL REMEMBERS. A composition made here used to live in the tab and
      nowhere else: close it, and the only record of the look was a screenshot.
@@ -1211,7 +844,9 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     const kept = JSON.parse(localStorage.getItem(SAVE) || "{}");
     Object.keys(kept).forEach((k) => { if (k in P && typeof kept[k] === typeof P[k]) P[k] = kept[k]; });
   } catch (e) { /* no storage: the defaults stand */ }
-  function keep() { try { localStorage.setItem(SAVE, JSON.stringify(P)); } catch (e) { /* ignore */ } }
+  function keep() {
+    try { localStorage.setItem(SAVE, JSON.stringify(P)); } catch (e) { /* ignore */ }
+  }
   /* ?side=red&style=hex&brank=crown&btier=seal&tier=S&gfmt=full&rank=1 pins a state, for a link or a headless shot */
   new URLSearchParams(location.search).forEach((v, k) => {
     if (!(k in P)) return;
@@ -1231,6 +866,79 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     return '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[n].svg + "</svg></div>";
   }
 
+  /* ONE SIZE PER LINE: every grade's name at the size of the longest one,
+     every rarity at the size of the longest rarity — per format and per
+     language, so a LIEUTENANT and a GENERAL dealt side by side read at the
+     same size. Measured once on a card nobody sees, at the reference
+     width (the ratio holds at any other), for the frame style in use, and
+     written on the root as `--nfit-full`, `--tfit-full` and `--nfit-mid`,
+     which the SKIN hands to every card that is not an object. `names` and
+     `tiers` are the words as they are shown (translated, in capitals). */
+  var plateKey = "";
+  function plateFit(style, refs, names, tiers, key) {
+    if (key === plateKey || !document.body) return;
+    plateKey = key;
+    var host = document.createElement("div"), out = {};
+    host.style.cssText = "position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none";
+    document.body.appendChild(host);
+    [["full", refs.full], ["mid", refs.mid]].forEach(function (f) {
+      var n = document.createElement("div");
+      n.className = "card static fmt-" + f[0] + " style-" + style + " tier-rare";
+      n.style.cssText = "--w:" + f[1] + "px;--h:" + (f[0] === "full" ? Math.round(f[1] * 1.4) : f[1]) +
+        "px;--sk:1;--nfit:1;--tfit:1";
+      n.innerHTML = '<div class="c-body"><div class="c-plate"><span class="c-name"></span><span class="c-tier"></span></div></div>';
+      host.appendChild(n);
+      var plate = n.querySelector(".c-plate"), cs = getComputedStyle(plate);
+      var room = plate.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var widest = function (sel, list) {
+        var el = plate.querySelector(sel), rg = document.createRange(), max = 0;
+        for (var i = 0; i < list.length; i++) {
+          el.textContent = list[i];
+          rg.selectNodeContents(el);
+          max = Math.max(max, rg.getBoundingClientRect().width);
+        }
+        return max;
+      };
+      var fit = function (w) { return w > room && room > 0 ? Math.max(0.3, room / w) : 1; };
+      out["n" + f[0]] = fit(widest(".c-name", names));
+      if (f[0] === "full") out.tfull = fit(widest(".c-tier", tiers));
+    });
+    host.parentNode.removeChild(host);
+    var root = document.documentElement.style;
+    root.setProperty("--nfit-full", out.nfull.toFixed(3));
+    root.setProperty("--tfit-full", out.tfull.toFixed(3));
+    root.setProperty("--nfit-mid", out.nmid.toFixed(3));
+  }
+
+  /* game.js fitName: the plate's two lines — the grade and, on a full card,
+     the rarity — shrunk to the plate (the SKIN's `--nfit` / `--tfit`) */
+  function fitName(n) {
+    var fmt = n.classList.contains("fmt-mid") ? "mid" : n.classList.contains("fmt-full") ? "full" : "";
+    if (!fmt || typeof ResizeObserver === "undefined") return;
+    var plate = n.querySelector(".c-plate");
+    if (!plate) return;
+    var ro = new ResizeObserver(function () {
+      if (!plate.clientWidth) return;
+      ro.disconnect();
+      /* in screen boxes, so a card scaled or turning is measured as it
+         stands: the ratio is all that is kept */
+      var pr = plate.getBoundingClientRect();
+      var k = pr.width / plate.clientWidth, cs = getComputedStyle(plate);
+      var room = pr.width - (parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)) * k;
+      /* each line on its own: the text's width, not its block's — a Range
+         over the letters — against the plate's */
+      [[".c-name", "--nfit"], [".c-tier", "--tfit"]].forEach(function (l) {
+        var line = plate.querySelector(l[0]);
+        if (!line || !line.textContent) return;
+        var rg = document.createRange();
+        rg.selectNodeContents(line);
+        var w = rg.getBoundingClientRect().width;
+        n.style.setProperty(l[1], w > room ? Math.max(0.3, room / w).toFixed(3) : "1");
+      });
+    });
+    ro.observe(plate);
+  }
+
   /* ---- one card ------------------------------------------------------------
      build(rank, side, fmt, style, opt) returns the node; every number it needs
      is a CSS variable, so a knob change is a restyle and never a rebuild. */
@@ -1247,46 +955,56 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     el.style.setProperty("--rar", ghost ? GHOST_RIM : obj ? OBJECT_RIM : tier.color);
     el.style.setProperty("--team", TEAM[side]);
     el.dataset.rank = r.n; el.dataset.side = side; el.dataset.fmt = fmt;
+    if (obj) el.dataset.obj = "1";
+    if (opt.w) el.dataset.w = opt.w;
 
     const pips = [];
     for (let i = 0; tiered && i < tier.pips; i++) pips.push("<i></i>");
-    const name = ghost ? "???" : upper(r.name);
+    const name = ghost ? "???" : upper(tr(r.name));
     el.innerHTML =
       '<div class="c-body">' +
       '<div class="c-frame"></div>' +
       '<div class="c-scene"></div>' +
       '<div class="c-mark' + (r.n >= 10 ? " two" : "") + '"><b>' + (obj ? "" : r.n) + "</b></div>" +
-      '<div class="c-hero" data-missing="no art"><img alt=""></div>' +
-      badge("rank", P.brank, obj ? "" : r.n, P.arank) +
-      badge("tier", P.btier, letter, P.atier) +
-      (!obj && side === "blue" && P.perkOn && PERK[r.n] ? perk(r.n) : "") +
+      '<div class="c-hero" data-missing="' + name + '"><img alt=""></div>' +
       '<div class="c-plate"><span class="c-name">' + name + '</span><span class="c-tier">' +
-        (ghost ? "" : upper(obj ? "Object" : tier.label)) + "</span></div>" +
+        (ghost ? "" : upper(tr(obj ? "Object" : tier.label))) + "</span></div>" +
       '<div class="c-pips">' + pips.join("") + "</div>" +
       '<div class="c-back"><img alt="" src="' + CREST[side] + '"></div>' +
-      "</div>";
+      '<div class="c-shine"></div>' +
+      "</div>" +
+      /* THE BADGES AND THE MACARON ARE SIBLINGS OF THE BODY, as the SKIN
+         says they are: `.c-body` clips to the card's outline, and inside it
+         a badge hung over the edge was cut, and the macaron in its corner
+         kept a quarter of its disc. game.js faceNode has them inside too —
+         to be moved with it. */
+      badge("rank", P.brank, obj ? "" : r.n, P.arank) +
+      badge("tier", P.btier, letter, P.atier) +
+      (!obj && side === "blue" && P.perkOn && PERK[r.n] ? perk(r.n) : "");
 
+    if (obj && !ghost) fitName(el);
     const img = el.querySelector(".c-hero img");
     img.onerror = () => { img.remove(); el.querySelector(".c-hero").classList.add("missing"); };
-    const face = MASTER + "stratideck-card-" + side + "-" + r.key + ".png";
-    if (opt.cast) {
-      /* the cast portrait (tools/lab/cast-sheets.mjs → encode-art), then what
-         the game falls back on where the sheet has not landed yet: a
-         turncoat on its red self, anyone on the grade's face (game.js,
-         castArt). The first miss marks the card as not painted. */
+    if (obj) {
+      img.src = EMBED + r.file;
+    } else {
+      /* THE FACE THE GAME DEALS (game.js, faceNode → castArt): the officer
+         of the cast at THIS card's tier — `assets/image/embed/`, the shipping
+         cut, never the master — then the turncoat's red self, then the
+         grade's own face. The first miss marks the card as not painted
+         (greyed by .nocast, which only the cast rows ask for). */
       const kind = opt.castKind || side, tail = (r.n < 10 ? "0" : "") + r.n + "-" + letter.toLowerCase() + ".webp";
       const chain = [EMBED + "stratideck-cast-" + kind + "-" + tail];
-      if (kind === "turn") chain.push(EMBED + "stratideck-cast-red-" + tail, MASTER + "stratideck-card-red-" + r.key + ".png");
-      else chain.push(face);
+      if (kind === "turn") chain.push(EMBED + "stratideck-cast-red-" + tail, EMBED + "stratideck-card-red-" + r.key + ".webp");
+      else chain.push(EMBED + "stratideck-card-" + side + "-" + r.key + ".webp");
       let at = 0;
       img.onerror = () => {
-        if (!at) { el.classList.add("nocast"); opt.cast(false); }
-        if (++at < chain.length) img.src = chain[at]; else img.onerror = null;
+        if (!at && opt.cast) { el.classList.add("nocast"); opt.cast(false); }
+        if (++at < chain.length) { img.src = chain[at]; return; }
+        img.onerror = null; img.remove(); el.querySelector(".c-hero").classList.add("missing");
       };
-      img.onload = () => { if (!at) opt.cast(true); img.onload = null; };
+      img.onload = () => { if (!at && opt.cast) opt.cast(true); img.onload = null; };
       img.src = chain[0];
-    } else {
-      img.src = obj ? EMBED + r.file : face;
     }
 
     // the tilt: the card turns toward the pointer, and no glare rides on it
@@ -1309,7 +1027,6 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     const f = P.vary && FOCUS[r] ? FOCUS[r] : [P.fx, P.fy];
     el.style.setProperty("--bgi", 'url("' + EMBED + "stratideck-background-phone-0" + P.band + '.webp")');
     el.style.setProperty("--zoom", P.zoom);
-    el.style.setProperty("--blur", P.blur + "px");
     el.style.setProperty("--fx", f[0] + "%");
     el.style.setProperty("--fy", f[1] + "%");
     el.style.setProperty("--hero", P.hero + "%");
@@ -1321,12 +1038,25 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     el.style.setProperty("--tinyz", P.tinyz);
     el.style.setProperty("--tinyx", P.tinyx + "%");
     el.style.setProperty("--tinyy", P.tinyy + "%");
-    const w = el.dataset.cmp ? Math.round(P.wfull * 0.62) : fmt === "full" ? P.wfull : fmt === "mid" ? P.wmid : P.wtiny;
+    // the grade badge, the tier badge and the macaron, at this format's own scale
+    const F = fmt.charAt(0).toUpperCase() + fmt.slice(1);
+    el.style.setProperty("--k-rank", P["rank" + F]);
+    el.style.setProperty("--k-tier", P["tier" + F]);
+    el.style.setProperty("--k-perk", P["perk" + F]);
+    ["rank", "tier", "perk"].forEach((k) => {
+      el.style.setProperty("--x-" + k, P[k + F + "X"]);
+      el.style.setProperty("--y-" + k, P[k + F + "Y"]);
+    });
+    // sizeNode, the game's: the width, the height, the blur read at 300px, the floors
+    const w = widthOf(el);
     el.style.setProperty("--w", w + "px");
-    if (fmt === "full") el.style.setProperty("--h", Math.round(w * 1.4) + "px");
+    el.style.setProperty("--h", (fmt === "full" ? Math.round(w * 1.4) : w) + "px");
+    el.style.setProperty("--blur", (P.blur * w / 300).toFixed(2) + "px");
+    el.style.setProperty("--sk", Math.max(1, w / refOf(fmt)).toFixed(3));
     el.classList.toggle("mark-over", P.markover);
-    el.classList.toggle("rank-on", P.rankOn);
-    el.classList.toggle("tier-on", P.tierOn);
+    // faceNode: the grade's badge on an officer only, the tier's on anything with a tier
+    el.classList.toggle("rank-on", P.rankOn && !el.dataset.obj);
+    el.classList.toggle("tier-on", P.tierOn && !el.dataset.obj);
     el.classList.toggle("still", !P.motion);
   }
 
@@ -1339,22 +1069,58 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
   const ghostRow  = document.getElementById("ghosts");
   const perkRow   = document.getElementById("perks");
 
-  function slot(node, label) {
+  /* THE SIZE OF A CARD IS ONE NUMBER (game.js, sizeNode). Each format is
+     composed once, at its reference width; a place shows it at its own
+     width, and since every length on a card is in em the card follows —
+     `--sk`, the width over the reference, scales the one thing in px, the
+     text floors. So a card at 2.5× is the reference card at 2.5×. */
+  function refOf(fmt) { return fmt === "full" ? P.rfull : fmt === "mid" ? P.rmid : P.rtiny; }
+  /* the width a card is shown at: its place (AS DEALT), else its reference */
+  function widthOf(el) { return el.dataset.w ? +el.dataset.w : refOf(el.dataset.fmt); }
+  const dims = (fmt, w) => fmt === "full" ? w + "×" + Math.round(w * 1.4) : String(w);
+  /* a card's caption: its format, its width and its scale — in red under 1,
+     where the words stay at their floor while the rest of the card shrinks */
+  function sizeLabel(fmt, w) {
+    const k = w / refOf(fmt);
+    return fmt + " · " + dims(fmt, w) + (Math.abs(k - 1) > 0.005 ? " · ×" + k.toFixed(2) : " · reference");
+  }
+  function slot(node, label, sub) {
     const s = document.createElement("div"); s.className = "slot";
     s.appendChild(node);
-    const t = document.createElement("small"); t.textContent = label; s.appendChild(t);
+    const t = document.createElement("small"); t.textContent = label;
+    const k = /· ×([0-9.]+)$/.exec(label);
+    if (k && +k[1] < 1) t.className = "under";
+    if (sub) { const b = document.createElement("span"); b.className = "src"; b.textContent = sub; t.appendChild(b); }
+    s.appendChild(t);
     return s;
   }
   function rankOf(n) { return RANKS.find((r) => r.n === n); }
 
   function rebuild() {
     const r = rankOf(P.rank);
+    // game.js plateFit: one size per line, for this style, these references, this language
+    plateFit(P.style, { full: P.rfull, mid: P.rmid }, RANKS.map((x) => upper(tr(x.name))),
+             ["Basic", "Common", "Uncommon", "Rare", "Epic", "Legendary"].map((x) => upper(tr(x))),
+             P.style + "." + P.rfull + "." + P.rmid + "." + P.lang + "." + !!FR);
     heroShelf.innerHTML = "";
-    heroShelf.appendChild(slot(build(r, P.side, "full", P.style), "full · " + P.wfull + "×" + Math.round(P.wfull * 1.4)));
-    heroShelf.appendChild(slot(build(r, P.side, "mid", P.style), "mid · " + P.wmid));
-    heroShelf.appendChild(slot(build(r, P.side, "tiny", P.style), "tiny · " + P.wtiny));
+    const shown = refOf;
+    ["full", "mid", "tiny"].forEach((fmt) => heroShelf.appendChild(slot(build(r, P.side, fmt, P.style), sizeLabel(fmt, shown(fmt)))));
     heroShelf.appendChild(slot(build(r, P.side, "mid", P.style, { back: true }), "back · mid"));
     heroShelf.appendChild(slot(build(r, P.side, "tiny", P.style, { back: true }), "back · tiny"));
+
+    // AS DEALT IN THE GAME: the same card at every place, the round's first, smallest first
+    const dealt = document.getElementById("dealt");
+    dealt.innerHTML = "";
+    ["full", "mid", "tiny"].forEach((fmt) => {
+      const row = document.createElement("div"); row.className = "dealt-row";
+      const t = document.createElement("small"); t.textContent = fmt; row.appendChild(t);
+      const shelf = document.createElement("div"); shelf.className = "shelf";
+      SPOTS[fmt].slice().sort((a, b) => (a.src === b.src ? 0 : a.src === "round" ? -1 : 1) || a.w - b.w).forEach((s) => {
+        shelf.appendChild(slot(build(r, P.side, fmt, P.style, { w: s.w }), sizeLabel(fmt, s.w), s.where + " · " + s.src));
+      });
+      row.appendChild(shelf);
+      dealt.appendChild(row);
+    });
 
     // the badge rack: every shape, as the pair, in the current card's rarity
     badgeRow.innerHTML = "";
@@ -1369,8 +1135,7 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
 
     styleRow.innerHTML = "";
     STYLES.forEach((st) => {
-      const c = build(r, P.side, "full", st); c.dataset.cmp = "1";
-      styleRow.appendChild(slot(c, st));
+      styleRow.appendChild(slot(build(r, P.side, "full", st), st));
     });
 
     // the macarons: each grade's disc at a reading size, with what it means
@@ -1437,9 +1202,9 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
 
     // every object in each of the three formats, one row per format
     objRow.innerHTML = "";
-    [["full", P.wfull + "×" + Math.round(P.wfull * 1.4)], ["mid", P.wmid], ["tiny", P.wtiny]].forEach(([fmt, size]) => {
+    ["full", "mid", "tiny"].map((f) => [f, shown(f)]).forEach(([fmt, w]) => {
       const row = document.createElement("div"); row.className = "fmtrow";
-      const t = document.createElement("small"); t.textContent = fmt + " · " + size; row.appendChild(t);
+      const t = document.createElement("small"); t.textContent = sizeLabel(fmt, w); row.appendChild(t);
       const grid = document.createElement("div"); grid.className = "grid";
       OBJECTS.forEach((o) => grid.appendChild(build(o, P.side, fmt, P.style)));
       row.appendChild(grid);
@@ -1453,6 +1218,7 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
   }
   function restyle() {
     keep();
+    paintSync();
     document.querySelectorAll(".card").forEach(dress);
     document.getElementById("stage").classList.toggle("checker", P.checker);
   }
@@ -1518,9 +1284,27 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
   range("tinyz", "tinyz", 0.01, 2, restyle);
   range("tinyx", "tinyx", 1, 0, restyle);
   range("tinyy", "tinyy", 1, 0, restyle);
-  range("wfull", "wfull", 1, 0, rebuild);
-  range("wmid", "wmid", 1, 0, rebuild);
-  range("wtiny", "wtiny", 1, 0, rebuild);
+  seg("lang", rebuild);
+  ["Full", "Mid", "Tiny"].forEach((F) => ["rank", "tier", "perk"].forEach((k) => {
+    range(k + F, k + F, 0.01, 2, restyle);
+    range(k + F + "X", k + F + "X", 1, 0, restyle);
+    range(k + F + "Y", k + F + "Y", 1, 0, restyle);
+  }));
+  range("rfull", "rfull", 1, 0, rebuild);
+  range("rmid", "rmid", 1, 0, rebuild);
+  range("rtiny", "rtiny", 1, 0, rebuild);
+  document.getElementById("dealt-sub").textContent =
+    "the ONE card of each format, composed at its reference and shown at every width the game deals it — the figure is the scale, in red under 1, where the words keep their floor";
+  /* the sections the panel was left with open, kept in this browser */
+  const OPEN = "lab:stratideck-card:open";
+  try {
+    const open = JSON.parse(localStorage.getItem(OPEN) || "null");
+    if (open) document.querySelectorAll("details.grp").forEach((d) => { d.open = open.indexOf(d.dataset.grp) >= 0; });
+  } catch (e) { /* the markup's own defaults stand */ }
+  document.querySelectorAll("details.grp").forEach((d) => d.addEventListener("toggle", () => {
+    const open = [...document.querySelectorAll("details.grp[open]")].map((x) => x.dataset.grp);
+    try { localStorage.setItem(OPEN, JSON.stringify(open)); } catch (e) { /* ignore */ }
+  }));
   check("vary", "vary", restyle);
   check("markover", "markover", restyle);
   check("rankOn", "rankOn", restyle);
@@ -1540,29 +1324,55 @@ button.act.quiet { background:#23233a; color:#e8e6f5; }
     tiers.appendChild(d);
   });
 
-  /* copy the card block out of this page's own stylesheet. The two markers
-     are searched WITH their banner punctuation: the page's header names both
-     of them in prose first, and a bare indexOf found the prose — the button
-     used to copy the header and the panel's own CSS, and not one card rule. */
   function copied(id, label) {
     const btn = document.getElementById(id); btn.textContent = "Copied";
     setTimeout(() => { btn.textContent = label; }, 1200);
   }
-  document.getElementById("copy").addEventListener("click", () => {
-    const css = document.querySelector("style").textContent;
-    const a = css.indexOf("THE CARD ITSELF —"), b = css.indexOf(" END OF THE CARD =");
-    const block = css.slice(css.lastIndexOf("/*", a), css.indexOf("*/", b) + 2);
-    navigator.clipboard.writeText(block).then(() => copied("copy", "Copy the card CSS"));
-  });
   /* the panel's choices, as the `cards` block of CONFIG in the game — the
      same names as P, so the paste needs no renaming */
   document.getElementById("copy-cfg").addEventListener("click", () => {
-    const keys = ["style", "brank", "btier", "arank", "atier", "rankOn", "tierOn", "zoom", "blur", "vary",
-                  "hero", "mark", "mx", "markover", "midz", "midx", "midy", "tinyz", "tinyx", "tinyy"];
-    const num = (v) => typeof v === "number" ? String(Math.round(v * 100) / 100) : JSON.stringify(v);
-    const txt = "    cards: {\n" + keys.map((k) => "      " + k + ": " + num(P[k])).join(",\n") + "\n    }";
+    const num = (v) => typeof v === "number" ? String(round2(v)) : JSON.stringify(v);
+    const txt = "    cards: {\n" + CFG_KEYS.map((k) => "      " + k + ": " + num(P[k])).join(",\n") + "\n    }";
     navigator.clipboard.writeText(txt).then(() => copied("copy-cfg", "Copy the card settings"));
   });
+
+  /* THE PANEL AGAINST THE GAME. CONFIG.cards is read back out of game.js
+     itself — the object literal after `cards: {` — so this box says whether
+     what the page shows is what the game deals, and names every knob that
+     is not. Over file:// the read is refused and the box says so. */
+  function paintSync() {
+    const syncBox = document.getElementById("sync");
+    if (!GAME) return;
+    const gameOf = (k) => k in GAME ? GAME[k] : CFG_DEFAULT[k];
+    const diff = CFG_KEYS.filter((k) => round2(P[k]) !== round2(gameOf(k)));
+    syncBox.className = "sync " + (diff.length ? "diff" : "same");
+    syncBox.innerHTML = diff.length
+      ? "Differs from the game on " + diff.length + ": " + diff.map((k) =>
+          "<code>" + k + "</code> " + round2(P[k]) + " (game " + round2(gameOf(k)) + (k in GAME ? "" : ", not read by the game yet") + ")").join(", ")
+      : "Same as CONFIG.cards in game.js.";
+  }
+  document.getElementById("reset-game").addEventListener("click", () => {
+    if (!GAME) return;
+    CFG_KEYS.forEach((k) => { if (k in GAME) P[k] = GAME[k]; else if (k in CFG_DEFAULT) P[k] = CFG_DEFAULT[k]; });
+    keep(); location.reload();
+  });
+  fetch("../games/stratideck/game.js").then((r) => r.ok ? r.text() : Promise.reject(r.status)).then((src) => {
+    const at = src.search(/\n\s*cards:\s*\{/);
+    if (at < 0) throw new Error("no cards block");
+    const open = src.indexOf("{", at), close = src.indexOf("}", open);
+    GAME = Function('"use strict"; return (' + src.slice(open, close + 1) + ");")();
+    paintSync();
+  }).catch(() => {
+    document.getElementById("sync").textContent = "game.js could not be read (file://?): open the page through make lab to compare.";
+    document.getElementById("reset-game").disabled = true;
+  });
+  /* the French names: web.copy.fr.strings of the manifest */
+  const langV = document.getElementById("lang-v");
+  fetch("../games/stratideck/manifest.json").then((r) => r.ok ? r.json() : Promise.reject(r.status)).then((m) => {
+    FR = (m.web && m.web.copy && m.web.copy.fr && m.web.copy.fr.strings) || {};
+    langV.textContent = "";
+    if (P.lang === "fr") rebuild();
+  }).catch(() => { langV.textContent = "no manifest (file://): English only"; });
 
   rebuild();
 })();

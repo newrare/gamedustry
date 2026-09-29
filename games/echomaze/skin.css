@@ -10,6 +10,10 @@
     /* the arc the whole game is drawn in, shared by the intro stage */
     --arc:#7ef9ff;
     --exit:#4ade80;
+    /* THE ROUND'S "!" STANDS ON TOP OF THE LEVEL PILL rather than beside it:
+       the launcher sits at the foot of the frame, just right of the pill, and
+       the "!" beside it would cover it (packages/webshell/meta.css). */
+    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
   }
   html, body { background:radial-gradient(820px 900px at 50% 30%, #101a4a 0%, #080d28 48%, #04060f 100%); }
   #intro-title {
@@ -193,8 +197,8 @@
   .demo-aim .demo-track::before {
     content:"EXIT"; position:absolute; left:240.2px; top:2px;
     width:51.2px; height:44px; box-sizing:border-box;
-    text-align:center; font:700 10px/12px system-ui,-apple-system,sans-serif;
-    letter-spacing:1.8px; color:#c8f7d6; text-shadow:0 0 9px rgba(74,222,128,.9);
+    text-align:center; font:700 18px/12px system-ui,-apple-system,sans-serif;
+    letter-spacing:.5px; color:#c8f7d6; text-shadow:0 0 9px rgba(74,222,128,.9);
     background-image:
       linear-gradient(180deg,#f2fff6,#35b365),
       linear-gradient(180deg,#f2fff6,#35b365),

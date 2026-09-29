@@ -106,6 +106,7 @@
     function box(n, min) {
       if (!n) return;
       n.style.fontSize = "";                  // back to the size the CSS asks for
+      n.style.whiteSpace = "";
       var size = parseFloat(window.getComputedStyle(n).fontSize);
       var room = n.clientWidth, floor = min || 12;
       if (!size || !room) return;
@@ -113,6 +114,10 @@
         size = Math.max(floor, Math.floor(size * room / n.scrollWidth) - 1);
         n.style.fontSize = size + "px";
       }
+      /* THE FLOOR WINS OVER THE ONE LINE. A line still too wide at its floor
+         takes a second one rather than going under it (CLAUDE.md, the type
+         floor): a statement on two lines reads, one in 12 px does not. */
+      if (n.scrollWidth > room) n.style.whiteSpace = "normal";
     }
 
     function all() { for (var id in ROOM) if (ROOM.hasOwnProperty(id)) one(id); }
@@ -256,7 +261,8 @@
        icon  a shell piece (coin ticket super xp star sticker trophy), painted
              when the build ships CONFIG.shellArt, or a pictogram (info warn
              lock unlock heart user check x hourglass sparkles eye trash).
-             Default: the kind's own. `null` for none.
+             Default: the kind's own. `null`, or a name not listed here,
+             draws the kind's dot in the same slot, so every line aligns.
        key   what two notices are compared on; default word + sub
        hold  ms fully readable, when a line needs longer than the house 2.2 s
 
@@ -284,7 +290,14 @@
 
      It is not cleared on a change of screen: a notice fired as a round ends
      ("Taken to the prison") is exactly the one the next screen must still
-     show. It lives over everything but the flying wallet pieces (z 48), so
+     show.
+
+     IT KEEPS A LOG: the last ten notices of the session, newest first,
+     already translated and shouted (`history()`), and one listener told when
+     it moves (`onLog`). A notice lives 2.2 s, and a player who looked away is
+     owed a way to read it again — the web shell's band draws that as its "!"
+     chip (packages/webshell/meta.js). A repeat of the notice on top of the log
+     bumps its ×N there too, rather than filling the log with one line. It lives over everything but the flying wallet pieces (z 48), so
      the same call reads over a round, a view and a card.
      -------------------------------------------------------------------- */
   var Notify = (function () {
@@ -316,6 +329,21 @@
     SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
 
     var live = [], box = null, raf = 0, last = 0, targetOf = null;
+    var LOG_MAX = 10, log = [], logFn = null;
+
+    /* Into the log, newest first. Keyed like a live notice, but only against
+       the entry on top: the same line again after something else was said is
+       a new event, and the log is read as the order things happened in. */
+    function record(key, w, sub, kind, icon) {
+      var top = log[0];
+      if (top && top.key === key) { top.count++; top.at = Date.now(); }
+      else {
+        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon,
+                      html: iconHtml(icon), count: 1, at: Date.now() });
+        if (log.length > LOG_MAX) log.length = LOG_MAX;
+      }
+      if (logFn) logFn(log.length);
+    }
 
     function host() {
       if (box && box.parentNode) return box;
@@ -326,11 +354,13 @@
       state(State);
       return box;
     }
+    /* Every notice carries a mark in the same 32 px slot, so the words of a
+       stack — and of the log — start on one line: a name this table does not
+       know, or none at all, is the kind's own dot rather than a gap. */
     function iconHtml(name) {
-      if (!name) return "";
-      var src = ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
+      var src = name && ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
       if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
-      if (!SVG[name]) return "";
+      if (!name || !SVG[name]) return '<span class="nt-ic dot" aria-hidden="true"></span>';
       return '<span class="nt-ic lu"><svg viewBox="0 0 24 24" aria-hidden="true">' + SVG[name] + '</svg></span>';
     }
     function esc(s) {
@@ -412,6 +442,7 @@
       var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
       var key = opt.key || (w + "|" + sub);
       var hold = opt.hold || HOLD, i, it;
+      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon);
 
       for (i = 0; i < live.length; i++) {
         it = live[i];
@@ -462,7 +493,18 @@
       box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
     }
 
-    return { say: say, clear: clear, target: target, state: state };
+    /* The log, as copies: { word, sub, kind, icon, html, count, at }, the
+       newest first. `html` is the notice's own icon, ready to draw. */
+    function history() {
+      return log.map(function (e) {
+        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon,
+                 html: e.html, count: e.count, at: e.at };
+      });
+    }
+    function onLog(fn) { logFn = fn; }
+
+    return { say: say, clear: clear, target: target, state: state,
+             history: history, onLog: onLog };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------

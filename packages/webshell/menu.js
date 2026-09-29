@@ -463,10 +463,17 @@
        what a failure costs */
     compass:'<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
     target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    /* the cards' CAMP tab — everyone the camp holds — and the kitchen post */
+    users:  '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    cook:   '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
     /* the band's fold (meta.js, section 11b): what a game adds to the
        wallet, behind one chip */
     sword:  '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
-    skull:  '<path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/>'
+    skull:  '<path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/>',
+    /* the barracks' defense: the button that arms it, and the arrows under
+       the grid that say which side a raid comes from */
+    shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>'
   };
 
   /* THE PAINTED INSTRUMENT, when the build carries one. A game with a
@@ -787,8 +794,8 @@
      modal of its own. */
   function cardPanel(body, fill) {
     /* NO CROSS, and no head: the title is the card's own slot and the way out
-       is the tap line under the rows, which says a tap beside the card closes
-       it (packages/webshell/view.js, `dismiss: "outside"`). A cross was a
+       is the tap line under the rows, which says a tap closes it — anywhere
+       but on a control (packages/webshell/view.js, `dismiss`). A cross was a
        second answer to a question that line already answers. */
     var rows = el("div", "web-pbody plain");
     fill(rows);
@@ -800,20 +807,16 @@
   var openCard = null;
 
   /* A card that opens OVER A ROUND pauses it, and a card that opens anywhere
-     else does not — same card either way, which is the point. The clock is the
-     loop's, so freezing the loop freezes the round, the world and the timer in
-     one call, and the game's own update never runs under an open card. */
+     else does not — same card either way, which is the point. The pause is the
+     modal's own (view.js, section 1b), as it is for every card of the shell. */
   function panelModal(kind, title, fill, again, foot) {
-    var pausing = W.state() === "playing" && !(W.ending && W.ending());
-    if (pausing) pause();
     var h = MD.open({
       kind: "web-card " + kind,
       title: title,
-      /* NOT dismissed by a tap ON it: every one of these cards has controls
-         on it, and a switch missed by a thumb would put the card away
-         instead. A tap AROUND it does, and the tap line says so; the key
-         closes it too — that is what `esc` is for. */
-      dismiss: "outside", esc: true,
+      /* Dismissed by a tap anywhere but on a control — the scrim, the card,
+         the tap line — like every card, since the line under it says "tap";
+         the key closes it too. */
+      dismiss: true, esc: true,
       fill: function (body, close, handle) {
         cardPanel(body, fill);
         var card = handle.card;
@@ -836,7 +839,6 @@
       onClose: function () {
         if (openCard === h) openCard = null;
         W.Decor.clear(h.card);
-        if (pausing) resume();
       }
     });
     /* THE FOOT IS THE MODAL'S, NOT THE CARD'S: a node pinned to the bottom of
@@ -1401,8 +1403,6 @@
      where the player lives — the village where there is one, the title screen
      otherwise — the same place the band's home chip and ESCAPE both mean. The
      map is one building of that place, not where a way out should land. */
-  var paused = false;
-
   function buildControls() {
     VW.corner([
       { name: "help",    icon: "help", label: COPY.help,    on: openHelp },
@@ -1456,24 +1456,11 @@
     return h;
   }
 
-  function pause() {
-    if (paused) return;
-    paused = true;
-    W.Loop.pause();
-  }
-
-  function resume() {
-    if (!paused) return;
-    paused = false;
-    W.Loop.resume();
-  }
-
   /* Leaving is the one path that throws a round away, so the score is not
      written: endRound is what records a best, and it is deliberately not
      called here. The state hook does the rest — the card, the world and the
      armed mode all reset on the way into the menu. */
   function leave() {
-    paused = false;
     W.Loop.stop();
     W.Round.stop();
     W.Music.unduck();
@@ -1481,16 +1468,6 @@
     /* Home, not the map: the village where there is one — the map is one of
        its buildings — and the title screen otherwise. */
     if (villaged()) VG().open();
-  }
-
-  /* The motor pauses the loop when the tab goes away and resumes it when it
-     comes back (packages/platform/web.js, and the engine itself), which would
-     un-pause a round the player left frozen behind a card. This listener is
-     registered last, so it has the last word. */
-  function guardVisibility() {
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && paused) W.Loop.pause();
-    });
   }
 
   /* ── 6. language, live ────────────────────────────────────────────────── */
@@ -1808,7 +1785,6 @@
     rewireEnd();
     bindKeys();
     bindBed();
-    guardVisibility();
 
     /* The tagline is the motor's, written in English in CONFIG.tagline; a game
        that ships a translated one in its manifest (web.copy.<lang>.tagline)
@@ -1824,7 +1800,6 @@
          or an end screen arriving closes every screen and every card that was
          open in front of it, in one call, whatever opened them. */
       VW.floor(state);
-      paused = false;
       /* The way out belongs to a round; help and the switches belong
          everywhere but the title screen, and the view system decides that on
          its own (cornerSync). */
@@ -1875,6 +1850,9 @@
      mounts, and the two run in load order: menu.js first, always. */
   window.__MENU__ = {
     levelled: levelled,
+    /* The way out of a round with no score written, for a layer that asks
+       the player whether to take it (army.js, the commander's surrender). */
+    leave: function () { if (W.state() === "playing" && !(W.ending && W.ending())) leave(); },
     doors: {
       map: function () { if (levelled()) LV.open(); },
       ranking: function () { VW.go("ranking"); },
@@ -1886,7 +1864,7 @@
          inside it and what tomorrow pays, none of which a door straight to
          today's reward ever showed (packages/webshell/daily.js, section 2b). */
       daily: function () { if (metaed() && DL && DL.active()) DL.openRoad(); },
-      /* THE BARRACKS' FOUR. Every one of them is a place with a list to manage,
+      /* THE BARRACKS' DOORS. Every one of them is a place with a list to manage,
          so every one of them is a VIEW and not a card — and they are reached
          only from the hub, because the wallet band is the navigation and a
          roster is not a number the band carries. */
@@ -1894,6 +1872,7 @@
       infirmary: function () { if (armied()) AR().open("infirmary"); },
       prison: function () { if (armied()) AR().open("prison"); },
       recruit: function () { if (armied()) AR().open("recruit"); },
+      defense: function () { if (armied()) AR().open("defense"); },
       options: function () { openOptions(true); },
       help: openHelp
     },

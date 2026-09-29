@@ -78,6 +78,33 @@
 
   var CONFIG = W.CONFIG;
 
+  /* DEV — the one switch that bends the real-time rules on a machine that is
+     plainly not a player's: localhost, a loopback, a LAN address or a file://
+     page. On, the daily road pays on every tap (daily.js) and the army's clock
+     runs an hour a second (army.js); off, both run on the real clock, which is
+     how a wait is watched at its true length without deploying. It is OFF
+     every time the game opens — the real clock is the one a player gets, so
+     it is the one a session starts on — and the band's DEV pill turns it on
+     for that session (section 11, THE DEV PILL). A deployed site's hostname
+     is none of these, so `on()` is false there whatever was asked. Defined
+     here, before daily.js and army.js run, since both read it. */
+  var devOn = false;
+  var devHooks = [];
+  W.Dev = {
+    local: (function () {
+      var h = location.hostname;
+      return h === "localhost" || h === "127.0.0.1" || h === "" || h === "::1" ||
+             h === "[::1]" || /^192\.168\./.test(h) || /^10\./.test(h);
+    })(),
+    on: function () { return W.Dev.local && devOn; },
+    set: function (v) {
+      if (!W.Dev.local || devOn === !!v) return;
+      devOn = !!v;
+      for (var i = 0; i < devHooks.length; i++) devHooks[i](!!v);
+    },
+    onChange: function (fn) { devHooks.push(fn); }
+  };
+
   /* The manifest's `web.meta` block, injected as CONFIG.web by the builder.
      Its presence is the whole declaration: a game without one never sees a
      coin, and `active()` is false everywhere below. */
@@ -92,6 +119,9 @@
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Shop", map: "Levels", home: "Home", scores: "Leaderboard",
       more: "More",
+      devOn: "Dev clock on", devOff: "Dev clock off",
+      notices: "Notifications", noticesNote: "The latest first",
+      justNow: "Just now", minAgo: "{n} min ago", hourAgo: "{n} h ago",
       owned: "{n}/{t}", newSticker: "New sticker!", dupe: "Double",
       gotCoins: "+{n} coins", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
       gotXp: "+{n} xp", levelUp: "Level up!", levelUpNote: "Player level {n} reached",
@@ -121,6 +151,9 @@
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Boutique", map: "Niveaux", home: "Accueil", scores: "Classement",
       more: "Plus",
+      devOn: "Horloge dev activée", devOff: "Horloge dev coupée",
+      notices: "Notifications", noticesNote: "Les plus récentes en premier",
+      justNow: "À l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
       gotCoins: "+{n} pièces", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
       gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau de joueur {n} atteint",
@@ -152,7 +185,7 @@
      by the motor's `upper` (packages/engine), which also takes the accents
      off — a capital carries none in this house. */
   var up = W.upper;
-  var CAPS = ["coins", "tickets", "level", "lvShort", "stickersEntry", "album",
+  var CAPS = ["coins", "tickets", "level", "lvShort", "stickersEntry", "album", "notices",
     "shop", "newSticker", "dupe", "gotCoins", "gotTickets", "gotTicketsN",
     "gotXp", "levelUp", "pickOne", "bonusTitle", "boostMul", "boostMore",
     "mulXp", "mulCoins", "mulTicket",
@@ -802,6 +835,7 @@
   function grant(rw) {
     if (rw.kind === "coins") { addCoins(rw.n); return; }
     if (rw.kind === "ticket") { addTickets(rw.n); return; }
+    if (rw.kind === "super") { addSupers(rw.n); return; }
     if (rw.kind === "xp") { addXp(rw.n); return; }
     if (rw.kind === "sticker") give(rw.n);
   }
@@ -824,7 +858,8 @@
        and it is decided per KIND rather than for the card: a build may well
        paint the coins and leave the ticket stroked, and the stroked one still
        needs its plate to have a body. */
-    var name = rw.kind === "coins" ? "coin" : rw.kind === "ticket" ? "ticket" : "xp";
+    var name = rw.kind === "coins" ? "coin" : rw.kind === "ticket" ? "ticket"
+             : rw.kind === "super" ? "ticketSuper" : "xp";
     var pic = rw.kind === "coins" ? artImg("coinPile", "mt-rwi") : null;
     var painted = !!pic || !!(CONFIG.shellArt && CONFIG.shellArt[name]);
     if (!pic) pic = icon(name, "mt-rwi");
@@ -861,15 +896,15 @@
   function frame() { return $("frame"); }
 
   /* THE WALLET STRIP. One node, built into whatever asked for it, repainted
-     from one place — the map's header, the album, the shop and the end screen
-     all show the same two numbers and they must never disagree by a frame.
+     from one place — the band and the end screen show the same numbers and
+     they must never disagree by a frame.
 
      `opts.full` adds the player's own level bar; the album, the shop and the
      end screen take the bare pair.
 
      `opts.doors` makes the two NUMBERS the two ways out of the wallet — coins
-     open the shop, tickets open the album — and it is then the ticket chip
-     that wears the album's unseen dot. Two nodes rather than the four a pair
+     open the shop, the collection opens the album — and it is then the
+     collection chip that wears the album's unseen dot. Two nodes rather than the four a pair
      of numbers beside a pair of buttons costs, which is what let the map's
      header lose its house and still say everything (levels.js).
 
@@ -906,8 +941,8 @@
     /* WHICH CHIP IS A DOOR, AND TO WHERE. Every chip of the band is one, and
        every one of them leads to the same screen from every screen:
 
-         LV     → HOME, the title screen    COIN  → the shop
-         TICKET → the collection            STAR  → the map
+         LV     → the ranking               COIN  → the shop
+         CLOVER → the collection            STAR  → the map
 
        which is the whole of this front end's navigation — there is no back
        arrow and no home button anywhere, because the four numbers the player
@@ -930,7 +965,16 @@
                 icon(pic, "mt-ci") + '<b></b>');
     }
     var cCoins = chip("coins", "coin", auto);
-    var cTick = chip("tickets", "ticket", auto);
+    /* THE COLLECTION'S CHIP: the album's count and nothing else. It carried
+       the tickets as its first half until the band needed the room — a ticket
+       is spent in one place, and that place (the album) and the one it is
+       bought in (the shop) both count it in their own header now (album.js,
+       `stock`). It is still where every ticket LANDS: a ticket, a super
+       ticket and a sticker all fly into this chip (`chipOf`) and write their
+       figure over it, so what was earned is seen arriving even though the
+       band no longer keeps the count. */
+    var cTick = el(auto ? "button" : "div", "mt-chip collection" + (auto ? " door" : ""),
+                   icon("sticker", "mt-ci") + '<b class="mt-cnt"></b>');
     if (auto) {
       cTick.appendChild(el("i", "mt-badge"));
       cCoins.addEventListener("click", function () { goTo("shop"); });
@@ -953,25 +997,11 @@
       if (auto) lvBox.addEventListener("click", function () { goTo("ranking"); });
     }
 
-    /* THE COLLECTION'S COUNT, and it is the album's own header moved into the
-       band. That screen carried a name and an `x / 20` over a row that was
-       already saying what the player owns: the name is what they tapped to get
-       here, and the count is one of those numbers. The album has no header
-       left at all, and the height it was taking goes to the machine, the odds
-       and the twenty tiles.
-
-       It is the SECOND HALF OF THE TICKET CHIP rather than a chip of its own,
-       because a chip is a door and both numbers open the same one: the tickets
-       are spent in the collection, the count is of it. Two chips side by side
-       leading to one screen read as two places; one macaron with two figures
-       reads as the one place and what the player has there. */
-    var cCount = null;
-    if (opts.count) {
-      cTick.classList.add("collection");
-      cTick.appendChild(el("i", "mt-csep"));
-      cTick.insertAdjacentHTML("beforeend", icon("sticker", "mt-ci") + '<b class="mt-cnt"></b>');
-      cCount = cTick;
-    }
+    /* THE COLLECTION'S COUNT is the album's own header moved into the band.
+       That screen carried a name and an `x / 20` over a row that was already
+       saying what the player owns: the name is what they tapped to get here,
+       and the count is one of those numbers. */
+    var cCount = cTick;
 
     /* THE BOARD'S OWN STARS, last in the row. They are not spent and not
        earned by the wallet, which is why they sit at the far end of it — but
@@ -1000,10 +1030,9 @@
       home: opts.homeHost || null,
       lvBox: lvBox,
       coins: cCoins.querySelector("b"),
-      tickets: cTick.querySelector("b"),
       badge: cTick.querySelector(".mt-badge"),
       count: cCount,
-      countN: cCount ? cCount.querySelector("b.mt-cnt") : null,
+      countN: cCount.querySelector("b.mt-cnt"),
       stars: cStars,
       starN: cStars ? cStars.querySelector("b") : null,
       lvl: lvBox ? lvBox.querySelector(".lbl") : null,
@@ -1035,7 +1064,7 @@
      player never saw. */
   function walletOf(kind) {
     return kind === "coins" ? save.c : kind === "ticket" ? save.t
-         : kind === "xp" ? save.x : 0;
+         : kind === "super" ? save.st : kind === "xp" ? save.x : 0;
   }
 
   /* THE BAR, RUN FROM ONE FIGURE TO ANOTHER. `paintWallet` writes a width and
@@ -1068,7 +1097,6 @@
        save is already right; what is on screen is the reading of it, and a
        repaint in the middle of a spree is what would make it a lie. */
     if (!w.coins.mtRun) w.coins.textContent = num(save.c);
-    if (!w.tickets.mtRun) w.tickets.textContent = num(save.t);
     if (w.badge) {
       /* The dot on the album button is not a count — it is "there is something
          in there you have not seen", which is the only thing a badge may ever
@@ -1116,7 +1144,7 @@
      "+1 ticket" ends in the ticket chip exactly as the ticket itself does. */
   if (W.Notify) W.Notify.target(function (icon) {
     var kind = icon === "coin" ? "coins" : icon === "xp" ? "xp"
-             : (icon === "ticket" || icon === "super" || icon === "sticker") ? "ticket" : null;
+             : (icon === "ticket" || icon === "super" || icon === "sticker") ? "sticker" : null;
     var home = kind && homeOf(kind);
     return home ? home.node : null;
   });
@@ -1140,7 +1168,8 @@
 
      `fx(o)`:
 
-       kind    which chip, and what flies: "coins" | "ticket" | "xp" | "sticker"
+       kind    which chip, and what flies: "coins" | "ticket" | "super" | "xp"
+               | "sticker" — the last three land in the collection's chip
        n       what moved, SIGNED — -250 charged, +280 earned
        from    a node or a rect the pieces leave. Without one nothing flies and
                the figure and the count happen where they stand (a purchase
@@ -1187,9 +1216,10 @@
   function chipOf(w, kind) {
     if (kind === "xp") return w.lvBox;     // the bar, which is the xp chip
     if (!w.node) return null;
-    /* Everything that is not a coin and not xp lands in the ticket chip: a
-       ticket, and a sticker, whose chip is the album's own door. */
-    return w.node.querySelector(".mt-chip." + (kind === "coins" ? "coins" : "tickets"));
+    /* Everything that is not a coin and not xp lands in the collection's
+       chip: a ticket, a super ticket and a sticker, all of which are spent or
+       kept behind the album's own door. */
+    return w.node.querySelector(".mt-chip." + (kind === "coins" ? "coins" : "collection"));
   }
 
   function homeOf(kind) {
@@ -1348,7 +1378,7 @@
     var home = homeOf(kind);
     if (!home) return;
     hold(home,
-         kind === "coins" ? home.w.coins : kind === "ticket" ? home.w.tickets : null,
+         kind === "coins" ? home.w.coins : null,
          kind === "xp" ? home.w : null,
          before);
   }
@@ -1363,8 +1393,10 @@
 
     if (!home || !host) { paintWallets(); if (o.done) o.done(); return 0; }
 
-    var cell = kind === "coins" ? home.w.coins
-             : kind === "ticket" ? home.w.tickets : null;
+    /* Only the coins have a figure of their own to count: a ticket lands in
+       the collection's chip, which counts stickers, so its figure is the tag
+       written over the chip and nothing else. */
+    var cell = kind === "coins" ? home.w.coins : null;
     var lv = kind === "xp" ? home.w : null;
     hold(home, cell, lv, before);
 
@@ -1411,7 +1443,8 @@
 
     function writeTag() {
       var sign = n < 0 ? "-" : "+";
-      var pic = icon(kind === "coins" ? "coin" : kind === "xp" ? "xp" : "ticket", "mt-ci");
+      var pic = icon(kind === "coins" ? "coin" : kind === "xp" ? "xp"
+                     : kind === "super" ? "ticketSuper" : "ticket", "mt-ci");
       var body = kind === "sticker" ? sign : sign + num(Math.abs(n)) + pic;
       /* THE DIRECTION IS THE CHIP'S, not the sign's, for xp alone. Everywhere
          else a figure rises off the chip when it is earned and falls off it
@@ -1516,7 +1549,7 @@
        and every wallet has already been repainted with it, so the chip would
        otherwise say the new figure before the piece had left the button. */
     var home = homeOf(kind);
-    var cell = home && (kind === "coins" ? home.w.coins : home.w.tickets);
+    var cell = home && kind === "coins" ? home.w.coins : null;
     if (cell) { cell.mtRun = (cell.mtRun || 0) + 1; cell.textContent = num(before); }
     setTimeout(function () {
       fx({ kind: kind, n: n, from: o.from, before: before, big: true, spread: 75 });
@@ -2107,7 +2140,7 @@
      and this is the one function that fills it. It holds BOTH wallets,
      because the end screen's is not the same instrument:
 
-       the full one    coins, tickets and the level bar under them, standing
+       the full one    coins, the collection and the level bar, standing
                        for as long as the view does. The map, the album and
                        the shop declare `hud: true` and get it.
        the transient   the same two chips, veiled, holding their place in the
@@ -2123,23 +2156,40 @@
   /* THE DEV PILL — the one mark that this front end is running on a machine
      that is plainly not a player's: localhost, a loopback or a LAN address.
      The daily road pays on every tap there and the army's clock runs an hour
-     a second (daily.js and army.js, DEV, same test), so a
-     screenshot must never be mistaken for the real thing. It is said ONCE, in
+     a second (W.Dev, section 0), so a screenshot must never be mistaken for
+     the real thing. It is also the SWITCH: off when the game opens, hollow
+     while it is, and a tap turns the fast clock on and back off (`W.Dev.set`)
+     — the pill stays either way, since the machine is still a dev one. It is said ONCE, in
      the band, in front of the level chip — not on each screen that bends a
      rule, which is how three pills in three places came to mean one thing.
      A deployed site's hostname is none of these, so the node is never built
      there. NOT on a file:// page, though the two layers count one as local:
      that is how tools/lab/shoot-screens.mjs opens a build, and a store
      screenshot is the one picture that must never wear it. */
-  var DEV = (function () {
-    var h = location.hostname;
-    return h === "localhost" || h === "127.0.0.1" || h === "::1" ||
-           h === "[::1]" || /^192\.168\./.test(h) || /^10\./.test(h);
-  })();
+  var DEV = W.Dev.local && location.hostname !== "";
+  function devPill() {
+    var b = el("button", "mt-dev", up("Dev"));
+    function paint() {
+      var on = W.Dev.on();
+      b.classList.toggle("off", !on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-label", on ? T.devOn : T.devOff);
+    }
+    b.addEventListener("click", function () { W.Dev.set(!W.Dev.on()); });
+    W.Dev.onChange(paint);
+    paint();
+    return b;
+  }
+  /* Said once per flip, whatever holds a pill, and every figure a clock
+     drives is repainted under it. */
+  W.Dev.onChange(function (on) {
+    if (W.Notify) W.Notify.say(on ? T.devOn : T.devOff, { kind: on ? "warn" : "info", icon: "hourglass", key: "dev" });
+    changed();
+  });
 
   /* ONE LINE, AND THE ORDER IS THE NAVIGATION:
 
-       LV 4  ·  1 240 coins  ·  3 tickets  ·  12/90 stars
+       LV 4  ·  1 240 coins  ·  3/20 stickers  ·  12/90 stars
 
      left to right, the same four on every screen that carries the band, each
      one a door to the screen it is the number of — the ranking, the shop, the
@@ -2158,18 +2208,17 @@
     var star = el("div", "mt-band-star");
     /* THE ORDER OF THE ROW, and it is the order the player reads it in:
 
-         ⌂  ·  ⚡ xp  ·  coins  ·  tickets | stickers  ·  stars
+         ⌂  ·  ⚡ xp  ·  coins  ·  stickers  ·  stars
 
        the way out first, then what is EARNED by playing (xp), then what is
-       SPENT (coins, tickets), then what those two buy (the collection, in the
-       same macaron as the tickets since both open it), then
+       SPENT (coins), then what it buys (the collection — the tickets are
+       counted in the shop's and the album's headers, and land here), then
        what the board itself is worth. Home is the only chip here that is not a
        number — the rest of the row is what the player owns, this is the way
        out of wherever they own it.
 
-       The collection's count rides in the ticket chip (both open the album),
-       and the stars hang in a host the wallet fills: a number it paints, like
-       the coins. */
+       The stars hang in a host the wallet fills: a number it paints, like the
+       coins. */
     var h = null;
     if (home) {
       h = el("button", "mt-chip home door", icon("home", "mt-ci"));
@@ -2178,11 +2227,15 @@
       row.appendChild(h);
     }
     /* On the standing row only: the end screen's is a target for a flight. */
-    if (home && DEV) row.appendChild(el("i", "mt-dev", up("Dev")));
+    if (home && DEV) row.appendChild(devPill());
     row.appendChild(lv);
     if (more) row.appendChild(more);
     row.appendChild(chips);
     row.appendChild(star);
+    /* The log of what was said, LAST in the row and on the standing row only:
+       it is not a number the player owns but a way back to what they were
+       told, and it only exists once something has been (section 11c). */
+    if (home) row.appendChild(buildLog());
     return { row: row, lv: lv, chips: chips, star: star, home: h };
   }
 
@@ -2192,7 +2245,7 @@
     host.appendChild(b.row);
     var full = a.chips, trans = b.chips;
     band = wallet(full, { full: true, doors: "auto", lvHost: a.lv, stars: true,
-                          starHost: a.star, count: true, root: a.row,
+                          starHost: a.star, root: a.row,
                           homeHost: a.home });
     /* The end screen's own, and it is the SAME four chips — veiled, holding
        their place in the layout so a flight has a rect to aim at, and lifted
@@ -2227,7 +2280,7 @@
     mark(band.home, "village", top, T.home);
     mark(band.lvBox, "ranking", top, T.scores);
     mark(band.coins.parentNode, "shop", top, T.shop);
-    mark(band.tickets.parentNode, "sticker", top, T.album);
+    mark(band.count, "sticker", top, T.album);
     mark(band.stars, "map", top, T.map);
   }
 
@@ -2735,6 +2788,116 @@
     return moreBox;
   }
 
+  /* ── 11c. the log: what was said, read again ──────────────────────────
+
+     A notice lives two seconds and a bit (the motor's Notify), and a player
+     who was looking at the board when it came is owed a way to read it again.
+     So the band carries a "!" chip at the END of the row — after the stars,
+     since it counts nothing the player owns — and it is not built into the
+     row's shape until something has been said: HIDDEN until the first notice
+     of the session, standing from then on. A tap opens a card with the last
+     ten, the newest on top, each with the notice's own icon, its colour, its
+     ×N and how long ago it was said.
+
+     The dot on it is the album's own: "there is something here you have not
+     read", never a count — it goes the moment the card is opened. The log
+     itself is the motor's (`Notify.history`), in memory: it is what was said
+     THIS session, and the save has nothing to do with it.
+
+     A ROUND HAS ITS OWN "!", because the band is down over a round and a
+     notice said mid-run is the one most likely to have gone unread. It rides
+     ON the level's star pill, just to its right (packages/webshell/levels.js,
+     `#lv-hud`): inside the pill's own box, so it follows it wherever a SKIN
+     moved it (`--lv-hud-left` / `--lv-hud-bottom`) and goes when it goes. Its
+     card pauses the round, like every card over one. */
+  var logBoxes = [], logCard = null, logSeen = 0, roundLog = null;
+
+  function logChip(cls) {
+    var box = el("div", cls);
+    var b = el("button", "mt-chip log door", '<b aria-hidden="true">!</b>');
+    b.appendChild(el("i", "mt-badge"));
+    box.appendChild(b);
+    b.addEventListener("click", function (e) { e.stopPropagation(); openLog(); });
+    logBoxes.push(box);
+    if (W.Notify && W.Notify.onLog) W.Notify.onLog(paintLog);
+    paintLog();
+    return box;
+  }
+
+  function buildLog() { return logChip("mt-band-log"); }
+
+  /* On the star pill, once the round has put it up: the level layer's own
+     state hook builds and shows it, and which of the two hooks runs first is
+     the order the files load in — so this waits one frame for the answer. */
+  W.onState(function (s) {
+    if (s !== "playing") return;
+    requestAnimationFrame(function () {
+      var pill = $("lv-hud");
+      if (!pill) return;
+      if (!roundLog) roundLog = logChip("mt-round-log");
+      if (roundLog.parentNode !== pill) pill.appendChild(roundLog);
+    });
+  });
+
+  function logList() {
+    return W.Notify && W.Notify.history ? W.Notify.history() : [];
+  }
+
+  function paintLog() {
+    var list = logList();
+    /* A notice said while the card is open is read there, as it lands. */
+    if (logCard && list.length) logSeen = list[0].at;
+    var fresh = !!list.length && list[0].at > logSeen;
+    for (var i = 0; i < logBoxes.length; i++) {
+      logBoxes[i].hidden = !list.length;
+      logBoxes[i].firstChild.setAttribute("aria-label", T.notices);
+      logBoxes[i].querySelector(".mt-badge").className = "mt-badge" + (fresh ? " on" : "");
+    }
+    if (logCard) fillLog(logCard.body);
+  }
+
+  function ago(at) {
+    var m = Math.floor((Date.now() - at) / 60000);
+    if (m < 1) return T.justNow;
+    if (m < 60) return fill(T.minAgo, { n: m });
+    return fill(T.hourAgo, { n: Math.floor(m / 60) });
+  }
+
+  /* One row per notice, in the notice's own dress (motor.css, `.nt-b`): the
+     same chip the player saw fly past, standing still, so a line in the log
+     is recognised rather than read. */
+  function fillLog(body) {
+    body.innerHTML = "";
+    var list = logList(), ul = el("ol", "mt-log");
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      var li = el("li", "nt-b k-" + e.kind + " mt-log-row",
+        e.html + '<span class="nt-tx"><b class="nt-w"></b>' +
+        (e.sub ? '<span class="nt-s"></span>' : "") + "</span>" +
+        (e.count > 1 ? '<span class="nt-n on">×' + e.count + "</span>" : "") +
+        '<span class="mt-log-at"></span>');
+      li.querySelector(".nt-w").textContent = e.word;
+      if (e.sub) li.querySelector(".nt-s").textContent = e.sub;
+      li.querySelector(".mt-log-at").textContent = ago(e.at);
+      ul.appendChild(li);
+    }
+    body.appendChild(ul);
+  }
+
+  function openLog() {
+    if (logCard || !MD) return;
+    var list = logList();
+    if (!list.length) return;
+    logSeen = list[0].at;
+    paintLog();
+    logCard = MD.open({
+      kind: "mt-logcard", eyebrow: T.noticesNote, title: T.notices,
+      fill: function (body) { fillLog(body); },
+      onClose: function () { logCard = null; }
+    });
+    W.Sound.cue("uiRow", 0.4, 1.05, 400, 0.06);
+  }
+
   /* A layer may register before the band is built, or after: both orders
      end on the same answer. */
   function moreAdd(key, prov) {
@@ -2907,5 +3070,6 @@
     paintWallets();
     paintMoreBtn();
     paintMore();
+    paintLog();
   }
 })();

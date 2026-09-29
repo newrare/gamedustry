@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -28,25 +28,25 @@
       "home05": "triverse-home-05",
       "home06": "triverse-home-06",
       "sticker01": "triverse-sticker-01",
-      "sticker02": "triverse-sticker-02",
-      "sticker03": "triverse-sticker-03",
-      "sticker04": "triverse-sticker-04",
+      "sticker02": "triverse-sticker-10",
+      "sticker03": "triverse-sticker-04",
+      "sticker04": "triverse-sticker-03",
       "sticker05": "triverse-sticker-05",
-      "sticker06": "triverse-sticker-06",
+      "sticker06": "triverse-sticker-08",
       "sticker07": "triverse-sticker-07",
-      "sticker08": "triverse-sticker-08",
-      "sticker09": "triverse-sticker-09",
-      "sticker10": "triverse-sticker-10",
-      "sticker11": "triverse-sticker-11",
-      "sticker12": "triverse-sticker-12",
+      "sticker08": "triverse-sticker-09",
+      "sticker09": "triverse-sticker-11",
+      "sticker10": "triverse-sticker-02",
+      "sticker11": "triverse-sticker-16",
+      "sticker12": "triverse-sticker-14",
       "sticker13": "triverse-sticker-13",
-      "sticker14": "triverse-sticker-14",
-      "sticker15": "triverse-sticker-15",
-      "sticker16": "triverse-sticker-16",
+      "sticker14": "triverse-sticker-18",
+      "sticker15": "triverse-sticker-19",
+      "sticker16": "triverse-sticker-15",
       "sticker17": "triverse-sticker-17",
-      "sticker18": "triverse-sticker-18",
-      "sticker19": "triverse-sticker-19",
-      "sticker20": "triverse-sticker-21"
+      "sticker18": "triverse-sticker-21",
+      "sticker19": "triverse-sticker-20",
+      "sticker20": "triverse-sticker-22"
     }
   },
   "copy": {
@@ -300,7 +300,7 @@
           "rarity": "rare"
         },
         {
-          "name": "Slipstream",
+          "name": "Victory V",
           "rarity": "rare"
         },
         {
@@ -312,7 +312,7 @@
           "rarity": "legendary"
         },
         {
-          "name": "Triple Speed",
+          "name": "Dizzy",
           "rarity": "rare"
         },
         {

@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.16.0",
+  "version": "0.22.1",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -380,6 +380,8 @@
           "Score": "Score",
           "Scout": "Éclaireur",
           "Sergeant": "Sergent",
+          "Slot locked": "Emplacement verrouillé",
+          "Unlocks at level": "Débloqué au niveau",
           "Spotted": "Repéré",
           "Spy": "Espion",
           "Still wounded": "Encore blessé",
@@ -413,7 +415,6 @@
           "Your army": "Ton armée",
           "Alive": "Vivants",
           "Lost": "Perdus",
-          "No card lost yet": "Aucune carte perdue",
           "Flag captured": "Drapeau pris",
           "No wounds": "Aucune blessure",
           "Prisoner taken": "Prisonnier fait",
@@ -547,10 +548,6 @@
         "play.enemyTier": [
           0.05,
           0.7
-        ],
-        "play.handSize": [
-          4,
-          5
         ]
       }
     },
@@ -695,24 +692,31 @@
           "always": true
         },
         {
-          "art": "home02",
-          "role": "album",
-          "x": 360,
-          "y": 370,
-          "w": 170,
+          "art": "empty",
+          "role": "defense",
+          "x": 150,
+          "y": 260,
+          "w": 200,
+          "halo": {
+            "w": 1,
+            "h": 0.95,
+            "dy": -0.3,
+            "color": "#153176"
+          },
           "badge": {
-            "dx": -0.2,
-            "dy": -0.8
-          }
+            "dx": 0.15,
+            "dy": -0.5
+          },
+          "light": "random"
         },
         {
-          "art": "home04",
-          "role": "shop",
-          "x": 160,
-          "y": 420,
-          "w": 200,
+          "art": "home02",
+          "role": "album",
+          "x": 370,
+          "y": 380,
+          "w": 190,
           "badge": {
-            "dx": -0.15,
+            "dx": -0.2,
             "dy": -0.8
           }
         },
@@ -723,6 +727,17 @@
           "y": 430,
           "w": 160,
           "flip": true
+        },
+        {
+          "art": "home04",
+          "role": "shop",
+          "x": 160,
+          "y": 440,
+          "w": 170,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.8
+          }
         },
         {
           "art": "empty",
@@ -736,7 +751,7 @@
           "role": "infirmary",
           "x": 110,
           "y": 630,
-          "w": 210,
+          "w": 190,
           "halo": {
             "w": 0.6,
             "h": 0.42,
@@ -746,17 +761,14 @@
           "badge": {
             "dx": -0.15,
             "dy": -0.78
-          },
-          "notify": "breath",
-          "every": 5.5,
-          "delay": 1.4
+          }
         },
         {
           "art": "home08",
           "role": "prison",
           "x": 610,
           "y": 650,
-          "w": 195,
+          "w": 180,
           "halo": {
             "w": 0.6,
             "h": 0.42,
@@ -783,17 +795,17 @@
           }
         },
         {
-          "art": "home01",
-          "role": "ranking",
-          "x": 560,
-          "y": 890,
-          "w": 230
-        },
-        {
           "art": "home03",
           "role": "options",
           "x": 150,
           "y": 900,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 570,
+          "y": 910,
           "w": 200
         },
         {
@@ -884,23 +896,27 @@
           "notify": "breath",
           "always": true
         }
-      ],
-      "life": {
-        "cycle": {
-          "warm": "#ffcf8f",
-          "cold": "#66b1ec",
-          "amount": 0.35,
-          "seconds": 90
-        }
-      }
+      ]
     },
     "army": {
-      "deckSize": 14,
+      "deckSize": [
+        12,
+        20
+      ],
       "infirmaryHours": 48,
       "prisonHours": 120,
-      "infirmaryBeds": 6,
-      "prisonCells": 6,
-      "capturePick": 3,
+      "infirmaryBeds": [
+        2,
+        9
+      ],
+      "prisonCells": [
+        2,
+        9
+      ],
+      "capturePick": [
+        1,
+        3
+      ],
       "conscript": {
         "r": 4,
         "t": 0
@@ -989,44 +1005,114 @@
         {
           "r": 13,
           "name": "Straw man",
-          "art": "itemStraw"
+          "art": "itemStraw",
+          "camp": 1
         },
         {
           "r": 14,
           "name": "Wooden fence",
-          "art": "itemFence"
+          "art": "itemFence",
+          "camp": 1
         },
         {
           "r": 15,
           "name": "Rock",
-          "art": "itemRock"
+          "art": "itemRock",
+          "camp": 7
         },
         {
           "r": 16,
           "name": "Forest",
-          "art": "itemForest"
+          "art": "itemForest",
+          "camp": 8
         },
         {
           "r": 17,
           "name": "Skull",
-          "art": "itemSkull"
+          "art": "itemSkull",
+          "camp": 13
         },
         {
           "r": 18,
           "name": "Book",
-          "art": "itemBook"
+          "art": "itemBook",
+          "camp": 19
         }
       ],
+      "defense": {
+        "cols": 5,
+        "rows": 4,
+        "perObject": 2,
+        "unlock": [
+          [
+            13,
+            14
+          ],
+          [
+            15,
+            16
+          ],
+          [
+            17
+          ],
+          [
+            18
+          ],
+          [
+            11
+          ]
+        ],
+        "attack": {
+          "chance": 0.3,
+          "awayHours": 4,
+          "turns": 12,
+          "runs": 200
+        },
+        "levelSpan": 20,
+        "win": {
+          "prisoners": [
+            1,
+            2
+          ],
+          "coins": [
+            40,
+            400
+          ],
+          "xp": [
+            30,
+            300
+          ]
+        },
+        "loss": {
+          "coinShare": [
+            0.03,
+            0.12
+          ],
+          "coinCap": 500,
+          "wounds": [
+            1,
+            2
+          ],
+          "woundHours": [
+            6,
+            24
+          ]
+        }
+      },
       "recruit": {
-        "slots": 3,
+        "slots": 4,
         "refreshHours": 6,
         "base": 90,
         "gradeStep": 0.22,
         "tierStep": 1.9,
-        "fallen": 0.4
+        "fallen": 0.4,
+        "needPrice": 20
       },
       "missions": {
-        "offers": 3,
+        "offers": [
+          2,
+          10
+        ],
         "running": 3,
         "refreshHours": 8,
         "need": [
@@ -3188,6 +3274,933 @@
         "step": 0.01,
         "max": 0.3
       },
+      "posts": {
+        "tier": [
+          10,
+          26,
+          42,
+          58,
+          74,
+          90
+        ],
+        "match": 10,
+        "spare": 50
+      },
+      "jobs": [
+        {
+          "k": "carpenter",
+          "post": "cmd",
+          "name": {
+            "en": "Carpenter",
+            "fr": "Charpentier",
+            "frF": "Charpentière"
+          }
+        },
+        {
+          "k": "postman",
+          "post": "cmd",
+          "name": {
+            "en": "Postman",
+            "fr": "Postier",
+            "frF": "Postière"
+          }
+        },
+        {
+          "k": "chaplain",
+          "post": "cmd",
+          "name": {
+            "en": "Chaplain",
+            "fr": "Aumônier"
+          }
+        },
+        {
+          "k": "archivist",
+          "post": "cmd",
+          "name": {
+            "en": "Archivist",
+            "fr": "Archiviste"
+          }
+        },
+        {
+          "k": "governor",
+          "post": "cmd",
+          "name": {
+            "en": "Governor",
+            "fr": "Gouverneur",
+            "frF": "Gouverneure"
+          }
+        },
+        {
+          "k": "instructor",
+          "post": "drill",
+          "name": {
+            "en": "Instructor",
+            "fr": "Instructeur",
+            "frF": "Instructrice"
+          }
+        },
+        {
+          "k": "masterAtArms",
+          "post": "drill",
+          "name": {
+            "en": "Master-at-arms",
+            "fr": "Maître d'armes"
+          }
+        },
+        {
+          "k": "tactician",
+          "post": "drill",
+          "name": {
+            "en": "Tactician",
+            "fr": "Tacticien",
+            "frF": "Tacticienne"
+          }
+        },
+        {
+          "k": "commando",
+          "post": "drill",
+          "name": {
+            "en": "Commando instructor",
+            "fr": "Moniteur commando",
+            "frF": "Monitrice commando"
+          }
+        },
+        {
+          "k": "horseMaster",
+          "post": "drill",
+          "name": {
+            "en": "Horse master",
+            "fr": "Écuyer",
+            "frF": "Écuyère"
+          }
+        },
+        {
+          "k": "cartographer",
+          "post": "ops",
+          "name": {
+            "en": "Cartographer",
+            "fr": "Cartographe"
+          }
+        },
+        {
+          "k": "analyst",
+          "post": "ops",
+          "name": {
+            "en": "Intelligence analyst",
+            "fr": "Analyste du renseignement"
+          }
+        },
+        {
+          "k": "liaison",
+          "post": "ops",
+          "name": {
+            "en": "Liaison officer",
+            "fr": "Officier de liaison",
+            "frF": "Officière de liaison"
+          }
+        },
+        {
+          "k": "signaller",
+          "post": "ops",
+          "name": {
+            "en": "Signaller",
+            "fr": "Transmetteur",
+            "frF": "Transmetteuse"
+          }
+        },
+        {
+          "k": "expedition",
+          "post": "ops",
+          "name": {
+            "en": "Expedition leader",
+            "fr": "Chef d'expédition",
+            "frF": "Cheffe d'expédition"
+          }
+        },
+        {
+          "k": "surgeon",
+          "post": "inf",
+          "name": {
+            "en": "Surgeon",
+            "fr": "Chirurgien",
+            "frF": "Chirurgienne"
+          }
+        },
+        {
+          "k": "nurse",
+          "post": "inf",
+          "name": {
+            "en": "Nurse",
+            "fr": "Infirmier",
+            "frF": "Infirmière"
+          }
+        },
+        {
+          "k": "stretcher",
+          "post": "inf",
+          "name": {
+            "en": "Stretcher-bearer",
+            "fr": "Brancardier",
+            "frF": "Brancardière"
+          }
+        },
+        {
+          "k": "pharmacist",
+          "post": "inf",
+          "name": {
+            "en": "Pharmacist",
+            "fr": "Pharmacien",
+            "frF": "Pharmacienne"
+          }
+        },
+        {
+          "k": "doctor",
+          "post": "inf",
+          "name": {
+            "en": "Doctor",
+            "fr": "Médecin"
+          }
+        },
+        {
+          "k": "warden",
+          "post": "pri",
+          "name": {
+            "en": "Warden",
+            "fr": "Surveillant",
+            "frF": "Surveillante"
+          }
+        },
+        {
+          "k": "interrogator",
+          "post": "pri",
+          "name": {
+            "en": "Interrogator",
+            "fr": "Interrogateur",
+            "frF": "Interrogatrice"
+          }
+        },
+        {
+          "k": "guard",
+          "post": "pri",
+          "name": {
+            "en": "Guard",
+            "fr": "Garde"
+          }
+        },
+        {
+          "k": "jailer",
+          "post": "pri",
+          "name": {
+            "en": "Jailer",
+            "fr": "Geôlier",
+            "frF": "Geôlière"
+          }
+        },
+        {
+          "k": "judge",
+          "post": "pri",
+          "name": {
+            "en": "Judge",
+            "fr": "Juge"
+          }
+        },
+        {
+          "k": "cook",
+          "post": "cook",
+          "name": {
+            "en": "Cook",
+            "fr": "Cuisinier",
+            "frF": "Cuisinière"
+          }
+        },
+        {
+          "k": "baker",
+          "post": "cook",
+          "name": {
+            "en": "Baker",
+            "fr": "Boulanger",
+            "frF": "Boulangère"
+          }
+        },
+        {
+          "k": "butcher",
+          "post": "cook",
+          "name": {
+            "en": "Butcher",
+            "fr": "Boucher",
+            "frF": "Bouchère"
+          }
+        },
+        {
+          "k": "dietitian",
+          "post": "cook",
+          "name": {
+            "en": "Dietitian",
+            "fr": "Diététicien",
+            "frF": "Diététicienne"
+          }
+        },
+        {
+          "k": "brewer",
+          "post": "cook",
+          "name": {
+            "en": "Brewer",
+            "fr": "Brasseur",
+            "frF": "Brasseuse"
+          }
+        }
+      ],
+      "events": {
+        "everyHours": 4,
+        "stack": 3,
+        "good": [
+          0.3,
+          0.9
+        ],
+        "list": [
+          {
+            "id": "brawl",
+            "good": false,
+            "fx": {
+              "kind": "wound",
+              "n": 1,
+              "h": 12
+            },
+            "title": {
+              "en": "A brawl broke out",
+              "fr": "Une bagarre a éclaté"
+            },
+            "text": {
+              "en": "Over the last sausage, of course. {c} came out of it with a black eye and a bed in the infirmary.",
+              "fr": "Pour la dernière saucisse, évidemment. {c} en ressort avec un œil au beurre noir et un lit à l'infirmerie."
+            }
+          },
+          {
+            "id": "thief",
+            "good": false,
+            "fx": {
+              "kind": "ticket",
+              "n": -1
+            },
+            "title": {
+              "en": "A thief in the night",
+              "fr": "Un voleur dans la nuit"
+            },
+            "text": {
+              "en": "Someone slipped into the command tent and made off with a ticket. The guard swears he saw nothing.",
+              "fr": "Quelqu'un s'est glissé sous la tente de commandement et a filé avec un ticket. Le garde jure n'avoir rien vu."
+            }
+          },
+          {
+            "id": "pickpocket",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -80
+            },
+            "title": {
+              "en": "Pickpocket in the camp",
+              "fr": "Pickpocket au camp"
+            },
+            "text": {
+              "en": "Purses are lighter this morning, and nobody remembers being bumped into.",
+              "fr": "Les bourses sont plus légères ce matin, et personne ne se souvient d'avoir été bousculé."
+            }
+          },
+          {
+            "id": "deserter",
+            "good": false,
+            "fx": {
+              "kind": "desert"
+            },
+            "title": {
+              "en": "A card deserted",
+              "fr": "Une désertion"
+            },
+            "text": {
+              "en": "{c} slipped away before dawn, with a blanket and two days of rations.",
+              "fr": "{c} a filé avant l'aube, avec une couverture et deux jours de rations."
+            }
+          },
+          {
+            "id": "stew",
+            "good": false,
+            "fx": {
+              "kind": "wound",
+              "n": 2,
+              "h": 12
+            },
+            "title": {
+              "en": "Bad stew",
+              "fr": "Ragoût douteux"
+            },
+            "text": {
+              "en": "Half the camp spent the night groaning. The worst cases are in the infirmary.",
+              "fr": "La moitié du camp a passé la nuit à gémir. Les cas les plus graves sont à l'infirmerie."
+            }
+          },
+          {
+            "id": "fire",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -120
+            },
+            "title": {
+              "en": "Fire in the storehouse",
+              "fr": "Incendie dans la réserve"
+            },
+            "text": {
+              "en": "A lantern tipped over among the sacks. The fire is out, but what it ate has to be bought again.",
+              "fr": "Une lanterne s'est renversée entre les sacs. Le feu est éteint, mais il faut racheter ce qu'il a dévoré."
+            }
+          },
+          {
+            "id": "escape",
+            "good": false,
+            "fx": {
+              "kind": "escape"
+            },
+            "title": {
+              "en": "A prisoner escaped",
+              "fr": "Évasion"
+            },
+            "text": {
+              "en": "{c} dug a tunnel with a soup spoon. The spoon has been found, the prisoner has not.",
+              "fr": "{c} a creusé un tunnel avec une cuillère à soupe. On a retrouvé la cuillère, pas le prisonnier."
+            }
+          },
+          {
+            "id": "rats",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -50
+            },
+            "title": {
+              "en": "Rats in the supplies",
+              "fr": "Des rats dans les vivres"
+            },
+            "text": {
+              "en": "They ate the cheese, the bread and a boot. The boot was the cheapest part.",
+              "fr": "Ils ont mangé le fromage, le pain et une botte. La botte était le moins cher."
+            }
+          },
+          {
+            "id": "storm",
+            "good": false,
+            "fx": {
+              "kind": "tentBurn"
+            },
+            "title": {
+              "en": "A storm flattened the tent",
+              "fr": "La tempête a couché la tente"
+            },
+            "text": {
+              "en": "The recruiting tent is on the ground and its candidates went home. New faces will come with the next shelf.",
+              "fr": "La tente de recrutement est à terre et ses candidats sont rentrés chez eux. De nouvelles têtes viendront au prochain renouvellement."
+            }
+          },
+          {
+            "id": "dice",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -100
+            },
+            "title": {
+              "en": "Gambling debts",
+              "fr": "Dettes de jeu"
+            },
+            "text": {
+              "en": "The dice came out after supper, and the camp's purse lost every round.",
+              "fr": "Les dés sont sortis après le souper, et la caisse du camp a perdu chaque partie."
+            }
+          },
+          {
+            "id": "riot",
+            "good": false,
+            "fx": {
+              "kind": "jailDelay",
+              "h": 24
+            },
+            "title": {
+              "en": "Riot in the prison",
+              "fr": "Mutinerie à la prison"
+            },
+            "text": {
+              "en": "The prisoners barricaded their cells and sang all night. Nobody will change sides for another day.",
+              "fr": "Les prisonniers ont barricadé leurs cellules et chanté toute la nuit. Personne ne changera de camp avant un jour de plus."
+            }
+          },
+          {
+            "id": "fever",
+            "good": false,
+            "fx": {
+              "kind": "healDelay",
+              "h": 12
+            },
+            "title": {
+              "en": "Fever in the infirmary",
+              "fr": "Fièvre à l'infirmerie"
+            },
+            "text": {
+              "en": "A fever runs from bed to bed. Every wounded card needs longer to get back on its feet.",
+              "fr": "Une fièvre court de lit en lit. Chaque carte blessée mettra plus longtemps à se remettre."
+            }
+          },
+          {
+            "id": "drill",
+            "good": false,
+            "fx": {
+              "kind": "wound",
+              "n": 1,
+              "h": 12
+            },
+            "title": {
+              "en": "Training accident",
+              "fr": "Accident à l'entraînement"
+            },
+            "text": {
+              "en": "A wooden sword turned out to be a real one. {c} will sit out the next battles.",
+              "fr": "Une épée de bois s'est révélée bien réelle. {c} ne combattra pas de sitôt."
+            }
+          },
+          {
+            "id": "duel",
+            "good": false,
+            "fx": {
+              "kind": "wound",
+              "n": 2,
+              "h": 12
+            },
+            "title": {
+              "en": "A duel of honour",
+              "fr": "Un duel d'honneur"
+            },
+            "text": {
+              "en": "Two officers settled a question of seating at dinner. Both won, and both are in the infirmary.",
+              "fr": "Deux officiers ont réglé une histoire de place à table. Les deux ont gagné, les deux sont à l'infirmerie."
+            }
+          },
+          {
+            "id": "taxman",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -90
+            },
+            "title": {
+              "en": "The tax collector",
+              "fr": "Le percepteur"
+            },
+            "text": {
+              "en": "He came with a ledger and a smile, and left with the smile and some of the coins.",
+              "fr": "Il est venu avec un registre et un sourire, et reparti avec le sourire et une partie des pièces."
+            }
+          },
+          {
+            "id": "homesick",
+            "good": false,
+            "fx": {
+              "kind": "desert"
+            },
+            "title": {
+              "en": "Homesick",
+              "fr": "Le mal du pays"
+            },
+            "text": {
+              "en": "{c} left a note: \"Gone to see my mother, back when the war is over.\"",
+              "fr": "{c} a laissé un mot : « Je rentre voir ma mère, je reviens à la fin de la guerre. »"
+            }
+          },
+          {
+            "id": "detour",
+            "good": false,
+            "fx": {
+              "kind": "squadDelay",
+              "h": 6
+            },
+            "title": {
+              "en": "A wrong turn",
+              "fr": "Une erreur de chemin"
+            },
+            "text": {
+              "en": "The squad sent on {m} took the wrong valley. It will be back later than planned.",
+              "fr": "L'escouade partie pour {m} s'est trompée de vallée. Elle rentrera plus tard que prévu."
+            }
+          },
+          {
+            "id": "spy",
+            "good": false,
+            "fx": {
+              "kind": "board"
+            },
+            "title": {
+              "en": "A spy at the mission board",
+              "fr": "Un espion au tableau des missions"
+            },
+            "text": {
+              "en": "An enemy spy read the board, and every plan had to be torn up. The missions on offer have changed.",
+              "fr": "Un espion ennemi a lu le tableau et il a fallu déchirer tous les plans. Les missions proposées ont changé."
+            }
+          },
+          {
+            "id": "cart",
+            "good": false,
+            "fx": {
+              "kind": "coins",
+              "n": -70
+            },
+            "title": {
+              "en": "The supply cart broke down",
+              "fr": "La charrette de vivres a cassé"
+            },
+            "text": {
+              "en": "A wheel in a ditch, a load in the mud and a carter to pay twice.",
+              "fr": "Une roue dans le fossé, un chargement dans la boue et un charretier à payer deux fois."
+            }
+          },
+          {
+            "id": "latrine",
+            "good": false,
+            "fx": {
+              "kind": "ticket",
+              "n": -1
+            },
+            "title": {
+              "en": "Lost in the latrines",
+              "fr": "Perdu aux latrines"
+            },
+            "text": {
+              "en": "A ticket fell where nobody will go and look for it.",
+              "fr": "Un ticket est tombé là où personne n'ira le chercher."
+            }
+          },
+          {
+            "id": "volunteer",
+            "good": true,
+            "fx": {
+              "kind": "recruit",
+              "t": [
+                0,
+                1
+              ]
+            },
+            "title": {
+              "en": "A volunteer",
+              "fr": "Un volontaire"
+            },
+            "text": {
+              "en": "{c} walked up to the gate this morning and asked where to sign.",
+              "fr": "{c} s'est présenté à la porte ce matin pour demander où signer."
+            }
+          },
+          {
+            "id": "fame",
+            "good": true,
+            "fx": {
+              "kind": "recruit",
+              "t": [
+                1,
+                2
+              ]
+            },
+            "title": {
+              "en": "The kitchen's fame",
+              "fr": "La réputation de la cuisine"
+            },
+            "text": {
+              "en": "Word of the camp's cooking has spread. {c} joins for the food and asks for no pay.",
+              "fr": "La cuisine du camp fait parler d'elle. {c} s'engage pour les repas, sans demander de solde."
+            },
+            "w": 0.6
+          },
+          {
+            "id": "treasure",
+            "good": true,
+            "fx": {
+              "kind": "coins",
+              "n": 150
+            },
+            "title": {
+              "en": "Buried treasure",
+              "fr": "Un trésor enterré"
+            },
+            "text": {
+              "en": "Digging new latrines, the sappers hit a chest of old coins.",
+              "fr": "En creusant de nouvelles latrines, les sapeurs sont tombés sur un coffre de vieilles pièces."
+            }
+          },
+          {
+            "id": "merchant",
+            "good": true,
+            "fx": {
+              "kind": "ticket",
+              "n": 1
+            },
+            "title": {
+              "en": "A merchant's gift",
+              "fr": "Le cadeau d'un marchand"
+            },
+            "text": {
+              "en": "A travelling merchant spent the night at the camp and paid for his supper with a ticket.",
+              "fr": "Un marchand ambulant a passé la nuit au camp et a payé son souper avec un ticket."
+            }
+          },
+          {
+            "id": "feast",
+            "good": true,
+            "fx": {
+              "kind": "healAll"
+            },
+            "title": {
+              "en": "A great feast",
+              "fr": "Un grand festin"
+            },
+            "text": {
+              "en": "Roast, pies and music until late. Everybody in the infirmary got up for it and never went back to bed.",
+              "fr": "Rôti, tourtes et musique jusque tard. Tout le monde à l'infirmerie s'est levé pour l'occasion et n'est jamais retourné se coucher."
+            },
+            "w": 0.7
+          },
+          {
+            "id": "soup",
+            "good": true,
+            "fx": {
+              "kind": "heal"
+            },
+            "title": {
+              "en": "Grandma's soup",
+              "fr": "La soupe de grand-mère"
+            },
+            "text": {
+              "en": "One bowl of the cook's secret soup, and {c} walks out of the infirmary.",
+              "fr": "Un bol de la soupe secrète du cuisinier, et {c} quitte l'infirmerie sur ses deux jambes."
+            }
+          },
+          {
+            "id": "bread",
+            "good": true,
+            "fx": {
+              "kind": "turn"
+            },
+            "title": {
+              "en": "A change of heart",
+              "fr": "Un revirement"
+            },
+            "text": {
+              "en": "{c} tasted the camp's bread and asks to change sides at once.",
+              "fr": "{c} a goûté au pain du camp et demande à changer de camp sur-le-champ."
+            }
+          },
+          {
+            "id": "veteran",
+            "good": true,
+            "fx": {
+              "kind": "promote"
+            },
+            "title": {
+              "en": "A veteran's lesson",
+              "fr": "La leçon d'un vétéran"
+            },
+            "text": {
+              "en": "An old soldier passing through spent the evening with {c}. By morning: a promotion.",
+              "fr": "Un vieux soldat de passage a passé la soirée à conseiller {c}. Au matin : une promotion."
+            }
+          },
+          {
+            "id": "letters",
+            "good": true,
+            "fx": {
+              "kind": "xp",
+              "n": 120
+            },
+            "title": {
+              "en": "Letters from home",
+              "fr": "Des lettres du pays"
+            },
+            "text": {
+              "en": "The mail finally got through. The whole camp reads, laughs and trains twice as hard.",
+              "fr": "Le courrier est enfin arrivé. Tout le camp lit, rit et s'entraîne deux fois plus dur."
+            }
+          },
+          {
+            "id": "traders",
+            "good": true,
+            "fx": {
+              "kind": "coins",
+              "n": 100
+            },
+            "title": {
+              "en": "Passing traders",
+              "fr": "Des marchands de passage"
+            },
+            "text": {
+              "en": "The camp sold its spare boots and old helmets at a very good price.",
+              "fr": "Le camp a vendu ses bottes en trop et ses vieux casques à très bon prix."
+            }
+          },
+          {
+            "id": "defector",
+            "good": true,
+            "fx": {
+              "kind": "defector"
+            },
+            "title": {
+              "en": "An enemy defector",
+              "fr": "Un transfuge ennemi"
+            },
+            "text": {
+              "en": "{c} left the red camp in the middle of the night and asks for a cell and a hot meal.",
+              "fr": "{c} a quitté le camp rouge en pleine nuit pour demander une cellule et un repas chaud."
+            }
+          },
+          {
+            "id": "plank",
+            "good": true,
+            "fx": {
+              "kind": "super",
+              "n": 1
+            },
+            "title": {
+              "en": "A lucky find",
+              "fr": "Une trouvaille"
+            },
+            "text": {
+              "en": "Under a loose plank of the command tent: a super ticket, left there by nobody knows who.",
+              "fr": "Sous une planche de la tente de commandement : un super ticket, oublié par on ne sait qui."
+            },
+            "w": 0.4
+          },
+          {
+            "id": "children",
+            "good": true,
+            "fx": {
+              "kind": "sticker"
+            },
+            "title": {
+              "en": "A child's gift",
+              "fr": "Le cadeau d'un enfant"
+            },
+            "text": {
+              "en": "The village children came to see the soldiers and left a sticker for the collection.",
+              "fr": "Les enfants du village sont venus voir les soldats et ont laissé un sticker pour la collection."
+            },
+            "w": 0.7
+          },
+          {
+            "id": "intel",
+            "good": true,
+            "fx": {
+              "kind": "board"
+            },
+            "title": {
+              "en": "Fresh intelligence",
+              "fr": "Des renseignements frais"
+            },
+            "text": {
+              "en": "The scouts came back with news, and the mission board has been rewritten.",
+              "fr": "Les éclaireurs rapportent des nouvelles, et le tableau des missions a été réécrit."
+            }
+          },
+          {
+            "id": "crowd",
+            "good": true,
+            "fx": {
+              "kind": "tent"
+            },
+            "title": {
+              "en": "A crowd at the tent",
+              "fr": "Foule à la tente"
+            },
+            "text": {
+              "en": "The smell of the kitchen drew a crowd. New faces are waiting at the recruiting tent.",
+              "fr": "L'odeur de la cuisine a attiré du monde. De nouvelles têtes attendent à la tente de recrutement."
+            }
+          },
+          {
+            "id": "shortcut",
+            "good": true,
+            "fx": {
+              "kind": "squadHome"
+            },
+            "title": {
+              "en": "A shortcut",
+              "fr": "Un raccourci"
+            },
+            "text": {
+              "en": "The squad sent on {m} found a shortcut home. Its report is waiting.",
+              "fr": "L'escouade partie pour {m} a trouvé un raccourci. Son rapport t'attend."
+            }
+          },
+          {
+            "id": "sunny",
+            "good": true,
+            "fx": {
+              "kind": "xp",
+              "n": 80
+            },
+            "title": {
+              "en": "A fine day",
+              "fr": "Une belle journée"
+            },
+            "text": {
+              "en": "Sun, a light wind and nothing on fire. The drills went perfectly.",
+              "fr": "Du soleil, un vent léger et rien qui brûle. Les exercices se sont parfaitement déroulés."
+            }
+          },
+          {
+            "id": "donation",
+            "good": true,
+            "fx": {
+              "kind": "coins",
+              "n": 80
+            },
+            "title": {
+              "en": "The village thanks you",
+              "fr": "Le village remercie"
+            },
+            "text": {
+              "en": "The villagers pooled what they could to thank the camp for its protection.",
+              "fr": "Les villageois ont réuni ce qu'ils pouvaient pour remercier le camp de sa protection."
+            }
+          },
+          {
+            "id": "harvest",
+            "good": true,
+            "fx": {
+              "kind": "ticket",
+              "n": 2
+            },
+            "title": {
+              "en": "A good harvest",
+              "fr": "Une bonne récolte"
+            },
+            "text": {
+              "en": "The camp's garden gave more than anyone could eat, and the surplus sold for two tickets.",
+              "fr": "Le potager du camp a donné plus que tout le monde ne pouvait manger, et le surplus s'est vendu contre deux tickets."
+            },
+            "w": 0.6
+          },
+          {
+            "id": "medal",
+            "good": true,
+            "fx": {
+              "kind": "promote"
+            },
+            "title": {
+              "en": "A medal",
+              "fr": "Une médaille"
+            },
+            "text": {
+              "en": "A messenger from the capital brought a medal and a promotion for {c}.",
+              "fr": "Un messager de la capitale apporte une médaille et une promotion pour {c}."
+            },
+            "w": 0.6
+          }
+        ]
+      },
       "cast": [
         {
           "side": "blue",
@@ -3197,6 +4210,7 @@
           "last": "Dunnit",
           "age": 23,
           "gender": "man",
+          "job": "cook",
           "desc": "skinny young man with messy black hair, an oversized dark-blue hood slipping over his eyes, patched plain cloak, holding one small rusty dagger backwards, tiptoeing pose with a nervous grin",
           "lore": {
             "en": "A kitchen boy who read too many spy novels. He hides behind curtains that are far too short and has never once been spotted — mostly because nobody ever looks at him.",
@@ -3211,6 +4225,7 @@
           "last": "Sterious",
           "age": 29,
           "gender": "woman",
+          "job": "analyst",
           "desc": "slim young woman with a short auburn bob, a dark-blue scarf over the lower half of her face, simple navy leather outfit, two plain daggers, crouched on one knee and winking",
           "lore": {
             "en": "Mae learned to vanish in a crowded market by stealing apples. Now she steals battle plans, and still leaves an apple core where they used to be.",
@@ -3225,6 +4240,7 @@
           "last": "Sight",
           "age": 34,
           "gender": "man",
+          "job": "liaison",
           "desc": "lean man with slicked-back hair and a thin curled moustache, long dark-blue coat with a high collar, black half-mask, a slender short sword, sidestepping sneakily",
           "lore": {
             "en": "A master of disguise who owns forty false moustaches and one real one. Nobody, not even Otto, remembers which one it is.",
@@ -3239,6 +4255,7 @@
           "last": "Trace",
           "age": 38,
           "gender": "woman",
+          "job": "postman",
           "desc": "athletic woman with a long black braid, hooded navy cloak with gold trim, fitted blue leather armour, two curved daggers, leaping forward with the cloak flaring",
           "lore": {
             "en": "Nova crosses enemy camps like smoke through a keyhole. Her reports are signed with a single gold thread, pulled from the cloak of whoever she just robbed.",
@@ -3253,6 +4270,7 @@
           "last": "Emblind",
           "age": 51,
           "gender": "man",
+          "job": "guard",
           "desc": "dashing man with grey temples and a sharp goatee, elegant black and navy leather coat with gold filigree, a gold-hilted rapier and a hidden wrist blade, bowing theatrically with a sly smile",
           "lore": {
             "en": "Once the king's pickpocket, now his most trusted blade. He has shaken the hand of every enemy Marshal — and counted his own rings afterwards.",
@@ -3267,6 +4285,7 @@
           "last": "Dough",
           "age": 60,
           "gender": "woman",
+          "job": "baker",
           "desc": "elegant silver-haired woman, hooded navy cloak lined with gold constellations, jewelled blue mask, legendary sapphire dagger glowing blue, two ghostly translucent afterimages of herself behind her",
           "lore": {
             "en": "No portrait of Shay Dough exists, which is why this one is priceless. Legend says three Marshals fell to the same whisper: hers.",
@@ -3281,6 +4300,7 @@
           "last": "Moore",
           "age": 20,
           "gender": "man",
+          "job": "archivist",
           "desc": "freckled young man in a blue tricorn far too big for him, simple blue tunic, a cheap wooden spyglass, standing on tiptoe on a small rock with his tongue out in concentration",
           "lore": {
             "en": "Seymour climbs every tree he meets to see what is behind it. Usually it is another tree. He writes them all down anyway.",
@@ -3295,6 +4315,7 @@
           "last": "Out",
           "age": 24,
           "gender": "man",
+          "job": "signaller",
           "desc": "lanky young man with sandy hair, blue scarf, short bow on his back, holding a brass spyglass to one eye, balancing on one leg on a fence post",
           "lore": {
             "en": "His only job is to shout his own name. It took the army a whole week to understand he was warning them.",
@@ -3309,6 +4330,7 @@
           "last": "Vation",
           "age": 30,
           "gender": "woman",
+          "job": "expedition",
           "desc": "sturdy woman with a red ponytail, blue feathered tricorn, rope coiled over her shoulder, a climbing hook on her belt, peering through a brass telescope",
           "lore": {
             "en": "Ella has never met a cliff she could not climb or a map she could not correct. She sleeps on the highest point of every camp, for the view.",
@@ -3323,6 +4345,7 @@
           "last": "Far",
           "age": 35,
           "gender": "woman",
+          "job": "cook",
           "desc": "tall dark-skinned woman with short curly hair, long blue ranger coat with gold trim, a long brass telescope, a hawk perched on her leather glove",
           "lore": {
             "en": "Wanda and her hawk Pip see everything within three valleys. Pip does the looking; Wanda takes the credit, and shares the sausages.",
@@ -3337,6 +4360,7 @@
           "last": "Onnaissance",
           "age": 44,
           "gender": "man",
+          "job": "expedition",
           "desc": "weathered bearded man with an eyepatch pushed up on his forehead, ornate blue and gold scout uniform, a map case, kneeling on a rock and pointing ahead with an engraved folding spyglass",
           "lore": {
             "en": "Rick has scouted every border of the kingdom twice, the second time to check the first. He can tell a trap from a pebble by the way it sits.",
@@ -3351,6 +4375,7 @@
           "last": "Voyant",
           "age": 67,
           "gender": "woman",
+          "job": "analyst",
           "desc": "elderly woman with long white hair braided with blue ribbons, a monocle glowing blue, flowing blue and gold cape, a legendary golden spyglass with a crystal lens, a small owl on her shoulder",
           "lore": {
             "en": "They say Clara Voyant can read a card before it is turned. She says she simply pays attention — then winks with the eye behind the glowing lens.",
@@ -3365,6 +4390,7 @@
           "last": "Mite",
           "age": 22,
           "gender": "woman",
+          "job": "pharmacist",
           "desc": "young woman with a soot-smudged face and singed brown pigtails, an oversized blue helmet, holding pliers in one hand and a smoking fuse she has not noticed in the other, wide-eyed",
           "lore": {
             "en": "Dinah defuses traps by asking them nicely first. It has worked once. Her eyebrows are still growing back.",
@@ -3379,6 +4405,7 @@
           "last": "Case",
           "age": 31,
           "gender": "man",
+          "job": "nurse",
           "desc": "stocky man with round spectacles, blue tricorn with brass goggles strapped on it, a huge backpack full of tools, carefully snipping a wire on a small round mine with pliers",
           "lore": {
             "en": "Justin carries a spare of everything, just in case. His backpack weighs more than he does, and it has saved the regiment eleven times.",
@@ -3393,6 +4420,7 @@
           "last": "Boom",
           "age": 33,
           "gender": "woman",
+          "job": "baker",
           "desc": "strong woman with black hair tied up in a blue bandana, leather apron with many pouches, a pickaxe on her back, holding a defused round bomb up triumphantly",
           "lore": {
             "en": "Kay can hear a buried trap tick from twenty paces. She disarms it, keeps the powder, and uses it to light the regiment's birthday cakes.",
@@ -3407,6 +4435,7 @@
           "last": "Dering",
           "age": 39,
           "gender": "man",
+          "job": "instructor",
           "desc": "brown-haired man in a blue tricorn with a white feather, heavy backpack with a lantern and rope, crouching over a mine with pliers in one hand and a bundle of dynamite in the other",
           "lore": {
             "en": "Sol has defused three hundred traps and built four hundred, for practice. He talks to every fuse he cuts, and none has ever answered back.",
@@ -3421,6 +4450,7 @@
           "last": "Field",
           "age": 47,
           "gender": "woman",
+          "job": "nurse",
           "desc": "mature woman with short grey-streaked hair and a small burn scar on her cheek, heavy blue and gold armoured apron, brass goggles, holding an ornate defusing kit and a mine-detecting rod",
           "lore": {
             "en": "Mina walks through minefields humming, and the minefields go quiet. The engineers swear that is not how it works. Mina swears it is.",
@@ -3435,6 +4465,7 @@
           "last": "Powder",
           "age": 72,
           "gender": "man",
+          "job": "pharmacist",
           "desc": "old man with a huge white moustache and round cracked goggles, legendary golden armoured sapper suit with blue plates, cradling a glowing blue bomb like a pet, sparks dancing around him",
           "lore": {
             "en": "Gus has been blown up so many times that the bombs now respect him. At seventy-two he defuses traps with his eyes shut, and often does, during his nap.",
@@ -3449,6 +4480,7 @@
           "last": "First",
           "age": 21,
           "gender": "man",
+          "job": "guard",
           "desc": "round-faced young man in a blue tricorn too big for him, a wooden practice sword and a dented plain shield, marching with his knees high and an earnest grin",
           "lore": {
             "en": "Hugo believes everything he is told, except scarecrows. A scarecrow is a man made of straw, and Hugo does not believe in men made of straw.",
@@ -3463,6 +4495,7 @@
           "last": "Long",
           "age": 26,
           "gender": "woman",
+          "job": "commando",
           "desc": "tall young woman with a blonde braid, blue tunic, a round shield with a gold lion, short sword raised, shouting a battle cry mid-stride",
           "lore": {
             "en": "Marcia marches in a straight line, whatever is in the way. Usually it is a straw man, and usually it loses.",
@@ -3477,6 +4510,7 @@
           "last": "Berd",
           "age": 33,
           "gender": "man",
+          "job": "dietitian",
           "desc": "broad-shouldered man with black hair under a blue tricorn, a halberd in one hand and a lion shield in the other, a torn straw dummy at his feet",
           "lore": {
             "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half — out of principle.",
@@ -3491,6 +4525,7 @@
           "last": "Lee",
           "age": 37,
           "gender": "man",
+          "job": "interrogator",
           "desc": "cheerful blond man in a blue tricorn with a white feather, blue cape with a gold lion, a raised steel sword and a lion shield, big confident smile",
           "lore": {
             "en": "Frank Lee says exactly what he thinks, and what he thinks is \"charge\". His honesty is so complete that no decoy has ever fooled him.",
@@ -3505,6 +4540,7 @@
           "last": "Ute",
           "age": 46,
           "gender": "woman",
+          "job": "doctor",
           "desc": "muscular woman with cropped grey hair and a square jaw, polished blue and gold breastplate, a sergeant's baton and a sword, standing at attention and saluting",
           "lore": {
             "en": "Sergeant Sal Ute has shouted at three generations of recruits. They all complain, and they all come home.",
@@ -3519,6 +4555,7 @@
           "last": "Firm",
           "age": 70,
           "gender": "man",
+          "job": "masterAtArms",
           "desc": "burly old man with a huge white beard and an eyepatch, gleaming legendary golden armour with a blue lion cape, a giant greatsword planted in the ground, shredded straw dummies around his boots",
           "lore": {
             "en": "Fifty years a sergeant, and proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
@@ -3533,6 +4570,7 @@
           "last": "Burr",
           "age": 22,
           "gender": "man",
+          "job": "carpenter",
           "desc": "skinny young man with messy black hair, plain blue tunic, a small hatchet, chopping at a wooden plank with a determined frown",
           "lore": {
             "en": "Tim was a woodcutter's son who joined up to escape the woodcutting. The army handed him an axe on the very first day.",
@@ -3547,6 +4585,7 @@
           "last": "Rhodes",
           "age": 27,
           "gender": "man",
+          "job": "stretcher",
           "desc": "cocky young man with spiky brown hair and a blue tricorn, an axe resting on his shoulder, smirking with one boot on a broken fence",
           "lore": {
             "en": "Axel says the shortest road goes through the fence. He has not used a gate since he was nine.",
@@ -3561,6 +4600,7 @@
           "last": "Wood",
           "age": 31,
           "gender": "woman",
+          "job": "carpenter",
           "desc": "woman with black hair in a bun, blue officer coat with gold buttons, swinging a curved battle axe, splinters of wood flying around",
           "lore": {
             "en": "Holly can fell a palisade in three strokes and rebuild it in four. She calls it redecorating the enemy camp.",
@@ -3575,6 +4615,7 @@
           "last": "Saw",
           "age": 36,
           "gender": "man",
+          "job": "butcher",
           "desc": "grinning black-haired man in a blue tricorn with a white plume, blue lion cape, holding a heavy double-bitted axe high above his head",
           "lore": {
             "en": "Buck has never met a wooden wall he liked. He knocks politely on every barrier — once, with the axe.",
@@ -3589,6 +4630,7 @@
           "last": "Chet",
           "age": 49,
           "gender": "woman",
+          "job": "surgeon",
           "desc": "sturdy freckled woman with braided red hair, ornate blue and gold officer coat, a hand axe in each hand, wood chips swirling around her",
           "lore": {
             "en": "Hattie throws axes the way other officers throw orders: fast, straight, and at whatever is in the way. Wooden walls have learned to fear her whistle.",
@@ -3603,6 +4645,7 @@
           "last": "Cleaver",
           "age": 64,
           "gender": "man",
+          "job": "butcher",
           "desc": "older man with a long grey braided beard, legendary golden armour with a blue cape, a massive rune-engraved axe glowing blue, a splintered wooden gate behind him",
           "lore": {
             "en": "Ash Cleaver once split a fortress gate with a single swing and apologised to the carpenter. His axe has a name, a pension and a tent of its own.",
@@ -3617,6 +4660,7 @@
           "last": "Hole",
           "age": 23,
           "gender": "man",
+          "job": "stretcher",
           "desc": "chubby young man with a dirty face and a plain blue cap, a small pickaxe, sitting on a boulder he failed to break, sweating",
           "lore": {
             "en": "Doug was made a captain because he could dig a trench faster than anyone. Nobody told him captains stop digging.",
@@ -3631,6 +4675,7 @@
           "last": "Stone",
           "age": 28,
           "gender": "woman",
+          "job": "surgeon",
           "desc": "young woman with a brown ponytail, blue captain's coat, a lantern on her belt, cracking a boulder with a miner's pickaxe",
           "lore": {
             "en": "Gemma grew up in the mines under the capital. She finds the weak line in any rock by tapping it twice and listening.",
@@ -3645,6 +4690,7 @@
           "last": "Hanger",
           "age": 34,
           "gender": "man",
+          "job": "archivist",
           "desc": "rugged stubbled man with his blue coat sleeves rolled up, a heavy pickaxe raised overhead, rock shards flying",
           "lore": {
             "en": "Cliff has split boulders, cliffs and one very stubborn statue of a general. He keeps a pebble from each in his pockets, which is why he clinks.",
@@ -3659,6 +4705,7 @@
           "last": "Rubble",
           "age": 42,
           "gender": "man",
+          "job": "commando",
           "desc": "bald burly man with a thick beard, blue tricorn, broad chest in a blue coat with a lion cape, a giant pickaxe on his shoulder",
           "lore": {
             "en": "Rocco walks through rocks, not around them. The quartermaster gave up ordering him new pickaxes; now he orders new rocks, for practice.",
@@ -3673,6 +4720,7 @@
           "last": "Eastwood",
           "age": 51,
           "gender": "man",
+          "job": "judge",
           "desc": "tall weathered man squinting, grey stubble, long blue duster coat with gold trim, a pickaxe slung over his back like a rifle, chewing a piece of straw",
           "lore": {
             "en": "Flint Eastwood speaks four words a day and wastes none of them. The rocks hear \"move\", and somehow they do.",
@@ -3687,6 +4735,7 @@
           "last": "Knight",
           "age": 78,
           "gender": "woman",
+          "job": "governor",
           "desc": "tiny elderly woman with a white bun and round glasses, legendary golden captain's armour with a blue cape, a huge crystal-headed pickaxe twice her size glowing blue, a boulder cracked in half behind her",
           "lore": {
             "en": "Captain Gran Knight has broken mountains since before the war had a name. She is small, she is ancient, and no rock in the kingdom dares to stand in her way.",
@@ -3701,6 +4750,7 @@
           "last": "Dering",
           "age": 24,
           "gender": "man",
+          "job": "cartographer",
           "desc": "confused young man with leaves in his hair, plain blue coat, holding a map upside down and a cheap brass compass",
           "lore": {
             "en": "Wayne holds his map upside down and still finds the way. The forest has never understood how, and neither has Wayne.",
@@ -3715,6 +4765,7 @@
           "last": "Path",
           "age": 29,
           "gender": "woman",
+          "job": "tactician",
           "desc": "young woman with short black hair, blue major's coat, a brass compass on a chain, a walking stick, striding confidently through ferns",
           "lore": {
             "en": "Tracy leaves chalk arrows on every tree she passes. Enemy scouts follow them for hours and end up right back in her camp.",
@@ -3729,6 +4780,7 @@
           "last": "Walker",
           "age": 35,
           "gender": "man",
+          "job": "postman",
           "desc": "fit man with an auburn beard, blue coat, a backpack stuffed with rolled maps, holding a big brass compass and pointing ahead",
           "lore": {
             "en": "Miles has walked every road of the kingdom and most of the ones that are not there. In a forest he is never lost; the forest is.",
@@ -3743,6 +4795,7 @@
           "last": "Vane",
           "age": 55,
           "gender": "man",
+          "job": "liaison",
           "desc": "older man with white hair and a neat white beard, blue major's uniform with gold, a large ornate compass in one hand, a sword at his hip, calm smile",
           "lore": {
             "en": "Major Hector Vane has never been lost, although he once misplaced a regiment for a weekend. They were found exactly where he had left them.",
@@ -3757,6 +4810,7 @@
           "last": "Winds",
           "age": 47,
           "gender": "woman",
+          "job": "signaller",
           "desc": "elegant woman with long dark wavy hair, blue and gold major's coat with a compass-rose brooch, holding a golden compass, cape swirling as if in the wind",
           "lore": {
             "en": "Rosa Winds reads the sky, the moss and the ants, and the forest opens like a book. She has led armies through woods that were on no map.",
@@ -3771,6 +4825,7 @@
           "last": "North",
           "age": 82,
           "gender": "man",
+          "job": "cartographer",
           "desc": "very old man with a white beard down to his belt, cloak of blue and gold embroidered with a star map, a legendary golden compass floating and glowing above his palm, a staff topped with a star",
           "lore": {
             "en": "Magnus North is said to have drawn the first map of the world, then walked it to check. At eighty-two, the forests still part before him out of respect.",
@@ -3785,6 +4840,7 @@
           "last": "Hardy",
           "age": 22,
           "gender": "man",
+          "job": "masterAtArms",
           "desc": "scrappy young man with bandaged knuckles and a bruised cheek, blue coat with torn sleeves, fists raised in a boxing stance, grinning",
           "lore": {
             "en": "Knox has lost every fight he ever started, and started every fight he ever saw. He is not brave; he simply never learned to be afraid.",
@@ -3799,6 +4855,7 @@
           "last": "Ore",
           "age": 27,
           "gender": "woman",
+          "job": "chaplain",
           "desc": "young woman with short platinum hair, blue colonel's coat, brass knuckle gauntlets, fierce stare, one boot resting on a cracked skull",
           "lore": {
             "en": "Val Ore was dared to spend a night in the haunted crypt. She came out at dawn with the ghost's hat and a strongly worded complaint.",
@@ -3813,6 +4870,7 @@
           "last": "Upps",
           "age": 34,
           "gender": "man",
+          "job": "brewer",
           "desc": "burly man with a broken nose and curly dark hair, blue coat, steel gauntlets, cracking his knuckles with a confident smirk",
           "lore": {
             "en": "Colonel Duke Upps settles every argument with one punch, then apologises politely. Skulls, bones and curses do not scare him; paperwork does.",
@@ -3827,6 +4885,7 @@
           "last": "Hart",
           "age": 44,
           "gender": "man",
+          "job": "warden",
           "desc": "long brown-haired man with a full beard, blue colonel's uniform with gold, a lion banner in one hand and an armoured gauntlet fist raised in the other",
           "lore": {
             "en": "Lionel Hart has walked into the Skull Pass five times, whistling all the way. The skulls rattle; Lionel rattles back.",
@@ -3841,6 +4900,7 @@
           "last": "Hem",
           "age": 52,
           "gender": "woman",
+          "job": "warden",
           "desc": "tall muscular woman with a grey mohawk and a scar across one eye, blue and gold armoured colonel, massive gauntlets, shattering a skull with a punch",
           "lore": {
             "en": "Mae Hem once punched a cursed skull so hard it apologised. Her regiment follows her anywhere, mostly to see what she will hit next.",
@@ -3855,6 +4915,7 @@
           "last": "Fear",
           "age": 69,
           "gender": "man",
+          "job": "jailer",
           "desc": "gigantic old man, bald with a braided white beard, legendary golden gauntlets glowing blue, blue lion cape, arms crossed, broken skulls at his feet",
           "lore": {
             "en": "Noah Fear has never been afraid of anything, dragons, ghosts and his mother-in-law included. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
@@ -3869,6 +4930,7 @@
           "last": "Faith",
           "age": 24,
           "gender": "woman",
+          "job": "doctor",
           "desc": "earnest young woman with a neat brown bun, a blue general's coat too big for her, clutching a small padlocked book to her chest",
           "lore": {
             "en": "Constance swore her oath on a book with a lock, then lost the key. She has kept every promise since, just to be safe.",
@@ -3883,6 +4945,7 @@
           "last": "Keeper",
           "age": 31,
           "gender": "man",
+          "job": "jailer",
           "desc": "young man with glasses and neatly parted hair, blue general's coat, a heavy book chained to his wrist, a ring of keys on his belt",
           "lore": {
             "en": "Keith guards the army's secret orders in a book chained to his wrist. He sleeps with it, eats with it, and once swam a river with it.",
@@ -3897,6 +4960,7 @@
           "last": "Thful",
           "age": 38,
           "gender": "woman",
+          "job": "horseMaster",
           "desc": "calm woman with short silver-blonde hair, blue general's coat, a sword and a padlocked leather tome on her belt, one hand on her heart",
           "lore": {
             "en": "Faye Thful has been offered gold, castles and a very nice horse to betray the crown. She kept the horse's apple and refused the rest.",
@@ -3911,6 +4975,7 @@
           "last": "Pledge",
           "age": 43,
           "gender": "woman",
+          "job": "interrogator",
           "desc": "woman with long curly red hair, blue tricorn with a white plume, sword raised, a padlocked golden book at her hip, confident smile",
           "lore": {
             "en": "Ruby Pledge's word is worth more than the royal treasury, and the treasury knows it. Enemy spies have tried every lie on her; she writes them all down and locks the book.",
@@ -3925,6 +4990,7 @@
           "last": "True",
           "age": 57,
           "gender": "man",
+          "job": "judge",
           "desc": "distinguished man with silver hair and a neat moustache, ornate blue and gold general's uniform with medals, a large book sealed with a gold padlock, his hand resting on it",
           "lore": {
             "en": "General Sterling True has never told a lie, not even to be polite. His locked book holds the kingdom's greatest secret, and he forgot the combination on purpose.",
@@ -3939,6 +5005,7 @@
           "last": "Bond",
           "age": 85,
           "gender": "woman",
+          "job": "chaplain",
           "desc": "very old dignified woman with silver hair in a crown braid, legendary golden general's armour with a blue mantle, a glowing book floating beside her, bound by golden chains and a padlock",
           "lore": {
             "en": "Verity Bond has served five kings and betrayed none of them, not even the unbearable one. The book she guards is locked by her word alone, and it has never opened.",
@@ -3953,6 +5020,7 @@
           "last": "Small",
           "age": 20,
           "gender": "man",
+          "job": "dietitian",
           "desc": "very young man with an oversized golden crown slipping over his eyes, blue marshal's coat with sleeves too long, a wooden baton, puffing out his chest",
           "lore": {
             "en": "Kingsley was made Marshal because his grandmother was one. He is still growing into the crown, into the coat, and into the job.",
@@ -3967,6 +5035,7 @@
           "last": "Royce",
           "age": 27,
           "gender": "woman",
+          "job": "governor",
           "desc": "young woman with blonde curls and a small crown, blue marshal's coat with gold braid, a marshal's baton, hand on her hip in a commanding pose",
           "lore": {
             "en": "Regina gives orders so confidently that people obey before they notice she is not their officer. Sometimes she is not even in the army.",
@@ -3981,6 +5050,7 @@
           "last": "Power",
           "age": 36,
           "gender": "man",
+          "job": "instructor",
           "desc": "muscular man with slicked-back black hair and a gold circlet, blue marshal's greatcoat, sword raised as he leads a charge",
           "lore": {
             "en": "Max Power believes every problem can be solved with a louder speech. He is right more often than the generals would like to admit.",
@@ -3995,6 +5065,7 @@
           "last": "Ious",
           "age": 41,
           "gender": "man",
+          "job": "brewer",
           "desc": "slender blond man with a small golden crown, white and blue marshal's coat with gold epaulettes, pointing forward with a golden baton, noble expression",
           "lore": {
             "en": "Marshal Victor Ious has won so many battles that he now loses the odd game of cards on purpose, to stay humble. It does not work.",
@@ -4009,6 +5080,7 @@
           "last": "Supreme",
           "age": 55,
           "gender": "woman",
+          "job": "horseMaster",
           "desc": "regal woman with long dark hair streaked with grey, tall golden crown set with sapphires, blue and gold ceremonial armour, ermine-trimmed cape, marshal's baton raised",
           "lore": {
             "en": "Reigna Supreme commands from the front, crown on and cape dragging in the mud. She says a crown that has never been dented is just a hat.",
@@ -4023,6 +5095,7 @@
           "last": "Maximus",
           "age": 88,
           "gender": "man",
+          "job": "tactician",
           "desc": "very old king-like man with long white hair and beard, legendary giant golden crown glowing, blue and gold royal armour, ermine cape, a golden lion sceptre, a spectral golden lion behind him",
           "lore": {
             "en": "Rex Maximus has led the blue army for sixty years and lost only to his grandchildren, at chess. Where his crown shines, the whole army stands a little straighter.",
@@ -4037,6 +5110,7 @@
           "last": "Lurker",
           "age": 21,
           "gender": "female",
+          "job": "dietitian",
           "desc": "tiny scrawny imp girl with big red eyes, an oversized red hood swallowing her, a tiny rusty dagger, peeking out from behind her own cape",
           "lore": {
             "en": "Ima is so small she hides inside her own hood. The camp sends her to steal secrets; so far she has stolen three spoons and a sock.",
@@ -4051,6 +5125,7 @@
           "last": "Tally",
           "age": 26,
           "gender": "male",
+          "job": "archivist",
           "desc": "lean imp with spiky black hair and a red scarf mask, simple black leather, two jagged daggers, crouched on top of a crate",
           "lore": {
             "en": "Mort keeps a tally of every tent he has sneaked into, scratched on his own dagger. The dagger is getting shorter.",
@@ -4065,6 +5140,7 @@
           "last": "Perr",
           "age": 33,
           "gender": "female",
+          "job": "interrogator",
           "desc": "slender dark-elf woman with a long red ponytail, black and red leather, a curved dagger dripping green poison, a grin with too many fangs",
           "lore": {
             "en": "Vi Perr smiles with too many teeth and whispers with a forked tongue. Nobody in the camp trusts her, which she takes as a compliment.",
@@ -4079,6 +5155,7 @@
           "last": "O'Ween",
           "age": 39,
           "gender": "male",
+          "job": "liaison",
           "desc": "hooded imp whose red eyes glow in the shadow of a black and red hood, crimson face mask, twin serrated daggers, lunging from a crouch",
           "lore": {
             "en": "Hal O'Ween only works at night, and only on the darkest ones. He has slipped into three blue camps without leaving a footprint — or a pumpkin.",
@@ -4093,6 +5170,7 @@
           "last": "Donna",
           "age": 52,
           "gender": "female",
+          "job": "pharmacist",
           "desc": "elegant dark-elf woman with white hair in a sharp bob, ornate black and red assassin armour with gold filigree, poison vials on her belt, twin golden daggers, sly smile",
           "lore": {
             "en": "Bella Donna poisons with charm first and daggers second. Her invitations to tea are the most feared letters in the blue army.",
@@ -4107,6 +5185,7 @@
           "last": "Dread",
           "age": 78,
           "gender": "male",
+          "job": "chaplain",
           "desc": "ancient hunched imp with a long white beard, legendary black and gold cloak dissolving into smoke, a glowing crimson dagger, burning red eyes, ghostly shadow hands curling around him",
           "lore": {
             "en": "Mortimer Dread has been dead once and found it boring. The blue Marshals sleep with a candle lit, because his shadow is the one thing a crown cannot outrank.",
@@ -4121,6 +5200,7 @@
           "last": "Squint",
           "age": 20,
           "gender": "female",
+          "job": "analyst",
           "desc": "tiny imp girl squinting one huge red eye through a cracked red monocle, oversized red cap, holding a spyglass made from a cardboard tube",
           "lore": {
             "en": "Iris squints so hard at the enemy that she gives herself headaches. She once reported an army that turned out to be a row of mushrooms.",
@@ -4135,6 +5215,7 @@
           "last": "Thorne",
           "age": 25,
           "gender": "male",
+          "job": "signaller",
           "desc": "gangly goblin-like imp with huge ears, red hood, short bow on his back, standing on tiptoe on a dead stump with a hand shading his eyes",
           "lore": {
             "en": "Ogle's ears are even better than his eyes. He hears the blue army's boots a league away, and their snoring from two.",
@@ -4149,6 +5230,7 @@
           "last": "Crowley",
           "age": 31,
           "gender": "female",
+          "job": "postman",
           "desc": "dark-elf woman with black feathered hair, red cloak trimmed with crow feathers, a spyglass carved from bone, a crow perched on her shoulder",
           "lore": {
             "en": "Raven's crows fly over the blue camp every morning and gossip to her every evening. She knows who snores, who cheats at cards and where the traps are.",
@@ -4163,6 +5245,7 @@
           "last": "Stringer",
           "age": 40,
           "gender": "male",
+          "job": "masterAtArms",
           "desc": "imp with a huge red feather crest, red and gold light armour, drawing a jagged longbow, glowing red eyes taking aim",
           "lore": {
             "en": "Bo Stringer can put an arrow through a keyhole and read the letter on the other side. He never shoots first; he just looks, and that is worse.",
@@ -4177,6 +5260,7 @@
           "last": "Gaze",
           "age": 54,
           "gender": "female",
+          "job": "analyst",
           "desc": "tall dark-elf woman with silver hair streaked red, a third red eye glowing on her forehead, ornate red and gold scout armour, holding a crystal spyglass",
           "lore": {
             "en": "Morgana Gaze painted a third eye on her forehead as a joke, and then it opened. Now nothing hidden stays hidden on any field she looks at.",
@@ -4191,6 +5275,7 @@
           "last": "Everything",
           "age": 81,
           "gender": "male",
+          "job": "interrogator",
           "desc": "ancient imp elder with long white eyebrows, a legendary golden headdress set with a giant glowing red crystal eye, small floating eyeballs orbiting him, a golden telescope staff",
           "lore": {
             "en": "I.C. Everything has watched this war since before it started. He sees through fog, walls and lies, and he is terribly bored by all of it.",
@@ -4205,6 +5290,7 @@
           "last": "Wickett",
           "age": 21,
           "gender": "male",
+          "job": "brewer",
           "desc": "small imp with singed smoking hair, a dented red helmet, holding a sputtering tiny round bomb with a worried grin",
           "lore": {
             "en": "Fizzle's bombs never go off when they should, and always go off when they should not. The camp keeps him downwind.",
@@ -4219,6 +5305,7 @@
           "last": "Ella",
           "age": 26,
           "gender": "female",
+          "job": "baker",
           "desc": "imp girl with sooty red pigtails, red apron with pockets full of black powder, a round bomb in each hand, cheeky fanged grin, one shoe missing",
           "lore": {
             "en": "Cinder Ella lost a shoe in every explosion she ever caused. She owns forty left shoes and lives in hope.",
@@ -4233,6 +5320,7 @@
           "last": "Tockley",
           "age": 34,
           "gender": "male",
+          "job": "signaller",
           "desc": "stocky goblin-like imp with brass goggles, red coat, a big alarm-clock bomb strapped to his back, pliers and coloured wires in hand",
           "lore": {
             "en": "Tick Tockley builds bombs that play a little tune before they go off. He says it is only polite to warn people.",
@@ -4247,6 +5335,7 @@
           "last": "D. Alive",
           "age": 40,
           "gender": "male",
+          "job": "stretcher",
           "desc": "grinning imp with a red plumed helmet and goggles, red and gold armour, holding a lit round bomb, a bundle of dynamite on his belt and a small shovel",
           "lore": {
             "en": "Barry D. Alive digs the traps, fills the traps, then forgets where he put them. The whole camp walks on tiptoe, just in case.",
@@ -4261,6 +5350,7 @@
           "last": "Glyss",
           "age": 49,
           "gender": "female",
+          "job": "brewer",
           "desc": "dark-elf woman with wild white hair standing on end, red and gold demolition armour, glass vials of glowing red liquid on bandoliers, a detonator plunger",
           "lore": {
             "en": "Nitro Glyss mixes her powders by candlelight and hums while she works. The blue sappers have learned to fear her humming more than her bombs.",
@@ -4275,6 +5365,7 @@
           "last": "Von Kaboom",
           "age": 84,
           "gender": "male",
+          "job": "commando",
           "desc": "ancient imp with a huge white moustache and a monocle, legendary golden and crimson armour, sitting on a giant glowing red bomb like a throne, holding a lit fuse like a cigar",
           "lore": {
             "en": "Baron Von Kaboom has blown up more bridges than the kingdom ever built. At eighty-four he lights his pipe on his own fuses and has never once flinched.",
@@ -4289,6 +5380,7 @@
           "last": "Mudworth",
           "age": 22,
           "gender": "male",
+          "job": "guard",
           "desc": "pudgy imp in a red helmet too big for him, a rusty short sword, tripping over his own cape",
           "lore": {
             "en": "Grunt is the loudest recruit in the camp and the easiest to fool — except by scarecrows, which he attacks on sight because they look shifty.",
@@ -4303,6 +5395,7 @@
           "last": "Grit",
           "age": 27,
           "gender": "female",
+          "job": "warden",
           "desc": "sturdy imp woman with braided red hair, dented red breastplate, a notched sword, snarling fiercely",
           "lore": {
             "en": "Snarla has never understood a joke, a trick or a decoy. She sees a straw man, she sees an enemy, and the straw man loses.",
@@ -4317,6 +5410,7 @@
           "last": "Wire",
           "age": 33,
           "gender": "female",
+          "job": "nurse",
           "desc": "tough imp woman with spiky red hair, spiked red armour with barbed wire wrapped around her forearms, a sword and a spiked shield",
           "lore": {
             "en": "Barb Wire hugs her recruits once a year, and they all dread it. On the field she tears through straw men like paper.",
@@ -4331,6 +5425,7 @@
           "last": "Le",
           "age": 40,
           "gender": "male",
+          "job": "butcher",
           "desc": "laughing imp with eyes squeezed shut, red and gold plumed hat, raising a jagged sword, red cape flowing",
           "lore": {
             "en": "Chuck Le laughs at everything: orders, danger, his own reflection. He laughed so hard at the blue scarecrows that he cut them all down by accident.",
@@ -4345,6 +5440,7 @@
           "last": "Less",
           "age": 51,
           "gender": "female",
+          "job": "instructor",
           "desc": "tall muscular imp woman with a grey buzz cut and a scar, ornate spiked red and gold sergeant's armour, a big serrated falchion, a whistle around her neck",
           "lore": {
             "en": "Ruth Less wakes the camp at four with a whistle and puts it to bed at midnight with a louder one. No straw man has ever survived her inspection.",
@@ -4359,6 +5455,7 @@
           "last": "Don",
           "age": 76,
           "gender": "male",
+          "job": "instructor",
           "desc": "huge old imp with a long white braided beard and small tusks, legendary gold and crimson armour, a giant flaming cleaver, burning straw dummies behind him",
           "lore": {
             "en": "Gore Don has trained every red soldier alive, and a few who are not. His bellow alone can flatten a field of straw men.",
@@ -4373,6 +5470,7 @@
           "last": "Splint",
           "age": 22,
           "gender": "male",
+          "job": "surgeon",
           "desc": "skinny imp with spiky blond hair and splinters in it, plain red tunic, a cracked hatchet, eager grin",
           "lore": {
             "en": "Hackett chops everything that looks wooden: fences, doors, and once the colonel's leg, which was wooden. They are no longer on speaking terms.",
@@ -4387,6 +5485,7 @@
           "last": "Rott",
           "age": 27,
           "gender": "female",
+          "job": "commando",
           "desc": "imp woman with a messy blond ponytail, red tunic, dragging a notched battle axe behind her, smirking",
           "lore": {
             "en": "Axelle drags her axe everywhere, so the whole camp hears her coming. The blue fences hear it too, and shiver.",
@@ -4401,6 +5500,7 @@
           "last": "Wolfe",
           "age": 34,
           "gender": "male",
+          "job": "butcher",
           "desc": "wolfish imp with a grey fur collar, red and black armour, a double-bladed axe, sharp fangs bared, a splintered palisade stake beside him",
           "lore": {
             "en": "Timber Wolfe howls before he chops. Nobody has told him it spoils the surprise, because nobody wants to be chopped.",
@@ -4415,6 +5515,7 @@
           "last": "Splinters",
           "age": 38,
           "gender": "female",
+          "job": "carpenter",
           "desc": "imp woman with spiky blond hair, red and gold plumed lieutenant's hat, fierce fanged grin, a heavy bearded axe raised and a round red shield",
           "lore": {
             "en": "Sally Splinters built a throne out of every fence she ever broke. It is terribly uncomfortable, and she sits on it every day.",
@@ -4429,6 +5530,7 @@
           "last": "Gore",
           "age": 48,
           "gender": "male",
+          "job": "carpenter",
           "desc": "broad imp with a black beard in braids, ornate red and gold armour, twin hand axes with glowing red edges, wood chips flying",
           "lore": {
             "en": "Hew Gore can clear a palisade faster than the blue army can build one. He keeps the best splinter of each as a toothpick.",
@@ -4443,6 +5545,7 @@
           "last": "Guillotine",
           "age": 83,
           "gender": "female",
+          "job": "nurse",
           "desc": "tiny ancient imp woman with a white hair bun and knitting needles in it, legendary gold and crimson armour, a massive glowing executioner's axe far bigger than her",
           "lore": {
             "en": "Granny Guillotine knits in the evenings and chops in the mornings. Every wooden wall in this war has felt her gentle smile, and then her axe.",
@@ -4457,6 +5560,7 @@
           "last": "Grubb",
           "age": 21,
           "gender": "male",
+          "job": "baker",
           "desc": "stubby goblin-like imp in an oversized red miner's helmet with a candle on it, a tiny pickaxe, sitting on a rock and sulking",
           "lore": {
             "en": "Pebble has been hitting the same rock for three weeks. The rock is winning, but Pebble has promised it a rematch.",
@@ -4471,6 +5575,7 @@
           "last": "Gravel",
           "age": 26,
           "gender": "female",
+          "job": "dietitian",
           "desc": "dust-covered imp woman with a red bandana, red miner's coat, a pickaxe over her shoulder, grinning with a chipped fang",
           "lore": {
             "en": "Gerty Gravel eats pebbles to keep her teeth sharp. At least, that is what she tells the recruits, and they believe her.",
@@ -4485,6 +5590,7 @@
           "last": "Bottom",
           "age": 35,
           "gender": "male",
+          "job": "stretcher",
           "desc": "hulking bald goblin-like imp with bare arms and red armour plates, a heavy iron pickaxe, cracking a boulder",
           "lore": {
             "en": "Rock Bottom has hit rocks so often he has become a bit like one: slow to move, hard to stop, and very difficult to lift.",
@@ -4499,6 +5605,7 @@
           "last": "Quarry",
           "age": 41,
           "gender": "female",
+          "job": "chaplain",
           "desc": "imp woman with long flowing red hair, red and gold plumed captain's hat, fierce fanged grin, a war pickaxe held high",
           "lore": {
             "en": "Captain Scarlett Quarry sings to the rocks before she breaks them. Most of them crack on the high notes, which saves her a lot of swinging.",
@@ -4513,6 +5620,7 @@
           "last": "Sidian",
           "age": 52,
           "gender": "male",
+          "job": "surgeon",
           "desc": "tall imp with black stone-like tattoos, ornate red and gold armour, a pickaxe with a glowing obsidian head, cracked rocks around him",
           "lore": {
             "en": "Obi Sidian's pickaxe was carved from a volcano's heart. It sings when it strikes, and rocks crumble just to make it stop.",
@@ -4527,6 +5635,7 @@
           "last": "Lode",
           "age": 80,
           "gender": "female",
+          "job": "cook",
           "desc": "ancient hunched imp woman with white hair and a crystal-studded crown, legendary gold and crimson armour, a colossal jewelled pickaxe glowing red, sitting on a split pile of gems",
           "lore": {
             "en": "Mother Lode has dug through more mountains than this war has soldiers. The rocks of the red country call her grandmother, and step aside when she asks.",
@@ -4541,6 +5650,7 @@
           "last": "Wrongway",
           "age": 23,
           "gender": "male",
+          "job": "cartographer",
           "desc": "skinny imp tangled in a map, leaves in his hair, plain red coat, a cracked compass spinning wildly in his hand",
           "lore": {
             "en": "Wendell's compass points wherever he is not. He trusts it completely, and has visited the whole red country by accident.",
@@ -4555,6 +5665,7 @@
           "last": "Gloom",
           "age": 28,
           "gender": "female",
+          "job": "pharmacist",
           "desc": "imp woman with moss-green streaks in her hair, hooded red coat with twigs caught in it, a bone compass on a string, sniffing the air",
           "lore": {
             "en": "Fern finds her way by the smell of the moss. The forest tried to swallow her once, and spat her out for being too clever.",
@@ -4569,6 +5680,7 @@
           "last": "Morrow",
           "age": 36,
           "gender": "male",
+          "job": "expedition",
           "desc": "imp with long pointed ears, red greatcoat with many pockets, a brass compass and a lantern, marching with a walking stick",
           "lore": {
             "en": "Trek Morrow has walked into the Black Forest nine times and back out eight. Nobody asks about the ninth.",
@@ -4583,6 +5695,7 @@
           "last": "Gellan",
           "age": 58,
           "gender": "female",
+          "job": "cartographer",
           "desc": "old dark-elf woman with white hair in a high bun and gold-rimmed glasses, red and gold robes, a golden compass in one hand and an old map book in the other",
           "lore": {
             "en": "Major Marga Gellan has charted every wood of the red country and scolded most of them. Trees are said to straighten their branches when she walks by.",
@@ -4597,6 +5710,7 @@
           "last": "Ian",
           "age": 50,
           "gender": "male",
+          "job": "expedition",
           "desc": "tall dark-elf man with long black hair and a silver streak, ornate red and gold major's armour, a golden compass spinning in the air above his hand, cape embroidered with a star chart",
           "lore": {
             "en": "Merid Ian navigates by the stars, even at noon; he simply knows where they are. No forest has ever kept him longer than a lunch break.",
@@ -4611,6 +5725,7 @@
           "last": "Longitude",
           "age": 87,
           "gender": "female",
+          "job": "governor",
           "desc": "ancient dark-elf woman with floor-length white hair, legendary golden crown shaped like compass points, crimson robes embroidered with maps, a giant glowing compass rose floating behind her",
           "lore": {
             "en": "Lady Longitude drew the borders of the red country with her own quill. Forests that are not on her maps are not allowed to exist, and many have quietly stopped.",
@@ -4625,6 +5740,7 @@
           "last": "Doolittle",
           "age": 22,
           "gender": "male",
+          "job": "horseMaster",
           "desc": "scrawny imp with a black eye, red headband, oversized red boxing gloves, bouncing in a fighting stance",
           "lore": {
             "en": "Scrappy challenges anyone to a fight, including the wind. He has lost to the wind twice, but he says it cheated.",
@@ -4639,6 +5755,7 @@
           "last": "Fang",
           "age": 27,
           "gender": "female",
+          "job": "doctor",
           "desc": "imp woman with white pigtails, torn red coat, spiked red knuckle-dusters, fanged grin, cracking a skull with one punch",
           "lore": {
             "en": "Brawla keeps a skull on her bedside table and says good morning to it. It has never said good morning back, and she finds that rude.",
@@ -4653,6 +5770,7 @@
           "last": "Maul",
           "age": 36,
           "gender": "male",
+          "job": "masterAtArms",
           "desc": "burly goblin-like imp with a shaved head and small tusks, red and black armour, iron gauntlets, one foot on a pile of skulls",
           "lore": {
             "en": "Mack Maul fears nothing except running out of things to punch. He once punched a ghost; the ghost left the camp the next morning.",
@@ -4667,6 +5785,7 @@
           "last": "Fury",
           "age": 44,
           "gender": "female",
+          "job": "warden",
           "desc": "imp woman with long wild white hair, red and gold plumed armour, massive spiked gauntlets, snarling, a smashed skull under her boot",
           "lore": {
             "en": "Colonel Blanche Fury went white overnight — not from fright, from anger. She has cracked every cursed skull the blue army ever planted.",
@@ -4681,6 +5800,7 @@
           "last": "Morgue",
           "age": 55,
           "gender": "male",
+          "job": "doctor",
           "desc": "towering bald imp with red war paint shaped like a skull on his face, ornate red and gold armour, huge glowing red gauntlets, fist raised",
           "lore": {
             "en": "Crusher Morgue paints a skull on his face so the real ones know who is in charge. They never argue; he punches them anyway.",
@@ -4695,6 +5815,7 @@
           "last": "Naught",
           "age": 88,
           "gender": "male",
+          "job": "guard",
           "desc": "gigantic ancient imp with a long white beard braided with small bones, legendary gold and crimson armour, colossal fiery gauntlets, a heap of broken skulls behind him",
           "lore": {
             "en": "Dread Naught fears nothing, because he is what everything else fears. At eighty-eight he still opens the Skull Gate with a single knock.",
@@ -4709,6 +5830,7 @@
           "last": "Padlock",
           "age": 22,
           "gender": "female",
+          "job": "jailer",
           "desc": "small imp girl in a red beret, carrying a huge padlocked book she can barely lift, keys jingling on her belt, determined pout",
           "lore": {
             "en": "Penny was given the camp's secret book to carry and has not put it down since. She does not know what is inside, and has decided that is what makes her loyal.",
@@ -4723,6 +5845,7 @@
           "last": "Tome",
           "age": 30,
           "gender": "male",
+          "job": "cook",
           "desc": "bookish imp with round spectacles, red general's coat, a chained book on his belt, a quill behind his pointed ear",
           "lore": {
             "en": "Tomas Tome has read the camp's secret book a thousand times and never told a soul. When blue spies ask, he recites the recipe for turnip soup.",
@@ -4737,6 +5860,7 @@
           "last": "Bound",
           "age": 38,
           "gender": "female",
+          "job": "liaison",
           "desc": "dark-elf woman with dark braids wrapped in chains, red and black general's coat, a heavy book sealed with red wax and a padlock, stern look",
           "lore": {
             "en": "Bonnie Bound wraps her promises in chains, literally. The blue army once offered her a castle to open her book; she used the letter to light a fire.",
@@ -4751,6 +5875,7 @@
           "last": "Sworn",
           "age": 45,
           "gender": "male",
+          "job": "judge",
           "desc": "massive imp in heavy red and gold armour, ferocious grin, gauntleted fist raised, a huge padlocked tome chained to his back",
           "lore": {
             "en": "General Garth Sworn swore loyalty to the red crown with his fist on the book, and dented it. He has never broken his word, only the odd table.",
@@ -4765,6 +5890,7 @@
           "last": "Chains",
           "age": 56,
           "gender": "female",
+          "job": "jailer",
           "desc": "tall dark-elf woman with silver hair in an elegant crown braid, ornate red and gold general's armour with medals, carrying a golden padlocked grimoire, commanding gaze",
           "lore": {
             "en": "Fidelia Chains has refused every bribe with the same smile and the same sentence: \"The book stays shut.\" Some say the book itself obeys her.",
@@ -4779,6 +5905,7 @@
           "last": "Sworn",
           "age": 89,
           "gender": "male",
+          "job": "archivist",
           "desc": "ancient imp elder with a long white beard, legendary gold and crimson armour, a giant floating tome locked with glowing red chains and a golden skull-shaped padlock",
           "lore": {
             "en": "Ever Sworn has kept the red country's oldest secret for seventy years. He has forgotten his birthday, and his own name twice, but never a word he gave.",
@@ -4793,6 +5920,7 @@
           "last": "Squeak",
           "age": 20,
           "gender": "male",
+          "job": "postman",
           "desc": "tiny imp boy with a huge red crown sliding over his eyes, red cape dragging on the ground, a wooden sceptre, pouting",
           "lore": {
             "en": "Pip Squeak is next in line for the red throne, after forty-two cousins. He practises his royal wave on the pigeons.",
@@ -4807,6 +5935,7 @@
           "last": "Tantrum",
           "age": 25,
           "gender": "female",
+          "job": "governor",
           "desc": "imp girl with red curls and a small spiky crown, red and gold gown over light armour, stamping her foot and pointing a sceptre",
           "lore": {
             "en": "Tiara gives an order, and if nobody obeys, she gives it again, louder. She has never needed a third time.",
@@ -4821,6 +5950,7 @@
           "last": "Less",
           "age": 38,
           "gender": "male",
+          "job": "tactician",
           "desc": "tall imp noble with slicked black hair and a widow's peak, high-collared red and black cape, a spiky crown, sly fanged smile",
           "lore": {
             "en": "Count Less has so many titles he has lost count. He introduces himself for twenty minutes before every battle, which is, in fact, his strategy.",
@@ -4835,6 +5965,7 @@
           "last": "Monarch",
           "age": 62,
           "gender": "male",
+          "job": "judge",
           "desc": "old imp with a white beard and gold glasses, a tall red and gold crown-hat, red robes, red magic swirling from one hand, a ledger book in the other",
           "lore": {
             "en": "Mordred Monarch rules the camp with a spell in one hand and a ledger in the other. He knows the price of every soldier and the name of none.",
@@ -4849,6 +5980,7 @@
           "last": "Throne",
           "age": 61,
           "gender": "female",
+          "job": "horseMaster",
           "desc": "imposing dark-elf queen with long black hair streaked white, a tall jagged crimson crown set with rubies, red and gold ceremonial armour, bat-wing cape, a sceptre with a glowing gem",
           "lore": {
             "en": "Vexa Throne took the crown at a banquet and nobody remembers how. She rules with a smile so cold that the camp fires burn blue when she passes.",
@@ -4863,6 +5995,7 @@
           "last": "Mortis",
           "age": 90,
           "gender": "male",
+          "job": "tactician",
           "desc": "ancient towering imp emperor with a very long white beard, legendary colossal golden crown with a burning red gem, crimson and gold robes, a skull sceptre, red flames and bats swirling around him",
           "lore": {
             "en": "Rex Mortis has worn the red crown so long it has grown into his head. He is ninety, he is terrible, and he is the one card every blue spy dreams of reaching.",

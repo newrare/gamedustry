@@ -1,0 +1,2139 @@
+{
+  "arcider": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-12",
+      "hash": "ea4a0e0dee09",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-08",
+      "hash": "61032bbd4b6c",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-07",
+      "hash": "8dbaaf56810e",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-09",
+      "hash": "0d40d36507af",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-14",
+      "hash": "0286caba5121",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-01",
+      "hash": "cc17b5e62d9f",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-15",
+      "hash": "2a1e68ca74c7",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-02",
+      "hash": "e5d1a0c97910",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-16",
+      "hash": "91ff6b0ec9b6",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-10",
+      "hash": "08be82f9d7a6",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-04",
+      "hash": "7d7ab862a291",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-22",
+      "hash": "4904b59a3abf",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-05",
+      "hash": "1682d10ddc23",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-17",
+      "hash": "fce47c3f1e0e",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-11",
+      "hash": "95754b4714dd",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-06",
+      "hash": "73a74f25ee5a",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-03",
+      "hash": "f24e38292f4e",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-24",
+      "hash": "6ef191375548",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-23",
+      "hash": "41d4a452d5ef",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-18",
+      "hash": "1dc507f98508",
+      "at": "2026-09-27"
+    },
+    "sticker24": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "arcider-sticker-21",
+      "hash": "6b9d33d55734",
+      "at": "2026-09-27"
+    }
+  },
+  "blight": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-01",
+      "hash": "6ef73a46d0c3",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-02",
+      "hash": "15284866a077",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-03",
+      "hash": "ce17312120c2",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-04",
+      "hash": "cfe9577164db",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-05",
+      "hash": "aef55400e0e9",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-06",
+      "hash": "8658aea6ecd6",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-07",
+      "hash": "ccaf7a5c4b1c",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-08",
+      "hash": "1d25c2481ee9",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-09",
+      "hash": "25f2138a0f50",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-10",
+      "hash": "90209a96194d",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-11",
+      "hash": "b20800bad2e5",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-12",
+      "hash": "fdbebffe6274",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-14",
+      "hash": "69efd3a7a51e",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-15",
+      "hash": "bec26ae30f85",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-16",
+      "hash": "a2d8694480bb",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-17",
+      "hash": "a3b416d6b28f",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-18",
+      "hash": "f70224c58292",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-19",
+      "hash": "90e8fd3df6f1",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-20",
+      "hash": "1d0d10522b45",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "blight-sticker-21",
+      "hash": "e4b91aa2f72c",
+      "at": "2026-09-27"
+    }
+  },
+  "bouncetry": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-01",
+      "hash": "2cde61b01fef",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-02",
+      "hash": "d825bc616fbe",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-03",
+      "hash": "d9da04004252",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-04",
+      "hash": "8b10fd334e46",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-05",
+      "hash": "aab9366c3dd0",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-06",
+      "hash": "24a6e64222f5",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-07",
+      "hash": "affc727d0170",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-08",
+      "hash": "d5edd7d228e9",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-09",
+      "hash": "253ef7db4d5c",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-10",
+      "hash": "80c0f63885ec",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-11",
+      "hash": "f91edf4315b9",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-12",
+      "hash": "432d5b3d32bf",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-13",
+      "hash": "6d4da2b5d036",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-14",
+      "hash": "35c6f9cc72f3",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-15",
+      "hash": "bafc1a073000",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-16",
+      "hash": "dc3b05470341",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-17",
+      "hash": "447f0e77a196",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-18",
+      "hash": "fb7104499c65",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-19",
+      "hash": "9683d9cab41d",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bouncetry-sticker-20",
+      "hash": "e9f50603321c",
+      "at": "2026-09-27"
+    }
+  },
+  "chainring": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-01",
+      "hash": "7a5e5661304e",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-02",
+      "hash": "241da3f845e8",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-03",
+      "hash": "e5d524809e58",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-04",
+      "hash": "ea121ec9bf3c",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-05",
+      "hash": "4edae62aba1b",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-06",
+      "hash": "36c92b62e372",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-07",
+      "hash": "f441e1636d41",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-08",
+      "hash": "22929e563525",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-09",
+      "hash": "e499d53949a4",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-10",
+      "hash": "c8e6c64f65f1",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-11",
+      "hash": "137c43c98059",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-12",
+      "hash": "478b3beca22a",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-13",
+      "hash": "c4b6f41e6ce0",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-14",
+      "hash": "4628efd0c1ed",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-15",
+      "hash": "69335b6ded72",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-16",
+      "hash": "37de0bec88db",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-17",
+      "hash": "012d7abcfa45",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-18",
+      "hash": "bcd550b1362b",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-19",
+      "hash": "7749cae7e113",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "chainring-sticker-20",
+      "hash": "e607d79bd28a",
+      "at": "2026-09-27"
+    }
+  },
+  "echomaze": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-01",
+      "hash": "45a0df6f4b57",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-02",
+      "hash": "194f5a193c8c",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-03",
+      "hash": "23cfe78642cb",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-04",
+      "hash": "090fac0d6584",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-05",
+      "hash": "fdb0c7b418e9",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-06",
+      "hash": "e8f9af12d36d",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-07",
+      "hash": "730d58b79582",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-08",
+      "hash": "60f767c70150",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-10",
+      "hash": "5b85a799c255",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-12",
+      "hash": "02a10088396e",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-13",
+      "hash": "f77a01a21ad8",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-14",
+      "hash": "7e8fd4f79a7e",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-15",
+      "hash": "bc3dfccfd69d",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-16",
+      "hash": "9706edb57bd0",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-17",
+      "hash": "a95a9e09786f",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-18",
+      "hash": "c8e305def363",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-19",
+      "hash": "08885c3febfe",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-21",
+      "hash": "38561bb89f7b",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-22",
+      "hash": "6bd18f86dac5",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "echomaze-sticker-24",
+      "hash": "9322a661d571",
+      "at": "2026-09-27"
+    }
+  },
+  "gearball": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-01",
+      "hash": "dd4e07739b5a",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-02",
+      "hash": "7bc9697ddc42",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-03",
+      "hash": "60bb19a887fb",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-04",
+      "hash": "0bc26c5be1cd",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-05",
+      "hash": "7c13cdd8b684",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-06",
+      "hash": "da40e9aeeef3",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-07",
+      "hash": "0c2d507885c1",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-08",
+      "hash": "5bff41896ee4",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-09",
+      "hash": "fc06213f0f30",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-10",
+      "hash": "e1794e0d10da",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-11",
+      "hash": "5696a2f1a51e",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-12",
+      "hash": "287ea2748051",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-13",
+      "hash": "1f28e513b537",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-14",
+      "hash": "6425ae0194f4",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-15",
+      "hash": "b06d62326d32",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-16",
+      "hash": "13182fc8819a",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-17",
+      "hash": "0d871cabade1",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-18",
+      "hash": "6286fa3ec712",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-19",
+      "hash": "1260cbe363fb",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gearball-sticker-20",
+      "hash": "986992fe58d3",
+      "at": "2026-09-27"
+    }
+  },
+  "marshmelt": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-01",
+      "hash": "0fb912eac4f1",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-02",
+      "hash": "f2b205987a69",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-03",
+      "hash": "4324597b5a5c",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-04",
+      "hash": "5631e60651ab",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-05",
+      "hash": "98087f3c6b36",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-06",
+      "hash": "3b4884fbfafc",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-07",
+      "hash": "2b759606a885",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-08",
+      "hash": "98a859ec4164",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-09",
+      "hash": "49601ab619b2",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-10",
+      "hash": "a75f70293dd1",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-11",
+      "hash": "d50354b57660",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-12",
+      "hash": "712eea04819b",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-13",
+      "hash": "4c74cc51a697",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-14",
+      "hash": "fcb969d8a16b",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-15",
+      "hash": "f9ef89bec41a",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-16",
+      "hash": "7b4ad6cdb8e8",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-17",
+      "hash": "fdcecbf2145f",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-18",
+      "hash": "58cf9159c733",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-19",
+      "hash": "e69297ba19ca",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "marshmelt-sticker-20",
+      "hash": "c3924c02f32a",
+      "at": "2026-09-27"
+    }
+  },
+  "orbinity": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-01",
+      "hash": "6fc7cbed905f",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-02",
+      "hash": "2fb71a088f39",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-03",
+      "hash": "440afa5269e3",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-04",
+      "hash": "5c2e3df342d8",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-05",
+      "hash": "746c39657d39",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-06",
+      "hash": "34dcc2e7d38d",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-07",
+      "hash": "768eec00f7b0",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-08",
+      "hash": "c728db314e99",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-09",
+      "hash": "2b8c224a6790",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-10",
+      "hash": "f8f2c3e1c566",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-11",
+      "hash": "837dbe805e3b",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-12",
+      "hash": "85abd8313b3c",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-13",
+      "hash": "a99576302b0e",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-14",
+      "hash": "6110154df30b",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-15",
+      "hash": "951663f9a152",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-16",
+      "hash": "24456f178071",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-17",
+      "hash": "3733574c13ad",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-18",
+      "hash": "860128e96f21",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-19",
+      "hash": "634eeeba9f61",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "orbinity-sticker-20",
+      "hash": "16f47a090ab1",
+      "at": "2026-09-27"
+    }
+  },
+  "pawko": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-01",
+      "hash": "679fd647ec91",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-02",
+      "hash": "abb3a380e3c8",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-03",
+      "hash": "c845a2824f11",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-04",
+      "hash": "bb54230c4389",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-05",
+      "hash": "c5c5a7e32ad3",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-06",
+      "hash": "da2fd0894cba",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-07",
+      "hash": "c23572c8774c",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-08",
+      "hash": "dc0d71f99eb6",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-09",
+      "hash": "97d5f30c2f22",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-10",
+      "hash": "5dbecd32025e",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-11",
+      "hash": "04d688acbb04",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-12",
+      "hash": "ad520879c2c1",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-13",
+      "hash": "21f7a90842b8",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-14",
+      "hash": "1831b77c0ee0",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-15",
+      "hash": "c5518a18285d",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-16",
+      "hash": "282674f875e2",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-17",
+      "hash": "4789d0168f12",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-18",
+      "hash": "3d06d6893f89",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-19",
+      "hash": "2bfd07d9e8ee",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "pawko-sticker-20",
+      "hash": "301dfd747dd5",
+      "at": "2026-09-27"
+    }
+  },
+  "radiam": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-01",
+      "hash": "0b5919ecded1",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-02",
+      "hash": "c07fca39b267",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-03",
+      "hash": "02fe753bdae5",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-04",
+      "hash": "6d445fb99ff8",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-05",
+      "hash": "efed01fed54f",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-06",
+      "hash": "1fdf8d392063",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-07",
+      "hash": "859de50df8db",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-08",
+      "hash": "88d943cee681",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-09",
+      "hash": "267c2ab5aed3",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-10",
+      "hash": "f5de8a747ccb",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-11",
+      "hash": "3d249eb31adf",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-12",
+      "hash": "81e5c806d8fa",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-13",
+      "hash": "d60b10014bb0",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-14",
+      "hash": "bd4ef68a75e8",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-15",
+      "hash": "b6126122e125",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-16",
+      "hash": "e841c4335f83",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-17",
+      "hash": "9a3a51139b56",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-18",
+      "hash": "c8f289e39ac1",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-19",
+      "hash": "09396b70b988",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "radiam-sticker-20",
+      "hash": "12a19e304107",
+      "at": "2026-09-27"
+    }
+  },
+  "slipdeck": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-01",
+      "hash": "f20099774c7b",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-02",
+      "hash": "da27607959c9",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-03",
+      "hash": "0b28ceba1075",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-04",
+      "hash": "1a494094be7c",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-05",
+      "hash": "b88fe0a6a8ce",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-06",
+      "hash": "d02dd53054c8",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-07",
+      "hash": "a0aae1bad620",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-08",
+      "hash": "af0d6257cf44",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-09",
+      "hash": "342539f7e5d7",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-10",
+      "hash": "560f00f89e13",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-11",
+      "hash": "6c9034eaaa2f",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-12",
+      "hash": "169f4f3d5261",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-14",
+      "hash": "cc228a2980ca",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-15",
+      "hash": "ddb0049c4944",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-16",
+      "hash": "36659fe212b1",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-17",
+      "hash": "2d140436c55d",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-18",
+      "hash": "78320bc1775f",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-19",
+      "hash": "c225e8ddb848",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-20",
+      "hash": "57924e6956cd",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "slipdeck-sticker-21",
+      "hash": "893745633285",
+      "at": "2026-09-27"
+    }
+  },
+  "spinshock": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-01",
+      "hash": "3a8b177645da",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-14",
+      "hash": "2b3d6a19cd35",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-03",
+      "hash": "64e43ff30120",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-04",
+      "hash": "df3c6d269d94",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-05",
+      "hash": "7798558a560c",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-06",
+      "hash": "a2a1d0b78430",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-10",
+      "hash": "2ec6e84fe4fa",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-12",
+      "hash": "bb14a67c426d",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-11",
+      "hash": "1388a50363ee",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-09",
+      "hash": "d94e8d24d0ae",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-08",
+      "hash": "a3f23b2ccd41",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-15",
+      "hash": "b9737f0ba886",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-16",
+      "hash": "50ec11af0508",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-19",
+      "hash": "47931b7b2636",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-20",
+      "hash": "efea3a751ae9",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-17",
+      "hash": "91b8a54c1c84",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-18",
+      "hash": "5991fb8a7021",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-07",
+      "hash": "a6376027d9e5",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-13",
+      "hash": "e6f1db738050",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "spinshock-sticker-02",
+      "hash": "24482455094e",
+      "at": "2026-09-27"
+    }
+  },
+  "stratideck": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-01",
+      "hash": "f3ebfd9f84b8",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-02",
+      "hash": "f4390fb2a50d",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-03",
+      "hash": "688d15940a8a",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-04",
+      "hash": "d8f9a57d8dc8",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-05",
+      "hash": "1ee1756800bc",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-06",
+      "hash": "4eeb717ea5a1",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-07",
+      "hash": "3a932f5f9afd",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-08",
+      "hash": "f9d0cd987a9b",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-09",
+      "hash": "04d15b3b0772",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-10",
+      "hash": "278797ed37d2",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-11",
+      "hash": "84b63f75b512",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-12",
+      "hash": "0033670799a9",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-13",
+      "hash": "a5db8c66161d",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-14",
+      "hash": "52b071a54de1",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-15",
+      "hash": "1b5e9fe5d278",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-16",
+      "hash": "2a79f20ec547",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-17",
+      "hash": "5d9f730424d4",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-18",
+      "hash": "00c754deeb18",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-19",
+      "hash": "3d178869bf3f",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "stratideck-sticker-20",
+      "hash": "c9086b7094ce",
+      "at": "2026-09-27"
+    }
+  },
+  "triverse": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-01",
+      "hash": "90bb5f397a48",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-10",
+      "hash": "08c6d9061b5b",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-04",
+      "hash": "5b840537ebaa",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-03",
+      "hash": "83617445bf7e",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-05",
+      "hash": "6676fe8360b0",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-08",
+      "hash": "027bd438fe77",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-07",
+      "hash": "4bae2305f6ca",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-09",
+      "hash": "ea210a7fedc8",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-11",
+      "hash": "0aa3958f4350",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-02",
+      "hash": "ad9370587c51",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-16",
+      "hash": "d41bf56ad7d9",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-14",
+      "hash": "5c4b29788a08",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-13",
+      "hash": "ba600775f3f7",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-18",
+      "hash": "3f724cd22cc2",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-19",
+      "hash": "d13c0c3b3ea2",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-15",
+      "hash": "6d52e5d54b43",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-17",
+      "hash": "03bb3893e55f",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-21",
+      "hash": "108797505005",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-20",
+      "hash": "01b795c53535",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "triverse-sticker-22",
+      "hash": "24be44aa0fb0",
+      "at": "2026-09-27"
+    }
+  },
+  "vipera": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-01",
+      "hash": "4df3eaf17d7c",
+      "at": "2026-09-27"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-02",
+      "hash": "f5bb0bac47a7",
+      "at": "2026-09-27"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-03",
+      "hash": "2dd19f4368d8",
+      "at": "2026-09-27"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-04",
+      "hash": "70d9f4d57811",
+      "at": "2026-09-27"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-05",
+      "hash": "d53256e07ae5",
+      "at": "2026-09-27"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-06",
+      "hash": "ccb26129f371",
+      "at": "2026-09-27"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-07",
+      "hash": "4e39769988cf",
+      "at": "2026-09-27"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-08",
+      "hash": "7ca9a0b7b8f0",
+      "at": "2026-09-27"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-09",
+      "hash": "8cfee5253319",
+      "at": "2026-09-27"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-10",
+      "hash": "f7853be834f7",
+      "at": "2026-09-27"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-12",
+      "hash": "62cd7429f6d4",
+      "at": "2026-09-27"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-13",
+      "hash": "36c6eeeae37a",
+      "at": "2026-09-27"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-14",
+      "hash": "b1cffd54fb81",
+      "at": "2026-09-27"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-15",
+      "hash": "72adb55f5662",
+      "at": "2026-09-27"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-16",
+      "hash": "0a85cca42ba3",
+      "at": "2026-09-27"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-17",
+      "hash": "c9cfec82fd11",
+      "at": "2026-09-27"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-18",
+      "hash": "e54a37895a9b",
+      "at": "2026-09-27"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-19",
+      "hash": "774cc3a1ba20",
+      "at": "2026-09-27"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-20",
+      "hash": "54d4faf4e59b",
+      "at": "2026-09-27"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "vipera-sticker-21",
+      "hash": "414c607acfb5",
+      "at": "2026-09-27"
+    }
+  }
+}

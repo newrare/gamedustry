@@ -416,7 +416,7 @@ thirteen products again:
 - it slides in from the right edge, shines once, **shakes when it is a `warn`
   or a `loss`**, and a timer line drains under it for 2.2 s;
 - it **leaves by flying into the chip it is about** — a coin notice into the
-  coins, a ticket into the tickets, xp into the level bar — when the web shell
+  coins, a ticket into the collection, xp into the level bar — when the web shell
   has registered where those are (`Notify.target(fn)`, meta.js), and by lifting
   away otherwise;
 - a tap dismisses it and a press holds it — **except in a round**, where the
@@ -425,6 +425,16 @@ thirteen products again:
 
 It is not cleared on a change of screen — the notice fired as a round ends is
 the one the next screen must still show.
+
+**It keeps a log**: the last ten notices of the session, newest first, already
+translated and shouted — `Notify.history()` hands them over as copies
+(`{ word, sub, kind, icon, html, count, at }`) and `Notify.onLog(fn)` is told
+when the log moves. A repeat of the notice on top of the log bumps its `×N`
+there instead of adding a line. The web shell draws it as the band's **"!"
+chip**, last in the row and hidden until the first notice: a tap opens a card
+listing the ten in the notice's own dress, with how long ago each was said
+(`packages/webshell/meta.js`, section 11c). In memory only — it is what was said
+this session, and the save knows nothing of it.
 
 **The one knob** is `CONFIG.notify = { round: "bottom" }`, for a game whose board
 fills the top of the frame (`bouncetry`'s bricks, `echomaze`'s maze): the

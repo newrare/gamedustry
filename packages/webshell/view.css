@@ -92,7 +92,7 @@
    not fit at the floor gets its wrap back (`.wrap`) rather than overflowing. */
 
 .mt-sub { margin:0; text-align:center; font-size:26px; color:var(--muted); line-height:1.35; }
-.mt-sub.small { font-size:20px; opacity:.7; }
+.mt-sub.small { font-size:22px; opacity:.7; }
 
 /* =========================================================================
    THE CORNER CONTROLS — options and help, from anywhere
@@ -239,17 +239,30 @@
 /* The DEV pill, between the house and the level chip, on a local machine only
    (meta.js, DEV). Not a chip and not a door: a flat tag in the danger colour,
    so it can never read as a number the player owns. It takes its width out of
-   the xp bar, which is the spring of the row. */
+   the xp bar, which is the spring of the row. It is the fast clock's switch
+   (W.Dev), off when the game opens: hollow while off — still there, since
+   the machine is still a dev one — and filled once a tap turns it on. */
 #web-hud .mt-dev {
-  flex:0 0 auto; font-style:normal; font-size:14px; font-weight:900;
-  letter-spacing:2px; line-height:1; padding:6px 8px; border-radius:6px;
-  color:#0b0b12; background:var(--danger); pointer-events:none;
+  flex:0 0 auto; font:inherit; font-style:normal; font-size:18px; font-weight:900;
+  letter-spacing:2px; line-height:1; padding:4px 6px; border-radius:6px;
+  color:#0b0b12; background:var(--danger); border:2px solid var(--danger);
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
 }
+#web-hud .mt-dev.off { color:var(--danger); background:transparent; }
 /* A chip whose door is the screen it is standing on: it still counts, it just
    stops offering. A control that cannot act is a tap the player learns to stop
    making — but it must not go MISSING either, or the row changes shape as the
    player walks it. */
 #web-hud .mt-chip.inert, #web-hud .mt-lv.inert { cursor:default; opacity:.72; }
+
+/* ---- the log: what was said, read again ---------------------------------
+   The last chip of the standing row (meta.js, section 11c), hidden until the
+   first notice of the session. A "!" and nothing else: it is the one chip that
+   counts nothing, so it carries no figure — only the unseen dot. */
+#web-hud .mt-band-log { position:relative; flex:0 0 auto; display:flex; }
+#web-hud .mt-band-log[hidden] { display:none; }
+#web-hud .mt-chip.log { padding:0 14px; color:var(--accent); }
+#web-hud .mt-chip.log b { font-size:26px; line-height:1; }
 
 /* ---- the fold: what a game adds to the band -----------------------------
    One chip between the level and the coins (meta.js, section 11b), on a game
@@ -277,7 +290,7 @@
 #web-hud .mt-more::before { content:""; position:absolute; left:0; right:0; top:-12px; height:12px; }
 @keyframes mt-more-in { from { opacity:0; transform:translateY(-6px); } }
 #web-hud .mt-more-h {
-  padding:6px 12px 8px; font-size:16px; letter-spacing:2px; color:var(--muted);
+  padding:6px 12px 8px; font-size:20px; letter-spacing:2px; color:var(--muted);
 }
 #web-hud .mt-more-row {
   display:flex; align-items:center; gap:12px; width:100%;
@@ -387,7 +400,7 @@
   font-weight:var(--web-fw, 900); color:var(--text);
   text-shadow:0 3px 14px rgba(0,0,0,.85);
 }
-.wv-sub { margin:0; font-size:19px; line-height:1.3; color:var(--muted); }
+.wv-sub { margin:0; font-size:22px; line-height:1.3; color:var(--muted); }
 .wv-sub[hidden] { display:none; }
 
 /* ---- the body -------------------------------------------------------- */
@@ -426,7 +439,7 @@
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
   background:none; border:0; border-radius:18px; color:var(--muted);
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
-  font-size:16px; letter-spacing:1.5px; white-space:nowrap;
+  font-size:18px; letter-spacing:1.5px; white-space:nowrap;
   transition:color .2s ease;
 }
 .wv-tab .wv-ti { width:28px; height:28px; flex:0 0 auto; }

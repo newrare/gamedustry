@@ -7,10 +7,11 @@ holds the reasoning. A task is **removed** once it is verifiably done.
 - **AUTO** — a command; no code to write.
 - **CODE** — something to develop.
 
-Three scopes are tracked here: **android**, the **web build's own bugs** and
-**acquisition** — TikTok and the web portals, un-parked on 2026-09-18. The meta
-layer now ships on all thirteen games; the ad measurement gate is parked, not
-done.
+Five scopes are tracked here: **android**, the **web build**, the **content
+pass on the games**, **acquisition** — TikTok and the web portals, un-parked on
+2026-09-18 — and **the codebase**. There are fifteen games: the thirteen of the
+first catalogue plus `pawko` and `stratideck`. Levels, the meta layer and a
+village ship on all fifteen; the ad measurement gate is parked, not done.
 
 ______________________________________________________________________
 
@@ -31,11 +32,11 @@ test anyway.
   which is a strict `-all`
 
 **The build** — done for `radiam`, and it is the same command for the other
-twelve: `--target=android`, `packages/platform/capacitor.js`,
+fourteen: `--target=android`, `packages/platform/capacitor.js`,
 `tools/publish/gen-native.mjs` and `make android GAME=<slug>` all exist, and
 the unsigned `.aab` builds (4.1 MB). What is left:
 
-- [ ] MAIN — generate the studio keystore, **one file for the thirteen games
+- [ ] MAIN — generate the studio keystore, **one file for the fifteen games
   with one key alias per game**, and back it up off the signing machine.
   Losing it costs an app its updates. Then write
   `~/.newrare/signing.properties` (`storeFile`, `storePassword`) — once, for
@@ -44,7 +45,7 @@ the unsigned `.aab` builds (4.1 MB). What is left:
   keytool -genkeypair -v -keystore ~/keys/newrare.keystore \
     -alias radiam -keyalg RSA -keysize 4096 -validity 10000
   ```
-- [ ] MAIN — add `"android"` to `targets` in the other twelve manifests, one at
+- [ ] MAIN — add `"android"` to `targets` in the other fourteen manifests, one at
   a time, as each game earns the store
 - [ ] AUTO — `fastlane android beta` once the app exists and the Play service
   account JSON is downloaded; `native/<slug>/fastlane/` is generated but
@@ -106,280 +107,23 @@ ______________________________________________________________________
   the path rather than on a painted pad. Open the composer and put it where it
   belongs.
 
-- [ ] CODE — **the village: the title screen as a place.** The composer ships
-  (`make village`, `lab/village.html`, `tools/lab/serve-village.mjs`) and so
-  does the art pipeline under it: `<slug>-background-home.png` is a role like
-  any other, `<slug>-object-home.png` is a 3x2 sheet cut into `homeNN`, both
-  web-only. A village is composed on the real 720x1280 frame — houses placed by
-  their FEET, sorted by them, each one given the door it opens — and saved as a
-  draft in `lab/village-presets.json` or pushed into `web.village` of the
-  manifest, with the patch bump and the rebuild. **All thirteen have the
-  artwork** — thirteen hubs and thirteen 3x2 sheets cut and adopted, ~440 KB a
-  game, web-only — and no village is composed yet: the hubs are NOT one layout
-  in thirteen palettes (six pads in a cross for five of them, a 2x3 grid for
-  echomaze, scattered islands for bouncetry, chainring and marshmelt, four
-  along a path for triverse, and no pad at all for orbinity and vipera), so a
-  placement is made per game and none of it transposes.
-
-  **The view ships** — `packages/webshell/village.{js,css}`, and the village is
-  a VIEW rather than a replacement of the title screen:
-  `title -> village -> map -> round -> score -> village`. PLAY opens it, it is
-  `View.base`, so the band's house chip, the end screen's first button and
-  ESCAPE all mean it; `#btn-start` is untouched on the title screen, so
-  `startGame`, SPACE and the audio unlock gesture are unchanged. The manifest
-  says HOW a house announces itself — a `notify` pulse on the BUILDING and a
-  `light` on its halo, two fields so a mill can turn over a flickering pad —
-  and the shell says WHEN, out of what a badge COUNTS — the tickets that pull
-  the machine, the sticker copies the shop buys back, today's gift, a board
-  nobody opened — or `always` takes the question away for both. A halo carries its own
-  `color`, and `art: "empty"` is a box with no picture in it for a lamp the hub
-  was already painted with. Every door wears its role's word under its feet,
-  hidden until the player asks for it in OPTIONS. HELP is the map's level 0 and
-  never a house; OPTIONS is a house or the corner control, never neither and
-  never both, which `make test` asserts. A game with no `web.village` is
-  byte-identical to what it was.
-
-  **What is left is twelve compositions**: `chainring` is the one village laid
-  out. Each is half an hour in `make village` — and two of them need a decision
-  first, since `orbinity` and `vipera` have no pads painted on their hub and
-  `triverse` has four for six houses. A **living backdrop** ships
-  for `chainring`: `life.daylight`, which lights the scene toward the real hour
-  as a DIFFERENCE from the hour the hub was painted at. A slow Ken Burns on the
-  hub shipped with it and was taken out the same day — the houses are placed in
-  the design space and do not move, so a drifting backdrop under fixed
-  buildings reads as the picture sliding. **Whatever moves here has to move all
-  of it**, and what meets that is `life.cycle`: the light breathes, passing
-  through the hub's own painted light out into warm, back through it and out
-  into cold, over two minutes. All keyframes — no clock, no interval, no
-  formula. Two answers were tried and removed before it: the player's real hour
-  (a difference nobody can see) and hand-placed CSS effects — mist, beams,
-  particles, glows — which read as decoration stuck onto a picture rather than
-  as a place. Still on the table: the hub going gold at 90/90 the way the map's
-  roads already do, the only idea left that would SAY something.
-  One known limit: daylight is ONE dimension, so eight in the morning and eight
-  in the evening are the same light. They are, physically; if a game ever wants
-  a red dusk against a blue dawn, the formula grows a second term.
-
-- [x] ART — **a sky for the villages.** `game-object-cloud-big.png` (7 on a
-  `4,3`), `game-object-cloud-flat.png` (7 on a `2,2,2,1`) and
-  `game-object-cloud-haze.png` (8 on a `2x4`) cut into `assets/image/object/` —
-  22 clouds, the same seven tints across the three styles, the grid keeping
-  them in step. They are the first SHARED material in the repo: a `game-` sheet
-  that is NOT the shell's, so a cloud is adopted by a game rather than named in
-  `SHELL_CUTS` — it stands on one village, at a place that game chose, and only
-  the villages that place one carry the bytes. The role is the cut's own name
-  minus the prefix (`cloud-haze-03` → `CONFIG.art.cloudHaze03`), the box is
-  600x320 at q 0.78 (~17 KB, wide because a haze cloud is 5.5:1), and it is
-  web-only like the houses. Adopted by clicking the **shared cuts** palette of
-  `make village`, or `--adopt 3,6 --into <slug>` on the command line; a sheet
-  the shell names refuses. **No village has placed one yet** — that is a
-  composition, and it belongs with the twelve above.
-
-- [x] ART — **the shell's instruments are painted.** `game-object-reward.png`
-  (24 on a 6x4), `game-object-trophy.png` (10 on a 5x2),
-  `game-object-ticket.png` (12 on a 4x3) and `game-object-multiplicator.png`
-  (6 on a 3x2) cut into `assets/image/object/`, eight of the 52 adopted by
-  `SHELL_CUTS` under the names the shell calls them by — `star`, `star-burst`,
-  `coin`, `coin-pile`, `ticket`, `xp`, `trophy`, `mult-5`. The ×5 plate is what
-  the seventh day of the daily road wears, on the strip and on both its
-  cards; it is keyed by the NUMBER (`Meta.multArt(5)`), so x2, x10, x20, x50
-  and x100 are cut and one line away. The three sentences that said the same
-  thing in the card's own type are gone with it — the `×5` tag on the reward
-  name, the rule under the locked card and the star-day line over the three
-  boxes. What a card still writes is what no picture carries: how far away the
-  day is. Four of those are the names `menu.js` already gave its pictograms,
-  so the swap is ONE branch in `icon()` and the wallet, the LV row, the shop,
-  the album, the daily road, the level map's stars and counter, the round's
-  star pill and the end screen's three stars all turn painted at once; a build
-  with no artwork keeps the stroke with no branch anywhere else. All thirteen
-  carry it, because the gate is `web.meta` and all thirteen declare one.
-
-- [x] META — **the layer ships on all thirteen games.** Twelve sticker sheets
-  cut, twenty stickers adopted each, and a `web.meta` block per manifest whose
-  three rates are read off that game's own climb. `coinsPer` is 100 or 1000
-  and nothing else (the build refuses the rest): 1000 where the first objective
-  is 2 000 points or more, 100 elsewhere, so a round's coins are its score with
-  the last digits dropped, times the level, and the end score dims the digits
-  it drops. `ticketPrice` keeps a ticket at the same price in points. Every board keeps one legendary, one epic,
-  one rare and five commons OUT of its twelve milestones, or the machine has a
-  tier it can never roll. The cut tool grew what those sheets needed: a `--grid`
-  written as one column count per row (the model fills the last row with
-  whatever is left over) and `--seq`, which numbers the adopted roles 01…20 in
-  the order given — the album reads a contiguous run and four of the sheets
-  held more than twenty objects.
-
-- [x] WEB — **the end screen has a third button: the way on.** Map · replay ·
-  next, and the third is the shell's own node rather than the motor's — a
-  playable has no next level and the motor must not learn what one is. It is
-  `last.level + 1`, hidden where there is none (a free round, a missed
-  objective, the last level), never dressed `hero`/`calm`/`dim`, and it rides
-  the motor's reveal through `#btn-replay.show ~ #btn-next` so it lights and
-  goes dark with it. All three now carry `cursor:pointer`: `dress()` rewrites
-  `className` and dropped the `.btn` / `.link` that used to carry it, so on a
-  desk they read as decoration.
-
-- [x] META — **the album and the shop are a STACK.** Both are layers over the
-  map with the same z-index, and the wallet's chips are doors both ways — so
-  DOM order decided which won, and DOM order is the order they were first
-  BUILT in. An album built before a shop could never be reopened from it: the
-  click landed, the screen turned on, and it turned on underneath. Opening one
-  now re-appends it to the end of the frame, which keeps BACK peeling layers
-  off without a z-index each.
-
-- [x] META — **every landing writes its figure.** The reward-card path passed
-  `tag: false`, so collecting a daily gift moved a chip with nothing to say it
-  had moved — no `+343`, no `+2`, no `+120 xp`. The reasoning (the card said
-  the amount already) stopped holding the day collecting CLOSED the card: the
-  piece lands 400 ms after it is gone. A sticker keeps it off — its `n` is an
-  index, so the tag could only read `+`.
-
-- [x] META — **a wallet is held the moment the state moves**, not the moment a
-  piece flies. A gift card grants before it can say what it paid, and
-  `persist` repaints every wallet on screen — so on the daily road, where the
-  map opens under the card, the header counted up for the quarter second the
-  card was still fading in. The player watched the money arrive and was then
-  asked to collect it.
-
-- [x] META — **a round's xp is read on the MAP.** `addXp` fired a callout from
-  inside itself: the arithmetic happens on the END screen, whose wallet has no
-  level bar, under a cascade of coins — so the line landed over a reveal, about
-  a bar nobody could see, announcing a reward that arrived before the screen
-  that holds it. The gain is granted at once and the READING waits:
-  `Meta.arrive()`, called from the map's `show()`, runs the bar from EMPTY to
-  where the player now stands, prints `+N` under it, and only then opens the
-  card — whose own title (*Level 2!*) is the announcement, so nothing is said
-  twice. The card carries `granted: true`; `addXp` already paid the ticket.
-
-- [x] META — **an xp reward is now visible when it lands.** It was the one
-  reward whose `before` was 0 and whose chip is a bar, so `grant()` moved the
-  bar behind the blurred card and the landing had nothing left to show. The
-  bar is held the way a coin chip is held, runs on the landing, and prints
-  `+N` under itself — a bar says how far along the player is, never how much
-  just arrived. A level crossed runs to the end, resets without a transition
-  and starts again, instead of sliding backwards.
-
-- [x] META — **the three gift boxes are dealt, not printed.** The size and the
-  idle (the floater, the rocker, the one something knocks in) were nailed to
-  the position, so the row was the same row every card — three looks in a fixed
-  order stop being three looks after the second one. Two independent shuffles
-  now, one for the look and one for the painted colour, plus a random negative
-  `animation-delay` so the idles are never caught at the same moment of
-  themselves twice. It still leaks nothing: both deals come from `Math.random`
-  alone and the three rewards are rolled per index and separately.
-
-- [x] META — **the shop is a grid of six, plus a missed day.** Ticket, super
-  ticket, mystery gift (three boxes: 2–4 tickets, xp or a sticker, never
-  coins; 3 tickets), xp pack (250 xp at 2× what they pay in coins at the
-  player's level), double coins (next paying round) and double xp (next three),
-  2 tickets each, in `save.b`. A missed day of the road is caught up for a week
-  at 60 % of its average worth, from its card or from the shop. Benched
-  headless on radiam: purchases, a level-up off the pack, the boosted sum
-  `+12 × Lv 2 × 2 = +48`, the catch-up.
+- [ ] MAIN — **the villages, a last pass by eye.** All fifteen games declare a
+  `web.village` (`packages/webshell/village.{js,css}`, composed in
+  `make village`). What is left is finishing, not composing: `radiam` and
+  `vipera` carry no `life.cycle`, and `bouncetry` and `spinshock` breathe over
+  `seconds: 10` where every other village takes 90 to 210 — a test value left
+  in, most likely. Still on the table: the hub going gold at 90/90 the way the
+  map's roads already do, the only idea left that would SAY something.
 
 - [ ] MAIN — tune the new shop prices per game if the defaults read wrong
   (`giftPrice`, `boostPrice`, `xpPack` in `web.meta`): they are derived from
   `ticketPrice`, whose weight against a round's coins differs a lot between
   games (vipera 8, pawko 14 250).
 
-- [x] META — **the shop sells a super ticket.** Fifteen ordinary tickets'
-  worth of coins (3 750) for one pull at **legendary 30 / epic 25 / rare 20 /
-  common the rest**. Its tiers are PINNED where an ordinary bet shares out a
-  pool — the five-ticket odds drift with the board (47/33/16/5 fresh,
-  33/52/10/5 once the milestones are paid in) and a premium pull that drifts
-  is not a promise. An empty tier hands its share back. It branches inside the
-  same `chances()`, so the bars the player reads are the bars the roll uses. Its own pocket (`save.st`, a field added to the save rather
-  than a version bump), no chip in the wallet — it is counted on the shop card
-  it is bought on and on the sixth bet pill it is spent from, which is the
-  only place it can be spent. The piece is the rainbow ticket of the twelve.
-
-- [x] META — **the ad offer pays ×5 and says so.** It multiplied by three,
-  which no plate can draw; five is the one the artwork states. The button
-  leads with the REWARD and follows with the price — `WIN ×5` over
-  `watch an ad` — and it is the card's ONLY control. There was a quiet arrow
-  beside it, the way past; it was a button for what a miss already does, since
-  a tap anywhere on the card or the frame collects the gift as it stands, and
-  so does ENTER / SPACE / ESCAPE. Two controls where one of them is "do
-  nothing" halved the weight of the only thing on the card worth reading, so
-  the arrow is gone and the footnote line under the button is what says the ad
-  can be walked past. A sticker is REDRAWN and not multiplied, so that one
-  wears no plate and reads *one more*.
-
-- [ ] ART — **the other twelve, and the motor.** The painted instruments reach
-  a game through `CONFIG.shellArt`, which the builder gates on `web.meta` — so
-  widening it is deciding what a game with no wallet should get (the stars, at
-  least: the level map and the end screen are all thirteen's). The playable and
-  the android builds still draw the glyph, which is the `template/` + motor
-  half of the same question.
-
-- [x] CODE — **a TAP reloaded the game view at random, and the layers piled
-  up.** Reproduced over CDP on the real builds, playable and web alike: it is
-  the END SCREEN'S TWO BUTTONS, still live over the round that follows. `.show`
-  is what makes `#btn-install` / `#btn-replay` visible AND `pointer-events:auto`,
-  and it was only ever taken off by the NEXT end screen — so from the second
-  round on, a closed `#screen-end` left two invisible 420x84 rectangles sitting
-  in the middle of the play area. `pointer-events:none` on `.screen.hidden`
-  does not beat `auto` on a descendant (the property is resolved per element,
-  never inherited as a veto), so a tap on either one reached `startGame` — or
-  `Ad.openStore` in a playable — from inside a running round. That was the
-  "random tap". The LAYERS were `Loop.start`: it scheduled a new `requestAnimationFrame`
-  chain every call, and the old chain only ever checked `running`, which start
-  had just set back to true — two chains, each calling update AND render, the
-  world at twice the rate and the frame drawn twice over itself. A third call
-  made three, which is the drag. Fixed in four places, none of them a `game.js`:
-  `Loop` holds its rAF handle, `start` is idempotent and `stop` cancels the
-  pending frame ([packages/engine/engine.js](packages/engine/engine.js));
-  `setState` strips `.show`, blurs the button and cancels the reveal's timers
-  on the way out of "end" ([packages/shell/shell.js](packages/shell/shell.js)),
-  which also stops the cascade firing confetti and star chimes inside the next
-  round; the stylesheet says the same at the same specificity
-  ([packages/shell/motor.css](packages/shell/motor.css)); and `startGame` tears
-  the previous round down before mounting a new one
-  ([packages/engine/bootstrap.js](packages/engine/bootstrap.js)). Measured
-  before and after with a tick-per-animation-frame counter: 2.00 then 1.00.
-
-- [x] CODE — **the thirteen games are translated, FR and EN.** Done with a
-  DICTIONARY rather than a key system: `web.copy.<lang>.strings` in each
-  `manifest.json`, whose key IS the English string the game writes, so there is
-  no key to invent, a missing entry falls back to the English, and the copy
-  desk's rule holds — one row is every call site. `Lang`
-  ([packages/engine/engine.js](packages/engine/engine.js)) applies it where the
-  motor WRITES a word — `CONFIG.copy`, `Pop.show`, `Pop.text`,
-  `HUD.setLeft/setRight`, `endRound`'s title and rows — so the round, the HUD
-  and the end screen changed language without a line of gameplay moving. The 84
-  strings a game BUILDS (`"x" + mult + " STREAK"`, anything it paints on the
-  canvas) wrap their own literal, `Lang.t(" STREAK")`, because no dictionary can
-  match a sentence assembled at runtime. `setLang()` re-applies the lot —
-  `Lang.set` + `applyCopy()` + `HUD.relabel()`, the two pills re-running the
-  game's last call rather than waiting for it to write again — so a switch from
-  OPTIONS repaints a paused round. `make text` is the gate: it lists the
-  dictionary under *Game words* and prints `N untranslated`, and the thirteen
-  read *fully translated*. Two blind spots were swept by hand on the way:
-  `scan-text.mjs` reads the call shapes it knows, so a stat row built with
-  `rows.push`, a word held in a table (`BONUS[k].word`, `CAT_NAME`,
-  `TIERS[i].name`) or assigned to a variable was never listed — some sixty
-  strings, now in the dictionaries but still invisible to the scanner.
-
-- [x] CODE — **OPTIONS "erase the best score" needs its own wording.** Done
-  with the level layer: with `prog:<slug>` in play the row reads *erase the
-  thirty levels*, asks twice with that wording, and wipes the best score and
-  the progression together — they are one action, because a best score with no
-  stars behind it describes nothing.
-
-- [x] CODE — **`bestScore` is shared by the thirteen games.** Done in `Store`
-  ([packages/engine/engine.js](packages/engine/engine.js)) rather than in
-  thirteen `game.js` files: a game that knows its slug (`CONFIG.slug`, injected
-  by the web build) reads and writes `best:<slug>` wherever it asks for
-  `bestScore`, so section 6 needed no edit. The old shared key is adopted once,
-  by whichever game is opened first, and then **dropped** — copying it into all
-  thirteen would have handed twelve of them a score they never made, and
-  merge-max never takes it back. `webLang` and `webSettings` stay shared.
-
-- [x] CODE — **the levels, on all thirteen.** Every game declares a
-  `web.levels` block; `games/slipdeck` promoted its seven section-6 `var`s into
-  `CONFIG.play` and `games/blight` re-reads three of its five at `reset()`, both
-  because a knob copied when the file parsed never sees the lerp. blight needed
-  no new win condition after all — measuring the score keeps its 60-second
-  round and the third star ends it early when it is earned.
+- [ ] ART — **the painted instruments, in the playable and the motor.** On the
+  web they reach every game through `CONFIG.shellArt` (gated on `web.meta`,
+  which all fifteen declare). The playable and the android builds still draw
+  the stroked glyph: that is the `template/` + motor half, still to decide.
 
 - [ ] TUNE — **the objectives are a formula, not a bench.** Ten games are
   scored on `objective(L15) ≈ their own 3★ threshold ÷ 2.2` with the ladder
@@ -395,62 +139,35 @@ ______________________________________________________________________
   of level 30 is a long way past the first. A multiplier that shrinks with `d`
   is the obvious alternative; it is a bench question, not a table one.
 
-- [x] CODE — **the screens are dressed with the game's own objects.** Four cuts
-  per game adopted out of its object sheet (`cut-objects.mjs --adopt … --as decor`, 52 in all, ~110 KB of base64 a game) and a `Decor` module in
-  `packages/shell/shell.js` that scatters one to three of them over the end
-  screen, the round's corners, the menu's panels, the pause card and the level
-  map. No game declares or calls anything. What is left is a taste pass: the
-  picks were made off the contact sheets, and a game whose four do not suit its
-  screens re-adopts four others — nothing else changes.
-
 - [ ] CODE — **radiam's eclipse clock is not lerpable.** `GROW`, `STEP` and
   `LINES` are locals of its eclipse module with a URL override on top, so a map
   level cannot set the level that clock starts at. Promoting them to
   `CONFIG.dial` is the whole job (see [docs/LEVELS.md](docs/LEVELS.md) §2).
 
-- [x] CODE — **the studio signature shows behind the menus.** Answered by the
-  view system rather than by a rule: the map, the album, the shop and the
-  ranking are opaque views over the title screen and cover it, and options,
-  help and the leave question are cards with a scrim and a blur of their own —
-  so the mark, `NEWRARE` and `v<version>` are behind the same blur as
-  everything else on the screen they belong to. The `web-open` class that used
-  to hide them, and the panel band it belonged to, are gone.
-
-- [x] CODE — **the music stays too loud once the round is over.** Settled by
-  the view system: **one factor** (`DUCK`, 0.4) for every screen and every card
-  this layer opens, and it is COUNTED rather than toggled — `Music.duck` is a
-  single global level with no stack of its own, so two screens that both duck
-  and both unduck raised the bed the moment the first of them closed. When the
-  count reaches zero the floor is read off the motor's state rather than
-  assumed: on the end screen it is the motor's own 0.3, so a gift card closing
-  over it no longer hands the player a bed at full volume under a screen that
-  is still being read. The three numbers that disagreed (0.4 on the map, 0.35
-  on a panel, nothing on the end screen) are one.
-
 - [ ] CODE — **the HUD does not say which level is being played.** A round
   opened from the map is level 12 or level 29 and looks the same either way.
-  Print `Lv12` in the top band for all thirteen — the level layer already knows
+  Print `Lv12` in the top band for all fifteen — the level layer already knows
   the number (`packages/webshell/levels.js`), the HUD already has the two side
   slots (`HUD.setLeft/setRight`, [packages/shell/shell.js:127](packages/shell/shell.js)),
   and a game that fills both needs the shell to place it without stealing a
   slot. Nothing in `game.js` is touched, and a playable — which has no
   levels — shows nothing.
 
-- [ ] CODE — **an end-of-game screen when level 30 falls, all thirteen.**
+- [ ] CODE — **an end-of-game screen when level 30 falls, all fifteen.**
   Finishing the ladder is today one more end screen followed by a map with
   nothing left to open. Give it a screen of its own: the game's own character
   and decor, the total stars, and a way on — the endless run, or back to the
   map. One screen in `packages/webshell/`, fired off the level layer, so no
   game declares it.
 
-- [ ] CODE — **a golden screen for a perfect board, all thirteen.** Level 30
+- [ ] CODE — **a golden screen for a perfect board, all fifteen.** Level 30
   cleared is one thing; **90/90** is the other, and it already has a look —
   the gold roads, the golden veil on the title screen
   ([packages/webshell/levels.js:1270](packages/webshell/levels.js)). Give it
   the ultra congratulation the veil is a leftover of: the same screen as above
   in its gold state, fired once, and never again on a later visit.
 
-- [ ] CODE — **the leave card, and the game-over buttons, all thirteen.**
+- [ ] CODE — **the leave card, and the game-over buttons, all fifteen.**
   Where a player goes when they stop playing. The **icons now say it**: the
   round's corner control wears the MAP pictogram on a levelled game and the
   house on a level-less one
@@ -466,72 +183,8 @@ ______________________________________________________________________
   LEVEL / MAP, [packages/webshell/menu.js:842](packages/webshell/menu.js)) and
   were never read side by side: decide the set once — retry, next, map,
   menu — which two show in which case, and in what order. One pass in
-  `packages/webshell/`, no `game.js` touched, and it reaches the thirteen at
+  `packages/webshell/`, no `game.js` touched, and it reaches the fifteen at
   once. Related: the game-over *content* pass in *The games*.
-
-- [x] CODE — **one system for the views, and one for the cards.**
-  `packages/webshell/view.js` + `view.css`, loaded first of the web layer and
-  published as `window.__VIEW__` / `window.__MODAL__`. Two kinds of thing and
-  exactly two: a **view** is a place the player goes — title, map, sticker,
-  shop, **ranking** (new: the leaderboard was a panel of the title band and is
-  a screen with the map's own header now), score — and a **card** is something
-  that happens over wherever they are: options, help, leaving a round, a daily
-  reward, an ad, a prize. Six screens' worth of mounting, back arrows, z-order,
-  decor, music ducks and ESCAPE branches came out of the four files and into
-  one. What that retires, each of which was a bug or a comment apologising for
-  one: the album could not be reopened from the shop (DOM order decided which
-  of two equal z-indexes won, and DOM order was the order they were first
-  BUILT in — the stack re-appends on every open now); ESCAPE meant five things
-  in four files, each guarding against the other four; the map carried its own
-  copy of the Help panel because a panel of the title screen could not be
-  raised over a map; the bed was ducked to 0.4 by the map, 0.35 by a panel and
-  not at all by the end screen. Options and help now open **from anywhere** —
-  a pair of controls in the bottom-right corner of every surface but the title
-  screen. The corner is the ROUND'S and only the round's — every other surface
-  has somewhere of its own to say the same things, and a round is the one with
-  nothing else on it at all. **No screen wears a back arrow and no header wears
-  a button**: the band's level chip is the way home, a card's way out is a
-  discreet cross, and the other three chips are the rest. One branch, and it is
-  not cosmetic: a game with no wallet has no band, so its views keep a home
-  button — there is always exactly one way home and never two, which is what
-  the test counts. The five card builders of the
-  meta layer are one `Modal.open`, and the class names are unchanged
-  (`wm-modal mt-modal`), so no rule in the three stylesheets moved.
-  [docs/VIEWS.md](docs/VIEWS.md) is the plan of record, and
-  **`make test` is the gate**: `tools/test/views.mjs` drives a real web build
-  over CDP and asserts the stack, the cards, the band and the keys — 70
-  assertions on radiam, 50 on a game with no wallet. No `game.js`, no SKIN and
-  no manifest changed, and the playable and android builds are untouched.
-
-- [x] CODE — **one HUD for every view, and it is the navigation.** `#web-hud`,
-  one node, owned by the view system and filled once by whoever knows what a
-  wallet is (`View.hudMount`). The component was already one (`Meta.wallet`);
-  the HOSTS were four — the map's header, the album's, the shop's and a layer
-  pinned to the end screen's corner — so the same numbers sat in four places
-  with four opinions about which chips were doors. It is **one line now, and
-  the order is what the player learns**: `LV 4 · 1 240 · 3 · 12/90`, each chip
-  the door to the screen it is the number of — home, the ranking, the shop, the
-  collection, the collection, the map. The order is the order it is read in:
-  the way out, then what is earned by playing, then what is spent, then what
-  those two buy, then what the board is worth. The row never changes shape and a
-  chip standing on its own screen goes INERT rather than missing, so a number
-  is never one to find again. **The album has no header of its own**: its
-  `x / 20` is the band's first chip, and the height a title was taking went to
-  the machine, the odds and the twenty tiles. That is what let **every back arrow come off**: the house is the only
-  chip that is not a number and it is the way home, and a card's way out is a
-  discreet cross in its corner. The LEVEL CHIP IS AN ICON until it has
-  something to say — a bar standing open on every screen is one nobody reads —
-  and it opens for a few seconds whenever the xp moves. **The stack owns the
-  z-order**, written from the depth on every open: the four screens were
-  authored with three different z-indexes, so the map reached from the album
-  arrived underneath it however it was appended. A view declares `hud: true` (map, sticker, shop, ranking) or
-  `hud: "auto"` (the score screen, where the row is down until a reward flies
-  into it — and it carries the LEVEL chip now, which is what xp had been
-  missing: its target was a bar and not a chip, so the one reward the player
-  never saw arrive was the one the map's header was built to show). The title
-  screen carries none and the ROUND carries none — the top band is the game's,
-  all of it. The map's header lost the game's own name and "pick a level" with
-  it, and `#lv-wallet` / `#lv-xp` / `#mt-end-wallet` are gone.
 
 - [ ] CODE — **what a first launch shows.** The MECHANICS of the navigation
   are settled — one stack, one BACK, one ESCAPE, and where every screen leads
@@ -545,16 +198,8 @@ ______________________________________________________________________
   collection with twenty silhouettes. Related: the leave card and the
   game-over buttons above.
 
-- [ ] CODE — **a sticker collection, ten per game.** The cuts under
-  `assets/image/object/` (414 of them across the thirteen) are the material: pick
-  ten per game, adopt them like any other master, and unlock them against the
-  star count on the ladder — so the stars buy something besides a road. A
-  collection view in the web menu, next to LEADERBOARD, showing the ten with
-  what is still locked. Decide the unlock curve once, shared, and the ten picks
-  per game; the screen and the save (`prog:<slug>`) are the webshell's.
-
 - [ ] CODE — **a CTA button styled per game, and a lab page to pick it.** The
-  install bar is the same button in thirteen games while the titles, the
+  install bar is the same button in fifteen games while the titles, the
   palettes and the type are all the game's own. Build the rack the way
   `lab/game-title.html` does it for `#intro-title`: a page of ready-made CTA
   looks rendered in each game's palette and font, one pick per game, exported
@@ -564,20 +209,58 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## The games — content pass on the thirteen
+## The games — content pass on the fifteen
 
-- [ ] MAIN — **check every sticker cut, all thirteen games.** Some of the
-  twenty adopted stickers per game are badly cut: a sticker sawn flat by the
-  grid, a crumb of its neighbour's outline left in a corner. Look at each cut
-  under `assets/image/object/<slug>-sticker-NN.png` (the album in the web build
-  shows them at their real size), and re-cut the sheets that fail. `pawko` is
-  the known case: its sheet welds at the default `--solid 245` and needs a
-  banded `--solid` plus two hand repairs that a re-cut undoes.
+- [ ] CODE — **`gearball` and `slipdeck`, rebuild the gameplay from the
+  ground up.** Not a tuning pass: both loops are thin over a thirty-level
+  ladder. `gearball`'s closed-gear-loop redesign is in and still not enough;
+  `slipdeck`'s seven tunables are already in `CONFIG.play`, so a new loop has
+  the knobs it needs. The mechanic is a `prototype/` question first, and the
+  port into `games/<slug>/game.js` is the request that follows.
 
-- [ ] MAIN — **`pawko`, compose the village.** The six houses are cut and
-  adopted (`home01`–`home06`) and `pawko-background-home.png` is encoded, but
-  the game declares no `web.village` until `make village` places them and
-  pushes the block: its title screen is the stacked menu until then.
+- [ ] CODE — **the gameplay, biome by biome.** The web target gave every game
+  a 30-level ladder against a loop designed for a 30-second ad, so each biome
+  has to bring something of its own — pickups, a second entity, a risk/reward
+  beat, a hazard — rather than the same level turning faster. One design per
+  game, not a shared system.
+
+  - done: `arcider`, `blight`, `echomaze`, `radiam`
+  - to finish or rethink: `spinshock`
+  - to do: `chainring`, `orbinity`, `triverse`, `vipera`, `stratideck`,
+    `pawko`, `marshmelt`
+  - `gearball` and `slipdeck` come with their rebuild (above), `bouncetry`
+    with its ghost (below)
+
+  **`radiam` is done and is the pattern to copy** (v1.1.0). Two tables in
+  `CONFIG.ladder` and one `applyLevel` hook, the shape `games/arcider` first
+  built: **eight special beads** where the dial shipped with two — BOMB (the
+  whole board), FIRE (the two neighbouring rays), LASER (through the hub to the
+  ray opposite), SCORE (an x2 / x5 / x10 window on a clock), SLOW (the eclipse
+  held back) and ICE (the one hazard: it freezes the plate it breaks on) — and
+  **thirty rows naming which one or two are in play**, so a level is *the one
+  where you meet the laser* rather than the same level turning faster. Under it,
+  **five biomes** of six levels, each a whole look: a bead material out of
+  `lab/bubble.html` (sticker, soap, gem, ink, neon) and the palette the machine
+  is painted in. A special's badge is a white glyph on a double pass of ink over
+  the bead's own hue, never instead of it — the colour is the gameplay.
+
+- [ ] MAIN — **the music, biome by biome.** A bed cut into sections — one per
+  biome plus a quiet, slower one for the menus (`CONFIG.bands`,
+  `CONFIG.music.menu`, `web.music`); [docs/MUSIC.md](docs/MUSIC.md) is the
+  procedure and `games/arcider` the reference.
+
+  - done: `arcider`, `blight`, `echomaze`, `radiam`, `stratideck`, `pawko`
+  - to finish or rethink: `spinshock`, `vipera`, `marshmelt`
+  - to complete: `chainring`
+  - to do: `orbinity`, `triverse`, `gearball`, `slipdeck`
+
+- [ ] MAIN — **proofread and validate every text, all fifteen games.** Every
+  word a player reads, EN and FR: the listing copy, the intro sentence, the HUD,
+  the round, the end screen, the level objective, the stickers, the game's
+  `web.copy` overrides. **`make text`** is the desk (`lab/game-text.html`): one
+  column per language, grouped by screen, Apply writes it back and rebuilds. Three
+  lines further down — the French taglines, the level-select copy and the
+  game-over screens — are the parts of it that already have a known fault.
 
 - [ ] TUNE — **`pawko`, play it by hand.** The five-wave round, the two kinds
   of card (pegs turned for good, multipliers for one wave) and the ladder
@@ -619,23 +302,16 @@ ______________________________________________________________________
   enemy's, which the deck may simply not have.
 
 - [ ] TUNE — **`stratideck`, check the painted cards on a phone.** The lab's
-  card is what the game deals — its CSS pasted verbatim into `skin.css`, the
+  card is what the game deals — the bench links `skin.css` itself, the
   cards DOM under the canvas (`game.js`, THE TABLE), the barracks through
-  `Game.cardNode` — in the look picked in the lab (forge, shield, burst;
+  `Game.cardNode` — in the look picked in the lab (forge, shield, seal;
   `CONFIG.cards`, and the lab now opens on it and keeps its panel in
-  `localStorage`). Check that the badges read at 125 px (a five-card hand) —
-  `--fit` scales them up under 220 px (`sizeNode`) — and that thirty-six token
-  nodes on a 6×6 camp hold the frame rate (`?perf=1`).
-
-- [x] CODE — **`stratideck`, the six scenery objects are in the camp (0.12.0).**
-  Each answers to one grade and does its effect to every other: the straw man
-  sends the card back to the deck (sergeant breaks it), the fence and the rock
-  back to the hand (lieutenant, captain), the forest takes it out of the
-  battle (major), the skull stuns it in its slot for good (colonel), the book
-  turns it on an ally of the hand in a real fight (general). Dealt from the
-  level each kind unlocks at (1, 1, 4, 8, 13, 18), `play.objects 1→7`, never
-  next to the flag, the costly three never on the front row. Every army card
-  wears a macaron naming what it is for (`PERK`). See `docs/ARMY.md` §2.
+  `localStorage`). THREE CARDS: each format is composed once at its
+  reference width (`rfull` 125, `rmid` 112, `rtiny` 58) and every place shows
+  it scaled as a whole (`sizeNode`, `--sk`). Check on a phone that the long
+  grades (LIEUTENANT, SERGEANT) fit the full card's plate — at the reference
+  the name sits on its 18 px floor and runs off the edge — and that
+  thirty-six token nodes on a 6×6 camp hold the frame rate (`?perf=1`).
 
 - [ ] TUNE — **`stratideck`, play the objects by hand.** Only a BLIND pilot has
   played them (random card, random target, 40 camps a level): no error and
@@ -646,69 +322,32 @@ ______________________________________________________________________
   finds it fair, and whether seven objects at level 30 is too many next to
   five traps, is for a hand to say.
 
-- [x] CODE — **`stratideck`, the cast: 120 officers (0.13.0).** One person per
-  army, grade and tier in `web.army.cast` — name, age, gender, lore in FR/EN,
-  and a `desc` line for the image model. The collection lists all 120, and a
-  card turns over to its file (tap in the collection, the ID-card button on a
-  roster card). A prisoner who enlists keeps their red portrait on a blue card
-  and wears a turncoat crest. See `docs/ARMY.md` §3b.
-
-- [x] MAIN — **`stratideck`, the 45 cast sheets are painted (0.13.4).** 180 /
-  180 portraits: 15 blue sheets, 30 red ones (the camp's officers and the
-  same creatures as turncoats), cut and adopted by `tools/lab/cast-sheets.mjs`.
-  Re-painting one sheet: save it over its master, then
-  `node tools/lab/cast-sheets.mjs <sheet>` (add `--keep-partial` when a weapon
-  or a plume touches the image's edge) and `node tools/lab/encode-art.mjs stratideck`.
-
-- [x] CODE — **`stratideck`, the deck house is two tabs (0.14.2).** DECK is the
-  formation of `lab/stratideck-deck.html` ("two lists"): every slot as a
-  medium card, four a row, on one page with no scroll, `−` to leave a card, `+` to open a picker over the reserve
-  (0.14.4: ready cards only, as tokens under a `+`, one fixed height, grade 1–10 greyed where nothing is ready)
-  and *Auto-fill*. A squad on a mission can no longer be brought back by an ad.
-  0.14.8: the mission board is one line per mission, the infirmary and the prison are rooms (medium cards
-  three a row, a gauge of the wait, no ad in the prison) and the shop's six tiles plus the doubles button fit one page.
-  COLLECTION is the codex of `lab/stratideck-collection.html`: blue, red,
-  turncoats and objects behind one switch, one card at a time with who they
-  are under it, the three filters as pictograms on the seam between the two.
-  The OBJECTS tab is gone into it. Every sheet's title is smaller (42 px, was
-  58), for every game. See
-  `docs/ARMY.md` §3.
-
-- [x] CODE — **`stratideck`, the camp house is four tabs (0.15.0).** The
-  tent lost its reroll ad. CAMP: five posts (infirmary, prison, formation,
-  missions, camp), each filled with the deck's picker — a card at a post is
-  out of the deck, the squads and the round's deck — then the roll of every
-  card the camp holds, prisoners included, with what each is doing and a
-  count. REGISTER: every card lost from now on (a wound with no bed, a squad
-  that did not come back), with where and when. See `docs/ARMY.md` §7c.
-
-- [x] CODE — **`stratideck`, cards are people and they climb (0.16.0).** The
-  camp never holds one officer twice (roster and prison; old saves repaired on
-  load, a copy with no free tier under it bought back). A card played, sent on
-  a mission or at a post counts a service; a victory rolls it one tier up
-  (`web.army.promotion`, 15 % + 1 % a service, 30 % at most). The recto wears
-  the new tier, the verso keeps the original one; a PROMOTION card tells each
-  step. The register marks each cause (battle, mission, wounds) and an IN
-  MEMORIAM card tells the deaths at the village; the tent can offer a fallen
-  officer back. See `docs/ARMY.md` §3b, §5b, §7, §7c.
+- [ ] TUNE — **`stratideck`, the two-card hand.** The hand is now two MID
+  cards and three locked slots (`play.handSize` / `handSlots`, no longer
+  lerped by the climb), and once a card is played some of the cards not played
+  go under the deck — none on two slots, one on three, two on four and five
+  (`play.handReturn`, drawn among the free ones); a bandage or a stun always
+  keeps its slot. A skull stun now
+  pins half the hand for the battle, and two stuns end it: play the object
+  levels by hand before deciding whether the stun should soften. The climb
+  opens the three slots, one per biome (`CONFIG.bands[].hand`: 2, 3, 4, 5, 5),
+  and a tap on a locked one names the level and the biome that opens it.
 
 - [ ] TUNE — **`stratideck`, how fast does the army climb?** Every card played
   in a won battle and every officer at a post rolls, so a won battle promotes
   about two cards. Play a week of it by hand: if the roster reaches A and S
   too fast, lower `promotion.base` or stop rolling the posts on every battle.
 
-- [ ] DESIGN — **`stratideck`, give the five posts an effect.** A post only
-  takes a card out of play today; nothing reads `save.po`. Candidates: the
-  infirmary manager shortens the heal, the prison warden the turn, the drill
-  instructor adds a deck slot, the mission officer adds odds, the commander
-  a recruit slot — each scaled on the officer's grade and tier.
+- [ ] TUNE — **`stratideck`, play the six posts' gauges for a week.** Landed
+  in 0.19.0 (docs/ARMY.md §7c, §7d): each post is a gauge filled by the
+  officer's tier (+30 % for a suited trade) and buys a range — captives,
+  deck slots, mission board, beds, cells, the kitchen's good days, one camp
+  event every 4 real hours. Check by hand that a fresh camp (2 beds, 2 cells,
+  12 cards, 2 missions) is not too tight, and that the forty days' coin
+  amounts (50–150) sit right against what a round pays.
 
 - [ ] TUNE — **`stratideck`, try the new deck house on a phone.** The picker's
   grade strip (52 px circles) and the codex swipe were only checked headless.
-
-- [ ] MAIN — **`stratideck`, paint the red scout.** `stratideck-card-red-scout.png`
-  is the one officer missing from the sheet (the camp never attacks, so the
-  game deals it no scout today, but the card bench shows a hole).
 
 - [ ] MAIN — **`stratideck`, review the village in `make village`.** The
   `web.village` block was written by hand off a gridded capture of the hub
@@ -720,11 +359,7 @@ ______________________________________________________________________
   `assets/audio/music/stratideck.mp3` (quiet intro to 30 s, breaks at 75–80
   and 115–125, outro from 155, fade from 173) and never by ear.
 
-- [ ] MAIN — **delete the old `stratideck/` project folder** at the repo root
-  once nothing more is wanted from it: the game was rebuilt on the motor and
-  reads nothing out of it.
-
-- [ ] TUNE — **rethink the difficulty ramp level by level, all thirteen
+- [ ] TUNE — **rethink the difficulty ramp level by level, all fifteen
   games.** The ladder is a formula today, never played end to end: see the two
   TUNE lines above (`objective(L15)`, the flat `1.5x` / `2.2x` star
   multipliers). What this adds is the pass itself — play or bench each game's
@@ -734,7 +369,7 @@ ______________________________________________________________________
   level harder than the one before, and a game whose knobs cannot express that
   needs more of them promoted into `CONFIG`.
 
-- [ ] CODE — **the opening board, level by level, on the twelve others.**
+- [ ] CODE — **the opening board, level by level, on the fourteen others.**
   `games/blight` has it: a table of thirty openings in section 6, each one a
   colour motif on a full wall or a figure hung from the ceiling (a heart, a
   ring, a diamond, an X), plus how many colours and how many blight seeds the
@@ -743,9 +378,9 @@ ______________________________________________________________________
   level 28. What travels to another game is the idea, not the code: what its
   board is made of at reset is the thing to vary.
 
-- [ ] CODE — **the French taglines, rewritten by hand, all thirteen games.**
+- [ ] CODE — **the French taglines, rewritten by hand, all fifteen games.**
   List what `web.copy.fr.tagline` says in every `manifest.json` today, read the
-  thirteen in one column, and rewrite each one by hand: they were written game
+  fifteen in one column, and rewrite each one by hand: they were written game
   by game — several of them read as a translation of the English rather than as
   a French sentence. The house rules hold (one sentence, never two, two or
   three key words wrapped in `<b class="w-…">`, `intro.caption` stays `""`),
@@ -754,16 +389,16 @@ ______________________________________________________________________
   English one and writes the rewrite straight into the manifest
   (`lab/game-text.html`).
 
-- [ ] CODE — **the level-select copy on the map, all thirteen games.** A level
+- [ ] CODE — **the level-select copy on the map, all fifteen games.** A level
   card is one shared string table
   ([packages/webshell/levels.js:88-145](packages/webshell/levels.js)) plus a
   bare number: *OBJECTIVE 120* says nothing about what 120 is in this game, and
   the band names (*Warm-up … Meltdown*) are the same five words for the
-  thirteen. Give the objective a per-game sentence — from the manifest, next to
+  fifteen. Give the objective a per-game sentence — from the manifest, next to
   the rest of the game copy — in both languages, and re-read the road, fork and
   endless cards with it.
 
-- [ ] MAIN/AUTO — **the store listing images, all thirteen games.** Only a few
+- [ ] MAIN/AUTO — **the store listing images, all fifteen games.** Only a few
   games have a saved layout in `lab/store-presets.json` today. Compose each
   game's card by hand in `make store`, then shoot the set with
   `node tools/lab/shoot-store.mjs <slug>`: the phone gallery
@@ -773,7 +408,7 @@ ______________________________________________________________________
   graphics set per locale. This is the asset half of the *upload the listing
   images* line in *Android*.
 
-- [ ] CODE — **review the game-over screens, all thirteen games.** Read the end
+- [ ] CODE — **review the game-over screens, all fifteen games.** Read the end
   screen of each game and re-decide what it shows: the title and its variant,
   the score, the stars, and above all the stat `rows` — at most four, and today
   they were written game by game, so several print a number the player has no
@@ -784,22 +419,21 @@ ______________________________________________________________________
   of it under END SCREEN** — the title's every branch, the four row labels and
   what they print — with Apply writing the wording back.
 
-- [ ] CODE — **review the copy and the `Pop` callouts, all thirteen games.**
+- [ ] CODE — **check the `Pop` messages, all fifteen games.**
   Every score gain, combo and celebration beat goes through `Pop.show`, and
   every status line through `Notify.say`; the words, the styles and when they fire were written
   game by game and have never been read side by side. Check they say something,
   that two callouts never stack on the same beat, and that the FR strings exist
-  (the copy still lives in section 6 for the end screen — see the language TODO
-  in *The web build*). **`make events` is the bench for this pass**: every beat
+  in `web.copy.fr.strings` (`make text` prints what is untranslated). **`make events` is the bench for this pass**: every beat
   of a game listed off its own source and fired inside its own build
   (`lab/game-events.html`), under the *view* tab — and a re-styled callout is
   written back into `game.js` by **Apply**, so the pass is read, heard and
   landed in one place. A word the game builds at runtime is still changed by
   hand: apply refuses it rather than paste the bench's stand-in. The WORDS
-  alone, all thirteen games' worth in one column and next to the manifest copy,
+  alone, all fifteen games' worth in one column and next to the manifest copy,
   are **`make text`** — that is where a vocabulary is made consistent; `make events` is where a beat is heard.
 
-- [ ] CODE — **review the sfx, all thirteen games.** One clip per event out of
+- [ ] CODE — **check the sfx and replace what falls short, all fifteen games.** One clip per event out of
   `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships
   (levels, pitch via `rate`, events still falling back to `Sound.beep`) and
   even out the loudness between games. The *sound* tab of `make events` already
@@ -829,24 +463,6 @@ ______________________________________________________________________
   and carry no licence record (`legacy` in `sources.tsv`); find where they came
   from or replace them.
 
-- [ ] CODE — **add bonus and gameplay elements, twelve games.** The web target
-  gave every game a 30-level ladder against a loop that was designed for a
-  30-second ad; each one needs more to give across thirty levels — pickups, a
-  second entity, a risk/reward beat. One design per game, not a shared system.
-
-  **`radiam` is done and is the pattern to copy** (v1.1.0). Two tables in
-  `CONFIG.ladder` and one `applyLevel` hook, the shape `games/arcider` first
-  built: **eight special beads** where the dial shipped with two — BOMB (the
-  whole board), FIRE (the two neighbouring rays), LASER (through the hub to the
-  ray opposite), SCORE (an x2 / x5 / x10 window on a clock), SLOW (the eclipse
-  held back) and ICE (the one hazard: it freezes the plate it breaks on) — and
-  **thirty rows naming which one or two are in play**, so a level is *the one
-  where you meet the laser* rather than the same level turning faster. Under it,
-  **five biomes** of six levels, each a whole look: a bead material out of
-  `lab/bubble.html` (sticker, soap, gem, ink, neon) and the palette the machine
-  is painted in. A special's badge is a white glyph on a double pass of ink over
-  the bead's own hue, never instead of it — the colour is the gameplay.
-
 - [ ] CODE — **`arcider`, blow the craft up when the shield runs out.** The
   four `die("SHIELD DOWN")` sites in section 6 go straight from the last hit to
   `endRound`, so the run that the whole game is about protecting ends on a
@@ -864,12 +480,6 @@ ______________________________________________________________________
   motion over it ([docs/LEVELS.md](docs/LEVELS.md)). What is left here is
   arcider's own — the craft coming apart and rolling off the road — which is
   the game's to draw inside that beat.
-
-- [ ] CODE — **`gearball`, rework the gameplay.** The closed-gear-loop redesign
-  is in, but the loop itself is still thin over a full ladder.
-
-- [ ] CODE — **`slipdeck`, rework the gameplay.** Same call, and its seven
-  tunables are already in `CONFIG.play`, so a new loop has the knobs it needs.
 
 - [ ] CODE — **`bouncetry`, rework the gameplay around a ghost.** The brick
   breaker with two colours and one swap tap is thin over thirty levels, and the
@@ -900,16 +510,6 @@ ______________________________________________________________________
   `ArtImages` and draw the picture in place of the shape, keeping the same
   footprint on the road so nothing about the collision or the sight line moves.
 
-- [ ] CODE — **roll the meta layer out to the other twelve.** It ships on
-  `radiam` only ([docs/META.md](docs/META.md)): wallet, twenty-sticker album,
-  gumball machine, shop, daily strip, the coin cascade on the end screen and the
-  gift boxes. Per game it is a 5x4 sticker sheet out of the image model
-  (`assets/image/master/<slug>-object-sticker.png`, cut with
-  `--grid 5x4 --keep-partial`) and a `web.meta` block naming the twenty and the
-  twelve milestone slots. Do it once `radiam` has been played enough to say the
-  economy's four numbers are right — `coinsPer`, `ticketPrice`, the sell prices
-  and the drop weights are guesses until someone has drawn fifty times.
-
 - [ ] CODE — **the advertising: a real rewarded ad, and where the ads are.**
   `Meta.ad` is a placeholder card that says so on screen and the web target has
   no SDK at all, so the first half is the body of one function — android first
@@ -939,19 +539,19 @@ ______________________________________________________________________
 ## Acquisition — where the players come from
 
 [docs/MARKETING.md](docs/MARKETING.md) holds the reasoning. In short: Play's
-algorithm amplifies traction, it does not create it, so thirteen games only pay
+algorithm amplifies traction, it does not create it, so fifteen games only pay
 off once something feeds them. Two channels do, and neither needs a budget —
 short vertical video, and the web portals that bring their own traffic.
 
 ### TikTok — the discovery channel
 
-The unit of the lottery is the **clip**, not the game: thirteen art directions
-are thirteen content angles, and a clip costs an hour. This is the one lever
+The unit of the lottery is the **clip**, not the game: fifteen art directions
+are fifteen content angles, and a clip costs an hour. This is the one lever
 that moves the per-game odds; the portfolio only multiplies them.
 
 - [ ] MAIN — **open the studio account.** TikTok first, then the same captures
   on Shorts and Reels — one capture, three uploads. The bio links the site and
-  not a store: the site is the single page that leads to all thirteen
+  not a store: the site is the single page that leads to all fifteen
 - [ ] CODE — **`tools/lab/shoot-clip.mjs`, a headless vertical capture.** The
   same Chrome `tools/lab/encode-art.mjs` already drives, pointed at a game's web
   build with the chrome hidden, recording 1080×1920 for N seconds. Filming a
@@ -984,7 +584,7 @@ to collect and no store graphics to redo per locale. Detail in
   traffic. SDK required, QA review, and **no outbound links, no ads of your
   own**: the target drops the site CTA and every cross-promo link, a build-time
   decision of the same kind as zeroing `ctaHeight` on web
-- [ ] MAIN — **submit three games, not thirteen.** Wait for the QA notes and
+- [ ] MAIN — **submit three games, not fifteen.** Wait for the QA notes and
   apply them to the other ten in one pass
 - [ ] MAIN — Poki is a goal, not a checkbox: curated, strict QA, sometimes
   exclusive. Revisit once CrazyGames has produced numbers
@@ -993,33 +593,24 @@ ______________________________________________________________________
 
 ## The codebase
 
-- [x] CODE — **the code audit is written**: [docs/AUDIT.md](docs/AUDIT.md)
-  (2026-09-21) — security, architecture, JS and CSS factorization, every
-  finding with its `file:line` and its fix, and the order to take them in. A
-  finding leaves that file when its fix lands; the actions below are that
-  file's section 5, and they are separate changes on purpose, so each one can
-  be reviewed on its own.
-- [x] CODE — **one lab server, one back office** (`make lab`,
-  `tools/lab/serve-lab.mjs`, `lab/index.html`): every page of `lab/` on
-  `localhost:8095`, listed beside a frame; the four tools proxied under
-  `/events/`, `/text/`, `/store/`, `/village/`, one process each, started on
-  first use. Their shared plumbing is `tools/lib/serve.mjs`, which binds
-  `127.0.0.1`, checks `Host`, decodes inside a `try` and answers 404 in plain
-  text — AUDIT 1.1, 1.3, 1.4 and 3.4 for the four of them.
+The audit is [docs/AUDIT.md](docs/AUDIT.md) (2026-09-21): every finding with
+its `file:line` and its fix. The steps below are its section 5, kept as
+separate changes so each can be reviewed on its own.
+
 - [ ] CODE — **audit, step 1 — what is left of the servers** (AUDIT 1.1–1.5,
   3.4): `serve-site.mjs` onto `tools/lib/serve.mjs`; numeric validation and
   `\x3c` escaping in `apply-events.mjs` / `apply-text.mjs`; a CSP with
   `frame-ancestors` in `vercel.json`
 - [ ] CODE — **audit, step 2 — the byte wins** (AUDIT 2.4, 3.1, 3.2, 3.3):
-  a comment strip in `build.mjs` (sources keep theirs; the thirteen
+  a comment strip in `build.mjs` (sources keep theirs; the fifteen
   `index.html` regenerate once), `tools/lib/repo.mjs` for `ROOT` / `games()`
   / `manifestOf` / `bumpPatch`, `chrome.mjs` growing `launch` / `connect` /
   `openPage` / `evaluate` so the eleven copies go, and the end screen's three
-  clips moved into the shell so all thirteen games sound the same there
+  clips moved into the shell so all fifteen games sound the same there
 - [ ] CODE — **audit, step 3 — one motor + skins pass** (AUDIT 4.1–4.3, 2.6):
   `--accent-rgb` / `--danger-rgb` / `--gold-rgb` tokens, the `#cta-bar`
   border and the `.demo-stage` size in the motor, `.pop-sub` on tokens — one commit,
-  thirteen patch bumps (the dead `Overlay.toast/banner/reward` already went
+  fifteen patch bumps (the dead `Overlay.toast/banner/reward` already went
   with the `Notify` port)
 - [ ] CODE — **audit, step 4 — the engine gains its helpers** (AUDIT 3.7–3.9,
   2.7): `Sprite.canvas` pre-scaled by `view.dpr` (nine games size their caches

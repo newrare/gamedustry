@@ -147,6 +147,7 @@
   var bet = 1;
 
   var S = null;                         // the album's sheet (view.js)
+  var alStock = null;                   // what the player holds, in its header
 
   function build() {
     if (built) return;
@@ -172,6 +173,8 @@
     S = VW.sheet({ id: "al-screen", body: scroll });
     box = S.box;
     S.setHead(T.album, "");
+    alStock = el("div", "sh-stock");
+    S.head.appendChild(alStock);
   }
 
   /* ── 3. the machine ───────────────────────────────────────────────────── */
@@ -680,6 +683,10 @@
     }
 
     paintOdds();
+    paintStock(alStock, [
+      { tone: "ticket", pic: "ticket", n: have, label: T.buyTitle },
+      { tone: "super", pic: "ticketSuper", n: supers, label: T.superTitle }
+    ]);
 
     drawBtn.disabled = drawing || !ok;
     drawBtn.innerHTML = "<span>" + (drawing ? T.mixing : T.draw) + "</span>" +
@@ -1013,7 +1020,7 @@
 
   /* ── 6. the shop ──────────────────────────────────────────────────────── */
 
-  var shop, shopBody, shopBuilt = false, SH = null;
+  var shop, shopBody, shopBuilt = false, SH = null, shStock = null;
 
   function buildShop() {
     if (shopBuilt) return;
@@ -1029,6 +1036,46 @@
     SH = VW.sheet({ id: "sh-screen", body: shopBody });
     shop = SH.box;
     SH.setHead(T.shop, "");
+    shStock = el("div", "sh-stock");
+    SH.head.appendChild(shStock);
+  }
+
+  /* WHAT THE PLAYER ALREADY HOLDS, under the title of the shop and of the
+     album. The band counts the coins and the collection and nothing else, so
+     the tickets, the super tickets and the rounds left on a boost are counted
+     on the two screens they are bought and spent on — in the HEADER, which
+     does not scroll, so the figure stays in sight while the shelf below is
+     read. A pill at zero is dimmed rather than dropped: the row keeps its
+     shape, and an empty pocket is still a figure. A pill whose figure moved
+     since it was last painted takes the band's own punch (`mt-hit`), since
+     what was bought flies into the band and this is where it is counted. */
+  function paintStock(node, list) {
+    if (!node) return;
+    /* Built once and then written in place: the shop repaints its whole body
+       two or three times per purchase (the spend, the gain, the tap), and a
+       pill rebuilt on each of them would lose the punch the first one gave. */
+    if (node.children.length !== list.length) {
+      node.innerHTML = "";
+      for (var k = 0; k < list.length; k++) {
+        node.appendChild(el("span", "sh-sp " + list[k].tone,
+          '<span class="sh-spi">' + icon(list[k].pic, "mt-ci") +
+          (list[k].mul ? "<i>" + list[k].mul + "</i>" : "") + "</span><b></b>"));
+      }
+    }
+    for (var i = 0; i < list.length; i++) {
+      var o = list[i], p = node.children[i], fig = num(o.n);
+      var b = p.querySelector("b");
+      p.classList.toggle("zero", !o.n);
+      p.setAttribute("role", "img");
+      p.setAttribute("aria-label", o.label + " " + o.n);
+      if (b.textContent === fig) continue;
+      if (b.textContent !== "") {
+        p.classList.remove("mt-hit");
+        void p.offsetWidth;                   // restart the animation
+        p.classList.add("mt-hit");
+      }
+      b.textContent = fig;
+    }
   }
 
   /* ONE TILE, the shape every product of the grid is sold in: the piece on
@@ -1122,6 +1169,13 @@
   function paintShop() {
     shopBody.innerHTML = "";
     var DL = window.__DAILY__;
+    var held = MT.boosts();
+    paintStock(shStock, [
+      { tone: "ticket", pic: "ticket", n: MT.tickets(), label: T.buyTitle },
+      { tone: "super", pic: "ticketSuper", n: MT.supers(), label: T.superTitle },
+      { tone: "coins", pic: "coin", mul: "×2", n: held.coins, label: T.coinBoostTitle },
+      { tone: "xp", pic: "xp", mul: "×2", n: held.xp, label: T.xpBoostTitle }
+    ]);
 
     /* 0. A MISSED DAY, while it can still be caught up — the one thing on this
        screen that goes away on its own, so it is the first thing on it. Full
@@ -1177,20 +1231,18 @@
        the board. Beside the ticket on purpose: two tiles that differ only in
        their piece, their price and their sentence are compared at a glance.
 
-       HOW MANY YOU OWN IS ON THE TILE. There is no chip for it in the wallet —
-       it is spent in one place — so the count lives where it is bought and
-       where it is spent, and nowhere else. */
+       HOW MANY YOU OWN is counted in this screen's header and the album's
+       (`paintStock`), where it is bought and where it is spent — the band has
+       no figure for any ticket. */
     grid.appendChild(tile({
       tone: "super", pic: icon("ticketSuper", "sh-i"),
       title: T.superTitle, note: T.superNote, price: MT.superPrice(),
       own: MT.supers() > 0 ? fill(T.superOwn, { n: MT.supers() }) : "",
-      buy: function (from, before) {
+      buy: function (from) {
         MT.addSupers(1);
-        /* No flight: `buyFx` throws the piece into the wallet chip that holds
-           it, and this one has no chip. What the player watches instead is the
-           coins leaving and the count on this tile going up under their
-           finger, which is the same beat without a destination invented. */
-        MT.spendFx(before, MT.coins());
+        /* The same flight as the ticket's: into the collection's chip of the
+           band, which is where every ticket lands and writes its figure. */
+        MT.buyFx({ cost: MT.superPrice(), kind: "super", n: 1, from: from });
         W.Sound.cue("uiStar", 0.8, 1.45, 1180, 0.16, "triangle");
       }
     }));

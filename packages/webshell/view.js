@@ -99,6 +99,56 @@
     else W.Music.unduck();
   }
 
+  /* ── 1b. the round, held ──────────────────────────────────────────────── */
+
+  /* EVERY CARD OVER A ROUND PAUSES IT, whoever opened it. It used to be the
+     caller's job, and only the options, the help, the leave question, the
+     notices and the surrender remembered it: a reward, a sticker, an
+     officer's file opened over a live round let the world, the clock and the
+     game's own update run on behind the scrim.
+
+     The clock is the loop's (packages/engine/engine.js), so freezing the loop
+     freezes the world, the timer and the game at once, and the last frame
+     stays on the canvas. Counted like the bed, so two cards over one another
+     resume nothing until the second has gone.
+
+     The OUTRO is held too. The state is still "playing" while it plays
+     (packages/shell/shell.js) and its slow motion is the loop turning at a
+     crawl — which is still the game going on behind the three gift boxes or
+     the prisoner's offer. The ramp that drives it (levels.js, `slowTo`) only
+     writes `Loop.rate`, so it picks up where it was when the card goes.
+
+     `era` is what a state change leaves behind: a round ending, or a new one
+     starting, is a loop the motor has already stopped or restarted, and a
+     card closing after that has nothing of its own to resume. */
+  var holds = 0, era = 0;
+
+  function hold() {
+    if (W.state() !== "playing") return null;
+    holds++;
+    if (holds === 1) W.Loop.pause();
+    var mine = era, done = false;
+    return function () {
+      if (done) return;
+      done = true;
+      if (mine !== era || holds === 0) return;
+      holds--;
+      if (holds === 0) W.Loop.resume();
+    };
+  }
+
+  function unhold() { holds = 0; era++; }
+
+  /* The motor resumes the loop when the tab comes back (packages/engine/
+     engine.js, and packages/platform/web.js), which would un-pause a round
+     frozen behind a card. Registered once the shell has mounted, after both
+     of those, so it has the last word. */
+  function guardVisibility() {
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && holds > 0) W.Loop.pause();
+    });
+  }
+
   /* ── 2. the modal ─────────────────────────────────────────────────────── */
 
   /* One implementation for every card this shell opens. It was five before —
@@ -116,12 +166,18 @@
 
   var FADE = 220;                       // the one teardown delay
 
+  /* What a tap on a dismissable card leaves alone: the nodes that DO
+     something. `closest` still walks a target its own handler has just
+     detached, so a control that repaints the card under the finger is
+     found all the same. */
+  var CONTROL = "button, a, input, select, textarea, label";
+
   /* THE LAST LINE OF EVERY CARD. A card has no cross (packages/shell/
      motor.css, CARD): it says what the tap does, and when the caller has
-     nothing more precise to say it is one of these two. */
+     nothing more precise to say it is this one. */
   var STRINGS = {
-    en: { tapClose: "Tap to close", tapOutside: "Tap outside to close" },
-    fr: { tapClose: "Touche pour fermer", tapOutside: "Touche à côté pour fermer" }
+    en: { tapClose: "Tap to close" },
+    fr: { tapClose: "Touche pour fermer" }
   };
   var LANG = "en";
   function tapCopy(key) { return (STRINGS[LANG] || STRINGS.en)[key]; }
@@ -182,9 +238,8 @@
        title     the title
        badge     the tag on the corner, a number                 (optional)
        tap       the last line, what a tap does. Every card carries one:
-                 left out, it is "Tap to close" (or "Tap outside to close"
-                 for `dismiss: "outside"`); a card whose tap does something
-                 else says its own ("Tap a box", "Tap to collect").
+                 left out, it is "Tap to close"; a card whose tap does
+                 something else says its own ("Tap a box", "Tap to collect").
                  All four are rewritten later with `handle.set({...})`.
        fill      fill(body, close, handle) — the caller writes the card's
                  BODY, which is the one thing a card does not share with the
@@ -197,11 +252,14 @@
                  body takes the room the slots leave and scrolls inside it.
        card      false for a caller that wants the scrim and nothing else
                  (the gift ceremony deals its own three boxes over the frame).
-       dismiss   true when a TAP ANYWHERE puts it away. "outside" when only a
-                 tap AROUND the card does: a card with switches on it must not
-                 close under the finger that reached for one, and since there
-                 is no cross, the scrim is its way out. false for a card that
-                 asks a question: a tap must never stand in for a choice.
+       dismiss   true (the default) when a TAP ANYWHERE puts it away — the
+                 scrim, the card, the tap line itself — except on a control
+                 (`CONTROL` below), which answers for itself. There was an
+                 "outside" mode that only listened to the scrim, for the cards
+                 with switches on them, and it read as a broken card: the line
+                 said "tap" and the card under the finger did nothing. false
+                 for a card that asks a question: a tap must never stand in
+                 for a choice.
        esc       whether ESCAPE closes it. It defaults to `dismiss` and is
                  named apart because the two are not the same question: the
                  options card is not dismissed by a tap and IS closed by the
@@ -213,6 +271,9 @@
                  that has already been detached.
        onClose   after the node is gone.
        bed       false for a card that must not touch the music (the ad).
+
+     Over a round, every card pauses it until it goes (section 1b); there is
+     no field for it because there is no card that should not.
   */
   function open(spec) {
     spec = spec || {};
@@ -226,7 +287,7 @@
       box.appendChild(card);
     }
 
-    var mode = spec.dismiss === "outside" ? "outside" : spec.dismiss !== false;
+    var mode = spec.dismiss !== false;
     var handle = {
       kind: spec.kind || "",
       box: box,
@@ -240,8 +301,7 @@
 
     setSlots(handle, {
       eyebrow: spec.eyebrow, title: spec.title, badge: spec.badge,
-      tap: spec.tap !== undefined ? spec.tap
-         : tapCopy(mode === "outside" ? "tapOutside" : "tapClose")
+      tap: spec.tap !== undefined ? spec.tap : tapCopy("tapClose")
     });
 
     if (spec.fill) spec.fill(body || box, handle.close, handle);
@@ -249,6 +309,7 @@
     frame().appendChild(box);
     modals.push(handle);
     if (spec.bed !== false) { handle.bed = true; bedDown(); }
+    handle.release = hold();
     /* One frame on screen at opacity 0, so the transition has a start state to
        run from: a node appended and classed in the same frame animates from
        nothing at all in every engine this shell runs in. */
@@ -263,20 +324,13 @@
       handle.watch.observe(card, { childList: true });
     }
 
-    if (handle.dismiss === "outside") {
+    if (handle.dismiss) {
       box.addEventListener("click", function (e) {
-        /* Only the scrim: everything on the card is something to touch — and
-           so is a control standing on the scrim (the wipe under the options,
-           which asks twice and would otherwise close the card on the first). */
-        if (card && card.contains(e.target)) return;
-        if (e.target.closest && e.target.closest("button")) return;
-        handle.close();
-      });
-    } else if (handle.dismiss) {
-      box.addEventListener("click", function (e) {
-        /* A control inside the card answers for itself; the rest of the card,
-           and the scrim around it, is the way out. */
-        if (e.target.closest && e.target.closest("button")) return;
+        /* A control answers for itself — on the card, or standing on the
+           scrim (the wipe under the options, which asks twice and would
+           otherwise close the card on the first). Everything else — the
+           scrim, the card, its tap line — is the way out. */
+        if (e.target.closest && e.target.closest(CONTROL)) return;
         handle.close();
       });
     }
@@ -316,6 +370,8 @@
     handle.box.classList.remove("on");
     setTimeout(function () {
       if (handle.box.parentNode) handle.box.parentNode.removeChild(handle.box);
+      /* The round comes back once the card is gone, not while it fades. */
+      if (handle.release) { handle.release(); handle.release = null; }
       if (handle.onClose) handle.onClose();
     }, FADE);
     notify();
@@ -461,6 +517,7 @@
      that was open over the screen they replace — ALL of them, the base view
      included: a round is not played under a village. */
   function floor(state) {
+    unhold();                           // the motor has stopped or restarted the loop
     if (state === "intro") return;      // the title screen is the floor itself
     clear();
     while (closeTopModal());
@@ -1052,7 +1109,7 @@
     /* menu.js hands the dom helpers and the icon pack over before anything
        defines a view, so the corner controls can be drawn with the same
        pictograms every other screen uses. */
-    mount: function (api) { API = api; },
+    mount: function (api) { API = api; guardVisibility(); },
 
     define: define,
     go: go,
@@ -1090,6 +1147,8 @@
     any: anyModal,
     top: topModal,
     count: function () { return modals.length; },
+    /* Is the round frozen behind a card? (section 1b) */
+    held: function () { return holds > 0; },
     /* the language of the two default tap lines; menu.js calls it with the
        rest of the shell */
     setLang: function (code) { if (STRINGS[code]) LANG = code; },

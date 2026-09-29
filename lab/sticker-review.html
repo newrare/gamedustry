@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — sticker review</title>
+<style>
+/* ===========================================================================
+   STICKER REVIEW — every adopted sticker of every game, checked by eye.
+
+   Twenty stickers a game, thirteen games and a few more: each one is a cut out
+   of a painted 5x4 sheet, and a cut goes wrong in ways a pixel count never
+   shows — a sticker sawn flat by the grid, a crumb of its neighbour's white
+   outline left in a corner, a piece of its own art left behind on the sheet.
+   The only way to find them is to look at each one, and this page is where
+   that is done and written down.
+
+   Three columns:
+
+     GAMES      progress per game, the filters and the backdrop
+     GRID       the stickers, one tile each, marked with their verdict and
+                with what the automatic pass found suspicious
+     DETAIL     the verdict on top, then the selected cut at full size, what
+                ships (the webp), and the cut put back ON ITS SHEET: the
+                sheet dimmed wherever the cut
+                did not keep a pixel, so a lost piece reads as dark art and a
+                crumb of the neighbour reads as a bright spot outside the body
+
+   A verdict is OK or REDO, and a REDO carries a note that says what is wrong.
+   Both are written to lab/sticker-review.json by tools/lab/serve-stickers.mjs
+   and that file IS the work order for the re-cut: `cut-objects.mjs --only`
+   rewrites the stickers it names and leaves the rest of the sheet alone.
+
+   A verdict remembers the hash of the cut it was given on. When the cut has
+   changed since, the verdict no longer describes the picture on screen, so
+   the sticker goes back to TO CHECK, flagged "re-cut".
+
+   The automatic pass is a HINT and never a verdict. It flags three things:
+     - an island: a second opaque blob beside the body — a crumb, or a spark
+       the artist drew on purpose;
+     - a sawn edge: a long straight run where the alpha drops from solid to
+       nothing in one pixel, which a painted, anti-aliased outline never does;
+     - the frame: opaque pixels on the file's own border, where the pad was
+       supposed to be.
+
+   Keys:  ← →  previous / next     O  ok     R  redo (type the note, Enter)
+          U  take the verdict back     1-4  backdrop     Esc  leave the note
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#0b0b12; --panel:#12121c; --line:#23233a; --ink:#e8e6f5; --mute:#8b8ba7;
+  --accent:#7ea6ff; --ok:#46d38a; --redo:#ff5b6e; --recut:#ffb938;
+  --common:#9aa3b5; --rare:#4f9dff; --epic:#b36bff; --legendary:#ffb938;
+}
+html, body { height:100%; }
+body {
+  display:flex; overflow:hidden;
+  background:var(--bg); color:var(--ink);
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+button {
+  padding:7px 10px; background:#1c1c2c; color:var(--ink);
+  border:1px solid #2c2c47; border-radius:7px; font:inherit; cursor:pointer;
+}
+button:hover { border-color:var(--accent); }
+button.on { background:var(--accent); color:#0b0b12; border-color:var(--accent); }
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 250px; overflow-y:auto;
+  padding:18px 16px; background:var(--panel); border-right:1px solid var(--line);
+}
+#panel h1 { font-size:16px; }
+#panel p.hint { margin:6px 0 16px; font-weight:500; font-size:12px; color:var(--mute); }
+#panel h2 { margin:16px 0 6px; font-size:11px; color:var(--mute); font-weight:700; letter-spacing:.5px; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:5px 7px; font-size:12px; }
+
+#games { list-style:none; }
+#games li {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 8px; border-radius:6px; cursor:pointer;
+}
+#games li:hover { background:#1a1a28; }
+#games li.on { background:#222238; }
+#games .nm { flex:1; }
+#games .ct { font-size:11px; color:var(--mute); font-variant-numeric:tabular-nums; }
+#games .rd { font-size:11px; color:var(--redo); font-variant-numeric:tabular-nums; }
+#games .bar { height:3px; margin:0 8px 4px; border-radius:2px; background:#23233a; overflow:hidden; }
+#games .bar i { display:block; height:100%; background:var(--ok); }
+
+#total { margin-top:10px; font-size:12px; color:var(--mute); }
+#copy { width:100%; margin-top:8px; }
+#keys { margin-top:14px; font-size:11px; font-weight:500; color:var(--mute); line-height:1.7; }
+#keys b { display:inline-block; min-width:18px; padding:0 4px; border:1px solid #2c2c47; border-radius:4px; text-align:center; color:var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   GRID — the backdrop is a class on the grid, so switching it is one write
+   --------------------------------------------------------------------------- */
+#grid { flex:1; overflow-y:auto; padding:18px 20px 60px; }
+#grid h3 { display:flex; align-items:baseline; gap:10px; margin:18px 0 10px; font-size:15px; }
+#grid h3:first-child { margin-top:0; }
+#grid h3 span { font-size:12px; color:var(--mute); font-weight:500; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(138px, 1fr)); gap:10px; }
+.empty { color:var(--mute); font-weight:500; padding:30px 0; }
+
+.tile {
+  position:relative; cursor:pointer;
+  border:2px solid var(--line); border-radius:10px; overflow:hidden; background:#101018;
+}
+.tile.sel { outline:3px solid var(--accent); outline-offset:1px; }
+.tile .pic { height:128px; display:flex; align-items:center; justify-content:center; padding:8px; }
+.tile .pic img { max-width:100%; max-height:100%; }
+.tile .cap { display:flex; gap:6px; padding:5px 8px 6px; font-size:11px; border-top:1px solid var(--line); background:#12121c; }
+.tile .cap .n { color:var(--mute); font-variant-numeric:tabular-nums; }
+.tile .cap .t { flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.tile .rar { position:absolute; left:0; top:0; bottom:0; width:4px; }
+.tile .v {
+  position:absolute; top:6px; right:6px; padding:1px 7px; border-radius:9px;
+  font-size:10px; font-weight:800; color:#0b0b12;
+}
+.tile .v.ok { background:var(--ok); }
+.tile .v.redo { background:var(--redo); }
+.tile .v.recut { background:var(--recut); }
+.tile .hints { position:absolute; left:10px; top:6px; display:flex; gap:3px; }
+.hint-chip { padding:0 5px; border-radius:4px; background:rgba(255,185,56,.9); color:#0b0b12; font-size:10px; font-weight:800; }
+.tile.redo { border-color:var(--redo); }
+.tile.ok { border-color:#1f5a3c; }
+
+/* the four backdrops, on the grid and on the detail's big view alike */
+.bg-checker .pic, .bg-checker #big {
+  background-color:#2a2a33;
+  background-image:
+    linear-gradient(45deg, #3a3a44 25%, transparent 25% 75%, #3a3a44 75%),
+    linear-gradient(45deg, #3a3a44 25%, transparent 25% 75%, #3a3a44 75%);
+  background-size:16px 16px; background-position:0 0, 8px 8px;
+}
+.bg-dark .pic, .bg-dark #big { background:#07070c; }
+.bg-light .pic, .bg-light #big { background:#f3f1ea; }
+/* what the album draws for a sticker nobody owns: its own white silhouette —
+   which is exactly where a crumb stops hiding in the artwork */
+.bg-sil .pic, .bg-sil #big { background:#1b2440; }
+.bg-sil .pic img, .bg-sil #big img { filter:brightness(0) invert(1); }
+
+/* ---------------------------------------------------------------------------
+   DETAIL
+   --------------------------------------------------------------------------- */
+#detail {
+  flex:0 0 440px; overflow-y:auto;
+  padding:18px 18px 40px; background:var(--panel); border-left:1px solid var(--line);
+}
+#detail .head { display:flex; align-items:baseline; gap:8px; }
+#detail .head b { font-size:16px; }
+#detail .head span { color:var(--mute); font-weight:500; }
+#detail .sub { margin:2px 0 12px; font-size:12px; color:var(--mute); font-weight:500; }
+#detail .sub code { color:var(--ink); }
+#big { height:340px; display:flex; align-items:center; justify-content:center; padding:10px; border-radius:10px; }
+#big img { max-width:100%; max-height:100%; }
+#detail h4 { margin:16px 0 6px; font-size:11px; color:var(--mute); letter-spacing:.5px; display:flex; justify-content:space-between; }
+#detail h4 em { font-style:normal; font-weight:500; }
+#ctx { display:block; width:100%; border-radius:8px; background:#07070c; }
+#sheet { display:block; width:100%; border-radius:8px; background:#07070c; cursor:zoom-in; }
+.ship { display:flex; gap:12px; align-items:center; }
+.ship img { width:96px; height:96px; object-fit:contain; border-radius:8px; background:#1b1b28; }
+.ship p { font-size:12px; font-weight:500; color:var(--mute); }
+.ship p.warn { color:var(--recut); }
+#hintlist { font-size:12px; font-weight:500; color:var(--mute); list-style:none; }
+#hintlist li::before { content:"· "; }
+#hintlist li.bad { color:var(--recut); }
+
+/* the verdict leads the column: it is what every sticker ends on, and the
+   buttons must not move down the page as the sheet below them grows */
+#verdict { margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+#verdict h4 { margin-top:0; }
+#note {
+  width:100%; min-height:62px; margin-top:4px; padding:8px;
+  background:#0b0b12; color:var(--ink); border:1px solid #2c2c47; border-radius:7px;
+  font:inherit; font-weight:500; resize:vertical;
+}
+.acts { display:flex; gap:6px; margin-top:8px; }
+.acts button { flex:1; }
+#b-ok.on { background:var(--ok); border-color:var(--ok); color:#0b0b12; }
+#b-redo.on { background:var(--redo); border-color:var(--redo); color:#0b0b12; }
+.nav { display:flex; gap:6px; margin-top:8px; }
+.nav button { flex:1; }
+#status { margin-top:10px; min-height:18px; font-size:12px; font-weight:500; color:var(--mute); }
+#status.err { color:var(--redo); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Sticker review</h1>
+  <p class="hint">Check every adopted sticker by eye, mark the bad ones, and the marks become the re-cut's work order.</p>
+
+  <h2>Games</h2>
+  <ul id="games"></ul>
+  <div id="total"></div>
+
+  <h2>Show</h2>
+  <div class="seg" id="filter">
+    <button data-f="all" class="on">All</button>
+    <button data-f="todo">To check</button>
+    <button data-f="redo">Redo</button>
+    <button data-f="ok">Ok</button>
+    <button data-f="suspect">Suspect</button>
+  </div>
+
+  <h2>Backdrop</h2>
+  <div class="seg" id="bgs">
+    <button data-bg="checker" class="on">Checker</button>
+    <button data-bg="dark">Dark</button>
+    <button data-bg="light">Light</button>
+    <button data-bg="sil">Silhouette</button>
+  </div>
+
+  <h2>Work order</h2>
+  <button id="copy">Copy the redo list</button>
+
+  <div id="keys">
+    <b>←</b> <b>→</b> previous / next<br>
+    <b>O</b> ok &nbsp; <b>R</b> redo &nbsp; <b>U</b> undo<br>
+    <b>1</b>–<b>4</b> backdrop &nbsp; <b>Esc</b> leave the note
+  </div>
+</div>
+
+<div id="grid" class="bg-checker"></div>
+
+<div id="detail" class="bg-checker">
+  <div id="verdict">
+    <h4>Verdict <em id="d-when"></em></h4>
+    <textarea id="note" placeholder="What is wrong with it — a crumb top left, sawn flat at the top, the hat left on the sheet…"></textarea>
+    <div class="acts">
+      <button id="b-ok">Ok (O)</button>
+      <button id="b-redo">Redo (R)</button>
+      <button id="b-clear">Undo (U)</button>
+    </div>
+    <div class="nav">
+      <button id="b-prev">← Previous</button>
+      <button id="b-next">Next →</button>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="head"><b id="d-name">—</b><span id="d-role"></span></div>
+  <div class="sub" id="d-sub"></div>
+  <div id="big"><img id="d-img" alt=""></div>
+
+  <h4>On its sheet <em id="d-where"></em></h4>
+  <canvas id="ctx" width="404" height="300"></canvas>
+
+  <h4>The whole sheet <em>click to open it</em></h4>
+  <canvas id="sheet" width="404" height="270"></canvas>
+
+  <h4>What ships</h4>
+  <div class="ship"><img id="d-ship" alt=""><p id="d-shipnote"></p></div>
+
+  <h4>Automatic pass <em>a hint, not a verdict</em></h4>
+  <ul id="hintlist"></ul>
+
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code: plain ES6, it runs in a desktop browser.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const RARITY = { common: "var(--common)", rare: "var(--rare)", epic: "var(--epic)", legendary: "var(--legendary)" };
+
+  let games = [];          // what the server lists, one album per game
+  let review = {};         // lab/sticker-review.json, slug → role → verdict
+  let game = "*";          // the game on screen, "*" for all of them
+  let filter = "all";
+  let sel = null;          // the selected sticker, { slug, role }
+  const hints = {};        // "slug/role" → the automatic pass's findings
+  const sheets = {};       // slug → Promise of { img, data } for the sheet
+
+  const key = (s) => s.slug + "/" + s.role;
+
+  function load(url) {
+    return new Promise((ok, ko) => {
+      const im = new Image();
+      im.onload = () => ok(im);
+      im.onerror = () => ko(new Error("cannot load " + url));
+      im.src = url;
+    });
+  }
+
+  function pixels(im) {
+    const c = document.createElement("canvas");
+    c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.drawImage(im, 0, 0);
+    return g.getImageData(0, 0, c.width, c.height);
+  }
+
+  /* ---- the state of one sticker ------------------------------------------
+     A verdict counts only on the cut it was given on: a hash that moved means
+     the picture was re-cut since, and it is back to be checked. */
+  function stateOf(s) {
+    const v = review[s.slug] && review[s.slug][s.role];
+    if (!v) return "todo";
+    if (v.hash !== s.hash) return "recut";
+    return v.verdict;
+  }
+
+  function isSuspect(s) {
+    const h = hints[key(s)];
+    return !!(h && (h.islands || h.sawn.length || h.frame));
+  }
+
+  function visible(s) {
+    const st = stateOf(s);
+    if (filter === "todo") return st === "todo" || st === "recut";
+    if (filter === "redo") return st === "redo";
+    if (filter === "ok") return st === "ok";
+    if (filter === "suspect") return isSuspect(s);
+    return true;
+  }
+
+  function all() {
+    const out = [];
+    games.forEach((g) => g.stickers.forEach((s) => out.push(Object.assign({ slug: g.slug, game: g }, s))));
+    return out;
+  }
+
+  function list() {
+    return all().filter((s) => (game === "*" || s.slug === game) && visible(s));
+  }
+
+  function find(k) {
+    return all().find((s) => k && s.slug === k.slug && s.role === k.role) || null;
+  }
+
+  /* ---- the automatic pass -------------------------------------------------
+     Three findings off the cut's own alpha, run once per picture. */
+  function analyse(data) {
+    const W = data.width, H = data.height, px = data.data;
+    const A = (x, y) => px[(y * W + x) * 4 + 3];
+
+    // 1. islands: 8-connected blobs at alpha >= 128, the biggest is the body
+    const lab = new Int32Array(W * H), stack = new Int32Array(W * H);
+    const areas = [0];
+    for (let p = 0; p < W * H; p++) {
+      if (lab[p] || px[p * 4 + 3] < 128) continue;
+      const id = areas.length; let n = 0, top = 0;
+      lab[p] = id; stack[top++] = p;
+      while (top) {
+        const q = stack[--top], qx = q % W, qy = (q / W) | 0; n++;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const x = qx + dx, y = qy + dy;
+          if (x < 0 || y < 0 || x >= W || y >= H) continue;
+          const r = y * W + x;
+          if (!lab[r] && px[r * 4 + 3] >= 128) { lab[r] = id; stack[top++] = r; }
+        }
+      }
+      areas.push(n);
+    }
+    const body = Math.max.apply(null, areas);
+    const extra = areas.slice(1).filter((a) => a !== body && a >= 30);
+    // the body's box, for the sawn-edge ratio
+    let x0 = W, y0 = H, x1 = 0, y1 = 0;
+    const bodyId = areas.indexOf(body);
+    for (let p = 0; p < W * H; p++) if (lab[p] === bodyId) {
+      const x = p % W, y = (p / W) | 0;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    const bw = Math.max(1, x1 - x0 + 1), bh = Math.max(1, y1 - y0 + 1);
+
+    /* 2. sawn edges: the longest straight run, in each direction, of pixels
+       that are solid (>= 160) with their outward neighbour empty (< 16). An
+       outline that was painted is anti-aliased and curved, so it never holds
+       that for long; a grid line or a --solid bar cutting through art does. */
+    const hard = (a, b) => a >= 160 && b < 16;
+    const runs = { top: 0, bottom: 0, left: 0, right: 0 };
+    for (let y = 0; y < H; y++) {
+      let t = 0, b = 0;
+      for (let x = 0; x < W; x++) {
+        const a = A(x, y);
+        t = hard(a, y > 0 ? A(x, y - 1) : 0) ? t + 1 : 0;
+        b = hard(a, y < H - 1 ? A(x, y + 1) : 0) ? b + 1 : 0;
+        if (t > runs.top) runs.top = t;
+        if (b > runs.bottom) runs.bottom = b;
+      }
+    }
+    for (let x = 0; x < W; x++) {
+      let l = 0, r = 0;
+      for (let y = 0; y < H; y++) {
+        const a = A(x, y);
+        l = hard(a, x > 0 ? A(x - 1, y) : 0) ? l + 1 : 0;
+        r = hard(a, x < W - 1 ? A(x + 1, y) : 0) ? r + 1 : 0;
+        if (l > runs.left) runs.left = l;
+        if (r > runs.right) runs.right = r;
+      }
+    }
+    const sawn = [];
+    [["top", bw], ["bottom", bw], ["left", bh], ["right", bh]].forEach(([side, len]) => {
+      if (runs[side] >= 24 && runs[side] / len >= 0.12) sawn.push({ side, px: runs[side], share: runs[side] / len });
+    });
+
+    // 3. the frame: opaque pixels on the file's own border, where the pad was
+    let frame = 0;
+    for (let x = 0; x < W; x++) { if (A(x, 0) >= 64) frame++; if (A(x, H - 1) >= 64) frame++; }
+    for (let y = 0; y < H; y++) { if (A(0, y) >= 64) frame++; if (A(W - 1, y) >= 64) frame++; }
+
+    return { w: W, h: H, islands: extra.length, islandPx: extra.reduce((a, b) => a + b, 0), sawn, frame };
+  }
+
+  /* One picture at a time, off the first paint: 300 cuts are ~40 M pixels. */
+  function runPass() {
+    const todo = all().filter((s) => !hints[key(s)]);
+    let i = 0;
+    (function next() {
+      if (i >= todo.length) return;
+      const s = todo[i++];
+      load("img/object/" + s.cut + ".png?" + s.hash).then((im) => {
+        hints[key(s)] = analyse(pixels(im));
+        paintTile(s);
+        if (sel && key(sel) === key(s)) paintHints(s);
+        if (filter === "suspect") renderGrid();
+      }).catch(() => { hints[key(s)] = { error: true, islands: 0, sawn: [], frame: 0 }; })
+        .then(() => setTimeout(next, 0));
+    })();
+  }
+
+  /* ---- where the cut came from on its sheet --------------------------------
+     A cut copies its sheet's RGB pixel for pixel, at the sheet's own scale, so
+     its place can be found by matching: take the most colourful solid pixel,
+     try every place on the sheet holding that colour, and keep the offset
+     under which forty-eight other solid pixels also match. "That colour" is
+     within 3 and "solid" is 250 and up, not 255: a cut's alpha tops out a
+     notch under opaque, and the premultiplied round trip through a canvas
+     moves its RGB by one or two. */
+  function sheetOf(g) {
+    if (!g.sheet) return Promise.resolve(null);
+    if (!sheets[g.slug]) {
+      sheets[g.slug] = load("img/master/" + g.sheet).then((img) => ({ img, data: pixels(img) }));
+    }
+    return sheets[g.slug];
+  }
+
+  function locate(cut, sheet) {
+    const W = sheet.width, sp = sheet.data, w = cut.width, h = cut.height, cp = cut.data;
+    const solid = [];
+    for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) {
+      const i = (y * w + x) * 4;
+      if (cp[i + 3] >= 250) solid.push([x, y, cp[i], cp[i + 1], cp[i + 2]]);
+    }
+    if (solid.length < 10) return null;
+    const vivid = (s) => Math.abs(s[2] - s[3]) + Math.abs(s[3] - s[4]) + Math.abs(s[2] - s[4]);
+    const anchors = solid.slice().sort((a, b) => vivid(b) - vivid(a)).slice(0, 3);
+    const samples = [];
+    const stride = Math.max(1, Math.floor(solid.length / 48));
+    for (let k = 0; k < solid.length; k += stride) samples.push(solid[k]);
+
+    const H = sheet.height;
+    const near = (i, s) => Math.abs(sp[i] - s[2]) <= 3 && Math.abs(sp[i + 1] - s[3]) <= 3 && Math.abs(sp[i + 2] - s[4]) <= 3;
+    for (const a of anchors) {
+      for (let p = 0; p < W * H; p++) {
+        const i = p * 4;
+        if (!near(i, a)) continue;
+        const ox = (p % W) - a[0], oy = ((p / W) | 0) - a[1];
+        let hit = 0, seen = 0;
+        for (const s of samples) {
+          const X = ox + s[0], Y = oy + s[1];
+          if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+          seen++;
+          if (near((Y * W + X) * 4, s)) hit++;
+        }
+        if (seen && hit / samples.length >= 0.9) return { x: ox, y: oy, w, h };
+      }
+    }
+    return null;
+  }
+
+  const located = {};      // "slug/role@hash" → the box, or null
+
+  async function paintContext(s) {
+    const cv = $("ctx"), g = cv.getContext("2d"), sc = $("sheet"), sg = sc.getContext("2d");
+    g.clearRect(0, 0, cv.width, cv.height); sg.clearRect(0, 0, sc.width, sc.height);
+    $("d-where").textContent = s.game.sheet ? "locating…" : "no sheet in assets/image/master/";
+    const sh = await sheetOf(s.game);
+    if (!sh || !sel || key(sel) !== key(s)) return;
+    const cutImg = await load("img/object/" + s.cut + ".png?" + s.hash);
+    if (!sel || key(sel) !== key(s)) return;
+
+    const lk = key(s) + "@" + s.hash;
+    if (!(lk in located)) located[lk] = locate(pixels(cutImg), sh.data);
+    const box = located[lk];
+    const SW = sh.img.naturalWidth, SH = sh.img.naturalHeight;
+
+    // the whole sheet, the cut's box drawn on it
+    const k = sc.width / SW;
+    sc.height = Math.round(SH * k);
+    checker(sg, sc.width, sc.height, 8);
+    sg.drawImage(sh.img, 0, 0, sc.width, sc.height);
+    if (box) {
+      sg.strokeStyle = "#ff5b6e"; sg.lineWidth = 2;
+      sg.strokeRect(box.x * k, box.y * k, box.w * k, box.h * k);
+    }
+    if (!box) {
+      $("d-where").textContent = "not found on the sheet — was the sheet redrawn since the cut?";
+      return;
+    }
+    $("d-where").textContent = "x " + box.x + "  y " + box.y + "  ·  " + box.w + "×" + box.h;
+
+    /* the neighbourhood: the sheet around the box, dimmed wherever the cut
+       kept nothing. Art of THIS sticker left dark was lost by the cut; a
+       bright speck outside the body is a neighbour's crumb the cut kept. */
+    const m = Math.round(Math.max(box.w, box.h) * 0.22);
+    const rx = box.x - m, ry = box.y - m, rw = box.w + m * 2, rh = box.h + m * 2;
+    const z = Math.min(cv.width / rw, 420 / rh);
+    cv.height = Math.round(rh * z);
+    checker(g, cv.width, cv.height, 10);
+    g.drawImage(sh.img, rx, ry, rw, rh, 0, 0, rw * z, rh * z);
+    const veil = document.createElement("canvas");
+    veil.width = cv.width; veil.height = cv.height;
+    const vg = veil.getContext("2d");
+    vg.fillStyle = "rgba(4,4,10,.78)";
+    vg.fillRect(0, 0, veil.width, veil.height);
+    vg.globalCompositeOperation = "destination-out";
+    vg.drawImage(cutImg, (box.x - rx) * z, (box.y - ry) * z, box.w * z, box.h * z);
+    g.drawImage(veil, 0, 0);
+    g.strokeStyle = "rgba(126,166,255,.7)"; g.lineWidth = 1; g.setLineDash([4, 4]);
+    g.strokeRect((box.x - rx) * z + .5, (box.y - ry) * z + .5, box.w * z, box.h * z);
+    g.setLineDash([]);
+  }
+
+  function checker(g, w, h, n) {
+    g.fillStyle = "#2a2a33"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#3a3a44";
+    for (let y = 0; y < h; y += n) for (let x = (y / n) % 2 ? n : 0; x < w; x += n * 2) g.fillRect(x, y, n, n);
+  }
+
+  /* ---- the panel ----------------------------------------------------------- */
+  function renderGames() {
+    const ul = $("games");
+    ul.innerHTML = "";
+    const row = (slug, label, stickers) => {
+      const done = stickers.filter((s) => { const st = stateOf(s); return st === "ok" || st === "redo"; }).length;
+      const redo = stickers.filter((s) => stateOf(s) === "redo").length;
+      const li = document.createElement("li");
+      li.className = game === slug ? "on" : "";
+      li.innerHTML = '<span class="nm"></span>' + (redo ? '<span class="rd">' + redo + " redo</span>" : "") +
+        '<span class="ct">' + done + "/" + stickers.length + "</span>";
+      li.querySelector(".nm").textContent = label;
+      li.onclick = () => { game = slug; renderGames(); renderGrid(); $("grid").scrollTop = 0; };
+      ul.appendChild(li);
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.innerHTML = '<i style="width:' + (100 * done / Math.max(1, stickers.length)) + '%"></i>';
+      ul.appendChild(bar);
+    };
+    const every = all();
+    row("*", "All games", every);
+    games.forEach((g) => row(g.slug, g.title, every.filter((s) => s.slug === g.slug)));
+    const ok = every.filter((s) => stateOf(s) === "ok").length;
+    const redo = every.filter((s) => stateOf(s) === "redo").length;
+    const recut = every.filter((s) => stateOf(s) === "recut").length;
+    $("total").textContent = every.length + " stickers · " + ok + " ok · " + redo + " redo" +
+      (recut ? " · " + recut + " re-cut to check again" : "");
+  }
+
+  /* ---- the grid ------------------------------------------------------------ */
+  const tiles = {};        // "slug/role" → its element
+
+  function renderGrid() {
+    const root = $("grid");
+    root.innerHTML = "";
+    for (const k in tiles) delete tiles[k];
+    const shown = list();
+    const groups = games.filter((g) => game === "*" || g.slug === game);
+    groups.forEach((g) => {
+      const mine = shown.filter((s) => s.slug === g.slug);
+      if (!mine.length && game === "*") return;
+      const h = document.createElement("h3");
+      h.textContent = g.title;
+      const sp = document.createElement("span");
+      sp.textContent = g.slug + "  ·  " + g.sheet + (g.version ? "  ·  v" + g.version : "");
+      h.appendChild(sp);
+      root.appendChild(h);
+      const box = document.createElement("div");
+      box.className = "tiles";
+      mine.forEach((s) => {
+        const t = document.createElement("div");
+        t.className = "tile";
+        t.innerHTML = '<div class="rar"></div><div class="hints"></div><div class="pic"><img loading="lazy" alt=""></div>' +
+          '<div class="cap"><span class="n"></span><span class="t"></span></div>';
+        t.querySelector("img").src = "img/object/" + s.cut + ".png?" + s.hash;
+        t.querySelector(".n").textContent = s.role.slice(7);
+        t.querySelector(".t").textContent = s.name || "(not in the album)";
+        t.querySelector(".rar").style.background = RARITY[s.rarity] || "transparent";
+        t.onclick = () => select(s);
+        tiles[key(s)] = t;
+        box.appendChild(t);
+        paintTile(s);
+      });
+      if (!mine.length) {
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = "Nothing under this filter.";
+        box.appendChild(e);
+      }
+      root.appendChild(box);
+    });
+    if (!root.children.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "Nothing under this filter.";
+      root.appendChild(e);
+    }
+  }
+
+  function paintTile(s) {
+    const t = tiles[key(s)];
+    if (!t) return;
+    const st = stateOf(s);
+    t.classList.toggle("ok", st === "ok");
+    t.classList.toggle("redo", st === "redo");
+    t.classList.toggle("sel", !!sel && key(sel) === key(s));
+    let v = t.querySelector(".v");
+    if (v) v.remove();
+    if (st !== "todo") {
+      v = document.createElement("span");
+      v.className = "v " + st;
+      v.textContent = st === "ok" ? "Ok" : st === "redo" ? "Redo" : "Re-cut";
+      t.appendChild(v);
+    }
+    const h = hints[key(s)], hb = t.querySelector(".hints");
+    hb.innerHTML = "";
+    if (h && !h.error) {
+      if (h.islands) chip(hb, "island" + (h.islands > 1 ? "s " + h.islands : ""));
+      if (h.sawn.length) chip(hb, "sawn");
+      if (h.frame) chip(hb, "frame");
+    }
+    const r = review[s.slug] && review[s.slug][s.role];
+    t.title = r && r.note ? r.note : "";
+  }
+
+  function chip(parent, word) {
+    const c = document.createElement("span");
+    c.className = "hint-chip";
+    c.textContent = word;
+    parent.appendChild(c);
+  }
+
+  /* ---- the detail ---------------------------------------------------------- */
+  function select(s) {
+    const prev = sel && find(sel);
+    sel = { slug: s.slug, role: s.role };
+    if (prev) paintTile(prev);
+    paintTile(s);
+    const t = tiles[key(s)];
+    if (t) t.scrollIntoView({ block: "nearest" });
+    renderDetail();
+  }
+
+  function renderDetail() {
+    const s = sel && find(sel);
+    if (!s) return;
+    $("d-name").textContent = s.name || "(not in the album)";
+    $("d-role").textContent = s.game.title + " · " + s.role + (s.rarity ? " · " + s.rarity : "");
+    $("d-sub").innerHTML = "";
+    const code = document.createElement("code");
+    code.textContent = "assets/image/object/" + s.cut + ".png";
+    $("d-sub").appendChild(code);
+    $("d-img").src = "img/object/" + s.cut + ".png?" + s.hash;
+
+    if (s.embed) {
+      $("d-ship").src = "img/embed/" + s.embed + "?" + s.hash;
+      $("d-ship").style.visibility = "visible";
+      $("d-shipnote").textContent = s.embed + (s.stale ? " — older than the cut: run encode-art.mjs " + s.slug : "");
+      $("d-shipnote").className = s.stale ? "warn" : "";
+    } else {
+      $("d-ship").style.visibility = "hidden";
+      $("d-shipnote").textContent = "No webp in assets/image/embed/ — encode-art.mjs " + s.slug + " has not run.";
+      $("d-shipnote").className = "warn";
+    }
+
+    const r = review[s.slug] && review[s.slug][s.role];
+    const st = stateOf(s);
+    $("note").value = r ? r.note : "";
+    $("b-ok").classList.toggle("on", st === "ok");
+    $("b-redo").classList.toggle("on", st === "redo");
+    $("d-when").textContent = !r ? "not checked yet"
+      : st === "recut" ? "was " + r.verdict + " on " + r.at + ", the cut changed since"
+      : r.verdict + " on " + r.at;
+    paintHints(s);
+    paintContext(s);
+  }
+
+  function paintHints(s) {
+    const ul = $("hintlist"), h = hints[key(s)];
+    ul.innerHTML = "";
+    const li = (txt, bad) => { const e = document.createElement("li"); e.textContent = txt; if (bad) e.className = "bad"; ul.appendChild(e); };
+    if (!h) return li("Measuring…");
+    if (h.error) return li("The cut could not be read.", true);
+    li(h.w + " × " + h.h + " px");
+    li(h.islands ? h.islands + " island" + (h.islands > 1 ? "s" : "") + " beside the body, " + h.islandPx + " px — a crumb, or a spark drawn on purpose"
+      : "One body, no island", !!h.islands);
+    if (h.sawn.length) h.sawn.forEach((e) => li("A straight hard edge on the " + e.side + ": " + e.px + " px, " +
+      Math.round(e.share * 100) + "% of the body — sawn by the grid or the bar?", true));
+    else li("No sawn edge");
+    li(h.frame ? h.frame + " opaque px on the file's own border — the pad did not hold" : "Clear of the frame", !!h.frame);
+  }
+
+  /* ---- verdicts ------------------------------------------------------------ */
+  async function give(verdict) {
+    const s = sel && find(sel);
+    if (!s) return;
+    const note = $("note").value.trim();
+    if (verdict === "redo" && !note) {
+      $("note").focus();
+      return say("Say what is wrong first, then Redo (or Enter).", true);
+    }
+    try {
+      const r = await fetch("api/review", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: s.slug, role: s.role, verdict, note: verdict === "ok" ? "" : note })
+      });
+      const out = await r.json();
+      if (out.error) throw new Error(out.error);
+      review = out.review;
+    } catch (e) { return say(String(e.message || e), true); }
+    say(verdict === null ? s.role + " back to be checked" : s.role + " " + verdict);
+    renderGames();
+    if (filter !== "all") renderGrid();
+    paintTile(s);
+    if (verdict !== null) step(1); else renderDetail();
+  }
+
+  function step(d) {
+    const l = list();
+    if (!l.length) return;
+    const i = sel ? l.findIndex((s) => key(s) === key(sel)) : -1;
+    const n = i < 0 ? 0 : Math.min(l.length - 1, Math.max(0, i + d));
+    select(l[n]);
+  }
+
+  function say(msg, err) {
+    $("status").textContent = msg;
+    $("status").className = err ? "err" : "";
+  }
+
+  /* The work order, as text to paste into a prompt: every sticker marked REDO
+     on the cut that is still on disk, with its note. */
+  function redoList() {
+    const lines = [];
+    all().forEach((s) => {
+      if (stateOf(s) !== "redo") return;
+      lines.push("- " + s.slug + " " + s.role + " (" + s.cut + "): " + review[s.slug][s.role].note);
+    });
+    return lines.length
+      ? "Re-cut these stickers (lab/sticker-review.json):\n" + lines.join("\n")
+      : "";
+  }
+
+  /* ---- wiring --------------------------------------------------------------- */
+  $("filter").onclick = (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    filter = b.dataset.f;
+    [...$("filter").children].forEach((c) => c.classList.toggle("on", c === b));
+    renderGrid();
+  };
+  function setBg(bg) {
+    ["grid", "detail"].forEach((id) => { $(id).className = "bg-" + bg; });
+    [...$("bgs").children].forEach((c) => c.classList.toggle("on", c.dataset.bg === bg));
+    try { localStorage.setItem("sticker-review:bg", bg); } catch (e) { /* private window */ }
+  }
+  $("bgs").onclick = (e) => { const b = e.target.closest("button"); if (b) setBg(b.dataset.bg); };
+  $("b-ok").onclick = () => give("ok");
+  $("b-redo").onclick = () => give("redo");
+  $("b-clear").onclick = () => give(null);
+  $("b-prev").onclick = () => step(-1);
+  $("b-next").onclick = () => step(1);
+  $("sheet").onclick = () => { const s = sel && find(sel); if (s && s.game.sheet) window.open("img/master/" + s.game.sheet, "_blank"); };
+  $("copy").onclick = async () => {
+    const txt = redoList();
+    if (!txt) return say("Nothing marked redo yet.");
+    try { await navigator.clipboard.writeText(txt); say("Copied " + (txt.split("\n").length - 1) + " stickers."); }
+    catch (e) { say("The clipboard refused — the list is in lab/sticker-review.json.", true); }
+  };
+  $("note").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); give("redo"); }
+    if (e.key === "Escape") $("note").blur();
+    e.stopPropagation();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "arrowright" || k === "arrowdown") { e.preventDefault(); step(1); }
+    else if (k === "arrowleft" || k === "arrowup") { e.preventDefault(); step(-1); }
+    else if (k === "o") give("ok");
+    else if (k === "r") { e.preventDefault(); $("note").focus(); if ($("note").value.trim()) give("redo"); }
+    else if (k === "u") give(null);
+    else if (k >= "1" && k <= "4") setBg(["checker", "dark", "light", "sil"][+k - 1]);
+  });
+
+  (async function boot() {
+    try { const bg = localStorage.getItem("sticker-review:bg"); if (bg) setBg(bg); } catch (e) { /* none */ }
+    try {
+      const r = await (await fetch("api/stickers")).json();
+      games = r.games; review = r.review || {};
+    } catch (e) {
+      $("grid").innerHTML = '<div class="empty">No server: run <b>make stickers</b> (or make lab) and open it from there.</div>';
+      return;
+    }
+    // open on the first game that still has something to check
+    const first = games.find((g) => g.stickers.some((s) => { const st = stateOf(Object.assign({ slug: g.slug }, s)); return st === "todo" || st === "recut"; }));
+    game = first ? first.slug : "*";
+    renderGames();
+    renderGrid();
+    const l = list();
+    const start = l.find((s) => { const st = stateOf(s); return st === "todo" || st === "recut"; }) || l[0];
+    if (start) select(start);
+    runPass();
+  })();
+})();
+</script>
+</body>
+</html>

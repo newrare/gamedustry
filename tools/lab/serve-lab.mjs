@@ -16,6 +16,7 @@
     /text/            tools/lab/serve-text.mjs
     /store/           tools/lab/serve-store.mjs
     /village/         tools/lab/serve-village.mjs
+    /stickers/        tools/lab/serve-stickers.mjs
     /lab/  /assets/  /games/  /packages/          read-only files, which is
                       what a file:// lab page reaches with `../`
 
@@ -52,7 +53,8 @@ const TOOLS = [
   { mount: '/events/', script: 'serve-events.mjs', pages: { 'game-events.html': '', 'sound-library.html': 'library' } },
   { mount: '/text/', script: 'serve-text.mjs', pages: { 'game-text.html': '' } },
   { mount: '/store/', script: 'serve-store.mjs', pages: { 'store-card.html': '' } },
-  { mount: '/village/', script: 'serve-village.mjs', pages: { 'village.html': '' } }
+  { mount: '/village/', script: 'serve-village.mjs', pages: { 'village.html': '' } },
+  { mount: '/stickers/', script: 'serve-stickers.mjs', pages: { 'sticker-review.html': '' } }
 ];
 
 const READ_ONLY = ['lab', 'assets', 'games', 'packages'].map((d) => path.join(ROOT, d));
