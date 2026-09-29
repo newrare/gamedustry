@@ -151,7 +151,10 @@
     deck:      function () { return armied() ? AR.deckShort() : 0; },
     infirmary: function () { return armied() ? AR.inInfirmary() : 0; },
     prison:    function () { return armied() ? AR.inPrison() : 0; },
-    recruit:   function () { return armied() ? (AR.camp ? AR.camp() : AR.affordable()) : 0; }
+    recruit:   function () { return armied() ? (AR.camp ? AR.camp() : AR.affordable()) : 0; },
+    /* the defense counts one thing, once: a camp with no defense standing,
+       which is a flag nobody has planted yet */
+    defense:   function () { return armied() && AR.defenseTodo ? AR.defenseTodo() : 0; }
   };
 
   /* How many stickers the shop would buy back: the EXTRA copies, which is what

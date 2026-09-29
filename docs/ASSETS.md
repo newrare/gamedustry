@@ -284,22 +284,26 @@ shape, so nothing in them can say which. The game says it, once. Re-cutting the
 sheet afterwards refreshes what ships with no second adoption, because a role
 points at a cut and not at a copy.
 
-| flag              | default | what it is                                                                 |
-| ----------------- | ------- | -------------------------------------------------------------------------- |
-| `--solid <alpha>` | `110`   | the alpha at which a pixel is the object rather than its glow — see below  |
-| `--solid a,b,c,d` | —       | …one bar per equal horizontal BAND of the sheet, when its halves differ    |
-| `--pad <px>`      | `20`    | the margin around a cut, and how far its own glow is followed              |
-| `--min <px²>`     | `2500`  | the speck floor: below it, paint rather than an object                     |
-| `--keep-partial`  | off     | keep the objects the sheet's own edge cuts in half                         |
-| `--step <0-255>`  | `14`    | opaque sheets only: how far the border flood crosses in one pixel          |
-| `--envelope <n>`  | `90`    | opaque sheets only: how far from the border colour the flood may ever go   |
-| `--grid 5x4`      | —       | the sheet is a regular grid: the CELL is the index, not the blob's area    |
-| `--grid 5,5,5,6`  | —       | …one column count PER ROW, when the rows are not all the same length       |
-| `--adopt 1,4`     | —       | declare those cuts in the game's `art.objects` (one sheet at a time)       |
-| `--as <role>`     | —       | name the role instead: `--as decor` → `decor-NN`, the decor pool           |
-| `--seq`           | off     | number the adopted roles 01…N in the order given, not after their cut      |
-| `--into <slug>`   | —       | which game adopts a SHARED `game-*` cut; meaningless on a game's own sheet |
-| `--list`          | —       | name the sheets and stop                                                   |
+| flag              | default   | what it is                                                                            |
+| ----------------- | --------- | ------------------------------------------------------------------------------------- |
+| `--solid <alpha>` | `110`     | the alpha at which a pixel is the object rather than its glow — see below             |
+| `--solid a,b,c,d` | —         | …one bar per equal horizontal BAND of the sheet, when its halves differ               |
+| `--pad <px>`      | `20`      | the margin around a cut, and how far its own glow is followed                         |
+| `--min <px²>`     | `2500`    | the speck floor: below it, paint rather than an object                                |
+| `--keep-partial`  | off       | keep the objects the sheet's own edge cuts in half                                    |
+| `--step <0-255>`  | `14`      | opaque sheets only: how far the border flood crosses in one pixel                     |
+| `--envelope <n>`  | `90`      | opaque sheets only: how far from the border colour the flood may ever go              |
+| `--grid 5x4`      | —         | the sheet is a regular grid: the CELL is the index, not the blob's area               |
+| `--grid 5,5,5,6`  | —         | …one column count PER ROW, when the rows are not all the same length                  |
+| `--adopt 1,4`     | —         | declare those cuts in the game's `art.objects` (one sheet at a time)                  |
+| `--as <role>`     | —         | name the role instead: `--as decor` → `decor-NN`, the decor pool                      |
+| `--seq`           | off       | number the adopted roles 01…N in the order given, not after their cut                 |
+| `--into <slug>`   | —         | which game adopts a SHARED `game-*` cut; meaningless on a game's own sheet            |
+| `--only 7,12`     | —         | write those cuts and nothing else: the rest of the sheet's files are left as they are |
+| `--neck`          | off       | with `--grid`: split touching stickers where they touch, not on the cell line         |
+| `--margin <px>`   | `= --pad` | the empty border alone, the box first tightened to what can be seen                   |
+| `--out <dir>`     | —         | a trial: cuts and contact sheet go there, nothing tracked moves                       |
+| `--list`          | —         | name the sheets and stop                                                              |
 
 #### `--grid` — when several sheets must be cut the same way
 
@@ -458,6 +462,42 @@ the adopted roles in the order given instead of after the cut each one points
 at, and twenty-five cuts minus five still land on a contiguous twenty. Which cut
 a role points at is the value beside it, so nothing is lost by the role not
 repeating it.
+
+**A bad sticker is re-cut on its own.** `make stickers` (lab/sticker-review.html)
+is where the twenty are checked, each cut shown back on its sheet, and a sticker
+marked REDO lands in `lab/sticker-review.json` with a note. The fix re-runs the
+cut and writes only the indices named, so the other cuts of the sheet — and the
+hand repairs some of them carry (pawko's 10 and 16) — are not touched:
+
+```bash
+node tools/lab/cut-objects.mjs pawko-object-sticker --grid 5x4 --keep-partial \
+  --solid 250 --pad 30 --neck --only 7
+node tools/lab/encode-art.mjs pawko
+```
+
+**What the sticker sheets taught, off the first review pass** (39 redone out of
+301). The image model draws these sheets with an alpha that stops at 252–253,
+so alpha says *painted* or *empty* and nothing about glow: a bar of 253 throws
+away the 252 band — a tenth of the sheet, most of it the white outline — and the
+cut comes back with its outline ragged. So:
+
+- **`--solid 250`** for the stickers themselves, and **lower on a band of neon
+  objects** (`250,250,32,32`): a comet's tail, a spinning top's trail or the thin
+  far arc of a planet's ring sit well under 250 and are only reached by the pad
+  walk, which stops at `--pad` px and saws them off on a diagonal.
+- **`--neck`** when two stickers' outlines touch — at full opacity, so no bar
+  parts them. Without it the grid saws them on the cell line; with it they are
+  eroded apart and each pixel goes to the nearer one through the shape.
+- **`--pad 80 --margin 30`** for a spark drawn well clear of its sticker: the
+  walk reaches it, and the file keeps the 30 px border the album tiles expect.
+- **`--out <dir>` first**, every time: try the flags on a scratch folder, look,
+  then run the same line with `--only`. A sheet cut with no grid (echomaze) is
+  numbered by area, and there the trial's file is copied onto the right name by
+  hand rather than trusting `--only` to keep the order.
+
+The index is the CUT's, the number in its file name. Flags that make the sheet
+cut into a different number of objects may renumber it, and the run warns when
+they do; the review desk then shows the new cut as *re-cut*, to be checked again.
 
 #### The village: `<slug>-background-home.png` + `<slug>-homeNN.png`
 

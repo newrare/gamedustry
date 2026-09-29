@@ -162,6 +162,12 @@ async function run(url) {
     await sleep(100);
   }
 
+  /* THE CAMP'S DAYS ARE HELD BACK for the whole run: on this machine an
+     hour is a second, so a day falls due every few seconds and its card
+     would open itself between any two steps. The barracks section below
+     draws one on purpose. */
+  await evalJs("if (window.__ARMY__ && __ARMY__.quietDays) __ARMY__.quietDays(true); return 1;");
+
   console.log("\nthe floor — the title screen");
   await check("the view system is published", "!!window.__VIEW__", true);
   await check("the modal system is published", "!!window.__MODAL__", true);
@@ -325,10 +331,15 @@ async function run(url) {
       "document.getElementById('web-hud').className", "on hud-full");
     await check("...and the album stands in the one sheet every view wears",
       "!!document.querySelector('#al-screen.wv-screen .wv-sheet .wv-title')", true);
-    await check("...the count riding in the ticket chip, one door for both",
-      "!!document.querySelector('#web-hud .mt-chip.tickets.collection .mt-cnt')", true);
+    await check("...the collection's chip counts the stickers and no ticket",
+      "(function () { var c = document.querySelector('#web-hud .mt-band.full .mt-chip.collection');" +
+      " return !!c.querySelector('.mt-cnt') && c.querySelectorAll('b').length === 1; })()", true);
+    /* THE TICKETS ARE COUNTED WHERE THEY ARE SPENT, since the band dropped
+       them: two pills in the album's header, four in the shop's. */
+    await check("...and the album's header counts the tickets and the super tickets",
+      "document.querySelectorAll('#al-screen .wv-head .sh-stock .sh-sp').length", 2);
     /* THE ORDER IS THE NAVIGATION, so it is what the test reads: level, coins,
-       tickets, stars, left to right, on every screen that carries the band. */
+       the collection, stars, left to right, on every screen that carries the band. */
     /* IT HAS TO FIT AT ITS WIDEST, and the widest is not what a fresh save
        shows: six chips with every number full, the level bar at its floor, is the
        case the paddings in view.css were measured against. A game's own face
@@ -338,26 +349,25 @@ async function run(url) {
       "(function () {" +
       "  var b = document.querySelector('#web-hud .mt-band.full');" +
       "  var lv = b.querySelector('.mt-lv');" +
-      "  var was = [b.querySelector('.mt-chip.tickets .mt-cnt').textContent," +
+      "  var was = [b.querySelector('.mt-chip.collection .mt-cnt').textContent," +
       "             b.querySelector('.mt-chip.coins b').textContent," +
-      "             b.querySelector('.mt-chip.tickets b').textContent," +
       "             b.querySelector('.mt-chip.stars b').textContent," +
       "             lv.querySelector('.lbl').textContent, lv.className];" +
-      "  b.querySelector('.mt-chip.tickets .mt-cnt').textContent = '20/20';" +
+      "  b.querySelector('.mt-chip.collection .mt-cnt').textContent = '20/20';" +
       "  b.querySelector('.mt-chip.coins b').textContent = '99 999';" +
-      "  b.querySelector('.mt-chip.tickets b').textContent = '99';" +
       "  b.querySelector('.mt-chip.stars b').textContent = '90/90';" +
       "  lv.querySelector('.lbl').textContent = 'LV 99';" +
+      "  var lg = b.querySelector('.mt-band-log'), lgWas = lg.hidden; lg.hidden = false;" +
       "  var f = document.getElementById('frame').getBoundingClientRect();" +
       "  var r = b.getBoundingClientRect();" +
       "  var room = f.width - 52 * f.width / 720;" +   /* the band's own 26px gutters */
       "  var fits = r.width <= room + 0.5 && r.left >= f.left - 0.5;" +
-      "  b.querySelector('.mt-chip.tickets .mt-cnt').textContent = was[0];" +
+      "  b.querySelector('.mt-chip.collection .mt-cnt').textContent = was[0];" +
       "  b.querySelector('.mt-chip.coins b').textContent = was[1];" +
-      "  b.querySelector('.mt-chip.tickets b').textContent = was[2];" +
-      "  b.querySelector('.mt-chip.stars b').textContent = was[3];" +
-      "  lv.querySelector('.lbl').textContent = was[4];" +
-      "  lv.className = was[5];" +
+      "  b.querySelector('.mt-chip.stars b').textContent = was[2];" +
+      "  lv.querySelector('.lbl').textContent = was[3];" +
+      "  lv.className = was[4];" +
+      "  lg.hidden = lgWas;" +
       "  return fits;" +
       "})()", true);
 
@@ -365,8 +375,8 @@ async function run(url) {
       "[].map.call(document.querySelectorAll('#web-hud .mt-band.full .mt-lv," +
       " #web-hud .mt-band.full .mt-chip:not(.more)'), function (n) {" +
       "   return n.className.split(' ').filter(function (c) {" +
-      "     return /^(home|mt-lv|coins|tickets|stars)$/.test(c); })[0]; })",
-      ["home", "mt-lv", "coins", "tickets", "stars"]);
+      "     return /^(home|mt-lv|coins|collection|stars|log)$/.test(c); })[0]; })",
+      ["home", "mt-lv", "coins", "collection", "stars", "log"]);
     /* A door answers a pointer and an inert chip does not — which is the only
        thing on the row that says a tap will do nothing. The level chip used to
        fail this: it is a button and it opens a screen, and it looked like a
@@ -377,10 +387,9 @@ async function run(url) {
       "   return getComputedStyle(n).cursor === 'pointer' ===" +
       "          !n.classList.contains('inert'); })" +
       " .every(function (v) { return v; })", true);
-    /* ONE CHIP LEADS TO THE COLLECTION, and it carries both of its numbers —
-       the tickets, which are spent there, and the count, which is of it. */
+    /* ONE CHIP LEADS TO THE COLLECTION, and it carries its count. */
     await check("the chip of the screen we are standing on is inert",
-      "!!document.querySelector('#web-hud .mt-chip.tickets.collection.inert')", true);
+      "!!document.querySelector('#web-hud .mt-chip.collection.inert')", true);
     await check("...and the others are not",
       "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 1);
     /* A SHEET CARRIES THE HOUSE IN ITS OWN BAR, bottom right, so the band's
@@ -427,6 +436,48 @@ async function run(url) {
   }
 
   if (metaed) {
+    /* THE LOG. A notice lives two seconds; the "!" at the end of the row is
+       the way back to it, and it only stands once something has been said. */
+    console.log("\nthe log — the last ten notices, behind the band's \"!\"");
+    await evalJs("__ALBUM__.open(); return 1;");
+    await sleep(400);
+    await check("the \"!\" is hidden until something is said",
+      "document.querySelector('#web-hud .mt-band.full .mt-band-log').hidden &&" +
+      " __WEB__.Notify.history().length === 0", true);
+    await evalJs("for (var i = 1; i <= 12; i++) __WEB__.Notify.say('Notice ' + i);" +
+                 " __WEB__.Notify.say('Notice 12'); return 1;");
+    await check("...and stands once it has, with its unseen dot",
+      "(function () { var b = document.querySelector('#web-hud .mt-band.full .mt-band-log');" +
+      " return !b.hidden && !!b.querySelector('.mt-badge.on'); })()", true);
+    await check("...last in the row",
+      "document.querySelector('#web-hud .mt-band.full').lastElementChild.className", "mt-band-log");
+    await evalJs("document.querySelector('#web-hud .mt-chip.log').click(); return 1;");
+    await sleep(400);
+    await check("a tap opens a card with the last ten",
+      "document.querySelectorAll('.mt-logcard .mt-log-row').length", 10);
+    await check("...the newest first, a repeat counted rather than listed",
+      "[].map.call(document.querySelectorAll('.mt-logcard .mt-log-row'), function (n) {" +
+      " return n.querySelector('.nt-w').textContent + (n.querySelector('.nt-n') ?" +
+      " n.querySelector('.nt-n').textContent : ''); }).slice(0, 2)",
+      ["NOTICE 12×2", "NOTICE 11"]);
+    await check("...and the dot is gone once it has been read",
+      "!!document.querySelector('#web-hud .mt-band-log .mt-badge.on')", false);
+    await key("Escape");
+    await check("escape puts it away", "__MODAL__.count()", 0);
+    await evalJs("__WEB__.Notify.clear(); __VIEW__.home(); return 1;");
+    await sleep(400);
+
+    /* THE DEV PILL IS THE FAST CLOCK'S SWITCH: off and hollow when the game
+       opens, a tap turns it on, a second one off again. After the log, since
+       each flip is said, and a notice stands the "!" the log's first check
+       wants hidden. */
+    await check("the fast clock is off when the game opens, and the pill hollow",
+      "!__WEB__.Dev.on() && document.querySelector('#web-hud .mt-band.full .mt-dev').classList.contains('off')", true);
+    await check("a tap on the DEV pill turns the fast clock on, and a second one off again",
+      "(function () { var d = document.querySelector('#web-hud .mt-band.full .mt-dev'), D = window.__WEB__.Dev;" +
+      " d.click(); var on = D.on() && !d.classList.contains('off');" +
+      " d.click(); var off = !D.on() && d.classList.contains('off'); __WEB__.Notify.clear(); return on && off; })()", true);
+
     console.log("\nthe band IS the navigation — the same four doors everywhere");
     await evalJs("__VIEW__.home(); if (window.__LEVELS__ && __LEVELS__.active())" +
                  " __LEVELS__.open(); else __ALBUM__.open(); return 1;");
@@ -434,9 +485,11 @@ async function run(url) {
     await evalJs("document.querySelector('#web-hud .mt-chip.coins').click(); return 1;");
     await sleep(400);
     await check("the coin chip opens the shop", "__VIEW__.top()", "shop");
-    await evalJs("document.querySelector('#web-hud .mt-chip.tickets').click(); return 1;");
+    await check("...whose header counts the tickets, the super tickets and both boosts",
+      "document.querySelectorAll('#sh-screen .wv-head .sh-stock .sh-sp').length", 4);
+    await evalJs("document.querySelector('#web-hud .mt-band.full .mt-chip.collection').click(); return 1;");
     await sleep(400);
-    await check("the ticket chip opens the collection", "__VIEW__.top()", "sticker");
+    await check("the collection chip opens the collection", "__VIEW__.top()", "sticker");
     if (levelled) {
       await evalJs("document.querySelector('#web-hud .mt-chip.stars').click(); return 1;");
       await sleep(400);
@@ -496,12 +549,28 @@ async function run(url) {
     " /^v\\d/.test((document.querySelector('.wm-modal .web-sig .brand-ver') || {}).textContent || '')",
     true);
   /* NO CROSS: every card ends on the line that says what the tap does, and
-     a card with switches on it is closed by a tap AROUND it. */
+     the tap it names works ANYWHERE — the scrim, the card, the line itself —
+     but on a control, which answers for itself. */
   await check("the way out is the tap line, not a cross",
     "!!document.querySelector('.wm-modal .mt-card > .mt-tap') &&" +
     " !document.querySelector('.wm-modal .web-close, .wm-modal .web-back')", true);
+  /* twice, so the setting is where it was */
+  await evalJs("var b = document.querySelector('.wm-modal .btn-switch'); b.click(); b.click(); return 1;");
+  await check("a switch tapped leaves the card open", "__MODAL__.count()", 1);
   await key("Escape");
   await check("escape closes it", "__MODAL__.count()", 0);
+  const OPEN_OPTIONS = "[].slice.call(document.querySelectorAll('.web-item'))" +
+    " .filter(function(b){return /OPTION/i.test(b.textContent);})[0].click(); return 1;";
+  for (const [where, sel] of [["its tap line", ".mt-card > .mt-tap"],
+                              ["the card itself", ".mt-card .web-row .lbl"],
+                              ["the scrim around it", ""]]) {
+    await evalJs(OPEN_OPTIONS);
+    await sleep(300);
+    await evalJs("var m = document.querySelector('.wm-modal');" +
+                 " (" + JSON.stringify(sel) + " ? m.querySelector(" + JSON.stringify(sel) + ") : m).click(); return 1;");
+    await check("a tap on " + where + " closes it", "__MODAL__.count()", 0);
+  }
+  await sleep(300);
 
   await evalJs("[].slice.call(document.querySelectorAll('.web-item'))" +
                " .filter(function(b){return /AIDE|HELP/i.test(b.textContent);})[0].click(); return 1;");
@@ -509,8 +578,9 @@ async function run(url) {
   await check("the help card is open", "__MODAL__.top()", "web-card help");
   await check("the motor's demo stage was moved into it",
     "!!document.querySelector('.wm-modal #intro-demo')", true);
-  await key("Escape");
-  await check("escape closes it", "__MODAL__.count()", 0);
+  await evalJs("document.querySelector('.wm-modal .mt-card > .mt-tap').click(); return 1;");
+  await check("a tap on its tap line closes it", "__MODAL__.count()", 0);
+  await sleep(300);
   await check("...and the demo stage went home",
     "!!document.querySelector('#web-demo-home #intro-demo')", true);
 
@@ -626,6 +696,31 @@ async function run(url) {
   await key("Escape");
   await check("a second escape resumes", "__MODAL__.count()", 0);
 
+  /* THE PAUSE IS THE CARD'S, not its caller's: a card opened by any layer —
+     a reward, a sticker, an officer's file — freezes the round like the
+     options do, and two cards over one another resume nothing until both
+     have gone. Read off the game's own update, which the loop calls: a clock
+     would stand still on a round with no timer (chainring). */
+  await evalJs("var G = __WEB__.Game, u = G.update; window.__ticks = 0;" +
+               " window.__untick = function () { G.update = u; };" +
+               " G.update = function (dt) { __ticks++; return u.call(G, dt); }; return 1;");
+  const clock = () => evalJs("return __ticks;");
+  await evalJs("window.__probeA = __MODAL__.open({ kind: 'probe-a' }); return 1;");
+  await sleep(100);
+  await check("any card over a round holds it", "__MODAL__.held()", true);
+  let c0 = await clock(); await sleep(400);
+  await check("...and its clock stands still", JSON.stringify(await clock() === c0), true);
+  await evalJs("window.__probeB = __MODAL__.open({ kind: 'probe-b' }); return 1;");
+  await evalJs("__probeA.close(); return 1;"); await sleep(340);
+  c0 = await clock(); await sleep(300);
+  await check("the first of two cards going resumes nothing",
+    JSON.stringify((await clock() === c0) + ":" + await evalJs("return __MODAL__.held();")), "true:true");
+  await evalJs("__probeB.close(); return 1;"); await sleep(340);
+  c0 = await clock(); await sleep(300);
+  await check("the last one going resumes the round",
+    JSON.stringify((await clock() > c0) + ":" + await evalJs("return __MODAL__.held();")), "true:false");
+  await evalJs("__untick(); return 1;");
+
   await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
   await sleep(300);
   await check("the way out asks first", "__MODAL__.top()", "web-card leave");
@@ -637,6 +732,45 @@ async function run(url) {
   await check("...and to the village where there is one",
     "__VIEW__.top()", villaged ? "village" : null);
   if (villaged) { await key("Escape"); }
+
+  if (metaed && levelled) {
+    /* THE ROUND'S "!", on the star pill: the band is down over a round, and a
+       notice said mid-run is the one most likely to have gone unread. The log
+       still holds what the section above said. */
+    console.log("\nthe log in a round — a \"!\" beside the star pill");
+    await evalJs("__LEVELS__.play(1); return 1;"); await sleep(900);
+    await check("a level is playing, its pill up",
+      "__WEB__.state() === 'playing' && !document.getElementById('lv-hud').hidden", true);
+    /* Beside it by default, on top of it where a SKIN says so (blight,
+       echomaze) — and never over it. */
+    await check("the \"!\" rides on the pill, beside it or on top, never over it",
+      "(function () { var n = document.querySelector('#lv-hud .mt-round-log');" +
+      " if (!n || n.hidden) return false;" +
+      " var a = document.getElementById('lv-hud').getBoundingClientRect(), b = n.getBoundingClientRect();" +
+      " return b.width > 0 && (b.left >= a.right - 0.5 || b.bottom <= a.top + 0.5); })()", true);
+    await evalJs("document.querySelector('#lv-hud .mt-round-log .mt-chip.log').click(); return 1;");
+    await sleep(400);
+    await check("a tap opens the log over the round", "__MODAL__.top()", "mt-logcard");
+    /* The world's own update is the witness: the round clock does not turn
+       on a level whose objective is not a timer. */
+    await evalJs("var g = __WEB__.Game, o = g.update; window.__ticks = 0;" +
+                 " g.update = function () { window.__ticks++; return o.apply(g, arguments); };" +
+                 " return 1;");
+    await check("...and the round is held under it",
+      "new Promise(function (ok) { var a = window.__ticks;" +
+      " setTimeout(function () { ok(window.__ticks === a); }, 400); })", true);
+    await key("Escape");
+    await check("escape gives the round back",
+      "new Promise(function (ok) { var a = window.__ticks;" +
+      " setTimeout(function () { ok(__MODAL__.count() === 0 && window.__ticks > a); }, 400); })", true);
+    await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
+    await sleep(300);
+    await evalJs("document.querySelector('.wm-modal .web-actions .btn-danger').click(); return 1;");
+    await sleep(500);
+    /* Disarmed, or the free rounds below would be played as level 1. */
+    await evalJs("__LEVELS__.clear(); return 1;");
+    if (villaged) { await key("Escape"); }
+  }
 
   if (metaed && villaged) {
     /* A VILLAGE HAS A BUILDING FOR IT, and that door opens the STRIP ITSELF
@@ -707,9 +841,9 @@ async function run(url) {
       "document.getElementById('web-hud').className", "on hud-auto");
     await check("...and it is the same node as everywhere else",
       "document.querySelectorAll('#web-hud').length", 1);
-    /* THREE AND NOT FOUR: a level, coins and tickets are what a round pays
-       into — the stars are the end screen's own three, and nothing flies to
-       them. The level one is the fix this pass made: xp was the one reward
+    /* THREE AND NOT FOUR: a level, coins and the collection (a ticket, a
+       sticker) are what a round pays into — the stars are the end screen's
+       own three, and nothing flies to them. The level one is the fix this pass made: xp was the one reward
        whose target was a bar and not a `.mt-chip`, so it had nowhere to go. */
     await check("the transient row carries the three a round can pay",
       "document.querySelectorAll('#web-hud .mt-band.transient .mt-lv," +
@@ -823,9 +957,9 @@ async function run(url) {
     if (missioned) {
       await evalJs("__VIEW__.home(); __ARMY__.open('recruit'); return 1;");
       await sleep(350);
-      await check("the camp carries four tabs",
+      await check("the command carries four tabs",
         "document.querySelectorAll('#ar-recruit .wv-tab').length", 4);
-      await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
+      await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[2].click(); return 1;");
       await sleep(250);
       await check("...and the missions tab shows the board",
         "document.querySelectorAll('#ar-recruit .ar-mis').length > 0", true);
@@ -863,7 +997,7 @@ async function run(url) {
         " return __WEB__.CONFIG.army.deck.every(function (c) { return away.indexOf(c.id) < 0; }); })()", true);
       await evalJs("__ARMY__.missions().r[0].e = 0;" +
         " document.querySelectorAll('#ar-recruit .wv-tab')[0].click();" +
-        " document.querySelectorAll('#ar-recruit .wv-tab')[1].click(); return 1;");
+        " document.querySelectorAll('#ar-recruit .wv-tab')[2].click(); return 1;");
       await sleep(250);
       await evalJs("document.querySelector('#ar-recruit .ar-run .btn:not(.btn-pub)').click(); return 1;");
       await sleep(400);
@@ -878,20 +1012,17 @@ async function run(url) {
       await key("Escape"); await sleep(300);
     }
 
-    /* THE CAMP'S POSTS (army.js, section 8d''): a card put at a post by the
-       deck's own picker is out of the reserve and of the round's deck, and
-       the roll under the posts lists every card the camp holds. */
+    /* THE COMMAND'S POSTS (army.js, section 8d''): a card put at a post by
+       the deck's own picker is out of the reserve and of the round's deck,
+       and the cards house's camp tab lists every card the camp holds. */
     await evalJs("__VIEW__.home(); __ARMY__.open('recruit'); return 1;");
     await sleep(350);
     await check("the tent sells no ad",
       "document.querySelectorAll('#ar-recruit .btn-pub').length", 0);
-    await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[" +
-      "document.querySelectorAll('#ar-recruit .wv-tab').length - 2].click(); return 1;");
+    await evalJs("document.querySelectorAll('#ar-recruit .wv-tab')[0].click(); return 1;");
     await sleep(250);
-    await check("the camp tab shows its five posts",
-      "document.querySelectorAll('#ar-recruit .ar-post').length", 5);
-    await check("...and the roll lists the cards the camp holds",
-      "document.querySelectorAll('#ar-recruit .ar-roll .ar-cell').length > 0", true);
+    await check("the management tab shows its six posts",
+      "document.querySelectorAll('#ar-recruit .ar-post').length", 6);
     await evalJs("document.querySelector('#ar-recruit .ar-post .ar-slot.empty').click(); return 1;");
     await sleep(350);
     await check("an empty post opens the picker", "__MODAL__.top()", "ar-picker");
@@ -904,6 +1035,12 @@ async function run(url) {
       await check("...and is out of the round's deck",
         "(function () { var id = __ARMY__.posts()[Object.keys(__ARMY__.posts())[0]];" +
         " return __WEB__.CONFIG.army.deck.every(function (c) { return c.id !== id; }); })()", true);
+      /* EVERY POST IS A GAUGE, and the officer holding one fills it */
+      await check("...every post wears its gauge",
+        "document.querySelectorAll('#ar-recruit .ar-posts .ar-pgauge').length", 6);
+      await check("...and the post taken reads above 0%",
+        "document.querySelector('#ar-recruit .ar-posts .ar-post .ar-slot:not(.empty)')" +
+        ".closest('.ar-post').querySelector('.ar-pgauge b').textContent !== '0%'", true);
     } else {
       await key("Escape"); await sleep(250);
     }
@@ -913,6 +1050,51 @@ async function run(url) {
     await check("the register lists every card lost",
       "document.querySelectorAll('#ar-recruit .ar-reg-pane .ar-reg').length === __ARMY__.register().length", true);
     await key("Escape"); await sleep(300);
+
+    /* THE DEFENSE (army.js, section 8c'): a grid of twenty, and the flag
+       before anything else — the picker offers it alone until it stands. */
+    await evalJs("__VIEW__.home(); __ARMY__.open('defense'); return 1;");
+    await sleep(350);
+    await check("the defense draws its grid",
+      "document.querySelectorAll('#ar-defense .ar-def > *').length", 20);
+    const flagged = await evalJs("return !!document.querySelector('#ar-defense .ar-def .ar-slot:not(.empty)');");
+    if (!flagged) {
+      await evalJs("document.querySelector('#ar-defense .ar-def .ar-slot.empty').click(); return 1;");
+      await sleep(350);
+      await check("...and an empty cell offers the flag alone at first",
+        "document.querySelectorAll('.ar-picker .ar-act.add').length", 1);
+      await key("Escape"); await sleep(250);
+    }
+    await key("Escape"); await sleep(300);
+    await evalJs("__VIEW__.home(); __ARMY__.open('deck'); return 1;");
+    await sleep(350);
+    await check("the cards carry three tabs",
+      "document.querySelectorAll('#ar-deck .wv-tab').length", 3);
+    await evalJs("document.querySelectorAll('#ar-deck .wv-tab')[0].click(); return 1;");
+    await sleep(250);
+    await check("...and the camp tab lists the cards the camp holds",
+      "document.querySelectorAll('#ar-deck .ar-roll .ar-cell').length > 0", true);
+    /* THE FORMATION'S CEILING IS SEEN: every slot the deck could ever hold,
+       the ones its post has not opened locked */
+    await evalJs("document.querySelectorAll('#ar-deck .wv-tab')[1].click(); return 1;");
+    await sleep(250);
+    await check("the deck draws the slots its post has not opened, locked",
+      "document.querySelectorAll('#ar-deck .ar-line .ar-slot.locked').length === __ARMY__.deckMax() - __ARMY__.size()",
+      true);
+    await key("Escape"); await sleep(300);
+
+    /* A DAY IN THE CAMP is told at the village, on a card a tap puts away —
+       and the tap is what applies it */
+    console.log("\nthe camp's days — told at the village");
+    await evalJs("while (__MODAL__.closeTop()); __VIEW__.home(); return 1;");
+    await sleep(300);
+    await evalJs("__ARMY__.drawDay(); __ARMY__.announce(); return 1;");
+    await sleep(500);
+    await check("a day due opens its card over the village", "__MODAL__.top()", "ar-event");
+    await check("...and stays queued until it is read", "__ARMY__.days().q.length", 1);
+    await evalJs("document.querySelector('.ar-event .ar-ev-text').click(); return 1;");
+    await sleep(400);
+    await check("a tap anywhere applies it and puts it away", "__ARMY__.days().q.length + __MODAL__.count()", 0);
   }
 
   console.log("\nthe floor wins — a round clears everything in front of it");

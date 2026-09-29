@@ -18,6 +18,7 @@
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
 #   make text    the copy desk, at http://localhost:8093/
 #   make village the village composer, at http://localhost:8094/
+#   make stickers the sticker review desk, at http://localhost:8096/
 #   make meta    the itch page copy, one file per game
 #   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
 #   make map   [GAME=<slug>]   just the eleventh, the level map
@@ -29,7 +30,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve preview lab store events sfx text village meta shots map ng android
+.PHONY: help check test push itch site serve preview lab store events sfx text village stickers meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -130,6 +131,13 @@ text:
 # touching a game's sources owes (CLAUDE.md).
 village:
 	node tools/lab/serve-village.mjs
+
+# Every adopted sticker of every game on one page, each cut shown back on the
+# sheet it came from, to be checked by eye and marked OK or REDO with a note.
+# The marks land in lab/sticker-review.json, which is the re-cut's work order:
+# `cut-objects.mjs --only` rewrites the stickers it names and nothing else.
+stickers:
+	node tools/lab/serve-stickers.mjs
 
 meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta

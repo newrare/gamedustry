@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -27,25 +27,25 @@
       "home05": "spinshock-home-05",
       "home06": "spinshock-home-06",
       "sticker01": "spinshock-sticker-01",
-      "sticker02": "spinshock-sticker-02",
+      "sticker02": "spinshock-sticker-14",
       "sticker03": "spinshock-sticker-03",
       "sticker04": "spinshock-sticker-04",
       "sticker05": "spinshock-sticker-05",
       "sticker06": "spinshock-sticker-06",
-      "sticker07": "spinshock-sticker-07",
-      "sticker08": "spinshock-sticker-08",
-      "sticker09": "spinshock-sticker-09",
-      "sticker10": "spinshock-sticker-10",
-      "sticker11": "spinshock-sticker-11",
-      "sticker12": "spinshock-sticker-12",
-      "sticker13": "spinshock-sticker-13",
-      "sticker14": "spinshock-sticker-14",
-      "sticker15": "spinshock-sticker-15",
-      "sticker16": "spinshock-sticker-16",
-      "sticker17": "spinshock-sticker-17",
-      "sticker18": "spinshock-sticker-18",
-      "sticker19": "spinshock-sticker-19",
-      "sticker20": "spinshock-sticker-20"
+      "sticker07": "spinshock-sticker-10",
+      "sticker08": "spinshock-sticker-12",
+      "sticker09": "spinshock-sticker-11",
+      "sticker10": "spinshock-sticker-09",
+      "sticker11": "spinshock-sticker-08",
+      "sticker12": "spinshock-sticker-15",
+      "sticker13": "spinshock-sticker-16",
+      "sticker14": "spinshock-sticker-19",
+      "sticker15": "spinshock-sticker-20",
+      "sticker16": "spinshock-sticker-17",
+      "sticker17": "spinshock-sticker-18",
+      "sticker18": "spinshock-sticker-07",
+      "sticker19": "spinshock-sticker-13",
+      "sticker20": "spinshock-sticker-02"
     }
   },
   "copy": {
@@ -303,7 +303,7 @@
           "rarity": "common"
         },
         {
-          "name": "Peace Out",
+          "name": "Uh-oh",
           "rarity": "common"
         },
         {
@@ -335,15 +335,15 @@
           "rarity": "rare"
         },
         {
-          "name": "The Clash",
+          "name": "Laugh It Off",
           "rarity": "epic"
         },
         {
-          "name": "Thunder",
+          "name": "Game Face",
           "rarity": "rare"
         },
         {
-          "name": "Spinshock!",
+          "name": "Big Grin",
           "rarity": "legendary"
         }
       ]

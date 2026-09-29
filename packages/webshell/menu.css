@@ -361,7 +361,7 @@ img.art-i {
   display:flex; flex-direction:column; gap:8px;
 }
 .web-help-rules li {
-  font-size:21px; line-height:1.35; color:var(--muted); text-align:left;
+  font-size:22px; line-height:1.35; color:var(--muted); text-align:left;
   padding-left:20px; position:relative;
 }
 .web-help-rules li::before {
@@ -550,7 +550,7 @@ svg.rk-cup-i { width:124px; height:124px; }
   color:var(--gold);
   text-shadow:0 0 30px color-mix(in srgb, var(--gold) 55%, transparent), 0 6px 0 rgba(0,0,0,.35);
 }
-.rk-rounds { position:relative; font-size:20px; color:var(--muted); }
+.rk-rounds { position:relative; font-size:22px; color:var(--muted); }
 
 /* A figure that opens LEVELS answers the finger like a button. */
 #web-rank .rk-go { cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .12s ease; }
@@ -587,11 +587,11 @@ svg.rk-cup-i { width:124px; height:124px; }
 .rk-pl { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
 .rk-pl-t { font-size:26px; letter-spacing:3px; font-weight:var(--web-fw, 900); color:var(--text); }
 #web-rank .rk-pl .rk-bar { height:14px; border-radius:8px; }
-.rk-pl-n { display:flex; align-items:center; gap:8px; font-size:19px; color:var(--muted); }
+.rk-pl-n { display:flex; align-items:center; gap:8px; font-size:22px; color:var(--muted); }
 .rk-pl-n i { font-style:normal; color:var(--text); font-weight:800; }
 .rk-pl-n em { font-style:normal; margin-left:auto; white-space:nowrap; }
 .rk-xp-i { width:26px; height:26px; flex:0 0 auto; color:var(--good); object-fit:contain; }
-.rk-pl-all { font-size:17px; color:var(--muted); opacity:.8; }
+.rk-pl-all { font-size:22px; color:var(--muted); opacity:.8; }
 
 /* ---- RECORDS: three figures ---------------------------------------------- */
 .rk-grid { flex:0 0 auto; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
@@ -616,8 +616,8 @@ svg.rk-cup-i { width:124px; height:124px; }
 svg.rk-t-i { width:42px; height:42px; }
 .rk-t-fig { display:flex; align-items:baseline; gap:6px; line-height:1; white-space:nowrap; }
 .rk-t-fig b { font-size:40px; font-weight:var(--web-fw, 900); color:var(--text); }
-.rk-t-fig i { font-style:normal; font-size:19px; color:var(--muted); }
-.rk-t-lbl { font-size:14px; line-height:1.15; letter-spacing:1px; font-weight:800; color:var(--tone); }
+.rk-t-fig i { font-style:normal; font-size:20px; color:var(--muted); }
+.rk-t-lbl { font-size:18px; line-height:1.15; letter-spacing:1px; font-weight:800; color:var(--tone); }
 #web-rank .rk-tile .rk-bar { align-self:stretch; margin-top:auto; height:9px; }
 #web-rank .rk-tile .rk-t-lbl + .rk-bar { margin-top:8px; }
 #web-rank .rk-tile .rk-bar u {
@@ -652,7 +652,7 @@ svg.rk-t-i { width:42px; height:42px; }
 @keyframes rk-lift { 50% { transform:translate(3px, -4px); } }
 .rk-soon-t { display:flex; flex-direction:column; gap:4px; min-width:0; }
 .rk-soon-t b { font-size:20px; letter-spacing:3px; color:var(--accent); font-weight:var(--web-fw, 900); }
-.rk-soon-t i { font-style:normal; font-size:18px; line-height:1.3; color:var(--muted); }
+.rk-soon-t i { font-style:normal; font-size:22px; line-height:1.3; color:var(--muted); }
 
 /* ---- LEVELS: the total ---------------------------------------------------- */
 .rk-sum {
@@ -682,7 +682,7 @@ svg.rk-t-i { width:42px; height:42px; }
 }
 .rk-colhead {
   min-height:0; padding:0 34px 0 8px; background:none; border:0;
-  font-size:15px; letter-spacing:2px; font-weight:800; color:var(--muted);
+  font-size:18px; letter-spacing:2px; font-weight:800; color:var(--muted);
 }
 .rk-colhead span:nth-child(3), .rk-colhead span:nth-child(4) { text-align:right; }
 .rk-n {
@@ -693,12 +693,12 @@ svg.rk-t-i { width:42px; height:42px; }
 }
 .rk-name { font-size:22px; letter-spacing:2px; font-weight:800; }
 .rk-note {
-  grid-column:3 / 5; text-align:right; font-size:19px; color:var(--muted);
+  grid-column:3 / 5; text-align:right; font-size:22px; color:var(--muted);
   display:flex; align-items:center; justify-content:flex-end; gap:6px;
 }
 .rk-ok { width:22px; height:22px; color:var(--good); }
 .rk-best { text-align:right; font-weight:800; display:flex; align-items:center; justify-content:flex-end; gap:8px; }
-.rk-tries { text-align:right; font-size:19px; color:var(--muted); }
+.rk-tries { text-align:right; font-size:20px; color:var(--muted); }
 .rk-stars { display:flex; gap:4px; }
 .rk-s { width:34px; height:34px; display:flex; opacity:.22; filter:grayscale(1); color:var(--muted); }
 .rk-s.on { opacity:1; filter:none; color:var(--gold); }
@@ -752,7 +752,7 @@ svg.rk-s-i { fill:currentColor; }
 .rk-bandhead { display:flex; align-items:center; gap:14px; padding:0 6px; }
 .rk-bn { font-size:19px; letter-spacing:3px; font-weight:var(--web-fw, 900); color:var(--accent); white-space:nowrap; }
 #web-rank .rk-bandhead .rk-bar { flex:1; height:8px; }
-.rk-bs { display:flex; align-items:center; gap:6px; font-size:19px; font-weight:800; color:var(--text); white-space:nowrap; }
+.rk-bs { display:flex; align-items:center; gap:6px; font-size:20px; font-weight:800; color:var(--text); white-space:nowrap; }
 .rk-bs i { font-style:normal; color:var(--muted); font-weight:400; }
 .rk-bs-i { width:24px; height:24px; color:var(--gold); object-fit:contain; }
 .rk-bandhead.full .rk-bn, .rk-bandhead.full .rk-bs { color:var(--gold); }

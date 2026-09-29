@@ -81,19 +81,6 @@ window.GAMES = [
     }
   },
   {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
-    fr: {
-      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
-      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
-    },
-    en: {
-      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
-      tags: ["Swipe to sort", "Three discards", "Poker hands"]
-    }
-  },
-  {
     slug: "chainring",
     name: "Chainring",
     accent: ["#4bf5ff", "#4263eb"],
@@ -104,19 +91,6 @@ window.GAMES = [
     en: {
       tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
       tags: ["Rhythm tap", "On the beat", "Sudden death"]
-    }
-  },
-  {
-    slug: "marshmelt",
-    name: "Marshmelt",
-    accent: ["#ff9d2e", "#ff7a1a"],
-    fr: {
-      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
-    },
-    en: {
-      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
     }
   },
   {
@@ -143,19 +117,6 @@ window.GAMES = [
     en: {
       tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
       tags: ["Swipe lanes", "Endless", "3 lives"]
-    }
-  },
-  {
-    slug: "bouncetry",
-    name: "Bouncetry",
-    accent: ["#ff3b57", "#2f86ff"],
-    fr: {
-      tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
-      tags: ["Tap inverseur", "Casse-briques", "Double briques"]
-    },
-    en: {
-      tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
-      tags: ["Tap to swap", "Breakout", "Lava floor"]
     }
   },
   {
@@ -208,6 +169,45 @@ window.GAMES = [
     en: {
       tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
       tags: ["Tap to drop", "A card between waves", "Score to beat"]
+    }
+  },
+  {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
+      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+    },
+    en: {
+      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
+      tags: ["Swipe to sort", "Three discards", "Poker hands"]
+    }
+  },
+  {
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
+    fr: {
+      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+    },
+    en: {
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
+      tags: ["Tap to jump", "Endless", "Lava"]
+    }
+  },
+  {
+    slug: "bouncetry",
+    name: "Bouncetry",
+    accent: ["#ff3b57", "#2f86ff"],
+    fr: {
+      tagline: "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
+      tags: ["Tap inverseur", "Casse-briques", "Double briques"]
+    },
+    en: {
+      tagline: "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
+      tags: ["Tap to swap", "Breakout", "Lava floor"]
     }
   }
 ];

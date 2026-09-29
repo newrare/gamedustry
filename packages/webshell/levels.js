@@ -1560,13 +1560,14 @@
      every width again (Orbitron's digits +24%, Bebas Neue -40%), and the room
      itself changes with the column of flames, which a wall's card hides. So
      they are `nowrap` in the stylesheet and measured here, shrunk until they
-     fit the room they already have. The floors are what a line stops being
-     worth reading under; nothing reaches them today. */
+     fit the room they already have. The floors are the house's type floor
+     for a line in lowercase at a regular weight (CLAUDE.md, hard constraint
+     8), and a line that still does not fit at its floor wraps (Fit.box). */
   function fitCard() {
     if (!W.Fit || !W.Fit.box) return;
     W.Fit.box(cTop, 24);                    // the row: the name and its band together
-    W.Fit.box(cGoal, 18);
-    W.Fit.box(cNote, 15);
+    W.Fit.box(cGoal, 22);
+    W.Fit.box(cNote, 22);
   }
 
   function levelCard(n) {

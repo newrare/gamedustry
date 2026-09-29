@@ -87,24 +87,24 @@
   position:absolute; top:4px; right:4px;
   width:20px; height:20px; border-radius:50%;
   background:var(--ar); color:#0a0d1e;
-  font-style:normal; font-weight:900; font-size:13px; line-height:20px;
+  font-style:normal; font-weight:900; font-size:18px; line-height:20px;
   text-align:center;
   border:1px solid rgba(0,0,0,.35);
 }
 .ar-grade {
   position:absolute; top:5px; left:6px;
-  font-style:normal; font-weight:900; font-size:14px; line-height:1;
+  font-style:normal; font-weight:900; font-size:18px; line-height:1;
   color:var(--text); text-shadow:0 1px 2px rgba(0,0,0,.8);
 }
 .ar-name {
   flex:0 0 auto; width:100%;
-  font-size:11px; font-weight:800; letter-spacing:.5px;
+  font-size:18px; font-weight:800; letter-spacing:.5px;
   text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   opacity:.9;
 }
 .ar-tag {
   position:absolute; left:0; right:0; bottom:0;
-  font-size:11px; font-weight:800; text-align:center;
+  font-size:18px; font-weight:800; text-align:center;
   padding:2px 0; background:rgba(6,9,26,.85);
 }
 .ar-tag.hurt { color:var(--danger, #ff5c5c); }
@@ -168,7 +168,7 @@
    the screen already has one — and the COUNT on it is the loud half, since
    that is the number the player came in to change. */
 .ar-sec {
-  margin:2px 0 -4px; font-size:17px; font-weight:800; letter-spacing:2px;
+  margin:2px 0 -4px; font-size:18px; font-weight:800; letter-spacing:2px;
   color:var(--muted);
 }
 .ar-sec b { color:var(--accent); font-variant-numeric:tabular-nums; }
@@ -178,7 +178,7 @@
 .ar-pane > .ar-sec:first-child { margin-top:14px; }
 
 .ar-note {
-  font-size:17px; color:var(--muted); text-align:center; line-height:1.3;
+  font-size:20px; color:var(--muted); text-align:center; line-height:1.3;
 }
 .ar-note.warn { color:var(--accent); }
 
@@ -201,15 +201,18 @@
 /* THE FORMATION — the deck tab (army.js, paintRoster): every slot the battle
    has, the empty ones included — "two lists" of lab/stratideck-deck.html,
    with the reserve moved into the picker. Medium cards (the lab's square),
-   four a row, so fourteen slots are four rows and the page does not scroll.
+   four a row, so the twenty slots the formation can ever hold are five rows
+   and the page does not scroll: the rows are set as tight as the `−` on a
+   card's corner allows, and a slot carries no word under its `+` or its
+   padlock.
    The count and the short way to a full deck share one line over it, and
    that line stands clear of the 16px the sheet's body fades in under
    (view.css, `.wv-body`): a button riding that edge read as dark on top. */
 .ar-dtop { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding-top:14px; }
 .ar-dtop .ar-sec { margin:0; white-space:nowrap; }
 .ar-line {
-  display:grid; grid-template-columns:repeat(4, 150px); gap:30px 22px;
-  justify-content:center; padding:16px 0 20px;
+  display:grid; grid-template-columns:repeat(4, 150px); gap:18px 22px;
+  justify-content:center; padding:12px 0 14px;
 }
 .ar-line .ar-slot { position:relative; aspect-ratio:auto; }
 .ar-line .ar-slot .ar-card { height:auto; }
@@ -221,7 +224,6 @@
   flex-direction:column; gap:4px;
 }
 .ar-line .ar-slot.empty .ar-plus { font-size:44px; line-height:1; color:rgba(255,255,255,.4); }
-.ar-slot-n { font-size:13px; letter-spacing:1px; color:rgba(255,255,255,.4); white-space:nowrap; }
 .ar-line .ar-slot.empty:active { transform:scale(.96); }
 
 /* What a card's corner does: leave the formation, or join it. */
@@ -248,19 +250,21 @@ button.ar-act:active { transform:scale(.9); }
 
 .ar-picker .mt-card { padding:34px 35px 28px; gap:18px; }
 .ar-picker .mt-body { gap:16px; }
-/* one strip of the grades, 1 to 10: a spy, a scout or a sapper is looked
-   for by name. A grade with no card ready is there and off, so the strip
-   never changes shape between two openings and never opens an empty page. */
+/* one strip of the grades, `*` then 1 to 10: a spy, a scout or a sapper is
+   looked for by name. A grade with no card ready is there and off, so the
+   strip never changes shape between two openings and never opens an empty
+   page. Eleven pills in the card's width, hence 48px and not 52. */
 .ar-gstrip { width:100%; flex:0 0 auto; display:flex; justify-content:space-between; }
 .ar-g {
   appearance:none; -webkit-appearance:none; cursor:pointer;
-  width:52px; height:52px; border-radius:50%; padding:0;
+  width:48px; height:48px; border-radius:50%; padding:0;
   background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
   border:2px solid rgba(255,255,255,.18); color:#f6e6b4;
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900); font-size:21px;
   transition:transform .15s ease;
 }
 .ar-g.none { opacity:.3; cursor:default; }
+.ar-g.all  { font-size:26px; line-height:1; }
 .ar-g.on { border-color:var(--accent); color:var(--accent); transform:scale(1.12);
            box-shadow:0 0 0 2px var(--accent), 0 0 16px rgba(242,193,78,.45); }
 /* the reserve itself: tokens five a row, and the one region of the card
@@ -295,7 +299,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-army { display:flex; gap:8px; }
 .ar-army-b {
   appearance:none; -webkit-appearance:none; cursor:pointer;
-  flex:1; min-width:0; height:80px; border-radius:18px; text-align:left; padding:8px 14px 0;
+  flex:1; min-width:0; height:80px; border-radius:18px; text-align:left; padding:8px 10px 0;
   background:rgba(6,9,26,.62); border:2px solid rgba(255,255,255,.12);
   display:flex; flex-direction:column; --c:#5aa9ff;
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900); color:var(--text);
@@ -303,9 +307,9 @@ button.ar-act:active { transform:scale(.9); }
 .ar-army-b.red { --c:#ff5c5c; }
 .ar-army-b.turn { --c:#b08cff; }
 .ar-army-b.obj { --c:#c9a86a; }
-.ar-army-b span { font-size:15px; letter-spacing:1px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ar-army-b span { font-size:18px; letter-spacing:.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ar-army-b b { font-size:24px; font-weight:inherit; line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.ar-army-b b i { font-style:normal; font-size:16px; color:var(--muted); }
+.ar-army-b b i { font-style:normal; font-size:18px; color:var(--muted); }
 .ar-army-b em { display:block; height:7px; margin-top:5px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
 .ar-army-b em u { display:block; height:100%; background:var(--c); }
 .ar-army-b.on { border-color:var(--c); background:linear-gradient(180deg, color-mix(in srgb, var(--c) 24%, transparent), rgba(6,9,26,.62)); }
@@ -361,7 +365,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-cx-f i {
   position:absolute; right:-10px; top:-8px; min-width:30px; height:24px; padding:0 6px;
   border-radius:12px; background:#0a1026; border:2px solid rgba(255,255,255,.2);
-  font-style:normal; font-size:14px; line-height:20px; color:var(--muted);
+  font-style:normal; font-size:18px; line-height:20px; color:var(--muted);
   font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
   font-variant-numeric:tabular-nums;
 }
@@ -374,15 +378,15 @@ button.ar-act:active { transform:scale(.9); }
 .ar-cx-meta { display:flex; flex-wrap:wrap; gap:8px; }
 .ar-cx-meta span {
   padding:4px 13px; border-radius:999px; background:rgba(255,255,255,.08);
-  font-size:17px; color:var(--muted);
+  font-size:20px; color:var(--muted);
 }
 .ar-cx-meta .ar-cx-tier { font-weight:var(--web-fw, 900); }
 .ar-cx-lore {
   margin:4px 0 0; padding-top:12px; border-top:1px solid rgba(255,255,255,.12);
   font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight:500;
-  font-size:19px; line-height:1.5; color:rgba(246,241,228,.82);
+  font-size:22px; line-height:1.5; color:rgba(246,241,228,.82);
 }
-.ar-cx-lock { margin:6px 0 0; display:flex; align-items:center; gap:14px; font-size:19px; line-height:1.3; color:var(--muted); }
+.ar-cx-lock { margin:6px 0 0; display:flex; align-items:center; gap:14px; font-size:20px; line-height:1.3; color:var(--muted); }
 .ar-cx-lock .ar-ci { width:34px; height:34px; flex:0 0 auto; }
 
 /* =========================================================================
@@ -451,7 +455,7 @@ button.ar-act:active { transform:scale(.9); }
 }
 .ar-fb-top {
   display:flex; justify-content:space-between; align-items:center;
-  font-size:17px; font-weight:900; letter-spacing:3px; color:rgba(255,255,255,.72);
+  font-size:18px; font-weight:900; letter-spacing:3px; color:rgba(255,255,255,.72);
 }
 .ar-fb-tier {
   width:42px; height:42px; border-radius:50%; flex:0 0 auto;
@@ -467,17 +471,17 @@ button.ar-act:active { transform:scale(.9); }
 .ar-fb-facts { display:flex; gap:8px; margin-top:4px; }
 .ar-fb-facts span {
   padding:4px 13px; border-radius:999px; background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.14); font-size:17px; font-weight:800;
+  border:1px solid rgba(255,255,255,.14); font-size:20px; font-weight:800;
 }
 .ar-fb-skill {
   margin:10px 0 0; padding:8px 12px; border-radius:10px; background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.14); font-size:18px; font-weight:800; line-height:1.3;
+  border:1px solid rgba(255,255,255,.14); font-size:20px; font-weight:800; line-height:1.3;
 }
 .ar-fb-lore { flex:1; margin:8px 0 0; font-size:20px; line-height:1.4; color:rgba(246,241,228,.92); }
 .ar-fb-foot {
   display:flex; justify-content:space-between; gap:8px;
   padding-top:10px; border-top:1px solid rgba(255,255,255,.18);
-  font-size:14px; font-weight:900; letter-spacing:2px; color:rgba(255,255,255,.7);
+  font-size:18px; font-weight:900; letter-spacing:2px; color:rgba(255,255,255,.7);
 }
 .ar-fb-foot .turn { color:#ff9a9a; }
 
@@ -504,10 +508,10 @@ button.ar-act:active { transform:scale(.9); }
   font-weight:var(--web-fw, 900); font-size:21px; letter-spacing:.5px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.ar-rowsub { font-size:15px; font-weight:800; letter-spacing:1.5px; color:var(--muted); margin:1px 0 3px; }
+.ar-rowsub { font-size:18px; font-weight:800; letter-spacing:1.5px; color:var(--muted); margin:1px 0 3px; }
 .ar-when {
   display:flex; align-items:center; gap:6px;
-  font-size:17px; color:var(--muted); font-variant-numeric:tabular-nums;
+  font-size:20px; color:var(--muted); font-variant-numeric:tabular-nums;
 }
 .ar-when.ok { color:var(--accent); }
 .ar-ci { width:17px; height:17px; flex:0 0 auto; }
@@ -526,7 +530,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-cell .ar-slot-w { width:150px; }
 .ar-cell .ar-row-card { display:block; }
 .ar-ward:not(.painted) .ar-cell .ar-card { width:150px; height:150px; }
-.ar-cell .ar-when { font-size:16px; white-space:nowrap; }
+.ar-cell .ar-when { font-size:20px; white-space:nowrap; }
 .ar-cell .btn { margin-top:-2px; }
 .ar-wgauge {
   width:150px; height:8px; border-radius:4px; overflow:hidden;
@@ -557,9 +561,9 @@ button.ar-act:active { transform:scale(.9); }
   width:150px; height:150px; flex:0 0 auto; border-radius:24px;
   border:3px dashed rgba(255,255,255,.18); background:rgba(255,255,255,.03);
 }
-.ar-cell.free .ar-rowsub { margin:0; }
+.ar-cell.free .ar-rowsub { margin:0; letter-spacing:.5px; text-align:center; }
 .ar-none {
-  margin:24px 0 0; text-align:center; font-size:19px; color:var(--muted);
+  margin:24px 0 0; text-align:center; font-size:20px; color:var(--muted);
   line-height:1.4;
 }
 
@@ -567,27 +571,120 @@ button.ar-act:active { transform:scale(.9); }
    THE CAMP — the posts, the roll and the register (army.js, section 8d'')
    ========================================================================= */
 
-/* Five posts on one row, the deck's medium card at 112 px: every post is
-   seen at once, and the roll under it starts on the first screen. */
+/* Six posts, three a row, the deck's medium card at 150 px: the posts have
+   the command's first tab to themselves, so the two rows stand on one page
+   with nothing to scroll. The columns are 40 px apart because the words
+   under them are wider than the cards at 18 px (INFIRMERIE with its
+   pictogram): a label is centred on its post and runs into the gaps, never
+   into its neighbour. */
 .ar-posts {
-  display:grid; grid-template-columns:repeat(5, 112px); gap:18px 16px;
+  display:grid; grid-template-columns:repeat(3, 150px); gap:30px 40px;
   justify-content:center; padding:14px 0 6px;
 }
 .ar-post { display:flex; flex-direction:column; align-items:center; gap:10px; }
-.ar-post .ar-slot-w { width:112px; }
+.ar-post .ar-slot-w { width:150px; }
 .ar-post .ar-slot { position:relative; aspect-ratio:auto; }
 .ar-post .ar-slot .ar-card { height:auto; }
-.ar-posts:not(.painted) .ar-slot { width:112px; height:112px; }
+.ar-posts:not(.painted) .ar-slot { width:150px; height:150px; }
 .ar-posts:not(.painted) .ar-slot .ar-card { height:100%; }
-.ar-post .ar-slot.empty { width:112px; height:112px; border-radius:20px; border-width:3px; }
+.ar-post .ar-slot.empty { width:150px; height:150px; border-radius:20px; border-width:3px; }
 .ar-post .ar-slot.empty .ar-plus { font-size:40px; line-height:1; color:rgba(255,255,255,.4); }
 .ar-post .ar-slot.empty:active { transform:scale(.96); }
 .ar-post .ar-act { width:38px; height:38px; font-size:24px; right:-9px; top:-9px; }
 .ar-post-l {
-  display:flex; align-items:center; gap:5px;
-  font-size:13px; font-weight:800; letter-spacing:1px; color:var(--muted); white-space:nowrap;
+  display:flex; align-items:center; gap:4px;
+  font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--muted); white-space:nowrap;
 }
 .ar-post-l .ar-ci { width:15px; height:15px; }
+/* the post's name is a button: a tap says which trades suit it */
+/* ...standing over the card, clear of the badges that ride its top edge:
+   a thumb aimed at the name must not land on the card. */
+button.ar-post-l {
+  appearance:none; -webkit-appearance:none; background:none; border:0; padding:4px 6px; margin:0 0 6px;
+  cursor:pointer; font-family:inherit;
+}
+button.ar-post-l:active { transform:scale(.96); }
+/* THE POST'S GAUGE (army.js, postSlot): the officer's trade, lit gold where
+   it suits the post, the bonus on its own line, then the gauge and what it
+   buys. Every line is in capitals and bold, so 18 px is the floor; a trade
+   too long for the column wraps rather than shrinks. The trade's block is
+   THREE lines tall whatever it holds — two for the longest trade
+   (ANALYSTE DU RENSEIGNEMENT), one for the bonus, set against the gauge they
+   explain — and is drawn empty on an empty post, so the gauges of a row
+   stand on one line. */
+.ar-post-job {
+  width:190px; height:calc(3 * 1.2em); margin-top:-4px;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; text-align:center;
+  font-size:18px; font-weight:800; letter-spacing:.3px; line-height:1.2; color:var(--muted);
+}
+.ar-post-job.match { color:var(--gold, #f2c14e); }
+.ar-post-job b { font-weight:900; }
+.ar-pgauge { display:flex; align-items:center; gap:8px; width:170px; }
+.ar-pgauge-t {
+  flex:1 1 auto; height:10px; border-radius:5px; overflow:hidden; background:rgba(255,255,255,.1);
+}
+.ar-pgauge-t i {
+  display:block; height:100%; border-radius:5px;
+  background:linear-gradient(90deg, #4d8dff, var(--gold, #f2c14e));
+  background-size:170px 100%;
+  transition:width .4s cubic-bezier(.3,.9,.4,1);
+}
+.ar-pgauge b {
+  flex:0 0 auto; min-width:52px; text-align:right;
+  font-size:20px; font-weight:900; color:#fff; font-variant-numeric:tabular-nums;
+}
+.ar-pgauge.full b { color:var(--gold, #f2c14e); }
+.ar-post-fx {
+  margin-top:-4px; font-size:18px; font-weight:800; letter-spacing:.3px; color:var(--accent); white-space:nowrap;
+}
+.ar-posts-note { margin:8px 16px 0; text-align:center; }
+.ar-posts-note .ar-note-b { color:var(--gold, #f2c14e); font-weight:900; }
+
+/* THE DEFENSE (army.js, section 8c'): the camp the player builds, five
+   cells a row and four rows, on one page of the sheet with nothing to
+   scroll. The bottom row is the FRONT, as a camp's bottom row is in a
+   battle, and the red line under the grid says so rather than a legend. */
+.ar-def {
+  display:grid; grid-template-columns:repeat(var(--df-cols, 5), 112px); gap:12px;
+  justify-content:center; padding:14px 0 0;
+}
+.ar-def .ar-slot-w { width:112px; }
+.ar-def .ar-slot { position:relative; aspect-ratio:auto; }
+.ar-def .ar-slot .ar-card { height:auto; }
+.ar-def:not(.painted) .ar-slot { width:112px; height:112px; }
+.ar-def:not(.painted) .ar-slot .ar-card { height:100%; }
+.ar-def .ar-slot.empty { width:112px; height:112px; border-radius:16px; border-width:3px; }
+.ar-def .ar-slot.empty .ar-plus { font-size:34px; line-height:1; color:rgba(255,255,255,.4); }
+.ar-def .ar-slot.empty:active { transform:scale(.96); }
+.ar-def .ar-act { width:34px; height:34px; font-size:22px; right:-8px; top:-8px; }
+.ar-def-front {
+  display:flex; align-items:center; justify-content:center; gap:10px; margin:14px 0 0;
+  font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--danger, #ff5c5c);
+}
+.ar-def-front .ar-ci { width:18px; height:18px; }
+.ar-def-note { margin:14px 20px 0; }
+.ar-def-acts { margin:18px 0 8px; }
+/* the report's solidity: the one place the figure is read */
+.ar-df-sol { width:440px; margin:18px auto 0; gap:12px; }
+.ar-df-sol-l { flex:0 0 auto; font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--muted); }
+
+/* A SLOT A POST HAS NOT OPENED YET (army.js, lockedSlot / lockedCell /
+   lockedRow): the free place's footprint, dimmer, with the padlock in it and
+   the gauge that opens it under it. */
+.ar-slot.empty.locked { border-style:solid; border-color:rgba(255,255,255,.1); background:rgba(0,0,0,.22); }
+.ar-lock .ar-ci, .locked .ar-free-slot .ar-ci { width:34px; height:34px; color:rgba(255,255,255,.34); }
+.locked .ar-free-slot {
+  display:flex; align-items:center; justify-content:center;
+  border-style:solid; border-color:rgba(255,255,255,.1); background:rgba(0,0,0,.22);
+}
+button.ar-cell.locked, button.ar-row.locked {
+  appearance:none; -webkit-appearance:none; font-family:inherit; cursor:pointer; color:inherit;
+}
+button.ar-cell.locked { background:none; border:0; padding:0; }
+.ar-cell.locked .ar-rowsub, .ar-row.locked .ar-rowsub { font-size:18px; font-weight:800; color:rgba(255,255,255,.42); }
+.ar-row.locked .ar-free-slot .ar-ci { width:24px; height:24px; }
+.ar-cell.locked:active, .ar-row.locked:active { transform:scale(.97); }
+.ar-tag.match { color:var(--gold, #f2c14e); }
 
 /* THE ROLL: every card the camp holds, four a row, each with what it is
    doing under it — the word in the status's colour, the wait under that. */
@@ -596,44 +693,87 @@ button.ar-act:active { transform:scale(.9); }
   justify-content:center; padding:14px 0 20px;
 }
 .ar-roll:not(.painted) .ar-cell .ar-card { width:150px; height:150px; }
+/* The pictogram rides INLINE, at the head of the first line: at 18 px most
+   statuses take two lines under a 150 px card (EN FORMATION), and a flex
+   icon beside a wrapped block hangs off the left of it. TWO LINES AT MOST,
+   and the screen makes the room rather than the type: the line spans the
+   column's whole pitch (the card and its 22 px gutter, centred, so 11 px
+   each side) with no tracking, which is what puts the pictogram and the
+   longest word of a post (GESTIONNAIRE, INSTRUCTEUR) on one line. A WIDTH
+   and not a max-width: the cell is a 150 px flex column, and a max-width
+   never grows an item past its container — the margins take it out. */
 .ar-st {
-  display:flex; align-items:flex-start; justify-content:center; gap:5px;
-  max-width:150px; text-align:center;
-  font-size:13px; font-weight:800; letter-spacing:1px; line-height:1.25; color:var(--muted);
+  display:block; width:172px; margin:0 -11px; text-align:center;
+  font-size:18px; font-weight:800; letter-spacing:0; line-height:1.25; color:var(--muted);
 }
-.ar-st .ar-ci { width:15px; height:15px; margin-top:1px; }
+.ar-st .ar-ci { display:inline-block; width:16px; height:16px; margin-right:4px; vertical-align:-2px; }
 .ar-st.post { color:var(--gold, #d9a441); }
-.ar-st.deck { color:var(--accent); }
+.ar-st.deck { color:#ff9f43; }
 .ar-st.away { color:#4d8dff; }
+.ar-st.idle { color:#51cf66; }
 .ar-st.hurt, .ar-st.jail { color:var(--danger, #ff5c5c); }
-.ar-st-t { margin-top:-5px; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.ar-st-t { margin-top:-5px; font-size:20px; color:var(--muted); font-variant-numeric:tabular-nums; }
 
 /* THE REGISTER: one row per card lost, the day on its right edge. */
 .ar-reg .ar-card { opacity:.6; filter:grayscale(.7); }
-.ar-when.ko { color:var(--danger, #ff5c5c); font-size:15px; }
+.ar-when.ko { color:var(--danger, #ff5c5c); font-size:20px; }
 .ar-reg-date {
   flex:0 0 auto; align-self:flex-start; padding-top:4px;
-  font-size:14px; font-weight:800; letter-spacing:1px; color:var(--muted); white-space:nowrap;
+  font-size:20px; font-weight:800; letter-spacing:1px; color:var(--muted); white-space:nowrap;
 }
 
 /* =========================================================================
    THE RECRUITING TENT
    ========================================================================= */
 
-/* minmax(0, …): a column is the third of the row and never the width of what
+/* two a row, two rows: four full cards and their prices on one page with no
+   scroll. minmax(0, …): a column is half the row and never the width of what
    is in it, so a long purchase label wraps inside its tile rather than
-   pushing the third tile out of the frame */
-.ar-offers { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
+   pushing the second tile out of the frame */
+.ar-offers { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
 .ar-offer {
   display:flex; flex-direction:column; gap:9px; align-items:stretch;
   background:rgba(6,9,26,.55); border:1px solid rgba(255,255,255,.1);
-  border-radius:14px; padding:10px;
+  border-radius:14px; padding:8px;
 }
+/* the word has to clear the macaron at the button's size: a narrower left
+   pad and a tighter tracking give RECRUTER back the room the price takes */
+.ar-offer .btn-buy { padding-left:calc(var(--h) * .28); letter-spacing:.5px; }
 .ar-offer .ar-card { aspect-ratio:3 / 4; }
 .ar-offer .ar-card.painted { aspect-ratio:auto; align-self:center; margin-top:6px; }
 .ar-offer.sold { opacity:.5; }
+/* THE NEW RIBBON (army.js, offerTile): a band across the CARD's top-right
+   corner, the one the grade's shield leaves free, and never past the card's
+   sides — the box is the card's own corner, rounded like the card (6% of its
+   250px width = 15px, games/stratideck/skin.css), and clips the band to it. The word is
+   NEW in every language, by decision — and RESCUE on a fallen officer found
+   again, the same band in green, in every language too. */
+.ar-new {
+  position:absolute; top:0; right:0; width:110px; height:110px;
+  overflow:hidden; border-top-right-radius:15px;
+  pointer-events:none; z-index:40;
+}
+.ar-new span {
+  /* the band's middle sits 50px down the corner's bisector: (35, 35) from
+     the corner, minus half the 160 x 28 band */
+  position:absolute; top:21px; right:-45px; width:160px;
+  transform:rotate(45deg);
+  padding:4px 0; text-align:center;
+  font-size:20px; font-weight:900; letter-spacing:1.5px; line-height:20px;
+  color:#2a1a00;
+  background:linear-gradient(180deg, #ffe08a, var(--gold, #f2c14e) 55%, #c9922a);
+  box-shadow:0 2px 6px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.ar-new.back span {
+  /* RESCUE is twice NEW's length and outgrows the corner's ~99px chord:
+     the band slides 9px further down the bisector, (44, 44), and the
+     tracking gives way — never the size */
+  letter-spacing:.5px; top:30px; right:-36px;
+  color:#062a10;
+  background:linear-gradient(180deg, #a6f5b4, #51cf66 55%, #2b9a45);
+}
 .ar-sold {
-  text-align:center; font-size:16px; font-weight:800; letter-spacing:1px;
+  text-align:center; font-size:20px; font-weight:800; letter-spacing:1px;
   color:var(--muted); padding:8px 0;
 }
 
@@ -656,7 +796,7 @@ button.ar-act:active { transform:scale(.9); }
   margin:0; min-width:0; font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
   font-size:23px; letter-spacing:.5px; line-height:1.1;
 }
-.ar-mis-brief { margin:0; font-size:18px; line-height:1.4; color:rgba(246,241,228,.9); }
+.ar-mis-brief { margin:0; font-size:20px; line-height:1.4; color:rgba(246,241,228,.9); }
 
 /* A mission on the board (army.js, missionTile): one line and a door — the
    favoured grade's token, the title and the pips over one row of chips that
@@ -696,7 +836,7 @@ button.ar-act:active { transform:scale(.9); }
   display:inline-flex; align-items:center; gap:6px;
   padding:4px 11px 4px 8px; border-radius:999px;
   background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14);
-  font-size:15px; font-weight:800; line-height:1.2; color:var(--text);
+  font-size:20px; font-weight:800; line-height:1.2; color:var(--text);
 }
 .ar-chip .ar-ci { width:18px; height:18px; }
 .ar-chip.favor { color:var(--accent); border-color:rgba(242,193,78,.4); }
@@ -709,7 +849,7 @@ button.ar-act:active { transform:scale(.9); }
   position:absolute; right:-8px; bottom:-6px; z-index:31;
   min-width:30px; height:30px; border-radius:15px; padding:0 6px;
   background:var(--accent); color:#10142c; border:2px solid #0b0d12;
-  font-style:normal; font-weight:900; font-size:15px; line-height:26px; text-align:center;
+  font-style:normal; font-weight:900; font-size:18px; line-height:26px; text-align:center;
 }
 .ar-run .ar-rowsub, .ar-log .ar-rowsub { display:flex; align-items:center; gap:10px; }
 
@@ -731,7 +871,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-log-stamp {
   flex:0 0 auto; display:inline-flex; align-items:center; gap:6px;
   padding:5px 12px; border-radius:10px; border:2px solid currentColor;
-  font-weight:var(--web-fw, 900); font-size:15px; letter-spacing:1.5px;
+  font-weight:var(--web-fw, 900); font-size:18px; letter-spacing:1.5px;
   transform:rotate(-4deg);
 }
 .ar-log.ok .ar-log-stamp { color:#51cf66; }
@@ -762,7 +902,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-gauge.mid { --c:var(--accent); --c-lo:rgba(242,193,78,.34); --c-hi:rgba(242,193,78,.45); }
 .ar-gauge.hi  { --c:#51cf66; --c-lo:rgba(81,207,102,.34); --c-hi:rgba(81,207,102,.45); }
 .ar-gauge-l {
-  font-size:15px; letter-spacing:2px; line-height:1.3; white-space:nowrap;
+  font-size:18px; letter-spacing:2px; line-height:1.3; white-space:nowrap;
   font-weight:var(--web-fw, 900); color:var(--c);
 }
 
@@ -778,7 +918,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-stamp.ok { color:#51cf66; }
 .ar-stamp.ko { color:var(--danger, #ff5c5c); }
 .ar-rep-brief {
-  margin:0; font-size:18px; line-height:1.4; font-style:italic; text-align:left;
+  margin:0; font-size:20px; line-height:1.4; font-style:italic; text-align:left;
   color:var(--muted); padding-left:14px; border-left:3px solid rgba(255,255,255,.18);
 }
 .ar-rep-text { margin:0; font-size:20px; line-height:1.45; color:rgba(246,241,228,.94); text-align:left; }
@@ -823,7 +963,6 @@ button.ar-act:active { transform:scale(.9); }
 /* A FALLEN OFFICER ON THE TENT'S SHELF: the offer is the tent's like any
    other, with the gold of a name found again around it. */
 .ar-offer.fallen { border-color:rgba(242,193,78,.6); box-shadow:inset 0 0 0 1px rgba(242,193,78,.25); }
-.ar-tag.back { color:var(--gold, #f2c14e); }
 
 /* =========================================================================
    IN MEMORIAM (army.js, openFallen)
@@ -866,10 +1005,21 @@ button.ar-act:active { transform:scale(.9); }
 .ar-fallen-list:not(.painted) .ar-fallen-c .ar-card { width:86px; height:86px; }
 .ar-fallen-list.one:not(.painted) .ar-fallen-c .ar-card { width:190px; height:190px; }
 .ar-fallen-n {
-  max-width:100%; font-size:13px; font-weight:800; letter-spacing:.5px; line-height:1.2;
+  max-width:100%; font-size:18px; font-weight:800; letter-spacing:.5px; line-height:1.2;
   color:var(--muted); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.ar-fallen-foot { margin:0; font-size:18px; line-height:1.4; font-style:italic; color:var(--muted); text-align:center; }
+.ar-fallen-foot { margin:0; font-size:20px; line-height:1.4; font-style:italic; color:var(--muted); text-align:center; }
+/* TO THE INFIRMARY (army.js, openWounded): the same layout, not in
+   mourning — the cards come back, so they keep their colour and the rim is
+   the infirmary's green. */
+.ar-wounded .mt-card { --card-rim-a:#51cf66; }
+.ar-wounded .mt-card .mt-h { color:#51cf66; }
+.ar-fallen-l.hurt .ar-ci { color:#51cf66; }
+.ar-fallen-c.hurt .ar-card > .card, .ar-fallen-c.hurt .ar-card:not(.painted) { filter:none; }
+/* ...and the defense's two cards (army.js, section 8c'): a prisoner taken, a
+   card to heal, an object handed over — nobody here is mourned */
+.ar-fallen-c.live .ar-card > .card, .ar-fallen-c.live .ar-card:not(.painted) { filter:none; }
+.ar-unlock .ar-fallen-c { width:auto; }
 @keyframes ar-mourn {
   from { opacity:0; transform:translateY(14px); filter:blur(6px); }
   to   { opacity:1; transform:none; filter:none; }
@@ -906,8 +1056,6 @@ button.ar-act:active { transform:scale(.9); }
   font-size:30px; letter-spacing:2px; line-height:1.15; text-align:center;
   font-weight:var(--web-fw, 900); color:var(--text);
 }
-.ar-up-line { margin:-6px 0 0; font-size:21px; color:var(--accent); text-align:center; }
-.ar-up-why { margin:0; font-size:18px; font-style:italic; color:var(--muted); text-align:center; }
 @keyframes ar-up-in {
   from { opacity:0; transform:scale(.55) rotate(-6deg); filter:brightness(2.2); }
   to   { opacity:1; transform:none; filter:none; }
@@ -996,3 +1144,41 @@ button.ar-act:active { transform:scale(.9); }
 .ar-hc.blue { background:var(--army, #5aa9ff); }
 .ar-hc.red { background:var(--camp, #ff5c5c); }
 .ar-hc.turn { background:linear-gradient(135deg, var(--camp, #ff5c5c) 50%, var(--army, #5aa9ff) 50%); }
+
+/* =========================================================================
+   THE SURRENDER (army.js, section 6a): the commander's offer
+   ========================================================================= */
+.ar-sur-foe {
+  display:block; width:220px; height:220px; margin:0 auto; object-fit:cover; object-position:50% 12%;
+  border-radius:50%; border:3px solid var(--camp, #ff5c5c); transform:scaleX(-1);
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+}
+.ar-sur-quote {
+  margin:14px 0 0; font-size:24px; font-style:italic; font-weight:700; line-height:1.4;
+  color:rgba(246,241,228,.96); text-align:center;
+}
+.mt-sub.ar-sur-note { margin:10px 0 0; font-size:22px; }
+
+/* =========================================================================
+   A DAY IN THE CAMP (army.js, section 6b): the card that tells it
+   ========================================================================= */
+.ar-ev-text {
+  margin:4px 0 0; font-size:22px; line-height:1.45; color:rgba(246,241,228,.94); text-align:center;
+}
+.ar-ev-foot {
+  margin:6px 0 0; font-size:20px; font-weight:700; line-height:1.35; color:var(--muted); text-align:center;
+}
+.ar-cx-job { color:var(--gold, #f2c14e); }
+.ar-fb-job {
+  margin:6px 0 0; text-align:center; font-size:20px; font-weight:800; letter-spacing:.5px;
+  color:var(--gold, #f2c14e);
+}
+/* the board's next locked slot is a short row with the padlock alone in its
+   middle, and an ellipsis under it stands for the slots behind it */
+button.ar-row.locked { width:100%; justify-content:center; }
+.ar-row.free.locked { min-height:0; padding:8px 12px; border-style:solid; border-color:rgba(255,255,255,.06); }
+.ar-row.free.locked .ar-free-slot { width:48px; height:48px; border-radius:12px; }
+.ar-lock-more {
+  margin:-2px 0 4px; text-align:center; font-size:32px; font-weight:800; line-height:1;
+  letter-spacing:4px; color:rgba(255,255,255,.34);
+}

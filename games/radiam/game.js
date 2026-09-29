@@ -2373,11 +2373,13 @@
       } else if (v & SCORE) {
         /* THE NUMBER ITSELF. Every other glyph is a picture standing in for a
            word; this one IS the word, and no picture of a multiplier beats
-           reading "x10". The x10 face is set narrower so the three glyphs cost
-           the same width on the inner plate. */
+           reading "x10". The x10 face is set a little narrower so the three
+           glyphs cost about the same width on the inner plate — and no
+           narrower than 0.82 of the radius, which is 18 px on the inner ring's
+           22 px bead: the house floor for any word on screen. */
         var face = D.mulSteps[mulOf(v)] || 2;
         var txt = "x" + face;
-        ctx.font = "900 " + Math.round(r * (face >= 10 ? 0.74 : 0.92)) + "px " +
+        ctx.font = "900 " + Math.round(r * (face >= 10 ? 0.82 : 0.92)) + "px " +
                    "-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.lineJoin = "round";

@@ -1886,24 +1886,31 @@
           "always": true
         },
         {
-          "art": "home02",
-          "role": "album",
-          "x": 360,
-          "y": 370,
-          "w": 170,
+          "art": "empty",
+          "role": "defense",
+          "x": 150,
+          "y": 260,
+          "w": 200,
+          "halo": {
+            "w": 1,
+            "h": 0.95,
+            "dy": -0.3,
+            "color": "#153176"
+          },
           "badge": {
-            "dx": -0.2,
-            "dy": -0.8
-          }
+            "dx": 0.15,
+            "dy": -0.5
+          },
+          "light": "random"
         },
         {
-          "art": "home04",
-          "role": "shop",
-          "x": 160,
-          "y": 420,
-          "w": 200,
+          "art": "home02",
+          "role": "album",
+          "x": 370,
+          "y": 380,
+          "w": 190,
           "badge": {
-            "dx": -0.15,
+            "dx": -0.2,
             "dy": -0.8
           }
         },
@@ -1914,6 +1921,17 @@
           "y": 430,
           "w": 160,
           "flip": true
+        },
+        {
+          "art": "home04",
+          "role": "shop",
+          "x": 160,
+          "y": 440,
+          "w": 170,
+          "badge": {
+            "dx": -0.15,
+            "dy": -0.8
+          }
         },
         {
           "art": "empty",
@@ -1927,7 +1945,7 @@
           "role": "infirmary",
           "x": 110,
           "y": 630,
-          "w": 210,
+          "w": 190,
           "halo": {
             "w": 0.6,
             "h": 0.42,
@@ -1937,17 +1955,14 @@
           "badge": {
             "dx": -0.15,
             "dy": -0.78
-          },
-          "notify": "breath",
-          "every": 5.5,
-          "delay": 1.4
+          }
         },
         {
           "art": "home08",
           "role": "prison",
           "x": 610,
           "y": 650,
-          "w": 195,
+          "w": 180,
           "halo": {
             "w": 0.6,
             "h": 0.42,
@@ -1974,17 +1989,17 @@
           }
         },
         {
-          "art": "home01",
-          "role": "ranking",
-          "x": 560,
-          "y": 890,
-          "w": 230
-        },
-        {
           "art": "home03",
           "role": "options",
           "x": 150,
           "y": 900,
+          "w": 200
+        },
+        {
+          "art": "home01",
+          "role": "ranking",
+          "x": 570,
+          "y": 910,
           "w": 200
         },
         {
@@ -2060,11 +2075,11 @@
           "x": 270,
           "y": 1230,
           "w": 80,
-          "notify": "alert",
           "badge": {
             "dx": -0.4,
             "dy": -0.9
-          }
+          },
+          "notify": "alert"
         },
         {
           "art": "piece03",
@@ -2076,14 +2091,7 @@
           "always": true
         }
       ],
-      "life": {
-        "cycle": {
-          "warm": "#ffcf8f",
-          "cold": "#66b1ec",
-          "amount": 0.35,
-          "seconds": 90
-        }
-      }
+      "life": null
     }
   }
 }

@@ -8,6 +8,10 @@
     --bg:#0a0e24; --accent:#3aa0ff;
     --cta-a:#ff8fab; --cta-b:#ff3d6b; --cta-text:#ffffff;
     --danger:#ff4d6d;
+    /* THE ROUND'S "!" STANDS ON TOP OF THE LEVEL PILL rather than beside it:
+       the launcher sits at the foot of the frame, just right of the pill, and
+       the "!" beside it would cover it (packages/webshell/meta.css). */
+    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
   }
   html, body { background:radial-gradient(900px 900px at 50% 22%, #16224e 0%, #0a0e24 60%, #05070f 100%); }
   #intro-title {

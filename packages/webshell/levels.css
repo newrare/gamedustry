@@ -320,10 +320,10 @@
 .lv-sti { width:22px; height:22px; }
 .lv-stars s.off .lv-sti { filter:grayscale(1) brightness(.55) opacity(.5); }
 .lv-tag em {
-  font-style:normal; font-size:16px; letter-spacing:2.2px; text-transform:uppercase;
+  font-style:normal; font-size:20px; letter-spacing:2.2px; text-transform:uppercase;
   color:rgba(255,255,255,.42);
 }
-.lv-tag .best { font-size:15px; color:rgba(255,255,255,.42); font-variant-numeric:tabular-nums; }
+.lv-tag .best { font-size:20px; color:rgba(255,255,255,.42); font-variant-numeric:tabular-nums; }
 
 /* ---- the force switch, on a local host only -----------------------------
    Not part of the game: levels.js builds this button on localhost and on a
@@ -344,7 +344,7 @@
   border:2px dashed rgba(255,255,255,.34);
   background:rgba(0,0,0,.62); color:rgba(255,255,255,.62);
   font-family:ui-monospace, Menlo, Consolas, monospace;
-  font-size:17px; letter-spacing:1.5px; cursor:pointer;
+  font-size:20px; letter-spacing:1.5px; cursor:pointer;
 }
 #lv-dev.on {
   border-style:solid; border-color:var(--gold);
@@ -396,7 +396,7 @@
 #lv-card .top { display:flex; align-items:baseline; gap:14px; font-size:40px; white-space:nowrap; }
 #lv-card .top > * { flex:0 0 auto; }
 #lv-name { font-size:1em; font-weight:var(--web-fw, 900); letter-spacing:1px; text-transform:uppercase; }
-#lv-band { font-size:.475em; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
+#lv-band { font-size:.5em; letter-spacing:2.6px; text-transform:uppercase; color:var(--accent); }
 #lv-goal { font-size:26px; line-height:1.35; color:rgba(255,255,255,.92); white-space:nowrap; }
 /* the wall's explanation and level 0's both run longer than an objective, and
    a game's own face is what decides how long */
@@ -407,7 +407,7 @@
    one line is unreadable long before it fits. */
 #lv-card.is-endless #lv-goal { white-space:normal; font-size:23px; }
 #lv-goal b { color:var(--accent); font-weight:var(--web-fw, 900); }
-#lv-note { font-size:19px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums;
+#lv-note { font-size:22px; color:rgba(255,255,255,.55); font-variant-numeric:tabular-nums;
            white-space:nowrap; }
 #lv-card.is-endless #lv-note { white-space:normal; }
 #lv-note em { font-style:normal; color:var(--gold); }
@@ -416,14 +416,14 @@
 #lv-chips { display:flex; gap:10px; flex-wrap:wrap; }
 #lv-chips:empty { display:none; }
 /* the motor's button, the plate (levels.js) */
-#lv-chips button s { text-decoration:none; color:var(--gold); font-size:16px; }
+#lv-chips button s { text-decoration:none; color:var(--gold); font-size:18px; }
 
 /* HOW HOT THE LEVEL IS — five flames down the right of the card, under their
    own word. A bar read as a percentage of nothing in particular; five icons
    read as a rating, which is the question a player actually asks the card. */
 #lv-diff {
   flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:8px;
-  font-size:16px; color:rgba(255,255,255,.5);
+  font-size:20px; color:rgba(255,255,255,.5);
   letter-spacing:1.6px; text-transform:uppercase;
 }
 #lv-diff .flames { display:flex; align-items:center; gap:4px; }

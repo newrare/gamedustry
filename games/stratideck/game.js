@@ -62,13 +62,15 @@
        two can only turn over together. `scene` is a key of CONFIG.art, injected
        out of assets/image/embed/stratideck-background-phone-NN.webp. A playable
        is one round at level 0: it rides the first band, the only scene and the
-       only window the builder embeds in it. */
+       only window the builder embeds in it. `hand` is how many of the row's
+       slots (play.handSlots) the band deals into: a biome opens one more, so
+       the three locked slots are the climb's to give, not a post's. */
     bands: [
-      { scene: "backgroundPhone01", music: { from: 30,  length: 30 } },  //  1-6   Outpost
-      { scene: "backgroundPhone02", music: { from: 45,  length: 30 } },  //  7-12  Palisade
-      { scene: "backgroundPhone03", music: { from: 80,  length: 30 } },  // 13-18  Warcamp
-      { scene: "backgroundPhone04", music: { from: 125, length: 30 } },  // 19-24  Siege
-      { scene: "backgroundPhone05", music: { from: 140, length: 30 } }   // 25-30  Citadel
+      { scene: "backgroundPhone01", hand: 2, music: { from: 30,  length: 30 } },  //  1-6   Outpost
+      { scene: "backgroundPhone02", hand: 3, music: { from: 45,  length: 30 } },  //  7-12  Palisade
+      { scene: "backgroundPhone03", hand: 4, music: { from: 80,  length: 30 } },  // 13-18  Warcamp
+      { scene: "backgroundPhone04", hand: 5, music: { from: 125, length: 30 } },  // 19-24  Siege
+      { scene: "backgroundPhone05", hand: 5, music: { from: 140, length: 30 } }   // 25-30  Citadel
     ],
 
     // All user-facing copy in one place.
@@ -108,25 +110,42 @@
          is what makes a deck worth going back to the barracks for. */
       enemyTier: 0.12,
       deckTier: 0.22,    // the same for a generated army (playable, endless run)
-      handSize: 4,       // cards on the table at once
+      handSize: 2,       // cards on the table at once, dealt in the MID format (a band's `hand` wins)
+      handSlots: 5,      // the row they stand in: the slots past handSize are locked
+      /* How many of the cards NOT played go back under the deck after a turn,
+         by the hand's size (index = open slots): a two-card hand keeps its
+         other card, a wider one sends one or two back and keeps the rest. */
+      handReturn: [0, 0, 0, 1, 2, 2],
       // no score goal: the three stars are the flag, no wound and a capture (tally)
       cornerClear: 96    // the hand stops this far above the frame's foot, so the
                          // web target's two corner pills never cover a card
     },
 
     /* THE CARD FACES, as lab/stratideck-card.html composes them. The look is
-       the lab's own stylesheet, pasted verbatim into the SKIN; these are the
+       the SKIN's card block, which that bench links as it is; these are the
        knobs of its panel, under the same names, so "Copy the card settings"
        in the lab is this block and nothing has to be renamed on the way.
        `style` is the frame, `brank` / `btier` the two badge designs, `arank`
-       / `atier` their place ("auto" is the design's own). The numbers are
-       the lab's at a 300px card; `blur` is scaled with the card. */
+       / `atier` their place ("auto" is the design's own); `blur` is read at
+       a 300px card and scaled with it.
+       THREE CARDS: `rfull` / `rmid` / `rtiny` are the widths each format is
+       composed at, and every place shows that card scaled as a whole
+       (sizeNode). Then, per format, the grade badge, the tier badge and the
+       macaron: `rankFull` its size (×), `rankFullX` / `rankFullY` its offset
+       from the design's own place, in percents of the card's width. */
     cards: {
-      style: "forge", brank: "shield", btier: "burst", arank: "auto", atier: "br",
+      style: "forge", brank: "shield", btier: "seal", arank: "tl", atier: "br",
       rankOn: true, tierOn: true,
       zoom: 2.6, blur: 2, vary: true,
       hero: 95, mark: 0.5, mx: -28, markover: false,
-      midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65
+      midz: 1.49, midx: -4, midy: 16, tinyz: 2.23, tinyx: -11, tinyy: 59,
+      rfull: 320, rmid: 120, rtiny: 60,
+      rankFull: 1, tierFull: 1.3, perkFull: 0.86,
+      rankMid: 1.6, tierMid: 2.19, perkMid: 1.42,
+      rankTiny: 1.21, tierTiny: 1.5, perkTiny: 1.09,
+      rankFullX: 0, rankFullY: 0, tierFullX: -1, tierFullY: -5, perkFullX: 2, perkFullY: -10,
+      rankMidX: 2, rankMidY: 4, tierMidX: 2, tierMidY: -8, perkMidX: 1, perkMidY: -26,
+      rankTinyX: -1, rankTinyY: 0, tierTinyX: -1, tierTinyY: -6, perkTinyX: 0, perkTinyY: -2
     }
   };
 
@@ -225,7 +244,10 @@
 
      A card that wins returns to the bottom of the deck; a card that loses is
      gone; a card that wins WOUNDED stays in its hand slot, greyed, for one
-     turn. After every card sent, THE CAMP ANSWERS: it may slide one soldier
+     turn. THE HAND IS DEALT AFRESH EVERY TURN: once a card has been played,
+     every card of the hand that was not goes back under the deck too, so a
+     card held back is a card given up — only a bandage or a stun keeps its
+     slot. After every card sent, THE CAMP ANSWERS: it may slide one soldier
      one cell into the emptied corridor, or pass — the flag and the traps
      never move, some soldiers never do on purpose, and a card that has moved
      stays tilted for the rest of the battle (THE ENEMY'S TURN, below). The
@@ -320,6 +342,17 @@
       18: { breaker: 9, effect: "spell", unlock: 18, hit: "Bewitched!", broken: "Book burnt",
             lesson: "Only a general can never turn traitor" }
     };
+    /* ON THE WEB THE MANIFEST SAYS WHEN. `web.army.objects[].camp` is the
+       first level of the climb that deals each kind, so the objects arrive
+       in the biome whose end hands them to the player's own defense
+       (packages/webshell/army.js, the defense): met in battle first, owned
+       after. A playable reads no manifest and keeps the table above. */
+    (function () {
+      var list = CONFIG.web && CONFIG.web.army && CONFIG.web.army.objects;
+      for (var i = 0; list && i < list.length; i++) {
+        if (OBJECTS[list[i].r] && list[i].camp) OBJECTS[list[i].r].unlock = list[i].camp | 0;
+      }
+    })();
     /* the three that cost a card never stand on the front row: a first turn
        that loses a card for the battle is a first turn nobody played */
     var HARMLESS = { decoy: true, block: true };
@@ -453,14 +486,17 @@
     var HAND_W = 118, HAND_H = 165, HAND_GAP = 10;   // the size is geometry()'s
 
     /* --- state --------------------------------------------------------------- */
-    var grid, cols, rows, deck, hand, handSize;
+    var grid, cols, rows, deck, hand, handSize, handSlots;
     var score, streak, bestStreak, kills, ties, losses, precise, scouted, trapsCleared;
-    var reach, targets, selected, drag, turn, refills, mood, lastFoe, lastWon;
+    var reach, targets, selected, drag, turn, refills, returns, mood, lastFoe, lastWon;
     var levelD, ended, outcome, tAnim, seed, BAND, flagCell, flagTaken;
     /* THE CAMP IS PLAYED FROM MEMORY. Only the last enemy turned over stays
        face up (`lastFoe`); the one before it turns back down the moment a new
        one is revealed, and `hiding` is that card on its way over. */
     var hiding;
+    /* THE COMMANDER OFFERS A SURRENDER ONCE A BATTLE: `offered` is that
+       offer made, whatever the answer was (HOPELESS, below). */
+    var offered;
     /* THE ENEMY'S REPLY: after every turn the camp may slide one of its
        soldiers one cell, or pass. `march` is that move while it plays. */
     var march;
@@ -498,6 +534,17 @@
       var b = CONFIG.bands;
       if (!CONFIG.level) return b[0];
       return b[clamp(Math.floor((CONFIG.level - 1) / 6), 0, b.length - 1)];
+    }
+    /* What opens hand slot `i`: the first band that deals into it, named
+       by the level it starts at and, on the web, the biome the map calls it
+       (web.levels.bands). "" when no band ever opens it. */
+    function unlockLine(i) {
+      var b = CONFIG.bands, L = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.bands, k, names;
+      for (k = 0; k < b.length; k++) if ((b[k].hand | 0) > i) break;
+      if (k >= b.length) return "";
+      names = L && (L[Lang.code()] || L.en);
+      return Lang.t("Unlocks at level") + " " + ((L && L.from && L.from[k]) || k * 6 + 1) +
+             (names && names[k] ? " · " + names[k] : "");
     }
 
     /* A tiny LCG for what has to be the same every time a level is opened:
@@ -805,14 +852,37 @@
       refillHand(false);
     }
 
-    function refillHand(animate) {
+    /* `wait` holds the deal back that many animation lengths, so a card
+       going back under the deck has left its slot before the next one lands. */
+    function refillHand(animate, wait) {
       var i;
       for (i = 0; i < handSize; i++) {
         if (hand[i] == null && deck.length) {
           hand[i] = deck.shift();
-          if (animate) refills.push({ slot: i, t: 0 });
+          if (animate) refills.push({ slot: i, t: -(wait || 0) });
         }
       }
+    }
+    /* THE HAND IS PARTLY DEALT AFRESH: once a card has been played, some of
+       the cards that were not go under the deck and fly to the pile to say
+       so — how many is `play.handReturn` read at the hand's size (none on two
+       slots, one on three, two on four and five), which ones is drawn among
+       the free ones, and the rest keep their slots. A wounded or a stunned
+       card is pinned to its slot and is never drawn — so is the played card
+       itself when it came back to it (a fence, a rock, a spell it survived).
+       Returns how many went. */
+    function returnHand(played) {
+      var i, free = [], quota = (P.handReturn || [])[handSize];
+      for (i = 0; i < handSize; i++) if (i !== played && pickable(i)) free.push(i);
+      if (quota == null) quota = free.length;
+      shuffle(free);
+      free = free.slice(0, quota).sort(function (a, b) { return a - b; });
+      for (i = 0; i < free.length; i++) {
+        deck.push(hand[free[i]]);
+        returns.push({ card: hand[free[i]], slot: free[i], t: 0 });
+        hand[free[i]] = null;
+      }
+      return free.length;
     }
     function countHand() {
       var n = 0;
@@ -881,7 +951,7 @@
        formats are squares, and a square is also the widest cell a 6x6 camp
        can afford in a portrait frame.
        =================================================================== */
-    var HAND_MAX = 160;           // a 4-card hand stops here; a 5-card one is width-bound
+    var HAND_MAX = 160;           // a hand slot stops here; a row of five is width-bound
     var LIFT = 34;                // the room a picked card rises into, badges included
     var CELL_MAX = 190;
     /* The two square formats of the lab: MID carries the name plate and wants
@@ -905,11 +975,14 @@
 
     function geometry() {
       var bottom = Math.min(Layout.bottom, CONFIG.designHeight - P.cornerClear);
-      HAND_W = Math.floor(Math.min(HAND_MAX, (Layout.w - (handSize - 1) * HAND_GAP) / handSize));
-      HAND_H = Math.round(HAND_W * 1.4);
+      /* THE HAND IS A ROW OF SQUARES: the cards dealt in the lab's MID
+         format, then the locked slots, all the same size so the row reads as
+         one hand with room in it. */
+      HAND_W = Math.floor(Math.min(HAND_MAX, (Layout.w - (handSlots - 1) * HAND_GAP) / handSlots));
+      HAND_H = HAND_W;
       G.handBottom = bottom;
       G.handY = bottom - HAND_H;
-      var row = handSize * HAND_W + (handSize - 1) * HAND_GAP;
+      var row = handSlots * HAND_W + (handSlots - 1) * HAND_GAP;
       G.handX0 = Layout.cx - row / 2;
 
       G.infoH = 130;
@@ -974,8 +1047,8 @@
     function handX(i) { return G.handX0 + i * (HAND_W + HAND_GAP); }
     function handAt(p) {
       if (p.y < G.handY - 40 || p.y > G.handBottom + 10) return -1;
-      for (var i = 0; i < handSize; i++) {
-        if (hand[i] == null) continue;
+      for (var i = 0; i < handSlots; i++) {
+        if (i < handSize && hand[i] == null) continue;
         var x = handX(i);
         if (p.x >= x - 8 && p.x <= x + HAND_W + 8) return i;
       }
@@ -990,10 +1063,11 @@
       Art.backdrop(BAND.scene);
       seed = ((CONFIG.level | 0) * 7919 + 12345) >>> 0;
       cols = Math.max(2, P.cols | 0); rows = Math.max(2, P.rows | 0);
-      handSize = Math.max(2, P.handSize | 0);
+      handSize = Math.max(2, (BAND.hand || P.handSize) | 0);
+      handSlots = Math.max(handSize, P.handSlots | 0);
       geometry();
       tableClear();
-      refills = [];
+      refills = []; returns = [];
       wounded = {}; captives = []; hurtCards = []; fallen = []; lostCards = []; met = []; refused = []; prisonWarned = false;
       used = {};
       strayed = []; smashed = 0; taught = {};
@@ -1005,7 +1079,7 @@
       kills = 0; ties = 0; losses = 0; precise = 0; scouted = 0; trapsCleared = 0;
       selected = -1; drag = null; turn = null; march = null; ended = false; outcome = null; tAnim = 0;
       mood = "neutral"; lastFoe = null; lastWon = null; hiding = null;
-      flagTaken = false;
+      flagTaken = false; offered = false;
       HUD.setScoreNow(0);
       showCounts();
       Fx.reset();
@@ -1074,6 +1148,13 @@
       if (zone) { sheetOpen(zone); return; }
       if (turn || march) return;
       var i = handAt(p);
+      if (i >= handSize) {
+        /* A LOCKED SLOT IS ANSWERED TOO, for the same reason a bandage is:
+           a slot that does nothing under the finger reads as a dead screen. */
+        Sound.clip("warn", 0.35, 0.9);
+        Notify.say("Slot locked", { sub: unlockLine(i), kind: "warn", icon: "lock" });
+        return;
+      }
       if (i >= 0) {
         if (!pickable(i)) {
           Sound.clip("warn", 0.35, 0.9);
@@ -1172,6 +1253,176 @@
       if (a.tier > foe.tier) return { kind: "win", margin: 0, hurt: "d" };
       if (a.tier < foe.tier) return { kind: "lose" };
       return { kind: "tie" };
+    }
+
+    /* ===================================================================
+       THE DEFENSE — the player's own camp, stormed while they are away
+       =================================================================== */
+
+    /* THE SAME RULES, THE OTHER WAY ROUND. The barracks lets the player lay
+       out a camp of their own — a flag, their cards, the objects the climb
+       gave them (packages/webshell/army.js, the defense) — and while they are
+       away the red army may storm it. How well it holds is not a formula over
+       where things stand: it is this function playing the assault, many
+       times, with `judge` and every object's effect exactly as a battle
+       plays them. A flag left in the open falls because the attacker walks
+       up to it, not because a rule said the back row is safer.
+
+       `cells` is the grid row by row, `rows * cols` entries of null or
+       `{ r, t, id }` (an object carries no tier and no id); row `rows - 1` is
+       the FRONT, the one the attacker reaches first, as the camp's bottom row
+       is in a battle. `army` is the attacker's deck, `{ r, t }` each — the
+       barracks mirrors it off the player's own roster. The attacker plays the
+       way a careful player does: it takes a flag it can see, sends the
+       tightest card that beats a card it has already turned over, sends a
+       scout at what it cannot see, and otherwise probes the dark with a
+       middling card, leaning toward the back where flags are kept. The camp
+       never moves and never strikes back — a defense is a layout.
+
+       AN ASSAULT IS A RAID, NOT A SIEGE: it lasts `turns` cards sent, then
+       the attacker has to be gone before the camp wakes. Without that bound
+       a winner going back under the deck wins forever — the marshal walks
+       through every wall given the night — and every defense falls; with it,
+       what a layout buys is TIME, which is exactly what a fence, a straw man
+       and a flag kept deep are for.
+
+       Returns the share of assaults held over `runs`, and one more assault
+       played out in full (`run`), which is the one that HAPPENED: who of the
+       player's cards was beaten, and which of the attacker's fell. */
+    var DEF_HAND = 4;
+
+    function defenseRun(cells, cols, rows, army, turns, rnd) {
+      var g = [], known = [], deck = [], hand = [], beaten = [], fallen = [], i, k, turn;
+      for (i = 0; i < cells.length; i++) {
+        g.push(cells[i] ? { rank: cells[i].r, tier: cells[i].t | 0, id: cells[i].id != null ? cells[i].id : null } : null);
+        known.push(false);
+      }
+      for (i = 0; i < army.length; i++) deck.push({ rank: army[i].r, tier: army[i].t | 0, stun: false });
+      for (i = deck.length - 1; i > 0; i--) {
+        k = Math.floor(rnd() * (i + 1));
+        var sw = deck[i]; deck[i] = deck[k]; deck[k] = sw;
+      }
+      function deal() { while (hand.length < DEF_HAND && deck.length) hand.push(deck.shift()); }
+      /* WHAT THE ATTACKER CAN STRIKE: the front row, then whatever stands
+         next to ground it has opened — an empty cell is open ground from the
+         start, which is what makes a hole in the wall a way in. */
+      function reach() {
+        var open = {}, seen = {}, stack = [], out = [], c, r, n, d;
+        for (c = 0; c < cols; c++) {
+          k = (rows - 1) * cols + c;
+          if (g[k]) { if (!seen[k]) { seen[k] = 1; out.push(k); } }
+          else if (!open[k]) { open[k] = 1; stack.push(k); }
+        }
+        while (stack.length) {
+          k = stack.pop(); r = Math.floor(k / cols); c = k % cols;
+          var near = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+          for (d = 0; d < 4; d++) {
+            if (near[d][0] < 0 || near[d][0] >= rows || near[d][1] < 0 || near[d][1] >= cols) continue;
+            n = near[d][0] * cols + near[d][1];
+            if (g[n]) { if (!seen[n]) { seen[n] = 1; out.push(n); } }
+            else if (!open[n]) { open[n] = 1; stack.push(n); }
+          }
+        }
+        return out;
+      }
+      function weakest(live) {
+        var b = live[0];
+        for (var j = 1; j < live.length; j++) if (hand[live[j]].rank * 10 + hand[live[j]].tier < hand[b].rank * 10 + hand[b].tier) b = live[j];
+        return b;
+      }
+      /* deeper cells weigh more: that is where a flag is looked for */
+      function pickDark(list) {
+        var tot = 0, j, x;
+        for (j = 0; j < list.length; j++) tot += 1 + 0.5 * (rows - 1 - Math.floor(list[j] / cols));
+        x = rnd() * tot;
+        for (j = 0; j < list.length; j++) {
+          x -= 1 + 0.5 * (rows - 1 - Math.floor(list[j] / cols));
+          if (x <= 0) return list[j];
+        }
+        return list[list.length - 1];
+      }
+      function choose(targets, live) {
+        var j, h, q, v, best = null, dark = [], soft = [], score;
+        for (j = 0; j < targets.length; j++) {
+          q = targets[j];
+          if (!known[q]) { dark.push(q); continue; }
+          if (g[q].rank === FLAG) return { q: q, h: weakest(live) };
+          if (isObject(g[q].rank) && HARMLESS[OBJECTS[g[q].rank].effect]) soft.push(q);
+          for (h = 0; h < live.length; h++) {
+            v = judge(hand[live[h]], { rank: g[q].rank, tier: g[q].tier, known: true });
+            if (v.kind === "win") score = 20 - v.margin * 2 - (v.hurt === "a" ? 3 : 0);
+            else if (v.kind === "smash" || v.kind === "clear") score = 22;
+            else continue;
+            if (!best || score > best.s) best = { q: q, h: live[h], s: score };
+          }
+        }
+        if (best) return best;
+        if (dark.length) {
+          for (h = 0; h < live.length; h++) if (hand[live[h]].rank === SCOUT) return { q: pickDark(dark), h: live[h] };
+          var byRank = live.slice().sort(function (a, b) { return hand[a].rank - hand[b].rank; });
+          return { q: pickDark(dark), h: byRank[Math.floor(byRank.length / 2)] };
+        }
+        /* nothing to beat and nothing unseen: a harmless object only costs a
+           turn, and a turn is a new hand */
+        if (soft.length) return { q: soft[Math.floor(rnd() * soft.length)], h: weakest(live) };
+        /* ...and what is left is a card it cannot beat: it throws its
+           weakest at the weakest of them, since standing still takes nothing */
+        var low = targets[0];
+        for (j = 1; j < targets.length; j++) if (g[targets[j]].rank < g[low].rank) low = targets[j];
+        return { q: low, h: weakest(live) };
+      }
+      deal();
+      for (turn = 0; turn < turns; turn++) {
+        var live = [];
+        for (i = 0; i < hand.length; i++) if (!hand[i].stun) live.push(i);
+        if (!live.length) break;              // nothing left to send: the camp held
+        var targets = reach();
+        if (!targets.length) break;
+        var mv = choose(targets, live), a = hand[mv.h], q = mv.q, foe = g[q];
+        var v = judge(a, { rank: foe.rank, tier: foe.tier, known: known[q] }), back = true, gone = null;
+        known[q] = true;
+        switch (v.kind) {
+          case "flag": return { held: false, beaten: beaten, fallen: fallen, turns: turn + 1 };
+          case "trap": back = false; fallen.push(a); g[q] = null; break;
+          case "clear": case "smash": g[q] = null; break;
+          case "stray": back = false; break;
+          case "stun": a.stun = true; break;
+          case "spell":
+            var allies = [];
+            for (i = 0; i < hand.length; i++) if (i !== mv.h) allies.push(i);
+            if (allies.length) {
+              var b = hand[allies[Math.floor(rnd() * allies.length)]];
+              var sv = judge(a, { rank: b.rank, tier: b.tier, known: true });
+              if (sv.kind === "win") gone = b;
+              else if (sv.kind === "lose") back = false;
+              else { back = false; gone = b; }
+            }
+            break;
+          case "win": if (foe.id != null) beaten.push(foe.id); g[q] = null; break;
+          case "lose": back = false; fallen.push(a); break;
+          case "tie": back = false; fallen.push(a); if (foe.id != null) beaten.push(foe.id); g[q] = null; break;
+        }
+        /* THE HAND IS DEALT AFRESH, as in a battle: every card but a stunned
+           one goes back under the deck, the one sent included when it came
+           back, and four are dealt. */
+        var keep = [];
+        for (i = 0; i < hand.length; i++) {
+          var hc = hand[i];
+          if (hc === gone) continue;
+          if (hc.stun) { keep.push(hc); continue; }
+          if (hc === a && !back) continue;
+          deck.push(hc);
+        }
+        hand = keep;
+        deal();
+      }
+      return { held: true, beaten: beaten, fallen: fallen, turns: turn };
+    }
+
+    function defenseSim(cells, cols, rows, army, opt) {
+      var n = Math.max(1, (opt && opt.runs) | 0 || 200), turns = Math.max(1, (opt && opt.turns) | 0 || 14), held = 0, i;
+      for (i = 0; i < n; i++) if (defenseRun(cells, cols, rows, army, turns, Math.random).held) held++;
+      return { held: held / n, runs: n, run: defenseRun(cells, cols, rows, army, turns, Math.random) };
     }
 
     /* WHO PAYS FOR A WIN THE GRADE ALREADY DECIDED. The loser's tier standing
@@ -1481,8 +1732,9 @@
        ends on — is the camp empty, is the army. */
     function endTurn(T) {
       var v = T.verdict, i;
+      var gone = returnHand(T.i);
       for (i = 0; i < handSize; i++) if (hand[i] && hand[i].hurt) hand[i].hurt--;
-      refillHand(true);
+      refillHand(true, gone ? 1 : 0);
       var left = cardsLeft();
       if (left <= 2 && left > 0) Sound.clip("warn", 0.4, 1);
       showCounts();
@@ -1507,6 +1759,10 @@
         return;
       }
       if (!anyTarget()) { finish(true); return; }         // nothing left to strike: the camp is taken
+      if (!offered) {
+        var lost = hopeless();
+        if (lost) offerSurrender(lost);
+      }
       enemyTurn();
     }
 
@@ -1559,6 +1815,88 @@
       return 99;
     }
     function movable(q) { return q && q.rank <= MARSHAL && !q.anchored; }
+
+    /* ===================================================================
+       HOPELESS — a battle the army can no longer win
+       A battle is won two ways: the flag is taken, or every soldier of the
+       camp is beaten (the camp emptied is the second one finished). When
+       the army that is left can do neither, the camp's commander says so
+       and offers a surrender (packages/webshell/army.js, `surrender`) —
+       the player who refuses plays on to the end screen, but knowing.
+
+       THE TEST IS OPTIMISTIC ON PURPOSE, so an offer is never made on a
+       battle that could still be won: every card that can go out counts
+       as many times as it is needed (a winner goes back under the deck), a
+       draw counts as a way through, and a soldier who may still move is
+       one that may step out of the corridor. What is left is what never
+       gives way: a trap with no sapper in the army, an object with none of
+       its breaker's grade, an anchored soldier nobody outranks.
+       Returns why the flag is out of reach — "trap", "object" or "soldier",
+       the first that walls it — or null while the battle can be won.
+       =================================================================== */
+    function hopeless() {
+      var army = deck.slice(), i, r, c;
+      for (i = 0; i < handSize; i++) if (hand[i] && !hand[i].stun) army.push(hand[i]);
+      if (!army.length) return null;                    // the army spent ends it anyway
+      function beaten(q) {
+        var foe = { rank: q.rank, tier: q.tier, known: true };
+        for (var j = 0; j < army.length; j++) {
+          var k = judge(army[j], foe).kind;
+          if (k === "win" || k === "tie" || k === "clear" || k === "smash" || k === "flag") return true;
+        }
+        return false;
+      }
+      /* a walk from under the camp through every cell that can give way */
+      function walk(pass) {
+        var seen = {}, q = [], dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]], wall = [], x, d;
+        for (x = 0; x < cols; x++) q.push({ r: rows, c: x });
+        while (q.length) {
+          var p = q.shift();
+          for (d = 0; d < 4; d++) {
+            var nr = p.r + dirs[d][0], nc = p.c + dirs[d][1], k = nr + "," + nc;
+            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || seen[k]) continue;
+            seen[k] = true;
+            var g = grid[nr][nc];
+            if (!g || pass(g)) q.push({ r: nr, c: nc });
+            else wall.push(g);
+          }
+        }
+        return { seen: seen, wall: wall };
+      }
+      var sold = [], all = true;
+      for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+        var g = grid[r][c];
+        if (!g || g.rank > MARSHAL) continue;
+        sold.push(r + "," + c);
+        if (!beaten(g)) all = false;
+      }
+      /* the second way: every soldier beaten, each reached through what can be cleared */
+      if (all) {
+        var w2 = walk(function (g) { return g.rank <= MARSHAL || beaten(g); });
+        for (i = 0; i < sold.length && w2.seen[sold[i]]; i++) {}
+        if (i === sold.length) return null;
+      }
+      /* the first way: the flag, reached through what can be cleared or may move */
+      var w1 = walk(function (g) { return g.rank === FLAG || beaten(g) || movable(g); });
+      if (w1.seen[flagCell.r + "," + flagCell.c]) return null;
+      var why = { trap: 0, object: 0, soldier: 0 };
+      for (i = 0; i < w1.wall.length; i++) {
+        var x = w1.wall[i].rank;
+        why[x === TRAP ? "trap" : isObject(x) ? "object" : "soldier"]++;
+      }
+      return why.trap ? "trap" : why.object ? "object" : "soldier";
+    }
+
+    /* The offer, where there is a barracks to make it: the commander's face
+       turns smug, and the web shell asks. A playable has nobody to ask and
+       plays the battle out as it always did. */
+    function offerSurrender(why) {
+      var AR = window.__ARMY__;
+      if (!AR || !AR.surrender) return;
+      offered = true;
+      mood = "happy";
+      AR.surrender(why);
+    }
 
     function enemyTurn() {
       var lvl = levelD == null ? 0.3 : levelD;
@@ -1645,6 +1983,10 @@
         refills[i].t += dt / 0.28;
         if (refills[i].t >= 1) refills.splice(i, 1);
       }
+      for (i = returns.length - 1; i >= 0; i--) {
+        returns[i].t += dt / 0.28;
+        if (returns[i].t >= 1) returns.splice(i, 1);
+      }
       if (hiding) { hiding.t += dt / FLIP; if (hiding.t >= 1) hiding = null; }
       if (march) { marchStep(dt); return; }
       if (!turn) return;
@@ -1669,12 +2011,13 @@
 
     /* ===================================================================
        THE CARD FACES — the lab's card, as DOM
-       lab/stratideck-card.html is where a card is composed, and its
-       stylesheet is pasted verbatim into the SKIN (the block between THE CARD
-       ITSELF and END OF THE CARD). What this section adds is the one thing a
-       stylesheet cannot say: which nodes a card is made of, with the numbers
-       of CONFIG.cards on them. `faceNode` is the lab's `build()`, minus the
-       tilt, and it is the one builder of a card face in the game — the
+       lab/stratideck-card.html is where a card is composed, and it draws
+       with the SKIN itself (the block between THE CARD ITSELF and END OF
+       THE CARD), linked rather than copied. What this section adds is the
+       one thing a stylesheet cannot say: which nodes a card is made of, with
+       the numbers of CONFIG.cards on them. `faceNode` is the lab's `build()`
+       minus the tilt, and `sizeNode` its `dress()` — a change to either is
+       made on both. It is the one builder of a card face in the game: the
        barracks asks for it too (`cardNode`), so a card picked in the deck
        screen and the card that lands on the grid are the same object.
        =================================================================== */
@@ -1817,6 +2160,14 @@
       n.style.setProperty("--tinyz", K.tinyz);
       n.style.setProperty("--tinyx", K.tinyx + "%");
       n.style.setProperty("--tinyy", K.tinyy + "%");
+      /* the grade badge, the tier badge and the macaron at THIS format's own
+         size and place (the SKIN's --k-* / --x-* / --y-*) */
+      var F = fmt.charAt(0).toUpperCase() + fmt.slice(1);
+      ["rank", "tier", "perk"].forEach(function (k) {
+        n.style.setProperty("--k-" + k, K[k + F] != null ? K[k + F] : 1);
+        n.style.setProperty("--x-" + k, K[k + F + "X"] || 0);
+        n.style.setProperty("--y-" + k, K[k + F + "Y"] || 0);
+      });
 
       var crest = (CONFIG.art && CREST[side] && CONFIG.art[CREST[side]]) || "";
       var html = '<div class="c-body"><div class="c-frame"></div><div class="c-scene"></div>';
@@ -1839,41 +2190,129 @@
           '<div class="c-mark' + (c.rank >= 10 ? " two" : "") + '"><b>' + (officer ? c.rank : "") + "</b></div>" +
           '<div class="c-hero' + (src ? "" : " missing") + '" data-missing="' + name + '">' +
             (src ? '<img alt="" src="' + src + '">' : "") + "</div>" +
-          badgeHTML("rank", K.brank, officer ? c.rank : "", K.arank) +
-          badgeHTML("tier", K.btier, TIERS[t], K.atier) +
-          /* the macaron: what this grade is FOR (PERK), on the army's cards
-             only — the camp never strikes, so its officers use none of it */
-          (officer && side !== "red" && PERK[c.rank]
-            ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg></div>" : "") +
           '<div class="c-plate"><span class="c-name">' + name +
             '</span><span class="c-tier">' + (ghost ? "" : upper(Lang.t(tiered ? TIER_LABEL[t] : "Object"))) + "</span></div>" +
           '<div class="c-pips">' + pips + "</div>";
       }
       html += '<div class="c-back">' + (crest ? '<img alt="" src="' + crest + '">' : "") + "</div>" +
               '<div class="c-shine"></div></div>';
+      /* THE BADGES AND THE MACARON ARE SIBLINGS OF THE BODY: `.c-body` clips
+         to the card's outline, and inside it a badge hung over the edge was
+         cut, and the macaron in its corner kept a quarter of its disc */
+      if (c) {
+        html += badgeHTML("rank", K.brank, officer ? c.rank : "", K.arank) +
+          badgeHTML("tier", K.btier, TIERS[t], K.atier) +
+          /* the macaron: what this grade is FOR (PERK), on the army's cards
+             only — the camp never strikes, so its officers use none of it */
+          (officer && side !== "red" && PERK[c.rank]
+            ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg></div>" : "");
+      }
       n.innerHTML = html;
+      /* the plate's words: one size per line for the officers, measured
+         once per language; an object fitted on its own card */
+      var TIERN = [];
+      for (var q = 0; q <= TOP_TIER; q++) TIERN.push(upper(Lang.t(TIER_LABEL[q])));
+      var NAMES = [];
+      for (q = 1; q <= 10; q++) NAMES.push(upper(Lang.t(RANKS[q].name)));
+      plateFit(K.style, { full: K.rfull, mid: K.rmid }, NAMES, TIERN,
+               K.style + "." + K.rfull + "." + K.rmid + "." + Lang.code());
+      if (c && !officer && !ghost) fitName(n);
       return n;
     }
-    /* THE SIZE, and the one number the lab reads in pixels: the scene's blur,
-       tuned at a 300px card, is scaled with the card or a small one turns to
-       fog.
-
-       AND THE BADGES AT A PLAYING SIZE. Everything on a card is a percent of
-       its width, which is what lets one stylesheet draw three formats — and
-       it is also what makes the two numbers a fight is decided on shrink with
-       the card: the lab's full card is composed at 300px, the hand is dealt
-       at 125 to 160. So under FIT_AT a card wears `fit` and `--fit`, and the
-       SKIN scales its two badges by that much and nothing else: the picture
-       may be small, the grade and the tier may not. The token (tiny) is
-       exempt — its badges were already re-measured for a small card. */
-    var FIT_AT = { full: 220, mid: 200 }, FIT_MAX = 1.7;
-    function sizeNode(n, w, fmt) {
+    /* ONE SIZE PER LINE: every grade's name at the size of the longest one,
+       every rarity at the size of the longest rarity — per format and per
+       language, so a LIEUTENANT and a GENERAL dealt side by side read at the
+       same size. Measured once on a card nobody sees, at the reference
+       width (the ratio holds at any other), for the frame style in use, and
+       written on the root as `--nfit-full`, `--tfit-full` and `--nfit-mid`,
+       which the SKIN hands to every card that is not an object. `names` and
+       `tiers` are the words as they are shown (translated, in capitals). */
+    var plateKey = "";
+    function plateFit(style, refs, names, tiers, key) {
+      if (key === plateKey || !document.body) return;
+      plateKey = key;
+      var host = document.createElement("div"), out = {};
+      host.style.cssText = "position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none";
+      document.body.appendChild(host);
+      [["full", refs.full], ["mid", refs.mid]].forEach(function (f) {
+        var n = document.createElement("div");
+        n.className = "card static fmt-" + f[0] + " style-" + style + " tier-rare";
+        n.style.cssText = "--w:" + f[1] + "px;--h:" + (f[0] === "full" ? Math.round(f[1] * 1.4) : f[1]) +
+          "px;--sk:1;--nfit:1;--tfit:1";
+        n.innerHTML = '<div class="c-body"><div class="c-plate"><span class="c-name"></span><span class="c-tier"></span></div></div>';
+        host.appendChild(n);
+        var plate = n.querySelector(".c-plate"), cs = getComputedStyle(plate);
+        var room = plate.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        var widest = function (sel, list) {
+          var el = plate.querySelector(sel), rg = document.createRange(), max = 0;
+          for (var i = 0; i < list.length; i++) {
+            el.textContent = list[i];
+            rg.selectNodeContents(el);
+            max = Math.max(max, rg.getBoundingClientRect().width);
+          }
+          return max;
+        };
+        var fit = function (w) { return w > room && room > 0 ? Math.max(0.3, room / w) : 1; };
+        out["n" + f[0]] = fit(widest(".c-name", names));
+        if (f[0] === "full") out.tfull = fit(widest(".c-tier", tiers));
+      });
+      host.parentNode.removeChild(host);
+      var root = document.documentElement.style;
+      root.setProperty("--nfit-full", out.nfull.toFixed(3));
+      root.setProperty("--tfit-full", out.tfull.toFixed(3));
+      root.setProperty("--nfit-mid", out.nmid.toFixed(3));
+    }
+    /* AN OBJECT'S WORDS, SHRUNK TO ITS PLATE (the SKIN's `--nfit` / `--tfit`):
+       an object's name is not a grade, so it is fitted on its own card rather
+       than sized with the grades (plateFit). Measured once the plate has a
+       size, since the face, the tracking and the language all move the width
+       and a card may be built in a tab not shown yet (ResizeObserver), and
+       taken once: the words and the plate scale together, so the ratio holds
+       at any width. The officer's file hides the plate and is never measured. */
+    function fitName(n) {
+      var fmt = n.classList.contains("fmt-mid") ? "mid" : n.classList.contains("fmt-full") ? "full" : "";
+      if (!fmt || typeof ResizeObserver === "undefined") return;
+      var plate = n.querySelector(".c-plate");
+      if (!plate) return;
+      var ro = new ResizeObserver(function () {
+        if (!plate.clientWidth) return;
+        ro.disconnect();
+        /* in screen boxes, so a card scaled or turning is measured as it
+           stands: the ratio is all that is kept */
+        var pr = plate.getBoundingClientRect();
+        var k = pr.width / plate.clientWidth, cs = getComputedStyle(plate);
+        var room = pr.width - (parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)) * k;
+        /* each line on its own: the text's width, not its block's — a Range
+           over the letters — against the plate's */
+        [[".c-name", "--nfit"], [".c-tier", "--tfit"]].forEach(function (l) {
+          var line = plate.querySelector(l[0]);
+          if (!line || !line.textContent) return;
+          var rg = document.createRange();
+          rg.selectNodeContents(line);
+          var w = rg.getBoundingClientRect().width;
+          n.style.setProperty(l[1], w > room ? Math.max(0.3, room / w).toFixed(3) : "1");
+        });
+      });
+      ro.observe(plate);
+    }
+    /* THE SIZE: one number, and the card follows it as a whole. Every length
+       on a card is in em (1% of its width), so `--w` alone scales it; the
+       text floors are the one thing in px, and `--sk` scales them with it —
+       the width over the format's reference (CONFIG.cards.rfull / rmid /
+       rtiny, the width the lab composes it at), never under 1 so a card
+       squeezed under its reference keeps its words at their floor. The
+       scene's blur is read at 300px and scaled like the rest.
+       `own` is the officer's file (cardBack), a page laid out at its own
+       width: its floors stay at 18 px. */
+    function refOf(fmt) {
+      var K = CONFIG.cards;
+      return (fmt === "mid" ? K.rmid : fmt === "tiny" ? K.rtiny : K.rfull) || 120;
+    }
+    function sizeNode(n, w, fmt, own) {
       n.style.setProperty("--w", w + "px");
       n.style.setProperty("--h", (fmt === "full" ? Math.round(w * 1.4) : w) + "px");
       n.style.setProperty("--blur", (CONFIG.cards.blur * w / 300).toFixed(2) + "px");
-      var fit = FIT_AT[fmt] ? clamp(FIT_AT[fmt] / w, 1, FIT_MAX) : 1;
-      n.style.setProperty("--fit", fit.toFixed(2));
-      n.classList.toggle("fit", fit > 1.01);
+      n.style.setProperty("--sk", own ? "1" : Math.max(1, w / refOf(fmt)).toFixed(3));
     }
     /* The barracks' door into this builder: `c` is { rank, tier }, `opt` is
        { fmt, w, side, ghost }. The scene is the first band's, which is the
@@ -1890,16 +2329,19 @@
 
     /* THE BACK OF AN OFFICER'S FILE, for the barracks (packages/webshell/
        army.js, openFile). It is the same card turned over: the frame, the
-       rim, the grade, the tier, the macaron and the pips of the face, so the
-       back is visibly the same object — with the officer standing small in a
-       window at its head and their file under it. `info` is written by the
+       rim, the grade, the tier and the pips of the face, so the back is
+       visibly the same object, with the officer standing small in a window
+       at its head and their file under it. The macaron stays on the face:
+       its pictogram heads the ability line instead. `info` is written by the
        barracks, already in the player's language and already in capitals
-       where it shouts: { grade, first, last, facts: [], skill, lore, army, turn }.
+       where it shouts: { grade, first, last, facts: [], job, jobPost, skill,
+       lore, army, turn }.
        Every line is text written into a node, never markup — a name like
        O'Ween and a lore with quotes in it are data. */
     function cardBack(c, opt, info) {
       opt = opt || {};
       var n = cardNode(c, { fmt: "full", w: opt.w || 300, side: opt.side || "blue" });
+      sizeNode(n, opt.w || 300, "full", true);   // a page at its own width, not a card scaled
       n.classList.add("file");
       var body = n.querySelector(".c-body");
       function line(parent, tag, cls, str) {
@@ -1917,6 +2359,13 @@
       if (info.facts && info.facts.length) {
         var facts = line(sheet, "div", "cf-facts");
         for (var i = 0; i < info.facts.length; i++) line(facts, "span", "", info.facts[i]);
+      }
+      /* the officer's trade, and the post of the camp it suits
+         (packages/webshell/army.js, `postPct`) */
+      if (info.job) {
+        var job = line(sheet, "div", "cf-job");
+        line(job, "b", "", info.job);
+        if (info.jobPost) line(job, "span", "", info.jobPost);
       }
       /* the grade's ability, under the macaron's own pictogram */
       if (info.skill) {
@@ -2448,10 +2897,33 @@
     var LIFT_SEL = 22, DRAG_UP = 30, DRAG_S = 1.1;
 
     function slotDashes(i) {
-      roundRect(ctx, handX(i), G.handY, HAND_W, HAND_H, HAND_W * 0.06);
+      roundRect(ctx, handX(i), G.handY, HAND_W, HAND_H, HAND_W * 0.05);
       ctx.fillStyle = "rgba(255,255,255,.035)"; ctx.fill();
       ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    /* A LOCKED SLOT: a dark plate in the row and the padlock of the Lucide
+       stroke (assets/motor/lucide/lock.svg), replayed through Path2D like
+       the skull — a slot the hand has, not a card it lost. */
+    var LOCK_PATHS = ["M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z",
+      "M7 11V7a5 5 0 0 1 10 0v4"];
+    var lockShapes = null;
+    function slotLocked(i) {
+      var x = handX(i), y = G.handY;
+      roundRect(ctx, x, y, HAND_W, HAND_H, HAND_W * 0.05);
+      ctx.fillStyle = "rgba(6,8,18,.55)"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.stroke();
+      if (!lockShapes) lockShapes = LOCK_PATHS.map(function (d) { return new Path2D(d); });
+      var s = HAND_W * 0.34 / 24;
+      ctx.save();
+      ctx.translate(x + HAND_W / 2, y + HAND_H / 2);
+      ctx.scale(s, s);
+      ctx.translate(-12, -12);
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(246,241,228,.32)";
+      for (var k = 0; k < lockShapes.length; k++) ctx.stroke(lockShapes[k]);
+      ctx.restore();
     }
 
     /* The hand. A card being PLAYED is its token: the moment it is dragged
@@ -2466,6 +2938,14 @@
     function drawHand() {
       var i, j, T = turn;
       var px = G.deckX + G.deckW / 2, py = G.deckY + G.deckH / 2, ps = G.deckW / HAND_W;
+      for (i = handSize; i < handSlots; i++) slotLocked(i);
+      /* the cards not played this turn, on their way under the deck */
+      for (j = 0; j < returns.length; j++) {
+        var R = returns[j], kr = ease(Math.min(1, R.t));
+        var rx = handX(R.slot) + HAND_W / 2, ry = G.handY + HAND_H / 2;
+        drawCard("r" + R.slot, R.card, rx + (px - rx) * kr, ry + (py - ry) * kr - 40 * Math.sin(kr * Math.PI), HAND_W,
+                 { fmt: "mid", down: kr >= 0.5, flip: kr, scale: 1 + (ps - 1) * kr });
+      }
       for (i = 0; i < handSize; i++) {
         var x = handX(i) + HAND_W / 2, y = G.handY + HAND_H / 2;
         /* the ally a spell turned the card on has stepped into the duel: one
@@ -2476,13 +2956,15 @@
         var arriving = null;
         for (j = 0; j < refills.length; j++) if (refills[j].slot === i) arriving = refills[j];
         if (arriving) {
+          if (arriving.t < 0) { slotDashes(i); continue; }   // still waiting for the pile
           var ka = ease(Math.min(1, arriving.t));
           drawCard("h" + i, hand[i], px + (x - px) * ka, py + (y - py) * ka, HAND_W,
-                   { down: ka < 0.5, flip: ka * 0.5 + 0.5, scale: ps + (1 - ps) * ka });
+                   { fmt: "mid", down: ka < 0.5, flip: ka * 0.5 + 0.5, scale: ps + (1 - ps) * ka });
           continue;
         }
         var sel = selected === i && !T;
-        drawCard("h" + i, hand[i], x, sel ? y - LIFT_SEL : y, HAND_W, { lit: sel ? 1 : 0, scale: sel ? 1.06 : 1 });
+        drawCard("h" + i, hand[i], x, sel ? y - LIFT_SEL : y, HAND_W,
+                 { fmt: "mid", lit: sel ? 1 : 0, scale: sel ? 1.06 : 1 });
       }
       /* the dragged card's token, over the canvas, under the finger */
       if (drag && drag.moved && hand[drag.i] != null && !T) {
@@ -2539,14 +3021,14 @@
       }
       ctx.globalAlpha = 1;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = font(15, 900); ctx.fillStyle = rgba(INK, open ? 1 : 0.8);
-      ctx.fillText(upper(Lang.t(role === "infirmary" ? "Infirmary" : "Prison")), x + w / 2, y + h + 13);
+      ctx.font = font(18, 900); ctx.fillStyle = rgba(INK, open ? 1 : 0.8);
+      ctx.fillText(upper(Lang.t(role === "infirmary" ? "Infirmary" : "Prison")), x + w / 2, y + h + 14);
       if (count) {
         var bx = x + w - 12, by = y + 10;
         ctx.beginPath(); ctx.arc(bx, by, 15, 0, Math.PI * 2);
         ctx.fillStyle = tint; ctx.fill();
         ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(8,10,22,.85)"; ctx.stroke();
-        ctx.font = font(17, 900); ctx.fillStyle = "#fff";
+        ctx.font = font(18, 900); ctx.fillStyle = "#fff";
         ctx.fillText(String(count), bx, by + 1);
       }
       ctx.restore();
@@ -2689,11 +3171,17 @@
       }
       var n = army0.length, w = n > 24 ? 76 : n > 14 ? 88 : 100;
       var c = sheetCard("army", "Your army", n, "At the start of the battle"), box = c.body;
-      box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
-      box.appendChild(armyTiles(alive, w));
-      box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
-      if (lostCards.length) box.appendChild(armyTiles(lostCards, w, true));
-      else box.insertAdjacentHTML("beforeend", '<div class="sh-empty">' + upper(Lang.t("No card lost yet")) + "</div>");
+      /* A SECTION IS DRAWN ONLY WHEN IT HOLDS A CARD: an empty heading is a
+         line that says nothing happened, which the count on the corner
+         already says. */
+      if (alive.length) {
+        box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
+        box.appendChild(armyTiles(alive, w));
+      }
+      if (lostCards.length) {
+        box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
+        box.appendChild(armyTiles(lostCards, w, true));
+      }
       if (strayed.length) {
         box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost in the forest")) + " <span>" + strayed.length + "</span></div>");
         box.appendChild(armyTiles(strayed, w, true));
@@ -2906,5 +3394,6 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally,
-             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo };
+             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo,
+             defense: defenseSim };
   })();

@@ -831,7 +831,7 @@
       ctx.fillStyle = goalHit ? "rgba(255,230,150,0.7)" : "rgba(255,170,120,0.5)";
       ctx.fillRect(BL, GATE_TOP - 4 - fh - 2, BW, 3);
       var marks = [1 / 2.2, 1.5 / 2.2, 1], labels = [target, Math.round(target * 1.5), Math.round(full)];
-      ctx.font = font(15, 800); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+      ctx.font = font(18, 800); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
       for (var i = 0; i < 3; i++) {
         var y = GATE_TOP - 4 - h * marks[i], on = f >= marks[i] - 0.0001;
         ctx.strokeStyle = on ? "rgba(255,220,120,0.7)" : "rgba(255,255,255,0.16)"; ctx.lineWidth = 1.5;
@@ -939,12 +939,12 @@
         }
         // the count, when the card turns pegs
         if (def.n) {
-          ctx.font = font(15, 900); ctx.textAlign = "right"; ctx.textBaseline = "top";
+          ctx.font = font(18, 900); ctx.textAlign = "right"; ctx.textBaseline = "top";
           ctx.fillStyle = "rgba(255,255,255,0.85)";
           ctx.fillText("x" + def.n, CARD_W - 9, 7);
         }
         // the name
-        ctx.font = font(17, 900); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = font(18, 900); ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillStyle = card.used ? "#c9c2cc" : "#ffe6a8";
         ctx.fillText(upper(Lang.t(def.name)), CARD_W / 2, CARD_H - 24);
         if (card.used) {

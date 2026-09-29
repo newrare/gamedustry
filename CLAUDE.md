@@ -49,16 +49,20 @@ development pages and answer only to the short rules in their own sections.
    `index.html`, which is now **generated** — see [The build](#the-build). No external `<script src>`, `<link href>`, `fetch`, `import`,
    web fonts, or CDN links. The file must work with `file://` and inside a
    sandboxed ad iframe.
+
 1. **Under 5 MB.** Target < 2 MB when possible. Verify with
    `node tools/build/check-size.mjs`. Prefer canvas/CSS drawing and WebAudio synth
    over embedded binaries. Embed assets only as base64 data URIs
    (see [docs/ASSETS.md](docs/ASSETS.md)).
+
 1. **Vanilla only.** No frameworks, no TypeScript, no build step. Plain ES5-ish
    JS that runs in mobile WebViews (`var`, `function`, no arrow functions, no
    template literals). The tooling around the games (`tools/`) is modern Node ESM
    and may do as it likes; the games themselves never gain a build step.
+
 1. **English** for all code, comments, identifiers, and docs. Prompts may be in
    any language.
+
 1. **Every string is written in normal case, and CAPITALS are a look the motor
    applies.** A source — `game.js`, `manifest.json`, `page.html`, the web
    shell's own `STRINGS` — holds `"Best score"`, `"Time's up!"`, `"Chaîne x"`:
@@ -68,15 +72,68 @@ development pages and answer only to the short rules in their own sections.
    capitals on screen, and never `toUpperCase` — `upper` also leaves a unit
    glued to a number alone, so `"Chain x" + 3` stays CHAIN x3. See
    [docs/ENGINE.md](docs/ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
+
 1. **Keep the 7-section structure** (see
    [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Sections 3 (`ENGINE`),
    4 (`AD GLUE`), 5 (`SHELL`) and 7 (`BOOTSTRAP`) plus the motor stylesheet now
    live in `packages/` and are shared by construction — a game cannot fork them.
    Put new reusable helpers there; put game logic in section 6 of
    `games/<slug>/game.js`. Verify with `node tools/build/build.mjs --check`.
+
 1. **Portrait only**, authored in the `720×1280` design space. Never read
    `window.innerWidth` in game code, never hard-code the top/bottom of the play
    area — use `view` and `Layout`.
+
+1. **No text under its floor, and the floor depends on how the text is set.**
+   Four sizes, in design px, chosen by eye on a phone in stratideck's own
+   dress:
+
+   | the text is                | bold | not bold |
+   | -------------------------- | ---- | -------- |
+   | in capitals (`upper()`)    | 18   | 20       |
+   | in normal case (lowercase) | 20   | 22       |
+
+   **Bold** is a weight of 600 or more, or one of the pack's single-weight
+   display faces — Russo One, Bungee, Bebas Neue — which are bold by design
+   whatever weight they are asked for. **Capitals** is a text the player reads
+   in capitals, whether `upper()` or `text-transform` put them there; a figure
+   (digits with their sign, `x`, `%` or `/`: `x10`, `0 / 20`) counts as
+   capitals, a unit written in letters (`12h`, `km/h`, `+150 xp`) does not. So
+   a HUD caption or a tab label may sit at 18 px; a status word in Russo One,
+   a chip or a sheet's subtitle in the game's face wants 20; a paragraph in
+   the system face at a regular weight (a lore, a note) wants 22. It holds on
+   every screen of every game, the motor and the web shell included, in the
+   DOM and on the canvas. The frame is scaled to the screen — a phone shows the
+   720 px in about 390 — so 18 design px is already ~10 px under a thumb.
+
+   A size relative to something else is floored, never left to fall:
+   `font-size:max(20px, 3.6em)`, and under a transform the floor is divided by
+   the scale (`max(calc(18px * var(--sk, 1) / var(--bz)), 10em)`, stratideck's
+   badges); a
+   line fitted to its room (`Fit.box`) is given its floor and wraps once it
+   reaches it. **When a word no longer fits, the SCREEN adapts, never the
+   type**: a tighter tracking, a narrower gap or padding, a smaller picture, a
+   second line — and as the last resort the word goes where something beside
+   it already says the same thing.
+   The floor is measured at rest, at the element's own size: a card leaning
+   away in a carousel, a piece in flight and a letter mid-animation are not
+   held to it, nor are a dev-only readout (`?perf=1`) and a purely decorative
+   glyph (a frame's runes). **The plate of a stratideck card is exempt by decision**: on the FACE of a
+   mid card (the grade's name) and of a full one (the name and the rarity),
+   each line is set at ONE size for every officer — the size the longest word
+   of that line needs to fit its plate, per format and per language
+   (LIEUTENANT, LEGENDARY; LIEUTENANT, PEU COMMUN in French): `plateFit` in
+   `games/stratideck/game.js`, the SKIN's `--nfit-full`, `--tfit-full` and
+   `--nfit-mid`. An object's name is fitted on its own card (`fitName`). The hard bottom of the table can be checked in the
+   sources with
+
+   ```bash
+   grep -rnE "font-size: *([0-9]|1[0-7])(\.[0-9]+)?px|font: *[0-9]{3} ([0-9]|1[0-7])(\.[0-9]+)?px|font\(([0-9]|1[0-7])(\.[0-9]+)?, |\"(bold|[0-9]{3}) ([0-9]|1[0-7])px" packages/ template/ games/*/game.js games/*/skin.css games/*/page.html --exclude=game-template.html
+   ```
+
+   which prints the perf readout and nothing else; whether an 18 or a 20 is
+   enough depends on the words and the face, which only the screen says —
+   open it on a phone viewport.
 
 ## How to create a new game
 
@@ -271,12 +328,20 @@ out with `data-nopull`. Chosen in `lab/view-frame.html`; see
 
 **There is no back arrow in it.** A back arrow answers "where did I come from",
 and the player does not care — they care where they are going. The **wallet band
-IS the navigation**: one line, `⌂ · ⚡ · 1 240 · 3 | 3/20 · 12/90`, each chip the
-door to the screen it is the number of — home, the ranking, the shop, the
-collection, the map. The tickets and the album's count are ONE chip, two figures
-behind one filet, because both open the collection and two chips leading to one
-screen read as two places; the count lives there and not in the album's title,
-which names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
+IS the navigation**: one line, `⌂ · DEV · ⚡ · more · 1 240 · 3/20 · 12/90 · !`,
+each chip the door to the screen it is the number of — home, the ranking, the
+shop, the collection, the map (DEV on a local machine only, `more` only on a
+game that declares `web.meta.more`). **The "!" at the end counts nothing**: it
+is hidden until the first notice of the session, wears the unseen dot while
+something new has been said, and opens a card with the last ten notices, the
+newest on top — a notice lives 2.2 s, and a player who looked away is owed a
+way to read it again. **The band counts no ticket**: the collection's chip holds
+the album's count and nothing else, and the tickets, the super tickets and the
+boosts are counted in the header of the two sheets they are bought and spent on
+— four pills under the shop's title, two under the album's. A ticket or a super
+ticket earned or bought still FLIES into the collection's chip and writes its
+`+N` there. The count lives in the band and not in the album's title, which
+names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
 inert rather than missing, so a number is never one to find again — the house
 alone is dropped on the bare village, since it is only a door and that door is
 the screen under it, and over every sheet, whose own bar carries it bottom right
@@ -284,7 +349,8 @@ the screen under it, and over every sheet, whose own bar carries it bottom right
 runs edge to edge, the house against the left gutter, and the level chip's xp
 bar fills all the room the counts leave free. A
 view's header carries no button; a card's way out is its tap line — every card
-ends on one ("Tap to close", "Tap outside to close") — and ESCAPE: no card
+ends on one ("Tap to close", "Tap to collect"), and a tap anywhere — the card,
+around it, the line itself — does what it says — and ESCAPE: no card
 carries a cross. The one branch: a game with no `web.meta` has no band, so
 its views keep a home button — there is always exactly one way home, never two.
 **The bottom-right corner belongs to the ROUND**, which is the one surface with
@@ -390,7 +456,12 @@ What a view brings:
   nothing about the round has to move to make room (`--hud-h`, `--cta-h` and
   `Layout` are all untouched). Any card over a round **pauses it** (the clock is
   `Loop`'s, so freezing the loop freezes the world, the timer and the game's
-  update at once, and a tab coming back cannot un-pause it): the same options
+  update at once, and a tab coming back cannot un-pause it). The pause is the
+  CARD's, not its caller's — `Modal.open` takes it and gives it back, counted,
+  for every card of the shell, a reward, a sticker or an officer's file as much
+  as the options (`packages/webshell/view.js`, section 1b) — and the outro is
+  held too, since its slow motion is still the game turning behind the scrim:
+  the same options
   rows, or the one question that throws a run away — leaving does not call
   `endRound`, so an abandoned round writes no score. ESCAPE is that pause on a
   keyboard.
@@ -434,7 +505,12 @@ What a view brings:
   there. A game whose own layout owns that corner moves the pill from its SKIN
   with `--lv-hud-bottom` / `--lv-hud-left` (`games/slipdeck`, whose five-card
   hand fills the foot of the frame) — and `games/arcider` moved its shield rail
-  and speedometer to the right flank instead. **The third star ends the
+  and speedometer to the right flank instead. **The pill carries the round's
+  "!"** just to its right — the band's notification log, which is down over a
+  round; its card pauses the round like every card over one — and a game
+  whose launcher stands there sets `--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)`
+  in its SKIN to stand it on top of the pill instead (`games/blight`,
+  `games/echomaze`). **The third star ends the
   round**: slow motion down to 12 %
   over ~0.6 s, then the end screen, because a player who has maxed a level
   should not have to die to be told so. **Every other ending gets its own outro
@@ -488,7 +564,7 @@ What a view brings:
   the tab order. A reward card is **dismissed by tapping it anywhere** — never
   the three boxes and never the ad, because a tap must not stand in for a
   choice. **Collecting flies the reward into the chip that holds it** — coins,
-  tickets, the level bar, or the album's door for a sticker — and the chip
+  the level bar, or the album's door for a ticket or a sticker — and the chip
   counts up on the landing, because a number that changed behind a blurred
   card changed nothing the player saw. **It carries no words at
   all** — a heading there would read as a third menu entry; what it is and which
@@ -499,7 +575,9 @@ What a view brings:
   map is never involved — and on a game with no hub the tap does what PLAY does
   and opens the LEVEL MAP under it. On `localhost` it pays on every tap, and
   the wallet band says so with a DEV pill in front of the level chip — the one
-  DEV pill the front end draws. `meta:<slug>` is the save, kept
+  DEV pill the front end draws. That fast clock (and the army's
+  hour-a-second) is OFF when the game opens; a tap on the pill turns it on for
+  the session. `meta:<slug>` is the save, kept
   apart from `prog:<slug>` because the two are written on different screens —
   OPTIONS erases both in one row.
   **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
@@ -522,9 +600,10 @@ What a view brings:
   premium pull that drifts is not a promise. An empty tier hands its share
   back so the four still add to one. It branches inside the same `chances()`,
   the one function the readout and the roll both go through. It is its own
-  currency (`save.st`) and it has **no chip in the wallet**: the wallet is
-  what can be spent anywhere, and this is spent in one place — the shop card
-  it is bought on and the pill it is spent from are where it is counted.
+  currency (`save.st`) and, like the ordinary ticket, it has **no figure in
+  the wallet band**: it is counted in the header of the shop and of the
+  album, the two sheets it is bought and spent on, and a super ticket won or
+  bought flies into the collection's chip like a ticket does.
   **The shop around it is a grid of six tiles** — the ticket, the super
   ticket, a mystery gift (the three boxes, which never pay coins), an xp pack
   priced at the player's own level, and two boosts counted in ROUNDS and never
@@ -552,8 +631,8 @@ What a view brings:
   a tap anywhere puts it away, and the one control left is DRAW AGAIN wearing
   the ticket and what the pull costs — gone entirely when the wallet cannot pay
   for it, since a control that cannot act is a wall. A perfect
-  round is offered three gift boxes ON THE ROUND ITSELF — the outro holds the
-  world in slow motion under them, so the end screen arrives with the prize
+  round is offered three gift boxes ON THE ROUND ITSELF — the outro's slow
+  motion freezes under them, like every card over a round, so the end screen arrives with the prize
   already in the wallet — and then one ad to pay **×5** what was in the one it
   picked, offered on a button that NAMES WHAT IT MULTIPLIES and follows with
   the price — `MULTIPLY YOUR COINS` and the shell's painted ×5 plate finishing
@@ -596,22 +675,38 @@ What a view brings:
   nothing to do for two days, which is not a mechanic; the prisoner's five days
   and a squad's mission are not, because a wait that blocks nothing is the
   reason to come back. Four more doors on the
-  hub — DECK, INFIRMARY, PRISON and the CAMP — and every one of them is a VIEW
-  and not a card, because each is a place with a list to manage and a screen a
-  stray tap can close is not a screen anything is composed on. The camp has four
-  tabs. RECRUITS spends the meta layer's own coins and never sells the three
+  hub — CARDS, INFIRMARY, PRISON and the COMMAND, plus a fifth, DEFENSE: a
+  5×4 grid the player fills with a flag, their cards and the objects each
+  biome hands over, stormed while they are away (30 % after 4 h of absence)
+  by their own roster in a mirror, and judged by playing the raid with the
+  battle's own rules — the solidity is read in the report only — and every
+  one of them is a
+  VIEW and not a card, because each is a place with a list to manage and a
+  screen a stray tap can close is not a screen anything is composed on. CARDS
+  has three tabs: CAMP (the roll of every card the camp holds and what it is
+  doing), DECK and COLLECTION. The command has four: MANAGEMENT, RECRUITS,
+  MISSIONS, REGISTER. RECRUITS spends the meta layer's own coins and never rolls the three
   specials: a spy, a scout and a sapper are ANSWERS to something, and a tent
-  that sold them would be selling the solution rather than the army. MISSIONS
+  that sold them would be selling the solution rather than the army. A grade
+  the roster holds none of — a special included — is the one exception: it is
+  always on the shelf, at its lowest free tier, for `recruit.needPrice` coins,
+  because a player stuck for a grade is a closed door and not a cost. MISSIONS
   sends a squad of two to five cards away for 4 to 48 real hours on one of
   `web.army.missions.list` (fifty scenarios), on odds the squad's grades and
   tiers decide and the briefing prints live; the squad is out of every battle
   until it is back, the outcome is drawn at the departure, and it comes back
   with a report written in the scenario's own words — what it paid (coins, xp,
   tickets, a sticker, an officer) or what it cost (wounds, cards lost, coins).
-  CAMP holds five posts (infirmary, prison, formation, missions, camp), filled
-  with the deck's own picker — a card at a post is out of the deck, the squads
-  and every battle — over the roll of every card the camp holds and what it is
-  doing; REGISTER lists every card lost, with where and when.
+  MANAGEMENT holds six posts (camp, formation, missions, infirmary, prison,
+  kitchen), filled with the deck's own picker — a card at a post is out of the
+  deck, the squads and every battle. **Every post is a gauge**: the officer's
+  tier fills it and a TRADE that suits the post adds 10 % (every officer has
+  one of thirty, printed on the back of the card, five per post), and the
+  gauge buys a range — the captives offered, the deck's slots (12 to 20), the
+  mission board (2 to 10), the beds and the cells (2 to 9), and the odds of a
+  good day in the camp, which draws one of forty events every four real hours
+  and tells it at the village; every slot a gauge has not opened is drawn
+  locked. REGISTER lists every card lost, with where and when.
   The layer says exactly one thing
   to the game — `CONFIG.army.deck`, read fresh by `Game.reset()` — and the
   battle hands back exactly one thing, `result.army`, which rides on `endRound`
@@ -1193,6 +1288,21 @@ at the top says which of the three — manifest, draft, empty — is ON SCREEN, 
 source nothing is stored in is disabled rather than silent, and switching asks
 before it replaces unsaved work.
 
+`sticker-review.html` is **the sticker review desk** (`make stickers`): every
+adopted sticker of every game on one page, to be checked by eye and marked
+**Ok** or **Redo** with a note saying what is wrong. The selected cut is shown
+at full size on four backdrops — the silhouette among them, which is what the
+album draws for a sticker nobody owns and where a crumb stops hiding — beside
+the webp that ships, and put back **on the sheet it came from**, found by
+matching its pixels: the sheet is dimmed wherever the cut kept nothing, so art
+the cut lost reads dark and a neighbour's crumb reads bright. An automatic pass
+flags islands, sawn edges and a cut touching its own frame, as a hint and never
+a verdict. The marks land in `lab/sticker-review.json`, **the re-cut's work
+order**, and a verdict remembers the hash of the cut it was given on, so a
+sticker re-cut since comes back as *re-cut* to be checked again. The fix is
+`cut-objects.mjs <slug>-object-sticker … --only 7,12`, which rewrites the cuts
+it names and leaves the rest of the sheet — and its hand repairs — alone.
+
 `view-frame.html` is **the view frame bench**: the one frame every room of the
 place stands in — veil, card, header, the tab bar at the foot and how it shares
 the bottom band with options and help, the page change and the entrance — as
@@ -1288,10 +1398,10 @@ thirteen equally, and a game that wants its own wording writes it under
 `web.copy`, which IS listed. `node tools/lab/scan-text.mjs <slug>` is the same
 list as text, no browser.
 
-The events bench, the copy desk and the village composer are the second, third
-and fourth lab pages with a server of their own (`make events`, `make text`,
-`make village`), for the same two reasons as the store composer plus one more:
-Apply writes.
+The events bench, the copy desk, the village composer and the sticker review
+desk are the other lab pages with a server of their own (`make events`,
+`make text`, `make village`, `make stickers`), for the same two reasons as the
+store composer plus one more: they write.
 
 **`make lab` puts all of them on one port, behind a back office**
 (`tools/lab/serve-lab.mjs`, `http://localhost:8095/`). `lab/index.html` lists
@@ -1300,7 +1410,7 @@ headline of the header comment, so a new page is listed with nothing to
 register), and opens each one in a frame beside the list; the hash is the
 location, so a reload comes back to the same page. The four tools with a server
 are **proxied under a prefix** — `/events/` (and `/events/library`), `/text/`,
-`/store/`, `/village/` — each one the same script its own target runs, started
+`/store/`, `/village/`, `/stickers/` — each one the same script its own target runs, started
 in **its own process** the first time it is opened: the copy desk's scan is
 ~18 s of synchronous CPU, and in a shared process it froze every other tool.
 That prefix is why a page served by a tool **addresses it with relative urls**
@@ -1455,7 +1565,9 @@ Shell (section 5):
   a round — newest on top, four at most, the same notice twice bumps a `×N`
   instead of stacking, a warn or a loss shakes, a timer line drains for 2.2 s,
   and it leaves by flying into the chip it is about (`Notify.target(fn)`,
-  registered by meta.js) or lifting away. Tap dismisses, press holds — except
+  registered by meta.js) or lifting away. The last ten are kept, newest first
+  (`Notify.history()`, `Notify.onLog(fn)`), and the web band reads them back
+  behind its "!" chip. Tap dismisses, press holds — except
   in a round, where the layer is pointer-transparent so it never eats the
   game's tap. The one knob is `CONFIG.notify = { round: "bottom" }` for a board
   that fills the top of the frame (bouncetry, echomaze). Chosen in
@@ -1630,6 +1742,9 @@ its own, deployed by Vercel from this repo.
 - [ ] `node tools/build/build-site.mjs` lists the game (not "skipped") and its card
   reads correctly in `dist/site/index.html`, in both FR and EN.
 - [ ] No external requests (check the network tab is empty).
+- [ ] No text under its floor (18 / 20 / 20 / 22 design px by case and
+  weight, hard constraint 8), on the canvas or in the DOM, on a phone viewport
+  — and no screen whose layout broke to get there.
 - [ ] Every status line, refusal, hint and warning is a `Notify.say` — no
   message painted on the canvas, no message node of the game's own, no
   `Pop.show("alert")` carrying anything but a mistake as it happens.

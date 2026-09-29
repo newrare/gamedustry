@@ -142,7 +142,7 @@
   #hud-score.bump2 { animation:scorebump2 .4s cubic-bezier(.2,1.5,.4,1); }
   @keyframes scorebump  { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
   @keyframes scorebump2 { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
-  #hud-score-lbl { margin-top:2px; font-size:15px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
+  #hud-score-lbl { margin-top:2px; font-size:18px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
   #hud-left, #hud-right { position:relative; z-index:1; min-width:120px; }
   #hud-right { text-align:right; }
   .hud-pill {
@@ -151,7 +151,7 @@
     font-size:28px; font-weight:900; text-shadow:0 2px 6px rgba(0,0,0,.5);
     font-variant-numeric:tabular-nums;
   }
-  .hud-pill .lbl { display:block; font-size:14px; font-weight:800; letter-spacing:2px; opacity:.65; }
+  .hud-pill .lbl { display:block; font-size:18px; font-weight:800; letter-spacing:2px; opacity:.65; }
   .hud-pill.warn { color:var(--danger); border-color:rgba(255,45,85,.5); }
   #hud-left:empty, #hud-right:empty { display:none; }
 
@@ -176,7 +176,7 @@
        .mt-tap      what a tap does — every card carries one
 
      THERE IS NO CROSS. A card says in its last line what the tap does
-     ("Tap to close", "Tap a box", "Tap outside to close"), and that line is
+     ("Tap to close", "Tap a box", "Tap to collect"), and that line is
      the way out: a cross in a corner was a second answer to a question the
      line already answers, and the one control on the card nobody aimed at.
 
@@ -324,6 +324,9 @@
     animation:nt-icon .5s cubic-bezier(.2,1.8,.4,1) both; animation-delay:130ms;
   }
   .nt-ic img { width:100%; height:100%; object-fit:contain; }
+  /* no icon: the kind's dot, in the icon's slot, so the words still align */
+  .nt-ic.dot::before { content:""; width:12px; height:12px; border-radius:50%;
+    background:var(--k); box-shadow:0 0 8px color-mix(in srgb, var(--k) 60%, transparent); }
   .nt-ic svg { width:84%; height:84%; fill:none; stroke:var(--k); stroke-width:2.4;
     stroke-linecap:round; stroke-linejoin:round; }
   .nt-tx { min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; }
@@ -333,7 +336,7 @@
   }
   .nt-s {
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    font-size:17px; font-weight:600; line-height:1.2; color:var(--muted);
+    font-size:20px; font-weight:600; line-height:1.2; color:var(--muted);
   }
   .nt-n {
     position:absolute; top:-14px; right:-10px; min-width:36px; height:36px; padding:0 8px;
@@ -977,7 +980,7 @@
              flex:0 1 auto; min-width:0; white-space:nowrap; text-align:left; }
   .btn-txt b { font-weight:inherit; }
   /* the sub line is READ, not shouted: normal case, lighter, under the verb */
-  .btn-txt i { font-style:normal; font-size:.72em; letter-spacing:.5px; opacity:.82; }
+  .btn-txt i { font-style:normal; font-size:max(20px, .72em); letter-spacing:.5px; opacity:.82; }
   .btn > .btn-reward {
     height:calc(var(--h) * .78); width:auto; flex:0 0 auto;
     margin:calc(var(--h) * -.12) calc(var(--h) * -.1) calc(var(--h) * -.12) calc(var(--h) * .04);
@@ -990,9 +993,13 @@
   .btn-buy { padding-right:calc(var(--h) * .98); }
   .btn-badge {
     position:absolute; z-index:2; right:calc(var(--h) * -.18); top:50%;
-    width:calc(var(--h) * 1.02); height:calc(var(--h) * 1.02); margin-top:calc(var(--h) * -.51);
+    /* a disc, until the figure is wider than one: at the 18 px type floor a
+       four-digit price ("3 750") runs past a small button's disc, so the
+       badge widens into a pill from its right edge instead */
+    box-sizing:border-box; min-width:calc(var(--h) * 1.02); padding:0 calc(var(--h) * .1);
+    height:calc(var(--h) * 1.02); margin-top:calc(var(--h) * -.51);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    border-radius:50%; font-size:.66em; line-height:1; letter-spacing:.5px; white-space:nowrap;
+    border-radius:calc(var(--h) * .51); font-size:max(18px, .66em); line-height:1; letter-spacing:0; white-space:nowrap;
     color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.5);
     background:radial-gradient(circle at 50% 30%, #2a3358, #10142a 70%);
     border:calc(var(--h) * .05) solid var(--gold);
@@ -1223,7 +1230,7 @@
     color:var(--muted); opacity:.45; text-shadow:0 1px 6px rgba(0,0,0,.75);
   }
   .brand-line { font-size:22px; font-weight:800; letter-spacing:2px; line-height:1.2; text-transform:uppercase; }
-  .brand-ver  { font-size:18px; font-weight:700; letter-spacing:1px; line-height:1.2; }
+  .brand-ver  { font-size:20px; font-weight:700; letter-spacing:1px; line-height:1.2; }
   .brand-ver:empty { display:none; }
 
   /* ---- Animated how-to-play demo -------------------------------------------
@@ -1394,7 +1401,7 @@
     0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
     50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
   }
-  .eo-scorelbl { margin-top:12px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
+  .eo-scorelbl { margin-top:12px; font-size:18px; font-weight:800; letter-spacing:6px; color:var(--muted);
     opacity:0; transition:opacity .4s ease; }
   .eo-scorelbl.show { opacity:1; }
   .eo-score {
@@ -3184,6 +3191,7 @@
     function box(n, min) {
       if (!n) return;
       n.style.fontSize = "";                  // back to the size the CSS asks for
+      n.style.whiteSpace = "";
       var size = parseFloat(window.getComputedStyle(n).fontSize);
       var room = n.clientWidth, floor = min || 12;
       if (!size || !room) return;
@@ -3191,6 +3199,10 @@
         size = Math.max(floor, Math.floor(size * room / n.scrollWidth) - 1);
         n.style.fontSize = size + "px";
       }
+      /* THE FLOOR WINS OVER THE ONE LINE. A line still too wide at its floor
+         takes a second one rather than going under it (CLAUDE.md, the type
+         floor): a statement on two lines reads, one in 12 px does not. */
+      if (n.scrollWidth > room) n.style.whiteSpace = "normal";
     }
 
     function all() { for (var id in ROOM) if (ROOM.hasOwnProperty(id)) one(id); }
@@ -3334,7 +3346,8 @@
        icon  a shell piece (coin ticket super xp star sticker trophy), painted
              when the build ships CONFIG.shellArt, or a pictogram (info warn
              lock unlock heart user check x hourglass sparkles eye trash).
-             Default: the kind's own. `null` for none.
+             Default: the kind's own. `null`, or a name not listed here,
+             draws the kind's dot in the same slot, so every line aligns.
        key   what two notices are compared on; default word + sub
        hold  ms fully readable, when a line needs longer than the house 2.2 s
 
@@ -3362,7 +3375,14 @@
 
      It is not cleared on a change of screen: a notice fired as a round ends
      ("Taken to the prison") is exactly the one the next screen must still
-     show. It lives over everything but the flying wallet pieces (z 48), so
+     show.
+
+     IT KEEPS A LOG: the last ten notices of the session, newest first,
+     already translated and shouted (`history()`), and one listener told when
+     it moves (`onLog`). A notice lives 2.2 s, and a player who looked away is
+     owed a way to read it again — the web shell's band draws that as its "!"
+     chip (packages/webshell/meta.js). A repeat of the notice on top of the log
+     bumps its ×N there too, rather than filling the log with one line. It lives over everything but the flying wallet pieces (z 48), so
      the same call reads over a round, a view and a card.
      -------------------------------------------------------------------- */
   var Notify = (function () {
@@ -3394,6 +3414,21 @@
     SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
 
     var live = [], box = null, raf = 0, last = 0, targetOf = null;
+    var LOG_MAX = 10, log = [], logFn = null;
+
+    /* Into the log, newest first. Keyed like a live notice, but only against
+       the entry on top: the same line again after something else was said is
+       a new event, and the log is read as the order things happened in. */
+    function record(key, w, sub, kind, icon) {
+      var top = log[0];
+      if (top && top.key === key) { top.count++; top.at = Date.now(); }
+      else {
+        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon,
+                      html: iconHtml(icon), count: 1, at: Date.now() });
+        if (log.length > LOG_MAX) log.length = LOG_MAX;
+      }
+      if (logFn) logFn(log.length);
+    }
 
     function host() {
       if (box && box.parentNode) return box;
@@ -3404,11 +3439,13 @@
       state(State);
       return box;
     }
+    /* Every notice carries a mark in the same 32 px slot, so the words of a
+       stack — and of the log — start on one line: a name this table does not
+       know, or none at all, is the kind's own dot rather than a gap. */
     function iconHtml(name) {
-      if (!name) return "";
-      var src = ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
+      var src = name && ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
       if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
-      if (!SVG[name]) return "";
+      if (!name || !SVG[name]) return '<span class="nt-ic dot" aria-hidden="true"></span>';
       return '<span class="nt-ic lu"><svg viewBox="0 0 24 24" aria-hidden="true">' + SVG[name] + '</svg></span>';
     }
     function esc(s) {
@@ -3490,6 +3527,7 @@
       var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
       var key = opt.key || (w + "|" + sub);
       var hold = opt.hold || HOLD, i, it;
+      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon);
 
       for (i = 0; i < live.length; i++) {
         it = live[i];
@@ -3540,7 +3578,18 @@
       box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
     }
 
-    return { say: say, clear: clear, target: target, state: state };
+    /* The log, as copies: { word, sub, kind, icon, html, count, at }, the
+       newest first. `html` is the notice's own icon, ready to draw. */
+    function history() {
+      return log.map(function (e) {
+        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon,
+                 html: e.html, count: e.count, at: e.at };
+      });
+    }
+    function onLog(fn) { logFn = fn; }
+
+    return { say: say, clear: clear, target: target, state: state,
+             history: history, onLog: onLog };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------

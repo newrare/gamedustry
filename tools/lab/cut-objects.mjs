@@ -115,6 +115,22 @@
  *   node tools/lab/cut-objects.mjs vipera-object-sticker --adopt 1,2,4 --seq
  *   node tools/lab/cut-objects.mjs radiam --step 18 --min 4000 --keep-partial
  *   node tools/lab/cut-objects.mjs radiam-object-ball-red --grid 5x4
+ *   node tools/lab/cut-objects.mjs pawko-object-sticker --grid 5x4 --solid 250 --only 7,12
+ *   node tools/lab/cut-objects.mjs blight-object-sticker --grid 5,5,5,6 --solid 250 --neck --out /tmp/try
+ *   node tools/lab/cut-objects.mjs gearball-object-sticker --grid 5x4 --solid 250 --pad 80 --margin 30
+ *
+ * --only 7,12 — RE-CUT A FEW, KEEP THE REST
+ * -----------------------------------------
+ * A sheet is cut whole, but a whole re-cut rewrites every file of it — and a
+ * sticker sheet carries cuts that were repaired BY HAND after the tool ran
+ * (pawko's 10, 15 and 16), which a whole re-cut silently undoes. `--only`
+ * runs the same cut and writes the objects it names and nothing else: the
+ * other files of the sheet are not touched, not deleted, not renumbered. It is
+ * what the sticker review desk's REDO list is fixed with (make stickers,
+ * lab/sticker-review.json), and the index is the CUT's, as in the file name.
+ * The flags may differ from the ones the rest of the sheet was cut with; if
+ * they change how many objects the sheet cuts into, the indices may no longer
+ * name the same pictures, and the run says so rather than guessing.
  *
  * --grid COLSxROWS — WHEN SEVERAL SHEETS MUST BE CUT THE SAME WAY
  * ---------------------------------------------------------------
@@ -169,6 +185,8 @@ var envelope = 90;      // how far from the border colour the fill may ever go
 var minArea = 2500;     // a speck below this is paint, not an object
 var solid = [110];      // alpha at which a pixel is the object rather than its glow
 var pad = 20;           // px of margin, and how far an object's glow is followed
+var margin = null;      // --margin: the border alone, the box tightened first
+var neck = false;       // --neck: split touching stickers at their neck, not the cell line
 var keepPartial = false;
 var listOnly = false;
 var adopt = null;
@@ -176,6 +194,8 @@ var adoptAs = null;     // the role the adopted cuts take in art.objects
 var adoptSeq = false;   // number the roles in the order given, not by the cut
 var grid = null;        // "5x4" or "5,5,5,6": the cell is the index, not the blob
 var into = null;        // the game a SHARED sheet's cuts are adopted into
+var only = null;        // the cut indices to write; every other file is left alone
+var outDir = null;      // --out: a TRIAL — cuts and contact sheet go there, nothing tracked moves
 
 /* --grid reads two ways, and the second one exists because a sheet of twenty
    stickers is rarely twenty: the model fills the last row with whatever is
@@ -217,6 +237,8 @@ for (var i = 0; i < argv.length; i++) {
   else if (a === "--envelope") envelope = parseInt(argv[++i], 10);
   else if (a === "--min") minArea = parseInt(argv[++i], 10);
   else if (a === "--pad") pad = parseInt(argv[++i], 10);
+  else if (a === "--margin") margin = parseInt(argv[++i], 10);
+  else if (a === "--neck") neck = true;
   else if (a === "--keep-partial") keepPartial = true;
   else if (a === "--list") listOnly = true;
   else if (a === "--grid") {
@@ -226,6 +248,12 @@ for (var i = 0; i < argv.length; i++) {
   else if (a === "--seq") adoptSeq = true;
   else if (a === "--as") adoptAs = argv[++i];
   else if (a === "--into") into = argv[++i];
+  else if (a === "--out") outDir = path.resolve(argv[++i] || "");
+  else if (a === "--only") {
+    var spec = argv[++i] || "";
+    if (!/^\d+(\s*,\s*\d+)*$/.test(spec)) throw new Error("--only wants cut indices, 7,12");
+    only = spec.split(",").map(function (v) { return parseInt(v.trim(), 10); });
+  }
   else targets.push(a);
 }
 
@@ -526,6 +554,96 @@ function cutJs(b64, o) {
       a[cellAt(p % W, (p / W) | 0)]++;
     }
 
+    /* --neck: WHERE TWO STICKERS TOUCH, NOT WHERE THE GRID SAYS. Two die-cut
+       stickers whose white outlines touch are one component at every bar —
+       the outline is as opaque as the art — and the split above then saws
+       them along the cell line: blight's witch lost the bottom of her outline
+       to the hat under her, and a sliver of the rainbow ball's outline rode
+       on the three balls beside it. With --neck the component is ERODED until
+       it falls apart into one core per hot cell, and every pixel then goes to
+       the core it is nearest to THROUGH THE SHAPE: the seam lands in the
+       middle of the neck where the two touch, and each sticker keeps the rest
+       of its outline. A component erosion never separates keeps the grid
+       seam. */
+    const NECK = ${o.neck ? "true" : "false"};
+    const necks = new Map();                   // old id -> the piece of every pixel
+    const around = (i, bw, bh) => {
+      const x = i % bw, y = (i / bw) | 0;
+      return [x > 0 ? i - 1 : -1, x < bw - 1 ? i + 1 : -1, y > 0 ? i - bw : -1, y < bh - 1 ? i + bw : -1];
+    };
+    const neckSplit = (b, hot, ids, weight) => {
+      const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1, n = bw * bh;
+      const inC = new Uint8Array(n);
+      for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) {
+        if (label[(b.y0 + y) * W + b.x0 + x] === b.id) inC[y * bw + x] = 1;
+      }
+      // how deep every pixel sits inside the component, in 4-steps
+      const dist = new Int32Array(n), q = new Int32Array(n);
+      let h = 0, t = 0;
+      for (let i = 0; i < n; i++) {
+        if (!inC[i]) continue;
+        if (around(i, bw, bh).some((j) => j < 0 || !inC[j])) { dist[i] = 1; q[t++] = i; }
+      }
+      while (h < t) {
+        const i = q[h++];
+        for (const j of around(i, bw, bh)) if (j >= 0 && inC[j] && !dist[j]) { dist[j] = dist[i] + 1; q[t++] = j; }
+      }
+      /* The depth that separates the MOST cells wins, the shallowest on a tie.
+         A chain of five welded stickers does not come apart at one depth: the
+         first two part at 4 px, the fifth only at 11, and a cell whose "object"
+         was only a neighbour's overflow never gets a core at all — it is then
+         simply not a piece, and its pixels go to the cores around it. */
+      const core = new Int32Array(n);
+      let best = null;
+      for (let r = 2; r <= 60; r++) {
+        core.fill(0);
+        const found = [];
+        for (let i = 0; i < n; i++) {
+          if (dist[i] <= r || core[i]) continue;
+          const id = found.length + 1;
+          const per = new Map();
+          let area = 0;
+          h = 0; t = 0; q[t++] = i; core[i] = id;
+          while (h < t) {
+            const k = q[h++];
+            area++;
+            const c = cellAt(b.x0 + k % bw, b.y0 + ((k / bw) | 0));
+            per.set(c, (per.get(c) || 0) + 1);
+            for (const j of around(k, bw, bh)) if (j >= 0 && dist[j] > r && !core[j]) { core[j] = id; q[t++] = j; }
+          }
+          /* a core speaks for a cell only when it sits in it almost whole and
+             weighs a real share of what the component has there: a core that
+             still straddles two stickers, or a crumb of ear parted from its
+             head, is not one of the objects and is grown over instead */
+          let cell = -1;
+          per.forEach((v, c) => {
+            const at = hot.indexOf(c);
+            if (at >= 0 && v >= area * 0.75 && area >= weight[c] * 0.2) cell = c;
+          });
+          found.push(cell);
+        }
+        if (!found.length) break;
+        const pieceOf = found.map((c) => { const at = hot.indexOf(c); return at >= 0 ? ids[at] : 0; });
+        const covered = new Set(pieceOf.filter(Boolean)).size;
+        if (!best || covered > best.covered) best = { covered, core: Int32Array.from(core), pieceOf };
+        if (covered === hot.length) break;
+      }
+      if (!best || best.covered < 2) return null;
+      {
+        const { core, pieceOf } = best;
+        // the cores grow back through the component, nearest first
+        const own = new Int32Array(n);
+        h = 0; t = 0;
+        for (let i = 0; i < n; i++) if (core[i] && pieceOf[core[i] - 1]) { own[i] = pieceOf[core[i] - 1]; q[t++] = i; }
+        while (h < t) {
+          const i = q[h++];
+          for (const j of around(i, bw, bh)) if (j >= 0 && inC[j] && !own[j]) { own[j] = own[i]; q[t++] = j; }
+        }
+        return { x0: b.x0, y0: b.y0, bw, own };
+      }
+      return null;
+    };
+
     let nextId = boxes.length + 1;
     const owner = new Map();                   // old id -> the piece each cell joins
     const pieces = [];
@@ -533,7 +651,12 @@ function cutJs(b64, o) {
       const a = weight.get(b.id);
       if (!a) continue;
       const hot = [];
-      for (let k = 0; k < CELLS; k++) if (a[k] >= b.area * SPLIT && a[k] >= ${o.minArea}) hot.push(k);
+      /* with --neck a cell is hot when it holds a real MASS of its own, not only
+         a share of the component: in a chain of five welded stickers each cell
+         is under 18% of the whole. A hot cell with nothing of its own in it is
+         harmless there — erosion finds it no core and it is not a piece. */
+      const mass = NECK ? (W * H / CELLS) * 0.12 : Infinity;
+      for (let k = 0; k < CELLS; k++) if ((a[k] >= b.area * SPLIT || a[k] >= mass) && a[k] >= ${o.minArea}) hot.push(k);
       if (hot.length < 2) continue;
       const ids = hot.map((k, i) => (i === 0 ? b.id : nextId++));
       const map = new Int32Array(CELLS);
@@ -549,6 +672,7 @@ function cutJs(b64, o) {
         map[k] = ids[best];
       }
       owner.set(b.id, map);
+      if (NECK) { const nk = neckSplit(b, hot, ids, a); if (nk) necks.set(b.id, nk); }
       ids.forEach((id) => pieces.push(id));
     }
 
@@ -558,9 +682,11 @@ function cutJs(b64, o) {
         const id = label[p];
         if (!id) continue;
         const map = owner.get(id);
-        const to = map ? map[cellAt(p % W, (p / W) | 0)] : id;
-        label[p] = to;
         const x = p % W, y = (p / W) | 0;
+        const nk = necks.get(id);
+        const to = nk ? (nk.own[(y - nk.y0) * nk.bw + (x - nk.x0)] || map[cellAt(x, y)])
+          : map ? map[cellAt(x, y)] : id;
+        label[p] = to;
         const box = fresh.get(to);
         if (!box) fresh.set(to, { id: to, area: 1, x0: x, y0: y, x1: x, y1: y, partial: false });
         else {
@@ -666,11 +792,35 @@ function cutJs(b64, o) {
     }
   }
 
+  /* --margin: the empty border a cut is written with, when it must not be
+     --pad. Pad is how far an object's glow is FOLLOWED, and it used to be the
+     border too — so reaching a spark 80 px away also wrote 80 px of nothing
+     around every cut, and the album, which fits a picture to its tile, drew
+     that sticker smaller than its neighbours. With a margin the box is first
+     tightened to what can be seen (alpha 8 and up; the haze under it is 1 or
+     2), then the margin is added. Without it nothing changes. */
+  const MARGIN = ${o.margin == null ? "null" : o.margin};
+  if (MARGIN !== null) {
+    const tight = new Map(kept.map((b) => [b.id, { x0: W, y0: H, x1: -1, y1: -1 }]));
+    for (let p = 0; p < W * H; p++) {
+      const t = tight.get(label[p]);
+      if (!t || px[p * 4 + 3] < 8) continue;
+      const x = p % W, y = (p / W) | 0;
+      if (x < t.x0) t.x0 = x; if (x > t.x1) t.x1 = x;
+      if (y < t.y0) t.y0 = y; if (y > t.y1) t.y1 = y;
+    }
+    for (const b of kept) {
+      const t = tight.get(b.id);
+      if (t.x1 >= 0) { b.x0 = t.x0; b.y0 = t.y0; b.x1 = t.x1; b.y1 = t.y1; }
+    }
+  }
+  const border = MARGIN === null ? pad : MARGIN;
+
   // 6. one canvas per object: alpha eroded by a pixel, then feathered by one.
   const out = [];
   for (const b of kept) {
-    const w = b.x1 - b.x0 + 1 + pad * 2;
-    const h = b.y1 - b.y0 + 1 + pad * 2;
+    const w = b.x1 - b.x0 + 1 + border * 2;
+    const h = b.y1 - b.y0 + 1 + border * 2;
     const oc = document.createElement("canvas");
     oc.width = w; oc.height = h;
     const og = oc.getContext("2d");
@@ -688,7 +838,7 @@ function cutJs(b64, o) {
       inside(x - 1, y) && inside(x + 1, y) && inside(x, y - 1) && inside(x, y + 1);
 
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const sx = b.x0 - pad + x, sy = b.y0 - pad + y;
+      const sx = b.x0 - border + x, sy = b.y0 - border + y;
       let alpha;
       if (byAlpha) {
         alpha = inside(sx, sy)
@@ -706,7 +856,8 @@ function cutJs(b64, o) {
       dst.data[d + 3] = alpha;
     }
     og.putImageData(dst, 0, 0);
-    out.push({ w, h, area: b.area, x: b.x0, y: b.y0, partial: b.partial, uri: oc.toDataURL("image/png") });
+    out.push({ w, h, area: b.area, x: b.x0, y: b.y0, ox: b.x0 - border, oy: b.y0 - border,
+      partial: b.partial, uri: oc.toDataURL("image/png") });
   }
 
   return {
@@ -850,6 +1001,14 @@ async function main() {
     });
     return;
   }
+  if (only && list.length !== 1) {
+    console.error("--only works on one sheet at a time; name it explicitly");
+    process.exit(1);
+  }
+  if (only && adopt) {
+    console.error("--only rewrites cuts that are already adopted; it does not adopt. Drop --adopt.");
+    process.exit(1);
+  }
   if (adopt && list.length !== 1) {
     console.error("--adopt works on one sheet at a time; name it explicitly");
     process.exit(1);
@@ -876,6 +1035,15 @@ async function main() {
     process.exit(1);
   }
 
+  /* --out is a trial: the same cut, written somewhere nothing reads, so a
+     sheet can be tried under ten sets of flags without the tracked cuts, the
+     contact sheet or a manifest moving. It cannot adopt — a role pointing at
+     a trial would point at nothing. */
+  if (outDir && adopt) {
+    console.error("--out is a trial and cannot adopt; drop --adopt, or drop --out to cut for real");
+    process.exit(1);
+  }
+  if (outDir) { OUT_DIR = outDir; CONTACT_DIR = outDir; }
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.mkdirSync(CONTACT_DIR, { recursive: true });
 
@@ -891,7 +1059,7 @@ async function main() {
     var b64 = fs.readFileSync(sheet.src).toString("base64");
     var r = await evaluate(client, sid, cutJs(b64, {
       step: step, envelope: envelope, minArea: minArea, pad: pad,
-      keepPartial: keepPartial, solid: solid, grid: grid
+      keepPartial: keepPartial, solid: solid, grid: grid, margin: margin, neck: neck
     }));
 
     console.log("\n" + path.relative(ROOT, sheet.src) + "  " + r.sheet.w + "x" + r.sheet.h +
@@ -901,23 +1069,55 @@ async function main() {
     console.log("  " + r.objects.length + " objects kept, " + r.dropped +
       " dropped (specks and the ones the sheet's edge cuts)");
 
-    // a previous run's cuts of this sheet go, or a shorter run leaves orphans
-    fs.readdirSync(OUT_DIR).forEach(function (f) {
-      if (f.indexOf(sheet.slug + "-" + sheet.name + "-") === 0) fs.rmSync(path.join(OUT_DIR, f));
+    var prefix = sheet.slug + "-" + sheet.name + "-";
+    var onDisk = fs.readdirSync(OUT_DIR).filter(function (f) {
+      return f.indexOf(prefix) === 0 && /^\d+\.png$/.test(f.slice(prefix.length));
     });
+
+    if (only) {
+      var missing = only.filter(function (n) { return n < 1 || n > r.objects.length; });
+      if (missing.length) {
+        console.error("  --only " + missing.join(",") + ": this cut has " + r.objects.length +
+                      " objects, so there is nothing at that index. Nothing written.");
+        process.exit(1);
+      }
+      if (onDisk.length !== r.objects.length) {
+        console.log("  WARNING: these flags cut the sheet into " + r.objects.length + " objects where " +
+                    onDisk.length + " files are on disk — an index may no longer name the same picture.");
+      }
+      if (r.empties && r.empties.length) {
+        console.log("  WARNING: EMPTY CELLS " + r.empties.join(" ") + " — every index after them has shifted.");
+      }
+    } else {
+      // a previous run's cuts of this sheet go, or a shorter run leaves orphans
+      onDisk.forEach(function (f) { fs.rmSync(path.join(OUT_DIR, f)); });
+    }
 
     var files = [];
     r.objects.forEach(function (o, i) {
+      if (only && only.indexOf(i + 1) < 0) return;
       var file = path.join(OUT_DIR, sheet.slug + "-" + sheet.name + "-" + String(i + 1).padStart(2, "0") + ".png");
       var bytes = write(file, o.uri);
       files.push(file);
       console.log("  " + String(i + 1).padStart(2, "0") + "  " +
         String(o.w).padStart(4) + "x" + String(o.h).padEnd(4) +
         "  " + String(Math.round(bytes / 1024)).padStart(4) + " KB" +
+        "  at " + o.ox + "," + o.oy +
         (o.partial ? "  (cut by the sheet's edge)" : ""));
     });
 
-    if (r.objects.length) {
+    if (only) {
+      /* its own contact sheet, so the whole-sheet one a full cut wrote stays
+         what it was — and the review desk is where the result is checked */
+      var picked = r.objects.filter(function (o, i) { return only.indexOf(i + 1) >= 0; });
+      var contactOnly = path.join(CONTACT_DIR, sheet.slug + "-" + sheet.name + "-only.png");
+      write(contactOnly, await evaluate(client, sid, contactJs(picked)));
+      console.log("\n  rewrote " + files.length + " of " + onDisk.length + " files; the others were not touched.");
+      console.log("  look at it:  open " + path.relative(ROOT, contactOnly) + "   (numbered in the order of --only)");
+      console.log("  check it:    make stickers   — the re-cut ones come back as RE-CUT");
+      console.log("  undo it:     git restore " + files.map(function (f) { return path.relative(ROOT, f); }).join(" "));
+      console.log("  then:        node tools/lab/encode-art.mjs " + sheet.slug);
+    } else if (r.objects.length) {
       var contact = path.join(CONTACT_DIR, sheet.slug + "-" + sheet.name + ".png");
       write(contact, await evaluate(client, sid, contactJs(r.objects)));
       console.log("\n  look at it:  open " + path.relative(ROOT, contact));

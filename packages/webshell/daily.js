@@ -132,11 +132,9 @@
      had today's" is lifted. Nothing here reaches a deployed site, whose
      hostname is none of those, and the band wears a DEV pill (meta.js) so a
      screenshot can never be mistaken for the real thing. */
-  var DEV = (function () {
-    var h = location.hostname;
-    return h === "localhost" || h === "127.0.0.1" || h === "" ||
-           h === "::1" || /^192\.168\./.test(h) || /^10\./.test(h);
-  })();
+  /* Read on every call, not once: the band's DEV pill switches it live
+     (packages/webshell/meta.js, W.Dev). */
+  function dev() { return !!(W.Dev && W.Dev.on()); }
 
   function today() {
     var d = new Date();
@@ -184,7 +182,7 @@
                   r: was ? st.r : null, c: was ? [1] : [] });
   }
 
-  function claimed() { return !DEV && state().d === today(); }
+  function claimed() { return !dev() && state().d === today(); }
 
   /* WHICH CELL IS LIVE, and it is the CALENDAR that says so — day one is the
      day the road was first seen and every day since has its own node, claimed
@@ -198,7 +196,7 @@
      instead: seven taps show a whole week, the starred day included. */
   function liveCell() {
     var s = state();
-    if (DEV) return s.d ? s.k + 1 : Math.max(1, s.k || 1);
+    if (dev()) return s.d ? s.k + 1 : Math.max(1, s.k || 1);
     if (!s.s) return 1;
     return Math.max(1, dayNum(today()) - dayNum(s.s) + 1);
   }
@@ -490,9 +488,9 @@
      tap that follows is the same tap the strip has always answered. Nothing is
      navigated — the wallet band this pays into is the hub's own.
 
-     It is dismissed by a tap outside, like every card of this layer; the days
-     are `<button>`s, which is what keeps a finger landing on one from being
-     read as a tap on the scrim (packages/webshell/view.js, open). */
+     It is dismissed by a tap anywhere, like every card of this layer; the
+     days are `<button>`s, which is what keeps a finger landing on one from
+     being read as that tap (packages/webshell/view.js, open). */
   var roadCard = null;
 
   function openRoad() {

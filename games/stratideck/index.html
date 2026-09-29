@@ -142,7 +142,7 @@
   #hud-score.bump2 { animation:scorebump2 .4s cubic-bezier(.2,1.5,.4,1); }
   @keyframes scorebump  { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
   @keyframes scorebump2 { 0%{transform:scale(1);} 28%{transform:scale(1.38);} 100%{transform:scale(1);} }
-  #hud-score-lbl { margin-top:2px; font-size:15px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
+  #hud-score-lbl { margin-top:2px; font-size:18px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
   #hud-left, #hud-right { position:relative; z-index:1; min-width:120px; }
   #hud-right { text-align:right; }
   .hud-pill {
@@ -151,7 +151,7 @@
     font-size:28px; font-weight:900; text-shadow:0 2px 6px rgba(0,0,0,.5);
     font-variant-numeric:tabular-nums;
   }
-  .hud-pill .lbl { display:block; font-size:14px; font-weight:800; letter-spacing:2px; opacity:.65; }
+  .hud-pill .lbl { display:block; font-size:18px; font-weight:800; letter-spacing:2px; opacity:.65; }
   .hud-pill.warn { color:var(--danger); border-color:rgba(255,45,85,.5); }
   #hud-left:empty, #hud-right:empty { display:none; }
 
@@ -176,7 +176,7 @@
        .mt-tap      what a tap does — every card carries one
 
      THERE IS NO CROSS. A card says in its last line what the tap does
-     ("Tap to close", "Tap a box", "Tap outside to close"), and that line is
+     ("Tap to close", "Tap a box", "Tap to collect"), and that line is
      the way out: a cross in a corner was a second answer to a question the
      line already answers, and the one control on the card nobody aimed at.
 
@@ -324,6 +324,9 @@
     animation:nt-icon .5s cubic-bezier(.2,1.8,.4,1) both; animation-delay:130ms;
   }
   .nt-ic img { width:100%; height:100%; object-fit:contain; }
+  /* no icon: the kind's dot, in the icon's slot, so the words still align */
+  .nt-ic.dot::before { content:""; width:12px; height:12px; border-radius:50%;
+    background:var(--k); box-shadow:0 0 8px color-mix(in srgb, var(--k) 60%, transparent); }
   .nt-ic svg { width:84%; height:84%; fill:none; stroke:var(--k); stroke-width:2.4;
     stroke-linecap:round; stroke-linejoin:round; }
   .nt-tx { min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; }
@@ -333,7 +336,7 @@
   }
   .nt-s {
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    font-size:17px; font-weight:600; line-height:1.2; color:var(--muted);
+    font-size:20px; font-weight:600; line-height:1.2; color:var(--muted);
   }
   .nt-n {
     position:absolute; top:-14px; right:-10px; min-width:36px; height:36px; padding:0 8px;
@@ -977,7 +980,7 @@
              flex:0 1 auto; min-width:0; white-space:nowrap; text-align:left; }
   .btn-txt b { font-weight:inherit; }
   /* the sub line is READ, not shouted: normal case, lighter, under the verb */
-  .btn-txt i { font-style:normal; font-size:.72em; letter-spacing:.5px; opacity:.82; }
+  .btn-txt i { font-style:normal; font-size:max(20px, .72em); letter-spacing:.5px; opacity:.82; }
   .btn > .btn-reward {
     height:calc(var(--h) * .78); width:auto; flex:0 0 auto;
     margin:calc(var(--h) * -.12) calc(var(--h) * -.1) calc(var(--h) * -.12) calc(var(--h) * .04);
@@ -990,9 +993,13 @@
   .btn-buy { padding-right:calc(var(--h) * .98); }
   .btn-badge {
     position:absolute; z-index:2; right:calc(var(--h) * -.18); top:50%;
-    width:calc(var(--h) * 1.02); height:calc(var(--h) * 1.02); margin-top:calc(var(--h) * -.51);
+    /* a disc, until the figure is wider than one: at the 18 px type floor a
+       four-digit price ("3 750") runs past a small button's disc, so the
+       badge widens into a pill from its right edge instead */
+    box-sizing:border-box; min-width:calc(var(--h) * 1.02); padding:0 calc(var(--h) * .1);
+    height:calc(var(--h) * 1.02); margin-top:calc(var(--h) * -.51);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    border-radius:50%; font-size:.66em; line-height:1; letter-spacing:.5px; white-space:nowrap;
+    border-radius:calc(var(--h) * .51); font-size:max(18px, .66em); line-height:1; letter-spacing:0; white-space:nowrap;
     color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.5);
     background:radial-gradient(circle at 50% 30%, #2a3358, #10142a 70%);
     border:calc(var(--h) * .05) solid var(--gold);
@@ -1223,7 +1230,7 @@
     color:var(--muted); opacity:.45; text-shadow:0 1px 6px rgba(0,0,0,.75);
   }
   .brand-line { font-size:22px; font-weight:800; letter-spacing:2px; line-height:1.2; text-transform:uppercase; }
-  .brand-ver  { font-size:18px; font-weight:700; letter-spacing:1px; line-height:1.2; }
+  .brand-ver  { font-size:20px; font-weight:700; letter-spacing:1px; line-height:1.2; }
   .brand-ver:empty { display:none; }
 
   /* ---- Animated how-to-play demo -------------------------------------------
@@ -1394,7 +1401,7 @@
     0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
     50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
   }
-  .eo-scorelbl { margin-top:12px; font-size:16px; font-weight:800; letter-spacing:6px; color:var(--muted);
+  .eo-scorelbl { margin-top:12px; font-size:18px; font-weight:800; letter-spacing:6px; color:var(--muted);
     opacity:0; transition:opacity .4s ease; }
   .eo-scorelbl.show { opacity:1; }
   .eo-score {
@@ -1631,12 +1638,12 @@
   }
 
   /* ---- THE CARDS -----------------------------------------------------------
-     What follows, between THE CARD ITSELF and END OF THE CARD, is the block
-     "Copy the card CSS" takes out of lab/stratideck-card.html, pasted as it
-     comes and left unindented so the next paste is a clean diff. Which frame
-     and which badges it wears is CONFIG.cards in game.js ("Copy the card
-     settings", same page). Nothing in it is edited here: a card is tuned in
-     the lab and the lab is what ships. */
+     What follows, between THE CARD ITSELF and END OF THE CARD, is THE card
+     stylesheet, and this is the one copy of it: lab/stratideck-card.html,
+     the design bench, links this file rather than carrying its own, so a
+     card rule is edited HERE and the bench shows it on a reload. Left
+     unindented, as it was written. Which frame and which badges it wears is
+     CONFIG.cards in game.js ("Copy the card settings", on the bench). */
 /* ===========================================================================
    THE CARD ITSELF — from here to the END OF THE CARD marker is what ships.
    =========================================================================== */
@@ -1706,19 +1713,29 @@
   filter:drop-shadow(0 1.5em 2em rgba(0,0,0,.6)) drop-shadow(0 0 1.5em color-mix(in srgb, var(--rar) 45%, transparent));
 }
 .c-hero.missing { align-items:center; }
-.c-hero.missing::before { content:attr(data-missing); font-size:5em; letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
+.c-hero.missing::before { content:attr(data-missing); font-size:max(calc(18px * var(--sk, 1)), 5em); letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
 
 /* 4. the badges. An SVG shape, a number over it, a shadow on the box. The
    colour is `--bc`: the card's rarity, for both roles. `.f` is
    the coloured body of the shape, `.f2` its darker second colour, `.x` its
    neutral parts (a blade, a chain, a plate), `.g` the gloss. Every design
    has a default place for each role and hangs a little over the card's edge;
-   the `at-*` classes override the place. z-index 20: above the body, always. */
+   the `at-*` classes override the place. z-index 20: above the body, always.
+   Its scale is two numbers: `--bs`, the format's and the design's (the rules
+   below), and `--bk`, the card's own knob for that role — `--k-rank` or
+   `--k-tier`, set on the card per format (CONFIG.cards), 1 if it names none.
+   `--bz` is their product, and the number's floor is divided by it so the
+   figure stays at 18 px whatever the badge is scaled to. `--bdx` / `--bdy`
+   move it off its design's own place — `--x-rank` / `--y-rank` (and -tier)
+   on the card, in percents of its width, 0 if it names none. */
 .c-badge {
   z-index:20; --bc:var(--rar); --rim2:var(--gold); --rim3:var(--gold3); --rot:0deg; --bs:1; --tx:0; --ty2:0; --ty:50%;
-  transform:translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bs));
+  --bk:1; --bz:calc(var(--bs) * var(--bk)); --bdx:0em; --bdy:0em;
+  transform:translate(var(--bdx), var(--bdy)) translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bz));
   filter:drop-shadow(0 .8em 1.4em rgba(0,0,0,.6)) drop-shadow(0 0 1.2em color-mix(in srgb, var(--bc) 55%, transparent));
 }
+.c-badge.rank { --bk:var(--k-rank, 1); --bdx:calc(var(--x-rank, 0) * 1em); --bdy:calc(var(--y-rank, 0) * 1em); }
+.c-badge.tier { --bk:var(--k-tier, 1); --bdx:calc(var(--x-tier, 0) * 1em); --bdy:calc(var(--y-tier, 0) * 1em); }
 /* the tier badge: same rarity colour, but a dark steel rim and a hard shadow */
 .c-badge.tier { --rim2:#1a1d24; --rim3:#0b0d12; filter:drop-shadow(.7em .9em 0 rgba(0,0,0,.78)); }
 .c-badge svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
@@ -1729,11 +1746,11 @@
 .c-badge .d  { fill:url(#bx-shade); pointer-events:none; }
 .c-badge span {
   position:absolute; left:50%; top:var(--ty); transform:translate(-50%, -50%);
-  font-size:10em; font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
+  font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 10em); font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
   color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.45), 0 0 .5em rgba(0,0,0,.4);
 }
 .c-badge span small { font-size:.36em; font-weight:800; letter-spacing:.15em; margin-right:.25em; vertical-align:.25em; }
-.c-badge.tier span { font-size:9em; color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
+.c-badge.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 9em); color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
 .card:not(.rank-on) .c-badge.rank { display:none; }
 .card:not(.tier-on) .c-badge.tier { display:none; }
 
@@ -1750,11 +1767,11 @@
 .d-medal.tier   { width:15em; height:21em; right:-3.5em; bottom:22em; --ty:67%; --rot:10deg; }
 .d-dogtag.rank  { width:16em; height:32em; left:3em; top:-8em; --rot:-7deg; --ty:68%; }
 .d-dogtag.tier  { width:12em; height:24em; right:-2.5em; top:-6em; --rot:9deg; --ty:68%; }
-.d-dogtag.tier span { font-size:6.5em; }
+.d-dogtag.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 6.5em); }
 .d-burst.rank   { width:27em; height:27em; left:-6em; top:-6em; --rot:-12deg; }
 .d-burst.tier   { width:19em; height:19em; right:-4em; bottom:24em; --rot:10deg; }
 .d-scroll.rank  { width:46em; height:16em; left:50%; top:-5em; --tx:-50%; }
-.d-scroll.rank span { font-size:8.5em; }
+.d-scroll.rank span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 8.5em); }
 .d-scroll.tier  { width:30em; height:11em; left:50%; bottom:-3.5em; --tx:-50%; }
 
 /* the placement override */
@@ -1776,13 +1793,16 @@
    the tier bottom-right, the macaron bottom-left — a card read small in a
    list and the same card opened big must not move a badge between them.
    `--ps` is its scale, which the game raises with the badges on a card
-   dealt small; it grows out of its own corner. */
+   dealt small, times `--k-perk`, the card's own knob per format
+   (CONFIG.cards); it grows out of its own corner, and `--x-perk` /
+   `--y-perk` move it, in percents of the card's width. */
 .c-perk {
   z-index:21; left:-4em; bottom:-4em; width:19em; height:19em; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
   box-shadow:0 0 0 1.3em var(--gold), 0 0 0 2em #0b0d12, 0 .9em 1.6em rgba(0,0,0,.6);
-  transform:scale(var(--ps, 1)); transform-origin:0 100%;
+  transform:translate(calc(var(--x-perk, 0) * 1em), calc(var(--y-perk, 0) * 1em)) scale(calc(var(--ps, 1) * var(--k-perk, 1)));
+  transform-origin:0 100%;
 }
 .c-perk svg {
   width:60%; height:60%; overflow:visible;
@@ -1808,10 +1828,10 @@
 }
 .c-plate::before { top:0; } .c-plate::after { bottom:0; }
 .c-name {
-  display:block; font-size:9em; font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
+  display:block; font-size:calc(max(calc(18px * var(--sk, 1)), 9em) * var(--nfit, 1)); font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
   color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.6), 0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
 }
-.c-tier { display:block; margin-top:.6em; font-size:4.2em; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
+.c-tier { display:block; margin-top:.6em; font-size:calc(max(calc(18px * var(--sk, 1)), 4.2em) * var(--tfit, 1)); white-space:nowrap; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
 .c-pips { left:0; right:0; bottom:1.6em; z-index:6; display:flex; justify-content:center; gap:1.4em; }
 .c-pips i {
   width:2.6em; height:2.6em; transform:rotate(45deg); border-radius:.4em;
@@ -2168,7 +2188,18 @@
 .fmt-mid .c-hero.missing, .fmt-tiny .c-hero.missing { display:flex; align-items:center; justify-content:center; }
 .fmt-mid .c-crest { right:3.5em; top:3.5em; width:18em; height:20em; }
 .fmt-mid .c-plate { bottom:4em; padding:1.6em 4em 1.2em; }
-.fmt-mid .c-name { font-size:10em; letter-spacing:.1em; }
+/* THE WORDS ALLOWED UNDER THEIR FLOOR: the plate's, on the face of a mid
+   card (the grade's name) and of a full one (the name and the rarity).
+   LIEUTENANT and SERGEANT do not fit a 112 px square at 18 px, nor
+   LEGENDARY a 125 px card, and the plate is where the card is read, so a
+   line wider than its plate is shrunk to it — `--nfit` / `--tfit` — and
+   nothing else on any card is. */
+.fmt-mid .c-name { font-size:calc(max(calc(18px * var(--sk, 1)), 10em) * var(--nfit, 1)); letter-spacing:.1em; }
+/* ...at ONE size per line: an officer's card takes the size the longest
+   grade and the longest rarity need (game.js, plateFit, on the root); an
+   object keeps its own, measured on the card (fitName) */
+.fmt-full:not(.object) { --nfit:var(--nfit-full, 1); --tfit:var(--tfit-full, 1); }
+.fmt-mid:not(.object) { --nfit:var(--nfit-mid, 1); }
 .fmt-mid .c-tier, .fmt-mid .c-pips { display:none; }
 .fmt-mid.style-steel .c-scene { inset:4.5em 4.5em 7.5em; }
 .fmt-mid.style-steel .c-plate { bottom:9em; }
@@ -2198,8 +2229,8 @@
    size is a fraction of a 300px card and reads as a speck on a 64px one, so
    every shape is re-measured here rather than scaled. */
 .fmt-tiny .c-badge { --bs:1; --rot:0deg; --tx:0; --ty2:0; }
-.fmt-tiny .c-badge span { font-size:23em; }
-.fmt-tiny .c-badge.tier span { font-size:19em; }
+.fmt-tiny .c-badge span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 23em); }
+.fmt-tiny .c-badge.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 19em); }
 .fmt-tiny .c-badge.rank { right:auto; bottom:auto; left:-4em; top:-4em; }
 .fmt-tiny .d-shield.rank { width:46em; height:50em; }
 .fmt-tiny .d-crown.rank  { width:54em; height:36em; left:-5em; top:-3em; }
@@ -2239,7 +2270,7 @@
 .card.back .c-mark, .card.back .c-hero, .card.back .c-badge, .card.back .c-plate, .card.back .c-pips, .card.back .c-crest, .card.back .c-frame::after { display:none; }
 .card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
 .card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
-.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:14em; font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
+.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:max(calc(18px * var(--sk, 1)), 14em); font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
 .card.back.fmt-tiny .c-back img { width:70%; }
 .card.back.fmt-tiny .c-back::after { display:none; }
 
@@ -2252,7 +2283,7 @@
 .card.object .c-hero { align-items:center; }
 .card.object .c-hero img { max-width:82%; max-height:82%; }
 .fmt-mid.object .c-hero img, .fmt-tiny.object .c-hero img { height:74%; margin:0; }
-.fmt-mid.object .c-name { font-size:8.5em; }
+.fmt-mid.object .c-name { font-size:calc(max(calc(18px * var(--sk, 1)), 8.5em) * var(--nfit, 1)); }
 
 /* a GHOST: a card the player has never had — never owned for an officer,
    never met for an object. The painted piece flattened to its own WHITE
@@ -2285,18 +2316,17 @@
     background:rgba(6,9,26,.58); box-shadow:inset 0 0 0 2px rgba(242,193,78,.35);
   }
 
-  /* THE BADGES AT A PLAYING SIZE (game.js, sizeNode): a card dealt smaller
-     than the lab composed it keeps its grade and its tier readable — and the
-     macaron with them, read at the same glance. */
-  .card.fit .c-badge { --bs:var(--fit); }
-  .card.fit.fmt-mid .c-badge { --bs:calc(.8 * var(--fit)); }
-
-  .card.fit .c-perk { --ps:var(--fit); }
-  .card.fit.fmt-mid .c-perk { --ps:calc(.8 * var(--fit)); }
-  /* ...and what those badges take from the plate, the name gives back: the
-     longest grade (LIEUTENANT) runs under the macaron on a square under
-     200 px, so the square's name is drawn smaller and tighter there. */
-  .card.fit.fmt-mid .c-name { font-size:7.6em; letter-spacing:.05em; }
+  /* THE SIZE OF A CARD IS ONE NUMBER. There are three cards — full, mid,
+     tiny — each composed ONCE, in lab/stratideck-card.html, at its
+     reference width (CONFIG.cards.rfull / rmid / rtiny), and every place
+     shows that card as a whole at its own width. Everything above is in em
+     (1% of the card's width), so it follows the width on its own; the one
+     thing that would not is a text FLOOR, written in px — so every floor is
+     `calc(18px * var(--sk))`, where `--sk` is the width over the reference
+     (game.js, sizeNode). A card dealt at 2.5× its reference is therefore
+     the reference card at 2.5×, words included, and never a card laid out
+     again for its size. `--sk` is never under 1: a card squeezed under its
+     reference keeps its words at their floor. */
 
   /* A CARD ALREADY TURNED OVER ONCE, back face down: the same cloth with a
      dog-eared corner and no question mark. It says "you have seen this one"
@@ -2346,7 +2376,7 @@
   .c-count.warn { color:rgba(255,110,110,.6); }
   .c-count.badge {
     inset:auto; right:-10%; top:-10%; width:auto; min-width:38%; height:38%; padding:0 6%;
-    font-size:24em; letter-spacing:0; border-radius:99em; color:#fff;
+    font-size:max(calc(18px * var(--sk, 1)), 24em); letter-spacing:0; border-radius:99em; color:#fff;
     background:#ff5c5c; box-shadow:0 0 0 .12em rgba(8,10,22,.85); text-shadow:none;
   }
 
@@ -2378,7 +2408,7 @@
              fill:#d61f2c; stroke:rgba(20,0,4,.85); stroke-width:1.3; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
   .sh-n { text-align:center; margin-top:6px; font-size:22px; font-weight:900; color:#ffb4b4; white-space:nowrap; }
   .card.no-tier .c-badge.tier { display:none; }
-  .sh-sec { align-self:stretch; font-size:17px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
+  .sh-sec { align-self:stretch; font-size:18px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
             border-bottom:1px solid rgba(143,194,255,.3); padding-bottom:6px; margin-bottom:-6px; }
   .sh-sec span { color:#f6f1e4; opacity:.7; margin-left:4px; }
   .sh-sec.lost { color:#ff8a8a; border-color:rgba(255,138,138,.3); }
@@ -2393,7 +2423,8 @@
      whatever size the file opens at. Top to bottom: the officer standing in
      a window, a name plate cut like the face's, the facts, the story on its
      own dark panel under the army's crest, the army along the foot. */
-  .card.file .c-mark, .card.file .c-plate { display:none; }
+  /* no macaron on the back: its pictogram already heads the ability line */
+  .card.file .c-mark, .card.file .c-plate, .card.file .c-perk { display:none; }
   .card.file .c-hero { top:4em; bottom:auto; height:36em; }
   .card.file .c-scene::after {
     background:
@@ -2417,7 +2448,7 @@
   }
   .cf-plate::before { top:0; } .cf-plate::after { bottom:0; }
   .cf-first {
-    display:block; font-size:4.4em; font-weight:800; letter-spacing:.34em; line-height:1.2;
+    display:block; font-size:max(calc(18px * var(--sk, 1)), 4.4em); font-weight:800; letter-spacing:.34em; line-height:1.2;
     color:var(--gold2); text-shadow:0 .1em 0 rgba(0,0,0,.6);
   }
   .cf-last {
@@ -2426,16 +2457,30 @@
     text-shadow:0 .07em 0 rgba(0,0,0,.6), 0 0 .6em color-mix(in srgb, var(--rar) 70%, transparent);
   }
   .cf-grade {
-    display:block; margin-top:.5em; font-size:4em; font-weight:800; letter-spacing:.42em;
+    display:block; margin-top:.5em; font-size:max(calc(18px * var(--sk, 1)), 4em); font-weight:800; letter-spacing:.42em;
     color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
   }
   .style-forge .cf-grade { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
   .cf-facts, .cf-lore { margin:0 8em; }
   .cf-facts { display:flex; justify-content:center; gap:1.8em; }
   .cf-facts span {
-    font-size:3.6em; font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
+    font-size:max(20px, 3.6em); font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
     border-radius:99em; color:var(--gold2); background:rgba(4,5,14,.72);
     box-shadow:inset 0 0 0 .1em color-mix(in srgb, var(--gold) 70%, transparent), 0 .2em .5em rgba(0,0,0,.5);
+  }
+  /* the officer's trade (game.js, cardBack): one line in the gold of the
+     frame, the post it suits after it, dimmer */
+  .cf-job {
+    flex:0 0 auto; margin:-.6em 8em 0; display:flex; flex-wrap:wrap; justify-content:center;
+    align-items:baseline; column-gap:1.6em; text-align:center;
+  }
+  .cf-job b {
+    font-size:max(calc(18px * var(--sk, 1)), 3.8em); font-weight:900; letter-spacing:.14em; line-height:1.2;
+    color:var(--gold2); text-shadow:0 .1em .2em rgba(0,0,0,.8);
+  }
+  .cf-job span {
+    font-size:max(calc(18px * var(--sk, 1)), 3.2em); font-weight:800; letter-spacing:.1em; line-height:1.2;
+    color:#d8cfb8; text-shadow:0 .1em .2em rgba(0,0,0,.8);
   }
   /* the grade's ability (game.js, SKILL): the macaron's pictogram and one
      line, in the gold of the frame — a rule, so it is read upright, unlike
@@ -2450,7 +2495,7 @@
     fill:none; stroke:var(--gold2); stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
   }
   .cf-skill p {
-    margin:0; font-size:3.5em; font-weight:800; line-height:1.3; color:#f6e6b4;
+    margin:0; font-size:max(20px, 3.5em); font-weight:800; line-height:1.3; color:#f6e6b4;
     text-shadow:0 .08em .2em rgba(0,0,0,.8);
   }
   .cf-lore {
@@ -2471,13 +2516,13 @@
     opacity:.1; filter:grayscale(1) brightness(1.6);
   }
   .cf-lore p {
-    position:relative; margin:0; font-size:4em; line-height:1.42; font-style:italic;
+    position:relative; margin:0; font-size:max(22px, 4em); line-height:1.42; font-style:italic;
     color:#f3ead6; text-shadow:0 .08em .2em rgba(0,0,0,.8);
   }
   .cf-foot {
     display:flex; align-items:center; justify-content:center; gap:1.6em;
     margin:0 2.5em;   /* 8 card units, in the foot's own 3.2 */
-    font-size:3.2em; font-weight:900; letter-spacing:.34em; line-height:1; color:rgba(246,230,180,.8);
+    font-size:max(calc(18px * var(--sk, 1)), 3.2em); font-weight:900; letter-spacing:.34em; line-height:1; color:rgba(246,230,180,.8);
   }
   .cf-foot::before, .cf-foot::after {
     content:""; flex:1; height:.14em;
@@ -2654,13 +2699,15 @@
        two can only turn over together. `scene` is a key of CONFIG.art, injected
        out of assets/image/embed/stratideck-background-phone-NN.webp. A playable
        is one round at level 0: it rides the first band, the only scene and the
-       only window the builder embeds in it. */
+       only window the builder embeds in it. `hand` is how many of the row's
+       slots (play.handSlots) the band deals into: a biome opens one more, so
+       the three locked slots are the climb's to give, not a post's. */
     bands: [
-      { scene: "backgroundPhone01", music: { from: 30,  length: 30 } },  //  1-6   Outpost
-      { scene: "backgroundPhone02", music: { from: 45,  length: 30 } },  //  7-12  Palisade
-      { scene: "backgroundPhone03", music: { from: 80,  length: 30 } },  // 13-18  Warcamp
-      { scene: "backgroundPhone04", music: { from: 125, length: 30 } },  // 19-24  Siege
-      { scene: "backgroundPhone05", music: { from: 140, length: 30 } }   // 25-30  Citadel
+      { scene: "backgroundPhone01", hand: 2, music: { from: 30,  length: 30 } },  //  1-6   Outpost
+      { scene: "backgroundPhone02", hand: 3, music: { from: 45,  length: 30 } },  //  7-12  Palisade
+      { scene: "backgroundPhone03", hand: 4, music: { from: 80,  length: 30 } },  // 13-18  Warcamp
+      { scene: "backgroundPhone04", hand: 5, music: { from: 125, length: 30 } },  // 19-24  Siege
+      { scene: "backgroundPhone05", hand: 5, music: { from: 140, length: 30 } }   // 25-30  Citadel
     ],
 
     // All user-facing copy in one place.
@@ -2700,25 +2747,42 @@
          is what makes a deck worth going back to the barracks for. */
       enemyTier: 0.12,
       deckTier: 0.22,    // the same for a generated army (playable, endless run)
-      handSize: 4,       // cards on the table at once
+      handSize: 2,       // cards on the table at once, dealt in the MID format (a band's `hand` wins)
+      handSlots: 5,      // the row they stand in: the slots past handSize are locked
+      /* How many of the cards NOT played go back under the deck after a turn,
+         by the hand's size (index = open slots): a two-card hand keeps its
+         other card, a wider one sends one or two back and keeps the rest. */
+      handReturn: [0, 0, 0, 1, 2, 2],
       // no score goal: the three stars are the flag, no wound and a capture (tally)
       cornerClear: 96    // the hand stops this far above the frame's foot, so the
                          // web target's two corner pills never cover a card
     },
 
     /* THE CARD FACES, as lab/stratideck-card.html composes them. The look is
-       the lab's own stylesheet, pasted verbatim into the SKIN; these are the
+       the SKIN's card block, which that bench links as it is; these are the
        knobs of its panel, under the same names, so "Copy the card settings"
        in the lab is this block and nothing has to be renamed on the way.
        `style` is the frame, `brank` / `btier` the two badge designs, `arank`
-       / `atier` their place ("auto" is the design's own). The numbers are
-       the lab's at a 300px card; `blur` is scaled with the card. */
+       / `atier` their place ("auto" is the design's own); `blur` is read at
+       a 300px card and scaled with it.
+       THREE CARDS: `rfull` / `rmid` / `rtiny` are the widths each format is
+       composed at, and every place shows that card scaled as a whole
+       (sizeNode). Then, per format, the grade badge, the tier badge and the
+       macaron: `rankFull` its size (×), `rankFullX` / `rankFullY` its offset
+       from the design's own place, in percents of the card's width. */
     cards: {
-      style: "forge", brank: "shield", btier: "burst", arank: "auto", atier: "br",
+      style: "forge", brank: "shield", btier: "seal", arank: "tl", atier: "br",
       rankOn: true, tierOn: true,
       zoom: 2.6, blur: 2, vary: true,
       hero: 95, mark: 0.5, mx: -28, markover: false,
-      midz: 1.35, midx: 0, midy: 16, tinyz: 3, tinyx: -20, tinyy: 65
+      midz: 1.49, midx: -4, midy: 16, tinyz: 2.23, tinyx: -11, tinyy: 59,
+      rfull: 320, rmid: 120, rtiny: 60,
+      rankFull: 1, tierFull: 1.3, perkFull: 0.86,
+      rankMid: 1.6, tierMid: 2.19, perkMid: 1.42,
+      rankTiny: 1.21, tierTiny: 1.5, perkTiny: 1.09,
+      rankFullX: 0, rankFullY: 0, tierFullX: -1, tierFullY: -5, perkFullX: 2, perkFullY: -10,
+      rankMidX: 2, rankMidY: 4, tierMidX: 2, tierMidY: -8, perkMidX: 1, perkMidY: -26,
+      rankTinyX: -1, rankTinyY: 0, tierTinyX: -1, tierTinyY: -6, perkTinyX: 0, perkTinyY: -2
     }
   };
 
@@ -2842,7 +2906,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "0.16.0",
+    version: "0.22.1",
     mark: "data:image/webp;base64,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"
   };
 
@@ -4128,6 +4192,7 @@
     function box(n, min) {
       if (!n) return;
       n.style.fontSize = "";                  // back to the size the CSS asks for
+      n.style.whiteSpace = "";
       var size = parseFloat(window.getComputedStyle(n).fontSize);
       var room = n.clientWidth, floor = min || 12;
       if (!size || !room) return;
@@ -4135,6 +4200,10 @@
         size = Math.max(floor, Math.floor(size * room / n.scrollWidth) - 1);
         n.style.fontSize = size + "px";
       }
+      /* THE FLOOR WINS OVER THE ONE LINE. A line still too wide at its floor
+         takes a second one rather than going under it (CLAUDE.md, the type
+         floor): a statement on two lines reads, one in 12 px does not. */
+      if (n.scrollWidth > room) n.style.whiteSpace = "normal";
     }
 
     function all() { for (var id in ROOM) if (ROOM.hasOwnProperty(id)) one(id); }
@@ -4278,7 +4347,8 @@
        icon  a shell piece (coin ticket super xp star sticker trophy), painted
              when the build ships CONFIG.shellArt, or a pictogram (info warn
              lock unlock heart user check x hourglass sparkles eye trash).
-             Default: the kind's own. `null` for none.
+             Default: the kind's own. `null`, or a name not listed here,
+             draws the kind's dot in the same slot, so every line aligns.
        key   what two notices are compared on; default word + sub
        hold  ms fully readable, when a line needs longer than the house 2.2 s
 
@@ -4306,7 +4376,14 @@
 
      It is not cleared on a change of screen: a notice fired as a round ends
      ("Taken to the prison") is exactly the one the next screen must still
-     show. It lives over everything but the flying wallet pieces (z 48), so
+     show.
+
+     IT KEEPS A LOG: the last ten notices of the session, newest first,
+     already translated and shouted (`history()`), and one listener told when
+     it moves (`onLog`). A notice lives 2.2 s, and a player who looked away is
+     owed a way to read it again — the web shell's band draws that as its "!"
+     chip (packages/webshell/meta.js). A repeat of the notice on top of the log
+     bumps its ×N there too, rather than filling the log with one line. It lives over everything but the flying wallet pieces (z 48), so
      the same call reads over a round, a view and a card.
      -------------------------------------------------------------------- */
   var Notify = (function () {
@@ -4338,6 +4415,21 @@
     SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
 
     var live = [], box = null, raf = 0, last = 0, targetOf = null;
+    var LOG_MAX = 10, log = [], logFn = null;
+
+    /* Into the log, newest first. Keyed like a live notice, but only against
+       the entry on top: the same line again after something else was said is
+       a new event, and the log is read as the order things happened in. */
+    function record(key, w, sub, kind, icon) {
+      var top = log[0];
+      if (top && top.key === key) { top.count++; top.at = Date.now(); }
+      else {
+        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon,
+                      html: iconHtml(icon), count: 1, at: Date.now() });
+        if (log.length > LOG_MAX) log.length = LOG_MAX;
+      }
+      if (logFn) logFn(log.length);
+    }
 
     function host() {
       if (box && box.parentNode) return box;
@@ -4348,11 +4440,13 @@
       state(State);
       return box;
     }
+    /* Every notice carries a mark in the same 32 px slot, so the words of a
+       stack — and of the log — start on one line: a name this table does not
+       know, or none at all, is the kind's own dot rather than a gap. */
     function iconHtml(name) {
-      if (!name) return "";
-      var src = ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
+      var src = name && ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
       if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
-      if (!SVG[name]) return "";
+      if (!name || !SVG[name]) return '<span class="nt-ic dot" aria-hidden="true"></span>';
       return '<span class="nt-ic lu"><svg viewBox="0 0 24 24" aria-hidden="true">' + SVG[name] + '</svg></span>';
     }
     function esc(s) {
@@ -4434,6 +4528,7 @@
       var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
       var key = opt.key || (w + "|" + sub);
       var hold = opt.hold || HOLD, i, it;
+      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon);
 
       for (i = 0; i < live.length; i++) {
         it = live[i];
@@ -4484,7 +4579,18 @@
       box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
     }
 
-    return { say: say, clear: clear, target: target, state: state };
+    /* The log, as copies: { word, sub, kind, icon, html, count, at }, the
+       newest first. `html` is the notice's own icon, ready to draw. */
+    function history() {
+      return log.map(function (e) {
+        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon,
+                 html: e.html, count: e.count, at: e.at };
+      });
+    }
+    function onLog(fn) { logFn = fn; }
+
+    return { say: say, clear: clear, target: target, state: state,
+             history: history, onLog: onLog };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------
@@ -6022,7 +6128,10 @@
 
      A card that wins returns to the bottom of the deck; a card that loses is
      gone; a card that wins WOUNDED stays in its hand slot, greyed, for one
-     turn. After every card sent, THE CAMP ANSWERS: it may slide one soldier
+     turn. THE HAND IS DEALT AFRESH EVERY TURN: once a card has been played,
+     every card of the hand that was not goes back under the deck too, so a
+     card held back is a card given up — only a bandage or a stun keeps its
+     slot. After every card sent, THE CAMP ANSWERS: it may slide one soldier
      one cell into the emptied corridor, or pass — the flag and the traps
      never move, some soldiers never do on purpose, and a card that has moved
      stays tilted for the rest of the battle (THE ENEMY'S TURN, below). The
@@ -6117,6 +6226,17 @@
       18: { breaker: 9, effect: "spell", unlock: 18, hit: "Bewitched!", broken: "Book burnt",
             lesson: "Only a general can never turn traitor" }
     };
+    /* ON THE WEB THE MANIFEST SAYS WHEN. `web.army.objects[].camp` is the
+       first level of the climb that deals each kind, so the objects arrive
+       in the biome whose end hands them to the player's own defense
+       (packages/webshell/army.js, the defense): met in battle first, owned
+       after. A playable reads no manifest and keeps the table above. */
+    (function () {
+      var list = CONFIG.web && CONFIG.web.army && CONFIG.web.army.objects;
+      for (var i = 0; list && i < list.length; i++) {
+        if (OBJECTS[list[i].r] && list[i].camp) OBJECTS[list[i].r].unlock = list[i].camp | 0;
+      }
+    })();
     /* the three that cost a card never stand on the front row: a first turn
        that loses a card for the battle is a first turn nobody played */
     var HARMLESS = { decoy: true, block: true };
@@ -6250,14 +6370,17 @@
     var HAND_W = 118, HAND_H = 165, HAND_GAP = 10;   // the size is geometry()'s
 
     /* --- state --------------------------------------------------------------- */
-    var grid, cols, rows, deck, hand, handSize;
+    var grid, cols, rows, deck, hand, handSize, handSlots;
     var score, streak, bestStreak, kills, ties, losses, precise, scouted, trapsCleared;
-    var reach, targets, selected, drag, turn, refills, mood, lastFoe, lastWon;
+    var reach, targets, selected, drag, turn, refills, returns, mood, lastFoe, lastWon;
     var levelD, ended, outcome, tAnim, seed, BAND, flagCell, flagTaken;
     /* THE CAMP IS PLAYED FROM MEMORY. Only the last enemy turned over stays
        face up (`lastFoe`); the one before it turns back down the moment a new
        one is revealed, and `hiding` is that card on its way over. */
     var hiding;
+    /* THE COMMANDER OFFERS A SURRENDER ONCE A BATTLE: `offered` is that
+       offer made, whatever the answer was (HOPELESS, below). */
+    var offered;
     /* THE ENEMY'S REPLY: after every turn the camp may slide one of its
        soldiers one cell, or pass. `march` is that move while it plays. */
     var march;
@@ -6295,6 +6418,17 @@
       var b = CONFIG.bands;
       if (!CONFIG.level) return b[0];
       return b[clamp(Math.floor((CONFIG.level - 1) / 6), 0, b.length - 1)];
+    }
+    /* What opens hand slot `i`: the first band that deals into it, named
+       by the level it starts at and, on the web, the biome the map calls it
+       (web.levels.bands). "" when no band ever opens it. */
+    function unlockLine(i) {
+      var b = CONFIG.bands, L = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.bands, k, names;
+      for (k = 0; k < b.length; k++) if ((b[k].hand | 0) > i) break;
+      if (k >= b.length) return "";
+      names = L && (L[Lang.code()] || L.en);
+      return Lang.t("Unlocks at level") + " " + ((L && L.from && L.from[k]) || k * 6 + 1) +
+             (names && names[k] ? " · " + names[k] : "");
     }
 
     /* A tiny LCG for what has to be the same every time a level is opened:
@@ -6602,14 +6736,37 @@
       refillHand(false);
     }
 
-    function refillHand(animate) {
+    /* `wait` holds the deal back that many animation lengths, so a card
+       going back under the deck has left its slot before the next one lands. */
+    function refillHand(animate, wait) {
       var i;
       for (i = 0; i < handSize; i++) {
         if (hand[i] == null && deck.length) {
           hand[i] = deck.shift();
-          if (animate) refills.push({ slot: i, t: 0 });
+          if (animate) refills.push({ slot: i, t: -(wait || 0) });
         }
       }
+    }
+    /* THE HAND IS PARTLY DEALT AFRESH: once a card has been played, some of
+       the cards that were not go under the deck and fly to the pile to say
+       so — how many is `play.handReturn` read at the hand's size (none on two
+       slots, one on three, two on four and five), which ones is drawn among
+       the free ones, and the rest keep their slots. A wounded or a stunned
+       card is pinned to its slot and is never drawn — so is the played card
+       itself when it came back to it (a fence, a rock, a spell it survived).
+       Returns how many went. */
+    function returnHand(played) {
+      var i, free = [], quota = (P.handReturn || [])[handSize];
+      for (i = 0; i < handSize; i++) if (i !== played && pickable(i)) free.push(i);
+      if (quota == null) quota = free.length;
+      shuffle(free);
+      free = free.slice(0, quota).sort(function (a, b) { return a - b; });
+      for (i = 0; i < free.length; i++) {
+        deck.push(hand[free[i]]);
+        returns.push({ card: hand[free[i]], slot: free[i], t: 0 });
+        hand[free[i]] = null;
+      }
+      return free.length;
     }
     function countHand() {
       var n = 0;
@@ -6678,7 +6835,7 @@
        formats are squares, and a square is also the widest cell a 6x6 camp
        can afford in a portrait frame.
        =================================================================== */
-    var HAND_MAX = 160;           // a 4-card hand stops here; a 5-card one is width-bound
+    var HAND_MAX = 160;           // a hand slot stops here; a row of five is width-bound
     var LIFT = 34;                // the room a picked card rises into, badges included
     var CELL_MAX = 190;
     /* The two square formats of the lab: MID carries the name plate and wants
@@ -6702,11 +6859,14 @@
 
     function geometry() {
       var bottom = Math.min(Layout.bottom, CONFIG.designHeight - P.cornerClear);
-      HAND_W = Math.floor(Math.min(HAND_MAX, (Layout.w - (handSize - 1) * HAND_GAP) / handSize));
-      HAND_H = Math.round(HAND_W * 1.4);
+      /* THE HAND IS A ROW OF SQUARES: the cards dealt in the lab's MID
+         format, then the locked slots, all the same size so the row reads as
+         one hand with room in it. */
+      HAND_W = Math.floor(Math.min(HAND_MAX, (Layout.w - (handSlots - 1) * HAND_GAP) / handSlots));
+      HAND_H = HAND_W;
       G.handBottom = bottom;
       G.handY = bottom - HAND_H;
-      var row = handSize * HAND_W + (handSize - 1) * HAND_GAP;
+      var row = handSlots * HAND_W + (handSlots - 1) * HAND_GAP;
       G.handX0 = Layout.cx - row / 2;
 
       G.infoH = 130;
@@ -6771,8 +6931,8 @@
     function handX(i) { return G.handX0 + i * (HAND_W + HAND_GAP); }
     function handAt(p) {
       if (p.y < G.handY - 40 || p.y > G.handBottom + 10) return -1;
-      for (var i = 0; i < handSize; i++) {
-        if (hand[i] == null) continue;
+      for (var i = 0; i < handSlots; i++) {
+        if (i < handSize && hand[i] == null) continue;
         var x = handX(i);
         if (p.x >= x - 8 && p.x <= x + HAND_W + 8) return i;
       }
@@ -6787,10 +6947,11 @@
       Art.backdrop(BAND.scene);
       seed = ((CONFIG.level | 0) * 7919 + 12345) >>> 0;
       cols = Math.max(2, P.cols | 0); rows = Math.max(2, P.rows | 0);
-      handSize = Math.max(2, P.handSize | 0);
+      handSize = Math.max(2, (BAND.hand || P.handSize) | 0);
+      handSlots = Math.max(handSize, P.handSlots | 0);
       geometry();
       tableClear();
-      refills = [];
+      refills = []; returns = [];
       wounded = {}; captives = []; hurtCards = []; fallen = []; lostCards = []; met = []; refused = []; prisonWarned = false;
       used = {};
       strayed = []; smashed = 0; taught = {};
@@ -6802,7 +6963,7 @@
       kills = 0; ties = 0; losses = 0; precise = 0; scouted = 0; trapsCleared = 0;
       selected = -1; drag = null; turn = null; march = null; ended = false; outcome = null; tAnim = 0;
       mood = "neutral"; lastFoe = null; lastWon = null; hiding = null;
-      flagTaken = false;
+      flagTaken = false; offered = false;
       HUD.setScoreNow(0);
       showCounts();
       Fx.reset();
@@ -6871,6 +7032,13 @@
       if (zone) { sheetOpen(zone); return; }
       if (turn || march) return;
       var i = handAt(p);
+      if (i >= handSize) {
+        /* A LOCKED SLOT IS ANSWERED TOO, for the same reason a bandage is:
+           a slot that does nothing under the finger reads as a dead screen. */
+        Sound.clip("warn", 0.35, 0.9);
+        Notify.say("Slot locked", { sub: unlockLine(i), kind: "warn", icon: "lock" });
+        return;
+      }
       if (i >= 0) {
         if (!pickable(i)) {
           Sound.clip("warn", 0.35, 0.9);
@@ -6969,6 +7137,176 @@
       if (a.tier > foe.tier) return { kind: "win", margin: 0, hurt: "d" };
       if (a.tier < foe.tier) return { kind: "lose" };
       return { kind: "tie" };
+    }
+
+    /* ===================================================================
+       THE DEFENSE — the player's own camp, stormed while they are away
+       =================================================================== */
+
+    /* THE SAME RULES, THE OTHER WAY ROUND. The barracks lets the player lay
+       out a camp of their own — a flag, their cards, the objects the climb
+       gave them (packages/webshell/army.js, the defense) — and while they are
+       away the red army may storm it. How well it holds is not a formula over
+       where things stand: it is this function playing the assault, many
+       times, with `judge` and every object's effect exactly as a battle
+       plays them. A flag left in the open falls because the attacker walks
+       up to it, not because a rule said the back row is safer.
+
+       `cells` is the grid row by row, `rows * cols` entries of null or
+       `{ r, t, id }` (an object carries no tier and no id); row `rows - 1` is
+       the FRONT, the one the attacker reaches first, as the camp's bottom row
+       is in a battle. `army` is the attacker's deck, `{ r, t }` each — the
+       barracks mirrors it off the player's own roster. The attacker plays the
+       way a careful player does: it takes a flag it can see, sends the
+       tightest card that beats a card it has already turned over, sends a
+       scout at what it cannot see, and otherwise probes the dark with a
+       middling card, leaning toward the back where flags are kept. The camp
+       never moves and never strikes back — a defense is a layout.
+
+       AN ASSAULT IS A RAID, NOT A SIEGE: it lasts `turns` cards sent, then
+       the attacker has to be gone before the camp wakes. Without that bound
+       a winner going back under the deck wins forever — the marshal walks
+       through every wall given the night — and every defense falls; with it,
+       what a layout buys is TIME, which is exactly what a fence, a straw man
+       and a flag kept deep are for.
+
+       Returns the share of assaults held over `runs`, and one more assault
+       played out in full (`run`), which is the one that HAPPENED: who of the
+       player's cards was beaten, and which of the attacker's fell. */
+    var DEF_HAND = 4;
+
+    function defenseRun(cells, cols, rows, army, turns, rnd) {
+      var g = [], known = [], deck = [], hand = [], beaten = [], fallen = [], i, k, turn;
+      for (i = 0; i < cells.length; i++) {
+        g.push(cells[i] ? { rank: cells[i].r, tier: cells[i].t | 0, id: cells[i].id != null ? cells[i].id : null } : null);
+        known.push(false);
+      }
+      for (i = 0; i < army.length; i++) deck.push({ rank: army[i].r, tier: army[i].t | 0, stun: false });
+      for (i = deck.length - 1; i > 0; i--) {
+        k = Math.floor(rnd() * (i + 1));
+        var sw = deck[i]; deck[i] = deck[k]; deck[k] = sw;
+      }
+      function deal() { while (hand.length < DEF_HAND && deck.length) hand.push(deck.shift()); }
+      /* WHAT THE ATTACKER CAN STRIKE: the front row, then whatever stands
+         next to ground it has opened — an empty cell is open ground from the
+         start, which is what makes a hole in the wall a way in. */
+      function reach() {
+        var open = {}, seen = {}, stack = [], out = [], c, r, n, d;
+        for (c = 0; c < cols; c++) {
+          k = (rows - 1) * cols + c;
+          if (g[k]) { if (!seen[k]) { seen[k] = 1; out.push(k); } }
+          else if (!open[k]) { open[k] = 1; stack.push(k); }
+        }
+        while (stack.length) {
+          k = stack.pop(); r = Math.floor(k / cols); c = k % cols;
+          var near = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+          for (d = 0; d < 4; d++) {
+            if (near[d][0] < 0 || near[d][0] >= rows || near[d][1] < 0 || near[d][1] >= cols) continue;
+            n = near[d][0] * cols + near[d][1];
+            if (g[n]) { if (!seen[n]) { seen[n] = 1; out.push(n); } }
+            else if (!open[n]) { open[n] = 1; stack.push(n); }
+          }
+        }
+        return out;
+      }
+      function weakest(live) {
+        var b = live[0];
+        for (var j = 1; j < live.length; j++) if (hand[live[j]].rank * 10 + hand[live[j]].tier < hand[b].rank * 10 + hand[b].tier) b = live[j];
+        return b;
+      }
+      /* deeper cells weigh more: that is where a flag is looked for */
+      function pickDark(list) {
+        var tot = 0, j, x;
+        for (j = 0; j < list.length; j++) tot += 1 + 0.5 * (rows - 1 - Math.floor(list[j] / cols));
+        x = rnd() * tot;
+        for (j = 0; j < list.length; j++) {
+          x -= 1 + 0.5 * (rows - 1 - Math.floor(list[j] / cols));
+          if (x <= 0) return list[j];
+        }
+        return list[list.length - 1];
+      }
+      function choose(targets, live) {
+        var j, h, q, v, best = null, dark = [], soft = [], score;
+        for (j = 0; j < targets.length; j++) {
+          q = targets[j];
+          if (!known[q]) { dark.push(q); continue; }
+          if (g[q].rank === FLAG) return { q: q, h: weakest(live) };
+          if (isObject(g[q].rank) && HARMLESS[OBJECTS[g[q].rank].effect]) soft.push(q);
+          for (h = 0; h < live.length; h++) {
+            v = judge(hand[live[h]], { rank: g[q].rank, tier: g[q].tier, known: true });
+            if (v.kind === "win") score = 20 - v.margin * 2 - (v.hurt === "a" ? 3 : 0);
+            else if (v.kind === "smash" || v.kind === "clear") score = 22;
+            else continue;
+            if (!best || score > best.s) best = { q: q, h: live[h], s: score };
+          }
+        }
+        if (best) return best;
+        if (dark.length) {
+          for (h = 0; h < live.length; h++) if (hand[live[h]].rank === SCOUT) return { q: pickDark(dark), h: live[h] };
+          var byRank = live.slice().sort(function (a, b) { return hand[a].rank - hand[b].rank; });
+          return { q: pickDark(dark), h: byRank[Math.floor(byRank.length / 2)] };
+        }
+        /* nothing to beat and nothing unseen: a harmless object only costs a
+           turn, and a turn is a new hand */
+        if (soft.length) return { q: soft[Math.floor(rnd() * soft.length)], h: weakest(live) };
+        /* ...and what is left is a card it cannot beat: it throws its
+           weakest at the weakest of them, since standing still takes nothing */
+        var low = targets[0];
+        for (j = 1; j < targets.length; j++) if (g[targets[j]].rank < g[low].rank) low = targets[j];
+        return { q: low, h: weakest(live) };
+      }
+      deal();
+      for (turn = 0; turn < turns; turn++) {
+        var live = [];
+        for (i = 0; i < hand.length; i++) if (!hand[i].stun) live.push(i);
+        if (!live.length) break;              // nothing left to send: the camp held
+        var targets = reach();
+        if (!targets.length) break;
+        var mv = choose(targets, live), a = hand[mv.h], q = mv.q, foe = g[q];
+        var v = judge(a, { rank: foe.rank, tier: foe.tier, known: known[q] }), back = true, gone = null;
+        known[q] = true;
+        switch (v.kind) {
+          case "flag": return { held: false, beaten: beaten, fallen: fallen, turns: turn + 1 };
+          case "trap": back = false; fallen.push(a); g[q] = null; break;
+          case "clear": case "smash": g[q] = null; break;
+          case "stray": back = false; break;
+          case "stun": a.stun = true; break;
+          case "spell":
+            var allies = [];
+            for (i = 0; i < hand.length; i++) if (i !== mv.h) allies.push(i);
+            if (allies.length) {
+              var b = hand[allies[Math.floor(rnd() * allies.length)]];
+              var sv = judge(a, { rank: b.rank, tier: b.tier, known: true });
+              if (sv.kind === "win") gone = b;
+              else if (sv.kind === "lose") back = false;
+              else { back = false; gone = b; }
+            }
+            break;
+          case "win": if (foe.id != null) beaten.push(foe.id); g[q] = null; break;
+          case "lose": back = false; fallen.push(a); break;
+          case "tie": back = false; fallen.push(a); if (foe.id != null) beaten.push(foe.id); g[q] = null; break;
+        }
+        /* THE HAND IS DEALT AFRESH, as in a battle: every card but a stunned
+           one goes back under the deck, the one sent included when it came
+           back, and four are dealt. */
+        var keep = [];
+        for (i = 0; i < hand.length; i++) {
+          var hc = hand[i];
+          if (hc === gone) continue;
+          if (hc.stun) { keep.push(hc); continue; }
+          if (hc === a && !back) continue;
+          deck.push(hc);
+        }
+        hand = keep;
+        deal();
+      }
+      return { held: true, beaten: beaten, fallen: fallen, turns: turn };
+    }
+
+    function defenseSim(cells, cols, rows, army, opt) {
+      var n = Math.max(1, (opt && opt.runs) | 0 || 200), turns = Math.max(1, (opt && opt.turns) | 0 || 14), held = 0, i;
+      for (i = 0; i < n; i++) if (defenseRun(cells, cols, rows, army, turns, Math.random).held) held++;
+      return { held: held / n, runs: n, run: defenseRun(cells, cols, rows, army, turns, Math.random) };
     }
 
     /* WHO PAYS FOR A WIN THE GRADE ALREADY DECIDED. The loser's tier standing
@@ -7278,8 +7616,9 @@
        ends on — is the camp empty, is the army. */
     function endTurn(T) {
       var v = T.verdict, i;
+      var gone = returnHand(T.i);
       for (i = 0; i < handSize; i++) if (hand[i] && hand[i].hurt) hand[i].hurt--;
-      refillHand(true);
+      refillHand(true, gone ? 1 : 0);
       var left = cardsLeft();
       if (left <= 2 && left > 0) Sound.clip("warn", 0.4, 1);
       showCounts();
@@ -7304,6 +7643,10 @@
         return;
       }
       if (!anyTarget()) { finish(true); return; }         // nothing left to strike: the camp is taken
+      if (!offered) {
+        var lost = hopeless();
+        if (lost) offerSurrender(lost);
+      }
       enemyTurn();
     }
 
@@ -7356,6 +7699,88 @@
       return 99;
     }
     function movable(q) { return q && q.rank <= MARSHAL && !q.anchored; }
+
+    /* ===================================================================
+       HOPELESS — a battle the army can no longer win
+       A battle is won two ways: the flag is taken, or every soldier of the
+       camp is beaten (the camp emptied is the second one finished). When
+       the army that is left can do neither, the camp's commander says so
+       and offers a surrender (packages/webshell/army.js, `surrender`) —
+       the player who refuses plays on to the end screen, but knowing.
+
+       THE TEST IS OPTIMISTIC ON PURPOSE, so an offer is never made on a
+       battle that could still be won: every card that can go out counts
+       as many times as it is needed (a winner goes back under the deck), a
+       draw counts as a way through, and a soldier who may still move is
+       one that may step out of the corridor. What is left is what never
+       gives way: a trap with no sapper in the army, an object with none of
+       its breaker's grade, an anchored soldier nobody outranks.
+       Returns why the flag is out of reach — "trap", "object" or "soldier",
+       the first that walls it — or null while the battle can be won.
+       =================================================================== */
+    function hopeless() {
+      var army = deck.slice(), i, r, c;
+      for (i = 0; i < handSize; i++) if (hand[i] && !hand[i].stun) army.push(hand[i]);
+      if (!army.length) return null;                    // the army spent ends it anyway
+      function beaten(q) {
+        var foe = { rank: q.rank, tier: q.tier, known: true };
+        for (var j = 0; j < army.length; j++) {
+          var k = judge(army[j], foe).kind;
+          if (k === "win" || k === "tie" || k === "clear" || k === "smash" || k === "flag") return true;
+        }
+        return false;
+      }
+      /* a walk from under the camp through every cell that can give way */
+      function walk(pass) {
+        var seen = {}, q = [], dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]], wall = [], x, d;
+        for (x = 0; x < cols; x++) q.push({ r: rows, c: x });
+        while (q.length) {
+          var p = q.shift();
+          for (d = 0; d < 4; d++) {
+            var nr = p.r + dirs[d][0], nc = p.c + dirs[d][1], k = nr + "," + nc;
+            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols || seen[k]) continue;
+            seen[k] = true;
+            var g = grid[nr][nc];
+            if (!g || pass(g)) q.push({ r: nr, c: nc });
+            else wall.push(g);
+          }
+        }
+        return { seen: seen, wall: wall };
+      }
+      var sold = [], all = true;
+      for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+        var g = grid[r][c];
+        if (!g || g.rank > MARSHAL) continue;
+        sold.push(r + "," + c);
+        if (!beaten(g)) all = false;
+      }
+      /* the second way: every soldier beaten, each reached through what can be cleared */
+      if (all) {
+        var w2 = walk(function (g) { return g.rank <= MARSHAL || beaten(g); });
+        for (i = 0; i < sold.length && w2.seen[sold[i]]; i++) {}
+        if (i === sold.length) return null;
+      }
+      /* the first way: the flag, reached through what can be cleared or may move */
+      var w1 = walk(function (g) { return g.rank === FLAG || beaten(g) || movable(g); });
+      if (w1.seen[flagCell.r + "," + flagCell.c]) return null;
+      var why = { trap: 0, object: 0, soldier: 0 };
+      for (i = 0; i < w1.wall.length; i++) {
+        var x = w1.wall[i].rank;
+        why[x === TRAP ? "trap" : isObject(x) ? "object" : "soldier"]++;
+      }
+      return why.trap ? "trap" : why.object ? "object" : "soldier";
+    }
+
+    /* The offer, where there is a barracks to make it: the commander's face
+       turns smug, and the web shell asks. A playable has nobody to ask and
+       plays the battle out as it always did. */
+    function offerSurrender(why) {
+      var AR = window.__ARMY__;
+      if (!AR || !AR.surrender) return;
+      offered = true;
+      mood = "happy";
+      AR.surrender(why);
+    }
 
     function enemyTurn() {
       var lvl = levelD == null ? 0.3 : levelD;
@@ -7442,6 +7867,10 @@
         refills[i].t += dt / 0.28;
         if (refills[i].t >= 1) refills.splice(i, 1);
       }
+      for (i = returns.length - 1; i >= 0; i--) {
+        returns[i].t += dt / 0.28;
+        if (returns[i].t >= 1) returns.splice(i, 1);
+      }
       if (hiding) { hiding.t += dt / FLIP; if (hiding.t >= 1) hiding = null; }
       if (march) { marchStep(dt); return; }
       if (!turn) return;
@@ -7466,12 +7895,13 @@
 
     /* ===================================================================
        THE CARD FACES — the lab's card, as DOM
-       lab/stratideck-card.html is where a card is composed, and its
-       stylesheet is pasted verbatim into the SKIN (the block between THE CARD
-       ITSELF and END OF THE CARD). What this section adds is the one thing a
-       stylesheet cannot say: which nodes a card is made of, with the numbers
-       of CONFIG.cards on them. `faceNode` is the lab's `build()`, minus the
-       tilt, and it is the one builder of a card face in the game — the
+       lab/stratideck-card.html is where a card is composed, and it draws
+       with the SKIN itself (the block between THE CARD ITSELF and END OF
+       THE CARD), linked rather than copied. What this section adds is the
+       one thing a stylesheet cannot say: which nodes a card is made of, with
+       the numbers of CONFIG.cards on them. `faceNode` is the lab's `build()`
+       minus the tilt, and `sizeNode` its `dress()` — a change to either is
+       made on both. It is the one builder of a card face in the game: the
        barracks asks for it too (`cardNode`), so a card picked in the deck
        screen and the card that lands on the grid are the same object.
        =================================================================== */
@@ -7614,6 +8044,14 @@
       n.style.setProperty("--tinyz", K.tinyz);
       n.style.setProperty("--tinyx", K.tinyx + "%");
       n.style.setProperty("--tinyy", K.tinyy + "%");
+      /* the grade badge, the tier badge and the macaron at THIS format's own
+         size and place (the SKIN's --k-* / --x-* / --y-*) */
+      var F = fmt.charAt(0).toUpperCase() + fmt.slice(1);
+      ["rank", "tier", "perk"].forEach(function (k) {
+        n.style.setProperty("--k-" + k, K[k + F] != null ? K[k + F] : 1);
+        n.style.setProperty("--x-" + k, K[k + F + "X"] || 0);
+        n.style.setProperty("--y-" + k, K[k + F + "Y"] || 0);
+      });
 
       var crest = (CONFIG.art && CREST[side] && CONFIG.art[CREST[side]]) || "";
       var html = '<div class="c-body"><div class="c-frame"></div><div class="c-scene"></div>';
@@ -7636,41 +8074,129 @@
           '<div class="c-mark' + (c.rank >= 10 ? " two" : "") + '"><b>' + (officer ? c.rank : "") + "</b></div>" +
           '<div class="c-hero' + (src ? "" : " missing") + '" data-missing="' + name + '">' +
             (src ? '<img alt="" src="' + src + '">' : "") + "</div>" +
-          badgeHTML("rank", K.brank, officer ? c.rank : "", K.arank) +
-          badgeHTML("tier", K.btier, TIERS[t], K.atier) +
-          /* the macaron: what this grade is FOR (PERK), on the army's cards
-             only — the camp never strikes, so its officers use none of it */
-          (officer && side !== "red" && PERK[c.rank]
-            ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg></div>" : "") +
           '<div class="c-plate"><span class="c-name">' + name +
             '</span><span class="c-tier">' + (ghost ? "" : upper(Lang.t(tiered ? TIER_LABEL[t] : "Object"))) + "</span></div>" +
           '<div class="c-pips">' + pips + "</div>";
       }
       html += '<div class="c-back">' + (crest ? '<img alt="" src="' + crest + '">' : "") + "</div>" +
               '<div class="c-shine"></div></div>';
+      /* THE BADGES AND THE MACARON ARE SIBLINGS OF THE BODY: `.c-body` clips
+         to the card's outline, and inside it a badge hung over the edge was
+         cut, and the macaron in its corner kept a quarter of its disc */
+      if (c) {
+        html += badgeHTML("rank", K.brank, officer ? c.rank : "", K.arank) +
+          badgeHTML("tier", K.btier, TIERS[t], K.atier) +
+          /* the macaron: what this grade is FOR (PERK), on the army's cards
+             only — the camp never strikes, so its officers use none of it */
+          (officer && side !== "red" && PERK[c.rank]
+            ? '<div class="c-perk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg></div>" : "");
+      }
       n.innerHTML = html;
+      /* the plate's words: one size per line for the officers, measured
+         once per language; an object fitted on its own card */
+      var TIERN = [];
+      for (var q = 0; q <= TOP_TIER; q++) TIERN.push(upper(Lang.t(TIER_LABEL[q])));
+      var NAMES = [];
+      for (q = 1; q <= 10; q++) NAMES.push(upper(Lang.t(RANKS[q].name)));
+      plateFit(K.style, { full: K.rfull, mid: K.rmid }, NAMES, TIERN,
+               K.style + "." + K.rfull + "." + K.rmid + "." + Lang.code());
+      if (c && !officer && !ghost) fitName(n);
       return n;
     }
-    /* THE SIZE, and the one number the lab reads in pixels: the scene's blur,
-       tuned at a 300px card, is scaled with the card or a small one turns to
-       fog.
-
-       AND THE BADGES AT A PLAYING SIZE. Everything on a card is a percent of
-       its width, which is what lets one stylesheet draw three formats — and
-       it is also what makes the two numbers a fight is decided on shrink with
-       the card: the lab's full card is composed at 300px, the hand is dealt
-       at 125 to 160. So under FIT_AT a card wears `fit` and `--fit`, and the
-       SKIN scales its two badges by that much and nothing else: the picture
-       may be small, the grade and the tier may not. The token (tiny) is
-       exempt — its badges were already re-measured for a small card. */
-    var FIT_AT = { full: 220, mid: 200 }, FIT_MAX = 1.7;
-    function sizeNode(n, w, fmt) {
+    /* ONE SIZE PER LINE: every grade's name at the size of the longest one,
+       every rarity at the size of the longest rarity — per format and per
+       language, so a LIEUTENANT and a GENERAL dealt side by side read at the
+       same size. Measured once on a card nobody sees, at the reference
+       width (the ratio holds at any other), for the frame style in use, and
+       written on the root as `--nfit-full`, `--tfit-full` and `--nfit-mid`,
+       which the SKIN hands to every card that is not an object. `names` and
+       `tiers` are the words as they are shown (translated, in capitals). */
+    var plateKey = "";
+    function plateFit(style, refs, names, tiers, key) {
+      if (key === plateKey || !document.body) return;
+      plateKey = key;
+      var host = document.createElement("div"), out = {};
+      host.style.cssText = "position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none";
+      document.body.appendChild(host);
+      [["full", refs.full], ["mid", refs.mid]].forEach(function (f) {
+        var n = document.createElement("div");
+        n.className = "card static fmt-" + f[0] + " style-" + style + " tier-rare";
+        n.style.cssText = "--w:" + f[1] + "px;--h:" + (f[0] === "full" ? Math.round(f[1] * 1.4) : f[1]) +
+          "px;--sk:1;--nfit:1;--tfit:1";
+        n.innerHTML = '<div class="c-body"><div class="c-plate"><span class="c-name"></span><span class="c-tier"></span></div></div>';
+        host.appendChild(n);
+        var plate = n.querySelector(".c-plate"), cs = getComputedStyle(plate);
+        var room = plate.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        var widest = function (sel, list) {
+          var el = plate.querySelector(sel), rg = document.createRange(), max = 0;
+          for (var i = 0; i < list.length; i++) {
+            el.textContent = list[i];
+            rg.selectNodeContents(el);
+            max = Math.max(max, rg.getBoundingClientRect().width);
+          }
+          return max;
+        };
+        var fit = function (w) { return w > room && room > 0 ? Math.max(0.3, room / w) : 1; };
+        out["n" + f[0]] = fit(widest(".c-name", names));
+        if (f[0] === "full") out.tfull = fit(widest(".c-tier", tiers));
+      });
+      host.parentNode.removeChild(host);
+      var root = document.documentElement.style;
+      root.setProperty("--nfit-full", out.nfull.toFixed(3));
+      root.setProperty("--tfit-full", out.tfull.toFixed(3));
+      root.setProperty("--nfit-mid", out.nmid.toFixed(3));
+    }
+    /* AN OBJECT'S WORDS, SHRUNK TO ITS PLATE (the SKIN's `--nfit` / `--tfit`):
+       an object's name is not a grade, so it is fitted on its own card rather
+       than sized with the grades (plateFit). Measured once the plate has a
+       size, since the face, the tracking and the language all move the width
+       and a card may be built in a tab not shown yet (ResizeObserver), and
+       taken once: the words and the plate scale together, so the ratio holds
+       at any width. The officer's file hides the plate and is never measured. */
+    function fitName(n) {
+      var fmt = n.classList.contains("fmt-mid") ? "mid" : n.classList.contains("fmt-full") ? "full" : "";
+      if (!fmt || typeof ResizeObserver === "undefined") return;
+      var plate = n.querySelector(".c-plate");
+      if (!plate) return;
+      var ro = new ResizeObserver(function () {
+        if (!plate.clientWidth) return;
+        ro.disconnect();
+        /* in screen boxes, so a card scaled or turning is measured as it
+           stands: the ratio is all that is kept */
+        var pr = plate.getBoundingClientRect();
+        var k = pr.width / plate.clientWidth, cs = getComputedStyle(plate);
+        var room = pr.width - (parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)) * k;
+        /* each line on its own: the text's width, not its block's — a Range
+           over the letters — against the plate's */
+        [[".c-name", "--nfit"], [".c-tier", "--tfit"]].forEach(function (l) {
+          var line = plate.querySelector(l[0]);
+          if (!line || !line.textContent) return;
+          var rg = document.createRange();
+          rg.selectNodeContents(line);
+          var w = rg.getBoundingClientRect().width;
+          n.style.setProperty(l[1], w > room ? Math.max(0.3, room / w).toFixed(3) : "1");
+        });
+      });
+      ro.observe(plate);
+    }
+    /* THE SIZE: one number, and the card follows it as a whole. Every length
+       on a card is in em (1% of its width), so `--w` alone scales it; the
+       text floors are the one thing in px, and `--sk` scales them with it —
+       the width over the format's reference (CONFIG.cards.rfull / rmid /
+       rtiny, the width the lab composes it at), never under 1 so a card
+       squeezed under its reference keeps its words at their floor. The
+       scene's blur is read at 300px and scaled like the rest.
+       `own` is the officer's file (cardBack), a page laid out at its own
+       width: its floors stay at 18 px. */
+    function refOf(fmt) {
+      var K = CONFIG.cards;
+      return (fmt === "mid" ? K.rmid : fmt === "tiny" ? K.rtiny : K.rfull) || 120;
+    }
+    function sizeNode(n, w, fmt, own) {
       n.style.setProperty("--w", w + "px");
       n.style.setProperty("--h", (fmt === "full" ? Math.round(w * 1.4) : w) + "px");
       n.style.setProperty("--blur", (CONFIG.cards.blur * w / 300).toFixed(2) + "px");
-      var fit = FIT_AT[fmt] ? clamp(FIT_AT[fmt] / w, 1, FIT_MAX) : 1;
-      n.style.setProperty("--fit", fit.toFixed(2));
-      n.classList.toggle("fit", fit > 1.01);
+      n.style.setProperty("--sk", own ? "1" : Math.max(1, w / refOf(fmt)).toFixed(3));
     }
     /* The barracks' door into this builder: `c` is { rank, tier }, `opt` is
        { fmt, w, side, ghost }. The scene is the first band's, which is the
@@ -7687,16 +8213,19 @@
 
     /* THE BACK OF AN OFFICER'S FILE, for the barracks (packages/webshell/
        army.js, openFile). It is the same card turned over: the frame, the
-       rim, the grade, the tier, the macaron and the pips of the face, so the
-       back is visibly the same object — with the officer standing small in a
-       window at its head and their file under it. `info` is written by the
+       rim, the grade, the tier and the pips of the face, so the back is
+       visibly the same object, with the officer standing small in a window
+       at its head and their file under it. The macaron stays on the face:
+       its pictogram heads the ability line instead. `info` is written by the
        barracks, already in the player's language and already in capitals
-       where it shouts: { grade, first, last, facts: [], skill, lore, army, turn }.
+       where it shouts: { grade, first, last, facts: [], job, jobPost, skill,
+       lore, army, turn }.
        Every line is text written into a node, never markup — a name like
        O'Ween and a lore with quotes in it are data. */
     function cardBack(c, opt, info) {
       opt = opt || {};
       var n = cardNode(c, { fmt: "full", w: opt.w || 300, side: opt.side || "blue" });
+      sizeNode(n, opt.w || 300, "full", true);   // a page at its own width, not a card scaled
       n.classList.add("file");
       var body = n.querySelector(".c-body");
       function line(parent, tag, cls, str) {
@@ -7714,6 +8243,13 @@
       if (info.facts && info.facts.length) {
         var facts = line(sheet, "div", "cf-facts");
         for (var i = 0; i < info.facts.length; i++) line(facts, "span", "", info.facts[i]);
+      }
+      /* the officer's trade, and the post of the camp it suits
+         (packages/webshell/army.js, `postPct`) */
+      if (info.job) {
+        var job = line(sheet, "div", "cf-job");
+        line(job, "b", "", info.job);
+        if (info.jobPost) line(job, "span", "", info.jobPost);
       }
       /* the grade's ability, under the macaron's own pictogram */
       if (info.skill) {
@@ -8245,10 +8781,33 @@
     var LIFT_SEL = 22, DRAG_UP = 30, DRAG_S = 1.1;
 
     function slotDashes(i) {
-      roundRect(ctx, handX(i), G.handY, HAND_W, HAND_H, HAND_W * 0.06);
+      roundRect(ctx, handX(i), G.handY, HAND_W, HAND_H, HAND_W * 0.05);
       ctx.fillStyle = "rgba(255,255,255,.035)"; ctx.fill();
       ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    /* A LOCKED SLOT: a dark plate in the row and the padlock of the Lucide
+       stroke (assets/motor/lucide/lock.svg), replayed through Path2D like
+       the skull — a slot the hand has, not a card it lost. */
+    var LOCK_PATHS = ["M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z",
+      "M7 11V7a5 5 0 0 1 10 0v4"];
+    var lockShapes = null;
+    function slotLocked(i) {
+      var x = handX(i), y = G.handY;
+      roundRect(ctx, x, y, HAND_W, HAND_H, HAND_W * 0.05);
+      ctx.fillStyle = "rgba(6,8,18,.55)"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.stroke();
+      if (!lockShapes) lockShapes = LOCK_PATHS.map(function (d) { return new Path2D(d); });
+      var s = HAND_W * 0.34 / 24;
+      ctx.save();
+      ctx.translate(x + HAND_W / 2, y + HAND_H / 2);
+      ctx.scale(s, s);
+      ctx.translate(-12, -12);
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(246,241,228,.32)";
+      for (var k = 0; k < lockShapes.length; k++) ctx.stroke(lockShapes[k]);
+      ctx.restore();
     }
 
     /* The hand. A card being PLAYED is its token: the moment it is dragged
@@ -8263,6 +8822,14 @@
     function drawHand() {
       var i, j, T = turn;
       var px = G.deckX + G.deckW / 2, py = G.deckY + G.deckH / 2, ps = G.deckW / HAND_W;
+      for (i = handSize; i < handSlots; i++) slotLocked(i);
+      /* the cards not played this turn, on their way under the deck */
+      for (j = 0; j < returns.length; j++) {
+        var R = returns[j], kr = ease(Math.min(1, R.t));
+        var rx = handX(R.slot) + HAND_W / 2, ry = G.handY + HAND_H / 2;
+        drawCard("r" + R.slot, R.card, rx + (px - rx) * kr, ry + (py - ry) * kr - 40 * Math.sin(kr * Math.PI), HAND_W,
+                 { fmt: "mid", down: kr >= 0.5, flip: kr, scale: 1 + (ps - 1) * kr });
+      }
       for (i = 0; i < handSize; i++) {
         var x = handX(i) + HAND_W / 2, y = G.handY + HAND_H / 2;
         /* the ally a spell turned the card on has stepped into the duel: one
@@ -8273,13 +8840,15 @@
         var arriving = null;
         for (j = 0; j < refills.length; j++) if (refills[j].slot === i) arriving = refills[j];
         if (arriving) {
+          if (arriving.t < 0) { slotDashes(i); continue; }   // still waiting for the pile
           var ka = ease(Math.min(1, arriving.t));
           drawCard("h" + i, hand[i], px + (x - px) * ka, py + (y - py) * ka, HAND_W,
-                   { down: ka < 0.5, flip: ka * 0.5 + 0.5, scale: ps + (1 - ps) * ka });
+                   { fmt: "mid", down: ka < 0.5, flip: ka * 0.5 + 0.5, scale: ps + (1 - ps) * ka });
           continue;
         }
         var sel = selected === i && !T;
-        drawCard("h" + i, hand[i], x, sel ? y - LIFT_SEL : y, HAND_W, { lit: sel ? 1 : 0, scale: sel ? 1.06 : 1 });
+        drawCard("h" + i, hand[i], x, sel ? y - LIFT_SEL : y, HAND_W,
+                 { fmt: "mid", lit: sel ? 1 : 0, scale: sel ? 1.06 : 1 });
       }
       /* the dragged card's token, over the canvas, under the finger */
       if (drag && drag.moved && hand[drag.i] != null && !T) {
@@ -8336,14 +8905,14 @@
       }
       ctx.globalAlpha = 1;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = font(15, 900); ctx.fillStyle = rgba(INK, open ? 1 : 0.8);
-      ctx.fillText(upper(Lang.t(role === "infirmary" ? "Infirmary" : "Prison")), x + w / 2, y + h + 13);
+      ctx.font = font(18, 900); ctx.fillStyle = rgba(INK, open ? 1 : 0.8);
+      ctx.fillText(upper(Lang.t(role === "infirmary" ? "Infirmary" : "Prison")), x + w / 2, y + h + 14);
       if (count) {
         var bx = x + w - 12, by = y + 10;
         ctx.beginPath(); ctx.arc(bx, by, 15, 0, Math.PI * 2);
         ctx.fillStyle = tint; ctx.fill();
         ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(8,10,22,.85)"; ctx.stroke();
-        ctx.font = font(17, 900); ctx.fillStyle = "#fff";
+        ctx.font = font(18, 900); ctx.fillStyle = "#fff";
         ctx.fillText(String(count), bx, by + 1);
       }
       ctx.restore();
@@ -8486,11 +9055,17 @@
       }
       var n = army0.length, w = n > 24 ? 76 : n > 14 ? 88 : 100;
       var c = sheetCard("army", "Your army", n, "At the start of the battle"), box = c.body;
-      box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
-      box.appendChild(armyTiles(alive, w));
-      box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
-      if (lostCards.length) box.appendChild(armyTiles(lostCards, w, true));
-      else box.insertAdjacentHTML("beforeend", '<div class="sh-empty">' + upper(Lang.t("No card lost yet")) + "</div>");
+      /* A SECTION IS DRAWN ONLY WHEN IT HOLDS A CARD: an empty heading is a
+         line that says nothing happened, which the count on the corner
+         already says. */
+      if (alive.length) {
+        box.insertAdjacentHTML("beforeend", '<div class="sh-sec">' + upper(Lang.t("Alive")) + " <span>" + alive.length + "</span></div>");
+        box.appendChild(armyTiles(alive, w));
+      }
+      if (lostCards.length) {
+        box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost")) + " <span>" + lostCards.length + "</span></div>");
+        box.appendChild(armyTiles(lostCards, w, true));
+      }
       if (strayed.length) {
         box.insertAdjacentHTML("beforeend", '<div class="sh-sec lost">' + upper(Lang.t("Lost in the forest")) + " <span>" + strayed.length + "</span></div>");
         box.appendChild(armyTiles(strayed, w, true));
@@ -8703,7 +9278,8 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally,
-             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo };
+             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo,
+             defense: defenseSim };
   })();
   /* ===================================================================
      7. BOOTSTRAP — wiring. Rarely edited.

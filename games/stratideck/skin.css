@@ -128,12 +128,12 @@
   }
 
   /* ---- THE CARDS -----------------------------------------------------------
-     What follows, between THE CARD ITSELF and END OF THE CARD, is the block
-     "Copy the card CSS" takes out of lab/stratideck-card.html, pasted as it
-     comes and left unindented so the next paste is a clean diff. Which frame
-     and which badges it wears is CONFIG.cards in game.js ("Copy the card
-     settings", same page). Nothing in it is edited here: a card is tuned in
-     the lab and the lab is what ships. */
+     What follows, between THE CARD ITSELF and END OF THE CARD, is THE card
+     stylesheet, and this is the one copy of it: lab/stratideck-card.html,
+     the design bench, links this file rather than carrying its own, so a
+     card rule is edited HERE and the bench shows it on a reload. Left
+     unindented, as it was written. Which frame and which badges it wears is
+     CONFIG.cards in game.js ("Copy the card settings", on the bench). */
 /* ===========================================================================
    THE CARD ITSELF — from here to the END OF THE CARD marker is what ships.
    =========================================================================== */
@@ -203,19 +203,29 @@
   filter:drop-shadow(0 1.5em 2em rgba(0,0,0,.6)) drop-shadow(0 0 1.5em color-mix(in srgb, var(--rar) 45%, transparent));
 }
 .c-hero.missing { align-items:center; }
-.c-hero.missing::before { content:attr(data-missing); font-size:5em; letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
+.c-hero.missing::before { content:attr(data-missing); font-size:max(calc(18px * var(--sk, 1)), 5em); letter-spacing:.3em; opacity:.5; text-transform:uppercase; }
 
 /* 4. the badges. An SVG shape, a number over it, a shadow on the box. The
    colour is `--bc`: the card's rarity, for both roles. `.f` is
    the coloured body of the shape, `.f2` its darker second colour, `.x` its
    neutral parts (a blade, a chain, a plate), `.g` the gloss. Every design
    has a default place for each role and hangs a little over the card's edge;
-   the `at-*` classes override the place. z-index 20: above the body, always. */
+   the `at-*` classes override the place. z-index 20: above the body, always.
+   Its scale is two numbers: `--bs`, the format's and the design's (the rules
+   below), and `--bk`, the card's own knob for that role — `--k-rank` or
+   `--k-tier`, set on the card per format (CONFIG.cards), 1 if it names none.
+   `--bz` is their product, and the number's floor is divided by it so the
+   figure stays at 18 px whatever the badge is scaled to. `--bdx` / `--bdy`
+   move it off its design's own place — `--x-rank` / `--y-rank` (and -tier)
+   on the card, in percents of its width, 0 if it names none. */
 .c-badge {
   z-index:20; --bc:var(--rar); --rim2:var(--gold); --rim3:var(--gold3); --rot:0deg; --bs:1; --tx:0; --ty2:0; --ty:50%;
-  transform:translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bs));
+  --bk:1; --bz:calc(var(--bs) * var(--bk)); --bdx:0em; --bdy:0em;
+  transform:translate(var(--bdx), var(--bdy)) translate(var(--tx), var(--ty2)) rotate(var(--rot)) scale(var(--bz));
   filter:drop-shadow(0 .8em 1.4em rgba(0,0,0,.6)) drop-shadow(0 0 1.2em color-mix(in srgb, var(--bc) 55%, transparent));
 }
+.c-badge.rank { --bk:var(--k-rank, 1); --bdx:calc(var(--x-rank, 0) * 1em); --bdy:calc(var(--y-rank, 0) * 1em); }
+.c-badge.tier { --bk:var(--k-tier, 1); --bdx:calc(var(--x-tier, 0) * 1em); --bdy:calc(var(--y-tier, 0) * 1em); }
 /* the tier badge: same rarity colour, but a dark steel rim and a hard shadow */
 .c-badge.tier { --rim2:#1a1d24; --rim3:#0b0d12; filter:drop-shadow(.7em .9em 0 rgba(0,0,0,.78)); }
 .c-badge svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
@@ -226,11 +236,11 @@
 .c-badge .d  { fill:url(#bx-shade); pointer-events:none; }
 .c-badge span {
   position:absolute; left:50%; top:var(--ty); transform:translate(-50%, -50%);
-  font-size:10em; font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
+  font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 10em); font-weight:900; line-height:1; letter-spacing:-.04em; white-space:nowrap;
   color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.45), 0 0 .5em rgba(0,0,0,.4);
 }
 .c-badge span small { font-size:.36em; font-weight:800; letter-spacing:.15em; margin-right:.25em; vertical-align:.25em; }
-.c-badge.tier span { font-size:9em; color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
+.c-badge.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 9em); color:#fff; -webkit-text-stroke:.03em rgba(0,0,0,.6); text-shadow:0 .08em 0 rgba(0,0,0,.6); }
 .card:not(.rank-on) .c-badge.rank { display:none; }
 .card:not(.tier-on) .c-badge.tier { display:none; }
 
@@ -247,11 +257,11 @@
 .d-medal.tier   { width:15em; height:21em; right:-3.5em; bottom:22em; --ty:67%; --rot:10deg; }
 .d-dogtag.rank  { width:16em; height:32em; left:3em; top:-8em; --rot:-7deg; --ty:68%; }
 .d-dogtag.tier  { width:12em; height:24em; right:-2.5em; top:-6em; --rot:9deg; --ty:68%; }
-.d-dogtag.tier span { font-size:6.5em; }
+.d-dogtag.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 6.5em); }
 .d-burst.rank   { width:27em; height:27em; left:-6em; top:-6em; --rot:-12deg; }
 .d-burst.tier   { width:19em; height:19em; right:-4em; bottom:24em; --rot:10deg; }
 .d-scroll.rank  { width:46em; height:16em; left:50%; top:-5em; --tx:-50%; }
-.d-scroll.rank span { font-size:8.5em; }
+.d-scroll.rank span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 8.5em); }
 .d-scroll.tier  { width:30em; height:11em; left:50%; bottom:-3.5em; --tx:-50%; }
 
 /* the placement override */
@@ -273,13 +283,16 @@
    the tier bottom-right, the macaron bottom-left — a card read small in a
    list and the same card opened big must not move a badge between them.
    `--ps` is its scale, which the game raises with the badges on a card
-   dealt small; it grows out of its own corner. */
+   dealt small, times `--k-perk`, the card's own knob per format
+   (CONFIG.cards); it grows out of its own corner, and `--x-perk` /
+   `--y-perk` move it, in percents of the card's width. */
 .c-perk {
   z-index:21; left:-4em; bottom:-4em; width:19em; height:19em; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
   box-shadow:0 0 0 1.3em var(--gold), 0 0 0 2em #0b0d12, 0 .9em 1.6em rgba(0,0,0,.6);
-  transform:scale(var(--ps, 1)); transform-origin:0 100%;
+  transform:translate(calc(var(--x-perk, 0) * 1em), calc(var(--y-perk, 0) * 1em)) scale(calc(var(--ps, 1) * var(--k-perk, 1)));
+  transform-origin:0 100%;
 }
 .c-perk svg {
   width:60%; height:60%; overflow:visible;
@@ -305,10 +318,10 @@
 }
 .c-plate::before { top:0; } .c-plate::after { bottom:0; }
 .c-name {
-  display:block; font-size:9em; font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
+  display:block; font-size:calc(max(calc(18px * var(--sk, 1)), 9em) * var(--nfit, 1)); font-weight:900; letter-spacing:.14em; line-height:1.05; white-space:nowrap;
   color:#fff; text-shadow:0 .08em 0 rgba(0,0,0,.6), 0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
 }
-.c-tier { display:block; margin-top:.6em; font-size:4.2em; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
+.c-tier { display:block; margin-top:.6em; font-size:calc(max(calc(18px * var(--sk, 1)), 4.2em) * var(--tfit, 1)); white-space:nowrap; font-weight:800; letter-spacing:.4em; color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent); }
 .c-pips { left:0; right:0; bottom:1.6em; z-index:6; display:flex; justify-content:center; gap:1.4em; }
 .c-pips i {
   width:2.6em; height:2.6em; transform:rotate(45deg); border-radius:.4em;
@@ -665,7 +678,18 @@
 .fmt-mid .c-hero.missing, .fmt-tiny .c-hero.missing { display:flex; align-items:center; justify-content:center; }
 .fmt-mid .c-crest { right:3.5em; top:3.5em; width:18em; height:20em; }
 .fmt-mid .c-plate { bottom:4em; padding:1.6em 4em 1.2em; }
-.fmt-mid .c-name { font-size:10em; letter-spacing:.1em; }
+/* THE WORDS ALLOWED UNDER THEIR FLOOR: the plate's, on the face of a mid
+   card (the grade's name) and of a full one (the name and the rarity).
+   LIEUTENANT and SERGEANT do not fit a 112 px square at 18 px, nor
+   LEGENDARY a 125 px card, and the plate is where the card is read, so a
+   line wider than its plate is shrunk to it — `--nfit` / `--tfit` — and
+   nothing else on any card is. */
+.fmt-mid .c-name { font-size:calc(max(calc(18px * var(--sk, 1)), 10em) * var(--nfit, 1)); letter-spacing:.1em; }
+/* ...at ONE size per line: an officer's card takes the size the longest
+   grade and the longest rarity need (game.js, plateFit, on the root); an
+   object keeps its own, measured on the card (fitName) */
+.fmt-full:not(.object) { --nfit:var(--nfit-full, 1); --tfit:var(--tfit-full, 1); }
+.fmt-mid:not(.object) { --nfit:var(--nfit-mid, 1); }
 .fmt-mid .c-tier, .fmt-mid .c-pips { display:none; }
 .fmt-mid.style-steel .c-scene { inset:4.5em 4.5em 7.5em; }
 .fmt-mid.style-steel .c-plate { bottom:9em; }
@@ -695,8 +719,8 @@
    size is a fraction of a 300px card and reads as a speck on a 64px one, so
    every shape is re-measured here rather than scaled. */
 .fmt-tiny .c-badge { --bs:1; --rot:0deg; --tx:0; --ty2:0; }
-.fmt-tiny .c-badge span { font-size:23em; }
-.fmt-tiny .c-badge.tier span { font-size:19em; }
+.fmt-tiny .c-badge span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 23em); }
+.fmt-tiny .c-badge.tier span { font-size:max(calc(18px * var(--sk, 1) / var(--bz)), 19em); }
 .fmt-tiny .c-badge.rank { right:auto; bottom:auto; left:-4em; top:-4em; }
 .fmt-tiny .d-shield.rank { width:46em; height:50em; }
 .fmt-tiny .d-crown.rank  { width:54em; height:36em; left:-5em; top:-3em; }
@@ -736,7 +760,7 @@
 .card.back .c-mark, .card.back .c-hero, .card.back .c-badge, .card.back .c-plate, .card.back .c-pips, .card.back .c-crest, .card.back .c-frame::after { display:none; }
 .card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
 .card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
-.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:14em; font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
+.card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:max(calc(18px * var(--sk, 1)), 14em); font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
 .card.back.fmt-tiny .c-back img { width:70%; }
 .card.back.fmt-tiny .c-back::after { display:none; }
 
@@ -749,7 +773,7 @@
 .card.object .c-hero { align-items:center; }
 .card.object .c-hero img { max-width:82%; max-height:82%; }
 .fmt-mid.object .c-hero img, .fmt-tiny.object .c-hero img { height:74%; margin:0; }
-.fmt-mid.object .c-name { font-size:8.5em; }
+.fmt-mid.object .c-name { font-size:calc(max(calc(18px * var(--sk, 1)), 8.5em) * var(--nfit, 1)); }
 
 /* a GHOST: a card the player has never had — never owned for an officer,
    never met for an object. The painted piece flattened to its own WHITE
@@ -782,18 +806,17 @@
     background:rgba(6,9,26,.58); box-shadow:inset 0 0 0 2px rgba(242,193,78,.35);
   }
 
-  /* THE BADGES AT A PLAYING SIZE (game.js, sizeNode): a card dealt smaller
-     than the lab composed it keeps its grade and its tier readable — and the
-     macaron with them, read at the same glance. */
-  .card.fit .c-badge { --bs:var(--fit); }
-  .card.fit.fmt-mid .c-badge { --bs:calc(.8 * var(--fit)); }
-
-  .card.fit .c-perk { --ps:var(--fit); }
-  .card.fit.fmt-mid .c-perk { --ps:calc(.8 * var(--fit)); }
-  /* ...and what those badges take from the plate, the name gives back: the
-     longest grade (LIEUTENANT) runs under the macaron on a square under
-     200 px, so the square's name is drawn smaller and tighter there. */
-  .card.fit.fmt-mid .c-name { font-size:7.6em; letter-spacing:.05em; }
+  /* THE SIZE OF A CARD IS ONE NUMBER. There are three cards — full, mid,
+     tiny — each composed ONCE, in lab/stratideck-card.html, at its
+     reference width (CONFIG.cards.rfull / rmid / rtiny), and every place
+     shows that card as a whole at its own width. Everything above is in em
+     (1% of the card's width), so it follows the width on its own; the one
+     thing that would not is a text FLOOR, written in px — so every floor is
+     `calc(18px * var(--sk))`, where `--sk` is the width over the reference
+     (game.js, sizeNode). A card dealt at 2.5× its reference is therefore
+     the reference card at 2.5×, words included, and never a card laid out
+     again for its size. `--sk` is never under 1: a card squeezed under its
+     reference keeps its words at their floor. */
 
   /* A CARD ALREADY TURNED OVER ONCE, back face down: the same cloth with a
      dog-eared corner and no question mark. It says "you have seen this one"
@@ -843,7 +866,7 @@
   .c-count.warn { color:rgba(255,110,110,.6); }
   .c-count.badge {
     inset:auto; right:-10%; top:-10%; width:auto; min-width:38%; height:38%; padding:0 6%;
-    font-size:24em; letter-spacing:0; border-radius:99em; color:#fff;
+    font-size:max(calc(18px * var(--sk, 1)), 24em); letter-spacing:0; border-radius:99em; color:#fff;
     background:#ff5c5c; box-shadow:0 0 0 .12em rgba(8,10,22,.85); text-shadow:none;
   }
 
@@ -875,7 +898,7 @@
              fill:#d61f2c; stroke:rgba(20,0,4,.85); stroke-width:1.3; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
   .sh-n { text-align:center; margin-top:6px; font-size:22px; font-weight:900; color:#ffb4b4; white-space:nowrap; }
   .card.no-tier .c-badge.tier { display:none; }
-  .sh-sec { align-self:stretch; font-size:17px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
+  .sh-sec { align-self:stretch; font-size:18px; font-weight:900; letter-spacing:2px; color:#8fc2ff;
             border-bottom:1px solid rgba(143,194,255,.3); padding-bottom:6px; margin-bottom:-6px; }
   .sh-sec span { color:#f6f1e4; opacity:.7; margin-left:4px; }
   .sh-sec.lost { color:#ff8a8a; border-color:rgba(255,138,138,.3); }
@@ -890,7 +913,8 @@
      whatever size the file opens at. Top to bottom: the officer standing in
      a window, a name plate cut like the face's, the facts, the story on its
      own dark panel under the army's crest, the army along the foot. */
-  .card.file .c-mark, .card.file .c-plate { display:none; }
+  /* no macaron on the back: its pictogram already heads the ability line */
+  .card.file .c-mark, .card.file .c-plate, .card.file .c-perk { display:none; }
   .card.file .c-hero { top:4em; bottom:auto; height:36em; }
   .card.file .c-scene::after {
     background:
@@ -914,7 +938,7 @@
   }
   .cf-plate::before { top:0; } .cf-plate::after { bottom:0; }
   .cf-first {
-    display:block; font-size:4.4em; font-weight:800; letter-spacing:.34em; line-height:1.2;
+    display:block; font-size:max(calc(18px * var(--sk, 1)), 4.4em); font-weight:800; letter-spacing:.34em; line-height:1.2;
     color:var(--gold2); text-shadow:0 .1em 0 rgba(0,0,0,.6);
   }
   .cf-last {
@@ -923,16 +947,30 @@
     text-shadow:0 .07em 0 rgba(0,0,0,.6), 0 0 .6em color-mix(in srgb, var(--rar) 70%, transparent);
   }
   .cf-grade {
-    display:block; margin-top:.5em; font-size:4em; font-weight:800; letter-spacing:.42em;
+    display:block; margin-top:.5em; font-size:max(calc(18px * var(--sk, 1)), 4em); font-weight:800; letter-spacing:.42em;
     color:var(--rar); text-shadow:0 0 .8em color-mix(in srgb, var(--rar) 70%, transparent);
   }
   .style-forge .cf-grade { color:#ffb347; text-shadow:0 0 .8em rgba(255,140,40,.8); }
   .cf-facts, .cf-lore { margin:0 8em; }
   .cf-facts { display:flex; justify-content:center; gap:1.8em; }
   .cf-facts span {
-    font-size:3.6em; font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
+    font-size:max(20px, 3.6em); font-weight:800; letter-spacing:.06em; line-height:1; padding:.42em 1em;
     border-radius:99em; color:var(--gold2); background:rgba(4,5,14,.72);
     box-shadow:inset 0 0 0 .1em color-mix(in srgb, var(--gold) 70%, transparent), 0 .2em .5em rgba(0,0,0,.5);
+  }
+  /* the officer's trade (game.js, cardBack): one line in the gold of the
+     frame, the post it suits after it, dimmer */
+  .cf-job {
+    flex:0 0 auto; margin:-.6em 8em 0; display:flex; flex-wrap:wrap; justify-content:center;
+    align-items:baseline; column-gap:1.6em; text-align:center;
+  }
+  .cf-job b {
+    font-size:max(calc(18px * var(--sk, 1)), 3.8em); font-weight:900; letter-spacing:.14em; line-height:1.2;
+    color:var(--gold2); text-shadow:0 .1em .2em rgba(0,0,0,.8);
+  }
+  .cf-job span {
+    font-size:max(calc(18px * var(--sk, 1)), 3.2em); font-weight:800; letter-spacing:.1em; line-height:1.2;
+    color:#d8cfb8; text-shadow:0 .1em .2em rgba(0,0,0,.8);
   }
   /* the grade's ability (game.js, SKILL): the macaron's pictogram and one
      line, in the gold of the frame — a rule, so it is read upright, unlike
@@ -947,7 +985,7 @@
     fill:none; stroke:var(--gold2); stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
   }
   .cf-skill p {
-    margin:0; font-size:3.5em; font-weight:800; line-height:1.3; color:#f6e6b4;
+    margin:0; font-size:max(20px, 3.5em); font-weight:800; line-height:1.3; color:#f6e6b4;
     text-shadow:0 .08em .2em rgba(0,0,0,.8);
   }
   .cf-lore {
@@ -968,13 +1006,13 @@
     opacity:.1; filter:grayscale(1) brightness(1.6);
   }
   .cf-lore p {
-    position:relative; margin:0; font-size:4em; line-height:1.42; font-style:italic;
+    position:relative; margin:0; font-size:max(22px, 4em); line-height:1.42; font-style:italic;
     color:#f3ead6; text-shadow:0 .08em .2em rgba(0,0,0,.8);
   }
   .cf-foot {
     display:flex; align-items:center; justify-content:center; gap:1.6em;
     margin:0 2.5em;   /* 8 card units, in the foot's own 3.2 */
-    font-size:3.2em; font-weight:900; letter-spacing:.34em; line-height:1; color:rgba(246,230,180,.8);
+    font-size:max(calc(18px * var(--sk, 1)), 3.2em); font-weight:900; letter-spacing:.34em; line-height:1; color:rgba(246,230,180,.8);
   }
   .cf-foot::before, .cf-foot::after {
     content:""; flex:1; height:.14em;
