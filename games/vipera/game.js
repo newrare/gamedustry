@@ -57,11 +57,13 @@
        along the burrow are in PROGRESS px — the coordinate the camera rides. */
     play: {
       // --- the viper ------------------------------------------------------
-      startLen:  3,        // blocks at the first frame
-      maxLen:    16,       // blocks the body cannot grow past
-      block:     34,       // progress px between two blocks
+      // The first block sits under the head, so the body shows one plate less
+      // than it has blocks: 4 plates at the start, 20 at full length.
+      startLen:  5,        // blocks at the first frame
+      maxLen:    21,       // blocks the body cannot grow past
+      block:     27,       // progress px between two blocks
       headR:     25,       // head radius at startLen...
-      headGrow:  0.55,     // ...plus this much per block grown
+      headGrow:  0.45,     // ...plus this much per block grown
       sample:    9,        // min gap between two trail samples
 
       // --- steering: the viper always turns, a tap only flips the side -----
@@ -70,6 +72,7 @@
       edge:      52,       // keep the head this far inside Layout
       wallHold:  0.3,      // seconds before a second wall bounce may sound
       tapLock:   0.07,     // a mashed screen is still one swerve per tap
+      eyeAhead:  520,      // px ahead within which the painted head eyes a gold egg
 
       // --- pace -----------------------------------------------------------
       // The length bonus is read off the LONGEST body of the run, never the
@@ -78,7 +81,7 @@
       speedMin:  330,      // forward speed at the first frame (px/s)
       speedMax:  560,      // ...once the time ramp is over
       ramp:      60,       // seconds of that ramp
-      lenSpeed:  5,        // extra px/s per block ever grown
+      lenSpeed:  4,        // extra px/s per block ever grown
       speedCap:  640,
 
       // --- THE SQUEEZE ----------------------------------------------------
@@ -104,7 +107,7 @@
          a small favour — losing it means eating the entire ladder again, at the
          speed the run has already reached, to get the next one. */
       lives:     3,        // bites the viper survives unarmoured
-      minLen:    2,        // what a bite leaves of the body
+      minLen:    4,        // what a bite leaves of the body
       invTime:   1.15,     // invulnerability after a bite
 
       /* --- THE DEATH -----------------------------------------------------
@@ -195,9 +198,9 @@
 
      Items live at { p, x }: p up the burrow, x in design pixels across it.
 
-     THE SQUEEZE. `anchorY` is a function of the body LENGTH, not of time: at 3
+     THE SQUEEZE. `anchorY` is a function of the body LENGTH, not of time: at 5
      blocks the head rides near the bottom with the whole screen to read ahead,
-     at 16 it has climbed some 350 px and the same thorn arrives in half the
+     at 21 it has climbed some 350 px and the same thorn arrives in half the
      time. Eating is at once the reward, the score and the difficulty curve —
      the player can see the ramp they are choosing.
      =================================================================== */
@@ -209,10 +212,10 @@
        time, so the reward lands on the character and not only in the HUD.
        `at` is the length the tier starts at. */
     var TIERS = [
-      { at: 3,  name: "Viper",   stops: ["#eaffef", "#7dffbb", "#12b86a", "#0a6d4a"], glow: "#4dff9b", halo: "#8dffbf" },
-      { at: 7,  name: "Adder",   stops: ["#f6ffe6", "#d3ff7a", "#7bc91a", "#2f6b12"], glow: "#b6ff5a", halo: "#d3ff7a" },
-      { at: 11, name: "Mamba",   stops: ["#fffbe6", "#ffd43b", "#ff9f1c", "#8a4200"], glow: "#ffb703", halo: "#ffd43b" },
-      { at: 15, name: "Basilisk", stops: ["#ffffff", "#ffb0f2", "#ff2d95", "#6a0f66"], glow: "#ff2d95", halo: "#ff9ae6" }
+      { at: 5,  name: "Viper",   stops: ["#f4ffd6", "#c4f04e", "#7cc423", "#3a8a16"], glow: "#4dff9b", halo: "#8dffbf" },
+      { at: 10, name: "Adder",   stops: ["#f6ffe6", "#d3ff7a", "#7bc91a", "#2f6b12"], glow: "#b6ff5a", halo: "#d3ff7a" },
+      { at: 15, name: "Mamba",   stops: ["#eef7ff", "#9fd4ff", "#3a9bff", "#123f8a"], glow: "#5ab4ff", halo: "#9fd4ff" },
+      { at: 20, name: "Basilisk", stops: ["#ffffff", "#ffb0f2", "#ff2d95", "#6a0f66"], glow: "#ff2d95", halo: "#ff9ae6" }
     ];
     // Extra class per tier for the score pops, so "+40" burns the same colour
     // as the body that earned it (palettes live in the SKIN block).
@@ -292,7 +295,7 @@
     // The head's line on screen for a given body length (see THE SQUEEZE).
     function anchorFor(l) {
       var t = clamp((l - T.startLen) / (T.maxLen - T.startLen), 0, 1);
-      var lo = Layout.bottom - T.anchorLow;          // 3 blocks: down here
+      var lo = Layout.bottom - T.anchorLow;          // startLen: down here
       var hi = Layout.top + T.anchorHigh;            // full length: up there
       return lo + (hi - lo) * Math.pow(t, 0.85);     // most of the climb early
     }
@@ -1571,36 +1574,54 @@
     }
 
     /* ====================================================================
-       THE SKIN — SCUTES, NOT BEADS
+       THE SKIN — THE APP ICON'S VIPER, SEEN FROM ABOVE
 
-       A chain of discs reads as an earthworm whatever colour it is painted. What
-       makes a body read as a SNAKE is IMBRICATION: overlapping plates, each one
-       tucked under the plate in front of it, all carrying the same scale grain,
-       with a dark dorsal zigzag running the length of the ridge.
+       The head is the mascot the app icon paints, seen the way the camera sees
+       everything in this burrow — from above: a round lime skull with the
+       icon's soft dark spots, its huge amber eyes bulging out of the crown
+       under two black brow marks, and the cream muzzle. It is painted art in
+       three faces (neutral, turn, hurt) and a drawn sprite where the build has
+       none.
 
-       So one scute is PRE-RENDERED per tier and per shade — a roof tile with a
-       rounded leading edge, a lit dorsal ridge, dark flanks, three staggered
-       rows of scales and a shaded trailing half — and the body is that sprite
-       drawn once per block, rotated onto the spine and laid TAIL FIRST so every
-       plate bites over the one behind it. The zigzag is a single polyline
-       stroked on top, so it stays continuous across the seams.
+       The body keeps what makes it read as a SNAKE rather than a worm,
+       IMBRICATION: staggered rows of small scales, each one's free edge lapping
+       over the row behind, blocks laid TAIL FIRST so every block bites over the
+       one behind it, with one gloss line down the spine so the hide never
+       breaks at a seam. The scales wear the tier's colour — and the
+       RAINBOW once the viper is plated: a full-length body is the armour, and
+       the armour is the one state worth seeing from across the screen.
 
-       Pre-rendering is what buys the grain: the per-frame cost stays at one
-       drawImage per block, with no shadowBlur and no gradient rebuilt per block
-       per frame.
+       Everything is pre-rendered once — one plate per tier, per hue and per
+       shade, one head — so a frame costs one drawImage per block, with no
+       shadowBlur and no gradient rebuilt per block per frame.
        ==================================================================== */
-    var PLATE_PX = 128;          // side of the scute sprite, in sprite px
-    var PLATE_HW = 40;           // half-width of the scute inside that sprite
+    var PLATE_PX = 128;          // side of a block's sprite, in sprite px
+    var PLATE_HW = 40;           // half-width of the body inside that sprite
     var PLATE_F  = 46;           // sprite px it reaches FORWARD, under its neighbour
     var PLATE_B  = 34;           // ...and BACKWARD, out to its free margin
     var PLATE_LEN = 1.78;        // on-screen length, in block spacings (see below)
     var HEAD_PX  = 224, HEAD_R = 62;   // head sprite side / the radius it draws
+    var HEAD_K   = 1.4;          // sprite radius over the head's hit radius: the big head IS the cute
     /* Where an eye sits inside the head sprite, in sprite units. Shared, because
        buildHead paints the living eye there and the death cinematic crosses it
        out at the very same spot — two numbers that must never drift apart. */
-    var EYE_X = HEAD_R * 0.92 * 0.55, EYE_Y = -HEAD_R * 0.62, EYE_R = HEAD_R * 0.225;
+    var EYE_X = HEAD_R * 0.56, EYE_Y = -HEAD_R * 0.48, EYE_R = HEAD_R * 0.3;
+    var SNOUT = HEAD_R * 1.28;   // where the tongue comes out, in sprite units
+    var HUES = 12;               // the rainbow, in steps of 30 degrees
+    /* THE PAINTED HEAD — assets/image/master/vipera-head-{neutral,turn,hurt}.png,
+       injected as CONFIG.art.head* and decoded into ArtImages. They are painted
+       from above with the snout at the BOTTOM of the picture, so they are drawn
+       turned half a turn. Measured on the pictures, as fractions of them: */
+    var PAINT_W     = 2.9;       // the head's width on screen, in hit radii
+    var PAINT_FILL  = 0.92;      // share of the picture's width the head fills
+    var PAINT_PIVOT = 0.42;      // the neck pivot, down from the nape at the top
+    var PAINT_SNOUT = 0.99;      // the snout's tip, same measure
+    var PAINT_HUE   = 85;        // the painted hide's own hue, in degrees
+    var hurtTint = null;         // the hurt head under a red filter, built once
+    var headTints = {};          // "<art key>:<hue>" -> the head recoloured to that hue
     var plateSprites = [];       // [tier][shade 0 = nape, 1 = mid, 2 = tail]
-    var headSprites  = [];       // [tier]
+    var rainbowSprites = [];     // [hue][shade]
+    var headSprite = null;
 
     function surface(px) {
       var cv = document.createElement("canvas");
@@ -1608,7 +1629,7 @@
       return cv;
     }
 
-    // A tier colour pushed toward the burrow's ink: the tail fades into the dark
+    // A colour pushed toward the burrow's ink: the tail fades into the dark
     // instead of ending on a bright stump. Returns a hex, so it can be fed back
     // into rgba().
     function darker(hex, k) {
@@ -1620,290 +1641,318 @@
       }
       return out;
     }
+    function hsla(h, s, l, a) {
+      return "hsla(" + h + "," + s + "%," + l + "%," + (a === undefined ? 1 : a) + ")";
+    }
+    // On a plated viper, block i wears hue step (i - 1): red at the nape,
+    // through the spectrum, and round again on a long body. The colour belongs
+    // to the block, so it travels with it instead of crawling along the body.
+    function hueIdx(i) { return ((i - 1) % HUES + HUES) % HUES; }
+    function hueOf(i) { return hueIdx(i) * (360 / HUES); }
 
-    /* One scute, in sprite space: forward is -y. Its LEADING half is a plain
-       slab, because the plate in front of it covers that half completely — what
-       the player actually sees of a scale is its FREE MARGIN, the rounded
-       trailing edge, exactly as with roof tiles. So all the definition (the
-       shadow line, the rim light, the scallop) goes on the back edge. */
-    function scutePath(c, hw, f, b) {
+    /* One block of the body, in sprite space: forward is -y. It is not one
+       plate but TWO ROWS OF SCALES, staggered, each scale a small rounded
+       shield whose free edge points back toward the tail and laps over the row
+       behind it — a ring drawn across the whole width is what read as an
+       earthworm. The block's own back edge is therefore SCALLOPED, scale by
+       scale, and the seams between blocks vanish into the pattern.
+
+       The rows are spaced at exactly half a block (PLATE_PERIOD, in sprite px),
+       so two rows per block keep the stagger in step from one block to the
+       next: the body reads as one continuous hide. */
+    var PLATE_PERIOD = (PLATE_F + PLATE_B) / PLATE_LEN;   // one block, in sprite px
+    var SCALE_ROW    = PLATE_PERIOD / 2;                  // two rows per block
+    var SCALE_ACROSS = 4;                                 // scales across the back
+
+    function pillPath(c, hw, y0, y1, rr) {
       c.beginPath();
-      c.moveTo(-hw, -f * 0.55);
-      c.quadraticCurveTo(-hw * 0.9, -f, 0, -f);
-      c.quadraticCurveTo(hw * 0.9, -f, hw, -f * 0.55);
-      c.lineTo(hw * 0.99, b * 0.42);
-      c.quadraticCurveTo(hw * 0.86, b, 0, b);            // the free margin
-      c.quadraticCurveTo(-hw * 0.86, b, -hw * 0.99, b * 0.42);
+      c.moveTo(-hw, y0 + rr);
+      c.quadraticCurveTo(-hw, y0, -hw + rr, y0);
+      c.lineTo(hw - rr, y0);
+      c.quadraticCurveTo(hw, y0, hw, y0 + rr);
+      c.lineTo(hw, y1 - rr);
+      c.quadraticCurveTo(hw, y1, hw - rr, y1);
+      c.lineTo(-hw + rr, y1);
+      c.quadraticCurveTo(-hw, y1, -hw, y1 - rr);
       c.closePath();
     }
-    function platePath(c, hw) { scutePath(c, hw, PLATE_F, PLATE_B); }
-    // The free margin alone — the one edge of the plate that is never covered.
-    function plateMargin(c, hw) {
+    function scalePath(c, x, y, w, h) {
       c.beginPath();
-      c.moveTo(-hw * 0.99, PLATE_B * 0.42);
-      c.quadraticCurveTo(-hw * 0.86, PLATE_B, 0, PLATE_B);
-      c.quadraticCurveTo(hw * 0.86, PLATE_B, hw * 0.99, PLATE_B * 0.42);
+      c.moveTo(x - w * 0.5, y - h * 0.12);
+      c.quadraticCurveTo(x - w * 0.5, y - h * 0.5, x, y - h * 0.5);
+      c.quadraticCurveTo(x + w * 0.5, y - h * 0.5, x + w * 0.5, y - h * 0.12);
+      c.quadraticCurveTo(x + w * 0.48, y + h * 0.3, x, y + h * 0.5);   // the free edge
+      c.quadraticCurveTo(x - w * 0.48, y + h * 0.3, x - w * 0.5, y - h * 0.12);
+      c.closePath();
+    }
+    // The free edge alone — the part of a scale that is never covered.
+    function scaleEdge(c, x, y, w, h) {
+      c.beginPath();
+      c.moveTo(x - w * 0.5, y - h * 0.12);
+      c.quadraticCurveTo(x - w * 0.48, y + h * 0.3, x, y + h * 0.5);
+      c.quadraticCurveTo(x + w * 0.48, y + h * 0.3, x + w * 0.5, y - h * 0.12);
     }
 
-    /* The grain: staggered rows of little rounded diamonds, lit on top and
-       inked underneath. Always drawn inside a clip, so it never spills out of
-       the shape it textures — one routine for the plates and for the skull. */
-    function grain(c, x0, y0, x1, y1, cell, lit) {
-      var row = 0, x, y, w = cell * 0.46, h = cell * 0.56, off;
-      for (y = y0; y <= y1; y += cell * 0.76) {
-        off = (row % 2) ? cell * 0.5 : 0;
-        for (x = x0 + off; x <= x1; x += cell) {
-          c.beginPath();
-          c.moveTo(x, y - h);
-          c.quadraticCurveTo(x + w, y - h * 0.15, x, y + h);
-          c.quadraticCurveTo(x - w, y - h * 0.15, x, y - h);
-          c.closePath();
-          c.fillStyle = "rgba(255,255,255," + lit + ")";
-          c.fill();
-          c.strokeStyle = "rgba(0,0,0,.22)"; c.lineWidth = 1.3; c.stroke();
-        }
-        row++;
-      }
-    }
-
-    function buildPlate(tier, shade) {
+    /* One block. `colAt(f)` is the skin colour down the block's VISIBLE band,
+       f = 0 where the block in front stops covering it to 1 at its own back
+       edge; `inkCol` outlines each scale's free edge. */
+    function buildPlate(colAt, inkCol, shade) {
       var cv = surface(PLATE_PX), c = cv.getContext("2d");
-      var hw = PLATE_HW, cols = tier.stops, ridge, mid, edge, g;
-      /* The ridge is the tier's LIGHT colour, never its near-white stop: a white
-         core down the middle of every plate merges into one pale ribbon and
-         washes the whole body out. */
-      ridge = shade === 0 ? cols[1] : shade === 1 ? cols[2] : cols[3];
-      mid   = shade === 0 ? cols[2] : shade === 1 ? cols[3] : darker(cols[3], 0.66);
-      edge  = shade === 0 ? cols[3] : shade === 1 ? darker(cols[3], 0.6) : darker(cols[3], 0.4);
+      var hw = PLATE_HW, step = hw * 2 / SCALE_ACROSS;
+      var sw = step * 1.18, sh = SCALE_ROW * 1.7;
+      var back = PLATE_B + 8;                           // the scallops' tips, inside the sprite
+      var y0 = back - sh * 0.5;                         // the back row's centre
+      var top = back - PLATE_PERIOD;                    // where the visible band starts
+      var g, k, x, y, off, col;
       c.translate(PLATE_PX * 0.5, PLATE_PX * 0.5);
 
-      // the plate: lit along the dorsal ridge, dark at both flanks, so a row of
-      // them reads as a round back and not as a flat ribbon
-      platePath(c, hw);
+      /* The block is a PILL: its flanks are straight and its four corners
+         rounded, so on a bend the corners of a block never stick out of the
+         body's side as a saw-tooth. Only the middle of the back edge is
+         scalloped by the scales. */
+      c.save();
+      pillPath(c, hw, -PLATE_F, back + 1, hw * 0.75);
+      c.clip();
+
+      /* Back row first: every row in front of it is drawn over it, so each
+         scale's free edge lies over the top of the scale behind — that order IS
+         the imbrication. */
+      for (k = 0; (y = y0 - k * SCALE_ROW) > -PLATE_F - sh * 0.5; k++) {
+        off = (k % 2) ? step * 0.5 : 0;
+        col = colAt(clamp((y + sh * 0.3 - top) / PLATE_PERIOD, 0, 1));
+        for (x = -hw - step + off; x <= hw + step; x += step) {
+          scalePath(c, x, y, sw, sh);
+          c.fillStyle = col; c.fill();
+          // lit toward the free edge, the way a scale catches the light
+          g = c.createLinearGradient(0, y - sh * 0.5, 0, y + sh * 0.5);
+          g.addColorStop(0, "rgba(0,0,0,.18)");
+          g.addColorStop(0.55, "rgba(255,255,255,0)");
+          g.addColorStop(0.85, "rgba(255,255,255,.2)");
+          g.addColorStop(1, "rgba(255,255,255,.05)");
+          c.fillStyle = g; c.fill();
+          scaleEdge(c, x, y, sw, sh);
+          c.lineWidth = 2.6; c.lineCap = "round"; c.strokeStyle = inkCol; c.stroke();
+          c.save(); c.translate(0, -2.2);
+          scaleEdge(c, x, y, sw * 0.86, sh * 0.86);
+          c.lineWidth = 1.6; c.strokeStyle = "rgba(255,255,255," + (shade === 2 ? 0.1 : 0.2) + ")";
+          c.stroke();
+          c.restore();
+        }
+      }
+
+      /* ...lit along the dorsal ridge, dark at both flanks, laid over every
+         scale at once, so a row of them reads as a round back and not as a
+         flat ribbon. */
+      c.globalCompositeOperation = "source-atop";
       g = c.createLinearGradient(-hw, 0, hw, 0);
-      g.addColorStop(0, edge);
-      g.addColorStop(0.18, mid);
-      g.addColorStop(0.4, ridge);
-      g.addColorStop(0.56, ridge);
-      g.addColorStop(0.8, mid);
-      g.addColorStop(1, edge);
-      c.fillStyle = g; c.fill();
-
-      c.save(); platePath(c, hw); c.clip();
-      grain(c, -hw, -PLATE_F * 0.4, hw, PLATE_B, hw * 0.4, shade === 2 ? 0.05 : 0.11);
-      /* The exposed band runs from y = 0 (where the plate in front stops) to the
-         free margin at y = PLATE_B. It is DARK at the top — that is the shadow
-         the plate in front drops on it — and brightens out to the margin. That
-         one gradient is what turns a row of sprites into a stack of layers. */
-      g = c.createLinearGradient(0, -PLATE_F * 0.5, 0, PLATE_B);
-      g.addColorStop(0, "rgba(0,0,0,.08)");
-      g.addColorStop(0.44, "rgba(0,0,0,.26)");
-      g.addColorStop(0.86, "rgba(0,0,0,0)");
-      g.addColorStop(1, "rgba(255,255,255,.16)");
+      g.addColorStop(0, "rgba(0,0,0,.55)");
+      g.addColorStop(0.2, "rgba(0,0,0,.14)");
+      g.addColorStop(0.44, "rgba(255,255,255,.16)");
+      g.addColorStop(0.56, "rgba(255,255,255,.12)");
+      g.addColorStop(0.8, "rgba(0,0,0,.16)");
+      g.addColorStop(1, "rgba(0,0,0,.6)");
       c.fillStyle = g;
-      c.fillRect(-hw, -PLATE_F, hw * 2, PLATE_F + PLATE_B);
-      c.restore();
-
-      // the free margin, inked and then rimmed: the edge the eye reads the
-      // imbrication off
-      plateMargin(c, hw);
-      c.lineWidth = 4; c.lineCap = "round";
-      c.strokeStyle = "rgba(3,17,12,.8)"; c.stroke();
-      c.save(); c.translate(0, -3.2);
-      plateMargin(c, hw * 0.985);
-      c.lineWidth = 2.6;
-      c.strokeStyle = "rgba(255,255,255," + (shade === 2 ? 0.1 : 0.24) + ")";
-      c.stroke();
+      c.fillRect(-hw, -PLATE_F - sh, hw * 2, PLATE_F + PLATE_B + sh * 2);
       c.restore();
       return cv;
     }
 
-    /* The head is where "worm" is won or lost: a sphere with two dots is a bead.
-       This one is a WEDGE — broad viper skull, blunt snout, crown scutes carrying
-       the same imbrication as the body, brow ridges over amber slit eyes, and the
-       chevron the dorsal zigzag runs out of. */
-    function buildHead(tier) {
-      var cv = surface(HEAD_PX), c = cv.getContext("2d");
-      var R = HEAD_R, w = R * 0.92, tip = -R * 1.45, cheek = -R * 0.15, neck = R * 1;
-      var cols = tier.stops, g, i, s;
+    // A tier block: the tier's own colour, darkening down the body.
+    function buildTierPlate(tier, shade) {
+      var base = darker(tier.stops[2], shade === 0 ? 1 : shade === 1 ? 0.84 : 0.66);
+      return buildPlate(function () { return base; }, rgba(darker(base, 0.32), 0.7), shade);
+    }
 
-      /* The wedge. Longer than it is wide, narrow at the snout, WIDEST at the
-         cheeks — forward of centre, where a viper carries its venom glands — then
-         pulled hard into the neck. That flare is most of the silhouette: a head
-         as round and as wide as the body behind it is a bead. */
+    /* A rainbow block. The hue runs DOWN the block, half a step ahead of its
+       own hue where the block in front stops covering it to half a step past it
+       at its back edge — which is where the next block takes over at that very
+       hue. So the rainbow flows down the body as one band instead of stacking
+       up as coloured rings. Yellow and green are bright at any lightness and
+       blue is dark at all of them: the light hues are pulled down and the dark
+       ones up so the band reads at one even weight. */
+    function buildRainbowPlate(hi, shade) {
+      var step = 360 / HUES, h = hi * step;
+      var dl = -(shade === 0 ? 0 : shade === 1 ? 7 : 16);
+      function lift(hh) {
+        hh = (hh + 360) % 360;
+        return (hh >= 40 && hh <= 160) ? -6 : (hh >= 200 && hh <= 280) ? 10 : 0;
+      }
+      return buildPlate(function (f) {
+        var hh = h - step * 0.5 + step * f;
+        return hsla(hh, 96, 54 + dl + lift(hh));
+      }, hsla(h, 70, 18, 0.6), shade);
+    }
+
+    /* The head, from above — the FALLBACK for a build without the painted
+       heads (THE PAINTED HEAD, above), drawn to the same design. Every
+       coordinate is a fraction of R, forward is -y: the snout at the top, the
+       neck at the bottom. */
+    function buildHead() {
+      var cv = surface(HEAD_PX), c = cv.getContext("2d");
+      var R = HEAD_R, g, i, s, d, a0, a1;
+      var INK = "#173a08";
+
+      /* Round and chubby, widest across the eyes, a short blunt snout, and
+         pinched into the neck so the head stands out of the body behind it. No
+         viper wedge: the plates already say snake, and the flare is what made
+         the old head read as a threat. */
       function skull() {
         c.beginPath();
-        c.moveTo(-w * 0.17, tip);                          // blunt snout, not a point
-        c.quadraticCurveTo(0, tip - R * 0.07, w * 0.17, tip);
-        c.bezierCurveTo(w * 0.56, tip + R * 0.04, w * 0.9, -R * 0.72, w * 0.98, cheek);
-        c.bezierCurveTo(w, R * 0.34, w * 0.66, R * 0.82, w * 0.34, neck);
-        c.quadraticCurveTo(0, neck + R * 0.18, -w * 0.34, neck);
-        c.bezierCurveTo(-w * 0.66, R * 0.82, -w, R * 0.34, -w * 0.98, cheek);
-        c.bezierCurveTo(-w * 0.9, -R * 0.72, -w * 0.56, tip + R * 0.04, -w * 0.17, tip);
+        c.moveTo(0, -R * 1.32);
+        c.bezierCurveTo(R * 0.5, -R * 1.32, R * 0.86, -R * 1.04, R * 0.95, -R * 0.56);
+        c.bezierCurveTo(R * 1.02, -R * 0.18, R * 0.92, R * 0.3, R * 0.72, R * 0.6);
+        c.bezierCurveTo(R * 0.56, R * 0.86, R * 0.34, R * 1.02, 0, R * 1.02);
+        c.bezierCurveTo(-R * 0.34, R * 1.02, -R * 0.56, R * 0.86, -R * 0.72, R * 0.6);
+        c.bezierCurveTo(-R * 0.92, R * 0.3, -R * 1.02, -R * 0.18, -R * 0.95, -R * 0.56);
+        c.bezierCurveTo(-R * 0.86, -R * 1.04, -R * 0.5, -R * 1.32, 0, -R * 1.32);
         c.closePath();
+      }
+      /* The edge of the lime cap over the cream: across the snout it leaves the
+         icon's cream MUZZLE in front of the eyes, and from there it runs back
+         along both sides as a thin lip to the cheeks. From above, that edge IS
+         the mouth line. */
+      function lipEdge() {
+        c.moveTo(-R * 0.97, R * 0.02);
+        c.bezierCurveTo(-R * 0.94, -R * 0.36, -R * 0.84, -R * 0.82, -R * 0.56, -R * 0.98);
+        c.quadraticCurveTo(0, -R * 1.12, R * 0.56, -R * 0.98);
+        c.bezierCurveTo(R * 0.84, -R * 0.82, R * 0.94, -R * 0.36, R * 0.97, R * 0.02);
       }
 
       c.translate(HEAD_PX * 0.5, HEAD_PX * 0.5);
+      c.lineJoin = "round"; c.lineCap = "round";
+
+      // the cream lip first, the whole skull...
       skull();
-      g = c.createLinearGradient(-w, 0, w, 0);
-      g.addColorStop(0, cols[3]);
-      g.addColorStop(0.2, cols[2]);
-      g.addColorStop(0.46, cols[1]);
-      g.addColorStop(0.76, cols[2]);
-      g.addColorStop(1, cols[3]);
+      g = c.createLinearGradient(0, -R * 1.36, 0, 0);
+      g.addColorStop(0, "#fff8c4");
+      g.addColorStop(1, "#ecd27a");
       c.fillStyle = g; c.fill();
 
       c.save(); skull(); c.clip();
-      grain(c, -w, -R * 1.2, w, neck, R * 0.26, 0.08);
-
-      // crown scutes, shrinking toward the snout: the head has to show the
-      // imbrication more clearly than anything else in the frame
-      for (i = 0; i < 5; i++) {
-        s = R * (0.46 - i * 0.055);
-        c.save();
-        c.translate(0, R * (0.82 - i * 0.42));
-        scutePath(c, s, s * 0.9, s * 0.62);
-        c.fillStyle = "rgba(255,255,255,.05)"; c.fill();
-        c.lineWidth = 2.6; c.strokeStyle = "rgba(0,0,0,.34)"; c.stroke();
-        c.beginPath();
-        c.moveTo(-s * 0.9, s * 0.42);
-        c.quadraticCurveTo(0, s * 0.72, s * 0.9, s * 0.42);
-        c.lineWidth = 2; c.strokeStyle = "rgba(255,255,255,.14)"; c.stroke();
-        c.restore();
-      }
-
-      /* The dark postocular stripe — the mark a real viper wears from the eye to
-         the angle of the jaw — plus the chevron at the nape the dorsal zigzag
-         runs out of. A big V across the whole crown reads as a logo; these read
-         as an animal. */
-      c.lineJoin = "round"; c.lineCap = "round";
-      c.strokeStyle = rgba(darker(cols[3], 0.4), 0.7);
-      for (i = -1; i <= 1; i += 2) {
-        c.beginPath();
-        c.moveTo(w * 0.5 * i, -R * 0.44);
-        c.quadraticCurveTo(w * 0.86 * i, R * 0.16, w * 0.44 * i, neck * 0.9);
-        c.lineWidth = R * 0.16; c.stroke();
-      }
+      // ...then the lime cap over it, lit from the top left like the icon
       c.beginPath();
-      c.moveTo(-w * 0.34, neck);
-      c.lineTo(0, R * 0.42);
-      c.lineTo(w * 0.34, neck);
-      c.lineWidth = R * 0.12; c.stroke();
+      lipEdge();
+      c.lineTo(R * 1.2, R * 1.2); c.lineTo(-R * 1.2, R * 1.2);
+      c.closePath();
+      g = c.createRadialGradient(-R * 0.3, -R * 0.6, R * 0.1, 0, -R * 0.1, R * 1.3);
+      g.addColorStop(0, "#d4f763");
+      g.addColorStop(0.5, "#8fd62a");
+      g.addColorStop(1, "#3f9a18");
+      c.fillStyle = g; c.fill();
 
-      /* A blush under each eye. Clipped to the skull, so it is a warm patch of
-         cheek and never a sticker floating off the silhouette — the cheapest
-         "cute" there is, and it lands exactly on the venom-gland flare. */
-      for (i = -1; i <= 1; i += 2) {
-        g = c.createRadialGradient(w * 0.48 * i, -R * 0.2, 2, w * 0.48 * i, -R * 0.2, R * 0.2);
-        g.addColorStop(0, "rgba(255,86,146,.5)");
-        g.addColorStop(1, "rgba(255,86,146,0)");
-        c.fillStyle = g;
-        c.beginPath(); c.arc(w * 0.48 * i, -R * 0.2, R * 0.2, 0, TAU); c.fill();
+      // the spots, on the crown and down the back of the skull
+      d = [[0, -0.5, 0.07], [-0.16, -0.22, 0.06], [0.18, -0.24, 0.065],
+           [0, 0.04, 0.09], [-0.34, 0.24, 0.08], [0.36, 0.2, 0.075],
+           [0, 0.5, 0.075], [-0.6, 0.3, 0.06], [0.58, 0.38, 0.065],
+           [-0.14, 0.82, 0.05], [0.24, 0.76, 0.055]];
+      for (i = 0; i < d.length; i++) {
+        c.beginPath(); c.arc(d[i][0] * R, d[i][1] * R, d[i][2] * R, 0, TAU);
+        c.fillStyle = "rgba(44,128,22,.55)"; c.fill();
       }
 
-      // lit from the snout, shaded into the neck: the wedge has to read as a
-      // wedge and not as a flat cut-out
-      g = c.createLinearGradient(0, tip, 0, neck);
-      g.addColorStop(0, "rgba(255,255,255,.2)");
-      g.addColorStop(0.5, "rgba(0,0,0,0)");
-      g.addColorStop(1, "rgba(0,0,0,.46)");
-      c.fillStyle = g; c.fillRect(-w, tip, w * 2, neck - tip);
+      // a blush on each cheek, just behind the corner of the grin
+      for (s = -1; s <= 1; s += 2) {
+        g = c.createRadialGradient(R * 0.74 * s, R * 0.06, 2, R * 0.74 * s, R * 0.06, R * 0.2);
+        g.addColorStop(0, "rgba(255,110,140,.55)");
+        g.addColorStop(1, "rgba(255,110,140,0)");
+        c.fillStyle = g;
+        c.beginPath(); c.arc(R * 0.74 * s, R * 0.06, R * 0.2, 0, TAU); c.fill();
+      }
+
+      // the gloss on the crown: the icon's hide is lacquer, not leather
+      c.save();
+      c.translate(-R * 0.08, -R * 0.78); c.rotate(-0.2); c.scale(1, 0.4);
+      c.beginPath(); c.arc(0, 0, R * 0.2, 0, TAU);
+      c.fillStyle = "rgba(255,255,255,.4)"; c.fill();
       c.restore();
 
-      /* THE EYE — where the viper stops being a threat and becomes a mascot.
-         The silhouette, the scutes and the zigzag already say "snake" on their
-         own, so the face is free to be friendly: a BIG ROUND pupil instead of a
-         vertical slit (a slit is a predator, a disc is a pet), a white eyeball
-         wide enough for the amber to read as an iris, two catchlights, and only a
-         whisper of the old brow ridge above it — the heavy one was what made the
-         head look like it was scowling. They still sit high on the cheek flare,
-         where a viper's are. */
-      for (s = -1; s <= 1; s += 2) {
-        c.save();
-        c.translate(EYE_X * s, EYE_Y);
-        c.rotate(s * 0.2);
+      // shaded into the neck, so the skull reads as a dome and not a cut-out
+      g = c.createLinearGradient(0, -R * 0.2, 0, R);
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(0,0,0,.32)");
+      c.fillStyle = g; c.fillRect(-R * 1.2, -R * 0.2, R * 2.4, R * 1.3);
+      c.restore();
 
-        // the brow: kept, but soft and high — a hint of a socket, not a scowl
-        c.save(); c.scale(1, 0.4);
-        c.beginPath(); c.arc(0, -R * 0.58, R * 0.3, 0, TAU);
-        c.fillStyle = "rgba(0,0,0,.16)"; c.fill();
-        c.restore();
-
-        c.save(); c.scale(1, 0.94);
-        // the eyeball
-        c.beginPath(); c.arc(0, 0, EYE_R, 0, TAU);
-        c.fillStyle = "#fffdf0"; c.fill();
-        c.lineWidth = 3.4; c.strokeStyle = "rgba(3,17,12,.9)"; c.stroke();
-        // the iris, low and a touch inward: an eye looking at the player
-        c.beginPath(); c.arc(-R * 0.026 * s, R * 0.03, R * 0.16, 0, TAU);
-        g = c.createLinearGradient(0, -R * 0.16, 0, R * 0.16);
-        g.addColorStop(0, "#ffe9a3");
-        g.addColorStop(1, "#e08a12");
-        c.fillStyle = g; c.fill();
-        // ...and the round pupil inside it
-        c.beginPath(); c.arc(-R * 0.026 * s, R * 0.026, R * 0.1, 0, TAU);
-        c.fillStyle = "#160a02"; c.fill();
-        c.restore();
-
-        // two catchlights, the big one up and forward: they are most of what
-        // makes an eye read as alive
-        c.beginPath(); c.arc(-R * 0.08, -R * 0.088, R * 0.055, 0, TAU);
-        c.fillStyle = "rgba(255,255,255,.92)"; c.fill();
-        c.beginPath(); c.arc(R * 0.078, R * 0.088, R * 0.028, 0, TAU);
-        c.fillStyle = "rgba(255,255,255,.5)"; c.fill();
-        c.restore();
-      }
-
-      // nostrils, high on the snout
-      for (s = -1; s <= 1; s += 2) {
-        c.beginPath(); c.arc(w * 0.24 * s, -R * 1.2, R * 0.05, 0, TAU);
-        c.fillStyle = "rgba(3,17,12,.65)"; c.fill();
-      }
-
-      // the lip line, running back from the snout under each cheek
+      /* THE GRIN. The mouth line along the lip, and at each cheek a corner that
+         curls back up into the face: from above, that curl is the whole smile. */
+      c.beginPath(); lipEdge();
+      c.lineWidth = 3.2; c.strokeStyle = INK; c.stroke();
       for (s = -1; s <= 1; s += 2) {
         c.beginPath();
-        c.moveTo(w * 0.2 * s, -R * 1.24);
-        c.quadraticCurveTo(w * 0.86 * s, -R * 0.7, w * 0.9 * s, cheek + R * 0.28);
-        c.lineWidth = 2.6; c.strokeStyle = "rgba(3,17,12,.35)"; c.stroke();
+        c.moveTo(R * 0.96 * s, -R * 0.12);
+        c.quadraticCurveTo(R * 0.9 * s, R * 0.06, R * 0.76 * s, R * 0.04);
+        c.lineWidth = 3; c.stroke();
       }
-
-      /* THE SMILE. It sits BETWEEN AND BELOW the eyes rather than out on the
-         snout: this head is seen from above, and a mouth drawn where the real one
-         is — forward of the eyes — reads as a frown on a forehead however it is
-         curved. Below them it reads as what it is, the way the app icon draws it.
-         One bowed stroke with both corners curling up, and nothing else. */
-      c.lineCap = "round"; c.lineJoin = "round";
-      c.strokeStyle = "rgba(3,17,12,.8)";
-      c.beginPath();
-      c.moveTo(-w * 0.32, -R * 0.3);
-      c.quadraticCurveTo(0, R * 0.06, w * 0.32, -R * 0.3);
-      c.lineWidth = R * 0.095; c.stroke();
-      for (s = -1; s <= 1; s += 2) {          // the corners ride up
-        c.beginPath();
-        c.moveTo(w * 0.32 * s, -R * 0.3);
-        c.quadraticCurveTo(w * 0.38 * s, -R * 0.37, w * 0.36 * s, -R * 0.44);
-        c.lineWidth = R * 0.065; c.stroke();
+      // nostrils, two dots near the tip of the snout
+      for (s = -1; s <= 1; s += 2) {
+        c.beginPath(); c.arc(R * 0.15 * s, -R * 1.18, R * 0.045, 0, TAU);
+        c.fillStyle = "rgba(40,30,8,.75)"; c.fill();
       }
 
       skull();
-      c.lineWidth = 4; c.strokeStyle = "rgba(3,17,12,.9)"; c.stroke();
+      c.lineWidth = 4.5; c.strokeStyle = INK; c.stroke();
+
+      /* THE EYES — bulging out of the crown as on the icon, big enough to break
+         the outline: a white eyeball, a big amber iris looking AHEAD, where the
+         viper is going, a round pupil and two catchlights. */
+      for (s = -1; s <= 1; s += 2) {
+        c.save();
+        c.translate(EYE_X * s, EYE_Y);
+        c.save(); c.scale(0.94, 1.08);
+        c.beginPath(); c.arc(0, 0, EYE_R, 0, TAU);
+        c.fillStyle = "#fffdf4"; c.fill();
+        c.lineWidth = 3.6; c.strokeStyle = INK; c.stroke();
+        c.restore();
+        c.beginPath(); c.arc(-R * 0.03 * s, -R * 0.07, R * 0.2, 0, TAU);
+        g = c.createRadialGradient(-R * 0.03 * s, -R * 0.02, R * 0.02, -R * 0.03 * s, -R * 0.07, R * 0.2);
+        g.addColorStop(0, "#ffd36a");
+        g.addColorStop(0.55, "#e0801c");
+        g.addColorStop(1, "#7a3206");
+        c.fillStyle = g; c.fill();
+        c.lineWidth = 2; c.strokeStyle = "rgba(60,20,0,.8)"; c.stroke();
+        c.beginPath(); c.arc(-R * 0.03 * s, -R * 0.09, R * 0.11, 0, TAU);
+        c.fillStyle = "#1a0b03"; c.fill();
+        c.beginPath(); c.arc(-R * 0.08, -R * 0.15, R * 0.07, 0, TAU);
+        c.fillStyle = "rgba(255,255,255,.95)"; c.fill();
+        c.beginPath(); c.arc(R * 0.06, R * 0.0, R * 0.035, 0, TAU);
+        c.fillStyle = "rgba(255,255,255,.6)"; c.fill();
+        c.restore();
+      }
+
+      /* The brow marks — the two black crescents the icon wears over its eyes,
+         lying on the bulge of each eye on the snout side, arched high so the
+         face reads as delighted, never cross. */
+      c.fillStyle = "#1a1d0e";
+      for (s = -1; s <= 1; s += 2) {
+        c.save();
+        c.translate(EYE_X * s, EYE_Y); c.scale(s, 1);
+        a0 = -Math.PI * 0.86; a1 = -Math.PI * 0.3;
+        c.beginPath();
+        c.arc(0, EYE_R * 0.1, EYE_R * 1.42, a0, a1);
+        c.arc(0, EYE_R * 0.22, EYE_R * 1.22, a1, a0, true);
+        c.closePath(); c.fill();
+        c.restore();
+      }
       return cv;
     }
 
-    // Sprites are tier-static: built once here, never per frame.
+    // Sprites are static: built once here, never per frame.
     function buildSkin() {
-      var t, s;
-      plateSprites = []; headSprites = [];
+      var t, h, s;
+      plateSprites = []; rainbowSprites = [];
       for (t = 0; t < TIERS.length; t++) {
         plateSprites[t] = [];
-        for (s = 0; s < 3; s++) plateSprites[t][s] = buildPlate(TIERS[t], s);
-        headSprites[t] = buildHead(TIERS[t]);
+        for (s = 0; s < 3; s++) plateSprites[t][s] = buildTierPlate(TIERS[t], s);
       }
+      for (h = 0; h < HUES; h++) {
+        rainbowSprites[h] = [];
+        for (s = 0; s < 3; s++) rainbowSprites[h][s] = buildRainbowPlate(h, s);
+      }
+      headSprite = buildHead();
     }
 
     /* Per-block screen pose, rebuilt once per frame and shared by the plate
-       pass, the zigzag and the armour sheen. Module-level arrays: three walks of
+       pass, the gloss and the tail tip. Module-level arrays: three walks of
        the body must not allocate three arrays every frame. */
     var bsx = [], bsy = [], bang = [];
 
@@ -1918,7 +1967,8 @@
     }
 
     // The tail has to END in a tail: without this the last plate reads as a body
-    // sawn off mid-stack. Drawn before the plates, so the last one laps over it.
+    // sawn off mid-stack. Drawn before the plates, so the last one laps over it,
+    // in the colour of the plate it leaves.
     function drawTailTip(n) {
       var i = n - 1, r = blockRadius(i, n) * 0.6, a = bang[i] + Math.PI;   // backward
       var tx = bsx[i] + Math.cos(a) * T.block * 1.15;
@@ -1930,63 +1980,31 @@
       ctx.quadraticCurveTo(tx + nx * r * 0.35, ty + ny * r * 0.35, tx, ty);
       ctx.quadraticCurveTo(tx - nx * r * 0.35, ty - ny * r * 0.35, bsx[i] - nx * r, bsy[i] - ny * r);
       ctx.closePath();
-      ctx.fillStyle = darker(TIERS[tier].stops[3], 0.78);
+      ctx.fillStyle = shield ? hsla(hueOf(i), 85, 36) : darker(TIERS[tier].stops[2], 0.6);
       ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(3,17,12,.8)"; ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = shield ? hsla(hueOf(i), 70, 14, 0.9) : rgba(darker(TIERS[tier].stops[2], 0.25), 0.9);
+      ctx.stroke();
     }
 
-    /* THE ZIGZAG. Vipera's signature, and the cheapest way to say "snake" in one
-       glance. One polyline over the plates so the band never breaks at a seam,
-       swinging flank to flank every second block, inked underneath for contrast
-       against the lit ridge. */
-    function drawZigzag(n) {
-      var i, s, ox, oy, r = headRadius(), pass, started;
+    /* THE GLOSS. One white line down the spine, set toward the lit flank, over
+       the plates: it is what makes the body read as one lacquered hide like the
+       icon's rather than as a stack of coloured tiles. */
+    function drawGloss(n) {
+      var i, s, ox, oy, pass, started;
       if (n < 3) return;
       ctx.lineJoin = "round"; ctx.lineCap = "round";
       for (pass = 0; pass < 2; pass++) {
         ctx.beginPath(); started = false;
         for (i = 1; i < n; i++) {
-          s = ((i % 2) ? 1 : -1) * blockRadius(i, n) * 0.34;
+          s = -blockRadius(i, n) * (pass ? 0.4 : 0.34);
           ox = bsx[i] - Math.sin(bang[i]) * s;      // lateral: the spine's normal
           oy = bsy[i] + Math.cos(bang[i]) * s;
           if (started) ctx.lineTo(ox, oy);
           else { ctx.moveTo(ox, oy); started = true; }
         }
-        ctx.lineWidth = pass ? r * 0.2 : r * 0.32;
-        ctx.strokeStyle = pass ? rgba(darker(TIERS[tier].stops[3], 0.55), 0.85)
-                               : "rgba(2,14,9,.3)";
-        ctx.stroke();
-      }
-    }
-
-    /* Plated: a sheen runs the whole length of the body. The player has to be
-       able to tell at a glance whether the next thorn is free or costs them half
-       the viper, and the head ring alone is too easy to miss mid-weave. */
-    function drawSheen(n) {
-      var i, pulse = 0.55 + 0.45 * Math.sin(runT * 5);
-      ctx.beginPath();
-      ctx.moveTo(bsx[0], bsy[0]);
-      for (i = 1; i < n; i++) ctx.lineTo(bsx[i], bsy[i]);
-      ctx.lineJoin = "round"; ctx.lineCap = "round";
-      ctx.lineWidth = headRadius() * 1.95;
-      ctx.strokeStyle = rgba("#8dffbf", 0.06 + 0.05 * pulse);
-      ctx.stroke();
-    }
-
-    // ...and a pair of counter-turning hex rings on the head, so the armour has
-    // a shape of its own instead of just a colour.
-    function drawAegis(hx, hy, r) {
-      var i, j, a, rr, pulse = 0.5 + 0.5 * Math.sin(runT * 4.5), spin = runT * 0.9;
-      for (j = 0; j < 2; j++) {
-        rr = r * (j ? 2.15 : 2.6);
-        ctx.beginPath();
-        for (i = 0; i <= 6; i++) {
-          a = (j ? -spin : spin) + i / 6 * TAU;
-          if (i) ctx.lineTo(hx + Math.cos(a) * rr, hy + Math.sin(a) * rr);
-          else ctx.moveTo(hx + Math.cos(a) * rr, hy + Math.sin(a) * rr);
-        }
-        ctx.lineWidth = j ? 3 : 5;
-        ctx.strokeStyle = rgba(j ? "#d8fff0" : "#8dffbf", (j ? 0.35 : 0.5) + 0.3 * pulse);
+        ctx.lineWidth = headRadius() * (pass ? 0.1 : 0.26);
+        ctx.strokeStyle = pass ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.16)";
         ctx.stroke();
       }
     }
@@ -2029,38 +2047,40 @@
         ctx.translate(bsx[i], bsy[i]);
         ctx.rotate(bang[i] + Math.PI / 2);              // sprite forward is -y
         ctx.scale(kx, ky);
-        ctx.drawImage(plateSprites[tier][shade], -PLATE_PX * 0.5, -PLATE_PX * 0.5, PLATE_PX, PLATE_PX);
+        ctx.drawImage(shield ? rainbowSprites[hueIdx(i)][shade] : plateSprites[tier][shade], -PLATE_PX * 0.5, -PLATE_PX * 0.5, PLATE_PX, PLATE_PX);
         ctx.restore();
       }
 
-      drawZigzag(n);
-      if (shield) drawSheen(n);
+      drawGloss(n);
     }
 
-    /* The head, once the run is over: eyes crossed out at the sprite's own eye
-       spots and a limp tongue hanging out of the grin. The tongue is drawn in
-       SCREEN space, not in the head's — limp means "wherever down is", whatever
-       the skull has rolled to. */
-    function drawDeadFace(hx, hy, a, k, r) {
+    /* The head, once the run is over: a limp tongue hanging out of the snout,
+       and — on the drawn fallback — eyes crossed out at the sprite's own eye
+       spots. The tongue is drawn in SCREEN space, not in the head's: limp means
+       "wherever down is", whatever the skull has rolled to. `sn` is how far the
+       snout's tip stands ahead of the pivot, in design px. */
+    function drawDeadFace(hx, hy, a, k, sn, painted) {
       var t = limpT(), s, e = EYE_R * 0.62, mx, my;
-      ctx.save();
-      ctx.translate(hx, hy); ctx.rotate(a); ctx.scale(k, k);
-      ctx.lineCap = "round";
-      for (s = -1; s <= 1; s += 2) {
-        ctx.save(); ctx.translate(EYE_X * s, EYE_Y);
-        ctx.beginPath(); ctx.arc(0, 0, EYE_R, 0, TAU);
-        ctx.fillStyle = "#fff4de"; ctx.fill();
-        ctx.lineWidth = 3.4; ctx.strokeStyle = "rgba(3,17,12,.9)"; ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(-e, -e); ctx.lineTo(e, e);
-        ctx.moveTo(e, -e); ctx.lineTo(-e, e);
-        ctx.lineWidth = EYE_R * 0.4; ctx.strokeStyle = "#1b0a10"; ctx.stroke();
+      if (!painted) {
+        ctx.save();
+        ctx.translate(hx, hy); ctx.rotate(a); ctx.scale(k, k);
+        ctx.lineCap = "round";
+        for (s = -1; s <= 1; s += 2) {
+          ctx.save(); ctx.translate(EYE_X * s, EYE_Y);
+          ctx.beginPath(); ctx.arc(0, 0, EYE_R, 0, TAU);
+          ctx.fillStyle = "#fff4de"; ctx.fill();
+          ctx.lineWidth = 3.4; ctx.strokeStyle = "rgba(3,17,12,.9)"; ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-e, -e); ctx.lineTo(e, e);
+          ctx.moveTo(e, -e); ctx.lineTo(-e, e);
+          ctx.lineWidth = EYE_R * 0.4; ctx.strokeStyle = "#1b0a10"; ctx.stroke();
+          ctx.restore();
+        }
         ctx.restore();
       }
-      ctx.restore();
 
-      mx = hx + Math.sin(a) * r * 1.15;
-      my = hy - Math.cos(a) * r * 1.15;
+      mx = hx + Math.sin(a) * sn;                       // out of the snout
+      my = hy - Math.cos(a) * sn;
       ctx.strokeStyle = "#ff5d8f"; ctx.lineWidth = 6; ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(mx, my);
@@ -2074,13 +2094,134 @@
       ctx.lineWidth = 4; ctx.stroke();
     }
 
+    function artImage(key) {
+      var img = typeof ArtImages !== "undefined" ? ArtImages[key] : null;
+      return img && img.complete && img.naturalWidth ? img : null;
+    }
+    // The hurt head under a red filter: painted once, on the picture's own
+    // alpha, so the red stops exactly at the silhouette.
+    function hurtRed(img) {
+      var c;
+      if (hurtTint) return hurtTint;
+      hurtTint = document.createElement("canvas");
+      hurtTint.width = img.naturalWidth; hurtTint.height = img.naturalHeight;
+      c = hurtTint.getContext("2d");
+      c.drawImage(img, 0, 0);
+      c.globalCompositeOperation = "source-atop";
+      c.fillStyle = "rgba(255,0,36,.68)";
+      c.fillRect(0, 0, hurtTint.width, hurtTint.height);
+      return hurtTint;
+    }
+
+    function hexHue(hex) {
+      var h = hex.replace("#", ""), r = parseInt(h.substr(0, 2), 16) / 255,
+          g = parseInt(h.substr(2, 2), 16) / 255, b = parseInt(h.substr(4, 2), 16) / 255,
+          mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), x;
+      if (!d) return 0;
+      x = mx === r ? (g - b) / d : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return (x * 60 + 360) % 360;
+    }
+
+    /* THE HEAD WEARS THE BODY'S COLOUR. Only the HIDE is recoloured: a pixel
+       counts as hide by its hue (the lime, past the cream muzzle's yellow) and
+       its saturation (the eyes' whites and the dark brows have none to speak
+       of), so the muzzle, the eyes and the brows keep the painter's colours.
+       The hide's spread of hues is narrowed around the new one, so its teal
+       shadows do not swing to a second colour on an orange head. Built once per
+       face and hue, on first use; a picture the canvas cannot read back is
+       left as painted. */
+    function tintedHead(key, img, hue) {
+      var id = key + ":" + hue, cv, c, im, d, i, r, g, b, mx, mn, dd, h, sv, v, w, nh, f, p, q, t, k;
+      if (Math.abs(((hue - PAINT_HUE + 540) % 360) - 180) < 6) return img;
+      if (headTints[id]) return headTints[id];
+      cv = document.createElement("canvas");
+      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+      c = cv.getContext("2d");
+      c.drawImage(img, 0, 0);
+      try { im = c.getImageData(0, 0, cv.width, cv.height); }
+      catch (e) { headTints[id] = img; return img; }
+      d = im.data;
+      for (i = 0; i < d.length; i += 4) {
+        if (d[i + 3] === 0) continue;
+        r = d[i] / 255; g = d[i + 1] / 255; b = d[i + 2] / 255;
+        mx = Math.max(r, g, b); mn = Math.min(r, g, b); dd = mx - mn;
+        if (!dd) continue;
+        h = mx === r ? (g - b) / dd : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4;
+        h = (h * 60 + 360) % 360;
+        sv = dd / mx; v = mx;
+        w = clamp((h - 58) / 10, 0, 1) * clamp((200 - h) / 15, 0, 1) * clamp((sv - 0.3) / 0.15, 0, 1);
+        if (!w) continue;
+        nh = ((hue + (h - PAINT_HUE) * 0.4) % 360 + 360) % 360 / 60;
+        k = Math.floor(nh); f = nh - k;
+        p = v * (1 - sv); q = v * (1 - sv * f); t = v * (1 - sv * (1 - f));
+        k = k % 6;
+        r = k === 0 ? v : k === 1 ? q : k === 2 ? p : k === 3 ? p : k === 4 ? t : v;
+        g = k === 0 ? t : k === 1 ? v : k === 2 ? v : k === 3 ? q : k === 4 ? p : p;
+        b = k === 0 ? p : k === 1 ? p : k === 2 ? t : k === 3 ? v : k === 4 ? v : q;
+        d[i]     = d[i]     + (r * 255 - d[i])     * w;
+        d[i + 1] = d[i + 1] + (g * 255 - d[i + 1]) * w;
+        d[i + 2] = d[i + 2] + (b * 255 - d[i + 2]) * w;
+      }
+      c.putImageData(im, 0, 0);
+      headTints[id] = cv;
+      return cv;
+    }
+    // The hue the head wears: the tier's body colour, and on a plated viper the
+    // hue of the plate at the nape, so the rainbow runs on out of the head.
+    function headHue() {
+      if (shield) return hueOf(1);
+      return Math.round(hexHue(TIERS[tier].stops[2]));
+    }
+
+    /* THE LOOK. The turn face is the head glancing aside, and the one thing in
+       the burrow worth glancing at is a GOLD EGG: the nearest one ahead, within
+       `eyeAhead`, and off to one side of where the viper is heading. Returns
+       -1 / 1 for the side, 0 to look straight on. */
+    function eggLook() {
+      var i, it, dx, dy, dd, best = 0, bx = 0, by = 0, rel;
+      for (i = 0; i < items.length; i++) {
+        it = items[i];
+        if (it.type !== "mega") continue;
+        dy = anchorY - sy(it.p); dx = it.x - headX;
+        if (dy < 40 || dy > T.eyeAhead) continue;
+        dd = dx * dx + dy * dy;
+        if (!best || dd < best) { best = dd; bx = dx; by = dy; }
+      }
+      if (!best) return 0;
+      rel = Math.atan2(bx, by) - ang;
+      return Math.abs(rel) < 0.22 ? 0 : rel > 0 ? 1 : -1;
+    }
+
+    /* The tongue, flicked out of the snout on every swerve, its fork swung
+       toward the side the viper is turning. In the head's space (forward is
+       -y), `sn` ahead of the pivot, `e` the size it is drawn at. */
+    function drawTongue(sn, e) {
+      var s = ease(tongueT / 0.26), side = dir;
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, -sn);
+      ctx.quadraticCurveTo(e * 0.08 * side, -sn - e * (0.2 + 0.2 * s),
+                           e * 0.16 * side * s, -sn - e * (0.34 + 0.4 * s));
+      ctx.moveTo(e * 0.16 * side * s, -sn - e * (0.34 + 0.4 * s));
+      ctx.lineTo(e * (0.16 * s - 0.16) * side, -sn - e * (0.52 + 0.5 * s));
+      ctx.moveTo(e * 0.16 * side * s, -sn - e * (0.34 + 0.4 * s));
+      ctx.lineTo(e * (0.16 * s + 0.18) * side, -sn - e * (0.48 + 0.46 * s));
+      ctx.lineWidth = e * 0.15; ctx.strokeStyle = "#173a08"; ctx.stroke();
+      ctx.lineWidth = e * 0.085; ctx.strokeStyle = "#ff5d8f"; ctx.stroke();
+    }
+
     function drawHead() {
-      // 1.34, not 1: a viper's head is visibly WIDER than the neck behind it,
-      // and that flare is most of what stops the body reading as a worm.
-      var r = headRadius(), T2 = TIERS[tier], k = r * 1.35 / HEAD_R;
+      // HEAD_K, not 1: the face is visibly WIDER than the neck behind it — the
+      // icon's big head, and most of what stops the body reading as a worm.
+      var r = headRadius(), T2 = TIERS[tier], k = r * HEAD_K / HEAD_R;
       var hx = headX, hy = anchorY, a = ang, dead = dieT >= 0, lt = 0;
-      var px, py, nx, ny, s;
-      if (invT > 0 && Math.floor(invT * 14) % 2) return;
+      var hurt = dead || invT > 0, flick = invT > 0 && Math.floor(invT * 14) % 2;
+      var look = hurt ? 0 : eggLook();
+      var key = hurt ? "headHurt" : look ? "headTurn" : "headNeutral", img = artImage(key);
+      var w, h, sn, mirror;
+      // the drawn fallback blinks out while immune; the painted head flickers
+      // instead (below), because it has a hurt face to show
+      if (!img && flick) return;
 
       /* Dying: the head shudders where it was hit, then rolls over toward the
          side it was carving and sinks as it gives up. It shrinks a little with
@@ -2094,9 +2235,6 @@
         k *= 1 - 0.08 * lt;
         r *= 1 - 0.08 * lt;
       }
-      px = Math.sin(a); py = -Math.cos(a);                // heading, screen space
-      nx = -py; ny = px;
-
       // halo — concentric discs, never shadowBlur. Kept faint: a bright disc
       // behind the skull puts the round silhouette straight back.
       ctx.fillStyle = rgba(T2.halo, 0.09);
@@ -2104,33 +2242,34 @@
       ctx.fillStyle = rgba(T2.halo, 0.13);
       ctx.beginPath(); ctx.arc(hx, hy, r * 1.6, 0, TAU); ctx.fill();
 
-      // the tongue, flicked on every swerve — drawn first so it comes OUT of the
-      // mouth instead of lying across it
-      if (tongueT > 0 && !dead) {
-        s = ease(tongueT / 0.26);
-        ctx.strokeStyle = "#ff5d8f"; ctx.lineWidth = 5; ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(hx + px * r * 1.2, hy + py * r * 1.2);
-        ctx.lineTo(hx + px * r * (1.8 + s * 0.7), hy + py * r * (1.8 + s * 0.7));
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(hx + px * r * (1.8 + s * 0.7), hy + py * r * (1.8 + s * 0.7));
-        ctx.lineTo(hx + px * r * (2.2 + s * 0.9) + nx * r * 0.34, hy + py * r * (2.2 + s * 0.9) + ny * r * 0.34);
-        ctx.moveTo(hx + px * r * (1.8 + s * 0.7), hy + py * r * (1.8 + s * 0.7));
-        ctx.lineTo(hx + px * r * (2.2 + s * 0.9) - nx * r * 0.34, hy + py * r * (2.2 + s * 0.9) - ny * r * 0.34);
-        ctx.stroke();
-      }
-
-      // the skull sprite, rotated onto the heading: local -y is where it points
       ctx.save();
       ctx.translate(hx, hy);
-      ctx.rotate(a);
-      ctx.drawImage(headSprites[tier],
-                    -HEAD_PX * 0.5 * k, -HEAD_PX * 0.5 * k, HEAD_PX * k, HEAD_PX * k);
+      ctx.rotate(a);                                      // local -y is where it points
+      if (img) {
+        w = PAINT_W * r / PAINT_FILL;
+        h = w * img.naturalHeight / img.naturalWidth;
+        sn = h * (PAINT_SNOUT - PAINT_PIVOT);
+        /* Which face: the hurt one while immune and dying, flickering between
+           itself and its MIRROR under a red filter so a bite reads as a blow;
+           the turn one while a gold egg is in sight off to one side, painted
+           looking left and mirrored to look right; neutral the rest of the
+           time, a swerve included. */
+        mirror = hurt ? flick : look > 0;
+        ctx.save();
+        ctx.rotate(Math.PI);                              // the snout is painted at the bottom
+        if (mirror) ctx.scale(-1, 1);
+        ctx.drawImage(hurt && flick ? hurtRed(img) : tintedHead(key, img, headHue()),
+                      -w * 0.5, -h * PAINT_PIVOT, w, h);
+        ctx.restore();
+      } else {
+        sn = SNOUT * k;
+        ctx.drawImage(headSprite,
+                      -HEAD_PX * 0.5 * k, -HEAD_PX * 0.5 * k, HEAD_PX * k, HEAD_PX * k);
+      }
+      if (tongueT > 0 && !dead) drawTongue(sn, r * HEAD_K);
       ctx.restore();
 
-      if (dead) { drawDeadFace(hx, hy, a, k, r); return; }
-      if (shield) drawAegis(hx, hy, r);
+      if (dead) drawDeadFace(hx, hy, a, k, sn, !!img);
     }
 
     function render() {

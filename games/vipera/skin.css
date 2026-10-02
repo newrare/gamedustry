@@ -98,31 +98,32 @@
 
   /* the viper: one node, four body blocks behind it as stacked shadows. They
      OVERLAP — a chain of separated beads is the one thing that makes a snake
-     read as a worm, in the demo exactly as on the canvas. The head is a wedge
-     rather than a sphere for the same reason. The turn is the fast part of the
+     read as a worm, in the demo exactly as on the canvas. The head is the app
+     icon's lime face over a cream muzzle, the body the canvas's rainbow, red at
+     the nape. The turn is the fast part of the
      keyframe — 7 % of the cycle to flip the lean, then the whole carve across
      the burrow. */
   .demo-tap .demo-target {
     z-index:2; top:64px; bottom:auto; width:52px; height:52px; margin-left:-26px;
     border:0; border-radius:52% 52% 44% 44% / 60% 60% 40% 40%;
-    /* banded, like the scutes on the canvas head */
+    /* the canvas face: lime hide lit from the top left, cream muzzle below */
     background:
-      repeating-linear-gradient(180deg, rgba(2,20,14,.22) 0 2px, transparent 2px 9px),
-      radial-gradient(circle at 38% 30%, #d8fff0 0%, #7dffbb 40%, #12b86a 100%);
+      radial-gradient(ellipse 74% 46% at 50% 84%, #fff6c0 0 97%, transparent 100%),
+      radial-gradient(circle at 36% 28%, #d4f763 0%, #8fd62a 50%, #3f9a18 100%);
     /* Each body block is TWO shadows: the plate, then a slightly larger dark one
        painted behind it. That rim is the imbrication the canvas body draws with
        real scutes — without it the chain reads as a caterpillar. */
     box-shadow:
-      0 0 20px rgba(77,255,155,.6),
-      0 17px 0 -2px  #2ad182, 0 17px 0 0     rgba(3,17,12,.55),
-      0 32px 0 -5px  #17c273, 0 32px 0 -3px  rgba(3,17,12,.55),
-      0 45px 0 -9px  #0f9558, 0 45px 0 -7px  rgba(3,17,12,.55),
-      0 56px 0 -13px #0a6d4a, 0 56px 0 -11px rgba(3,17,12,.55);
+      0 0 0 2px #173a08, 0 0 20px rgba(77,255,155,.6),
+      0 17px 0 -2px  #ff3b4e, 0 17px 0 0     rgba(3,17,12,.55),
+      0 32px 0 -5px  #ff9a1f, 0 32px 0 -3px  rgba(3,17,12,.55),
+      0 45px 0 -9px  #ffd21f, 0 45px 0 -7px  rgba(3,17,12,.55),
+      0 56px 0 -13px #3fd16a, 0 56px 0 -11px rgba(3,17,12,.55);
     animation:demoWeave 2.4s ease-in-out infinite;
   }
   /* The head needs a face, or a 16 deg lean reads as nothing. The two ripples are
      recycled into it: the first is the pair of amber eyes — the same eyes the
-     canvas skull wears — and the second is the smile under them, so the intro
+     canvas face wears — and the second is the open grin under them, so the intro
      promises the same friendly viper the canvas draws. Both ride the rotation
      with the head. */
   .demo-tap .demo-ripple { display:none; }
@@ -133,9 +134,10 @@
     box-shadow:17px 0 0 #ffd43b, 17px 0 0 2px #0b0600;
   }
   .demo-tap .demo-ripple.d2 {
-    display:block; inset:auto; left:17px; top:25px; width:18px; height:9px;
-    border:0; border-bottom:3px solid #0b0600; border-radius:0 0 70% 70%;
-    background:none; opacity:.9; animation:none;
+    display:block; inset:auto; left:16px; top:29px; width:20px; height:11px;
+    border:2px solid #173a08; border-radius:3px 3px 50% 50% / 3px 3px 100% 100%;
+    background:linear-gradient(180deg, #5a0a16 55%, #ff6f8e 56%);
+    opacity:1; animation:none;
   }
   @keyframes demoWeave {
     0%   { transform:translateX(-66px) rotate(-16deg); }
@@ -171,11 +173,11 @@
      callout burns in the colour of the body that earned it. */
   .pop-score.pop-t0 { --fill:linear-gradient(180deg,#ffffff 0%,#4dff9b 100%); --glow:rgba(77,255,155,.75); --ink:#04261a; }
   .pop-score.pop-t1 { --fill:linear-gradient(180deg,#ffffff 0%,#b6ff5a 100%); --glow:rgba(182,255,90,.75); --ink:#1b2a00; }
-  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#fffbe6 0%,#ffd43b 100%); --glow:rgba(255,212,59,.8);  --ink:#2a1a00; }
+  .pop-score.pop-t2 { --fill:linear-gradient(180deg,#ffffff 0%,#9fd4ff 60%,#3a9bff 100%); --glow:rgba(58,155,255,.8); --ink:#06204a; }
   .pop-score.pop-t3 { --fill:linear-gradient(180deg,#ffffff 0%,#ff9ae6 60%,#ff2d95 100%); --glow:rgba(255,45,149,.8); --ink:#28001a; }
   /* The gold egg rides the same quick `score` callout as an ordinary gem, so it
      is told apart by colour alone: a hot amber that no tier palette reaches —
-     t2 is a flat gold, this one burns down into orange. */
+     no tier wears gold, and this one burns down into orange. */
   .pop-score.pop-egg { --fill:linear-gradient(180deg,#fffdf0 0%,#ffe066 38%,#ff9f1c 100%); --glow:rgba(255,159,28,.9); --ink:#2a1400; }
   /* the bite that tears blocks off the body */
   .pop-danger.pop-bite { --fill:linear-gradient(180deg,#ffd9e2 0%,#ff2d55 100%); --glow:rgba(255,45,85,.7); --ink:#2a0009; }

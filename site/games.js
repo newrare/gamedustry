@@ -81,6 +81,19 @@ window.GAMES = [
     }
   },
   {
+    slug: "vipera",
+    name: "Vipera",
+    accent: ["#4dff9b", "#12b86a"],
+    fr: {
+      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
+      tags: ["Tap pour dévier", "Sans fin", "Armure"]
+    },
+    en: {
+      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
+      tags: ["Tap to swerve", "Endless", "Armour"]
+    }
+  },
+  {
     slug: "chainring",
     name: "Chainring",
     accent: ["#4bf5ff", "#4263eb"],
@@ -169,19 +182,6 @@ window.GAMES = [
     en: {
       tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
       tags: ["Swipe lanes", "Endless", "3 lives"]
-    }
-  },
-  {
-    slug: "vipera",
-    name: "Vipera",
-    accent: ["#4dff9b", "#12b86a"],
-    fr: {
-      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
-      tags: ["Tap pour dévier", "Sans fin", "Armure"]
-    },
-    en: {
-      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
-      tags: ["Tap to swerve", "Endless", "Armour"]
     }
   },
   {
