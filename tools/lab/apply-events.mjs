@@ -39,7 +39,7 @@ import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
-  ROOT, SFX_DIR, scanCalls, soundPack, sfxFiles, sfxLabel, literal, games
+  ROOT, SFX_DIR, scanCalls, soundPack, sfxFiles, sfxLabel, literal, games, units, unitDir, unitWhere, TEMPLATE
 } from './scan-events.mjs';
 
 const run = promisify(execFile);
@@ -322,10 +322,11 @@ export function bumpPatch(version) {
 export async function applyEdits(slug, plan) {
   const { calls = [], sfx = [], kill = {}, bump = true, dry = false } = plan || {};
   const killCalls = kill.calls || [], killClips = kill.clips || [];
-  const dir = path.join(ROOT, 'games', slug);
+  // The template (template/game.js) is a unit too: the end screen's cues.
+  const dir = unitDir(slug);
   const file = path.join(dir, 'game.js');
   const src = await readFile(file, 'utf8');
-  const where = `games/${slug}/game.js`;
+  const where = unitWhere(slug);
 
   const scanned = scanCalls(src, where);
   const pack = soundPack(src);
@@ -434,7 +435,8 @@ export async function applyEdits(slug, plan) {
   let version = null;
   if (!dry) {
     await writeFile(file, out);
-    if (bump) {
+    // The template has no manifest and no version: it ships nowhere.
+    if (bump && slug !== TEMPLATE) {
       const mf = path.join(dir, 'manifest.json');
       try {
         const raw = await readFile(mf, 'utf8');
@@ -460,9 +462,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
   const all = (name) => argv.map((a, i) => (a === '--' + name ? argv[i + 1] : null)).filter(Boolean);
 
-  if (!slug || !(await games()).includes(slug)) {
+  if (!slug || !(await units()).includes(slug)) {
     console.log('usage: node tools/lab/apply-events.mjs <slug> [--pop <line>:<field>=<value>] [--sfx <key>=<file>] [--len 0.6] [--no-bump] [--dry]');
-    console.log('       games: ' + (await games()).join(' '));
+    console.log('       games: ' + (await units()).join(' '));
     process.exit(1);
   }
 
@@ -484,5 +486,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const s of res.skipped) console.log('  ! ' + s);
   if (res.version) console.log(`  version → ${res.version}`);
   if (!res.applied.length) console.log('  nothing to apply');
-  else if (res.written) console.log(`  written ${slug}/game.js — rebuild with: node tools/build/build.mjs --game=${slug}`);
+  else if (res.written) console.log(`  written ${unitWhere(slug)} — rebuild with: node tools/build/build.mjs --game=${slug}`);
 }

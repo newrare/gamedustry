@@ -1288,11 +1288,14 @@
 
        Returns the share of assaults held over `runs`, and one more assault
        played out in full (`run`), which is the one that HAPPENED: who of the
-       player's cards was beaten, and which of the attacker's fell. */
+       player's cards was beaten, which of the attacker's fell, and the LOG —
+       every card sent, in the order it was sent, against what and how it
+       went (`judge`'s kind, and `hurt` on a win), which the barracks' report
+       tab reads back as a list of duels. */
     var DEF_HAND = 4;
 
     function defenseRun(cells, cols, rows, army, turns, rnd) {
-      var g = [], known = [], deck = [], hand = [], beaten = [], fallen = [], i, k, turn;
+      var g = [], known = [], deck = [], hand = [], beaten = [], fallen = [], log = [], i, k, turn;
       for (i = 0; i < cells.length; i++) {
         g.push(cells[i] ? { rank: cells[i].r, tier: cells[i].t | 0, id: cells[i].id != null ? cells[i].id : null } : null);
         known.push(false);
@@ -1381,8 +1384,9 @@
         var mv = choose(targets, live), a = hand[mv.h], q = mv.q, foe = g[q];
         var v = judge(a, { rank: foe.rank, tier: foe.tier, known: known[q] }), back = true, gone = null;
         known[q] = true;
+        log.push({ a: { r: a.rank, t: a.tier }, d: { r: foe.rank, t: foe.tier, id: foe.id }, k: v.kind, hurt: v.hurt || null });
         switch (v.kind) {
-          case "flag": return { held: false, beaten: beaten, fallen: fallen, turns: turn + 1 };
+          case "flag": return { held: false, beaten: beaten, fallen: fallen, log: log, turns: turn + 1 };
           case "trap": back = false; fallen.push(a); g[q] = null; break;
           case "clear": case "smash": g[q] = null; break;
           case "stray": back = false; break;
@@ -1416,7 +1420,7 @@
         hand = keep;
         deal();
       }
-      return { held: true, beaten: beaten, fallen: fallen, turns: turn };
+      return { held: true, beaten: beaten, fallen: fallen, log: log, turns: turn };
     }
 
     function defenseSim(cells, cols, rows, army, opt) {
@@ -1478,7 +1482,7 @@
        conscript has no id and never reaches a bed, so it is always taken in.
        `slot` is the hand slot the card stands in, emptied on a refusal.
        Returns whether the card was admitted. */
-    function wound(c, slot) {
+    function wound(c, slot, gap) {
       var beds = CONFIG.army && CONFIG.army.beds;
       if (c.id && beds != null && !wounded[c.id] && Object.keys(wounded).length >= beds) {
         refused.push(c);
@@ -1489,7 +1493,9 @@
         return false;
       }
       c.hurt = 2;
-      if (c.id) wounded[c.id] = 1;
+      /* the tier gap is kept, the widest if the card is hurt twice: it is how
+         long the barracks keeps the card in the infirmary (`ledger`) */
+      if (c.id) wounded[c.id] = Math.max(wounded[c.id] || 0, gap || 1);
       if (hurtCards.indexOf(c) < 0) hurtCards.push(c);
       return true;
     }
@@ -1569,9 +1575,9 @@
       Sound.clip(v.res === "tie" ? "tie" : "lose", 0.6, 0.9);
       Fx.shake(9, 0.25);
       if (v.deadB) { lostCards.push(b); hand[v.ally] = null; losses++; }
-      else if (v.hurtB) wound(b, v.ally);
+      else if (v.hurtB) wound(b, v.ally, Math.abs(a.tier - b.tier));
       if (v.deadA) { lostCards.push(a); losses++; }
-      else { hand[T.i] = a; if (v.hurtA) wound(a, T.i); }
+      else { hand[T.i] = a; if (v.hurtA) wound(a, T.i, Math.abs(a.tier - b.tier)); }
       var fell = v.deadA && v.deadB ? "Both fall"
                : v.deadB ? "An ally falls"
                : v.deadA ? "Struck down by an ally"
@@ -1665,7 +1671,7 @@
           hand[T.i] = a;
           Sound.clip("tie", 0.5, 1.25);
           Fx.burst(cx, cy, { color: [RED, "#ffd0d0"], count: 10, speed: 260, life: 0.45, grav: 420 });
-          if (wound(a, T.i)) Notify.say("Wounded", { sub: cardName(a), kind: "loss" });
+          if (wound(a, T.i, foe.tier - a.tier)) Notify.say("Wounded", { sub: cardName(a), kind: "loss" });
         } else {
           deck.push(a);
           if (v.hurt === "d" && foe.rank <= MARSHAL) {
@@ -2476,6 +2482,28 @@
     function styleOnce(n, prop, v) {
       if (n._s[prop] !== v) { n._s[prop] = v; n.style[prop] = v; }
     }
+    /* THE ROUND'S ENTRANCE (Enter): the camp's panel, every card, the doors
+       and the commander are its elements, landing in the order render()
+       opens them — the board, the camp, the pile, the tents, the commander,
+       the hand last. A card is a DOM node, which the canvas transform of an
+       element does not reach, so the element's flight — its scale, where it
+       has put the point, its fade — is read back off the context against the
+       ground's (`enterBase`, taken at the top of render) and handed to the
+       node. Null outside the entrance, so a round pays nothing for it. */
+    var enterBase = null, ENTER_ALPHA = null;
+    try { ENTER_ALPHA = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "globalAlpha"); } catch (e) {}
+    function enterGround() {
+      enterBase = null;
+      if (!Enter.active() || !ctx.getTransform) return;
+      var m = ctx.getTransform();
+      enterBase = { a: m.a, d: m.d, e: m.e, f: m.f, al: ENTER_ALPHA && ENTER_ALPHA.get ? ENTER_ALPHA.get.call(ctx) || 1 : 1 };
+    }
+    function enterLook(x, y) {
+      if (!enterBase || !Enter.active()) return null;
+      var m = ctx.getTransform(), b = enterBase, s = m.a / b.a;
+      return { x: x * s + (m.e - b.e) / b.a, y: y * s + (m.f - b.f) / b.d, s: s,
+               a: ENTER_ALPHA && ENTER_ALPHA.get ? ENTER_ALPHA.get.call(ctx) / b.al : 1 };
+    }
     function place(key, c, x, y, w, h, fmt, opt) {
       var side = opt.side || "blue", down = !!opt.down || !c;
       var sig = (c ? c.rank + "." + c.tier + (c.o || "") : "x") + "." + side + "." + fmt + "." + Lang.code();
@@ -2511,13 +2539,14 @@
         n.style.setProperty("--sd", opt.delay.toFixed(2) + "s");
         n._delay = opt.delay;
       }
-      var sx = opt.scale || 1, sy = sx;
+      var sx = opt.scale || 1, sy = sx, en = enterLook(x, y), ea = 1;
+      if (en) { x = en.x; y = en.y; sx *= en.s; sy = sx; ea = en.a; }
       if (opt.flip != null) sx *= Math.max(0.02, Math.abs(Math.cos(opt.flip * Math.PI)));
       var tf = "translate(" + (x - w / 2).toFixed(1) + "px," + (y - h / 2).toFixed(1) + "px)";
       if (opt.rot) tf += " rotate(" + opt.rot.toFixed(3) + "rad)";
       if (sx !== 1 || sy !== 1) tf += " scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
       styleOnce(n, "transform", tf);
-      styleOnce(n, "opacity", opt.alpha != null ? String(Math.round(clamp(opt.alpha, 0, 1) * 100) / 100) : "1");
+      styleOnce(n, "opacity", opt.alpha != null || ea !== 1 ? String(Math.round(clamp((opt.alpha != null ? opt.alpha : 1) * ea, 0, 1) * 100) / 100) : "1");
       styleOnce(n, "zIndex", String(Table.z++));
     }
     function tableBegin() {
@@ -2533,6 +2562,11 @@
     /* The camp's panel is part of the table, UNDER the cards: on the canvas
        it would be a veil over them. */
     function panel(x, y, w, h) {
+      var pn = Table.panel, en = enterLook(x + w / 2, y + h / 2);
+      if (!pn._s) pn._s = {};
+      styleOnce(pn, "visibility", "");
+      styleOnce(pn, "transform", en ? "translate(" + (en.x - x - w / 2).toFixed(1) + "px," + (en.y - y - h / 2).toFixed(1) + "px) scale(" + en.s.toFixed(3) + ")" : "");
+      styleOnce(pn, "opacity", en ? String(Math.round(clamp(en.a, 0, 1) * 100) / 100) : "");
       var at = Math.round(x) + "," + Math.round(y) + "," + Math.round(w) + "," + Math.round(h);
       if (Table.panelAt === at) return;
       Table.panelAt = at;
@@ -2551,9 +2585,10 @@
     function drawCard(key, c, x, y, w, opt) {
       opt = opt || {};
       var fmt = opt.fmt || "full", h = fmt === "full" ? Math.round(w * 1.4) : w;
+      if (!Enter.begin(x, y)) return;          // not landed yet: its node stays hidden (tableEnd)
       place(key, c, x, y, w, h, fmt, opt);
       var lit = opt.lit || 0, hurt = c && c.hurt && !opt.down, stun = c && c.stun && !opt.down;
-      if (lit <= 0 && !hurt && !stun) return;
+      if (lit <= 0 && !hurt && !stun) { Enter.end(); return; }
       ctx.save();
       ctx.translate(x, y);
       if (opt.rot) ctx.rotate(opt.rot);
@@ -2572,6 +2607,7 @@
       if (stun) drawStun(w, h, r);
       else if (hurt) drawWound(w, h, r);
       ctx.restore();
+      Enter.end();
     }
 
     /* STUNNED, AND IT IS THE SKULL THAT DID IT: a violet veil — a wound's
@@ -2633,6 +2669,11 @@
 
     function drawGrid() {
       var r, c, T = turn;
+      if (!Enter.begin(G.gx0 + G.gw / 2, G.gy0 + G.gh / 2)) {
+        if (!Table.panel._s) Table.panel._s = {};
+        styleOnce(Table.panel, "visibility", "hidden");
+        return;
+      }
       panel(G.gx0 - 14, G.gy0 - 14, G.gw + 28, G.gh + 28);
       var hot = selected >= 0 || (drag && drag.moved) ? 2 : 1;
       for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
@@ -2682,6 +2723,7 @@
                  rot: cell.tilt || 0, scale: lift,
                  alpha: !isTarget(r, c) && !up ? 0.82 : 1 });
       }
+      Enter.end();
     }
 
     /* The turn's own drawing: the token in flight, the enemy turning over,
@@ -3000,6 +3042,7 @@
     function drawDoor(role, x, count, tint) {
       var img = art(role), y = G.doorY, w = G.doorW, h = G.doorH;
       var open = sheet && sheet.kind === role;
+      if (!Enter.begin(x + w / 2, y + h / 2)) return;
       ctx.save();
       /* the pad it stands on, in its own colour: the prison is a black tent
          and a black tent on a night scene is a door nobody finds */
@@ -3032,6 +3075,7 @@
         ctx.fillText(String(count), bx, by + 1);
       }
       ctx.restore();
+      Enter.end();
     }
 
     /* The enemy's corner: the commander behind his camp, reacting to the
@@ -3045,8 +3089,16 @@
       if (f._src !== src) { f._src = src; if (src) f.src = src; styleOnce(f, "display", src ? "" : "none"); }
       styleOnce(f, "width", G.foeW + "px"); styleOnce(f, "height", G.foeH + "px");
       var bob = Math.round(Math.sin(tAnim * 2.2) * 30) / 10;
-      styleOnce(f, "transform", "translate(" + Math.round(G.foeX) + "px," + (Math.round(G.foeY) + bob) + "px)" +
-                (FOE_FLIP ? " scaleX(-1)" : ""));
+      var fcx = G.foeX + G.foeW / 2, fcy = G.foeY + G.foeH / 2, fen = null;
+      if (Enter.begin(fcx, fcy)) {
+        fen = enterLook(fcx, fcy);
+        Enter.end();
+        styleOnce(f, "visibility", "");
+      } else styleOnce(f, "visibility", "hidden");
+      styleOnce(f, "transform", (fen ? "translate(" + (fen.x - fcx).toFixed(1) + "px," + (fen.y - fcy).toFixed(1) + "px) " : "") +
+                "translate(" + Math.round(G.foeX) + "px," + (Math.round(G.foeY) + bob) + "px)" +
+                (fen ? " scale(" + fen.s.toFixed(3) + ")" : "") + (FOE_FLIP ? " scaleX(-1)" : ""));
+      styleOnce(f, "opacity", fen ? String(Math.round(clamp(fen.a, 0, 1) * 100) / 100) : "");
 
       var i, n = fallen.length, w = G.pileW;
       if (!n) {
@@ -3286,6 +3338,7 @@
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.restore();
       }
+      enterGround();
       tableBegin();
       drawGrid();
       drawInfo();
@@ -3307,8 +3360,8 @@
        offered a choice. It rides on the result, so the motor carries it
        without knowing what any of it is. */
     function ledger() {
-      var out = [], k;
-      for (k in wounded) if (wounded.hasOwnProperty(k)) out.push(k);
+      var out = [], gaps = {}, k;
+      for (k in wounded) if (wounded.hasOwnProperty(k)) { out.push(k); gaps[k] = wounded[k]; }
       var best = captives.slice().sort(function (a, b) {
         return (b.r * 10 + b.t) - (a.r * 10 + a.t);
       });
@@ -3316,7 +3369,7 @@
       for (k = 0; k < refused.length; k++) if (refused[k].id) dead.push(refused[k].id);
       var played = [];
       for (k in used) if (used.hasOwnProperty(k)) played.push(k);
-      return { hurt: out, dead: dead, met: met.slice(0), used: played,
+      return { hurt: out, gaps: gaps, dead: dead, met: met.slice(0), used: played,
                captives: best.slice(0, 8).map(function (q) { return { r: q.r, t: q.t }; }) };
     }
 

@@ -1,0 +1,1160 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>marble-rocket prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0a07; overflow: hidden;
+    touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// The marble machine of marble-router, put to work: it FUELS A ROCKET.
+//
+// A rocket stands on a launch pad down the right edge of the screen, three
+// tanks stacked in it, each with its own colour and a fill level you can read
+// from across the room. A hopper at the top pours marbles onto brass rails;
+// they roll down (real slope physics, loops, a notched wheel that merges two
+// lines, a coil), through four flip-flop switches S0-S3, and land in one of
+// four intakes at the bottom:
+//   Tank 1 / Tank 2 / Tank 3 - fuel intakes. A good marble dropped in one
+//              runs up its pipe (the pipe lights up) into its tank. A tank
+//              that is already full refuses it: "Full", and it rolls away
+//              into the gutter. So the stream has to be steered toward the
+//              EMPTIEST tank, which moves every few seconds.
+//   Furnace  - where bombs belong. A good marble burnt there is wasted.
+// A bomb dropped in a fuel intake runs up the pipe too and cracks the rocket
+// (a crack on the hull, a shake) and the tank leaks some fuel. Three cracks
+// and the rocket is scrapped.
+//
+// Every rocket has a countdown ("T-12", big, top right). All three tanks full
+// before zero -> LIFTOFF: ignition, smoke, flame, the rocket climbs out
+// through the top of the screen over the machine, and pays 1 to 3 stars by
+// the time it had to spare. Then the next rocket rolls in: bigger tanks, a
+// shorter countdown. Zero with a tank short -> the engine fizzles, the rocket
+// slumps, and the run is over. Play as many rockets as you can.
+//
+// Each switch flips itself as every marble passes it, so the machine keeps
+// re-routing itself and the player keeps correcting it: a tap flips the
+// nearest switch. Escapements (pendulum + pallet) hold a short visible queue
+// before each switch so the next few marbles can be read. Spent marbles go
+// back up to the hopper through the background (gutter -> screw -> top rail).
+//
+// The question: is fuelling a rocket against a countdown, ending on a launch,
+// a satisfying level loop?
+//
+// Tap: flip the nearest switch. Tap "Auto" (or A) to let it play itself.
+// Keys 1-4 flip S0-S3, R restarts.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;          // design space, portrait
+var R = 14;                     // marble radius
+var G = 780;                    // px/s^2 of gravity along a slope
+var FRICTION = 55;              // px/s^2 of rolling drag
+var VMIN = 110, VMAX = 400;     // a marble never stalls and never flies off
+var LEVEL_RAMP = 4;             // rockets until the machine runs at its END values
+var TEMPO_START = 0.95, TEMPO_END = 1.1;    // time scale of the rails
+var SPAWN_START = 0.95, SPAWN_END = 0.62;    // seconds between two marbles
+var HOPPER_HOLD = 6;            // the hopper stops pouring while the top gate holds this many
+var BAD_START = 0.34, BAD_END = 0.4;       // share of bombs in the stream
+var GOLD_CHANCE = 0.05;         // a rare big marble, worth GOLD_FILL
+var GOLD_FILL = 2;
+// The rocket.
+var TANK_START = 5, TANK_STEP = 1;         // marbles per tank, rocket 1 and each rocket after
+var COUNT_START = 41, COUNT_STEP = 4, COUNT_MIN = 22;   // countdown seconds
+var CRACKS = 3;                 // bombs in the tanks before the rocket is scrapped
+var CRACK_SPILL = 2;            // fuel a crack leaks out of the tank it hit
+var STAR3_LEFT = 9, STAR2_LEFT = 4;         // seconds to spare for 3 and 2 stars (else 1)
+var PIPE_SPEED = 650;           // px/s of a marble up its fuel pipe
+var IGNITE_SECONDS = 1.2, RISE_ACC = 520;  // the launch: ignition, then the climb
+var ROLL_AT = 4.3, ROLL_SECONDS = 1.0;     // when the next rocket rolls in, and how long it takes
+var FAIL_SECONDS = 2.6;         // the fizzle before the end screen
+var AUTO_RESTART = 3;           // Auto starts a new run this long after one ends
+var TAP_REACH = 240;            // a tap farther than this from every switch does nothing
+var FLIP_TIME = 0.09;
+var TOGGLE_ON_PASS = true;      // a marble passing a switch flips it
+var WHEEL_OMEGA = 1.8;          // rad/s
+var WHEEL_NOTCHES = 8;
+var GUTTER_SPEED = 220;
+// Escapements: channel, where on it (share of its length), seconds per marble
+// at the start and at the end of the ramp, and where the pendulum's pivot
+// hangs from, relative to the pallet.
+var GATES = [["top", 0.8, 0.95, 0.75, 0, -88], ["S0L", 0.78, 1.2, 0.9, 0, -88],
+  ["S0R", 0.78, 1.2, 0.9, 0, -88], ["wout", 0.6, 0.9, 0.7, 52, -52]];
+var GATE_PRESSURE = 3;          // a queue this long swings the pendulum faster...
+var GATE_RUSH = 0.6;            // ... by this factor
+var WOUT_CAP = 2;               // marbles the gate under the wheel stores before the wheel keeps them
+var SCREW_X = 24, SCREW_BOT = 1238, SCREW_TOP = 44, SCREW_SPEED = 110;
+var BG_RAIL_SPEED = 120;
+var FERRIS = { cx: 590, cy: 350, r: 56, buckets: 6, omega: 0.6, marbles: 5 };
+var BG_ALPHA = 0.42;            // how far back the return circuits sit
+var AUTO_RATE = 0.22;           // seconds between two flips of the autopilot
+
+// --- palette ---------------------------------------------------------------
+var C_BG = "#1c140e", C_BG2 = "#241a12", C_WOOD = "#5a3d25", C_BRASS = "#c9994a",
+    C_BRASS_D = "#7a5a2a", C_STEEL = "#8d95a3", C_GOOD = "#f2b53a", C_BAD = "#1d1d22",
+    C_HULL = "#e9e1cf", C_NOSE = "#c8443a";
+
+// --- the network -------------------------------------------------------------
+var DS = 5;                     // rails are resampled every DS px
+var MID = 330;                  // the machine is symmetric about x = MID
+function mir(pts) { var o = []; for (var i = 0; i < pts.length; i++) o.push([2 * MID - pts[i][0], pts[i][1], pts[i][2]]); return o; }
+function loopPts(cx, cy, r) {
+  var o = [];
+  for (var i = 1; i <= 60; i++) { var a = Math.PI / 2 - i / 60 * Math.PI * 2; o.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  return o;
+}
+// A spiral seen from slightly above: x = sin, depth = cos, the near half lower.
+function coilPts(cx, y0, y1, r, turns) {
+  var o = [], n = turns * 48;
+  for (var i = 0; i <= n; i++) {
+    var a = i / n * turns * Math.PI * 2;
+    o.push([cx + r * Math.sin(a), y0 + (y1 - y0) * i / n + r * 0.35 * Math.cos(a), Math.cos(a)]);
+  }
+  return o;
+}
+var SW = { S0: [MID, 262], S1: [150, 470], S2: [2 * MID - 150, 470], S3: [MID, 790] };
+var WHEEL = { cx: MID, cy: 615, r: 70 };
+var S0L = [[MID, 262], [215, 318], [252, 392], [150, 470]];
+var S1L = [[150, 470], [60, 560], [110, 650], [30, 760], [32, 830], [52, 858], [100, 870]]
+  .concat(loopPts(100, 820, 50), [[140, 880], [168, 930], [85, 1005], [85, 1074]]);
+var S1R = [[150, 470], [250, 535], [205, 595], [WHEEL.cx - WHEEL.r, WHEEL.cy]];
+// The right outer line is narrower than its left twin: the rocket needs the
+// right edge. Drawn on the left, then mirrored.
+var S2R_L = [[150, 470], [92, 548], [132, 632], [84, 722], [86, 790], [100, 818], [130, 830]]
+  .concat(loopPts(130, 784, 46), [[166, 842], [160, 900], [124, 1000], [124, 1074]]);
+var RAW = {
+  top:  { to: "S0", pts: [[650, 152], [560, 186], [450, 212], [MID, 262]] },
+  S0L:  { to: "S1", pts: S0L },            S0R: { to: "S2", pts: mir(S0L) },
+  S1L:  { to: "A", pts: S1L },              S1R: { to: "wheelL", pts: S1R },
+  S2L:  { to: "wheelR", pts: mir(S1R) },    S2R: { to: "C", pts: mir(S2R_L) },
+  wout: { to: "S3", pts: [[MID, WHEEL.cy + WHEEL.r], [MID, 790]] },
+  S3L:  { to: "furnace", pts: [[MID, 790], [255, 850], [300, 930], [250, 1000], [250, 1074]] },
+  S3R:  { to: "B", pts: [[MID, 790], [420, 842]].concat(coilPts(410, 850, 1030, 44, 2), [[410, 1074]]) }
+};
+var OUT = { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] };
+// The rocket: RX is its axis, PAD_Y the top of the pad it stands on, and every
+// height below is measured up from there (negative = higher).
+var RX = 666, RW = 42, PAD_Y = 1222;
+var TANKS = [
+  { name: "Tank 1", intake: "A", color: "#5ab4ff", y0: -242, y1: -70, riser: 620, level: 1210 },
+  { name: "Tank 2", intake: "B", color: "#4fe0b0", y0: -422, y1: -250, riser: 612, level: 1200 },
+  { name: "Tank 3", intake: "C", color: "#c77dff", y0: -602, y1: -430, riser: 604, level: 1190 }
+];
+var MACHINE_DEFS = [
+  { id: "A", tank: 0, x: 85 },
+  { id: "furnace", name: "Furnace", x: 250, color: "#ff6a2a" },
+  { id: "B", tank: 1, x: 410 },
+  { id: "C", tank: 2, x: 536 }
+];
+var BOX_Y = 1080, BOX_H = 100, BOX_W = 120;
+var GUTTER_L = 12, GUTTER_R = 596, GUTTER_Y = 1240;
+var HOPPER = { x: 690, y: 118 };
+var CHIMES = [["top", 0.22], ["top", 0.42], ["top", 0.62], ["S0L", 0.55], ["S0R", 0.55], ["S3L", 0.5]];
+var DECO_GEARS = [[120, 250, 58, 11], [470, 740, 52, 10],
+  [185, 740, 44, 9], [540, 960, 44, 9], [60, 960, 40, 8], [520, 1010, 36, 7]];
+// Which tanks a switch can still reach down each of its two branches (-1 is
+// the furnace). The autopilot reads it.
+var REACH = { S0: [[0, 1, -1], [2, 1, -1]], S1: [[0], [1, -1]], S2: [[1, -1], [2]], S3: [[-1], [1]] };
+
+// Background rails: the top return from the screw, and the ferris wheel's run.
+var BG_RAW = {
+  back: [[SCREW_X, SCREW_TOP], [200, 50], [380, 58], [560, 64], [656, 70]],
+  ferris: [[612, 292], [650, 318], [618, 350], [652, 382], [606, 410]]
+};
+
+// Resample every channel to one point every DS px, keeping a depth per point.
+var CH = {}, BG = {}, PIPES = [];
+function makeChannel(k, to, raw) {
+  var xs = [], ys = [], zs = [];
+  xs.push(raw[0][0]); ys.push(raw[0][1]); zs.push(raw[0][2] === undefined ? 1 : raw[0][2]);
+  var carry = 0;
+  for (var i = 1; i < raw.length; i++) {
+    var a = raw[i - 1], b = raw[i], za = a[2] === undefined ? 1 : a[2], zb = b[2] === undefined ? 1 : b[2];
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.sqrt(dx * dx + dy * dy), s = DS - carry;
+    while (s <= L) { var q = s / L; xs.push(a[0] + dx * q); ys.push(a[1] + dy * q); zs.push(za + (zb - za) * q); s += DS; }
+    carry = L - (s - DS);
+  }
+  var last = raw[raw.length - 1];
+  xs.push(last[0]); ys.push(last[1]); zs.push(last[2] === undefined ? 1 : last[2]);
+  var n = xs.length, coil = false;
+  for (i = 0; i < n; i++) if (zs[i] < 0) coil = true;
+  return { id: k, to: to, xs: xs, ys: ys, zs: zs, n: n, len: (n - 1) * DS, coil: coil };
+}
+for (var chk in RAW) CH[chk] = makeChannel(chk, RAW[chk].to, RAW[chk].pts);
+for (chk in BG_RAW) BG[chk] = makeChannel(chk, null, BG_RAW[chk]);
+// Fuel pipes: down out of the intake, along the bottom, up the rocket's side
+// and into the middle of its tank. Nested so that no two of them cross.
+for (var ti = 0; ti < TANKS.length; ti++) {
+  var tk = TANKS[ti], ix = MACHINE_DEFS[[0, 2, 3][ti]].x, ey = PAD_Y + (tk.y0 + tk.y1) / 2;
+  PIPES.push(makeChannel("pipe" + ti, null, [[ix, BOX_Y + BOX_H], [ix, tk.level], [tk.riser, tk.level], [tk.riser, ey], [RX - RW, ey]]));
+}
+function at(ch, d) {
+  var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
+  return { x: ch.xs[i] + (ch.xs[i + 1] - ch.xs[i]) * q, y: ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q,
+           z: ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q, slope: (ch.ys[i + 1] - ch.ys[i]) / DS };
+}
+// The gutter runs down to the left, into the screw.
+function gutterY(x) { return GUTTER_Y + (GUTTER_R - x) * 0.012; }
+
+// --- canvas ------------------------------------------------------------------
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1, trackLayer = null, frontLayer = null;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  offX = (innerWidth - W * scale) / 2; offY = (innerHeight - H * scale) / 2;
+  buildLayers();
+}
+
+// The rails never move, so they are drawn once: sleepers, a shadow, two brass
+// rails. The coil's near half is also drawn on a second layer that goes OVER
+// the marbles, which is what puts a marble behind its own rails.
+function buildLayers() {
+  var k = scale * dpr;
+  trackLayer = document.createElement("canvas"); frontLayer = document.createElement("canvas");
+  trackLayer.width = frontLayer.width = Math.max(1, Math.round(W * k));
+  trackLayer.height = frontLayer.height = Math.max(1, Math.round(H * k));
+  var t = trackLayer.getContext("2d"), f = frontLayer.getContext("2d");
+  t.setTransform(k, 0, 0, k, 0, 0); f.setTransform(k, 0, 0, k, 0, 0);
+  for (var id in CH) {
+    var ch = CH[id];
+    drawRails(t, ch, function (z) { return z < 0; }, 0.4);
+    drawRails(t, ch, function (z) { return z >= 0; }, 1);
+    if (ch.coil) drawRails(f, ch, function (z) { return z >= 0.15; }, 1);
+  }
+}
+function normalAt(ch, i) {
+  var a = Math.max(0, i - 1), b = Math.min(ch.n - 1, i + 1);
+  var dx = ch.xs[b] - ch.xs[a], dy = ch.ys[b] - ch.ys[a], L = Math.sqrt(dx * dx + dy * dy) || 1;
+  return [-dy / L, dx / L];
+}
+function drawRails(c, ch, keep, alpha) {
+  c.globalAlpha = alpha; c.lineCap = "round"; c.lineJoin = "round";
+  var i, nv;
+  c.strokeStyle = C_WOOD; c.lineWidth = 5;
+  for (i = 0; i < ch.n; i += 5) {
+    if (!keep(ch.zs[i])) continue;
+    nv = normalAt(ch, i);
+    c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 7), ch.ys[i] - nv[1] * (R + 7));
+    c.lineTo(ch.xs[i] + nv[0] * (R + 7), ch.ys[i] + nv[1] * (R + 7)); c.stroke();
+  }
+  var sides = [-(R + 2), R + 2], pass, s;
+  for (pass = 0; pass < 2; pass++) {
+    c.strokeStyle = pass ? C_BRASS : "rgba(0,0,0,0.45)"; c.lineWidth = pass ? 3.5 : 5;
+    for (s = 0; s < 2; s++) {
+      var open = false;
+      c.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        if (!keep(ch.zs[i])) { open = false; continue; }
+        nv = normalAt(ch, i);
+        var x = ch.xs[i] + nv[0] * sides[s] + (pass ? 0 : 1.5), y = ch.ys[i] + nv[1] * sides[s] + (pass ? 0 : 2.5);
+        if (!open) { c.moveTo(x, y); open = true; } else c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+  }
+  c.globalAlpha = 1;
+}
+addEventListener("resize", resize);
+
+// --- state -------------------------------------------------------------------
+var marbles, queue, machines, sw, parts, smoke, floats, rings, wheel, chimes, gates, ferris, blobs, pipeLit;
+var state, t, spawnT, shake, stats, flow, gearA, stock, screwPhase;
+var rocket, countLeft, phaseT, lastLaunch, launches, failWhy, overT;
+var auto = false, autoT = 0;
+
+function newRocket(n) {
+  return { n: n, cap: TANK_START + (n - 1) * TANK_STEP, fill: [0, 0, 0], flash: [0, 0, 0],
+    cracks: [], jolt: 0, x: 0, y: 0, tilt: 0, flame: 0 };
+}
+function countFor(n) { return Math.max(COUNT_MIN, COUNT_START - (n - 1) * COUNT_STEP); }
+
+function reset() {
+  marbles = []; queue = []; parts = []; smoke = []; floats = []; rings = []; blobs = [];
+  pipeLit = [0, 0, 0];
+  machines = {};
+  for (var i = 0; i < MACHINE_DEFS.length; i++) {
+    var d = MACHINE_DEFS[i], tank = d.tank === undefined ? -1 : d.tank;
+    machines[d.id] = { id: d.id, x: d.x, tank: tank, name: tank >= 0 ? TANKS[tank].name : d.name,
+      color: tank >= 0 ? TANKS[tank].color : d.color, flash: 0 };
+  }
+  sw = {};
+  for (var k in SW) {
+    var dir = k === "S1" ? 1 : 0;
+    sw[k] = { x: SW[k][0], y: SW[k][1], dir: dir, ang: branchAngle(k, dir), spin: 0, flash: 0 };
+  }
+  wheel = { phase: 0, notch: [], q: { wheelL: [], wheelR: [] } };
+  for (i = 0; i < WHEEL_NOTCHES; i++) wheel.notch.push(null);
+  gates = [];
+  for (i = 0; i < GATES.length; i++) {
+    var gc = CH[GATES[i][0]], gd = gc.len * GATES[i][1], gp = at(gc, gd), ga = at(gc, gd + 5);
+    var tl = Math.sqrt((ga.x - gp.x) * (ga.x - gp.x) + (ga.y - gp.y) * (ga.y - gp.y)) || 1;
+    gc.gate = { ch: gc, d: gd, p0: GATES[i][2], p1: GATES[i][3], q: [], timer: 0, open: 0, side: 1,
+      x: gp.x, y: gp.y, tx: (ga.x - gp.x) / tl, ty: (ga.y - gp.y) / tl, px: GATES[i][4], py: GATES[i][5] };
+    gates.push(gc.gate);
+  }
+  ferris = { phase: 0, bucket: [], rail: [], wait: [] };
+  for (i = 0; i < FERRIS.buckets; i++) ferris.bucket.push(i < FERRIS.marbles ? { rot: i } : null);
+  chimes = [];
+  for (i = 0; i < CHIMES.length; i++) {
+    var ch = CH[CHIMES[i][0]], cd = ch.len * CHIMES[i][1], p = at(ch, cd), nv = normalAt(ch, Math.round(cd / DS));
+    if (nv[1] > 0) nv = [-nv[0], -nv[1]];      // hang it on the upper side of the rail
+    chimes.push({ ch: ch, d: cd, x: p.x + nv[0] * 30, y: p.y + nv[1] * 30, hit: 9 });
+  }
+  rocket = newRocket(1); countLeft = countFor(1);
+  for (i = 0; i < 3; i++) queue.push(rollKind(0));
+  state = "play"; t = 0; spawnT = 0.6; shake = 0; phaseT = 0; overT = 0;
+  flow = 0; gearA = 0; screwPhase = 0; stock = 6; lastLaunch = null; launches = []; failWhy = "";
+  stats = { fuel: 0, full: 0, burnt: 0, wasted: 0, cracks: 0, starsTotal: 0 };
+}
+
+function branchAngle(id, dir) {
+  var ch = CH[OUT[id][dir]], p = at(ch, 30);
+  return Math.atan2(p.y - SW[id][1], p.x - SW[id][0]);
+}
+// How far up the difficulty ramp this rocket is.
+function progress() { return Math.min(1, (rocket.n - 1) / LEVEL_RAMP); }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function mod(a, m) { return ((a % m) + m) % m; }
+function ease(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
+function rollKind(k) {
+  var r = Math.random();
+  if (r < GOLD_CHANCE) return "gold";
+  return r < GOLD_CHANCE + lerp(BAD_START, BAD_END, k) ? "bad" : "good";
+}
+function newMarble(kind, x, y) {
+  var m = { kind: kind, st: "track", ch: null, d: 0, v: VMIN, x: x, y: y, z: 1, rot: Math.random() * 6 };
+  marbles.push(m); return m;
+}
+function spawn(kind) {
+  var m = newMarble(kind === "gold" ? "good" : kind, CH.top.xs[0], CH.top.ys[0]);
+  m.ch = CH.top; m.gold = kind === "gold";
+  if (stock > 0) stock--;
+}
+// Fuel already on its way up a pipe counts as in the tank, so the "Full"
+// refusal and the autopilot never over-fill.
+function pending(ti) {
+  var n = 0;
+  for (var i = 0; i < blobs.length; i++) if (blobs[i].tank === ti && blobs[i].kind === "good") n += blobs[i].amount;
+  return n;
+}
+function need(ti) { return rocket.cap - rocket.fill[ti] - pending(ti); }
+function neediest() {
+  var best = -1, bn = 0;
+  for (var i = 0; i < 3; i++) { var n = need(i); if (n > bn) { bn = n; best = i; } }
+  return best;
+}
+function tankY(ti) { return PAD_Y + (TANKS[ti].y0 + TANKS[ti].y1) / 2; }
+
+// --- events ------------------------------------------------------------------
+function deliver(m, id) {
+  var mc = machines[id];
+  if (id === "furnace") {
+    kill(m);
+    if (m.kind === "bad") { stats.burnt++; burst(mc.x, BOX_Y + 20, "#ff6a2a", 14); }
+    else { stats.wasted++; say("Wasted", mc.x, BOX_Y - 30, "#c8b8a0"); burst(mc.x, BOX_Y + 20, "#ffd27a", 8); }
+    return;
+  }
+  // No rocket on the pad (it is leaving, or it is dead): the intakes are shut.
+  if (state !== "play") { toGutter(m); return; }
+  var ti = mc.tank;
+  if (m.kind === "bad") {
+    kill(m); mc.flash = 0.5;
+    blobs.push({ tank: ti, d: 0, kind: "bad", amount: 0, rot: m.rot });
+    say("Bomb!", mc.x, BOX_Y - 30, "#ff5a5a"); burst(mc.x, BOX_Y + 30, "#ff5a5a", 12);
+    return;
+  }
+  if (need(ti) <= 0) { toGutter(m); stats.full++; say("Full", mc.x, BOX_Y - 30, "#c8b8a0"); return; }
+  kill(m); mc.flash = 0.35; stats.fuel++;
+  blobs.push({ tank: ti, d: 0, kind: "good", amount: m.gold ? GOLD_FILL : 1, gold: m.gold, rot: m.rot });
+  burst(mc.x, BOX_Y + 50, mc.color, 6);
+}
+function kill(m) { m.st = "dead"; }
+function toGutter(m) { m.st = "drop"; m.vy = 0; m.kind = "spent"; }
+
+// A marble reaches the top of its pipe.
+function arrive(b) {
+  if (state !== "play") return;
+  var ti = b.tank, y = tankY(ti);
+  if (b.kind === "bad") {
+    rocket.cracks.push(makeCrack(ti)); rocket.jolt = 0.45; shake = 0.4; stats.cracks++;
+    rocket.fill[ti] = Math.max(0, rocket.fill[ti] - CRACK_SPILL); rocket.flash[ti] = 0.4;
+    burst(RX, y, "#ff5a5a", 26); burst(RX, y, "#ffe066", 10); say("Crack!", RX - 90, y, "#ff5a5a");
+    if (rocket.cracks.length >= CRACKS) startFail("scrap");
+    return;
+  }
+  rocket.fill[ti] = Math.min(rocket.cap, rocket.fill[ti] + b.amount); rocket.flash[ti] = 0.4;
+  burst(RX - RW + 6, y, TANKS[ti].color, 8);
+  if (rocket.fill[ti] >= rocket.cap) say("Full", RX - 80, y - 40, TANKS[ti].color);
+  if (rocket.fill[0] >= rocket.cap && rocket.fill[1] >= rocket.cap && rocket.fill[2] >= rocket.cap) startLaunch();
+}
+function makeCrack(ti) {
+  var tk = TANKS[ti], x = (Math.random() - 0.5) * 50, y = lerp(tk.y0 + 24, tk.y1 - 24, Math.random());
+  var pts = [[x, y]], a = Math.random() * Math.PI * 2;
+  for (var i = 0; i < 6; i++) {
+    a += (Math.random() - 0.5) * 1.6; x += Math.cos(a) * 12; y += Math.sin(a) * 12;
+    if (Math.abs(x) > RW - 6) { x = Math.max(-RW + 6, Math.min(RW - 6, x)); a = Math.PI - a; }
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+function startLaunch() {
+  var left = countLeft, stars = left >= STAR3_LEFT ? 3 : left >= STAR2_LEFT ? 2 : 1;
+  lastLaunch = { n: rocket.n, left: left, stars: stars };
+  launches.push(lastLaunch); stats.starsTotal += stars;
+  state = "launch"; phaseT = 0; blobs = [];
+}
+function startFail(why) { state = "fizzle"; phaseT = 0; failWhy = why; blobs = []; }
+
+function say(str, x, y, color) { floats.push({ x: x, y: y, t: 0, color: color, str: str }); }
+function burst(x, y, color, n) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 320;
+    parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 150, life: 0.5 + Math.random() * 0.4, t: 0, color: color });
+  }
+}
+// A puff of exhaust: a grey disc that swells, drifts and thins out.
+function puff(x, y, vx, vy, r, life, color) {
+  smoke.push({ x: x, y: y, vx: vx, vy: vy, r: r, life: life, t: 0, color: color || "#9a9082" });
+}
+function flip(id, byMarble) {
+  var s = sw[id]; s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
+  if (!byMarble) s.spin += 0.6;
+}
+
+// --- update --------------------------------------------------------------------
+function update(dt) {
+  if (shake > 0) shake -= dt;
+  var i, k;
+  for (i = parts.length - 1; i >= 0; i--) {
+    var p = parts[i]; p.t += dt; p.vy += (p.g === undefined ? 900 : p.g) * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.t > p.life) parts.splice(i, 1);
+  }
+  for (i = smoke.length - 1; i >= 0; i--) {
+    var sm = smoke[i]; sm.t += dt; sm.x += sm.vx * dt; sm.y += sm.vy * dt; sm.vx *= 1 - dt * 1.5; sm.vy *= 1 - dt * 1.5;
+    sm.r += dt * 40;
+    if (sm.t > sm.life) smoke.splice(i, 1);
+  }
+  for (i = floats.length - 1; i >= 0; i--) { floats[i].t += dt; if (floats[i].t > 1) floats.splice(i, 1); }
+  for (i = rings.length - 1; i >= 0; i--) { rings[i].t += dt; if (rings[i].t > 0.8) rings.splice(i, 1); }
+  for (k in sw) {
+    var s = sw[k], target = branchAngle(k, s.dir), da = mod(target - s.ang + Math.PI, Math.PI * 2) - Math.PI;
+    s.ang += da * Math.min(1, dt / FLIP_TIME * 1.5); s.flash = Math.max(0, s.flash - dt);
+  }
+  for (i = 0; i < chimes.length; i++) chimes[i].hit += dt;
+  rocket.jolt = Math.max(0, rocket.jolt - dt);
+  for (i = 0; i < 3; i++) { rocket.flash[i] = Math.max(0, rocket.flash[i] - dt); pipeLit[i] = Math.max(0, pipeLit[i] - dt * 1.6); }
+  for (k in machines) machines[k].flash = Math.max(0, machines[k].flash - dt);
+  if (state === "over") {
+    if (auto) { overT += dt; if (overT > AUTO_RESTART) reset(); }
+    return;
+  }
+
+  t += dt;
+  if (state === "play") {
+    countLeft -= dt;
+    if (countLeft <= 0) { countLeft = 0; startFail("fuel"); }
+  } else if (state === "launch") updateLaunch(dt);
+  else if (state === "fizzle") updateFail(dt);
+  if (state === "over") return;
+
+  var pk = progress(), mdt = dt * lerp(TEMPO_START, TEMPO_END, pk);
+  if (auto) autopilot(dt);
+
+  spawnT -= dt;
+  if (spawnT <= 0 && CH.top.gate.q.length < HOPPER_HOLD) {
+    spawn(queue.shift()); queue.push(rollKind(pk)); spawnT = lerp(SPAWN_START, SPAWN_END, pk);
+  }
+
+  // Escapements: one marble per swing, a faster swing under a long queue.
+  for (i = 0; i < gates.length; i++) {
+    var gt = gates[i], period = lerp(gt.p0, gt.p1, pk) * (gt.q.length >= GATE_PRESSURE ? GATE_RUSH : 1);
+    gt.period = period; gt.timer -= mdt; gt.open = Math.max(0, gt.open - dt);
+    if (gt.timer <= 0 && gt.q.length) {
+      var gm = gt.q.shift();
+      gm.st = "track"; gm.gateOk = true; gm.v = VMIN; gm.d = gt.d + 1;
+      gt.open = 0.18; gt.side = -gt.side; gt.timer = period;
+    }
+  }
+
+  // Fuel runs up the pipes.
+  for (i = blobs.length - 1; i >= 0; i--) {
+    var b = blobs[i]; b.d += PIPE_SPEED * dt; b.rot += dt * 14; pipeLit[b.tank] = 1;
+    if (b.d >= PIPES[b.tank].len) { blobs.splice(i, 1); arrive(b); if (state !== "play") break; }
+  }
+
+  // The wheel turns; a waiting marble boards the first free notch that
+  // sweeps past its entry.
+  var step = Math.PI * 2 / WHEEL_NOTCHES, prev = wheel.phase, dA = WHEEL_OMEGA * mdt;
+  wheel.phase += dA;
+  var ENTRY = { wheelL: Math.PI, wheelR: 0 };
+  for (var e in wheel.q) {
+    var q = wheel.q[e];
+    if (!q.length) continue;
+    for (var j = 0; j < WHEEL_NOTCHES && q.length; j++) {
+      if (wheel.notch[j]) continue;
+      if (mod(ENTRY[e] - (prev + j * step), Math.PI * 2) < dA) {
+        var bm = q.shift();
+        bm.st = "wheel"; bm.notch = j; bm.left = mod(Math.PI / 2 - ENTRY[e], Math.PI * 2);
+        wheel.notch[j] = bm;
+      }
+    }
+  }
+
+  var onTrack = 0;
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "track") { onTrack++; roll(m, mdt); }
+    else if (m.st === "wait") {
+      var qq = wheel.q[m.ch.to], spot = m.ch.len - qq.indexOf(m) * 2.2 * R;
+      m.d = Math.min(spot, m.d + 260 * mdt); place(m);
+    } else if (m.st === "wheel") {
+      onTrack++;
+      m.left -= dA; m.rot += dA * WHEEL.r / R;
+      var ang = wheel.phase + m.notch * step;
+      m.x = WHEEL.cx + Math.cos(ang) * WHEEL.r; m.y = WHEEL.cy + Math.sin(ang) * WHEEL.r; m.z = 1;
+      if (m.left <= 0) {
+        // The gate under the wheel is full: the marble stays aboard for a lap.
+        if (CH.wout.gate.q.length >= WOUT_CAP) m.left += Math.PI * 2;
+        else { wheel.notch[m.notch] = null; m.st = "track"; m.ch = CH.wout; m.d = 0; m.v = VMIN + 40; m.gateOk = false; }
+      }
+    } else if (m.st === "gate") {
+      var gq = m.gate, gspot = Math.max(0, gq.d - gq.q.indexOf(m) * 2.2 * R);
+      m.d = Math.min(gspot, m.d + 220 * mdt); place(m);
+    } else if (m.st === "drop") {
+      m.vy += 1800 * dt; m.y += m.vy * dt;
+      if (m.y >= gutterY(m.x) - R) { m.y = gutterY(m.x) - R; m.st = "gutter"; }
+    } else if (m.st === "gutter") {
+      m.x -= GUTTER_SPEED * dt; m.y = gutterY(m.x) - R; m.rot -= GUTTER_SPEED * dt / R;
+      if (m.x <= SCREW_X) { m.x = SCREW_X; m.st = "screw"; m.y = SCREW_BOT; }
+    } else if (m.st === "screw") {
+      // Carried up the thread: the marble rides round the shaft as it climbs.
+      m.y -= SCREW_SPEED * dt; m.x = SCREW_X + Math.sin(m.y * 0.1) * 7; m.rot += dt * 6;
+      if (m.y <= SCREW_TOP) { m.st = "back"; m.d = 0; }
+    } else if (m.st === "back") {
+      m.d += BG_RAIL_SPEED * dt; m.rot += BG_RAIL_SPEED * dt / R;
+      var bp = at(BG.back, m.d); m.x = bp.x; m.y = bp.y - R * 0.7;
+      if (m.d >= BG.back.len) { m.st = "dead"; stock = Math.min(9, stock + 1); }
+    }
+  }
+  screwPhase += SCREW_SPEED * dt;
+  updateFerris(dt);
+  for (i = marbles.length - 1; i >= 0; i--) if (marbles[i].st === "dead") marbles.splice(i, 1);
+
+  flow += (onTrack * 0.05 - flow) * Math.min(1, dt * 2);
+  gearA += (0.25 + flow) * dt;
+}
+
+// The launch: the engine lights, smoke floods the pad, the rocket climbs out
+// through the top of the screen, then the next one rolls in from the right.
+function updateLaunch(dt) {
+  phaseT += dt;
+  var lt = phaseT, nozzleY = PAD_Y + rocket.y;
+  if (rocket.n === lastLaunch.n) {
+    if (lt < IGNITE_SECONDS) {
+      var k = lt / IGNITE_SECONDS;
+      rocket.flame = 0.25 + 0.45 * k; shake = Math.max(shake, 0.1 + 0.2 * k);
+      if (Math.random() < 0.7) puff(RX + (Math.random() - 0.5) * 40, PAD_Y + 6, (Math.random() < 0.5 ? -1 : 1) * (120 + Math.random() * 260), -20 - Math.random() * 40, 16 + Math.random() * 10, 1.4 + Math.random());
+    } else {
+      var rt = lt - IGNITE_SECONDS;
+      rocket.flame = 1; rocket.y = -0.5 * RISE_ACC * rt * rt - 30 * rt;
+      if (rocket.y > -900) shake = Math.max(shake, 0.35);
+      if (nozzleY > -60) {
+        for (var i = 0; i < 3; i++) {
+          parts.push({ x: RX + (Math.random() - 0.5) * 30, y: nozzleY + 30 + Math.random() * 40, vx: (Math.random() - 0.5) * 120,
+            vy: 200 + Math.random() * 200, g: 0, life: 0.35 + Math.random() * 0.3, t: 0, color: Math.random() < 0.5 ? "#ffc23a" : "#ff6a2a" });
+        }
+        if (Math.random() < 0.8) puff(RX + (Math.random() - 0.5) * 24, nozzleY + 60, (Math.random() - 0.5) * 60, 40, 14 + Math.random() * 8, 1.6 + Math.random());
+      }
+      if (rt < 0.8 && Math.random() < 0.8) puff(RX + (Math.random() - 0.5) * 40, PAD_Y + 6, (Math.random() < 0.5 ? -1 : 1) * (160 + Math.random() * 280), -10 - Math.random() * 30, 18 + Math.random() * 12, 1.6 + Math.random());
+    }
+    if (lt >= ROLL_AT) { rocket = newRocket(lastLaunch.n + 1); rocket.x = 170; countLeft = countFor(rocket.n); }
+  } else {
+    rocket.x = 170 * (1 - ease((lt - ROLL_AT) / ROLL_SECONDS));
+    if (lt >= ROLL_AT + ROLL_SECONDS) { rocket.x = 0; state = "play"; }
+  }
+}
+// The failure: the engine coughs, gives up, and the rocket slumps on its pad.
+function updateFail(dt) {
+  phaseT += dt;
+  var k = ease(phaseT / 1.6), scrap = failWhy === "scrap";
+  rocket.tilt = -(scrap ? 0.3 : 0.14) * k; rocket.y = (scrap ? 26 : 14) * k;
+  rocket.flame = phaseT < 1.4 && Math.random() < 0.35 ? 0.2 + Math.random() * 0.25 : 0;
+  if (Math.random() < 0.35) puff(RX + (Math.random() - 0.5) * 50, PAD_Y - (scrap ? Math.random() * 500 : 0), (Math.random() - 0.5) * 80, -40 - Math.random() * 40, 12 + Math.random() * 8, 1.4, scrap ? "#5a5048" : "#9a9082");
+  if (scrap && Math.random() < 0.25) burst(RX + (Math.random() - 0.5) * 60, PAD_Y - 100 - Math.random() * 450, Math.random() < 0.5 ? "#ffc23a" : "#ff5a5a", 3);
+  if (phaseT >= FAIL_SECONDS) { state = "over"; overT = 0; }
+}
+
+// A marble on the rails: gravity along the slope, rolling drag, clamped so it
+// never stalls at the top of a loop. At the end of a channel it meets a
+// switch (which it flips on its way through), the wheel, or an intake.
+function roll(m, mdt) {
+  var p = at(m.ch, m.d);
+  m.v = Math.max(VMIN, Math.min(VMAX, m.v + (G * p.slope - FRICTION) * mdt));
+  var d0 = m.d;
+  m.d += m.v * mdt; m.rot += m.v * mdt / R;
+  for (var i = 0; i < chimes.length; i++) {
+    var c = chimes[i];
+    if (c.ch === m.ch && d0 < c.d && m.d >= c.d) c.hit = 0;
+  }
+  var ch = m.ch, gt = ch.gate;
+  if (gt && !m.gateOk) {
+    var gstop = Math.max(0, gt.d - gt.q.length * 2.2 * R);
+    if (m.d >= gstop) { m.d = gstop; m.st = "gate"; m.gate = gt; gt.q.push(m); place(m); return; }
+  }
+  if (wheel.q[ch.to]) {
+    var stop = ch.len - wheel.q[ch.to].length * 2.2 * R;
+    if (m.d >= stop) { m.d = stop; m.st = "wait"; wheel.q[ch.to].push(m); }
+  } else if (m.d >= ch.len) {
+    if (OUT[ch.to]) {
+      var s = sw[ch.to], rest = m.d - ch.len;
+      m.ch = CH[OUT[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
+      if (TOGGLE_ON_PASS) flip(ch.to, true);
+    } else { deliver(m, ch.to); return; }
+  }
+  place(m);
+}
+function place(m) { var p = at(m.ch, m.d); m.x = p.x; m.y = p.y; m.z = p.z; }
+
+// The ferris wheel in the back: buckets pick marbles up at the bottom, tip
+// them just past the top onto a little zigzag that brings them back down.
+function updateFerris(dt) {
+  var step = Math.PI * 2 / FERRIS.buckets, prev = ferris.phase, dA = FERRIS.omega * dt, i, j;
+  ferris.phase += dA;
+  var TIP = Math.PI * 1.5 + 0.3, LOAD = Math.PI * 0.5;
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a0 = prev + j * step, b = ferris.bucket[j];
+    if (b && mod(TIP - a0, Math.PI * 2) < dA) { ferris.bucket[j] = null; ferris.rail.push({ d: 0, rot: b.rot }); }
+    else if (!b && ferris.wait.length && mod(LOAD - a0, Math.PI * 2) < dA) ferris.bucket[j] = ferris.wait.shift();
+  }
+  for (i = ferris.rail.length - 1; i >= 0; i--) {
+    var r = ferris.rail[i];
+    r.d += 90 * dt; r.rot += 90 * dt / R;
+    if (r.d >= BG.ferris.len) { ferris.rail.splice(i, 1); ferris.wait.push(r); }
+  }
+}
+
+// --- autopilot -------------------------------------------------------------------
+// Where a switch should send the marble about to reach it: a bomb toward the
+// furnace, a good marble toward the emptiest tank that branch can still reach.
+function autoWant(id, m) {
+  var cur = sw[id].dir;
+  if (m.kind === "bad") return id === "S0" ? cur : id === "S1" ? 1 : 0;
+  var sc = [0, 0];
+  for (var d = 0; d < 2; d++) {
+    for (var j = 0; j < REACH[id][d].length; j++) {
+      var ti = REACH[id][d][j];
+      if (ti >= 0) sc[d] = Math.max(sc[d], need(ti));
+    }
+  }
+  return sc[0] > sc[1] ? 0 : sc[1] > sc[0] ? 1 : cur;
+}
+// The marble on the rails nearest to a switch, and how far it still has to go.
+function nextAt(id) {
+  var best = null, rem = 1e9;
+  for (var i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st !== "track" || m.ch.to !== id) continue;
+    var r = m.ch.len - m.d;
+    if (r < rem) { rem = r; best = m; }
+  }
+  return best ? { m: best, rem: rem } : null;
+}
+function autopilot(dt) {
+  autoT -= dt;
+  if (autoT > 0) return;
+  for (var id in sw) {
+    var n = nextAt(id);
+    if (!n || n.rem > 150) continue;
+    if (sw[id].dir !== autoWant(id, n.m)) { flip(id); autoT = AUTO_RATE; return; }
+  }
+}
+
+// --- render ----------------------------------------------------------------------
+function cog(x, y, r, teeth, a, col) {
+  ctx.fillStyle = col; ctx.beginPath();
+  for (var i = 0; i < teeth * 2; i++) {
+    var an = a + i * Math.PI / teeth, an2 = a + (i + 1) * Math.PI / teeth, rr = i % 2 ? r : r * 0.8;
+    ctx.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr);
+    ctx.lineTo(x + Math.cos(an2) * rr, y + Math.sin(an2) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.fill();
+}
+function starShape(x, y, r, on) {
+  ctx.beginPath();
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+  ctx.fillStyle = on ? "#ffd23a" : "rgba(255,255,255,0.12)"; ctx.fill();
+  ctx.strokeStyle = on ? "#8a5a10" : "rgba(255,255,255,0.35)"; ctx.lineWidth = 3; ctx.stroke();
+}
+function drawMarble(m) {
+  var s = m.z < 0 ? 0.86 : 1, r = R * s * (m.gold ? 1.2 : 1), x = m.x, y = m.y;
+  var ga = ctx.globalAlpha;
+  ctx.globalAlpha = ga * (m.z < 0 ? 0.75 : 1);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(x + 3, y + r * 0.8, r * 0.9, r * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+  var base = m.kind === "bad" ? C_BAD : m.kind === "spent" ? "#aab0bb" : m.gold ? "#ff9d00" : C_GOOD;
+  ctx.fillStyle = base; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  // The swirl turns with the roll, the highlight stays with the light.
+  ctx.strokeStyle = m.kind === "bad" ? "#ff4a3a" : "rgba(255,255,255,0.55)"; ctx.lineWidth = m.kind === "bad" ? 3 : 2.5;
+  ctx.beginPath(); ctx.arc(x, y, r * 0.6, m.rot, m.rot + 2.2); ctx.stroke();
+  if (m.kind === "bad") {
+    var fx = x + Math.cos(m.rot) * r * 0.6, fy = y + Math.sin(m.rot) * r * 0.6;
+    ctx.fillStyle = Math.sin(t * 40 + m.rot) > 0 ? "#ffe066" : "#ff4a3a";
+    ctx.beginPath(); ctx.arc(fx, fy, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.beginPath(); ctx.arc(x - r * 0.38, y - r * 0.4, r * 0.24, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = ga;
+}
+
+function drawWheel() {
+  var step = Math.PI * 2 / WHEEL_NOTCHES;
+  cog(WHEEL.cx, WHEEL.cy, WHEEL.r + 14, 24, wheel.phase, C_BRASS_D);
+  ctx.fillStyle = C_WOOD; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, WHEEL.r - 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 6;
+  for (var j = 0; j < WHEEL_NOTCHES; j++) {
+    var a = wheel.phase + j * step;
+    ctx.beginPath(); ctx.moveTo(WHEEL.cx, WHEEL.cy);
+    ctx.lineTo(WHEEL.cx + Math.cos(a) * (WHEEL.r - 8), WHEEL.cy + Math.sin(a) * (WHEEL.r - 8)); ctx.stroke();
+    ctx.fillStyle = "#120c08";
+    ctx.beginPath(); ctx.arc(WHEEL.cx + Math.cos(a) * WHEEL.r, WHEEL.cy + Math.sin(a) * WHEEL.r, R + 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, 14, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawSwitches() {
+  for (var k in sw) {
+    var s = sw[k], live = CH[OUT[k][s.dir]];
+    // The first stretch of the live branch glows, so the route reads at a glance.
+    ctx.strokeStyle = "rgba(255,210,120,0.35)"; ctx.lineWidth = 2 * R + 4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(live.xs[0], live.ys[0]);
+    for (var i = 1; i < Math.min(live.n, 16); i++) ctx.lineTo(live.xs[i], live.ys[i]);
+    ctx.stroke();
+    cog(s.x, s.y, 30, 10, s.spin, s.flash > 0 ? "#ffe9b0" : C_STEEL);
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58, 7, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Everything behind the machine: the screw, the top return rail and the
+// ferris wheel, all faded back so they read as depth and never as a route.
+function drawBackground() {
+  ctx.globalAlpha = BG_ALPHA;
+  var i, j;
+  // Archimedes screw: a tube with a thread that climbs.
+  ctx.fillStyle = "#2b2016"; ctx.fillRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3;
+  for (var y = SCREW_BOT - mod(screwPhase, 22); y > SCREW_TOP; y -= 22) {
+    ctx.beginPath(); ctx.moveTo(SCREW_X - 14, y); ctx.lineTo(SCREW_X + 14, y - 11); ctx.stroke();
+  }
+  ctx.strokeStyle = C_BRASS_D; ctx.lineWidth = 2; ctx.strokeRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  // Thin rails for the two background runs.
+  for (var k in BG) {
+    var ch = BG[k];
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    for (var sd = -1; sd <= 1; sd += 2) {
+      ctx.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        var nv = normalAt(ch, i), x = ch.xs[i] + nv[0] * sd * 9, yy = ch.ys[i] + nv[1] * sd * 9;
+        if (i) ctx.lineTo(x, yy); else ctx.moveTo(x, yy);
+      }
+      ctx.stroke();
+    }
+  }
+  // Ferris wheel.
+  var step = Math.PI * 2 / FERRIS.buckets;
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(FERRIS.cx, FERRIS.cy, FERRIS.r, 0, Math.PI * 2); ctx.stroke();
+  cog(FERRIS.cx, FERRIS.cy, 18, 8, ferris.phase, C_BRASS);
+  cog(FERRIS.cx + 30, FERRIS.cy + 26, 14, 7, -ferris.phase * 18 / 14, C_BRASS_D);
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a = ferris.phase + j * step, bx = FERRIS.cx + Math.cos(a) * FERRIS.r, by = FERRIS.cy + Math.sin(a) * FERRIS.r;
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(FERRIS.cx, FERRIS.cy); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS_D; ctx.fillRect(bx - 11, by + 6, 22, 6);
+    if (ferris.bucket[j]) drawMarble({ kind: "spent", x: bx, y: by, z: 1, rot: ferris.bucket[j].rot });
+  }
+  for (i = 0; i < ferris.rail.length; i++) {
+    var fp = at(BG.ferris, ferris.rail[i].d);
+    drawMarble({ kind: "spent", x: fp.x, y: fp.y - 6, z: 1, rot: ferris.rail[i].rot });
+  }
+  for (i = 0; i < ferris.wait.length; i++) drawMarble({ kind: "spent", x: 606 - i * 26, y: 404, z: 1, rot: 0 });
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "screw" || m.st === "back") drawMarble(m);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// An escapement: a pendulum above the rail, a pallet that blocks it and
+// lifts for a moment each time it lets a marble through.
+function drawGates() {
+  for (var i = 0; i < gates.length; i++) {
+    var g = gates[i], k = Math.max(0, Math.min(1, g.timer / (g.period || 1)));
+    var swing = g.side * 0.5 * Math.cos(Math.PI * k);
+    var fx = g.x + g.tx * (R + 4), fy = g.y + g.ty * (R + 4), lift = g.open > 0 ? 16 : 0;
+    var px = fx + g.px, py = fy + g.py;
+    ctx.strokeStyle = "rgba(200,210,225,0.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(fx, fy - R - 10 - lift); ctx.stroke();
+    ctx.strokeStyle = g.open > 0 ? "#ffe9b0" : C_BRASS; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(fx, fy - R - 10 - lift); ctx.lineTo(fx, fy + R - 2 - lift); ctx.stroke();
+    ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+    var arm = Math.min(44, -g.py - 12), bx = px + Math.sin(swing) * arm, by = py + Math.cos(swing) * arm;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C_STEEL; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawHopper() {
+  // Gutter under the intakes, down to the screw.
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(GUTTER_L, gutterY(GUTTER_L)); ctx.lineTo(GUTTER_R, gutterY(GUTTER_R)); ctx.stroke();
+  // Hopper, with what it holds and the next three marbles at its mouth.
+  ctx.fillStyle = "#2b2016"; ctx.beginPath();
+  ctx.moveTo(HOPPER.x - 50, HOPPER.y - 50); ctx.lineTo(HOPPER.x + 26, HOPPER.y - 50);
+  ctx.lineTo(HOPPER.x + 26, HOPPER.y + 20); ctx.lineTo(HOPPER.x - 40, HOPPER.y + 38); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.stroke();
+  for (var i = 0; i < Math.min(stock, 6); i++) drawMarble({ kind: "spent", x: HOPPER.x - 30 + (i % 3) * 22, y: HOPPER.y - 30 + Math.floor(i / 3) * 20, z: 1, rot: i });
+  for (i = 0; i < queue.length; i++) drawMarble({ kind: queue[i], gold: queue[i] === "gold", x: 616 - i * 32, y: 128, z: 1, rot: 0 });
+}
+
+// The fuel pipes: dark when idle, lit in their tank's colour while fuel runs.
+function drawPipes() {
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  for (var i = 0; i < PIPES.length; i++) {
+    var p = PIPES[i], lit = pipeLit[i];
+    ctx.beginPath(); ctx.moveTo(p.xs[0], p.ys[0]);
+    for (var j = 1; j < p.n; j++) ctx.lineTo(p.xs[j], p.ys[j]);
+    if (lit > 0) { ctx.strokeStyle = TANKS[i].color; ctx.globalAlpha = 0.25 * lit; ctx.lineWidth = 18; ctx.stroke(); }
+    ctx.globalAlpha = 1; ctx.strokeStyle = "#120c08"; ctx.lineWidth = 9; ctx.stroke();
+    ctx.strokeStyle = TANKS[i].color; ctx.globalAlpha = 0.45 + 0.55 * lit; ctx.lineWidth = 4; ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  for (i = 0; i < blobs.length; i++) {
+    var b = blobs[i], bp = at(PIPES[b.tank], b.d);
+    if (b.kind === "bad") {
+      ctx.fillStyle = C_BAD; ctx.beginPath(); ctx.arc(bp.x, bp.y, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = Math.sin(t * 40) > 0 ? "#ffe066" : "#ff4a3a";
+      ctx.beginPath(); ctx.arc(bp.x + Math.cos(b.rot) * 5, bp.y + Math.sin(b.rot) * 5, 3.5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = TANKS[b.tank].color; ctx.beginPath(); ctx.arc(bp.x, bp.y, b.gold ? 10 : 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(bp.x, bp.y, 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+function drawMachines() {
+  var nd = state === "play" ? neediest() : -1, pulse = 0.5 + 0.5 * Math.sin(t * 7);
+  for (var k in machines) {
+    var mc = machines[k], bx = mc.x - BOX_W / 2, ti = mc.tank;
+    var full = ti >= 0 && need(ti) <= 0, hot = ti >= 0 && ti === nd;
+    ctx.fillStyle = mc.flash > 0 ? "#3a2c1e" : "#2e2217";
+    ctx.fillRect(bx, BOX_Y, BOX_W, BOX_H);
+    ctx.lineWidth = hot ? 5 : 3;
+    ctx.strokeStyle = hot ? "rgba(255,255,255," + (0.45 + 0.55 * pulse) + ")" : full ? "#5a4a38" : mc.color;
+    ctx.strokeRect(bx, BOX_Y, BOX_W, BOX_H);
+    ctx.save(); ctx.beginPath(); ctx.rect(bx, BOX_Y, BOX_W, BOX_H); ctx.clip();
+    if (k === "furnace") drawFurnace(mc); else drawIntake(mc, full);
+    ctx.restore();
+    ctx.fillStyle = full ? "#8a7a64" : "#f3e6cf"; ctx.font = "700 20px system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(full ? "Full" : mc.name, mc.x, BOX_Y + BOX_H - 10);
+  }
+  for (var i = 0; i < rings.length; i++) {
+    var rg = rings[i];
+    if (rg.t < 0) continue;
+    ctx.globalAlpha = 1 - rg.t / 0.8; ctx.strokeStyle = rg.color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(rg.x, rg.y, 20 + rg.t * 160, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+// A fuel intake: a funnel in its tank's colour, and the tank's level as pips.
+function drawIntake(mc, full) {
+  var ti = mc.tank, c = full ? "#5a4a38" : mc.color, y = BOX_Y;
+  ctx.fillStyle = c; ctx.globalAlpha = mc.flash > 0 ? 1 : 0.8;
+  ctx.beginPath(); ctx.moveTo(mc.x - 44, y + 10); ctx.lineTo(mc.x + 44, y + 10); ctx.lineTo(mc.x + 9, y + 44);
+  ctx.lineTo(mc.x + 9, y + 54); ctx.lineTo(mc.x - 9, y + 54); ctx.lineTo(mc.x - 9, y + 44); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1; ctx.fillStyle = "#120c08";
+  ctx.beginPath(); ctx.ellipse(mc.x, y + 12, 40, 5, 0, 0, Math.PI * 2); ctx.fill();
+  var cap = rocket.cap, gap = Math.min(13, 104 / cap), x0 = mc.x - gap * (cap - 1) / 2;
+  for (var i = 0; i < cap; i++) {
+    ctx.fillStyle = i < rocket.fill[ti] ? mc.color : i < rocket.fill[ti] + pending(ti) ? "#f3e6cf" : "#4a3a2a";
+    ctx.beginPath(); ctx.arc(x0 + i * gap, y + 66, 4.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function drawFurnace(mc) {
+  ctx.fillStyle = "#120c08"; ctx.fillRect(mc.x - 52, BOX_Y + 14, 104, 50);
+  for (var i = 0; i < 6; i++) {
+    var fx = mc.x - 45 + i * 18, h = 20 + 12 * Math.sin(t * 9 + i * 1.7) + 7 * Math.sin(t * 23 + i);
+    ctx.fillStyle = i % 2 ? "#ff6a2a" : "#ffb03a";
+    ctx.beginPath(); ctx.moveTo(fx - 10, BOX_Y + 64); ctx.lineTo(fx, BOX_Y + 64 - h); ctx.lineTo(fx + 10, BOX_Y + 64); ctx.fill();
+  }
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+  for (i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(mc.x - 48 + i * 24, BOX_Y + 14); ctx.lineTo(mc.x - 48 + i * 24, BOX_Y + 64); ctx.stroke(); }
+}
+
+// The launch pad under the rocket, and the rocket itself.
+function drawPad() {
+  ctx.fillStyle = "#3a3f48"; ctx.fillRect(RX - 72, PAD_Y, 140, 20);
+  ctx.strokeStyle = "#5c6470"; ctx.lineWidth = 3; ctx.strokeRect(RX - 72, PAD_Y, 140, 20);
+  ctx.strokeStyle = "#2a2e35"; ctx.lineWidth = 2;
+  for (var x = RX - 64; x < RX + 66; x += 16) { ctx.beginPath(); ctx.moveTo(x, PAD_Y + 2); ctx.lineTo(x + 10, PAD_Y + 18); ctx.stroke(); }
+  // The flame trench glows while the engine burns.
+  if (rocket.flame > 0 && rocket.y > -200) {
+    ctx.fillStyle = "rgba(255,160,60," + (0.5 * rocket.flame) + ")"; ctx.fillRect(RX - 30, PAD_Y, 60, 20);
+  }
+}
+function drawFlame(k) {
+  var len = (40 + 200 * k) * (0.85 + Math.random() * 0.3), w = 20 + 8 * k;
+  var cols = ["rgba(255,106,42,0.9)", "rgba(255,194,58,0.95)", "rgba(255,246,210,1)"];
+  for (var i = 0; i < 3; i++) {
+    var s = 1 - i * 0.3;
+    ctx.fillStyle = cols[i]; ctx.beginPath();
+    ctx.moveTo(-w * s, 0); ctx.quadraticCurveTo(-w * s * 0.9, len * s * 0.5, 0, len * s);
+    ctx.quadraticCurveTo(w * s * 0.9, len * s * 0.5, w * s, 0); ctx.closePath(); ctx.fill();
+  }
+}
+function drawRocket() {
+  var r = rocket, jx = r.jolt > 0 ? (Math.random() - 0.5) * 12 * r.jolt / 0.45 : 0, i;
+  ctx.save();
+  ctx.translate(RX + r.x + jx, PAD_Y + r.y); ctx.rotate(r.tilt);
+  if (r.flame > 0) drawFlame(r.flame);
+  // Nozzle, fins, engine skirt.
+  ctx.fillStyle = C_STEEL; ctx.beginPath();
+  ctx.moveTo(-18, -32); ctx.lineTo(18, -32); ctx.lineTo(26, 0); ctx.lineTo(-26, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C_NOSE;
+  for (var sd = -1; sd <= 1; sd += 2) {
+    ctx.beginPath(); ctx.moveTo(sd * RW, -190); ctx.lineTo(sd * (RW + 20), -70); ctx.lineTo(sd * (RW + 20), -4);
+    ctx.lineTo(sd * RW, -44); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = "#4a4f58"; ctx.fillRect(-RW + 4, -64, 2 * RW - 8, 34);
+  // Hull, with a shaded side.
+  ctx.fillStyle = C_HULL; ctx.fillRect(-RW, -610, 2 * RW, 546);
+  ctx.fillStyle = "rgba(0,0,0,0.13)"; ctx.fillRect(RW * 0.35, -610, RW * 0.65, 546);
+  ctx.fillStyle = C_NOSE; ctx.beginPath(); ctx.moveTo(-RW, -610);
+  ctx.quadraticCurveTo(-RW * 0.9, -690, 0, -724); ctx.quadraticCurveTo(RW * 0.9, -690, RW, -610); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#1c2430"; ctx.beginPath(); ctx.arc(0, -648, 11, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.stroke();
+  // Brass bands between the stages.
+  ctx.fillStyle = C_BRASS;
+  ctx.fillRect(-RW - 2, -612, 2 * RW + 4, 8); ctx.fillRect(-RW - 2, -428, 2 * RW + 4, 8);
+  ctx.fillRect(-RW - 2, -248, 2 * RW + 4, 8); ctx.fillRect(-RW - 2, -70, 2 * RW + 4, 8);
+  // The three tanks: a window with the fuel level in it, and the count.
+  for (i = 0; i < 3; i++) {
+    var tk = TANKS[i], top = tk.y0 + 8, bot = tk.y1 - 8, hh = bot - top, k = Math.min(1, r.fill[i] / r.cap), full = r.fill[i] >= r.cap;
+    ctx.fillStyle = "#15110d"; ctx.fillRect(-30, top, 60, hh);
+    if (k > 0) {
+      var lh = hh * k, wob = r.flash[i] > 0 ? Math.sin(t * 30) * 3 * r.flash[i] / 0.4 : 0;
+      ctx.fillStyle = tk.color; ctx.fillRect(-30, bot - lh + wob, 60, lh - wob);
+      ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.fillRect(-30, bot - lh + wob, 60, 4);
+      ctx.fillStyle = "rgba(255,255,255,0.18)"; ctx.fillRect(-24, bot - lh + wob + 6, 8, Math.max(0, lh - wob - 10));
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 2;
+    for (var j = 1; j < r.cap; j++) { var ty = bot - hh * j / r.cap; ctx.beginPath(); ctx.moveTo(20, ty); ctx.lineTo(30, ty); ctx.stroke(); }
+    ctx.strokeStyle = full ? "#ffffff" : r.flash[i] > 0 ? tk.color : C_BRASS_D; ctx.lineWidth = full ? 4 : 3;
+    ctx.strokeRect(-30, top, 60, hh);
+    ctx.font = "800 28px system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(0,0,0,0.75)"; ctx.fillStyle = "#ffffff";
+    var lbl = r.fill[i] + "/" + r.cap;
+    ctx.strokeText(lbl, 0, top + hh / 2 + 10); ctx.fillText(lbl, 0, top + hh / 2 + 10);
+  }
+  // Cracks: a dark split with a hot lip, where a bomb got in.
+  ctx.save(); ctx.beginPath(); ctx.rect(-RW, -610, 2 * RW, 546); ctx.clip();
+  for (i = 0; i < r.cracks.length; i++) {
+    var cr = r.cracks[i];
+    for (var pass = 0; pass < 2; pass++) {
+      ctx.strokeStyle = pass ? "#2a0d0a" : "rgba(255,120,90,0.85)"; ctx.lineWidth = pass ? 4.5 : 9;
+      ctx.beginPath(); ctx.moveTo(cr[0][0], cr[0][1]);
+      for (j = 1; j < cr.length; j++) ctx.lineTo(cr[j][0], cr[j][1]);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0e0a07"; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  var sx = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  var sy = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (offX + sx * scale) * dpr, (offY + sy * scale) * dpr);
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, C_BG2); bg.addColorStop(1, C_BG);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // Background works: meshing gears that turn faster when the rails are busy.
+  ctx.globalAlpha = 0.16;
+  for (var i = 0; i < DECO_GEARS.length; i++) {
+    var gdef = DECO_GEARS[i], dir = i % 2 ? -1 : 1;
+    cog(gdef[0], gdef[1], gdef[2], gdef[3], gearA * dir * 60 / gdef[2], C_BRASS);
+  }
+  ctx.globalAlpha = 1;
+
+  drawBackground();
+  ctx.globalAlpha = 0.75; drawHopper(); ctx.globalAlpha = 1;
+  drawWheel();
+  ctx.drawImage(trackLayer, 0, 0, W, H);
+  for (i = 0; i < chimes.length; i++) {
+    var c = chimes[i], lit = Math.max(0, 1 - c.hit / 0.35), wob = lit * Math.sin(c.hit * 60) * 0.3;
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(wob);
+    ctx.fillStyle = lit > 0 ? "rgba(255,230,160," + (0.5 + lit * 0.5) + ")" : C_BRASS_D;
+    ctx.fillRect(-14, -5, 28, 10);
+    if (lit > 0) { ctx.strokeStyle = "rgba(255,230,160," + lit + ")"; ctx.lineWidth = 2; ctx.strokeRect(-20 - lit * 8, -10 - lit * 6, 40 + lit * 16, 20 + lit * 12); }
+    ctx.restore();
+  }
+  drawSwitches();
+  drawGates();
+
+  for (i = 0; i < marbles.length; i++) if (marbles[i].z < 0) drawMarble(marbles[i]);
+  ctx.drawImage(frontLayer, 0, 0, W, H);
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.z >= 0 && m.st !== "drop" && m.st !== "gutter" && m.st !== "screw" && m.st !== "back") drawMarble(m);
+  }
+  drawMachines();
+  for (i = 0; i < marbles.length; i++) if (marbles[i].st === "gutter") drawMarble(marbles[i]);
+
+  // The fuel lines stand in front of the rocket on the pad, and behind it
+  // once it leans or leaves.
+  if (state !== "play") drawPipes();
+  drawPad();
+  drawRocket();
+  if (state === "play") drawPipes();
+  for (i = 0; i < smoke.length; i++) {
+    var sm = smoke[i];
+    ctx.globalAlpha = 0.55 * (1 - sm.t / sm.life); ctx.fillStyle = sm.color;
+    ctx.beginPath(); ctx.arc(sm.x, sm.y, sm.r, 0, Math.PI * 2); ctx.fill();
+  }
+  for (i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD: the rocket and the run on the left, Auto in the middle, the
+  // countdown big on the right.
+  ctx.textAlign = "left"; ctx.fillStyle = "#f3e6cf"; ctx.font = "800 38px system-ui, sans-serif";
+  ctx.fillText("Rocket " + rocket.n, 28, 60);
+  ctx.font = "600 22px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+  ctx.fillText("Launched " + launches.length, 28, 94);
+  starShape(178, 87, 11, true);
+  ctx.fillStyle = "#cdbb9c"; ctx.fillText("" + stats.starsTotal, 196, 94);
+  var hull = "Hull ";
+  for (i = 0; i < CRACKS; i++) hull += i < CRACKS - rocket.cracks.length ? "● " : "○ ";
+  ctx.fillStyle = rocket.cracks.length ? "#ff7a6a" : "#cdbb9c"; ctx.fillText(hull, 28, 124);
+  ctx.textAlign = "center";
+  ctx.fillStyle = auto ? C_BRASS : "#3a2c1e"; ctx.fillRect(290, 30, 120, 44);
+  ctx.fillStyle = auto ? "#1c140e" : "#cdbb9c"; ctx.font = "700 22px system-ui, sans-serif";
+  ctx.fillText(auto ? "Auto on" : "Auto", 350, 60);
+  ctx.textAlign = "right";
+  var tl = Math.ceil(countLeft), urgent = state === "play" && countLeft <= 10;
+  // During a launch the clock stays frozen, in gold, on the time that was left.
+  var big = "T-" + (state === "launch" && rocket.n === lastLaunch.n ? Math.floor(lastLaunch.left) : tl);
+  ctx.font = "800 " + (urgent ? 76 + 6 * Math.max(0, Math.sin(t * 8)) : 76) + "px system-ui, sans-serif";
+  ctx.fillStyle = state === "launch" ? "#ffd23a" : urgent || state === "fizzle" ? "#ff5a5a" : "#f3e6cf";
+  ctx.fillText(big, 624, 90);
+
+  ctx.textAlign = "center";
+  for (i = 0; i < floats.length; i++) {
+    var f = floats[i];
+    ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color;
+    ctx.font = "800 28px system-ui, sans-serif";
+    ctx.fillText(f.str, f.x, f.y - f.t * 70);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#7d6a52"; ctx.font = "20px system-ui, sans-serif";
+  ctx.fillText("Debug: fuel " + stats.fuel + "  full " + stats.full + "  wasted " + stats.wasted +
+    "  burnt " + stats.burnt + "  cracks " + stats.cracks + "  marbles " + marbles.length, MID, 1270);
+
+  // The launch card: what this rocket earned, over the machine.
+  if (state === "launch" && phaseT > 1.3 && phaseT < ROLL_AT + ROLL_SECONDS) {
+    var ka = Math.min(1, (phaseT - 1.3) / 0.25, (ROLL_AT + ROLL_SECONDS - phaseT) / 0.3);
+    ctx.globalAlpha = ka;
+    ctx.fillStyle = "rgba(14,10,7,0.82)"; ctx.fillRect(70, 470, 460, 250);
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.strokeRect(70, 470, 460, 250);
+    ctx.fillStyle = "#ffd23a"; ctx.font = "800 60px system-ui, sans-serif";
+    ctx.fillText("Liftoff!", 300, 540);
+    for (i = 0; i < 3; i++) {
+      var pop = Math.min(1, Math.max(0, (phaseT - 1.6 - i * 0.25) / 0.2));
+      starShape(220 + i * 80, 600, 30 * (pop > 0 ? 0.6 + 0.4 * pop : 1), i < lastLaunch.stars && pop > 0);
+    }
+    ctx.fillStyle = "#f3e6cf"; ctx.font = "700 28px system-ui, sans-serif";
+    ctx.fillText("Rocket " + lastLaunch.n + ", " + Math.floor(lastLaunch.left) + " s to spare", 300, 686);
+    ctx.globalAlpha = 1;
+  }
+  if (state === "fizzle" && phaseT > 0.8) {
+    ctx.globalAlpha = Math.min(1, (phaseT - 0.8) / 0.3);
+    ctx.fillStyle = "rgba(14,10,7,0.82)"; ctx.fillRect(40, 490, 500, 100);
+    ctx.strokeStyle = "#ff5a5a"; ctx.lineWidth = 3; ctx.strokeRect(40, 490, 500, 100);
+    ctx.fillStyle = "#ff5a5a"; ctx.font = "800 56px system-ui, sans-serif";
+    ctx.fillText(failWhy === "scrap" ? "Rocket scrapped" : "Launch failed", 300, 560);
+    ctx.globalAlpha = 1;
+  }
+
+  if (state === "over") {
+    ctx.fillStyle = "rgba(0,0,0,0.72)"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#f3e6cf"; ctx.font = "800 60px system-ui, sans-serif";
+    ctx.fillText(failWhy === "scrap" ? "Rocket scrapped" : "Launch failed", W / 2, 420);
+    ctx.font = "700 36px system-ui, sans-serif";
+    ctx.fillText("Rockets launched " + launches.length, W / 2, 500);
+    ctx.fillText("Stars " + stats.starsTotal, W / 2, 550);
+    ctx.font = "600 24px system-ui, sans-serif";
+    for (i = 0; i < Math.min(launches.length, 8); i++) {
+      var L = launches[i], ly = 610 + i * 46;
+      ctx.textAlign = "right"; ctx.fillStyle = "#cdbb9c"; ctx.fillText("Rocket " + L.n, 300, ly + 8);
+      for (var s2 = 0; s2 < 3; s2++) starShape(340 + s2 * 36, ly, 14, s2 < L.stars);
+      ctx.textAlign = "left"; ctx.fillStyle = "#cdbb9c"; ctx.fillText(Math.floor(L.left) + " s", 470, ly + 8);
+    }
+    ctx.textAlign = "center"; ctx.font = "26px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+    ctx.fillText(auto ? "Auto restarts in a moment" : "Tap to play again", W / 2, 640 + Math.min(launches.length, 8) * 46 + 30);
+  }
+}
+
+// --- input ---------------------------------------------------------------------
+function setAuto(on) { auto = on; reset(); }
+cv.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  var x = (e.clientX - offX) / scale, y = (e.clientY - offY) / scale;
+  if (x >= 290 && x <= 410 && y >= 30 && y <= 74) { setAuto(!auto); return; }
+  if (state === "over") { reset(); return; }
+  if (auto) return;
+  var best = null, bd = TAP_REACH;
+  for (var k in sw) {
+    var d = Math.sqrt((sw[k].x - x) * (sw[k].x - x) + (sw[k].y - y) * (sw[k].y - y));
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (best) flip(best);
+});
+addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  if (e.key >= "1" && e.key <= "4" && !auto && state !== "over") flip("S" + (e.key - 1));
+  else if (e.key === "r" || e.key === "R") reset();
+  else if (e.key === "a" || e.key === "A") setAuto(!auto);
+});
+
+// --- loop ----------------------------------------------------------------------
+var lastT = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - lastT) / 1000 || 0);
+  lastT = now;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+resize();
+reset();
+requestAnimationFrame(frame);
+</script>

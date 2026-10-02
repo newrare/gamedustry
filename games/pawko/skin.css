@@ -19,15 +19,17 @@
   .eo-score { text-shadow:0 0 22px rgba(255,184,48,.8); }
   #cta-bar { border-top:1px solid rgba(255,184,48,.25); }
 
-  /* ---- intro: one sentence, and a stage that drops one ball --------------
-     "Tap to drop a wave of balls" — the stage plays that beat alone: the
-     finger taps the top of a little pinboard, a ball appears under the tip
-     and rattles down three staggered rows of brass pegs, left, right, left,
-     and out at the foot. The motor's target ring becomes the ball; the
-     ripples mean nothing here and are dropped. */
+  /* ---- intro: one sentence, and a stage that plays one card --------------
+     "Drag a card onto the board to drop a wave of balls" — the stage plays
+     that gesture: the finger presses a card at the foot of a little
+     pinboard, where the hand is in the round, carries it up to the top and
+     lets go; the card melts into the chute and
+     a ball rattles down three staggered rows of brass pegs, left, right,
+     left, and out at the foot. The motor's target becomes the card, its
+     arrow becomes the ball, and the drag track is not drawn. */
   .demo-caption { display:none; }
   #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#ffe6c4; }
-  #intro-tagline .w-tap  { color:var(--accent); text-shadow:0 0 18px rgba(255,184,48,.75); }
+  #intro-tagline .w-drag { color:var(--accent); text-shadow:0 0 18px rgba(255,184,48,.75); }
   #intro-tagline .w-wave { color:#ff4d6d; text-shadow:0 0 18px rgba(255,77,109,.75); }
   #intro-tagline .w-card { color:#c46bff; text-shadow:0 0 18px rgba(196,107,255,.75); }
   #intro-demo { margin-top:30px; }
@@ -63,44 +65,65 @@
                               rgba(255,77,109,.35) 40% 60%, rgba(255,184,48,0) 60% 80%, rgba(255,184,48,.14) 80%);
     border-top:2px solid rgba(255,184,48,.45);
   }
-  /* the ball: the motor's target ring, restyled into a red paw ball */
-  .demo-tap .demo-target {
-    z-index:1; left:190px; top:30px; width:34px; height:34px; margin-left:-17px;
-    border:0; border-radius:50%;
+  /* the card: the motor's target, restyled into a little velvet card with
+     a brass coin on it. It starts at the foot, where the round's hand is,
+     is carried up and 130 px right to the chute, and shrinks into it. */
+  .demo-drag .demo-target {
+    display:block; z-index:1; left:60px; top:212px; width:44px; height:56px;
+    margin-left:-22px; border-radius:8px; border:2px solid #ffcf5a;
+    background:
+      radial-gradient(circle at 50% 42%, #fff4c8 0 3px, #ffcf5a 7px, #a8681a 11px, rgba(0,0,0,0) 12px),
+      linear-gradient(180deg, #5a1020 0%, #2a0612 100%);
+    box-shadow:0 0 14px rgba(255,184,48,.45);
+    animation:demoCardDrag 3s ease-in-out infinite;
+  }
+  .demo-drag .demo-ripple { display:none; }
+  .demo-drag .demo-track { display:none; }
+  @keyframes demoCardDrag {
+    0%,12%   { transform:translate(0,0) scale(1); opacity:1; }
+    18%      { transform:translate(0,-4px) scale(1.12) rotate(-4deg); }
+    40%      { transform:translate(130px,-204px) scale(1.12) rotate(4deg); opacity:1; }
+    47%      { transform:translate(130px,-186px) scale(.2); opacity:0; }
+    90%      { transform:translate(0,0) scale(.6); opacity:0; }
+    100%     { transform:translate(0,0) scale(1); opacity:1; }
+  }
+  /* the ball: the motor's arrow, restyled into a red paw ball, which leaves
+     the chute where the card was let go */
+  .demo-drag .demo-arrow {
+    display:block; z-index:1; left:190px; top:30px; width:34px; height:34px;
+    margin:0 0 0 -17px; border:0; border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #ffffff 0 3px, #ff6b6b 9px, #7a0f22 17px);
     box-shadow:0 0 14px rgba(255,77,109,.6);
-    animation:demoBallFall 2.4s linear infinite;
+    animation:demoBallFall 3s linear infinite;
   }
-  .demo-tap .demo-ripple { display:none; }
   /* every stop sits at its share of the path's length, so `linear` reads as
      one fall with three knocks in it */
   @keyframes demoBallFall {
-    0%,38%   { transform:translate(0,0) scale(.6); opacity:0; }
-    41%      { transform:translate(0,0) scale(1); opacity:1; }
-    50%      { transform:translate(0,42px); }
-    52%      { transform:translate(4px,46px) scale(1.12,.88); }
-    61%      { transform:translate(20px,103px); }
-    63%      { transform:translate(17px,108px) scale(1.12,.88); }
-    73%      { transform:translate(-8px,163px); }
-    75%      { transform:translate(-5px,168px) scale(1.12,.88); }
+    0%,45%   { transform:translate(0,0) scale(.6); opacity:0; }
+    48%      { transform:translate(0,0) scale(1); opacity:1; }
+    56%      { transform:translate(0,42px); }
+    57%      { transform:translate(4px,46px) scale(1.12,.88); }
+    65%      { transform:translate(20px,103px); }
+    67%      { transform:translate(17px,108px) scale(1.12,.88); }
+    75%      { transform:translate(-8px,163px); }
+    77%      { transform:translate(-5px,168px) scale(1.12,.88); }
     85%      { transform:translate(16px,225px); }
-    93%      { transform:translate(22px,272px); opacity:1; }
-    96%,100% { transform:translate(22px,272px); opacity:0; }
+    92%      { transform:translate(22px,272px); opacity:1; }
+    95%,100% { transform:translate(22px,272px); opacity:0; }
   }
-  /* the finger: comes up to the chute, taps, and holds there while the ball
-     falls — a tap is the whole gesture, nothing to drag */
-  .demo-tap .demo-hand {
-    left:190px; margin-left:-37px; bottom:auto; top:36px; z-index:2;
-    animation:demoChuteTap 2.4s ease-in-out infinite;
+  /* the finger: its tip on the card's coin, it presses, carries the card up
+     to the chute and lets go, then leaves while the ball falls */
+  .demo-drag .demo-hand {
+    left:60px; margin-left:-37px; bottom:auto; top:236px; z-index:2;
+    animation:demoCardHand 3s ease-in-out infinite;
   }
-  @keyframes demoChuteTap {
-    0%       { transform:translate(-90px,40px); opacity:0; }
-    18%      { transform:translate(0,14px); opacity:1; }
-    34%      { transform:translate(0,14px); }
-    40%      { transform:translate(0,-4px); }
-    46%      { transform:translate(0,14px); }
-    80%      { transform:translate(0,14px); opacity:1; }
-    92%,100% { transform:translate(-90px,40px); opacity:0; }
+  @keyframes demoCardHand {
+    0%       { transform:translate(-50px,40px); opacity:0; }
+    10%      { transform:translate(0,4px); opacity:1; }
+    18%      { transform:translate(0,-4px); }
+    40%      { transform:translate(130px,-204px); }
+    46%      { transform:translate(130px,-218px); opacity:1; }
+    62%,100% { transform:translate(200px,-130px); opacity:0; }
   }
 
   /* ---- comic callouts -----------------------------------------------------
@@ -131,3 +154,215 @@
   }
   /* OBJECTIVE REACHED — gold, as the gauge turns */
   .pop-perfect { --fill:linear-gradient(180deg,#ffffff 0%,#ffe08a 45%,#ffb830 100%); --glow:rgba(255,184,48,.85); --ink:#2a1400; }
+
+  /* the Mult pill once a combination is running — x10 and up */
+  .hud-pill.hot { color:#ffd166; text-shadow:0 0 14px rgba(255,140,26,.85); border-color:rgba(255,184,48,.7); }
+
+  /* ---- THE CARD, as DOM (game.js, cardNode) --------------------------------
+     One layout at 300 x 420 design px, scaled as a whole (--sk) to the width
+     asked for: the round's big card is 400 wide, the collection's 300. The
+     body (.pk-back) clips and nothing else does, so the badge, the price tag
+     and the label may leave the card. Four tokens come from the card: --c its
+     own colour, --k its kind (the cloth, the badge, the label's ink), --r its
+     rarity (the rim) and --rbg the rarity's band (the rainbow on an epic).
+     The base below is the structure; the look is THE PATCH CARD after it,
+     copied from lab/pawko-patch.html as it stands — tune it there. */
+  .pk-cbox { position:relative; flex:0 0 auto; }
+  .pk-card {
+    position:absolute; left:0; top:0; width:300px; height:420px; transform-origin:0 0;
+    transform:scale(var(--sk, 1));
+    font-family:var(--web-font, -apple-system, "Segoe UI", Roboto, sans-serif); font-weight:var(--web-fw, 800);
+    color:#fff;
+  }
+  .pk-card > * { position:absolute; }
+  .pk-back { inset:0; border-radius:28px; overflow:hidden; background:#2a0612; }
+  .pk-back > * { position:absolute; inset:0; }
+  .pk-frame { inset:0; border-radius:28px; pointer-events:none; }
+  .pk-art { left:0; right:0; top:60px; height:190px; display:flex; align-items:center; justify-content:center; }
+  .pk-art img { max-width:190px; max-height:180px; display:block; }
+  .pk-plate {
+    left:16px; right:16px; top:266px; height:106px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center;
+  }
+  .pk-name { font-size:34px; line-height:1; letter-spacing:.5px; }
+  .pk-kind { font-size:20px; letter-spacing:3px; line-height:1.1; }
+  .pk-tag { left:16px; top:16px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+  .pk-tag svg { position:relative; z-index:1; width:36px; height:36px; fill:currentColor; stroke:currentColor; }
+  .pk-rar { display:none; align-items:center; white-space:nowrap; font-size:20px; letter-spacing:2px; line-height:1; }
+  .pk-num { right:16px; top:18px; font-size:28px; line-height:1.1; }
+  .pk-desc { display:none; }
+  .pk-back { z-index:0; } .pk-frame { z-index:1; } .pk-art { z-index:2; }
+  .pk-plate { z-index:3; } .pk-desc { z-index:3; } .pk-tag { z-index:4; } .pk-rar { z-index:5; } .pk-num { z-index:5; }
+  @keyframes rb-move { from { background-position:0% 50%; } to { background-position:300% 50%; } }
+  /* a card not unlocked yet: its own white silhouette, like an unowned sticker */
+  .pk-card.ghost .pk-art img { filter:brightness(0) invert(1) !important; opacity:.42; }
+  .pk-card.ghost .pk-tag { filter:grayscale(1) brightness(.8); }
+
+  /* PAWKO — THE PATCH CARD (lab/pawko-patch.html) */
+  .pk-card.s-patch {
+    --pt-radius:32px;
+    --pt-rim:8px;
+    --pt-rim-bg:linear-gradient(160deg, #fff, var(--r) 35%, color-mix(in srgb, var(--r) 55%, #000) 70%, var(--r));
+    --pt-seam-inset:17px;
+    --pt-seam-w:2px;
+    --pt-seam-style:dashed;
+    --pt-seam-color:rgba(255,255,255,0.75);
+    --pt-cloth-a:color-mix(in srgb, var(--k) 85%, #fff);
+    --pt-cloth-b:color-mix(in srgb, var(--k) 65%, #200010);
+    --pt-twill:0.09;
+    --pt-glow:0.35;
+    --pt-tilt:0deg;
+    --tag-size:75px;
+    --tag-l:-10px;
+    --tag-t:-10px;
+    --tag-rot:0deg;
+    --tag-radius:50%;
+    --tag-ring:6px;
+    --tag-tint:100%;
+    --tag-paper:#fff8e6;
+    --rt-x:260px;
+    --rt-y:16.8px;
+    --rt-rot:75deg;
+    --rt-flip:0deg;
+    --rt-str:25px;
+    --rt-h:40px;
+    --rt-fs:20px;
+    --rt-band:6px;
+    --rt-paper:#fff8e6;
+    --pl-l:-10px;
+    --pl-r:-10px;
+    --pl-top:260px;
+    --pl-h:82px;
+    --pl-rot:0deg;
+    --pl-clip:polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
+    --pl-paper:#fff8e6;
+    --pl-stitch:rgba(77,42,51,0.35);
+    --pl-name:35px;
+    --pl-kind:20px;
+    --pl-kind-show:block;
+    --pl-ink:30%;
+    --ds-show:block;
+    --ds-top:350px;
+    --ds-side:20px;
+    --ds-fs:20px;
+    --ds-pad:0;
+    --ds-bg:transparent;
+    --ds-ink:#fff8e6;
+    --ds-shadow:0 2px 0 rgba(0,0,0,.45);
+    --ds-box:none;
+    --art-size:200px;
+    --art-top:34px;
+    --art-filter:drop-shadow(3px 3px 0 rgba(0,0,0,.25)) drop-shadow(0 12px 14px rgba(0,0,0,.3));
+    --num-l:auto;
+    --num-r:50px;
+    --num-t:50px;
+    --num-b:auto;
+    --num-fs:24px;
+  }
+  .pk-card.s-patch { transform:scale(var(--sk, 1)) rotate(var(--pt-tilt)); }
+  .pk-card.s-patch .pk-back {
+    border-radius:var(--pt-radius);
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,var(--pt-twill)) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,var(--pt-twill)) 0 3px, transparent 3px 6px),
+      linear-gradient(180deg, var(--pt-cloth-a), var(--pt-cloth-b));
+    box-shadow:0 14px 26px rgba(0,0,0,.45);
+  }
+  .pk-card.s-patch .pk-glow { background:radial-gradient(circle at 50% 36%, rgba(255,255,255,var(--pt-glow)), transparent 50%); }
+  /* the seam, sewn round the cloth */
+  .pk-card.s-patch .pk-back::after {
+    content:""; position:absolute; inset:var(--pt-seam-inset);
+    border:var(--pt-seam-w) var(--pt-seam-style) var(--pt-seam-color);
+    border-radius:max(6px, calc(var(--pt-radius) - var(--pt-seam-inset)));
+  }
+  /* the rim, in the rarity's thread — a rainbow that moves on an epic */
+  .pk-card.s-patch .pk-frame {
+    border-radius:var(--pt-radius); padding:var(--pt-rim); background:var(--pt-rim-bg);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  .pk-card.s-patch.r-4 .pk-frame { background:var(--rbg); background-size:300% 100%; animation:rb-move 5s linear infinite; }
+  /* the object */
+  .pk-card.s-patch .pk-art { top:var(--art-top); height:var(--art-size); }
+  .pk-card.s-patch .pk-art img { max-width:var(--art-size); max-height:var(--art-size); filter:var(--art-filter); }
+  /* the badge: the kind, ironed on over a corner */
+  .pk-card.s-patch .pk-tag {
+    left:var(--tag-l); top:var(--tag-t); width:var(--tag-size); height:var(--tag-size);
+    border-radius:var(--tag-radius); color:#200010; transform:rotate(var(--tag-rot));
+    background:repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 3px, transparent 3px 6px), color-mix(in srgb, var(--k) var(--tag-tint), #fff);
+    box-shadow:0 0 0 var(--tag-ring) var(--tag-paper), 0 0 0 calc(var(--tag-ring) + 3px) color-mix(in srgb, var(--k) 50%, #000), 0 10px 16px rgba(0,0,0,.35);
+  }
+  .pk-card.s-patch .pk-tag::after { content:""; position:absolute; inset:7px; border-radius:inherit; border:2px dashed rgba(32,0,16,.5); }
+  .pk-card.s-patch .pk-tag svg { width:calc(var(--tag-size) * .46); height:calc(var(--tag-size) * .46); }
+  /* the rarity: a price tag hanging off an edge on its string */
+  .pk-card.s-patch .pk-rar {
+    display:flex; left:var(--rt-x); top:var(--rt-y); height:var(--rt-h);
+    transform-origin:0 50%; transform:translateY(-50%) rotate(var(--rt-rot));
+    filter:drop-shadow(0 8px 8px rgba(0,0,0,.4));
+  }
+  .pk-card.s-patch .pk-rar::before {
+    content:""; flex:0 0 var(--rt-str); height:12px;
+    background:radial-gradient(circle at 5px 50%, #5a3a2a 0 4px, transparent 4.5px), linear-gradient(var(--rt-paper), var(--rt-paper)) center / 100% 3px no-repeat;
+  }
+  .pk-card.s-patch .pk-rar span {
+    position:relative; display:flex; align-items:center; height:100%;
+    padding:3px 20px 0 calc(var(--rt-band) + 28px); color:#200010; font-size:var(--rt-fs);
+    background:var(--rt-paper); clip-path:polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
+  }
+  .pk-card.s-patch .pk-rar span::before { content:""; position:absolute; left:18px; top:0; bottom:0; width:var(--rt-band); background:var(--rbg); background-size:300% 100%; }
+  .pk-card.s-patch.r-4 .pk-rar span::before { animation:rb-move 4s linear infinite; }
+  .pk-card.s-patch .pk-rar span::after { content:""; position:absolute; left:8px; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:#5a3a2a; }
+  .pk-card.s-patch .pk-rar em { font-style:normal; display:inline-block; transform:rotate(var(--rt-flip)); }
+  /* the name, on a woven label */
+  .pk-card.s-patch .pk-plate {
+    left:var(--pl-l); right:var(--pl-r); top:var(--pl-top); height:var(--pl-h);
+    transform:rotate(var(--pl-rot)); filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));
+  }
+  .pk-card.s-patch .pk-plate::before { content:""; position:absolute; inset:0; z-index:-1; background:var(--pl-paper); clip-path:var(--pl-clip); }
+  .pk-card.s-patch .pk-plate::after {
+    content:""; position:absolute; inset:7px 26px;
+    border-top:2px dashed var(--pl-stitch); border-bottom:2px dashed var(--pl-stitch);
+  }
+  .pk-card.s-patch .pk-name { font-size:var(--pl-name); color:color-mix(in srgb, var(--k) var(--pl-ink), #200010); }
+  .pk-card.s-patch .pk-kind { display:var(--pl-kind-show); font-size:var(--pl-kind); color:color-mix(in srgb, var(--k) 70%, #200010); }
+  /* what the card does, sewn on: in thread on the cloth, or on a label of its own */
+  .pk-card.s-patch .pk-desc {
+    display:var(--ds-show); left:var(--ds-side); right:var(--ds-side); top:var(--ds-top);
+    padding:var(--ds-pad); border-radius:10px; background:var(--ds-bg); color:var(--ds-ink);
+    font:700 var(--ds-fs)/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    text-align:center; text-shadow:var(--ds-shadow); box-shadow:var(--ds-box);
+  }
+  /* the count */
+  .pk-card.s-patch .pk-num {
+    left:var(--num-l); right:var(--num-r); top:var(--num-t); bottom:var(--num-b);
+    background:#200010; color:#fff8e6; border-radius:14px; padding:2px 12px 0; font-size:var(--num-fs);
+  }
+
+  /* ---- THE BIG CARD, over the round (game.js, openZoom) ---------------------
+     The motor's CARD with no plate behind it: the card is the card, on a
+     veil. It takes no pointer — the next tap reaches the canvas, which puts
+     it away. */
+  #pk-zoom {
+    position:absolute; inset:0; z-index:30; pointer-events:none;
+    display:flex; align-items:center; justify-content:center; padding:0 50px;
+    background:rgba(10,2,6,.78); opacity:0; transition:opacity .2s ease;
+  }
+  #pk-zoom.on { opacity:1; }
+  #pk-zoom .pk-zc { background:none; box-shadow:none; padding:0; gap:22px; }
+  #pk-zoom .pk-zc::before { content:none; }
+  #pk-zoom .pk-cbox { transform:scale(.6) translateY(60px); transition:transform .32s cubic-bezier(.2,1.3,.4,1); }
+  #pk-zoom.on .pk-cbox { transform:none; }
+  .pk-zinfo {
+    width:100%; padding:20px 24px; border-radius:22px;
+    background:rgba(26,4,12,.85); border:1px solid rgba(255,184,48,.3);
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .pk-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .pk-chips span {
+    padding:4px 13px; border-radius:999px; background:rgba(255,255,255,.08);
+    font-size:20px; font-weight:800; color:#e8d9c0;
+  }
+  .pk-hint {
+    margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight:500; font-size:22px; line-height:1.4; color:rgba(255,230,190,.7);
+  }

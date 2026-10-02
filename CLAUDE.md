@@ -165,7 +165,10 @@ development pages and answer only to the short rules in their own sections.
 1. Rewrite the **`Game`** module (section 6 of `games/<slug>/game.js`):
    - `reset()` — initialize a fresh round (position entities inside `Layout`).
    - `update(dt)` — advance the simulation; `dt` is seconds.
-   - `render()` — draw the world with `ctx` in design coordinates.
+   - `render()` — draw the world with `ctx` in design coordinates, and wrap
+     each ELEMENT of it — a brick, a card, the board, the player — in
+     `if (Enter.begin(x, y)) { …; Enter.end(); }`, in the order it should land:
+     that is the round's entrance, and what is drawn outside is the ground.
    - `onDown(p)` / `onMove(p)` / `onUp(p)` — optional pointer hooks, `p` is
      `{x,y}` in design coordinates.
    - `onTimeUp()` — optional; without it the clock ends the round.
@@ -522,7 +525,11 @@ What a view brings:
   bands pay, never a promotion: `games/arcider` is a race, so the third star
   is the chequered flag taken in first place and a run that never reached it
   is worth one) and `Game.levelWon()` (how it ends its own round, so the end
-  screen keeps its stat rows). `Game.levelTally()` goes further for a round won on objectives rather than a
+  screen keeps its stat rows). `Game.levelMaxed()` answering true turns the
+  third star into a beat instead of an ending — the shine without the slow
+  motion, the game's own callout, and the round runs to its own end, for a
+  game whose score is the point (`games/pawko`, where a broken combination is
+  what is chased). `Game.levelTally()` goes further for a round won on objectives rather than a
   quantity: it IS the star count, 0 to 3, and replaces the bands
   (`games/stratideck`: the flag, no wound, a prisoner). See [docs/LEVELS.md](docs/LEVELS.md).
 - **a game that declares `web.meta` gets the META LAYER on top of that** — a
@@ -573,11 +580,13 @@ What a view brings:
   not there land nowhere: on a village that is the hub the player is already
   standing on — the road card steps aside and the boxes take its place, and the
   map is never involved — and on a game with no hub the tap does what PLAY does
-  and opens the LEVEL MAP under it. On `localhost` it pays on every tap, and
-  the wallet band says so with a DEV pill in front of the level chip — the one
-  DEV pill the front end draws. That fast clock (and the army's
-  hour-a-second) is OFF when the game opens; a tap on the pill turns it on for
-  the session. `meta:<slug>` is the save, kept
+  and opens the LEVEL MAP under it. On `localhost` the wallet band carries a
+  DEV pill in front of the level chip — the one DEV pill the front end draws —
+  and it is the door to the **DEV view** (`packages/webshell/dev.js`): every
+  card and action the layers register with `W.Dev.entry`, one tap each, and
+  the game's clock (`W.Dev.now()`) moved by hand — ADVANCE passes x hours with
+  the player in the game, RECONNECT has them come back x hours later through a
+  reload. The day of the road is read off that clock. `meta:<slug>` is the save, kept
   apart from `prog:<slug>` because the two are written on different screens —
   OPTIONS erases both in one row.
   **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
@@ -667,19 +676,19 @@ What a view brings:
   two equal grades, so the one DRAW left in the game is two cards that match on
   both. The tier GAP is what the fight costs: the loser's tier standing above
   the winner's **WOUNDS** the winner, which takes the cell, pins the card in its
-  hand slot for a turn and sends it to the INFIRMARY for two real days; the
+  hand slot for a turn and sends it to the INFIRMARY for 1 to 24 real hours,
+  longer the wider the gap; the
   winner's standing above the loser's leaves the loser **STANDING**, and a won
-  battle offers one of those as a PRISONER, who turns after five real days and
-  then enlists. The wound is bought out with the shell's rewarded-ad
-  placeholder, because a player whose three best cards are in bandages has
-  nothing to do for two days, which is not a mechanic; the prisoner's five days
-  and a squad's mission are not, because a wait that blocks nothing is the
-  reason to come back. Four more doors on the
-  hub — CARDS, INFIRMARY, PRISON and the COMMAND, plus a fifth, DEFENSE: a
+  battle offers one of those as a PRISONER, who turns after 4 to 48 real hours
+  (by grade) and then enlists. Neither wait is bought out with an ad: a
+  wound, a prisoner and a squad's mission are all sat out. Four more doors on the
+  hub — CARDS, INFIRMARY, PRISON and the COMMAND, plus a fifth, DEFENSE, in
+  two tabs: STRATEGY, a
   5×4 grid the player fills with a flag, their cards and the objects each
-  biome hands over, stormed while they are away (30 % after 4 h of absence)
+  biome hands over, stormed on every return after 4 h of absence
   by their own roster in a mirror, and judged by playing the raid with the
-  battle's own rules — the solidity is read in the report only — and every
+  battle's own rules — the solidity is read in the report only — and REPORT,
+  the last raid as its list of duels in the order of attack; and every
   one of them is a
   VIEW and not a card, because each is a place with a list to manage and a
   screen a stray tap can close is not a screen anything is composed on. CARDS
@@ -691,7 +700,7 @@ What a view brings:
   the roster holds none of — a special included — is the one exception: it is
   always on the shelf, at its lowest free tier, for `recruit.needPrice` coins,
   because a player stuck for a grade is a closed door and not a cost. MISSIONS
-  sends a squad of two to five cards away for 4 to 48 real hours on one of
+  sends a squad of two to five cards away for 20 minutes to 6 real hours on one of
   `web.army.missions.list` (fifty scenarios), on odds the squad's grades and
   tiers decide and the briefing prints live; the squad is out of every battle
   until it is back, the outcome is drawn at the departure, and it comes back
@@ -703,8 +712,8 @@ What a view brings:
   tier fills it and a TRADE that suits the post adds 10 % (every officer has
   one of thirty, printed on the back of the card, five per post), and the
   gauge buys a range — the captives offered, the deck's slots (12 to 20), the
-  mission board (2 to 10), the beds and the cells (2 to 9), and the odds of a
-  good day in the camp, which draws one of forty events every four real hours
+  mission slots (2 to 6), the beds and the cells (2 to 9), and the odds of a
+  good day in the camp, which draws one of forty events every two real hours
   and tells it at the village; every slot a gauge has not opened is drawn
   locked. REGISTER lists every card lost, with where and when.
   The layer says exactly one thing
@@ -728,6 +737,25 @@ What a view brings:
   A card lost is written in the register with its cause, told once on an IN
   MEMORIAM card at the village, and the tent may find it alive again. See
   [docs/ARMY.md](docs/ARMY.md).
+- **a game that publishes `Game.codex` gets the CODEX** — every card of the
+  game as a collection, the barracks' own codex for a game with no barracks
+  (`packages/webshell/codex.{js,css}`): the books behind one switch with their
+  progress, one card at a time in a carousel, the three filters on the seam
+  and what the card is under it; a tap on the middle card opens it on its own,
+  a shadow says how it is earned. The contract is four functions — `books()`,
+  `items(book)` (`{ id, lv }`), `node(id, { w, ghost })` and `info(id)` — and
+  `node` is the SAME builder the round draws its big card with, so a card read
+  in the collection and the card in the hand are one object. A card is had
+  once the map has opened its `lv` — unless `items` says `had` itself, with
+  `info(id).lock` wording the shadow. Its door is the village role `cards`.
+  `games/pawko` publishes it: fifty cards in four books (pegs, waves, charms,
+  tricks), a corner tag per kind and a rim per rarity. `games/gearball`
+  publishes it too: its 113 upgrade cards in five books (the biomes), a card
+  had once it has been TAKEN in a round. Those cards are dealt two at a time
+  when an electric marble reaches a charged socket — the round stops for the
+  choice through `Game.held()` (docs/ENGINE.md), the socket recharges for 30 s,
+  and the deal is one help card against one score, risk or legendary card,
+  never told apart on screen. The look is chosen in `lab/gearball-cards.html`.
 
 **A game that declares `web.village` gets the VILLAGE**, a view between the
 title screen and the map, and it is the place the player lives:
@@ -1105,8 +1133,10 @@ idea came from.
 ## The lab
 
 `lab/` holds standalone HTML tools: a design catalogue or a bench for one piece
-of the motor — `overlay-pop.html` is the `Pop` callout catalogue,
-`icon-card.html` composes an icon, `game-title.html` is a rack of ready-made
+of the motor — `overlay-pop.html` is the `Pop` catalogue, every style of the
+motor's own table and `Pop.text` fired in a game's web build (`make events` →
+`/pop`, so it can never drift from the motor),
+`game-title.html` is a rack of ready-made
 `#intro-title` looks — one pick per game, rendered in that game's own name and
 palette, exported as the CSS block to paste into its SKIN,
 `gacha.html` is the rack of **sticker-draw ceremonies** — eleven ways to hand
@@ -1152,9 +1182,37 @@ drawn by the OS and fires nothing over its rows. A clip nothing plays has no bea
 no row; the *never played* pill in the header names it, which is the one thing
 a separate list of the pack was for. `tools/lab/scan-events.mjs` reads them back, and each row is fired
 **inside that game's own web build** through `window.__WEB__`, so a callout is
-reviewed with its real style, its real SKIN and its real sample under it. The
-stage is the build with its chrome hidden — the painted backdrop and the
-overlay layer, no menu, no round, no world.
+reviewed with its real style, its real SKIN and its real sample under it. **The
+picker's first entry is the TEMPLATE**: its clips are the end screen's
+(`uiScore`, `uiStar`, `uiRow`), listed under the motor lines that play them and
+heard in the template's own web build (`build.mjs --target=web --lab`, which only
+the bench asks for), and Apply re-cuts them into `template/game.js` — every game
+keeps the copy it was made with until it is re-cut on its own entry. The
+stage is **the build twice, EN above FR**, with everything but the callout
+layers hidden — no backdrop, no menu, no round, no world, a flat ground — and a
+row fires into both, so a French word that overflows is seen under the
+English one that fits (a sound plays in the English frame only). On SOUND,
+where there is nothing to look at, the two frames leave the stage and keep
+running off-screen. **A word the
+game builds is RUN, not stubbed**: `"x" + mult + Lang.t(" streak")` is
+evaluated in each frame, so the French comes out of the game's own `Lang.t`,
+and the round's locals it needs are inputs under the row, pre-filled from the
+source where it can say (a constant table and its keys, an alias of `CONFIG`,
+a local assigned just above the call) and guessed from the name otherwise.
+Those values are the bench's, kept per game in the browser and never written
+back; under them, the row reads back what each language was handed and marks a
+French identical to the English. **A line seen and heard is CHECKED** — the
+tick of the copy desk — and **check, revert and remove sit in ONE place on
+every card**, pinned to the top-right corner of its header: a callout's card
+acts on the whole moment (what fires together is checked and removed
+together), a clip's card on every line that plays it, and a cue line keeps its
+own three in the last columns of its grid, right under the card's. The mark lands in
+`lab/events-review.json` against the call's `checkId`: its source in its
+function, plus, for a cue, the clip it plays (provenance note and size). Edit
+the call or re-cut its clip and the mark no longer matches, so the line reads
+unchecked again; a clip's card ticks every line under it at once, *Hide
+checked* leaves what is left, and a game whose every callout, notice and cue
+line is checked turns green in the picker.
 
 Every row is editable — the pop's **style** from the motor's twelve, the word,
 the anchor, the **file a clip is cut from** and how long the cut is, the volume,
@@ -1379,8 +1437,27 @@ of a call nine hundred lines down, and the French half of it all is in a manifes
 nobody opens while writing gameplay, which is how a game ends up saying "Length" in
 one corner and BODY in another. So `tools/lab/scan-text.mjs` reads all four
 sources back and groups the result by the SCREEN a player reads it on — the
-listing, the title screen, the shell, the HUD, the round, the end screen, the
-level objective. Every row has an edit field and **APPLY writes it back**
+listing, the title screen, the help card, the shell, the HUD, the round, the
+end screen, the level objective — plus, for a game that declares `web.army`,
+the barracks' own screens, the officers (grade and object names, trades, the
+lore on every card), the missions (briefing, success and failure reports) and
+the camp events. It opens on no game: the picker is the manifests alone, and a
+game is parsed when it is picked, French first. **Every row says where it is
+read** — the function the call sits in and its line of source, and for a
+dictionary entry every call that writes its English (or the table it is
+defined in; an entry nothing writes is marked *no use found*). **A row read and
+signed off is CHECKED** — it turns green, and the mark lands in
+`lab/text-review.json` with the text it was given on, so a string edited since
+reads as unchecked again; *Hide checked* leaves what is left to read, and a
+pending edit is amber. **A mark travels**: the same row reading the same words
+in another game is checked (or unchecked) there too; an applied edit is
+checked by its apply; and a game whose every row is checked, with nothing
+untranslated and nothing to update, turns green in the picker. **A French
+edit applied opens a TO UPDATE action** on the English it translates
+(`lab/text-todo.json`), closed by checking that English or changing it. **A
+dictionary entry marked *no use found* is proposed for removal** as soon as
+the game is read, and APPLY takes it out of the manifest. Every row has an
+edit field and **APPLY writes it back**
 (`tools/lab/apply-text.mjs`) into whichever of `manifest.json`,
 `games/<slug>/game.js` and `games/<slug>/page.html` holds it, then rebuilds the
 game and both catalogues, so a proofreading pass leaves a tree that still passes
@@ -1395,7 +1472,9 @@ is two pieces of copy, so the unit is the string LITERAL and not the argument,
 with the expression printed under it and spliced around untouched. The motor's
 own menu strings (PLAY, OPTIONS, LEAVE?) are not listed: they belong to the
 thirteen equally, and a game that wants its own wording writes it under
-`web.copy`, which IS listed. `node tools/lab/scan-text.mjs <slug>` is the same
+`web.copy`, which IS listed. The army layer's `STRINGS` is the one shared table
+that is — a single game shows it — and a row there writes
+`packages/webshell/army.js`. `node tools/lab/scan-text.mjs <slug>` is the same
 list as text, no browser.
 
 The events bench, the copy desk, the village composer and the sticker review
@@ -1407,12 +1486,18 @@ store composer plus one more: they write.
 (`tools/lab/serve-lab.mjs`, `http://localhost:8095/`). `lab/index.html` lists
 every page of `lab/`, read off the pages themselves (the `<title>` and the
 headline of the header comment, so a new page is listed with nothing to
-register), and opens each one in a frame beside the list; the hash is the
+register), filed in three groups the page declares with
+`<meta name="lab-group">` — **TOOLS** (what a game is built and checked
+with), **CSS** (a look tried before it moves into the motor or a SKIN) and
+**PROTOTYPE** (a mechanic tried outside the motor) — and tagged with the one
+game it is about by `<meta name="lab-game">`, and opens each one in a frame
+beside the list; the hash is the
 location, so a reload comes back to the same page. The four tools with a server
-are **proxied under a prefix** — `/events/` (and `/events/library`), `/text/`,
+are **proxied under a prefix** — `/events/` (and `/events/library`, `/events/pop`), `/text/`,
 `/store/`, `/village/`, `/stickers/` — each one the same script its own target runs, started
-in **its own process** the first time it is opened: the copy desk's scan is
-~18 s of synchronous CPU, and in a shared process it froze every other tool.
+in **its own process** the first time it is opened: a tool's scan is
+synchronous CPU (the copy desk's was ~18 s before it went per game), and in a
+shared process it froze every other tool.
 That prefix is why a page served by a tool **addresses it with relative urls**
 (`api/games`, never `/api/games`) — a new tool page must too. Every other page
 is served as a file under `/lab/`, with `assets/`, `games/` and `packages/`
@@ -1420,6 +1505,33 @@ read-only beside it, which is what its `../` paths already reach. All of these
 servers sit on `tools/lib/serve.mjs`: they bind `127.0.0.1`, answer only a
 `Host` naming this machine, and a new lab server starts from it rather than
 from `createServer`.
+
+`pawko-cards.html` is **pawko's card style catalogue**, in its second round:
+nine looks for the full-size card (the round's big card, the collection) on a
+NEW structure that clips nothing — the object may rise out of the top, the tag
+hang off a corner, the name banner run wider than the card — with the rarity
+WRITTEN on every card (silver, emerald, gold, rainbow epic) and escalating
+(wings, a crown, a foil). Jewel is the one kept from the first round. Each
+look is a `<style data-style>` block scoped `.pk-card.s-<key>`, one card in
+every style or one style on every card, FR/EN, locked cards, three grounds;
+COPY CSS hands over a block. The PATCH won it, and ships: `cardNode` builds
+the page's structure and `RARITY` took the new ladder.
+
+`pawko-patch.html` is **the composer of the look that round picked**, the
+embroidered PATCH: every measure of it is a knob — the badge's corner, size,
+overhang and angle, the edge the rarity's price tag hangs from, how far along
+it, its string and its angle, the name label's width, height, ends and angle,
+the sizes of the name, the kind, the rarity and the description (sewn on the
+card in thread, or on a label of its own under it), the object, the count and
+every colour. The rules (`#patch-rules`) read custom properties only, the
+panel writes them into `#patch-vars`, and **COPY CSS is both blocks**;
+COPY SETTINGS is the panel's JSON, which carries the corner and the edge that
+a CSS copy only holds as positions, and the kind and rarity colours, which are
+the game's data. `#preset=<name>` opens a preset. **What ships is its COPY
+CSS**, pasted as the PATCH CARD block of `games/pawko/skin.css`; a retune is
+a new paste over that block, and a change of colour is `KINDS` / `RARITY` in
+`game.js`. The description is sewn on the card, so pawko's `codex.info`
+carries no `text` and the codex writes no lore under it.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see
@@ -1431,7 +1543,7 @@ a control panel on one side and the thing being tried on the other. Same
 anti-dependency rule as everywhere else — no framework, no CDN, no web font.
 And the same casing rule: the page's strings are written in normal case, and a
 page that MOCKS a game screen carries its own copy of `upper()` so its capitals
-lose their accents exactly as the motor's do — `overlay-pop.html` is the one to
+lose their accents exactly as the motor's do — `button.html` is the one to
 copy it from. A page that is only a control panel needs none: its buttons read
 *Apply* and *All*, which is what a tool's chrome should look like anyway.
 
@@ -1531,6 +1643,20 @@ Frame & input (section 3):
 - `Fx.burst/ring/shake/flash/freeze` — the canvas juice layer; the frame
   pipeline updates and draws it for you. It holds no text: every word a game
   writes is `Pop` or `Notify`.
+- `Enter.begin(x, y)` / `Enter.end()` — **the round's entrance**, on every
+  round of every game: the ground ALONE for a full second, then each element
+  the game wraps in those two calls falls from the glass onto its place, one
+  after the other in the order `render()` opens them, then the HUD drops in —
+  1.8 to 3.6 s, a tap skips it. `Enter.begin(x, y, { last: true })` lands one
+  element whole after all the others (echomaze's labyrinth, which is there to
+  be memorised); `{ rank: n }` lands it in its rank's wave without moving it
+  in the paint (gearball: gears, then track, then the return behind). The
+  world, the clock, the beat and the input are held meanwhile,
+  the round's music starts on landing, and `Pop.show` / `Notify.say` fired
+  during it wait for the landing. A `begin` that returns false is not there
+  yet: skip it, no `end`. Outside the entrance both cost nothing.
+  `CONFIG.enter = false` opts out. See
+  [docs/ENGINE.md](docs/ENGINE.md#enter--the-rounds-entrance).
 - `Confetti.burst(n)`.
 
 Shell (section 5):
@@ -1541,7 +1667,7 @@ Shell (section 5):
   beat that celebrates a player action, a mistake as it happens (`alert`:
   "Combo lost", "Miss") and an alarm (`danger`). A word the player has to READ
   rather than feel is not a moment and goes to `Notify.say` below.
-  Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html`; what a
+  Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html` (`make events` → `/pop`); what a
   given game already fires, in that game's own build: `make events`.
 - `Pop.text(x, y, str, {color, size, tier:0..3, life, vy})` — **the same
   system's other half**: a number floating up from a point in the world, drawn

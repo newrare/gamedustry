@@ -7,7 +7,7 @@
  * for one game cannot be dropped on another's shot, and any colour comes back
  * from a blend mode over a neutral plate.
  *
- * Same rig as shoot-icon.mjs, and the same one thing that makes transparency
+ * The one thing that makes transparency
  * work: a headless viewport paints an opaque white backdrop unless
  * Emulation.setDefaultBackgroundColorOverride clears it, and the PNG then
  * carries alpha 0 wherever the silhouette does not cover the frame. (The

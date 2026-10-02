@@ -1969,7 +1969,12 @@
     function render() {
       ctx.drawImage(floorCv, 0, 0, floorCv._w, floorCv._h);
       drawTracks();                     // where every rival has just been
-      drawZaps();                       // the boards, only where one was struck
+      /* The fence, each rival, the top and the spin bar are the elements of
+         the round's entrance (Enter): they land in this order on the dish. */
+      if (Enter.begin(arena.cx, arena.cy)) {
+        drawZaps();                     // the boards, only where one was struck
+        Enter.end();
+      }
 
       var i, f, gap, tier;
 
@@ -1998,6 +2003,7 @@
       for (i = 0; i < foes.length; i++) {
         f = foes[i];
         if (f.dead) continue;
+        if (!Enter.begin(f.x, f.y)) continue;
         var fade = clamp(f.born / 0.22, 0.15, 1);
         if (phase === "spin") {
           gap = gapOf(f);
@@ -2031,12 +2037,14 @@
           ctx.globalAlpha = 1;
         }
         drawShell(f, fade);
+        Enter.end();
       }
 
-      drawPlayer();
+      if (Enter.begin(player.x, player.y)) { drawPlayer(); Enter.end(); }
       drawWaves();
       drawCombo();
-      drawGauge();                      // last, so no top ever draws over it
+      // last, so no top ever draws over it
+      if (Enter.begin(gauge.x + gauge.w / 2, gauge.y + gauge.h / 2)) { drawGauge(); Enter.end(); }
     }
 
     /* THE SPIN BAR ----------------------------------------------------------

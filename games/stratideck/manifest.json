@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.22.1",
+  "version": "0.24.0",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -903,8 +903,14 @@
         12,
         20
       ],
-      "infirmaryHours": 48,
-      "prisonHours": 120,
+      "infirmaryHours": [
+        1,
+        24
+      ],
+      "prisonHours": [
+        4,
+        48
+      ],
       "infirmaryBeds": [
         2,
         9
@@ -1063,7 +1069,6 @@
           ]
         ],
         "attack": {
-          "chance": 0.3,
           "awayHours": 4,
           "turns": 12,
           "runs": 200
@@ -1101,7 +1106,7 @@
       },
       "recruit": {
         "slots": 4,
-        "refreshHours": 6,
+        "refreshMinutes": 20,
         "base": 90,
         "gradeStep": 0.22,
         "tierStep": 1.9,
@@ -1109,11 +1114,10 @@
         "needPrice": 20
       },
       "missions": {
-        "offers": [
+        "slots": [
           2,
-          10
+          6
         ],
-        "running": 3,
         "refreshHours": 8,
         "need": [
           10,
@@ -1131,7 +1135,7 @@
           {
             "id": "m01",
             "d": 1,
-            "hours": 4,
+            "minutes": 20,
             "squad": [
               2,
               2
@@ -1169,7 +1173,7 @@
           {
             "id": "m02",
             "d": 1,
-            "hours": 5,
+            "minutes": 30,
             "squad": [
               2,
               3
@@ -1207,7 +1211,7 @@
           {
             "id": "m03",
             "d": 1,
-            "hours": 6,
+            "minutes": 35,
             "squad": [
               2,
               3
@@ -1245,7 +1249,7 @@
           {
             "id": "m04",
             "d": 1,
-            "hours": 6,
+            "minutes": 35,
             "squad": [
               2,
               2
@@ -1282,7 +1286,7 @@
           {
             "id": "m05",
             "d": 1,
-            "hours": 4,
+            "minutes": 20,
             "squad": [
               2,
               2
@@ -1320,7 +1324,7 @@
           {
             "id": "m06",
             "d": 1,
-            "hours": 5,
+            "minutes": 30,
             "squad": [
               2,
               3
@@ -1357,7 +1361,7 @@
           {
             "id": "m07",
             "d": 1,
-            "hours": 7,
+            "minutes": 45,
             "squad": [
               2,
               3
@@ -1394,7 +1398,7 @@
           {
             "id": "m08",
             "d": 1,
-            "hours": 8,
+            "minutes": 50,
             "squad": [
               2,
               3
@@ -1432,7 +1436,7 @@
           {
             "id": "m09",
             "d": 1,
-            "hours": 8,
+            "minutes": 50,
             "squad": [
               2,
               2
@@ -1469,7 +1473,7 @@
           {
             "id": "m10",
             "d": 1,
-            "hours": 6,
+            "minutes": 35,
             "squad": [
               2,
               3
@@ -1507,7 +1511,7 @@
           {
             "id": "m11",
             "d": 2,
-            "hours": 8,
+            "minutes": 50,
             "squad": [
               2,
               3
@@ -1544,7 +1548,7 @@
           {
             "id": "m12",
             "d": 2,
-            "hours": 10,
+            "minutes": 65,
             "squad": [
               2,
               4
@@ -1582,7 +1586,7 @@
           {
             "id": "m13",
             "d": 2,
-            "hours": 12,
+            "minutes": 80,
             "squad": [
               2,
               3
@@ -1619,7 +1623,7 @@
           {
             "id": "m14",
             "d": 2,
-            "hours": 9,
+            "minutes": 60,
             "squad": [
               2,
               4
@@ -1657,7 +1661,7 @@
           {
             "id": "m15",
             "d": 2,
-            "hours": 7,
+            "minutes": 45,
             "squad": [
               2,
               3
@@ -1699,7 +1703,7 @@
           {
             "id": "m16",
             "d": 2,
-            "hours": 12,
+            "minutes": 80,
             "squad": [
               2,
               4
@@ -1736,7 +1740,7 @@
           {
             "id": "m17",
             "d": 2,
-            "hours": 10,
+            "minutes": 65,
             "squad": [
               2,
               3
@@ -1774,7 +1778,7 @@
           {
             "id": "m18",
             "d": 2,
-            "hours": 8,
+            "minutes": 50,
             "squad": [
               2,
               4
@@ -1811,7 +1815,7 @@
           {
             "id": "m19",
             "d": 2,
-            "hours": 6,
+            "minutes": 35,
             "squad": [
               2,
               3
@@ -1849,7 +1853,7 @@
           {
             "id": "m20",
             "d": 2,
-            "hours": 11,
+            "minutes": 75,
             "squad": [
               2,
               3
@@ -1890,7 +1894,7 @@
           {
             "id": "m21",
             "d": 2,
-            "hours": 12,
+            "minutes": 80,
             "squad": [
               2,
               4
@@ -1927,7 +1931,7 @@
           {
             "id": "m22",
             "d": 2,
-            "hours": 9,
+            "minutes": 60,
             "squad": [
               2,
               3
@@ -1965,7 +1969,7 @@
           {
             "id": "m23",
             "d": 3,
-            "hours": 16,
+            "minutes": 115,
             "squad": [
               3,
               4
@@ -2009,7 +2013,7 @@
           {
             "id": "m24",
             "d": 3,
-            "hours": 18,
+            "minutes": 130,
             "squad": [
               3,
               4
@@ -2051,7 +2055,7 @@
           {
             "id": "m25",
             "d": 3,
-            "hours": 20,
+            "minutes": 145,
             "squad": [
               2,
               4
@@ -2088,7 +2092,7 @@
           {
             "id": "m26",
             "d": 3,
-            "hours": 14,
+            "minutes": 95,
             "squad": [
               3,
               4
@@ -2134,7 +2138,7 @@
           {
             "id": "m27",
             "d": 3,
-            "hours": 24,
+            "minutes": 175,
             "squad": [
               3,
               4
@@ -2179,7 +2183,7 @@
           {
             "id": "m28",
             "d": 3,
-            "hours": 20,
+            "minutes": 145,
             "squad": [
               3,
               4
@@ -2220,7 +2224,7 @@
           {
             "id": "m29",
             "d": 3,
-            "hours": 12,
+            "minutes": 80,
             "squad": [
               2,
               4
@@ -2265,7 +2269,7 @@
           {
             "id": "m30",
             "d": 3,
-            "hours": 15,
+            "minutes": 105,
             "squad": [
               2,
               4
@@ -2307,7 +2311,7 @@
           {
             "id": "m31",
             "d": 3,
-            "hours": 18,
+            "minutes": 130,
             "squad": [
               3,
               4
@@ -2343,7 +2347,7 @@
           {
             "id": "m32",
             "d": 3,
-            "hours": 20,
+            "minutes": 145,
             "squad": [
               3,
               4
@@ -2388,7 +2392,7 @@
           {
             "id": "m33",
             "d": 3,
-            "hours": 16,
+            "minutes": 115,
             "squad": [
               3,
               4
@@ -2429,7 +2433,7 @@
           {
             "id": "m34",
             "d": 3,
-            "hours": 22,
+            "minutes": 160,
             "squad": [
               3,
               4
@@ -2473,7 +2477,7 @@
           {
             "id": "m35",
             "d": 4,
-            "hours": 30,
+            "minutes": 220,
             "squad": [
               3,
               5
@@ -2526,7 +2530,7 @@
           {
             "id": "m36",
             "d": 4,
-            "hours": 24,
+            "minutes": 175,
             "squad": [
               3,
               5
@@ -2567,7 +2571,7 @@
           {
             "id": "m37",
             "d": 4,
-            "hours": 28,
+            "minutes": 205,
             "squad": [
               3,
               5
@@ -2620,7 +2624,7 @@
           {
             "id": "m38",
             "d": 4,
-            "hours": 20,
+            "minutes": 145,
             "squad": [
               3,
               5
@@ -2657,7 +2661,7 @@
           {
             "id": "m39",
             "d": 4,
-            "hours": 18,
+            "minutes": 130,
             "squad": [
               3,
               5
@@ -2701,7 +2705,7 @@
           {
             "id": "m40",
             "d": 4,
-            "hours": 32,
+            "minutes": 235,
             "squad": [
               3,
               5
@@ -2738,7 +2742,7 @@
           {
             "id": "m41",
             "d": 4,
-            "hours": 26,
+            "minutes": 190,
             "squad": [
               3,
               5
@@ -2779,7 +2783,7 @@
           {
             "id": "m42",
             "d": 4,
-            "hours": 36,
+            "minutes": 265,
             "squad": [
               3,
               5
@@ -2827,7 +2831,7 @@
           {
             "id": "m43",
             "d": 4,
-            "hours": 34,
+            "minutes": 250,
             "squad": [
               3,
               5
@@ -2879,7 +2883,7 @@
           {
             "id": "m44",
             "d": 4,
-            "hours": 22,
+            "minutes": 160,
             "squad": [
               3,
               5
@@ -2923,7 +2927,7 @@
           {
             "id": "m45",
             "d": 5,
-            "hours": 48,
+            "minutes": 360,
             "squad": [
               4,
               5
@@ -2964,7 +2968,7 @@
           {
             "id": "m46",
             "d": 5,
-            "hours": 36,
+            "minutes": 265,
             "squad": [
               4,
               5
@@ -3017,7 +3021,7 @@
           {
             "id": "m47",
             "d": 5,
-            "hours": 42,
+            "minutes": 315,
             "squad": [
               4,
               5
@@ -3058,7 +3062,7 @@
           {
             "id": "m48",
             "d": 5,
-            "hours": 40,
+            "minutes": 300,
             "squad": [
               4,
               5
@@ -3111,7 +3115,7 @@
           {
             "id": "m49",
             "d": 5,
-            "hours": 44,
+            "minutes": 330,
             "squad": [
               4,
               5
@@ -3152,7 +3156,7 @@
           {
             "id": "m50",
             "d": 5,
-            "hours": 46,
+            "minutes": 345,
             "squad": [
               4,
               5
@@ -3551,7 +3555,7 @@
         }
       ],
       "events": {
-        "everyHours": 4,
+        "everyHours": 2,
         "stack": 3,
         "good": [
           0.3,

@@ -1,0 +1,439 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>marble-clock prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0d0f14; overflow: hidden;
+    touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// A rolling-ball clock. A lift carries marbles up out of a reservoir; each one
+// dropped on the MINUTES rail is one minute. The rail holds four: the fifth
+// lands on its lever, the rail lifts, the four roll back down to the reservoir
+// and the fifth falls through to the FIVE MINUTES rail (eleven), whose twelfth
+// falls to the HOURS rail (eleven, plus the hour nobody can take away).
+//
+// The question: is SORTING that machine fun? The marbles come in three
+// colours, the lift shows the next ten, and every time a rail tips it pays
+// its majority colour squared - double when the whole rail is one colour. You
+// choose, marble by marble, to DROP it on the clock or to SKIP it back to the
+// tail of the reservoir; a skip shuts the gate for a moment, so purity costs
+// time against a 90 s clock (SKIP_BUDGET also rations them). The
+// marble that tips a rail is the one that goes down to the next, so the
+// colour you END a minute on is the colour the five-minute rail collects.
+//
+// Tap left of the lift: drop.  Tap the lift: skip.
+// Keys: SPACE / LEFT drop, RIGHT / S skip, R restart, W watch the clock run.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;          // design space, portrait
+var R = 17;                     // marble radius
+var D = 36;                     // slot pitch on a rail
+var COLORS = ["#e5484d", "#3e7bfa", "#f5c542"];
+var PER_COLOR = 14;             // marbles of each colour (the clock needs 26 + a queue)
+var ROUND_SECONDS = 90;
+var LIFT_CAP = 10;              // marbles the lift shows ahead (the queue)
+var LIFT_SPEED = 1100;          // px/s up the lift
+var RES_SPEED = 700;            // px/s along the reservoir trough
+var SKIP_LOCK = 0.3;            // seconds the gate stays shut after a skip: what a skip costs
+var SKIP_BUDGET = false;        // true: skips are also counted, and a pure tip refunds some
+var SKIPS_START = 4, SKIPS_MAX = 6, SKIP_ON_PURE = 1;
+var GATE_PATIENCE = 0;          // > 0: the gate drops on its own after this many s
+var BASE = [3, 4, 10];          // points per rail, multiplied by majority^2
+var PURE_MULT = 3;
+var ROLL_ACC = 1400;            // px/s^2 rolling to a slot on a resting rail
+var SPILL_ACC = 2600;           // px/s^2 rolling back off a lifted rail
+var PATH_ACC = 2600, PATH_VMAX = 1600;   // return ramps and the gutter
+var DROP_TIME = 0.22;           // gate -> minutes rail
+var FALL_TIME = 0.28;           // a tipping marble -> the rail under it
+var SKIP_TIME = 0.45;           // gate -> over the top -> gutter
+var A0 = 0.06, A1 = 0.32;       // rail angle at rest / lifted (rad)
+var TIP_UP = 0.1, TIP_HOLD = 0.5, TIP_DOWN = 0.15;
+var WATCH_TICK = 0.22;          // seconds per minute in watch mode
+
+// --- geometry --------------------------------------------------------------
+var ENTRY_X = 590;              // every rail's entry (and lever) stands under the lift top
+var GUTTER_X = 48;              // the return channel down the left edge
+var GATE = { x: 668, y: 240 };
+var RES_Y = 1190, RES_L = GUTTER_X, RES_R = 640, RES_SLOPE = 0.04;
+var SKIP_ZONE_X = 630;          // a tap right of this is a skip
+var RAIL_DEFS = [
+  { name: "Minutes", cap: 4, y: 370 },
+  { name: "Five minutes", cap: 11, y: 600 },
+  { name: "Hours", cap: 11, y: 840 }
+];
+
+// --- canvas ----------------------------------------------------------------
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  offX = (innerWidth - W * scale) / 2; offY = (innerHeight - H * scale) / 2;
+}
+addEventListener("resize", resize); resize();
+
+// --- state -----------------------------------------------------------------
+var marbles, res, lift, rails, floats;
+var state, timeLeft, score, skips, pures, dropped, lockT, gateT, watch, watchT, overT;
+var pending = null, pendingT = 0;
+
+function resY(x) { return RES_Y - (RES_R - x) * RES_SLOPE; }
+
+function makeRail(def, i) {
+  var uEntry = 4 + (def.cap + 0.5) * D;
+  return { i: i, name: def.name, cap: def.cap, uEntry: uEntry, len: (def.cap + 1) * D + 8,
+    lx: ENTRY_X - uEntry * Math.cos(A0), ly: def.y + uEntry * Math.sin(A0),
+    a: A0, stored: [], reserved: 0, incoming: 0, tip: -1 };
+}
+function slotU(i) { return 4 + (i + 0.5) * D; }
+
+// Centre of a marble sitting at distance u along a rail, measured from the
+// rail's left end (its pivot). The rail rises to the right.
+function railCenter(r, u, a) {
+  if (a === undefined) a = r.a;
+  var c = Math.cos(a), s = Math.sin(a);
+  return { x: r.lx + u * c - R * s, y: r.ly - u * s - R * c };
+}
+
+function reset() {
+  marbles = []; res = []; lift = []; floats = [];
+  for (var c = 0; c < COLORS.length; c++)
+    for (var k = 0; k < PER_COLOR; k++) marbles.push({ c: c, x: 0, y: 0, st: "res" });
+  for (var i = marbles.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1)), t = marbles[i]; marbles[i] = marbles[j]; marbles[j] = t;
+  }
+  res = marbles.slice();
+  layoutRes(true);
+  rails = [];
+  for (i = 0; i < RAIL_DEFS.length; i++) rails.push(makeRail(RAIL_DEFS[i], i));
+  state = "ready"; timeLeft = ROUND_SECONDS; score = 0; skips = SKIPS_START;
+  pures = 0; dropped = 0; lockT = 0; gateT = 0; watchT = 0; overT = 0; pending = null;
+}
+
+// --- motion helpers ---------------------------------------------------------
+function hop(m, x1, y1, T, arc, done) {
+  m.st = "hop";
+  m.h = { x0: m.x, y0: m.y, x1: x1, y1: y1, t: 0, T: T, arc: arc, done: done };
+}
+function pathTo(m, pts, v) { m.st = "path"; m.pts = pts; m.k = 0; m.v = v || 0; }
+function toGutter(m, fromY, v) {
+  pathTo(m, [{ x: GUTTER_X, y: fromY }, { x: GUTTER_X, y: resY(GUTTER_X) }], v);
+}
+function rampEndY(r) { return r.ly + 50 - R; }
+function joinRes(m) { m.st = "res"; res.push(m); }
+
+function layoutRes(snap, dt) {
+  var n = res.length, sp = Math.min(D, (RES_R - RES_L) / Math.max(1, n - 1));
+  for (var i = 0; i < n; i++) {
+    var m = res[i], tx = RES_R - i * sp;
+    if (snap) m.x = tx;
+    else if (m.x < tx) m.x = Math.min(tx, m.x + RES_SPEED * dt);
+    else if (m.x > tx) m.x = Math.max(tx, m.x - RES_SPEED * dt);
+    m.y = resY(m.x);
+  }
+}
+
+// --- the clock --------------------------------------------------------------
+function gateMarble() { return lift.length && lift[0].y <= GATE.y + 0.5 ? lift[0] : null; }
+
+function canDrop() {
+  var r = rails[0];
+  var tipOk = r.tip < 0 || r.tip > TIP_UP + TIP_HOLD * 0.5;
+  return gateMarble() && lockT <= 0 && tipOk && r.reserved + r.incoming <= r.cap;
+}
+function canSkip() { return gateMarble() && lockT <= 0 && (!SKIP_BUDGET || skips > 0); }
+
+function drop() {
+  var m = lift.shift(), r = rails[0], e = railCenter(r, r.uEntry, A0);
+  r.incoming++; dropped++; gateT = 0;
+  hop(m, e.x, e.y, DROP_TIME, 40, function () { arrive(m, r); });
+}
+function skip() {
+  var m = lift.shift();
+  if (SKIP_BUDGET) skips--;
+  lockT = SKIP_LOCK; gateT = 0;
+  hop(m, GUTTER_X, 220, SKIP_TIME, 90, function () { toGutter(m, 220, 300); });
+}
+
+// A marble has reached a rail's entry. It takes the next free slot, or, if it
+// is the one too many, waits on the lever until the rail is settled and full.
+// It stays counted in r.incoming until it has a slot, so the gate cannot
+// overfill a rail that is still settling.
+function arrive(m, r) {
+  m.rail = r;
+  if (r.tip >= 0) { m.st = "hold"; return; }
+  r.incoming--;
+  var slot = r.reserved++;
+  if (slot === r.cap) { m.st = "lever"; return; }
+  m.st = "roll"; m.u = r.uEntry; m.v = 60; m.uTo = slotU(slot);
+}
+
+function startTip(r, trigger) {
+  var group = r.stored.concat([trigger]);
+  scoreTip(r, group);
+  r.tip = 0;
+  for (var i = 0; i < r.stored.length; i++) {
+    var m = r.stored[i]; m.st = "spill"; m.u = slotU(i); m.v = 0;
+  }
+  r.stored = []; r.reserved = 0;
+  if (r.i < rails.length - 1) {
+    var nr = rails[r.i + 1], e = railCenter(nr, nr.uEntry, A0);
+    nr.incoming++;
+    hop(trigger, e.x, e.y, FALL_TIME, 0, function () { arrive(trigger, nr); });
+  } else {
+    // The hour rail's twelfth goes home with the rest: 12:59 -> 1:00.
+    trigger.st = "spill"; trigger.u = r.uEntry; trigger.v = 0;
+  }
+}
+
+function scoreTip(r, group) {
+  var cnt = [], best = 0, bestC = 0;
+  for (var i = 0; i < COLORS.length; i++) cnt.push(0);
+  for (i = 0; i < group.length; i++) cnt[group[i].c]++;
+  for (i = 0; i < cnt.length; i++) if (cnt[i] > best) { best = cnt[i]; bestC = i; }
+  var pure = best === group.length;
+  var pts = BASE[r.i] * best * best * (pure ? PURE_MULT : 1);
+  var mid = railCenter(r, r.len / 2, A0);
+  if (watch) return;
+  score += pts;
+  if (pure) { pures++; skips = Math.min(SKIPS_MAX, skips + SKIP_ON_PURE); }
+  floats.push({ x: mid.x, y: mid.y - 30, t: 0, color: COLORS[bestC],
+    str: (pure ? "Pure! " : best + "/" + group.length + "  ") + "+" + pts });
+}
+
+// --- update -----------------------------------------------------------------
+function update(dt) {
+  if (state === "play" && !watch) {
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; state = "over"; overT = 0; pending = null; }
+  }
+  if (state === "over") overT += dt;
+  lockT -= dt;
+
+  // Input buffer: a tap during a tip is kept for a moment rather than lost.
+  if (pending) {
+    pendingT -= dt;
+    if (pending === "drop" && canDrop()) { drop(); pending = null; }
+    else if (pending === "skip") {
+      if (SKIP_BUDGET && skips <= 0) { floatAtGate("No skip left"); pending = null; }
+      else if (canSkip()) { skip(); pending = null; }
+    }
+    if (pendingT <= 0) pending = null;
+  }
+  if (watch) {
+    watchT -= dt;
+    if (watchT <= 0 && canDrop()) { drop(); watchT = WATCH_TICK; }
+  } else if (state === "play" && GATE_PATIENCE > 0 && gateMarble()) {
+    gateT += dt;
+    if (gateT >= GATE_PATIENCE && canDrop()) drop();
+  }
+
+  // Rails lift and settle back.
+  for (var i = 0; i < rails.length; i++) {
+    var r = rails[i];
+    if (r.tip < 0) continue;
+    r.tip += dt;
+    var t = r.tip;
+    if (t < TIP_UP) r.a = A0 + (A1 - A0) * (t / TIP_UP);
+    else if (t < TIP_UP + TIP_HOLD) r.a = A1;
+    else if (t < TIP_UP + TIP_HOLD + TIP_DOWN) r.a = A1 - (A1 - A0) * ((t - TIP_UP - TIP_HOLD) / TIP_DOWN);
+    else { r.a = A0; r.tip = -1; }
+  }
+
+  // Lift: feed it from the head of the reservoir, stack it under the gate.
+  var last = lift[lift.length - 1];
+  if (lift.length < LIFT_CAP && res.length && res[0].x >= RES_R - 4 &&
+      (!last || last.y < RES_Y - D)) {
+    var fed = res.shift(); fed.st = "lift"; fed.y = RES_Y; lift.push(fed);
+  }
+  for (i = 0; i < lift.length; i++) {
+    var lm = lift[i], ty = GATE.y + i * D;
+    lm.y = Math.max(ty, lm.y - LIFT_SPEED * dt);
+    lm.x += (GATE.x - lm.x) * Math.min(1, dt * 20);
+  }
+  layoutRes(false, dt);
+
+  for (i = 0; i < marbles.length; i++) moveMarble(marbles[i], dt);
+
+  for (i = floats.length - 1; i >= 0; i--) {
+    floats[i].t += dt; if (floats[i].t > 1.2) floats.splice(i, 1);
+  }
+}
+
+function moveMarble(m, dt) {
+  var p, r = m.rail;
+  if (m.st === "hop") {
+    var h = m.h; h.t += dt;
+    var k = Math.min(1, h.t / h.T), ky = h.arc > 0 ? k : k * k;
+    m.x = h.x0 + (h.x1 - h.x0) * k;
+    m.y = h.y0 + (h.y1 - h.y0) * ky - h.arc * 4 * k * (1 - k);
+    if (k >= 1) { m.h = null; h.done(); }
+  } else if (m.st === "roll") {
+    m.v += ROLL_ACC * dt; m.u -= m.v * dt;
+    if (m.u <= m.uTo) { m.u = m.uTo; m.st = "rail"; r.stored.push(m); }
+    p = railCenter(r, m.u); m.x = p.x; m.y = p.y;
+  } else if (m.st === "rail") {
+    p = railCenter(r, m.u); m.x = p.x; m.y = p.y;
+  } else if (m.st === "lever") {
+    p = railCenter(r, r.uEntry); m.x = p.x; m.y = p.y;
+    if (r.tip < 0 && r.stored.length === r.cap) startTip(r, m);
+  } else if (m.st === "hold") {
+    p = railCenter(r, r.uEntry); m.x = p.x; m.y = p.y;
+    if (r.tip < 0) arrive(m, r);
+  } else if (m.st === "spill") {
+    m.v += SPILL_ACC * dt; m.u -= m.v * dt;
+    if (m.u <= 0) { p = railCenter(r, 0); m.x = p.x; m.y = p.y; toGutter(m, rampEndY(r), m.v); }
+    else { p = railCenter(r, m.u); m.x = p.x; m.y = p.y; }
+  } else if (m.st === "path") {
+    m.v = Math.min(PATH_VMAX, m.v + PATH_ACC * dt);
+    var step = m.v * dt;
+    while (step > 0 && m.k < m.pts.length) {
+      var q = m.pts[m.k], dx = q.x - m.x, dy = q.y - m.y, d = Math.sqrt(dx * dx + dy * dy);
+      if (d <= step) { m.x = q.x; m.y = q.y; step -= d; m.k++; }
+      else { m.x += dx / d * step; m.y += dy / d * step; step = 0; }
+    }
+    if (m.k >= m.pts.length) joinRes(m);
+  }
+}
+
+function floatAtGate(str) {
+  floats.push({ x: GATE.x - 90, y: GATE.y - 40, t: 0, color: "#ffffff", str: str });
+}
+
+// --- render -----------------------------------------------------------------
+function line(x0, y0, x1, y1, w, col) {
+  ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+}
+function marble(m, x, y) {
+  ctx.fillStyle = COLORS[m.c];
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.beginPath(); ctx.arc(x - R * 0.35, y - R * 0.35, R * 0.3, 0, Math.PI * 2); ctx.fill();
+}
+function clockText() {
+  var h = rails[2].stored.length + 1;
+  var mm = rails[0].stored.length + 5 * rails[1].stored.length;
+  return h + ":" + (mm < 10 ? "0" : "") + mm;
+}
+
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0d0f14"; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, offX * dpr, offY * dpr);
+  ctx.fillStyle = "#1a1d26"; ctx.fillRect(0, 0, W, H);
+
+  // Gutter, lift tube, reservoir trough.
+  ctx.fillStyle = "#232734";
+  ctx.fillRect(GUTTER_X - R - 4, 200, 2 * R + 8, resY(GUTTER_X) - 200);
+  ctx.fillRect(GATE.x - R - 5, GATE.y - R - 5, 2 * R + 10, RES_Y - GATE.y + R + 5);
+  line(RES_L - R, resY(RES_L) + R + 3, GATE.x + R + 5, RES_Y + R + 3, 6, "#5a6072");
+  ctx.fillStyle = "#232734";
+  ctx.fillRect(GATE.x - R - 5, GATE.y - R - 5, 2 * R + 10, LIFT_CAP * D);
+  ctx.strokeStyle = "#3a4050"; ctx.lineWidth = 2;
+  ctx.strokeRect(GATE.x - R - 5, GATE.y - R - 5, 2 * R + 10, LIFT_CAP * D);
+
+  // Rails, their return ramps, slot ghosts and the lever.
+  for (var i = 0; i < rails.length; i++) {
+    var r = rails[i], c = Math.cos(r.a), s = Math.sin(r.a);
+    line(r.lx, r.ly, GUTTER_X + R, r.ly + 50, 4, "#3a4050");
+    line(r.lx, r.ly, r.lx + r.len * c, r.ly - r.len * s, 6, r.tip >= 0 ? "#c9a24a" : "#8a90a2");
+    if (r.tip < 0) line(r.lx + 2, r.ly, r.lx + 2, r.ly - 16, 5, "#8a90a2");   // stopper
+    ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 2;
+    for (var k = 0; k <= r.cap; k++) {
+      var g = railCenter(r, slotU(k));
+      ctx.beginPath(); ctx.arc(g.x, g.y, R - 3, 0, Math.PI * 2); ctx.stroke();
+    }
+    var lv = railCenter(r, r.uEntry);
+    line(lv.x - 14, lv.y + R + 6, lv.x + 14, lv.y + R + 6, 5, "#c9a24a");      // lever
+    ctx.fillStyle = "#8a90a2"; ctx.font = "600 22px system-ui, sans-serif"; ctx.textAlign = "left";
+    ctx.fillText(r.name + "  " + r.stored.length + "/" + r.cap + (i === 2 ? "  (+1)" : ""),
+      r.lx + 10, r.ly - 60);
+  }
+
+  // Marbles.
+  for (i = 0; i < marbles.length; i++) marble(marbles[i], marbles[i].x, marbles[i].y);
+
+  // Gate ring.
+  var gm = gateMarble();
+  if (gm) {
+    ctx.strokeStyle = canDrop() ? "#ffffff" : "rgba(255,255,255,0.3)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(gm.x, gm.y, R + 6, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // HUD.
+  ctx.textAlign = "center"; ctx.fillStyle = "#ffffff";
+  ctx.font = "800 88px system-ui, sans-serif";
+  ctx.fillText(clockText(), W / 2, 110);
+  ctx.font = "600 26px system-ui, sans-serif"; ctx.fillStyle = "#c8ccd8";
+  ctx.fillText(watch ? "Watch mode - W to play" :
+    "Score " + score + (SKIP_BUDGET ? "   Skips " + skips : "") + "   " + Math.ceil(timeLeft) + " s", W / 2, 160);
+
+  for (i = 0; i < floats.length; i++) {
+    var f = floats[i];
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.2);
+    ctx.fillStyle = f.color; ctx.font = "800 30px system-ui, sans-serif";
+    ctx.fillText(f.str, f.x, f.y - f.t * 60);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "#6c7286"; ctx.font = "22px system-ui, sans-serif";
+  ctx.fillText("Tap left: drop   Tap the lift: skip   W watch   R restart", W / 2, 1256);
+  ctx.fillText("Debug: dropped " + dropped + "  pure tips " + pures + "  reservoir " + res.length +
+    "  lift " + lift.length, W / 2, 1228);
+
+  if (state === "ready" && !watch) {
+    ctx.fillStyle = "#ffffff"; ctx.font = "700 30px system-ui, sans-serif";
+    ctx.fillText("Tap to drop the first marble", W / 2, 1060);
+  }
+  if (state === "over") {
+    ctx.fillStyle = "rgba(0,0,0,0.65)"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff"; ctx.font = "800 64px system-ui, sans-serif";
+    ctx.fillText("Time's up", W / 2, 540);
+    ctx.font = "700 36px system-ui, sans-serif";
+    ctx.fillText("Score " + score + "   clock " + clockText(), W / 2, 610);
+    ctx.fillText("Pure tips " + pures + "   marbles dropped " + dropped, W / 2, 660);
+    ctx.font = "26px system-ui, sans-serif"; ctx.fillStyle = "#c8ccd8";
+    ctx.fillText("Tap to play again", W / 2, 740);
+  }
+}
+
+// --- input -------------------------------------------------------------------
+function act(kind) {
+  if (state === "over") { if (overT > 0.6) reset(); return; }
+  if (watch) return;
+  if (state === "ready") state = "play";
+  pending = kind; pendingT = 0.4;
+}
+cv.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  var x = (e.clientX - offX) / scale;
+  act(x >= SKIP_ZONE_X ? "skip" : "drop");
+});
+addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  var k = e.key;
+  if (k === " " || k === "ArrowLeft" || k === "ArrowDown") { act("drop"); e.preventDefault(); }
+  else if (k === "ArrowRight" || k === "s" || k === "S") act("skip");
+  else if (k === "r" || k === "R") reset();
+  else if (k === "w" || k === "W") { watch = !watch; reset(); }
+});
+
+// --- loop ----------------------------------------------------------------------
+var lastT = 0;
+function frame(t) {
+  var dt = Math.min(0.05, (t - lastT) / 1000 || 0);
+  lastT = t;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+watch = false;
+reset();
+requestAnimationFrame(frame);
+</script>

@@ -124,6 +124,19 @@
     transition:opacity .2s ease;
   }
   #hud.hidden { opacity:0; }
+  /* THE ENTRANCE (Enter, engine.js). While the world assembles the HUD's
+     three slots wait out of sight — the band's scrim stays, it is ground —
+     and once the last element has landed they fall from the glass like the
+     world did, left, centre, right. `backwards` and not `both`: once landed,
+     a slot is back to whatever transform the SKIN or a punch gives it. */
+  #frame.enter-wait #hud > * { opacity:0; }
+  #frame.enter-go #hud > * { animation:enter-drop .42s cubic-bezier(.3,1.35,.5,1) backwards; }
+  #frame.enter-go #hud > :nth-child(2) { animation-delay:.07s; }
+  #frame.enter-go #hud > :nth-child(3) { animation-delay:.14s; }
+  @keyframes enter-drop {
+    from { opacity:0; transform:scale(1.9); }
+    40%  { opacity:1; }
+  }
   #hud::before {
     content:""; position:absolute; left:0; right:0; top:0; bottom:0; z-index:-1;
     background:linear-gradient(180deg, rgba(4,5,16,.62), rgba(4,5,16,0));
@@ -3376,6 +3389,193 @@
              update: update, begin: begin, end: end, render: render, post: post };
   })();
 
+  /* --- Enter — the round's entrance ---------------------------------------
+
+     A round used to cut from the intro (or the menu) straight into a world
+     already standing and already moving. Now it ASSEMBLES: the ground is
+     there first, then every element of the world arrives one after the
+     other, quickly, falling from the glass onto the scene — drawn big and
+     transparent, shrinking onto its own place with a small thud — and the
+     HUD drops in last. The ground stands ALONE for a full second first, so
+     the painted scene is seen for itself before anything covers it; the
+     whole entrance is then 1.8 to 3.6 s, and a tap skips it.
+
+     The game says what an element is, and nothing else:
+
+         if (Enter.begin(x, y)) { ...draw the element...; Enter.end(); }
+
+     (x, y) is the point the element lands on — its centre, in design px —
+     and the element's arrival slot is its ORDER in the frame: whatever
+     render() opens first lands first. Anything drawn outside a begin / end
+     is the ground, and is on screen from the first frame. A begin that
+     returns false is an element that has not arrived yet: skip it, and do
+     not call end(). Outside the entrance begin() returns true and costs
+     nothing, so the calls stay in render() for good. Elements may nest (a
+     board, then the pieces on it): a child composes with its parent and
+     takes a later slot.
+
+         Enter.begin(x, y, { last: true })
+
+     takes no slot in the order: it lands AFTER every other element, in one
+     piece, closing the entrance — for the one thing the round is about and
+     that must be read whole, like echomaze's labyrinth, which is on screen
+     to be memorised.
+
+         Enter.begin(x, y, { rank: 2 })
+
+     moves the element in the ORDER without moving it in the PAINT: the
+     slots go to the elements sorted by rank (default 0), in open order
+     inside one rank. It is how a game lands what it paints last before what
+     it paints first — gearball's gears (rank 0) over its track (1), then the
+     machinery behind both (2). A nested child keeps its own rank.
+
+     The slots are spread over the COUNT of elements, not one per beat: six
+     arrive a beat apart, sixty cascade in over the same second and a half.
+     The count is the last frame's, which is exact because the world is held
+     while the entrance plays: the bootstrap runs neither Game.update, nor
+     the round clock, nor the beat clock, and routes no input to the game.
+     The music starts when the world has landed (`done`), so a game on the
+     beat is on it from its first real frame.
+
+     The fade rides on `ctx.globalAlpha`. Games write it all the time — and
+     write 1 to "reset" it, which would pop an element to full opacity — so
+     for the length of the entrance the context's own globalAlpha is shadowed
+     by an accessor that scales whatever the game writes by the fade of the
+     elements open around it, and reads it back unscaled. It is deleted the
+     moment the entrance ends, so a round pays nothing for it.
+
+     A word the round says while it assembles — a "Get ready" fired from
+     reset() — waits for the landing (`later`, used by Pop.show and
+     Notify.say), so it reads over a finished scene rather than a half-built
+     one.
+
+     CONFIG.enter = false opts a game out: the round starts at once. */
+  var Enter = (function () {
+    var LEAD = 1.25;      // the ground alone: a full second once the screen
+                          // in front of it (.screen, .25 s) has faded out
+    var FLY = 0.5;        // one element's flight, glass to ground
+    var STEP = 0.11;      // between two slots, while there are few of them
+    var SPREAD = 1.3;     // ...and never more than this from first to last
+    var FROM = 2.1;       // the scale an element starts its flight at
+    var FADE = 0.35;      // share of the flight it takes to become opaque
+    var AFTER = 0.3;      // a `last` element leaves this long after the last slot
+    var on = false, t = 0, n = 0, count = 0, k = 1, stack = [], done = null, queue = [];
+    var lastNow = false, lastSeen = false;   // a `last` element this frame / ever
+    var ranks = [], slotOf = null;            // this frame's ranks; last frame's slot per open index
+    var alpha = null;     // the prototype's own globalAlpha accessor
+    try { alpha = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "globalAlpha"); } catch (e) {}
+
+    function spread() { return Math.min(SPREAD, Math.max(0, count - 1) * STEP); }
+    function total() { return LEAD + spread() + (lastSeen ? AFTER : 0) + FLY; }
+    function frameEl() { return $("frame"); }
+
+    function shadowAlpha() {
+      if (!alpha || !alpha.get || !alpha.set) return;
+      try {
+        Object.defineProperty(ctx, "globalAlpha", {
+          configurable: true,
+          get: function () { return alpha.get.call(ctx) / (k || 1); },
+          set: function (v) {
+            if (!(v >= 0 && v <= 1)) return;   // the native setter ignores these too
+            alpha.set.call(ctx, v * k);
+          }
+        });
+      } catch (e) {}
+    }
+    function unshadowAlpha() { try { delete ctx.globalAlpha; } catch (e) {} }
+
+    function start(fn) {
+      if (on) finish();
+      if (CONFIG.enter === false) { if (fn) fn(); return; }
+      on = true; t = 0; n = 0; count = 0; k = 1; stack.length = 0; done = fn || null; queue = [];
+      ranks = []; slotOf = null;
+      lastNow = lastSeen = false;
+      shadowAlpha();
+      var f = frameEl();
+      if (f) { f.classList.remove("enter-go"); f.classList.add("enter-wait"); }
+    }
+    function finish() {
+      if (!on) return;
+      on = false; k = 1; stack.length = 0;
+      unshadowAlpha();
+      var f = frameEl();
+      if (f) {
+        f.classList.remove("enter-wait");
+        void f.offsetWidth;                // restart the HUD's drop on a replay
+        f.classList.add("enter-go");
+      }
+      var fn = done, q = queue; done = null; queue = [];
+      if (fn) fn();
+      for (var i = 0; i < q.length; i++) q[i]();
+    }
+    // The entrance is torn down with its round, without starting anything.
+    function cancel() {
+      if (!on) return;
+      done = null; queue = []; finish();
+    }
+    // Run fn once the world has landed; false (run it now) outside the entrance.
+    function later(fn) {
+      if (!on) return false;
+      queue.push(fn);
+      return true;
+    }
+    function update(dt) {
+      if (!on) return;
+      t += dt;
+      if (t >= total()) finish();
+    }
+    // Top of every render pass: last frame's count becomes the spread.
+    function frame() {
+      if (!on) return;
+      count = Math.max(count, n);
+      // last frame's elements, sorted by rank and open order: the slot each one lands in
+      if (n) {
+        var idx = [], i;
+        for (i = 0; i < n; i++) idx.push(i);
+        idx.sort(function (a, b) { return ((ranks[a] || 0) - (ranks[b] || 0)) || (a - b); });
+        slotOf = [];
+        for (i = 0; i < n; i++) slotOf[idx[i]] = i;
+      }
+      n = 0; ranks.length = 0;
+      lastSeen = lastSeen || lastNow; lastNow = false;
+      k = 1; stack.length = 0;             // an element left open is not carried over
+    }
+    function begin(x, y, opt) {
+      if (!on) return true;
+      var at;
+      if (opt && opt.last) {
+        lastNow = true;
+        at = LEAD + spread() + AFTER;
+      } else {
+        var o = n++, N = Math.max(count, n), i = slotOf && slotOf[o] != null ? slotOf[o] : o;
+        ranks[o] = (opt && opt.rank) || 0;
+        at = LEAD + (N > 1 ? i / (N - 1) : 0) * spread();
+      }
+      var p = clamp((t - at) / FLY, 0, 1);
+      if (p <= 0) return false;
+      /* easeOutBack with a short overshoot: the element passes its own size
+         by ~4 % — pressed into the ground — and settles back onto it. */
+      var q = p - 1, e = 1 + 1.9 * q * q * q + 0.9 * q * q;
+      var s = FROM + (1 - FROM) * e, a = clamp(p / FADE, 0, 1);
+      ctx.save();
+      stack.push(k);
+      if (alpha && alpha.get) alpha.set.call(ctx, alpha.get.call(ctx) * a);
+      k *= a;
+      ctx.translate(x, y); ctx.scale(s, s); ctx.translate(-x, -y);
+      return true;
+    }
+    function end() {
+      if (!on || !stack.length) return;
+      ctx.restore();
+      k = stack.pop();
+    }
+    return {
+      start: start, skip: finish, cancel: cancel, update: update, frame: frame,
+      begin: begin, end: end, later: later,
+      active: function () { return on; }
+    };
+  })();
+
   // --- Confetti: end-screen celebration on its own canvas ----------------
   var Confetti = (function () {
     var cvs = null, cx = null, parts = [], running = false, last = 0;
@@ -3506,7 +3706,7 @@
         if (document.activeElement === b) b.blur();
       });
     }
-    if (s !== "playing") Overlay.clear();
+    if (s !== "playing") { Overlay.clear(); Enter.cancel(); }   // a round left mid-entrance
     Notify.state(s);
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
@@ -3902,6 +4102,7 @@
     }
 
     function say(word, opt) {
+      if (Enter.later(function () { say(word, opt); })) return;        // after the entrance
       opt = opt || {};
       if (word == null || word === "" || !host()) return;
       var kind = KIND_ICON[opt.kind] ? opt.kind : "info";
@@ -4121,6 +4322,7 @@
 
     function show(name, opt) {
       if (!enabled) return null;
+      if (Enter.later(function () { show(name, opt); })) return null;   // after the entrance
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 
@@ -7674,33 +7876,44 @@
       var i, k, r, a, b, sc;
       ctx.drawImage(bg, 0, 0);
 
-      for (i = 0; i < 3; i++) drawPlate(rings[i]);
-      drawTeeth(rings[2]);
+      // The plates, the rays, every bead and the hub are the elements of the
+      // round's entrance (Enter): each lands on the dial's hall in that order.
+      for (i = 0; i < 3; i++) {
+        if (!Enter.begin(cx, cy)) continue;
+        drawPlate(rings[i]);
+        if (i === 2) drawTeeth(rings[2]);
+        Enter.end();
+      }
 
       // The rays the board is read on, drawn ON TOP of the plates and under
       // the beads: they are the one thing on screen that never moves, and a
       // player who cannot see them cannot see the game.
-      ctx.save(); ctx.translate(cx, cy);
-      ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
-      for (i = 0; i < N; i++) {
-        // The rotate comes first, so this pass draws ray i+1.
-        ctx.rotate(SLOT);
-        if (Eclipse.on)
-          ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
-        ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
-      }
-      ctx.restore();
+      if (Enter.begin(cx, cy)) {
+        ctx.save(); ctx.translate(cx, cy);
+        ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
+        for (i = 0; i < N; i++) {
+          // The rotate comes first, so this pass draws ray i+1.
+          ctx.rotate(SLOT);
+          if (Eclipse.on)
+            ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
+          ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
+        }
+        ctx.restore();
 
-      // The ink, over the machine and clipped to it, and under the beads:
-      // a bead sitting on black is a ray that cannot pay. See Eclipse.
-      if (Eclipse.on) Eclipse.draw(0);
+        // The ink, over the machine and clipped to it, and under the beads:
+        // a bead sitting on black is a ray that cannot pay. See Eclipse.
+        if (Eclipse.on) Eclipse.draw(0);
+        Enter.end();
+      }
 
       for (i = 0; i < 3; i++) {
         r = rings[i];
         for (k = 0; k < N; k++) {
           if (r.slots[k] === null) continue;
           a = r.angle + k * SLOT;
+          if (!Enter.begin(px(a, r.rad), py(a, r.rad))) continue;
           drawBall(r.slots[k], i, px(a, r.rad), py(a, r.rad), 1, 1);
+          Enter.end();
         }
       }
 
@@ -7732,8 +7945,8 @@
       for (i = 0; i < beams.length; i++) drawBeam(beams[i]);
       ctx.globalCompositeOperation = "source-over";
 
-      drawHub();
-      drawMul();
+      if (Enter.begin(cx, cy)) { drawHub(); Enter.end(); }
+      drawMul();                     // a score window never opens before the first move
       if (finale && finale.phase === "drama") drawFinale();
     }
 
@@ -7932,7 +8145,16 @@
      7. BOOTSTRAP — wiring. Rarely edited.
      =================================================================== */
   function frameUpdate(dt) {
+    /* The entrance holds the whole round — world, clock and beat — while the
+       scene assembles; only the entrance itself advances (Enter, engine.js). */
+    if (Enter.active()) { Enter.update(dt); return; }
     Beat.update(dt);                                // music does not hit-stop
+    /* A game that stops its own round for a choice (gearball's upgrade
+       cards) answers Game.held(): the world and the clock wait, and only the
+       juice and the HUD go on turning. Unlike Loop.pause it is the GAME's,
+       so nothing that pauses and resumes the loop can let the round run on
+       under an open choice. */
+    if (Game.held && Game.held()) { Fx.update(dt); Pop.tick(dt); HUD.tick(dt); return; }
     if (Fx.frozen(dt)) { Fx.update(dt); Pop.tick(dt); return; }   // hit-stop: only fx advance
     Round.tick(dt);
     if (State !== "playing") return;                // a game may have ended us
@@ -7950,6 +8172,7 @@
        shake lasts. Every other game fills its own opaque ground and needs
        nothing. */
     if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
+    Enter.frame();   // the entrance counts the elements of this frame
     Fx.begin();      // shake transform
     Game.render();   // the world
     Fx.render();     // particles / rings above it
@@ -7968,10 +8191,23 @@
        idempotent on its own now (packages/engine/engine.js); this is the round
        itself saying the same thing, and it is also what stops a clock that was
        already counting from carrying into the new one. */
-    Loop.stop(); Round.stop();
+    Loop.stop(); Round.stop(); Enter.cancel();
     Sound.unlock();                       // must run inside a user gesture (iOS)
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it
+    /* THE ENTRANCE: the ground first, then the world's elements one by one,
+       then the HUD — the world, the clock and the beat held meanwhile. The
+       round's bed starts once it has landed, so a game on the beat starts on
+       beat 0 with its music; on the web the menu's bed plays on under the
+       entrance and crossfades into the round's there. (A game whose reset()
+       picks its own section with Music.play has started that bed already;
+       none of those is on the beat.) Armed BEFORE Game.reset(), so a word
+       the reset says — a stage notice, a "Get ready" — waits for the landing
+       like any other said during the entrance. */
+    Enter.start(function () {
+      Music.start();                      // no-op without ASSETS.sounds.music
+      Music.unduck();                     // back to full bed after an end screen
+    });
     /* The bed the ROUND plays, armed before the game's own reset so that a
        game picking one stretch of its track per biome or per level — from
        reset(), with Music.play(section) — simply wins, and so that the menus'
@@ -7979,8 +8215,6 @@
        until start() below, which is what makes the armed section play. */
     Music.arm((CONFIG.music || {}).round || null);
     Game.reset();
-    Music.start();                        // no-op without ASSETS.sounds.music
-    Music.unduck();                       // back to full bed after an end screen
     Round.reset();
     setState("playing");
     Ad.track("game_start");
@@ -8046,10 +8280,21 @@
     cssVar("--cta-h", CONFIG.layout.ctaHeight + "px");
     fitCanvas();
 
-    // Route pointer input to the game only while it is playing.
-    Input.on("down", function (p) { if (State === "playing" && Game.onDown) Game.onDown(p); });
-    Input.on("move", function (p) { if (State === "playing" && Game.onMove) Game.onMove(p); });
-    Input.on("up",   function (p) { if (State === "playing" && Game.onUp)   Game.onUp(p); });
+    /* Route pointer input to the game only while it is playing. A press
+       during the entrance skips it, and the whole gesture it starts is eaten:
+       the game never sees a move or an up without the down that opened it. */
+    var eaten = false;
+    Input.on("down", function (p) {
+      if (State !== "playing") return;
+      if (Enter.active()) { Enter.skip(); eaten = true; return; }
+      eaten = false;
+      if (Game.onDown) Game.onDown(p);
+    });
+    Input.on("move", function (p) { if (State === "playing" && !eaten && !Enter.active() && Game.onMove) Game.onMove(p); });
+    Input.on("up",   function (p) {
+      if (eaten) { eaten = false; return; }
+      if (State === "playing" && !Enter.active() && Game.onUp) Game.onUp(p);
+    });
 
     bindKeys();
 

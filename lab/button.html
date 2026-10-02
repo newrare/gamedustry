@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lab — buttons</title>
+<title>Lab — game buttons</title>
+<meta name="lab-group" content="tools">
 <style>
 /* ===========================================================================
    BUTTON LAB — one button for the motor and every game.
@@ -438,7 +439,8 @@ body {
 
   const $ = (id) => document.getElementById(id);
 
-  /* ---- the motor's upper(), copied from overlay-pop.html --------------- */
+  /* ---- the motor's upper(), copied from packages/engine/engine.js ------
+     The copy a lab page takes when it mocks a game screen. */
   function upper(str) {
     var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
     var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";

@@ -668,6 +668,82 @@ button.ar-post-l:active { transform:scale(.96); }
 .ar-df-sol { width:440px; margin:18px auto 0; gap:12px; }
 .ar-df-sol-l { flex:0 0 auto; font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--muted); }
 
+/* THE REPORT TAB (army.js, paintDfReport): the verdict stamped as the
+   village's card stamped it, the solidity and the tally, then the raid as
+   its duels — one bout a line, the red attacker facing the camp's card at
+   the deck's medium size, the VS between them. The side that won the bout
+   tints its half of the plate and wears its army's glow; the loser is
+   dimmed, as a card out of the fight is everywhere else. */
+.ar-drep-top {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  margin:14px 8px 0; padding:18px 16px 16px; border-radius:20px;
+  background:radial-gradient(120% 90% at 50% 0%, rgba(81,207,102,.16), rgba(0,0,0,.34) 70%);
+  border:1px solid rgba(81,207,102,.28);
+}
+.ar-drep-top.ko {
+  background:radial-gradient(120% 90% at 50% 0%, rgba(255,92,92,.18), rgba(0,0,0,.34) 70%);
+  border-color:rgba(255,92,92,.3);
+}
+.ar-drep-verdict { font-size:22px; font-weight:800; color:var(--text); }
+.ar-drep-top .ar-df-sol { margin-top:2px; }
+.ar-drep-tally { justify-content:center; gap:10px; margin-top:2px; }
+.ar-chip.camp { color:#9cc2ff; border-color:rgba(90,150,255,.45); background:rgba(26,52,120,.45); }
+.ar-chip.foe  { color:#ffb0b0; border-color:rgba(255,92,92,.45); background:rgba(110,20,20,.45); }
+.ar-drep-sec { margin:6px 16px -6px; }
+.ar-drep-note { font-size:22px; margin:6px 24px 0; }
+
+.ar-bouts { display:flex; flex-direction:column; gap:14px; padding:4px 8px 8px; }
+.ar-bout {
+  position:relative; display:flex; align-items:center; gap:10px;
+  padding:14px 16px; border-radius:20px;
+  background:linear-gradient(90deg, rgba(163,38,38,.22), rgba(0,0,0,.36) 34%, rgba(0,0,0,.36) 66%, rgba(42,86,184,.22));
+  border:1px solid rgba(255,255,255,.08);
+}
+.ar-bout.foe  { background:linear-gradient(90deg, rgba(200,40,40,.46), rgba(0,0,0,.36) 42%, rgba(0,0,0,.36) 70%, rgba(42,86,184,.14)); border-color:rgba(255,92,92,.28); }
+.ar-bout.camp { background:linear-gradient(90deg, rgba(163,38,38,.14), rgba(0,0,0,.36) 30%, rgba(0,0,0,.36) 58%, rgba(52,110,230,.46)); border-color:rgba(90,150,255,.3); }
+.ar-bout.flag { border:2px solid var(--danger, #ff5c5c); box-shadow:0 0 22px rgba(255,92,92,.45); }
+.ar-bout-card { position:relative; flex:0 0 auto; }
+.ar-bout-hurt {
+  position:absolute; right:-10px; top:-10px; z-index:35;
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #ff6b6b, #8a1010 74%);
+  border:3px solid #ffd2d2; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.6);
+}
+.ar-bout-hurt .ar-ci { width:20px; height:20px; }
+.ar-bout-card .ar-row-card { display:block; }
+.ar-bouts:not(.painted) .ar-bout-card .ar-card { width:132px; height:132px; }
+.ar-bout-card.up.foe  { filter:drop-shadow(0 0 12px rgba(255,80,80,.55)); }
+.ar-bout-card.up.camp { filter:drop-shadow(0 0 12px rgba(90,150,255,.55)); }
+.ar-bout.even .ar-bout-card.up, .ar-bout.foe .ar-bout-card.camp, .ar-bout.camp .ar-bout-card.foe { filter:none; }
+.ar-bout-mid {
+  flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px;
+  text-align:center;
+}
+.ar-bout-n {
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:900; font-variant-numeric:tabular-nums;
+  color:var(--muted); background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.14);
+}
+.ar-bout-vs {
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-size:44px; line-height:1; font-style:italic; letter-spacing:2px;
+  color:var(--gold, #f2c14e);
+  text-shadow:0 2px 0 rgba(0,0,0,.6), 0 0 14px rgba(242,193,78,.45);
+}
+.ar-bout-res { font-size:20px; font-weight:800; line-height:1.2; }
+.ar-bout.foe  .ar-bout-res { color:#ff9a9a; }
+.ar-bout.camp .ar-bout-res { color:#9cc2ff; }
+.ar-bout.even .ar-bout-res { color:var(--muted); }
+.ar-bout-wound {
+  display:inline-flex; align-items:center; gap:6px; margin-top:2px;
+  padding:2px 10px 2px 8px; border-radius:999px;
+  font-size:20px; font-weight:800; color:#ffb0b0;
+  background:rgba(110,20,20,.5); border:1px solid rgba(255,92,92,.45);
+}
+.ar-bout-wound .ar-ci { width:18px; height:18px; }
+
 /* A SLOT A POST HAS NOT OPENED YET (army.js, lockedSlot / lockedCell /
    lockedRow): the free place's footprint, dimmer, with the padlock in it and
    the gauge that opens it under it. */
@@ -995,6 +1071,9 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   opacity:0; animation:ar-mourn .9s ease-out forwards;
 }
 .ar-fallen-list.one .ar-fallen-c { width:auto; }
+/* The defense report hands over one or two cards at most: nothing to scroll,
+   and the tier medal hanging under a card must not raise a scrollbar. */
+.ar-dfrep .ar-fallen-list { max-height:none; overflow:visible; }
 .ar-fallen-c:nth-child(2) { animation-delay:.15s; }
 .ar-fallen-c:nth-child(3) { animation-delay:.3s; }
 .ar-fallen-c:nth-child(4) { animation-delay:.45s; }
@@ -1008,13 +1087,15 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   max-width:100%; font-size:18px; font-weight:800; letter-spacing:.5px; line-height:1.2;
   color:var(--muted); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.ar-fallen-foot { margin:0; font-size:20px; line-height:1.4; font-style:italic; color:var(--muted); text-align:center; }
+.ar-fallen-foot { margin:0; font-size:22px; line-height:1.4; font-style:italic; color:var(--muted); text-align:center; }
 /* TO THE INFIRMARY (army.js, openWounded): the same layout, not in
    mourning — the cards come back, so they keep their colour and the rim is
    the infirmary's green. */
 .ar-wounded .mt-card { --card-rim-a:#51cf66; }
-.ar-wounded .mt-card .mt-h { color:#51cf66; }
-.ar-fallen-l.hurt .ar-ci { color:#51cf66; }
+.ar-wounded .mt-card .mt-h { color:#ff9f1c; }
+.ar-fallen-l.hurt .ar-ci { color:#ff9f1c; }
+.ar-fallen-foot.hurt { font-style:normal; color:rgba(246,241,228,.92); }
+.ar-hurt-t { color:#ff9f1c; font-weight:800; white-space:nowrap; }
 .ar-fallen-c.hurt .ar-card > .card, .ar-fallen-c.hurt .ar-card:not(.painted) { filter:none; }
 /* ...and the defense's two cards (army.js, section 8c'): a prisoner taken, a
    card to heal, an object handed over — nobody here is mourned */
@@ -1118,15 +1199,6 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   font-size:22px; color:var(--muted); text-align:center;
   font-variant-numeric:tabular-nums;
 }
-/* THE WAY PAST IT IS A LINE AND NOT A SECOND BUTTON. Three cards is a choice,
-   and a fourth control shaped like the three halves the weight of all of them
-   (the same rule the gift card's footnote is written under, meta.js). */
-.ar-skip {
-  appearance:none; -webkit-appearance:none; cursor:pointer;
-  background:none; border:0; margin:6px auto 0; padding:10px 18px; display:block;
-  font-family:var(--web-font, inherit); font-size:24px; color:var(--muted);
-  text-decoration:underline; text-underline-offset:4px;
-}
 
 /* =========================================================================
    THE ARMY'S FIGURES IN THE BAND'S FOLD (army.js, `bandRows`)
@@ -1173,12 +1245,11 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   margin:6px 0 0; text-align:center; font-size:20px; font-weight:800; letter-spacing:.5px;
   color:var(--gold, #f2c14e);
 }
-/* the board's next locked slot is a short row with the padlock alone in its
-   middle, and an ellipsis under it stands for the slots behind it */
-button.ar-row.locked { width:100%; justify-content:center; }
-.ar-row.free.locked { min-height:0; padding:8px 12px; border-style:solid; border-color:rgba(255,255,255,.06); }
-.ar-row.free.locked .ar-free-slot { width:48px; height:48px; border-radius:12px; }
-.ar-lock-more {
-  margin:-2px 0 4px; text-align:center; font-size:32px; font-weight:800; line-height:1;
-  letter-spacing:4px; color:rgba(255,255,255,.34);
-}
+/* A mission slot the post has not opened (army.js, lockedRow): the free
+   slot's own row, solid and dimmer, the padlock in the footprint and the
+   word beside it. */
+button.ar-row.locked { width:100%; text-align:left; }
+.ar-row.free.locked { border-style:solid; border-color:rgba(255,255,255,.06); background:rgba(0,0,0,.22); }
+/* THE SIX MISSION SLOTS are one height whatever state each is in, so a slot
+   changing state never moves the rows under it. */
+.ar-list.ar-mslots > * { min-height:112px; margin:0; }

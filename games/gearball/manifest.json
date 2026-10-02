@@ -1,8 +1,8 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "1.2.7",
-  "tagline": "Drop a ball in an empty slot and chain them to fill the loop",
+  "version": "2.6.4",
+  "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
   "targets": [
@@ -45,43 +45,93 @@
       "sticker17": "gearball-sticker-17",
       "sticker18": "gearball-sticker-18",
       "sticker19": "gearball-sticker-19",
-      "sticker20": "gearball-sticker-20"
+      "sticker20": "gearball-sticker-20",
+      "card-spare-heart": "gearball-card-one-01",
+      "card-repair": "gearball-card-one-02",
+      "card-slow-rails": "gearball-card-one-03",
+      "card-lock-freeze": "gearball-card-one-04",
+      "card-master-key": "gearball-card-one-05",
+      "card-wider-gate": "gearball-card-one-06",
+      "card-net": "gearball-card-one-07",
+      "card-loop-prize": "gearball-card-one-08",
+      "card-jumpstart": "gearball-card-one-09",
+      "card-turbo": "gearball-card-one-10",
+      "card-gold": "gearball-card-one-11",
+      "card-glass": "gearball-card-one-12",
+      "card-blood-pact": "gearball-card-one-13",
+      "card-auto-switch": "gearball-card-one-14",
+      "card-slowmo": "gearball-card-one-15",
+      "card-shield": "gearball-card-one-16",
+      "card-rusty-locks": "gearball-card-one-17",
+      "card-spiral-prize": "gearball-card-one-18",
+      "card-train": "gearball-card-one-19",
+      "card-chain": "gearball-card-one-20",
+      "card-packed": "gearball-card-one-21",
+      "card-overclock": "gearball-card-one-22",
+      "card-all-in": "gearball-card-one-23",
+      "card-double-or": "gearball-card-one-24",
+      "card-capacitor": "gearball-card-one-25",
+      "card-auto-gate": "gearball-card-one-26",
+      "card-stiff": "gearball-card-one-27",
+      "card-second": "gearball-card-one-28",
+      "card-quick-release": "gearball-card-one-29",
+      "card-split": "gearball-card-one-30",
+      "card-static-charge": "gearball-card-two-01",
+      "card-anchor": "gearball-card-two-02",
+      "card-greedy": "gearball-card-two-03",
+      "card-torrent": "gearball-card-two-04",
+      "card-sacrifice": "gearball-card-two-05",
+      "card-one-lock-less": "gearball-card-two-06",
+      "card-slow-pour": "gearball-card-two-07",
+      "card-overcharge": "gearball-card-two-08",
+      "card-red-jackpot": "gearball-card-two-09",
+      "card-narrow": "gearball-card-two-10",
+      "card-blackout": "gearball-card-two-11",
+      "card-live-wire": "gearball-card-two-12",
+      "card-dynamo": "gearball-card-two-13",
+      "card-wide": "gearball-card-two-14",
+      "card-short-fuse": "gearball-card-two-15",
+      "card-lockdown": "gearball-card-two-16",
+      "card-jam": "gearball-card-two-17",
+      "card-tempt": "gearball-card-two-18",
+      "card-tesla": "gearball-card-two-19",
+      "card-back": "gearball-card-two-20"
     }
   },
   "copy": {
     "fr": {
-      "tagline": "Des engrenages et des billes. Anticipe la rotation pour placer les billes au bon moment.",
+      "tagline": "Une machine à billes à faire tourner. Déverrouille les barrières avant qu’elles débordent et déplace la prise pour attraper la bille électrique.",
       "tags": [
-        "Tap pour lâcher",
-        "Anticipe la roue",
-        "Boucle à remplir"
+        "Tap pour ouvrir",
+        "Attrape l’étincelle",
+        "Monte le combo"
       ]
     },
     "en": {
-      "tagline": "Cogs and balls. Lead the rotation to drop each ball at the right moment.",
+      "tagline": "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
       "tags": [
-        "Tap to drop",
-        "Lead the cog",
-        "Fill the loop"
+        "Tap to unlock",
+        "Catch the spark",
+        "Build the combo"
       ]
     }
   },
-  "description": "Every round packs a new closed circuit: eight cogs of wildly different sizes, each tangent to the next, and their rims form one continuous track cut into slots. The whole chain rides the machine at a single rim speed, and a hopper hangs above the highest point of it. Tap and a ball falls — into a free slot it seats, scores and climbs the combo; into a taken one it is destroyed and the shift loses a life. The catch is the lead: the fall lasts a third of a second, in which the machine turns nearly two slots, so the gap to aim at is never the one under the hopper when the finger goes down. Where it lands matters as much as when: a ball that seats next to balls already on the track WELDS to them and the whole run pays, the chain lights up as one girder, and the multiplier only climbs while the player keeps welding — bridge two runs and it is a splice. Every few seconds the magazine loads something other than stock: a WILD that cannot jam and hunts out the nearest free seat, a SPLIT that pulls a second ball into the gap beside it, a CHARGE that cashes in the whole chain it joins. Fill every slot and the circuit is closed: that wins the shift there and then, worth more the more clock is left.",
+  "description": "A marble machine in portrait, and the player keeps it running. A feed gear turning half off the screen pours marbles onto chrome rails with real slope physics: they pick up speed downhill, slow on the flat and crawl over the top of a loop, through flip-flop switches, a notched wheel that merges lines, zigzags, corkscrews, coils, whirlpools that drain through their centre, glass tubes, pipes that dive behind the machine and resurface and ferry gears that carry a marble round their rim from one line to the next, into glowing arrivals at the bottom, each known by its colour. What they swallow drops to a gutter and rides a screw tower up the back of the machine to the feed gear, so the pour never runs dry. Every marble delivered climbs the combo on the wheel hub, and the combo multiplies every point. The gates are open until one LOCKS, at random and more and more often: a locked gate holds its marbles in slots that fill green to red and shows a big pulsing padlock, and a tap opens it. A marble that reaches a full locked gate breaks the combo and drops through a trapdoor behind the machine, where a spill network of back rails and turning cogs carries it to a red socket that costs a heart. One ELECTRIC marble is always in play, and one arrival is its socket: the switches flip on their own at every marble that passes, so the player reads the route and taps an arrival to move the socket under it. Caught, the electric marble pays big, sends an arc up the rails to the hub and makes the combo jump — anywhere else it fizzles, the combo breaks and the machine's lights go out for half a second. The machine grows with the climb: five biomes, five machines, each its own skeleton, from one switch and two arrivals to six switches, six gates and six arrivals.",
   "store": {
     "copy": {
       "en": {
         "lines": [
           {
-            "kicker": "Gear",
-            "line": "<b>Chain</b> electrification"
+            "kicker": "Marbles",
+            "line": "A <b>marble machine</b> to keep running"
           },
           {
-            "kicker": "Timing",
-            "line": "Lead the <b>rotation</b>"
+            "kicker": "Reflex",
+            "line": "<b>Unlock</b> the gates in time"
           },
           {
-            "kicker": "Skill",
-            "line": "Aim for the right <b>slot</b>"
+            "kicker": "Electric",
+            "line": "Catch the <b>spark</b>"
           },
           {
             "kicker": "30 levels",
@@ -96,16 +146,16 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Gear",
-            "line": "<b>Électrification</b> en chaîne"
+            "kicker": "Billes",
+            "line": "Une <b>machine à billes</b> à faire tourner"
           },
           {
-            "kicker": "Timing",
-            "line": "Anticipe la <b>rotation</b>"
+            "kicker": "Réflexe",
+            "line": "<b>Déverrouille</b> les barrières à temps"
           },
           {
-            "kicker": "Skill",
-            "line": "Vise le bon <b>espace</b>"
+            "kicker": "Électrique",
+            "line": "Attrape l’<b>étincelle</b>"
           },
           {
             "kicker": "30 levels",
@@ -149,72 +199,229 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-drop\">Lâche</b> une bille dans un <b class=\"w-slot\">logement vide</b> et <b class=\"w-fill\">enchaîne-les pour remplir la chaîne</b>",
+        "tagline": "<b class=\"w-lock\">Déverrouille</b> les barrières à temps et place la <b class=\"w-sock\">prise</b> sous la <b class=\"w-volt\">bille électrique</b>",
         "strings": {
-          " slots left": " encoches restantes",
-          "A ball next to another welds — the whole run pays": "Une bille collée à une autre soude — toute la série paie",
-          "Balls set": "Billes posées",
+          "Best combo": "Meilleur combo",
           "Best score": "Meilleur score",
-          "Charge x": "Charge x",
-          "Circuit cleared!": "Circuit bouclé !",
-          "Circuit full": "Circuit plein",
+          "Charged!": "Chargée !",
+          "Combo lost": "Combo perdu",
+          "Combo x": "Combo x",
+          "Electric marble": "Bille électrique",
+          "Electric on target": "Électriques au but",
           "Final score": "Score final",
+          "Fizzle": "Grillée",
+          "Tap an arrival to move the socket under it": "Touche une arrivée pour y déplacer la prise",
+          "Full power!": "Pleine puissance !",
+          "Hearts": "Cœurs",
           "Install now": "Installer",
-          "Jam": "Bourrage",
-          "Jammed!": "Enrayé !",
-          "Jams": "Bourrages",
-          "Lives": "Vies",
-          "Longest chain": "Plus longue série",
+          "It rolls behind the machine to the red socket, and costs a heart": "Elle roule derrière la machine jusqu’à la prise rouge, et coûte un cœur",
+          "Last heart": "Dernier cœur",
+          "Lost marble": "Bille perdue",
+          "Marbles delivered": "Billes livrées",
+          "Out of hearts": "Plus de cœurs",
+          "Overdrive": "Surrégime",
+          "Overflow": "Débordement",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
           "Score": "Score",
+          "Shattered": "Brisée",
           "Shift over": "Fin de service",
-          "Splice": "Raccord",
-          "Split": "Doublé",
-          "Stage bonus": "Bonus de tableau",
+          "Tap a lock to open its gate": "Tape un cadenas pour ouvrir sa barrière",
           "Tap to play": "Tap pour jouer",
-          "Tap when a gap reaches the hopper": "Tap quand un trou arrive à la trémie",
           "Time": "Temps",
-          "Weld x": "Soudure x",
-          "Wild save": "Joker sauveur"
+          "Spare heart": "Cœur de rechange",
+          "+{n} max hearts, filled": "+{n} cœurs max, remplis",
+          "+1 max heart, filled": "+1 cœur max, rempli",
+          "Repair": "Réparation",
+          "{n} lost hearts come back": "{n} cœurs perdus reviennent",
+          "A lost heart comes back": "Un cœur perdu revient",
+          "Every lost heart comes back": "Tous les cœurs perdus reviennent",
+          "Slow rails": "Rails lents",
+          "The marbles roll 30% slower": "Les billes roulent 30 % moins vite",
+          "Lock freeze": "Cadenas gelés",
+          "No gate locks": "Aucune barrière ne se verrouille",
+          "Master key": "Passe-partout",
+          "{n} keys: tap one to open every locked gate": "{n} clés : tape une clé pour ouvrir toutes les barrières verrouillées",
+          "A key: tap it to open every locked gate": "Une clé : tape-la pour ouvrir toutes les barrières verrouillées",
+          "Wider gate": "Barrière élargie",
+          "Your busiest gate holds {n} more marbles": "Ta barrière la plus chargée garde {n} billes de plus",
+          "Your busiest gate holds 1 more marble": "Ta barrière la plus chargée garde 1 bille de plus",
+          "Safety net": "Filet",
+          "The next {n} lost marbles roll back to the feeder": "Les {n} prochaines billes perdues retournent à l'alimentation",
+          "Loop prize": "Prime de looping",
+          "A marble through a loop pays +{n}": "Une bille qui passe un looping rapporte +{n}",
+          "Jumpstart": "Coup de fouet",
+          "+{n} combo now": "+{n} au combo tout de suite",
+          "Turbo": "Turbo",
+          "+1 multiplier": "+1 multiplicateur",
+          "Gold marbles": "Billes dorées",
+          "One marble in {n} is gold and pays x5": "Une bille sur {n} est dorée et rapporte x5",
+          "Glass cannon": "Canon de verre",
+          "Score x2 for the shift": "Score x2 pour le service",
+          "-2 max hearts": "-2 cœurs max",
+          "Blood pact": "Pacte de sang",
+          "The combo drops to 0": "Le combo retombe à 0",
+          "Auto switch": "Aiguillage auto",
+          "The switches steer every electric marble to the socket": "Les aiguillages guident chaque bille électrique jusqu’à la prise",
+          "Slow motion": "Ralenti",
+          "The machine runs at half speed": "La machine tourne à mi-vitesse",
+          "Combo shield": "Bouclier de combo",
+          "The next {n} combo breaks are absorbed": "Les {n} prochaines casses de combo sont absorbées",
+          "The next combo break is absorbed": "La prochaine casse de combo est absorbée",
+          "Rusty locks": "Cadenas rouillés",
+          "Gates lock 40% less often": "Les barrières se verrouillent 40 % moins souvent",
+          "Spiral prize": "Prime de spirale",
+          "A marble down a spiral pays +{n}": "Une bille qui descend une spirale rapporte +{n}",
+          "Marble train": "Train de billes",
+          "Marbles landing back to back pay +{n} per wagon": "Les billes qui arrivent à la file rapportent +{n} par wagon",
+          "Chain lightning": "Éclair en chaîne",
+          "The payoff arc zaps every marble it passes: +{n} each": "L’arc électrique frappe chaque bille sur son passage : +{n} chacune",
+          "Packed machine": "Machine pleine",
+          "Every marble delivered pays +5% per marble in the machine": "Chaque bille livrée rapporte +5 % par bille dans la machine",
+          "Overclock": "Surcadencé",
+          "Score x1.5 for the shift": "Score x1,5 pour le service",
+          "The rails run 30% faster": "Les rails vont 30 % plus vite",
+          "All in": "Tapis",
+          "+25 combo now": "+25 au combo tout de suite",
+          "The next lost marble costs 3 hearts": "La prochaine bille perdue coûte 3 cœurs",
+          "Double or nothing": "Quitte ou double",
+          "The next electric on target doubles your score": "La prochaine électrique au but double ton score",
+          "A wasted one halves it": "Ratée, elle le divise par deux",
+          "Capacitor": "Condensateur",
+          "The socket recharges {n}% faster": "La prise se recharge {n} % plus vite",
+          "Self-opening gate": "Barrière automatique",
+          "Your busiest gate unlocks itself": "Ta barrière la plus chargée se déverrouille seule",
+          "Stiff switches": "Aiguillages raides",
+          "Marbles no longer flip the switches": "Les billes ne basculent plus les aiguillages",
+          "Second chance": "Seconde chance",
+          "The next {n} wasted electric marbles go back to the feeder": "Les {n} prochaines électriques ratées retournent à l'alimentation",
+          "The next wasted electric marble goes back to the feeder": "La prochaine électrique ratée retourne à l'alimentation",
+          "Quick release": "Vidange express",
+          "An unlocked queue runs out {n} times faster": "Une file déverrouillée se vide {n} fois plus vite",
+          "Splitting spark": "Étincelle fendue",
+          "The next {n} electric marbles split in two at every switch": "Les {n} prochaines électriques se dédoublent à chaque aiguillage",
+          "The next electric marble splits in two at every switch": "La prochaine électrique se dédouble à chaque aiguillage",
+          "Static charge": "Électricité statique",
+          "An electric marble every {n} marbles": "Une bille électrique toutes les {n} billes",
+          "Combo anchor": "Ancre de combo",
+          "The combo never falls below its last tier": "Le combo ne retombe jamais sous son dernier palier",
+          "Greedy locks": "Cadenas gourmands",
+          "Every unlock pays 100": "Chaque déverrouillage rapporte 100",
+          "Gates lock 50% more often": "Les barrières se verrouillent 50 % plus souvent",
+          "Torrent": "Torrent",
+          "Every marble pays x3": "Chaque bille rapporte x3",
+          "The feeder pours twice as fast": "L'alimentation verse deux fois plus vite",
+          "Sacrifice": "Sacrifice",
+          "+1 multiplier for the shift": "+1 multiplicateur pour le service",
+          "-1 heart now": "-1 cœur tout de suite",
+          "One lock less": "Un cadenas de moins",
+          "One gate fewer can be locked at once": "Une barrière de moins peut être verrouillée à la fois",
+          "Slow feeder": "Alimentation lente",
+          "The feeder pours 40% fewer marbles": "L'alimentation verse 40 % de billes en moins",
+          "Overcharge": "Surcharge",
+          "An electric on target charges the machine for {n} s: every marble pays x3": "Une électrique au but charge la machine {n} s : chaque bille rapporte x3",
+          "Red jackpot": "Jackpot rouge",
+          "A marble in the red socket pays 50 instead of a heart": "Une bille dans la prise rouge rapporte 50 au lieu d’un cœur",
+          "Narrow gates": "Barrières étroites",
+          "Electric marbles pay x2 for the shift": "Les électriques rapportent x2 pour le service",
+          "Every gate holds one marble less": "Chaque barrière garde une bille de moins",
+          "Blackout": "Panne de courant",
+          "The routes no longer light up": "Les routes ne s’allument plus",
+          "Live wire": "Fil sous tension",
+          "An electric marble every 5 marbles": "Une bille électrique toutes les 5 billes",
+          "A wasted electric marble costs a heart": "Une électrique ratée coûte un cœur",
+          "Dynamo": "Dynamo",
+          "Wide socket": "Prise élargie",
+          "The arrivals beside the socket take electric marbles too": "Les arrivées voisines de la prise prennent aussi les électriques",
+          "Short fuse": "Mèche courte",
+          "The combo tiers come {n}% sooner": "Les paliers de combo arrivent {n} % plus tôt",
+          "Lockdown": "Confinement",
+          "Marbles leaving a gate pay x5": "Les billes qui sortent d’une barrière rapportent x5",
+          "Every gate locks now": "Toutes les barrières se verrouillent tout de suite",
+          "Jam session": "Bouchon",
+          "The combo climbs twice as fast for the shift": "Le combo monte deux fois plus vite pour le service",
+          "The wheel entries hold 2 marbles less": "Les entrées de la roue gardent 2 billes de moins",
+          "Tempt fate": "Tenter le sort",
+          "The next pick deals two epic cards": "Le prochain choix donne deux cartes épiques",
+          "Tesla coil": "Bobine Tesla",
+          "The socket recharges in 20 s": "La prise se recharge en 20 s",
+          "Common": "Commune",
+          "Rare": "Rare",
+          "Epic": "Épique",
+          "Legendary": "Légendaire",
+          "Until the next pick": "Jusqu’au prochain choix",
+          "Whole shift": "Tout le service",
+          "Now": "Immédiat",
+          "Socket charged": "Prise chargée",
+          "Pick one": "Choisis-en une",
+          "Tap a card to take it": "Tape une carte pour la prendre",
+          "Upgrade ready": "Amélioration prête",
+          "The next electric on target deals two cards": "La prochaine électrique au but donne deux cartes",
+          "Caught": "Rattrapée",
+          "Shielded": "Protégé",
+          "Anchored": "Ancré",
+          "Double!": "Doublé !",
+          "Halved": "Divisé par deux",
+          "Loop +": "Looping +",
+          "Spiral +": "Spirale +",
+          "Train x": "Train x",
+          "Workshop": "Atelier",
+          "Glassworks": "Verrerie",
+          "Maelstrom": "Maelström",
+          "Depths": "Profondeurs",
+          "Clockwork": "Horlogerie",
+          "Pick it in a round to add it to the collection": "Choisis-la en partie pour l’ajouter à la collection",
+          "No gate is locked": "Aucune barrière n’est verrouillée"
         }
       }
     },
     "font": "russoone",
+    "music": "gearball.mp3",
     "levels": {
       "objective": {
-        "from": 1100,
-        "to": 7300,
-        "step": 100
+        "from": 13000,
+        "to": 95000,
+        "step": 500
       },
       "copy": {
-        "en": "Score <b>{n}</b> without a jam",
-        "fr": "Marque <b>{n}</b> sans enrayer la chaîne"
+        "en": "Score <b>{n}</b> before the shift ends",
+        "fr": "Marque <b>{n}</b> avant la fin du service"
       },
       "tune": {
-        "ring.gears": [
+        "gameSeconds": [
+          180,
+          600
+        ],
+        "mix.rampSeconds": [
+          180,
+          600
+        ],
+        "mix.hearts": [
           6,
-          12
+          3
+        ]
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
         ],
-        "ring.speed": [
-          240,
-          420
+        "en": [
+          "Workshop",
+          "Glassworks",
+          "Maelstrom",
+          "Depths",
+          "Clockwork"
         ],
-        "ring.accel": [
-          3,
-          9
-        ],
-        "ring.magSize": [
-          4,
-          2
-        ],
-        "ring.reload": [
-          0.34,
-          0.6
-        ],
-        "ring.lives": [
-          5,
-          2
+        "fr": [
+          "Atelier",
+          "Verrerie",
+          "Maelström",
+          "Profondeurs",
+          "Horlogerie"
         ]
       }
     },
@@ -441,6 +648,13 @@
           "y": 486,
           "w": 89,
           "layer": 1
+        },
+        {
+          "art": "decor07",
+          "role": "cards",
+          "x": 360,
+          "y": 1085,
+          "w": 130
         }
       ],
       "life": {

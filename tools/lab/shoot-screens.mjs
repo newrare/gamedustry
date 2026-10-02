@@ -47,6 +47,8 @@
  *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source
  *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
  *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
+ *   node tools/lab/shoot-screens.mjs vipera --out /tmp/x   # anywhere but assets/image/screen/
+ *   GEARBALL_BIOME=3 node tools/lab/shoot-screens.mjs gearball --out /tmp/x   # one biome's machine
  *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -11
  *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
  *   node tools/lab/shoot-screens.mjs --village-only        # just the village, -12
@@ -88,7 +90,6 @@ var SPAN = {
   blight: 42,       // its own clock says 60, the pilot sees 40
   bouncetry: 15,
   echomaze: 18,
-  gearball: 20,     // clock 45
   marshmelt: 13,    // with its SWEEP entry below; every seed reaches 12.9 s
   pawko: 50,        // five waves, clockless; the RACK pilot plays them all in ~55 s
   slipdeck: 15,     // clock 30
@@ -118,13 +119,13 @@ var SWEEP = {
 };
 
 /* Games with a RACK of cards to play before each drop. pawko deals five cards
-   under the HUD and refuses a drop until one is played, so the blind pilot
-   taps the five slots in turn — a used card, and a slot tapped while the wave
-   is falling, are both ignored by the game — and then taps the board.
+   under the HUD and a wave leaves only when one is DRAGGED onto the board, so
+   the blind pilot drags the five slots in turn onto the board — a used card,
+   and a card pressed while the wave is falling, are both ignored by the game.
 
    slots - how many cards.  x0 / dx - the first slot's centre and the pitch, in
    fractions of the band's width.  y - the slot's centre under the band's top,
-   in design px.  board - where the drop goes, as a fraction of the band. */
+   in design px.  board - where the card is let go, as a fraction of the band. */
 var RACK = {
   pawko: { slots: 5, x0: 0.106, dx: 0.197, y: 83, board: 0.4 }
 };
@@ -142,21 +143,54 @@ var RACK = {
    be for a bench), and when nothing wins, the smallest card it holds at a
    random target, so a loss costs little and the board still moves. The flag
    comes LAST: seeing through the cards, the pilot found it in a few turns and
-   the late shots were all end screens. And after a win it walks past the
-   army layer's prisoner offer, a choice with no default that otherwise holds
+   the late shots were all end screens. And after a win it takes the first tile of the
+   army layer's victory reward, a choice with no default that otherwise holds
    the outro, and the round, forever.
 
    anchor - the text the hook is written in front of, inside the first script
             block.  every - frames between two moves, the pause a turn reads in. */
 var GAME_PILOT = {
+  /* gearball is a machine with four switches and four gates, and a tap goes to
+     the NEAREST of them: a blind tap in the middle of the band flips the same
+     switch forever while the locked gates overflow. So the pilot is the
+     game's own, and it plays like a decent player: the fullest locked gate
+     once it is half full, else the switch an electric marble is about to
+     reach when it lies the wrong way, else any locked gate holding marbles. */
+  gearball: {
+    every: 18,
+    anchor: "return { reset: reset, update: update, render: render,",
+    // GEARBALL_BIOME=0..4 shoots a free round on that biome's machine
+    js: `
+    CONFIG.mix.playableBiome = ${+(process.env.GEARBALL_BIOME || 0)};
+    window.__G = { play: function () {
+      if (state !== "play") return false;
+      var best = null, bk = -1, i, g, k, m, id, rem;
+      for (i = 0; i < gates.length; i++) {
+        g = gates[i]; if (!g.locked) continue;
+        k = g.q.length / g.cap; if (k >= 0.5 && k > bk) { bk = k; best = g; }
+      }
+      if (best) return unlock(best);
+      for (id in sw) {
+        for (i = 0; i < marbles.length; i++) {
+          m = marbles[i];
+          if (!m.e || m.st !== "track" || m.ch.to !== id) continue;
+          rem = routeWant(id);
+          if (m.ch.len - m.d <= 150 && rem !== null && sw[id].dir !== rem) { flip(id, false); return true; }
+        }
+      }
+      for (i = 0; i < gates.length; i++) if (gates[i].locked && gates[i].q.length) return unlock(gates[i]);
+      return false;
+    } };
+    `
+  },
   stratideck: {
     every: 45,
     anchor: "return { reset: reset, update: update, render: render,",
     js: `
     window.__G = { play: function () {
       if (ended && !window.__endAt) window.__endAt = window.__progress;   // SHOOT_DEBUG
-      var skip = document.querySelector(".ar-skip");  // the prisoner offer holds the outro
-      if (skip) { skip.click(); return true; }
+      var pick = document.querySelector(".ar-pick-t");  // the victory reward holds the outro
+      if (pick) { pick.click(); return true; }
       if (ended || turn || march || sheet || State !== "playing") return false;
       var best = null, low = -1, keys = [], i, k;
       for (k in targets) if (targets.hasOwnProperty(k)) keys.push(k);
@@ -224,6 +258,7 @@ var withCards = true;
 var cardsOnly = false;
 var ctls = false;
 var lang = "en";
+var outDir = OUT_DIR;
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shots") shots = parseInt(argv[++i], 10);
   else if (argv[i] === "--keep") keep = true;
@@ -239,6 +274,7 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--cards-only") cardsOnly = true;
   else if (argv[i] === "--ctls") ctls = true;
   else if (argv[i] === "--lang") lang = argv[++i];
+  else if (argv[i] === "--out") outDir = path.resolve(argv[++i]);
   else slugs.push(argv[i]);
 }
 /* The map lives in the web shell, which a playable does not ship. */
@@ -309,7 +345,7 @@ var HOOK_JS = `
   window.__H = {
     startGame: startGame, frameUpdate: frameUpdate, frameRender: frameRender,
     Loop: Loop, Input: Input, Layout: Layout, CONFIG: CONFIG, Beat: Beat,
-    Pop: Pop, Overlay: Overlay, state: function () { return State; }
+    Pop: Pop, Overlay: Overlay, Notify: Notify, Enter: Enter, state: function () { return State; }
   };
 `;
 
@@ -368,6 +404,17 @@ var DRIVER_JS = `<script>
       if (n % window.__GEVERY === 0) window.__G.play();
       return;
     }
+    // a rack of cards over the board: drag a card onto it (see RACK)
+    var R = window.__RACK;
+    if (R) {
+      var kk = n % 24, slot = Math.floor(n / 24) % R.slots;
+      var sx = L.left + L.w * (R.x0 + R.dx * slot), sy = L.top + R.y;
+      var bx = L.left + L.w * (0.2 + 0.6 * Math.abs(Math.sin(n * 0.013))), by = L.top + L.h * R.board;
+      if (kk === 0) H.Input.at("down", sx, sy);
+      else if (kk < 12) H.Input.at("move", sx + (bx - sx) * (kk / 12), sy + (by - sy) * (kk / 12));
+      else if (kk === 12) H.Input.at("up", bx, by);
+      return;
+    }
     if (demo === "swipe") {                          // one flick every ~0.6 s
       if (n % 36 === 0) H.Input.swipe(n % 72 === 0 ? 1 : -1);
       return;
@@ -385,14 +432,6 @@ var DRIVER_JS = `<script>
       if (k === 0) H.Input.at("down", ax, ay);
       else if (k < 20) H.Input.at("move", ax + (tx - ax) * (k / 20), ay + (ty - ay) * (k / 20));
       else if (k === 20) H.Input.at("up", tx, ty);
-      return;
-    }
-    // "tap" with a rack of cards over the board: a card, then the board (see RACK).
-    var R = window.__RACK;
-    if (R) {
-      var kk = n % 60;
-      if (kk < R.slots) tap(H, L.left + L.w * (R.x0 + R.dx * kk), L.top + R.y);
-      else if (kk === 30) tap(H, L.cx, L.top + L.h * R.board);
       return;
     }
     // "tap" whose point is the aim: sweep the top of the band (see SWEEP).
@@ -430,7 +469,7 @@ var DRIVER_JS = `<script>
 
   function step(H) {
     if (H.state() !== "playing") {                   // the pilot died: play again
-      H.startGame(); H.Loop.stop();
+      H.startGame(); H.Loop.stop(); H.Enter.skip();   // a capture is of play, not of the entrance
       roundFrame = 0; rounds++; cleaned = false;
     }
     pilot(H, frame);
@@ -562,6 +601,7 @@ var DRIVER_JS = `<script>
       if (H.state() !== "intro") return;              // still loading
       H.startGame();
       H.Loop.stop();                                  // we drive the clock
+      H.Enter.skip();                                 // ...from a landed world
       aim(H);                                         // CONFIG is final now
       started = true;
     }
@@ -577,8 +617,8 @@ var DRIVER_JS = `<script>
     var settle = need() - PACED;
     if (roundFrame < settle) {                        // fast-forward, cheaply
       for (var i = 0; i < 20 && roundFrame < settle && frame < cap; i++) step(H);
-      if (roundFrame >= settle && !cleaned) {         // drop the piled-up callouts
-        H.Pop.clear(); H.Overlay.clear(); cleaned = true;
+      if (roundFrame >= settle && !cleaned) {         // drop the piled-up callouts and notices
+        H.Pop.clear(); H.Overlay.clear(); H.Notify.clear(); cleaned = true;
       }
     } else {
       step(H);                                        // one frame per animation frame
@@ -796,7 +836,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
 // --- Run -----------------------------------------------------------------
 
 
-fs.mkdirSync(OUT_DIR, { recursive: true });
+fs.mkdirSync(outDir, { recursive: true });
 if (!playable && build) buildWeb(slugs);
 var missing = slugs.filter(function (s) { return !fs.existsSync(sourceOf(s)); });
 if (missing.length) {
@@ -825,7 +865,7 @@ for (var s = 0; s < slugs.length; s++) {
     var aim = aims[a];
     var tag = String(aim.n).padStart(2, "0");
     var name = slug + "-" + tag + (png ? ".png" : ".jpg");
-    var outPath = path.join(OUT_DIR, name);
+    var outPath = path.join(outDir, name);
     try {
       // The seed is the shot number, so two shots of one game are two
       // different runs sampled at two different points of the round.

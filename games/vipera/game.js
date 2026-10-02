@@ -1564,7 +1564,9 @@
         if (it.p < pMin || it.p > pMax) continue;
         y = sy(it.p);
         if (y < -70 || y > view.h + 70) continue;
+        if (!Enter.begin(it.x, y)) continue;
         drawItem(it, it.x, y);
+        Enter.end();
       }
     }
 
@@ -2151,11 +2153,12 @@
       drawFar();
       drawSparks();
       drawFlies();
-      drawBanks();
-      drawWalls();
+      // The banks, the rails, every item and the viper are the elements of the
+      // round's entrance (Enter); the canopy and the corners are the ground.
+      if (Enter.begin(view.w / 2, view.h / 2)) { drawBanks(); Enter.end(); }
+      if (Enter.begin(Layout.cx, view.h / 2)) { drawWalls(); Enter.end(); }
       drawItems();
-      drawBody();
-      drawHead();
+      if (Enter.begin(headX, anchorY)) { drawBody(); drawHead(); Enter.end(); }
 
       if (dieT >= 0) { ctx.restore(); drawDeathVeil(); }
     }

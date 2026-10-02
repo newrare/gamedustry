@@ -1084,6 +1084,193 @@
              update: update, begin: begin, end: end, render: render, post: post };
   })();
 
+  /* --- Enter — the round's entrance ---------------------------------------
+
+     A round used to cut from the intro (or the menu) straight into a world
+     already standing and already moving. Now it ASSEMBLES: the ground is
+     there first, then every element of the world arrives one after the
+     other, quickly, falling from the glass onto the scene — drawn big and
+     transparent, shrinking onto its own place with a small thud — and the
+     HUD drops in last. The ground stands ALONE for a full second first, so
+     the painted scene is seen for itself before anything covers it; the
+     whole entrance is then 1.8 to 3.6 s, and a tap skips it.
+
+     The game says what an element is, and nothing else:
+
+         if (Enter.begin(x, y)) { ...draw the element...; Enter.end(); }
+
+     (x, y) is the point the element lands on — its centre, in design px —
+     and the element's arrival slot is its ORDER in the frame: whatever
+     render() opens first lands first. Anything drawn outside a begin / end
+     is the ground, and is on screen from the first frame. A begin that
+     returns false is an element that has not arrived yet: skip it, and do
+     not call end(). Outside the entrance begin() returns true and costs
+     nothing, so the calls stay in render() for good. Elements may nest (a
+     board, then the pieces on it): a child composes with its parent and
+     takes a later slot.
+
+         Enter.begin(x, y, { last: true })
+
+     takes no slot in the order: it lands AFTER every other element, in one
+     piece, closing the entrance — for the one thing the round is about and
+     that must be read whole, like echomaze's labyrinth, which is on screen
+     to be memorised.
+
+         Enter.begin(x, y, { rank: 2 })
+
+     moves the element in the ORDER without moving it in the PAINT: the
+     slots go to the elements sorted by rank (default 0), in open order
+     inside one rank. It is how a game lands what it paints last before what
+     it paints first — gearball's gears (rank 0) over its track (1), then the
+     machinery behind both (2). A nested child keeps its own rank.
+
+     The slots are spread over the COUNT of elements, not one per beat: six
+     arrive a beat apart, sixty cascade in over the same second and a half.
+     The count is the last frame's, which is exact because the world is held
+     while the entrance plays: the bootstrap runs neither Game.update, nor
+     the round clock, nor the beat clock, and routes no input to the game.
+     The music starts when the world has landed (`done`), so a game on the
+     beat is on it from its first real frame.
+
+     The fade rides on `ctx.globalAlpha`. Games write it all the time — and
+     write 1 to "reset" it, which would pop an element to full opacity — so
+     for the length of the entrance the context's own globalAlpha is shadowed
+     by an accessor that scales whatever the game writes by the fade of the
+     elements open around it, and reads it back unscaled. It is deleted the
+     moment the entrance ends, so a round pays nothing for it.
+
+     A word the round says while it assembles — a "Get ready" fired from
+     reset() — waits for the landing (`later`, used by Pop.show and
+     Notify.say), so it reads over a finished scene rather than a half-built
+     one.
+
+     CONFIG.enter = false opts a game out: the round starts at once. */
+  var Enter = (function () {
+    var LEAD = 1.25;      // the ground alone: a full second once the screen
+                          // in front of it (.screen, .25 s) has faded out
+    var FLY = 0.5;        // one element's flight, glass to ground
+    var STEP = 0.11;      // between two slots, while there are few of them
+    var SPREAD = 1.3;     // ...and never more than this from first to last
+    var FROM = 2.1;       // the scale an element starts its flight at
+    var FADE = 0.35;      // share of the flight it takes to become opaque
+    var AFTER = 0.3;      // a `last` element leaves this long after the last slot
+    var on = false, t = 0, n = 0, count = 0, k = 1, stack = [], done = null, queue = [];
+    var lastNow = false, lastSeen = false;   // a `last` element this frame / ever
+    var ranks = [], slotOf = null;            // this frame's ranks; last frame's slot per open index
+    var alpha = null;     // the prototype's own globalAlpha accessor
+    try { alpha = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), "globalAlpha"); } catch (e) {}
+
+    function spread() { return Math.min(SPREAD, Math.max(0, count - 1) * STEP); }
+    function total() { return LEAD + spread() + (lastSeen ? AFTER : 0) + FLY; }
+    function frameEl() { return $("frame"); }
+
+    function shadowAlpha() {
+      if (!alpha || !alpha.get || !alpha.set) return;
+      try {
+        Object.defineProperty(ctx, "globalAlpha", {
+          configurable: true,
+          get: function () { return alpha.get.call(ctx) / (k || 1); },
+          set: function (v) {
+            if (!(v >= 0 && v <= 1)) return;   // the native setter ignores these too
+            alpha.set.call(ctx, v * k);
+          }
+        });
+      } catch (e) {}
+    }
+    function unshadowAlpha() { try { delete ctx.globalAlpha; } catch (e) {} }
+
+    function start(fn) {
+      if (on) finish();
+      if (CONFIG.enter === false) { if (fn) fn(); return; }
+      on = true; t = 0; n = 0; count = 0; k = 1; stack.length = 0; done = fn || null; queue = [];
+      ranks = []; slotOf = null;
+      lastNow = lastSeen = false;
+      shadowAlpha();
+      var f = frameEl();
+      if (f) { f.classList.remove("enter-go"); f.classList.add("enter-wait"); }
+    }
+    function finish() {
+      if (!on) return;
+      on = false; k = 1; stack.length = 0;
+      unshadowAlpha();
+      var f = frameEl();
+      if (f) {
+        f.classList.remove("enter-wait");
+        void f.offsetWidth;                // restart the HUD's drop on a replay
+        f.classList.add("enter-go");
+      }
+      var fn = done, q = queue; done = null; queue = [];
+      if (fn) fn();
+      for (var i = 0; i < q.length; i++) q[i]();
+    }
+    // The entrance is torn down with its round, without starting anything.
+    function cancel() {
+      if (!on) return;
+      done = null; queue = []; finish();
+    }
+    // Run fn once the world has landed; false (run it now) outside the entrance.
+    function later(fn) {
+      if (!on) return false;
+      queue.push(fn);
+      return true;
+    }
+    function update(dt) {
+      if (!on) return;
+      t += dt;
+      if (t >= total()) finish();
+    }
+    // Top of every render pass: last frame's count becomes the spread.
+    function frame() {
+      if (!on) return;
+      count = Math.max(count, n);
+      // last frame's elements, sorted by rank and open order: the slot each one lands in
+      if (n) {
+        var idx = [], i;
+        for (i = 0; i < n; i++) idx.push(i);
+        idx.sort(function (a, b) { return ((ranks[a] || 0) - (ranks[b] || 0)) || (a - b); });
+        slotOf = [];
+        for (i = 0; i < n; i++) slotOf[idx[i]] = i;
+      }
+      n = 0; ranks.length = 0;
+      lastSeen = lastSeen || lastNow; lastNow = false;
+      k = 1; stack.length = 0;             // an element left open is not carried over
+    }
+    function begin(x, y, opt) {
+      if (!on) return true;
+      var at;
+      if (opt && opt.last) {
+        lastNow = true;
+        at = LEAD + spread() + AFTER;
+      } else {
+        var o = n++, N = Math.max(count, n), i = slotOf && slotOf[o] != null ? slotOf[o] : o;
+        ranks[o] = (opt && opt.rank) || 0;
+        at = LEAD + (N > 1 ? i / (N - 1) : 0) * spread();
+      }
+      var p = clamp((t - at) / FLY, 0, 1);
+      if (p <= 0) return false;
+      /* easeOutBack with a short overshoot: the element passes its own size
+         by ~4 % — pressed into the ground — and settles back onto it. */
+      var q = p - 1, e = 1 + 1.9 * q * q * q + 0.9 * q * q;
+      var s = FROM + (1 - FROM) * e, a = clamp(p / FADE, 0, 1);
+      ctx.save();
+      stack.push(k);
+      if (alpha && alpha.get) alpha.set.call(ctx, alpha.get.call(ctx) * a);
+      k *= a;
+      ctx.translate(x, y); ctx.scale(s, s); ctx.translate(-x, -y);
+      return true;
+    }
+    function end() {
+      if (!on || !stack.length) return;
+      ctx.restore();
+      k = stack.pop();
+    }
+    return {
+      start: start, skip: finish, cancel: cancel, update: update, frame: frame,
+      begin: begin, end: end, later: later,
+      active: function () { return on; }
+    };
+  })();
+
   // --- Confetti: end-screen celebration on its own canvas ----------------
   var Confetti = (function () {
     var cvs = null, cx = null, parts = [], running = false, last = 0;

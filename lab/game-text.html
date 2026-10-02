@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lab — game text</title>
+<meta name="lab-group" content="tools">
 <style>
 /* ===========================================================================
    COPY DESK — every word a game shows a player, read as COPY.
@@ -27,6 +28,39 @@
      THE ROUND      callouts, floating values, what the canvas paints
      END SCREEN     the title and the stat rows
      LEVELS         the objective, one sentence with {n} in it
+
+   and, for a game that declares `web.army`, the four the barracks add: its own
+   screens (packages/webshell/army.js), the officers, the missions and the camp
+   events — hundreds of `{ en, fr }` stories in the manifest.
+
+   It opens on nothing. The list of games is the manifests alone, and a game
+   is parsed when it is picked — a spinner while it is. French first, because
+   the French half is the one nobody reads while writing the game.
+
+   Every row says WHERE it is read: the function the call is written in and
+   the line of source, and for a dictionary entry every call that writes its
+   English — the key says what it means, not where it shows.
+
+   CHECKED is the proofreader's own mark: a row read and signed off turns
+   green, and the mark lands in lab/text-review.json with the text it was
+   given on. A string edited since reads as unchecked again — a sign-off is
+   for words, not for a slot. A pending edit is amber, so green only ever
+   means read and right.
+
+   A mark travels: the same row reading the same words in another game is the
+   same decision, so checking it here checks it there. An edit that is applied
+   is checked by that apply, and a game every row of which is checked — with
+   nothing untranslated and nothing left to update — turns green in the
+   picker.
+
+   TO UPDATE is what a French edit leaves behind: applying it opens an action
+   on the English it translates, which closes when that English is checked
+   (still right) or changed. The TO UPDATE mode lists them.
+
+   NO USE FOUND is a dictionary entry whose English the game no longer writes.
+   It is marked for removal as soon as the game is read — struck through and
+   counted in APPLY, taken back with revert like any change — and APPLY takes
+   it out of the manifest.
 
    Every row is one string with an edit field, and APPLY writes the lot back
    (tools/lab/apply-text.mjs) — into manifest.json, games/<slug>/game.js and
@@ -58,7 +92,8 @@
    What is NOT here is as deliberate. The motor's own menu strings (PLAY,
    OPTIONS, LEAVE?) belong to packages/webshell/menu.js and are the same for
    the thirteen; a game that wants its own wording writes it under `web.copy`,
-   which IS listed. Copy a game assembles in a local variable before the call
+   which IS listed — the army layer is the one exception, since a single game
+   shows it. Copy a game assembles in a local variable before the call
    is out of reach of a parser and is not listed either — tools/lab/scan-text.mjs
    says so rather than half-listing it.
 
@@ -100,6 +135,14 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 #modes button:hover { color:#e8e6f5; }
 #modes button.on { background:#2a2a44; color:#e8e6f5; }
 
+#todo {
+  padding:8px 12px; border:1px solid #2c2c47; border-radius:9px; background:#0b0b12; color:#8b8ba7;
+  font:700 11px/1 inherit; letter-spacing:1.1px; cursor:pointer; white-space:nowrap;
+}
+#todo:hover { color:#e8e6f5; }
+#todo.on { background:#13221b; border-color:#2a5040; color:#5fd49a; }
+#stats span.done { background:#13221b; color:#5fd49a; }
+
 #apply {
   padding:9px 16px; border:0; border-radius:8px; background:#2a2a44; color:#6f6f92;
   font:700 11px/1 inherit; letter-spacing:1.2px; cursor:not-allowed; white-space:nowrap;
@@ -129,8 +172,13 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 
 .row { background:#151522; border:1px solid #22223a; border-left:3px solid #22223a; border-radius:9px; margin-bottom:7px; padding:8px 11px; }
 .row:hover { border-color:#2e2e4c; border-left-color:#2e2e4c; }
-.row.changed { border-left-color:#8fe0b8; background:#15201b; }
+.row.changed { border-left-color:#ffb648; background:#211c12; }
+.row.checked { border-left-color:#5fd49a; background:#13221b; border-color:#1f3a2c; }
+.row.checked:hover { border-color:#2a5040; border-left-color:#5fd49a; }
 .row.editing { border-left-color:#7ea6ff; }
+.row.todo { border-left-color:#b89cff; background:#1a1628; border-color:#2f2748; }
+.row.dropped { border-left-color:#e07aa8; background:#22141c; }
+.row.dropped .val { color:#8b6a7a; text-decoration:line-through; }
 
 .meta { display:flex; align-items:center; gap:9px; font-size:11px; flex-wrap:wrap; }
 .meta .ctx { font-weight:700; color:#c9c9e0; }
@@ -146,10 +194,22 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .ico { width:24px; height:22px; border:0; border-radius:6px; background:#1f1f31; color:#8b8ba7; font-size:12px; line-height:1; cursor:pointer; }
 .ico:hover { background:#2a2a44; color:#e8e6f5; }
 .ico.hide { display:none; }
+.ico.check.on { background:#5fd49a; color:#0b0b12; }
+.ico.check.on:hover { background:#7de3b0; }
+.meta .pill.stale { background:#2a2214; color:#c99a4a; }
+.meta .pill.todo { background:#2a2240; color:#b89cff; }
+.meta .pill.drop { background:#3a1a2a; color:#e07aa8; }
+.todo-fr { margin-top:4px; font-size:12px; color:#b89cff; }
+.todo-fr u { text-decoration:none; font:700 10px/1 inherit; letter-spacing:1px; color:#7a68a8; margin-right:7px; }
+.todo-fr s { color:#6f6f92; margin-right:6px; }
+#stats span.todo { background:#2a2240; color:#b89cff; cursor:pointer; }
+#game-pick.done { border-color:#2a5040; color:#5fd49a; }
+#game-pick option { color:#e8e6f5; background:#0b0b12; }
+#game-pick option.done { color:#5fd49a; }
 
 .val { margin-top:5px; font-size:14px; font-weight:500; color:#e8e6f5; white-space:pre-wrap; word-break:break-word; cursor:text; }
 .val:empty::before { content:"(empty)"; color:#4f4f6b; font-style:italic; }
-.row.changed .val { color:#8fe0b8; }
+.row.changed .val { color:#ffcf85; }
 .row.changed .was { margin-top:3px; font-size:11px; color:#6f6f92; text-decoration:line-through; }
 
 textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-weight:500; resize:vertical; min-height:38px; }
@@ -167,6 +227,22 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 .expr mark { background:none; color:#c99a4a; }
 
 .empty { padding:40px 0; text-align:center; color:#5d5d7c; }
+
+/* Where the row is read: the function and the source line, dimmed, one line
+   each — enough to place the moment, not a code viewer. */
+.uses { margin-top:6px; padding-left:9px; border-left:2px solid #22223a; display:flex; flex-direction:column; gap:3px; }
+.use-h { font-size:11px; color:#8b8ba7; }
+.use-h b { color:#b3b3cc; font-weight:700; }
+.use-h code { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b89cff; }
+.use-h .ln { font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#5d5d7c; margin-left:4px; }
+.use .src { font:500 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#5d5d7c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.use .src mark { background:none; color:#c9c9e0; }
+.use.more { font-size:11px; color:#5d5d7c; }
+.meta .pill.unused { background:#2a1a24; color:#e07aa8; }
+
+.loading { padding:60px 0; display:flex; flex-direction:column; align-items:center; gap:14px; color:#6f6f92; }
+.spin { width:28px; height:28px; border-radius:50%; border:3px solid #26263c; border-top-color:#7ea6ff; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
 /* --- the report ---------------------------------------------------------- */
 #report {
@@ -189,17 +265,19 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
   <h1>Copy desk<small id="sub">every word a game shows</small></h1>
   <select id="game-pick"></select>
   <div id="modes">
-    <button data-mode="all" class="on">All</button>
+    <button data-mode="fr" class="on">FR</button>
     <button data-mode="en">EN</button>
-    <button data-mode="fr">FR</button>
+    <button data-mode="all">All</button>
+    <button data-mode="todo">To update</button>
     <button data-mode="changed">Changed</button>
   </div>
+  <button id="todo" title="show only what is left to read">Hide checked</button>
   <input type="text" id="filter" placeholder="filter — a word, a context, a file  ( / )">
   <div id="stats"></div>
   <button id="apply">Apply</button>
 </div>
 
-<div id="list"><div class="empty">loading…</div></div>
+<div id="list"><div class="empty">Choose a game</div></div>
 <div id="report" class="hide"></div>
 
 <script>
@@ -210,7 +288,11 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
    spliced over — see tools/lab/apply-text.mjs.
    --------------------------------------------------------------------------- */
 var $ = function (id) { return document.getElementById(id); };
-var scan = null, plan = {}, mode = "all", filter = "";
+var scan = null, plan = {}, mode = "fr", filter = "";
+var drop = {};                              // id → true: an unused entry APPLY removes
+var status = {}, titles = {};               // slug → what the server says of it, and its name
+var hideChecked = false;
+var loading = null;                         // the slug being fetched, or null
 
 var LANGS = { en: "English", fr: "Français", all: "Every language" };
 
@@ -240,20 +322,52 @@ function changed(row) {
 function valueOf(row) {
   return Object.prototype.hasOwnProperty.call(plan, row.id) ? plan[row.id] : row.text;
 }
+function dropped(row) { return !!drop[row.id]; }
+function pending(row) { return changed(row) || dropped(row); }
 function countChanged() {
+  return scan ? scan.rows.filter(pending).length : 0;
+}
+// What the reader typed, as opposed to the removals the scan proposed itself.
+function countEdits() {
   return scan ? scan.rows.filter(changed).length : 0;
 }
+function todo(row) { return scan && scan.todo ? scan.todo[row.id] : null; }
+
+/* A mark counts while the file still reads the text it was given on. */
+function mark(row) { return scan && scan.review ? scan.review[row.id] : null; }
+function checked(row) { var m = mark(row); return !!m && m.text === row.text; }
+function stale(row) { var m = mark(row); return !!m && m.text !== row.text; }
 
 /* --- drawing ------------------------------------------------------------- */
 function where(row) {
-  if (row.where !== "game.js") return row.where;
-  var lines = row.lines || [row.line];
-  return "game.js:" + lines[0];
+  var line = row.lines ? row.lines[0] : row.line;
+  return line ? row.where + ":" + line : row.where;
+}
+
+/* Where the row is read in the game. A game.js row lists its own call sites;
+   a dictionary entry lists every row that writes its English; an army.js key
+   the first place the barracks read it. */
+function drawUses(row) {
+  var u = row.uses || [];
+  if (!u.length) return "";
+  var needle = esc(JSON.stringify(row.group === "words" ? row.context : row.text));
+  var out = u.slice(0, 3).map(function (x) {
+    var head = [];
+    if (row.group === "words" && x.context) head.push("<b>" + esc(x.context) + "</b>");
+    if (x.fn) head.push("in <code>" + esc(x.fn) + "</code>");
+    head.push('<span class="ln">' + esc((x.file || "game.js") + (x.line ? ":" + x.line : "")) + "</span>");
+    var src = x.src ? esc(x.src).split(needle).join("<mark>" + needle + "</mark>") : "";
+    return '<div class="use"><div class="use-h">' + head.join(" ") + "</div>" +
+      (src ? '<div class="src" title="' + esc(x.src) + '">' + src + "</div>" : "") + "</div>";
+  });
+  if (u.length > 3) out.push('<div class="use more">+ ' + (u.length - 3) + " more</div>");
+  return '<div class="uses">' + out.join("") + "</div>";
 }
 
 function drawRow(row) {
   var el = document.createElement("div");
-  el.className = "row" + (changed(row) ? " changed" : "");
+  el.className = "row" + (dropped(row) ? " dropped" : changed(row) ? " changed" : todo(row) ? " todo" :
+    checked(row) ? " checked" : "");
   el.dataset.id = row.id;
 
   var sites = row.targets.length;
@@ -267,15 +381,28 @@ function drawRow(row) {
     bits.push('<span class="pill sites" title="applying this row writes all of them">' + extra + "</span>");
   }
   if (row.fragment) bits.push('<span class="pill frag" title="one literal inside a bigger expression">fragment</span>');
+  if (row.unused) bits.push('<span class="pill unused" title="nothing in game.js writes this English — stale, or built at runtime">no use found</span>');
+  if (dropped(row)) bits.push('<span class="pill drop" title="Apply takes this entry out of the manifest">will be removed</span>');
+  if (todo(row)) bits.push('<span class="pill todo" title="the French it translates changed on ' + esc(todo(row).at) +
+    ' — check it if it still reads right, or edit it">FR changed · update EN</span>');
   if (row.desync != null) {
     bits.push('<span class="pill desync" title="page.html reads &ldquo;' + esc(row.desync) +
       '&rdquo; — the shell overwrites it from CONFIG at boot, so the source lies">page.html drifted</span>');
     bits.push('<button class="ico sync" title="write this string into page.html too">&#8646;</button>');
   }
+  if (stale(row)) bits.push('<span class="pill stale" title="checked on &ldquo;' + esc(mark(row).text) +
+    '&rdquo; — the text has changed since">changed since checked</span>');
   if (row.hint) bits.push('<span class="hint">' + esc(row.hint) + "</span>");
   bits.push('<span class="sp"></span>');
-  bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
-  bits.push('<button class="ico undo' + (changed(row) ? "" : " hide") + '" title="Revert">&#8634;</button>');
+  // A pending edit is not what the file says yet, so there is nothing to sign off.
+  // On a row with an action, the check answers it: the English still reads right.
+  var on = checked(row) && !todo(row);
+  if (!pending(row)) bits.push('<button class="ico check' + (on ? " on" : "") + '" title="' +
+    (todo(row) ? "Still right — check it and close the action" :
+     on ? "Checked " + esc(mark(row).at) + " — click to take it back" : "Mark as checked") + '">&#10003;</button>');
+  if (row.unused && !dropped(row)) bits.push('<button class="ico trash" title="Remove it from the manifest on Apply">&#128465;</button>');
+  if (!dropped(row)) bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
+  bits.push('<button class="ico undo' + (pending(row) ? "" : " hide") + '" title="Revert">&#8634;</button>');
 
   var html = '<div class="meta">' + bits.join("") + "</div>";
   html += '<div class="val">' + esc(valueOf(row)) + "</div>";
@@ -284,24 +411,38 @@ function drawRow(row) {
   if (row.other != null) {
     html += '<div class="other"><u>' + (row.lang === "fr" ? "EN" : "FR") + "</u>" + esc(row.other) + "</div>";
   }
+  if (todo(row)) html += '<div class="todo-fr"><u>FR NOW</u>' + (todo(row).was != null ? "<s>" + esc(todo(row).was) + "</s>" : "") +
+    esc(todo(row).fr) + "</div>";
   if (row.expr) html += '<div class="expr">' + esc(row.expr) + "</div>";
+  html += drawUses(row);
 
   el.innerHTML = html;
   return el;
 }
 
 function matches(row) {
-  if (mode === "changed") return changed(row);
-  if (mode !== "all" && row.lang !== mode) return false;
+  if (mode === "changed") return pending(row);
+  if (mode === "todo") return !!todo(row);
+  if (hideChecked && checked(row) && !todo(row)) return false;
+  // A string with no language is read in both, so both modes show it.
+  if (mode !== "all" && row.lang !== mode && row.lang !== "all") return false;
   if (!filter) return true;
-  var hay = (row.context + " " + valueOf(row) + " " + where(row) + " " + (row.other || "")).toLowerCase();
+  var hay = (row.context + " " + valueOf(row) + " " + where(row) + " " + (row.other || "") + " " + (row.hint || "") + " " +
+    (row.uses || []).map(function (u) { return (u.fn || "") + " " + (u.context || ""); }).join(" ")).toLowerCase();
   return hay.indexOf(filter) >= 0;
 }
 
 function draw() {
   var list = $("list");
+  // Redrawing empties the list, which would throw the reader back to the top.
+  var keep = list.scrollTop;
   list.innerHTML = "";
-  if (!scan) { list.innerHTML = '<div class="empty">loading…</div>'; return; }
+  if (loading) {
+    list.innerHTML = '<div class="loading"><div class="spin"></div>reading ' + esc(loading) + "…</div>";
+    drawHead();
+    return;
+  }
+  if (!scan) { list.innerHTML = '<div class="empty">Choose a game</div>'; drawHead(); return; }
 
   var shown = 0;
   ["en", "fr", "all"].forEach(function (lang) {
@@ -324,6 +465,7 @@ function draw() {
   });
 
   if (!shown) list.innerHTML = '<div class="empty">nothing matches</div>';
+  list.scrollTop = keep;
   drawHead();
 }
 
@@ -332,9 +474,15 @@ function drawHead() {
   var btn = $("apply");
   btn.className = n ? "live" : "";
   btn.innerHTML = n ? "Apply <b>" + n + "</b>" : "Apply";
-  if (!scan) return;
+  if (!scan) { $("stats").innerHTML = ""; $("sub").textContent = "every word a game shows"; return; }
   var s = ['<span><b>' + scan.counts.en + "</b> EN</span>", '<span><b>' + scan.counts.fr + "</b> FR</span>"];
   if (scan.counts.fragments) s.push("<span>" + scan.counts.fragments + " fragments</span>");
+  // What is left to read, in the language on screen.
+  var pool = scan.rows.filter(function (r) { return mode === "all" || mode === "changed" || mode === "todo" || r.lang === mode || r.lang === "all"; });
+  var ok = pool.filter(function (r) { return checked(r) && !todo(r); }).length;
+  s.push('<span class="' + (ok && ok === pool.length ? "done" : "") + '"><b>' + ok + "</b> / " + pool.length + " checked</span>");
+  var todos = scan.rows.filter(todo).length;
+  if (todos) s.push('<span class="todo" id="todo-chip" title="English whose French changed — show them">' + todos + " EN to update</span>");
   // The work left, not a number of rows: a game is done when it is 0.
   s.push(scan.counts.untranslated
     ? '<span class="warn" title="' + esc((scan.missing || []).join(" · ")) + '">' +
@@ -343,6 +491,30 @@ function drawHead() {
   (scan.warnings || []).forEach(function (w) { s.push('<span class="warn" title="' + esc(w) + '">' + esc(w.slice(0, 44)) + "…</span>"); });
   $("stats").innerHTML = s.join("");
   $("sub").textContent = scan.title + " · v" + scan.version;
+}
+
+/* --- checking ------------------------------------------------------------
+   The mark is written by the server, which refuses it when the file no longer
+   reads what the page shows; the page redraws on the marks it hands back. */
+function toggleCheck(row) {
+  if (!row || pending(row)) return;
+  var on = !checked(row) || !!todo(row);
+  fetch("api/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ game: scan.slug, id: row.id, text: on ? row.text : null })
+  }).then(function (r) { return r.json(); }).then(function (res) {
+    if (res.error) { report({ applied: [], skipped: [], error: res.error }); return; }
+    scan.review = res.review;
+    scan.todo = res.todo || {};
+    setStatus(res.status);
+    if (res.also && res.also.length) note((on ? "checked" : "unchecked") + " in " + res.also.length + " other game" +
+      (res.also.length > 1 ? "s" : "") + " too — " + res.also.map(function (g) { return titles[g] || g; }).join(", "));
+    // One card changes: redraw it alone, unless hiding checked rows takes it away.
+    var el = $("list").querySelector('.row[data-id="' + CSS.escape(row.id) + '"]');
+    if (el && !hideChecked && mode !== "todo") { el.replaceWith(drawRow(row)); drawHead(); }
+    else draw();
+  }).catch(function (e) { report({ applied: [], skipped: [], error: String(e) }); });
 }
 
 /* --- editing ------------------------------------------------------------- */
@@ -389,11 +561,14 @@ function edit(el) {
 $("list").addEventListener("click", function (e) {
   var el = e.target.closest(".row");
   if (!el) return;
-  if (e.target.closest(".undo")) { delete plan[el.dataset.id]; draw(); return; }
+  if (e.target.closest(".undo")) { delete plan[el.dataset.id]; delete drop[el.dataset.id]; draw(); return; }
+  if (e.target.closest(".trash")) { drop[el.dataset.id] = true; draw(); return; }
+  if (e.target.closest(".check")) { toggleCheck(rowById(el.dataset.id)); return; }
   if (e.target.closest(".sync")) { plan[el.dataset.id] = rowById(el.dataset.id).text; draw(); return; }
   if (e.target.closest(".at")) {
     var row = rowById(el.dataset.id);
-    var ref = "games/" + scan.slug + "/" + (row.where === "game.js" ? "game.js:" + row.line : row.where);
+    var file = row.targets[0].file;
+    var ref = (file.indexOf("/") >= 0 ? file : "games/" + scan.slug + "/" + file) + (row.line ? ":" + row.line : "");
     navigator.clipboard && navigator.clipboard.writeText(ref);
     e.target.textContent = "copied";
     setTimeout(draw, 600);
@@ -403,16 +578,34 @@ $("list").addEventListener("click", function (e) {
 });
 
 /* --- loading and applying ------------------------------------------------ */
+/* An entry nothing writes is proposed for removal the moment the game is read:
+   the reader sees it struck through and counted, and keeps it with revert. */
+function proposeDrops() {
+  drop = {};
+  if (scan) scan.rows.forEach(function (r) { if (r.unused) drop[r.id] = true; });
+}
+
 function load(slug) {
   plan = {};
+  drop = {};
   scan = null;
+  loading = slug || null;
   draw();
+  if (!slug) return;
   fetch("api/text?game=" + encodeURIComponent(slug))
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
     .then(function (data) {
+      if (loading !== slug) return;           // another game was picked meanwhile
+      loading = null;
       scan = data;
-      localStorage.setItem("text:game", slug);
+      proposeDrops();
       draw();
+    })
+    .catch(function (e) {
+      if (loading !== slug) return;
+      loading = null;
+      draw();
+      $("list").innerHTML = '<div class="empty">could not read ' + esc(slug) + " — " + esc(e.message) + "</div>";
     });
 }
 
@@ -423,8 +616,13 @@ function report(res) {
   res.applied.forEach(function (a) {
     html += '<p class="ok">' + esc(a.what) + "<small>&ldquo;" + esc(a.from) + "&rdquo; &rarr; &ldquo;" + esc(a.to) + "&rdquo; · " + esc(a.where) + "</small></p>";
   });
+  (res.removed || []).forEach(function (d) {
+    html += '<p class="ok">' + esc(d.what) + "<small>removed from manifest.json &mdash; &ldquo;" + esc(d.text) + "&rdquo;</small></p>";
+  });
+  if (res.todo && res.todo.length) html += '<p>' + res.todo.length + " English string" + (res.todo.length > 1 ? "s" : "") +
+    " to update after the French &mdash; the <b>To update</b> mode lists them</p>";
   res.skipped.forEach(function (s) { html += '<p class="no">' + esc(s) + "</p>"; });
-  if (!res.applied.length && !res.skipped.length && !res.error) html += "<p>nothing to apply</p>";
+  if (!res.applied.length && !(res.removed || []).length && !res.skipped.length && !res.error) html += "<p>nothing to apply</p>";
   if (res.version) html += "<p>version &rarr; <b>" + esc(res.version) + "</b></p>";
   if (res.rebuilt) html += "<p>rebuilt " + esc(res.rebuilt.join(", ")) + "</p>";
   box.innerHTML = html;
@@ -437,13 +635,15 @@ $("apply").addEventListener("click", function () {
   var edits = scan.rows.filter(changed).map(function (r) {
     return { id: r.id, was: r.text, text: plan[r.id] };
   });
+  var remove = scan.rows.filter(dropped).map(function (r) { return { id: r.id, was: r.text }; });
   $("apply").innerHTML = "Applying…";
   fetch("api/apply", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ game: scan.slug, edits: edits })
+    body: JSON.stringify({ game: scan.slug, edits: edits, remove: remove })
   }).then(function (r) { return r.json(); }).then(function (res) {
-    if (res.scan) { scan = res.scan; plan = {}; }
+    if (res.scan) { scan = res.scan; plan = {}; proposeDrops(); }
+    setStatus(res.status);
     // A refused edit keeps its typing, so it can be looked at rather than lost.
     (res.skipped || []).forEach(function (s) {
       edits.forEach(function (e) { if (s.indexOf(e.id) === 0) plan[e.id] = e.text; });
@@ -454,14 +654,34 @@ $("apply").addEventListener("click", function () {
 });
 
 $("filter").addEventListener("input", function () { filter = this.value.trim().toLowerCase(); draw(); });
-$("game-pick").addEventListener("change", function () { load(this.value); });
-$("modes").addEventListener("click", function (e) {
-  var b = e.target.closest("button");
-  if (!b) return;
-  mode = b.dataset.mode;
-  [].forEach.call(this.children, function (c) { c.classList.toggle("on", c === b); });
+var picked = "";
+$("game-pick").addEventListener("change", function () {
+  if (countEdits() && !confirm(countEdits() + " unapplied change(s) on " + scan.title + " — drop them?")) {
+    this.value = picked;
+    return;
+  }
+  picked = this.value;
+  this.className = status[picked] && status[picked].done ? "done" : "";
+  load(this.value);
+});
+$("stats").addEventListener("click", function (e) {
+  if (!e.target.closest("#todo-chip")) return;
+  setMode("todo");
+});
+$("todo").addEventListener("click", function () {
+  hideChecked = !hideChecked;
+  this.classList.toggle("on", hideChecked);
   draw();
 });
+$("modes").addEventListener("click", function (e) {
+  var b = e.target.closest("button");
+  if (b) setMode(b.dataset.mode);
+});
+function setMode(m) {
+  mode = m;
+  [].forEach.call($("modes").children, function (c) { c.classList.toggle("on", c.dataset.mode === m); });
+  draw();
+}
 
 document.addEventListener("keydown", function (e) {
   if (e.key === "/" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement !== $("filter")) {
@@ -470,17 +690,47 @@ document.addEventListener("keydown", function (e) {
   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); $("apply").click(); }
 });
 
+/* The manifests only, so the picker is up at once; nothing is parsed until a
+   game is chosen. */
+var versions = {};
 fetch("api/games").then(function (r) { return r.json(); }).then(function (list) {
-  var pick = $("game-pick");
-  pick.innerHTML = list.map(function (g) {
-    return '<option value="' + g.slug + '">' + g.title + "  ·  " + g.counts.en + " EN / " + g.counts.fr + " FR" +
-      (g.counts.untranslated ? "  ·  " + g.counts.untranslated + " untranslated" : "") +
-      (g.warnings ? "  !" : "") + "</option>";
+  $("game-pick").innerHTML = '<option value="">Choose a game</option>' + list.map(function (g) {
+    titles[g.slug] = g.title;
+    versions[g.slug] = g.version;
+    return '<option value="' + esc(g.slug) + '"></option>';
   }).join("");
-  var saved = localStorage.getItem("text:game");
-  if (saved && list.some(function (g) { return g.slug === saved; })) pick.value = saved;
-  load(pick.value);
+  list.forEach(function (g) { drawOption(g.slug); });
+  // Every game's status, read after the picker is up: it parses what the
+  // server has not cached yet (~2 s cold).
+  return fetch("api/status").then(function (r) { return r.json(); }).then(setStatus);
 });
+
+/* A game every row of which is checked — nothing untranslated, nothing left to
+   update — is green, and wears a tick, since a native popup may draw the
+   options without their colour. */
+function drawOption(slug) {
+  var opt = $("game-pick").querySelector('option[value="' + CSS.escape(slug) + '"]');
+  if (!opt) return;
+  var st = status[slug];
+  var txt = (st && st.done ? "\u2713 " : "") + (titles[slug] || slug) + (versions[slug] ? "  ·  v" + versions[slug] : "");
+  if (st && !st.done) txt += "  ·  " + st.checked + "/" + st.total + (st.todo ? "  ·  " + st.todo + " to update" : "");
+  opt.textContent = txt;
+  opt.className = st && st.done ? "done" : "";
+  if (slug === picked) $("game-pick").className = opt.className;
+}
+
+function setStatus(map) {
+  if (!map) return;
+  Object.keys(map).forEach(function (slug) { status[slug] = map[slug]; drawOption(slug); });
+}
+
+// A line in the report box, for what a click did beyond the row it was on.
+function note(text) {
+  var box = $("report");
+  box.innerHTML = '<h2>CHECK <button class="ico" id="report-x">&times;</button></h2><p>' + esc(text) + "</p>";
+  box.classList.remove("hide");
+  $("report-x").addEventListener("click", function () { box.classList.add("hide"); });
+}
 </script>
 </body>
 </html>

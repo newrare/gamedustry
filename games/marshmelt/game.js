@@ -864,15 +864,26 @@
       // A rock that caught fire keeps its silhouette and wears the flames on
       // top: it reads as "that rock is burning", not as a new object.
       var i;
-      for (i = 0; i < rocks.length; i++) if (!rocks[i].hot) drawRock(rocks[i]);
+      for (i = 0; i < rocks.length; i++) if (!rocks[i].hot) enterRock(rocks[i], drawRock);
       // the burning ones go over the plain ones: a rock that is about to give
       // way is the read the player needs, and array order must not bury it
-      for (i = 0; i < rocks.length; i++) if (rocks[i].burning) drawRock(rocks[i]);
-      for (i = 0; i < rocks.length; i++) if (rocks[i].hot) drawFire(rocks[i]);
+      for (i = 0; i < rocks.length; i++) if (rocks[i].burning) enterRock(rocks[i], drawRock);
+      for (i = 0; i < rocks.length; i++) if (rocks[i].hot) enterRock(rocks[i], drawFire);
 
       if (dead) drawMallow();          // sinking: the crust closes over it
-      drawLava();
-      if (!dead) { drawAim(); drawMallow(); drawFocusBar(); }
+      if (Enter.begin(view.w / 2, (lavaY + view.h) / 2)) { drawLava(); Enter.end(); }
+      if (!dead && Enter.begin(mallow.x, mallow.y)) {
+        drawAim(); drawMallow(); drawFocusBar();
+        Enter.end();
+      }
+    }
+
+    /* The rocks, the lake and the body are the elements of the round's
+       entrance (Enter), landing in that order. A rock still above the glass
+       takes no beat of it: nothing of it would be seen landing. */
+    function enterRock(rk, draw) {
+      if (rk.y + rk.r * 2 < 0) { draw(rk); return; }
+      if (Enter.begin(rk.x, rk.y + rk.sunk * 60)) { draw(rk); Enter.end(); }
     }
 
     function drawEmbers() {

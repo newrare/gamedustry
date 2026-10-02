@@ -1046,12 +1046,20 @@
 
     function render() {
       ctx.drawImage(bg.cvs, 0, 0, view.w, view.h);
-      drawBounds();
+      // Each Enter.begin/end below is one element of the round's entrance:
+      // the field, the wells, the planets, the hint, and the comet last.
+      if (Enter.begin(view.w / 2, (Bounds.top + Bounds.bottom) / 2)) {
+        drawBounds();
+        Enter.end();
+      }
       drawPlanets();
       drawLandingHint();
-      drawAura();                 // behind the comet, so the tail stays crisp
-      drawTail();
-      drawHead();
+      if (Enter.begin(trail[0].x, trail[0].y)) {
+        drawAura();               // behind the comet, so the tail stays crisp
+        drawTail();
+        drawHead();
+        Enter.end();
+      }
     }
 
     /* The containment field: a thin line on each wall of Bounds. It exists so
@@ -1090,11 +1098,14 @@
       // exactly where a shot bends the most.
       for (i = 0; i < planets.length; i++) {
         p = planets[i];
+        if (!Enter.begin(p.x, p.y)) continue;
         ctx.fillStyle = p.field;
         ctx.fillRect(p.x - p.pullR, p.y - p.pullR, p.pullR * 2, p.pullR * 2);
+        Enter.end();
       }
       for (i = 0; i < planets.length; i++) {
         p = planets[i];
+        if (!Enter.begin(p.x, p.y)) continue;
         var host = !comet.flying && comet.host === p;
         var danger = host && orbitTurns > C.maxOrbits - 0.6;
         // Gravity well: a slowly turning dashed circle, kept almost subliminal.
@@ -1107,6 +1118,7 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, p.captureR, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
         ctx.drawImage(p.sprite, p.x - p.half, p.y - p.half, p.size, p.size);
+        Enter.end();
       }
     }
 
@@ -1168,7 +1180,7 @@
         if (res === "wall") { if (++bounced > 1) break; }
         else if (res) { land = res; break; }
       }
-      if (!land) return;
+      if (!land || !Enter.begin(land.x, land.y)) return;
       // Red ring: the shot lands, but only after hitting a wall — which costs
       // the chain. That single colour tells the player to wait a beat.
       ctx.globalAlpha = 0.26 + 0.14 * Math.sin(clock * 6);
@@ -1176,6 +1188,7 @@
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(land.x, land.y, land.r + 12, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
+      Enter.end();
     }
 
     /* The dust tail. Same trail as ever, but drawn as a plume rather than a

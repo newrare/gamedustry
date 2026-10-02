@@ -4,8 +4,8 @@ How a game gets more than one bed out of a single music file: a different
 stretch of it per biome, per level band or per mode, and a quiet, slower window
 of the same track under the menus.
 
-`games/arcider` is the reference; `games/blight`, `games/echomaze`,
-`games/radiam` and `games/spinshock` followed.
+`games/arcider` is the reference; `games/blight`, `games/bouncetry`,
+`games/echomaze`, `games/gearball`, `games/radiam` and `games/spinshock` followed.
 This document is the procedure for the other eight — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
@@ -280,9 +280,9 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 | `echomaze`   | 171.4 s | 36.0 s       | **5 map bands + menu**, one hall apiece  |
 | `slipdeck`   | 115.8 s | 46.9 s       | none yet — the master is long enough     |
 | `marshmelt`  | 54.0 s  | 35.0 s       | none yet — enough for two, plus the menu |
-| `bouncetry`  | 30.7 s  | 30.8 s       | needs a longer master first              |
+| `bouncetry`  | 177.8 s | 30.5 s       | **5 biomes + menu**, one scene apiece    |
 | `chainring`  | 30.8 s  | 30.8 s       | **no** — it is beat-locked (see Traps)   |
-| `gearball`   | 30.5 s  | 30.6 s       | needs a longer master first              |
+| `gearball`   | 160.1 s | 30.8 s       | **5 machines + menu**, one layout apiece |
 | `orbinity`   | 27.0 s  | 27.0 s       | needs a longer master first              |
 | `pawko`      | 179.3 s | 35.0 s       | **5 map bands + menu**, one scene apiece |
 | `radiam`     | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |

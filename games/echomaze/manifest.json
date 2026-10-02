@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.7",
+  "version": "1.8.8",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -51,11 +51,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin à l’écho des balles.",
+      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l’écho des balles.",
       "tags": [
-        "Vise et tire",
+        "Mémorise et vise",
         "Écholocation",
-        "1 sortie sur 6"
+        "Une seule sortie"
       ]
     },
     "en": {
@@ -102,14 +102,14 @@
           },
           {
             "kicker": "Echo",
-            "line": "Les <b>rebonds</b> peuvent aider"
+            "line": "Aide-toi des <b>rebonds</b>"
           },
           {
             "kicker": "Satisfaisant",
             "line": "Un <b>plaisir</b> à parcourir"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
@@ -206,7 +206,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> reading the maze",
-        "fr": "Marque <b>{n}</b> dans le labyrinthe"
+        "fr": "Marque <b>{n}</b> points dans le labyrinthe"
       },
       "bands": {
         "en": [

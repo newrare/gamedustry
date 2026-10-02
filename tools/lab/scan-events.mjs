@@ -26,6 +26,7 @@
 
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -323,7 +324,8 @@ function previewOf(call) {
   // The copy: a literal is already in place, a runtime string gets a stand-in.
   if (call.name === 'Pop.show') {
     const o = args[1] || (args[1] = {});
-    if (o.word == null) o.word = stubWord(call.wordExpr, String(args[0] || 'POP').toUpperCase());
+    // No word in the source is the style's own word: the motor supplies it.
+    if (o.word == null && call.wordExpr) o.word = stubWord(call.wordExpr, '');
     if (o.sub == null && call.subExpr) o.sub = stubWord(call.subExpr, '');
     if (o.at == null) delete o.at;                       // let the style decide
   } else if (call.name === 'Pop.text') {
@@ -334,6 +336,279 @@ function previewOf(call) {
     if (o.sub == null && call.subExpr) o.sub = stubWord(call.subExpr, '');
   }
   return { fn: call.name, args, exact };
+}
+
+/* ── a built word, with real values in it ─────────────────────────────────
+   `"x" + mult + Lang.t(" streak")` is copy with HOLES in it, and a stand-in
+   that reads "X12 STREAK" says nothing about either language: the French half
+   comes out of the `Lang.t` the game wrapped around its own literal, which only
+   running the expression can apply. So the bench runs it — the game's own
+   expression, inside each language's build — and the holes become SLOTS: the
+   locals of the round (`mult`, `T2.name`, `cardName(c)`) the bench cannot read,
+   offered as inputs with a plausible value already in them.
+
+   Not everything is a hole. A root the build can resolve stays live:
+     live     Lang, CONFIG, upper, Math… — the frame's own
+     alias    `var T = CONFIG.play` → T.cuts reads the game's real tuning
+     table    `var TIER_WORD = ["", "Great!", …]` → embedded, so
+              TIER_WORD[tier] is a real word and `tier` is a pick of its keys
+     row      `T2 = TIERS[tier]` → T2.name is TIERS[tier].name, same pick
+   Everything else is a slot, and a slot's first value is a guess from its
+   name and from where it sits (a ternary's condition is a boolean, an index
+   is the table's first key, a `.name` is one of the names the source writes). */
+const LIVE_ROOTS = new Set(['Lang', 'CONFIG', 'upper', 'Math', 'String', 'Number', 'JSON',
+  'parseInt', 'parseFloat', 'isNaN', 'isFinite']);
+const KEYWORDS = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'new', 'in',
+  'instanceof', 'void', 'NaN', 'Infinity', 'return']);
+const ID0 = /[A-Za-z_$]/, IDC = /[\w$]/;
+
+/* What a game's source declares that the bench can stand on: its literal
+   tables and constants, its aliases of CONFIG, the locals bound to a row of a
+   table, and every string it writes under a property name (the suggestions a
+   `.name` slot offers). Read once per game, comments blanked. */
+export function textEnv(src) {
+  const clean = stripComments(src), mask = codeMask(clean);
+  const tables = {}, aliases = {}, rows = {}, props = {};
+  let m;
+  const decl = /(?:\bvar\s+|,\s*)([A-Za-z_$][\w$]*)\s*=\s*/g;
+  while ((m = decl.exec(clean))) {
+    const name = m[1], at = m.index + m[0].length, c = clean[at];
+    if (!mask[at] && c !== '"') continue;
+    if (LIVE_ROOTS.has(name)) continue;               // the frame's own, never a copy
+    /* A table is a CONSTANT, and the games write those in capitals (TIERS,
+       CARDS, TIER_WORD). A lowercase literal is a local that happens to start
+       as one — `var foe = {…}` in one function is not the foe of another. */
+    if (c === '[' || c === '{') {
+      if (tables[name] || !/^[A-Z][A-Z0-9_]*$/.test(name)) continue;
+      const lit = c + argsOf(clean, mask, at).text + (c === '[' ? ']' : '}');
+      const v = jsonish(lit).value;
+      if (v && typeof v === 'object' && Object.keys(v).length) tables[name] = v;
+      continue;
+    }
+    const rest = clean.slice(at, at + 160);
+    let a;
+    /* An alias is a NAME FOR THE TUNING (`C`, `T`, `P`), written with a capital.
+       `var gain = CONFIG.cureScore` is a local that starts there and moves. */
+    if ((a = /^(CONFIG(?:\.[\w$]+)*)\s*[,;)]/.exec(rest))) { if (!aliases[name] && /^[A-Z]/.test(name)) aliases[name] = a[1]; continue; }
+    if ((a = /^(-?\d+(?:\.\d+)?)\s*[,;]/.exec(rest)) && /^[A-Z][A-Z0-9_]*$/.test(name)) { if (!(name in tables)) tables[name] = Number(a[1]); continue; }
+  }
+  // `T2 = TIERS[tier]`, with or without the var — a local that is one row.
+  const row = /(?:^|[\s,;(])([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\s*\[\s*([A-Za-z_$][\w$.]*)\s*\]\s*[,;)]/gm;
+  while ((m = row.exec(clean))) {
+    if (!rows[m[1]] && !tables[m[1]] && !aliases[m[1]]) rows[m[1]] = { table: m[2], index: m[3] };
+  }
+  const prop = /\b([A-Za-z_$][\w$]*)\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  while ((m = prop.exec(src))) {
+    const list = props[m[1]] || (props[m[1]] = []);
+    if (m[2] && list.length < 40 && !list.includes(m[2])) list.push(m[2]);
+  }
+  // A row only resolves when its table was read whole enough to embed.
+  for (const k of Object.keys(rows)) if (!tables[rows[k].table] || typeof tables[rows[k].table] !== 'object') delete rows[k];
+  return { tables, aliases, rows, props, clean, mask };
+}
+
+/* A bare local is often written a few lines above the call that uses it —
+   `var streakSub = mult > 1 ? "x" + mult + Lang.t(" streak") : …` — and then
+   the honest preview is THAT expression with its own holes, not a free field.
+   The nearest assignment above the call, inside a short window, so a name
+   reused by another function far away is never picked up. */
+const LOCAL_WINDOW = 60;
+function localExpr(name, env, at) {
+  if (at == null) return null;
+  const { clean, mask } = env;
+  let from = at, lines = 0;
+  while (from > 0 && lines < LOCAL_WINDOW) { from--; if (clean[from] === '\n') lines++; }
+  const id = name.replace(/\$/g, '\\$');
+  const re = new RegExp('(?:\\bvar\\s+|[,;{(]\\s*|^\\s*)' + id + '\\s*=(?!=)\\s*', 'gm');
+  re.lastIndex = from;
+  let m, best = null;
+  while ((m = re.exec(clean)) && m.index < at) if (mask[m.index + m[0].indexOf(name)]) best = m;
+  if (!best) return null;
+  // Up to the comma or semicolon that closes it, brackets balanced.
+  let i = best.index + best[0].length, depth = 0;
+  const start = i;
+  for (; i < at; i++) {
+    if (!mask[i]) continue;
+    const c = clean[i];
+    if (c === '(' || c === '[' || c === '{') depth++;
+    else if (c === ')' || c === ']' || c === '}') { if (depth === 0) break; depth--; }
+    else if ((c === ',' || c === ';') && depth === 0) break;
+  }
+  const expr = clean.slice(start, i).trim();
+  /* `x = x || "…"`, a function, or an INITIALISER — `var combo = 0` is where
+     the value starts, not what it is when the callout fires: nothing a
+     preview can stand on, so the name stays a slot. */
+  if (!expr || /^(-?\d+(\.\d+)?|true|false|null|""|''|\[\]|\{\})$/.test(expr) || new RegExp('(^|[^\\w$.])' + id + '(?![\\w$])').test(expr) || /^function\b/.test(expr)) return null;
+  return expr;
+}
+
+/* Every reference chain at the top level of an expression: a root identifier
+   and what hangs off it — `.prop`, `[…]`, `(…)` — with each piece's span, so
+   a chain can be kept and only its insides rewritten. */
+function chainsOf(expr) {
+  const mask = codeMask(expr), out = [];
+  let i = 0;
+  const skipWs = (j) => { while (j < expr.length && /\s/.test(expr[j])) j++; return j; };
+  while (i < expr.length) {
+    if (!mask[i] || !ID0.test(expr[i]) || (i > 0 && IDC.test(expr[i - 1]))) { i++; continue; }
+    let back = i - 1;
+    while (back >= 0 && /\s/.test(expr[back])) back--;
+    const start = i;
+    while (i < expr.length && IDC.test(expr[i])) i++;
+    const root = expr.slice(start, i);
+    if (back >= 0 && expr[back] === '.' || /^\d/.test(root)) continue;
+    const acc = [];
+    for (;;) {
+      const j = skipWs(i);
+      if (expr[j] === '.' && ID0.test(expr[skipWs(j + 1)] || '')) {
+        let k = skipWs(j + 1); const s = k;
+        while (k < expr.length && IDC.test(expr[k])) k++;
+        acc.push({ type: '.', name: expr.slice(s, k), start: j, end: k });
+        i = k; continue;
+      }
+      if ((expr[j] === '[' || expr[j] === '(') && mask[j]) {
+        const inner = argsOf(expr, mask, j);
+        acc.push({ type: expr[j], start: j, end: inner.end + 1, innerStart: j + 1, innerEnd: inner.end });
+        i = inner.end + 1; continue;
+      }
+      break;
+    }
+    out.push({ root, start, end: i, acc, next: expr[skipWs(i)] || '' });
+  }
+  return out;
+}
+
+const NUM_GUESS = [
+  [/^(g|gain|gained|pts|points|score|bonus|ko|value|amount)$|gain$|score$/i, 150],
+  [/^(boost|cost)$/i, 0.25],
+  [/^pct$|percent/i, 15],
+  [/^lives?$/i, 2],
+  [/^need$/i, 5],
+  [/^(level|lvl)$/i, 4],
+  [/^dist/i, 128],
+  [/^w$/i, 1.2]
+];
+const STR_NAME = /(name|names|word|sub|title|tag|desc|label|hit|lesson|broken|reason|str|fell|line)$/i;
+function numGuess(id) {
+  for (const [re, v] of NUM_GUESS) if (re.test(id)) return v;
+  return null;
+}
+function guessSlot(text, ctx) {
+  if (ctx.choices && ctx.choices.length) return { kind: 'pick', value: ctx.choices[0], choices: ctx.choices };
+  if (ctx.index) return { kind: 'num', value: 0 };
+  const ids = text.match(/[A-Za-z_$][\w$]*/g) || ['n'];
+  /* The name that says what the value IS. `cardName(c)` is a name, not a c;
+     `fmtNum(pts)` is the pts it formats; `names.join(", ")` is the names. */
+  const call = /([A-Za-z_$][\w$]*)\s*\(([^()]*)\)\s*$/.exec(text);
+  let last = ids[ids.length - 1];
+  if (call) {
+    const argIds = call[2].match(/[A-Za-z_$][\w$]*/g) || [];
+    const before = ids[ids.indexOf(call[1]) - 1];
+    if (/^(join|trim|toLowerCase|toUpperCase)$/.test(call[1]) && before) last = before;
+    else if (/^(fmt|format)/i.test(call[1]) && argIds.length) last = argIds[argIds.length - 1];
+    else last = call[1];
+    if (/^(is|has|at|can|should|was|perfect)/i.test(last)) return { kind: 'bool', value: true };
+  }
+  // A ternary's condition — unless the name says it is a number that is truthy.
+  if (ctx.bool && numGuess(last) == null) return { kind: 'bool', value: true };
+  if (STR_NAME.test(last)) {
+    const key = (last.match(/[A-Z]?[a-z]+$/) || [last])[0].toLowerCase();
+    const pool = ctx.props[last] || ctx.props[key] || ctx.props.name || [];
+    // A word, not a fragment: "+" is a sub too, and no slot means that.
+    const choices = pool.filter((v) => /[A-Za-z\u00C0-\u024F]{2}/.test(v)).slice(0, 40);
+    const plain = last.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/^./, (c) => c.toUpperCase());
+    return { kind: 'str', value: choices[0] || plain, choices };
+  }
+  const v = numGuess(last);
+  return { kind: 'num', value: v == null ? 3 : v };
+}
+
+/* One expression → JavaScript the page can run: every slot written `$[i]`,
+   into a list of slots SHARED by the whole call, so `lives` in the word and
+   `lives` in the sub are one input. */
+function holes(expr, env, slots, at, depth = 0) {
+  const chains = chainsOf(expr);
+  const edits = [];
+  const slotFor = (text, ctx) => {
+    const key = text.replace(/\s+/g, '');
+    let i = slots.findIndex((s) => s.key === key);
+    if (i < 0) {
+      slots.push({ key, text: text.replace(/\s+/g, ' '), ...guessSlot(text, { ...ctx, props: env.props }) });
+      i = slots.length - 1;
+    }
+    return '$[' + i + ']';
+  };
+  const keysOf = (t) => {
+    const v = env.tables[t];
+    if (!v || typeof v !== 'object') return null;
+    return Object.keys(v).filter((k) => v[k] != null && v[k] !== '').map((k) => (Array.isArray(v) ? Number(k) : k));
+  };
+  for (const ch of chains) {
+    if (KEYWORDS.has(ch.root)) continue;
+    const live = LIVE_ROOTS.has(ch.root) || env.aliases[ch.root] || (env.tables[ch.root] !== undefined);
+    const row = env.rows[ch.root];
+    if (live || row) {
+      // Kept: the root resolves in the frame. Only its brackets and calls are
+      // expressions of their own, rewritten in place.
+      if (row) edits.push({ start: ch.start, end: ch.start + ch.root.length,
+        text: '(' + row.table + '[' + slotFor(row.index, { choices: keysOf(row.table), index: true }) + '])' });
+      ch.acc.forEach((a, n) => {
+        if (a.type === '.') return;
+        const inner = expr.slice(a.innerStart, a.innerEnd);
+        // A bare name in brackets is an INDEX: the table's first key, or 0.
+        const root = inner.trim().split('.')[0];
+        const isIndex = a.type === '[' && /^\s*[A-Za-z_$][\w$.]*\s*$/.test(inner) &&
+          !LIVE_ROOTS.has(root) && !env.aliases[root] && env.tables[root] === undefined;
+        const sub = isIndex
+          ? slotFor(inner.trim(), { choices: n === 0 ? keysOf(ch.root) : null, index: true })
+          : holes(inner, env, slots, at, depth);
+        edits.push({ start: a.innerStart, end: a.innerEnd, text: sub });
+      });
+      continue;
+    }
+    // A hole. `w.toFixed(1)` keeps its formatting live: the hole is `w`.
+    let end = ch.end, acc = ch.acc;
+    const tail = acc.length >= 2 && acc[acc.length - 2].type === '.' && /^to(Fixed|String)$/.test(acc[acc.length - 2].name) && acc[acc.length - 1].type === '(';
+    if (tail) end = acc[acc.length - 2].start;
+    const text = expr.slice(ch.start, end);
+    // A bare local assigned just above: its own expression, two levels deep.
+    const local = !acc.length && depth < 2 && localExpr(ch.root, env, at);
+    if (local) {
+      edits.push({ start: ch.start, end, text: '(' + holes(local, env, slots, at, depth + 1) + ')' });
+      continue;
+    }
+    const bool = !tail && ch.next === '?';
+    edits.push({ start: ch.start, end, text: slotFor(text, { bool }) });
+  }
+  let out = expr;
+  for (const e of edits.sort((a, b) => b.start - a.start)) out = out.slice(0, e.start) + e.text + out.slice(e.end);
+  return out;
+}
+
+/* The words of one callout or notice, each either a literal (the motor
+   translates it whole) or code with slots (the game's own Lang.t calls
+   translate its pieces, the motor the rest). */
+export function textsOf(call, env) {
+  const exprs = {};
+  if (call.name === 'Pop.show') { exprs.word = call.wordExpr; exprs.sub = call.subExpr; }
+  else if (call.name === 'Pop.text') exprs.word = call.wordExpr;
+  else if (call.name === 'Notify.say') { exprs.word = call.wordExpr; exprs.sub = call.subExpr; }
+  const slots = [], fields = {};
+  for (const [k, e] of Object.entries(exprs)) {
+    if (!e) continue;
+    const lit = literal(e);
+    if (lit != null) { fields[k] = { lit }; continue; }
+    try { fields[k] = { code: holes(e, env, slots, call.callSpan && call.callSpan.start), expr: e }; }
+    catch { fields[k] = { lit: stubWord(e, '') }; }
+  }
+  return { fields, slots: slots.map(({ key, ...s }) => s) };
+}
+
+// Only what some word's code names — a game's tables run to kilobytes.
+function usedEnv(env, calls) {
+  const code = calls.map((c) => c.texts ? Object.values(c.texts.fields).map((f) => f.code || '').join(' ') : '').join(' ');
+  const pick = (o) => Object.fromEntries(Object.entries(o).filter(([k]) => new RegExp('(^|[^\\w$.])' + k.replace(/\$/g, '\\$') + '(?![\\w$])').test(code)));
+  return { aliases: pick(env.aliases), tables: pick(env.tables) };
 }
 
 /* The function a call sits in: the nearest one above it declared at a shallower
@@ -560,6 +835,19 @@ export async function games() {
   return dirs.filter((d) => d.isDirectory()).map((d) => d.name).sort();
 }
 
+/* What the bench can open: the TEMPLATE, then every game. The template is the
+   source every game's end-screen cues were copied from, and a unit like the
+   others as far as the bench is concerned — a game.js with an ASSETS.sounds
+   block — except that it has no manifest and lives at template/. */
+export const TEMPLATE = 'template';
+export async function units() { return [TEMPLATE, ...(await games())]; }
+export function unitDir(slug) {
+  return slug === TEMPLATE ? path.join(ROOT, 'template') : path.join(ROOT, 'games', slug);
+}
+export function unitWhere(slug) {
+  return slug === TEMPLATE ? 'template/game.js' : `games/${slug}/game.js`;
+}
+
 let MOTOR = null;
 // The lab server re-scans on save; the motor pass is the only thing cached.
 export function clearCache() { MOTOR = null; }
@@ -614,14 +902,17 @@ function braced(src, at) {
 }
 
 export async function scanGame(slug) {
-  const dir = path.join(ROOT, 'games', slug);
+  const dir = unitDir(slug);
   const src = await readFile(path.join(dir, 'game.js'), 'utf8');
   let manifest = {};
   try { manifest = JSON.parse(await readFile(path.join(dir, 'manifest.json'), 'utf8')); } catch {}
+  if (slug === TEMPLATE) manifest = { title: 'Template — the end screen', targets: [] };
 
-  const where = `games/${slug}/game.js`;
+  const where = unitWhere(slug);
   const lines = src.split('\n');
   const calls = scanCalls(src, where);
+  const env = textEnv(src);
+  for (const c of calls) if (c.kind === 'pop' || c.kind === 'notify') c.texts = textsOf(c, env);
   const beats = beatsOf(calls, lines);
   const pack = soundPack(src);
 
@@ -662,6 +953,38 @@ export async function scanGame(slug) {
   const silentPops = beats.filter((b) => b.kinds.includes('pop') && !b.kinds.includes('sound'));
   for (const b of silentPops) warnings.push(`line ${b.line}: the callout in ${b.fn || 'the game'}() fires with no sound`);
 
+  /* The template's clips are played by NO line of its own: the end screen's
+     cues are the motor's (packages/shell/shell.js, Sound.cue). So its SOUND
+     side lists those motor lines under the clip they play — marked
+     `inherited`, auditioned like any line and never written back, since
+     apply-events splices template/game.js and a motor line is not in it. The
+     beats are left alone: they are read off this file's own lines. */
+  if (slug === TEMPLATE) {
+    for (const c of motor) {
+      if (c.module !== 'Sound' || !c.soundLiteral) continue;
+      if (!pack.keys.some((k) => k.key === c.sound)) continue;
+      calls.push({ ...c, inherited: true });
+    }
+  }
+
+  /* What a CHECKED mark is given on (lab/game-events.html, lab/events-review.json).
+     Not the line — a line moves whenever anything above it is written — but
+     the call itself, in its function: its source as it reads now, and for a cue
+     the clip it plays too (the note naming its file, and its size), because a
+     clip re-cut from another file is a sound nobody has listened to yet. Change
+     any of it and the id is a new one: the old mark no longer matches anything,
+     which is what "unchecked again" means. Two identical calls in one function
+     are told apart by their order. */
+  const seen = {};
+  for (const c of calls) {
+    if (c.kind !== 'pop' && c.kind !== 'notify' && c.kind !== 'sound') continue;
+    const snd = c.kind === 'sound' ? sounds.find((x) => x.key === c.sound) : null;
+    const base = createHash('sha1').update([c.where, c.fn || '', c.source,
+      snd ? (snd.note || '') + '|' + snd.bytes : ''].join('\n')).digest('hex').slice(0, 12);
+    seen[base] = (seen[base] || 0) + 1;
+    c.checkId = base + (seen[base] > 1 ? '#' + seen[base] : '');
+  }
+
   return {
     slug,
     title: manifest.title || slug,
@@ -670,6 +993,9 @@ export async function scanGame(slug) {
     where,
     beats, calls, sounds, warnings,
     music: musicConfig(src),
+    // What a built word stands on in the frame: the aliases and the tables
+    // its slots were cut around (textsOf), embedded once for every call.
+    textEnv: usedEnv(env, calls),
     motor: motor.map((c) => ({ ...c, inherited: true })),
     counts: {
       pop: calls.filter((c) => c.kind === 'pop').length,

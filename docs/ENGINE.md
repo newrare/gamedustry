@@ -125,7 +125,9 @@ loading ──► intro ──► playing ──► end ──┐
 - `setState(name)` toggles the screens and shows the HUD + CTA bar only while
   `playing`.
 - `startGame()` unlocks audio, resets Fx/Overlay/Game/Round and starts the loop.
-  It is bound to both the intro button and the end-screen replay link.
+  It is bound to both the intro button and the end-screen replay link. Every
+  round then opens on its **entrance** — the ground, the world's elements one
+  by one, the HUD — before the clock starts (see [`Enter`](#enter--the-rounds-entrance)).
 - `endRound(result)` is the single exit from a round (see below).
 - `onState(fn)` registers a listener called on every change. The motor itself
   never uses it; it is how a target bolted on top learns the screen moved — the
@@ -315,13 +317,26 @@ function onTimeUp() { if (!doom) spawnDoom(); }   // the run ends on contact
 
 Without `onTimeUp`, the motor ends the round with `CONFIG.copy.timeUp`.
 
+### If the round stops for a choice
+
+Implement `held()` and answer true while the choice is open: the frame skips
+`Round.tick` and `Game.update` (the world and the clock wait) and keeps `Fx`,
+`Pop` and the `HUD` turning, and `render()` still draws the frozen world under
+the game's own card. It is the game's and not `Loop.pause`, so a tab coming
+back, or a shell card opening and closing over the round, cannot let the round
+run on under the choice. `games/gearball` is the reference: an electric marble
+on a charged socket deals two upgrade cards, and `held()` is true until one is
+taken.
+
 ## Frame pipeline
 
 The bootstrap drives every frame, so a game only draws its own world:
 
 ```js
 frameUpdate(dt):
+  if (Enter.active()) { Enter.update(dt); return; } // the entrance holds it all
   Beat.update(dt)                                  // musical clock — music
+  if (Game.held && Game.held()) { Fx/Pop/HUD tick; return; }   // a choice holds it
   if (Fx.frozen(dt)) { Fx.update(dt); return; }    // does not hit-stop
   Round.tick(dt)                                   // clock + HUD timer
   Game.update(dt)
@@ -330,6 +345,7 @@ frameUpdate(dt):
   HUD.tick(dt)                                     // eases the score counter
 
 frameRender():
+  Enter.frame()   // the entrance counts this frame's elements
   Fx.begin()      // screen-shake transform
   Game.render()   // background + world
   Fx.render()     // particles and rings on top of the world
@@ -381,7 +397,7 @@ INFORMATION — something the player should know and could read a second later:
 
 - a state that changed and stays changed — "Shield down", "Wounded", "x2 over";
 - an input refused — "Out of reach", "Not enough coins", "The deck is full";
-- a lesson or a hint — gearball's "Tap when a gap reaches the hopper",
+- a lesson or a hint — gearball's "Tap a lock to open its gate",
   radiam's power names;
 - a warning of what is coming — "Last ball", "The lava pulls";
 - **anything at all said outside a round** — the village, the map, a view, a
@@ -553,8 +569,11 @@ what is currently off, so a reading can never be misattributed.
 **Every MOMENT a game writes goes through `Pop`** — the beats that celebrate a
 player action (score gains, combo milestones, tier-ups, hero beats) and the
 mistakes as they happen, which the `alert` style carries. A status line — a
-state, a refusal, a lesson — is not a moment and goes to `Notify` (above). The DOM half is designed and previewed in
-[`lab/overlay-pop.html`](../lab/overlay-pop.html); what a given game already
+state, a refusal, a lesson — is not a moment and goes to `Notify` (above). A look is designed in the motor itself (the POP LAYER block of
+`packages/shell/motor.css`, the `STYLES` table of `packages/shell/shell.js`) and
+previewed in [`lab/overlay-pop.html`](../lab/overlay-pop.html) — every style of
+that table and `Pop.text`, fired in a game's own web build (`make events` →
+`/pop`); what a given game already
 fires, in that game's own build, is `make events`. The WORDS themselves — every
 one of them, next to the manifest's FR and EN copy and the rest of what the game
 says — are `make text`, the copy desk.
@@ -754,6 +773,62 @@ Fx.reset();             // called for you by startGame()
 `color` may be an array: each particle picks one. There is no `Fx.text` — the
 floating number is `Pop.text` (above), so every word a game writes belongs to
 one module.
+
+### `Enter` — the round's entrance
+
+A round does not cut into a world already standing: it **assembles**. The
+ground is on screen from the first frame and **stands alone for a full
+second** (1.25 s from `startGame`, the intro screen's fade included), then
+every element of the world arrives one after the other — drawn big and
+transparent, as if it fell from the glass, and shrinking onto its own place
+with a small overshoot — and the HUD's three slots drop in last. 1.8 to 3.6 s
+in all; a tap skips it.
+
+The motor cannot tell a brick from a backdrop, so the game names its elements
+in `render()`:
+
+```js
+if (Enter.begin(x, y)) {      // (x, y): the point it lands on, its centre
+  drawBrick(b);
+  Enter.end();
+}
+```
+
+- **The order of the `begin` calls is the order of arrival** — whatever
+  `render()` opens first lands first. The slots are spread over the element
+  COUNT: six arrive a beat apart, sixty cascade in over the same ~1.3 s.
+- **Anything drawn outside a `begin` / `end` is ground**, visible from frame one.
+- A `begin` that returns **false** is an element that has not arrived: skip it
+  and do not call `end()`. Every `true` is matched by exactly one `end()`.
+- Outside the entrance `begin` returns true and costs nothing: the calls stay.
+- Elements nest (a board, then its pieces): a child composes with its parent
+  and takes a later slot.
+- `Enter.begin(x, y, { last: true })` takes no slot: the element lands **after
+  all the others, in one piece**, and closes the entrance. It is for the one
+  thing the round is about and that must be read whole — echomaze's labyrinth,
+  which is on screen to be memorised, and whose reveal clock only starts once
+  it has landed, since the entrance holds the world.
+- `Enter.begin(x, y, { rank: n })` moves an element in the ORDER without
+  moving it in the PAINT: the slots go to the elements sorted by rank (0 by
+  default), in open order inside one rank. It is how a game lands what it
+  paints on top before what lies under it — gearball lands its gears (0),
+  then its track (1), then the return behind both (2). A nested child keeps
+  its own rank.
+- The scale is a transform, so a `ctx.setTransform` inside an element escapes
+  it. The fade rides on `ctx.globalAlpha`, which the motor shadows for the
+  length of the entrance so a game writing `globalAlpha = 1` inside an element
+  stays faded; the shadow is deleted on landing.
+
+While it plays the round is **held**: no `Game.update`, no round clock, no
+`Beat`, no input to the game (the press that skips it is eaten, its move and
+up with it). `Pop.show` and `Notify.say` fired meanwhile — a "Get ready" from
+`reset()` — wait for the landing (`Enter.later(fn)`). The round's music starts
+on landing too, so a game on the beat starts on beat 0 with its bed; on the web
+the menu's bed plays on under the entrance and crossfades there. A game whose
+`reset()` picks its own section with `Music.play` has started it already.
+
+`CONFIG.enter = false` opts a game out. The HUD's drop is the
+`#frame.enter-wait` / `#frame.enter-go` pair in `packages/shell/motor.css`.
 
 ### `Round`
 

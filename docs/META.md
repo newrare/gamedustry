@@ -995,15 +995,14 @@ There is no server and there is nothing to defend: a player who moves their
 clock to claim twice has cheated themselves out of a sticker's worth of
 anticipation, which is the whole stake.
 
-**On a dev machine there is no day at all.** A ceremony that fires once every
-twenty-four hours takes a week to look at seven times, and the alternative —
-moving the machine's clock — is worse than no test. So on `localhost`, a LAN
-address or a `file://` page the date stops being a gate: the run still advances
-a node per claim and the save is still written, and only *you have had today's*
-is lifted. The band then carries a red **DEV** pill in front of the level chip
-([VIEWS.md](VIEWS.md)), so a screenshot of a dev machine can never pass for the
-real thing, and a deployed site — whose hostname is none of those — is
-untouched.
+**On a dev machine the day is moved by hand.** A ceremony that fires once
+every twenty-four hours takes a week to look at seven times, so the day is read
+off the shell's clock (`W.Dev.now()`, `meta.js`) rather than the machine's, and
+on `localhost` or a LAN address the **DEV view** moves that clock a step at a
+time ([VIEWS.md](VIEWS.md)): a day forward is the next cell of the road, a day
+skipped is a missed one, exactly as a player walks it. The road's card itself
+is one row of that view's events. A deployed site — whose hostname is none of
+those — runs on the real clock.
 
 ______________________________________________________________________
 
@@ -1334,7 +1333,7 @@ logotype and its trophy piece are wherever they were drawn, and ninety of
 ninety should pay in one of *those* rather than in whatever landed in cell
 twelve. Leave it out and the first twelve are used in order. **The three rates are the one thing that is not a default**, because a point
 is worth a different amount in each of the thirteen: vipera's climb tops out at
-650 and pawko's at 45 000, and a rate of 1000 over vipera would pay nothing
+650 and pawko's at 60 000, and a rate of 1000 over vipera would pay nothing
 at all. `coinsPer` is **1000**
 when `web.levels.objective.from` is 2 000 or more and **100** otherwise — a
 cleared level then always pays at least a couple of coins at level 1, and the

@@ -40,7 +40,7 @@
         if (document.activeElement === b) b.blur();
       });
     }
-    if (s !== "playing") Overlay.clear();
+    if (s !== "playing") { Overlay.clear(); Enter.cancel(); }   // a round left mid-entrance
     Notify.state(s);
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
@@ -436,6 +436,7 @@
     }
 
     function say(word, opt) {
+      if (Enter.later(function () { say(word, opt); })) return;        // after the entrance
       opt = opt || {};
       if (word == null || word === "" || !host()) return;
       var kind = KIND_ICON[opt.kind] ? opt.kind : "info";
@@ -655,6 +656,7 @@
 
     function show(name, opt) {
       if (!enabled) return null;
+      if (Enter.later(function () { show(name, opt); })) return null;   // after the entrance
       opt = opt || {};
       var st = STYLES[name]; if (!st) return null;
 

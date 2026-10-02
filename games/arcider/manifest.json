@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.15",
+  "version": "1.10.18",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -57,10 +57,10 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges et les adversaires puis choisis vitesse ou récupération.",
+      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges ainsi que les adversaires pour accélérer. Trouves le meilleur compromis entre vitesse ou récupération.",
       "tags": [
         "Course",
-        "Battle royale",
+        "Battle Royale",
         "Turbo"
       ]
     },
@@ -103,19 +103,19 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Course en battle royale",
+            "kicker": "Course en Battle Royale",
             "line": "Reste en <b>vie</b> pour gagner"
           },
           {
             "kicker": "Choix",
-            "line": "Plus de <b>vitesse</b> ou récupération"
+            "line": "<b>Vitesse</b> ou récupération"
           },
           {
             "kicker": "Rétro",
             "line": "Course <b>futuriste</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
@@ -157,7 +157,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais casser ton <b class=\"w-shield\">bouclier</b>",
+        "tagline": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais détruire ton <b class=\"w-shield\">bouclier</b>",
         "strings": {
           " in ": " dans ",
           " pilots left": " pilotes en lice",
@@ -170,10 +170,10 @@
           "Final score": "Score final",
           "Finish · ": "Arrivée · ",
           "Finish · take the lead": "Arrivée · prends la tête",
-          "Hull critical": "Coque critique",
+          "Hull critical": "Bouclier critique",
           "Install now": "Installer",
           "km/h": "km/h",
-          "Leader": "En tête",
+          "Leader": "Premier",
           "ND": "e",
           "Next cut · top ": "Prochain couperet · top ",
           "On the podium!": "Sur le podium !",
@@ -185,7 +185,7 @@
           "RD": "e",
           "Score": "Score",
           "Shield": "Bouclier",
-          "Shield down": "Bouclier à zéro",
+          "Shield down": "Bouclier détruit",
           "ST": "er",
           "Take the charge line": "Prends la ligne de charge",
           "Tap to race": "Tap pour foncer",

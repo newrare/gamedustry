@@ -19,6 +19,15 @@
                     CONFIG at boot, so page.html is a mirror: writing one and
                     not the other is the desync CLAUDE.md asks to avoid, and it
                     is the one thing a proofreading pass would never notice.
+    army.js         packages/webshell/army.js, the barracks' STRINGS table,
+                    listed for a game that declares `web.army` — the one path
+                    here that is the repo's and not the game's folder.
+
+  A dictionary entry the scan finds no use for (`unused`: the English it
+  translates is written nowhere in the game any more) is REMOVED rather than
+  edited — the whole `"key": "value"` entry and its comma, still spliced, never
+  re-serialized. That is the one deletion this tool makes, and it is refused
+  for any row the game still writes.
 
   A row whose text appears at several call sites — "Length", the HUD's left
   label, written at three — is written at all of them, which is the reason
@@ -40,7 +49,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { ROOT, scanText, games, htmlEscape } from './scan-text.mjs';
+import { ROOT, scanText, games, htmlEscape, jsonStrings } from './scan-text.mjs';
 import { splice, bumpPatch } from './apply-events.mjs';
 
 /* How a string is written back, per file. The span a row carries already sits
@@ -50,12 +59,52 @@ function encode(target, text) {
   return JSON.stringify(text);                      // valid for both JSON and ES5
 }
 
+/* The span that takes one `"key": "value"` entry out of a JSON object, its
+   separator with it, so the object reads as if the entry had never been
+   written: the comma AFTER it when there is one (with the line break in front
+   of the key), the comma BEFORE it for the last entry, and the whole inside of
+   the braces for the only one. The value's own span comes from jsonStrings. */
+function entrySpan(src, entry) {
+  const isWs = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\r';
+  let a = entry.keyStart, b = entry.end;
+  let before = a - 1;
+  while (before >= 0 && isWs(src[before])) before--;
+  let after = b;
+  while (after < src.length && isWs(src[after])) after++;
+  if (src[after] === ',') return { start: before + 1, end: after + 1 };
+  if (src[before] === ',') return { start: before, end: b };
+  return { start: before + 1, end: after };           // `{ "only": "one" }` → `{}`
+}
+
+/* A dictionary entry nothing in the game writes any more is taken out of the
+   manifest, which is the only place it lives. One at a time, re-reading the
+   file between two: two neighbours share the comma between them, and spans
+   computed up front would both claim it. */
+function removeEntries(src, paths, skipped, what) {
+  let out = src;
+  const removed = [];
+  for (const p of paths) {
+    const hit = jsonStrings(out).find((e) => e.path.join('.') === p.path && e.keyStart != null);
+    if (!hit) { skipped.push(`${p.label}: not found in manifest.json — not removed`); continue; }
+    const span = entrySpan(out, hit);
+    out = out.slice(0, span.start) + out.slice(span.end);
+    removed.push(p);
+  }
+  JSON.parse(out);                                    // a removal must leave a manifest, or nothing is written
+  what.push(...removed);
+  return out;
+}
+
 /**
  * @param {string} slug
- * @param {{edits?: Array<{id:string, was?:string, text:string}>, bump?: boolean, dry?: boolean}} plan
+ * @param {{edits?: Array<{id:string, was?:string, text:string}>, remove?: Array<{id:string, was?:string}>,
+ *          bump?: boolean, dry?: boolean}} plan
+ *   remove: rows the scan marked `unused` — a dictionary entry whose English
+ *   nothing writes — taken out of the manifest. Any other row is refused: a
+ *   string the game does use is corrected, never deleted from here.
  */
 export async function applyText(slug, plan) {
-  const { edits = [], bump = true, dry = false } = plan || {};
+  const { edits = [], remove = [], bump = true, dry = false } = plan || {};
   const dir = path.join(ROOT, 'games', slug);
   const scan = await scanText(slug);
   const byId = new Map(scan.rows.map((r) => [r.id, r]));
@@ -82,17 +131,39 @@ export async function applyText(slug, plan) {
       if (!perFile.has(t.file)) perFile.set(t.file, []);
       perFile.get(t.file).push({ start: t.start, end: t.end, text: encode(t, edit.text), what: label });
     }
-    applied.push({ what: label, where: row.targets.map((t) => (t.line ? `${t.file}:${t.line}` : t.file)).join(' '),
+    applied.push({ id: row.id, lang: row.lang, what: label,
+      where: row.targets.map((t) => (t.line ? `${t.file}:${t.line}` : t.file)).join(' '),
       from: row.text, to: edit.text });
+  }
+
+  const drops = [];
+  for (const r of remove) {
+    const row = byId.get(r.id);
+    const label = row ? `${row.context} (${row.lang.toUpperCase()})` : r.id;
+    if (!row) { skipped.push(`${r.id}: no such string — the sources moved under the tool`); continue; }
+    if (!row.unused) { skipped.push(`${label}: the game writes it — not removed`); continue; }
+    if (r.was != null && r.was !== row.text) { skipped.push(`${label}: the file now reads "${row.text}" — not removed`); continue; }
+    if (row.targets.length !== 1 || row.targets[0].file !== 'manifest.json') {
+      skipped.push(`${label}: only a manifest entry can be removed`);
+      continue;
+    }
+    drops.push({ id: row.id, path: row.id.slice('manifest.json:'.length), label, text: row.text });
   }
 
   /* One splice per file, back to front, with overlaps refused and named —
      the same pass tools/lab/apply-events.mjs writes a call argument with. */
-  const written = [];
+  const written = [], removed = [];
+  if (drops.length && !perFile.has('manifest.json')) perFile.set('manifest.json', []);
   for (const [file, list] of perFile) {
-    const full = path.join(dir, file);
+    // A game's own file is named from its folder; a shared one (army.js) from the repo.
+    const full = file.includes('/') ? path.join(ROOT, file) : path.join(dir, file);
     const src = await readFile(full, 'utf8');
-    const out = splice(src, list, skipped);
+    let out = splice(src, list, skipped);
+    // The removals run on the file the edits left: an edit never touches a removed entry.
+    if (file === 'manifest.json' && drops.length) {
+      try { out = removeEntries(out, drops, skipped, removed); }
+      catch (e) { skipped.push(`manifest.json: removing left invalid JSON (${e.message}) — nothing removed`); removed.length = 0; }
+    }
     if (out === src) continue;
     if (!dry) await writeFile(full, out);
     written.push(file);
@@ -108,7 +179,7 @@ export async function applyText(slug, plan) {
     } catch { skipped.push('manifest.json: version not moved'); }
   }
 
-  return { slug, applied, skipped, written, version };
+  return { slug, applied, removed: removed.map((d) => ({ id: d.id, what: d.label, text: d.text })), skipped, written, version };
 }
 
 /* ── CLI ─────────────────────────────────────────────────────────────────── */
@@ -118,7 +189,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const all = (name) => argv.map((a, i) => (a === '--' + name ? argv[i + 1] : null)).filter(Boolean);
 
   if (!slug || !(await games()).includes(slug)) {
-    console.log("usage: node tools/lab/apply-text.mjs <slug> --set '<id>=<text>' [--no-bump] [--dry]");
+    console.log("usage: node tools/lab/apply-text.mjs <slug> --set '<id>=<text>' [--remove '<id>'] [--no-bump] [--dry]");
     console.log('       the ids are what `node tools/lab/scan-text.mjs <slug> --json` prints');
     console.log('       games: ' + (await games()).join(' '));
     process.exit(1);
@@ -131,10 +202,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     edits.push({ id: spec.slice(0, at), text: spec.slice(at + 1) });
   }
 
-  const res = await applyText(slug, { edits, bump: !argv.includes('--no-bump'), dry: argv.includes('--dry') });
+  const remove = all('remove').map((id) => ({ id }));
+  const res = await applyText(slug, { edits, remove, bump: !argv.includes('--no-bump'), dry: argv.includes('--dry') });
   for (const a of res.applied) console.log(`  ✓ ${a.what}\n      "${a.from}"\n   →  "${a.to}"   ${a.where}`);
+  for (const d of res.removed) console.log(`  ✗ ${d.what}  "${d.text}" removed`);
   for (const s of res.skipped) console.log('  ! ' + s);
   if (res.version) console.log(`  version → ${res.version}`);
-  if (!res.applied.length) console.log('  nothing to apply');
+  if (!res.applied.length && !res.removed.length) console.log('  nothing to apply');
   else if (res.written.length) console.log(`  written ${res.written.join(', ')} — rebuild with: node tools/build/build.mjs --game=${slug}`);
 }
