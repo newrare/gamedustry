@@ -3480,18 +3480,26 @@
       paint.length = n;
       paint.sort(function (a, b) { return b.p - a.p; });   // far first
 
+      // Every gate, rival and item is an element of the round's entrance
+      // (Enter), far first like the painter's order; the road is the ground.
       for (i = 0; i < n; i++) {
         e = paint[i];
         k = kAt(e.p);
-        if (e.g) { drawGate(e.g, e.last); continue; }
-        if (e.r) { drawRival(e.r, k); continue; }
-        if (e.it.type === "boost") { drawPad(e.it, k); continue; }
-        if (e.it.type === "ramp")  { drawRamp(e.it, k); continue; }
-        x = screenX(itemX(e.it), k);
-        if (x < -240 * k || x > view.w + 240 * k) continue;
         y = screenY(e.p, k);
-        if (y < horizonY - 40) continue;
-        drawStanding(e.it, x, y, k);
+        if (e.g) x = screenX(roadX(e.p), k);
+        else if (e.r) x = screenX(rivalX(e.r), k);
+        else {
+          x = screenX(itemX(e.it), k);
+          if (e.it.type !== "boost" && e.it.type !== "ramp" &&
+              (x < -240 * k || x > view.w + 240 * k || y < horizonY - 40)) continue;
+        }
+        if (!Enter.begin(x, y)) continue;
+        if (e.g) drawGate(e.g, e.last);
+        else if (e.r) drawRival(e.r, k);
+        else if (e.it.type === "boost") drawPad(e.it, k);
+        else if (e.it.type === "ramp") drawRamp(e.it, k);
+        else drawStanding(e.it, x, y, k);
+        Enter.end();
       }
       ctx.lineJoin = "miter";
     }
@@ -4028,9 +4036,15 @@
       drawShards();
       drawStreaks();
       ctx.restore();
-      drawCraft();
-      drawShieldRail();
-      drawSpeedo();
+      if (Enter.begin(craftX(), craftY())) { drawCraft(); Enter.end(); }
+      if (Enter.begin(shieldRail.x + shieldRail.w * 0.5, shieldRail.y + shieldRail.h * 0.5)) {
+        drawShieldRail();
+        Enter.end();
+      }
+      if (Enter.begin(shieldRail.x + shieldRail.w - 60, shieldRail.y + shieldRail.h + 40)) {
+        drawSpeedo();
+        Enter.end();
+      }
     }
 
     function onResize() { metrics(); lens(); }

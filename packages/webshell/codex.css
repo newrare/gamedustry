@@ -1,0 +1,101 @@
+/* =========================================================================
+   THE CODEX — a game's cards, as a collection (codex.js). The barracks'
+   collection (army.css, .ar-cx-*) for a game with no barracks: the books
+   switch, the carousel bleeding to the sheet's edges, the three filters on
+   the seam and what the card in the middle is, under it.
+   ========================================================================= */
+.cx-body { display:flex; flex-direction:column; gap:14px; }
+
+.cx-books { display:flex; gap:8px; }
+.cx-book {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  flex:1; min-width:0; height:80px; border-radius:18px; text-align:left; padding:8px 10px 0;
+  background:rgba(6,9,26,.62); border:2px solid rgba(255,255,255,.12);
+  display:flex; flex-direction:column; --c:var(--accent);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900); color:var(--text);
+}
+.cx-book span { font-size:18px; letter-spacing:.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cx-book b { font-size:24px; font-weight:inherit; line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.cx-book b i { font-style:normal; font-size:18px; color:var(--muted); }
+.cx-book em { display:block; height:7px; margin-top:5px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
+.cx-book em u { display:block; height:100%; background:var(--c); }
+.cx-book.on { border-color:var(--c); background:linear-gradient(180deg, color-mix(in srgb, var(--c) 24%, transparent), rgba(6,9,26,.62)); }
+.cx-book.on b { color:var(--c); }
+
+/* the carousel bleeds to the sheet's edges (.wv-body pads 26 px) */
+.cx-stage {
+  position:relative; flex:0 0 auto; height:476px; margin:0 -26px;
+  overflow:hidden; touch-action:pan-y; cursor:grab;
+}
+.cx-stage.drag { cursor:grabbing; }
+.cx-card {
+  appearance:none; -webkit-appearance:none; background:none; border:0; padding:0; cursor:pointer;
+  position:absolute; left:50%; top:26px; margin-left:-150px;
+  transition:transform .38s cubic-bezier(.2,.8,.2,1), opacity .38s;
+}
+.cx-stage.drag .cx-card, .cx-card.nt { transition:none; }
+.cx-arrow {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  position:absolute; top:200px; z-index:200; width:64px; height:64px; border-radius:50%; padding:0;
+  background:rgba(6,9,26,.78); border:2px solid color-mix(in srgb, var(--accent) 55%, transparent); color:var(--accent);
+  font-size:34px; line-height:1;
+}
+.cx-arrow.l { left:16px; }
+.cx-arrow.r { right:16px; }
+.cx-none { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--muted); }
+
+.cx-info {
+  padding:56px 24px 22px; border-radius:22px;
+  background:rgba(8,12,32,.78); border:1px solid rgba(255,255,255,.1);
+  display:flex; flex-direction:column; gap:10px; min-height:180px;
+}
+.cx-info:empty { display:none; }
+/* THE THREE FILTERS, on the seam, half over the carousel and half over the
+   panel, since they choose between the one and fill the other */
+.cx-filters {
+  position:relative; z-index:3; height:0; margin:22px 0 -14px;
+  display:flex; justify-content:center; gap:18px;
+}
+.cx-f {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  position:relative; top:-32px; width:64px; height:64px; border-radius:50%; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
+  border:3px solid rgba(255,255,255,.2); color:var(--muted);
+  box-shadow:0 6px 14px rgba(0,0,0,.55);
+  transition:transform .15s ease;
+}
+.cx-f .cx-ci { width:28px; height:28px; }
+.cx-f i {
+  position:absolute; right:-10px; top:-8px; min-width:30px; height:24px; padding:0 6px;
+  border-radius:12px; background:#0a1026; border:2px solid rgba(255,255,255,.2);
+  font-style:normal; font-size:18px; line-height:20px; color:var(--muted);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900);
+  font-variant-numeric:tabular-nums;
+}
+.cx-f.on { border-color:var(--accent); color:var(--accent); transform:scale(1.1);
+           box-shadow:0 0 0 2px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent), 0 6px 14px rgba(0,0,0,.55); }
+.cx-f.on i { border-color:var(--accent); color:var(--accent); }
+.cx-f:active { transform:scale(.94); }
+.cx-name { font-size:36px; line-height:1.05; color:var(--text); }
+.cx-meta { display:flex; flex-wrap:wrap; gap:8px; }
+.cx-meta span {
+  padding:4px 13px; border-radius:999px; background:rgba(255,255,255,.08);
+  font-size:20px; color:var(--muted);
+}
+.cx-lore {
+  margin:4px 0 0; padding-top:12px; border-top:1px solid rgba(255,255,255,.12);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight:500;
+  font-size:22px; line-height:1.5; color:rgba(246,241,228,.86);
+}
+.cx-lock { margin:6px 0 0; display:flex; align-items:center; gap:14px; font-size:20px; line-height:1.3; color:var(--muted); }
+.cx-lock .cx-ci { width:34px; height:34px; flex:0 0 auto; }
+
+/* THE CARD ON ITS OWN (codex.js, openCard): no plate behind it — the card is
+   the card, on the veil — and what it does under it */
+.mt-modal.cx-open .mt-card { background:none; box-shadow:none; padding:20px 0 16px; gap:22px; }
+.mt-modal.cx-open .mt-card::before { content:none; }
+.cx-big-lore {
+  width:100%; padding:18px 22px; border:0; border-radius:20px;
+  background:rgba(8,12,32,.82); text-align:center; font-size:24px;
+}

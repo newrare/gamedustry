@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lab — view frame</title>
+<title>Lab — game views</title>
+<meta name="lab-group" content="tools">
 <style>
 /* ===========================================================================
    VIEW FRAME LAB — one frame for every view of the web shell.
@@ -586,7 +587,7 @@ body {
 
   const $ = (id) => document.getElementById(id);
 
-  /* ---- the motor's upper(), copied from overlay-pop.html --------------- */
+  /* ---- the motor's upper(), copied from packages/engine/engine.js ------ */
   function upper(str) {
     var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
     var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";

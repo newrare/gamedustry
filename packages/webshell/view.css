@@ -237,18 +237,17 @@
    (packages/webshell/meta.js, `bandDoors`). */
 #web-hud .mt-chip.home.gone { display:none; }
 /* The DEV pill, between the house and the level chip, on a local machine only
-   (meta.js, DEV). Not a chip and not a door: a flat tag in the danger colour,
-   so it can never read as a number the player owns. It takes its width out of
-   the xp bar, which is the spring of the row. It is the fast clock's switch
-   (W.Dev), off when the game opens: hollow while off — still there, since
-   the machine is still a dev one — and filled once a tap turns it on. */
+   (meta.js, DEV). Not a chip and not a number: a flat tag in the danger
+   colour, so it can never read as something the player owns. It takes its
+   width out of the xp bar, which is the spring of the row. It is the door to
+   the DEV view (packages/webshell/dev.js), and wears the clock's offset while
+   there is one. */
 #web-hud .mt-dev {
   flex:0 0 auto; font:inherit; font-style:normal; font-size:18px; font-weight:900;
   letter-spacing:2px; line-height:1; padding:4px 6px; border-radius:6px;
   color:#0b0b12; background:var(--danger); border:2px solid var(--danger);
   cursor:pointer; -webkit-tap-highlight-color:transparent;
 }
-#web-hud .mt-dev.off { color:var(--danger); background:transparent; }
 /* A chip whose door is the screen it is standing on: it still counts, it just
    stops offering. A control that cannot act is a tap the player learns to stop
    making — but it must not go MISSING either, or the row changes shape as the

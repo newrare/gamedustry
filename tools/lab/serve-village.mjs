@@ -67,10 +67,11 @@ const DRAFTS = path.join(ROOT, 'lab', 'village-presets.json');
    (packages/webshell/view.js, docs/VIEWS.md) and not a list this tool
    invented: a village is the TITLE VIEW, so what a house opens is what a menu
    entry opened. `decor` is the one that opens nothing — a house placed for the
-   picture. The five before it are the BARRACKS' (packages/webshell/army.js),
-   and only a game that declares `web.army` owes them. */
+   picture. The five after `help` are the BARRACKS' (packages/webshell/army.js),
+   and only a game that declares `web.army` owes them; `cards` is the CODEX
+   (packages/webshell/codex.js), for a game that publishes `Game.codex`. */
 const ROLES = ['play', 'map', 'ranking', 'shop', 'album', 'daily', 'options', 'help',
-  'deck', 'infirmary', 'prison', 'recruit', 'defense', 'decor'];
+  'deck', 'infirmary', 'prison', 'recruit', 'defense', 'cards', 'decor'];
 
 /* SHARED MATERIAL — `game-<sheet>-NN.png`, the cuts that belong to no game.
    `assets/image/object/` holds two kinds of them under that one prefix and

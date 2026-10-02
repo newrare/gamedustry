@@ -59,15 +59,24 @@ export { ROOT };
 
 /* ── the groups, in the order the page shows them ────────────────────────── */
 export const GROUPS = [
-  { key: 'store',  label: 'Listing',      note: 'the site, itch and the store cards — read before the game is installed' },
-  { key: 'intro',  label: 'Title screen', note: 'the one sentence that explains the game' },
-  { key: 'ui',     label: 'Shell',        note: 'the buttons and labels the motor draws around the round' },
-  { key: 'hud',    label: 'HUD',          note: 'the two side slots of the top band' },
-  { key: 'round',  label: 'The round',    note: 'callouts, floating values and what the canvas paints' },
-  { key: 'end',    label: 'End screen',   note: 'the title and the stat rows' },
-  { key: 'levels', label: 'Levels',       note: 'the objective, one sentence with {n} in it' },
-  { key: 'words',  label: 'Game words',   note: 'the FR side of everything the game itself writes, keyed by the English' }
+  { key: 'store',    label: 'Listing',      note: 'the site, itch and the store cards — read before the game is installed' },
+  { key: 'intro',    label: 'Title screen', note: 'the one sentence that explains the game' },
+  { key: 'help',     label: 'Help card',    note: 'the rules the help card lists, one line each' },
+  { key: 'ui',       label: 'Shell',        note: 'the buttons and labels the motor draws around the round' },
+  { key: 'hud',      label: 'HUD',          note: 'the two side slots of the top band' },
+  { key: 'round',    label: 'The round',    note: 'callouts, floating values and what the canvas paints' },
+  { key: 'end',      label: 'End screen',   note: 'the title and the stat rows' },
+  { key: 'levels',   label: 'Levels',       note: 'the objective, one sentence with {n} in it' },
+  { key: 'barracks', label: 'Barracks',     note: 'the army layer\'s own screens — packages/webshell/army.js, shared by every game that declares web.army' },
+  { key: 'officers', label: 'Officers',     note: 'the grades, the objects, the trades and the lore on the back of every card' },
+  { key: 'missions', label: 'Missions',     note: 'title, briefing, and the report the squad brings back — {leader} is its first card' },
+  { key: 'events',   label: 'Camp events',  note: 'the good and bad days the camp draws every few hours — {c} is the card it lands on' },
+  { key: 'words',    label: 'Game words',   note: 'the FR side of everything the game itself writes, keyed by the English' }
 ];
+
+/* Groups whose rows come in {en, fr} pairs held side by side in one source.
+   A pair with no French is work left, like a dictionary entry nobody wrote. */
+const PAIRED = new Set(['help', 'barracks', 'officers', 'missions', 'events']);
 
 /* A game is written in English and translated by a DICTIONARY in its manifest
    (`web.copy.<lang>.strings`), keyed by the English string. These are the rows
@@ -76,8 +85,8 @@ export const GROUPS = [
    is empty by house rule, and the intro sentence is translated as
    `web.copy.<lang>.tagline`. Everything else a game says has to be in there. */
 const NO_DICT = new Set(['Game title', 'Intro sentence', 'Demo caption']);
-const translatable = (r) => r.lang === 'en' && r.where === 'game.js' && !r.code &&
-  !NO_DICT.has(r.context) && /[A-Za-z]{2,}/.test(r.text);
+const translatable = (r) => r.lang === 'en' && (r.dict || (r.where === 'game.js' && !r.code &&
+  !NO_DICT.has(r.context))) && /[A-Za-z]{2,}/.test(r.text);
 
 /* ── strings ─────────────────────────────────────────────────────────────── */
 
@@ -132,7 +141,9 @@ const oneLine = (s) => String(s).replace(/\s*\n\s*/g, ' ').trim();
 /* ── the manifest ────────────────────────────────────────────────────────────
    Every string VALUE of the file with the path it sits at and its span, so a
    rewrite splices the one literal and the manifest keeps its own formatting —
-   re-serializing it would reorder nothing but reflow everything. */
+   re-serializing it would reorder nothing but reflow everything. A value
+   inside an object also carries `keyStart`, where its key opens, which is what
+   removing the whole entry needs. */
 export function jsonStrings(src) {
   const out = [];
   let i = 0;
@@ -144,10 +155,10 @@ export function jsonStrings(src) {
     i++;
     return { start, end: i, text: JSON.parse(src.slice(start, i)) };
   }
-  function value(where) {
+  function value(where, keyStart) {
     ws();
     const c = src[i];
-    if (c === '"') { const s = str(); out.push({ path: where, ...s }); return; }
+    if (c === '"') { const s = str(); out.push({ path: where, ...s, keyStart }); return; }
     if (c === '{') {
       i++;
       for (;;) {
@@ -155,7 +166,7 @@ export function jsonStrings(src) {
         if (src[i] === '}' || i >= src.length) { i++; return; }
         const key = str();
         ws(); i++;                                   // the ':'
-        value(where.concat(key.text));
+        value(where.concat(key.text), key.start);
         ws();
         if (src[i] === ',') i++;
       }
@@ -182,9 +193,14 @@ const LANGS = ['en', 'fr'];
 /* One manifest string → the row the page shows, or null when the value is not
    copy (a slug, a hex colour, a target, an appId). `pair` is what puts the two
    languages of the same sentence on the same line of the page. */
-function manifestRow(entry) {
+function manifestRow(entry, manifest) {
   const p = entry.path, n = p.length;
   const at = (i) => String(p[i]);
+
+  if (p[0] === 'web' && p[1] === 'army') return armyRow(p, manifest.web.army);
+
+  if (n === 5 && p[0] === 'web' && p[1] === 'copy' && LANGS.includes(at(2)) && p[3] === 'helpRules')
+    return { lang: at(2), group: 'help', context: `Rule ${p[4] + 1}`, pair: `help-${p[4]}`, html: true };
 
   if (n === 1 && p[0] === 'title')   return { lang: 'en', group: 'store', context: 'Studio title', hint: 'the name on the site, on itch and in the store' };
   if (n === 1 && p[0] === 'tagline') return { lang: 'en', group: 'store', context: 'Manifest tagline', hint: 'the plain-text pitch the itch page and the store meta take' };
@@ -232,6 +248,108 @@ function manifestRow(entry) {
   return null;
 }
 
+/* ── the army ──────────────────────────────────────────────────────────────
+   `web.army` is content rather than chrome: 120 officers with a lore each, 30
+   trades, 50 missions with a briefing and two reports, 40 camp events. Every
+   one of them is an `{ en, fr }` object (a trade adds `frF`, the feminine), so
+   both languages sit in the manifest and pair up by path. The context is built
+   from the record itself — who the officer is, what the mission pays — since
+   "missions.list.17.win.fr" says nothing about which story it is. */
+const TEXT_LANGS = { en: 'en', fr: 'fr', frF: 'fr' };
+
+function armyRow(p, army) {
+  const n = p.length, last = String(p[n - 1]);
+  const gradeName = (r) => ((army.grades || []).find((g) => g.r === r) || {}).name || `grade ${r}`;
+
+  // Two names the player reads on every card, written in English and
+  // translated by the dictionary like the game's own words.
+  if (n === 5 && (p[2] === 'grades' || p[2] === 'objects') && p[4] === 'name') {
+    const it = army[p[2]][p[3]] || {};
+    return { lang: 'en', group: 'officers', dict: true,
+      context: p[2] === 'grades' ? `Grade ${it.r} · name` : 'Object · name',
+      hint: 'on the card face, the deck and every list — translated by the dictionary' };
+  }
+
+  if (!(last in TEXT_LANGS)) return null;
+  const lang = TEXT_LANGS[last], fem = last === 'frF';
+
+  if (p[2] === 'cast' && n === 6 && p[4] === 'lore') {
+    const c = army.cast[p[3]] || {};
+    return { lang, group: 'officers', context: `${c.first} ${c.last} · lore`, pair: `cast-${p[3]}`,
+      hint: `${c.side} ${gradeName(c.r)} ${(army.tiers || [])[c.t] || ''} · ${c.gender}, ${c.age} · ${c.job} — the back of the card` };
+  }
+  if (p[2] === 'jobs' && n === 6 && p[4] === 'name') {
+    const j = army.jobs[p[3]] || {};
+    return { lang, group: 'officers', context: `Trade · ${j.k}${fem ? ' · feminine' : ''}`,
+      pair: fem ? null : `job-${p[3]}`, echo: fem ? `job-${p[3]}` : null,
+      hint: `printed on the back of the card · suits the ${j.post} post` };
+  }
+  if (p[2] === 'missions' && p[3] === 'list' && n === 7) {
+    const m = army.missions.list[p[4]] || {};
+    const part = { title: 'title', brief: 'briefing', win: 'success report', lose: 'failure report' }[p[5]];
+    if (!part) return null;
+    const list = (l) => (l || []).map((x) => `${x.kind} ${x.n}`).join(', ') || 'nothing';
+    const title = (m.title && m.title.en) || m.id;
+    return { lang, group: 'missions', pair: `mission-${p[4]}-${p[5]}`,
+      context: p[5] === 'title' ? `${m.id} · mission title` : `${m.id} · ${title} · ${part}`,
+      hint: p[5] === 'win' ? `the report when it succeeds · pays ${list(m.reward)}`
+        : p[5] === 'lose' ? `the report when it fails · costs ${list(m.fail)}`
+        : `${m.hours} h away · squad of ${(m.squad || []).join('–')} · difficulty ${m.d}` };
+  }
+  if (p[2] === 'events' && p[3] === 'list' && n === 7) {
+    const e = army.events.list[p[4]] || {}, fx = e.fx || {};
+    const part = { title: 'title', text: 'story' }[p[5]];
+    if (!part) return null;
+    return { lang, group: 'events', pair: `event-${p[4]}-${p[5]}`,
+      context: `${e.id} · ${e.good ? 'good' : 'bad'} day · ${part}`,
+      hint: `told at the village · ${[fx.kind, fx.n, fx.h ? fx.h + ' h' : ''].filter((x) => x != null && x !== '').join(' ')}` };
+  }
+  return null;
+}
+
+/* ── where a line of code sits ─────────────────────────────────────────────
+   A row's context is the screen it is read on; a proofreader also wants the
+   MOMENT, and the nearest thing a parser can say about that is the function
+   the call is written in (`Game.onDown`, `openFile`). One pass keeps a stack
+   of braces and names each one after the header in front of it — a function,
+   a method, or an object literal assigned to a name. */
+function scopeIndex(clean, mask) {
+  const frames = [], stack = [];
+  for (let i = 0; i < clean.length; i++) {
+    if (!mask[i]) continue;
+    const c = clean[i];
+    if (c === '{') {
+      const head = clean.slice(Math.max(0, i - 160), i);
+      let m, name = null;
+      if ((m = /([\w$]+)\s*[:=]\s*function\s*[\w$]*\s*\([^()]*\)\s*$/.exec(head))) name = m[1];
+      else if ((m = /function\s+([\w$]+)\s*\([^()]*\)\s*$/.exec(head))) name = m[1];
+      else if ((m = /(?:^|[\s{,;(])([\w$]+)\s*[:=]\s*$/.exec(head)) && m[1] !== 'default') name = m[1];
+      const f = { start: i, end: clean.length, name, parent: stack[stack.length - 1] || null };
+      stack.push(f);
+      if (name) frames.push(f);
+    } else if (c === '}') {
+      const f = stack.pop();
+      if (f) f.end = i;
+    }
+  }
+  return (off) => {
+    let best = null;
+    for (const f of frames) if (f.start < off && off < f.end && (!best || f.start > best.start)) best = f;
+    const chain = [];
+    for (let f = best; f; f = f.parent) if (f.name) chain.unshift(f.name);
+    return chain.slice(-3).join('.');
+  };
+}
+
+// The line of source an offset sits on, trimmed to what fits on a row.
+function lineAt(src, off) {
+  const from = src.lastIndexOf('\n', off - 1) + 1;
+  let to = src.indexOf('\n', off);
+  if (to < 0) to = src.length;
+  const t = src.slice(from, to).trim();
+  return t.length > 180 ? t.slice(0, 177) + '…' : t;
+}
+
 /* ── game.js ─────────────────────────────────────────────────────────────── */
 
 /* Where a call keeps copy. Anything not named here is not offered: `Pop.show`'s
@@ -243,7 +361,11 @@ const TEXT_CALLS = {
   'Notify.say':     { args: { 0: 'Notice' }, opts: { sub: 'Notice sub' }, group: 'round' },
   'HUD.setLeft':    { args: { 0: 'HUD left value', 1: 'HUD left label' }, group: 'hud' },
   'HUD.setRight':   { args: { 0: 'HUD right value', 1: 'HUD right label' }, group: 'hud' },
-  'fillText':       { args: { 0: 'Canvas text' }, group: 'round' }
+  'fillText':       { args: { 0: 'Canvas text' }, group: 'round' },
+  /* What a game translates itself: a literal it concatenates, or writes into
+     a sheet of its own. Inside one of the calls above it is already that
+     call's fragment, and it is listed once. */
+  'Lang.t':         { args: { 0: 'Translated in place' }, group: 'round' }
 };
 
 // The friendly name of a CONFIG.copy key. An unlisted one keeps its own.
@@ -275,9 +397,12 @@ const slugOf = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replac
 
 function scanGameJs(src, out, push) {
   const merged = new Map();
+  const claimed = new Set();                         // literal starts already on a row
   const clean = stripComments(src);
   const mask = codeMask(clean);
   const lineOf = lineIndex(src);
+  const scopeOf = scopeIndex(clean, mask);
+  out.js = { src, clean, lineOf, scopeOf };
 
   /* --- CONFIG: the copy a game declares rather than writes inline ---------- */
   const cfg = configSpan(clean, mask);
@@ -348,22 +473,29 @@ function scanGameJs(src, out, push) {
       lits.forEach((lit, n) => {
         const whole = lits.length === 1 && lit.start === span.start && lit.end === span.end;
         if (!whole && !lit.text.trim()) return;      // "" in a concatenation is not copy
+        if (claimed.has(lit.start)) return;
+        claimed.add(lit.start);
         const at = lineOf(lit.start);
         const site = { file: 'game.js', kind: 'js', start: lit.start, end: lit.end, line: at };
+        const use = { line: at, fn: scopeOf(lit.start), src: lineAt(src, lit.start) };
         /* A literal in a copy POSITION is not always copy: a stat row's value
            holds `Store.get("bestScore", 0)` and an end title branches on
            `reason === "jam"`. Both are code, and neither belongs in the
            dictionary — so they are marked rather than counted. */
-        const lead = clean.slice(0, lit.start).replace(/\s+$/, '');
-        const tail = clean.slice(lit.end).replace(/^\s+/, '');
-        const code = !whole && (((lead.slice(-1) === '(' || lead.slice(-1) === ',') &&
-                                 (tail[0] === ',' || tail[0] === ')')) ||
-                                /[=!]==$/.test(lead) || /^[=!]==/.test(tail));
+        /* A short window on each side, never the whole file: `/\s+$/` over a
+           megabyte of prefix was 95% of the scan (the base64 assets). */
+        const lead = clean.slice(Math.max(0, lit.start - 200), lit.start).replace(/\s+$/, '');
+        const tail = clean.slice(lit.end, lit.end + 200).replace(/^\s+/, '');
+        const code = !whole && !/\bLang\.t\s*\($/.test(lead) &&
+                     (((lead.slice(-1) === '(' || lead.slice(-1) === ',') &&
+                       (tail[0] === ',' || tail[0] === ')')) ||
+                      /[=!]==$/.test(lead) || /^[=!]==/.test(tail));
         const key = `${(extra && extra.group) || spec.group}|${context}|${lit.text}`;
         if (whole && merged.has(key)) {
           const row = merged.get(key);
           row.targets.push(site);
           row.lines.push(at);
+          row.uses.push(use);
           return;
         }
         const row = push({
@@ -372,7 +504,7 @@ function scanGameJs(src, out, push) {
           lang: 'en', group: (extra && extra.group) || spec.group, where: 'game.js', line: at,
           context, text: lit.text, fragment: !whole, code: code, expr: whole ? null : expr,
           ...(extra || {}),
-          lines: [at], targets: [site]
+          lines: [at], targets: [site], uses: [use]
         });
         if (whole) merged.set(key, row);
       });
@@ -435,11 +567,69 @@ function scanPage(src, out, warn) {
 
 export const htmlEscape = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/* ── packages/webshell/army.js ───────────────────────────────────────────────
+   The barracks' own screens — CARDS, INFIRMARY, PRISON, COMMAND, DEFENSE — are
+   written in the army layer's STRINGS table, `{ en: {…}, fr: {…} }`, and not in
+   the game. It is listed for a game that declares `web.army` because that game
+   is the only one that shows it; unlike menu.js, a word there is read by the
+   players of one game. Applying a row writes army.js and rebuilds that game.
+   The table has no fallback — `T = STRINGS[LANG]` — so a key the French side
+   lacks is an empty label, and it is counted as work left. */
+export const ARMY_JS = 'packages/webshell/army.js';
+
+async function scanArmyJs(push, warn) {
+  const src = await readFile(path.join(ROOT, ARMY_JS), 'utf8');
+  const clean = stripComments(src);
+  const mask = codeMask(clean);
+  const lineOf = lineIndex(src);
+  const m = /\bvar\s+STRINGS\s*=\s*\{/.exec(clean);
+  if (!m || !mask[m.index]) { warn('army.js: no STRINGS table — the barracks are not listed'); return; }
+  const top = fieldsOf(clean, braceSpan(clean, mask, m.index + m[0].length - 1));
+
+  // Where each key is read: the first `T.key` of the file, and the function it sits in.
+  const scopeOf = scopeIndex(clean, mask);
+  const readAt = {};
+  const re = /\bT\.([\w$]+)/g;
+  let r;
+  while ((r = re.exec(clean))) {
+    if (!mask[r.index] || readAt[r[1]]) continue;
+    readAt[r[1]] = { line: lineOf(r.index), fn: scopeOf(r.index), src: lineAt(src, r.index), file: 'army.js' };
+  }
+
+  for (const lang of LANGS) {
+    const tbl = top[lang];
+    if (!tbl || clean[tbl.start] !== '{') continue;
+    const fields = fieldsOf(clean, tbl);
+    for (const key of Object.keys(fields)) {
+      const f = fields[key];
+      const lit = literalsIn(clean, f.start, f.end);
+      if (lit.length !== 1 || lit[0].start !== f.start || lit[0].end !== f.end) continue;
+      const line = lineOf(f.start);
+      push({ id: `${lang}.${key}`, where: 'army.js', lang, group: 'barracks', context: key, line,
+        text: lit[0].text, pair: 'army:' + key, uses: readAt[key] ? [readAt[key]] : [],
+        targets: [{ file: ARMY_JS, kind: 'js', start: f.start, end: f.end, line }] });
+    }
+  }
+}
+
 /* ── one game ────────────────────────────────────────────────────────────── */
 
 export async function games() {
   const dirs = await readdir(path.join(ROOT, 'games'), { withFileTypes: true });
   return dirs.filter((d) => d.isDirectory()).map((d) => d.name).sort();
+}
+
+/* The picker's list: the manifests and nothing else, so the page is up before
+   a single game.js is parsed. */
+export async function gameList() {
+  const out = [];
+  for (const slug of await games()) {
+    try {
+      const m = JSON.parse(await readFile(path.join(ROOT, 'games', slug, 'manifest.json'), 'utf8'));
+      out.push({ slug, title: m.title || slug, version: m.version || '' });
+    } catch { out.push({ slug, title: slug, version: '' }); }
+  }
+  return out;
 }
 
 export async function scanText(slug) {
@@ -468,15 +658,18 @@ export async function scanText(slug) {
     return full;
   };
 
+  const manifestLine = lineIndex(manifestSrc);
   for (const entry of jsonStrings(manifestSrc)) {
-    const row = manifestRow(entry);
+    const row = manifestRow(entry, manifest);
     if (!row) continue;
-    push({ ...row, id: entry.path.join('.'), where: 'manifest.json', text: entry.text,
-      targets: [{ file: 'manifest.json', kind: 'json', start: entry.start, end: entry.end }] });
+    const line = manifestLine(entry.start);
+    push({ ...row, id: entry.path.join('.'), where: 'manifest.json', line, text: entry.text,
+      targets: [{ file: 'manifest.json', kind: 'json', start: entry.start, end: entry.end, line }] });
   }
 
   scanGameJs(gameSrc, out, push);
   scanPage(pageSrc, out, warn);
+  if (manifest.web && manifest.web.army) await scanArmyJs(push, warn);
 
   // Same sentence, two languages, one line on the page.
   const byPair = {};
@@ -484,6 +677,31 @@ export async function scanText(slug) {
   for (const r of rows) if (r.pair) {
     const other = r.lang === 'fr' ? byPair[r.pair].en : byPair[r.pair].fr;
     if (other != null) r.other = other;
+  }
+  // A feminine form reads against the English, the one pair it has.
+  for (const r of rows) if (r.echo && byPair[r.echo] && byPair[r.echo].en != null) r.other = byPair[r.echo].en;
+
+  /* WHERE A DICTIONARY ENTRY IS READ. Its key is the English, which says what
+     it means but not where it shows: every row of the game that writes that
+     English is one use, printed under the French. An entry nothing writes is
+     marked — the English moved and the translation stayed behind, or the game
+     builds the string at runtime where a parser cannot follow it. */
+  const usesOf = {};
+  for (const r of rows) if (r.lang === 'en' && (r.dict || r.where === 'game.js') && !r.code) {
+    (usesOf[r.text] = usesOf[r.text] || []).push(...(r.uses && r.uses.length ? r.uses.map((u) => ({ ...u, context: r.context, group: r.group }))
+      : [{ context: r.context, group: r.group, file: r.where, line: r.line }]));
+  }
+  /* Second chance: the English sits in a table the game reads at runtime
+     (`TIER_LABEL = ["Basic", "Common", …]`) and reaches Lang.t through a
+     variable. The table is still where it is written, so that is its use. */
+  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc } = out.js;
+  for (const r of rows) if (r.group === 'words') {
+    r.uses = usesOf[r.context] || [];
+    if (r.uses.length) continue;
+    const at = [JSON.stringify(r.context), `'${r.context.replace(/'/g, "\\'")}'`]
+      .map((q) => js.indexOf(q)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+    if (at != null) r.uses = [{ context: 'Found in game.js', group: 'data', line: jsLine(at), fn: jsScope(at), src: lineAt(jsSrc, at) }];
+    else r.unused = true;
   }
 
   /* PARITY. Every string the game itself writes is read back against the
@@ -496,6 +714,8 @@ export async function scanText(slug) {
     if (dict[r.text] != null) r.fr = dict[r.text];
     else if (!missing.some((m) => m.text === r.text)) missing.push(r);
   }
+  for (const r of rows) if (PAIRED.has(r.group) && r.lang === 'en' && r.pair && byPair[r.pair].fr == null)
+    missing.push({ text: `${r.context} (${r.where})` });
 
   const counts = {
     en: rows.filter((r) => r.lang !== 'fr').length,
@@ -526,7 +746,7 @@ function table(scan) {
       if (!inGroup.length) continue;
       console.log(`  \x1b[90m── ${g.label}\x1b[0m`);
       for (const r of inGroup) {
-        const at = r.where === 'game.js' ? `game.js:${r.line}` : r.where;
+        const at = r.line ? `${r.where}:${r.line}` : r.where;
         console.log(`    ${pad(at, 16)} ${pad(r.context, 26)} ${r.fragment ? '\x1b[90m·\x1b[0m ' : '  '}${oneLine(r.text)}`);
       }
     }

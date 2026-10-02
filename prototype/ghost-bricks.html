@@ -1,0 +1,719 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>ghost-bricks prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05070f; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; touch-action: none; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// Bouncetry, new verb. The wall holds two kinds of brick:
+//
+//   classic - breaks on a hit (one or two), pays points
+//   ghost   - the ball goes straight through it... until you tap.
+//
+// While a ball is in flight, a tap turns the ghost bricks solid: the ball
+// bounces off them, they pay nothing and never break. Tap again and they are
+// ghosts again. No cooldown, no budget: the player decides, and the level
+// design is what makes a tap right or wrong. A well-timed tap closes a pocket
+// of classic bricks around the ball - it rattles inside and eats the pocket -
+// and a second tap lets it out.
+//
+// A level may hold TWO groups of ghosts, A (cyan) and B (magenta). Then a tap
+// swaps them: when one turns solid the other turns ghost. Such a level can
+// start a shot with A already solid (`start: 1`), and the sight shows it.
+//
+// The question: is timing that one tap - in, close, harvest, open - fun?
+//
+// Aim: drag anywhere, release to fire. One ball at a time.
+// Keys: SPACE fire / toggle, R restart, <- -> level.
+// Top bar: tap the arrows to change level, the level name to restart.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;              // design space, portrait
+var FIELD_L = 24, FIELD_R = 696;    // side walls
+var FIELD_T = 140;                  // ceiling
+var COLS = 12;
+var CELL_W = 56, CELL_H = 36;       // 12 x 56 = 672 = FIELD_R - FIELD_L
+var PAD = 3;                        // visual gap only - physics uses full cells
+var GRID_L = FIELD_L, GRID_T = FIELD_T;
+var LAVA_Y = 1160;                  // below this the ball is lost
+var CANNON_X = 360, CANNON_Y = 1095;
+var MUZZLE = 52;
+
+var BALLS = 5;                      // balls per level
+var BALL_R = 11;
+var BALL_SPEED = 820;               // px/s, constant until the pull kicks in
+var MIN_AIM_DEG = 12;               // never aim flatter than this
+var MIN_VY = 0.14;                  // share of the speed kept vertical, no flat rallies
+var PULL_AFTER = 9;                 // seconds of flight before gravity pulls
+var PULL = 520;                     // px/s^2
+var BALL_MAX_LIFE = 60;             // hard safety net for a ball shut in forever
+
+// A ball that cannot reach the lava any more - every way down is shut by a
+// wall, a live brick or a solid ghost - is sped up, and eased back to normal
+// the moment a way down opens again. The pull timer only runs while it is free.
+var FAST_MULT = 1.8;                // speed x while the ball is shut in
+var FAST_IN = 5;                    // 1/s easing up to the fast speed
+var FAST_OUT = 16;                  // 1/s easing back down once it is free
+
+// A ball shut in a pocket with nothing left to break in it is let out by the
+// game: the solid ghosts blink for RELEASE_DELAY seconds, then the game taps.
+// A tap from the player during the blink cancels it (the tap is theirs).
+var RELEASE_DELAY = 2.0;
+
+var TRACE_BOUNCES = 2;              // how far ahead the dotted sight solves
+var BRICK_SCORE = 10;               // x the chain of the shot
+var BALL_BONUS = 200;               // per unfired ball on a clear
+
+// --- levels ----------------------------------------------------------------
+// '.' empty   'o' classic   'O' classic, 2 hits   'g' ghost A   'h' ghost B
+// start: which group is solid when a shot leaves the cannon (0 none, 1 A, 2 B)
+var LEVELS = [
+  { name: "Lid", rows: [
+    "............",
+    "oooooooooooo",
+    "oOOooOOooOOo",
+    "oooooooooooo",
+    "............",
+    "............",
+    "............",
+    "gggggggggggg",
+    "............",
+    "............",
+    "............",
+    "..o......o..",
+    ".ooo....ooo.",
+  ]},
+  { name: "Cage", rows: [
+    "............",
+    "............",
+    ".gggggggggg.",
+    ".g........g.",
+    ".g.oooooo.g.",
+    ".g.oOOOOo.g.",
+    ".g.oooooo.g.",
+    ".g........g.",
+    ".g........g.",
+    ".g........g.",
+    ".gggggggggg.",
+    "............",
+    "............",
+    "o..........o",
+    "oo........oo",
+  ]},
+  { name: "Twins", rows: [
+    "............",
+    "ggggg..ggggg",
+    "gooog..gooog",
+    "gOOOg..gOOOg",
+    "gooog..gooog",
+    "g...g..g...g",
+    "g...g..g...g",
+    "g...g..g...g",
+    "ggggg..ggggg",
+    "............",
+    "............",
+    "....oooo....",
+  ]},
+  { name: "Shafts", rows: [
+    "............",
+    "ooogoooogooo",
+    "oOogoOOogoOo",
+    "ooogoooogooo",
+    "...g....g...",
+    "...g....g...",
+    "...g....g...",
+    "...g....g...",
+    "...g....g...",
+    "...g....g...",
+    "............",
+    "............",
+    "o....oo....o",
+  ]},
+  { name: "Nest", rows: [
+    "............",
+    "gggggggggggg",
+    "g..........g",
+    "g.oooooooo.g",
+    "g.o......o.g",
+    "g.o.gggg.o.g",
+    "g.o.gOOg.o.g",
+    "g.o.gOOg.o.g",
+    "g.o.gggg.o.g",
+    "g.o......o.g",
+    "g.oooooooo.g",
+    "g..........g",
+    "g..........g",
+    "gggggggggggg",
+  ]},
+  // Two groups from here on. A is solid at launch: pass B into the lock,
+  // swap while the ball is between the lines, and the top is shut in with it.
+  { name: "Airlock", start: 1, rows: [
+    "............",
+    "oooooooooooo",
+    "oOOooOOooOOo",
+    "oooooooooooo",
+    "............",
+    "............",
+    "gggggggggggg",
+    "............",
+    "..oo....oo..",
+    "............",
+    "hhhhhhhhhhhh",
+    "............",
+    "............",
+    "..o......o..",
+    ".ooo....ooo.",
+  ]},
+  // Left cage A shut, right cage B open. Every tap closes one and opens the
+  // other, so moving the ball from one cage to the next is two timed taps.
+  { name: "Seesaw", start: 1, rows: [
+    "............",
+    "ggggg..hhhhh",
+    "gooog..hoooh",
+    "gOOOg..hOOOh",
+    "gooog..hoooh",
+    "g...g..h...h",
+    "g...g..h...h",
+    "g...g..h...h",
+    "ggggg..hhhhh",
+    "............",
+    "............",
+    "....oooo....",
+  ]},
+  // Alternating lines: A, B, A, B going down. Each tap moves the ceiling and
+  // the floor of the chamber the ball is in - it climbs one lock at a time.
+  { name: "Locks", start: 1, rows: [
+    "............",
+    "oooooooooooo",
+    "oOOooOOooOOo",
+    "............",
+    "gggggggggggg",
+    "............",
+    "o..oo..oo..o",
+    "............",
+    "hhhhhhhhhhhh",
+    "............",
+    "o..oo..oo..o",
+    "............",
+    "gggggggggggg",
+    "............",
+    ".oo..oo..oo.",
+    "............",
+    "hhhhhhhhhhhh",
+  ]},
+];
+
+// --- state -----------------------------------------------------------------
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var scale = 1, dpr = 1;
+var level = 0, grid = [], gridRows = 0;
+var ball = null, ballsLeft = 0;
+var phase = 0, groups = 1, solidFlash = 0;   // phase: which group is solid, 0 none
+var score = 0, chain = 0, bestChain = 0;
+var state = "aim";                  // aim | fly | clear | over
+var aiming = false, aimA = -Math.PI / 2;
+var toggles = 0, releaseT = -1, autoTaps = 0;   // releaseT: blink countdown, -1 off
+var fps = 60, lastT = 0;
+
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+function loadLevel(i) {
+  level = (i + LEVELS.length) % LEVELS.length;
+  var rows = LEVELS[level].rows;
+  gridRows = rows.length;
+  grid = [];
+  groups = 1;
+  for (var r = 0; r < rows.length; r++) {
+    grid.push([]);
+    for (var c = 0; c < COLS; c++) {
+      var ch = rows[r].charAt(c), b = null;
+      if (ch === "o" || ch === "O")
+        b = { ghost: false, group: 0, hp: ch === "O" ? 2 : 1, alive: true, r: r, c: c, flash: 0 };
+      else if (ch === "g" || ch === "h") {
+        b = { ghost: true, group: ch === "g" ? 1 : 2, hp: 0, alive: true, r: r, c: c, flash: 0 };
+        if (ch === "h") groups = 2;
+      }
+      grid[r].push(b);
+    }
+  }
+  ball = null; ballsLeft = BALLS; phase = LEVELS[level].start || 0;
+  score = 0; chain = 0; bestChain = 0; toggles = 0; releaseT = -1; autoTaps = 0;
+  state = "aim"; aiming = false;
+}
+
+function classicLeft() {
+  var n = 0;
+  for (var r = 0; r < gridRows; r++)
+    for (var c = 0; c < COLS; c++) {
+      var b = grid[r][c];
+      if (b && b.alive && !b.ghost) n++;
+    }
+  return n;
+}
+
+function cellRect(r, c) {
+  var x0 = GRID_L + c * CELL_W, y0 = GRID_T + r * CELL_H;
+  return { x0: x0, y0: y0, x1: x0 + CELL_W, y1: y0 + CELL_H };
+}
+
+function overlaps(bl, rc) {
+  var px = clamp(bl.x, rc.x0, rc.x1), py = clamp(bl.y, rc.y0, rc.y1);
+  var dx = bl.x - px, dy = bl.y - py;
+  return dx * dx + dy * dy < BALL_R * BALL_R;
+}
+
+// --- ghosts ----------------------------------------------------------------
+function isSolid(b) { return b.ghost && b.group === phase; }
+
+// One group: none <-> A. Two groups: A <-> B (a first tap from none gives A).
+function nextPhase() {
+  if (groups === 1) return phase ? 0 : 1;
+  return phase === 1 ? 2 : 1;
+}
+
+function tap() {
+  releaseT = -1;
+  setPhase(nextPhase());
+}
+
+function setPhase(p) {
+  if (p === phase) return;
+  phase = p;
+  solidFlash = 0.18;
+  toggles++;
+  // A ghost the ball is already inside stays passable for it until it leaves,
+  // or the ball would be spat out sideways by a brick materialising around it.
+  ball.pass = [];
+  for (var r = 0; r < gridRows; r++)
+    for (var c = 0; c < COLS; c++) {
+      var b = grid[r][c];
+      if (b && isSolid(b) && overlaps(ball, cellRect(r, c))) ball.pass.push(b);
+    }
+}
+
+function passable(r, c) {
+  var b = grid[r][c];
+  return !b || !b.alive || (b.ghost && !isSolid(b));
+}
+
+// Flood fill from the ball's cell over the passable cells, 4-connected (two
+// bricks touching at a corner leave no gap a ball fits through). Reaching the
+// last row of the grid means the open space under it, and the lava: free.
+// Returns the enclosed cells, or null when the ball is free.
+function trappedZone(bl) {
+  var r = Math.floor((bl.y - GRID_T) / CELL_H);
+  if (r >= gridRows) return null;
+  var c = clamp(Math.floor((bl.x - GRID_L) / CELL_W), 0, COLS - 1);
+  r = Math.max(0, r);
+  var start = r * COLS + c, seen = {}, zone = [start], stack = [start];
+  seen[start] = true;
+  while (stack.length) {
+    var k = stack.pop(), rr = Math.floor(k / COLS), cc = k % COLS;
+    if (rr === gridRows - 1) return null;
+    var nb = [[rr - 1, cc], [rr + 1, cc], [rr, cc - 1], [rr, cc + 1]];
+    for (var i = 0; i < 4; i++) {
+      var nr = nb[i][0], nc = nb[i][1], nk = nr * COLS + nc;
+      if (nr < 0 || nc < 0 || nc >= COLS || seen[nk] || !passable(nr, nc)) continue;
+      seen[nk] = true; zone.push(nk); stack.push(nk);
+    }
+  }
+  return zone;
+}
+
+// Is there a classic brick the ball can still reach from its pocket? The
+// bricks are the pocket's walls, so they are the cells around it - diagonals
+// included, since a ball clips a corner.
+function zoneHasBricks(zone) {
+  for (var i = 0; i < zone.length; i++) {
+    var r = Math.floor(zone[i] / COLS), c = zone[i] % COLS;
+    for (var dr = -1; dr <= 1; dr++)
+      for (var dc = -1; dc <= 1; dc++) {
+        var nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= gridRows || nc < 0 || nc >= COLS) continue;
+        var b = grid[nr][nc];
+        if (b && b.alive && !b.ghost) return true;
+      }
+  }
+  return false;
+}
+
+function prunePass(bl) {
+  if (!bl.pass.length) return;
+  var keep = [];
+  for (var i = 0; i < bl.pass.length; i++) {
+    var b = bl.pass[i];
+    if (overlaps(bl, cellRect(b.r, b.c))) keep.push(b);
+  }
+  bl.pass = keep;
+}
+
+// --- physics ---------------------------------------------------------------
+function fixAngle(bl) {
+  if (bl.pulling) return;
+  var want = BALL_SPEED * (bl.k || 1);
+  var m = MIN_VY * want;
+  if (Math.abs(bl.vy) < m) bl.vy = (bl.vy < 0 ? -1 : 1) * m;
+  var sp = Math.sqrt(bl.vx * bl.vx + bl.vy * bl.vy);
+  bl.vx *= want / sp; bl.vy *= want / sp;
+}
+
+// Deepest brick overlap, resolved and reflected. `dry` is the sight: nothing
+// breaks, and the ghosts are as they stand now.
+function collideBricks(bl, dry) {
+  var R = BALL_R;
+  var c0 = Math.max(0, Math.floor((bl.x - R - GRID_L) / CELL_W));
+  var c1 = Math.min(COLS - 1, Math.floor((bl.x + R - GRID_L) / CELL_W));
+  var r0 = Math.max(0, Math.floor((bl.y - R - GRID_T) / CELL_H));
+  var r1 = Math.min(gridRows - 1, Math.floor((bl.y + R - GRID_T) / CELL_H));
+  var best = null, bestPen = 0, bnx = 0, bny = 0;
+  for (var r = r0; r <= r1; r++)
+    for (var c = c0; c <= c1; c++) {
+      var b = grid[r][c];
+      if (!b || !b.alive) continue;
+      if (b.ghost && (!isSolid(b) || bl.pass.indexOf(b) >= 0)) continue;
+      var rc = cellRect(r, c);
+      var px = clamp(bl.x, rc.x0, rc.x1), py = clamp(bl.y, rc.y0, rc.y1);
+      var dx = bl.x - px, dy = bl.y - py, d2 = dx * dx + dy * dy;
+      if (d2 >= R * R) continue;
+      var nx, ny, pen;
+      if (d2 > 1e-6) {
+        var d = Math.sqrt(d2); nx = dx / d; ny = dy / d; pen = R - d;
+      } else {
+        var l = bl.x - rc.x0, rt = rc.x1 - bl.x, t = bl.y - rc.y0, bt = rc.y1 - bl.y;
+        var m = Math.min(l, rt, t, bt);
+        if (m === l) { nx = -1; ny = 0; pen = l + R; }
+        else if (m === rt) { nx = 1; ny = 0; pen = rt + R; }
+        else if (m === t) { nx = 0; ny = -1; pen = t + R; }
+        else { nx = 0; ny = 1; pen = bt + R; }
+      }
+      if (pen > bestPen) { best = b; bestPen = pen; bnx = nx; bny = ny; }
+    }
+  if (!best) return null;
+  bl.x += bnx * bestPen; bl.y += bny * bestPen;
+  var vn = bl.vx * bnx + bl.vy * bny;
+  if (vn < 0) { bl.vx -= 2 * vn * bnx; bl.vy -= 2 * vn * bny; }
+  fixAngle(bl);
+  return best;
+}
+
+function hitBrick(b) {
+  b.flash = 0.15;
+  if (b.ghost) return;                       // solid ghost: a wall, no points
+  b.hp--;
+  if (b.hp <= 0) {
+    b.alive = false;
+    chain++;
+    if (chain > bestChain) bestChain = chain;
+    score += BRICK_SCORE * chain;
+  }
+}
+
+// Moves a ball by dt in small substeps. Returns the number of bounces.
+function advance(bl, dt, dry) {
+  var sp = Math.sqrt(bl.vx * bl.vx + bl.vy * bl.vy);
+  var n = Math.max(1, Math.ceil(sp * dt / (BALL_R * 0.4)));
+  var h = dt / n, bounces = 0;
+  for (var i = 0; i < n; i++) {
+    bl.x += bl.vx * h; bl.y += bl.vy * h;
+    if (bl.x < FIELD_L + BALL_R) { bl.x = FIELD_L + BALL_R; bl.vx = Math.abs(bl.vx); fixAngle(bl); bounces++; }
+    if (bl.x > FIELD_R - BALL_R) { bl.x = FIELD_R - BALL_R; bl.vx = -Math.abs(bl.vx); fixAngle(bl); bounces++; }
+    if (bl.y < FIELD_T + BALL_R) { bl.y = FIELD_T + BALL_R; bl.vy = Math.abs(bl.vy); fixAngle(bl); bounces++; }
+    if (!dry) prunePass(bl);
+    for (var k = 0; k < 2; k++) {
+      var b = collideBricks(bl, dry);
+      if (!b) break;
+      bounces++;
+      if (!dry) hitBrick(b);
+    }
+    if (bl.y - BALL_R > LAVA_Y) { bl.dead = true; return bounces; }
+  }
+  return bounces;
+}
+
+// --- flow ------------------------------------------------------------------
+function fire() {
+  if (state !== "aim" || ballsLeft <= 0) return;
+  ballsLeft--;
+  ball = { x: CANNON_X + Math.cos(aimA) * MUZZLE, y: CANNON_Y + Math.sin(aimA) * MUZZLE,
+           vx: Math.cos(aimA) * BALL_SPEED, vy: Math.sin(aimA) * BALL_SPEED,
+           life: 0, free: 0, pulling: false, pass: [], dead: false, k: 1, zone: null };
+  chain = 0;
+  state = "fly";
+  releaseT = -1;
+}
+
+function endBall() {
+  releaseT = -1;
+  phase = LEVELS[level].start || 0;
+  ball = null;
+  if (classicLeft() === 0) { score += ballsLeft * BALL_BONUS; state = "clear"; }
+  else if (ballsLeft <= 0) state = "over";
+  else state = "aim";
+}
+
+function update(dt) {
+  solidFlash = Math.max(0, solidFlash - dt);
+  for (var r = 0; r < gridRows; r++)
+    for (var c = 0; c < COLS; c++)
+      if (grid[r][c]) grid[r][c].flash = Math.max(0, grid[r][c].flash - dt);
+
+  if (state !== "fly" || !ball) return;
+  ball.life += dt;
+  ball.zone = trappedZone(ball);
+  if (ball.zone) ball.pulling = false;
+  else {
+    ball.free += dt;
+    if (ball.free > PULL_AFTER) { ball.pulling = true; ball.vy += PULL * dt; }
+  }
+  // shut in with nothing left to break: blink, then the game taps for you
+  if (ball.zone && !zoneHasBricks(ball.zone)) {
+    if (releaseT < 0) releaseT = RELEASE_DELAY;
+    releaseT -= dt;
+    if (releaseT <= 0) { tap(); autoTaps++; }
+  } else releaseT = -1;
+  var target = ball.zone ? FAST_MULT : 1;
+  ball.k += (target - ball.k) * Math.min(1, dt * (target > ball.k ? FAST_IN : FAST_OUT));
+  fixAngle(ball);
+  advance(ball, dt, false);
+  if (classicLeft() === 0 || ball.dead || ball.life > BALL_MAX_LIFE) endBall();
+}
+
+// --- input -----------------------------------------------------------------
+function toDesign(e) {
+  var rect = cv.getBoundingClientRect();
+  return { x: (e.clientX - rect.left) / scale, y: (e.clientY - rect.top) / scale };
+}
+
+function setAim(p) {
+  var a = Math.atan2(p.y - CANNON_Y, p.x - CANNON_X);
+  if (a > 0) a = p.x < CANNON_X ? -Math.PI : 0;       // below the cannon
+  var lim = MIN_AIM_DEG * Math.PI / 180;
+  aimA = clamp(a, -Math.PI + lim, -lim);
+}
+
+function onDown(p) {
+  if (p.y < 70) {                                     // top bar
+    if (p.x < 110) loadLevel(level - 1);
+    else if (p.x > W - 110) loadLevel(level + 1);
+    else loadLevel(level);
+    return;
+  }
+  if (state === "clear") { loadLevel(level + 1); return; }
+  if (state === "over") { loadLevel(level); return; }
+  if (state === "fly") { tap(); return; }
+  aiming = true;
+  setAim(p);
+}
+
+function onMove(p) { if (aiming) setAim(p); }
+
+function onUp() {
+  if (aiming) { aiming = false; fire(); }
+}
+
+cv.addEventListener("pointerdown", function (e) { cv.setPointerCapture(e.pointerId); onDown(toDesign(e)); });
+cv.addEventListener("pointermove", function (e) { onMove(toDesign(e)); });
+cv.addEventListener("pointerup", function (e) { onUp(toDesign(e)); });
+cv.addEventListener("pointercancel", function (e) { onUp(toDesign(e)); });
+
+window.addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (state === "fly") tap();
+    else if (state === "aim") fire();
+    else if (state === "clear") loadLevel(level + 1);
+    else loadLevel(level);
+  } else if (e.code === "KeyR") loadLevel(level);
+  else if (e.code === "ArrowLeft") loadLevel(level - 1);
+  else if (e.code === "ArrowRight") loadLevel(level + 1);
+});
+
+// --- render ----------------------------------------------------------------
+var HUES = [350, 20, 45, 90, 160, 200, 260, 300];
+// per ghost group: solid fill, solid rim, ghost outline
+var GHOST = [null,
+  { fill: "#bdf2ff", rim: "#39c6f2", line: "rgba(120,220,255,0.45)" },
+  { fill: "#ffc8f4", rim: "#e04fc4", line: "rgba(255,130,230,0.45)" }];
+
+function drawBrick(b) {
+  var rc = cellRect(b.r, b.c);
+  var x = rc.x0 + PAD, y = rc.y0 + PAD, w = CELL_W - 2 * PAD, h = CELL_H - 2 * PAD;
+  if (b.ghost) {
+    var g = GHOST[b.group];
+    var look = isSolid(b);
+    // During the release countdown the group about to swap blinks, faster
+    // at the end: the solid one flickers out, the one taking over flickers in.
+    if (releaseT >= 0) {
+      var off = Math.floor(releaseT * (releaseT < 0.7 ? 14 : 6)) % 2 === 0;
+      if (isSolid(b) && off) look = false;
+      else if (!isSolid(b) && b.group === nextPhase() && !off) look = true;
+    }
+    if (look) {
+      ctx.fillStyle = b.flash > 0 ? "#ffffff" : g.fill;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = g.rim; ctx.lineWidth = 3;
+      ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      ctx.fillRect(x, y, w, h);
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = g.line;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      ctx.setLineDash([]);
+    }
+    return;
+  }
+  var hue = HUES[b.r % HUES.length];
+  ctx.fillStyle = b.flash > 0 ? "#fff" : "hsl(" + hue + ",75%," + (b.hp > 1 ? 38 : 55) + "%)";
+  ctx.fillRect(x, y, w, h);
+  if (b.hp > 1) {
+    ctx.strokeStyle = "hsl(" + hue + ",80%,72%)"; ctx.lineWidth = 3;
+    ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
+  }
+}
+
+function drawTrace() {
+  var bl = { x: CANNON_X + Math.cos(aimA) * MUZZLE, y: CANNON_Y + Math.sin(aimA) * MUZZLE,
+             vx: Math.cos(aimA) * BALL_SPEED, vy: Math.sin(aimA) * BALL_SPEED,
+             pulling: false, pass: [], dead: false };
+  var bounces = 0, dist = 0, step = 1 / 240;
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  for (var i = 0; i < 2000 && !bl.dead; i++) {
+    var ox = bl.x, oy = bl.y;
+    bounces += advance(bl, step, true);
+    dist += Math.hypot(bl.x - ox, bl.y - oy);
+    if (bounces > TRACE_BOUNCES) break;
+    if (dist > 22) { dist = 0; ctx.beginPath(); ctx.arc(bl.x, bl.y, 3.5, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+
+function render() {
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  ctx.fillStyle = "#0b0f1f"; ctx.fillRect(0, 0, W, H);
+
+  // field
+  ctx.fillStyle = solidFlash > 0 ? "#142038" : "#10162b";
+  ctx.fillRect(FIELD_L, FIELD_T, FIELD_R - FIELD_L, LAVA_Y - FIELD_T);
+  ctx.fillStyle = "#2a3354";
+  ctx.fillRect(FIELD_L - 6, FIELD_T - 6, 6, LAVA_Y - FIELD_T + 6);
+  ctx.fillRect(FIELD_R, FIELD_T - 6, 6, LAVA_Y - FIELD_T + 6);
+  ctx.fillRect(FIELD_L - 6, FIELD_T - 6, FIELD_R - FIELD_L + 12, 6);
+
+  // the pocket the ball is shut in, if any
+  if (ball && ball.zone) {
+    ctx.fillStyle = "rgba(255,224,102,0.07)";
+    for (var z = 0; z < ball.zone.length; z++) {
+      var zr = Math.floor(ball.zone[z] / COLS), zc = ball.zone[z] % COLS;
+      ctx.fillRect(GRID_L + zc * CELL_W, GRID_T + zr * CELL_H, CELL_W, CELL_H);
+    }
+  }
+
+  for (var r = 0; r < gridRows; r++)
+    for (var c = 0; c < COLS; c++) {
+      var b = grid[r][c];
+      if (b && b.alive) drawBrick(b);
+    }
+
+  // lava
+  ctx.fillStyle = "#d9431e"; ctx.fillRect(FIELD_L, LAVA_Y, FIELD_R - FIELD_L, H - LAVA_Y);
+  ctx.fillStyle = "#ff8a3d"; ctx.fillRect(FIELD_L, LAVA_Y, FIELD_R - FIELD_L, 5);
+
+  // cannon
+  if (state === "aim") drawTrace();
+  ctx.strokeStyle = "#c9d2f0"; ctx.lineWidth = 16; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(CANNON_X, CANNON_Y);
+  ctx.lineTo(CANNON_X + Math.cos(aimA) * MUZZLE, CANNON_Y + Math.sin(aimA) * MUZZLE); ctx.stroke();
+  ctx.fillStyle = "#4b5a8a"; ctx.beginPath(); ctx.arc(CANNON_X, CANNON_Y, 30, 0, Math.PI * 2); ctx.fill();
+  for (var i = 0; i < ballsLeft; i++) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(CANNON_X + 60 + i * 26, CANNON_Y + 20, 8, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ball
+  if (ball) {
+    var fast = (ball.k - 1) / (FAST_MULT - 1);
+    if (fast > 0.05) {                         // a streak behind a fast ball
+      ctx.strokeStyle = "rgba(255,224,102," + (0.45 * fast) + ")";
+      ctx.lineWidth = BALL_R * 1.6; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(ball.x, ball.y);
+      ctx.lineTo(ball.x - ball.vx * 0.035, ball.y - ball.vy * 0.035); ctx.stroke();
+    }
+    ctx.fillStyle = ball.pulling ? "#ffb4a0" : ball.zone ? "#ffe066" : "#ffffff";
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // top bar
+  ctx.fillStyle = "#e8ecff"; ctx.textBaseline = "middle";
+  ctx.font = "bold 30px system-ui, sans-serif";
+  ctx.textAlign = "left"; ctx.fillText("<", 34, 36);
+  ctx.textAlign = "right"; ctx.fillText(">", W - 34, 36);
+  ctx.textAlign = "center";
+  ctx.fillText((level + 1) + ". " + LEVELS[level].name, W / 2, 36);
+  ctx.font = "24px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Score " + score, FIELD_L, 86);
+  ctx.textAlign = "center";
+  ctx.fillText("Chain x" + chain + "  (best x" + bestChain + ")", W / 2, 86);
+  ctx.textAlign = "right";
+  ctx.fillText("Bricks " + classicLeft(), FIELD_R, 86);
+
+  // which group is solid: one strip per group, lit when solid
+  var sw = (FIELD_R - FIELD_L - 8 * (groups - 1)) / groups;
+  for (var gi = 1; gi <= groups; gi++) {
+    ctx.fillStyle = phase === gi ? GHOST[gi].fill : "#1d2440";
+    ctx.fillRect(FIELD_L + (gi - 1) * (sw + 8), 110, sw, 12);
+  }
+
+  // debug line
+  ctx.font = "22px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#ffe7d6";
+  ctx.fillText("Tap = " + (groups === 1 ? "ghosts solid / ghost" : "swap A and B") +
+               "  |  toggles " + toggles + " (auto " + autoTaps + ")" + (ball ? "  |  speed x" + ball.k.toFixed(2) : "") +
+               "  |  " + Math.round(fps) + " fps", W / 2, H - 70);
+  ctx.fillText(state === "aim" ? "Drag to aim, release to fire" :
+               state === "fly" && releaseT >= 0 ? "Empty pocket - auto tap in " + releaseT.toFixed(1) + "s" :
+               state === "fly" ? (groups === 2 ? (phase === 1 ? "A solid - tap for B" : "B solid - tap for A") :
+                                  phase ? "Solid - tap to open" : "Ghost - tap to close") :
+               state === "clear" ? "Clear! Tap for the next level" :
+               "Out of balls - tap to retry", W / 2, H - 36);
+
+  if (state === "clear" || state === "over") {
+    ctx.fillStyle = "rgba(5,7,15,0.6)"; ctx.fillRect(0, 500, W, 180);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 48px system-ui, sans-serif";
+    ctx.fillText(state === "clear" ? "Clear" : "Out of balls", W / 2, 565);
+    ctx.font = "28px system-ui, sans-serif";
+    ctx.fillText("Score " + score + "  |  best chain x" + bestChain + "  |  toggles " + toggles, W / 2, 625);
+  }
+}
+
+// --- loop ------------------------------------------------------------------
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  cv.style.width = Math.round(W * scale) + "px";
+  cv.style.height = Math.round(H * scale) + "px";
+  cv.width = Math.round(W * scale * dpr);
+  cv.height = Math.round(H * scale * dpr);
+}
+window.addEventListener("resize", resize);
+
+function frame(t) {
+  var dt = lastT ? Math.min(0.033, (t - lastT) / 1000) : 1 / 60;
+  lastT = t;
+  if (dt > 0) fps += (1 / dt - fps) * 0.05;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+
+resize();
+loadLevel(0);
+requestAnimationFrame(frame);
+</script>

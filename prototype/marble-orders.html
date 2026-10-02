@@ -1,0 +1,1114 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>marble-orders prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0a07; overflow: hidden;
+    touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// Marble orders: the marble-router machine, turned into a little factory.
+//
+// The same brass-and-wood marble run: a hopper pours marbles on rails that
+// roll with real slope physics, four flip-flop switches S0-S3 (a tap flips the
+// nearest one, and every marble passing flips it too), loops, the notched
+// wheel that merges the two inner lines, the coil, the escapements that queue
+// the stream before each switch, and the gutter that carries everything back
+// up through the background (screw, top rail, bucket lift, ferris wheel).
+//
+// What changed: the marbles come in three glass colours - amber (a ring),
+// teal (a triangle) and violet (a square) - plus bombs. The three machines
+// at the bottom are ORDER STATIONS. Each one posts an order on its box: a row
+// of empty slots in one colour (the count), and a timer bar draining under
+// it. A marble of the right colour fills a slot; a wrong colour is refused
+// ("Wrong") and falls to the gutter, which only breaks the combo. A bomb jams
+// the station and costs a strike. A filled order pays - more with time left -
+// and sets its machine off as the reward: the bell rings, the launcher throws
+// three marbles back up to the hopper, the cannon shoots every bomb on the
+// rails. A new order arrives a second later. An order that runs out costs a
+// strike; three strikes end the round. Now and then an EXPRESS order comes in:
+// short timer, double pay. Over the 75 s the orders ask for more marbles in
+// less time, and the stream carries more bombs. Bombs belong in the furnace,
+// down the middle; a good marble there is simply lost.
+//
+// The question: is juggling timed orders from a live marble stream fun?
+//
+// Tap: flip the nearest switch. Tap "Auto" (or A) to let it play itself.
+// Keys 1-4 flip S0-S3, R restarts.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;          // design space, portrait
+var R = 14;                     // marble radius
+var ROUND_SECONDS = 75;
+var LIVES = 3;
+var G = 780;                    // px/s^2 of gravity along a slope
+var FRICTION = 55;              // px/s^2 of rolling drag
+var VMIN = 110, VMAX = 400;     // a marble never stalls and never flies off
+var TEMPO_START = 1.2, TEMPO_END = 1.35;    // time scale of the rails over the round
+var SPAWN_START = 1.05, SPAWN_END = 0.7;    // seconds between two marbles
+var HOPPER_HOLD = 3;            // the hopper stops pouring while the top gate holds this many
+var BAD_START = 0.12, BAD_END = 0.28;      // share of bombs in the stream
+var DEMAND_BASE = 0.3, DEMAND_BIAS = 2;    // colour weight in the pour: base + bias per slot some order still wants
+var JAM_SECONDS = 3;
+var JAM_STRIKE = true;          // a bomb in a station costs a strike (as in the base)
+var LAUNCH_BONUS = 3;           // marbles the launcher throws back up
+// Orders.
+var ORDER_TIME_START = 15, ORDER_TIME_END = 11;  // seconds on the clock of a two-marble order
+var ORDER_TIME_PER_EXTRA = 2.5;                  // extra seconds per marble past two
+var COUNT_START = 2, COUNT_END = 4;              // the most an order asks for, over the round
+var ORDER_GAP = 1.0;            // seconds between an order closing and the next one
+var ORDER_FIRST = [0.4, 1.6, 2.8];               // when the first order of bell, launcher, cannon arrives
+var ORDER_STREAM_BIAS = 1;      // a new order leans toward colours already aboard and unclaimed, per marble
+var ORDER_TAKEN = 0.25;         // weight of a colour another station is already asking for
+var EXPRESS_AFTER = 12, EXPRESS_CHANCE = 0.18, EXPRESS_TIME = 0.7, EXPRESS_PAY = 2;
+var EXPRESS_STRIKE = false;     // a missed express order is a chance lost, not a strike
+var PTS_PIP = 10, PTS_ORDER = 60, PTS_BURN = 5, PTS_SHOT = 20;   // PTS_ORDER per marble, x(1 + share of time left)
+var COMBO_STEP = 5, MULT_MAX = 5;   // good marbles per +1 multiplier, and its ceiling
+var TAP_REACH = 240;            // a tap farther than this from every switch does nothing
+var FLIP_TIME = 0.09;
+var TOGGLE_ON_PASS = true;      // a marble passing a switch flips it
+var WHEEL_OMEGA = 1.8;          // rad/s
+var WHEEL_NOTCHES = 8;
+var GUTTER_SPEED = 220, LIFT_SPEED = 150, CUP_GAP = 56;
+// Escapements: channel, where on it (share of its length), seconds per marble
+// at the start and at the end of the round, and where the pendulum's pivot
+// hangs from, relative to the pallet.
+var GATES = [["top", 0.8, 1.0, 0.75, 0, -88], ["S0L", 0.78, 1.25, 0.9, 0, -88],
+  ["S0R", 0.78, 1.25, 0.9, 0, -88], ["wout", 0.6, 0.9, 0.7, 52, -52]];
+var GATE_PRESSURE = 3;          // a queue this long swings the pendulum faster...
+var GATE_RUSH = 0.6;            // ... by this factor
+var WOUT_CAP = 2;               // marbles the gate under the wheel stores before the wheel keeps them
+var SCREW_X = 24, SCREW_BOT = 1238, SCREW_TOP = 44, SCREW_SPEED = 110;
+var BG_RAIL_SPEED = 120;
+var FERRIS = { cx: 590, cy: 350, r: 56, buckets: 6, omega: 0.6, marbles: 5 };
+var BG_ALPHA = 0.42;            // how far back the return circuits sit
+var AUTO_RATE = 0.22;           // seconds between two flips of the autopilot
+
+// --- palette ---------------------------------------------------------------
+var C_BG = "#1c140e", C_BG2 = "#241a12", C_WOOD = "#5a3d25", C_BRASS = "#c9994a",
+    C_BRASS_D = "#7a5a2a", C_STEEL = "#8d95a3", C_BAD = "#1d1d22";
+// The three glass colours, each with a symbol so colour is never the only cue.
+var COLS = [{ name: "Amber", c: "#f5a72e", sym: "ring" },
+            { name: "Teal", c: "#2ed3c1", sym: "tri" },
+            { name: "Violet", c: "#b07cff", sym: "square" }];
+
+// --- the network -------------------------------------------------------------
+var DS = 5;                     // rails are resampled every DS px
+var MID = 330;                  // the machine is symmetric about x = MID
+function mir(pts) { var o = []; for (var i = 0; i < pts.length; i++) o.push([2 * MID - pts[i][0], pts[i][1], pts[i][2]]); return o; }
+function loopPts(cx, cy, r) {
+  var o = [];
+  for (var i = 1; i <= 60; i++) { var a = Math.PI / 2 - i / 60 * Math.PI * 2; o.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  return o;
+}
+// A spiral seen from slightly above: x = sin, depth = cos, the near half lower.
+function coilPts(cx, y0, y1, r, turns) {
+  var o = [], n = turns * 48;
+  for (var i = 0; i <= n; i++) {
+    var a = i / n * turns * Math.PI * 2;
+    o.push([cx + r * Math.sin(a), y0 + (y1 - y0) * i / n + r * 0.35 * Math.cos(a), Math.cos(a)]);
+  }
+  return o;
+}
+var SW = { S0: [MID, 262], S1: [150, 470], S2: [2 * MID - 150, 470], S3: [MID, 790] };
+var WHEEL = { cx: MID, cy: 615, r: 70 };
+var S0L = [[MID, 262], [215, 318], [252, 392], [150, 470]];
+var S1L = [[150, 470], [60, 560], [110, 650], [30, 760], [32, 830], [52, 858], [100, 870]]
+  .concat(loopPts(100, 820, 50), [[140, 880], [168, 930], [85, 1005], [85, 1074]]);
+var S1R = [[150, 470], [250, 535], [205, 595], [WHEEL.cx - WHEEL.r, WHEEL.cy]];
+var RAW = {
+  top:  { to: "S0", pts: [[650, 152], [560, 186], [450, 212], [MID, 262]] },
+  S0L:  { to: "S1", pts: S0L },            S0R: { to: "S2", pts: mir(S0L) },
+  S1L:  { to: "bell", pts: S1L },           S1R: { to: "wheelL", pts: S1R },
+  S2L:  { to: "wheelR", pts: mir(S1R) },    S2R: { to: "cannon", pts: mir(S1L) },
+  wout: { to: "S3", pts: [[MID, WHEEL.cy + WHEEL.r], [MID, 790]] },
+  S3L:  { to: "furnace", pts: [[MID, 790], [255, 850], [300, 930], [250, 1000], [250, 1074]] },
+  S3R:  { to: "launcher", pts: [[MID, 790], [420, 842]].concat(coilPts(410, 850, 1030, 44, 2), [[410, 1074]]) }
+};
+var OUT = { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] };
+var MACHINE_DEFS = [
+  { id: "bell", name: "Bell", x: 85, color: "#e8c77a" },
+  { id: "furnace", name: "Furnace", x: 250, color: "#ff6a2a" },
+  { id: "launcher", name: "Launcher", x: 410, color: "#e8c77a" },
+  { id: "cannon", name: "Cannon", x: 575, color: "#e8c77a" }
+];
+var STATIONS = ["bell", "launcher", "cannon"];
+var BOX_Y = 1080, BOX_H = 120, BOX_W = 150;
+var GUTTER_L = 12, GUTTER_Y = 1226;
+var LIFT_X = 690, LIFT_BOT = 1240, LIFT_TOP = 118;
+var HOPPER = { x: 690, y: 118 };
+var CHIMES = [["top", 0.22], ["top", 0.42], ["top", 0.62], ["S0L", 0.55], ["S0R", 0.55], ["S3L", 0.5]];
+var DECO_GEARS = [[120, 250, 58, 11], [470, 740, 52, 10],
+  [185, 740, 44, 9], [600, 900, 66, 13], [60, 960, 40, 8], [520, 1010, 36, 7]];
+
+// Background rails: the top return from the screw, and the ferris wheel's run.
+var BG_RAW = {
+  back: [[SCREW_X, SCREW_TOP], [200, 50], [380, 58], [560, 64], [656, 70]],
+  ferris: [[612, 292], [650, 318], [618, 350], [652, 382], [606, 410]]
+};
+
+// Resample every channel to one point every DS px, keeping a depth per point.
+var CH = {}, BG = {};
+function makeChannel(k, to, raw) {
+  var xs = [], ys = [], zs = [];
+  xs.push(raw[0][0]); ys.push(raw[0][1]); zs.push(raw[0][2] === undefined ? 1 : raw[0][2]);
+  var carry = 0;
+  for (var i = 1; i < raw.length; i++) {
+    var a = raw[i - 1], b = raw[i], za = a[2] === undefined ? 1 : a[2], zb = b[2] === undefined ? 1 : b[2];
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.sqrt(dx * dx + dy * dy), s = DS - carry;
+    while (s <= L) { var q = s / L; xs.push(a[0] + dx * q); ys.push(a[1] + dy * q); zs.push(za + (zb - za) * q); s += DS; }
+    carry = L - (s - DS);
+  }
+  var last = raw[raw.length - 1];
+  xs.push(last[0]); ys.push(last[1]); zs.push(last[2] === undefined ? 1 : last[2]);
+  var n = xs.length, coil = false;
+  for (i = 0; i < n; i++) if (zs[i] < 0) coil = true;
+  return { id: k, to: to, xs: xs, ys: ys, zs: zs, n: n, len: (n - 1) * DS, coil: coil };
+}
+for (var chk in RAW) CH[chk] = makeChannel(chk, RAW[chk].to, RAW[chk].pts);
+for (chk in BG_RAW) BG[chk] = makeChannel(chk, null, BG_RAW[chk]);
+function at(ch, d) {
+  var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
+  return { x: ch.xs[i] + (ch.xs[i + 1] - ch.xs[i]) * q, y: ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q,
+           z: ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q, slope: (ch.ys[i + 1] - ch.ys[i]) / DS };
+}
+// The gutter is a shallow V: each half runs out to its own return circuit.
+function gutterY(x) { return GUTTER_Y + Math.abs(x - MID) * 0.03; }
+
+// --- canvas ------------------------------------------------------------------
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1, trackLayer = null, frontLayer = null;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  offX = (innerWidth - W * scale) / 2; offY = (innerHeight - H * scale) / 2;
+  buildLayers();
+}
+
+// The rails never move, so they are drawn once: sleepers, a shadow, two brass
+// rails. The coil's near half is also drawn on a second layer that goes OVER
+// the marbles, which is what puts a marble behind its own rails.
+function buildLayers() {
+  var k = scale * dpr;
+  trackLayer = document.createElement("canvas"); frontLayer = document.createElement("canvas");
+  trackLayer.width = frontLayer.width = Math.max(1, Math.round(W * k));
+  trackLayer.height = frontLayer.height = Math.max(1, Math.round(H * k));
+  var t = trackLayer.getContext("2d"), f = frontLayer.getContext("2d");
+  t.setTransform(k, 0, 0, k, 0, 0); f.setTransform(k, 0, 0, k, 0, 0);
+  for (var id in CH) {
+    var ch = CH[id];
+    drawRails(t, ch, function (z) { return z < 0; }, 0.4);
+    drawRails(t, ch, function (z) { return z >= 0; }, 1);
+    if (ch.coil) drawRails(f, ch, function (z) { return z >= 0.15; }, 1);
+  }
+}
+function normalAt(ch, i) {
+  var a = Math.max(0, i - 1), b = Math.min(ch.n - 1, i + 1);
+  var dx = ch.xs[b] - ch.xs[a], dy = ch.ys[b] - ch.ys[a], L = Math.sqrt(dx * dx + dy * dy) || 1;
+  return [-dy / L, dx / L];
+}
+function drawRails(c, ch, keep, alpha) {
+  c.globalAlpha = alpha; c.lineCap = "round"; c.lineJoin = "round";
+  var i, nv;
+  c.strokeStyle = C_WOOD; c.lineWidth = 5;
+  for (i = 0; i < ch.n; i += 5) {
+    if (!keep(ch.zs[i])) continue;
+    nv = normalAt(ch, i);
+    c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 7), ch.ys[i] - nv[1] * (R + 7));
+    c.lineTo(ch.xs[i] + nv[0] * (R + 7), ch.ys[i] + nv[1] * (R + 7)); c.stroke();
+  }
+  var sides = [-(R + 2), R + 2], pass, s;
+  for (pass = 0; pass < 2; pass++) {
+    c.strokeStyle = pass ? C_BRASS : "rgba(0,0,0,0.45)"; c.lineWidth = pass ? 3.5 : 5;
+    for (s = 0; s < 2; s++) {
+      var open = false;
+      c.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        if (!keep(ch.zs[i])) { open = false; continue; }
+        nv = normalAt(ch, i);
+        var x = ch.xs[i] + nv[0] * sides[s] + (pass ? 0 : 1.5), y = ch.ys[i] + nv[1] * sides[s] + (pass ? 0 : 2.5);
+        if (!open) { c.moveTo(x, y); open = true; } else c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+  }
+  c.globalAlpha = 1;
+}
+addEventListener("resize", resize);
+
+// --- state -------------------------------------------------------------------
+var marbles, queue, machines, sw, parts, floats, beams, rings, wheel, chimes, gates, ferris;
+var state, t, spawnT, score, combo, lives, shake, stats, flow, gearA, liftPhase, stock, screwPhase;
+var auto = false, autoT = 0;
+var FIRE_TIME = 0.9;            // how long a machine's reward animation plays
+
+function reset() {
+  marbles = []; queue = []; parts = []; floats = []; beams = []; rings = [];
+  machines = {};
+  for (var i = 0; i < MACHINE_DEFS.length; i++) {
+    var d = MACHINE_DEFS[i], si = STATIONS.indexOf(d.id);
+    machines[d.id] = { id: d.id, name: d.name, x: d.x, color: d.color, jam: 0, fire: 0, aim: -Math.PI / 2,
+      order: null, next: si >= 0 ? ORDER_FIRST[si] : null, flash: 0, refuse: 0, done: null };
+  }
+  sw = {};
+  for (var k in SW) {
+    var dir = k === "S1" ? 1 : 0;
+    sw[k] = { x: SW[k][0], y: SW[k][1], dir: dir, ang: branchAngle(k, dir), spin: 0, flash: 0 };
+  }
+  wheel = { phase: 0, notch: [], q: { wheelL: [], wheelR: [] } };
+  for (i = 0; i < WHEEL_NOTCHES; i++) wheel.notch.push(null);
+  gates = [];
+  for (i = 0; i < GATES.length; i++) {
+    var gc = CH[GATES[i][0]], gd = gc.len * GATES[i][1], gp = at(gc, gd), ga = at(gc, gd + 5);
+    var tl = Math.sqrt((ga.x - gp.x) * (ga.x - gp.x) + (ga.y - gp.y) * (ga.y - gp.y)) || 1;
+    gc.gate = { ch: gc, d: gd, p0: GATES[i][2], p1: GATES[i][3], q: [], timer: 0, open: 0, side: 1,
+      x: gp.x, y: gp.y, tx: (ga.x - gp.x) / tl, ty: (ga.y - gp.y) / tl, px: GATES[i][4], py: GATES[i][5] };
+    gates.push(gc.gate);
+  }
+  ferris = { phase: 0, bucket: [], rail: [], wait: [] };
+  for (i = 0; i < FERRIS.buckets; i++) ferris.bucket.push(i < FERRIS.marbles ? { rot: i } : null);
+  chimes = [];
+  for (i = 0; i < CHIMES.length; i++) {
+    var ch = CH[CHIMES[i][0]], cd = ch.len * CHIMES[i][1], p = at(ch, cd), nv = normalAt(ch, Math.round(cd / DS));
+    if (nv[1] > 0) nv = [-nv[0], -nv[1]];      // hang it on the upper side of the rail
+    chimes.push({ ch: ch, d: cd, x: p.x + nv[0] * 30, y: p.y + nv[1] * 30, hit: 9 });
+  }
+  state = "play"; t = 0; spawnT = 0.6; score = 0; combo = 0; lives = LIVES; shake = 0;
+  flow = 0; gearA = 0; liftPhase = 0; screwPhase = 0; stock = 6;
+  stats = { good: 0, filled: 0, expired: 0, wrong: 0, burnt: 0, wasted: 0, jams: 0, shot: 0 };
+  for (i = 0; i < 3; i++) queue.push(rollKind(0));
+}
+
+function branchAngle(id, dir) {
+  var ch = CH[OUT[id][dir]], p = at(ch, 30);
+  return Math.atan2(p.y - SW[id][1], p.x - SW[id][0]);
+}
+function progress() { return auto ? 0.5 : Math.min(1, t / ROUND_SECONDS); }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function mod(a, m) { return ((a % m) + m) % m; }
+// How many marbles of colour c the open orders still want.
+function wanted(c) {
+  var n = 0;
+  for (var i = 0; i < STATIONS.length; i++) {
+    var o = machines[STATIONS[i]].order;
+    if (o && o.col === c) n += o.need - o.got;
+  }
+  return n;
+}
+// Marbles of colour c already on their way: on the rails, queued, riding the
+// wheel, flying back from the launcher, or waiting at the hopper's mouth.
+function aboard(c) {
+  var n = 0, i;
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.kind === "good" && m.col === c && m.st !== "drop" && m.st !== "dead") n++;
+  }
+  for (i = 0; i < queue.length; i++) if (queue[i].col === c) n++;
+  return n;
+}
+// The next marble: a bomb, or a colour drawn with a lean toward what the
+// orders still want and the machine is not already carrying.
+function rollColour() {
+  var w = [], sum = 0, c;
+  for (c = 0; c < COLS.length; c++) { w.push(DEMAND_BASE + DEMAND_BIAS * Math.max(0, wanted(c) - aboard(c))); sum += w[c]; }
+  var r = Math.random() * sum;
+  for (c = 0; c < COLS.length - 1; c++) { if (r < w[c]) return c; r -= w[c]; }
+  return COLS.length - 1;
+}
+function rollKind(k) {
+  if (Math.random() < lerp(BAD_START, BAD_END, k)) return { kind: "bad", col: -1 };
+  return { kind: "good", col: rollColour() };
+}
+function newMarble(kind, col, x, y) {
+  var m = { kind: kind, col: col, st: "track", ch: null, d: 0, v: VMIN, x: x, y: y, z: 1, rot: Math.random() * 6 };
+  marbles.push(m); return m;
+}
+function spawn(q) {
+  var m = newMarble(q.kind, q.col, CH.top.xs[0], CH.top.ys[0]);
+  m.ch = CH.top;
+  if (stock > 0) stock--;
+}
+function mult() { return Math.min(MULT_MAX, 1 + Math.floor(combo / COMBO_STEP)); }
+
+// --- orders ------------------------------------------------------------------
+function newOrder(mc) {
+  var pk = progress(), top = Math.round(lerp(COUNT_START, COUNT_END, pk));
+  var need = COUNT_START + Math.floor(Math.random() * (top - COUNT_START + 1));
+  var express = t > EXPRESS_AFTER && Math.random() < EXPRESS_CHANCE;
+  if (express) need = COUNT_START;
+  var T = (lerp(ORDER_TIME_START, ORDER_TIME_END, pk) + (need - 2) * ORDER_TIME_PER_EXTRA) * (express ? EXPRESS_TIME : 1);
+  // Mostly a colour the machine is already carrying more of than anyone
+  // wants, and rarely one another station is asking for.
+  var w = [], sum = 0, c, i;
+  for (c = 0; c < COLS.length; c++) {
+    var taken = false;
+    for (i = 0; i < STATIONS.length; i++) { var o = machines[STATIONS[i]].order; if (o && o.col === c) taken = true; }
+    w.push((1 + ORDER_STREAM_BIAS * Math.max(0, aboard(c) - wanted(c))) * (taken ? ORDER_TAKEN : 1)); sum += w[c];
+  }
+  var r = Math.random() * sum;
+  for (c = 0; c < COLS.length - 1; c++) { if (r < w[c]) break; r -= w[c]; }
+  mc.order = { col: c, need: need, got: 0, T: T, left: T, express: express, age: 0, pop: 0 };
+  mc.next = null;
+  if (express) say("Express!", mc.x, BOX_Y - 70, "#ffe07a");
+}
+function strike() {
+  if (auto) return;
+  lives--;
+  if (lives <= 0) state = "over";
+}
+function expire(mc) {
+  var free = mc.order.express && !EXPRESS_STRIKE;
+  mc.order = null; mc.next = ORDER_GAP; mc.flash = 1; combo = 0; stats.expired++; shake = Math.max(shake, 0.3);
+  say("Expired", mc.x, BOX_Y - 30, "#ff5a5a"); burst(mc.x, BOX_Y + 40, "#ff5a5a", 16);
+  if (!free) strike();
+}
+
+// --- events ------------------------------------------------------------------
+function deliver(m, id) {
+  var mc = machines[id];
+  if (id === "furnace") {
+    kill(m);
+    if (m.kind === "bad") { combo++; stats.burnt++; gain(PTS_BURN * mult(), mc.x, BOX_Y - 10, mc.color); burst(mc.x, BOX_Y + 20, "#ff6a2a", 14); }
+    else { stats.wasted++; say("Lost", mc.x, BOX_Y - 30, "#c8b8a0"); burst(mc.x, BOX_Y + 20, COLS[m.col].c, 8); }
+    return;
+  }
+  if (m.kind === "bad") {
+    kill(m);
+    if (mc.jam > 0) { say("Jammed", mc.x, BOX_Y - 30, "#ff5a5a"); return; }
+    mc.jam = JAM_SECONDS; combo = 0; stats.jams++; shake = 0.35;
+    burst(mc.x, BOX_Y + 30, "#ff5a5a", 26); say("Jam!", mc.x, BOX_Y - 30, "#ff5a5a");
+    if (JAM_STRIKE) strike();
+    return;
+  }
+  // Whatever a station swallows or refuses falls to the gutter and goes home.
+  var col = m.col;
+  m.st = "drop"; m.vy = 0; m.kind = "spent"; m.gdir = m.x < MID ? -1 : 1;
+  if (mc.jam > 0) { combo = 0; say("Jammed", mc.x, BOX_Y - 30, "#ff5a5a"); return; }
+  var o = mc.order;
+  if (!o || o.col !== col) {
+    combo = 0; stats.wrong++; mc.refuse = 0.4;
+    say("Wrong", mc.x, BOX_Y - 30, "#ff8a7a"); burst(mc.x, BOX_Y + 10, "#aab0bb", 8);
+    return;
+  }
+  o.got++; o.pop = 0.3; combo++; stats.good++;
+  gain(PTS_PIP * mult(), mc.x, BOX_Y - 10, COLS[col].c);
+  burst(mc.x, BOX_Y + 10, COLS[col].c, 8);
+  if (o.got >= o.need) {
+    var pts = Math.round(PTS_ORDER * o.need * (1 + o.left / o.T) * (o.express ? EXPRESS_PAY : 1) * mult());
+    stats.filled++;
+    mc.done = { col: col, n: o.need }; mc.order = null; mc.next = ORDER_GAP;
+    fire(mc, pts);
+  }
+}
+function kill(m) { m.st = "dead"; }
+
+// A filled order sets its machine off: that is the reward beat.
+function fire(mc, pts) {
+  mc.fire = FIRE_TIME; shake = Math.max(shake, 0.2);
+  var cc = COLS[mc.done.col].c;
+  burst(mc.x, BOX_Y + 40, cc, 30);
+  gain(pts, mc.x, BOX_Y - 60, cc, "Filled ");
+  if (mc.id === "bell") {
+    for (var i = 0; i < 3; i++) rings.push({ x: mc.x, y: BOX_Y + 70, t: -i * 0.12, color: cc });
+  } else if (mc.id === "launcher") {
+    for (i = 0; i < LAUNCH_BONUS; i++) {
+      var m = newMarble("good", rollColour(), mc.x, BOX_Y);
+      m.st = "fly"; m.fly = { x0: mc.x, y0: BOX_Y + 10, x1: CH.top.xs[0], y1: CH.top.ys[0], t: -i * 0.25, T: 1.1 };
+    }
+  } else if (mc.id === "cannon") {
+    var n = 0;
+    for (i = 0; i < marbles.length; i++) {
+      var b = marbles[i];
+      if (b.kind === "bad" && (b.st === "track" || b.st === "wait" || b.st === "wheel" || b.st === "gate")) {
+        releaseNotch(b); kill(b); n++;
+        beams.push({ x0: mc.x, y0: BOX_Y + 20, x1: b.x, y1: b.y, t: -n * 0.04 });
+        burst(b.x, b.y, "#d8c4ff", 16);
+      }
+    }
+    stats.shot += n;
+    if (n) gain(PTS_SHOT * n * mult(), mc.x, BOX_Y - 100, "#d8c4ff", "Boom x" + n + " ");
+  }
+}
+function releaseNotch(m) {
+  if (m.st === "gate") { var gi = m.gate.q.indexOf(m); if (gi >= 0) m.gate.q.splice(gi, 1); }
+  if (m.st === "wheel") wheel.notch[m.notch] = null;
+  if (m.st === "wait") { var q = wheel.q[m.ch.to], i = q.indexOf(m); if (i >= 0) q.splice(i, 1); }
+}
+
+function gain(pts, x, y, color, prefix) {
+  score += pts;
+  floats.push({ x: x, y: y, t: 0, color: color, str: (prefix || "") + "+" + pts });
+}
+function say(str, x, y, color) { floats.push({ x: x, y: y, t: 0, color: color, str: str }); }
+function burst(x, y, color, n) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 320;
+    parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 150, life: 0.5 + Math.random() * 0.4, t: 0, color: color });
+  }
+}
+function flip(id, byMarble) {
+  var s = sw[id]; s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
+  if (!byMarble) s.spin += 0.6;
+}
+
+// --- update --------------------------------------------------------------------
+function update(dt) {
+  if (shake > 0) shake -= dt;
+  var i, k;
+  for (i = parts.length - 1; i >= 0; i--) {
+    var p = parts[i]; p.t += dt; p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.t > p.life) parts.splice(i, 1);
+  }
+  for (i = floats.length - 1; i >= 0; i--) { floats[i].t += dt; if (floats[i].t > 1) floats.splice(i, 1); }
+  for (i = beams.length - 1; i >= 0; i--) { beams[i].t += dt; if (beams[i].t > 0.25) beams.splice(i, 1); }
+  for (i = rings.length - 1; i >= 0; i--) { rings[i].t += dt; if (rings[i].t > 0.8) rings.splice(i, 1); }
+  for (k in sw) {
+    var s = sw[k], target = branchAngle(k, s.dir), da = mod(target - s.ang + Math.PI, Math.PI * 2) - Math.PI;
+    s.ang += da * Math.min(1, dt / FLIP_TIME * 1.5); s.flash = Math.max(0, s.flash - dt);
+  }
+  for (i = 0; i < chimes.length; i++) chimes[i].hit += dt;
+  if (state !== "play") return;
+
+  t += dt;
+  if (!auto && t >= ROUND_SECONDS) { state = "over"; return; }
+  var pk = progress(), mdt = dt * lerp(TEMPO_START, TEMPO_END, pk);
+  if (auto) autopilot(dt);
+
+  spawnT -= dt;
+  if (spawnT <= 0 && CH.top.gate.q.length < HOPPER_HOLD) {
+    spawn(queue.shift()); queue.push(rollKind(pk)); spawnT = lerp(SPAWN_START, SPAWN_END, pk);
+  }
+
+  // Escapements: one marble per swing, a faster swing under a long queue.
+  for (i = 0; i < gates.length; i++) {
+    var gt = gates[i], period = lerp(gt.p0, gt.p1, pk) * (gt.q.length >= GATE_PRESSURE ? GATE_RUSH : 1);
+    gt.period = period; gt.timer -= mdt; gt.open = Math.max(0, gt.open - dt);
+    if (gt.timer <= 0 && gt.q.length) {
+      var gm = gt.q.shift();
+      gm.st = "track"; gm.gateOk = true; gm.v = VMIN; gm.d = gt.d + 1;
+      gt.open = 0.18; gt.side = -gt.side; gt.timer = period;
+    }
+  }
+
+  for (k in machines) {
+    var m2 = machines[k];
+    m2.jam = Math.max(0, m2.jam - dt); m2.fire = Math.max(0, m2.fire - dt);
+    m2.flash = Math.max(0, m2.flash - dt); m2.refuse = Math.max(0, m2.refuse - dt);
+    if (m2.order) {
+      var od = m2.order; od.left -= dt; od.age += dt; od.pop = Math.max(0, od.pop - dt);
+      if (od.left <= 0) expire(m2);
+    } else if (m2.next !== null) {
+      m2.next -= dt;
+      if (m2.next <= 0) newOrder(m2);
+    }
+    if (k === "cannon") {
+      var tgt = nearestBomb(), want = tgt ? Math.atan2(tgt.y - (BOX_Y + 20), tgt.x - m2.x) : -Math.PI / 2;
+      m2.aim += (want - m2.aim) * Math.min(1, dt * 6);
+    }
+  }
+  if (state !== "play") return;
+
+  // The wheel turns; a waiting marble boards the first free notch that
+  // sweeps past its entry.
+  var step = Math.PI * 2 / WHEEL_NOTCHES, prev = wheel.phase, dA = WHEEL_OMEGA * mdt;
+  wheel.phase += dA;
+  var ENTRY = { wheelL: Math.PI, wheelR: 0 };
+  for (var e in wheel.q) {
+    var q = wheel.q[e];
+    if (!q.length) continue;
+    for (var j = 0; j < WHEEL_NOTCHES && q.length; j++) {
+      if (wheel.notch[j]) continue;
+      if (mod(ENTRY[e] - (prev + j * step), Math.PI * 2) < dA) {
+        var bm = q.shift();
+        bm.st = "wheel"; bm.notch = j; bm.left = mod(Math.PI / 2 - ENTRY[e], Math.PI * 2);
+        wheel.notch[j] = bm;
+      }
+    }
+  }
+
+  var onTrack = 0;
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "track") { onTrack++; roll(m, mdt); }
+    else if (m.st === "wait") {
+      var qq = wheel.q[m.ch.to], spot = m.ch.len - qq.indexOf(m) * 2.2 * R;
+      m.d = Math.min(spot, m.d + 260 * mdt); place(m);
+    } else if (m.st === "wheel") {
+      onTrack++;
+      m.left -= dA; m.rot += dA * WHEEL.r / R;
+      var ang = wheel.phase + m.notch * step;
+      m.x = WHEEL.cx + Math.cos(ang) * WHEEL.r; m.y = WHEEL.cy + Math.sin(ang) * WHEEL.r; m.z = 1;
+      if (m.left <= 0) {
+        // The gate under the wheel is full: the marble stays aboard for a lap.
+        if (CH.wout.gate.q.length >= WOUT_CAP) m.left += Math.PI * 2;
+        else { wheel.notch[m.notch] = null; m.st = "track"; m.ch = CH.wout; m.d = 0; m.v = VMIN + 40; m.gateOk = false; }
+      }
+    } else if (m.st === "gate") {
+      var gq = m.gate, gspot = Math.max(0, gq.d - gq.q.indexOf(m) * 2.2 * R);
+      m.d = Math.min(gspot, m.d + 220 * mdt); place(m);
+    } else if (m.st === "fly") {
+      var f = m.fly; f.t += dt;
+      if (f.t < 0) { m.x = f.x0; m.y = f.y0; continue; }
+      var fq = Math.min(1, f.t / f.T);
+      m.x = lerp(f.x0, f.x1, fq); m.y = lerp(f.y0, f.y1, fq) - 380 * 4 * fq * (1 - fq); m.rot += dt * 12;
+      if (fq >= 1) { m.st = "track"; m.ch = CH.top; m.d = 0; m.v = VMIN; m.gateOk = false; }
+    } else if (m.st === "drop") {
+      m.vy += 1800 * dt; m.y += m.vy * dt;
+      if (m.y >= gutterY(m.x) - R) { m.y = gutterY(m.x) - R; m.st = "gutter"; }
+    } else if (m.st === "gutter") {
+      m.x += m.gdir * GUTTER_SPEED * dt; m.y = gutterY(m.x) - R; m.rot += m.gdir * GUTTER_SPEED * dt / R;
+      if (m.x >= LIFT_X) { m.x = LIFT_X; m.st = "cupwait"; }
+      else if (m.x <= SCREW_X) { m.x = SCREW_X; m.st = "screw"; m.y = SCREW_BOT; }
+    } else if (m.st === "screw") {
+      // Carried up the thread: the marble rides round the shaft as it climbs.
+      m.y -= SCREW_SPEED * dt; m.x = SCREW_X + Math.sin(m.y * 0.1) * 7; m.rot += dt * 6;
+      if (m.y <= SCREW_TOP) { m.st = "back"; m.d = 0; }
+    } else if (m.st === "back") {
+      m.d += BG_RAIL_SPEED * dt; m.rot += BG_RAIL_SPEED * dt / R;
+      var bp = at(BG.back, m.d); m.x = bp.x; m.y = bp.y - R * 0.7;
+      if (m.d >= BG.back.len) { m.st = "dead"; stock = Math.min(9, stock + 1); }
+    } else if (m.st === "cupwait") {
+      // Board the next cup that comes round the bottom of the lift.
+      if (mod(liftPhase, CUP_GAP) < LIFT_SPEED * dt * 1.5) { m.st = "lift"; m.ly = LIFT_BOT; }
+    } else if (m.st === "lift") {
+      m.ly -= LIFT_SPEED * dt; m.x = LIFT_X - 4; m.y = m.ly - 10;
+      if (m.ly <= LIFT_TOP + 20) { m.st = "dead"; stock = Math.min(9, stock + 1); }
+    }
+  }
+  liftPhase += LIFT_SPEED * dt; screwPhase += SCREW_SPEED * dt;
+  updateFerris(dt);
+  for (i = marbles.length - 1; i >= 0; i--) if (marbles[i].st === "dead") marbles.splice(i, 1);
+
+  flow += (onTrack * 0.05 - flow) * Math.min(1, dt * 2);
+  gearA += (0.25 + flow) * dt;
+}
+
+// A marble on the rails: gravity along the slope, rolling drag, clamped so it
+// never stalls at the top of a loop. At the end of a channel it meets a
+// switch (which it flips on its way through), the wheel, or a machine.
+function roll(m, mdt) {
+  var p = at(m.ch, m.d);
+  m.v = Math.max(VMIN, Math.min(VMAX, m.v + (G * p.slope - FRICTION) * mdt));
+  var d0 = m.d;
+  m.d += m.v * mdt; m.rot += m.v * mdt / R;
+  for (var i = 0; i < chimes.length; i++) {
+    var c = chimes[i];
+    if (c.ch === m.ch && d0 < c.d && m.d >= c.d) c.hit = 0;
+  }
+  var ch = m.ch, gt = ch.gate;
+  if (gt && !m.gateOk) {
+    var gstop = Math.max(0, gt.d - gt.q.length * 2.2 * R);
+    if (m.d >= gstop) { m.d = gstop; m.st = "gate"; m.gate = gt; gt.q.push(m); place(m); return; }
+  }
+  if (wheel.q[ch.to]) {
+    var stop = ch.len - wheel.q[ch.to].length * 2.2 * R;
+    if (m.d >= stop) { m.d = stop; m.st = "wait"; wheel.q[ch.to].push(m); }
+  } else if (m.d >= ch.len) {
+    if (OUT[ch.to]) {
+      var s = sw[ch.to], rest = m.d - ch.len;
+      m.ch = CH[OUT[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
+      if (TOGGLE_ON_PASS) flip(ch.to, true);
+    } else { deliver(m, ch.to); return; }
+  }
+  place(m);
+}
+function place(m) { var p = at(m.ch, m.d); m.x = p.x; m.y = p.y; m.z = p.z; }
+function nearestBomb() {
+  var best = null, by = -1;
+  for (var i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.kind === "bad" && m.st !== "dead" && m.y > by) { by = m.y; best = m; }
+  }
+  return best;
+}
+
+// The ferris wheel in the back: buckets pick marbles up at the bottom, tip
+// them just past the top onto a little zigzag that brings them back down.
+function updateFerris(dt) {
+  var step = Math.PI * 2 / FERRIS.buckets, prev = ferris.phase, dA = FERRIS.omega * dt, i, j;
+  ferris.phase += dA;
+  var TIP = Math.PI * 1.5 + 0.3, LOAD = Math.PI * 0.5;
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a0 = prev + j * step, b = ferris.bucket[j];
+    if (b && mod(TIP - a0, Math.PI * 2) < dA) { ferris.bucket[j] = null; ferris.rail.push({ d: 0, rot: b.rot }); }
+    else if (!b && ferris.wait.length && mod(LOAD - a0, Math.PI * 2) < dA) ferris.bucket[j] = ferris.wait.shift();
+  }
+  for (i = ferris.rail.length - 1; i >= 0; i--) {
+    var r = ferris.rail[i];
+    r.d += 90 * dt; r.rot += 90 * dt / R;
+    if (r.d >= BG.ferris.len) { ferris.rail.splice(i, 1); ferris.wait.push(r); }
+  }
+}
+
+// --- autopilot -------------------------------------------------------------------
+// Watches the marble about to reach each switch and sets it: a bomb to the
+// furnace, a colour to the station that wants it with the least time left.
+var REACH = { S0: ["bell", "cannon", "launcher"], S1: ["bell", "launcher"], S2: ["cannon", "launcher"], S3: ["launcher"] };
+function inflight(id, col, except) {
+  var n = 0;
+  for (var i = 0; i < marbles.length; i++) {
+    var b = marbles[i];
+    if (b !== except && b.target === id && b.col === col && b.kind === "good") n++;
+  }
+  return n;
+}
+function pickStation(m, sid) {
+  if (m.kind === "bad") return "furnace";
+  var best = "furnace", bl = 1e9, reach = REACH[sid];
+  for (var i = 0; i < reach.length; i++) {
+    var mc = machines[reach[i]], o = mc.order;
+    if (!o || o.col !== m.col || mc.jam > 0) continue;
+    if (o.need - o.got - inflight(mc.id, m.col, m) <= 0) continue;
+    if (o.left < bl) { bl = o.left; best = mc.id; }
+  }
+  return best;
+}
+// The branch a switch should take for this marble, or -1 when either will do.
+function wantDir(sid, m) {
+  var to = pickStation(m, sid);
+  m.target = to;
+  if (sid === "S0") return to === "bell" ? 0 : to === "cannon" ? 1 : -1;
+  if (sid === "S1") return to === "bell" ? 0 : 1;
+  if (sid === "S2") return to === "cannon" ? 1 : 0;
+  return to === "launcher" ? 1 : 0;
+}
+// The marble on the rails closest to switch id, and how far it still has to go.
+function nextAt(id) {
+  var best = null, rem = 1e9;
+  for (var i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st !== "track" || m.ch.to !== id) continue;
+    var r = m.ch.len - m.d;
+    if (r < rem) { rem = r; best = m; }
+  }
+  return best ? { m: best, rem: rem } : null;
+}
+function autopilot(dt) {
+  autoT -= dt;
+  if (autoT > 0) return;
+  for (var id in sw) {
+    var nx = nextAt(id);
+    if (!nx || nx.rem > 150) continue;
+    var want = wantDir(id, nx.m);
+    if (want >= 0 && sw[id].dir !== want) { flip(id); autoT = AUTO_RATE; return; }
+  }
+}
+
+// --- render ----------------------------------------------------------------------
+function cog(x, y, r, teeth, a, col) {
+  ctx.fillStyle = col; ctx.beginPath();
+  for (var i = 0; i < teeth * 2; i++) {
+    var an = a + i * Math.PI / teeth, an2 = a + (i + 1) * Math.PI / teeth, rr = i % 2 ? r : r * 0.8;
+    ctx.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr);
+    ctx.lineTo(x + Math.cos(an2) * rr, y + Math.sin(an2) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.fill();
+}
+// A colour's symbol, upright whatever the marble's spin, so colour is never
+// the only cue.
+function drawSym(c, x, y, sz, col, alpha) {
+  var sym = COLS[c].sym, ga = ctx.globalAlpha;
+  ctx.globalAlpha = ga * (alpha === undefined ? 1 : alpha);
+  ctx.fillStyle = col; ctx.strokeStyle = col;
+  if (sym === "ring") { ctx.lineWidth = sz * 0.5; ctx.beginPath(); ctx.arc(x, y, sz * 0.75, 0, Math.PI * 2); ctx.stroke(); }
+  else if (sym === "tri") { ctx.beginPath(); ctx.moveTo(x, y - sz); ctx.lineTo(x + sz * 0.95, y + sz * 0.7); ctx.lineTo(x - sz * 0.95, y + sz * 0.7); ctx.closePath(); ctx.fill(); }
+  else ctx.fillRect(x - sz * 0.75, y - sz * 0.75, sz * 1.5, sz * 1.5);
+  ctx.globalAlpha = ga;
+}
+function drawMarble(m) {
+  var s = (m.z < 0 ? 0.86 : 1) * (m.scale || 1), r = R * s, x = m.x, y = m.y;
+  var ga = ctx.globalAlpha;
+  ctx.globalAlpha = ga * (m.z < 0 ? 0.75 : 1);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(x + 3, y + r * 0.8, r * 0.9, r * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+  var good = m.kind === "good" && m.col >= 0;
+  var base = m.kind === "bad" ? C_BAD : good ? COLS[m.col].c : "#aab0bb";
+  ctx.fillStyle = base; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  // The swirl turns with the roll, the highlight stays with the light.
+  ctx.strokeStyle = m.kind === "bad" ? "#ff4a3a" : "rgba(255,255,255,0.45)"; ctx.lineWidth = m.kind === "bad" ? 3 : 2;
+  ctx.beginPath(); ctx.arc(x, y, r * (good ? 0.82 : 0.6), m.rot, m.rot + 2.2); ctx.stroke();
+  if (m.kind === "bad") {
+    var fx = x + Math.cos(m.rot) * r * 0.6, fy = y + Math.sin(m.rot) * r * 0.6;
+    ctx.fillStyle = Math.sin(t * 40 + m.rot) > 0 ? "#ffe066" : "#ff4a3a";
+    ctx.beginPath(); ctx.arc(fx, fy, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+  if (good) drawSym(m.col, x, y + r * 0.05, r * 0.42, "rgba(28,16,8,0.78)");
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.beginPath(); ctx.arc(x - r * 0.45, y - r * 0.47, r * 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = ga;
+}
+
+function drawWheel() {
+  var step = Math.PI * 2 / WHEEL_NOTCHES;
+  cog(WHEEL.cx, WHEEL.cy, WHEEL.r + 14, 24, wheel.phase, C_BRASS_D);
+  ctx.fillStyle = C_WOOD; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, WHEEL.r - 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 6;
+  for (var j = 0; j < WHEEL_NOTCHES; j++) {
+    var a = wheel.phase + j * step;
+    ctx.beginPath(); ctx.moveTo(WHEEL.cx, WHEEL.cy);
+    ctx.lineTo(WHEEL.cx + Math.cos(a) * (WHEEL.r - 8), WHEEL.cy + Math.sin(a) * (WHEEL.r - 8)); ctx.stroke();
+    ctx.fillStyle = "#120c08";
+    ctx.beginPath(); ctx.arc(WHEEL.cx + Math.cos(a) * WHEEL.r, WHEEL.cy + Math.sin(a) * WHEEL.r, R + 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, 14, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawSwitches() {
+  for (var k in sw) {
+    var s = sw[k], live = CH[OUT[k][s.dir]];
+    // The first stretch of the live branch glows, so the route reads at a glance.
+    ctx.strokeStyle = "rgba(255,210,120,0.35)"; ctx.lineWidth = 2 * R + 4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(live.xs[0], live.ys[0]);
+    for (var i = 1; i < Math.min(live.n, 16); i++) ctx.lineTo(live.xs[i], live.ys[i]);
+    ctx.stroke();
+    cog(s.x, s.y, 30, 10, s.spin, s.flash > 0 ? "#ffe9b0" : C_STEEL);
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58, 7, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Everything behind the machine: the screw, the top return rail and the
+// ferris wheel, all faded back so they read as depth and never as a route.
+function drawBackground() {
+  ctx.globalAlpha = BG_ALPHA;
+  var i, j;
+  // Archimedes screw: a tube with a thread that climbs.
+  ctx.fillStyle = "#2b2016"; ctx.fillRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3;
+  for (var y = SCREW_BOT - mod(screwPhase, 22); y > SCREW_TOP; y -= 22) {
+    ctx.beginPath(); ctx.moveTo(SCREW_X - 14, y); ctx.lineTo(SCREW_X + 14, y - 11); ctx.stroke();
+  }
+  ctx.strokeStyle = C_BRASS_D; ctx.lineWidth = 2; ctx.strokeRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  // Thin rails for the two background runs.
+  for (var k in BG) {
+    var ch = BG[k];
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    for (var sd = -1; sd <= 1; sd += 2) {
+      ctx.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        var nv = normalAt(ch, i), x = ch.xs[i] + nv[0] * sd * 9, yy = ch.ys[i] + nv[1] * sd * 9;
+        if (i) ctx.lineTo(x, yy); else ctx.moveTo(x, yy);
+      }
+      ctx.stroke();
+    }
+  }
+  // Ferris wheel.
+  var step = Math.PI * 2 / FERRIS.buckets;
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(FERRIS.cx, FERRIS.cy, FERRIS.r, 0, Math.PI * 2); ctx.stroke();
+  cog(FERRIS.cx, FERRIS.cy, 18, 8, ferris.phase, C_BRASS);
+  cog(FERRIS.cx + 30, FERRIS.cy + 26, 14, 7, -ferris.phase * 18 / 14, C_BRASS_D);
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a = ferris.phase + j * step, bx = FERRIS.cx + Math.cos(a) * FERRIS.r, by = FERRIS.cy + Math.sin(a) * FERRIS.r;
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(FERRIS.cx, FERRIS.cy); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS_D; ctx.fillRect(bx - 11, by + 6, 22, 6);
+    if (ferris.bucket[j]) drawMarble({ kind: "spent", x: bx, y: by, z: 1, rot: ferris.bucket[j].rot });
+  }
+  for (i = 0; i < ferris.rail.length; i++) {
+    var fp = at(BG.ferris, ferris.rail[i].d);
+    drawMarble({ kind: "spent", x: fp.x, y: fp.y - 6, z: 1, rot: ferris.rail[i].rot });
+  }
+  for (i = 0; i < ferris.wait.length; i++) drawMarble({ kind: "spent", x: 606 - i * 26, y: 404, z: 1, rot: 0 });
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "screw" || m.st === "back") drawMarble(m);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// An escapement: a pendulum above the rail, a pallet that blocks it and
+// lifts for a moment each time it lets a marble through.
+function drawGates() {
+  for (var i = 0; i < gates.length; i++) {
+    var g = gates[i], k = Math.max(0, Math.min(1, g.timer / (g.period || 1)));
+    var swing = g.side * 0.5 * Math.cos(Math.PI * k);
+    // The pallet stands across the rail just ahead of the head of the queue,
+    // and lifts while it lets one through.
+    var fx = g.x + g.tx * (R + 4), fy = g.y + g.ty * (R + 4), lift = g.open > 0 ? 16 : 0;
+    var px = fx + g.px, py = fy + g.py;
+    ctx.strokeStyle = "rgba(200,210,225,0.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(fx, fy - R - 10 - lift); ctx.stroke();
+    ctx.strokeStyle = g.open > 0 ? "#ffe9b0" : C_BRASS; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(fx, fy - R - 10 - lift); ctx.lineTo(fx, fy + R - 2 - lift); ctx.stroke();
+    ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+    var arm = Math.min(44, -g.py - 12), bx = px + Math.sin(swing) * arm, by = py + Math.cos(swing) * arm;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C_STEEL; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawLift() {
+  ctx.fillStyle = "#2b2016"; ctx.fillRect(LIFT_X - 24, LIFT_TOP, 48, LIFT_BOT - LIFT_TOP + 10);
+  ctx.strokeStyle = C_BRASS_D; ctx.lineWidth = 3;
+  ctx.strokeRect(LIFT_X - 24, LIFT_TOP, 48, LIFT_BOT - LIFT_TOP + 10);
+  ctx.fillStyle = C_BRASS_D;
+  for (var y = LIFT_BOT - mod(liftPhase, CUP_GAP); y > LIFT_TOP + 10; y -= CUP_GAP) {
+    ctx.fillRect(LIFT_X - 20, y, 30, 5); ctx.fillRect(LIFT_X - 20, y - 12, 4, 12);
+  }
+  // Gutter under the machines.
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(GUTTER_L, gutterY(GUTTER_L)); ctx.lineTo(MID, gutterY(MID)); ctx.lineTo(LIFT_X + 20, gutterY(LIFT_X + 20)); ctx.stroke();
+  // Hopper, with what it holds and the next three marbles at its mouth.
+  ctx.fillStyle = "#2b2016"; ctx.beginPath();
+  ctx.moveTo(HOPPER.x - 50, HOPPER.y - 50); ctx.lineTo(HOPPER.x + 26, HOPPER.y - 50);
+  ctx.lineTo(HOPPER.x + 26, HOPPER.y + 20); ctx.lineTo(HOPPER.x - 40, HOPPER.y + 38); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.stroke();
+  for (var i = 0; i < Math.min(stock, 6); i++) drawMarble({ kind: "spent", x: HOPPER.x - 30 + (i % 3) * 22, y: HOPPER.y - 30 + Math.floor(i / 3) * 20, z: 1, rot: i });
+  for (i = 0; i < queue.length; i++) drawMarble({ kind: queue[i].kind, col: queue[i].col, x: 616 - i * 32, y: 112, z: 1, rot: 0 });
+}
+
+function drawMachines() {
+  for (var k in machines) {
+    var mc = machines[k], o = mc.order, fire = mc.fire / FIRE_TIME, pulse = 0.5 + 0.5 * Math.sin(t * 14);
+    var wob = mc.refuse > 0 ? Math.sin(mc.refuse * 60) * 7 * mc.refuse / 0.4 : 0;
+    var cx = mc.x + wob, bx = cx - BOX_W / 2, share = o ? o.left / o.T : 1, oc = o ? COLS[o.col].c : null;
+    ctx.fillStyle = mc.jam > 0 || mc.flash > 0 ? "#4a1f1a" : "#2e2217";
+    ctx.fillRect(bx, BOX_Y, BOX_W, BOX_H);
+    // The border wears the colour the station is asking for; it throbs red
+    // when the clock is nearly out, and gold on an express order.
+    var border = oc || (k === "furnace" ? C_BRASS_D : mc.color), lw = o ? 5 : 3;
+    if (o && share < 0.3) { border = pulse > 0.5 ? "#ff5a5a" : oc; lw = 7; }
+    if (o && o.express && share >= 0.3) { border = pulse > 0.5 ? "#ffe07a" : oc; lw = 6; }
+    if (mc.fire > 0 && mc.done) { border = pulse > 0.5 ? "#fff3d0" : COLS[mc.done.col].c; lw = 6; }
+    ctx.lineWidth = lw; ctx.strokeStyle = border; ctx.strokeRect(bx, BOX_Y, BOX_W, BOX_H);
+    ctx.save(); ctx.beginPath(); ctx.rect(bx, BOX_Y, BOX_W, BOX_H); ctx.clip();
+    var label, lcol = "#f3e6cf";
+    if (k === "furnace") { drawFurnace(mc); label = mc.name; }
+    else if (o && mc.fire <= 0) {
+      drawCard(mc, cx);
+      label = (o.need - o.got) + " " + COLS[o.col].name.toLowerCase();
+      lcol = oc;
+    } else {
+      ctx.save(); ctx.translate(cx - mc.x, 0);
+      if (k === "bell") drawBell(mc, fire);
+      else if (k === "launcher") drawLauncher(mc, fire);
+      else drawCannon(mc, fire);
+      ctx.restore();
+      label = mc.flash > 0 ? "Expired" : mc.fire > 0 ? "Filled!" : mc.name;
+      if (mc.flash > 0) lcol = "#ff8a7a";
+    }
+    if (mc.jam > 0) {
+      ctx.fillStyle = "rgba(60,10,8,0.6)"; ctx.fillRect(bx, BOX_Y, BOX_W, BOX_H);
+      label = "Jammed " + mc.jam.toFixed(1); lcol = "#ff8a7a";
+    }
+    ctx.restore();
+    ctx.fillStyle = lcol; ctx.font = "800 22px system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(label, cx, BOX_Y + BOX_H - 12);
+    if (o && o.express) {
+      // The express badge sits on the corner of the box.
+      ctx.fillStyle = "#ffe07a"; ctx.beginPath(); ctx.arc(bx + BOX_W - 4, BOX_Y + 2, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#2a1a08"; ctx.font = "800 22px system-ui, sans-serif";
+      ctx.fillText("x" + EXPRESS_PAY, bx + BOX_W - 4, BOX_Y + 10);
+    }
+  }
+  for (var i = 0; i < rings.length; i++) {
+    var rg = rings[i];
+    if (rg.t < 0) continue;
+    ctx.globalAlpha = 1 - rg.t / 0.8; ctx.strokeStyle = rg.color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(rg.x, rg.y, 20 + rg.t * 160, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+// The order card: one slot per marble wanted, filled as they land, and the
+// clock draining under them.
+function drawCard(mc, cx) {
+  var o = mc.order, n = o.need, pitch = 36, x0 = cx - (n - 1) * pitch / 2, y = BOX_Y + 32;
+  var pop = Math.min(1, o.age / 0.2), oc = COLS[o.col].c;
+  for (var i = 0; i < n; i++) {
+    var x = x0 + i * pitch, rr = 16 * (0.6 + 0.4 * pop);
+    if (i < o.got) {
+      var bump = i === o.got - 1 && o.pop > 0 ? 1 + o.pop : 1;
+      drawMarble({ kind: "good", col: o.col, x: x, y: y, z: 1, rot: 0, scale: 1.15 * bump * (0.6 + 0.4 * pop) });
+    } else {
+      ctx.fillStyle = "#120c08"; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = oc; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke();
+      drawSym(o.col, x, y + 1, rr * 0.42, oc, 0.8);
+    }
+  }
+  var share = Math.max(0, o.left / o.T), bw = 128, by = BOX_Y + 58;
+  ctx.fillStyle = "#120c08"; ctx.fillRect(cx - bw / 2, by, bw, 14);
+  ctx.fillStyle = share < 0.3 ? "#ff5a5a" : oc; ctx.fillRect(cx - bw / 2, by, bw * share, 14);
+  ctx.strokeStyle = "rgba(243,230,207,0.35)"; ctx.lineWidth = 2; ctx.strokeRect(cx - bw / 2, by, bw, 14);
+}
+function drawBell(mc, fire) {
+  // The bucket tips the order it was filled with; the bell swings.
+  var tip = fire > 0 ? Math.sin((1 - fire) * Math.PI) * 1.1 : 0;
+  ctx.save(); ctx.translate(mc.x - 30, BOX_Y + 34); ctx.rotate(tip);
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3; ctx.strokeRect(-26, -18, 52, 30);
+  if (fire > 0 && mc.done) for (var i = 0; i < mc.done.n; i++) drawMarble({ kind: "good", col: mc.done.col, x: -16 + (i % 3) * 16, y: 2 - Math.floor(i / 3) * 12, z: 1, rot: i });
+  ctx.restore();
+  var swing = fire > 0 ? Math.sin(t * 30) * 0.5 * fire : Math.sin(t * 2) * 0.03;
+  ctx.save(); ctx.translate(mc.x + 36, BOX_Y + 14); ctx.rotate(swing);
+  ctx.fillStyle = "#f5c542"; ctx.beginPath();
+  ctx.moveTo(-20, 50); ctx.quadraticCurveTo(-18, 6, 0, 4); ctx.quadraticCurveTo(18, 6, 20, 50); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C_BRASS_D; ctx.beginPath(); ctx.arc(0, 52, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function drawFurnace(mc) {
+  ctx.fillStyle = "#120c08"; ctx.fillRect(mc.x - 55, BOX_Y + 22, 110, 55);
+  for (var i = 0; i < 6; i++) {
+    var fx = mc.x - 48 + i * 19, h = 22 + 14 * Math.sin(t * 9 + i * 1.7) + 8 * Math.sin(t * 23 + i);
+    ctx.fillStyle = i % 2 ? "#ff6a2a" : "#ffb03a";
+    ctx.beginPath(); ctx.moveTo(fx - 10, BOX_Y + 77); ctx.lineTo(fx, BOX_Y + 77 - h); ctx.lineTo(fx + 10, BOX_Y + 77); ctx.fill();
+  }
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+  for (i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(mc.x - 50 + i * 25, BOX_Y + 22); ctx.lineTo(mc.x - 50 + i * 25, BOX_Y + 77); ctx.stroke(); }
+}
+function drawLauncher(mc, fire) {
+  // A spring, squashed while it waits; it kicks the plunger when it fires.
+  var top = BOX_Y + 14 + (fire > 0 ? -20 * fire : 26);
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 4; ctx.beginPath();
+  var bottom = BOX_Y + 84, n = 8;
+  for (var i = 0; i <= n; i++) ctx.lineTo(mc.x + (i % 2 ? 18 : -18), top + 12 + (bottom - top - 12) * i / n);
+  ctx.stroke();
+  ctx.fillStyle = mc.done && fire > 0 ? COLS[mc.done.col].c : "#4fd1c5"; ctx.fillRect(mc.x - 28, top, 56, 12);
+}
+function drawCannon(mc, fire) {
+  var px = mc.x, py = BOX_Y + 54, a = Math.max(-Math.PI + 0.3, Math.min(-0.3, mc.aim));
+  ctx.save(); ctx.translate(px, py); ctx.rotate(a);
+  ctx.fillStyle = C_STEEL; ctx.fillRect(-6 - (fire > 0 ? 10 * fire : 0), -11, 58, 22);
+  ctx.restore();
+  ctx.fillStyle = "#b18cff"; ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2); ctx.fill();
+}
+
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0e0a07"; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  var sx = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  var sy = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (offX + sx * scale) * dpr, (offY + sy * scale) * dpr);
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, C_BG2); bg.addColorStop(1, C_BG);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // Background works: meshing gears that turn faster when the rails are busy.
+  ctx.globalAlpha = 0.16;
+  for (var i = 0; i < DECO_GEARS.length; i++) {
+    var gdef = DECO_GEARS[i], dir = i % 2 ? -1 : 1;
+    cog(gdef[0], gdef[1], gdef[2], gdef[3], gearA * dir * 60 / gdef[2], C_BRASS);
+  }
+  ctx.globalAlpha = 1;
+
+  drawBackground();
+  ctx.globalAlpha = 0.75; drawLift(); ctx.globalAlpha = 1;
+  drawWheel();
+  ctx.drawImage(trackLayer, 0, 0, W, H);
+  for (i = 0; i < chimes.length; i++) {
+    var c = chimes[i], lit = Math.max(0, 1 - c.hit / 0.35), wob = lit * Math.sin(c.hit * 60) * 0.3;
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(wob);
+    ctx.fillStyle = lit > 0 ? "rgba(255,230,160," + (0.5 + lit * 0.5) + ")" : C_BRASS_D;
+    ctx.fillRect(-14, -5, 28, 10);
+    if (lit > 0) { ctx.strokeStyle = "rgba(255,230,160," + lit + ")"; ctx.lineWidth = 2; ctx.strokeRect(-20 - lit * 8, -10 - lit * 6, 40 + lit * 16, 20 + lit * 12); }
+    ctx.restore();
+  }
+  drawSwitches();
+  drawGates();
+
+  for (i = 0; i < beams.length; i++) {
+    var b = beams[i];
+    if (b.t < 0) continue;
+    ctx.globalAlpha = 1 - b.t / 0.25; ctx.strokeStyle = "#e0d0ff"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(b.x0, b.y0); ctx.lineTo(b.x1, b.y1); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (i = 0; i < marbles.length; i++) if (marbles[i].z < 0) drawMarble(marbles[i]);
+  ctx.drawImage(frontLayer, 0, 0, W, H);
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.z >= 0 && m.st !== "drop" && m.st !== "gutter" && m.st !== "cupwait" && m.st !== "screw" && m.st !== "back") drawMarble(m);
+  }
+  drawMachines();
+  for (i = 0; i < marbles.length; i++) if (marbles[i].st === "gutter" || marbles[i].st === "cupwait") drawMarble(marbles[i]);
+
+  for (i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD.
+  ctx.textAlign = "left"; ctx.fillStyle = "#f3e6cf"; ctx.font = "800 40px system-ui, sans-serif";
+  ctx.fillText(score, 28, 60);
+  ctx.font = "600 22px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+  ctx.fillText("Combo " + combo + "  x" + mult() + "   Filled " + stats.filled, 28, 94);
+  ctx.textAlign = "center";
+  ctx.fillStyle = auto ? C_BRASS : "#3a2c1e"; ctx.fillRect(290, 30, 120, 44);
+  ctx.fillStyle = auto ? "#1c140e" : "#cdbb9c"; ctx.font = "700 22px system-ui, sans-serif";
+  ctx.fillText(auto ? "Auto on" : "Auto", 350, 60);
+  // A plate behind the clock and the strikes, so the return rail behind them never hides them.
+  ctx.fillStyle = "rgba(20,14,9,0.85)"; ctx.fillRect(428, 28, 104, 76);
+  ctx.textAlign = "right"; ctx.fillStyle = "#cdbb9c";
+  ctx.fillText(auto ? "Endless" : Math.ceil(ROUND_SECONDS - t) + " s", 520, 60);
+  var hearts = ""; for (i = 0; i < lives; i++) hearts += "● ";
+  ctx.fillStyle = "#ff5a5a"; ctx.fillText(auto ? "" : hearts, 520, 90);
+
+  ctx.textAlign = "center";
+  for (i = 0; i < floats.length; i++) {
+    var f = floats[i];
+    ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color;
+    ctx.font = "800 28px system-ui, sans-serif";
+    ctx.fillText(f.str, f.x, f.y - f.t * 70);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#7d6a52"; ctx.font = "20px system-ui, sans-serif";
+  ctx.fillText("Debug: filled " + stats.filled + "  expired " + stats.expired + "  wrong " + stats.wrong +
+    "  lost " + stats.wasted + "  jams " + stats.jams + "  shot " + stats.shot + "  marbles " + marbles.length, MID, 1268);
+
+  if (state === "over") {
+    ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#f3e6cf"; ctx.font = "800 64px system-ui, sans-serif";
+    ctx.fillText(lives <= 0 ? "Out of strikes" : "Time's up", W / 2, 540);
+    ctx.font = "700 36px system-ui, sans-serif";
+    ctx.fillText("Score " + score, W / 2, 610);
+    ctx.fillText("Orders filled " + stats.filled + "   expired " + stats.expired, W / 2, 660);
+    ctx.font = "26px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+    ctx.fillText("Tap to play again", W / 2, 740);
+  }
+}
+
+// --- input ---------------------------------------------------------------------
+function setAuto(on) { auto = on; reset(); }
+cv.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  var x = (e.clientX - offX) / scale, y = (e.clientY - offY) / scale;
+  if (x >= 290 && x <= 410 && y >= 30 && y <= 74) { setAuto(!auto); return; }
+  if (state === "over") { reset(); return; }
+  if (auto) return;
+  var best = null, bd = TAP_REACH;
+  for (var k in sw) {
+    var d = Math.sqrt((sw[k].x - x) * (sw[k].x - x) + (sw[k].y - y) * (sw[k].y - y));
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (best && state === "play") flip(best);
+});
+addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  if (e.key >= "1" && e.key <= "4" && !auto && state === "play") flip("S" + (e.key - 1));
+  else if (e.key === "r" || e.key === "R") reset();
+  else if (e.key === "a" || e.key === "A") setAuto(!auto);
+});
+
+// --- loop ----------------------------------------------------------------------
+var lastT = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - lastT) / 1000 || 0);
+  lastT = now;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+resize();
+reset();
+requestAnimationFrame(frame);
+</script>

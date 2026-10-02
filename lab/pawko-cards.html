@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — card style</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="pawko">
+<style>
+/* ===========================================================================
+   PAWKO — CARD STYLES, second round. The first ten were kept inside the card
+   and read as one card in ten colours; Jewel was the one kept. This round
+   lets the card BREAK ITS FRAME — an object that rises out of the top, a tag
+   that hangs off a corner, a name banner wider than the card — and makes the
+   RARITY the loudest thing after the name: written out on every card, in a
+   colour of its own, and climbing from common to epic (a rim that turns to
+   rainbow, wings, a crown, a foil that moves).
+
+   THE CARD IS A NEW STRUCTURE, and it is what `cardNode`
+   (games/pawko/game.js) would build once a style is picked:
+
+     .pk-card        300 x 420 design px, scaled as a whole by --sk; it CLIPS
+                     NOTHING, so every piece below may leave it
+       .pk-back      the card's body, rounded and clipped: .pk-bg (a pattern),
+                     .pk-glow (the light), .pk-shine (a foil that moves)
+       .pk-frame     the rim
+       .pk-deco      the style's own piece — wings, a sphere, a shadow
+       .pk-art       the painted object
+       .pk-plate     the name (.pk-name) and the kind (.pk-kind)
+       .pk-tag       the kind's tag, in a corner and usually off it
+       .pk-rar       the rarity, WRITTEN (Common … Epic)
+       .pk-num       the count (x5), when the card has one
+
+   Tokens: --c the card's own colour, --k its kind's, --r its rarity's and
+   --rbg the rarity as a background (a solid colour, or the moving rainbow of
+   an epic); classes .k-<kind> and .r-1 (common) … .r-4 (epic).
+
+   THE RARITY LADDER IS NEW TOO: silver, emerald, gold and a rainbow epic —
+   four hues no kind wears (the kinds are orange, cyan, violet and ivory),
+   where the shipping card's blue rare sat on top of the wave's cyan.
+
+   Each style is its own <style data-style> block, scoped `.pk-card.s-<key>`,
+   so COPY CSS hands over exactly what moves into the SKIN. Strings are
+   written in normal case and shouted through this page's copy of the
+   motor's `upper()` (button.html): a capital carries no accent (EPIQUE).
+   =========================================================================== */
+
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+:root { --font:"Baloo 2", ui-rounded, "Trebuchet MS", Roboto, sans-serif; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:#0b0b12; }
+body {
+  min-height:100vh; display:flex; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---- PANEL ---------------------------------------------------------------- */
+#panel {
+  flex:0 0 290px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a;
+  position:sticky; top:0; height:100vh; overflow-y:auto; z-index:10;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+.row { margin-bottom:16px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#ffb830; }
+.row select {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.seg { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; background:#1a1a28; border:1px solid #2c2c44; border-radius:10px; padding:3px; }
+.seg button {
+  flex:1; appearance:none; border:0; background:none; color:#8b8ba7; cursor:pointer;
+  font:inherit; font-size:12px; padding:5px 8px; border-radius:7px; white-space:nowrap;
+}
+.seg button.on { background:#ffb830; color:#2a1402; }
+#styles { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+#styles button {
+  appearance:none; text-align:left; border:1px solid #2c2c47; background:#0f0f18; color:#c9c7de;
+  font:inherit; font-size:13px; padding:7px 10px; border-radius:8px; cursor:pointer;
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+}
+#styles button.on { border-color:#ffb830; color:#fff; background:#2a1a08; }
+#styles button i { font-style:normal; font-size:10px; letter-spacing:1px; padding:1px 6px; border-radius:6px; background:#5be37a; color:#06210f; }
+.act {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#ffb830; color:#2a1402; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+#note { margin-top:8px; font-size:12px; font-weight:500; color:#9c9cba; min-height:18px; }
+#about { margin-top:10px; font-size:12px; font-weight:500; color:#8b8ba7; line-height:1.5; }
+
+/* ---- STAGE ---------------------------------------------------------------- */
+#stage {
+  flex:1; min-width:0; padding:20px 20px 60px;
+  display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; gap:4px 0;
+  background:#1a050c center/cover no-repeat;
+}
+#stage.bg-round { background-image:linear-gradient(rgba(10,2,6,.55),rgba(10,2,6,.55)), url("../assets/image/embed/pawko-background-phone-01.webp"); background-attachment:fixed; }
+#stage.bg-home  { background-image:linear-gradient(rgba(6,9,26,.5),rgba(6,9,26,.5)), url("../assets/image/embed/pawko-background-home.webp"); background-attachment:fixed; }
+#stage.bg-flat  { background:#2a0a14; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:14px; }
+.cell .cap { font-size:12px; color:#e8e6f5; text-shadow:0 1px 3px #000; text-align:center; }
+.cell.pick { cursor:pointer; }
+
+/* =========================================================================
+   THE CARD — the base every style starts from
+   ========================================================================= */
+.pk-cbox { position:relative; flex:0 0 auto; }
+.pk-card {
+  position:absolute; left:0; top:0; width:300px; height:420px; transform-origin:0 0;
+  transform:scale(var(--sk, 1));
+  font-family:var(--font); font-weight:800; color:#fff;
+}
+.pk-card > * { position:absolute; }
+.pk-back { inset:0; border-radius:28px; overflow:hidden; background:#2a0612; }
+.pk-back > * { position:absolute; inset:0; }
+.pk-frame { inset:0; border-radius:28px; pointer-events:none; }
+.pk-deco { display:none; }
+.pk-art { left:0; right:0; top:60px; height:190px; display:flex; align-items:center; justify-content:center; }
+.pk-art img { max-width:190px; max-height:180px; display:block; }
+.pk-plate {
+  left:16px; right:16px; top:266px; height:106px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center;
+}
+.pk-name { font-size:34px; line-height:1; letter-spacing:.5px; }
+.pk-kind { font-size:20px; letter-spacing:3px; line-height:1.1; }
+.pk-tag { left:16px; top:16px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+.pk-tag svg { position:relative; z-index:1; width:36px; height:36px; fill:currentColor; stroke:currentColor; }
+.pk-rar { display:none; align-items:center; justify-content:center; white-space:nowrap; font-size:20px; letter-spacing:2px; line-height:1; }
+.pk-num { right:16px; top:18px; font-size:28px; line-height:1.1; }
+/* the painting order: the body, the rim and the style's piece under the
+   object, the words and the tags over it */
+.pk-back { z-index:0; } .pk-frame { z-index:1; } .pk-deco { z-index:1; } .pk-art { z-index:2; }
+.pk-plate { z-index:3; } .pk-tag { z-index:4; } .pk-rar { z-index:5; } .pk-num { z-index:5; }
+
+/* a ring of any width, out of a box's padding: the shape every rim uses */
+.ring {
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+/* the epic's rainbow moves */
+@keyframes rb-move { from { background-position:0% 50%; } to { background-position:300% 50%; } }
+@keyframes sweep   { from { background-position:150% 0; } to { background-position:-50% 0; } }
+@keyframes bob     { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+.pk-card.r-4 { --rbg-size:300% 100%; }
+
+/* a card not unlocked yet: its own white silhouette, like an unowned sticker */
+.pk-card.ghost .pk-art img { filter:brightness(0) invert(1) !important; opacity:.42; }
+.pk-card.ghost .pk-tag { filter:grayscale(1) brightness(.8); }
+</style>
+<!-- ===========================================================================
+     THE STYLES. One block each, scoped `.pk-card.s-<key>`; data-name and
+     data-about are what the panel lists.
+     =========================================================================== -->
+<style data-style="jewel" data-name="Jewel" data-about="Kept from the first round, and pushed: the rim is the rarity's metal (rainbow on an epic), the tag a cut gem hanging off the top-left corner, the count a diamond off the top-right, the rarity a faceted plaque hanging under the card. A rare twinkles.">
+.pk-card.s-jewel .pk-back { background:radial-gradient(90% 60% at 50% 32%, color-mix(in srgb, var(--k) 32%, #3a0c22), #12030a 80%); }
+.pk-card.s-jewel .pk-bg { background:repeating-conic-gradient(from 0deg at 50% 36%, rgba(255,255,255,.05) 0 10deg, transparent 10deg 20deg); }
+.pk-card.s-jewel .pk-glow { background:radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--c) 60%, transparent), transparent 52%); }
+.pk-card.s-jewel .pk-frame {
+  padding:9px;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  background:linear-gradient(140deg, #fff 0%, var(--r) 22%, color-mix(in srgb, var(--r) 40%, #000) 50%, var(--r) 72%, #fff 100%);
+}
+.pk-card.s-jewel.r-4 .pk-frame { background:var(--rbg); background-size:300% 100%; animation:rb-move 5s linear infinite; }
+.pk-card.s-jewel .pk-art img { max-width:200px; max-height:190px; filter:drop-shadow(0 12px 16px rgba(0,0,0,.6)); }
+.pk-card.s-jewel .pk-tag { left:-22px; top:-22px; width:96px; height:96px; color:#1a0410; filter:drop-shadow(0 8px 8px rgba(0,0,0,.55)); }
+.pk-card.s-jewel .pk-tag::before {
+  content:""; position:absolute; inset:0;
+  clip-path:polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background:conic-gradient(from 30deg, #ffffff, var(--k) 18%, color-mix(in srgb, var(--k) 45%, #000) 42%, var(--k) 62%, #ffffff 82%, var(--k));
+}
+.pk-card.s-jewel .pk-tag::after {
+  content:""; position:absolute; inset:14px;
+  clip-path:polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 60%);
+}
+.pk-card.s-jewel .pk-tag svg { width:40px; height:40px; }
+.pk-card.s-jewel .pk-num {
+  right:-20px; top:-20px; width:84px; height:84px; display:flex; align-items:center; justify-content:center;
+  color:#1a0410; font-size:26px; filter:drop-shadow(0 6px 8px rgba(0,0,0,.55));
+}
+.pk-card.s-jewel .pk-num::before {
+  content:""; position:absolute; inset:0; z-index:-1;
+  clip-path:polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background:conic-gradient(from 45deg, #fff, var(--c) 25%, color-mix(in srgb, var(--c) 50%, #000) 50%, var(--c) 75%, #fff);
+}
+.pk-card.s-jewel .pk-plate {
+  top:262px; height:108px;
+  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 50%, rgba(0,0,0,.4));
+  border:1px solid rgba(255,255,255,.28); border-radius:16px; box-shadow:inset 0 2px 0 rgba(255,255,255,.2);
+}
+.pk-card.s-jewel .pk-name { color:#fff6dc; text-shadow:0 2px 0 rgba(0,0,0,.6); }
+.pk-card.s-jewel .pk-kind { color:var(--k); }
+.pk-card.s-jewel .pk-rar { display:flex; left:50%; bottom:-24px; transform:translateX(-50%); height:50px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.55)); }
+.pk-card.s-jewel .pk-rar span {
+  display:flex; align-items:center; height:100%; padding:0 34px; color:#12030a;
+  clip-path:polygon(14% 0, 86% 0, 100% 50%, 86% 100%, 14% 100%, 0 50%);
+  background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 50%, rgba(0,0,0,.18)), var(--rbg);
+  background-size:100% 100%, 300% 100%;
+}
+.pk-card.s-jewel.r-4 .pk-rar span { animation:rb-move 5s linear infinite; }
+/* a rare and an epic twinkle */
+.pk-card.s-jewel.r-3 .pk-shine, .pk-card.s-jewel.r-4 .pk-shine {
+  background:
+    radial-gradient(circle, #fff 0 1.5px, transparent 2.5px) 30px 40px / 90px 110px,
+    radial-gradient(circle, #fff 0 1px, transparent 2px) 70px 10px / 70px 80px;
+  animation:jewel-twinkle 1.8s ease-in-out infinite alternate;
+}
+@keyframes jewel-twinkle { from { opacity:.15; } to { opacity:.9; } }
+</style>
+
+<style data-style="sticker" data-name="Pop sticker" data-about="A die-cut sticker: a fat white outline round the card, the object popping out of the top with its own white outline, the tag a round sticker stuck over the corner, the rarity a sash across the other corner and a name pill wider than the card. A rare's outline turns gold, an epic's rainbow.">
+.pk-card.s-sticker .pk-back {
+  border-radius:30px;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--k) 70%, #fff) 0%, var(--k) 42%, color-mix(in srgb, var(--k) 55%, #1a0010) 100%);
+  box-shadow:0 0 0 10px #fff, 0 20px 36px 6px rgba(0,0,0,.45);
+}
+.pk-card.s-sticker .pk-bg { background:radial-gradient(circle, rgba(255,255,255,.4) 2.2px, transparent 3px) 0 0 / 16px 16px; -webkit-mask:linear-gradient(180deg, #000, transparent 75%); mask:linear-gradient(180deg, #000, transparent 75%); }
+.pk-card.s-sticker .pk-glow { background:repeating-conic-gradient(from 0deg at 50% 30%, rgba(255,255,255,.22) 0 9deg, transparent 9deg 18deg); }
+.pk-card.s-sticker.r-3 .pk-frame, .pk-card.s-sticker.r-4 .pk-frame {
+  inset:-10px; border-radius:40px; padding:10px; background:var(--rbg); background-size:300% 100%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.pk-card.s-sticker.r-4 .pk-frame { animation:rb-move 4s linear infinite; }
+.pk-card.s-sticker .pk-art { top:-64px; height:310px; }
+.pk-card.s-sticker .pk-art img {
+  max-width:250px; max-height:250px;
+  filter:drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff) drop-shadow(0 14px 12px rgba(0,0,0,.4));
+}
+.pk-card.s-sticker .pk-tag {
+  left:-30px; top:-26px; width:98px; height:98px; border-radius:50%; color:#1a0010;
+  background:radial-gradient(circle at 35% 30%, #fff 0 10%, color-mix(in srgb, var(--k) 75%, #fff) 30%, var(--k) 70%);
+  box-shadow:0 0 0 7px #fff, 0 10px 16px rgba(0,0,0,.4); transform:rotate(-12deg);
+}
+.pk-card.s-sticker .pk-tag svg { width:48px; height:48px; }
+.pk-card.s-sticker .pk-rar {
+  display:flex; top:30px; right:-50px; width:200px; height:46px; transform:rotate(38deg);
+  background:var(--rbg); background-size:300% 100%; color:#1a0010; font-size:20px;
+  box-shadow:0 0 0 4px #fff, 0 8px 12px rgba(0,0,0,.35);
+}
+.pk-card.s-sticker.r-4 .pk-rar { animation:rb-move 4s linear infinite; }
+.pk-card.s-sticker .pk-plate {
+  left:-26px; right:-26px; top:270px; height:104px; border-radius:52px; background:#fff;
+  box-shadow:0 0 0 5px #1a0010, 0 12px 18px rgba(0,0,0,.35);
+}
+.pk-card.s-sticker .pk-name { color:color-mix(in srgb, var(--k) 45%, #1a0010); font-size:36px; }
+.pk-card.s-sticker .pk-kind { color:#fff; background:var(--k); border-radius:12px; padding:2px 14px 0; }
+.pk-card.s-sticker .pk-num {
+  right:14px; top:auto; bottom:6px; background:#1a0010; color:#fff; border-radius:20px; padding:2px 14px 0;
+  box-shadow:0 0 0 4px #fff; font-size:26px;
+}
+</style>
+
+<style data-style="candy" data-name="Candy" data-about="A jelly sweet: a glossy, striped body in the card's own colour with a thick bevelled rim in the rarity, the object floating over its own shadow, the tag a gumdrop off the corner, the rarity a candy tag hanging off the right edge, the name on a ribbon with folded tails.">
+.pk-card.s-candy .pk-back {
+  border-radius:44px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 50%, #fff) 0%, var(--c) 40%, color-mix(in srgb, var(--c) 50%, #2a0010) 100%);
+}
+.pk-card.s-candy .pk-bg { background:radial-gradient(120% 45% at 50% 0%, rgba(255,255,255,.6), transparent 62%); }
+.pk-card.s-candy .pk-glow { background:repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 14px, transparent 14px 28px); }
+.pk-card.s-candy .pk-frame {
+  border-radius:44px;
+  box-shadow:inset 0 0 0 9px var(--r), inset 0 7px 0 11px rgba(255,255,255,.4), inset 0 -9px 0 11px rgba(0,0,0,.22),
+             0 14px 0 -2px color-mix(in srgb, var(--r) 55%, #000), 0 26px 36px rgba(0,0,0,.45);
+}
+.pk-card.s-candy.r-4 .pk-frame::before {
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:9px;
+  background:var(--rbg); background-size:300% 100%; animation:rb-move 4s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.pk-card.s-candy .pk-art { top:26px; height:220px; animation:bob 3s ease-in-out infinite; }
+.pk-card.s-candy .pk-art img { max-width:200px; max-height:200px; filter:drop-shadow(0 4px 0 rgba(255,255,255,.5)); }
+.pk-card.s-candy .pk-deco { display:block; left:84px; right:84px; top:236px; height:24px; border-radius:50%; background:radial-gradient(rgba(0,0,0,.4), transparent 70%); }
+.pk-card.s-candy .pk-tag {
+  left:-18px; top:-20px; width:88px; height:88px; color:#2a0010;
+  border-radius:50% 50% 46% 46% / 58% 58% 42% 42%;
+  background:radial-gradient(circle at 34% 26%, #fff 0 9%, color-mix(in srgb, var(--k) 70%, #fff) 24%, var(--k) 56%, color-mix(in srgb, var(--k) 55%, #000) 100%);
+  box-shadow:0 6px 0 color-mix(in srgb, var(--k) 45%, #000), 0 14px 18px rgba(0,0,0,.35);
+}
+.pk-card.s-candy .pk-rar {
+  display:flex; right:-30px; top:26px; height:48px; padding:3px 20px 0 34px; border-radius:24px 12px 12px 24px;
+  background:var(--rbg); background-size:300% 100%; color:#2a0010; transform:rotate(10deg);
+  box-shadow:0 5px 0 rgba(0,0,0,.25), 0 10px 14px rgba(0,0,0,.3);
+}
+.pk-card.s-candy.r-4 .pk-rar { animation:rb-move 4s linear infinite; }
+.pk-card.s-candy .pk-rar::before { content:""; position:absolute; left:12px; top:50%; width:12px; height:12px; margin-top:-6px; border-radius:50%; background:#fff; box-shadow:inset 0 2px 2px rgba(0,0,0,.35); }
+.pk-card.s-candy .pk-plate {
+  left:-30px; right:-30px; top:274px; height:96px; border-radius:16px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--k) 70%, #fff), var(--k));
+  box-shadow:0 6px 0 color-mix(in srgb, var(--k) 45%, #000), 0 14px 18px rgba(0,0,0,.3);
+}
+.pk-card.s-candy .pk-plate::before, .pk-card.s-candy .pk-plate::after {
+  content:""; position:absolute; bottom:-18px; width:30px; height:18px; background:color-mix(in srgb, var(--k) 40%, #000);
+}
+.pk-card.s-candy .pk-plate::before { left:0; clip-path:polygon(0 0, 100% 0, 100% 100%); }
+.pk-card.s-candy .pk-plate::after { right:0; clip-path:polygon(0 0, 100% 0, 0 100%); }
+.pk-card.s-candy .pk-name { color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.28); }
+.pk-card.s-candy .pk-kind { color:rgba(42,0,16,.72); }
+.pk-card.s-candy .pk-num { right:26px; top:auto; bottom:12px; background:#fff; color:#2a0010; border-radius:18px; padding:2px 12px 0; font-size:24px; }
+</style>
+
+<style data-style="comic" data-name="Comic" data-about="A page out of a comic: rays and halftone in the kind's colour, a thick ink line and a hard offset shadow, the object breaking out of the top in ink, the count in a starburst off the corner, the rarity a tilted stamp off the left edge, the name on a slanted banner.">
+.pk-card.s-comic .pk-back { border-radius:18px; background:var(--k); }
+.pk-card.s-comic .pk-bg { background:repeating-conic-gradient(from 0deg at 50% 38%, rgba(255,255,255,.3) 0 8deg, transparent 8deg 16deg); }
+.pk-card.s-comic .pk-glow { background:radial-gradient(circle, rgba(18,3,10,.3) 1.8px, transparent 2.6px) 0 0 / 11px 11px; -webkit-mask:linear-gradient(0deg, #000, transparent 65%); mask:linear-gradient(0deg, #000, transparent 65%); }
+.pk-card.s-comic .pk-frame { border-radius:18px; box-shadow:inset 0 0 0 7px #12030a, 12px 14px 0 #12030a; }
+.pk-card.s-comic.r-3 .pk-frame, .pk-card.s-comic.r-4 .pk-frame { box-shadow:inset 0 0 0 7px #12030a, inset 0 0 0 13px var(--r), 12px 14px 0 #12030a; }
+.pk-card.s-comic.r-4 .pk-frame { box-shadow:inset 0 0 0 7px #12030a, 12px 14px 0 #12030a; }
+.pk-card.s-comic.r-4 .pk-frame::before {
+  content:""; position:absolute; inset:7px; border-radius:11px; padding:7px;
+  background:var(--rbg); background-size:300% 100%; animation:rb-move 4s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.pk-card.s-comic .pk-art { top:-40px; height:296px; }
+.pk-card.s-comic .pk-art img {
+  max-width:240px; max-height:240px;
+  filter:drop-shadow(4px 0 0 #12030a) drop-shadow(-4px 0 0 #12030a) drop-shadow(0 4px 0 #12030a) drop-shadow(0 -4px 0 #12030a) drop-shadow(8px 10px 0 rgba(18,3,10,.5));
+}
+.pk-card.s-comic .pk-tag { left:-24px; top:-24px; width:84px; height:84px; color:#12030a; }
+.pk-card.s-comic .pk-tag::before {
+  content:""; position:absolute; inset:10px; transform:rotate(45deg); border-radius:10px;
+  background:#fff; box-shadow:0 0 0 6px #12030a, 6px 6px 0 6px #12030a;
+}
+.pk-card.s-comic .pk-num {
+  right:-38px; top:-34px; width:110px; height:110px; display:flex; align-items:center; justify-content:center;
+  color:#12030a; font-size:32px; transform:rotate(12deg);
+}
+.pk-card.s-comic .pk-num::before, .pk-card.s-comic .pk-num::after {
+  content:""; position:absolute; inset:0; z-index:-1;
+  clip-path:polygon(50% 0, 61% 26%, 90% 12%, 76% 40%, 100% 52%, 74% 62%, 86% 92%, 58% 76%, 46% 100%, 38% 74%, 8% 88%, 24% 60%, 0 46%, 26% 38%, 12% 10%, 40% 24%);
+}
+.pk-card.s-comic .pk-num::after { background:#12030a; transform:scale(1.14); z-index:-2; }
+.pk-card.s-comic .pk-num::before { background:#ffe14d; }
+.pk-card.s-comic .pk-rar {
+  display:flex; left:-28px; top:204px; padding:7px 18px 3px; border:5px solid #12030a; border-radius:8px;
+  background:var(--rbg); background-size:300% 100%; color:#12030a; font-size:24px; transform:rotate(-14deg); box-shadow:6px 7px 0 #12030a;
+}
+.pk-card.s-comic.r-4 .pk-rar { animation:rb-move 4s linear infinite; }
+.pk-card.s-comic .pk-plate {
+  left:-28px; right:26px; top:268px; height:106px; align-items:flex-start; padding-left:36px; text-align:left;
+  background:#fff; border:6px solid #12030a; transform:skewX(-9deg); box-shadow:9px 9px 0 #12030a;
+}
+.pk-card.s-comic .pk-plate > * { transform:skewX(9deg); }
+.pk-card.s-comic .pk-name { color:#12030a; font-size:36px; }
+.pk-card.s-comic .pk-kind { color:#12030a; border-bottom:5px solid var(--k); }
+</style>
+
+<style data-style="legend" data-name="Legend" data-about="The frame IS the rarity, and it climbs: a common is a silver rim, an uncommon grows two emerald studs off its sides, a rare spreads gold wings behind it, an epic wears a crown over its rainbow rim and a light that sweeps across. The rarity rides the top edge; the tag is a shield off the bottom-left corner.">
+.pk-card.s-legend .pk-back { border-radius:24px; background:radial-gradient(100% 70% at 50% 34%, color-mix(in srgb, var(--k) 45%, #1a0820), #0c0310 85%); }
+.pk-card.s-legend .pk-bg { background:repeating-radial-gradient(circle at 50% 36%, rgba(255,255,255,.05) 0 2px, transparent 2px 18px); }
+.pk-card.s-legend .pk-glow { background:radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--c) 70%, transparent), transparent 52%); }
+.pk-card.s-legend .pk-frame {
+  border-radius:24px; padding:8px;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  background:linear-gradient(160deg, #fff, var(--r) 30%, color-mix(in srgb, var(--r) 35%, #000) 60%, var(--r) 85%, #fff);
+}
+.pk-card.s-legend.r-4 .pk-frame { background:var(--rbg); background-size:300% 100%; animation:rb-move 5s linear infinite; }
+.pk-card.s-legend.r-4 .pk-shine {
+  background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.45) 48%, transparent 58%);
+  background-size:300% 100%; animation:sweep 2.8s ease-in-out infinite;
+}
+.pk-card.s-legend .pk-art img { max-width:200px; max-height:190px; filter:drop-shadow(0 12px 16px rgba(0,0,0,.6)); }
+/* uncommon: two studs; rare and epic: the wings, behind the card */
+.pk-card.s-legend.r-2 .pk-deco { display:block; left:-18px; right:-18px; top:184px; height:36px; z-index:-1; }
+.pk-card.s-legend.r-2 .pk-deco::before, .pk-card.s-legend.r-2 .pk-deco::after {
+  content:""; position:absolute; top:0; width:36px; height:36px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--r) 45%, color-mix(in srgb, var(--r) 45%, #000));
+}
+.pk-card.s-legend.r-2 .pk-deco::before { left:0; } .pk-card.s-legend.r-2 .pk-deco::after { right:0; }
+.pk-card.s-legend.r-3 .pk-deco, .pk-card.s-legend.r-4 .pk-deco { display:block; left:-74px; right:-74px; top:70px; height:200px; z-index:-1; }
+.pk-card.s-legend.r-3 .pk-deco::before, .pk-card.s-legend.r-3 .pk-deco::after,
+.pk-card.s-legend.r-4 .pk-deco::before, .pk-card.s-legend.r-4 .pk-deco::after {
+  content:""; position:absolute; top:0; width:130px; height:200px;
+  clip-path:polygon(100% 18%, 70% 2%, 30% 0, 4% 14%, 30% 24%, 0 36%, 30% 44%, 6% 58%, 36% 62%, 16% 78%, 48% 78%, 40% 96%, 100% 76%);
+  background:linear-gradient(200deg, #fff 0%, var(--r) 35%, color-mix(in srgb, var(--r) 45%, #000) 100%);
+}
+.pk-card.s-legend.r-4 .pk-deco::before, .pk-card.s-legend.r-4 .pk-deco::after { background:linear-gradient(200deg, #fff 0%, #ffd166 30%, #ff4fb3 60%, #7a3cff 100%); }
+.pk-card.s-legend .pk-deco::before { left:0; }
+.pk-card.s-legend .pk-deco::after { right:0; transform:scaleX(-1); }
+.pk-card.s-legend .pk-rar {
+  display:flex; left:50%; top:-24px; transform:translateX(-50%); height:48px; padding:3px 28px 0; border-radius:12px;
+  background:var(--rbg); background-size:300% 100%; color:#1a0820; font-size:22px;
+  box-shadow:0 0 0 4px #1a0820, 0 0 0 7px color-mix(in srgb, var(--r) 80%, #fff), 0 10px 14px rgba(0,0,0,.5);
+}
+.pk-card.s-legend.r-4 .pk-rar { animation:rb-move 5s linear infinite; }
+.pk-card.s-legend.r-4 .pk-rar::before {
+  content:""; position:absolute; left:50%; top:-62px; width:100px; height:58px; margin-left:-50px;
+  clip-path:polygon(0 100%, 6% 28%, 28% 60%, 50% 0, 72% 60%, 94% 28%, 100% 100%);
+  background:linear-gradient(180deg, #fff3c4, #ffc93c 50%, #b9862a);
+}
+.pk-card.s-legend .pk-tag { left:-20px; top:auto; bottom:-18px; width:84px; height:96px; color:#12030a; filter:drop-shadow(0 8px 8px rgba(0,0,0,.5)); }
+.pk-card.s-legend .pk-tag::before {
+  content:""; position:absolute; inset:0;
+  clip-path:polygon(50% 0, 100% 14%, 100% 56%, 50% 100%, 0 56%, 0 14%);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--k) 70%, #fff), var(--k) 55%, color-mix(in srgb, var(--k) 55%, #000));
+}
+.pk-card.s-legend .pk-tag svg { margin-top:-8px; }
+.pk-card.s-legend .pk-plate {
+  top:258px; left:22px; right:22px; height:114px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.75));
+  box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--r) 70%, transparent);
+}
+.pk-card.s-legend .pk-name { color:#fff6d8; text-shadow:0 2px 0 rgba(0,0,0,.6); }
+.pk-card.s-legend .pk-kind { color:var(--k); }
+.pk-card.s-legend .pk-num { right:20px; top:34px; background:rgba(0,0,0,.55); border:2px solid rgba(255,255,255,.4); border-radius:16px; padding:0 12px; }
+</style>
+
+<style data-style="patch" data-name="Patch" data-about="An embroidered patch: woven cloth in the kind's colour, a stitched seam and a rim in the rarity's thread, the tag an iron-on badge over the corner, the rarity a price tag hanging off the right edge on its string, the name on a woven label wider than the card.">
+.pk-card.s-patch .pk-back {
+  border-radius:32px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 3px, transparent 3px 6px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.09) 0 3px, transparent 3px 6px),
+    linear-gradient(180deg, color-mix(in srgb, var(--k) 85%, #fff), color-mix(in srgb, var(--k) 65%, #200010));
+  box-shadow:0 14px 26px rgba(0,0,0,.45);
+}
+.pk-card.s-patch .pk-glow { background:radial-gradient(circle at 50% 36%, rgba(255,255,255,.35), transparent 50%); }
+.pk-card.s-patch .pk-frame {
+  border-radius:32px; padding:8px;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  background:repeating-linear-gradient(90deg, var(--r) 0 4px, color-mix(in srgb, var(--r) 65%, #000) 4px 6px);
+}
+.pk-card.s-patch.r-4 .pk-frame { background:var(--rbg); background-size:300% 100%; animation:rb-move 5s linear infinite; }
+.pk-card.s-patch .pk-back::after { content:""; position:absolute; inset:16px; border:3px dashed rgba(255,255,255,.75); border-radius:20px; }
+.pk-card.s-patch .pk-art { top:34px; height:220px; }
+.pk-card.s-patch .pk-art img { max-width:200px; max-height:200px; filter:drop-shadow(0 0 0 #fff) drop-shadow(3px 3px 0 rgba(0,0,0,.25)); }
+.pk-card.s-patch .pk-tag {
+  left:-26px; top:-26px; width:100px; height:100px; border-radius:50%; color:#200010; transform:rotate(-8deg);
+  background:repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 3px, transparent 3px 6px), color-mix(in srgb, var(--k) 70%, #fff);
+  box-shadow:0 0 0 7px #fff8e6, 0 0 0 10px color-mix(in srgb, var(--k) 50%, #000), 0 10px 16px rgba(0,0,0,.35);
+}
+.pk-card.s-patch .pk-tag::after { content:""; position:absolute; inset:7px; border-radius:50%; border:2px dashed rgba(32,0,16,.5); }
+.pk-card.s-patch .pk-tag svg { width:46px; height:46px; }
+.pk-card.s-patch .pk-rar { display:flex; right:-62px; top:66px; height:56px; transform:rotate(14deg); filter:drop-shadow(0 8px 8px rgba(0,0,0,.4)); }
+.pk-card.s-patch .pk-rar::before { content:""; position:absolute; left:-40px; top:50%; width:46px; height:3px; background:#fff8e6; transform:rotate(-14deg); }
+.pk-card.s-patch .pk-rar span {
+  position:relative; display:flex; align-items:center; height:100%; padding:3px 20px 0 44px; color:#200010;
+  background:#fff8e6; clip-path:polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
+}
+.pk-card.s-patch .pk-rar span::before { content:""; position:absolute; left:18px; top:0; bottom:0; width:16px; background:var(--rbg); background-size:300% 100%; }
+.pk-card.s-patch.r-4 .pk-rar span::before { animation:rb-move 4s linear infinite; }
+.pk-card.s-patch .pk-rar span::after { content:""; position:absolute; left:8px; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:#5a3a2a; }
+.pk-card.s-patch .pk-plate { left:-20px; right:-20px; top:272px; height:98px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
+.pk-card.s-patch .pk-plate::before {
+  content:""; position:absolute; inset:0; z-index:-1; background:#fff8e6;
+  clip-path:polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
+}
+.pk-card.s-patch .pk-plate::after { content:""; position:absolute; inset:7px 26px; border-top:2px dashed rgba(32,0,16,.3); border-bottom:2px dashed rgba(32,0,16,.3); }
+.pk-card.s-patch .pk-name { color:color-mix(in srgb, var(--k) 40%, #200010); }
+.pk-card.s-patch .pk-kind { color:color-mix(in srgb, var(--k) 70%, #200010); }
+.pk-card.s-patch .pk-num { right:30px; top:auto; bottom:20px; background:#200010; color:#fff8e6; border-radius:14px; padding:2px 12px 0; font-size:24px; }
+</style>
+
+<style data-style="ticket" data-name="Golden ticket" data-about="A ticket: notched paper tinted by the rarity, a perforated line over the stub, the object bursting out of the top, the rarity a rubber stamp slammed across it, the tag a punched seal off the corner. An epic is gold leaf with a light that sweeps.">
+.pk-card.s-ticket .pk-back {
+  border-radius:16px;
+  background:repeating-linear-gradient(-30deg, rgba(60,20,0,.045) 0 2px, transparent 2px 9px),
+             linear-gradient(160deg, #fffbea 0%, color-mix(in srgb, var(--r) 30%, #fff3d0) 100%);
+  -webkit-mask:radial-gradient(circle 22px at 0 262px, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 22px at 100% 262px, #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:radial-gradient(circle 22px at 0 262px, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 22px at 100% 262px, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+.pk-card.s-ticket.r-4 .pk-back { background:repeating-linear-gradient(-30deg, rgba(90,40,0,.08) 0 2px, transparent 2px 9px), linear-gradient(160deg, #fff6c8 0%, #ffd34d 40%, #e0a020 70%, #ffe680 100%); }
+.pk-card.s-ticket .pk-bg { background:linear-gradient(var(--k), var(--k)) 0 0 / 100% 20px no-repeat; }
+.pk-card.s-ticket .pk-glow { inset:auto 30px auto 30px; top:258px; height:8px; background:radial-gradient(circle, rgba(60,20,0,.4) 3px, transparent 3.5px) 0 0 / 16px 8px; }
+.pk-card.s-ticket.r-4 .pk-shine { background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.7) 48%, transparent 58%); background-size:300% 100%; animation:sweep 2.6s ease-in-out infinite; }
+.pk-card.s-ticket .pk-frame { border-radius:16px; }
+.pk-card.s-ticket .pk-art { top:-70px; height:310px; }
+.pk-card.s-ticket .pk-art img { max-width:240px; max-height:240px; filter:drop-shadow(0 14px 12px rgba(60,20,0,.45)); }
+.pk-card.s-ticket .pk-rar {
+  display:flex; left:50%; top:184px; transform:translateX(-50%) rotate(-12deg);
+  padding:6px 18px 2px; border:5px solid currentColor; border-radius:12px;
+  color:color-mix(in srgb, var(--r) 60%, #2a0a00); font-size:32px; letter-spacing:5px;
+  background:rgba(255,255,255,.45); box-shadow:inset 0 0 0 3px rgba(255,255,255,.6);
+}
+.pk-card.s-ticket.r-4 .pk-rar { color:#c2185b; }
+.pk-card.s-ticket .pk-tag {
+  left:-20px; top:-20px; width:88px; height:88px; border-radius:50%; color:#2a1000;
+  background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--k) 60%, #fff), var(--k) 60%);
+  box-shadow:0 0 0 5px #fffbea, 0 0 0 8px color-mix(in srgb, var(--k) 55%, #000), 0 10px 14px rgba(0,0,0,.35);
+}
+.pk-card.s-ticket .pk-tag::after { content:""; position:absolute; inset:6px; border-radius:50%; border:2px dotted rgba(42,16,0,.5); }
+.pk-card.s-ticket .pk-plate { top:276px; height:98px; left:26px; right:26px; }
+.pk-card.s-ticket .pk-name { color:#3a1400; }
+.pk-card.s-ticket .pk-kind { color:color-mix(in srgb, var(--k) 55%, #2a1000); }
+.pk-card.s-ticket .pk-num { right:16px; top:auto; bottom:12px; color:#3a1400; border:3px solid #3a1400; border-radius:10px; padding:1px 10px 0; font-size:24px; }
+</style>
+
+<style data-style="orb" data-name="Orb" data-about="A crystal ball: a glass sphere rising out of the top of the card with the object inside it, ringed in the rarity (a turning rainbow on an epic), the rarity on a pill at the foot of the sphere, the name on a pedestal, the tag a small lit orb off the corner.">
+.pk-card.s-orb .pk-back { border-radius:30px; background:radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--k) 40%, #140626), #07020f 75%); }
+.pk-card.s-orb .pk-bg {
+  background:radial-gradient(circle, rgba(255,255,255,.7) 1px, transparent 1.6px) 0 0 / 37px 41px,
+             radial-gradient(circle, rgba(255,255,255,.4) 1px, transparent 1.6px) 13px 19px / 53px 47px;
+}
+.pk-card.s-orb .pk-frame { border-radius:30px; box-shadow:inset 0 0 0 4px color-mix(in srgb, var(--r) 70%, transparent), 0 18px 34px rgba(0,0,0,.5); }
+.pk-card.s-orb .pk-deco {
+  display:block; left:50%; top:-52px; width:276px; height:276px; margin-left:-138px; border-radius:50%;
+  background:radial-gradient(circle at 50% 56%, color-mix(in srgb, var(--c) 55%, transparent), color-mix(in srgb, var(--k) 30%, #0a0218) 72%);
+  box-shadow:inset 0 -20px 30px rgba(0,0,0,.45), inset 0 8px 18px rgba(255,255,255,.18),
+             0 0 0 8px var(--r), 0 0 34px var(--r), 0 16px 26px rgba(0,0,0,.55);
+}
+.pk-card.s-orb.r-4 .pk-deco { box-shadow:inset 0 -20px 30px rgba(0,0,0,.45), inset 0 8px 18px rgba(255,255,255,.18), 0 0 34px #ff4fb3, 0 16px 26px rgba(0,0,0,.55); }
+.pk-card.s-orb.r-4 .pk-deco::before {
+  content:""; position:absolute; inset:-8px; border-radius:50%; padding:8px;
+  background:conic-gradient(#ff4d6d, #ffb830, #ffe14d, #46e07a, #4fc3ff, #b76bff, #ff4d6d);
+  animation:orb-turn 4s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@keyframes orb-turn { to { transform:rotate(360deg); } }
+.pk-card.s-orb .pk-art { top:-52px; height:276px; }
+.pk-card.s-orb .pk-art img { max-width:170px; max-height:170px; }
+.pk-card.s-orb .pk-art::after {
+  content:""; position:absolute; left:50%; top:22px; width:150px; height:64px; margin-left:-112px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(255,255,255,.5), transparent 70%); transform:rotate(-24deg);
+}
+.pk-card.s-orb .pk-tag {
+  left:-18px; top:-18px; width:80px; height:80px; border-radius:50%; color:#1a0626;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--k) 45%, color-mix(in srgb, var(--k) 50%, #000));
+  box-shadow:0 0 20px var(--k), 0 0 0 4px rgba(255,255,255,.85);
+}
+.pk-card.s-orb .pk-rar {
+  display:flex; left:50%; top:206px; transform:translateX(-50%); height:44px; padding:3px 24px 0; border-radius:22px;
+  background:var(--rbg); background-size:300% 100%; color:#1a0626; box-shadow:0 0 18px var(--r), 0 0 0 4px #07020f;
+}
+.pk-card.s-orb.r-4 .pk-rar { animation:rb-move 4s linear infinite; }
+.pk-card.s-orb .pk-plate { top:268px; left:24px; right:24px; height:112px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+.pk-card.s-orb .pk-plate::before {
+  content:""; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--k) 50%, #2a0a3a), #0a0218);
+  clip-path:polygon(10% 0, 90% 0, 100% 100%, 0 100%); border-top:3px solid var(--k);
+}
+.pk-card.s-orb .pk-name { color:#fff; text-shadow:0 0 14px color-mix(in srgb, var(--k) 70%, transparent); }
+.pk-card.s-orb .pk-kind { color:var(--k); }
+.pk-card.s-orb .pk-num { right:-12px; top:-12px; background:#07020f; border:3px solid var(--k); border-radius:18px; padding:2px 12px 0; box-shadow:0 0 14px var(--k); font-size:26px; }
+</style>
+
+<style data-style="tilt" data-name="Tilt holo" data-about="A premium card held at an angle: a real thickness on its edge, the object rising out of the top, a holo that moves on a rare and turns rainbow on an epic, the rarity on a vertical tab off the right edge, the tag a metal pin off the corner.">
+.pk-card.s-tilt { transform:scale(var(--sk, 1)) perspective(900px) rotateY(-12deg) rotateX(6deg); }
+.pk-card.s-tilt .pk-back {
+  border-radius:22px;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--k) 75%, #fff) 0%, color-mix(in srgb, var(--k) 55%, #1a0010) 72%);
+  box-shadow:1px 1px 0 color-mix(in srgb, var(--r) 70%, #000), 2px 2px 0 color-mix(in srgb, var(--r) 70%, #000),
+             3px 3px 0 color-mix(in srgb, var(--r) 65%, #000), 4px 4px 0 color-mix(in srgb, var(--r) 60%, #000),
+             5px 5px 0 color-mix(in srgb, var(--r) 55%, #000), 6px 6px 0 color-mix(in srgb, var(--r) 50%, #000),
+             7px 7px 0 color-mix(in srgb, var(--r) 45%, #000), 8px 8px 0 color-mix(in srgb, var(--r) 40%, #000),
+             22px 26px 30px rgba(0,0,0,.5);
+  overflow:hidden;
+}
+.pk-card.s-tilt .pk-bg { background:radial-gradient(circle at 50% 34%, rgba(255,255,255,.5), transparent 55%), repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px); }
+.pk-card.s-tilt.r-3 .pk-shine, .pk-card.s-tilt.r-4 .pk-shine {
+  background:linear-gradient(115deg, transparent 25%, rgba(255,255,255,.55) 40%, transparent 55%);
+  background-size:300% 100%; animation:sweep 3s ease-in-out infinite; mix-blend-mode:overlay;
+}
+.pk-card.s-tilt.r-4 .pk-glow { background:linear-gradient(125deg, #ff4d6d, #ffd166, #46e07a, #4fc3ff, #b76bff, #ff4d6d); background-size:300% 300%; animation:rb-move 5s linear infinite; mix-blend-mode:overlay; opacity:.6; }
+.pk-card.s-tilt .pk-frame { border-radius:22px; padding:6px; background:var(--rbg); background-size:300% 100%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.pk-card.s-tilt.r-4 .pk-frame { animation:rb-move 4s linear infinite; }
+.pk-card.s-tilt .pk-art { top:-40px; height:300px; }
+.pk-card.s-tilt .pk-art img { max-width:236px; max-height:236px; filter:drop-shadow(0 18px 14px rgba(0,0,0,.45)); }
+.pk-card.s-tilt .pk-tag {
+  left:-22px; top:-22px; width:84px; height:84px; border-radius:50%; color:#1a0010;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--k) 50%, color-mix(in srgb, var(--k) 55%, #000));
+  box-shadow:0 0 0 5px #eef1f7, 0 0 0 9px #8a93a6, 0 12px 18px rgba(0,0,0,.45);
+}
+.pk-card.s-tilt .pk-rar {
+  display:flex; right:-24px; top:60px; width:46px; height:180px; writing-mode:vertical-rl; letter-spacing:4px;
+  background:var(--rbg); background-size:100% 300%; color:#1a0010; border-radius:12px;
+  box-shadow:0 0 0 4px #fff, 0 12px 16px rgba(0,0,0,.4);
+}
+.pk-card.s-tilt.r-4 .pk-rar { background:linear-gradient(180deg, #ff4d6d, #ffd166, #46e07a, #4fc3ff, #b76bff); }
+.pk-card.s-tilt .pk-plate {
+  left:0; right:0; top:276px; height:144px; padding-top:20px; border-radius:0 0 22px 22px;
+  background:linear-gradient(180deg, transparent, rgba(10,0,6,.72) 34%);
+}
+.pk-card.s-tilt .pk-name { color:#fff; text-shadow:0 3px 6px rgba(0,0,0,.6); font-size:36px; }
+.pk-card.s-tilt .pk-kind { color:color-mix(in srgb, var(--k) 70%, #fff); }
+.pk-card.s-tilt .pk-num { right:36px; top:14px; background:rgba(10,0,6,.6); border:2px solid rgba(255,255,255,.5); border-radius:16px; padding:2px 12px 0; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Pawko cards</h1>
+  <p class="hint">Which look should the full-size card wear — in the round's big card and in the collection? Second round: the card may break its frame, and the rarity is written on it.</p>
+
+  <div class="row">
+    <label>view</label>
+    <div class="seg" id="view">
+      <button data-v="style">One style, every card</button>
+      <button data-v="compare">One card, every style</button>
+    </div>
+  </div>
+
+  <div class="row" id="row-styles">
+    <label>style</label>
+    <div id="styles"></div>
+  </div>
+
+  <div class="row" id="row-kind">
+    <label>cards</label>
+    <div class="seg" id="kind">
+      <button data-v="sample">Sample</button>
+      <button data-v="peg">Pegs</button>
+      <button data-v="wave">Waves</button>
+      <button data-v="charm">Charms</button>
+      <button data-v="meta">Tricks</button>
+    </div>
+  </div>
+
+  <div class="row" id="row-card">
+    <label for="card">card</label>
+    <select id="card"></select>
+  </div>
+
+  <div class="row">
+    <label for="size">width <b id="size-v">300</b></label>
+    <input id="size" type="range" min="160" max="440" step="10" value="300">
+  </div>
+
+  <div class="row">
+    <label>language</label>
+    <div class="seg" id="lang"><button data-v="en">EN</button><button data-v="fr">FR</button></div>
+  </div>
+
+  <div class="row">
+    <label>ground</label>
+    <div class="seg" id="ground"><button data-v="round">Round</button><button data-v="home">Village</button><button data-v="flat">Flat</button></div>
+  </div>
+
+  <div class="row">
+    <label>locked (ghost)</label>
+    <div class="seg" id="ghost"><button data-v="off">Off</button><button data-v="mix">Some</button><button data-v="on">All</button></div>
+  </div>
+
+  <div class="row">
+    <button class="act" id="copy">Copy CSS</button>
+    <div id="note"></div>
+    <div id="about"></div>
+  </div>
+</div>
+
+<div id="stage" class="bg-round"></div>
+
+<script>
+/* ===========================================================================
+   THE CARDS, as games/pawko/game.js holds them (CARDS) with their French out
+   of web.copy.fr.strings — a copy, regenerated by hand when the table moves:
+   [key, kind, n, lv, w, icon file, colour, name EN, name FR, desc EN, desc FR]
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const DATA = [
+    ["fire", "peg", 5, 1, 4, "pawko-icon-02", "#ff7a1a", "Fire", "Feu", "5 pegs catch fire", "5 pegs prennent feu"],
+    ["ice", "peg", 5, 1, 4, "pawko-icon-03", "#5ad8ff", "Ice", "Glace", "5 pegs turn to ice", "5 pegs deviennent de glace"],
+    ["bumper", "peg", 10, 1, 4, "pawko-icon-04", "#ff4d6d", "Bumper", "Bumper", "10 pegs become bumpers", "10 pegs deviennent des bumpers"],
+    ["magnet", "peg", 4, 1, 4, "pawko-icon-05", "#c46bff", "Magnet", "Aimant", "4 pegs turn magnetic", "4 pegs deviennent aimantés"],
+    ["bomb", "peg", 3, 1, 4, "pawko-icon-06", "#9aa0b4", "Bomb", "Bombe", "3 pegs become bombs", "3 pegs deviennent des bombes"],
+    ["prism", "peg", 3, 2, 3, "pawko-icon-09", "#ff9ff3", "Prism", "Prisme", "3 prisms split a ball in two", "3 prismes coupent une bille en deux"],
+    ["lucky", "peg", 6, 3, 3, "pawko-icon-10", "#5be37a", "Lucky", "Chance", "6 pegs: 1 in 4 pays x10", "6 pegs : 1 chance sur 4 de payer x10"],
+    ["lightning", "peg", 4, 4, 3, "pawko-icon-11", "#8fe3ff", "Spark", "Éclair", "4 pegs arc to their 3 neighbours", "4 pegs foudroient leurs 3 voisins"],
+    ["glass", "peg", 8, 5, 3, "pawko-icon-12", "#d6f6ff", "Glass", "Verre", "8 pegs pay x5, break after 3 hits", "8 pegs paient x5 et cassent au 3e coup"],
+    ["echo", "peg", 3, 7, 3, "pawko-icon-13", "#9d7bff", "Echo", "Écho", "3 pegs replay the last special a ball hit", "3 pegs rejouent le dernier spécial touché"],
+    ["mirror", "peg", 4, 7, 3, "pawko-icon-14", "#d8dce8", "Mirror", "Miroir", "4 pegs copy the special next to them", "4 pegs copient le spécial voisin"],
+    ["golden", "peg", 5, 2, 3, "pawko-icon-15", "#ffd700", "Midas", "Midas", "5 pegs add +0.1 mult on every hit", "5 pegs ajoutent +0,1 de mult à chaque coup"],
+    ["portal", "peg", 2, 8, 2, "pawko-icon-16", "#6a5cff", "Portal", "Portail", "2 portals send a ball back to the top", "2 portails renvoient une bille en haut"],
+    ["spike", "peg", 2, 8, 2, "pawko-icon-17", "#ff3355", "Spike", "Pique", "2 spikes destroy a ball for x50", "2 piques détruisent une bille pour x50"],
+    ["double", "wave", 0, 1, 4, "pawko-icon-01", "#ffd166", "Double", "Double", "Classic pegs pay double this wave", "Les pegs classiques paient double cette vague"],
+    ["gold", "wave", 0, 1, 4, "pawko-icon-08", "#ffb830", "Gold", "Or", "Gates pay double this wave, no malus", "Les gates paient double cette vague, sans malus"],
+    ["balls", "wave", 6, 1, 4, "pawko-icon-07", "#ff5c5c", "Balls", "Billes", "6 more balls in this wave", "6 billes de plus dans cette vague"],
+    ["molten", "wave", 0, 2, 3, "pawko-icon-18", "#ff5a1a", "Magma", "Magma", "Every ball burns for the whole wave", "Toutes les billes brûlent toute la vague"],
+    ["fever", "wave", 0, 2, 3, "pawko-icon-19", "#ff7ab8", "Fever", "Fièvre", "+0.1 mult for every special peg hit", "+0,1 de mult par peg spécial touché"],
+    ["twins", "wave", 0, 3, 3, "pawko-icon-20", "#6ee08a", "Twins", "Jumelles", "Every ball drops with a twin", "Chaque bille tombe avec une jumelle"],
+    ["combo", "wave", 0, 3, 3, "pawko-icon-21", "#7be05a", "Combo", "Combo", "Each hit of a ball adds x0.1 to its next ones", "Chaque coup d'une bille ajoute x0,1 aux suivants"],
+    ["chain", "wave", 0, 4, 1, "pawko-icon-22", "#ff8a3c", "Chain reaction", "Réaction en chaîne", "x1.5 mult for every explosion this wave", "x1,5 de mult par explosion cette vague"],
+    ["heavy", "wave", 0, 4, 3, "pawko-icon-23", "#a9a9b8", "Heavy", "Plomb", "Big balls that pay half a peg more a hit", "De grosses billes qui paient un demi-peg de plus"],
+    ["cryo", "wave", 0, 5, 3, "pawko-icon-24", "#7ac8ff", "Cryo", "Cryo", "Every ball drops frozen", "Toutes les billes tombent gelées"],
+    ["thermal", "wave", 0, 5, 2, "pawko-icon-25", "#ff6ad5", "Thermal shock", "Choc thermique", "Fire meets ice: an explosion worth x10", "Le feu touche la glace : une explosion à x10"],
+    ["lastCall", "wave", 0, 6, 1, "pawko-icon-26", "#ffcf5a", "Last call", "Dernier tour", "x3 mult, played on the last wave only", "x3 de mult, à la dernière vague seulement"],
+    ["bouncy", "wave", 0, 8, 3, "pawko-icon-27", "#ff6b6b", "Bouncy", "Rebond", "Livelier balls that last twice as long", "Des billes plus vives qui durent deux fois plus"],
+    ["ghost", "wave", 0, 9, 3, "pawko-icon-28", "#b48cff", "Ghost", "Fantôme", "Balls pass through classic pegs", "Les billes traversent les pegs classiques"],
+    ["rain", "wave", 0, 9, 3, "pawko-icon-29", "#5ab0ff", "Rain", "Pluie", "Balls fall across the whole board", "Les billes tombent sur toute la largeur"],
+    ["goldBall", "wave", 0, 10, 3, "pawko-icon-30", "#ffd700", "Gold ball", "Bille d'or", "One ball is gold: its hits pay x5", "Une bille en or : ses coups paient x5"],
+    ["jackpotRush", "wave", 0, 10, 3, "pawko-icon-31", "#ff4d6d", "Jackpot rush", "Gros lot", "The jackpot gate is twice as wide", "La gate jackpot est deux fois plus large"],
+    ["overcharge", "wave", 0, 11, 2, "pawko-icon-32", "#c46bff", "Surge", "Survolt", "Every ball is charged for the whole wave", "Toutes les billes sont chargées toute la vague"],
+    ["encore", "wave", 0, 11, 1, "pawko-icon-33", "#ff4d6d", "Encore", "Bis", "The wave drops a second time", "La vague tombe une seconde fois"],
+    ["allIn", "wave", 0, 12, 1, "pawko-icon-34", "#ffb830", "All in", "Tapis", "x2 mult, but the edge gates take points", "x2 de mult, mais les gates du bord retirent des points"],
+    ["wildfire", "charm", 0, 6, 2, "pawko-icon-35", "#ff7a1a", "Wildfire", "Brasier", "After each wave, every fire peg lights a neighbour", "Après chaque vague, chaque peg de feu enflamme un voisin"],
+    ["pyro", "charm", 0, 6, 2, "pawko-icon-36", "#ff5a1a", "Pyro", "Pyromane", "Every fire hit adds 1 point to all fire pegs", "Chaque coup de feu ajoute 1 point à tous les pegs de feu"],
+    ["collector", "charm", 0, 6, 2, "pawko-icon-37", "#ffd166", "Hoarder", "Collecte", "+0.5 mult for every card played", "+0,5 de mult par carte jouée"],
+    ["clover", "charm", 0, 3, 2, "pawko-icon-38", "#5be37a", "Clover", "Trèfle", "Every chance is doubled", "Toutes les chances sont doublées"],
+    ["domino", "charm", 0, 4, 1, "pawko-icon-39", "#9aa0b4", "Domino", "Domino", "A blast sets off the bombs near it, +1 mult each", "Une explosion déclenche les bombes voisines, +1 de mult chacune"],
+    ["shards", "charm", 0, 5, 2, "pawko-icon-40", "#d6f6ff", "Shards", "Éclats", "+0.5 mult for the round per glass peg broken", "+0,5 de mult pour la partie par peg de verre cassé"],
+    ["reverb", "charm", 0, 7, 1, "pawko-icon-41", "#9d7bff", "Reverb", "Réverb", "Special pegs trigger twice", "Les pegs spéciaux se déclenchent deux fois"],
+    ["martyr", "charm", 0, 8, 2, "pawko-icon-42", "#ff3355", "Martyr", "Martyr", "+0.5 mult for the round per ball lost", "+0,5 de mult pour la partie par bille perdue"],
+    ["unison", "charm", 0, 9, 2, "pawko-icon-43", "#ffe08a", "Unison", "Unisson", "A special on the board 10 times pays x2", "Un spécial présent 10 fois sur le plateau paie x2"],
+    ["rainbow", "charm", 0, 9, 2, "pawko-icon-44", "#ff9ff3", "Rainbow", "Palette", "+1 mult per kind of special on the board", "+1 de mult par sorte de spécial sur le plateau"],
+    ["interest", "charm", 0, 10, 2, "pawko-icon-45", "#ffcf5a", "Interest", "Intérêts", "Every gate adds 1% of your score", "Chaque gate ajoute 1 % de ton score"],
+    ["jackpotHunt", "charm", 0, 10, 2, "pawko-icon-46", "#ff4d6d", "Jackpot hunt", "Chasse au jackpot", "x1.1 mult for the round per jackpot ball", "x1,1 de mult pour la partie par bille au jackpot"],
+    ["snowball", "charm", 0, 11, 2, "pawko-icon-47", "#5ad8ff", "Snowball", "Boule de neige", "A frozen ball grows on every ice peg", "Une bille gelée grossit à chaque peg de glace"],
+    ["contagion", "charm", 0, 11, 1, "pawko-icon-48", "#c46bff", "Spread", "Épidémie", "A charged ball charges every ball it touches", "Une bille chargée charge toutes celles qu'elle touche"],
+    ["blueprint", "meta", 0, 7, 1, "pawko-icon-49", "#e8e2d0", "Copy", "Copie", "Plays the last card again", "Rejoue la dernière carte"],
+    ["recycler", "meta", 0, 12, 1, "pawko-icon-50", "#e8e2d0", "Recall", "Retour", "The last card played comes back to your hand", "La dernière carte jouée revient dans ta main"],
+  ];
+
+  /* the kinds and the rarities, as cardNode reads them (game.js, KINDS / RARITY) */
+  const KINDS = {
+    peg:   { color: "#ff8a3c", en: "Peg",   fr: "Peg" },
+    wave:  { color: "#5ad8ff", en: "Wave",  fr: "Vague" },
+    charm: { color: "#c46bff", en: "Charm", fr: "Charme" },
+    meta:  { color: "#e8e2d0", en: "Trick", fr: "Astuce" }
+  };
+  /* THE NEW LADDER — silver, emerald, gold, rainbow — keyed by the pile's
+     weight `w` (what is dealt least is worth the most) */
+  const RAINBOW = "linear-gradient(90deg, #ff4d6d, #ffb830, #ffe14d, #46e07a, #4fc3ff, #b76bff, #ff4d6d)";
+  const RARITY = {
+    4: { color: "#c9d0dc", step: 1, en: "Common",   fr: "Commune" },
+    3: { color: "#46e07a", step: 2, en: "Uncommon", fr: "Peu commune" },
+    2: { color: "#ffc93c", step: 3, en: "Rare",     fr: "Rare" },
+    1: { color: "#ff4fb3", step: 4, en: "Epic",     fr: "Épique", bg: RAINBOW }
+  };
+  const KIND_SVG = {
+    peg:   '<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9.4" fill="none" stroke-width="2.6"/>',
+    wave:  '<path d="M2 13 C5.5 4.5 9 4.5 12 13 S18.5 21.5 22 13" fill="none" stroke-width="3.2" stroke-linecap="round"/>',
+    charm: '<path d="M12 1.5 L20.8 12 L12 22.5 L3.2 12 Z"/>',
+    meta:  '<rect x="2.5" y="2.5" width="12.5" height="12.5" rx="2.5" fill="none" stroke-width="2.6"/><rect x="9" y="9" width="12.5" height="12.5" rx="2.5"/>'
+  };
+  /* one card of each kind at each rarity the table has, for the sample */
+  const SAMPLE = ["fire", "prism", "portal", "double", "thermal", "encore",
+                  "clover", "pyro", "reverb", "blueprint"];
+  const CARDS = {};
+  DATA.forEach(function (r) {
+    CARDS[r[0]] = { key: r[0], kind: r[1], n: r[2], lv: r[3], w: r[4], icon: r[5], color: r[6],
+                    name: { en: r[7], fr: r[8] }, desc: { en: r[9], fr: r[10] } };
+  });
+
+  /* The motor's upper(), copied from button.html: the accents come off and a
+     lowercase run glued to a digit (x5) is left alone. */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+  function roman(n) {
+    const R = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+    let s = "";
+    R.forEach(function (p) { while (n >= p[0]) { s += p[1]; n -= p[0]; } });
+    return s;
+  }
+
+  /* THE STYLES, read off their own <style data-style> blocks */
+  const STYLES = [].map.call(document.querySelectorAll("style[data-style]"), function (n) {
+    return { key: n.getAttribute("data-style"), name: n.getAttribute("data-name"),
+             about: n.getAttribute("data-about"), node: n };
+  });
+
+  /* ONE CARD — the structure the head comment describes, which is what
+     cardNode would build once a style is picked. */
+  function cardNode(c, style, w, ghost, lang) {
+    const K = KINDS[c.kind], R = RARITY[c.w];
+    const box = document.createElement("div");
+    box.className = "pk-cbox";
+    box.style.width = w + "px"; box.style.height = Math.round(w * 1.4) + "px";
+    const n = document.createElement("div");
+    n.className = "pk-card k-" + c.kind + " r-" + (ghost ? 1 : R.step) + " s-" + style + (ghost ? " ghost" : "");
+    n.style.setProperty("--sk", w / 300);
+    n.style.setProperty("--c", ghost ? "#69718a" : c.color);
+    n.style.setProperty("--k", K.color);
+    n.style.setProperty("--r", ghost ? "#69718a" : R.color);
+    n.style.setProperty("--rbg", ghost ? "#69718a" : (R.bg || R.color));
+    const svg = '<svg viewBox="0 0 24 24" aria-hidden="true">' + KIND_SVG[c.kind] + "</svg>";
+    n.innerHTML =
+      '<div class="pk-back"><div class="pk-bg"></div><div class="pk-glow"></div><div class="pk-shine"></div></div>' +
+      '<div class="pk-frame"></div>' +
+      '<div class="pk-deco"></div>' +
+      '<div class="pk-art"><img alt="" draggable="false" src="../assets/image/embed/' + c.icon + '.webp"></div>' +
+      '<div class="pk-plate"><div class="pk-name"></div><div class="pk-kind"></div></div>' +
+      '<div class="pk-tag">' + svg + "</div>" +
+      '<div class="pk-rar"><span></span></div>' +
+      (c.n && !ghost ? '<div class="pk-num">x' + c.n + "</div>" : "");
+    n.querySelector(".pk-name").textContent = ghost ? "???" : upper(c.name[lang]);
+    n.querySelector(".pk-kind").textContent = upper(K[lang]);
+    n.querySelector(".pk-rar span").textContent = ghost ? "???" : upper(R[lang]);
+    box.appendChild(n);
+    return box;
+  }
+
+  /* ---- the state, kept in the hash so a reload comes back to it ----------- */
+  const S = { view: "style", style: "jewel", kind: "sample", card: "fire", size: 300, lang: "en", ground: "round", ghost: "off" };
+  (location.hash.slice(1) || "").split("&").forEach(function (kv) {
+    const p = kv.split("=");
+    if (p[0] in S && p[1]) S[p[0]] = p[0] === "size" ? +p[1] : decodeURIComponent(p[1]);
+  });
+  function save() {
+    history.replaceState(null, "", "#" + Object.keys(S).map(function (k) { return k + "=" + encodeURIComponent(S[k]); }).join("&"));
+  }
+
+  const $ = function (id) { return document.getElementById(id); };
+  const stage = $("stage");
+
+  function paint() {
+    stage.innerHTML = "";
+    stage.className = "bg-" + S.ground;
+    $("row-styles").style.display = S.view === "style" ? "" : "none";
+    $("row-kind").style.display = S.view === "style" ? "" : "none";
+    $("row-card").style.display = S.view === "compare" ? "" : "none";
+    let cells = [];
+    if (S.view === "style") {
+      const keys = S.kind === "sample" ? SAMPLE : DATA.filter(function (r) { return r[1] === S.kind; }).map(function (r) { return r[0]; });
+      keys.forEach(function (k, i) {
+        const ghost = S.ghost === "on" || (S.ghost === "mix" && i % 3 === 2);
+        cells.push({ node: cardNode(CARDS[k], S.style, S.size, ghost, S.lang), cap: null });
+      });
+    } else {
+      STYLES.forEach(function (st, i) {
+        const ghost = S.ghost === "on" || (S.ghost === "mix" && i % 3 === 2);
+        cells.push({ node: cardNode(CARDS[S.card], st.key, S.size, ghost, S.lang), cap: st.name, key: st.key });
+      });
+    }
+    cells.forEach(function (c) {
+      const cell = document.createElement("div");
+      cell.className = "cell" + (c.key ? " pick" : "");
+      /* room for what leaves the card: wings, a sash, a tag off a corner */
+      const pad = Math.round(80 * S.size / 300);
+      cell.style.padding = pad + "px " + pad + "px " + Math.round(pad * 0.75) + "px";
+      cell.style.gap = Math.round(14 + 34 * S.size / 300) + "px";   // a plaque may hang under the card
+      cell.appendChild(c.node);
+      if (c.cap) {
+        const cap = document.createElement("div");
+        cap.className = "cap";
+        cap.textContent = c.cap;
+        cell.appendChild(cap);
+        cell.title = "Open this style on every card";
+        cell.addEventListener("click", function () { S.view = "style"; S.style = c.key; sync(); });
+      }
+      stage.appendChild(cell);
+    });
+    const st = STYLES.filter(function (s) { return s.key === S.style; })[0];
+    $("about").textContent = S.view === "style" && st ? st.about : "Click a card to see that style on every card.";
+    $("copy").textContent = "Copy CSS — " + (st ? st.name : "");
+    save();
+  }
+
+  /* ---- the panel ---------------------------------------------------------- */
+  STYLES.forEach(function (st) {
+    const b = document.createElement("button");
+    b.setAttribute("data-v", st.key);
+    b.innerHTML = "<span></span>" + (st.key === "jewel" ? "<i>Kept</i>" : "");
+    b.querySelector("span").textContent = st.name;
+    b.addEventListener("click", function () { S.style = st.key; sync(); });
+    $("styles").appendChild(b);
+  });
+  DATA.forEach(function (r) {
+    const o = document.createElement("option");
+    o.value = r[0]; o.textContent = r[7] + " · " + KINDS[r[1]].en + " · level " + r[3];
+    $("card").appendChild(o);
+  });
+  $("card").addEventListener("change", function () { S.card = this.value; sync(); });
+  function seg(id, key) {
+    [].forEach.call($(id).querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () { S[key] = b.getAttribute("data-v"); sync(); });
+    });
+  }
+  seg("view", "view"); seg("kind", "kind"); seg("lang", "lang"); seg("ground", "ground"); seg("ghost", "ghost");
+  $("size").addEventListener("input", function () { S.size = +this.value; sync(); });
+
+  function light() {
+    [["view", "view"], ["kind", "kind"], ["lang", "lang"], ["ground", "ground"], ["ghost", "ghost"], ["styles", "style"]].forEach(function (p) {
+      [].forEach.call($(p[0]).querySelectorAll("button"), function (b) { b.classList.toggle("on", b.getAttribute("data-v") === S[p[1]]); });
+    });
+    $("card").value = S.card;
+    $("size").value = S.size;
+    $("size-v").textContent = S.size;
+  }
+  function sync() { light(); paint(); }
+
+  /* COPY CSS: the style's own block, which is what moves into the SKIN —
+     the selector scoped to .s-<key> is the one line to rewrite there. */
+  $("copy").addEventListener("click", function () {
+    const st = STYLES.filter(function (s) { return s.key === S.style; })[0];
+    const css = st.node.textContent.trim();
+    const done = function (ok) { $("note").textContent = ok ? "Copied: " + st.name : "Copy refused by the browser — select it in the page source."; };
+    if (navigator.clipboard) navigator.clipboard.writeText(css).then(function () { done(true); }, function () { done(false); });
+    else done(false);
+  });
+
+  sync();
+})();
+</script>
+</body>
+</html>

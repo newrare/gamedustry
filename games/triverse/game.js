@@ -1130,7 +1130,10 @@
         pathPoint(paths[it.path], it.p, pp);
         y = sy(pp.y);
         if (y < -70 || y > view.h + 70) continue;
-        drawItem(it, pp.x, y, paths[it.path].color);
+        if (Enter.begin(pp.x, y)) {
+          drawItem(it, pp.x, y, paths[it.path].color);
+          Enter.end();
+        }
       }
     }
 
@@ -1186,12 +1189,25 @@
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, view.w, view.h);
       drawSparks();
+      // The ropes, the pickups and the arrow are the elements of the round's
+      // entrance (Enter): the ground and its sparks are there from frame one.
       // the ridden rope last, so it always reads on top of the crossings
-      for (i = 0; i < 3; i++) if (i !== lane) drawPath(paths[i], false);
-      drawPath(paths[lane], true);
+      for (i = 0; i < 3; i++) {
+        if (i !== lane && Enter.begin(pathX(i, camP), view.h * 0.5)) {
+          drawPath(paths[i], false);
+          Enter.end();
+        }
+      }
+      if (Enter.begin(pathX(lane, camP), view.h * 0.5)) {
+        drawPath(paths[lane], true);
+        Enter.end();
+      }
       drawItems();
-      drawTrail();
-      drawArrow();
+      if (Enter.begin(arrowX, arrowY)) {
+        drawTrail();
+        drawArrow();
+        Enter.end();
+      }
     }
 
     function onResize() { metrics(); }

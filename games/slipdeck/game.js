@@ -914,27 +914,33 @@
     function drawHand() {
       var i, j, ev, label, col;
 
-      for (i = 0; i < HAND_SIZE; i++) {
+      for (i = 0; i < HAND_SIZE; i++) {             // each empty slot is an element
+        if (!Enter.begin(slotX(i), L.slotY)) continue;
         roundRect(slotX(i) - L.slotW / 2, L.slotY - L.slotH / 2, L.slotW, L.slotH, L.slotW * 0.085);
         ctx.fillStyle = "rgba(255,255,255,.035)"; ctx.fill();
         ctx.setLineDash([9, 9]);
         ctx.strokeStyle = "rgba(255,255,255,.15)"; ctx.lineWidth = 2; ctx.stroke();
         ctx.setLineDash([]);
+        Enter.end();
       }
 
       for (i = 0; i < hand.length; i++) {
         var moving = false;
         for (j = 0; j < landing.length; j++) if (landing[j].slot === i) moving = true;
-        if (!moving) drawCard(hand[i], slotX(i), L.slotY, L.slotW, L.slotH, 0, 1, null);
+        if (!moving && Enter.begin(slotX(i), L.slotY)) {
+          drawCard(hand[i], slotX(i), L.slotY, L.slotW, L.slotH, 0, 1, null);
+          Enter.end();
+        }
       }
       for (i = 0; i < landing.length; i++) {
         var la = landing[i], t = 1 - (1 - la.t) * (1 - la.t) * (1 - la.t);
-        drawCard(la.card,
-          la.fx + (slotX(la.slot) - la.fx) * t,
-          la.fy + (L.slotY - la.fy) * t,
+        var lx = la.fx + (slotX(la.slot) - la.fx) * t, ly = la.fy + (L.slotY - la.fy) * t;
+        if (!Enter.begin(lx, ly)) continue;
+        drawCard(la.card, lx, ly,
           L.cardW + (L.slotW - L.cardW) * t,
           L.cardH + (L.slotH - L.cardH) * t,
           la.frot * (1 - t), 1, null);
+        Enter.end();
       }
 
       ev = evalHand(hand);
@@ -949,7 +955,10 @@
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.font = font(28, 900);
       ctx.fillStyle = col;
-      ctx.fillText(upper(label) + "   " + hand.length + "/" + HAND_SIZE, Layout.cx, L.labelY);
+      if (Enter.begin(Layout.cx, L.labelY)) {
+        ctx.fillText(upper(label) + "   " + hand.length + "/" + HAND_SIZE, Layout.cx, L.labelY);
+        Enter.end();
+      }
     }
 
     function render() {
@@ -963,14 +972,23 @@
       }
 
       var pull = cur ? clamp(Math.abs(cur.x) / SWIPE_DIST, 0, 1) : 0;
-      drawGate(L.gateLX, BIN_COL,  Lang.t("Bin"),  cur && cur.x < 0 ? pull : 0);
-      drawGate(L.gateRX, KEEP_COL, Lang.t("Keep"), cur && cur.x > 0 ? pull : 0);
+      var gy = (L.gateTop + L.gateBot) / 2;
+      // the gates, the chute, the hand and the cards are the elements of the
+      // round's entrance (Enter): each lands on its own place, in this order
+      if (Enter.begin(L.gateLX + L.gateW / 2, gy)) {
+        drawGate(L.gateLX, BIN_COL,  Lang.t("Bin"),  cur && cur.x < 0 ? pull : 0);
+        Enter.end();
+      }
+      if (Enter.begin(L.gateRX + L.gateW / 2, gy)) {
+        drawGate(L.gateRX, KEEP_COL, Lang.t("Keep"), cur && cur.x > 0 ? pull : 0);
+        Enter.end();
+      }
 
-      drawChute();
+      if (Enter.begin(Layout.cx, L.chuteY)) { drawChute(); Enter.end(); }
       drawHand();
 
       // the shoe: two backs peeking behind the live card
-      if (deckSprite) {
+      if (deckSprite && Enter.begin(L.cardCX + 13, L.cardCY + 18)) {
         ctx.save();
         ctx.globalAlpha = 0.45;
         ctx.translate(L.cardCX + 18, L.cardCY + 24); ctx.rotate(0.05);
@@ -981,6 +999,7 @@
         ctx.translate(L.cardCX + 9, L.cardCY + 12); ctx.rotate(0.024);
         ctx.drawImage(deckSprite, -L.cardW / 2, -L.cardH / 2, L.cardW, L.cardH);
         ctx.restore();
+        Enter.end();
       }
 
       for (i = 0; i < flying.length; i++) {
@@ -995,11 +1014,14 @@
         var sc = 0.9 + 0.1 * e, tint = null;
         if (cur.x < -4)      tint = rgba(BIN_COL,  0.05 + pull * 0.17);
         else if (cur.x > 4)  tint = rgba(KEEP_COL, 0.05 + pull * 0.17);
-        drawCard(cur.card, x, y, L.cardW * sc, L.cardH * sc, cur.rot, e, tint);
+        if (Enter.begin(x, y)) {
+          drawCard(cur.card, x, y, L.cardW * sc, L.cardH * sc, cur.rot, e, tint);
+          Enter.end();
+        }
       }
 
-      drawFuse();
-      drawPreview();
+      if (Enter.begin(L.cardCX, L.fuseY + L.fuseH / 2)) { drawFuse(); Enter.end(); }
+      if (Enter.begin(Layout.cx, L.chipY)) { drawPreview(); Enter.end(); }
     }
 
     /* ===================================================================

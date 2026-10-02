@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — cards editor</title>
+<meta name="lab-group" content="tools">
+<meta name="lab-game" content="pawko">
+<style>
+/* ===========================================================================
+   PAWKO — THE PATCH CARD, composed. The second round of lab/pawko-cards.html
+   picked one look out of nine: the embroidered PATCH (woven cloth in the
+   kind's colour, a stitched seam, a rim in the rarity's thread, an iron-on
+   badge over a corner, a price tag on a string for the rarity, a woven label
+   for the name). This page is where that look is tuned rather than chosen:
+   every measure of it is a knob — where the badge sits and how far it hangs
+   off, which edge the price tag hangs from and at what angle, how wide the
+   label runs, the sizes of the name, the kind, the rarity and the
+   description, the threads and the papers.
+
+   HOW IT IS BUILT. The rules of the look (<style id="patch-rules">) never
+   change: every measure in them is a custom property. The panel writes those
+   properties into <style id="patch-vars">, scoped `.pk-card.s-patch`, and
+   COPY CSS hands over the two blocks together — which is exactly what moves
+   into games/pawko/skin.css. COPY SETTINGS is the panel's state as JSON, the
+   one thing a CSS copy cannot carry back into this page (the corner picked,
+   the edge picked: the CSS holds the positions they produced).
+
+   The properties are declared ON THE CARD and not on the page, because a
+   value like `var(--r)` is resolved where it is declared: on the card, the
+   rarity is that card's.
+
+   THE CARD'S STRUCTURE is the one lab/pawko-cards.html introduced (a body
+   that clips, everything else free to leave the card), plus one node:
+   .pk-desc, what the card does, which the round's big card and the
+   collection write under the card today and which this page can sew onto it.
+
+   Casing: every string is written in normal case; the name, the kind and the
+   rarity are shouted through this page's copy of the motor's `upper()`
+   (button.html), the description stays in normal case — so its floor is
+   20 px bold (CLAUDE.md, hard constraint 8), which its slider starts at.
+   =========================================================================== */
+
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+:root { --font:"Baloo 2", ui-rounded, "Trebuchet MS", Roboto, sans-serif; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:#0b0b12; }
+body {
+  min-height:100vh; display:flex; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---- PANEL ---------------------------------------------------------------- */
+#panel {
+  flex:0 0 320px; padding:18px 18px 40px; background:#12121c; border-right:1px solid #23233a;
+  position:sticky; top:0; height:100vh; overflow-y:auto; z-index:10;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+details { border:1px solid #23233a; border-radius:10px; margin-bottom:8px; background:#0f0f18; }
+summary {
+  cursor:pointer; list-style:none; padding:9px 12px; font-size:13px; color:#e8e6f5;
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+}
+summary::-webkit-details-marker { display:none; }
+summary::after { content:"▸"; color:#6f6a90; transition:transform .15s; }
+details[open] > summary::after { transform:rotate(90deg); }
+summary small { margin-left:auto; color:#6f6a90; font-weight:500; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+.knobs { padding:2px 12px 10px; }
+.row { margin-bottom:11px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#ffb830; }
+.row select {
+  width:100%; margin-top:4px; padding:5px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px;
+}
+.row input[type=color] { width:100%; height:28px; margin-top:4px; border:1px solid #2c2c47; border-radius:6px; background:#0b0b12; padding:2px; }
+.seg { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; background:#1a1a28; border:1px solid #2c2c44; border-radius:9px; padding:3px; }
+.seg button {
+  flex:1; appearance:none; border:0; background:none; color:#8b8ba7; cursor:pointer;
+  font:inherit; font-size:12px; padding:4px 6px; border-radius:6px; white-space:nowrap;
+}
+.seg button.on { background:#ffb830; color:#2a1402; }
+.colors { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; }
+.colors .row { margin-bottom:4px; }
+.act {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#ffb830; color:#2a1402; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+.act.ghost { background:#23233a; color:#e8e6f5; }
+.acts { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
+#note { margin-top:8px; font-size:12px; font-weight:500; color:#9c9cba; min-height:18px; }
+
+/* ---- STAGE ---------------------------------------------------------------- */
+#stage {
+  flex:1; min-width:0; padding:20px 20px 80px;
+  display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; gap:4px 0;
+  background:#1a050c center/cover no-repeat;
+}
+#stage.bg-round { background-image:linear-gradient(rgba(10,2,6,.55),rgba(10,2,6,.55)), url("../assets/image/embed/pawko-background-phone-01.webp"); background-attachment:fixed; }
+#stage.bg-home  { background-image:linear-gradient(rgba(6,9,26,.5),rgba(6,9,26,.5)), url("../assets/image/embed/pawko-background-home.webp"); background-attachment:fixed; }
+#stage.bg-flat  { background:#2a0a14; }
+.cell { display:flex; flex-direction:column; align-items:center; }
+
+/* =========================================================================
+   THE CARD — the base, as lab/pawko-cards.html has it
+   ========================================================================= */
+.pk-cbox { position:relative; flex:0 0 auto; }
+.pk-card {
+  position:absolute; left:0; top:0; width:300px; height:420px; transform-origin:0 0;
+  transform:scale(var(--sk, 1));
+  font-family:var(--font); font-weight:800; color:#fff;
+}
+.pk-card > * { position:absolute; }
+.pk-back { inset:0; border-radius:28px; overflow:hidden; background:#2a0612; }
+.pk-back > * { position:absolute; inset:0; }
+.pk-frame { inset:0; border-radius:28px; pointer-events:none; }
+.pk-deco { display:none; }
+.pk-art { left:0; right:0; top:60px; height:190px; display:flex; align-items:center; justify-content:center; }
+.pk-art img { max-width:190px; max-height:180px; display:block; }
+.pk-plate {
+  left:16px; right:16px; top:266px; height:106px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center;
+}
+.pk-name { font-size:34px; line-height:1; letter-spacing:.5px; }
+.pk-kind { font-size:20px; letter-spacing:3px; line-height:1.1; }
+.pk-tag { left:16px; top:16px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+.pk-tag svg { position:relative; z-index:1; width:36px; height:36px; fill:currentColor; stroke:currentColor; }
+.pk-rar { display:none; align-items:center; white-space:nowrap; font-size:20px; letter-spacing:2px; line-height:1; }
+.pk-num { right:16px; top:18px; font-size:28px; line-height:1.1; }
+.pk-desc { display:none; }
+.pk-back { z-index:0; } .pk-frame { z-index:1; } .pk-art { z-index:2; }
+.pk-plate { z-index:3; } .pk-desc { z-index:3; } .pk-tag { z-index:4; } .pk-rar { z-index:5; } .pk-num { z-index:5; }
+@keyframes rb-move { from { background-position:0% 50%; } to { background-position:300% 50%; } }
+.pk-card.ghost .pk-art img { filter:brightness(0) invert(1) !important; opacity:.42; }
+.pk-card.ghost .pk-tag { filter:grayscale(1) brightness(.8); }
+</style>
+
+<!-- THE VARIABLES — written by the panel (see `vars()` below) -->
+<style id="patch-vars"></style>
+
+<!-- THE RULES OF THE PATCH — never edited by the panel: every measure is a
+     variable of the block above. This block and that one are COPY CSS. -->
+<style id="patch-rules">
+.pk-card.s-patch { transform:scale(var(--sk, 1)) rotate(var(--pt-tilt)); }
+.pk-card.s-patch .pk-back {
+  border-radius:var(--pt-radius);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,var(--pt-twill)) 0 3px, transparent 3px 6px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,var(--pt-twill)) 0 3px, transparent 3px 6px),
+    linear-gradient(180deg, var(--pt-cloth-a), var(--pt-cloth-b));
+  box-shadow:0 14px 26px rgba(0,0,0,.45);
+}
+.pk-card.s-patch .pk-glow { background:radial-gradient(circle at 50% 36%, rgba(255,255,255,var(--pt-glow)), transparent 50%); }
+/* the seam, sewn round the cloth */
+.pk-card.s-patch .pk-back::after {
+  content:""; position:absolute; inset:var(--pt-seam-inset);
+  border:var(--pt-seam-w) var(--pt-seam-style) var(--pt-seam-color);
+  border-radius:max(6px, calc(var(--pt-radius) - var(--pt-seam-inset)));
+}
+/* the rim, in the rarity's thread — a rainbow that moves on an epic */
+.pk-card.s-patch .pk-frame {
+  border-radius:var(--pt-radius); padding:var(--pt-rim); background:var(--pt-rim-bg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.pk-card.s-patch.r-4 .pk-frame { background:var(--rbg); background-size:300% 100%; animation:rb-move 5s linear infinite; }
+/* the object */
+.pk-card.s-patch .pk-art { top:var(--art-top); height:var(--art-size); }
+.pk-card.s-patch .pk-art img { max-width:var(--art-size); max-height:var(--art-size); filter:var(--art-filter); }
+/* the badge: the kind, ironed on over a corner */
+.pk-card.s-patch .pk-tag {
+  left:var(--tag-l); top:var(--tag-t); width:var(--tag-size); height:var(--tag-size);
+  border-radius:var(--tag-radius); color:#200010; transform:rotate(var(--tag-rot));
+  background:repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 3px, transparent 3px 6px), color-mix(in srgb, var(--k) var(--tag-tint), #fff);
+  box-shadow:0 0 0 var(--tag-ring) var(--tag-paper), 0 0 0 calc(var(--tag-ring) + 3px) color-mix(in srgb, var(--k) 50%, #000), 0 10px 16px rgba(0,0,0,.35);
+}
+.pk-card.s-patch .pk-tag::after { content:""; position:absolute; inset:7px; border-radius:inherit; border:2px dashed rgba(32,0,16,.5); }
+.pk-card.s-patch .pk-tag svg { width:calc(var(--tag-size) * .46); height:calc(var(--tag-size) * .46); }
+/* the rarity: a price tag hanging off an edge on its string */
+.pk-card.s-patch .pk-rar {
+  display:flex; left:var(--rt-x); top:var(--rt-y); height:var(--rt-h);
+  transform-origin:0 50%; transform:translateY(-50%) rotate(var(--rt-rot));
+  filter:drop-shadow(0 8px 8px rgba(0,0,0,.4));
+}
+.pk-card.s-patch .pk-rar::before {
+  content:""; flex:0 0 var(--rt-str); height:12px;
+  background:radial-gradient(circle at 5px 50%, #5a3a2a 0 4px, transparent 4.5px), linear-gradient(var(--rt-paper), var(--rt-paper)) center / 100% 3px no-repeat;
+}
+.pk-card.s-patch .pk-rar span {
+  position:relative; display:flex; align-items:center; height:100%;
+  padding:3px 20px 0 calc(var(--rt-band) + 28px); color:#200010; font-size:var(--rt-fs);
+  background:var(--rt-paper); clip-path:polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
+}
+.pk-card.s-patch .pk-rar span::before { content:""; position:absolute; left:18px; top:0; bottom:0; width:var(--rt-band); background:var(--rbg); background-size:300% 100%; }
+.pk-card.s-patch.r-4 .pk-rar span::before { animation:rb-move 4s linear infinite; }
+.pk-card.s-patch .pk-rar span::after { content:""; position:absolute; left:8px; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:#5a3a2a; }
+.pk-card.s-patch .pk-rar em { font-style:normal; display:inline-block; transform:rotate(var(--rt-flip)); }
+/* the name, on a woven label */
+.pk-card.s-patch .pk-plate {
+  left:var(--pl-l); right:var(--pl-r); top:var(--pl-top); height:var(--pl-h);
+  transform:rotate(var(--pl-rot)); filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));
+}
+.pk-card.s-patch .pk-plate::before { content:""; position:absolute; inset:0; z-index:-1; background:var(--pl-paper); clip-path:var(--pl-clip); }
+.pk-card.s-patch .pk-plate::after {
+  content:""; position:absolute; inset:7px 26px;
+  border-top:2px dashed var(--pl-stitch); border-bottom:2px dashed var(--pl-stitch);
+}
+.pk-card.s-patch .pk-name { font-size:var(--pl-name); color:color-mix(in srgb, var(--k) var(--pl-ink), #200010); }
+.pk-card.s-patch .pk-kind { display:var(--pl-kind-show); font-size:var(--pl-kind); color:color-mix(in srgb, var(--k) 70%, #200010); }
+/* what the card does, sewn on: in thread on the cloth, or on a label of its own */
+.pk-card.s-patch .pk-desc {
+  display:var(--ds-show); left:var(--ds-side); right:var(--ds-side); top:var(--ds-top);
+  padding:var(--ds-pad); border-radius:10px; background:var(--ds-bg); color:var(--ds-ink);
+  font:700 var(--ds-fs)/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  text-align:center; text-shadow:var(--ds-shadow); box-shadow:var(--ds-box);
+}
+/* the count */
+.pk-card.s-patch .pk-num {
+  left:var(--num-l); right:var(--num-r); top:var(--num-t); bottom:var(--num-b);
+  background:#200010; color:#fff8e6; border-radius:14px; padding:2px 12px 0; font-size:var(--num-fs);
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Pawko patch</h1>
+  <p class="hint">Tune the patch card picked in pawko-cards.html: where every piece sits, how far it hangs off, its angle, its size and its colours.</p>
+
+  <div class="row">
+    <label for="preset">preset</label>
+    <select id="preset"></select>
+  </div>
+  <div id="knobs"></div>
+
+  <div class="acts">
+    <button class="act" id="copy-css">Copy CSS</button>
+    <button class="act ghost" id="copy-set">Copy settings</button>
+  </div>
+  <div class="acts">
+    <button class="act ghost" id="paste-set">Paste settings</button>
+    <button class="act ghost" id="reset">Reset</button>
+  </div>
+  <div id="note"></div>
+</div>
+
+<div id="stage" class="bg-round"></div>
+
+<script>
+/* ===========================================================================
+   THE CARDS, as games/pawko/game.js holds them (CARDS) with their French out
+   of web.copy.fr.strings — a copy, regenerated by hand when the table moves:
+   [key, kind, n, lv, w, icon file, colour, name EN, name FR, desc EN, desc FR]
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const DATA = [
+    ["fire", "peg", 5, 1, 4, "pawko-icon-02", "#ff7a1a", "Fire", "Feu", "5 pegs catch fire", "5 pegs prennent feu"],
+    ["ice", "peg", 5, 1, 4, "pawko-icon-03", "#5ad8ff", "Ice", "Glace", "5 pegs turn to ice", "5 pegs deviennent de glace"],
+    ["bumper", "peg", 10, 1, 4, "pawko-icon-04", "#ff4d6d", "Bumper", "Bumper", "10 pegs become bumpers", "10 pegs deviennent des bumpers"],
+    ["magnet", "peg", 4, 1, 4, "pawko-icon-05", "#c46bff", "Magnet", "Aimant", "4 pegs turn magnetic", "4 pegs deviennent aimantés"],
+    ["bomb", "peg", 3, 1, 4, "pawko-icon-06", "#9aa0b4", "Bomb", "Bombe", "3 pegs become bombs", "3 pegs deviennent des bombes"],
+    ["prism", "peg", 3, 2, 3, "pawko-icon-09", "#ff9ff3", "Prism", "Prisme", "3 prisms split a ball in two", "3 prismes coupent une bille en deux"],
+    ["lucky", "peg", 6, 3, 3, "pawko-icon-10", "#5be37a", "Lucky", "Chance", "6 pegs: 1 in 4 pays x10", "6 pegs : 1 chance sur 4 de payer x10"],
+    ["lightning", "peg", 4, 4, 3, "pawko-icon-11", "#8fe3ff", "Spark", "Éclair", "4 pegs arc to their 3 neighbours", "4 pegs foudroient leurs 3 voisins"],
+    ["glass", "peg", 8, 5, 3, "pawko-icon-12", "#d6f6ff", "Glass", "Verre", "8 pegs pay x5, break after 3 hits", "8 pegs paient x5 et cassent au 3e coup"],
+    ["echo", "peg", 3, 7, 3, "pawko-icon-13", "#9d7bff", "Echo", "Écho", "3 pegs replay the last special a ball hit", "3 pegs rejouent le dernier spécial touché"],
+    ["mirror", "peg", 4, 7, 3, "pawko-icon-14", "#d8dce8", "Mirror", "Miroir", "4 pegs copy the special next to them", "4 pegs copient le spécial voisin"],
+    ["golden", "peg", 5, 2, 3, "pawko-icon-15", "#ffd700", "Midas", "Midas", "5 pegs add +0.1 mult on every hit", "5 pegs ajoutent +0,1 de mult à chaque coup"],
+    ["portal", "peg", 2, 8, 2, "pawko-icon-16", "#6a5cff", "Portal", "Portail", "2 portals send a ball back to the top", "2 portails renvoient une bille en haut"],
+    ["spike", "peg", 2, 8, 2, "pawko-icon-17", "#ff3355", "Spike", "Pique", "2 spikes destroy a ball for x50", "2 piques détruisent une bille pour x50"],
+    ["double", "wave", 0, 1, 4, "pawko-icon-01", "#ffd166", "Double", "Double", "Classic pegs pay double this wave", "Les pegs classiques paient double cette vague"],
+    ["gold", "wave", 0, 1, 4, "pawko-icon-08", "#ffb830", "Gold", "Or", "Gates pay double this wave, no malus", "Les gates paient double cette vague, sans malus"],
+    ["balls", "wave", 6, 1, 4, "pawko-icon-07", "#ff5c5c", "Balls", "Billes", "6 more balls in this wave", "6 billes de plus dans cette vague"],
+    ["molten", "wave", 0, 2, 3, "pawko-icon-18", "#ff5a1a", "Magma", "Magma", "Every ball burns for the whole wave", "Toutes les billes brûlent toute la vague"],
+    ["fever", "wave", 0, 2, 3, "pawko-icon-19", "#ff7ab8", "Fever", "Fièvre", "+0.1 mult for every special peg hit", "+0,1 de mult par peg spécial touché"],
+    ["twins", "wave", 0, 3, 3, "pawko-icon-20", "#6ee08a", "Twins", "Jumelles", "Every ball drops with a twin", "Chaque bille tombe avec une jumelle"],
+    ["combo", "wave", 0, 3, 3, "pawko-icon-21", "#7be05a", "Combo", "Combo", "Each hit of a ball adds x0.1 to its next ones", "Chaque coup d'une bille ajoute x0,1 aux suivants"],
+    ["chain", "wave", 0, 4, 1, "pawko-icon-22", "#ff8a3c", "Chain reaction", "Réaction en chaîne", "x1.5 mult for every explosion this wave", "x1,5 de mult par explosion cette vague"],
+    ["heavy", "wave", 0, 4, 3, "pawko-icon-23", "#a9a9b8", "Heavy", "Plomb", "Big balls that pay half a peg more a hit", "De grosses billes qui paient un demi-peg de plus"],
+    ["cryo", "wave", 0, 5, 3, "pawko-icon-24", "#7ac8ff", "Cryo", "Cryo", "Every ball drops frozen", "Toutes les billes tombent gelées"],
+    ["thermal", "wave", 0, 5, 2, "pawko-icon-25", "#ff6ad5", "Thermal shock", "Choc thermique", "Fire meets ice: an explosion worth x10", "Le feu touche la glace : une explosion à x10"],
+    ["lastCall", "wave", 0, 6, 1, "pawko-icon-26", "#ffcf5a", "Last call", "Dernier tour", "x3 mult, played on the last wave only", "x3 de mult, à la dernière vague seulement"],
+    ["bouncy", "wave", 0, 8, 3, "pawko-icon-27", "#ff6b6b", "Bouncy", "Rebond", "Livelier balls that last twice as long", "Des billes plus vives qui durent deux fois plus"],
+    ["ghost", "wave", 0, 9, 3, "pawko-icon-28", "#b48cff", "Ghost", "Fantôme", "Balls pass through classic pegs", "Les billes traversent les pegs classiques"],
+    ["rain", "wave", 0, 9, 3, "pawko-icon-29", "#5ab0ff", "Rain", "Pluie", "Balls fall across the whole board", "Les billes tombent sur toute la largeur"],
+    ["goldBall", "wave", 0, 10, 3, "pawko-icon-30", "#ffd700", "Gold ball", "Bille d'or", "One ball is gold: its hits pay x5", "Une bille en or : ses coups paient x5"],
+    ["jackpotRush", "wave", 0, 10, 3, "pawko-icon-31", "#ff4d6d", "Jackpot rush", "Gros lot", "The jackpot gate is twice as wide", "La gate jackpot est deux fois plus large"],
+    ["overcharge", "wave", 0, 11, 2, "pawko-icon-32", "#c46bff", "Surge", "Survolt", "Every ball is charged for the whole wave", "Toutes les billes sont chargées toute la vague"],
+    ["encore", "wave", 0, 11, 1, "pawko-icon-33", "#ff4d6d", "Encore", "Bis", "The wave drops a second time", "La vague tombe une seconde fois"],
+    ["allIn", "wave", 0, 12, 1, "pawko-icon-34", "#ffb830", "All in", "Tapis", "x2 mult, but the edge gates take points", "x2 de mult, mais les gates du bord retirent des points"],
+    ["wildfire", "charm", 0, 6, 2, "pawko-icon-35", "#ff7a1a", "Wildfire", "Brasier", "After each wave, every fire peg lights a neighbour", "Après chaque vague, chaque peg de feu enflamme un voisin"],
+    ["pyro", "charm", 0, 6, 2, "pawko-icon-36", "#ff5a1a", "Pyro", "Pyromane", "Every fire hit adds 1 point to all fire pegs", "Chaque coup de feu ajoute 1 point à tous les pegs de feu"],
+    ["collector", "charm", 0, 6, 2, "pawko-icon-37", "#ffd166", "Hoarder", "Collecte", "+0.5 mult for every card played", "+0,5 de mult par carte jouée"],
+    ["clover", "charm", 0, 3, 2, "pawko-icon-38", "#5be37a", "Clover", "Trèfle", "Every chance is doubled", "Toutes les chances sont doublées"],
+    ["domino", "charm", 0, 4, 1, "pawko-icon-39", "#9aa0b4", "Domino", "Domino", "A blast sets off the bombs near it, +1 mult each", "Une explosion déclenche les bombes voisines, +1 de mult chacune"],
+    ["shards", "charm", 0, 5, 2, "pawko-icon-40", "#d6f6ff", "Shards", "Éclats", "+0.5 mult for the round per glass peg broken", "+0,5 de mult pour la partie par peg de verre cassé"],
+    ["reverb", "charm", 0, 7, 1, "pawko-icon-41", "#9d7bff", "Reverb", "Réverb", "Special pegs trigger twice", "Les pegs spéciaux se déclenchent deux fois"],
+    ["martyr", "charm", 0, 8, 2, "pawko-icon-42", "#ff3355", "Martyr", "Martyr", "+0.5 mult for the round per ball lost", "+0,5 de mult pour la partie par bille perdue"],
+    ["unison", "charm", 0, 9, 2, "pawko-icon-43", "#ffe08a", "Unison", "Unisson", "A special on the board 10 times pays x2", "Un spécial présent 10 fois sur le plateau paie x2"],
+    ["rainbow", "charm", 0, 9, 2, "pawko-icon-44", "#ff9ff3", "Rainbow", "Palette", "+1 mult per kind of special on the board", "+1 de mult par sorte de spécial sur le plateau"],
+    ["interest", "charm", 0, 10, 2, "pawko-icon-45", "#ffcf5a", "Interest", "Intérêts", "Every gate adds 1% of your score", "Chaque gate ajoute 1 % de ton score"],
+    ["jackpotHunt", "charm", 0, 10, 2, "pawko-icon-46", "#ff4d6d", "Jackpot hunt", "Chasse au jackpot", "x1.1 mult for the round per jackpot ball", "x1,1 de mult pour la partie par bille au jackpot"],
+    ["snowball", "charm", 0, 11, 2, "pawko-icon-47", "#5ad8ff", "Snowball", "Boule de neige", "A frozen ball grows on every ice peg", "Une bille gelée grossit à chaque peg de glace"],
+    ["contagion", "charm", 0, 11, 1, "pawko-icon-48", "#c46bff", "Spread", "Épidémie", "A charged ball charges every ball it touches", "Une bille chargée charge toutes celles qu'elle touche"],
+    ["blueprint", "meta", 0, 7, 1, "pawko-icon-49", "#e8e2d0", "Copy", "Copie", "Plays the last card again", "Rejoue la dernière carte"],
+    ["recycler", "meta", 0, 12, 1, "pawko-icon-50", "#e8e2d0", "Recall", "Retour", "The last card played comes back to your hand", "La dernière carte jouée revient dans ta main"],
+  ];
+  const CARDS = {};
+  DATA.forEach(function (r) {
+    CARDS[r[0]] = { key: r[0], kind: r[1], n: r[2], lv: r[3], w: r[4], icon: r[5], color: r[6],
+                    name: { en: r[7], fr: r[8] }, desc: { en: r[9], fr: r[10] } };
+  });
+  const KIND_NAME = { peg: { en: "Peg", fr: "Peg" }, wave: { en: "Wave", fr: "Vague" },
+                      charm: { en: "Charm", fr: "Charme" }, meta: { en: "Trick", fr: "Astuce" } };
+  const RAR_NAME = { 1: { en: "Common", fr: "Commune" }, 2: { en: "Uncommon", fr: "Peu commune" },
+                     3: { en: "Rare", fr: "Rare" }, 4: { en: "Epic", fr: "Épique" } };
+  const STEP = { 4: 1, 3: 2, 2: 3, 1: 4 };          // the pile's weight `w` → the rarity's step
+  const RAINBOW = "linear-gradient(90deg, #ff4d6d, #ffb830, #ffe14d, #46e07a, #4fc3ff, #b76bff, #ff4d6d)";
+  const KIND_SVG = {
+    peg:   '<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9.4" fill="none" stroke-width="2.6"/>',
+    wave:  '<path d="M2 13 C5.5 4.5 9 4.5 12 13 S18.5 21.5 22 13" fill="none" stroke-width="3.2" stroke-linecap="round"/>',
+    charm: '<path d="M12 1.5 L20.8 12 L12 22.5 L3.2 12 Z"/>',
+    meta:  '<rect x="2.5" y="2.5" width="12.5" height="12.5" rx="2.5" fill="none" stroke-width="2.6"/><rect x="9" y="9" width="12.5" height="12.5" rx="2.5"/>'
+  };
+  /* one card at each rarity, across the four kinds */
+  const SAMPLE = ["fire", "prism", "portal", "encore", "pyro", "blueprint"];
+
+  /* The motor's upper(), copied from button.html. */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* =========================================================================
+     THE KNOBS. One line each: [key, group, label, kind, …]. `range` is
+     [min, max, step, unit]; `seg` and `select` list their values; `color` is
+     a colour. The preview group is the page's and is never exported.
+     ========================================================================= */
+  const KNOBS = [
+    // the preview
+    ["view",   "Preview", "show",           "seg",   ["sample", "single"], ["Sample", "One card"]],
+    ["card",   "Preview", "card",           "select"],
+    ["width",  "Preview", "width",          "range", [180, 460, 10, ""]],
+    ["lang",   "Preview", "language",       "seg",   ["en", "fr"], ["EN", "FR"]],
+    ["ground", "Preview", "ground",         "seg",   ["round", "home", "flat"], ["Round", "Village", "Flat"]],
+    ["ghost",  "Preview", "locked",         "seg",   ["off", "on"], ["Off", "On"]],
+    // the cloth
+    ["radius",   "Cloth", "corner radius",  "range", [10, 50, 1, "px"]],
+    ["rim",      "Cloth", "rim width",      "range", [0, 16, 1, "px"]],
+    ["rimStyle", "Cloth", "rim thread",     "seg",   ["thread", "solid", "satin"], ["Thread", "Solid", "Satin"]],
+    ["seamIn",   "Cloth", "seam inset",     "range", [6, 34, 1, "px"]],
+    ["seamW",    "Cloth", "seam width",     "range", [1, 6, 1, "px"]],
+    ["seamStyle","Cloth", "seam stitch",    "seg",   ["dashed", "dotted", "solid"], ["Dashed", "Dotted", "Solid"]],
+    ["clothA",   "Cloth", "cloth, top (kind %)",    "range", [30, 100, 1, "%"]],
+    ["clothB",   "Cloth", "cloth, bottom (kind %)", "range", [30, 100, 1, "%"]],
+    ["twill",    "Cloth", "weave",          "range", [0, 0.24, 0.01, ""]],
+    ["glow",     "Cloth", "light behind the object", "range", [0, 0.7, 0.01, ""]],
+    ["tilt",     "Cloth", "card angle",     "range", [-12, 12, 0.5, "deg"]],
+    // the badge
+    ["tagCorner","Badge", "corner",         "seg",   ["tl", "tr", "bl", "br"], ["↖", "↗", "↙", "↘"]],
+    ["tagSize",  "Badge", "size",           "range", [56, 150, 1, "px"]],
+    ["tagOut",   "Badge", "hangs off by",   "range", [-20, 60, 1, "px"]],
+    ["tagRot",   "Badge", "angle",          "range", [-40, 40, 1, "deg"]],
+    ["tagShape", "Badge", "shape",          "seg",   ["circle", "square"], ["Round", "Square"]],
+    ["tagRing",  "Badge", "edge",           "range", [0, 14, 1, "px"]],
+    ["tagTint",  "Badge", "colour (kind %)","range", [30, 100, 1, "%"]],
+    // the price tag
+    ["rtEdge",   "Rarity tag", "edge",          "seg",  ["right", "left", "top", "bottom"], ["Right", "Left", "Top", "Bottom"]],
+    ["rtAlong",  "Rarity tag", "along the edge","range", [4, 96, 1, "%"]],
+    ["rtPin",    "Rarity tag", "pinned inside by", "range", [0, 40, 1, "px"]],
+    ["rtStr",    "Rarity tag", "string",        "range", [0, 100, 1, "px"]],
+    ["rtRot",    "Rarity tag", "angle",         "range", [-90, 90, 1, "deg"]],
+    ["rtH",      "Rarity tag", "height",        "range", [40, 76, 1, "px"]],
+    ["rtFs",     "Rarity tag", "text size",     "range", [18, 30, 1, "px"]],
+    ["rtBand",   "Rarity tag", "colour band",   "range", [6, 40, 1, "px"]],
+    // the label
+    ["plOut",    "Name label", "wider than the card by", "range", [-24, 50, 1, "px"]],
+    ["plTop",    "Name label", "top",           "range", [200, 330, 1, "px"]],
+    ["plH",      "Name label", "height",        "range", [70, 140, 1, "px"]],
+    ["plRot",    "Name label", "angle",         "range", [-10, 10, 0.5, "deg"]],
+    ["plEnds",   "Name label", "ends",          "seg",   ["notched", "pointed", "straight"], ["Notched", "Pointed", "Straight"]],
+    ["plName",   "Name label", "name size",     "range", [26, 48, 1, "px"]],
+    ["plKind",   "Name label", "kind size",     "range", [18, 28, 1, "px"]],
+    ["plKindOn", "Name label", "kind line",     "seg",   ["on", "off"], ["Shown", "Hidden"]],
+    ["plInk",    "Name label", "name ink (kind %)", "range", [0, 90, 1, "%"]],
+    // the description
+    ["dsShow",   "Description", "sewn on",      "seg",   ["off", "thread", "label"], ["No", "In thread", "On a label"]],
+    ["dsWhere",  "Description", "where",        "seg",   ["card", "under"], ["On the card", "Under it"]],
+    ["dsFs",     "Description", "text size",    "range", [20, 30, 1, "px"]],
+    ["dsSide",   "Description", "side margin",  "range", [-20, 50, 1, "px"]],
+    ["dsGap",    "Description", "gap under the label", "range", [-10, 40, 1, "px"]],
+    // the object
+    ["artSize",  "Object", "size",              "range", [110, 280, 1, "px"]],
+    ["artTop",   "Object", "top (negative: out of the card)", "range", [-110, 90, 1, "px"]],
+    ["artLine",  "Object", "outline",           "seg",   ["thread", "shadow", "none"], ["Thread", "Shadow", "None"]],
+    // the count
+    ["numCorner","Count", "corner",             "seg",   ["tl", "tr", "bl", "br"], ["↖", "↗", "↙", "↘"]],
+    ["numIn",    "Count", "inset",              "range", [-20, 50, 1, "px"]],
+    ["numFs",    "Count", "size",               "range", [20, 34, 1, "px"]],
+    // the colours
+    ["cPeg",     "Colours", "peg",       "color"], ["cWave",  "Colours", "wave",  "color"],
+    ["cCharm",   "Colours", "charm",     "color"], ["cMeta",  "Colours", "trick", "color"],
+    ["rCommon",  "Colours", "common",    "color"], ["rUnc",   "Colours", "uncommon", "color"],
+    ["rRare",    "Colours", "rare",      "color"], ["rEpic",  "Colours", "epic",  "color"],
+    ["epicRb",   "Colours", "epic is a rainbow", "seg", ["on", "off"], ["Yes", "No"]],
+    ["paperTag", "Colours", "badge edge", "color"], ["paperRt", "Colours", "tag paper", "color"],
+    ["paperPl",  "Colours", "label paper", "color"], ["seamC",  "Colours", "seam thread", "color"],
+    ["plStitch", "Colours", "label stitch", "color"], ["dsInk", "Colours", "description thread", "color"]
+  ];
+
+  /* THE PRESETS. `Round 2` is the patch exactly as lab/pawko-cards.html drew
+     it; the others are starting points, not answers. */
+  const BASE = {
+    view: "sample", card: "portal", width: 260, lang: "en", ground: "round", ghost: "off",
+    radius: 32, rim: 8, rimStyle: "thread", seamIn: 16, seamW: 3, seamStyle: "dashed",
+    clothA: 85, clothB: 65, twill: 0.08, glow: 0.35, tilt: 0,
+    tagCorner: "tl", tagSize: 100, tagOut: 26, tagRot: -8, tagShape: "circle", tagRing: 7, tagTint: 70,
+    rtEdge: "right", rtAlong: 22, rtPin: 8, rtStr: 46, rtRot: 14, rtH: 56, rtFs: 20, rtBand: 16,
+    plOut: 20, plTop: 272, plH: 98, plRot: 0, plEnds: "notched", plName: 34, plKind: 20, plKindOn: "on", plInk: 40,
+    dsShow: "off", dsWhere: "card", dsFs: 20, dsSide: 22, dsGap: 8,
+    artSize: 200, artTop: 34, artLine: "shadow",
+    numCorner: "br", numIn: 20, numFs: 24,
+    cPeg: "#ff8a3c", cWave: "#5ad8ff", cCharm: "#c46bff", cMeta: "#e8e2d0",
+    rCommon: "#c9d0dc", rUnc: "#46e07a", rRare: "#ffc93c", rEpic: "#ff4fb3", epicRb: "on",
+    paperTag: "#fff8e6", paperRt: "#fff8e6", paperPl: "#fff8e6", seamC: "#ffffff", plStitch: "#4d2a33", dsInk: "#fff8e6"
+  };
+  const PRESETS = {
+    "Round 2": {},
+    "Sewn description": { plTop: 214, plH: 92, artSize: 170, artTop: 22, dsShow: "thread", dsGap: 6, dsFs: 21, dsSide: 26, numCorner: "tr", numIn: 22 },
+    "Tag on top": { rtEdge: "top", rtAlong: 74, rtPin: 6, rtStr: 30, rtRot: -8, tagCorner: "bl", tagOut: 22, tagRot: 10, numCorner: "tr", artTop: 44 },
+    "Big badge, left tag": { tagCorner: "tr", tagSize: 128, tagOut: 34, tagRot: 12, rtEdge: "left", rtAlong: 30, rtStr: 40, rtRot: -10, plOut: 34, plRot: -3, numCorner: "bl" },
+    "Out of the frame": { artSize: 250, artTop: -86, plTop: 250, plH: 110, plOut: 40, plName: 38, tagCorner: "bl", tagOut: 30, rtEdge: "right", rtAlong: 56, rtStr: 56, rtRot: 24, numCorner: "tr", tilt: -3 },
+    "Label under the card": { dsShow: "label", dsWhere: "under", dsGap: 14, dsSide: 6, dsFs: 22 }
+  };
+
+  /* ---- the state: the last one seen, else Round 2 -------------------------- */
+  const KEY = "lab:pawko-patch";
+  let S = Object.assign({}, BASE);
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved) S = Object.assign({}, BASE, saved); } catch (e) { /* storage blocked */ }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
+
+  const $ = function (id) { return document.getElementById(id); };
+  const stage = $("stage");
+  const px = function (v) { return Math.round(v * 10) / 10 + "px"; };
+
+  /* =========================================================================
+     THE VARIABLES, out of the knobs. Positions are worked out here (a corner,
+     an edge, an angle), so the rules only ever read numbers.
+     ========================================================================= */
+  function vars() {
+    const V = {}, W = 300, H = 420;
+    V["--pt-radius"] = px(S.radius);
+    V["--pt-rim"] = px(S.rim);
+    V["--pt-rim-bg"] = S.rimStyle === "solid" ? "var(--r)"
+      : S.rimStyle === "satin" ? "linear-gradient(160deg, #fff, var(--r) 35%, color-mix(in srgb, var(--r) 55%, #000) 70%, var(--r))"
+      : "repeating-linear-gradient(90deg, var(--r) 0 4px, color-mix(in srgb, var(--r) 65%, #000) 4px 6px)";
+    V["--pt-seam-inset"] = px(S.seamIn);
+    V["--pt-seam-w"] = px(S.seamW);
+    V["--pt-seam-style"] = S.seamStyle;
+    V["--pt-seam-color"] = hexA(S.seamC, 0.75);
+    V["--pt-cloth-a"] = "color-mix(in srgb, var(--k) " + S.clothA + "%, #fff)";
+    V["--pt-cloth-b"] = "color-mix(in srgb, var(--k) " + S.clothB + "%, #200010)";
+    V["--pt-twill"] = String(S.twill);
+    V["--pt-glow"] = String(S.glow);
+    V["--pt-tilt"] = S.tilt + "deg";
+
+    // the badge: a corner, and how far past it
+    const ts = S.tagSize, to = S.tagOut;
+    V["--tag-size"] = px(ts);
+    V["--tag-l"] = px(S.tagCorner.indexOf("l") >= 0 ? -to : W - ts + to);
+    V["--tag-t"] = px(S.tagCorner.indexOf("t") >= 0 ? -to : H - ts + to);
+    V["--tag-rot"] = S.tagRot + "deg";
+    V["--tag-radius"] = S.tagShape === "circle" ? "50%" : "22%";
+    V["--tag-ring"] = px(S.tagRing);
+    V["--tag-tint"] = S.tagTint + "%";
+    V["--tag-paper"] = S.paperTag;
+
+    // the price tag: pinned at a point of an edge, hanging outward
+    const a = S.rtAlong / 100, p = S.rtPin;
+    let x, y, th;
+    if (S.rtEdge === "right")      { x = W - p; y = a * H; th = 0; }
+    else if (S.rtEdge === "left")  { x = p; y = a * H; th = 180; }
+    else if (S.rtEdge === "top")   { x = a * W; y = p; th = -90; }
+    else                            { x = a * W; y = H - p; th = 90; }
+    let rot = th + S.rtRot;
+    let n = ((rot % 360) + 540) % 360 - 180;           // into (-180, 180]
+    V["--rt-x"] = px(x); V["--rt-y"] = px(y);
+    V["--rt-rot"] = rot + "deg";
+    V["--rt-flip"] = Math.abs(n) > 90 ? "180deg" : "0deg";   // the word is never upside down
+    V["--rt-str"] = px(S.rtStr);
+    V["--rt-h"] = px(S.rtH);
+    V["--rt-fs"] = px(S.rtFs);
+    V["--rt-band"] = px(S.rtBand);
+    V["--rt-paper"] = S.paperRt;
+
+    // the label
+    V["--pl-l"] = px(-S.plOut); V["--pl-r"] = px(-S.plOut);
+    V["--pl-top"] = px(S.plTop); V["--pl-h"] = px(S.plH);
+    V["--pl-rot"] = S.plRot + "deg";
+    V["--pl-clip"] = S.plEnds === "straight" ? "inset(0 round 8px)"
+      : S.plEnds === "pointed" ? "polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)"
+      : "polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%)";
+    V["--pl-paper"] = S.paperPl;
+    V["--pl-stitch"] = hexA(S.plStitch, 0.35);
+    V["--pl-name"] = px(S.plName); V["--pl-kind"] = px(S.plKind);
+    V["--pl-kind-show"] = S.plKindOn === "on" ? "block" : "none";
+    V["--pl-ink"] = S.plInk + "%";
+
+    // the description
+    const label = S.dsShow === "label";
+    V["--ds-show"] = S.dsShow === "off" ? "none" : "block";
+    V["--ds-top"] = px(S.dsWhere === "under" ? H + S.dsGap : S.plTop + S.plH + S.dsGap);
+    V["--ds-side"] = px(S.dsSide);
+    V["--ds-fs"] = px(S.dsFs);
+    V["--ds-pad"] = label ? "10px 14px" : "0";
+    V["--ds-bg"] = label ? S.paperPl : "transparent";
+    V["--ds-ink"] = label ? "#200010" : S.dsInk;
+    V["--ds-shadow"] = label ? "none" : "0 2px 0 rgba(0,0,0,.45)";
+    V["--ds-box"] = label ? "0 8px 12px rgba(0,0,0,.35), inset 0 0 0 2px " + hexA(S.plStitch, 0.25) : "none";
+
+    // the object
+    V["--art-size"] = px(S.artSize); V["--art-top"] = px(S.artTop);
+    const P = S.paperTag;
+    V["--art-filter"] = S.artLine === "thread"
+      ? "drop-shadow(3px 0 0 " + P + ") drop-shadow(-3px 0 0 " + P + ") drop-shadow(0 3px 0 " + P + ") drop-shadow(0 -3px 0 " + P + ") drop-shadow(0 10px 10px rgba(0,0,0,.35))"
+      : S.artLine === "shadow" ? "drop-shadow(3px 3px 0 rgba(0,0,0,.25)) drop-shadow(0 12px 14px rgba(0,0,0,.3))" : "none";
+
+    // the count
+    const ni = px(S.numIn);
+    V["--num-l"] = S.numCorner.indexOf("l") >= 0 ? ni : "auto";
+    V["--num-r"] = S.numCorner.indexOf("r") >= 0 ? ni : "auto";
+    V["--num-t"] = S.numCorner.indexOf("t") >= 0 ? ni : "auto";
+    V["--num-b"] = S.numCorner.indexOf("b") >= 0 ? ni : "auto";
+    V["--num-fs"] = px(S.numFs);
+    return V;
+  }
+  function hexA(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function varsCss() {
+    const V = vars();
+    return ".pk-card.s-patch {\n" + Object.keys(V).map(function (k) { return "  " + k + ":" + V[k] + ";"; }).join("\n") + "\n}";
+  }
+
+  /* ---- one card: the structure of lab/pawko-cards.html, plus .pk-desc ------ */
+  function kindColor(k) { return S[{ peg: "cPeg", wave: "cWave", charm: "cCharm", meta: "cMeta" }[k]]; }
+  function rarColor(step) { return S[["", "rCommon", "rUnc", "rRare", "rEpic"][step]]; }
+  function cardNode(c, w, ghost) {
+    const step = ghost ? 1 : STEP[c.w], lang = S.lang;
+    const box = document.createElement("div");
+    box.className = "pk-cbox";
+    box.style.width = w + "px"; box.style.height = Math.round(w * 1.4) + "px";
+    const n = document.createElement("div");
+    n.className = "pk-card s-patch k-" + c.kind + " r-" + step + (ghost ? " ghost" : "");
+    n.style.setProperty("--sk", w / 300);
+    n.style.setProperty("--c", ghost ? "#69718a" : c.color);
+    n.style.setProperty("--k", kindColor(c.kind));
+    n.style.setProperty("--r", ghost ? "#69718a" : rarColor(step));
+    n.style.setProperty("--rbg", ghost ? "#69718a" : step === 4 && S.epicRb === "on" ? RAINBOW : rarColor(step));
+    n.innerHTML =
+      '<div class="pk-back"><div class="pk-bg"></div><div class="pk-glow"></div><div class="pk-shine"></div></div>' +
+      '<div class="pk-frame"></div><div class="pk-deco"></div>' +
+      '<div class="pk-art"><img alt="" draggable="false" src="../assets/image/embed/' + c.icon + '.webp"></div>' +
+      '<div class="pk-plate"><div class="pk-name"></div><div class="pk-kind"></div></div>' +
+      '<div class="pk-desc"></div>' +
+      '<div class="pk-tag"><svg viewBox="0 0 24 24" aria-hidden="true">' + KIND_SVG[c.kind] + "</svg></div>" +
+      '<div class="pk-rar"><span><em></em></span></div>' +
+      (c.n && !ghost ? '<div class="pk-num">x' + c.n + "</div>" : "");
+    n.querySelector(".pk-name").textContent = ghost ? "???" : upper(c.name[lang]);
+    n.querySelector(".pk-kind").textContent = upper(KIND_NAME[c.kind][lang]);
+    n.querySelector(".pk-rar em").textContent = ghost ? "???" : upper(RAR_NAME[step][lang]);
+    n.querySelector(".pk-desc").textContent = ghost ? "" : c.desc[lang];
+    box.appendChild(n);
+    return box;
+  }
+
+  /* ---- paint --------------------------------------------------------------- */
+  function paint() {
+    $("patch-vars").textContent = varsCss();
+    stage.className = "bg-" + S.ground;
+    stage.innerHTML = "";
+    const keys = S.view === "single" ? [S.card] : SAMPLE, w = S.width, k = w / 300;
+    keys.forEach(function (key) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      /* room for what leaves the card, side by side, worked out from what does */
+      const rt = S.rtStr + 170 - S.rtPin;                    // a string and a tag, flat
+      const tagOn = function (c) { return S.tagCorner.indexOf(c) >= 0 ? S.tagOut + 14 : 0; };
+      const side = function (edge, c) { return Math.max(24, tagOn(c), S.plOut + 10, S.rtEdge === edge ? rt : 0); };
+      const top = Math.max(30, tagOn("t"), -S.artTop + 16, S.rtEdge === "top" ? rt : 0);
+      const bottom = Math.max(40, tagOn("b"), S.rtEdge === "bottom" ? rt : 0,
+                              S.dsShow !== "off" && S.dsWhere === "under" ? 150 : 0);
+      cell.style.padding = [top, side("right", "r"), bottom, side("left", "l")].map(function (v) { return Math.round(v * k) + "px"; }).join(" ");
+      cell.appendChild(cardNode(CARDS[key], w, S.ghost === "on"));
+      stage.appendChild(cell);
+    });
+    summaries();
+    save();
+  }
+
+  /* =========================================================================
+     THE PANEL, built from KNOBS
+     ========================================================================= */
+  const groups = {}, inputs = {};
+  KNOBS.forEach(function (K) {
+    const key = K[0], group = K[1], label = K[2], kind = K[3];
+    if (!groups[group]) {
+      const d = document.createElement("details");
+      if (group === "Preview" || group === "Badge") d.open = true;
+      d.innerHTML = "<summary>" + group + "<small></small></summary><div class='knobs" + (group === "Colours" ? " colors" : "") + "'></div>";
+      $("knobs").appendChild(d);
+      groups[group] = { box: d.querySelector(".knobs"), sum: d.querySelector("small"), keys: [] };
+    }
+    groups[group].keys.push(K);
+    const row = document.createElement("div");
+    row.className = "row";
+    if (kind === "range") {
+      const r = K[4];
+      row.innerHTML = "<label>" + label + " <b></b></label><input type='range' min='" + r[0] + "' max='" + r[1] + "' step='" + r[2] + "'>";
+      const inp = row.querySelector("input"), out = row.querySelector("b");
+      inp.addEventListener("input", function () { S[key] = +inp.value; out.textContent = inp.value + r[3]; paint(); });
+      inputs[key] = function () { inp.value = S[key]; out.textContent = S[key] + r[3]; };
+    } else if (kind === "seg") {
+      row.innerHTML = "<label>" + label + "</label><div class='seg'></div>";
+      const seg = row.querySelector(".seg");
+      K[4].forEach(function (v, i) {
+        const b = document.createElement("button");
+        b.textContent = K[5][i];
+        b.addEventListener("click", function () { S[key] = v; light(); paint(); });
+        seg.appendChild(b);
+      });
+      inputs[key] = function () { [].forEach.call(seg.children, function (b, i) { b.classList.toggle("on", K[4][i] === S[key]); }); };
+    } else if (kind === "color") {
+      row.innerHTML = "<label>" + label + "</label><input type='color'>";
+      const inp = row.querySelector("input");
+      inp.addEventListener("input", function () { S[key] = inp.value; paint(); });
+      inputs[key] = function () { inp.value = S[key]; };
+    } else if (kind === "select") {
+      row.innerHTML = "<label>" + label + "</label><select></select>";
+      const sel = row.querySelector("select");
+      DATA.forEach(function (r) {
+        const o = document.createElement("option");
+        o.value = r[0]; o.textContent = r[7] + " · " + KIND_NAME[r[1]].en + " · " + RAR_NAME[STEP[r[4]]].en.toLowerCase();
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", function () { S[key] = sel.value; S.view = "single"; light(); paint(); });
+      inputs[key] = function () { sel.value = S[key]; };
+    }
+    groups[group].box.appendChild(row);
+  });
+  function light() { Object.keys(inputs).forEach(function (k) { inputs[k](); }); }
+  /* a closed group still says what it holds, on its header */
+  function summaries() {
+    const say = {
+      Badge: function () { return S.tagCorner + " · " + S.tagSize + "px · " + S.tagRot + "°"; },
+      "Rarity tag": function () { return S.rtEdge + " " + S.rtAlong + "% · " + S.rtRot + "°"; },
+      "Name label": function () { return S.plEnds + " · +" + S.plOut + "px · " + S.plName + "px"; },
+      Description: function () { return S.dsShow === "off" ? "not on the card" : S.dsShow + " · " + S.dsWhere + " · " + S.dsFs + "px"; },
+      Object: function () { return S.artSize + "px at " + S.artTop; },
+      Count: function () { return S.numCorner + " · " + S.numFs + "px"; },
+      Cloth: function () { return S.rimStyle + " · r" + S.radius + " · " + S.tilt + "°"; },
+      Colours: function () { return S.epicRb === "on" ? "rainbow epic" : "solid epic"; },
+      Preview: function () { return S.view + " · " + S.width + "px · " + S.lang; }
+    };
+    Object.keys(groups).forEach(function (g) { groups[g].sum.textContent = say[g] ? say[g]() : ""; });
+  }
+
+  Object.keys(PRESETS).forEach(function (name) {
+    const o = document.createElement("option");
+    o.value = name; o.textContent = name;
+    $("preset").appendChild(o);
+  });
+  $("preset").value = "";
+  $("preset").addEventListener("change", function () {
+    const keep = { view: S.view, card: S.card, width: S.width, lang: S.lang, ground: S.ground, ghost: S.ghost };
+    S = Object.assign({}, BASE, PRESETS[this.value], keep);
+    light(); paint();
+    note("Preset: " + this.value);
+  });
+  $("reset").addEventListener("click", function () { S = Object.assign({}, BASE); light(); paint(); note("Back to Round 2"); });
+
+  /* COPY CSS: the variables as they stand and the rules that read them — the
+     two blocks that move into games/pawko/skin.css together. */
+  $("copy-css").addEventListener("click", function () {
+    clip("/* PAWKO — THE PATCH CARD (lab/pawko-patch.html) */\n" + varsCss() + "\n" + $("patch-rules").textContent.trim() + "\n", "CSS copied");
+  });
+  /* COPY SETTINGS: the panel's own state, which a CSS copy cannot give back —
+     and the kind and rarity colours, which are the game's KINDS and RARITY
+     (games/pawko/game.js), data rather than style. */
+  $("copy-set").addEventListener("click", function () {
+    const out = {};
+    Object.keys(S).forEach(function (k) { if (["view", "card", "width", "lang", "ground", "ghost"].indexOf(k) < 0) out[k] = S[k]; });
+    clip(JSON.stringify(out, null, 2), "Settings copied");
+  });
+  $("paste-set").addEventListener("click", function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { note("The browser will not read the clipboard here."); return; }
+    navigator.clipboard.readText().then(function (txt) {
+      try { S = Object.assign({}, BASE, S, JSON.parse(txt)); light(); paint(); note("Settings pasted"); }
+      catch (e) { note("That is not a settings block."); }
+    }, function () { note("The browser refused to read the clipboard."); });
+  });
+  function clip(txt, ok) {
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { note(ok); }, function () { note("Copy refused by the browser."); });
+    else note("Copy refused by the browser.");
+  }
+  function note(t) { $("note").textContent = t; }
+
+  /* `#preset=<name>` opens on a preset, `&view=single&card=<key>` on one card —
+     a link to a state, and what a headless shot asks for */
+  (function () {
+    const h = {};
+    (location.hash.slice(1) || "").split("&").forEach(function (kv) { const p = kv.split("="); if (p[1]) h[p[0]] = decodeURIComponent(p[1]); });
+    if (h.preset && PRESETS[h.preset]) S = Object.assign({}, BASE, PRESETS[h.preset]);
+    ["view", "card", "lang", "ground", "ghost"].forEach(function (k) { if (h[k]) S[k] = h[k]; });
+    if (h.width) S.width = +h.width;
+  })();
+
+  light();
+  paint();
+})();
+</script>
+</body>
+</html>

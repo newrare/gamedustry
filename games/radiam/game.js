@@ -2657,33 +2657,44 @@
       var i, k, r, a, b, sc;
       ctx.drawImage(bg, 0, 0);
 
-      for (i = 0; i < 3; i++) drawPlate(rings[i]);
-      drawTeeth(rings[2]);
+      // The plates, the rays, every bead and the hub are the elements of the
+      // round's entrance (Enter): each lands on the dial's hall in that order.
+      for (i = 0; i < 3; i++) {
+        if (!Enter.begin(cx, cy)) continue;
+        drawPlate(rings[i]);
+        if (i === 2) drawTeeth(rings[2]);
+        Enter.end();
+      }
 
       // The rays the board is read on, drawn ON TOP of the plates and under
       // the beads: they are the one thing on screen that never moves, and a
       // player who cannot see them cannot see the game.
-      ctx.save(); ctx.translate(cx, cy);
-      ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
-      for (i = 0; i < N; i++) {
-        // The rotate comes first, so this pass draws ray i+1.
-        ctx.rotate(SLOT);
-        if (Eclipse.on)
-          ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
-        ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
-      }
-      ctx.restore();
+      if (Enter.begin(cx, cy)) {
+        ctx.save(); ctx.translate(cx, cy);
+        ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
+        for (i = 0; i < N; i++) {
+          // The rotate comes first, so this pass draws ray i+1.
+          ctx.rotate(SLOT);
+          if (Eclipse.on)
+            ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
+          ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
+        }
+        ctx.restore();
 
-      // The ink, over the machine and clipped to it, and under the beads:
-      // a bead sitting on black is a ray that cannot pay. See Eclipse.
-      if (Eclipse.on) Eclipse.draw(0);
+        // The ink, over the machine and clipped to it, and under the beads:
+        // a bead sitting on black is a ray that cannot pay. See Eclipse.
+        if (Eclipse.on) Eclipse.draw(0);
+        Enter.end();
+      }
 
       for (i = 0; i < 3; i++) {
         r = rings[i];
         for (k = 0; k < N; k++) {
           if (r.slots[k] === null) continue;
           a = r.angle + k * SLOT;
+          if (!Enter.begin(px(a, r.rad), py(a, r.rad))) continue;
           drawBall(r.slots[k], i, px(a, r.rad), py(a, r.rad), 1, 1);
+          Enter.end();
         }
       }
 
@@ -2715,8 +2726,8 @@
       for (i = 0; i < beams.length; i++) drawBeam(beams[i]);
       ctx.globalCompositeOperation = "source-over";
 
-      drawHub();
-      drawMul();
+      if (Enter.begin(cx, cy)) { drawHub(); Enter.end(); }
+      drawMul();                     // a score window never opens before the first move
       if (finale && finale.phase === "drama") drawFinale();
     }
 

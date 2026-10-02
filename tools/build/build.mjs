@@ -83,6 +83,13 @@ const CHECK = argv.includes('--check');
 const target = (argv.find((a) => a.startsWith('--target=')) || '--target=playable').split('=')[1];
 const dest = (argv.find((a) => a.startsWith('--dest=')) || '--dest=site').split('=')[1];
 const only = (argv.find((a) => a.startsWith('--game=')) || '').split('=')[1] || null;
+/* --lab: the web build of the TEMPLATE too, at dist/web/template/. The template
+   ships nowhere, so no outlet asks for it; the events bench does
+   (tools/lab/serve-events.mjs), because the end screen's cues are the
+   template's clips and they are auditioned through the motor like any game's.
+   build-site.mjs copies the games of its catalogue and nothing else, and it
+   rebuilds dist/web without this flag, so the template never reaches the site. */
+const LAB = argv.includes('--lab');
 
 const TARGETS = ['playable', 'web', 'android'];
 if (!TARGETS.includes(target)) {
@@ -221,8 +228,8 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
     Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, upper: upper,
-    Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop,
-    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view,
+    Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
+    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
     onOutro: onOutro, endRound: endRound, applyCopy: applyCopy,
     state: function () { return State; },
@@ -350,6 +357,14 @@ const WEB_ONLY_ART = ['background-desk', 'background-home'];
    nobody keeps in step with the artwork. */
 const WEB_ONLY_STYLE = /^ball-[a-z]+-(\d+)$/;
 
+/* THE BRICK TEXTURES are the same case one game over. `<slug>-brick-<colour>-NN`
+   is games/bouncetry's brick in twenty-three textures and five colours, and a
+   stage paints its glass in ONE texture, all five colours of it. A playable is
+   a round of the first biome, stages 1 to 6, so it keeps the six textures those
+   stages use and the web build keeps all of them. */
+const WEB_ONLY_BRICK = /^brick-[a-z]+-(\d+)$/;
+const PLAYABLE_BRICKS = 6;
+
 /* THE STICKER ALBUM is web-only wholesale, and it is the largest of the four
    exceptions: twenty cuts of one 5x4 sheet, ~730 KB, and a playable has no
    collection to put them in — no album, no machine, no shop, no map to earn
@@ -405,6 +420,8 @@ function webOnlyArt(role, roles) {
   if (WEB_ONLY_CAST.test(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
   if (m && Number(m[1]) !== 1) return true;
+  const b = WEB_ONLY_BRICK.exec(role);
+  if (b && Number(b[1]) > PLAYABLE_BRICKS) return true;
   if (SCENE_SET.test(role) && roles) {
     const first = firstScene(roles);
     return !roles.includes('background-phone') ? role !== first : true;
@@ -851,12 +868,19 @@ async function main() {
                                       save it writes through and whose wallet it
                                       spends, and BEFORE menu.js and village.js,
                                       which list its four doors
+       codex.js   window.__CODEX__  — every card of a game that publishes
+                                      `Game.codex`, as a collection. Before
+                                      menu.js and village.js, which list its
+                                      door and its word
        menu.js    mounts all six, and publishes the DOORS
        village.js window.__VILLAGE__ — the front door as a place, for a game
-                                      that declares `web.village`. LAST,
-                                      because it stands on menu.js: it reads
+                                      that declares `web.village`. After
+                                      menu.js, because it stands on it: it reads
                                       the doors that file publishes and puts
                                       the list it drew away
+       dev.js     the DEV view the band's pill opens, on a local machine only.
+                                      LAST, because it lists what every layer
+                                      above registered with W.Dev.entry
 
      The stylesheets follow the same order for the same reason: view.css holds
      the base every card and every band is drawn on, and meta.css re-cuts the
@@ -868,15 +892,19 @@ async function main() {
              await read('packages/webshell/levels.css') + '\n' +
              await read('packages/webshell/meta.css') + '\n' +
              await read('packages/webshell/army.css') + '\n' +
-             await read('packages/webshell/village.css'),
+             await read('packages/webshell/codex.css') + '\n' +
+             await read('packages/webshell/village.css') + '\n' +
+             await read('packages/webshell/dev.css'),
         js: await read('packages/webshell/view.js') + '\n' +
             await read('packages/webshell/levels.js') + '\n' +
             await read('packages/webshell/meta.js') + '\n' +
             await read('packages/webshell/album.js') + '\n' +
             await read('packages/webshell/daily.js') + '\n' +
             await read('packages/webshell/army.js') + '\n' +
+            await read('packages/webshell/codex.js') + '\n' +
             await read('packages/webshell/menu.js') + '\n' +
-            await read('packages/webshell/village.js')
+            await read('packages/webshell/village.js') + '\n' +
+            await read('packages/webshell/dev.js')
       }
     : null;
 
@@ -899,7 +927,7 @@ async function main() {
       skipped.push(`${unit.name} (targets: ${manifest.targets.join(' ')})`);
       continue;
     }
-    if (DIST_TARGET && unit.template) continue;      // the template ships nowhere
+    if (DIST_TARGET && unit.template && !(LAB && SPLIT)) continue;   // the template ships nowhere
 
     const src = await sourcesOf(unit);
 

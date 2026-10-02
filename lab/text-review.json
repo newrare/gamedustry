@@ -1,0 +1,428 @@
+{
+  "arcider": {
+    "manifest.json:copy.fr.tagline": {
+      "text": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges ainsi que les adversaires pour accélérer. Trouves le meilleur compromis entre vitesse ou récupération.",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Course",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Battle Royale",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Turbo",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Course en Battle Royale",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Reste en <b>vie</b> pour gagner",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Choix",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "<b>Vitesse</b> ou récupération",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Rétro",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Course <b>futuriste</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-09-30"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Challenge",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Obtiens le <b>meilleur score</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings. in ": {
+      "text": " dans ",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings. pilots left": {
+      "text": " pilotes en lice",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Distance (m)": {
+      "text": "Distance (m)",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Eliminated": {
+      "text": "Éliminé",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Final ": {
+      "text": "Finale ",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Final position": {
+      "text": "Position finale",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Leader": {
+      "text": "Premier",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.ND": {
+      "text": "e",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.On the podium!": {
+      "text": "Sur le podium !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.RD": {
+      "text": "e",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.Race again": {
+      "text": "Relancer la course",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Race finished!": {
+      "text": "Course terminée !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Race won!": {
+      "text": "Course gagnée !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.ST": {
+      "text": "er",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Shield": {
+      "text": "Bouclier",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Shield down": {
+      "text": "Bouclier détruit",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.TH": {
+      "text": "e",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Top ": {
+      "text": "Top ",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.km/h": {
+      "text": "km/h",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais détruire ton <b class=\"w-shield\">bouclier</b>",
+      "at": "2026-09-30"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Gagne la course ou atteins <b>{n} m</b>",
+      "at": "2026-09-30"
+    }
+  },
+  "blight": {
+    "manifest.json:copy.fr.tagline": {
+      "text": "Un Bubble Shooter mais avec un vrai Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Vise rapidement",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Bubble",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Contamination",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Bubble Twist",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Sois plus rapide que la <b>contamination</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Super",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "L’arc-en-ciel est la <b>solution</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Obscure",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "La contamination doit être <b>contenue</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-09-30"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Challenge",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Obtiens le <b>meilleur score</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Bubbles cleared": {
+      "text": "Bulles éliminées",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Cascade": {
+      "text": "Cascade",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Next": {
+      "text": "Suivant",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Purified!": {
+      "text": "Purifié !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Rot": {
+      "text": "Infection",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Tap to play": {
+      "text": "Tap pour jouer",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.The rot spreads": {
+      "text": "L'infection se propage",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.The rot wins!": {
+      "text": "L'infection l'emporte !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Marque <b>{n}</b> avant la contamination totale",
+      "at": "2026-09-29"
+    }
+  },
+  "echomaze": {
+    "manifest.json:copy.fr.tagline": {
+      "text": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l’écho des balles.",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Mémorise et vise",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Écholocation",
+      "at": "2026-09-29"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Une seule sortie",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Deux secondes",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Mémorisation <b>rapide</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Echo",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "Aide-toi des <b>rebonds</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Satisfaisant",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Un <b>plaisir</b> à parcourir",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-09-30"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Challenge",
+      "at": "2026-09-29"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Obtiens le <b>meilleur score</b>",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Perfect read!": {
+      "text": "Lecture parfaite !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Tap to play": {
+      "text": "Tap pour jouer",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Valves": {
+      "text": "Valves",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Walls": {
+      "text": "Murs",
+      "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
+      "at": "2026-09-29"
+    }
+  },
+  "stratideck": {
+    "army.js:fr.bandBlue": {
+      "text": "Bleu",
+      "at": "2026-09-30"
+    },
+    "army.js:fr.bandRed": {
+      "text": "Rouge",
+      "at": "2026-09-30"
+    },
+    "army.js:fr.bandTurn": {
+      "text": "Transfuge",
+      "at": "2026-09-30"
+    },
+    "army.js:fr.deckSection": {
+      "text": "Formation",
+      "at": "2026-09-30"
+    },
+    "army.js:fr.deckTitle": {
+      "text": "Deck",
+      "at": "2026-09-30"
+    },
+    "army.js:fr.fillBest": {
+      "text": "Auto-complétion",
+      "at": "2026-09-30"
+    }
+  },
+  "vipera": {
+    "manifest.json:copy.fr.tagline": {
+      "text": "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
+      "at": "2026-10-01"
+    }
+  }
+}

@@ -14,9 +14,10 @@
   roster, kept — and then gives a fight a price:
 
     a card that wins against something better equipped is WOUNDED, and goes to
-    the infirmary for two days once the battle is over
+    the infirmary once the battle is over, for 1 to 24 hours by the tier gap
     an enemy beaten by something plainly better is left STANDING, and a won
-    battle offers one of them as a PRISONER, who turns after five days
+    battle offers one of them as a PRISONER, who turns after 4 to 48 hours
+    by their grade
 
   Those two rules are the round's (games/stratideck/game.js, `judge`): this
   file never watches a fight. What it does is own the four lists either rule
@@ -242,8 +243,11 @@
   (function () {
     for (var i = 0; i < MISSIONS.length; i++) MISSION[MISSIONS[i].id] = MISSIONS[i];
   })();
-  var BOARD_R = span2(MS.offers, 3);
-  var M_RUN = Math.max(1, MS.running || 3);
+  /* THE MISSION SLOTS, and one slot is one place on the board whatever it
+     holds: a mission offered, the squad sent on it, then the report it came
+     back with — so the board is also the ceiling on the squads away. The
+     missions' post opens them across `slots` (2 to 6). */
+  var BOARD_R = span2(MS.slots || MS.offers, 2);
   var M_LOG = 20;                           // reports kept in the history
 
   /* WHAT A SQUAD IS WORTH, and it is the same two numbers a fight is read in:
@@ -293,22 +297,41 @@
   /* ── 1b. the clock ────────────────────────────────────────────────────── */
 
   /* THE ONE THING THIS LAYER CANNOT BE WORKED ON IS THE THING IT IS MADE OF: a
-     wait of two days takes two days to watch once. Same answer as the daily
-     road's (packages/webshell/daily.js) and the same fence around it — on a
-     machine that is plainly not a player's, an hour is a second, and the
-     band's DEV pill (packages/webshell/meta.js) says so, so a screenshot can
-     never be mistaken for the real thing. Nothing here reaches a deployed site, whose hostname is none of
-     these. */
-  /* The band's DEV pill switches it live (packages/webshell/meta.js, W.Dev),
-     so every length below is read at the moment it is used. A deadline
-     already written keeps the clock it was written under: a wound taken on
-     the fast clock still heals in seconds once it is off. */
-  function dev() { return !!(W.Dev && W.Dev.on()); }
-  function hour() { return dev() ? 1000 : 3600000; }
+     wait of two days takes two days to watch once. The answer is the shell's
+     own, and it is the same for every layer: an hour is an hour, and on a
+     machine that is plainly not a player's the clock is MOVED by hand from
+     the DEV view (W.Dev, packages/webshell/meta.js) — `now()` below reads it.
+     Nothing of it reaches a deployed site, whose hostname is none of these. */
+  function hour() { return 3600000; }
 
-  function healMs() { return (SPEC.infirmaryHours || 48) * hour(); }
-  function freeMs() { return (SPEC.prisonHours || 120) * hour(); }
-  function tentMs() { return (RC.refreshHours || 6) * hour(); }
+  /* A WAIT WRITTEN AS A RANGE, [shortest, longest] in hours, is read along
+     a scale from 0 to 1 and rounded to the hour; a single number is the same
+     wait for everyone, which is how a manifest used to write it. */
+  function spanMs(v, k) {
+    if (typeof v === "number") return v * hour();
+    return Math.round(v[0] + (v[1] - v[0]) * clamp(k, 0, 1)) * hour();
+  }
+  /* A wound lasts as long as the TIER GAP that caused it: 1 (a card that
+     beat something one letter better) is the shortest stay, the whole
+     ladder the longest. A failed mission hands its difficulty in instead. */
+  function healMs(gap) {
+    return spanMs(SPEC.infirmaryHours || [1, 24], ((gap || 1) - 1) / Math.max(1, TOP - 1));
+  }
+  /* A prisoner turns after a wait read off their GRADE: a spy is quick to
+     talk round, a marshal takes the longest. */
+  function freeMs(g) {
+    var lo = GRADES.length ? GRADES[0].r : 1, hi = GRADES.length ? GRADES[GRADES.length - 1].r : 10;
+    return spanMs(SPEC.prisonHours || [4, 48], ((g || lo) - lo) / Math.max(1, hi - lo));
+  }
+  /* The card goes to the infirmary for `ms`, and keeps how long its stay
+     is (`ws`) so its gauge fills over that stay and not over another. */
+  function hurtFor(c, ms) { c.w = now() + ms; c.ws = ms; }
+  function stayOf(c) { return c.ws || healMs(); }
+  /* The tent's shelf turns over in minutes (`refreshMinutes`), and a
+     manifest still written in hours (`refreshHours`) keeps working. */
+  function tentMs() {
+    return RC.refreshMinutes ? RC.refreshMinutes * 60000 : (RC.refreshHours || 6) * hour();
+  }
   function boardMs() { return (MS.refreshHours || 8) * hour(); }
 
   /* BEDS AND CELLS HAVE A CEILING. A room that holds everything is a room
@@ -400,7 +423,7 @@
      save: past it the oldest name goes first. */
   var X_MAX = 200;
 
-  function now() { return Date.now(); }
+  function now() { return W.Dev ? W.Dev.now() : Date.now(); }
 
   /* A WAIT, WRITTEN THE WAY A WAIT IS READ: the biggest unit and the one under
      it, never three, and never a unit that is always zero. "2d 04h" and
@@ -416,6 +439,15 @@
     return T.soon;
   }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
+  /* ...and a wait told in a SENTENCE, in words: "2 days", "1 day 4 hours",
+     "5 hours" — a countdown's "2d 00h" is a readout, not something said. */
+  function waitWords(ms) {
+    var h = Math.max(0, Math.round(ms / 3600000)), d = Math.floor(h / 24), out = [];
+    h -= d * 24;
+    if (d) out.push(d + " " + (d > 1 ? T.wDays : T.wDay));
+    if (h || !d) out.push(h + " " + (h > 1 ? T.wHours : T.wHour));
+    return out.join(" ");
+  }
 
   /* ── 2. the save ──────────────────────────────────────────────────────── */
 
@@ -436,11 +468,13 @@
        p  the prison: { g, t, u the moment the prisoner turns }
        k  the recruiting tent: { t when the shelf was rolled, o what is on it,
           b which of those have been bought }
-       ms the missions: { t when the board was rolled, o the mission ids on
-          it, r the squads away { m mission, c card ids, e when they are back,
-          p the odds they left on, z the roll that decides it — drawn at the
-          departure, so no reload re-rolls a report }, q the reports written
-          and not yet collected, l the reports collected, newest first and
+       ms the missions: { v 2, t when the board was rolled, n the slots it
+          was rolled with, o the mission offered in each slot, by slot, null
+          where there is none, r the squads away { k slot, m mission, c card
+          ids, e when they are back, p the odds they left on, z the roll that
+          decides it — drawn at the departure, so no reload re-rolls a
+          report }, q the reports written and not yet collected (each one
+          keeps its slot `k`), l the reports collected, newest first and
           at most `M_LOG` of them — the tab's history, re-read on a tap —
           h mission → how many times it was run, w how many of those came
           back a success — the village's band }
@@ -627,6 +661,14 @@
     if (document.hidden) { dfSeen(); MT.setArmy(save); }
     else dfArrive();
   });
+  /* THE DEV CLOCK (W.Dev, meta.js). Hours passed with the player here are
+     not an absence: "last seen" follows the clock, and every wait the jump
+     ended is repainted. A player sent away writes when they left, and the
+     reload that brings them back is the arrival above. */
+  if (W.Dev) {
+    W.Dev.onChange(function () { persist(); });
+    W.Dev.onLeave(function () { dfSeen(); MT.setArmy(save); });
+  }
 
   var hooks = [];
   function persist() {
@@ -757,7 +799,7 @@
          sooner than one hurt on the last, which is a rule about the length of
          a battle and not about the wound. The round already kept to the
          beds it was told of; this is the fence behind it. */
-      if (inInfirmary() < beds()) { c.w = now() + healMs(); battleHurt.push(c); }
+      if (inInfirmary() < beds()) { hurtFor(c, healMs((a.gaps || {})[a.hurt[i]])); battleHurt.push(c); }
       else retire(c, "battle");
       n++;
     }
@@ -981,10 +1023,12 @@
     var tiles = list.length + (spoils ? 1 : 0);
     var tileW = Math.min(PICK_MAX, Math.floor(
       (PICK_ROOM - PICK_GAP * (tiles - 1) - (spoils ? PICK_OR : 0)) / tiles));
-    /* NEITHER DISMISSED NOR ESCAPED. Two or three tiles is a CHOICE, and a
-       choice has no default — the same rule the three gift boxes are opened
-       under (packages/webshell/meta.js). The way past it is the line under
-       them.
+    /* NEITHER DISMISSED NOR ESCAPED, AND NO WAY PAST IT. Two or three tiles
+       is a CHOICE, and a choice has no default — the same rule the three gift
+       boxes are opened under (packages/webshell/meta.js). A victory pays, so
+       the player picks what it pays in: there is no line under the tiles to
+       walk away with nothing, and no sentence over them either — the title
+       says what the card is and the tiles say the rest.
 
        `close` is the one `fill` is handed, and NOT the handle `MD.open`
        returns: fill runs INSIDE open, before that handle exists, so a tile
@@ -994,9 +1038,6 @@
       kind: "captive", dismiss: false, esc: false, onClose: then,
       title: T.captiveTitle, tap: T.captiveTap,
       fill: function (card, close) {
-        var spare = false;
-        for (var j = 0; j < list.length; j++) if (list[j].sp) spare = true;
-        card.appendChild(el("p", "mt-sub", spare ? T.captiveSubSpare : spoils ? T.captiveSubOr : T.captiveSub));
         var row = el("div", "ar-pick" + (PAINTED ? " painted" : ""));
         row.style.setProperty("--pw", tileW + "px");
         row.style.setProperty("--pw-n", (tileW * 0.78 / 190).toFixed(3));   // the reward's 190 px disc
@@ -1006,9 +1047,6 @@
           row.appendChild(spoilsTile(spoils, close));
         }
         card.appendChild(row);
-        var skip = el("button", "ar-skip", T.captiveSkip);
-        skip.addEventListener("click", function () { if (!taken) { taken = true; close(); } });
-        card.appendChild(skip);
       }
     });
     W.Sound.cue("uiStar", 0.8, 1.2, 880, 0.18, "triangle");
@@ -1016,13 +1054,13 @@
     function pickTile(c, close) {
       var b = el("button", "ar-pick-t");
       b.appendChild(cardTile({ g: c.r, t: c.t }, { foe: true, fmt: "full", w: tileW }));
-      var f = el("div", "ar-pick-when", untilText(freeMs()));
+      var f = el("div", "ar-pick-when", untilText(freeMs(c.r)));
       b.appendChild(f);
       b.addEventListener("click", function () {
         if (taken) return;
         taken = true;
         if (held(save, "red", c.r, c.t)) { close(); return; }
-        save.p.push({ g: c.r, t: c.t, u: now() + freeMs() });
+        save.p.push({ g: c.r, t: c.t, u: now() + freeMs(c.r) });
         meet(save, c.r, c.t);
         persist();
         close();
@@ -1321,7 +1359,7 @@
         break;
       case "defector":
         if (inPrison() < cells() && !held(save, "red", ev.c.g, ev.c.t)) {
-          save.p.push({ g: ev.c.g, t: ev.c.t, u: now() + freeMs() });
+          save.p.push({ g: ev.c.g, t: ev.c.t, u: now() + freeMs(ev.c.g) });
           meet(save, ev.c.g, ev.c.t);
         }
         break;
@@ -1335,7 +1373,7 @@
       case "wound":
         for (i = 0; i < ev.cs.length; i++) {
           c = byId(ev.cs[i].i);
-          if (c && free(c) && inInfirmary() < beds()) c.w = now() + ev.h * hour();
+          if (c && free(c) && inInfirmary() < beds()) hurtFor(c, ev.h * hour());
         }
         break;
       case "heal":
@@ -1346,7 +1384,10 @@
         for (i = 0; i < save.r.length; i++) save.r[i].w = 0;
         break;
       case "healDelay":
-        for (i = 0; i < save.r.length; i++) if (!fit(save.r[i])) save.r[i].w += ev.h * hour();
+        for (i = 0; i < save.r.length; i++) {
+          c = save.r[i];
+          if (!fit(c)) { c.ws = stayOf(c) + ev.h * hour(); c.w += ev.h * hour(); }
+        }
         break;
       case "promote":
         c = byId(ev.c.i);
@@ -1637,7 +1678,8 @@
      three, the command's four. A tap on the page already lit does nothing,
      unless the screen says it is not at the top of that page (`S.deep`: the
      camp's briefing, which its tab leaves). */
-  var TAB_ICON = { roll: "users", deck: "deck", coll: "file", posts: "crown", tent: "recruit", mis: "compass", reg: "skull" };
+  var TAB_ICON = { roll: "users", deck: "deck", coll: "file", posts: "crown", tent: "recruit", mis: "compass", reg: "skull",
+                   strat: "shield", rep: "sword" };
 
   function tabList(keys) {
     var out = [];
@@ -1737,20 +1779,23 @@
     return b;
   }
   /* A bed or a cell the room does not have yet: the free place's footprint
-     with the padlock in it, and under it the tab whose post opens it. */
+     with the padlock in it, and under it the word that says so — the tap
+     names the post that opens it. */
   function lockedCell(k) {
     var c = el("button", "ar-cell free locked");
     c.appendChild(el("div", "ar-free-slot", icon("lock", "ar-ci")));
-    c.appendChild(text("div", "ar-rowsub", W.upper(T.tab_posts)));
+    c.appendChild(text("div", "ar-rowsub", W.upper(T.locked)));
     c.setAttribute("aria-label", fill(T.lockSay, { post: T["post_" + k] }));
     c.addEventListener("click", lockTap(k));
     return c;
   }
-  /* The mission board's next slot the missions' post has not opened yet:
-     the padlock alone, and the tap says which post opens it. */
+  /* A mission slot the missions' post has not opened yet: the footprint
+     with the padlock in it and the word, and the tap says which post opens
+     it. */
   function lockedRow(k) {
     var row = el("button", "ar-row free locked");
     row.appendChild(el("div", "ar-free-slot", icon("lock", "ar-ci")));
+    row.appendChild(text("div", "ar-rowsub", W.upper(T.locked)));
     row.setAttribute("aria-label", fill(T.lockSay, { post: T["post_" + k] }));
     row.addEventListener("click", lockTap(k));
     return row;
@@ -2265,8 +2310,6 @@
     IN = screen("ar-inf", "infirmary");
     IN.list = el("div", "ar-ward" + (PAINTED ? " painted" : ""));
     IN.body.appendChild(IN.list);
-    IN.acts = el("div", "ar-acts");
-    IN.body.appendChild(IN.acts);
   }
 
   function paintInfirmary() {
@@ -2274,23 +2317,12 @@
     var cap = beds();
     head(IN, T.infTitle, fill(T.infSub, { n: list.length, m: cap }));
     IN.list.innerHTML = "";
-    IN.acts.innerHTML = "";
     /* EVERY BED IS DRAWN, taken or not: the ceiling is the rule, and a
        rule that only shows once it bites is a card lost by surprise. */
     for (i = 0; i < Math.max(cap, list.length); i++) {
       IN.list.appendChild(i < list.length ? bedCell(list[i]) : freeCell(T.infFree));
     }
     for (i = Math.max(cap, list.length); i < BEDS_R[1]; i++) IN.list.appendChild(lockedCell("inf"));
-    if (!list.length) return;
-    /* ONE BUTTON FOR ALL OF THEM, and the only ad in the room: an ad per
-       bandage is four ads for one battle's worth of wounds, which is a price
-       nobody pays twice. It stays because a wound BLOCKS play — a player
-       whose best cards are in bandages has nothing to field. */
-    IN.acts.appendChild(adButton(T.infHealAll, function () {
-      for (var j = 0; j < save.r.length; j++) save.r[j].w = 0;
-      persist();
-      say(T.infHealed, "", "good", "heart");
-    }, "", "heal"));
   }
 
   /* How far along a wait is, 0 to 1, from its end and its length. */
@@ -2315,7 +2347,7 @@
   function bedCell(c) {
     return wardCell("bed",
       cardTile(face(c), { dim: true, fmt: "mid", w: WARD_W }),
-      whoOf(c), "blue", doneOf(c.w, healMs()),
+      whoOf(c), "blue", doneOf(c.w, stayOf(c)),
       el("div", "ar-when", icon("heal", "ar-ci") + "<span>" + untilText(c.w - now()) + "</span>"));
   }
 
@@ -2335,8 +2367,6 @@
     PR = screen("ar-prison", "prison");
     PR.list = el("div", "ar-ward" + (PAINTED ? " painted" : ""));
     PR.body.appendChild(PR.list);
-    PR.acts = el("div", "ar-acts");
-    PR.body.appendChild(PR.acts);
   }
 
   /* ── 8c'. the defense ─────────────────────────────────────────────────── */
@@ -2423,28 +2453,49 @@
     return b >= 0 ? fill(T.objGhostBand, { b: bandName(b) }) : T.objGhostNone;
   }
 
+  /* TWO TABS, and the grid is where the house opens: the STRATEGY is the
+     layout being composed, the REPORT the last raid read back duel by duel.
+     They are one house because they are one question asked twice — how to
+     hold the flag, and how it was held — and the report is what tells the
+     player which cell of the strategy to change. */
+  var DF_TABS = ["strat", "rep"];
+
   function buildDefense() {
     DF = screen("ar-defense", "defense");
+    DF.tab = "strat";
+    DF.pane = {};
+    DF.pages(tabList(DF_TABS), pickTab(DF, paintDefense));
+    var st = DF.pane.strat = el("div", "ar-pane");
     DF.grid = el("div", "ar-def" + (PAINTED ? " painted" : ""));
     DF.grid.style.setProperty("--df-cols", DF_COLS);
-    DF.body.appendChild(DF.grid);
+    st.appendChild(DF.grid);
     DF.front = el("div", "ar-def-front");
-    DF.body.appendChild(DF.front);
+    st.appendChild(DF.front);
     DF.note = el("p", "ar-note ar-def-note");
-    DF.body.appendChild(DF.note);
+    st.appendChild(DF.note);
     DF.acts = el("div", "ar-acts ar-def-acts");
-    DF.body.appendChild(DF.acts);
+    st.appendChild(DF.acts);
+    DF.body.appendChild(st);
+    DF.pane.rep = el("div", "ar-pane ar-drep-pane");
+    DF.body.appendChild(DF.pane.rep);
     DF.justIn = -1;
   }
 
   function paintDefense() {
+    paintTabs(DF, DF_TABS);
+    if (DF.tab === "rep") paintDfReport();
+    else paintDfStrat();
+  }
+
+  function paintDfStrat() {
     var d = dfState(), i, flag = dfFlag(d.g), dirty = dfDirty();
-    head(DF, T.defenseTitle, !flag ? T.dfSubFlag : dirty ? (d.v ? T.dfSubDirty : T.dfSubNew) : T.dfSubOn);
+    /* a validated grid says nothing: the button gone is the sign */
+    head(DF, T.defenseTitle, !flag ? T.dfSubFlag : dirty ? (d.v ? T.dfSubDirty : T.dfSubNew) : "");
     DF.grid.innerHTML = "";
     for (i = 0; i < DF_N; i++) DF.grid.appendChild(dfSlot(i));
     DF.justIn = -1;
     DF.front.innerHTML = icon("arrowUp", "ar-ci") + "<span>" + W.upper(T.dfFront) + "</span>" + icon("arrowUp", "ar-ci");
-    DF.note.textContent = fill(T.dfNote, { n: DF_PER });
+    DF.note.textContent = T.dfNote;
     DF.acts.innerHTML = "";
     if (dirty || !d.v) {
       var go = el("button", "btn" + (flag ? "" : " is-off"), icon("shield", "ar-ci") + "<span>" + W.upper(T.dfValidate) + "</span>");
@@ -2467,6 +2518,142 @@
         });
         DF.acts.appendChild(undo);
       }
+    }
+  }
+
+  /* THE REPORT TAB: the last raid, as the list of duels it was — every card
+     the red army sent, in the order it was sent, against what it struck
+     and how it went. The report the village showed says WHETHER the camp
+     held; this says WHERE, which is what the strategy tab is changed on. A
+     report still waiting at the village is not read here first: the village
+     is where it pays. */
+  function paintDfReport() {
+    var d = dfState(), rep = d.last, P = DF.pane.rep, i;
+    P.innerHTML = "";
+    head(DF, T.defenseTitle, rep ? fill(T.dfRepSub, { d: whenText(rep.at) }) : T.dfRepNoneSub);
+    if (!rep) {
+      P.appendChild(text("p", "ar-note ar-drep-note", fill(T.dfRepNone, { n: DF_ATT.awayHours || 4 })));
+      return;
+    }
+    /* THE VERDICT FIRST, as the village's card stamped it, then the solidity
+       and the tally of the duels: how many the camp won, how many the raid */
+    var top = el("div", "ar-drep-top " + (rep.ok ? "ok" : "ko"));
+    top.appendChild(el("div", "ar-stamp " + (rep.ok ? "ok" : "ko"), W.upper(rep.ok ? T.dfStampHeld : T.dfStampLost)));
+    top.appendChild(text("div", "ar-drep-verdict", rep.ok ? T.dfRepHeld : T.dfRepLost));
+    var g = el("div", "ar-pgauge ar-df-sol" + (rep.sol >= 70 ? " full" : ""));
+    var bar = el("div", "ar-pgauge-t"), f = el("i");
+    f.style.width = rep.sol + "%";
+    bar.appendChild(f);
+    g.appendChild(text("span", "ar-df-sol-l", W.upper(T.dfSolid)));
+    g.appendChild(bar);
+    g.appendChild(el("b", "", rep.sol + "%"));
+    top.appendChild(g);
+    if (rep.log) {
+      var nc = 0, nf = 0;
+      for (i = 0; i < rep.log.length; i++) {
+        var sd = duelSide(rep.log[i].k);
+        if (sd === "camp") nc++; else if (sd === "foe") nf++;
+      }
+      var tally = el("div", "ar-chips ar-drep-tally");
+      tally.appendChild(mkChip("shield", fill(T.dfRepCamp, { n: nc }), "camp"));
+      tally.appendChild(mkChip("sword", fill(T.dfRepFoe, { n: nf }), "foe"));
+      top.appendChild(tally);
+    }
+    P.appendChild(top);
+    if (!rep.log) {
+      P.appendChild(text("p", "ar-note ar-drep-note", T.dfRepNoLog));
+      return;
+    }
+    P.appendChild(el("h3", "ar-sec ar-drep-sec", W.upper(T.dfRepOrder) + " <b>" + rep.log.length + "</b>"));
+    var list = el("div", "ar-bouts" + (PAINTED ? " painted" : ""));
+    for (i = 0; i < rep.log.length; i++) list.appendChild(duelRow(rep.log[i], i + 1));
+    P.appendChild(list);
+  }
+
+  /* WHO FOUGHT, BY NAME, as every screen of the barracks names an officer:
+     the cast's first and last name — the camp's card by the tier it was
+     raised at, since that is who it is — and an object by what it is. It is
+     what the outcome line under the two cards is written with. */
+  function duelName(p, foe) {
+    if (OBJECT[p[0]]) return W.Lang.t(gradeName(p[0]));
+    var c = !foe && p[2] != null ? byId(p[2]) : null;
+    if (c) return whoName(c.o === "red" ? "red" : "blue", p[0], baseOf(c));
+    return whoName(foe ? "red" : "blue", p[0], p[1] | 0);
+  }
+
+  /* Which side came out of a duel on top: the raid took the cell, turned it
+     over or walked past it; the camp stopped the card; a draw is nobody's. */
+  var DUEL_RED = { win: 1, clear: 1, smash: 1, flag: 1, scout: 1 };
+  function duelSide(k) { return k === "tie" ? "even" : DUEL_RED[k] ? "foe" : "camp"; }
+  /* ...and who is left DIMMED for it: the card that lost, both on a draw,
+     nobody on a scout's look */
+  var DUEL_DIM = { win: "d", clear: "d", smash: "d", flag: "d", lose: "a", trap: "a", stray: "a",
+                   stun: "a", spell: "a", decoy: "a", block: "a", tie: "ad" };
+
+  /* THE TWO CARDS OF A DUEL, face to face at the deck's medium size: the red
+     attacker on the left, the camp's card on the right — the very officer
+     who stood guard, when the report kept who it was. The winner stands in
+     its army's glow, the loser dimmed, and a wound on a winner is a badge
+     on the card's corner — a tag over a medium card hides its name — and a
+     line under the outcome. */
+  var BOUT_W = 132;
+
+  function duelCard(p, foe, dim, hurt) {
+    var obj = !!OBJECT[p[0]], c = !foe && p[2] != null ? byId(p[2]) : null, tile, who;
+    if (obj) {
+      tile = cardTile({ g: p[0], t: null }, { obj: true, fmt: "mid", w: BOUT_W, dim: dim });
+      who = { g: p[0], obj: true };
+    } else {
+      var f = c ? { g: p[0], t: p[1] | 0, b: c.b, o: c.o } : { g: p[0], t: p[1] | 0 };
+      tile = cardTile(f, { foe: foe, fmt: "mid", w: BOUT_W, dim: dim });
+      who = foe ? { o: "red", g: p[0], t: p[1] | 0 } : c ? whoOf(c) : { o: "blue", g: p[0], t: p[1] | 0 };
+    }
+    var w = el("div", "ar-bout-card " + (foe ? "foe" : "camp") + (dim ? " lost" : " up"));
+    w.appendChild(fileDoor(tile, who, obj ? "none" : foe ? "red" : "blue"));
+    if (hurt) {
+      var h = el("i", "ar-bout-hurt", icon("heal", "ar-ci"));
+      h.setAttribute("aria-label", T.fateHurt);
+      w.appendChild(h);
+    }
+    return w;
+  }
+
+  function duelRow(L, n) {
+    var a = duelName(L.a, true), d = duelName(L.d, false), res, side = duelSide(L.k), dim = DUEL_DIM[L.k] || "";
+    switch (L.k) {
+      case "win":   res = fill(T.duWin, { w: a }); break;
+      case "lose":  res = fill(T.duWin, { w: d }); break;
+      case "tie":   res = T.duTie; break;
+      case "flag":  res = T.duFlag; break;
+      case "trap":  res = fill(T.duTrap, { a: a }); break;
+      case "clear": res = fill(T.duClear, { a: a }); break;
+      case "smash": res = fill(T.duSmash, { a: a }); break;
+      case "stray": res = fill(T.duStray, { a: a }); break;
+      case "stun":  res = fill(T.duStun, { a: a }); break;
+      case "spell": res = fill(T.duSpell, { a: a }); break;
+      case "scout": res = fill(T.duScout, { a: a }); break;
+      default:      res = fill(T.duBlock, { a: a });
+    }
+    var row = el("div", "ar-bout " + side + (L.k === "flag" ? " flag" : ""));
+    row.appendChild(duelCard(L.a, true, dim.indexOf("a") >= 0, !!L.h));
+    var mid = el("div", "ar-bout-mid");
+    mid.appendChild(el("b", "ar-bout-n", String(n)));
+    mid.appendChild(text("span", "ar-bout-vs", W.upper(T.duVs)));
+    mid.appendChild(text("span", "ar-bout-res", res));
+    if (L.h) mid.appendChild(el("span", "ar-bout-wound", icon("heal", "ar-ci") + "<span>" + T.fateHurt + "</span>"));
+    row.appendChild(mid);
+    row.appendChild(duelCard(L.d, false, dim.indexOf("d") >= 0, false));
+    return row;
+  }
+
+  /* The day and the hour a raid came: a report is read the day after as
+     often as the minute after. */
+  function whenText(at) {
+    try {
+      return new Date(at).toLocaleString(LANG === "fr" ? "fr-FR" : "en-GB",
+        { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch (err) {
+      return "";
     }
   }
 
@@ -2558,12 +2745,13 @@
 
   /* ── the raid ── */
 
-  /* A RAID IS ROLLED ON A RETURN. `seen` is the last moment the player was
+  /* A RAID COMES WITH EVERY RETURN. `seen` is the last moment the player was
      here — every write moves it, and so does the tab going to the
      background — and a session that starts, or a tab that comes back, after
-     `awayHours` of absence arms ONE roll, which the village plays out the
-     next time it is on screen (`announce`). A reload is not an absence, so a
-     prisoner cannot be farmed by refreshing the page. */
+     `awayHours` of absence arms ONE raid, which the village plays out the
+     next time it is on screen (`announce`). No dice: the player left, and
+     the camp was stormed while they were gone. A reload is not an absence,
+     so a prisoner cannot be farmed by refreshing the page. */
   function awayMs() { return (DF_ATT.awayHours || 4) * hour(); }
   function dfSeen() { if (save && save.df) save.df.seen = now(); }
   function dfArrive() {
@@ -2615,7 +2803,6 @@
     if (!d.pend) return;
     d.pend = 0;
     if (!d.v || !dfFlag(d.v) || !W.Game || !W.Game.defense) return;
-    if (Math.random() >= (DF_ATT.chance != null ? DF_ATT.chance : 0.3)) return;
     var army = redArmy();
     if (!army.length) return;
     var sim = W.Game.defense(dfCells(d.v), DF_COLS, DF_ROWS, army,
@@ -2629,6 +2816,16 @@
   function dfReport(sim) {
     var run = sim.run, lf = levelF(), rep = { at: now(), ok: !!run.held, sol: Math.round(sim.held * 100) }, i, c;
     var WIN = DEF.win || {}, LOSS = DEF.loss || {};
+    /* THE DUELS, in the order they were fought, for the report tab: the
+       attacker and the cell it struck as `[grade, tier]` (an object has no
+       tier, the camp's card adds its id), `judge`'s kind, and `h` when the
+       winner was wounded */
+    rep.log = [];
+    for (i = 0; run.log && i < run.log.length; i++) {
+      c = run.log[i];
+      rep.log.push({ a: [c.a.r, c.a.t], d: OBJECT[c.d.r] ? [c.d.r] : c.d.id != null ? [c.d.r, c.d.t, c.d.id] : [c.d.r, c.d.t],
+                     k: c.k, h: c.hurt === "a" ? 1 : 0 });
+    }
     if (rep.ok) {
       /* one or two of the attackers who fell, one officer each and a cell
          for each — a prison with no room takes nobody */
@@ -2683,7 +2880,7 @@
       for (i = 0; i < (rep.pr || []).length; i++) {
         p = rep.pr[i];
         if (inPrison() < cells() && !held(save, "red", p.g, p.t)) {
-          save.p.push({ g: p.g, t: p.t, u: now() + freeMs() });
+          save.p.push({ g: p.g, t: p.t, u: now() + freeMs(p.g) });
           meet(save, p.g, p.t);
         }
       }
@@ -2699,7 +2896,7 @@
     } else {
       for (i = 0; i < (rep.hurt || []).length; i++) {
         c = byId(rep.hurt[i]);
-        if (c && free(c) && inInfirmary() < beds()) c.w = now() + rep.h * hour();
+        if (c && free(c) && inInfirmary() < beds()) hurtFor(c, rep.h * hour());
       }
       fine = Math.min(rep.fine || 0, had);
       if (fine) MT.spend(fine);
@@ -2714,7 +2911,9 @@
   /* THE DEFENSE REPORT, at the village: held, with what it paid, or taken,
      with what it cost — and the solidity, which is the one place the
      player reads how good the layout was. A raid that never came says
-     nothing at all. */
+     nothing at all. A TAP pays it and opens the defense on its REPORT tab,
+     where the raid is read duel by duel; a key only pays it, since ESCAPE
+     and ENTER put a card away rather than walk somewhere. */
   function openDefenseReport(then) {
     var d = dfState(), rep = d.q, done = false, off = null;
     if (!rep) { then(); return; }
@@ -2722,7 +2921,7 @@
       kind: "ar-event ar-dfrep", dismiss: false, esc: false, onClose: then,
       eyebrow: T.dfRepEyebrow,
       title: rep.ok ? T.dfRepHeld : T.dfRepLost,
-      tap: rep.ok ? T.repCollect : T.tapContinue,
+      tap: rep.ok ? T.dfRepTapHeld : T.dfRepTapLost,
       fill: function (card, close, handle) {
         card.appendChild(el("div", "ar-stamp " + (rep.ok ? "ok" : "ko"), W.upper(rep.ok ? T.dfStampHeld : T.dfStampLost)));
         card.appendChild(text("p", "ar-ev-text", rep.ok ? T.dfTextHeld : T.dfTextLost));
@@ -2760,7 +2959,7 @@
         card.appendChild(g);
         card.appendChild(text("p", "ar-ev-foot", rep.sol < 50 ? T.dfTipLow : rep.sol < 80 ? T.dfTipMid : T.dfTipHigh));
 
-        function finish() {
+        function finish(open) {
           if (done) return;
           done = true;
           if (off) off();
@@ -2768,12 +2967,25 @@
           close();
           fly();
           if (rep.ok) W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+          if (open) openDfReportTab();
         }
-        MT.tapOut(handle.box, finish);
-        off = MT.keyOut(finish);
+        MT.tapOut(handle.box, function () { finish(true); });
+        off = MT.keyOut(function () { finish(false); });
       }
     });
     W.Sound.cue(rep.ok ? "uiStar" : "uiRow", 0.8, rep.ok ? 1.15 : 0.7, rep.ok ? 880 : 220, 0.18, "triangle");
+  }
+
+  /* The defense's REPORT tab, from wherever the player is: redrawn on it
+     when the defense is already the screen on top, opened on it otherwise. */
+  function openDfReportTab() {
+    if (VW.top() === "defense" && DF) {
+      DF.tab = "rep";
+      DF.body.scrollTop = 0;
+      paintDefense();
+    } else {
+      VW.go("defense", { tab: "rep" });
+    }
   }
 
   /* A NEW OBJECT CARD, told once, when the band that hands it over is
@@ -2823,7 +3035,6 @@
     var cap = cells();
     head(PR, T.prisonTitle, fill(T.prisonSub, { n: save.p.length, m: cap }));
     PR.list.innerHTML = "";
-    PR.acts.innerHTML = "";
     for (i = 0; i < Math.max(cap, save.p.length); i++) {
       PR.list.appendChild(i < save.p.length ? prisonCell(save.p[i]) : freeCell(T.prisonFree));
     }
@@ -2832,7 +3043,7 @@
 
   /* A PRISONER IS BEHIND BARS, in red, and the gauge under the card turns
      from red to blue as they do. NO AD BUYS THE TURN: a prisoner is a bonus
-     that blocks nothing, so the five days are a reason to come back rather
+     that blocks nothing, so the wait is a reason to come back rather
      than a wall — the infirmary keeps its ad because a wound is one. Once
      turned the bars are gone, the card stands in the blue cloth, and the
      tap on ENLIST turns it over into the army. */
@@ -2851,7 +3062,7 @@
        the player's army, in the uniform they were caught in. */
     var n = wardCell("cell" + (turned ? " turned" : ""),
       cardTile({ g: p.g, t: p.t, o: turned ? "red" : null }, { foe: !turned, fmt: "mid", w: WARD_W }),
-      { o: "red", g: p.g, t: p.t }, turned ? "blue" : "red", doneOf(p.u, freeMs()), line);
+      { o: "red", g: p.g, t: p.t }, turned ? "blue" : "red", doneOf(p.u, freeMs(p.g)), line);
     if (turned) {
       var busy = false;
       line.addEventListener("click", function () {
@@ -3133,14 +3344,52 @@
      closing the game in between. */
   function mstate() {
     var s = save.ms;
-    if (!s) s = save.ms = { t: 0, o: [], r: [], q: [], h: {} };
+    if (!s) s = save.ms = { v: 2, t: 0, n: 0, o: [], r: [], q: [], h: {} };
     if (!s.o) s.o = [];
     if (!s.r) s.r = [];
     if (!s.q) s.q = [];
     if (!s.l) s.l = [];
     if (!s.h) s.h = {};
     if (typeof s.w !== "number") s.w = 0;
+    if (s.v !== 2) toSlots(s);
     return s;
+  }
+
+  /* A SAVE WRITTEN BEFORE THE SLOTS kept the board, the squads and the
+     reports as three lists: each is given a slot, the reports first, then
+     the squads, then the offers — every one kept, even past the gauge, since
+     a squad away cannot be locked out of its own board. */
+  function toSlots(s) {
+    var k = 0, o = [], i;
+    for (i = 0; i < s.q.length; i++) s.q[i].k = k++;
+    for (i = 0; i < s.r.length; i++) s.r[i].k = k++;
+    for (i = 0; i < s.o.length; i++) { o[k] = s.o[i]; k++; }
+    for (i = 0; i < k; i++) if (o[i] == null) o[i] = null;
+    s.o = o;
+    s.n = k;
+    s.v = 2;
+  }
+
+  /* What slot `k` holds: "rep" (a report to read), "run" (a squad away),
+     "offer" (a mission to pick) or "" (nothing until the board is rolled). */
+  function slotRun(s, k) {
+    for (var i = 0; i < s.r.length; i++) if (s.r[i].k === k) return s.r[i];
+    return null;
+  }
+  function slotRep(s, k) {
+    for (var i = 0; i < s.q.length; i++) if (s.q[i].k === k) return s.q[i];
+    return null;
+  }
+  function slotBusy(s, k) { return !!(slotRun(s, k) || slotRep(s, k)); }
+  /* How many slots the tab draws open: the gauge's, and every slot past it
+     that still holds something — a squad sent before the post was relieved
+     comes home to the slot it left from. */
+  function slotsShown(s) {
+    var n = boardCap(), i;
+    for (i = 0; i < s.r.length; i++) n = Math.max(n, s.r[i].k + 1);
+    for (i = 0; i < s.q.length; i++) n = Math.max(n, s.q[i].k + 1);
+    for (i = 0; i < s.o.length; i++) if (s.o[i]) n = Math.max(n, i + 1);
+    return n;
   }
 
   function board() {
@@ -3151,22 +3400,31 @@
        the missions is felt the moment they take the post. A gauge that fell
        keeps what is already pinned until the board is rolled again. `n` is
        how many slots the board was rolled with. */
-    if (s.n == null) s.n = s.o.length;
-    if (cap > s.n) rollBoard(cap - s.n);
+    if (cap > s.n) rollBoard(true);
     /* a mission the manifest has since dropped is not offered */
-    for (i = s.o.length - 1; i >= 0; i--) if (!MISSION[s.o[i]]) s.o.splice(i, 1);
+    for (i = 0; i < s.o.length; i++) if (s.o[i] && !MISSION[s.o[i]]) s.o[i] = null;
     return s;
   }
 
   /* Written and not persisted, like the tent's `roll`: the screen drawing
      the board is what rolls it, and `persist` would repaint that screen.
-     `more` tops the board up by that many instead, keeping its clock and
-     what is already pinned on it. */
+
+     A ROLL FILLS EVERY SLOT UNDER THE GAUGE THAT HOLDS NO SQUAD AND NO
+     REPORT, the missions left unpicked there included; a slot past the gauge
+     is emptied. `more` fills only the slots the gauge opened since the last
+     roll, keeping the board's clock and what is already pinned on it. */
   function rollBoard(more) {
-    var s = mstate(), busy = {}, pool = [], out = [], seen = {}, i, j, tmp;
-    var cap = more ? more : boardCap();
+    var s = mstate(), busy = {}, pool = [], out = [], seen = {}, gaps = [], i, j, tmp;
+    var cap = boardCap(), from = more ? s.n : 0;
     for (i = 0; i < s.r.length; i++) busy[s.r[i].m] = 1;
-    if (more) for (i = 0; i < s.o.length; i++) busy[s.o[i]] = 1;
+    for (i = 0; i < s.q.length; i++) busy[s.q[i].m] = 1;
+    if (more) for (i = 0; i < s.o.length; i++) if (s.o[i]) busy[s.o[i]] = 1;
+    if (!more) for (i = cap; i < s.o.length; i++) s.o[i] = null;
+    for (i = from; i < cap; i++) {
+      if (slotBusy(s, i) || (more && s.o[i])) continue;
+      s.o[i] = null;
+      gaps.push(i);
+    }
     for (i = 0; i < MISSIONS.length; i++) if (!busy[MISSIONS[i].id]) pool.push(MISSIONS[i]);
     for (i = pool.length - 1; i > 0; i--) {
       j = Math.floor(Math.random() * (i + 1));
@@ -3176,22 +3434,18 @@
        as often as each other stay in random order — then one per difficulty
        before a difficulty is offered twice. */
     pool = stable(pool, function (a, b) { return (s.h[a.id] || 0) - (s.h[b.id] || 0); });
-    for (i = 0; i < pool.length && out.length < cap; i++) {
+    for (i = 0; i < pool.length && out.length < gaps.length; i++) {
       if (!seen[pool[i].d]) { seen[pool[i].d] = 1; out.push(pool[i]); }
     }
-    for (i = 0; i < pool.length && out.length < cap; i++) {
+    for (i = 0; i < pool.length && out.length < gaps.length; i++) {
       if (out.indexOf(pool[i]) < 0) out.push(pool[i]);
     }
-    if (more) {
-      for (i = 0; i < s.o.length; i++) if (MISSION[s.o[i]]) out.push(MISSION[s.o[i]]);
-      s.n += more;
-    } else {
-      s.t = now();
-      s.n = cap;
-    }
-    out.sort(function (a, b) { return a.d - b.d || a.hours - b.hours; });
-    s.o = [];
-    for (i = 0; i < out.length; i++) s.o.push(out[i].id);
+    /* easiest first, down the slots this roll fills */
+    out.sort(function (a, b) { return a.d - b.d || minsOf(a) - minsOf(b); });
+    for (i = 0; i < out.length; i++) s.o[gaps[i]] = out[i].id;
+    while (s.o.length && s.o[s.o.length - 1] == null) s.o.length--;
+    if (!more) s.t = now();
+    s.n = cap;
     MT.setArmy(save);
   }
 
@@ -3218,9 +3472,12 @@
   function launch(m, ids) {
     var s = mstate(), cards = [], i, c;
     for (i = 0; i < ids.length; i++) { c = byId(ids[i]); if (c) cards.push(c); }
+    /* THE SQUAD LEAVES FROM THE MISSION'S OWN SLOT, which it holds until its
+       report is read */
     var at = s.o.indexOf(m.id);
-    if (at >= 0) s.o.splice(at, 1);
-    s.r.push({ m: m.id, c: ids.slice(0), e: now() + m.hours * hour(),
+    if (at >= 0) s.o[at] = null;
+    else for (at = 0; slotBusy(s, at) || s.o[at]; at++) {}
+    s.r.push({ k: at, m: m.id, c: ids.slice(0), e: now() + minsOf(m) * 60000,
                p: chanceOf(cards, m), z: Math.random() });
     persist();
   }
@@ -3238,7 +3495,7 @@
     }
     sq.sort(cmpCard);
     var ok = !!m && run.z < run.p;
-    var rep = { m: run.m, ok: ok, p: run.p, sq: sq, rw: [], pen: [] };
+    var rep = { k: run.k, m: run.m, ok: ok, p: run.p, sq: sq, rw: [], pen: [] };
     if (m && ok) {
       for (i = 0; i < (m.reward || []).length; i++) rep.rw.push(rollReward(m.reward[i]));
     }
@@ -3273,7 +3530,7 @@
       pick = left.splice(Math.floor(Math.random() * left.length), 1)[0];
       c = byId(pick.i);
       if (!c) continue;
-      if (kind === "wound" && inInfirmary() < beds()) { c.w = now() + healMs(); pick.f = "hurt"; }
+      if (kind === "wound" && inInfirmary() < beds()) { hurtFor(c, healMs((MISSION[mid] || {}).d)); pick.f = "hurt"; }
       else { retire(c, kind === "wound" ? "wounds" : "mission", mid); pick.f = "lost"; }
     }
   }
@@ -3368,6 +3625,13 @@
     var d = Math.floor(h / 24), r = h - d * 24;
     return d + T.uD + (r ? " " + pad(r) + T.uH : "");
   }
+  /* A mission's length is written in `minutes` (`hours` still reads). */
+  function minsOf(m) { return m.minutes != null ? m.minutes : (m.hours || 0) * 60; }
+  function minsText(n) {
+    var h = Math.floor(n / 60), r = n - h * 60;
+    if (!h) return r + T.uM;
+    return h + T.uH + (r ? " " + pad(r) + T.uM : "");
+  }
 
   function rewardText(rw) {
     if (rw.kind === "super") return fill(T.rwSuper, { n: rw.n || 1 });
@@ -3415,7 +3679,7 @@
      many, which grade it favours, what it pays, what it risks. */
   function facts(m) {
     var row = el("div", "ar-chips");
-    row.appendChild(mkChip("clock", hoursText(m.hours)));
+    row.appendChild(mkChip("clock", minsText(minsOf(m))));
     var sq = m.squad || [2, 5];
     row.appendChild(mkChip("deck", fill(sq[0] === sq[1] ? T.squadN : T.squadRange, { a: sq[0], b: sq[1] })));
     if (m.favor && GRADE[m.favor]) {
@@ -3441,40 +3705,40 @@
     box.innerHTML = "";
     if (RT.brief && !MISSION[RT.brief.m]) RT.brief = null;
     if (RT.brief) { paintBrief(box); return; }
-    /* THREE SECTIONS AND NO SUBTITLE: the count the subtitle carried is the
-       squads' section's own, and a screen does not say one number twice. */
+    /* TWO SECTIONS AND NO SUBTITLE: the slots, then the history. */
     head(RT, T.misTitle, "");
 
-    /* 1. THE BOARD FIRST, as SLOTS — it is what the tab is opened to pick
-       from. A mission sent leaves its slot empty until the board is rolled
-       again, which is when the note under it says. NO AD ROLLS IT EARLY: a
-       board bought again is a board shopped for the easy mission, which is
-       what the clock is there to prevent. */
-    var cap = boardCap(), open = Math.max(s.o.length, Math.min(s.n, cap));
-    box.appendChild(sec(T.misBoard, s.o.length + " / " + cap));
-    for (i = 0; i < s.o.length; i++) box.appendChild(missionTile(MISSION[s.o[i]]));
-    for (i = s.o.length; i < open; i++) box.appendChild(freeRow(T.boardFree));
-    /* THE SLOTS THE MISSIONS' POST HAS NOT OPENED YET: one padlock for the
-       next, and an ellipsis under it when more wait behind — eight locked
-       rows under two missions were a list to scroll, not a ceiling to read. */
-    if (open < BOARD_R[1]) box.appendChild(lockedRow("ops"));
-    if (open + 1 < BOARD_R[1]) box.appendChild(text("div", "ar-lock-more", "…"));
-    var note = el("div", "ar-note");
-    note.textContent = fill(T.boardNext, { t: untilText(s.t + boardMs() - now()) });
-    box.appendChild(note);
-
-    /* 2. UNDER WAY, as slots too: the reports written and not collected, the
-       squads away (the first back first), then one free slot per squad the
-       camp could still send — so the limit is seen, not learned on a refusal. */
-    var runs = s.r.slice().sort(function (a, b) { return a.e - b.e; });
-    box.appendChild(sec(T.misAway, s.r.length + " / " + M_RUN));
-    var list = el("div", "ar-list");
-    for (i = 0; i < s.q.length; i++) list.appendChild(reportRow(s.q[i]));
-    for (i = 0; i < runs.length; i++) list.appendChild(runRow(runs[i]));
-    for (i = s.r.length; i < M_RUN; i++) list.appendChild(freeRow(T.runFree));
+    /* 1. THE SLOTS, every one the missions' post could ever open, and each
+       drawn in the one state it is in — a report to read, a squad away, a
+       mission to pick, or empty until the board is rolled again — then a
+       padlock for each the gauge has not opened: six rows, so the ceiling
+       is seen and not learned on a refusal. A slot is a place, not a list:
+       the squad sent on a mission leaves from that mission's row and its
+       report comes back to it. NO AD ROLLS THE BOARD EARLY: a board bought
+       again is a board shopped for the easy mission, which is what the
+       clock is there to prevent. */
+    var shown = slotsShown(s), next = untilText(s.t + boardMs() - now()), gap = false, k, rep, run;
+    box.appendChild(sec(T.misBoard, shown + " / " + Math.max(shown, BOARD_R[1])));
+    var list = el("div", "ar-list ar-mslots");
+    for (k = 0; k < Math.max(shown, BOARD_R[1]); k++) {
+      rep = slotRep(s, k);
+      run = rep ? null : slotRun(s, k);
+      if (rep) list.appendChild(reportRow(rep));
+      else if (run) list.appendChild(runRow(run));
+      else if (s.o[k] && MISSION[s.o[k]]) list.appendChild(missionTile(MISSION[s.o[k]]));
+      else if (k < shown) { list.appendChild(freeRow(fill(T.slotNext, { t: next }))); gap = true; }
+      else list.appendChild(lockedRow("ops"));
+    }
     box.appendChild(list);
+    /* the roll replaces the missions nobody picked too, which a board with
+       no empty slot has nowhere else to say */
+    if (!gap) {
+      var note = el("div", "ar-note");
+      note.textContent = fill(T.boardNext, { t: next });
+      box.appendChild(note);
+    }
 
-    /* 3. THE REPORTS ALREADY READ, newest first: what each squad did, a
+    /* 2. THE REPORTS ALREADY READ, newest first: what each squad did, a
        success or a failure at a glance, and the report itself on a tap. */
     box.appendChild(sec(T.misLog, s.l.length ? String(s.l.length) : ""));
     if (!s.l.length) { box.appendChild(el("p", "ar-none", T.logEmpty)); return; }
@@ -3483,7 +3747,8 @@
     box.appendChild(log);
   }
 
-  /* A slot nobody is in: the token's footprint, dashed, and the word. */
+  /* A slot with nothing in it until the board is rolled: the token's
+     footprint, dashed, and when the next mission comes. */
   function freeRow(word) {
     var row = el("div", "ar-row ar-run free");
     row.appendChild(el("div", "ar-free-slot"));
@@ -3529,8 +3794,7 @@
      briefing's, where the choice is made — a board of five panels of prose
      showed one mission and a half, and a board is read to pick one. */
   function missionTile(m) {
-    var full = mstate().r.length >= M_RUN;
-    var n = el("button", "ar-mis row" + (full ? " off" : ""));
+    var n = el("button", "ar-mis row");
     var lead = el("div", "ar-mis-lead");
     if (m.favor && GRADE[m.favor]) {
       lead.appendChild(cardTile({ g: m.favor, t: 0 }, { fmt: "tiny", w: 72, tag: "+" + M_FAVOR, tagClass: "in" }));
@@ -3546,7 +3810,7 @@
     mid.appendChild(top);
     var row = el("div", "ar-chips line");
     var sq = m.squad || [2, 5];
-    row.appendChild(mkChip("clock", hoursText(m.hours)));
+    row.appendChild(mkChip("clock", minsText(minsOf(m))));
     row.appendChild(mkChip("deck", fill(sq[0] === sq[1] ? T.squadN : T.squadRange, { a: sq[0], b: sq[1] })));
     if (m.reward && m.reward.length) row.appendChild(mkChip(rewardIcon(m.reward[0]), rewardText(m.reward[0]), "gain"));
     mid.appendChild(row);
@@ -3554,7 +3818,6 @@
     n.appendChild(el("i", "ar-mis-go", icon("next", "ar-ci")));
     n.setAttribute("aria-label", loc(m.title) + " — " + T.prepare);
     n.addEventListener("click", function () {
-      if (mstate().r.length >= M_RUN) { say(T.runFull, fill(T.runFullSub, { n: M_RUN }), "warn", "clock"); return; }
       RT.brief = { m: m.id, pick: [] };
       RT.body.scrollTop = 0;
       paintRecruit();
@@ -3663,12 +3926,12 @@
                 icon("compass", "ar-ci") + "<span>" + W.upper(T.send) + "</span>");
     go.addEventListener("click", function () {
       if (short > 0) { say(fill(short === 1 ? T.needMore1 : T.needMoreN, { n: short }), "", "warn", "info"); return; }
-      if (mstate().r.length >= M_RUN) { say(T.runFull, fill(T.runFullSub, { n: M_RUN }), "warn", "clock"); return; }
+      if (mstate().o.indexOf(m.id) < 0) { RT.brief = null; paintRecruit(); return; }
       launch(m, RT.brief.pick);
       RT.brief = null;
       RT.body.scrollTop = 0;
       paintRecruit();
-      say(T.sent, fill(T.sentSub, { t: hoursText(m.hours) }), "info", "clock");
+      say(T.sent, fill(T.sentSub, { t: minsText(minsOf(m)) }), "info", "clock");
       W.Sound.cue("uiWin", 0.8, 0.9, 520, 0.2, "triangle");
     });
     acts.appendChild(go);
@@ -4546,8 +4809,20 @@
         var row = el("div", "ar-fallen-list" + (one ? " one" : "") + (PAINTED ? " painted" : ""));
         for (i = 0; i < list.length; i++) row.appendChild(hurtDoor(list[i], one));
         card.appendChild(row);
-        card.appendChild(text("p", "ar-fallen-foot",
-          fill(T.hurtFoot, { t: untilText(healMs()), n: Math.max(0, beds() - inInfirmary()), m: beds() })));
+        /* ONE SENTENCE: who goes, and for how long — the wait in the
+           card's own colour, since it is the one thing to remember. */
+        var c0 = list[0], foot = el("p", "ar-fallen-foot hurt"), longest = 0;
+        /* each wound has its own stay; a sentence about several says the longest */
+        for (i = 0; i < list.length; i++) longest = Math.max(longest, stayOf(list[i]));
+        var parts = fill(one ? T.hurtGo1 : T.hurtGoN, {
+          g: W.Lang.t(gradeName(c0.g)), c: whoName(c0.o || "blue", c0.g, baseOf(c0)),
+          r: tierName(c0.t), n: list.length
+        }).split("{t}");
+        for (i = 0; i < parts.length; i++) {
+          if (i) foot.appendChild(text("b", "ar-hurt-t", waitWords(longest)));
+          foot.appendChild(document.createTextNode(parts[i]));
+        }
+        card.appendChild(foot);
       }
     });
     W.Sound.cue("uiRow", 0.6, 0.8, 330, 0.2, "triangle");
@@ -4555,8 +4830,7 @@
 
   function hurtDoor(c, one) {
     var b = el("button", "ar-fallen-c hurt");
-    var tile = cardTile(face(c), { fmt: one ? "mid" : "tiny", w: one ? FALLEN_W : FALLEN_TINY,
-                                   tag: untilText(c.w - now()), tagClass: "hurt" });
+    var tile = cardTile(face(c), { fmt: one ? "mid" : "tiny", w: one ? FALLEN_W : FALLEN_TINY });
     b.appendChild(tile);
     if (!one) b.appendChild(text("span", "ar-fallen-n", W.upper(whoName(c.o || "blue", c.g, baseOf(c)))));
     b.setAttribute("aria-label", T.fileOpen);
@@ -4655,26 +4929,7 @@
     return function () { window.removeEventListener("keydown", go, true); };
   }
 
-  /* ── 9. the ad, and the one line this layer says ──────────────────────── */
-
-  /* EVERY WAIT CAN BE BOUGHT OUT, AND THE PRICE IS AN AD. It is the same
-     placeholder the rest of this shell offers — a card with a countdown that
-     says what it is (packages/webshell/meta.js, `ad`) — so wiring a network in
-     is one function body for all of it. Without this a player whose three best
-     cards are in bandages has nothing to do for two days, which is not a
-     mechanic, it is a closed door. */
-  /* THE SHELL'S AD BUTTON (motor.css, .btn-pub): the play glyph, the line,
-     "watch an ad" under it, and what the wait bought out pays — `reward` is
-     the pictogram of it (a heart for the infirmary, a clock for a wait). */
-  function adButton(label, done, cls, reward) {
-    var b = el("button", "btn btn-pub" + (cls === "small" ? " btn-sm" : ""),
-               icon("play") + '<span class="btn-txt"><b>' + W.upper(label) + "</b><i>" +
-               MT.text("boostCost") + "</i></span>" + icon(reward || "clock", "btn-reward"));
-    b.addEventListener("click", function () {
-      MT.ad(function (ok) { if (ok) done(); });
-    });
-    return b;
-  }
+  /* ── 9. the one line this layer says ─────────────────────────────────── */
 
   /* THE ONE LINE THIS LAYER SAYS, and it is the motor's Notify — the voice
      every game and every screen informs with: a purchase, a wait bought out, a
@@ -4723,10 +4978,8 @@
     }
     stopBeat();
   }
-  function startBeat() { if (!beat) beat = setInterval(tick, dev() ? 1000 : 20000); }
+  function startBeat() { if (!beat) beat = setInterval(tick, 20000); }
   function stopBeat() { if (beat) { clearInterval(beat); beat = null; } }
-  /* The beat's own pace follows the DEV switch too. */
-  if (W.Dev) W.Dev.onChange(function () { if (beat) { stopBeat(); startBeat(); } });
 
   /* ── 10b. the army's figures, in the band's fold ──────────────────────── */
 
@@ -4788,7 +5041,11 @@
     });
     VW.define("defense", {
       build: buildDefense, node: function () { return DF.box; },
-      show: paintDefense,
+      show: function (o) {
+        DF.tab = (o && o.tab) || "strat";
+        DF.body.scrollTop = 0;
+        paintDefense();
+      },
       hud: true, decor: DECOR
     });
     VW.define("recruit", {
@@ -4806,6 +5063,101 @@
 
     /* The icons need `API`, which is why the fold is filled at mount. */
     if (MT.moreAdd) MT.moreAdd("army", { title: function () { return T.bandTitle; }, rows: bandRows });
+    devEntries();
+  }
+
+  /* ── 11b. what the DEV view can fire ──────────────────────────────────── */
+
+  /* EVERY CARD THIS LAYER OPENS, one tap each, from the DEV view
+     (packages/webshell/dev.js). Each one is the real thing — it reads the
+     save and writes it the way the game would — so a card that needs the camp
+     to hold something (a wounded card, a validated defense) says so rather
+     than opening on nothing. The surrender is not here: it is an offer made
+     inside a round. */
+  function devNo(word) { say(word, "", "warn", "info"); }
+  function devEntries() {
+    if (!W.Dev || !W.Dev.local) return;
+    var noop = function () {};
+    function add(label, sub, run) { W.Dev.entry({ group: "Army", label: label, sub: sub, run: run }); }
+
+    add("Defense raid", "The report of a raid on the validated defense", function () {
+      var d = dfState();
+      if (!d.v || !dfFlag(d.v) || !W.Game || !W.Game.defense) { devNo("Validate a defense first"); return; }
+      d.q = dfReport(W.Game.defense(dfCells(d.v), DF_COLS, DF_ROWS, redArmy(),
+                                    { runs: DF_ATT.runs || 200, turns: DF_ATT.turns || 12 }));
+      MT.setArmy(save);
+      openDefenseReport(noop);
+    });
+    add("Prisoner offer", "Two officers of the camp's mirror, as a won battle offers them", function () {
+      var pool = distinct(redArmy()), list = [], i;
+      for (i = 0; i < pool.length && list.length < 2; i++) {
+        if (!held(save, "red", pool[i].r, pool[i].t)) list.push(pool[i]);
+      }
+      if (!list.length) { devNo("No officer left to take"); return; }
+      offer = list;
+      offerCoins = false;
+      openOffer(noop);
+    });
+    add("Promotion", "One card of the roster climbs a tier", function () {
+      var list = [], i;
+      for (i = 0; i < save.r.length; i++) if (save.r[i].t < TOP) list.push(save.r[i]);
+      if (!list.length) { devNo("Every card is at the top tier"); return; }
+      promote(pickOne(list), "battle");
+      persist();
+      openPromos(noop);
+    });
+    add("Wounded", "The cards in the infirmary, or one idle card wounded for real", function () {
+      var list = hurtList(), c;
+      if (!list.length) {
+        var idle = idleCards();
+        if (!idle.length || inInfirmary() >= beds()) { devNo("No idle card and no free bed"); return; }
+        c = pickOne(idle);
+        hurtFor(c, healMs(1 + Math.floor(Math.random() * TOP)));
+        persist();
+        list = [c];
+      }
+      openWounded(list, noop);
+    });
+    add("In memoriam", "The last name of the register, told again", function () {
+      if (!save.x.length) { devNo("Nobody has fallen yet"); return; }
+      var e = JSON.parse(JSON.stringify(save.x[0]));
+      openFallen([e], noop);
+    });
+    add("New object", "The objects the climb has handed over, told again", function () {
+      var u = unlocked(), list = [], r;
+      for (r in u) if (u.hasOwnProperty(r) && +r !== FLAG_R) list.push(+r);
+      if (!list.length) { devNo("Pass a band of the map first"); return; }
+      openUnlocks(list.slice(0, 3), noop);
+    });
+    add("Squads home", "Every squad on a mission is back now", function () {
+      var runs = awayRuns(), i;
+      if (!runs.length) { devNo("No squad is away"); return; }
+      for (i = 0; i < runs.length; i++) runs[i].e = now();
+      persist();
+      VW.go("recruit", { tab: "mis" });
+    });
+    add("Officer's file", "The back of the best card of the roster", function () {
+      if (!save.r.length) return;
+      var best = save.r.slice(0).sort(cmpCard)[0];
+      openFile(whoOf(best), "blue");
+    });
+
+    /* THE CAMP'S DAYS, one row each, in the manifest's order: the day is
+       decided on the tap (`prepare`), so one the camp holds nothing for says
+       so, and applied on the card's own tap like every other day. */
+    for (var i = 0; i < EV_LIST.length; i++) (function (d) {
+      W.Dev.entry({
+        group: "Camp days",
+        label: function () { return loc(d.title); },
+        sub: (d.good ? "Good" : "Bad") + " · " + ((d.fx || {}).kind || "none"),
+        tone: d.good ? "good" : "bad",
+        run: function () {
+          var ev = prepare(d);
+          if (!ev) { devNo("The camp holds nothing for this day"); return; }
+          openEvent(ev, 1, noop);
+        }
+      });
+    })(EV_LIST[i]);
   }
 
   W.onResult(absorb);
@@ -4863,13 +5215,13 @@
       infTitle: "Infirmary", infSub: "{n} / {m} beds taken", infFree: "Free bed",
       infFull: "Infirmary full", prisonFree: "Free cell",
       prisonFull: "Prison full", prisonFullSub: "{n} cells, all taken: no prisoner this time",
-      infHealAll: "Patch everybody up", infHealed: "Back on their feet",
+      infHealed: "Back on their feet", locked: "Locked",
       prisonTitle: "Prison", prisonSub: "{n} / {m} cells taken",
       defenseTitle: "Defense",
       dfSubFlag: "Place your flag first", dfSubNew: "Protect the flag, then validate",
-      dfSubDirty: "Changed: validate to defend with it", dfSubOn: "Validated: it guards the camp",
+      dfSubDirty: "Changed: validate to defend with it",
       dfFront: "The enemy attacks from here",
-      dfNote: "Place your flag, then protect it with your cards and your objects. Each object can be used {n} times at most, the flag once.",
+      dfNote: "Place your flag, then protect it with your cards and your objects.",
       dfValidate: "Validate", dfUndo: "Undo changes",
       dfNeedFlag: "Place your flag first",
       dfValidated: "Defense validated", dfValidatedSub: "It guards the camp while you are away",
@@ -4884,6 +5236,16 @@
       dfTipLow: "Keep the flag away from the front and fill the cells around it: a gap is a way in.",
       dfTipMid: "Objects buy time: a raid that stalls on a fence or a straw man is a raid that runs out of night.",
       dfTipHigh: "A layout that holds almost every assault.",
+      tab_strat: "Strategy", tab_rep: "Report",
+      dfRepSub: "Last raid: {d}", dfRepNoneSub: "No raid yet",
+      dfRepNone: "No raid yet. Validate a defense: the red army storms your camp when you come back after {n} hours away.",
+      dfRepNoLog: "This raid came before the report kept its duels.",
+      dfRepTapHeld: "Tap anywhere to collect and see the report", dfRepTapLost: "Tap anywhere to see the report",
+      dfRepOrder: "Order of attack", dfRepCamp: "Pushed back: {n}", dfRepFoe: "Broken through: {n}",
+      duVs: "vs", duWin: "{w} wins", duTie: "Both fall", duFlag: "Flag taken",
+      duTrap: "{a} falls in the trap", duClear: "{a} clears the trap", duSmash: "{a} clears the way",
+      duBlock: "{a} is held back", duStray: "{a} gets lost", duStun: "{a} is stunned",
+      duSpell: "{a} is bewitched", duScout: "{a} reveals the card",
       dfUnlockEyebrow: "{b} cleared", dfUnlockEyebrowN: "Biomes cleared",
       dfUnlockTitleN: "New object cards",
       dfUnlockText1: "It is now in your collection and can guard your camp in the defense, up to {n} times.",
@@ -4892,20 +5254,18 @@
       recruitTitle: "Recruiting tent", recruitSub: "New faces in {t}",
       sold: "Recruited", recruited: "{c} recruited",
       tooPoor: "Not enough coins",
-      captiveTitle: "Take a prisoner", captiveSub: "One of the enemies you left standing",
-      captiveSubOr: "The enemy you left standing, or the spoils instead", or: "or",
-      captiveSkip: "Leave them", captiveTaken: "Taken to the prison",
+      captiveTitle: "Victory reward", or: "or",
+      captiveTaken: "Taken to the prison",
       captiveTap: "Tap a card to take it",
       ready: "Ready", soon: "Any moment", uD: "d", uH: "h", uM: "m",
+      wDay: "day", wDays: "days", wHour: "hour", wHours: "hours",
       away: "On mission",
       tab_tent: "Recruits", tab_mis: "Missions",
       misTitle: "Missions",
-      misAway: "Squads away", misBoard: "Mission board",
-      runFree: "Squad free", boardFree: "Mission under way",
+      misBoard: "Mission board", slotNext: "New mission in {t}",
       boardNext: "New missions in {t}",
       misLog: "Reports", logEmpty: "No squad has come back yet.",
-      prepare: "Prepare", runFull: "Every squad is out",
-      runFullSub: "{n} missions at once — wait for one to come back",
+      prepare: "Prepare",
       runBack: "Back at camp", readReport: "Report",
       oddsShort: "{p} success", oddsLabel: "Chance of success",
       diff: "Difficulty {n} of 5",
@@ -4967,7 +5327,8 @@
       surNo: "Fight on", surYes: "Surrender", surTap: "Tap to fight on",
       hurtTitle: "Wounded", hurtEyebrow1: "To the infirmary", hurtEyebrowN: "{n} cards to the infirmary",
       hurt1: "{c}: wounded in battle", hurtN: "{n} cards wounded in battle",
-      hurtFoot: "Back on their feet in {t}. Beds left: {n} / {m} — a wound with no bed left is a card lost.",
+      hurtGo1: "{g} {c}, rank {r}, must go to the infirmary for {t}.",
+      hurtGoN: "{n} cards must go to the infirmary for {t}.",
       upTitle: "Promotion!", upEyebrow: "A card climbs", upEyebrowN: "Promotion {i} / {n}",
       upNext: "Tap for the next one", upClose: "Tap to close",
       deckCut1: "1 card back in reserve", deckCutN: "{n} cards back in reserve",
@@ -4977,11 +5338,10 @@
       fx_cmd: "Captives: {n}/{m}", fx_drill: "Deck: {n}/{m}", fx_ops: "Missions: {n}/{m}",
       fx_inf: "Beds: {n}/{m}", fx_pri: "Cells: {n}/{m}", fx_cook: "Morale: {n}/{m}",
       pd_cmd: "Captives offered after a won battle", pd_drill: "Slots in your deck",
-      pd_ops: "Missions on the board", pd_inf: "Beds in the infirmary",
+      pd_ops: "Mission slots", pd_inf: "Beds in the infirmary",
       pd_pri: "Cells in the prison", pd_cook: "The camp's morale: the higher it is, the more good days",
       postJobsLine: "Suited trades: {j}",
       postJobs: "Trades suited to {post}", jobFor: "Suits {post}",
-      captiveSubSpare: "Your camp found a straggler from the enemy camp",
       lostDesert: "Deserted the camp",
       evEyebrow: "Life in the camp", evEyebrowN: "Life in the camp · {n} news",
       evGood: "Good news", evBad: "Bad news",
@@ -5020,13 +5380,13 @@
       infTitle: "Infirmerie", infSub: "{n} / {m} lits occupés", infFree: "Lit libre",
       infFull: "Infirmerie pleine", prisonFree: "Cellule libre",
       prisonFull: "Prison pleine", prisonFullSub: "{n} cellules, toutes prises : pas de prisonnier cette fois",
-      infHealAll: "Soigner tout le monde", infHealed: "De nouveau sur pied",
+      infHealed: "De nouveau sur pied", locked: "Verrouillé",
       prisonTitle: "Prison", prisonSub: "{n} / {m} cellules occupées",
       defenseTitle: "Défense",
       dfSubFlag: "Place d'abord ton drapeau", dfSubNew: "Protège le drapeau, puis valide",
-      dfSubDirty: "Modifiée : valide pour défendre avec", dfSubOn: "Validée : elle garde le camp",
+      dfSubDirty: "Modifiée : valide pour défendre avec",
       dfFront: "L'ennemi attaque par ici",
-      dfNote: "Place ton drapeau, puis protège-le avec tes cartes et tes objets. Chaque objet sert {n} fois au plus, le drapeau une seule.",
+      dfNote: "Place ton drapeau, puis protège-le avec tes cartes et tes objets.",
       dfValidate: "Valider", dfUndo: "Annuler les changements",
       dfNeedFlag: "Place d'abord ton drapeau",
       dfValidated: "Défense validée", dfValidatedSub: "Elle garde le camp pendant ton absence",
@@ -5041,6 +5401,16 @@
       dfTipLow: "Éloigne le drapeau du front et remplis les cases autour : un trou est un passage.",
       dfTipMid: "Les objets font gagner du temps : un assaut bloqué sur une barrière ou un homme de paille finit par manquer de nuit.",
       dfTipHigh: "Une défense qui résiste à presque tous les assauts.",
+      tab_strat: "Stratégie", tab_rep: "Rapport",
+      dfRepSub: "Dernier assaut : {d}", dfRepNoneSub: "Aucun assaut pour l'instant",
+      dfRepNone: "Aucun assaut pour l'instant. Valide une défense : l'armée rouge attaque ton camp quand tu reviens après {n} heures d'absence.",
+      dfRepNoLog: "Cet assaut date d'avant que le rapport garde ses duels.",
+      dfRepTapHeld: "Touche n'importe où pour récupérer et voir le rapport", dfRepTapLost: "Touche n'importe où pour voir le rapport",
+      dfRepOrder: "Ordre d'attaque", dfRepCamp: "Repoussés : {n}", dfRepFoe: "Percées : {n}",
+      duVs: "vs", duWin: "{w} gagne", duTie: "Les deux tombent", duFlag: "Drapeau pris",
+      duTrap: "{a} tombe dans le piège", duClear: "{a} désamorce le piège", duSmash: "{a} ouvre le passage",
+      duBlock: "{a} est bloquée", duStray: "{a} se perd", duStun: "{a} est étourdie",
+      duSpell: "{a} est ensorcelée", duScout: "{a} révèle la carte",
       dfUnlockEyebrow: "{b} terminé", dfUnlockEyebrowN: "Biomes terminés",
       dfUnlockTitleN: "Nouvelles cartes objets",
       dfUnlockText1: "Elle rejoint ta collection et peut maintenant garder ton camp en défense, {n} fois au plus.",
@@ -5049,20 +5419,18 @@
       recruitTitle: "Tente de recrutement", recruitSub: "De nouvelles têtes dans {t}",
       sold: "Recruté", recruited: "{c} recruté",
       tooPoor: "Pas assez de pièces",
-      captiveTitle: "Fais un prisonnier", captiveSub: "Un des ennemis que tu as laissés debout",
-      captiveSubOr: "L'ennemi que tu as laissé debout, ou le butin à la place", or: "ou",
-      captiveSkip: "Les laisser partir", captiveTaken: "Emmené en prison",
+      captiveTitle: "Récompense de victoire", or: "ou",
+      captiveTaken: "Emmené en prison",
       captiveTap: "Touche une carte pour la prendre",
       ready: "Prêt", soon: "D'un instant à l'autre", uD: "j", uH: "h", uM: "min",
+      wDay: "jour", wDays: "jours", wHour: "heure", wHours: "heures",
       away: "En mission",
       tab_tent: "Recrues", tab_mis: "Missions",
       misTitle: "Missions",
-      misAway: "Escouades en mission", misBoard: "Tableau des missions",
-      runFree: "Escouade disponible", boardFree: "Mission en cours",
+      misBoard: "Tableau des missions", slotNext: "Nouvelle mission dans {t}",
       boardNext: "Nouvelles missions dans {t}",
       misLog: "Rapports", logEmpty: "Aucune escouade n'est encore rentrée.",
-      prepare: "Préparer", runFull: "Toutes les escouades sont dehors",
-      runFullSub: "{n} missions à la fois — attends qu'une rentre",
+      prepare: "Préparer",
       runBack: "De retour au camp", readReport: "Rapport",
       oddsShort: "{p} de réussite", oddsLabel: "Chances de réussite",
       diff: "Difficulté {n} sur 5",
@@ -5124,7 +5492,8 @@
       surNo: "Continuer", surYes: "Se rendre", surTap: "Touche pour continuer",
       hurtTitle: "Blessés", hurtEyebrow1: "Direction l'infirmerie", hurtEyebrowN: "{n} cartes à l'infirmerie",
       hurt1: "{c} : blessure au combat", hurtN: "{n} cartes blessées au combat",
-      hurtFoot: "De retour sur pied dans {t}. Lits libres : {n} / {m} — une blessure sans lit libre, c'est une carte perdue.",
+      hurtGo1: "Le {g} {c} de rang {r} doit partir à l'infirmerie pendant {t}.",
+      hurtGoN: "{n} cartes doivent partir à l'infirmerie pendant {t}.",
       upTitle: "Promotion !", upEyebrow: "Une carte monte en grade", upEyebrowN: "Promotion {i} / {n}",
       upNext: "Touche pour la suivante", upClose: "Touche pour fermer",
       deckCut1: "1 carte retourne en réserve", deckCutN: "{n} cartes retournent en réserve",
@@ -5134,11 +5503,10 @@
       fx_cmd: "Captifs : {n}/{m}", fx_drill: "Deck : {n}/{m}", fx_ops: "Missions : {n}/{m}",
       fx_inf: "Lits : {n}/{m}", fx_pri: "Cellules : {n}/{m}", fx_cook: "Moral : {n}/{m}",
       pd_cmd: "Prisonniers proposés après une victoire", pd_drill: "Places dans ton deck",
-      pd_ops: "Missions sur le tableau", pd_inf: "Lits à l'infirmerie",
+      pd_ops: "Emplacements de mission", pd_inf: "Lits à l'infirmerie",
       pd_pri: "Cellules à la prison", pd_cook: "Le moral du camp : plus il est haut, plus les bons jours sont fréquents",
       postJobsLine: "Métiers adaptés : {j}",
       postJobs: "Métiers adaptés au poste {post}", jobFor: "Poste : {post}",
-      captiveSubSpare: "Ton camp a trouvé un traînard du camp ennemi",
       lostDesert: "A déserté le camp",
       evEyebrow: "Vie du camp", evEyebrowN: "Vie du camp · {n} nouvelles",
       evGood: "Bonne nouvelle", evBad: "Mauvaise nouvelle",

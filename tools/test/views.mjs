@@ -162,10 +162,10 @@ async function run(url) {
     await sleep(100);
   }
 
-  /* THE CAMP'S DAYS ARE HELD BACK for the whole run: on this machine an
-     hour is a second, so a day falls due every few seconds and its card
-     would open itself between any two steps. The barracks section below
-     draws one on purpose. */
+  /* THE CAMP'S DAYS ARE HELD BACK for the whole run: a save left in this
+     profile by an earlier run may have a day due, and its card would open
+     itself between any two steps. The barracks section below draws one on
+     purpose. */
   await evalJs("if (window.__ARMY__ && __ARMY__.quietDays) __ARMY__.quietDays(true); return 1;");
 
   console.log("\nthe floor — the title screen");
@@ -467,16 +467,24 @@ async function run(url) {
     await evalJs("__WEB__.Notify.clear(); __VIEW__.home(); return 1;");
     await sleep(400);
 
-    /* THE DEV PILL IS THE FAST CLOCK'S SWITCH: off and hollow when the game
-       opens, a tap turns it on, a second one off again. After the log, since
-       each flip is said, and a notice stands the "!" the log's first check
-       wants hidden. */
-    await check("the fast clock is off when the game opens, and the pill hollow",
-      "!__WEB__.Dev.on() && document.querySelector('#web-hud .mt-band.full .mt-dev').classList.contains('off')", true);
-    await check("a tap on the DEV pill turns the fast clock on, and a second one off again",
-      "(function () { var d = document.querySelector('#web-hud .mt-band.full .mt-dev'), D = window.__WEB__.Dev;" +
-      " d.click(); var on = D.on() && !d.classList.contains('off');" +
-      " d.click(); var off = !D.on() && d.classList.contains('off'); __WEB__.Notify.clear(); return on && off; })()", true);
+    /* THE DEV PILL IS THE DOOR TO THE DEV VIEW: the clock moved by hand and
+       every card the layers register. After the log, since advancing the
+       clock says so, and a notice stands the "!" the log's first check wants
+       hidden. */
+    await evalJs("document.querySelector('#web-hud .mt-band.full .mt-dev').click(); return 1;");
+    await sleep(400);
+    await check("a tap on the DEV pill opens the DEV view", "__VIEW__.top()", "dev");
+    await check("...which lists what the layers registered",
+      "document.querySelectorAll('#dv-screen .dv-row').length === __WEB__.Dev.entries().length &&" +
+      " __WEB__.Dev.entries().length > 0", true);
+    await check("advancing the clock moves the game's time, and the pill wears it",
+      "(function () { var D = __WEB__.Dev, t0 = D.now(); D.advance(4);" +
+      " var ok = D.now() - t0 >= 4 * 3600000 &&" +
+      " /\\+4h/.test(document.querySelector('#web-hud .mt-band.full .mt-dev').textContent);" +
+      " D.reset(); __WEB__.Notify.clear();" +
+      " return ok && D.offset === 0 && document.querySelector('#web-hud .mt-band.full .mt-dev').textContent === 'DEV'; })()", true);
+    await evalJs("__VIEW__.home(); return 1;");
+    await sleep(400);
 
     console.log("\nthe band IS the navigation — the same four doors everywhere");
     await evalJs("__VIEW__.home(); if (window.__LEVELS__ && __LEVELS__.active())" +
@@ -678,6 +686,11 @@ async function run(url) {
   console.log("\nthe round — the corner grows a way out");
   await evalJs("__WEB__.start(); return 1;"); await sleep(700);
   await check("the motor is playing", "__WEB__.state()", "playing");
+  /* Every round opens on its entrance (Enter, engine.js), which holds the
+     world and the clock for a second or two; what follows measures a round
+     that runs, so it is landed here rather than waited out. */
+  await check("...and it opens on its entrance", "__WEB__.Enter.active()", true);
+  await evalJs("__WEB__.Enter.skip(); return 1;");
   await check("nothing of the shell is in front of it", "__VIEW__.depth()", 0);
   await check("the corner is up", "document.getElementById('web-ctls').hidden", false);
   await check("...with the way out in front of the pair",
@@ -739,6 +752,7 @@ async function run(url) {
        still holds what the section above said. */
     console.log("\nthe log in a round — a \"!\" beside the star pill");
     await evalJs("__LEVELS__.play(1); return 1;"); await sleep(900);
+    await evalJs("__WEB__.Enter.skip(); return 1;");       // land the entrance
     await check("a level is playing, its pill up",
       "__WEB__.state() === 'playing' && !document.getElementById('lv-hud').hidden", true);
     /* Beside it by default, on top of it where a SKIN says so (blight,
@@ -963,8 +977,9 @@ async function run(url) {
       await sleep(250);
       await check("...and the missions tab shows the board",
         "document.querySelectorAll('#ar-recruit .ar-mis').length > 0", true);
-      await check("...its squads as slots, taken or free",
-        "document.querySelectorAll('#ar-recruit .ar-mis-pane .ar-run').length", 3);
+      await check("...as every slot the post could open, the closed ones locked",
+        "document.querySelectorAll('#ar-recruit .ar-mslots > *').length ===" +
+        " __WEB__.CONFIG.web.army.missions.slots[1]", true);
       /* a mission on the board is one line, and the line is the door */
       await evalJs("document.querySelector('#ar-recruit .ar-mis.row:not(.off)').click(); return 1;");
       await sleep(250);
@@ -992,6 +1007,8 @@ async function run(url) {
       await evalJs("document.querySelector('#ar-recruit .ar-acts .btn:not(.is-off):not(.btn-plate):not(.btn-pub)').click(); return 1;");
       await sleep(250);
       await check("the squad is away", "__ARMY__.missions().r.length", 1);
+      await check("...from the slot its mission was offered in",
+        "__ARMY__.missions().r[0].k === 0 && __ARMY__.missions().o[0] == null", true);
       await check("...and out of the round's deck",
         "(function () { var away = __ARMY__.missions().r[0].c;" +
         " return __WEB__.CONFIG.army.deck.every(function (c) { return away.indexOf(c.id) < 0; }); })()", true);
@@ -1065,6 +1082,13 @@ async function run(url) {
         "document.querySelectorAll('.ar-picker .ar-act.add').length", 1);
       await key("Escape"); await sleep(250);
     }
+    /* ...and a second tab, the REPORT: the last raid read back duel by duel */
+    await check("the defense carries two tabs",
+      "document.querySelectorAll('#ar-defense .wv-tab').length", 2);
+    await evalJs("document.querySelectorAll('#ar-defense .wv-tab')[1].click(); return 1;");
+    await sleep(250);
+    await check("...and the report tab lists the last raid's duels, or says there was none",
+      "!!document.querySelector('#ar-defense .ar-drep-pane .ar-duels, #ar-defense .ar-drep-pane .ar-drep-note')", true);
     await key("Escape"); await sleep(300);
     await evalJs("__VIEW__.home(); __ARMY__.open('deck'); return 1;");
     await sleep(350);

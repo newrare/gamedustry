@@ -32,6 +32,7 @@ at, they stack, and BACK peels one off.
 | `prison`    | `packages/webshell/army.js`    | yes                       |
 | `recruit`   | `packages/webshell/army.js`    | yes — the command, 4 tabs |
 | `defense`   | `packages/webshell/army.js`    | yes — the camp's grid     |
+| `codex`     | `packages/webshell/codex.js`   | yes — every card, 4 books |
 | `score`     | the motor's `#screen-end`      | while it is paid          |
 
 **A CARD (a modal) is something that happens over wherever they are.** It never
@@ -329,16 +330,34 @@ owns the figures ([docs/META.md](META.md)). It is a chip of this row and not a
 second row: the band keeps its one line and its one height.
 
 **On a dev machine the row carries a DEV pill**, between the house and the
-level chip — localhost, a loopback or a LAN address, where the daily road pays
-on every tap and the army's clock runs an hour a second. A `file://` page bends
-those two rules too but shows no pill, because it is how
+level chip — localhost, a loopback or a LAN address, where the game's clock can
+be moved by hand. A `file://` page shows no pill, because it is how
 `tools/lab/shoot-screens.mjs` opens a build and a store screenshot must never
-wear it. It is the one place that says so: no card and no sheet wears a
-pill of its own. It is not a chip and not a door, and its width comes out of
-the xp bar, the row's spring. A deployed site never builds the node. **It is
-also the switch**: both rules are OFF when the game opens and the pill is
-hollow; a tap turns them on for the session (`W.Dev.set`, never persisted) and
-fills it, a second tap turns them off again.
+wear it. It is the one place that says so: no card and no sheet wears a pill of
+its own. It is not a chip, and its width comes out of the xp bar, the row's
+spring. A deployed site never builds the node. It wears the clock's offset
+while there is one (`DEV +52h`).
+
+**The pill is the door to the DEV view** (`packages/webshell/dev.js`), a sheet
+with two tabs. **EVENTS** lists every card and action the layers can fire, one
+tap each, grouped by the layer that owns it — the three gift boxes, the ad, a
+sticker draw, the daily road, options and help, and on a game with an army the
+raid report, the prisoner offer, a promotion, the wounded, IN MEMORIAM, a new
+object, the squads home, an officer's file and every camp day of the manifest.
+Each layer registers its own with `W.Dev.entry({ group, label, sub, run })`,
+because the function that opens a card is private to the file that draws it; a
+row is the real thing, reads the save and writes it, and one the save cannot
+answer says so in a notice instead of opening on nothing. **CLOCK** moves the
+game's clock by a step picked once (1 h to 5 days): **advance** passes the
+hours with the player in the game — every wait they end is over, the camp's
+news is due at the village, nothing is an absence — and **reconnect** has the
+player leave and come back that much later: the layers write when they were
+last seen, the offset moves and the page reloads, since the boot is the one
+faithful copy of a return (the raid after `awayHours` of absence included). The
+clock is `W.Dev.now()` — the real clock plus an offset kept per game in
+`dev:clock:<slug>` — and every layer that reads the time reads it there; a
+third button drops the offset. The hour-a-second clock this replaced made
+everything happen at once and nothing on purpose.
 
 **The round shows no band.** The top band is the game's, all of it, and the
 thirteen fill it differently.

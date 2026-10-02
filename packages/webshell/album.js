@@ -1417,6 +1417,27 @@
         node: function () { return shop; },
         show: paintShop, hud: true, decor: decor
       });
+      /* The machine's two reveals, for the DEV view (packages/webshell/dev.js):
+         a sticker given for real, one the album lacks or one it already has. */
+      if (W.Dev) {
+        var pickSticker = function (had) {
+          var out = [], i;
+          for (i = 0; i < MT.total(); i++) if (!!MT.count(i) === had) out.push(i);
+          return out.length ? out[Math.floor(Math.random() * out.length)] : -1;
+        };
+        W.Dev.entry({ group: "Shell", label: "Sticker draw, new", sub: "The machine's reveal of a sticker the album lacks",
+          run: function () {
+            var n = pickSticker(false);
+            if (n < 0) { W.Notify.say("The album is full", { kind: "warn" }); return; }
+            MT.give(n); MT.bumpUnseen(); reveal(n, true);
+          } });
+        W.Dev.entry({ group: "Shell", label: "Sticker draw, double", sub: "The machine's reveal of a sticker already owned",
+          run: function () {
+            var n = pickSticker(true);
+            if (n < 0) { W.Notify.say("No sticker owned yet", { kind: "warn" }); return; }
+            MT.give(n); reveal(n, false);
+          } });
+      }
     },
 
     setLang: setLang,

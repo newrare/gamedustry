@@ -101,7 +101,7 @@ newrare-arcade/
 │   ├── build/             ← build.mjs and the checks, now build assertions
 │   └── publish/           ← deploy-itch, store-meta, gen-native (phase 8)
 ├── prototype/             ← one raw HTML page per idea: no motor, no build
-├── lab/                   ← the HTML workbenches (overlay-pop, icon-card…)
+├── lab/                   ← the HTML workbenches (overlay-pop, bubble…)
 └── dist/                  ← gitignored build output
 ```
 
@@ -411,13 +411,13 @@ writes no best score. ESCAPE is that pause on a keyboard.
 
 Three families, by what they are for.
 
-| family           | tools                                                                                                                                                                         |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-icon`, `shoot-cover`, `shoot-screens`, `bench-pop` (what a callout costs on an emulated phone) |
-| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                                    |
-| `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8)                    |
+| family           | tools                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-cover`, `shoot-screens`, `bench-pop` (what a callout costs on an emulated phone) |
+| `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                      |
+| `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8)      |
 
-The HTML workbenches in [lab/](../lab/) — `overlay-pop`, `icon-card`, `bubble` —
+The HTML workbenches in [lab/](../lab/) — `overlay-pop`, `bubble`, `brick` —
 stay where they are: they are visual ateliers, not scripts.
 
 Everything in `tools/` is flat today. Moving the scripts into these

@@ -22,6 +22,12 @@
    which is what a page wanting the whole window (or a platform EyeDropper
    that refuses a frame) asks for.
 
+   The list is filed in three groups the pages declare themselves, with
+   `<meta name="lab-group">`: TOOLS (what a game is built and checked with),
+   CSS (a look being tried before it moves into the motor or a SKIN) and
+   PROTOTYPE (a mechanic tried outside the motor). `<meta name="lab-game">`
+   tags a page with the one game it is about.
+
    The location is the hash — `#/events/`, `#/lab/button.html` — so a reload
    comes back to the same page, and a page that navigates inside the frame
    moves the hash with it.
@@ -168,6 +174,7 @@ body.home #home { display:block; }
 
   var $ = function (id) { return document.getElementById(id); };
   var LABS = [];
+  var GROUPS = [["tools", "Tools"], ["css", "CSS"], ["prototype", "Prototype"], ["other", "Other"]];
   var frame = $("frame");
 
   function esc(s) {
@@ -186,10 +193,11 @@ body.home #home { display:block; }
     var hit = LABS.filter(function (l) {
       return !q || (l.name + " " + l.file + " " + (l.game || "") + " " + l.summary).toLowerCase().indexOf(q) >= 0;
     });
-    return [
-      ["Tools", hit.filter(function (l) { return l.server; })],
-      ["Pages", hit.filter(function (l) { return !l.server; })]
-    ].filter(function (g) { return g[1].length; });
+    // Filed by the page's own <meta name="lab-group">, sorted by name inside.
+    return GROUPS.map(function (g) {
+      return [g[1], hit.filter(function (l) { return l.group === g[0]; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); })];
+    }).filter(function (g) { return g[1].length; });
   }
 
   function renderList() {

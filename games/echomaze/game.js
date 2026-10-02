@@ -2019,7 +2019,11 @@
       SCAN = recapFront();               // the post-mortem lights the grid in rows
       // 1. the whole grid, and the box around it, but only while the power is
       //    on — the opening reveal, and then the post-mortem of a lost run
-      if (rev > 0.02) {
+      //    The labyrinth is the round's LAST element of the entrance (Enter),
+      //    grid, box and doors in one piece: it is there to be memorised, so
+      //    it lands whole once everything else stands, and the reveal's own
+      //    clock only starts after it (the entrance holds the world).
+      if (rev > 0.02 && Enter.begin(Layout.cx, (field.top + field.bottom) / 2, LAST)) {
         batch(isSolid, ARC, rev, 4 * rev, 3);
         // the walls the scan is crossing right now, struck white as it passes
         if (SCAN > -1e8) batch(isFresh, "#ffffff", 0.5, 8, 2);
@@ -2031,6 +2035,7 @@
         ctx.lineTo(field.right, field.bottom); ctx.lineTo(field.right, b);
         ctx.stroke();
         drawDoors(rev);
+        Enter.end();
       }
       // 2. the dying echoes, in brightness bands
       for (b = 0; b < BANDS; b++) {
@@ -2045,6 +2050,7 @@
       }
     }
     var LO = 0, HI = 0;
+    var LAST = { last: true };
     // How far the post-mortem's scan has climbed, and how deep its leading edge
     // is. SCAN is parked below the board whenever nothing is scanning, so the
     // opening reveal still draws the grid whole.
@@ -2276,8 +2282,16 @@
        the run's own note, kept for the same reason the valves are. */
     function drawGates() {
       var i;
-      for (i = 0; i < decoys.length; i++) drawGateAt(decoys[i].c, false, decoys[i]);
-      drawGateAt(exitCol, true, null);             // the real one last, on top
+      var y = (Layout.top + 8 + M.y0) / 2;
+      for (i = 0; i < decoys.length; i++) {
+        if (!Enter.begin(M.x0 + (decoys[i].c + 0.5) * M.cw, y)) continue;
+        drawGateAt(decoys[i].c, false, decoys[i]);
+        Enter.end();
+      }
+      if (Enter.begin(M.x0 + (exitCol + 0.5) * M.cw, y)) {
+        drawGateAt(exitCol, true, null);           // the real one last, on top
+        Enter.end();
+      }
     }
 
     function drawGateAt(col, real, d) {
@@ -2432,6 +2446,7 @@
       var x, y, r, k;
       if (!crystal || !crystal.alive) return;
       x = crystal.x; y = crystal.y; r = crystal.r;
+      if (!Enter.begin(x, y)) return;
       k = 0.72 + 0.28 * Math.sin(clock * 2.6);
       ctx.save();
       ctx.lineJoin = "round";
@@ -2448,6 +2463,7 @@
       ctx.fillStyle = rgba("#ffffff", 0.7 + 0.3 * k);
       ctx.fill();
       ctx.restore();
+      Enter.end();
     }
 
     /* THE FENCE. One live wire along the whole mouth row with a single GAP in
@@ -2734,9 +2750,12 @@
       drawSurge();     // the fence, and the one gap in it
       drawArena();     // only where the frame was just struck
       if (phase === "play") drawAim();
-      drawCannon();
+      if (Enter.begin(cannon.x, cannon.y)) { drawCannon(); Enter.end(); }
       drawBalls();
-      if (phase === "reveal") drawRevealHud(revealT, C.revealSeconds);
+      if (phase === "reveal" && Enter.begin(Layout.cx, M.y1 + 71)) {
+        drawRevealHud(revealT, C.revealSeconds);
+        Enter.end();
+      }
       if (phase === "recap") { drawScan(); drawTrueWay(); }
     }
 

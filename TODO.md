@@ -211,12 +211,14 @@ ______________________________________________________________________
 
 ## The games — content pass on the fifteen
 
-- [ ] CODE — **`gearball` and `slipdeck`, rebuild the gameplay from the
-  ground up.** Not a tuning pass: both loops are thin over a thirty-level
-  ladder. `gearball`'s closed-gear-loop redesign is in and still not enough;
-  `slipdeck`'s seven tunables are already in `CONFIG.play`, so a new loop has
-  the knobs it needs. The mechanic is a `prototype/` question first, and the
-  port into `games/<slug>/game.js` is the request that follows.
+- [ ] CODE — **`slipdeck`, rebuild the gameplay from the ground up.** Not a
+  tuning pass: the loop is thin over a thirty-level ladder. Its seven tunables
+  are already in `CONFIG.play`, so a new loop has the knobs it needs. The
+  mechanic is a `prototype/` question first, and the port into
+  `games/<slug>/game.js` is the request that follows. **`gearball` is done**
+  (v2.0.0): the marble machine of `prototype/marble-mix.html` — locking gates,
+  flip-flop switches, electric marbles steered to one arrival — replaced the
+  closed gear loop.
 
 - [ ] CODE — **the gameplay, biome by biome.** The web target gave every game
   a 30-level ladder against a loop designed for a 30-second ad, so each biome
@@ -224,12 +226,38 @@ ______________________________________________________________________
   beat, a hazard — rather than the same level turning faster. One design per
   game, not a shared system.
 
-  - done: `arcider`, `blight`, `echomaze`, `radiam`
+  - done: `arcider`, `blight`, `echomaze`, `radiam`, `gearball` (v2.2.0: one
+    machine per biome, each on its own skeleton, 1 to 6 switches, gates and
+    arrivals; a full queue spills behind the machine to a red sink that costs
+    a heart)
+  - `gearball` v2.3.0 adds the UPGRADE CARDS (113, by biome, a codex of the
+    ones taken); v2.4.0 stretches the level shifts to 3 → 10 minutes, the
+    pace ramping linearly to its old peak on the last second (a human-paced
+    bench pilot now takes 6 picks on level 1 and ~13 on level 30), and the
+    objective follows (12 000 → 45 000). Left: MAIN — pick the card look in
+    `lab/gearball-cards.html` and paste it as the SKIN's `.gb-card` block;
+    MAIN — place the `cards` house in `make village` (it stands on `decor07`
+    at a guessed spot); MAIN — the hearts over a long shift: on levels 25–30
+    the bench pilot loses its 3 hearts before the clock in most runs
+    (8–9 minutes in); CODE — a balance bench of the 113 cards against a
+    human-paced pilot. v2.5.0 replaces the hopper with a FEED GEAR half off
+    the right edge, the return circuits (left screw, top rail, ferris wheel,
+    lift) with one SCREW TOWER on the right, and adds one FERRY GEAR per
+    machine in its largest empty stretch (LAYOUTS, `fer`). Left: CODE —
+    `lab/gearball-modules.html` still draws the hopper and the old return
+    circuits, and its Machines view does not know a `fer:` line; MAIN — the
+    top-left corner the ferris wheel stood in is empty on every machine.
+    v2.6.0: the switches are the machine's own (they flip at every marble,
+    the shut way barred in red), the player taps an ARRIVAL to move the
+    socket, one electric marble is always in play, and a broken combo plays
+    `blackout` and cuts the lights for 0.5 s; the objective moved to
+    13 000 → 95 000 off the bench. Left: MAIN — the store lines and the
+    listing images still show the old wording and machine (reshoot)
   - to finish or rethink: `spinshock`
   - to do: `chainring`, `orbinity`, `triverse`, `vipera`, `stratideck`,
     `pawko`, `marshmelt`
-  - `gearball` and `slipdeck` come with their rebuild (above), `bouncetry`
-    with its ghost (below)
+  - `slipdeck` comes with its rebuild (above), `bouncetry` with its ghost
+    (below)
 
   **`radiam` is done and is the pattern to copy** (v1.1.0). Two tables in
   `CONFIG.ladder` and one `applyLevel` hook, the shape `games/arcider` first
@@ -249,7 +277,8 @@ ______________________________________________________________________
   `CONFIG.music.menu`, `web.music`); [docs/MUSIC.md](docs/MUSIC.md) is the
   procedure and `games/arcider` the reference.
 
-  - done: `arcider`, `blight`, `echomaze`, `radiam`, `stratideck`, `pawko`
+  - done: `arcider`, `blight`, `echomaze`, `radiam`, `stratideck`, `pawko`,
+    `bouncetry`
   - to finish or rethink: `spinshock`, `vipera`, `marshmelt`
   - to complete: `chainring`
   - to do: `orbinity`, `triverse`, `gearball`, `slipdeck`
@@ -269,12 +298,30 @@ ______________________________________________________________________
   multipliers-first by ~20%; L1 random play lands 2–3 stars, L30 random play
   1–2). Nothing has checked the FEEL: gravity 1300, peg restitution .45, the
   bumper kick 760, a wave of ~11 s, and whether the one-wave cards read as
-  one-wave on screen.
+  one-wave on screen. **Since v0.3.0 it is a different game**: fifty cards
+  in four kinds (peg, wave, charm, meta), a hand of five refilled from a pile
+  seeded by the level, and the score is points × Mult (cap ×999). The ladder
+  (`17 000 → 60 000`) was set off a headless random pilot (median 30k at L1,
+  ~100k at L30, single deals up to 600k) — nothing has checked by hand which
+  synergies break the game too early (Midas + Fever were already cut from
+  +0.2 to +0.1 for that). Since v0.3.1 the third star no longer ends a
+  pawko round (`Game.levelMaxed`): it is called over the hand and the round
+  plays on to the last ball. **Since v0.6.0 the hand is at the FOOT of the
+  frame** (under the thumb; the board under the HUD, gates 56 px high) and a
+  card dropped casts its effect as orbs (`castFx`): check on a phone that the
+  reach up to the board is comfortable, and that the cast (~0.7–1 s before
+  the wave) does not feel like a wait.
 
 - [ ] MAIN — **`pawko`, listen to the six music windows** (`CONFIG.bands`,
   `CONFIG.music.menu`): the seams were placed on the RMS profile of
   `assets/audio/music/pawko.mp3` (body at 10 s, breaks at 45–55, 95–110 and
   130–135, end at 176) and never by ear.
+
+- [ ] MAIN — **`bouncetry`, listen to the six music windows** (`BIOMES[].music`,
+  `CONFIG.music.menu`): the seams were placed on a 126 bpm bar grid read off
+  the RMS and spectral profile of `assets/audio/music/bouncetry.mp3` (body at
+  15.2 s, break 45.7–49.5, peak from 76.2, breakdown 114–122, finale 152.4,
+  fade from 173.4) and never by ear.
 
 - [ ] TUNE — **`stratideck`, play it by hand.** The camp, the army and the
   ladder (`700 → 3 000`, `play.cols 4→8`, `play.rows 3→6`, `play.traps 0→5`,
@@ -481,14 +528,46 @@ ______________________________________________________________________
   arcider's own — the craft coming apart and rolling off the road — which is
   the game's to draw inside that beat.
 
-- [ ] CODE — **`bouncetry`, rework the gameplay around a ghost.** The brick
-  breaker with two colours and one swap tap is thin over thirty levels, and the
-  swap is the only decision it offers. Rebuild the loop around a GHOST — the
-  ball, or a second body, that passes THROUGH what it cannot break instead of
-  bouncing off it — and re-decide what the tap does once that is true. The
-  mechanic is not settled: it is a `prototype/` question first
-  (one raw page, one answer), and porting the update / render / input into
-  `games/bouncetry/game.js` is the separate request that follows.
+- [ ] BENCH — **`bouncetry`, tune the ghost-brick rebuild by hand.** The
+  mechanic of `prototype/ghost-bricks.html` is in the game (v2.5.0): painted
+  glass in five colours that pay 10 to 60 (red to rainbow, dealt by height),
+  switch buttons that a tap lights solid, the pocket speed-up and the
+  auto-tap over an empty pocket, on thirty blueprints (12 columns, no two
+  alike, all glass reachable, one pocket at least) in five painted biomes,
+  each with its own bonus bricks and every stage with its own brick design.
+  What was measured is a scratch pilot that reads the sight and taps only
+  when a tap shuts a ball in with glass: ~2 500 to ~28 700 a level, against
+  ~40 to ~4 700 for a player who never taps. The objective (`1 500 → 4 500`)
+  was set off that pilot and the spread is the blueprints': THE SEESAW (12)
+  and THE PAIR (15) stay under their objective. A human pass on a phone has to
+  settle the objective and those two, and pick the sfx of the three powers by
+  ear (`make events`). The sheets gave twenty-three distinct brick designs
+  for thirty stages, so stages 24 to 30 reuse designs 7, 9 … 19.
+  **v2.4.0 adds the living glass**, one kind per biome placed over the
+  blueprints (`BIOMES[].live`): 5 warp panes (biome 1), 4 split panes (2),
+  1 seed (3), 4 shield panes (4) and 2/2/1/2 of them (5). A random pilot over
+  the thirty levels × 3 seeds ran clean (no exception, every kind placed);
+  the counts, `warpEvery`, `seedEvery` / `seedHp` and `shieldUp` /
+  `shieldDown` are first guesses for the same phone pass, and none of the
+  four has an sfx of its own yet (a split reuses `blast`, a shield `steel`).
+  **v2.6.0 replaces the objective and the combo.** Six stages a biome
+  (`STAGES`: one colour, the colours with their price engraved, the first
+  power, the living glass, the mix, a finale recalling the biome before),
+  the blueprint's bonus letters used as slots. The combo is the shot's (x2
+  every 5 panes, up to x5) instead of a 1.6 s window that died in open air.
+  The stars are `levelTally`: 50 % of the wall, 80 %, then a clear or 80 %
+  within par (`web.levels.objective` = par, `4 → 2`). Bench, 30 levels × 4
+  seeds: a perfect pilot (best of 25 angles, taps only to shut a ball in with
+  glass) takes 3★ in 81/120, a random one in 10/120 (0★ in 68). THE TOWER
+  (14), THE PAIR (15), THE KILN (19) and THE TWO ROOMS (28) stay under two
+  stars even for the perfect pilot; levels 1, 7, 10, 11, 13, 17, 20, 26 and
+  27 give it 80 % in one ball. A phone pass has to settle par, `startBalls`
+  and those boards.
+  **v2.6.1**: no price engraved any more — what a pane paid pops where it
+  broke, in its colour and bigger the dearer (`Pop.text` tier 1, the rainbow
+  tier 3); the pocket speed-up waits for 5 s shut in without touching glass
+  (`fastAfter`, `stuckAfter` 4 → 9) and a touch ends it; warp panes jump
+  every 3 s. Same bench: 3★ 79/120 for the perfect pilot, 7/120 random.
 
 - [ ] CODE — **`blight`, re-balance the rainbow and the rot.** The two halves
   of the game argue with each other and neither was benched. The RAINBOW is

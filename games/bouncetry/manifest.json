@@ -1,8 +1,8 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "1.2.6",
-  "tagline": "A ball only breaks the bricks of its own colour and one tap flips them all",
+  "version": "2.6.5",
+  "tagline": "One tap switches the buttons on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
   "targets": [
@@ -18,7 +18,132 @@
       "ball05": "bouncetry-ball-05",
       "ball24": "bouncetry-ball-24",
       "ball28": "bouncetry-ball-28",
+      "brick-blue-01": "bouncetry-brick-blue-01",
+      "brick-blue-02": "bouncetry-brick-blue-02",
+      "brick-blue-03": "bouncetry-brick-blue-03",
+      "brick-blue-04": "bouncetry-brick-blue-04",
+      "brick-blue-05": "bouncetry-brick-blue-05",
+      "brick-blue-06": "bouncetry-brick-blue-06",
+      "brick-blue-07": "bouncetry-brick-blue-07",
+      "brick-blue-08": "bouncetry-brick-blue-08",
+      "brick-blue-09": "bouncetry-brick-blue-09",
+      "brick-blue-10": "bouncetry-brick-blue-10",
+      "brick-blue-11": "bouncetry-brick-blue-11",
+      "brick-blue-12": "bouncetry-brick-blue-12",
+      "brick-blue-13": "bouncetry-brick-blue-13",
+      "brick-blue-14": "bouncetry-brick-blue-14",
+      "brick-blue-15": "bouncetry-brick-blue-15",
+      "brick-blue-16": "bouncetry-brick-blue-16",
+      "brick-blue-17": "bouncetry-brick-blue-18",
+      "brick-blue-18": "bouncetry-brick-blue-19",
+      "brick-blue-19": "bouncetry-brick-blue-20",
+      "brick-blue-20": "bouncetry-brick-blue-28",
+      "brick-blue-21": "bouncetry-brick-blue-30",
+      "brick-blue-22": "bouncetry-brick-blue-31",
+      "brick-blue-23": "bouncetry-brick-blue-35",
+      "brick-green-01": "bouncetry-brick-green-01",
+      "brick-green-02": "bouncetry-brick-green-02",
+      "brick-green-03": "bouncetry-brick-green-03",
+      "brick-green-04": "bouncetry-brick-green-04",
+      "brick-green-05": "bouncetry-brick-green-05",
+      "brick-green-06": "bouncetry-brick-green-06",
+      "brick-green-07": "bouncetry-brick-green-07",
+      "brick-green-08": "bouncetry-brick-green-08",
+      "brick-green-09": "bouncetry-brick-green-09",
+      "brick-green-10": "bouncetry-brick-green-10",
+      "brick-green-11": "bouncetry-brick-green-11",
+      "brick-green-12": "bouncetry-brick-green-12",
+      "brick-green-13": "bouncetry-brick-green-13",
+      "brick-green-14": "bouncetry-brick-green-14",
+      "brick-green-15": "bouncetry-brick-green-15",
+      "brick-green-16": "bouncetry-brick-green-16",
+      "brick-green-17": "bouncetry-brick-green-18",
+      "brick-green-18": "bouncetry-brick-green-19",
+      "brick-green-19": "bouncetry-brick-green-20",
+      "brick-green-20": "bouncetry-brick-green-28",
+      "brick-green-21": "bouncetry-brick-green-30",
+      "brick-green-22": "bouncetry-brick-green-31",
+      "brick-green-23": "bouncetry-brick-green-35",
+      "brick-purple-01": "bouncetry-brick-purple-01",
+      "brick-purple-02": "bouncetry-brick-purple-02",
+      "brick-purple-03": "bouncetry-brick-purple-03",
+      "brick-purple-04": "bouncetry-brick-purple-04",
+      "brick-purple-05": "bouncetry-brick-purple-05",
+      "brick-purple-06": "bouncetry-brick-purple-06",
+      "brick-purple-07": "bouncetry-brick-purple-07",
+      "brick-purple-08": "bouncetry-brick-purple-08",
+      "brick-purple-09": "bouncetry-brick-purple-09",
+      "brick-purple-10": "bouncetry-brick-purple-10",
+      "brick-purple-11": "bouncetry-brick-purple-11",
+      "brick-purple-12": "bouncetry-brick-purple-12",
+      "brick-purple-13": "bouncetry-brick-purple-13",
+      "brick-purple-14": "bouncetry-brick-purple-14",
+      "brick-purple-15": "bouncetry-brick-purple-15",
+      "brick-purple-16": "bouncetry-brick-purple-16",
+      "brick-purple-17": "bouncetry-brick-purple-18",
+      "brick-purple-18": "bouncetry-brick-purple-19",
+      "brick-purple-19": "bouncetry-brick-purple-20",
+      "brick-purple-20": "bouncetry-brick-purple-28",
+      "brick-purple-21": "bouncetry-brick-purple-30",
+      "brick-purple-22": "bouncetry-brick-purple-31",
+      "brick-purple-23": "bouncetry-brick-purple-35",
+      "brick-rainbow-01": "bouncetry-brick-rainbow-01",
+      "brick-rainbow-02": "bouncetry-brick-rainbow-02",
+      "brick-rainbow-03": "bouncetry-brick-rainbow-03",
+      "brick-rainbow-04": "bouncetry-brick-rainbow-04",
+      "brick-rainbow-05": "bouncetry-brick-rainbow-05",
+      "brick-rainbow-06": "bouncetry-brick-rainbow-06",
+      "brick-rainbow-07": "bouncetry-brick-rainbow-07",
+      "brick-rainbow-08": "bouncetry-brick-rainbow-08",
+      "brick-rainbow-09": "bouncetry-brick-rainbow-09",
+      "brick-rainbow-10": "bouncetry-brick-rainbow-10",
+      "brick-rainbow-11": "bouncetry-brick-rainbow-11",
+      "brick-rainbow-12": "bouncetry-brick-rainbow-12",
+      "brick-rainbow-13": "bouncetry-brick-rainbow-13",
+      "brick-rainbow-14": "bouncetry-brick-rainbow-14",
+      "brick-rainbow-15": "bouncetry-brick-rainbow-15",
+      "brick-rainbow-16": "bouncetry-brick-rainbow-16",
+      "brick-rainbow-17": "bouncetry-brick-rainbow-18",
+      "brick-rainbow-18": "bouncetry-brick-rainbow-19",
+      "brick-rainbow-19": "bouncetry-brick-rainbow-20",
+      "brick-rainbow-20": "bouncetry-brick-rainbow-28",
+      "brick-rainbow-21": "bouncetry-brick-rainbow-30",
+      "brick-rainbow-22": "bouncetry-brick-rainbow-31",
+      "brick-rainbow-23": "bouncetry-brick-rainbow-35",
+      "brick-red-01": "bouncetry-brick-red-01",
+      "brick-red-02": "bouncetry-brick-red-02",
+      "brick-red-03": "bouncetry-brick-red-03",
+      "brick-red-04": "bouncetry-brick-red-04",
+      "brick-red-05": "bouncetry-brick-red-05",
+      "brick-red-06": "bouncetry-brick-red-06",
+      "brick-red-07": "bouncetry-brick-red-07",
+      "brick-red-08": "bouncetry-brick-red-08",
+      "brick-red-09": "bouncetry-brick-red-09",
+      "brick-red-10": "bouncetry-brick-red-10",
+      "brick-red-11": "bouncetry-brick-red-11",
+      "brick-red-12": "bouncetry-brick-red-12",
+      "brick-red-13": "bouncetry-brick-red-13",
+      "brick-red-14": "bouncetry-brick-red-14",
+      "brick-red-15": "bouncetry-brick-red-15",
+      "brick-red-16": "bouncetry-brick-red-16",
+      "brick-red-17": "bouncetry-brick-red-18",
+      "brick-red-18": "bouncetry-brick-red-19",
+      "brick-red-19": "bouncetry-brick-red-20",
+      "brick-red-20": "bouncetry-brick-red-28",
+      "brick-red-21": "bouncetry-brick-red-30",
+      "brick-red-22": "bouncetry-brick-red-31",
+      "brick-red-23": "bouncetry-brick-red-35",
       "brick03": "bouncetry-brick-03",
+      "button-off-01": "bouncetry-button-06",
+      "button-off-02": "bouncetry-button-07",
+      "button-off-03": "bouncetry-button-08",
+      "button-off-04": "bouncetry-button-09",
+      "button-off-05": "bouncetry-button-10",
+      "button-on-01": "bouncetry-button-01",
+      "button-on-02": "bouncetry-button-02",
+      "button-on-03": "bouncetry-button-03",
+      "button-on-04": "bouncetry-button-04",
+      "button-on-05": "bouncetry-button-05",
       "cloud-big-04": "game-cloud-big-04",
       "decor-ball-01": "bouncetry-ball-01",
       "decor-ball-34": "bouncetry-ball-34",
@@ -54,23 +179,23 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un casse-briques avec une limite de billes. Choisis le meilleur angle, puis inverse les couleurs au bon moment avec un TAP stratégique.",
+      "tagline": "Un casse-briques avec une limite de billes. Vise, puis tape pour allumer les boutons et enfermer la bille avec les briques de couleur.",
       "tags": [
-        "Tap inverseur",
+        "Tap piège",
         "Casse-briques",
-        "Double briques"
+        "Boutons switch"
       ]
     },
     "en": {
-      "tagline": "A brick breaker with a limited supply of balls. Pick the best angle, then flip the colours at the right moment with one strategic tap.",
+      "tagline": "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
       "tags": [
-        "Tap to swap",
+        "Tap to trap",
         "Breakout",
-        "Lava floor"
+        "Switch buttons"
       ]
     }
   },
-  "description": "A wall of red and blue glass over a lake of lava. A ball only breaks its own colour and never changes it on its own, so the tap that swaps the whole wall — as often as you like while the ball is in the air — is the only colour control you have. The dotted sight solves five bounces ahead.",
+  "description": "Coloured glass and banks of switches over a lake of lava. The ball breaks every pane of glass and flies straight past the dark buttons — until you tap: then they light up and turn solid, and the ball bounces off them and can never break them. Tap while the ball is inside a pocket of glass and it is shut in with it, runs faster and eats the whole room; tap again to let it out, or the game opens an empty pocket for you. Thirty boards across five biomes, each with its own bonus bricks: row and column blasts, bombs and multiball, the big ball, the fireball that burns through the glass and the magnet that pulls it in — and each biome brings its own living glass too: warp panes that jump every three seconds, split panes that burst into new glass, a seed that grows glass around it and electric panes behind a shield that comes and goes. Each biome teaches it in six stages — one colour, then all five and what each pays, its power, its living glass, the mix and a finale — and the stars are the wall's, not the score's: half of it, four fifths, and three for a clear or for four fifths within the level's par of balls. The dotted sight solves five bounces ahead.",
   "store": {
     "copy": {
       "en": {
@@ -80,8 +205,8 @@
             "line": "With a limited supply of <b>balls</b>"
           },
           {
-            "kicker": "Brick switch",
-            "line": "Tap to <b>flip them all</b>"
+            "kicker": "Switch buttons",
+            "line": "Tap to <b>trap the ball</b>"
           },
           {
             "kicker": "Aim line",
@@ -104,8 +229,8 @@
             "line": "Avec une limite de <b>billes</b>"
           },
           {
-            "kicker": "Brique switch",
-            "line": "TAP pour <b>tout inverser</b>"
+            "kicker": "Boutons switch",
+            "line": "Tape pour <b>piéger la bille</b>"
           },
           {
             "kicker": "Aide",
@@ -153,70 +278,105 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Une balle ne brise que les briques de sa <b class=\"w-wall\">couleur</b> et un <b class=\"w-tap\">TAP</b> les inverse toutes",
+        "tagline": "Un <b class=\"w-tap\">tap</b> allume les <b class=\"w-wall\">boutons</b> et enferme la bille avec les briques",
         "strings": {
-          " bricks charged": " briques chargées",
-          "+3 balls in flight": "+3 billes en jeu",
+          " balls": " billes",
           "Balls": "Billes",
           "Balls fired": "Billes lancées",
-          "Best chain": "Meilleure chaîne",
+          "Best combo": "Meilleur combo",
           "Best score": "Meilleur score",
-          "Blue": "Bleues",
+          "Big ball": "Grosse bille",
           "Bomb": "Bombe",
-          "Bonus": "Bonus",
-          "Bricks": "Briques",
-          "Bricks smashed": "Briques brisées",
-          "Chain x": "Chaîne x",
-          "Chain x10": "Chaîne x10",
-          "Chain x15": "Chaîne x15",
-          "Chain x5": "Chaîne x5",
+          "Burns through the glass": "Traverse le verre en le brûlant",
+          "Clear the wall for the third star": "Vide le mur pour la troisième étoile",
           "Clears its column": "Nettoie sa colonne",
           "Clears its row": "Nettoie sa rangée",
-          "Column": "Colonne",
           "Column blast": "Souffle de colonne",
-          "Dealing your round bonus": "Distribution du bonus de manche",
+          "Combo x": "Combo x",
+          "Combo x2": "Combo x2",
+          "Combo x3": "Combo x3",
+          "Combo x4": "Combo x4",
+          "Combo x5": "Combo x5",
+          "Each colour has its price": "Chaque couleur a son prix",
+          "Every kind at once": "Toutes à la fois",
           "Final score": "Score final",
+          "Fireball": "Bille de feu",
+          "Hit it while the shield is down": "Frappe-la quand le bouclier tombe",
           "Hot!": "Chaud !",
           "Huge run!": "Énorme partie !",
           "Install now": "Installer",
+          "It bursts into new glass": "Elle éclate en nouvelles briques",
+          "It grows new glass every second": "Elle fait pousser une brique chaque seconde",
+          "It jumps every three seconds": "Elle saute toutes les trois secondes",
           "Last ball": "Dernière bille",
-          "Mixed bag": "Sac surprise",
+          "Living glass": "Verre vivant",
+          "Magnet": "Aimant",
           "Multiball": "Multibille",
           "Nice run!": "Belle partie !",
           "Out of balls!": "Plus de billes !",
+          "Over par": "Par dépassé",
           "Perfect clear": "Tableau parfait",
           "Perfect clear!": "Tableau parfait !",
           "Play the full game": "Jouer au jeu complet",
-          "Red": "Rouges",
+          "Pocket cleared": "Poche vidée",
+          "Pulls the glass in": "Attire le verre",
           "Replay the demo": "Rejouer la démo",
-          "Row": "Rangée",
           "Row blast": "Souffle de rangée",
           "Score": "Score",
+          "Seed glass": "Verre graine",
+          "Shield glass": "Verre bouclier",
           "Smash!": "Fracas !",
+          "Split glass": "Verre éclaté",
           "Takes the neighbours": "Emporte les voisines",
           "Tap to play": "Tap pour jouer",
+          "The ball grows": "La bille grossit",
+          "The higher, the dearer": "Plus c'est haut, plus ça paie",
           "The lava pulls": "La lave attire",
           "Time": "Temps",
-          "Time's up!": "Temps écoulé !"
+          "Time's up!": "Temps écoulé !",
+          "Under par!": "Sous le par !",
+          "Wall": "Mur",
+          "Wall broken": "Mur cassé",
+          "Warp glass": "Verre téléporteur"
         }
       }
     },
     "font": "bungee",
+    "music": "bouncetry.mp3",
     "levels": {
       "objective": {
-        "from": 350,
-        "to": 2300,
-        "step": 50
+        "from": 4,
+        "to": 2,
+        "step": 1
       },
       "copy": {
-        "en": "Score <b>{n}</b> off the wall",
-        "fr": "Marque <b>{n}</b> pour progresser"
+        "en": "Clear it, or <b>80%</b> in <b>{n}</b> balls",
+        "fr": "Vide-le, ou <b>80 %</b> en <b>{n}</b> billes"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "Lava fields",
+          "Night works",
+          "Green forge",
+          "Machine hall",
+          "Furnace core"
+        ],
+        "fr": [
+          "Champs de lave",
+          "Usine de nuit",
+          "Forge verte",
+          "Salle des machines",
+          "Cœur du four"
+        ]
       },
       "tune": {
-        "rows": [
-          7,
-          11
-        ],
         "startBalls": [
           8,
           4
@@ -224,10 +384,6 @@
         "multiBalls": [
           3,
           2
-        ],
-        "bonusBricks": [
-          4,
-          1
         ],
         "pullAfter": [
           7,
@@ -243,19 +399,19 @@
         1,
         2,
         3,
-        5,
+        4,
         6,
         7,
-        11,
+        13,
         14,
         15,
         18,
-        16,
+        17,
         20
       ],
       "stickers": [
         {
-          "name": "Nice One",
+          "name": "Big Grin",
           "rarity": "common"
         },
         {
@@ -263,7 +419,11 @@
           "rarity": "common"
         },
         {
-          "name": "Smitten",
+          "name": "Happy Tears",
+          "rarity": "common"
+        },
+        {
+          "name": "Tongue Out",
           "rarity": "common"
         },
         {
@@ -271,7 +431,15 @@
           "rarity": "epic"
         },
         {
-          "name": "Big Laugh",
+          "name": "Smitten",
+          "rarity": "common"
+        },
+        {
+          "name": "Grumpy",
+          "rarity": "common"
+        },
+        {
+          "name": "Teary",
           "rarity": "common"
         },
         {
@@ -279,15 +447,11 @@
           "rarity": "common"
         },
         {
-          "name": "No Clue",
-          "rarity": "common"
-        },
-        {
           "name": "Nap Time",
           "rarity": "common"
         },
         {
-          "name": "Steamed",
+          "name": "No Clue",
           "rarity": "common"
         },
         {
@@ -295,43 +459,35 @@
           "rarity": "common"
         },
         {
-          "name": "Heart Held",
+          "name": "Thumbs Up",
           "rarity": "rare"
         },
         {
-          "name": "Peace Out",
-          "rarity": "common"
-        },
-        {
-          "name": "Hooray",
-          "rarity": "common"
-        },
-        {
-          "name": "Dizzy",
+          "name": "Smug",
           "rarity": "rare"
         },
         {
-          "name": "Spot On",
+          "name": "Steamed",
           "rarity": "rare"
-        },
-        {
-          "name": "Frost Ball",
-          "rarity": "epic"
         },
         {
           "name": "Fire Ball",
           "rarity": "legendary"
         },
         {
+          "name": "Steel Brick",
+          "rarity": "epic"
+        },
+        {
           "name": "Red Brick",
           "rarity": "rare"
         },
         {
-          "name": "Blue Brick",
+          "name": "X Brick",
           "rarity": "rare"
         },
         {
-          "name": "Gold Star",
+          "name": "Gold Brick",
           "rarity": "legendary"
         }
       ]

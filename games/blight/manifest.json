@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.8",
+  "version": "1.9.9",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -51,10 +51,10 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Bubble magique classique, mais avec un léger Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      "tagline": "Un Bubble Shooter mais avec un vrai Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
       "tags": [
-        "Vise et tire",
-        "Par trois",
+        "Vise rapidement",
+        "Bubble",
         "Contamination"
       ]
     },
@@ -97,8 +97,8 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Bubble twist",
-            "line": "Eclate vite, avant la <b>contamination</b>"
+            "kicker": "Bubble Twist",
+            "line": "Sois plus rapide que la <b>contamination</b>"
           },
           {
             "kicker": "Super",
@@ -109,7 +109,7 @@
             "line": "La contamination doit être <b>contenue</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {

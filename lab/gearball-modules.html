@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lab — gearball modules</title>
+<meta name="lab-group" content="tools">
+<meta name="lab-game" content="gearball">
+<style>
+/* ===========================================================================
+   GEARBALL MODULES — every piece the marble machine is built from, one live
+   tile each.
+
+   games/gearball draws five machines (section 6, LAYOUTS), and each is a
+   graph assembled out of two kinds of piece:
+     - the TRACK MODULES of the `Track` library — a rail, a zigzag, a loop, a
+       corkscrew, a coil, a whirlpool, a glass tube, a dive behind the machine;
+     - the MACHINE PARTS the rules act on — the flip-flop switch, the merging
+       wheel, the locking gate, the arrivals, plus what only dresses it: the
+       chimes, the hopper, the marbles and the return circuits in the back.
+   On a machine they are all tangled together; here each one stands alone in
+   a 360 x 420 box of machine px (the game's own unit, marble radius 14), with
+   marbles rolling through it on the game's slope physics, so a module is
+   judged on its own before it is placed in a layout.
+
+   WHAT IS THE GAME'S AND WHAT IS A COPY. Opened through `make lab` (http),
+   the page reads games/gearball/game.js itself: the `Track` library is cut
+   out of it and evaluated, and the physics numbers are read off CONFIG.mix,
+   so a module retuned in the game is the module drawn here. Opened over
+   file://, it falls back on the embedded copy below, and the panel says
+   which one is on screen. The DRAWING (rails, tubes, mouths, bowls, cogs,
+   switches, gates, funnels, marbles) is a copy of section 6's render code,
+   adapted to draw one tile at a time — port a change by hand both ways.
+
+   A tap does what it does in the round: it flips the nearest switch or opens
+   the nearest locked gate. A tap on a tile with nothing to act on opens it
+   alone, with its own parameters.
+
+   RAIL SKINS. The rails are one look among several here: LADDER is what
+   ships (section 6, railBed + railPass), the others are proposals, each a
+   `bed` and a `pass` with the same signature, so porting one into the game is
+   replacing those two functions. A skin marked LIVE also draws something per
+   frame, on top of the cached layers. "Compare" lays one module out in every
+   skin at once. The glass tubes, the pipe mouths and the whirlpool bowls are
+   their own modules and keep their look whatever the skin.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex;
+  background:#07060e;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 300px;
+  height:100vh; overflow-y:auto;
+  padding:22px 20px 40px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 {
+  margin:22px 0 10px; font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:#7e7ea0;
+}
+.src {
+  display:inline-block; padding:4px 9px; border-radius:99px;
+  font-size:11px; font-weight:700; background:#2a2140; color:#cbbcff;
+}
+.src.live { background:#163a33; color:#7dffcf; }
+
+.row { margin-bottom:13px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:5px; accent-color:#7ef9ff; }
+.row select {
+  width:100%; margin-top:5px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.check { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px; color:#c4c4dc; cursor:pointer; }
+.check input { accent-color:#7ef9ff; }
+
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chips button {
+  padding:5px 10px; border-radius:99px; border:1px solid #2c2c47;
+  background:#0b0b12; color:#b9b9d6; font:700 12px/1 inherit; cursor:pointer;
+}
+.chips button.on { background:#7ef9ff; border-color:#7ef9ff; color:#07060e; }
+
+button.wide {
+  width:100%; margin-top:8px; padding:9px 10px;
+  background:#7ef9ff; color:#07060e; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.4px; cursor:pointer;
+}
+button.wide.ghost { background:transparent; color:#cfcfe8; border:1px solid #34345a; }
+
+#focus-panel { display:none; }
+body.focus #focus-panel { display:block; }
+#focus-panel .name { font-size:20px; font-weight:800; }
+#focus-panel code { display:block; margin:4px 0 8px; color:#7ef9ff; font:600 13px/1.4 ui-monospace,Menlo,monospace; }
+#focus-panel p { font-weight:500; font-size:13px; color:#b4b4cf; }
+.legend { margin-top:6px; font-size:12px; font-weight:500; color:#9c9cba; }
+.legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 5px -1px 0; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the grid of tiles, or one tile alone
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; height:100vh; overflow-y:auto;
+  padding:26px;
+}
+.group-title {
+  margin:4px 0 14px; font-size:12px; letter-spacing:1.6px; text-transform:uppercase; color:#8080a6;
+}
+.grid { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:34px; }
+.card {
+  width:270px;
+  background:#110e22; border:1px solid #241d44; border-radius:14px;
+  overflow:hidden; transition:opacity .2s;
+}
+.card.dim { opacity:.22; }
+.card header {
+  display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+  padding:10px 12px 8px; cursor:pointer;
+}
+.card header b { font-size:15px; }
+.card header code { color:#7ef9ff; font:600 11px/1.2 ui-monospace,Menlo,monospace; text-align:right; }
+.card canvas { display:block; cursor:pointer; }
+.card p { padding:8px 12px 4px; font-weight:500; font-size:12px; line-height:1.45; color:#a8a8c4; }
+.card footer { display:flex; flex-wrap:wrap; gap:5px; padding:6px 12px 12px; }
+.pill {
+  padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;
+  background:#221b40; color:#b8aef0;
+}
+.pill.tap { background:#3a2a10; color:#ffcf8a; }
+
+.card.picked { border-color:#7ef9ff; box-shadow:0 0 0 1px #7ef9ff; }
+#machines { display:none; }
+body.machines #machines { display:block; }
+body.machines #modules { display:none; }
+.card.machine { width:350px; }
+.checks { list-style:none; padding:4px 12px 12px; font-size:12px; font-weight:600; }
+.checks li { padding:2px 0; color:#7dffcf; }
+.checks li.bad { color:#ff7b9c; }
+.checks li small { display:block; font-weight:500; color:#a8a8c4; }
+.counts { padding:2px 12px 0; font:600 11px/1.5 ui-monospace,Menlo,monospace; color:#b8aef0; }
+.pill.live { background:#3a1030; color:#ff9ce6; }
+.pill.ship { background:#163a33; color:#7dffcf; }
+#skin-desc { margin:8px 0 4px; font-weight:500; font-size:12px; color:#a8a8c4; }
+#skin-desc .pill { margin-right:6px; }
+#compare { display:none; }
+body.compare #compare { display:block; }
+body.compare #modules, body.compare #focus-panel { display:none; }
+
+body.focus .group-title, body.focus .card:not(.solo) { display:none; }
+body.focus .grid { justify-content:center; margin:0; }
+body.focus .card.solo { width:auto; }
+body.focus .card.solo p { max-width:640px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Gearball modules</h1>
+  <p class="hint">Every piece the five machines are built from, alone and live.
+    Tap a switch or a padlock to act on it; tap anywhere else on a tile to open it.</p>
+  <span id="src" class="src">Loading game.js…</span>
+
+  <h2>View</h2>
+  <div class="chips" id="views">
+    <button data-v="modules" class="on">Modules</button>
+    <button data-v="machines">Machines</button>
+  </div>
+
+  <div id="focus-panel">
+    <h2>Module</h2>
+    <div class="name" id="f-name"></div>
+    <code id="f-call"></code>
+    <p id="f-blurb"></p>
+    <h2>Parameters</h2>
+    <div id="f-params"></div>
+    <button class="wide ghost" id="f-reset">Reset parameters</button>
+    <button class="wide" id="f-back">Back to all modules</button>
+  </div>
+
+  <h2>Rail skin</h2>
+  <div class="chips" id="skins"></div>
+  <div id="skin-desc"></div>
+  <label class="check"><input type="checkbox" id="compare-on"> Compare every skin on one module</label>
+  <div class="row" id="compare-row" hidden>
+    <select id="compare-mod"></select>
+  </div>
+
+  <h2>Biome</h2>
+  <p class="hint">Dims the modules a biome does not use, and paints them in its metal.</p>
+  <div class="chips" id="biomes"></div>
+
+  <h2>Run</h2>
+  <div class="row">
+    <label for="tempo">Tempo <b id="tempo-v"></b></label>
+    <input id="tempo" type="range" min="0.2" max="2.5" step="0.05" value="1">
+  </div>
+  <div class="row">
+    <label for="pour">Pour rate <b id="pour-v"></b></label>
+    <input id="pour" type="range" min="0.3" max="3" step="0.05" value="1">
+  </div>
+  <label class="check"><input type="checkbox" id="auto" checked> Autopilot opens the gates</label>
+  <label class="check"><input type="checkbox" id="debug"> Show the path</label>
+  <label class="check"><input type="checkbox" id="tags"> Colour the modules</label>
+  <label class="check"><input type="checkbox" id="pause"> Pause</label>
+  <div class="legend" id="legend" hidden>
+    <i style="background:#ffffff"></i>front <i style="background:#ff6fd8"></i>behind
+    <i style="background:#7ef9ff"></i>glass <i style="background:#ffb44f"></i>pipe mouth
+  </div>
+
+  <h2>Physics <span id="phys-src"></span></h2>
+  <div class="row">
+    <label for="gravity">Gravity <b id="gravity-v"></b></label>
+    <input id="gravity" type="range" min="200" max="2000" step="10">
+  </div>
+  <div class="row">
+    <label for="friction">Friction <b id="friction-v"></b></label>
+    <input id="friction" type="range" min="0" max="300" step="5">
+  </div>
+  <div class="row">
+    <label for="vMin">Min speed <b id="vMin-v"></b></label>
+    <input id="vMin" type="range" min="20" max="300" step="5">
+  </div>
+  <div class="row">
+    <label for="vMax">Max speed <b id="vMax-v"></b></label>
+    <input id="vMax" type="range" min="150" max="900" step="10">
+  </div>
+  <button class="wide ghost" id="phys-reset">Back to the game's numbers</button>
+</div>
+
+<div id="stage"><div id="compare"></div><div id="modules"></div><div id="machines"></div></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===========================================================================
+     CONSTANTS — machine px, the game's own (games/gearball/game.js, section 6)
+     =========================================================================== */
+  const PI2 = Math.PI * 2;
+  const R = 14;                 // marble radius
+  const DS = 5;                 // rails are resampled every DS px
+  const TW = 360, TH = 420;     // one tile, in machine px
+  const FLIP_TIME = 0.09;
+  const WHEEL_R = 70, RIM = WHEEL_R + 14, WHEEL_OMEGA = 1.8;
+  const TIERS = [12, 35, 80];
+  const TIERS_COL = ["#a99cc6", "#ffd43b", "#ff6fd8", "#fff3b0"];
+  const ORBIT_SPARKS = [0, 4, 8, 14];
+  const CLASSIC = "#b389ff";   // every arrival wears the classic marble's violet, the electric one C.volt
+  const PART_MAX = 140;
+  const ELECTRIC_SHARE = 0.1;   // about one marble in ten (CONFIG.mix.electricEvery)
+  const C = {
+    steel: "#6f63ad", steelD: "#2c2360", steelL: "#bdb3ee", chrome: "#ece8ff",
+    text: "#f0f4ff", dim: "#a99cc6", ink: "#0b0720",
+    volt: "#7ef9ff", voltHi: "#e8fdff", voltDeep: "#1a6f9e",
+    amber: "#ffb44f", calm: "#6dffb0", full: "#ff3d6e", heart: "#ff5d86"
+  };
+  const C0 = { steel: C.steel, steelD: C.steelD, steelL: C.steelL };
+
+  /* THE BIOME'S METAL — section 6's tc(): every metal tone is written in
+     the first biome's violet and turned to the biome's hue (CONFIG.biomes,
+     read off game.js), its lightness kept. Machines wear their own biome;
+     the module tiles wear the one picked in the panel. */
+  const METALS = ["#6f63ad", "#5c86bc", "#6f9d58", "#b56a4a", "#ac5da5"];
+  const TINT = { dh: 0, ks: 1, key: "0" };
+  let tintMemo = {};
+  function hexHsl(hex) {
+    const n = parseInt(hex.slice(1), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, s = 0;
+    if (d) {
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      h = (mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;
+    }
+    return [h, s, l];
+  }
+  function hslHex(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    const f = (n) => {
+      const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+      return ("0" + Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255).toString(16)).slice(-2);
+    };
+    return "#" + f(0) + f(8) + f(4);
+  }
+  function tc(hex) {
+    if (tintMemo[hex]) return tintMemo[hex];
+    const c = hexHsl(hex);
+    return (tintMemo[hex] = TINT.dh || TINT.ks !== 1 ? hslHex(c[0] + TINT.dh, Math.min(1, c[1] * TINT.ks), c[2]) : hex);
+  }
+  function tca(hex, a) { return rgba(tc(hex), a); }
+  function setTint(b) {
+    if (TINT.key === String(b)) return;
+    const base = hexHsl(METALS[0]), m = hexHsl(METALS[b] || METALS[0]);
+    TINT.dh = m[0] - base[0]; TINT.ks = m[1] / base[1]; TINT.key = String(b); tintMemo = {};
+    C.steel = tc(C0.steel); C.steelD = tc(C0.steelD); C.steelL = tc(C0.steelL);
+  }
+  const BIOMES = ["Workshop", "Glassworks", "Maelstrom", "Depths", "Clockwork"];
+  const SYS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+
+  // CONFIG.mix — overwritten by what game.js says when it can be read.
+  const GAME_PH = { gravity: 780, friction: 55, vMin: 110, vMax: 400, flushGap: 0.14, flushV: 230, waitCap: 5 };
+  const PH = Object.assign({}, GAME_PH);
+
+  const Lab = { tempo: 1, pour: 1, auto: true, debug: false, tags: false, view: "modules", paused: false, biome: 0, focus: null,
+                skin: "ladder", compare: false, cmpMod: "cork" };
+
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function mod(a, m) { return ((a % m) + m) % m; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  /* ===========================================================================
+     THE MODULE LIBRARY — embedded copy of section 6, "THE MODULE LIBRARY"
+     (function Track ... function mirrorPts). Used only when game.js cannot be
+     read (file://); otherwise the game's own text is evaluated instead.
+     =========================================================================== */
+  function embeddedLibrary() {
+    function Track(x, y) {
+      this.p = [[x, y, 1, 0, 0]];
+      this.z = 1; this.g = 0; this.m = 0; this.bowls = [];
+    }
+    Track.prototype.last = function () { return this.p[this.p.length - 1]; };
+    Track.prototype.put = function (x, y, z) {
+      var l, dx, dy, L;
+      if (this.m) {
+        l = this.last(); dx = x - l[0]; dy = y - l[1]; L = Math.sqrt(dx * dx + dy * dy) || 1;
+        l[4] = 1;
+        this.p.push([l[0] + dx / L * 9, l[1] + dy / L * 9, this.z, this.g, 0]);
+        this.m = 0;
+      }
+      this.p.push([x, y, z === undefined ? this.z : z, this.g, 0]);
+      return this;
+    };
+    Track.prototype.to = function (x, y) { return this.put(x, y); };
+    Track.prototype.glass = function (on) { this.g = on ? 1 : 0; return this; };
+    Track.prototype.under = function () { this.z = -1; this.m = 1; return this; };
+    Track.prototype.over = function () { this.z = 1; this.m = 1; return this; };
+    Track.prototype.zig = function (x, y, n, amp) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dx = x - x0, dy = y - y0, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      var nx = -dy / L, ny = dx / L, i, k, s;
+      for (i = 1; i < 2 * n; i++) {
+        k = i / (2 * n); s = (i % 2 ? 1 : -1) * amp;
+        this.put(x0 + dx * k + nx * s, y0 + dy * k + ny * s);
+      }
+      return this.put(x, y);
+    };
+    Track.prototype.loop = function (r, dir) {
+      var l = this.last(), cx = l[0], cy = l[1] - r, i, a;
+      for (i = 1; i <= 60; i++) { a = Math.PI / 2 - dir * i / 60 * PI2; this.put(cx + r * Math.cos(a), cy + r * Math.sin(a)); }
+      return this;
+    };
+    Track.prototype.cork = function (x, y, turns, r) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dx = x - x0, dy = y - y0, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      var nx = -dy / L, ny = dx / L, n = Math.round(turns * 28), i, k, a;
+      for (i = 1; i <= n; i++) {
+        k = i / n; a = k * turns * PI2;
+        this.put(x0 + dx * k + nx * r * Math.sin(a), y0 + dy * k + ny * r * Math.sin(a), Math.cos(a));
+      }
+      this.z = 1;
+      return this;
+    };
+    Track.prototype.coil = function (y1, r, turns) {
+      var l = this.last(), cx = l[0], y0 = l[1], n = Math.round(turns * 48), i, a;
+      for (i = 1; i <= n; i++) {
+        a = i / n * turns * PI2;
+        this.put(cx + r * Math.sin(a), y0 + (y1 - y0) * i / n + r * 0.35 * (Math.cos(a) - 1), Math.cos(a));
+      }
+      this.z = 1;
+      return this;
+    };
+    Track.prototype.whirl = function (cx, cy, r0, r1, turns, dir) {
+      var l = this.last(), a0 = Math.atan2((l[1] - cy) / 0.5, l[0] - cx), n = Math.round(turns * 44), i, k, a, r;
+      for (i = 1; i <= n; i++) {
+        k = i / n; a = a0 + dir * k * turns * PI2; r = r0 + (r1 - r0) * k;
+        this.put(cx + r * Math.cos(a), cy + r * 0.5 * Math.sin(a) + k * 12);
+      }
+      this.bowls.push({ cx: cx, cy: cy, r: r0 });
+      this.put(cx, cy + 14);
+      return this.under();
+    };
+    Track.prototype.behind = function (from) {
+      for (var i = from || 0; i < this.p.length; i++) this.p[i][2] = -1;
+      this.z = -1;
+      return this;
+    };
+    function mirrorPts(tr) {
+      var o = [], i, q;
+      for (i = 0; i < tr.p.length; i++) { q = tr.p[i]; o.push([660 - q[0], q[1], q[2], q[3], q[4]]); }
+      var t2 = new Track(0, 0); t2.p = o;
+      for (i = 0; i < tr.bowls.length; i++) t2.bowls.push({ cx: 660 - tr.bowls[i].cx, cy: tr.bowls[i].cy, r: tr.bowls[i].r });
+      return t2;
+    }
+    return { Track: Track, mirrorPts: mirrorPts };
+  }
+
+  /* The game's own library: the text between `function Track(x, y) {` and
+     `function T(x, y)` in game.js, which only needs PI2. Null when the file
+     cannot be fetched (file://) or no longer has those two markers. */
+  async function liveLibrary() {
+    try {
+      const res = await fetch("../games/gearball/game.js", { cache: "no-store" });
+      if (!res.ok) return null;
+      const text = await res.text();
+      const i0 = text.indexOf("function Track(x, y) {"), i1 = text.indexOf("function T(x, y)");
+      if (i0 < 0 || i1 < i0) return null;
+      const lib = new Function("PI2", text.slice(i0, i1) + "\nreturn { Track: Track, mirrorPts: mirrorPts };")(PI2);
+      const num = (re) => { const m = text.match(re); return m ? parseFloat(m[1]) : null; };
+      const read = {
+        gravity: num(/gravity:\s*([\d.]+)/), friction: num(/friction:\s*([\d.]+)/),
+        vMin: num(/vMin:\s*([\d.]+)/), vMax: num(/vMax:\s*([\d.]+)/),
+        flushGap: num(/flushGap:\s*([\d.]+)/), flushV: num(/flushV:\s*([\d.]+)/), waitCap: num(/waitCap:\s*([\d.]+)/)
+      };
+      for (const k in read) if (read[k] != null) GAME_PH[k] = read[k];
+      // THE FIVE MACHINES: the text from `var H0 =` to the end of LAYOUTS, evaluated with
+      // the library — so the Machines view is the game's own layouts, never a copy.
+      const j0 = text.indexOf("var H0 = "), j1 = text.indexOf("/* ---------------- building a layout");
+      if (j0 > 0 && j1 > j0) {
+        const hop = text.match(/var HOPPER = (\{[^}]+\})/);
+        MACHINE.rimY = num(/RIM_Y = (\d+)/) || MACHINE.rimY;
+        MACHINE.railEnd = num(/RAIL_END = (\d+)/) || MACHINE.railEnd;
+        if (hop) MACHINE.hopper = new Function("return " + hop[1])();
+        MACHINE.src = text.slice(j0, j1);
+        const metals = [...text.matchAll(/metal: "(#[0-9a-fA-F]{6})"/g)].map((m) => m[1]);
+        if (metals.length) METALS.splice(0, METALS.length, ...metals);
+      }
+      return lib;
+    } catch (e) { return null; }
+  }
+  // What a machine needs beside its layout, read off game.js when it can be.
+  const MACHINE = { src: null, layouts: null, rimY: 1072, railEnd: 1076, topY: 68, botY: 1170,
+                    hopper: { x: 650, y: 152, l: 606, r: 704, top: 52, bot: 110 } };
+
+  /* MODULE TAGS. Every module call stamps the points it lays with its name
+     and a call number, carried by makeChannel, so a machine can be coloured
+     by module and its modules counted. A mirrored track keeps the tags, with
+     an "m" — one call drawn twice, which is worth telling apart. */
+  function tagLibrary(lib) {
+    let uid = 0;
+    for (const name of ["zig", "loop", "cork", "coil", "whirl"]) {
+      const f = lib.Track.prototype[name];
+      lib.Track.prototype[name] = function () {
+        const n0 = this.p.length, tag = name + "#" + (++uid);
+        const r = f.apply(this, arguments);
+        for (let i = n0; i < this.p.length; i++) if (this.p[i][5] == null) this.p[i][5] = tag;
+        return r;
+      };
+    }
+    const mp = lib.mirrorPts;
+    lib.mirrorPts = function (tr) {
+      const t2 = mp(tr);
+      t2.p.forEach((q, i) => { const tg = tr.p[i] && tr.p[i][5]; if (tg) q[5] = tg + "m"; });
+      return t2;
+    };
+    return lib;
+  }
+
+  let LIB = null;
+  const T = (x, y) => new LIB.Track(x, y);
+
+  /* ===========================================================================
+     CHANNELS — makeChannel, at, normalAt, dsc: copied from section 6
+     =========================================================================== */
+  function makeChannel(id, to, raw) {
+    var xs = [], ys = [], zs = [], gs = [], ts = [], mouths = [], i, a, b, dx, dy, L, s, q, carry = 0;
+    xs.push(raw[0][0]); ys.push(raw[0][1]); zs.push(raw[0][2]); gs.push(0); ts.push(raw[0][5] || null);
+    for (i = 1; i < raw.length; i++) {
+      a = raw[i - 1]; b = raw[i];
+      dx = b[0] - a[0]; dy = b[1] - a[1]; L = Math.sqrt(dx * dx + dy * dy); s = DS - carry;
+      while (s <= L) {
+        q = s / L;
+        xs.push(a[0] + dx * q); ys.push(a[1] + dy * q); zs.push(a[2] + (b[2] - a[2]) * q); gs.push(b[3]);
+        ts.push(b[5] || null);
+        s += DS;
+      }
+      carry = L - (s - DS);
+      if (b[4]) mouths.push(xs.length - 1);
+    }
+    var last = raw[raw.length - 1];
+    xs.push(last[0]); ys.push(last[1]); zs.push(last[2]); gs.push(last[3]); ts.push(last[5] || null);
+    return { id: id, to: to, xs: xs, ys: ys, zs: zs, gs: gs, ts: ts, n: xs.length, len: (xs.length - 1) * DS,
+             mouths: mouths, gate: null };
+  }
+  function nearestD(ch, x, y) {
+    var bi = 0, bd = 1e18, i, d;
+    for (i = 0; i < ch.n; i++) { d = (ch.xs[i] - x) * (ch.xs[i] - x) + (ch.ys[i] - y) * (ch.ys[i] - y); if (d < bd) { bd = d; bi = i; } }
+    return bi * DS;
+  }
+  var tmpP = { x: 0, y: 0, z: 1, slope: 0 };
+  function at(ch, d, o) {
+    o = o || tmpP;
+    var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
+    o.x = ch.xs[i] + (ch.xs[i + 1] - ch.xs[i]) * q;
+    o.y = ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q;
+    o.z = ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q;
+    o.slope = (ch.ys[i + 1] - ch.ys[i]) / DS;
+    return o;
+  }
+  function normalAt(ch, i) {
+    var a = Math.max(0, i - 1), b = Math.min(ch.n - 1, i + 1);
+    var dx = ch.xs[b] - ch.xs[a], dy = ch.ys[b] - ch.ys[a], L = Math.sqrt(dx * dx + dy * dy) || 1;
+    return [-dy / L, dx / L];
+  }
+  function dsc(z) { return z < 0 ? 1 - 0.24 * Math.min(1, -z) : 1; }
+
+  /* ===========================================================================
+     THE CATALOGUE. Every module is authored in its own 360 x 420 box. A
+     module's `build(P)` returns the same shape a LAYOUTS entry does — `ch`,
+     `sw`, `out`, `wheel`, `gates`, `arr`, `chimes` — plus `start` (the
+     channels the pour feeds, in turn) and `gap` (seconds between two
+     marbles). A channel with no `to` is an EXIT: the marble fades out there.
+     `used` is the biomes whose LAYOUTS call it.
+     =========================================================================== */
+  const MODULES = [
+    /* ---------------- the track modules ---------------- */
+    {
+      key: "rail", group: "track", name: "Rail", call: ".to(x, y)", used: [1, 2, 3, 4, 5],
+      blurb: "The plain segment every module is joined with, on the game's slope physics: a marble gains speed downhill, loses it uphill and on the flat, and never drops under the min speed, so nothing stalls.",
+      params: [{ k: "drop", label: "First drop", min: 40, max: 200, step: 10, v: 140 }],
+      gap: 1.0,
+      build: (P) => {
+        const d = P.drop;
+        return { ch: { a: { tr: T(30, 50).to(150, 50 + d).to(240, 60 + d).to(320, 20 + d).to(330, 120 + d).to(60, 180 + d).to(40, 410) } },
+                 start: ["a"] };
+      }
+    },
+    {
+      key: "zig", group: "track", name: "Zigzag", call: ".zig(x, y, n, amp)", used: [1, 2, 4, 5],
+      blurb: "n teeth either side of the straight line to (x, y). Each tooth is a short steep slope, so a zigzag brakes a fall without ever stopping it.",
+      params: [{ k: "n", label: "Teeth (n)", min: 1, max: 5, step: 1, v: 2 },
+               { k: "amp", label: "Amplitude", min: 6, max: 70, step: 2, v: 30 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(180, 30).to(180, 70).zig(180, 380, P.n, P.amp).to(180, 410) } }, start: ["a"] })
+    },
+    {
+      key: "loop", group: "track", name: "Loop", call: ".loop(r, dir)", used: [1],
+      blurb: "A vertical loop that comes out where it went in. The marble crawls over the top — the min speed is what carries it — and picks the speed back up on the way down.",
+      params: [{ k: "r", label: "Radius (r)", min: 20, max: 90, step: 2, v: 36 },
+               { k: "dir", label: "Direction (dir)", options: [[1, "1 — rightward at the bottom"], [-1, "-1 — leftward"]], v: 1 }],
+      gap: 1.0,
+      build: (P) => {
+        const X = (x) => P.dir > 0 ? x : TW - x;
+        return { ch: { a: { tr: T(X(20), 120).to(X(120), 290).to(X(170), 300).loop(P.r, P.dir).to(X(300), 310).to(X(340), 410) } },
+                 start: ["a"] };
+      }
+    },
+    {
+      key: "cork", group: "track", name: "Corkscrew", call: ".cork(x, y, turns, r)", used: [2, 3, 5],
+      blurb: "The rail winds round its line of travel, turns whole times, r either side of it. The far half of every turn runs behind the machine: smaller, dimmer, under the front rails.",
+      params: [{ k: "turns", label: "Turns", min: 1, max: 5, step: 1, v: 2 },
+               { k: "r", label: "Radius (r)", min: 6, max: 34, step: 2, v: 16 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(30, 40).to(80, 80).cork(300, 340, P.turns, P.r).to(330, 410) } }, start: ["a"] })
+    },
+    {
+      key: "coil", group: "track", name: "Coil", call: ".coil(y1, r, turns)", used: [1, 3],
+      blurb: "A helix seen from slightly above, straight down to y1. Like the corkscrew, its far half is drawn behind, and the marbles on it with it.",
+      params: [{ k: "r", label: "Radius (r)", min: 20, max: 80, step: 2, v: 38 },
+               { k: "turns", label: "Turns", min: 1, max: 4, step: 1, v: 2 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(30, 40).to(180, 80).coil(360, P.r, P.turns).to(180, 410) } }, start: ["a"] })
+    },
+    {
+      key: "whirl", group: "track", name: "Whirlpool", call: ".whirl(cx, cy, r0, r1, turns, dir) … .over()", used: [3, 5],
+      blurb: "A funnel seen from above. The marble spirals in from the rim down to r1, drops through the drain and runs on behind the machine, until .over() brings it back through a pipe mouth.",
+      params: [{ k: "r0", label: "Rim radius (r0)", min: 30, max: 90, step: 2, v: 58 },
+               { k: "r1", label: "Drain radius (r1)", min: 6, max: 30, step: 2, v: 14 },
+               { k: "turns", label: "Turns", min: 0.5, max: 3, step: 0.25, v: 1.75 },
+               { k: "dir", label: "Direction (dir)", options: [[-1, "-1"], [1, "1"]], v: -1 }],
+      gap: 1.0,
+      build: (P) => ({ ch: { a: { tr: T(20, 40).to(180 - P.r0 - 20, 150).to(180 - P.r0, 210)
+                                      .whirl(180, 210, P.r0, P.r1, P.turns, P.dir).to(180, 320).over().to(180, 345).to(180, 410) } },
+                       start: ["a"] })
+    },
+    {
+      key: "glass", group: "track", name: "Glass tube", call: ".glass(1) … .glass(0)", used: [2, 5],
+      blurb: "Any stretch between .glass(1) and .glass(0). The walls are drawn under the marbles and the sheen over them, so a marble inside reads as seen through glass.",
+      params: [],
+      gap: 0.8,
+      build: () => ({ ch: { a: { tr: T(30, 40).to(90, 100).glass(1).to(260, 160).zig(260, 330, 2, 24).glass(0).to(320, 410) } }, start: ["a"] })
+    },
+    {
+      key: "dive", group: "track", name: "Dive", call: ".under() … .over()", used: [3, 4, 5],
+      blurb: ".under() takes the line into a pipe mouth and behind the machine, .over() brings it back through another: how one line crosses under another. A whirlpool's drain is a dive too.",
+      params: [],
+      gap: 0.75,
+      build: () => ({ ch: { a: { tr: T(20, 190).to(340, 250) },
+                            b: { tr: T(230, 30).to(200, 130).under().to(140, 320).over().to(120, 350).to(110, 410) } },
+                      start: ["a", "b"] })
+    },
+
+    /* ---------------- the machine parts ---------------- */
+    {
+      key: "switch", group: "part", name: "Switch", call: "sw: { S0: [x, y, dir] }", used: [1, 2, 3, 4, 5], tap: true,
+      blurb: "A flip-flop: it flips at every marble that passes and at every tap, so it is how a marble is steered. The live branch glows, cyan when it leads to the electric arrival, and a cyan ring says an electric marble is on its way.",
+      params: [{ k: "volt", label: "Electric arrival", options: [[0, "Left"], [1, "Right"]], v: 1 },
+               { k: "electric", label: "Electric share", min: 0, max: 1, step: 0.05, v: 0.3 }],
+      gap: 0.85,
+      build: (P) => ({
+        ch: { in: { to: "S0", tr: T(180, 30).to(180, 140) },
+              L: { to: "a0", tr: T(180, 140).to(100, 200).to(90, 334) },
+              R: { to: "a1", tr: T(180, 140).to(260, 200).to(270, 334) } },
+        sw: { S0: [180, 140, 0] }, out: { S0: ["L", "R"] },
+        arr: [{ id: "a0", x: 90 }, { id: "a1", x: 270 }], rimY: 330, volt: P.volt ? "a1" : "a0",
+        electric: P.electric, start: ["in"]
+      })
+    },
+    {
+      key: "wheel", group: "part", name: "Wheel", call: "wheel: { cx, cy, notches, entries, out }", used: [1, 2, 3, 4, 5],
+      blurb: "Merges two lines into one. A waiting marble boards the first free notch that sweeps past its entry and gets off at the bottom. The hub carries the combo; an entry holding five shatters the next marble.",
+      params: [{ k: "notches", label: "Notches", options: [[8, "8"], [12, "12"]], v: 8 }],
+      gap: 0.55,
+      build: (P) => ({
+        ch: { l: { to: "wheel", tr: T(20, 40).to(50, 110).to(70, 200).to(110, 210) },
+              r: { to: "wheel", tr: T(340, 40).to(310, 110).to(290, 200).to(250, 210) },
+              out: { tr: T(180, 280).to(180, 410) } },
+        wheel: { cx: 180, cy: 210, notches: P.notches, entries: { l: Math.PI, r: 0 }, out: "out" },
+        start: ["l", "r"]
+      })
+    },
+    {
+      key: "gate", group: "part", name: "Gate", call: "gates: [{ ch, at, cap, p }]", used: [1, 2, 3, 4, 5], tap: true,
+      blurb: "Open until it locks. A locked gate holds its marbles in slots that fill green to red; a marble finding it full drops through the trapdoor past the last slot, rides the spill line behind and costs a heart at the red sink. Tap the padlock: the queue runs out.",
+      params: [{ k: "cap", label: "Capacity (cap)", min: 2, max: 6, step: 1, v: 4 },
+               { k: "every", label: "Locks every (s)", min: 1, max: 8, step: 0.5, v: 3 }],
+      gap: 0.6,
+      build: (P) => ({
+        ch: { a: { tr: T(330, 30).to(300, 60).to(60, 140).to(40, 180).to(60, 260).to(300, 330).to(320, 410) } },
+        gates: [{ ch: "a", at: [290, 327], cap: P.cap, p: [190, 200] }], lockEvery: P.every,
+        drains: [{ q: "gate:0", into: "sink", tr: (x, y) => T(x, y).under().to(x - 10, y + 40).to(120, 372).to(70, 350) }],
+        sink: [70, 350], cogs: [[150, 395, 26, 1], [196, 395, 18, -1]],
+        start: ["a"]
+      })
+    },
+    {
+      key: "arrival", group: "part", name: "Arrivals", call: "arr: [{ id, x }]", used: [1, 2, 3, 4, 5],
+      blurb: "Where a rail ends: a funnel whose colour is its name. A marble sends a light up it and a lamp along its rim. The electric arrival adds the cyan; an electric marble dropped anywhere else fizzles.",
+      params: [{ k: "volt", label: "Electric arrival", options: [[0, "Left"], [1, "Middle"], [2, "Right"]], v: 1 },
+               { k: "electric", label: "Electric share", min: 0, max: 1, step: 0.05, v: 0.3 }],
+      gap: 0.5,
+      build: (P) => ({
+        ch: { a0: { to: "a0", tr: T(60, 40).to(90, 160).to(90, 304) },
+              a1: { to: "a1", tr: T(180, 40).to(180, 304) },
+              a2: { to: "a2", tr: T(300, 40).to(270, 160).to(270, 304) } },
+        arr: [{ id: "a0", x: 90 }, { id: "a1", x: 180 }, { id: "a2", x: 270 }],
+        rimY: 300, volt: "a" + P.volt, electric: P.electric, start: ["a0", "a1", "a2"]
+      })
+    },
+    {
+      key: "chime", group: "part", name: "Chimes", call: "chimes: [[ch, x, y]]", used: [1, 2, 3, 4, 5],
+      blurb: "Tubes hung off the upper side of a rail on a bracket. A marble passing under strikes one, and it swings and glows. Pure feel: no rule reads them.",
+      params: [],
+      gap: 0.9,
+      build: () => ({
+        ch: { a: { tr: T(30, 90).to(330, 180).to(320, 250).to(40, 320).to(40, 410) } },
+        chimes: [["a", 110, 114], ["a", 250, 156], ["a", 180, 285]],
+        start: ["a"]
+      })
+    },
+    {
+      key: "hopper", group: "part", name: "Hopper", call: "H0 = [650, 152]", used: [1, 2, 3, 4, 5],
+      blurb: "Pours the marbles, from the same mouth on every machine. The next three wait in it, so an electric marble is seen coming before it drops.",
+      params: [{ k: "electric", label: "Electric share", min: 0, max: 1, step: 0.05, v: 0.2 }],
+      gap: 0.8,
+      build: (P) => ({
+        ch: { a: { tr: T(290, 152).to(240, 190).to(60, 250).to(40, 290).to(60, 330).to(300, 380).to(330, 410) } },
+        hopper: { x: 290, y: 152, l: 246, r: 344, top: 52, bot: 110 }, electric: P.electric,
+        start: ["a"]
+      })
+    },
+    {
+      key: "marbles", group: "part", name: "Marbles", call: "kind: c · k · e", used: [1, 2, 3, 4, 5],
+      blurb: "Violet glass and chrome are the classic marbles; about one in ten is electric — the one the switches are for. A spent marble is the grey one going home through the return circuits.",
+      params: [],
+      build: () => {
+        const ch = {};
+        [90, 185, 280, 375].forEach((y, i) => { ch["r" + i] = { tr: T(60, y).to(300, y) }; });
+        return { ch: ch, start: [], custom: MARBLES };
+      }
+    },
+    {
+      key: "return", group: "part", name: "Return circuits", call: "drawBackground()", used: [1, 2, 3, 4, 5],
+      blurb: "Behind every machine, the same: a gutter under the arrivals, an Archimedes screw and a top rail on the left, a lift on the right, a ferris wheel. Faded back (34 % in the game) so they read as depth and never as a route.",
+      params: [{ k: "alpha", label: "Opacity", min: 0.1, max: 1, step: 0.02, v: 0.34 }],
+      build: () => ({ ch: {}, start: [], custom: RETURN })
+    }
+  ];
+  for (const m of MODULES) m.defaults = Object.fromEntries(m.params.map((p) => [p.k, p.v]));
+  for (const m of MODULES) m.P = Object.assign({}, m.defaults);
+
+  /* ===========================================================================
+     A SCENE — one module, alive: its channels, parts and marbles, in the
+     same state shape section 6's reset() builds.
+     =========================================================================== */
+  function makeScene(mod) {
+    const src = mod.build(mod.P);
+    const S = {
+      mod, src, W: src.W || TW, H: src.H || TH, lost: 0, sinkKick: 0,
+      CH: {}, bowls: [], out: src.out || {}, marbles: [], t: 0, spawnT: 0.2, si: 0,
+      sw: {}, gates: [], boxes: {}, chimes: [], wheel: null, hub: 0, hubPop: 0, hubBreak: 0,
+      parts: [], shards: [], rings: [], puffs: [], queue: [], layers: null, custom: src.custom || null
+    };
+    for (const id in src.ch) {
+      const c = src.ch[id];
+      S.CH[id] = makeChannel(id, c.to || null, c.tr.p);
+      for (const b of c.tr.bowls) S.bowls.push(b);
+    }
+    buildSpill(S, src);
+    for (const k in src.sw || {}) {
+      const s = src.sw[k];
+      S.sw[k] = { x: s[0], y: s[1], dir: s[2], ang: 0, spin: 0, flash: 0, snap: 0 };
+      S.sw[k].ang = branchAngle(S, k, s[2]);
+    }
+    if (src.wheel) {
+      const W = src.wheel;
+      S.wheel = { phase: 0, notch: new Array(W.notches).fill(null), q: {}, flashT: {}, n: W.notches };
+      S.wheel.spill = {};
+      for (const e in W.entries) { S.wheel.q[e] = []; S.wheel.flashT[e] = 0; S.wheel.spill[e] = S.CH[S.drainOf["wheel:" + e]] || null; }
+    }
+    for (const gs of src.gates || []) {
+      const gc = S.CH[gs.ch], gd = nearestD(gc, gs.at[0], gs.at[1]);
+      const gp = at(gc, gd, {}), ga = at(gc, gd + 5, {});
+      const tl = Math.hypot(ga.x - gp.x, ga.y - gp.y) || 1;
+      const g = { ch: gc, d: gd, cap: gs.cap, q: [], locked: false, lockAge: 0, lockedT: 0, flush: false, flushT: 0,
+                  open: 0, broke: 0, pop: 0, x: gp.x, y: gp.y, tx: (ga.x - gp.x) / tl, ty: (ga.y - gp.y) / tl,
+                  px: gs.p[0], py: gs.p[1] };
+      g.fx = g.x + g.tx * (R + 4); g.fy = g.y + g.ty * (R + 4);
+      g.spill = S.CH[S.drainOf["gate:" + S.gates.length]] || null;
+      rollGate(S, g);
+      gc.gate = g; S.gates.push(g);
+    }
+    if (src.arr) {
+      let gap = 1e9;
+      for (let i = 1; i < src.arr.length; i++) gap = Math.min(gap, src.arr[i].x - src.arr[i - 1].x);
+      S.mouthW = Math.min(52, gap / 2 - 6);
+      S.rimY = src.rimY; S.coreY = src.rimY + 74;
+      S.voltArr = src.volt || null;
+      for (const a of src.arr) S.boxes[a.id] = { id: a.id, x: a.x, col: a.id === S.voltArr ? C.volt : CLASSIC, kick: 0, fizz: 0, charge: 0, led: -1, sweep: 0 };
+      S.reach = reachTable(S);
+    }
+    for (const c of src.chimes || []) {
+      const ch = S.CH[c[0]], cd = nearestD(ch, c[1], c[2]), p = at(ch, cd, {});
+      let nv = normalAt(ch, Math.round(cd / DS));
+      if (nv[1] > 0) nv = [-nv[0], -nv[1]];
+      S.chimes.push({ ch, d: cd, x: p.x + nv[0] * 34, y: p.y + nv[1] * 34, rx: p.x + nv[0] * (R + 4), ry: p.y + nv[1] * (R + 4), hit: 9 });
+    }
+    if (src.hopper) for (let i = 0; i < 3; i++) S.queue.push(rollKind(S));
+    if (S.custom) S.custom.init(S);
+    return S;
+  }
+
+  // THE SPILL NETWORK — section 6's queueTail + buildSpill.
+  function queueTail(S, src, q) {
+    if (q.indexOf("gate:") === 0) {
+      const g = src.gates[+q.slice(5)], ch = S.CH[g.ch];
+      return { ch, d: nearestD(ch, g.at[0], g.at[1]) - g.cap * 2.2 * R };
+    }
+    const ch = S.CH[q.slice(6)];
+    return { ch, d: ch.len - PH.waitCap * 2.2 * R };
+  }
+  function buildSpill(S, src) {
+    S.sink = src.sink || null; S.cogs = src.cogs || []; S.drainOf = {};
+    for (const k in src.back || {}) {
+      const c = src.back[k];
+      S.CH[k] = makeChannel(k, c.to, c.tr.behind(0).p); S.CH[k].spill = true;
+    }
+    for (const d of src.drains || []) {
+      const tl = queueTail(S, src, d.q), p = at(tl.ch, tl.d, {}), id = "spill:" + d.q;
+      S.CH[id] = makeChannel(id, d.into, d.tr(p.x, p.y).behind(1).p); S.CH[id].spill = true;
+      S.drainOf[d.q] = id;
+    }
+    for (const k in S.CH) {
+      const ch = S.CH[k];
+      if (!ch.spill || ch.to === "sink" || !S.CH[ch.to]) continue;
+      ch.join = nearestD(S.CH[ch.to], ch.xs[ch.n - 1], ch.ys[ch.n - 1]);
+    }
+  }
+
+  // Which channels can still lead to the electric arrival (section 6, reachTable).
+  function reachTable(S) {
+    const tab = {};
+    function reaches(id, a, seen) {
+      const ch = S.CH[id];
+      if (!ch || seen[id]) return false;
+      seen[id] = 1;
+      if (ch.to === a) return true;
+      if (ch.to === "wheel") return reaches(S.src.wheel.out, a, seen);
+      const o = S.out[ch.to];
+      return !!o && (reaches(o[0], a, seen) || reaches(o[1], a, seen));
+    }
+    if (S.voltArr) for (const id in S.CH) tab[id] = reaches(id, S.voltArr, {});
+    return tab;
+  }
+  function leads(S, chId) { return !!(S.reach && S.reach[chId]); }
+  function branchAngle(S, id, dir) {
+    const p = at(S.CH[S.out[id][dir]], 30);
+    return Math.atan2(p.y - S.sw[id].y, p.x - S.sw[id].x);
+  }
+  function rollKind(S) {
+    const share = S.src.electric != null ? S.src.electric : ELECTRIC_SHARE;
+    if (Math.random() < share) return "e";
+    return Math.random() < 0.42 ? "k" : "c";
+  }
+  function rollGate(S, g) {
+    g.lockAfter = (S.src.lockEvery || 3) * (0.6 + Math.random() * 0.8);
+    g.autoAfter = 0.8 + Math.random() * 2.2;
+  }
+
+  /* ---------------- effects (section 6) ---------------- */
+  function spark(S, x, y, color, n, speed, up) {
+    for (let i = 0; i < n && S.parts.length < PART_MAX; i++) {
+      const a = Math.random() * PI2, v = (speed || 260) * (0.35 + Math.random() * 0.8);
+      S.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (up == null ? 150 : up),
+                     life: 0.45 + Math.random() * 0.4, t: 0, color, s: 2 + Math.random() * 2.6 });
+    }
+  }
+  function ring(S, x, y, color, r0, grow, life, w) {
+    S.rings.push({ x, y, t: 0, color, r0: r0 || 20, grow: grow || 160, life: life || 0.7, w: w || 4 });
+  }
+  function shatterAt(S, x, y, col, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * PI2, v = 120 + Math.random() * 300;
+      S.shards.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 140, a, va: (Math.random() - 0.5) * 22,
+                      s: 5 + Math.random() * 7, t: 0, life: 0.7 + Math.random() * 0.35, color: col });
+    }
+  }
+  function puff(S, x, y, n) {
+    for (let i = 0; i < n; i++) {
+      S.puffs.push({ x: x + (Math.random() - 0.5) * 60, y: y + Math.random() * 20, vy: -40 - Math.random() * 50,
+                     r: 8 + Math.random() * 10, t: -Math.random() * 0.25, life: 1.1 });
+    }
+  }
+
+  /* ---------------- events ---------------- */
+  function flip(S, id, byMarble) {
+    const s = S.sw[id];
+    s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
+    if (!byMarble) {
+      s.spin += 0.6; s.snap = 0.22;
+      const a = branchAngle(S, id, s.dir);
+      spark(S, s.x + Math.cos(a) * 58, s.y + Math.sin(a) * 58, C.steelL, 5, 150);
+    }
+  }
+  function unlock(S, g) {
+    if (!g.locked) return false;
+    g.locked = false; g.open = 0; g.pop = 0.4; rollGate(S, g);
+    if (g.q.length) { g.flush = true; g.flushT = 0; }
+    spark(S, g.px, g.py, C.calm, 14, 260);
+    ring(S, g.px, g.py, C.calm, 30, 180, 0.5, 4);
+    return true;
+  }
+  function releaseGate(g, v) {
+    const gm = g.q.shift();
+    gm.st = "track"; gm.gateOk = true; gm.v = v; gm.d = Math.max(gm.d, g.d - R) + 1;
+  }
+  function destroy(S, m, g) {
+    m.st = "dead";
+    shatterAt(S, m.x, m.y, m.e ? C.volt : m.k ? C.chrome : "#b389ff", 10);
+    ring(S, m.x, m.y, C.full, 12, 140, 0.45, 4);
+    if (g) g.broke = 0.6;
+    S.hubBreak = 0.6;
+  }
+  // A full queue drops the marble through its trapdoor onto the drain (section 6, spill).
+  function spill(S, m, sp, g) {
+    if (!sp) { destroy(S, m, g); return; }
+    m.ch = sp; m.d = 0; m.v = PH.vMin; m.lost = true; m.gateOk = true; m.fade = false;
+    if (g) g.broke = 0.6;
+    ring(S, m.x, m.y, C.full, R, 120, 0.5, 4);
+    spark(S, m.x, m.y, C.full, 6, 150);
+    S.hubBreak = 0.6; S.hub = 0;
+  }
+  function sinkHit(S, m) {
+    m.st = "dead"; S.lost++; S.sinkKick = 0.7;
+    spark(S, S.sink[0], S.sink[1] + 10, C.full, 16, 220);
+    ring(S, S.sink[0], S.sink[1] + 10, C.full, 12, 150, 0.6, 4);
+  }
+  function deliver(S, m, id) {
+    const b = S.boxes[id];
+    m.st = "dead";
+    b.sweep = 0.4; b.led = (b.led + 1) % 5;
+    if (m.e && id === S.voltArr) {
+      b.kick = 0.5; b.charge = 1;
+      spark(S, b.x, S.rimY, C.volt, 22, 280);
+      ring(S, b.x, S.rimY, C.volt, 20, 160, 0.6, 4);
+    } else if (m.e) {
+      b.fizz = 0.6; puff(S, b.x, S.rimY + 20, 5);
+    } else b.kick = 0.3;
+  }
+
+  /* ---------------- a marble on the rails (section 6, roll) ---------------- */
+  function place(m) {
+    const p = at(m.ch, m.d);
+    m.x = p.x; m.y = p.y; m.z = p.z;
+    m.a = 1;
+    if (m.fade && m.ch === m.ch0) m.a = clamp(m.d / 24, 0, 1);
+    if (!m.ch.to && m.ch.n > 1) m.a = Math.min(m.a, clamp((m.ch.len - m.d) / 30, 0, 1));
+  }
+  function roll(S, m, mdt) {
+    const p = at(m.ch, m.d);
+    m.v = Math.max(PH.vMin, Math.min(PH.vMax, m.v + (PH.gravity * p.slope - PH.friction) * mdt));
+    const d0 = m.d;
+    m.d += m.v * mdt; m.rot += m.v * mdt / R;
+    for (const c of S.chimes) if (c.ch === m.ch && d0 < c.d && m.d >= c.d) c.hit = 0;
+    const ch = m.ch, gt = ch.gate;
+    if (gt && !m.gateOk && (gt.locked || gt.flush)) {
+      const gstop = Math.max(0, gt.d - gt.q.length * 2.2 * R);
+      if (m.d >= gstop) {
+        if (gt.q.length >= gt.cap) { place(m); spill(S, m, gt.spill, gt); return; }
+        m.d = gstop; m.st = "gate"; m.gate = gt; gt.q.push(m); place(m); return;
+      }
+    } else if (gt && m.d >= gt.d) m.gateOk = true;
+    if (ch.to === "wheel") {
+      const wq = S.wheel.q[ch.id], stop = ch.len - wq.length * 2.2 * R;
+      if (m.d >= stop) {
+        if (wq.length >= PH.waitCap) { place(m); S.wheel.flashT[ch.id] = 0.6; spill(S, m, S.wheel.spill[ch.id], null); place(m); return; }
+        m.d = stop; m.st = "wait"; wq.push(m);
+      }
+    } else if (m.d >= ch.len) {
+      if (ch.join != null) { const rest = m.d - ch.len; m.ch = S.CH[ch.to]; m.d = ch.join + rest; }
+      else if (ch.to === "sink") { sinkHit(S, m); return; }
+      else if (S.out[ch.to]) {
+        const s = S.sw[ch.to], rest = m.d - ch.len;
+        m.ch = S.CH[S.out[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
+        flip(S, ch.to, true);
+      } else if (ch.to && S.boxes[ch.to]) { place(m); deliver(S, m, ch.to); return; }
+      else { m.st = "dead"; return; }
+    }
+    place(m);
+  }
+
+  function spawn(S) {
+    const starts = S.src.start;
+    if (!starts.length) return true;
+    const id = starts[S.si % starts.length], ch = S.CH[id];
+    for (const o of S.marbles) if (o.ch === ch && o.d < 2.4 * R) return false;   // the mouth is taken: next frame
+    S.si++;
+    const kind = S.src.hopper ? S.queue.shift() : rollKind(S);
+    if (S.src.hopper) S.queue.push(rollKind(S));
+    const m = { e: kind === "e", k: kind === "k", st: "track", ch, ch0: ch, d: 0, v: PH.vMin, rot: Math.random() * 6,
+                gateOk: false, spent: false, fade: !S.src.hopper, x: 0, y: 0, z: 1, a: 0 };
+    place(m);
+    S.marbles.push(m);
+    if (m.e && S.src.hopper) spark(S, S.src.hopper.x, S.src.hopper.y - 10, C.volt, 10, 220);
+    return true;
+  }
+
+  /* ---------------- update (section 6, update — what a tile needs of it) ---------------- */
+  function update(S, dt) {
+    const mdt = dt * Lab.tempo;
+    S.t += dt;
+    if (S.custom) { S.custom.update(S, dt, mdt); updateEffects(S, dt); return; }
+
+    S.spawnT -= mdt * Lab.pour;
+    if (S.spawnT <= 0 && spawn(S)) S.spawnT = (S.src.gap || 0.9) * (0.8 + Math.random() * 0.4);
+
+    for (const k in S.sw) {
+      const s = S.sw[k];
+      s.flash = Math.max(0, s.flash - dt); s.snap = Math.max(0, s.snap - dt);
+      const target = branchAngle(S, k, s.dir), da = mod(target - s.ang + Math.PI, PI2) - Math.PI;
+      s.ang += da * Math.min(1, dt / FLIP_TIME * 1.5);
+    }
+    for (const g of S.gates) {
+      g.pop = Math.max(0, g.pop - dt); g.broke = Math.max(0, g.broke - dt); g.lockAge += dt;
+      if (!g.locked && !g.flush) {
+        g.open += mdt;
+        if (g.open >= g.lockAfter) { g.locked = true; g.lockAge = 0; g.lockedT = 0; ring(S, g.px, g.py, C.amber, 30, 140, 0.6, 4); }
+      }
+      if (g.locked) { g.lockedT += dt; if (Lab.auto && g.lockedT >= g.autoAfter) unlock(S, g); }
+      if (g.flush) {
+        g.flushT -= mdt;
+        if (g.flushT <= 0) {
+          if (g.q.length) { releaseGate(g, PH.flushV); g.flushT = PH.flushGap; }
+          if (!g.q.length) g.flush = false;
+        }
+      }
+    }
+    for (const id in S.boxes) {
+      const b = S.boxes[id];
+      b.kick = Math.max(0, b.kick - dt); b.sweep = Math.max(0, b.sweep - dt);
+      b.fizz = Math.max(0, b.fizz - dt); b.charge = Math.max(0, b.charge - dt * 0.8);
+    }
+    for (const c of S.chimes) c.hit += dt;
+    S.hubPop = Math.max(0, S.hubPop - dt * 3); S.hubBreak = Math.max(0, S.hubBreak - dt);
+    S.sinkKick = Math.max(0, S.sinkKick - dt);
+
+    // The wheel turns; a waiting marble boards the first free notch that sweeps past its entry.
+    const W = S.wheel;
+    let dA = 0, step = 1;
+    if (W) {
+      step = PI2 / W.n; const prev = W.phase; dA = WHEEL_OMEGA * (1 + 0.12 * tier(S.hub)) * mdt;
+      W.phase += dA;
+      for (const e in W.flashT) W.flashT[e] = Math.max(0, W.flashT[e] - dt);
+      const ENTRY = S.src.wheel.entries;
+      for (const e in W.q) {
+        const q = W.q[e];
+        for (let j = 0; j < W.n && q.length; j++) {
+          if (W.notch[j]) continue;
+          if (mod(ENTRY[e] - (prev + j * step), PI2) < dA) {
+            const bm = q.shift();
+            bm.st = "wheel"; bm.notch = j; bm.left = mod(Math.PI / 2 - ENTRY[e], PI2);
+            W.notch[j] = bm;
+          }
+        }
+      }
+    }
+
+    for (const m of S.marbles) {
+      if (m.e && (m.st === "track" || m.st === "wheel") && Math.random() < 0.45 && S.parts.length < PART_MAX) {
+        S.parts.push({ x: m.x + (Math.random() - 0.5) * 10, y: m.y + (Math.random() - 0.5) * 10,
+                       vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40 - 20,
+                       life: 0.3, t: 0, color: Math.random() < 0.5 ? C.volt : C.voltHi, s: 1.6 + Math.random() * 1.4 });
+      }
+      if (m.st === "track") roll(S, m, mdt);
+      else if (m.st === "wait") {
+        const qq = W.q[m.ch.id], spot = m.ch.len - qq.indexOf(m) * 2.2 * R;
+        m.d = Math.min(spot, m.d + 260 * mdt); place(m);
+      } else if (m.st === "wheel") {
+        m.left -= dA; m.rot += dA * WHEEL_R / R;
+        const ang = W.phase + m.notch * step, wc = S.src.wheel;
+        m.x = wc.cx + Math.cos(ang) * WHEEL_R; m.y = wc.cy + Math.sin(ang) * WHEEL_R; m.z = 1; m.a = 1;
+        if (m.left <= 0) {
+          W.notch[m.notch] = null; m.st = "track"; m.ch = S.CH[wc.out]; m.d = 0; m.v = PH.vMin + 40; m.gateOk = false;
+          S.hub = S.hub >= 99 ? 0 : S.hub + 1; S.hubPop = 0.3;
+        }
+      } else if (m.st === "gate") {
+        const gq = m.gate, gspot = Math.max(0, gq.d - gq.q.indexOf(m) * 2.2 * R);
+        m.d = Math.min(gspot, m.d + (gq.flush ? 520 : 220) * mdt); place(m);
+      }
+    }
+    S.marbles = S.marbles.filter((m) => m.st !== "dead");
+    updateEffects(S, dt);
+  }
+  function updateEffects(S, dt) {
+    for (let i = S.parts.length - 1; i >= 0; i--) {
+      const p = S.parts[i]; p.t += dt;
+      p.vy += 700 * dt; p.vx *= 0.985; p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.t > p.life) S.parts.splice(i, 1);
+    }
+    for (let i = S.shards.length - 1; i >= 0; i--) {
+      const s = S.shards[i]; s.t += dt; s.vy += 900 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.a += s.va * dt;
+      if (s.t > s.life) S.shards.splice(i, 1);
+    }
+    for (let i = S.puffs.length - 1; i >= 0; i--) {
+      const p = S.puffs[i]; p.t += dt; if (p.t > 0) { p.y += p.vy * dt; p.r += 26 * dt; }
+      if (p.t > p.life) S.puffs.splice(i, 1);
+    }
+    for (let i = S.rings.length - 1; i >= 0; i--) { S.rings[i].t += dt; if (S.rings[i].t > S.rings[i].life) S.rings.splice(i, 1); }
+  }
+  function tier(c) { let n = 0; for (let i = 0; i < TIERS.length; i++) if (c >= TIERS[i]) n = i + 1; return n; }
+
+  /* ===========================================================================
+     CUSTOM TILES — the two that are not a graph
+     =========================================================================== */
+  // The four marbles, each rolling to and fro on its own short rail.
+  const MARBLES = {
+    kinds: [["Glass", { k: false }], ["Chrome", { k: true }], ["Electric", { e: true }], ["Spent", { spent: true }]],
+    init(S) {
+      S.show = MARBLES.kinds.map((kd, i) => Object.assign({ x: 180, y: 90 + i * 95 - R, z: 1, a: 1, rot: 0 }, kd[1]));
+    },
+    update(S, dt) {
+      S.show.forEach((m, i) => {
+        const x = 180 + Math.sin(S.t * 1.1 * Lab.tempo + i * 0.9) * 96;
+        m.rot += (x - m.x) / R; m.x = x;
+        if (m.e && Math.random() < 0.45) {
+          S.parts.push({ x: m.x + (Math.random() - 0.5) * 10, y: m.y + (Math.random() - 0.5) * 10,
+                         vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40 - 20,
+                         life: 0.3, t: 0, color: Math.random() < 0.5 ? C.volt : C.voltHi, s: 1.6 + Math.random() * 1.4 });
+        }
+      });
+    },
+    draw(S) {
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.font = "700 18px " + SYS;
+      MARBLES.kinds.forEach((kd, i) => {
+        ctx.fillStyle = C.dim;
+        ctx.fillText(kd[0], 60, 90 + i * 95 - 40);
+      });
+      for (const m of S.show) drawMarble(m);
+    }
+  };
+
+  /* The return circuits, as section 6's drawBackground() paints them and
+     update() moves them, folded into one tile: marbles drop from where the
+     arrivals would be, roll out along the gutter, climb the screw onto the
+     top rail on the left, or ride a cup up the lift on the right. */
+  const RETURN = {
+    SX: 26, STOP: 44, SBOT: 396, LX: 332, LTOP: 70, LBOT: 404, GY: 394, MID: 180, GL: 12,
+    FX: 180, FY: 170, FR: 50, BUCKETS: 6, OMEGA: 0.6, CUP_GAP: 56,
+    init(S) {
+      const F = RETURN;
+      S.ret = { lift: 0, screw: 0, dropT: 0.3, ferris: { phase: 0, bucket: [], rail: [], wait: [] } };
+      for (let i = 0; i < F.BUCKETS; i++) S.ret.ferris.bucket.push(i < 5 ? { rot: i } : null);
+      S.ret.back = makeChannel("back", null, [[F.SX, F.STOP, 1, 0, 0], [110, 50, 1, 0, 0], [200, 56, 1, 0, 0], [300, 62, 1, 0, 0]]);
+      S.ret.fch = makeChannel("ferris", null, [[F.FX + 22, F.FY - 58, 1, 0, 0], [F.FX + 60, F.FY - 32, 1, 0, 0], [F.FX + 28, F.FY, 1, 0, 0],
+                                               [F.FX + 62, F.FY + 32, 1, 0, 0], [F.FX + 16, F.FY + 56, 1, 0, 0]]);
+    },
+    gutterY(x) { return RETURN.GY + Math.abs(x - RETURN.MID) * 0.03; },
+    update(S, dt, mdt) {
+      const F = RETURN, r = S.ret;
+      r.lift += 150 * mdt; r.screw += 110 * mdt;
+      r.dropT -= mdt * Lab.pour;
+      if (r.dropT <= 0) {
+        r.dropT = 0.7 + Math.random() * 0.5;
+        const x = 80 + Math.random() * 200;
+        S.marbles.push({ spent: true, st: "drop", x, y: 250, z: 1, a: 1, vy: 0, rot: Math.random() * 6, gdir: x < F.MID ? -1 : 1 });
+      }
+      for (const m of S.marbles) {
+        if (m.st === "drop") {
+          m.vy += 1800 * mdt; m.y += m.vy * mdt;
+          if (m.y >= F.gutterY(m.x) - R) { m.y = F.gutterY(m.x) - R; m.st = "gutter"; }
+        } else if (m.st === "gutter") {
+          m.x += m.gdir * 220 * mdt; m.y = F.gutterY(m.x) - R; m.rot += m.gdir * 220 * mdt / R;
+          if (m.x >= F.LX) { m.x = F.LX; m.st = "cupwait"; }
+          else if (m.x <= F.SX) { m.x = F.SX; m.st = "screw"; m.y = F.SBOT; }
+        } else if (m.st === "screw") {
+          m.y -= 110 * mdt; m.x = F.SX + Math.sin(m.y * 0.1) * 7; m.rot += mdt * 6;
+          if (m.y <= F.STOP) { m.st = "back"; m.d = 0; }
+        } else if (m.st === "back") {
+          m.d += 120 * mdt; m.rot += 120 * mdt / R;
+          const p = at(r.back, m.d); m.x = p.x; m.y = p.y - R * 0.7;
+          if (m.d >= r.back.len) m.st = "dead";
+        } else if (m.st === "cupwait") {
+          if (mod(r.lift, F.CUP_GAP) < 150 * mdt * 1.5) { m.st = "lift"; m.ly = F.LBOT; }
+        } else if (m.st === "lift") {
+          m.ly -= 150 * mdt; m.x = F.LX - 4; m.y = m.ly - 10;
+          if (m.ly <= F.LTOP + 20) m.st = "dead";
+        }
+      }
+      S.marbles = S.marbles.filter((m) => m.st !== "dead");
+      // the ferris wheel: buckets load at the bottom and tip past the top onto its zigzag
+      const fe = r.ferris, stp = PI2 / F.BUCKETS, prev = fe.phase, dA = F.OMEGA * mdt;
+      fe.phase += dA;
+      const TIP = Math.PI * 1.5 + 0.3, LOAD = Math.PI * 0.5;
+      for (let j = 0; j < F.BUCKETS; j++) {
+        const a0 = prev + j * stp, b = fe.bucket[j];
+        if (b && mod(TIP - a0, PI2) < dA) { fe.bucket[j] = null; fe.rail.push({ d: 0, rot: b.rot }); }
+        else if (!b && fe.wait.length && mod(LOAD - a0, PI2) < dA) fe.bucket[j] = fe.wait.shift();
+      }
+      for (let i = fe.rail.length - 1; i >= 0; i--) {
+        const q = fe.rail[i]; q.d += 90 * mdt; q.rot += 90 * mdt / R;
+        if (q.d >= r.fch.len) { fe.rail.splice(i, 1); fe.wait.push(q); }
+      }
+    },
+    draw(S) {
+      const F = RETURN, r = S.ret, A = S.mod.P.alpha;
+      ctx.globalAlpha = A; ctx.lineCap = "round";
+      // Archimedes screw
+      ctx.fillStyle = tc("#1a1238"); ctx.fillRect(F.SX - 16, F.STOP - 10, 32, F.SBOT - F.STOP + 20);
+      ctx.strokeStyle = C.steelL; ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let y = F.SBOT - mod(r.screw, 22); y > F.STOP; y -= 22) { ctx.moveTo(F.SX - 14, y); ctx.lineTo(F.SX + 14, y - 11); }
+      ctx.stroke();
+      ctx.strokeStyle = C.steel; ctx.lineWidth = 2; ctx.strokeRect(F.SX - 16, F.STOP - 10, 32, F.SBOT - F.STOP + 20);
+      // the two thin background rails
+      for (const ch of [r.back, r.fch]) {
+        ctx.strokeStyle = C.steelL; ctx.lineWidth = 2;
+        for (let sd = -1; sd <= 1; sd += 2) {
+          ctx.beginPath();
+          for (let i = 0; i < ch.n; i++) {
+            const nv = normalAt(ch, i), x = ch.xs[i] + nv[0] * sd * 9, yy = ch.ys[i] + nv[1] * sd * 9;
+            if (i) ctx.lineTo(x, yy); else ctx.moveTo(x, yy);
+          }
+          ctx.stroke();
+        }
+      }
+      // the ferris wheel
+      const fe = r.ferris, stp = PI2 / F.BUCKETS;
+      ctx.strokeStyle = C.steelL; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(F.FX, F.FY, F.FR, 0, PI2); ctx.stroke();
+      ctx.save(); ctx.translate(F.FX, F.FY); ctx.rotate(fe.phase); ctx.drawImage(SP.cog, -20, -20, 40, 40); ctx.restore();
+      ctx.lineWidth = 2;
+      for (let j = 0; j < F.BUCKETS; j++) {
+        const a = fe.phase + j * stp, bx = F.FX + Math.cos(a) * F.FR, by = F.FY + Math.sin(a) * F.FR;
+        ctx.beginPath(); ctx.moveTo(F.FX, F.FY); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.fillStyle = C.steel; ctx.fillRect(bx - 11, by + 6, 22, 6);
+        if (fe.bucket[j]) drawMarble({ spent: true, x: bx, y: by, z: 1, rot: 0 });
+      }
+      for (const q of fe.rail) { const fp = at(r.fch, q.d); drawMarble({ spent: true, x: fp.x, y: fp.y - 6, z: 1, rot: q.rot }); }
+      fe.wait.forEach((q, i) => drawMarble({ spent: true, x: F.FX + 16 - i * 26, y: F.FY + 54, z: 1, rot: 0 }));
+      for (const m of S.marbles) if (m.st === "screw" || m.st === "back") drawMarble(m);
+      // the lift and the gutter
+      ctx.globalAlpha = Math.min(1, A * 1.6);
+      ctx.fillStyle = tc("#1a1238"); ctx.fillRect(F.LX - 24, F.LTOP, 48, F.LBOT - F.LTOP + 10);
+      ctx.strokeStyle = C.steel; ctx.lineWidth = 3; ctx.strokeRect(F.LX - 24, F.LTOP, 48, F.LBOT - F.LTOP + 10);
+      ctx.fillStyle = C.steelL;
+      for (let y = F.LBOT - mod(r.lift, F.CUP_GAP); y > F.LTOP + 10; y -= F.CUP_GAP) {
+        ctx.fillRect(F.LX - 20, y, 30, 5); ctx.fillRect(F.LX - 20, y - 12, 4, 12);
+      }
+      for (const m of S.marbles) if (m.st === "lift") drawMarble(m);
+      ctx.strokeStyle = C.steelL; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(F.GL, F.gutterY(F.GL)); ctx.lineTo(F.MID, F.gutterY(F.MID));
+      ctx.lineTo(F.LX + 20, F.gutterY(F.LX + 20)); ctx.stroke();
+      ctx.globalAlpha = 1;
+      // in the game, a falling or rolling marble is drawn at full strength
+      for (const m of S.marbles) if (m.st === "drop" || m.st === "gutter" || m.st === "cupwait") drawMarble(m);
+    }
+  };
+
+  /* ===========================================================================
+     SPRITES — buildCog, buildWheel, buildMarbles of section 6, cached per
+     pixel ratio k (machine px -> device px)
+     =========================================================================== */
+  let ctx = null, t = 0, SP = null;      // the tile being drawn, its clock and its sprites
+  const spriteCache = {}, glows = {};
+
+  function canvasOf(w, h) {
+    const cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.ceil(w)); cv.height = Math.max(1, Math.ceil(h));
+    return cv;
+  }
+  function spritesFor(k) {
+    const key = k.toFixed(3) + "/" + TINT.key;
+    if (!spriteCache[key]) spriteCache[key] = { k, cog: buildCog(k), wheels: {}, ...buildMarbles(k) };
+    return spriteCache[key];
+  }
+  function wheelSprite(n) { return SP.wheels[n] || (SP.wheels[n] = buildWheel(SP.k, n)); }
+  function glow(col) {
+    let g = glows[col];
+    if (g) return g;
+    g = canvasOf(64, 64);
+    const c = g.getContext("2d"), gr = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, rgba(col, 0.9)); gr.addColorStop(0.35, rgba(col, 0.42));
+    gr.addColorStop(0.7, rgba(col, 0.12)); gr.addColorStop(1, rgba(col, 0));
+    c.fillStyle = gr; c.fillRect(0, 0, 64, 64);
+    return (glows[col] = g);
+  }
+  function drawGlow(col, x, y, r, a) {
+    if (a <= 0.003) return;
+    const ga = ctx.globalAlpha;
+    ctx.globalAlpha = ga * a;
+    ctx.drawImage(glow(col), x - r, y - r, r * 2, r * 2);
+    ctx.globalAlpha = ga;
+  }
+  function cogPath(c, x, y, r, teeth, a) {
+    c.beginPath();
+    for (let i = 0; i < teeth * 2; i++) {
+      const an = a + i * Math.PI / teeth, an2 = a + (i + 1) * Math.PI / teeth, rr = i % 2 ? r : r * 0.84;
+      c.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr);
+      c.lineTo(x + Math.cos(an2) * rr, y + Math.sin(an2) * rr);
+    }
+    c.closePath();
+  }
+  function paintCog(c, r, teeth, spokes, holeR) {
+    const g = c.createLinearGradient(-r, -r, r, r);
+    g.addColorStop(0, tc("#9d8fe0")); g.addColorStop(0.45, tc("#5b4ea3")); g.addColorStop(1, tc("#231b52"));
+    cogPath(c, 0, 0, r, teeth, 0);
+    c.fillStyle = g; c.fill();
+    c.lineWidth = 2; c.strokeStyle = tca("#0a061e", .8); c.stroke();
+    c.beginPath(); c.arc(0, 0, r * 0.8, 0, PI2);
+    c.lineWidth = 1.5; c.strokeStyle = tca("#e6dcff", .35); c.stroke();
+    c.beginPath(); c.arc(0, 0, r * 0.7, 0, PI2);
+    const g2 = c.createRadialGradient(-r * 0.2, -r * 0.3, 0, 0, 0, r * 0.7);
+    g2.addColorStop(0, tc("#3a2f78")); g2.addColorStop(1, tc("#150e34"));
+    c.fillStyle = g2; c.fill();
+    c.strokeStyle = tc("#8b7fd0"); c.lineCap = "round";
+    for (let i = 0; i < spokes; i++) {
+      const a = i / spokes * PI2;
+      c.lineWidth = r * 0.12;
+      c.beginPath(); c.moveTo(Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2);
+      c.lineTo(Math.cos(a) * r * 0.66, Math.sin(a) * r * 0.66); c.stroke();
+    }
+    if (holeR) {
+      c.beginPath(); c.arc(0, 0, holeR, 0, PI2); c.fillStyle = tc("#b3a6ee"); c.fill();
+      c.beginPath(); c.arc(0, 0, holeR * 0.5, 0, PI2); c.fillStyle = tc("#1b1440"); c.fill();
+    }
+  }
+  function buildWheel(k, notches) {
+    const half = RIM + 6, cv = canvasOf(half * 2 * k, half * 2 * k), c = cv.getContext("2d");
+    c.setTransform(k, 0, 0, k, half * k, half * k);
+    paintCog(c, RIM, 28, 0, 0);
+    c.beginPath(); c.arc(0, 0, WHEEL_R - 4, 0, PI2); c.fillStyle = tc("#1a1240"); c.fill();
+    c.strokeStyle = tc("#6f63ad"); c.lineCap = "round";
+    for (let i = 0; i < notches; i++) {
+      const a = i / notches * PI2 + Math.PI / notches;
+      c.lineWidth = 7;
+      c.beginPath(); c.moveTo(Math.cos(a) * 30, Math.sin(a) * 30);
+      c.lineTo(Math.cos(a) * (WHEEL_R - 6), Math.sin(a) * (WHEEL_R - 6)); c.stroke();
+    }
+    for (let i = 0; i < notches; i++) {
+      const a = i / notches * PI2;
+      c.beginPath(); c.arc(Math.cos(a) * WHEEL_R, Math.sin(a) * WHEEL_R, R + 3, 0, PI2);
+      c.fillStyle = tc("#07041a"); c.fill();
+      c.lineWidth = 2; c.strokeStyle = tca("#beb0ff", .55); c.stroke();
+    }
+    return cv;
+  }
+  function buildCog(k) {
+    const half = 34, cv = canvasOf(half * 2 * k, half * 2 * k), c = cv.getContext("2d");
+    c.setTransform(k, 0, 0, k, half * k, half * k);
+    paintCog(c, 30, 10, 5, 7);
+    return cv;
+  }
+  function buildMarbles(k) {
+    const box = R * 2 + 12, out = {};
+    function sprite(paint) {
+      const cv = canvasOf(box * k, box * k), c = cv.getContext("2d");
+      c.setTransform(k, 0, 0, k, box / 2 * k, box / 2 * k);
+      c.fillStyle = "rgba(0,0,0,.34)";
+      c.beginPath(); c.ellipse(2.5, R * 0.8, R * 0.95, R * 0.36, 0, 0, PI2); c.fill();
+      paint(c);
+      return cv;
+    }
+    function body(c, stops, rim) {
+      const g = c.createRadialGradient(-R * 0.38, -R * 0.42, R * 0.1, 0, 0, R);
+      for (const s of stops) g.addColorStop(s[0], s[1]);
+      c.beginPath(); c.arc(0, 0, R, 0, PI2); c.fillStyle = g; c.fill();
+      c.lineWidth = 1.2; c.strokeStyle = rim; c.stroke();
+    }
+    function shine(c, a) {
+      c.fillStyle = "rgba(255,255,255," + a + ")";
+      c.beginPath(); c.ellipse(-R * 0.36, -R * 0.44, R * 0.3, R * 0.2, -0.6, 0, PI2); c.fill();
+      c.fillStyle = "rgba(255,255,255," + (a * 0.35) + ")";
+      c.beginPath(); c.arc(R * 0.42, R * 0.4, R * 0.14, 0, PI2); c.fill();
+    }
+    out.glass = sprite((c) => {
+      body(c, [[0, "#f1e4ff"], [0.3, "#b389ff"], [0.72, "#5a28c4"], [1, "#240b5c"]], "rgba(20,6,50,.8)");
+      shine(c, 0.85);
+    });
+    out.chrome = sprite((c) => {
+      body(c, [[0, "#ffffff"], [0.28, "#dcd8f0"], [0.55, "#8b84ad"], [0.8, "#35304f"], [1, "#b9b2dc"]], "rgba(20,16,40,.8)");
+      c.save(); c.beginPath(); c.arc(0, 0, R - 0.8, 0, PI2); c.clip();
+      c.fillStyle = "rgba(40,30,80,.45)"; c.fillRect(-R, R * 0.1, R * 2, R * 0.22);
+      c.restore();
+      shine(c, 0.95);
+    });
+    out.spent = sprite((c) => {
+      body(c, [[0, "#b9b1d6"], [0.5, "#6a6290"], [1, "#2c2648"]], "rgba(10,6,30,.6)");
+      shine(c, 0.4);
+    });
+    out.volt = sprite((c) => {
+      body(c, [[0, "#ffffff"], [0.25, "#c8fdff"], [0.55, "#3fd6ff"], [0.85, "#135a8c"], [1, "#07243f"]], "rgba(2,20,40,.9)");
+      shine(c, 0.9);
+    });
+    return out;
+  }
+
+  /* ===========================================================================
+     THE RAILS — three cached layers per scene and pixel ratio, as section
+     6's buildRails: back (behind the machine), front (bowls, rails on their
+     bed, tube walls, pipe mouths), glass (the sheen, over the marbles)
+     =========================================================================== */
+  function boxOf(S, test, pad) {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, any = false;
+    for (const id in S.CH) {
+      const ch = S.CH[id];
+      for (let i = 0; i < ch.n; i++) if (test(ch, i)) {
+        any = true;
+        x0 = Math.min(x0, ch.xs[i]); x1 = Math.max(x1, ch.xs[i]);
+        y0 = Math.min(y0, ch.ys[i]); y1 = Math.max(y1, ch.ys[i]);
+      }
+    }
+    if (!any) return null;
+    return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
+  }
+  function layer(box, k, paint) {
+    if (!box) return null;
+    const cv = canvasOf(box.w * k, box.h * k), c = cv.getContext("2d");
+    c.setTransform(k, 0, 0, k, -box.x * k, -box.y * k);
+    paint(c);
+    return { cv, x: box.x, y: box.y, w: box.w, h: box.h };
+  }
+  const isBack = (ch, i) => ch.zs[i] < 0;
+  const isFront = (ch, i) => ch.zs[i] >= 0 && !ch.gs[i];
+  const isGlass = (ch, i) => ch.zs[i] >= 0 && !!ch.gs[i];
+  function buildRails(S, k, sk) {
+    const each = (fn) => { for (const id in S.CH) fn(S.CH[id]); };
+    let fb = boxOf(S, (ch, i) => ch.zs[i] >= 0, 40);
+    for (const bw of S.bowls) {
+      if (!fb) fb = { x: bw.cx, y: bw.cy, w: 0, h: 0 };
+      const x1 = Math.max(fb.x + fb.w, bw.cx + bw.r + 30);
+      fb.x = Math.min(fb.x, bw.cx - bw.r - 30); fb.w = x1 - fb.x;
+    }
+    S.layers = {
+      key: k.toFixed(3) + "/" + sk.key + "/" + TINT.key,
+      back: layer(boxOf(S, isBack, 34), k, (c) => {
+        each((ch) => { if (ch.spill) { c.globalAlpha = SPILL_ALPHA; sk.bed(c, ch, isBack); c.globalAlpha = 1; } });
+        each((ch) => { if (ch.spill) sk.pass(c, ch, isBack, SPILL_ALPHA); });
+        each((ch) => { if (!ch.spill) sk.bed(c, ch, isBack); });
+        each((ch) => { if (!ch.spill) sk.pass(c, ch, isBack, 0.8); });
+      }),
+      front: layer(fb, k, (c) => {
+        for (const b of S.bowls) paintBowl(c, b);
+        each((ch) => sk.bed(c, ch, isFront));
+        each((ch) => sk.pass(c, ch, isFront, 1));
+        each((ch) => tubeWalls(c, ch));
+        each((ch) => { for (const i of ch.mouths) paintMouth(c, ch, i); });
+      }),
+      glass: layer(boxOf(S, isGlass, 34), k, (c) => each((ch) => tubeSheen(c, ch))),
+      cogs: S.cogs.map((cg) => layer({ x: -cg[2] - 2, y: -cg[2] - 2, w: cg[2] * 2 + 4, h: cg[2] * 2 + 4 }, k,
+        (c) => paintCog(c, cg[2], Math.max(8, Math.round(cg[2] / 4)), cg[2] > 40 ? 6 : 4, cg[2] * 0.16)))
+    };
+  }
+  function runs(c, ch, keep, off, dx, dy) {
+    let open = false;
+    c.beginPath();
+    for (let i = 0; i < ch.n; i++) {
+      if (!keep(ch, i)) { open = false; continue; }
+      const nv = normalAt(ch, i), sc = dsc(ch.zs[i]);
+      const x = ch.xs[i] + nv[0] * off * sc + (dx || 0), y = ch.ys[i] + nv[1] * off * sc + (dy || 0);
+      if (!open) { c.moveTo(x, y); open = true; } else c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+  function railBed(c, ch, keep) {
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = tca("#0a051c", .55); c.lineWidth = 2 * R + 22; runs(c, ch, keep, 0);
+    c.strokeStyle = tca("#6046be", .10); c.lineWidth = 2 * R + 8; runs(c, ch, keep, 0);
+  }
+  function railPass(c, ch, keep, alpha) {
+    c.globalAlpha = alpha; c.lineCap = "round"; c.lineJoin = "round";
+    for (let i = 0; i < ch.n; i += 5) {
+      if (!keep(ch, i)) continue;
+      const nv = normalAt(ch, i), sc = dsc(ch.zs[i]), hw = (R + 8) * sc;
+      c.strokeStyle = tc("#140c33"); c.lineWidth = 7 * sc;
+      c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * hw, ch.ys[i] - nv[1] * hw);
+      c.lineTo(ch.xs[i] + nv[0] * hw, ch.ys[i] + nv[1] * hw); c.stroke();
+      c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 4 * sc;
+      c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (hw - 1), ch.ys[i] - nv[1] * (hw - 1));
+      c.lineTo(ch.xs[i] + nv[0] * (hw - 1), ch.ys[i] + nv[1] * (hw - 1)); c.stroke();
+    }
+    const PASS = [["rgba(0,0,0,.5)", 6.5, 1.5, 2.5], [tc("#3d3079"), 5, 0, 0], [tc("#b7abf0"), 2.6, -0.6, -0.8], [tc("#f4f0ff"), 1, -0.9, -1.2]];
+    for (const p of PASS) {
+      c.strokeStyle = p[0]; c.lineWidth = p[1];
+      runs(c, ch, keep, -(R + 2), p[2], p[3]);
+      runs(c, ch, keep, R + 2, p[2], p[3]);
+    }
+    c.globalAlpha = 1;
+  }
+  function tubeWalls(c, ch) {
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, isGlass, 0);
+    c.strokeStyle = tca("#9678ff", .10); c.lineWidth = 2 * R + 8; runs(c, ch, isGlass, 0);
+    c.strokeStyle = tc("#0b0720"); c.lineWidth = 5;
+    runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
+    c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2;
+    runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
+    for (let i = 0; i < ch.n; i += 14) {
+      if (!isGlass(ch, i)) continue;
+      const nv = normalAt(ch, i);
+      c.strokeStyle = tc("#0b0720"); c.lineWidth = 7;
+      c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 8), ch.ys[i] - nv[1] * (R + 8));
+      c.lineTo(ch.xs[i] + nv[0] * (R + 8), ch.ys[i] + nv[1] * (R + 8)); c.stroke();
+      c.strokeStyle = tc("#e6e0ff"); c.lineWidth = 3; c.stroke();
+    }
+  }
+  function tubeSheen(c, ch) {
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = tca("#c8b4ff", .14); c.lineWidth = 2 * R + 6; runs(c, ch, isGlass, 0);
+    c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 2.4; runs(c, ch, isGlass, -(R - 3));
+    c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1.5; runs(c, ch, isGlass, R - 5);
+  }
+  function paintMouth(c, ch, i) {
+    const nv = normalAt(ch, i), a = Math.atan2(nv[1], nv[0]), x = ch.xs[i], y = ch.ys[i];
+    c.save(); c.translate(x, y); c.rotate(a);
+    c.fillStyle = "rgba(0,0,0,.45)"; c.beginPath(); c.ellipse(2, 3, R + 13, 10, 0, 0, PI2); c.fill();
+    const g = c.createLinearGradient(-R - 12, 0, R + 12, 0);
+    g.addColorStop(0, tc("#3a2f78")); g.addColorStop(0.4, tc("#e6e1ff")); g.addColorStop(1, tc("#2a2058"));
+    c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, R + 12, 9, 0, 0, PI2); c.fill();
+    c.fillStyle = "#05030f"; c.beginPath(); c.ellipse(0, 0, R + 5, 5, 0, 0, PI2); c.fill();
+    c.lineWidth = 1.5; c.strokeStyle = tca("#0a061e", .9); c.beginPath(); c.ellipse(0, 0, R + 12, 9, 0, 0, PI2); c.stroke();
+    c.restore();
+  }
+  function paintBowl(c, b) {
+    c.save(); c.translate(b.cx, b.cy); c.scale(1, 0.5);
+    c.beginPath(); c.arc(0, 8, b.r + 18, 0, PI2); c.fillStyle = "rgba(0,0,0,.45)"; c.fill();
+    const g = c.createRadialGradient(0, 18, 4, 0, 0, b.r + 16);
+    g.addColorStop(0, tc("#030110")); g.addColorStop(0.35, tc("#1a1240")); g.addColorStop(0.85, tc("#3b2f7c")); g.addColorStop(1, tc("#6f63ad"));
+    c.beginPath(); c.arc(0, 0, b.r + 16, 0, PI2); c.fillStyle = g; c.fill();
+    for (let i = 1; i <= 3; i++) {
+      const rr = (b.r + 16) * (1 - i * 0.22);
+      c.beginPath(); c.arc(0, i * 4, rr, 0, PI2);
+      c.lineWidth = 2; c.strokeStyle = "rgba(190,176,255," + (0.3 - i * 0.06) + ")"; c.stroke();
+    }
+    c.beginPath(); c.arc(0, 0, b.r + 16, 0, PI2);
+    c.lineWidth = 6; c.strokeStyle = tc("#0b0720"); c.stroke();
+    c.lineWidth = 3; c.strokeStyle = tc("#cfc6f5"); c.stroke();
+    c.restore();
+  }
+
+
+  /* ===========================================================================
+     RAIL SKINS — proposals for railBed + railPass. Every one is drawn into
+     the cached layers (cost: nothing per frame) unless it has a `live` part.
+     `runs` strokes a channel offset along its normal; `every` walks it in
+     steps of `px`, which is how the sleepers, ties and rivets are spaced.
+     =========================================================================== */
+  function every(ch, keep, px, fn) {
+    const st = Math.max(1, Math.round(px / DS));
+    for (let i = 0; i < ch.n; i += st) if (keep(ch, i)) fn(i, normalAt(ch, i), dsc(ch.zs[i]));
+  }
+  function railPt(ch, i, nv, sc, off) { return [ch.xs[i] + nv[0] * off * sc, ch.ys[i] + nv[1] * off * sc]; }
+  function seg(c, a, b) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); }
+  function dot(c, p, r, col) { c.fillStyle = col; c.beginPath(); c.arc(p[0], p[1], r, 0, PI2); c.fill(); }
+  function round(c) { c.lineCap = "round"; c.lineJoin = "round"; }
+
+  const SKINS = [
+    { key: "ladder", name: "Ladder", ship: true,
+      blurb: "What ships: two violet steel rails on dark sleepers, laid on a soft bed. Reads as a track at any scale, and the sleepers show the speed as they stream past.",
+      bed: railBed, pass: railPass },
+
+    { key: "halfpipe", name: "Half-pipe",
+      blurb: "A trough the marble runs IN rather than on: a dark groove between a lit lip and a shaded one. No sleepers, so a busy machine reads calmer and the marbles stand out more.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = tca("#0a051c", .55); c.lineWidth = 2 * R + 24; runs(c, ch, keep, 0);
+        c.strokeStyle = tc("#0b0720"); c.lineWidth = 2 * R + 14; runs(c, ch, keep, 0);
+        c.strokeStyle = tc("#3a2f78"); c.lineWidth = 2 * R + 10; runs(c, ch, keep, 0);
+        c.strokeStyle = tc("#1a1240"); c.lineWidth = 2 * R + 2; runs(c, ch, keep, 0);
+        c.strokeStyle = "#110a2c"; c.lineWidth = R; runs(c, ch, keep, R * 0.45);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        c.strokeStyle = tca("#beb0ff", .13); c.lineWidth = 5; runs(c, ch, keep, -R * 0.4);
+        c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 3; runs(c, ch, keep, R + 4);
+        c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2.4; runs(c, ch, keep, -(R + 4));
+        c.strokeStyle = "rgba(255,255,255,.75)"; c.lineWidth = 1; runs(c, ch, keep, -(R + 4.6));
+        c.globalAlpha = 1;
+      } },
+
+    { key: "neon", name: "Neon",
+      blurb: "Two glowing violet tubes over a black bed and a dotted pink centre line. The track becomes light: strong over the painted hall, and the cyan stays the electric marble's alone.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = "rgba(4,2,14,.72)"; c.lineWidth = 2 * R + 18; runs(c, ch, keep, 0);
+        c.strokeStyle = "rgba(199,125,255,.07)"; c.lineWidth = 2 * R + 4; runs(c, ch, keep, 0);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        for (const side of [-1, 1]) {
+          c.strokeStyle = "rgba(199,125,255,.10)"; c.lineWidth = 13; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = "rgba(199,125,255,.30)"; c.lineWidth = 6; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = "#f3dcff"; c.lineWidth = 1.8; runs(c, ch, keep, side * (R + 2));
+        }
+        c.setLineDash([2, 14]); c.strokeStyle = "rgba(255,111,216,.55)"; c.lineWidth = 3; runs(c, ch, keep, 0);
+        c.setLineDash([]);
+        c.globalAlpha = 1;
+      } },
+
+    { key: "coaster", name: "Coaster",
+      blurb: "A roller-coaster track: two round chrome rails held by V ties on a fat spine tube that runs under them. Mechanical and readable, and the spine gives every line a body.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, keep, 0, 3, 7);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        c.strokeStyle = tc("#0b0720"); c.lineWidth = 14; runs(c, ch, keep, 0, 0, 6);
+        c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 10; runs(c, ch, keep, 0, 0, 6);
+        c.strokeStyle = tc("#8f84c8"); c.lineWidth = 2.5; runs(c, ch, keep, 0, -1, 3.5);
+        every(ch, keep, 22, (i, nv, sc) => {
+          const a = railPt(ch, i, nv, sc, -(R + 2)), b = railPt(ch, i, nv, sc, R + 2), m = [ch.xs[i], ch.ys[i] + 6];
+          c.strokeStyle = tc("#0b0720"); c.lineWidth = 5 * sc; seg(c, a, m); seg(c, b, m);
+          c.strokeStyle = tc("#6f63ad"); c.lineWidth = 2.6 * sc; seg(c, a, m); seg(c, b, m);
+        });
+        for (const side of [-1, 1]) {
+          c.strokeStyle = tc("#0b0720"); c.lineWidth = 7.5; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 4.5; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = "#ffffff"; c.lineWidth = 1.3; runs(c, ch, keep, side * (R + 2), -0.6, -1);
+        }
+        c.globalAlpha = 1;
+      } },
+
+    { key: "girder", name: "Girder",
+      blurb: "A truss: two I-beam rails braced by alternating diagonals, a rivet at every node. The most industrial of the set — it says machine, and it says weight.",
+      bed: railBed,
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        let flipSide = false;
+        const st = Math.round(18 / DS);
+        for (let i = 0; i + st < ch.n; i += st) {
+          if (!keep(ch, i) || !keep(ch, i + st)) continue;
+          const n0 = normalAt(ch, i), n1 = normalAt(ch, i + st), s0 = dsc(ch.zs[i]), s1 = dsc(ch.zs[i + st]);
+          const a = railPt(ch, i, n0, s0, (flipSide ? 1 : -1) * (R + 2)), b = railPt(ch, i + st, n1, s1, (flipSide ? -1 : 1) * (R + 2));
+          c.strokeStyle = tc("#0b0720"); c.lineWidth = 5 * s0; seg(c, a, b);
+          c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 3 * s0; seg(c, a, b);
+          flipSide = !flipSide;
+        }
+        for (const side of [-1, 1]) {
+          c.strokeStyle = tc("#0b0720"); c.lineWidth = 9; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = tc("#5b4ea3"); c.lineWidth = 6.5; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = "#bdb3ee"; c.lineWidth = 1.4; runs(c, ch, keep, side * (R + 2) - 2);
+        }
+        every(ch, keep, 18, (i, nv, sc) => {
+          dot(c, railPt(ch, i, nv, sc, -(R + 2)), 2.2 * sc, tc("#e6e0ff"));
+          dot(c, railPt(ch, i, nv, sc, R + 2), 2.2 * sc, tc("#e6e0ff"));
+        });
+        c.globalAlpha = 1;
+      } },
+
+    { key: "plate", name: "Riveted plate",
+      blurb: "The groove is cut into a wide steel plate with rivets down both edges. A solid object rather than a line — it fills the machine, so it suits the sparse first biomes better than the dense last ones.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = "rgba(0,0,0,.45)"; c.lineWidth = 2 * R + 32; runs(c, ch, keep, 0, 2, 4);
+        c.strokeStyle = tc("#6f63ad"); c.lineWidth = 2 * R + 30; runs(c, ch, keep, 0);
+        c.strokeStyle = "#2c2360"; c.lineWidth = 2 * R + 26; runs(c, ch, keep, 0);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        c.strokeStyle = tc("#0b0720"); c.lineWidth = 2 * R + 7; runs(c, ch, keep, 0);
+        c.strokeStyle = tc("#150e34"); c.lineWidth = 2 * R + 2; runs(c, ch, keep, 0);
+        c.strokeStyle = "#a99cdf"; c.lineWidth = 1.6; runs(c, ch, keep, -(R + 3));
+        c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 1.6; runs(c, ch, keep, R + 3);
+        every(ch, keep, 28, (i, nv, sc) => {
+          for (const side of [-1, 1]) {
+            const p = railPt(ch, i, nv, sc, side * (R + 9));
+            dot(c, [p[0] + 0.8, p[1] + 1], 2.4 * sc, "rgba(0,0,0,.6)");
+            dot(c, p, 2.2 * sc, "#bdb3ee");
+          }
+        });
+        c.globalAlpha = 1;
+      } },
+
+    { key: "wire", name: "Wire",
+      blurb: "Two thin chrome wires on small brackets, almost no bed. The lightest of the set: the machine becomes a drawing, the marbles carry all the weight, and the painted hall shows through.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = tca("#0a051c", .32); c.lineWidth = 2 * R + 10; runs(c, ch, keep, 0);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        every(ch, keep, 36, (i, nv, sc) => {
+          for (const side of [-1, 1]) {
+            const a = railPt(ch, i, nv, sc, side * (R + 2)), b = railPt(ch, i, nv, sc, side * (R + 11));
+            c.strokeStyle = tc("#0b0720"); c.lineWidth = 5 * sc; seg(c, a, b);
+            c.strokeStyle = tc("#8f84c8"); c.lineWidth = 2.4 * sc; seg(c, a, b);
+            dot(c, b, 2.6 * sc, tc("#d9ccff"));
+          }
+        });
+        for (const side of [-1, 1]) {
+          c.strokeStyle = tc("#0b0720"); c.lineWidth = 5; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = tc("#e6e1ff"); c.lineWidth = 2.4; runs(c, ch, keep, side * (R + 2));
+          c.strokeStyle = "#ffffff"; c.lineWidth = 0.8; runs(c, ch, keep, side * (R + 2), -0.5, -0.7);
+        }
+        c.globalAlpha = 1;
+      } },
+
+    { key: "blueprint", name: "Blueprint",
+      blurb: "A technical drawing: thin blue rails, a dashed centre line, ticks for sleepers, and the lines behind the machine dashed as hidden lines are on a plan. A theme for a biome rather than a default.",
+      bed(c, ch, keep) {
+        round(c);
+        c.strokeStyle = "rgba(80,110,220,.07)"; c.lineWidth = 2 * R + 10; runs(c, ch, keep, 0);
+      },
+      pass(c, ch, keep, alpha) {
+        c.globalAlpha = alpha; round(c);
+        every(ch, keep, 25, (i, nv, sc) => {
+          c.strokeStyle = "rgba(111,134,216,.7)"; c.lineWidth = 1;
+          seg(c, railPt(ch, i, nv, sc, -(R + 6)), railPt(ch, i, nv, sc, R + 6));
+        });
+        c.setLineDash([10, 6]); c.strokeStyle = "rgba(140,170,255,.55)"; c.lineWidth = 1.2; runs(c, ch, keep, 0);
+        c.setLineDash(keep === isBack ? [5, 5] : []);
+        c.strokeStyle = "#a9c1ff"; c.lineWidth = 1.8;
+        runs(c, ch, keep, -(R + 2)); runs(c, ch, keep, R + 2);
+        c.setLineDash([]);
+        c.globalAlpha = 1;
+      } },
+
+    { key: "chaser", name: "Chaser lights", live: true,
+      blurb: "Ladder, plus a run of lamps travelling the way the marbles go. It tells the direction of every line at a glance — which no still rail does — at the cost of a draw per lamp per frame.",
+      bed: railBed, pass: railPass,
+      live(S) {
+        for (const id in S.CH) {
+          const ch = S.CH[id], gap = 46, off = mod(S.t * 90 * Lab.tempo, gap);
+          for (let d = off; d < ch.len; d += gap) {
+            const i = Math.min(ch.n - 1, Math.round(d / DS));
+            if (ch.gs[i]) continue;
+            const p = at(ch, d), back = p.z < 0, a = back ? 0.35 : 1, r = back ? 2.2 : 3;
+            drawGlow(tc("#e7d9ff"), p.x, p.y, back ? 9 : 13, 0.55 * a);
+            ctx.globalAlpha = a; ctx.fillStyle = "#fff6ff";
+            ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, PI2); ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        }
+      } }
+  ];
+  const skinOf = (key) => SKINS.find((s) => s.key === key) || SKINS[0];
+
+  /* ===========================================================================
+     DRAWING — section 6's draw functions, one scene at a time
+     =========================================================================== */
+  function bolt(x0, y0, x1, y1, jag, segs) {
+    ctx.beginPath(); ctx.moveTo(x0, y0);
+    const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    for (let i = 1; i < segs; i++) {
+      const q = i / segs, o = (Math.random() - 0.5) * 2 * jag;
+      ctx.lineTo(x0 + dx * q + nx * o, y0 + dy * q + ny * o);
+    }
+    ctx.lineTo(x1, y1); ctx.stroke();
+  }
+  function boltIcon(x, y, s, col) {
+    ctx.fillStyle = col; ctx.beginPath();
+    ctx.moveTo(x + 0.2 * s, y - s); ctx.lineTo(x - 0.45 * s, y + 0.1 * s); ctx.lineTo(x - 0.02 * s, y + 0.1 * s);
+    ctx.lineTo(x - 0.25 * s, y + s); ctx.lineTo(x + 0.45 * s, y - 0.15 * s); ctx.lineTo(x + 0.05 * s, y - 0.15 * s);
+    ctx.closePath(); ctx.fill();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function drawMarble(m) {
+    const sc = dsc(m.z) * (m.e ? 1.12 : 1), r = R * sc, x = m.x, y = m.y, box = (R * 2 + 12) * sc;
+    const ga = ctx.globalAlpha;
+    ctx.globalAlpha = ga * (m.a == null ? 1 : m.a);
+    if (m.z < 0) ctx.globalAlpha *= 1 - 0.42 * Math.min(1, -m.z);
+    if (ctx.globalAlpha <= 0.01) { ctx.globalAlpha = ga; return; }
+    if (m.lost) drawGlow(C.full, x, y, r + 14, 0.5);
+    if (m.e) {
+      const hum = mod(t * 2 + m.rot * 0.2, 1);
+      drawGlow(C.volt, x, y, r + 22, 0.55 + 0.25 * Math.sin(t * 20 + m.rot));
+      ctx.strokeStyle = rgba(C.volt, 0.55 * (1 - hum)); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, r + 4 + hum * 16, 0, PI2); ctx.stroke();
+      ctx.drawImage(SP.volt, x - box / 2, y - box / 2, box, box);
+      ctx.strokeStyle = C.voltHi; ctx.lineWidth = 1.8;
+      for (let i = 0; i < 3; i++) {
+        const a0 = Math.random() * PI2, a1 = a0 + 0.8 + Math.random();
+        bolt(x + Math.cos(a0) * r * 0.8, y + Math.sin(a0) * r * 0.8, x + Math.cos(a1) * (r + 9), y + Math.sin(a1) * (r + 9), 4, 3);
+      }
+    } else {
+      const sp = m.spent ? SP.spent : m.k ? SP.chrome : SP.glass;
+      ctx.drawImage(sp, x - box / 2, y - box / 2, box, box);
+      if (!m.spent && !m.k) {
+        ctx.strokeStyle = "rgba(236,220,255,.5)"; ctx.lineWidth = 2.2;
+        ctx.beginPath(); ctx.arc(x, y, r * 0.55, m.rot, m.rot + 2.2); ctx.stroke();
+      } else if (!m.spent) {
+        ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x, y, r * 0.72, m.rot, m.rot + 0.7); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = ga;
+  }
+
+  function drawHopper(S) {
+    const H = S.src.hopper, l = H.l, r = H.r, tp = H.top, bt = H.bot;
+    ctx.beginPath();
+    ctx.moveTo(l, tp); ctx.lineTo(r, tp); ctx.lineTo(r, bt); ctx.lineTo(H.x + 20, H.y - 14);
+    ctx.lineTo(H.x - 20, H.y - 14); ctx.lineTo(l, bt); ctx.closePath();
+    const g = ctx.createLinearGradient(l, tp, r, bt);
+    g.addColorStop(0, tc("#3b2f7c")); g.addColorStop(1, tc("#150e36"));
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineJoin = "round"; ctx.lineWidth = 5; ctx.strokeStyle = tc("#0b0720"); ctx.stroke();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = C.steelL; ctx.stroke();
+    const QX = [H.x, H.x - 18, H.x + 18], QY = [H.y - 30, bt - 20, bt - 20];
+    for (let i = Math.min(S.queue.length, 3) - 1; i >= 0; i--) {
+      drawMarble({ e: S.queue[i] === "e", k: S.queue[i] === "k", x: QX[i], y: QY[i], z: 1, rot: i });
+    }
+  }
+
+  function drawWheel(S) {
+    const W = S.src.wheel, half = RIM + 6, tr = tier(S.hub);
+    if (S.hubBreak > 0) drawGlow("#000000", W.cx, W.cy, RIM + 60, S.hubBreak);
+    if (tr) drawGlow(TIERS_COL[tr], W.cx, W.cy, RIM + 40 + tr * 26, (0.28 + 0.12 * tr) * (0.85 + 0.15 * Math.sin(t * (4 + tr * 2))));
+    ctx.save(); ctx.translate(W.cx, W.cy); ctx.rotate(S.wheel.phase);
+    ctx.drawImage(wheelSprite(W.notches), -half, -half, half * 2, half * 2);
+    ctx.restore();
+    drawHub(S, W.cx, W.cy);
+  }
+  function drawHub(S, cx, cy) {
+    const combo = S.hub, tr = tier(combo), col = TIERS_COL[tr], rr = 44;
+    ctx.beginPath(); ctx.arc(cx, cy, rr + 7, 0, PI2);
+    ctx.fillStyle = tca("#09051a", .94); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = tca("#beb0ff", .4); ctx.stroke();
+    if (combo === 0 && S.hubBreak <= 0) {
+      drawGlow("#b389ff", cx, cy, rr + 10, 0.25 + 0.12 * Math.sin(t * 2.2));
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 0.6); ctx.globalAlpha = 0.55;
+      ctx.drawImage(SP.cog, -30, -30, 60, 60);
+      ctx.restore();
+      return;
+    }
+    const lo = tr ? TIERS[tr - 1] : 0, hi = tr < TIERS.length ? TIERS[tr] : 0, k = hi ? (combo - lo) / (hi - lo) : 1;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
+    if (S.hubBreak > 0) {
+      ctx.strokeStyle = rgba(C.full, S.hubBreak / 0.6); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
+    } else if (combo > 0) {
+      ctx.strokeStyle = rgba(col, 0.3); ctx.lineWidth = 11;
+      ctx.beginPath(); ctx.arc(cx, cy, rr, -Math.PI / 2, -Math.PI / 2 + PI2 * Math.max(0.04, Math.min(1, k))); ctx.stroke();
+      ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.stroke();
+    }
+    const pop = 1 + S.hubPop * 0.7;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(pop, pop);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "900 36px " + SYS;
+    ctx.lineJoin = "round"; ctx.lineWidth = 6; ctx.strokeStyle = tca("#060314", .9);
+    ctx.strokeText("x" + combo, 0, 2);
+    ctx.fillStyle = combo > 0 ? col : tc("#6e6390");
+    ctx.fillText("x" + combo, 0, 2);
+    ctx.restore();
+    // sparks orbiting the wheel, more and faster with each tier
+    const n = ORBIT_SPARKS[tr];
+    for (let i = 0; i < n; i++) {
+      const a = t * (1.4 + tr * 0.5) + i * PI2 / n, r2 = RIM + 16 + 5 * Math.sin(t * 3 + i * 1.7);
+      for (let j = 0; j < 3; j++) {
+        const aj = a - j * 0.09;
+        ctx.globalAlpha = 1 - j * 0.33; ctx.fillStyle = j ? col : "#ffffff";
+        ctx.beginPath(); ctx.arc(cx + Math.cos(aj) * r2, cy + Math.sin(aj) * r2, 4 - j, 0, PI2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawSwitches(S) {
+    const eNext = {};
+    for (const m of S.marbles) if (m.e && m.st === "track" && S.out[m.ch.to]) eNext[m.ch.to] = true;
+    ctx.lineCap = "round";
+    for (const k in S.sw) {
+      const s = S.sw[k], live = S.CH[S.out[k][s.dir]];
+      let toArr = leads(S, live.id);
+      ctx.strokeStyle = toArr ? C.volt : tc("#d9ccff"); ctx.globalAlpha = toArr ? 0.34 : 0.16;
+      ctx.lineWidth = 2 * R + 6;
+      ctx.beginPath(); ctx.moveTo(live.xs[0], live.ys[0]);
+      for (let i = 1; i < Math.min(live.n, 16); i++) ctx.lineTo(live.xs[i], live.ys[i]);
+      ctx.stroke(); ctx.globalAlpha = 1;
+      if (eNext[k]) {
+        const pl = 0.5 + 0.5 * Math.sin(t * 12);
+        drawGlow(C.volt, s.x, s.y, 70, 0.35 + 0.3 * pl);
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 4; ctx.globalAlpha = 0.55 + 0.45 * pl;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 44 + pl * 4, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      const snap = s.snap > 0 ? 1 + 0.18 * Math.sin(s.snap / 0.22 * Math.PI) : 1;
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.scale(snap, snap);
+      ctx.drawImage(SP.cog, -34, -34, 68, 68);
+      ctx.restore();
+      if (s.flash > 0) drawGlow("#ffffff", s.x, s.y, 44, s.flash / (FLIP_TIME * 2) * 0.6);
+      const ex = s.x + Math.cos(s.ang) * 58 * snap, ey = s.y + Math.sin(s.ang) * 58 * snap;
+      ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 14;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.strokeStyle = tc("#cfc6f5"); ctx.lineWidth = 8; ctx.stroke();
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y - 2); ctx.lineTo(ex, ey - 2); ctx.stroke();
+      toArr = leads(S, S.out[k][s.dir]);
+      drawGlow(toArr ? C.volt : tc("#d9ccff"), ex, ey, 22, 0.8);
+      ctx.fillStyle = toArr ? C.volt : tc("#e9e2ff");
+      ctx.beginPath(); ctx.arc(ex, ey, 7.5, 0, PI2); ctx.fill();
+      ctx.fillStyle = tc("#1b1440");
+      ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, PI2); ctx.fill();
+    }
+  }
+
+  function gaugeColor(k) { return k >= 0.8 ? C.full : k >= 0.5 ? C.amber : C.calm; }
+  function drawSockets(ch, dHead, cap, n, broke, drain) {
+    const col = gaugeColor(n / cap), full = n >= cap, blink = full && Math.sin(t * 18) > 0;
+    if (broke > 0) {
+      ctx.strokeStyle = rgba(C.full, broke / 0.6 * 0.55); ctx.lineWidth = 2 * R + 14; ctx.lineCap = "round";
+      ctx.beginPath();
+      for (let q = 0; q <= 10; q++) { const sp = at(ch, dHead - (cap - 1) * 2.2 * R * q / 10); if (q) ctx.lineTo(sp.x, sp.y); else ctx.moveTo(sp.x, sp.y); }
+      ctx.stroke();
+    }
+    for (let j = 0; j < cap; j++) {
+      const sp = at(ch, dHead - j * 2.2 * R);
+      if (j < n) drawGlow(col, sp.x, sp.y, R + 16, 0.5);
+      ctx.fillStyle = tca("#060314", .55); ctx.beginPath(); ctx.arc(sp.x, sp.y, R + 4, 0, PI2); ctx.fill();
+      ctx.strokeStyle = j < n ? (blink ? "#ffffff" : col) : tca("#c8beff", .35); ctx.lineWidth = j < n ? 4 : 2;
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, R + 4, 0, PI2); ctx.stroke();
+    }
+    if (drain) {
+      const dd = dHead - cap * 2.2 * R, hp = at(ch, dd, {}), hn = normalAt(ch, Math.max(0, Math.round(dd / DS)));
+      ctx.save(); ctx.translate(hp.x, hp.y); ctx.rotate(Math.atan2(hn[1], hn[0]));
+      if (full) drawGlow(C.full, 0, 0, R + 18, 0.5);
+      ctx.fillStyle = "#05030f"; ctx.beginPath(); ctx.ellipse(0, 0, R + 7, 8, 0, 0, PI2); ctx.fill();
+      ctx.lineWidth = full ? 4 : 2.5; ctx.strokeStyle = full ? (blink ? "#ffffff" : C.full) : rgba(C.full, 0.6);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    const dl = dHead - (cap - 1) * 2.2 * R - R - 8, lp = at(ch, dl), nv = normalAt(ch, Math.max(0, Math.round(dl / DS)));
+    ctx.strokeStyle = full ? C.full : rgba(C.full, 0.55); ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(lp.x - nv[0] * (R + 10), lp.y - nv[1] * (R + 10));
+    ctx.lineTo(lp.x + nv[0] * (R + 10), lp.y + nv[1] * (R + 10)); ctx.stroke();
+  }
+  function padlock(x, y, s, col, open) {
+    const lift = open * s * 0.5;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = col; ctx.lineWidth = s * 0.22;
+    ctx.save(); ctx.translate(x + s * 0.42, y - s * 0.1 - lift); ctx.rotate(-open * 0.7);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 0.25);
+    ctx.arc(-s * 0.42, -s * 0.25, s * 0.42, 0, Math.PI, true); ctx.lineTo(-s * 0.84, 0);
+    ctx.stroke(); ctx.restore();
+    ctx.fillStyle = col;
+    roundRect(x - s * 0.64, y - s * 0.15, s * 1.28, s * 0.98, s * 0.18); ctx.fill();
+    ctx.fillStyle = "#1b0f2e"; ctx.beginPath(); ctx.arc(x, y + s * 0.26, s * 0.14, 0, PI2); ctx.fill();
+    ctx.fillRect(x - s * 0.05, y + s * 0.3, s * 0.1, s * 0.22);
+  }
+  function drawGates(S) {
+    for (const g of S.gates) if (g.locked || g.flush || g.broke > 0) drawSockets(g.ch, g.d, g.cap, g.q.length, g.broke, !!g.spill);
+    if (S.wheel) for (const e in S.wheel.q) {
+      if (S.wheel.q[e].length || S.wheel.flashT[e] > 0) drawSockets(S.CH[e], S.CH[e].len, PH.waitCap, S.wheel.q[e].length, S.wheel.flashT[e], !!S.wheel.spill[e]);
+    }
+    for (const g of S.gates) {
+      const shut = g.locked;
+      const nx = -g.ty, ny = g.tx, pw = R + 9;
+      const sgn = (nx * (g.px - g.fx) + ny * (g.py - g.fy)) >= 0 ? 1 : -1;
+      const ax = g.fx + nx * pw * sgn, ay = g.fy + ny * pw * sgn, bx2 = g.fx - nx * pw * sgn, by2 = g.fy - ny * pw * sgn;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = shut ? rgba(C.amber, 0.6) : tca("#c8beff", .26); ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.moveTo(g.px, g.py); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.setLineDash([]);
+      const bar = shut ? 1 : g.pop > 0 ? g.pop / 0.4 : 0;
+      if (bar > 0) {
+        if (shut) drawGlow(C.amber, g.fx, g.fy, R + 22, 0.55);
+        ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx2 - ax) * bar, ay + (by2 - ay) * bar); ctx.stroke();
+        ctx.strokeStyle = shut ? C.amber : C.calm; ctx.lineWidth = 6; ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.6; ctx.stroke();
+      }
+      for (let pj = 0; pj < 2; pj++) {
+        const qx = pj ? bx2 : ax, qy = pj ? by2 : ay;
+        ctx.fillStyle = tc("#0b0720"); ctx.beginPath(); ctx.arc(qx, qy, 7.5, 0, PI2); ctx.fill();
+        ctx.fillStyle = shut ? C.amber : tc("#8f84c8"); ctx.beginPath(); ctx.arc(qx, qy, 5, 0, PI2); ctx.fill();
+      }
+      if (!shut) {
+        const op = g.pop > 0 ? g.pop / 0.4 : 0;
+        if (op > 0) {
+          const rr = 14 + 24 * op;
+          drawGlow(C.calm, g.px, g.py, rr + 30, 0.7 * op);
+          ctx.fillStyle = "#12241e"; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+          ctx.lineWidth = 5; ctx.strokeStyle = C.calm; ctx.stroke();
+          ctx.globalAlpha = op; padlock(g.px, g.py - 2, 22 * (0.6 + 0.4 * op), "#eafff4", 1 - op * 0.2); ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = tc("#1b1440"); ctx.beginPath(); ctx.arc(g.px, g.py, 14, 0, PI2); ctx.fill();
+          ctx.lineWidth = 3; ctx.strokeStyle = tc("#8f84c8"); ctx.stroke();
+          drawGlow(C.calm, g.px, g.py, 14, 0.7);
+          ctx.fillStyle = C.calm; ctx.beginPath(); ctx.arc(g.px, g.py, 4, 0, PI2); ctx.fill();
+        }
+        continue;
+      }
+      const n = g.q.length, k = n / g.cap, col = gaugeColor(k), pl = 0.5 + 0.5 * Math.sin(t * (7 + 10 * k));
+      const grow = g.lockAge < 0.3 ? 1 + 0.35 * Math.sin(g.lockAge / 0.3 * Math.PI) : 1;
+      const rr = (34 + pl * 3) * grow;
+      drawGlow(C.amber, g.px, g.py, rr + 40, 0.35 + 0.3 * pl);
+      drawGlow(col, g.px, g.py, rr + 18, 0.4);
+      const bg = ctx.createRadialGradient(g.px - rr * 0.3, g.py - rr * 0.35, 2, g.px, g.py, rr);
+      bg.addColorStop(0, "#5a3a1c"); bg.addColorStop(1, "#1d0f14");
+      ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = n >= g.cap && Math.sin(t * 18) > 0 ? "#ffffff" : col;
+      ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.amber, 0.8);
+      ctx.beginPath(); ctx.arc(g.px, g.py, rr - 7, 0, PI2); ctx.stroke();
+      padlock(g.px, g.py - 2, 22 * grow, "#ffe3b0", 0);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "900 22px " + SYS;
+      ctx.lineJoin = "round"; ctx.lineWidth = 6; ctx.strokeStyle = tca("#060314", .92);
+      ctx.strokeText(n + "/" + g.cap, g.px, g.py + rr + 18);
+      ctx.fillStyle = col; ctx.fillText(n + "/" + g.cap, g.px, g.py + rr + 18);
+    }
+  }
+
+  function drawChimes(S) {
+    ctx.lineCap = "round";
+    for (const c of S.chimes) {
+      const lit = Math.max(0, 1 - c.hit / 0.35), wob = lit * Math.sin(c.hit * 60) * 0.45;
+      ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(c.rx, c.ry); ctx.lineTo(c.x, c.y - 12); ctx.stroke();
+      ctx.strokeStyle = tc("#8f84c8"); ctx.lineWidth = 2; ctx.stroke();
+      if (lit > 0) drawGlow(tc("#e7d9ff"), c.x, c.y, 24 + lit * 16, lit * 0.85);
+      ctx.save(); ctx.translate(c.x, c.y - 12); ctx.rotate(wob);
+      ctx.fillStyle = tc("#0b0720"); roundRect(-6, -2, 12, 28, 5); ctx.fill();
+      const g = ctx.createLinearGradient(-4, 0, 4, 0);
+      g.addColorStop(0, lit > 0 ? "#ffffff" : tc("#8b7fd0")); g.addColorStop(0.45, lit > 0 ? "#fff6d8" : tc("#e3dcff"));
+      g.addColorStop(1, lit > 0 ? tc("#d9c8ff") : tc("#4a3f8a"));
+      ctx.fillStyle = g; roundRect(-4, 0, 8, 24, 3.5); ctx.fill();
+      ctx.fillStyle = tc("#cfc6f5"); ctx.beginPath(); ctx.arc(0, 0, 3, 0, PI2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function funnel(S, x, w) {
+    const RY = S.rimY, CY = S.coreY;
+    ctx.beginPath();
+    ctx.moveTo(x - w, RY); ctx.lineTo(x + w, RY);
+    ctx.lineTo(x + w * 0.42, RY + 50); ctx.lineTo(x + w * 0.3, CY - 8);
+    ctx.lineTo(x - w * 0.3, CY - 8); ctx.lineTo(x - w * 0.42, RY + 50); ctx.closePath();
+  }
+  function drawReceivers(S) {
+    const w = S.mouthW, cr = Math.min(18, w * 0.42), RY = S.rimY, CY = S.coreY, pl = 0.5 + 0.5 * Math.sin(t * 5);
+    for (const k in S.boxes) {
+      const mc = S.boxes[k], arr = k === S.voltArr, col = mc.col;
+      if (arr) drawGlow(C.volt, mc.x, RY + 40, w * 2.1, 0.32 + 0.14 * pl + mc.charge * 0.5);
+      drawGlow(col, mc.x, RY + 38, w * 1.5, 0.22 + mc.kick * 1.2);
+      ctx.lineJoin = "round";
+      funnel(S, mc.x, w);
+      let g = ctx.createLinearGradient(0, RY, 0, CY);
+      g.addColorStop(0, rgba(col, 0.42)); g.addColorStop(0.35, "#1c1344"); g.addColorStop(1, "#07041a");
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
+      if (mc.sweep > 0) {
+        ctx.save(); funnel(S, mc.x, w); ctx.clip();
+        const yb = CY - (1 - mc.sweep / 0.4) * (CY - RY + 20);
+        const sg = ctx.createLinearGradient(0, yb - 16, 0, yb + 16);
+        sg.addColorStop(0, rgba(col, 0)); sg.addColorStop(0.5, rgba(arr ? C.volt : col, 0.7)); sg.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = sg; ctx.fillRect(mc.x - w, yb - 16, w * 2, 32);
+        ctx.restore();
+      }
+      if (mc.fizz > 0) { funnel(S, mc.x, w); ctx.fillStyle = "rgba(70,80,100," + (mc.fizz * 0.55) + ")"; ctx.fill(); }
+      ctx.beginPath(); ctx.ellipse(mc.x, RY, w, 8, 0, 0, PI2);
+      ctx.fillStyle = "#05030f"; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      if (arr) { ctx.lineWidth = 1.5; ctx.strokeStyle = C.voltHi; ctx.beginPath(); ctx.ellipse(mc.x, RY, w - 5, 5, 0, 0, PI2); ctx.stroke(); }
+      for (let i = 0; i < 5; i++) {
+        const lx = mc.x + (i - 2) * w * 0.36, on = i === mc.led && mc.sweep > 0;
+        if (on) drawGlow(col, lx, RY + 8, 14, 0.9);
+        ctx.fillStyle = on ? "#ffffff" : rgba(col, 0.45);
+        ctx.beginPath(); ctx.arc(lx, RY + 8, 2.6, 0, PI2); ctx.fill();
+      }
+      drawGlow(arr ? C.volt : col, mc.x, CY, cr * 2.4, 0.5 + mc.kick * 1.4 + (arr ? 0.2 * pl : 0));
+      g = ctx.createRadialGradient(mc.x - cr * 0.3, CY - cr * 0.35, 1, mc.x, CY, cr);
+      g.addColorStop(0, mc.kick > 0.1 ? "#ffffff" : arr ? C.voltHi : rgba(col, 0.95));
+      g.addColorStop(0.6, col); g.addColorStop(1, "#140c33");
+      ctx.beginPath(); ctx.arc(mc.x, CY, cr, 0, PI2); ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      if (arr) {
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 2;
+        const nb = mc.kick > 0 ? 5 : mc.charge > 0.2 ? 3 : 1;
+        for (let i = 0; i < nb; i++) if (mc.kick > 0 || mc.charge > 0.2 || Math.random() < 0.35) {
+          bolt(mc.x + (Math.random() - 0.5) * w * 1.6, RY + 4, mc.x + (Math.random() - 0.5) * cr, CY - cr * 0.6, 6, 4);
+        }
+        const by = RY - 40 + Math.sin(t * 3) * 4;
+        drawGlow(C.volt, mc.x, by, 40, 0.6 + 0.3 * pl);
+        ctx.fillStyle = "#07243f"; ctx.beginPath(); ctx.arc(mc.x, by, 19, 0, PI2); ctx.fill();
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 3; ctx.stroke();
+        boltIcon(mc.x, by, 12, C.voltHi);
+      }
+    }
+  }
+
+  function drawEffects(S) {
+    for (const p of S.puffs) {
+      if (p.t < 0) continue;
+      ctx.globalAlpha = 0.45 * (1 - p.t / p.life); ctx.fillStyle = "#8a93a8";
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, PI2); ctx.fill();
+    }
+    for (const rg of S.rings) {
+      ctx.globalAlpha = 1 - rg.t / rg.life; ctx.strokeStyle = rg.color; ctx.lineWidth = rg.w;
+      ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.r0 + rg.t * rg.grow, 0, PI2); ctx.stroke();
+    }
+    for (const p of S.parts) {
+      ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.s, p.y - p.s, p.s * 2, p.s * 2);
+    }
+    for (const s of S.shards) {
+      ctx.globalAlpha = 1 - s.t / s.life;
+      const c = Math.cos(s.a), sn = Math.sin(s.a), cs = s.s;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.moveTo(s.x + c * cs, s.y + sn * cs);
+      let a = s.a + 2.3; ctx.lineTo(s.x + Math.cos(a) * cs * 0.7, s.y + Math.sin(a) * cs * 0.7);
+      a = s.a + 3.9; ctx.lineTo(s.x + Math.cos(a) * cs * 0.55, s.y + Math.sin(a) * cs * 0.55);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // The path as data: every resampled point by plane, the pipe mouths, where
+  // each channel starts, and one label at its middle — its name, its length
+  // and where it goes (several channels share a start at a switch).
+  function drawDebug(S) {
+    ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.font = "700 12px " + SYS;
+    let nth = 0;
+    for (const id in S.CH) {
+      const ch = S.CH[id];
+      for (let i = 0; i < ch.n; i += 2) {
+        ctx.fillStyle = ch.zs[i] < 0 ? "#ff6fd8" : ch.gs[i] ? "#7ef9ff" : "#ffffff";
+        ctx.fillRect(ch.xs[i] - 1.5, ch.ys[i] - 1.5, 3, 3);
+      }
+      ctx.strokeStyle = "#ffb44f"; ctx.lineWidth = 2;
+      for (const i of ch.mouths) { ctx.beginPath(); ctx.arc(ch.xs[i], ch.ys[i], 7, 0, PI2); ctx.stroke(); }
+      ctx.fillStyle = "#6dffb0"; ctx.beginPath(); ctx.arc(ch.xs[0], ch.ys[0], 4, 0, PI2); ctx.fill();
+      // every other channel is labelled further along, so side-by-side lines do not stack their labels
+      const mi = Math.floor(ch.n * (nth++ % 2 ? 0.62 : 0.38)), nv = normalAt(ch, mi);
+      const label = id + " · " + ch.len + " px → " + (ch.to || "exit"), lw = ctx.measureText(label).width;
+      const lx = clamp(ch.xs[mi] + nv[0] * 34, lw / 2 + 6, S.W - lw / 2 - 6), ly = clamp(ch.ys[mi] + nv[1] * 34, 12, S.H - 12);
+      ctx.fillStyle = "rgba(7,5,20,.78)";
+      ctx.fillRect(lx - lw / 2 - 5, ly - 9, lw + 10, 18);
+      ctx.fillStyle = "#6dffb0";
+      ctx.fillText(label, lx, ly);
+    }
+  }
+
+  /* The tap targets (switches, padlocks), each with half the 165 px the
+     bench asks between two of them: two rings that overlap are too close. */
+  function drawTargets(S) {
+    const tg = targetsOf(S);
+    for (const a of tg) {
+      const bad = tg.some((b) => b !== a && Math.hypot(a.x - b.x, a.y - b.y) < TAP_GAP);
+      ctx.strokeStyle = bad ? "#ff3d6e" : "rgba(109,255,176,.6)"; ctx.lineWidth = bad ? 3 : 2;
+      ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.arc(a.x, a.y, TAP_GAP / 2, 0, PI2); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  // The modules in colour: every point stamped by a module call, the glass, the spill network.
+  const TAG_COL = { zig: "#ffd43b", loop: "#ff5fc8", cork: "#5f95ff", coil: "#8dff7a", whirl: "#ff8a5c", glass: "#7ef9ff", spill: "#ff3d6e" };
+  function drawTags(S) {
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 2 * R + 6;
+    for (const id in S.CH) {
+      const ch = S.CH[id];
+      let open = null;
+      const kindAt = (i) => ch.spill ? "spill" : ch.ts[i] ? ch.ts[i].split("#")[0] : ch.gs[i] ? "glass" : null;
+      for (let i = 0; i <= ch.n; i++) {
+        const k = i < ch.n ? kindAt(i) : null;
+        if (k !== open) {
+          if (open) { ctx.stroke(); }
+          open = k;
+          if (k) { ctx.strokeStyle = rgba(TAG_COL[k], ch.spill ? 0.3 : 0.42); ctx.beginPath(); ctx.moveTo(ch.xs[i], ch.ys[i]); }
+        } else if (k) ctx.lineTo(ch.xs[i], ch.ys[i]);
+      }
+    }
+  }
+  // The spill network's cogs and the red sink (section 6, drawCogs + drawSink).
+  const SPILL_ALPHA = 0.2;
+  function drawCogs(S) {
+    ctx.globalAlpha = SPILL_ALPHA * 0.8;
+    S.cogs.forEach((cg, i) => {
+      const sp = S.layers.cogs[i];
+      ctx.save(); ctx.translate(cg[0], cg[1]); ctx.rotate(t * 0.9 * (cg[3] || 1) * 30 / cg[2]);
+      ctx.drawImage(sp.cv, sp.x, sp.y, sp.w, sp.h);
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+  }
+  function heartPath(x, y, s) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + s * 0.9);
+    ctx.bezierCurveTo(x - s * 1.3, y, x - s * 0.7, y - s * 1.0, x, y - s * 0.35);
+    ctx.bezierCurveTo(x + s * 0.7, y - s * 1.0, x + s * 1.3, y, x, y + s * 0.9);
+    ctx.closePath();
+  }
+  function drawSink(S) {
+    const x = 0, y = 0, w = 30, k = S.sinkKick, pl = 0.5 + 0.5 * Math.sin(t * 3);
+    ctx.save(); ctx.translate(S.sink[0], S.sink[1]); ctx.scale(0.7, 0.7);
+    drawGlow(C.full, x, y + 26, 54, 0.22 + 0.12 * pl + k * 0.9);
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x - w, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w * 0.4, y + 34); ctx.lineTo(x + w * 0.3, y + 48);
+    ctx.lineTo(x - w * 0.3, y + 48); ctx.lineTo(x - w * 0.4, y + 34); ctx.closePath();
+    const g = ctx.createLinearGradient(0, y, 0, y + 50);
+    g.addColorStop(0, rgba(C.full, 0.45)); g.addColorStop(0.45, "#2a0716"); g.addColorStop(1, "#0c0208");
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineJoin = "round"; ctx.lineWidth = 5; ctx.strokeStyle = tc("#0b0720"); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.full, 0.85); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x, y, w, 6, 0, 0, PI2);
+    ctx.fillStyle = "#05030f"; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = C.full; ctx.stroke();
+    drawGlow(C.full, x, y + 58, 24, 0.5 + k);
+    ctx.beginPath(); ctx.arc(x, y + 58, 14, 0, PI2);
+    ctx.fillStyle = k > 0.1 ? "#ff8aa5" : "#3a0a1c"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = tc("#0b0720"); ctx.stroke();
+    ctx.fillStyle = k > 0.1 ? "#ffffff" : C.heart; heartPath(x, y + 58, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    if (S.lost) {
+      ctx.font = "800 18px " + SYS; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = C.heart; ctx.fillText("-" + S.lost, S.sink[0], S.sink[1] - 18);
+    }
+  }
+
+  // One frame of a scene, in section 6's render order.
+  function drawScene(S, cv, k, sk) {
+    setTint(S.mod.group === "machine" ? S.mod.used[0] - 1 : Lab.biome ? Lab.biome - 1 : 0);
+    ctx = cv.getContext("2d"); t = S.t; SP = spritesFor(k);
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    const g = ctx.createLinearGradient(0, 0, 0, S.H);
+    g.addColorStop(0, tc("#1d1542")); g.addColorStop(1, tc("#07051a"));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, S.W, S.H);
+    if (!S.layers || S.layers.key !== k.toFixed(3) + "/" + sk.key + "/" + TINT.key) buildRails(S, k, sk);
+    const Lb = S.layers.back, Lf = S.layers.front, Lg = S.layers.glass;
+    drawCogs(S);
+    if (Lb) ctx.drawImage(Lb.cv, Lb.x, Lb.y, Lb.w, Lb.h);
+    if (S.sink) drawSink(S);
+    for (const m of S.marbles) if (m.z < 0 && (m.st === "track" || m.st === "gate")) drawMarble(m);
+    if (Lf) ctx.drawImage(Lf.cv, Lf.x, Lf.y, Lf.w, Lf.h);
+    if (sk.live) sk.live(S);
+    if (S.wheel) drawWheel(S);
+    drawChimes(S);
+    drawSwitches(S);
+    drawGates(S);
+    if (S.custom) S.custom.draw(S);
+    else for (const m of S.marbles) if (m.z >= 0) drawMarble(m);
+    if (Lg) ctx.drawImage(Lg.cv, Lg.x, Lg.y, Lg.w, Lg.h);
+    if (S.src.arr) drawReceivers(S);
+    if (S.src.hopper) drawHopper(S);
+    drawEffects(S);
+    if (Lab.tags) drawTags(S);
+    if (Lab.debug) { drawDebug(S); drawTargets(S); }
+  }
+
+  /* ===========================================================================
+     THE BENCH — what a machine must hold to be playable, checked on the
+     built channels. Numbers: TAP_GAP between two tap targets; a padlock's
+     button (34 px, more when it pulses) and its count clear of the front
+     rails (half-width R + 8 with the sleepers).
+     =========================================================================== */
+  const TAP_GAP = 165;
+  function targetsOf(S) {
+    const out = [];
+    for (const k in S.sw) out.push({ x: S.sw[k].x, y: S.sw[k].y, name: k });
+    S.gates.forEach((g, i) => out.push({ x: g.px, y: g.py, name: "gate " + i }));
+    return out;
+  }
+  function frontPoints(S) {
+    const out = [];
+    for (const id in S.CH) {
+      const ch = S.CH[id];
+      if (ch.spill) continue;
+      for (let i = 0; i < ch.n; i++) if (ch.zs[i] >= 0) out.push([ch.xs[i], ch.ys[i], id, i]);
+    }
+    return out;
+  }
+  function minDist(pts, x, y) { let m = 1e9; for (const p of pts) m = Math.min(m, Math.hypot(p[0] - x, p[1] - y)); return m; }
+  function checks(S) {
+    const out = [], add = (ok, label, detail) => out.push({ ok, label, detail: ok ? "" : detail });
+    const front = frontPoints(S), tg = targetsOf(S), src = S.src, b = S.mod.used[0] - 1;
+    // the counts the pace was tuned on
+    const want = [[1, 2, 2], [2, 3, 3], [4, 4, 4], [5, 5, 5], [6, 6, 6]][b];
+    const have = [Object.keys(S.sw).length, S.gates.length, src.arr.length];
+    add(want.join() === have.join(), "Counts " + have.join(" / ") + " (switches / gates / arrivals)", "the pace expects " + want.join(" / "));
+    // tap targets apart
+    const close = [];
+    for (let i = 0; i < tg.length; i++) for (let j = i + 1; j < tg.length; j++) {
+      const d = Math.hypot(tg[i].x - tg[j].x, tg[i].y - tg[j].y);
+      if (d < TAP_GAP) close.push(tg[i].name + "–" + tg[j].name + " " + Math.round(d));
+    }
+    add(!close.length, "Tap targets " + TAP_GAP + " px apart", close.join(", "));
+    // padlocks clear of the rails, the count under them too
+    const lockBad = [];
+    S.gates.forEach((g, i) => {
+      const d = minDist(front, g.px, g.py), dt = minDist(front, g.px, g.py + 58);
+      if (d < 60 || dt < 32) lockBad.push("gate " + i + " (" + Math.round(d) + " / " + Math.round(dt) + ")");
+    });
+    add(!lockBad.length, "Padlocks clear of the rails", lockBad.join(", "));
+    // every queue on plain front rail, its trapdoor included, and drained
+    const qBad = [], dBad = [];
+    const plain = (ch, d0, d1) => {
+      if (d0 < 0) return "runs off the start of " + ch.id;
+      for (let d = d0; d <= d1; d += DS) {
+        const i = Math.min(ch.n - 1, Math.round(d / DS));
+        if (ch.zs[i] < 0 || ch.gs[i]) return "on glass or behind on " + ch.id;
+        if (ch.mouths.some((mi) => Math.abs(mi - i) < 4)) return "on a pipe mouth of " + ch.id;
+      }
+      return null;
+    };
+    const queues = S.gates.map((g, i) => ({ q: "gate:" + i, ch: g.ch, d0: g.d - g.cap * 2.2 * R - R, d1: g.d }));
+    if (S.wheel) for (const e in S.wheel.q) queues.push({ q: "wheel:" + e, ch: S.CH[e], d0: S.CH[e].len - PH.waitCap * 2.2 * R - R, d1: S.CH[e].len });
+    for (const q of queues) {
+      const why = plain(q.ch, q.d0, q.d1);
+      if (why) qBad.push(q.q + ": " + why);
+      const sp = S.CH[S.drainOf[q.q]];
+      if (!sp) { dBad.push(q.q + ": no drain"); continue; }
+      let ch = sp, hops = 0;
+      while (ch && ch.to !== "sink" && hops++ < 12) ch = S.CH[ch.to];
+      if (!ch || ch.to !== "sink") dBad.push(q.q + ": never reaches the sink");
+      else if (sp.zs[Math.min(sp.n - 1, 4)] >= 0) dBad.push(q.q + ": its drain does not dive at once");
+    }
+    add(!qBad.length, "Queues and trapdoors on plain front rail", qBad.join(", "));
+    add(!dBad.length && !!S.sink, "Every queue drains to the sink", (S.sink ? "" : "no sink. ") + dBad.join(", "));
+    // inside the band
+    let off = 0;
+    for (const p of front) if (p[1] < MACHINE.topY || p[1] > MACHINE.railEnd + 1 || p[0] < R || p[0] > 720 - R) off++;
+    add(!off, "Front rails inside the band", off + " points out of x " + R + "–" + (720 - R) + ", y " + MACHINE.topY + "–" + MACHINE.railEnd);
+    // two front lines never touch, away from the nodes they share
+    const nodes = [];
+    for (const id in S.CH) { const ch = S.CH[id]; if (!ch.spill) nodes.push([ch.xs[0], ch.ys[0]], [ch.xs[ch.n - 1], ch.ys[ch.n - 1]]); }
+    if (src.wheel) nodes.push([src.wheel.cx, src.wheel.cy]);
+    const nearNode = (x, y) => nodes.some((n) => Math.hypot(n[0] - x, n[1] - y) < 70);
+    const hits = new Set();
+    for (let i = 0; i < front.length; i += 2) for (let j = i + 2; j < front.length; j += 2) {
+      const a = front[i], c = front[j];
+      if (a[2] === c[2]) continue;
+      if (Math.abs(a[0] - c[0]) > 2 * R + 10 || Math.abs(a[1] - c[1]) > 2 * R + 10) continue;
+      if (Math.hypot(a[0] - c[0], a[1] - c[1]) < 2 * R + 10 && !nearNode(a[0], a[1])) hits.add(a[2] + "×" + c[2]);
+    }
+    add(!hits.size, "Front lines never touch", [...hits].join(", "));
+    // every arrival reachable, every switch a real choice
+    const reach = (from, a, seen = {}) => {
+      const ch = S.CH[from];
+      if (!ch || seen[from]) return false;
+      seen[from] = 1;
+      if (ch.to === a) return true;
+      if (ch.to === "wheel") return reach(src.wheel.out, a, seen);
+      const o = S.out[ch.to];
+      return !!o && (reach(o[0], a, seen) || reach(o[1], a, seen));
+    };
+    const lost = src.arr.filter((a) => !reach("top", a.id)).map((a) => a.id);
+    add(!lost.length, "Every arrival reachable", lost.join(", ") + " unreachable");
+    const dull = Object.keys(S.out).filter((k) => {
+      const set = (id) => src.arr.filter((a) => reach(id, a.id)).map((a) => a.id).join();
+      return set(S.out[k][0]) === set(S.out[k][1]);
+    });
+    add(!dull.length, "Every switch changes where a marble ends", dull.join(", ") + " sends both ways to the same arrivals");
+    add(S.mouthW >= 30, "Arrival mouths wide enough", "half-width " + Math.round(S.mouthW) + " px");
+    return out;
+  }
+  function countModules(S) {
+    const seen = {}, n = {};
+    let glass = 0, mouths = 0;
+    for (const id in S.CH) {
+      const ch = S.CH[id];
+      if (ch.spill) continue;
+      for (let i = 0; i < ch.n; i++) {
+        const tg = ch.ts[i];
+        if (tg && !seen[tg]) { seen[tg] = 1; const k = tg.split("#")[0] + (tg.endsWith("m") ? " (mirror)" : ""); n[k] = (n[k] || 0) + 1; }
+        if (ch.gs[i] && (i === 0 || !ch.gs[i - 1])) glass++;
+      }
+      mouths += ch.mouths.length;
+    }
+    const parts = Object.keys(n).sort().map((k) => k + " " + n[k]);
+    if (glass) parts.push("glass " + glass);
+    if (mouths) parts.push("pipe mouths " + mouths);
+    const spills = Object.values(S.CH).filter((c) => c.spill).length;
+    parts.push("spill lines " + spills + (S.cogs.length ? ", cogs " + S.cogs.length : ""));
+    return parts.join(" · ");
+  }
+
+  /* ===========================================================================
+     THE PAGE
+     =========================================================================== */
+  const $ = (id) => document.getElementById(id);
+  const stage = $("stage");
+  const tiles = [];               // { mod, scene, card, cv }
+  const cmpTiles = [];            // the compare view: one module, one tile per skin
+
+  function tap(tile, ev) {
+    const S = tile.scene, r = tile.cv.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width * S.W, y = (ev.clientY - r.top) / r.height * S.H;
+    let best = null, bd = 120 * 120;
+    for (const k in S.sw) { const s = S.sw[k], d = (s.x - x) ** 2 + (s.y - y) ** 2; if (d < bd) { bd = d; best = () => flip(S, k, false); } }
+    for (const g of S.gates) if (g.locked) { const d = (g.px - x) ** 2 + (g.py - y) ** 2; if (d < bd) { bd = d; best = () => unlock(S, g); } }
+    if (best) best();
+    else if (tile.skin) pickSkin(tile.skin);
+    else if (!Lab.focus) location.hash = tile.mod.key;
+  }
+
+  function buildGrid() {
+    const host = $("modules");
+    host.innerHTML = "";
+    tiles.length = 0;
+    for (const [group, title] of [["track", "Track modules — the Track library"], ["part", "Machine parts"]]) {
+      const h = document.createElement("div");
+      h.className = "group-title"; h.textContent = title;
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      for (const mod of MODULES.filter((m) => m.group === group)) {
+        const card = document.createElement("div");
+        card.className = "card"; card.dataset.key = mod.key;
+        card.innerHTML =
+          '<header><b></b><code></code></header><canvas></canvas><p></p><footer></footer>';
+        card.querySelector("b").textContent = mod.name;
+        card.querySelector("code").textContent = mod.call;
+        card.querySelector("p").textContent = mod.blurb;
+        const ft = card.querySelector("footer");
+        if (mod.tap) ft.insertAdjacentHTML("beforeend", '<span class="pill tap">Tap it</span>');
+        for (const b of mod.used) {
+          const s = document.createElement("span");
+          s.className = "pill"; s.textContent = b + " · " + BIOMES[b - 1];
+          ft.appendChild(s);
+        }
+        const tile = { mod, card, cv: card.querySelector("canvas"), scene: makeScene(mod) };
+        card.querySelector("header").addEventListener("click", () => { location.hash = Lab.focus ? "" : mod.key; });
+        tile.cv.addEventListener("pointerdown", (ev) => tap(tile, ev));
+        tiles.push(tile);
+        grid.appendChild(card);
+      }
+      host.appendChild(h); host.appendChild(grid);
+    }
+    buildMachines();
+    applyBiome();
+  }
+
+  /* THE MACHINES VIEW — the five LAYOUTS of game.js, alive, each with what
+     its modules are and what the bench says about it. */
+  function machineModules() {
+    if (!MACHINE.layouts) return [];
+    return MACHINE.layouts.map((fn, b) => ({
+      key: "m" + (b + 1), group: "machine", name: (b + 1) + " · " + BIOMES[b], call: "LAYOUTS[" + b + "]",
+      used: [b + 1], params: [], P: {}, defaults: {},
+      blurb: "The machine biome " + (b + 1) + " plays, read off games/gearball/game.js.",
+      build: () => {
+        const lay = fn();
+        return Object.assign(lay, { start: ["top"], hopper: MACHINE.hopper, rimY: MACHINE.rimY, W: 720, H: 1240,
+          gap: 0.55, lockEvery: 4, electric: 0.12, volt: lay.arr[Math.floor(Math.random() * lay.arr.length)].id });
+      }
+    }));
+  }
+  function buildMachines() {
+    const host = $("machines");
+    host.innerHTML = "";
+    const mods = machineModules();
+    if (!mods.length) {
+      host.innerHTML = '<p class="hint">The machines are read off games/gearball/game.js: open this page through make lab.</p>';
+      return;
+    }
+    host.insertAdjacentHTML("beforeend", '<div class="group-title">The five machines — LAYOUTS</div><div class="grid"></div>');
+    const grid = host.lastChild;
+    for (const mod of mods) {
+      const card = document.createElement("div");
+      card.className = "card machine"; card.dataset.key = mod.key;
+      card.innerHTML = '<header><b></b><code></code></header><canvas></canvas><div class="counts"></div><ul class="checks"></ul>';
+      card.querySelector("b").textContent = mod.name;
+      card.querySelector("code").textContent = mod.call;
+      const tile = { mod, card, cv: card.querySelector("canvas"), scene: makeScene(mod) };
+      card.querySelector(".counts").textContent = countModules(tile.scene);
+      card.querySelector(".checks").innerHTML = checks(tile.scene).map((c) =>
+        '<li class="' + (c.ok ? "" : "bad") + '">' + (c.ok ? "✓ " : "✗ ") + c.label +
+        (c.detail ? "<small>" + c.detail + "</small>" : "") + "</li>").join("");
+      card.querySelector("header").addEventListener("click", () => { location.hash = Lab.focus ? "" : mod.key; });
+      tile.cv.addEventListener("pointerdown", (ev) => tap(tile, ev));
+      tiles.push(tile);
+      grid.appendChild(card);
+    }
+  }
+  function setView(v) {
+    Lab.view = v;
+    document.body.classList.toggle("machines", v === "machines");
+    document.querySelectorAll("#views button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+    tiles.forEach(sizeTile);
+  }
+
+  /* One module, one tile per skin, side by side. A tile's own scene, so the
+     skins are judged on the same machine at the same moment of its life —
+     a tap on a tile with nothing to act on picks its skin. */
+  function buildCompare() {
+    const host = $("compare"), mod = MODULES.find((m) => m.key === Lab.cmpMod);
+    host.innerHTML = '<div class="group-title"></div><div class="grid"></div>';
+    host.firstChild.textContent = "Rail skins — " + mod.name;
+    cmpTiles.length = 0;
+    for (const sk of SKINS) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = '<header><b></b><code></code></header><canvas></canvas><p></p>';
+      card.querySelector("b").textContent = sk.name;
+      card.querySelector("code").innerHTML = (sk.ship ? '<span class="pill ship">Ships</span> ' : "") +
+        (sk.live ? '<span class="pill live">Live</span>' : "");
+      card.querySelector("p").textContent = sk.blurb;
+      const tile = { mod, card, skin: sk.key, cv: card.querySelector("canvas"), scene: makeScene(mod) };
+      card.querySelector("header").addEventListener("click", () => pickSkin(sk.key));
+      tile.cv.addEventListener("pointerdown", (ev) => tap(tile, ev));
+      sizeTile(tile);
+      cmpTiles.push(tile);
+      host.lastChild.appendChild(card);
+    }
+    markSkin();
+  }
+  function pickSkin(key) {
+    Lab.skin = key;
+    try { localStorage.setItem("gbmod-skin", key); } catch (e) { /* private window: the choice lasts the visit */ }
+    markSkin();
+  }
+  function markSkin() {
+    const sk = skinOf(Lab.skin);
+    document.querySelectorAll("#skins button").forEach((b) => b.classList.toggle("on", b.dataset.k === sk.key));
+    $("skin-desc").innerHTML = (sk.ship ? '<span class="pill ship">Ships</span>' : "") +
+      '<span class="pill' + (sk.live ? ' live">Live: a draw per frame' : '">Cached: free per frame') + "</span>";
+    $("skin-desc").appendChild(document.createTextNode(sk.blurb));
+    for (const tl of cmpTiles) tl.card.classList.toggle("picked", tl.skin === sk.key);
+  }
+  function setCompare(on) {
+    Lab.compare = on;
+    document.body.classList.toggle("compare", on);
+    $("compare-row").hidden = !on;
+    if (on) buildCompare();
+    stage.scrollTop = 0;
+  }
+
+  // Canvas size: the grid's tile width, or as large as the stage allows.
+  function sizeTile(tile) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = tile.scene.W, H = tile.scene.H;
+    let scale = (tile.mod.group === "machine" ? 350 : 270) / W;
+    if (Lab.focus === tile.mod.key) {
+      const r = stage.getBoundingClientRect();
+      scale = clamp(Math.min((r.width - 80) / W, (r.height - 230) / H), 0.4, 2.6);
+    }
+    const w = Math.round(W * scale), h = Math.round(H * scale);
+    tile.cv.style.width = w + "px"; tile.cv.style.height = h + "px";
+    tile.cv.width = Math.round(w * dpr); tile.cv.height = Math.round(h * dpr);
+    tile.k = tile.cv.width / W;
+  }
+
+  function applyBiome() {
+    for (const tl of tiles) tl.card.classList.toggle("dim", !!Lab.biome && !tl.mod.used.includes(Lab.biome));
+    document.querySelectorAll("#biomes button").forEach((b) => b.classList.toggle("on", +b.dataset.b === Lab.biome));
+  }
+
+  function paramRow(mod, p, onChange) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const id = "p-" + p.k;
+    if (p.options) {
+      row.innerHTML = '<label for="' + id + '">' + p.label + "</label><select id=\"" + id + '"></select>';
+      const sel = row.querySelector("select");
+      for (const [v, l] of p.options) {
+        const o = document.createElement("option"); o.value = v; o.textContent = l;
+        if (v === mod.P[p.k]) o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.addEventListener("change", () => { mod.P[p.k] = +sel.value; onChange(); });
+    } else {
+      row.innerHTML = '<label for="' + id + '">' + p.label + ' <b></b></label><input id="' + id + '" type="range">';
+      const inp = row.querySelector("input"), out = row.querySelector("b");
+      inp.min = p.min; inp.max = p.max; inp.step = p.step; inp.value = mod.P[p.k];
+      out.textContent = mod.P[p.k];
+      inp.addEventListener("input", () => { mod.P[p.k] = +inp.value; out.textContent = inp.value; onChange(); });
+    }
+    return row;
+  }
+
+  function showFocus() {
+    if (Lab.compare) { $("compare-on").checked = false; setCompare(false); }
+    const key = location.hash.slice(1);
+    const tile = tiles.find((tl) => tl.mod.key === key);
+    Lab.focus = tile ? key : null;
+    if (tile) setView(tile.mod.group === "machine" ? "machines" : "modules");
+    document.body.classList.toggle("focus", !!tile);
+    for (const tl of tiles) { tl.card.classList.toggle("solo", tl === tile); sizeTile(tl); }
+    if (!tile) return;
+    const mod = tile.mod;
+    $("f-name").textContent = mod.name;
+    $("f-call").textContent = mod.call;
+    $("f-blurb").textContent = mod.blurb;
+    const box = $("f-params");
+    box.innerHTML = "";
+    const rebuild = () => { tile.scene = makeScene(mod); };
+    if (mod.group === "machine") box.innerHTML = '<p class="hint">' + countModules(tile.scene) + '</p>';
+    else if (!mod.params.length) box.innerHTML = '<p class="hint">Nothing to tune: the module takes no number.</p>';
+    for (const p of mod.params) box.appendChild(paramRow(mod, p, rebuild));
+    $("f-reset").onclick = () => { mod.P = Object.assign({}, mod.defaults); rebuild(); showFocus(); };
+    stage.scrollTop = 0;
+  }
+
+  /* ---------------- the panel ---------------- */
+  function bindRange(id, read, write, digits) {
+    const el = $(id), out = $(id + "-v");
+    const show = () => { out.textContent = (+el.value).toFixed(digits); };
+    el.value = read(); show();
+    el.addEventListener("input", () => { write(+el.value); show(); });
+    return () => { el.value = read(); show(); };
+  }
+  function buildPanel() {
+    try { Lab.skin = localStorage.getItem("gbmod-skin") || Lab.skin; } catch (e) { /* no storage: the shipped skin */ }
+    const sc = $("skins");
+    for (const sk of SKINS) sc.insertAdjacentHTML("beforeend", '<button data-k="' + sk.key + '">' + sk.name + "</button>");
+    sc.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) pickSkin(b.dataset.k); });
+    const cm = $("compare-mod");
+    for (const m of MODULES) if (m.key !== "return") cm.insertAdjacentHTML("beforeend", '<option value="' + m.key + '">' + m.name + "</option>");
+    cm.value = Lab.cmpMod;
+    cm.onchange = () => { Lab.cmpMod = cm.value; buildCompare(); };
+    $("compare-on").onchange = (e) => setCompare(e.target.checked);
+    markSkin();
+    const chips = $("biomes");
+    chips.insertAdjacentHTML("beforeend", '<button data-b="0">All</button>');
+    BIOMES.forEach((n, i) => chips.insertAdjacentHTML("beforeend", '<button data-b="' + (i + 1) + '">' + (i + 1) + " " + n + "</button>"));
+    chips.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      Lab.biome = +b.dataset.b; applyBiome();
+    });
+    bindRange("tempo", () => Lab.tempo, (v) => { Lab.tempo = v; }, 2);
+    bindRange("pour", () => Lab.pour, (v) => { Lab.pour = v; }, 2);
+    const refresh = ["gravity", "friction", "vMin", "vMax"].map((k) => bindRange(k, () => PH[k], (v) => { PH[k] = v; }, 0));
+    $("phys-reset").onclick = () => { Object.assign(PH, GAME_PH); refresh.forEach((f) => f()); };
+    $("auto").onchange = (e) => { Lab.auto = e.target.checked; };
+    $("debug").onchange = (e) => { Lab.debug = e.target.checked; $("legend").hidden = !Lab.debug; };
+    $("tags").onchange = (e) => { Lab.tags = e.target.checked; };
+    $("views").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      if (Lab.focus) location.hash = "";
+      setView(b.dataset.v);
+    });
+    $("pause").onchange = (e) => { Lab.paused = e.target.checked; };
+    $("f-back").onclick = () => { location.hash = ""; };
+    window.addEventListener("hashchange", showFocus);
+    window.addEventListener("resize", () => { tiles.forEach(sizeTile); cmpTiles.forEach(sizeTile); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && Lab.focus) location.hash = ""; });
+  }
+
+  /* ---------------- the loop ---------------- */
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const list = Lab.compare ? cmpTiles : tiles;
+    for (const tl of list) {
+      if (!Lab.compare && Lab.focus && Lab.focus !== tl.mod.key) continue;
+      if (!Lab.compare && !Lab.focus && (tl.mod.group === "machine") !== (Lab.view === "machines")) continue;
+      if (!Lab.paused) update(tl.scene, dt);
+      drawScene(tl.scene, tl.cv, tl.k, skinOf(tl.skin || Lab.skin));
+    }
+    requestAnimationFrame(frame);
+  }
+
+  (async function boot() {
+    const live = await liveLibrary();
+    LIB = tagLibrary(live || embeddedLibrary());
+    if (MACHINE.src) {
+      try { MACHINE.layouts = new Function("T", "mirrorPts", "RAIL_END", "PI2", MACHINE.src + "\nreturn LAYOUTS;")(T, LIB.mirrorPts, MACHINE.railEnd, PI2); }
+      catch (e) { console.error("LAYOUTS could not be evaluated", e); }
+    }
+    Object.assign(PH, GAME_PH);
+    const src = $("src");
+    if (live) { src.textContent = "Track library and physics: live from game.js"; src.classList.add("live"); }
+    else src.textContent = "Embedded copy: open through make lab to read game.js";
+    $("phys-src").textContent = live ? "· game.js" : "· copy";
+    buildPanel();
+    buildGrid();
+    showFocus();
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1860,6 +1860,9 @@
           var phase = r * 1.7 + c * 2.9;
           var puff = 1 + BREATHE * Math.sin(bgT * 1.5 + phase);
           var def = deformAt(r, c);
+          // Every bubble, the smoke, the controls and the shot are the
+          // elements of the round's entrance (Enter): the wall rains in first.
+          if (!Enter.begin(cellX(r, c), cellY(r))) continue;
           if (blk[r][c] && inf[r][c] < 1) {
             drawInfecting(cellX(r, c), cellY(r), R, grid[r][c], def, wobAng[r][c], puff,
                           inf[r][c], infAng[r][c], phase);
@@ -1867,11 +1870,12 @@
             drawBubble(cellX(r, c), cellY(r), R, grid[r][c], sup[r][c], blk[r][c], 1,
                        sup[r][c] ? superRot : 0, def, wobAng[r][c], puff);
           }
+          Enter.end();
         }
       }
       ctx.restore();
 
-      drawBlightSmoke();
+      if (Enter.begin(view.w / 2, fieldY + GRID_TOP + ROWH * 3)) { drawBlightSmoke(); Enter.end(); }
 
       for (var fi = 0; fi < fallers.length; fi++) {
         var f = fallers[fi];
@@ -1881,12 +1885,16 @@
 
       drawSplashes();
 
-      if (!ball.flying && !ended) drawAim();
-      drawLauncher();
-      if (!ball.flying && !ended) drawSwapRing();
+      // The preview comes first so the shot lands last; the two never overlap.
+      if (Enter.begin(NEXT_X, LY)) { drawNextPreview(); Enter.end(); }
+      if (Enter.begin(LX, LY)) {
+        if (!ball.flying && !ended) drawAim();
+        drawLauncher();
+        Enter.end();
+      }
+      if (!ball.flying && !ended && Enter.begin(SWAP_X, LY)) { drawSwapRing(); Enter.end(); }
       if (ball.flying) drawTrail();
-      if (!ended) drawBall();
-      drawNextPreview();
+      if (!ended && Enter.begin(ball.x, ball.y)) { drawBall(); Enter.end(); }
     }
 
     // The shot itself: stretched along its flight the way a water balloon is,

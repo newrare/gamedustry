@@ -78,32 +78,82 @@
 
   var CONFIG = W.CONFIG;
 
-  /* DEV — the one switch that bends the real-time rules on a machine that is
-     plainly not a player's: localhost, a loopback, a LAN address or a file://
-     page. On, the daily road pays on every tap (daily.js) and the army's clock
-     runs an hour a second (army.js); off, both run on the real clock, which is
-     how a wait is watched at its true length without deploying. It is OFF
-     every time the game opens — the real clock is the one a player gets, so
-     it is the one a session starts on — and the band's DEV pill turns it on
-     for that session (section 11, THE DEV PILL). A deployed site's hostname
-     is none of these, so `on()` is false there whatever was asked. Defined
-     here, before daily.js and army.js run, since both read it. */
-  var devOn = false;
-  var devHooks = [];
+  /* DEV — THE GAME'S CLOCK, MOVED BY HAND, on a machine that is plainly not
+     a player's: localhost, a loopback, a LAN address or a file:// page.
+
+     Every wait in this shell is real time — the daily road's day, a wound's
+     two days, a prisoner's five, a squad's mission, the camp's news every
+     four hours, the raid that comes with a return — and a wait of two days
+     takes two days to watch once. An hour-a-second clock was the first
+     answer and it was not usable: everything ran at once, a card healed
+     while it was being read, and nothing could be looked at on purpose. So
+     the clock runs at its true pace and is MOVED instead, a step at a time,
+     from the DEV view (packages/webshell/dev.js): `now()` is the real clock
+     plus an offset, and every layer that reads the time reads it here.
+
+     Two ways to move it, because they are two different afternoons:
+       advance(h)  the hours pass WITH the player in the game — nothing is an
+                   absence, so no raid, but every deadline and every news the
+                   camp owes on the way is due;
+       away(h)     the player LEAVES and comes back h hours later: the layers
+                   write down when they were last seen, the offset moves, and
+                   the page is RELOADED — the one faithful copy of a
+                   reconnection is the boot itself.
+
+     The offset is kept per game (`dev:clock:<slug>`), because the saves are
+     too and a deadline written under it must still be read under it after a
+     reload. It is only ever read on a local machine, so a deployed site runs
+     on the real clock whatever a store holds. Defined here, before daily.js
+     and army.js run, since both read it.
+
+     `entry` is the other half: every layer names the cards and the actions it
+     can fire, and the DEV view lists them. A layer registers what it OWNS —
+     the function that opens the card is private to it — so the list is never
+     a second copy of anybody's code. */
+  var DEV_KEY = "dev:clock:" + (CONFIG.slug || "game");
+  var HOUR = 3600000;
+  var devHooks = [], devLeave = [], devList = [];
   W.Dev = {
     local: (function () {
       var h = location.hostname;
       return h === "localhost" || h === "127.0.0.1" || h === "" || h === "::1" ||
              h === "[::1]" || /^192\.168\./.test(h) || /^10\./.test(h);
     })(),
-    on: function () { return W.Dev.local && devOn; },
-    set: function (v) {
-      if (!W.Dev.local || devOn === !!v) return;
-      devOn = !!v;
-      for (var i = 0; i < devHooks.length; i++) devHooks[i](!!v);
+    offset: 0,
+    now: function () { return Date.now() + W.Dev.offset; },
+    /* The hours pass with the player here. */
+    advance: function (h) {
+      if (!W.Dev.local || !(h > 0)) return;
+      W.Dev.offset += h * HOUR;
+      W.Store.set(DEV_KEY, W.Dev.offset);
+      for (var i = 0; i < devHooks.length; i++) devHooks[i](h);
     },
-    onChange: function (fn) { devHooks.push(fn); }
+    /* The player leaves, and the page comes back `h` hours later. The leave
+       hooks run on the clock as it is, and the offset is written but NOT
+       applied: the tab going to the background on the reload writes its own
+       "last seen", and it must write the moment the player left. */
+    away: function (h) {
+      if (!W.Dev.local || !(h > 0)) return;
+      for (var i = 0; i < devLeave.length; i++) devLeave[i]();
+      W.Store.set(DEV_KEY, W.Dev.offset + h * HOUR);
+      location.reload();
+    },
+    /* Back to the real clock. A deadline written under the offset keeps it:
+       a wound taken three days "later" is three days further off now. */
+    reset: function () {
+      if (!W.Dev.local || !W.Dev.offset) return;
+      W.Dev.offset = 0;
+      W.Store.del(DEV_KEY);
+      for (var i = 0; i < devHooks.length; i++) devHooks[i](0);
+    },
+    onChange: function (fn) { devHooks.push(fn); },
+    onLeave: function (fn) { devLeave.push(fn); },
+    /* { group, label, sub, run } — `run` fires it, `sub` says what it needs
+       or what it writes. */
+    entry: function (e) { if (W.Dev.local && e && e.run) devList.push(e); },
+    entries: function () { return devList.slice(0); }
   };
+  if (W.Dev.local) W.Dev.offset = +W.Store.get(DEV_KEY, 0) || 0;
 
   /* The manifest's `web.meta` block, injected as CONFIG.web by the builder.
      Its presence is the whole declaration: a game without one never sees a
@@ -119,7 +169,6 @@
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Shop", map: "Levels", home: "Home", scores: "Leaderboard",
       more: "More",
-      devOn: "Dev clock on", devOff: "Dev clock off",
       notices: "Notifications", noticesNote: "The latest first",
       justNow: "Just now", minAgo: "{n} min ago", hourAgo: "{n} h ago",
       owned: "{n}/{t}", newSticker: "New sticker!", dupe: "Double",
@@ -151,7 +200,6 @@
       stickersEntry: "Stickers",
       album: "Stickers", shop: "Boutique", map: "Niveaux", home: "Accueil", scores: "Classement",
       more: "Plus",
-      devOn: "Horloge dev activée", devOff: "Horloge dev coupée",
       notices: "Notifications", noticesNote: "Les plus récentes en premier",
       justNow: "À l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
@@ -2155,35 +2203,35 @@
 
   /* THE DEV PILL — the one mark that this front end is running on a machine
      that is plainly not a player's: localhost, a loopback or a LAN address.
-     The daily road pays on every tap there and the army's clock runs an hour
-     a second (W.Dev, section 0), so a screenshot must never be mistaken for
-     the real thing. It is also the SWITCH: off when the game opens, hollow
-     while it is, and a tap turns the fast clock on and back off (`W.Dev.set`)
-     — the pill stays either way, since the machine is still a dev one. It is said ONCE, in
-     the band, in front of the level chip — not on each screen that bends a
-     rule, which is how three pills in three places came to mean one thing.
-     A deployed site's hostname is none of these, so the node is never built
-     there. NOT on a file:// page, though the two layers count one as local:
-     that is how tools/lab/shoot-screens.mjs opens a build, and a store
-     screenshot is the one picture that must never wear it. */
+     Its clock can be moved by hand there (W.Dev, section 0), so a screenshot
+     must never be mistaken for the real thing. It is also the DOOR to the DEV
+     view (packages/webshell/dev.js): the clock, and every card and action the
+     layers can fire, one tap each. It wears the offset while the clock is
+     ahead of the real one — "Dev +52h" — and reads "Dev" alone on the real
+     clock, since a moved clock is the one thing about this machine that a
+     picture of it cannot show. It is said ONCE, in the band, in front of the
+     level chip — not on each screen that bends a rule, which is how three
+     pills in three places came to mean one thing. A deployed site's hostname
+     is none of these, so the node is never built there. NOT on a file://
+     page, though the two layers count one as local: that is how
+     tools/lab/shoot-screens.mjs opens a build, and a store screenshot is the
+     one picture that must never wear it. */
   var DEV = W.Dev.local && location.hostname !== "";
+  var devPills = [];
+  function devWord() {
+    var h = Math.round(W.Dev.offset / 3600000);
+    return up("Dev") + (h ? " +" + h + "h" : "");
+  }
   function devPill() {
-    var b = el("button", "mt-dev", up("Dev"));
-    function paint() {
-      var on = W.Dev.on();
-      b.classList.toggle("off", !on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-      b.setAttribute("aria-label", on ? T.devOn : T.devOff);
-    }
-    b.addEventListener("click", function () { W.Dev.set(!W.Dev.on()); });
-    W.Dev.onChange(paint);
-    paint();
+    var b = el("button", "mt-dev", devWord());
+    b.setAttribute("aria-label", "Dev");
+    b.addEventListener("click", function () { VW.go("dev"); });
+    devPills.push(b);
     return b;
   }
-  /* Said once per flip, whatever holds a pill, and every figure a clock
-     drives is repainted under it. */
-  W.Dev.onChange(function (on) {
-    if (W.Notify) W.Notify.say(on ? T.devOn : T.devOff, { kind: on ? "warn" : "info", icon: "hourglass", key: "dev" });
+  /* Every figure a clock drives is repainted when it moves. */
+  W.Dev.onChange(function () {
+    for (var i = 0; i < devPills.length; i++) devPills[i].textContent = devWord();
     changed();
   });
 
@@ -2965,6 +3013,23 @@
   function moreRepaint() { paintMore(); }
 
   /* ── 12. the module ───────────────────────────────────────────────────── */
+
+  /* WHAT THE DEV VIEW CAN FIRE out of this layer (packages/webshell/dev.js):
+     the real cards, paying into the real wallet. */
+  if (ON && DEV) {
+    W.Dev.entry({ group: "Shell", label: "Three gift boxes", sub: "The ceremony a perfect round and a gift day open",
+                  run: function () { gift({ boost: true }); } });
+    W.Dev.entry({ group: "Shell", label: "Starred gift ×5", sub: "The seventh day's three boxes",
+                  run: function () { gift({ rich: true, mult: 5, boost: false }); } });
+    W.Dev.entry({ group: "Shell", label: "Prize", sub: "One reward, no choice — a small day of the road",
+                  run: function () { prize({ reward: randomReward(false), boost: true }); } });
+    W.Dev.entry({ group: "Shell", label: "Level up", sub: "The card only: no xp and no ticket are paid",
+                  run: function () { levelUp(1); } });
+    W.Dev.entry({ group: "Shell", label: "Rewarded ad", sub: "The placeholder, with its countdown",
+                  run: function () { ad(function () {}); } });
+    W.Dev.entry({ group: "Shell", label: "Sticker reward", sub: "A sticker rolled and given, as a gift pays one",
+                  run: function () { var n = roll(); give(n); stickerCard(n, null); } });
+  }
 
   window.__META__ = {
     active: function () { return ON; },

@@ -93,6 +93,7 @@
   function levelled() { return !!(LV && LV.active()); }
   function metaed() { return !!(MT && MT.active()); }
   function armied() { return !!(AR && AR.active()); }
+  var CX = window.__CODEX__ || null;
 
   function $(id) { return document.getElementById(id); }
 
@@ -443,6 +444,7 @@
     /* The barracks names its own four, out of its own strings — a house's word
        is the ROLE'S and nothing in a village is typed twice. */
     if (armied() && AR.label(role)) return AR.label(role);
+    if (role === "cards") return CX && CX.active() ? CX.label() : "";
     if (!metaed()) return "";
     if (role === "album") return MT.text("stickersEntry");
     if (role === "shop") return MT.text("shop");

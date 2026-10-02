@@ -1,0 +1,1324 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>marble-defense prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0a07; overflow: hidden;
+    touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------------------
+// The marble run of marble-router, under attack.
+//
+// Same machine: a hopper pours marbles on brass rails with real slope
+// physics, four flip-flop switches S0-S3 route them (a tap flips the nearest
+// one, and every marble passing flips it too), escapements store a queue
+// before each switch, a notched wheel merges the two inner lines, and the
+// gutter sends everything home through the screw, the top rail and the
+// bucket lift.
+//
+// What changed:
+//   heart    - the notched wheel is the heart of the machine. Its hull is the
+//              bar above it; the round is lost when it reaches zero.
+//   beetles  - rusty clockwork beetles crawl in from the LEFT and the RIGHT
+//              edge along a girder, straight at the heart, and chew on it
+//              once they get there. A red chevron at the edge warns of a
+//              group about to come in. Five waves, bigger and faster each
+//              time, with a tougher, horned beetle now and then.
+//   turrets  - the machines are guns now, and the marbles their ammunition.
+//              Left turret (where the bell was) covers the left half of the
+//              screen, Right turret (where the cannon was) the right half, and
+//              the Mortar (where the launcher was) lobs a shell with a splash
+//              at the beetle closest to the heart, anywhere. Every good marble
+//              delivered is one round, stacked in the turret's two tubes; the
+//              turret fires on its own, one marble per shot, and the marble is
+//              the projectile. A gold marble is three rounds. A turret holds
+//              eight; past that a marble falls through, so stocking one side
+//              in advance only goes so far.
+//   bombs    - still belong in the furnace, and a bomb in a turret still jams
+//              it: it loses its stored rounds, stops for a while, and the
+//              backfire costs the heart a point of hull. Every bomb burnt
+//              charges the furnace; charged, it blasts every beetle near the
+//              heart.
+//
+// The route is the whole game: S0 picks a side, S1 sends the left line to the
+// Left turret or to the wheel, S2 the same on the right, and S3 under the
+// wheel sends bombs to the furnace and good marbles to the Mortar.
+//
+// The question: is routing ammo to the side under attack fun?
+//
+// Tap: flip the nearest switch. Tap "Auto" (or A) to let it play itself.
+// Keys 1-4 flip S0-S3, R restarts.
+// ---------------------------------------------------------------------------
+
+// --- tunables --------------------------------------------------------------
+var W = 720, H = 1280;          // design space, portrait
+var R = 14;                     // marble radius
+var WAVES = 5;                  // survive this many to win
+var HULL = 16;                  // the heart's hit points
+var G = 780;                    // px/s^2 of gravity along a slope
+var FRICTION = 55;              // px/s^2 of rolling drag
+var VMIN = 110, VMAX = 400;     // a marble never stalls and never flies off
+var TEMPO_START = 0.9, TEMPO_END = 1.1;     // time scale of the rails, wave 1 to the last wave
+var SPAWN_START = 1.0, SPAWN_END = 0.75;    // seconds between two marbles
+var HOPPER_HOLD = 6;            // the hopper stops pouring while the top gate holds this many
+var BAD_START = 0.25, BAD_END = 0.35;       // share of bombs in the stream
+var GOLD_CHANCE = 0.05;         // a rare big marble, worth GOLD_FILL rounds
+var GOLD_FILL = 3;
+var JAM_SECONDS = 3;            // a bomb in a turret: it loses its rounds and stops this long
+var JAM_DMG = 1;                // ... and the backfire costs the heart this much hull
+var AMMO_MAX = 8;               // rounds a turret holds (its two tubes); a marble past that falls through
+// Waves and beetles.
+var WAVE_BASE = 7, WAVE_GROW = 2;           // beetles in wave 1, and how many more each wave
+var WAVE_CAP = 5;               // Auto keeps going past the last wave, at the last wave's size and speed
+var WAVE_BREAK = 3;             // seconds of calm (and the "Wave n" plate) between two waves
+var WAVE_LINGER = 10;           // a wave not cleared this long after its last beetle gives way anyway
+var GROUP_MAX = 3;              // beetles come in groups of 1 to GROUP_MAX, all on one side
+var GROUP_GAP = 1.6, GROUP_GAP_END = 1.0;   // seconds between two groups, wave 1 and the last wave
+var GROUP_EACH = 0.4;            // ... plus this much per beetle in the group
+var WARN_TIME = 1.6;            // the edge chevron shows this long before a group comes in
+var BEETLE_SPEED = 38;          // px/s in wave 1...
+var BEETLE_SPEED_GROW = 0.1;    // ... and 10% faster each wave after it
+var BEETLE_HP = 1;
+var TOUGH_HP = 4, TOUGH_SPEED = 0.7, TOUGH_CHANCE = 0.1, TOUGH_CHANCE_GROW = 0.04; // from wave 2
+var BITE_EVERY = 1.2;           // a beetle at the heart bites this often...
+var BITE_DMG = 1, TOUGH_BITE_DMG = 2;       // ... for this much hull
+// Turrets.
+var GUN_RATE = 0.3;             // seconds between two shots of a side turret
+var SHOT_SPEED = 1100;          // px/s of a marble fired by a side turret
+var SHOT_DMG = 1;
+var MORTAR_RATE = 0.8, MORTAR_T = 0.95, MORTAR_ARC = 260, MORTAR_SPLASH = 64, MORTAR_DMG = 1;
+var BLAST_CHARGE = 5;           // bombs burnt to charge the furnace's blast
+var BLAST_R = 200;              // ... which clears every beetle this close to the heart's centre
+var KNOCKBACK = 6;              // px a hit pushes a beetle back (half that for a tough one)
+// Controls and machinery.
+var TAP_REACH = 240;            // a tap farther than this from every switch does nothing
+var FLIP_TIME = 0.09;
+var TOGGLE_ON_PASS = true;      // a marble passing a switch flips it
+var WHEEL_OMEGA = 1.8;          // rad/s
+var WHEEL_NOTCHES = 8;
+var GUTTER_SPEED = 220, LIFT_SPEED = 150, CUP_GAP = 56;
+// Escapements: channel, where on it (share of its length), seconds per marble
+// in wave 1 and in the last wave, and where the pendulum's pivot hangs from,
+// relative to the pallet.
+var GATES = [["top", 0.8, 1.0, 0.75, 0, -88], ["S0L", 0.78, 1.25, 0.9, 0, -88],
+  ["S0R", 0.78, 1.25, 0.9, 0, -88], ["wout", 0.6, 0.9, 0.7, 52, -52]];
+var GATE_PRESSURE = 3;          // a queue this long swings the pendulum faster...
+var GATE_RUSH = 0.6;            // ... by this factor
+var WOUT_CAP = 2;               // marbles the gate under the wheel stores before the wheel keeps them
+var SCREW_X = 24, SCREW_BOT = 1238, SCREW_TOP = 44, SCREW_SPEED = 110;
+var BG_RAIL_SPEED = 120;
+var FERRIS = { cx: 590, cy: 350, r: 56, buckets: 6, omega: 0.6, marbles: 5 };
+var BG_ALPHA = 0.42;            // how far back the return circuits sit
+var AUTO_RATE = 0.22;           // seconds between two flips of the autopilot
+var AUTO_REPAIR = 4;             // Auto is endless: the heart gets this much hull back between two waves
+var AUTO_AMMO_W = 0.8;          // the autopilot counts a stored round as this much of a beetle's hp
+
+// --- palette ---------------------------------------------------------------
+var C_BG = "#1c140e", C_BG2 = "#241a12", C_WOOD = "#5a3d25", C_BRASS = "#c9994a",
+    C_BRASS_D = "#7a5a2a", C_STEEL = "#8d95a3", C_GOOD = "#f2b53a", C_BAD = "#1d1d22";
+
+// --- the network -------------------------------------------------------------
+var DS = 5;                     // rails are resampled every DS px
+var MID = 330;                  // the machine is symmetric about x = MID
+function mir(pts) { var o = []; for (var i = 0; i < pts.length; i++) o.push([2 * MID - pts[i][0], pts[i][1], pts[i][2]]); return o; }
+function loopPts(cx, cy, r) {
+  var o = [];
+  for (var i = 1; i <= 60; i++) { var a = Math.PI / 2 - i / 60 * Math.PI * 2; o.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  return o;
+}
+// A spiral seen from slightly above: x = sin, depth = cos, the near half lower.
+function coilPts(cx, y0, y1, r, turns) {
+  var o = [], n = turns * 48;
+  for (var i = 0; i <= n; i++) {
+    var a = i / n * turns * Math.PI * 2;
+    o.push([cx + r * Math.sin(a), y0 + (y1 - y0) * i / n + r * 0.35 * Math.cos(a), Math.cos(a)]);
+  }
+  return o;
+}
+var SW = { S0: [MID, 262], S1: [150, 470], S2: [2 * MID - 150, 470], S3: [MID, 790] };
+var WHEEL = { cx: MID, cy: 615, r: 70 };
+var S0L = [[MID, 262], [215, 318], [252, 392], [150, 470]];
+var S1L = [[150, 470], [60, 560], [110, 650], [30, 760], [32, 830], [52, 858], [100, 870]]
+  .concat(loopPts(100, 820, 50), [[140, 880], [168, 930], [85, 1005], [85, 1074]]);
+var S1R = [[150, 470], [250, 535], [205, 595], [WHEEL.cx - WHEEL.r, WHEEL.cy]];
+var RAW = {
+  top:  { to: "S0", pts: [[650, 152], [560, 186], [450, 212], [MID, 262]] },
+  S0L:  { to: "S1", pts: S0L },            S0R: { to: "S2", pts: mir(S0L) },
+  S1L:  { to: "left", pts: S1L },           S1R: { to: "wheelL", pts: S1R },
+  S2L:  { to: "wheelR", pts: mir(S1R) },    S2R: { to: "right", pts: mir(S1L) },
+  wout: { to: "S3", pts: [[MID, WHEEL.cy + WHEEL.r], [MID, 790]] },
+  S3L:  { to: "furnace", pts: [[MID, 790], [255, 850], [300, 930], [250, 1000], [250, 1074]] },
+  S3R:  { to: "mortar", pts: [[MID, 790], [420, 842]].concat(coilPts(410, 850, 1030, 44, 2), [[410, 1074]]) }
+};
+var OUT = { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] };
+var MACHINE_DEFS = [
+  { id: "left", name: "Left turret", x: 85, color: "#f5c542" },
+  { id: "furnace", name: "Furnace", x: 250, color: "#ff6a2a" },
+  { id: "mortar", name: "Mortar", x: 410, color: "#4fd1c5" },
+  { id: "right", name: "Right turret", x: 575, color: "#b18cff" }
+];
+var BOX_Y = 1080, BOX_H = 120, BOX_W = 150;
+var GUTTER_L = 12, GUTTER_Y = 1226;
+var LIFT_X = 690, LIFT_BOT = 1240, LIFT_TOP = 118;
+var HOPPER = { x: 690, y: 118 };
+var CHIMES = [["top", 0.22], ["top", 0.42], ["top", 0.62], ["S0L", 0.55], ["S0R", 0.55], ["S3L", 0.5]];
+var DECO_GEARS = [[120, 250, 58, 11], [470, 740, 52, 10],
+  [185, 740, 44, 9], [600, 900, 66, 13], [60, 960, 40, 8], [520, 1010, 36, 7]];
+
+// Background rails: the top return from the screw, and the ferris wheel's run.
+var BG_RAW = {
+  back: [[SCREW_X, SCREW_TOP], [200, 50], [380, 58], [560, 64], [656, 70]],
+  ferris: [[612, 292], [650, 318], [618, 350], [652, 382], [606, 410]]
+};
+
+// Resample every channel to one point every DS px, keeping a depth per point.
+var CH = {}, BG = {};
+function makeChannel(k, to, raw) {
+  var xs = [], ys = [], zs = [];
+  xs.push(raw[0][0]); ys.push(raw[0][1]); zs.push(raw[0][2] === undefined ? 1 : raw[0][2]);
+  var carry = 0;
+  for (var i = 1; i < raw.length; i++) {
+    var a = raw[i - 1], b = raw[i], za = a[2] === undefined ? 1 : a[2], zb = b[2] === undefined ? 1 : b[2];
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.sqrt(dx * dx + dy * dy), s = DS - carry;
+    while (s <= L) { var q = s / L; xs.push(a[0] + dx * q); ys.push(a[1] + dy * q); zs.push(za + (zb - za) * q); s += DS; }
+    carry = L - (s - DS);
+  }
+  var last = raw[raw.length - 1];
+  xs.push(last[0]); ys.push(last[1]); zs.push(last[2] === undefined ? 1 : last[2]);
+  var n = xs.length, coil = false;
+  for (i = 0; i < n; i++) if (zs[i] < 0) coil = true;
+  return { id: k, to: to, xs: xs, ys: ys, zs: zs, n: n, len: (n - 1) * DS, coil: coil };
+}
+for (var chk in RAW) CH[chk] = makeChannel(chk, RAW[chk].to, RAW[chk].pts);
+for (chk in BG_RAW) BG[chk] = makeChannel(chk, null, BG_RAW[chk]);
+function at(ch, d) {
+  var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
+  return { x: ch.xs[i] + (ch.xs[i + 1] - ch.xs[i]) * q, y: ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q,
+           z: ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q, slope: (ch.ys[i + 1] - ch.ys[i]) / DS };
+}
+// The gutter is a shallow V: each half runs out to its own return circuit.
+function gutterY(x) { return GUTTER_Y + Math.abs(x - MID) * 0.03; }
+
+// --- canvas ------------------------------------------------------------------
+var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1, trackLayer = null, frontLayer = null;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  offX = (innerWidth - W * scale) / 2; offY = (innerHeight - H * scale) / 2;
+  buildLayers();
+}
+
+// The rails never move, so they are drawn once: sleepers, a shadow, two brass
+// rails. The coil's near half is also drawn on a second layer that goes OVER
+// the marbles, which is what puts a marble behind its own rails.
+function buildLayers() {
+  var k = scale * dpr;
+  trackLayer = document.createElement("canvas"); frontLayer = document.createElement("canvas");
+  trackLayer.width = frontLayer.width = Math.max(1, Math.round(W * k));
+  trackLayer.height = frontLayer.height = Math.max(1, Math.round(H * k));
+  var t = trackLayer.getContext("2d"), f = frontLayer.getContext("2d");
+  t.setTransform(k, 0, 0, k, 0, 0); f.setTransform(k, 0, 0, k, 0, 0);
+  for (var id in CH) {
+    var ch = CH[id];
+    drawRails(t, ch, function (z) { return z < 0; }, 0.4);
+    drawRails(t, ch, function (z) { return z >= 0; }, 1);
+    if (ch.coil) drawRails(f, ch, function (z) { return z >= 0.15; }, 1);
+  }
+}
+function normalAt(ch, i) {
+  var a = Math.max(0, i - 1), b = Math.min(ch.n - 1, i + 1);
+  var dx = ch.xs[b] - ch.xs[a], dy = ch.ys[b] - ch.ys[a], L = Math.sqrt(dx * dx + dy * dy) || 1;
+  return [-dy / L, dx / L];
+}
+function drawRails(c, ch, keep, alpha) {
+  c.globalAlpha = alpha; c.lineCap = "round"; c.lineJoin = "round";
+  var i, nv;
+  c.strokeStyle = C_WOOD; c.lineWidth = 5;
+  for (i = 0; i < ch.n; i += 5) {
+    if (!keep(ch.zs[i])) continue;
+    nv = normalAt(ch, i);
+    c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 7), ch.ys[i] - nv[1] * (R + 7));
+    c.lineTo(ch.xs[i] + nv[0] * (R + 7), ch.ys[i] + nv[1] * (R + 7)); c.stroke();
+  }
+  var sides = [-(R + 2), R + 2], pass, s;
+  for (pass = 0; pass < 2; pass++) {
+    c.strokeStyle = pass ? C_BRASS : "rgba(0,0,0,0.45)"; c.lineWidth = pass ? 3.5 : 5;
+    for (s = 0; s < 2; s++) {
+      var open = false;
+      c.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        if (!keep(ch.zs[i])) { open = false; continue; }
+        nv = normalAt(ch, i);
+        var x = ch.xs[i] + nv[0] * sides[s] + (pass ? 0 : 1.5), y = ch.ys[i] + nv[1] * sides[s] + (pass ? 0 : 2.5);
+        if (!open) { c.moveTo(x, y); open = true; } else c.lineTo(x, y);
+      }
+      c.stroke();
+    }
+  }
+  c.globalAlpha = 1;
+}
+addEventListener("resize", resize);
+
+// --- the lanes -------------------------------------------------------------------
+// The beetles walk a girder on each side, straight at the heart, and stop
+// against its cog: STOP_DX from the centre, plus part of their own body.
+var LANE_Y = 660;
+var HEART_R = WHEEL.r + 14;
+var STOP_DX = Math.sqrt(HEART_R * HEART_R - (LANE_Y - WHEEL.cy) * (LANE_Y - WHEEL.cy));
+var GUN_Y = BOX_Y + 72;          // pivot of a turret's barrel
+
+// --- state -------------------------------------------------------------------
+var marbles, queue, machines, sw, parts, floats, rings, wheel, chimes, gates, ferris;
+var enemies, shots, warns, wave, banner, hull, heartHit, blast, won;
+var state, t, spawnT, shake, stats, flow, gearA, liftPhase, stock, screwPhase;
+var auto = false, autoT = 0, autoWrecks = 0;
+
+function reset() {
+  marbles = []; queue = []; parts = []; floats = []; rings = [];
+  enemies = []; shots = []; warns = [];
+  machines = {};
+  for (var i = 0; i < MACHINE_DEFS.length; i++) {
+    var d = MACHINE_DEFS[i];
+    machines[d.id] = { id: d.id, name: d.name, x: d.x, color: d.color, ammo: 0, jam: 0, fire: 0, cool: 0,
+      aim: -Math.PI / 2, target: null, charge: 0 };
+  }
+  sw = {};
+  for (var k in SW) {
+    var dir = k === "S1" ? 1 : 0;
+    sw[k] = { x: SW[k][0], y: SW[k][1], dir: dir, ang: branchAngle(k, dir), spin: 0, flash: 0 };
+  }
+  wheel = { phase: 0, notch: [], q: { wheelL: [], wheelR: [] } };
+  for (i = 0; i < WHEEL_NOTCHES; i++) wheel.notch.push(null);
+  gates = [];
+  for (i = 0; i < GATES.length; i++) {
+    var gc = CH[GATES[i][0]], gd = gc.len * GATES[i][1], gp = at(gc, gd), ga = at(gc, gd + 5);
+    var tl = Math.sqrt((ga.x - gp.x) * (ga.x - gp.x) + (ga.y - gp.y) * (ga.y - gp.y)) || 1;
+    gc.gate = { ch: gc, d: gd, p0: GATES[i][2], p1: GATES[i][3], q: [], timer: 0, open: 0, side: 1,
+      x: gp.x, y: gp.y, tx: (ga.x - gp.x) / tl, ty: (ga.y - gp.y) / tl, px: GATES[i][4], py: GATES[i][5] };
+    gates.push(gc.gate);
+  }
+  ferris = { phase: 0, bucket: [], rail: [], wait: [] };
+  for (i = 0; i < FERRIS.buckets; i++) ferris.bucket.push(i < FERRIS.marbles ? { rot: i } : null);
+  chimes = [];
+  for (i = 0; i < CHIMES.length; i++) {
+    var ch = CH[CHIMES[i][0]], cd = ch.len * CHIMES[i][1], p = at(ch, cd), nv = normalAt(ch, Math.round(cd / DS));
+    if (nv[1] > 0) nv = [-nv[0], -nv[1]];      // hang it on the upper side of the rail
+    chimes.push({ ch: ch, d: cd, x: p.x + nv[0] * 30, y: p.y + nv[1] * 30, hit: 9 });
+  }
+  for (i = 0; i < 3; i++) queue.push(rollKind(0));
+  state = "play"; t = 0; spawnT = 0.6; shake = 0; hull = HULL; heartHit = 0; blast = 0; won = false;
+  flow = 0; gearA = 0; liftPhase = 0; screwPhase = 0; stock = 6;
+  // The first break is the calm before wave 1: the first marbles are already
+  // on their way down while the plate says what is coming.
+  wave = { n: 0, phase: "break", t: WAVE_BREAK + 1, age: 0, left: 0, groupT: 0, since: 0 };
+  banner = { str: "Wave 1", sub: "Beetles from both sides", t: 0 };
+  stats = { ammo: 0, full: 0, shots: 0, kills: 0, bites: 0, jams: 0, burnt: 0, wasted: 0, blasts: 0 };
+}
+
+function progress() { return Math.max(0, Math.min(1, (wave.n - 1) / (WAVES - 1))); }
+function branchAngle(id, dir) {
+  var ch = CH[OUT[id][dir]], p = at(ch, 30);
+  return Math.atan2(p.y - SW[id][1], p.x - SW[id][0]);
+}
+function lerp(a, b, k) { return a + (b - a) * k; }
+function mod(a, m) { return ((a % m) + m) % m; }
+function rollKind(k) {
+  var r = Math.random();
+  if (r < GOLD_CHANCE) return "gold";
+  return r < GOLD_CHANCE + lerp(BAD_START, BAD_END, k) ? "bad" : "good";
+}
+function newMarble(kind, x, y) {
+  var m = { kind: kind, st: "track", ch: null, d: 0, v: VMIN, x: x, y: y, z: 1, rot: Math.random() * 6 };
+  marbles.push(m); return m;
+}
+function spawn(kind) {
+  var m = newMarble(kind === "gold" ? "good" : kind, CH.top.xs[0], CH.top.ys[0]);
+  m.ch = CH.top; m.gold = kind === "gold";
+  if (stock > 0) stock--;
+}
+
+// --- events ------------------------------------------------------------------
+// A good marble in a turret is one round in its tubes; a bomb jams it. The
+// furnace burns bombs into the blast charge, and wastes a good marble.
+function deliver(m, id) {
+  var mc = machines[id];
+  if (id === "furnace") {
+    kill(m);
+    if (m.kind === "bad") {
+      stats.burnt++; burst(mc.x, BOX_Y + 20, "#ff6a2a", 14);
+      if (mc.charge < BLAST_CHARGE) {
+        mc.charge++;
+        say(mc.charge >= BLAST_CHARGE ? "Blast ready" : "Charge " + mc.charge, mc.x, BOX_Y - 10, mc.color);
+      }
+    } else { stats.wasted++; say("Wasted", mc.x, BOX_Y - 30, "#c8b8a0"); burst(mc.x, BOX_Y + 20, "#ffd27a", 8); }
+    return;
+  }
+  if (m.kind === "bad") {
+    kill(m);
+    if (mc.jam > 0) { say("Jammed", mc.x, BOX_Y - 30, "#ff5a5a"); return; }
+    mc.jam = JAM_SECONDS; mc.ammo = 0; stats.jams++; shake = 0.35;
+    hull = Math.max(0, hull - JAM_DMG); heartHit = 0.35;
+    burst(mc.x, BOX_Y + 30, "#ff5a5a", 26); say("Jam!  -" + JAM_DMG, mc.x, BOX_Y - 30, "#ff5a5a");
+    return;
+  }
+  if (mc.jam > 0) {
+    // A jammed turret cannot load: the marble falls through to the gutter.
+    m.st = "drop"; m.vy = 0; m.kind = "spent"; m.gdir = m.x < MID ? -1 : 1;
+    say("Jammed", mc.x, BOX_Y - 30, "#ff5a5a"); return;
+  }
+  if (mc.ammo >= AMMO_MAX) {
+    m.st = "drop"; m.vy = 0; m.kind = "spent"; m.gdir = m.x < MID ? -1 : 1;
+    say("Full", mc.x, BOX_Y - 30, "#c8b8a0"); stats.full++; return;
+  }
+  kill(m);
+  var n = Math.min(AMMO_MAX - mc.ammo, m.gold ? GOLD_FILL : 1);
+  mc.ammo += n; stats.ammo += n;
+  say("+" + n, mc.x, BOX_Y - 10, mc.color);
+  burst(mc.x, BOX_Y, mc.color, 6);
+}
+function kill(m) { m.st = "dead"; }
+
+// The beetle a turret should shoot: on screen, in its half (either half for
+// the mortar), not already covered by a shot in flight, closest to the heart.
+function pickTarget(half) {
+  var best = null, bd = 1e9;
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (e.dead || e.x < 6 || e.x > W - 6 || e.pending >= e.hp) continue;
+    if (half < 0 && e.x >= MID) continue;
+    if (half > 0 && e.x < MID) continue;
+    var d = Math.abs(e.x - e.stop);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function barrelTip(mc, len) { return { x: mc.x + Math.cos(mc.aim) * len, y: GUN_Y + Math.sin(mc.aim) * len }; }
+function fireGun(mc, e) {
+  var p = barrelTip(mc, 50);
+  mc.ammo--; mc.cool = GUN_RATE; mc.fire = 0.18; e.pending += SHOT_DMG; stats.shots++;
+  shots.push({ kind: "gun", x: p.x, y: p.y, target: e, tx: e.x, ty: e.y, color: mc.color, trail: [], rot: 0 });
+  burst(p.x, p.y, "#ffe9b0", 4);
+}
+function fireMortar(mc, e) {
+  // Aim where the beetle will be when the shell comes down.
+  var ahead = e.biting ? e.x : e.x + e.dir * e.speed * MORTAR_T;
+  if ((e.stop - ahead) * e.dir < 0) ahead = e.stop;
+  var p = barrelTip(mc, 40);
+  mc.ammo--; mc.cool = MORTAR_RATE; mc.fire = 0.35; e.pending += MORTAR_DMG; stats.shots++;
+  shots.push({ kind: "mortar", x: p.x, y: p.y, x0: p.x, y0: p.y, x1: ahead, y1: e.y, t: 0, target: e, color: mc.color, rot: 0 });
+  burst(p.x, p.y, "#bff7f0", 8);
+}
+// A spent marble drops from wherever it hit and goes home through the gutter.
+function casing(x, y) {
+  var m = newMarble("spent", Math.max(SCREW_X + 2, Math.min(LIFT_X - 2, x)), y);
+  m.st = "drop"; m.vy = -120; m.casing = true; m.gdir = x < MID ? -1 : 1;
+}
+function hurt(e, n) {
+  if (e.dead) return;
+  e.hp -= n; e.flash = 0.12;
+  e.x -= e.dir * KNOCKBACK * (e.tough ? 0.5 : 1); e.biting = false;
+  if (e.hp <= 0) {
+    e.dead = true; stats.kills++; shake = Math.max(shake, 0.1);
+    burst(e.x, e.y, "#b0643a", e.tough ? 26 : 14); burst(e.x, e.y, "#ffd27a", 6);
+    if (e.tough) say("Crushed", e.x, e.y - 40, "#ffd27a");
+  } else burst(e.x, e.y, "#ffd27a", 5);
+}
+function bite(e) {
+  var dmg = e.tough ? TOUGH_BITE_DMG : BITE_DMG;
+  hull = Math.max(0, hull - dmg); heartHit = 0.35; shake = Math.max(shake, 0.25); stats.bites++;
+  e.chomp = 0.25;
+  burst(e.stop - e.dir * e.r * 0.9, e.y, "#ff5a5a", 8);
+  say("-" + dmg, e.stop, e.y - 44, "#ff5a5a");
+}
+function fireBlast(mc) {
+  mc.charge = 0; mc.fire = 0.7; stats.blasts++; shake = 0.4;
+  for (var i = 0; i < 3; i++) rings.push({ x: WHEEL.cx, y: WHEEL.cy, t: -i * 0.1, color: "#ff8a3a", big: true });
+  say("Blast!", WHEEL.cx, WHEEL.cy - 120, "#ffb03a");
+  for (i = 0; i < enemies.length; i++) {
+    var e = enemies[i], dx = e.x - WHEEL.cx, dy = e.y - WHEEL.cy;
+    if (!e.dead && dx * dx + dy * dy < BLAST_R * BLAST_R) hurt(e, 99);
+  }
+}
+
+// --- waves -------------------------------------------------------------------
+function waveCount(n) { return WAVE_BASE + WAVE_GROW * (Math.min(n, WAVE_CAP) - 1); }
+function beetleSpeed(n) { return BEETLE_SPEED * (1 + BEETLE_SPEED_GROW * (Math.min(n, WAVE_CAP) - 1)); }
+function startWave() {
+  wave.n++; wave.phase = "fight"; wave.age = 0; wave.left = waveCount(wave.n); wave.groupT = 0.2; wave.since = 0;
+}
+function spawnBeetle(side, i) {
+  var n = wave.n, tough = n >= 2 && Math.random() < TOUGH_CHANCE + TOUGH_CHANCE_GROW * (Math.min(n, WAVE_CAP) - 2);
+  var r = tough ? 34 : 26, dir = side < 0 ? 1 : -1;
+  var e = { side: side, dir: dir, tough: tough, r: r, hp: tough ? TOUGH_HP : BEETLE_HP, max: tough ? TOUGH_HP : BEETLE_HP,
+    x: side < 0 ? -40 - i * 64 : W + 40 + i * 64, y: LANE_Y - 8 + (Math.random() - 0.5) * 12,
+    speed: beetleSpeed(n) * (tough ? TOUGH_SPEED : 1) * (0.9 + Math.random() * 0.2),
+    walk: Math.random() * 6, pending: 0, flash: 0, chomp: 0, biting: false, biteT: 0, dead: false };
+  e.stop = MID - dir * (STOP_DX + r * 0.55);
+  enemies.push(e);
+}
+function updateWaves(dt) {
+  if (wave.phase === "break") {
+    wave.t -= dt;
+    if (wave.t <= 0) startWave();
+    return;
+  }
+  wave.age += dt;
+  var pk = progress();
+  wave.groupT -= dt;
+  if (wave.left > 0 && wave.groupT <= 0) {
+    var n = Math.min(wave.left, 1 + Math.floor(Math.random() * GROUP_MAX)), side = Math.random() < 0.5 ? -1 : 1;
+    warns.push({ side: side, n: n, t: WARN_TIME });
+    wave.left -= n; wave.groupT = lerp(GROUP_GAP, GROUP_GAP_END, pk) + n * GROUP_EACH;
+  }
+  for (var i = warns.length - 1; i >= 0; i--) {
+    warns[i].t -= dt;
+    if (warns[i].t <= 0) { for (var j = 0; j < warns[i].n; j++) spawnBeetle(warns[i].side, j); warns.splice(i, 1); wave.since = 0; }
+  }
+  if (wave.left > 0 || warns.length) return;
+  wave.since += dt;
+  var alive = 0;
+  for (i = 0; i < enemies.length; i++) if (!enemies[i].dead) alive++;
+  if (!auto && wave.n >= WAVES) { if (!alive) { state = "over"; won = true; } return; }
+  if (!alive || wave.since > WAVE_LINGER) {
+    wave.phase = "break"; wave.t = WAVE_BREAK;
+    if (auto && hull < HULL) { hull = Math.min(HULL, hull + AUTO_REPAIR); say("Repaired", WHEEL.cx, 470, "#7fd36a"); }
+    var next = wave.n + 1;
+    banner = { str: "Wave " + next, sub: !auto && next === WAVES ? "Last wave" : alive ? "They keep coming" : "Wave " + wave.n + " cleared", t: 0 };
+  }
+}
+function say(str, x, y, color) { floats.push({ x: x, y: y, t: 0, color: color, str: str }); }
+function burst(x, y, color, n) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 320;
+    parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 150, life: 0.5 + Math.random() * 0.4, t: 0, color: color });
+  }
+}
+function flip(id, byMarble) {
+  var s = sw[id]; s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
+  if (!byMarble) s.spin += 0.6;
+}
+
+
+// --- update --------------------------------------------------------------------
+function update(dt) {
+  if (shake > 0) shake -= dt;
+  var i, k;
+  for (i = parts.length - 1; i >= 0; i--) {
+    var p = parts[i]; p.t += dt; p.vy += 900 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.t > p.life) parts.splice(i, 1);
+  }
+  for (i = floats.length - 1; i >= 0; i--) { floats[i].t += dt; if (floats[i].t > 1) floats.splice(i, 1); }
+  for (i = rings.length - 1; i >= 0; i--) { rings[i].t += dt; if (rings[i].t > 0.8) rings.splice(i, 1); }
+  for (k in sw) {
+    var s = sw[k], target = branchAngle(k, s.dir), da = mod(target - s.ang + Math.PI, Math.PI * 2) - Math.PI;
+    s.ang += da * Math.min(1, dt / FLIP_TIME * 1.5); s.flash = Math.max(0, s.flash - dt);
+  }
+  for (i = 0; i < chimes.length; i++) chimes[i].hit += dt;
+  banner.t += dt; heartHit = Math.max(0, heartHit - dt);
+  if (state !== "play") return;
+
+  t += dt;
+  var pk = progress(), mdt = dt * lerp(TEMPO_START, TEMPO_END, pk);
+  if (auto) autopilot(dt);
+  updateWaves(dt);
+  if (state !== "play") return;
+
+  spawnT -= dt;
+  if (spawnT <= 0 && CH.top.gate.q.length < HOPPER_HOLD) {
+    spawn(queue.shift()); queue.push(rollKind(pk)); spawnT = lerp(SPAWN_START, SPAWN_END, pk);
+  }
+
+  // Escapements: one marble per swing, a faster swing under a long queue.
+  for (i = 0; i < gates.length; i++) {
+    var gt = gates[i], period = lerp(gt.p0, gt.p1, pk) * (gt.q.length >= GATE_PRESSURE ? GATE_RUSH : 1);
+    gt.period = period; gt.timer -= mdt; gt.open = Math.max(0, gt.open - dt);
+    if (gt.timer <= 0 && gt.q.length) {
+      var gm = gt.q.shift();
+      gm.st = "track"; gm.gateOk = true; gm.v = VMIN; gm.d = gt.d + 1;
+      gt.open = 0.18; gt.side = -gt.side; gt.timer = period;
+    }
+  }
+
+  // Turrets: aim at their beetle and fire one stored marble per shot.
+  for (k in machines) {
+    var mc = machines[k];
+    mc.jam = Math.max(0, mc.jam - dt); mc.fire = Math.max(0, mc.fire - dt); mc.cool -= dt;
+    if (k === "furnace") {
+      if (mc.charge >= BLAST_CHARGE) {
+        for (i = 0; i < enemies.length; i++) {
+          var be = enemies[i], bdx = be.x - WHEEL.cx, bdy = be.y - WHEEL.cy;
+          if (!be.dead && bdx * bdx + bdy * bdy < (BLAST_R - 40) * (BLAST_R - 40)) { fireBlast(mc); break; }
+        }
+      }
+      continue;
+    }
+    var half = k === "left" ? -1 : k === "right" ? 1 : 0, tg = pickTarget(half);
+    mc.target = tg; mc.seen = false;
+    for (i = 0; i < enemies.length && half; i++) {
+      var ve = enemies[i];
+      if (!ve.dead && ve.x > 6 && ve.x < W - 6 && (half < 0) === (ve.x < MID)) mc.seen = true;
+    }
+    var want = tg ? Math.atan2(tg.y - GUN_Y, tg.x - mc.x) : -Math.PI / 2;
+    if (k === "mortar") want = -Math.PI / 2 + Math.max(-0.6, Math.min(0.6, (want + Math.PI / 2) * 0.6));
+    mc.aim += (want - mc.aim) * Math.min(1, dt * 10);
+    if (tg && mc.ammo > 0 && mc.jam <= 0 && mc.cool <= 0) {
+      if (k === "mortar") fireMortar(mc, tg); else fireGun(mc, tg);
+    }
+  }
+
+  // Shots in flight: a side turret's marble homes in, a mortar shell arcs.
+  for (i = shots.length - 1; i >= 0; i--) {
+    var sh = shots[i], e = sh.target;
+    sh.rot += dt * 20;
+    if (sh.kind === "gun") {
+      if (!e.dead) { sh.tx = e.x; sh.ty = e.y; }
+      var dx = sh.tx - sh.x, dy = sh.ty - sh.y, dl = Math.sqrt(dx * dx + dy * dy), stp = SHOT_SPEED * dt;
+      sh.trail.push(sh.x, sh.y); if (sh.trail.length > 12) sh.trail.splice(0, 2);
+      if (dl <= stp + 8) {
+        if (!e.dead) { e.pending -= SHOT_DMG; hurt(e, SHOT_DMG); }
+        casing(sh.tx, sh.ty); shots.splice(i, 1);
+      } else { sh.x += dx / dl * stp; sh.y += dy / dl * stp; }
+    } else {
+      sh.t += dt;
+      var q = Math.min(1, sh.t / MORTAR_T);
+      sh.x = lerp(sh.x0, sh.x1, q); sh.y = lerp(sh.y0, sh.y1, q) - MORTAR_ARC * 4 * q * (1 - q);
+      if (q >= 1) {
+        if (!e.dead) e.pending -= MORTAR_DMG;
+        rings.push({ x: sh.x1, y: sh.y1, t: 0, color: sh.color, splash: true });
+        burst(sh.x1, sh.y1, sh.color, 14);
+        for (var j = 0; j < enemies.length; j++) {
+          var se = enemies[j], sdx = se.x - sh.x1, sdy = se.y - sh.y1;
+          if (!se.dead && sdx * sdx + sdy * sdy < MORTAR_SPLASH * MORTAR_SPLASH) hurt(se, MORTAR_DMG);
+        }
+        casing(sh.x1, sh.y1); shots.splice(i, 1);
+      }
+    }
+  }
+
+  // Beetles crawl to the heart and chew on it.
+  for (i = 0; i < enemies.length; i++) {
+    var en = enemies[i];
+    if (en.dead) continue;
+    en.flash = Math.max(0, en.flash - dt); en.chomp = Math.max(0, en.chomp - dt);
+    if (!en.biting) {
+      en.x += en.dir * en.speed * dt; en.walk += dt * (4 + en.speed * 0.12);
+      if ((en.stop - en.x) * en.dir <= 0) { en.x = en.stop; en.biting = true; en.biteT = 0.35; }
+    } else {
+      en.biteT -= dt; en.walk += dt * 1.5;
+      if (en.biteT <= 0) { en.biteT = BITE_EVERY; bite(en); }
+    }
+  }
+  for (i = enemies.length - 1; i >= 0; i--) if (enemies[i].dead) enemies.splice(i, 1);
+  if (hull <= 0) {
+    if (auto) { autoWrecks++; reset(); return; }
+    state = "over"; won = false; return;
+  }
+
+  // The wheel turns; a waiting marble boards the first free notch that
+  // sweeps past its entry.
+  var step = Math.PI * 2 / WHEEL_NOTCHES, prev = wheel.phase, dA = WHEEL_OMEGA * mdt;
+  wheel.phase += dA;
+  var ENTRY = { wheelL: Math.PI, wheelR: 0 };
+  for (var en2 in wheel.q) {
+    var wq = wheel.q[en2];
+    if (!wq.length) continue;
+    for (j = 0; j < WHEEL_NOTCHES && wq.length; j++) {
+      if (wheel.notch[j]) continue;
+      if (mod(ENTRY[en2] - (prev + j * step), Math.PI * 2) < dA) {
+        var bm = wq.shift();
+        bm.st = "wheel"; bm.notch = j; bm.left = mod(Math.PI / 2 - ENTRY[en2], Math.PI * 2);
+        wheel.notch[j] = bm;
+      }
+    }
+  }
+
+  var onTrack = 0;
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "track") { onTrack++; roll(m, mdt); }
+    else if (m.st === "wait") {
+      var qq = wheel.q[m.ch.to], spot = m.ch.len - qq.indexOf(m) * 2.2 * R;
+      m.d = Math.min(spot, m.d + 260 * mdt); place(m);
+    } else if (m.st === "wheel") {
+      onTrack++;
+      m.left -= dA; m.rot += dA * WHEEL.r / R;
+      var ang = wheel.phase + m.notch * step;
+      m.x = WHEEL.cx + Math.cos(ang) * WHEEL.r; m.y = WHEEL.cy + Math.sin(ang) * WHEEL.r; m.z = 1;
+      if (m.left <= 0) {
+        // The gate under the wheel is full: the marble stays aboard for a lap.
+        if (CH.wout.gate.q.length >= WOUT_CAP) m.left += Math.PI * 2;
+        else { wheel.notch[m.notch] = null; m.st = "track"; m.ch = CH.wout; m.d = 0; m.v = VMIN + 40; m.gateOk = false; }
+      }
+    } else if (m.st === "gate") {
+      var gq = m.gate, gspot = Math.max(0, gq.d - gq.q.indexOf(m) * 2.2 * R);
+      m.d = Math.min(gspot, m.d + 220 * mdt); place(m);
+    } else if (m.st === "drop") {
+      m.vy += 1800 * dt; m.y += m.vy * dt;
+      if (m.y >= gutterY(m.x) - R) { m.y = gutterY(m.x) - R; m.st = "gutter"; }
+    } else if (m.st === "gutter") {
+      m.x += m.gdir * GUTTER_SPEED * dt; m.y = gutterY(m.x) - R; m.rot += m.gdir * GUTTER_SPEED * dt / R;
+      if (m.x >= LIFT_X) { m.x = LIFT_X; m.st = "cupwait"; }
+      else if (m.x <= SCREW_X) { m.x = SCREW_X; m.st = "screw"; m.y = SCREW_BOT; }
+    } else if (m.st === "screw") {
+      // Carried up the thread: the marble rides round the shaft as it climbs.
+      m.y -= SCREW_SPEED * dt; m.x = SCREW_X + Math.sin(m.y * 0.1) * 7; m.rot += dt * 6;
+      if (m.y <= SCREW_TOP) { m.st = "back"; m.d = 0; }
+    } else if (m.st === "back") {
+      m.d += BG_RAIL_SPEED * dt; m.rot += BG_RAIL_SPEED * dt / R;
+      var bp = at(BG.back, m.d); m.x = bp.x; m.y = bp.y - R * 0.7;
+      if (m.d >= BG.back.len) { m.st = "dead"; stock = Math.min(9, stock + 1); }
+    } else if (m.st === "cupwait") {
+      // Board the next cup that comes round the bottom of the lift.
+      if (mod(liftPhase, CUP_GAP) < LIFT_SPEED * dt * 1.5) { m.st = "lift"; m.ly = LIFT_BOT; }
+    } else if (m.st === "lift") {
+      m.ly -= LIFT_SPEED * dt; m.x = LIFT_X - 4; m.y = m.ly - 10;
+      if (m.ly <= LIFT_TOP + 20) { m.st = "dead"; stock = Math.min(9, stock + 1); }
+    }
+  }
+  liftPhase += LIFT_SPEED * dt; screwPhase += SCREW_SPEED * dt;
+  updateFerris(dt);
+  for (i = marbles.length - 1; i >= 0; i--) if (marbles[i].st === "dead") marbles.splice(i, 1);
+
+  flow += (onTrack * 0.05 - flow) * Math.min(1, dt * 2);
+  gearA += (0.25 + flow) * dt;
+}
+
+// A marble on the rails: gravity along the slope, rolling drag, clamped so it
+// never stalls at the top of a loop. At the end of a channel it meets a
+// switch (which it flips on its way through), the wheel, or a machine.
+function roll(m, mdt) {
+  var p = at(m.ch, m.d);
+  m.v = Math.max(VMIN, Math.min(VMAX, m.v + (G * p.slope - FRICTION) * mdt));
+  var d0 = m.d;
+  m.d += m.v * mdt; m.rot += m.v * mdt / R;
+  for (var i = 0; i < chimes.length; i++) {
+    var c = chimes[i];
+    if (c.ch === m.ch && d0 < c.d && m.d >= c.d) c.hit = 0;
+  }
+  var ch = m.ch, gt = ch.gate;
+  if (gt && !m.gateOk) {
+    var gstop = Math.max(0, gt.d - gt.q.length * 2.2 * R);
+    if (m.d >= gstop) { m.d = gstop; m.st = "gate"; m.gate = gt; gt.q.push(m); place(m); return; }
+  }
+  if (wheel.q[ch.to]) {
+    var stop = ch.len - wheel.q[ch.to].length * 2.2 * R;
+    if (m.d >= stop) { m.d = stop; m.st = "wait"; wheel.q[ch.to].push(m); }
+  } else if (m.d >= ch.len) {
+    if (OUT[ch.to]) {
+      var s = sw[ch.to], rest = m.d - ch.len;
+      m.ch = CH[OUT[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
+      if (TOGGLE_ON_PASS) flip(ch.to, true);
+    } else { deliver(m, ch.to); return; }
+  }
+  place(m);
+}
+function place(m) { var p = at(m.ch, m.d); m.x = p.x; m.y = p.y; m.z = p.z; }
+
+// The ferris wheel in the back: buckets pick marbles up at the bottom, tip
+// them just past the top onto a little zigzag that brings them back down.
+function updateFerris(dt) {
+  var step = Math.PI * 2 / FERRIS.buckets, prev = ferris.phase, dA = FERRIS.omega * dt, i, j;
+  ferris.phase += dA;
+  var TIP = Math.PI * 1.5 + 0.3, LOAD = Math.PI * 0.5;
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a0 = prev + j * step, b = ferris.bucket[j];
+    if (b && mod(TIP - a0, Math.PI * 2) < dA) { ferris.bucket[j] = null; ferris.rail.push({ d: 0, rot: b.rot }); }
+    else if (!b && ferris.wait.length && mod(LOAD - a0, Math.PI * 2) < dA) ferris.bucket[j] = ferris.wait.shift();
+  }
+  for (i = ferris.rail.length - 1; i >= 0; i--) {
+    var r = ferris.rail[i];
+    r.d += 90 * dt; r.rot += 90 * dt / R;
+    if (r.d >= BG.ferris.len) { ferris.rail.splice(i, 1); ferris.wait.push(r); }
+  }
+}
+
+
+// --- autopilot -------------------------------------------------------------------
+// Which turret needs rounds most: the side whose beetles (weighted by hp and
+// by how close they are to the heart, plus the groups announced at its edge)
+// outweigh the rounds already stored there. Nothing pressing: the mortar.
+function threatSide() {
+  var need = { left: -machines.left.ammo * AUTO_AMMO_W, right: -machines.right.ammo * AUTO_AMMO_W };
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (e.dead) continue;
+    need[e.x < MID ? "left" : "right"] += e.hp * (2 - Math.min(1, Math.abs(e.x - e.stop) / 300));
+  }
+  for (i = 0; i < warns.length; i++) need[warns[i].side < 0 ? "left" : "right"] += warns[i].n;
+  if (machines.left.jam > 0 || machines.left.ammo >= AMMO_MAX) need.left = -99;
+  if (machines.right.jam > 0 || machines.right.ammo >= AMMO_MAX) need.right = -99;
+  if (need.left <= 0 && need.right <= 0) return "mortar";
+  return need.left >= need.right ? "left" : "right";
+}
+// Where a switch should send the marble about to reach it.
+function routeWant(id, m) {
+  var bad = m.kind === "bad", tg = threatSide(), cur = sw[id].dir;
+  if (id === "S0") return bad ? cur : tg === "left" ? 0 : tg === "right" ? 1 : cur;
+  if (id === "S1") return bad ? 1 : tg === "left" ? 0 : 1;
+  if (id === "S2") return bad ? 0 : tg === "right" ? 1 : 0;
+  return bad ? 0 : 1;
+}
+// The marble on the rails that reaches a switch next, and how far it is.
+function nextAt(id) {
+  var best = null, rem = 1e9;
+  for (var i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st !== "track" || m.ch.to !== id) continue;
+    var r = m.ch.len - m.d;
+    if (r < rem) { rem = r; best = m; }
+  }
+  return best ? { m: best, rem: rem } : null;
+}
+function autopilot(dt) {
+  autoT -= dt;
+  if (autoT > 0) return;
+  for (var id in sw) {
+    var nx = nextAt(id);
+    if (!nx || nx.rem > 150) continue;
+    if (sw[id].dir !== routeWant(id, nx.m)) { flip(id); autoT = AUTO_RATE; return; }
+  }
+}
+
+// --- render ----------------------------------------------------------------------
+function cog(x, y, r, teeth, a, col) {
+  ctx.fillStyle = col; ctx.beginPath();
+  for (var i = 0; i < teeth * 2; i++) {
+    var an = a + i * Math.PI / teeth, an2 = a + (i + 1) * Math.PI / teeth, rr = i % 2 ? r : r * 0.8;
+    ctx.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr);
+    ctx.lineTo(x + Math.cos(an2) * rr, y + Math.sin(an2) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.fill();
+}
+function drawMarble(m) {
+  var s = m.z < 0 ? 0.86 : 1, r = R * s * (m.gold ? 1.2 : 1), x = m.x, y = m.y;
+  var ga = ctx.globalAlpha;
+  ctx.globalAlpha = ga * (m.z < 0 ? 0.75 : 1);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(x + 3, y + r * 0.8, r * 0.9, r * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+  var base = m.kind === "bad" ? C_BAD : m.kind === "spent" ? "#aab0bb" : m.gold ? "#ff9d00" : C_GOOD;
+  ctx.fillStyle = base; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  // The swirl turns with the roll, the highlight stays with the light.
+  ctx.strokeStyle = m.kind === "bad" ? "#ff4a3a" : "rgba(255,255,255,0.55)"; ctx.lineWidth = m.kind === "bad" ? 3 : 2.5;
+  ctx.beginPath(); ctx.arc(x, y, r * 0.6, m.rot, m.rot + 2.2); ctx.stroke();
+  if (m.kind === "bad") {
+    var fx = x + Math.cos(m.rot) * r * 0.6, fy = y + Math.sin(m.rot) * r * 0.6;
+    ctx.fillStyle = Math.sin(t * 40 + m.rot) > 0 ? "#ffe066" : "#ff4a3a";
+    ctx.beginPath(); ctx.arc(fx, fy, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.beginPath(); ctx.arc(x - r * 0.38, y - r * 0.4, r * 0.24, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = ga;
+}
+
+function drawWheel() {
+  var step = Math.PI * 2 / WHEEL_NOTCHES;
+  cog(WHEEL.cx, WHEEL.cy, WHEEL.r + 14, 24, wheel.phase, C_BRASS_D);
+  ctx.fillStyle = C_WOOD; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, WHEEL.r - 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 6;
+  for (var j = 0; j < WHEEL_NOTCHES; j++) {
+    var a = wheel.phase + j * step;
+    ctx.beginPath(); ctx.moveTo(WHEEL.cx, WHEEL.cy);
+    ctx.lineTo(WHEEL.cx + Math.cos(a) * (WHEEL.r - 8), WHEEL.cy + Math.sin(a) * (WHEEL.r - 8)); ctx.stroke();
+    ctx.fillStyle = "#120c08";
+    ctx.beginPath(); ctx.arc(WHEEL.cx + Math.cos(a) * WHEEL.r, WHEEL.cy + Math.sin(a) * WHEEL.r, R + 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, 14, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawSwitches() {
+  for (var k in sw) {
+    var s = sw[k], live = CH[OUT[k][s.dir]];
+    // The first stretch of the live branch glows, so the route reads at a glance.
+    ctx.strokeStyle = "rgba(255,210,120,0.35)"; ctx.lineWidth = 2 * R + 4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(live.xs[0], live.ys[0]);
+    for (var i = 1; i < Math.min(live.n, 16); i++) ctx.lineTo(live.xs[i], live.ys[i]);
+    ctx.stroke();
+    cog(s.x, s.y, 30, 10, s.spin, s.flash > 0 ? "#ffe9b0" : C_STEEL);
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(s.x + Math.cos(s.ang) * 58, s.y + Math.sin(s.ang) * 58, 7, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Everything behind the machine: the screw, the top return rail and the
+// ferris wheel, all faded back so they read as depth and never as a route.
+function drawBackground() {
+  ctx.globalAlpha = BG_ALPHA;
+  var i, j;
+  // Archimedes screw: a tube with a thread that climbs.
+  ctx.fillStyle = "#2b2016"; ctx.fillRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3;
+  for (var y = SCREW_BOT - mod(screwPhase, 22); y > SCREW_TOP; y -= 22) {
+    ctx.beginPath(); ctx.moveTo(SCREW_X - 14, y); ctx.lineTo(SCREW_X + 14, y - 11); ctx.stroke();
+  }
+  ctx.strokeStyle = C_BRASS_D; ctx.lineWidth = 2; ctx.strokeRect(SCREW_X - 16, SCREW_TOP - 10, 32, SCREW_BOT - SCREW_TOP + 20);
+  // Thin rails for the two background runs.
+  for (var k in BG) {
+    var ch = BG[k];
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    for (var sd = -1; sd <= 1; sd += 2) {
+      ctx.beginPath();
+      for (i = 0; i < ch.n; i++) {
+        var nv = normalAt(ch, i), x = ch.xs[i] + nv[0] * sd * 9, yy = ch.ys[i] + nv[1] * sd * 9;
+        if (i) ctx.lineTo(x, yy); else ctx.moveTo(x, yy);
+      }
+      ctx.stroke();
+    }
+  }
+  // Ferris wheel.
+  var step = Math.PI * 2 / FERRIS.buckets;
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(FERRIS.cx, FERRIS.cy, FERRIS.r, 0, Math.PI * 2); ctx.stroke();
+  cog(FERRIS.cx, FERRIS.cy, 18, 8, ferris.phase, C_BRASS);
+  cog(FERRIS.cx + 30, FERRIS.cy + 26, 14, 7, -ferris.phase * 18 / 14, C_BRASS_D);
+  for (j = 0; j < FERRIS.buckets; j++) {
+    var a = ferris.phase + j * step, bx = FERRIS.cx + Math.cos(a) * FERRIS.r, by = FERRIS.cy + Math.sin(a) * FERRIS.r;
+    ctx.strokeStyle = C_BRASS; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(FERRIS.cx, FERRIS.cy); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS_D; ctx.fillRect(bx - 11, by + 6, 22, 6);
+    if (ferris.bucket[j]) drawMarble({ kind: "spent", x: bx, y: by, z: 1, rot: ferris.bucket[j].rot });
+  }
+  for (i = 0; i < ferris.rail.length; i++) {
+    var fp = at(BG.ferris, ferris.rail[i].d);
+    drawMarble({ kind: "spent", x: fp.x, y: fp.y - 6, z: 1, rot: ferris.rail[i].rot });
+  }
+  for (i = 0; i < ferris.wait.length; i++) drawMarble({ kind: "spent", x: 606 - i * 26, y: 404, z: 1, rot: 0 });
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.st === "screw" || m.st === "back" || (m.st === "drop" && m.casing)) drawMarble(m);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// An escapement: a pendulum above the rail, a pallet that blocks it and
+// lifts for a moment each time it lets a marble through.
+function drawGates() {
+  for (var i = 0; i < gates.length; i++) {
+    var g = gates[i], k = Math.max(0, Math.min(1, g.timer / (g.period || 1)));
+    var swing = g.side * 0.5 * Math.cos(Math.PI * k);
+    // The pallet stands across the rail just ahead of the head of the queue,
+    // and lifts while it lets one through.
+    var fx = g.x + g.tx * (R + 4), fy = g.y + g.ty * (R + 4), lift = g.open > 0 ? 16 : 0;
+    var px = fx + g.px, py = fy + g.py;
+    ctx.strokeStyle = "rgba(200,210,225,0.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(fx, fy - R - 10 - lift); ctx.stroke();
+    ctx.strokeStyle = g.open > 0 ? "#ffe9b0" : C_BRASS; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(fx, fy - R - 10 - lift); ctx.lineTo(fx, fy + R - 2 - lift); ctx.stroke();
+    ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+    var arm = Math.min(44, -g.py - 12), bx = px + Math.sin(swing) * arm, by = py + Math.cos(swing) * arm;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.fillStyle = C_BRASS; ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C_STEEL; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawLift() {
+  ctx.fillStyle = "#2b2016"; ctx.fillRect(LIFT_X - 24, LIFT_TOP, 48, LIFT_BOT - LIFT_TOP + 10);
+  ctx.strokeStyle = C_BRASS_D; ctx.lineWidth = 3;
+  ctx.strokeRect(LIFT_X - 24, LIFT_TOP, 48, LIFT_BOT - LIFT_TOP + 10);
+  ctx.fillStyle = C_BRASS_D;
+  for (var y = LIFT_BOT - mod(liftPhase, CUP_GAP); y > LIFT_TOP + 10; y -= CUP_GAP) {
+    ctx.fillRect(LIFT_X - 20, y, 30, 5); ctx.fillRect(LIFT_X - 20, y - 12, 4, 12);
+  }
+  // Gutter under the machines.
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(GUTTER_L, gutterY(GUTTER_L)); ctx.lineTo(MID, gutterY(MID)); ctx.lineTo(LIFT_X + 20, gutterY(LIFT_X + 20)); ctx.stroke();
+  // Hopper, with what it holds and the next three marbles at its mouth.
+  ctx.fillStyle = "#2b2016"; ctx.beginPath();
+  ctx.moveTo(HOPPER.x - 50, HOPPER.y - 50); ctx.lineTo(HOPPER.x + 26, HOPPER.y - 50);
+  ctx.lineTo(HOPPER.x + 26, HOPPER.y + 20); ctx.lineTo(HOPPER.x - 40, HOPPER.y + 38); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.stroke();
+  for (var i = 0; i < Math.min(stock, 6); i++) drawMarble({ kind: "spent", x: HOPPER.x - 30 + (i % 3) * 22, y: HOPPER.y - 30 + Math.floor(i / 3) * 20, z: 1, rot: i });
+  for (i = 0; i < queue.length; i++) drawMarble({ kind: queue[i], gold: queue[i] === "gold", x: 616 - i * 32, y: 112, z: 1, rot: 0 });
+}
+
+// The heart: a glowing core on the wheel's hub, and it flares red when bitten.
+function drawHeart() {
+  var hit = heartHit / 0.35, beat = 0.5 + 0.5 * Math.sin(t * (hull < HULL * 0.35 ? 9 : 4));
+  for (var i = 3; i >= 1; i--) {
+    ctx.fillStyle = "rgba(255," + Math.round(90 - 60 * hit) + ",60," + (0.1 + 0.08 * beat + 0.2 * hit) + ")";
+    ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, 16 + i * 8 + hit * 10, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = hit > 0 ? "#ffd0c0" : "#ff5a3a";
+  ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, 15, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C_BRASS; ctx.lineWidth = 3; ctx.stroke();
+  if (hit > 0) {
+    ctx.strokeStyle = "rgba(255,90,90," + hit + ")"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(WHEEL.cx, WHEEL.cy, HEART_R + 6, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+// The hull bar, right above the heart it belongs to.
+function drawHull() {
+  var w = 150, x = MID - w / 2, y = 500, k = hull / HULL;
+  ctx.fillStyle = "rgba(14,10,7,0.85)"; ctx.fillRect(x - 4, y - 4, w + 8, 22);
+  ctx.fillStyle = k > 0.5 ? "#7fd36a" : k > 0.25 ? "#f2b53a" : "#ff5a5a";
+  if (heartHit > 0) ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x, y, w * k, 14);
+  ctx.strokeStyle = "rgba(14,10,7,0.9)"; ctx.lineWidth = 2;
+  for (var i = 1; i < HULL; i++) { ctx.beginPath(); ctx.moveTo(x + w * i / HULL, y); ctx.lineTo(x + w * i / HULL, y + 14); ctx.stroke(); }
+  ctx.strokeStyle = C_BRASS; ctx.strokeRect(x - 4, y - 4, w + 8, 22);
+}
+// The two girders the beetles walk on, behind the rails.
+function drawGirders() {
+  for (var s = -1; s <= 1; s += 2) {
+    var x0 = s < 0 ? 0 : MID + STOP_DX - 6, x1 = s < 0 ? MID - STOP_DX + 6 : W;
+    ctx.fillStyle = "#3a2a1c"; ctx.fillRect(x0, LANE_Y + 10, x1 - x0, 16);
+    ctx.fillStyle = C_BRASS_D; ctx.fillRect(x0, LANE_Y + 10, x1 - x0, 4); ctx.fillRect(x0, LANE_Y + 22, x1 - x0, 4);
+    ctx.fillStyle = C_BRASS;
+    for (var x = x0 + 12; x < x1 - 6; x += 30) { ctx.beginPath(); ctx.arc(x, LANE_Y + 18, 2.5, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+// A side turret's half of the screen, lit faintly while it has a beetle to shoot.
+function drawRanges() {
+  var ids = ["left", "right"];
+  for (var i = 0; i < ids.length; i++) {
+    var mc = machines[ids[i]];
+    if (!mc.seen || mc.jam > 0) continue;
+    var x0 = ids[i] === "left" ? 0 : MID, w = ids[i] === "left" ? MID : W - MID, a = mc.ammo > 0 ? 0.14 : 0.06;
+    ctx.globalAlpha = a; ctx.fillStyle = mc.color; ctx.fillRect(x0, LANE_Y - 64, w, 118);
+    ctx.globalAlpha = a * 3; ctx.strokeStyle = mc.color; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.moveTo(MID, LANE_Y - 64); ctx.lineTo(MID, LANE_Y + 54); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+}
+function drawWarns() {
+  for (var i = 0; i < warns.length; i++) {
+    var w = warns[i], blink = Math.sin(t * 14) > 0 ? 1 : 0.45, x = w.side < 0 ? 12 : W - 12, d = w.side < 0 ? 1 : -1;
+    ctx.globalAlpha = blink; ctx.fillStyle = "#ff5a5a"; ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 3;
+    // Above the girder, so a beetle already walking in is never hidden by it.
+    var cy = LANE_Y - 78;
+    for (var j = 0; j < w.n; j++) {
+      var cx = x + d * j * 20;
+      ctx.beginPath(); ctx.moveTo(cx, cy - 16); ctx.lineTo(cx + d * 16, cy); ctx.lineTo(cx, cy + 16);
+      ctx.lineTo(cx + d * 5, cy); ctx.closePath(); ctx.stroke(); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+// A clockwork beetle: six legs, a riveted rusty shell, a glowing eye facing
+// the heart. The horned one is the tough one, with its hp over its back.
+function drawBeetle(e) {
+  var r = e.r, lunge = e.chomp > 0 ? Math.sin(e.chomp / 0.25 * Math.PI) * 10 : 0;
+  ctx.save(); ctx.translate(e.x + e.dir * lunge, e.y); ctx.scale(e.dir, 1);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(2, r * 0.75, r * 1.1, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+  // Legs: three a side, walking in two alternating tripods.
+  ctx.lineCap = "round";
+  for (var i = 0; i < 3; i++) {
+    for (var sd = -1; sd <= 1; sd += 2) {
+      var ph = Math.sin(e.walk * 2 + i * 2.1 + (sd > 0 ? Math.PI : 0)), lx = (i - 1) * r * 0.62;
+      var kx = lx + ph * r * 0.25, ky = sd * r * 0.95, fx = lx + ph * r * 0.45 - (i - 1) * 4, fy = sd * r * 1.25 + (ph > 0 ? 0 : -3 * sd);
+      for (var pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass ? "#c07a48" : "#1a0f08"; ctx.lineWidth = pass ? 3 : 6;
+        ctx.beginPath(); ctx.moveTo(lx, sd * r * 0.4); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
+      }
+    }
+  }
+  // Shell.
+  ctx.fillStyle = e.tough ? "#6e3424" : "#9a5228";
+  ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.ellipse(-r * 0.1, 0, r, r * 0.74, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = "rgba(255,190,120,0.55)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(-r * 0.1, 0, r - 4, r * 0.74 - 4, 0, Math.PI * 1.1, Math.PI * 1.75); ctx.stroke();
+  ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-r * 1.05, 0); ctx.lineTo(r * 0.55, 0); ctx.stroke();
+  ctx.fillStyle = "#d9a56a";
+  for (i = 0; i < 3; i++) {
+    ctx.beginPath(); ctx.arc(-r * 0.6 + i * r * 0.45, -r * 0.35, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-r * 0.6 + i * r * 0.45, r * 0.35, 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+  // Head, mandibles, eye.
+  var hx = r * 0.85, jaw = e.chomp > 0 ? 0.1 : 0.45 + 0.1 * Math.sin(t * 8 + e.walk);
+  ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(hx + r * 0.2, -4); ctx.lineTo(hx + r * 0.6, -r * jaw * 0.7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hx + r * 0.2, 4); ctx.lineTo(hx + r * 0.6, r * jaw * 0.7); ctx.stroke();
+  ctx.fillStyle = "#4a2616"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(hx, 0, r * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (e.tough) {
+    ctx.fillStyle = "#d9c7a8"; ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(hx - 2, -r * 0.3); ctx.lineTo(hx + r * 0.7, -r * 0.95); ctx.lineTo(hx + 6, -r * 0.1); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  var eg = 0.6 + 0.4 * Math.sin(t * 6 + e.walk);
+  ctx.fillStyle = "rgba(255,70,40," + (0.3 * eg) + ")"; ctx.beginPath(); ctx.arc(hx + r * 0.15, -r * 0.05, r * 0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ff3b2a"; ctx.beginPath(); ctx.arc(hx + r * 0.15, -r * 0.05, r * 0.16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ffe066"; ctx.beginPath(); ctx.arc(hx + r * 0.19, -r * 0.09, r * 0.07, 0, Math.PI * 2); ctx.fill();
+  if (e.flash > 0) {
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.beginPath(); ctx.ellipse(-r * 0.1, 0, r, r * 0.74, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+  if (e.max > 1) {
+    for (i = 0; i < e.max; i++) {
+      ctx.fillStyle = i < e.hp ? "#ff5a5a" : "#3a2a1c"; ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 2;
+      ctx.fillRect(e.x - e.max * 6 + i * 12, e.y - r - 16, 9, 7); ctx.strokeRect(e.x - e.max * 6 + i * 12, e.y - r - 16, 9, 7);
+    }
+  }
+}
+function drawShots() {
+  for (var i = 0; i < shots.length; i++) {
+    var s = shots[i];
+    if (s.kind === "gun") {
+      ctx.lineCap = "round";
+      for (var pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass ? "#fff4d0" : s.color;
+        for (var j = 2; j < s.trail.length; j += 2) {
+          ctx.globalAlpha = j / s.trail.length * (pass ? 0.9 : 0.6); ctx.lineWidth = pass ? 2 + j * 0.3 : 6 + j * 1.2;
+          ctx.beginPath(); ctx.moveTo(s.trail[j - 2], s.trail[j - 1]); ctx.lineTo(s.trail[j], s.trail[j + 1]); ctx.stroke();
+        }
+        if (s.trail.length) { ctx.beginPath(); ctx.moveTo(s.trail[s.trail.length - 2], s.trail[s.trail.length - 1]); ctx.lineTo(s.x, s.y); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 0.5; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, R + 6, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      drawMarble({ kind: "good", x: s.x, y: s.y, z: 1, rot: s.rot });
+    } else {
+      // The shell's landing spot is marked while it flies.
+      var q = Math.min(1, s.t / MORTAR_T);
+      ctx.strokeStyle = "rgba(191,247,240," + (0.25 + 0.5 * q) + ")"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(s.x1, s.y1 + 14, MORTAR_SPLASH * (1.2 - 0.4 * q), MORTAR_SPLASH * 0.3 * (1.2 - 0.4 * q), 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 0.45; ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(s.x, s.y, R + 9, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1; ctx.strokeStyle = s.color; ctx.lineWidth = 3; ctx.stroke();
+      drawMarble({ kind: "good", x: s.x, y: s.y, z: 1, rot: s.rot, gold: true });
+    }
+  }
+}
+
+function drawMini(x, y, r, gold) {
+  ctx.fillStyle = gold ? "#ff9d00" : C_GOOD; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,0.4)"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.28, 0, Math.PI * 2); ctx.fill();
+}
+// Two glass tubes on the sides of a turret: its stored rounds, four a tube.
+function drawTubes(mc) {
+  var bx = mc.x - BOX_W / 2;
+  for (var s = 0; s < 2; s++) {
+    var tx = s ? bx + BOX_W - 17 : bx + 17;
+    ctx.fillStyle = "#120c08"; ctx.fillRect(tx - 11, BOX_Y + 8, 22, 80);
+    ctx.strokeStyle = C_STEEL; ctx.lineWidth = 2; ctx.strokeRect(tx - 11, BOX_Y + 8, 22, 80);
+    for (var j = 0; j < 4; j++) if (s * 4 + j < mc.ammo) drawMini(tx, BOX_Y + 77 - j * 19, 9);
+  }
+}
+function drawGun(mc, fire) {
+  var kick = fire > 0 ? 10 * fire / 0.18 : 0;
+  ctx.save(); ctx.translate(mc.x, GUN_Y); ctx.rotate(mc.aim);
+  ctx.fillStyle = C_STEEL; ctx.fillRect(-4 - kick, -9, 54, 18);
+  ctx.fillStyle = C_BRASS_D; ctx.fillRect(40 - kick, -11, 10, 22);
+  ctx.restore();
+  ctx.fillStyle = mc.color; ctx.beginPath(); ctx.arc(mc.x, GUN_Y, 18, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.arc(mc.x, GUN_Y, 7, 0, Math.PI * 2); ctx.fill();
+}
+function drawMortar(mc, fire) {
+  // A squat barrel on a spring; the spring kicks when it fires.
+  var kick = fire > 0 ? fire / 0.35 : 0, base = BOX_Y + 92;
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3; ctx.beginPath();
+  for (var i = 0; i <= 6; i++) ctx.lineTo(mc.x + (i % 2 ? 16 : -16), base - i * (5 - 2 * kick));
+  ctx.stroke();
+  ctx.save(); ctx.translate(mc.x, GUN_Y - 4 + kick * 8); ctx.rotate(mc.aim);
+  ctx.fillStyle = C_STEEL; ctx.fillRect(-6, -15, 46, 30);
+  ctx.fillStyle = mc.color; ctx.fillRect(32, -17, 10, 34);
+  ctx.restore();
+}
+function drawMachines() {
+  for (var k in machines) {
+    var mc = machines[k], bx = mc.x - BOX_W / 2, fire = mc.fire;
+    var ready = k === "furnace" && mc.charge >= BLAST_CHARGE, pulse = 0.5 + 0.5 * Math.sin(t * 12);
+    ctx.fillStyle = mc.jam > 0 ? "#4a1f1a" : "#2e2217";
+    ctx.fillRect(bx, BOX_Y, BOX_W, BOX_H);
+    ctx.lineWidth = ready ? 6 : 3;
+    ctx.strokeStyle = ready ? "rgba(255,210,120," + (0.4 + 0.6 * pulse) + ")" : mc.color;
+    ctx.strokeRect(bx, BOX_Y, BOX_W, BOX_H);
+    ctx.save(); ctx.beginPath(); ctx.rect(bx, BOX_Y, BOX_W, BOX_H); ctx.clip();
+    if (k === "furnace") drawFurnace(mc);
+    else {
+      drawTubes(mc);
+      if (k === "mortar") drawMortar(mc, fire); else drawGun(mc, fire);
+    }
+    ctx.restore();
+    ctx.fillStyle = "#f3e6cf"; ctx.font = "700 20px system-ui, sans-serif"; ctx.textAlign = "center";
+    var label = mc.jam > 0 ? "Jammed " + mc.jam.toFixed(1) : ready ? "Blast ready" : mc.name;
+    ctx.fillText(label, mc.x, BOX_Y + BOX_H - 10);
+    // The round count, over the box's corner, where the rails do not run.
+    if (k !== "furnace" && mc.ammo > 0) {
+      ctx.textAlign = "right"; ctx.font = "800 24px system-ui, sans-serif"; ctx.fillStyle = mc.color;
+      ctx.fillText("x" + mc.ammo, bx + BOX_W - 4, BOX_Y - 10);
+    }
+    if (k === "furnace") {
+      for (var i = 0; i < BLAST_CHARGE; i++) {
+        ctx.fillStyle = i < mc.charge ? "#ffb03a" : "#4a3a2a";
+        ctx.beginPath(); ctx.arc(mc.x - (BLAST_CHARGE - 1) * 11 + i * 22, BOX_Y + 16, 7, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  for (i = 0; i < rings.length; i++) {
+    var rg = rings[i];
+    if (rg.t < 0) continue;
+    ctx.globalAlpha = 1 - rg.t / 0.8; ctx.strokeStyle = rg.color; ctx.lineWidth = rg.big ? 8 : 4;
+    ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.big ? 40 + rg.t / 0.8 * BLAST_R : rg.splash ? 12 + rg.t / 0.8 * MORTAR_SPLASH * 1.3 : 20 + rg.t * 160, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawFurnace(mc) {
+  ctx.fillStyle = "#120c08"; ctx.fillRect(mc.x - 55, BOX_Y + 30, 110, 55);
+  for (var i = 0; i < 6; i++) {
+    var fx = mc.x - 48 + i * 19, h = 22 + 14 * Math.sin(t * 9 + i * 1.7) + 8 * Math.sin(t * 23 + i);
+    ctx.fillStyle = i % 2 ? "#ff6a2a" : "#ffb03a";
+    ctx.beginPath(); ctx.moveTo(fx - 10, BOX_Y + 85); ctx.lineTo(fx, BOX_Y + 85 - h); ctx.lineTo(fx + 10, BOX_Y + 85); ctx.fill();
+  }
+  ctx.strokeStyle = C_STEEL; ctx.lineWidth = 3;
+  for (i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(mc.x - 50 + i * 25, BOX_Y + 30); ctx.lineTo(mc.x - 50 + i * 25, BOX_Y + 85); ctx.stroke(); }
+}
+
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0e0a07"; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  var sx = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  var sy = shake > 0 ? (Math.random() - 0.5) * 16 * shake / 0.35 : 0;
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, (offX + sx * scale) * dpr, (offY + sy * scale) * dpr);
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, C_BG2); bg.addColorStop(1, C_BG);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // Background works: meshing gears that turn faster when the rails are busy.
+  ctx.globalAlpha = 0.16;
+  for (var i = 0; i < DECO_GEARS.length; i++) {
+    var gdef = DECO_GEARS[i], dir = i % 2 ? -1 : 1;
+    cog(gdef[0], gdef[1], gdef[2], gdef[3], gearA * dir * 60 / gdef[2], C_BRASS);
+  }
+  ctx.globalAlpha = 1;
+
+  drawBackground();
+  ctx.globalAlpha = 0.75; drawLift(); ctx.globalAlpha = 1;
+  drawRanges();
+  drawGirders();
+  drawWheel();
+  drawHeart();
+  ctx.drawImage(trackLayer, 0, 0, W, H);
+  for (i = 0; i < chimes.length; i++) {
+    var c = chimes[i], lit = Math.max(0, 1 - c.hit / 0.35), wob = lit * Math.sin(c.hit * 60) * 0.3;
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(wob);
+    ctx.fillStyle = lit > 0 ? "rgba(255,230,160," + (0.5 + lit * 0.5) + ")" : C_BRASS_D;
+    ctx.fillRect(-14, -5, 28, 10);
+    if (lit > 0) { ctx.strokeStyle = "rgba(255,230,160," + lit + ")"; ctx.lineWidth = 2; ctx.strokeRect(-20 - lit * 8, -10 - lit * 6, 40 + lit * 16, 20 + lit * 12); }
+    ctx.restore();
+  }
+  drawSwitches();
+  drawGates();
+  drawHull();
+
+  for (i = 0; i < marbles.length; i++) if (marbles[i].z < 0) drawMarble(marbles[i]);
+  ctx.drawImage(frontLayer, 0, 0, W, H);
+  for (i = 0; i < marbles.length; i++) {
+    var m = marbles[i];
+    if (m.z >= 0 && m.st !== "drop" && m.st !== "gutter" && m.st !== "cupwait" && m.st !== "screw" && m.st !== "back") drawMarble(m);
+  }
+  drawMachines();
+  for (i = 0; i < marbles.length; i++) if (marbles[i].st === "gutter" || marbles[i].st === "cupwait") drawMarble(marbles[i]);
+
+  // The attack goes on top of the machine, outlined, so it never hides in the rails.
+  for (i = 0; i < enemies.length; i++) drawBeetle(enemies[i]);
+  drawWarns();
+  drawShots();
+
+  for (i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD.
+  ctx.textAlign = "left"; ctx.fillStyle = "#f3e6cf"; ctx.font = "800 40px system-ui, sans-serif";
+  ctx.fillText(auto ? "Wave " + Math.max(1, wave.n) : "Wave " + Math.max(1, wave.n) + " / " + WAVES, 28, 60);
+  ctx.font = "600 22px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+  ctx.fillText("Kills " + stats.kills, 28, 94);
+  ctx.textAlign = "center";
+  ctx.fillStyle = auto ? C_BRASS : "#3a2c1e"; ctx.fillRect(290, 30, 120, 44);
+  ctx.fillStyle = auto ? "#1c140e" : "#cdbb9c"; ctx.font = "700 22px system-ui, sans-serif";
+  ctx.fillText(auto ? "Auto on" : "Auto", 350, 60);
+  ctx.textAlign = "right"; ctx.fillStyle = hull > HULL * 0.25 ? "#cdbb9c" : "#ff5a5a";
+  ctx.fillText("Hull " + hull + " / " + HULL, 560, 60);
+  if (auto) { ctx.fillStyle = "#7d6a52"; ctx.fillText("Endless", 560, 90); }
+
+  ctx.textAlign = "center";
+  for (i = 0; i < floats.length; i++) {
+    var f = floats[i];
+    ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color;
+    ctx.font = "800 28px system-ui, sans-serif";
+    ctx.fillText(f.str, f.x, f.y - f.t * 70);
+  }
+  ctx.globalAlpha = 1;
+
+  // The wave plate, during the calm before a wave.
+  if (state === "play" && wave.phase === "break" && banner.t < WAVE_BREAK + 1) {
+    var ba = Math.min(1, banner.t / 0.2, (WAVE_BREAK + 0.6 - banner.t) / 0.3);
+    if (ba > 0) {
+      var bs = 1 + 0.15 * Math.max(0, 1 - banner.t / 0.25);
+      ctx.globalAlpha = ba;
+      ctx.save(); ctx.translate(MID, 420); ctx.scale(bs, bs);
+      ctx.fillStyle = "rgba(14,10,7,0.88)"; ctx.fillRect(-170, -58, 340, 104);
+      ctx.strokeStyle = "#ff5a5a"; ctx.lineWidth = 3; ctx.strokeRect(-170, -58, 340, 104);
+      ctx.fillStyle = "#f3e6cf"; ctx.font = "800 54px system-ui, sans-serif"; ctx.fillText(banner.str, 0, 4);
+      ctx.fillStyle = "#ff8a6a"; ctx.font = "700 22px system-ui, sans-serif"; ctx.fillText(banner.sub, 0, 34);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  ctx.fillStyle = "#7d6a52"; ctx.font = "20px system-ui, sans-serif";
+  ctx.fillText("Debug: rounds " + stats.ammo + "  shots " + stats.shots + "  bites " + stats.bites +
+    "  jams " + stats.jams + "  wasted " + stats.wasted + "  blasts " + stats.blasts + "  foes " + enemies.length, W / 2, 1268);
+
+  if (state === "over") {
+    var survived = won ? WAVES : Math.max(0, wave.n - 1);
+    ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = won ? "#7fd36a" : "#ff5a5a"; ctx.font = "800 64px system-ui, sans-serif";
+    ctx.fillText(won ? "Machine saved" : "Machine wrecked", W / 2, 540);
+    ctx.fillStyle = "#f3e6cf"; ctx.font = "700 36px system-ui, sans-serif";
+    ctx.fillText("Waves survived " + survived + " / " + WAVES, W / 2, 610);
+    ctx.fillText("Kills " + stats.kills + "   hull left " + hull + " / " + HULL, W / 2, 660);
+    ctx.font = "26px system-ui, sans-serif"; ctx.fillStyle = "#cdbb9c";
+    ctx.fillText(Math.round(t) + " s   rounds loaded " + stats.ammo + "   jams " + stats.jams, W / 2, 706);
+    ctx.fillText("Tap to play again", W / 2, 770);
+  }
+}
+
+// --- input ---------------------------------------------------------------------
+function setAuto(on) { auto = on; reset(); }
+cv.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  var x = (e.clientX - offX) / scale, y = (e.clientY - offY) / scale;
+  if (x >= 290 && x <= 410 && y >= 30 && y <= 74) { setAuto(!auto); return; }
+  if (state === "over") { reset(); return; }
+  if (auto) return;
+  var best = null, bd = TAP_REACH;
+  for (var k in sw) {
+    var d = Math.sqrt((sw[k].x - x) * (sw[k].x - x) + (sw[k].y - y) * (sw[k].y - y));
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (best && state === "play") flip(best);
+});
+addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  if (e.key >= "1" && e.key <= "4" && !auto && state === "play") flip("S" + (e.key - 1));
+  else if (e.key === "r" || e.key === "R") reset();
+  else if (e.key === "a" || e.key === "A") setAuto(!auto);
+});
+
+// --- loop ----------------------------------------------------------------------
+var lastT = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - lastT) / 1000 || 0);
+  lastT = now;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+resize();
+reset();
+requestAnimationFrame(frame);
+</script>

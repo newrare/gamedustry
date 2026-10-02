@@ -107,7 +107,7 @@ function hardKill(pid) {
  * delete the profile directories nothing is holding any more.
  *
  * `prefix` is the mkdtemp prefix the script passes to `fs.mkdtempSync`
- * ("shoot-icon-"), so a tool only ever reaps its own kind. Call it before
+ * ("shoot-gears-"), so a tool only ever reaps its own kind. Call it before
  * launching, and before mkdtemp — the run's own directory does not exist yet,
  * which is what keeps this from eating the browser it is about to start.
  *

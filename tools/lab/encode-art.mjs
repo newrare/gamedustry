@@ -169,7 +169,13 @@ var CARDS = { w: 560, h: 700, q: 0.84 };
    Keyed by slug, because nothing about the ROLE can say it: `card-red-major`
    and `card-king` are the same name for a prop drawn at a third of the size. */
 var CARD_BY_SLUG = {
-  stratideck: { w: 380, h: 470, q: 0.82 }
+  stratideck: { w: 380, h: 470, q: 0.82 },
+  /* games/gearball's upgrade cards: one illustration per family, `card-<family>`,
+     cut out of two grid sheets. The picture stands in the card's porthole at
+     ~110 design px on the round's two cards and ~150 on the collection's big
+     card, and FIFTY of them ride in every build, the playable included — so
+     256 is the budget: ~2.3x the round's size, ~1.7x the big card's. */
+  gearball: { w: 256, h: 256, q: 0.8 }
 };
 
 /* The DECOR POOL: `<slug>-decor-NN.png`, adopted out of a sheet with
@@ -190,6 +196,20 @@ var DECOR = { w: 360, h: 360, q: 0.78 };
    The size is also the budget. A game carries fifteen styles in six colours,
    ninety files in one build, so every kilobyte here is paid ninety times. */
 var BALL = { w: 256, h: 256, q: 0.84 };
+
+/* THE BRICK TEXTURES: `<slug>-brick-<colour>-NN.png`, adopted out of five
+   recoloured sheets with `cut-objects.mjs --grid 8x5 --adopt … --as brick-red
+   --seq`. games/bouncetry draws a brick 50x40 design px, so 176 wide covers it
+   at a 3x device ratio with the cut's own margin around it. Twenty-three
+   textures in five colours ride in the web build, which is why the box is
+   the budget here exactly as it is for the beads. */
+var BRICK = { w: 176, h: 176, q: 0.84 };
+
+/* THE SWITCH BUTTONS: `<slug>-button-<on|off>-NN.png`, adopted out of one
+   5x2 sheet — five colours lit on the top row, the same five dark under
+   them. games/bouncetry draws one ~46 design px across in a brick's cell, so
+   160 covers it at a 3x device ratio. */
+var BUTTON = { w: 160, h: 160, q: 0.84 };
 
 /* THE STICKER ALBUM: `<slug>-stickerNN.png`, adopted out of one 5x4 sheet with
    `cut-objects.mjs --grid 5x4`. Twenty per game, and they are WEB-ONLY art
@@ -259,6 +279,8 @@ function profileFor(role, slug) {
   if (role.indexOf("card-") === 0) return CARD_BY_SLUG[slug] || CARDS;
   if (role.indexOf("decor") === 0) return DECOR;
   if (role.indexOf("ball-") === 0) return BALL;
+  if (/^brick-[a-z]+-\d+$/.test(role)) return BRICK;
+  if (/^button-(on|off)-\d+$/.test(role)) return BUTTON;
   if (role.indexOf("sticker") === 0) return STICKER;
   if (/^home\d+$/.test(role)) return HOUSE;
   if (role.indexOf("cloud-") === 0) return CLOUD;
@@ -358,6 +380,7 @@ function knownRole(role) {
   return !!PROFILE[role] || role.indexOf("card-") === 0 ||
          role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
          role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
+         /^brick-[a-z]+-\d+$/.test(role) || /^button-(on|off)-\d+$/.test(role) ||
          role.indexOf("background-") === 0 || /^home\d+$/.test(role) ||
          role.indexOf("cloud-") === 0 || /^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role);
 }

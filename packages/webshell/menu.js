@@ -94,6 +94,10 @@
      doors are simply never built. */
   function AR() { return window.__ARMY__ || null; }
   function armied() { var a = AR(); return !!(a && a.active()); }
+  /* The codex, published by packages/webshell/codex.js for a game that
+     publishes `Game.codex` (games/pawko) — read lazily, like the barracks. */
+  function CX() { return window.__CODEX__ || null; }
+  function codexed() { var c = CX(); return !!(c && c.active()); }
 
   /* WHAT PLAY OPENS, IN ONE PLACE. Three answers and they are a chain, not a
      switch: a village is the place the player lives, a map is what a levelled
@@ -959,6 +963,7 @@
       W.Store.set("bestScore", 0);
       if (levelled()) LV.wipe();
       if (metaed()) MT.wipe();
+      if (W.Game && W.Game.wipe) W.Game.wipe();   // what the game keeps itself (gearball's card collection)
       /* The question was the button's own (it is the control, asking), and
          the answer is information: it is said the way every other one is,
          and the button goes back to being what it was. */
@@ -1488,6 +1493,7 @@
     if (levelled()) LV.setLang(code);
     if (metaed()) { MT.setLang(code); AL.setLang(code); DL.setLang(code); }
     if (armied()) AR().setLang(code);
+    if (codexed()) CX().setLang(code);
     for (var i = 0; i < items.length; i++)
       items[i].node.textContent = (items[i].mt && metaed() ? MT.text(items[i].mt) : null) ||
                                   (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
@@ -1755,6 +1761,13 @@
          never without it. */
       if (armied()) AR().mount(mapi);
     }
+    /* The codex needs no wallet: a game's cards are read with or without one. */
+    if (codexed()) CX().mount({ el: el, icon: icon, art: artImg, lang: LANG });
+    /* This file's two cards, for the DEV view (packages/webshell/dev.js). */
+    if (W.Dev) {
+      W.Dev.entry({ group: "Shell", label: "Options", sub: "The options card, with the erase row", run: function () { openOptions(true); } });
+      W.Dev.entry({ group: "Shell", label: "Help", sub: "The help card and the game's demo", run: openHelp });
+    }
     if (LV) LV.mount({
       el: el, icon: icon, art: artImg, lang: LANG,
       /* ...and the way to the Help CARD, so the map's level 0 opens the ONE
@@ -1873,6 +1886,9 @@
       prison: function () { if (armied()) AR().open("prison"); },
       recruit: function () { if (armied()) AR().open("recruit"); },
       defense: function () { if (armied()) AR().open("defense"); },
+      /* EVERY CARD OF THE GAME, as a collection (packages/webshell/codex.js):
+         a place with a list to read, so a view, reached from the hub. */
+      cards: function () { if (codexed()) CX().open(); },
       options: function () { openOptions(true); },
       help: openHelp
     },

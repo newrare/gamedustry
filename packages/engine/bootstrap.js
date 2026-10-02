@@ -2,7 +2,16 @@
      7. BOOTSTRAP — wiring. Rarely edited.
      =================================================================== */
   function frameUpdate(dt) {
+    /* The entrance holds the whole round — world, clock and beat — while the
+       scene assembles; only the entrance itself advances (Enter, engine.js). */
+    if (Enter.active()) { Enter.update(dt); return; }
     Beat.update(dt);                                // music does not hit-stop
+    /* A game that stops its own round for a choice (gearball's upgrade
+       cards) answers Game.held(): the world and the clock wait, and only the
+       juice and the HUD go on turning. Unlike Loop.pause it is the GAME's,
+       so nothing that pauses and resumes the loop can let the round run on
+       under an open choice. */
+    if (Game.held && Game.held()) { Fx.update(dt); Pop.tick(dt); HUD.tick(dt); return; }
     if (Fx.frozen(dt)) { Fx.update(dt); Pop.tick(dt); return; }   // hit-stop: only fx advance
     Round.tick(dt);
     if (State !== "playing") return;                // a game may have ended us
@@ -20,6 +29,7 @@
        shake lasts. Every other game fills its own opaque ground and needs
        nothing. */
     if (Art.scene()) ctx.clearRect(0, 0, view.w, view.h);
+    Enter.frame();   // the entrance counts the elements of this frame
     Fx.begin();      // shake transform
     Game.render();   // the world
     Fx.render();     // particles / rings above it
@@ -38,10 +48,23 @@
        idempotent on its own now (packages/engine/engine.js); this is the round
        itself saying the same thing, and it is also what stops a clock that was
        already counting from carrying into the new one. */
-    Loop.stop(); Round.stop();
+    Loop.stop(); Round.stop(); Enter.cancel();
     Sound.unlock();                       // must run inside a user gesture (iOS)
     Fx.reset(); Overlay.clear(); Confetti.clear();
     Beat.reset();                         // musical clock, before the game reads it
+    /* THE ENTRANCE: the ground first, then the world's elements one by one,
+       then the HUD — the world, the clock and the beat held meanwhile. The
+       round's bed starts once it has landed, so a game on the beat starts on
+       beat 0 with its music; on the web the menu's bed plays on under the
+       entrance and crossfades into the round's there. (A game whose reset()
+       picks its own section with Music.play has started that bed already;
+       none of those is on the beat.) Armed BEFORE Game.reset(), so a word
+       the reset says — a stage notice, a "Get ready" — waits for the landing
+       like any other said during the entrance. */
+    Enter.start(function () {
+      Music.start();                      // no-op without ASSETS.sounds.music
+      Music.unduck();                     // back to full bed after an end screen
+    });
     /* The bed the ROUND plays, armed before the game's own reset so that a
        game picking one stretch of its track per biome or per level — from
        reset(), with Music.play(section) — simply wins, and so that the menus'
@@ -49,8 +72,6 @@
        until start() below, which is what makes the armed section play. */
     Music.arm((CONFIG.music || {}).round || null);
     Game.reset();
-    Music.start();                        // no-op without ASSETS.sounds.music
-    Music.unduck();                       // back to full bed after an end screen
     Round.reset();
     setState("playing");
     Ad.track("game_start");
@@ -116,10 +137,21 @@
     cssVar("--cta-h", CONFIG.layout.ctaHeight + "px");
     fitCanvas();
 
-    // Route pointer input to the game only while it is playing.
-    Input.on("down", function (p) { if (State === "playing" && Game.onDown) Game.onDown(p); });
-    Input.on("move", function (p) { if (State === "playing" && Game.onMove) Game.onMove(p); });
-    Input.on("up",   function (p) { if (State === "playing" && Game.onUp)   Game.onUp(p); });
+    /* Route pointer input to the game only while it is playing. A press
+       during the entrance skips it, and the whole gesture it starts is eaten:
+       the game never sees a move or an up without the down that opened it. */
+    var eaten = false;
+    Input.on("down", function (p) {
+      if (State !== "playing") return;
+      if (Enter.active()) { Enter.skip(); eaten = true; return; }
+      eaten = false;
+      if (Game.onDown) Game.onDown(p);
+    });
+    Input.on("move", function (p) { if (State === "playing" && !eaten && !Enter.active() && Game.onMove) Game.onMove(p); });
+    Input.on("up",   function (p) {
+      if (eaten) { eaten = false; return; }
+      if (State === "playing" && !Enter.active() && Game.onUp) Game.onUp(p);
+    });
 
     bindKeys();
 

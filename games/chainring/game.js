@@ -701,13 +701,17 @@
       // stroke behind it. Hot means tappable, so the window it lights up over is
       // exactly the one onDown grades against. A struck ring is a pale ghost:
       // already scored, still there for the ball to bounce off.
+      // Each ring is an element of the round's entrance (Enter), landing on
+      // the arena's centre from the outermost in.
       for (var i = 0; i < rings.length; i++) {
         var ring = rings[i], hot = !ring.struck && Math.abs(ring.hit - now) <= MAXWIN;
         var rr = Math.max(1, ring.r), pl = ring.pulse || 0;
+        if (!Enter.begin(C.x, C.y)) continue;
         if (ring.struck) {
           ctx.globalAlpha = 0.3; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4;
           ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke();
           ctx.globalAlpha = 1;
+          Enter.end();
           continue;
         }
         if (pl > 0) {
@@ -721,6 +725,7 @@
         ctx.strokeStyle = pl > 0 ? "#ffffff" : ring.color;
         ctx.lineWidth = (hot ? 11 : 7) + pl * 6;
         ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke();
+        Enter.end();
       }
 
       // Shockwave fronts.
@@ -773,14 +778,18 @@
       ctx.globalAlpha = 1;
 
       // Ball — cheap "glow" from concentric circles: halo + body + core. The
-      // halo breathes on the beat so the ball itself keeps the tempo.
-      var br = CONFIG.ballR * (1 + ballPop * 0.5 + beat * beat * 0.10);
-      ctx.globalAlpha = 0.3 + hitFx * 0.4 + beat * beat * 0.12; ctx.fillStyle = bc;
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (1.7 + ballPop * 0.6 + beat * beat * 0.25), 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1; ctx.fillStyle = bc;
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, br, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (0.5 + ballPop * 0.25), 0, Math.PI * 2); ctx.fill();
+      // halo breathes on the beat so the ball itself keeps the tempo. The
+      // last element of the entrance to land.
+      if (Enter.begin(ball.x, ball.y)) {
+        var br = CONFIG.ballR * (1 + ballPop * 0.5 + beat * beat * 0.10);
+        ctx.globalAlpha = 0.3 + hitFx * 0.4 + beat * beat * 0.12; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (1.7 + ballPop * 0.6 + beat * beat * 0.25), 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (0.5 + ballPop * 0.25), 0, Math.PI * 2); ctx.fill();
+        Enter.end();
+      }
     }
 
     // The clock hitting zero does not end the run: it releases the spiked ring.

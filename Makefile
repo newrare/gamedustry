@@ -14,7 +14,7 @@
 #   make preview the same site built once, no reload — restart it to rebuild
 #   make lab     every lab page behind one back office, at http://localhost:8095/
 #   make store   the store card composer, at http://localhost:8091/
-#   make events  the callouts / cues bench, at http://localhost:8092/ (and /library, the sfx by ear)
+#   make events  the callouts / cues bench, at http://localhost:8092/ (and /library, the sfx by ear; /pop, the Pop styles)
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
 #   make text    the copy desk, at http://localhost:8093/
 #   make village the village composer, at http://localhost:8094/
@@ -102,6 +102,8 @@ store:
 # for a server as the composer — it reads the sources back and serves a built
 # game on a scriptable origin — plus one more: Apply writes the change back into
 # games/<slug>/game.js (tools/lab/apply-events.mjs) and re-cuts a swapped clip.
+# A line signed off is checked into lab/events-review.json; a game whose every
+# line is checked is green in the picker.
 # `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
 events:
 	node tools/lab/serve-events.mjs

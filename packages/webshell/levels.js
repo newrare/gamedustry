@@ -770,7 +770,10 @@
       W.Sound.cue("uiStar", 0.55, 1 + st * 0.14, 720 + st * 180, 0.09, "triangle");
     }
     litStars = st;
-    if (st >= 3 && !won) winRound(value);
+    if (st >= 3 && !won) {
+      if (W.Game && W.Game.levelMaxed && W.Game.levelMaxed()) playOn();
+      else winRound(value);
+    }
   }
 
   /* THE THREE-STAR FINISH. There is nothing left to earn, so the round stops
@@ -833,6 +836,23 @@
       W.Pop.show("record", { word: T.threeStars, hold: WIN_HOLD });
       setTimeout(function () { finishWin(value); }, WIN_ENTER + WIN_HOLD);
     }, wait);
+  }
+
+  /* PLAYING ON. A game whose score is the point of the round rather than a
+     bar to clear — pawko, where a combination that breaks the game is what a
+     player is chasing — answers `Game.levelMaxed()` with true, and the third
+     star is then a beat and not an ending: the same gold shine, without the
+     slow motion, the held vignette or the ducked music, and the round runs to
+     its own end. The game writes the callout itself (it knows where the
+     action is not); the outro still hands over the bonus at the end, since
+     `won` is already set. */
+  function playOn() {
+    won = true;
+    W.Fx.flash("#ffd43b", 0.35, 2.4);
+    W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 20, to: 620, color: "#ffd43b", width: 12, life: 0.7 });
+    W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 10, to: 420, color: "#ffffff", width: 6, life: 0.5 });
+    W.Overlay.vignette("#ffd43b", 0.6, 900);
+    W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
   }
 
   /* The game gets to end its own round when it can (`Game.levelWon`), because

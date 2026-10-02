@@ -2,1218 +2,504 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Overlay Lab — comic callouts</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — game pop message</title>
+<meta name="lab-group" content="tools">
 <style>
 /* ===========================================================================
-   OVERLAY LAB — comic / manga onomatopoeia callouts for the playable motor.
+   GAME POP MESSAGE — every style of the motor's Pop, fired in a real game.
 
-   This is a design lab, not a shipped playable: the background is loaded from
-   ../assets/image/master/ with a relative path so the file stays small.
+   This page used to be a design atelier with its own copy of the callout
+   machinery, and the copy drifted: it still had eleven styles under their
+   first names (incredible, revolution, go) when the motor shipped twelve
+   (ribbon, manifest, vert, and `alert` for a mistake as it happens), and
+   nothing of `Pop.text`. So it no longer carries a copy of anything. It is
+   served by the events bench (`make events` → /pop, `make lab` →
+   /events/pop), and it loads the chosen game's own WEB BUILD in the frame —
+   the motor's `Pop`, the game's SKIN and face, its painted backdrop — through
+   `window.__WEB__`, the same handle lab/game-events.html plays a game's
+   callouts with.
 
-   The `Pop` module now SHIPS IN THE MOTOR (template/game-template.html,
-   section 5 + the POP LAYER stylesheet). Use this file to design a look — new
-   style, palette, copy, timing — then port only that style into the motor.
-   Do NOT port this file's machinery back: the motor's version is tuned so a
-   callout never costs the gameplay a frame (single-layer word, will-change,
-   static rays, no full-screen decor, prewarm on the intro). See
-   docs/ENGINE.md, "The overlay must never cost the gameplay a frame".
+   What it reads is the motor's own table, `Pop.styles`, so a style added to
+   packages/shell/shell.js appears here on the next rebuild with nothing to
+   register, and every number printed on a style is the one that ships.
 
-   Everything is authored in the 720x1280 design space, like the motor.
+     CALLOUT   Pop.show(style, { word, sub, at, rot, hold }) — the MOMENT a
+               game writes. The word and the sub are typed in normal case; the
+               motor shouts them with upper() and translates them with Lang.t,
+               exactly as in a round.
+     VALUE     Pop.text(x, y, str, { color, size, tier, life }) — the number
+               floating up from a point of the world, on the canvas. The frame
+               pipeline does not turn outside a round, so the page drives the
+               three calls it would (clear, tick, draw) while a value lives.
+
+   A click on the game fires the current one THERE: a callout at that point
+   (`at` as coordinates), a value from that point. The anchors toggle marks
+   the motor's named anchors on the frame, resolved against the game's own
+   Layout. The line under the controls is the call as a game would write it.
+
+   What is not here: a new LOOK. A style is designed in the motor itself —
+   the POP LAYER block of packages/shell/motor.css and the STYLES table of
+   packages/shell/shell.js — and the rebuild the events server runs on save
+   brings it straight into this frame. Mind docs/ENGINE.md, "The overlay must
+   never cost the gameplay a frame", before adding a layer to one.
    =========================================================================== */
 
-*{box-sizing:border-box; margin:0; padding:0;}
-html,body{height:100%;}
-body{
-  background:#08060f;
-  color:#e8e6f5;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  display:flex; gap:28px; padding:22px; align-items:flex-start; flex-wrap:wrap;
-  min-height:100%;
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden; display:flex;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 
-/* --- stage: the 720x1280 phone frame, scaled to fit ----------------------
-   Two nested nodes on purpose: #fit owns the viewport scale, #frame owns the
-   screen-shake translate. One transform each, so they never overwrite. */
-#stage{ position:relative; flex:0 0 auto; }
-#fit{ transform-origin:top left; }
-#frame{
-  position:relative; width:720px; height:1280px; overflow:hidden;
-  background:#05040c;
-  border-radius:26px; box-shadow:0 30px 80px rgba(0,0,0,.65);
-}
-#bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-#bg-tint{ position:absolute; inset:0; background:radial-gradient(circle at 50% 42%, rgba(0,0,0,0) 35%, rgba(0,0,0,.45) 100%); }
+/* --- the panel ----------------------------------------------------------- */
+#panel { flex:0 0 400px; display:flex; flex-direction:column; border-right:1px solid #23233a; background:#12121c; min-width:0; }
+#head { padding:14px 16px 10px; border-bottom:1px solid #23233a; }
+#head h1 { font-size:14px; letter-spacing:1.5px; text-transform:uppercase; }
+#head h1 small { display:block; font-weight:600; font-size:11px; letter-spacing:.4px; color:#8b8ba7; text-transform:none; }
+#head .line { display:flex; gap:8px; margin-top:10px; }
 
-/* fake HUD + CTA, only here to check the callouts never bury the chrome */
-.chrome{ position:absolute; left:0; right:0; z-index:5; color:#fff; }
-#hud{ top:0; padding:26px 26px 0; display:flex; justify-content:space-between; }
-.pill{
-  padding:9px 18px; border-radius:18px; background:rgba(0,0,0,.42);
-  border:1px solid rgba(255,255,255,.18); font-size:28px; font-weight:900;
-  text-align:center; font-variant-numeric:tabular-nums;
+select, input[type=text], input[type=number] {
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:7px;
+  font:inherit; padding:6px 8px; min-width:0;
 }
-.pill .lbl{ display:block; font-size:14px; font-weight:800; letter-spacing:2px; opacity:.6; }
-#cta{ bottom:0; padding:18px 26px 30px; background:linear-gradient(180deg,rgba(6,8,20,0),rgba(6,8,20,.85) 42%); }
-#cta div{
-  height:88px; border-radius:22px; display:flex; align-items:center; justify-content:center;
-  font-size:34px; font-weight:900; letter-spacing:1px;
-  background:linear-gradient(180deg,#5ce1ff,#2b8bff); color:#03121f;
-  box-shadow:0 10px 0 rgba(0,0,0,.35);
-}
+select:focus, input:focus { outline:none; border-color:#7ea6ff; }
+#game-pick { flex:1; font-weight:700; }
 
-/* full-screen impact layers driven by the Pop module */
-#flash{ position:absolute; inset:0; z-index:14; opacity:0; pointer-events:none; }
-#tint{ position:absolute; inset:0; z-index:13; opacity:0; pointer-events:none; transition:opacity .35s ease; }
-#confetti{ position:absolute; inset:0; z-index:17; pointer-events:none; overflow:hidden; }
+#body { flex:1; overflow-y:auto; padding:6px 16px 20px; }
+#body::-webkit-scrollbar { width:10px; }
+#body::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
 
-/* anchor debug overlay (lab only) */
-#anchors{ position:absolute; inset:0; z-index:18; pointer-events:none; display:none; }
-#anchors.on{ display:block; }
-.anch{
-  position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%;
-  background:#5ce1ff; box-shadow:0 0 0 4px rgba(0,0,0,.65);
-}
-.anch b{
-  position:absolute; left:50%; top:16px; transform:translateX(-50%); white-space:nowrap;
-  font:800 17px/1 -apple-system,sans-serif; color:#04121e; background:#5ce1ff;
-  padding:4px 7px; border-radius:6px;
-}
+h2 { margin:16px 0 8px; font-size:10px; font-weight:700; line-height:1.4; letter-spacing:1.3px; text-transform:uppercase; color:#7ea6ff; display:flex; gap:8px; align-items:baseline; }
+h2 i { font-style:normal; font-weight:600; letter-spacing:.3px; text-transform:none; color:#6f6f92; }
 
-/* ===========================================================================
-   POP LAYER — every callout lives here. Screen-space, pointer-transparent.
-   Three nested elements on purpose, so the transforms never fight:
-     .pop       -> placement (left/top in design px)
-     .pop-anim  -> entry / hold / exit animation
-     .pop-body  -> static rotation + auto shrink-to-fit
-   =========================================================================== */
-#pops{ position:absolute; inset:0; z-index:16; pointer-events:none; overflow:hidden; }
+#modes { display:flex; gap:3px; padding:3px; background:#0b0b12; border:1px solid #2c2c47; border-radius:9px; margin-top:12px; }
+#modes button { flex:1; padding:7px 10px; border:0; border-radius:7px; background:none; color:#8b8ba7; font-family:inherit; font-size:11px; font-weight:700; line-height:1; letter-spacing:1.1px; cursor:pointer; }
+#modes button:hover { color:#e8e6f5; }
+#modes button.on { background:#2a2a44; color:#e8e6f5; }
+body[data-mode="value"] .only-callout, body[data-mode="callout"] .only-value { display:none; }
 
-.pop{
-  position:absolute; transform:translate(-50%,-50%);
-  display:flex; align-items:center; justify-content:center;
-  /* defaults, overridden by each style class */
-  --sz:78px;                                   /* cap height of the word     */
-  --ink:#0b0a1e;                               /* outline + extrusion color  */
-  --ink2:rgba(0,0,0,.45);
-  --fill:linear-gradient(180deg,#ffffff,#cfd6ff);
-  --glow:rgba(120,180,255,.6);
-  --stroke:14px;
-  --ray:rgba(255,255,255,.22);
-  --dot:rgba(0,0,0,.4);
-  --band:#0b0a1e;
-  --band-line:#fff;
-  --accent:#5ce1ff;
+/* One tile per style of the motor's table, keyed 1-9 then 0, -, =. */
+#styles { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+#styles button {
+  position:relative; padding:9px 8px 8px; border:1px solid #26263c; border-radius:8px;
+  background:#171725; color:#c9c9e0; text-align:left; cursor:pointer; font-family:inherit; font-size:12px; font-weight:700; line-height:1.2;
 }
-/* .pop-out owns the exit (delayed by enter + hold), .pop-anim owns the entry.
-   Two nodes so each keeps a single `transform` and `hold` becomes a free
-   parameter instead of a percentage baked into one keyframe. */
-.pop-out { position:relative; display:flex; align-items:center; justify-content:center; }
-.pop-anim{ position:relative; display:flex; align-items:center; justify-content:center; }
-.pop-body{
-  position:relative; z-index:2; text-align:center;
-  transform:rotate(var(--rot,0deg)) scale(var(--fit,1));
-}
-/* alarm styles blink for the whole hold, however long it is */
-.pop-body.pulse{ animation:a-pulse .5s steps(1,end) infinite; }
+#styles button:hover { border-color:#3a3a5c; color:#fff; }
+#styles button.on { border-color:#7ea6ff; background:#1a2138; color:#fff; }
+#styles button kbd { position:absolute; top:6px; right:7px; font:700 10px/1 ui-monospace,Menlo,monospace; color:#5d5d7c; }
+#styles button small { display:block; margin-top:3px; font-size:10px; font-weight:600; line-height:1.2; color:#6f6f92; }
 
-/* --- the word ------------------------------------------------------------ */
-.pop-word{
-  display:flex; justify-content:center; align-items:flex-end; flex-wrap:nowrap;
-  /* Impact-class display face. iOS has no Impact: it degrades to a heavy
-     sans. Ship a base64 woff2 subset if a campaign needs it guaranteed. */
-  font-family:Impact,"Haettenschweiler","Arial Black","Arial Bold",sans-serif;
-  font-weight:900; font-size:var(--sz); line-height:.92;
-  letter-spacing:var(--track,2px); text-transform:uppercase;
-  white-space:nowrap;
-  filter:drop-shadow(0 0 20px var(--glow)) drop-shadow(0 12px 10px rgba(0,0,0,.45));
-}
-.pop-word.vert{ flex-direction:column; align-items:center; line-height:.82; }
+.spec { margin-top:8px; padding:8px 10px; border-radius:8px; background:#0e0e18; border:1px solid #1f1f33; font:600 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8b8ba7; }
+.spec b { color:#c9c9e0; font-weight:700; }
 
-/* Two stacked copies of the same glyph:
-     .pop-ltr   -> the ink layer: thick outline + 3D extrusion
-     ::before   -> the gradient face, painted ON TOP
-   The face has to be the absolutely-positioned pseudo-element, not the other
-   way round: `background-clip:text` paints at the background stage, so an ink
-   layer sitting above it in the paint order would bury the colour. Absolute
-   positioning puts the face in the positioned-descendants stage, i.e. after
-   the parent's own glyph — the outline reads, the colour reads. */
-.pop-ltr{
-  position:relative; display:inline-block;
-  color:var(--ink); -webkit-text-fill-color:var(--ink);
-  -webkit-text-stroke:var(--stroke) var(--ink);
-  text-shadow:
-    0 5px 0 var(--ink), 0 10px 0 var(--ink), 0 15px 0 var(--ink2),
-    0 22px 26px rgba(0,0,0,.55);
-  animation:a-ltr .3s cubic-bezier(.2,1.9,.4,1) backwards;
-  animation-delay:calc(var(--i,0) * var(--stagger, 0ms));
-}
-.pop-ltr::before{
-  content:attr(data-t); position:absolute; left:0; top:0;
-  -webkit-text-stroke:0;
-  background-image:var(--fill); -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent; color:transparent;
-  text-shadow:none;
-}
-.pop-sp{ display:inline-block; width:.28em; }
+.field { display:grid; grid-template-columns:78px 1fr; gap:8px; align-items:center; margin-top:7px; }
+.field label { font-size:11px; color:#8b8ba7; }
+.field .row { display:flex; gap:6px; align-items:center; min-width:0; }
+.field .row > * { flex:1; }
+.field output { flex:0 0 58px; text-align:right; font:700 11px/1 ui-monospace,Menlo,monospace; color:#c9c9e0; }
+input[type=range] { accent-color:#7ea6ff; }
+input[type=color] { flex:0 0 42px !important; height:30px; border:1px solid #2c2c47; border-radius:7px; background:#0b0b12; padding:2px; }
 
-/* --- the sub-line (score, context) --------------------------------------- */
-.pop-sub{
-  display:inline-block; margin-top:14px; padding:7px 20px; border-radius:10px;
-  font-family:inherit; font-size:calc(var(--sz) * .34); font-weight:900; letter-spacing:3px;
-  background:var(--ink); color:#fff; border:3px solid rgba(255,255,255,.85);
-  box-shadow:0 8px 0 rgba(0,0,0,.4);
-  animation:a-sub .4s .12s cubic-bezier(.2,1.8,.4,1) backwards;
+.btns { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+.btn {
+  padding:9px 14px; border:1px solid #2c2c47; border-radius:8px; background:#1b1b2b; color:#c9c9e0;
+  font-family:inherit; font-size:11px; font-weight:700; line-height:1; letter-spacing:1px; cursor:pointer; white-space:nowrap;
 }
+.btn:hover { border-color:#7ea6ff; color:#fff; }
+.btn.main { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+.btn.main:hover { background:#9dbaff; }
+.btn.on { border-color:#5fd49a; color:#5fd49a; }
 
-/* ===========================================================================
-   DECOR PRIMITIVES — composed per style, all centered behind the word.
-   =========================================================================== */
-.d{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:1; pointer-events:none; }
+#call {
+  margin-top:12px; padding:9px 10px; border-radius:8px; background:#0e0e18; border:1px solid #1f1f33;
+  font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b89cff; word-break:break-all; cursor:pointer;
+}
+#call:hover { border-color:#3a3a5c; }
+#hint { margin-top:8px; font-size:11px; color:#6f6f92; min-height:16px; }
 
-/* radiating manga speed rays */
-.d-rays{
-  width:1500px; height:1500px; border-radius:50%;
-  background:repeating-conic-gradient(from 0deg, var(--ray) 0 4.5deg, transparent 4.5deg 13deg);
-  -webkit-mask-image:radial-gradient(circle, #000 6%, rgba(0,0,0,.5) 26%, transparent 58%);
-          mask-image:radial-gradient(circle, #000 6%, rgba(0,0,0,.5) 26%, transparent 58%);
-  animation:a-spin 12s linear infinite;
-}
-
-/* comic ben-day halftone dots */
-.d-dots{
-  width:1100px; height:520px;
-  background-image:radial-gradient(circle, var(--dot) 2px, transparent 2.4px);
-  background-size:14px 14px;
-  -webkit-mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
-          mask-image:radial-gradient(ellipse at center, #000 20%, transparent 72%);
-}
-
-/* the comic banner the word sits on */
-.d-band{
-  width:1400px; height:var(--band-h,190px); background:var(--band);
-  border-top:7px solid var(--band-line); border-bottom:7px solid var(--band-line);
-  transform:translate(-50%,-50%) skewY(var(--band-skew,-5deg));
-  box-shadow:0 22px 0 rgba(0,0,0,.3);
-}
-/* horizontal speed lines inside the banner */
-.d-lines{
-  width:1400px; height:var(--band-h,190px);
-  transform:translate(-50%,-50%) skewY(var(--band-skew,-5deg));
-  background:repeating-linear-gradient(90deg, rgba(255,255,255,.20) 0 5px, transparent 5px 17px);
-  -webkit-mask-image:linear-gradient(90deg,#000,transparent 36%,transparent 64%,#000);
-          mask-image:linear-gradient(90deg,#000,transparent 36%,transparent 64%,#000);
-  animation:a-slide .45s linear infinite;
-}
-/* hazard tape */
-.d-stripes{
-  width:1400px; height:var(--band-h,150px);
-  transform:translate(-50%,-50%) skewY(var(--band-skew,0deg));
-  background:repeating-linear-gradient(-45deg,#ffd400 0 30px,#141020 30px 60px);
-  border-top:6px solid #ffd400; border-bottom:6px solid #ffd400;
-  animation:a-tape 1.1s linear infinite;
-}
-/* arrow chevrons pushing the eye forward */
-.d-chevrons{
-  width:900px; height:var(--band-h,200px);
-  transform:translate(-50%,-50%) skewX(-16deg);
-  background:repeating-linear-gradient(90deg, var(--burst,#ff2d55) 0 22px, transparent 22px 52px);
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);
-          mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);
-  opacity:.85; animation:a-slide-l .5s linear infinite;
-}
-/* white impact flash */
-.d-flash{
-  width:1300px; height:1300px; border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,.35) 26%, transparent 62%);
-  animation:a-flash .42s ease-out forwards;
-}
-.d-spark{
-  position:absolute; width:var(--s,54px); height:var(--s,54px); background:#fff5c2;
-  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
-  animation:a-twinkle 1.1s ease-in-out infinite;
-}
-
-/* --- cheap impact primitives, used by the `combo` chip -------------------
-   Everything here is a solid colour on a rounded box animated with nothing
-   but `transform` + `opacity`: no clip-path, no mask, no gradient, no blur,
-   so the compositor animates them without ever re-rasterizing. */
-
-/* shockwave: one hollow ellipse expanding once and fading out. Wider than tall
-   so it clears the chip it sits behind instead of showing as two arcs. */
-.d-ring{
-  width:var(--ring-w,430px); height:var(--ring-h,250px); border-radius:50%;
-  border:var(--ring-s,7px) solid var(--chip-line,#ffb02e);
-  opacity:0; animation:a-ring .42s cubic-bezier(.15,.8,.3,1) forwards;
-}
-/* four ticks flicked diagonally off the chip's corners */
-.d-dash{
-  position:absolute; left:50%; top:50%; z-index:1;
-  width:var(--dw,44px); height:8px; border-radius:4px;
-  background:var(--chip-line,#ffb02e);
-  opacity:0; animation:a-dash .38s cubic-bezier(.2,.75,.3,1) forwards;
-}
-
-/* ===========================================================================
-   ANIMATIONS
-   =========================================================================== */
-@keyframes a-ltr{
-  0%{ opacity:0; transform:translateY(-64px) rotate(-18deg) scale(1.6); }
-  70%{ opacity:1; }
-  100%{ opacity:1; transform:none; }
-}
-@keyframes a-sub{ 0%{opacity:0; transform:translateY(-16px) scale(.7);} 100%{opacity:1; transform:none;} }
-@keyframes a-spin{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
-@keyframes a-slide{ to{ background-position:22px 0; } }
-@keyframes a-slide-l{ to{ background-position:-52px 0; } }
-@keyframes a-tape{ to{ background-position:85px 0; } }
-@keyframes a-flash{ 0%{opacity:.95; transform:translate(-50%,-50%) scale(.3);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1.15);} }
-@keyframes a-twinkle{ 0%,100%{opacity:.25; transform:scale(.6) rotate(0);} 50%{opacity:1; transform:scale(1.15) rotate(45deg);} }
-/* Both start where the chip's own plate stops hiding them (the plate is opaque
-   and sits on top), so the whole animation is actually seen. */
-@keyframes a-ring{
-  0%  { opacity:.9; transform:translate(-50%,-50%) scale(.62); }
-  100%{ opacity:0;  transform:translate(-50%,-50%) scale(1.06); }
-}
-@keyframes a-dash{
-  0%  { opacity:0; transform:translate(-50%,-50%) translate(calc(var(--tx) * .8), calc(var(--ty) * .8)) rotate(var(--rd)) scaleX(.5); }
-  22% { opacity:1; }
-  100%{ opacity:0; transform:translate(-50%,-50%) translate(var(--tx), var(--ty)) rotate(var(--rd)) scaleX(1); }
-}
-
-/* Entry / exit pairs. Every `in-*` ends on the neutral state and every
-   `out-*` starts from it, so the hold in between can last any duration.
-   A style names the pair once (STYLES[x].anim = "slam" -> in-slam/out-slam). */
-
-/* SLAM — arrives from the camera, overshoots, settles, blows out. */
-@keyframes in-slam{
-  0%  { opacity:0; transform:scale(3.1) rotate(-16deg); }
-  34% { opacity:1; transform:scale(.84) rotate(4deg); }
-  58% { transform:scale(1.09) rotate(-3deg); }
-  80% { transform:scale(.98) rotate(1deg); }
-  100%{ opacity:1; transform:scale(1) rotate(0); }
-}
-@keyframes out-slam{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(1.3) translateY(-46px); } }
-
-/* SWIPE — a banner crossing the screen, comic-strip style. */
-@keyframes in-swipe{
-  0%  { opacity:0; transform:translateX(-130%) skewX(-18deg); }
-  62% { opacity:1; transform:translateX(20px) skewX(0); }
-  100%{ opacity:1; transform:translateX(0) skewX(0); }
-}
-@keyframes out-swipe{ from{ opacity:1; transform:translateX(0); } to{ opacity:0; transform:translateX(130%) skewX(18deg); } }
-
-/* DROP — slams down from the top with a bounce. */
-@keyframes in-drop{
-  0%  { opacity:0; transform:translateY(-460px) scale(1.35) rotate(-7deg); }
-  52% { opacity:1; transform:translateY(0) scale(1) rotate(0); }
-  74% { transform:translateY(-32px) scale(.97); }
-  100%{ opacity:1; transform:translateY(0) scale(1); }
-}
-@keyframes out-drop{ from{ opacity:1; transform:translateY(0); } to{ opacity:0; transform:translateY(70px) scale(.9); } }
-
-/* ZOOM — the hero moment: rushes in, then swallows the screen on exit. */
-@keyframes in-zoom{
-  0%  { opacity:0; transform:scale(.15) rotate(14deg); }
-  28% { opacity:1; transform:scale(1.35) rotate(-5deg); }
-  54% { transform:scale(.93) rotate(3deg); }
-  78% { transform:scale(1.07) rotate(-1deg); }
-  100%{ opacity:1; transform:scale(1) rotate(0); }
-}
-@keyframes out-zoom{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(2.4); } }
-
-/* PUNCH — the cheap, frequent one. Use for small callouts. */
-@keyframes in-punch{
-  0%  { opacity:0; transform:scale(.4) rotate(-8deg); }
-  58% { opacity:1; transform:scale(1.14) rotate(2deg); }
-  100%{ opacity:1; transform:scale(1) rotate(0); }
-}
-@keyframes out-punch{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(1.08) translateY(-30px); } }
-
-/* CHIP — the cheapest entry in the catalogue, for the callout a good run
-   fires over and over. A composited layer is rasterized at the LARGEST scale
-   of its animation, so `slam` (scale 3.1) pays for ~9x the pixels it ever
-   shows — that is the hitch. This one never leaves 0.86..1.06, i.e. the
-   raster is the callout's own size, and it only moves and fades. */
-@keyframes in-chip{
-  0%  { opacity:0; transform:translateY(24px) scale(.86); }
-  55% { opacity:1; transform:translateY(0) scale(1.06); }
-  100%{ opacity:1; transform:translateY(0) scale(1); }
-}
-@keyframes out-chip{ from{ opacity:1; transform:translateY(0) scale(1); } to{ opacity:0; transform:translateY(-30px) scale(.97); } }
-
-/* ALARM — hard cut in, then .pop-body pulses for the whole hold. */
-@keyframes in-alarm{ from{ opacity:0; transform:scale(1.25); } to{ opacity:1; transform:scale(1); } }
-@keyframes out-alarm{ from{ opacity:1; transform:scale(1); } to{ opacity:0; transform:scale(.94); } }
-@keyframes a-pulse{ 0%,49%{ opacity:1; } 50%,100%{ opacity:.32; } }
-
-/* FLOAT — the "+250" that rises off the impact point. */
-@keyframes in-float{
-  0%  { opacity:0; transform:translateY(30px) scale(.5); }
-  64% { opacity:1; transform:translateY(0) scale(1.12); }
-  100%{ opacity:1; transform:translateY(0) scale(1); }
-}
-@keyframes out-float{ from{ opacity:1; transform:translateY(0); } to{ opacity:0; transform:translateY(-150px) scale(.9); } }
-
-/* screen shake, two flavors so repeats never look identical */
-@keyframes shake-a{
-  0%,100%{transform:translate(0,0)} 15%{transform:translate(-14px,8px)}
-  30%{transform:translate(12px,-10px)} 45%{transform:translate(-9px,-6px)}
-  60%{transform:translate(7px,7px)} 80%{transform:translate(-4px,2px)}
-}
-@keyframes shake-b{
-  0%,100%{transform:translate(0,0)} 20%{transform:translate(10px,10px) rotate(.4deg)}
-  40%{transform:translate(-12px,-6px) rotate(-.5deg)} 65%{transform:translate(6px,-9px)}
-  85%{transform:translate(-3px,4px)}
-}
-.shk-a{ animation:shake-a var(--shk,.4s) cubic-bezier(.36,.07,.19,.97); }
-.shk-b{ animation:shake-b var(--shk,.4s) cubic-bezier(.36,.07,.19,.97); }
-@keyframes a-conf{ to{ transform:translate(var(--dx),var(--dy)) rotate(var(--dr)); opacity:0; } }
-
-/* ===========================================================================
-   STYLES — one class per callout. Only tokens + a couple of specifics.
-   =========================================================================== */
-
-/* COMBO x2 — a compact chip that hugs its own word.
-   Rewritten from scratch: the old version was a 600x430 jagged star (two
-   32-point clip-paths) plus a 1300px radial flash, slammed in from scale(3.1)
-   with a drop-shadow filter on the text. That is four separate reasons for the
-   raster thread to stall, and it covered a third of the screen for a beat that
-   fires several times per run. The chip costs one rounded box, one hollow
-   circle and four solid bars — no clip-path, no mask, no filter, no
-   full-screen layer — and it is the size of the text it carries. */
-.s-combo{
-  --sz:58px; --track:3px; --ink:#20100a; --ink2:rgba(80,30,0,.4); --stroke:0px;
-  --fill:linear-gradient(180deg,#fff6d8 0%,#ffd257 52%,#ff9f1c 100%);
-  --glow:rgba(255,170,50,.5);
-  --chip:#1a1024;                 /* plate behind the word                  */
-  --chip-line:#ffb02e;            /* border, shockwave ring and speed dashes */
-  --ring-w:430px; --ring-h:250px; --ring-s:7px;
-}
-/* The plate is a background on .pop-body, not a decor node: it inherits the
-   body's rotation for free and it is exactly as wide as the copy inside. */
-.s-combo .pop-body{
-  padding:13px 26px 15px; border-radius:18px;
-  background:var(--chip); border:4px solid var(--chip-line);
-  box-shadow:0 7px 0 rgba(0,0,0,.4), inset 0 3px 0 rgba(255,255,255,.09);
-}
-/* No `filter` on the word: a filter forces its own offscreen surface, which is
-   re-rasterized at the entry animation's largest scale. A flat text-shadow
-   reads the same on a chip this small and Skia draws it in place. */
-.s-combo .pop-word{ filter:none; }
-.s-combo .pop-ltr{
-  text-shadow:0 3px 0 rgba(0,0,0,.5);
-  animation:none;                 /* the chip animates as one block */
-}
-.s-combo .pop-sub{
-  margin-top:2px; padding:0; border:0; box-shadow:none; background:none;
-  color:var(--chip-line); font-size:calc(var(--sz) * .44); letter-spacing:2px;
-}
-
-/* INCROYABLE — comic banner sweeping across the play area. */
-.s-ribbon{
-  --sz:82px; --track:4px; --ink:#0a0a16; --stroke:12px;
-  --fill:linear-gradient(180deg,#ffffff 0%,#dfe6ff 55%,#9fb4ff 100%);
-  --glow:rgba(90,140,255,.6); --band:#141033; --band-line:#5ce1ff; --band-h:210px; --band-skew:-5deg;
-}
-
-/* Révolutionnaire — political-poster energy: red band, halftone, chroma split. */
-.s-manifest{
-  --sz:70px; --track:1px; --ink:#12000a; --stroke:11px;
-  --fill:linear-gradient(180deg,#fff 0%,#ffe3e8 60%,#ffb3c1 100%);
-  --glow:rgba(255,45,85,.75); --band:#d61b3c; --band-line:#12000a; --band-h:230px; --band-skew:-3deg;
-  --dot:rgba(0,0,0,.5); --stagger:34ms;
-}
-/* chromatic split: the colour fringes go first, the extrusion still follows */
-.s-manifest .pop-ltr{
-  text-shadow:
-    -7px 0 0 rgba(0,225,255,.7), 7px 0 0 rgba(255,0,80,.7),
-    0 5px 0 var(--ink), 0 10px 0 var(--ink), 0 15px 0 var(--ink2),
-    0 22px 26px rgba(0,0,0,.55);
-}
-.s-manifest .pop-sub{ background:#12000a; border-color:#ffd400; color:#ffd400; letter-spacing:5px; }
-
-/* ULTRA — the hero moment: rays, chroma, maximum size. */
-.s-ultra{
-  --sz:170px; --track:6px; --ink:#0b0020; --ink2:rgba(80,0,140,.55); --stroke:20px;
-  --fill:linear-gradient(180deg,#fdfbff 0%,#a6e9ff 38%,#7b6bff 70%,#ff3fd0 100%);
-  --glow:rgba(150,110,255,.85); --ray:rgba(190,150,255,.30);
-}
-.s-ultra .pop-ltr{
-  text-shadow:
-    -10px 0 0 rgba(255,0,120,.65), 10px 0 0 rgba(0,220,255,.65),
-    0 6px 0 var(--ink), 0 12px 0 var(--ink), 0 18px 0 var(--ink2),
-    0 26px 30px rgba(0,0,0,.55);
-}
-.s-ultra .pop-sub{ background:#0b0020; border-color:#a6e9ff; color:#a6e9ff; }
-
-/* Série x5 — chevrons pushing the eye sideways. */
-.s-chevron{
-  --sz:84px; --ink:#1a0018; --stroke:13px;
-  --fill:linear-gradient(180deg,#fff 0%,#ffd9f2 50%,#ff5ecb 100%);
-  --glow:rgba(255,80,190,.75); --burst:#ff2d9b; --band-h:210px;
-}
-
-/* PARFAIT — gold, sparkles, gentle rays. The "you nailed it" beat. */
-.s-gold{
-  --sz:100px; --ink:#3a2200; --ink2:rgba(90,50,0,.55); --stroke:15px;
-  --fill:linear-gradient(180deg,#fffdf0 0%,#ffe27a 34%,#f5b400 62%,#fff3b0 78%,#c98a00 100%);
-  --glow:rgba(255,205,80,.85); --ray:rgba(255,220,120,.28);
-}
-.s-gold .pop-sub{ background:#3a2200; border-color:#ffe27a; color:#ffe27a; }
-
-/* MEGA BONUS — sticker slapped on the bottom band. */
-.s-sticker{
-  --sz:74px; --track:3px; --ink:#001a14; --stroke:12px;
-  --fill:linear-gradient(180deg,#f4fff9 0%,#7dffcf 55%,#00d58a 100%);
-  --glow:rgba(0,230,160,.7); --dot:rgba(0,60,45,.45);
-}
-.s-sticker .pop-sub{ background:#001a14; border-color:#7dffcf; color:#7dffcf; }
-
-/* Dernière chance — hazard tape, blinking. */
-.s-hazard{
-  --sz:62px; --track:4px; --ink:#14100a; --stroke:10px;
-  --fill:linear-gradient(180deg,#fff 0%,#ffe9a8 100%);
-  --glow:rgba(255,60,60,.75); --band-h:160px;
-}
-
-/* NOUVEAU RECORD — band + rays + sparkles + confetti. The end-of-run peak. */
-.s-record{
-  --sz:76px; --track:3px; --ink:#2b1a00; --stroke:12px;
-  --fill:linear-gradient(180deg,#fffbe8 0%,#ffd977 40%,#ffab00 72%,#fff1b8 100%);
-  --glow:rgba(255,200,70,.8); --ray:rgba(255,215,120,.26);
-  --band:#1b1330; --band-line:#ffd977; --band-h:200px; --band-skew:-2deg;
-}
-.s-record .pop-sub{ background:#1b1330; border-color:#ffd977; color:#ffd977; }
-
-/* GO GO GO — vertical manga column hugging one edge. */
-.s-vert{
-  --sz:88px; --track:0; --ink:#0d0016; --stroke:14px;
-  --fill:linear-gradient(180deg,#fff 0%,#b8f5ff 60%,#00c6ff 100%);
-  --glow:rgba(0,200,255,.75); --ray:rgba(120,230,255,.24);
-}
-
-/* +250 — the tiny frequent one, spawned at the impact point. */
-.s-float{
-  --sz:64px; --track:1px; --ink:#001428; --stroke:9px;
-  --fill:linear-gradient(180deg,#fff 0%,#a8f0ff 100%);
-  --glow:rgba(90,220,255,.7);
-}
-
-/* ===========================================================================
-   LAB PANEL (not part of the motor)
-   =========================================================================== */
-#panel{ flex:1 1 auto; max-width:520px; min-width:300px; }
-#panel h1{ font-size:19px; letter-spacing:.5px; }
-#panel h1 span{ color:#5ce1ff; }
-#panel p.lead{ margin:8px 0 18px; font-size:13px; line-height:1.55; color:#9c98b8; }
-.grp{ margin-bottom:18px; }
-.grp h2{ font-size:11px; letter-spacing:2.4px; text-transform:uppercase; color:#6f6a90; margin-bottom:9px; }
-.row{ display:flex; flex-wrap:wrap; gap:8px; }
-button{
-  font:inherit; font-size:13px; font-weight:700; cursor:pointer;
-  padding:10px 13px; border-radius:11px; color:#e8e6f5;
-  background:#161327; border:1px solid #2b2545; transition:.12s;
-}
-button:hover{ background:#221c3d; border-color:#4b3f7d; transform:translateY(-1px); }
-button.hero{ background:linear-gradient(180deg,#5ce1ff,#2b8bff); color:#04121e; border-color:transparent; }
-button.on{ background:#2b8bff; border-color:#7fc0ff; color:#02101f; }
-button .k{ display:block; font-size:10px; font-weight:800; letter-spacing:1.6px; opacity:.5; margin-top:3px; }
-.bgbtn{ padding:6px; width:56px; height:56px; overflow:hidden; }
-.bgbtn img{ width:100%; height:100%; object-fit:cover; border-radius:6px; display:block; }
-code{ background:#161327; padding:2px 6px; border-radius:5px; font-size:12px; color:#8ad9ff; }
-.ctrl{ display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12px; }
-.ctrl label{ width:34px; color:#8ad9ff; font-weight:700; }
-.ctrl input[type=range]{ flex:1; accent-color:#2b8bff; }
-.ctrl output{ width:120px; color:#9c98b8; font-variant-numeric:tabular-nums; }
-.ctrl select{
-  flex:1; font:inherit; font-size:12px; padding:7px 9px; border-radius:9px;
-  background:#161327; color:#e8e6f5; border:1px solid #2b2545;
-}
-#panel .note{ font-size:12px; line-height:1.6; color:#7d789a; border-left:2px solid #2b2545; padding-left:12px; }
+/* --- the stage ----------------------------------------------------------- */
+#stage { flex:1; display:flex; align-items:center; justify-content:center; background:#08080f; min-width:0; padding:14px; }
+#fit { position:relative; transform-origin:top left; }
+#frame { display:block; width:720px; height:1280px; border:0; border-radius:26px; background:#05040c; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+#veil { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+  font-size:26px; color:#6f6f92; border-radius:26px; background:#0b0b12; }
+#veil.hide { display:none; }
+.spin { width:48px; height:48px; border-radius:50%; border:5px solid #26263c; border-top-color:#7ea6ff; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
-<body>
+<body data-mode="callout">
 
-<div id="stage">
- <div id="fit">
-  <div id="frame">
-    <img id="bg" src="../assets/image/embed/blight-background-phone.webp" alt="">
-    <div id="bg-tint"></div>
-
-    <!-- fake game chrome, so the callouts can be judged in context -->
-    <div class="chrome" id="hud">
-      <div class="pill"><span class="lbl" data-up>Score</span><span id="hud-score">0</span></div>
-      <div class="pill"><span class="lbl" data-up>Temps</span>18</div>
-    </div>
-    <div class="chrome" id="cta"><div data-up>Installer</div></div>
-
-    <!-- the layers the Pop module drives -->
-    <div id="tint"></div>
-    <div id="flash"></div>
-    <div id="pops"></div>
-    <div id="confetti"></div>
-    <div id="anchors"></div>
-  </div>
- </div>
-</div>
-
-<div id="panel">
-  <h1>Overlay Lab — <span>callouts BD / manga</span></h1>
-  <p class="lead">
-    Chaque bouton joue un preset dans l'espace de design 720×1280.
-    Clique dans l'écran pour faire apparaître un <code>+250</code> au point d'impact.
-  </p>
-
-  <div class="grp">
-    <h2>Presets</h2>
-    <div class="row" id="preset-row"></div>
-  </div>
-
-  <div class="grp">
-    <h2>Paramètres appliqués au prochain clic</h2>
-    <div class="ctrl">
-      <label for="in-hold">hold</label>
-      <input type="range" id="in-hold" min="-200" max="4000" step="100" value="-200">
-      <output id="out-hold">défaut du preset</output>
-    </div>
-    <div class="ctrl">
-      <label for="in-at">at</label>
-      <select id="in-at"></select>
-    </div>
-    <div class="row">
-      <button id="btn-mute">sfx : défaut</button>
-      <button id="btn-anchors">Afficher les ancres</button>
+<aside id="panel">
+  <div id="head">
+    <h1>Game pop message<small id="sub">the motor's Pop, in a real game</small></h1>
+    <div class="line"><select id="game-pick"></select></div>
+    <div id="modes">
+      <button data-mode="callout" class="on">Callout · Pop.show</button>
+      <button data-mode="value">Value · Pop.text</button>
     </div>
   </div>
 
-  <div class="grp">
-    <h2>Enchaînements</h2>
-    <div class="row">
-      <button class="hero" id="btn-reel">▶ Show reel</button>
-      <button id="btn-auto">Auto (aléatoire)</button>
-      <button id="btn-sound" class="on">🔊 Son (master)</button>
-      <button id="btn-clear">Effacer</button>
+  <div id="body">
+    <div class="only-callout">
+      <h2>Style <i>the motor's table, keys 1–9, 0, −, =</i></h2>
+      <div id="styles"></div>
+      <div class="spec" id="spec"></div>
+
+      <h2>Words <i>normal case — the motor shouts</i></h2>
+      <div class="field"><label for="word">Word</label><input type="text" id="word"></div>
+      <div class="field"><label for="sub-in">Sub</label><input type="text" id="sub-in" placeholder="(none)"></div>
+
+      <h2>Placement <i>empty keeps the style's own</i></h2>
+      <div class="field"><label for="at">Anchor</label><select id="at"></select></div>
+      <div class="field"><label for="rot">Tilt</label>
+        <div class="row"><input type="range" id="rot" min="-20" max="20" step="1"><output id="rot-o"></output></div></div>
+      <div class="field"><label for="hold">Hold</label>
+        <div class="row"><input type="range" id="hold" min="0" max="3000" step="20"><output id="hold-o"></output></div></div>
     </div>
-  </div>
 
-  <div class="grp">
-    <h2>Fond</h2>
-    <div class="row" id="bg-row"></div>
-  </div>
+    <div class="only-value">
+      <h2>Value <i>the house look: size 22, life 0.6, tier 1</i></h2>
+      <div class="field"><label for="v-text">Text</label><input type="text" id="v-text" value="+40"></div>
+      <div class="field"><label for="v-color">Colour</label>
+        <div class="row"><input type="color" id="v-color" value="#ffd23f"><input type="text" id="v-color-t" value="#ffd23f"></div></div>
+      <div class="field"><label for="v-tier">Tier</label>
+        <div class="row"><input type="range" id="v-tier" min="0" max="3" step="1" value="1"><output id="v-tier-o"></output></div></div>
+      <div class="field"><label for="v-size">Size</label>
+        <div class="row"><input type="range" id="v-size" min="18" max="72" step="1" value="22"><output id="v-size-o"></output></div></div>
+      <div class="field"><label for="v-life">Life</label>
+        <div class="row"><input type="range" id="v-life" min="0.2" max="2" step="0.05" value="0.6"><output id="v-life-o"></output></div></div>
+    </div>
 
-  <p class="note">
-    <b>API</b> — <code>Pop.show(style, opts)</code> renvoie
-    <code>{ el, close, remove }</code>.<br>
-    <code>word</code>, <code>sub</code>, <code>rot</code> ·
-    <code>at</code> : nom d'ancre ou <code>{x,y}</code> en px design ·
-    <code>hold</code> : ms d'affichage plein (<code>-1</code> = reste jusqu'à
-    <code>close()</code>) · <code>enter</code> / <code>exit</code> : ms des
-    animations · <code>sfx</code> : nom du son ou <code>false</code> pour
-    couper.<br>
-    Sons : <code>hit</code>, <code>whoosh</code>, <code>sparkle</code>,
-    <code>alarm</code>, <code>blip</code>.<br><br>
-    <b>Portage</b> — le bloc CSS <code>POP LAYER</code> → <code>SKIN</code> du
-    jeu, le module <code>Pop</code> → section 5 à côté d'<code>Overlay</code>.
-  </p>
-</div>
+    <div class="btns">
+      <button class="btn main" id="fire">Fire  ( space )</button>
+      <button class="btn only-callout" id="all">Every style</button>
+      <button class="btn" id="anchors">Anchors</button>
+      <button class="btn" id="reset">Reset</button>
+    </div>
+    <div id="call" title="click to copy"></div>
+    <div id="hint">A click on the game fires it there.</div>
+  </div>
+</aside>
+
+<main id="stage">
+  <div id="fit">
+    <iframe id="frame" title="the game's web build"></iframe>
+    <div id="veil"><div class="spin"></div><span id="veil-t">building the games…</span></div>
+  </div>
+</main>
 
 <script>
-(function () {
-  "use strict";
+"use strict";
+const $ = (id) => document.getElementById(id);
+const frame = $("frame");
 
-  var $ = function (id) { return document.getElementById(id); };
-  var frame = $("frame"), stage = $("stage"), fit = $("fit"), pops = $("pops");
+/* A sample word per style, for what each one is FOR — never a label. A style
+   the motor grows later gets its own name until someone writes it one. */
+const SAMPLES = {
+  score:    { word: "+250" },
+  alert:    { word: "Combo lost" },
+  combo:    { word: "Combo x2", sub: "+40" },
+  streak:   { word: "x5 streak" },
+  ribbon:   { word: "Incredible" },
+  manifest: { word: "Level up", sub: "Level 12 unlocked" },
+  perfect:  { word: "Perfect", sub: "No miss" },
+  ultra:    { word: "Ultra", sub: "x12" },
+  bonus:    { word: "Mega bonus", sub: "+1000" },
+  danger:   { word: "Last chance" },
+  record:   { word: "New record", sub: "18 420 pts" },
+  vert:     { word: "Go go go" }
+};
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="];
 
-  /* -----------------------------------------------------------------------
-     Fit the 720x1280 frame into the viewport (same trick as the motor).
-     ----------------------------------------------------------------------- */
-  function resize() {
-    var maxW = Math.max(240, Math.min(window.innerWidth - 380, 520));
-    var maxH = Math.max(420, window.innerHeight - 44);
-    var s = Math.min(maxW / 720, maxH / 1280);
-    fit.style.transform = "scale(" + s + ")";
-    stage.style.width = (720 * s) + "px";
-    stage.style.height = (1280 * s) + "px";
-  }
-  window.addEventListener("resize", resize);
+let styles = {}, anchors = {}, style = null, mode = "callout", showAnchors = false;
 
-  /* -----------------------------------------------------------------------
-     Sfx — tiny WebAudio synth so the callouts can be judged with sound.
-     ----------------------------------------------------------------------- */
-  var Sfx = (function () {
-    var ctx = null, on = true;
-    function ac() {
-      if (!ctx) { var C = window.AudioContext || window.webkitAudioContext; if (C) ctx = new C(); }
-      if (ctx && ctx.state === "suspended") ctx.resume();
-      return ctx;
-    }
-    function tone(f, f2, dur, type, vol) {
-      var a = ac(); if (!a || !on) return;
-      var o = a.createOscillator(), g = a.createGain();
-      o.type = type || "square"; o.frequency.setValueAtTime(f, a.currentTime);
-      if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + dur);
-      g.gain.setValueAtTime(vol || .18, a.currentTime);
-      g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + dur);
-      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + dur + .02);
-    }
-    function noise(dur, freq, q, vol) {
-      var a = ac(); if (!a || !on) return;
-      var n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0), i;
-      for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-      var src = a.createBufferSource(); src.buffer = buf;
-      var flt = a.createBiquadFilter(); flt.type = "bandpass"; flt.Q.value = q || 1;
-      flt.frequency.setValueAtTime(freq, a.currentTime);
-      flt.frequency.exponentialRampToValueAtTime(Math.max(80, freq * .25), a.currentTime + dur);
-      var g = a.createGain(); g.gain.setValueAtTime(vol || .25, a.currentTime);
-      g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + dur);
-      src.connect(flt); flt.connect(g); g.connect(a.destination); src.start();
-    }
-    var kit = {
-      hit:     function () { noise(.28, 1600, .8, .3); tone(180, 42, .3, "sine", .35); },
-      whoosh:  function () { noise(.42, 2400, 3, .18); },
-      sparkle: function () {
-        var f = [880, 1174, 1568, 2093], i;
-        for (i = 0; i < f.length; i++) (function (n, k) { setTimeout(function () { tone(n, 0, .16, "triangle", .12); }, k * 55); })(f[i], i);
-      },
-      alarm:   function () { tone(340, 200, .18, "sawtooth", .16); setTimeout(function () { tone(300, 170, .26, "sawtooth", .16); }, 150); },
-      blip:    function () { tone(1200, 1800, .09, "square", .1); }
-    };
-    return {
-      play: function (name) { if (kit[name]) kit[name](); },
-      toggle: function () { on = !on; return on; }
-    };
-  })();
+/* --- the game ------------------------------------------------------------ */
+function web() { try { return frame.contentWindow && frame.contentWindow.__WEB__; } catch (e) { return null; } }
 
-  /* -----------------------------------------------------------------------
-     Geometry helpers.
-     ----------------------------------------------------------------------- */
-  /* Named anchors in the 720x1280 design space. A 3x5 grid (column x row)
-     kept clear of the HUD band (top ~140px) and the CTA bar (bottom ~170px),
-     plus four specials. `at` also accepts a raw { x, y } in design px. */
-  var ANCHORS = {
-    // row 1 — just under the HUD
-    topLeft:     { x: 220, y: 285 },  top:    { x: 360, y: 250 },  topRight:    { x: 500, y: 285 },
-    // row 2
-    upperLeft:   { x: 240, y: 435 },  upper:  { x: 360, y: 430 },  upperRight:  { x: 480, y: 435 },
-    // row 3 — eye level
-    left:        { x: 230, y: 620 },  center: { x: 360, y: 620 },  right:       { x: 490, y: 620 },
-    // row 4
-    lowerLeft:   { x: 240, y: 830 },  lower:  { x: 360, y: 830 },  lowerRight:  { x: 480, y: 830 },
-    // row 5 — just above the CTA bar
-    bottomLeft:  { x: 250, y: 1000 }, bottom: { x: 360, y: 1000 }, bottomRight: { x: 470, y: 1000 },
-    // specials
-    hudUnder:    { x: 360, y: 190 },  // hugging the HUD, for discreet toasts
-    ctaAbove:    { x: 360, y: 1090 }, // sitting right on top of the CTA
-    edgeLeft:    { x: 128, y: 640 },  // vertical manga column, left edge
-    edgeRight:   { x: 592, y: 640 }   // vertical manga column, right edge
-  };
+/* The build with everything but the picture out of the way — the stack
+   lab/game-events.html uses: the overlay over the intro, the intro's painted
+   backdrop under the canvas, the menu and the round's controls hidden. */
+const BENCH_CSS = `
+  #overlay { z-index:40; }
+  #screen-intro { z-index:-1 !important; }
+  #screen-intro > *:not(.screen-art):not(.decor-layer) { display:none !important; }
+  /* A game with a village leaves its splash for the hub after two seconds:
+     the hub and its wallet band are views, and none of them is reviewed here. */
+  #web-ctls, #screen-end, #screen-loading, #web-hud, #web-village, .wv-screen { display:none !important; }
+  .lab-anchor { position:absolute; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%;
+    background:#5ce1ff; box-shadow:0 0 0 4px rgba(0,0,0,.6); z-index:60; pointer-events:none; }
+  .lab-anchor b { position:absolute; left:50%; top:20px; transform:translateX(-50%); white-space:nowrap;
+    font:800 18px/1 -apple-system,sans-serif; color:#04121e; background:#5ce1ff; padding:4px 7px; border-radius:6px; }
+  .lab-anchor.on { background:#ffd23f; } .lab-anchor.on b { background:#ffd23f; }
+`;
 
-  /* -----------------------------------------------------------------------
-     Pop — the callout module. This is the part meant to move into the motor.
-
-       Pop.show(styleName, { word, sub, at:{x,y}|"anchor", rot, dur })
-
-     A callout is 3 nested nodes so placement / animation / rotation never
-     fight over `transform`, plus optional decor layers behind the word.
-     ----------------------------------------------------------------------- */
-  var Pop = (function () {
-    var timers = [], seed = 0;
-    function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
-    /* Build the word. Every glyph layer is expensive to rasterize — gradient
-       face clipped to the text, thick stroke, extrusion — so a style can ask
-       for ONE layer with `letters:false` instead of one node per letter.
-
-       The word arrives in NORMAL case, like every string in the repo, and is
-       shouted here the way the motor shouts it (`upper`, packages/engine) —
-       accents off, so a catalogue shows DERNIERE CHANCE and not what
-       `text-transform: uppercase` alone would leave on the screen. */
-    function buildWord(text, st) {
-      text = upper(text);
-      var w = document.createElement("div");
-      var vertical = !!st.vertical;
-      w.className = "pop-word" + (vertical ? " vert" : "");
-      var i, ch, el;
-      if (st.letters === false && !vertical) {
-        el = document.createElement("span");
-        el.className = "pop-ltr";
-        el.setAttribute("data-t", text);
-        el.textContent = text;
-        w.appendChild(el);
-        return w;
-      }
-      for (i = 0; i < text.length; i++) {
-        ch = text.charAt(i);
-        if (ch === " ") { el = document.createElement("span"); el.className = "pop-sp"; }
-        else {
-          el = document.createElement("span");
-          el.className = "pop-ltr";
-          el.setAttribute("data-t", ch);
-          el.style.setProperty("--i", i);
-          el.textContent = ch;
-        }
-        w.appendChild(el);
-      }
-      return w;
-    }
-
-    function decorNode(kind) {
-      var d = document.createElement("div");
-      d.className = "d d-" + kind;
-      return d;
-    }
-
-    /* Pop.show(styleName, opt) — every field overrides the style's default:
-         word, sub   the copy
-         at          anchor name (see ANCHORS) or a raw { x, y } in design px
-         rot         static tilt, degrees
-         hold        ms the callout stays fully readable between its entry and
-                     its exit. `hold:-1` keeps it on screen until the returned
-                     handle's close() is called (or Pop.clear()).
-         enter/exit  ms of the entry / exit animation
-         sfx         sound name to swap in, or `false` to play nothing
-       Returns { el, close, remove }. */
-    function show(name, opt) {
-      opt = opt || {};
-      var st = STYLES[name]; if (!st) return null;
-      seed++;
-
-      var word = opt.word != null ? opt.word : st.word;
-      var sub  = opt.sub  != null ? opt.sub  : st.sub;
-      var at   = opt.at   != null ? opt.at   : st.at;
-      var pos  = typeof at === "string" ? ANCHORS[at] || ANCHORS.center : at;
-
-      var enter = opt.enter != null ? opt.enter : (st.enter || 420);
-      var hold  = opt.hold  != null ? opt.hold  : (st.hold == null ? 900 : st.hold);
-      var exit  = opt.exit  != null ? opt.exit  : (st.exit  || 340);
-      // `sfx:false` silences one call; a string swaps the sound for one call.
-      var sfx   = opt.sfx !== undefined ? opt.sfx : st.sfx;
-
-      var pop = document.createElement("div");
-      pop.className = "pop " + st.cls;
-      // A little jitter keeps repeats from stacking pixel-perfect.
-      pop.style.left = (pos.x + (Math.random() * 24 - 12)) + "px";
-      pop.style.top  = (pos.y + (Math.random() * 20 - 10)) + "px";
-
-      var out = document.createElement("div");
-      out.className = "pop-out";
-
-      var anim = document.createElement("div");
-      anim.className = "pop-anim";
-      anim.style.animation = "in-" + st.anim + " " + enter + "ms cubic-bezier(.2,.9,.3,1) forwards";
-
-      // decor behind the word
-      var i, decor = st.decor || [];
-      for (i = 0; i < decor.length; i++) {
-        if (decor[i] === "sparks") { addSparks(anim); continue; }
-        if (decor[i] === "dashes") { addDashes(anim); continue; }
-        anim.appendChild(decorNode(decor[i]));
-      }
-
-      var body = document.createElement("div");
-      body.className = "pop-body" + (st.pulse ? " pulse" : "");
-      var rot = opt.rot != null ? opt.rot : (st.rot || 0);
-      body.style.setProperty("--rot", rot + "deg");
-      body.appendChild(buildWord(word, st));
-      if (sub) {
-        var s = document.createElement("div");
-        s.className = "pop-sub"; s.textContent = upper(sub);
-        body.appendChild(s);
-      }
-      anim.appendChild(body);
-      out.appendChild(anim);
-      pop.appendChild(out);
-      pops.appendChild(pop);
-
-      // Shrink-to-fit: offsetWidth is untransformed, i.e. already design px.
-      var wordEl = body.querySelector(".pop-word");
-      var maxW = st.vertical ? 260 : 690;
-      if (wordEl.offsetWidth > maxW) {
-        body.style.setProperty("--fit", (maxW / wordEl.offsetWidth).toFixed(3));
-      }
-
-      if (st.shake) shake(st.shake);
-      if (st.flash) flash(st.flash, st.flashMs || 220);
-      if (st.tint) tint(st.tint, Math.min(st.tintMs || 520, enter + hold));
-      if (st.confetti) confetti(28);
-      if (sfx) Sfx.play(sfx);
-
-      function remove() { if (pop.parentNode) pop.parentNode.removeChild(pop); }
-      function close(delay) {
-        if (out.dataset.closing) return;
-        out.dataset.closing = "1";
-        out.style.animation = "out-" + st.anim + " " + exit + "ms ease-in " + delay + "ms forwards";
-        later(remove, delay + exit + 60);
-      }
-      if (hold >= 0) close(enter + hold);
-
-      return {
-        el: pop,
-        close: function () { close(0); },   // dismiss a hold:-1 callout
-        remove: remove
-      };
-    }
-
-    /* Four ticks flicked diagonally off the chip's corners. Deterministic and
-       mirrored, so repeats read as the same effect; four solid bars are cheaper
-       than one masked gradient, and they stay inside the shockwave's footprint
-       so the callout never grows past the ring. */
-    var DASHES = [
-      { tx: -215, ty: -86, rd: -28, dw: 46 },
-      { tx:  215, ty: -86, rd:  28, dw: 46 },
-      { tx: -203, ty:  90, rd:  30, dw: 38 },
-      { tx:  203, ty:  90, rd: -30, dw: 38 }
-    ];
-    function addDashes(parent) {
-      var i, d, s;
-      for (i = 0; i < DASHES.length; i++) {
-        s = DASHES[i];
-        d = document.createElement("div");
-        d.className = "d-dash";
-        d.style.setProperty("--tx", s.tx + "px");
-        d.style.setProperty("--ty", s.ty + "px");
-        d.style.setProperty("--rd", s.rd + "deg");
-        d.style.setProperty("--dw", s.dw + "px");
-        d.style.animationDelay = (i % 2 ? 40 : 0) + "ms";
-        parent.appendChild(d);
-      }
-    }
-
-    function addSparks(parent) {
-      var n = 7, i, s, a, r;
-      for (i = 0; i < n; i++) {
-        s = document.createElement("div");
-        s.className = "d-spark";
-        a = (i / n) * Math.PI * 2 + .4;
-        r = 210 + Math.random() * 130;
-        s.style.left = (50 + Math.cos(a) * r * .07) + "%";
-        s.style.top  = (50 + Math.sin(a) * r * .12) + "%";
-        s.style.setProperty("--s", (34 + Math.random() * 40) + "px");
-        s.style.animationDelay = (Math.random() * .6) + "s";
-        parent.appendChild(s);
-      }
-    }
-
-    function shake(px) {
-      var cls = Math.random() < .5 ? "shk-a" : "shk-b";
-      frame.classList.remove("shk-a", "shk-b");
-      void frame.offsetWidth;
-      frame.style.setProperty("--shk", (px > 10 ? .5 : .36) + "s");
-      frame.classList.add(cls);
-      later(function () { frame.classList.remove(cls); }, 520);
-    }
-
-    function flash(color, ms) {
-      var el = $("flash");
-      el.style.background = color;
-      el.style.transition = "none"; el.style.opacity = .85;
-      void el.offsetWidth;
-      el.style.transition = "opacity " + ms + "ms ease-out"; el.style.opacity = 0;
-    }
-
-    function tint(color, ms) {
-      var el = $("tint");
-      el.style.boxShadow = "inset 0 0 160px 46px " + color;
-      el.style.opacity = 1;
-      later(function () { el.style.opacity = 0; }, ms);
-    }
-
-    function confetti(n) {
-      var host = $("confetti"), cols = ["#ffd400", "#ff2d9b", "#5ce1ff", "#7dffcf", "#fff"], i, p;
-      for (i = 0; i < n; i++) {
-        p = document.createElement("div");
-        p.style.cssText = "position:absolute;width:16px;height:24px;border-radius:3px;left:50%;top:38%;";
-        p.style.background = cols[i % cols.length];
-        p.style.setProperty("--dx", (Math.random() * 700 - 350) + "px");
-        p.style.setProperty("--dy", (Math.random() * 480 + 300) + "px");
-        p.style.setProperty("--dr", (Math.random() * 900 - 450) + "deg");
-        p.style.animation = "a-conf " + (1.1 + Math.random() * .8) + "s cubic-bezier(.2,.7,.5,1) forwards";
-        host.appendChild(p);
-        (function (el) { later(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2200); })(p);
-      }
-    }
-
-    function clear() {
-      var i; for (i = 0; i < timers.length; i++) clearTimeout(timers[i]);
-      timers = [];
-      pops.innerHTML = ""; $("confetti").innerHTML = "";
-      $("tint").style.opacity = 0; $("flash").style.opacity = 0;
-    }
-
-    return { show: show, shake: shake, flash: flash, tint: tint, confetti: confetti, clear: clear };
-  })();
-
-  /* Capitals, the house way: accents come off, and a lowercase run glued to a
-     digit (a unit, a multiplier) keeps its case. Same rule as the motor's
-     `upper` — see docs/ENGINE.md. */
-  function upper(str) {
-    var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
-    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
-    var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
-    var shouted = String(str == null ? "" : str).replace(
-      /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
-        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
-        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
-        return run.toUpperCase();
-      });
-    var out = "", i, c, k;
-    for (i = 0; i < shouted.length; i++) {
-      c = shouted.charAt(i);
-      if (PAIR[c]) { out += PAIR[c]; continue; }
-      k = FROM.indexOf(c);
-      out += k < 0 ? c : TO.charAt(k);
-    }
-    return out;
-  }
-
-  /* -----------------------------------------------------------------------
-     STYLES — the catalogue. Each entry is one visual language:
-       cls                 CSS class carrying the palette tokens
-       anim                entry/exit keyframe pair ("slam" -> in-slam/out-slam)
-       enter / hold / exit default timing in ms; `hold` is what a caller tunes
-       decor               layers painted behind the word
-       at / rot            default anchor and static tilt
-       sfx                 default sound (Sfx kit name)
-       shake / flash / tint / confetti: full-screen impact
-     ----------------------------------------------------------------------- */
-  var STYLES = {
-    combo: {
-      label: "Combo x2", word: "Combo x2", sub: "+40", cls: "s-combo",
-      anim: "chip", enter: 260, hold: 520, exit: 220,
-      decor: ["ring", "dashes"], at: "upperRight", rot: -7,
-      letters: false, shake: 4, sfx: "hit"
-    },
-    incredible: {
-      label: "Incroyable", word: "Incroyable", cls: "s-ribbon",
-      anim: "swipe", enter: 520, hold: 900, exit: 420,
-      decor: ["band", "lines"], at: "upper",
-      shake: 5, sfx: "whoosh"
-    },
-    revolution: {
-      label: "Révolutionnaire", word: "Révolutionnaire", sub: "Niveau 12 débloqué", cls: "s-manifest",
-      anim: "drop", enter: 640, hold: 1200, exit: 380,
-      decor: ["dots", "band"], at: "center",
-      shake: 12, tint: "rgba(214,27,60,.9)", tintMs: 700, sfx: "alarm"
-    },
-    ultra: {
-      label: "Ultra", word: "Ultra", sub: "x12", cls: "s-ultra",
-      anim: "zoom", enter: 580, hold: 900, exit: 420,
-      decor: ["rays", "flash"], at: "center",
-      shake: 16, flash: "rgba(190,150,255,.9)", tint: "rgba(120,70,255,.85)", sfx: "hit"
-    },
-    streak: {
-      label: "Série x5", word: "Série x5", cls: "s-chevron",
-      anim: "punch", enter: 380, hold: 800, exit: 300,
-      decor: ["chevrons"], at: "left", rot: -7,
-      shake: 4, sfx: "sparkle"
-    },
-    perfect: {
-      label: "Parfait", word: "Parfait", sub: "Sans faute", cls: "s-gold",
-      anim: "punch", enter: 460, hold: 1100, exit: 340,
-      decor: ["rays", "sparks"], at: "upper", rot: -3,
-      tint: "rgba(255,190,60,.8)", sfx: "sparkle"
-    },
-    bonus: {
-      label: "Mega bonus", word: "Mega bonus", sub: "+1000", cls: "s-sticker",
-      anim: "drop", enter: 480, hold: 900, exit: 340,
-      decor: ["dots"], at: "lower", rot: -4,
-      sfx: "sparkle"
-    },
-    danger: {
-      label: "Dernière chance", word: "Dernière chance", cls: "s-hazard",
-      anim: "alarm", enter: 260, hold: 1800, exit: 300, pulse: true,
-      decor: ["stripes"], at: "top",
-      tint: "rgba(255,40,40,.85)", tintMs: 1800, sfx: "alarm"
-    },
-    record: {
-      label: "Nouveau record", word: "Nouveau record", sub: "18 420 pts", cls: "s-record",
-      anim: "drop", enter: 620, hold: 1500, exit: 380,
-      decor: ["rays", "band", "sparks"], at: "center",
-      shake: 8, confetti: true, sfx: "sparkle"
-    },
-    go: {
-      label: "Go go go (vertical)", word: "Gogogo", cls: "s-vert", vertical: true,
-      anim: "punch", enter: 400, hold: 800, exit: 320,
-      decor: ["rays"], at: "edgeRight", rot: 4,
-      sfx: "blip"
-    },
-    score: {
-      label: "+250 (flottant)", word: "+250", cls: "s-float",
-      anim: "float", enter: 260, hold: 320, exit: 520,
-      decor: [], at: "center", rot: -5,
-      sfx: "blip"
-    }
-  };
-
-  /* -----------------------------------------------------------------------
-     Lab UI.
-     ----------------------------------------------------------------------- */
-  var score = 0;
-  function bumpScore(n) {
-    score += n; $("hud-score").textContent = score;
-  }
-
-  // The three per-call overrides the panel can inject: hold, at, sfx.
-  var override = { hold: null, at: null, mute: false };
-  var holding = null;   // handle of the last `hold:-1` callout, so it can close
-
-  function callOpts() {
-    var o = {};
-    if (override.hold !== null) o.hold = override.hold;
-    if (override.at) o.at = override.at;
-    if (override.mute) o.sfx = false;
-    return o;
-  }
-
-  function fire(k) {
-    if (holding) { holding.close(); holding = null; }
-    var h = Pop.show(k, callOpts());
-    if (override.hold === -1) holding = h;   // stays until the next callout
-    bumpScore(120);
-  }
-
-  var row = $("preset-row"), key;
-  for (key in STYLES) {
-    if (!STYLES.hasOwnProperty(key)) continue;
-    (function (k) {
-      var b = document.createElement("button");
-      b.innerHTML = STYLES[k].label + "<span class='k'>" + k + "</span>";
-      b.onclick = function () { fire(k); };
-      row.appendChild(b);
-    })(key);
-  }
-
-  // hold slider. The two notches below zero are modes, not durations:
-  //   -200 -> keep the preset's own hold, -100 -> hold:-1 (stays until closed)
-  var holdIn = $("in-hold"), holdOut = $("out-hold");
-  holdIn.oninput = function () {
-    var v = parseInt(this.value, 10);
-    if (v <= -200)     { override.hold = null; holdOut.textContent = "défaut du preset"; }
-    else if (v <= -100){ override.hold = -1;   holdOut.textContent = "-1 · persistant"; }
-    else               { override.hold = v;    holdOut.textContent = v + " ms"; }
-  };
-
-  // anchor picker, filled straight from ANCHORS so the list can never drift
-  var atIn = $("in-at"), o0 = document.createElement("option");
-  o0.value = ""; o0.textContent = "(ancre par défaut du preset)"; atIn.appendChild(o0);
-  var an;
-  for (an in ANCHORS) {
-    if (!ANCHORS.hasOwnProperty(an)) continue;
-    var op = document.createElement("option");
-    op.value = an;
-    op.textContent = an + "  —  " + ANCHORS[an].x + ", " + ANCHORS[an].y;
-    atIn.appendChild(op);
-  }
-  atIn.onchange = function () { override.at = this.value || null; };
-
-  $("btn-mute").onclick = function () {
-    override.mute = !override.mute;
-    this.classList.toggle("on", override.mute);
-    this.textContent = override.mute ? "sfx : false (muet)" : "sfx : défaut";
-  };
-
-  // Plot every named anchor over the play area.
-  var anchorHost = $("anchors"), a2;
-  for (a2 in ANCHORS) {
-    if (!ANCHORS.hasOwnProperty(a2)) continue;
-    (function (name, p) {
-      var d = document.createElement("div");
-      d.className = "anch";
-      d.style.left = p.x + "px"; d.style.top = p.y + "px";
-      d.innerHTML = "<b>" + name + "</b>";
-      anchorHost.appendChild(d);
-    })(a2, ANCHORS[a2]);
-  }
-  $("btn-anchors").onclick = function () {
-    this.classList.toggle("on", anchorHost.classList.toggle("on"));
-  };
-
-/* The grounds the callouts are judged against, ordered darkest to brightest:
-     a callout that reads over marshmelt's lava and over echomaze's near-black
-     reads everywhere. These are the shipping cut (assets/image/embed/), which
-     is what the motor actually paints behind the intro and the end screen —
-     and 20 KB apiece instead of the 2 MB masters, so the page opens at once. */
-  var BGS = ["echomaze", "blight", "orbinity", "slipdeck", "marshmelt"];
-  var BG_DIR = "../assets/image/embed/", BG_SUF = "-background-phone.webp";
-  var bgRow = $("bg-row"), j;
-  for (j = 0; j < BGS.length; j++) {
-    (function (slug) {
-      var src = BG_DIR + slug + BG_SUF;
-      var b = document.createElement("button");
-      b.className = "bgbtn";
-      b.title = slug;
-      var im = document.createElement("img"); im.src = src; im.alt = slug;
-      b.appendChild(im);
-      b.onclick = function () { $("bg").src = src; };
-      bgRow.appendChild(b);
-    })(BGS[j]);
-  }
-
-  // Tap the play area -> floating score at the impact point (design coords).
-  frame.addEventListener("pointerdown", function (e) {
-    var r = frame.getBoundingClientRect();
-    var s = r.width / 720;
-    Pop.show("score", {
-      word: "+" + (Math.floor(Math.random() * 4) + 1) * 50,
-      at: { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s }
-    });
-    bumpScore(50);
+frame.addEventListener("load", () => {
+  let d;
+  try { d = frame.contentDocument; } catch (e) { return veil("the build did not load"); }
+  if (!d || !frame.contentWindow.__WEB__) return veil("no web build for this game yet — the events server builds it on start");
+  const st = d.createElement("style");
+  st.textContent = BENCH_CSS;
+  d.head.appendChild(st);
+  // A click on the game fires the current one where it landed.
+  d.addEventListener("pointerdown", (e) => {
+    const box = d.getElementById("frame");
+    if (!box) return;
+    const r = box.getBoundingClientRect();
+    const k = 720 / r.width;
+    fire({ x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k });
   });
+  // The motor's own tables, read once the build has booted.
+  const W = web();
+  styles = W.Pop.styles || {};
+  anchors = W.Pop.anchors || {};
+  drawStyles();
+  drawAnchorsSelect();
+  if (!style || !styles[style]) pick(Object.keys(styles)[0]);
+  drawAnchors();
+  veil(null);
+});
 
-  // Scripted show reel: the beats of a real run, in order.
-  var REEL = [
-    [0,    "score",      { at: { x: 300, y: 720 }, word: "+150" }],
-    [420,  "score",      { at: { x: 430, y: 640 }, word: "+200" }],
-    [900,  "combo",      {}],
-    [2100, "streak",     {}],
-    [4400, "incredible", {}],
-    [6000, "perfect",    {}],
-    [7700, "ultra",      {}],
-    [9500, "revolution", {}],
-    [11600,"danger",     {}],
-    [13600,"bonus",      {}],
-    [15200,"record",     {}]
+function veil(msg) {
+  $("veil").classList.toggle("hide", !msg);
+  if (msg) $("veil-t").textContent = msg;
+}
+
+function load(slug) {
+  veil("loading " + slug + "…");
+  try { localStorage.setItem("pop:game", slug); } catch (e) {}
+  frame.src = "build/" + slug + "/index.html";
+}
+
+/* The value half is drawn on the canvas by the frame pipeline, which is not
+   turning outside a round: drive clear, tick and draw while a value lives. */
+let juiceUntil = 0, juiceRunning = false;
+function juice(seconds) {
+  juiceUntil = Math.max(juiceUntil, performance.now() + seconds * 1000);
+  if (juiceRunning) return;
+  const W = web();
+  if (!W) return;
+  juiceRunning = true;
+  let last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    W.clearWorld(); W.Pop.tick(dt); W.Pop.canvas();
+    if (now < juiceUntil) requestAnimationFrame(step);
+    else { W.clearWorld(); juiceRunning = false; }
+  };
+  requestAnimationFrame(step);
+}
+
+/* --- the style tiles ----------------------------------------------------- */
+function drawStyles() {
+  $("styles").innerHTML = Object.keys(styles).map((k, i) =>
+    `<button data-k="${k}"${k === style ? ' class="on"' : ""}>${k}` +
+    `<small>${styles[k].anim} · ${styles[k].at}</small>${KEYS[i] ? `<kbd>${KEYS[i]}</kbd>` : ""}</button>`).join("");
+}
+
+function drawAnchorsSelect() {
+  $("at").innerHTML = '<option value="">(the style\'s own)</option>' +
+    Object.keys(anchors).map((a) => `<option value="${a}">${a}</option>`).join("");
+}
+
+function spec(k) {
+  const s = styles[k];
+  if (!s) return "";
+  const bits = [
+    `<b>${k}</b>  anim ${s.anim} · ${s.enter} / ${s.hold} / ${s.exit} ms`,
+    `at ${s.at}${s.rot ? " · tilt " + s.rot + "°" : ""}${s.decor && s.decor.length ? " · decor " + s.decor.join(", ") : ""}`
   ];
-  var reelTimers = [];
-  $("btn-reel").onclick = function () {
-    var i;
-    for (i = 0; i < reelTimers.length; i++) clearTimeout(reelTimers[i]);
-    reelTimers = []; Pop.clear(); score = 0; $("hud-score").textContent = 0;
-    for (i = 0; i < REEL.length; i++) {
-      (function (step) {
-        reelTimers.push(setTimeout(function () { Pop.show(step[1], step[2]); bumpScore(180); }, step[0]));
-      })(REEL[i]);
-    }
+  const fx = [];
+  if (s.letters) fx.push("letters");
+  if (s.vertical) fx.push("vertical");
+  if (s.pulse) fx.push("pulse");
+  if (s.shake) fx.push("shake " + s.shake);
+  if (s.flash) fx.push("flash " + s.flash);
+  if (s.vignette) fx.push("vignette" + (s.vignetteMs ? " " + s.vignetteMs + " ms" : ""));
+  if (s.confetti) fx.push("confetti " + s.confetti);
+  if (fx.length) bits.push(fx.join(" · "));
+  return bits.join("<br>");
+}
+
+function pick(k) {
+  if (!styles[k]) return;
+  style = k;
+  const s = styles[k], sample = SAMPLES[k] || { word: k.charAt(0).toUpperCase() + k.slice(1) };
+  $("word").value = sample.word;
+  $("sub-in").value = sample.sub || "";
+  $("at").value = "";
+  $("rot").value = s.rot || 0;
+  $("hold").value = s.hold;
+  [].forEach.call($("styles").children, (b) => b.classList.toggle("on", b.dataset.k === k));
+  $("spec").innerHTML = spec(k);
+  sync();
+  drawAnchors();
+}
+
+/* --- what a fire sends ---------------------------------------------------- */
+function calloutOpts(at) {
+  const s = styles[style] || {};
+  const o = { word: $("word").value };
+  if ($("sub-in").value) o.sub = $("sub-in").value;
+  if (at) o.at = { x: Math.round(at.x), y: Math.round(at.y) };
+  else if ($("at").value) o.at = $("at").value;
+  const rot = +$("rot").value;
+  if (rot !== (s.rot || 0)) o.rot = rot;
+  const hold = +$("hold").value;
+  if (hold !== s.hold) o.hold = hold;
+  return o;
+}
+
+function valueOpts() {
+  return { color: $("v-color-t").value, size: +$("v-size").value, tier: +$("v-tier").value, life: +$("v-life").value };
+}
+
+// The call as a game would write it — normal-case strings, only what differs.
+function callLine() {
+  const js = (v) => JSON.stringify(v);
+  const obj = (o) => "{ " + Object.keys(o).map((k) =>
+    k + ": " + (o[k] && typeof o[k] === "object" ? "{ x: " + o[k].x + ", y: " + o[k].y + " }" : js(o[k]))).join(", ") + " }";
+  if (mode === "value") return `Pop.text(x, y, ${js($("v-text").value)}, ${obj(valueOpts())});`;
+  return `Pop.show(${js(style)}, ${obj(calloutOpts())});`;
+}
+
+function sync() {
+  $("rot-o").textContent = $("rot").value + "°";
+  $("hold-o").textContent = $("hold").value + " ms";
+  $("v-tier-o").textContent = $("v-tier").value;
+  $("v-size-o").textContent = $("v-size").value + " px";
+  $("v-life-o").textContent = (+$("v-life").value).toFixed(2) + " s";
+  $("call").textContent = style || mode === "value" ? callLine() : "";
+}
+
+function fire(at) {
+  const W = web();
+  if (!W) return;
+  try { W.Sound.unlock(); } catch (e) {}
+  if (mode === "value") {
+    const L = W.Layout;
+    const x = at ? at.x : L.cx + (Math.random() - 0.5) * L.w * 0.4;
+    const y = at ? at.y : L.cy + (Math.random() - 0.5) * L.h * 0.2;
+    W.Pop.text(x, y, $("v-text").value, valueOpts());
+    juice(+$("v-life").value + 0.3);
+    return;
+  }
+  if (!style) return;
+  W.Pop.show(style, calloutOpts(at));
+}
+
+/* Every style in the table's order, each one after the last has left. */
+let reel = null;
+function playAll() {
+  const W = web();
+  if (!W) return;
+  if (reel) { clearTimeout(reel); reel = null; $("all").classList.remove("on"); return; }
+  const keys = Object.keys(styles);
+  let i = 0;
+  $("all").classList.add("on");
+  const next = () => {
+    if (i >= keys.length) { reel = null; $("all").classList.remove("on"); return; }
+    pick(keys[i++]);
+    fire();
+    reel = setTimeout(() => { reel = setTimeout(next, 250); }, Math.max(400, W.Pop.pending()));
   };
+  next();
+}
 
-  var autoId = null;
-  $("btn-auto").onclick = function () {
-    var b = this;
-    if (autoId) { clearInterval(autoId); autoId = null; b.classList.remove("on"); return; }
-    b.classList.add("on");
-    var keys = Object.keys(STYLES);
-    autoId = setInterval(function () {
-      Pop.show(keys[Math.floor(Math.random() * keys.length)]);
-      bumpScore(90);
-    }, 1600);
-  };
+/* --- the anchors, drawn into the game's own overlay ----------------------- */
+function drawAnchors() {
+  const W = web();
+  let d;
+  try { d = frame.contentDocument; } catch (e) { return; }
+  if (!W || !d) return;
+  d.querySelectorAll(".lab-anchor").forEach((n) => n.remove());
+  if (!showAnchors) return;
+  const host = d.getElementById("overlay") || d.getElementById("frame");
+  const L = W.Layout;
+  const cur = $("at").value || (styles[style] && styles[style].at);
+  Object.keys(anchors).forEach((name) => {
+    const a = anchors[name];
+    const n = d.createElement("div");
+    n.className = "lab-anchor" + (name === cur ? " on" : "");
+    n.style.left = (L.left + a[0] * L.w) + "px";
+    n.style.top = (L.top + a[1] * L.h) + "px";
+    n.innerHTML = "<b>" + name + "</b>";
+    host.appendChild(n);
+  });
+}
 
-  $("btn-sound").onclick = function () {
-    this.classList.toggle("on", Sfx.toggle());
-  };
-  $("btn-clear").onclick = function () { Pop.clear(); };
+/* --- wiring --------------------------------------------------------------- */
+$("styles").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) { pick(b.dataset.k); fire(); }
+});
+$("modes").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  mode = b.dataset.mode;
+  document.body.dataset.mode = mode;
+  [].forEach.call($("modes").children, (c) => c.classList.toggle("on", c === b));
+  sync();
+});
+["word", "sub-in", "rot", "hold", "v-text", "v-tier", "v-size", "v-life"].forEach((id) => $(id).addEventListener("input", sync));
+$("at").addEventListener("change", () => { sync(); drawAnchors(); });
+$("v-color").addEventListener("input", () => { $("v-color-t").value = $("v-color").value; sync(); });
+$("v-color-t").addEventListener("input", () => {
+  if (/^#[0-9a-f]{6}$/i.test($("v-color-t").value)) $("v-color").value = $("v-color-t").value;
+  sync();
+});
+$("fire").addEventListener("click", () => fire());
+$("all").addEventListener("click", playAll);
+$("anchors").addEventListener("click", () => {
+  showAnchors = !showAnchors;
+  $("anchors").classList.toggle("on", showAnchors);
+  drawAnchors();
+});
+$("reset").addEventListener("click", () => {
+  if (style) pick(style);
+  $("v-text").value = "+40"; $("v-color").value = $("v-color-t").value = "#ffd23f";
+  $("v-tier").value = 1; $("v-size").value = 22; $("v-life").value = 0.6;
+  sync();
+  const W = web();
+  if (W) W.Pop.clear();
+});
+$("call").addEventListener("click", () => {
+  const t = $("call").textContent;
+  navigator.clipboard && navigator.clipboard.writeText(t).then(() => { $("hint").textContent = "copied"; setTimeout(() => { $("hint").textContent = "A click on the game fires it there."; }, 900); });
+});
+$("game-pick").addEventListener("change", function () { load(this.value); });
 
-  /* The fake chrome is written in normal case like every other string in the
-     repo; `data-up` is what shouts it, so the mock HUD follows the same rule
-     as the callouts above it. */
-  var ups = document.querySelectorAll("[data-up]"), u;
-  for (u = 0; u < ups.length; u++) ups[u].textContent = upper(ups[u].textContent);
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if (e.key === " ") { e.preventDefault(); fire(); return; }
+  const i = KEYS.indexOf(e.key);
+  const k = Object.keys(styles)[i];
+  if (i >= 0 && k) { if (mode !== "callout") $("modes").children[0].click(); pick(k); fire(); }
+});
 
-  resize();
-  // Opening beat so the page never looks empty.
-  setTimeout(function () { Pop.show("combo"); }, 500);
-})();
+/* The frame is the design space, scaled to the room the stage has. */
+function fit() {
+  const st = $("stage");
+  const k = Math.max(0.2, Math.min((st.clientHeight - 28) / 1280, (st.clientWidth - 28) / 720));
+  $("fit").style.transform = "scale(" + k + ")";
+  $("fit").style.width = "720px";
+  $("fit").style.height = "1280px";
+  $("fit").style.margin = (-(1280 * (1 - k)) / 2) + "px " + (-(720 * (1 - k)) / 2) + "px";
+  $("fit").style.transformOrigin = "center center";
+}
+window.addEventListener("resize", fit);
+fit();
+
+fetch("api/games").then((r) => r.json()).then((list) => {
+  const pickEl = $("game-pick");
+  pickEl.innerHTML = list.map((g) => `<option value="${g.slug}">${g.title}${g.built ? "" : "  (not built yet)"}</option>`).join("");
+  let saved = null;
+  try { saved = localStorage.getItem("pop:game"); } catch (e) {}
+  if (saved && list.some((g) => g.slug === saved)) pickEl.value = saved;
+  load(pickEl.value);
+}).catch(() => veil("this page needs its server — make events, then /pop"));
 </script>
 </body>
 </html>

@@ -98,7 +98,10 @@ mistake it answers.
 stays in the hand slot it was sent from, bandaged and unplayable for one turn —
 it does *not* go to the bottom of the deck, because a wound the player cannot
 see is a rule nobody learns, and the slot it occupies is what the wound costs.
-After the battle it goes to the **infirmary** for two real days.
+After the battle it goes to the **infirmary** for as long as the **tier gap**
+that caused the wound says: `infirmaryHours` is a range, `[1, 24]`, read from a
+gap of one letter (1 h) to the whole ladder (24 h). A failed mission's wound
+reads the mission's difficulty (1 to 5) in place of the gap.
 
 **The infirmary has two to nine beds and the prison two to nine cells** (`infirmaryBeds`,
 `prisonCells`). The barracks tells the round how many are free
@@ -127,13 +130,13 @@ screen a stray tap can close is not a screen anything is composed on. They
 stack over the village like the album and the shop, they carry the wallet band,
 and ESCAPE peels them. `tools/test/views.mjs` holds that contract for all four.
 
-| the door  | what is on it                                                             |
-| --------- | ------------------------------------------------------------------------- |
-| CARDS     | three tabs: CAMP (7c), DECK (the next battle's cards), COLLECTION         |
-| INFIRMARY | what the last battles cost, and how long until each card is back          |
-| PRISON    | who was taken, how long until they turn, and the button that enlists them |
-| COMMAND   | four tabs: MANAGEMENT (7c), RECRUITS (the tent), MISSIONS (7b), REGISTER  |
-| DEFENSE   | the camp the player builds against a raid (7e)                            |
+| the door  | what is on it                                                              |
+| --------- | -------------------------------------------------------------------------- |
+| CARDS     | three tabs: CAMP (7c), DECK (the next battle's cards), COLLECTION          |
+| INFIRMARY | what the last battles cost, and how long until each card is back           |
+| PRISON    | who was taken, how long until they turn, and the button that enlists them  |
+| COMMAND   | four tabs: MANAGEMENT (7c), RECRUITS (the tent), MISSIONS (7b), REGISTER   |
+| DEFENSE   | two tabs: STRATEGY (the camp built against a raid, 7e), REPORT (its duels) |
 
 The two houses keep their view keys — `deck` for CARDS, `recruit` for COMMAND —
 since the key is the save's and the manifest's, and the name is only a word.
@@ -431,24 +434,22 @@ telling, the infirmary shows it.
 
 ## 6. The two waits, and the way out of them
 
-Two real days in the infirmary, five in the prison. **Only the first can be
-bought out**, with the shell's **rewarded-ad placeholder** (`Meta.ad`,
-[docs/META.md](META.md)) — one button for all the bandages at once, and none per
-bed, because an ad per wound is four ads for one battle and a price nobody pays
-twice. The prison has no ad at all: a prisoner is a bonus that blocks nothing,
-so the five days are a reason to come back, like a squad on a mission.
+1 to 24 hours in the infirmary (by the tier gap), 4 to 48 in the prison (by
+the prisoner's grade, `prisonHours: [4, 48]`: a spy talks soonest, a marshal
+last). **Neither is bought out
+with an ad**: the infirmary's "heal everyone" button is gone, and the prison
+never had one — a prisoner is a bonus that blocks nothing, so the wait is
+a reason to come back, like a squad on a mission. A wound still ends early
+when the camp's own day says so (the `healAll` event).
 
-Without that button a player whose three best cards are in bandages has nothing
-to do for two days, which is not a mechanic, it is a closed door.
-
-**On a machine that is plainly not a player's an hour can be a second**, the same
-fence the daily road keeps (`W.Dev`, `meta.js`): localhost, a LAN address or a
-`file://` page. The band's DEV pill ([VIEWS.md](VIEWS.md)) says so, so a
-screenshot can never be mistaken for the real thing, and nothing of it reaches
-a deployed site. **The fast clock is OFF when the game opens**, and a tap on
-the pill turns it on for the session (never persisted), so the real length of
-a wait is what a local machine shows unless asked otherwise. A deadline
-already written keeps the clock it was written under.
+**On a machine that is plainly not a player's the clock is moved by hand**, the
+same fence the daily road keeps (`W.Dev`, `meta.js`): localhost or a LAN
+address. An hour is always an hour; the band's DEV pill opens the DEV view
+([VIEWS.md](VIEWS.md)), whose clock **advances** the hours with the player in
+the camp or has them **reconnect** that much later (a reload, so the raid, the
+camp's news and the returns are the boot's own), and whose events fire every
+card of this layer on demand — a camp day by name, a raid on the validated
+defense, a prisoner offer, a promotion. Nothing of it reaches a deployed site.
 
 ## 7. Recruiting
 
@@ -462,8 +463,9 @@ price = base × (1 + gradeStep × (grade − 1)) × tierStep ^ tier      (rounde
 
 **The shelf is rolled on a clock, not on arrival.** A shelf that re-rolls every
 time the player walks in is a shelf they re-roll instead of buying from, and
-the price stops meaning anything. Nothing re-rolls it early — the ad that
-did was removed in 0.15.0.
+the price stops meaning anything. It turns over every twenty minutes
+(`refreshMinutes`; a manifest may still write `refreshHours`). Nothing
+re-rolls it early — the ad that did was removed in 0.15.0.
 
 **The tent never rolls the three specials.** A spy, a scout and a sapper are
 ANSWERS to something — the marshal, the fog, the traps — and a tent that sold
@@ -495,7 +497,7 @@ player then has to visit a second screen to use is a purchase they do not feel.
 
 The command's third tab. The board offers a few scenarios out of
 `web.army.missions.list` (fifty in `games/stratideck`) — a pretext, a
-difficulty from 1 to 5, a length of 4 to 48 real hours, a squad of two to five
+difficulty from 1 to 5, a length of 20 minutes to 6 real hours (`minutes`), a squad of two to five
 cards, what it pays and what a failure costs. On the board each is **one
 line** and a door: the token of the grade it favours, the title and its pips,
 then the length, the squad and the first reward — the pretext and the full
@@ -523,18 +525,27 @@ use off the grid.
 
 **The squad is away for the whole wait**: still in the deck, since the deck is
 the player's standing choice, and out of every battle until it is back — the
-rule a wound follows, and the deck screen tags it ON MISSION. At most
-`running` squads are out at once, and the board is rolled on a clock
-(`refreshHours`) like the tent's shelf, the missions run least first and one
-per difficulty before a difficulty repeats. **No ad rolls it early and no ad
+rule a wound follows, and the deck screen tags it ON MISSION. The board is
+rolled on a clock (`refreshHours`) like the tent's shelf, the missions run
+least first and one per difficulty before a difficulty repeats. **No ad rolls it early and no ad
 brings a squad home**: a board bought again is a board shopped for the easy
 mission, and the wait is the reason to come back to the game later.
 
-**The tab is three sections and no subtitle**, in the order they are read.
-THE BOARD first, `offers` slots, and a mission sent leaves its slot empty
-until the clock rolls the board again. UNDER WAY is `running` slots — the
-squads away, a report not yet collected, and a dashed slot per squad the camp
-could still send. REPORTS is the history: every report collected, newest
+**A slot is one place on the board, whatever it holds.** The missions' post
+opens `slots` of them (`[2, 6]`: two with nobody at the post, six under an S
+who suits it), and each is in one state at a time: a MISSION offered, the
+SQUAD sent on it (the squad leaves from its mission's own row), the REPORT it
+came back with, then EMPTY until the clock rolls the board again, which fills
+every slot holding no squad and no report — the missions nobody picked
+included. So the board is also the ceiling on the squads away: six at most,
+and there is no second limit. A slot past the gauge still shows the squad or
+the report it holds (a post relieved never locks a squad out of its own
+row).
+
+**The tab is two sections and no subtitle.** THE BOARD draws all six rows —
+the ones the gauge has not opened as a padlock and the word LOCKED, and a tap
+on one names the post — at one height, so a slot changing state never moves
+the rows under it. REPORTS is the history: every report collected, newest
 first and at most twenty, each row stamped success or failure and re-opened
 on a tap, as it was written and paying nothing.
 
@@ -594,7 +605,7 @@ the gauges keeps its figure:
 | --------- | ---------------------------- | ------------------------------------- |
 | camp      | captives offered after a win | `capturePick` `[1, 3]`, + a straggler |
 | formation | the deck's slots             | `deckSize` `[12, 20]`                 |
-| missions  | the mission board's slots    | `missions.offers` `[2, 10]`           |
+| missions  | the mission slots            | `missions.slots` `[2, 6]`             |
 | infirmary | beds                         | `infirmaryBeds` `[2, 9]`              |
 | prison    | cells                        | `prisonCells` `[2, 9]`                |
 | kitchen   | the odds of a good day (§7d) | `events.good` `[0.3, 0.9]`            |
@@ -640,7 +651,7 @@ cards are doors to this tab. An entry is `nw` until it has been shown.
 
 ## 7d. The camp's day — the kitchen
 
-Every `events.everyHours` (4) real hours something happens in the camp.
+Every `events.everyHours` (2) real hours something happens in the camp.
 `web.army.events.list` holds forty days, twenty good and twenty bad, each a
 title, a line (`{c}` the officer it is about, `{m}` a squad's mission) and one
 effect (`fx.kind`): coins or tickets won or lost, xp, a super ticket, a
@@ -703,12 +714,12 @@ row is the FRONT, as a camp's bottom row is in a battle.
   unlocks: an object is owned once it is handed over, and its shadow names the
   biome that hands it over.
 
-**A raid is rolled on a return.** `seen` is the last moment the player was
+**A raid comes with every return.** `seen` is the last moment the player was
 here — every write moves it, and so does the tab going to the background — and
 a session that starts, or a tab that comes back, after `attack.awayHours` (4)
-of absence arms one roll, played at the village: `attack.chance` (30 %) that
-the red army came. A reload is not an absence, so prisoners cannot be farmed by
-refreshing. No raid, no card.
+of absence arms one raid, played at the village. There is no roll: the player
+left, and the red army came while they were gone. A reload is not an absence,
+so prisoners cannot be farmed by refreshing.
 
 **How well a layout holds is played, not computed.** `Game.defense`
 (games/stratideck) plays the assault `attack.runs` (200) times with the
@@ -737,6 +748,21 @@ defense.loss  coinShare [0.03, 0.12] of the wallet (coinCap 500),
               wounds [1, 2], woundHours [6, 24]
 ```
 
+**The house has two tabs.** STRATEGY is the grid above, where the house
+opens; REPORT is the last raid read back — whether the camp held, the
+solidity, the tally, and the duels in the order the red army sent its cards
+— one bout a line, the red attacker facing the camp's card (the very officer
+on guard) at the deck's medium size, VS between them and the outcome under
+it: the officer by their first and last name — `Sara Colt wins`, `Tom Reed is held back` against a fence. The winner's half of the
+plate is tinted in its army's colour and the loser dimmed; a winner a
+better-equipped loser wounded wears a wound badge and a *Wounded* line, and
+the bout that took the flag is ringed in red.
+`Game.defense` hands the duels back as `run.log`, and the report keeps them
+as `log`, `{ a [grade, tier], d [grade, tier] or [object], k judge's kind, h 1 when the winner was wounded }` each. The village shows the report once
+and pays it, and a tap on that card opens the defense straight on this tab (a
+key only pays it: ESCAPE and ENTER put a card away rather than walk
+somewhere); the tab only ever shows the report already read (`df.last`).
+
 `__ARMY__.raid()` writes a report from the validated defense on demand and
 tells it at the village — the test hook, and the way to see one in DEV.
 
@@ -751,6 +777,7 @@ second thing for OPTIONS to erase and a second thing to forget.
 n  the next id to hand out — ids are NEVER reused, because the deck, the
    infirmary and a battle's wound list are three lists pointing at one card
 r  the roster   { i id, g grade, t tier, w when its wound heals (0 = fit),
+                 ws how long that stay is, for its gauge,
                  o "red" on a prisoner who enlisted — absent otherwise,
                  b the tier it was raised at, once promoted,
                  s services since its last promotion }
@@ -765,11 +792,12 @@ x  the register every card lost, newest first, 200 at most
                    nw not told yet, back when the tent found them alive }
 k  the tent     { t when the shelf was rolled, o the offers { g, t, o, f fallen,
                  m a missing grade, sold at needPrice }, b the ones bought }
-ms the missions { t when the board was rolled, o its mission ids,
-                 r the squads away { m, c card ids, e back at, p odds, z roll },
-                 q reports written and not collected, l reports collected
-                 (newest first, 20 at most), h mission → times run,
-                 n the slots the board was rolled with }
+ms the missions { v 2, t when the board was rolled, o the mission offered
+                 in each slot (by slot, null where none),
+                 r the squads away { k slot, m, c card ids, e back at, p odds, z roll },
+                 q reports written and not collected (each keeps its slot k),
+                 l reports collected (newest first, 20 at most),
+                 h mission → times run, n the slots the board was rolled with }
 c  the collection, which only grows: { h officer → 1 once owned,
    m officer → 1 once met, o object → 1 once turned over }, an officer
    being the cast's key, "b4.2" = the blue sergeant at C — the OBJECTS tab
@@ -795,8 +823,8 @@ about what either means.
 ```json
 "army": {
   "deckSize": 14,
-  "infirmaryHours": 48,
-  "prisonHours": 120,
+  "infirmaryHours": [1, 24],
+  "prisonHours": [4, 48],
   "infirmaryBeds": 6,
   "prisonCells": 6,
   "capturePick": 3,
@@ -805,14 +833,14 @@ about what either means.
   "grades": [
     { "r": 1, "name": "Spy", "art": "cardBlueSpy", "foe": "cardRedSpy" }
   ],
-  "recruit": { "slots": 4, "refreshHours": 6,
+  "recruit": { "slots": 4, "refreshMinutes": 20,
                "base": 90, "gradeStep": 0.22, "tierStep": 1.9, "fallen": 0.4,
                "needPrice": 20 },
   "promotion": { "base": 0.15, "step": 0.01, "max": 0.3 },
-  "missions": { "offers": 3, "running": 3, "refreshHours": 8,
+  "missions": { "slots": [2, 6], "refreshHours": 8,
                 "need": [10, 20, 32, 46, 64], "par": 0.7,
                 "tierWeight": 2, "favorBonus": 10,
-                "list": [ { "id": "m01", "d": 1, "hours": 4, "squad": [2, 3],
+                "list": [ { "id": "m01", "d": 1, "minutes": 20, "squad": [2, 3],
                             "favor": 2, "reward": [ { "kind": "coins", "n": 150 } ],
                             "fail": [ { "kind": "wound", "n": 1 } ],
                             "title": { "en": "…", "fr": "…" }, "brief": { … },

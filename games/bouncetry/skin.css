@@ -25,158 +25,80 @@
   #cta-bar { border-top:1px solid rgba(255,138,26,.22); }
 
   /* ---- intro: one sentence, and a stage that plays the rule ---------------
-     "A ball only breaks its own colour and one tap flips every brick", so the
-     stage plays exactly that and slows down on the tap, because a colour
-     change is over in one frame and would otherwise never be read.
+     "One tap switches the buttons on and traps the ball with the bricks", so
+     the stage plays exactly that: the ball climbs PAST a row of dark buttons,
+     the finger taps, the whole row lights up red under it, and the ball —
+     gold now, and faster — rattles between the lit buttons and the glass,
+     breaking a pane on every trip up. A second tap switches them off and the
+     ball drops through them into the lava.
 
      The motor's nodes are all recycled: the arrow becomes the barrel, the beam
      becomes the dotted sight, the track becomes the lava, the target becomes
-     the ball, its two ripples become the two impact rings (never a trail) and
-     the stage's ::before / ::after become the two brick rows.
+     the ball, its two ripples become the impact rings (white on the glass,
+     red on a lit button), the stage's ::before is the row of glass and its
+     ::after the row of buttons.
 
      Geometry, in the 420x280 stage: the turret pivots on (210, 246) and holds
-     66 deg, so the muzzle sits at (252, 227). The ball climbs to the right
-     edge at (409, 158), banks off it and comes back down-left onto the lower
-     row at (278, 104). The rows carry FIVE bricks each — 60 px wide on a 68 px
-     pitch, from x=44 — and the shot lands on the fourth of the lower row, the
-     only one that ever breaks.
+     17 deg, so the muzzle sits at (223, 202). The glass row carries FIVE panes
+     — 60 px wide on a 68 px pitch, from x=44, y=34 — and the row of buttons lies
+     across the whole stage at y=120. The path was solved on that grid: every
+     pane the ball crosses after it broke is already gone.
 
-     Timeline over 5.2 s: 0-19% aim, 19% the shot leaves, 37.5% the wall hit —
-     held in slow motion to 60% while the ball turns blue, 64% the tap — held
-     to 76% while both rows flip end over end, 85.6% ONE brick blows out. */
+     Timeline over 5.6 s: 0-18% aim, 18% the shot, 23-29% it crosses the buttons,
+     31% THE TAP, 34-58% four panes break, 64% the left wall, 80% the second
+     tap, 94% the lava. */
   .demo-caption { display:none; }
-  /* white sentence, and only the two nouns the rules hang on are in colour */
+  /* white sentence, and only the two words the rule hangs on are in colour */
   #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#ffffff; }
-  #intro-tagline .w-wall { color:#7ef9ff; text-shadow:0 0 18px rgba(126,249,255,.8); }
+  #intro-tagline .w-wall { color:#ff6a5c; text-shadow:0 0 18px rgba(255,74,61,.85); }
   #intro-tagline .w-tap  { color:#ffd43b; text-shadow:0 0 18px rgba(255,212,59,.8); }
   #intro-demo { margin-top:28px; }
 
-  /* the stage, and the right wall that lights up when the ball strikes it */
   .demo-stage {
     width:420px; height:280px; overflow:hidden;
     background:radial-gradient(320px 260px at 50% 24%, rgba(46,60,150,.5), rgba(7,10,30,0) 74%), var(--panel);
-    animation:demoWall 5.2s linear infinite;
-  }
-  @keyframes demoWall {
-    0%,37.4% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
-    37.5%    { box-shadow:inset -30px 0 40px -8px rgba(255,255,255,.95); }
-    44%      { box-shadow:inset -26px 0 36px -8px rgba(126,249,255,.85); }
-    58%,100% { box-shadow:inset 0 0 0 0 rgba(126,249,255,0); }
   }
 
-  /* The two brick rows, five panes each. A gradient does not interpolate, so
-     every state is spelled out and the change lands on back-to-back keyframes
-     — always while the row is edge-on, mid-flip. */
-  .demo-stage::before, .demo-stage::after {
-    content:""; position:absolute; left:44px; width:332px; height:26px; z-index:0;
-    transform-origin:50% 50%;
-  }
+  /* the glass: five panes in the five colours of the board, and one by one
+     the ball takes four of them out */
   .demo-stage::before {
-    top:40px;
-    background-image:linear-gradient(90deg,
-      rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-      rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-      rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-      rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-      rgba(255,59,87,.62) 272px 332px);
-    border-top:2px solid rgba(255,217,221,.7);
-    box-shadow:0 0 18px rgba(255,59,87,.3);
-    animation:demoRowTop 5.2s linear infinite, demoFlipTop 5.2s ease-in-out infinite;
+    content:""; position:absolute; left:44px; top:34px; width:332px; height:24px; z-index:0;
+    border-radius:6px;
+    animation:demoGlass 5.6s linear infinite;
   }
+  @keyframes demoGlass {
+    0%,33.9% { background-image:linear-gradient(90deg, rgba(255,59,87,.72) 0px 60px, transparent 60px 68px, rgba(255,138,26,.72) 68px 128px, transparent 128px 136px, rgba(255,212,59,.72) 136px 196px, transparent 196px 204px, rgba(74,222,128,.72) 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+    34%,43.9% { background-image:linear-gradient(90deg, rgba(255,59,87,.72) 0px 60px, transparent 60px 68px, rgba(255,138,26,.72) 68px 128px, transparent 128px 136px, rgba(255,212,59,.72) 136px 196px, transparent 196px 204px, transparent 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+    44%,50.9% { background-image:linear-gradient(90deg, rgba(255,59,87,.72) 0px 60px, transparent 60px 68px, rgba(255,138,26,.72) 68px 128px, transparent 128px 136px, transparent 136px 196px, transparent 196px 204px, transparent 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+    51%,57.9% { background-image:linear-gradient(90deg, rgba(255,59,87,.72) 0px 60px, transparent 60px 68px, transparent 68px 128px, transparent 128px 136px, transparent 136px 196px, transparent 196px 204px, transparent 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+    58%,99.9% { background-image:linear-gradient(90deg, transparent 0px 60px, transparent 60px 68px, transparent 68px 128px, transparent 128px 136px, transparent 136px 196px, transparent 196px 204px, transparent 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+    100% { background-image:linear-gradient(90deg, rgba(255,59,87,.72) 0px 60px, transparent 60px 68px, rgba(255,138,26,.72) 68px 128px, transparent 128px 136px, rgba(255,212,59,.72) 136px 196px, transparent 196px 204px, rgba(74,222,128,.72) 204px 264px, transparent 264px 272px, rgba(47,134,255,.72) 272px 332px); }
+  }
+
+  /* the row of switches: twelve round buttons across the stage, dark while
+     the ball flies past them, then — back to back on the tap — lit red with
+     a glow, and dark again on the second tap. Drawn in gradients: the SKIN
+     cannot reach the painted cuts the round draws. */
   .demo-stage::after {
-    top:74px;
-    background-image:linear-gradient(90deg,
-      rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-      rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-      rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-      rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-      rgba(47,134,255,.62) 272px 332px);
-    border-top:2px solid rgba(212,233,255,.7);
-    box-shadow:0 0 18px rgba(47,134,255,.3);
-    animation:demoRowBot 5.2s linear infinite, demoFlipBot 5.2s ease-in-out infinite;
+    content:""; position:absolute; left:0; right:0; top:120px; height:26px; z-index:0;
+    animation:demoSwitch 5.6s linear infinite;
   }
-  /* THE TAP, at 64%: every pane turns end over end onto the other colour. The
-     lower row is a breath behind the upper one, so the swap reads as a wave
-     instead of a single blink. */
-  @keyframes demoFlipTop {
-    0%,60.6%   { transform:perspective(460px) rotateX(0deg); }
-    64%        { transform:perspective(460px) rotateX(90deg); }
-    67.5%      { transform:perspective(460px) rotateX(-16deg); }
-    70%,100%   { transform:perspective(460px) rotateX(0deg); }
-  }
-  @keyframes demoFlipBot {
-    0%,62.3%   { transform:perspective(460px) rotateX(0deg); }
-    65.7%      { transform:perspective(460px) rotateX(90deg); }
-    69.2%      { transform:perspective(460px) rotateX(-16deg); }
-    71.7%,100% { transform:perspective(460px) rotateX(0deg); }
-  }
-  @keyframes demoRowTop {
-    0%,63.9% { background-image:linear-gradient(90deg,
-                 rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                 rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                 rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-                 rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-                 rgba(255,59,87,.62) 272px 332px);
-               border-top-color:rgba(255,217,221,.7);
-               box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
-    64%      { background-image:linear-gradient(90deg,
-                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                 rgba(47,134,255,.62) 272px 332px);
-               border-top-color:#ffffff;
-               box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    70%,100% { background-image:linear-gradient(90deg,
-                 rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                 rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                 rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                 rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                 rgba(47,134,255,.62) 272px 332px);
-               border-top-color:rgba(212,233,255,.7);
-               box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
-  }
-  /* the lower row also loses its FOURTH pane at 85.6% — one brick, the one the
-     ball actually reaches, and the hole stays open until the loop restarts */
-  @keyframes demoRowBot {
-    0%,65.6%    { background-image:linear-gradient(90deg,
-                    rgba(47,134,255,.62) 0 60px, transparent 60px 68px,
-                    rgba(47,134,255,.62) 68px 128px, transparent 128px 136px,
-                    rgba(47,134,255,.62) 136px 196px, transparent 196px 204px,
-                    rgba(47,134,255,.62) 204px 264px, transparent 264px 272px,
-                    rgba(47,134,255,.62) 272px 332px);
-                  border-top-color:rgba(212,233,255,.7);
-                  box-shadow:0 0 18px rgba(47,134,255,.3); filter:brightness(1); }
-    65.7%       { background-image:linear-gradient(90deg,
-                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                    rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-                    rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-                    rgba(255,59,87,.62) 272px 332px);
-                  border-top-color:#ffffff;
-                  box-shadow:0 0 30px rgba(255,255,255,.75); filter:brightness(2); }
-    71.7%,85.5% { background-image:linear-gradient(90deg,
-                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                    rgba(255,59,87,.62) 136px 196px, transparent 196px 204px,
-                    rgba(255,59,87,.62) 204px 264px, transparent 264px 272px,
-                    rgba(255,59,87,.62) 272px 332px);
-                  border-top-color:rgba(255,217,221,.7);
-                  box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
-    85.6%       { background-image:linear-gradient(90deg,
-                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
-                    rgba(255,59,87,.62) 272px 332px);
-                  border-top-color:#ffffff;
-                  box-shadow:0 0 34px rgba(255,255,255,.8); filter:brightness(2.4); }
-    89%,100%    { background-image:linear-gradient(90deg,
-                    rgba(255,59,87,.62) 0 60px, transparent 60px 68px,
-                    rgba(255,59,87,.62) 68px 128px, transparent 128px 136px,
-                    rgba(255,59,87,.62) 136px 196px, transparent 196px 272px,
-                    rgba(255,59,87,.62) 272px 332px);
-                  border-top-color:rgba(255,217,221,.7);
-                  box-shadow:0 0 18px rgba(255,59,87,.3); filter:brightness(1); }
+  @keyframes demoSwitch {
+    0%,30.9%, 80.1%,100% {
+      background:radial-gradient(circle at 50% 50%, #5a1a16 0 7px, #1b1e26 8px 10.5px,
+                                 #6a707c 11px 12.5px, transparent 13px) 0 0 / 35px 26px repeat-x;
+      filter:none;
+    }
+    31%, 80% {
+      background:radial-gradient(circle at 50% 50%, #ffffff 0 9px, #ffd2cc 10px 12.5px,
+                                 transparent 13px) 0 0 / 35px 26px repeat-x;
+      filter:drop-shadow(0 0 10px rgba(255,210,204,.95));
+    }
+    33.5%,79.9% {
+      background:radial-gradient(circle at 42% 38%, #fff0ec 0 2px, #ff3b2e 3.5px 8px, #8a130c 8.5px 9px,
+                                 #1b1e26 9.5px 10.5px, #a9afba 11px 12.5px, transparent 13px) 0 0 / 35px 26px repeat-x;
+      filter:drop-shadow(0 0 6px rgba(255,74,61,.9));
+    }
   }
 
   /* the lava: the floor, and the only thing that destroys a ball */
@@ -197,10 +119,10 @@
     display:block; left:203px; bottom:34px; top:auto; margin:0;
     width:14px; height:46px; border:0; border-radius:7px;
     background:linear-gradient(180deg, #d4e2ff, #6f86b8);
-    box-shadow:0 0 0 4px rgba(255,59,87,.25);
+    box-shadow:0 0 0 4px rgba(143,211,255,.25);
     transform-origin:50% 100%;
-    filter:drop-shadow(0 0 10px rgba(255,180,79,.6));
-    animation:demoCannon 5.2s ease-in-out infinite;
+    filter:drop-shadow(0 0 10px rgba(143,211,255,.6));
+    animation:demoCannon 5.6s ease-in-out infinite;
   }
   /* the pivot the barrel swings on — a circle, so the rotation never shows */
   .demo-aim .demo-arrow::after {
@@ -210,93 +132,123 @@
     box-shadow:0 0 0 3px rgba(126,249,255,.3);
   }
   @keyframes demoCannon {
-    0%        { transform:rotate(34deg); }
-    19.2%,94% { transform:rotate(66deg); }
-    100%      { transform:rotate(34deg); }
+    0%        { transform:rotate(-20deg); }
+    18%,94%   { transform:rotate(17deg); }
+    100%      { transform:rotate(-20deg); }
   }
 
   /* the aim line, anchored on the cannon pivot and gone the instant it fires */
   .demo-aim .demo-beam {
     left:210px; bottom:34px; margin-left:-3px; width:6px; height:150px;
     transform-origin:50% 100%;
-    background:repeating-linear-gradient(180deg, #ff3b57 0 10px, transparent 10px 22px);
-    animation:demoBeam 5.2s ease-in-out infinite;
+    background:repeating-linear-gradient(180deg, #8fd3ff 0 10px, transparent 10px 22px);
+    animation:demoBeam 5.6s ease-in-out infinite;
   }
   @keyframes demoBeam {
-    0%       { transform:rotate(34deg); opacity:0; }
-    5%       { transform:rotate(38deg); opacity:.95; }
-    19.2%    { transform:rotate(66deg); opacity:.95; }
-    21%,100% { transform:rotate(66deg); opacity:0; }
+    0%       { transform:rotate(-20deg); opacity:0; }
+    5%       { transform:rotate(-14deg); opacity:.95; }
+    18%      { transform:rotate(17deg); opacity:.95; }
+    19.5%,100% { transform:rotate(17deg); opacity:0; }
   }
 
-  /* THE SHOT — one ball, and it only ever breaks one brick. It leaves the
-     muzzle red and stays red: it crawls off the right wall untouched, hangs in
-     the air while the tap flips the board, and lands on the pane that the tap
-     just turned red for it. */
+  /* THE SHOT — white while it is free, gold from the tap on, because a ball
+     shut in with the glass is the fast one; white again once the buttons go dark */
   .demo-aim .demo-target {
-    z-index:1; left:241px; top:216px; width:22px; height:22px; margin-left:0;
+    z-index:1; left:212px; top:191px; width:22px; height:22px; margin-left:0;
     border:0; border-radius:50%;
-    background:radial-gradient(circle at 34% 28%, #ffffff 0 22%, #ff3b57 62%, #8c0f22 100%);
-    box-shadow:0 0 16px rgba(255,59,87,.85);
-    animation:demoShot 5.2s linear infinite, demoBallFlash 5.2s linear infinite;
+    animation:demoShot 5.6s linear infinite, demoBall 5.6s linear infinite;
   }
-  /* THE BALL KEEPS ITS COLOUR: red out of the muzzle, red into the brick. The
-     wall only whitens it for a frame — that is the impact, not a repaint. */
-  @keyframes demoBallFlash {
-    0%,37.4%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
-    37.5%      { box-shadow:0 0 30px rgba(255,255,255,.95); filter:brightness(1.9); }
-    41%,100%   { box-shadow:0 0 16px rgba(255,59,87,.85); filter:brightness(1); }
+  @keyframes demoBall {
+    0%,30.9%, 80.1%,100% { background:radial-gradient(circle at 34% 28%, #ffffff 0 24%, #eaf6ff 60%, #8fd3ff 100%);
+                           box-shadow:0 0 16px rgba(143,211,255,.9); }
+    31%,80%              { background:radial-gradient(circle at 34% 28%, #fff7cf 0 22%, #ffd84a 62%, #c07a00 100%);
+                           box-shadow:0 0 22px rgba(255,176,0,.95); }
   }
-  /* the hit and the tap are both held: between 37.5% and 60% the ball barely
-     drifts off the wall, and between 60% and 76% it barely moves at all */
   @keyframes demoShot {
-    0%,19.1% { transform:translate(0,0) scale(.35); opacity:0; }
-    19.2%    { transform:translate(0,0) scale(1); opacity:1; }
-    37.5%    { transform:translate(157px,-69px) scale(1.3); opacity:1; }
-    40.5%    { transform:translate(154px,-70px) scale(1); opacity:1; }
-    49%      { transform:translate(149px,-72px) scale(1); opacity:1; }
-    60.6%    { transform:translate(85px,-99px) scale(1); opacity:1; }
-    75.9%    { transform:translate(78px,-102px) scale(1); opacity:1; }
-    85.6%    { transform:translate(26px,-123px) scale(1); opacity:1; }
-    88%      { transform:translate(26px,-123px) scale(1.3); opacity:1; }
-    94%,100% { transform:translate(26px,-123px) scale(1.5); opacity:0; }
+    0%,17.9% { transform:translate(0,0) scale(.35); opacity:0; }
+    18% { transform:translate(0px,0px) scale(1); opacity:1; }
+    34% { transform:translate(39px,-133px) scale(1); opacity:1; }
+    40% { transform:translate(9px,-93px) scale(1); opacity:1; }
+    44% { transform:translate(-21px,-133px) scale(1); opacity:1; }
+    47.5% { transform:translate(-51px,-93px) scale(1); opacity:1; }
+    51% { transform:translate(-81px,-133px) scale(1); opacity:1; }
+    54.5% { transform:translate(-111px,-93px) scale(1); opacity:1; }
+    58% { transform:translate(-141px,-133px) scale(1); opacity:1; }
+    61.5% { transform:translate(-171px,-93px) scale(1); opacity:1; }
+    64% { transform:translate(-212px,-122px) scale(1); opacity:1; }
+    66.5% { transform:translate(-183px,-93px) scale(1); opacity:1; }
+    72% { transform:translate(-103px,-191px) scale(1); opacity:1; }
+    77.5% { transform:translate(-23px,-93px) scale(1); opacity:1; }
+    83% { transform:translate(57px,-191px) scale(1); opacity:1; }
+    94% { transform:translate(137px,48px) scale(1); opacity:1; }
+    95%,100% { transform:translate(137px,48px) scale(1); opacity:0; }
   }
-  /* NO TRAIL: the two ripples are the two impact rings instead — both bleed
-     from white back to the ball's own red, because nothing repaints it */
+  /* the two impact rings: white off the glass, red off a lit button */
   .demo-aim .demo-ripple {
     inset:-9px; width:auto; height:auto; border:3px solid #ffffff; border-radius:50%;
     background:none; box-shadow:none; opacity:0;
-    animation:demoRingWall 5.2s linear infinite;
+    animation:demoRingGlass 5.6s linear infinite;
   }
-  .demo-aim .demo-ripple.d2 { animation:demoRingHit 5.2s linear infinite; animation-delay:0s; }
-  @keyframes demoRingWall {
-    0%,37.4% { transform:scale(.5); opacity:0; border-color:#ffffff; }
-    37.5%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    45%      { transform:scale(2.2); opacity:.55; border-color:#7ef9ff; }
-    52%,100% { transform:scale(3); opacity:0; border-color:#7ef9ff; }
+  .demo-aim .demo-ripple.d2 { animation:demoRingSteel 5.6s linear infinite; animation-delay:0s; }
+  @keyframes demoRingGlass {
+    0% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    33.9% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    34% { transform:scale(.8); opacity:1; border-color:#ffffff; }
+    37% { transform:scale(2.4); opacity:0; border-color:#ffd84a; }
+    43.9% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    44% { transform:scale(.8); opacity:1; border-color:#ffffff; }
+    47% { transform:scale(2.4); opacity:0; border-color:#ffd84a; }
+    50.9% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    51% { transform:scale(.8); opacity:1; border-color:#ffffff; }
+    54% { transform:scale(2.4); opacity:0; border-color:#ffd84a; }
+    57.9% { transform:scale(.5); opacity:0; border-color:#ffffff; }
+    58% { transform:scale(.8); opacity:1; border-color:#ffffff; }
+    61% { transform:scale(2.4); opacity:0; border-color:#ffd84a; }
+    100% { transform:scale(.5); opacity:0; border-color:#ffffff; }
   }
-  @keyframes demoRingHit {
-    0%,85.5% { transform:scale(.5); opacity:0; border-color:#ffd9dd; }
-    85.6%    { transform:scale(.7); opacity:1; border-color:#ffffff; }
-    93%,100% { transform:scale(3); opacity:0; border-color:#ff3b57; }
+  @keyframes demoRingSteel {
+    0% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    39.9% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    40% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    43% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    47.4% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    47.5% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    50.5% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    54.4% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    54.5% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    57.5% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    61.4% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    61.5% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    64.5% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    66.4% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    66.5% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    69.5% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    77.4% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
+    77.5% { transform:scale(.8); opacity:1; border-color:#ffd2cc; }
+    80.5% { transform:scale(2.4); opacity:0; border-color:#ff4a3d; }
+    100% { transform:scale(.5); opacity:0; border-color:#ffd2cc; }
   }
 
-  /* the finger: drags the aim across, lets go — then comes back mid-flight and
-     TAPS at 64%, which is what flips both rows */
+  /* the finger: drags the aim across and lets go — then comes back to TAP
+     while the ball is above the buttons (31%), and once more to let it go (80%) */
   .demo-aim .demo-hand {
     left:138px; bottom:-34px; margin-left:0; z-index:2;
-    animation:demoAimHand 5.2s ease-in-out infinite;
+    animation:demoAimHand 5.6s ease-in-out infinite;
   }
   @keyframes demoAimHand {
     0%,3%    { transform:translate(-34px,0) scale(1); opacity:1; }
-    19.2%    { transform:translate(26px,0) scale(1); opacity:1; }
-    26%      { transform:translate(26px,46px) scale(1); opacity:0; }
-    54%      { transform:translate(0,46px) scale(1); opacity:0; }
-    60%      { transform:translate(0,-6px) scale(1); opacity:1; }
-    64%      { transform:translate(0,10px) scale(.86); opacity:1; }
-    69%      { transform:translate(0,-6px) scale(1); opacity:1; }
-    78%,94%  { transform:translate(0,46px) scale(1); opacity:0; }
-    96%,100% { transform:translate(-34px,0) scale(1); opacity:1; }
+    18%      { transform:translate(26px,0) scale(1); opacity:1; }
+    22%      { transform:translate(26px,46px) scale(1); opacity:0; }
+    26%      { transform:translate(170px,46px) scale(1); opacity:0; }
+    29%      { transform:translate(170px,-6px) scale(1); opacity:1; }
+    31%      { transform:translate(170px,10px) scale(.86); opacity:1; }
+    34%      { transform:translate(170px,-6px) scale(1); opacity:1; }
+    38%,74%  { transform:translate(170px,46px) scale(1); opacity:0; }
+    78%      { transform:translate(170px,-6px) scale(1); opacity:1; }
+    80%      { transform:translate(170px,10px) scale(.86); opacity:1; }
+    83%      { transform:translate(170px,-6px) scale(1); opacity:1; }
+    88%,94%  { transform:translate(170px,46px) scale(1); opacity:0; }
+    97%,100% { transform:translate(-34px,0) scale(1); opacity:1; }
   }
 
   /* ---- comic callouts -----------------------------------------------------

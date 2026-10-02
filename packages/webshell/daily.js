@@ -43,7 +43,8 @@
   which is the entire stake. If the meta layer ever gets an account
   (packages/meta, phase 5) the date comes from it and this comment goes.
 
-  ON A DEV MACHINE the day is not a gate at all — see DEV below.
+  ON A DEV MACHINE the clock is moved by hand, from the DEV view — see
+  `today` below.
 
   ES5-ish, same WebViews as the rest.
 */
@@ -121,23 +122,13 @@
 
   /* ── 1. the day, and the run ──────────────────────────────────────────── */
 
-  /* DEV — a gift on tap, as many as you like, and it says so on screen.
-
-     The one thing this layer cannot be worked on is the thing it is made of: a
-     ceremony that fires once a day takes a week to look at seven times, and
-     the alternative is moving the machine's clock, which is worse than no
-     test. So on a machine that is plainly not a player's — localhost, a LAN
-     address, or a file:// page — the date stops being a gate: the run still
-     advances a cell per claim, the save is still written, and only "you have
-     had today's" is lifted. Nothing here reaches a deployed site, whose
-     hostname is none of those, and the band wears a DEV pill (meta.js) so a
-     screenshot can never be mistaken for the real thing. */
-  /* Read on every call, not once: the band's DEV pill switches it live
-     (packages/webshell/meta.js, W.Dev). */
-  function dev() { return !!(W.Dev && W.Dev.on()); }
-
+  /* THE DAY IS THE SHELL'S CLOCK, not the machine's: on a dev machine the
+     DEV view moves it by hand (W.Dev, packages/webshell/meta.js), and a day
+     is then looked at by moving the clock a day — the road, the missed days
+     and the catch-up are the calendar's, and a clock that stopped gating
+     them showed a road no player walks. */
   function today() {
-    var d = new Date();
+    var d = new Date(W.Dev ? W.Dev.now() : Date.now());
     function p(n) { return (n < 10 ? "0" : "") + n; }
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
@@ -182,7 +173,7 @@
                   r: was ? st.r : null, c: was ? [1] : [] });
   }
 
-  function claimed() { return !dev() && state().d === today(); }
+  function claimed() { return state().d === today(); }
 
   /* WHICH CELL IS LIVE, and it is the CALENDAR that says so — day one is the
      day the road was first seen and every day since has its own node, claimed
@@ -190,13 +181,9 @@
      the player back to the first cell; now the road simply carries on, day 7
      is followed by day 8, and a day nobody opened stays on it behind them,
      greyed. The punishment is still only ever the absence of a reward — but
-     now the player can SEE the one they walked past.
-
-     Under DEV the date is not a gate, so the road walks one cell per claim
-     instead: seven taps show a whole week, the starred day included. */
+     now the player can SEE the one they walked past. */
   function liveCell() {
     var s = state();
-    if (dev()) return s.d ? s.k + 1 : Math.max(1, s.k || 1);
     if (!s.s) return 1;
     return Math.max(1, dayNum(today()) - dayNum(s.s) + 1);
   }
@@ -557,8 +544,7 @@
 
   /* The eyebrow every one of these cards wears: which day of the run. Only
      the day — "Daily gift" over a title that names the gift, or over "Next
-     gift", is one word said twice. That this machine pays on every tap is the
-     band's DEV pill to say (packages/webshell/meta.js), not each card's. */
+     gift", is one word said twice. */
   function eyebrow(a) {
     return MT.fill(T.dayLong, { n: a });
   }
@@ -803,6 +789,12 @@
          midnight, or a gift taken from another screen, must not leave a stale
          strip behind. */
       W.onState(function (s) { if (s === "intro") paint(); });
+      /* ...and so does a clock moved by hand, which is a day passing. */
+      if (W.Dev) {
+        W.Dev.onChange(function () { if (built) paint(); });
+        W.Dev.entry({ group: "Shell", label: "Daily road", sub: "The strip of days, today's gift on it",
+                      run: openRoad });
+      }
     },
 
     /* The strip's node, for menu.js to place. It is NOT appended here: this

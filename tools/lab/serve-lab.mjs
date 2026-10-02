@@ -24,8 +24,9 @@
   first time it is asked for on a free port of 127.0.0.1 and reached through a
   proxy that takes the prefix off — which is why the four pages address their
   server with relative urls. One PROCESS per tool, not one module per
-  process: the copy desk's scan is ~18 s of synchronous CPU, and in a shared
-  process it froze every other tool for as long. Opening the back office starts
+  process: a tool's scan is synchronous CPU (the copy desk's was ~18 s before
+  it went per game), and in a shared process it froze every other tool for as
+  long. Opening the back office starts
   none of them, so it does not run the events bench's web build either. Their
   output is printed here, each line tagged with the tool.
 
@@ -50,7 +51,7 @@ const HOME = path.join(LAB, 'index.html');
    never served as a bare file: without its server under it, it would open on
    an api that is not there. */
 const TOOLS = [
-  { mount: '/events/', script: 'serve-events.mjs', pages: { 'game-events.html': '', 'sound-library.html': 'library' } },
+  { mount: '/events/', script: 'serve-events.mjs', pages: { 'game-events.html': '', 'sound-library.html': 'library', 'overlay-pop.html': 'pop' } },
   { mount: '/text/', script: 'serve-text.mjs', pages: { 'game-text.html': '' } },
   { mount: '/store/', script: 'serve-store.mjs', pages: { 'store-card.html': '' } },
   { mount: '/village/', script: 'serve-village.mjs', pages: { 'village.html': '' } },
@@ -165,6 +166,13 @@ function summaryOf(src) {
   return s.length > 160 ? s.slice(0, 157) + '…' : s;
 }
 
+/* Where a page is filed, written in the page itself so a new one needs no
+   registry: `<meta name="lab-group" content="tools|css|prototype">` and, for a
+   page about one game, `<meta name="lab-game" content="radiam">`. A page that
+   names no group is filed by what it is — a tool with a server, or "other". */
+const GROUPS = ['tools', 'css', 'prototype'];
+const metaOf = (src, name) => (src.match(new RegExp(`<meta name="${name}" content="([^"]*)"`)) || [])[1] || null;
+
 function labs() {
   const slugs = fs.readdirSync(path.join(ROOT, 'games'))
     .filter((d) => fs.existsSync(path.join(ROOT, 'games', d, 'manifest.json')));
@@ -174,9 +182,13 @@ function labs() {
     const src = fs.readFileSync(path.join(LAB, file), 'utf8');
     const title = (src.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
     const served = toolOf(file);
-    const game = slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null;
+    const declared = metaOf(src, 'lab-game');
+    const game = (declared && slugs.includes(declared) ? declared : null) ||
+      slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null;
+    const g = metaOf(src, 'lab-group');
+    const group = GROUPS.includes(g) ? g : served ? 'tools' : 'other';
     out.push({
-      file, title, game,
+      file, title, game, group,
       name: nameOf(title, file),
       summary: summaryOf(src),
       url: served ? served.url : '/lab/' + file,
