@@ -556,9 +556,17 @@ ______________________________________________________________________
   see `assets/audio/sfx/LICENSES.md`. Echomaze's `map` is an eight-click echo
   train rebuilt by hand from `tone-high-down-01`, so the bench must not re-cut
   it. The ZapSplat and legacy files were purged from the git history. First
-  guesses all, to be heard in each game; a wider CC0 import (chimey UI, dings,
-  win jingles, glockenspiel glissandi) is still to decide for the kit's reward
-  roles.
+  guesses all, to be heard in each game; a wider CC0 import landed the same day
+  (142 files: chimes, dings, win jingles, glockenspiel and wind-chime
+  glissandi, magic sparkles, level-up risers), then a targeted CC0 pass (214 files: bubbles, balls,
+  heartbeats, alarms and countdowns, tyres, war drums, cannons and horns,
+  hisses, a crank and coins for the gacha, ambient beds), then, the rule
+  widened to the public domain with a stated reason, 61 more (US Army and
+  Marine bugle calls, buzzers, boxing and school bells, a battle reenactment,
+  crowds, a rattlesnake, an alligator hiss, a pinball room) — 1312 files in
+  all. Still missing: marble-on-marble clacks, a marble rolling on wood or
+  metal, short pinball pins and bumpers (only a 30 s room to cut), a gacha
+  capsule popping open, a game-show buzzer, a real snake hiss.
 
 - [ ] CODE — **`arcider`, blow the craft up when the shield runs out.** The
   four `die("SHIELD DOWN")` sites in section 6 go straight from the last hit to

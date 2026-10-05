@@ -894,3 +894,420 @@ harp-run-up-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL
 harp-roll-up-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Concert Harp mf: E major roll E3 to E5
 harp-success-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Concert Harp mf (A3 B3 E4 A4 B4 E5) over VSCO 2 CE vibraring3
 whistle-rise-01.mp3	oga-up-3x	CC0 1.0	https://opengameart.org/content/up-3x built from qubodup Up (3x) upshort.wav, raised ten semitones
+chime-confirm-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Confirm.mp3
+chime-cancel-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Cancel.mp3
+chime-load-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Load.mp3
+chime-levelup-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_LevelUp.mp3
+chime-sleep-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Sleep.mp3
+chime-save-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Save.mp3
+chime-exit-01.mp3	oga-chimey-ui	CC0 1.0	https://opengameart.org/content/chimey-ui-sounds Chime_Exit.mp3
+ding-positive-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-positive.ogg
+ding-save-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-save.ogg
+ding-neutral-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-neutral.ogg
+ding-negative-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-negative.ogg
+ding-reverse-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-reverse.ogg
+ding-levelup-01.ogg	oga-ding-clicks	CC0 1.0	https://opengameart.org/content/6-user-interface-ding-clicks dingCling-levelup.ogg
+bell-metal-01.ogg	oga-metal-dings	CC0 1.0	https://opengameart.org/content/4-metal-dingsrings ding.1.ogg
+bell-metal-02.ogg	oga-metal-dings	CC0 1.0	https://opengameart.org/content/4-metal-dingsrings ding.2.ogg
+bell-metal-03.ogg	oga-metal-dings	CC0 1.0	https://opengameart.org/content/4-metal-dingsrings ding.3.ogg
+bell-metal-04.ogg	oga-metal-dings	CC0 1.0	https://opengameart.org/content/4-metal-dingsrings ding.4.ogg
+magic-sparkle-01.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure1.wav
+magic-sparkle-02.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure2.wav
+magic-sparkle-03.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure3.wav
+magic-sparkle-04.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure4.wav
+magic-sparkle-05.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure5.wav
+magic-sparkle-06.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure6.wav
+magic-sparkle-07.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure7.wav
+magic-sparkle-08.mp3	oga-cure-magic	CC0 1.0	https://opengameart.org/content/cure-magic Cure8.wav
+jingle-levelup-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Level Up.mp3
+jingle-ability-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Ability Learn.mp3
+ui-menu-confirm-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Menu Confirm.mp3
+error-menu-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Menu Error.mp3
+ui-menu-move-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Menu Move.mp3
+item-pickup-chime-01.mp3	oga-7-assorted	CC0 1.0	https://opengameart.org/content/7-assorted-sound-effects-menu-level-up Item Pickup.mp3
+gem-gather-01.mp3	oga-gem-collect	CC0 1.0	https://opengameart.org/content/gem-collect-sfx gem-gather-orig.wav
+gem-gather-02.mp3	oga-gem-collect	CC0 1.0	https://opengameart.org/content/gem-collect-sfx gem-gather-reverb.wav
+powerup-rise-01.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise01.aif
+powerup-rise-02.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise02.aif
+powerup-rise-03.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise03.aif
+powerup-rise-04.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise04.aif
+powerup-rise-05.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise05.aif
+powerup-rise-06.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise06.aif
+powerup-rise-07.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Rise07.aif
+powerup-rise-08.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Upper01.aif
+powerup-fall-01.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Downer01.aif
+coins-synth-01.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Coin01.aif
+alarm-synth-01.mp3	oga-levelup-13	CC0 1.0	https://opengameart.org/content/level-up-power-up-coin-get-13-sounds Alarm.aif
+xylophone-sweep-01.ogg	oga-xylophone	CC0 1.0	https://opengameart.org/content/childrens-xylophone child's_xylophone-1.ogg
+xylophone-sweep-02.ogg	oga-xylophone	CC0 1.0	https://opengameart.org/content/childrens-xylophone child's_xylophone-2.ogg
+ding-bell-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications Ding.wav
+ding-deep-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications ding_deep.wav
+chime-cascade-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications chimes.wav
+error-musical-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications negative_sound.wav
+error-musical-02.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications negative_sound2.wav
+alarm-ui-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications alarm.wav
+alarm-ui-02.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications alarm2.wav
+ui-dum-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications dum.wav
+click-musical-01.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications click_1.wav
+click-musical-02.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications click_2.wav
+click-musical-03.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications click_3.wav
+click-musical-04.mp3	oga-ui-feedback	CC0 1.0	https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications click_4.wav
+ui-positive-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects positive.wav
+ui-negative-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects negative.wav
+ui-negative-02.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects negative_2.wav
+ui-save-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects save.wav
+ui-load-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects load.wav
+ui-menu-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects misc_menu.wav
+ui-menu-02.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects misc_menu_2.wav
+ui-menu-03.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects misc_menu_3.wav
+ui-menu-04.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects misc_menu_4.wav
+ui-echo-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects sharp_echo.wav
+ui-misc-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects misc_sound.wav
+ui-click-soft-01.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects click.wav
+ui-click-soft-02.mp3	oga-gui-lokif	CC0 1.0	https://opengameart.org/content/gui-sound-effects click_2.wav
+bell-chime-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/bell-dingschimes bell_ding1.wav
+bell-chime-02.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/bell-dingschimes bell_ding2.wav
+bell-chime-03.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/bell-dingschimes bell_ding3.wav
+bell-chime-04.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/bell-dingschimes bell_ding4.wav
+bell-correct-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/correct-bell bell.wav
+vibe-bell-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/pleasing-bell-sound-effect pleasing-bell.wav
+bell-arpeggio-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/bell-arpeggio-24 24.wav
+kalimba-notes-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/kalimba-two-notes kalimba.wav
+jingle-mystery-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/mystery-sting mystery_sting.ogg
+bell-elevator-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/elevator-ding elevatording.ogg
+bell-basic-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects bell1_0.mp3
+bell-basic-02.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects bell2_0.mp3
+bell-basic-03.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects bell3_0.mp3
+jingle-success-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects success_0.mp3
+vibe-sting-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects vibrophone1_0.mp3
+vibe-sting-02.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/basic-sound-effects vibrophone2_0.mp3
+jingle-win-bandoneon-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinBandoneon.ogg
+jingle-win-banjo-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinBanjo.ogg
+jingle-win-brass-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinBrass.ogg
+jingle-win-doot-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinDoot.ogg
+jingle-win-fantasia-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinFantasia.ogg
+jingle-win-fretless-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinFretless.ogg
+jingle-win-grand-piano-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinGrandPiano.ogg
+jingle-win-harpsichord-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinHarpsichord.ogg
+jingle-win-jazz-guitar-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinJazzGuitar.ogg
+jingle-win-muted-guitar-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinMutedGuitar.ogg
+jingle-win-nylon-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinNylon.ogg
+jingle-win-pizzicato-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinPizzicato.ogg
+jingle-win-saw-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinSaw.ogg
+jingle-win-square-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinSquare.ogg
+jingle-win-steel-drums-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinSteelDrums.ogg
+jingle-win-strings-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinStrings.ogg
+jingle-win-vibraphone-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/win-jingle WinVibraphone.ogg
+jingle-achievement-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/achievement achievement.wav
+jingle-newthing-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/new-thing-get newthingget.ogg
+jingle-win-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/win-sound-effect Win%20sound.wav
+jingle-positive-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/positive-sound positive.ogg
+jingle-fanfare-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/classic-fanfare-lick fanfare_3.ogg
+jingle-fanfare-02.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/classic-fanfare-lick fanfare_4.ogg
+magic-heal-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/magic-words-healing-sound-effect health_restore.wav
+magic-words-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/magic-words-healing-sound-effect magic_words.wav
+magic-button-01.mp3	oga-singles	CC0 1.0	https://opengameart.org/content/fantasy-magic-spell fantasy_magic_button_1.mp3
+powerup-sting-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/power-up-sound-effects power_up_sound_v1.ogg
+powerup-sting-02.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/power-up-sound-effects power_up_sound_v2.ogg
+powerup-sting-03.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/power-up-sound-effects power_up_sound_v3.ogg
+magic-twinkle-01.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_1.ogg
+magic-twinkle-02.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_2.ogg
+magic-twinkle-03.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_3.ogg
+magic-twinkle-04.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_4.ogg
+magic-twinkle-05.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_5.ogg
+magic-twinkle-06.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_6.ogg
+magic-twinkle-07.ogg	oga-singles	CC0 1.0	https://opengameart.org/content/magic-spell-sfx magical_7.ogg
+glock-glissando-up-02.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_up_pentatonic_med_02.wav (first 3 s)
+glock-glissando-up-03.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_up_chromatic_fast_01.wav (first 3 s)
+glock-glissando-up-04.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_up_chromatic_med_01.wav (first 3 s)
+glock-glissando-up-05.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_up_chromatic_slow_01.wav (first 3 s)
+glock-glissando-down-01.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_down_pentatonic_med_01.wav (first 3 s)
+glock-glissando-down-02.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE glock_fx_down_chromatic_fast_01.wav (first 3 s)
+bell-nepalese-01.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE fx1_short_r01_main.wav (first 2.5 s)
+bell-nepalese-02.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE fx1_short_r04_main.wav (first 2.5 s)
+bell-nepalese-03.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE fx1_short_r07_main.wav (first 2.5 s)
+bell-nepalese-04.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE fx1_short_r11_main.wav (first 2.5 s)
+chime-tree-up-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL windchimes_asc1.wav (first 3 s)
+chime-tree-up-02.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL windchimes_fastAsc1.wav (first 3 s)
+chime-tree-down-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL windchimes_desc1.wav (first 3 s)
+bell-tree-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL BellTree_Stroke_1_Mid.wav (first 3 s)
+bell-tree-02.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL BellTree_Stroke_3_Mid.wav (first 3 s)
+bell-tree-03.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL BellTree_Stroke_6_Mid.wav (first 3 s)
+bell-hand-nepalese-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL HB_1.wav (first 2.5 s)
+bell-hand-nepalese-02.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL HB_2.wav (first 2.5 s)
+bell-hand-nepalese-03.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL HB_3.wav (first 2.5 s)
+pop-bubble-01.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop1.wav
+pop-bubble-02.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop2.wav
+pop-bubble-03.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop3.wav
+pop-bubble-04.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop4.wav
+pop-bubble-05.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop5.wav
+pop-bubble-06.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop6.wav
+pop-bubble-07.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop7.wav
+pop-bubble-08.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop8.wav
+pop-bubble-09.mp3	oga-pop-sounds-0	CC0 1.0	https://opengameart.org/content/pop-sounds-0 pop9.wav
+pop-bubble-10.ogg	oga-bubbles-pop	CC0 1.0	https://opengameart.org/content/bubbles-pop pop.ogg
+pop-dot-01.ogg	oga-3-pop-sounds	CC0 1.0	https://opengameart.org/content/3-pop-sounds pop1.ogg
+pop-dot-02.ogg	oga-3-pop-sounds	CC0 1.0	https://opengameart.org/content/3-pop-sounds pop2.ogg
+pop-dot-03.ogg	oga-3-pop-sounds	CC0 1.0	https://opengameart.org/content/3-pop-sounds pop3.ogg
+pop-blip-01.ogg	oga-pop-effect-sounds	CC0 1.0	https://opengameart.org/content/pop-effect-sounds p_1.ogg
+pop-blip-02.ogg	oga-pop-effect-sounds	CC0 1.0	https://opengameart.org/content/pop-effect-sounds p_2.ogg
+pop-blip-03.ogg	oga-pop-effect-sounds	CC0 1.0	https://opengameart.org/content/pop-effect-sounds p_3.ogg
+pop-blip-04.ogg	oga-pop-effect-sounds	CC0 1.0	https://opengameart.org/content/pop-effect-sounds p_4.ogg
+pop-blip-05.ogg	oga-pop-effect-sounds	CC0 1.0	https://opengameart.org/content/pop-effect-sounds p_5.ogg
+bubble-water-01.mp3	oga-bubble-sound-effects	CC0 1.0	https://opengameart.org/content/bubble-sound-effects bubbles-single1.wav
+bubble-water-02.mp3	oga-bubble-sound-effects	CC0 1.0	https://opengameart.org/content/bubble-sound-effects bubbles-single2.wav
+bubble-water-03.mp3	oga-bubble-sound-effects	CC0 1.0	https://opengameart.org/content/bubble-sound-effects bubbles-single3.wav
+loop-bubbles-01.mp3	oga-bubble-sound-effects	CC0 1.0	https://opengameart.org/content/bubble-sound-effects bubbles-loop1-amp.wav
+bubble-water-04.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx bubble_01.ogg
+bubble-water-05.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx bubble_02.ogg
+bubble-water-06.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx bubble_03.ogg
+loop-bubbles-02.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx loop_bubbles_1.ogg
+loop-bubbles-03.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx loop_bubbles_02.ogg
+slime-pop-01.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_01.ogg
+slime-pop-02.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_02.ogg
+slime-pop-03.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_03.ogg
+slime-pop-04.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_04.ogg
+slime-pop-05.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_05.ogg
+slime-pop-06.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_06.ogg
+slime-pop-07.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_07.ogg
+slime-pop-08.ogg	oga-40-cc0-water-splash-slime-sfx	CC0 1.0	https://opengameart.org/content/40-cc0-water-splash-slime-sfx slime_08.ogg
+ball-glass-bounce-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/glass-ball-bounce-1-s2240.html glass-ball-bounce-1-s2240.mp3
+ball-glass-bounce-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/glass-ball-bounce-2-s2241.html glass-ball-bounce-2-s2241.mp3
+ball-metal-bounce-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/metal-ball-bounce-1-s2242.html metal-ball-bounce-1-s2242.mp3
+ball-metal-bounce-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/metal-ball-bounce-2-s2243.html metal-ball-bounce-2-s2243.mp3
+ball-metal-bounce-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/metal-ball-bounce-3-s2244.html metal-ball-bounce-3-s2244.mp3
+ball-metal-bounce-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/metal-ball-bounce-4-s2245.html metal-ball-bounce-4-s2245.mp3
+ball-pingpong-bounce-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/ping-pong-ball-bounce-1-s2236.html ping-pong-ball-bounce-1-s2236.mp3
+ball-pingpong-bounce-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/ping-pong-ball-bounce-2-s2237.html ping-pong-ball-bounce-2-s2237.mp3
+ball-pingpong-bounce-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/ping-pong-ball-bounce-3-s2238.html ping-pong-ball-bounce-3-s2238.mp3
+ball-pingpong-bounce-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/ping-pong-ball-bounce-4-s2239.html ping-pong-ball-bounce-4-s2239.mp3
+ball-tennis-bounce-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/tennis-ball-bounce-s0584.html tennis-ball-bounce-s0584.mp3
+ball-rubber-bounce-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/ball-rebounds-s1045.html ball-rebounds-s1045.mp3
+ball-metal-clack-01.mp3	oga-baoding-balls	CC0 1.0	https://opengameart.org/content/baoding-balls Baoding.wav (first 8 s)
+ball-roll-01.ogg	oga-bowling-ball-rolling	CC0 1.0	https://opengameart.org/content/bowling-ball-rolling qubodup-bowling_roll-nofadeout.ogg
+ball-pingpong-bounce-05.ogg	oga-ping-pong-sounds	CC0 1.0	https://opengameart.org/content/ping-pong-sounds pingpongboard.ogg
+ball-pingpong-hit-01.ogg	oga-ping-pong-sounds	CC0 1.0	https://opengameart.org/content/ping-pong-sounds pingpongbat.ogg
+loop-rolling-01.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops rolling.ogg
+heartbeat-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/heartbeat-1-s0243.html heartbeat-1-s0243.mp3
+heartbeat-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/heartbeat-2-s0244.html heartbeat-2-s0244.mp3
+heartbeat-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/heartbeat-3-s0770.html heartbeat-3-s0770.mp3
+loop-heartbeat-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/heart-beat-s0218.html heart-beat-s0218.mp3
+heartbeat-fast-01.mp3	oga-heartbeat-sounds	CC0 1.0	https://opengameart.org/content/heartbeat-sounds heartbeat_fast_0.wav
+heartbeat-slow-01.mp3	oga-heartbeat-sounds	CC0 1.0	https://opengameart.org/content/heartbeat-sounds heartbeat_slow_0.wav
+heartbeat-04.mp3	oga-heartbeat-single-sound	CC0 1.0	https://opengameart.org/content/heartbeat-single-sound heartbeat.mp3_.flac
+loop-alarm-01.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops alarm_01.ogg
+loop-alarm-02.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops alarm_02.ogg
+loop-alarm-03.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops alarm_03.ogg
+alarm-short-01.ogg	oga-short-alarm	CC0 1.0	https://opengameart.org/content/short-alarm alarm.ogg
+alarm-tone-01.ogg	oga-alarm-1	CC0 1.0	https://opengameart.org/content/alarm-1 alarm_2.ogg
+alarm-tone-02.mp3	oga-alarm-2	CC0 1.0	https://opengameart.org/content/alarm-2 alarm_0.wav
+alarm-tone-03.mp3	oga-alarm-sound-effect	CC0 1.0	https://opengameart.org/content/alarm-sound-effect alarm_2.wav
+alarm-siren-01.mp3	oga-sirens-and-alarm-noise	CC0 1.0	https://opengameart.org/content/sirens-and-alarm-noise siren.mp3 (first 6 s)
+countdown-race-01.ogg	oga-race-start-countdown	CC0 1.0	https://opengameart.org/content/race-start-countdown countdown.ogg
+beep-ui-01.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-00.wav
+beep-ui-02.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-01.wav
+beep-ui-03.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-02.wav
+beep-ui-04.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-03.wav
+beep-ui-05.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-04.wav
+beep-ui-06.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-05.wav
+beep-ui-07.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-06.wav
+beep-ui-08.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-07.wav
+beep-ui-09.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-08.wav
+beep-ui-10.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-09.wav
+beep-ui-11.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-10.wav
+beep-ui-12.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-11.wav
+beep-ui-13.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-12.wav
+beep-ui-14.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-13.wav
+beep-ui-15.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-14.wav
+beep-ui-16.mp3	oga-interface-beeps	CC0 1.0	https://opengameart.org/content/interface-beeps beep-15.wav
+beep-tone-01.mp3	oga-beep-tone-sound-sfx	CC0 1.0	https://opengameart.org/content/beep-tone-sound-sfx beep.wav
+jingle-lose-trumpet-01.ogg	oga-game-over-trumpet-sfx	CC0 1.0	https://opengameart.org/content/game-over-trumpet-sfx losetrumpet.ogg
+tire-screech-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/screeching-tires-1-s2368.html screeching-tires-1-s2368.mp3
+tire-screech-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/screeching-tires-2-s2369.html screeching-tires-2-s2369.mp3
+tire-screech-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/screeching-tires-3-s2370.html screeching-tires-3-s2370.mp3
+tire-screech-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/screeching-tires-4-s2371.html screeching-tires-4-s2371.mp3
+tire-squeal-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/tire-squeal-s0500.html tire-squeal-s0500.mp3 (first 4 s)
+car-pass-by-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/car-passing-50km-h-3-s2987.html car-passing-50km-h-3-s2987.mp3
+crash-car-01.ogg	oga-crash-collision	CC0 1.0	https://opengameart.org/content/crash-collision qubodup-crash.ogg
+impact-crunch-01.mp3	oga-5-break-crunch-impacts	CC0 1.0	https://opengameart.org/content/5-break-crunch-impacts impactcrunch01.mp3.flac
+impact-crunch-02.mp3	oga-5-break-crunch-impacts	CC0 1.0	https://opengameart.org/content/5-break-crunch-impacts impactcrunch02.mp3.flac
+impact-crunch-03.mp3	oga-5-break-crunch-impacts	CC0 1.0	https://opengameart.org/content/5-break-crunch-impacts impactcrunch03.mp3.flac
+impact-crunch-04.mp3	oga-5-break-crunch-impacts	CC0 1.0	https://opengameart.org/content/5-break-crunch-impacts impactcrunch04.mp3.flac
+impact-crunch-05.mp3	oga-5-break-crunch-impacts	CC0 1.0	https://opengameart.org/content/5-break-crunch-impacts impactcrunch05.mp3.flac
+boost-thruster-01.mp3	oga-boost-or-launch-or-thruster-sound-effect	CC0 1.0	https://opengameart.org/content/boost-or-launch-or-thruster-sound-effect boost.mp3
+car-spin-01.mp3	oga-spin	CC0 1.0	https://opengameart.org/content/spin car_spinning.wav
+whoosh-air-01.mp3	oga-air-woosh-move	CC0 1.0	https://opengameart.org/content/air-woosh-move air_move.wav
+whoosh-air-02.mp3	oga-air-whoosh	CC0 1.0	https://opengameart.org/content/air-whoosh whoosh2_0.wav
+horn-bugle-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/bugle-awake-morning-call-s3263.html bugle-awake-morning-call-s3263.mp3 (first 8 s)
+drum-roll-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/drum-roll-1-s-s2400.html drum-roll-1-s-s2400.mp3
+drum-roll-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/drum-roll-1-l-s2402.html drum-roll-1-l-s2402.mp3
+drum-roll-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/drum-roll-2-s-s2403.html drum-roll-2-s-s2403.mp3
+drum-roll-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/drum-roll-3-s-s2406.html drum-roll-3-s-s2406.mp3
+drum-roll-05.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/drum-roll-3-m-s2407.html drum-roll-3-m-s2407.mp3
+drum-snare-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/snare-drum-1-s2304.html snare-drum-1-s2304.mp3
+drum-snare-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/snare-drum-4-s2307.html snare-drum-4-s2307.mp3
+drum-snare-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/snare-drum-5-s2308.html snare-drum-5-s2308.mp3
+drum-snare-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/snare-drum-6-s2309.html snare-drum-6-s2309.mp3
+drum-snare-05.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/snare-drum-7-s2310.html snare-drum-7-s2310.mp3
+drum-snare-06.mp3	oga-an-interesting-snare-drum-sound	CC0 1.0	https://opengameart.org/content/an-interesting-snare-drum-sound best_snare_0.wav
+drum-tom-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/bass-tom-1-s2338.html bass-tom-1-s2338.mp3
+drum-tom-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/bass-tom-4-s2341.html bass-tom-4-s2341.mp3
+explosion-real-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/explosion-1-s1807.html explosion-1-s1807.mp3
+explosion-real-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/explosion-2-s1808.html explosion-2-s1808.mp3
+explosion-real-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/explosion-far-away-s1023.html explosion-far-away-s1023.mp3
+cannon-shot-01.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx cannon_01.ogg
+cannon-shot-02.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx cannon_02.ogg
+cannon-shot-03.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx cannon_03.ogg
+cannon-shot-04.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx cannon_04.ogg
+cannon-shot-05.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx cannon_05.ogg
+firework-burst-01.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_01.ogg
+firework-burst-02.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_02.ogg
+firework-burst-03.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_03.ogg
+firework-burst-04.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_04.ogg
+firework-burst-05.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_05.ogg
+firework-burst-06.ogg	oga-25-cc0-bang-firework-sfx	CC0 1.0	https://opengameart.org/content/25-cc0-bang-firework-sfx fw_06.ogg
+cannon-shot-06.ogg	oga-battle-at-sea	CC0 1.0	https://opengameart.org/content/battle-at-sea cannon_fire_1.ogg
+cannon-hit-01.ogg	oga-battle-at-sea	CC0 1.0	https://opengameart.org/content/battle-at-sea cannon_hit_1.ogg
+cannon-hit-02.ogg	oga-battle-at-sea	CC0 1.0	https://opengameart.org/content/battle-at-sea cannon_hit_wall_no_splash.ogg
+cannon-miss-01.ogg	oga-battle-at-sea	CC0 1.0	https://opengameart.org/content/battle-at-sea cannon_miss_1.ogg
+cannon-shot-07.mp3	oga-tiny-naval-battle-sounds-set	CC0 1.0	https://opengameart.org/content/tiny-naval-battle-sounds-set GunShot.wav
+explosion-metal-01.mp3	oga-tiny-naval-battle-sounds-set	CC0 1.0	https://opengameart.org/content/tiny-naval-battle-sounds-set ExplosionMetal.wav
+horn-war-01.ogg	oga-their-coming-generic-horn-sound	CC0 1.0	https://opengameart.org/content/their-coming-generic-horn-sound theircoming3.ogg
+horn-war-02.ogg	oga-their-coming-generic-horn-sound	CC0 1.0	https://opengameart.org/content/their-coming-generic-horn-sound theircoming.ogg
+loop-war-drums-01.mp3	oga-horde-war-drums-loop	CC0 1.0	https://opengameart.org/content/horde-war-drums-loop horde_war_drums_by_william_hector.wav
+crowd-cheer-01.ogg	oga-cheers-0	CC0 1.0	https://opengameart.org/content/cheers-0 cheers_1.ogg
+crowd-ooh-01.ogg	oga-oooooooooooooo	CC0 1.0	https://opengameart.org/content/oooooooooooooo oooooooooo.ogg
+crowd-applause-02.mp3	oga-applause-in-a-large-hall-or-church	CC0 1.0	https://opengameart.org/content/applause-in-a-large-hall-or-church applause-clapping-church-crowd-immersive.wav (first 10 s)
+hiss-voice-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/hisses-loud-short-s1169.html hisses-loud-short-s1169.mp3
+hiss-voice-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/hisses-loud-long-s1170.html hisses-loud-long-s1170.mp3
+hiss-voice-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/hisses-loud-very-loud-s1171.html hisses-loud-very-loud-s1171.mp3
+hiss-gas-01.ogg	oga-compressed-gas-leak-sfx	CC0 1.0	https://opengameart.org/content/compressed-gas-leak-sfx compressed_gas_leak.ogg
+hiss-steam-01.mp3	oga-steam-release-sounds	CC0 1.0	https://opengameart.org/content/steam-release-sounds steam hisses - Marker #1.wav
+hiss-steam-02.mp3	oga-steam-release-sounds	CC0 1.0	https://opengameart.org/content/steam-release-sounds steam hisses - Marker #2.wav
+hiss-steam-03.mp3	oga-steam-release-sounds	CC0 1.0	https://opengameart.org/content/steam-release-sounds steam hisses - Marker #3.wav
+hiss-steam-04.mp3	oga-steam-release-sounds	CC0 1.0	https://opengameart.org/content/steam-release-sounds steam hisses - Marker #4.wav
+hiss-steam-05.mp3	oga-steam-release-sounds	CC0 1.0	https://opengameart.org/content/steam-release-sounds steam hisses - Marker #5.wav
+hiss-sand-01.mp3	oga-sand-spell	CC0 1.0	https://opengameart.org/content/sand-spell sand-spell.flac
+crank-wind-01.mp3	oga-clock-wind-sounds	CC0 1.0	https://opengameart.org/content/clock-wind-sounds multiwind1.wav
+crank-wind-02.mp3	oga-clock-wind-sounds	CC0 1.0	https://opengameart.org/content/clock-wind-sounds multiwind2.wav
+crank-click-01.mp3	oga-clock-wind-sounds	CC0 1.0	https://opengameart.org/content/clock-wind-sounds singlewind1.wav
+crank-click-02.mp3	oga-clock-wind-sounds	CC0 1.0	https://opengameart.org/content/clock-wind-sounds singlewind2.wav
+crank-click-03.mp3	oga-clock-wind-sounds	CC0 1.0	https://opengameart.org/content/clock-wind-sounds singlewind3.wav
+coins-cup-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/coin-in-cup-1-s0339.html coin-in-cup-1-s0339.mp3
+coins-cup-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/coin-in-cup-2-s0340.html coin-in-cup-2-s0340.mp3
+coins-cup-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/coin-in-cup-3-s0341.html coin-in-cup-3-s0341.mp3
+crank-start-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/starting-crank-s2545.html starting-crank-s2545.mp3 (first 4 s)
+plastic-handle-01.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_01.wav
+plastic-handle-02.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_02.wav
+plastic-handle-03.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_03.wav
+plastic-handle-04.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_04.wav
+plastic-handle-05.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_05.wav
+plastic-handle-06.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_06.wav
+plastic-handle-07.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_07.wav
+plastic-handle-08.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_08.wav
+plastic-handle-09.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_09.wav
+plastic-handle-10.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Plastic_10.wav
+coins-money-01.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_01.wav
+coins-money-02.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_02.wav
+coins-money-03.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_03.wav
+coins-money-04.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_04.wav
+coins-money-05.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_05.wav
+coins-money-06.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_06.wav
+coins-money-07.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_07.wav
+coins-money-08.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_08.wav
+coins-money-09.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_09.wav
+coins-money-10.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_10.wav
+coins-money-11.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_11.wav
+coins-money-12.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Money_12.wav
+spinner-fidget-01.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Fidget_Spinner1.wav
+spinner-fidget-02.mp3	oga-202-more-sound-effects	CC0 1.0	https://opengameart.org/content/202-more-sound-effects Fidget_Spinner2.wav
+coins-drop-05.ogg	oga-coin-drop	CC0 1.0	https://opengameart.org/content/coin-drop coin_drop.ogg
+metal-clasp-01.mp3	oga-small-metal-clasp-open-close-switching	CC0 1.0	https://opengameart.org/content/small-metal-clasp-open-close-switching small_metal_clasp.mp3
+amb-wind-01.mp3	oga-wind1	CC0 1.0	https://opengameart.org/content/wind1 wind1.wav (first 30 s)
+amb-wind-02.mp3	oga-wind1	CC0 1.0	https://opengameart.org/content/wind1 wind2.wav (first 30 s)
+amb-wind-03.mp3	oga-wind1	CC0 1.0	https://opengameart.org/content/wind1 wind3.wav (first 30 s)
+amb-wind-04.mp3	oga-wind1	CC0 1.0	https://opengameart.org/content/wind1 wind4.wav (first 30 s)
+amb-wind-05.mp3	oga-wind1	CC0 1.0	https://opengameart.org/content/wind1 wind5.wav (first 30 s)
+amb-wind-06.ogg	oga-wind	CC0 1.0	https://opengameart.org/content/wind Wind.ogg
+amb-wind-07.mp3	oga-mild-wind-background-noise	CC0 1.0	https://opengameart.org/content/mild-wind-background-noise wind background noise 2.wav (first 30 s)
+loop-wind-01.ogg	oga-wind-whoosh-loop	CC0 1.0	https://opengameart.org/content/wind-whoosh-loop wind woosh loop.ogg
+amb-cave-01.mp3	oga-loopable-dungeon-ambience	CC0 1.0	https://opengameart.org/content/loopable-dungeon-ambience dungeon_ambient_1.ogg (first 30 s)
+amb-drip-01.mp3	oga-dripping-water-loop	CC0 1.0	https://opengameart.org/content/dripping-water-loop atmosbasement.mp3_.flac
+amb-forest-01.mp3	oga-forest-bird-sounds	CC0 1.0	https://opengameart.org/content/forest-bird-sounds Forest 1.wav (first 30 s)
+amb-forest-02.mp3	oga-forest-bird-sounds	CC0 1.0	https://opengameart.org/content/forest-bird-sounds Forest 2.wav (first 30 s)
+amb-forest-03.mp3	oga-forest-bird-sounds	CC0 1.0	https://opengameart.org/content/forest-bird-sounds Forest 3.wav (first 30 s)
+amb-morning-01.ogg	oga-amb-morning-sounds-perfect-loop	CC0 1.0	https://opengameart.org/content/amb-morning-sounds-perfect-loop amb_morning.ogg
+amb-outside-01.ogg	oga-amb-outside-1	CC0 1.0	https://opengameart.org/content/amb-outside-1 amb_outdoor1_loop.ogg
+amb-birds-01.ogg	oga-ambient-bird-sounds	CC0 1.0	https://opengameart.org/content/ambient-bird-sounds birds-isaiah658.ogg
+amb-crickets-01.mp3	oga-crickets-ambient-noise-loopable	CC0 1.0	https://opengameart.org/content/crickets-ambient-noise-loopable crickets-oneloop.mp3
+amb-crickets-02.mp3	oga-cricket-sounds	CC0 1.0	https://opengameart.org/content/cricket-sounds cricketsounds090613.wav (first 30 s)
+amb-cicada-01.ogg	oga-cicada-sounds	CC0 1.0	https://opengameart.org/content/cicada-sounds 082526-cicadasounds.ogg
+amb-cicada-02.ogg	oga-cicada-sounds	CC0 1.0	https://opengameart.org/content/cicada-sounds 082526-cicadasounds2.ogg
+amb-swamp-01.ogg	oga-swamp-environment-audio	CC0 1.0	https://opengameart.org/content/swamp-environment-audio atmosphere_1.ogg
+amb-swamp-02.ogg	oga-swamp-environment-audio	CC0 1.0	https://opengameart.org/content/swamp-environment-audio atmosphere_2.ogg
+amb-swamp-03.ogg	oga-swamp-environment-audio	CC0 1.0	https://opengameart.org/content/swamp-environment-audio atmosphere_3.ogg
+amb-crickets-03.ogg	oga-swamp-environment-audio	CC0 1.0	https://opengameart.org/content/swamp-environment-audio cricket_1.ogg
+amb-crickets-04.ogg	oga-swamp-environment-audio	CC0 1.0	https://opengameart.org/content/swamp-environment-audio cricket_2.ogg
+loop-rain-01.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops rain.ogg
+loop-water-01.ogg	oga-30-cc0-sfx-loops	CC0 1.0	https://opengameart.org/content/30-cc0-sfx-loops water_flowing.ogg
+ball-rattle-roll-01.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Rolling_toy_rattle_on_floor.ogg — stephan Rolling_toy_rattle_on_floor.ogg (first 10 s)
+amb-pinball-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/games-room-2-s2675.html — Joseph Sardin (BigSoundBank) games-room-2-s2675.mp3 (first 30 s)
+amb-arcade-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/games-room-1-s2673.html — Joseph Sardin (BigSoundBank) games-room-1-s2673.mp3 (first 30 s)
+crank-reel-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/toy-fishing-rod-reel-1-s0798.html — Joseph Sardin (BigSoundBank) toy-fishing-rod-reel-1-s0798.mp3 (first 6 s)
+crank-reel-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/toy-fishing-rod-reel-2-s0799.html — Joseph Sardin (BigSoundBank) toy-fishing-rod-reel-2-s0799.mp3 (first 6 s)
+plastic-click-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/plastic-handcuff-3-s1964.html — Joseph Sardin (BigSoundBank) plastic-handcuff-3-s1964.mp3
+plastic-clatter-01.ogg	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Plastic_object_clattering.ogg — natalie Plastic_object_clattering.ogg
+metal-box-open-01.ogg	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Metal_box_springs_open.ogg — stephan Metal_box_springs_open.ogg
+buzzer-electric-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/buzzer-1-s1583.html — Joseph Sardin (BigSoundBank) buzzer-1-s1583.mp3
+buzzer-electric-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/buzzer-2-s1584.html — Joseph Sardin (BigSoundBank) buzzer-2-s1584.mp3
+buzzer-electric-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/buzzer-3-s1585.html — Joseph Sardin (BigSoundBank) buzzer-3-s1585.mp3
+buzzer-electric-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/buzzer-4-s1586.html — Joseph Sardin (BigSoundBank) buzzer-4-s1586.mp3
+buzzer-electric-05.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/buzzer-5-s1587.html — Joseph Sardin (BigSoundBank) buzzer-5-s1587.mp3
+buzzer-game-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/operation-game-1-s1682.html — Joseph Sardin (BigSoundBank) operation-game-1-s1682.mp3
+buzzer-game-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/operation-game-2-s1683.html — Joseph Sardin (BigSoundBank) operation-game-2-s1683.mp3
+buzzer-game-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/operation-game-3-s1684.html — Joseph Sardin (BigSoundBank) operation-game-3-s1684.mp3
+buzzer-electronic-01.mp3	wikimedia-commons	CC0 1.0	https://commons.wikimedia.org/wiki/File:Buzzer.wav — David Pride Buzzer.wav
+bell-boxing-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/boxing-bell-1-s1926.html — Joseph Sardin (BigSoundBank) boxing-bell-1-s1926.mp3
+bell-boxing-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/boxing-bell-2-s1927.html — Joseph Sardin (BigSoundBank) boxing-bell-2-s1927.mp3 (first 6 s)
+bell-ring-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/industrial-doorbell-s1269.html — Joseph Sardin (BigSoundBank) industrial-doorbell-s1269.mp3 (first 6 s)
+bell-ring-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/industrial-doorbell-3-s1923.html — Joseph Sardin (BigSoundBank) industrial-doorbell-3-s1923.mp3 (first 6 s)
+bell-ring-03.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/industrial-doorbell-4-s1924.html — Joseph Sardin (BigSoundBank) industrial-doorbell-4-s1924.mp3 (first 6 s)
+bell-ring-04.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/industrial-doorbell-5-s1925.html — Joseph Sardin (BigSoundBank) industrial-doorbell-5-s1925.mp3 (first 6 s)
+bell-school-01.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Old_school_bell_1.ogg — ezwa Old_school_bell_1.ogg (first 8 s)
+bell-school-02.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Old_school_bell_2.ogg — ezwa Old_school_bell_2.ogg (first 8 s)
+bell-school-03.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Old_school_bell_3.ogg — ezwa Old_school_bell_3.ogg (first 8 s)
+bell-school-04.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Old_school_bell_4.ogg — ezwa Old_school_bell_4.ogg (first 8 s)
+bell-school-05.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Old_school_bell_5.ogg — ezwa Old_school_bell_5.ogg (first 8 s)
+horn-blow-01.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/horn-1-s2520.html — Joseph Sardin (BigSoundBank) horn-1-s2520.mp3
+horn-blow-02.mp3	bigsoundbank	CC0 1.0	https://bigsoundbank.com/horn-6-s2525.html — Joseph Sardin (BigSoundBank) horn-6-s2525.mp3
+bugle-assembly-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Assembly.mp3 — U.S. Army Assembly.mp3
+bugle-assembly-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Assembly_bugle_call.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Assembly_bugle_call.ogg
+bugle-attention-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Attention.mp3 — U.S. Army Attention.mp3
+bugle-attention-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Attention_%28typical_U.S._military_version%29.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Attention_typical_U.S._military_version.ogg
+bugle-first-call-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:FirstCall.mp3 — U.S. Army FirstCall.mp3
+bugle-first-call-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:First_Call.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps First_Call.ogg
+bugle-recall-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Recall.mp3 — U.S. Army Recall.mp3
+bugle-recall-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Recall_bugle_call.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Recall_bugle_call.ogg
+bugle-retreat-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Retreat.mp3 — U.S. Army Retreat.mp3
+bugle-retreat-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Retreat.ogg — U.S. Army Bands Retreat.ogg
+bugle-reveille-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Reveille.mp3 — U.S. Army Reveille.mp3
+bugle-reveille-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Reveille.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Reveille.ogg
+bugle-taps-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Taps.mp3 — U.S. Army Taps.mp3
+bugle-taps-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Taps.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Taps.ogg
+bugle-to-arms-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:ToArms.mp3 — U.S. Army ToArms.mp3
+bugle-to-arms-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:To_Arms.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps To_Arms.ogg
+bugle-fire-call-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:FireCall.mp3 — U.S. Army FireCall.mp3
+bugle-fire-call-02.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Fire_Call.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Fire_Call.ogg
+bugle-mess-call-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:MessCall.mp3 — U.S. Army MessCall.mp3
+bugle-double-time-01.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Double_Time.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Double_Time.ogg
+bugle-drill-call-01.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Drill_Call.ogg — Sgt. Codie Lynn Williams, U.S. Marine Corps Drill_Call.ogg
+drum-cadence-01.mp3	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Drum_Cadence_-_Ceremonial_Brass_-_United_States_Air_Force_Band.mp3 — Performance: United States Air Force Band, Ceremonial Brass Drum_Cadence_-_Ceremonial_Brass_-_United_States_Air_Force_Band.mp3 (first 20 s)
+battle-reenactment-01.mp3	nps	Public domain (US federal work)	https://www.nps.gov/subjects/sound/sounds-battle.htm — National Park Service, Natural Sounds and Night Skies Division nri-battlesounds.mp3
+drum-fife-01.mp3	nps	Public domain (US federal work)	https://www.nps.gov/subjects/sound/sounds-jamboree.htm — National Park Service, Natural Sounds and Night Skies Division nri-JamboreeMIMA.mp3
+crowd-shout-01.mp3	oga-crowd-shouting-speaking-ambience	CC0 1.0	https://opengameart.org/content/crowd-shoutingspeaking-ambience — StarNinjas crowd_shouting.ogg (first 15 s)
+crowd-hurray-01.ogg	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Clapping_hurray.ogg — starlite Clapping_hurray.ogg
+crowd-ooh-02.ogg	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Ohhh_ahhh.ogg — starlite Ohhh_ahhh.ogg
+crowd-applause-03.mp3	wikimedia-commons	Public domain (dedication)	https://commons.wikimedia.org/wiki/File:Slow_starting_applause.ogg — stephan Slow_starting_applause.ogg (first 15 s)
+rattle-snake-01.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Rattlesnake.ogg Rattlesnake.ogg
+hiss-alligator-01.ogg	wikimedia-commons	Public domain (US federal work)	https://commons.wikimedia.org/wiki/File:Alligatorhiss.ogg Alligatorhiss.ogg
+hiss-cat-01.mp3	wikimedia-commons	CC0 1.0	https://commons.wikimedia.org/wiki/File:Cat_hissing_-_Zabuhailo.wav — Zabuhailo Cat_hissing_-_Zabuhailo.wav

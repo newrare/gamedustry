@@ -1470,11 +1470,14 @@ signature sounds no role says.
 page, grouped by the CATEGORY its name starts with, with its length, whether it
 is mono, its pack and which game already cuts a clip from it (`chainring.hit`);
 a search box, the categories, the packs and the length as facets; hover plays,
-click copies the name. The library is ~880 files, **all CC0** — eight Kenney
-packs and ten OpenGameArt ones — because the repository is public and the raw
-files are in it: a licence that allows a sound in a game but forbids handing
-out the file (ZapSplat's, removed on 2026-10-04, Sonniss, Pixabay) cannot be
-in this folder. **Every file is named
+click copies the name. The library is ~1310 files, **all free of rights** —
+CC0 1.0, or the public domain with its reason written in `sources.tsv` (the
+author's dedication, a US federal work, an expired term) — out of eight Kenney
+packs, some ninety OpenGameArt pages, BigSoundBank, Wikimedia Commons, the US
+National Park Service and two instrument sample banks, because the repository is public and the raw files are in it: a licence
+that allows a sound in a game but forbids handing out the file (ZapSplat's,
+removed on 2026-10-04, Sonniss, Pixabay) or asks for a credit cannot be in this
+folder. **Every file is named
 `<category>-<descriptor>-<NN>.<ext>`**: `impact-metal-heavy-01.ogg`,
 `gem-pickup-01.ogg`, `creature-cute-03.ogg`, the category first
 because it is what a list groups by, the vendor's word order and marketing words

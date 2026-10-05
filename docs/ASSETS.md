@@ -43,18 +43,24 @@ the rest of the form.
 
 ## Sound effects always come from `assets/audio/sfx/`
 
-`assets/audio/sfx/` is the shared sfx library of the repo: **895 files, all
-CC0** — eight Kenney packs (impacts, footsteps, cards and chips, lasers and
-power-ups, interface, RPG foley, jingles), eleven OpenGameArt
-packs (creatures, RPG items and spells, coins, swishes, electricity, mechanical,
-fire, a clock, household foley, applause, a rising whistle), and fifteen tonal
-pieces BUILT out of two instrument sample banks, VCSL and VSCO 2 CE (harp runs,
-marimba plinks, taps and errors, glockenspiel pings, a vibraphone arpeggio) —
-`LICENSES.md` says how. **CC0 is a rule, not a preference**:
-the repository is public and the raw files are in it, so a licence that allows
-a sound inside a game but forbids handing out the file — ZapSplat's, which the
-library held until 2026-10-04, Sonniss, Pixabay, Mixkit — cannot be in this
-folder. Every game picks from it, so the whole catalogue sounds like one product
+`assets/audio/sfx/` is the shared sfx library of the repo: **1312 files, all
+free of rights** — eight Kenney packs (impacts, footsteps, cards and chips, lasers and
+power-ups, interface, RPG foley, jingles), some ninety OpenGameArt pages
+(creatures, RPG items and spells, coins, swishes, electricity, mechanical, fire,
+household foley; chimes, dings, win jingles and magic sparkles; bubbles, balls,
+heartbeats, alarms, tyres, war drums and cannons, hisses, a crank; ambient
+beds of wind, cave, forest and night), BigSoundBank's recorded foley, public-domain bugle calls, bells and crowds out of
+Wikimedia Commons and the US National Park Service, and the
+two instrument sample banks VCSL and VSCO 2 CE — cut into glissandi and bells,
+and fifteen tonal pieces BUILT out of their notes (harp runs, marimba plinks,
+taps and errors, glockenspiel pings, a vibraphone arpeggio) — `LICENSES.md`
+says how. **free of rights is a rule, not a preference** —
+CC0 1.0, or the public domain with its reason written in `sources.tsv` (an
+author's dedication, a US federal work, an expired term; `LICENSES.md` holds
+the rule): the repository is public and the raw files are in it, so a licence
+that allows a sound inside a game but forbids handing out the file — ZapSplat's,
+which the library held until 2026-10-04, Sonniss, Pixabay, Mixkit — or asks
+for a credit cannot be in this folder. Every game picks from it, so the whole catalogue sounds like one product
 instead of one synth per game. `LICENSES.md` in the folder is the record of the
 packs and `sources.tsv` the record of every file: pack, licence, the vendor's
 original name.
