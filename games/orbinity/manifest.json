@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -46,6 +46,15 @@
       "sticker19": "orbinity-sticker-19",
       "sticker20": "orbinity-sticker-20"
     }
+  },
+  "sfx": {
+    "grab": "pickup/uipluck",
+    "milestone": "combo/tone",
+    "evolve": "power/powerup",
+    "lost": "malus/uiminimize",
+    "launch": "launch/laserlarge",
+    "wall": "bounce/impactmetalscifi",
+    "boom": "burst/explosioncrunch02"
   },
   "copy": {
     "fr": {

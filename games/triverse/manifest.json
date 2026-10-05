@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -56,7 +56,8 @@
     "power": "power/forcefield",
     "void": "malus/phaser",
     "crash": "crash/explosion",
-    "swipe": "move/scratch"
+    "swipe": "move/scratch",
+    "loop": "combo/jinglehit"
   },
   "copy": {
     "fr": {

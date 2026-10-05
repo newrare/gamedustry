@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -47,6 +47,15 @@
       "sticker19": "marshmelt-sticker-19",
       "sticker20": "marshmelt-sticker-20"
     }
+  },
+  "sfx": {
+    "climb": "combo/glocktwotone",
+    "burn": "malus/slime",
+    "melt": "crash/slime",
+    "fling": "launch/whistlerise",
+    "stick": "bounce/impactsoftmedium",
+    "wall": "bounce/impactmining",
+    "crumble": "world/stepsnow"
   },
   "copy": {
     "fr": {

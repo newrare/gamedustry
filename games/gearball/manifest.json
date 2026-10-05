@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.6.8",
+  "version": "2.6.9",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
@@ -97,6 +97,17 @@
       "card-tesla": "gearball-card-two-19",
       "card-back": "gearball-card-two-20"
     }
+  },
+  "sfx": {
+    "deliver": "pickup/glass",
+    "chain": "combo/harprunup",
+    "blackout": "malus/impactmining",
+    "shatter": "crash/impactglassheavy",
+    "heart": "crash/impactglasslight",
+    "chime": "world/glockping",
+    "flip": "toggle/metalclick",
+    "lock": "toggle/metallatch",
+    "unlock": "toggle/coinshandle"
   },
   "copy": {
     "fr": {

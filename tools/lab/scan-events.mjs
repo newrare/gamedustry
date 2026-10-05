@@ -927,6 +927,19 @@ export async function scanGame(slug) {
     if (c.module !== 'Sound' || !c.soundLiteral) continue;
     if (pack.keys.some((k) => k.key === c.sound)) (played[c.sound] = played[c.sound] || []).push(c.where + ':' + c.line);
   }
+  /* A key handed to a COMPUTED call — `snd = "lucky"; … Sound.clip(snd)` — has
+     no literal line of its own and is played all the same (pawko's pegs). So a
+     key with no literal line still counts as played when the game makes such a
+     call and names the key as a string somewhere (an object key — `"key":` —
+     is the clip's own entry, not a use), and the computed call is its player. */
+  const computed = calls.filter((c) => c.module === 'Sound' && !c.soundLiteral && (c.method === 'clip' || c.method === 'cue'));
+  if (computed.length) {
+    const keys = new Set([...pack.keys.map((k) => k.key), ...Object.keys(manifest.sfx || {})]);
+    for (const key of keys) {
+      if (key === 'music' || played[key]) continue;
+      if (new RegExp(`(["'])${key}\\1(?!\\s*:)`).test(src)) played[key] = computed.map((c) => c.line);
+    }
+  }
 
   const lib = await sfxFiles();
   const sounds = pack.keys.map((k) => ({

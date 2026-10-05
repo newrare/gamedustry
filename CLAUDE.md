@@ -1212,8 +1212,13 @@ together), a clip's card on every line that plays it, and a cue line keeps its
 own three in the last columns of its grid, right under the card's. The mark lands in
 `lab/events-review.json` against the call's `checkId`: its source in its
 function, plus, for a cue, the clip it plays (provenance note and size). Edit
-the call or re-cut its clip and the mark no longer matches, so the line reads
-unchecked again; a clip's card ticks every line under it at once, *Hide
+the call or re-cut its clip BY HAND and the mark no longer matches, so the line
+reads unchecked again — but **an APPLY keeps the marks of the lines it
+rewrites** (a volume, a style, the kit variant a key plays): the bench's own
+write was made by someone who heard the line, so `serve-events.mjs` pairs each
+call with the one that replaced it and moves the mark, and the v2 clip with
+it; a line the apply removes takes its mark and its clip away. A clip's card
+ticks every line under it at once, *Hide
 checked* leaves what is left, and a game whose every callout, notice and cue
 line is checked turns green in the picker.
 
@@ -1248,8 +1253,12 @@ it. *Trash* deletes nothing by itself — it MARKS, like every other change here
 so a removal is reviewed next to the rest of the plan, counted in the Apply
 badge and taken back with the same revert as a typo. On a callout or a cue line
 it removes that statement; on a clip's card it removes the clip from
-`ASSETS.sounds` **and every line that plays it**, because a game calling a clip
-it no longer ships gets silence rather than an error. The statement goes, not
+`ASSETS.sounds` — or the key's `sfx` entry in the manifest, for a key that
+plays a role of the house kit — **and every line that plays it**, because a
+game calling a clip it no longer ships gets silence rather than an error. The
+other way round holds too: **a key whose last line is removed goes with it**,
+clip or kit entry, unless the source still names it somewhere else, which the
+report says. The statement goes, not
 the call: `apply-events.mjs` takes the whole line, and the `if (…)` guard with
 it when the guard was only ever there for that call — 259 of the catalogue's 277
 calls qualify. Anything else (a line shared with code, a dangling `else`, a
@@ -1452,7 +1461,8 @@ the jitter. Save writes `assets/audio/kit/kit.json`, and
 `tools/lab/cut-kit.mjs` re-cuts every take into `assets/audio/kit/<role>-<n>.mp3`,
 levelled to one loudness (committed, like `assets/image/shell/`; the build
 never runs ffmpeg). A second group of roles is GAMEPLAY (`pickup`, `bonus`,
-`combo`, `power`, `malus`, `crash`, `move`), and since a crash in one game is
+`combo`, `power`, `malus`, `crash`, `move`, `launch`, `hit`, `bounce`, `burst`,
+`toggle`, `card`, `miss`, `warn`, `world`, `goal`, `defeat`), and since a crash in one game is
 not a crash in another, each holds named VARIANTS (`crash/explosion`,
 `crash/glass`) where a shell role holds one, `default`. A game maps a key to
 ONE variant from its `manifest.json` — `"sfx": { "crash": "crash/explosion" }`,
@@ -1461,9 +1471,10 @@ game's code keeps `Sound.clip("crash")`, its clip leaves `ASSETS.sounds`, and
 the kit page says which game plays each variant and will not rename or drop
 one a game plays. **The takes inside a variant are interchangeable** — the
 engine alternates them so a sound heard twenty times does not repeat — and
-never a choice: a different sound is a different variant. A game moves onto the kit one at a time, by
-decision, never in a batch (`triverse` is the first), and keeps as clips the
-signature sounds no role says.
+never a choice: a different sound is a different variant. **Every key of every
+game is mapped to a role** — each variant cut to the file and length its clip
+had — save echomaze's `map`, an echo train built by hand that no take can
+hold; the events bench's header counts what is still *without a role*.
 
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one

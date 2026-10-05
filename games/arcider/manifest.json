@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.20",
+  "version": "1.10.23",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -54,6 +54,15 @@
       "sticker20": "arcider-sticker-18",
       "sticker24": "arcider-sticker-21"
     }
+  },
+  "sfx": {
+    "batt": "pickup/lasersmall",
+    "boost": "power/uiclose",
+    "crash": "crash/explosioncrunch",
+    "scrape": "crash/impactmetalscifi",
+    "ramp": "launch/phaserup",
+    "land": "bounce/impactmetalheavy",
+    "warn": "warn/errorui03"
   },
   "copy": {
     "fr": {

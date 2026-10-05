@@ -383,7 +383,10 @@
       gain: [980, 0.12], buy: [900, 0.12], draw: [380, 0.08], reward: [1180, 0.2],
       win: [660, 0.2], fail: [200, 0.45],
       pickup: [880, 0.08], bonus: [1180, 0.2], combo: [990, 0.14], power: [520, 0.25],
-      malus: [260, 0.2], crash: [120, 0.35], move: [600, 0.06]
+      malus: [260, 0.2], crash: [120, 0.35], move: [600, 0.06],
+      launch: [700, 0.08], hit: [820, 0.06], bounce: [300, 0.05], burst: [1000, 0.12],
+      toggle: [560, 0.04], card: [480, 0.05], miss: [240, 0.15], warn: [330, 0.2],
+      world: [180, 0.25], goal: [1320, 0.3], defeat: [160, 0.5]
     };
     var lastTake = {}, door = null, doorTimer = null;
     function shoot(id, vol, rate) {

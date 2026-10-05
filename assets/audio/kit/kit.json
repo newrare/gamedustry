@@ -180,6 +180,24 @@
           "takes": [
             { "file": "ui-glass-02", "start": 0, "length": 0.12 }
           ]
+        },
+        "lasersmall": {
+          "jitter": 0,
+          "takes": [
+            { "file": "laser-small-01", "start": 0, "length": 0.236 }
+          ]
+        },
+        "uipluck": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-pluck-01", "start": 0, "length": 0.1 }
+          ]
+        },
+        "marimbaplink": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-plink-01", "start": 0, "length": 0.36 }
+          ]
         }
       }
     },
@@ -192,17 +210,137 @@
           "takes": [
             { "file": "powerup-04", "start": 0, "length": 0.55 }
           ]
+        },
+        "glockchord": {
+          "jitter": 0,
+          "takes": [
+            { "file": "glock-chord-01", "start": 0, "length": 0.57 }
+          ]
+        },
+        "uiselect": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-select-06", "start": 0, "length": 0.43 }
+          ]
+        },
+        "glockping": {
+          "jitter": 0,
+          "takes": [
+            { "file": "glock-ping-02", "start": 0, "length": 0.43 }
+          ]
+        },
+        "coinshandle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "coins-handle-02", "start": 0, "length": 0.338 }
+          ]
+        },
+        "powerup06": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-06", "start": 0, "length": 0.441 }
+          ]
+        },
+        "harpsuccess": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-success-01", "start": 0, "length": 1.62 }
+          ]
+        },
+        "harprollup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-roll-up-01", "start": 0, "length": 1.62 }
+          ]
+        },
+        "jinglehit15": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-hit-15", "start": 0, "length": 0.417 }
+          ]
+        },
+        "whistlerise": {
+          "jitter": 0,
+          "takes": [
+            { "file": "whistle-rise-01", "start": 0, "length": 0.32 }
+          ]
+        },
+        "jinglehit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-hit-04", "start": 0, "length": 0.746 }
+          ]
+        },
+        "harprunup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-run-up-01", "start": 0, "length": 1.51 }
+          ]
         }
       }
     },
     "combo": {
       "group": "game",
-      "what": "A combo or a streak crosses a step",
+      "what": "A combo, a streak or a climb crosses a step",
       "variants": {
         "tone": {
           "jitter": 0,
           "takes": [
             { "file": "tone-triple-01", "start": 0, "length": 0.5 }
+          ]
+        },
+        "uiscrolllong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-scroll-05", "start": 0, "length": 0.97 }
+          ]
+        },
+        "harprunuplong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-run-up-01", "start": 0, "length": 1.4 }
+          ]
+        },
+        "harprunupshort": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-run-up-01", "start": 0, "length": 0.75 }
+          ]
+        },
+        "uiscroll": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-scroll-05", "start": 0, "length": 0.68 }
+          ]
+        },
+        "jinglepizzicato": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-pizzicato-13", "start": 0, "length": 0.993 }
+          ]
+        },
+        "harprunup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-run-up-01", "start": 0, "length": 1.11 }
+          ]
+        },
+        "glocktwotone": {
+          "jitter": 0,
+          "takes": [
+            { "file": "glock-two-tone-01", "start": 0, "length": 0.36 }
+          ]
+        },
+        "jinglehit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-hit-12", "start": 0, "length": 0.72 }
+          ]
+        },
+        "glockglissandoup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "glock-glissando-up-01", "start": 0, "length": 2.12 }
           ]
         }
       }
@@ -216,6 +354,66 @@
           "takes": [
             { "file": "forcefield-03", "start": 0, "length": 0.45 }
           ]
+        },
+        "uiclose": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-close-01", "start": 0, "length": 0.148 }
+          ]
+        },
+        "powerup04": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-04", "start": 0, "length": 0.546 }
+          ]
+        },
+        "loopthruster": {
+          "jitter": 0,
+          "takes": [
+            { "file": "loop-thruster-02", "start": 0, "length": 0.61 }
+          ]
+        },
+        "forcefield02": {
+          "jitter": 0,
+          "takes": [
+            { "file": "forcefield-02", "start": 0, "length": 0.72 }
+          ]
+        },
+        "powerup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-01", "start": 0, "length": 0.72 }
+          ]
+        },
+        "whistlerise": {
+          "jitter": 0,
+          "takes": [
+            { "file": "whistle-rise-01", "start": 0, "length": 0.36 }
+          ]
+        },
+        "impactglasslight": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-glass-light-01", "start": 0, "length": 0.21 }
+          ]
+        },
+        "powerup05": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-05", "start": 0, "length": 0.43 }
+          ]
+        },
+        "vibearpeggio": {
+          "jitter": 0,
+          "takes": [
+            { "file": "vibe-arpeggio-01", "start": 0, "length": 1.4 }
+          ]
+        },
+        "powerup02": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-02", "start": 0, "length": 0.46 }
+          ]
         }
       }
     },
@@ -227,6 +425,36 @@
           "jitter": 0.02,
           "takes": [
             { "file": "phaser-down-02", "start": 0, "length": 0.31 }
+          ]
+        },
+        "impactmining": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-mining-04", "start": 0, "length": 0.992 }
+          ]
+        },
+        "slime": {
+          "jitter": 0,
+          "takes": [
+            { "file": "slime-01", "start": 0, "length": 0.43 }
+          ]
+        },
+        "uiminimize": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-minimize-03", "start": 0, "length": 0.21 }
+          ]
+        },
+        "errorui": {
+          "jitter": 0,
+          "takes": [
+            { "file": "error-ui-03", "start": 0, "length": 0.46 }
+          ]
+        },
+        "chipcollide": {
+          "jitter": 0,
+          "takes": [
+            { "file": "chip-collide-01", "start": 0, "length": 0.256 }
           ]
         }
       }
@@ -241,10 +469,70 @@
             { "file": "explosion-crunch-02", "start": 0, "length": 0.7 }
           ]
         },
-        "scratch": {
-          "jitter": 0.03,
+        "explosioncrunch": {
+          "jitter": 0,
           "takes": [
-            { "file": "ui-scratch-01", "start": 0, "length": 0.14 }
+            { "file": "explosion-crunch-03", "start": 0, "length": 0.75 }
+          ]
+        },
+        "impactmetalscifi": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-scifi-05", "start": 0, "length": 0.36 }
+          ]
+        },
+        "jinglehit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-hit-06", "start": 0, "length": 0.613 }
+          ]
+        },
+        "impactglassheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-glass-heavy-02", "start": 0, "length": 0.25 }
+          ]
+        },
+        "impactglasslight": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-glass-light-02", "start": 0, "length": 0.207 }
+          ]
+        },
+        "slime": {
+          "jitter": 0,
+          "takes": [
+            { "file": "slime-02", "start": 0, "length": 1.11 }
+          ]
+        },
+        "impactmetalheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-heavy-02", "start": 0, "length": 0.356 }
+          ]
+        },
+        "marimbaerror": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-error-01", "start": 0, "length": 0.9 }
+          ]
+        },
+        "dicethrowsingle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "dice-throw-single-04", "start": 0, "length": 0.471 }
+          ]
+        },
+        "impactwoodheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-wood-heavy-03", "start": 0, "length": 0.31 }
+          ]
+        },
+        "electrichit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "electric-hit-01", "start": 0, "length": 1.33 }
           ]
         }
       }
@@ -257,6 +545,528 @@
           "jitter": 0.02,
           "takes": [
             { "file": "ui-scratch-01", "start": 0, "length": 0.14 }
+          ]
+        },
+        "uiscratch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-scratch-03", "start": 0, "length": 0.123 }
+          ]
+        }
+      }
+    },
+    "launch": {
+      "group": "game",
+      "what": "Something leaves the player's hand: a shot, a throw, a jump",
+      "variants": {
+        "phaserup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "phaser-up-07", "start": 0, "length": 0.363 }
+          ]
+        },
+        "metalclank": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-clank-09", "start": 0, "length": 0.43 }
+          ]
+        },
+        "metalclanklong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-clank-09", "start": 0, "length": 0.57 }
+          ]
+        },
+        "whistlerise": {
+          "jitter": 0,
+          "takes": [
+            { "file": "whistle-rise-01", "start": 0, "length": 0.32 }
+          ]
+        },
+        "laserlarge": {
+          "jitter": 0,
+          "takes": [
+            { "file": "laser-large-01", "start": 0, "length": 0.46 }
+          ]
+        },
+        "chiphandle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "chip-handle-04", "start": 0, "length": 0.356 }
+          ]
+        }
+      }
+    },
+    "hit": {
+      "group": "game",
+      "what": "A contact that scores: a brick, a peg, a target struck, pitched up the chain",
+      "variants": {
+        "itemmisc": {
+          "jitter": 0,
+          "takes": [
+            { "file": "item-misc-02", "start": 0, "length": 0.28 }
+          ]
+        },
+        "marimbaplink": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-plink-01", "start": 0, "length": 0.46 }
+          ]
+        },
+        "impactmetallight": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-light-05", "start": 0, "length": 0.18 }
+          ]
+        },
+        "phaserdown": {
+          "jitter": 0,
+          "takes": [
+            { "file": "phaser-down-02", "start": 0, "length": 0.311 }
+          ]
+        },
+        "impactslam": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-slam-04", "start": 0, "length": 0.302 }
+          ]
+        },
+        "impactmetalmedium": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-medium-04", "start": 0, "length": 0.25 }
+          ]
+        }
+      }
+    },
+    "bounce": {
+      "group": "game",
+      "what": "A contact that scores nothing: a wall, the ground, a rebound",
+      "variants": {
+        "impactmetalheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-heavy-02", "start": 0, "length": 0.356 }
+          ]
+        },
+        "dicethrowsingle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "dice-throw-single-04", "start": 0, "length": 0.32 }
+          ]
+        },
+        "clickswitch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "click-switch-03", "start": 0, "length": 0.18 }
+          ]
+        },
+        "impactsoftmedium": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-soft-medium-01", "start": 0, "length": 0.115 }
+          ]
+        },
+        "impactmining": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-mining-03", "start": 0, "length": 0.36 }
+          ]
+        },
+        "impactmetalscifi": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-metal-scifi-04", "start": 0, "length": 0.36 }
+          ]
+        },
+        "impactplateheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-plate-heavy-02", "start": 0, "length": 0.32 }
+          ]
+        },
+        "marimbaplink": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-plink-01", "start": 0, "length": 0.43 }
+          ]
+        },
+        "itemmisc": {
+          "jitter": 0,
+          "takes": [
+            { "file": "item-misc-02", "start": 0, "length": 0.32 }
+          ]
+        },
+        "dicethrowsinglelong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "dice-throw-single-04", "start": 0, "length": 0.471 }
+          ]
+        }
+      }
+    },
+    "burst": {
+      "group": "game",
+      "what": "Something breaks open and pays: a cluster popped, a bomb, a line cleared",
+      "variants": {
+        "popplop": {
+          "jitter": 0,
+          "takes": [
+            { "file": "pop-plop-01", "start": 0, "length": 0.14 }
+          ]
+        },
+        "vibearpeggiolong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "vibe-arpeggio-01", "start": 0, "length": 1.22 }
+          ]
+        },
+        "vibearpeggio": {
+          "jitter": 0,
+          "takes": [
+            { "file": "vibe-arpeggio-01", "start": 0, "length": 0.57 }
+          ]
+        },
+        "whistlerise": {
+          "jitter": 0,
+          "takes": [
+            { "file": "whistle-rise-01", "start": 0, "length": 0.43 }
+          ]
+        },
+        "explosioncrunch02": {
+          "jitter": 0,
+          "takes": [
+            { "file": "explosion-crunch-02", "start": 0, "length": 0.72 }
+          ]
+        },
+        "explosioncrunch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.61 }
+          ]
+        },
+        "impactglassheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-glass-heavy-02", "start": 0, "length": 0.429 }
+          ]
+        },
+        "popplop02": {
+          "jitter": 0,
+          "takes": [
+            { "file": "pop-plop-02", "start": 0, "length": 0.21 }
+          ]
+        },
+        "hitthud": {
+          "jitter": 0,
+          "takes": [
+            { "file": "hit-thud-03", "start": 0, "length": 0.39 }
+          ]
+        }
+      }
+    },
+    "toggle": {
+      "group": "game",
+      "what": "A mechanism turns: a switch, a gate, a detent, a portal",
+      "variants": {
+        "metalclicklong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-click-01", "start": 0, "length": 0.32 }
+          ]
+        },
+        "metalclick": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-click-01", "start": 0, "length": 0.18 }
+          ]
+        },
+        "metallatch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-latch-01", "start": 0, "length": 0.21 }
+          ]
+        },
+        "coinshandle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "coins-handle-02", "start": 0, "length": 0.338 }
+          ]
+        },
+        "phaserjump": {
+          "jitter": 0,
+          "takes": [
+            { "file": "phaser-jump-02", "start": 0, "length": 0.389 }
+          ]
+        },
+        "clickswitch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "click-switch-03", "start": 0, "length": 0.18 }
+          ]
+        }
+      }
+    },
+    "card": {
+      "group": "game",
+      "what": "A card dealt, picked up, placed, kept or turned over",
+      "variants": {
+        "cardplace": {
+          "jitter": 0,
+          "takes": [
+            { "file": "card-place-02", "start": 0, "length": 0.457 }
+          ]
+        },
+        "cardplace03": {
+          "jitter": 0,
+          "takes": [
+            { "file": "card-place-03", "start": 0.33, "length": 0.3 }
+          ]
+        },
+        "uiselect": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-select-06", "start": 0, "length": 0.43 }
+          ]
+        },
+        "uirollover": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-rollover-06", "start": 0, "length": 0.172 }
+          ]
+        },
+        "cardfan": {
+          "jitter": 0,
+          "takes": [
+            { "file": "card-fan-01", "start": 0, "length": 0.25 }
+          ]
+        },
+        "chipstack": {
+          "jitter": 0,
+          "takes": [
+            { "file": "chip-stack-02", "start": 0, "length": 0.17 }
+          ]
+        },
+        "bookflip": {
+          "jitter": 0,
+          "takes": [
+            { "file": "book-flip-03", "start": 0, "length": 0.231 }
+          ]
+        }
+      }
+    },
+    "miss": {
+      "group": "game",
+      "what": "An action that came to nothing: a shot wasted, a wave into air",
+      "variants": {
+        "dicethrowsingle": {
+          "jitter": 0,
+          "takes": [
+            { "file": "dice-throw-single-04", "start": 0, "length": 0.28 }
+          ]
+        },
+        "marimbaerror": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-error-01", "start": 0, "length": 1.22 }
+          ]
+        },
+        "laserlarge": {
+          "jitter": 0,
+          "takes": [
+            { "file": "laser-large-02", "start": 0, "length": 0.72 }
+          ]
+        },
+        "uirollover": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-rollover-06", "start": 0, "length": 0.172 }
+          ]
+        },
+        "marimbaerror02": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-error-02", "start": 0, "length": 0.72 }
+          ]
+        }
+      }
+    },
+    "warn": {
+      "group": "game",
+      "what": "Something is running out: the clock, the battery, the last cards",
+      "variants": {
+        "errorui03": {
+          "jitter": 0,
+          "takes": [
+            { "file": "error-ui-03", "start": 0, "length": 0.5 }
+          ]
+        },
+        "clickswitch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "click-switch-22", "start": 0, "length": 0.14 }
+          ]
+        },
+        "marimbataps": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-taps-01", "start": 0, "length": 0.82 }
+          ]
+        },
+        "marimbaerror": {
+          "jitter": 0,
+          "takes": [
+            { "file": "marimba-error-03", "start": 0, "length": 0.57 }
+          ]
+        },
+        "errorui": {
+          "jitter": 0,
+          "takes": [
+            { "file": "error-ui-01", "start": 0, "length": 0.162 }
+          ]
+        }
+      }
+    },
+    "world": {
+      "group": "game",
+      "what": "The world acts on its own: a trap, a geyser, a bolt, the lights going out",
+      "variants": {
+        "uirollover": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-rollover-06", "start": 0, "length": 0.172 }
+          ]
+        },
+        "laserlarge": {
+          "jitter": 0,
+          "takes": [
+            { "file": "laser-large-02", "start": 0, "length": 0.72 }
+          ]
+        },
+        "clickswitch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "click-switch-03", "start": 0, "length": 0.18 }
+          ]
+        },
+        "forcefield": {
+          "jitter": 0,
+          "takes": [
+            { "file": "forcefield-01", "start": 0, "length": 0.954 }
+          ]
+        },
+        "electricpowerdown": {
+          "jitter": 0,
+          "takes": [
+            { "file": "electric-power-down-01", "start": 0, "length": 1.51 }
+          ]
+        },
+        "glockping": {
+          "jitter": 0,
+          "takes": [
+            { "file": "glock-ping-01", "start": 0, "length": 0.46 }
+          ]
+        },
+        "stepsnow": {
+          "jitter": 0,
+          "takes": [
+            { "file": "step-snow-03", "start": 0, "length": 0.36 }
+          ]
+        },
+        "explosioncrunch": {
+          "jitter": 0,
+          "takes": [
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.57 }
+          ]
+        },
+        "explosionlow": {
+          "jitter": 0,
+          "takes": [
+            { "file": "explosion-low-02", "start": 0, "length": 0.72 }
+          ]
+        },
+        "impactpunchheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-punch-heavy-02", "start": 0, "length": 0.5 }
+          ]
+        },
+        "explosioncrunchlong": {
+          "jitter": 0,
+          "takes": [
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.777 }
+          ]
+        },
+        "cloth": {
+          "jitter": 0,
+          "takes": [
+            { "file": "cloth-01", "start": 0, "length": 0.661 }
+          ]
+        }
+      }
+    },
+    "goal": {
+      "group": "game",
+      "what": "The objective reached: the board cleared, the way out, the flag taken",
+      "variants": {
+        "harprollup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "harp-roll-up-01", "start": 0, "length": 1.33 }
+          ]
+        },
+        "jinglepizzicato08": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-pizzicato-08", "start": 0, "length": 1.324 }
+          ]
+        },
+        "jinglepizzicato": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-pizzicato-05", "start": 0, "length": 0.564 }
+          ]
+        },
+        "impactbellheavy": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-bell-heavy-03", "start": 0, "length": 0.57 }
+          ]
+        },
+        "jinglesteel": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-steel-01", "start": 0, "length": 0.9 }
+          ]
+        }
+      }
+    },
+    "defeat": {
+      "group": "game",
+      "what": "The round is lost: out of pulses, the army spent, the fatal bite",
+      "variants": {
+        "jinglehit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "jingle-hit-06", "start": 0, "length": 0.61 }
+          ]
+        },
+        "metalpot": {
+          "jitter": 0,
+          "takes": [
+            { "file": "metal-pot-01", "start": 0, "length": 0.9 }
+          ]
+        },
+        "electrichit": {
+          "jitter": 0,
+          "takes": [
+            { "file": "electric-hit-01", "start": 0, "length": 1.8 }
+          ]
+        },
+        "electricpowerdown": {
+          "jitter": 0,
+          "takes": [
+            { "file": "electric-power-down-01", "start": 0, "length": 1.65 }
           ]
         }
       }

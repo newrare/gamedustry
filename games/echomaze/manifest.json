@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.10",
+  "version": "1.8.11",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -48,6 +48,17 @@
       "sticker19": "echomaze-sticker-22",
       "sticker20": "echomaze-sticker-24"
     }
+  },
+  "sfx": {
+    "deep": "combo/jinglepizzicato",
+    "shoot": "launch/metalclanklong",
+    "wall": "bounce/dicethrowsingle",
+    "fizzle": "miss/laserlarge",
+    "flap": "world/clickswitch",
+    "power": "world/forcefield",
+    "dark": "world/electricpowerdown",
+    "escape": "goal/jinglepizzicato08",
+    "fail": "defeat/jinglehit"
   },
   "copy": {
     "fr": {

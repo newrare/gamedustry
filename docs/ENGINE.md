@@ -346,15 +346,26 @@ falls back to a synthesized beep. The kit is chosen by ear at `make events` →
 **A game reaches the kit through its manifest, not its code.** The kit holds a
 second group of roles, for GAMEPLAY —
 
-| role     | the moment                                        |
-| -------- | ------------------------------------------------- |
-| `pickup` | a collectible taken, pitched up the chain         |
-| `bonus`  | a rare, valuable pickup                           |
-| `combo`  | a combo or a streak crosses a step                |
-| `power`  | a power-up taken: a multiplier, a shield          |
-| `malus`  | points lost, a chain broken                       |
-| `crash`  | a life lost — and, pitched up, a hit shrugged off |
-| `move`   | the player moves: a lane, a swipe, a flick        |
+| role     | the moment                                                        |
+| -------- | ----------------------------------------------------------------- |
+| `pickup` | a collectible taken, pitched up the chain                         |
+| `bonus`  | a rare, valuable pickup                                           |
+| `combo`  | a combo, a streak or a climb crosses a step                       |
+| `power`  | a power-up taken: a multiplier, a shield                          |
+| `malus`  | points lost, a chain broken                                       |
+| `crash`  | a life lost — and, pitched up, a hit shrugged off                 |
+| `move`   | the player moves: a lane, a swipe, a flick                        |
+| `launch` | something leaves the player's hand: a shot, a throw, a jump       |
+| `hit`    | a contact that scores: a brick, a peg, a target struck            |
+| `bounce` | a contact that scores nothing: a wall, the ground, a rebound      |
+| `burst`  | something breaks open and pays: a cluster, a bomb, a line         |
+| `toggle` | a mechanism turns: a switch, a gate, a detent, a portal           |
+| `card`   | a card dealt, picked up, placed, kept or turned over              |
+| `miss`   | an action that came to nothing: a shot wasted, a wave into air    |
+| `warn`   | something is running out: the clock, the battery, the last cards  |
+| `world`  | the world acts on its own: a trap, a geyser, the lights going out |
+| `goal`   | the objective reached: the board cleared, the way out, the flag   |
+| `defeat` | the round is lost: out of pulses, the army spent                  |
 
 — and a crash in one game is not a crash in another, so a gameplay role holds
 named **variants** (`crash/explosion`, `crash/glass`), each with its own takes
@@ -368,9 +379,10 @@ volume and its pitch do not change. The takes inside a variant are
 interchangeable, alternated so a sound heard twenty times does not repeat; a
 different sound is a different variant, never another take. A mapped key must no longer be embedded in
 `ASSETS.sounds` — the build refuses one that is, since those bytes would never
-play. What no role says stays a clip of the game's own: its signature
-(`games/triverse` keeps its `loop`). Games move onto the kit one at a time;
-`triverse` is the first.
+play. Every key of every game is mapped today, its variant cut to the file and the
+length its clip had; the one clip left is `echomaze`'s `map`, an echo train
+built by hand rather than cut, which no take can hold. The events bench names
+any key still outside the kit in its header (*without a role*).
 
 It plays at **twice the speed it was authored at**: every delay in `EndScreen`
 is the timing the cascade was tuned with and `PACE` (0.5) is what the screen

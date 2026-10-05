@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -46,6 +46,13 @@
       "sticker19": "chainring-sticker-19",
       "sticker20": "chainring-sticker-20"
     }
+  },
+  "sfx": {
+    "perfect": "bonus/uiselect",
+    "chain": "combo/uiscroll",
+    "doom": "warn/marimbataps",
+    "miss": "miss/marimbaerror",
+    "hit": "hit/marimbaplink"
   },
   "copy": {
     "fr": {

@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.7.3",
+  "version": "1.7.8",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -180,6 +180,25 @@
       "trap-peak03": "vipera-trap-peak-03",
       "tree01": "vipera-tree-01"
     }
+  },
+  "sfx": {
+    "orb": "pickup/marimbaplink",
+    "mega": "bonus/whistlerise",
+    "idol": "bonus/jinglehit",
+    "rainbow": "bonus/harprunup",
+    "chain": "combo/uiscroll",
+    "grow": "combo/glockglissandoup",
+    "power": "power/vibearpeggio",
+    "magnet": "power/powerup02",
+    "bite": "crash/electrichit",
+    "turn": "move/uiscratch",
+    "wall": "bounce/dicethrowsinglelong",
+    "erupt": "world/explosionlow",
+    "land": "world/impactpunchheavy",
+    "strike": "world/explosioncrunchlong",
+    "dive": "world/cloth",
+    "death": "defeat/electrichit",
+    "wilt": "defeat/electricpowerdown"
   },
   "copy": {
     "fr": {

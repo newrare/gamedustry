@@ -19,6 +19,12 @@
               assets/audio/sfx/ (ffmpeg, mono 32 kHz / 64 kbps, a 70 ms fade —
               docs/ASSETS.md), with the provenance comment moved with it.
 
+  And deletions, which take what they leave behind with them: a key removed
+  goes with every line that plays it, and a key whose LAST line is removed
+  goes too — its ASSETS.sounds clip, or its `sfx` entry in manifest.json when
+  it plays a role of the house kit — unless the source still names it
+  somewhere else (a table, a computed call), which is reported instead.
+
   Two rules hold the thing together:
 
     - **Only a literal is ever overwritten.** A game writes `Pop.show(style,
@@ -377,6 +383,14 @@ export async function applyEdits(slug, plan) {
   const scanned = scanCalls(src, where);
   const pack = soundPack(src);
   const lib = await sfxFiles();
+  // The keys the manifest hands to the house kit: no clip here, a line all the same.
+  const mfFile = path.join(dir, 'manifest.json');
+  let mapped = {};
+  if (slug !== TEMPLATE) {
+    try { mapped = JSON.parse(await readFile(mfFile, 'utf8')).sfx || {}; } catch {}
+  }
+  const unmap = new Set();
+  const playersOf = (key) => scanned.filter((c) => c.module === 'Sound' && c.soundLiteral && c.sound === key);
 
   const edits = [], applied = [], skipped = [];
   // `applied` is filled after the splice, from where each change landed.
@@ -386,13 +400,14 @@ export async function applyEdits(slug, plan) {
   const gone = new Set();
   for (const key of killClips) {
     const entry = pack.keys.find((k) => k.key === key);
-    const label = `sounds.${key}`;
-    if (!entry) { skipped.push(`${label}: no such clip in ASSETS.sounds`); continue; }
+    const kit = !entry && mapped[key];
+    const label = kit ? `sfx.${key}` : `sounds.${key}`;
+    if (!entry && !kit) { skipped.push(`${label}: no such clip in ASSETS.sounds, nor in the kit mapping`); continue; }
     if (key === 'music') { skipped.push(`${label}: the bed is not an sfx — remove it by hand`); continue; }
 
     // Every line that plays it has to go with it, or the game calls a clip it
     // no longer ships — which Sound.clip answers with silence, not an error.
-    const players = scanned.filter((c) => c.module === 'Sound' && c.soundLiteral && c.sound === key);
+    const players = playersOf(key);
     const spans = [];
     let stuck = false;
     for (const c of players) {
@@ -402,11 +417,17 @@ export async function applyEdits(slug, plan) {
     }
     if (stuck) { skipped.push(`${label}: left in place — one of the lines that play it cannot be removed on its own`); continue; }
 
-    const prop = soundEntrySpan(src, entry);
-    if (!prop) { skipped.push(`${label}: cannot read the ASSETS.sounds entry — remove it by hand`); continue; }
-    edits.push({ start: prop.start, end: prop.end, text: '', what: label, applied: { what: label, value: 'removed from ASSETS.sounds', line: null, quiet: true } });
-    const note = pack.noteSpans[key];
-    if (note) edits.push({ start: note.lineStart, end: note.lineEnd, text: '', what: `note for ${key}` });
+    if (kit) {
+      // A role of the house kit: the manifest entry goes, written after the splice.
+      unmap.add(key);
+      applied.push({ what: label, value: `removed — it played the kit's ${kit}`, line: null });
+    } else {
+      const prop = soundEntrySpan(src, entry);
+      if (!prop) { skipped.push(`${label}: cannot read the ASSETS.sounds entry — remove it by hand`); continue; }
+      edits.push({ start: prop.start, end: prop.end, text: '', what: label, applied: { what: label, value: 'removed from ASSETS.sounds', line: null, quiet: true } });
+      const note = pack.noteSpans[key];
+      if (note) edits.push({ start: note.lineStart, end: note.lineEnd, text: '', what: `note for ${key}` });
+    }
     for (const p of spans) {
       edits.push({ start: p.span.start, end: p.span.end, text: '', what: `${p.call.name}:${p.call.line}`,
         applied: { what: `${p.call.name}:${p.call.line}`, value: `removed — it played ${key}`, line: p.call.line, quiet: true } });
@@ -476,16 +497,56 @@ export async function applyEdits(slug, plan) {
     noteEdit(src, pack, key, edit.file, edits);
   }
 
-  if (!edits.length) return { slug, applied, skipped, written: false, version: null };
+  /* A key whose every line this apply removes is a key nobody plays any more:
+     it goes with its last line, or every build ships a sound for nothing. */
+  const orphans = [];
+  for (const key of new Set([...pack.keys.map((k) => k.key), ...Object.keys(mapped)])) {
+    if (key === 'music' || killClips.includes(key)) continue;
+    const players = playersOf(key);
+    if (players.length && players.every((c) => gone.has(c.line + '|' + c.name))) orphans.push(key);
+  }
 
-  const out = splice(src, edits, skipped);
+  if (!edits.length && !unmap.size) return { slug, applied, skipped, written: false, version: null, gone: [] };
+
+  let out = edits.length ? splice(src, edits, skipped) : src;
   for (const e of edits) {
     if (!e.applied || e.after === undefined) continue;
     applied.push({ ...e.applied, after: e.applied.quiet ? null : e.after, at: e.newLine });
   }
+
+  // The orphans, read off the source as it now reads: named nowhere else, they go.
+  if (orphans.length) {
+    const pack2 = soundPack(out), more = [];
+    for (const key of orphans) {
+      const entry = pack2.keys.find((k) => k.key === key);
+      const prop = entry && soundEntrySpan(out, entry);
+      const rest = prop ? out.slice(0, prop.start) + out.slice(prop.end) : out;
+      if (new RegExp(`(["'])${key}\\1`).test(rest)) {
+        skipped.push(`${key}: no line plays it any more, but the source still names it — left in place`);
+        continue;
+      }
+      if (prop) {
+        more.push({ start: prop.start, end: prop.end, text: '', what: `sounds.${key}` });
+        const note = pack2.noteSpans[key];
+        if (note) more.push({ start: note.lineStart, end: note.lineEnd, text: '', what: `note for ${key}` });
+        applied.push({ what: `sounds.${key}`, value: 'removed — no line plays it any more', line: null });
+      } else if (mapped[key]) {
+        unmap.add(key);
+        applied.push({ what: `sfx.${key}`, value: `removed — no line plays the kit's ${mapped[key]} any more`, line: null });
+      }
+    }
+    if (more.length) out = splice(out, more, skipped);
+  }
+
   let version = null;
   if (!dry) {
     await writeFile(file, out);
+    if (unmap.size) {
+      const m = JSON.parse(await readFile(mfFile, 'utf8'));
+      for (const key of unmap) delete m.sfx[key];
+      if (!Object.keys(m.sfx).length) delete m.sfx;
+      await writeFile(mfFile, JSON.stringify(m, null, 2) + '\n');
+    }
     // The template has no manifest and no version: it ships nowhere.
     if (bump && slug !== TEMPLATE) {
       const mf = path.join(dir, 'manifest.json');
@@ -500,7 +561,8 @@ export async function applyEdits(slug, plan) {
       } catch { skipped.push('manifest.json: version not moved'); }
     }
   }
-  return { slug, applied, skipped, written: !dry, version, diff: out.length - src.length };
+  // `gone`: the calls this apply removed, as `line|name` of the source it read.
+  return { slug, applied, skipped, written: !dry, version, diff: out.length - src.length, gone: [...gone] };
 }
 
 /* ── CLI ─────────────────────────────────────────────────────────────────── */

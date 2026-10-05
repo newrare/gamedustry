@@ -507,8 +507,19 @@ ______________________________________________________________________
   `combo/chime`, `power/forcefield`, `malus/phaser`, `crash/explosion`,
   `move/scratch`, seeded with the clips it had), and only its `loop` stays a
   clip. A variant is per game (a crash is not the same crash everywhere); the
-  takes inside one are interchangeable. `crash/scratch` exists and nothing
-  plays it yet. Still open after that: a `Notify.say` plays no sound of its own.
+  takes inside one are interchangeable. **2026-10-05: every game is on the kit.** The gameplay group
+  grew from seven roles to eighteen (`launch`, `hit`, `bounce`, `burst`,
+  `toggle`, `card`, `miss`, `warn`, `world`, `goal`, `defeat` added), and the
+  140 keys the fourteen other games played as clips are mapped to variants cut
+  to the file and length each clip had (`jitter` 0, one take). Only echomaze's
+  hand-built `map` train stays a clip — the bench counts it *without a role*.
+  Open: **review each mapping by ear** at `make events` (sound tab, the kit
+  selector of each card) — the levelling moves most game sounds 3–8 dB down
+  against their old clips, louder for a few quiet ones (stratideck `pick`,
+  vipera `charge`, pawko / gearball `coins-handle-02`); slipdeck's `deal` now
+  starts at 0.33 s, on the card, where the CC0 re-cut had left it 0.33 s of
+  near silence. Then enrich the variants worth it with a second or third take
+  at `/kit`. Still open after that: a `Notify.say` plays no sound of its own.
 
 - [ ] CODE — **check the sfx and replace what falls short, all fifteen games.** One clip per event out of
   `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships

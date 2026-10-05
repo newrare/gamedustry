@@ -144,6 +144,8 @@ function statusOf(g, marks) {
   return { checked, total, view, sound, done: total > 0 && checked === total };
 }
 
+const markLabel = (c) => `${c.name} ${c.inherited ? c.where.split('/').pop() + ':' : 'L'}${c.line}${c.fn ? ' ' + c.fn + '()' : ''}`;
+
 let checking = Promise.resolve();
 async function check(slug, body) {
   const g = await scanGame(slug);
@@ -157,7 +159,7 @@ async function check(slug, body) {
   const at = new Date().toISOString().slice(0, 10);
   for (const id of ids) {
     const c = byId.get(id);
-    if (body.on) mine[id] = { at, what: `${c.name} ${c.inherited ? c.where.split('/').pop() + ':' : 'L'}${c.line}${c.fn ? ' ' + c.fn + '()' : ''}` };
+    if (body.on) mine[id] = { at, what: markLabel(c) };
     else delete mine[id];
   }
   review[slug] = mine;
@@ -241,6 +243,67 @@ function dropClip(slug, file) {
   });
   clipping = run.catch(() => {});
   return run.catch((e) => ({ error: String(e.message || e) }));
+}
+
+/* An apply rewrites calls, and a call's id is its source: every line it
+   touched — a volume, a style, the kit variant its key plays — would come
+   back with a new id and its mark and its clip left behind, so the lines
+   that were checked before the apply would read unchecked after it. The
+   apply is the bench's own write, made by someone who heard the line, so
+   what it changes keeps its mark: each call of the source as it was is
+   paired with the call that replaced it — by file, function and name, in
+   order, the lines it removed left out — and the mark and the recorded clip
+   move to the new id. A removed line takes its mark and its clip with it. */
+async function carryMarks(slug, before, after, goneList) {
+  const gone = new Set(goneList || []);
+  const isGone = (c) => gone.has(c.line + '|' + c.name);
+  const groups = (calls, skip) => {
+    const m = new Map();
+    for (const c of calls) {
+      if (!c.checkId || c.inherited || (skip && skip(c))) continue;
+      const k = c.where + '\n' + c.name + '\n' + (c.fn || '');
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(c);
+    }
+    return m;
+  };
+  const olds = groups(before.calls, isGone), news = groups(after.calls);
+  const moved = new Map();
+  for (const [k, list] of olds) {
+    const now = news.get(k) || [];
+    if (list.length === now.length) { list.forEach((o, i) => moved.set(o.checkId, now[i])); continue; }
+    // A count that moved some other way: only the calls whose source is unchanged pair up.
+    const used = new Set();
+    for (const o of list) {
+      const n = now.find((x) => !used.has(x) && x.source === o.source);
+      if (n) { used.add(n); moved.set(o.checkId, n); }
+    }
+  }
+  const dropped = new Set(before.calls.filter((c) => c.checkId && isGone(c)).map((c) => c.checkId));
+
+  const review = await readReview();
+  const mine = review[slug] || {}, next = {};
+  let carried = 0, cleared = 0;
+  for (const [id, m] of Object.entries(mine)) {
+    if (dropped.has(id)) { cleared++; continue; }
+    const n = moved.get(id);
+    if (n && n.checkId !== id) { next[n.checkId] = { ...m, what: markLabel(n) }; carried++; }
+    else next[id] = m;
+  }
+  review[slug] = next;
+  await writeReview(review);
+
+  await (clipping = clipping.then(async () => {
+    const idx = await readClips(slug);
+    let touched = false;
+    for (const [id, f] of Object.entries(idx.byId)) {
+      if (dropped.has(id)) { delete idx.byId[id]; touched = true; continue; }
+      const n = moved.get(id);
+      if (n && n.checkId !== id && !idx.byId[n.checkId]) { idx.byId[n.checkId] = f; delete idx.byId[id]; touched = true; }
+    }
+    if (touched) { await pruneClips(slug, idx); await writeClips(slug, idx); }
+  }).catch(() => {}));
+  return { carried, cleared };
 }
 
 async function page(res, file) {
@@ -408,8 +471,10 @@ export async function handle(req, res, p, url) {
     const plan = await readJson(req, 1e6);
     if (!(await units()).includes(plan && plan.game)) return notFound(res, 'game ' + (plan && plan.game));
     const stamp = new Date().toTimeString().slice(0, 8);
-    let out;
+    let out, before;
     try {
+      clearCache();
+      before = await scanGame(plan.game);
       out = await applyEdits(plan.game, plan);
       /* A key handed to the kit (the clip card's kit selector): the manifest
          maps it, its clip leaves game.js — after the edits above, which read
@@ -434,6 +499,15 @@ export async function handle(req, res, p, url) {
     }
     catch (e) { return json(res, 200, { error: String(e.message || e) }); }
     clearCache();
+    if (out.written) {
+      const run = checking.then(async () => carryMarks(plan.game, before, await scanGame(plan.game), out.gone));
+      checking = run.catch(() => {});
+      try {
+        const kept = await run;
+        if (kept.carried) out.applied.push({ what: 'checked', value: `${kept.carried} mark${kept.carried > 1 ? 's' : ''} kept on the lines this apply rewrote` });
+        if (kept.cleared) out.applied.push({ what: 'checked', value: `${kept.cleared} mark${kept.cleared > 1 ? 's' : ''} gone with the lines removed` });
+      } catch (e) { out.skipped.push('checked marks not carried — ' + String(e.message || e)); }
+    }
     for (const a of out.applied) console.log(`  ${stamp}  ✓ ${a.what} → ${a.value}`);
     for (const w of out.skipped) console.log(`  ${stamp}  ! ${w}`);
     return json(res, 200, out);

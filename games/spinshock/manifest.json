@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.4.10",
+  "version": "1.4.11",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -47,6 +47,15 @@
       "sticker19": "spinshock-sticker-13",
       "sticker20": "spinshock-sticker-02"
     }
+  },
+  "sfx": {
+    "perfect": "bonus/uiselect",
+    "chain": "combo/uiscrolllong",
+    "crash": "crash/dicethrowsingle",
+    "bump": "bounce/itemmisc",
+    "warn": "warn/marimbataps",
+    "miss": "miss/marimbaerror02",
+    "shock": "hit/impactslam"
   },
   "copy": {
     "fr": {

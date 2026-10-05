@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "2.6.8",
+  "version": "2.6.9",
   "tagline": "One tap switches the buttons on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
@@ -176,6 +176,23 @@
       "sticker19": "bouncetry-sticker-19",
       "sticker20": "bouncetry-sticker-20"
     }
+  },
+  "sfx": {
+    "gold": "bonus/glockchord",
+    "chain": "combo/harprunupshort",
+    "big": "power/powerup04",
+    "fire": "power/loopthruster",
+    "magnet": "power/forcefield02",
+    "burn": "crash/jinglehit",
+    "shoot": "launch/metalclank",
+    "wall": "bounce/dicethrowsingle",
+    "steel": "bounce/clickswitch",
+    "tick": "warn/clickswitch",
+    "blast": "burst/vibearpeggio",
+    "line": "burst/whistlerise",
+    "brick": "hit/itemmisc",
+    "clear": "goal/harprollup",
+    "swap": "toggle/metalclicklong"
   },
   "copy": {
     "fr": {

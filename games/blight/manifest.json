@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.11",
+  "version": "1.9.12",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -48,6 +48,16 @@
       "sticker19": "blight-sticker-20",
       "sticker20": "blight-sticker-21"
     }
+  },
+  "sfx": {
+    "drop": "combo/uiscrolllong",
+    "cheer": "combo/harprunuplong",
+    "shoot": "launch/metalclank",
+    "stick": "miss/dicethrowsingle",
+    "pop": "burst/popplop",
+    "blast": "burst/vibearpeggiolong",
+    "spread": "world/uirollover",
+    "press": "world/laserlarge"
   },
   "copy": {
     "fr": {

@@ -1133,13 +1133,15 @@ assets/audio/kit/<role>-<n>.mp3  the cuts, committed, levelled to one loudness
   correcting the file rather than mixing the moment.
 
 A game's own events can join the kit too: the kit's GAMEPLAY roles (`pickup`,
-`bonus`, `combo`, `power`, `malus`, `crash`, `move`) hold named VARIANTS
+`bonus`, `combo`, `power`, `malus`, `crash`, `move`, `launch`, `hit`, `bounce`,
+`burst`, `toggle`, `card`, `miss`, `warn`, `world`, `goal`, `defeat`) hold named VARIANTS
 (`crash/explosion`, `crash/glass`), because a crash in one game is not a crash
 in another, and `manifest.json` maps a key to one of them —
 `"sfx": { "crash": "crash/explosion" }`. The events bench's kit selector, on
 the key's clip card, writes that and takes the clip out of `game.js`; the kit
-page creates, renames and fills the variants and says which game plays each. The game's code does not change, and a signature sound no role
-says stays a clip. See [ENGINE.md](ENGINE.md#soundui--the-house-sound-kit) for
+page creates, renames and fills the variants and says which game plays each. The game's code does not change. Every game's keys are mapped
+today; a sound no take can hold (echomaze's hand-built `map` train) stays a
+clip, and the bench counts it *without a role*. See [ENGINE.md](ENGINE.md#soundui--the-house-sound-kit) for
 `Sound.ui`, the two tables of roles and the mapping.
 
 ## Size budget

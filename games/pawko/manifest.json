@@ -1,7 +1,7 @@
 {
   "slug": "pawko",
   "title": "Pawko",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "tagline": "Drop waves of balls down a pinboard of pegs and play a card between waves",
   "order": 140,
   "draft": false,
@@ -103,6 +103,27 @@
       "sticker19": "pawko-sticker-19",
       "sticker20": "pawko-sticker-20"
     }
+  },
+  "sfx": {
+    "gate": "bonus/glockping",
+    "lucky": "bonus/coinshandle",
+    "mult": "bonus/powerup06",
+    "fire": "power/whistlerise",
+    "ice": "power/impactglasslight",
+    "zap": "power/powerup05",
+    "bad": "malus/errorui",
+    "spike": "crash/impactmetalheavy",
+    "drop": "launch/chiphandle",
+    "bump": "bounce/impactplateheavy",
+    "out": "miss/uirollover",
+    "boom": "burst/explosioncrunch",
+    "shatter": "burst/impactglassheavy",
+    "split": "burst/popplop02",
+    "hit": "hit/impactmetallight",
+    "arc": "hit/phaserdown",
+    "goal": "goal/jinglepizzicato",
+    "warp": "toggle/phaserjump",
+    "card": "card/cardplace"
   },
   "copy": {
     "fr": {

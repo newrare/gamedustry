@@ -1426,7 +1426,7 @@ function killClip(key, card) {
   countPending();
   const n = card.querySelectorAll(".call").length;
   note(on
-    ? `${key} will be removed from ASSETS.sounds on apply, and so will the ${n} line${n > 1 ? "s" : ""} that play it`
+    ? `${key} will be removed from ${card.querySelector(".kitbtn") ? "the kit mapping (sfx)" : "ASSETS.sounds"} on apply, and so will the ${n} line${n > 1 ? "s" : ""} that play it`
     : "");
 }
 
@@ -1705,8 +1705,14 @@ function kitCard(key, snd, calls, card) {
     `<a class="kitbtn" href="kit#${esc(snd.kit)}" target="_blank" title="this key plays a variant of the house kit — its takes are chosen on the kit page, for every game that maps to it">kit: ${esc(snd.kit)} ↗</a>` +
     kitSelect(key, snd.kit) +
     `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
-    `<span class="acts">` + iconBtn("check", "check", "check every line of this clip at once") + `</span>`;
+    `<span class="acts">` +
+    iconBtn("check", "check", "check every line of this clip at once") +
+    iconBtn("revert", "revert", "put this key back where the source has it") +
+    iconBtn("trash", "trash", "take this key out of the house kit (sfx in manifest.json), and every line of the game that plays it") +
+    `</span>`;
   head.querySelector(".key").onclick = () => copy(key);
+  head.querySelector(".revert").onclick = () => revertClip(key, card);
+  head.querySelector(".trash").onclick = () => killClip(key, card);
   head.querySelector(".check").onclick = () => {
     const ids = calls.map((c) => c.checkId).filter(Boolean);
     toggleCheck(ids, !ids.every(isChecked));
@@ -1861,12 +1867,16 @@ function render() {
   /* A clip nothing plays has no beat, so it has no row — the pill is the only
      place it is still named, and it names it: dead bytes in every build. */
   const dead = d.sounds.filter((x) => !x.music && !x.plays.length).map((x) => x.key);
+  /* A clip the manifest has not handed to a role of the house kit (`sfx`) is
+     the game's own file: the pill names every key still waiting for a role. */
+  const loose = d.sounds.filter((x) => !x.music && !x.kit).map((x) => x.key);
   el("stats").innerHTML =
     `<span><b>${d.counts.pop}</b> callouts</span>` +
     `<span><b>${d.counts.notify}</b> notifications</span>` +
     `<span><b>${d.counts.sound}</b> cues</span>` +
     `<span><b>${d.sounds.length}</b> clips</span>` +
     (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "") +
+    (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
     `<span class="seen-pill seen"></span>` +
     `<span class="checked-pill"></span>` +
     `<button class="hide${state.hideChecked ? " on" : ""}" title="show only what is left to check">Hide checked</button>`;
@@ -2157,11 +2167,19 @@ function loadClips() {
     state.clips = idx && idx.clips ? idx : { clips: {}, byId: {} };
     paintClips();
   });
+  loadOffset();
+}
+
+/* Asked again every time the played frame loads, not only when the game is
+   picked: an offset that failed then (a build half-way through) would leave
+   REC catching nothing for the whole session, and saying nothing about it. */
+function loadOffset() {
+  const slug = state.slug;
   fetch("api/offset?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
     if (slug !== state.slug) return;
     state.offset = o && o.offset != null ? o.offset : null;
-    if (o && o.error && REC.on) note("rec: " + o.error);
-  });
+    if (REC.on && state.offset == null) note("rec: " + ((o && o.error) || "no offset for " + slug) + " — nothing can be caught");
+  }).catch((e) => { if (REC.on) note("rec: api/offset failed — " + e.message); });
 }
 
 function nearEvent(call) {
@@ -2457,6 +2475,7 @@ recFrame.addEventListener("load", () => {
     REC.W = W;
     REC.canvas = w.document.getElementById("game");
     REC.ground = groundOf(w);
+    loadOffset();
     recLevels(w.__LEVELS__ && w.__LEVELS__.active() && w.__LEVELS__.count ? w.__LEVELS__.count() : 0);
     ["show", "text"].forEach((m) => hook(W.Pop, m, "Pop." + m));
     hook(W.Notify, "say", "Notify.say");
@@ -2491,8 +2510,12 @@ function callAt(name, line) {
 
 function recSaw(name, stack) {
   if (state.offset == null || !state.data) return;
-  // [0] "Error", [1] the wrapper, [2] whoever called it.
-  const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(String(stack).split("\n")[2] || "");
+  /* The frames, in any engine's spelling: Chrome opens on an "Error" line and
+     writes "at f (url:l:c)", Firefox and Safari open on the first frame and
+     write "f@url:l:c". So the lines that end on a location are kept — [0] is
+     the wrapper, [1] whoever called it — rather than counted from the top. */
+  const frames = String(stack).split("\n").filter((l) => /:\d+:\d+\)?\s*$/.test(l));
+  const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || "");
   if (!m) return;
   const call = callAt(name, Number(m[1]) + state.offset);
   if (!call) return;
