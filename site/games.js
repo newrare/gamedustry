@@ -94,45 +94,6 @@ window.GAMES = [
     }
   },
   {
-    slug: "chainring",
-    name: "Chainring",
-    accent: ["#4bf5ff", "#4263eb"],
-    fr: {
-      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
-      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
-    },
-    en: {
-      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
-      tags: ["Rhythm tap", "On the beat", "Sudden death"]
-    }
-  },
-  {
-    slug: "stratideck",
-    name: "Stratideck",
-    accent: ["#f2c14e", "#5aa9ff"],
-    fr: {
-      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
-      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
-    },
-    en: {
-      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
-      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
-    }
-  },
-  {
-    slug: "pawko",
-    name: "Pawko",
-    accent: ["#ffb830", "#ff4d6d"],
-    fr: {
-      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
-      tags: ["Glisse pour lâcher", "Cinquante cartes à combiner", "Score à battre"]
-    },
-    en: {
-      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
-      tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
-    }
-  },
-  {
     slug: "radiam",
     name: "Radiam",
     accent: ["#35e0ff", "#8b6cff"],
@@ -156,6 +117,45 @@ window.GAMES = [
     en: {
       tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
       tags: ["Timing tap", "5 biomes", "Physics"]
+    }
+  },
+  {
+    slug: "chainring",
+    name: "Chainring",
+    accent: ["#4bf5ff", "#4263eb"],
+    fr: {
+      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
+      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
+    },
+    en: {
+      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
+      tags: ["Rhythm tap", "On the beat", "Sudden death"]
+    }
+  },
+  {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
+      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+    },
+    en: {
+      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
+      tags: ["Swipe to sort", "Three discards", "Poker hands"]
+    }
+  },
+  {
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
+    fr: {
+      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+    },
+    en: {
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
+      tags: ["Tap to jump", "Endless", "Lava"]
     }
   },
   {
@@ -185,29 +185,29 @@ window.GAMES = [
     }
   },
   {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
+    slug: "stratideck",
+    name: "Stratideck",
+    accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
-      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
+      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
     },
     en: {
-      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
-      tags: ["Swipe to sort", "Three discards", "Poker hands"]
+      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
+      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
     }
   },
   {
-    slug: "marshmelt",
-    name: "Marshmelt",
-    accent: ["#ff9d2e", "#ff7a1a"],
+    slug: "pawko",
+    name: "Pawko",
+    accent: ["#ffb830", "#ff4d6d"],
     fr: {
-      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
+      tags: ["Glisse pour lâcher", "Cinquante cartes à combiner", "Score à battre"]
     },
     en: {
-      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
+      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
+      tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
     }
   }
 ];

@@ -338,6 +338,7 @@
     handle.onHide = spec.onHide || null;
     handle.onClose = spec.onClose || null;
     notify();
+    door("open");
     return handle;
   }
 
@@ -375,6 +376,7 @@
       if (handle.onClose) handle.onClose();
     }, FADE);
     notify();
+    door("close");
   }
 
   /* CLOSES, AND SAYS WHETHER IT DID. It is the force: the stack shutting
@@ -395,6 +397,19 @@
   function topModal() {
     var m = modals[modals.length - 1];
     return m ? m.kind : null;
+  }
+
+  /* EVERY DOOR IS HEARD, AND HERE RATHER THAN BY ITS CALLER. A card or a view
+     going up plays the kit's `open`, coming down its `close` — once, for all
+     of them, so no screen of the shell opens in silence and none has to
+     remember to say so. The engine makes a door the quietest thing there is:
+     any other role played in the same task replaces it (a reward card says
+     "reward"), and a stack peeled in one go is one door (Sound.ui,
+     packages/engine/engine.js). The floor plays none: a round starting or an
+     end screen arriving has its own entrance, and a door under it is noise. */
+  var quiet = 0;
+  function door(role) {
+    if (!quiet && W.Sound && W.Sound.ui) W.Sound.ui(role, 0.4);
   }
 
   /* ── 3. the view stack ────────────────────────────────────────────────── */
@@ -469,6 +484,7 @@
     if (spec.decor) W.Decor.dress(node, spec.decor);
     syncHud();
     notify();
+    door("open");
   }
 
   function back() {
@@ -485,6 +501,7 @@
     if (spec.bed !== false) bedUp();
     syncHud();
     notify();
+    door("close");
     return true;
   }
 
@@ -519,8 +536,10 @@
   function floor(state) {
     unhold();                           // the motor has stopped or restarted the loop
     if (state === "intro") return;      // the title screen is the floor itself
+    quiet++;
     clear();
     while (closeTopModal());
+    quiet--;
   }
 
   /* ── 4. keys, in one order ────────────────────────────────────────────── */

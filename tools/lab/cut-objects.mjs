@@ -25,7 +25,7 @@
  *
  * …or `--adopt 1,4 --as decor`, which declares the role `decor-NN` instead and
  * lands the cut in the DECOR POOL: the shell scatters those over the end
- * screen, the round's corners and the web menu's panels without a game naming
+ * screen and the web menu's panels without a game naming
  * one of them (packages/shell/shell.js, Decor).
  *
  * ADOPTING MOVES NO FILE. A cut lives in `assets/image/object/` once, under the

@@ -1049,7 +1049,7 @@
         card.appendChild(row);
       }
     });
-    W.Sound.cue("uiStar", 0.8, 1.2, 880, 0.18, "triangle");
+    W.Sound.ui("reward", 0.8);
 
     function pickTile(c, close) {
       var b = el("button", "ar-pick-t");
@@ -1065,7 +1065,7 @@
         persist();
         close();
         say(T.captiveTaken, whoName("red", c.r, c.t), "info", "lock");
-        W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+        W.Sound.ui("win", 0.8);
       });
       return b;
     }
@@ -1084,7 +1084,7 @@
         MT.grant(rw);
         close();
         MT.fx({ rw: rw, from: from, before: before, tag: rw.kind !== "sticker" });
-        W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+        W.Sound.ui("win", 0.8);
       });
       return b;
     }
@@ -1526,13 +1526,13 @@
           var fly = applyEvent(ev);
           close();
           fly();
-          if (ev.good) W.Sound.cue("uiWin", 0.7, 1, 660, 0.2, "triangle");
+          if (ev.good) W.Sound.ui("win", 0.7);
         }
         MT.tapOut(handle.box, finish);
         off = MT.keyOut(finish);
       }
     });
-    W.Sound.cue(ev.good ? "uiStar" : "uiRow", 0.75, ev.good ? 1.15 : 0.75, ev.good ? 880 : 240, 0.18, "triangle");
+    W.Sound.ui(ev.good ? "win" : "fail", ev.good ? 0.75 : 0.6);
   }
 
   /* The card a day is about: a prisoner in red (or already in the blue cloth
@@ -1694,7 +1694,7 @@
       if (S.leave) S.leave();
       S.body.scrollTop = 0;
       paint();
-      W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
+      W.Sound.ui("tap", 0.45);
     };
   }
 
@@ -1765,7 +1765,7 @@
     return function (e) {
       if (e) e.stopPropagation();
       say(fill(T.lockSay, { post: T["post_" + k] }), jobsOf(k).join(" · "), "info", "lock");
-      W.Sound.cue("uiRow", 0.35, 0.8, 300, 0.06);
+      W.Sound.ui("deny", 0.35);
     };
   }
 
@@ -1807,7 +1807,7 @@
     if (!k) return;
     persist();
     say(fill(k === 1 ? T.filled1 : T.filledN, { n: k }), "", "good", "check");
-    W.Sound.cue("uiWin", 0.6, 1.1, 660, 0.14, "triangle");
+    W.Sound.ui("win", 0.6, 1.1);
   }
 
   /* A CARD OF THE FORMATION IS A DOOR TO WHO IT IS, like every small card:
@@ -1833,7 +1833,7 @@
       if (at < 0) return;
       save.d.splice(at, 1);
       persist();
-      W.Sound.cue("uiRow", 0.4, 0.9, 400, 0.06);
+      W.Sound.ui("tap", 0.4, 0.9);
     });
     w.appendChild(del);
     return w;
@@ -1882,7 +1882,7 @@
         save.d.push(c.i);
         DK.justIn = c.i;
         persist();
-        W.Sound.cue("uiRow", 0.45, 1.15, 420, 0.07);
+        W.Sound.ui("tap", 0.45, 1.1);
       }
     });
   }
@@ -1953,7 +1953,7 @@
             if (!any) return;
             P.g = !g || P.g === g ? 0 : g;
             paint();
-            W.Sound.cue("uiRow", 0.35, 1.05, 380, 0.06);
+            W.Sound.ui("tap", 0.35, 1.05);
           };
         }
       }
@@ -2091,7 +2091,7 @@
       X.ix = i;
       car.go(i);
       cxInfo(info, list[i]);
-      W.Sound.cue("uiRow", 0.3, 1 + (i % 2) * 0.06, 400, 0.05);
+      W.Sound.ui("tap", 0.3, 1 + (i % 2) * 0.06);
     }, cxOpen);
     var l = el("button", "ar-cx-arrow l", "‹"), r = el("button", "ar-cx-arrow r", "›");
     l.setAttribute("aria-label", T.prev);
@@ -2107,7 +2107,7 @@
         if (X.side === s) return;
         X.side = s; X.f = "all"; X.ix = null;
         paintCollection();
-        W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
+        W.Sound.ui("tap", 0.45);
       };
     }
     function filterBtn(key, ico, count) {
@@ -2118,7 +2118,7 @@
         if (X.f === key) return;
         X.f = key; X.ix = null;
         paintCollection();
-        W.Sound.cue("uiRow", 0.35, 1, 380, 0.06);
+        W.Sound.ui("tap", 0.35);
       });
       return c;
     }
@@ -2506,7 +2506,7 @@
         s.vt = now();
         persist();
         say(T.dfValidated, T.dfValidatedSub, "good", "check");
-        W.Sound.cue("uiWin", 0.8, 1, 620, 0.2, "triangle");
+        W.Sound.ui("win", 0.8, 0.94);
       });
       DF.acts.appendChild(go);
       if (d.v && dirty) {
@@ -2684,7 +2684,7 @@
         if (s.g[i] !== e) return;
         s.g[i] = null;
         persist();
-        W.Sound.cue("uiRow", 0.4, 0.9, 400, 0.06);
+        W.Sound.ui("tap", 0.4, 0.9);
       });
       w.appendChild(del);
       return w;
@@ -2738,7 +2738,7 @@
         }
         DF.justIn = at;
         persist();
-        W.Sound.cue("uiRow", 0.45, 1.15, 420, 0.07);
+        W.Sound.ui("tap", 0.45, 1.1);
       }
     });
   }
@@ -2966,14 +2966,14 @@
           var fly = dfCollect(rep, card);
           close();
           fly();
-          if (rep.ok) W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+          if (rep.ok) W.Sound.ui("win", 0.8);
           if (open) openDfReportTab();
         }
         MT.tapOut(handle.box, function () { finish(true); });
         off = MT.keyOut(function () { finish(false); });
       }
     });
-    W.Sound.cue(rep.ok ? "uiStar" : "uiRow", 0.8, rep.ok ? 1.15 : 0.7, rep.ok ? 880 : 220, 0.18, "triangle");
+    W.Sound.ui(rep.ok ? "win" : "fail", 0.8);
   }
 
   /* The defense's REPORT tab, from wherever the player is: redrawn on it
@@ -3026,7 +3026,7 @@
         off = MT.keyOut(finish);
       }
     });
-    W.Sound.cue("uiStar", 0.8, 1.2, 880, 0.18, "triangle");
+    W.Sound.ui("reward", 0.8);
   }
 
   function paintPrison() {
@@ -3069,7 +3069,7 @@
         if (busy) return;
         busy = true;
         n.classList.add("enlist");
-        W.Sound.cue("uiWin", 0.8, 1, 720, 0.2, "triangle");
+        W.Sound.ui("win", 0.8, 1.09);
         setTimeout(function () {
           if (save.p.indexOf(p) < 0) return;
           /* out of the cell first: the prisoner IS the officer being
@@ -3302,7 +3302,7 @@
       persist();
       say(fill(o.f ? T.returned : T.recruited, { c: whoName(o.o || "blue", o.g, o.t) }),
           W.Lang.t(gradeName(o.g)) + " · " + tierName(o.t), "gain", "user");
-      W.Sound.cue("uiWin", 0.8, 1, 780, 0.2, "triangle");
+      W.Sound.ui("win", 0.8, 1.18);
     });
     n.appendChild(b);
     return n;
@@ -3776,7 +3776,7 @@
     row.setAttribute("aria-label", (m ? loc(m.title) : "") + " — " + (rep.ok ? T.repWin : T.repLose));
     row.addEventListener("click", function () {
       openReport(rep, true);
-      W.Sound.cue("uiRow", 0.45, 1.1, 420, 0.08);
+      W.Sound.ui("tap", 0.45, 1.05);
     });
     return row;
   }
@@ -3821,7 +3821,7 @@
       RT.brief = { m: m.id, pick: [] };
       RT.body.scrollTop = 0;
       paintRecruit();
-      W.Sound.cue("uiRow", 0.45, 1.1, 420, 0.08);
+      W.Sound.ui("tap", 0.45, 1.05);
     });
     return n;
   }
@@ -3932,7 +3932,7 @@
       RT.body.scrollTop = 0;
       paintRecruit();
       say(T.sent, fill(T.sentSub, { t: minsText(minsOf(m)) }), "info", "clock");
-      W.Sound.cue("uiWin", 0.8, 0.9, 520, 0.2, "triangle");
+      W.Sound.ui("win", 0.8, 0.8);
     });
     acts.appendChild(go);
     var no = el("button", "btn btn-plate", "<span>" + W.upper(T.cancel) + "</span>");
@@ -4043,7 +4043,7 @@
     if (at >= 0) RT.brief.pick.splice(at, 1);
     else RT.brief.pick.push(id);
     paintRecruit();
-    W.Sound.cue("uiRow", 0.4, at >= 0 ? 0.9 : 1.1, 400, 0.06);
+    W.Sound.ui("tap", 0.4, at >= 0 ? 0.9 : 1.1);
   }
 
   /* ── the report ── */
@@ -4109,13 +4109,13 @@
           var fly = collect(rep, card);
           close();
           if (fly) fly();
-          if (rep.ok) W.Sound.cue("uiWin", 0.8, 1, 660, 0.2, "triangle");
+          if (rep.ok) W.Sound.ui("win", 0.8);
         }
         MT.tapOut(handle.box, finish);
         off = MT.keyOut(finish);
       }
     });
-    W.Sound.cue(rep.ok ? "uiStar" : "uiRow", 0.8, rep.ok ? 1.2 : 0.7, rep.ok ? 880 : 220, 0.18, "triangle");
+    W.Sound.ui(rep.ok ? "win" : "fail", 0.8);
   }
 
   /* ── 8d''. the command's posts, and the cards' camp ───────────────────── */
@@ -4196,7 +4196,7 @@
         if (save.po[p.k] !== c.i) return;
         delete save.po[p.k];
         persist();
-        W.Sound.cue("uiRow", 0.4, 0.9, 400, 0.06);
+        W.Sound.ui("tap", 0.4, 0.9);
       });
       w.appendChild(del);
       cell.appendChild(w);
@@ -4255,7 +4255,7 @@
         persist();
         say(fill(T.posted, { c: whoName(c.o || "blue", c.g, baseOf(c)) }),
             T["post_" + k] + " " + postPct(k) + "% · " + postEffect(k), "good", "check");
-        W.Sound.cue("uiRow", 0.45, 1.15, 420, 0.07);
+        W.Sound.ui("tap", 0.45, 1.1);
       }
     });
   }
@@ -4473,7 +4473,7 @@
           flip.addEventListener("click", function () {
             if (flip.classList.contains("fly")) return;   // let it land first
             turn();
-            W.Sound.cue("uiRow", 0.45, turns % 2 ? 1.1 : 0.9, 420, 0.08);
+            W.Sound.ui("tap", 0.45, turns % 2 ? 1.1 : 0.9);
           });
         }
         card.appendChild(flip);
@@ -4825,7 +4825,7 @@
         card.appendChild(foot);
       }
     });
-    W.Sound.cue("uiRow", 0.6, 0.8, 330, 0.2, "triangle");
+    W.Sound.ui("fail", 0.6);
   }
 
   function hurtDoor(c, one) {

@@ -295,11 +295,82 @@ bonus; see [LEVELS.md](LEVELS.md)), then the army layer's prisoner offer (see
 is still `"playing"`, so `endRound` guards itself against a game that ends the
 same round twice.
 
-The reveal scores itself through `Sound.cue`, on three keys the games embed in
-`ASSETS.sounds`: `uiScore` (the count-up landing), `uiStar` (one chime per star,
-pitched up by `STAR_RATE`) and `uiRow` (the stat-row tick). Drop the keys and
-the same beats play as synthesized beeps — a new game sounds finished before it
-has an sfx pack, and re-themes just by swapping the three clips.
+The reveal scores itself through the **house sound kit** — `Sound.ui("score")`
+(the count-up landing), `Sound.ui("star")` (one per star, pitched up by
+`STAR_RATE`) and `Sound.ui("tick")` (the stat-row tick) — which the builder
+injects into every game, so no game embeds them and all of them sound the same
+there. See [Sound.ui](#soundui--the-house-sound-kit) below.
+
+### `Sound.ui` — the house sound kit
+
+What the SHELL sounds like is not a game's to choose: the end screen, the menu,
+the map, the album, the shop, the daily road and the barracks all play
+`Sound.ui(role, vol, rate)`, and a **role** is what a moment means —
+
+| role     | the moment                                                       |
+| -------- | ---------------------------------------------------------------- |
+| `tap`    | a tab, a filter, a carousel step, a card picked or put back      |
+| `open`   | a card or a view opens — played by the view system, never called |
+| `close`  | a card or a view goes — same                                     |
+| `deny`   | refused, locked, missed                                          |
+| `tick`   | a light step of a ladder: an end-screen row, a bet, a sum        |
+| `coin`   | one coin landing in the wallet, pitched up the cascade           |
+| `score`  | the end screen's score lands                                     |
+| `star`   | one star, pitched up the three                                   |
+| `gain`   | something lands in the wallet                                    |
+| `buy`    | a purchase goes through                                          |
+| `draw`   | the sticker machine is shaken                                    |
+| `reward` | the big reveal: a new sticker, a gift, a level up, a third star  |
+| `win`    | the camp's good news                                             |
+| `fail`   | the bad news: an objective missed, a mission lost, a wound       |
+
+Each role holds one to three takes, cut out of `assets/audio/sfx/` and
+**levelled to one loudness** by `tools/lab/cut-kit.mjs` from
+`assets/audio/kit/kit.json` — so `vol` at a call site is MIX, never a correction
+of a file. The builder injects them as `ASSETS.sounds["kit-<role>-<n>"]` with
+`CONFIG.kit[id] = { key, n, jitter }` — the id is the role's name for a shell
+role (`tap`), `role/variant` for a gameplay one: a playable carries the end
+screen's three shell roles (`kit.playable`), the web target all of the shell's,
+and every build of a game the gameplay variants its manifest maps. Two takes never play twice
+in a row, and a role with a `jitter` is detuned a little on every shot; a ladder
+(`star`, `tick`, `coin`) has none, since its `rate` is the melody.
+
+`open` and `close` are the view system's doors (`packages/webshell/view.js`
+plays them on every card and every view) and they are the quietest thing there
+is: deferred to the end of the task, replaced by any other role played in it —
+a reward card says `reward`, not `open, reward` — merged into one when a stack
+is peeled, and silent on the floor (a round starting). A role with no take
+falls back to a synthesized beep. The kit is chosen by ear at `make events` →
+`/kit` (`lab/sound-kit.html`).
+
+**A game reaches the kit through its manifest, not its code.** The kit holds a
+second group of roles, for GAMEPLAY —
+
+| role     | the moment                                        |
+| -------- | ------------------------------------------------- |
+| `pickup` | a collectible taken, pitched up the chain         |
+| `bonus`  | a rare, valuable pickup                           |
+| `combo`  | a combo or a streak crosses a step                |
+| `power`  | a power-up taken: a multiplier, a shield          |
+| `malus`  | points lost, a chain broken                       |
+| `crash`  | a life lost — and, pitched up, a hit shrugged off |
+| `move`   | the player moves: a lane, a swipe, a flick        |
+
+— and a crash in one game is not a crash in another, so a gameplay role holds
+named **variants** (`crash/explosion`, `crash/glass`), each with its own takes
+and jitter, where a shell role holds one, `default`. `manifest.json` maps each
+key a game already plays to ONE variant:
+`"sfx": { "gem": "pickup/glass", "crash": "crash/explosion" }` (the events
+bench's kit selector writes it). The builder injects that as `CONFIG.sfx` and
+ships the mapped variants — and only those — in every build of that game, and
+`Sound.clip("gem", vol, rate)` then plays the variant: the game's line, its
+volume and its pitch do not change. The takes inside a variant are
+interchangeable, alternated so a sound heard twenty times does not repeat; a
+different sound is a different variant, never another take. A mapped key must no longer be embedded in
+`ASSETS.sounds` — the build refuses one that is, since those bytes would never
+play. What no role says stays a clip of the game's own: its signature
+(`games/triverse` keeps its `loop`). Games move onto the kit one at a time;
+`triverse` is the first.
 
 It plays at **twice the speed it was authored at**: every delay in `EndScreen`
 is the timing the cascade was tuned with and `PACE` (0.5) is what the screen
@@ -874,7 +945,20 @@ Icon.get(key, size, colour) → canvas       // …or the tinted canvas itself
 Confetti.burst(n) / clear()
 rgba("#rrggbb", alpha) → "rgba(…)"
 clamp(v, lo, hi)
+freeCanvas(cv) → null                      // give a replaced cached canvas's pixels back now
 ```
+
+**A cached canvas is built once per thing it depends on, never per round, and
+the one it replaces is freed.** A backdrop, a strip or a sprite set baked from
+`reset()` is rebuilt on every replay, and what it replaces is garbage whose
+backing store — and on a phone the GPU texture behind it — lives until a major
+GC: that GC lands mid-round, a few rounds later, as the hitch the first round
+never has. So key each cache on a signature of exactly what it is made of (the
+viewport, `view.dpr`, the level's band, whether its art has decoded) and
+rebuild only when that changes, the way `games/vipera` keys its scenery on
+`jungleSig`; and pass the canvas being replaced to `freeCanvas`, which zeroes
+its size so the pixels go at once (`bg = freeCanvas(bg);`). Never on a canvas
+still being drawn.
 
 Every sound effect is a clip picked from the shared **`assets/audio/sfx/`** library and
 embedded in `ASSETS.sounds` — see [ASSETS.md](ASSETS.md#sound-effects-always-come-from-assetsaudiosfx).
@@ -1184,7 +1268,6 @@ Where it lands, and who asks for it:
 | screen                           | who calls it                    | pieces |
 | -------------------------------- | ------------------------------- | ------ |
 | the end screen                   | the motor, on `setState("end")` | 2      |
-| the round's corners              | the motor, on `"playing"`       | 1–2    |
 | the web menu's panels            | `packages/webshell/menu.js`     | 2      |
 | the pause card                   | `packages/webshell/menu.js`     | 1      |
 | the level map, and its help card | `packages/webshell/levels.js`   | 2 / 1  |
@@ -1209,11 +1292,13 @@ budget for something that never changes) and **no piece takes a tap**.
 
 Pieces come out of a bag reshuffled only once it is empty, so a pool of four
 dresses four screens running without repeating itself, and each takes its own
-size, tilt, flip, bob and depth. The round is the one place a picture sits over
-a live world, so it is worth 0.2 opacity against a screen's 0.5, it is under the
-HUD and the overlay (`motor.css`), and it costs `Layout` nothing.
+size, tilt, flip, bob and depth. **The round is never dressed**: it used to get
+one or two pieces in its corners at 0.2 opacity, and a bobbing, drop-shadowed
+picture over a live world was a layer re-rastered over the canvas every frame,
+on every game, for something nobody looked at — it was taken out for the frame
+rate.
 
-`CONFIG.decor = false` turns the whole layer off; `CONFIG.decor = { round: false }` keeps the screens and leaves the round alone. A game with no
+`CONFIG.decor = false` turns the whole layer off. A game with no
 `decor-NN` art has an empty pool and never sees any of it.
 
 ### `Music` — the background bed

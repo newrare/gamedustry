@@ -48,6 +48,7 @@
  *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
  *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
  *   node tools/lab/shoot-screens.mjs vipera --out /tmp/x   # anywhere but assets/image/screen/
+ *   node tools/lab/shoot-screens.mjs vipera --level 19 --out /tmp/x   # that level's round (web levels)
  *   GEARBALL_BIOME=3 node tools/lab/shoot-screens.mjs gearball --out /tmp/x   # one biome's machine
  *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -11
  *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
@@ -258,6 +259,7 @@ var withCards = true;
 var cardsOnly = false;
 var ctls = false;
 var lang = "en";
+var level = 0;                       // --level N: the round is that level's (web levels)
 var outDir = OUT_DIR;
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shots") shots = parseInt(argv[++i], 10);
@@ -274,6 +276,7 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--cards-only") cardsOnly = true;
   else if (argv[i] === "--ctls") ctls = true;
   else if (argv[i] === "--lang") lang = argv[++i];
+  else if (argv[i] === "--level") level = parseInt(argv[++i], 10) || 0;
   else if (argv[i] === "--out") outDir = path.resolve(argv[++i]);
   else slugs.push(argv[i]);
 }
@@ -356,7 +359,7 @@ var HOOK_JS = `
    game's own objective instead of being invented here. */
 var LV_HOOK_JS = `
   window.__LV = {
-    record: record, save: save, goalOf: goalOf, dOf: dOf, levels: LEVELS
+    record: record, save: save, goalOf: goalOf, dOf: dOf, levels: LEVELS, arm: arm
   };
 `;
 
@@ -372,6 +375,7 @@ var DRIVER_JS = `<script>
   var BACK = q.get("back") === "1";                  // ...turned over
   var SPAN = parseInt(q.get("span"), 10) || 0;       // measured reach, 0 = none
   var ENDLESS = parseInt(q.get("endless"), 10) || 30;
+  var LEVEL = parseInt(q.get("level"), 10) || 0;     // --level: play that level's round
   var DT = 1 / 60;
   var PACED = 110;              // frames before the shot played at wall speed
   /* The end screen is a timed DOM cascade, not frames: title, score count-up,
@@ -599,6 +603,8 @@ var DRIVER_JS = `<script>
     if (CARD >= 0) { tickCard(H); return; }
     if (!started) {
       if (H.state() !== "intro") return;              // still loading
+      // a level is armed exactly as the map arms it, before the round starts
+      if (LEVEL && window.__LV && window.__LV.arm) window.__LV.arm(LEVEL);
       H.startGame();
       H.Loop.stop();                                  // we drive the clock
       H.Enter.skip();                                 // ...from a landed world
@@ -795,7 +801,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
      to the browser, a headless Chrome in a French locale writes REJOUER on
      the replay button of every screenshot. */
   var url = "file://" + file + "?seed=" + seed + "&span=" + span
-    + "&endless=" + SPAN._endless + "&lang=" + lang
+    + "&endless=" + SPAN._endless + "&lang=" + lang + (level ? "&level=" + level : "")
     + (aim.map ? "&map=1" : aim.village ? "&village=1"
       : aim.card != null ? "&card=" + aim.card + (aim.back ? "&back=1" : "")
       : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));

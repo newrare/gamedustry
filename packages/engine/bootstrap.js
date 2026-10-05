@@ -4,7 +4,9 @@
   function frameUpdate(dt) {
     /* The entrance holds the whole round — world, clock and beat — while the
        scene assembles; only the entrance itself advances (Enter, engine.js). */
-    if (Enter.active()) { Enter.update(dt); return; }
+    var entering = Enter.active();
+    Enter.update(dt);                               // also runs an opted-out landing
+    if (entering) return;
     Beat.update(dt);                                // music does not hit-stop
     /* A game that stops its own round for a choice (gearball's upgrade
        cards) answers Game.held(): the world and the clock wait, and only the

@@ -28,25 +28,41 @@
   the save the page just made is what triggers the rebuild above — so the next
   frame is played on the change. Everything else here reads and plays.
 
-  Two more pages ride on the same build: lab/sound-library.html (/library)
+  More pages ride on the same build: lab/sound-kit.html (/kit), the house
+  sound kit the shell plays in every game; lab/sound-library.html (/library)
   and lab/overlay-pop.html (/pop), the motor's Pop styles fired one by one.
+
+  The bench's second version, lab/game-events-v2.html (/v2), adds what the
+  first cannot show: the MOMENT of the game an event belongs to. It records the
+  game being played (the canvas, a few seconds around every event), keeps each
+  capture in lab/events-clips/<slug>/ (ignored by git — playing again makes
+  them again), and loops it under the callout being judged. Its routes are
+  /api/offset, /api/clips, /api/clip, /api/clip-drop and /clips/…; it also
+  hands /api/apply a `keepEn` list — a callout kept in English on the French
+  screen (tools/lab/keep-english.mjs).
 
   `make lab` runs this same script behind its proxy, under /events/
   (tools/lab/serve-lab.mjs), which is why the page addresses it with relative
   urls.
 */
 
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, stat, readdir, mkdir, unlink } from 'node:fs/promises';
 import { existsSync, watch } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { games, units, scanGame, clearCache, sfxFiles, soundPack, fileForNote, SFX_DIR, ROOT } from './scan-events.mjs';
 import { applyEdits } from './apply-events.mjs';
+import { keepEnglish } from './keep-english.mjs';
+import { readKit, writeKit, cutKit, kitUsers, mapKeys, KIT_DIR } from './cut-kit.mjs';
+import { createHash } from 'node:crypto';
 import { isMain, portArg, listen, json, notFound, readJson, sendFile, reloadHub, MIME } from '../lib/serve.mjs';
 
 const BUILD = path.join(ROOT, 'dist', 'web');
 const PAGE = path.join(ROOT, 'lab', 'game-events.html');
+const PAGE_V2 = path.join(ROOT, 'lab', 'game-events-v2.html');
+const CLIPS = path.join(ROOT, 'lab', 'events-clips');
 const LIBRARY = path.join(ROOT, 'lab', 'sound-library.html');
+const KIT_PAGE = path.join(ROOT, 'lab', 'sound-kit.html');
 const POP = path.join(ROOT, 'lab', 'overlay-pop.html');
 const REVIEW = path.join(ROOT, 'lab', 'events-review.json');
 const SFX = SFX_DIR;
@@ -85,6 +101,8 @@ function start() {
         if (!file || file.includes('index.html') || path.basename(file).startsWith('.')) return;
         // A check is not a change to the build: it would reload the page under the click.
         if (path.basename(file) === path.basename(REVIEW)) return;
+        // Nor is a recorded clip, nor the parked French of a word kept in English.
+        if (file.includes('events-clips') || path.basename(file) === 'events-keep-en.json') return;
         clearTimeout(timer);
         timer = setTimeout(build, 120);
       });
@@ -147,6 +165,84 @@ async function check(slug, body) {
   return { review: saved[slug] || {}, status: statusOf(g, saved[slug]) };
 }
 
+/* ── the clips of the second version ─────────────────────────────────────
+   lab/events-clips/<slug>/index.json:
+     { clips: { <file>: { dur, at, when, events: [{ id, name, line, fn, t }] } },
+       byId:  { <checkId>: <file> } }
+   `byId` is what a row asks; `events` is everything that fired inside the
+   window, at its own time, so a loop replays the whole moment and not only
+   the line being judged. */
+async function sourceOffset(slug) {
+  const src = await readFile(path.join(ROOT, slug === 'template' ? 'template' : path.join('games', slug), 'game.js'), 'utf8');
+  const html = await readFile(path.join(BUILD, slug, 'index.html'), 'utf8').catch(() => '');
+  const m = /game\.[0-9a-f]+\.js/.exec(html);
+  if (!m) return { error: 'no web build of ' + slug };
+  const built = (await readFile(path.join(BUILD, slug, m[0]), 'utf8')).replace(/^"use strict";\n/, '');
+  const at = src.indexOf(built.slice(0, 2000));
+  if (at < 0) return { file: m[0], error: 'the built game no longer matches its source — wait for the rebuild' };
+  // Built line 1 is "use strict", so built line n is source line n - 1 + (lines before section 6).
+  return { file: m[0], offset: src.slice(0, at).split('\n').length - 2 };
+}
+
+async function readClips(slug) {
+  try { return JSON.parse(await readFile(path.join(CLIPS, slug, 'index.json'), 'utf8')); }
+  catch { return { clips: {}, byId: {} }; }
+}
+
+async function writeClips(slug, idx) {
+  await mkdir(path.join(CLIPS, slug), { recursive: true });
+  await writeFile(path.join(CLIPS, slug, 'index.json'), JSON.stringify(idx, null, 1) + '\n');
+}
+
+let clipping = Promise.resolve();
+function saveClip(slug, body) {
+  const run = clipping.then(async () => {
+    const buf = Buffer.from(String(body.webm || ''), 'base64');
+    if (buf.length < 100) return { error: 'empty clip' };
+    const file = createHash('sha1').update(buf).digest('hex').slice(0, 12) + '.webm';
+    await mkdir(path.join(CLIPS, slug), { recursive: true });
+    await writeFile(path.join(CLIPS, slug, file), buf);
+    const idx = await readClips(slug);
+    const events = [].concat(body.events || []).filter((e) => e && e.id);
+    idx.clips[file] = { dur: Number(body.dur) || 0, at: Number(body.at) || 0, when: new Date().toISOString().slice(0, 16), events };
+    const claim = new Set([].concat(body.claim || []));
+    for (const e of events) if (claim.has(e.id) || !idx.byId[e.id]) idx.byId[e.id] = file;
+    await pruneClips(slug, idx);
+    await writeClips(slug, idx);
+    const stamp = new Date().toTimeString().slice(0, 8);
+    console.log(`  ${stamp}  clip ${slug}/${file} — ${events.length} event${events.length > 1 ? 's' : ''}, ${(buf.length / 1024).toFixed(0)} KB`);
+    return { file, index: idx };
+  });
+  clipping = run.catch(() => {});
+  return run.catch((e) => ({ error: String(e.message || e) }));
+}
+
+// A clip no row points at any more is only bytes.
+async function pruneClips(slug, idx) {
+  const used = new Set(Object.values(idx.byId));
+  for (const f of Object.keys(idx.clips)) {
+    if (used.has(f)) continue;
+    delete idx.clips[f];
+    await unlink(path.join(CLIPS, slug, f)).catch(() => {});
+  }
+  // And a file the index never heard of (a crash between two writes).
+  for (const f of await readdir(path.join(CLIPS, slug)).catch(() => [])) {
+    if (f.endsWith('.webm') && !idx.clips[f]) await unlink(path.join(CLIPS, slug, f)).catch(() => {});
+  }
+}
+
+function dropClip(slug, file) {
+  const run = clipping.then(async () => {
+    const idx = await readClips(slug);
+    for (const [id, f] of Object.entries(idx.byId)) if (f === file) delete idx.byId[id];
+    await pruneClips(slug, idx);
+    await writeClips(slug, idx);
+    return { index: idx };
+  });
+  clipping = run.catch(() => {});
+  return run.catch((e) => ({ error: String(e.message || e) }));
+}
+
 async function page(res, file) {
   const html = await readFile(file, 'utf8');
   res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-store' });
@@ -158,15 +254,83 @@ export async function handle(req, res, p, url) {
 
   if (p === '/' || p === '/index.html') return page(res, PAGE);
 
+  // The second version: the same list, with the game's own moment looped under it.
+  if (p === '/v2') return page(res, PAGE_V2);
+
+  /* Where a line of the built game.<hash>.js sits in the SOURCE: the split
+     build writes section 6 verbatim behind a "use strict" line, so one offset
+     maps every line — and a call caught in the running game is named by the
+     line scan-events gives it. */
+  if (p === '/api/offset') {
+    const slug = url.searchParams.get('game');
+    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    return json(res, 200, await sourceOffset(slug));
+  }
+
+  if (p === '/api/clips') {
+    const slug = url.searchParams.get('game');
+    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    return json(res, 200, await readClips(slug));
+  }
+
+  /* One capture: the webm, base64 in a JSON body, and what fired in it. The
+     file is named by its content, and every event of the window that had no
+     clip yet points at it — or every one of them, on a re-record. */
+  if (p === '/api/clip' && req.method === 'POST') {
+    const body = await readJson(req, 3e7);
+    const slug = body && body.game;
+    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    return json(res, 200, await saveClip(slug, body));
+  }
+
+  if (p === '/api/clip-drop' && req.method === 'POST') {
+    const body = await readJson(req, 1e5);
+    const slug = body && body.game;
+    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    return json(res, 200, await dropClip(slug, body.file));
+  }
+
+  if (p.startsWith('/clips/')) {
+    const [slug, file] = p.slice('/clips/'.length).split('/');
+    const dir = path.join(CLIPS, path.basename(slug || ''));
+    if (file && sendFile(res, path.join(dir, path.basename(file)), [CLIPS], { 'Cache-Control': 'no-store' })) return;
+    return notFound(res, p);
+  }
+
   // The library page: every file of assets/audio/sfx/, by ear, beside the bench.
   if (p === '/library') return page(res, LIBRARY);
 
   // The Pop catalogue: every style of the motor's table, fired in a game's build.
   if (p === '/pop') return page(res, POP);
 
-  /* The picker: every game, and the TEMPLATE first — the one unit whose clips
-     are the end screen's (uiScore, uiStar, uiRow), heard through the motor
-     lines that play them. */
+  /* The house sound kit: what the shell sounds like in every game, one role at
+     a time (lab/sound-kit.html, tools/lab/cut-kit.mjs). A save writes kit.json,
+     re-cuts and levels every take, and rebuilds, so the games the bench plays
+     are wearing the kit that was just picked. */
+  if (p === '/kit') return page(res, KIT_PAGE);
+  /* With the kit, who plays each variant: the games whose manifest maps a key
+     to it (`sfx`), so a take is never changed without knowing who hears it. */
+  if (p === '/api/kit' && req.method === 'GET') return json(res, 200, { ...(await readKit()), users: await kitUsers() });
+  if (p === '/api/kit' && req.method === 'POST') {
+    const body = await readJson(req, 1e5);
+    const log = [];
+    try {
+      await writeKit(body);
+      await cutKit({ log: (l) => log.push(l.trim()) });
+    } catch (e) { return json(res, 200, { error: String(e.message || e) }); }
+    const stamp = new Date().toTimeString().slice(0, 8);
+    console.log(`  ${stamp}  kit re-cut (${log.length} takes)`);
+    build();
+    return json(res, 200, { kit: { ...(await readKit()), users: await kitUsers() }, log });
+  }
+  if (p.startsWith('/kit/')) {
+    const file = path.join(KIT_DIR, path.basename(p.slice('/kit/'.length)));
+    if (sendFile(res, file, [KIT_DIR], { 'Cache-Control': 'no-store' })) return;
+    return notFound(res, p);
+  }
+
+  /* The picker: every game, and the TEMPLATE first. The end screen's own
+     sounds are no longer its clips but the house kit's (/kit). */
   if (p === '/api/games') {
     const out = [], review = await readReview();
     for (const slug of await units()) {
@@ -245,7 +409,29 @@ export async function handle(req, res, p, url) {
     if (!(await units()).includes(plan && plan.game)) return notFound(res, 'game ' + (plan && plan.game));
     const stamp = new Date().toTimeString().slice(0, 8);
     let out;
-    try { out = await applyEdits(plan.game, plan); }
+    try {
+      out = await applyEdits(plan.game, plan);
+      /* A key handed to the kit (the clip card's kit selector): the manifest
+         maps it, its clip leaves game.js — after the edits above, which read
+         the source as it was, and with the version moved once for both. */
+      if (plan.kit && plan.kit.length) {
+        if (plan.game === 'template') throw new Error('the template has no manifest to map a key in');
+        const km = await mapKeys(plan.game, plan.kit, { bump: plan.bump !== false && !out.version });
+        out.applied = out.applied.concat(km.applied);
+        out.skipped = out.skipped.concat(km.skipped);
+        out.written = out.written || km.written;
+        out.version = out.version || km.version;
+      }
+      /* A callout kept in English is a manifest entry, not a call argument —
+         and the version moves ONCE for the whole apply, whichever wrote first. */
+      if (plan.keepEn && plan.keepEn.length) {
+        const ke = await keepEnglish(plan.game, plan.keepEn, { bump: plan.bump !== false && !out.version });
+        out.applied = out.applied.concat(ke.applied);
+        out.skipped = out.skipped.concat(ke.skipped);
+        out.written = out.written || ke.written;
+        out.version = out.version || ke.version;
+      }
+    }
     catch (e) { return json(res, 200, { error: String(e.message || e) }); }
     clearCache();
     for (const a of out.applied) console.log(`  ${stamp}  ✓ ${a.what} → ${a.value}`);

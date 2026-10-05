@@ -580,7 +580,7 @@
   function claim(n) {
     write({ s: state().s || today(), d: today(), k: n, c: claimedWith(n) });
     paint();
-    W.Sound.cue("uiScore", 0.75, 1.15, 900, 0.12);
+    W.Sound.ui("gain", 0.75);
 
     /* The reward is written beside the day, not instead of it: the day is what
        the road is counted in, and `r` is what the node to the left of
@@ -628,7 +628,7 @@
     MT.spendFx(before, MT.coins());
     write({ c: claimedWith(a) });
     paint();
-    W.Sound.cue("uiScore", 0.75, 1.15, 900, 0.12);
+    W.Sound.ui("gain", 0.75);
     pay(a, here ? 0 : stage(), function () { paint(); });
     return true;
   }
@@ -717,7 +717,6 @@
     MT.note({ eyebrow: eyebrow(a), title: T.next, art: node,
               mult: isStar(a) ? STAR : 1,
               name: kindWord(a), sub: sub });
-    W.Sound.cue("uiRow", 0.5, 0.82, 320, 0.09);
   }
 
   /* ---- a day behind: what it paid, and that it is spent -------------------
@@ -754,7 +753,7 @@
       name: kindWord(a), sub: can ? T.catchNote : T.missedNote,
       act: act
     });
-    W.Sound.cue("uiRow", 0.45, 0.72, 260, 0.1);
+    W.Sound.ui("deny", 0.45);
   }
 
   function showTaken(a) {
@@ -774,7 +773,6 @@
       name: paid ? MT.rewardLabel(paid) : "",
       sub: paid ? "" : T.takenGone
     });
-    W.Sound.cue("uiRow", 0.5, 0.9, 380, 0.09);
   }
 
   /* ── 4. mount ─────────────────────────────────────────────────────────── */

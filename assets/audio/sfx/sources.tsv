@@ -1,25 +1,4 @@
 file	pack	license	source
-beep-digital-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_short_digital_futuristic_beep_generic_004_53940.mp3
-beep-digital-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_short_digital_futuristic_beep_generic_010_53946.mp3
-beep-menu-select-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_menu_digital_beep_select_001_71612.mp3
-beep-select-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_menu_select_item_beep_click_003_70849.mp3
-bell-chime-ping-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_bell_chime_ping_tone_003_65022.mp3
-bell-digital-warm-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_digital_bell_warm_generic_005_53908.mp3
-bell-digital-warm-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_digital_bell_warm_positive_003_53920.mp3
-bell-digital-warm-03.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_digital_bell_warm_positive_004_53921.mp3
-bell-ding-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_ping_chime_bell_ding_notification_001_91173.mp3
-bell-ding-dong-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_ping_ding_dong_high_pitched_thin_88741.mp3
-bell-dreamy-finish-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_dreamy_soft_warm_drippy_delayed_bells_finish_end_002_57870.mp3
-bell-dreamy-positive-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_dreamy_soft_warm_drippy_delayed_bells_positive_002_57873.mp3
-bell-dreamy-positive-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_dreamy_soft_warm_drippy_delayed_bells_positive_003_57874.mp3
-bell-organic-chime-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_organic_bell_ping_chime_notification_003_90028.mp3
-bell-ping-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_bell_ping_new_alert_notification_002_87942.mp3
-bell-ping-cute-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_cute_ping_bell_ring_004_66566.mp3
-bell-ping-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_bell_ping_notification_high_pitched_005_84282.mp3
-bell-ping-pad-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_bell_ping_with_simple_pad_musical_002_90009.mp3
-bell-ping-timer-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_bell_ping_new_alert_notification_simple_timer_style_medium_pitched_87952.mp3
-bell-ping-triple-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_bell_ping_new_alert_notification_triple_ping_87956.mp3
-bell-ping-wooden-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_bell_ping_wooden_004_54054.mp3
 book-close-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/bookClose.ogg
 book-flip-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/bookFlip1.ogg
 book-flip-02.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/bookFlip2.ogg
@@ -51,20 +30,6 @@ card-slide-05.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/card-slide
 card-slide-06.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/card-slide-6.ogg
 card-slide-07.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/card-slide-7.ogg
 card-slide-08.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/card-slide-8.ogg
-chime-bright-airy-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_chime_bright_airy_positive_002_93380.mp3
-chime-bright-keys-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_chime_bright_keys_positive_002_93384.mp3
-chime-keys-short-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_prompt_keys_warm_bright_short_generic_002_42404.mp3
-chime-mellow-calm-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_prompt_alert_mellow_calm_positive_chime_002_114375.mp3
-chime-ping-bright-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_ping_bright_chime_001_93276.mp3
-chime-ping-bright-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_ping_bright_chime_004_93280.mp3
-chime-ping-correct-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ping_chime_correct_answer_check_positive_009_70198.mp3
-chime-ping-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_chime_ping_high_pitched_005_64904.mp3
-chime-ping-ring-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ping_chine_ring_112378.mp3
-chime-ping-two-tone-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_chime_alert_notification_simple_ping_2_tone_higher_pitched_88737.mp3
-chime-ping-x3-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ping_chime_x3_70202.mp3
-chime-positive-bright-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_notification_chime_positive_bright_005_99336.mp3
-chime-ring-correct-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_gameshow_correct_answer_ping_ring_chime_006_92779.mp3
-chime-warm-bright-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_bright_warm_system_positive_002_57864.mp3
 chip-collide-01.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/chips-collide-1.ogg
 chip-collide-02.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/chips-collide-2.ogg
 chip-collide-03.ogg	kenney-casino	CC0 1.0	sfx/kenney_casino-audio/Audio/chips-collide-3.ogg
@@ -90,15 +55,8 @@ click-02.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/click2.ogg
 click-03.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/click3.ogg
 click-04.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/click4.ogg
 click-05.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/click5.ogg
-click-ascending-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_notification_clicks_fast_ascending_001_78073.mp3
-click-clinks-fast-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_clinks_taps_fast_001_77957.mp3
-click-message-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_new_message_clicks_004_85151.mp3
-click-metallic-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_switch_or_menu_item_metallic_click_71616.mp3
 click-mouse-down-01.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/mouseclick1.ogg
 click-mouse-up-01.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/mouserelease1.ogg
-click-percussive-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_percussive_clicks_002_99573.mp3
-click-percussive-sent-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_percussive_sent_99574.mp3
-click-popup-fast-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_clicks_fast_pop_up_004_65487.mp3
 click-switch-01.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch1.ogg
 click-switch-02.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch2.ogg
 click-switch-03.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch3.ogg
@@ -137,14 +95,6 @@ click-switch-35.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch35.ogg
 click-switch-36.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch36.ogg
 click-switch-37.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch37.ogg
 click-switch-38.ogg	kenney-ui	CC0 1.0	sfx/kenney_ui-audio/Audio/switch38.ogg
-click-taps-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_clicks_taps_notification_002_78051.mp3
-click-taps-dark-ringing-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_finished_taps_dark_with_bright_ringing_001_64248.mp3
-click-toggle-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_menu_toggle_clicks_001_65500.mp3
-click-wooden-fast-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_clicks_wooden_very_fast_notification_high_pitched_80615.mp3
-click-wooden-message-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_wooden_clicks_new_message_002_78044.mp3
-click-wooden-x3-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_new_message_or_general_alert_clicks_wooden_x3_fast_002_65527.mp3
-click-wooden-x4-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_clicks_x4_wooden_fast_notification_80619.mp3
-click-wooden-x4-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_clicks_x4_wooden_fast_notification_high_pitched_80618.mp3
 cloth-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/cloth1.ogg
 cloth-02.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/cloth2.ogg
 cloth-03.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/cloth3.ogg
@@ -180,16 +130,6 @@ door-scifi-close-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/door
 door-scifi-open-01.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/doorOpen_000.ogg
 door-scifi-open-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/doorOpen_001.ogg
 door-scifi-open-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/doorOpen_002.ogg
-error-buzzy-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_error_buzzy_fat_001_41222.mp3
-error-game-issue-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_software_game_error_issue_113740.mp3
-error-hit-delayed-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_negative_hit_delayed_79284.mp3
-error-mallet-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_game_sound_mallets_negative_error_001_70231.mp3
-error-mallet-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_game_sound_mallets_negative_error_002_70232.mp3
-error-mallet-03.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_game_sound_mallets_negative_error_003_70233.mp3
-error-marimba-subtle-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_prompt_mallet_marimba_warning_subtle_104797.mp3
-error-marimba-warning-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_prompt_mallet_marimba_warning_or_error_104796.mp3
-error-soft-tone-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_software_warm_soft_tone_error_002_90053.mp3
-error-synth-dry-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_synth_app_notification_dry_notify_error_001_114198.mp3
 error-ui-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_001.ogg
 error-ui-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_002.ogg
 error-ui-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_003.ogg
@@ -198,7 +138,6 @@ error-ui-05.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error
 error-ui-06.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_006.ogg
 error-ui-07.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_007.ogg
 error-ui-08.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/error_008.ogg
-error-warm-layered-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_layered_warm_negative_006_53900.mp3
 explosion-crunch-01.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/explosionCrunch_000.ogg
 explosion-crunch-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/explosionCrunch_001.ogg
 explosion-crunch-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/explosionCrunch_002.ogg
@@ -216,18 +155,6 @@ forcefield-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/forceField
 forcefield-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/forceField_002.ogg
 forcefield-04.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/forceField_003.ogg
 forcefield-05.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/forceField_004.ogg
-harp-ascending-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_harp_positive_ascending_tone_musical_113859.mp3
-harp-final-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_harp_positive_final_110727.mp3
-harp-finish-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_harp_musical_tone_finish_complete_113858.mp3
-harp-organic-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_notification_organic_harp_001_99337.mp3
-harp-organic-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_notification_organic_harp_002_99338.mp3
-harp-pad-success-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_harp_and_warm_pad_positive_success_complete_113863.mp3
-harp-pad-success-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_harp_and_warm_pad_positive_successful_complete_113866.mp3
-harp-roll-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_harp_roll_completed_finished_109556.mp3
-hit-sport-01.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_hit_01_sport.mp3
-hit-sport-02.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_hit_02_sport.mp3
-hit-sport-03.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_hit_03_sport.mp3
-hit-wall-01.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_hitwall_sport_01.mp3
 impact-bell-heavy-01.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/impactBell_heavy_000.ogg
 impact-bell-heavy-02.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/impactBell_heavy_001.ogg
 impact-bell-heavy-03.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/impactBell_heavy_002.ogg
@@ -457,10 +384,6 @@ leather-belt-02.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/beltHandle2.og
 leather-drop-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/dropLeather.ogg
 leather-handle-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/handleSmallLeather.ogg
 leather-handle-02.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/handleSmallLeather2.ogg
-loop-computer-01.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/computerNoise_000.ogg
-loop-computer-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/computerNoise_001.ogg
-loop-computer-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/computerNoise_002.ogg
-loop-computer-04.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/computerNoise_003.ogg
 loop-engine-01.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/spaceEngine_000.ogg
 loop-engine-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/spaceEngine_001.ogg
 loop-engine-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/spaceEngine_002.ogg
@@ -490,27 +413,6 @@ loop-thruster-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/thruste
 loop-thruster-03.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/thrusterFire_002.ogg
 loop-thruster-04.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/thrusterFire_003.ogg
 loop-thruster-05.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/thrusterFire_004.ogg
-mallet-action-required-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_alert_software_app_simple_mallet_notify_action_required_85933.mp3
-mallet-bell-warm-stop-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_notification_mallet_bell_warm_stop_79221.mp3
-mallet-bright-warm-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_mallets_bright_warm_positive_79283.mp3
-mallet-chime-complete-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_notification_positive_chime_mallet_complete_finished_81102.mp3
-mallet-chime-ring-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_mallet_chime_ring_notification_001_78052.mp3
-mallet-chime-ring-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_mallet_chime_ring_notification_002_78053.mp3
-mallet-end-complete-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_prompt_ui_mallet_notification_end_complete_finished_001_70206.mp3
-mallet-end-tone-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_end_complete_tone_mallet_92664.mp3
-mallet-marimba-positive-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_notification_musical_short_marimba_positive_feedback_002_64264.mp3
-mallet-marimba-success-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_marimba_warm_short_musical_tone_notify_complete_success_finish_114183.mp3
-mallet-mellow-playful-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_prompt_alert_mellow_calm_positive_playful_mallet_key_004_114382.mp3
-mallet-nudge-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_game_sound_mallets_nudge_reminder_005_70242.mp3
-mallet-nudge-tone-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_nudge_reminder_tone_mallet_002_92670.mp3
-mallet-plink-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_mallet_tone_single_plink_generic_002_105003.mp3
-mallet-short-positive-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_notification_mallet_musical_short_positive_002_61638.mp3
-mallet-taps-attention-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_mallet_3_taps_attention_77959.mp3
-mallet-taps-attention-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_mallet_bright_3_taps_attention_77961.mp3
-mallet-turn-on-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_mallet_tone_turn_on_start_105005.mp3
-mallet-wooden-attention-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_wooden_mallet_attention_process_complete_001_80640.mp3
-mallet-wooden-ring-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_mallet_wooden_chime_ring_002_78061.mp3
-mallet-wooden-two-tone-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_wooden_mallet_fast_positive_two_tone_004_78829.mp3
 metal-click-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/metalClick.ogg
 metal-latch-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/metalLatch.ogg
 metal-pot-01.ogg	kenney-rpg	CC0 1.0	sfx/kenney_rpg-audio/Audio/metalPot1.ogg
@@ -531,15 +433,6 @@ phaser-up-04.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/phaserUp4
 phaser-up-05.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/phaserUp5.ogg
 phaser-up-06.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/phaserUp6.ogg
 phaser-up-07.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/phaserUp7.ogg
-pop-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_pop_up_pop_002_91296.mp3
-pop-close-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_pop_up_close_002_78850.mp3
-pop-fast-clicks-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_pops_fast_clicks_001_106572.mp3
-pop-fast-clicks-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_pops_fast_clicks_002_106573.mp3
-pop-high-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_pop_up_pop_high_pitched_003_80448.mp3
-pop-refresh-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_app_refresh_pop_91297.mp3
-pop-up-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_pop_up_001_65532.mp3
-pop-x3-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_clicks_pops_x3_new_message_87961.mp3
-pop-x3-low-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_notification_alert_clicks_pops_x3_low_pitched_87960.mp3
 powerup-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp1.ogg
 powerup-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp2.ogg
 powerup-03.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp3.ogg
@@ -552,16 +445,11 @@ powerup-09.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp9.og
 powerup-10.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp10.ogg
 powerup-11.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp11.ogg
 powerup-12.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/powerUp12.ogg
-shoot-pool-01.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_shoot_pool.mp3
-shoot-pool-02.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_shoot_pool-v3.mp3
-shoot-sport-01.mp3	legacy	unknown — predates the ZapSplat drop, no record	sfx_shoot_sport_01.mp3
 slime-01.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/slime_000.ogg
 slime-02.ogg	kenney-scifi	CC0 1.0	sfx/kenney_sci-fi-sounds/Audio/slime_001.ogg
 step-carpet-01.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_carpet_000.ogg
 step-carpet-02.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_carpet_001.ogg
-step-carpet-03.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_carpet_002.ogg
 step-carpet-04.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_carpet_003.ogg
-step-carpet-05.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_carpet_004.ogg
 step-concrete-01.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_concrete_000.ogg
 step-concrete-02.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_concrete_001.ogg
 step-concrete-03.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_concrete_002.ogg
@@ -592,18 +480,6 @@ step-wood-02.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_w
 step-wood-03.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_wood_002.ogg
 step-wood-04.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_wood_003.ogg
 step-wood-05.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_wood_004.ogg
-success-game-completed-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_software_game_success_completed_finished_113741.mp3
-success-game-loading-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_software_game_success_loading_complete_113742.mp3
-success-game-open-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_software_game_success_open_113743.mp3
-success-musical-finish-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_finish_complete_109555.mp3
-success-soft-completed-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_software_warm_soft_tone_completed_chime_90051.mp3
-success-soft-completed-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_software_warm_soft_tone_successfully_completed_90056.mp3
-success-transfer-complete-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_ui_computer_software_update_or_file_transfer_complete_001_113734.mp3
-success-warm-finish-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_warm_finish_complete_001_64250.mp3
-success-warm-finish-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_warm_finish_complete_002_64251.mp3
-success-warm-finish-03.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_musical_warm_finish_complete_success_002_64254.mp3
-tone-clicky-correct-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_tone_short_thin_clicky_positive_correct_92811.mp3
-tone-delete-close-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_app_tone_delete_close_loud_001_91298.mp3
 tone-double-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/twoTone1.ogg
 tone-double-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/twoTone2.ogg
 tone-high-down-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/highDown.ogg
@@ -616,12 +492,7 @@ tone-pep-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/pepSound2.
 tone-pep-03.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/pepSound3.ogg
 tone-pep-04.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/pepSound4.ogg
 tone-pep-05.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/pepSound5.ogg
-tone-plucked-end-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_tone_thin_plucked_end_complete_001_92673.mp3
-tone-plucked-positive-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_alert_prompt_positive_plucked_112379.mp3
-tone-plucked-positive-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_tone_thin_plucked_positive_002_92680.mp3
 tone-single-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/tone1.ogg
-tone-soft-complete-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_prompt_complete_or_soft_error_002_97096.mp3
-tone-soft-shutdown-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_software_warm_soft_tone_successfully_shut_down_004_90060.mp3
 tone-triple-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/threeTone1.ogg
 tone-triple-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/threeTone2.ogg
 ui-back-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/back_001.ogg
@@ -633,7 +504,6 @@ ui-click-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/click
 ui-click-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/click_002.ogg
 ui-click-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/click_003.ogg
 ui-click-04.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/click_004.ogg
-ui-click-05.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/click_005.ogg
 ui-close-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/close_001.ogg
 ui-close-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/close_002.ogg
 ui-close-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/close_003.ogg
@@ -654,8 +524,6 @@ ui-glass-05.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glass
 ui-glass-06.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glass_006.ogg
 ui-glitch-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glitch_001.ogg
 ui-glitch-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glitch_002.ogg
-ui-glitch-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glitch_003.ogg
-ui-glitch-04.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/glitch_004.ogg
 ui-maximize-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/maximize_001.ogg
 ui-maximize-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/maximize_002.ogg
 ui-maximize-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/maximize_003.ogg
@@ -715,158 +583,314 @@ ui-switch-04.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/swit
 ui-switch-05.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/switch_005.ogg
 ui-switch-06.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/switch_006.ogg
 ui-switch-07.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/switch_007.ogg
-ui-tick-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/tick_001.ogg
 ui-tick-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/tick_002.ogg
 ui-tick-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/tick_004.ogg
 ui-toggle-01.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/toggle_001.ogg
 ui-toggle-02.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/toggle_002.ogg
 ui-toggle-03.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/toggle_003.ogg
 ui-toggle-04.ogg	kenney-interface	CC0 1.0	sfx/kenney_interface-sounds/Audio/toggle_004.ogg
-voice-female-congratulations.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/congratulations.ogg
-voice-female-correct.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/correct.ogg
-voice-female-eight.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/8.ogg
-voice-female-final-round.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/final_round.ogg
-voice-female-five.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/5.ogg
-voice-female-four.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/4.ogg
-voice-female-game-over.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/game_over.ogg
-voice-female-go.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/go.ogg
-voice-female-hurry-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/hurry_up.ogg
-voice-female-its-a-tie.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/its_a_tie.ogg
-voice-female-level-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/level_up.ogg
-voice-female-level.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/level.ogg
-voice-female-mission-completed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/mission_completed.ogg
-voice-female-mission-failed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/mission_failed.ogg
-voice-female-new-highscore.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/new_highscore.ogg
-voice-female-nine.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/9.ogg
-voice-female-objective-achieved.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/objective_achieved.ogg
-voice-female-one.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/1.ogg
-voice-female-power-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/power_up.ogg
-voice-female-ready.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/ready.ogg
-voice-female-round.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/round.ogg
-voice-female-set.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/set.ogg
-voice-female-seven.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/7.ogg
-voice-female-six.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/6.ogg
-voice-female-ten.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/10.ogg
-voice-female-three.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/3.ogg
-voice-female-time-over.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/time_over.ogg
-voice-female-two.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/2.ogg
-voice-female-war-call-for-backup.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_call_for_backup.ogg
-voice-female-war-cover-me.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_cover_me.ogg
-voice-female-war-fire-in-the-hole.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_fire_in_the_hole.ogg
-voice-female-war-get-down.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_get_down.ogg
-voice-female-war-go-go-go.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_go_go_go.ogg
-voice-female-war-hold.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_hold.ogg
-voice-female-war-look-out.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_look_out.ogg
-voice-female-war-medic.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_medic.ogg
-voice-female-war-reloading.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_reloading.ogg
-voice-female-war-rpg.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_rpg.ogg
-voice-female-war-sniper.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_sniper.ogg
-voice-female-war-suppressing-fire.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_supressing_fire.ogg
-voice-female-war-target-destroyed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_target_destroyed.ogg
-voice-female-war-target-engaged.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_target_engaged.ogg
-voice-female-war-watch-my-back.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/war_watch_my_back.ogg
-voice-female-wrong.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/wrong.ogg
-voice-female-you-lose.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/you_lose.ogg
-voice-female-you-win.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Female/you_win.ogg
-voice-fighter-arcade-mode.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/arcade_mode.ogg
-voice-fighter-battle-mode.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/battle_mode.ogg
-voice-fighter-begin.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/begin.ogg
-voice-fighter-championship-mode.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/championship_mode.ogg
-voice-fighter-choose-your-character.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/choose_your_character.ogg
-voice-fighter-combo-breaker.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/combo_breaker.ogg
-voice-fighter-combo.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/combo.ogg
-voice-fighter-deathmatch.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/deathmatch.ogg
-voice-fighter-eight.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/8.ogg
-voice-fighter-fight.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/fight.ogg
-voice-fighter-final-round.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/final_round.ogg
-voice-fighter-five.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/5.ogg
-voice-fighter-flawless-victory.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/flawless_victory.ogg
-voice-fighter-four.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/4.ogg
-voice-fighter-game-over.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/game_over.ogg
-voice-fighter-its-a-tie.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/it's_a_tie.ogg
-voice-fighter-kill-her.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/kill_her.ogg
-voice-fighter-kill-him.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/kill_him.ogg
-voice-fighter-kill-it.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/kill_it.ogg
-voice-fighter-loser.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/loser.ogg
-voice-fighter-multi-kill.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/multi_kill.ogg
-voice-fighter-nine.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/9.ogg
-voice-fighter-one.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/1.ogg
-voice-fighter-player-1.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/player_1.ogg
-voice-fighter-player-2.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/player_2.ogg
-voice-fighter-prepare-yourself.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/prepare_yourself.ogg
-voice-fighter-ready.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/ready.ogg
-voice-fighter-round-1.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/round_1.ogg
-voice-fighter-round-2.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/round_2.ogg
-voice-fighter-round-3.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/round_3.ogg
-voice-fighter-round-4.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/round_4.ogg
-voice-fighter-round-5.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/round_5.ogg
-voice-fighter-seven.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/7.ogg
-voice-fighter-six.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/6.ogg
-voice-fighter-story-mode.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/story_mode.ogg
-voice-fighter-sudden-death.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/sudden_death.ogg
-voice-fighter-survival-mode.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/survival_mode.ogg
-voice-fighter-ten.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/10.ogg
-voice-fighter-three.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/3.ogg
-voice-fighter-tie-breaker.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/tie_breaker.ogg
-voice-fighter-tie.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/tie.ogg
-voice-fighter-time.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/time.ogg
-voice-fighter-two.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/2.ogg
-voice-fighter-winner.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/winner.ogg
-voice-fighter-you-lose.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/you_lose.ogg
-voice-fighter-you-win.ogg	kenney-voice-fighter	CC0 1.0	sfx/kenney_voiceover-pack-fighter/Audio/you_win.ogg
-voice-male-congratulations.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/congratulations.ogg
-voice-male-correct.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/correct.ogg
-voice-male-eight.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/8.ogg
-voice-male-final-round.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/final_round.ogg
-voice-male-five.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/5.ogg
-voice-male-four.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/4.ogg
-voice-male-game-over.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/game_over.ogg
-voice-male-go.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/go.ogg
-voice-male-hold.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/hold.ogg
-voice-male-hurry-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/hurry_up.ogg
-voice-male-its-a-tie.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/its_a_tie.ogg
-voice-male-level-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/level_up.ogg
-voice-male-level.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/level.ogg
-voice-male-mission-completed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/mission_completed.ogg
-voice-male-mission-failed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/mission_failed.ogg
-voice-male-new-highscore.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/new_highscore.ogg
-voice-male-nine.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/9.ogg
-voice-male-objective-achieved.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/objective_achieved.ogg
-voice-male-one.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/1.ogg
-voice-male-power-up.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/power_up.ogg
-voice-male-ready.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/ready.ogg
-voice-male-round.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/round.ogg
-voice-male-set.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/set.ogg
-voice-male-seven.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/7.ogg
-voice-male-six.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/6.ogg
-voice-male-ten.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/10.ogg
-voice-male-three.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/3.ogg
-voice-male-time-over.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/time_over.ogg
-voice-male-two.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/2.ogg
-voice-male-war-call-for-backup.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_call_for_backup.ogg
-voice-male-war-cover-me.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_cover_me.ogg
-voice-male-war-fire-in-the-hole.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_fire_in_the_hole.ogg
-voice-male-war-get-down.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_get_down.ogg
-voice-male-war-go-go-go.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_go_go_go.ogg
-voice-male-war-look-out.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_look_out.ogg
-voice-male-war-medic.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_medic.ogg
-voice-male-war-reloading.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_reloading.ogg
-voice-male-war-rpg.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_rpg.ogg
-voice-male-war-sniper.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_sniper.ogg
-voice-male-war-suppressing-fire.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_suppressing_fire.ogg
-voice-male-war-target-destroyed.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_target_destroyed.ogg
-voice-male-war-target-engaged.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_target_engaged.ogg
-voice-male-war-watch-my-back.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/war_watch_my_back.ogg
-voice-male-wrong.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/wrong.ogg
-voice-male-you-lose.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/you_lose.ogg
-voice-male-you-win.ogg	kenney-voice	CC0 1.0	sfx/kenney_voiceover-pack/Male/you_win.ogg
-whoosh-trill-flutter-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_mobile_touch_screen_pull_down_refresh_trill_flutter_percussive_bold_002_91163.mp3
-whoosh-whistle-ascending-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_refresh_smartphone_app_short_sine_whistle_ascending_001_92649.mp3
-whoosh-whistle-ascending-02.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_ui_refresh_smartphone_app_short_sine_whistle_ascending_003_92651.mp3
-whoosh-whizz-clicks-01.mp3	zapsplat	ZapSplat standard licence (LICENSE-zapsplat.pdf)	zapsplat_multimedia_new_message_whizz_into_clicks_85147.mp3
 zap-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zap1.ogg
 zap-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zap2.ogg
 zap-double-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zapTwoTone.ogg
 zap-double-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zapTwoTone2.ogg
 zap-triple-down-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zapThreeToneDown.ogg
 zap-triple-up-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/zapThreeToneUp.ogg
+blade-swing-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx blade_01.ogg
+blade-swing-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx blade_02.ogg
+blade-swing-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx blade_03.ogg
+book-page-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx book_01.ogg
+book-page-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx book_02.ogg
+book-page-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx book_03.ogg
+book-page-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx book_04.ogg
+chain-rattle-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx chain_01.ogg
+chain-rattle-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx chain_02.ogg
+chain-rattle-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx chain_03.ogg
+creature-die-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_die_01.ogg
+creature-hurt-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_hurt_01.ogg
+creature-hurt-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_hurt_02.ogg
+creature-misc-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_01.ogg
+creature-misc-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_02.ogg
+creature-misc-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_03.ogg
+creature-misc-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_04.ogg
+creature-misc-05.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_05.ogg
+creature-misc-06.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_06.ogg
+creature-misc-07.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_07.ogg
+creature-misc-08.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_misc_08.ogg
+creature-monster-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_monster_01.ogg
+creature-monster-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_monster_02.ogg
+creature-monster-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_monster_03.ogg
+creature-monster-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_monster_04.ogg
+creature-roar-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_roar_01.ogg
+creature-roar-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_roar_02.ogg
+creature-roar-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_roar_03.ogg
+slime-squelch-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_slime_01.ogg
+slime-squelch-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_slime_02.ogg
+slime-squelch-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_slime_03.ogg
+slime-squelch-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx creature_slime_04.ogg
+coins-drop-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_coins_01.ogg
+coins-drop-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_coins_02.ogg
+coins-drop-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_coins_03.ogg
+coins-drop-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_coins_04.ogg
+gem-pickup-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_gem_01.ogg
+gem-pickup-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_gem_02.ogg
+gem-pickup-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_gem_03.ogg
+gem-pickup-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_gem_04.ogg
+item-pickup-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_01.ogg
+item-pickup-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_02.ogg
+item-pickup-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_03.ogg
+item-pickup-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_04.ogg
+item-pickup-05.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_05.ogg
+item-pickup-06.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_misc_06.ogg
+stone-drop-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_stone_01.ogg
+stone-drop-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_stone_02.ogg
+stone-drop-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_stone_03.ogg
+stone-drop-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_stone_04.ogg
+wood-drop-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_wood_01.ogg
+wood-drop-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_wood_02.ogg
+wood-drop-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx item_wood_03.ogg
+lock-click-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx lock_01.ogg
+lock-click-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx lock_02.ogg
+lock-click-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx lock_03.ogg
+metal-clang-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx metal_01.ogg
+metal-clang-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx metal_02.ogg
+metal-clang-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx metal_03.ogg
+item-misc-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx misc_01.ogg
+item-misc-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx misc_02.ogg
+item-misc-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx misc_03.ogg
+magic-spell-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_01.ogg
+magic-spell-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_02.ogg
+fire-spell-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_01.ogg
+fire-spell-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_02.ogg
+fire-spell-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_03.ogg
+fire-spell-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_04.ogg
+fire-spell-05.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_05.ogg
+fire-spell-06.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_06.ogg
+fire-spell-07.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx spell_fire_07.ogg
+stone-rumble-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx stones_01.ogg
+stone-rumble-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx stones_02.ogg
+stone-rumble-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx stones_03.ogg
+stone-rumble-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx stones_04.ogg
+wood-thud-01.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx wood_01.ogg
+wood-thud-02.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx wood_02.ogg
+wood-thud-03.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx wood_03.ogg
+wood-thud-04.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx wood_04.ogg
+wood-thud-05.ogg	oga-rpg	CC0 1.0	https://opengameart.org/content/80-cc0-rpg-sfx wood_05.ogg
+creature-alien-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_01.ogg
+creature-alien-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_02.ogg
+creature-alien-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_03.ogg
+creature-alien-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_04.ogg
+creature-alien-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_05.ogg
+creature-alien-06.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx alien_06.ogg
+creature-bark-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx barking_01.ogg
+creature-bark-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx barking_02.ogg
+creature-breath-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx breath.ogg
+creature-bug-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx bug_01.ogg
+creature-bug-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx bug_02.ogg
+creature-bug-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx bug_03.ogg
+creature-bug-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx bug_04.ogg
+creature-burble-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx burble_01.ogg
+creature-burble-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx burble_02.ogg
+creature-burp-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx burp_01.ogg
+creature-burp-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx burp_02.ogg
+creature-cute-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_01.ogg
+creature-cute-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_02.ogg
+creature-cute-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_03.ogg
+creature-cute-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_04.ogg
+creature-cute-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_05.ogg
+creature-cute-06.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_06.ogg
+creature-cute-07.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_07.ogg
+creature-cute-08.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_08.ogg
+creature-cute-09.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_09.ogg
+creature-cute-10.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx cute_10.ogg
+creature-eat-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx eat_01.ogg
+creature-eat-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx eat_02.ogg
+creature-eat-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx eat_03.ogg
+creature-eat-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx eat_04.ogg
+creature-grunt-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx grunt_01.ogg
+creature-grunt-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx grunt_02.ogg
+creature-grunt-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx grunt_03.ogg
+creature-grunt-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx grunt_04.ogg
+creature-grunt-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx grunt_05.ogg
+creature-howl-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx howl.ogg
+creature-pain-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx hurt_01.ogg
+creature-pain-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx hurt_02.ogg
+creature-pain-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx hurt_03.ogg
+creature-pain-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx hurt_04.ogg
+creature-pain-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx hurt_05.ogg
+creature-odd-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_01.ogg
+creature-odd-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_02.ogg
+creature-odd-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_03.ogg
+creature-odd-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_04.ogg
+creature-odd-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_05.ogg
+creature-odd-06.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_06.ogg
+creature-odd-07.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_07.ogg
+creature-odd-08.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_08.ogg
+creature-odd-09.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx misc_09.ogg
+creature-beast-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_01.ogg
+creature-beast-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_02.ogg
+creature-beast-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_03.ogg
+creature-beast-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_04.ogg
+creature-beast-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_05.ogg
+creature-beast-06.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_06.ogg
+creature-beast-07.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx monster_07.ogg
+creature-ooh-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx ooh.ogg
+creature-growl-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx roar_01.ogg
+creature-growl-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx roar_02.ogg
+creature-growl-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx roar_03.ogg
+creature-scream-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx scream_01.ogg
+creature-scream-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx scream_02.ogg
+creature-spit-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx spit_01.ogg
+creature-spit-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx spit_02.ogg
+creature-spit-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx spit_03.ogg
+creature-troll-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx troll_01.ogg
+creature-troll-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx troll_02.ogg
+creature-troll-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx troll_03.ogg
+creature-weird-01.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx weird_01.ogg
+creature-weird-02.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx weird_02.ogg
+creature-weird-03.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx weird_03.ogg
+creature-weird-04.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx weird_04.ogg
+creature-weird-05.ogg	oga-creature	CC0 1.0	https://opengameart.org/content/80-cc0-creature-sfx weird_05.ogg
+coins-jingle-01.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.1.ogg
+coins-jingle-02.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.2.ogg
+coins-jingle-03.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.3.ogg
+coins-jingle-04.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.4.ogg
+coins-jingle-05.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.5.ogg
+coins-jingle-06.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.6.ogg
+coins-jingle-07.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.7.ogg
+coins-jingle-08.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.8.ogg
+coins-jingle-09.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.9.ogg
+coins-jingle-10.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.10.ogg
+coins-jingle-11.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.11.ogg
+coins-jingle-12.ogg	oga-coins	CC0 1.0	https://opengameart.org/content/12-coin-sound-effects coin.12.ogg
+whoosh-swish-01.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-1.wav
+whoosh-swish-02.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-2.wav
+whoosh-swish-03.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-3.wav
+whoosh-swish-04.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-4.wav
+whoosh-swish-05.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-5.wav
+whoosh-swish-06.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-6.wav
+whoosh-swish-07.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-7.wav
+whoosh-swish-08.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-8.wav
+whoosh-swish-09.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-9.wav
+whoosh-swish-10.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-10.wav
+whoosh-swish-11.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-11.wav
+whoosh-swish-12.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-12.wav
+whoosh-swish-13.mp3	oga-swishes	CC0 1.0	https://opengameart.org/content/swishes-sound-pack swish-13.wav
+bell-hand-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx bell_01.ogg
+bell-hand-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx bell_02.ogg
+bell-hand-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx bell_03.ogg
+door-knock-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_01.ogg
+door-knock-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_02.ogg
+door-shut-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_close_01.ogg
+door-shut-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_close_02.ogg
+door-shut-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_close_03.ogg
+door-shut-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_close_04.ogg
+door-swing-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx door_open.ogg
+explosion-boom-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx explosion.ogg
+glass-clink-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx glass_01.ogg
+glass-clink-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx glass_02.ogg
+glass-clink-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx glass_03.ogg
+glass-clink-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx glass_04.ogg
+glass-clink-05.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx glass_05.ogg
+gong-hit-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx gong_01.ogg
+gong-hit-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx gong_02.ogg
+hit-thud-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx hit_01.ogg
+hit-thud-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx hit_02.ogg
+hit-thud-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx hit_03.ogg
+hit-thud-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx hit_04.ogg
+key-turn-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx key_open_01.ogg
+key-turn-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx key_open_02.ogg
+metal-clank-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_01.ogg
+metal-clank-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_02.ogg
+metal-clank-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_03.ogg
+metal-clank-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_04.ogg
+metal-clank-05.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_05.ogg
+metal-clank-06.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_06.ogg
+metal-clank-07.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_07.ogg
+metal-clank-08.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_08.ogg
+metal-clank-09.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_09.ogg
+metal-clank-10.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_10.ogg
+metal-clank-11.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_11.ogg
+metal-clank-12.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx metal_12.ogg
+paper-rustle-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx paper_01.ogg
+paper-rustle-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx paper_02.ogg
+paper-rustle-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx paper_03.ogg
+paper-rustle-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx paper_04.ogg
+pop-plop-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx plop_01.ogg
+pop-plop-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx plop_02.ogg
+pot-bang-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx pot_01.ogg
+pot-bang-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx pot_02.ogg
+shoot-gun-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx shot_01.ogg
+shoot-gun-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx shot_02.ogg
+impact-slam-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_01.ogg
+impact-slam-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_02.ogg
+impact-slam-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_03.ogg
+impact-slam-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_04.ogg
+impact-slam-05.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_05.ogg
+impact-slam-06.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_06.ogg
+impact-slam-07.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx slam_07.ogg
+water-splash-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx splash_01.ogg
+water-splash-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx splash_02.ogg
+spring-boing-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_01.ogg
+spring-boing-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_02.ogg
+spring-boing-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_03.ogg
+spring-boing-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_04.ogg
+spring-boing-05.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_05.ogg
+spring-boing-06.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_06.ogg
+spring-boing-07.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_07.ogg
+spring-boing-08.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_08.ogg
+spring-boing-09.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx spring_09.ogg
+switch-flick-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx switch_01.ogg
+switch-flick-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx switch_02.ogg
+tools-clank-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx tools_01.ogg
+tools-clank-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx tools_02.ogg
+tools-clank-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx tools_03.ogg
+tools-clank-04.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx tools_04.ogg
+tools-clank-05.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx tools_05.ogg
+wood-box-open-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx wooded_box_open.ogg
+wood-knock-01.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx wooden_01.ogg
+wood-knock-02.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx wooden_02.ogg
+wood-knock-03.ogg	oga-100	CC0 1.0	https://opengameart.org/content/100-cc0-sfx wooden_03.ogg
+mech-clank-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds clank1.wav
+mech-clunk-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds lightclunk1.wav
+mech-clunk-02.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds lightclunk2.wav
+mech-gear-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds mechanical1.wav
+mech-gear-02.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds mechanical2.wav
+mech-rattle-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds rattle1.wav
+mech-click-squeaky-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds squeakyclick1.wav
+mech-click-squeaky-02.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds squeakyclick2.wav
+mech-typewriter-01.mp3	oga-mechanical	CC0 1.0	https://opengameart.org/content/mechanical-sounds typewriter.wav
+clock-tick-01.ogg	oga-clock	CC0 1.0	https://opengameart.org/content/ticking-clock-0 clock-1.ogg
+electric-charge-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack charge.wav
+electric-charge-start-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack chargestart.wav
+loop-electric-crackle-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack crackleelectricityloop.wav
+electric-death-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack death_1.wav
+electric-boom-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack deathboom.wav
+electric-ground-hit-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack groundhit.wav
+electric-hit-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack hit.wav
+electric-kill-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack killconfirmed.wav
+electric-power-down-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack powerdown.wav
+electric-power-up-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack powerup.wav
+electric-recharge-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack recharge.wav
+electric-shield-hit-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack shieldhit.wav
+loop-electric-shield-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack shieldloop.wav
+loop-electric-snap-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack snaploop.wav
+electric-teleport-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack teleport_1.wav
+electric-turbo-01.mp3	oga-electricity	CC0 1.0	https://opengameart.org/content/electricity-game-sound-pack turbo.wav
+loop-fire-crackle-01.mp3	oga-fire	CC0 1.0	https://opengameart.org/content/fire-crackling fire-1.wav
+fire-ignite-01.ogg	oga-fire	CC0 1.0	https://opengameart.org/content/catching-fire flame.ogg
+crowd-applause-01.ogg	oga-well-done	CC0 1.0	https://opengameart.org/content/well-done welldone.ogg
+marimba-plink-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Marimba Outrigger F5 med, lowered to C#6
+marimba-taps-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Marimba Outrigger G4 med: three taps on F#5
+marimba-error-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Marimba Outrigger C2 loud: E3 then D3
+marimba-error-02.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Marimba Outrigger G2 med: G#3 then F#3
+marimba-error-03.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Marimba Outrigger B2 soft: D4 then A#3
+glock-ping-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Glockenspiel medium C6, lowered to B6
+glock-ping-02.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Glockenspiel soft C6: D7 then F#7
+glock-two-tone-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Glockenspiel medium G4 and C5: E5 then E6
+glock-chord-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Glockenspiel medium G4 and C5: E6, then G5 B5 D6 together
+vibe-arpeggio-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Vibraphone hard mallets: F3 C4 A4 C5 E5 arpeggio
+glock-glissando-up-01.mp3	vsco2ce	CC0 1.0	https://github.com/sgossner/VSCO-2-CE cut from VSCO 2 CE glock_fx_up_pentatonic_med_01
+harp-run-up-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Concert Harp mf: C4 D4 G4 C5 D5 G5 C6 run
+harp-roll-up-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Concert Harp mf: E major roll E3 to E5
+harp-success-01.mp3	vcsl	CC0 1.0	https://github.com/sgossner/VCSL built from VCSL Concert Harp mf (A3 B3 E4 A4 B4 E5) over VSCO 2 CE vibraring3
+whistle-rise-01.mp3	oga-up-3x	CC0 1.0	https://opengameart.org/content/up-3x built from qubodup Up (3x) upshort.wav, raised ten semitones

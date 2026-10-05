@@ -5,7 +5,8 @@ stretch of it per biome, per level band or per mode, and a quiet, slower window
 of the same track under the menus.
 
 `games/arcider` is the reference; `games/blight`, `games/bouncetry`,
-`games/echomaze`, `games/gearball`, `games/radiam` and `games/spinshock` followed.
+`games/echomaze`, `games/gearball`, `games/radiam`, `games/spinshock` and
+`games/vipera` followed.
 This document is the procedure for the other eight — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
@@ -289,7 +290,7 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 | `spinshock`  | 182.0 s | 23.0 s       | **5 bands + menu**, one dish apiece      |
 | `stratideck` | 177.2 s | 30.0 s       | **5 map bands + menu**, one camp apiece  |
 | `triverse`   | 30.8 s  | 30.8 s       | needs a longer master first              |
-| `vipera`     | 30.8 s  | 30.8 s       | needs a longer master first              |
+| `vipera`     | 176.9 s | 33.0 s       | **5 biomes + menu**, one ground apiece   |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,
 which is what the ten do today. Nothing about them changed when the sections

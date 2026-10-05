@@ -69,7 +69,7 @@
  *   character-happy
  *
  *   decor-NN           the decor pool: small painted objects the shell
- *                      scatters over the end screen, the round's corners and
+ *                      scatters over the end screen and
  *                      the web menu's panels. They come out of a sheet with
  *                      `cut-objects.mjs --adopt 1,4 --as decor`, which writes
  *                      the role into the manifest, and no game names one —
@@ -180,7 +180,7 @@ var CARD_BY_SLUG = {
 
 /* The DECOR POOL: `<slug>-decor-NN.png`, adopted out of a sheet with
    `cut-objects.mjs --adopt 1,4 --as decor`. These are the small objects the
-   shell scatters over the end screen, the round's corners and the web menu's
+   shell scatters over the end screen and the web menu's
    panels (packages/shell/shell.js, Decor) — a game names none of them, so
    four or five of them ride in EVERY build of that game and the size is what
    keeps that affordable. They are shown between 120 and 220 design px and
@@ -260,6 +260,42 @@ var CLOUD = { w: 600, h: 320, q: 0.78 };
    quality is what keeps a hundred and eighty of them affordable. */
 var CAST = { w: 600, h: 830, q: 0.8 };
 
+/* A SCROLLING GROUND: `ground-<biome>`, the floor a game draws on the CANVAS
+   under its round and scrolls with the world (games/vipera, one per biome). It
+   is painted to repeat vertically, so it is fitted to the frame's WIDTH — the
+   720 design px it is drawn across — and keeps its own height, which is the
+   period it repeats at. Soft painted art under the play, like a background. */
+var GROUND = { w: 720, h: 1440, q: 0.74 };
+
+/* THE BANKS' OBJECTS: `bank-<biome>NN`, the props games/vipera scatters along
+   the two margins of its burrow, outside the rails. Drawn at 90 to 150 design
+   px, never bigger, and twenty of them ride in every build, the playable
+   included — so the box is the size they are shown at on a 3x phone, no more. */
+var BANK = { w: 256, h: 256, q: 0.8 };
+
+/* THE DRIFTING LOG: `treeNN`, games/vipera's swamp hazard, a trunk seen from
+   above and drawn ~200 design px across. Wide and short like the material
+   (the cut is 1969x687), and sized for that width on a 3x phone — the generic
+   320 px box was half of it. One of them rides in every build. */
+var TREE = { w: 600, h: 220, q: 0.8 };
+
+/* THE EAGLE: `eagle-<pose>`, games/vipera's bird over the lair — `plane` (its
+   shadow), `start` and `attack` (the stoop). Drawn across half the frame,
+   ~334 design px wide, so the box is twice that and keeps the master's 3:2. */
+var EAGLE = { w: 720, h: 480, q: 0.8 };
+
+/* THE LIGHTNING: `lightningNN`, games/vipera's temple storm — three bolts,
+   the charge, two impacts and two scorch marks. A bolt is drawn ~300 design px
+   wide and stretched up to the top of the frame, an impact ~280 across, so the
+   box is about twice that and keeps the bolt's portrait shape. */
+var LIGHTNING = { w: 560, h: 720, q: 0.8 };
+
+/* THE THORN AND THE TRAPS: `peakNN` (games/vipera's thorn ball, four
+   designs) and `trap-peakNN` / `trap-fireNN` (its two traps, three frames
+   each: sunk, rising, up). Drawn ~80-90 design px across, about one per lane
+   of a row, so the box is that size on a 3x phone, like the banks' props. */
+var HAZARD = { w: 256, h: 256, q: 0.8 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -284,6 +320,12 @@ function profileFor(role, slug) {
   if (role.indexOf("sticker") === 0) return STICKER;
   if (/^home\d+$/.test(role)) return HOUSE;
   if (role.indexOf("cloud-") === 0) return CLOUD;
+  if (role.indexOf("ground-") === 0) return GROUND;
+  if (role.indexOf("bank-") === 0) return BANK;
+  if (/^tree\d+$/.test(role)) return TREE;
+  if (role.indexOf("eagle-") === 0) return EAGLE;
+  if (/^lightning\d+$/.test(role)) return LIGHTNING;
+  if (/^(peak|trap-peak|trap-fire)\d+$/.test(role)) return HAZARD;
   if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
@@ -382,7 +424,10 @@ function knownRole(role) {
          role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
          /^brick-[a-z]+-\d+$/.test(role) || /^button-(on|off)-\d+$/.test(role) ||
          role.indexOf("background-") === 0 || /^home\d+$/.test(role) ||
-         role.indexOf("cloud-") === 0 || /^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role);
+         role.indexOf("cloud-") === 0 || /^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role) ||
+         role.indexOf("ground-") === 0 || role.indexOf("bank-") === 0 ||
+         /^tree\d+$/.test(role) || role.indexOf("eagle-") === 0 ||
+         /^lightning\d+$/.test(role) || /^(peak|trap-peak|trap-fire)\d+$/.test(role);
 }
 
 function masters(all) {

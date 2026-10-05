@@ -14,8 +14,9 @@
 #   make preview the same site built once, no reload — restart it to rebuild
 #   make lab     every lab page behind one back office, at http://localhost:8095/
 #   make store   the store card composer, at http://localhost:8091/
-#   make events  the callouts / cues bench, at http://localhost:8092/ (and /library, the sfx by ear; /pop, the Pop styles)
+#   make events  the callouts / cues bench, at http://localhost:8092/ (and /kit, the house sound kit; /library, the sfx by ear; /pop, the Pop styles)
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
+#   make kit     re-cut the house sound kit (assets/audio/kit/) after editing kit.json by hand
 #   make text    the copy desk, at http://localhost:8093/
 #   make village the village composer, at http://localhost:8094/
 #   make stickers the sticker review desk, at http://localhost:8096/
@@ -30,7 +31,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve preview lab store events sfx text village stickers meta shots map ng android
+.PHONY: help check test push itch site serve preview lab store events sfx kit text village stickers meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -104,6 +105,9 @@ store:
 # games/<slug>/game.js (tools/lab/apply-events.mjs) and re-cuts a swapped clip.
 # A line signed off is checked into lab/events-review.json; a game whose every
 # line is checked is green in the picker.
+# /v2 is the same bench with the game's own MOMENT under each event: REC records
+# the game being played (lab/events-clips/, ignored by git), ↻ loops it under a
+# row, and EN keeps a callout in English on the French screen.
 # `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
 events:
 	node tools/lab/serve-events.mjs
@@ -115,6 +119,13 @@ events:
 # this is run by hand when a file is added, removed or renamed.
 sfx:
 	node tools/lab/index-sfx.mjs
+
+# The house sound kit — what the shell sounds like in every game — re-cut and
+# levelled out of assets/audio/kit/kit.json. The kit page (`make events` → /kit)
+# runs the same cut on Save; this is for a kit.json edited by hand. The cuts are
+# committed, so tools/update.mjs never runs ffmpeg.
+kit:
+	node tools/lab/cut-kit.mjs
 
 # Every word a game shows a player, EN and FR side by side, read off the four
 # sources instead of one call at a time. Same reason for a server as the two

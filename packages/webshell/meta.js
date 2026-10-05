@@ -1510,7 +1510,7 @@
           piece(host, "mt-coin", icon("coin", "mt-ci"), a, b, 60, 0.45,
                 idx * FLY_GAP + 20, FLY_MS);
           setTimeout(function () {
-            W.Sound.cue("uiRow", 0.32, 1.1 + idx * 0.035, 620 + idx * 40, 0.04);
+            W.Sound.ui("coin", 0.32, 1 + idx * 0.035);
             if (idx === FLY_N - 1) land();
           }, idx * FLY_GAP + FLY_MS + 40);
         })(i);
@@ -1527,7 +1527,7 @@
                       a, b, o.spread ? 45 : 0, o.big ? 0.26 : 0.3, 0, 0);
       setTimeout(function () {
         if (fly.parentNode) fly.parentNode.removeChild(fly);
-        W.Sound.cue("uiStar", 0.6, o.big ? 1.35 : 1.25, o.big ? 1040 : 980, 0.12, "triangle");
+        W.Sound.ui("gain", 0.6, o.big ? 1.08 : 1);
         land();
       }, HOME_MS);
       span = HOME_MS;
@@ -1541,7 +1541,7 @@
       hit(home.node);
       if (cell) countTo(cell, before, after, 340);
       else if (lv) { lv.holdXp = null; fillLv(lv, before, after); }
-      W.Sound.cue("uiRow", 0.5, n < 0 ? 0.68 : 1.2, n < 0 ? 300 : 900, 0.1);
+      W.Sound.ui(n < 0 ? "tick" : "gain", 0.5, n < 0 ? 0.7 : 1);
       veil(home.w, kind, away);
       if (o.done) o.done();
     }
@@ -1637,7 +1637,7 @@
       return;
     }
     step(a.level, a.need, a.need, function () {
-      W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
+      W.Sound.ui("reward", 0.8);
       step(b.level, b.need, b.into, function () { if (done) done(); });
     });
   }
@@ -1917,8 +1917,7 @@
           var f = b.querySelector(".face");
           if (f) f.src = giftFace(faces[i], true);
         }, 180);
-        W.Sound.cue("uiScore", 0.75, 1.1, 900, 0.14);
-        W.Sound.cue("uiStar", 0.55, 1.5, 1400, 0.1, "triangle");
+        W.Sound.ui("reward", 0.75);
         setTimeout(function () { reveal(hand, rewards[i], opts); }, 760);
       });
       row.appendChild(b);
@@ -1997,7 +1996,7 @@
     card.appendChild(el("div", "mt-rw-name shine", rewardLabel(rw)));
     if (rw.kind === "sticker") card.appendChild(el("div", "mt-rw-rar r" + rarityOf(rw.n), rarityName(rw.n)));
 
-    W.Sound.cue("uiStar", 0.8, 1.35, 1180, 0.18, "triangle");
+    W.Sound.ui("reward", 0.8);
     /* No Confetti: the motor's own burst draws on the END SCREEN's canvas
        (packages/engine/engine.js), and this card opens over the map or the
        title screen, where that canvas is not on top of anything. The badge's
@@ -2569,7 +2568,7 @@
       setTimeout(function () {
         if (i === 0) sc.classList.add("cut");
         parts[i].classList.add("on");
-        W.Sound.cue("uiRow", vol, rate, 620 + i * 220, 0.08);
+        W.Sound.ui("tick", vol, rate);
       }, i * GAIN_MS);
     }
     return g;
@@ -2649,7 +2648,7 @@
         card.appendChild(el("div", "mt-rw-rar r" + rarityOf(n), rarityName(n)));
       }
     });
-    W.Sound.cue("uiStar", 0.85, 1.5, 1180, 0.2, "triangle");
+    W.Sound.ui("reward", 0.85);
   }
 
   /* THE THREE-STAR BONUS, HANDED OVER ON THE ROUND THAT EARNED IT. It used to
@@ -2943,7 +2942,6 @@
       fill: function (body) { fillLog(body); },
       onClose: function () { logCard = null; }
     });
-    W.Sound.cue("uiRow", 0.4, 1.05, 400, 0.06);
   }
 
   /* A layer may register before the band is built, or after: both orders

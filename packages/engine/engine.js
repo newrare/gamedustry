@@ -316,6 +316,9 @@
     }
     function clip(name, vol, rate) {
       if (muted) return;
+      // A key the game's manifest hands to the house kit (`sfx`): its variant plays.
+      var id = CONFIG.sfx && CONFIG.sfx[name];
+      if (id) { shoot(id, vol, rate); return; }
       var src = ASSETS.sounds[name]; if (!src) return;
       var a = ensure(), buf = buffers[name];
       if (a && buf) {
@@ -341,12 +344,83 @@
        and still sounds like something in a game with zero assets. `rate` also
        shifts the fallback pitch, so both paths follow the same melody.      */
     function cue(name, vol, rate, freq, dur, type) {
-      if (ASSETS.sounds[name]) return clip(name, vol, rate);
+      if (ASSETS.sounds[name] || (CONFIG.sfx && CONFIG.sfx[name])) return clip(name, vol, rate);
       beep((freq || 440) * (rate == null ? 1 : rate), dur, type || "triangle", vol == null ? 0.3 : vol * 0.4);
     }
+    /* --- The house kit ----------------------------------------------------
+       What the SHELL sounds like, the same in every game: a ROLE is what a
+       moment means (`tap`, `open`, `coin`, `star`, `reward`, `fail`…) and the
+       builder injects its takes as ASSETS.sounds["kit-<role>-<variant>-<n>"],
+       with CONFIG.kit[id] = { key, n, jitter } beside them — the id is the
+       role's name for a shell role, `role/variant` for a gameplay one
+       (tools/build/build.mjs, cut by tools/lab/cut-kit.mjs out of
+       assets/audio/kit/kit.json). Every take
+       leaves the cutter at one loudness, so `vol` here is MIX — this moment
+       against the others — and never a correction of the file.
+
+       Two takes of a role never play twice in a row, and a role with a
+       `jitter` is detuned a little on every shot, so a tab tapped ten times
+       does not sound like a recording. A ladder (the stars, the coins) has no
+       jitter: its `rate` IS the melody.
+
+       `open` and `close` are the view system's own doors (packages/webshell/
+       view.js plays them on every card and every view), and a door is the
+       quietest thing that can be said: it waits for the end of the current
+       task, and any other role played in that task takes its place — a reward
+       card opening says "reward", not "open, reward". Several doors in one
+       task (a stack peeled to the floor) are one door. Neither plays before
+       the first gesture has made a context: a door at boot is not a sound.
+
+       A GAME reaches the kit without a line of code changing: its manifest
+       maps the keys it already plays to variants of the gameplay roles
+       (`"sfx": { "gem": "pickup/glass" }`) — a crash in one game is not a
+       crash in another — the builder injects that as CONFIG.sfx, and
+       `Sound.clip("gem")` plays the variant instead of an embedded clip. Its
+       signature sounds stay clips. */
+    var UI_FALLBACK = {                       // [freq, dur] of the synth stand-in
+      tap: [520, 0.05], open: [620, 0.07], close: [460, 0.07], deny: [220, 0.12],
+      tick: [480, 0.05], coin: [900, 0.05], score: [900, 0.14], star: [660, 0.16],
+      gain: [980, 0.12], buy: [900, 0.12], draw: [380, 0.08], reward: [1180, 0.2],
+      win: [660, 0.2], fail: [200, 0.45],
+      pickup: [880, 0.08], bonus: [1180, 0.2], combo: [990, 0.14], power: [520, 0.25],
+      malus: [260, 0.2], crash: [120, 0.35], move: [600, 0.06]
+    };
+    var lastTake = {}, door = null, doorTimer = null;
+    function shoot(id, vol, rate) {
+      var k = CONFIG.kit && CONFIG.kit[id], r = rate == null ? 1 : rate;
+      if (!k || !k.n) {
+        var f = UI_FALLBACK[id.split("/")[0]] || [440, 0.1];
+        beep(f[0] * r, f[1], "triangle", (vol == null ? 1 : vol) * 0.3);
+        return;
+      }
+      var i = 0;
+      if (k.n > 1) {
+        var prev = lastTake[id] == null ? -1 : lastTake[id];
+        i = Math.floor(Math.random() * (prev < 0 ? k.n : k.n - 1));
+        if (prev >= 0 && i >= prev) i++;
+      }
+      lastTake[id] = i;
+      if (k.jitter) r *= 1 + (Math.random() * 2 - 1) * k.jitter;
+      clip(k.key + "-" + (i + 1), vol, r);
+    }
+    function ui(role, vol, rate) {
+      if (role === "open" || role === "close") {
+        if (!actx) return;
+        door = [role, vol, rate];
+        if (!doorTimer) doorTimer = setTimeout(function () {
+          doorTimer = null;
+          var d = door; door = null;
+          if (d) shoot(d[0], d[1], d[2]);
+        }, 0);
+        return;
+      }
+      door = null;
+      shoot(role, vol, rate);
+    }
+
     function unlock() { var a = ensure(); decodeAll(); return a; }
     return {
-      unlock: unlock, beep: beep, arp: arp, clip: clip, cue: cue,
+      unlock: unlock, beep: beep, arp: arp, clip: clip, cue: cue, ui: ui,
       setMuted: function (v) { muted = !!v; },
       isMuted: function () { return muted; },
       ctx: function () { return actx; },              // no resume: for Music
@@ -963,6 +1037,20 @@
     return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
   }
 
+  /* --- freeCanvas: give a baked canvas's pixels back NOW -----------------
+     A cached canvas a game replaces (a backdrop rebuilt for a new band, a
+     sprite set rebuilt on a resize) is garbage, but its backing store — and
+     on a phone the GPU texture behind it — lives until a major GC, which
+     lands mid-round, rounds later, as a hitch. Zeroing the size frees the
+     pixels at once and leaves an empty husk the collector sweeps for free.
+     Call it on the canvas being REPLACED, never on one still drawn. Returns
+     null, so `bg = freeCanvas(bg);` reads as what it does.
+     -------------------------------------------------------------------- */
+  function freeCanvas(cv) {
+    if (cv && cv.getContext) { cv.width = 0; cv.height = 0; }
+    return null;
+  }
+
   /* --- Fx: the shared canvas juice layer --------------------------------
      Particles, expanding rings, floating world-space text, screen shake,
      colour flash and hit-stop — the things every playable needs and no game
@@ -1144,7 +1232,10 @@
      Notify.say), so it reads over a finished scene rather than a half-built
      one.
 
-     CONFIG.enter = false opts a game out: the round starts at once. */
+     CONFIG.enter = false opts a game out: the round starts at once, and the
+     landing's callback runs on the round's first update rather than inside
+     start() — the bootstrap arms the round's bed AFTER calling start(), so
+     running it there would start whatever section was armed before. */
   var Enter = (function () {
     var LEAD = 1.25;      // the ground alone: a full second once the screen
                           // in front of it (.screen, .25 s) has faded out
@@ -1155,6 +1246,7 @@
     var FADE = 0.35;      // share of the flight it takes to become opaque
     var AFTER = 0.3;      // a `last` element leaves this long after the last slot
     var on = false, t = 0, n = 0, count = 0, k = 1, stack = [], done = null, queue = [];
+    var pending = null;   // CONFIG.enter === false: the landing, run on the first update
     var lastNow = false, lastSeen = false;   // a `last` element this frame / ever
     var ranks = [], slotOf = null;            // this frame's ranks; last frame's slot per open index
     var alpha = null;     // the prototype's own globalAlpha accessor
@@ -1181,7 +1273,8 @@
 
     function start(fn) {
       if (on) finish();
-      if (CONFIG.enter === false) { if (fn) fn(); return; }
+      pending = null;
+      if (CONFIG.enter === false) { pending = fn || null; return; }
       on = true; t = 0; n = 0; count = 0; k = 1; stack.length = 0; done = fn || null; queue = [];
       ranks = []; slotOf = null;
       lastNow = lastSeen = false;
@@ -1205,6 +1298,7 @@
     }
     // The entrance is torn down with its round, without starting anything.
     function cancel() {
+      pending = null;
       if (!on) return;
       done = null; queue = []; finish();
     }
@@ -1215,6 +1309,7 @@
       return true;
     }
     function update(dt) {
+      if (pending) { var fn = pending; pending = null; fn(); }
       if (!on) return;
       t += dt;
       if (t >= total()) finish();

@@ -12,7 +12,8 @@
 
     a call    the style of a Pop, its word, its anchor, the clip a cue names,
               its volume and its pitch — rewritten IN PLACE in
-              games/<slug>/game.js, one argument at a time.
+              games/<slug>/game.js, one argument at a time. And one rewrite
+              of a whole call: a Notify.say turned into a Pop.show.
 
     a clip    ASSETS.sounds.<key> re-cut from another file of
               assets/audio/sfx/ (ffmpeg, mono 32 kHz / 64 kbps, a 70 ms fade —
@@ -60,6 +61,51 @@ const FIELDS = {
   'Sound.clip':      { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } },
   'Sound.cue':       { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } }
 };
+
+/* ── a notice turned into a callout ───────────────────────────────────────
+   `Notify.say(word, { sub, kind, icon })` → `Pop.show(style, { word, sub })`.
+   The one edit that rewrites the whole call rather than one argument: the
+   word moves from a position into the options object, so there is no single
+   span to splice. The word and the sub keep the source's own text — a built
+   word stays built — unless the bench retyped a literal. What a Pop has no
+   use for (`kind`, `icon`, `key`, and `hold`, which is a notice's reading time
+   and not a callout's) is dropped and named; the style's own timing takes over. */
+function convertNotify(src, call, set, edits, skip, label) {
+  const style = String(set.as);
+  if (!/^\w+$/.test(style)) { skip.push(`${label}: "${style}" is not a Pop style — not converted`); return; }
+  const spans = call.argSpans;
+  const raw = (sp) => src.slice(sp.start, sp.end).trim();
+  if (!spans.length) { skip.push(`${label}: no word to carry — not converted`); return; }
+  if (spans.length > 2) { skip.push(`${label}: more than two arguments — convert it by hand`); return; }
+  if (spans[1] && raw(spans[1])[0] !== '{') { skip.push(`${label}: the options are an expression — convert it by hand`); return; }
+
+  const pick = (name, srcText, isLiteral) => {
+    if (set[name] == null) return srcText;               // untouched on the bench
+    if (srcText != null && !isLiteral) {
+      skip.push(`${label} ${name}: the source writes an expression (${srcText}) — kept as it is`);
+      return srcText;
+    }
+    return set[name] === '' ? null : q(set[name]);
+  };
+  const opts = call.optSpans || {};
+  const word = pick('word', raw(spans[0]), literal(call.args[0]) != null);
+  const subSrc = opts.sub ? src.slice(opts.sub.start, opts.sub.end).trim() : null;
+  const sub = pick('sub', subSrc, subSrc == null || literal(subSrc) != null);
+
+  const fields = [];
+  if (word != null) fields.push(`word: ${word}`);
+  if (sub != null) fields.push(`sub: ${sub}`);
+  if (set.at) fields.push(`at: ${q(set.at)}`);
+  for (const k of Object.keys(opts)) {
+    if (k !== 'sub') skip.push(`${label}: ${k} dropped — a Pop has no ${k === 'hold' ? 'notice timing' : k}`);
+  }
+  edits.push({
+    start: call.callSpan.start, end: call.callSpan.end,
+    text: `Pop.show(${q(style)}${fields.length ? `, { ${fields.join(', ')} }` : ''})`,
+    what: label,
+    applied: { what: label, value: `Pop.show("${style}")`, line: call.line }
+  });
+}
 
 /* One positional argument. An argument that is not there yet is appended, and
    the ones it skips over take the motor's own default rather than a hole. */
@@ -391,6 +437,11 @@ export async function applyEdits(slug, plan) {
       continue;
     }
     const call = hits[0];
+    // A notice converted carries its word and sub along: one edit, not three.
+    if (call.name === 'Notify.say' && edit.set && edit.set.as) {
+      convertNotify(src, call, edit.set, edits, skipped, `${call.name}:${call.line}`);
+      continue;
+    }
     const spec = FIELDS[call.name];
     if (!spec) { skipped.push(`${call.name}: not an editable call`); continue; }
     for (const [name, value] of Object.entries(edit.set || {})) {

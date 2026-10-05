@@ -68,7 +68,9 @@
 
    Every row is editable — the style, the word, the anchor, the clip, the file
    that clip is cut from, the volume, the pitch — so a change can be seen and
-   heard before it is written.
+   heard before it is written. A notice can also be turned into a callout: its
+   first dropdown reads `notify`, and picking a Pop style there fires the row
+   as that Pop.show, and apply rewrites the call (kind and icon dropped).
 
    APPLY is what makes it stick. What the rows changed goes to POST /api/apply
    (tools/lab/apply-events.mjs), which splices the arguments back into
@@ -103,11 +105,9 @@
    every line under it at once. A game whose every callout, notice and cue line
    is checked turns green in the picker, and HIDE CHECKED leaves what is left.
 
-   The picker's first entry is the TEMPLATE. Its clips are the end screen's
-   (uiScore, uiStar, uiRow) and no line of its own plays them: the motor does,
-   so its SOUND side lists those motor lines (marked, blue) under each clip —
-   played in the template's own web build, their volume and pitch swept by ear
-   and never written, while the clip itself is re-cut into template/game.js.
+   The picker's first entry is the TEMPLATE, played in its own web build. The
+   end screen's sounds are not its clips any more: they are the house kit's
+   (Sound.ui), chosen on the kit page (/kit, lab/sound-kit.html).
    Served by `make events` (tools/lab/serve-events.mjs).
    =========================================================================== */
 
@@ -210,6 +210,7 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
 }
 .k-pop     .tag { background:#3a2350; color:#dcb6ff; }
 .k-notify .tag { background:#1f3550; color:#9fd0ff; }
+.k-notify.as-pop .tag { background:#3a2350; color:#dcb6ff; }
 .k-sound   .tag { background:#1d3d31; color:#8fe0b8; }
 
 .call input, .call select { padding:3px 7px; border-radius:6px; font:700 12px/1.4 inherit; }
@@ -316,6 +317,10 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
   position:relative;
 }
 .filebtn::after { content:"▾"; position:absolute; right:7px; top:3px; color:#6f6f92; }
+.kitbtn { flex:1 1 180px; min-width:150px; max-width:280px; padding:3px 9px; border:1px solid #3a3260; border-radius:7px; background:#1a1630; color:#c8b8ff; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-decoration:none; }
+.kitbtn:hover { border-color:#c8b8ff; }
+.kitsel { flex:0 1 170px; min-width:110px; padding:3px 6px; background:#151522; color:#c8b8ff; border:1px solid #3a3260; border-radius:7px; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.kitsel.dirty { border-color:#ffd08a; color:#ffd08a; }
 .filebtn:hover, .filebtn.open { border-color:#7ea6ff; background:#141d33; }
 .filebtn.swap { color:#ffd08a; }
 .filebtn.dirty { border-color:#7ea6ff; background:#141d33; }
@@ -543,10 +548,10 @@ const state = {
      (a tab, a filter) puts every control back where the hand left it.
        calls: { "<line>|<Name>": { style, word, sub, at, clip, vol, rate } }
        sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file */
-  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} } }
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} }
 };
 
-const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} } });
+const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} });
 
 /* A value apply can write back, as opposed to one the game builds at runtime.
    The two shapes are the two the splicer accepts (tools/lab/apply-events.mjs):
@@ -602,7 +607,8 @@ function countPending() {
   const kill = state.pending.kill;
   const n = Object.values(state.pending.calls).reduce((a, o) => a + Object.keys(o).length, 0) +
             Object.keys(state.pending.sfx).length +
-            Object.keys(kill.calls).length + Object.keys(kill.clips).length;
+            Object.keys(kill.calls).length + Object.keys(kill.clips).length +
+            Object.keys(state.pending.kit || {}).length;
   const btn = el("btn-apply");
   btn.disabled = !n;
   btn.innerHTML = n ? `Apply <span class="cnt">${n}</span>` : "Apply";
@@ -725,6 +731,16 @@ function argsFor(call, row, W) {
     const o = args[1] = Object.assign({}, args[1] || {});
     const sub = text("sub");
     if (sub) o.sub = sub; else delete o.sub;
+    // Turned into a callout: what Pop.show would be handed instead.
+    const as = asPop(row);
+    if (as) {
+      const p = {};
+      if (args[0]) p.word = args[0];
+      if (sub) p.sub = sub;
+      const at = get("select.at").value;
+      if (at) p.at = at;
+      return [as, p];
+    }
   }
   return args;
 }
@@ -848,6 +864,12 @@ function num(input, fallback) {
   return isNaN(v) ? fallback : v;
 }
 
+// The Pop style a notice row has been turned into, or "" when it is a notice.
+function asPop(row) {
+  const as = row && row.querySelector("select.as");
+  return as ? as.value : "";
+}
+
 function fire(call, row) {
   /* A clip picked but not applied is not in the build yet, so the motor cannot
      play it: the page plays the file itself, whole and untrimmed, which is the
@@ -864,7 +886,7 @@ function fire(call, row) {
     }
   }
   unlock();
-  const [mod, meth] = call.preview.fn.split(".");
+  const [mod, meth] = (asPop(row) ? "Pop.show" : call.preview.fn).split(".");
   // A sound is heard once, from the English frame; a word is read in both.
   const langs = call.kind === "sound" ? ["en"] : LANGS;
   for (const lang of langs) {
@@ -1255,6 +1277,9 @@ function revertCall(call, row) {
 function revertClip(key, card) {
   delete state.pending.sfx[key];
   delete state.pending.kill.clips[key];
+  if (state.pending.kit) delete state.pending.kit[key];
+  const ks = card.querySelector(".kitsel");
+  if (ks) { ks.value = ks.querySelector("option[selected]") ? ks.querySelector("option[selected]").value : ""; ks.classList.remove("dirty"); }
   // The controls first: with the pending entry gone, refreshFiles() has
   // nothing left to put them back from.
   resetControls(card.querySelector(".bhead"));
@@ -1341,11 +1366,16 @@ function callRow(call) {
       "the pitch — one sample covers a whole family of events through this, instead of a clip each"));
   } else if (call.kind === "notify") {
     // Notify.say — one look, so a word and a sub and no style. The vignette is
-    // scanned as juice (scan-events.mjs) and never reaches this list.
+    // scanned as juice (scan-events.mjs) and never reaches this list. The
+    // dropdown is what it is SAID as: `notify`, or a Pop style it is turned
+    // into — then it takes an anchor like any callout.
     const o = call.preview.args[1] || {};
-    bits.push(`<span class="style">notify</span>`);
+    bits.push(`<select class="as" title="notify, or a Pop style to turn this notice into a callout — apply rewrites it as Pop.show">` +
+      `<option value="">notify</option>${STYLES.map((s) => `<option>${s}</option>`).join("")}</select>`);
     bits.push(field("word", "w", String(call.preview.args[0])));
     bits.push(field("sub", "s", o.sub, "sub"));
+    bits.push(`<select class="at" hidden><option value="">style spot</option>${ANCHORS.map((a) =>
+      `<option>${a}</option>`).join("")}</select>`);
   }
 
   /* The marker holds its cell whether or not it has anything to say: a cue row
@@ -1432,6 +1462,20 @@ function callRow(call) {
   } else if (call.kind === "notify") {
     bind("input.w", "word", call.args[0]);
     bind("input.s", "sub", opts.sub);
+    bind("select.as", "as", null);
+    bind("select.at", "at", null);
+    const as = row.querySelector("select.as"), at = row.querySelector("select.at");
+    /* Back to `notify`, the anchor goes with it: a notice has no spot, and an
+       anchor left pending would be refused by apply as a field it lacks. */
+    as._sync = () => {
+      const on = !!as.value;
+      row.classList.toggle("as-pop", on);
+      row.querySelector(".tag").textContent = on ? "Notify.say → Pop.show" : call.name;
+      at.hidden = !on;
+      if (!on && at.value) { at.value = ""; at.dispatchEvent(new Event("change")); }
+    };
+    as.addEventListener("change", as._sync);
+    as._sync();
   }
   return row;
 }
@@ -1443,11 +1487,45 @@ function callRow(call) {
    file it is cut from and the length of the cut are written once, at the top,
    and the lines that play it are underneath with the only things that are
    theirs — how loud, and how high.                                          */
+/* The kit selector of a clip card: hand this key to one VARIANT of the house
+   kit's gameplay roles (a crash in one game is not a crash in another). On
+   Apply the manifest maps it (`sfx`) and its clip leaves game.js
+   (tools/lab/cut-kit.mjs, mapKeys); the lines that play it do not change. A
+   key already in the kit can move to another variant, not back to a clip. */
+function kitSelect(key, current) {
+  if (state.slug === "template" || !(state.kitIds || []).length) return "";
+  const groups = {};
+  state.kitIds.forEach((id) => { const r = id.split("/")[0]; (groups[r] = groups[r] || []).push(id); });
+  return `<select class="kitsel" title="play the house kit's variant instead of this clip — chosen and tuned at /kit">` +
+    (current ? "" : `<option value="">clip</option>`) +
+    Object.entries(groups).map(([r, list]) => `<optgroup label="${esc(r)}">` +
+      list.map((id) => `<option value="${esc(id)}"${id === current ? " selected" : ""}>kit: ${esc(id)}</option>`).join("") +
+      `</optgroup>`).join("") +
+    `</select>`;
+}
+function wireKitSelect(sel, key, current) {
+  if (!sel) return;
+  const p = state.pending.kit[key];
+  if (p) sel.value = p;
+  sel.classList.toggle("dirty", !!p);
+  sel.onchange = () => {
+    const v = sel.value;
+    if (!v || v === current) delete state.pending.kit[key];
+    else { state.pending.kit[key] = v; delete state.pending.sfx[key]; delete state.pending.kill.clips[key]; }
+    sel.classList.toggle("dirty", !!state.pending.kit[key]);
+    countPending();
+    note(state.pending.kit[key]
+      ? `${key} will play the kit's ${v} on apply` + (current ? "" : " — its clip leaves game.js, the lines that play it stay")
+      : "");
+  };
+}
+
 function clipCard(key, calls) {
   const card = document.createElement("div");
   card.className = "beat clip";
   card.dataset.key = key;
   const snd = (state.data.sounds || []).find((x) => x.key === key);
+  if (snd && snd.kit) return kitCard(key, snd, calls, card);
 
   const head = document.createElement("div");
   head.className = "bhead";
@@ -1455,6 +1533,7 @@ function clipCard(key, calls) {
   head.innerHTML =
     `<span class="key" title="ASSETS.sounds.${esc(key)}">${esc(key)}</span>` +
     `<button class="filebtn" title="the file in assets/audio/sfx/ this clip is cut from — open it, hover to hear, click to keep. Apply re-cuts the clip, for every line below."></button>` +
+    kitSelect(key, null) +
     slider("len", cutLen(key), 0.05, 3, 0.05, 0.5, "cut",
       "how much of the file the clip keeps — mono 32 kHz / 64 kbps with a 70 ms fade. It starts at what the embedded clip measures.") +
     `<span class="sp"></span>` +
@@ -1481,6 +1560,33 @@ function clipCard(key, calls) {
   wireSliders(head);                       // the snap, before what reads it
   wireFile(head.querySelector(".filebtn"), () => key);
   wireLen(head.querySelector("input.len"), key);
+  wireKitSelect(head.querySelector(".kitsel"), key, null);
+  return card;
+}
+
+/* A key the manifest maps to a role of the house kit (`sfx` in manifest.json):
+   the game embeds no clip for it, and what it sounds like is chosen on the
+   kit page, for every game that maps a key to that role. So the card names
+   the role and opens the kit instead of offering a file — the lines under it
+   keep their own volume and pitch, which are the game's. */
+function kitCard(key, snd, calls, card) {
+  const head = document.createElement("div");
+  head.className = "bhead has-acts";
+  head.dataset.key = key;
+  head.innerHTML =
+    `<span class="key" title="manifest.json sfx.${esc(key)}">${esc(key)}</span>` +
+    `<a class="kitbtn" href="kit#${esc(snd.kit)}" target="_blank" title="this key plays a variant of the house kit — its takes are chosen on the kit page, for every game that maps to it">kit: ${esc(snd.kit)} ↗</a>` +
+    kitSelect(key, snd.kit) +
+    `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
+    `<span class="acts">` + iconBtn("check", "check", "check every line of this clip at once") + `</span>`;
+  head.querySelector(".key").onclick = () => copy(key);
+  head.querySelector(".check").onclick = () => {
+    const ids = calls.map((c) => c.checkId).filter(Boolean);
+    toggleCheck(ids, !ids.every(isChecked));
+  };
+  card.appendChild(head);
+  calls.forEach((c) => card.appendChild(callRow(c)));
+  wireKitSelect(head.querySelector(".kitsel"), key, snd.kit);
   return card;
 }
 
@@ -1776,6 +1882,15 @@ fetch("api/sfx").then((r) => r.json()).then((files) => {
   if (state.data) render();
 });
 
+// The gameplay variants of the house kit, for the clip cards' kit selector.
+fetch("api/kit").then((r) => r.json()).then((k) => {
+  state.kitIds = [];
+  for (const [role, r] of Object.entries(k.roles || {})) {
+    if (r.group !== "game") continue;
+    for (const v of Object.keys(r.variants || {})) state.kitIds.push(role + "/" + v);
+  }
+  if (state.data) render();
+}).catch(() => {});
 fetch("api/games").then((r) => r.json()).then((list) => {
   const pick = el("game-pick");
   state.games = {};
@@ -1814,7 +1929,8 @@ function applyPlan() {
   /* The version always moves with the source — CLAUDE.md, and it is the number
      the title screen signs itself with, so a build nobody can name is worse
      than a patch number nobody reads. There is no switch for it here. */
-  return { game: state.slug, calls, sfx, kill, bump: true };
+  const kit = Object.entries(state.pending.kit || {}).map(([key, id]) => ({ key, id }));
+  return { game: state.slug, calls, sfx, kill, kit, bump: true };
 }
 
 function showReport(r) {
@@ -1837,7 +1953,7 @@ function showReport(r) {
 
 function applyNow() {
   const plan = applyPlan();
-  if (!plan.calls.length && !plan.sfx.length && !plan.kill.calls.length && !plan.kill.clips.length) return;
+  if (!plan.calls.length && !plan.sfx.length && !plan.kill.calls.length && !plan.kill.clips.length && !plan.kit.length) return;
   const btn = el("btn-apply");
   btn.disabled = true;
   btn.textContent = plan.sfx.length ? "Cutting…" : "Writing…";

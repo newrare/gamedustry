@@ -1226,9 +1226,12 @@
      own object sheet and nothing else —
      `tools/lab/cut-objects.mjs <slug>-object-<name> --adopt 1,4 --as decor`.
 
-     WHAT IT DRESSES. The end screen and the round's corners from here; the
-     web menu's panels, the pause card and the level map from packages/webshell
-     through the web handle. A screen the motor writes in a column is a column
+     WHAT IT DRESSES. The end screen from here; the web menu's panels, the
+     pause card and the level map from packages/webshell through the web
+     handle. NEVER THE ROUND: a piece over a live world bobbing with a drop
+     shadow was a composited layer re-rastered over the canvas every frame,
+     on every game, for a picture at a fifth of its opacity — it was taken
+     out for the frame rate, and a round is read through nothing. A screen the motor writes in a column is a column
      on a picture; the same screen with a gear hanging off its corner and a leaf
      behind its card is a screen somebody dressed. It costs nothing to add,
      because the objects were painted for the game already and the cut is 20 KB.
@@ -1255,13 +1258,10 @@
      rather than as variety. Each piece then takes its own size, tilt, flip,
      bob and depth — in front of the screen's content or behind it.
 
-     A game opts out with `CONFIG.decor = false`, and out of the round alone
-     with `CONFIG.decor = { round: false }` — the one place a picture sits over
-     a live world rather than over a screen. */
+     A game opts out with `CONFIG.decor = false`. */
   var Decor = (function () {
     var art = CONFIG.art || {};
-    var opt = CONFIG.decor;
-    var OFF = opt === false;
+    var OFF = CONFIG.decor === false;
 
     /* The pool, sorted so two builds of the same game scatter the same set.
        `decor01`, `decorBall01`, `decorBolt17` — a game whose objects come off
@@ -1327,8 +1327,9 @@
       return lay;
     }
 
-    /* Direct children only: #frame holds the end screen, and clearing the
-       round's corners must not take the end screen's own dressing with it. */
+    /* Direct children only: a box may hold a screen with its own dressing
+       (#frame holds the end screen), and clearing one must not take the
+       other's with it. */
     function clear(box) {
       if (!box) return;
       for (var i = box.children.length - 1; i >= 0; i--) {
@@ -1345,7 +1346,7 @@
                   gets two thirds of that, because it lands over text
          front    the odds a piece is in front of the content at all
          cls      an extra class on the layer, for a caller that needs its own
-                  depth (the round, the level map) */
+                  depth (the level map) */
     function dress(box, opts) {
       if (OFF || !pool.length || !box) return;
       opts = opts || {};
@@ -1374,19 +1375,6 @@
       });
     }
 
-    /* The round's own corners, one or two of them, at a fraction of the
-       opacity a screen gets: this is the one layer that sits over a live world,
-       and a gameplay is read through it. It goes on #frame rather than on the
-       canvas, under the HUD and the overlay (motor.css), so no game has to
-       give up a pixel of Layout for it. */
-    function round() {
-      if (opt && opt.round === false) return;
-      dress($("frame"), {
-        count: Rand.int(1, 2), spots: ["tl", "tr", "bl", "br"],
-        size: 150, opacity: 0.2, front: 0, cls: "round"
-      });
-    }
-
     function end() {
       /* Never bottom-right: that corner is the character's, and the two of them
          stacked is the crowded end screen the artwork was drawn to replace. */
@@ -1401,9 +1389,14 @@
        adding a line to the round's start-up path. */
     if (!OFF && pool.length) {
       onState(function (s) {
-        if (s === "playing") round();
-        else clear($("frame"));
         if (s === "end") end();
+        /* The end screen is only faded out (.screen.hidden), so its pieces
+           stayed in the document behind every later round, still bobbing
+           under a drop-shadow — the one thing a replay had that the first
+           round did not. They go once the fade (.25 s) is over. */
+        else if (s === "playing") setTimeout(function () {
+          if (State === "playing") clear($("screen-end"));
+        }, 400);
       });
     }
 
@@ -1513,9 +1506,8 @@
        to the map, and a player who has just cleared a level reads the stars
        long before the old cascade had finished landing them. */
     var PACE = 0.5;
-    // The reveal climbs: each star rings the same chime a step higher. RATE
-    // drives the embedded "uiStar" clip, FREQ the synthesized fallback.
-    var STAR_RATE = [1, 1.19, 1.42], STAR_FREQ = [660, 880, 1180];
+    // The reveal climbs: each star rings the kit's `star` a step higher.
+    var STAR_RATE = [1, 1.19, 1.42];
 
     function countUp(el, target, dur, cb) {
       var start = performance.now();
@@ -1589,7 +1581,7 @@
         Confetti.burst(70);
         countUp($("eo-score"), result.score || 0, 1100 * PACE, function () {
           $("eo-score").classList.add("pop");
-          Sound.cue("uiScore", 0.8, 1, 900, 0.14);
+          Sound.ui("score", 0.8);
           Confetti.burst(90);
         });
       }, T_SCORE);
@@ -1606,7 +1598,7 @@
             T(function () {
               var el = $("star-" + (idx + 1));
               el.classList.remove("dim"); el.classList.add("on");
-              Sound.cue("uiStar", 0.75, STAR_RATE[idx] || 1.42, STAR_FREQ[idx] || 1180, 0.16);
+              Sound.ui("star", 0.75, STAR_RATE[idx] || 1.42);
               Confetti.burst(30);
             }, T_STARS + idx * STAR_GAP);
           })(si);
@@ -1622,7 +1614,7 @@
           var el = $("eo-val-" + i);
           if (typeof r.value === "number") countUp(el, r.value, 450 * PACE);
           else el.textContent = upper(Lang.t(r.value));
-          Sound.cue("uiRow", 0.5, 1 + i * 0.07, 480 + i * 70, 0.05);
+          Sound.ui("tick", 0.5, 1 + i * 0.07);
         }, afterStars + i * ROW_GAP);
       });
 

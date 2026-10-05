@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.6.4",
+  "version": "2.6.8",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
@@ -530,10 +530,20 @@
       "ground": "backgroundHome",
       "houses": [
         {
+          "art": "decor06",
+          "role": "cards",
+          "x": 380,
+          "y": 180,
+          "w": 140,
+          "notify": "float",
+          "every": 20,
+          "always": true
+        },
+        {
           "art": "empty",
           "role": "decor",
-          "x": 384,
-          "y": 193,
+          "x": 730,
+          "y": 270,
           "w": 200,
           "halo": {
             "w": 0.95,
@@ -648,13 +658,6 @@
           "y": 486,
           "w": 89,
           "layer": 1
-        },
-        {
-          "art": "decor07",
-          "role": "cards",
-          "x": 360,
-          "y": 1085,
-          "w": 130
         }
       ],
       "life": {

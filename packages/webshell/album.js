@@ -637,7 +637,7 @@
           /* The pitch climbs with the row, and the super is the step above
              the last ticket — `n` is a sentinel there and not a position. */
           var step = n === MT.superBet() ? MT.maxBet() + 1 : n;
-          W.Sound.cue("uiRow", 0.4, 1 + step * 0.06, 420 + step * 60, 0.05);
+          W.Sound.ui("tick", 0.4, 1 + step * 0.06);
           paintMachine();
         };
       })(+pills[i].getAttribute("data-b")));
@@ -713,14 +713,14 @@
 
     var n = MT.roll(bet);
     Machine.shake();
-    W.Sound.cue("uiRow", 0.5, 0.9, 380, 0.07);
+    W.Sound.ui("draw", 0.5);
 
     setTimeout(function () {
       var done = false;
       function landed() {
         if (done) return;
         done = true;
-        W.Sound.cue("uiScore", 0.7, 0.85, 520, 0.12);
+        W.Sound.ui("gain", 0.7, 0.9);
         var isNew = MT.give(n);
         if (isNew) MT.bumpUnseen();
         drawing = false;
@@ -836,11 +836,10 @@
       acts.appendChild(ok);
       card.appendChild(acts);
     }
-    W.Sound.cue("uiStar", 0.85, isNew ? 1.5 : 1.05, isNew ? 1180 : 720, 0.18, "triangle");
+    W.Sound.ui(isNew ? "reward" : "gain", 0.85);
     /* No Confetti here, for the reason meta.js gives on its own gift card: the
        motor's burst draws on the END SCREEN's canvas, which is not over this
        one. The sunburst and the shockwave are the celebration. */
-    if (isNew) W.Sound.cue("uiScore", 0.6, 1.6, 1480, 0.22, "triangle");
 
     /* A tap anywhere puts it away — everywhere but on DRAW AGAIN, which is a
        real control and must never be what a thumb lands on by missing. ENTER,
@@ -1159,7 +1158,6 @@
         body.appendChild(b);
       }
     });
-    W.Sound.cue("uiRow", 0.4, 1.05, 400, 0.06);
   }
 
   function roundsLeft(n) {
@@ -1220,7 +1218,7 @@
       buy: function (from) {
         MT.addTickets(1);
         MT.buyFx({ cost: MT.ticketPrice(), kind: "ticket", n: 1, from: from });
-        W.Sound.cue("uiScore", 0.7, 1.2, 900, 0.12);
+        W.Sound.ui("buy", 0.7);
       }
     }));
 
@@ -1243,7 +1241,7 @@
         /* The same flight as the ticket's: into the collection's chip of the
            band, which is where every ticket lands and writes its figure. */
         MT.buyFx({ cost: MT.superPrice(), kind: "super", n: 1, from: from });
-        W.Sound.cue("uiStar", 0.8, 1.45, 1180, 0.16, "triangle");
+        W.Sound.ui("buy", 0.8, 1.1);
       }
     }));
 
@@ -1259,7 +1257,7 @@
       tag: "?", title: T.giftTitle, note: T.giftNote, price: MT.giftPrice(),
       buy: function (from, before) {
         MT.spendFx(before, MT.coins());
-        W.Sound.cue("uiScore", 0.75, 1.1, 900, 0.14);
+        W.Sound.ui("buy", 0.75);
         setTimeout(function () {
           MT.gift({ roll: MT.mysteryReward, boost: false,
                     eyebrow: T.giftTitle, gotEyebrow: T.giftTitle });
@@ -1278,7 +1276,7 @@
       buy: function (from, before) {
         var x0 = MT.xp(), levels = MT.addXp(pack);
         MT.spendFx(before, MT.coins());
-        W.Sound.cue("uiStar", 0.7, 1.3, 1040, 0.14, "triangle");
+        W.Sound.ui("buy", 0.7);
         setTimeout(function () {
           MT.fx({ kind: "xp", n: pack, from: from, before: x0, big: true, spread: 75,
                   done: function () { if (levels) setTimeout(function () { MT.levelUp(levels); }, 700); } });
@@ -1297,7 +1295,7 @@
       buy: function (from, before) {
         MT.addBoost("coins");
         MT.spendFx(before, MT.coins());
-        W.Sound.cue("uiStar", 0.75, 1.2, 980, 0.14, "triangle");
+        W.Sound.ui("buy", 0.75);
       }
     }));
     grid.appendChild(tile({
@@ -1307,7 +1305,7 @@
       buy: function (from, before) {
         MT.addBoost("xp");
         MT.spendFx(before, MT.coins());
-        W.Sound.cue("uiStar", 0.75, 1.2, 980, 0.14, "triangle");
+        W.Sound.ui("buy", 0.75);
       }
     }));
 
@@ -1348,7 +1346,7 @@
         var got = MT.sellAll();
         if (got) {
           MT.fx({ kind: "coins", n: got, from: from, before: before, burst: true });
-          W.Sound.cue("uiScore", 0.7, 1.35, 1000, 0.12);
+          W.Sound.ui("gain", 0.7);
         }
         paintShop();
         if (built) paintShelves();

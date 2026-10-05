@@ -16,3 +16,7 @@ native/
 signing.properties
 *.keystore
 *.jks
+
+# The events bench v2's recordings (lab/game-events-v2.html): a few seconds of
+# play around each event, made again by playing. Never committed.
+lab/events-clips/

@@ -914,7 +914,7 @@
       Settings.set(key, on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
       // Turning the effects back on says so out loud — the switch is audible.
-      if (on && key === "sfx") W.Sound.cue("uiRow", 0.5, 1.1, 660, 0.06, "triangle");
+      if (on && key === "sfx") W.Sound.ui("tap", 0.5, 1.1);
     });
     return b;
   }
@@ -1120,7 +1120,7 @@
     RK.tab = key;
     rankBody.scrollTop = 0;
     paintRanking();
-    W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
+    W.Sound.ui("tap", 0.45);
   }
 
   /* A FIGURE IS A DOOR TO WHAT IT COUNTS. The figures of the climb open

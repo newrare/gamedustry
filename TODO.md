@@ -253,9 +253,20 @@ ______________________________________________________________________
     `blackout` and cuts the lights for 0.5 s; the objective moved to
     13 000 → 95 000 off the bench. Left: MAIN — the store lines and the
     listing images still show the old wording and machine (reshoot)
+  - `vipera` v1.4.0: five biomes by level number (jungle, swamp, temple,
+    volcano, lair), each a painted scrolling ground and its bank props, one
+    hazard and one pickup each (drifting logs / fireflies, spike traps / idol,
+    geysers and falling rocks / amber, the eagle / rainbow egg), the climb a
+    saw computed in `applyLevel` (`CONFIG.biomes`, `CONFIG.ladder`) instead of
+    the manifest's straight lerp. Left: MAIN — play it, the shares and the
+    saw were tuned against a scripted bench pilot only. v1.6.0 adds the
+    temple's LIGHTNING (`bolt`, art `lightning01`-`08`, web-only): a zone
+    lights up where the head is heading, a red ring closes on it, the bolt
+    flashes and leaves an impact then a scorch. Left: MAIN — play levels
+    13-18 and tune `boltWarn` / `boltR` / `boltAim` by hand
   - to finish or rethink: `spinshock`
-  - to do: `chainring`, `orbinity`, `triverse`, `vipera`, `stratideck`,
-    `pawko`, `marshmelt`
+  - to do: `chainring`, `orbinity`, `triverse`, `stratideck`, `pawko`,
+    `marshmelt`
   - `slipdeck` comes with its rebuild (above), `bouncetry` with its ghost
     (below)
 
@@ -278,8 +289,8 @@ ______________________________________________________________________
   procedure and `games/arcider` the reference.
 
   - done: `arcider`, `blight`, `echomaze`, `radiam`, `stratideck`, `pawko`,
-    `bouncetry`
-  - to finish or rethink: `spinshock`, `vipera`, `marshmelt`
+    `bouncetry`, `vipera` (v1.4.0: five biomes + menu off a new 177 s master)
+  - to finish or rethink: `spinshock`, `marshmelt`
   - to complete: `chainring`
   - to do: `orbinity`, `triverse`, `gearball`, `slipdeck`
 
@@ -480,6 +491,25 @@ ______________________________________________________________________
   alone, all fifteen games' worth in one column and next to the manifest copy,
   are **`make text`** — that is where a vocabulary is made consistent; `make events` is where a beat is heard.
 
+- [ ] CODE — **the house sound kit, then the games onto it one at a time.** Landed
+  2026-10-04: the SHELL plays fourteen ROLES (`Sound.ui` — `tap`, `open`, `close`,
+  `deny`, `tick`, `coin`, `score`, `star`, `gain`, `buy`, `draw`, `reward`, `win`,
+  `fail`) out of `assets/audio/kit/`, levelled to one loudness by
+  `tools/lab/cut-kit.mjs`, injected by the builder; cards and views play
+  `open` / `close` on their own; the `uiScore` / `uiStar` / `uiRow` copies left
+  the sixteen `game.js`. **The takes are first guesses** (the template's three
+  for the end screen, one library pick per other role): pick them by ear at
+  `make events` → `/kit`, two or three takes where a role repeats (`tap`,
+  `coin`). Then a game's OWN events move onto roles where a role says the same
+  thing — one game per change, on the user's call, since several are already
+  well tuned. **`triverse` is the first** (2026-10-04): its manifest maps seven
+  keys to VARIANTS of the kit's gameplay roles (`pickup/glass`, `bonus/chime`,
+  `combo/chime`, `power/forcefield`, `malus/phaser`, `crash/explosion`,
+  `move/scratch`, seeded with the clips it had), and only its `loop` stays a
+  clip. A variant is per game (a crash is not the same crash everywhere); the
+  takes inside one are interchangeable. `crash/scratch` exists and nothing
+  plays it yet. Still open after that: a `Notify.say` plays no sound of its own.
+
 - [ ] CODE — **check the sfx and replace what falls short, all fifteen games.** One clip per event out of
   `assets/audio/sfx/`, trimmed and embedded; audit what each game actually ships
   (levels, pitch via `rate`, events still falling back to `Sound.beep`) and
@@ -506,9 +536,29 @@ ______________________________________________________________________
   each file came from. Still to do, and now possible: the pass above, game by
   game — the thirteen were scored out of the UI-chime set because that was the
   set, and `hit-wall-01` is the "impact" of nine games where the impact pack
-  now holds sixty. Seven `hit-*` / `shoot-*` files predate the ZapSplat drop
-  and carry no licence record (`legacy` in `sources.tsv`); find where they came
-  from or replace them.
+  now holds sixty.
+
+  **2026-10-04: the library is CC0 only.** The repository is public, and
+  ZapSplat's licence forbids distributing its files in any form, so its 120
+  files left `assets/audio/sfx/` with the seven `legacy` ones of unknown origin;
+  ten OpenGameArt CC0 packs came in (305 files: creatures, coins, swishes,
+  electricity, mechanical, fire, RPG items, household foley, applause), then the
+  library was pruned to 880 (the voice packs, phone-recorded noise, exact and
+  near-exact duplicates). The seven legacy clips the games embedded were re-cut
+  from their closest CC0 neighbours by an acoustic fingerprint (`metal-clank-09`,
+  `dice-throw-single-04`, `item-misc-02`, `impact-slam-04`, `hit-thud-03` — 12
+  clips in blight, bouncetry, echomaze, radiam, spinshock, vipera: first
+  guesses, to hear). **2026-10-05: closed.** The 68 clips cut from
+  removed files (echomaze's eight, then sixty more across eleven games and the
+  template) were re-cut from CC0 files: 35 from the library as it stood, 32
+  tonal ones from fifteen pieces built out of the VCSL and VSCO 2 CE sample
+  banks (harps, marimba, glockenspiel, vibraphone) and qubodup's *Up (3x)* —
+  see `assets/audio/sfx/LICENSES.md`. Echomaze's `map` is an eight-click echo
+  train rebuilt by hand from `tone-high-down-01`, so the bench must not re-cut
+  it. The ZapSplat and legacy files were purged from the git history. First
+  guesses all, to be heard in each game; a wider CC0 import (chimey UI, dings,
+  win jingles, glockenspiel glissandi) is still to decide for the kit's reward
+  roles.
 
 - [ ] CODE — **`arcider`, blow the craft up when the shield runs out.** The
   four `die("SHIELD DOWN")` sites in section 6 go straight from the last hit to
@@ -684,8 +734,8 @@ separate changes so each can be reviewed on its own.
   a comment strip in `build.mjs` (sources keep theirs; the fifteen
   `index.html` regenerate once), `tools/lib/repo.mjs` for `ROOT` / `games()`
   / `manifestOf` / `bumpPatch`, `chrome.mjs` growing `launch` / `connect` /
-  `openPage` / `evaluate` so the eleven copies go, and the end screen's three
-  clips moved into the shell so all fifteen games sound the same there
+  `openPage` / `evaluate` so the eleven copies go (the end screen's three
+  clips moved into the shell on 2026-10-04 — the house sound kit, below)
 - [ ] CODE — **audit, step 3 — one motor + skins pass** (AUDIT 4.1–4.3, 2.6):
   `--accent-rgb` / `--danger-rgb` / `--gold-rgb` tokens, the `#cta-bar`
   border and the `.demo-stage` size in the motor, `.pop-sub` on tokens — one commit,

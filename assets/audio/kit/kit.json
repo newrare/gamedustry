@@ -1,0 +1,265 @@
+{
+  "target": -16,
+  "peak": -1,
+  "playable": ["score", "star", "tick"],
+  "roles": {
+    "tap": {
+      "group": "shell",
+      "what": "A tab, a filter, a step of a carousel, a card picked or put back",
+      "variants": {
+        "default": {
+          "jitter": 0.04,
+          "takes": [
+            { "file": "ui-click-01", "start": 0, "length": 0.1 }
+          ]
+        }
+      }
+    },
+    "open": {
+      "group": "shell",
+      "what": "A card or a view opens",
+      "variants": {
+        "default": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "ui-open-01", "start": 0, "length": 0.15 }
+          ]
+        }
+      }
+    },
+    "close": {
+      "group": "shell",
+      "what": "A card or a view goes",
+      "variants": {
+        "default": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "ui-close-01", "start": 0, "length": 0.15 }
+          ]
+        }
+      }
+    },
+    "deny": {
+      "group": "shell",
+      "what": "Refused, locked, missed",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "error-ui-04", "start": 0, "length": 0.1 }
+          ]
+        }
+      }
+    },
+    "tick": {
+      "group": "shell",
+      "what": "A light step of a ladder: an end-screen row, a bet, a figure of a sum",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-select-01", "start": 0, "length": 0.04 }
+          ]
+        }
+      }
+    },
+    "coin": {
+      "group": "shell",
+      "what": "One coin landing in the wallet, pitched up the cascade",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "chip-lay-01", "start": 0, "length": 0.17 }
+          ]
+        }
+      }
+    },
+    "score": {
+      "group": "shell",
+      "what": "The end screen's score lands",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-confirm-01", "start": 0, "length": 0.29 }
+          ]
+        }
+      }
+    },
+    "star": {
+      "group": "shell",
+      "what": "One star, pitched up the three of them",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "impact-generic-light-02", "start": 0, "length": 0.11 }
+          ]
+        }
+      }
+    },
+    "gain": {
+      "group": "shell",
+      "what": "Something lands in the wallet: a reward collected, a ball out of the machine",
+      "variants": {
+        "default": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "gem-pickup-01", "start": 0, "length": 0.25 }
+          ]
+        }
+      }
+    },
+    "buy": {
+      "group": "shell",
+      "what": "A purchase goes through",
+      "variants": {
+        "default": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "coins-handle-02", "start": 0, "length": 0.34 }
+          ]
+        }
+      }
+    },
+    "draw": {
+      "group": "shell",
+      "what": "The sticker machine is shaken",
+      "variants": {
+        "default": {
+          "jitter": 0.04,
+          "takes": [
+            { "file": "chip-handle-03", "start": 0, "length": 0.23 }
+          ]
+        }
+      }
+    },
+    "reward": {
+      "group": "shell",
+      "what": "The big reveal: a new sticker, a gift opened, a level up, the third star",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-05", "start": 0, "length": 0.44 }
+          ]
+        }
+      }
+    },
+    "win": {
+      "group": "shell",
+      "what": "The camp's good news: a mission won, a captive taken, a recruit",
+      "variants": {
+        "default": {
+          "jitter": 0.02,
+          "takes": [
+            { "file": "ui-confirm-02", "start": 0, "length": 0.54 }
+          ]
+        }
+      }
+    },
+    "fail": {
+      "group": "shell",
+      "what": "The bad news: an objective missed, a mission lost, a wound",
+      "variants": {
+        "default": {
+          "jitter": 0,
+          "takes": [
+            { "file": "error-ui-05", "start": 0, "length": 0.5 }
+          ]
+        }
+      }
+    },
+    "pickup": {
+      "group": "game",
+      "what": "A collectible taken, pitched up the chain",
+      "variants": {
+        "glass": {
+          "jitter": 0,
+          "takes": [
+            { "file": "ui-glass-02", "start": 0, "length": 0.12 }
+          ]
+        }
+      }
+    },
+    "bonus": {
+      "group": "game",
+      "what": "A rare, valuable pickup",
+      "variants": {
+        "powerup": {
+          "jitter": 0,
+          "takes": [
+            { "file": "powerup-04", "start": 0, "length": 0.55 }
+          ]
+        }
+      }
+    },
+    "combo": {
+      "group": "game",
+      "what": "A combo or a streak crosses a step",
+      "variants": {
+        "tone": {
+          "jitter": 0,
+          "takes": [
+            { "file": "tone-triple-01", "start": 0, "length": 0.5 }
+          ]
+        }
+      }
+    },
+    "power": {
+      "group": "game",
+      "what": "A power-up taken: a multiplier, a shield",
+      "variants": {
+        "forcefield": {
+          "jitter": 0.02,
+          "takes": [
+            { "file": "forcefield-03", "start": 0, "length": 0.45 }
+          ]
+        }
+      }
+    },
+    "malus": {
+      "group": "game",
+      "what": "Points lost, a chain broken",
+      "variants": {
+        "phaser": {
+          "jitter": 0.02,
+          "takes": [
+            { "file": "phaser-down-02", "start": 0, "length": 0.31 }
+          ]
+        }
+      }
+    },
+    "crash": {
+      "group": "game",
+      "what": "A life lost — and, pitched up, a hit shrugged off",
+      "variants": {
+        "explosion": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "explosion-crunch-02", "start": 0, "length": 0.7 }
+          ]
+        },
+        "scratch": {
+          "jitter": 0.03,
+          "takes": [
+            { "file": "ui-scratch-01", "start": 0, "length": 0.14 }
+          ]
+        }
+      }
+    },
+    "move": {
+      "group": "game",
+      "what": "The player moves: a lane, a swipe, a flick",
+      "variants": {
+        "scratch": {
+          "jitter": 0.02,
+          "takes": [
+            { "file": "ui-scratch-01", "start": 0, "length": 0.14 }
+          ]
+        }
+      }
+    }
+  }
+}

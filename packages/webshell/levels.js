@@ -767,7 +767,7 @@
       hudBox.classList.remove("hit");
       void hudBox.offsetWidth;                 // once a star, not once a frame
       hudBox.classList.add("hit");
-      W.Sound.cue("uiStar", 0.55, 1 + st * 0.14, 720 + st * 180, 0.09, "triangle");
+      W.Sound.ui("star", 0.55, 1 + st * 0.14);
     }
     litStars = st;
     if (st >= 3 && !won) {
@@ -820,7 +820,7 @@
     W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 10, to: 420, color: "#ffffff", width: 6, life: 0.5 });
     W.Overlay.vignette("#ffd43b", 0.85);
     W.Music.duck(0.4, 0.35);
-    W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
+    W.Sound.ui("reward", 0.8);
   }
 
   function winRound(value) {
@@ -852,7 +852,7 @@
     W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 20, to: 620, color: "#ffd43b", width: 12, life: 0.7 });
     W.Fx.ring(W.view.w / 2, W.view.h / 2, { from: 10, to: 420, color: "#ffffff", width: 6, life: 0.5 });
     W.Overlay.vignette("#ffd43b", 0.6, 900);
-    W.Sound.cue("uiStar", 0.8, 1.5, 1180, 0.18, "triangle");
+    W.Sound.ui("reward", 0.8);
   }
 
   /* The game gets to end its own round when it can (`Game.levelWon`), because
@@ -921,7 +921,7 @@
     W.Fx.shake(13, 0.45);
     W.Overlay.vignette("#ff2d2d", 0.92);
     W.Music.duck(0.3, 0.4);
-    W.Sound.cue("uiScore", 0.7, 0.55, 200, 0.45, "sawtooth");
+    W.Sound.ui("fail", 0.7);
     flames(LOSS_HOLD);
   }
 
@@ -965,7 +965,10 @@
 
   function watch() {
     if (!watching) return;
-    if (W.state() !== "playing") { watching = false; return; }
+    /* No level is no pill: a round replaced while one was running (startGame
+       takes the old one down without leaving "playing") may be the endless
+       run, and its level 0 has no node to measure against. */
+    if (W.state() !== "playing" || !CONFIG.level) { watching = false; return; }
     paintHud(measure());
     requestAnimationFrame(watch);
   }
@@ -1905,6 +1908,14 @@
     playNext: function () { var n = nextLevel(); if (n) play(n); },
     topOpen: topOpen,
     playTop: function () { if (ON) play(topOpen()); },
+
+    /* ANY LEVEL, straight into its round — what the events bench's REC mode
+       picks from (lab/game-events-v2.html). Still gated by `canPlay`, so it
+       starts a locked level only under the dev force (`?force=1`, which the
+       bench passes). `count` is the climb's length; count + 1 is the endless
+       star. */
+    count: function () { return LEVELS; },
+    play: function (n) { if (ON && n >= 1 && n <= BONUS) play(n); },
 
     text: function (key) { return T[key]; },
     perfect: function () { return ON && perfect(); },

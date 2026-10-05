@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — sound kit</title>
+<meta name="lab-group" content="tools">
+<style>
+/* ===========================================================================
+   SOUND KIT — what the shell sounds like, in every game, picked one role at a
+   time.
+
+   The web shell used to play three clips copied into every game.js (uiScore,
+   uiStar, uiRow), pitched every which way for some seventy moments: a tab, a
+   coin landing, a gift opened, a mission lost. The kit names the moments
+   instead. A ROLE is what an event MEANS — `tap`, `open`, `coin`, `star`,
+   `reward`, `fail` — and holds one to three TAKES cut out of
+   assets/audio/sfx/. The shell calls `Sound.ui(role)` and never a file.
+
+   This page is where a role's takes are chosen: the role on the left, its
+   takes in the middle — the source drawn as a waveform with the cut on it,
+   dragged to move it — and the library under them, narrowed by a search the
+   role pre-fills. Hover a file to hear it, click it to put it in the active
+   take, + to add it as another one.
+
+   EVERYTHING IS HEARD LEVELLED. tools/lab/cut-kit.mjs brings every take to
+   one loudness (its loudest 50 ms window to kit.target dBFS RMS, its peak
+   under kit.peak), and this page applies the same measure before it plays a
+   thing — a candidate, a take, a role — so two files are compared as they
+   will ship and not as two vendors mastered them. `Shipped` plays the files
+   on disk now, which is what the games wear until Save.
+
+   Two groups of roles. SHELL roles are what the menus and the end screen play,
+   the same in every game: one variant each, `default`. GAMEPLAY roles are a
+   game's own events, and a crash in one game is not a crash in another, so
+   they hold named VARIANTS (`crash/explosion`, `crash/glass`) — created,
+   renamed and dropped here — and a game's manifest maps a key it already plays
+   to ONE of them (`"sfx": { "crash": "crash/explosion" }`), which the events
+   bench's kit selector writes. The list says which game plays each variant,
+   so a take is never changed without knowing who hears it, and a variant a
+   game plays cannot be renamed or dropped.
+
+   Inside a variant the TAKES are interchangeable: the engine alternates
+   between them so a sound heard twenty times a round does not repeat. They
+   are never a choice — a different sound is a different variant.
+
+   Save writes assets/audio/kit/kit.json, re-cuts every take and rebuilds the
+   web build of the bench: the cut files are committed, the games pick them up
+   on the next `node tools/update.mjs`. Only the takes and the jitter are the
+   page's to change — a role is a name the shell calls.
+
+   Served by `make events` (tools/lab/serve-events.mjs) at /kit, beside the
+   library it reads. Over file:// it has nothing to read and says so.
+
+   Same rules as every lab page: one file, no framework, no CDN, no web font,
+   strings in normal case.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  height:100vh; display:flex; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+button { font:inherit; color:inherit; }
+#roles {
+  flex:0 0 280px; display:flex; flex-direction:column; gap:4px;
+  padding:18px 12px; background:#12121c; border-right:1px solid #23233a; overflow:auto;
+}
+#roles h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; padding:0 6px 10px; }
+#roles h1 small { display:block; margin-top:4px; font-size:11px; font-weight:500; color:#8b8ba7; letter-spacing:0; text-transform:none; }
+.role {
+  display:grid; grid-template-columns:1fr auto; gap:2px 8px; padding:8px 10px;
+  border:0; border-radius:8px; background:none; text-align:left; cursor:pointer;
+}
+.role:hover { background:#1a1a2a; }
+.role.on { background:#1e2740; }
+.role b { font-size:13px; }
+.role .n { color:#6f6f92; font-size:11px; }
+.role .w { grid-column:1 / -1; color:#8b8ba7; font-size:11px; font-weight:500; }
+.role.dirty b::after { content:" •"; color:#ffd08a; }
+.role .u { grid-column:1 / -1; color:#8fe0b8; font-size:11px; font-weight:500; }
+.role .u.none { color:#6f6f92; }
+.role.var { margin-left:12px; padding:5px 10px; }
+.role-h { padding:10px 10px 2px; display:flex; flex-direction:column; gap:1px; }
+.role-h b { font-size:13px; }
+.role-h .w { color:#8b8ba7; font-size:11px; font-weight:500; }
+.role-h.dirty b::after { content:" •"; color:#ffd08a; }
+.vacts { display:flex; gap:6px; }
+.grp { padding:14px 10px 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; }
+.tag { display:inline-block; margin-left:6px; padding:0 6px; border-radius:10px; background:#2a2440; color:#c8b8ff; font-size:10px; font-weight:600; }
+#roles .foot { margin-top:auto; padding:12px 6px 0; display:flex; flex-direction:column; gap:8px; font-size:11px; color:#9c9cba; }
+#roles .foot label { display:flex; justify-content:space-between; align-items:center; }
+#roles .foot input[type=range] { width:130px; accent-color:#7ea6ff; }
+
+#main { flex:1; display:flex; flex-direction:column; min-width:0; }
+#bar {
+  display:flex; align-items:center; gap:10px; padding:12px 18px;
+  border-bottom:1px solid #23233a; font-size:12px; color:#8b8ba7;
+}
+#bar .grow { flex:1; }
+.btn {
+  padding:6px 12px; border:1px solid #2c2c47; border-radius:8px; background:#151522; cursor:pointer;
+  font-size:12px;
+}
+.btn:hover { border-color:#7ea6ff; }
+.btn.primary { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+.btn:disabled { opacity:.4; cursor:default; border-color:#2c2c47; }
+#status { color:#8fe0b8; }
+#status.err { color:#ff8f8f; }
+
+#role-head { padding:16px 18px 8px; display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
+#role-head h2 { font-size:18px; }
+#role-head .w { flex-basis:100%; color:#9c9cba; font-weight:500; }
+#role-head label { display:flex; align-items:center; gap:8px; font-size:12px; color:#9c9cba; }
+#role-head input[type=range] { width:140px; accent-color:#7ea6ff; }
+
+#takes { padding:4px 18px 10px; display:flex; flex-direction:column; gap:8px; }
+.take {
+  display:grid; grid-template-columns:28px 1fr auto; gap:6px 10px; align-items:center;
+  padding:8px 10px; border:1px solid #23233a; border-radius:10px; background:#11111b; cursor:pointer;
+}
+.take.on { border-color:#7ea6ff; }
+.take .ix { color:#6f6f92; font-size:12px; text-align:center; }
+.take .file { font:600 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.take .file small { color:#7d7d9d; font-weight:500; margin-left:8px; }
+.take .acts { display:flex; gap:6px; }
+.take canvas { grid-column:2 / -1; width:100%; height:64px; display:block; border-radius:6px; background:#0b0b12; cursor:ew-resize; }
+.take .nums { grid-column:2 / -1; display:flex; gap:14px; font-size:11px; color:#9c9cba; align-items:center; }
+.take .nums input { width:70px; padding:3px 6px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; }
+.ic { width:28px; height:28px; padding:0; border:1px solid #2c2c47; border-radius:7px; background:none; cursor:pointer; }
+.ic:hover { border-color:#7ea6ff; }
+.ic:disabled { opacity:.35; cursor:default; }
+
+#lib { flex:1; display:flex; flex-direction:column; min-height:0; border-top:1px solid #23233a; }
+#lib-head { display:flex; gap:10px; align-items:center; padding:10px 18px; }
+#lib-head input {
+  flex:1; padding:7px 10px; background:#0b0b12; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:8px; font:inherit;
+}
+#lib-head input:focus { outline:0; border-color:#7ea6ff; }
+#lib-head span { font-size:11px; color:#6f6f92; }
+#list { flex:1; overflow:auto; padding:0 18px 30px; }
+#list::-webkit-scrollbar { width:10px; }
+#list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+.file-row {
+  display:grid; grid-template-columns:minmax(220px, 1fr) 60px 130px 32px; gap:12px; align-items:center;
+  padding:4px 8px; border-radius:7px; cursor:pointer;
+  font:600 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6;
+}
+.file-row:hover { background:#1e2740; color:#e8e6f5; }
+.file-row.in { color:#8fe0b8; }
+.file-row .sec { color:#7d7d9d; font-size:11px; font-variant-numeric:tabular-nums; }
+.file-row .pack { color:#5f5f80; font-size:11px; }
+#offline { padding:60px 40px; color:#9c9cba; font-weight:500; max-width:560px; line-height:1.6; }
+#offline code { color:#7ea6ff; }
+</style>
+</head>
+<body>
+
+<aside id="roles">
+  <h1>Sound kit <small>the house sounds, picked one role at a time</small></h1>
+  <div id="role-list"></div>
+  <div class="foot">
+    <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05"></label>
+    <span>Every sound here is heard levelled, as cut-kit will ship it.</span>
+  </div>
+</aside>
+
+<div id="main">
+  <div id="bar">
+    <button class="btn" id="play">Play</button>
+    <button class="btn" id="seq">Sequence</button>
+    <button class="btn" id="shipped">Shipped</button>
+    <span class="grow"></span>
+    <span id="status"></span>
+    <button class="btn" id="revert" disabled>Revert</button>
+    <button class="btn primary" id="save" disabled>Save</button>
+  </div>
+  <div id="role-head"></div>
+  <div id="takes"></div>
+  <div id="lib">
+    <div id="lib-head">
+      <input id="q" type="text" autocomplete="off" placeholder="Search the library">
+      <span>hover hears it · click puts it in the active take · + adds a take</span>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* What the library is searched for when a role is opened — a start, not a
+     fence: the box is the player's to change. */
+  const SEARCH = {
+    tap: "click", open: "ui open", close: "ui close", deny: "error",
+    tick: "ui select", coin: "coins", score: "confirm", star: "impact light",
+    gain: "pickup", buy: "coins", draw: "chip handle", reward: "powerup",
+    win: "confirm", fail: "error",
+    pickup: "pickup", bonus: "powerup", combo: "tone", power: "powerup",
+    malus: "phaser", crash: "explosion", move: "swish"
+  };
+  /* How the shell plays a role in a row: the stars climb, the rows tick up,
+     the coins cascade. A role that is not a ladder is played five times, which
+     is how its takes and its jitter are heard. */
+  const LADDER = {
+    star: { rates: [1, 1.19, 1.42], gap: 220 },
+    tick: { rates: [1, 1.07, 1.14, 1.21], gap: 125 },
+    coin: { rates: [1, 1.035, 1.07, 1.105, 1.14, 1.175, 1.21, 1.245], gap: 70 },
+    pickup: { rates: [1, 1.045, 1.09, 1.135, 1.18, 1.225, 1.27, 1.315], gap: 110 }
+  };
+  const GROUPS = { shell: "Shell — every game's menus and end screen", game: "Gameplay — mapped by a game's manifest (sfx)" };
+  const WINDOW = 0.05, MAX_TAKES = 3;
+
+  const S = { kit: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "" };
+
+  // ---- audio -------------------------------------------------------------
+  let ac = null;
+  const bufs = {};
+  function ctx() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; }
+  function vol() { try { const v = parseFloat(localStorage.getItem("kit:vol")); return isNaN(v) ? 0.7 : v; } catch (e) { return 0.7; } }
+  function bufOf(stem) {
+    const f = S.byStem[stem];
+    if (!f) return Promise.reject(new Error("no file " + stem));
+    if (!bufs[stem]) bufs[stem] = fetch("sfx/" + encodeURIComponent(f.file))
+      .then((r) => r.arrayBuffer()).then((b) => ctx().decodeAudioData(b));
+    return bufs[stem];
+  }
+  // The measure tools/lab/cut-kit.mjs applies: the loudest window, and the peak.
+  function levelOf(buf, start, length) {
+    const rate = buf.sampleRate, a = Math.floor(start * rate), b = Math.min(buf.length, Math.floor((start + length) * rate));
+    const n = Math.max(1, b - a), mono = new Float32Array(n);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < n; i++) mono[i] += (d[a + i] || 0) / buf.numberOfChannels;
+    }
+    let peak = 0, best = 0;
+    for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(mono[i]));
+    const win = Math.max(1, Math.round(WINDOW * rate)), hop = Math.max(1, win >> 2);
+    for (let s = 0; ; s += hop) {
+      let sum = 0, k = 0;
+      for (let i = s; i < Math.min(s + win, n); i++, k++) sum += mono[i] * mono[i];
+      if (k) best = Math.max(best, Math.sqrt(sum / k));
+      if (s + win >= n) break;
+    }
+    const db = (v) => v > 0 ? 20 * Math.log10(v) : -120;
+    return { rms: db(best), peak: db(peak) };
+  }
+  function gainDb(buf, start, length) {
+    const l = levelOf(buf, start, length);
+    return Math.min(S.kit.target - l.rms, S.kit.peak - l.peak);
+  }
+  let voices = [];
+  function stopAll() { voices.forEach((v) => { try { v.stop(); } catch (e) {} }); voices = []; }
+  function playCut(stem, start, length, rate, at) {
+    return bufOf(stem).then((buf) => {
+      const a = ctx(), src = a.createBufferSource(), g = a.createGain();
+      const t0 = a.currentTime + (at || 0), r = rate || 1, real = length / r;
+      const fade = Math.min(0.07, length * 0.3) / r;
+      const level = Math.pow(10, gainDb(buf, start, length) / 20) * vol();
+      src.buffer = buf; src.playbackRate.value = r;
+      g.gain.setValueAtTime(level, t0);
+      g.gain.setValueAtTime(level, t0 + Math.max(0, real - fade));
+      g.gain.linearRampToValueAtTime(0, t0 + real);
+      src.connect(g); g.connect(a.destination);
+      src.start(t0, start, length);
+      voices.push(src);
+      src.onended = () => { voices = voices.filter((v) => v !== src); };
+    }).catch(() => {});
+  }
+  // One shot of a variant the way Sound.ui plays it: a take, never the same twice, detuned by the jitter.
+  let lastTake = -1;
+  function shot(rate, at) {
+    const v = cur(), n = v.takes.length;
+    let i = 0;
+    if (n > 1) { i = Math.floor(Math.random() * (lastTake < 0 ? n : n - 1)); if (lastTake >= 0 && i >= lastTake) i++; }
+    lastTake = i;
+    const t = v.takes[i] || v.takes[0];
+    const j = v.jitter ? 1 + (Math.random() * 2 - 1) * v.jitter : 1;
+    return playCut(t.file, t.start, t.length, (rate || 1) * j, at);
+  }
+  function sequence() {
+    stopAll();
+    const l = LADDER[S.role];
+    if (l) l.rates.forEach((rt, i) => shot(rt, i * l.gap / 1000));
+    else for (let i = 0; i < 5; i++) shot(1, i * 0.18);
+  }
+  // The cut files on disk: what the games wear until Save.
+  function shipped() {
+    stopAll();
+    const was = JSON.parse(S.saved)[S.role], v = was && was.variants[S.variant];
+    if (!v) { status("Not saved yet — nothing shipped for " + idNow()); return; }
+    for (let i = 0; i < v.takes.length; i++) {
+      const el = new Audio("kit/" + S.role + "-" + S.variant + "-" + (i + 1) + ".mp3?" + Date.now());
+      el.volume = vol();
+      setTimeout(() => el.play().catch(() => {}), i * 450);
+    }
+  }
+
+  // ---- state -------------------------------------------------------------
+  const dump = (k) => JSON.stringify(k.roles);
+  const isShell = (role) => S.kit.roles[role].group === "shell";
+  // The id a manifest and Sound.ui name a variant by: `tap`, `crash/explosion`.
+  const idOf = (role, variant) => isShell(role) ? role : role + "/" + variant;
+  const idNow = () => idOf(S.role, S.variant);
+  function dirtyIds() {
+    const was = JSON.parse(S.saved), out = [];
+    for (const [role, r] of Object.entries(S.kit.roles)) {
+      for (const [name, v] of Object.entries(r.variants)) {
+        const w = was[role] && was[role].variants[name];
+        if (!w || JSON.stringify(w) !== JSON.stringify(v)) out.push(idOf(role, name));
+      }
+      // a variant dropped or renamed is a change of the role too
+      if (was[role] && Object.keys(was[role].variants).some((n) => !r.variants[n])) out.push(role);
+    }
+    return out;
+  }
+  function status(msg, err) { const s = $("status"); s.textContent = msg || ""; s.className = err ? "err" : ""; }
+  function cur() { return S.kit.roles[S.role].variants[S.variant]; }
+  function sel(id) {
+    const [role, variant] = id.split("/");
+    if (!S.kit.roles[role]) return;
+    const names = Object.keys(S.kit.roles[role].variants);
+    S.role = role; S.variant = names.includes(variant) ? variant : names[0];
+    S.take = 0; lastTake = -1;
+    S.q = SEARCH[role] || "";
+    $("q").value = S.q;
+    try { history.replaceState(null, "", "#" + idNow()); } catch (e) {}
+    paint();
+  }
+
+  // ---- painting ----------------------------------------------------------
+  function usersOf(id) { return (S.kit.users && S.kit.users[id]) || []; }
+  const takesWord = (v) => v.takes.length + (v.takes.length > 1 ? " takes" : " take");
+  function paintRoles() {
+    const dirty = dirtyIds();
+    let html = "", group = null;
+    Object.keys(S.kit.roles).forEach((role) => {
+      const x = S.kit.roles[role];
+      if (x.group !== group) { group = x.group; html += '<h3 class="grp">' + esc(GROUPS[group] || group) + "</h3>"; }
+      if (x.group === "shell") {
+        const v = x.variants.default;
+        html += '<button class="role' + (role === S.role ? " on" : "") + (dirty.includes(role) ? " dirty" : "") + '" data-id="' + role + '">' +
+          "<b>" + esc(role) + (S.kit.playable.includes(role) ? '<span class="tag">playable</span>' : "") + "</b>" +
+          '<span class="n">' + takesWord(v) + "</span>" +
+          '<span class="w">' + esc(x.what) + "</span></button>";
+        return;
+      }
+      /* A gameplay role is a heading and its variants under it: a variant is
+         what a game picks, so it is what is listed and what is selected. */
+      html += '<div class="role-h' + (dirty.includes(role) ? " dirty" : "") + '"><b>' + esc(role) + '</b><span class="w">' + esc(x.what) + "</span></div>";
+      Object.entries(x.variants).forEach(([name, v]) => {
+        const id = idOf(role, name), users = usersOf(id);
+        html += '<button class="role var' + (role === S.role && name === S.variant ? " on" : "") + (dirty.includes(id) ? " dirty" : "") + '" data-id="' + id + '">' +
+          "<b>" + esc(name) + "</b>" + '<span class="n">' + takesWord(v) + "</span>" +
+          '<span class="u' + (users.length ? "" : " none") + '">' + (users.length ? esc(users.join(", ")) : "no game plays it") + "</span></button>";
+      });
+    });
+    $("role-list").innerHTML = html;
+    $("save").disabled = $("revert").disabled = !dirty.length;
+  }
+  function paintHead() {
+    const x = S.kit.roles[S.role], v = cur(), shell = isShell(S.role), users = usersOf(idNow());
+    const used = users.length > 0, last = Object.keys(x.variants).length < 2;
+    $("role-head").innerHTML =
+      "<h2>" + esc(idNow()) + "</h2>" +
+      '<label>Jitter <input id="jit" type="range" min="0" max="0.1" step="0.01" value="' + (v.jitter || 0) + '"><span id="jit-v">' +
+      Math.round((v.jitter || 0) * 100) + " %</span></label>" +
+      (S.kit.playable.includes(S.role) ? '<span class="tag">ships in playables too</span>' : "") +
+      (shell ? "" :
+        '<span class="vacts"><button class="btn" id="v-new" title="A new variant of this role, starting from these takes">New variant</button>' +
+        '<button class="btn" id="v-ren"' + (used ? ' disabled title="A game plays it — map that game elsewhere first"' : "") + ">Rename</button>" +
+        '<button class="btn" id="v-del"' + (used || last ? ' disabled title="' + (used ? "A game plays it — map that game elsewhere first" : "A role keeps one variant at least") + '"' : "") + ">Delete</button></span>") +
+      '<span class="w">' + esc(x.what) + (LADDER[S.role] ? " — played as a ladder: keep the jitter at 0." : ".") +
+      (shell ? " The same in every game." : used ? " Played by " + esc(users.join(", ")) + " — a change here is heard there." : " No game plays it yet: map a key to it on the events bench.") +
+      " The takes below are interchangeable — the shell alternates between them; they are not a choice.</span>";
+    $("jit").oninput = (e) => {
+      v.jitter = Math.round(parseFloat(e.target.value) * 100) / 100;
+      $("jit-v").textContent = Math.round(v.jitter * 100) + " %";
+      paintRoles();
+    };
+    if (shell) return;
+    const ask = (msg, was) => {
+      const n = (prompt(msg, was || "") || "").trim().toLowerCase();
+      if (!n) return null;
+      if (!/^[a-z][a-z0-9]{0,23}$/.test(n)) { status("A variant is named in lowercase letters and digits", true); return null; }
+      if (x.variants[n]) { status(S.role + "/" + n + " already exists", true); return null; }
+      return n;
+    };
+    $("v-new").onclick = () => {
+      const n = ask("Name of the new " + S.role + " variant (glass, metal, soft…)");
+      if (!n) return;
+      x.variants[n] = JSON.parse(JSON.stringify(v));
+      sel(S.role + "/" + n);
+      status("New variant " + S.role + "/" + n + " — pick its takes, then Save");
+    };
+    $("v-ren").onclick = () => {
+      const n = ask("Rename " + idNow() + " to", S.variant);
+      if (!n) return;
+      const out = {};
+      for (const [k, val] of Object.entries(x.variants)) out[k === S.variant ? n : k] = val;
+      x.variants = out;
+      sel(S.role + "/" + n);
+    };
+    $("v-del").onclick = () => {
+      if (!confirm("Delete " + idNow() + "?")) return;
+      delete x.variants[S.variant];
+      sel(S.role);
+    };
+  }
+  function paintTakes() {
+    const r = cur();
+    $("takes").innerHTML = r.takes.map((t, i) => {
+      const f = S.byStem[t.file];
+      return '<div class="take' + (i === S.take ? " on" : "") + '" data-i="' + i + '">' +
+        '<span class="ix">' + (i + 1) + "</span>" +
+        '<span class="file">' + esc(t.file) + "<small>" + (f ? (+f.seconds || 0).toFixed(2) + " s · " + esc(f.pack) : "missing") + '</small><small class="gain" data-i="' + i + '"></small></span>' +
+        '<span class="acts"><button class="ic" data-act="play" data-i="' + i + '" title="Play this take">▶</button>' +
+        '<button class="ic" data-act="drop" data-i="' + i + '" title="Remove this take"' + (r.takes.length < 2 ? " disabled" : "") + ">✕</button></span>" +
+        '<canvas data-i="' + i + '"></canvas>' +
+        '<span class="nums">Start <input type="number" step="0.01" min="0" data-k="start" data-i="' + i + '" value="' + t.start + '">' +
+        'Length <input type="number" step="0.01" min="0.02" max="3" data-k="length" data-i="' + i + '" value="' + t.length + '"></span>' +
+        "</div>";
+    }).join("");
+    r.takes.forEach((t, i) => drawWave(i));
+  }
+  function drawWave(i) {
+    const t = cur().takes[i], cv = document.querySelector('canvas[data-i="' + i + '"]');
+    if (!cv || !t) return;
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+    cv.width = w * dpr; cv.height = h * dpr;
+    const g = cv.getContext("2d");
+    g.scale(dpr, dpr);
+    bufOf(t.file).then((buf) => {
+      const dur = buf.duration, d = buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / w));
+      g.clearRect(0, 0, w, h);
+      const x0 = (t.start / dur) * w, x1 = Math.min(w, ((t.start + t.length) / dur) * w);
+      g.fillStyle = "rgba(126,166,255,0.16)"; g.fillRect(x0, 0, x1 - x0, h);
+      g.fillStyle = "#4b5578";
+      for (let x = 0; x < w; x++) {
+        let m = 0;
+        for (let k = x * step; k < Math.min(d.length, (x + 1) * step); k++) m = Math.max(m, Math.abs(d[k]));
+        const y = m * (h / 2 - 2);
+        if (x >= x0 && x <= x1) g.fillStyle = "#9db8ff"; else g.fillStyle = "#3a4160";
+        g.fillRect(x, h / 2 - y, 1, Math.max(1, y * 2));
+      }
+      g.fillStyle = "#7ea6ff"; g.fillRect(x0, 0, 2, h); g.fillRect(x1 - 2, 0, 2, h);
+      const gl = document.querySelector('.gain[data-i="' + i + '"]');
+      if (gl) { const db = gainDb(buf, t.start, t.length); gl.textContent = "levelled " + (db >= 0 ? "+" : "") + db.toFixed(1) + " dB"; }
+      cv.dataset.dur = dur;
+    }).catch(() => {});
+  }
+  function terms() { return S.q.toLowerCase().split(/\s+/).filter(Boolean); }
+  function paintList() {
+    const tt = terms(), inKit = new Set(cur().takes.map((t) => t.file));
+    const rows = S.files.filter((f) => tt.every((x) => (f.stem + " " + f.category + " " + f.pack).toLowerCase().includes(x)));
+    $("list").innerHTML = rows.length ? rows.map((f) =>
+      '<div class="file-row' + (inKit.has(f.stem) ? " in" : "") + '" data-stem="' + esc(f.stem) + '">' +
+      "<span>" + esc(f.stem) + '</span><span class="sec">' + (+f.seconds || 0).toFixed(2) + ' s</span><span class="pack">' + esc(f.pack) + "</span>" +
+      '<button class="ic" data-add="' + esc(f.stem) + '" title="Add as another take"' + (cur().takes.length >= MAX_TAKES ? " disabled" : "") + ">+</button></div>"
+    ).join("") : '<p id="offline">Nothing in the library matches.</p>';
+  }
+  function paint() { paintRoles(); paintHead(); paintTakes(); paintList(); }
+
+  // ---- editing -----------------------------------------------------------
+  function defaultLength(stem) {
+    const f = S.byStem[stem], was = cur().takes[S.take];
+    return Math.round(Math.min(+f.seconds || 0.4, was ? was.length : 0.4) * 100) / 100;
+  }
+  function setTake(i, stem) {
+    cur().takes[i] = { file: stem, start: 0, length: defaultLength(stem) };
+    paint();
+    const t = cur().takes[i];
+    stopAll(); playCut(t.file, t.start, t.length);
+  }
+
+  $("role-list").addEventListener("click", (e) => {
+    const b = e.target.closest(".role");
+    if (b) sel(b.dataset.id);
+  });
+  $("takes").addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      const i = +act.dataset.i, t = cur().takes[i];
+      if (act.dataset.act === "play") { stopAll(); playCut(t.file, t.start, t.length); }
+      if (act.dataset.act === "drop" && cur().takes.length > 1) { cur().takes.splice(i, 1); S.take = 0; paint(); }
+      return;
+    }
+    const box = e.target.closest(".take");
+    if (box && +box.dataset.i !== S.take && e.target.tagName !== "INPUT" && e.target.tagName !== "CANVAS") {
+      S.take = +box.dataset.i;
+      document.querySelectorAll(".take").forEach((n) => n.classList.toggle("on", +n.dataset.i === S.take));
+    }
+  });
+  $("takes").addEventListener("change", (e) => {
+    const k = e.target.dataset.k;
+    if (!k) return;
+    const t = cur().takes[+e.target.dataset.i], v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    t[k] = Math.round((k === "length" ? Math.min(3, Math.max(0.02, v)) : Math.max(0, v)) * 1000) / 1000;
+    drawWave(+e.target.dataset.i); paintRoles();
+    stopAll(); playCut(t.file, t.start, t.length);
+  });
+  /* The cut is dragged on the waveform: press where it starts, release where
+     it ends; a click without a drag moves the window and keeps its length. */
+  let drag = null;
+  $("takes").addEventListener("pointerdown", (e) => {
+    const cv = e.target.closest("canvas");
+    if (!cv || !cv.dataset.dur) return;
+    const i = +cv.dataset.i, rect = cv.getBoundingClientRect(), dur = +cv.dataset.dur;
+    const at = (x) => Math.max(0, Math.min(dur, ((x - rect.left) / rect.width) * dur));
+    S.take = i;
+    drag = { i, at, from: at(e.clientX), moved: false };
+    cv.setPointerCapture(e.pointerId);
+  });
+  $("takes").addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const t = cur().takes[drag.i], to = drag.at(e.clientX);
+    if (Math.abs(to - drag.from) < 0.01) return;
+    drag.moved = true;
+    t.start = Math.round(Math.min(drag.from, to) * 100) / 100;
+    t.length = Math.round(Math.max(0.02, Math.min(3, Math.abs(to - drag.from))) * 100) / 100;
+    drawWave(drag.i);
+  });
+  $("takes").addEventListener("pointerup", () => {
+    if (!drag) return;
+    const t = cur().takes[drag.i];
+    if (!drag.moved) t.start = Math.round(drag.from * 100) / 100;
+    drag = null;
+    paintTakes(); paintRoles();
+    stopAll(); playCut(t.file, t.start, t.length);
+  });
+
+  $("list").addEventListener("click", (e) => {
+    const add = e.target.closest("[data-add]");
+    if (add) {
+      if (cur().takes.length >= MAX_TAKES) return;
+      S.take = cur().takes.length;
+      setTake(S.take, add.dataset.add);
+      return;
+    }
+    const row = e.target.closest(".file-row");
+    if (row) setTake(S.take, row.dataset.stem);
+  });
+  let hoverTimer = null;
+  $("list").addEventListener("mouseover", (e) => {
+    const row = e.target.closest(".file-row");
+    if (!row || row === $("list").__hover) return;
+    $("list").__hover = row;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      const stem = row.dataset.stem;
+      stopAll(); playCut(stem, 0, defaultLength(stem));
+    }, 90);
+  });
+  $("list").addEventListener("mouseleave", () => { $("list").__hover = null; clearTimeout(hoverTimer); });
+  $("q").addEventListener("input", (e) => { S.q = e.target.value; paintList(); });
+
+  $("play").onclick = () => { stopAll(); shot(1); };
+  $("seq").onclick = () => sequence();
+  $("shipped").onclick = () => shipped();
+  $("vol").value = vol();
+  $("vol").oninput = (e) => { try { localStorage.setItem("kit:vol", e.target.value); } catch (err) {} };
+
+  $("revert").onclick = () => {
+    S.kit.roles = JSON.parse(S.saved);
+    sel(idNow()); status("Reverted");
+  };
+  $("save").onclick = () => {
+    $("save").disabled = true;
+    status("Cutting…");
+    fetch("api/kit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(S.kit) })
+      .then((r) => r.json()).then((out) => {
+        if (out.error) { status(out.error, true); paintRoles(); return; }
+        S.kit = out.kit; S.saved = dump(S.kit);
+        status("Saved — " + out.log.length + " takes cut and levelled, the bench is rebuilding");
+        paint();
+      }).catch((e) => { status(String(e), true); paintRoles(); });
+  };
+  window.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === " ") { e.preventDefault(); $("play").click(); }
+    if (e.key === "/") { e.preventDefault(); $("q").focus(); }
+  });
+  window.addEventListener("resize", () => { if (S.role) paintTakes(); });
+
+  // ---- boot --------------------------------------------------------------
+  Promise.all([fetch("api/kit").then((r) => r.json()), fetch("api/sfx").then((r) => r.json())])
+    .then(([kit, files]) => {
+      S.kit = kit; S.saved = dump(kit);
+      S.files = files.slice().sort((a, b) => a.stem.localeCompare(b.stem));
+      S.files.forEach((f) => { S.byStem[f.stem] = f; });
+      const want = decodeURIComponent(location.hash.slice(1));
+      sel(kit.roles[want.split("/")[0]] ? want : Object.keys(kit.roles)[0]);
+    })
+    .catch(() => {
+      $("main").innerHTML = '<p id="offline">This page reads the kit and the library from its server. Run <code>make events</code> and open <code>/kit</code>.</p>';
+    });
+})();
+</script>
+</body>
+</html>

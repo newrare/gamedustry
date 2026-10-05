@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.8",
+  "version": "1.8.10",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,

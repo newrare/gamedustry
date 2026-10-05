@@ -191,9 +191,14 @@ development pages and answer only to the short rules in their own sections.
    in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Every file there is
    named `<category>-<descriptor>-<NN>` — browse it by ear at `make events` →
    `/library`, or `node tools/lab/index-sfx.mjs --list metal heavy` — and the
-   comment above the clip names the file it was cut from (`// hit: mallet-plink-01`),
+   comment above the clip names the file it was cut from (`// hit: gem-pickup-01`),
    which is the only record `make events` has of it. Never invent a synth
    voice for a game: `Sound.beep/arp` is only the fallback for an event with no
+   clip. The end screen, the menu and every view are NOT a game's to sound:
+   they play the house kit (`Sound.ui`), which the builder injects — never
+   embed a `uiScore`-style key. An event a gameplay role of the kit already
+   says (a pickup, a crash, a move…) can be mapped to one of its variants from
+   the manifest (`"sfx": { "gem": "pickup/glass" }`) instead of embedding a
    clip.
 1. **Never create the app icon, and never create the painted artwork.** Both are
    added later by the user: the icon (`assets/image/icon/<slug>.png` and its `thumb/`
@@ -1042,13 +1047,13 @@ The two rules that hold this together:
   A cut adopted with `--as decor` takes the role `decor-NN` and reaches
   `CONFIG.art.decorNN` like any other picture, and `Decor` — a module of
   `packages/shell/shell.js` — scatters one to three of them over the end
-  screen, the round's corners, the web menu's panels, the pause card and the
-  level map. **A game names none of them and calls nothing**: the pool is
-  whatever `decor*` keys exist. Three pieces on a screen is the ceiling, every
-  piece bleeds off an edge, none of them takes a tap, and the round's are worth
-  a fifth of a screen's opacity because that is the one place a picture sits
-  over a live world. `CONFIG.decor = false` turns it off,
-  `CONFIG.decor = { round: false }` keeps the screens only. See
+  screen, the web menu's panels, the pause card and the level map. **A game
+  names none of them and calls nothing**: the pool is whatever `decor*` keys
+  exist. Three pieces on a screen is the ceiling, every piece bleeds off an
+  edge, none of them takes a tap, and **none of them is ever over a round**:
+  a bobbing piece over a live world was re-rastered over the canvas every
+  frame, on every game, and it went for the frame rate.
+  `CONFIG.decor = false` turns it off. See
   [docs/ENGINE.md](docs/ENGINE.md#decor--the-games-own-objects-on-the-screens).
 - **A sheet of objects is material, not a role.** An image model asked for a
   gear returns a wall of sixteen, so `assets/image/master/<slug>-object-<name>.png` is
@@ -1183,11 +1188,9 @@ no row; the *never played* pill in the header names it, which is the one thing
 a separate list of the pack was for. `tools/lab/scan-events.mjs` reads them back, and each row is fired
 **inside that game's own web build** through `window.__WEB__`, so a callout is
 reviewed with its real style, its real SKIN and its real sample under it. **The
-picker's first entry is the TEMPLATE**: its clips are the end screen's
-(`uiScore`, `uiStar`, `uiRow`), listed under the motor lines that play them and
-heard in the template's own web build (`build.mjs --target=web --lab`, which only
-the bench asks for), and Apply re-cuts them into `template/game.js` — every game
-keeps the copy it was made with until it is re-cut on its own entry. The
+picker's first entry is the TEMPLATE**, heard in its own web build
+(`build.mjs --target=web --lab`, which only the bench asks for); the end
+screen's sounds are no longer its clips but the house kit's (`/kit`, below). The
 stage is **the build twice, EN above FR**, with everything but the callout
 layers hidden — no backdrop, no menu, no round, no world, a flat ground — and a
 row fires into both, so a French word that overflows is seen under the
@@ -1221,7 +1224,12 @@ writes the choice back into `games/<slug>/game.js`**: `tools/lab/apply-events.mj
 re-reads the source and splices the one argument, so a multi-line call keeps its
 shape; a changed file is re-cut with ffmpeg (mono 32 kHz / 64 kbps, a 70 ms
 fade) into `ASSETS.sounds`, its provenance comment moves with it, and the game's
-patch version moves in the same change. **An argument the game builds at runtime
+patch version moves in the same change. **A notice can be turned into a
+callout**: a `Notify.say` row's first dropdown reads `notify`, and picking a
+Pop style there fires the row as that `Pop.show` (with an anchor) and makes
+apply rewrite the whole call — the word and the sub carried over as the source
+writes them, `kind`, `icon`, `key` and `hold` dropped and named in the report.
+**An argument the game builds at runtime
 is refused by name, never overwritten**: a word written as `"+" plus the gain` is
 previewed with a stand-in, and pasting a stand-in back would break the game, so
 the row marks it before the click and the report names it after. Changing a
@@ -1255,6 +1263,29 @@ a button for them would do nothing; and `Overlay.vignette` is a coloured glow
 over the frame rather than a notification — it carries no word, so there is
 nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
 because it is what holds a beat together.
+
+`game-events-v2.html` is **the same bench with the game's own moment under
+each event** (`make events` → `/v2`); the first version stays as it is. A
+callout judged on a flat ground says nothing about whether it lands on the hit
+it celebrates, so **REC** turns the stage into the game itself, played: every
+`Pop` / `Notify` / `Sound` call is caught at its call site (the stack's line in
+the built `game.<hash>.js`, mapped back to the source by `/api/offset`), and an
+event with no clip yet keeps the 2 s of canvas before it and 1.2 s after,
+encoded as a webm into `lab/events-clips/<slug>/` — **ignored by git**, since
+playing again is how they are made again. The level picker beside REC starts any level
+of the climb, or the endless run, straight into its round — locked ones too,
+since the played frame is loaded with the dev force (`?force=1`) and
+`__LEVELS__.play(n)` (packages/webshell/levels.js) is what it calls. **↻** on a row loops that clip under
+both frames, EN and FR, and fires the row — with its pending edits — at the
+instant it fired in play, together with everything else that fired in the
+window (a chip mutes one). `Pop.text` is not drawn while recording, so the
+number is never baked into the picture; the DOM (HUD, callouts) and a backdrop
+laid under the canvas (`CONFIG.sceneArt`) are not in a clip. **EN** keeps a
+callout's words in English on the French screen: on APPLY,
+`tools/lab/keep-english.mjs` writes an entry whose French IS the English into
+`web.copy.fr.strings` (the copy desk counts it as translated), parks the old
+French in `lab/events-keep-en.json`, and gives it back when the toggle is
+undone.
 
 `village.html` is **the village composer** (`make village`), and what it
 composes is a game's TITLE SCREEN drawn as a place instead of a list. It is
@@ -1406,15 +1437,46 @@ ships** — "Jelly" mixed flat — as the BUTTON block of
 `packages/shell/motor.css`, so no SKIN writes a button rule of its own; see
 [docs/ENGINE.md](docs/ENGINE.md#the-button--one-component-and-a-skin-never-restyles-it).
 
+`sound-kit.html` is **the house sound kit** (`make events` → `/kit`): what the
+SHELL sounds like in every game — the end screen, the menu, the map, the album,
+the shop, the daily road, the barracks — as fourteen ROLES (`tap`, `open`,
+`close`, `deny`, `tick`, `coin`, `score`, `star`, `gain`, `buy`, `draw`,
+`reward`, `win`, `fail`), one to three takes each, cut out of the library.
+**A role is what a moment means, never a file**: the shell calls
+`Sound.ui(role)`, and changing what `reward` sounds like is one Save, for
+thirteen games at once. The page pre-searches the library for the selected
+role, plays every candidate LEVELLED as it will ship, takes the cut dragged on
+the waveform, and plays the role the way the shell does — the stars as a
+ladder, the coins as a cascade, the rest five times over to hear the takes and
+the jitter. Save writes `assets/audio/kit/kit.json`, and
+`tools/lab/cut-kit.mjs` re-cuts every take into `assets/audio/kit/<role>-<n>.mp3`,
+levelled to one loudness (committed, like `assets/image/shell/`; the build
+never runs ffmpeg). A second group of roles is GAMEPLAY (`pickup`, `bonus`,
+`combo`, `power`, `malus`, `crash`, `move`), and since a crash in one game is
+not a crash in another, each holds named VARIANTS (`crash/explosion`,
+`crash/glass`) where a shell role holds one, `default`. A game maps a key to
+ONE variant from its `manifest.json` — `"sfx": { "crash": "crash/explosion" }`,
+written by the kit selector on the key's clip card in `make events` — so the
+game's code keeps `Sound.clip("crash")`, its clip leaves `ASSETS.sounds`, and
+the kit page says which game plays each variant and will not rename or drop
+one a game plays. **The takes inside a variant are interchangeable** — the
+engine alternates them so a sound heard twenty times does not repeat — and
+never a choice: a different sound is a different variant. A game moves onto the kit one at a time, by
+decision, never in a batch (`triverse` is the first), and keeps as clips the
+signature sounds no role says.
+
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
 page, grouped by the CATEGORY its name starts with, with its length, whether it
 is mono, its pack and which game already cuts a clip from it (`chainring.hit`);
 a search box, the categories, the packs and the length as facets; hover plays,
-click copies the name. The library is ~870 files from two vendors — the
-ZapSplat "multimedia" set and ten Kenney CC0 packs — and **every file is named
+click copies the name. The library is ~880 files, **all CC0** — eight Kenney
+packs and ten OpenGameArt ones — because the repository is public and the raw
+files are in it: a licence that allows a sound in a game but forbids handing
+out the file (ZapSplat's, removed on 2026-10-04, Sonniss, Pixabay) cannot be
+in this folder. **Every file is named
 `<category>-<descriptor>-<NN>.<ext>`**: `impact-metal-heavy-01.ogg`,
-`chime-ping-correct-01.mp3`, `voice-female-level-up.ogg`, the category first
+`gem-pickup-01.ogg`, `creature-cute-03.ogg`, the category first
 because it is what a list groups by, the vendor's word order and marketing words
 gone. `assets/audio/sfx/sources.tsv` keeps each file's pack, licence and
 original name, `LICENSES.md` beside it says what the packs are, and
@@ -1595,6 +1657,12 @@ Frame & input (section 3):
   is a time scale on the simulation only: the frame keeps rendering, `update`
   gets `k * dt`, and `start` resets it to 1. The web target's three-star finish
   is what ramps it.
+- `Sound.ui(role, vol, rate)` — **the house sound kit**, the way the SHELL plays
+  sound: `tap open close deny tick coin score star gain buy draw reward win fail`,
+  injected into every game by the builder from `assets/audio/kit/`, levelled to
+  one loudness so `vol` is mix. `open` / `close` are the view system's own doors
+  and are never called by hand. A game never embeds these sounds; see
+  [docs/ENGINE.md](docs/ENGINE.md#soundui--the-house-sound-kit).
 - `Sound.unlock()` (in a user gesture), `Sound.clip(name,vol,rate)` — the way a
   game plays sound: one clip from `assets/audio/sfx/` per event, pitched with `rate`
   rather than duplicated. `Sound.cue(name,vol,rate,freq,dur,type)` plays the clip
@@ -1637,6 +1705,11 @@ Frame & input (section 3):
   string in the repo is written in normal case; this is the only way it reaches
   a screen in capitals. See [docs/ENGINE.md](docs/ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
 - `preloadImages(done)` + `Images[key]`. `rgba(hex,a)`, `clamp(v,lo,hi)`.
+- `freeCanvas(cv)` — frees a cached canvas being REPLACED (zeroes its size,
+  returns null). A cache built from `reset()` is keyed on what it is made of
+  (viewport, `view.dpr`, band, art decoded) and rebuilt only when that changes —
+  never once per round: the garbage of a replay is a mid-round GC hitch a few
+  rounds later. See [docs/ENGINE.md](docs/ENGINE.md#engine-basics).
 - `Icon.draw(ctx,key,cx,cy,size,colour)` / `Icon.get(...)` — a pictogram from
   the shared `assets/motor/lucide/` pack, encoded with `node tools/lab/embed-icon.mjs <name> --key icoThing` into `ASSETS.images` and tinted here. Icons are stored
   white, so never `drawImage` the raw SVG.

@@ -1,7 +1,7 @@
 {
   "slug": "pawko",
   "title": "Pawko",
-  "version": "0.6.0",
+  "version": "0.6.3",
   "tagline": "Drop waves of balls down a pinboard of pegs and play a card between waves",
   "order": 140,
   "draft": false,
@@ -554,6 +554,13 @@
           "always": true
         },
         {
+          "art": "empty",
+          "role": "cards",
+          "x": 360,
+          "y": 280,
+          "w": 200
+        },
+        {
           "art": "home03",
           "role": "map",
           "x": 550,
@@ -592,14 +599,7 @@
           "role": "play",
           "x": 360,
           "y": 710,
-          "w": 260
-        },
-        {
-          "art": "home07",
-          "role": "cards",
-          "x": 495,
-          "y": 830,
-          "w": 160
+          "w": 250
         },
         {
           "art": "decor02",
@@ -614,11 +614,20 @@
           "notify": "alert"
         },
         {
+          "art": "icon34",
+          "role": "decor",
+          "x": 500,
+          "y": 800,
+          "w": 70,
+          "notify": "float",
+          "always": true
+        },
+        {
           "art": "home01",
           "role": "shop",
           "x": 160,
-          "y": 810,
-          "w": 220,
+          "y": 800,
+          "w": 180,
           "badge": {
             "dx": 0.25,
             "dy": -0.75
@@ -635,8 +644,8 @@
           "art": "home04",
           "role": "options",
           "x": 180,
-          "y": 1080,
-          "w": 220
+          "y": 1060,
+          "w": 190
         },
         {
           "art": "empty",

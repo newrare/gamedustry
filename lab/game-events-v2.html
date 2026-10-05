@@ -1,0 +1,2748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — game events v2</title>
+<meta name="lab-group" content="tools">
+<style>
+/* ===========================================================================
+   EVENTS BENCH V2 — the same bench, plus the MOMENT of the game each event
+   belongs to. lab/game-events.html is the first version and stays as it is.
+
+   A callout or a cue is hard to judge on a flat ground: "Combo x3" over
+   nothing says nothing about whether it lands on the hit it celebrates. So
+   this version RECORDS the game being played and loops the moment under the
+   row being judged.
+
+     REC           the stage becomes the real game, in English, playable. Every
+                   Pop.show / Pop.text / Notify.say / Sound.* call the game makes
+                   is caught at its call site (the stack's line in the built
+                   game.<hash>.js, mapped back to games/<slug>/game.js through
+                   /api/offset) and matched to its row. The canvas is sampled
+                   all the time (2 s kept); an event with no clip yet keeps
+                   those 2 s and 1.2 s more, encoded as a webm and saved in
+                   lab/events-clips/<slug>/ (ignored by git — playing again is
+                   how they are made again). Pop.text is not drawn while
+                   recording, so the number is never baked into the picture.
+     LOOP (↻)      on a row with a clip, the clip plays behind both frames
+                   (EN and FR), and at the instant the event fired it is fired
+                   again — with what the row now says, so an edit is judged on
+                   the real action. Everything else that fired in that window
+                   fires with it, at its own time, so the moment is whole; a
+                   chip in the loop bar mutes one of them.
+     EN            on a callout or a notice: keep its words in English on the
+                   French screen. It writes an entry whose French IS the
+                   English into web.copy.fr.strings (tools/lab/keep-english.mjs,
+                   on APPLY), which the copy desk counts as translated.
+
+   What a clip cannot show: the DOM — the HUD, the callouts (which is the
+   point: they are fired live over it) — and a painted backdrop the game lays
+   UNDER its canvas (CONFIG.sceneArt): the canvas is drawn on the game's flat
+   ground colour instead.
+   ===========================================================================
+
+   EVENTS BENCH — what a game SAYS and what it PLAYS, in one list, played on
+   that game's own backdrop.
+
+   The scope is deliberately narrow, and it is the whole point of the page.
+   The list has TWO sides, and they are the two questions a beat is reviewed
+   against — what the player READS and what the player HEARS:
+
+     VIEW          the Pop callouts (`Pop.show` in the DOM, `Pop.text` on the
+                   canvas) and the Overlay notifications, in source order,
+                   grouped into the beat they fire together on
+     SOUND         the background bed and its CONFIG.music, then ONE CARD PER
+                   CLIP — the file of assets/audio/sfx/ it is cut from and how
+                   long the cut is at the top, and under it every line of the
+                   game that plays it, with the volume and the pitch that line
+                   asks for
+
+   The card is the clip and not the line, because 18 cues in a game are 7 clips:
+   listing the clip once per line said the same thing five times over and
+   offered the same file list five times for one decision. What is shared is
+   written once; what a line owns — how loud, how high, since one sample covers
+   a family of events through `rate` — stays on the line.
+
+   The whole of assets/audio/sfx/ opens from the file button, and HOVERING a row
+   plays it, trimmed to the cut length: a clip is chosen by ear, 127 file names
+   say nothing, and picking them one at a time to hear them is not choosing.
+   That is also why the list is not a <select> — a native popup is drawn by the
+   operating system and fires nothing over its rows. A clip nothing plays has no
+   line and therefore no card: the "never played" pill in the header names it,
+   which is the one thing a separate list of the pack was for.
+
+   Everything else a beat does — Fx.burst / ring / shake / flash / freeze,
+   HUD.punch, and `Overlay.vignette`, which is a coloured glow over the frame
+   and not a notification — is juice with no words in it. There is nothing on
+   it to read, re-style or re-word, so tools/lab/scan-events.mjs lists it and
+   this page does not.
+
+   The right column is the game's own web build TWICE, one under the other —
+   once in English, once in French — with everything but the callout layers hidden:
+   no backdrop, no menu, no round, no world, a flat ground. The build is there
+   because it is the only honest source of the real Pop styles, the real SKIN
+   and the real samples; the backdrop is not, because a callout is reviewed for
+   what it SAYS here. A row fires into both at once, so a French word that
+   overflows its plate is seen under the English one that fits; a sound plays
+   in the English frame only. On SOUND there is nothing to look at, so the two
+   frames leave the stage and run on off-screen, still playing the rows. `Pop.text` needs the frame pipeline, which is not
+   turning, so the bench drives the three calls that pipeline would make and
+   nothing more (see `juice`).
+
+   A word the game BUILDS is run, not stubbed: `"x" + mult + Lang.t(" streak")`
+   is evaluated inside each frame, so the French comes out of the very Lang.t
+   the game wrapped around its own literal. What the bench cannot read — the
+   round's locals, `mult`, `T2.name`, `cardName(c)` — are SLOTS, inputs under
+   the row with a plausible value already in them (tools/lab/scan-events.mjs,
+   textsOf): a tier is a pick of the table's own keys, a `.name` one of the
+   names the source writes, a count a count. Whatever is typed there is the
+   bench's and is never written back; it is kept per game in this browser.
+   Under the slots, the row reads back what each frame was handed, EN and FR,
+   and marks a French that came out identical to the English.
+
+   Every row is editable — the style, the word, the anchor, the clip, the file
+   that clip is cut from, the volume, the pitch — so a change can be seen and
+   heard before it is written. A notice can also be turned into a callout: its
+   first dropdown reads `notify`, and picking a Pop style there fires the row
+   as that Pop.show, and apply rewrites the call (kind and icon dropped).
+
+   APPLY is what makes it stick. What the rows changed goes to POST /api/apply
+   (tools/lab/apply-events.mjs), which splices the arguments back into
+   games/<slug>/game.js — one span at a time, so a multi-line call keeps its
+   shape — re-cuts a clip with ffmpeg when its FILE changed, moves the
+   provenance comment with it, and bumps the game's patch version. The save
+   trips the server's watcher, the build is rebuilt, the page comes back on the
+   change. An argument the game builds at runtime (`"+" + gain`) is REFUSED by
+   name rather than overwritten with the bench's stand-in.
+
+   A row carries no `copy` button and a beat no `play all`: the one way a change
+   leaves this page is APPLY, and the one thing to copy is the beat's own
+   `file:line`, which its header hands over on a click. A number is a slider
+   rather than a field, because a volume and a pitch are swept, not typed.
+
+   Two icons sit on everything the bench can change. REVERT puts the element
+   back where the source has it. TRASH deletes nothing by itself — it MARKS,
+   the way every other change here is marked, so a removal is reviewed next to
+   the rest of the plan, counted in the Apply badge, and taken back with the
+   same revert as a typo. On a cue line it removes that line; on a clip's card
+   it removes the clip from ASSETS.sounds AND every line that plays it, because
+   a game calling a clip it no longer ships gets silence rather than an error.
+
+   A line seen and heard is CHECKED — the copy desk's tick — and the three
+   actions (check, revert, remove) sit in ONE place on every card: the
+   top-right corner of its header, out of the flow, so no wrap can move them.
+   A callout's card acts on its whole moment; a cue line keeps its own three
+   in the last columns of its grid, right under its clip card's. The mark lands in lab/events-review.json against the call's
+   checkId (tools/lab/scan-events.mjs): the call's source in its function, and
+   for a cue the clip it plays. Change the call, or re-cut its clip, and the
+   mark no longer matches: the line reads unchecked again. A clip's card ticks
+   every line under it at once. A game whose every callout, notice and cue line
+   is checked turns green in the picker, and HIDE CHECKED leaves what is left.
+
+   The picker's first entry is the TEMPLATE, played in its own web build. The
+   end screen's sounds are not its clips any more: they are the house kit's
+   (Sound.ui), chosen on the kit page (/kit, lab/sound-kit.html).
+   Served by `make events` (tools/lab/serve-events.mjs).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — one list: the bed, the pack, then the beats.
+   --------------------------------------------------------------------------- */
+#panel { flex:1 1 auto; min-width:420px; display:flex; flex-direction:column; background:#12121c; border-right:1px solid #23233a; }
+#head { padding:16px 18px 14px; border-bottom:1px solid #23233a; }
+#head h1 { font-size:15px; letter-spacing:1.5px; text-transform:uppercase; display:flex; align-items:center; gap:10px; }
+#head h1 small { font-weight:600; font-size:11px; letter-spacing:.5px; color:#8b8ba7; text-transform:none; }
+
+select, input[type=text], input[type=number] {
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:7px;
+  font:inherit; padding:7px 9px;
+}
+select:focus, input:focus { outline:none; border-color:#7ea6ff; }
+#game-pick { width:100%; margin-top:12px; font-weight:700; }
+/* A game every line of which is checked — green, and a tick in its label,
+   since a native popup may draw the options without their colour. */
+#game-pick.done { border-color:#2a5040; color:#5fd49a; }
+#game-pick option { color:#e8e6f5; background:#0b0b12; }
+#game-pick option.done { color:#5fd49a; }
+
+/* The two sides of the list. VIEW is what the player reads, SOUND is what the
+   player hears — and a beat that does both shows its own half in each. */
+#tabs { display:flex; gap:4px; margin-top:12px; padding:3px; background:#0b0b12; border:1px solid #2c2c47; border-radius:9px; }
+#tabs button {
+  flex:1; padding:7px 0; border:0; border-radius:7px; background:none; color:#8b8ba7;
+  font:700 11px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; cursor:pointer;
+}
+#tabs button:hover { color:#e8e6f5; }
+#tabs button.on { background:#2a2a44; color:#e8e6f5; }
+#tabs button b { color:#6f6f92; font-weight:700; }
+#tabs button.on b { color:#7ea6ff; }
+
+#stats { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; font-size:11px; }
+#stats span { padding:3px 8px; border-radius:20px; background:#1b1b2b; color:#9c9cba; }
+#stats span b { color:#e8e6f5; }
+
+#list { flex:1; overflow:auto; padding:14px 14px 60px; }
+#list::-webkit-scrollbar { width:10px; }
+#list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+
+.section { margin:18px 0 8px; font:700 10px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; color:#6f6f92; }
+.section:first-child { margin-top:2px; }
+.legend { margin:-2px 0 12px; font-size:11px; color:#6f6f92; }
+
+/* --- one beat: the moment, its rows, its source -------------------------- */
+.beat { background:#151522; border:1px solid #22223a; border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.bhead { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#191927; border-bottom:1px solid #22223a; flex-wrap:wrap; }
+/* A card's three actions — check, revert, remove — sit in ONE place on every
+   card of both tabs: pinned to the top-right corner of its header, out of the
+   flow, so neither a long function name, a warning nor a header that wraps can
+   move them. The header keeps their room free. The 7px gap and the 10px edge
+   are the cue lines' own, so on a clip's card the header's three sit right
+   above each line's three. */
+.bhead.has-acts { position:relative; padding-right:106px; min-height:39px; }
+.bhead .acts { position:absolute; top:8px; right:10px; display:flex; gap:7px; }
+/* A clip's card: the shared decisions on top, the lines that play it below. */
+.bhead .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8fe0b8; min-width:58px; cursor:pointer; }
+.bhead .filebtn { flex:1 1 180px; min-width:150px; max-width:280px; }
+.bhead .plays { font-size:11px; color:#8fe0b8; font-variant-numeric:tabular-nums; }
+.bhead .approx { color:#ffb648; font-size:11px; cursor:help; }
+.beat.clip .call { padding-left:16px; }
+.call .ln { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
+.call .fn { font-size:12px; color:#c9c9e0; }
+.call .fn i { color:#6f6f92; font-style:normal; }
+.bhead .ln { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
+.bhead .fn { font-size:12px; color:#c9c9e0; }
+.bhead .fn i { color:#6f6f92; font-style:normal; }
+.bhead .sp { flex:1; }
+.bhead .warn { color:#ffb648; font-size:11px; cursor:help; }
+
+button.act {
+  padding:5px 10px; border-radius:7px; border:0; background:#2a2a44; color:#e8e6f5;
+  font:700 11px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.act:hover { background:#3b3b5f; }
+button.act.go { background:#7ea6ff; color:#0b0b12; }
+button.act.go:hover { background:#9dbaff; }
+button.act.sm { padding:4px 7px; }
+button.act.ghost { background:none; border:1px solid #2c2c47; color:#8b8ba7; }
+button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
+
+.call { display:flex; align-items:center; gap:7px; padding:7px 10px; border-top:1px solid #1d1d2e; flex-wrap:wrap; }
+.call:first-child { border-top:0; }
+.tag {
+  font:700 10px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.4px;
+  padding:1px 7px; border-radius:5px; background:#22223a; color:#9c9cba; white-space:nowrap;
+}
+.k-pop     .tag { background:#3a2350; color:#dcb6ff; }
+.k-notify .tag { background:#1f3550; color:#9fd0ff; }
+.k-notify.as-pop .tag { background:#3a2350; color:#dcb6ff; }
+.k-sound   .tag { background:#1d3d31; color:#8fe0b8; }
+
+.call input, .call select { padding:3px 7px; border-radius:6px; font:700 12px/1.4 inherit; }
+.call input.w { width:150px; }
+.call input.s { width:110px; font-weight:600; color:#a8a8c8; }
+.call select { font-size:11px; font-weight:700; }
+
+/* A number here is a FEEL — a volume, a pitch, how much of a file to keep —
+   and a feel is swept, not typed. The track carries the step as a printed
+   grid, and the thumb lands on it, so the value is read off the position and
+   two rows are comparable at a glance. */
+/* Label, track and value are three columns of a fixed grid, so VOL and RATE
+   sit under VOL and RATE all the way down a card however long the words to
+   their left are. */
+.rng { display:grid; grid-template-columns:30px 96px 34px; align-items:center; gap:7px; }
+.rng > .lbl { text-align:right; }
+
+/* THE GROOVE IS THIS SPAN, not the input's pseudo-track: `::-webkit-slider-*`
+   styles or does not depending on the engine, and where it does not the slider
+   comes out as a bare thumb over nothing. Three layers, topmost first — the
+   grid of ticks, the fill up to the thumb, the groove — so the extent AND the
+   value read at rest instead of only under the hand. */
+.rng .track {
+  position:relative; height:9px; border-radius:5px; border:1px solid #4a4a78;
+  background:
+    repeating-linear-gradient(90deg, rgba(160,160,215,.32) 0 1px, transparent 1px var(--tick, 8px)),
+    linear-gradient(90deg, #35507f 0 var(--fill, 0%), #07070d var(--fill, 0%));
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.6);
+}
+.rng.dirty .track { border-color:#7ea6ff; }
+.rng.dirty .track {
+  background:
+    repeating-linear-gradient(90deg, rgba(190,210,255,.38) 0 1px, transparent 1px var(--tick, 8px)),
+    linear-gradient(90deg, #4a6dad 0 var(--fill, 0%), #07070d var(--fill, 0%));
+}
+.rng.expr .track { border-color:#6b5824; }
+
+/* The input is an invisible overlay: it keeps the dragging, the keyboard and
+   the snapping, and contributes nothing but its thumb. */
+.rng .track input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  position:absolute; left:-1px; right:-1px; top:-5px; height:19px;
+  margin:0; padding:0; border:0; background:transparent; cursor:pointer;
+}
+.rng .track input[type=range]::-webkit-slider-runnable-track { height:19px; background:transparent; border:0; }
+.rng .track input[type=range]::-moz-range-track { height:19px; background:transparent; border:0; }
+.rng .track input[type=range]::-moz-range-progress { background:transparent; }
+
+.rng .track input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:14px; height:14px; margin-top:2px; border-radius:50%;
+  background:#7ea6ff; border:2px solid #12121c; box-shadow:0 0 0 1px #7ea6ff;
+}
+.rng .track input[type=range]::-moz-range-thumb {
+  width:14px; height:14px; border-radius:50%;
+  background:#7ea6ff; border:2px solid #12121c; box-shadow:0 0 0 1px #7ea6ff;
+}
+.rng .track input[type=range]:hover::-webkit-slider-thumb { background:#9dbaff; }
+.rng .track input[type=range]:hover::-moz-range-thumb { background:#9dbaff; }
+.rng .track input[type=range]:focus { outline:none; }
+.rng .track input[type=range]:focus::-webkit-slider-thumb { box-shadow:0 0 0 1px #7ea6ff, 0 0 0 4px rgba(126,166,255,.3); }
+.rng .track input[type=range]:focus::-moz-range-thumb { box-shadow:0 0 0 1px #7ea6ff, 0 0 0 4px rgba(126,166,255,.3); }
+.rng.dirty .track input[type=range]::-webkit-slider-thumb { background:#9dbaff; box-shadow:0 0 0 1px #9dbaff; }
+.rng.dirty .track input[type=range]::-moz-range-thumb { background:#9dbaff; box-shadow:0 0 0 1px #9dbaff; }
+.rng.dirty.expr .track input[type=range]::-webkit-slider-thumb { background:#ffb648; box-shadow:0 0 0 1px #ffb648; }
+.rng.dirty.expr .track input[type=range]::-moz-range-thumb { background:#ffb648; box-shadow:0 0 0 1px #ffb648; }
+
+.rng b {
+  font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:#c9c9e0; font-variant-numeric:tabular-nums; text-align:right;
+}
+.rng.dirty b { color:#9dbaff; }
+
+/* A cue line is a grid and not a flow: nine cells, the same nine on every
+   line, so nothing in front of a slider can push it out of its column. */
+.call.k-sound {
+  display:grid; align-items:center; gap:7px;
+  grid-template-columns: 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px 24px;
+}
+.call.k-sound .fn { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.call .approx { min-width:12px; text-align:center; }
+.lbl { font-size:10px; color:#6f6f92; text-transform:uppercase; letter-spacing:.6px; }
+.call .meta { font-size:11px; color:#7d7d9d; font-variant-numeric:tabular-nums; }
+.call .approx { color:#ffb648; font-size:11px; cursor:help; }
+.call .sp { flex:1; }
+
+/* A control the bench changed and APPLY has not written yet. The amber one is
+   a control whose value the GAME builds at runtime — it can be previewed, and
+   apply will refuse it by name rather than paste the stand-in into the source. */
+.call input.dirty, .call select.dirty, .sfx select.dirty, .sfx input.dirty {
+  border-color:#7ea6ff; background:#141d33;
+}
+.call .expr, .call select.expr, .call input.expr { border-color:#5a4a1e; }
+.call .dirty.expr, .sfx .dirty.expr { border-color:#ffb648; background:#251c0e; }
+/* The file picker is NOT a <select>: a native popup is drawn by the OS and
+   fires no event over its rows, so a clip could only be heard by committing to
+   it. This one is ours — hovering a row plays it, and nothing is chosen until
+   a click. */
+.filebtn {
+  flex:1 1 200px; min-width:150px; max-width:300px; text-align:left;
+  padding:3px 22px 3px 7px; border-radius:6px; border:1px solid #2c2c47; background:#0b0b12;
+  font:600 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff;
+  cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  position:relative;
+}
+.filebtn::after { content:"▾"; position:absolute; right:7px; top:3px; color:#6f6f92; }
+.kitbtn { flex:1 1 180px; min-width:150px; max-width:280px; padding:3px 9px; border:1px solid #3a3260; border-radius:7px; background:#1a1630; color:#c8b8ff; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-decoration:none; }
+.kitbtn:hover { border-color:#c8b8ff; }
+.kitsel { flex:0 1 170px; min-width:110px; padding:3px 6px; background:#151522; color:#c8b8ff; border:1px solid #3a3260; border-radius:7px; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.kitsel.dirty { border-color:#ffd08a; color:#ffd08a; }
+.filebtn:hover, .filebtn.open { border-color:#7ea6ff; background:#141d33; }
+.filebtn.swap { color:#ffd08a; }
+.filebtn.dirty { border-color:#7ea6ff; background:#141d33; }
+
+/* The list itself, anchored to the button and parked on the body so the
+   panel's own overflow cannot clip it. */
+/* `display:flex` beats the hidden attribute's UA rule, so say it again. */
+#filemenu[hidden] { display:none; }
+#filemenu {
+  position:fixed; z-index:50; width:340px; max-height:390px; display:flex; flex-direction:column;
+  background:#12121c; border:1px solid #3b3b5f; border-radius:10px;
+  box-shadow:0 18px 50px rgba(0,0,0,.6); overflow:hidden;
+}
+#filemenu .fm-head { padding:8px; border-bottom:1px solid #23233a; }
+#filemenu input.fm-filter { width:100%; font-weight:600; }
+#filemenu .fm-note { padding:6px 10px 0; font-size:10px; color:#6f6f92; }
+#filemenu .fm-list { overflow:auto; padding:6px; }
+#filemenu .fm-list::-webkit-scrollbar { width:9px; }
+#filemenu .fm-list::-webkit-scrollbar-thumb { background:#26263c; border-radius:8px; }
+#filemenu .fm-row {
+  display:block; width:100%; text-align:left; padding:5px 8px; border:0; border-radius:6px;
+  background:none; color:#b9b9d6; cursor:pointer;
+  font:600 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+  word-break:break-word; overflow-wrap:anywhere;
+}
+#filemenu .fm-row:hover, #filemenu .fm-row.on { background:#1e2740; color:#e8e6f5; }
+#filemenu .fm-row.cur { color:#ffd08a; }
+#filemenu .fm-row .sz { color:#5f5f80; font-size:9px; }
+#filemenu .fm-row.used .sz { color:#8fe0b8; }
+#filemenu .fm-none { padding:14px; text-align:center; color:#6f6f92; font-size:11px; }
+#filemenu .fm-cat { padding:8px 8px 2px; font:700 9px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#6f6f92; }
+#filemenu .fm-cat[hidden] { display:none; }
+#head .lib { display:inline-block; margin-top:6px; font-size:11px; color:#7ea6ff; text-decoration:none; }
+#head .lib:hover { text-decoration:underline; }
+
+
+/* The two icons every changeable element carries. Dim until there is something
+   to undo; the trash turns red once it is armed. */
+.iconbtn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:22px; padding:0; border:0; border-radius:6px;
+  background:none; color:#4d4d68; cursor:pointer;
+}
+.iconbtn svg { width:14px; height:14px; }
+.iconbtn:hover { background:#22223a; color:#e8e6f5; }
+.iconbtn.trash:hover { background:#3a1520; color:#ff8fa3; }
+.call.killed .iconbtn.trash, .beat.killed .bhead .iconbtn.trash { color:#ff6b83; }
+
+/* Marked for removal: still readable, plainly on its way out, and one click on
+   the revert brings it back. */
+.call.killed > *:not(.iconbtn), .beat.killed .bhead > *:not(.acts) {
+  opacity:.4; text-decoration:line-through; pointer-events:none;
+}
+.call.killed { background:#1d1218; }
+
+/* Checked: seen, heard and signed off. */
+.iconbtn.check.on { background:#5fd49a; color:#0b0b12; }
+.iconbtn.check.on:hover { background:#7de3b0; color:#0b0b12; }
+.call.checked { background:#13221b; }
+.call.checked.killed { background:#1d1218; }
+.beat.checked { border-color:#2a5040; }
+.beat.checked > .bhead { background:#15241c; }
+#stats span.done { background:#13221b; color:#5fd49a; }
+#stats span.done b { color:#5fd49a; }
+#stats button.hide { margin-left:auto; padding:3px 9px; border-radius:20px; border:1px solid #2c2c47; background:none; color:#8b8ba7; font:700 11px/1.3 inherit; cursor:pointer; }
+#stats button.hide:hover { color:#e8e6f5; }
+#stats button.hide.on { background:#1e2740; border-color:#7ea6ff; color:#e8e6f5; }
+#tabs button.done b { color:#5fd49a; }
+.beat.killed { border-color:#5a2030; }
+
+details.src { border-top:1px solid #1d1d2e; }
+details.src summary { padding:6px 10px; font-size:11px; color:#6f6f92; cursor:pointer; list-style:none; }
+details.src summary::-webkit-details-marker { display:none; }
+details.src summary:hover { color:#9c9cba; }
+details.src pre {
+  margin:0; padding:10px 12px; background:#0d0d16; overflow:auto;
+  font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6; white-space:pre;
+}
+
+/* --- the bed and the pack ------------------------------------------------ */
+.sfx { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151522; border:1px solid #22223a; border-radius:9px; margin-bottom:7px; }
+.sfx .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#e8e6f5; width:84px; }
+.sfx .note { flex:1; font-size:11px; color:#7d7d9d; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sfx.bed { border-color:#4a2338; background:#181220; }
+.sfx.bed .key { color:#f0a0c0; }
+.empty { padding:26px; text-align:center; color:#6f6f92; font-size:12px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the game's backdrop and the overlay layer, nothing else.
+   --------------------------------------------------------------------------- */
+#stage { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; padding:14px; background:#08080f; }
+#bar { display:flex; align-items:center; gap:7px; margin-bottom:12px; width:100%; }
+#bar .sp { flex:1; }
+/* The two languages, one under the other, the same frame at the same scale. */
+#shell { position:relative; display:flex; flex-direction:column; gap:12px; }
+/* SOUND has nothing to look at: the frames leave the stage, which keeps the
+   bar, the hint and the report. They stay loaded and rendered off-screen —
+   the English one is what plays a row. */
+body.sound:not(.looping) #shell { position:absolute; left:-10000px; top:0; }
+.pane .lang { height:22px; font:700 11px/22px inherit; letter-spacing:1.5px; color:#8b8ba7; text-align:center; }
+.fit { transform-origin:top left; }
+.frame { width:720px; height:1280px; border:0; border-radius:22px; background:#000; display:block; box-shadow:0 24px 70px rgba(0,0,0,.6); }
+#hint { margin-top:9px; text-align:center; font-size:11px; color:#6f6f92; min-height:15px; }
+/* The column must not SHRINK its own rows: fit() sizes the frame from what the
+   hint and the report measure, and a flex-shrunk report would make it read a
+   height it had already caused. */
+#bar, #shell, #hint, #report { flex:0 0 auto; }
+
+/* What APPLY did, kept across the rebuild's reload: the line as it is now
+   written, and every change that was refused and why. */
+#report {
+  margin-top:10px; width:100%; max-height:190px; overflow:auto;
+  background:#12121c; border:1px solid #23233a; border-radius:9px; padding:9px 11px;
+  font:600 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6;
+}
+#report:empty { display:none; }
+#report .ok { color:#8fe0b8; }
+#report .no { color:#ffb648; }
+#report .at { color:#6f6f92; display:block; padding-left:14px; white-space:pre-wrap; word-break:break-word; }
+#report .ver { color:#7ea6ff; }
+#bar .cnt { font:700 11px/1 inherit; color:#0b0b12; background:#7ea6ff; border-radius:20px; padding:3px 7px; }
+.call.inherited .ln.motor { color:#8fb0ff; cursor:pointer; }
+/* A motor line names its FILE as well as its line (levels.js:1030), which the
+   46px cell sized for "L123" cannot hold: it spilled over the function name. */
+.call.k-sound.inherited { grid-template-columns: 26px 76px 100px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+.call.k-sound .ln { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.call.inherited { background:rgba(126,166,255,.05); }
+
+/* A word the game builds: its expression in place of the field, the round's
+   values it needs on the line under it, and what each language reads under
+   those. */
+.call code.xw {
+  max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding:3px 7px; border-radius:6px; border:1px dashed #3b3b5f; background:#0d0d16;
+  font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#ffd08a; cursor:help;
+}
+.call .slots, .call .read { flex:1 1 100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding-left:34px; }
+.call .slots .lbl { margin-right:-4px; }
+.slot { display:inline-flex; align-items:center; gap:5px; }
+.slot span { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8b8ba7; }
+.call .slot input, .call .slot select { padding:2px 6px; font:700 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#ffd08a; }
+.call .slot input { width:72px; }
+.call .slot input.str { width:150px; }
+.call .read { font-size:12px; color:#c9c9e0; gap:4px 16px; }
+.read .ln2 { display:inline-flex; align-items:baseline; gap:7px; min-width:0; }
+.read .lg { font:700 9px/1 inherit; letter-spacing:1.2px; color:#6f6f92; }
+.read b { color:#e8e6f5; }
+.read i { font-style:normal; color:#9c9cba; }
+.read .same { color:#ffb648; font-size:10px; cursor:help; }
+.read .err { color:#ff8fa3; }
+
+/* ---------------------------------------------------------------------------
+   V2 — the recorder, the loop and the EN toggle.
+   --------------------------------------------------------------------------- */
+#bar .rec { min-width:64px; }
+#bar .rec.on { background:#c0304a; color:#fff; border-color:#c0304a; }
+#bar .rec.on::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:#fff; margin-right:6px; animation:recblink 1s steps(2) infinite; }
+@keyframes recblink { 50% { opacity:0; } }
+/* The level picker exists in REC only: it starts a round in the played frame. */
+#rec-level { display:none; padding:4px 7px; font-size:11px; font-weight:700; }
+body.rec #rec-level { display:inline-block; }
+#rec-info { font-size:11px; color:#8b8ba7; font-variant-numeric:tabular-nums; }
+#rec-info b { color:#ff8fa3; }
+/* REC: the bench frames step aside, alive (a loop needs them back at once). */
+#recwrap { display:none; flex:0 0 auto; }
+body.rec #recwrap { display:block; }
+body.rec #shell { position:absolute; left:-10000px; top:0; }
+body.rec #replay { display:none; }
+
+/* The clip lies UNDER the frame: the bench's ground goes transparent while it
+   plays, so the callouts are fired over the very action they belong to. */
+.fit { position:relative; }
+.fit video.clip { position:absolute; left:0; top:0; width:720px; height:1280px; object-fit:cover; border-radius:22px; background:#000; display:none; }
+body.looping .fit video.clip { display:block; }
+body.looping .frame { background:transparent; position:relative; }
+
+#replay { width:100%; margin-bottom:10px; display:none; flex-wrap:wrap; align-items:center; gap:6px 8px;
+  background:#12121c; border:1px solid #2a3a60; border-radius:9px; padding:7px 9px; font-size:11px; color:#b9b9d6; }
+body.looping #replay { display:flex; }
+#replay .what { font:700 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff; }
+#replay .time { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; font-variant-numeric:tabular-nums; }
+#replay .sp { flex:1; }
+#replay .ev { padding:2px 7px; border-radius:20px; border:1px solid #2c2c47; background:#1b1b2b; color:#c9c9e0; cursor:pointer; font:600 10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
+#replay .ev.me { border-color:#7ea6ff; color:#e8e6f5; }
+#replay .ev.off { opacity:.35; text-decoration:line-through; }
+#replay .ev.k-sound { color:#8fe0b8; }
+#replay .ev.k-pop { color:#dcb6ff; }
+#replay .ev.k-notify { color:#9fd0ff; }
+
+button.act.loop { background:#1b1b2b; color:#4d4d68; }
+button.act.loop.has { background:#1e2740; color:#9fd0ff; }
+button.act.loop.has:hover { background:#2a3a60; }
+button.act.loop.on { background:#7ea6ff; color:#0b0b12; }
+button.act.loop.near { color:#ffd08a; }
+.call.k-sound { grid-template-columns: 26px 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+.call.k-sound.inherited { grid-template-columns: 26px 26px 76px 100px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+
+button.act.en { background:none; border:1px solid #2c2c47; color:#6f6f92; padding:3px 6px; font-size:10px; letter-spacing:1px; }
+button.act.en:hover { color:#e8e6f5; border-color:#7ea6ff; }
+button.act.en.on { background:#1d3d31; border-color:#5fd49a; color:#8fe0b8; }
+button.act.en.dirty { box-shadow:0 0 0 1px #7ea6ff; }
+.read .kept { color:#5fd49a; font-size:10px; cursor:help; }
+#stats span.seen b { color:#9fd0ff; }
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <div id="head">
+    <h1>Events <small id="sub">what the game says, and what it plays</small></h1>
+    <select id="game-pick"></select>
+    <a class="lib" href="library" target="_blank" title="every file of assets/audio/sfx/ by category — hover to hear, click to copy the name">Sound library ↗</a>
+    <div id="tabs">
+      <button data-view="view">View <b></b></button>
+      <button data-view="sound">Sound <b></b></button>
+    </div>
+    <div id="stats"></div>
+  </div>
+  <div id="list"></div>
+</aside>
+
+<main id="stage">
+  <div id="bar">
+    <button class="act ghost" id="btn-reload">Reload</button>
+    <button class="act ghost rec" id="btn-rec" title="play the game here — every event with no clip yet is recorded with the 2 s before it">Rec</button>
+    <select id="rec-level" title="start any level — locked ones too (the dev force, for this load only)"></select>
+    <span id="rec-info"></span>
+    <span class="sp"></span>
+    <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
+  </div>
+  <div id="replay"></div>
+  <div id="shell">
+    <div class="pane"><div class="lang">EN</div>
+      <div class="fit"><video class="clip" data-lang="en" muted playsinline></video><iframe class="frame" data-lang="en" title="the game's callout layers, in English"></iframe></div></div>
+    <div class="pane"><div class="lang">FR</div>
+      <div class="fit"><video class="clip" data-lang="fr" muted playsinline></video><iframe class="frame" data-lang="fr" title="the game's callout layers, in French"></iframe></div></div>
+  </div>
+  <div id="recwrap" class="pane"><div class="lang">Rec — play; every event not yet seen is captured</div>
+    <div class="fit rec"><iframe class="recframe frame" id="rec-frame" title="the game itself, played to record its events"></iframe></div></div>
+  <div id="hint"></div>
+  <div id="report"></div>
+</main>
+
+<div id="filemenu" hidden>
+  <div class="fm-head">
+    <input class="fm-filter" type="text" placeholder="filter — ping, wooden error, pop…">
+    <div class="fm-note">Hover to hear it · click to keep it · esc to leave</div>
+  </div>
+  <div class="fm-list"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   The motor's own callout styles and anchor names (packages/shell/shell.js —
+   Pop.STYLES and Pop.ANCHORS). Copied, not read: the list is needed before a
+   build is loaded. lab/overlay-pop.html reads the live table instead.
+   --------------------------------------------------------------------------- */
+const STYLES = ["score","alert","combo","streak","ribbon","manifest","perfect",
+                "ultra","bonus","danger","record","vert"];
+const ANCHORS = ["topLeft","top","topRight","upperLeft","upper","upperRight",
+  "left","center","right","lowerLeft","lower","lowerRight",
+  "bottomLeft","bottom","bottomRight","hudUnder","ctaAbove","edgeLeft","edgeRight"];
+
+/* The two sides of the list. Canvas juice (Fx.*, HUD.punch) is scanned but
+   listed by neither — see the head. */
+const VIEWS = {
+  view:  { kinds: { pop: 1, notify: 1 }, label: "what the game says" },
+  sound: { kinds: { sound: 1 },           label: "what the game plays" }
+};
+
+const el = (id) => document.getElementById(id);
+/* One build per language. English is the source and the one that sounds: the
+   French frame is muted, or every cue would be heard twice. */
+const LANGS = ["en", "fr"];
+const frames = {};
+document.querySelectorAll("iframe.frame[data-lang]").forEach((f) => { frames[f.dataset.lang] = f; });
+const state = {
+  slug: null, data: null, sfx: [],
+  view: localStorage.getItem("events:view") === "sound" ? "sound" : "view",
+  // Every game's checked count, for the picker (api/games, then api/check).
+  status: {},
+  hideChecked: (() => { try { return localStorage.getItem("events:hideChecked") === "1"; } catch (e) { return false; } })(),
+  /* What the rows changed and APPLY has not written yet, keyed so a re-render
+     (a tab, a filter) puts every control back where the hand left it.
+       calls: { "<line>|<Name>": { style, word, sub, at, clip, vol, rate } }
+       sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file
+       keepEn: { "<English word>": true | false } — kept in English, or given
+               its French back (tools/lab/keep-english.mjs) */
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, keepEn: {} },
+  // V2: the recorded moments (lab/events-clips/<slug>/index.json) and the
+  // line offset that maps the built game.<hash>.js back to its source.
+  clips: { clips: {}, byId: {} },
+  offset: null
+};
+
+const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, keepEn: {} });
+
+/* A value apply can write back, as opposed to one the game builds at runtime.
+   The two shapes are the two the splicer accepts (tools/lab/apply-events.mjs):
+   a quoted string where the argument is copy, a bare number where it is a knob.
+   `Sound.clip("wall", 0.32, 1.15)` is three literals, not one. */
+function isLit(expr) {
+  return expr != null && /^\s*(["'])(?:[^\\]|\\.)*?\1\s*$/.test(String(expr));
+}
+function isNum(expr) {
+  return expr != null && /^\s*-?\d+(\.\d+)?\s*$/.test(String(expr));
+}
+const NUMERIC = { vol: 1, rate: 1 };
+function writable(name, expr) {
+  return NUMERIC[name] ? isNum(expr) : isLit(expr);
+}
+
+function pendKey(call) { return call.line + "|" + call.name; }
+function pend(call) {
+  const k = pendKey(call);
+  return state.pending.calls[k] || (state.pending.calls[k] = {});
+}
+
+/* A control is dirty when its value is not the one the row was BUILT with —
+   never by comparing against the source, because a value the game computes is
+   previewed with a stand-in that differs from the source by construction.
+   Typing over it and typing it back is not a change. */
+function watch(ctrl, call, name, expr) {
+  ctrl.dataset.was = ctrl.value;
+  if (expr != null && !writable(name, expr)) {
+    ctrl.classList.add("expr");
+    ctrl.title = "the game builds this at runtime (" + expr + ") — apply refuses it rather than write the bench's stand-in";
+  }
+  const sync = () => {
+    const changed = ctrl.value !== ctrl.dataset.was;
+    ctrl.classList.toggle("dirty", changed);
+    // A slider's wrapper carries the marking, and this runs AFTER the readout
+    // (wireSliders binds first, so the snap lands before anything reads it).
+    if (ctrl._show) ctrl._show();
+    const p = pend(call);
+    if (changed) p[name] = ctrl.value; else delete p[name];
+    if (!Object.keys(p).length) delete state.pending.calls[pendKey(call)];
+    countPending();
+  };
+  ctrl.addEventListener("input", sync);
+  ctrl.addEventListener("change", sync);
+  // A tab away and back rebuilds the row: put the pending value back on it.
+  const p = state.pending.calls[pendKey(call)];
+  if (p && p[name] != null) { ctrl.value = p[name]; ctrl.classList.add("dirty"); }
+  return ctrl;
+}
+
+function countPending() {
+  const kill = state.pending.kill;
+  const n = Object.values(state.pending.calls).reduce((a, o) => a + Object.keys(o).length, 0) +
+            Object.keys(state.pending.sfx).length +
+            Object.keys(kill.calls).length + Object.keys(kill.clips).length +
+            Object.keys(state.pending.kit || {}).length +
+            Object.keys(state.pending.keepEn).length;
+  const btn = el("btn-apply");
+  btn.disabled = !n;
+  btn.innerHTML = n ? `Apply <span class="cnt">${n}</span>` : "Apply";
+  return n;
+}
+
+/* --- talking to the game -------------------------------------------------
+   The web build injects window.__WEB__, a plain list of motor references (see
+   tools/build/build.mjs). Everything below goes through it. */
+function web(lang) {
+  const f = frames[lang || "en"];
+  return f && f.contentWindow && f.contentWindow.__WEB__;
+}
+function api(mod, lang) {
+  const W = web(lang);
+  const w = frames[lang || "en"].contentWindow;
+  return (W && W[mod]) || (w && w[mod]) || null;
+}
+
+/* The language is SET, never asked for by URL: the player's own choice in
+   OPTIONS is stored, wins over `?lang=`, and both frames share one origin and
+   so one Store. This is what menu.js does on a switch, minus the menu. */
+function setLang(W, lang) {
+  if (!W || !W.Lang) return;
+  const copy = W.CONFIG && W.CONFIG.web && W.CONFIG.web.copy;
+  let dict = lang !== "en" && copy && copy[lang] && copy[lang].strings;
+  /* A word the bench is about to keep in English is previewed as such: its
+     French is the English. Given back, it falls to the English too until
+     apply writes the French it had — the bench does not hold that copy. */
+  if (dict && lang === "fr" && Object.keys(state.pending.keepEn).length) {
+    dict = Object.assign({}, dict);
+    for (const [w, on] of Object.entries(state.pending.keepEn)) { if (on) dict[w] = w; else delete dict[w]; }
+  }
+  W.Lang.set(lang, dict || null);
+}
+
+/* The stage is the game's build with everything but the callout layers taken
+   out of the way, injected into each iframe and nowhere near the repo: the
+   canvas (Pop.text draws there), the overlay (Pop.show) and the notice layer
+   (Notify) stay, on a flat ground; the backdrop, the menu, the village, the
+   band and every screen go. */
+const BENCH_CSS = `
+  html, body, #stage, #frame { background:#262834 !important; }
+  #frame::before, #frame::after { display:none !important; }
+  #backdrop { display:none !important; }
+  #frame > *:not(#game):not(#overlay):not(#nt-layer) { display:none !important; }
+  #overlay { z-index:40; }
+  /* V2: a clip plays UNDER the iframe while a row loops — the ground clears. */
+  html.lab-clear, html.lab-clear body, html.lab-clear #stage, html.lab-clear #frame, html.lab-clear #game { background:transparent !important; }
+`;
+LANGS.forEach((lang) => frames[lang].addEventListener("load", () => {
+  try {
+    const f = frames[lang], d = f.contentDocument;
+    const style = d.createElement("style");
+    style.id = "lab-bench";
+    style.textContent = BENCH_CSS;
+    d.head.appendChild(style);
+    // A click on the game is a click away from anything this page has open.
+    d.addEventListener("mousedown", () => closeFileMenu());
+    const W = web(lang);
+    setLang(W, lang);
+    if (lang !== "en" && W) {
+      try { W.Sound.setMuted(true); W.Music.setMuted(true); } catch (e) {}
+    }
+    d.documentElement.classList.toggle("lab-clear", !!LOOP.clip);
+    refreshReads();
+    paintAllEn();
+  } catch (e) { note("the build did not load"); }
+}));
+
+/* Pop has two halves and the second one is drawn on the canvas, by the frame
+   pipeline — which does not turn here, because no round is running. So the
+   bench drives the three calls the pipeline would (clear, tick, draw) for as
+   long as the number lives, and nothing else: no Game.update, no Game.render,
+   no world. That is the whole reason `Pop.text` can be previewed on a bench
+   showing only a backdrop. */
+const juices = {};
+function juice(lang, seconds) {
+  const j = juices[lang] || (juices[lang] = { until: 0, running: false });
+  j.until = Math.max(j.until, performance.now() + seconds * 1000);
+  if (j.running) return;
+  const W = web(lang);
+  if (!W) return;
+  j.running = true;
+  let last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    W.clearWorld();
+    W.Pop.tick(dt);
+    W.Pop.canvas();
+    if (now < j.until) requestAnimationFrame(step);
+    else { W.clearWorld(); j.running = false; }
+  };
+  requestAnimationFrame(step);
+}
+
+/* iOS and every desktop browser want the AudioContext opened inside a gesture.
+   The click that fires a row is one, and user activation reaches a same-origin
+   iframe, so unlocking the GAME's context from here is enough — and it decodes
+   the whole pack, which is what makes the first cue audible. */
+function unlock() {
+  const S = api("Sound");
+  if (S) { try { S.unlock(); } catch (e) {} }
+}
+
+/* What a row will actually call: the source's own arguments, with whatever the
+   row's inputs now say written over them. One function, so firing a row and
+   copying its line can never disagree. */
+function argsFor(call, row, W) {
+  const args = JSON.parse(JSON.stringify(call.preview.args));
+  if (!row) return args;
+  const get = (sel) => row.querySelector(sel);
+  const text = (field) => textOf(call, row, field, W);
+  if (call.name === "Pop.text") {
+    const w = text("word");
+    if (w !== undefined) args[2] = w;
+  } else if (call.kind === "pop") {
+    const o = args[1] = Object.assign({}, args[1]);
+    args[0] = get("select.style").value;
+    const w = text("word"), sub = text("sub");
+    if (w) o.word = w; else delete o.word;          // the style's own word
+    if (sub) o.sub = sub; else delete o.sub;
+    const at = get("select.at").value;
+    if (at) o.at = at; else delete o.at;
+  } else if (call.kind === "sound") {
+    args[1] = num(get("input.vol"), args[1]);
+    args[2] = num(get("input.rate"), args[2]);
+  } else if (call.kind === "notify") {
+    const w = text("word");
+    if (w !== undefined) args[0] = w;
+    const o = args[1] = Object.assign({}, args[1] || {});
+    const sub = text("sub");
+    if (sub) o.sub = sub; else delete o.sub;
+    // Turned into a callout: what Pop.show would be handed instead.
+    const as = asPop(row);
+    if (as) {
+      const p = {};
+      if (args[0]) p.word = args[0];
+      if (sub) p.sub = sub;
+      const at = get("select.at").value;
+      if (at) p.at = at;
+      return [as, p];
+    }
+  }
+  return args;
+}
+
+/* ── a built word, run in the frame ───────────────────────────────────────
+   One field of a callout — its word or its sub — as the frame `W` will be
+   handed it. A literal is the row's own field (the motor translates it whole);
+   a built word is the game's expression with the row's slots in it, run with
+   that frame's Lang, so its Lang.t pieces come out in that frame's language.
+   `undefined` is "the source says nothing here": the motor's own default. */
+const RUNNERS = {};
+function runner(code) {
+  const env = (state.data && state.data.textEnv) || { aliases: {}, tables: {} };
+  const key = state.slug + "\n" + code;
+  if (RUNNERS[key]) return RUNNERS[key];
+  let prelude = "";
+  for (const k in env.tables) prelude += "var " + k + " = " + JSON.stringify(env.tables[k]) + ";\n";
+  for (const k in env.aliases) prelude += "var " + k + " = " + env.aliases[k] + ";\n";
+  return (RUNNERS[key] = new Function("$", "Lang", "CONFIG", "upper", prelude + "return (" + code + ");"));
+}
+
+function textOf(call, row, field, W) {
+  const f = call.texts && call.texts.fields[field];
+  if (f && f.code) {
+    if (!W) return undefined;
+    try {
+      const v = runner(f.code)(slotValues(call, row), W.Lang, W.CONFIG, W.upper);
+      return v == null ? "" : String(v);
+    } catch (e) { return "⚠ " + e.message; }
+  }
+  const inp = row && row.querySelector(field === "word" ? "input.w" : "input.s");
+  if (inp) return inp.value === "" ? undefined : inp.value;
+  return f && f.lit != null ? f.lit : undefined;
+}
+
+/* The values a row's slots hold now, typed the way the game would hold them:
+   a number reads as a number (`lives === 1` must be able to be true), a
+   true/false as a boolean, anything else as the string it is. */
+function slotValues(call, row) {
+  const slots = (call.texts && call.texts.slots) || [];
+  return slots.map((s, i) => {
+    const c = row && row.querySelector('.slot [data-i="' + i + '"]');
+    const raw = c ? c.value : String(s.value);
+    if (/^-?\d+(\.\d+)?$/.test(raw.trim())) return Number(raw);
+    if (raw === "true" || raw === "false") return raw === "true";
+    return raw;
+  });
+}
+
+/* What a row's slots were last set to, per game, in this browser only: a
+   value typed here is the bench's, never the game's. */
+function slotStore() {
+  try { return JSON.parse(localStorage.getItem("events:slots:" + state.slug) || "{}"); }
+  catch (e) { return {}; }
+}
+function slotSave(key, value) {
+  const all = slotStore();
+  if (value == null) delete all[key]; else all[key] = value;
+  try { localStorage.setItem("events:slots:" + state.slug, JSON.stringify(all)); } catch (e) {}
+}
+
+function slotsHtml(call) {
+  const slots = (call.texts && call.texts.slots) || [];
+  if (!slots.length) return "";
+  const saved = slotStore();
+  const id = "dl-" + call.line + "-" + call.method;
+  return `<div class="slots"><span class="lbl" title="the round's own values — the bench cannot read them, so it offers one. Never written back.">values</span>` +
+    slots.map((s, i) => {
+      const k = call.line + "|" + call.name + "|" + s.text;
+      const v = saved[k] != null ? saved[k] : String(s.value);
+      const head = `<label class="slot" title="${esc(s.text)}"><span>${esc(s.text.length > 22 ? s.text.slice(0, 21) + "…" : s.text)}</span>`;
+      if (s.kind === "pick" || s.kind === "bool") {
+        const opts = s.kind === "bool" ? ["true", "false"] : s.choices.map(String);
+        return head + `<select data-i="${i}" data-k="${esc(k)}">` +
+          opts.map((o) => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("") + `</select></label>`;
+      }
+      const list = s.choices && s.choices.length
+        ? `<datalist id="${id}-${i}">${s.choices.map((c) => `<option value="${esc(c)}">`).join("")}</datalist>` : "";
+      return head + `<input type="text" data-i="${i}" data-k="${esc(k)}" class="${s.kind}" value="${esc(v)}"` +
+        (list ? ` list="${id}-${i}"` : "") + `>${list}</label>`;
+    }).join("") + `</div>`;
+}
+
+/* What each frame was handed, read back under the row: the word and the sub
+   as Lang.t leaves them (the screen shouts them on top of that). A French
+   identical to the English is marked — a word with no entry in
+   web.copy.fr.strings, or a piece the game forgot to wrap in Lang.t. */
+function readHtml(call, row) {
+  if (!call.texts) return "";
+  const style = row.querySelector("select.style");
+  const out = LANGS.map((lang) => {
+    const W = web(lang);
+    if (!W) return null;
+    setLang(W, lang);
+    const parts = ["word", "sub"].map((field) => {
+      let v = textOf(call, row, field, W);
+      if (v === undefined && field === "word" && style && W.Pop.styles && W.Pop.styles[style.value]) v = W.Pop.styles[style.value].word;
+      return v == null || v === "" ? "" : String(W.Lang.t(v));
+    });
+    return { lang, word: parts[0], sub: parts[1] };
+  }).filter(Boolean);
+  if (!out.length) return "";
+  const en = out.find((o) => o.lang === "en");
+  return out.map((o) => {
+    const txt = o.word + (o.sub ? " · " + o.sub : "");
+    const same = o.lang !== "en" && en && txt === en.word + (en.sub ? " · " + en.sub : "") && /[A-Za-z]{2}/.test(txt);
+    const kept = same && enState(call).all;
+    const err = /⚠/.test(txt);
+    return `<span class="ln2"><span class="lg">${o.lang.toUpperCase()}</span>` +
+      `<b${err ? ' class="err"' : ""}>${esc(o.word)}</b>${o.sub ? ` <i>${esc(o.sub)}</i>` : ""}` +
+      (kept ? ` <span class="kept" title="kept in English on purpose — web.copy.fr.strings holds the English as its French">en kept</span>` :
+       same ? ` <span class="same" title="the French reads exactly like the English — no entry in web.copy.fr.strings, or a piece not wrapped in Lang.t">= en</span>` : "") +
+      `</span>`;
+  }).join("");
+}
+
+function refreshReads() {
+  document.querySelectorAll(".call").forEach((row) => { if (row._read) row._read(); });
+}
+function num(input, fallback) {
+  if (!input) return fallback;
+  const v = parseFloat(input.value);
+  return isNaN(v) ? fallback : v;
+}
+
+// The Pop style a notice row has been turned into, or "" when it is a notice.
+function asPop(row) {
+  const as = row && row.querySelector("select.as");
+  return as ? as.value : "";
+}
+
+function fire(call, row) {
+  /* A clip picked but not applied is not in the build yet, so the motor cannot
+     play it: the page plays the file itself, whole and untrimmed, which is the
+     honest preview of what the cut will be taken from. */
+  /* A clip picked but not applied is not in the build yet, so the motor cannot
+     play it: the page plays the file itself, cut to the length the card asks
+     for, which is the honest preview of what apply would embed. */
+  if (call.kind === "sound" && row && row.dataset.key) {
+    const p = state.pending.sfx[row.dataset.key];
+    if (p) {
+      sfxPlay(p.file, p.len);
+      note(p.file + " — " + p.len + "s of it, which is what apply would cut");
+      return;
+    }
+  }
+  unlock();
+  const [mod, meth] = (asPop(row) ? "Pop.show" : call.preview.fn).split(".");
+  // A sound is heard once, from the English frame; a word is read in both.
+  const langs = call.kind === "sound" ? ["en"] : LANGS;
+  for (const lang of langs) {
+    const W = web(lang);
+    const target = api(mod, lang);
+    if (!target || typeof target[meth] !== "function") { note(call.name + " is not reachable in this build"); return; }
+    setLang(W, lang);
+    const args = argsFor(call, row, W);
+    try { target[meth].apply(target, args); }
+    catch (e) { note(call.name + " threw: " + e.message); return; }
+    // The canvas half only exists while something draws it.
+    if (call.name === "Pop.text") juice(lang, ((args[3] && args[3].life) || 0.9) + 0.4);
+  }
+}
+
+function note(msg) { el("hint").textContent = msg || ""; }
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => note(text + "   copied"), () => note(text));
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function add(cls, text) {
+  const n = document.createElement("div");
+  n.className = cls;
+  n.textContent = text;
+  el("list").appendChild(n);
+  return n;
+}
+
+/* --- swapping the FILE a clip is cut from --------------------------------
+   `Sound.clip("orb")` names a KEY, and the key names a cut of one file of
+   assets/audio/sfx/ — the only record of which is the provenance comment.
+   Changing the file is therefore a change to the PACK, not to the call: it
+   reaches every beat that plays that key, which is why the swap is shown on
+   every row holding it and not only on the one that made it.               */
+/* ── the file picker ──────────────────────────────────────────────────────
+   One panel for the whole page, moved to whichever button opened it. A native
+   <select> could not do this: its popup is drawn by the operating system and
+   fires nothing over its rows, so every clip would have to be COMMITTED to be
+   heard — 127 files, one click each. Here the pointer is the audition and the
+   click is the decision, which is the order a clip is actually picked in.
+
+   Nothing is written until that click: leaving by escape or by clicking away
+   puts the button back where it was.                                        */
+const fileMenu = { btn: null, key: null, rows: [], hover: null, idx: -1 };
+
+function closeFileMenu() {
+  const box = el("filemenu");
+  box.hidden = true;
+  clearTimeout(fileMenu.hover);
+  if (fileMenu.btn) fileMenu.btn.classList.remove("open");
+  fileMenu.btn = null; fileMenu.key = null; fileMenu.rows = []; fileMenu.idx = -1;
+}
+
+function openFileMenu(btn, key) {
+  const box = el("filemenu");
+  if (fileMenu.btn === btn && !box.hidden) { closeFileMenu(); return; }
+  closeFileMenu();
+  fileMenu.btn = btn; fileMenu.key = key;
+  btn.classList.add("open");
+
+  // Which files this game already embeds, and under which key — the same mark
+  // the library grid used to carry, now where the choice is made.
+  const used = {};
+  (state.data ? state.data.sounds : []).forEach((x) => { if (x.file) used[x.file] = x.key; });
+
+  const list = box.querySelector(".fm-list");
+  list.innerHTML = "";
+  // Grouped by the category a file's name starts with — the folder is sorted
+  // by name, so the groups fall out of the order it comes in.
+  fileMenu.rows = [];
+  const cats = [];
+  let lastCat = null;
+  (state.sfx || []).forEach((f) => {
+    const cat = f.category || "other";
+    if (cat !== lastCat) {
+      const h = document.createElement("div");
+      h.className = "fm-cat"; h.textContent = cat; h.dataset.cat = cat;
+      list.appendChild(h); cats.push(h); lastCat = cat;
+    }
+    const row = document.createElement("button");
+    row.className = "fm-row" + (used[f.file] ? " used" : "") + (f.file === btn.value ? " cur" : "");
+    row.innerHTML = `${esc(f.label)}<br><span class="sz">` +
+      (f.seconds != null ? f.seconds.toFixed(2) + " s · " : "") + `${Math.round(f.size / 1024)} KB` +
+      (f.pack ? " · " + esc(f.pack) : "") + (used[f.file] ? " · " + esc(used[f.file]) : "") + `</span>`;
+    // A short intent delay, so sweeping the list does not fire every file it
+    // crosses on the way to the one being aimed at.
+    row.onmouseenter = () => {
+      clearTimeout(fileMenu.hover);
+      fileMenu.hover = setTimeout(() => sfxPlay(f.file, cutLen(key)), 110);
+    };
+    row.onmouseleave = () => clearTimeout(fileMenu.hover);
+    row.onclick = () => { pickFile(btn, key, f.file); closeFileMenu(); };
+    list.appendChild(row);
+    fileMenu.rows.push({ node: row, file: f.file, cat, hay: (f.file + " " + f.label + " " + cat + " " + (f.pack || "")).toLowerCase() });
+  });
+  const none = document.createElement("div");
+  none.className = "fm-none";
+  none.textContent = "nothing matches";
+  none.hidden = true;
+  list.appendChild(none);
+
+  // Every space-separated term has to be in the name — "wooden error" is an AND.
+  const filter = box.querySelector("input.fm-filter");
+  filter.value = "";
+  filter.oninput = () => {
+    const terms = filter.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let n = 0;
+    fileMenu.rows.forEach((r) => {
+      const hit = terms.every((t) => r.hay.indexOf(t) >= 0);
+      r.node.hidden = !hit;
+      if (hit) n++;
+    });
+    cats.forEach((h) => { h.hidden = !fileMenu.rows.some((r) => r.cat === h.dataset.cat && !r.node.hidden); });
+    none.hidden = !!n;
+    fileMenu.idx = -1;
+  };
+
+  // Anchored to the button, flipped up when the bottom of the window is close.
+  const r = btn.getBoundingClientRect();
+  box.hidden = false;
+  const h = box.offsetHeight;
+  box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - box.offsetWidth - 8)) + "px";
+  box.style.top = (r.bottom + h + 8 < window.innerHeight ? r.bottom + 4 : Math.max(8, r.top - h - 4)) + "px";
+
+  const cur = fileMenu.rows.find((x) => x.file === btn.value);
+  if (cur) cur.node.scrollIntoView({ block: "center" });
+  filter.focus();
+}
+
+// Keeping one: the button takes the value, the pending re-cut follows.
+function pickFile(btn, key, file) {
+  btn.value = file;
+  btn.textContent = sfxLabelOf(file);
+  btn.title = file;
+  syncPending(key, btn.closest(".call"));
+}
+
+function sfxLabelOf(file) {
+  const f = (state.sfx || []).find((x) => x.file === file);
+  return f ? f.label : (file || "— no provenance comment —");
+}
+
+/* The arrows walk the list and play as they go — the same audition as the
+   pointer, for a hand already on the keyboard. */
+function fileMenuKey(e) {
+  const box = el("filemenu");
+  if (box.hidden) return;
+  const live = fileMenu.rows.filter((r) => !r.node.hidden);
+  if (e.key === "Escape") { closeFileMenu(); fileMenu.btn && fileMenu.btn.focus(); e.preventDefault(); return; }
+  if (e.key === "Enter") {
+    const r = live[fileMenu.idx];
+    if (r) { pickFile(fileMenu.btn, fileMenu.key, r.file); closeFileMenu(); }
+    e.preventDefault();
+    return;
+  }
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  if (!live.length) return;
+  fileMenu.idx = Math.max(0, Math.min(live.length - 1, fileMenu.idx + (e.key === "ArrowDown" ? 1 : -1)));
+  live.forEach((r) => r.node.classList.remove("on"));
+  const r = live[fileMenu.idx];
+  r.node.classList.add("on");
+  r.node.scrollIntoView({ block: "nearest" });
+  sfxPlay(r.file, cutLen(fileMenu.key));
+}
+
+function awayFromMenu(e) {
+  if (el("filemenu").hidden) return;
+  if (e && (el("filemenu").contains(e.target) || e.target === fileMenu.btn)) return;
+  closeFileMenu();
+}
+
+document.addEventListener("keydown", fileMenuKey);
+document.addEventListener("mousedown", awayFromMenu);
+/* The stage is an IFRAME, and a click inside one never reaches this document —
+   so a menu left open over the game stayed open however hard the picture was
+   clicked. The frame is same-origin, so it gets the same handler on every load
+   (see the load listener that dresses it), and losing the window entirely
+   closes the menu too. */
+window.addEventListener("blur", () => closeFileMenu());
+window.addEventListener("resize", () => closeFileMenu());
+el("list").addEventListener("scroll", () => closeFileMenu());
+
+// What the embedded clip measures, which is the length a re-cut starts from.
+function clipSeconds(snd) {
+  return snd && snd.bytes ? Math.max(0.05, Math.round(snd.bytes / 8000 * 20) / 20) : 0.6;
+}
+function cutLen(key) {
+  const p = state.pending.sfx[key];
+  if (p && p.len) return p.len;
+  const snd = (state.data.sounds || []).find((s) => s.key === key);
+  return clipSeconds(snd);
+}
+
+/* ── the pending re-cut of one key ────────────────────────────────────────
+   Two controls describe it — the FILE the clip is cut from and how long the
+   cut is — and either one off the source is a re-cut. They are read together,
+   from the row that was just touched, so moving one never drops the other:
+   picking a file back to its original with a shorter `cut` still standing is a
+   re-cut of the same file, not a cancellation.
+
+   `row` is the one the hand is in. A key is played by several beats and each
+   of them carries the pair; refreshFiles() puts the others back in step.     */
+function syncPending(key, row) {
+  if (!key) return;
+  row = row || document.querySelector('.bhead[data-key="' + key + '"]');
+  const sel = row && row.querySelector(".filebtn");
+  const len = row && row.querySelector("input.len");
+  const snd = (state.data.sounds || []).find((x) => x.key === key);
+  const wasFile = (snd && snd.file) || "";
+  const file = sel ? sel.value : wasFile;
+  const v = len ? parseFloat(len.value) : NaN;
+  const nowLen = isNaN(v) ? cutLen(key) : v;
+  const moved = (!!file && file !== wasFile) || (len && String(nowLen) !== len.dataset.was);
+  if (!moved || !file) delete state.pending.sfx[key];
+  else state.pending.sfx[key] = { file: file, len: nowLen };
+  refreshFiles();
+  countPending();
+}
+
+/* One file select, wherever it is shown. `key` is read off the row so a swap
+   made on one beat shows on every other beat that plays the same clip. */
+function wireFile(sel, keyOf) {
+  const sync = () => {
+    const key = keyOf();
+    const snd = (state.data.sounds || []).find((s) => s.key === key);
+    const was = (snd && snd.file) || "";
+    sel.dataset.was = was;
+    const p = state.pending.sfx[key];
+    const now = p ? p.file : was;
+    if (sel.value !== now) sel.value = now;
+    sel.textContent = sfxLabelOf(now);
+    sel.title = now || "this clip has no provenance comment — nothing says which file it was cut from";
+    sel.classList.toggle("swap", !!p);
+    sel.classList.toggle("dirty", !!p);
+  };
+  sel.onclick = () => openFileMenu(sel, keyOf());
+  sel.onkeydown = (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openFileMenu(sel, keyOf());
+    }
+  };
+  sel._sync = sync;
+  sync();
+  return sel;
+}
+
+/* The cut length, per KEY and shown on every beat that plays it. A length on
+   its own is a re-cut too: the same file, a shorter clip. */
+function wireLen(len, key) {
+  if (!len) return;
+  len.dataset.was = String(cutLen(key));
+  len.onchange = len.oninput = () => {
+    const v = parseFloat(len.value);
+    if (isNaN(v)) return;
+    const row = len.closest(".bhead");
+    const sel = row && row.querySelector(".filebtn");
+    /* A cut needs something to cut FROM, and a clip whose game never wrote a
+       provenance comment names no file. Pick one first; a length alone would
+       come back refused. */
+    if (!(sel && sel.value)) {
+      note(key + " has no provenance comment — pick the file it comes from first");
+      return;
+    }
+    syncPending(key, row);
+  };
+}
+
+// Every file select on the page agrees about every key, always.
+function refreshFiles() {
+  document.querySelectorAll(".filebtn").forEach((sel) => { if (sel._sync) sel._sync(); });
+  // One card per clip, so one pair of controls to put back in step.
+  document.querySelectorAll(".bhead[data-key]").forEach((row) => {
+    const p = state.pending.sfx[row.dataset.key];
+    const len = row.querySelector("input.len");
+    if (!len) return;
+    if (p && String(p.len) !== len.value) len.value = p.len;
+    len.classList.toggle("dirty", !!p && String(p.len) !== len.dataset.was);
+    if (len._show) len._show();
+  });
+}
+
+/* One number as a slider cut into magnetic segments, with the value printed
+   beside it. Two grids, and the difference between them is the whole trick:
+
+     `grid`   what the HAND lands on. Dragging snaps to it, so the round values
+              are the easy ones to hit — 0.05, 0.10, 0.15…
+     `tick`   what the EYE reads, drawn on the track. Coarser where a step-sized
+              graduation would be a grey smear (a 0.05 cut over three seconds is
+              59 segments).
+
+   The snap is applied on the MOVE, never on the draw: 43 of the 340 volumes
+   and pitches in the thirteen games sit off a 0.05 grid (0.32, 1.45, 0.62…),
+   and a slider whose `step` was 0.05 would rewrite them the moment the row was
+   drawn — a change nobody asked for, in a tool whose whole job is to write
+   changes back. So the input is free (`step` 0.01, which every source value is
+   already on) and the handler rounds what the hand moves. The first drag of
+   0.32 lands on 0.30, which the hand did ask for.                            */
+function slider(cls, value, min, max, grid, tickEvery, label, title) {
+  const v = Math.min(max, Math.max(min, Number(value) || 0));
+  const tick = 78 / ((max - min) / tickEvery);
+  /* The groove is a NODE of ours, not `::-webkit-slider-runnable-track`. The
+     pseudo-element is the usual way and it is the wrong one here: whether it
+     styles at all depends on the engine, and where it does not the slider comes
+     out as a bare thumb floating on nothing — which is exactly what it did.
+     A span we draw ourselves renders the same everywhere; the input lies over
+     it, transparent, and only its THUMB is styled, in every vendor spelling. */
+  return `<span class="rng" title="${esc(title || "")}"><span class="lbl">${label}</span>` +
+    `<span class="track" style="--tick:${tick.toFixed(2)}px">` +
+    `<input class="n ${cls}" type="range" min="${min}" max="${max}" step="0.01" value="${v}" data-grid="${grid}">` +
+    `</span><b>${v}</b></span>`;
+}
+
+// The snap itself. Rounded to the hundredth too, or 0.1 * 3 prints 0.30000000000000004.
+function snapTo(v, grid) {
+  return Math.round(Math.round(v / grid) * grid * 100) / 100;
+}
+
+/* The readout follows the thumb. Kept out of `watch` on purpose: the dirty
+   marking is about the pending change, this is about reading the value. */
+function wireSliders(row) {
+  row.querySelectorAll(".rng").forEach((box) => {
+    const input = box.querySelector("input[type=range]");
+    const out = box.querySelector("b");
+    const grid = Number(input.dataset.grid) || 0.05;
+    const show = () => {
+      out.textContent = input.value;
+      // How much of the track is behind the thumb, for the fill (see the CSS).
+      const lo = Number(input.min), hi = Number(input.max);
+      const track = input.parentNode;
+      track.style.setProperty("--fill", ((Number(input.value) - lo) / (hi - lo) * 100).toFixed(1) + "%");
+      box.classList.toggle("dirty", input.classList.contains("dirty"));
+      box.classList.toggle("expr", input.classList.contains("expr"));
+    };
+    /* The snap runs BEFORE the listeners that read the value — `watch` and
+       `wireLen` are bound after this one, so they see the rounded number and
+       never a 0.37 the hand did not choose. */
+    input.addEventListener("input", () => {
+      const v = snapTo(parseFloat(input.value), grid);
+      if (String(v) !== input.value) input.value = v;
+    });
+    input.addEventListener("input", show);
+    input.addEventListener("change", show);
+    input._show = show;             // refreshFiles() moves one from elsewhere
+    show();
+  });
+}
+
+/* ── undo, and remove ─────────────────────────────────────────────────────
+   Two icons on everything the bench can change. REVERT puts the element back
+   where the source has it — every control to the value the row was built with,
+   and the pending entry gone. TRASH does not delete anything on its own: it
+   MARKS, the way every other change here is marked, and apply is what carries
+   it out. So a removal is reviewed next to the rest of the plan, counted in
+   the Apply badge, and taken back with the same revert as a typo.            */
+const ICON = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  revert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h12a5 5 0 0 1 0 10h-5"/><path d="M7 5 3 9l4 4"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>'
+};
+function iconBtn(cls, name, title) {
+  return `<button class="iconbtn ${cls}" title="${esc(title)}">${ICON[name]}</button>`;
+}
+
+// Every control of one element, back to what the row was built with.
+function resetControls(node) {
+  node.querySelectorAll("input, select, .filebtn").forEach((c) => {
+    if (c.dataset.was === undefined) return;
+    c.value = c.dataset.was;
+    c.classList.remove("dirty", "swap");
+    if (c._show) c._show();
+    if (c._sync) c._sync();
+  });
+}
+
+function revertCall(call, row) {
+  delete state.pending.calls[pendKey(call)];
+  delete state.pending.kill.calls[pendKey(call)];
+  if (row._en) { enWords(call).forEach((w) => { delete state.pending.keepEn[w]; }); refreshReads(); paintAllEn(); }
+  resetControls(row);
+  row.classList.remove("killed");
+  countPending();
+  note("");
+}
+
+function revertClip(key, card) {
+  delete state.pending.sfx[key];
+  delete state.pending.kill.clips[key];
+  if (state.pending.kit) delete state.pending.kit[key];
+  const ks = card.querySelector(".kitsel");
+  if (ks) { ks.value = ks.querySelector("option[selected]") ? ks.querySelector("option[selected]").value : ""; ks.classList.remove("dirty"); }
+  // The controls first: with the pending entry gone, refreshFiles() has
+  // nothing left to put them back from.
+  resetControls(card.querySelector(".bhead"));
+  card.querySelectorAll(".call").forEach((r) => r.classList.remove("killed"));
+  card.classList.remove("killed");
+  refreshFiles();
+  countPending();
+  note("");
+}
+
+function killCall(call, row) {
+  const k = pendKey(call);
+  if (state.pending.kill.calls[k]) delete state.pending.kill.calls[k];
+  else state.pending.kill.calls[k] = { line: call.line, name: call.name };
+  row.classList.toggle("killed", !!state.pending.kill.calls[k]);
+  countPending();
+  note(state.pending.kill.calls[k]
+    ? `${call.name} line ${call.line} will be removed from the source on apply`
+    : "");
+}
+
+function killClip(key, card) {
+  const kill = state.pending.kill.clips;
+  if (kill[key]) delete kill[key];
+  else kill[key] = 1;
+  const on = !!kill[key];
+  card.classList.toggle("killed", on);
+  card.querySelectorAll(".call").forEach((r) => r.classList.toggle("killed", on));
+  countPending();
+  const n = card.querySelectorAll(".call").length;
+  note(on
+    ? `${key} will be removed from ASSETS.sounds on apply, and so will the ${n} line${n > 1 ? "s" : ""} that play it`
+    : "");
+}
+
+/* --- the rows ------------------------------------------------------------ */
+function callRow(call) {
+  const row = document.createElement("div");
+  row.className = "call k-" + call.kind;
+  const bits = [`<button class="act sm play" title="fire it in the game">▶</button>`,
+                `<button class="act sm loop" title="loop the moment of the game it fires on">↻</button>`,
+                `<span class="tag">${call.name}</span>`];
+
+  /* A field is an input when the source writes it as a literal (or not at
+     all), and the game's expression when the game builds it — its values are
+     the slots under the row, never the field itself. */
+  const fields = (call.texts && call.texts.fields) || {};
+  const field = (name, cls, value, ph) => fields[name] && fields[name].code
+    ? `<code class="xw" title="${esc(name + " = " + fields[name].expr)} — built by the game, run here with the values below">${esc(fields[name].expr)}</code>`
+    : `<input type="text" class="${cls}"${ph ? ` placeholder="${ph}"` : ""} value="${esc(value == null ? "" : value)}">`;
+
+  if (call.name === "Pop.text") {
+    // The canvas half: a word at a point in the world, no style and no anchor.
+    const o = call.preview.args[3] || {};
+    bits.push(`<span class="style">text</span>`);
+    bits.push(field("word", "w", String(call.preview.args[2])));
+    bits.push(`<span class="meta">${esc(Object.keys(o).map((k) => k + " " + o[k]).join(" · "))}</span>`);
+  } else if (call.kind === "pop") {
+    const o = call.preview.args[1] || {};
+    const style = call.preview.args[0];
+    bits.push(`<select class="style">${STYLES.map((s) =>
+      `<option${style === s ? " selected" : ""}>${s}</option>`).join("")}</select>`);
+    bits.push(field("word", "w", o.word, "style word"));
+    bits.push(field("sub", "s", o.sub, "sub"));
+    // The empty option is "whatever the style says" — a call that names no
+    // anchor must not be previewed at some arbitrary corner of the frame.
+    const at = o.at || "";
+    bits.push(`<select class="at"><option value=""${at ? "" : " selected"}>style spot</option>${ANCHORS.map((a) =>
+      `<option${at === a ? " selected" : ""}>${a}</option>`).join("")}</select>`);
+    if (call.cls) bits.push(`<span class="meta">.${esc(call.cls)}</span>`);
+    if (call.style !== style) bits.push(`<span class="meta">src: ${esc(call.style)}</span>`);
+  } else if (call.kind === "sound") {
+    /* The clip itself — which file it is cut from, and how long the cut is —
+       belongs to the KEY, and it is written once on the card's header. What a
+       line owns is how loud and how high IT plays it: one sample covers a whole
+       family of events through `rate`, which is the point of the pack.
+       A line of the MOTOR (the template's end-screen cues) is named by its
+       file, since it is not in the unit's own source. */
+    bits.push(call.inherited
+      ? `<span class="ln motor" title="${esc(call.source)} — a motor line: auditioned here, changed in the source">${esc(call.where.split("/").pop())}:${call.line}</span>`
+      : `<span class="ln" title="${esc(call.source)}">L${call.line}</span>`);
+    bits.push(`<span class="fn">${call.fn ? esc(call.fn) + "<i>()</i>" : "<i>top level</i>"}</span>`);
+    bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it"));
+    bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
+      "the pitch — one sample covers a whole family of events through this, instead of a clip each"));
+  } else if (call.kind === "notify") {
+    // Notify.say — one look, so a word and a sub and no style. The vignette is
+    // scanned as juice (scan-events.mjs) and never reaches this list. The
+    // dropdown is what it is SAID as: `notify`, or a Pop style it is turned
+    // into — then it takes an anchor like any callout.
+    const o = call.preview.args[1] || {};
+    bits.push(`<select class="as" title="notify, or a Pop style to turn this notice into a callout — apply rewrites it as Pop.show">` +
+      `<option value="">notify</option>${STYLES.map((s) => `<option>${s}</option>`).join("")}</select>`);
+    bits.push(field("word", "w", String(call.preview.args[0])));
+    bits.push(field("sub", "s", o.sub, "sub"));
+    bits.push(`<select class="at" hidden><option value="">style spot</option>${ANCHORS.map((a) =>
+      `<option>${a}</option>`).join("")}</select>`);
+  }
+
+  /* The marker holds its cell whether or not it has anything to say: a cue row
+     is a GRID, and a column that appears on some lines and not on others is a
+     column that never lines up. */
+  // V2: keep this callout's words in English on the French screen.
+  if ((call.kind === "pop" || call.kind === "notify") && state.slug !== "template")
+    bits.push(`<button class="act sm en" title="keep it in English on the French screen — apply writes an entry whose French is the English">EN</button>`);
+  bits.push(call.preview.exact
+    ? `<span class="approx"></span>`
+    : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Type over it.">≈</span>`);
+  /* A cue line carries its own three, in the last columns of its grid: one
+     clip is played by several lines and each is its own decision. A callout's
+     are its card's (beatCard), in the header's corner. */
+  if (call.kind === "sound") {
+    bits.push(iconBtn("check", "check", "mark as checked — seen and heard, signed off"));
+    bits.push(iconBtn("revert", "revert", "put this line back where the source has it"));
+    bits.push(call.inherited
+      ? `<span class="iconbtn" title="a motor line — apply writes the clip, not this line"></span>`
+      : iconBtn("trash", "trash", "remove this line from the game — the clip stays, the other lines that play it stay"));
+  }
+
+  if (call.texts) {
+    bits.push(slotsHtml(call));
+    bits.push(`<div class="read"></div>`);
+  }
+
+  row.innerHTML = bits.join("");
+  // Before the bindings below: the snap has to run first, so everything that
+  // reads the value reads the one the grid gave it.
+  wireSliders(row);
+  if (call.texts) {
+    const read = row.querySelector(".read");
+    row._read = () => { read.innerHTML = readHtml(call, row); };
+    row.querySelectorAll(".slot [data-i]").forEach((c) => {
+      const keep = () => {
+        const s = call.texts.slots[Number(c.dataset.i)];
+        slotSave(c.dataset.k, c.value === String(s.value) ? null : c.value);
+        row._read();
+      };
+      c.addEventListener("input", keep);
+      c.addEventListener("change", keep);
+    });
+    row.querySelectorAll("input.w, input.s, select.style").forEach((c) => c.addEventListener("input", row._read));
+    row._read();
+  }
+  row.querySelector(".play").onclick = () => fire(call, row);
+  row._call = call;
+  row.querySelector(".loop").onclick = () => loopToggle(call);
+  const enBtn = row.querySelector(".en");
+  if (enBtn) {
+    row._en = () => paintEn(call, row, enBtn);
+    enBtn.onclick = () => toggleEn(call, row);
+    row._en();
+  }
+  row.dataset.check = call.checkId || "";
+  if (row.querySelector(".check")) row.querySelector(".check").onclick = () => toggleCheck([call.checkId], !isChecked(call.checkId));
+  if (row.querySelector(".revert")) row.querySelector(".revert").onclick = () => revertCall(call, row);
+  if (row.querySelector(".trash")) row.querySelector(".trash").onclick = () => killCall(call, row);
+
+  /* A motor line's volume and pitch move for the ear only: nothing pends, and
+     revert puts them back where the motor has them. */
+  if (call.inherited) {
+    row.classList.add("inherited");
+    row.dataset.key = String(call.preview.args[0]);
+    row.querySelectorAll("input[type=range]").forEach((c) => { c.dataset.was = c.value; });
+    row.querySelector(".ln").onclick = () => copy(call.where + ":" + call.line);
+    return row;
+  }
+
+  /* Which control writes which argument back. `expr` is the source as the game
+     wrote it, and it is what tells an editable value from one apply has to
+     refuse — the row shows both the same way, so nothing is a surprise. */
+  const opts = call.opts || {};
+  const bind = (sel, name, expr) => {
+    const ctrl = row.querySelector(sel);
+    if (!ctrl) return;
+    // A call apply cannot write back (Sound.beep, Sound.arp) is still played
+    // from here — it is read-only, not hidden.
+    if (!name) { ctrl.disabled = true; ctrl.title = "apply does not write this call — change it in the source"; return; }
+    watch(ctrl, call, name, expr);
+  };
+  if (call.name === "Pop.text") bind("input.w", "word", call.args[2]);
+  else if (call.kind === "pop") {
+    bind("select.style", "style", call.args[0]);
+    bind("input.w", "word", opts.word);
+    bind("input.s", "sub", opts.sub);
+    bind("select.at", "at", opts.at);
+  } else if (call.kind === "sound") {
+    const editable = call.name === "Sound.clip" || call.name === "Sound.cue";
+    bind("input.vol", editable ? "vol" : null, call.args[1]);
+    bind("input.rate", editable ? "rate" : null, call.args[2]);
+    row.dataset.key = String(call.preview.args[0]);
+    row.querySelector(".ln").onclick = () => copy(state.data.where + ":" + call.line);
+  } else if (call.kind === "notify") {
+    bind("input.w", "word", call.args[0]);
+    bind("input.s", "sub", opts.sub);
+    bind("select.as", "as", null);
+    bind("select.at", "at", null);
+    const as = row.querySelector("select.as"), at = row.querySelector("select.at");
+    /* Back to `notify`, the anchor goes with it: a notice has no spot, and an
+       anchor left pending would be refused by apply as a field it lacks. */
+    as._sync = () => {
+      const on = !!as.value;
+      row.classList.toggle("as-pop", on);
+      row.querySelector(".tag").textContent = on ? "Notify.say → Pop.show" : call.name;
+      at.hidden = !on;
+      if (!on && at.value) { at.value = ""; at.dispatchEvent(new Event("change")); }
+    };
+    as.addEventListener("change", as._sync);
+    as._sync();
+  }
+  return row;
+}
+
+/* ── one card per CLIP ────────────────────────────────────────────────────
+   A pack of eight clips is played by eighteen lines, and listing the clip once
+   per line said the same thing eighteen times — worse, it offered the same
+   file dropdown eighteen times for one decision. The clip is the card: the
+   file it is cut from and the length of the cut are written once, at the top,
+   and the lines that play it are underneath with the only things that are
+   theirs — how loud, and how high.                                          */
+/* The kit selector of a clip card: hand this key to one VARIANT of the house
+   kit's gameplay roles (a crash in one game is not a crash in another). On
+   Apply the manifest maps it (`sfx`) and its clip leaves game.js
+   (tools/lab/cut-kit.mjs, mapKeys); the lines that play it do not change. A
+   key already in the kit can move to another variant, not back to a clip. */
+function kitSelect(key, current) {
+  if (state.slug === "template" || !(state.kitIds || []).length) return "";
+  const groups = {};
+  state.kitIds.forEach((id) => { const r = id.split("/")[0]; (groups[r] = groups[r] || []).push(id); });
+  return `<select class="kitsel" title="play the house kit's variant instead of this clip — chosen and tuned at /kit">` +
+    (current ? "" : `<option value="">clip</option>`) +
+    Object.entries(groups).map(([r, list]) => `<optgroup label="${esc(r)}">` +
+      list.map((id) => `<option value="${esc(id)}"${id === current ? " selected" : ""}>kit: ${esc(id)}</option>`).join("") +
+      `</optgroup>`).join("") +
+    `</select>`;
+}
+function wireKitSelect(sel, key, current) {
+  if (!sel) return;
+  const p = state.pending.kit[key];
+  if (p) sel.value = p;
+  sel.classList.toggle("dirty", !!p);
+  sel.onchange = () => {
+    const v = sel.value;
+    if (!v || v === current) delete state.pending.kit[key];
+    else { state.pending.kit[key] = v; delete state.pending.sfx[key]; delete state.pending.kill.clips[key]; }
+    sel.classList.toggle("dirty", !!state.pending.kit[key]);
+    countPending();
+    note(state.pending.kit[key]
+      ? `${key} will play the kit's ${v} on apply` + (current ? "" : " — its clip leaves game.js, the lines that play it stay")
+      : "");
+  };
+}
+
+function clipCard(key, calls) {
+  const card = document.createElement("div");
+  card.className = "beat clip";
+  card.dataset.key = key;
+  const snd = (state.data.sounds || []).find((x) => x.key === key);
+  if (snd && snd.kit) return kitCard(key, snd, calls, card);
+
+  const head = document.createElement("div");
+  head.className = "bhead";
+  head.dataset.key = key;
+  head.innerHTML =
+    `<span class="key" title="ASSETS.sounds.${esc(key)}">${esc(key)}</span>` +
+    `<button class="filebtn" title="the file in assets/audio/sfx/ this clip is cut from — open it, hover to hear, click to keep. Apply re-cuts the clip, for every line below."></button>` +
+    kitSelect(key, null) +
+    slider("len", cutLen(key), 0.05, 3, 0.05, 0.5, "cut",
+      "how much of the file the clip keeps — mono 32 kHz / 64 kbps with a 70 ms fade. It starts at what the embedded clip measures.") +
+    `<span class="sp"></span>` +
+    (snd ? `<span class="plays">${calls.length}×</span>`
+         : `<span class="approx" title="this game embeds no clip under that name — every line below plays nothing">no clip</span>`) +
+    `<span class="acts">` +
+    iconBtn("check", "check", "check every line of this clip at once") +
+    iconBtn("revert", "revert", "put this clip back where the source has it") +
+    iconBtn("trash", "trash", "remove this clip from ASSETS.sounds, and every line of the game that plays it") +
+    `</span>`;
+  head.classList.add("has-acts");
+  head.querySelector(".key").onclick = () => copy(key);
+  head.querySelector(".revert").onclick = () => revertClip(key, card);
+  head.querySelector(".trash").onclick = () => killClip(key, card);
+  // Every line on (or every line off when they all are): one decision, one clip.
+  head.querySelector(".check").onclick = () => {
+    const ids = calls.map((c) => c.checkId).filter(Boolean);
+    toggleCheck(ids, !ids.every(isChecked));
+  };
+  card.appendChild(head);
+
+  calls.forEach((c) => card.appendChild(callRow(c)));
+
+  wireSliders(head);                       // the snap, before what reads it
+  wireFile(head.querySelector(".filebtn"), () => key);
+  wireLen(head.querySelector("input.len"), key);
+  wireKitSelect(head.querySelector(".kitsel"), key, null);
+  return card;
+}
+
+/* A key the manifest maps to a role of the house kit (`sfx` in manifest.json):
+   the game embeds no clip for it, and what it sounds like is chosen on the
+   kit page, for every game that maps a key to that role. So the card names
+   the role and opens the kit instead of offering a file — the lines under it
+   keep their own volume and pitch, which are the game's. */
+function kitCard(key, snd, calls, card) {
+  const head = document.createElement("div");
+  head.className = "bhead has-acts";
+  head.dataset.key = key;
+  head.innerHTML =
+    `<span class="key" title="manifest.json sfx.${esc(key)}">${esc(key)}</span>` +
+    `<a class="kitbtn" href="kit#${esc(snd.kit)}" target="_blank" title="this key plays a variant of the house kit — its takes are chosen on the kit page, for every game that maps to it">kit: ${esc(snd.kit)} ↗</a>` +
+    kitSelect(key, snd.kit) +
+    `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
+    `<span class="acts">` + iconBtn("check", "check", "check every line of this clip at once") + `</span>`;
+  head.querySelector(".key").onclick = () => copy(key);
+  head.querySelector(".check").onclick = () => {
+    const ids = calls.map((c) => c.checkId).filter(Boolean);
+    toggleCheck(ids, !ids.every(isChecked));
+  };
+  card.appendChild(head);
+  calls.forEach((c) => card.appendChild(callRow(c)));
+  wireKitSelect(head.querySelector(".kitsel"), key, snd.kit);
+  return card;
+}
+
+function beatCard(beat, calls) {
+  const card = document.createElement("div");
+  card.className = "beat";
+  const silent = calls.some((c) => c.kind === "pop") && !calls.some((c) => c.kind === "sound");
+  const head = document.createElement("div");
+  head.className = "bhead";
+  head.innerHTML =
+    `<span class="ln" title="click to copy the path">L${beat.line}</span>` +
+    `<span class="fn">${beat.fn ? esc(beat.fn) + "<i>()</i>" : "<i>top level</i>"}</span>` +
+    `<span class="sp"></span>` +
+    (silent ? `<span class="warn" title="this moment shows a callout and plays nothing — deliberate on a beat that is already loud, a gap otherwise">no sound</span>` : "") +
+    `<span class="acts">` +
+    iconBtn("check", "check", calls.length > 1 ? "check the " + calls.length + " callouts of this moment" : "mark as checked — seen and read, signed off") +
+    iconBtn("revert", "revert", "put this moment back where the source has it") +
+    iconBtn("trash", "trash", calls.length > 1 ? "remove the " + calls.length + " callouts of this moment from the game" : "remove this callout from the game") +
+    `</span>`;
+  head.classList.add("has-acts");
+  head.querySelector(".ln").onclick = () => copy(state.data.where + ":" + beat.line);
+  card.appendChild(head);
+
+  const rows = calls.map((c) => { const r = callRow(c); card.appendChild(r); return r; });
+
+  /* The card's actions are the moment's: what fires together is checked,
+     reverted and removed together. Removing is all or nothing — every line
+     marked, or, when they all already are, every line given back. */
+  head.querySelector(".check").onclick = () => {
+    const ids = calls.map((c) => c.checkId).filter(Boolean);
+    toggleCheck(ids, !ids.every(isChecked));
+  };
+  head.querySelector(".revert").onclick = () => {
+    calls.forEach((c, i) => revertCall(c, rows[i]));
+    card.classList.remove("killed");
+  };
+  head.querySelector(".trash").onclick = () => {
+    const on = !calls.every((c) => state.pending.kill.calls[pendKey(c)]);
+    calls.forEach((c, i) => { if (!!state.pending.kill.calls[pendKey(c)] !== on) killCall(c, rows[i]); });
+    card.classList.toggle("killed", on);
+  };
+  card.classList.toggle("killed", calls.every((c) => state.pending.kill.calls[pendKey(c)]));
+
+  const src = document.createElement("details");
+  src.className = "src";
+  src.innerHTML = `<summary>source · ${state.data.where}:${beat.codeFrom}</summary><pre>${esc(beat.code)}</pre>`;
+  card.appendChild(src);
+  return card;
+}
+
+/* --- auditioning a raw file ----------------------------------------------
+   A file of assets/audio/sfx/ picked in a dropdown is not embedded yet, so the
+   motor cannot play it: the PAGE plays it, off /sfx/…, with its own <audio>.
+   It stops at the cut length rather than running the whole file — most clips
+   are mostly tail, and what the game will ship is the first `len` seconds. */
+const sfxAudio = {};
+let sfxPlaying = null, sfxStop = null;
+
+function sfxVol() {
+  const v = parseFloat(localStorage.getItem("events:libvol"));
+  return isNaN(v) ? 0.9 : v;
+}
+
+function sfxPlay(file, len) {
+  if (sfxPlaying) sfxPlaying.pause();
+  clearTimeout(sfxStop);
+  const a = sfxAudio[file] || (sfxAudio[file] = new Audio("sfx/" + encodeURIComponent(file)));
+  a.volume = sfxVol();
+  try { a.currentTime = 0; } catch (e) {}
+  a.play().catch(() => note("cannot play " + file));
+  sfxPlaying = a;
+  if (len > 0) sfxStop = setTimeout(() => { try { a.pause(); } catch (e) {} }, len * 1000);
+}
+
+/* --- the one list -------------------------------------------------------- */
+function render() {
+  const list = el("list");
+  list.innerHTML = "";
+  if (!state.data) { list.innerHTML = `<div class="empty">loading…</div>`; return; }
+  const d = state.data;
+  const sound = state.view === "sound";
+  if (document.body.classList.contains("sound") !== sound) { document.body.classList.toggle("sound", sound); fit(); }
+
+  // 1. the bed — the one sound nothing in the game ever calls.
+  const bed = sound && d.sounds.find((s) => s.music);
+  if (bed) {
+    add("section", "music — the background bed");
+    const m = d.music || {};
+    const settings = Object.keys(m).map((k) => k + " " + m[k]).join(" · ");
+    const row = document.createElement("div");
+    row.className = "sfx bed";
+    row.innerHTML = `<span class="key">${esc(bed.key)}</span><span class="note">` +
+      esc(bed.note || "assets/audio/music/" + d.slug + ".mp3") +
+      (settings ? ` — <b style="color:#c98fb0">${esc(settings)}</b>` : "") + `</span>`;
+    const play = document.createElement("button");
+    play.className = "act sm";
+    play.textContent = "▶ play";
+    play.onclick = () => { unlock(); const M = api("Music"); if (M) M.start(); };
+    const stop = document.createElement("button");
+    stop.className = "act sm ghost";
+    stop.textContent = "stop";
+    stop.onclick = () => { const M = api("Music"); if (M) M.stop(); };
+    row.appendChild(play); row.appendChild(stop);
+    list.appendChild(row);
+    add("legend", "The shell starts it, ducks it on the end screen and pauses it off-screen. A game only embeds it and sets CONFIG.music.");
+  }
+
+  /* 2. the beats, in source order, with only this side of each showing. The
+        pack is not listed a second time: a clip is reached through the beat
+        that plays it, which is the only place it can be judged anyway. */
+  add("section", sound ? "cues — one card per clip, and the lines that play it" : "events — the callouts and the notifications");
+  if (sound && d.slug === "template") add("legend",
+    "The template's clips are the end screen's: the motor plays them (packages/shell/shell.js, and the web shell's map and menu), " +
+    "so the lines below are motor lines — play them, sweep their volume and pitch by ear. Apply re-cuts the CLIP into template/game.js; " +
+    "every game keeps the copy it was made with until it is re-cut on its own entry.");
+  add("legend", sound
+    ? "The file a clip is cut from and the length of the cut belong to the clip, so they are written once, at the top of its card — change them and every line below follows. Open the file list and hover a row to hear it. Volume and pitch are each line's own."
+    : "The style dropdown is the callout's look; apply writes it back into the Pop.show line. A value the game builds at runtime is marked and refused rather than overwritten.");
+  let n = 0;
+  if (sound) {
+    // Grouped by the clip, the groups in the order their first line appears.
+    const groups = new Map();
+    d.calls.filter((c) => c.kind === "sound").forEach((c) => {
+      const key = String(c.preview.args[0]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(c);
+    });
+    groups.forEach((calls, key) => {
+      if (state.hideChecked && calls.every((c) => isChecked(c.checkId))) return;
+      list.appendChild(clipCard(key, calls)); n++;
+    });
+  } else {
+    const kinds = VIEWS[state.view].kinds;
+    d.beats.forEach((b) => {
+      const calls = b.calls.filter((c) => kinds[c.kind] && !(state.hideChecked && isChecked(c.checkId)));
+      if (!calls.length) return;
+      list.appendChild(beatCard(b, calls));
+      n++;
+    });
+  }
+  if (!n) add("empty", state.hideChecked && sideTotal(state.view)
+    ? "everything on this side is checked"
+    : sound ? "this game plays no cue" : "this game fires no callout");
+
+  /* A clip nothing plays has no beat, so it has no row — the pill is the only
+     place it is still named, and it names it: dead bytes in every build. */
+  const dead = d.sounds.filter((x) => !x.music && !x.plays.length).map((x) => x.key);
+  el("stats").innerHTML =
+    `<span><b>${d.counts.pop}</b> callouts</span>` +
+    `<span><b>${d.counts.notify}</b> notifications</span>` +
+    `<span><b>${d.counts.sound}</b> cues</span>` +
+    `<span><b>${d.sounds.length}</b> clips</span>` +
+    (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "") +
+    `<span class="seen-pill seen"></span>` +
+    `<span class="checked-pill"></span>` +
+    `<button class="hide${state.hideChecked ? " on" : ""}" title="show only what is left to check">Hide checked</button>`;
+  el("stats").querySelector("button.hide").onclick = () => {
+    state.hideChecked = !state.hideChecked;
+    try { localStorage.setItem("events:hideChecked", state.hideChecked ? "1" : "0"); } catch (e) {}
+    render();
+  };
+
+  el("tabs").querySelectorAll("button").forEach((btn) => {
+    const v = btn.dataset.view;
+    btn.classList.toggle("on", v === state.view);
+    btn.title = VIEWS[v].label;
+    btn.querySelector("b").textContent =
+      d.beats.reduce((a, b2) => a + b2.calls.filter((c) => VIEWS[v].kinds[c.kind]).length, 0);
+  });
+  paintChecks();
+  paintClips();
+  refreshFiles();
+  countPending();
+}
+
+/* ── checked ──────────────────────────────────────────────────────────────
+   A mark is the server's (lab/events-review.json) and is matched on the
+   call's checkId alone, so the page only ever asks "is this id in the review".
+   A click repaints in place rather than re-rendering: a row holds pending
+   edits and slot values the hand is in the middle of. With HIDE CHECKED on,
+   a row that was just checked leaves the list, which is the point of it. */
+function isChecked(id) {
+  return !!(id && state.data && state.data.review && state.data.review[id]);
+}
+function sideCalls(view) {
+  const kinds = VIEWS[view].kinds;
+  return state.data ? state.data.calls.filter((c) => c.checkId && kinds[c.kind]) : [];
+}
+function sideTotal(view) { return sideCalls(view).length; }
+
+// In order, one after the other, so the last answer is the whole review.
+let checkQueue = Promise.resolve();
+function toggleCheck(ids, on) {
+  ids = ids.filter(Boolean);
+  if (!ids.length) return;
+  checkQueue = checkQueue.then(() => sendCheck(ids, on));
+}
+function sendCheck(ids, on) {
+  return fetch("api/check", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ game: state.slug, ids, on })
+  })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.error) { note(res.error); return; }
+      state.data.review = res.review;
+      state.status[state.slug] = res.status;
+      drawOption(state.slug);
+      if (state.hideChecked && on) {
+        const list = el("list"), top = list.scrollTop;
+        render();
+        list.scrollTop = top;
+      } else paintChecks();
+      note(on ? ids.length + " checked" : ids.length + " unchecked");
+    })
+    .catch((e) => note("check failed: " + e.message));
+}
+
+function paintChecks() {
+  document.querySelectorAll(".call[data-check]").forEach((row) => {
+    const on = isChecked(row.dataset.check);
+    row.classList.toggle("checked", on);
+    const b = row.querySelector(".iconbtn.check");
+    if (b) {
+      b.classList.toggle("on", on);
+      const m = on && state.data.review[row.dataset.check];
+      b.title = on ? "checked " + m.at + " — click to take it back" : "mark as checked — seen and heard, signed off";
+    }
+  });
+  // A card is checked when every line on it is.
+  document.querySelectorAll("#list .beat").forEach((card) => {
+    const rows = [...card.querySelectorAll(".call[data-check]")];
+    const all = rows.length > 0 && rows.every((r) => r.classList.contains("checked"));
+    card.classList.toggle("checked", all);
+    const b = card.querySelector(".bhead .iconbtn.check");
+    if (b) b.classList.toggle("on", all);
+  });
+  if (!state.data) return;
+  const done = (view) => sideCalls(view).filter((c) => isChecked(c.checkId)).length;
+  const pill = el("stats").querySelector(".checked-pill");
+  if (pill) {
+    const all = sideTotal("view") + sideTotal("sound"), ok = done("view") + done("sound");
+    pill.className = "checked-pill" + (all && ok === all ? " done" : "");
+    pill.innerHTML = `<b>${ok}</b> / ${all} checked`;
+  }
+  el("tabs").querySelectorAll("button").forEach((btn) => {
+    const v = btn.dataset.view, t = sideTotal(v);
+    btn.classList.toggle("done", t > 0 && done(v) === t);
+    btn.querySelector("b").textContent = t ? done(v) + "/" + t : "0";
+  });
+}
+
+/* The picker's label: a tick and green once the game is done, its count
+   otherwise — what is left to check is the reason to open it. */
+function drawOption(slug) {
+  const pick = el("game-pick");
+  const opt = pick.querySelector('option[value="' + CSS.escape(slug) + '"]');
+  const g = state.games && state.games[slug];
+  if (!opt || !g) return;
+  const st = state.status[slug];
+  opt.textContent = (st && st.done ? "\u2713 " : "") + g.title + " — " + g.counts.pop + " callouts, " + g.counts.sound + " cues" +
+    (st && !st.done && st.total ? "  ·  " + st.checked + "/" + st.total + " checked" : "");
+  opt.className = st && st.done ? "done" : "";
+  if (pick.value === slug) pick.className = opt.className;
+}
+
+function fit() {
+  const stage = el("stage"), bar = el("bar"), gap = 12, label = 22;
+  // The apply report takes its room out of the frames, never off the bottom of
+  // the window: what it costs in height the frames give back.
+  const h = stage.clientHeight - bar.offsetHeight - el("hint").offsetHeight - el("report").offsetHeight -
+            el("replay").offsetHeight - label * 2 - gap - 75;
+  // Two frames stacked in the height the stage gets, never wider than a third of the window.
+  const k = Math.max(0.12, Math.min(h / 2560, (window.innerWidth * 0.34 - 28) / 720));
+  // REC: ONE frame, as big as the stage allows — it is played, not glanced at.
+  const kr = Math.max(0.2, Math.min((h + label + gap) / 1280, (window.innerWidth * 0.45 - 28) / 720));
+  if (document.body.classList.contains("rec")) {
+    const f = document.querySelector(".fit.rec");
+    f.style.transform = "scale(" + kr + ")";
+    f.style.width = (720 * kr) + "px"; f.style.height = (1280 * kr) + "px";
+    f.parentNode.style.width = (720 * kr) + "px";
+    stage.style.flexBasis = (720 * kr + 28) + "px";
+    return;
+  }
+  document.querySelectorAll(".fit:not(.rec)").forEach((f) => {
+    f.style.transform = "scale(" + k + ")";
+    f.style.width = (720 * k) + "px";
+    f.style.height = (1280 * k) + "px";
+    f.parentNode.style.width = (720 * k) + "px";
+  });
+  stage.style.flexBasis = (document.body.classList.contains("sound") && !document.body.classList.contains("looping") ? 300 : Math.max(300, 720 * k + 28)) + "px";
+}
+
+function load(slug) {
+  if (slug !== state.slug) { state.pending = EMPTY_PENDING(); loopStop(); }
+  state.slug = slug;
+  loadClips();
+  if (REC.on) recLoad();
+  localStorage.setItem("events:game", slug);
+  LANGS.forEach((lang) => { frames[lang].src = "build/" + slug + "/index.html?lang=" + lang; });
+  fetch("api/events?game=" + encodeURIComponent(slug))
+    .then((r) => r.json())
+    .then((d) => { state.data = d; state.status[slug] = d.status; drawOption(slug); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
+}
+
+/* ===========================================================================
+   V2 — EN: a callout kept in English on the French screen.
+
+   A word is kept in English by a dictionary entry whose French IS the English
+   (tools/lab/keep-english.mjs). So the words of a row are the ones the
+   dictionary is asked about: a literal word or sub, the `Lang.t("…")` pieces
+   of a built word, a literal of it the dictionary already knows, the
+   CONFIG.copy value it names — and, for a callout that names no word, the
+   word of its style.
+   =========================================================================== */
+function frDict() {
+  const W = web("fr") || web("en");
+  const c = W && W.CONFIG && W.CONFIG.web && W.CONFIG.web.copy;
+  return (c && c.fr && c.fr.strings) || {};
+}
+
+function strLits(expr) {
+  const out = [], re = /(["'])((?:\\.|(?!\1)[^\\])*)\1/g;
+  let m;
+  while ((m = re.exec(String(expr)))) {
+    try { out.push(JSON.parse('"' + m[2].replace(/\\'/g, "'").replace(/(^|[^\\])"/g, '$1\\"') + '"')); } catch (e) {}
+  }
+  return out;
+}
+
+// The source expression of a field, as the game writes it (scan-events).
+function fieldExpr(call, field) {
+  const o = call.opts || {};
+  if (call.name === "Pop.text") return field === "word" ? call.args[2] : null;
+  if (call.name === "Notify.say") return field === "word" ? call.args[0] : o.sub;
+  return o[field];
+}
+
+function enWords(call) {
+  const out = new Set(), dict = frDict(), W = web("en");
+  const fields = (call.texts && call.texts.fields) || {};
+  for (const k of ["word", "sub"]) {
+    const f = fields[k];
+    if (!f) continue;
+    if (f.code) {
+      (String(f.expr).match(/Lang\.t\(\s*(["'])(?:\\.|(?!\1)[^\\])*\1\s*\)/g) || [])
+        .forEach((t) => strLits(t).forEach((w) => out.add(w)));
+      strLits(f.expr).forEach((w) => { if (dict[w] != null) out.add(w); });
+      (String(f.expr).match(/CONFIG\.copy\.\w+/g) || []).forEach((r) => {
+        const v = W && W.CONFIG && W.CONFIG.copy && W.CONFIG.copy[r.split(".")[2]];
+        if (typeof v === "string") out.add(v);
+      });
+      // A bare slot (`word`, a helper's parameter) is the bench's guess, not the game's word.
+      if (!/^\s*\$\[\d+\]\s*$/.test(f.code)) builtValues(call, f).forEach((w) => { if (dict[w] != null) out.add(w); });
+    } else if (f.lit != null && isLit(fieldExpr(call, k))) out.add(f.lit);
+  }
+  if (call.name === "Pop.show" && !fields.word && W && W.Pop && W.Pop.styles) {
+    const st = W.Pop.styles[call.preview.args[0]];
+    if (st && typeof st.word === "string") out.add(st.word);
+  }
+  return [...out].filter((w) => /[A-Za-z]{2}/.test(w));
+}
+
+/* A word read out of the round's state (`T2.name`) is every value it can take:
+   the code run in English with the dictionary off, over each choice of its
+   pick and true/false slots (capped), the others at their default. What comes
+   out whole and is a key of the dictionary is a word this callout writes. */
+const IDLANG = { t: (x) => x, code: () => "en", set: () => {} };
+function builtValues(call, f) {
+  const W = web("en");
+  if (!W) return [];
+  const slots = (call.texts && call.texts.slots) || [];
+  let combos = [slotValues(call, null)];
+  slots.forEach((sl, i) => {
+    const opts = sl.kind === "bool" ? [true, false] : sl.kind === "pick" && sl.choices ? sl.choices : null;
+    if (!opts || combos.length * opts.length > 64) return;
+    combos = combos.flatMap((c) => opts.map((o) => { const n = c.slice(); n[i] = o; return n; }));
+  });
+  const out = new Set();
+  for (const c of combos) {
+    try {
+      const v = runner(f.code)(c, IDLANG, W.CONFIG, W.upper);
+      if (typeof v === "string") out.add(v);
+    } catch (e) {}
+  }
+  return [...out];
+}
+
+function enState(call) {
+  const words = enWords(call), dict = frDict(), pend = state.pending.keepEn;
+  const cur = (w) => (pend[w] !== undefined ? pend[w] : dict[w] === w);
+  return {
+    words,
+    all: words.length > 0 && words.every(cur),
+    dirty: words.some((w) => pend[w] !== undefined)
+  };
+}
+
+function paintEn(call, row, btn) {
+  const st = enState(call);
+  btn.classList.toggle("on", st.all);
+  btn.classList.toggle("dirty", st.dirty);
+  btn.disabled = !st.words.length;
+  btn.title = !st.words.length
+    ? "nothing here goes through the dictionary — a built word with no Lang.t piece"
+    : (st.all ? "kept in English on the French screen — click to give the French back" : "keep it in English on the French screen") +
+      " · " + st.words.map((w) => '"' + w + '"').join(", ") + (st.dirty ? " · apply writes it" : "");
+}
+function paintAllEn() {
+  document.querySelectorAll(".call").forEach((r) => { if (r._en) r._en(); });
+}
+
+function toggleEn(call) {
+  const st = enState(call);
+  if (!st.words.length) { note("no word of this call goes through the dictionary"); return; }
+  const target = !st.all, dict = frDict();
+  st.words.forEach((w) => {
+    if ((dict[w] === w) === target) delete state.pending.keepEn[w];
+    else state.pending.keepEn[w] = target;
+  });
+  countPending();
+  refreshReads();
+  paintAllEn();
+  note(target
+    ? st.words.map((w) => '"' + w + '"').join(", ") + " will stay English on the French screen — every callout that writes it"
+    : "the French comes back on apply");
+}
+
+/* ===========================================================================
+   V2 — the clips: lab/events-clips/<slug>/ (tools/lab/serve-events.mjs).
+
+   A row's clip is the one recorded for its checkId. A call edited since has a
+   new checkId; it borrows the clip of the nearest event of the same call name
+   in the same function that no live call claims, and says so (amber ↻).
+   =========================================================================== */
+function loadClips() {
+  const slug = state.slug;
+  state.offset = null;
+  fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
+    if (slug !== state.slug) return;
+    state.clips = idx && idx.clips ? idx : { clips: {}, byId: {} };
+    paintClips();
+  });
+  fetch("api/offset?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
+    if (slug !== state.slug) return;
+    state.offset = o && o.offset != null ? o.offset : null;
+    if (o && o.error && REC.on) note("rec: " + o.error);
+  });
+}
+
+function nearEvent(call) {
+  const idx = state.clips, live = new Set(state.data ? state.data.calls.map((c) => c.checkId) : []);
+  let best = null;
+  for (const [file, clip] of Object.entries(idx.clips || {})) {
+    for (const e of clip.events || []) {
+      if (e.name !== call.name || e.fn !== (call.fn || "") || live.has(e.id)) continue;
+      const d = Math.abs(e.line - call.line);
+      if (!best || d < best.d) best = { file, clip, e, d };
+    }
+  }
+  return best;
+}
+
+function clipFor(call) {
+  if (!call || call.inherited || !call.checkId) return null;
+  const idx = state.clips, f = idx.byId && idx.byId[call.checkId];
+  if (f && idx.clips[f]) return { file: f, clip: idx.clips[f], near: false };
+  const n = nearEvent(call);
+  return n ? { file: n.file, clip: n.clip, near: true } : null;
+}
+
+// A recorded event → the call the source has now (the same id, or the near one).
+function callOf(e) {
+  const calls = state.data ? state.data.calls : [];
+  const hit = calls.find((c) => c.checkId === e.id);
+  if (hit) return hit;
+  const ids = new Set(calls.map((c) => c.checkId));
+  let best = null;
+  for (const c of calls) {
+    if (c.name !== e.name || (c.fn || "") !== e.fn || c.inherited) continue;
+    // A call that has a clip of its own is not the one this event was.
+    if (state.clips.byId[c.checkId] && ids.has(c.checkId)) continue;
+    const d = Math.abs(c.line - e.line);
+    if (!best || d < best.d) best = { c, d };
+  }
+  return best ? best.c : null;
+}
+
+function paintClips() {
+  document.querySelectorAll(".call").forEach((row) => {
+    const b = row.querySelector(".loop"), c = row._call;
+    if (!b || !c) return;
+    if (c.inherited) { b.disabled = true; b.title = "a motor line — the recorder catches the game's own calls only"; return; }
+    const hit = clipFor(c);
+    b.classList.toggle("has", !!hit);
+    b.classList.toggle("near", !!(hit && hit.near));
+    b.classList.toggle("on", LOOP.id === c.checkId);
+    b.title = !hit ? "not seen in play yet — Rec, and play until it fires"
+      : LOOP.id === c.checkId ? "stop the loop"
+      : "loop the moment of the game it fires on (" + hit.clip.dur.toFixed(1) + " s, recorded " + hit.clip.when.replace("T", " ") + ")" +
+        (hit.near ? " — recorded before this call was edited" : "");
+  });
+  const pill = el("stats").querySelector(".seen-pill");
+  if (pill && state.data) {
+    const pool = state.data.calls.filter((c) => c.checkId && !c.inherited && (c.kind === "pop" || c.kind === "notify" || c.kind === "sound"));
+    const seen = pool.filter((c) => clipFor(c)).length;
+    pill.innerHTML = `<b>${seen}</b> / ${pool.length} seen in play`;
+    pill.title = "events with a recorded moment — Rec and play to capture the rest";
+  }
+}
+
+/* ===========================================================================
+   V2 — the LOOP: the clip under both frames, the moment fired over it.
+   =========================================================================== */
+const LOOP = { id: null, call: null, clip: null, file: null, near: false, url: null, events: [], muted: {}, raf: 0, prev: -1 };
+const clipVideos = () => [...document.querySelectorAll("video.clip")];
+
+function setClear(on) {
+  LANGS.forEach((lang) => {
+    try { frames[lang].contentDocument.documentElement.classList.toggle("lab-clear", on); } catch (e) {}
+  });
+}
+
+function loopToggle(call) {
+  if (LOOP.id && LOOP.id === call.checkId) { loopStop(); return; }
+  const hit = clipFor(call);
+  if (!hit) { note("not seen in play yet — Rec, and play until it fires"); return; }
+  loopStart(call, hit);
+}
+
+function loopStart(call, hit) {
+  loopStop();
+  if (REC.on) recToggle(false);
+  Object.assign(LOOP, { id: call.checkId, call, clip: hit.clip, file: hit.file, near: hit.near, muted: {}, prev: -1 });
+  // The whole moment: every event of the window, each at its own time, once.
+  const seen = {};
+  LOOP.events = (hit.clip.events || []).map((e) => ({ e, call: callOf(e) }))
+    .filter((x) => x.call && !seen[x.call.checkId + "@" + x.e.t] && (seen[x.call.checkId + "@" + x.e.t] = 1));
+  // A beat's rows hold COPIES of the scan's calls: a call is the same call by its id.
+  if (!LOOP.events.some((x) => x.call.checkId === call.checkId)) LOOP.events.push({ e: { id: call.checkId, t: hit.clip.at }, call });
+  LOOP.events.sort((a, b) => a.e.t - b.e.t);
+  const slug = state.slug, id = call.checkId;
+  fetch("clips/" + encodeURIComponent(slug) + "/" + hit.file).then((r) => {
+    if (!r.ok) throw new Error("clip " + hit.file + " is gone");
+    return r.blob();
+  }).then((blob) => {
+    if (LOOP.id !== id || slug !== state.slug) return;
+    LOOP.url = URL.createObjectURL(blob);
+    document.body.classList.add("looping");
+    setClear(true);
+    clipVideos().forEach((v) => { v.src = LOOP.url; v.currentTime = 0; v.play().catch(() => {}); });
+    unlock();
+    drawReplay();
+    fit();
+    paintClips();
+    LOOP.raf = requestAnimationFrame(loopTick);
+  }).catch((e) => { note("loop: " + e.message); loopStop(); });
+  paintClips();
+}
+
+function loopStop() {
+  cancelAnimationFrame(LOOP.raf);
+  const was = !!LOOP.id;
+  Object.assign(LOOP, { id: null, call: null, clip: null, file: null, events: [], raf: 0 });
+  clipVideos().forEach((v) => { try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} });
+  if (LOOP.url) { URL.revokeObjectURL(LOOP.url); LOOP.url = null; }
+  document.body.classList.remove("looping");
+  setClear(false);
+  if (was) { drawReplay(); fit(); paintClips(); }
+}
+
+function loopRestart() {
+  clipVideos().forEach((v) => { try { v.currentTime = 0; v.play().catch(() => {}); } catch (e) {} });
+  LOOP.prev = -1;
+}
+
+const evKey = (x) => x.call.checkId + "@" + x.e.t;
+
+function loopTick() {
+  if (!LOOP.clip) return;
+  LOOP.raf = requestAnimationFrame(loopTick);
+  const [en, fr] = ["en", "fr"].map((l) => document.querySelector('video.clip[data-lang="' + l + '"]'));
+  if (!en || !en.src) return;
+  // MediaRecorder writes no duration into a webm: the index's is the one to trust.
+  const dur = LOOP.clip.dur || en.duration;
+  if (en.ended || (isFinite(dur) && en.currentTime >= dur - 0.03)) { loopRestart(); return; }
+  const t = en.currentTime;
+  if (t < LOOP.prev - 0.1) LOOP.prev = -1;
+  for (const x of LOOP.events) {
+    if (LOOP.muted[evKey(x)] || !(x.e.t > LOOP.prev && x.e.t <= t)) continue;
+    const row = document.querySelector('.call[data-check="' + CSS.escape(x.call.checkId) + '"]');
+    fire(x.call, row);
+  }
+  LOOP.prev = t;
+  if (fr && fr.src && Math.abs(fr.currentTime - t) > 0.15) { try { fr.currentTime = t; } catch (e) {} }
+  const tm = el("replay").querySelector(".time");
+  if (tm) tm.textContent = t.toFixed(1) + " / " + (isFinite(dur) ? dur.toFixed(1) : "?") + " s";
+}
+
+function evLabel(call) {
+  if (call.kind === "sound") return String(call.preview.args[0]) + " L" + call.line;
+  const w = call.texts && call.texts.fields && call.texts.fields.word;
+  const word = w ? (w.lit != null ? w.lit : w.expr) : call.preview.args[0];
+  const s = String(word == null ? call.name : word);
+  return (s.length > 16 ? s.slice(0, 15) + "…" : s) + " L" + call.line;
+}
+
+function drawReplay() {
+  const box = el("replay");
+  if (!LOOP.clip) { box.innerHTML = ""; return; }
+  const c = LOOP.call;
+  box.innerHTML =
+    `<span class="what">↻ L${c.line} ${c.fn ? esc(c.fn) + "()" : "top level"} · ${esc(c.name)}</span>` +
+    `<span class="time"></span>` +
+    (LOOP.near ? `<span class="approx" title="the call was edited since this moment was recorded — the clip is the one its older self fired on">recorded before the edit</span>` : "") +
+    `<span class="sp"></span>` +
+    `<button class="act sm ghost" data-a="drop" title="forget this recording — the next time it fires under Rec, it is captured again">Drop clip</button>` +
+    `<button class="act sm" data-a="stop">Stop</button>` +
+    `<div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px">` +
+    LOOP.events.map((x, i) =>
+      `<button class="ev k-${x.call.kind}${x.call.checkId === c.checkId ? " me" : ""}${LOOP.muted[evKey(x)] ? " off" : ""}" data-i="${i}" ` +
+      `title="${esc(x.call.name)} at ${x.e.t.toFixed(2)} s — click to mute it in the loop">${esc(evLabel(x.call))} · ${x.e.t.toFixed(1)}s</button>`).join("") +
+    `</div>`;
+  box.querySelector('[data-a="stop"]').onclick = loopStop;
+  box.querySelector('[data-a="drop"]').onclick = dropClip;
+  box.querySelectorAll(".ev").forEach((b) => {
+    b.onclick = () => {
+      const k = evKey(LOOP.events[Number(b.dataset.i)]);
+      LOOP.muted[k] = !LOOP.muted[k];
+      b.classList.toggle("off", LOOP.muted[k]);
+    };
+  });
+}
+
+function dropClip() {
+  const file = LOOP.file, slug = state.slug;
+  if (!file) return;
+  fetch("api/clip-drop", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: slug, file }) })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.error) { note("drop: " + res.error); return; }
+      if (slug === state.slug) state.clips = res.index;
+      loopStop();
+      paintClips();
+      note("clip dropped — Rec, and the next time it fires it is captured again");
+    });
+}
+
+/* ===========================================================================
+   V2 — REC: the game itself, played, and its events caught as they fire.
+
+   Each watched method of the build is wrapped (Pop, Notify, Sound): the
+   wrapper reads its caller off the stack — a line of the built
+   game.<hash>.js, which /api/offset maps to the source — and matches it to
+   the row scan-events gave that line. A call the motor makes for itself has
+   no frame in game.<hash>.js and is ignored.
+
+   The canvas is sampled at REC_FPS into a ring of small canvases holding
+   REC_PRE seconds. An event with no clip yet keeps the ring and REC_POST
+   seconds more; every other event in that window rides along in the clip's
+   list, so the loop can replay the moment whole. The frames are encoded into a
+   webm in real time (MediaRecorder over a canvas stream, each frame at the
+   time it was taken) and posted to /api/clip.
+   =========================================================================== */
+const REC_PRE = 2, REC_POST = 1.2, REC_FPS = 20, REC_W = 360, REC_H = 640;
+const REC = { on: false, W: null, canvas: null, ground: "#000", ring: [], pool: [], log: [], open: null,
+              inflight: new Set(), saved: 0, busy: 0, raf: 0, last: 0 };
+const recFrame = el("rec-frame");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function recToggle(on) {
+  REC.on = on === undefined ? !REC.on : !!on;
+  el("btn-rec").classList.toggle("on", REC.on);
+  document.body.classList.toggle("rec", REC.on);
+  cancelAnimationFrame(REC.raf);
+  if (REC.on) {
+    loopStop();
+    recLoad();
+    REC.raf = requestAnimationFrame(recTick);
+    note("play — every event with no clip yet is captured with the 2 s before it");
+  } else {
+    recDiscard();
+    REC.W = REC.canvas = null;
+    recFrame.src = "about:blank";
+  }
+  recInfo();
+  fit();
+}
+
+function recLoad() {
+  recDiscard();
+  REC.W = REC.canvas = null;
+  // force=1: every level of the map can be started, for this load only (levels.js).
+  recFrame.src = "build/" + state.slug + "/index.html?lang=en&force=1";
+  recLevels(0);
+}
+
+/* The level picker: filled from the played build once it is up (its climb's
+   length — the template and a game with no map have none), and a pick starts
+   that level's round at once, from whatever screen the frame is on. */
+function recLevels(n) {
+  const sel = el("rec-level");
+  sel.innerHTML = n
+    ? `<option value="">Level…</option>` +
+      Array.from({ length: n }, (_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join("") +
+      `<option value="${n + 1}">Endless</option>`
+    : `<option value="">No levels</option>`;
+  sel.disabled = !n;
+}
+
+el("rec-level").onchange = () => {
+  const sel = el("rec-level"), n = Number(sel.value);
+  sel.value = "";
+  const w = recFrame.contentWindow, L = w && w.__LEVELS__;
+  if (!n || !L || !L.play) return;
+  // A round under way is taken down by startGame itself (bootstrap.js): no score, no end screen.
+  recDiscard();
+  L.play(n);
+  try { w.focus(); } catch (e) {}
+  note(n > L.count() ? "endless run started" : "level " + n + " started");
+};
+
+// The colour under the canvas: the SKIN's --bg when it is a plain colour, the frame's otherwise.
+function groundOf(w) {
+  const d = w.document;
+  const tok = w.getComputedStyle(d.documentElement).getPropertyValue("--bg").trim();
+  if (/^(#|rgb|hsl)/.test(tok)) return tok;
+  for (const n of [d.getElementById("frame"), d.getElementById("stage"), d.body]) {
+    if (!n) continue;
+    const bg = w.getComputedStyle(n).backgroundColor;
+    if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
+  }
+  return "#000";
+}
+
+recFrame.addEventListener("load", () => {
+  if (!REC.on) return;
+  try {
+    const w = recFrame.contentWindow, W = w && w.__WEB__;
+    if (!W) return;
+    REC.W = W;
+    REC.canvas = w.document.getElementById("game");
+    REC.ground = groundOf(w);
+    recLevels(w.__LEVELS__ && w.__LEVELS__.active() && w.__LEVELS__.count ? w.__LEVELS__.count() : 0);
+    ["show", "text"].forEach((m) => hook(W.Pop, m, "Pop." + m));
+    hook(W.Notify, "say", "Notify.say");
+    ["clip", "cue", "beep", "arp"].forEach((m) => hook(W.Sound, m, "Sound." + m));
+    w.document.addEventListener("mousedown", () => closeFileMenu());
+    try { w.focus(); } catch (e) {}
+  } catch (e) { note("rec: the build did not load — " + e.message); }
+});
+
+function hook(obj, meth, name) {
+  const orig = obj && obj[meth];
+  if (typeof orig !== "function" || orig.__lab) return;
+  const f = function () {
+    if (REC.on) recSaw(name, new Error().stack);
+    // The number is fired live over the loop: drawn here, it would be baked into the clip.
+    if (name === "Pop.text") return;
+    return orig.apply(this, arguments);
+  };
+  f.__lab = true;
+  obj[meth] = f;
+}
+
+function callAt(name, line) {
+  const pool = state.data.calls.filter((c) => c.name === name && !c.inherited && c.checkId);
+  let best = null;
+  for (const c of pool) {
+    const d = Math.abs(c.line - line);
+    if (d <= 2 && (!best || d < best.d)) best = { c, d };
+  }
+  return best && best.c;
+}
+
+function recSaw(name, stack) {
+  if (state.offset == null || !state.data) return;
+  // [0] "Error", [1] the wrapper, [2] whoever called it.
+  const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(String(stack).split("\n")[2] || "");
+  if (!m) return;
+  const call = callAt(name, Number(m[1]) + state.offset);
+  if (!call) return;
+  const t = performance.now();
+  REC.log.push({ id: call.checkId, name: call.name, line: call.line, fn: call.fn || "", t });
+  if (REC.log.length > 400) REC.log.splice(0, 200);
+  if ((state.clips.byId && state.clips.byId[call.checkId]) || REC.inflight.has(call.checkId)) return;
+  if (!REC.open) recOpen(t);
+  REC.open.ids.add(call.checkId);
+  REC.inflight.add(call.checkId);
+  recInfo();
+}
+
+function recRelease(f) { if (--f.refs <= 0) REC.pool.push(f); }
+
+function recTick(now) {
+  if (!REC.on) return;
+  REC.raf = requestAnimationFrame(recTick);
+  if (!REC.canvas || now - REC.last < 1000 / REC_FPS - 4) return;
+  REC.last = now;
+  const f = REC.pool.pop() || { c: Object.assign(document.createElement("canvas"), { width: REC_W, height: REC_H }), t: 0, refs: 0 };
+  const g = f.c.getContext("2d");
+  g.fillStyle = REC.ground;
+  g.fillRect(0, 0, REC_W, REC_H);
+  try { g.drawImage(REC.canvas, 0, 0, REC_W, REC_H); } catch (e) {}
+  f.t = now;
+  f.refs = 1;
+  REC.ring.push(f);
+  if (REC.open) {
+    f.refs++;
+    REC.open.frames.push(f);
+    if (now >= REC.open.until) recClose();
+  }
+  while (REC.ring.length && REC.ring[0].t < now - REC_PRE * 1000 - 100) recRelease(REC.ring.shift());
+}
+
+function recOpen(t) {
+  const frames = REC.ring.filter((f) => f.t >= t - REC_PRE * 1000);
+  frames.forEach((f) => { f.refs++; });
+  REC.open = { slug: state.slug, t0: frames.length ? frames[0].t : t, frames, until: t + REC_POST * 1000, ids: new Set() };
+}
+
+function recClose() {
+  const cap = REC.open;
+  REC.open = null;
+  if (!cap.frames.length) { cap.ids.forEach((id) => REC.inflight.delete(id)); return; }
+  const t1 = cap.frames[cap.frames.length - 1].t;
+  const events = REC.log.filter((e) => e.t >= cap.t0 && e.t <= t1)
+    .map((e) => ({ id: e.id, name: e.name, line: e.line, fn: e.fn, t: Math.round((e.t - cap.t0)) / 1000 }));
+  const claim = [...cap.ids];
+  const first = events.find((e) => cap.ids.has(e.id));
+  recEncode(cap, events, claim, first ? first.t : REC_PRE);
+  recInfo();
+}
+
+function recDiscard() {
+  if (REC.open) {
+    REC.open.frames.forEach(recRelease);
+    REC.open.ids.forEach((id) => REC.inflight.delete(id));
+    REC.open = null;
+  }
+  REC.ring.forEach(recRelease);
+  REC.ring = [];
+}
+
+function blobB64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(",")[1] || "");
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function recEncode(cap, events, claim, at) {
+  REC.busy++;
+  recInfo();
+  try {
+    const c = Object.assign(document.createElement("canvas"), { width: REC_W, height: REC_H });
+    const g = c.getContext("2d");
+    g.drawImage(cap.frames[0].c, 0, 0);
+    const mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m));
+    const stream = c.captureStream(REC_FPS);
+    const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 });
+    const chunks = [];
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((r) => { mr.onstop = r; });
+    mr.start();
+    // Real time, each frame at the moment it was taken: the event's `at` stays true.
+    const start = performance.now();
+    for (const f of cap.frames) {
+      const wait = start + (f.t - cap.t0) - performance.now();
+      if (wait > 0) await sleep(wait);
+      g.drawImage(f.c, 0, 0);
+    }
+    await sleep(1000 / REC_FPS);
+    mr.stop();
+    await stopped;
+    stream.getTracks().forEach((t) => t.stop());
+    const dur = (cap.frames[cap.frames.length - 1].t - cap.t0) / 1000 + 1 / REC_FPS;
+    const webm = await blobB64(new Blob(chunks, { type: "video/webm" }));
+    const res = await fetch("api/clip", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ game: cap.slug, webm, dur, at, events, claim })
+    }).then((r) => r.json());
+    if (res.error) note("rec: " + res.error);
+    else {
+      REC.saved++;
+      if (cap.slug === state.slug) { state.clips = res.index; paintClips(); }
+    }
+  } catch (e) { note("rec: " + e.message); }
+  finally {
+    cap.frames.forEach(recRelease);
+    claim.forEach((id) => REC.inflight.delete(id));
+    REC.busy--;
+    recInfo();
+  }
+}
+
+function recInfo() {
+  el("rec-info").innerHTML = REC.on || REC.busy
+    ? `<b>${REC.saved}</b> captured` + (REC.open ? " · recording" : "") + (REC.busy ? " · encoding " + REC.busy : "")
+    : "";
+}
+
+el("btn-rec").onclick = () => recToggle();
+
+fetch("api/sfx").then((r) => r.json()).then((files) => {
+  state.sfx = files;
+  if (state.data) render();
+});
+
+// The gameplay variants of the house kit, for the clip cards' kit selector.
+fetch("api/kit").then((r) => r.json()).then((k) => {
+  state.kitIds = [];
+  for (const [role, r] of Object.entries(k.roles || {})) {
+    if (r.group !== "game") continue;
+    for (const v of Object.keys(r.variants || {})) state.kitIds.push(role + "/" + v);
+  }
+  if (state.data) render();
+}).catch(() => {});
+fetch("api/games").then((r) => r.json()).then((list) => {
+  const pick = el("game-pick");
+  state.games = {};
+  pick.innerHTML = list.map((g) => {
+    state.games[g.slug] = g;
+    state.status[g.slug] = g.status;
+    return `<option value="${g.slug}"></option>`;
+  }).join("");
+  const saved = localStorage.getItem("events:game");
+  pick.value = list.some((g) => g.slug === saved) ? saved : list[0].slug;
+  list.forEach((g) => drawOption(g.slug));
+  pick.onchange = () => { drawOption(pick.value); load(pick.value); };
+  load(pick.value);
+});
+
+/* --- APPLY — the one thing on this page that writes ----------------------
+   What the rows changed goes to the server as a plan, never as a patch: the
+   page names the call by LINE and by NAME, and tools/lab/apply-events.mjs
+   re-reads the source and splices the argument itself. So a file that moved
+   under the bench is refused by name instead of being written over blind.
+
+   The write trips the server's watcher, which rebuilds and reloads the page —
+   which is why the report is parked in sessionStorage and read back on the way
+   in. It is the only record of what was refused.                            */
+function applyPlan() {
+  const calls = [];
+  for (const [k, set] of Object.entries(state.pending.calls)) {
+    const [line, name] = k.split("|");
+    if (Object.keys(set).length) calls.push({ line: Number(line), name, set });
+  }
+  const sfx = Object.entries(state.pending.sfx).map(([key, v]) => ({ key, file: v.file, len: v.len }));
+  const kill = {
+    calls: Object.values(state.pending.kill.calls),
+    clips: Object.keys(state.pending.kill.clips)
+  };
+  /* The version always moves with the source — CLAUDE.md, and it is the number
+     the title screen signs itself with, so a build nobody can name is worse
+     than a patch number nobody reads. There is no switch for it here. */
+  const keepEn = Object.entries(state.pending.keepEn).map(([word, on]) => ({ word, on }));
+  const kit = Object.entries(state.pending.kit || {}).map(([key, id]) => ({ key, id }));
+  return { game: state.slug, calls, sfx, kill, kit, keepEn, bump: true };
+}
+
+function showReport(r) {
+  const box = el("report");
+  if (!r) { box.innerHTML = ""; fit(); return; }
+  if (r.error) { box.innerHTML = `<div class="no">apply failed — ${esc(r.error)}</div>`; return; }
+  const seen = {};
+  const lines = [];
+  for (const a of r.applied || []) {
+    lines.push(`<div class="ok">✓ ${esc(a.what)} → ${esc(a.value)}</div>`);
+    // Several changes land on one line; the line as it now reads is printed once.
+    if (a.after && !seen[a.at]) { seen[a.at] = 1; lines.push(`<span class="at">${a.at}: ${esc(a.after)}</span>`); }
+  }
+  for (const w of r.skipped || []) lines.push(`<div class="no">! ${esc(w)}</div>`);
+  if (r.version) lines.push(`<div class="ver">version → ${esc(r.version)}</div>`);
+  if (!lines.length) lines.push(`<div class="no">nothing to apply</div>`);
+  box.innerHTML = lines.join("");
+  fit();
+}
+
+function applyNow() {
+  const plan = applyPlan();
+  if (!plan.calls.length && !plan.sfx.length && !plan.kill.calls.length && !plan.kill.clips.length && !plan.kit.length && !plan.keepEn.length) return;
+  const btn = el("btn-apply");
+  btn.disabled = true;
+  btn.textContent = plan.sfx.length ? "Cutting…" : "Writing…";
+  note("writing " + (plan.game === "template" ? "template" : "games/" + plan.game) + (plan.calls.length || plan.sfx.length || plan.kill.calls.length || plan.kill.clips.length ? "/game.js…" : "/manifest.json…"));
+  fetch("api/apply", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(plan)
+  })
+    .then((r) => r.json())
+    .then((r) => {
+      state.pending = EMPTY_PENDING();
+      try { sessionStorage.setItem("events:report", JSON.stringify(r)); } catch (e) {}
+      showReport(r);
+      note(r.written ? "written — rebuilding" : "nothing written");
+      countPending();
+      render();
+    })
+    .catch((e) => { note("apply failed: " + e.message); countPending(); });
+}
+
+el("btn-apply").onclick = applyNow;
+el("tabs").querySelectorAll("button").forEach((btn) => {
+  btn.onclick = () => {
+    state.view = btn.dataset.view;
+    localStorage.setItem("events:view", state.view);
+    render();
+    el("list").scrollTop = 0;
+  };
+});
+try {
+  const saved = sessionStorage.getItem("events:report");
+  if (saved) showReport(JSON.parse(saved));
+} catch (e) {}
+
+el("btn-reload").onclick = () => load(state.slug);
+
+/* The report is the only thing on the stage that outlives its moment — a
+   callout expires on its own and the bed is started and stopped from its own
+   row in SOUND. Click it away. */
+el("report").onclick = () => {
+  showReport(null);
+  try { sessionStorage.removeItem("events:report"); } catch (e) {}
+};
+
+window.addEventListener("resize", fit);
+fit();
+</script>
+</body>
+</html>

@@ -1095,9 +1095,9 @@
 
   /* ---- The decor: the game's own objects, on the screens ------------------
      `assets/image/embed/<slug>-decor-NN.webp`, scattered by the shell's Decor module
-     (packages/shell/shell.js) over the end screen and the round's corners, and
-     by packages/webshell over the menu's panels, the pause card and the level
-     map. One to three per screen, each of them hanging off an edge.
+     (packages/shell/shell.js) over the end screen, and by packages/webshell
+     over the menu's panels, the pause card and the level map — never over a
+     round. One to three per screen, each of them hanging off an edge.
 
      Two nodes per piece: the SLOT carries the position and the fade, the IMAGE
      carries the tilt, the flip and the bob. Putting both on one node would let
@@ -1112,9 +1112,6 @@
      is worth two thirds of the opacity (Decor.dress), never more. */
   .decor-layer.back  { z-index:0; }
   .decor-layer.front { z-index:3; }
-  /* The round's corners: over the canvas, under the HUD (15) and the overlay
-     (16), so nothing the GAME writes can ever be behind a piece of dressing. */
-  .decor-layer.round { z-index:10; }
 
   .decor-slot { position:absolute; opacity:0; transition:opacity .55s ease; }
   .decor-slot.on { opacity:var(--d-a, .5); }

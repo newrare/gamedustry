@@ -110,5 +110,47 @@
       "at": "2026-10-02",
       "what": "Sound.clip L1204 tierUp()"
     }
+  },
+  "vipera": {
+    "0d558043282d": {
+      "at": "2026-10-03",
+      "what": "Pop.show L1023 collect()"
+    },
+    "20a9d0598136": {
+      "at": "2026-10-03",
+      "what": "Pop.show L1068 power()"
+    },
+    "5360b188346a": {
+      "at": "2026-10-03",
+      "what": "Sound.clip L1335 crumbBlock()"
+    },
+    "5e10565b1155": {
+      "at": "2026-10-03",
+      "what": "Pop.show L1062 power()"
+    },
+    "5f0a0781ac33": {
+      "at": "2026-10-04",
+      "what": "Pop.show L1020 collect()"
+    },
+    "6835e591909c": {
+      "at": "2026-10-03",
+      "what": "Sound.clip L729 updateHazards()"
+    },
+    "69919fb63633": {
+      "at": "2026-10-03",
+      "what": "Pop.show L1153 bite()"
+    },
+    "98b354ae83cd": {
+      "at": "2026-10-03",
+      "what": "Pop.show L983 checkTier()"
+    },
+    "de336cdfeaa2": {
+      "at": "2026-10-03",
+      "what": "Pop.show L1275 update()"
+    },
+    "eadbb16983b5": {
+      "at": "2026-10-03",
+      "what": "Sound.clip L531 bounce()"
+    }
   }
 }

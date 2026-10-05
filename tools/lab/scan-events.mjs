@@ -939,6 +939,15 @@ export async function scanGame(slug) {
     music: k.key === 'music'
   }));
 
+  /* A key the manifest hands to the house kit (`sfx`, assets/audio/kit/) has
+     no clip in game.js and plays all the same: it is listed as the role it
+     plays, which the bench links to the kit page rather than offering a file. */
+  for (const [key, role] of Object.entries(manifest.sfx || {})) {
+    if (sounds.some((x) => x.key === key)) continue;
+    sounds.push({ key, mime: 'audio/mpeg', note: 'kit: ' + role, kit: role, file: null,
+                  bytes: 0, plays: played[key] || [], music: false });
+  }
+
   const warnings = [];
   for (const s of sounds) {
     if (!s.plays.length && !s.music) warnings.push(`${s.key} is embedded and never played — dead bytes in every build`);
@@ -953,8 +962,10 @@ export async function scanGame(slug) {
   const silentPops = beats.filter((b) => b.kinds.includes('pop') && !b.kinds.includes('sound'));
   for (const b of silentPops) warnings.push(`line ${b.line}: the callout in ${b.fn || 'the game'}() fires with no sound`);
 
-  /* The template's clips are played by NO line of its own: the end screen's
-     cues are the motor's (packages/shell/shell.js, Sound.cue). So its SOUND
+  /* A clip of the template played by NO line of its own but by a motor line
+     (packages/shell/shell.js) — the end screen's three were, before they moved
+     into the house kit (Sound.ui, assets/audio/kit/), and a motor Sound.cue on
+     a key the template embeds would be again. So its SOUND
      side lists those motor lines under the clip they play — marked
      `inherited`, auditioned like any line and never written back, since
      apply-events splices template/game.js and a motor line is not in it. The

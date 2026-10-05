@@ -176,7 +176,7 @@
       X.ix = i;
       car.go(i);
       paintInfo(info, shown[i]);
-      W.Sound.cue("uiRow", 0.3, 1 + (i % 2) * 0.06, 400, 0.05);
+      W.Sound.ui("tap", 0.3, 1 + (i % 2) * 0.06);
     }, openCard);
     var l = el("button", "cx-arrow l", "‹"), r = el("button", "cx-arrow r", "›");
     l.setAttribute("aria-label", T.prev);
@@ -192,7 +192,7 @@
         if (X.book === k) return;
         X.book = k; X.f = "all"; X.ix = null;
         paint();
-        W.Sound.cue("uiRow", 0.45, 1, 380, 0.08);
+        W.Sound.ui("tap", 0.45);
       };
     }
     function filterBtn(key, ico, count) {
@@ -203,7 +203,7 @@
         if (X.f === key) return;
         X.f = key; X.ix = null;
         paint();
-        W.Sound.cue("uiRow", 0.35, 1, 380, 0.06);
+        W.Sound.ui("tap", 0.35);
       });
       return c;
     }

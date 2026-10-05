@@ -412,16 +412,40 @@ function firstScene(roles) {
   return set.length ? set[0] : null;
 }
 
+/* And a BIOME SET, the same rule a fourth time: a game that scrolls its round
+   over a painted ground keeps one ground and one sheet of bank props per biome
+   (`<slug>-ground-<biome>.webp`, `<slug>-bank-<biome>NN.webp`, games/vipera's
+   five over thirty levels). A playable is one round with no level, so it only
+   ever builds the FIRST biome — the others are megabytes of base64 for a burrow
+   the ad never reaches. First is alphabetical, as for the scene set, so a game
+   names its first biome to sort first. */
+const BIOME_GROUND = /^ground-([a-z]+)$/;
+const BIOME_BANK = /^bank-([a-z]+)\d+$/;
+function firstBiome(roles) {
+  const set = roles.map((r) => BIOME_GROUND.exec(r)).filter(Boolean).map((m) => m[1]).sort();
+  return set.length ? set[0] : null;
+}
+
+/* games/vipera's EAGLE flies over the lair, the last biome, which no playable
+   reaches: its three poses are web-only like the lair's own ground and banks. */
+const WEB_ONLY_EAGLE = /^eagle-[a-z]+$/;
+/* ...and its LIGHTNING strikes the temple, the third biome: web-only too. */
+const WEB_ONLY_LIGHTNING = /^lightning\d+$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;
   if (WEB_ONLY_HOUSE.test(role)) return true;
   if (WEB_ONLY_CLOUD.test(role)) return true;
   if (WEB_ONLY_CAST.test(role)) return true;
+  if (WEB_ONLY_EAGLE.test(role)) return true;
+  if (WEB_ONLY_LIGHTNING.test(role)) return true;
   const m = WEB_ONLY_STYLE.exec(role);
   if (m && Number(m[1]) !== 1) return true;
   const b = WEB_ONLY_BRICK.exec(role);
   if (b && Number(b[1]) > PLAYABLE_BRICKS) return true;
+  const bm = BIOME_GROUND.exec(role) || BIOME_BANK.exec(role);
+  if (bm && roles) return bm[1] !== firstBiome(roles);
   if (SCENE_SET.test(role) && roles) {
     const first = firstScene(roles);
     return !roles.includes('background-phone') ? role !== first : true;
@@ -551,6 +575,81 @@ async function shellArtJs(manifest) {
   CONFIG.shellArt = {
 ${entries.join(',\n')}
   };
+
+`;
+}
+
+/*
+  THE HOUSE SOUND KIT — CONFIG.kit and ASSETS.sounds["kit-<role>-<n>"]. Every
+  target, every game, the template included.
+
+  What the shell sounds like: one ROLE per thing a moment means (`tap`, `open`,
+  `coin`, `star`, `reward`…), one to three takes each, cut and levelled by
+  tools/lab/cut-kit.mjs out of assets/audio/kit/kit.json into
+  assets/audio/kit/<role>-<n>.mp3 — committed, so this never runs ffmpeg.
+  `Sound.ui(role, vol, rate)` plays them (packages/engine/engine.js). They used
+  to be three clips copied into every game.js, which had drifted apart.
+
+  A playable carries the roles kit.json lists under `playable` — the end
+  screen's, ~20 KB — plus the roles its own game maps to, and the web target
+  all of them: the rest belong to the web shell, which a creative does not have.
+
+  A GAME joins the kit through its manifest: `"sfx": { "gem": "pickup/glass" }`
+  maps a key its code already plays to one VARIANT of a gameplay role (a crash
+  in one game is not a crash in another), injected as CONFIG.sfx, and
+  `Sound.clip("gem")` plays that variant. A gameplay variant ships only to the
+  games that map to it. A mapped key the game still EMBEDS is
+  refused: those bytes would ship and never play.
+*/
+const KIT_DIR = 'assets/audio/kit';
+
+async function kitJs(web, manifest, configSrc) {
+  const file = path.join(ROOT, KIT_DIR, 'kit.json');
+  if (!existsSync(file)) return '';
+  const kit = JSON.parse(await readFile(file, 'utf8'));
+  // Every variant by the id Sound.ui and a manifest name it: `tap`, `crash/glass`.
+  const all = [];
+  for (const [role, r] of Object.entries(kit.roles || {})) {
+    for (const [variant, v] of Object.entries(r.variants || {})) {
+      all.push({ id: r.group === 'shell' ? role : `${role}/${variant}`, role, variant, shell: r.group === 'shell', v });
+    }
+  }
+  const map = (manifest && manifest.sfx) || {};
+  for (const [key, id] of Object.entries(map)) {
+    if (!all.some((x) => x.id === id)) throw new Error(`manifest sfx.${key}: no variant "${id}" in ${KIT_DIR}/kit.json`);
+    if (new RegExp(`(^|[\\s{,])"?${key}"?\\s*:\\s*"data:audio`, 'm').test(configSrc || '')) {
+      throw new Error(`manifest sfx.${key} plays the kit's "${id}", and game.js still embeds ASSETS.sounds.${key} — remove the clip`);
+    }
+  }
+  const mapped = new Set(Object.values(map));
+  const meta = [], entries = [];
+  for (const { id, role, variant, shell, v } of all) {
+    // A shell role is the shell's: every web build, and a playable's end screen.
+    // A gameplay variant ships only to a game that maps a key to it.
+    const wanted = mapped.has(id) || (shell && (web || (kit.playable || []).includes(role)));
+    if (!wanted) continue;
+    const stem = `${role}-${variant}`;
+    let n = 0;
+    while (existsSync(path.join(ROOT, KIT_DIR, `${stem}-${n + 1}.mp3`))) {
+      const buf = await readBin(path.join(KIT_DIR, `${stem}-${n + 1}.mp3`));
+      entries.push(`    "kit-${stem}-${n + 1}": "data:audio/mpeg;base64,${buf.toString('base64')}"`);
+      n++;
+    }
+    if (n) meta.push(`    ${JSON.stringify(id)}: { key: "kit-${stem}", n: ${n}, jitter: ${Number(v.jitter) || 0} }`);
+  }
+  if (!entries.length) return '';
+  const sfx = Object.keys(map).length
+    ? `  CONFIG.sfx = ${JSON.stringify(map).replace(/,/g, ', ')};\n` : '';
+  return `
+  /* ---- the house sound kit, from ${KIT_DIR}/ (tools/lab/cut-kit.mjs).
+     Injected by tools/build/build.mjs; Sound.ui(id) plays it, and
+     Sound.clip(key) for a key the manifest maps in CONFIG.sfx. ---- */
+  CONFIG.kit = {
+${meta.join(',\n')}
+  };
+${sfx}  (function (to, from) { for (var k in from) to[k] = from[k]; })(ASSETS.sounds, {
+${entries.join(',\n')}
+  });
 
 `;
 }
@@ -933,12 +1032,13 @@ async function main() {
 
     /* All of these are appended to the game's own CONFIG/ASSETS half, so they
        are read by the engine on the same pass as the rest of it, and the split
-       build externalizes their assets along with the game's own. The artwork
-       and the studio signature go to every target (minus the desk background,
-       which is web-only); the manifest's web block only to the web. The
+       build externalizes their assets along with the game's own. The artwork,
+       the studio signature and the sound kit go to every target (minus the
+       desk background and the shell's own roles, which are web-only); the
+       manifest's web block only to the web. The
        template is a build unit with no slug, so it gets neither of those two. */
     const artCfg = await gameArt(unit.template ? null : unit.name, WEBISH);
-    const webCfg = artCfg + await brandJs(manifest) +
+    const webCfg = artCfg + await brandJs(manifest) + await kitJs(WEBISH, manifest, src.config) +
       (WEBISH ? slugJs(unit.template ? null : unit.name) + webConfigJs(manifest) +
                 await shellArtJs(manifest) : '');
     // The web target's own bed, swapped into the game's ASSETS in place of the

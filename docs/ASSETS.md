@@ -25,16 +25,16 @@ Play asks the same question in its own form. The answer is not per game, it is
 per *kind of asset*, and this table is the record of it. Keep it true: it is
 what the disclosure on thirteen store pages is copied from.
 
-| asset                                                | where it comes from               | generative AI |
-| ---------------------------------------------------- | --------------------------------- | ------------- |
-| the code, all of it                                  | written with an LLM               | **yes**       |
-| the game names                                       | generated                         | **yes**       |
-| app icons — `assets/image/icon/<slug>.png`           | an image model                    | **yes**       |
-| painted artwork — `assets/image/master/<slug>-*.png` | an image model                    | **yes**       |
-| background music — `ASSETS.sounds.music`             | a music model                     | **yes**       |
-| sound effects — `assets/audio/sfx/`                  | ZapSplat (licensed), Kenney (CC0) | no            |
-| pictograms — `assets/motor/lucide/`                  | Lucide, ISC                       | no            |
-| type — `assets/motor/font/`                          | six OFL families                  | no            |
+| asset                                                | where it comes from          | generative AI |
+| ---------------------------------------------------- | ---------------------------- | ------------- |
+| the code, all of it                                  | written with an LLM          | **yes**       |
+| the game names                                       | generated                    | **yes**       |
+| app icons — `assets/image/icon/<slug>.png`           | an image model               | **yes**       |
+| painted artwork — `assets/image/master/<slug>-*.png` | an image model               | **yes**       |
+| background music — `ASSETS.sounds.music`             | a music model                | **yes**       |
+| sound effects — `assets/audio/sfx/`                  | Kenney and OpenGameArt (CC0) | no            |
+| pictograms — `assets/motor/lucide/`                  | Lucide, ISC                  | no            |
+| type — `assets/motor/font/`                          | six OFL families             | no            |
 
 So the answer on a store form is **yes**, for all thirteen. What that costs is
 a place on itch's *AI Assisted* browse page; what not saying it costs is the
@@ -43,11 +43,18 @@ the rest of the form.
 
 ## Sound effects always come from `assets/audio/sfx/`
 
-`assets/audio/sfx/` is the shared sfx library of the repo: **871 files** from
-two vendors — the ZapSplat "multimedia" set (UI chimes, mallets, clicks; standard
-licence, PDF in the folder) and ten Kenney packs (impacts, footsteps, cards and
-chips, lasers and power-ups, interface, RPG foley, jingles, two voice packs;
-CC0). Every game picks from it, so the whole catalogue sounds like one product
+`assets/audio/sfx/` is the shared sfx library of the repo: **895 files, all
+CC0** — eight Kenney packs (impacts, footsteps, cards and chips, lasers and
+power-ups, interface, RPG foley, jingles), eleven OpenGameArt
+packs (creatures, RPG items and spells, coins, swishes, electricity, mechanical,
+fire, a clock, household foley, applause, a rising whistle), and fifteen tonal
+pieces BUILT out of two instrument sample banks, VCSL and VSCO 2 CE (harp runs,
+marimba plinks, taps and errors, glockenspiel pings, a vibraphone arpeggio) —
+`LICENSES.md` says how. **CC0 is a rule, not a preference**:
+the repository is public and the raw files are in it, so a licence that allows
+a sound inside a game but forbids handing out the file — ZapSplat's, which the
+library held until 2026-10-04, Sonniss, Pixabay, Mixkit — cannot be in this
+folder. Every game picks from it, so the whole catalogue sounds like one product
 instead of one synth per game. `LICENSES.md` in the folder is the record of the
 packs and `sources.tsv` the record of every file: pack, licence, the vendor's
 original name.
@@ -58,24 +65,24 @@ Every file is named
 
 ```
 <category>-<descriptor>-<NN>.<ext>     impact-metal-heavy-01.ogg
-                                       chime-ping-correct-01.mp3
+                                       gem-pickup-01.ogg
                                        step-grass-03.ogg
-                                       voice-female-level-up.ogg
+                                       creature-cute-03.ogg
 ```
 
 kebab-case, the **category first** — what the sound IS: `impact`, `hit`, `step`,
-`click`, `ui`, `chime`, `bell`, `mallet`, `harp`, `pop`, `error`, `success`,
-`tone`, `beep`, `whoosh`, `card`, `chip`, `dice`, `laser`, `phaser`, `zap`,
-`powerup`, `explosion`, `loop`, `door`, `book`, `cloth`, `knife`, `coins`,
-`metal`, `leather`, `jingle`, `voice`… — then what describes it, then a
-two-digit take where the vendor shipped several. A voice line carries its word
-instead of a number. The vendor's order and marketing words are gone
+`click`, `ui`, `error`, `tone`, `whoosh`, `card`, `chip`, `dice`, `laser`,
+`phaser`, `zap`, `powerup`, `explosion`, `electric`, `fire`, `creature`, `loop`,
+`door`, `book`, `cloth`, `knife`, `coins`, `gem`, `metal`, `mech`, `spring`,
+`jingle`… — then what describes it, then a two-digit take where the vendor
+shipped several. The vendor's order and marketing words are gone
 (`zapsplat_multimedia_alert_ping_chime_correct_answer_check_positive_009_70198`
 is `chime-ping-correct-01`), because a list of 871 names is grouped and searched
 on nothing but the name, and a provenance comment is read by a person.
 
 `tools/lab/rename-sfx.mjs` is the one-shot that did it, and the record of every
-rule and every hand-picked ZapSplat name. A pack added later is named to the
+rule and every hand-picked ZapSplat name (those files are gone, from the
+history too, and no game embeds a clip cut from one — see `LICENSES.md`). A pack added later is named to the
 scheme by hand and declared in `sources.tsv` before `make sfx` — see
 `assets/audio/sfx/LICENSES.md`.
 
@@ -102,7 +109,7 @@ scheme by hand and declared in `sources.tsv` before `make sfx` — see
    useful length — most clips are mostly tail:
    ```bash
    node tools/lab/index-sfx.mjs --list chime ping         # what there is, with lengths
-   ffmpeg -i assets/audio/sfx/chime-ping-correct-01.mp3 -af "silencedetect=noise=-42dB:d=0.04" -f null -
+   ffmpeg -i assets/audio/sfx/gem-pickup-01.ogg -af "silencedetect=noise=-42dB:d=0.04" -f null -
    ```
 1. **Trim and re-encode small.** Mono, 32 kHz, 64 kbps, with a short fade so the
    cut does not click. An sfx costs ~8 KB per second at that setting. **The
@@ -539,8 +546,8 @@ and there is no z-order anywhere.
 
 One adopted role is not a game's to draw: `--as decor` declares a cut under the
 role `decor-NN`, and every `CONFIG.art.decor*` key is the pool the shell
-scatters over the screens — the end screen, the round's corners, the web menu's
-panels, the pause card, the level map. A game declares nothing and calls
+scatters over the screens — the end screen, the web menu's panels, the pause
+card, the level map, never the round. A game declares nothing and calls
 nothing; see [ENGINE.md](ENGINE.md#decor--the-games-own-objects-on-the-screens).
 
 ```bash
@@ -1093,12 +1100,41 @@ The builder swaps the entry for the web target rather than adding a second one,
 so the site never carries a music file nothing fetches. A game that names no
 `web.music` keeps its embedded cut on every target, which is the twelve others.
 
-### The three end-screen keys
+### The shell's sounds are the house kit, not a game's
 
-The template already ships `uiScore`, `uiStar` and `uiRow` (~22 KB) — the shared
-end-screen reveal plays them through `Sound.cue`, so keep the keys and swap the
-clips to re-theme it. Removing them is safe: `Sound.cue` falls back to the
-synthesized beeps.
+A game embeds the sounds of ITS events and nothing else. The end screen, the
+menu, the map, the album, the shop, the daily road and the barracks play the
+**house sound kit** — fourteen roles (`tap`, `open`, `coin`, `star`, `reward`,
+`fail`…), one to three takes each — which the builder injects into every game:
+the end screen's three roles in a playable (~20 KB), all of them on the web
+(~75 KB). There used to be three keys (`uiScore`, `uiStar`, `uiRow`) copied into
+every `game.js`; they had drifted apart and are gone.
+
+```
+assets/audio/kit/kit.json        the source: each role's takes, file + start + length
+assets/audio/kit/<role>-<n>.mp3  the cuts, committed, levelled to one loudness
+```
+
+- **`make events` → `/kit`** (`lab/sound-kit.html`) is where a role is chosen:
+  the library pre-searched for it, every candidate heard LEVELLED as it will
+  ship, the cut dragged on the waveform, the role played as the shell plays it
+  (the stars as a ladder, the coins as a cascade). Save writes `kit.json`,
+  re-cuts and rebuilds.
+- **`node tools/lab/cut-kit.mjs`** is the same cut without the page; `--list`
+  prints what each role holds. Every take's loudest 50 ms window is brought to
+  `kit.target` dBFS RMS, its peak kept under `kit.peak` — a dozen packs and ~1000
+  files were mastered ~18 dB apart, and a volume written per call was
+  correcting the file rather than mixing the moment.
+
+A game's own events can join the kit too: the kit's GAMEPLAY roles (`pickup`,
+`bonus`, `combo`, `power`, `malus`, `crash`, `move`) hold named VARIANTS
+(`crash/explosion`, `crash/glass`), because a crash in one game is not a crash
+in another, and `manifest.json` maps a key to one of them —
+`"sfx": { "crash": "crash/explosion" }`. The events bench's kit selector, on
+the key's clip card, writes that and takes the clip out of `game.js`; the kit
+page creates, renames and fills the variants and says which game plays each. The game's code does not change, and a signature sound no role
+says stays a clip. See [ENGINE.md](ENGINE.md#soundui--the-house-sound-kit) for
+`Sound.ui`, the two tables of roles and the mapping.
 
 ## Size budget
 
