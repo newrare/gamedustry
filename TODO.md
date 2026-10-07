@@ -211,6 +211,113 @@ ______________________________________________________________________
 
 ## The games — content pass on the fifteen
 
+- [ ] **`grudgeon`, the sixteenth game, on the site since v0.2.1** (12
+  captures by its own `shoot-screens.mjs` pilot): a Japanese-horror dungeon crawler built on old-pawko's exploration
+  grid — a 7 x 7..12 map lit one room at a time, rooms holding a yokai (a
+  turn-based fight on the band's bare scene once the map has blown away), a shop,
+  an altar of blessings, an event or a bonus; a party of one to four heroes
+  out of four; the level's objective is yokai exorcised (3 → 14). The art,
+  the meta layer, the village and the bed (sections on the track's seams)
+  shipped in v0.2.0. **The fight went to a timeline in v0.4.0**
+  (`lab/grudgeon-timeline.html`, staged as `lab/grudgeon-fight.html`'s
+  preset B): FFX's CTB with a weight per action and a live preview, the
+  yokai's turns shown ahead with their target and exact damage, Persona's
+  weakness / one more kept. **v0.5.0 gave each of the twenty yokai a rule
+  out of its legend** (`RULES`) **and the climb its thirty stages**
+  (`stageOf`): every band brings its four yokai in one at a time on the same
+  six steps — a small map, a bigger one, the second yokai, more fights, the
+  third, the fourth as the master — and four objectives through the level
+  layer's new `levelGoal` hook: exorcise n, earn n gold, find the way out,
+  exorcise the master. **v0.6.0 made the fight HUD compact**: portraits
+  only on the timeline (a tap on a turn, on the boss bar or on the yokai
+  opens its card — the rule, the turns coming and what each does), the
+  yokai's turns in a violet aura, a thin boss bar with the weaknesses found
+  as badges riding on it, a skull and the blow under the hero it will land
+  on, folded hero tiles with the turn's hero opened, and the four actions as
+  square SCROLLS — tapped then aimed at a target, or dragged onto it; the
+  yokai's own aura burns as high as its health. **v0.7.0 gave every scroll
+  two faces**, aimed at the yokai or at an ally: a blow laid on an ally
+  imbues their next blow with its element (Purify, Frost, Foxfire, Ghost
+  shot), whets it (Iai), covers them (Attack) or hastens them (Flash); a
+  support thrown at the yokai provokes it (Guard), pacifies its next blow
+  (Blessing) or binds it back (Ward). A yokai's rule can answer any of it
+  through the new `onScroll(f, h, id, tg)` hook, which none uses yet.
+  **v0.8.0 made the map a place to walk** (THE WAY THROUGH in `game.js`):
+  the party walks corridor by corridor through the rooms already opened (a
+  far room shows its way and its price on a first tap, a second walks it),
+  and every hero carries a candle — a step burns one per hero standing, so
+  four heroes are the stronger party and the first the dark catches; at zero
+  the hour of the ox hides what lit rooms hold, makes the yokai 25 % stronger
+  and wounds every step (candle stubs in bonus rooms, candles at the shop).
+  Each band adds one thing (`featsOf`): the hospital fire doors on the way to
+  the far room (one way, the branches behind lost) and seals on side
+  branches with one seal-breaker fewer than seals; the shrine forest yokai
+  that wander with their next move drawn and an AMBUSH (it acts first, said
+  by a notice) when one walks into the party; the drowned village a SPLIT
+  party whose other group joins a fight from next door after REINF waits
+  and then merges; the Gate of Yomi all of them, doors from step 1, wanderers
+  from 3, the split from 5. A lesson notice says each the first time. The
+  lantern's band (candles, burn per step, seal-breakers, split / regroup)
+  stands under the map, because the notices own the top. **v0.9.0 put
+  faces on it**: the party walks the map as four kawaii heads
+  (`grudgeon-object-head.png`, cut on a 2x2 grid into `head01`..`head04`,
+  160 px) shown in an INFO-BUBBLE pointing at the group's room like a map
+  pin (80 design px a head, whatever the room's size) for two seconds after
+  a tap on that room and at the run's first step, put away by a step; the
+  room itself only wears a neutral white pin. The lantern is a
+  panel under the map (`play.lampBar` 184: the candles, one big head per hero
+  with the candle they carry lit beside it, and "the party uses n candles
+  per move"), and the party card says the same sentence, re-read on every
+  tap. Left:
+
+  - CHECK — the map was benched headless only (a pilot walking to the
+    nearest lit room, 6 seeds × 30 levels × 1/2/4 heroes): with
+    `play.candles` 3.0 four heroes go dark at ~75 % of the map and two
+    almost never; play bands 2–5 by hand for the doors, the wanderers'
+    pace (`CHASE`, `ROAM_SPD`) and the split before tuning any of it
+
+  - DESIGN — a lone hero still loses almost every fight from stage 3, with
+    or without the lantern (same bench, mechanics off): the candle is the
+    price of four heroes only if one hero is a party that can win
+
+  - CHECK — the lesson notices (4.5 s) dock over the fight's timeline when a
+    fight starts in the first seconds of a run
+
+  - DESIGN — give some yokai a rule that reads the scrolls (`onScroll`):
+    one that punishes a support laid on an ally, one immune to provoke, one
+    that steals an imbued element…
+
+  - CHECK — the bench pilot (`shoot-screens.mjs`) and the balance bench
+    still only throw scrolls at their default target; the ally faces are
+    unbalanced until a pilot uses them
+
+  - CHECK — play a fight on a real phone: the scroll drag (pointer capture
+    on a WebView), the info cards over a running yokai turn (a card holds
+    the fight) and the tap targets of the folded tiles were only benched
+    headless
+
+  - MAIN — a night-school background for band 1: `background-phone-01` is
+    the torii-over-a-lake picture for now, the only one that is no school
+
+  - MAIN — place the eight houses in `make village`: their spots were read
+    off the ground's empty pads by eye and never looked at in the build
+
+  - CODE — the party is picked on a card at the start of every run; move it
+    to a village house (the clubroom, `home02`, is the `play` door today) and
+    keep the heroes (levels, gear) between runs instead of `play.partyLevel`
+
+  - CODE — the playable is 4.6 MB of a 5 MB budget: the 24 hero poses and
+    the 14 spells are most of it; make the spells web-only or encode the
+    sprites smaller before anything else is added to it
+
+  - CODE — balance of the thirty stages, benched in v0.5.0 with a pilot that
+    reads the intents (guards a lethal blow, heals a low party, answers the
+    rule, keeps the master for last), three runs a stage: three stars almost
+    every time up to stage 16, then a climb that drops to 0–2 stars from 23
+    and to rare wins at 29–30 (Gashadokuro, then Onryo's master). Play the last
+    band by hand before moving `play.foeHp` / `foeAtk`, `tune.play.foePower`
+    (1.0 → 1.1) or `tune.play.partyLevel` (1 → 20)
+
 - [ ] CODE — **`slipdeck`, rebuild the gameplay from the ground up.** Not a
   tuning pass: the loop is thin over a thirty-level ladder. Its seven tunables
   are already in `CONFIG.play`, so a new loop has the knobs it needs. The
@@ -252,7 +359,28 @@ ______________________________________________________________________
     socket, one electric marble is always in play, and a broken combo plays
     `blackout` and cuts the lights for 0.5 s; the objective moved to
     13 000 → 95 000 off the bench. Left: MAIN — the store lines and the
-    listing images still show the old wording and machine (reshoot)
+    listing images still show the old wording and machine (reshoot).
+    v2.7.0: ONE MACHINE PER LEVEL (30, `LAYOUTS`; the five old ones are the
+    first level of each biome, whose counts and metal hold) and six new
+    track modules — ZEBRA tube, accordion HOSE, JUMP into a catcher,
+    STAIRCASE, WAVE, copper BOOSTER (`land` and `boost` sounds mapped to
+    kit variants). Left: MAIN — play the 30 and listen to `land` /
+    `boost` in `make events`; CODE — re-run the pace bench on the new
+    machines (their rail lengths differ from the five it was tuned on).
+    v2.8.0: THE COMBO IS THE PLAYER'S — only a gate opened (+1 a released
+    marble, a spark flying to the hub) and an electric caught (+5) feed it,
+    a FUSE round the wheel (4 / 3 / 2.2 / 1.6 s by tier, burning only while
+    the machine waits on the player) drops it a tier when it goes out, tiers
+    8 / 25 / 60; the effects grow with it (hub, orbit, trails, sparks, arcs
+    between marbles, lit rails, frame glow, a rising note, a break scaled to
+    the combo with slow motion from tier 2). Benched against v2.7.0 with
+    the same seeds: ~94% of the old points a second, objective unchanged;
+    notices dock at the top again and the `bonus` callouts too. Left: MAIN —
+    feel the fuse on a phone (1.6 s at the top tier is the tightest knob);
+    MAIN — the `Short fuse` card (tiers sooner) now reads as if it were about
+    the fuse; MAIN — survival, not the combo, decides the stars: the bench
+    pilot (0.45–1 s reactions) spills out of hearts before the clock on
+    levels 6, 24 and 30 in 10–11 runs of 12, on v2.7.0 as on v2.8.0
   - `vipera` v1.4.0: five biomes by level number (jungle, swamp, temple,
     volcano, lair), each a painted scrolling ground and its bank props, one
     hazard and one pickup each (drifting logs / fireflies, spike traps / idol,
@@ -264,8 +392,35 @@ ______________________________________________________________________
     lights up where the head is heading, a red ring closes on it, the bolt
     flashes and leaves an impact then a scorch. Left: MAIN — play levels
     13-18 and tune `boltWarn` / `boltR` / `boltAim` by hand
+  - `chainring` v1.3.0: five biomes by level number (Neon, Amber, Eclipse,
+    Glacier, Nova), each a ring and ball LOOK drawn on the canvas and one
+    rule: REWIND rings (a tap shoves the rings behind back out, they rush
+    in on the same beat), STICKY (the ball rides the rim two beats, the
+    burst is a second tap), DARK (must not be tapped), GAP (sweeps across
+    the ball mid-flight, gaps standing still: a gap is no tap and counts in
+    the combo, a bar is a tap); Nova deals them 2, 3 then 4 at a time.
+    v1.3.1: rings keep their biome colour in a combo, the sticky ring's
+    departure has a closing circle. v1.5.0: a kaleidoscope ground per biome
+    (no picture under the round) and the third star never ends a round;
+    v1.5.1 animates each one its own way (tunnel, hive, spiral, frost, warp).
+    v1.6.0: a ring DESIGN per biome (tube, sprocket, chain, crown, ribbon,
+    from `lab/chainring-rings.html`) and drops of glue as the sticky glyph.
+    v1.6.1: a dark ring left alone is a PERFECT step of the combo (a late
+    tap in its window takes it back); a gap ring met on a bar is a real
+    bounce — the flight is cut there and leaves inwards, and a tap on it is
+    a PERFECT; a gap gone through untapped is a PERFECT too, the ring diving
+    on to the centre (`gapDive`, speeding up) to break there; before that a
+    gap ring closes in at the speed of every ring, keeps `gapClear` (60 px)
+    from every ring on screen, enters `gapLead` (half a beat) ahead of the
+    rings landing after it and never shares the screen with a rewind; the
+    flight is PLANNED for it (`gapRate` is now a share of bounces) — check
+    the rate on the 19-24 band.
+    Left: MAIN — check the ground with `?perf=1` on a phone; play the
+    30 and judge the four looks and the rule rates (`ruleRate`, `gapRate`,
+    `gapOpen`), tuned against a scripted bench pilot only; listen to the
+    six new keys in `make events`. v1.4.0: one track per biome (below)
   - to finish or rethink: `spinshock`
-  - to do: `chainring`, `orbinity`, `triverse`, `stratideck`, `pawko`,
+  - to do: `orbinity`, `triverse`, `stratideck`, `pawko`,
     `marshmelt`
   - `slipdeck` comes with its rebuild (above), `bouncetry` with its ghost
     (below)
@@ -289,9 +444,11 @@ ______________________________________________________________________
   procedure and `games/arcider` the reference.
 
   - done: `arcider`, `blight`, `echomaze`, `radiam`, `stratideck`, `pawko`,
-    `bouncetry`, `vipera` (v1.4.0: five biomes + menu off a new 177 s master)
+    `bouncetry`, `vipera` (v1.4.0: five biomes + menu off a new 177 s master),
+    `chainring` (v1.4.0: five TRACKS, one per biome, stretches on the beat,
+    the whole song on each biome's last level, menu cut from Glacier; left:
+    MAIN — play the five whole-track levels and judge their objective)
   - to finish or rethink: `spinshock`, `marshmelt`
-  - to complete: `chainring`
   - to do: `orbinity`, `triverse`, `gearball`, `slipdeck`
 
 - [ ] MAIN — **proofread and validate every text, all fifteen games.** Every
@@ -484,7 +641,7 @@ ______________________________________________________________________
   that two callouts never stack on the same beat, and that the FR strings exist
   in `web.copy.fr.strings` (`make text` prints what is untranslated). **`make events` is the bench for this pass**: every beat
   of a game listed off its own source and fired inside its own build
-  (`lab/game-events.html`), under the *view* tab — and a re-styled callout is
+  (`lab/game-events-message.html`) — and a re-styled callout is
   written back into `game.js` by **Apply**, so the pass is read, heard and
   landed in one place. A word the game builds at runtime is still changed by
   hand: apply refuses it rather than paste the bench's stand-in. The WORDS

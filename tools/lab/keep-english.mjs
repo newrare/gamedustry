@@ -17,8 +17,8 @@
   French entry has nothing to park, so `--off` takes the entry out and the copy
   desk lists it as untranslated again — which is the truth.
 
-  lab/game-events-v2.html is what calls this (the EN toggle on a callout row,
-  written on APPLY through tools/lab/serve-events.mjs). The version moves with
+  lab/game-events-message.html is what calls this (the EN toggle on a callout
+  row, written on APPLY through tools/lab/serve-events.mjs). The version moves with
   the manifest, like every other write of the lab (CLAUDE.md).
 */
 

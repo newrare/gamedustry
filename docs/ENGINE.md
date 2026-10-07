@@ -1197,9 +1197,12 @@ transform — a full-canvas `clearRect` there covers a shifted rectangle and
 smears a few pixels of the previous frame along two edges for as long as the
 shake lasts.
 
-`games/chainring`, `games/slipdeck`, `games/marshmelt` and `games/radiam` are
-the four that opt in — and `radiam` is the one whose picture changes per band,
+`games/slipdeck`, `games/marshmelt` and `games/radiam` are the three that opt
+in — and `radiam` is the one whose picture changes per band,
 so `Art.backdrop` moves the round's scene along with the end screen's.
+(`games/chainring` was a fourth until its biomes needed a ground they could
+guarantee the contrast of: it paints a kaleidoscope per biome instead, one
+rotated blit of a disc built once — see its `drawGround`.)
 The picture is a CSS layer under the canvas (`.frame-art`), not a per-frame
 `drawImage`: a full-screen blit of a backdrop that never changes is ~2.7 Mpixel
 a frame on a 3× phone, and a layer costs the compositor nothing. The one

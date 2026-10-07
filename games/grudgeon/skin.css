@@ -1,0 +1,252 @@
+  /* =========================================================================
+     SKIN — GRUDGEON. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few overrides below. Japanese
+     urban-legend horror: ink-blue night, bone white, blood red and the
+     violet of a spirit's glow.
+     ========================================================================= */
+  :root {
+    --bg:#07060c; --accent:#e2364b;
+    --cta-a:#e2364b; --cta-b:#7a1426; --cta-text:#fff4f0;
+    --danger:#ff3b4e; --gold:#e9c46a;
+    --card-rim-a:#e2364b; --card-rim-b:#9b8cff;
+  }
+  html, body { background:radial-gradient(900px 900px at 50% 25%, #1c1430 0%, #07060c 65%, #020104 100%); }
+  #intro-title {
+    color:#f4eef0; letter-spacing:6px;
+    text-shadow:0 0 18px rgba(226,54,75,.65), 0 0 46px rgba(155,140,255,.35), 0 4px 0 #3a0812;
+  }
+  #intro-tagline .w-tap   { color:#9b8cff; }
+  #intro-tagline .w-room  { color:#e9c46a; }
+  #intro-tagline .w-fight { color:#e2364b; }
+  #hud-score { text-shadow:0 0 14px rgba(226,54,75,.6); }
+  .eo-score { text-shadow:0 0 22px rgba(226,54,75,.8); }
+  #cta-bar { border-top:1px solid rgba(226,54,75,.25); }
+
+  /* ---- intro: a room lit at the edge of the dark --------------------------
+     "Tap a lit room to explore it" — the motor's tap target becomes a square
+     room of the map, rimmed in blood red, with three dark rooms around it on
+     the stage's ::before / ::after; the finger taps the lit one. */
+  .demo-caption { display:none; }
+  .demo-tap .demo-target {
+    width:92px; height:92px; margin-left:-46px; border-radius:18px;
+    border:5px solid var(--accent); background:#1d1526;
+    box-shadow:0 0 26px rgba(226,54,75,.55), inset 0 0 18px rgba(155,140,255,.25);
+  }
+  .demo-tap .demo-ripple { border-radius:22px; border-color:#e9c46a; }
+  .demo-stage::before, .demo-stage::after {
+    content:""; position:absolute; top:41px; width:66px; height:66px; border-radius:14px;
+    background:rgba(120,100,150,.12); border:3px solid rgba(255,255,255,.06);
+  }
+  .demo-stage::before { left:calc(50% - 160px); }
+  .demo-stage::after  { left:calc(50% + 94px); }
+
+  /* ---- a fight's entrance: the bare scene ---------------------------------
+     For the first second of a fight the band's scene is shown as painted:
+     the HUD band and the scrim over the picture go with the blast and come
+     back with the fight's own HUD (INTRO, game.js). */
+  .frame-art::after { transition:opacity .5s ease; }
+  #frame.gd-bare .frame-art::after { opacity:0; }
+  #frame.gd-bare #hud { opacity:0; transition:opacity .5s ease; }
+
+  /* ---- the cards over the round: party, shop, altar, event ---------------
+     The motor's CARD on a veil (Game.openCard). The one layer of the round
+     that takes a pointer. */
+  #gd-card {
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center; padding:0 34px;
+    background:radial-gradient(70% 55% at 50% 45%, rgba(60,10,24,.55), rgba(4,2,8,.9));
+    opacity:0; transition:opacity .2s ease;
+  }
+  /* Leaving a round from the web shell's corner sets the state back to the
+     menu without telling the game: the HUD goes hidden, and so does every
+     layer of the round that still stands (they are appended after it). */
+  #hud.hidden ~ #gd-card, #hud.hidden ~ #gd-bar { display:none; }
+  #gd-card.on { opacity:1; }
+  #gd-card.off { opacity:0; pointer-events:none; transition-duration:.25s; }
+  .gd-text { margin:0; font-size:24px; line-height:1.4; text-align:center; color:var(--text); opacity:.88; }
+  .gd-list { display:flex; flex-direction:column; gap:14px; width:100%; }
+  .gd-list .btn { width:100%; height:auto; min-height:var(--h); padding-top:10px; padding-bottom:10px; }
+  .gd-list .btn-txt { align-items:center; white-space:normal; text-align:center; }
+  .gd-list .btn.is-sold { opacity:.4; }
+
+  /* the party: four heroes, lit when they are coming */
+  .gd-party { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; }
+  .gd-hero {
+    --hc:var(--accent);
+    appearance:none; -webkit-appearance:none; margin:0; cursor:pointer; font:inherit; color:var(--text);
+    display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px 14px;
+    border-radius:22px; border:3px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03);
+    opacity:.45; filter:grayscale(.8);
+    transition:opacity .15s ease, filter .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .gd-hero.on {
+    opacity:1; filter:none; border-color:var(--hc);
+    background:color-mix(in srgb, var(--hc) 10%, transparent);
+    box-shadow:0 0 26px color-mix(in srgb, var(--hc) 35%, transparent);
+  }
+  .gd-hero:active { transform:scale(.97); }
+  .gd-hero canvas { width:150px; height:150px; }
+  .gd-hero b { font-size:28px; letter-spacing:3px; font-weight:900; color:var(--hc); }
+  .gd-hero i { font-style:normal; font-size:20px; letter-spacing:1px; font-weight:800; opacity:.75; text-align:center; }
+  /* the candle a hero carries, on their tile: lit when called */
+  .gd-hero { position:relative; }
+  .gd-burn {
+    position:absolute; top:8px; right:8px; width:52px; height:52px; border-radius:26px;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle, rgba(255,190,90,.45), rgba(255,190,90,0) 70%);
+    filter:grayscale(1) brightness(.5); transition:filter .15s ease;
+  }
+  .gd-burn img { width:44px; height:44px; object-fit:contain; }
+  .gd-hero.on .gd-burn { filter:none; }
+  /* the lantern under the party: the candles, and the steps of light they
+     make for the party picked */
+  .gd-lamp {
+    width:100%; box-sizing:border-box; padding:14px 18px; border-radius:18px;
+    background:radial-gradient(120% 140% at 12% 50%, rgba(255,190,90,.18), rgba(20,12,6,.6) 60%);
+    border:1px solid rgba(255,207,122,.4);
+  }
+  .gd-lamp .gd-lamp-row { display:flex; align-items:center; gap:16px; margin:0; }
+  .gd-lamp .gd-lamp-why { margin:10px 0 0; }
+  .gd-lamp-ico img { width:56px; height:56px; object-fit:contain; display:block; }
+  .gd-lamp-col { margin:0; display:flex; flex-direction:column; line-height:1; gap:4px; }
+  .gd-lamp-col b { font-size:40px; font-weight:900; color:#fff2c4; }
+  .gd-lamp-col i { font-style:normal; font-size:18px; letter-spacing:2px; font-weight:900; color:rgba(255,242,196,.7); }
+  .gd-lamp-why {
+    font-size:20px; line-height:1.3; font-weight:700; color:rgba(255,242,196,.85);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+
+  /* ---- the fight's scrolls, under the stage the canvas draws -------------
+     One square scroll per action: the paper between two rods, the action's
+     pictogram inked in its element's colour, its SP price on a blue seal.
+     A tap lifts it (selected) and floats its details (#gd-tip) over the
+     party; a drag carries a ghost of it to its target. */
+  #gd-bar {
+    position:absolute; z-index:29; display:flex; justify-content:center; align-items:flex-end;
+    gap:18px; padding-top:12px;
+  }
+  #gd-bar.off { visibility:hidden; }
+  .gd-scroll {
+    appearance:none; -webkit-appearance:none; position:relative; flex:0 0 auto;
+    width:88px; height:88px; margin:0; padding:0; border:0; background:none; cursor:pointer;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+    transition:transform .14s ease, filter .14s ease, opacity .14s ease;
+  }
+  /* the paper, and the two rods it is rolled on */
+  .gd-paper {
+    position:absolute; inset:9px 4px; border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(120% 90% at 50% 45%, rgba(255,250,232,.0) 55%, rgba(120,80,30,.35) 100%),
+      linear-gradient(180deg, #f6ead0 0%, #e8d3a6 55%, #d9bd86 100%);
+    box-shadow:0 8px 16px rgba(0,0,0,.55), inset 0 0 0 1px rgba(90,60,20,.35);
+  }
+  .gd-scroll::before, .gd-scroll::after {
+    content:""; position:absolute; left:-2px; right:-2px; height:12px; border-radius:6px; z-index:1;
+    background:linear-gradient(180deg, #8a3a22 0%, #5a1d10 55%, #2e0c06 100%);
+    box-shadow:0 2px 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,180,140,.35);
+  }
+  .gd-scroll::before { top:2px; }
+  .gd-scroll::after  { bottom:2px; }
+  .gd-scroll.is-rule .gd-paper { background:linear-gradient(180deg, #fff1b8 0%, #f0c95a 60%, #d79a2a 100%); }
+  .gd-scroll.is-rule::before, .gd-scroll.is-rule::after { background:linear-gradient(180deg, #e9c46a, #8a5a12); }
+  .gd-glyph {
+    display:block; width:48px; height:48px; background:var(--ink, #3b3142);
+    -webkit-mask-size:contain; mask-size:contain;
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    -webkit-mask-position:center; mask-position:center;
+  }
+  .gd-cost {
+    position:absolute; top:-6px; right:-10px; z-index:2; min-width:34px; height:34px; padding:0 6px; border-radius:17px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:900; line-height:1; color:#eaf8ff;
+    background:radial-gradient(circle at 35% 30%, #4fb2e8, #1b4f86 75%); border:2px solid #0b2140;
+    box-shadow:0 3px 8px rgba(0,0,0,.6);
+  }
+  .gd-scroll:active { transform:scale(.95); }
+  .gd-scroll.is-sel { transform:translateY(-12px) scale(1.08); }
+  .gd-scroll.is-sel .gd-paper { box-shadow:0 0 0 3px #ffd166, 0 0 26px rgba(255,209,102,.7), 0 12px 20px rgba(0,0,0,.6); }
+  .gd-scroll.is-off { filter:grayscale(1) brightness(.6); opacity:.55; }
+  .gd-ghost {
+    position:absolute; z-index:40; pointer-events:none; margin:0;
+    transform:rotate(-8deg) scale(1.05); opacity:.9; transition:none;
+  }
+  .gd-ghost.is-on { transform:rotate(0) scale(1.18); }
+  .gd-ghost.is-on .gd-paper { box-shadow:0 0 0 3px #ffd166, 0 0 30px rgba(255,209,102,.9); }
+
+  /* the selected scroll's details, floated over the party */
+  #gd-tip {
+    position:absolute; z-index:29; box-sizing:border-box; padding:14px 20px; pointer-events:none;
+    border-radius:18px; background:rgba(8,5,14,.9); border:1px solid rgba(255,209,102,.35);
+    box-shadow:0 10px 30px rgba(0,0,0,.6);
+    transition:opacity .15s ease;
+  }
+  #gd-tip.off { opacity:0; }
+  #gd-tip p { margin:0; }
+  .gd-tip-h { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .gd-tip-h b { font-size:24px; letter-spacing:2px; font-weight:900; color:var(--ink); }
+  .gd-tip-h i { font-style:normal; font-size:18px; letter-spacing:2px; font-weight:900; color:#8fdcff; }
+  /* a scroll's two faces: on the yokai, on an ally — a label, then what
+     it does there */
+  .gd-tip-faces { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+  .gd-face { margin:0; font-size:22px; line-height:1.3; font-weight:700; color:#f4eef8; }
+  .gd-face b { margin-right:10px; font-size:18px; letter-spacing:1px; font-weight:900; color:#b69cff; }
+  #gd-tip .gd-tip-a { margin-top:4px; font-size:20px; line-height:1.3; font-weight:700; color:#ffd166; opacity:.85; }
+  #hud.hidden ~ #gd-tip, #hud.hidden ~ .gd-ghost { display:none; }
+
+  /* ---- the cards of a fight: the yokai, a hero ----------------------------
+     A sentence is set in the system face: the game's display face has no
+     lowercase, and a line of rules read in capitals is a line skimmed. */
+  .gd-line, .gd-note, .gd-face, #gd-tip .gd-tip-a {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:0;
+  }
+  .gd-info .mt-body { gap:16px; align-items:stretch; }
+  .gd-info p { margin:0; }
+  .gd-sec { display:flex; align-items:center; gap:12px; font-size:20px; letter-spacing:3px; font-weight:900; color:#b69cff; }
+  .gd-sec b { font-weight:900; }
+  .gd-pill {
+    font-style:normal; font-size:20px; letter-spacing:2px; font-weight:900; color:#ffd166;
+    padding:2px 12px; border-radius:15px; border:2px solid rgba(233,196,106,.8); background:rgba(233,196,106,.15);
+  }
+  .gd-line { font-size:22px; line-height:1.35; font-weight:700; color:var(--text); opacity:.9; }
+  .gd-note { font-size:20px; line-height:1.35; font-weight:700; color:var(--muted, #9aa0b5); }
+  .gd-hp { display:flex; align-items:center; gap:14px; font-size:20px; font-weight:900; }
+  .gd-hp b { width:110px; letter-spacing:2px; }
+  .gd-hp span { min-width:104px; text-align:right; font-variant-numeric:tabular-nums; }
+  .gd-hp-bar { flex:1; height:12px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .gd-hp-bar i { display:block; height:100%; border-radius:6px; background:#e2364b; }
+  .gd-hp.gd-h-hp .gd-hp-bar i { background:#7ee0a1; }
+  .gd-hp.gd-h-sp .gd-hp-bar i { background:#8fdcff; }
+  .gd-kv { display:flex; justify-content:space-between; gap:14px; font-size:20px; letter-spacing:2px; font-weight:900; }
+  .gd-kv span { color:#ffd166; }
+  .gd-kv.gd-threat span { color:#ff5d73; }
+  .gd-els { display:flex; flex-direction:column; gap:10px; }
+  .gd-el-g { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:20px; letter-spacing:2px; font-weight:900; }
+  .gd-el-g > b { width:110px; color:#ff8a9a; }
+  .gd-el-resist > b { color:#9aa0b5; }
+  .gd-el, .gd-el-q {
+    display:inline-flex; align-items:center; gap:8px; font-style:normal;
+    padding:3px 12px 3px 6px; border-radius:16px; border:2px solid var(--c, #6c6880); color:var(--c, #9aa0b5);
+    background:color-mix(in srgb, var(--c, #6c6880) 15%, transparent);
+  }
+  .gd-el-q { padding:3px 14px; }
+  .gd-el-resist .gd-el { filter:grayscale(.7); opacity:.75; text-decoration:line-through; }
+  .gd-el-ico { width:24px; height:24px; background:var(--c); -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+  .gd-rulebox { display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:16px; background:rgba(233,196,106,.07); border:1px solid rgba(233,196,106,.25); }
+  .gd-rulebox .gd-sec { color:#ffd166; }
+  .gd-turns { display:flex; flex-direction:column; gap:8px; }
+  .gd-turn {
+    display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:4px 14px;
+    padding:10px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);
+    font-size:20px; letter-spacing:1px; font-weight:900;
+  }
+  .gd-turn.on { background:rgba(150,60,255,.14); border-color:rgba(176,124,255,.6); }
+  .gd-turn.sp .gd-what { color:#ff8a9a; }
+  .gd-when { color:#b69cff; }
+  .gd-dmg { color:#ff5d73; text-align:right; }
+  .gd-turn .gd-line { grid-column:1 / -1; }
+  .gd-sk { display:flex; flex-direction:column; gap:12px; }
+  .gd-sk-row { display:flex; gap:14px; align-items:flex-start; }
+  .gd-sk-ico { flex:0 0 40px; width:40px; height:40px; margin-top:2px; background:var(--ink); -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+  .gd-sk-t p:first-child { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; font-size:20px; letter-spacing:2px; font-weight:900; }
+  .gd-sk-t p:first-child i { font-style:normal; font-size:18px; color:#8fdcff; }

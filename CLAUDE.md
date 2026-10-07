@@ -536,7 +536,10 @@ What a view brings:
   game whose score is the point (`games/pawko`, where a broken combination is
   what is chased). `Game.levelTally()` goes further for a round won on objectives rather than a
   quantity: it IS the star count, 0 to 3, and replaces the bands
-  (`games/stratideck`: the flag, no wound, a prisoner). See [docs/LEVELS.md](docs/LEVELS.md).
+  (`games/stratideck`: the flag, no wound, a prisoner) — or null, on a level that
+  keeps the bands. `Game.levelGoal(n)` changes the objective itself from level
+  to level, `{ goal, text }` (`games/grudgeon`: yokai, gold, the way out, the
+  master). See [docs/LEVELS.md](docs/LEVELS.md).
 - **a game that declares `web.meta` gets the META LAYER on top of that** — a
   wallet, a collection and a reason to open the game tomorrow. It is what the
   map sends a cleared level's score to, AT THE PLAYER'S OWN LEVEL:
@@ -1035,10 +1038,11 @@ The two rules that hold this together:
   gameplays are balanced against the flat ground their SKIN paints, and a
   picture under the world costs them contrast. A game whose world reads over its
   scene sets `CONFIG.sceneArt = true` and then stops painting its own opaque
-  ground, asking `Art.scene()` in `render()` — `chainring`, `slipdeck`,
-  `marshmelt` and `radiam` are the four, and each of them replaced a purely
-  decorative ground (a radial gradient, a felt fill, a pre-rendered cavern, a
-  wall of gears embedded as a JPEG). `radiam` is the one whose scene changes
+  ground, asking `Art.scene()` in `render()` — `slipdeck`, `marshmelt` and
+  `radiam` are the three, and each of them replaced a purely decorative ground
+  (a felt fill, a pre-rendered cavern, a wall of gears embedded as a JPEG).
+  `chainring` left the list: its round paints a kaleidoscope per biome, in the
+  hues opposite its rings, because a picture could not promise that contrast. `radiam` is the one whose scene changes
   per band, so its round wears the world it is playing. It is a CSS
   layer under the canvas, so it costs nothing per frame; the scrim over it is
   the `--scene-scrim` token a SKIN can raise. See
@@ -1171,17 +1175,25 @@ the one lab page with a server of its own (`make store`,
 image it composed into `assets/image/<store>/<lang>/`, neither of which a
 `file://` page
 can do; `tools/lab/shoot-store.mjs` shoots the same page for the batch,
-`game-events.html` is **the bench for what a game says and plays**, and the
-list has the two sides that question has: **VIEW** is every `Pop.show`,
-`Pop.text` and `Notify.say` of the `game.js` in source order,
-grouped into the beat they fire together on; **SOUND** is the background bed with its
-`CONFIG.music`, then **one card per clip** — the file of `assets/audio/sfx/` it
-is cut from and how long the cut is at the top, and under it every line of the
-game that plays it with the volume and pitch that line asks for. The card is the
-clip and not the line because eighteen cues in a game are seven clips: one
-decision, offered once. The whole folder opens from the file button and
+**The bench for what a game says and plays is two pages over one scan**, one
+per question: `game-events-message.html` (`make events` → `/`) is what the
+player READS — every `Pop.show`, `Pop.text` and `Notify.say` of the `game.js`
+in source order, grouped into the beat they fire together on — and
+`game-events-sound.html` (`/sound`) is what the player HEARS — **one card per
+clip**, the file of `assets/audio/sfx/` it is cut from and how long the cut is
+at the top (or the house kit variant it plays), and under it every line of the
+game that plays it with the volume and pitch that line asks for. The background
+bed is on neither: it is the game's music, cut by hand (docs/MUSIC.md). The
+card is the clip and not the line because eighteen cues in a game are seven
+clips: one decision, offered once. **A volume or a pitch is the LINE's, in that
+game's source**: moving one never reaches the kit, nor another game mapping a
+key to the same variant — a variant's own sound is the kit page's (`/kit`,
+below), where a change reaches every game that plays it. So a kit card **wears
+the thumbs of the other games playing its variant** (`/icons/<slug>.png`, read
+off `/api/kit`'s users), and the kit selector counts them, so a variant is
+never re-cut blind. The whole folder opens from the file button and
 **hovering a row plays it**, trimmed to the cut length — a clip is chosen by
-ear, 127 names say nothing, and picking them one at a time to hear them is not
+ear, names say nothing, and picking them one at a time to hear them is not
 choosing. That list is not a `<select>`, for the same reason: a native popup is
 drawn by the OS and fires nothing over its rows. A clip nothing plays has no beat and therefore
 no row; the *never played* pill in the header names it, which is the one thing
@@ -1190,13 +1202,12 @@ a separate list of the pack was for. `tools/lab/scan-events.mjs` reads them back
 reviewed with its real style, its real SKIN and its real sample under it. **The
 picker's first entry is the TEMPLATE**, heard in its own web build
 (`build.mjs --target=web --lab`, which only the bench asks for); the end
-screen's sounds are no longer its clips but the house kit's (`/kit`, below). The
-stage is **the build twice, EN above FR**, with everything but the callout
-layers hidden — no backdrop, no menu, no round, no world, a flat ground — and a
-row fires into both, so a French word that overflows is seen under the
-English one that fits (a sound plays in the English frame only). On SOUND,
-where there is nothing to look at, the two frames leave the stage and keep
-running off-screen. **A word the
+screen's sounds are no longer its clips but the house kit's (`/kit`, below).
+The message page's stage is **the build twice, EN above FR**, with everything
+but the callout layers hidden — no backdrop, no menu, no round, no world, a
+flat ground — and a row fires into both, so a French word that overflows is
+seen under the English one that fits; the sound page's single frame runs
+off-screen until a row loops. **A word the
 game builds is RUN, not stubbed**: `"x" + mult + Lang.t(" streak")` is
 evaluated in each frame, so the French comes out of the game's own `Lang.t`,
 and the round's locals it needs are inputs under the row, pre-filled from the
@@ -1204,7 +1215,7 @@ source where it can say (a constant table and its keys, an alias of `CONFIG`,
 a local assigned just above the call) and guessed from the name otherwise.
 Those values are the bench's, kept per game in the browser and never written
 back; under them, the row reads back what each language was handed and marks a
-French identical to the English. **A line seen and heard is CHECKED** — the
+French identical to the English. **A line seen or heard is CHECKED** — the
 tick of the copy desk — and **check, revert and remove sit in ONE place on
 every card**, pinned to the top-right corner of its header: a callout's card
 acts on the whole moment (what fires together is checked and removed
@@ -1216,11 +1227,12 @@ the call or re-cut its clip BY HAND and the mark no longer matches, so the line
 reads unchecked again — but **an APPLY keeps the marks of the lines it
 rewrites** (a volume, a style, the kit variant a key plays): the bench's own
 write was made by someone who heard the line, so `serve-events.mjs` pairs each
-call with the one that replaced it and moves the mark, and the v2 clip with
-it; a line the apply removes takes its mark and its clip away. A clip's card
+call with the one that replaced it and moves the mark, and the recorded clip
+with it; a line the apply removes takes its mark and its clip away. A clip's card
 ticks every line under it at once, *Hide
-checked* leaves what is left, and a game whose every callout, notice and cue
-line is checked turns green in the picker.
+checked* leaves what is left, and a game turns green in a page's picker once
+every line of THAT page is checked — its callouts and notices on one, its
+cues on the other.
 
 Every row is editable — the pop's **style** from the motor's twelve, the word,
 the anchor, the **file a clip is cut from** and how long the cut is, the volume,
@@ -1273,23 +1285,25 @@ over the frame rather than a notification — it carries no word, so there is
 nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
 because it is what holds a beat together.
 
-`game-events-v2.html` is **the same bench with the game's own moment under
-each event** (`make events` → `/v2`); the first version stays as it is. A
-callout judged on a flat ground says nothing about whether it lands on the hit
-it celebrates, so **REC** turns the stage into the game itself, played: every
+**Both pages put the game's own moment under each event.** A callout or a cue
+judged on a flat ground says nothing about whether it lands on the hit it
+belongs to, so **REC** turns the stage into the game itself, played: every
 `Pop` / `Notify` / `Sound` call is caught at its call site (the stack's line in
 the built `game.<hash>.js`, mapped back to the source by `/api/offset`), and an
-event with no clip yet keeps the 2 s of canvas before it and 1.2 s after,
+event with no clip yet keeps **one second of canvas before it and one after**,
 encoded as a webm into `lab/events-clips/<slug>/` — **ignored by git**, since
-playing again is how they are made again. The level picker beside REC starts any level
+playing again is how they are made again. Each page opens captures for its own
+kind (callouts and notices on the message page, cues on the sound page), and
+the two share the one folder; whatever else fired in the window rides along. The level picker beside REC starts any level
 of the climb, or the endless run, straight into its round — locked ones too,
 since the played frame is loaded with the dev force (`?force=1`) and
 `__LEVELS__.play(n)` (packages/webshell/levels.js) is what it calls. **↻** on a row loops that clip under
-both frames, EN and FR, and fires the row — with its pending edits — at the
-instant it fired in play, together with everything else that fired in the
-window (a chip mutes one). `Pop.text` is not drawn while recording, so the
+the frame — both frames, EN and FR, on the message page — and fires the row,
+with its pending edits, at the instant it fired in play, together with
+everything else that fired in the window (a chip mutes one). `Pop.text` is not drawn while recording, so the
 number is never baked into the picture; the DOM (HUD, callouts) and a backdrop
-laid under the canvas (`CONFIG.sceneArt`) are not in a clip. **EN** keeps a
+laid under the canvas (`CONFIG.sceneArt`) are not in a clip.
+**EN**, on the message page, keeps a
 callout's words in English on the French screen: on APPLY,
 `tools/lab/keep-english.mjs` writes an entry whose French IS the English into
 `web.copy.fr.strings` (the copy desk counts it as translated), parks the old
@@ -1454,8 +1468,9 @@ the shop, the daily road, the barracks — as fourteen ROLES (`tap`, `open`,
 **A role is what a moment means, never a file**: the shell calls
 `Sound.ui(role)`, and changing what `reward` sounds like is one Save, for
 thirteen games at once. The page pre-searches the library for the selected
-role, plays every candidate LEVELLED as it will ship, takes the cut dragged on
-the waveform, and plays the role the way the shell does — the stars as a
+role, plays every candidate LEVELLED as it will ship, takes the cut by its
+grips on the waveform — and how it ENDS, cut, faded out or dropping an octave
+as it fades (`tail`), for a take cut in the middle of its sound — and plays the role the way the shell does — the stars as a
 ladder, the coins as a cascade, the rest five times over to hear the takes and
 the jitter. Save writes `assets/audio/kit/kit.json`, and
 `tools/lab/cut-kit.mjs` re-cuts every take into `assets/audio/kit/<role>-<n>.mp3`,
@@ -1608,6 +1623,17 @@ CSS**, pasted as the PATCH CARD block of `games/pawko/skin.css`; a retune is
 a new paste over that block, and a change of colour is `KINDS` / `RARITY` in
 `game.js`. The description is sewn on the card, so pawko's `codex.info`
 carries no `text` and the codex writes no lore under it.
+
+`chainring-rings.html` is **chainring's ring design catalogue**: fifteen
+STRUCTURES a ring can be — a sprocket, a chain, a hexagon, an orbit, a crystal,
+plasma… — each in a small arena dressed with a biome's own kaleidoscope, ball
+and palette, with the four kinds (rewind, sticky, dark, gap) laid over every
+one of them, because a design made of beads or of gaps fights the kind marked
+that way. Gallery shows every design on one biome and a click gives it to that
+biome; Pairing shows the five biomes side by side, which is the comparison the
+choice is made on; Copy pairing hands it over as JSON. What ships is tube,
+sprocket, chain, crown and ribbon, Neon to Nova — `ring` on each biome of
+`games/chainring/game.js`, its `DESIGN` table a port of this page's.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see

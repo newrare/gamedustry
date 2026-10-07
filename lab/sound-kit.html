@@ -40,6 +40,14 @@
    so a take is never changed without knowing who hears it, and a variant a
    game plays cannot be renamed or dropped.
 
+   A take is cut on its waveform by its grips: the left edge is the start,
+   the right edge the end, the middle moves the window and keeps its length,
+   and a press outside it draws a new one. A take cut in the middle of its
+   sound may END rather than stop — `Fade` dies out over its last seconds,
+   `Drop` does the same while its pitch falls an octave — and the amber grip
+   inside the window is where that tail begins. The tail is rendered by the
+   same function tools/lab/cut-kit.mjs cuts with (tailPcm, copied below).
+
    Inside a variant the TAKES are interchangeable: the engine alternates
    between them so a sound heard twenty times a round does not repeat. They
    are never a choice — a different sound is a different variant.
@@ -67,6 +75,12 @@ button { font:inherit; color:inherit; }
   padding:18px 12px; background:#12121c; border-right:1px solid #23233a; overflow:auto;
 }
 #roles h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; padding:0 6px 10px; }
+#rq {
+  margin:0 4px 8px; padding:7px 10px; background:#0b0b12; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:8px; font:inherit; font-weight:500;
+}
+#rq:focus { outline:0; border-color:#7ea6ff; }
+#roles .none-left { padding:10px; color:#6f6f92; font-weight:500; }
 #roles h1 small { display:block; margin-top:4px; font-size:11px; font-weight:500; color:#8b8ba7; letter-spacing:0; text-transform:none; }
 .role {
   display:grid; grid-template-columns:1fr auto; gap:2px 8px; padding:8px 10px;
@@ -80,6 +94,8 @@ button { font:inherit; color:inherit; }
 .role.dirty b::after { content:" •"; color:#ffd08a; }
 .role .u { grid-column:1 / -1; color:#8fe0b8; font-size:11px; font-weight:500; }
 .role .u.none { color:#6f6f92; }
+.role .g { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.role .g img { width:24px; height:24px; border-radius:6px; display:block; background:#1a1a2a; }
 .role.var { margin-left:12px; padding:5px 10px; }
 .role-h { padding:10px 10px 2px; display:flex; flex-direction:column; gap:1px; }
 .role-h b { font-size:13px; }
@@ -124,8 +140,13 @@ button { font:inherit; color:inherit; }
 .take .file { font:600 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
 .take .file small { color:#7d7d9d; font-weight:500; margin-left:8px; }
 .take .acts { display:flex; gap:6px; }
-.take canvas { grid-column:2 / -1; width:100%; height:64px; display:block; border-radius:6px; background:#0b0b12; cursor:ew-resize; }
+.take canvas { grid-column:2 / -1; width:100%; height:72px; display:block; border-radius:6px; background:#0b0b12; cursor:crosshair; touch-action:none; }
 .take .nums { grid-column:2 / -1; display:flex; gap:14px; font-size:11px; color:#9c9cba; align-items:center; }
+.take .nums label { display:flex; align-items:center; gap:6px; }
+.seg { display:inline-flex; border:1px solid #2c2c47; border-radius:7px; overflow:hidden; }
+.seg button { padding:3px 10px; border:0; background:none; cursor:pointer; font-size:11px; color:#9c9cba; }
+.seg button + button { border-left:1px solid #2c2c47; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
 .take .nums input { width:70px; padding:3px 6px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; }
 .ic { width:28px; height:28px; padding:0; border:1px solid #2c2c47; border-radius:7px; background:none; cursor:pointer; }
 .ic:hover { border-color:#7ea6ff; }
@@ -159,6 +180,7 @@ button { font:inherit; color:inherit; }
 
 <aside id="roles">
   <h1>Sound kit <small>the house sounds, picked one role at a time</small></h1>
+  <input id="rq" type="search" autocomplete="off" placeholder="Filter roles, variants, games">
   <div id="role-list"></div>
   <div class="foot">
     <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05"></label>
@@ -218,18 +240,19 @@ button { font:inherit; color:inherit; }
   const GROUPS = { shell: "Shell — every game's menus and end screen", game: "Gameplay — mapped by a game's manifest (sfx)" };
   const WINDOW = 0.05, MAX_TAKES = 3;
 
-  const S = { kit: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "" };
+  const S = { kit: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "" };
 
   // ---- audio -------------------------------------------------------------
   let ac = null;
-  const bufs = {};
+  const bufs = {}, decoded = {};
   function ctx() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; }
   function vol() { try { const v = parseFloat(localStorage.getItem("kit:vol")); return isNaN(v) ? 0.7 : v; } catch (e) { return 0.7; } }
   function bufOf(stem) {
     const f = S.byStem[stem];
     if (!f) return Promise.reject(new Error("no file " + stem));
     if (!bufs[stem]) bufs[stem] = fetch("sfx/" + encodeURIComponent(f.file))
-      .then((r) => r.arrayBuffer()).then((b) => ctx().decodeAudioData(b));
+      .then((r) => r.arrayBuffer()).then((b) => ctx().decodeAudioData(b))
+      .then((buf) => { decoded[stem] = buf; return buf; });
     return bufs[stem];
   }
   // The measure tools/lab/cut-kit.mjs applies: the loudest window, and the peak.
@@ -256,20 +279,63 @@ button { font:inherit; color:inherit; }
     const l = levelOf(buf, start, length);
     return Math.min(S.kit.target - l.rms, S.kit.peak - l.peak);
   }
+  /* THE TAIL — a copy of tailPcm in tools/lab/cut-kit.mjs, so the page hears
+     the take the cutter writes. Keep the two identical. */
+  const TAILS = ["fade", "drop"], DROP_TO = 0.5;
+  const defaultTail = (length) => Math.round(Math.min(0.3, length * 0.4) * 1000) / 1000;
+  function tailPcm(pcm, rate, tail, tailLength) {
+    const n = pcm.length, t0 = Math.max(0, n - Math.round(tailLength * rate)), span = Math.max(1, n - t0);
+    const out = [];
+    let p = 0;
+    while (p < n - 1) {
+      const i = Math.floor(p), f = p - i;
+      const s = pcm[i] * (1 - f) + pcm[i + 1] * f;
+      const u = p < t0 ? 0 : (p - t0) / span;
+      out.push(s * (1 - u) * (1 - u));
+      p += tail === "drop" ? 1 - (1 - DROP_TO) * u : 1;
+    }
+    return Float32Array.from(out);
+  }
+  // The cut with its tail, as one mono buffer — the channels averaged, like the cutter.
+  const rendered = new Map();
+  function renderTake(buf, t) {
+    const key = [t.file, t.start, t.length, t.tail, t.tailLength].join("|");
+    if (rendered.has(key)) return rendered.get(key);
+    const rate = buf.sampleRate, a = Math.floor(t.start * rate);
+    const n = Math.max(2, Math.min(buf.length - a, Math.floor(t.length * rate))), mono = new Float32Array(n);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < n; i++) mono[i] += (d[a + i] || 0) / buf.numberOfChannels;
+    }
+    const out = tailPcm(mono, rate, t.tail, t.tailLength || defaultTail(t.length));
+    const ab = ctx().createBuffer(1, Math.max(1, out.length), rate);
+    ab.copyToChannel(out, 0);
+    if (rendered.size > 40) rendered.clear();
+    rendered.set(key, ab);
+    return ab;
+  }
   let voices = [];
   function stopAll() { voices.forEach((v) => { try { v.stop(); } catch (e) {} }); voices = []; }
-  function playCut(stem, start, length, rate, at) {
-    return bufOf(stem).then((buf) => {
+  // A take — { file, start, length, tail? } — levelled and played the way it will ship.
+  function playTake(t, rate, at) {
+    return bufOf(t.file).then((buf) => {
       const a = ctx(), src = a.createBufferSource(), g = a.createGain();
-      const t0 = a.currentTime + (at || 0), r = rate || 1, real = length / r;
-      const fade = Math.min(0.07, length * 0.3) / r;
+      const t0 = a.currentTime + (at || 0), r = rate || 1, start = t.start || 0, length = t.length;
       const level = Math.pow(10, gainDb(buf, start, length) / 20) * vol();
-      src.buffer = buf; src.playbackRate.value = r;
-      g.gain.setValueAtTime(level, t0);
-      g.gain.setValueAtTime(level, t0 + Math.max(0, real - fade));
-      g.gain.linearRampToValueAtTime(0, t0 + real);
+      src.playbackRate.value = r;
       src.connect(g); g.connect(a.destination);
-      src.start(t0, start, length);
+      if (t.tail) {
+        src.buffer = renderTake(buf, t);
+        g.gain.setValueAtTime(level, t0);
+        src.start(t0);
+      } else {
+        const real = length / r, fade = Math.min(0.07, length * 0.3) / r;
+        src.buffer = buf;
+        g.gain.setValueAtTime(level, t0);
+        g.gain.setValueAtTime(level, t0 + Math.max(0, real - fade));
+        g.gain.linearRampToValueAtTime(0, t0 + real);
+        src.start(t0, start, length);
+      }
       voices.push(src);
       src.onended = () => { voices = voices.filter((v) => v !== src); };
     }).catch(() => {});
@@ -283,7 +349,7 @@ button { font:inherit; color:inherit; }
     lastTake = i;
     const t = v.takes[i] || v.takes[0];
     const j = v.jitter ? 1 + (Math.random() * 2 - 1) * v.jitter : 1;
-    return playCut(t.file, t.start, t.length, (rate || 1) * j, at);
+    return playTake(t, (rate || 1) * j, at);
   }
   function sequence() {
     stopAll();
@@ -338,11 +404,29 @@ button { font:inherit; color:inherit; }
   // ---- painting ----------------------------------------------------------
   function usersOf(id) { return (S.kit.users && S.kit.users[id]) || []; }
   const takesWord = (v) => v.takes.length + (v.takes.length > 1 ? " takes" : " take");
+  /* The games behind a variant, one icon each: `blight.spread` and
+     `blight.rot` are one game, and the keys ride in the tooltip. */
+  function iconsOf(users) {
+    const by = {};
+    users.forEach((u) => { const slug = u.split(".")[0]; (by[slug] = by[slug] || []).push(u); });
+    return Object.keys(by).map((slug) =>
+      '<img src="icons/' + encodeURIComponent(slug) + '.png" alt="' + esc(slug) + '" title="' + esc(by[slug].join(", ")) + '">').join("");
+  }
+  // Every word of the filter has to be somewhere in the role, the variant or the games playing it.
+  function matches(text) {
+    const tt = S.rq.toLowerCase().split(/\s+/).filter(Boolean), hay = text.toLowerCase();
+    return tt.every((x) => hay.includes(x));
+  }
   function paintRoles() {
     const dirty = dirtyIds();
     let html = "", group = null;
     Object.keys(S.kit.roles).forEach((role) => {
-      const x = S.kit.roles[role];
+      const x = S.kit.roles[role], base = role + " " + x.what + " " + x.group;
+      const shown = Object.keys(x.variants).filter((name) => {
+        const id = idOf(role, name);
+        return matches(base + " " + id + " " + usersOf(id).join(" "));
+      });
+      if (!shown.length) return;
       if (x.group !== group) { group = x.group; html += '<h3 class="grp">' + esc(GROUPS[group] || group) + "</h3>"; }
       if (x.group === "shell") {
         const v = x.variants.default;
@@ -355,14 +439,14 @@ button { font:inherit; color:inherit; }
       /* A gameplay role is a heading and its variants under it: a variant is
          what a game picks, so it is what is listed and what is selected. */
       html += '<div class="role-h' + (dirty.includes(role) ? " dirty" : "") + '"><b>' + esc(role) + '</b><span class="w">' + esc(x.what) + "</span></div>";
-      Object.entries(x.variants).forEach(([name, v]) => {
-        const id = idOf(role, name), users = usersOf(id);
+      shown.forEach((name) => {
+        const v = x.variants[name], id = idOf(role, name), users = usersOf(id);
         html += '<button class="role var' + (role === S.role && name === S.variant ? " on" : "") + (dirty.includes(id) ? " dirty" : "") + '" data-id="' + id + '">' +
           "<b>" + esc(name) + "</b>" + '<span class="n">' + takesWord(v) + "</span>" +
-          '<span class="u' + (users.length ? "" : " none") + '">' + (users.length ? esc(users.join(", ")) : "no game plays it") + "</span></button>";
+          (users.length ? '<span class="g">' + iconsOf(users) + "</span>" : '<span class="u none">no game plays it</span>') + "</button>";
       });
     });
-    $("role-list").innerHTML = html;
+    $("role-list").innerHTML = html || '<p class="none-left">No role matches.</p>';
     $("save").disabled = $("revert").disabled = !dirty.length;
   }
   function paintHead() {
@@ -414,6 +498,7 @@ button { font:inherit; color:inherit; }
       sel(S.role);
     };
   }
+  const r3 = (v) => Math.round(v * 1000) / 1000;
   function paintTakes() {
     const r = cur();
     $("takes").innerHTML = r.takes.map((t, i) => {
@@ -424,37 +509,74 @@ button { font:inherit; color:inherit; }
         '<span class="acts"><button class="ic" data-act="play" data-i="' + i + '" title="Play this take">▶</button>' +
         '<button class="ic" data-act="drop" data-i="' + i + '" title="Remove this take"' + (r.takes.length < 2 ? " disabled" : "") + ">✕</button></span>" +
         '<canvas data-i="' + i + '"></canvas>' +
-        '<span class="nums">Start <input type="number" step="0.01" min="0" data-k="start" data-i="' + i + '" value="' + t.start + '">' +
-        'Length <input type="number" step="0.01" min="0.02" max="3" data-k="length" data-i="' + i + '" value="' + t.length + '"></span>' +
-        "</div>";
+        '<span class="nums"><label>Start <input type="number" step="0.01" min="0" data-k="start" data-i="' + i + '" value="' + t.start + '"></label>' +
+        '<label>Length <input type="number" step="0.01" min="0.02" max="3" data-k="length" data-i="' + i + '" value="' + t.length + '"></label>' +
+        '<label>End <span class="seg">' +
+        ["", "fade", "drop"].map((k) => '<button data-tail="' + k + '" data-i="' + i + '" class="' + ((t.tail || "") === k ? "on" : "") + '" title="' +
+          ({ "": "Stops on a 70 ms anti-click fade", fade: "Dies out over the tail", drop: "Dies out while its pitch falls an octave" })[k] + '">' +
+          ({ "": "Cut", fade: "Fade", drop: "Drop" })[k] + "</button>").join("") + "</span></label>" +
+        (t.tail ? '<label>Tail <input type="number" step="0.01" min="0.02" data-k="tailLength" data-i="' + i + '" value="' + t.tailLength + '"></label>' : "") +
+        "</span></div>";
     }).join("");
     r.takes.forEach((t, i) => drawWave(i));
+  }
+  // The inputs and the level of one take, rewritten in place while its grips are dragged.
+  function syncNums(i) {
+    const t = cur().takes[i];
+    document.querySelectorAll('.take[data-i="' + i + '"] input[data-k]').forEach((n) => { n.value = t[n.dataset.k]; });
+  }
+  // Where the window, its end and its tail sit on a canvas, in CSS px.
+  function geom(cv, t) {
+    const dur = +cv.dataset.dur, w = cv.clientWidth, x = (sec) => Math.max(0, Math.min(w, (sec / dur) * w));
+    const end = t.start + t.length;
+    return { w, x0: x(t.start), x1: x(end), xt: t.tail ? x(end - (t.tailLength || defaultTail(t.length))) : null };
+  }
+  const peaks = {};
+  function peaksOf(stem, buf, w) {
+    const k = stem + "@" + w;
+    if (peaks[k]) return peaks[k];
+    const d = buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / w)), out = new Float32Array(w);
+    for (let x = 0; x < w; x++) {
+      let m = 0;
+      for (let j = x * step; j < Math.min(d.length, (x + 1) * step); j++) m = Math.max(m, Math.abs(d[j]));
+      out[x] = m;
+    }
+    return (peaks[k] = out);
   }
   function drawWave(i) {
     const t = cur().takes[i], cv = document.querySelector('canvas[data-i="' + i + '"]');
     if (!cv || !t) return;
+    const buf = decoded[t.file];
+    if (!buf) { bufOf(t.file).then(() => drawWave(i)).catch(() => {}); return; }
     const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
-    cv.width = w * dpr; cv.height = h * dpr;
-    const g = cv.getContext("2d");
-    g.scale(dpr, dpr);
-    bufOf(t.file).then((buf) => {
-      const dur = buf.duration, d = buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / w));
-      g.clearRect(0, 0, w, h);
-      const x0 = (t.start / dur) * w, x1 = Math.min(w, ((t.start + t.length) / dur) * w);
-      g.fillStyle = "rgba(126,166,255,0.16)"; g.fillRect(x0, 0, x1 - x0, h);
-      g.fillStyle = "#4b5578";
-      for (let x = 0; x < w; x++) {
-        let m = 0;
-        for (let k = x * step; k < Math.min(d.length, (x + 1) * step); k++) m = Math.max(m, Math.abs(d[k]));
-        const y = m * (h / 2 - 2);
-        if (x >= x0 && x <= x1) g.fillStyle = "#9db8ff"; else g.fillStyle = "#3a4160";
-        g.fillRect(x, h / 2 - y, 1, Math.max(1, y * 2));
-      }
-      g.fillStyle = "#7ea6ff"; g.fillRect(x0, 0, 2, h); g.fillRect(x1 - 2, 0, 2, h);
-      const gl = document.querySelector('.gain[data-i="' + i + '"]');
-      if (gl) { const db = gainDb(buf, t.start, t.length); gl.textContent = "levelled " + (db >= 0 ? "+" : "") + db.toFixed(1) + " dB"; }
-      cv.dataset.dur = dur;
-    }).catch(() => {});
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    cv.dataset.dur = buf.duration;
+    const g = cv.getContext("2d"), p = peaksOf(t.file, buf, w), { x0, x1, xt } = geom(cv, t);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = "rgba(126,166,255,0.16)"; g.fillRect(x0, 0, x1 - x0, h);
+    for (let x = 0; x < w; x++) {
+      const y = p[x] * (h / 2 - 2);
+      let k = 1;
+      if (xt != null && x > xt && x <= x1) k = 1 - (x - xt) / Math.max(1, x1 - xt);
+      g.fillStyle = x >= x0 && x <= x1 ? "rgba(157,184,255," + (0.25 + 0.75 * k * k) + ")" : "#3a4160";
+      g.fillRect(x, h / 2 - y, 1, Math.max(1, y * 2));
+    }
+    // The tail: a ramp down to silence, and its grip — amber, the colour of an unsaved change.
+    if (xt != null) {
+      g.strokeStyle = "#ffd08a"; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(xt, 6); g.lineTo(x1, h - 6); g.stroke();
+      g.setLineDash([3, 3]); g.beginPath(); g.moveTo(xt, 0); g.lineTo(xt, h); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#ffd08a"; g.fillRect(xt - 4, 0, 8, 10);
+    }
+    // The two grips of the window: a bar and a tab to take it by.
+    g.fillStyle = "#7ea6ff";
+    [x0, x1].forEach((x, k) => {
+      g.fillRect(k ? x - 2 : x, 0, 2, h);
+      g.fillRect(k ? x - 8 : x, h / 2 - 12, 8, 24);
+    });
+    const gl = document.querySelector('.gain[data-i="' + i + '"]');
+    if (gl) { const db = gainDb(buf, t.start, t.length); gl.textContent = "levelled " + (db >= 0 ? "+" : "") + db.toFixed(1) + " dB"; }
   }
   function terms() { return S.q.toLowerCase().split(/\s+/).filter(Boolean); }
   function paintList() {
@@ -477,65 +599,115 @@ button { font:inherit; color:inherit; }
     cur().takes[i] = { file: stem, start: 0, length: defaultLength(stem) };
     paint();
     const t = cur().takes[i];
-    stopAll(); playCut(t.file, t.start, t.length);
+    play(t);
   }
 
   $("role-list").addEventListener("click", (e) => {
     const b = e.target.closest(".role");
     if (b) sel(b.dataset.id);
   });
+  function selectTake(i) {
+    S.take = i;
+    document.querySelectorAll(".take").forEach((n) => n.classList.toggle("on", +n.dataset.i === S.take));
+  }
+  const play = (t) => { stopAll(); playTake(t); };
   $("takes").addEventListener("click", (e) => {
     const act = e.target.closest("[data-act]");
     if (act) {
       const i = +act.dataset.i, t = cur().takes[i];
-      if (act.dataset.act === "play") { stopAll(); playCut(t.file, t.start, t.length); }
+      if (act.dataset.act === "play") play(t);
       if (act.dataset.act === "drop" && cur().takes.length > 1) { cur().takes.splice(i, 1); S.take = 0; paint(); }
       return;
     }
-    const box = e.target.closest(".take");
-    if (box && +box.dataset.i !== S.take && e.target.tagName !== "INPUT" && e.target.tagName !== "CANVAS") {
-      S.take = +box.dataset.i;
-      document.querySelectorAll(".take").forEach((n) => n.classList.toggle("on", +n.dataset.i === S.take));
+    const tl = e.target.closest("[data-tail]");
+    if (tl) {
+      const i = +tl.dataset.i, t = cur().takes[i];
+      if (tl.dataset.tail) { t.tail = tl.dataset.tail; t.tailLength = Math.min(t.length, t.tailLength || defaultTail(t.length)); }
+      else { delete t.tail; delete t.tailLength; }
+      S.take = i;
+      paintTakes(); paintRoles(); play(t);
+      return;
     }
+    const box = e.target.closest(".take");
+    if (box && +box.dataset.i !== S.take && e.target.tagName !== "INPUT" && e.target.tagName !== "CANVAS") selectTake(+box.dataset.i);
   });
   $("takes").addEventListener("change", (e) => {
     const k = e.target.dataset.k;
     if (!k) return;
-    const t = cur().takes[+e.target.dataset.i], v = parseFloat(e.target.value);
+    const i = +e.target.dataset.i, t = cur().takes[i], v = parseFloat(e.target.value);
     if (isNaN(v)) return;
-    t[k] = Math.round((k === "length" ? Math.min(3, Math.max(0.02, v)) : Math.max(0, v)) * 1000) / 1000;
-    drawWave(+e.target.dataset.i); paintRoles();
-    stopAll(); playCut(t.file, t.start, t.length);
+    if (k === "length") t.length = r3(Math.min(3, Math.max(0.02, v)));
+    if (k === "start") t.start = r3(Math.max(0, v));
+    if (k === "tailLength" || (k === "length" && t.tail)) t.tailLength = r3(Math.min(t.length, Math.max(0.02, k === "tailLength" ? v : t.tailLength)));
+    syncNums(i); drawWave(i); paintRoles();
+    play(t);
   });
-  /* The cut is dragged on the waveform: press where it starts, release where
-     it ends; a click without a drag moves the window and keeps its length. */
+
+  /* The cut is taken by its grips. Within GRIP px of an edge, that edge moves
+     and the other stays; inside the window, the window moves and keeps its
+     length; the amber grip is where the tail begins; a press outside draws a
+     new window from where it went down to where it comes up — and a click
+     there with no drag moves the window to it. */
+  const GRIP = 9, MIN = 0.02, MAX = 3;
+  function hitOf(cv, t, x) {
+    const { x0, x1, xt } = geom(cv, t);
+    const near = [["start", Math.abs(x - x0)], ["end", Math.abs(x - x1)]];
+    if (xt != null) near.push(["tail", Math.abs(x - xt) - 1]);
+    near.sort((a, b) => a[1] - b[1]);
+    if (near[0][1] <= GRIP) return near[0][0];
+    return x > x0 && x < x1 ? "move" : "new";
+  }
+  const CURSOR = { start: "ew-resize", end: "ew-resize", tail: "ew-resize", move: "grab", new: "crosshair" };
   let drag = null;
   $("takes").addEventListener("pointerdown", (e) => {
     const cv = e.target.closest("canvas");
-    if (!cv || !cv.dataset.dur) return;
-    const i = +cv.dataset.i, rect = cv.getBoundingClientRect(), dur = +cv.dataset.dur;
+    if (!cv || !cv.dataset.dur || e.button) return;
+    e.preventDefault();
+    const i = +cv.dataset.i, t = cur().takes[i], rect = cv.getBoundingClientRect(), dur = +cv.dataset.dur;
     const at = (x) => Math.max(0, Math.min(dur, ((x - rect.left) / rect.width) * dur));
-    S.take = i;
-    drag = { i, at, from: at(e.clientX), moved: false };
+    const mode = hitOf(cv, t, e.clientX - rect.left);
+    selectTake(i);
+    drag = { i, cv, at, dur, mode, x: e.clientX, from: at(e.clientX), start: t.start, end: t.start + t.length, moved: false };
+    if (mode === "move") cv.style.cursor = "grabbing";
     cv.setPointerCapture(e.pointerId);
   });
   $("takes").addEventListener("pointermove", (e) => {
-    if (!drag) return;
-    const t = cur().takes[drag.i], to = drag.at(e.clientX);
-    if (Math.abs(to - drag.from) < 0.01) return;
+    if (!drag) {
+      const cv = e.target.closest("canvas");
+      if (cv && cv.dataset.dur) cv.style.cursor = CURSOR[hitOf(cv, cur().takes[+cv.dataset.i], e.clientX - cv.getBoundingClientRect().left)];
+      return;
+    }
+    if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return;
     drag.moved = true;
-    t.start = Math.round(Math.min(drag.from, to) * 100) / 100;
-    t.length = Math.round(Math.max(0.02, Math.min(3, Math.abs(to - drag.from))) * 100) / 100;
-    drawWave(drag.i);
+    const t = cur().takes[drag.i], to = drag.at(e.clientX), d = drag;
+    if (d.mode === "start") {
+      const s = Math.max(Math.max(0, d.end - MAX), Math.min(d.end - MIN, to));
+      t.start = r3(s); t.length = r3(d.end - s);
+    } else if (d.mode === "end") {
+      t.length = r3(Math.max(d.start + MIN, Math.min(Math.min(d.dur, d.start + MAX), to)) - d.start);
+    } else if (d.mode === "move") {
+      const len = d.end - d.start;
+      t.start = r3(Math.max(0, Math.min(d.dur - len, d.start + to - d.from)));
+    } else if (d.mode === "tail") {
+      t.tailLength = r3(Math.max(MIN, Math.min(t.length, t.start + t.length - to)));
+    } else {
+      const a = Math.min(d.from, to), b = Math.max(a + MIN, Math.min(a + MAX, Math.max(d.from, to)));
+      t.start = r3(a); t.length = r3(b - a);
+    }
+    if (t.tail) t.tailLength = r3(Math.min(t.length, t.tailLength));
+    drawWave(drag.i); syncNums(drag.i);
   });
-  $("takes").addEventListener("pointerup", () => {
+  function release() {
     if (!drag) return;
-    const t = cur().takes[drag.i];
-    if (!drag.moved) t.start = Math.round(drag.from * 100) / 100;
+    const d = drag, t = cur().takes[d.i];
     drag = null;
-    paintTakes(); paintRoles();
-    stopAll(); playCut(t.file, t.start, t.length);
-  });
+    d.cv.style.cursor = "";
+    if (!d.moved && d.mode === "new") t.start = r3(Math.max(0, Math.min(d.dur - t.length, d.from)));
+    drawWave(d.i); syncNums(d.i); paintRoles();
+    play(t);
+  }
+  $("takes").addEventListener("pointerup", release);
+  $("takes").addEventListener("pointercancel", release);
 
   $("list").addEventListener("click", (e) => {
     const add = e.target.closest("[data-add]");
@@ -556,11 +728,18 @@ button { font:inherit; color:inherit; }
     clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
       const stem = row.dataset.stem;
-      stopAll(); playCut(stem, 0, defaultLength(stem));
+      stopAll(); playTake({ file: stem, start: 0, length: defaultLength(stem) });
     }, 90);
   });
   $("list").addEventListener("mouseleave", () => { $("list").__hover = null; clearTimeout(hoverTimer); });
   $("q").addEventListener("input", (e) => { S.q = e.target.value; paintList(); });
+  $("rq").addEventListener("input", (e) => {
+    S.rq = e.target.value;
+    try { localStorage.setItem("kit:rq", S.rq); } catch (err) {}
+    paintRoles();
+  });
+  try { S.rq = localStorage.getItem("kit:rq") || ""; } catch (e) {}
+  $("rq").value = S.rq;
 
   $("play").onclick = () => { stopAll(); shot(1); };
   $("seq").onclick = () => sequence();

@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — triverse biomes</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="triverse">
+<style>
+/* ===========================================================================
+   TRIVERSE BIOMES — what each stretch of the climb LOOKS like, before any of
+   it goes into games/triverse.
+
+   Today the thirty levels of triverse are one road driven faster: one radial
+   ground, one field of stars, one kind of dotted rope. This page tries five
+   biomes of six levels each, and a biome is four layers the game can change
+   without touching what the player must read:
+     - the GROUND, three stops of the radial gradient `metrics()` builds, plus
+       an optional glow rising from the bottom edge;
+     - the PARTICLES, what `sparks` becomes: stars, prism shards, rain with
+       lightning, comets crossing, embers rising;
+     - the rope's MATERIAL, what `dotSprite()` draws per dot: dots, faceted
+       beads, electric dashes, hollow rings, chain links;
+     - the FIGURES, the weights the band generator draws from (`FIGURES`),
+       which change the shape of the whole screen.
+
+   Two more layers ride with the biome since the first round:
+     - the three ROPE COLOURS. Cyan, pink and lime were the game's identity;
+       a biome now deals its own three. The gems take the colour of their
+       rope and the Prism gates the colour of the rope they let through, so
+       both follow. In the game this is more than `play.colors`: the SKIN's
+       `--p0/1/2`, the `pop-l0/1/2` callouts and the intro demo carry the rope
+       colours too, so a biome would write them on #frame at level start;
+     - the ARROW's shape. The chevron is the game today; the Arrows view lays
+       seven shapes side by side on the selected ground, in the selected
+       biome's three colours, leaning into a hop the way the game leans it.
+       "This arrow on every biome" is there because the arrow is the player's
+       own piece and most likely stays one shape for the whole climb.
+
+   One thing never moves, and the page holds it fixed on purpose: the items —
+   mine, void, gem, mega gem, x2, shield — keep their colour and silhouette in
+   every biome, so a danger reads the same everywhere.
+
+   So the question a biome has to answer is "does everything still read on
+   this ground?", and the chips under each card answer it: an item whose hue
+   sits too close to a saturated ground stop, to the glow or (for a hazard) to
+   the particles, or whose contrast against the ground falls under 3, is
+   flagged. A rope is held to more: it must not wear a hazard's hue (a mine on
+   a red rope disappears), nor the mega gem's gold (every gem on it would read
+   as one), nor sit too close to another rope of the same biome (two ropes the
+   player cannot tell apart break the gates and the braids). That leaves a
+   rope four families — greens, cyans, blues and magentas — plus white. The free
+   hues for a saturated GROUND are narrower still — roughly greens (114–144°)
+   and blues (221–242°) — so everything else there has to be dark or grey.
+
+   The RULE of each biome (colour gates, broken rope, moving hazard, rope heat)
+   is drawn too, as a look and not as a mechanic: the arrow is an autopilot
+   that hops away from what it sees, nothing collides, nothing scores.
+
+   Gallery: the five side by side, the comparison a biome is chosen on. Focus:
+   one biome at full height beside its item sheet, every object at rest on that
+   ground. The panel edits the selected biome; Copy settings hands the five
+   over as JSON. Nothing here ships.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel {
+  flex:0 0 290px; padding:22px 20px;
+  background:#12121c; border-right:1px solid #23233a;
+  position:sticky; top:0; height:100vh; overflow:auto;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:20px 0 8px; font-size:12px; color:#9c9cba; letter-spacing:.5px; }
+.row { margin-bottom:12px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.swatches { display:flex; gap:6px; margin-top:6px; }
+.swatches input[type=color] {
+  flex:1; height:30px; padding:0; border:1px solid #2c2c47; border-radius:6px; background:#0b0b12; cursor:pointer;
+}
+.check { display:flex; gap:8px; align-items:center; font-size:12px; color:#c9c9e0; margin-bottom:8px; cursor:pointer; }
+.seg { display:flex; gap:4px; margin-top:6px; }
+.seg button { flex:1; margin:0; background:#1d1d2e; color:#c9c9e0; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+button {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.ghost { background:#1d1d2e; color:#c9c9e0; }
+#copied { font-size:11px; color:#8b8ba7; min-height:16px; margin-top:6px; }
+
+#stage { flex:1; padding:24px; min-width:0; }
+#grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:18px; }
+#focus { display:none; gap:20px; align-items:flex-start; }
+body.focus #grid, body.arrows #grid { display:none; }
+body.focus #focus { display:flex; }
+#arrows { display:none; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:18px; }
+body.arrows #arrows { display:grid; }
+#arrows-cap { display:none; font-size:12px; color:#9c9cba; margin-bottom:14px; }
+body.arrows #arrows-cap { display:block; }
+body.presets #grid { display:none; }
+#presets { display:none; flex-direction:column; gap:18px; }
+body.presets #presets { display:flex; }
+.preset { background:#12121c; border:1px solid #23233a; border-radius:14px; padding:14px; cursor:pointer; transition:border-color .15s; }
+.preset:hover { border-color:#4a4a72; }
+.preset.picked { border-color:#7ea6ff; box-shadow:0 0 0 2px #7ea6ff inset; }
+.preset h3 { font-size:15px; }
+.preset h3 em { font-style:normal; color:#7ea6ff; font-size:11px; margin-left:8px; }
+.preset .note { font-size:12px; font-weight:500; color:#b4b4cc; margin:2px 0 10px; }
+.preset .row5 { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; }
+.preset canvas { display:block; width:100%; aspect-ratio:9/16; border-radius:8px; }
+.preset .bn { font-size:12px; margin-top:4px; }
+.preset .bw { font-size:11px; font-weight:500; color:#7be0a0; }
+.preset .bw.bad { color:#ffd27a; }
+.card canvas.wide { aspect-ratio:4/3; }
+#focus .col { display:flex; flex-direction:column; gap:8px; }
+#focus .cap { font-size:12px; color:#9c9cba; }
+
+.card {
+  background:#12121c; border:1px solid #23233a; border-radius:14px; overflow:hidden; cursor:pointer;
+  transition:border-color .15s, transform .15s;
+}
+.card:hover { border-color:#4a4a72; transform:translateY(-2px); }
+.card.picked { border-color:#7ea6ff; box-shadow:0 0 0 2px #7ea6ff inset; }
+.card canvas { display:block; width:100%; aspect-ratio:9/16; }
+.card .txt { padding:10px 12px 12px; }
+.card .name { font-size:14px; }
+.card .name em { font-style:normal; color:#7ea6ff; font-size:11px; margin-left:6px; }
+.card .note { font-size:12px; font-weight:500; color:#b4b4cc; margin-top:2px; }
+.card .fit { font-size:11px; font-weight:500; color:#8b8ba7; margin-top:4px; }
+.chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.chip {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:2px 7px 2px 5px; border-radius:99px;
+  background:#1a1a28; border:1px solid #2a2a40; font-size:11px; font-weight:600; color:#c9c9e0;
+}
+.chip::before { content:""; width:9px; height:9px; border-radius:50%; background:var(--c); }
+.chip.warn { border-color:#ffb020; color:#ffd27a; background:#2a1f08; }
+.chip.warn::after { content:"!"; font-weight:900; }
+.verdict { font-size:11px; font-weight:600; margin-top:6px; color:#7be0a0; }
+.verdict.bad { color:#ffd27a; }
+canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Triverse biomes</h1>
+  <p class="hint">Five looks for the five stretches of the climb. The items never change; the ground, the particles, the ropes' colours and material, the figures and the arrow do.</p>
+
+  <div class="row">
+    <label>View</label>
+    <div class="seg"><button id="v-gallery" class="on">Gallery</button><button id="v-focus">Focus</button><button id="v-arrows">Arrows</button><button id="v-presets">Presets</button></div>
+  </div>
+  <label class="check"><input type="checkbox" id="t-items" checked> Items</label>
+  <label class="check"><input type="checkbox" id="t-rule" checked> The biome's rule</label>
+  <label class="check"><input type="checkbox" id="t-particles" checked> Particles</label>
+  <label class="check"><input type="checkbox" id="t-arrow" checked> Arrow</label>
+  <label class="check"><input type="checkbox" id="t-anim" checked> Animate</label>
+  <div class="row">
+    <label for="speed">Scroll speed <b id="speed-v">780</b></label>
+    <input id="speed" type="range" min="300" max="1300" step="10" value="780">
+  </div>
+  <button id="reseed" class="ghost">New ropes</button>
+
+  <h2>Selected biome</h2>
+  <div class="row">
+    <label for="biome">Biome</label>
+    <select id="biome"></select>
+  </div>
+  <div class="row">
+    <label>Ground (top, middle, edge)</label>
+    <div class="swatches"><input type="color" id="g0"><input type="color" id="g1"><input type="color" id="g2"></div>
+  </div>
+  <div class="row">
+    <label for="glowA">Glow from below <b id="glowA-v">0</b></label>
+    <div class="swatches"><input type="color" id="glow"></div>
+    <input id="glowA" type="range" min="0" max="50" value="0">
+  </div>
+  <div class="row">
+    <label for="particles">Particles</label>
+    <select id="particles"></select>
+    <div class="swatches"><input type="color" id="tint"></div>
+  </div>
+  <div class="row">
+    <label for="density">Density <b id="density-v">1.0</b></label>
+    <input id="density" type="range" min="0" max="25" value="10">
+  </div>
+  <div class="row">
+    <label>Rope colours</label>
+    <div class="swatches"><input type="color" id="r0"><input type="color" id="r1"><input type="color" id="r2"></div>
+  </div>
+  <div class="row">
+    <label for="material">Rope material</label>
+    <select id="material"></select>
+  </div>
+  <div class="row">
+    <label for="arrow">Arrow</label>
+    <select id="arrow"></select>
+    <button id="arrow-all" class="ghost">This arrow on every biome</button>
+  </div>
+  <div class="row">
+    <label for="figures">Figures</label>
+    <select id="figures"></select>
+  </div>
+  <div class="row">
+    <label for="rule">Rule</label>
+    <select id="rule"></select>
+  </div>
+
+  <h2>Presets</h2>
+  <div class="row">
+    <label for="preset">A whole look for the five biomes</label>
+    <select id="preset"></select>
+    <button id="preset-all">Apply to the five biomes</button>
+    <button id="preset-one" class="ghost">Apply to the selected biome only</button>
+  </div>
+
+  <h2>Hand over</h2>
+  <button id="copy">Copy settings</button>
+  <button id="reset" class="ghost">Back to the defaults</button>
+  <div id="copied"></div>
+</div>
+
+<div id="stage">
+  <div id="grid"></div>
+  <div id="arrows-cap"></div>
+  <div id="presets"></div>
+  <div id="arrows"></div>
+  <div id="focus">
+    <div class="col"><canvas id="focus-live" class="big"></canvas><div class="cap" id="focus-cap"></div></div>
+    <div class="col"><canvas id="focus-sheet" class="big"></canvas><div class="cap">Every object at rest on this ground</div></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- the frame, as games/triverse/game.js sees it (web target) ---------
+     720x1280, a 150 px HUD band, no CTA bar, the 26 px house margin at the
+     foot. The tunables are CONFIG.play's own values. */
+  const W = 720, H = 1280, TAU = Math.PI * 2;
+  const L = { left: 30, right: 690, w: 660, cx: 360, top: 150, bottom: 1254 };
+  const T = { edge: 84, dot: 27, loopR: 88, loopClear: 76, sway: 26, anchorUp: 170,
+              switchTime: 0.13, hazardClear: 130, hazardApart: 118 };
+  const ANCHOR = L.bottom - T.anchorUp;
+
+  // Fixed across every biome: the items. The ropes are the biome's (`ropes`).
+  const FIXED = { mine: "#ff2d55", void: "#c07bff", star: "#ffd43b", x2: "#a6ff3d", shield: "#8ffff2" };
+  // Every hazard speaks the mine's red, the comet included: one colour for danger.
+  const COMET = "#ff2d55";
+
+  const FIGSETS = {
+    classic: { label: "Rails and shifts", list: ["rails", "rails", "ribbon", "ribbon", "shift", "shift", "shift", "coil", "braid"] },
+    braids:  { label: "Braids", list: ["braid", "braid", "braid", "braid", "shift", "shift", "shift", "ribbon", "helix", "rails"] },
+    coils:   { label: "Coils and loops", list: ["coil", "coil", "coil", "ribbon", "ribbon", "rails", "breath", "loop", "loop", "spring"] },
+    helix:   { label: "Helix and breath", list: ["helix", "helix", "breath", "breath", "breath", "braid", "braid", "spring", "eight"] },
+    all:     { label: "Everything (the game today)", list: ["rails", "rails", "ribbon", "ribbon", "coil", "coil",
+               "braid", "braid", "braid", "breath", "breath", "helix", "shift", "shift", "shift", "loop", "loop", "eight", "spring"] }
+  };
+  const PARTICLES = { stars: "Stars and speed streaks", shards: "Prism shards and light beams",
+                      grid: "Synthwave floor", bubbles: "Bubbles rising", snow: "Snow drifting",
+                      rain: "Rain and lightning", comets: "Comets crossing", embers: "Embers rising" };
+  const MATERIALS = { dots: "Dots (the game today)", beads: "Faceted beads", dashes: "Electric dashes",
+                      rings: "Hollow rings", links: "Chain links" };
+  /* The arrow's shapes. Every one points up (-y) in its own frame, fits the
+     chevron's box (about 36 up, 28 down, 34 across) so the hop and the halo
+     need no retuning, and wears the same dark contour: the arrow sits ON a
+     glowing rope and has to be cut out of it. */
+  const ARROWS = {
+    chevron: { label: "Chevron (the game today)", note: "The open V: reads at once, says nothing of the game." },
+    trident: { label: "Trident", note: "Three prongs for three ropes — the name of the game in the piece." },
+    dart:    { label: "Dart", note: "Slim and notched: speed, and the rope stays visible on both sides." },
+    jet:     { label: "Jet", note: "Swept wings and a tail: a vehicle rather than a cursor." },
+    drop:    { label: "Drop", note: "A head of light with its point forward: soft, kin to the comet." },
+    kite:    { label: "Kite", note: "A long diamond with a spine — but the gems are diamonds too." },
+    prow:    { label: "Orb and prow", note: "A ball with a beak: a creature riding the rope." }
+  };
+  const RULES = { none: "None", gate: "Colour gates", break: "Broken rope", comet: "Moving hazard",
+                  heat: "Rope heat", all: "Rope heat, and every rule before" };
+
+  /* The rope triads. Neon keeps the game's own three; the others are picked
+     out of what is left once the hazards, the mega gem and the ground have
+     taken their hues: a blue and a white on Prism's green, ice, white and an
+     electric magenta for Storm, a mint / blue / orchid dusk for Comets, and cool ropes on Fusion's
+     warm ground, because every warm hue there belongs to a mine or a gem. */
+  const DEFAULTS = [
+    { key: "neon",   name: "Neon",   levels: "1–6",   ground: ["#141a44", "#080b22", "#03040c"], glow: "#3ce0ff", glowA: 0,
+      particles: "stars",  tint: "#ffffff", density: 1, ropes: ["#3ce0ff", "#ff5ad4", "#a6ff3d"],
+      material: "dots",   arrow: "trident", figures: "classic", rule: "none" },
+    { key: "prism",  name: "Prism",  levels: "7–12",  ground: ["#0b3a1a", "#05200e", "#020a05"], glow: "#3dff8a", glowA: 0,
+      particles: "shards", tint: "#d8fff0", density: 1, ropes: ["#5a8cff", "#ff6fd8", "#f4fbff"],
+      material: "beads",  arrow: "trident", figures: "braids",  rule: "gate" },
+    { key: "storm",  name: "Storm",  levels: "13–18", ground: ["#2a3442", "#121820", "#06080c"], glow: "#cfe3ff", glowA: 0,
+      particles: "rain",   tint: "#cfe3ff", density: 1, ropes: ["#7fe9ff", "#ff5ae0", "#ffffff"],
+      material: "dashes", arrow: "trident", figures: "coils",   rule: "break" },
+    { key: "comets", name: "Comets", levels: "19–24", ground: ["#1f1a2e", "#110e1c", "#05040a"], glow: "#ff9d7a", glowA: 0.24,
+      particles: "comets", tint: "#e8eeff", density: 1, ropes: ["#4dffc3", "#4f7bff", "#ff7ae6"],
+      material: "rings",  arrow: "trident", figures: "helix",   rule: "comet" },
+    { key: "fusion", name: "Fusion", levels: "25–30", ground: ["#2a1810", "#140b07", "#060302"], glow: "#ff6a1c", glowA: 0.18,
+      particles: "embers", tint: "#ffb347", density: 1, ropes: ["#4af0ff", "#fff1dc", "#7dff6a"],
+      material: "links",  arrow: "trident", figures: "all",     rule: "all" }
+  ];
+
+  /* ---- presets: a whole look for the five biomes at once ------------------
+     A preset is an art direction, not five unrelated picks: the five grounds
+     read as one family, the arrow is one shape for the whole climb, and each
+     biome still differs from its neighbours in hue. It carries the LOOK only —
+     name, ground, glow, particles, ropes, material, arrow. The rule and the
+     figures are gameplay and stay with the biome's slot (none, gates, broken
+     rope, moving hazard, heat). Every preset was tuned against the checker:
+     the Presets view prints what it says, biome by biome. */
+  const LOOK = ["name", "ground", "glow", "glowA", "particles", "tint", "density", "ropes", "material"];
+  const PRESETS = [
+    { key: "arcade", name: "Neon arcade", arrow: "trident",
+      note: "The game as it is, pushed five ways: the house look, one new idea per stretch.",
+      biomes: DEFAULTS.map(b => { const o = {}; LOOK.forEach(k => { o[k] = clone(b[k]); }); return o; }) },
+    { key: "space", name: "Deep space", arrow: "jet",
+      note: "A ship crossing the cosmos: near-black skies, a nebula, an ion storm, a meteor field, a dying star.",
+      biomes: [
+        { name: "Orbit", ground: ["#0e1430", "#070a1c", "#020308"], glow: "#5a7bff", glowA: 0, particles: "stars", tint: "#ffffff",
+          density: 1.2, ropes: ["#7fd8ff", "#ff8ae8", "#c8ff7a"], material: "dots" },
+        { name: "Nebula", ground: ["#12301f", "#081a10", "#020604"], glow: "#5a7bff", glowA: 0.16, particles: "shards", tint: "#cfe0ff",
+          density: 0.8, ropes: ["#5ad8ff", "#ff6fd8", "#ffffff"], material: "beads" },
+        { name: "Ion storm", ground: ["#1b2236", "#0d111c", "#040509"], glow: "#a9c4ff", glowA: 0, particles: "rain", tint: "#a9c4ff",
+          density: 1, ropes: ["#7ff0ff", "#ff6ae0", "#d6ffa0"], material: "dashes" },
+        { name: "Meteor field", ground: ["#221a14", "#120d0a", "#050403"], glow: "#ff7a3a", glowA: 0.2, particles: "comets", tint: "#fff0e0",
+          density: 1.3, ropes: ["#6fd8ff", "#8dff9a", "#ff8ae8"], material: "rings" },
+        { name: "Supernova", ground: ["#2a0d22", "#150610", "#050205"], glow: "#ff5a2a", glowA: 0.22, particles: "embers", tint: "#ffd0a0",
+          density: 1.2, ropes: ["#4af0ff", "#ffffff", "#9dff6a"], material: "links" }
+      ] },
+    { key: "elements", name: "Elements", arrow: "prow",
+      note: "Water, wood, ice, crystal, fire: five natures the player recognises before reading anything.",
+      biomes: [
+        { name: "Abyss", ground: ["#062a44", "#03182a", "#01070e"], glow: "#9fe8ff", glowA: 0, particles: "bubbles", tint: "#9fe8ff",
+          density: 1, ropes: ["#b8ff7a", "#ff8ae8", "#ffffff"], material: "rings" },
+        { name: "Forest", ground: ["#10361c", "#071d0e", "#020803"], glow: "#d8ff7a", glowA: 0, particles: "embers", tint: "#d8ff7a",
+          density: 0.7, ropes: ["#5ab4ff", "#ff7ae6", "#ffffff"], material: "beads" },
+        { name: "Blizzard", ground: ["#283040", "#12161f", "#05060a"], glow: "#eef4ff", glowA: 0, particles: "snow", tint: "#eef4ff",
+          density: 1.2, ropes: ["#7fe9ff", "#ff5ae0", "#b8ff6a"], material: "dots" },
+        { name: "Crystal", ground: ["#102a4a", "#08162a", "#02060d"], glow: "#7fd0ff", glowA: 0.16, particles: "shards", tint: "#e0f4ff",
+          density: 1, ropes: ["#4dffc3", "#ff7ae6", "#ffffff"], material: "beads" },
+        { name: "Magma", ground: ["#2a1810", "#140b07", "#060302"], glow: "#ff6a1c", glowA: 0.18, particles: "embers", tint: "#ffb347",
+          density: 1.2, ropes: ["#4af0ff", "#fff1dc", "#7dff6a"], material: "links" }
+      ] },
+    { key: "synth", name: "Synthwave", arrow: "dart",
+      note: "A night drive in 1986: magenta skies, a sunset floor, a laser grid, a wet city, then the redline.",
+      biomes: [
+        { name: "Sunset drive", ground: ["#3d0f3a", "#1c0820", "#07020a"], glow: "#ff6a2a", glowA: 0.26, particles: "grid", tint: "#ff5ae0",
+          density: 1, ropes: ["#35f0ff", "#6a7dff", "#ffffff"], material: "dots" },
+        { name: "Laser grid", ground: ["#0a1440", "#050a24", "#01030c"], glow: "#35f0ff", glowA: 0, particles: "grid", tint: "#35f0ff",
+          density: 1, ropes: ["#ff5ae0", "#a6ff3d", "#ffffff"], material: "dashes" },
+        { name: "Night city", ground: ["#1a1a2a", "#0c0c16", "#040408"], glow: "#ff8ae8", glowA: 0, particles: "rain", tint: "#ff8ae8",
+          density: 0.9, ropes: ["#35f0ff", "#a6ff3d", "#ff5ae0"], material: "rings" },
+        { name: "Chrome sky", ground: ["#241e30", "#110e1a", "#050408"], glow: "#ff5a2a", glowA: 0.22, particles: "comets", tint: "#ffe0f4",
+          density: 1, ropes: ["#4dffc3", "#6a7dff", "#ff7ae6"], material: "beads" },
+        { name: "Overdrive", ground: ["#36082e", "#1a0416", "#060105"], glow: "#ff6a2a", glowA: 0.2, particles: "embers", tint: "#ff9a5a",
+          density: 1.1, ropes: ["#35f0ff", "#ffffff", "#a6ff3d"], material: "links" }
+      ] }
+  ];
+  // The five biomes a preset would give: the preset's look over the slots' rules and figures.
+  function presetBiomes(pr) { return BIOMES.map((b, i) => Object.assign(clone(b), clone(pr.biomes[i]), { arrow: pr.arrow })); }
+
+  const STORE = "lab:triverse-biomes";
+  const S = { view: "gallery", sel: 0, preset: -1, items: true, rule: true, particles: true, arrow: true, anim: true, speed: 780 };
+  let BIOMES = clone(DEFAULTS);
+  try { const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+        // a save from an older round of the page lacks the newer keys: fill them from the defaults
+        if (saved && saved.length === DEFAULTS.length) BIOMES = saved.map((b, i) => Object.assign(clone(DEFAULTS[i]), b));
+      } catch (e) {}
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(BIOMES)); } catch (e) {} }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  /* ---- colour helpers --------------------------------------------------- */
+  function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function rgba(hex, a) { const c = rgb(hex); return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  function mix(a, b, t) {
+    const x = rgb(a), y = rgb(b);
+    return "#" + [0, 1, 2].map(i => Math.round(x[i] + (y[i] - x[i]) * t).toString(16).padStart(2, "0")).join("");
+  }
+  function hsl(hex) {
+    const c = rgb(hex).map(v => v / 255), mx = Math.max(...c), mn = Math.min(...c), l = (mx + mn) / 2, d = mx - mn;
+    if (!d) return { h: 0, s: 0, l, ch: 0 };
+    const s = d / (1 - Math.abs(2 * l - 1));
+    let h = mx === c[0] ? ((c[1] - c[2]) / d) % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4;
+    return { h: (h * 60 + 360) % 360, s, l, ch: d };
+  }
+  function lum(hex) {
+    const c = rgb(hex).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function hueGap(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+  function hash(n) { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); }
+  function ease(t) { return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  /* ---- the readability check ---------------------------------------------
+     What a biome must not do to the items. Hue is only judged against a stop
+     that is saturated AND light enough to carry a hue at all — a near-black
+     ground has no colour to clash with. The particles are judged against the
+     hazards only: a gold spark near a gem is harmless, a red one near a mine
+     is not. */
+  const HUE_MIN = 24, CONTRAST_MIN = 3, ROPE_APART = 110;
+  // Plain RGB distance, out of ~441: crude, and enough to catch two ropes the eye merges.
+  function dist(a, b) { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); }
+  function checks(b) {
+    const list = [
+      ["Mine", FIXED.mine, "hazard"], ["Void", FIXED.void, "hazard"],
+      ["Mega gem", FIXED.star, "item"], ["x2", FIXED.x2, "item"], ["Shield", FIXED.shield, "item"]
+    ];
+    if (b.rule === "comet" || b.rule === "all") list.push(["Comet", COMET, "hazard"]);
+    b.ropes.forEach((c, i) => list.push(["Rope " + (i + 1), c, "rope", i]));
+    const stops = b.ground.filter(c => { const h = hsl(c); return h.s >= 0.35 && h.l >= 0.12; });
+    const glowOn = b.glowA >= 0.15, tintH = hsl(b.tint);
+    const hazards = list.filter(r => r[2] === "hazard");
+    return list.map(([name, col, kind, ri]) => {
+      // judged on chroma, not HSL saturation, which calls a near-white fully saturated
+      const why = [], hc = hsl(col), h = hc.h, tinted = hc.ch >= 0.3;
+      const ratio = contrast(col, b.ground[1]);
+      if (ratio < CONTRAST_MIN) why.push("contrast " + ratio.toFixed(1) + " on the ground");
+      if (tinted) {
+        stops.forEach(s => { if (hueGap(h, hsl(s).h) < HUE_MIN) why.push("hue near the ground " + s); });
+        if (glowOn && hueGap(h, hsl(b.glow).h) < HUE_MIN) why.push("hue near the glow");
+      }
+      if (kind === "hazard" && b.particles !== "shards" && tintH.s >= 0.35 && hueGap(h, tintH.h) < HUE_MIN) why.push("hue near the particles");
+      if (kind === "rope") {
+        if (tinted) {
+          hazards.forEach(z => { if (hueGap(h, hsl(z[1]).h) < HUE_MIN) why.push("in the hue of the " + z[0].toLowerCase()); });
+          if (hueGap(h, hsl(FIXED.star).h) < HUE_MIN) why.push("its gems read as mega gems");
+        }
+        b.ropes.forEach((o, j) => { if (j !== ri && dist(col, o) < ROPE_APART) why.push("too close to rope " + (j + 1)); });
+      }
+      return { name, col, why, ratio };
+    });
+  }
+
+  /* ---- seeded random, so a card keeps its ropes across a redraw ---------- */
+  function makeRand(seed) {
+    let a = seed >>> 0;
+    const f = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+                      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    return { f, range: (x, y) => x + (y - x) * f(), int: (x, y) => x + Math.floor(f() * (y - x + 1)),
+             pick: arr => arr[Math.floor(f() * arr.length)], chance: p => f() < p };
+  }
+
+  /* =========================================================================
+     ONE WORLD — the band generator of games/triverse/game.js, ported as is,
+     with the biome's figure weights; the items, a reduced version of the
+     game's spawner plus the four rules; and an autopilot arrow.
+     ========================================================================= */
+  // `src` is the list of biomes the world reads (BIOMES unless a preset is being previewed)
+  function makeWorld(bi, seed, src) {
+    const R = makeRand(seed);
+    const Wd = { bi, t: 0, camP: 0, lane: 1, prevLane: 1, switchT: 1, switchDir: 1, hopT: 1, heat: 0,
+                 trail: [], flashT: 0, flashIn: 2, bolt: null, parts: [], partKey: "", deco: [] };
+    let paths, genP, curX, slotRope, sway, onGrid, items, nextItemP, lastHazardP;
+    const pa = { x: 0, y: 0 }, pb = { x: 0, y: 0 }, pc = { x: 0, y: 0 }, sa = { x: 0, y: 0 }, sb = { x: 0, y: 0 };
+    const B = () => (src || BIOMES)[Wd.bi];
+
+    function segEval(s, p, out) {
+      let t, th;
+      if (s.k === 0) { out.x = s.x; out.y = p; }
+      else if (s.k === 1) { t = (p - s.p0) / (s.p1 - s.p0); out.x = s.x0 + (s.x1 - s.x0) * ease(t); out.y = p; }
+      else if (s.k === 2) { out.x = s.x + s.amp * Math.sin(TAU * (p - s.p0) / s.wl + s.ph); out.y = p; }
+      else { th = TAU * (p - s.p0) / (s.p1 - s.p0); out.x = s.x + s.dir * s.r * (1 - Math.cos(th)); out.y = p + s.r * Math.sin(th); }
+    }
+    function pathSeg(path, p) {
+      const segs = path.segs;
+      for (let i = 0; i < segs.length; i++) if (p < segs[i].p1) return segs[i];
+      return segs[segs.length - 1];
+    }
+    function pathPoint(i, p, out) { segEval(pathSeg(paths[i], p), p, out); return out; }
+    function pathX(i, p) { return pathPoint(i, p, pc).x; }
+    function dotStep(kind, a, b) {
+      if (kind === 2) return T.dot / Math.sqrt(1 + (a * TAU / b) * (a * TAU / b) * 0.5);
+      if (kind === 3) return T.dot * b / Math.sqrt(a * a + b * b);
+      return T.dot;
+    }
+    function slotHalf() { return L.w * 0.5 - T.edge; }
+    function slotX(s) { return L.cx + sway + (s - 1) * slotHalf(); }
+    function wallRoom(x, dir) { return dir > 0 ? (L.right - 26) - x : x - (L.left + 26); }
+    function emitStraight(i, p0, p1) { paths[i].segs.push({ k: 0, p0, p1, x: curX[i], step: T.dot }); }
+    function emitCurve(i, p0, p1, x1) { paths[i].segs.push({ k: 1, p0, p1, x0: curX[i], x1, step: T.dot * 0.86 }); curX[i] = x1; }
+    function emitSine(i, p0, wl, n, center, amp, ph) {
+      paths[i].segs.push({ k: 2, p0, p1: p0 + wl * n, x: center, amp, wl, ph, step: dotStep(2, Math.abs(amp), wl) });
+    }
+    function emitLoop(i, p0, span, r, dir) {
+      paths[i].segs.push({ k: 3, p0, p1: p0 + span, x: curX[i], r, dir, step: dotStep(3, r, span / TAU) });
+    }
+    function ferryTo(perm) {
+      let len = 0;
+      for (let i = 0; i < 3; i++) len = Math.max(len, Math.abs(slotX(i) - curX[perm[i]]));
+      len = clamp(250 + len * 1.05, 280, 660);
+      for (let i = 0; i < 3; i++) emitCurve(perm[i], genP, genP + len, slotX(i));
+      slotRope = perm; onGrid = true; genP += len;
+    }
+    function ferryHome() { const o = [0, 1, 2]; o.sort((u, v) => curX[u] - curX[v]); ferryTo(o); }
+    const SHIFTS = [[1, 0, 2], [0, 2, 1], [2, 1, 0], [1, 2, 0], [2, 0, 1]];
+    function pushRails(p0) { const len = R.range(190, 330); for (let i = 0; i < 3; i++) emitStraight(i, p0, p0 + len); genP = p0 + len; }
+
+    function pushBand() {
+      const p0 = genP;
+      let i, a, b, ia, ib, ic, center, amp, wl, n, ph, xs, len, off, mid, li, gapL, gapR, r, dir, spans, total, q;
+      if (!onGrid) { ferryHome(); return; }
+      const kind = R.pick((FIGSETS[B().figures] || FIGSETS.all).list);
+      if (kind === "rails") { pushRails(p0); return; }
+      if (kind === "shift") {
+        sway = clamp(sway + R.range(-T.sway, T.sway), -T.sway, T.sway);
+        a = R.pick(SHIFTS);
+        ferryTo([slotRope[a[0]], slotRope[a[1]], slotRope[a[2]]]);
+        return;
+      }
+      if (kind === "ribbon" || kind === "coil") {
+        amp = Math.min(kind === "coil" ? 42 : 58, Math.min(wallRoom(slotX(0), -1), wallRoom(slotX(2), 1)));
+        if (amp < 22) { pushRails(p0); return; }
+        wl = kind === "coil" ? R.range(160, 220) : R.range(320, 460);
+        n = kind === "coil" ? R.int(3, 4) : R.int(1, 2);
+        for (i = 0; i < 3; i++) emitSine(i, p0, wl, n, curX[i], amp, 0);
+        genP = p0 + wl * n; return;
+      }
+      if (kind === "braid") {
+        a = R.chance(0.5) ? 0 : 1; b = a + 1;
+        ia = slotRope[a]; ib = slotRope[b]; ic = slotRope[3 - a - b];
+        center = (slotX(a) + slotX(b)) * 0.5; amp = (slotX(b) - slotX(a)) * 0.5;
+        wl = R.range(320, 440); n = R.int(1, 2);
+        emitSine(ia, p0, wl, n, center, amp, -Math.PI / 2);
+        emitSine(ib, p0, wl, n, center, amp, Math.PI / 2);
+        emitStraight(ic, p0, p0 + wl * n);
+        genP = p0 + wl * n; return;
+      }
+      if (kind === "helix") {
+        center = L.cx + sway; amp = slotHalf() * 0.68; ph = [-TAU / 3, 0, TAU / 3];
+        xs = []; len = 0;
+        for (i = 0; i < 3; i++) xs.push(center + amp * Math.sin(ph[i]));
+        for (i = 0; i < 3; i++) len = Math.max(len, Math.abs(xs[i] - curX[slotRope[i]]));
+        len = clamp(240 + len * 1.05, 270, 620);
+        for (i = 0; i < 3; i++) emitCurve(slotRope[i], p0, p0 + len, xs[i]);
+        genP = p0 + len;
+        wl = R.range(330, 450); n = R.int(1, 2);
+        for (i = 0; i < 3; i++) emitSine(slotRope[i], genP, wl, n, center, amp, ph[i]);
+        genP += wl * n; onGrid = false; return;
+      }
+      if (kind === "breath") {
+        center = L.cx + sway; mid = R.range(0.80, 0.88);
+        wl = R.range(320, 440); n = R.int(1, 2);
+        for (i = 0; i < 3; i++) {
+          off = slotX(i) - center;
+          if (Math.abs(off) < 4) emitStraight(slotRope[i], p0, p0 + wl * n);
+          else emitSine(slotRope[i], p0, wl, n, center + off * mid, off * (1 - mid), Math.PI / 2);
+        }
+        genP = p0 + wl * n; return;
+      }
+      li = kind === "loop" ? slotRope[R.int(0, 2)] : slotRope[1];
+      gapL = wallRoom(curX[li], -1); gapR = wallRoom(curX[li], 1);
+      for (i = 0; i < 3; i++) {
+        if (i === li) continue;
+        if (curX[i] < curX[li]) gapL = Math.min(gapL, curX[li] - curX[i]);
+        else gapR = Math.min(gapR, curX[i] - curX[li]);
+      }
+      if (kind === "eight") { dir = R.chance(0.5) ? 1 : -1; r = Math.min(T.loopR, (Math.min(gapL, gapR) - T.loopClear) * 0.5); }
+      else { dir = gapR >= gapL ? 1 : -1; r = Math.min(T.loopR, (Math.max(gapL, gapR) - T.loopClear) * 0.5); }
+      if (r < 44) { pushRails(p0); return; }
+      n = kind === "loop" ? 1 : kind === "eight" ? 2 : R.int(2, 3);
+      spans = []; total = 0;
+      for (i = 0; i < n; i++) { q = r * R.range(1.8, 2.7); spans.push(q); total += q; }
+      for (i = 0; i < 3; i++) if (i !== li) emitStraight(i, p0, p0 + total);
+      q = p0;
+      for (i = 0; i < n; i++) { emitLoop(li, q, spans[i], r, kind === "eight" && (i % 2) ? -dir : dir); q += spans[i]; }
+      genP = p0 + total;
+    }
+    function buildAll(horizon) {
+      while (genP < horizon) pushBand();
+      for (let i = 0; i < 3; i++) { const s = paths[i].segs; while (s.length > 1 && s[0].p1 < Wd.camP - 700) s.shift(); }
+    }
+
+    /* ---- items ----------------------------------------------------------- */
+    function freeRange(idx, p0, p1) {
+      for (let i = 0; i < 3; i++) {
+        if (i === idx) continue;
+        for (let q = p0; q <= p1; q += 20) {
+          pathPoint(idx, q, sa); pathPoint(i, q, sb);
+          if (Math.abs(sa.x - sb.x) < T.hazardApart) return false;
+        }
+      }
+      return true;
+    }
+    function crossingFree(idx, p) { return freeRange(idx, p - T.hazardClear, p + T.hazardClear); }
+    function spot(p, len) {
+      for (let tries = 0; tries < 5; tries++) {
+        buildAll(p + (len || 0) + T.hazardClear + 60);
+        const order = [Wd.lane, (Wd.lane + 1) % 3, (Wd.lane + 2) % 3];
+        for (let i = 0; i < 3; i++) {
+          if (len ? freeRange(order[i], p - 60, p + len + 60) : crossingFree(order[i], p)) return { path: order[i], p };
+        }
+        p += 150;
+      }
+      return null;
+    }
+    function spawnRule(kind, p) {
+      if (kind === "gate") {
+        for (let tries = 0; tries < 4; tries++, p += 150) {
+          buildAll(p + T.hazardClear + 60);
+          if (crossingFree(0, p) && crossingFree(1, p) && crossingFree(2, p)) {
+            items.push({ type: "gate", p, rope: R.int(0, 2) });
+            nextItemP = p + R.range(420, 560); return true;
+          }
+        }
+        return false;
+      }
+      if (kind === "break") {
+        const len = R.range(170, 240), s = spot(p, len);
+        if (!s) return false;
+        items.push({ type: "break", path: s.path, p: s.p, len });
+        nextItemP = s.p + len + R.range(280, 380); return true;
+      }
+      if (kind === "comet") {
+        items.push({ type: "comet", path: R.int(0, 2), p: p + 300, v: R.range(220, 360) });
+        nextItemP = p + R.range(360, 480); return true;
+      }
+      return false;
+    }
+    function spawnItems(horizon) {
+      while (nextItemP < horizon) {
+        const p = nextItemP, rule = B().rule;
+        const rk = rule === "all" ? R.pick(["gate", "break", "comet"]) : rule;
+        if ((rk === "gate" || rk === "break" || rk === "comet") && R.chance(rule === "all" ? 0.22 : 0.3)) {
+          if (spawnRule(rk, p)) continue;
+        }
+        if (R.chance(0.5) && p - lastHazardP > 300) {
+          if (R.chance(0.25)) {
+            buildAll(p + T.hazardClear + 60);
+            const free = R.int(0, 2);
+            if (crossingFree(free, p)) {
+              items.push({ type: "mine", path: (free + 1) % 3, p, seed: R.range(0, TAU) });
+              items.push({ type: "mine", path: (free + 2) % 3, p, seed: R.range(0, TAU) });
+              lastHazardP = p; nextItemP = p + R.range(480, 620); continue;
+            }
+          }
+          const s = spot(p);
+          if (s) {
+            items.push({ type: R.chance(0.72) ? "mine" : "void", path: s.path, p: s.p, seed: R.range(0, TAU) });
+            lastHazardP = s.p; nextItemP = s.p + R.range(300, 460);
+          } else nextItemP = p + R.range(200, 320);
+        } else if (R.chance(0.18)) {
+          items.push({ type: R.pick(["x2", "shield", "star"]), path: R.int(0, 2), p, seed: 0 });
+          nextItemP = p + R.range(250, 380);
+        } else {
+          const lp = R.chance(0.45) ? Wd.lane : (Wd.lane + 1 + R.int(0, 1)) % 3, n = R.int(3, 5), gap = R.range(70, 92);
+          for (let i = 0; i < n; i++) items.push({ type: "gem", path: lp, p: p + i * gap, seed: 0 });
+          nextItemP = p + n * gap + R.range(140, 240);
+        }
+      }
+    }
+
+    /* ---- the autopilot: hop away from what is coming, sometimes for fun --- */
+    function blocked(l, d) {
+      const rule = S.rule;
+      for (const it of items) {
+        if (it.type === "gate") { if (rule && it.p > Wd.camP && it.p < Wd.camP + d && it.rope !== l) return true; continue; }
+        if (it.path !== l) continue;
+        if (it.type === "break") { if (rule && it.p < Wd.camP + d && it.p + it.len > Wd.camP) return true; continue; }
+        if (it.type === "comet" && !rule) continue;
+        if ((it.type === "mine" || it.type === "void" || it.type === "comet") && it.p > Wd.camP && it.p < Wd.camP + d) return true;
+      }
+      return false;
+    }
+    function neighbours() {
+      const o = [0, 1, 2].sort((u, v) => pathX(u, Wd.camP) - pathX(v, Wd.camP)), k = o.indexOf(Wd.lane), n = [];
+      if (k > 0) n.push(o[k - 1]);
+      if (k < 2) n.push(o[k + 1]);
+      return n;
+    }
+    function hop(to) {
+      // the side it hops to, for the lean (the game's switchDir)
+      Wd.switchDir = pathX(to, Wd.camP) > pathX(Wd.lane, Wd.camP) ? 1 : -1;
+      Wd.prevLane = Wd.lane; Wd.lane = to; Wd.switchT = 0; Wd.heat = 0;
+    }
+
+    Wd.reset = function () {
+      paths = [0, 1, 2].map(i => ({ idx: i, segs: [] }));
+      genP = 0; sway = 0; onGrid = true; slotRope = [0, 1, 2];
+      curX = [slotX(0), slotX(1), slotX(2)];
+      items = []; nextItemP = 700; lastHazardP = -1e9;
+      Wd.camP = 0; Wd.lane = 1; Wd.prevLane = 1; Wd.switchT = 1; Wd.heat = 0; Wd.trail = [];
+      pushRails(0);
+      buildAll(1800);
+    };
+
+    Wd.update = function (dt) {
+      Wd.t += dt;
+      Wd.camP += S.speed * dt;
+      buildAll(Wd.camP + 1800);
+      spawnItems(Wd.camP + 1650);
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (it.type === "comet") it.p -= it.v * dt;
+        if ((it.p + (it.len || 0)) < Wd.camP - 400) items.splice(i, 1);
+      }
+      if (Wd.switchT < 1) Wd.switchT = Math.min(1, Wd.switchT + dt / T.switchTime);
+      Wd.hopT -= dt;
+      if (Wd.switchT >= 1 && (Wd.hopT <= 0 || blocked(Wd.lane, 460))) {
+        const ns = neighbours().filter(n => !blocked(n, 460));
+        if (ns.length) hop(R.pick(ns));
+        Wd.hopT = R.range(0.9, 1.9);
+      }
+      if (S.rule && (B().rule === "heat" || B().rule === "all")) Wd.heat = Math.min(1, Wd.heat + dt / 2.4);
+      else Wd.heat = 0;
+      // lightning, for the rain
+      Wd.flashT = Math.max(0, Wd.flashT - dt);
+      Wd.flashIn -= dt;
+      if (Wd.flashIn <= 0) {
+        Wd.flashIn = R.range(2.5, 6);
+        if (B().particles === "rain") {
+          Wd.flashT = 0.38;
+          const pts = []; let x = R.range(120, 600), y = -20;
+          const end = H * R.range(0.32, 0.55);
+          while (y < end) { pts.push([x, y]); y += R.range(40, 80); x += R.range(-46, 46); }
+          Wd.bolt = pts;
+        }
+      }
+      // the decorative comets of the comet sky
+      for (let i = Wd.deco.length - 1; i >= 0; i--) {
+        const d = Wd.deco[i]; d.x += d.vx * dt; d.y += d.vy * dt;
+        if (d.y > H + 200 || d.x < -300) Wd.deco.splice(i, 1);
+      }
+      if (B().particles === "comets" && Wd.deco.length < Math.round(2 * B().density) && R.chance(dt * 0.9)) {
+        const sp = R.range(520, 900);
+        Wd.deco.push({ x: R.range(300, 900), y: R.range(-160, H * 0.3), vx: -sp * 0.62, vy: sp * 0.78, len: R.range(160, 260) });
+      }
+    };
+
+    /* ---- drawing --------------------------------------------------------- */
+    const sy = y => ANCHOR - (y - Wd.camP);
+
+    Wd.drawBackdrop = function (ctx, still) {
+      const b = B();
+      drawGround(ctx, b);
+      if (S.particles) drawParticles(ctx, b, Wd, still);
+    };
+
+    function brokenAt(i, p) {
+      if (!S.rule) return null;
+      for (const it of items) if (it.type === "break" && it.path === i && p >= it.p && p <= it.p + it.len) return it;
+      return null;
+    }
+
+    function drawPath(ctx, i, hot) {
+      const b = B(), segs = paths[i].segs, pMin = Wd.camP - (H - ANCHOR) - 200, pMax = Wd.camP + ANCHOR + 200;
+      let col = b.ropes[i];
+      if (hot && Wd.heat > 0) col = mix(col, "#ffffff", Math.round(Wd.heat * 5) / 10);
+      for (const s of segs) {
+        if (s.p1 < pMin || s.p0 > pMax) continue;
+        const k0 = Math.max(0, Math.floor((pMin - s.p0) / s.step)), k1 = Math.ceil((Math.min(pMax, s.p1) - s.p0) / s.step);
+        for (let k = k0; k <= k1; k++) {
+          const p = s.p0 + k * s.step;
+          if (p > s.p1) break;
+          if (brokenAt(i, p)) continue;
+          segEval(s, p, pa);
+          const y = sy(pa.y);
+          if (y < -40 || y > H + 40) continue;
+          segEval(s, p + 2, pb);
+          const ang = Math.atan2(-(pb.y - pa.y), pb.x - pa.x);
+          drawDot(ctx, b.material, col, hot, pa.x, y, ang, k, s.step, Wd.t, hot ? Wd.heat : 0);
+        }
+      }
+    }
+
+    function drawRule(ctx) {
+      for (const it of items) {
+        if (it.type === "gate") {
+          const y = sy(it.p);
+          if (y < -60 || y > H + 60) continue;
+          const xs = [0, 1, 2].map(i => ({ i, x: pathPoint(i, it.p, pa).x }));
+          drawGate(ctx, y, xs, it.rope, B().ropes);
+        } else if (it.type === "break") {
+          for (const end of [it.p, it.p + it.len]) {
+            pathPoint(it.path, end, pa);
+            const y = sy(pa.y);
+            if (y > -40 && y < H + 40) drawSnap(ctx, pa.x, y, Wd.t + end);
+          }
+        }
+      }
+    }
+
+    function drawItems(ctx) {
+      for (const it of items) {
+        if (it.type === "gate" || it.type === "break") continue;
+        if (it.type === "comet") {
+          if (!S.rule) continue;
+          const tail = [];
+          for (let q = 0; q <= 240; q += 16) { pathPoint(it.path, it.p + q, pa); tail.push([pa.x, sy(pa.y)]); }
+          if (tail[0][1] > -80 && tail[0][1] < H + 80) drawComet(ctx, tail, Wd.t);
+          continue;
+        }
+        if (!S.items) continue;
+        pathPoint(it.path, it.p, pa);
+        const y = sy(pa.y);
+        if (y < -70 || y > H + 70) continue;
+        drawItem(ctx, it.type, pa.x, y, B().ropes[it.path], Wd.t, it.seed);
+      }
+    }
+
+    function drawArrowAll(ctx) {
+      const e = ease(Wd.switchT);
+      pathPoint(Wd.lane, Wd.camP, pa);
+      let x = pa.x, y = pa.y;
+      if (Wd.switchT < 1) { pathPoint(Wd.prevLane, Wd.camP, pb); x = pb.x + (pa.x - pb.x) * e; y = pb.y + (pa.y - pb.y) * e; }
+      pathPoint(Wd.lane, Wd.camP + 7, pb); pathPoint(Wd.lane, Wd.camP - 7, pc);
+      let ang = Math.atan2(-(pb.y - pc.y), pb.x - pc.x);
+      if (Wd.switchT < 1) ang += Wd.switchDir * 0.5 * Math.sin(Math.PI * Wd.switchT);   // lean into the hop
+      Wd.trail.push({ x, y }); if (Wd.trail.length > 18) Wd.trail.shift();
+      drawTrail(ctx, Wd.trail.map(p => ({ x: p.x, y: sy(p.y) })), B().ropes[Wd.lane]);
+      drawArrow(ctx, B().arrow, x, sy(y), ang, B().ropes[Wd.lane], S.rule && (B().rule === "heat" || B().rule === "all") ? Wd.heat : -1);
+    }
+
+    Wd.render = function (ctx) {
+      Wd.drawBackdrop(ctx);
+      for (let i = 0; i < 3; i++) if (i !== Wd.lane) drawPath(ctx, i, false);
+      drawPath(ctx, Wd.lane, true);
+      if (S.rule) drawRule(ctx);
+      drawItems(ctx);
+      if (S.arrow) drawArrowAll(ctx);
+    };
+
+    Wd.reset();
+    return Wd;
+  }
+
+  /* =========================================================================
+     DRAWING — pure functions, shared by the live cards and the item sheet.
+     ========================================================================= */
+  function drawGround(ctx, b) {
+    const g = ctx.createRadialGradient(W * 0.5, H * 0.3, 40, W * 0.5, H * 0.42, H * 0.95);
+    g.addColorStop(0, b.ground[0]); g.addColorStop(0.55, b.ground[1]); g.addColorStop(1, b.ground[2]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (b.glowA > 0) {
+      const r = ctx.createRadialGradient(W * 0.5, H * 1.08, 20, W * 0.5, H * 1.08, H * 0.75);
+      r.addColorStop(0, rgba(b.glow, b.glowA)); r.addColorStop(1, rgba(b.glow, 0));
+      ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  /* The particle fields, built once per kind and density, then scrolled off
+     the camera with their own parallax — the way `sparks` already is. */
+  function buildParts(w, b) {
+    const key = b.particles + ":" + b.density;
+    if (w.partKey === key) return;
+    w.partKey = key;
+    const R = makeRand(9001 + w.bi), n = Math.round(b.density * ({ stars: 70, shards: 34, rain: 90, comets: 60, embers: 60, grid: 30, bubbles: 40, snow: 80 })[b.particles]);
+    w.parts = [];
+    for (let i = 0; i < n; i++) {
+      const star = i < n * 0.68;
+      // Prism shards stay out of red, violet and pink: those hues belong to the hazards and the pink rope.
+      const hues = [R.range(40, 70), R.range(120, 170), R.range(185, 250)];
+      w.parts.push({
+        x: R.range(0, W), y: R.range(0, H + 80), star, a: R.range(0.25, 0.6),
+        w: star ? R.range(2, 3.4) : 2, h: star ? R.range(2, 3.4) : R.range(40, 110),
+        par: star ? R.range(0.16, 0.42) : R.range(0.85, 1.3),
+        r: R.range(5, 13), rot: R.range(0, TAU), spin: R.range(-0.8, 0.8), hue: R.pick(hues),
+        v: R.range(900, 1500), len: R.range(30, 70), rise: R.range(60, 150), ph: R.range(0, TAU), f: R.range(4, 11)
+      });
+    }
+  }
+
+  function drawParticles(ctx, b, w, still) {
+    buildParts(w, b);
+    const span = H + 80, t = w.t, cam = w.camP;
+    const wrap = y => { y %= span; return y < 0 ? y + span : y; };
+    ctx.save();
+    if (b.particles === "stars" || b.particles === "comets") {
+      ctx.fillStyle = b.tint;
+      for (const s of w.parts) {
+        if (b.particles === "comets" && !s.star) continue;          // a still sky: no speed streaks
+        ctx.globalAlpha = s.star ? s.a : s.a * 0.22;
+        ctx.fillRect(s.x, wrap(s.y + cam * s.par) - 40, s.w, s.h);
+      }
+      if (b.particles === "comets") {
+        for (const d of w.deco) {
+          const nx = -0.62, ny = 0.78, g = ctx.createLinearGradient(d.x, d.y, d.x - nx * d.len, d.y - ny * d.len);
+          g.addColorStop(0, rgba(b.tint, 0.75)); g.addColorStop(1, rgba(b.tint, 0));
+          ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - nx * d.len, d.y - ny * d.len); ctx.stroke();
+          ctx.fillStyle = rgba(b.tint, 0.9); ctx.beginPath(); ctx.arc(d.x, d.y, 3.2, 0, TAU); ctx.fill();
+        }
+      }
+    } else if (b.particles === "shards") {
+      // three wide beams of refracted light, drifting, under the shards
+      for (let i = 0; i < 3; i++) {
+        const x = ((i * 290 + t * 14) % (W + 500)) - 250;
+        ctx.save(); ctx.translate(x, H * 0.5); ctx.rotate(-0.36);
+        const g = ctx.createLinearGradient(-90, 0, 90, 0);
+        g.addColorStop(0, rgba(b.tint, 0)); g.addColorStop(0.5, rgba(b.tint, 0.07)); g.addColorStop(1, rgba(b.tint, 0));
+        ctx.fillStyle = g; ctx.fillRect(-90, -H, 180, H * 2);
+        ctx.restore();
+      }
+      for (const s of w.parts) {
+        const y = wrap(s.y + cam * (s.par * 0.6)) - 40;
+        ctx.save(); ctx.translate(s.x, y); ctx.rotate(s.rot + t * s.spin);
+        ctx.globalAlpha = s.a * 0.7;
+        ctx.fillStyle = "hsl(" + s.hue + ",90%,72%)";
+        ctx.beginPath(); ctx.moveTo(0, -s.r); ctx.lineTo(s.r * 0.4, 0); ctx.lineTo(0, s.r); ctx.lineTo(-s.r * 0.4, 0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    } else if (b.particles === "rain") {
+      if (w.flashT > 0 && !still) {
+        const k = w.flashT / 0.38;
+        ctx.globalAlpha = 0.10 * k; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+        if (w.bolt) {
+          ctx.lineJoin = "round"; ctx.lineCap = "round";
+          for (const [lw, a] of [[14, 0.12], [4, 0.5]]) {
+            ctx.globalAlpha = a * k; ctx.strokeStyle = b.tint; ctx.lineWidth = lw;
+            ctx.beginPath(); w.bolt.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+          }
+        }
+      }
+      ctx.strokeStyle = b.tint; ctx.lineWidth = 2; ctx.lineCap = "round";
+      for (const s of w.parts) {
+        const y = wrap(s.y + cam * s.par * 0.5 + t * s.v * 0.5) - 40;
+        ctx.globalAlpha = s.a * 0.45;
+        ctx.beginPath(); ctx.moveTo(s.x, y); ctx.lineTo(s.x - s.len * 0.22, y + s.len); ctx.stroke();
+      }
+    } else if (b.particles === "embers") {
+      ctx.fillStyle = b.tint;
+      for (const s of w.parts) {
+        const y = wrap(s.y + cam * 0.12 - t * s.rise) - 40;
+        const x = s.x + Math.sin(t * 1.3 + s.ph) * 14;
+        ctx.globalAlpha = s.a * (0.55 + 0.45 * Math.sin(t * s.f + s.ph));
+        ctx.beginPath(); ctx.arc(x, y, s.w * 0.8, 0, TAU); ctx.fill();
+      }
+    } else if (b.particles === "bubbles") {
+      ctx.strokeStyle = b.tint; ctx.lineWidth = 2;
+      for (const s of w.parts) {
+        const y = wrap(s.y + cam * 0.15 - t * s.rise * 0.7) - 40;
+        const x = s.x + Math.sin(t * 1.7 + s.ph) * 10;
+        ctx.globalAlpha = s.a * 0.6;
+        ctx.beginPath(); ctx.arc(x, y, 3 + s.r * 0.45, 0, TAU); ctx.stroke();
+      }
+    } else if (b.particles === "snow") {
+      ctx.fillStyle = b.tint;
+      for (const s of w.parts) {
+        const y = wrap(s.y + cam * s.par * 0.5 + t * 50 * s.par) - 40;
+        const x = s.x + Math.sin(t * 0.9 + s.ph) * 22;
+        ctx.globalAlpha = s.a * 0.8;
+        ctx.beginPath(); ctx.arc(x, y, 1.5 + s.w * 0.6, 0, TAU); ctx.fill();
+      }
+    } else if (b.particles === "grid") {
+      /* The synthwave floor: a perspective grid under a horizon, rolling toward
+         the player with the camera, stars above it. It stays faint — the ropes
+         run over it and must not be read as one of its lines. */
+      const hz = H * 0.36, a = Math.min(1, b.density);
+      ctx.fillStyle = "#ffffff";
+      for (const s of w.parts) {
+        if (s.y > hz) continue;
+        ctx.globalAlpha = s.a * 0.7; ctx.fillRect(s.x, s.y, 2, 2);
+      }
+      ctx.strokeStyle = b.tint; ctx.lineWidth = 2;
+      const roll = (cam / 220) % 1;
+      for (let i = 0; i < 14; i++) {
+        const z = (i + roll) / 14, y = hz + (H - hz) * z * z;
+        ctx.globalAlpha = 0.28 * z * a;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      for (let j = -9; j <= 9; j++) {
+        ctx.globalAlpha = 0.16 * a;
+        ctx.beginPath(); ctx.moveTo(W / 2 + j * 14, hz); ctx.lineTo(W / 2 + j * 130, H); ctx.stroke();
+      }
+      ctx.globalAlpha = 0.5 * a; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, hz); ctx.lineTo(W, hz); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ---- the rope's material: one dot -------------------------------------
+     dots, beads and rings are one sprite per colour (what `dotSprite` does
+     today, no per-frame cost); dashes and links follow the rope's tangent,
+     so in the game they would be a stroke per dot instead of a drawImage. */
+  const SPR = new Map();
+  function sprite(mat, color, hot) {
+    const key = mat + color + hot;
+    if (SPR.has(key)) return SPR.get(key);
+    const s = hot ? 46 : 38, c = document.createElement("canvas"), h = s / 2;
+    c.width = s; c.height = s;
+    const k = c.getContext("2d");
+    const g = k.createRadialGradient(h, h, 0, h, h, h);
+    g.addColorStop(0, rgba(color, hot ? 0.55 : 0.26)); g.addColorStop(0.45, rgba(color, hot ? 0.2 : 0.08)); g.addColorStop(1, rgba(color, 0));
+    k.fillStyle = g; k.fillRect(0, 0, s, s);
+    if (mat === "dots") {
+      k.fillStyle = color; k.beginPath(); k.arc(h, h, hot ? 7.5 : 5.2, 0, TAU); k.fill();
+      if (hot) { k.fillStyle = "rgba(255,255,255,.92)"; k.beginPath(); k.arc(h, h, 3.4, 0, TAU); k.fill(); }
+    } else if (mat === "beads") {
+      const r = hot ? 9.5 : 7.2;
+      k.beginPath(); k.moveTo(h, h - r); k.lineTo(h + r, h); k.lineTo(h, h + r); k.lineTo(h - r, h); k.closePath();
+      k.fillStyle = color; k.fill();
+      k.beginPath(); k.moveTo(h, h - r); k.lineTo(h, h); k.lineTo(h - r, h); k.closePath();
+      k.fillStyle = "rgba(255,255,255,.55)"; k.fill();
+      k.beginPath(); k.moveTo(h, h + r); k.lineTo(h + r, h); k.lineTo(h, h); k.closePath();
+      k.fillStyle = "rgba(0,0,0,.28)"; k.fill();
+      if (hot) { k.fillStyle = "#ffffff"; k.beginPath(); k.arc(h - r * 0.3, h - r * 0.3, 2, 0, TAU); k.fill(); }
+    } else {                                                     // rings
+      k.strokeStyle = color; k.lineWidth = hot ? 3.6 : 3;
+      k.beginPath(); k.arc(h, h, hot ? 8.5 : 6.5, 0, TAU); k.stroke();
+      if (hot) { k.fillStyle = "#ffffff"; k.beginPath(); k.arc(h, h, 2.6, 0, TAU); k.fill(); }
+    }
+    SPR.set(key, c);
+    return c;
+  }
+
+  function drawDot(ctx, mat, color, hot, x, y, ang, k, step, t, heat) {
+    if (mat === "dots" || mat === "beads" || mat === "rings") {
+      const s = sprite(mat, color, hot);
+      ctx.drawImage(s, x - s.width / 2, y - s.height / 2);
+      return;
+    }
+    const ux = Math.cos(ang), uy = Math.sin(ang);
+    if (mat === "dashes") {
+      // an electric dash, crackling sideways a little every twentieth of a second
+      const len = step * 0.36, j = (hash(k * 7.1 + Math.floor(t * 20)) - 0.5) * 5;
+      const cx = x - uy * j, cy = y + ux * j;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = rgba(color, hot ? 0.32 : 0.16); ctx.lineWidth = hot ? 15 : 11;
+      ctx.beginPath(); ctx.moveTo(cx - ux * len, cy - uy * len); ctx.lineTo(cx + ux * len, cy + uy * len); ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = hot ? 5 : 3.6;
+      ctx.beginPath(); ctx.moveTo(cx - ux * len, cy - uy * len); ctx.lineTo(cx + ux * len, cy + uy * len); ctx.stroke();
+      if (hot) {
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(cx - ux * len, cy - uy * len); ctx.lineTo(cx + ux * len, cy + uy * len); ctx.stroke();
+      }
+      return;
+    }
+    // links: a chain, one link seen flat, the next edge-on; the ridden rope glows with its heat
+    const glowA = (hot ? 0.3 : 0.14) + heat * 0.35;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    if (k % 2 === 0) {
+      ctx.strokeStyle = rgba(color, glowA); ctx.lineWidth = hot ? 11 : 9;
+      ctx.beginPath(); ctx.ellipse(0, 0, step * 0.5, 7, 0, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = hot ? 4 : 3.2;
+      ctx.beginPath(); ctx.ellipse(0, 0, step * 0.5, 7, 0, 0, TAU); ctx.stroke();
+    } else {
+      ctx.lineCap = "round";
+      ctx.strokeStyle = rgba(color, glowA); ctx.lineWidth = 11;
+      ctx.beginPath(); ctx.moveTo(-step * 0.42, 0); ctx.lineTo(step * 0.42, 0); ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = hot ? 5 : 4;
+      ctx.beginPath(); ctx.moveTo(-step * 0.42, 0); ctx.lineTo(step * 0.42, 0); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ---- the items, as drawItem() in games/triverse/game.js --------------- */
+  function halo(ctx, x, y, r, col) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(col, 0.5)); g.addColorStop(0.42, rgba(col, 0.16)); g.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  function diamond(ctx, x, y, r, rot, top, mid, bot, ink) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    const g = ctx.createLinearGradient(0, -r, 0, r);
+    g.addColorStop(0, top); if (mid) g.addColorStop(0.5, mid); g.addColorStop(1, bot);
+    ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.72, 0); ctx.lineTo(0, r); ctx.lineTo(-r * 0.72, 0); ctx.closePath();
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = Math.max(3.5, r * 0.2); ctx.strokeStyle = ink; ctx.stroke();
+    ctx.restore();
+  }
+  function spiked(ctx, x, y, n, ro, ri, fill, ink, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath();
+    for (let i = 0; i < n * 2; i++) {
+      const a = (i / (n * 2)) * TAU, r = i % 2 ? ri : ro;
+      if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    ctx.lineWidth = Math.max(3.5, ro * 0.13); ctx.strokeStyle = ink; ctx.stroke();
+    ctx.restore();
+  }
+  function drawItem(ctx, type, x, y, col, t, seed) {
+    let pu;
+    if (type === "gem") {
+      halo(ctx, x, y, 36, col); diamond(ctx, x, y, 21, t * 1.6, "#ffffff", null, col, "rgba(4,5,15,.75)");
+    } else if (type === "star") {
+      pu = 1 + Math.sin(t * 5) * 0.07;
+      halo(ctx, x, y, 52 * pu, "#ffd43b"); diamond(ctx, x, y, 31 * pu, -t * 1.2, "#fffbe8", "#ffd43b", "#ff9f1c", "#2b1a00");
+    } else if (type === "mine") {
+      pu = 1 + Math.sin(t * 7 + seed) * 0.09;
+      halo(ctx, x, y, 66 * pu, "#ff2d55");
+      spiked(ctx, x, y, 7, 47 * pu, 18, "#2b0410", "#ff2d55", seed - t * 0.85);
+      ctx.fillStyle = "#ff2d55"; ctx.beginPath(); ctx.arc(x, y, 16, 0, TAU); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.beginPath(); ctx.arc(x, y, 16, 0, TAU); ctx.stroke();
+      ctx.fillStyle = "#ffe3ea"; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, TAU); ctx.fill();
+    } else if (type === "void") {
+      halo(ctx, x, y, 54, "#a24bff");
+      ctx.fillStyle = "#160a24"; ctx.beginPath(); ctx.arc(x, y, 31, 0, TAU); ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = "#c07bff"; ctx.beginPath(); ctx.arc(x, y, 31, 0, TAU); ctx.stroke();
+      ctx.fillStyle = "#e8ccff"; ctx.fillRect(x - 16, y - 4, 32, 8);
+    } else if (type === "x2") {
+      halo(ctx, x, y, 46, "#a6ff3d");
+      ctx.fillStyle = "#0c2a12"; ctx.beginPath(); ctx.arc(x, y, 28, 0, TAU); ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#a6ff3d"; ctx.beginPath(); ctx.arc(x, y, 28, 0, TAU); ctx.stroke();
+      ctx.fillStyle = "#eaffd0"; ctx.font = "900 32px -apple-system,Segoe UI,Roboto,sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("x2", x, y + 1);
+    } else {
+      halo(ctx, x, y, 46, "#8ffff2");
+      spiked(ctx, x, y, 6, 30, 27, "#062229", "#8ffff2", Math.PI / 6);
+      ctx.fillStyle = "#d8fffb"; ctx.beginPath(); ctx.arc(x, y, 9, 0, TAU); ctx.fill();
+    }
+  }
+
+  /* ---- the four rules, as looks ------------------------------------------ */
+  // A colour gate: a bar across the three ropes, in the colour of the one rope it lets through.
+  function drawGate(ctx, y, xs, rope, ropes) {
+    const col = ropes[rope], open = xs.find(o => o.i === rope).x, gap = 46;
+    const runs = [[L.left - 20, open - gap], [open + gap, L.right + 20]];
+    ctx.lineCap = "round";
+    for (const [w, a] of [[20, 0.16], [7, 0.9], [2, 0.7]]) {
+      ctx.strokeStyle = w === 2 ? rgba("#ffffff", a) : rgba(col, a); ctx.lineWidth = w;
+      ctx.beginPath();
+      for (const [x0, x1] of runs) if (x1 > x0) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
+      ctx.stroke();
+    }
+    // two posts frame the opening
+    ctx.fillStyle = col;
+    for (const x of [open - gap, open + gap]) { ctx.fillRect(x - 4, y - 18, 8, 36); }
+    // a lock on every other rope
+    for (const o of xs) {
+      if (o.i === rope) continue;
+      ctx.save(); ctx.translate(o.x, y); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = "#0b0b14"; ctx.fillRect(-15, -15, 30, 30);
+      ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.strokeRect(-15, -15, 30, 30);
+      ctx.restore();
+    }
+  }
+  // The torn end of a broken rope: a few sparks, flickering.
+  function drawSnap(ctx, x, y, t) {
+    ctx.lineCap = "round";
+    for (let i = 0; i < 4; i++) {
+      const a = hash(i * 3.7 + Math.floor(t * 18)) * TAU, l = 10 + hash(i + Math.floor(t * 18)) * 14;
+      ctx.strokeStyle = i % 2 ? "#ffffff" : "#ffe9a8"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
+    }
+    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, y, 4, 0, TAU); ctx.fill();
+  }
+  // A comet sliding down a rope at the arrow: the mine's red, a white-hot head, its tail up the rope.
+  function drawComet(ctx, tail, t) {
+    for (let i = tail.length - 1; i >= 1; i--) {
+      const k = 1 - i / tail.length;
+      ctx.fillStyle = rgba(COMET, 0.55 * k); ctx.beginPath(); ctx.arc(tail[i][0], tail[i][1], 4 + 12 * k, 0, TAU); ctx.fill();
+    }
+    const [x, y] = tail[0], pu = 1 + Math.sin(t * 14) * 0.08;
+    halo(ctx, x, y, 58 * pu, COMET);
+    ctx.fillStyle = COMET; ctx.beginPath(); ctx.arc(x, y, 19 * pu, 0, TAU); ctx.fill();
+    ctx.fillStyle = "#fff4f6"; ctx.beginPath(); ctx.arc(x, y + 3, 10, 0, TAU); ctx.fill();
+  }
+
+  function drawTrail(ctx, trail, col) {
+    const n = trail.length;
+    if (n < 2) return;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (let pass = 0; pass < 2; pass++) {
+      ctx.strokeStyle = pass ? "#ffffff" : rgba(col, 0.5);
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        ctx.globalAlpha = pass ? t * 0.4 : t * 0.75; ctx.lineWidth = (pass ? 5 : 16) * t;
+        ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* ---- the arrow ----------------------------------------------------------
+     `arrowPath` traces the outline of a shape in its own frame (point up),
+     `drawArrow` fills it the game's way — white tip, rope-coloured belly,
+     dark contour — over one soft halo, and adds the shape's own detail. */
+  function poly(ctx, pts) { ctx.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]); }
+  function arrowPath(ctx, shape) {
+    ctx.beginPath();
+    if (shape === "trident") poly(ctx, [0, -40, 7, -16, 19, -30, 16, 0, 27, 28, 0, 17, -27, 28, -16, 0, -19, -30, -7, -16]);
+    else if (shape === "dart") poly(ctx, [0, -42, 10, -4, 22, 28, 7, 16, 0, 24, -7, 16, -22, 28, -10, -4]);
+    else if (shape === "jet") poly(ctx, [0, -40, 7, -14, 7, -4, 32, 16, 32, 22, 7, 14, 9, 28, 0, 24, -9, 28, -7, 14, -32, 22, -32, 16, -7, -4, -7, -14]);
+    else if (shape === "kite") poly(ctx, [0, -42, 18, -4, 0, 30, -18, -4]);
+    else if (shape === "drop") {
+      ctx.moveTo(0, -40);
+      ctx.bezierCurveTo(10, -22, 22, -6, 22, 8);
+      ctx.arc(0, 8, 22, 0, Math.PI, false);
+      ctx.bezierCurveTo(-22, -6, -10, -22, 0, -40);
+    } else if (shape === "prow") {
+      // a beak whose base sits on the ball, so the contour is one line
+      ctx.moveTo(0, -38); ctx.lineTo(11.6, -10.3);
+      ctx.arc(0, 6, 20, -Math.PI / 2 + 0.62, -Math.PI / 2 - 0.62, false);
+    } else poly(ctx, [0, -36, 26, 27, 0, 14, -26, 27]);              // chevron
+    ctx.closePath();
+  }
+  // heat < 0: no gauge. The gauge is gold to orange — never the mine's red.
+  function drawArrow(ctx, shape, x, y, ang, col, heat) {
+    ctx.save(); ctx.translate(x, y);
+    if (heat >= 0) {
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(0, 0, 52, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = mix("#ffd43b", "#ff8a1c", heat); ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(0, 0, 52, -Math.PI / 2, -Math.PI / 2 + TAU * heat); ctx.stroke();
+    }
+    ctx.rotate(ang + Math.PI / 2);
+    let g = ctx.createRadialGradient(0, 0, 0, 0, 0, 54);
+    g.addColorStop(0, rgba(col, 0.55)); g.addColorStop(0.4, rgba(col, 0.2)); g.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 54, 0, TAU); ctx.fill();
+    g = ctx.createLinearGradient(0, -40, 0, 28);
+    g.addColorStop(0, "#ffffff"); g.addColorStop(0.55, col); g.addColorStop(1, "#ffffff");
+    arrowPath(ctx, shape);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineJoin = "round"; ctx.lineWidth = 5; ctx.strokeStyle = "rgba(3,4,12,.9)"; ctx.stroke();
+    // the detail that makes each shape more than a silhouette
+    ctx.lineCap = "round";
+    if (shape === "trident" || shape === "dart" || shape === "kite") {
+      ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(0, shape === "trident" ? -30 : -32); ctx.lineTo(0, shape === "kite" ? 18 : 10); ctx.stroke();
+    } else if (shape === "jet") {
+      ctx.fillStyle = "rgba(3,4,12,.75)"; ctx.beginPath(); ctx.ellipse(0, -16, 3.5, 8, 0, 0, TAU); ctx.fill();
+    } else if (shape === "drop" || shape === "prow") {
+      const cy = shape === "drop" ? 8 : 6;
+      ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.beginPath(); ctx.arc(0, cy, 8.5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* ---- the item sheet: every object at rest on the selected ground ------- */
+  function renderSheet(ctx, w) {
+    const b = BIOMES[w.bi], t = w.t;
+    w.drawBackdrop(ctx, true);
+    const label = (s, x, y) => {
+      ctx.fillStyle = "rgba(232,230,245,.78)"; ctx.font = "600 22px -apple-system,Segoe UI,Roboto,sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText(s, x, y);
+    };
+    const cols = [170, 360, 550];
+    const rope = (i, x, y0, y1, hot, skip) => {
+      for (let y = y0, k = 0; y <= y1; y += T.dot, k++) {
+        if (skip && y > skip[0] && y < skip[1]) continue;
+        drawDot(ctx, b.material, b.ropes[i], hot, x, y, -Math.PI / 2, k, T.dot, t, 0);
+      }
+    };
+    // row 1: what costs
+    drawItem(ctx, "mine", cols[0], 240, FIXED.mine, t, 0); label("Mine", cols[0], 340);
+    drawItem(ctx, "void", cols[1], 240, FIXED.void, t, 0); label("Void", cols[1], 340);
+    const tail = []; for (let q = 0; q <= 240; q += 16) tail.push([cols[2], 250 - q * 0.55]);
+    drawComet(ctx, tail, t); label("Comet", cols[2], 340);
+    // row 2: the gems, one per rope colour, sitting on their rope
+    for (let i = 0; i < 3; i++) { rope(i, cols[i], 400, 520, false); drawItem(ctx, "gem", cols[i], 460, b.ropes[i], t, 0); }
+    label("Gems", cols[1], 560);
+    // row 3: what helps
+    drawItem(ctx, "star", cols[0], 650, FIXED.star, t, 0); label("Mega gem", cols[0], 740);
+    drawItem(ctx, "x2", cols[1], 650, FIXED.x2, t, 0); label("x2", cols[1], 740);
+    drawItem(ctx, "shield", cols[2], 650, FIXED.shield, t, 0); label("Shield", cols[2], 740);
+    // row 4: a colour gate over the three ropes, letting the pink one through
+    for (let i = 0; i < 3; i++) rope(i, cols[i], 790, 900, i === 1);
+    drawGate(ctx, 845, cols.map((x, i) => ({ i, x })), 1, b.ropes); label("Colour gate", cols[1], 940);
+    // row 5: a broken rope, and the arrow riding a rope with its heat gauge
+    rope(0, cols[0], 990, 1180, false, [1050, 1120]);
+    drawSnap(ctx, cols[0], 1050, t); drawSnap(ctx, cols[0], 1120, t + 3); label("Broken rope", cols[0], 1225);
+    rope(2, cols[2], 990, 1180, true);
+    drawArrow(ctx, b.arrow, cols[2], 1085, -Math.PI / 2, b.ropes[2], 0.5 + 0.5 * Math.sin(t * 0.8)); label("Rope heat", cols[2], 1225);
+  }
+
+  /* =========================================================================
+     THE PAGE
+     ========================================================================= */
+  let seed = 1;
+  let worlds = BIOMES.map((b, i) => makeWorld(i, seed * 101 + i * 7));
+  const grid = document.getElementById("grid");
+  const cards = [], acards = [], pcards = [];
+
+  function buildCards() {
+    grid.innerHTML = ""; cards.length = 0;
+    BIOMES.forEach((b, i) => {
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = '<canvas></canvas><div class="txt"><div class="name"></div><div class="note"></div>' +
+                     '<div class="fit"></div><div class="chips"></div><div class="verdict"></div></div>';
+      el.addEventListener("click", () => select(i));
+      el.addEventListener("dblclick", () => { select(i); setView("focus"); });
+      grid.appendChild(el);
+      cards.push({ el, cv: el.querySelector("canvas") });
+    });
+    describe();
+  }
+
+  function describe() {
+    BIOMES.forEach((b, i) => {
+      const c = cards[i]; if (!c) return;
+      c.el.classList.toggle("picked", i === S.sel);
+      c.el.querySelector(".name").innerHTML = b.name + "<em>levels " + b.levels + "</em>";
+      c.el.querySelector(".note").textContent = RULES[b.rule];
+      c.el.querySelector(".fit").textContent = PARTICLES[b.particles] + " · " + MATERIALS[b.material] + " · " +
+                                               FIGSETS[b.figures].label + " · " + ARROWS[b.arrow].label;
+      const res = checks(b), bad = res.filter(r => r.why.length);
+      c.el.querySelector(".chips").innerHTML = res.map(r =>
+        '<span class="chip' + (r.why.length ? " warn" : "") + '" style="--c:' + r.col + '" title="' +
+        (r.why.length ? r.why.join(", ") : "contrast " + r.ratio.toFixed(1)) + '">' + r.name + "</span>").join("");
+      const v = c.el.querySelector(".verdict");
+      v.className = "verdict" + (bad.length ? " bad" : "");
+      v.textContent = bad.length ? bad.length + " to check — hover a chip" : "Everything reads on this ground";
+    });
+    const b = BIOMES[S.sel];
+    document.getElementById("focus-cap").textContent = b.name + ", levels " + b.levels + " — " + RULES[b.rule];
+    describeArrows();
+  }
+
+  /* ---- the preset catalogue: each preset as its five biomes, still -------- */
+  function buildPresetCards() {
+    const host = document.getElementById("presets");
+    host.innerHTML = ""; pcards.length = 0;
+    PRESETS.forEach((pr, pi) => {
+      const el = document.createElement("div");
+      el.className = "preset";
+      el.innerHTML = "<h3></h3><div class=\"note\"></div><div class=\"row5\"></div>";
+      el.querySelector("h3").innerHTML = pr.name + "<em>" + ARROWS[pr.arrow].label + "</em>";
+      el.querySelector(".note").textContent = pr.note;
+      const row = el.querySelector(".row5"), cells = [];
+      pr.biomes.forEach(() => {
+        const c = document.createElement("div");
+        c.innerHTML = "<canvas></canvas><div class=\"bn\"></div><div class=\"bw\"></div>";
+        row.appendChild(c); cells.push(c);
+      });
+      el.addEventListener("click", () => applyPreset(pi, false));
+      host.appendChild(el);
+      pcards.push({ el, cells });
+    });
+  }
+  // Drawn once per visit (and on resize): twenty animated frames would be noise, not a comparison.
+  function renderPresets() {
+    PRESETS.forEach((pr, pi) => {
+      const src = presetBiomes(pr), pc = pcards[pi];
+      pc.el.classList.toggle("picked", S.preset === pi);
+      src.forEach((b, i) => {
+        const w = makeWorld(i, 77 + i * 13, src);
+        for (let n = 0; n < 150; n++) w.update(1 / 60);
+        draw(pc.cells[i].querySelector("canvas"), ctx => w.render(ctx));
+        const bad = checks(b).filter(r => r.why.length), bw = pc.cells[i].querySelector(".bw");
+        pc.cells[i].querySelector(".bn").textContent = b.name + " · levels " + b.levels;
+        bw.className = "bw" + (bad.length ? " bad" : "");
+        bw.textContent = bad.length ? bad.map(r => r.name + ": " + r.why[0]).join("; ") : "Everything reads";
+      });
+    });
+  }
+  function applyPreset(pi, onlySelected) {
+    const pr = PRESETS[pi];
+    BIOMES.forEach((b, i) => {
+      if (onlySelected && i !== S.sel) return;
+      Object.assign(b, clone(pr.biomes[i]), { arrow: pr.arrow });
+      worlds[i] = makeWorld(i, seed * 101 + i * 7);
+    });
+    S.preset = onlySelected ? S.preset : pi;
+    $("preset").value = pi;
+    save(); syncPanel(); describe();
+    if (S.view === "presets") renderPresets();
+  }
+
+  /* ---- the arrow catalogue: one card per shape, on the selected ground ---- */
+  function buildArrowCards() {
+    const host = document.getElementById("arrows");
+    host.innerHTML = ""; acards.length = 0;
+    Object.keys(ARROWS).forEach(key => {
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = '<canvas class="wide"></canvas><div class="txt"><div class="name"></div><div class="note"></div><div class="fit"></div></div>';
+      el.querySelector(".name").textContent = ARROWS[key].label;
+      el.querySelector(".note").textContent = ARROWS[key].note;
+      el.addEventListener("click", () => { edit(b => { b.arrow = key; }); syncPanel(); });
+      host.appendChild(el);
+      acards.push({ key, el, cv: el.querySelector("canvas") });
+    });
+  }
+  function describeArrows() {
+    const b = BIOMES[S.sel];
+    acards.forEach(c => {
+      const worn = BIOMES.filter(o => o.arrow === c.key).map(o => o.name);
+      c.el.classList.toggle("picked", c.key === b.arrow);
+      c.el.querySelector(".fit").textContent = worn.length ? "Worn by " + worn.join(", ") : "Click to give it to " + b.name;
+    });
+    document.getElementById("arrows-cap").textContent = "On " + b.name + "'s ground and ropes, at 1.5 times the game's size. " +
+      "The middle one rides the hot rope and leans into a hop, the way the game leans it. Click a shape to give it to " + b.name + ".";
+  }
+  // 480x360 design px shown, i.e. the 720-wide frame zoomed 1.5 times
+  function renderArrowCard(ctx, key, t) {
+    const b = BIOMES[S.sel], cols = [90, 240, 390];
+    ctx.scale(1.5, 1.5);
+    drawGround(ctx, b);
+    for (let i = 0; i < 3; i++) {
+      for (let y = -10, k = 0; y < 380; y += T.dot, k++) drawDot(ctx, b.material, b.ropes[i], i === 1, cols[i], y, -Math.PI / 2, k, T.dot, t, 0);
+    }
+    const lean = 0.5 * Math.sin(Math.PI * ((t * 0.7) % 1)) * (Math.floor(t * 0.7) % 2 ? 1 : -1);
+    drawArrow(ctx, key, cols[0], 200, -Math.PI / 2, b.ropes[0], -1);
+    drawArrow(ctx, key, cols[1], 200, -Math.PI / 2 + lean, b.ropes[1], -1);
+    drawArrow(ctx, key, cols[2], 200, -Math.PI / 2, b.ropes[2], -1);
+  }
+
+  /* ---- panel ------------------------------------------------------------- */
+  const $ = id => document.getElementById(id);
+  function fill(sel, obj) { sel.innerHTML = Object.keys(obj).map(k => '<option value="' + k + '">' + (obj[k].label || obj[k]) + "</option>").join(""); }
+  $("biome").innerHTML = BIOMES.map((b, i) => '<option value="' + i + '">' + b.name + " — levels " + b.levels + "</option>").join("");
+  fill($("particles"), PARTICLES); fill($("material"), MATERIALS); fill($("figures"), FIGSETS); fill($("rule"), RULES);
+  fill($("arrow"), ARROWS);
+  $("preset").innerHTML = PRESETS.map((pr, i) => '<option value="' + i + '">' + pr.name + "</option>").join("");
+  $("preset-all").addEventListener("click", () => applyPreset(+$("preset").value, false));
+  $("preset-one").addEventListener("click", () => applyPreset(+$("preset").value, true));
+
+  function syncPanel() {
+    const b = BIOMES[S.sel];
+    $("biome").value = S.sel;
+    ["g0", "g1", "g2"].forEach((id, i) => { $(id).value = b.ground[i]; });
+    $("glow").value = b.glow; $("glowA").value = Math.round(b.glowA * 100); $("glowA-v").textContent = b.glowA.toFixed(2);
+    $("particles").value = b.particles; $("tint").value = b.tint;
+    $("density").value = Math.round(b.density * 10); $("density-v").textContent = b.density.toFixed(1);
+    $("material").value = b.material; $("figures").value = b.figures; $("rule").value = b.rule;
+    ["r0", "r1", "r2"].forEach((id, i) => { $(id).value = b.ropes[i]; });
+    $("arrow").value = b.arrow;
+  }
+  function select(i) { S.sel = i; syncPanel(); describe(); }
+  function edit(fn, regen) {
+    fn(BIOMES[S.sel]); save(); describe();
+    if (regen) { worlds[S.sel] = makeWorld(S.sel, seed * 101 + S.sel * 7); }
+  }
+  $("biome").addEventListener("change", e => select(+e.target.value));
+  ["g0", "g1", "g2"].forEach((id, i) => $(id).addEventListener("input", e => edit(b => { b.ground[i] = e.target.value; })));
+  $("glow").addEventListener("input", e => edit(b => { b.glow = e.target.value; }));
+  $("glowA").addEventListener("input", e => edit(b => { b.glowA = e.target.value / 100; $("glowA-v").textContent = b.glowA.toFixed(2); }));
+  $("particles").addEventListener("change", e => edit(b => { b.particles = e.target.value; }));
+  $("tint").addEventListener("input", e => edit(b => { b.tint = e.target.value; }));
+  $("density").addEventListener("input", e => edit(b => { b.density = e.target.value / 10; $("density-v").textContent = b.density.toFixed(1); }));
+  $("material").addEventListener("change", e => edit(b => { b.material = e.target.value; }));
+  ["r0", "r1", "r2"].forEach((id, i) => $(id).addEventListener("input", e => edit(b => { b.ropes[i] = e.target.value; })));
+  $("arrow").addEventListener("change", e => edit(b => { b.arrow = e.target.value; }));
+  $("arrow-all").addEventListener("click", () => {
+    const shape = BIOMES[S.sel].arrow;
+    BIOMES.forEach(b => { b.arrow = shape; }); save(); describe();
+  });
+  $("figures").addEventListener("change", e => edit(b => { b.figures = e.target.value; }, true));
+  $("rule").addEventListener("change", e => edit(b => { b.rule = e.target.value; }, true));
+
+  [["t-items", "items"], ["t-rule", "rule"], ["t-particles", "particles"], ["t-arrow", "arrow"], ["t-anim", "anim"]]
+    .forEach(([id, key]) => $(id).addEventListener("change", e => { S[key] = e.target.checked; }));
+  $("speed").addEventListener("input", e => { S.speed = +e.target.value; $("speed-v").textContent = S.speed; });
+  $("reseed").addEventListener("click", () => { seed++; worlds = BIOMES.map((b, i) => makeWorld(i, seed * 101 + i * 7)); });
+
+  function setView(v) {
+    S.view = v;
+    document.body.classList.toggle("focus", v === "focus");
+    document.body.classList.toggle("arrows", v === "arrows");
+    document.body.classList.toggle("presets", v === "presets");
+    ["gallery", "focus", "arrows", "presets"].forEach(n => $("v-" + n).classList.toggle("on", v === n));
+    sizeFocus(); describeArrows();
+    if (v === "presets") requestAnimationFrame(renderPresets);
+  }
+  window.addEventListener("resize", () => { if (S.view === "presets") renderPresets(); });
+  ["gallery", "focus", "arrows", "presets"].forEach(n => $("v-" + n).addEventListener("click", () => setView(n)));
+
+  $("copy").addEventListener("click", () => {
+    const text = JSON.stringify(BIOMES, null, 2);
+    const done = () => { $("copied").textContent = "Copied — " + BIOMES.length + " biomes"; };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
+    else fallback(text, done);
+  });
+  function fallback(text, done) {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove(); done();
+  }
+  $("reset").addEventListener("click", () => {
+    BIOMES = clone(DEFAULTS); save(); syncPanel(); describe();
+    worlds = BIOMES.map((b, i) => makeWorld(i, seed * 101 + i * 7));
+  });
+
+  /* ---- sizing: every canvas is the 720x1280 design space, scaled -------- */
+  function fit(cv, aspect) {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(r.width * dpr)), h = Math.round(w * (aspect || H / W));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    return w / W;
+  }
+  function sizeFocus() {
+    // two frames side by side: bounded by the window's height AND the stage's width
+    const room = document.getElementById("stage").clientWidth - 48 - 20;
+    const h = Math.max(320, Math.min(window.innerHeight - 90, room / 2 * H / W)), w = Math.round(h * W / H);
+    for (const id of ["focus-live", "focus-sheet"]) { $(id).style.width = w + "px"; $(id).style.height = h + "px"; }
+  }
+  window.addEventListener("resize", sizeFocus);
+
+  function draw(cv, fn, aspect) {
+    const k = fit(cv, aspect), ctx = cv.getContext("2d");
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    fn(ctx);
+  }
+
+  let last = performance.now(), clock = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (S.anim) clock += dt;
+    if (S.view === "presets") {
+      // still pictures: drawn by renderPresets
+    } else if (S.view === "arrows") {
+      acards.forEach(c => draw(c.cv, ctx => renderArrowCard(ctx, c.key, clock), 3 / 4));
+    } else if (S.view === "gallery") {
+      worlds.forEach((w, i) => { if (S.anim) w.update(dt); draw(cards[i].cv, ctx => w.render(ctx)); });
+    } else {
+      const w = worlds[S.sel];
+      if (S.anim) w.update(dt);
+      draw($("focus-live"), ctx => w.render(ctx));
+      draw($("focus-sheet"), ctx => renderSheet(ctx, w));
+    }
+    requestAnimationFrame(frame);
+  }
+
+  buildPresetCards(); buildArrowCards(); buildCards(); syncPanel(); sizeFocus();
+  // #focus=2 opens a biome in the focus view straight away, #arrows=2 the arrow catalogue on it
+  const fh = /(focus|arrows|presets)=(\d)/.exec(location.hash);
+  if (fh && BIOMES[+fh[2]]) { select(+fh[2]); setView(fh[1]); }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

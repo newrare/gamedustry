@@ -3,107 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lab — game events</title>
+<title>Lab — game events sound</title>
 <meta name="lab-group" content="tools">
 <style>
 /* ===========================================================================
-   EVENTS BENCH — what a game SAYS and what it PLAYS, in one list, played on
-   that game's own backdrop.
+   EVENTS BENCH · SOUND — what a game PLAYS, one card per clip, judged on the
+   moment of the game each cue fires on.
 
-   The scope is deliberately narrow, and it is the whole point of the page.
-   The list has TWO sides, and they are the two questions a beat is reviewed
-   against — what the player READS and what the player HEARS:
-
-     VIEW          the Pop callouts (`Pop.show` in the DOM, `Pop.text` on the
-                   canvas) and the Overlay notifications, in source order,
-                   grouped into the beat they fire together on
-     SOUND         the background bed and its CONFIG.music, then ONE CARD PER
-                   CLIP — the file of assets/audio/sfx/ it is cut from and how
-                   long the cut is at the top, and under it every line of the
-                   game that plays it, with the volume and the pitch that line
-                   asks for
+   What the game SAYS — the callouts and the notices — is the other page,
+   lab/game-events-message.html (/). This one lists the cues and nothing else:
+   ONE CARD PER CLIP — the file of assets/audio/sfx/ it is cut from and how
+   long the cut is at the top, or the house kit variant it plays, and under it
+   every line of the game that plays it, with the volume and the pitch that
+   line asks for. The background bed is not here: it is the game's music, cut
+   into sections by hand (docs/MUSIC.md).
 
    The card is the clip and not the line, because 18 cues in a game are 7 clips:
    listing the clip once per line said the same thing five times over and
    offered the same file list five times for one decision. What is shared is
    written once; what a line owns — how loud, how high, since one sample covers
-   a family of events through `rate` — stays on the line.
+   a family of events through `rate` — stays on the line. So a volume or a pitch
+   moved here is THAT line of THAT game, written into its game.js; it never
+   reaches the kit, nor another game that maps a key to the same variant.
+
+   A key the manifest hands to the house kit (`sfx`) has no file here: its card
+   names the variant and opens the kit page (/kit), where its takes are chosen
+   for every game at once. The foot of that card lists every game that plays
+   the variant, by its thumb, so it is never re-cut without seeing who else
+   hears it.
 
    The whole of assets/audio/sfx/ opens from the file button, and HOVERING a row
-   plays it, trimmed to the cut length: a clip is chosen by ear, 127 file names
-   say nothing, and picking them one at a time to hear them is not choosing.
-   That is also why the list is not a <select> — a native popup is drawn by the
-   operating system and fires nothing over its rows. A clip nothing plays has no
-   line and therefore no card: the "never played" pill in the header names it,
-   which is the one thing a separate list of the pack was for.
+   plays it, trimmed to the cut length: a clip is chosen by ear, file names say
+   nothing, and picking them one at a time to hear them is not choosing. That
+   is also why the list is not a <select> — a native popup is drawn by the
+   operating system and fires nothing over its rows. A clip nothing plays has
+   no line and therefore no card: the "never played" pill in the header names
+   it.
 
-   Everything else a beat does — Fx.burst / ring / shake / flash / freeze,
-   HUD.punch, and `Overlay.vignette`, which is a coloured glow over the frame
-   and not a notification — is juice with no words in it. There is nothing on
-   it to read, re-style or re-word, so tools/lab/scan-events.mjs lists it and
-   this page does not.
+     REC           the stage becomes the real game, in English, playable. Every
+                   Pop.show / Pop.text / Notify.say / Sound.* call the game makes
+                   is caught at its call site (the stack's line in the built
+                   game.<hash>.js, mapped back to games/<slug>/game.js through
+                   /api/offset) and matched to its row. The canvas is sampled
+                   all the time (REC_PRE kept); a cue with no clip yet keeps
+                   that second and REC_POST more, encoded as a webm and saved
+                   in lab/events-clips/<slug>/ (ignored by git — playing again
+                   is how they are made again). Pop.text is not drawn while
+                   recording, so the number is never baked into the picture.
+     LOOP (↻)      on a row with a clip, the clip plays behind the frame, and
+                   at the instant the cue fired it is fired again — with what
+                   the row now says, so a volume or a pitch is judged on the
+                   real action. Everything else that fired in that window, the
+                   callouts included, fires with it at its own time, so the
+                   moment is whole; a chip in the loop bar mutes one of them.
 
-   The right column is the game's own web build TWICE, one under the other —
-   once in English, once in French — with everything but the callout layers hidden:
-   no backdrop, no menu, no round, no world, a flat ground. The build is there
-   because it is the only honest source of the real Pop styles, the real SKIN
-   and the real samples; the backdrop is not, because a callout is reviewed for
-   what it SAYS here. A row fires into both at once, so a French word that
-   overflows its plate is seen under the English one that fits; a sound plays
-   in the English frame only. On SOUND there is nothing to look at, so the two
-   frames leave the stage and run on off-screen, still playing the rows. `Pop.text` needs the frame pipeline, which is not
-   turning, so the bench drives the three calls that pipeline would make and
-   nothing more (see `juice`).
+   What a clip cannot show: the DOM — the HUD, the callouts (they are fired
+   live over it) — and a painted backdrop the game lays UNDER its canvas
+   (CONFIG.sceneArt): the canvas is drawn on the game's flat ground colour.
 
-   A word the game BUILDS is run, not stubbed: `"x" + mult + Lang.t(" streak")`
-   is evaluated inside each frame, so the French comes out of the very Lang.t
-   the game wrapped around its own literal. What the bench cannot read — the
-   round's locals, `mult`, `T2.name`, `cardName(c)` — are SLOTS, inputs under
-   the row with a plausible value already in them (tools/lab/scan-events.mjs,
-   textsOf): a tier is a pick of the table's own keys, a `.name` one of the
-   names the source writes, a count a count. Whatever is typed there is the
-   bench's and is never written back; it is kept per game in this browser.
-   Under the slots, the row reads back what each frame was handed, EN and FR,
-   and marks a French that came out identical to the English.
-
-   Every row is editable — the style, the word, the anchor, the clip, the file
-   that clip is cut from, the volume, the pitch — so a change can be seen and
-   heard before it is written. A notice can also be turned into a callout: its
-   first dropdown reads `notify`, and picking a Pop style there fires the row
-   as that Pop.show, and apply rewrites the call (kind and icon dropped).
+   The stage is the game's own web build, with everything but the callout
+   layers hidden. Out of a loop there is nothing to look at, so the frame
+   leaves the stage and runs on off-screen, still playing the rows.
 
    APPLY is what makes it stick. What the rows changed goes to POST /api/apply
-   (tools/lab/apply-events.mjs), which splices the arguments back into
-   games/<slug>/game.js — one span at a time, so a multi-line call keeps its
-   shape — re-cuts a clip with ffmpeg when its FILE changed, moves the
-   provenance comment with it, and bumps the game's patch version. The save
-   trips the server's watcher, the build is rebuilt, the page comes back on the
-   change. An argument the game builds at runtime (`"+" + gain`) is REFUSED by
-   name rather than overwritten with the bench's stand-in.
-
-   A row carries no `copy` button and a beat no `play all`: the one way a change
-   leaves this page is APPLY, and the one thing to copy is the beat's own
-   `file:line`, which its header hands over on a click. A number is a slider
-   rather than a field, because a volume and a pitch are swept, not typed.
+   (tools/lab/apply-events.mjs), which splices the volume and the pitch back
+   into games/<slug>/game.js, re-cuts a clip with ffmpeg when its FILE changed,
+   moves the provenance comment with it, maps a key to a kit variant in the
+   manifest, and bumps the game's patch version. The save trips the server's
+   watcher, the build is rebuilt, the page comes back on the change.
 
    Two icons sit on everything the bench can change. REVERT puts the element
-   back where the source has it. TRASH deletes nothing by itself — it MARKS,
-   the way every other change here is marked, so a removal is reviewed next to
-   the rest of the plan, counted in the Apply badge, and taken back with the
-   same revert as a typo. On a cue line it removes that line; on a clip's card
-   it removes the clip from ASSETS.sounds AND every line that plays it, because
-   a game calling a clip it no longer ships gets silence rather than an error.
+   back where the source has it. TRASH deletes nothing by itself — it MARKS, so
+   a removal is reviewed next to the rest of the plan. On a cue line it removes
+   that line; on a clip's card it removes the clip from ASSETS.sounds (or the
+   key from the manifest's `sfx`) AND every line that plays it, because a game
+   calling a clip it no longer ships gets silence rather than an error.
 
-   A line seen and heard is CHECKED — the copy desk's tick — and the three
-   actions (check, revert, remove) sit in ONE place on every card: the
-   top-right corner of its header, out of the flow, so no wrap can move them.
-   A callout's card acts on its whole moment; a cue line keeps its own three
-   in the last columns of its grid, right under its clip card's. The mark lands in lab/events-review.json against the call's
-   checkId (tools/lab/scan-events.mjs): the call's source in its function, and
-   for a cue the clip it plays. Change the call, or re-cut its clip, and the
-   mark no longer matches: the line reads unchecked again. A clip's card ticks
-   every line under it at once. A game whose every callout, notice and cue line
-   is checked turns green in the picker, and HIDE CHECKED leaves what is left.
+   A line heard is CHECKED, and the mark lands in lab/events-review.json
+   against the call's checkId (tools/lab/scan-events.mjs): the call's source in
+   its function and the clip it plays. Change the call, or re-cut its clip, and
+   the line reads unchecked again. A clip's card ticks every line under it at
+   once. A game whose every cue line is checked turns green in the picker.
 
    The picker's first entry is the TEMPLATE, played in its own web build. The
    end screen's sounds are not its clips any more: they are the house kit's
@@ -122,7 +102,7 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   PANEL — one list: the bed, the pack, then the beats.
+   PANEL — one list: a card per clip.
    --------------------------------------------------------------------------- */
 #panel { flex:1 1 auto; min-width:420px; display:flex; flex-direction:column; background:#12121c; border-right:1px solid #23233a; }
 #head { padding:16px 18px 14px; border-bottom:1px solid #23233a; }
@@ -134,24 +114,34 @@ select, input[type=text], input[type=number] {
   font:inherit; padding:7px 9px;
 }
 select:focus, input:focus { outline:none; border-color:#7ea6ff; }
-#game-pick { width:100%; margin-top:12px; font-weight:700; }
-/* A game every line of which is checked — green, and a tick in its label,
-   since a native popup may draw the options without their colour. */
-#game-pick.done { border-color:#2a5040; color:#5fd49a; }
-#game-pick option { color:#e8e6f5; background:#0b0b12; }
-#game-pick option.done { color:#5fd49a; }
-
-/* The two sides of the list. VIEW is what the player reads, SOUND is what the
-   player hears — and a beat that does both shows its own half in each. */
-#tabs { display:flex; gap:4px; margin-top:12px; padding:3px; background:#0b0b12; border:1px solid #2c2c47; border-radius:9px; }
-#tabs button {
-  flex:1; padding:7px 0; border:0; border-radius:7px; background:none; color:#8b8ba7;
-  font:700 11px/1 inherit; letter-spacing:1.2px; text-transform:uppercase; cursor:pointer;
+/* The game picker is ours and not a <select>: the platform's popup draws its
+   own tick on the selected entry, which reads as "checked" next to ours. Each
+   entry is a dot (the game being edited), a tick (every line of THIS page
+   checked) and the title, nothing else. */
+#game-pick { position:relative; margin-top:12px; }
+#game-pick .gp-btn {
+  position:relative; display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+  padding:7px 28px 7px 9px; border:1px solid #2c2c47; border-radius:7px;
+  background:#0b0b12; color:#e8e6f5; font-family:inherit; font-size:13px; font-weight:700; line-height:1.5;
 }
-#tabs button:hover { color:#e8e6f5; }
-#tabs button.on { background:#2a2a44; color:#e8e6f5; }
-#tabs button b { color:#6f6f92; font-weight:700; }
-#tabs button.on b { color:#7ea6ff; }
+#game-pick .gp-btn::after { content:"\25BE"; position:absolute; right:10px; top:7px; color:#6f6f92; }
+#game-pick .gp-btn:hover, #game-pick.open .gp-btn, #game-pick .gp-btn:focus { outline:none; border-color:#7ea6ff; }
+#game-pick.done .gp-btn { color:#5fd49a; }
+#game-pick .gp-list[hidden] { display:none; }
+#game-pick .gp-list {
+  position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:60;
+  max-height:70vh; overflow:auto; padding:5px;
+  background:#12121c; border:1px solid #3b3b5f; border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.6);
+}
+#game-pick .gp-row {
+  display:flex; align-items:center; gap:8px; width:100%; padding:6px 9px; text-align:left; cursor:pointer;
+  border:0; border-radius:6px; background:none; color:#c9c9e0;
+  font-family:inherit; font-size:13px; font-weight:700; line-height:1.4;
+}
+#game-pick .gp-row:hover, #game-pick .gp-row.on { background:#1e2740; color:#e8e6f5; }
+#game-pick .gp-row.done { color:#5fd49a; }
+#game-pick .gp-dot { width:8px; height:8px; border-radius:50%; background:#7ea6ff; flex:0 0 auto; }
+#game-pick .gp-ck { color:#5fd49a; flex:0 0 auto; }
 
 #stats { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; font-size:11px; }
 #stats span { padding:3px 8px; border-radius:20px; background:#1b1b2b; color:#9c9cba; }
@@ -169,7 +159,7 @@ select:focus, input:focus { outline:none; border-color:#7ea6ff; }
 .beat { background:#151522; border:1px solid #22223a; border-radius:10px; margin-bottom:10px; overflow:hidden; }
 .bhead { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#191927; border-bottom:1px solid #22223a; flex-wrap:wrap; }
 /* A card's three actions — check, revert, remove — sit in ONE place on every
-   card of both tabs: pinned to the top-right corner of its header, out of the
+   card: pinned to the top-right corner of its header, out of the
    flow, so neither a long function name, a warning nor a header that wraps can
    move them. The header keeps their room free. The 7px gap and the 10px edge
    are the cue lines' own, so on a clip's card the header's three sit right
@@ -388,7 +378,6 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
 #stats button.hide { margin-left:auto; padding:3px 9px; border-radius:20px; border:1px solid #2c2c47; background:none; color:#8b8ba7; font:700 11px/1.3 inherit; cursor:pointer; }
 #stats button.hide:hover { color:#e8e6f5; }
 #stats button.hide.on { background:#1e2740; border-color:#7ea6ff; color:#e8e6f5; }
-#tabs button.done b { color:#5fd49a; }
 .beat.killed { border-color:#5a2030; }
 
 details.src { border-top:1px solid #1d1d2e; }
@@ -400,12 +389,6 @@ details.src pre {
   font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6; white-space:pre;
 }
 
-/* --- the bed and the pack ------------------------------------------------ */
-.sfx { display:flex; align-items:center; gap:10px; padding:8px 10px; background:#151522; border:1px solid #22223a; border-radius:9px; margin-bottom:7px; }
-.sfx .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#e8e6f5; width:84px; }
-.sfx .note { flex:1; font-size:11px; color:#7d7d9d; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sfx.bed { border-color:#4a2338; background:#181220; }
-.sfx.bed .key { color:#f0a0c0; }
 .empty { padding:26px; text-align:center; color:#6f6f92; font-size:12px; }
 
 /* ---------------------------------------------------------------------------
@@ -414,12 +397,11 @@ details.src pre {
 #stage { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; padding:14px; background:#08080f; }
 #bar { display:flex; align-items:center; gap:7px; margin-bottom:12px; width:100%; }
 #bar .sp { flex:1; }
-/* The two languages, one under the other, the same frame at the same scale. */
 #shell { position:relative; display:flex; flex-direction:column; gap:12px; }
-/* SOUND has nothing to look at: the frames leave the stage, which keeps the
-   bar, the hint and the report. They stay loaded and rendered off-screen —
-   the English one is what plays a row. */
-body.sound #shell { position:absolute; left:-10000px; top:0; }
+/* Out of a loop there is nothing to look at: the frame leaves the stage, which
+   keeps the bar, the hint and the report. It stays loaded and rendered
+   off-screen — it is what plays a row. */
+body:not(.looping) #shell { position:absolute; left:-10000px; top:0; }
 .pane .lang { height:22px; font:700 11px/22px inherit; letter-spacing:1.5px; color:#8b8ba7; text-align:center; }
 .fit { transform-origin:top left; }
 .frame { width:720px; height:1280px; border:0; border-radius:22px; background:#000; display:block; box-shadow:0 24px 70px rgba(0,0,0,.6); }
@@ -449,41 +431,66 @@ body.sound #shell { position:absolute; left:-10000px; top:0; }
 .call.k-sound .ln { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .call.inherited { background:rgba(126,166,255,.05); }
 
-/* A word the game builds: its expression in place of the field, the round's
-   values it needs on the line under it, and what each language reads under
-   those. */
-.call code.xw {
-  max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  padding:3px 7px; border-radius:6px; border:1px dashed #3b3b5f; background:#0d0d16;
-  font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#ffd08a; cursor:help;
-}
-.call .slots, .call .read { flex:1 1 100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding-left:34px; }
-.call .slots .lbl { margin-right:-4px; }
-.slot { display:inline-flex; align-items:center; gap:5px; }
-.slot span { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8b8ba7; }
-.call .slot input, .call .slot select { padding:2px 6px; font:700 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#ffd08a; }
-.call .slot input { width:72px; }
-.call .slot input.str { width:150px; }
-.call .read { font-size:12px; color:#c9c9e0; gap:4px 16px; }
-.read .ln2 { display:inline-flex; align-items:baseline; gap:7px; min-width:0; }
-.read .lg { font:700 9px/1 inherit; letter-spacing:1.2px; color:#6f6f92; }
-.read b { color:#e8e6f5; }
-.read i { font-style:normal; color:#9c9cba; }
-.read .same { color:#ffb648; font-size:10px; cursor:help; }
-.read .err { color:#ff8fa3; }
+/* ---------------------------------------------------------------------------
+   The recorder and the loop.
+   --------------------------------------------------------------------------- */
+#bar .rec { min-width:64px; }
+#bar .rec.on { background:#c0304a; color:#fff; border-color:#c0304a; }
+#bar .rec.on::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:#fff; margin-right:6px; animation:recblink 1s steps(2) infinite; }
+@keyframes recblink { 50% { opacity:0; } }
+/* The level picker exists in REC only: it starts a round in the played frame. */
+#rec-level { display:none; padding:4px 7px; font-size:11px; font-weight:700; }
+body.rec #rec-level { display:inline-block; }
+#rec-info { font-size:11px; color:#8b8ba7; font-variant-numeric:tabular-nums; }
+#rec-info b { color:#ff8fa3; }
+/* REC: the bench frames step aside, alive (a loop needs them back at once). */
+#recwrap { display:none; flex:0 0 auto; }
+body.rec #recwrap { display:block; }
+body.rec #shell { position:absolute; left:-10000px; top:0; }
+body.rec #replay { display:none; }
+
+/* The clip lies UNDER the frame: the bench's ground goes transparent while it
+   plays, so the callouts are fired over the very action they belong to. */
+.fit { position:relative; }
+.fit video.clip { position:absolute; left:0; top:0; width:720px; height:1280px; object-fit:cover; border-radius:22px; background:#000; display:none; }
+body.looping .fit video.clip { display:block; }
+body.looping .frame { background:transparent; position:relative; }
+
+#replay { width:100%; margin-bottom:10px; display:none; flex-wrap:wrap; align-items:center; gap:6px 8px;
+  background:#12121c; border:1px solid #2a3a60; border-radius:9px; padding:7px 9px; font-size:11px; color:#b9b9d6; }
+body.looping #replay { display:flex; }
+#replay .what { font:700 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff; }
+#replay .time { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; font-variant-numeric:tabular-nums; }
+#replay .sp { flex:1; }
+#replay .ev { padding:2px 7px; border-radius:20px; border:1px solid #2c2c47; background:#1b1b2b; color:#c9c9e0; cursor:pointer; font:600 10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
+#replay .ev.me { border-color:#7ea6ff; color:#e8e6f5; }
+#replay .ev.off { opacity:.35; text-decoration:line-through; }
+#replay .ev.k-sound { color:#8fe0b8; }
+#replay .ev.k-pop { color:#dcb6ff; }
+#replay .ev.k-notify { color:#9fd0ff; }
+
+button.act.loop { background:#1b1b2b; color:#4d4d68; }
+button.act.loop.has { background:#1e2740; color:#9fd0ff; }
+button.act.loop.has:hover { background:#2a3a60; }
+button.act.loop.on { background:#7ea6ff; color:#0b0b12; }
+button.act.loop.near { color:#ffd08a; }
+.call.k-sound { grid-template-columns: 26px 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+.call.k-sound.inherited { grid-template-columns: 26px 26px 76px 100px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+
+#stats span.seen b { color:#9fd0ff; }
+/* The foot of a kit card: the icon of every game that plays its variant,
+   this one included, so what a re-cut on /kit reaches is seen at a glance. */
+.kitusers { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:7px 10px; border-top:1px solid #2a2445; background:#161328; }
+.kitusers img { width:28px; height:28px; border-radius:7px; display:block; cursor:help; }
 </style>
 </head>
 <body>
 
 <aside id="panel">
   <div id="head">
-    <h1>Events <small id="sub">what the game says, and what it plays</small></h1>
-    <select id="game-pick"></select>
+    <h1>Sounds <small id="sub">what the game plays</small></h1>
+    <div id="game-pick"><button type="button" class="gp-btn" title="the game this page reads"></button><div class="gp-list" hidden></div></div>
     <a class="lib" href="library" target="_blank" title="every file of assets/audio/sfx/ by category — hover to hear, click to copy the name">Sound library ↗</a>
-    <div id="tabs">
-      <button data-view="view">View <b></b></button>
-      <button data-view="sound">Sound <b></b></button>
-    </div>
     <div id="stats"></div>
   </div>
   <div id="list"></div>
@@ -492,15 +499,19 @@ body.sound #shell { position:absolute; left:-10000px; top:0; }
 <main id="stage">
   <div id="bar">
     <button class="act ghost" id="btn-reload">Reload</button>
+    <button class="act ghost rec" id="btn-rec" title="play the game here — every cue with no clip yet is recorded with the second before it and the second after">Rec</button>
+    <select id="rec-level" title="start any level — locked ones too (the dev force, for this load only)"></select>
+    <span id="rec-info"></span>
     <span class="sp"></span>
     <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
   </div>
+  <div id="replay"></div>
   <div id="shell">
-    <div class="pane"><div class="lang">EN</div>
-      <div class="fit"><iframe class="frame" data-lang="en" title="the game's callout layers, in English"></iframe></div></div>
-    <div class="pane"><div class="lang">FR</div>
-      <div class="fit"><iframe class="frame" data-lang="fr" title="the game's callout layers, in French"></iframe></div></div>
+    <div class="pane"><div class="lang">Loop</div>
+      <div class="fit"><video class="clip" data-lang="en" muted playsinline></video><iframe class="frame" data-lang="en" title="the game's own build, playing the cues"></iframe></div></div>
   </div>
+  <div id="recwrap" class="pane"><div class="lang">Rec — play; every cue not yet seen is captured</div>
+    <div class="fit rec"><iframe class="recframe frame" id="rec-frame" title="the game itself, played to record its events"></iframe></div></div>
   <div id="hint"></div>
   <div id="report"></div>
 </main>
@@ -525,47 +536,42 @@ const ANCHORS = ["topLeft","top","topRight","upperLeft","upper","upperRight",
   "left","center","right","lowerLeft","lower","lowerRight",
   "bottomLeft","bottom","bottomRight","hudUnder","ctaAbove","edgeLeft","edgeRight"];
 
-/* The two sides of the list. Canvas juice (Fx.*, HUD.punch) is scanned but
-   listed by neither — see the head. */
-const VIEWS = {
-  view:  { kinds: { pop: 1, notify: 1 }, label: "what the game says" },
-  sound: { kinds: { sound: 1 },           label: "what the game plays" }
-};
+// What this page lists: the cues. The callouts are the message page's.
+const KINDS = { sound: 1 };
 
 const el = (id) => document.getElementById(id);
-/* One build per language. English is the source and the one that sounds: the
-   French frame is muted, or every cue would be heard twice. */
-const LANGS = ["en", "fr"];
+/* One build, in English: a cue has no language. The callouts a loop fires
+   over its clip are read in it too. */
+const LANGS = ["en"];
 const frames = {};
-document.querySelectorAll("iframe.frame").forEach((f) => { frames[f.dataset.lang] = f; });
+document.querySelectorAll("iframe.frame[data-lang]").forEach((f) => { frames[f.dataset.lang] = f; });
 const state = {
   slug: null, data: null, sfx: [],
-  view: localStorage.getItem("events:view") === "sound" ? "sound" : "view",
   // Every game's checked count, for the picker (api/games, then api/check).
   status: {},
   hideChecked: (() => { try { return localStorage.getItem("events:hideChecked") === "1"; } catch (e) { return false; } })(),
   /* What the rows changed and APPLY has not written yet, keyed so a re-render
-     (a tab, a filter) puts every control back where the hand left it.
-       calls: { "<line>|<Name>": { style, word, sub, at, clip, vol, rate } }
-       sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file */
-  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} }
+     (a filter) puts every control back where the hand left it.
+       calls: { "<line>|<Name>": { vol, rate } }
+       sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file
+       kit:   { "<key>": "<role>/<variant>" } — the key plays the kit instead */
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} },
+  // The recorded moments (lab/events-clips/<slug>/index.json) and the
+  // line offset that maps the built game.<hash>.js back to its source.
+  clips: { clips: {}, byId: {} },
+  offset: null
 };
 
 const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} });
 
-/* A value apply can write back, as opposed to one the game builds at runtime.
-   The two shapes are the two the splicer accepts (tools/lab/apply-events.mjs):
-   a quoted string where the argument is copy, a bare number where it is a knob.
-   `Sound.clip("wall", 0.32, 1.15)` is three literals, not one. */
-function isLit(expr) {
-  return expr != null && /^\s*(["'])(?:[^\\]|\\.)*?\1\s*$/.test(String(expr));
-}
+/* A value apply can write back, as opposed to one the game builds at runtime:
+   a bare number, the shape the splicer accepts for a knob
+   (tools/lab/apply-events.mjs). `Sound.clip("wall", 0.32, 1.15)` has two. */
 function isNum(expr) {
   return expr != null && /^\s*-?\d+(\.\d+)?\s*$/.test(String(expr));
 }
-const NUMERIC = { vol: 1, rate: 1 };
 function writable(name, expr) {
-  return NUMERIC[name] ? isNum(expr) : isLit(expr);
+  return isNum(expr);
 }
 
 function pendKey(call) { return call.line + "|" + call.name; }
@@ -597,7 +603,7 @@ function watch(ctrl, call, name, expr) {
   };
   ctrl.addEventListener("input", sync);
   ctrl.addEventListener("change", sync);
-  // A tab away and back rebuilds the row: put the pending value back on it.
+  // A re-render rebuilds the row: put the pending value back on it.
   const p = state.pending.calls[pendKey(call)];
   if (p && p[name] != null) { ctrl.value = p[name]; ctrl.classList.add("dirty"); }
   return ctrl;
@@ -649,6 +655,8 @@ const BENCH_CSS = `
   #backdrop { display:none !important; }
   #frame > *:not(#game):not(#overlay):not(#nt-layer) { display:none !important; }
   #overlay { z-index:40; }
+  /* A clip plays UNDER the iframe while a row loops — the ground clears. */
+  html.lab-clear, html.lab-clear body, html.lab-clear #stage, html.lab-clear #frame, html.lab-clear #game { background:transparent !important; }
 `;
 LANGS.forEach((lang) => frames[lang].addEventListener("load", () => {
   try {
@@ -659,12 +667,8 @@ LANGS.forEach((lang) => frames[lang].addEventListener("load", () => {
     d.head.appendChild(style);
     // A click on the game is a click away from anything this page has open.
     d.addEventListener("mousedown", () => closeFileMenu());
-    const W = web(lang);
-    setLang(W, lang);
-    if (lang !== "en" && W) {
-      try { W.Sound.setMuted(true); W.Music.setMuted(true); } catch (e) {}
-    }
-    refreshReads();
+    setLang(web(lang), lang);
+    d.documentElement.classList.toggle("lab-clear", !!LOOP.clip);
   } catch (e) { note("the build did not load"); }
 }));
 
@@ -704,176 +708,23 @@ function unlock() {
 }
 
 /* What a row will actually call: the source's own arguments, with whatever the
-   row's inputs now say written over them. One function, so firing a row and
-   copying its line can never disagree. */
-function argsFor(call, row, W) {
+   row's sliders now say written over them. A callout a loop replays has no row
+   here (it is the message page's) and fires as the source writes it. */
+function argsFor(call, row) {
   const args = JSON.parse(JSON.stringify(call.preview.args));
-  if (!row) return args;
-  const get = (sel) => row.querySelector(sel);
-  const text = (field) => textOf(call, row, field, W);
-  if (call.name === "Pop.text") {
-    const w = text("word");
-    if (w !== undefined) args[2] = w;
-  } else if (call.kind === "pop") {
-    const o = args[1] = Object.assign({}, args[1]);
-    args[0] = get("select.style").value;
-    const w = text("word"), sub = text("sub");
-    if (w) o.word = w; else delete o.word;          // the style's own word
-    if (sub) o.sub = sub; else delete o.sub;
-    const at = get("select.at").value;
-    if (at) o.at = at; else delete o.at;
-  } else if (call.kind === "sound") {
-    args[1] = num(get("input.vol"), args[1]);
-    args[2] = num(get("input.rate"), args[2]);
-  } else if (call.kind === "notify") {
-    const w = text("word");
-    if (w !== undefined) args[0] = w;
-    const o = args[1] = Object.assign({}, args[1] || {});
-    const sub = text("sub");
-    if (sub) o.sub = sub; else delete o.sub;
-    // Turned into a callout: what Pop.show would be handed instead.
-    const as = asPop(row);
-    if (as) {
-      const p = {};
-      if (args[0]) p.word = args[0];
-      if (sub) p.sub = sub;
-      const at = get("select.at").value;
-      if (at) p.at = at;
-      return [as, p];
-    }
-  }
+  if (!row || call.kind !== "sound") return args;
+  args[1] = num(row.querySelector("input.vol"), args[1]);
+  args[2] = num(row.querySelector("input.rate"), args[2]);
   return args;
 }
 
-/* ── a built word, run in the frame ───────────────────────────────────────
-   One field of a callout — its word or its sub — as the frame `W` will be
-   handed it. A literal is the row's own field (the motor translates it whole);
-   a built word is the game's expression with the row's slots in it, run with
-   that frame's Lang, so its Lang.t pieces come out in that frame's language.
-   `undefined` is "the source says nothing here": the motor's own default. */
-const RUNNERS = {};
-function runner(code) {
-  const env = (state.data && state.data.textEnv) || { aliases: {}, tables: {} };
-  const key = state.slug + "\n" + code;
-  if (RUNNERS[key]) return RUNNERS[key];
-  let prelude = "";
-  for (const k in env.tables) prelude += "var " + k + " = " + JSON.stringify(env.tables[k]) + ";\n";
-  for (const k in env.aliases) prelude += "var " + k + " = " + env.aliases[k] + ";\n";
-  return (RUNNERS[key] = new Function("$", "Lang", "CONFIG", "upper", prelude + "return (" + code + ");"));
-}
-
-function textOf(call, row, field, W) {
-  const f = call.texts && call.texts.fields[field];
-  if (f && f.code) {
-    if (!W) return undefined;
-    try {
-      const v = runner(f.code)(slotValues(call, row), W.Lang, W.CONFIG, W.upper);
-      return v == null ? "" : String(v);
-    } catch (e) { return "⚠ " + e.message; }
-  }
-  const inp = row && row.querySelector(field === "word" ? "input.w" : "input.s");
-  if (inp) return inp.value === "" ? undefined : inp.value;
-  return f && f.lit != null ? f.lit : undefined;
-}
-
-/* The values a row's slots hold now, typed the way the game would hold them:
-   a number reads as a number (`lives === 1` must be able to be true), a
-   true/false as a boolean, anything else as the string it is. */
-function slotValues(call, row) {
-  const slots = (call.texts && call.texts.slots) || [];
-  return slots.map((s, i) => {
-    const c = row && row.querySelector('.slot [data-i="' + i + '"]');
-    const raw = c ? c.value : String(s.value);
-    if (/^-?\d+(\.\d+)?$/.test(raw.trim())) return Number(raw);
-    if (raw === "true" || raw === "false") return raw === "true";
-    return raw;
-  });
-}
-
-/* What a row's slots were last set to, per game, in this browser only: a
-   value typed here is the bench's, never the game's. */
-function slotStore() {
-  try { return JSON.parse(localStorage.getItem("events:slots:" + state.slug) || "{}"); }
-  catch (e) { return {}; }
-}
-function slotSave(key, value) {
-  const all = slotStore();
-  if (value == null) delete all[key]; else all[key] = value;
-  try { localStorage.setItem("events:slots:" + state.slug, JSON.stringify(all)); } catch (e) {}
-}
-
-function slotsHtml(call) {
-  const slots = (call.texts && call.texts.slots) || [];
-  if (!slots.length) return "";
-  const saved = slotStore();
-  const id = "dl-" + call.line + "-" + call.method;
-  return `<div class="slots"><span class="lbl" title="the round's own values — the bench cannot read them, so it offers one. Never written back.">values</span>` +
-    slots.map((s, i) => {
-      const k = call.line + "|" + call.name + "|" + s.text;
-      const v = saved[k] != null ? saved[k] : String(s.value);
-      const head = `<label class="slot" title="${esc(s.text)}"><span>${esc(s.text.length > 22 ? s.text.slice(0, 21) + "…" : s.text)}</span>`;
-      if (s.kind === "pick" || s.kind === "bool") {
-        const opts = s.kind === "bool" ? ["true", "false"] : s.choices.map(String);
-        return head + `<select data-i="${i}" data-k="${esc(k)}">` +
-          opts.map((o) => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("") + `</select></label>`;
-      }
-      const list = s.choices && s.choices.length
-        ? `<datalist id="${id}-${i}">${s.choices.map((c) => `<option value="${esc(c)}">`).join("")}</datalist>` : "";
-      return head + `<input type="text" data-i="${i}" data-k="${esc(k)}" class="${s.kind}" value="${esc(v)}"` +
-        (list ? ` list="${id}-${i}"` : "") + `>${list}</label>`;
-    }).join("") + `</div>`;
-}
-
-/* What each frame was handed, read back under the row: the word and the sub
-   as Lang.t leaves them (the screen shouts them on top of that). A French
-   identical to the English is marked — a word with no entry in
-   web.copy.fr.strings, or a piece the game forgot to wrap in Lang.t. */
-function readHtml(call, row) {
-  if (!call.texts) return "";
-  const style = row.querySelector("select.style");
-  const out = LANGS.map((lang) => {
-    const W = web(lang);
-    if (!W) return null;
-    setLang(W, lang);
-    const parts = ["word", "sub"].map((field) => {
-      let v = textOf(call, row, field, W);
-      if (v === undefined && field === "word" && style && W.Pop.styles && W.Pop.styles[style.value]) v = W.Pop.styles[style.value].word;
-      return v == null || v === "" ? "" : String(W.Lang.t(v));
-    });
-    return { lang, word: parts[0], sub: parts[1] };
-  }).filter(Boolean);
-  if (!out.length) return "";
-  const en = out.find((o) => o.lang === "en");
-  return out.map((o) => {
-    const txt = o.word + (o.sub ? " · " + o.sub : "");
-    const same = o.lang !== "en" && en && txt === en.word + (en.sub ? " · " + en.sub : "") && /[A-Za-z]{2}/.test(txt);
-    const err = /⚠/.test(txt);
-    return `<span class="ln2"><span class="lg">${o.lang.toUpperCase()}</span>` +
-      `<b${err ? ' class="err"' : ""}>${esc(o.word)}</b>${o.sub ? ` <i>${esc(o.sub)}</i>` : ""}` +
-      (same ? ` <span class="same" title="the French reads exactly like the English — no entry in web.copy.fr.strings, or a piece not wrapped in Lang.t">= en</span>` : "") +
-      `</span>`;
-  }).join("");
-}
-
-function refreshReads() {
-  document.querySelectorAll(".call").forEach((row) => { if (row._read) row._read(); });
-}
 function num(input, fallback) {
   if (!input) return fallback;
   const v = parseFloat(input.value);
   return isNaN(v) ? fallback : v;
 }
 
-// The Pop style a notice row has been turned into, or "" when it is a notice.
-function asPop(row) {
-  const as = row && row.querySelector("select.as");
-  return as ? as.value : "";
-}
-
 function fire(call, row) {
-  /* A clip picked but not applied is not in the build yet, so the motor cannot
-     play it: the page plays the file itself, whole and untrimmed, which is the
-     honest preview of what the cut will be taken from. */
   /* A clip picked but not applied is not in the build yet, so the motor cannot
      play it: the page plays the file itself, cut to the length the card asks
      for, which is the honest preview of what apply would embed. */
@@ -886,15 +737,11 @@ function fire(call, row) {
     }
   }
   unlock();
-  const [mod, meth] = (asPop(row) ? "Pop.show" : call.preview.fn).split(".");
-  // A sound is heard once, from the English frame; a word is read in both.
-  const langs = call.kind === "sound" ? ["en"] : LANGS;
-  for (const lang of langs) {
-    const W = web(lang);
+  const [mod, meth] = call.preview.fn.split(".");
+  for (const lang of LANGS) {
     const target = api(mod, lang);
     if (!target || typeof target[meth] !== "function") { note(call.name + " is not reachable in this build"); return; }
-    setLang(W, lang);
-    const args = argsFor(call, row, W);
+    const args = argsFor(call, row);
     try { target[meth].apply(target, args); }
     catch (e) { note(call.name + " threw: " + e.message); return; }
     // The canvas half only exists while something draws it.
@@ -1319,164 +1166,71 @@ function killClip(key, card) {
 function callRow(call) {
   const row = document.createElement("div");
   row.className = "call k-" + call.kind;
-  const bits = [`<button class="act sm play" title="fire it in the game">▶</button>`,
+  /* The clip itself — which file it is cut from, and how long the cut is —
+     belongs to the KEY, and it is written once on the card's header. What a
+     line owns is how loud and how high IT plays it: one sample covers a whole
+     family of events through `rate`, which is the point of the pack. Both are
+     this line's, in this game's source: neither reaches the kit.
+     A line of the MOTOR (the template's end-screen cues) is named by its
+     file, since it is not in the unit's own source. */
+  const bits = [`<button class="act sm play" title="play it in the game">▶</button>`,
+                `<button class="act sm loop" title="loop the moment of the game it fires on">↻</button>`,
                 `<span class="tag">${call.name}</span>`];
-
-  /* A field is an input when the source writes it as a literal (or not at
-     all), and the game's expression when the game builds it — its values are
-     the slots under the row, never the field itself. */
-  const fields = (call.texts && call.texts.fields) || {};
-  const field = (name, cls, value, ph) => fields[name] && fields[name].code
-    ? `<code class="xw" title="${esc(name + " = " + fields[name].expr)} — built by the game, run here with the values below">${esc(fields[name].expr)}</code>`
-    : `<input type="text" class="${cls}"${ph ? ` placeholder="${ph}"` : ""} value="${esc(value == null ? "" : value)}">`;
-
-  if (call.name === "Pop.text") {
-    // The canvas half: a word at a point in the world, no style and no anchor.
-    const o = call.preview.args[3] || {};
-    bits.push(`<span class="style">text</span>`);
-    bits.push(field("word", "w", String(call.preview.args[2])));
-    bits.push(`<span class="meta">${esc(Object.keys(o).map((k) => k + " " + o[k]).join(" · "))}</span>`);
-  } else if (call.kind === "pop") {
-    const o = call.preview.args[1] || {};
-    const style = call.preview.args[0];
-    bits.push(`<select class="style">${STYLES.map((s) =>
-      `<option${style === s ? " selected" : ""}>${s}</option>`).join("")}</select>`);
-    bits.push(field("word", "w", o.word, "style word"));
-    bits.push(field("sub", "s", o.sub, "sub"));
-    // The empty option is "whatever the style says" — a call that names no
-    // anchor must not be previewed at some arbitrary corner of the frame.
-    const at = o.at || "";
-    bits.push(`<select class="at"><option value=""${at ? "" : " selected"}>style spot</option>${ANCHORS.map((a) =>
-      `<option${at === a ? " selected" : ""}>${a}</option>`).join("")}</select>`);
-    if (call.cls) bits.push(`<span class="meta">.${esc(call.cls)}</span>`);
-    if (call.style !== style) bits.push(`<span class="meta">src: ${esc(call.style)}</span>`);
-  } else if (call.kind === "sound") {
-    /* The clip itself — which file it is cut from, and how long the cut is —
-       belongs to the KEY, and it is written once on the card's header. What a
-       line owns is how loud and how high IT plays it: one sample covers a whole
-       family of events through `rate`, which is the point of the pack.
-       A line of the MOTOR (the template's end-screen cues) is named by its
-       file, since it is not in the unit's own source. */
-    bits.push(call.inherited
-      ? `<span class="ln motor" title="${esc(call.source)} — a motor line: auditioned here, changed in the source">${esc(call.where.split("/").pop())}:${call.line}</span>`
-      : `<span class="ln" title="${esc(call.source)}">L${call.line}</span>`);
-    bits.push(`<span class="fn">${call.fn ? esc(call.fn) + "<i>()</i>" : "<i>top level</i>"}</span>`);
-    bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it"));
-    bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
-      "the pitch — one sample covers a whole family of events through this, instead of a clip each"));
-  } else if (call.kind === "notify") {
-    // Notify.say — one look, so a word and a sub and no style. The vignette is
-    // scanned as juice (scan-events.mjs) and never reaches this list. The
-    // dropdown is what it is SAID as: `notify`, or a Pop style it is turned
-    // into — then it takes an anchor like any callout.
-    const o = call.preview.args[1] || {};
-    bits.push(`<select class="as" title="notify, or a Pop style to turn this notice into a callout — apply rewrites it as Pop.show">` +
-      `<option value="">notify</option>${STYLES.map((s) => `<option>${s}</option>`).join("")}</select>`);
-    bits.push(field("word", "w", String(call.preview.args[0])));
-    bits.push(field("sub", "s", o.sub, "sub"));
-    bits.push(`<select class="at" hidden><option value="">style spot</option>${ANCHORS.map((a) =>
-      `<option>${a}</option>`).join("")}</select>`);
-  }
-
+  bits.push(call.inherited
+    ? `<span class="ln motor" title="${esc(call.source)} — a motor line: auditioned here, changed in the source">${esc(call.where.split("/").pop())}:${call.line}</span>`
+    : `<span class="ln" title="${esc(call.source)}">L${call.line}</span>`);
+  bits.push(`<span class="fn">${call.fn ? esc(call.fn) + "<i>()</i>" : "<i>top level</i>"}</span>`);
+  bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it — this line of this game only, never the kit"));
+  bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
+    "the pitch — one sample covers a whole family of events through this; this line of this game only, never the kit"));
   /* The marker holds its cell whether or not it has anything to say: a cue row
      is a GRID, and a column that appears on some lines and not on others is a
      column that never lines up. */
   bits.push(call.preview.exact
     ? `<span class="approx"></span>`
-    : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Type over it.">≈</span>`);
-  /* A cue line carries its own three, in the last columns of its grid: one
-     clip is played by several lines and each is its own decision. A callout's
-     are its card's (beatCard), in the header's corner. */
-  if (call.kind === "sound") {
-    bits.push(iconBtn("check", "check", "mark as checked — seen and heard, signed off"));
-    bits.push(iconBtn("revert", "revert", "put this line back where the source has it"));
-    bits.push(call.inherited
-      ? `<span class="iconbtn" title="a motor line — apply writes the clip, not this line"></span>`
-      : iconBtn("trash", "trash", "remove this line from the game — the clip stays, the other lines that play it stay"));
-  }
-
-  if (call.texts) {
-    bits.push(slotsHtml(call));
-    bits.push(`<div class="read"></div>`);
-  }
+    : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Slide over it.">≈</span>`);
+  // Each line carries its own three: one clip is played by several lines and
+  // each is its own decision.
+  bits.push(iconBtn("check", "check", "mark as checked — heard, signed off"));
+  bits.push(iconBtn("revert", "revert", "put this line back where the source has it"));
+  bits.push(call.inherited
+    ? `<span class="iconbtn" title="a motor line — apply writes the clip, not this line"></span>`
+    : iconBtn("trash", "trash", "remove this line from the game — the clip stays, the other lines that play it stay"));
 
   row.innerHTML = bits.join("");
   // Before the bindings below: the snap has to run first, so everything that
   // reads the value reads the one the grid gave it.
   wireSliders(row);
-  if (call.texts) {
-    const read = row.querySelector(".read");
-    row._read = () => { read.innerHTML = readHtml(call, row); };
-    row.querySelectorAll(".slot [data-i]").forEach((c) => {
-      const keep = () => {
-        const s = call.texts.slots[Number(c.dataset.i)];
-        slotSave(c.dataset.k, c.value === String(s.value) ? null : c.value);
-        row._read();
-      };
-      c.addEventListener("input", keep);
-      c.addEventListener("change", keep);
-    });
-    row.querySelectorAll("input.w, input.s, select.style").forEach((c) => c.addEventListener("input", row._read));
-    row._read();
-  }
   row.querySelector(".play").onclick = () => fire(call, row);
+  row._call = call;
+  row.querySelector(".loop").onclick = () => loopToggle(call);
   row.dataset.check = call.checkId || "";
-  if (row.querySelector(".check")) row.querySelector(".check").onclick = () => toggleCheck([call.checkId], !isChecked(call.checkId));
-  if (row.querySelector(".revert")) row.querySelector(".revert").onclick = () => revertCall(call, row);
+  row.dataset.key = String(call.preview.args[0]);
+  row.querySelector(".check").onclick = () => toggleCheck([call.checkId], !isChecked(call.checkId));
+  row.querySelector(".revert").onclick = () => revertCall(call, row);
   if (row.querySelector(".trash")) row.querySelector(".trash").onclick = () => killCall(call, row);
 
   /* A motor line's volume and pitch move for the ear only: nothing pends, and
      revert puts them back where the motor has them. */
   if (call.inherited) {
     row.classList.add("inherited");
-    row.dataset.key = String(call.preview.args[0]);
     row.querySelectorAll("input[type=range]").forEach((c) => { c.dataset.was = c.value; });
     row.querySelector(".ln").onclick = () => copy(call.where + ":" + call.line);
     return row;
   }
 
-  /* Which control writes which argument back. `expr` is the source as the game
+  /* Which slider writes which argument back. `expr` is the source as the game
      wrote it, and it is what tells an editable value from one apply has to
-     refuse — the row shows both the same way, so nothing is a surprise. */
-  const opts = call.opts || {};
-  const bind = (sel, name, expr) => {
+     refuse. A call apply cannot write back (Sound.beep, Sound.arp) is still
+     played from here — it is read-only, not hidden. */
+  const editable = call.name === "Sound.clip" || call.name === "Sound.cue";
+  [["input.vol", "vol", call.args[1]], ["input.rate", "rate", call.args[2]]].forEach(([sel, name, expr]) => {
     const ctrl = row.querySelector(sel);
     if (!ctrl) return;
-    // A call apply cannot write back (Sound.beep, Sound.arp) is still played
-    // from here — it is read-only, not hidden.
-    if (!name) { ctrl.disabled = true; ctrl.title = "apply does not write this call — change it in the source"; return; }
+    if (!editable) { ctrl.disabled = true; ctrl.title = "apply does not write this call — change it in the source"; return; }
     watch(ctrl, call, name, expr);
-  };
-  if (call.name === "Pop.text") bind("input.w", "word", call.args[2]);
-  else if (call.kind === "pop") {
-    bind("select.style", "style", call.args[0]);
-    bind("input.w", "word", opts.word);
-    bind("input.s", "sub", opts.sub);
-    bind("select.at", "at", opts.at);
-  } else if (call.kind === "sound") {
-    const editable = call.name === "Sound.clip" || call.name === "Sound.cue";
-    bind("input.vol", editable ? "vol" : null, call.args[1]);
-    bind("input.rate", editable ? "rate" : null, call.args[2]);
-    row.dataset.key = String(call.preview.args[0]);
-    row.querySelector(".ln").onclick = () => copy(state.data.where + ":" + call.line);
-  } else if (call.kind === "notify") {
-    bind("input.w", "word", call.args[0]);
-    bind("input.s", "sub", opts.sub);
-    bind("select.as", "as", null);
-    bind("select.at", "at", null);
-    const as = row.querySelector("select.as"), at = row.querySelector("select.at");
-    /* Back to `notify`, the anchor goes with it: a notice has no spot, and an
-       anchor left pending would be refused by apply as a field it lacks. */
-    as._sync = () => {
-      const on = !!as.value;
-      row.classList.toggle("as-pop", on);
-      row.querySelector(".tag").textContent = on ? "Notify.say → Pop.show" : call.name;
-      at.hidden = !on;
-      if (!on && at.value) { at.value = ""; at.dispatchEvent(new Event("change")); }
-    };
-    as.addEventListener("change", as._sync);
-    as._sync();
-  }
+  });
+  row.querySelector(".ln").onclick = () => copy(state.data.where + ":" + call.line);
   return row;
 }
 
@@ -1499,10 +1253,38 @@ function kitSelect(key, current) {
   return `<select class="kitsel" title="play the house kit's variant instead of this clip — chosen and tuned at /kit">` +
     (current ? "" : `<option value="">clip</option>`) +
     Object.entries(groups).map(([r, list]) => `<optgroup label="${esc(r)}">` +
-      list.map((id) => `<option value="${esc(id)}"${id === current ? " selected" : ""}>kit: ${esc(id)}</option>`).join("") +
+      list.map((id) => {
+        const n = kitGames(id).length;
+        return `<option value="${esc(id)}"${id === current ? " selected" : ""}>kit: ${esc(id)}${n ? " · " + n + (n > 1 ? " games" : " game") : ""}</option>`;
+      }).join("") +
       `</optgroup>`).join("") +
     `</select>`;
 }
+/* The games whose manifest maps a key to a kit variant (`sfx`), read off
+   /api/kit: { "crash/glass": ["gearball.crash", "pawko.burst"] }. One game
+   is counted once, whatever number of its keys play it. */
+function kitGames(id) {
+  const seen = {};
+  ((state.kitUsers || {})[id] || []).forEach((u) => {
+    const [slug, key] = u.split(".");
+    (seen[slug] = seen[slug] || []).push(key);
+  });
+  return Object.entries(seen).map(([slug, keys]) => ({ slug, keys }));
+}
+
+/* The foot of a kit card: the icon of every game that plays the variant,
+   this one first. A take changed on /kit is changed for all of them, so they
+   are shown on the card the variant is chosen on; the name and the keys are
+   in the tooltip. */
+function usersHtml(id) {
+  const all = kitGames(id).sort((a, b) => (b.slug === state.slug) - (a.slug === state.slug));
+  if (!all.length) return "";
+  return `<div class="kitusers">` + all.map((g) => {
+    const name = (state.games && state.games[g.slug] && state.games[g.slug].title) || g.slug;
+    return `<img src="icons/${encodeURIComponent(g.slug)}.png" alt="${esc(name)}" title="${esc(name + " — " + g.keys.join(", ") + " plays " + id)}">`;
+  }).join("") + `</div>`;
+}
+
 function wireKitSelect(sel, key, current) {
   if (!sel) return;
   const p = state.pending.kit[key];
@@ -1592,54 +1374,8 @@ function kitCard(key, snd, calls, card) {
   };
   card.appendChild(head);
   calls.forEach((c) => card.appendChild(callRow(c)));
+  card.insertAdjacentHTML("beforeend", usersHtml(snd.kit));
   wireKitSelect(head.querySelector(".kitsel"), key, snd.kit);
-  return card;
-}
-
-function beatCard(beat, calls) {
-  const card = document.createElement("div");
-  card.className = "beat";
-  const silent = calls.some((c) => c.kind === "pop") && !calls.some((c) => c.kind === "sound");
-  const head = document.createElement("div");
-  head.className = "bhead";
-  head.innerHTML =
-    `<span class="ln" title="click to copy the path">L${beat.line}</span>` +
-    `<span class="fn">${beat.fn ? esc(beat.fn) + "<i>()</i>" : "<i>top level</i>"}</span>` +
-    `<span class="sp"></span>` +
-    (silent ? `<span class="warn" title="this moment shows a callout and plays nothing — deliberate on a beat that is already loud, a gap otherwise">no sound</span>` : "") +
-    `<span class="acts">` +
-    iconBtn("check", "check", calls.length > 1 ? "check the " + calls.length + " callouts of this moment" : "mark as checked — seen and read, signed off") +
-    iconBtn("revert", "revert", "put this moment back where the source has it") +
-    iconBtn("trash", "trash", calls.length > 1 ? "remove the " + calls.length + " callouts of this moment from the game" : "remove this callout from the game") +
-    `</span>`;
-  head.classList.add("has-acts");
-  head.querySelector(".ln").onclick = () => copy(state.data.where + ":" + beat.line);
-  card.appendChild(head);
-
-  const rows = calls.map((c) => { const r = callRow(c); card.appendChild(r); return r; });
-
-  /* The card's actions are the moment's: what fires together is checked,
-     reverted and removed together. Removing is all or nothing — every line
-     marked, or, when they all already are, every line given back. */
-  head.querySelector(".check").onclick = () => {
-    const ids = calls.map((c) => c.checkId).filter(Boolean);
-    toggleCheck(ids, !ids.every(isChecked));
-  };
-  head.querySelector(".revert").onclick = () => {
-    calls.forEach((c, i) => revertCall(c, rows[i]));
-    card.classList.remove("killed");
-  };
-  head.querySelector(".trash").onclick = () => {
-    const on = !calls.every((c) => state.pending.kill.calls[pendKey(c)]);
-    calls.forEach((c, i) => { if (!!state.pending.kill.calls[pendKey(c)] !== on) killCall(c, rows[i]); });
-    card.classList.toggle("killed", on);
-  };
-  card.classList.toggle("killed", calls.every((c) => state.pending.kill.calls[pendKey(c)]));
-
-  const src = document.createElement("details");
-  src.className = "src";
-  src.innerHTML = `<summary>source · ${state.data.where}:${beat.codeFrom}</summary><pre>${esc(beat.code)}</pre>`;
-  card.appendChild(src);
   return card;
 }
 
@@ -1673,69 +1409,28 @@ function render() {
   list.innerHTML = "";
   if (!state.data) { list.innerHTML = `<div class="empty">loading…</div>`; return; }
   const d = state.data;
-  const sound = state.view === "sound";
-  if (document.body.classList.contains("sound") !== sound) { document.body.classList.toggle("sound", sound); fit(); }
-
-  // 1. the bed — the one sound nothing in the game ever calls.
-  const bed = sound && d.sounds.find((s) => s.music);
-  if (bed) {
-    add("section", "music — the background bed");
-    const m = d.music || {};
-    const settings = Object.keys(m).map((k) => k + " " + m[k]).join(" · ");
-    const row = document.createElement("div");
-    row.className = "sfx bed";
-    row.innerHTML = `<span class="key">${esc(bed.key)}</span><span class="note">` +
-      esc(bed.note || "assets/audio/music/" + d.slug + ".mp3") +
-      (settings ? ` — <b style="color:#c98fb0">${esc(settings)}</b>` : "") + `</span>`;
-    const play = document.createElement("button");
-    play.className = "act sm";
-    play.textContent = "▶ play";
-    play.onclick = () => { unlock(); const M = api("Music"); if (M) M.start(); };
-    const stop = document.createElement("button");
-    stop.className = "act sm ghost";
-    stop.textContent = "stop";
-    stop.onclick = () => { const M = api("Music"); if (M) M.stop(); };
-    row.appendChild(play); row.appendChild(stop);
-    list.appendChild(row);
-    add("legend", "The shell starts it, ducks it on the end screen and pauses it off-screen. A game only embeds it and sets CONFIG.music.");
-  }
-
-  /* 2. the beats, in source order, with only this side of each showing. The
-        pack is not listed a second time: a clip is reached through the beat
-        that plays it, which is the only place it can be judged anyway. */
-  add("section", sound ? "cues — one card per clip, and the lines that play it" : "events — the callouts and the notifications");
-  if (sound && d.slug === "template") add("legend",
+  add("section", "cues — one card per clip, and the lines that play it");
+  if (d.slug === "template") add("legend",
     "The template's clips are the end screen's: the motor plays them (packages/shell/shell.js, and the web shell's map and menu), " +
     "so the lines below are motor lines — play them, sweep their volume and pitch by ear. Apply re-cuts the CLIP into template/game.js; " +
     "every game keeps the copy it was made with until it is re-cut on its own entry.");
-  add("legend", sound
-    ? "The file a clip is cut from and the length of the cut belong to the clip, so they are written once, at the top of its card — change them and every line below follows. Open the file list and hover a row to hear it. Volume and pitch are each line's own."
-    : "The style dropdown is the callout's look; apply writes it back into the Pop.show line. A value the game builds at runtime is marked and refused rather than overwritten.");
+  add("legend", "The file a clip is cut from and the length of the cut belong to the clip, so they are written once, at the top of its card — change them and every line below follows. " +
+    "Volume and pitch are each line's own, in this game's source: they never reach the kit, nor another game.");
   let n = 0;
-  if (sound) {
-    // Grouped by the clip, the groups in the order their first line appears.
-    const groups = new Map();
-    d.calls.filter((c) => c.kind === "sound").forEach((c) => {
-      const key = String(c.preview.args[0]);
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(c);
-    });
-    groups.forEach((calls, key) => {
-      if (state.hideChecked && calls.every((c) => isChecked(c.checkId))) return;
-      list.appendChild(clipCard(key, calls)); n++;
-    });
-  } else {
-    const kinds = VIEWS[state.view].kinds;
-    d.beats.forEach((b) => {
-      const calls = b.calls.filter((c) => kinds[c.kind] && !(state.hideChecked && isChecked(c.checkId)));
-      if (!calls.length) return;
-      list.appendChild(beatCard(b, calls));
-      n++;
-    });
-  }
-  if (!n) add("empty", state.hideChecked && sideTotal(state.view)
-    ? "everything on this side is checked"
-    : sound ? "this game plays no cue" : "this game fires no callout");
+  // Grouped by the clip, the groups in the order their first line appears.
+  const groups = new Map();
+  d.calls.filter((c) => c.kind === "sound").forEach((c) => {
+    const key = String(c.preview.args[0]);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(c);
+  });
+  groups.forEach((calls, key) => {
+    if (state.hideChecked && calls.every((c) => isChecked(c.checkId))) return;
+    list.appendChild(clipCard(key, calls)); n++;
+  });
+  if (!n) add("empty", state.hideChecked && sideTotal()
+    ? "every cue is checked"
+    : "this game plays no cue");
 
   /* A clip nothing plays has no beat, so it has no row — the pill is the only
      place it is still named, and it names it: dead bytes in every build. */
@@ -1744,12 +1439,11 @@ function render() {
      the game's own file: the pill names every key still waiting for a role. */
   const loose = d.sounds.filter((x) => !x.music && !x.kit).map((x) => x.key);
   el("stats").innerHTML =
-    `<span><b>${d.counts.pop}</b> callouts</span>` +
-    `<span><b>${d.counts.notify}</b> notifications</span>` +
     `<span><b>${d.counts.sound}</b> cues</span>` +
     `<span><b>${d.sounds.length}</b> clips</span>` +
     (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "") +
     (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
+    `<span class="seen-pill seen"></span>` +
     `<span class="checked-pill"></span>` +
     `<button class="hide${state.hideChecked ? " on" : ""}" title="show only what is left to check">Hide checked</button>`;
   el("stats").querySelector("button.hide").onclick = () => {
@@ -1758,14 +1452,8 @@ function render() {
     render();
   };
 
-  el("tabs").querySelectorAll("button").forEach((btn) => {
-    const v = btn.dataset.view;
-    btn.classList.toggle("on", v === state.view);
-    btn.title = VIEWS[v].label;
-    btn.querySelector("b").textContent =
-      d.beats.reduce((a, b2) => a + b2.calls.filter((c) => VIEWS[v].kinds[c.kind]).length, 0);
-  });
   paintChecks();
+  paintClips();
   refreshFiles();
   countPending();
 }
@@ -1779,11 +1467,10 @@ function render() {
 function isChecked(id) {
   return !!(id && state.data && state.data.review && state.data.review[id]);
 }
-function sideCalls(view) {
-  const kinds = VIEWS[view].kinds;
-  return state.data ? state.data.calls.filter((c) => c.checkId && kinds[c.kind]) : [];
+function sideCalls() {
+  return state.data ? state.data.calls.filter((c) => c.checkId && KINDS[c.kind]) : [];
 }
-function sideTotal(view) { return sideCalls(view).length; }
+function sideTotal() { return sideCalls().length; }
 
 // In order, one after the other, so the last answer is the whole review.
 let checkQueue = Promise.resolve();
@@ -1802,7 +1489,7 @@ function sendCheck(ids, on) {
       if (res.error) { note(res.error); return; }
       state.data.review = res.review;
       state.status[state.slug] = res.status;
-      drawOption(state.slug);
+      drawPicker();
       if (state.hideChecked && on) {
         const list = el("list"), top = list.scrollTop;
         render();
@@ -1821,7 +1508,7 @@ function paintChecks() {
     if (b) {
       b.classList.toggle("on", on);
       const m = on && state.data.review[row.dataset.check];
-      b.title = on ? "checked " + m.at + " — click to take it back" : "mark as checked — seen and heard, signed off";
+      b.title = on ? "checked " + m.at + " — click to take it back" : "mark as checked — heard, signed off";
     }
   });
   // A card is checked when every line on it is.
@@ -1833,59 +1520,616 @@ function paintChecks() {
     if (b) b.classList.toggle("on", all);
   });
   if (!state.data) return;
-  const done = (view) => sideCalls(view).filter((c) => isChecked(c.checkId)).length;
   const pill = el("stats").querySelector(".checked-pill");
   if (pill) {
-    const all = sideTotal("view") + sideTotal("sound"), ok = done("view") + done("sound");
+    const all = sideTotal(), ok = sideCalls().filter((c) => isChecked(c.checkId)).length;
     pill.className = "checked-pill" + (all && ok === all ? " done" : "");
     pill.innerHTML = `<b>${ok}</b> / ${all} checked`;
   }
-  el("tabs").querySelectorAll("button").forEach((btn) => {
-    const v = btn.dataset.view, t = sideTotal(v);
-    btn.classList.toggle("done", t > 0 && done(v) === t);
-    btn.querySelector("b").textContent = t ? done(v) + "/" + t : "0";
-  });
 }
 
-/* The picker's label: a tick and green once the game is done, its count
-   otherwise — what is left to check is the reason to open it. */
-function drawOption(slug) {
-  const pick = el("game-pick");
-  const opt = pick.querySelector('option[value="' + CSS.escape(slug) + '"]');
-  const g = state.games && state.games[slug];
-  if (!opt || !g) return;
-  const st = state.status[slug];
-  opt.textContent = (st && st.done ? "\u2713 " : "") + g.title + " — " + g.counts.pop + " callouts, " + g.counts.sound + " cues" +
-    (st && !st.done && st.total ? "  ·  " + st.checked + "/" + st.total + " checked" : "");
-  opt.className = st && st.done ? "done" : "";
-  if (pick.value === slug) pick.className = opt.className;
+/* ── the game picker ──────────────────────────────────────────────────────
+   One button, and a list under it: the game being edited wears a dot, a game
+   every line of THIS page's side of which is checked (its cues, never the other
+   page's) wears a tick and goes green. Not a <select>, whose popup draws its
+   own tick on the selected entry. */
+const picker = { order: [], value: null, idx: -1 };
+
+function pickDone(slug) {
+  const st = state.status[slug] && state.status[slug].sound;
+  return !!(st && st.total && st.checked === st.total);
 }
+
+function pickEntry(slug, withDot) {
+  const g = state.games && state.games[slug];
+  return (withDot && slug === picker.value ? `<span class="gp-dot"></span>` : "") +
+    (pickDone(slug) ? `<span class="gp-ck">\u2713</span>` : "") +
+    `<span>${esc(g ? g.title : slug)}</span>`;
+}
+
+function drawPicker() {
+  const box = el("game-pick");
+  if (!picker.value) return;
+  box.classList.toggle("done", pickDone(picker.value));
+  box.querySelector(".gp-btn").innerHTML = pickEntry(picker.value, false);
+  const list = box.querySelector(".gp-list");
+  list.innerHTML = picker.order.map((slug, i) =>
+    `<button type="button" class="gp-row${pickDone(slug) ? " done" : ""}${i === picker.idx ? " on" : ""}" data-slug="${esc(slug)}">${pickEntry(slug, true)}</button>`).join("");
+  list.querySelectorAll(".gp-row").forEach((r) => { r.onclick = () => pickGame(r.dataset.slug); });
+}
+
+function pickOpen(on) {
+  const box = el("game-pick"), list = box.querySelector(".gp-list");
+  list.hidden = !on;
+  box.classList.toggle("open", on);
+  if (!on) return;
+  picker.idx = picker.order.indexOf(picker.value);
+  drawPicker();
+  const cur = list.querySelector(".gp-row.on");
+  if (cur) cur.scrollIntoView({ block: "nearest" });
+}
+
+function pickGame(slug) {
+  pickOpen(false);
+  if (slug === picker.value) return;
+  picker.value = slug;
+  drawPicker();
+  load(slug);
+}
+
+(function wirePicker() {
+  const box = el("game-pick"), btn = box.querySelector(".gp-btn"), list = box.querySelector(".gp-list");
+  btn.onclick = () => pickOpen(list.hidden);
+  box.addEventListener("keydown", (e) => {
+    if (list.hidden) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); pickOpen(true); }
+      return;
+    }
+    if (e.key === "Escape") { e.preventDefault(); pickOpen(false); btn.focus(); return; }
+    if (e.key === "Enter") { e.preventDefault(); if (picker.order[picker.idx]) pickGame(picker.order[picker.idx]); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    picker.idx = Math.max(0, Math.min(picker.order.length - 1, picker.idx + (e.key === "ArrowDown" ? 1 : -1)));
+    drawPicker();
+    const on = list.querySelector(".gp-row.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  });
+  // A click anywhere else, or the window losing focus (a click in a game frame), closes it.
+  document.addEventListener("mousedown", (e) => { if (!box.contains(e.target)) pickOpen(false); });
+  window.addEventListener("blur", () => pickOpen(false));
+})();
 
 function fit() {
   const stage = el("stage"), bar = el("bar"), gap = 12, label = 22;
   // The apply report takes its room out of the frames, never off the bottom of
   // the window: what it costs in height the frames give back.
-  const h = stage.clientHeight - bar.offsetHeight - el("hint").offsetHeight - el("report").offsetHeight - label * 2 - gap - 75;
-  // Two frames stacked in the height the stage gets, never wider than a third of the window.
-  const k = Math.max(0.12, Math.min(h / 2560, (window.innerWidth * 0.34 - 28) / 720));
-  document.querySelectorAll(".fit").forEach((f) => {
+  const h = stage.clientHeight - bar.offsetHeight - el("hint").offsetHeight - el("report").offsetHeight -
+            el("replay").offsetHeight - label - 75;
+  // One frame in the height the stage gets, never wider than a third of the window.
+  const k = Math.max(0.12, Math.min(h / 1280, (window.innerWidth * 0.34 - 28) / 720));
+  // REC: ONE frame, as big as the stage allows — it is played, not glanced at.
+  const kr = Math.max(0.2, Math.min((h + label + gap) / 1280, (window.innerWidth * 0.45 - 28) / 720));
+  if (document.body.classList.contains("rec")) {
+    const f = document.querySelector(".fit.rec");
+    f.style.transform = "scale(" + kr + ")";
+    f.style.width = (720 * kr) + "px"; f.style.height = (1280 * kr) + "px";
+    f.parentNode.style.width = (720 * kr) + "px";
+    stage.style.flexBasis = (720 * kr + 28) + "px";
+    return;
+  }
+  document.querySelectorAll(".fit:not(.rec)").forEach((f) => {
     f.style.transform = "scale(" + k + ")";
     f.style.width = (720 * k) + "px";
     f.style.height = (1280 * k) + "px";
     f.parentNode.style.width = (720 * k) + "px";
   });
-  stage.style.flexBasis = (document.body.classList.contains("sound") ? 300 : Math.max(300, 720 * k + 28)) + "px";
+  stage.style.flexBasis = (document.body.classList.contains("looping") ? Math.max(300, 720 * k + 28) : 300) + "px";
 }
 
 function load(slug) {
-  if (slug !== state.slug) state.pending = EMPTY_PENDING();
+  if (slug !== state.slug) { state.pending = EMPTY_PENDING(); loopStop(); }
   state.slug = slug;
+  loadClips();
+  if (REC.on) recLoad();
   localStorage.setItem("events:game", slug);
   LANGS.forEach((lang) => { frames[lang].src = "build/" + slug + "/index.html?lang=" + lang; });
   fetch("api/events?game=" + encodeURIComponent(slug))
     .then((r) => r.json())
-    .then((d) => { state.data = d; state.status[slug] = d.status; drawOption(slug); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
+    .then((d) => { state.data = d; state.status[slug] = d.status; drawPicker(); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
 }
+
+/* ===========================================================================
+   The clips: lab/events-clips/<slug>/ (tools/lab/serve-events.mjs).
+
+   A row's clip is the one recorded for its checkId. A call edited since has a
+   new checkId; it borrows the clip of the nearest event of the same call name
+   in the same function that no live call claims, and says so (amber ↻).
+   =========================================================================== */
+function loadClips() {
+  const slug = state.slug;
+  state.offset = null;
+  fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
+    if (slug !== state.slug) return;
+    state.clips = idx && idx.clips ? idx : { clips: {}, byId: {} };
+    paintClips();
+  });
+  loadOffset();
+}
+
+/* Asked again every time the played frame loads, not only when the game is
+   picked: an offset that failed then (a build half-way through) would leave
+   REC catching nothing for the whole session, and saying nothing about it. */
+function loadOffset() {
+  const slug = state.slug;
+  fetch("api/offset?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
+    if (slug !== state.slug) return;
+    state.offset = o && o.offset != null ? o.offset : null;
+    if (REC.on && state.offset == null) note("rec: " + ((o && o.error) || "no offset for " + slug) + " — nothing can be caught");
+  }).catch((e) => { if (REC.on) note("rec: api/offset failed — " + e.message); });
+}
+
+function nearEvent(call) {
+  const idx = state.clips, live = new Set(state.data ? state.data.calls.map((c) => c.checkId) : []);
+  let best = null;
+  for (const [file, clip] of Object.entries(idx.clips || {})) {
+    for (const e of clip.events || []) {
+      if (e.name !== call.name || e.fn !== (call.fn || "") || live.has(e.id)) continue;
+      const d = Math.abs(e.line - call.line);
+      if (!best || d < best.d) best = { file, clip, e, d };
+    }
+  }
+  return best;
+}
+
+function clipFor(call) {
+  if (!call || call.inherited || !call.checkId) return null;
+  const idx = state.clips, f = idx.byId && idx.byId[call.checkId];
+  if (f && idx.clips[f]) return { file: f, clip: idx.clips[f], near: false };
+  const n = nearEvent(call);
+  return n ? { file: n.file, clip: n.clip, near: true } : null;
+}
+
+// A recorded event → the call the source has now (the same id, or the near one).
+function callOf(e) {
+  const calls = state.data ? state.data.calls : [];
+  const hit = calls.find((c) => c.checkId === e.id);
+  if (hit) return hit;
+  const ids = new Set(calls.map((c) => c.checkId));
+  let best = null;
+  for (const c of calls) {
+    if (c.name !== e.name || (c.fn || "") !== e.fn || c.inherited) continue;
+    // A call that has a clip of its own is not the one this event was.
+    if (state.clips.byId[c.checkId] && ids.has(c.checkId)) continue;
+    const d = Math.abs(c.line - e.line);
+    if (!best || d < best.d) best = { c, d };
+  }
+  return best ? best.c : null;
+}
+
+function paintClips() {
+  document.querySelectorAll(".call").forEach((row) => {
+    const b = row.querySelector(".loop"), c = row._call;
+    if (!b || !c) return;
+    if (c.inherited) { b.disabled = true; b.title = "a motor line — the recorder catches the game's own calls only"; return; }
+    const hit = clipFor(c);
+    b.classList.toggle("has", !!hit);
+    b.classList.toggle("near", !!(hit && hit.near));
+    b.classList.toggle("on", LOOP.id === c.checkId);
+    b.title = !hit ? "not seen in play yet — Rec, and play until it fires"
+      : LOOP.id === c.checkId ? "stop the loop"
+      : "loop the moment of the game it fires on (" + hit.clip.dur.toFixed(1) + " s, recorded " + hit.clip.when.replace("T", " ") + ")" +
+        (hit.near ? " — recorded before this call was edited" : "");
+  });
+  const pill = el("stats").querySelector(".seen-pill");
+  if (pill && state.data) {
+    const pool = state.data.calls.filter((c) => c.checkId && !c.inherited && c.kind === "sound");
+    const seen = pool.filter((c) => clipFor(c)).length;
+    pill.innerHTML = `<b>${seen}</b> / ${pool.length} seen in play`;
+    pill.title = "cues with a recorded moment — Rec and play to capture the rest";
+  }
+}
+
+/* ===========================================================================
+   The LOOP: the clip under the frame, the moment fired over it.
+   =========================================================================== */
+const LOOP = { id: null, call: null, clip: null, file: null, near: false, url: null, events: [], muted: {}, raf: 0, prev: -1 };
+const clipVideos = () => [...document.querySelectorAll("video.clip")];
+
+function setClear(on) {
+  LANGS.forEach((lang) => {
+    try { frames[lang].contentDocument.documentElement.classList.toggle("lab-clear", on); } catch (e) {}
+  });
+}
+
+function loopToggle(call) {
+  if (LOOP.id && LOOP.id === call.checkId) { loopStop(); return; }
+  const hit = clipFor(call);
+  if (!hit) { note("not seen in play yet — Rec, and play until it fires"); return; }
+  loopStart(call, hit);
+}
+
+function loopStart(call, hit) {
+  loopStop();
+  if (REC.on) recToggle(false);
+  Object.assign(LOOP, { id: call.checkId, call, clip: hit.clip, file: hit.file, near: hit.near, muted: {}, prev: -1 });
+  // The whole moment: every event of the window, each at its own time, once.
+  const seen = {};
+  LOOP.events = (hit.clip.events || []).map((e) => ({ e, call: callOf(e) }))
+    .filter((x) => x.call && !seen[x.call.checkId + "@" + x.e.t] && (seen[x.call.checkId + "@" + x.e.t] = 1));
+  // A beat's rows hold COPIES of the scan's calls: a call is the same call by its id.
+  if (!LOOP.events.some((x) => x.call.checkId === call.checkId)) LOOP.events.push({ e: { id: call.checkId, t: hit.clip.at }, call });
+  LOOP.events.sort((a, b) => a.e.t - b.e.t);
+  const slug = state.slug, id = call.checkId;
+  fetch("clips/" + encodeURIComponent(slug) + "/" + hit.file).then((r) => {
+    if (!r.ok) throw new Error("clip " + hit.file + " is gone");
+    return r.blob();
+  }).then((blob) => {
+    if (LOOP.id !== id || slug !== state.slug) return;
+    LOOP.url = URL.createObjectURL(blob);
+    document.body.classList.add("looping");
+    setClear(true);
+    clipVideos().forEach((v) => { v.src = LOOP.url; v.currentTime = 0; v.play().catch(() => {}); });
+    unlock();
+    drawReplay();
+    fit();
+    paintClips();
+    LOOP.raf = requestAnimationFrame(loopTick);
+  }).catch((e) => { note("loop: " + e.message); loopStop(); });
+  paintClips();
+}
+
+function loopStop() {
+  cancelAnimationFrame(LOOP.raf);
+  const was = !!LOOP.id;
+  Object.assign(LOOP, { id: null, call: null, clip: null, file: null, events: [], raf: 0 });
+  clipVideos().forEach((v) => { try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} });
+  if (LOOP.url) { URL.revokeObjectURL(LOOP.url); LOOP.url = null; }
+  document.body.classList.remove("looping");
+  setClear(false);
+  if (was) { drawReplay(); fit(); paintClips(); }
+}
+
+function loopRestart() {
+  clipVideos().forEach((v) => { try { v.currentTime = 0; v.play().catch(() => {}); } catch (e) {} });
+  LOOP.prev = -1;
+}
+
+const evKey = (x) => x.call.checkId + "@" + x.e.t;
+
+function loopTick() {
+  if (!LOOP.clip) return;
+  LOOP.raf = requestAnimationFrame(loopTick);
+  const en = document.querySelector('video.clip[data-lang="en"]');
+  if (!en || !en.src) return;
+  // MediaRecorder writes no duration into a webm: the index's is the one to trust.
+  const dur = LOOP.clip.dur || en.duration;
+  if (en.ended || (isFinite(dur) && en.currentTime >= dur - 0.03)) { loopRestart(); return; }
+  const t = en.currentTime;
+  if (t < LOOP.prev - 0.1) LOOP.prev = -1;
+  for (const x of LOOP.events) {
+    if (LOOP.muted[evKey(x)] || !(x.e.t > LOOP.prev && x.e.t <= t)) continue;
+    const row = document.querySelector('.call[data-check="' + CSS.escape(x.call.checkId) + '"]');
+    fire(x.call, row);
+  }
+  LOOP.prev = t;
+  const tm = el("replay").querySelector(".time");
+  if (tm) tm.textContent = t.toFixed(1) + " / " + (isFinite(dur) ? dur.toFixed(1) : "?") + " s";
+}
+
+function evLabel(call) {
+  if (call.kind === "sound") return String(call.preview.args[0]) + " L" + call.line;
+  const w = call.texts && call.texts.fields && call.texts.fields.word;
+  const word = w ? (w.lit != null ? w.lit : w.expr) : call.preview.args[0];
+  const s = String(word == null ? call.name : word);
+  return (s.length > 16 ? s.slice(0, 15) + "…" : s) + " L" + call.line;
+}
+
+function drawReplay() {
+  const box = el("replay");
+  if (!LOOP.clip) { box.innerHTML = ""; return; }
+  const c = LOOP.call;
+  box.innerHTML =
+    `<span class="what">↻ L${c.line} ${c.fn ? esc(c.fn) + "()" : "top level"} · ${esc(c.name)}</span>` +
+    `<span class="time"></span>` +
+    (LOOP.near ? `<span class="approx" title="the call was edited since this moment was recorded — the clip is the one its older self fired on">recorded before the edit</span>` : "") +
+    `<span class="sp"></span>` +
+    `<button class="act sm ghost" data-a="drop" title="forget this recording — the next time it fires under Rec, it is captured again">Drop clip</button>` +
+    `<button class="act sm" data-a="stop">Stop</button>` +
+    `<div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px">` +
+    LOOP.events.map((x, i) =>
+      `<button class="ev k-${x.call.kind}${x.call.checkId === c.checkId ? " me" : ""}${LOOP.muted[evKey(x)] ? " off" : ""}" data-i="${i}" ` +
+      `title="${esc(x.call.name)} at ${x.e.t.toFixed(2)} s — click to mute it in the loop">${esc(evLabel(x.call))} · ${x.e.t.toFixed(1)}s</button>`).join("") +
+    `</div>`;
+  box.querySelector('[data-a="stop"]').onclick = loopStop;
+  box.querySelector('[data-a="drop"]').onclick = dropClip;
+  box.querySelectorAll(".ev").forEach((b) => {
+    b.onclick = () => {
+      const k = evKey(LOOP.events[Number(b.dataset.i)]);
+      LOOP.muted[k] = !LOOP.muted[k];
+      b.classList.toggle("off", LOOP.muted[k]);
+    };
+  });
+}
+
+function dropClip() {
+  const file = LOOP.file, slug = state.slug;
+  if (!file) return;
+  fetch("api/clip-drop", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: slug, file }) })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.error) { note("drop: " + res.error); return; }
+      if (slug === state.slug) state.clips = res.index;
+      loopStop();
+      paintClips();
+      note("clip dropped — Rec, and the next time it fires it is captured again");
+    });
+}
+
+/* ===========================================================================
+   REC: the game itself, played, and its events caught as they fire.
+
+   Each watched method of the build is wrapped (Pop, Notify, Sound): the
+   wrapper reads its caller off the stack — a line of the built
+   game.<hash>.js, which /api/offset maps to the source — and matches it to
+   the row scan-events gave that line. A call the motor makes for itself has
+   no frame in game.<hash>.js and is ignored.
+
+   The canvas is sampled at REC_FPS into a ring of small canvases holding
+   REC_PRE seconds. A CUE with no clip yet keeps the ring and REC_POST seconds
+   more — a second on each side is the moment, and more is the round going on
+   about something else. Every other event in that window (another cue, a
+   callout) rides along in the clip's list, so the loop can replay the moment
+   whole; a callout opens no capture of its own, since nothing here judges it. The frames are encoded into a
+   webm in real time (MediaRecorder over a canvas stream, each frame at the
+   time it was taken) and posted to /api/clip.
+   =========================================================================== */
+const REC_PRE = 1, REC_POST = 1, REC_FPS = 20, REC_W = 360, REC_H = 640;
+const REC = { on: false, W: null, canvas: null, ground: "#000", ring: [], pool: [], log: [], open: null,
+              inflight: new Set(), saved: 0, busy: 0, raf: 0, last: 0 };
+const recFrame = el("rec-frame");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function recToggle(on) {
+  REC.on = on === undefined ? !REC.on : !!on;
+  el("btn-rec").classList.toggle("on", REC.on);
+  document.body.classList.toggle("rec", REC.on);
+  cancelAnimationFrame(REC.raf);
+  if (REC.on) {
+    loopStop();
+    recLoad();
+    REC.raf = requestAnimationFrame(recTick);
+    note("play — every cue with no clip yet is captured, a second either side of it");
+  } else {
+    recDiscard();
+    REC.W = REC.canvas = null;
+    recFrame.src = "about:blank";
+  }
+  recInfo();
+  fit();
+}
+
+function recLoad() {
+  recDiscard();
+  REC.W = REC.canvas = null;
+  // force=1: every level of the map can be started, for this load only (levels.js).
+  recFrame.src = "build/" + state.slug + "/index.html?lang=en&force=1";
+  recLevels(0);
+}
+
+/* The level picker: filled from the played build once it is up (its climb's
+   length — the template and a game with no map have none), and a pick starts
+   that level's round at once, from whatever screen the frame is on. */
+function recLevels(n) {
+  const sel = el("rec-level");
+  sel.innerHTML = n
+    ? `<option value="">Level…</option>` +
+      Array.from({ length: n }, (_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join("") +
+      `<option value="${n + 1}">Endless</option>`
+    : `<option value="">No levels</option>`;
+  sel.disabled = !n;
+}
+
+el("rec-level").onchange = () => {
+  const sel = el("rec-level"), n = Number(sel.value);
+  sel.value = "";
+  const w = recFrame.contentWindow, L = w && w.__LEVELS__;
+  if (!n || !L || !L.play) return;
+  // A round under way is taken down by startGame itself (bootstrap.js): no score, no end screen.
+  recDiscard();
+  L.play(n);
+  try { w.focus(); } catch (e) {}
+  note(n > L.count() ? "endless run started" : "level " + n + " started");
+};
+
+// The colour under the canvas: the SKIN's --bg when it is a plain colour, the frame's otherwise.
+function groundOf(w) {
+  const d = w.document;
+  const tok = w.getComputedStyle(d.documentElement).getPropertyValue("--bg").trim();
+  if (/^(#|rgb|hsl)/.test(tok)) return tok;
+  for (const n of [d.getElementById("frame"), d.getElementById("stage"), d.body]) {
+    if (!n) continue;
+    const bg = w.getComputedStyle(n).backgroundColor;
+    if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
+  }
+  return "#000";
+}
+
+recFrame.addEventListener("load", () => {
+  if (!REC.on) return;
+  try {
+    const w = recFrame.contentWindow, W = w && w.__WEB__;
+    if (!W) return;
+    REC.W = W;
+    REC.canvas = w.document.getElementById("game");
+    REC.ground = groundOf(w);
+    loadOffset();
+    recLevels(w.__LEVELS__ && w.__LEVELS__.active() && w.__LEVELS__.count ? w.__LEVELS__.count() : 0);
+    ["show", "text"].forEach((m) => hook(W.Pop, m, "Pop." + m));
+    hook(W.Notify, "say", "Notify.say");
+    ["clip", "cue", "beep", "arp"].forEach((m) => hook(W.Sound, m, "Sound." + m));
+    w.document.addEventListener("mousedown", () => closeFileMenu());
+    try { w.focus(); } catch (e) {}
+  } catch (e) { note("rec: the build did not load — " + e.message); }
+});
+
+function hook(obj, meth, name) {
+  const orig = obj && obj[meth];
+  if (typeof orig !== "function" || orig.__lab) return;
+  const f = function () {
+    if (REC.on) recSaw(name, new Error().stack);
+    // The number is fired live over the loop: drawn here, it would be baked into the clip.
+    if (name === "Pop.text") return;
+    return orig.apply(this, arguments);
+  };
+  f.__lab = true;
+  obj[meth] = f;
+}
+
+function callAt(name, line) {
+  const pool = state.data.calls.filter((c) => c.name === name && !c.inherited && c.checkId);
+  let best = null;
+  for (const c of pool) {
+    const d = Math.abs(c.line - line);
+    if (d <= 2 && (!best || d < best.d)) best = { c, d };
+  }
+  return best && best.c;
+}
+
+function recSaw(name, stack) {
+  if (state.offset == null || !state.data) return;
+  /* The frames, in any engine's spelling: Chrome opens on an "Error" line and
+     writes "at f (url:l:c)", Firefox and Safari open on the first frame and
+     write "f@url:l:c". So the lines that end on a location are kept — [0] is
+     the wrapper, [1] whoever called it — rather than counted from the top. */
+  const frames = String(stack).split("\n").filter((l) => /:\d+:\d+\)?\s*$/.test(l));
+  const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || "");
+  if (!m) return;
+  const call = callAt(name, Number(m[1]) + state.offset);
+  if (!call) return;
+  const t = performance.now();
+  REC.log.push({ id: call.checkId, name: call.name, line: call.line, fn: call.fn || "", t });
+  if (REC.log.length > 400) REC.log.splice(0, 200);
+  if (call.kind !== "sound") return;
+  if ((state.clips.byId && state.clips.byId[call.checkId]) || REC.inflight.has(call.checkId)) return;
+  if (!REC.open) recOpen(t);
+  REC.open.ids.add(call.checkId);
+  REC.inflight.add(call.checkId);
+  recInfo();
+}
+
+function recRelease(f) { if (--f.refs <= 0) REC.pool.push(f); }
+
+function recTick(now) {
+  if (!REC.on) return;
+  REC.raf = requestAnimationFrame(recTick);
+  if (!REC.canvas || now - REC.last < 1000 / REC_FPS - 4) return;
+  REC.last = now;
+  const f = REC.pool.pop() || { c: Object.assign(document.createElement("canvas"), { width: REC_W, height: REC_H }), t: 0, refs: 0 };
+  const g = f.c.getContext("2d");
+  g.fillStyle = REC.ground;
+  g.fillRect(0, 0, REC_W, REC_H);
+  try { g.drawImage(REC.canvas, 0, 0, REC_W, REC_H); } catch (e) {}
+  f.t = now;
+  f.refs = 1;
+  REC.ring.push(f);
+  if (REC.open) {
+    f.refs++;
+    REC.open.frames.push(f);
+    if (now >= REC.open.until) recClose();
+  }
+  while (REC.ring.length && REC.ring[0].t < now - REC_PRE * 1000 - 100) recRelease(REC.ring.shift());
+}
+
+function recOpen(t) {
+  const frames = REC.ring.filter((f) => f.t >= t - REC_PRE * 1000);
+  frames.forEach((f) => { f.refs++; });
+  REC.open = { slug: state.slug, t0: frames.length ? frames[0].t : t, frames, until: t + REC_POST * 1000, ids: new Set() };
+}
+
+function recClose() {
+  const cap = REC.open;
+  REC.open = null;
+  if (!cap.frames.length) { cap.ids.forEach((id) => REC.inflight.delete(id)); return; }
+  const t1 = cap.frames[cap.frames.length - 1].t;
+  const events = REC.log.filter((e) => e.t >= cap.t0 && e.t <= t1)
+    .map((e) => ({ id: e.id, name: e.name, line: e.line, fn: e.fn, t: Math.round((e.t - cap.t0)) / 1000 }));
+  const claim = [...cap.ids];
+  const first = events.find((e) => cap.ids.has(e.id));
+  recEncode(cap, events, claim, first ? first.t : REC_PRE);
+  recInfo();
+}
+
+function recDiscard() {
+  if (REC.open) {
+    REC.open.frames.forEach(recRelease);
+    REC.open.ids.forEach((id) => REC.inflight.delete(id));
+    REC.open = null;
+  }
+  REC.ring.forEach(recRelease);
+  REC.ring = [];
+}
+
+function blobB64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(",")[1] || "");
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function recEncode(cap, events, claim, at) {
+  REC.busy++;
+  recInfo();
+  try {
+    const c = Object.assign(document.createElement("canvas"), { width: REC_W, height: REC_H });
+    const g = c.getContext("2d");
+    g.drawImage(cap.frames[0].c, 0, 0);
+    const mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m));
+    const stream = c.captureStream(REC_FPS);
+    const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1500000 });
+    const chunks = [];
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((r) => { mr.onstop = r; });
+    mr.start();
+    // Real time, each frame at the moment it was taken: the event's `at` stays true.
+    const start = performance.now();
+    for (const f of cap.frames) {
+      const wait = start + (f.t - cap.t0) - performance.now();
+      if (wait > 0) await sleep(wait);
+      g.drawImage(f.c, 0, 0);
+    }
+    await sleep(1000 / REC_FPS);
+    mr.stop();
+    await stopped;
+    stream.getTracks().forEach((t) => t.stop());
+    const dur = (cap.frames[cap.frames.length - 1].t - cap.t0) / 1000 + 1 / REC_FPS;
+    const webm = await blobB64(new Blob(chunks, { type: "video/webm" }));
+    const res = await fetch("api/clip", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ game: cap.slug, webm, dur, at, events, claim })
+    }).then((r) => r.json());
+    if (res.error) note("rec: " + res.error);
+    else {
+      REC.saved++;
+      if (cap.slug === state.slug) { state.clips = res.index; paintClips(); }
+    }
+  } catch (e) { note("rec: " + e.message); }
+  finally {
+    cap.frames.forEach(recRelease);
+    claim.forEach((id) => REC.inflight.delete(id));
+    REC.busy--;
+    recInfo();
+  }
+}
+
+function recInfo() {
+  el("rec-info").innerHTML = REC.on || REC.busy
+    ? `<b>${REC.saved}</b> captured` + (REC.open ? " · recording" : "") + (REC.busy ? " · encoding " + REC.busy : "")
+    : "";
+}
+
+el("btn-rec").onclick = () => recToggle();
 
 fetch("api/sfx").then((r) => r.json()).then((files) => {
   state.sfx = files;
@@ -1895,6 +2139,7 @@ fetch("api/sfx").then((r) => r.json()).then((files) => {
 // The gameplay variants of the house kit, for the clip cards' kit selector.
 fetch("api/kit").then((r) => r.json()).then((k) => {
   state.kitIds = [];
+  state.kitUsers = k.users || {};
   for (const [role, r] of Object.entries(k.roles || {})) {
     if (r.group !== "game") continue;
     for (const v of Object.keys(r.variants || {})) state.kitIds.push(role + "/" + v);
@@ -1902,18 +2147,13 @@ fetch("api/kit").then((r) => r.json()).then((k) => {
   if (state.data) render();
 }).catch(() => {});
 fetch("api/games").then((r) => r.json()).then((list) => {
-  const pick = el("game-pick");
   state.games = {};
-  pick.innerHTML = list.map((g) => {
-    state.games[g.slug] = g;
-    state.status[g.slug] = g.status;
-    return `<option value="${g.slug}"></option>`;
-  }).join("");
+  list.forEach((g) => { state.games[g.slug] = g; state.status[g.slug] = g.status; });
+  picker.order = list.map((g) => g.slug);
   const saved = localStorage.getItem("events:game");
-  pick.value = list.some((g) => g.slug === saved) ? saved : list[0].slug;
-  list.forEach((g) => drawOption(g.slug));
-  pick.onchange = () => { drawOption(pick.value); load(pick.value); };
-  load(pick.value);
+  picker.value = list.some((g) => g.slug === saved) ? saved : list[0].slug;
+  drawPicker();
+  load(picker.value);
 });
 
 /* --- APPLY — the one thing on this page that writes ----------------------
@@ -1967,7 +2207,7 @@ function applyNow() {
   const btn = el("btn-apply");
   btn.disabled = true;
   btn.textContent = plan.sfx.length ? "Cutting…" : "Writing…";
-  note("writing " + (plan.game === "template" ? "template" : "games/" + plan.game) + "/game.js…");
+  note("writing " + (plan.game === "template" ? "template" : "games/" + plan.game) + (plan.calls.length || plan.sfx.length || plan.kill.calls.length || plan.kill.clips.length ? "/game.js…" : "/manifest.json…"));
   fetch("api/apply", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(plan)
   })
@@ -1984,14 +2224,6 @@ function applyNow() {
 }
 
 el("btn-apply").onclick = applyNow;
-el("tabs").querySelectorAll("button").forEach((btn) => {
-  btn.onclick = () => {
-    state.view = btn.dataset.view;
-    localStorage.setItem("events:view", state.view);
-    render();
-    el("list").scrollTop = 0;
-  };
-});
 try {
   const saved = sessionStorage.getItem("events:report");
   if (saved) showReport(JSON.parse(saved));
@@ -1999,9 +2231,8 @@ try {
 
 el("btn-reload").onclick = () => load(state.slug);
 
-/* The report is the only thing on the stage that outlives its moment — a
-   callout expires on its own and the bed is started and stopped from its own
-   row in SOUND. Click it away. */
+/* The report is the only thing on the stage that outlives its moment. Click
+   it away. */
 el("report").onclick = () => {
   showReport(null);
   try { sessionStorage.removeItem("events:report"); } catch (e) {}

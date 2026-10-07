@@ -3231,19 +3231,29 @@
       xhr.onerror = fail;
       try { xhr.send(); } catch (e) { fail(); }
     }
+    function decode(k) {
+      var a = actx; if (!a || !a.decodeAudioData || !ASSETS.sounds[k]) return;
+      if (buffers[k] || pending[k]) return;
+      pending[k] = true;
+      fetchBytes(ASSETS.sounds[k], function (bytes) {
+        try {
+          a.decodeAudioData(bytes,
+            function (buf) { if (pending[k]) buffers[k] = buf; pending[k] = false; },
+            function () { pending[k] = false; });
+        } catch (e) { pending[k] = false; }
+      }, function () { pending[k] = false; });
+    }
+    /* A BED THAT IS NOT ALWAYS PLAYING is not decoded until it is asked for.
+       A game whose music is several long tracks — one per biome, chainring —
+       ships the extra ones as `music<Name>` (`musicNova`), and decodeAll
+       leaves them alone: five three-minute beds decoded at once are ~170 MB
+       of samples on a phone that only ever plays one of them. Music asks for
+       the one it is about to play (`load`) and lets go of the one it left
+       (`drop`). The plain `music` key is decoded with everything else, as it
+       always was. */
+    function lazy(k) { return k !== "music" && /^music[A-Z0-9]/.test(k); }
     function decodeAll() {
-      var a = actx; if (!a || !a.decodeAudioData) return;
-      Object.keys(ASSETS.sounds).forEach(function (k) {
-        if (buffers[k] || pending[k]) return;
-        pending[k] = true;
-        fetchBytes(ASSETS.sounds[k], function (bytes) {
-          try {
-            a.decodeAudioData(bytes,
-              function (buf) { buffers[k] = buf; pending[k] = false; },
-              function () { pending[k] = false; });
-          } catch (e) { pending[k] = false; }
-        }, function () { pending[k] = false; });
-      });
+      Object.keys(ASSETS.sounds).forEach(function (k) { if (!lazy(k)) decode(k); });
     }
     function clip(name, vol, rate) {
       if (muted) return;
@@ -3358,7 +3368,9 @@
       setMuted: function (v) { muted = !!v; },
       isMuted: function () { return muted; },
       ctx: function () { return actx; },              // no resume: for Music
-      buffer: function (name) { return buffers[name] || null; }
+      buffer: function (name) { return buffers[name] || null; },
+      load: decode,
+      drop: function (k) { if (lazy(k)) { delete buffers[k]; pending[k] = false; } }
     };
   })();
 
@@ -3393,6 +3405,23 @@
      over `fade` while the new one fades in, so a biome change is not a
      restart and never clicks.
 
+     SEVERAL FILES, AND A GRID PER SECTION. A section may name the TRACK it
+     is cut from (`track: "musicNova"`, a key of ASSETS.sounds — `music` when
+     it names none), which is how a game with one long bed per biome plays
+     them (chainring); a `music<Name>` track is decoded the first time it is
+     asked for and let go once another one has taken over (Sound.load/drop).
+     And a section may carry its OWN beat grid — `bpm`, `beatOffset` (seconds
+     into the FILE of any beat of it) and `beats` (how many beats one pass
+     keeps before it wraps):
+
+        Music.play({ track: "musicNova", from: 40.08, length: 62,
+                     bpm: 144, beatOffset: 0.07, beats: 144 })
+
+     A gridded section at speed anchors Beat on its first beat and wraps on a
+     whole number of beats, so a game on the beat stays on it inside any
+     stretch of any track — not only the whole file, which is all CONFIG.music
+     can describe.
+
      Scheduling is done with a look-ahead timer against the WebAudio clock,
      which keeps the seam sample-accurate even when the rAF loop is paused.  */
   var Music = (function () {
@@ -3406,6 +3435,8 @@
     var origin = 0;               // audio-clock time of the track's beat 0
     var want = null;              // the section asked for, as the caller wrote it
     var cur = null;               // that section resolved against the buffer
+    var heard = null;             // the track the passes in flight come from
+    function trackOf(o) { return (o && o.track) || KEY; }
 
     function cfg() {
       var m = CONFIG.music || {};
@@ -3423,15 +3454,24 @@
       var len = s.length > 0 ? Math.min(s.length, dur - from) : dur - from;
       var rate = s.rate > 0 ? clamp(s.rate, 0.25, 4) : 1;
       return {
-        from: from, len: Math.max(len, 1), rate: rate,
+        track: trackOf(s), from: from, len: Math.max(len, 1), rate: rate,
         gain: s.gain == null ? 1 : clamp(s.gain, 0, 4),
         fade: s.fade > 0 ? s.fade : fade,
-        plain: from === 0 && rate === 1 && len >= dur - 0.05
+        plain: from === 0 && rate === 1 && len >= dur - 0.05,
+        per: s.bpm > 0 ? 60 / s.bpm : 0, offset: s.beatOffset || 0, beats: s.beats || 0
       };
     }
     function same(a, b) {
-      return !!a && !!b && a.from === b.from && a.len === b.len &&
+      return !!a && !!b && a.track === b.track && a.from === b.from && a.len === b.len &&
              a.rate === b.rate && a.gain === b.gain;
+    }
+    /* Where, inside one pass, the grid's first beat falls — or null when the
+       section has no grid to ride. A section's own grid wins; the whole file
+       at speed falls back on CONFIG.music's, as it always did. */
+    function gridLead(s) {
+      if (s.rate !== 1) return null;
+      if (s.per) return s.offset + Math.ceil((s.from - s.offset) / s.per - 1e-6) * s.per - s.from;
+      return s.plain ? ((CONFIG.music || {}).beatOffset || 0) : null;
     }
     /* How far one pass advances before the next one is queued, in seconds of
        the FILE. A beat-locked track (CONFIG.music.bpm + loopBeats, see Beat)
@@ -3442,7 +3482,11 @@
        wrap.                                                                 */
     function advance(s) {
       var m = CONFIG.music || {};
-      if (s.plain && m.bpm > 0 && m.loopBeats > 0) {
+      if (s.per && s.beats > 0 && s.rate === 1) {
+        var own = s.beats * s.per;
+        if (own > 0.5 && own <= s.len) return own;
+      }
+      if (s.plain && !s.per && m.bpm > 0 && m.loopBeats > 0) {
         var body = m.loopBeats * 60 / m.bpm;
         if (body > 0.5 && body <= s.len) return body;
       }
@@ -3475,7 +3519,7 @@
         if (voices.length > 6) voices.shift();
         // Beat 0 of the first pass anchors the grid: every later pass lands a
         // whole number of beats after it, so the anchor never moves.
-        if (!origin && s.plain) origin = at + ((CONFIG.music || {}).beatOffset || 0);
+        if (!origin) { var lead = gridLead(s); if (lead !== null) origin = at + lead; }
         nextAt = at + wadv;                     // next pass overlaps the tail
       }
     }
@@ -3484,11 +3528,27 @@
        straight away whenever something changes the section. */
     function pump() {
       var a = Sound.ctx(); if (!a || !playing) return;
-      var buf = Sound.buffer(KEY);
-      if (!buf) { if (++waited > TAG_AFTER) startTag(ASSETS.sounds[KEY]); return; }
+      var track = trackOf(want), buf = Sound.buffer(track);
+      if (!buf) {
+        Sound.load(track);
+        if (++waited > TAG_AFTER) startTag(ASSETS.sounds[track]);
+        return;
+      }
+      waited = 0;
       if (!cur) cur = resolve(want, buf.duration);
       if (!nextAt) nextAt = a.currentTime + 0.08;
+      hear(track);
       schedule(a, buf);
+    }
+    /* The passes now come from `track`: the bed they used to come from is
+       let go once its last pass has faded out — unless it is asked for again
+       in the meantime, or it is the plain `music` everything else shares. */
+    function hear(track) {
+      if (heard === track) return;
+      var old = heard;
+      heard = track;
+      if (old) setTimeout(function () { if (heard !== old && trackOf(want) !== old) Sound.drop(old); },
+                          (fade + LOOKAHEAD + 1) * 1000);
     }
     /* Last resort: the browser's own loop, seam included. Only used when
        decodeAudioData never came back (some WebViews refuse long data URIs).
@@ -3508,7 +3568,7 @@
       } catch (e) {}
     }
     function begin() {
-      var src = ASSETS.sounds[KEY];
+      var src = ASSETS.sounds[trackOf(want)];
       if (!src || playing || muted) return;
       var a = Sound.unlock();                   // context + kicks the decode off
       if (!a) return;
@@ -3536,13 +3596,20 @@
     function arm(o) { want = o || null; }
     function apply() {
       if (!playing) { begin(); return; }
-      var a = Sound.ctx(), buf = Sound.buffer(KEY);
-      if (!a || !buf) { cur = null; nextAt = 0; return; }   // pump will resolve it
+      var a = Sound.ctx(), buf = Sound.buffer(trackOf(want));
+      if (!a) { cur = null; nextAt = 0; return; }
+      if (!buf) {                               // a bed still decoding: let the old one go
+        if (cur) fadeOut(a, cur.fade);
+        cur = null; nextAt = 0; origin = 0; waited = 0;
+        Sound.load(trackOf(want));
+        return;                                 // pump starts it once it is there
+      }
       var next = resolve(want, buf.duration);
       if (same(cur, next)) return;
       cur = next;
       fadeOut(a, next.fade);
       nextAt = 0;                               // the new section starts now
+      origin = 0;                               // and its grid with it
       pump();
     }
     function start(o) { if (o) arm(o); apply(); }
@@ -3594,7 +3661,7 @@
       if (!playing) return;
       var out = secs == null ? fade : secs;
       ramp(0, out);
-      clearInterval(timer); timer = null; playing = false; origin = 0; cur = null;
+      clearInterval(timer); timer = null; playing = false; origin = 0; cur = null; heard = null;
       var dying = voices, dyingTag = tag;
       voices = []; tag = null;
       setTimeout(function () {
@@ -3618,6 +3685,9 @@
       setMuted: setMuted, isMuted: function () { return muted; },
       unduck: function (secs) { ramp(level, secs == null ? 0.6 : secs); },
       isPlaying: function () { return playing; },
+      // Decode a bed ahead of the section that will play it (a level chosen
+      // on the map), so the round does not open on a decode.
+      preload: function (track) { if (Sound.ctx()) Sound.load(track || KEY); },
       // Audio-clock time of the track's beat 0 (0 until a pass is scheduled).
       // Always 0 for a section that is not the whole file at speed: an offset
       // or a rate moves every beat, so there is no grid left to ride.

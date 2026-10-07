@@ -12,7 +12,7 @@
 
     /                 the back office
     /api/labs         what it lists, read off lab/*.html
-    /events/          tools/lab/serve-events.mjs   (and /events/v2, /events/library, /events/kit)
+    /events/          tools/lab/serve-events.mjs   (and /events/sound, /events/library, /events/kit)
     /text/            tools/lab/serve-text.mjs
     /store/           tools/lab/serve-store.mjs
     /village/         tools/lab/serve-village.mjs
@@ -51,7 +51,7 @@ const HOME = path.join(LAB, 'index.html');
    never served as a bare file: without its server under it, it would open on
    an api that is not there. */
 const TOOLS = [
-  { mount: '/events/', script: 'serve-events.mjs', pages: { 'game-events.html': '', 'game-events-v2.html': 'v2', 'sound-library.html': 'library', 'sound-kit.html': 'kit', 'overlay-pop.html': 'pop' } },
+  { mount: '/events/', script: 'serve-events.mjs', pages: { 'game-events-message.html': '', 'game-events-sound.html': 'sound', 'sound-library.html': 'library', 'sound-kit.html': 'kit', 'overlay-pop.html': 'pop' } },
   { mount: '/text/', script: 'serve-text.mjs', pages: { 'game-text.html': '' } },
   { mount: '/store/', script: 'serve-store.mjs', pages: { 'store-card.html': '' } },
   { mount: '/village/', script: 'serve-village.mjs', pages: { 'village.html': '' } },

@@ -2109,6 +2109,136 @@
         }
       ],
       "life": null
+    },
+    "grudgeon": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "home03",
+          "role": "shop",
+          "x": 180,
+          "y": 455,
+          "w": 220,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home04",
+          "role": "album",
+          "x": 580,
+          "y": 500,
+          "w": 210,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "items03",
+          "role": "daily",
+          "x": 110,
+          "y": 610,
+          "w": 60,
+          "badge": {
+            "dx": 0.5,
+            "dy": -0.95
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "items15",
+          "role": "decor",
+          "x": 50,
+          "y": 650,
+          "w": 60,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 600,
+          "y": 700,
+          "w": 170,
+          "halo": {
+            "w": 0.75,
+            "h": 0.55,
+            "dy": 0.04
+          },
+          "rot": -5,
+          "light": "flicker",
+          "always": true
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 350,
+          "y": 750,
+          "w": 250,
+          "always": true,
+          "light": "random"
+        },
+        {
+          "art": "home01",
+          "role": "map",
+          "x": 165,
+          "y": 1035,
+          "w": 240,
+          "always": true
+        },
+        {
+          "art": "home05",
+          "role": "ranking",
+          "x": 610,
+          "y": 1070,
+          "w": 210,
+          "flip": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 260,
+          "y": 1090,
+          "w": 170,
+          "halo": {
+            "w": 0.75,
+            "h": 0.55,
+            "dy": -0.05
+          },
+          "rot": -5,
+          "light": "flicker",
+          "always": true,
+          "lightDelay": 0.9,
+          "lightEvery": 7.6
+        },
+        {
+          "art": "home07",
+          "role": "options",
+          "x": 440,
+          "y": 1215,
+          "w": 100
+        },
+        {
+          "art": "cloudHaze05",
+          "role": "decor",
+          "x": 580,
+          "y": 190,
+          "w": 200,
+          "layer": 1,
+          "notify": "cloud",
+          "always": true
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ff9a6b",
+          "cold": "#1d216a",
+          "amount": 0.3,
+          "seconds": 150
+        }
+      }
     }
   }
 }

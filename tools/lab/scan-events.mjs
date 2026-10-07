@@ -20,7 +20,7 @@
   same card — plus the sfx pack with its provenance comments and what plays it.
   It parses, it never runs: no build, no browser, no game loop.
 
-  lab/game-events.html is the same data with the game's own motor around it
+  lab/game-events-message.html and lab/game-events-sound.html are the same data with the game's own motor around it
   (`make events`), where a beat can be fired into the real build and heard.
 */
 
@@ -991,7 +991,7 @@ export async function scanGame(slug) {
     }
   }
 
-  /* What a CHECKED mark is given on (lab/game-events.html, lab/events-review.json).
+  /* What a CHECKED mark is given on (lab/game-events-*.html, lab/events-review.json).
      Not the line — a line moves whenever anything above it is written — but
      the call itself, in its function: its source as it reads now, and for a cue
      the clip it plays too (the note naming its file, and its size), because a

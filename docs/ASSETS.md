@@ -1123,7 +1123,8 @@ assets/audio/kit/<role>-<n>.mp3  the cuts, committed, levelled to one loudness
 
 - **`make events` → `/kit`** (`lab/sound-kit.html`) is where a role is chosen:
   the library pre-searched for it, every candidate heard LEVELLED as it will
-  ship, the cut dragged on the waveform, the role played as the shell plays it
+  ship, the cut taken by its grips on the waveform, how a take ends (`tail`:
+  cut, `fade`, or `drop` — the pitch falling an octave as it fades), the role played as the shell plays it
   (the stars as a ladder, the coins as a cascade). Save writes `kit.json`,
   re-cuts and rebuilds.
 - **`node tools/lab/cut-kit.mjs`** is the same cut without the page; `--list`

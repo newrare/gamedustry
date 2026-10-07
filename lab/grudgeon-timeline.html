@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Grudgeon timeline fight</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="prototype">
+<meta name="lab-game" content="grudgeon">
+<style>
+/* ===========================================================================
+   GRUDGEON TIMELINE FIGHT — a prototype of the fight, outside the motor.
+
+   The question: is grudgeon's turn-based fight a strategic one once the
+   player can SEE what is coming? Three ideas, mixed:
+
+     - the TIMELINE (FFX's CTB): the row at the top is the real order of the
+       next seven turns. Every action has a weight — Flash is quick, Iai is
+       slow, Guard hands the turn back early — and the row re-sorts itself
+       live while the pointer is over a button, before anything is chosen;
+     - the INTENTS (Slay the Spire): every turn of the yokai on that row
+       carries what it will do, to whom and for how much, so a special is
+       read three turns ahead and Guard, Ward and the heal become answers;
+     - the RULE of each yokai (the folklore): the four of the first band
+       each bend the row their own way — Hanako-san knocks three times,
+       Teke Teke is twice as fast and ice stops her, Jinmenken walks away if
+       nobody hits him, Aka Manto asks "Red or blue?" and the right answer
+       is neither.
+
+   It is drawn with lab/grudgeon-fight.html's preset "B · Diagonal stage",
+   copied rather than linked (a lab page stands alone): the diagonal stage,
+   the timeline row on top, the boss bar, the slanted tiles, the 2x2 bar. The
+   staging knobs are gone; the tunable numbers of the fight are at the top
+   of the script.
+
+   Keys: 1-4 the action bar, 5 the yokai's rule, R restart the fight,
+   N next yokai. A tap on the yokai is an attack.
+   =========================================================================== */
+
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#stage {
+  flex:1; min-width:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:16px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+canvas { display:block; border-radius:14px; background:#07060c; box-shadow:0 18px 50px rgba(0,0,0,.5); touch-action:none; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="view"></canvas>
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code (ES6 — a lab page runs in your browser, not in a
+   mobile WebView). Five parts: the data copied from games/grudgeon/game.js,
+   the settings and their panel, the fight's little simulation, the camera
+   and projection, and the drawing.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const W = 720, H = 1280;
+  const ART = "../assets/image/embed/grudgeon-";
+  const TAU = Math.PI * 2;
+
+  /* The motor's upper(), copied from lab/button.html: capitals are a look,
+     and a capital carries no accent. */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* =========================================================================
+     0. THE TUNABLES — the numbers of the fight, plain and at the top
+     ========================================================================= */
+  const FOE_HP = 5;          // the yokai's health, x its game value (a party of four, depth 0)
+  const FOE_ATK = 1.6;       // the yokai's blows, x its game value
+  const TICK = 100;          // a unit waits TICK / spd between two turns, at weight 1
+  const SHOW = 7;            // turns on the timeline
+  const SPECIAL_EVERY = 3;   // the yokai's special is every n-th of its turns
+  const FLASH_PUSH = 0.6;    // Flash pushes the yokai back this share of its wait
+  const ICE_PUSH = 0.5;      // an ice hit pushes Teke Teke back this share of hers
+  const FEAR_PUSH = 0.6;     // fear pushes a hero back this share of their wait
+  const KNOCKS = 3;          // Hanako-san comes out on this knock
+  const RESTORE = true;      // the party is healed whole between two fights
+
+  /* =========================================================================
+     1. THE DATA — games/grudgeon/game.js, the first band
+     ========================================================================= */
+  const ELEMENTS = {
+    slash:  { name: "Slash",  color: "#e8e6f0" },
+    fire:   { name: "Fire",   color: "#ff7a3d" },
+    ice:    { name: "Ice",    color: "#8fdcff" },
+    light:  { name: "Light",  color: "#fff2a8" },
+    spirit: { name: "Spirit", color: "#b69cff" }
+  };
+  const HEROES = {
+    akane: { name: "Akane", color: "#ff5d73", hp: 72,  sp: 40, atk: 9,  def: 6, spd: 11, skills: ["purify", "blessing"] },
+    kenji: { name: "Kenji", color: "#5aa9ff", hp: 100, sp: 24, atk: 15, def: 9, spd: 8,  skills: ["iai", "ward"] },
+    yuki:  { name: "Yuki",  color: "#9ce7ff", hp: 60,  sp: 60, atk: 7,  def: 4, spd: 10, skills: ["frost", "foxfire"] },
+    haru:  { name: "Haru",  color: "#ffd166", hp: 76,  sp: 36, atk: 10, def: 5, spd: 14, skills: ["flash", "ghostshot"] }
+  };
+  const HERO_IDS = ["akane", "kenji", "yuki", "haru"];
+
+  /* The game's skills, plus `w`: the WEIGHT of the action on the timeline —
+     the hero's next turn comes w times their wait later. Guard hands the turn
+     back early, Iai pays for its power in time, Flash is quick and pushes the
+     yokai back. */
+  const SKILLS = {
+    attack:    { name: "Attack",         kind: "hit",   fx: "spells13", el: "slash",  pow: 1.0, sp: 0,  w: 1 },
+    guard:     { name: "Guard",          kind: "guard", fx: "spells04", sp: 0, w: 0.6 },
+    purify:    { name: "Purify",         kind: "hit",   fx: "spells01", el: "light",  pow: 1.7, sp: 8,  w: 1 },
+    blessing:  { name: "Blessing",       kind: "heal",  fx: "spells02", pow: 0.32, sp: 12, w: 1.2 },
+    iai:       { name: "Iai slash",      kind: "hit",   fx: "spells03", el: "slash",  pow: 2.3, sp: 8,  w: 1.5 },
+    ward:      { name: "Spirit ward",    kind: "ward",  fx: "spells04", turns: 2, sp: 6, w: 0.8 },
+    frost:     { name: "Frost talisman", kind: "hit",   fx: "spells05", el: "ice",    pow: 2.0, sp: 9,  w: 1 },
+    foxfire:   { name: "Foxfire",        kind: "hit",   fx: "spells06", el: "fire",   pow: 2.0, sp: 9,  w: 1 },
+    flash:     { name: "Flash",          kind: "hit",   fx: "spells07", el: "light",  pow: 1.1, sp: 10, w: 0.7, push: FLASH_PUSH },
+    ghostshot: { name: "Ghost shot",     kind: "hit",   fx: "spells08", el: "spirit", pow: 1.6, sp: 8,  w: 1, pierce: true }
+  };
+
+  /* The four yokai of the first band. Teke Teke runs at 22 instead of the
+     game's 16: her rule is to be TWICE as fast as the party. */
+  const FOES = {
+    hanako:    { name: "Hanako-san", color: "#d94a5a", hp: 60, atk: 9,  def: 4, spd: 9,  weak: ["light"],  resist: ["ice"],   move: "fear",  special: "Third stall" },
+    teketeke:  { name: "Teke Teke",  color: "#c9c2b8", hp: 52, atk: 11, def: 3, spd: 22, weak: ["ice"],    resist: ["slash"], move: "heavy", special: "Teke teke" },
+    jinmenken: { name: "Jinmenken",  color: "#9a7b5a", hp: 66, atk: 10, def: 5, spd: 12, weak: ["fire"],   resist: [],        move: "drain", special: "Endless bite" },
+    akamanto:  { name: "Aka Manto",  color: "#b3122e", hp: 80, atk: 12, def: 6, spd: 10, weak: ["spirit"], resist: ["fire"],  move: "all",   special: "Red or blue?" }
+  };
+  const BANDS = [
+    { name: "Night school", tint: "#1d2a52", scene: "background-phone-01", foes: ["hanako", "teketeke", "jinmenken", "akamanto"] }
+  ];
+  const MOVE_FX = { strike: "spells13", heavy: "spells14", all: "spells12", drain: "spells11", fear: "spells10" };
+
+  /* The painted art, as the build ships it (assets/image/embed/). Loaded on
+     first ask; a sprite that has not decoded yet is simply not drawn. */
+  const IMGS = {};
+  function img(key) {
+    let im = IMGS[key];
+    if (!im) { im = new Image(); im.src = ART + key + ".webp"; IMGS[key] = im; }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function preload() {
+    HERO_IDS.forEach(id => { for (let p = 1; p <= 6; p++) img("hero-" + id + "0" + p); });
+    for (const id in FOES) for (let p = 1; p <= 4; p++) img("foe-" + id + "0" + p);
+    for (let k = 1; k <= 14; k++) img("spells" + (k < 10 ? "0" : "") + k);
+    BANDS.forEach(b => img(b.scene));
+  }
+
+  /* =========================================================================
+     2. THE STAGING — lab/grudgeon-fight.html's preset "B · Diagonal stage",
+        frozen (its knobs live on that page)
+     ========================================================================= */
+  const LAYOUTS = {
+    diag: {
+      cam: { persp: 7, tilt: 0.75, unit: 112, groundY: 720, pivotZ: 0.3, heroScale: 0.95, foeScale: 1.15 },
+      foe: [1.2, 1.3],
+      heroes: n => spread(n, i => [-2.4 + i * 1.0, 0.5 - i * 0.65])
+    }
+  };
+  function spread(n, f) { const out = []; for (let i = 0; i < n; i++) out.push(f(i)); return out; }
+
+  const P = Object.assign({
+    band: 0, foe: "hanako", party: HERO_IDS.slice(), entrance: "slide",
+    layout: "diag", persp: 40, tilt: 1.25, unit: 105, groundY: 671, pivotZ: 0, yaw: 0, sway: 0, swaySpeed: 0.25,
+    heroScale: 1, foeScale: 1, autoFace: true, flipHero: false, flipFoe: false, floor: "none",
+    body: "sprite", cardSkin: "lacquer", cardPop: true, cardTilt: 1,
+    ground: "shadow", breath: 1, bob: 1, outline: 0, outlineColor: "#07060c",
+    rim: 0, rimColor: "#ff8fa0", rimAngle: -50, tint: 0, fog: 0, dimIdle: 0,
+    foeAura: "none", heroAura: "none", heroAuraWho: "active", auraOwn: true, auraColor: "#b69cff",
+    auraSize: 1, auraPower: 0.8, auraSpeed: 1,
+    turnZoom: 0, actZoom: 0, follow: 0.6, camSpeed: 4, cutToTarget: false, dash: 0.12,
+    punch: 0, shake: 8, hitstop: 0, flash: 0.25, dutch: 0, letterbox: false, slowmo: false,
+    drift: 0, parallax: 0, bgZoom: 1, bgDim: 0.35, vignette: 0.3, spellBlend: "normal",
+    heroHud: "plates", foeHud: "plate", turnOrder: "none", numbers: "float", actionBar: "game",
+    gameHud: true, guides: false, face: "bebas"
+  }, LAYOUTS.diag.cam, {
+    layout: "diag", ground: "reflection", floor: "mist", rim: 0.6, tint: 0.25, fog: 0.4, dimIdle: 0.25,
+    foeAura: "flame", heroAura: "ring", turnZoom: 0.08, actZoom: 0.22, follow: 0.6, cutToTarget: true,
+    dash: 0.75, punch: 0.06, shake: 12, hitstop: 0.07, flash: 0.35, dutch: 6, letterbox: true,
+    parallax: 0.3, bgZoom: 1.08, drift: 0.01, heroHud: "slants", foeHud: "boss", turnOrder: "top", numbers: "stamp"
+  });
+
+  /* =========================================================================
+     3. THE FIGHT — the timeline, the intents and the rules
+     ========================================================================= */
+  let party = [], foe = null, active = 0, turn = 1, busy = false;
+  let T = 0;                 // world clock (stops on a hit-stop, slows on a slow motion)
+  let RT = 0;                // real clock
+  let hitstop = 0, slow = 0, special = 0, enterT = 0;
+  let jobs = [], tweens = [], parts = [], nums = [], calls = [], fxs = [];
+  let flashA = 0, flashC = "#ffffff";
+  let ward = 0;              // the yokai's blows left under Spirit ward
+  let extra = false;         // the active hero already took their one more
+  let over = false;          // the fight is decided, the next one is coming
+  let hoverAct = null;       // the action under the pointer: the timeline previews it
+  let TL = [];               // the timeline, rebuilt every frame
+  const tally = { exorcised: 0, letGo: 0, wiped: 0, turns: 0 };
+
+  function anim(i) {
+    return { hx: 0, hz: 0, tx: 0, tz: 0, dash: 0, dashTo: { x: 0, z: 0 }, kx: 0, kz: 0,
+      hurt: 0, lunge: 0, cast: 0, guard: 0, dead: false, flash: 0, boost: 0, spin: 0, hover: 0, fade: 1, phase: i * 1.7, enter: 0 };
+  }
+  function makeHero(id, i) {
+    const b = HEROES[id];
+    return Object.assign(anim(i), { kind: "hero", id, b, i, color: b.color, mhp: b.hp, hp: b.hp, msp: b.sp, sp: b.sp, lag: b.hp,
+      atk: b.atk, def: b.def, spd: b.spd, ct: 0, n: 0, guarding: false });
+  }
+  function makeFoe(id) {
+    const b = FOES[id], hp = Math.round(b.hp * 1.3 * FOE_HP);
+    return Object.assign(anim(0.25), { kind: "foe", id, b, color: b.color, mhp: hp, hp, lag: hp,
+      atk: b.atk * FOE_ATK, def: b.def, spd: b.spd, ct: 0, n: 0, acts: 0, plan: [],
+      knocks: 0, hitSince: false, lastHitter: null, answered: false, doing: null });
+  }
+  function all() { return foe ? party.concat([foe]) : party.slice(); }
+  function alive() { return party.filter(h => !h.dead); }
+  function activeHero() { return party[active] && !party[active].dead ? party[active] : null; }
+  function randomHero() { const a = alive(); return a[Math.floor(Math.random() * a.length)]; }
+  function weakestHero() { return alive().reduce((m, h) => !m || h.hp < m.hp ? h : m, null); }
+
+  function setTargets(snap) {
+    const L = LAYOUTS[P.layout], pos = L.heroes(party.length, active);
+    party.forEach((h, i) => { h.tx = pos[i][0]; h.tz = pos[i][1]; if (snap) { h.hx = h.tx; h.hz = h.tz; } });
+    if (foe) { foe.tx = L.foe[0]; foe.tz = L.foe[1]; if (snap) { foe.hx = foe.tx; foe.hz = foe.tz; } }
+  }
+
+  /* --- timing helpers ---------------------------------------------------- */
+  function later(d, fn) { jobs.push({ t: d, fn }); }
+  function tween(o, k, to, d, ease, delay) { tweens.push({ o, k, from: null, to, d, t: -(delay || 0), ease: ease || outCubic }); }
+  function outCubic(q) { return 1 - Math.pow(1 - q, 3); }
+  function inOut(q) { return q * q * (3 - 2 * q); }
+  function outBack(q) { const c = 1.7; return 1 + (c + 1) * Math.pow(q - 1, 3) + c * Math.pow(q - 1, 2); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  /* --- THE TIMELINE ------------------------------------------------------
+     Every living unit counts `ct` down; the lowest acts, a tie goes to the
+     heroes in party order, then to the yokai. Acting puts the unit back at
+     its wait (TICK / spd) times the weight of what it did. */
+  function wait(u) { return TICK / u.spd; }
+  function units() { return alive().concat(foe && !foe.dead ? [foe] : []); }
+  function lowest(list) { let best = null; list.forEach(e => { if (!best || e.ct < best.ct - 1e-6) best = e; }); return best; }
+  function push(u, share, word) {
+    u.ct += wait(u) * share;
+    if (word) callout(word, u.kind === "foe" ? "#8fdcff" : "#e2364b", u.kind === "foe" ? "Pushed back" : u.b.name + " loses time");
+  }
+
+  /* The next SHOW turns, as the player will see them. While a hero chooses,
+     their own next turn is placed with the weight of the action under the
+     pointer (`w`), so the row re-sorts itself before anything is chosen. */
+  function timeline(w) {
+    if (!foe || foe.dead || over) return [];
+    const sim = units().map(u => ({ u, ct: u.ct, n: u.n, guarding: u.guarding }));
+    const out = [];
+    const now = turn === 0 ? activeHero() : null;
+    if (now) {
+      out.push({ u: now, key: now.id + ":" + now.n, now: true });
+      const s = sim.find(o => o.u === now);
+      s.ct = wait(now) * (w == null ? 1 : w); s.n++; s.guarding = hoverAct === "guard";
+    }
+    let fk = 0, wd = ward;
+    while (out.length < SHOW) {
+      const s = lowest(sim); if (!s) break;
+      const d = s.ct; sim.forEach(o => { o.ct -= d; });
+      const e = { u: s.u, key: s.u.id + ":" + s.n, now: !out.length };
+      if (s.u.kind === "foe") {
+        // while the yokai is acting, its first slot is what it is DOING
+        const it = foe.doing ? (fk++ === 0 ? foe.doing : liveIntent(fk - 2)) : liveIntent(fk++);
+        e.it = it;
+        e.hits = targetsOf(it).map(h => { const g = sim.find(o => o.u === h); return { h, dmg: estimate(it, h, g && g.guarding, wd > 0) }; });
+        if (it.alt) e.hits = maybeHits(it, sim, wd > 0);
+        if (wd > 0) wd--;
+        s.ct = wait(s.u) * it.w;
+      } else {
+        s.guarding = false;
+        s.ct = wait(s.u);
+      }
+      s.n++;
+      out.push(e);
+    }
+    return out;
+  }
+
+  /* --- THE INTENTS -------------------------------------------------------
+     The yokai plans its turns ahead (`foe.plan`) so the timeline can show
+     them; a rule may plan differently, or change the NEXT intent live. */
+  const POW = { strike: 1, heavy: 1.8, all: 0.75, drain: 1.2, fear: 0.9 };
+  function basePlan(f, i) {
+    const sp = (i + 1) % SPECIAL_EVERY === 0, mv = sp ? f.b.move : "strike";
+    const it = { kind: mv, label: sp ? f.b.special : "Strike", fx: mv, w: sp ? 1.2 : 1, special: sp, pow: POW[mv] };
+    if (mv === "all") it.all = true; else it.targets = [randomHero()];
+    if (mv === "drain") it.drain = true;
+    if (mv === "fear") it.fear = true;
+    return it;
+  }
+  function intent(k) {
+    const R = RULES[foe.id];
+    while (foe.plan.length <= k) {
+      const j = foe.plan.length;
+      foe.plan.push(R.plan ? R.plan(foe, j) : basePlan(foe, foe.acts + j));
+    }
+    return foe.plan[k];
+  }
+  function liveIntent(k) {
+    const R = RULES[foe.id], it = intent(k);
+    return k === 0 && R.live ? R.live(foe, it) : it;
+  }
+  function targetsOf(it) {
+    if (it.all) return alive();
+    return (it.targets || []).filter(h => h && !h.dead);
+  }
+  /* A yokai's blow is exactly what its intent says: no luck, no crit. */
+  function estimate(it, h, guarding, warded) {
+    if (!it.pow) return 0;
+    let d = foe.atk * it.pow * 2.4 * (14 / (14 + h.def));
+    if (guarding) d *= 0.5;
+    if (warded) d *= 0.6;
+    return Math.max(1, Math.round(d));
+  }
+  function maybeHits(it, sim, warded) {
+    const by = new Map();
+    [it.alt.red, it.alt.blue].forEach(a => targetsOf(a).forEach(h => {
+      const g = sim.find(o => o.u === h), d = estimate(a, h, g && g.guarding, warded);
+      by.set(h, Math.max(by.get(h) || 0, d));
+    }));
+    return Array.from(by, ([h, dmg]) => ({ h, dmg, maybe: true }));
+  }
+
+  /* --- THE RULES ---------------------------------------------------------
+     One per yokai, out of its legend: `text` is the line under the boss bar,
+     `plan` its own intents, `live` what turns the next intent into another,
+     `action` a button the heroes get for it, `onHit` what a blow does to it. */
+  const RULES = {
+    hanako: {
+      text: "Third knock, she comes out: hold the door",
+      plan(f, j) {
+        const k = (f.knocks + j) % KNOCKS + 1;
+        if (k === KNOCKS) return { kind: "stall", label: f.b.special, all: true, pow: 1.5, w: 1.2, special: true, fx: "all", after: f2 => { f2.knocks = 0; } };
+        return { kind: "knock", label: "Knock " + k + "/" + KNOCKS, tag: k + "/" + KNOCKS, targets: [randomHero()], pow: 0.6, w: 1, fx: "strike", after: f2 => { f2.knocks++; } };
+      },
+      action(f) {
+        if (f.knocks < 1) return null;
+        return { label: "Hold the door", sub: "One knock back", run: f2 => { f2.knocks--; f2.plan = []; callout("Door held", "#ffd166", "One knock back"); } };
+      }
+    },
+    teketeke: {
+      text: "Twice as fast, hunts the weakest: ice stops her",
+      plan(f, j) {
+        const it = basePlan(f, f.acts + j);
+        if (it.special) it.targets = [weakestHero()];
+        return it;
+      },
+      onHit(f, h, s) { if (s.el === "ice") push(f, ICE_PUSH, "Frozen"); }
+    },
+    jinmenken: {
+      text: "Don't hit him before \"Leave me be\" and he walks away",
+      plan(f, j) {
+        const i = f.acts + j;
+        if (i % 3 === 1) return { kind: "leave", label: "Leave me be", tag: "...", pow: 0, w: 1, targets: [] };
+        return basePlan(f, i);
+      },
+      live(f, it) {
+        if (it.kind === "leave" && f.hitSince && f.lastHitter && !f.lastHitter.dead)
+          return { kind: "bite", label: "You hit me", targets: [f.lastHitter], pow: 1.8, w: 1, special: true, fx: "heavy" };
+        return it;
+      }
+    },
+    akamanto: {
+      text: "Red or blue? Both kill: answer neither",
+      plan(f, j) {
+        const i = f.acts + j;
+        if ((i + 1) % SPECIAL_EVERY) return basePlan(f, i);
+        return { kind: "question", label: f.b.special, tag: "?", special: true, w: 1.2, pow: 0,
+          alt: { red:  { kind: "red", label: "Red", sub: "Slashed", targets: [randomHero()], pow: 2.2, special: true, fx: "heavy", w: 1.2 },
+                 blue: { kind: "blue", label: "Blue", sub: "Drained", all: true, pow: 0.9, drain: true, special: true, fx: "drain", w: 1.2 } } };
+      },
+      live(f, it) {
+        return it.kind === "question" && f.answered ? { kind: "silence", label: "Silence", tag: "-", pow: 0, w: 1.2, targets: [] } : it;
+      },
+      action(f) {
+        if (intent(0).kind !== "question" || f.answered) return null;
+        return { label: "Neither", sub: "Refuse to choose", run: f2 => { f2.answered = true; callout("Neither", "#ffd166", "He has no answer"); } };
+      }
+    }
+  };
+  function ruleAction() {
+    const R = foe && RULES[foe.id];
+    return R && R.action && !over && !foe.dead ? R.action(foe) : null;
+  }
+
+  /* --- the beats --------------------------------------------------------- */
+  function impact(target, from, dmg, opts) {
+    opts = opts || {};
+    target.hurt = 0.4; target.flash = 1;
+    const dx = target.hx - from.hx, dz = target.hz - from.hz, d = Math.hypot(dx, dz) || 1;
+    target.kx = dx / d * 0.25; target.kz = dz / d * 0.25;
+    tween(target, "kx", 0, 0.35); tween(target, "kz", 0, 0.35);
+    if (opts.heal) target.hp = Math.min(target.mhp, target.hp + dmg);
+    else target.hp = Math.max(0, target.hp - dmg);
+    nums.push({ a: target, txt: (opts.heal ? "+" : "") + dmg, col: opts.heal ? "#7ee0a1" : target.kind === "foe" ? (opts.el ? ELEMENTS[opts.el].color : "#ffffff") : "#ff5d73",
+      t: 0, life: 1.1, weak: !!opts.weak, heal: !!opts.heal, ox: rnd(-20, 20) });
+    if (opts.heal) { target.hurt = 0; target.flash = 0.6; return; }
+    const k = opts.weak ? 1.6 : opts.big ? 1.3 : 1;
+    cam.shake = Math.max(cam.shake, P.shake * k);
+    cam.punch = P.punch * k;
+    hitstop = P.hitstop * k;
+    if (P.flash > 0) { flashA = P.flash * (opts.weak ? 1 : 0.55); flashC = opts.el ? ELEMENTS[opts.el].color : "#ffffff"; }
+    if (P.cutToTarget) cam.subject = target;
+  }
+  function spell(key, a, scale) {
+    fxs.push({ key, a, t: 0, d: 0.75, s: (scale || 1.1) });
+  }
+  function callout(word, col, sub) { calls.length = 0; calls.push({ word, col, sub, t: 0, life: 1.3 }); }
+
+  /* The game's damage formula: weak 1.6x (and ONE MORE), resisted 0.5x,
+     8% crits — the heroes keep their luck, the yokai has none. */
+  function strike(att, tgt, pow, el, pierce) {
+    const def = pierce ? tgt.def * 0.3 : tgt.def;
+    let d = att.atk * pow * 2.4 * (14 / (14 + def)) * rnd(0.9, 1.1);
+    let weak = false, resist = false, crit = false;
+    if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
+    else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
+    if (!resist && Math.random() < 0.08) { crit = true; d *= 1.5; }
+    return { dmg: Math.max(1, Math.round(d)), weak, resist, crit };
+  }
+
+  /* --- the heroes -------------------------------------------------------- */
+  function canAct() { return !busy && !over && turn === 0 && activeHero() && foe && !foe.dead; }
+
+  function heroAct(id) {
+    if (!canAct()) return;
+    const h = activeHero(), s = SKILLS[id];
+    if (s.sp > h.sp) { callout("Not enough SP", "#8fdcff", h.b.name); return; }
+    h.sp -= s.sp; busy = true; turn = 1; hoverAct = null;
+    cam.subject = h;
+    if (s.kind === "guard") {
+      h.guarding = true; h.guard = 1.2; h.sp = Math.min(h.msp, h.sp + 5);
+      spell(s.fx, h, 0.9);
+      later(0.8, () => endHero(h, s.w));
+      return;
+    }
+    if (s.kind === "heal") {
+      h.cast = 0.9;
+      later(0.3, () => alive().forEach(x => { spell(s.fx, x, 0.9); impact(x, h, Math.min(x.mhp - x.hp, Math.round(x.mhp * s.pow)), { heal: true }); }));
+      later(1.0, () => endHero(h, s.w));
+      return;
+    }
+    if (s.kind === "ward") {
+      h.cast = 0.9; ward = s.turns;
+      alive().forEach(x => spell(s.fx, x, 0.9));
+      callout("Spirit ward", "#9ce7ff", "Next two blows softened");
+      later(1.0, () => endHero(h, s.w));
+      return;
+    }
+    // a hit
+    const f = foe, skill = id !== "attack";
+    let again = false;
+    if (skill) h.cast = 0.9; else h.lunge = 0.6;
+    h.dashTo = { x: f.hx + (h.hx - f.hx) * 0.3, z: f.hz + (h.hz - f.hz) * 0.3 };
+    tween(h, "dash", skill ? 0.35 : 1, 0.22);
+    later(skill ? 0.38 : 0.24, () => {
+      const r = strike(h, f, s.pow, s.el, s.pierce);
+      spell(r.crit ? "spells14" : s.fx, f, 1.15);
+      impact(f, h, r.dmg, { el: s.el, weak: r.weak });
+      f.hitSince = true; f.lastHitter = h;
+      if (f.hp <= 0) return;
+      if (s.push) push(f, s.push, "Stunned");
+      const R = RULES[f.id];
+      if (R.onHit) R.onHit(f, h, s);
+      if (r.weak && !extra) { again = true; callout("Weak!", "#ffd166", "One more"); f.boost = 1; tween(f, "boost", 0, 1.2); }
+      else if (r.crit) callout("Critical", "#ffd166");
+      else if (r.resist) callout("Resisted", "#9aa0b5");
+    });
+    later(0.62, () => { tween(h, "dash", 0, 0.32, inOut); });
+    later(1.05, () => {
+      cam.subject = null;
+      if (f.hp <= 0) { exorcise(); return; }
+      if (again) { extra = true; busy = false; turn = 0; return; }   // ONE MORE: the same hero, the same slot
+      endHero(h, s.w);
+    });
+  }
+  function ruleAct() {
+    if (!canAct()) return;
+    const ra = ruleAction(); if (!ra) return;
+    const h = activeHero();
+    busy = true; turn = 1; hoverAct = null; cam.subject = h; h.cast = 0.9;
+    spell("spells04", h, 0.9);
+    later(0.3, () => ra.run(foe));
+    later(1.0, () => endHero(h, 1));
+  }
+  function endHero(h, w) {
+    h.n++; h.ct = wait(h) * w;
+    cam.subject = null; busy = false;
+    step();
+  }
+
+  /* --- the yokai --------------------------------------------------------- */
+  function foeAct() {
+    if (over || !foe || foe.dead) return;
+    const f = foe;
+    let it = liveIntent(0);
+    f.plan.shift(); f.acts++;
+    busy = true;
+    if (it.kind === "leave") {
+      callout("Leave me be", "#c9c2b8", "He walks away");
+      f.dead = true;
+      later(0.3, () => tween(f, "fade", 0, 1.2, inOut));
+      later(1.8, () => endFight("letGo"));
+      return;
+    }
+    if (it.kind === "question") it = Math.random() < 0.5 ? it.alt.red : it.alt.blue;
+    f.doing = it;
+    if (it.kind === "silence") {
+      callout("Silence", "#9aa0b5", "He loses his turn");
+      later(1.0, () => endFoe(it));
+      return;
+    }
+    const big = !!it.special;
+    cam.subject = f;
+    if (big) {
+      special = 1; f.cast = 1.5; f.boost = 1.5;
+      tween(f, "boost", 0.3, 1.6, inOut);
+      later(0.35, () => callout(it.label, "#e2364b", it.sub));
+    } else {
+      f.lunge = 0.6;
+      const h0 = targetsOf(it)[0] || randomHero();
+      if (h0) { f.dashTo = { x: h0.hx + (f.hx - h0.hx) * 0.3, z: h0.hz + (f.hz - h0.hz) * 0.3 }; tween(f, "dash", 1, 0.24); }
+      later(0.62, () => { tween(f, "dash", 0, 0.34, inOut); });
+    }
+    later(big ? 1.05 : 0.26, () => {
+      let tg = targetsOf(it);
+      if (!tg.length && it.pow && alive().length) tg = [randomHero()];
+      let total = 0;
+      tg.forEach(h => {
+        const dmg = estimate(it, h, h.guarding, ward > 0);
+        total += dmg;
+        spell(MOVE_FX[it.fx] || "spells13", h, 1.0);
+        impact(h, f, dmg, { big });
+        if (it.fear && h.hp > 0) push(h, FEAR_PUSH, "Frozen with fear");
+      });
+      if (it.drain && total) later(0.3, () => impact(f, f, Math.round(total * 0.5), { heal: true }));
+      if (ward > 0) ward--;
+      if (big) { flashC = "#e2364b"; flashA = Math.max(flashA, P.flash * 0.8); }
+      if (P.cutToTarget && big) cam.subject = null;
+    });
+    later(big ? 1.9 : 1.05, () => {
+      special = 0; f.boost = 0;
+      party.forEach(h => { if (!h.dead && h.hp <= 0) down(h); });
+      endFoe(it);
+    });
+  }
+  function endFoe(it) {
+    const f = foe;
+    if (it.after) it.after(f);
+    f.n++; f.ct = wait(f) * it.w;
+    f.hitSince = false; f.answered = false; f.doing = null;
+    cam.subject = null; busy = false;
+    step();
+  }
+  function down(h) {
+    h.dead = true; h.hp = 0;
+    callout(h.b.name, "#e2364b", "Down");
+  }
+
+  /* --- the scheduler ----------------------------------------------------- */
+  function step() {
+    if (over || !foe || foe.dead) return;
+    if (!alive().length) { wipe(); return; }
+    const u = lowest(units()), d = u.ct;
+    units().forEach(o => { o.ct -= d; });
+    u.ct = 0;
+    tally.turns++;
+    if (u.kind === "foe") { turn = 1; later(0.45, foeAct); return; }
+    active = party.indexOf(u); setTargets();
+    u.guarding = false; extra = false;
+    turn = 0;
+  }
+
+  /* --- a fight's ends ---------------------------------------------------- */
+  function exorcise() {
+    const f = foe;
+    if (!f || f.dead) return;
+    busy = true; over = true;
+    cam.subject = f;
+    spell("spells01", f, 1.5);
+    f.dead = true;
+    if (P.slowmo) slow = 0.9;
+    callout("Exorcised", "#fff2a8");
+    later(0.3, () => {
+      tween(f, "fade", 0, 1.3, inOut);
+      for (let i = 0; i < 60; i++) parts.push({ owner: f, layer: "front", x: f.sx + rnd(-1, 1) * f.s * 0.3, y: f.sy - rnd(0, 1) * f.s * 0.9,
+        vx: rnd(-30, 30), vy: rnd(-160, -60), life: rnd(0.8, 1.6), t: 0, size: rnd(6, 16), col: "#e9e6ff", add: true, kind: "dot" });
+    });
+    later(2.0, () => endFight("exorcised"));
+  }
+  function wipe() {
+    over = true; busy = true;
+    callout("Wiped out", "#e2364b", "Try again");
+    later(2.0, () => { tally.wiped++; startFight(P.foe, true); });
+  }
+  function endFight(kind) {
+    tally[kind]++;
+    const list = BANDS[0].foes;
+    startFight(list[(list.indexOf(P.foe) + 1) % list.length], RESTORE);
+  }
+
+  function startFight(id, fresh) {
+    jobs = []; tweens = []; parts = []; nums = []; calls = []; fxs = [];
+    busy = false; over = false; hitstop = 0; slow = 0; special = 0; ward = 0; extra = false; hoverAct = null;
+    tally.turns = 0;
+    P.foe = id;
+    if (fresh || !party.length) party = P.party.map((pid, i) => makeHero(pid, i));
+    party.forEach(h => { h.ct = wait(h); h.n = 0; h.guarding = false; });
+    foe = makeFoe(id);
+    foe.ct = wait(foe);
+    active = 0; turn = 1;
+    setTargets(true);
+    replayEntrance();
+    later(1.3, step);
+  }
+  function replayEntrance() {
+    enterT = 0;
+    all().forEach((a, i) => { a.enter = 0; tween(a, "enter", 1, 0.55, outCubic, a.kind === "foe" ? 0.62 : 0.45 + i * 0.09); });
+  }
+
+
+  /* =========================================================================
+     4. THE CAMERA AND THE PROJECTION
+     ========================================================================= */
+  const cam = { x: W / 2, y: H / 2, z: 1, rot: 0, shake: 0, punch: 0, subject: null, lb: 0, sx: 0, sy: 0 };
+  let yawNow = 0, camMat = null;
+
+  /* A point on the ground (x across, z into the screen) seen by a camera
+     standing `persp` units in front of the pivot: s is the scale there, so
+     a near hero is bigger and lower; `tilt` is how much depth climbs the
+     screen, and `yaw` turns the whole ground around the pivot. */
+  function proj(wx, wz) {
+    const c = Math.cos(yawNow), s = Math.sin(yawNow), pz = P.pivotZ, dz = wz - pz;
+    const x = wx * c - dz * s, z = wx * s + dz * c + pz;
+    const D = P.persp, q = Math.max(D * 0.3, z + D), k = D / q;
+    return { x: W / 2 + P.unit * x * k, y: P.groundY - P.unit * P.tilt * D * z / q, s: k, z };
+  }
+
+  function place(a) {
+    let x = a.hx + (a.dashTo.x - a.hx) * a.dash * P.dash + a.kx;
+    let z = a.hz + (a.dashTo.z - a.hz) * a.dash * P.dash + a.kz;
+    const e = a.enter;
+    if (P.entrance === "slide") x += (a.kind === "foe" ? 6.5 : -6.5) * (1 - e);
+    const p = proj(x, z);
+    a.wx = x; a.wz = z; a.sx = p.x; a.sy = p.y; a.depth = p.z; a.k = p.s;
+    a.s = (a.kind === "foe" ? 320 * P.foeScale : 200 * P.heroScale) * p.s;
+    a.alpha = 1; a.dy = 0;
+    if (P.entrance === "drop") { a.dy = -1300 * Math.pow(1 - e, 2); }
+    else if (P.entrance === "mist") { a.alpha = e; a.dy = 40 * (1 - e); }
+    else if (P.entrance === "zoom") { a.alpha = Math.min(1, e * 2); }
+    if (a.kind === "foe") a.dy += Math.sin(T * 1.6) * 8 * P.bob;
+    if (a.hurt > 0) a.sx += Math.sin(a.hurt * 60) * 7;
+    if (a.dead && a.kind === "foe") { a.alpha *= a.fade; a.dy -= (1 - a.fade) * 80; }
+  }
+
+  function updateCamera(dt) {
+    let tx = W / 2, ty = H / 2, tz = 1, trot = 0;
+    if (P.entrance === "zoom" && enterT < 1.3 && foe) { cam.subject = cam.subject || foe; }
+    else if (P.entrance === "zoom" && enterT < 1.4 && cam.subject === foe && !busy) cam.subject = null;
+    const subj = cam.subject || (P.turnZoom > 0 && turn === 0 ? activeHero() : null);
+    if (subj && subj.sx != null) {
+      const zoom = cam.subject ? Math.max(P.actZoom, P.turnZoom) + (P.entrance === "zoom" && enterT < 1.3 ? 0.5 : 0) : P.turnZoom;
+      tz = 1 + zoom;
+      tx = W / 2 + (subj.sx - W / 2) * P.follow;
+      ty = H / 2 + (subj.sy + subj.dy - subj.s * 0.45 - H / 2) * P.follow;
+    }
+    if (special) trot = P.dutch * Math.PI / 180 * (foe && foe.sx > W / 2 ? 1 : -1);
+    tz += Math.sin(RT * 0.21) * P.drift * 2;
+    tx += Math.sin(RT * 0.13) * P.drift * 600;
+    const hw = W / 2 / tz, hh = H / 2 / tz;
+    tx = clamp(tx, hw, W - hw); ty = clamp(ty, hh, H - hh);
+    const k = Math.min(1, dt * P.camSpeed);
+    cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; cam.z += (tz - cam.z) * k;
+    cam.rot += (trot - cam.rot) * Math.min(1, dt * 5);
+    cam.punch *= Math.pow(0.0005, dt);
+    cam.shake *= Math.pow(0.002, dt);
+    cam.sx = (Math.random() * 2 - 1) * cam.shake; cam.sy = (Math.random() * 2 - 1) * cam.shake;
+    cam.lb += ((special && P.letterbox ? 1 : 0) - cam.lb) * Math.min(1, dt * 6);
+  }
+  function camZoom() { return cam.z + cam.punch; }
+  function applyCamera(g) {
+    g.translate(W / 2 + cam.sx, H / 2 + cam.sy);
+    g.rotate(cam.rot);
+    g.scale(camZoom(), camZoom());
+    g.translate(-cam.x, -cam.y);
+  }
+  /* camera space -> design px on screen (HUD anchors) */
+  function toScreen(x, y) {
+    const z = camZoom(), c = Math.cos(cam.rot), s = Math.sin(cam.rot);
+    const dx = (x - cam.x) * z, dy = (y - cam.y) * z;
+    return { x: W / 2 + cam.sx + dx * c - dy * s, y: H / 2 + cam.sy + dx * s + dy * c };
+  }
+  function toCamera(x, y) {
+    const z = camZoom(), c = Math.cos(-cam.rot), s = Math.sin(-cam.rot);
+    const dx = x - W / 2 - cam.sx, dy = y - H / 2 - cam.sy;
+    return { x: (dx * c - dy * s) / z + cam.x, y: (dx * s + dy * c) / z + cam.y };
+  }
+
+  /* =========================================================================
+     5. DRAWING
+     ========================================================================= */
+  const cv = document.getElementById("view");
+  const ctx = cv.getContext("2d");
+  let R = 1;
+
+  function face(size) { return P.face === "bebas" ? size + 'px "Bebas Neue", Impact, sans-serif' : "800 " + size + "px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"; }
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function mix(hex, hex2, k) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(hex2.slice(1), 16);
+    const ch = sh => Math.round((a >> sh & 255) * (1 - k) + (b >> sh & 255) * k);
+    return "#" + ((1 << 24) + (ch(16) << 16) + (ch(8) << 8) + ch(0)).toString(16).slice(1);
+  }
+  function lum(hex) { const n = parseInt(hex.slice(1), 16); return ((n >> 16 & 255) * 0.3 + (n >> 8 & 255) * 0.59 + (n & 255) * 0.11) / 255; }
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function text(str, x, y, size, col, align, stroke) {
+    ctx.font = face(size); ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    if (stroke) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(6,4,10,.9)"; ctx.strokeText(str, x, y); }
+    ctx.fillStyle = col; ctx.fillText(str, x, y);
+  }
+
+  /* --- sprite caches: every effect that needs the figure's own shape is a
+     silhouette built once per (image, colour, size) and drawn scaled. ----- */
+  const cache = new Map();
+  function cached(key, w, h, build) {
+    let c = cache.get(key);
+    if (!c) { c = document.createElement("canvas"); c.width = Math.ceil(w); c.height = Math.ceil(h); build(c.getContext("2d"), c); cache.set(key, c); }
+    return c;
+  }
+  function sil(im, col) {
+    return cached("s|" + im.src + "|" + col, im.naturalWidth, im.naturalHeight, g => {
+      g.drawImage(im, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = col; g.fillRect(0, 0, im.naturalWidth, im.naturalHeight);
+    });
+  }
+  function glowCv(im, col, blur) {
+    blur = Math.max(2, Math.round(blur));
+    const pad = blur * 2;
+    const c = cached("g|" + im.src + "|" + col + "|" + blur, im.naturalWidth + pad * 2, im.naturalHeight + pad * 2, g => {
+      g.filter = "blur(" + blur + "px)";
+      g.drawImage(sil(im, col), pad, pad); g.drawImage(sil(im, col), pad, pad);
+    });
+    c.pad = pad; return c;
+  }
+  function outlineCv(im, col, r) {
+    r = Math.max(1, Math.round(r));
+    const c = cached("o|" + im.src + "|" + col + "|" + r, im.naturalWidth + r * 2, im.naturalHeight + r * 2, g => {
+      const s = sil(im, col);
+      for (let k = 0; k < 16; k++) { const a = k / 16 * TAU; g.drawImage(s, r + Math.cos(a) * r, r + Math.sin(a) * r); }
+    });
+    c.pad = r; return c;
+  }
+  function rimCv(im, col, dx, dy) {
+    return cached("r|" + im.src + "|" + col + "|" + dx + "|" + dy, im.naturalWidth, im.naturalHeight, g => {
+      g.drawImage(sil(im, col), 0, 0);
+      g.globalCompositeOperation = "destination-out";
+      g.drawImage(sil(im, "#000000"), dx, dy);
+    });
+  }
+  function dotCv(col) {
+    return cached("d|" + col, 64, 64, g => {
+      const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.25, rgba(col, 0.9)); gr.addColorStop(1, rgba(col, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    });
+  }
+  function puffCv(col) {
+    return cached("p|" + col, 96, 96, g => {
+      const gr = g.createRadialGradient(48, 48, 0, 48, 48, 48);
+      gr.addColorStop(0, rgba(col, 0.8)); gr.addColorStop(0.6, rgba(col, 0.35)); gr.addColorStop(1, rgba(col, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
+    });
+  }
+
+  /* Where the head is, for a portrait cut out of the idle pose: the middle
+     of the topmost opaque rows. Read once per image; over file:// the canvas
+     is tainted and the guess is the middle of the top. */
+  const heads = new Map();
+  function headOf(im) {
+    let h = heads.get(im.src);
+    if (h) return h;
+    h = { x: 0.5, y: 0.14 };
+    try {
+      const w = 64, hh = Math.round(64 * im.naturalHeight / im.naturalWidth);
+      const c = document.createElement("canvas"); c.width = w; c.height = hh;
+      const g = c.getContext("2d"); g.drawImage(im, 0, 0, w, hh);
+      const d = g.getImageData(0, 0, w, hh).data;
+      let top = -1;
+      for (let y = 0; y < hh && top < 0; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 140) { top = y; break; }
+      if (top >= 0) {
+        const y0 = top + Math.round(hh * 0.05), y1 = top + Math.round(hh * 0.14);
+        let sx = 0, n = 0;
+        for (let y = y0; y < y1; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 140) { sx += x; n++; }
+        if (n) h = { x: sx / n / w, y: (top + hh * 0.1) / hh };
+      }
+    } catch (e) { /* tainted over file:// */ }
+    heads.set(im.src, h);
+    return h;
+  }
+  function portrait(a, x, y, r, square) {
+    const im = poseImg(a, true);
+    ctx.save();
+    ctx.beginPath();
+    if (square) ctx.rect(x - r, y - r, r * 2, r * 2); else ctx.arc(x, y, r, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = mix(a.color, "#07060c", 0.6); ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    if (im) {
+      const hd = headOf(im), side = im.naturalWidth * 0.36;
+      const sx = clamp(hd.x * im.naturalWidth - side / 2, 0, im.naturalWidth - side), sy = clamp(hd.y * im.naturalHeight - side * 0.45, 0, im.naturalHeight - side);
+      ctx.drawImage(im, sx, sy, side, side, x - r, y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+
+  function poseImg(a, idle) {
+    let pose;
+    if (a.kind === "hero") pose = idle ? 1 : a.dead ? 6 : a.hurt > 0 ? 5 : a.lunge > 0 ? 2 : a.cast > 0 ? 3 : a.guard > 0 ? 4 : 1;
+    else pose = idle ? 1 : a.hurt > 0 ? 3 : a.cast > 0 ? 4 : a.lunge > 0 ? 2 : 1;
+    return img(a.kind + "-" + a.id + "0" + pose) || img(a.kind + "-" + a.id + "01");
+  }
+  function flipOf(a) {
+    let f = false;
+    if (P.autoFace && foe) {
+      if (a.kind === "hero") f = a.sx > foe.sx + 30;
+      else { const xs = party.filter(h => !h.dead); const mx = xs.reduce((s, h) => s + h.sx, 0) / (xs.length || 1); f = mx > a.sx + 30; }
+    }
+    return a.kind === "hero" ? f !== P.flipHero : f !== P.flipFoe;
+  }
+  function auraStyle(a) {
+    if (a.kind === "foe") return a.dead ? "none" : P.foeAura;
+    if (P.heroAura === "none" || a.dead) return "none";
+    if (P.heroAuraWho === "active" && a !== activeHero()) return "none";
+    return P.heroAura;
+  }
+  function auraCol(a) {
+    if (!P.auraOwn) return P.auraColor;
+    return lum(a.color) < 0.35 ? mix(a.color, "#b69cff", 0.6) : a.color;
+  }
+  function auraPow(a) { return P.auraPower * (1 + a.boost) * (a.kind === "hero" && a === activeHero() && turn === 0 ? 1.15 : 1); }
+
+  /* --- the figure itself, in image px with its feet at the origin -------- */
+  function drawStack(g, a, im, flip, depth01) {
+    const w = im.naturalWidth, h = im.naturalHeight, A = g.globalAlpha;
+    if (P.outline > 0) { const o = outlineCv(im, P.outlineColor, P.outline / (a.s / Math.max(w, h))); g.drawImage(o, -w / 2 - o.pad, -h - o.pad); }
+    g.drawImage(im, -w / 2, -h);
+    if (P.tint > 0) { g.globalCompositeOperation = "multiply"; g.globalAlpha = A * P.tint; g.drawImage(sil(im, mix(BANDS[P.band].tint, "#8a7fb0", 0.35)), -w / 2, -h); g.globalCompositeOperation = "source-over"; }
+    const dim = (P.fog * depth01 * (a.kind === "foe" ? 0.5 : 1)) + (a.kind === "hero" && a !== activeHero() && !busy ? P.dimIdle : 0) + (a.dead ? 0.45 : 0);
+    if (dim > 0) { g.globalAlpha = A * Math.min(0.85, dim); g.drawImage(sil(im, mix(BANDS[P.band].tint, "#05040a", 0.55)), -w / 2, -h); }
+    if (P.rim > 0) {
+      const ang = P.rimAngle * Math.PI / 180, off = Math.round(w * 0.022);
+      let dx = Math.round(-Math.cos(ang) * off), dy = Math.round(-Math.sin(ang) * off);
+      if (flip) dx = -dx;
+      g.globalCompositeOperation = "lighter"; g.globalAlpha = A * P.rim;
+      g.drawImage(rimCv(im, P.rimColor, dx, dy), -w / 2, -h);
+      g.globalCompositeOperation = "source-over";
+    }
+    if (a.flash > 0) { g.globalAlpha = A * a.flash * 0.7; g.drawImage(sil(im, "#ffffff"), -w / 2, -h); }
+    g.globalAlpha = A;
+  }
+
+  /* --- auras: what is drawn behind the figure, and in front of it -------- */
+  function auraBack(a, im, k, flip, bx, by) {
+    const st = auraStyle(a); if (st === "none" || !im) return;
+    const col = auraCol(a), pw = auraPow(a), sp = P.auraSpeed, w = im.naturalWidth, h = im.naturalHeight;
+    const X = a.sx, Y = a.sy + a.dy;
+    ctx.save();
+    ctx.globalAlpha = a.alpha;
+    if (st === "glow" || st === "flame" || st === "smoke" || st === "rim" || st === "sparks") {
+      ctx.translate(X, Y); ctx.scale(k * bx * (flip ? -1 : 1), k * by);
+      if (st === "glow" || st === "sparks") {
+        const c = glowCv(im, col, 14 * P.auraSize);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = a.alpha * Math.min(1, pw * (st === "sparks" ? 0.5 : 0.75) * (0.75 + 0.25 * Math.sin(T * 2.4 * sp + a.phase)));
+        ctx.scale(1.04, 1.03);
+        ctx.drawImage(c, -w / 2 - c.pad, -h - c.pad);
+      } else if (st === "rim") {
+        const o = outlineCv(im, col, 5 * P.auraSize), c = glowCv(im, col, 6 * P.auraSize);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = a.alpha * Math.min(1, pw * (0.6 + 0.4 * Math.sin(T * 3 * sp + a.phase)));
+        ctx.drawImage(c, -w / 2 - c.pad, -h - c.pad);
+        ctx.drawImage(o, -w / 2 - o.pad, -h - o.pad);
+      } else if (st === "flame") {
+        const c = glowCv(im, col, 10 * P.auraSize);
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 3; i++) {
+          const f = 0.5 + 0.5 * Math.sin(T * (7 + i * 3) * sp + i * 2 + a.phase);
+          ctx.save();
+          ctx.globalAlpha = a.alpha * Math.min(1, pw * (0.35 + 0.2 * f));
+          ctx.transform(1, 0, Math.sin(T * 2.3 * sp + i) * 0.06, 1, 0, 0);
+          ctx.scale(1 + 0.04 * i * P.auraSize, 1.06 + (0.07 + 0.05 * f) * i * P.auraSize);
+          ctx.drawImage(c, -w / 2 - c.pad, -h - c.pad);
+          ctx.restore();
+        }
+      } else if (st === "smoke") {
+        const c = glowCv(im, mix(col, "#05020a", 0.7), 22 * P.auraSize);
+        ctx.globalAlpha = a.alpha * Math.min(1, pw * 0.85);
+        ctx.scale(1.08 + 0.03 * Math.sin(T * 1.3 * sp), 1.05);
+        ctx.drawImage(c, -w / 2 - c.pad, -h - c.pad);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = a.alpha * Math.min(1, pw * 0.25);
+        const c2 = glowCv(im, col, 9 * P.auraSize);
+        ctx.drawImage(c2, -w / 2 - c2.pad, -h - c2.pad);
+      }
+    }
+    ctx.restore();
+    if (st === "ring") drawRing(a, col, pw);
+    if (st === "wisps") drawWisps(a, col, pw, -1);
+  }
+  function auraFront(a) {
+    const st = auraStyle(a); if (st === "none") return;
+    const col = auraCol(a), pw = auraPow(a);
+    if (st === "wisps") drawWisps(a, col, pw, 1);
+    if (st === "sparks") drawSparks(a, col, pw);
+  }
+  function spawnAura(a, dt) {
+    const st = auraStyle(a); if (st === "none" || a.sx == null) return;
+    const col = auraCol(a), pw = auraPow(a);
+    const cx = a.sx, cy = a.sy + a.dy - a.s * 0.45, rx = a.s * 0.26 * P.auraSize, ry = a.s * 0.42;
+    if (st === "flame") {
+      a.acc = (a.acc || 0) + dt * 26 * pw * P.auraSpeed;
+      while (a.acc > 1) {
+        a.acc--;
+        const t = Math.random() * TAU;
+        parts.push({ owner: a, layer: Math.random() < 0.5 ? "back" : "front", x: cx + Math.cos(t) * rx * rnd(0.4, 1), y: cy + Math.sin(t) * ry * rnd(0.3, 1),
+          vx: rnd(-14, 14), vy: rnd(-150, -60) * P.auraSpeed, life: rnd(0.5, 1.1), t: 0, size: rnd(5, 12) * Math.sqrt(a.k), col, add: true, kind: "dot" });
+      }
+    } else if (st === "smoke") {
+      a.acc = (a.acc || 0) + dt * 9 * pw * P.auraSpeed;
+      while (a.acc > 1) {
+        a.acc--;
+        const t = Math.random() * TAU;
+        parts.push({ owner: a, layer: Math.random() < 0.6 ? "back" : "front", x: cx + Math.cos(t) * rx * 1.1, y: cy + Math.sin(t) * ry * 0.9 + a.s * 0.1,
+          vx: rnd(-18, 18), vy: rnd(-40, -16) * P.auraSpeed, life: rnd(1.6, 2.8), t: 0, size: rnd(40, 80) * a.k * P.auraSize, col: mix(col, "#05020a", 0.72), add: false, kind: "puff" });
+      }
+    }
+  }
+  function drawRing(a, col, pw) {
+    const r = (a.kind === "foe" ? 1.15 : 0.7) * P.auraSize, rot = T * 0.7 * P.auraSpeed, N = 48;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = a.alpha * Math.min(1, pw * 0.9);
+    ctx.strokeStyle = col; ctx.lineCap = "round";
+    const ring = (rad, lw) => {
+      ctx.lineWidth = lw * a.k; ctx.beginPath();
+      for (let i = 0; i <= N; i++) { const t = i / N * TAU, p = proj(a.wx + Math.cos(t) * rad, a.wz + Math.sin(t) * rad); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }
+      ctx.stroke();
+    };
+    ring(r, 4); ring(r * 0.82, 2);
+    ctx.lineWidth = 3 * a.k;
+    for (let i = 0; i < 12; i++) {
+      const t = rot + i / 12 * TAU, p1 = proj(a.wx + Math.cos(t) * r * 0.82, a.wz + Math.sin(t) * r * 0.82), p2 = proj(a.wx + Math.cos(t) * r, a.wz + Math.sin(t) * r);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    }
+    ctx.fillStyle = col;
+    for (let i = 0; i < 4; i++) {
+      const t = -rot * 1.4 + i / 4 * TAU, p = proj(a.wx + Math.cos(t) * r * 1.12, a.wz + Math.sin(t) * r * 1.12);
+      ctx.fillRect(p.x - 6 * p.s, p.y - 4 * p.s, 12 * p.s, 8 * p.s);
+    }
+    const d = dotCv(col), p = proj(a.wx, a.wz), gw = r * P.unit * 2.4 * p.s;
+    ctx.globalAlpha = a.alpha * Math.min(1, pw * 0.5);
+    ctx.drawImage(d, p.x - gw / 2, p.y - gw * 0.2, gw, gw * 0.4);
+    ctx.restore();
+  }
+  function drawWisps(a, col, pw, side) {
+    const n = a.kind === "foe" ? 5 : 3, r = (a.kind === "foe" ? 1.0 : 0.65) * P.auraSize, d = dotCv(col), core = dotCv("#ffffff");
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < n; i++) {
+      const base = T * 1.1 * P.auraSpeed + i / n * TAU;
+      const sinb = Math.sin(base);
+      if ((sinb > 0 ? -1 : 1) !== side) continue;          // behind the figure, or in front of it
+      for (let j = 7; j >= 0; j--) {
+        const t = base - j * 0.07, p = proj(a.wx + Math.cos(t) * r, a.wz + Math.sin(t) * r);
+        const hgt = a.s * (0.5 + 0.12 * Math.sin(T * 2 + i * 1.7)) + j * 4 * p.s;
+        const sz = (34 - j * 3.5) * p.s * Math.sqrt(P.auraSize);
+        ctx.globalAlpha = a.alpha * Math.min(1, pw) * (1 - j / 8) * (0.85 + 0.15 * Math.sin(T * 9 + i));
+        ctx.drawImage(j ? d : core, p.x - sz / 2, p.y - hgt - sz / 2, sz, sz);
+        if (!j) ctx.drawImage(d, p.x - sz, p.y - hgt - sz, sz * 2, sz * 2);
+      }
+    }
+    ctx.restore();
+  }
+  function drawSparks(a, col, pw) {
+    if (!a.bolts || RT - (a.boltT || 0) > 0.08 / P.auraSpeed) {
+      a.boltT = RT; a.bolts = [];
+      const n = Math.round(1 + pw * 2.5), cx = a.sx, cy = a.sy + a.dy - a.s * 0.45, rx = a.s * 0.34 * P.auraSize, ry = a.s * 0.5;
+      for (let b = 0; b < n; b++) {
+        if (Math.random() < 0.3) continue;
+        const t0 = Math.random() * TAU, t1 = t0 + rnd(0.5, 1.2) * (Math.random() < 0.5 ? -1 : 1), pts = [];
+        for (let s = 0; s <= 6; s++) {
+          const t = t0 + (t1 - t0) * s / 6, j = s && s < 6 ? rnd(-14, 14) * a.k : 0;
+          pts.push([cx + Math.cos(t) * (rx + j), cy + Math.sin(t) * (ry + j)]);
+        }
+        a.bolts.push(pts);
+      }
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter"; ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.globalAlpha = a.alpha * Math.min(1, pw);
+    a.bolts.forEach(pts => {
+      [[7, rgba(col, 0.35)], [3.5, col], [1.4, "#ffffff"]].forEach(([lw, c]) => {
+        ctx.lineWidth = lw * Math.sqrt(a.k); ctx.strokeStyle = c; ctx.beginPath();
+        pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+      });
+    });
+    ctx.restore();
+  }
+  function drawParts(a, layer) {
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i];
+      if (p.owner !== a || p.layer !== layer) continue;
+      const q = p.t / p.life;
+      ctx.save();
+      if (p.add) ctx.globalCompositeOperation = "lighter";
+      if (p.kind === "dot") {
+        ctx.globalAlpha = (1 - q) * a.alpha;
+        const s = p.size * (1 - q * 0.5);
+        ctx.drawImage(dotCv(p.col), p.x - s, p.y - s, s * 2, s * 2);
+      } else {
+        ctx.globalAlpha = Math.sin(q * Math.PI) * 0.55 * a.alpha;
+        const s = p.size * (0.6 + q * 0.8);
+        ctx.drawImage(puffCv(p.col), p.x - s, p.y - s, s * 2, s * 2);
+      }
+      ctx.restore();
+    }
+  }
+
+  /* --- on the ground: shadow or reflection ------------------------------- */
+  function drawGroundUnder(a, im, k, flip) {
+    if (P.ground === "none" || !im) return;
+    const X = a.sx, Y = a.sy;
+    const lift = Math.max(0, -a.dy) / 300;
+    if (P.ground === "shadow" || P.body !== "sprite") {
+      ctx.fillStyle = "rgba(0,0,0," + (0.45 * a.alpha * Math.max(0.2, 1 - lift)) + ")";
+      ctx.beginPath(); ctx.ellipse(X, Y, a.s * 0.3, a.s * 0.3 * Math.max(0.12, 0.22 * P.tilt), 0, 0, TAU); ctx.fill();
+      if (P.ground === "shadow") return;
+    }
+    if (P.body !== "sprite") return;
+    /* the reflection: the figure upside down under its feet, in slices that
+       ripple and fade, darker than the figure — it stands on water */
+    const w = im.naturalWidth, h = im.naturalHeight, N = 14, sh = h / N;
+    ctx.save();
+    ctx.translate(X, Y + 4);
+    ctx.scale(k * (flip ? -1 : 1), -k * 0.75);
+    for (let i = 0; i < N; i++) {
+      const sy = h - (i + 1) * sh;
+      ctx.globalAlpha = a.alpha * 0.32 * (1 - i / N);
+      const off = Math.sin(T * 3 + i * 0.9) * (2 + i * 0.8) / k * 0.6;
+      ctx.drawImage(im, 0, sy, w, sh, -w / 2 + off, -h + sy, w, sh + 1);
+    }
+    ctx.restore();
+  }
+
+  /* --- the plane of a card or a standee, in true perspective ------------- */
+  function plane(a) {
+    if (!a.off) { a.off = document.createElement("canvas"); a.offg = a.off.getContext("2d"); }
+    return a.off;
+  }
+  /* Draws the canvas `c` (whose design width is dw, height dh, with the
+     anchor `ax, ay` in it) turned by `ang` around its vertical axis, as
+     vertical slices each scaled by its own depth. */
+  function drawTurned(c, dw, dh, ax, ay, X, Y, ang, alpha) {
+    const N = 28, F = dw * 2.6, cs = Math.cos(ang), sn = Math.sin(ang);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    let prev = null;
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, lx = u * dw - ax, X3 = lx * cs, Z3 = lx * sn, p = F / (F + Z3);
+      const cur = { x: X + X3 * p, p };
+      if (prev) {
+        const x0 = prev.x, x1 = cur.x, pm = (prev.p + cur.p) / 2;
+        const left = Math.min(x0, x1), wdt = Math.abs(x1 - x0) + 0.8;
+        const su = (i - 1) / N * c.width, sw = c.width / N;
+        ctx.save();
+        if (x1 < x0) { ctx.translate(left + wdt, 0); ctx.scale(-1, 1); ctx.translate(-left, 0); }
+        ctx.drawImage(c, su, 0, sw, c.height, left, Y - ay * pm, wdt, dh * pm);
+        ctx.restore();
+      }
+      prev = cur;
+    }
+    ctx.restore();
+  }
+  function cardAngle(a) {
+    let ang = P.cardTilt * (-yawNow * 0.9 + Math.sin(RT * 0.7 + a.phase) * 0.1 + a.hover);
+    const opp = a.kind === "hero" ? foe : activeHero() || party[0];
+    if (opp && a.dash > 0) ang += Math.sign(opp.sx - a.sx || 1) * a.dash * 0.35;
+    return ang + a.spin;
+  }
+
+  const CARD_GLYPH = { foe: "怨", hero: "祓" };
+  function drawCardFace(g, a, im, cw, ch, top, flip, back) {
+    const skin = P.cardSkin, x0 = -cw / 2, y0 = -ch, r = cw * 0.07;
+    const win = { x: x0 + cw * 0.08, y: y0 + cw * 0.08, w: cw * 0.84, h: ch * 0.68 - cw * 0.08 };
+    if (skin === "ofuda") { win.x = x0 + cw * 0.1; win.w = cw * 0.8; win.y = y0 + cw * 0.36; win.h = ch * 0.62 - cw * 0.36; }
+    g.save();
+    // the stock
+    if (skin === "lacquer") {
+      const gr = g.createLinearGradient(0, y0, 0, 0); gr.addColorStop(0, "#2a0f18"); gr.addColorStop(1, "#0b0508");
+      rr(g, x0, y0, cw, ch, r); g.fillStyle = gr; g.fill();
+      const gold = g.createLinearGradient(x0, y0, x0 + cw, 0); gold.addColorStop(0, "#f6d58a"); gold.addColorStop(0.5, "#9a6a1e"); gold.addColorStop(1, "#f6d58a");
+      g.lineWidth = Math.max(3, cw * 0.035); g.strokeStyle = gold; g.stroke();
+      rr(g, x0 + cw * 0.05, y0 + cw * 0.05, cw * 0.9, ch - cw * 0.1, r * 0.6); g.lineWidth = 1.5; g.strokeStyle = "rgba(226,54,75,.8)"; g.stroke();
+    } else if (skin === "washi") {
+      rr(g, x0, y0, cw, ch, r * 0.4); g.fillStyle = "#ece0c4"; g.fill();
+      g.save(); g.clip();
+      g.strokeStyle = "rgba(120,96,60,.12)"; g.lineWidth = 1;
+      for (let i = 0; i < 26; i++) { const s = Math.sin(i * 91.7 + a.phase * 13) * 0.5 + 0.5, s2 = Math.sin(i * 37.1) * 0.5 + 0.5; g.beginPath(); g.moveTo(x0 + s * cw, y0 + s2 * ch); g.lineTo(x0 + s * cw + 18, y0 + s2 * ch + 6); g.stroke(); }
+      g.restore();
+      g.strokeStyle = "#1a1012"; g.lineWidth = Math.max(3, cw * 0.03); g.lineJoin = "round";
+      g.beginPath();
+      const wob = (t) => Math.sin(t * 12.3 + a.phase) * cw * 0.008;
+      g.moveTo(x0 + 4, y0 + 4 + wob(1)); g.lineTo(x0 + cw - 4 + wob(2), y0 + 5); g.lineTo(x0 + cw - 5, -4 + wob(3)); g.lineTo(x0 + 5 + wob(4), -5); g.closePath(); g.stroke();
+    } else if (skin === "ofuda") {
+      rr(g, x0, y0, cw, ch, 4); g.fillStyle = "#efe6cf"; g.fill();
+      g.fillStyle = "#b3122e"; g.fillRect(x0, y0, cw, cw * 0.3);
+      g.beginPath(); g.arc(0, y0 + cw * 0.15, cw * 0.1, 0, TAU); g.fillStyle = "#efe6cf"; g.fill();
+      g.beginPath(); g.arc(0, y0 + cw * 0.15, cw * 0.05, 0, TAU); g.fillStyle = "#1a1012"; g.fill();
+      g.strokeStyle = "#b3122e"; g.lineWidth = 2;
+      g.strokeRect(x0 + cw * 0.05, y0 + cw * 0.33, cw * 0.9, ch - cw * 0.38);
+    } else {
+      rr(g, x0, y0, cw, ch, r); g.fillStyle = "rgba(16,10,30,.62)"; g.fill();
+      g.strokeStyle = rgba(a.color, 0.9); g.lineWidth = 3; g.shadowColor = a.color; g.shadowBlur = 18; g.stroke(); g.shadowBlur = 0;
+      g.fillStyle = a.color;
+      [[x0 + 10, y0 + 10], [-x0 - 10, y0 + 10], [x0 + 10, -10], [-x0 - 10, -10]].forEach(p => { g.save(); g.translate(p[0], p[1]); g.rotate(Math.PI / 4); g.fillRect(-4, -4, 8, 8); g.restore(); });
+    }
+    if (back) {
+      g.fillStyle = skin === "washi" || skin === "ofuda" ? "#b3122e" : "#e2364b";
+      g.beginPath(); g.arc(0, -ch / 2, cw * 0.28, 0, TAU); g.fill();
+      g.fillStyle = "#fff4f0"; g.font = "900 " + Math.round(cw * 0.3) + "px serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(CARD_GLYPH[a.kind], 0, -ch / 2 + 2);
+      g.restore(); return;
+    }
+    // the window and the figure
+    const glow = g.createRadialGradient(win.x + win.w / 2, win.y + win.h * 0.6, 4, win.x + win.w / 2, win.y + win.h * 0.6, win.w * 0.8);
+    glow.addColorStop(0, rgba(a.color, skin === "washi" || skin === "ofuda" ? 0.25 : 0.4)); glow.addColorStop(1, rgba(a.color, 0));
+    g.fillStyle = skin === "lacquer" ? "#12070c" : skin === "spirit" ? "rgba(0,0,0,.25)" : "rgba(0,0,0,0)";
+    g.fillRect(win.x, win.y, win.w, win.h);
+    g.fillStyle = glow; g.fillRect(win.x, win.y, win.w, win.h);
+    if (im) {
+      g.save();
+      g.beginPath();
+      if (P.cardPop) { g.rect(win.x - cw, y0 - top, win.w + cw * 2, win.y - (y0 - top)); g.rect(win.x, win.y, win.w, win.h); }
+      else g.rect(win.x, win.y, win.w, win.h);
+      g.clip();
+      const sz = (P.cardPop ? win.h * 1.28 : win.h * 1.02), kk = sz / Math.max(im.naturalWidth, im.naturalHeight);
+      g.translate(win.x + win.w / 2, win.y + win.h + (P.cardPop ? win.h * 0.06 : 0));
+      g.scale(kk * (flip ? -1 : 1), kk);
+      drawStack(g, a, im, flip, 0);
+      g.restore();
+    }
+    if (skin === "lacquer") { g.strokeStyle = "rgba(246,213,138,.6)"; g.lineWidth = 2; g.strokeRect(win.x, win.y, win.w, win.h); }
+    // the name
+    const ny = y0 + ch * 0.84, nm = upper(a.b.name);
+    let fs = Math.max(20, cw * 0.15);
+    g.font = face(fs);
+    while (fs > 20 && g.measureText(nm).width > cw * 0.84) { fs -= 1; g.font = face(fs); }
+    g.textAlign = "center"; g.textBaseline = "middle";
+    if (skin === "lacquer") {
+      g.fillStyle = "#000"; g.fillRect(x0 + cw * 0.06, ny - fs * 0.75, cw * 0.88, fs * 1.5);
+      g.fillStyle = "#f6d58a";
+    } else if (skin === "spirit") g.fillStyle = a.color;
+    else g.fillStyle = "#1a1012";
+    g.fillText(nm, 0, ny + 1);
+    if (skin === "washi") {
+      g.fillStyle = "#b3122e"; const hs = cw * 0.16;
+      g.fillRect(x0 + cw - hs - cw * 0.06, -hs - cw * 0.05, hs, hs);
+      g.fillStyle = "#efe6cf"; g.font = "900 " + Math.round(hs * 0.7) + "px serif"; g.fillText(CARD_GLYPH[a.kind], x0 + cw - hs / 2 - cw * 0.06, -hs / 2 - cw * 0.05 + 1);
+    }
+    if (skin === "ofuda") {
+      g.fillStyle = "rgba(26,16,18,.75)"; g.font = "900 " + Math.round(cw * 0.11) + "px serif";
+      "悪霊退散".split("").forEach((c, i) => g.fillText(c, x0 + cw * 0.92 - cw * 0.08, win.y + cw * 0.12 + i * cw * 0.13));
+    }
+    // the hp, on the card itself
+    const hb = { x: x0 + cw * 0.12, y: ny + fs * 0.85, w: cw * 0.76, h: Math.max(6, cw * 0.035) };
+    g.fillStyle = "rgba(0,0,0,.45)"; rr(g, hb.x, hb.y, hb.w, hb.h, hb.h / 2); g.fill();
+    g.fillStyle = a.kind === "foe" ? "#e2364b" : a.hp / a.mhp < 0.3 ? "#e2364b" : "#7ee0a1";
+    if (a.hp > 0) { rr(g, hb.x, hb.y, Math.max(hb.h, hb.w * a.hp / a.mhp), hb.h, hb.h / 2); g.fill(); }
+    g.restore();
+  }
+
+  function drawActor(a) {
+    const im = poseImg(a);
+    const flip = flipOf(a);
+    const br = 1 + Math.sin(T * 2 + a.phase) * 0.014 * P.breath, bx = 1 - (br - 1) * 0.6;
+    const k = im ? a.s / Math.max(im.naturalWidth, im.naturalHeight) : 1;
+    const zs = all().map(o => o.depth), zmin = Math.min.apply(null, zs), zmax = Math.max.apply(null, zs);
+    const depth01 = zmax > zmin ? (a.depth - zmin) / (zmax - zmin) : 0;
+    drawGroundUnder(a, im, k, flip);
+    drawParts(a, "back");
+    auraBack(a, im, k, flip, bx, br);
+    if (!im) { ctx.fillStyle = rgba(a.color, 0.5); ctx.beginPath(); ctx.arc(a.sx, a.sy - a.s * 0.4, a.s * 0.2, 0, TAU); ctx.fill(); return; }
+    if (P.body === "sprite") {
+      ctx.save();
+      ctx.globalAlpha = a.alpha;
+      ctx.translate(a.sx, a.sy + a.dy);
+      ctx.scale(k * bx * (flip ? -1 : 1), k * br);
+      drawStack(ctx, a, im, flip, depth01);
+      ctx.restore();
+    } else if (P.body === "standee") {
+      // the base the paper figure stands in
+      ctx.save();
+      ctx.globalAlpha = a.alpha;
+      const bw = a.s * 0.2, bh = bw * Math.max(0.2, 0.3 * P.tilt);
+      const gr = ctx.createLinearGradient(0, a.sy - bh, 0, a.sy + bh * 1.6);
+      gr.addColorStop(0, "#3a2a33"); gr.addColorStop(1, "#0b0608");
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.ellipse(a.sx, a.sy + bh * 0.5, bw, bh, 0, 0, TAU); ctx.fill();
+      ctx.fillRect(a.sx - bw, a.sy - bh * 0.1, bw * 2, bh * 0.6);
+      ctx.beginPath(); ctx.ellipse(a.sx, a.sy - bh * 0.1, bw, bh, 0, 0, TAU); ctx.fillStyle = mix(a.color, "#1a1016", 0.55); ctx.fill();
+      ctx.strokeStyle = rgba(a.color, 0.7); ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+      const c = plane(a), dw = im.naturalWidth * k * 1.08, dh = im.naturalHeight * k * 1.04, ax = dw / 2, ay = dh;
+      c.width = Math.ceil(dw * R); c.height = Math.ceil(dh * R);
+      const g = a.offg; g.setTransform(R, 0, 0, R, 0, 0); g.clearRect(0, 0, dw, dh);
+      g.translate(ax, ay); g.scale(k * (flip ? -1 : 1), k);
+      drawStack(g, a, im, flip, depth01);
+      const ang = -yawNow + a.spin + (a.dash > 0 ? 0.25 * a.dash * (a.kind === "hero" ? -1 : 1) : 0);
+      drawTurned(c, dw, dh, ax, ay, a.sx, a.sy - bh * 0.1 + a.dy, ang, a.alpha);
+    } else {
+      const ofuda = P.cardSkin === "ofuda";
+      const cw = a.s * (ofuda ? 0.56 : 0.72), ch = a.s * (ofuda ? 1.05 : 1.0), top = P.cardPop ? a.s * 0.45 : 0, m = 24;
+      const dw = cw + m * 2, dh = ch + top + m;
+      const c = plane(a);
+      c.width = Math.ceil(dw * R); c.height = Math.ceil(dh * R);
+      const g = a.offg; g.setTransform(R, 0, 0, R, 0, 0); g.clearRect(0, 0, dw, dh);
+      const ang = cardAngle(a), back = Math.cos(ang) < 0;
+      g.translate(m + cw / 2, top + ch);
+      drawCardFace(g, a, im, cw, ch, top, flip, back);
+      drawTurned(c, dw, dh, m + cw / 2, top + ch * 0.5, a.sx, a.sy - ch * 0.5 + a.dy, ang, a.alpha);
+    }
+    drawParts(a, "front");
+    auraFront(a);
+  }
+
+  /* --- the scene and the floor ------------------------------------------- */
+  function drawScene() {
+    ctx.fillStyle = "#07060c"; ctx.fillRect(0, 0, W, H);
+    const im = img(BANDS[P.band].scene);
+    if (im) {
+      const cover = Math.max(W / im.naturalWidth, H / im.naturalHeight) * P.bgZoom;
+      const z = 1 + (camZoom() - 1) * P.parallax;
+      ctx.save();
+      ctx.translate(W / 2 + cam.sx * P.parallax, H / 2 + cam.sy * P.parallax);
+      ctx.rotate(cam.rot * P.parallax);
+      ctx.scale(z, z);
+      const ox = -(cam.x - W / 2) * P.parallax - Math.sin(yawNow) * 260 * P.parallax, oy = -(cam.y - H / 2) * P.parallax;
+      ctx.drawImage(im, -im.naturalWidth * cover / 2 + ox, -im.naturalHeight * cover / 2 + oy, im.naturalWidth * cover, im.naturalHeight * cover);
+      ctx.restore();
+    }
+    if (P.bgDim > 0) {
+      const gr = ctx.createRadialGradient(W / 2, H * 0.45, 60, W / 2, H * 0.45, H * 0.75);
+      gr.addColorStop(0, rgba("#05040a", P.bgDim * 0.55)); gr.addColorStop(1, rgba(mix(BANDS[P.band].tint, "#05040a", 0.6), Math.min(1, P.bgDim * 1.4)));
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    }
+  }
+  function floorPath(r, rz, n) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) { const t = i / n * TAU, p = proj(Math.cos(t) * r, P.pivotZ + Math.sin(t) * rz); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }
+  }
+  function drawFloor() {
+    if (P.floor === "grid") {
+      ctx.save(); ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 1.5;
+      for (let x = -4; x <= 4; x++) { ctx.beginPath(); for (let z = -4; z <= 5; z += 0.5) { const p = proj(x, z); z === -4 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); } ctx.stroke(); }
+      for (let z = -4; z <= 5; z++) { ctx.beginPath(); for (let x = -4; x <= 4; x += 0.5) { const p = proj(x, z); x === -4 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); } ctx.stroke(); }
+      const o = proj(0, P.pivotZ); ctx.fillStyle = "#e2364b"; ctx.beginPath(); ctx.arc(o.x, o.y, 5, 0, TAU); ctx.fill();
+      ctx.restore();
+    } else if (P.floor === "mist") {
+      ctx.save();
+      for (let i = 0; i < 4; i++) {
+        const p = proj(Math.sin(T * 0.12 + i * 1.7) * 1.2, P.pivotZ + Math.cos(T * 0.09 + i) * 0.6 - 0.3);
+        const rx = (2.6 + i * 0.4) * P.unit * p.s, ry = rx * Math.max(0.12, 0.3 * P.tilt);
+        ctx.save(); ctx.translate(p.x, p.y); ctx.scale(1, ry / rx);
+        const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+        gr.addColorStop(0, "rgba(200,190,230,.10)"); gr.addColorStop(1, "rgba(200,190,230,0)");
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, rx, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    } else if (P.floor === "rope") {
+      const r = 3.0, rz = 2.4;
+      ctx.save();
+      ctx.lineCap = "round";
+      floorPath(r, rz, 64); ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 16; ctx.stroke();
+      floorPath(r, rz, 64); ctx.strokeStyle = "#c9b48a"; ctx.lineWidth = 9; ctx.stroke();
+      ctx.strokeStyle = "rgba(90,70,40,.8)"; ctx.lineWidth = 2;
+      for (let i = 0; i < 90; i++) {
+        const t = i / 90 * TAU, p = proj(Math.cos(t) * r, P.pivotZ + Math.sin(t) * rz), w = 5 * p.s;
+        ctx.beginPath(); ctx.moveTo(p.x - w, p.y - w * 0.8); ctx.lineTo(p.x + w, p.y + w * 0.8); ctx.stroke();
+      }
+      for (let i = 0; i < 8; i++) {                        // the shide: paper zigzags hanging off the rope
+        const t = i / 8 * TAU + 0.2, p = proj(Math.cos(t) * r, P.pivotZ + Math.sin(t) * rz), s = 14 * p.s;
+        ctx.fillStyle = "#f4efe2"; ctx.beginPath();
+        ctx.moveTo(p.x - s * 0.3, p.y); ctx.lineTo(p.x + s * 0.3, p.y); ctx.lineTo(p.x + s * 0.5, p.y + s); ctx.lineTo(p.x - s * 0.1, p.y + s);
+        ctx.lineTo(p.x + s * 0.2, p.y + s * 2); ctx.lineTo(p.x - s * 0.4, p.y + s * 2); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  /* --- spells and numbers (camera space) --------------------------------- */
+  function drawSpells() {
+    fxs.forEach(e => {
+      const im = img(e.key); if (!im || !e.a.sx) return;
+      const q = e.t / e.d, s = e.a.s * e.s * (0.7 + 0.4 * Math.min(1, q * 2.5)), k = s / Math.max(im.naturalWidth, im.naturalHeight);
+      ctx.save();
+      if (P.spellBlend === "lighter") ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = q < 0.6 ? 1 : 1 - (q - 0.6) / 0.4;
+      ctx.drawImage(im, e.a.sx - im.naturalWidth * k / 2, e.a.sy + e.a.dy - e.a.s * 0.45 - im.naturalHeight * k / 2, im.naturalWidth * k, im.naturalHeight * k);
+      ctx.restore();
+    });
+  }
+  function drawNumbers() {
+    nums.forEach(n => {
+      const a = n.a, q = n.t / n.life;
+      const base = toScreen(a.sx + n.ox, a.sy + a.dy - a.s * 0.82);
+      let x = base.x, y = base.y;
+      const size = n.weak ? 64 : 48;
+      ctx.save();
+      if (P.numbers === "float") {
+        y -= q * 70;
+        ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+        text(n.txt, x, y, size, n.col, "center", 8);
+      } else if (P.numbers === "stamp") {
+        const pop = q < 0.12 ? 2 - outCubic(q / 0.12) : 1;
+        ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+        ctx.translate(x, y); ctx.rotate(-0.14); ctx.scale(pop, pop);
+        const s = size * 1.3;
+        ctx.fillStyle = n.heal ? "#2f7a4c" : "#b3122e"; rr(ctx, -s * 0.8, -s * 0.55, s * 1.6, s * 1.1, 8); ctx.fill();
+        ctx.strokeStyle = "#fff4f0"; ctx.lineWidth = 3; rr(ctx, -s * 0.8 + 5, -s * 0.55 + 5, s * 1.6 - 10, s * 1.1 - 10, 5); ctx.stroke();
+        text(n.txt, 0, 2, size, "#fff4f0");
+      } else if (P.numbers === "brush") {
+        const sl = outCubic(Math.min(1, q / 0.18));
+        ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+        ctx.translate(x, y);
+        ctx.fillStyle = n.heal ? "rgba(20,60,36,.92)" : "rgba(10,6,10,.92)";
+        ctx.beginPath();
+        const L = size * 2.4 * sl, hh = size * 0.55;
+        ctx.moveTo(-L / 2, -hh * 0.6);
+        for (let i = 0; i <= 10; i++) ctx.lineTo(-L / 2 + L * i / 10, -hh + Math.sin(i * 2.1 + n.ox) * 5);
+        ctx.lineTo(L / 2 + 14, -hh * 0.2); ctx.lineTo(L / 2, hh * 0.4);
+        for (let i = 10; i >= 0; i--) ctx.lineTo(-L / 2 + L * i / 10, hh + Math.sin(i * 1.7 + n.ox) * 6);
+        ctx.closePath(); ctx.fill();
+        text(n.txt, 0, 3, size, n.heal ? "#7ee0a1" : n.weak ? "#ffd166" : "#fff4f0");
+      } else {
+        const pop = q < 0.1 ? outBack(q / 0.1) : 1;
+        ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+        ctx.translate(x, y - q * 20); ctx.scale(pop, pop); ctx.rotate(0.08);
+        const s = size * 1.05;
+        ctx.beginPath();
+        for (let i = 0; i < 24; i++) { const t = i / 24 * TAU, r = i % 2 ? s * 0.62 : s * 1.05; ctx.lineTo(Math.cos(t) * r * 1.3, Math.sin(t) * r); }
+        ctx.closePath();
+        ctx.fillStyle = n.heal ? "#7ee0a1" : n.weak ? "#ffd166" : "#ff7a3d"; ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = "#1a1012"; ctx.stroke();
+        text(n.txt, 0, 2, size, "#1a1012");
+      }
+      ctx.restore();
+    });
+  }
+  function drawCallouts() {
+    calls.forEach(c => {
+      const q = c.t / c.life, pop = q < 0.12 ? outBack(q / 0.12) : 1;
+      ctx.save();
+      ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+      ctx.translate(W / 2, 470); ctx.scale(pop, pop); ctx.rotate(-0.05);
+      text(upper(c.word), 0, 0, 92, c.col, "center", 14);
+      if (c.sub) text(upper(c.sub), 0, 70, 36, "#fff4f0", "center", 8);
+      ctx.restore();
+    });
+  }
+
+  /* --- the HUD (screen space) -------------------------------------------- */
+  function bar(x, y, w, h, frac, col, lag) {
+    ctx.fillStyle = "rgba(255,255,255,.12)"; rr(ctx, x, y, w, h, h / 2); ctx.fill();
+    if (lag != null && lag > frac) { ctx.fillStyle = "rgba(255,244,240,.75)"; rr(ctx, x, y, Math.max(h, w * lag), h, h / 2); ctx.fill(); }
+    if (frac > 0) { ctx.fillStyle = col; rr(ctx, x, y, Math.max(h, w * frac), h, h / 2); ctx.fill(); }
+  }
+  function plate(x, y, w, h, edge) {
+    ctx.fillStyle = "rgba(6,4,12,.66)"; rr(ctx, x, y, w, h, 14); ctx.fill();
+    if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  function hpCol(a) { return a.hp / a.mhp < 0.3 ? "#e2364b" : "#7ee0a1"; }
+  const hits = [];          // the action bar's buttons, for the pointer
+
+  function hudTop() { return P.gameHud ? 160 : 34; }
+  function bottomRowY(h) { return (P.actionBar !== "none" ? 982 : 1172) - h; }
+
+  /* The yokai's next turn on the timeline: who it hits and for how much. */
+  function nextFoe() { return TL.find(e => e.it) || null; }
+  function incoming() {
+    const m = new Map(), e = nextFoe();
+    if (e) e.hits.forEach(x => m.set(x.h, x));
+    return m;
+  }
+
+  function drawHeroHud() {
+    const st = P.heroHud, n = party.length;
+    if (st === "none") return;
+    if (st === "plates" || st === "feet") {
+      party.forEach(h => {
+        if (h.sx == null) return;
+        const on = h === activeHero() && turn === 0;
+        if (st === "plates") {
+          const sp = toScreen(h.sx, h.sy), s = h.s * camZoom();
+          let bx = sp.x + s * 0.5, ty = sp.y - s * 0.7;
+          if (bx + 160 > W - 26) bx = sp.x - s * 0.5 - 148;
+          ctx.save(); ctx.globalAlpha = h.enter;
+          plate(bx - 12, ty - 24, 172, 126, on ? rgba(h.color, 0.8) : null);
+          text(upper(h.b.name), bx, ty, 24, h.dead ? "#6c6880" : h.color, "left");
+          bar(bx, ty + 20, 148, 14, h.hp / h.mhp, hpCol(h), h.lag / h.mhp);
+          text(h.hp + " / " + h.mhp + " HP", bx, ty + 50, 20, "rgba(240,236,250,.9)", "left");
+          bar(bx, ty + 66, 148, 10, h.sp / h.msp, "#8fdcff");
+          text(Math.round(h.sp) + " SP", bx, ty + 90, 20, "rgba(240,236,250,.9)", "left");
+          ctx.restore();
+        } else {
+          const sp = toScreen(h.sx, h.sy + 14);
+          const w = 120;
+          ctx.save(); ctx.globalAlpha = h.enter;
+          plate(sp.x - w / 2 - 10, sp.y - 4, w + 20, 62, on ? rgba(h.color, 0.8) : null);
+          text(upper(h.b.name), sp.x, sp.y + 14, 22, h.dead ? "#6c6880" : h.color);
+          bar(sp.x - w / 2, sp.y + 30, w, 10, h.hp / h.mhp, hpCol(h), h.lag / h.mhp);
+          bar(sp.x - w / 2, sp.y + 44, w, 6, h.sp / h.msp, "#8fdcff");
+          ctx.restore();
+        }
+      });
+      return;
+    }
+    const gap = 12, tw = Math.min(158, (W - 52 - gap * (n - 1)) / n), x0 = W / 2 - (tw * n + gap * (n - 1)) / 2;
+    party.forEach((h, i) => {
+      const on = h === activeHero() && turn === 0;
+      const x = x0 + i * (tw + gap);
+      if (st === "ofuda") {
+        const th = 132, lift = on ? 14 : 0, y = bottomRowY(th) - lift;
+        ctx.save();
+        ctx.translate(x + tw / 2, y + th / 2); ctx.rotate((i % 2 ? 1 : -1) * 0.02); ctx.translate(-tw / 2, -th / 2);
+        if (on) { ctx.shadowColor = h.color; ctx.shadowBlur = 22; }
+        ctx.fillStyle = h.dead ? "#8a8274" : "#efe6cf"; ctx.fillRect(0, 0, tw, th);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = on ? h.color : "#b3122e"; ctx.fillRect(0, 0, tw, 8);
+        ctx.strokeStyle = "#b3122e"; ctx.lineWidth = 2; ctx.strokeRect(6, 14, tw - 12, th - 20);
+        text(upper(h.b.name), tw / 2, 38, 30, "#1a1012");
+        // the hp, a stroke of red ink with a dry end
+        const bw = tw - 28, f = h.hp / h.mhp;
+        ctx.fillStyle = "rgba(26,16,18,.14)"; ctx.fillRect(14, 62, bw, 14);
+        if (f > 0) {
+          ctx.fillStyle = "#b3122e"; ctx.beginPath(); ctx.moveTo(14, 62);
+          const e = 14 + bw * f; ctx.lineTo(e, 62); ctx.lineTo(e + 6, 66); ctx.lineTo(e - 2, 70); ctx.lineTo(e + 4, 76); ctx.lineTo(14, 76); ctx.closePath(); ctx.fill();
+        }
+        text(h.hp + " / " + h.mhp, tw / 2, 94, 22, "#1a1012");
+        const dots = 6, df = Math.round(h.sp / h.msp * dots);
+        for (let d = 0; d < dots; d++) { ctx.beginPath(); ctx.arc(tw / 2 - (dots - 1) * 9 + d * 18, 116, 6, 0, TAU); ctx.fillStyle = d < df ? "#1a1012" : "rgba(26,16,18,.18)"; ctx.fill(); }
+        if (h.dead) { ctx.strokeStyle = "rgba(26,16,18,.6)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, th - 10); ctx.lineTo(tw - 6, 12); ctx.stroke(); }
+        ctx.restore();
+      } else if (st === "slants") {
+        const th = 112, y = bottomRowY(th) - (on ? 12 : 0);
+        ctx.save();
+        ctx.translate(x, y); ctx.transform(1, 0, -0.18, 1, th * 0.18, 0);
+        ctx.fillStyle = on ? mix(h.color, "#0b0610", 0.55) : "rgba(10,6,16,.86)"; ctx.fillRect(0, 0, tw, th);
+        ctx.fillStyle = h.dead ? "#4a4458" : h.color; ctx.fillRect(0, 0, 7, th);
+        if (on) { ctx.strokeStyle = h.color; ctx.lineWidth = 3; ctx.strokeRect(0, 0, tw, th); }
+        ctx.restore();
+        // the portrait and the text, upright, inside the slant
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(x + th * 0.18 + 8, y); ctx.lineTo(x + th * 0.18 + 70, y); ctx.lineTo(x + 70, y + th); ctx.lineTo(x + 8, y + th); ctx.closePath(); ctx.clip();
+        portrait(h, x + 40 + th * 0.09, y + th / 2, 56, true);
+        ctx.restore();
+        const tx = x + 78 + th * 0.09;
+        text(upper(h.b.name), tx, y + 26, 26, h.dead ? "#6c6880" : on ? "#fff4f0" : h.color, "left");
+        bar(tx - 4, y + 48, tw - 88, 12, h.hp / h.mhp, hpCol(h), h.lag / h.mhp);
+        text("" + h.hp, tx, y + 76, 22, "rgba(240,236,250,.9)", "left");
+        bar(tx - 8, y + 94, tw - 92, 7, h.sp / h.msp, "#8fdcff");
+        // what the yokai's NEXT turn will do to this hero, red on a plate when it kills
+        const inc = incoming().get(h);
+        if (inc && !h.dead) {
+          const lethal = inc.dmg >= h.hp, label = (lethal ? "KO " : "-") + (lethal ? "" : inc.dmg) + (inc.maybe ? "?" : "");
+          ctx.font = face(22); const lw = ctx.measureText(label).width + 16, lx = x + tw - lw - 2, ly = y + 62;
+          ctx.fillStyle = lethal ? "#e2364b" : "rgba(226,54,75,.25)"; rr(ctx, lx, ly, lw, 28, 8); ctx.fill();
+          text(label, lx + lw / 2, ly + 15, 22, lethal ? "#fff4f0" : "#ff8a9a");
+        }
+        if (h.guarding && !h.dead) {
+          ctx.fillStyle = "rgba(10,30,48,.85)"; ctx.fillRect(x + 12, y + th - 30, 66, 26);
+          text(upper("Guard"), x + 45, y + th - 16, 20, "#8fdcff");
+        }
+      } else if (st === "medallions") {
+        const r = 46, cx = x + tw / 2, cy = bottomRowY(150) + 62 - (on ? 10 : 0);
+        ctx.save();
+        if (on) {
+          const pul = 0.5 + 0.5 * Math.sin(RT * 5);
+          ctx.strokeStyle = rgba(h.color, 0.35 + 0.35 * pul); ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, r + 22, 0, TAU); ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(6,4,12,.8)"; ctx.beginPath(); ctx.arc(cx, cy, r + 16, 0, TAU); ctx.fill();
+        portrait(h, cx, cy, r, false);
+        if (h.dead) { ctx.fillStyle = "rgba(6,4,12,.6)"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill(); }
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(cx, cy, r + 7, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = hpCol(h); ctx.beginPath(); ctx.arc(cx, cy, r + 7, -Math.PI / 2, -Math.PI / 2 + TAU * h.hp / h.mhp); if (h.hp > 0) ctx.stroke();
+        ctx.strokeStyle = "#8fdcff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, r + 14, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * h.sp / h.msp); if (h.sp > 0) ctx.stroke();
+        text(upper(h.b.name), cx, cy + r + 34, 24, h.dead ? "#6c6880" : h.color, "center", 6);
+        ctx.restore();
+      }
+    });
+  }
+
+  function chips(list, x, y, align, label, labelCol) {
+    ctx.font = face(20);
+    let cx = x;
+    const items = [{ t: upper(label), c: labelCol, plain: true }].concat(list.map(el => ({ t: upper(ELEMENTS[el].name), c: ELEMENTS[el].color })));
+    const widths = items.map(it => ctx.measureText(it.t).width + (it.plain ? 6 : 22));
+    const total = widths.reduce((s, w) => s + w + 6, -6);
+    if (align === "center") cx = x - total / 2; else if (align === "right") cx = x - total;
+    items.forEach((it, i) => {
+      if (!it.plain) { ctx.fillStyle = rgba(it.c, 0.18); rr(ctx, cx, y - 15, widths[i], 30, 15); ctx.fill(); ctx.strokeStyle = rgba(it.c, 0.7); ctx.lineWidth = 1.5; ctx.stroke(); }
+      text(it.t, cx + widths[i] / 2, y + 1, 20, it.c);
+      cx += widths[i] + 6;
+    });
+  }
+  function drawFoeHud(topY) {
+    const f = foe; if (!f || P.foeHud === "none" || f.sx == null) return;
+    const a = (f.dead ? f.fade : 1) * f.enter;
+    if (a <= 0.01) return;
+    const name = upper(f.b.name);
+    ctx.save(); ctx.globalAlpha = a * (1 - cam.lb * 0.7);
+    const st = P.foeHud;
+    if (st === "plate" || st === "feet") {
+      const sp = toScreen(f.sx, f.sy), s = f.s * camZoom();
+      if (st === "plate") {
+        ctx.font = face(30); const nw = ctx.measureText(name).width;
+        plate(sp.x - nw / 2 - 22, topY - 4, nw + 44, 52, "rgba(226,54,75,.6)");
+        text(name, sp.x, topY + 23, 30, "#f4eef8");
+      }
+      const hbW = Math.min(250, s * 0.78), hbY = sp.y + 18 + (st === "feet" ? 30 : 0);
+      plate(sp.x - hbW / 2 - 14, hbY - 14 - (st === "feet" ? 34 : 0), hbW + 28, (st === "feet" ? 34 : 0) + 98 + (f.b.resist.length ? 34 : 0), null);
+      if (st === "feet") text(name, sp.x, hbY - 20, 26, "#f4eef8");
+      bar(sp.x - hbW / 2, hbY, hbW, 16, f.hp / f.mhp, "#e2364b", f.lag / f.mhp);
+      text(f.hp + " / " + f.mhp, sp.x, hbY + 34, 20, "rgba(240,236,250,.9)");
+      chips(f.b.weak, sp.x, hbY + 64, "center", "Weak", "#ff8a9a");
+      if (f.b.resist.length) chips(f.b.resist, sp.x, hbY + 96, "center", "Resists", "#9aa0b5");
+    } else if (st === "boss") {
+      const x = 26, w = W - 52;
+      const gr = ctx.createLinearGradient(0, topY - 10, 0, topY + 110);
+      gr.addColorStop(0, "rgba(6,4,12,.85)"); gr.addColorStop(1, "rgba(6,4,12,0)");
+      ctx.fillStyle = gr; ctx.fillRect(0, topY - 10, W, 120);
+      text(name, x, topY + 22, 46, "#f4eef8", "left", 6);
+      ctx.font = face(46); const nw = ctx.measureText(name).width;
+      text(upper(BANDS[P.band].name), x + nw + 14, topY + 28, 22, "rgba(226,54,75,.9)", "left");
+      const by = topY + 52;
+      ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(x - 3, by - 3, w + 6, 26);
+      bar(x, by, w, 20, f.hp / f.mhp, "#e2364b", f.lag / f.mhp);
+      ctx.fillStyle = "rgba(6,4,12,.8)";
+      for (let i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4 - 1.5, by, 3, 20);
+      chips(f.b.weak, x, by + 46, "left", "Weak", "#ff8a9a");
+      if (f.b.resist.length) chips(f.b.resist, x + w, by + 46, "right", "Resists", "#9aa0b5");
+    } else if (st === "scroll") {
+      const w = 470, h = 132, x = W / 2 - w / 2, y = topY;
+      const paper = ctx.createLinearGradient(0, y, 0, y + h);
+      paper.addColorStop(0, "#efe4c8"); paper.addColorStop(1, "#d9caa4");
+      ctx.fillStyle = paper; ctx.fillRect(x, y + 6, w, h - 12);
+      ctx.strokeStyle = "rgba(179,18,46,.7)"; ctx.lineWidth = 2; ctx.strokeRect(x + 10, y + 14, w - 20, h - 28);
+      [x - 14, x + w - 6].forEach(rx => {
+        const wood = ctx.createLinearGradient(rx, 0, rx + 20, 0);
+        wood.addColorStop(0, "#2a1408"); wood.addColorStop(0.5, "#6b3a1c"); wood.addColorStop(1, "#2a1408");
+        ctx.fillStyle = wood; rr(ctx, rx, y - 6, 20, h + 12, 8); ctx.fill();
+        ctx.fillStyle = "#e9c46a"; ctx.fillRect(rx + 2, y - 10, 16, 8); ctx.fillRect(rx + 2, y + h + 2, 16, 8);
+      });
+      text(name, W / 2, y + 44, 44, "#1a1012");
+      const bw = 360, bx = W / 2 - bw / 2, f2 = f.hp / f.mhp;
+      ctx.fillStyle = "rgba(26,16,18,.14)"; ctx.fillRect(bx, y + 72, bw, 14);
+      if (f2 > 0) { ctx.fillStyle = "#b3122e"; ctx.beginPath(); ctx.moveTo(bx, y + 72); const e = bx + bw * f2; ctx.lineTo(e, y + 72); ctx.lineTo(e + 8, y + 77); ctx.lineTo(e - 2, y + 81); ctx.lineTo(e + 5, y + 86); ctx.lineTo(bx, y + 86); ctx.closePath(); ctx.fill(); }
+      text(upper("Weak") + " · " + f.b.weak.map(e => upper(ELEMENTS[e].name)).join(", ") + (f.b.resist.length ? "   " + upper("Resists") + " · " + f.b.resist.map(e => upper(ELEMENTS[e].name)).join(", ") : ""), W / 2, y + 108, 20, "#5a1420");
+    } else if (st === "seal") {
+      const sp = toScreen(f.sx, f.sy + f.dy - f.s * 0.95), s = f.s * camZoom();
+      let x = sp.x - s * 0.42, y = Math.max(topY + 60, sp.y);
+      x = clamp(x, 90, W - 90);
+      const r = 46;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(x, y, r + 12, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(x, y, r + 12, -Math.PI / 2, -Math.PI / 2 + TAU * f.hp / f.mhp); if (f.hp > 0) ctx.stroke();
+      ctx.fillStyle = "#b3122e"; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#fff4f0"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, r - 6, 0, TAU); ctx.stroke();
+      ctx.fillStyle = "#fff4f0"; ctx.font = "900 52px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("怨", x, y + 3);
+      text(name, x, y + r + 34, 28, "#f4eef8", "center", 7);
+      chips(f.b.weak, x, y + r + 68, "center", "Weak", "#ff8a9a");
+    }
+    ctx.restore();
+  }
+
+  /* THE TIMELINE ROW: the next SHOW turns, the yokai's carrying its intent on
+     a chip under the portrait. A turn keeps its place on the row by its key
+     (unit and turn number), so a preview, a push or a one more SLIDES it to
+     its new slot instead of redrawing the row. */
+  const slotX = new Map();
+  let frameDt = 0;
+  function drawTurnOrder(y) {
+    if (!foe) return;
+    const seen = new Set(), me = turn === 0 ? activeHero() : null;
+    ctx.save(); ctx.globalAlpha = 1 - cam.lb * 0.7;
+    ctx.fillStyle = "rgba(6,4,12,.55)"; rr(ctx, 16, y + 2, W - 32, 112, 18); ctx.fill();
+    TL.forEach((e, i) => {
+      const r = i ? 26 : 34, tx = 62 + (i ? 96 + (i - 1) * 86 : 0), yy = y + 44;
+      let x = slotX.has(e.key) ? slotX.get(e.key) : tx + 90;
+      x += (tx - x) * Math.min(1, frameDt * 12);
+      slotX.set(e.key, x); seen.add(e.key);
+      const a = e.u;
+      if (hoverAct && me && a === me && !e.now) {
+        const pul = 0.5 + 0.5 * Math.sin(RT * 8);
+        ctx.strokeStyle = rgba("#ffd166", 0.5 + 0.5 * pul); ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(x, yy, r + 10, 0, TAU); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(6,4,12,.85)"; ctx.beginPath(); ctx.arc(x, yy, r + 5, 0, TAU); ctx.fill();
+      portrait(a, x, yy, r, false);
+      ctx.strokeStyle = a.kind === "foe" ? "#e2364b" : a.color; ctx.lineWidth = i ? 2.5 : 4;
+      ctx.beginPath(); ctx.arc(x, yy, r + 2, 0, TAU); ctx.stroke();
+      if (e.it) drawIntentChip(e, x, yy + r + 20);
+    });
+    for (const k of Array.from(slotX.keys())) if (!seen.has(k)) slotX.delete(k);
+    ctx.restore();
+  }
+  function topDmg(e) { return e.hits.reduce((m, x) => Math.max(m, x.dmg), 0); }
+  function drawIntentChip(e, x, y) {
+    const it = e.it, dmg = topDmg(e), one = !it.all && !it.alt && e.hits.length === 1 ? e.hits[0].h : null;
+    let label;
+    if (it.alt) label = "?";
+    else if (!it.pow) label = it.tag || "-";
+    else label = (it.tag ? it.tag + " " : "") + (it.all ? "All " : "") + dmg;
+    ctx.font = face(22);
+    const tw = ctx.measureText(label).width, w = tw + 16 + (one ? 18 : 0), x0 = x - w / 2;
+    ctx.fillStyle = it.special ? "#b3122e" : "rgba(20,8,14,.92)"; rr(ctx, x0, y - 14, w, 28, 9); ctx.fill();
+    ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+    if (one) { ctx.fillStyle = one.color; ctx.beginPath(); ctx.arc(x0 + 15, y, 7, 0, TAU); ctx.fill(); }
+    text(label, x0 + (one ? 18 : 0) + 8 + tw / 2, y + 1, 22, "#fff4f0");
+  }
+
+  /* THE INTENT, in words: the yokai's next turn, when it comes, what it does
+     and to whom — and the yokai's rule under it. */
+  function drawIntent(y) {
+    const e = nextFoe(); if (!e || over || !foe) return;
+    const it = e.it, at = TL.indexOf(e);
+    ctx.save(); ctx.globalAlpha = 1 - cam.lb * 0.85;
+    const when = upper(at === 0 ? "Now" : at === 1 ? "Next turn" : "In " + at + " turns");
+    text(when, 44, y + 26, 20, "rgba(240,236,250,.75)", "left", 6);
+    ctx.font = face(20); const ww = ctx.measureText(when).width;
+    let what = it.label;
+    if (it.alt) {
+      const red = it.alt.red.targets[0];
+      what += "  Red " + (red && !red.dead ? red.b.name : "one") + " · blue all";
+    } else if (it.pow) {
+      what += "  > " + (it.all ? "all" : e.hits.map(x => x.h.b.name).join(", ")) + "  " + topDmg(e);
+    }
+    text(upper(what), 44 + ww + 14, y + 26, 28, it.special ? "#ff8a9a" : "#fff4f0", "left", 7);
+    text(RULES[foe.id].text, 44, y + 62, 22, "#ffd166", "left", 6);
+    ctx.restore();
+  }
+
+  /* On the stage, a red ring under every hero the next turn will hit. */
+  function drawReticles() {
+    const pul = 0.5 + 0.5 * Math.sin(RT * 6);
+    incoming().forEach((x, h) => {
+      if (h.dead || h.sx == null) return;
+      ctx.strokeStyle = rgba("#e2364b", 0.45 + 0.45 * pul); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.ellipse(h.sx, h.sy, h.s * 0.34, h.s * 0.34 * 0.3, 0, 0, TAU); ctx.stroke();
+    });
+  }
+
+  /* THE ACTION BAR: the game's four (attack, the hero's two skills, guard),
+     each with its cost, its element and its weight on the timeline, and over
+     them, gold, the button the yokai's rule hands the heroes when it does. */
+  function weightWord(w) { return w < 0.9 ? "Quick" : w > 1.1 ? "Slow" : ""; }
+  function subOf(s) {
+    const what = s.kind === "hit" ? ELEMENTS[s.el].name : s.kind === "guard" ? "+5 SP" : s.kind === "heal" ? "Heal all" : "Ward";
+    return [s.sp ? s.sp + " SP" : "", what, weightWord(s.w)].filter(Boolean).join(" · ");
+  }
+  function actionsOf(h) { return ["attack", h.b.skills[0], h.b.skills[1], "guard"]; }
+  function drawActionBar() {
+    hits.length = 0;
+    const h = activeHero(), live = canAct(), top = 992;
+    ctx.save();
+    ctx.globalAlpha = (live ? 1 : 0.45) * (1 - cam.lb);
+    const ra = live ? ruleAction() : null;
+    if (ra) {
+      const x = 26, w = W - 52, hh = 46;
+      const gr = ctx.createLinearGradient(0, top, 0, top + hh); gr.addColorStop(0, "#f2cf73"); gr.addColorStop(1, "#a8741c");
+      ctx.fillStyle = gr; rr(ctx, x, top, w, hh, 16); ctx.fill();
+      if (hoverAct === "rule") { ctx.strokeStyle = "#fff4f0"; ctx.lineWidth = 3; ctx.stroke(); }
+      text(upper(ra.label) + "  ·  " + upper(ra.sub), W / 2, top + hh / 2 + 2, 26, "#1a1012");
+      hits.push({ x, y: top, w, h: hh, act: "rule" });
+    } else if (h && turn === 0) text(upper(h.b.name), W / 2, top + 24, 22, h.color, "center", 6);
+    if (h) {
+      const bw = (W - 52 - 14) / 2, bh = 64;
+      actionsOf(h).forEach((id, i) => {
+        const s = SKILLS[id], x = 26 + (i % 2) * (bw + 14), y = top + 54 + Math.floor(i / 2) * (bh + 10);
+        const can = s.sp <= h.sp;
+        ctx.fillStyle = can ? "#4a0c18" : "#17141e"; rr(ctx, x, y + 5, bw, bh, 22); ctx.fill();
+        const gr = ctx.createLinearGradient(0, y, 0, y + bh);
+        gr.addColorStop(0, can ? "#e2364b" : "#3a3546"); gr.addColorStop(1, can ? "#7a1426" : "#24202e");
+        ctx.fillStyle = gr; rr(ctx, x, y, bw, bh, 22); ctx.fill();
+        if (hoverAct === id) { ctx.strokeStyle = "#fff4f0"; ctx.lineWidth = 3; ctx.stroke(); }
+        text(upper(s.name), x + bw / 2, y + 24, 28, can ? "#fff4f0" : "#8a8498");
+        text(upper(subOf(s)), x + bw / 2, y + 49, 20, can ? "rgba(255,244,240,.8)" : "#8a8498");
+        hits.push({ x, y, w: bw, h: bh, act: id });
+      });
+    }
+    ctx.restore();
+  }
+
+  /* The game's top band, used here as the prototype's tally. */
+  function drawGameHud() {
+    const gr = ctx.createLinearGradient(0, 0, 0, 150);
+    gr.addColorStop(0, "rgba(4,3,8,.7)"); gr.addColorStop(1, "rgba(4,3,8,0)");
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, 150);
+    [["Exorcised", tally.exorcised, 100, "#e9c46a"], ["Turn", tally.turns, W / 2, "#fff4f0"],
+     ["Let go", tally.letGo, W - 210, "#c9c2b8"], ["Wiped", tally.wiped, W - 90, "#ff8a9a"]].forEach(c => {
+      text(upper(c[0]), c[2], 44, 20, "rgba(240,236,250,.6)");
+      text("" + c[1], c[2], 84, 44, c[3]);
+    });
+    text("1-4 act · 5 rule · R restart · N next yokai · hover a button to preview", W / 2, 1228, 20, "rgba(240,236,250,.45)");
+  }
+  function drawGuides() {
+    if (!P.guides) return;
+    ctx.save();
+    ctx.setLineDash([8, 6]); ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(126,166,255,.8)"; ctx.strokeRect(26, 150, W - 52, 1254 - 150);
+    ctx.strokeStyle = "rgba(233,196,106,.8)"; ctx.strokeRect(26, 1004, W - 52, 200);
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(226,54,75,.22)";
+    ctx.fillRect(26, 1184, 230, 70); ctx.fillRect(W - 26 - 230, 1184, 230, 70);
+    ctx.fillStyle = "rgba(126,166,255,.12)"; ctx.fillRect(0, 0, W, 150);
+    ctx.font = "600 22px -apple-system,sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(126,166,255,.95)"; ctx.fillText("HUD band (150)", 34, 120); ctx.fillText("Layout", 34, 158);
+    ctx.fillStyle = "rgba(233,196,106,.95)"; ctx.fillText("Action bar", 34, 1010);
+    ctx.fillStyle = "rgba(255,140,150,.95)"; ctx.fillText("Stars pill", 34, 1192); ctx.textAlign = "right"; ctx.fillText("Web corner", W - 34, 1192);
+    ctx.restore();
+  }
+
+  /* --- one frame ---------------------------------------------------------- */
+  function render() {
+    ctx.setTransform(R, 0, 0, R, 0, 0);
+    drawScene();
+    ctx.save();
+    applyCamera(ctx);
+    drawFloor();
+    drawReticles();
+    const list = all().filter(a => a.sx != null).sort((a, b) => b.depth - a.depth);
+    list.forEach(drawActor);
+    drawSpells();
+    ctx.restore();
+
+    if (flashA > 0.01) { ctx.fillStyle = rgba(flashC, flashA); ctx.globalCompositeOperation = "lighter"; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = "source-over"; }
+    if (P.vignette > 0) {
+      const gr = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+      gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0," + P.vignette + ")");
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    }
+    if (cam.lb > 0.01) { const b = 130 * cam.lb; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, b); ctx.fillRect(0, H - b, W, b); }
+
+    drawNumbers();
+    let y = hudTop();
+    ctx.save(); ctx.globalAlpha = 1 - cam.lb * 0.85;
+    drawGameHud();
+    ctx.restore();
+    drawTurnOrder(y); y += 122;
+    drawFoeHud(y);
+    drawIntent(y + 128);
+    ctx.save(); ctx.globalAlpha = 1 - cam.lb * 0.85;
+    drawHeroHud();
+    ctx.restore();
+    drawActionBar();
+    drawCallouts();
+    drawGuides();
+  }
+
+  /* --- the clock ---------------------------------------------------------- */
+  function update(rdt) {
+    RT += rdt; frameDt = rdt;
+    let dt = rdt;
+    if (hitstop > 0) { hitstop -= rdt; dt = 0; }
+    if (slow > 0) { slow -= rdt; dt *= 0.3; }
+    T += dt; enterT += dt;
+    yawNow = (P.yaw + Math.sin(RT * P.swaySpeed * TAU * 0.5) * P.sway) * Math.PI / 180;
+
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i]; tw.t += dt;
+      if (tw.t < 0) continue;
+      if (tw.from === null) tw.from = tw.o[tw.k];
+      const q = Math.min(1, tw.t / tw.d);
+      tw.o[tw.k] = tw.from + (tw.to - tw.from) * tw.ease(q);
+      if (q >= 1) tweens.splice(i, 1);
+    }
+    for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; j.t -= dt; if (j.t <= 0) { jobs.splice(i, 1); j.fn(); } }
+    all().forEach(a => {
+      a.hx += (a.tx - a.hx) * Math.min(1, dt * 5); a.hz += (a.tz - a.hz) * Math.min(1, dt * 5);
+      a.hurt = Math.max(0, a.hurt - dt); a.lunge = Math.max(0, a.lunge - dt); a.cast = Math.max(0, a.cast - dt);
+      a.guard = Math.max(0, a.guard - dt); a.flash = Math.max(0, a.flash - dt * 5);
+      a.lag += (a.hp - a.lag) * Math.min(1, dt * (a.lag > a.hp ? 1.6 : 8));
+      place(a);
+      spawnAura(a, dt);
+      if (P.body === "card" && a.sx != null && pointer) {
+        const ins = Math.abs(pointer.x - a.sx) < a.s * 0.4 && pointer.y < a.sy && pointer.y > a.sy - a.s;
+        const want = ins ? clamp((pointer.x - a.sx) / (a.s * 0.4), -1, 1) * 0.5 : 0;
+        a.hover += (want - a.hover) * Math.min(1, rdt * 8);
+      } else a.hover *= 0.9;
+    });
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.t += dt;
+      if (p.t >= p.life) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (let i = fxs.length - 1; i >= 0; i--) { fxs[i].t += dt; if (fxs[i].t >= fxs[i].d) fxs.splice(i, 1); }
+    for (let i = nums.length - 1; i >= 0; i--) { nums[i].t += rdt; if (nums[i].t >= nums[i].life) nums.splice(i, 1); }
+    for (let i = calls.length - 1; i >= 0; i--) { calls[i].t += rdt; if (calls[i].t >= calls[i].life) calls.splice(i, 1); }
+    flashA *= Math.pow(0.0001, rdt);
+    updateCamera(rdt);
+    TL = timeline(hoverAct ? (hoverAct === "rule" ? 1 : SKILLS[hoverAct].w) : null);
+  }
+
+  /* --- the canvas, the pointer, the keys --------------------------------- */
+  let pointer = null;
+  function fit() {
+    const st = document.getElementById("stage");
+    const aw = st.clientWidth - 32, ah = st.clientHeight - 32;
+    const h = Math.min(ah, aw * H / W), w = h * W / H;
+    cv.style.width = w + "px"; cv.style.height = h + "px";
+    R = Math.min(2, (window.devicePixelRatio || 1) * h / H * 1.0);
+    R = Math.max(0.5, R);
+    cv.width = Math.round(W * R); cv.height = Math.round(H * R);
+  }
+  function design(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  function hitAt(d) {
+    for (const hb of hits) if (d.x >= hb.x && d.x <= hb.x + hb.w && d.y >= hb.y && d.y <= hb.y + hb.h) return hb.act;
+    return null;
+  }
+  function run(act) { if (act === "rule") ruleAct(); else heroAct(act); }
+
+  /* The pointer over a button PREVIEWS it on the timeline; a press that is
+     released on the same button acts. On a phone that is press, look,
+     release — slide off the button to change your mind. */
+  let pressed = null;
+  cv.addEventListener("pointermove", e => {
+    const d = design(e);
+    pointer = toCamera(d.x, d.y);
+    hoverAct = canAct() ? hitAt(d) : null;
+  });
+  cv.addEventListener("pointerleave", () => { pointer = null; hoverAct = null; });
+  cv.addEventListener("pointerdown", e => {
+    const d = design(e);
+    pressed = hitAt(d);
+    if (pressed) { hoverAct = canAct() ? pressed : null; return; }
+    const p = toCamera(d.x, d.y);
+    if (foe && !foe.dead && Math.abs(p.x - foe.sx) < foe.s * 0.35 && p.y < foe.sy && p.y > foe.sy - foe.s) heroAct("attack");
+  });
+  cv.addEventListener("pointerup", e => {
+    const act = hitAt(design(e));
+    if (act && act === pressed) run(act);
+    pressed = null;
+    if (e.pointerType !== "mouse") hoverAct = null;
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey) return;
+    const k = e.key.toLowerCase(), h = activeHero();
+    if (k >= "1" && k <= "4" && h) { e.preventDefault(); heroAct(actionsOf(h)[+k - 1]); }
+    else if (k === "5") { e.preventDefault(); ruleAct(); }
+    else if (k === "r") startFight(P.foe, true);
+    else if (k === "n") { const list = BANDS[0].foes; startFight(list[(list.indexOf(P.foe) + 1) % list.length], true); }
+  });
+
+  /* --- boot --------------------------------------------------------------- */
+  preload();
+  startFight(BANDS[0].foes[0], true);
+  fit();
+  window.addEventListener("resize", fit);
+  let last = performance.now();
+  (function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  })(last);
+})();
+</script>
+</body>
+</html>

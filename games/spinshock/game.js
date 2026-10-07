@@ -183,22 +183,51 @@
     foeLiveMax: 900,       // speed a pile-up may push a cruising top to...
     foeMaxSpeed: 1600,     // ...and the hard ceiling for one the wave launched
 
-    /* PATIENCE — the one rule above all six ways of moving, and the reason the
-       game is playable at all. The player's top does not go anywhere: it holds
-       the middle of the dish and drifts on its own recoil. Three of the six
-       liveries (the orbiter, the runner, the wanderer) have no reason of their
-       own to enter the strike zone, so a level fielding one of them ALONE — and
-       most of the first three bands do, because that is where a livery is met
-       by itself — had nothing in reach at all: the gauge ran out at 15 to 30 s
-       with a score of nothing. Measured, not guessed: levels 8, 9, 16 and 25
-       were 0-1 clears out of 8 on the headless pilot.
+    /* PATIENCE — the reason a wanderer is never scenery. The player's top does
+       not go anywhere: it holds the middle of the dish and drifts on its own
+       recoil, so a livery with no reason of its own to enter the strike zone
+       leaves a level that fields it ALONE with nothing in reach at all — the
+       gauge ran out at 15 to 30 s with a score of nothing (levels 8, 9, 16 and
+       25 were 0-1 clears out of 8 on the headless pilot, back when blue orbited
+       the dish and black ran).
        So a top that has been out of reach for `patience` seconds starts bending
        toward the player, and over `patienceRamp` more it is simply charging.
-       It keeps its character — an orbiter flies most of a lap and then swoops,
-       a runner darts in and backs off again — and nothing in the dish can be
-       scenery. */
+       Only the PURPLE needs it today: the pulser, the zigzag and the chargers
+       all aim at the top by construction, the red flies a line at it, and the
+       black's ring is drawn inside the reach (see `circleGap`). */
     patience: 2.0,         // seconds out of reach a top is allowed...
     patienceRamp: 2.6,     // ...and how long the pull then takes to take over
+    /* An ANSWERED top — repelled, or its charge landed — flies on the speed it
+       was handed for this long before its own way of moving takes it back. The
+       pulser, the zigzag and the circler steer HARD (they hold a shape the
+       player has to read), and without this beat a shockwave would be cancelled
+       a frame after it landed and no top would ever reach a board. */
+    recover: 0.55,
+
+    /* BLUE — the PULSER. It alternates two beats and nothing else: it HOLDS,
+       stopped dead, while a ring closes in on it and a line draws the run it is
+       about to make, then it DASHES that line at several times its cruise. */
+    pulseHold: 1.05,       // seconds stopped, charging...
+    pulseDash: 0.42,       // ...seconds of the dash that follows...
+    pulseBoost: 2.6,       // ...at this many times its cruise
+    pulseBrake: 16,        // how hard it stops (1/s) once a dash is spent
+    /* YELLOW — the SAW. A triangle wave at the top: straight runs at zigAngle
+       off the line to the player, flipping side every time it is zigAmp px
+       off that line, so the floor keeps a sawtooth with sharp corners. */
+    zigAngle: 0.96,        // rad off the line it is heading along (55°)
+    zigAmp: 64,            // px off that line before it flips (+ its radius)
+    zigSteer: 40,          // how fast its velocity snaps onto the new run (1/s)
+    /* RED — the BOMB. A straight line across the dish, no steering at all, and
+       it blows up on the first thing it touches: a wall, a top, the player. The
+       blast is a ring the player SEES, and what that ring reaches is what it
+       hits — a shell point and a shove for every rival under it. */
+    blastR: [150, 230],    // radius of the blast, small and large
+    blastPush: 900,        // px/s a rival under the blast is thrown out at
+    /* BLACK — the CIRCLER. A ring around the player at a fixed gap and never a
+       step closer: it does not want the hit, it wants to be near the others it
+       mends. The ring sits inside the reach so a tap always answers it. */
+    circleGap: 0.78,       // the ring's gap, as a share of `reach`
+    circleSteer: 7,        // how fast it settles onto the ring (1/s)
 
     /* SIX LIVERIES, AND A LIVERY IS AN IMMUNITY ----------------------------
        The colour of a rival is not decoration: it is the one source of damage
@@ -211,11 +240,13 @@
          yellow  another TOP cannot. A chain reaction washes over it, so it is
                  the one colour a crowd does not solve.
          red     everything but the fence. A shockwave does not mark it, it
-                 AIMS it: the only way through a red shell is a board.
+                 AIMS it — and it blows up on whatever it touches next, so a
+                 red sent into a board is a red gone, and its blast marks
+                 every rival around the spot.
          black   nothing, and it hands a shell point back to every rival it
                  touches. Answer it first or answer the dish twice.
          purple  none, and it does not die quietly: a large one leaves two
-                 mediums, each of which leaves two smalls. One top is seven.
+                 smalls. One top is three.
 
        AND A LIVERY IS ALSO A WAY OF MOVING. The immunity says how a top is
        taken apart; `move` says how it behaves before that, which is what the
@@ -225,15 +256,16 @@
 
          green   `chase`  straight at the top, and SLOW. The first thing the
                  game ever shows, at a speed a first tap can answer.
-         blue    `orbit`  a lap of the dish on an ellipse of its own, one way or
-                 the other. It never aims at anything, so it arrives sideways.
-         yellow  `zigzag` at the top, but never on the line it is on: it sweeps
-                 side to side the whole way in.
-         red     `chase`  straight at the top, and FAST. It is the charge the
-                 gauge is afraid of.
-         black   `flee`   it closes to just outside the strike zone and then
-                 backs off around it — never into a corner, or there would be
-                 nothing the player could do about it.
+         blue    `pulse`  stop, charge, DASH, stop again: it holds still while
+                 a ring closes on it and a line shows the run it is about to
+                 make, then makes it. The floor keeps a string of straight
+                 dashes, one per impulse.
+         yellow  `zigzag` at the top, on a TRIANGLE wave: straight runs and
+                 sharp corners, so its trail is a saw on the floor.
+         red     `line`   one straight run across the dish, aimed at the top
+                 when it came in, FAST, no steering — and it ends in a blast.
+         black   `circle` a ring round the player at a fixed gap, never a step
+                 closer: it never comes for the hit.
          purple  `drift`  a new heading every second or so, a quarter of it
                  pulled toward the top so a wanderer always comes round in the
                  end.
@@ -251,27 +283,30 @@
        objective range can span. What the number IS for is the LIVERY — how
        awkward that colour is to take apart. */
     foeColours: [
-      { key:"g", hp:[1,2,4], score:[8,9,10],   move:"chase",  speedK:0.62,
+      { key:"g", hp:[1,4], score:[8,10],  move:"chase",  speedK:0.62,
         rim:["#8cff5e","#1a6b12"], plate:"#0d2408", arm:"#d2ffb8", core:"#f2fff0" },
-      { key:"b", hp:[2,3,4], score:[11,12,13], move:"orbit",  speedK:0.95, wallProof:true,
+      { key:"b", hp:[2,4], score:[11,13], move:"pulse",  speedK:0.95, wallProof:true,
         rim:["#6fb4ff","#0d3a8f"], plate:"#0a1a3c", arm:"#bcdcff", core:"#eaf5ff" },
-      { key:"y", hp:[2,3,4], score:[11,12,13], move:"zigzag", speedK:1.00, foeProof:true,
+      { key:"y", hp:[2,4], score:[11,13], move:"zigzag", speedK:1.00, foeProof:true, trail:1.7,
         rim:["#ffd21f","#6f4a00"], plate:"#241800", arm:"#ffeda0", core:"#fffbe0" },
-      { key:"r", hp:[2,3,4], score:[15,16,17], move:"chase",  speedK:1.25, wallOnly:true,
+      /* ONE shell point, whatever the build: a red does not wear down, it
+         blows up on its first contact — the pip ring is whole until then. */
+      { key:"r", hp:[1,1], score:[15,17], move:"line",   speedK:1.70, wallOnly:true, blasts:true,
         rim:["#ff4d5e","#780512"], plate:"#280409", arm:"#ffb3bb", core:"#ffe4e8" },
-      { key:"k", hp:[2,3,4], score:[14,16,18], move:"flee",   speedK:0.85, heals:true,
+      { key:"k", hp:[2,4], score:[14,18], move:"circle", speedK:0.85, heals:true,
         rim:["#9aa3c2","#14151e"], plate:"#06060b", arm:"#5bd992", core:"#8affc0" },
-      { key:"p", hp:[2,1,1], score:[9,9,9],    move:"drift",  speedK:0.85, splits:true,
+      { key:"p", hp:[2,1], score:[9,9],   move:"drift",  speedK:0.85, splits:true,
         rim:["#c9a3ff","#4a1d8f"], plate:"#1c0f38", arm:"#e0c6ff", core:"#f4ecff" }
     ],
 
-    /* THREE BUILDS — the half of a rival a player reads before its colour. A
-       small top is quick and cheap to be hit by, a large one crosses the dish
-       slowly and costs a quarter of the gauge when it lands. */
+    /* TWO BUILDS — the half of a rival a player reads before its colour, and
+       two is all it takes to read it: a small top is quick and cheap to be hit
+       by, a large one crosses the dish slowly and costs a quarter of the gauge
+       when it lands. A middle build sat between them and was told apart from
+       neither at a glance. */
     foeSizes: [
-      { key:"1", r:26, speed:380, cost:0.09, teeth:8,  amp:18, arms:2, sharp:true },
-      { key:"2", r:38, speed:265, cost:0.15, teeth:12, amp:15, arms:3 },
-      { key:"3", r:52, speed:185, cost:0.23, teeth:16, amp:16, arms:4 }
+      { key:"s", r:26, speed:380, cost:0.09, teeth:8,  amp:18, arms:2, sharp:true },
+      { key:"l", r:52, speed:185, cost:0.23, teeth:16, amp:16, arms:4 }
     ],
 
     /* THE BOSS — the one top a level places itself, and nothing but a PERFECT
@@ -286,7 +321,7 @@
 
     /* THIRTY LEVELS, ONE LINE EACH ----------------------------------------
        `pool` is the roster, `key:weight` per entry, where the key is a livery
-       and a build (see foeTypes below): "g1" a small green, "r3" a large red.
+       and a build (see foeTypes below): "gs" a small green, "rl" a large red.
        `max` is how many may be in the dish at once — the one knob the level
        layer does NOT lerp, because a roster and a crowd size only mean
        anything together. `boss` puts a boss in the dish from the first second.
@@ -294,17 +329,17 @@
        THE LADDER IS A COURSE, NOT A RAMP. A level is where one thing is
        learned, so most of the first three bands field ONE TYPE, alone, in a
        nearly empty dish: level 1 is a single small green top and nothing else.
-       A colour arrives in its small build, grows through the two above it, and
-       only then meets what came before. Sizes are what the early bands vary;
-       COLOURS are what the last ones do — the top of the ladder is five
-       liveries in their large build, all moving differently, which is a dish to
-       read rather than a dish to survive.
+       A colour arrives in its small build, then its large one, and only then
+       meets what came before. Sizes are what the early bands vary; COLOURS are
+       what the last ones do — the top of the ladder is five liveries in their
+       large build, all moving differently, which is a dish to read rather than
+       a dish to survive.
 
        The crowd runs 1 -> 5, not 3 -> 8. A rival is a thing to watch, and six
        of them at once is a thing to flail at. The splitter is the one that
        breaks the cap on purpose: `max` gates SPAWNS, and nothing gates what a
        purple leaves behind, so a board of three large purples is a board of
-       twenty-one tops if it is answered badly.
+       nine tops if it is answered badly.
 
        A cap of two is a level of ONE top most of the time, and the late bands
        carry the high end of the objective — measured on the headless pilot, the
@@ -312,36 +347,36 @@
        stars inside a round at all. They hold three, which is still the "one to
        three" the early bands are built on. */
     levels: [
-      { pool:"g1:1",                             max:1 },  //  1  BLUE — one small green. That is the whole level.
-      { pool:"g2:1",                             max:2 },  //  2      the medium: two shockwaves, not one
-      { pool:"g3:1",                             max:2 },  //  3      the large: four
-      { pool:"g1:3 g2:2",                        max:3 },  //  4      the first two together
-      { pool:"g2:3 g3:2",                        max:3 },  //  5
-      { pool:"g1:2 g2:3 g3:2",                   max:3 },  //  6      all three builds of one livery
-      { pool:"b1:1",                             max:2 },  //  7  GREEN — blue, alone: it orbits, and the fence cannot mark it
-      { pool:"b2:1",                             max:3 },  //  8
-      { pool:"b3:1",                             max:3 },  //  9
-      { pool:"b1:2 b2:2 b3:1",                   max:3 },  // 10
-      { pool:"g2:2 b2:2",                        max:3 },  // 11      the first meeting of two liveries
-      { pool:"g3:2 b2:2 b3:1",                   max:4 },  // 12
-      { pool:"y1:1",                             max:2 },  // 13  YELLOW — yellow, alone: it zigzags, and no other top can mark it
-      { pool:"y2:1",                             max:2 },  // 14
-      { pool:"y3:1",                             max:3 },  // 15
-      { pool:"p3:1",                             max:3 },  // 16      one large purple — and it is four tops by the end
-      { pool:"y2:2 p3:1",                        max:3 },  // 17
-      { pool:"y3:2 p3:2 b3:1",                   max:4 },  // 18
-      { pool:"r1:1",                             max:3 },  // 19  PURPLE — red, alone: it charges, and only the fence marks it
-      { pool:"r2:1",                             max:3 },  // 20
-      { pool:"r3:1",                             max:3 },  // 21
-      { pool:"r2:2 r3:2",                        max:3 },  // 22
-      { pool:"r3:2 b3:2 y3:2",                   max:4 },  // 23      three liveries, one build: colours, not sizes
-      { pool:"r3:2 y3:2 p3:1",                   max:4 },  // 24
-      { pool:"k1:1",                             max:3 },  // 25  RED — black, alone: it runs, and it mends
-      { pool:"k2:2 g3:2",                        max:4 },  // 26      ...and now it has something to mend
-      { pool:"k3:2 b3:2 r3:2",                   max:4, boss:1 },  // 27
-      { pool:"k2:2 y3:2 p3:2 b3:2",              max:5 },  // 28
-      { pool:"b3:2 y3:2 r3:2 k3:2 p3:2",         max:5 },  // 29      the five liveries, large, six trails on the floor
-      { pool:"b3:2 y3:2 r3:2 k3:2 p3:2",         max:5, boss:1 }   // 30
+      { pool:"gs:1",                             max:1 },  //  1  BLUE — one small green. That is the whole level.
+      { pool:"gs:1",                             max:2 },  //  2      two of them: the dish is never empty
+      { pool:"gl:1",                             max:2 },  //  3      the large: four shockwaves, not one
+      { pool:"gs:3 gl:1",                        max:3 },  //  4      the two builds together
+      { pool:"gs:1 gl:2",                        max:3 },  //  5
+      { pool:"gs:1 gl:1",                        max:3 },  //  6
+      { pool:"bs:1",                             max:2 },  //  7  GREEN — blue, alone: it pulses, and the fence cannot mark it
+      { pool:"bs:1",                             max:3 },  //  8
+      { pool:"bl:1",                             max:3 },  //  9
+      { pool:"bs:2 bl:1",                        max:3 },  // 10
+      { pool:"gs:1 gl:1 bs:2",                   max:3 },  // 11      the first meeting of two liveries
+      { pool:"gl:2 bs:1 bl:2",                   max:4 },  // 12
+      { pool:"ys:1",                             max:2 },  // 13  YELLOW — yellow, alone: it saws, and no other top can mark it
+      { pool:"ys:1 yl:1",                        max:2 },  // 14
+      { pool:"yl:1",                             max:3 },  // 15
+      { pool:"pl:1",                             max:3 },  // 16      one large purple — and it is two more by the end
+      { pool:"ys:1 yl:1 pl:1",                   max:3 },  // 17
+      { pool:"yl:2 pl:2 bl:1",                   max:4 },  // 18
+      { pool:"rs:1",                             max:3 },  // 19  PURPLE — red, alone: a line, a blast, and only the fence marks it
+      { pool:"rs:1 rl:1",                        max:3 },  // 20
+      { pool:"rl:1",                             max:3 },  // 21
+      { pool:"rs:1 rl:2",                        max:3 },  // 22
+      { pool:"rl:2 bl:2 yl:2",                   max:4 },  // 23      three liveries, one build: colours, not sizes
+      { pool:"rl:2 yl:2 pl:1",                   max:4 },  // 24
+      { pool:"ks:1",                             max:3 },  // 25  RED — black, alone: it circles, and it mends
+      { pool:"ks:1 kl:1 gl:2",                   max:4 },  // 26      ...and now it has something to mend
+      { pool:"kl:2 bl:2 rl:2",                   max:4, boss:1 },  // 27
+      { pool:"ks:1 kl:1 yl:2 pl:2 bl:2",         max:5 },  // 28
+      { pool:"bl:2 yl:2 rl:2 kl:2 pl:2",         max:5 },  // 29      the five liveries, large, six trails on the floor
+      { pool:"bl:2 yl:2 rl:2 kl:2 pl:2",         max:5, boss:1 }   // 30
     ],
 
     /* THE PLAYABLE, AND THE ENDLESS RUN ABOVE LEVEL 30 — neither has a level,
@@ -350,22 +385,22 @@
        is thirty seconds long and a top nothing but a perfect tap can mark would
        read, in an ad, as a top that cannot be killed. */
     endless: [
-      { from: 0,  pool:"g1:4 g2:2" },
-      { from: 16, pool:"g2:3 g3:2 b1:2" },
-      { from: 32, pool:"g3:2 b2:2 y1:2" },
-      { from: 50, pool:"b3:2 y2:2 p3:1" },
-      { from: 70, pool:"b3:2 y3:2 r3:2 p3:2" }
+      { from: 0,  pool:"gs:5 gl:1" },
+      { from: 16, pool:"gs:1 gl:4 bs:2" },
+      { from: 32, pool:"gl:2 bs:1 bl:1 ys:2" },
+      { from: 50, pool:"bl:2 ys:1 yl:1 pl:1" },
+      { from: 70, pool:"bl:2 yl:2 rl:2 pl:2" }
     ]
   };
 
-  /* NINETEEN RIVALS, COMPOSED FROM THE TWO TABLES ABOVE — six liveries times
-     three builds, plus the boss. None of them is written by hand: the build
+  /* THIRTEEN RIVALS, COMPOSED FROM THE TWO TABLES ABOVE — six liveries times
+     two builds, plus the boss. None of them is written by hand: the build
      gives a top its silhouette, its speed and the spin its charge costs, the
      livery gives it its paint and its one immunity, and the pair gives it the
      shell points and the score. The key is colour + size, which is what a
      level's roster names.
      `down` is where a purple goes when it blows up: a large one leaves two
-     mediums, a medium two smalls, and a small nothing. */
+     smalls, and a small nothing. */
   CONFIG.foeTypes = (function () {
     var out = {}, i, j, c, s, t, sizes = CONFIG.foeSizes, cols = CONFIG.foeColours;
     for (i = 0; i < cols.length; i++) {
@@ -378,7 +413,8 @@
               move: c.move, speedK: c.speedK,
               rim: c.rim, plate: c.plate, arm: c.arm, core: c.core,
               wallProof: !!c.wallProof, foeProof: !!c.foeProof,
-              wallOnly: !!c.wallOnly, heals: !!c.heals, splits: !!c.splits };
+              wallOnly: !!c.wallOnly, heals: !!c.heals, splits: !!c.splits,
+              blastR: c.blasts ? CONFIG.blastR[j] : 0, trail: c.trail || 1 };
         out[t.key] = t;
       }
     }
@@ -443,7 +479,7 @@
     var spin, spinAngle, elapsed, spawnT, cooldown, shownPct, warnArmed, lowSpin;
     var wornSaid;
     var phase, phaseT;                 // "spin" | "fall" | "done"
-    var player, foes, waves, zaps, shards, wreckStep, tracks;
+    var player, foes, waves, zaps, shards, wreckStep, tracks, blasts, scorches;
     var arena = { x:0, y:0, w:0, h:0, cx:0, cy:0 };
     var floorCv = null, topCvs = null, foeCv = {}, topDpr = 0;
     var bumpT = 0;                     // throttle on the metal-on-metal clank
@@ -772,9 +808,9 @@
     /* THE TRAILS ------------------------------------------------------------
        Every rival drags a line of its own colour across the dish and the line
        fades out behind it, so the six ways of moving are DRAWN rather than
-       merely performed: an orbiter leaves an ellipse, a zigzag leaves a braid,
-       a wanderer leaves a scribble, a charger leaves a straight line at the
-       player and a runner leaves an arc curling away from it. It is the
+       merely performed: a pulser leaves a string of straight dashes, a zigzag
+       leaves a saw, a wanderer leaves a scribble, a charger and a bomb leave a
+       straight line and a circler leaves a ring round the player. It is the
        clearest thing on the floor about what a colour is, and it is read
        without taking the eye off the gap.
 
@@ -785,8 +821,8 @@
        The line is SAMPLED IN PX, not on a clock: a point every TRACK_STEP of
        travel, so a slow green leaves a short stub and a charging red leaves the
        whole length of its run, which is the reading that matters. What bounds
-       it is TRACK_LIFE — three and a half seconds, which is most of a lap for
-       an orbiter and the whole of a charge for anything else: the point is to
+       it is TRACK_LIFE — three and a half seconds, which is most of a ring for
+       a circler and the whole of a charge for anything else: the point is to
        see where a top HAS BEEN, so the line has to outlast the manoeuvre it
        describes. TRACK_MAX is the ceiling that keeps a fast top from filling
        the array; at 24 px a point it almost never binds.
@@ -800,10 +836,12 @@
     var TRACK_MAX = 78;        // points one line may hold
     var TRACK_BANDS = 4;
 
-    function trackPush(f) {
+    /* `corner` forces a point in whatever the spacing: the turn of a zigzag is
+       the one place the line must not be sampled past, or the saw rounds off. */
+    function trackPush(f, corner) {
       var pts = f.track.pts, p = pts[pts.length - 1];
       // a box test, not a distance: this runs per top per frame
-      if (p && Math.abs(f.x - p.x) < TRACK_STEP && Math.abs(f.y - p.y) < TRACK_STEP) return;
+      if (!corner && p && Math.abs(f.x - p.x) < TRACK_STEP && Math.abs(f.y - p.y) < TRACK_STEP) return;
       pts.push({ x: f.x, y: f.y, a: 1 });
       if (pts.length > TRACK_MAX) pts.shift();
     }
@@ -835,8 +873,10 @@
           a = pts[i1].a;                       // the band's own head
           // Well under half: the metal and the shockwaves are what the player
           // reads, and a floor that competes with them is a floor in the way.
-          ctx.strokeStyle = rgba(t.col, a * 0.42);
-          ctx.lineWidth = 2 + 4 * (b + 1) / TRACK_BANDS;
+          // `w` is the livery's own weight — the yellow's saw IS the reading of
+          // that colour, so it is drawn heavier than the others.
+          ctx.strokeStyle = rgba(t.col, Math.min(0.8, a * 0.42 * t.w));
+          ctx.lineWidth = (2 + 4 * (b + 1) / TRACK_BANDS) * (0.6 + 0.4 * t.w);
           ctx.beginPath();
           ctx.moveTo(pts[i0].x, pts[i0].y);
           for (j = i0 + 1; j <= i1; j++) ctx.lineTo(pts[j].x, pts[j].y);
@@ -947,7 +987,7 @@
 
     /* The distinct types a round can put in the dish, for `build` to bake a
        sprite apiece. A purple's children are pulled in even when no roster ever
-       names them — a large purple leaves two mediums whatever the level said. */
+       names them — a large purple leaves two smalls whatever the level said. */
     function rosterTypes() {
       var seen = {}, out = [], src = [], bag, i, j, t;
       if (ROW) src.push(ROW.pool);
@@ -965,7 +1005,7 @@
 
     function pickType() {
       var pool = spawnPool();
-      return pool.length ? Rand.pick(pool) : CONFIG.foeTypes.g1;
+      return pool.length ? Rand.pick(pool) : CONFIG.foeTypes.gs;
     }
 
     /* One rival, from just outside the wall on a random angle, charging the
@@ -985,6 +1025,13 @@
       f.cruise = sp;
       f.vx = Math.cos(a + Math.PI + jitter) * sp;
       f.vy = Math.sin(a + Math.PI + jitter) * sp;
+      /* A RED is never steered again, so the line it comes in on is the whole
+         of its run: dead on the player, where the dish's middle is only near
+         him. */
+      if (t.move === "line") {
+        var dx = player.x - f.x, dy = player.y - f.y, d = Math.hypot(dx, dy) || 1;
+        f.vx = dx / d * sp; f.vy = dy / d * sp;
+      }
       return f;
     }
 
@@ -996,14 +1043,16 @@
         ang: Rand.range(0, TAU), vr: Rand.pick([-1, 1]) * Rand.range(7, 12),
         vx: 0, vy: 0, born: 0, age: 0, inside: false, cruise: cruiseOf(t),
         hp: t.hp, hpMax: t.hp, flash: 0, mend: 0, shrug: 0, healT: 0,
-        dead: false, starve: 0,
-        /* the state its own way of moving needs (see `heading`): the phase of a
-           zigzag, the heading and clock of a wanderer, and the lap an orbiter
-           is flying — its radius as a share of the dish, and which way round. */
-        zig: Rand.range(0, TAU), wanderA: Rand.range(0, TAU), wanderT: 0,
-        ring: Rand.range(0.45, 0.82), cw: Rand.pick([-1, 1])
+        dead: false, starve: 0, shot: false,
+        /* the state its own way of moving needs (see `steer`): the beat of a
+           pulser and the line it will dash along, the side a zigzag is running
+           to and how far off its line it already is, the heading and clock of
+           a wanderer, and which way round a circler turns. */
+        pulse: "dash", pulseT: 0, aimX: 0, aimY: 0,
+        zigSide: Rand.pick([-1, 1]), zigOff: 0, zigUx: 0, zigUy: 0, corner: false,
+        wanderA: Rand.range(0, TAU), wanderT: 0, cw: Rand.pick([-1, 1])
       };
-      f.track = { col: t.rim[0], pts: [], last: 0 };
+      f.track = { col: t.rim[0], pts: [], last: 0, w: t.trail || 1 };
       tracks.push(f.track);
       foes.push(f);
       return f;
@@ -1032,59 +1081,24 @@
       return f;
     }
 
-    /* WHERE A TOP WANTS TO GO ----------------------------------------------
-       One heading per livery, and it is the half of a colour the player watches
-       (the immunity is the half they work out). It returns a UNIT vector and
-       nothing else: `steer` below accelerates toward it and drags the excess
-       off, so a knock still sends a top off course whatever it wanted, and a
-       launched one keeps the speed the wave gave it. */
+    /* HOW A TOP MOVES ------------------------------------------------------
+       One way per livery, and it is the half of a colour the player watches
+       (the immunity is the half they work out). Two families:
+
+         STEERED  the charger and the wanderer return a unit HEADING and `steer`
+                  accelerates toward it, dragging the excess off, so a knock
+                  sends them off course and they have to come round again;
+         DRAWN    the pulser, the zigzag and the circler hold a SHAPE the player
+                  has to read — a stop and a dash, a saw, a ring — so their
+                  velocity is snapped onto the shape instead of eased toward
+                  it. An answered one flies `recover` seconds on what it was
+                  handed first, or a shockwave would be undone a frame later.
+
+       And one that is neither: the RED is never steered at all. */
     function heading(f, dt) {
-      var m = f.type.move;
       var dx = player.x - f.x, dy = player.y - f.y, d = Math.hypot(dx, dy) || 1;
-      var ux = dx / d, uy = dy / d, h;
-
-      /* PATIENCE first, because it is what the answer below is blended with.
-         The clock runs until the top is ANSWERED — repelled, or its charge
-         landed — and not until it is merely near. Distance was the first rule
-         and it was wrong: a runner turned round the instant it crossed into
-         reach, 122 px out, which is a top the player can see and never hit.
-         Answered, it gets its own behaviour back for a couple of seconds. */
-      f.starve += dt;
-
-      if (m === "orbit") {
-        /* A lap of the DISH, not of the player: the ellipse is the arena's own,
-           so a blue top sweeps the whole board and arrives sideways rather than
-           aiming at anything. `ring` is the radius it is flying, as a share of
-           the dish, and the pull back onto it is what closes the ellipse. */
-        var ox = (f.x - arena.cx) / (arena.w / 2);
-        var oy = (f.y - arena.cy) / (arena.h / 2);
-        var od = Math.hypot(ox, oy) || 0.001;
-        var err = clamp(f.ring - od, -1, 1) * 1.6;
-        h = unit(-oy / od * f.cw + ox / od * err,
-                  ox / od * f.cw + oy / od * err);
-        return pullIn(f, h, ux, uy);
-      }
-      if (m === "flee") {
-        /* It keeps its DISTANCE and slides around the top rather than closing:
-           a black top never charges and never lands a hit, which is why it
-           costs no spin — its threat is the shell points it hands back.
-           The ring it holds is INSIDE the strike zone, not outside it. Parked
-           just beyond `reach` it was a top the player could see all round the
-           level and never once hit (0 clears out of 8 on level 25); at .62 of
-           the reach it is always answerable, and what reads as running away is
-           that it will not come any closer than that. */
-        var want = CONFIG.playerR + f.type.r + CONFIG.reach * 0.62;
-        var k = d < want ? -1 : 1;
-        h = unit(ux * k * 0.8 - uy * 0.6, uy * k * 0.8 + ux * 0.6);
-        return pullIn(f, h, ux, uy);
-      }
-      if (m === "zigzag") {
-        // at the top, but never on the line it is on
-        f.zig += dt * 3.4;
-        var w = Math.sin(f.zig) * 0.9;
-        return pullIn(f, unit(ux - uy * w, uy + ux * w), ux, uy);
-      }
-      if (m === "drift") {
+      var ux = dx / d, uy = dy / d;
+      if (f.type.move === "drift") {
         // a new heading every second or so, a quarter of it pulled toward the
         // top: a wanderer that never came round would never be answered.
         f.wanderT -= dt;
@@ -1095,7 +1109,7 @@
         return pullIn(f, unit(Math.cos(f.wanderA) * 0.75 + ux * 0.25,
                               Math.sin(f.wanderA) * 0.75 + uy * 0.25), ux, uy);
       }
-      return { x: ux, y: uy };                   // "chase" — green slow, red fast
+      return { x: ux, y: uy };                   // "chase" — green, and the boss
     }
 
     function unit(x, y) {
@@ -1113,19 +1127,115 @@
       return unit(h.x + ux * k * 2, h.y + uy * k * 2);
     }
 
-    /* A rival steers toward its heading instead of tracking it rigidly, so a
-       knock sends it off course and it has to come around again. */
+    /* `starve` is the clock since the top was last ANSWERED — repelled, or its
+       charge landed — and it runs here, for every livery, every frame. */
     function steer(f, dt) {
-      var h = heading(f, dt);
+      var m = f.type.move, v, k;
+      f.starve += dt;
       f.cruise = cruiseOf(f.type);               // the ramp moves under it
+      if (m === "line") return;                  // the red: the line it was given
+      if (m === "pulse") { pulse(f, dt); return; }
+      if (m === "zigzag" || m === "circle") {
+        if (f.starve < CONFIG.recover) { drag(f, dt); return; }
+        v = m === "zigzag" ? zigzag(f, dt) : circle(f);
+        k = Math.min(1, (m === "zigzag" ? CONFIG.zigSteer : CONFIG.circleSteer) * dt);
+        f.vx += (v.x - f.vx) * k; f.vy += (v.y - f.vy) * k;
+        return;
+      }
+      var h = heading(f, dt);
       f.vx += h.x * f.cruise * CONFIG.foeAccel * dt;
       f.vy += h.y * f.cruise * CONFIG.foeAccel * dt;
-      // Not a hard clamp: speed borrowed in a collision bleeds off over a beat,
-      // so a top that has just been slammed keeps flying before it recovers.
+      drag(f, dt);
+    }
+
+    /* Not a hard clamp: speed borrowed in a collision bleeds off over a beat,
+       so a top that has just been slammed keeps flying before it recovers. */
+    function drag(f, dt) {
       if (Math.hypot(f.vx, f.vy) > f.cruise) {
         var k = 1 - Math.min(0.9, CONFIG.foeDrag * dt);
         f.vx *= k; f.vy *= k;
       }
+    }
+
+    /* BLUE — two beats. HOLD: stopped dead, aiming at the player the whole
+       time (the line drawn in `render` is that aim, at the length of the run),
+       while a ring closes on it. DASH: the aim at the instant the ring meets
+       the rim, at pulseBoost times its cruise, for pulseDash seconds. It flies
+       in from the wall on its first dash and starts charging once inside. */
+    function pulse(f, dt) {
+      if (f.pulse === "hold") {
+        var dx = player.x - f.x, dy = player.y - f.y, d = Math.hypot(dx, dy) || 1;
+        f.aimX = dx / d; f.aimY = dy / d;
+        if (f.starve < CONFIG.recover) drag(f, dt);
+        else {
+          var k = Math.max(0, 1 - CONFIG.pulseBrake * dt);
+          f.vx *= k; f.vy *= k;
+        }
+        f.pulseT -= dt;
+        if (f.pulseT <= 0 && f.inside) dash(f);
+        return;
+      }
+      f.pulseT -= dt;
+      if (f.pulseT <= 0 && f.inside) holdPulse(f, CONFIG.pulseHold);
+    }
+
+    function holdPulse(f, t) { f.pulse = "hold"; f.pulseT = t; }
+
+    function dash(f) {
+      var sp = f.cruise * CONFIG.pulseBoost, r = f.type.r;
+      f.pulse = "dash"; f.pulseT = CONFIG.pulseDash;
+      f.vx = f.aimX * sp; f.vy = f.aimY * sp;
+      f.vr = (f.vr > 0 ? 1 : -1) * 22;
+      if (phase !== "spin") return;
+      Fx.ring(f.x, f.y, { from: r * 0.8, to: r * 2.6, color: f.type.rim[0],
+        width: 6, life: 0.26 });
+      Fx.burst(f.x - f.aimX * r, f.y - f.aimY * r, { color: [f.type.rim[0], "#ffffff"],
+        count: 8, speed: 300, size: 5, life: 0.3 });
+      Sound.clip("bump", 0.32, 0.62);           // the release, a fifth down
+    }
+
+    /* YELLOW — a TRIANGLE wave at the player: a straight run zigAngle off the
+       line to him, held until it is zigAmp (+ its radius) off that line, then
+       the same run mirrored. `zigOff` is how far off the line it is, so the
+       first run is half a swing and the saw is centred on the line.
+       The line is taken at each CORNER and held for the whole run, never
+       re-aimed on the way: re-aimed every frame, a run bends as the angle to
+       the player turns, and the saw on the floor reads as a scribble. */
+    function zigzag(f, dt) {
+      var c = Math.cos(CONFIG.zigAngle), sn = Math.sin(CONFIG.zigAngle);
+      var amp = CONFIG.zigAmp + f.type.r;
+      if (!f.zigUx && !f.zigUy) zigAim(f);
+      var ux = f.zigUx, uy = f.zigUy;            // forward, and (-uy, ux) its left
+      f.zigOff += f.zigSide * f.cruise * sn * dt;
+      if (f.zigSide * f.zigOff >= amp) {
+        f.zigOff = f.zigSide * amp;
+        zigAim(f);                               // before the flip: off the old line
+        f.zigSide = -f.zigSide;
+        f.corner = true;                         // pin the turn on the floor
+      }
+      return { x: (ux * c - uy * sn * f.zigSide) * f.cruise,
+               y: (uy * c + ux * sn * f.zigSide) * f.cruise };
+    }
+
+    /* The new line is aimed from the saw's CENTRE, not from the corner the top
+       stands on — the corner is zigOff off the old line, and a line drawn
+       through it would push the whole saw off to that side. */
+    function zigAim(f) {
+      var cx = f.x + f.zigUy * f.zigOff, cy = f.y - f.zigUx * f.zigOff;
+      var dx = player.x - cx, dy = player.y - cy, d = Math.hypot(dx, dy) || 1;
+      f.zigUx = dx / d; f.zigUy = dy / d;
+    }
+
+    /* BLACK — a ring round the player at a fixed gap, inside the reach. Far
+       off it spirals in; on the ring it only turns; pushed inside it backs out.
+       It never takes a step toward the hit. */
+    function circle(f) {
+      var dx = f.x - player.x, dy = f.y - player.y, d = Math.hypot(dx, dy) || 1;
+      var ox = dx / d, oy = dy / d;              // out from the player
+      var want = CONFIG.playerR + f.type.r + CONFIG.reach * CONFIG.circleGap;
+      var err = clamp((want - d) / 60, -1.5, 1.5);
+      var h = unit(-oy * f.cw + ox * err, ox * f.cw + oy * err);
+      return { x: h.x * f.cruise, y: h.y * f.cruise };
     }
 
     /* The dish walls. Everything bounces on them — that is where the chaos in
@@ -1133,7 +1243,7 @@
        A hit above chipSpeed is a SLAM and costs a shell point; anything slower
        is a free graze, so a top cruising along the rim never chips itself to
        death on its own. A BLUE top is never marked here at all, and a RED one
-       is marked here and nowhere else. */
+       blows up here at any speed. */
     function walls(f) {
       var r = f.type.r, sp = Math.hypot(f.vx, f.vy), hit = false;
       var slam = sp > CONFIG.chipSpeed;
@@ -1151,6 +1261,7 @@
       // colour whatever struck it — it is the dish, not the visitor.
       if (sx >= 0 && vnx > ZAP_MIN) zap(sx, f.x, f.y, clamp(vnx / 900, 0.1, 1));
       if (sy >= 0 && vny > ZAP_MIN) zap(sy, f.x, f.y, clamp(vny / 900, 0.1, 1));
+      if (f.type.blastR) { blast(f); return; }
       if (!slam) { clank(f.x, f.y, sp, 0.7); return; }
       Sound.clip("bump", 0.5, 0.8);
       dmg(f, "wall");
@@ -1200,7 +1311,7 @@
         speed: 320, size: 5, life: 0.32 });
       if (f.hp > 0) return false;
       f.hp = 0;
-      explode(f);
+      if (f.type.blastR) blast(f); else explode(f);
       return true;
     }
 
@@ -1213,7 +1324,13 @@
         width: 6, life: 0.32 });
       Fx.shake(f.type.perfectOnly ? 16 : 6, f.type.perfectOnly ? 0.4 : 0.16);
       Sound.clip("crash", f.type.perfectOnly ? 0.8 : 0.42, f.type.perfectOnly ? 0.7 : 1.35);
-      // Killing a rival outright pays on top of the shockwaves that got it there.
+      payKo(f);
+      split(f);
+    }
+
+    // Killing a rival outright pays on top of the shockwaves that got it there.
+    function payKo(f) {
+      var col = f.type.rim[0];
       if (phase === "spin") {
         var ko = f.type.score * CONFIG.koScore;
         score += ko; HUD.setScore(score);
@@ -1224,12 +1341,77 @@
           Pop.show("ultra", { word: Lang.t("Boss down!"), sub: "+" + ko, at: farSpot() });
         }
       }
-      split(f);
+    }
+
+    /* A RED blows up on the first thing it touches, and the blast is a ring of
+       blastR the player SEES (`drawBlasts`): every rival under it is thrown out
+       and loses a shell point — a yellow and the boss shrug the point off as
+       they shrug off any top, and another red under it goes up in turn. It only
+       PAYS when the player sent it — a red that ran into a board on its own
+       line, or into the player, is a red gone and nothing more; a blast it sets
+       off keeps the credit of the one that set it off. */
+    function blast(f) {
+      if (f.dead) return;
+      var R = f.type.blastR, n = foes.length, i, o, dx, dy, d, k;
+      f.dead = true;
+      boom(f.x, f.y, R, f.type.rim[0]);
+      if (f.shot) payKo(f);
+      for (i = 0; i < n; i++) {
+        o = foes[i];
+        if (o === f || o.dead || !o.inside) continue;
+        dx = o.x - f.x; dy = o.y - f.y;
+        d = Math.hypot(dx, dy) || 1;
+        if (d - o.type.r > R) continue;
+        k = 1 - 0.5 * clamp((d - o.type.r) / R, 0, 1);   // harder at the heart
+        o.vx = dx / d * CONFIG.blastPush * k; o.vy = dy / d * CONFIG.blastPush * k;
+        o.starve = 0;                    // thrown: it flies before it steers
+        if (o.type.blastR) { o.shot = o.shot || f.shot; blast(o); }
+        else dmg(o, "foe");
+      }
+    }
+
+    /* THE BLAST, AS THE PLAYER SEES IT — the loudest thing in the game, and
+       built in layers that each land on their own beat (`drawBlasts`):
+       a hit-stop and a white frame on the instant, a core gone white-hot,
+       a dozen rays thrown out of it, a fireball that swells and burns down
+       through yellow and orange, the shock ring racing out to blastR with a
+       second one behind it, sparks and embers that fall, the fence lit
+       wherever the ring reaches a board — and a scorch left on the floor
+       that cools for a couple of seconds after everything else has gone.
+       A large red is the same blast scaled by its radius. */
+    function boom(x, y, R, col) {
+      var big = R / CONFIG.blastR[CONFIG.blastR.length - 1], rays = [], i;
+      for (i = 0; i < 12; i++)
+        rays.push({ a: i / 12 * TAU + Rand.range(-0.2, 0.2),
+                    len: Rand.range(0.75, 1.25), w: Rand.range(0.05, 0.09) });
+      blasts.push({ x: x, y: y, r: R, t: 0, life: 0.75, col: col, rays: rays });
+      var cracks = [];
+      for (i = 0; i < 7; i++) cracks.push({ a: Rand.range(0, TAU), len: Rand.range(0.4, 0.7) });
+      scorches.push({ x: x, y: y, r: R, t: 0, life: 2.8, cracks: cracks });
+      Fx.burst(x, y, { color: ["#ffffff", "#fff3b0", "#ffd43b", "#ff7a3d"], count: 44,
+        speed: 980 * (0.7 + 0.3 * big), size: 6, life: 0.55 });
+      Fx.burst(x, y, { color: ["#ff7a3d", col, "#ffb000", "#3a1208"], count: 22,
+        speed: 420, size: 9, life: 1.15, grav: 320 });
+      Fx.ring(x, y, { from: R * 0.9, to: R * 1.45, color: "#ffffff", width: 3, life: 0.6 });
+      // the fence answers wherever the ring reaches a board
+      if (x - R < arena.x)           zap(SIDE_L, x, y, 1, "#ffb000");
+      if (x + R > arena.x + arena.w) zap(SIDE_R, x, y, 1, "#ffb000");
+      if (y - R < arena.y)           zap(SIDE_T, x, y, 1, "#ffb000");
+      if (y + R > arena.y + arena.h) zap(SIDE_B, x, y, 1, "#ffb000");
+      Fx.shake(14 + 10 * big, 0.45);
+      Fx.flash("#fff1c4", 0.55, 2.4);
+      if (phase === "spin") {
+        Fx.freeze(0.07);
+        Overlay.vignette("rgba(255,110,40,.85)", 1, 460);
+      }
+      Sound.clip("crash", 0.95, 0.6);
+      Sound.clip("shock", 0.8, 0.55);
+      Sound.clip("bump", 0.6, 0.45);
     }
 
     /* A PURPLE does not die quietly: it leaves two of the build below it,
        thrown apart along the axis it was travelling on, so one large purple is
-       two mediums and then four smalls — seven tops out of one spawn. */
+       two smalls — three tops out of one spawn. */
     function split(f) {
       var t = f.type, i, c, a, sp, k;
       if (!t.splits || !t.down) return;
@@ -1328,6 +1510,13 @@
           b.x += nx * push * (ma / tm); b.y += ny * push * (ma / tm);
           if (a.type.heals) mend(a, b);
           if (b.type.heals) mend(b, a);
+          // a red goes up on contact, at any speed: the blast does the rest
+          if ((a.type.blastR && a.inside) || (b.type.blastR && b.inside)) {
+            if (a.type.blastR && a.inside) blast(a);
+            if (b.type.blastR && b.inside) blast(b);
+            if (a.dead) break;
+            continue;
+          }
           rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
           if (rv > 0) continue;                    // already separating
           spa = Math.hypot(a.vx, a.vy); spb = Math.hypot(b.vx, b.vy);
@@ -1386,7 +1575,7 @@
       shownPct = -1; warnArmed = true; lowSpin = false; wornSaid = false;
       phase = "spin"; phaseT = 0; wreckStep = 0;
       spawnT = 0.9;
-      foes = []; waves = []; zaps = []; shards = []; tracks = [];
+      foes = []; waves = []; zaps = []; shards = []; tracks = []; blasts = []; scorches = [];
       /* The band comes first: buildFloor() paints the dish out of it and the
          fence burns its colour, and the scene the END SCREEN wears is the one
          just played. `applyLevel` has already fixed BAND and ROW when there is
@@ -1564,8 +1753,9 @@
        across the dish at knockback speed, where the fence and whatever it
        ploughs through on the way can take the rest. That is the whole loop:
        the tap is the answer, and the arena is the follow-through.
-       Three liveries bend it — a RED top takes nothing from the wave and is
-       simply aimed, and the BOSS takes its one point only from a PERFECT. */
+       Two liveries bend it — a RED top takes nothing from the wave and is
+       simply aimed (at a board, where it blows up), and the BOSS takes its one
+       point only from a PERFECT. */
     function repel(f, tier) {
       var dx = f.x - player.x, dy = f.y - player.y, d = Math.hypot(dx, dy) || 1;
       // The wave throws a small top further than a big one, which is what makes
@@ -1576,6 +1766,9 @@
       var kick = CONFIG.knockback * clamp(40 / f.type.r, 0.6, 1.2);
       f.vx = dx / d * kick; f.vy = dy / d * kick;
       f.starve = 0;                    // answered: it flies its own line again
+      f.shot = true;                   // a red sent from here pays its blast
+      f.zigUx = f.zigUy = 0; f.zigOff = 0;   // a zigzag takes a fresh line once back
+      if (f.type.move === "pulse") holdPulse(f, CONFIG.pulseHold + CONFIG.recover);
       f.vr = (f.vr > 0 ? 1 : -1) * 26;
       f.flash = 0.12;
       Fx.burst(f.x, f.y, { color: [f.type.rim[0], "#ffffff", "#ff4fbe"],
@@ -1593,6 +1786,7 @@
     function crash(f) {
       crashes++; combo = 0;
       f.starve = 0;                    // it got what it came for
+      if (f.type.move === "pulse") holdPulse(f, CONFIG.pulseHold + CONFIG.recover);
       pushSpin(-f.type.cost);
       var dx = f.x - player.x, dy = f.y - player.y, d = Math.hypot(dx, dy) || 1;
       f.vx = dx / d * 1000; f.vy = dy / d * 1000;
@@ -1849,6 +2043,14 @@
         waves[w].t += dt;
         if (waves[w].t >= waves[w].life) waves.splice(w, 1);
       }
+      for (w = blasts.length - 1; w >= 0; w--) {
+        blasts[w].t += dt;
+        if (blasts[w].t >= blasts[w].life) blasts.splice(w, 1);
+      }
+      for (w = scorches.length - 1; w >= 0; w--) {
+        scorches[w].t += dt;
+        if (scorches[w].t >= scorches[w].life) scorches.splice(w, 1);
+      }
 
       if (phase === "fall") {
         phaseT += dt;
@@ -1955,7 +2157,8 @@
         // round and comes back on its own once its borrowed speed has bled off.
         if (phase === "spin") steer(f, dt);
         f.x += f.vx * dt; f.y += f.vy * dt;
-        if (f.inside) trackPush(f);          // the line it leaves on the floor
+        if (f.inside) trackPush(f, f.corner); // the line it leaves on the floor
+        f.corner = false;
         // A rival only starts colliding with the wall once it is really inside.
         if (!f.inside) {
           f.inside = insideArena(f);
@@ -1966,7 +2169,10 @@
         }
         walls(f);
         if (f.dead) continue;
-        if (phase === "spin" && gapOf(f) <= 0) crash(f);
+        if (phase === "spin" && gapOf(f) <= 0) {
+          crash(f);
+          if (f.type.blastR) blast(f);
+        }
       }
       foeCollisions();
       sweepFoes();
@@ -1976,6 +2182,7 @@
     function render() {
       ctx.drawImage(floorCv, 0, 0, floorCv._w, floorCv._h);
       drawTracks();                     // where every rival has just been
+      drawScorches();                   // ...and where a red went up
       /* The fence, each rival, the top and the spin bar are the elements of
          the round's entrance (Enter): they land in this order on the dish. */
       if (Enter.begin(arena.cx, arena.cy)) {
@@ -2028,6 +2235,7 @@
             }
           }
         }
+        drawIntent(f, fade);
         blit(foeCv[f.type.key], f.x, f.y, f.ang, 1, fade);
         if (f.flash > 0) {
           ctx.globalAlpha = clamp(f.flash / 0.16, 0, 1) * 0.55 * fade;
@@ -2049,6 +2257,7 @@
 
       if (Enter.begin(player.x, player.y)) { drawPlayer(); Enter.end(); }
       drawWaves();
+      drawBlasts();
       drawCombo();
       // last, so no top ever draws over it
       if (Enter.begin(gauge.x + gauge.w / 2, gauge.y + gauge.h / 2)) { drawGauge(); Enter.end(); }
@@ -2464,6 +2673,165 @@
         ctx.restore();
       }
       ctx.globalAlpha = 1;
+    }
+
+    /* WHAT A TOP IS ABOUT TO DO, drawn under it — the half of a livery that
+       has to be read before it happens.
+       BLUE holding: a dashed line along its aim, as long as the run it is
+       about to make, and a ring closing in on its rim; the ring touches the
+       rim on the frame it leaves, and burns white over the last beat.
+       BLUE dashing, and every RED: two ghosts behind it along its velocity,
+       and the red a short dashed line AHEAD of it — a straight run is read by
+       where it goes, not by where it has been. */
+    function drawIntent(f, fade) {
+      var m = f.type.move, cv = foeCv[f.type.key], r = f.type.r, col = f.type.rim[0];
+      if (m !== "pulse" && m !== "line") return;
+      if (!f.inside && m === "pulse") return;
+      ctx.save();
+      if (m === "pulse" && f.pulse === "hold") {
+        var ch = clamp(1 - f.pulseT / CONFIG.pulseHold, 0, 1);
+        if (ch > 0 && phase === "spin") {
+          var len = f.cruise * CONFIG.pulseBoost * CONFIG.pulseDash;
+          var hot = ch > 0.82 ? "#ffffff" : col;
+          ctx.lineCap = "round";
+          ctx.setLineDash([16, 12]);
+          ctx.lineDashOffset = -f.age * 70;
+          ctx.strokeStyle = rgba(hot, (0.12 + 0.58 * ch) * fade);
+          ctx.lineWidth = 3 + 3 * ch;
+          var x1 = f.x + f.aimX * (r + len), y1 = f.y + f.aimY * (r + len);
+          ctx.beginPath();
+          ctx.moveTo(f.x + f.aimX * (r + 10), f.y + f.aimY * (r + 10));
+          ctx.lineTo(x1, y1);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // the head of the run: a chevron at its far end
+          ctx.beginPath();
+          ctx.moveTo(x1 - f.aimX * 18 - f.aimY * 13, y1 - f.aimY * 18 + f.aimX * 13);
+          ctx.lineTo(x1, y1);
+          ctx.lineTo(x1 - f.aimX * 18 + f.aimY * 13, y1 - f.aimY * 18 - f.aimX * 13);
+          ctx.stroke();
+          // the ring closing in: r * 2.8 at the stop, the rim at the launch
+          ctx.strokeStyle = rgba(hot, (0.3 + 0.6 * ch) * fade);
+          ctx.lineWidth = 3 + 5 * ch;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, r + 6 + r * 1.8 * (1 - ch), 0, TAU);
+          ctx.stroke();
+        }
+      } else {
+        var sp = Math.hypot(f.vx, f.vy);
+        if (sp > 260) {
+          blit(cv, f.x - f.vx * 0.05, f.y - f.vy * 0.05, f.ang - 0.3, 1, 0.14 * fade);
+          blit(cv, f.x - f.vx * 0.025, f.y - f.vy * 0.025, f.ang - 0.15, 1, 0.26 * fade);
+        }
+        if (m === "line" && phase === "spin" && sp > 1) {
+          var ux = f.vx / sp, uy = f.vy / sp;
+          ctx.setLineDash([10, 12]);
+          ctx.lineDashOffset = -f.age * 120;
+          ctx.strokeStyle = rgba(col, 0.38 * fade);
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(f.x + ux * (r + 8), f.y + uy * (r + 8));
+          ctx.lineTo(f.x + ux * (r + 230), f.y + uy * (r + 230));
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+      ctx.restore();
+    }
+
+    /* A red's blast, drawn in its layers (see `boom`). Times are seconds, so
+       every layer keeps its own beat whatever the blast's total life. The
+       light is added ("lighter"), which is what makes it glow over the floor
+       and the metal without a shadowBlur. */
+    function drawBlasts() {
+      var i, j, b, s, R, k, e, r, g, ray, len, w;
+      for (i = 0; i < blasts.length; i++) {
+        b = blasts[i]; s = b.t; R = b.r;
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        // the fireball: swells to .8R and burns down through yellow and orange
+        if (s < 0.55) {
+          k = s < 0.12 ? 1 : 1 - (s - 0.12) / 0.43;
+          r = R * (0.35 + 0.45 * (1 - Math.pow(1 - Math.min(1, s / 0.3), 2)));
+          g = ctx.createRadialGradient(b.x, b.y, 1, b.x, b.y, r);
+          g.addColorStop(0, rgba("#ffffff", k));
+          g.addColorStop(0.3, rgba(s < 0.2 ? "#fff3b0" : "#ffd43b", 0.95 * k));
+          g.addColorStop(0.65, rgba("#ff7a3d", 0.75 * k));
+          g.addColorStop(1, rgba(b.col, 0));
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.fill();
+        }
+        // the rays: thrown out of the core and gone in a quarter of a second
+        if (s < 0.26) {
+          k = 1 - s / 0.26;
+          e = 1 - Math.pow(1 - s / 0.26, 3);
+          ctx.fillStyle = rgba("#fff6d0", 0.85 * k);
+          for (j = 0; j < b.rays.length; j++) {
+            ray = b.rays[j]; len = R * 1.15 * ray.len * e; w = ray.w;
+            ctx.beginPath();
+            ctx.moveTo(b.x + Math.cos(ray.a - w) * R * 0.12, b.y + Math.sin(ray.a - w) * R * 0.12);
+            ctx.lineTo(b.x + Math.cos(ray.a) * len, b.y + Math.sin(ray.a) * len);
+            ctx.lineTo(b.x + Math.cos(ray.a + w) * R * 0.12, b.y + Math.sin(ray.a + w) * R * 0.12);
+            ctx.closePath(); ctx.fill();
+          }
+        }
+        ctx.globalCompositeOperation = "source-over";
+        // the shock ring, out to the radius it really hits, with a wide halo
+        if (s < 0.5) {
+          k = s / 0.5; e = 1 - Math.pow(1 - k, 3); r = R * e;
+          ctx.globalAlpha = (1 - k) * 0.3;
+          ctx.strokeStyle = "#ffb000"; ctx.lineWidth = 44 * (1 - k) + 6;
+          ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.stroke();
+          ctx.globalAlpha = 1 - k;
+          ctx.strokeStyle = b.col; ctx.lineWidth = 22 * (1 - k) + 4;
+          ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.stroke();
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 7 * (1 - k) + 2;
+          ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.stroke();
+        }
+        // ...and the second ring a beat behind it, a little wider
+        if (s > 0.1 && s < 0.7) {
+          k = (s - 0.1) / 0.6; e = 1 - Math.pow(1 - k, 2); r = R * 1.2 * e;
+          ctx.globalAlpha = (1 - k) * 0.8;
+          ctx.strokeStyle = "#ff7a3d"; ctx.lineWidth = 10 * (1 - k) + 2;
+          ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    /* The mark a blast leaves on the floor: a dark burn with an ember rim that
+       cools first, and a few cracks out of its heart. Drawn under the tops. */
+    function drawScorches() {
+      var i, j, c, k, glow, R, g;
+      for (i = 0; i < scorches.length; i++) {
+        c = scorches[i]; R = c.r;
+        k = 1 - c.t / c.life;
+        glow = clamp(1 - c.t / 0.9, 0, 1);
+        ctx.save();
+        g = ctx.createRadialGradient(c.x, c.y, 1, c.x, c.y, R * 0.62);
+        g.addColorStop(0, rgba("#050203", 0.62 * k));
+        g.addColorStop(0.6, rgba("#140606", 0.42 * k));
+        g.addColorStop(1, rgba("#140606", 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(c.x, c.y, R * 0.62, 0, TAU); ctx.fill();
+        ctx.lineCap = "round";
+        ctx.strokeStyle = rgba(glow > 0 ? "#ff7a3d" : "#050203", glow > 0 ? 0.25 + 0.6 * glow : 0.5 * k);
+        ctx.lineWidth = 3;
+        for (j = 0; j < c.cracks.length; j++) {
+          var a = c.cracks[j].a, l = c.cracks[j].len * R;
+          ctx.beginPath();
+          ctx.moveTo(c.x + Math.cos(a) * R * 0.1, c.y + Math.sin(a) * R * 0.1);
+          ctx.lineTo(c.x + Math.cos(a + 0.12) * l * 0.55, c.y + Math.sin(a + 0.12) * l * 0.55);
+          ctx.lineTo(c.x + Math.cos(a - 0.05) * l, c.y + Math.sin(a - 0.05) * l);
+          ctx.stroke();
+        }
+        if (glow > 0) {
+          ctx.strokeStyle = rgba("#ffb000", 0.55 * glow);
+          ctx.lineWidth = 6 * glow + 1;
+          ctx.beginPath(); ctx.arc(c.x, c.y, R * 0.42, 0, TAU); ctx.stroke();
+        }
+        ctx.restore();
+      }
     }
 
     function drawWaves() {

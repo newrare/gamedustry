@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.2.14",
+  "version": "1.6.1",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -52,7 +52,13 @@
     "chain": "combo/uiscroll",
     "doom": "warn/marimbataps",
     "miss": "miss/marimbaerror",
-    "hit": "hit/marimbaplink"
+    "hit": "hit/marimbaplink",
+    "rewind": "malus/phaser",
+    "stick": "malus/slime",
+    "burst": "burst/popplop",
+    "dark": "warn/errorui",
+    "dodge": "pickup/uipluck",
+    "shatter": "crash/impactglasslight"
   },
   "copy": {
     "fr": {
@@ -72,7 +78,7 @@
       ]
     }
   },
-  "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring.",
+  "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring. On the web the climb crosses five worlds, each with its own rings and its own rule: rewind rings that throw the others back, sticky rings that hold the ball, dark rings that must not be tapped, gap rings the ball can slip through — and all four at once in the last.",
   "store": {
     "copy": {
       "en": {
@@ -160,11 +166,15 @@
         "strings": {
           "Close": "Presque",
           "Combo": "Combo",
+          "Dark ring": "Anneau sombre",
           "Dodge the spikes": "Évite les piquants",
+          "Don't tap: let the ball bounce off it": "Ne tape pas : laisse la bille rebondir",
           "Empty beat": "Temps mort",
           "Feel the beat": "Sens le rythme",
           "Final score": "Score final",
+          "Full track": "Morceau complet",
           "Game over": "Partie terminée",
+          "Gap ring": "Anneau troué",
           "Get ready": "Prépare-toi",
           "Go!": "Go !",
           "Good": "Bien",
@@ -176,15 +186,28 @@
           "Perfect": "Parfait",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
+          "Rewind ring": "Anneau inverse",
           "Score": "Score",
+          "Sticky ring": "Anneau collant",
           "Sudden death": "Mort subite",
+          "Tap it: the rings behind back off, then rush in": "Touché, les anneaux suivants reculent puis foncent",
           "Tap to play": "Tap pour jouer",
+          "Tap when the ball lands, and again when it leaves": "Tape quand la bille arrive, puis quand elle repart",
+          "The round lasts the whole song": "La partie dure tout le morceau",
+          "Through a gap, no tap. On a bar, tap": "Dans un trou, pas de tap. Sur un plein, tape",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !"
         }
       }
     },
     "font": "exo2",
+    "music": {
+      "music": "chainring-glacier.mp3",
+      "musicNeon": "chainring-neon.mp3",
+      "musicAmber": "chainring-amber.mp3",
+      "musicEclipse": "chainring-eclipse.mp3",
+      "musicNova": "chainring-nova.mp3"
+    },
     "levels": {
       "objective": {
         "from": 700,
@@ -194,6 +217,29 @@
       "copy": {
         "en": "Score <b>{n}</b> on the chart",
         "fr": "Marque <b>{n}</b> sur la partition"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "Neon",
+          "Amber",
+          "Eclipse",
+          "Glacier",
+          "Nova"
+        ],
+        "fr": [
+          "Néon",
+          "Ambre",
+          "Éclipse",
+          "Glacier",
+          "Nova"
+        ]
       },
       "tune": {
         "gameSeconds": [

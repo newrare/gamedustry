@@ -16,19 +16,6 @@
 */
 window.GAMES = [
   {
-    slug: "bouncetry",
-    name: "Bouncetry",
-    accent: ["#ff3b57", "#2f86ff"],
-    fr: {
-      tagline: "Un casse-briques avec une limite de billes. Vise, puis tape pour allumer les boutons et enfermer la bille avec les briques de couleur.",
-      tags: ["Tap piège", "Casse-briques", "Boutons switch"]
-    },
-    en: {
-      tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
-      tags: ["Tap to trap", "Breakout", "Switch buttons"]
-    }
-  },
-  {
     slug: "gearball",
     name: "Gearball",
     accent: ["#7ef9ff", "#ffb44f"],
@@ -39,6 +26,58 @@ window.GAMES = [
     en: {
       tagline: "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
       tags: ["Tap to unlock", "Catch the spark", "Build the combo"]
+    }
+  },
+  {
+    slug: "chainring",
+    name: "Chainring",
+    accent: ["#4bf5ff", "#4263eb"],
+    fr: {
+      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
+      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
+    },
+    en: {
+      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
+      tags: ["Rhythm tap", "On the beat", "Sudden death"]
+    }
+  },
+  {
+    slug: "spinshock",
+    name: "Spinshock",
+    accent: ["#40ecff", "#ff4fbe"],
+    fr: {
+      tagline: "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
+      tags: ["Tap rythmé", "5 biomes", "Physique"]
+    },
+    en: {
+      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      tags: ["Timing tap", "5 biomes", "Physics"]
+    }
+  },
+  {
+    slug: "grudgeon",
+    name: "Grudgeon",
+    accent: ["#e2364b", "#9b8cff"],
+    fr: {
+      tagline: "Un dungeon crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
+      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
+    },
+    en: {
+      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
+      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
+    }
+  },
+  {
+    slug: "bouncetry",
+    name: "Bouncetry",
+    accent: ["#ff3b57", "#2f86ff"],
+    fr: {
+      tagline: "Un casse-briques avec une limite de billes. Vise, puis tape pour allumer les boutons et enfermer la bille avec les briques de couleur.",
+      tags: ["Tap piège", "Casse-briques", "Boutons switch"]
+    },
+    en: {
+      tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
+      tags: ["Tap to trap", "Breakout", "Switch buttons"]
     }
   },
   {
@@ -104,32 +143,6 @@ window.GAMES = [
     en: {
       tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
       tags: ["Drag a ring", "Three per ray", "8 special beads"]
-    }
-  },
-  {
-    slug: "spinshock",
-    name: "Spinshock",
-    accent: ["#40ecff", "#ff4fbe"],
-    fr: {
-      tagline: "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
-      tags: ["Tap rythmé", "5 biomes", "Physique"]
-    },
-    en: {
-      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
-      tags: ["Timing tap", "5 biomes", "Physics"]
-    }
-  },
-  {
-    slug: "chainring",
-    name: "Chainring",
-    accent: ["#4bf5ff", "#4263eb"],
-    fr: {
-      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
-      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
-    },
-    en: {
-      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
-      tags: ["Rhythm tap", "On the beat", "Sudden death"]
     }
   },
   {

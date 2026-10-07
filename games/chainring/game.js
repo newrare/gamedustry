@@ -16,12 +16,12 @@
     designWidth: 720, designHeight: 1280, bg: "#0a0a18",
     layout: { hudHeight: 168, ctaHeight: 120, sideMargin: 30 },
 
-    /* The painted scene goes behind the ROUND too, not just behind the intro
-       and the end screen: assets/image/embed/chainring-background-phone.webp replaces the
-       radial gradient this game used to draw as its own ground. The motor puts it in
-       as a CSS layer under the canvas (Art.dressFrame), and render() below asks
-       Art.scene() before painting a ground of its own. */
-    sceneArt: true,
+    /* The painted scene dresses the intro and the end screen only. The ROUND
+       paints its own ground — a kaleidoscope per biome (CONFIG.biomes,
+       `ground`), dark and in the hues opposite the rings, so the rings and the
+       ball are always the brightest, most saturated things in the frame. A
+       picture under the arena could not promise that. */
+    sceneArt: false,
     intro: { logo: "logo", demo: "tap", caption: "" },
     hud: { score: true, timer: true },
     /* The bed is the metronome: the track runs at a dead-steady 128 BPM (a beat
@@ -30,7 +30,12 @@
        those 64 beats so the grid never shifts, and Beat hands the game a clock
        locked to it — every ring is launched and lands on that grid. Re-measure
        these three numbers if the track is ever re-cut or re-encoded.          */
-    music: { volume: 0.10, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64 },
+    music: { volume: 0.10, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64,
+             /* The web menus' bed: the soft passage of Glacier's track (bars
+                53-68), which the web build ships as `music` — see `beds`
+                below. A playable has no menu and never reads it. */
+             menu: { from: 99.985, length: 32.2, bpm: 125, beatOffset: 0.145, beats: 64,
+                     gain: 1.1, fade: 1.8 } },
     copy: {
       start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
@@ -99,7 +104,112 @@
        of the same corner of the arena. */
     speedMax: 1300,        // px/s: fastest a flight may be launched or arrive
     doomSpeed: 320,        // closing speed of the spiked game-over ring
-    chainEvery: 5          // combo interval that fires a chain-reaction payoff
+    chainEvery: 5,         // combo interval that fires a chain-reaction payoff
+
+    /* --- the five biomes (web target) ---
+       A lerp only ever makes the same chart denser. Each six-level stretch of
+       the climb is therefore a WORLD with its own look — how a ring and the
+       ball are drawn, and the palette they are drawn in — and the RULE that
+       arrives with it, one new kind of ring per biome:
+         rewind  tapped, it shoves every ring behind it back out, and they rush
+                 in again to land on their beat all the same
+         sticky  the ball holds on and rides the rim for `stickBeats`, then the
+                 ring bursts: a tap when the ball lands, another when it leaves
+         dark    must NOT be tapped: the ball bounces off it alone, which is
+                 a PERFECT step of the combo, and a tap on it breaks the chain
+         gap     sweeps across the ball in mid-flight, on a beat the ball flies
+                 over, its gaps standing still: through a gap, no tap — a
+                 PERFECT, and the ring dives on to the centre and breaks
+                 there; on a bar, the ball bounces off it there — a tap on
+                 that bounce is a PERFECT too, and breaks it
+       The rules are taught in that order — first a ring that only lies to the
+       eye, then one that adds a tap, then one that takes a tap away, then one
+       that takes it away only sometimes — and NOVA brings them back two, then
+       three, then four at a time (applyLevel). A playable and a free round
+       wear NEON with no rule at all, which is the game as it always was.
+       `ring` is what a ring IS there (DESIGN, below), `look` how the ball is
+       drawn; `rings` / `balls` are the palettes (`balls` climbs with the combo).
+
+       `ground` is the biome's KALEIDOSCOPE, drawn by the game (buildGround):
+       one MOTIF scattered over a slice of the disc and mirrored `fold` times
+       around the arena's centre, turning slowly (`spin`, rad/s) and breathing
+       on the beat (`glow`). Its colours are the OPPOSITE of the rings' in hue
+       and far under them in value — purple under Neon's cyan, navy under
+       Amber's gold, gold under Eclipse's ice blue, crimson under Glacier's
+       cyan, emerald under Nova's pinks: five hues spread round the wheel, so
+       no two biomes read as one. The ground is felt and never read.         */
+    biomes: [
+      { name: "Neon",    look: "neon", ring: "tube",    rules: ["rewind"],
+        rings: ["#00e5ff", "#ff2d95", "#c86bff", "#39ff14", "#ffe600", "#ff6b35", "#18dcff"],
+        balls: ["#00e5ff", "#39ff14", "#ffe600", "#ff9f1c", "#ff2d95", "#c86bff", "#ff1744"],
+        ground: { style: "tunnel", motif: "shards",    fold: 8,  spin: 0.025,  base: ["#24103e", "#0c0518"], ink: ["#4a2280", "#3a1a6e", "#5a1f80", "#2e1a6a"], glow: "#9a4cff" } },
+      { name: "Amber",   look: "amber", ring: "sprocket",   rules: ["sticky"],
+        rings: ["#ffb627", "#ff8c42", "#ffd166", "#f9844a", "#ffc43d", "#ff9f1c"],
+        balls: ["#ffd166", "#ffb627", "#ff9f1c", "#ff7b00", "#ff5400", "#e85d04", "#ff006e"],
+        ground: { style: "hive", motif: "cells",     fold: 6,  spin: -0.02,  base: ["#0a1e46", "#030a1c"], ink: ["#16357a", "#112a66", "#1d4290", "#0d2456"], glow: "#2f6bff" } },
+      { name: "Eclipse", look: "eclipse", ring: "chain", rules: ["dark"],
+        rings: ["#8fa8ff", "#b388ff", "#7fd1ff", "#c77dff", "#9aa5ff"],
+        balls: ["#e9edff", "#c7d2fe", "#b8c0ff", "#cdb4ff", "#e0aaff", "#ff9ecf", "#ff6b9a"],
+        ground: { style: "spiral", motif: "crescents", fold: 10, spin: 0.015,  base: ["#2e2008", "#120c02"], ink: ["#5e4410", "#4a360c", "#705214", "#3e2c0a"], glow: "#e0a020" } },
+      { name: "Glacier", look: "glacier", ring: "crown", rules: ["gap"],
+        rings: ["#22d3ee", "#5eead4", "#38bdf8", "#67e8f9", "#818cf8", "#2dd4bf"],
+        balls: ["#e0f7ff", "#a5f3fc", "#67e8f9", "#5eead4", "#93c5fd", "#a78bfa", "#f0abfc"],
+        ground: { style: "frost", motif: "crystals",  fold: 6,  spin: -0.018, base: ["#3a0a10", "#140306"], ink: ["#6a1420", "#561018", "#7a1c28", "#480c1a"], glow: "#ff3048" } },
+      { name: "Nova",    look: "nova", ring: "ribbon",    rules: ["rewind", "sticky", "dark", "gap"],
+        rings: ["#ff2d95", "#ff6b35", "#ffe600", "#c86bff", "#ff4d6d", "#ffa62b"],
+        balls: ["#ffe600", "#ffb703", "#ff6b35", "#ff2d95", "#c86bff", "#7b2cff", "#ffffff"],
+        ground: { style: "warp", motif: "petals",    fold: 12, spin: 0.03,   base: ["#06301e", "#01120a"], ink: ["#0d5236", "#0b4430", "#13633f", "#08382a"], glow: "#14c97a" } }
+    ],
+    /* --- one bed per biome (web target) ---
+       Each biome rides its own track — `track` is its key in ASSETS.sounds,
+       which the web build fills from `web.music` in the manifest (the plain
+       `music` key is Glacier's there, so the menu bed is decoded with the
+       rest; the four others are decoded only when a round asks for them).
+       A playable ships none of them and keeps the original 128 BPM bed.
+
+       `bpm` and `beatOffset` (the first kick, in seconds into the file) are
+       MEASURED on the shipping cut by template-matching the kick at every
+       beat: a track whose grid moved under it is useless to a game written on
+       the beat. Eclipse and Glacier each jumped ~150 ms across a breakdown
+       (an artefact of the generator) and their masters are re-timed — 0.16 s
+       taken out of the quiet passage — which puts every kick of all five
+       within 25 ms of its grid, under a quarter of the PERFECT window.
+
+       `stages` are the first five levels of the biome, each a STRETCH of the
+       track — `[first bar, bars]`, bars counted from `beatOffset`, chosen on
+       the track's own phrase seams and long enough that a round rarely wraps
+       — and the sixth level plays the WHOLE track: its round lasts the song
+       (`end` is where the music stops), the third star no longer cuts it
+       short (`levelMaxed`) and its objective is scaled to its length
+       (`levelGoal`).                                                       */
+    beds: [
+      { track: "musicNeon",    bpm: 125.06, beatOffset: 0.152, end: 174.8,
+        stages: [[2, 16], [10, 16], [26, 20], [51, 20], [72, 20]] },
+      { track: "musicAmber",   bpm: 105,    beatOffset: 0.100, end: 118.97,
+        stages: [[2, 18], [9, 18], [17, 18], [25, 18], [35, 18]] },
+      { track: "musicEclipse", bpm: 125,    beatOffset: 0.145, end: 184.2,
+        stages: [[1, 23], [25, 24], [33, 23], [65, 24], [73, 23]] },
+      { track: "music",        bpm: 125,    beatOffset: 0.145, end: 174.9,
+        stages: [[1, 28], [17, 28], [33, 28], [41, 28], [65, 28]] },
+      { track: "musicNova",    bpm: 144,    beatOffset: 0.070, end: 178.4,
+        stages: [[1, 36], [25, 36], [41, 36], [59, 36], [69, 36]] }
+    ],
+    stageFade: 1.0,          // seconds a stage's stretch fades in, and crossfades if it wraps
+
+    /* The level each biome opens on — the LEVEL NUMBER, not the map's `d`: the
+       two roads out of a fork have to be the same world, and
+       `web.levels.bands.from` in the manifest carries the very same list. */
+    biomeFrom: [1, 7, 13, 19, 25],
+    ruleRate: [0.2, 0.36],   // share of landing rings that carry the rule, first..last level of a biome
+    gapRate: [0.12, 0.22],   // share of bounces whose next flight is planned for a gap ring, same
+    stickBeats: 2,           // beats the ball rides a sticky ring before it bursts
+    stickRide: 0.7,          // radians it slides along the rim meanwhile
+    rewindPush: 150,         // px a rewind tap shoves the rings behind it back out
+    gapOpen: 0.6,            // share of gap rings that meet the ball on a gap
+    gapWidth: 0.34,          // half-width of a gap, in radians (the ball is ~0.13 at the rim)
+    gapClear: 60,            // px a gap ring keeps from every other ring on screen, all its life
+    gapLead: 0.5,            // beats a gap ring enters ahead of any ring landing after it
+    gapDive: 0.6             // beats a gap ring the ball went through takes to the centre, speeding up
   };
 
   /* ===================================================================
@@ -129,9 +239,28 @@
      are the shared motor.
      =================================================================== */
   var Game = (function () {
-    var PALETTE = ["#00e5ff", "#ff2d95", "#c86bff", "#39ff14", "#ffe600", "#ff6b35", "#18dcff"];
-    // The ball glows a hotter colour the higher the combo climbs.
-    var BALL_COLORS = ["#00e5ff", "#39ff14", "#ffe600", "#ff9f1c", "#ff2d95", "#c86bff", "#ff1744"];
+    /* The biome being played (CONFIG.biomes), fixed by applyLevel before
+       reset() and read everywhere: BIO.rings is the ring palette, BIO.balls the
+       colour the ball glows at as the combo climbs, BIO.ring what a ring is
+       there and BIO.look how the ball is drawn.
+       RULES are the kinds of ring this level deals, RATE the share of landing
+       rings that carry one, GAPRATE the share of bounces whose next flight
+       is planned for a gap ring (planFlight). */
+    var BIO = CONFIG.biomes[0], RULES = [], RATE = 0, GAPRATE = 0;
+    /* The bed of the level (CONFIG.beds), web target only: SEC is the section
+       reset() arms, FULL says it is the whole track. A playable ships none of
+       the beds (BEDS false) and keeps its own track and its own grid. */
+    var BEDS = !!ASSETS.sounds.musicNeon, SEC = null, FULL = false;
+    // The kinds a tap must leave alone: the dark ring, and a gap ring that
+    // meets the ball on one of its gaps.
+    function noTap(ring) { return ring.kind === "dark" || (ring.kind === "gap" && ring.open); }
+    // What each kind says the first time it shows up in a round (Notify).
+    var HINTS = {
+      rewind: { word: "Rewind ring", sub: "Tap it: the rings behind back off, then rush in", icon: "info" },
+      sticky: { word: "Sticky ring", sub: "Tap when the ball lands, and again when it leaves", icon: "hourglass" },
+      dark:   { word: "Dark ring",   sub: "Don't tap: let the ball bounce off it", icon: "warn" },
+      gap:    { word: "Gap ring",    sub: "Through a gap, no tap. On a bar, tap", icon: "eye" }
+    };
     // Timing grades, tightest window first: higher tier = more points + juice.
     // `win` is how far off the beat the tap may be, **in beats** — a ring lands
     // on the beat, so the grade is pure rhythm accuracy and the widest window
@@ -151,15 +280,19 @@
     // crossing the arena, and the bounce stops reading as a bounce.
     var MINARC = 1.2;
 
-    var C, arenaR, ball, segs, rings, trail, colorIdx, bgGrad, doom;
+    var C, arenaR, ball, segs, rings, trail, colorIdx, doom;
+    var kalKey = "", glowGrad = null;     // the ground's cache key and beat glow
     var shockwaves, rays, ballPop, hitFx, tAnim;
     var held, heldT, startAt, readyPop;   // the lead-in hold, see CONFIG
     var lastA, prevA, lastBeats;          // the last two bounces, for variety
     var lastStyle, sinceLow;              // bounce shape, and time since the last fall
     var score, combo, bestCombo, stats;
     var maxScore, idealCombo;   // running "perfect play" reference for the stars
+    var seen, lastKind;         // kinds already announced this round, the last landing ring's kind
+    var lastFree;               // the ring last left alone (letAlone), while a late tap can still spoil it
+    var gapAfter, gapBorn;      // the last gap ring's beat and birth: no ring landing later is born earlier
 
-    function ballColor() { return BALL_COLORS[Math.min(combo, BALL_COLORS.length - 1)]; }
+    function ballColor() { return BIO.balls[Math.min(combo, BIO.balls.length - 1)]; }
     function period() { return Beat.period() || 0.5; }
     function ballDist() {
       return Math.sqrt((ball.x - C.x) * (ball.x - C.x) + (ball.y - C.y) * (ball.y - C.y));
@@ -171,18 +304,21 @@
       // audible (see CONFIG --- lead-in ---), then release() launches the chain.
       held = true; heldT = 0; startAt = null; readyPop = false;
       ball = { x: C.x, y: C.y - 90, vx: 0, vy: 0 };
-      segs = []; rings = []; trail = []; colorIdx = 0; bgGrad = null; doom = null;
+      segs = []; rings = []; trail = []; colorIdx = 0; doom = null;
       lastA = null; prevA = null; lastBeats = 0; lastStyle = null; sinceLow = 0;
       shockwaves = []; rays = []; ballPop = 0; hitFx = 0; tAnim = 0;
       score = 0; combo = 0; bestCombo = 0;
       maxScore = 0; idealCombo = 0;
+      seen = {}; lastKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
       HUD.setScoreNow(0);
       HUD.setLeft("x0", "Combo");
+      // The level's bed, started by the motor when the entrance lands.
+      if (SEC) Music.arm(SEC);
     }
 
     function onResize() {
-      C = { x: Layout.cx, y: Layout.cy }; bgGrad = null;
+      C = { x: Layout.cx, y: Layout.cy };
       // The bowl: the widest disc centred on the arena whose rim still leaves a
       // ring inside the frame, and never wider than the band gameplay owns.
       arenaR = Math.min(view.w / 2, Layout.h / 2) - CONFIG.arenaMargin;
@@ -279,7 +415,7 @@
        against that, pushes back on anything landing near the last two spots or
        repeating the last flight length, and then picks at *random* among what
        is left. Short snaps, high lobs and long crossings all stay on the table. */
-    function planFlight(px, py) {
+    function planFlight(px, py, inward, gapWant, b0) {
       var lim = arenaR - CONFIG.ballR, per = period();
       var prog = clamp(Round.elapsed() / Math.max(1, CONFIG.gameSeconds), 0, 1);
       // A flight longer than one beat is what leaves the beats it passes over
@@ -312,6 +448,8 @@
           var a1 = a0 + off;
           var qx = C.x + Math.cos(a1) * lim, qy = C.y + Math.sin(a1) * lim;
           var v = solve(px, py, qx, qy, T);
+          // Off a gap ring's bar the ball has to come away from it, inwards.
+          if (inward && v.vx * (px - C.x) + v.vy * (py - C.y) >= 0) continue;
           if (!fits(px, py, v, T, lim)) continue;
           var launch = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
           var vy1 = v.vy + CONFIG.gravity * T;
@@ -336,10 +474,26 @@
           cands.push(cand); sum[beats] += w;
         }
       }
+      /* A gap ring wanted: only a flight long enough to pass over a beat, on
+         which one can be dealt clear of every other ring, will do — and the
+         pick is made among those alone, by the same weights. None: the flight
+         is planned as any other and the ring waits for a later bounce. */
+      var fit = [], fitW = 0, chosen = null;
+      if (gapWant) {
+        for (var g = 0; g < cands.length; g++) {
+          if (cands[g].beats < 2) continue;
+          cands[g].gap = fitGap(px, py, cands[g].v, cands[g].beats, b0, gapWant.open);
+          if (cands[g].gap) { fit.push(cands[g]); fitW += cands[g].w; }
+        }
+      }
+      if (fit.length) {
+        var pg = Rand.range(0, fitW);
+        for (g = 0; g < fit.length; g++) { pg -= fit[g].w; if (pg <= 0) { chosen = fit[g]; break; } }
+        if (!chosen) chosen = fit[fit.length - 1];
+      }
       // Nothing inside the comfort band: take the likeliest exact solution
       // anyway. It is still a real parabola onto a real ring, only harsher.
-      var chosen = null;
-      if (!cands.length) chosen = loose;
+      else if (!cands.length) chosen = loose;
       else {
         var total = 0, n;
         for (n = 0; n < cands.length; n++) {
@@ -359,24 +513,218 @@
 
     // A ring is launched for every planned bounce: it is the surface the ball
     // will turn around on, and it closes onto the rim exactly on that beat.
-    function spawnRing(slot) {
+    function spawnRing(slot, kind) {
       var span = travelBeats();
-      var ring = { hit: slot, born: slot - span, span: span, r: CONFIG.spawnR,
-                   color: PALETTE[colorIdx++ % PALETTE.length], pulse: 0, struck: false };
+      // Never born with or before a gap ring that lands ahead of it: it would
+      // enter alongside it, or inside it and slower, and the gap ring would
+      // sweep across it (addGap). It follows it in, `gapLead` behind.
+      if (slot > gapAfter) span = Math.min(span, slot - gapBorn - CONFIG.gapLead);
+      // `land` is the radius the ring reaches on its beat (the rim, but for a
+      // gap ring); `kicks` are the shoves a rewind tap gave it (kickAt).
+      var ring = { kind: kind || "", hit: slot, born: slot - span, span: span, land: arenaR,
+                   r: CONFIG.spawnR, color: BIO.rings[colorIdx++ % BIO.rings.length],
+                   pulse: 0, struck: false, kicks: [], spin: Rand.range(-0.6, 0.6) };
       rings.push(ring);
+      if (ring.kind) announce(ring.kind);
       return ring;
     }
 
-    function addSeg(px, py, b0) {
-      var f = planFlight(px, py);
+    /* The kind of the next LANDING ring: a rule of the level, at its RATE —
+       never inside the opening pulse (`steadyFor`, the round's own metronome),
+       never two sticky rings or two dark rings back to back. The gap ring is
+       not a landing ring and is dealt by addGap. */
+    function pickKind(slot) {
+      if (!RULES.length || held || Round.elapsed() < CONFIG.steadyFor) return "";
+      var pool = [];
+      for (var i = 0; i < RULES.length; i++) if (RULES[i] !== "gap") pool.push(RULES[i]);
+      if (!pool.length || !Rand.chance(RATE)) return "";
+      var k = Rand.pick(pool);
+      // A rewind landing while a gap ring is still on screen would shove the
+      // rings round it back out unevenly, and across it.
+      if (k === "rewind") {
+        for (i = 0; i < rings.length; i++) if (rings[i].kind === "gap" && leavesAt(rings[i]) >= slot) return "";
+      }
+      return k === lastKind && k !== "rewind" ? "" : k;
+    }
+
+    // The first ring of a kind in a round names its rule, once.
+    function announce(kind) {
+      if (seen[kind]) return;
+      seen[kind] = true;
+      var h = HINTS[kind];
+      Notify.say(h.word, { sub: h.sub, kind: "info", icon: h.icon, hold: 3200 });
+    }
+
+    // `inward`: the flight leaves a gap ring's bar, not the rim (see below).
+    function addSeg(px, py, b0, inward) {
+      var want = gapWanted();
+      var f = (inward && planFlight(px, py, true, want, b0)) || planFlight(px, py, false, want, b0);
       // Remember what this bounce did, so the next two are pushed elsewhere.
       prevA = lastA; lastA = f.a1; lastBeats = f.beats;
       var seg = { b0: b0, b1: b0 + f.beats, T: f.T, x0: px, y0: py,
                   vx: f.v.vx, vy: f.v.vy, x1: f.x1, y1: f.y1 };
-      seg.ring = spawnRing(seg.b1);
-      seg.color = seg.ring.color;
       segs.push(seg);
+      /* A gap ring that meets the ball on a bar is a surface like any other:
+         the flight is cut where the bar crosses it, the ball bounces off it
+         there, and that ring is the landing — the rim's is never dealt. */
+      var gap = f.gap ? dealGap(f.gap) : null;
+      if (gap && !gap.open) {
+        var u = (gap.hit - b0) * period();
+        seg.b1 = gap.hit; seg.T = u; seg.x1 = gap.x; seg.y1 = gap.y;
+        seg.ring = gap; seg.color = gap.color; seg.bar = true;
+        lastA = Math.atan2(gap.y - C.y, gap.x - C.x); lastKind = "";
+        return seg;
+      }
+      lastKind = pickKind(b0 + f.beats);
+      seg.ring = spawnRing(seg.b1, lastKind);
+      seg.color = seg.ring.color;
+      if (lastKind === "sticky") addStick(seg);
       return seg;
+    }
+
+    /* A sticky ring holds the ball: the bounce is followed by a segment that is
+       not a flight at all, the ball riding the rim for `stickBeats` while the
+       ring turns with it. The ring is re-armed for the beat it bursts on (see
+       the ring pass in update), and the next flight is solved from wherever
+       the ride left the ball. */
+    function addStick(seg) {
+      var lim = arenaR - CONFIG.ballR, a0 = Math.atan2(seg.y1 - C.y, seg.x1 - C.x);
+      // Ride up whichever flank the ball landed on, so it is never carried
+      // across the floor of the bowl into the very spot it came from.
+      var da = (Math.cos(a0) >= 0 ? -1 : 1) * CONFIG.stickRide * Rand.range(0.7, 1.2);
+      var a1 = a0 + da;
+      var st = { stick: true, b0: seg.b1, b1: seg.b1 + CONFIG.stickBeats, a0: a0, da: da, lim: lim,
+                 x0: seg.x1, y0: seg.y1, x1: C.x + Math.cos(a1) * lim, y1: C.y + Math.sin(a1) * lim,
+                 ring: seg.ring, color: seg.color };
+      seg.ring.release = st.b1; seg.ring.ride = st;
+      segs.push(st);
+      prevA = lastA; lastA = a1;
+    }
+
+    /* A gap ring is dealt on a beat a long flight passes over, sized to the
+       ball's distance from the centre ON that beat: it sweeps in, crosses the
+       ball in mid-flight, and carries on to the centre. Its gaps stand still
+       — a turning gap could not be read off the ball's arc — and are laid so
+       that the ball meets either the middle of a gap (`open`: no tap, and the
+       ring shatters as a step of the combo) or the middle of a bar (the ball
+       bounces off it, see addSeg: tap it on the hit, and it breaks). A bar
+       stops on the ball, its edge on the ball's, like the rim; a gap carries
+       on to the centre. Returns the ring, or null when none was dealt. */
+    // Is the next flight to carry a gap ring, and which kind? Null: no.
+    function gapWanted() {
+      if (RULES.indexOf("gap") < 0 || held || Round.elapsed() < CONFIG.steadyFor) return null;
+      if (!Rand.chance(GAPRATE)) return null;
+      return { open: Rand.chance(CONFIG.gapOpen) };
+    }
+    /* The gap ring a flight (`v` from P, `beats` long, leaving on `b0`) can
+       carry, or null. It closes in at the speed every ring does — `spawnR` to
+       the rim in `travelBeats` — so nothing about it rushes before the ball
+       has gone through: only the dive past it speeds up (radiusAt). Every
+       beat the flight passes over is tried, from a random one, and the first
+       that keeps clear of every ring already dealt is the one. A ring landing
+       LATER cannot meet it — spawnRing holds its birth back behind this
+       one's, so it trails behind. */
+    function fitGap(px, py, v, beats, b0, open) {
+      var now = Beat.beats(), k0 = Rand.int(1, beats - 1);
+      for (var j = 0; j < beats - 1; j++) {
+        var k = 1 + (k0 - 1 + j) % (beats - 1), u = k * period();
+        var x = px + v.vx * u, y = py + v.vy * u + 0.5 * CONFIG.gravity * u * u;
+        var d = Math.sqrt((x - C.x) * (x - C.x) + (y - C.y) * (y - C.y));
+        if (d < arenaR * 0.4) continue;                   // too small a ring to read
+        var a = Math.atan2(y - C.y, x - C.x), land = open ? d : d + CONFIG.ballR;
+        var span = travelBeats() * (CONFIG.spawnR - land) / (CONFIG.spawnR - arenaR);
+        var ring = { kind: "gap", hit: b0 + k, born: b0 + k - span, span: span, land: land,
+                     x: x, y: y, r: CONFIG.spawnR, pulse: 0, struck: false, kicks: [],
+                     open: open, spin: 0, phase: open ? a : a + Math.PI / 3 };
+        // Dealt too late to cover that run-up at that speed, or not clear.
+        if (ring.born >= now && clearOf(ring, ring.born)) return ring;
+      }
+      return null;
+    }
+    function dealGap(ring) {
+      ring.color = BIO.rings[colorIdx++ % BIO.rings.length];
+      rings.push(ring);
+      gapAfter = ring.hit; gapBorn = Math.max(gapBorn, ring.born);
+      announce("gap");
+      return ring;
+    }
+
+    /* A ring's radius at beat `t` on its own schedule (a rewind kick aside: it
+       is back to nothing before the landing), and the beat it leaves the
+       screen: a gap ring the ball went through once its dive reaches the
+       centre, one met on a bar on its beat (struck or hidden, see passRing),
+       any other a CLOSE window past its landing — or past the end of the
+       ride it holds the ball for.
+       The dive: from the ball, the ring carries on at its own speed and
+       speeds up, to reach the centre `gapDive` beats later. */
+    function radiusAt(ring, t) {
+      if (ring.release && t >= ring.hit) return arenaR;
+      var S = CONFIG.spawnR, x = t - ring.hit;
+      if (ring.kind === "gap" && ring.open && x > 0) {
+        var v0 = (S - ring.land) / ring.span, D = CONFIG.gapDive;
+        var acc = Math.max(0, ring.land - v0 * D) / (D * D);
+        return Math.max(0, ring.land - v0 * x - acc * x * x);
+      }
+      return S + (ring.land - S) * clamp((t - ring.born) / ring.span, 0, 1);
+    }
+    function leavesAt(ring) {
+      if (ring.kind === "gap") return ring.hit + (ring.open ? CONFIG.gapDive : 0);
+      return (ring.release || ring.hit) + MAXWIN;
+    }
+    // Does a gap ring keep `gapClear` from every ring on screen with it, from
+    // beat `t0` to the beat it leaves? Off the frame (past ~0.9 spawnR) a
+    // crossing is not seen and does not count.
+    function clearOf(g, t0) {
+      var vis = CONFIG.spawnR * 0.9, end = leavesAt(g);
+      for (var t = t0; t <= end; t += 0.05) {
+        var rg = radiusAt(g, t);
+        if (rg > vis) continue;
+        for (var i = 0; i < rings.length; i++) {
+          var o = rings[i];
+          // A rewind landing before it is gone would shove it, and the rings
+          // round it, back out unevenly — even before it is on screen.
+          if (o.kind === "rewind" && !o.struck && o.hit <= end) return false;
+          if (o.done || t > leavesAt(o)) continue;
+          var ro = radiusAt(o, t);
+          if (ro <= vis && Math.abs(ro - rg) < CONFIG.gapClear) return false;
+        }
+      }
+      return true;
+    }
+
+    /* A rewind tap: every ring still closing in is shoved back out, then rushes
+       in again — and still lands on its beat, because a kick is an offset
+       that is back to nothing half a beat before the landing (kickAt). It
+       lies to the eye and never to the ear. */
+    function rewind(src) {
+      var now = Beat.beats(), any = false;
+      for (var i = 0; i < rings.length; i++) {
+        var r = rings[i], left = r.hit - now;
+        if (r === src || r.struck || r.done || r.held || left < 1.2) continue;
+        r.kicks.push({ t0: now, d: left - 0.5, a: CONFIG.rewindPush * Math.min(1, (left - 0.5) / 2.5) });
+        any = true;
+      }
+      if (!any) return;
+      spawnShock(arenaR, src.color, 1.4);
+      Sound.clip("rewind", 0.6);
+    }
+    // Out fast, then back in on an accelerating curve that flattens onto the
+    // ring's own speed just before it lands.
+    function kickAt(ring, now) {
+      var off = 0;
+      for (var i = 0; i < ring.kicks.length; i++) {
+        var k = ring.kicks[i], x = (now - k.t0) / k.d;
+        if (x <= 0 || x >= 1) continue;
+        off += k.a * (x < 0.2 ? Math.sin(x / 0.2 * Math.PI / 2) : Math.pow(1 - (x - 0.2) / 0.8, 2));
+      }
+      return off;
+    }
+
+    // A gap ring met on a gap does not stop on its beat: it dives on to the
+    // centre (radiusAt). One met on a bar stops there, the ball's surface.
+    function ringRadius(ring, now) {
+      if (ring.held) return arenaR;
+      return radiusAt(ring, now) + kickAt(ring, now);
     }
 
     // Keep the chain of bounces planned a full ring flight ahead, so every ring
@@ -385,7 +733,7 @@
       var guard = 0, horizon = now + travelBeats() + 1;
       while (segs.length && segs[segs.length - 1].b1 < horizon && guard++ < 16) {
         var last = segs[segs.length - 1];
-        addSeg(last.x1, last.y1, last.b1);
+        addSeg(last.x1, last.y1, last.b1, last.bar);
       }
     }
 
@@ -393,6 +741,13 @@
     // no integration, so it cannot drift away from the ring waiting for it.
     function placeBall(now) {
       var s = segs[0], u = (now - s.b0) * period();
+      if (s.stick) {                         // held by a sticky ring: ride the rim
+        var k = clamp((now - s.b0) / (s.b1 - s.b0), 0, 1), a = s.a0 + s.da * k * k * (3 - 2 * k);
+        ball.x = C.x + Math.cos(a) * s.lim; ball.y = C.y + Math.sin(a) * s.lim;
+        ball.vx = 0; ball.vy = 0;
+        s.ring.spinA = a;
+        return;
+      }
       ball.x = s.x0 + s.vx * u;
       ball.y = s.y0 + s.vy * u + 0.5 * CONFIG.gravity * u * u;
       ball.vx = s.vx; ball.vy = s.vy + CONFIG.gravity * u;
@@ -400,9 +755,12 @@
 
     // The ball reaches the rim and the ring turns it around. The impact is worth
     // its own kick of juice whether or not the player tapped it.
+    // The end of a sticky ride is the burst, which the ring pass plays.
     function bounce(seg) {
+      if (seg.stick) return;
       Fx.burst(seg.x1, seg.y1, { color: seg.color, count: 6, speed: 280, size: 5, life: 0.35 });
-      spawnShock(arenaR, seg.color, 0.5);
+      spawnShock(seg.bar ? seg.ring.land : arenaR, seg.color, 0.5);
+      if (seg.ring.kind === "sticky") Sound.clip("stick", 0.7);
     }
 
     /* =====================================================================
@@ -445,6 +803,7 @@
       held = false;
       Fx.flash("#ffffff", 0.18);
       Pop.show("alert", { word: "Go!", hold: 200 });
+      if (FULL) Notify.say("Full track", { sub: "The round lasts the whole song", kind: "info", icon: "hourglass" });
     }
 
     // Timer out: a spiked ring is released. It cannot be tapped away — when it
@@ -495,6 +854,7 @@
       // bounce on. It is marked spent, drawn as a ghost, and cleared the instant
       // the ball actually reaches it (see the ring pass in update).
       ring.struck = true;
+      if (ring.kind === "rewind") rewind(ring);
       addScore(gained, tier.color);
       spawnShock(arenaR, tier.color, Math.min(2.2, 0.6 + combo * 0.12));
       ballPop = 1; hitFx = Math.min(1, 0.5 + combo * 0.06);
@@ -547,14 +907,28 @@
       if (held) return;                     // the lead-in is not part of the run
       var now = Beat.beats(), best = null, bestGap = 1e9;
       for (var i = 0; i < rings.length; i++) {
-        if (rings[i].struck) continue;      // already scored, waiting for the ball
+        if (rings[i].struck || rings[i].done) continue;   // already scored, waiting for the ball
         var gap = Math.abs(rings[i].hit - now);
         if (gap < bestGap) { bestGap = gap; best = rings[i]; }
       }
+      // A ring just left alone (a dark ring bounced off, a gap gone through)
+      // was paid as a perfect: a tap still inside its window is a tap on it,
+      // and takes that back.
+      if (lastFree && now - lastFree.hit <= MAXWIN && now - lastFree.hit < bestGap) {
+        var lf = lastFree;
+        lastFree = null;
+        score -= lf.gained; HUD.setScore(score); stats.perfect--;
+        lf.ring.broken = true;              // a diving gap ring stops there
+        return spoil(lf.ring);
+      }
       if (!best) return;
+      // A dark ring, or a gap ring the ball goes through: the tap IS the mistake.
+      if (bestGap <= MAXWIN && noTap(best)) return spoil(best);
       if (bestGap <= MAXWIN) {
         var tier = TIERS[TIERS.length - 1];
         for (var t = 0; t < TIERS.length; t++) { if (bestGap <= TIERS[t].win) { tier = TIERS[t]; break; } }
+        // The bounce off a gap ring's bar is read, not timed: a tap on it is a perfect.
+        if (best.kind === "gap") tier = TIERS[0];
         combo++;
         if (combo > bestCombo) bestCombo = combo;
         stats[tier.name.toLowerCase()]++;
@@ -573,6 +947,105 @@
                             at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
         Fx.shake(5, 0.2);
         Sound.clip("miss", 0.6);
+      }
+    }
+
+    // Tapped a ring that wanted to be left alone: the chain breaks there.
+    function spoil(ring) {
+      ring.struck = true; ring.spoiled = true;
+      combo = 0; stats.miss++;
+      HUD.setLeft("x0", "Combo");
+      Pop.show("score", { word: Lang.t(ring.kind === "dark" ? "Dark ring" : "Gap ring"), cls: "pop-miss", hold: 180,
+                          at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
+      Fx.shake(6, 0.22);
+      Sound.clip("dark", 0.6);
+    }
+
+    /* A ring left alone as it should be — a dark ring on the bounce off it, a
+       gap ring as the ball goes through: holding back IS the beat played
+       right, so it is a step of the combo graded PERFECT. A tap that still
+       comes inside its window spoils it (onDown). */
+    function letAlone(ring) {
+      var tier = TIERS[0];
+      combo++;
+      if (combo > bestCombo) bestCombo = combo;
+      stats.perfect++;
+      chance();
+      var gained = Math.round(10 * combo * tier.mult);
+      popRing(ring, tier, gained);
+      Sound.clip("dodge", 0.5, 1 + Math.min(combo, 10) * 0.03);
+      HUD.setLeft("x" + combo, "Combo", combo >= CONFIG.chainEvery ? "hot" : "");
+      if (combo % CONFIG.chainEvery === 0) triggerChain();
+      lastFree = { ring: ring, hit: ring.hit, gained: gained };
+      ring.struck = false;                  // a diving gap ring is drawn whole, not as a ghost
+    }
+
+    // An untapped ring has gone by: the chance is spent and the chain breaks.
+    function missRing(ring) {
+      Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
+      combo = 0; chance();                 // missed the beat (still a chance faced)
+      HUD.setLeft("x0", "Combo");
+      Sound.clip("miss", 0.45, 1.15);      // quiet: the tap was never made
+    }
+
+    // A sticky ring that has caught the ball is re-armed for its burst.
+    function holdRing(ring) {
+      ring.held = true; ring.struck = false; ring.hit = ring.release;
+    }
+    function burstRing(ring) {
+      for (var i = 0; i < 6; i++) {
+        var a = (ring.spinA || 0) + i * Math.PI / 3;
+        Fx.burst(C.x + Math.cos(a) * arenaR, C.y + Math.sin(a) * arenaR,
+                 { color: ring.color, count: 6, speed: 300, size: 6, life: 0.45 });
+      }
+      spawnShock(arenaR, ring.color, 1.2);
+      Fx.shake(8, 0.2);
+      Sound.clip("burst", 0.7);
+    }
+    // A gap ring breaks: a bar where the ball strikes it, a dive at the centre.
+    function shatter(ring, x, y) {
+      Fx.burst(x, y, { color: ring.color, count: 12, speed: 380, size: 5, life: 0.45 });
+      Fx.burst(x, y, { color: "#ffffff", count: 5, speed: 300, size: 4, life: 0.35 });
+      Sound.clip("shatter", 0.6);
+    }
+
+    /* One ring's life past its beat. A gap ring the ball goes through is
+       resolved on the hit and dives on, to break at the centre. A sticky ring
+       comes past its landing twice: once to catch the ball, once to burst. */
+    function passRing(ring, i, now) {
+      if (ring.kind === "gap") {
+        if (ring.open) {
+          if (!ring.done && now >= ring.hit) {
+            ring.done = true;
+            if (ring.spoiled) ring.broken = true; else letAlone(ring);
+          }
+          if (ring.done && !ring.broken && ring.r < 6) { ring.broken = true; shatter(ring, C.x, C.y); }
+        } else if (!ring.done) {
+          if (ring.struck) {
+            if (now >= ring.hit) { ring.done = ring.broken = true; shatter(ring, ball.x, ball.y); }
+          } else if (now > ring.hit + MAXWIN) {
+            ring.done = ring.broken = true; missRing(ring);
+          } else if (now >= ring.hit) {
+            // Bounced off untapped: out of sight at once (the ball flies back
+            // across where it stood), still there for a late tap to grade.
+            ring.gone = true;
+          }
+        }
+        if (ring.broken) rings.splice(i, 1);
+        return;
+      }
+      if (ring.struck) {
+        if (now < ring.hit) return;                        // the ball has not hit it yet
+        if (ring.kind === "sticky" && !ring.held) return holdRing(ring);
+        if (ring.held) burstRing(ring);
+        rings.splice(i, 1);
+      } else if (ring.kind === "dark") {
+        if (now >= ring.hit) { rings.splice(i, 1); letAlone(ring); }
+      } else if (now > ring.hit + MAXWIN) {
+        missRing(ring);
+        if (ring.kind === "sticky" && !ring.held) return holdRing(ring);
+        if (ring.held) burstRing(ring);
+        rings.splice(i, 1);
       }
     }
 
@@ -603,18 +1076,8 @@
          an untapped one for one CLOSE window past the bounce (still tappable,
          see onDown) and is then a miss.                                       */
       for (var i = rings.length - 1; i >= 0; i--) {
-        var ring = rings[i];
-        var p = clamp((now - ring.born) / ring.span, 0, 1);
-        ring.r = CONFIG.spawnR + (arenaR - CONFIG.spawnR) * p;
-        if (ring.struck) {
-          if (now >= ring.hit) rings.splice(i, 1);        // the ball has hit it
-        } else if (now > ring.hit + MAXWIN) {
-          Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
-          rings.splice(i, 1);
-          combo = 0; chance();                 // missed the beat (still a chance faced)
-          HUD.setLeft("x0", "Combo");
-          Sound.clip("miss", 0.45, 1.15);                 // quiet: the tap was never made
-        }
+        rings[i].r = ringRadius(rings[i], now);
+        passRing(rings[i], i, now);
       }
 
       // Game-over ring closes in and ends the run when it reaches the ball.
@@ -651,25 +1114,10 @@
     }
 
     function render() {
-      // Dark backdrop. The radial gradient is built once and reused (cheap).
-      /* No ground of our own when the painted scene is behind the canvas
-         (CONFIG.sceneArt): the frame pipeline has already wiped the canvas, so
-         the arena is drawn straight onto the picture. The gradient is what this
-         game painted before, and it is still the fallback for a build with no
-         artwork on disk. */
-      if (!Art.scene()) {
-        if (!bgGrad) {
-          bgGrad = ctx.createRadialGradient(view.w / 2, C.y, 60, view.w / 2, C.y, 730);
-          bgGrad.addColorStop(0, "#151439");
-          bgGrad.addColorStop(0.6, "#0a0a1c");
-          bgGrad.addColorStop(1, "#05050e");
-        }
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, view.w, view.h);
-      }
-
       var bc = ballColor();
       var now = Beat.beats(), beat = Beat.pulse(1);
+
+      drawGround(beat);
 
       /* The rim (where every ring lands and where the ball turns around), the
          dotted guide along the ball's flight and the marker on its landing spot
@@ -684,27 +1132,11 @@
       // Each ring is an element of the round's entrance (Enter), landing on
       // the arena's centre from the outermost in.
       for (var i = 0; i < rings.length; i++) {
-        var ring = rings[i], hot = !ring.struck && Math.abs(ring.hit - now) <= MAXWIN;
-        var rr = Math.max(1, ring.r), pl = ring.pulse || 0;
+        var ring = rings[i];
+        if (ring.gone) continue;
+        var hot = !ring.struck && !ring.done && !noTap(ring) && Math.abs(ring.hit - now) <= MAXWIN;
         if (!Enter.begin(C.x, C.y)) continue;
-        if (ring.struck) {
-          ctx.globalAlpha = 0.3; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke();
-          ctx.globalAlpha = 1;
-          Enter.end();
-          continue;
-        }
-        if (pl > 0) {
-          ctx.globalAlpha = Math.min(0.5, pl * 0.4); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 18 + pl * 16;
-          ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
-        }
-        if (hot) {
-          ctx.globalAlpha = 0.22; ctx.strokeStyle = ring.color; ctx.lineWidth = 20;
-          ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
-        }
-        ctx.strokeStyle = pl > 0 ? "#ffffff" : ring.color;
-        ctx.lineWidth = (hot ? 11 : 7) + pl * 6;
-        ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, Math.PI * 2); ctx.stroke();
+        drawRing(ring, Math.max(1, ring.r), hot, now);
         Enter.end();
       }
 
@@ -761,15 +1193,564 @@
       // halo breathes on the beat so the ball itself keeps the tempo. The
       // last element of the entrance to land.
       if (Enter.begin(ball.x, ball.y)) {
-        var br = CONFIG.ballR * (1 + ballPop * 0.5 + beat * beat * 0.10);
-        ctx.globalAlpha = 0.3 + hitFx * 0.4 + beat * beat * 0.12; ctx.fillStyle = bc;
-        ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (1.7 + ballPop * 0.6 + beat * beat * 0.25), 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 1; ctx.fillStyle = bc;
-        ctx.beginPath(); ctx.arc(ball.x, ball.y, br, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath(); ctx.arc(ball.x, ball.y, br * (0.5 + ballPop * 0.25), 0, Math.PI * 2); ctx.fill();
+        drawBall(bc, beat);
         Enter.end();
       }
+    }
+
+    /* =====================================================================
+       The biome's look. A DESIGN is what a ring is, a LOOK how the ball is
+       drawn; a KIND is a mark laid over the design, and it is the same mark
+       in every biome — chevrons out for a rewind ring, drops of glue for a
+       sticky one, black between violet edges for a dark one, the gaps
+       themselves for a gap ring — because NOVA deals all four over one
+       design, and a rule must read by its SHAPE whatever it is painted with. All of it is plain strokes and fills:
+       no shadowBlur, the glow is a wider translucent stroke underneath.
+       ===================================================================== */
+
+    /* =====================================================================
+       The ground — the biome's kaleidoscope, ANIMATED (CONFIG.biomes,
+       `ground`). Every biome is a different MOVEMENT, not only a different
+       palette, because five tints of one turning picture read as one place:
+
+         tunnel  NEON     neon octagons born at the centre on every beat and
+                          flung out at an accelerating pace, over the shards
+         hive     AMBER   two honeycombs turning against each other and
+                          breathing over two beats — the moiré between them
+                          never settles
+         spiral   ECLIPSE a spiral turning on itself, the oldest hypnotic
+                          illusion (it reads as an endless fall inward),
+                          crescents drifting the other way above it
+         frost    GLACIER a snowflake, and two sets of rings whose centres
+                          drift apart and together: interference fringes
+         warp     NOVA    a starburst, and streaks of light rushing out of the
+                          centre, surging on the beat
+
+       Discs (a kaleidoscope, a spiral) are built ONCE, wide enough to cover
+       the frame from the arena's centre at any angle, and drawn as one rotated
+       blit — two at most a frame. Everything else is a few strokes in one
+       path. The cache is keyed on what it is made of — the biome, the disc,
+       the device ratio — and rebuilt only when one of them changes. All of it
+       stays dark and in the hues opposite the rings: it moves under them, it
+       never competes with them.
+       ===================================================================== */
+    var discs = {};
+    function disc(id, R, res, build) {
+      var key = BIO.look + "|" + id + "|" + R + "|" + res;
+      if (!discs[key]) discs[key] = build();
+      return discs[key];
+    }
+    function blit(cv, R, angle, scale, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(C.x, C.y); ctx.rotate(angle); ctx.scale(scale, scale);
+      ctx.drawImage(cv, -R, -R, R * 2, R * 2);
+      ctx.restore();
+    }
+    function drawGround(beat) {
+      var g = BIO.ground, k;
+      var far = 0, cx = [0, view.w], cy = [0, view.h], i, j;
+      for (i = 0; i < 2; i++) for (j = 0; j < 2; j++)
+        far = Math.max(far, Math.sqrt((cx[i] - C.x) * (cx[i] - C.x) + (cy[j] - C.y) * (cy[j] - C.y)));
+      far = Math.ceil(far + 40);                      // + the shake's reach
+      var res = Math.min(view.dpr || 1, 1.5), key = BIO.look + "|" + far + "|" + res;
+      if (key !== kalKey) {                           // a new biome or a new frame
+        for (k in discs) if (discs.hasOwnProperty(k)) freeCanvas(discs[k]);
+        discs = {};
+        kalKey = key;
+        glowGrad = ctx.createRadialGradient(C.x, C.y, 0, C.x, C.y, arenaR * 1.3);
+        glowGrad.addColorStop(0, rgba(g.glow, 1));
+        glowGrad.addColorStop(1, rgba(g.glow, 0));
+      }
+      var b = Beat.beats(), t = tAnim, seed = CONFIG.biomes.indexOf(BIO) * 7 + 1;
+      var breath = 0.5 - 0.5 * Math.cos(b * Math.PI);  // 0..1 over two beats
+      ctx.fillStyle = g.base[1];
+      ctx.fillRect(0, 0, view.w, view.h);
+
+      if (g.style === "tunnel") {
+        blit(disc("k", far, res, function () { return kaleido(g, far, res, seed, true); }), far, t * g.spin, 1, 1);
+        tunnel(g, b, t, far);
+      } else if (g.style === "hive") {
+        blit(disc("k", far, res, function () { return kaleido(g, far, res, seed, true); }), far, t * g.spin, 1 + 0.05 * breath, 1);
+        blit(disc("k2", far, 1, function () { return kaleido(g, far, 1, seed + 3, false); }), far, -t * g.spin * 1.7, 1.12 - 0.05 * breath, 0.75);
+      } else if (g.style === "spiral") {
+        blit(disc("s", far, res, function () { return spiral(g, far, res); }), far, -t * 0.9, 1, 1);
+        blit(disc("k", far, 1, function () { return kaleido(g, far, 1, seed, false); }), far, t * g.spin, 1 + 0.04 * breath, 0.7);
+      } else if (g.style === "frost") {
+        blit(disc("k", far, res, function () { return kaleido(g, far, res, seed, true); }), far, t * g.spin, 1 + 0.03 * breath, 1);
+        fringes(g, t, far);
+      } else {
+        blit(disc("k", far, res, function () { return kaleido(g, far, res, seed, true); }), far, t * g.spin, 1, 1);
+        warp(g, b, t, far, beat);
+      }
+      // The ground breathes on the beat, under everything else.
+      ctx.globalAlpha = 0.05 + 0.12 * beat * beat;
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, view.w, view.h);
+      ctx.globalAlpha = 1;
+    }
+
+    // NEON: an octagon born at the centre on every beat, flung outward on an
+    // exponential so it seems to come at the eye; ten in flight at once.
+    function tunnel(g, b, t, far) {
+      var n = 10, k, v;
+      ctx.lineJoin = "round";
+      for (k = 0; k < n; k++) {
+        var age = (b - Math.floor(b)) + k;           // beats since it was born
+        var r = 14 * Math.exp(age * Math.log(far / 14) / n);
+        var a = Math.min(1, age) * (1 - age / n);
+        ctx.globalAlpha = 0.42 * a;
+        ctx.strokeStyle = (Math.floor(b) - k) % 2 ? g.glow : g.ink[2];
+        ctx.lineWidth = 2.5 + age * 1.4;
+        ctx.beginPath();
+        for (v = 0; v <= 8; v++) {
+          var va = v * Math.PI / 4 + age * 0.12 + t * 0.15;
+          if (v) ctx.lineTo(C.x + Math.cos(va) * r, C.y + Math.sin(va) * r);
+          else ctx.moveTo(C.x + Math.cos(va) * r, C.y + Math.sin(va) * r);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // GLACIER: two sets of rings, one fixed on the arena and one whose centre
+    // wanders in a slow loop — where they cross, fringes sweep the frame.
+    function fringes(g, t, far) {
+      var gap = 16, n = Math.ceil(far / gap), k, set;
+      ctx.lineWidth = 3;
+      for (set = 0; set < 2; set++) {
+        var ox = set ? Math.cos(t * 0.37) * 34 : 0, oy = set ? Math.sin(t * 0.53) * 34 : 0;
+        ctx.globalAlpha = 0.32;
+        ctx.strokeStyle = set ? g.glow : g.ink[2];
+        ctx.beginPath();
+        for (k = 1; k <= n; k++) {
+          var r = k * gap + (set ? 0 : (t * 6) % gap);
+          ctx.moveTo(C.x + ox + r, C.y + oy);
+          ctx.arc(C.x + ox, C.y + oy, r, 0, Math.PI * 2);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // NOVA: streaks of light rushing out of the centre, faster on the beat.
+    // Stateless: every streak's place is a function of time and its index.
+    function warp(g, b, t, far, beat) {
+      var n = 70, k;
+      ctx.lineCap = "round";
+      for (var pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass ? "#ffffff" : g.glow;
+        ctx.globalAlpha = pass ? 0.25 : 0.45;
+        ctx.lineWidth = pass ? 1.5 : 3;
+        ctx.beginPath();
+        for (k = 0; k < n; k++) {
+          var a = k * 2.399963 + 0.3;                 // golden angle: evenly spread
+          var u = (k * 0.6180339 + t * 0.09 + b * 0.05) % 1;
+          var r0 = 20 * Math.exp(u * Math.log(far / 20));
+          var r1 = r0 * (1.06 + 0.12 * u + 0.08 * beat);
+          ctx.moveTo(C.x + Math.cos(a) * r0, C.y + Math.sin(a) * r0);
+          ctx.lineTo(C.x + Math.cos(a) * r1, C.y + Math.sin(a) * r1);
+        }
+        ctx.stroke();
+      }
+      ctx.lineCap = "butt"; ctx.globalAlpha = 1;
+    }
+
+    /* One slice of the disc is filled with the biome's motif at random —
+       a seeded random, so a biome is the same kaleidoscope every time it is
+       played — and every shape is stamped 2 x fold times, turned and
+       mirrored, which is what makes it a kaleidoscope. The translucent inks
+       overlap into a richer weave where mirrors meet. `solid` gives it its
+       ground and its vignette; without, it is a layer to lay over another. */
+    function kaleido(g, R, res, seed, solid) {
+      var cv = document.createElement("canvas"), S = Math.ceil(R * 2 * res);
+      cv.width = S; cv.height = S;
+      var c = cv.getContext("2d"), st = 2654435761 * seed % 4294967296;
+      function rnd() { st = (st * 1664525 + 1013904223) % 4294967296; return st / 4294967296; }
+      c.scale(res, res); c.translate(R, R);
+      if (solid) {
+        var base = c.createRadialGradient(0, 0, 0, 0, 0, R);
+        base.addColorStop(0, g.base[0]); base.addColorStop(1, g.base[1]);
+        c.fillStyle = base;
+        c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
+      }
+      var fold = solid ? g.fold : g.fold * 2, slice = Math.PI / fold, shapes = [], n, k, m;
+      for (n = 0; n < (solid ? 26 : 14); n++) {
+        shapes.push({ r: 30 + Math.pow(rnd(), 0.8) * (R - 30), a: rnd() * slice,
+                      size: 18 + rnd() * 70, len: 40 + rnd() * 160,
+                      ink: g.ink[Math.floor(rnd() * g.ink.length)], alpha: 0.35 + rnd() * 0.4 });
+      }
+      for (k = 0; k < fold; k++) {
+        for (m = -1; m <= 1; m += 2) {
+          c.save();
+          c.rotate(k * 2 * slice);
+          c.scale(1, m);
+          for (n = 0; n < shapes.length; n++) motif(c, g.motif, shapes[n]);
+          c.restore();
+        }
+      }
+      if (solid) {
+        // A few fine circles, the kaleidoscope's tube, and a vignette.
+        c.globalAlpha = 0.18; c.strokeStyle = g.ink[0]; c.lineWidth = 2;
+        for (n = 1; n <= 6; n++) { c.beginPath(); c.arc(0, 0, R * n / 6.5, 0, Math.PI * 2); c.stroke(); }
+        c.globalAlpha = 1;
+        var vig = c.createRadialGradient(0, 0, R * 0.35, 0, 0, R);
+        vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.6)");
+        c.fillStyle = vig;
+        c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
+      }
+      return cv;
+    }
+
+    // ECLIPSE: a spiral of alternating arms, darker towards the rim. Turned,
+    // it seems to pour endlessly into the centre.
+    function spiral(g, R, res) {
+      var cv = document.createElement("canvas"), S = Math.ceil(R * 2 * res);
+      cv.width = S; cv.height = S;
+      var c = cv.getContext("2d"), arms = 12, w = Math.PI / arms, twist = 5.5, i, r;
+      c.scale(res, res); c.translate(R, R);
+      c.fillStyle = g.base[1];
+      c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
+      for (i = 0; i < arms; i++) {
+        var a0 = i * 2 * w;
+        if (i % 2) continue;                          // the dark arms are the ground
+        c.fillStyle = g.ink[(i / 2) % 2 ? 0 : 2];
+        c.beginPath(); c.moveTo(0, 0);
+        for (r = 0; r <= R; r += 8) c.lineTo(Math.cos(a0 + twist * r / R) * r, Math.sin(a0 + twist * r / R) * r);
+        for (r = R; r >= 0; r -= 8) c.lineTo(Math.cos(a0 + w + twist * r / R) * r, Math.sin(a0 + w + twist * r / R) * r);
+        c.closePath(); c.fill();
+      }
+      var vig = c.createRadialGradient(0, 0, 0, 0, 0, R);
+      vig.addColorStop(0, rgba(g.base[0], 0.9)); vig.addColorStop(0.25, "rgba(0,0,0,0)");
+      vig.addColorStop(0.8, "rgba(0,0,0,0.25)"); vig.addColorStop(1, "rgba(0,0,0,0.65)");
+      c.fillStyle = vig;
+      c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fill();
+      return cv;
+    }
+
+    // One shape of a motif at polar (r, a), on the 2D context `c`.
+    function motif(c, kind, sh) {
+      var x = Math.cos(sh.a) * sh.r, y = Math.sin(sh.a) * sh.r, ux = Math.cos(sh.a), uy = Math.sin(sh.a);
+      var w = sh.size * 0.35, i;
+      c.globalAlpha = sh.alpha; c.fillStyle = sh.ink; c.strokeStyle = sh.ink;
+      c.beginPath();
+      if (kind === "shards") {            // NEON: long splinters pointing out
+        c.moveTo(x - uy * w, y + ux * w);
+        c.lineTo(x + ux * sh.len, y + uy * sh.len);
+        c.lineTo(x + uy * w, y - ux * w);
+        c.closePath(); c.fill();
+      } else if (kind === "cells") {      // AMBER: honeycomb cells
+        for (i = 0; i < 6; i++) {
+          var ha = sh.a + i * Math.PI / 3;
+          if (i) c.lineTo(x + Math.cos(ha) * sh.size * 0.6, y + Math.sin(ha) * sh.size * 0.6);
+          else c.moveTo(x + Math.cos(ha) * sh.size * 0.6, y + Math.sin(ha) * sh.size * 0.6);
+        }
+        c.closePath(); c.fill();
+        c.globalAlpha = sh.alpha * 0.8; c.lineWidth = 3; c.stroke();
+      } else if (kind === "crescents") {  // ECLIPSE: moons cut by their shadow
+        c.arc(x, y, sh.size * 0.6, 0, Math.PI * 2);
+        c.arc(x + ux * sh.size * 0.28, y + uy * sh.size * 0.28, sh.size * 0.5, 0, Math.PI * 2, true);
+        c.fill("evenodd");
+      } else if (kind === "crystals") {   // GLACIER: rhombs along the radius
+        c.moveTo(x - ux * sh.len * 0.5, y - uy * sh.len * 0.5);
+        c.lineTo(x - uy * w, y + ux * w);
+        c.lineTo(x + ux * sh.len * 0.5, y + uy * sh.len * 0.5);
+        c.lineTo(x + uy * w, y - ux * w);
+        c.closePath(); c.fill();
+        c.globalAlpha = sh.alpha * 0.9; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(x - ux * sh.len * 0.5, y - uy * sh.len * 0.5);
+        c.lineTo(x + ux * sh.len * 0.5, y + uy * sh.len * 0.5); c.stroke();
+      } else {                            // NOVA: petals of a flare
+        c.ellipse(x, y, sh.len * 0.5, w, sh.a, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+
+    /* =====================================================================
+       What a ring IS in each biome — its DESIGN (`ring` on the biome), chosen
+       in lab/chainring-rings.html: crossing into a biome changes the very
+       object the player watches, not only its colour.
+         tube      NEON     the original line and its glow
+         sprocket  AMBER    a bicycle chainring, square teeth turning outward
+         chain     ECLIPSE  a loop of links, flat and edge-on by turns
+         crown     GLACIER  a zigzag band, points out (outward and in the
+                            biome's colour, where sudden death is red and
+                            points in)
+         ribbon    NOVA     a twisted band, wide facing the eye, a thread
+                            where it turns away
+       Every design keeps the RIM readable — the line or band the ball lands
+       on sits at `r` — and every design takes the KINDS the same way: a gap
+       ring is the design clipped to its three bars, a dark ring is the design
+       in black between violet edges, and the rewind and sticky rings carry a
+       white glyph ringed in black over whatever is under it. Teeth, links and
+       points each go into ONE path, so a ring is a stroke or two whatever its
+       size. RA is the alpha every part of a ring is multiplied by — a ghost,
+       or a gap ring fading on its way to the centre.
+       ===================================================================== */
+    var TAU = Math.PI * 2, RA = 1;
+    function circ(r, col, w, a) {
+      ctx.globalAlpha = (a == null ? 1 : a) * RA; ctx.strokeStyle = col; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.arc(C.x, C.y, Math.max(1, r), 0, TAU); ctx.stroke();
+    }
+    function pt(r, a) { return [C.x + Math.cos(a) * r, C.y + Math.sin(a) * r]; }
+    // A hex colour pushed toward white (k > 0) or black (k < 0).
+    function tone(hex, k) {
+      var n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255], i;
+      for (i = 0; i < 3; i++) c[i] = Math.round(k > 0 ? c[i] + (255 - c[i]) * k : c[i] * (1 + k));
+      return "rgb(" + c.join(",") + ")";
+    }
+    var DESIGN = {
+      tube: function (r, col, s) {
+        if (s.hot) circ(r, col, 22, 0.22);
+        circ(r, col, (s.hot ? 11 : 7) + s.pl * 6);
+      },
+      sprocket: function (r, col, s) {
+        var n = Math.max(12, Math.round(TAU * r / 30)), rot = s.t * 0.6 * s.dir, d = TAU / n * 0.32, i, a, p;
+        if (s.hot) circ(r + 6, col, 30, 0.18);
+        ctx.globalAlpha = RA; ctx.fillStyle = col;
+        ctx.beginPath();
+        for (i = 0; i < n; i++) {
+          a = rot + i * TAU / n;
+          p = pt(r + 2, a - d * 1.2); ctx.moveTo(p[0], p[1]);
+          p = pt(r + 13, a - d * 0.8); ctx.lineTo(p[0], p[1]);
+          p = pt(r + 13, a + d * 0.8); ctx.lineTo(p[0], p[1]);
+          p = pt(r + 2, a + d * 1.2); ctx.lineTo(p[0], p[1]);
+          ctx.closePath();
+        }
+        ctx.fill();
+        circ(r, col, (s.hot ? 10 : 7) + s.pl * 6);
+        circ(r - 7, tone(col, -0.5), 3, 0.8);
+      },
+      chain: function (r, col, s) {
+        var n = Math.max(16, Math.round(TAU * r / 24) & ~1), rot = s.t * 0.4 * s.dir;
+        var L = TAU * r / n * 0.62, flat, i, a, p, e, ry;
+        if (s.hot) circ(r, col, 24, 0.2);
+        ctx.globalAlpha = RA; ctx.strokeStyle = col; ctx.lineWidth = (s.hot ? 5 : 4) + s.pl * 2;
+        for (flat = 0; flat < 2; flat++) {          // the links lying flat, then the ones edge-on
+          ry = flat ? 2.5 : 7;
+          ctx.beginPath();
+          for (i = flat; i < n; i += 2) {
+            a = rot + i * TAU / n; p = pt(r, a); e = a + Math.PI / 2;
+            ctx.moveTo(p[0] + Math.cos(e) * L, p[1] + Math.sin(e) * L);
+            ctx.ellipse(p[0], p[1], L, ry, e, 0, TAU);
+          }
+          ctx.stroke();
+        }
+      },
+      crown: function (r, col, s) {
+        var n = Math.max(16, Math.round(TAU * r / 26)), rot = s.t * 0.5 * s.dir, i, p;
+        if (s.hot) circ(r, col, 26, 0.2);
+        ctx.globalAlpha = RA; ctx.lineJoin = "miter"; ctx.strokeStyle = col;
+        ctx.lineWidth = (s.hot ? 6 : 4) + s.pl * 3;
+        ctx.beginPath();
+        for (i = 0; i < n * 2; i++) {
+          p = pt(i % 2 ? r + 11 : r - 4, rot + i * Math.PI / n);
+          if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]);
+        }
+        ctx.closePath(); ctx.stroke();
+      },
+      ribbon: function (r, col, s) {
+        var N = 120, tw = s.t * 1.2 * s.dir, wide = (s.hot ? 11 : 8) + s.pl * 4, i, a, w, p;
+        if (s.hot) circ(r, col, 24, 0.2);
+        ctx.globalAlpha = RA; ctx.fillStyle = col;
+        ctx.beginPath();
+        for (i = 0; i <= N; i++) {
+          a = i * TAU / N; w = 2 + wide * Math.abs(Math.cos(a * 2 + tw)); p = pt(r + w, a);
+          if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]);
+        }
+        for (i = N; i >= 0; i--) {
+          a = i * TAU / N; w = 2 + wide * Math.abs(Math.cos(a * 2 + tw)); p = pt(r - w, a);
+          ctx.lineTo(p[0], p[1]);
+        }
+        ctx.closePath(); ctx.fill();
+        circ(r, tone(col, 0.6), 1.5, 0.8);
+      }
+    };
+
+    // A gap ring is its design clipped to three bars, the gaps standing still.
+    function gapClip(ring, r) {
+      var gw = CONFIG.gapWidth, j, a0, a1;
+      ctx.beginPath();
+      for (j = 0; j < 3; j++) {
+        a0 = ring.phase + j * TAU / 3 + gw; a1 = ring.phase + (j + 1) * TAU / 3 - gw;
+        ctx.moveTo(C.x, C.y); ctx.arc(C.x, C.y, r + 80, a0, a1); ctx.closePath();
+      }
+      ctx.clip();
+    }
+
+    function drawRing(ring, rr, hot, now) {
+      /* A ring is ALWAYS drawn in its own colour. The shockwave that lights it
+         used to repaint it white, and a chain sends one out on every beat, so
+         in a combo nearly every ring on screen was white and the biomes could
+         not be told apart: the light is a halo in the ring's own colour. */
+      var pl = ring.pulse || 0, col = ring.color, draw = DESIGN[BIO.ring] || DESIGN.tube;
+      var s = { t: tAnim, hot: hot, pl: pl, dir: ring.spin < 0 ? -1 : 1 };
+      // A gap ring diving to the centre dims a little on the way, and stays
+      // readable down to the break.
+      RA = ring.kind === "gap" && ring.done ? 0.5 + 0.5 * clamp(rr / Math.max(1, ring.land), 0, 1) : 1;
+      ctx.save();
+      ctx.lineJoin = "round";
+      if (ring.kind === "gap") gapClip(ring, rr);
+      if (ring.struck) {                    // scored, or spoiled: a ghost the ball still meets
+        RA *= 0.35; s.hot = false; s.pl = 0;
+        draw(rr, col, s);
+      } else if (ring.kind === "dark") {
+        // No colour of its own: the biome's design in black between two violet
+        // edges, and a cold halo instead of the "hot" glow — it is never the
+        // ring to tap.
+        circ(rr, "#8b5cf6", 34, 0.2);
+        draw(rr, "#0b0814", s);
+        circ(rr - 11, "#c4a1ff", 2.5, 1);
+        circ(rr + 11, "#c4a1ff", 2.5, 1);
+      } else {
+        if (pl > 0) circ(rr, col, 18 + pl * 16, Math.min(0.4, pl * 0.3));
+        draw(rr, col, s);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1; RA = 1;
+      if (ring.struck) return;
+      if (ring.kind === "rewind") drawChevrons(ring, rr);
+      else if (ring.kind === "sticky") drawGlue(ring, rr, now);
+    }
+
+    // Rewind: four double chevrons riding the ring, pointing OUT — the way
+    // the rings behind it will be thrown.
+    function drawChevrons(ring, rr) {
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.beginPath();
+      for (var j = 0; j < 4; j++) {
+        var a = tAnim * ring.spin + j * Math.PI / 2, cx = Math.cos(a), cy = Math.sin(a);
+        for (var c = 0; c < 2; c++) {
+          var r0 = rr - 10 + c * 17;
+          var bx = C.x + cx * r0, by = C.y + cy * r0;
+          ctx.moveTo(bx - cy * 16 - cx * 6, by + cx * 16 - cy * 6);
+          ctx.lineTo(bx + cx * 10, by + cy * 10);
+          ctx.lineTo(bx + cy * 16 - cx * 6, by - cx * 16 - cy * 6);
+        }
+      }
+      // A dark outline first, so the mark reads over any ring colour.
+      ctx.globalAlpha = 0.7; ctx.strokeStyle = "#05050e"; ctx.lineWidth = 10; ctx.stroke();
+      ctx.globalAlpha = 1; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 5; ctx.stroke();
+      ctx.lineCap = "butt";
+    }
+
+    /* Sticky: four double drops of glue hanging off the ring toward the
+       centre — the rewind's chevrons' family, white ringed in black, so it
+       reads over every design (beads in the ring's own colour vanished into a
+       sprocket or a chain). Once the ring holds the ball the drops turn with
+       it and stretch as the burst comes, and a circle closing on the ball
+       says the beat the ball leaves on — the second tap. */
+    function drawGlue(ring, rr, now) {
+      var k = ring.held ? clamp(1 - (ring.hit - now) / CONFIG.stickBeats, 0, 1) : 0;
+      var base = ring.held ? (ring.spinA || 0) + Math.PI / 4 : tAnim * ring.spin;
+      var shake = ring.held ? Math.sin(tAnim * 50) * 3 * k : 0;
+      var len = 26 + 22 * k + 3 * Math.sin(tAnim * 5), rad = 13 + 3 * k, j;
+      ctx.beginPath();
+      for (j = 0; j < 4; j++) {
+        var a = base + j * Math.PI / 2, ux = -Math.cos(a), uy = -Math.sin(a);
+        var tx = C.x + Math.cos(a) * (rr + 6 + shake), ty = C.y + Math.sin(a) * (rr + 6 + shake);
+        drop(tx, ty, ux, uy, len, rad);
+        var fx = tx + ux * (len + rad * 2.6), fy = ty + uy * (len + rad * 2.6);
+        ctx.moveTo(fx + rad * 0.55, fy);
+        ctx.arc(fx, fy, rad * 0.55, 0, TAU);
+      }
+      ctx.lineJoin = "round";
+      ctx.globalAlpha = 0.75; ctx.strokeStyle = "#05050e"; ctx.lineWidth = 8; ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = "#ffffff"; ctx.fill();
+      if (ring.held) {
+        ctx.globalAlpha = 0.35 + 0.55 * k; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, CONFIG.ballR + 6 + 110 * (1 - k), 0, TAU); ctx.stroke();
+      }
+      if (ring.held && k > 0.5) {
+        ctx.globalAlpha = (k - 0.5) * 1.2 * (0.5 + 0.5 * Beat.pulse(1));
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(C.x, C.y, rr, 0, TAU); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // One drop: its tip at (tx, ty) on the ring, its round end `len` toward
+    // the centre along (ux, uy), `rad` wide.
+    function drop(tx, ty, ux, uy, len, rad) {
+      var px = -uy, py = ux, bx = tx + ux * len, by = ty + uy * len, pa = Math.atan2(py, px);
+      ctx.moveTo(tx, ty);
+      ctx.quadraticCurveTo(tx + ux * len * 0.5 + px * rad * 0.9, ty + uy * len * 0.5 + py * rad * 0.9,
+                           bx + px * rad, by + py * rad);
+      ctx.arc(bx, by, rad, pa, pa - Math.PI, true);
+      ctx.quadraticCurveTo(tx + ux * len * 0.5 - px * rad * 0.9, ty + uy * len * 0.5 - py * rad * 0.9, tx, ty);
+      ctx.closePath();
+    }
+
+    function drawBall(bc, beat) {
+      var x = ball.x, y = ball.y, look = BIO.look;
+      var br = CONFIG.ballR * (1 + ballPop * 0.5 + beat * beat * 0.10);
+      var halo = br * (1.7 + ballPop * 0.6 + beat * beat * 0.25);
+      var ha = 0.3 + hitFx * 0.4 + beat * beat * 0.12;
+      if (look === "amber") {
+        // A drop of honey: a dark rim and a highlight off-centre.
+        ctx.globalAlpha = ha * 0.8; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(x, y, halo, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(x, y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#5a2600"; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = "#fff6d8";
+        ctx.beginPath(); ctx.arc(x - br * 0.35, y - br * 0.38, br * (0.26 + ballPop * 0.1), 0, Math.PI * 2); ctx.fill();
+      } else if (look === "eclipse") {
+        // A moon: a corona ring, the disc, and its shadow carved out of it.
+        ctx.globalAlpha = ha; ctx.strokeStyle = bc; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(x, y, halo * 0.85, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = ha * 0.5; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(x, y, halo, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1; ctx.fillStyle = "#f5f6ff";
+        ctx.beginPath(); ctx.arc(x, y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.clip();
+        ctx.fillStyle = "#0b0918"; ctx.globalAlpha = 0.85 - ballPop * 0.5;
+        ctx.beginPath(); ctx.arc(x + br * 0.45, y - br * 0.3, br * 0.92, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.globalAlpha = 1; ctx.strokeStyle = bc; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x, y, br, 0, Math.PI * 2); ctx.stroke();
+      } else if (look === "glacier") {
+        // A turning hexagonal crystal, its facets lit from the centre.
+        ctx.globalAlpha = ha * 0.7; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(x, y, halo, 0, Math.PI * 2); ctx.fill();
+        var rot = tAnim * 1.2, j, hr = br * 1.12;
+        ctx.globalAlpha = 1; ctx.fillStyle = bc;
+        ctx.beginPath();
+        for (j = 0; j < 6; j++) {
+          var a = rot + j * Math.PI / 3;
+          if (j) ctx.lineTo(x + Math.cos(a) * hr, y + Math.sin(a) * hr);
+          else ctx.moveTo(x + Math.cos(a) * hr, y + Math.sin(a) * hr);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.beginPath();
+        for (j = 0; j < 6; j += 2) {
+          var b = rot + j * Math.PI / 3;
+          ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(b) * hr, y + Math.sin(b) * hr);
+        }
+        ctx.stroke(); ctx.globalAlpha = 1;
+      } else if (look === "nova") {
+        // A star: eight turning spikes around a white-hot core.
+        ctx.globalAlpha = ha * 0.8; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(x, y, halo, 0, Math.PI * 2); ctx.fill();
+        var spin = tAnim * 1.8, k;
+        ctx.globalAlpha = 1; ctx.beginPath();
+        for (k = 0; k < 16; k++) {
+          var sa = spin + k * Math.PI / 8, sr = k % 2 ? br * 0.85 : br * (1.7 + beat * 0.3);
+          if (k) ctx.lineTo(x + Math.cos(sa) * sr, y + Math.sin(sa) * sr);
+          else ctx.moveTo(x + Math.cos(sa) * sr, y + Math.sin(sa) * sr);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(x, y, br * (0.62 + ballPop * 0.25), 0, Math.PI * 2); ctx.fill();
+      } else {
+        // NEON: cheap "glow" from concentric circles — halo, body, core.
+        ctx.globalAlpha = ha; ctx.fillStyle = bc;
+        ctx.beginPath(); ctx.arc(x, y, halo, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(x, y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(x, y, br * (0.5 + ballPop * 0.25), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
     }
 
     // The clock hitting zero does not end the run: it releases the spiked ring.
@@ -795,12 +1776,86 @@
     }
 
     /* --- THE LEVEL LAYER (web target) ------------------------------------
-       The three-star finish: the web shell has already played the slow
+       `applyLevel(d)` is called after the manifest's knobs are lerped and
+       BEFORE reset(): it picks the biome off the LEVEL NUMBER (the two roads
+       out of a fork are the same world) and the rule that arrives with it.
+       Inside a biome the rule grows from `ruleRate[0]` to `ruleRate[1]` over
+       its six levels. NOVA deals the four again, two at a time on its first two
+       levels, three on the next two and all four on the last two — in the
+       order the climb taught them. `null` is the playable, a free round and
+       the endless run: NEON, no rule, the game as it always was. */
+    function applyLevel(d) {
+      var n = CONFIG.level | 0, i, from = CONFIG.biomeFrom;
+      BIO = CONFIG.biomes[0]; RULES = []; RATE = 0; GAPRATE = 0;
+      SEC = null; FULL = false;
+      // The endless run: NEON's whole track, no rule.
+      if (!n || d == null) { if (BEDS) bedFor(0, 5); return; }
+      for (i = 0; i < from.length; i++) if (n >= from[i]) BIO = CONFIG.biomes[i];
+      var step = clamp(n - from[CONFIG.biomes.indexOf(BIO)], 0, 5), k = step / 5;
+      RULES = BIO.rules.slice(0, BIO.rules.length > 1 ? 2 + Math.floor(step / 2) : 1);
+      RATE = CONFIG.ruleRate[0] + (CONFIG.ruleRate[1] - CONFIG.ruleRate[0]) * k;
+      GAPRATE = CONFIG.gapRate[0] + (CONFIG.gapRate[1] - CONFIG.gapRate[0]) * k;
+      // Shared out between several rules, each one would come round less often
+      // than it did alone: NOVA deals more of them in all.
+      if (RULES.length > 1) RATE *= 1.4;
+      if (BEDS) bedFor(CONFIG.biomes.indexOf(BIO), step);
+    }
+
+    /* The level's stretch of its biome's track, or the whole track on the
+       biome's last level — whose round is then as long as the song. The tempo
+       goes into CONFIG.music.bpm because Beat reads it when the round starts
+       (before reset), and the track is decoded now, while the level card is
+       up, so the round does not open on a decode. */
+    function bedFor(b, step) {
+      var bed = CONFIG.beds[b], per = 60 / bed.bpm, st = bed.stages[step];
+      FULL = !st;
+      if (FULL) {
+        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset,
+                beats: Math.floor((bed.end - bed.beatOffset) / per) };
+        CONFIG.gameSeconds = fullSeconds(bed);
+      } else {
+        var beats = st[1] * 4;
+        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset, beats: beats,
+                from: bed.beatOffset + (st[0] - 1) * 4 * per,
+                length: beats * per + CONFIG.stageFade, fade: CONFIG.stageFade };
+      }
+      CONFIG.music.bpm = bed.bpm;
+      Music.preload(bed.track);
+    }
+    /* A whole-track round: the clock starts once the lead-in is over (the bed's
+       first beat, then `leadInBeats` and the beat they wait on) and the spiked
+       ring takes ~1.4 s to close after it, so the round's own seconds are the
+       song minus both — and it ends as the music does. */
+    function fullSeconds(bed) {
+      var per = 60 / bed.bpm;
+      return Math.floor(bed.end - bed.beatOffset - (CONFIG.leadInBeats + 1) * per - 1.4);
+    }
+    /* The whole-track level is three times longer than the levels around it,
+       so the objective the manifest lerps is scaled to its length; the map
+       asks for any level's goal, not only the one being played, so the level
+       layer's own curve is redone here (docs/LEVELS.md, `levelGoal`). */
+    function levelGoal(n) {
+      var lv = CONFIG.web && CONFIG.web.levels, i, from = CONFIG.biomeFrom;
+      if (!BEDS || !lv || !n) return null;
+      for (i = from.length - 1; i >= 0 && n < from[i]; i--) {}
+      if (i < 0 || n - from[i] !== 5) return null;
+      var d = Math.pow((n - 1) / 29, 0.9), o = lv.objective, step = o.step || 1;
+      var t = lv.tune && lv.tune.gameSeconds, secs = t ? t[0] + (t[1] - t[0]) * d : CONFIG.gameSeconds;
+      var base = o.from + (o.to - o.from) * d;
+      return { goal: Math.round(base * fullSeconds(CONFIG.beds[i]) / secs / step) * step };
+    }
+
+    /* The three-star finish: the web shell has already played the slow
        motion, and the round ends through the game's own result so the end
        screen keeps these stat rows. Ignored by the playable, which has no
        levels — see docs/LEVELS.md. */
     return { reset: reset, onDown: onDown, update: update, render: render,
-             onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: end };
+             onTimeUp: onTimeUp, onResize: onResize, applyLevel: applyLevel,
+             levelWon: end, levelGoal: levelGoal,
+             /* The third star is a BEAT, not the end of the round, on every
+                level: a round is a stretch of music, and a player good
+                enough to max it in ten seconds was being sent to the end
+                screen before the track had even got going. */
+             levelMaxed: function () { return true; } };
   })();
 

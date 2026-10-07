@@ -6,8 +6,8 @@
     node tools/lab/apply-events.mjs vipera --sfx orb=mallet-plink-01.mp3 --len 0.5
     node tools/lab/apply-events.mjs vipera --sfx orb=... --dry
 
-  lab/game-events.html is where a callout is re-styled and a clip is swapped by
-  ear; this is the half that makes the choice stick. Two kinds of change, and
+  lab/game-events-message.html is where a callout is re-styled, and
+  lab/game-events-sound.html where a clip is swapped by ear; this is the half that makes the choice stick. Two kinds of change, and
   they are the two the bench can offer honestly:
 
     a call    the style of a Pop, its word, its anchor, the clip a cue names,

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — chainring ring designs</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="chainring">
+<style>
+/* ===========================================================================
+   CHAINRING RING DESIGNS — what a ring IS in each biome, beyond its colour.
+
+   The five biomes of games/chainring already differ in palette and ground;
+   a ring still read as the same object everywhere, a circle stroked in a
+   different hue, so crossing into a new biome said nothing on the one thing
+   the player watches. This page tries STRUCTURES — a sprocket, a chain, a
+   hexagon, an orbit, a crystal, plasma — each a strong marker of its biome,
+   in a small arena dressed with that biome's own ground and ball.
+
+   Two rules a design has to survive, and why the page shows them:
+     - the KINDS are shapes laid over a ring (rewind chevrons, sticky glue
+       beads, the dark band, the gap ring's gaps), so a design that is itself
+       made of beads, or of gaps, fights one of them — "Show the four kinds"
+       lays them over every design;
+     - the ball lands on a CIRCLE (its flight is solved onto the rim), so a
+       design must still show where the rim is. Each card says how it fits.
+
+   Gallery: every design on one biome; a click gives that design to the biome.
+   Pairing: the five biomes side by side with the design each was given —
+   the comparison the choice is actually made on. Copy pairing hands it over
+   as JSON. Nothing here ships.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel {
+  flex:0 0 280px; padding:22px 20px;
+  background:#12121c; border-right:1px solid #23233a;
+  position:sticky; top:0; height:100vh; overflow:auto;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 22px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:22px 0 8px; font-size:12px; color:#9c9cba; letter-spacing:.5px; }
+.row { margin-bottom:14px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.check { display:flex; gap:8px; align-items:center; font-size:12px; color:#c9c9e0; margin-bottom:10px; cursor:pointer; }
+.seg { display:flex; gap:4px; margin-top:6px; }
+.seg button { flex:1; margin:0; background:#1d1d2e; color:#c9c9e0; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+button {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+.pair { display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; margin-bottom:6px; font-size:12px; }
+.pair select { margin:0; }
+#copied { font-size:11px; color:#8b8ba7; min-height:16px; margin-top:6px; }
+
+#stage { flex:1; padding:24px; }
+#stage h3 { font-size:13px; color:#9c9cba; margin:0 0 14px; font-weight:600; }
+#grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:18px; }
+.card {
+  background:#12121c; border:1px solid #23233a; border-radius:14px; overflow:hidden; cursor:pointer;
+  transition:border-color .15s, transform .15s;
+}
+.card:hover { border-color:#4a4a72; transform:translateY(-2px); }
+.card.picked { border-color:#7ea6ff; box-shadow:0 0 0 2px #7ea6ff inset; }
+.card canvas { display:block; width:100%; aspect-ratio:3/4; }
+.card .txt { padding:10px 12px 12px; }
+.card .name { font-size:14px; }
+.card .name em { font-style:normal; color:#7ea6ff; font-size:11px; margin-left:6px; }
+.card .note { font-size:12px; font-weight:500; color:#b4b4cc; margin-top:2px; }
+.card .fit { font-size:11px; font-weight:500; color:#8b8ba7; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Ring designs</h1>
+  <p class="hint">A ring per biome that is a different OBJECT, not a different colour — so crossing into a biome is seen on the very thing the player watches.</p>
+
+  <div class="row">
+    <label>View</label>
+    <div class="seg"><button id="v-gallery" class="on">Gallery</button><button id="v-pairing">Pairing</button></div>
+  </div>
+  <div class="row" id="biome-row">
+    <label for="biome">Biome</label>
+    <select id="biome"></select>
+  </div>
+  <label class="check"><input type="checkbox" id="kinds" checked> Show the four kinds</label>
+  <label class="check"><input type="checkbox" id="ground" checked> The biome's ground</label>
+  <label class="check"><input type="checkbox" id="anim" checked> Animate</label>
+  <div class="row">
+    <label for="speed">Tempo <b id="speed-v">125</b></label>
+    <input id="speed" type="range" min="60" max="160" value="125">
+  </div>
+
+  <h2>Pairing</h2>
+  <div id="pairs"></div>
+  <button id="copy">Copy pairing</button>
+  <button id="reset">Back to what ships</button>
+  <div id="copied"></div>
+</div>
+
+<div id="stage">
+  <h3 id="title"></h3>
+  <div id="grid"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---- the biomes, as games/chainring/game.js has them (CONFIG.biomes) ---- */
+  const BIOMES = [
+    { key: "neon", name: "Neon", rings: ["#00e5ff", "#ff2d95", "#c86bff", "#39ff14", "#ffe600"], ball: "#00e5ff",
+      ground: { motif: "shards", fold: 8, spin: 0.025, base: ["#24103e", "#0c0518"], ink: ["#4a2280", "#3a1a6e", "#5a1f80", "#2e1a6a"] } },
+    { key: "amber", name: "Amber", rings: ["#ffb627", "#ff8c42", "#ffd166", "#f9844a", "#ffc43d"], ball: "#ffd166",
+      ground: { motif: "cells", fold: 6, spin: -0.02, base: ["#0a1e46", "#030a1c"], ink: ["#16357a", "#112a66", "#1d4290", "#0d2456"] } },
+    { key: "eclipse", name: "Eclipse", rings: ["#8fa8ff", "#b388ff", "#7fd1ff", "#c77dff", "#9aa5ff"], ball: "#e9edff",
+      ground: { motif: "crescents", fold: 10, spin: 0.015, base: ["#2e2008", "#120c02"], ink: ["#5e4410", "#4a360c", "#705214", "#3e2c0a"] } },
+    { key: "glacier", name: "Glacier", rings: ["#22d3ee", "#5eead4", "#38bdf8", "#67e8f9", "#818cf8"], ball: "#e0f7ff",
+      ground: { motif: "crystals", fold: 6, spin: -0.018, base: ["#3a0a10", "#140306"], ink: ["#6a1420", "#561018", "#7a1c28", "#480c1a"] } },
+    { key: "nova", name: "Nova", rings: ["#ff2d95", "#ff6b35", "#ffe600", "#c86bff", "#ff4d6d"], ball: "#ffe600",
+      ground: { motif: "petals", fold: 12, spin: 0.03, base: ["#06301e", "#01120a"], ink: ["#0d5236", "#0b4430", "#13633f", "#08382a"] } }
+  ];
+
+  /* ---- small drawing helpers (the context is centred on the arena) ---- */
+  const TAU = Math.PI * 2;
+  function circle(c, r, col, w, a) {
+    c.globalAlpha = a == null ? 1 : a; c.strokeStyle = col; c.lineWidth = w;
+    c.beginPath(); c.arc(0, 0, Math.max(1, r), 0, TAU); c.stroke(); c.globalAlpha = 1;
+  }
+  function poly(c, pts) {
+    c.beginPath();
+    pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])));
+    c.closePath();
+  }
+  function polar(r, a) { return [Math.cos(a) * r, Math.sin(a) * r]; }
+  function mix(hex, k) {           // toward white (k > 0) or black (k < 0)
+    const n = parseInt(hex.slice(1), 16), rgb = [n >> 16, (n >> 8) & 255, n & 255];
+    return "rgb(" + rgb.map(v => Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k))).join(",") + ")";
+  }
+
+  /* ---- the designs --------------------------------------------------------
+     draw(c, r, col, s): r is the rim radius the ring stands on, s = { t, hot,
+     spin } — t in seconds, hot while the ring is in its timing window, spin a
+     per-ring direction. Each one has to still say where the rim is.          */
+  const DESIGNS = {
+    tube: {
+      name: "Neon tube", note: "Today's line: a circle and its glow.",
+      fit: "Fits every kind. Says nothing about the biome.",
+      draw(c, r, col, s) {
+        if (s.hot) circle(c, r, col, 22, 0.22);
+        circle(c, r, col, s.hot ? 11 : 7);
+      }
+    },
+    sprocket: {
+      name: "Sprocket", note: "A bicycle chainring — band and square teeth turning outward. The game's own name.",
+      fit: "The ball meets the band; the teeth stand outside the rim.",
+      draw(c, r, col, s) {
+        const n = Math.max(12, Math.round(TAU * r / 30)), rot = s.t * 0.6 * s.spin, h = 13, w = 0.32;
+        if (s.hot) circle(c, r + 6, col, 30, 0.18);
+        c.fillStyle = col;
+        c.beginPath();
+        for (let i = 0; i < n; i++) {
+          const a = rot + i * TAU / n, d = (TAU / n) * w;
+          const p = [polar(r + 2, a - d * 1.2), polar(r + h, a - d * 0.8), polar(r + h, a + d * 0.8), polar(r + 2, a + d * 1.2)];
+          c.moveTo(p[0][0], p[0][1]); p.slice(1).forEach(q => c.lineTo(q[0], q[1])); c.closePath();
+        }
+        c.fill();
+        circle(c, r, col, s.hot ? 10 : 7);
+        circle(c, r - 7, mix(col, -0.5), 3, 0.8);
+      }
+    },
+    chain: {
+      name: "Chain", note: "A loop of links, alternating flat and edge-on, rolling round.",
+      fit: "Reads as a circle from afar; the links do the marking.",
+      draw(c, r, col, s) {
+        const n = Math.max(16, Math.round(TAU * r / 24) & ~1), rot = s.t * 0.4 * s.spin;
+        if (s.hot) circle(c, r, col, 24, 0.2);
+        c.strokeStyle = col; c.lineWidth = s.hot ? 5 : 4;
+        for (let i = 0; i < n; i++) {
+          const a = rot + i * TAU / n, p = polar(r, a), flat = i % 2 === 0;
+          c.beginPath();
+          c.ellipse(p[0], p[1], TAU * r / n * 0.62, flat ? 7 : 2.5, a + Math.PI / 2, 0, TAU);
+          c.stroke();
+        }
+      }
+    },
+    beads: {
+      name: "Beads", note: "A string of pearls, each lit from the top left.",
+      fit: "Fights the sticky ring, whose mark is beads of glue.",
+      draw(c, r, col, s) {
+        const n = Math.max(14, Math.round(TAU * r / 22)), rot = s.t * 0.3 * s.spin, br = s.hot ? 10 : 8;
+        for (let i = 0; i < n; i++) {
+          const p = polar(r, rot + i * TAU / n);
+          c.fillStyle = col; c.beginPath(); c.arc(p[0], p[1], br, 0, TAU); c.fill();
+          c.fillStyle = "rgba(255,255,255,.7)"; c.beginPath(); c.arc(p[0] - br * 0.3, p[1] - br * 0.35, br * 0.3, 0, TAU); c.fill();
+        }
+      }
+    },
+    hexagon: {
+      name: "Hexagon", note: "The ring is a honeycomb cell — six faces, rounded corners, turning slowly.",
+      fit: "The rim is its inscribed circle: a face must be turned under the ball's landing.",
+      draw(c, r, col, s) {
+        const R = r / Math.cos(Math.PI / 6), rot = s.t * 0.25 * s.spin, pts = [];
+        for (let i = 0; i < 6; i++) pts.push(polar(R, rot + i * TAU / 6));
+        c.lineJoin = "round";
+        if (s.hot) { c.globalAlpha = 0.22; c.strokeStyle = col; c.lineWidth = 26; poly(c, pts); c.stroke(); c.globalAlpha = 1; }
+        c.strokeStyle = mix(col, -0.55); c.lineWidth = (s.hot ? 12 : 9) + 6; poly(c, pts); c.stroke();
+        c.strokeStyle = col; c.lineWidth = s.hot ? 12 : 9; poly(c, pts); c.stroke();
+        c.strokeStyle = mix(col, 0.6); c.lineWidth = 2; poly(c, pts.map(p => [p[0] * 0.97, p[1] * 0.97])); c.stroke();
+      }
+    },
+    crystal: {
+      name: "Crystal", note: "A cut gem: a 12-sided band with facets and a cold inner edge.",
+      fit: "Twelve faces sit close enough to the rim to read as one.",
+      draw(c, r, col, s) {
+        const n = 12, R = r / Math.cos(Math.PI / n), rot = s.t * 0.2 * s.spin, o = [], i_ = [];
+        for (let i = 0; i < n; i++) { o.push(polar(R + 6, rot + i * TAU / n)); i_.push(polar(R - 10, rot + (i + 0.5) * TAU / n)); }
+        if (s.hot) circle(c, r, col, 28, 0.2);
+        c.fillStyle = mix(col, -0.35); c.globalAlpha = 0.55;
+        c.beginPath();
+        o.forEach((p, k) => (k ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.closePath();
+        i_.forEach((p, k) => (k ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.closePath();
+        c.fill("evenodd"); c.globalAlpha = 1;
+        c.strokeStyle = col; c.lineWidth = s.hot ? 4 : 3; poly(c, o); c.stroke();
+        c.strokeStyle = mix(col, 0.55); c.lineWidth = 2;
+        c.beginPath();
+        for (let k = 0; k < n; k++) { c.moveTo(o[k][0], o[k][1]); c.lineTo(i_[k][0], i_[k][1]); c.lineTo(o[(k + 1) % n][0], o[(k + 1) % n][1]); }
+        c.stroke();
+      }
+    },
+    wave: {
+      name: "Wave", note: "A liquid ring: the radius ripples, and the ripple travels round.",
+      fit: "The ripple calms to a circle in the timing window, so the landing reads.",
+      draw(c, r, col, s) {
+        const amp = s.hot ? 2 : 7, k = 9;
+        if (s.hot) circle(c, r, col, 22, 0.22);
+        c.strokeStyle = col; c.lineWidth = s.hot ? 10 : 7;
+        c.beginPath();
+        for (let i = 0; i <= 160; i++) {
+          const a = i * TAU / 160, rr = r + amp * Math.sin(k * a + s.t * 4 * s.spin);
+          i ? c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : c.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        c.closePath(); c.stroke();
+      }
+    },
+    crown: {
+      name: "Crown", note: "A zigzag band, points out — a ring of blades.",
+      fit: "Its points look like the spiked sudden-death ring: risky.",
+      draw(c, r, col, s) {
+        const n = Math.max(16, Math.round(TAU * r / 26)), rot = s.t * 0.5 * s.spin, pts = [];
+        for (let i = 0; i < n * 2; i++) pts.push(polar(i % 2 ? r + 11 : r - 4, rot + i * Math.PI / n));
+        if (s.hot) circle(c, r, col, 26, 0.2);
+        c.lineJoin = "miter"; c.strokeStyle = col; c.lineWidth = s.hot ? 6 : 4; poly(c, pts); c.stroke();
+      }
+    },
+    rail: {
+      name: "Rail", note: "Two rails and their sleepers: a track the ball runs on.",
+      fit: "The two rails frame the rim exactly.",
+      draw(c, r, col, s) {
+        const n = Math.max(18, Math.round(TAU * r / 20)), rot = s.t * 0.3 * s.spin;
+        if (s.hot) circle(c, r, col, 28, 0.2);
+        c.strokeStyle = mix(col, -0.3); c.lineWidth = 3;
+        c.beginPath();
+        for (let i = 0; i < n; i++) { const a = rot + i * TAU / n, p = polar(r - 9, a), q = polar(r + 9, a); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); }
+        c.stroke();
+        circle(c, r - 8, col, s.hot ? 5 : 3.5); circle(c, r + 8, col, s.hot ? 5 : 3.5);
+      }
+    },
+    dial: {
+      name: "Dial", note: "A watch bezel: fine graduations, a long one every fifth.",
+      fit: "The inner line is the rim; the ticks stand outside it.",
+      draw(c, r, col, s) {
+        const n = 72, rot = s.t * 0.15 * s.spin;
+        if (s.hot) circle(c, r + 6, col, 26, 0.2);
+        c.strokeStyle = col; c.lineWidth = 3;
+        c.beginPath();
+        for (let i = 0; i < n; i++) {
+          const a = rot + i * TAU / n, L = i % 6 === 0 ? 18 : 9, p = polar(r + 2, a), q = polar(r + 2 + L, a);
+          c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]);
+        }
+        c.stroke();
+        circle(c, r, col, s.hot ? 6 : 4);
+      }
+    },
+    orbit: {
+      name: "Orbit", note: "A thin orbit with three moons riding it, and a ghost orbit outside.",
+      fit: "The moons must keep clear of the ball's landing point.",
+      draw(c, r, col, s) {
+        if (s.hot) circle(c, r, col, 24, 0.2);
+        c.setLineDash([3, 9]); circle(c, r + 14, col, 2, 0.6); c.setLineDash([]);
+        circle(c, r, col, s.hot ? 5 : 3);
+        for (let i = 0; i < 3; i++) {
+          const a = s.t * 0.7 * s.spin + i * TAU / 3, p = polar(r, a), mr = s.hot ? 12 : 10;
+          c.fillStyle = col; c.beginPath(); c.arc(p[0], p[1], mr, 0, TAU); c.fill();
+          c.fillStyle = "rgba(10,8,20,.8)"; c.beginPath(); c.arc(p[0] + mr * 0.4, p[1] - mr * 0.3, mr * 0.85, 0, TAU); c.fill();
+          c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.arc(p[0], p[1], mr, 0, TAU); c.stroke();
+        }
+      }
+    },
+    ribbon: {
+      name: "Ribbon", note: "A twisted band, wide where it faces you and a thread where it turns away.",
+      fit: "Its thin twists must not land under the ball — or twist slower.",
+      draw(c, r, col, s) {
+        const N = 120, out = [], inn = [], tw = s.t * 1.2 * s.spin;
+        for (let i = 0; i <= N; i++) {
+          const a = i * TAU / N, w = 2 + (s.hot ? 11 : 8) * Math.abs(Math.cos(a * 2 + tw));
+          out.push(polar(r + w, a)); inn.push(polar(r - w, a));
+        }
+        c.fillStyle = col; c.beginPath();
+        out.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])));
+        inn.reverse().forEach(p => c.lineTo(p[0], p[1])); c.closePath(); c.fill();
+        circle(c, r, mix(col, 0.6), 1.5, 0.8);
+      }
+    },
+    plasma: {
+      name: "Plasma", note: "Three electric strands crackling round a white core.",
+      fit: "The core is the rim; the strands only flicker around it.",
+      draw(c, r, col, s) {
+        if (s.hot) circle(c, r, col, 30, 0.22);
+        for (let k = 0; k < 3; k++) {
+          c.strokeStyle = col; c.lineWidth = s.hot ? 4 : 3; c.globalAlpha = 0.85;
+          c.beginPath();
+          for (let i = 0; i <= 90; i++) {
+            const a = i * TAU / 90;
+            const j = 6 * Math.sin(a * (7 + k * 3) + s.t * (9 + k * 4)) + 4 * Math.sin(a * (13 + k) - s.t * 13);
+            const p = polar(r + j, a);
+            i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]);
+          }
+          c.closePath(); c.stroke();
+        }
+        c.globalAlpha = 1;
+        circle(c, r, col, s.hot ? 12 : 9, 0.35);
+        circle(c, r, "#ffffff", s.hot ? 5 : 3.5, 0.95);
+      }
+    },
+    scallop: {
+      name: "Scallop", note: "A flower's rim: soft arches bulging outward.",
+      fit: "The arches rest on the rim; their feet mark it.",
+      draw(c, r, col, s) {
+        const n = 18, rot = s.t * 0.25 * s.spin, d = TAU / n;
+        if (s.hot) circle(c, r, col, 24, 0.2);
+        c.strokeStyle = col; c.lineWidth = s.hot ? 7 : 5;
+        c.beginPath();
+        for (let i = 0; i < n; i++) {
+          const a0 = rot + i * d, a1 = a0 + d, p0 = polar(r, a0), m = polar(r + 16, a0 + d / 2), p1 = polar(r, a1);
+          if (!i) c.moveTo(p0[0], p0[1]);
+          c.quadraticCurveTo(m[0] * 1.02, m[1] * 1.02, p1[0], p1[1]);
+        }
+        c.stroke();
+        circle(c, r, col, 2, 0.6);
+      }
+    },
+    dots: {
+      name: "Constellation", note: "Points of light on the rim, a bright star every fourth, twinkling.",
+      fit: "Fights the gap ring: dots already read as a broken line.",
+      draw(c, r, col, s) {
+        const n = Math.max(24, Math.round(TAU * r / 14)), rot = s.t * 0.2 * s.spin;
+        for (let i = 0; i < n; i++) {
+          const p = polar(r, rot + i * TAU / n), big = i % 4 === 0;
+          const tw = 0.6 + 0.4 * Math.sin(s.t * 5 + i * 1.7);
+          c.globalAlpha = big ? 1 : tw; c.fillStyle = big ? mix(col, 0.5) : col;
+          c.beginPath(); c.arc(p[0], p[1], (big ? 6 : 3.5) + (s.hot ? 1.5 : 0), 0, TAU); c.fill();
+        }
+        c.globalAlpha = 1;
+      }
+    }
+  };
+  const ORDER = Object.keys(DESIGNS);
+  // The pairing the game ships (games/chainring/game.js, `ring` on each biome).
+  const PROPOSAL = { neon: "tube", amber: "sprocket", eclipse: "chain", glacier: "crown", nova: "ribbon" };
+
+  /* ---- the kinds, laid over a design exactly as the game marks them ---- */
+  const KINDS = ["", "rewind", "sticky", "dark", "gap"];
+  function gapClip(c, r) {          // three bars, three gaps of 0.34 rad half-width
+    c.beginPath();
+    for (let j = 0; j < 3; j++) {
+      const a0 = 0.6 + j * TAU / 3 + 0.34, a1 = 0.6 + (j + 1) * TAU / 3 - 0.34;
+      c.moveTo(0, 0); c.arc(0, 0, r + 60, a0, a1); c.closePath();
+    }
+    c.clip();
+  }
+  function chevrons(c, r, t) {
+    c.lineJoin = "round"; c.lineCap = "round"; c.beginPath();
+    for (let j = 0; j < 4; j++) {
+      const a = t * 0.4 + j * Math.PI / 2, cx = Math.cos(a), cy = Math.sin(a);
+      for (let k = 0; k < 2; k++) {
+        const r0 = r - 10 + k * 17, bx = cx * r0, by = cy * r0;
+        c.moveTo(bx - cy * 16 - cx * 6, by + cx * 16 - cy * 6); c.lineTo(bx + cx * 10, by + cy * 10); c.lineTo(bx + cy * 16 - cx * 6, by - cx * 16 - cy * 6);
+      }
+    }
+    c.globalAlpha = 0.7; c.strokeStyle = "#05050e"; c.lineWidth = 10; c.stroke();
+    c.globalAlpha = 1; c.strokeStyle = "#ffffff"; c.lineWidth = 5; c.stroke();
+    c.lineCap = "butt";
+  }
+  // Sticky: four double drops of glue hanging toward the centre, white
+  // ringed in black like the rewind's chevrons (the game's drawGlue).
+  function glue(c, r, col, t) {
+    const len = 26 + 3 * Math.sin(t * 5), rad = 13;
+    c.beginPath();
+    for (let j = 0; j < 4; j++) {
+      const a = t * 0.5 + j * Math.PI / 2, ux = -Math.cos(a), uy = -Math.sin(a);
+      const tx = Math.cos(a) * (r + 6), ty = Math.sin(a) * (r + 6), px = -uy, py = ux;
+      const bx = tx + ux * len, by = ty + uy * len, pa = Math.atan2(py, px);
+      c.moveTo(tx, ty);
+      c.quadraticCurveTo(tx + ux * len * 0.5 + px * rad * 0.9, ty + uy * len * 0.5 + py * rad * 0.9, bx + px * rad, by + py * rad);
+      c.arc(bx, by, rad, pa, pa - Math.PI, true);
+      c.quadraticCurveTo(tx + ux * len * 0.5 - px * rad * 0.9, ty + uy * len * 0.5 - py * rad * 0.9, tx, ty);
+      c.closePath();
+      const fx = tx + ux * (len + rad * 2.6), fy = ty + uy * (len + rad * 2.6);
+      c.moveTo(fx + rad * 0.55, fy); c.arc(fx, fy, rad * 0.55, 0, TAU);
+    }
+    c.lineJoin = "round";
+    c.globalAlpha = 0.75; c.strokeStyle = "#05050e"; c.lineWidth = 8; c.stroke();
+    c.globalAlpha = 1; c.fillStyle = "#ffffff"; c.fill();
+  }
+  function drawRing(c, design, kind, r, col, s) {
+    c.save();
+    if (kind === "gap") gapClip(c, r);
+    if (kind === "dark") {
+      // The dark ring keeps the biome's SHAPE, in black with violet edges.
+      circle(c, r, "#8b5cf6", 34, 0.2);
+      DESIGNS[design].draw(c, r, "#0b0814", s);
+      circle(c, r - 11, "#c4a1ff", 2, 0.9); circle(c, r + 11, "#c4a1ff", 2, 0.9);
+    } else DESIGNS[design].draw(c, r, col, s);
+    c.restore();
+    if (kind === "rewind") chevrons(c, r, s.t);
+    if (kind === "sticky") glue(c, r, col, s.t);
+  }
+
+  /* ---- the ground: the biome's kaleidoscope, built once per biome ---- */
+  const groundCache = {};
+  function groundOf(b) {
+    if (groundCache[b.key]) return groundCache[b.key];
+    const R = 560, cv = document.createElement("canvas");
+    cv.width = cv.height = R * 2;
+    const c = cv.getContext("2d"), g = b.ground;
+    let st = 99991 * (BIOMES.indexOf(b) + 1);
+    const rnd = () => (st = (st * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    c.translate(R, R);
+    const base = c.createRadialGradient(0, 0, 0, 0, 0, R);
+    base.addColorStop(0, g.base[0]); base.addColorStop(1, g.base[1]);
+    c.fillStyle = base; c.fillRect(-R, -R, R * 2, R * 2);
+    const slice = Math.PI / g.fold, shapes = [];
+    for (let n = 0; n < 24; n++) shapes.push({ r: 30 + Math.pow(rnd(), 0.8) * (R - 30), a: rnd() * slice,
+      size: 18 + rnd() * 70, len: 40 + rnd() * 160, ink: g.ink[Math.floor(rnd() * g.ink.length)], alpha: 0.35 + rnd() * 0.4 });
+    for (let k = 0; k < g.fold; k++) for (const m of [-1, 1]) {
+      c.save(); c.rotate(k * 2 * slice); c.scale(1, m);
+      shapes.forEach(sh => motif(c, g.motif, sh));
+      c.restore();
+    }
+    c.globalAlpha = 1;
+    const vig = c.createRadialGradient(0, 0, R * 0.35, 0, 0, R);
+    vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.6)");
+    c.fillStyle = vig; c.fillRect(-R, -R, R * 2, R * 2);
+    return (groundCache[b.key] = cv);
+  }
+  function motif(c, kind, sh) {
+    const x = Math.cos(sh.a) * sh.r, y = Math.sin(sh.a) * sh.r, ux = Math.cos(sh.a), uy = Math.sin(sh.a), w = sh.size * 0.35;
+    c.globalAlpha = sh.alpha; c.fillStyle = sh.ink; c.strokeStyle = sh.ink; c.beginPath();
+    if (kind === "shards") { c.moveTo(x - uy * w, y + ux * w); c.lineTo(x + ux * sh.len, y + uy * sh.len); c.lineTo(x + uy * w, y - ux * w); c.closePath(); c.fill(); }
+    else if (kind === "cells") { for (let i = 0; i < 6; i++) { const a = sh.a + i * Math.PI / 3, px = x + Math.cos(a) * sh.size * 0.6, py = y + Math.sin(a) * sh.size * 0.6; i ? c.lineTo(px, py) : c.moveTo(px, py); } c.closePath(); c.fill(); }
+    else if (kind === "crescents") { c.arc(x, y, sh.size * 0.6, 0, TAU); c.arc(x + ux * sh.size * 0.28, y + uy * sh.size * 0.28, sh.size * 0.5, 0, TAU, true); c.fill("evenodd"); }
+    else if (kind === "crystals") { c.moveTo(x - ux * sh.len * 0.5, y - uy * sh.len * 0.5); c.lineTo(x - uy * w, y + ux * w); c.lineTo(x + ux * sh.len * 0.5, y + uy * sh.len * 0.5); c.lineTo(x + uy * w, y - ux * w); c.closePath(); c.fill(); }
+    else { c.ellipse(x, y, sh.len * 0.5, w, sh.a, 0, TAU); c.fill(); }
+  }
+
+  /* ---- one card: a small arena, rings closing in on the beat ---- */
+  const DW = 600, DH = 800, RIM = 250, SPAWN = 520;   // design units of a card
+  function drawCard(cv, b, design, t) {
+    const c = cv.getContext("2d"), k = cv.width / DW;
+    c.setTransform(k, 0, 0, k, 0, 0);
+    c.fillStyle = b.ground.base[1]; c.fillRect(0, 0, DW, DH);
+    c.save(); c.translate(DW / 2, DH / 2);
+    if (S.ground) { c.save(); c.rotate(t * b.ground.spin * 4); c.drawImage(groundOf(b), -560, -560); c.restore(); }
+    const per = 60 / S.tempo, beats = t / per, travel = 4;
+    /* Four rings in flight, one landing per beat; ring j carries kind j % 5
+       when the kinds are shown, so every kind passes through every card. */
+    for (let i = 3; i >= 0; i--) {
+      const j = Math.floor(beats) + i, p = 1 - (j - beats) / travel;
+      if (p < 0) continue;
+      const r = SPAWN + (RIM - SPAWN) * Math.min(1, p), hot = Math.abs(j - beats) < 0.4 && p <= 1;
+      const kind = S.kinds ? KINDS[((j % 5) + 5) % 5] : "";
+      drawRing(c, design, kind, r, b.rings[((j % b.rings.length) + b.rings.length) % b.rings.length], { t, hot, spin: j % 2 ? 1 : -1 });
+    }
+    // The ball hops from one landing spot on the rim to the next.
+    const j0 = Math.floor(beats), u = beats - j0;
+    const ang = n => n * 2.1 + Math.sin(n * 1.3) * 0.8;
+    const pa = polar(RIM - 24, ang(j0)), pb = polar(RIM - 24, ang(j0 + 1));
+    // A bounce under gravity: up and over, as the game's solved flights are.
+    const bx = pa[0] + (pb[0] - pa[0]) * u, by = pa[1] + (pb[1] - pa[1]) * u - Math.sin(Math.PI * u) * 110;
+    c.globalAlpha = 0.3; c.fillStyle = b.ball; c.beginPath(); c.arc(bx, by, 44, 0, TAU); c.fill();
+    c.globalAlpha = 1; c.beginPath(); c.arc(bx, by, 24, 0, TAU); c.fill();
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(bx, by, 12, 0, TAU); c.fill();
+    c.restore();
+  }
+
+  /* ---- state, persisted per browser (a convenience, nothing depends on it) ---- */
+  const BASE = { view: "gallery", biome: "neon", kinds: true, ground: true, anim: true, tempo: 125, pairing: Object.assign({}, PROPOSAL) };
+  let S = JSON.parse(JSON.stringify(BASE));
+  try { const saved = JSON.parse(localStorage.getItem("lab-chainring-rings") || "{}"); S = Object.assign(S, saved); S.pairing = Object.assign({}, PROPOSAL, saved.pairing || {}); } catch (e) {}
+  function save() { try { localStorage.setItem("lab-chainring-rings", JSON.stringify(S)); } catch (e) {} }
+
+  const $ = id => document.getElementById(id);
+  const sel = $("biome");
+  BIOMES.forEach(b => { const o = document.createElement("option"); o.value = b.key; o.textContent = b.name; sel.appendChild(o); });
+  const pairs = $("pairs");
+  BIOMES.forEach(b => {
+    const row = document.createElement("div"); row.className = "pair";
+    row.innerHTML = "<span>" + b.name + "</span>";
+    const s = document.createElement("select"); s.dataset.biome = b.key;
+    ORDER.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = DESIGNS[k].name; s.appendChild(o); });
+    s.addEventListener("change", () => { S.pairing[b.key] = s.value; save(); build(); });
+    row.appendChild(s); pairs.appendChild(row);
+  });
+
+  let cards = [];
+  function build() {
+    sel.value = S.biome; $("kinds").checked = S.kinds; $("ground").checked = S.ground; $("anim").checked = S.anim;
+    $("speed").value = S.tempo; $("speed-v").textContent = S.tempo;
+    $("v-gallery").classList.toggle("on", S.view === "gallery");
+    $("v-pairing").classList.toggle("on", S.view === "pairing");
+    $("biome-row").style.display = S.view === "gallery" ? "" : "none";
+    pairs.querySelectorAll("select").forEach(s => { s.value = S.pairing[s.dataset.biome]; });
+    const grid = $("grid"); grid.innerHTML = ""; cards = [];
+    const b = BIOMES.find(x => x.key === S.biome);
+    const list = S.view === "gallery"
+      ? ORDER.map(k => ({ b, design: k }))
+      : BIOMES.map(x => ({ b: x, design: S.pairing[x.key] }));
+    $("title").textContent = S.view === "gallery"
+      ? "Every design on " + b.name + " — a click gives it to " + b.name
+      : "One design per biome — the change a player sees at each border";
+    list.forEach(item => {
+      const d = DESIGNS[item.design], card = document.createElement("div");
+      card.className = "card" + (S.view === "gallery" && S.pairing[item.b.key] === item.design ? " picked" : "");
+      const cv = document.createElement("canvas");
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(300 * dpr); cv.height = Math.round(400 * dpr);
+      card.appendChild(cv);
+      const txt = document.createElement("div"); txt.className = "txt";
+      txt.innerHTML = '<div class="name"></div><div class="note"></div><div class="fit"></div>';
+      txt.querySelector(".name").textContent = S.view === "pairing" ? item.b.name + " — " + d.name : d.name;
+      if (S.view === "gallery" && PROPOSAL[item.b.key] === item.design) {
+        const em = document.createElement("em"); em.textContent = "shipped"; txt.querySelector(".name").appendChild(em);
+      }
+      txt.querySelector(".note").textContent = d.note;
+      txt.querySelector(".fit").textContent = d.fit;
+      card.appendChild(txt);
+      card.addEventListener("click", () => {
+        if (S.view === "gallery") { S.pairing[item.b.key] = item.design; save(); build(); }
+        else { S.view = "gallery"; S.biome = item.b.key; save(); build(); }
+      });
+      grid.appendChild(card);
+      cards.push({ cv, b: item.b, design: item.design });
+    });
+  }
+
+  $("v-gallery").addEventListener("click", () => { S.view = "gallery"; save(); build(); });
+  $("v-pairing").addEventListener("click", () => { S.view = "pairing"; save(); build(); });
+  sel.addEventListener("change", () => { S.biome = sel.value; save(); build(); });
+  $("kinds").addEventListener("change", e => { S.kinds = e.target.checked; save(); });
+  $("ground").addEventListener("change", e => { S.ground = e.target.checked; save(); });
+  $("anim").addEventListener("change", e => { S.anim = e.target.checked; save(); });
+  $("speed").addEventListener("input", e => { S.tempo = +e.target.value; $("speed-v").textContent = S.tempo; save(); });
+  $("copy").addEventListener("click", () => {
+    const text = JSON.stringify(S.pairing, null, 2);
+    const done = () => { $("copied").textContent = "Copied: " + BIOMES.map(b => DESIGNS[S.pairing[b.key]].name).join(", "); };
+    try { navigator.clipboard.writeText(text).then(done, () => { $("copied").textContent = text; }); } catch (e) { $("copied").textContent = text; }
+  });
+  $("reset").addEventListener("click", () => { S.pairing = Object.assign({}, PROPOSAL); save(); build(); });
+
+  build();
+  let t = 0, last = performance.now();
+  (function frame(now) {
+    const dt = Math.min(0.05, ((now || last) - last) / 1000); last = now || last;
+    if (S.anim) t += dt;
+    cards.forEach(k => drawCard(k.cv, k.b, k.design, t));
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

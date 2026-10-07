@@ -148,7 +148,7 @@ gamedustry/
 │   │   │                        (make store — lists the assets, takes the saves)
 │   │   ├── scan-events.mjs   ← every callout / notification / cue a game fires,
 │   │   │                        read off its own game.js (a table, or --json)
-│   │   ├── serve-events.mjs  ← the server lab/game-events.html plays them over
+│   │   ├── serve-events.mjs  ← the server lab/game-events-*.html play them over
 │   │   │                        (make events — the list, inside the real build)
 │   │   ├── apply-events.mjs  ← write a beat changed on that bench back into
 │   │   │                        game.js; re-cuts a clip from assets/audio/sfx/

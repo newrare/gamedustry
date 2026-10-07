@@ -315,12 +315,26 @@
     var v = o.from + (o.to - o.from) * d;
     return Math.round(v / step) * step;
   }
+  /* A GAME WHOSE OBJECTIVE CHANGES FROM LEVEL TO LEVEL answers
+     `Game.levelGoal(n)` with `{ goal, text }`: the number the three bands are
+     cut on, and the sentence the card writes (with {n}), already in the
+     player's language. Nothing, or no hook, is the manifest's lerp and copy.
+     games/grudgeon is the one: exorcise n yokai, earn n gold, find the way
+     out, exorcise the master. */
+  function custom(n) {
+    return W.Game && W.Game.levelGoal ? W.Game.levelGoal(n) || null : null;
+  }
+  function goalAt(n) {
+    var c = custom(n);
+    return c && c.goal != null ? c.goal : goalOf(dOf(n));
+  }
   function goalText(n) {
-    var copy = (SPEC.copy && (SPEC.copy[LANG] || SPEC.copy.en)) || "Score <b>{n}</b>";
-    return fill(copy, { n: num(goalOf(dOf(n))) });
+    var c = custom(n);
+    var copy = c && c.text ? c.text : (SPEC.copy && (SPEC.copy[LANG] || SPEC.copy.en)) || "Score <b>{n}</b>";
+    return fill(copy, { n: num(goalAt(n)) });
   }
   function starsFor(n, value) {
-    var g = goalOf(dOf(n));
+    var g = goalAt(n);
     return value >= g * 2.2 ? 3 : value >= g * 1.5 ? 2 : value >= g ? 1 : 0;
   }
 
@@ -343,10 +357,14 @@
      lost. `Game.levelTally()` is that count, 0 to 3, read live and at the end;
      where a game has it, it REPLACES the score bands — the pill lights what it
      says, the bar shows the tally out of three and the end screen writes no
-     objective number, since there is none. The score still pays the wallet. */
+     objective number, since there is none. The score still pays the wallet.
+     A game that tallies SOME levels only answers null on the others, which
+     keep the bands (grudgeon: the way out and the master are tallied). */
   function tally() {
     if (!W.Game || !W.Game.levelTally) return null;
-    return Math.max(0, Math.min(3, W.Game.levelTally() | 0));
+    var v = W.Game.levelTally();
+    if (v == null) return null;
+    return Math.max(0, Math.min(3, v | 0));
   }
 
   function starsEarned(n, value) {
@@ -657,7 +675,7 @@
     if (!ON || !n) return;                      // the endless run scores nothing
     var value = result.levelScore == null ? result.score : result.levelScore;
     var st = starsEarned(n, value);
-    var goal = goalOf(dOf(n));
+    var goal = goalAt(n);
 
     result.stars = st;
     /* THE END SCREEN OF A LEVEL SAYS ONE OF TWO THINGS, and neither of them is
@@ -741,7 +759,7 @@
      it is the run from 1.5x to 2.2x that is left to walk, and that is the only
      distance the player still cares about. */
   function paintHud(value) {
-    var n = CONFIG.level, g = goalOf(dOf(n));
+    var n = CONFIG.level, g = goalAt(n);
     // The bar walks the raw bands and the stars are what they earn — the two
     // differ only for a game that caps them (see starsEarned).
     var t = tally();
@@ -1910,7 +1928,7 @@
     playTop: function () { if (ON) play(topOpen()); },
 
     /* ANY LEVEL, straight into its round — what the events bench's REC mode
-       picks from (lab/game-events-v2.html). Still gated by `canPlay`, so it
+       picks from (lab/game-events-sound.html). Still gated by `canPlay`, so it
        starts a locked level only under the dev force (`?force=1`, which the
        bench passes). `count` is the climb's length; count + 1 is the endless
        star. */

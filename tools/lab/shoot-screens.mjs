@@ -96,6 +96,7 @@ var SPAN = {
   slipdeck: 15,     // clock 30
   spinshock: 27,
   stratideck: 24,   // clockless; the GAME_PILOT below takes the flag at ~27 s
+  grudgeon: 60,     // clockless; the GAME_PILOT below explores the whole dungeon in ~70 s
   triverse: 15
 };
 
@@ -181,6 +182,51 @@ var GAME_PILOT = {
       }
       for (i = 0; i < gates.length; i++) if (gates[i].locked && gates[i].q.length) return unlock(gates[i]);
       return false;
+    } };
+    `
+  },
+  /* grudgeon is a dungeon of cards and fights: the party card waits for its
+     DESCEND, a shop for a tap outside it, an altar or an event for one of its
+     buttons, and a hero's turn for an action. The pilot answers whichever is
+     open, through the same buttons and the game's own heroAct(), and
+     otherwise walks to a lit room it can reach, at random — a weakness when it holds one,
+     a heal when the party is low, else an attack or the first skill. */
+  grudgeon: {
+    every: 20,
+    anchor: "return { reset: reset, update: update, render: render,",
+    js: `
+    window.__G = { play: function () {
+      if (ended) return false;
+      var lay = document.querySelector("#gd-card:not(.off)");
+      if (lay) {
+        var go = lay.querySelector(".btn-shiny"), b = lay.querySelectorAll(".gd-list .btn:not(.is-off)");
+        if (go) go.click();
+        else if (lay.querySelector(".gd-shop")) { if (b.length && Math.random() < 0.4) b[0].click(); else lay.click(); }
+        else if (b.length) b[Math.floor(Math.random() * b.length)].click();
+        return true;
+      }
+      if (combat) {
+        if (combat.phase !== "input") return false;
+        var h = combat.actor, f = combat.foe, pick = "attack", i, sk;
+        for (i = 0; i < 2; i++) {
+          sk = SKILLS[h.b.skills[i]];
+          if (sk.sp <= h.sp && sk.kind === "hit" && f.b.weak.indexOf(sk.el) >= 0) pick = h.b.skills[i];
+        }
+        if (pick === "attack") {
+          sk = SKILLS[h.b.skills[1]];
+          var low = party.filter(function (x) { return !x.dead && x.hp < x.mhp * 0.4; }).length;
+          if (sk.kind === "heal" && sk.sp <= h.sp && low) pick = h.b.skills[1];
+          else if (SKILLS[h.b.skills[0]].sp <= h.sp && Math.random() < 0.5) pick = h.b.skills[0];
+        }
+        heroAct(pick);
+        return true;
+      }
+      if (walk || held || !party || !groups.length) return false;
+      var g = groups[gi], ways = [];
+      cells.forEach(function (c) { var w = c.state === LIT && pathFor(g, c.i); if (w) ways.push(w); });
+      if (!ways.length) return false;
+      goTo(g, ways[Math.floor(Math.random() * ways.length)]);
+      return true;
     } };
     `
   },

@@ -352,7 +352,7 @@
         "forcefield": {
           "jitter": 0.02,
           "takes": [
-            { "file": "forcefield-03", "start": 0, "length": 0.45 }
+            { "file": "powerup-rise-05", "start": 0, "length": 0.699 }
           ]
         },
         "uiclose": {
@@ -994,7 +994,8 @@
         "explosioncrunchlong": {
           "jitter": 0,
           "takes": [
-            { "file": "explosion-crunch-01", "start": 0, "length": 0.777 }
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.555 },
+            { "file": "explosion-crunch-02", "start": 0, "length": 0.969 }
           ]
         },
         "cloth": {

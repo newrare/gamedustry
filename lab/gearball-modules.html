@@ -11,13 +11,18 @@
    GEARBALL MODULES — every piece the marble machine is built from, one live
    tile each.
 
-   games/gearball draws five machines (section 6, LAYOUTS), and each is a
-   graph assembled out of two kinds of piece:
+   games/gearball draws thirty machines (section 6, LAYOUTS: one per level,
+   six per biome, levels 1, 7, 13, 19 and 25 being the five of BASE5), and
+   each is a graph assembled out of two kinds of piece:
      - the TRACK MODULES of the `Track` library — a rail, a zigzag, a loop, a
-       corkscrew, a coil, a whirlpool, a glass tube, a dive behind the machine;
+       corkscrew, a coil, a whirlpool, a glass tube, a striped zebra tube, a
+       dive behind the machine, a hose joining two modules that do not line
+       up, a jump into a catcher, a staircase, a wave of humps, a booster;
      - the MACHINE PARTS the rules act on — the flip-flop switch, the merging
        wheel, the locking gate, the arrivals, plus what only dresses it: the
        chimes, the hopper, the marbles and the return circuits in the back.
+   The Machines view lays out all thirty, grouped by biome and tinted in its
+   metal, each with the bench's verdict against the counts of its BIOME.
    On a machine they are all tangled together; here each one stands alone in
    a 360 x 420 box of machine px (the game's own unit, marble radius 14), with
    marbles rolling through it on the game's slope physics, so a module is
@@ -28,8 +33,11 @@
    out of it and evaluated, and the physics numbers are read off CONFIG.mix,
    so a module retuned in the game is the module drawn here. Opened over
    file://, it falls back on the embedded copy below, and the panel says
-   which one is on screen. The DRAWING (rails, tubes, mouths, bowls, cogs,
+   which one is on screen. The DRAWING (rails, tubes, zebra bands, hoses,
+   catchers, ledges, booster coils, mouths, bowls, cogs, ferry gears,
    switches, gates, funnels, marbles) is a copy of section 6's render code,
+   and so is the marble sim (slopes, flights with no drag, landings,
+   boosters, ferries),
    adapted to draw one tile at a time — port a change by hand both ways.
 
    A tap does what it does in the round: it flips the nearest switch or opens
@@ -168,7 +176,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
 
 <div id="panel">
   <h1>Gearball modules</h1>
-  <p class="hint">Every piece the five machines are built from, alone and live.
+  <p class="hint">Every piece the thirty machines are built from, alone and live.
     Tap a switch or a padlock to act on it; tap anywhere else on a tile to open it.</p>
   <span id="src" class="src">Loading game.js…</span>
 
@@ -216,8 +224,10 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   <label class="check"><input type="checkbox" id="pause"> Pause</label>
   <div class="legend" id="legend" hidden>
     <i style="background:#ffffff"></i>front <i style="background:#ff6fd8"></i>behind
-    <i style="background:#7ef9ff"></i>glass <i style="background:#ffb44f"></i>pipe mouth
+    <i style="background:#7ef9ff"></i>glass, zebra <i style="background:#9b7653"></i>hose
+    <i style="background:#ffd43b"></i>in the air <i style="background:#ffb44f"></i>pipe mouth
   </div>
+  <div class="legend" id="tag-legend" hidden></div>
 
   <h2>Physics <span id="phys-src"></span></h2>
   <div class="row">
@@ -260,6 +270,10 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   const CLASSIC = "#b389ff";   // every arrival wears the classic marble's violet, the electric one C.volt
   const PART_MAX = 140;
   const ELECTRIC_SHARE = 0.1;   // about one marble in ten (CONFIG.mix.electricEvery)
+  // What a track segment is made of (section 6, SK_*): the 4th field of a point.
+  const SK_RAIL = 0, SK_GLASS = 1, SK_ZEBRA = 2, SK_HOSE = 3, SK_AIR = 4;
+  // The moving modules and the ferries — overwritten by what game.js says when it can be read.
+  const MOVE = { boostK: 1.5, boostTime: 0.7, land: 0.72, ferryOmega: 2.4 };
   const C = {
     steel: "#6f63ad", steelD: "#2c2360", steelL: "#bdb3ee", chrome: "#ece8ff",
     text: "#f0f4ff", dim: "#a99cc6", ink: "#0b0720",
@@ -324,18 +338,27 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
 
   /* ===========================================================================
      THE MODULE LIBRARY — embedded copy of section 6, "THE MODULE LIBRARY"
-     (function Track ... function mirrorPts). Used only when game.js cannot be
-     read (file://); otherwise the game's own text is evaluated instead.
+     (var SK_RAIL ... function mirrorPts, word for word; it reads R and PI2
+     off this page). Used only when game.js cannot be read (file://);
+     otherwise the game's own text is evaluated instead.
      =========================================================================== */
   function embeddedLibrary() {
+    var SK_RAIL = 0,                // two chrome rails on their sleepers
+        SK_GLASS = 1,               // a glass tube: the marble is seen all the way
+        SK_ZEBRA = 2,               // a striped tube: seen through every other band
+        SK_HOSE = 3,                // a dark ribbed hose: hidden, the tube swells round it
+        SK_AIR = 4;                 // nothing under it: a jump's flight, a stair's ledges
     function Track(x, y) {
       this.p = [[x, y, 1, 0, 0]];
       this.z = 1; this.g = 0; this.m = 0; this.bowls = [];
+      this.mods = [];     // the loops and spirals (module prizes, CARD_FX), the landings, the notes, the boosters
+      this.props = [];    // what is drawn beside the line: catchers, ledges, booster coils
     }
     Track.prototype.last = function () { return this.p[this.p.length - 1]; };
     Track.prototype.put = function (x, y, z) {
       var l, dx, dy, L;
       if (this.m) {
+        // a pending mouth: the depth steps right past it, so the collar hides the step
         l = this.last(); dx = x - l[0]; dy = y - l[1]; L = Math.sqrt(dx * dx + dy * dy) || 1;
         l[4] = 1;
         this.p.push([l[0] + dx / L * 9, l[1] + dy / L * 9, this.z, this.g, 0]);
@@ -346,8 +369,11 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     };
     Track.prototype.to = function (x, y) { return this.put(x, y); };
     Track.prototype.glass = function (on) { this.g = on ? 1 : 0; return this; };
+    // A dive: the line goes into a pipe mouth and runs on behind the machine...
     Track.prototype.under = function () { this.z = -1; this.m = 1; return this; };
+    // ...and comes back to the front through another.
     Track.prototype.over = function () { this.z = 1; this.m = 1; return this; };
+    // A zigzag to (x, y): n teeth either side of the straight line.
     Track.prototype.zig = function (x, y, n, amp) {
       var l = this.last(), x0 = l[0], y0 = l[1], dx = x - x0, dy = y - y0, L = Math.sqrt(dx * dx + dy * dy) || 1;
       var nx = -dy / L, ny = dx / L, i, k, s;
@@ -357,11 +383,16 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       }
       return this.put(x, y);
     };
+    // A vertical loop: up, over and out where it went in. `dir` is +1 when
+    // the marble travels rightward at the bottom of the loop, -1 leftward.
     Track.prototype.loop = function (r, dir) {
       var l = this.last(), cx = l[0], cy = l[1] - r, i, a;
       for (i = 1; i <= 60; i++) { a = Math.PI / 2 - dir * i / 60 * PI2; this.put(cx + r * Math.cos(a), cy + r * Math.sin(a)); }
+      this.mods.push({ kind: "loop", x: cx, y: cy - r });       // the top of the loop
       return this;
     };
+    // A corkscrew (vrille) to (x, y): the rail winds round the line of travel,
+    // `turns` whole times, `r` either side of it; the far half runs behind.
     Track.prototype.cork = function (x, y, turns, r) {
       var l = this.last(), x0 = l[0], y0 = l[1], dx = x - x0, dy = y - y0, L = Math.sqrt(dx * dx + dy * dy) || 1;
       var nx = -dy / L, ny = dx / L, n = Math.round(turns * 28), i, k, a;
@@ -370,8 +401,10 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         this.put(x0 + dx * k + nx * r * Math.sin(a), y0 + dy * k + ny * r * Math.sin(a), Math.cos(a));
       }
       this.z = 1;
+      this.mods.push({ kind: "spiral", x: x, y: y });
       return this;
     };
+    // A coil down to y1: a helix seen from slightly above, the far half behind.
     Track.prototype.coil = function (y1, r, turns) {
       var l = this.last(), cx = l[0], y0 = l[1], n = Math.round(turns * 48), i, a;
       for (i = 1; i <= n; i++) {
@@ -379,8 +412,14 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         this.put(cx + r * Math.sin(a), y0 + (y1 - y0) * i / n + r * 0.35 * (Math.cos(a) - 1), Math.cos(a));
       }
       this.z = 1;
+      l = this.last(); this.mods.push({ kind: "spiral", x: l[0], y: l[1] });
       return this;
     };
+    /* A whirlpool (tourbillon): a funnel seen from slightly above. The marble
+       comes in on its rim, spirals in `turns` times down to r1, then drops
+       through the drain in the centre and runs on BEHIND the machine — the
+       caller brings it back with .over(). The bowl is drawn with the front
+       rails, so the drop is hidden by it. */
     Track.prototype.whirl = function (cx, cy, r0, r1, turns, dir) {
       var l = this.last(), a0 = Math.atan2((l[1] - cy) / 0.5, l[0] - cx), n = Math.round(turns * 44), i, k, a, r;
       for (i = 1; i <= n; i++) {
@@ -388,35 +427,144 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         this.put(cx + r * Math.cos(a), cy + r * 0.5 * Math.sin(a) + k * 12);
       }
       this.bowls.push({ cx: cx, cy: cy, r: r0 });
+      l = this.last(); this.mods.push({ kind: "spiral", x: l[0], y: l[1] });
       this.put(cx, cy + 14);
       return this.under();
     };
+    // A striped tube (zebra): opaque bands and glass windows by turns, so a
+    // marble flickers in and out of sight; an electric one glows through.
+    Track.prototype.zebra = function (on) { this.g = on ? SK_ZEBRA : SK_RAIL; return this; };
+    // The line's heading at its last point, as a unit vector (down when unknown).
+    Track.prototype.heading = function () {
+      var n = this.p.length, a = this.p[Math.max(0, n - 2)], b = this.p[n - 1], dx = b[0] - a[0], dy = b[1] - a[1];
+      var L = Math.sqrt(dx * dx + dy * dy);
+      return L ? [dx / L, dy / L] : [0, 1];
+    };
+    /* A HOSE (soufflet) to (x, y): a dark ribbed rubber hose that leaves along
+       the line's own heading and arrives heading `deg` (the way the marble
+       travels, 90 = straight down), a smooth curve between. It is the joint
+       between two modules that do not line up: the marble is hidden inside
+       and the hose swells where it passes. */
+    Track.prototype.hose = function (x, y, deg) {
+      var l = this.last(), x0 = l[0], y0 = l[1], h = this.heading(), a = (deg == null ? 90 : deg) * Math.PI / 180;
+      var D = Math.sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)), k = D * 0.42;
+      var c1x = x0 + h[0] * k, c1y = y0 + h[1] * k, c2x = x - Math.cos(a) * k, c2y = y - Math.sin(a) * k;
+      var n = Math.max(6, Math.round(D / 10)), g0 = this.g, i, s, u;
+      this.g = SK_HOSE;
+      for (i = 1; i <= n; i++) {
+        s = i / n; u = 1 - s;
+        this.put(u * u * u * x0 + 3 * u * u * s * c1x + 3 * u * s * s * c2x + s * s * s * x,
+                 u * u * u * y0 + 3 * u * u * s * c1y + 3 * u * s * s * c2y + s * s * s * y);
+      }
+      this.g = g0;
+      return this;
+    };
+    /* A JUMP (tremplin) to (x, y): the rail curls up into a kicker and stops;
+       the marble flies a parabola that leaves the lip at `deg` degrees above
+       the horizontal (35 unless told) and lands in a CATCHER at (x, y) — a
+       scoop with a high back wall — where the line goes on. Nothing is drawn
+       under the flight. Write the run before it downhill, so the marble
+       arrives with speed. */
+    Track.prototype.jump = function (x, y, deg) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dir = x >= x0 ? 1 : -1, RK = 64, i, f;
+      var lip = (deg || 35) * Math.PI / 180;
+      for (i = 1; i <= 6; i++) {
+        f = lip * i / 6;
+        this.put(x0 + dir * RK * Math.sin(f), y0 - RK * (1 - Math.cos(f)));
+      }
+      l = this.last();
+      this.props.push({ k: "kick", x: x0, y: y0, dir: dir, rk: RK, lip: lip });
+      var xl = l[0], yl = l[1], span = Math.abs(x - xl), n = Math.max(8, Math.round(span / 9)), s, g0 = this.g;
+      // the sag that makes the flight leave the lip along it
+      var h = ((y - yl) + Math.tan(lip) * span) / 4;
+      this.g = SK_AIR;
+      for (i = 1; i <= n; i++) { s = i / n; this.put(xl + (x - xl) * s, yl + (y - yl) * s - 4 * h * s * (1 - s)); }
+      this.g = g0;
+      this.props.push({ k: "catch", x: x, y: y, dir: dir });
+      this.mods.push({ kind: "land", x: x, y: y });
+      return this;
+    };
+    /* A STAIRCASE (escalier) to (x, y): `n` ledges, the marble rolls along
+       each and hops down onto the next, and every landing rings a note, a
+       scale down the stairs. The stairs need some width: a ledge is about
+       half a step across. */
+    Track.prototype.steps = function (x, y, n) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dx = (x - x0) / n, dy = (y - y0) / n, dir = dx >= 0 ? 1 : -1;
+      var i, j, s, ax, ay, ex, ey, g0 = this.g, run = 0.5, HOP = 12;
+      this.g = SK_AIR;
+      for (i = 0; i < n; i++) {
+        ax = x0 + dx * i; ay = y0 + dy * i;
+        ex = ax + dx * run; ey = ay + 3;
+        this.put(ex, ey);
+        this.props.push({ k: "ledge", x0: ax - dir * (R + 6), x1: ex + dir * 6, y: ay + R + 1 });
+        for (j = 1; j <= 6; j++) {
+          s = j / 6;
+          this.put(ex + (ax + dx - ex) * s, ey + (ay + dy - ey) * s - 4 * HOP * s * (1 - s));
+        }
+        this.mods.push({ kind: "note", x: ax + dx, y: ay + dy, n: i });
+      }
+      this.props.push({ k: "ledge", x0: x - dir * (R + 6), x1: x + dir * (R + 10), y: y + R + 1 });
+      this.g = g0;
+      return this;
+    };
+    // A WAVE (bosses) to (x, y): `n` smooth humps `amp` high over the straight
+    // line, which the marble crawls up and runs down.
+    Track.prototype.wave = function (x, y, n, amp) {
+      var l = this.last(), x0 = l[0], y0 = l[1], m = n * 16, i, k;
+      for (i = 1; i <= m; i++) {
+        k = i / m;
+        this.put(x0 + (x - x0) * k, y0 + (y - y0) * k - amp * (1 - Math.cos(k * n * PI2)) / 2);
+      }
+      return this;
+    };
+    /* A BOOSTER to (x, y): a straight run through three copper coils. A
+       marble through the middle one is shot on at full speed, faster than
+       any slope gives it, and keeps it a moment. */
+    Track.prototype.boost = function (x, y) {
+      var l = this.last(), x0 = l[0], y0 = l[1], i;
+      for (i = 1; i <= 3; i++) this.props.push({ k: "coil", x: x0 + (x - x0) * i / 4, y: y0 + (y - y0) * i / 4,
+                                                  a: Math.atan2(y - y0, x - x0) });
+      this.put(x, y);
+      this.mods.push({ kind: "boost", x: (x0 + x) / 2, y: (y0 + y) / 2 });
+      return this;
+    };
+    /* Everything from point `from` on runs BEHIND the machine, whatever
+       depth the modules gave it — a coil's near half included. This is the
+       spill network's plane: a line a lost marble rides, never one the
+       player reads. The point before `from` keeps its depth, so a drain
+       still starts on the front rail it falls out of. */
     Track.prototype.behind = function (from) {
       for (var i = from || 0; i < this.p.length; i++) this.p[i][2] = -1;
       this.z = -1;
       return this;
     };
+    // The mirror image of a track about x = 330 (the machines' axis).
     function mirrorPts(tr) {
       var o = [], i, q;
       for (i = 0; i < tr.p.length; i++) { q = tr.p[i]; o.push([660 - q[0], q[1], q[2], q[3], q[4]]); }
       var t2 = new Track(0, 0); t2.p = o;
       for (i = 0; i < tr.bowls.length; i++) t2.bowls.push({ cx: 660 - tr.bowls[i].cx, cy: tr.bowls[i].cy, r: tr.bowls[i].r });
+      for (i = 0; i < tr.mods.length; i++) t2.mods.push({ kind: tr.mods[i].kind, x: 660 - tr.mods[i].x, y: tr.mods[i].y, n: tr.mods[i].n });
+      for (i = 0; i < tr.props.length; i++) {
+        q = tr.props[i];
+        t2.props.push({ k: q.k, x: 660 - q.x, y: q.y, dir: -q.dir, x0: 660 - q.x0, x1: 660 - q.x1, a: Math.PI - q.a });
+      }
       return t2;
     }
     return { Track: Track, mirrorPts: mirrorPts };
   }
 
-  /* The game's own library: the text between `function Track(x, y) {` and
-     `function T(x, y)` in game.js, which only needs PI2. Null when the file
-     cannot be fetched (file://) or no longer has those two markers. */
+  /* The game's own library: the text between `var SK_RAIL` and
+     `function T(x, y)` in game.js, which only needs R and PI2. Null when the
+     file cannot be fetched (file://) or no longer has those two markers. */
   async function liveLibrary() {
     try {
       const res = await fetch("../games/gearball/game.js", { cache: "no-store" });
       if (!res.ok) return null;
       const text = await res.text();
-      const i0 = text.indexOf("function Track(x, y) {"), i1 = text.indexOf("function T(x, y)");
+      const i0 = text.indexOf("var SK_RAIL"), i1 = text.indexOf("function T(x, y)");
       if (i0 < 0 || i1 < i0) return null;
-      const lib = new Function("PI2", text.slice(i0, i1) + "\nreturn { Track: Track, mirrorPts: mirrorPts };")(PI2);
+      const lib = new Function("PI2", "R", text.slice(i0, i1) + "\nreturn { Track: Track, mirrorPts: mirrorPts };")(PI2, R);
       const num = (re) => { const m = text.match(re); return m ? parseFloat(m[1]) : null; };
       const read = {
         gravity: num(/gravity:\s*([\d.]+)/), friction: num(/friction:\s*([\d.]+)/),
@@ -424,15 +572,28 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         flushGap: num(/flushGap:\s*([\d.]+)/), flushV: num(/flushV:\s*([\d.]+)/), waitCap: num(/waitCap:\s*([\d.]+)/)
       };
       for (const k in read) if (read[k] != null) GAME_PH[k] = read[k];
-      // THE FIVE MACHINES: the text from `var H0 =` to the end of LAYOUTS, evaluated with
+      const mv = { boostK: num(/BOOST_K = ([\d.]+)/), boostTime: num(/BOOST_TIME = ([\d.]+)/),
+                   land: num(/"land"\)\s*\{\s*m\.v \*= ([\d.]+)/), ferryOmega: num(/FERRY_OMEGA = ([\d.]+)/) };
+      for (const k in mv) if (mv[k] != null) MOVE[k] = mv[k];
+      // THE MACHINES: the text from `var H0 =` to the end of LAYOUTS, evaluated with
       // the library — so the Machines view is the game's own layouts, never a copy.
-      const j0 = text.indexOf("var H0 = "), j1 = text.indexOf("/* ---------------- building a layout");
+      const j0 = text.indexOf("var H0 = ");
+      let j1 = text.indexOf("/* ---------------- building a layout");
+      if (j1 < j0) j1 = text.indexOf("function makeChannel(", j0);
       if (j0 > 0 && j1 > j0) {
         const hop = text.match(/var HOPPER = (\{[^}]+\})/);
         MACHINE.rimY = num(/RIM_Y = (\d+)/) || MACHINE.rimY;
         MACHINE.railEnd = num(/RAIL_END = (\d+)/) || MACHINE.railEnd;
         if (hop) MACHINE.hopper = new Function("return " + hop[1])();
         MACHINE.src = text.slice(j0, j1);
+        /* Every numeric constant section 6 declares before the machines
+           (MW, R, RAIL_END, the SK_ skins…), handed to them by name, so a
+           layout written with one of them still evaluates here. */
+        const s6 = text.indexOf("6. GAME"), consts = {};
+        for (const m of text.slice(s6 > 0 ? s6 : 0, j0).matchAll(/\b([A-Z][A-Z0-9_]*)\s*=\s*(-?\d+(?:\.\d+)?)\s*(?=[,;])/g)) {
+          if (!(m[1] in consts)) consts[m[1]] = parseFloat(m[2]);
+        }
+        MACHINE.consts = consts;
         const metals = [...text.matchAll(/metal: "(#[0-9a-fA-F]{6})"/g)].map((m) => m[1]);
         if (metals.length) METALS.splice(0, METALS.length, ...metals);
       }
@@ -440,7 +601,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     } catch (e) { return null; }
   }
   // What a machine needs beside its layout, read off game.js when it can be.
-  const MACHINE = { src: null, layouts: null, rimY: 1072, railEnd: 1076, topY: 68, botY: 1170,
+  const MACHINE = { src: null, layouts: null, base: null, consts: {}, rimY: 1072, railEnd: 1076, topY: 68, botY: 1170,
                     hopper: { x: 650, y: 152, l: 606, r: 704, top: 52, bot: 110 } };
 
   /* MODULE TAGS. Every module call stamps the points it lays with its name
@@ -449,7 +610,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
      an "m" — one call drawn twice, which is worth telling apart. */
   function tagLibrary(lib) {
     let uid = 0;
-    for (const name of ["zig", "loop", "cork", "coil", "whirl"]) {
+    for (const name of ["zig", "loop", "cork", "coil", "whirl", "hose", "jump", "steps", "wave", "boost"]) {
       const f = lib.Track.prototype[name];
       lib.Track.prototype[name] = function () {
         const n0 = this.p.length, tag = name + "#" + (++uid);
@@ -498,7 +659,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     for (i = 0; i < ch.n; i++) { d = (ch.xs[i] - x) * (ch.xs[i] - x) + (ch.ys[i] - y) * (ch.ys[i] - y); if (d < bd) { bd = d; bi = i; } }
     return bi * DS;
   }
-  var tmpP = { x: 0, y: 0, z: 1, slope: 0 };
+  var tmpP = { x: 0, y: 0, z: 1, slope: 0, sk: 0 };
   function at(ch, d, o) {
     o = o || tmpP;
     var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
@@ -506,6 +667,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     o.y = ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q;
     o.z = ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q;
     o.slope = (ch.ys[i + 1] - ch.ys[i]) / DS;
+    o.sk = ch.gs[i + 1];
     return o;
   }
   function normalAt(ch, i) {
@@ -592,6 +754,14 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       build: () => ({ ch: { a: { tr: T(30, 40).to(90, 100).glass(1).to(260, 160).zig(260, 330, 2, 24).glass(0).to(320, 410) } }, start: ["a"] })
     },
     {
+      key: "zebra", group: "track", name: "Zebra tube", call: ".zebra(1) … .zebra(0)", used: [],
+      blurb: "A tube painted in bands, with glass windows between them, so a marble flickers in and out of sight as it runs through. The electric one glows through the paint: it is the one the player must never lose.",
+      params: [{ k: "electric", label: "Electric share", min: 0, max: 1, step: 0.05, v: 0.3 }],
+      gap: 0.8,
+      build: (P) => ({ ch: { a: { tr: T(30, 40).to(90, 100).zebra(1).to(260, 160).zig(260, 330, 2, 24).zebra(0).to(320, 410) } },
+                       start: ["a"], electric: P.electric })
+    },
+    {
       key: "dive", group: "track", name: "Dive", call: ".under() … .over()", used: [3, 4, 5],
       blurb: ".under() takes the line into a pipe mouth and behind the machine, .over() brings it back through another: how one line crosses under another. A whirlpool's drain is a dive too.",
       params: [],
@@ -599,6 +769,50 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       build: () => ({ ch: { a: { tr: T(20, 190).to(340, 250) },
                             b: { tr: T(230, 30).to(200, 130).under().to(140, 320).over().to(120, 350).to(110, 410) } },
                       start: ["a", "b"] })
+    },
+    {
+      key: "hose", group: "track", name: "Hose", call: ".hose(x, y, deg)", used: [],
+      blurb: "The joint between two modules that do not line up: a dark ribbed hose leaves along the line's own heading and arrives heading deg (90 is straight down), a smooth curve between. The marble is hidden inside, and the hose swells where it passes.",
+      params: [{ k: "deg", label: "Arrival heading (deg)", min: 0, max: 180, step: 5, v: 90 }],
+      gap: 0.85,
+      build: (P) => {
+        const a = P.deg * Math.PI / 180, x = 220, y = 230, ex = x + Math.cos(a) * 90, ey = y + Math.sin(a) * 90;
+        return { ch: { a: { tr: T(30, 40).to(80, 70).to(150, 90).hose(x, y, P.deg).to(ex, ey).to(clamp(ex, 40, 320), 410) } },
+                 start: ["a"] };
+      }
+    },
+    {
+      key: "jump", group: "track", name: "Jump", call: ".jump(x, y, deg)", used: [],
+      blurb: "The rail curls up into a kicker and stops; the marble flies a parabola off the lip at deg degrees and lands in a catcher at (x, y) — a scoop with a high back wall — where the line goes on. Nothing drags it in the air, and the landing knocks some of its speed off.",
+      params: [{ k: "deg", label: "Lip angle (deg)", min: 15, max: 60, step: 5, v: 35 },
+               { k: "x", label: "Catcher x", min: 200, max: 330, step: 10, v: 280 },
+               { k: "y", label: "Catcher y", min: 160, max: 340, step: 10, v: 260 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(20, 40).to(45, 100).to(80, 230).to(95, 250).jump(P.x, P.y, P.deg)
+                                      .to(P.x, P.y + 60).to(P.x - 20, 410) } }, start: ["a"] })
+    },
+    {
+      key: "steps", group: "track", name: "Staircase", call: ".steps(x, y, n)", used: [],
+      blurb: "n ledges down to (x, y): the marble rolls along each one, hops off onto the next, and every landing rings a note, a scale down the stairs. A ledge is about half a step across, so the stairs need some width.",
+      params: [{ k: "n", label: "Ledges (n)", min: 2, max: 6, step: 1, v: 4 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(20, 50).to(50, 80).steps(290, 330, P.n).to(325, 336).to(335, 410) } }, start: ["a"] })
+    },
+    {
+      key: "wave", group: "track", name: "Wave", call: ".wave(x, y, n, amp)", used: [],
+      blurb: "n smooth humps, amp high over the straight line to (x, y). The marble crawls up every one and runs down the far side: a stretch that reads as bumpy and never stops it.",
+      params: [{ k: "n", label: "Humps (n)", min: 1, max: 6, step: 1, v: 3 },
+               { k: "amp", label: "Amplitude", min: 6, max: 70, step: 2, v: 30 }],
+      gap: 0.9,
+      build: (P) => ({ ch: { a: { tr: T(20, 100).to(50, 140).wave(320, 250, P.n, P.amp).to(335, 290).to(330, 410) } }, start: ["a"] })
+    },
+    {
+      key: "boost", group: "track", name: "Booster", call: ".boost(x, y)", used: [],
+      blurb: "A straight run through three copper coils. A marble through the middle one is shot on faster than any slope gives it (BOOST_K times the top speed), nothing drags it for BOOST_TIME, and the coils flare as they fire: here it takes the climb at full tilt.",
+      params: [],
+      gap: 0.9,
+      build: () => ({ ch: { a: { tr: T(20, 40).to(40, 120).to(70, 200).to(100, 220).boost(240, 226)
+                                      .to(300, 190).to(330, 120).to(340, 60) } }, start: ["a"] })
     },
 
     /* ---------------- the machine parts ---------------- */
@@ -708,15 +922,25 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     const src = mod.build(mod.P);
     const S = {
       mod, src, W: src.W || TW, H: src.H || TH, lost: 0, sinkKick: 0,
-      CH: {}, bowls: [], out: src.out || {}, marbles: [], t: 0, spawnT: 0.2, si: 0,
+      CH: {}, bowls: [], props: [], fers: [], out: src.out || {}, marbles: [], t: 0, spawnT: 0.2, si: 0,
       sw: {}, gates: [], boxes: {}, chimes: [], wheel: null, hub: 0, hubPop: 0, hubBreak: 0,
       parts: [], shards: [], rings: [], puffs: [], queue: [], layers: null, custom: src.custom || null
     };
     for (const id in src.ch) {
       const c = src.ch[id];
-      S.CH[id] = makeChannel(id, c.to || null, c.tr.p);
+      const ch = S.CH[id] = makeChannel(id, c.to || null, c.tr.p);
       for (const b of c.tr.bowls) S.bowls.push(b);
+      // the landings, notes and boosters a marble sets off, at their distance along the line
+      ch.mods = (c.tr.mods || []).map((md) => ({ kind: md.kind, n: md.n || 0, d: nearestD(ch, md.x, md.y) }));
+      for (const q of c.tr.props || []) S.props.push(q);
     }
+    // the ferry gears (section 6, layout): in radians, and the line that ends on each one
+    for (const c of src.fer || []) {
+      const f = { cx: c.cx, cy: c.cy, r: c.r, n: c.n, out: c.out, a0: c.from * Math.PI / 180,
+                  dir: c.to > c.from ? 1 : -1, travel: Math.abs(c.to - c.from) * Math.PI / 180 };
+      S.fers.push({ f, phase: 0, notch: new Array(c.n).fill(null), q: [] });
+    }
+    for (const id in S.CH) { const to = S.CH[id].to; if (typeof to === "string" && to.indexOf("fer:") === 0) S.CH[id].ferK = +to.slice(4); }
     buildSpill(S, src);
     for (const k in src.sw || {}) {
       const s = src.sw[k];
@@ -797,6 +1021,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       seen[id] = 1;
       if (ch.to === a) return true;
       if (ch.to === "wheel") return reaches(S.src.wheel.out, a, seen);
+      if (ch.ferK != null) return reaches(S.fers[ch.ferK].f.out, a, seen);
       const o = S.out[ch.to];
       return !!o && (reaches(o[0], a, seen) || reaches(o[1], a, seen));
     }
@@ -909,10 +1134,14 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   }
   function roll(S, m, mdt) {
     const p = at(m.ch, m.d);
-    m.v = Math.max(PH.vMin, Math.min(PH.vMax, m.v + (PH.gravity * p.slope - PH.friction) * mdt));
+    // in flight nothing drags; a boosted marble keeps its shot a moment
+    const fr = p.sk === SK_AIR || m.vb > 0 ? 0 : PH.friction, top = m.vb > 0 ? PH.vMax * MOVE.boostK : PH.vMax;
+    if (m.vb > 0) m.vb -= mdt;
+    m.v = Math.max(PH.vMin, Math.min(top, m.v + (PH.gravity * p.slope - fr) * mdt));
     const d0 = m.d;
     m.d += m.v * mdt; m.rot += m.v * mdt / R;
     for (const c of S.chimes) if (c.ch === m.ch && d0 < c.d && m.d >= c.d) c.hit = 0;
+    if (m.ch.mods && m.ch.mods.length) moduleFx(S, m, d0);
     const ch = m.ch, gt = ch.gate;
     if (gt && !m.gateOk && (gt.locked || gt.flush)) {
       const gstop = Math.max(0, gt.d - gt.q.length * 2.2 * R);
@@ -921,7 +1150,11 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         m.d = gstop; m.st = "gate"; m.gate = gt; gt.q.push(m); place(m); return;
       }
     } else if (gt && m.d >= gt.d) m.gateOk = true;
-    if (ch.to === "wheel") {
+    if (ch.ferK != null) {
+      // a ferry gear: wait at the rim for the next free pocket
+      const fq = S.fers[ch.ferK].q, fstop = ch.len - fq.length * 2.2 * R;
+      if (m.d >= fstop) { m.d = Math.max(0, fstop); m.st = "fwait"; m.fer = S.fers[ch.ferK]; fq.push(m); place(m); return; }
+    } else if (ch.to === "wheel") {
       const wq = S.wheel.q[ch.id], stop = ch.len - wq.length * 2.2 * R;
       if (m.d >= stop) {
         if (wq.length >= PH.waitCap) { place(m); S.wheel.flashT[ch.id] = 0.6; spill(S, m, S.wheel.spill[ch.id], null); place(m); return; }
@@ -938,6 +1171,43 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       else { m.st = "dead"; return; }
     }
     place(m);
+  }
+
+  /* What the moving modules do as a marble crosses their mark (section 6,
+     moduleFx): a jump's catcher takes the landing and some of its speed, a
+     stair rings its note, a booster fires. The sounds stay in the game. */
+  function moduleFx(S, m, d0) {
+    for (const md of m.ch.mods) {
+      if (d0 >= md.d || m.d < md.d) continue;
+      if (md.kind === "land") {
+        m.v *= MOVE.land;
+        spark(S, m.x, m.y + R, C.steelL, 5, 150, 90);
+        ring(S, m.x, m.y, C.steelL, R, 50, 0.3, 3);
+      } else if (md.kind === "note") {
+        spark(S, m.x, m.y + R, C.steelL, 2, 90, 60);
+      } else if (md.kind === "boost") {
+        m.vb = MOVE.boostTime; m.v = PH.vMax * MOVE.boostK;
+        fireCoils(S, m.ch, md.d);
+        spark(S, m.x, m.y, C.amber, 6, 220);
+      }
+    }
+  }
+  // A booster's coils light up round the marble they shoot (section 6, fireCoils).
+  function fireCoils(S, ch, d) {
+    const p = at(ch, d, {});
+    for (const q of S.props) if (q.k === "coil" && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < 90 * 90) q.hit = 0.45;
+  }
+  /* A ferry gear turns; a free pocket sweeping past where its line ends
+     takes the marble waiting there, for the length of the ride (section 6,
+     stepFerry). */
+  function stepFerry(fr, mdt) {
+    const f = fr.f, step = PI2 / f.n, prev = fr.phase, dA = MOVE.ferryOmega * mdt;
+    fr.phase += f.dir * dA;
+    for (let i = 0; i < f.n && fr.q.length; i++) {
+      if (fr.notch[i] || mod(f.dir * (f.a0 - (prev + i * step)), PI2) >= dA) continue;
+      const m = fr.q.shift();
+      m.st = "ferry"; m.notch = i; m.left = f.travel; fr.notch[i] = m;
+    }
   }
 
   function spawn(S) {
@@ -992,6 +1262,8 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       b.fizz = Math.max(0, b.fizz - dt); b.charge = Math.max(0, b.charge - dt * 0.8);
     }
     for (const c of S.chimes) c.hit += dt;
+    for (const q of S.props) if (q.hit > 0) q.hit -= dt;
+    for (const fr of S.fers) stepFerry(fr, mdt);
     S.hubPop = Math.max(0, S.hubPop - dt * 3); S.hubBreak = Math.max(0, S.hubBreak - dt);
     S.sinkKick = Math.max(0, S.sinkKick - dt);
 
@@ -1017,7 +1289,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     }
 
     for (const m of S.marbles) {
-      if (m.e && (m.st === "track" || m.st === "wheel") && Math.random() < 0.45 && S.parts.length < PART_MAX) {
+      if (m.e && (m.st === "track" || m.st === "wheel" || m.st === "ferry") && Math.random() < 0.45 && S.parts.length < PART_MAX) {
         S.parts.push({ x: m.x + (Math.random() - 0.5) * 10, y: m.y + (Math.random() - 0.5) * 10,
                        vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40 - 20,
                        life: 0.3, t: 0, color: Math.random() < 0.5 ? C.volt : C.voltHi, s: 1.6 + Math.random() * 1.4 });
@@ -1033,6 +1305,17 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         if (m.left <= 0) {
           W.notch[m.notch] = null; m.st = "track"; m.ch = S.CH[wc.out]; m.d = 0; m.v = PH.vMin + 40; m.gateOk = false;
           S.hub = S.hub >= 99 ? 0 : S.hub + 1; S.hubPop = 0.3;
+        }
+      } else if (m.st === "fwait") {
+        const fq = m.fer.q, fspot = Math.max(0, m.ch.len - fq.indexOf(m) * 2.2 * R);
+        m.d = Math.min(fspot, m.d + 260 * mdt); place(m);
+      } else if (m.st === "ferry") {
+        const fr = m.fer, fa = fr.phase + m.notch * PI2 / fr.f.n;
+        m.left -= MOVE.ferryOmega * mdt; m.rot += MOVE.ferryOmega * mdt * fr.f.dir * fr.f.r / R;
+        m.x = fr.f.cx + Math.cos(fa) * fr.f.r; m.y = fr.f.cy + Math.sin(fa) * fr.f.r; m.z = 1; m.a = 1;
+        if (m.left <= 0) {
+          fr.notch[m.notch] = null; m.fer = null;
+          m.st = "track"; m.ch = S.CH[fr.f.out]; m.d = 0; m.v = PH.vMin + 40; m.gateOk = false; place(m);
         }
       } else if (m.st === "gate") {
         const gq = m.gate, gspot = Math.max(0, gq.d - gq.q.indexOf(m) * 2.2 * R);
@@ -1222,10 +1505,11 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   }
   function spritesFor(k) {
     const key = k.toFixed(3) + "/" + TINT.key;
-    if (!spriteCache[key]) spriteCache[key] = { k, cog: buildCog(k), wheels: {}, ...buildMarbles(k) };
+    if (!spriteCache[key]) spriteCache[key] = { k, cog: buildCog(k), wheels: {}, gears: {}, ...buildMarbles(k) };
     return spriteCache[key];
   }
   function wheelSprite(n) { return SP.wheels[n] || (SP.wheels[n] = buildWheel(SP.k, n)); }
+  function ferrySprite(f) { const key = f.r + "/" + f.n; return SP.gears[key] || (SP.gears[key] = gearSprite(SP.k, f.r, f.n)); }
   function glow(col) {
     let g = glows[col];
     if (g) return g;
@@ -1291,6 +1575,30 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     for (let i = 0; i < notches; i++) {
       const a = i / notches * PI2;
       c.beginPath(); c.arc(Math.cos(a) * WHEEL_R, Math.sin(a) * WHEEL_R, R + 3, 0, PI2);
+      c.fillStyle = tc("#07041a"); c.fill();
+      c.lineWidth = 2; c.strokeStyle = tca("#beb0ff", .55); c.stroke();
+    }
+    return cv;
+  }
+  /* A pocket gear — the feed gear and the ferry gears (section 6,
+     gearSprite): a cog with a dark disc, spokes, and one pocket a marble
+     sits in every 1 / n of the rim at radius r. */
+  function gearSprite(k, r, n) {
+    const half = r + 18, cv = canvasOf(half * 2 * k, half * 2 * k), c = cv.getContext("2d");
+    c.setTransform(k, 0, 0, k, half * k, half * k);
+    paintCog(c, r + 16, Math.round(r / 3.4), 0, 0);
+    c.beginPath(); c.arc(0, 0, r - 6, 0, PI2);
+    c.fillStyle = tc("#1a1240"); c.fill();
+    c.strokeStyle = tc("#6f63ad"); c.lineCap = "round";
+    for (let i = 0; i < n; i++) {
+      const a = i / n * PI2 + Math.PI / n;
+      c.lineWidth = 6;
+      c.beginPath(); c.moveTo(Math.cos(a) * 22, Math.sin(a) * 22);
+      c.lineTo(Math.cos(a) * (r - 8), Math.sin(a) * (r - 8)); c.stroke();
+    }
+    for (let i = 0; i < n; i++) {
+      const a = i / n * PI2;
+      c.beginPath(); c.arc(Math.cos(a) * r, Math.sin(a) * r, R + 3, 0, PI2);
       c.fillStyle = tc("#07041a"); c.fill();
       c.lineWidth = 2; c.strokeStyle = tca("#beb0ff", .55); c.stroke();
     }
@@ -1373,14 +1681,32 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   }
   const isBack = (ch, i) => ch.zs[i] < 0;
   const isFront = (ch, i) => ch.zs[i] >= 0 && !ch.gs[i];
-  const isGlass = (ch, i) => ch.zs[i] >= 0 && !!ch.gs[i];
+  const isGlass = (ch, i) => ch.zs[i] >= 0 && ch.gs[i] === SK_GLASS;
+  const isZebra = (ch, i) => ch.zs[i] >= 0 && ch.gs[i] === SK_ZEBRA;
+  const isHose = (ch, i) => ch.zs[i] >= 0 && ch.gs[i] === SK_HOSE;
+  // what is laid OVER the marbles: the glass sheen, the zebra's bands, the hose
+  const isOver = (ch, i) => ch.zs[i] >= 0 && ch.gs[i] >= SK_GLASS && ch.gs[i] <= SK_HOSE;
+  /* A ZEBRA tube's opaque bands: ZEBRA_BAND px of paint every ZEBRA_P px
+     along the line, so each window between is wider than a marble. */
+  const ZEBRA_P = 58, ZEBRA_BAND = 24;
+  const zebraBand = (ch, i) => isZebra(ch, i) && (i * DS) % ZEBRA_P < ZEBRA_BAND;
+  // A box grown to take in a point and its radius.
+  function grow(box, x, y, r) {
+    if (!box) return { x: x - r, y: y - r, w: r * 2, h: r * 2 };
+    const x1 = Math.max(box.x + box.w, x + r), y1 = Math.max(box.y + box.h, y + r);
+    box.x = Math.min(box.x, x - r); box.y = Math.min(box.y, y - r);
+    box.w = x1 - box.x; box.h = y1 - box.y;
+    return box;
+  }
   function buildRails(S, k, sk) {
     const each = (fn) => { for (const id in S.CH) fn(S.CH[id]); };
-    let fb = boxOf(S, (ch, i) => ch.zs[i] >= 0, 40);
-    for (const bw of S.bowls) {
-      if (!fb) fb = { x: bw.cx, y: bw.cy, w: 0, h: 0 };
-      const x1 = Math.max(fb.x + fb.w, bw.cx + bw.r + 30);
-      fb.x = Math.min(fb.x, bw.cx - bw.r - 30); fb.w = x1 - fb.x;
+    let fb = boxOf(S, (ch, i) => ch.zs[i] >= 0, 40), ob = boxOf(S, isOver, 34);
+    for (const bw of S.bowls) fb = grow(fb, bw.cx, bw.cy, bw.r + 30);
+    for (const q of S.props) {
+      if (q.k === "coil") ob = grow(ob, q.x, q.y, R + 16);
+      else if (q.k === "catch") fb = grow(fb, q.x, q.y, R + 60);
+      else if (q.k === "kick") fb = grow(fb, q.x, q.y, q.rk + 30);
+      else if (q.k === "ledge") { fb = grow(fb, q.x0, q.y, 30); fb = grow(fb, q.x1, q.y, 30); }
     }
     S.layers = {
       key: k.toFixed(3) + "/" + sk.key + "/" + TINT.key,
@@ -1394,10 +1720,16 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
         for (const b of S.bowls) paintBowl(c, b);
         each((ch) => sk.bed(c, ch, isFront));
         each((ch) => sk.pass(c, ch, isFront, 1));
-        each((ch) => tubeWalls(c, ch));
+        each((ch) => { tubeWalls(c, ch, isGlass, 14); tubeWalls(c, ch, isZebra, 0); });
         each((ch) => { for (const i of ch.mouths) paintMouth(c, ch, i); });
+        for (const q of S.props) paintProp(c, q);
       }),
-      glass: layer(boxOf(S, isGlass, 34), k, (c) => each((ch) => tubeSheen(c, ch))),
+      glass: layer(ob, k, (c) => {
+        each((ch) => tubeSheen(c, ch, isGlass));
+        each((ch) => zebraBands(c, ch));
+        each((ch) => hoseBody(c, ch));
+        for (const q of S.props) if (q.k === "coil") paintCoil(c, q);
+      }),
       cogs: S.cogs.map((cg) => layer({ x: -cg[2] - 2, y: -cg[2] - 2, w: cg[2] * 2 + 4, h: cg[2] * 2 + 4 }, k,
         (c) => paintCog(c, cg[2], Math.max(8, Math.round(cg[2] / 4)), cg[2] > 40 ? 6 : 4, cg[2] * 0.16)))
     };
@@ -1438,16 +1770,18 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     }
     c.globalAlpha = 1;
   }
-  function tubeWalls(c, ch) {
+  // A glass tube (a zebra's too): two walls and a joint every `joint`
+  // steps (none at 0), on the front layer...
+  function tubeWalls(c, ch, keep, joint) {
     c.lineCap = "round"; c.lineJoin = "round";
-    c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, isGlass, 0);
-    c.strokeStyle = tca("#9678ff", .10); c.lineWidth = 2 * R + 8; runs(c, ch, isGlass, 0);
+    c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, keep, 0);
+    c.strokeStyle = tca("#9678ff", .10); c.lineWidth = 2 * R + 8; runs(c, ch, keep, 0);
     c.strokeStyle = tc("#0b0720"); c.lineWidth = 5;
-    runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
+    runs(c, ch, keep, -(R + 5)); runs(c, ch, keep, R + 5);
     c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2;
-    runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
-    for (let i = 0; i < ch.n; i += 14) {
-      if (!isGlass(ch, i)) continue;
+    runs(c, ch, keep, -(R + 5)); runs(c, ch, keep, R + 5);
+    for (let i = 0; joint && i < ch.n; i += joint) {
+      if (!keep(ch, i)) continue;
       const nv = normalAt(ch, i);
       c.strokeStyle = tc("#0b0720"); c.lineWidth = 7;
       c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 8), ch.ys[i] - nv[1] * (R + 8));
@@ -1455,11 +1789,121 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       c.strokeStyle = tc("#e6e0ff"); c.lineWidth = 3; c.stroke();
     }
   }
-  function tubeSheen(c, ch) {
+  // ...and its sheen, over the marbles.
+  function tubeSheen(c, ch, keep) {
     c.lineCap = "round"; c.lineJoin = "round";
-    c.strokeStyle = tca("#c8b4ff", .14); c.lineWidth = 2 * R + 6; runs(c, ch, isGlass, 0);
-    c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 2.4; runs(c, ch, isGlass, -(R - 3));
-    c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1.5; runs(c, ch, isGlass, R - 5);
+    c.strokeStyle = tca("#c8b4ff", .14); c.lineWidth = 2 * R + 6; runs(c, ch, keep, 0);
+    c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 2.4; runs(c, ch, keep, -(R - 3));
+    c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1.5; runs(c, ch, keep, R - 5);
+  }
+  /* A zebra tube over the marbles: the windows get the glass sheen, the
+     bands are painted metal, wider than the walls, so a marble is cut off
+     at every one of them. */
+  function zebraBands(c, ch) {
+    tubeSheen(c, ch, isZebra);
+    c.lineCap = "butt"; c.lineJoin = "round";
+    c.strokeStyle = tc("#0b0720"); c.lineWidth = 2 * R + 16; runs(c, ch, zebraBand, 0);
+    c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2 * R + 10; runs(c, ch, zebraBand, 0);
+    c.strokeStyle = tca("#4a3b8e", .7); c.lineWidth = 5; runs(c, ch, zebraBand, R + 1);
+    c.strokeStyle = "rgba(255,255,255,.75)"; c.lineWidth = 2.5; runs(c, ch, zebraBand, -(R - 1));
+  }
+  /* A hose over the marbles: dark rubber, a rib every step (a lit fold
+     every other one), a dull sheen along its top and a clamp collar at
+     each end, where it meets the module it joins. */
+  function hoseBody(c, ch) {
+    const w = R + 9;
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = "rgba(0,0,0,.4)"; c.lineWidth = 2 * R + 18; runs(c, ch, isHose, 0, 3, 5);
+    c.strokeStyle = tc("#140f2a"); c.lineWidth = 2 * R + 14; runs(c, ch, isHose, 0);
+    c.lineCap = "butt";
+    for (let i = 0; i < ch.n; i++) {
+      if (!isHose(ch, i)) continue;
+      const nv = normalAt(ch, i);
+      c.strokeStyle = i % 2 ? tc("#3b3268") : tc("#07050f"); c.lineWidth = i % 2 ? 2.6 : 1.6;
+      c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * w, ch.ys[i] - nv[1] * w);
+      c.lineTo(ch.xs[i] + nv[0] * w, ch.ys[i] + nv[1] * w); c.stroke();
+    }
+    c.lineCap = "round";
+    c.strokeStyle = "rgba(255,255,255,.09)"; c.lineWidth = 4; runs(c, ch, isHose, -(R - 2));
+    for (let i = 0; i < ch.n; i++) {
+      if (isHose(ch, i) && (i === 0 || !isHose(ch, i - 1) || i === ch.n - 1 || !isHose(ch, i + 1))) collar(c, ch, i);
+    }
+  }
+  // A clamp collar across a line at its point i.
+  function collar(c, ch, i) {
+    const nv = normalAt(ch, i), w = R + 12, x = ch.xs[i], y = ch.ys[i];
+    c.lineCap = "round";
+    c.strokeStyle = tc("#0b0720"); c.lineWidth = 11;
+    c.beginPath(); c.moveTo(x - nv[0] * w, y - nv[1] * w); c.lineTo(x + nv[0] * w, y + nv[1] * w); c.stroke();
+    c.strokeStyle = tc("#8b7fd0"); c.lineWidth = 7; c.stroke();
+    c.strokeStyle = tc("#ece8ff"); c.lineWidth = 2;
+    c.beginPath(); c.moveTo(x - nv[0] * (w - 2) - 1, y - nv[1] * (w - 2) - 1.5);
+    c.lineTo(x + nv[0] * (w - 2) - 1, y + nv[1] * (w - 2) - 1.5); c.stroke();
+  }
+  /* What stands beside a line on the front layer: a jump's CATCHER — a
+     scoop whose high back wall the marble lands against, open on the side
+     it comes from and at the bottom, where it leaves — its KICKER ramp,
+     and a stair's LEDGE, a plate on a bracket. */
+  function paintProp(c, q) {
+    if (q.k === "catch") {
+      const a0 = -1.75, a1 = 0.75;
+      c.save(); c.translate(q.x, q.y); c.scale(q.dir, 1);
+      c.lineCap = "round";
+      // the post it stands on, then the scoop's dark inside
+      c.beginPath(); c.moveTo(R + 10, 10); c.lineTo(R + 18, 52);
+      c.strokeStyle = tca("#140c33", .9); c.lineWidth = 8; c.stroke();
+      c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 4; c.stroke();
+      c.fillStyle = tca("#0a051c", .6);
+      c.beginPath(); c.arc(0, 0, R + 17, a0, a1); c.arc(0, 0, R + 1, a1, a0, true); c.closePath(); c.fill();
+      c.beginPath(); c.arc(0, 0, R + 9, a0, a1);
+      c.strokeStyle = "rgba(0,0,0,.55)"; c.lineWidth = 15; c.stroke();
+      c.strokeStyle = tc("#3d3079"); c.lineWidth = 11; c.stroke();
+      c.strokeStyle = tc("#b7abf0"); c.lineWidth = 5; c.stroke();
+      c.beginPath(); c.arc(0, 0, R + 5, a0 + 0.12, a1 - 0.12);
+      c.strokeStyle = tc("#f4f0ff"); c.lineWidth = 1.6; c.stroke();
+      // the lip flares out at the top, to take a marble that comes in high
+      c.beginPath(); c.moveTo(Math.cos(a0) * (R + 9), Math.sin(a0) * (R + 9));
+      c.quadraticCurveTo(Math.cos(a0) * (R + 14), Math.sin(a0) * (R + 14) - 6, Math.cos(a0) * (R + 9) - 12, Math.sin(a0) * (R + 9) - 14);
+      c.strokeStyle = "rgba(0,0,0,.55)"; c.lineWidth = 9; c.stroke();
+      c.strokeStyle = tc("#b7abf0"); c.lineWidth = 5; c.stroke();
+      c.restore();
+    } else if (q.k === "kick") {
+      // a jump's ramp: a steel wedge under the kicker's curl, the lip plated
+      c.save(); c.translate(q.x, q.y); c.scale(q.dir, 1);
+      const ex = q.rk * Math.sin(q.lip), ey = -q.rk * (1 - Math.cos(q.lip));
+      c.beginPath(); c.moveTo(-10, R + 4);
+      for (let f = 0; f <= 6; f++) c.lineTo(q.rk * Math.sin(q.lip * f / 6), -q.rk * (1 - Math.cos(q.lip * f / 6)) + R + 4);
+      c.lineTo(ex + 4, ey + R + 4); c.lineTo(ex + 4, R + 22); c.lineTo(-10, R + 22); c.closePath();
+      c.fillStyle = "rgba(0,0,0,.45)"; c.fill();
+      c.fillStyle = tca("#3d3079", .95); c.fill();
+      c.lineWidth = 2; c.strokeStyle = tc("#140c33"); c.stroke();
+      c.beginPath(); c.moveTo(ex + 4, ey + R + 4); c.lineTo(ex + 4, R + 22);
+      c.strokeStyle = tc("#b7abf0"); c.lineWidth = 3; c.stroke();
+      c.restore();
+    } else if (q.k === "ledge") {
+      const x0 = Math.min(q.x0, q.x1), x1 = Math.max(q.x0, q.x1);
+      c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(x0 + 3, q.y + 4, x1 - x0, 12);
+      c.beginPath(); c.moveTo((x0 + x1) / 2, q.y + 10); c.lineTo((x0 + x1) / 2 - 10, q.y + 34);
+      c.strokeStyle = tc("#140c33"); c.lineWidth = 7; c.lineCap = "round"; c.stroke();
+      c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 3.5; c.stroke();
+      c.fillStyle = tc("#140c33"); c.fillRect(x0 - 1, q.y - 1, x1 - x0 + 2, 13);
+      c.fillStyle = tc("#3d3079"); c.fillRect(x0, q.y, x1 - x0, 11);
+      c.fillStyle = tc("#b7abf0"); c.fillRect(x0, q.y, x1 - x0, 3);
+      c.fillStyle = tc("#f4f0ff"); c.fillRect(x0 + 2, q.y, x1 - x0 - 4, 1);
+    }
+  }
+  // A booster's coil: three turns of copper wire wound round the rail.
+  function paintCoil(c, q) {
+    c.save(); c.translate(q.x, q.y); c.rotate(q.a);
+    for (let j = -1; j <= 1; j++) {
+      const o = j * 6;
+      c.beginPath(); c.ellipse(o, 0, 4.5, R + 10, 0, 0, PI2);
+      c.strokeStyle = "rgba(20,8,0,.85)"; c.lineWidth = 5.5; c.stroke();
+      c.strokeStyle = "#c4733a"; c.lineWidth = 3.4; c.stroke();
+      c.beginPath(); c.ellipse(o, 0, 4.5, R + 10, 0, Math.PI * 1.05, Math.PI * 1.6);
+      c.strokeStyle = "#ffd6a0"; c.lineWidth = 1.2; c.stroke();
+    }
+    c.restore();
   }
   function paintMouth(c, ch, i) {
     const nv = normalAt(ch, i), a = Math.atan2(nv[1], nv[0]), x = ch.xs[i], y = ch.ys[i];
@@ -1740,6 +2184,37 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       }
     }
     ctx.globalAlpha = ga;
+  }
+
+  // The ferry gears, each with its marbles riding in its pockets (section 6, drawFerries).
+  function drawFerries(S) {
+    for (const fr of S.fers) {
+      const f = fr.f, half = f.r + 18;
+      ctx.save(); ctx.translate(f.cx, f.cy); ctx.rotate(fr.phase);
+      ctx.drawImage(ferrySprite(f), -half, -half, half * 2, half * 2);
+      ctx.restore();
+      ctx.save(); ctx.translate(f.cx, f.cy); ctx.rotate(-fr.phase * 0.5);
+      ctx.drawImage(SP.cog, -24, -24, 48, 48);
+      ctx.restore();
+      for (const m of fr.notch) if (m) drawMarble(m);
+    }
+  }
+  /* Over the hoses and the zebra's bands (section 6, drawCovered): a marble
+     in a hose swells it, an electric one glows through whatever covers it,
+     and a booster's coils flare as they fire. */
+  function drawCovered(S) {
+    for (const m of S.marbles) {
+      if (m.st !== "track" && m.st !== "gate") continue;
+      const i = Math.min(m.ch.n - 1, Math.round(m.d / DS)), sk = m.ch.gs[i];
+      if (sk !== SK_HOSE && sk !== SK_ZEBRA) continue;
+      if (sk === SK_HOSE) {
+        const nv = normalAt(m.ch, i), a = Math.atan2(nv[1], nv[0]);
+        ctx.fillStyle = tc("#1d1638"); ctx.strokeStyle = tc("#3b3268"); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(m.x, m.y, R + 11, R + 3, a, 0, PI2); ctx.fill(); ctx.stroke();
+      }
+      if (m.e) drawGlow(C.volt, m.x, m.y, R + 20, 0.75 + 0.2 * Math.sin(t * 20 + m.rot));
+    }
+    for (const q of S.props) if (q.k === "coil" && q.hit > 0) drawGlow(C.amber, q.x, q.y, R + 26, Math.min(1, q.hit * 2.4));
   }
 
   function drawHopper(S) {
@@ -2077,7 +2552,8 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     for (const id in S.CH) {
       const ch = S.CH[id];
       for (let i = 0; i < ch.n; i += 2) {
-        ctx.fillStyle = ch.zs[i] < 0 ? "#ff6fd8" : ch.gs[i] ? "#7ef9ff" : "#ffffff";
+        const g = ch.gs[i];
+        ctx.fillStyle = ch.zs[i] < 0 ? "#ff6fd8" : g === SK_HOSE ? "#9b7653" : g === SK_AIR ? "#ffd43b" : g ? "#7ef9ff" : "#ffffff";
         ctx.fillRect(ch.xs[i] - 1.5, ch.ys[i] - 1.5, 3, 3);
       }
       ctx.strokeStyle = "#ffb44f"; ctx.lineWidth = 2;
@@ -2105,13 +2581,16 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     }
   }
   // The modules in colour: every point stamped by a module call, the glass, the spill network.
-  const TAG_COL = { zig: "#ffd43b", loop: "#ff5fc8", cork: "#5f95ff", coil: "#8dff7a", whirl: "#ff8a5c", glass: "#7ef9ff", spill: "#ff3d6e" };
+  const TAG_COL = { zig: "#ffd43b", loop: "#ff5fc8", cork: "#5f95ff", coil: "#8dff7a", whirl: "#ff8a5c", glass: "#7ef9ff",
+                    zebra: "#ffffff", hose: "#9b7653", jump: "#19e6a8", steps: "#c9a0ff", wave: "#ff9aa2", boost: "#f7b733",
+                    spill: "#ff3d6e" };
   function drawTags(S) {
     ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 2 * R + 6;
     for (const id in S.CH) {
       const ch = S.CH[id];
       let open = null;
-      const kindAt = (i) => ch.spill ? "spill" : ch.ts[i] ? ch.ts[i].split("#")[0] : ch.gs[i] ? "glass" : null;
+      const kindAt = (i) => ch.spill ? "spill" : ch.ts[i] ? ch.ts[i].split("#")[0] :
+        ch.gs[i] === SK_GLASS ? "glass" : ch.gs[i] === SK_ZEBRA ? "zebra" : null;
       for (let i = 0; i <= ch.n; i++) {
         const k = i < ch.n ? kindAt(i) : null;
         if (k !== open) {
@@ -2172,7 +2651,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
 
   // One frame of a scene, in section 6's render order.
   function drawScene(S, cv, k, sk) {
-    setTint(S.mod.group === "machine" ? S.mod.used[0] - 1 : Lab.biome ? Lab.biome - 1 : 0);
+    setTint(S.mod.group === "machine" ? S.mod.biome : Lab.biome ? Lab.biome - 1 : 0);
     ctx = cv.getContext("2d"); t = S.t; SP = spritesFor(k);
     ctx.setTransform(k, 0, 0, k, 0, 0);
     const g = ctx.createLinearGradient(0, 0, 0, S.H);
@@ -2186,13 +2665,14 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     for (const m of S.marbles) if (m.z < 0 && (m.st === "track" || m.st === "gate")) drawMarble(m);
     if (Lf) ctx.drawImage(Lf.cv, Lf.x, Lf.y, Lf.w, Lf.h);
     if (sk.live) sk.live(S);
+    drawFerries(S);
     if (S.wheel) drawWheel(S);
     drawChimes(S);
     drawSwitches(S);
     drawGates(S);
     if (S.custom) S.custom.draw(S);
-    else for (const m of S.marbles) if (m.z >= 0) drawMarble(m);
-    if (Lg) ctx.drawImage(Lg.cv, Lg.x, Lg.y, Lg.w, Lg.h);
+    else for (const m of S.marbles) if (m.z >= 0 && m.st !== "ferry") drawMarble(m);
+    if (Lg) { ctx.drawImage(Lg.cv, Lg.x, Lg.y, Lg.w, Lg.h); drawCovered(S); }
     if (S.src.arr) drawReceivers(S);
     if (S.src.hopper) drawHopper(S);
     drawEffects(S);
@@ -2225,8 +2705,8 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   function minDist(pts, x, y) { let m = 1e9; for (const p of pts) m = Math.min(m, Math.hypot(p[0] - x, p[1] - y)); return m; }
   function checks(S) {
     const out = [], add = (ok, label, detail) => out.push({ ok, label, detail: ok ? "" : detail });
-    const front = frontPoints(S), tg = targetsOf(S), src = S.src, b = S.mod.used[0] - 1;
-    // the counts the pace was tuned on
+    const front = frontPoints(S), tg = targetsOf(S), src = S.src, b = S.mod.biome;
+    // the counts the pace was tuned on, which are the BIOME's: its six levels share them
     const want = [[1, 2, 2], [2, 3, 3], [4, 4, 4], [5, 5, 5], [6, 6, 6]][b];
     const have = [Object.keys(S.sw).length, S.gates.length, src.arr.length];
     add(want.join() === have.join(), "Counts " + have.join(" / ") + " (switches / gates / arrivals)", "the pace expects " + want.join(" / "));
@@ -2250,7 +2730,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       if (d0 < 0) return "runs off the start of " + ch.id;
       for (let d = d0; d <= d1; d += DS) {
         const i = Math.min(ch.n - 1, Math.round(d / DS));
-        if (ch.zs[i] < 0 || ch.gs[i]) return "on glass or behind on " + ch.id;
+        if (ch.zs[i] < 0 || ch.gs[i]) return "off plain rail (a tube, a hose, a flight) or behind, on " + ch.id;
         if (ch.mouths.some((mi) => Math.abs(mi - i) < 4)) return "on a pipe mouth of " + ch.id;
       }
       return null;
@@ -2293,6 +2773,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       seen[from] = 1;
       if (ch.to === a) return true;
       if (ch.to === "wheel") return reach(src.wheel.out, a, seen);
+      if (ch.ferK != null) return reach(S.fers[ch.ferK].f.out, a, seen);      // "fer:<k>" goes on along fer[k].out
       const o = S.out[ch.to];
       return !!o && (reach(o[0], a, seen) || reach(o[1], a, seen));
     };
@@ -2308,19 +2789,22 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
   }
   function countModules(S) {
     const seen = {}, n = {};
-    let glass = 0, mouths = 0;
+    let glass = 0, zebra = 0, mouths = 0;
     for (const id in S.CH) {
       const ch = S.CH[id];
       if (ch.spill) continue;
       for (let i = 0; i < ch.n; i++) {
         const tg = ch.ts[i];
         if (tg && !seen[tg]) { seen[tg] = 1; const k = tg.split("#")[0] + (tg.endsWith("m") ? " (mirror)" : ""); n[k] = (n[k] || 0) + 1; }
-        if (ch.gs[i] && (i === 0 || !ch.gs[i - 1])) glass++;
+        if (ch.gs[i] === SK_GLASS && (i === 0 || ch.gs[i - 1] !== SK_GLASS)) glass++;
+        if (ch.gs[i] === SK_ZEBRA && (i === 0 || ch.gs[i - 1] !== SK_ZEBRA)) zebra++;
       }
       mouths += ch.mouths.length;
     }
     const parts = Object.keys(n).sort().map((k) => k + " " + n[k]);
     if (glass) parts.push("glass " + glass);
+    if (zebra) parts.push("zebra " + zebra);
+    if (S.fers.length) parts.push("ferries " + S.fers.length);
     if (mouths) parts.push("pipe mouths " + mouths);
     const spills = Object.values(S.CH).filter((c) => c.spill).length;
     parts.push("spill lines " + spills + (S.cogs.length ? ", cogs " + S.cogs.length : ""));
@@ -2382,21 +2866,31 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     applyBiome();
   }
 
-  /* THE MACHINES VIEW — the five LAYOUTS of game.js, alive, each with what
-     its modules are and what the bench says about it. */
+  /* THE MACHINES VIEW — every entry of LAYOUTS in game.js (one machine
+     per level, six levels per biome), alive, each with what its modules are
+     and what the bench says about it. A level plays its biome's metal and
+     is held to its biome's counts. */
   function machineModules() {
     if (!MACHINE.layouts) return [];
-    return MACHINE.layouts.map((fn, b) => ({
-      key: "m" + (b + 1), group: "machine", name: (b + 1) + " · " + BIOMES[b], call: "LAYOUTS[" + b + "]",
-      used: [b + 1], params: [], P: {}, defaults: {},
-      blurb: "The machine biome " + (b + 1) + " plays, read off games/gearball/game.js.",
-      build: () => {
-        const lay = fn();
-        return Object.assign(lay, { start: ["top"], hopper: MACHINE.hopper, rimY: MACHINE.rimY, W: 720, H: 1240,
-          gap: 0.55, lockEvery: 4, electric: 0.12, volt: lay.arr[Math.floor(Math.random() * lay.arr.length)].id });
-      }
-    }));
+    return MACHINE.layouts.map((fn, n) => {
+      const b = Math.min(BIOMES.length - 1, Math.floor(n / 6)), base = MACHINE.base ? MACHINE.base.indexOf(fn) : -1;
+      return {
+        key: "m" + (n + 1), group: "machine", level: n + 1, biome: b, base,
+        name: "Level " + (n + 1) + " · " + BIOMES[b], call: "LAYOUTS[" + n + "]" + (base >= 0 ? " = BASE5[" + base + "]" : ""),
+        used: [b + 1], params: [], P: {}, defaults: {},
+        blurb: "The machine level " + (n + 1) + " plays, in biome " + (b + 1) + " (" + BIOMES[b] + "), read off games/gearball/game.js.",
+        build: () => {
+          const lay = fn();
+          return Object.assign(lay, { start: ["top"], hopper: MACHINE.hopper, rimY: MACHINE.rimY, W: 720, H: 1240,
+            gap: 0.55, lockEvery: 4, electric: 0.12, volt: lay.arr[Math.floor(Math.random() * lay.arr.length)].id });
+        }
+      };
+    });
   }
+  // Only the tiles on screen are run and drawn: thirty machines at once is the cost of one.
+  const onScreen = typeof IntersectionObserver === "function" ? new IntersectionObserver((list) => {
+    for (const e of list) { const tl = tiles.find((x) => x.cv === e.target); if (tl) tl.visible = e.isIntersecting; }
+  }, { root: stage, rootMargin: "200px" }) : null;
   function buildMachines() {
     const host = $("machines");
     host.innerHTML = "";
@@ -2405,24 +2899,62 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
       host.innerHTML = '<p class="hint">The machines are read off games/gearball/game.js: open this page through make lab.</p>';
       return;
     }
-    host.insertAdjacentHTML("beforeend", '<div class="group-title">The five machines — LAYOUTS</div><div class="grid"></div>');
-    const grid = host.lastChild;
+    let grid = null, cur = -1;
     for (const mod of mods) {
+      if (mod.biome !== cur) {
+        cur = mod.biome;
+        const lv = mods.filter((m) => m.biome === cur).map((m) => m.level);
+        host.insertAdjacentHTML("beforeend", '<div class="group-title"></div><div class="grid"></div>');
+        host.lastChild.previousSibling.textContent = "Biome " + (cur + 1) + " · " + BIOMES[cur] + " — levels " +
+          lv[0] + (lv.length > 1 ? "–" + lv[lv.length - 1] : "") + " (LAYOUTS)";
+        grid = host.lastChild;
+      }
       const card = document.createElement("div");
       card.className = "card machine"; card.dataset.key = mod.key;
       card.innerHTML = '<header><b></b><code></code></header><canvas></canvas><div class="counts"></div><ul class="checks"></ul>';
       card.querySelector("b").textContent = mod.name;
       card.querySelector("code").textContent = mod.call;
-      const tile = { mod, card, cv: card.querySelector("canvas"), scene: makeScene(mod) };
+      let scene;
+      try { scene = makeScene(mod); }
+      catch (e) {
+        console.error("Level " + mod.level + " could not be built", e);
+        card.querySelector(".counts").textContent = "Could not be built: " + e.message;
+        grid.appendChild(card);
+        continue;
+      }
+      const tile = { mod, card, cv: card.querySelector("canvas"), scene, visible: !onScreen };
       card.querySelector(".counts").textContent = countModules(tile.scene);
       card.querySelector(".checks").innerHTML = checks(tile.scene).map((c) =>
         '<li class="' + (c.ok ? "" : "bad") + '">' + (c.ok ? "✓ " : "✗ ") + c.label +
         (c.detail ? "<small>" + c.detail + "</small>" : "") + "</li>").join("");
       card.querySelector("header").addEventListener("click", () => { location.hash = Lab.focus ? "" : mod.key; });
       tile.cv.addEventListener("pointerdown", (ev) => tap(tile, ev));
+      if (onScreen) onScreen.observe(tile.cv);
       tiles.push(tile);
       grid.appendChild(card);
     }
+  }
+  /* Which biomes use which track module, read off the machines themselves
+     (the module tags, the skins, the pipe mouths) — so a module the game's
+     levels start using is counted the day they do, with nothing to update. */
+  function deriveUse() {
+    if (!MACHINE.layouts) return;
+    const use = {};
+    MACHINE.layouts.forEach((fn, n) => {
+      const b = Math.min(BIOMES.length - 1, Math.floor(n / 6)) + 1, lay = fn();
+      const mark = (k) => { (use[k] = use[k] || new Set()).add(b); };
+      mark("rail");
+      for (const id in lay.ch) {
+        const tr = lay.ch[id].tr;
+        for (const q of tr.p) {
+          if (q[5]) mark(q[5].split("#")[0]);
+          if (q[3] === SK_GLASS) mark("glass");
+          if (q[3] === SK_ZEBRA) mark("zebra");
+          if (q[4] && !(q[5] && q[5].indexOf("whirl") === 0)) mark("dive");
+        }
+      }
+    });
+    for (const m of MODULES) if (m.group === "track") m.used = use[m.key] ? [...use[m.key]].sort() : [];
   }
   function setView(v) {
     Lab.view = v;
@@ -2575,7 +3107,8 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     $("phys-reset").onclick = () => { Object.assign(PH, GAME_PH); refresh.forEach((f) => f()); };
     $("auto").onchange = (e) => { Lab.auto = e.target.checked; };
     $("debug").onchange = (e) => { Lab.debug = e.target.checked; $("legend").hidden = !Lab.debug; };
-    $("tags").onchange = (e) => { Lab.tags = e.target.checked; };
+    $("tags").onchange = (e) => { Lab.tags = e.target.checked; $("tag-legend").hidden = !Lab.tags; };
+    $("tag-legend").innerHTML = Object.keys(TAG_COL).map((k) => '<i style="background:' + TAG_COL[k] + '"></i>' + k).join(" ");
     $("views").addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
       if (Lab.focus) location.hash = "";
@@ -2597,6 +3130,7 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     for (const tl of list) {
       if (!Lab.compare && Lab.focus && Lab.focus !== tl.mod.key) continue;
       if (!Lab.compare && !Lab.focus && (tl.mod.group === "machine") !== (Lab.view === "machines")) continue;
+      if (!Lab.compare && !Lab.focus && tl.visible === false) continue;
       if (!Lab.paused) update(tl.scene, dt);
       drawScene(tl.scene, tl.cv, tl.k, skinOf(tl.skin || Lab.skin));
     }
@@ -2607,8 +3141,17 @@ body.focus .card.solo p { max-width:640px; font-size:13px; }
     const live = await liveLibrary();
     LIB = tagLibrary(live || embeddedLibrary());
     if (MACHINE.src) {
-      try { MACHINE.layouts = new Function("T", "mirrorPts", "RAIL_END", "PI2", MACHINE.src + "\nreturn LAYOUTS;")(T, LIB.mirrorPts, MACHINE.railEnd, PI2); }
+      try {
+        // the section's own numeric constants by name, then what the machines are written with
+        const env = Object.assign({}, MACHINE.consts, { RAIL_END: MACHINE.railEnd, RIM_Y: MACHINE.rimY, R, DS, PI2,
+                                                         SK_RAIL, SK_GLASS, SK_ZEBRA, SK_HOSE, SK_AIR });
+        const names = Object.keys(env);
+        const got = new Function("T", "mirrorPts", ...names, MACHINE.src +
+          '\nreturn { layouts: LAYOUTS, base: typeof BASE5 !== "undefined" ? BASE5 : null };')(T, LIB.mirrorPts, ...names.map((k) => env[k]));
+        MACHINE.layouts = got.layouts; MACHINE.base = got.base;
+      }
       catch (e) { console.error("LAYOUTS could not be evaluated", e); }
+      try { deriveUse(); } catch (e) { console.error("The machines could not be read for module use", e); }
     }
     Object.assign(PH, GAME_PH);
     const src = $("src");

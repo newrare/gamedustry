@@ -257,12 +257,22 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
 
 ## Traps
 
-- **A game on the beat cannot have sections.** `Beat` rides the audio clock
-  through `Music.beatOrigin()`, which is 0 for any section that is not the
-  whole file at speed — an offset or a rate moves every beat of the track. The
-  clock then runs off `dt`, which is correct and drift-free but no longer
-  locked to what is audible. `chainring` is the one game concerned
-  (`bpm: 128, loopBeats: 64`): leave its bed alone.
+- **A game on the beat needs a GRID on every section it plays.** `Beat` rides
+  the audio clock through `Music.beatOrigin()`, and a section only has one when
+  it carries its own `bpm` and `beatOffset` (seconds into the file of any
+  beat) and plays at speed — then its first pass anchors the grid on its first
+  beat and `beats` makes it wrap on a whole number of them. Without a grid an
+  offset or a rate moves every beat of the track, `beatOrigin()` is 0 and the
+  clock runs off `dt`: drift-free, but no longer locked to what is audible.
+  Measure the grid on the SHIPPING cut, kick by kick (below): a generated
+  track can jump its grid by a third of a beat across a breakdown.
+- **One bed per biome is several files**, and only the playing one is
+  decoded. `web.music` takes a table (`{ "music": …, "musicNova": … }`), every
+  `music<Name>` key is a bed the motor decodes when a section names it as its
+  `track` and lets go of once another one has taken over (`Sound.load` /
+  `drop`, `Music.preload` to decode it while a level card is up). `chainring`
+  is the one: five tracks, one per biome, plus its menu bed cut out of one of
+  them.
 - **The menu bed cannot start before a gesture.** No browser lets it. The web
   shell arms it on the first `pointerdown`/`keydown` on the page; the fade-in
   covers the delay. Do not try to start it on load.
@@ -272,25 +282,54 @@ a blast, `vipera` 0.3 for the beat), and the web shell's pause card ducks to
   lives. The web build's track is a cached file and the itch single-file build
   has no network limit to respect.
 
+## chainring — five beds on the beat
+
+chainring is written on the beat, so every stretch it plays has to carry its
+grid, and each of its five biomes rides its own track (`CONFIG.beds`):
+
+| biome   | track                | file                    | bpm    | first kick |
+| ------- | -------------------- | ----------------------- | ------ | ---------- |
+| Neon    | `musicNeon`          | `chainring-neon.mp3`    | 125.06 | 0.152 s    |
+| Amber   | `musicAmber`         | `chainring-amber.mp3`   | 105    | 0.100 s    |
+| Eclipse | `musicEclipse`       | `chainring-eclipse.mp3` | 125    | 0.145 s    |
+| Glacier | `music` (+ the menu) | `chainring-glacier.mp3` | 125    | 0.145 s    |
+| Nova    | `musicNova`          | `chainring-nova.mp3`    | 144    | 0.070 s    |
+
+The first five levels of a biome each play a STRETCH, `[first bar, bars]`
+cut on the track's phrase seams; the sixth plays the whole track, and its round
+lasts the song. The menu is Glacier's soft passage (bars 53-68).
+
+**The grid is measured, not read off the prompt.** The generator was asked for
+120 / 105 / 124 / 132 / 140 BPM and delivered 125 / 105 / 125 / 125 / 144. The
+measure that holds is TEMPLATE MATCHING: a kick cut from a clean beat of the
+intro, correlated against every beat of the track, reports how far each real
+kick sits from the grid. An onset or energy detector is fooled by sidechained
+bass and syncopated basslines in the dense sections; the template is not.
+Measured that way, Eclipse and Glacier each **jumped ~150 ms across a
+breakdown** — the grid after it is not the grid before it — and their masters
+were re-timed by taking 0.16 s out of the quiet passage (a 30 ms crossfade),
+which puts every kick of all five within 25 ms of its grid. Re-measure on the
+SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
+
 ## Where each game stands
 
-| game         | master  | embedded cut | sections                                 |
-| ------------ | ------- | ------------ | ---------------------------------------- |
-| `arcider`    | 182.5 s | 36.1 s       | **5 biomes + menu**                      |
-| `blight`     | 179.1 s | 36.0 s       | **5 map bands + menu**, one scene apiece |
-| `echomaze`   | 171.4 s | 36.0 s       | **5 map bands + menu**, one hall apiece  |
-| `slipdeck`   | 115.8 s | 46.9 s       | none yet — the master is long enough     |
-| `marshmelt`  | 54.0 s  | 35.0 s       | none yet — enough for two, plus the menu |
-| `bouncetry`  | 177.8 s | 30.5 s       | **5 biomes + menu**, one scene apiece    |
-| `chainring`  | 30.8 s  | 30.8 s       | **no** — it is beat-locked (see Traps)   |
-| `gearball`   | 160.1 s | 30.8 s       | **5 machines + menu**, one layout apiece |
-| `orbinity`   | 27.0 s  | 27.0 s       | needs a longer master first              |
-| `pawko`      | 179.3 s | 35.0 s       | **5 map bands + menu**, one scene apiece |
-| `radiam`     | 181.2 s | 29.5 s       | **5 worlds + menu**, one hall apiece     |
-| `spinshock`  | 182.0 s | 23.0 s       | **5 bands + menu**, one dish apiece      |
-| `stratideck` | 177.2 s | 30.0 s       | **5 map bands + menu**, one camp apiece  |
-| `triverse`   | 30.8 s  | 30.8 s       | needs a longer master first              |
-| `vipera`     | 176.9 s | 33.0 s       | **5 biomes + menu**, one ground apiece   |
+| game         | master     | embedded cut | sections                                                           |
+| ------------ | ---------- | ------------ | ------------------------------------------------------------------ |
+| `arcider`    | 182.5 s    | 36.1 s       | **5 biomes + menu**                                                |
+| `blight`     | 179.1 s    | 36.0 s       | **5 map bands + menu**, one scene apiece                           |
+| `echomaze`   | 171.4 s    | 36.0 s       | **5 map bands + menu**, one hall apiece                            |
+| `slipdeck`   | 115.8 s    | 46.9 s       | none yet — the master is long enough                               |
+| `marshmelt`  | 54.0 s     | 35.0 s       | none yet — enough for two, plus the menu                           |
+| `bouncetry`  | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
+| `chainring`  | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
+| `gearball`   | 160.1 s    | 30.8 s       | **5 biomes + menu**, six machines apiece                           |
+| `orbinity`   | 27.0 s     | 27.0 s       | needs a longer master first                                        |
+| `pawko`      | 179.3 s    | 35.0 s       | **5 map bands + menu**, one scene apiece                           |
+| `radiam`     | 181.2 s    | 29.5 s       | **5 worlds + menu**, one hall apiece                               |
+| `spinshock`  | 182.0 s    | 23.0 s       | **5 bands + menu**, one dish apiece                                |
+| `stratideck` | 177.2 s    | 30.0 s       | **5 map bands + menu**, one camp apiece                            |
+| `triverse`   | 30.8 s     | 30.8 s       | needs a longer master first                                        |
+| `vipera`     | 176.9 s    | 33.0 s       | **5 biomes + menu**, one ground apiece                             |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,
 which is what the ten do today. Nothing about them changed when the sections

@@ -8,6 +8,10 @@
       "at": "2026-10-02",
       "what": "Sound.clip L1978 takeCell()"
     },
+    "29d670fdb4ad": {
+      "at": "2026-10-05",
+      "what": "Sound.clip L2039 land()"
+    },
     "3615adc2f8df": {
       "at": "2026-10-02",
       "what": "Sound.clip L1889 lostPlaces()"
@@ -43,6 +47,10 @@
     "ec43414b2dfd": {
       "at": "2026-10-01",
       "what": "Sound.clip L2006 takeBoost()"
+    },
+    "fcd5e4dec4a8": {
+      "at": "2026-10-05",
+      "what": "Sound.clip L2030 land()"
     }
   },
   "gearball": {
@@ -107,10 +115,20 @@
       "what": "Sound.clip L1369 flip()"
     }
   },
+  "triverse": {
+    "fed5babc02a8": {
+      "at": "2026-10-06",
+      "what": "Sound.clip L631 collect()"
+    }
+  },
   "vipera": {
     "0d558043282d": {
       "at": "2026-10-03",
       "what": "Pop.show L1023 collect()"
+    },
+    "10243fbc7b81": {
+      "at": "2026-10-06",
+      "what": "Sound.clip L753 boltStrike()"
     },
     "1e06701ce2d1": {
       "at": "2026-10-05",

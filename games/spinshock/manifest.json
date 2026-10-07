@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.4.11",
+  "version": "1.5.1",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -75,7 +75,7 @@
       ]
     }
   },
-  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that marks their shell, launches them into the electric walls and winds your spin back up. Their COLOUR is what they are immune to — blue shrugs off the fence, yellow shrugs off the crowd, red answers to the fence alone, black hands shell points back to the others and purple splits in two every time it breaks. Thirty levels across five dishes, each with its own fence colour, its own roster and its own stretch of the track, and a ten-point boss that nothing but a perfect tap can mark. The top's colour is the only gauge — the run ends when it blows apart.",
+  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that marks their shell, launches them into the electric walls and winds your spin back up. Their COLOUR is how they move and what they are immune to — blue stops, charges and dashes and shrugs off the fence, yellow saws its way in and shrugs off the crowd, red flies one straight line and blows up on whatever it touches, black circles you and hands shell points back to the others, and purple splits in two when it breaks. Thirty levels across five dishes, each with its own fence colour, its own roster and its own stretch of the track, and a ten-point boss that nothing but a perfect tap can mark. The top's colour is the only gauge — the run ends when it blows apart.",
   "store": {
     "copy": {
       "en": {

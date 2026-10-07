@@ -20,7 +20,7 @@
 
     { target, peak, playable: [role…],
       roles: { <role>: { group, what,
-        variants: { <name>: { jitter, takes: [{ file, start, length }] } } } } }
+        variants: { <name>: { jitter, takes: [{ file, start, length, tail?, tailLength? }] } } } } }
 
   A role says what a moment MEANS; a VARIANT is one way of saying it. Two groups:
 
@@ -36,7 +36,8 @@
   Inside a variant, the TAKES are interchangeable: Sound.ui alternates between
   them so a sound heard twenty times a round does not repeat — they are never
   a choice. `file` is a library stem, the same name a provenance comment
-  writes; `start` and `length` are seconds into it. `jitter` is the random
+  writes; `start` and `length` are seconds into it; `tail`, when there is
+  one, is how the take ends (THE TAIL, below). `jitter` is the random
   pitch spread put on every shot (0 for a variant pitched as a LADDER — the
   stars, the coins, a chain of pickups — where a wobble would blur the steps).
   `playable` lists the shell roles a playable carries, the end screen's.
@@ -50,7 +51,7 @@
   with the same measure, so what is picked there is what is cut here.
 
   Every take is re-encoded like a game's clip (mono 32 kHz / 64 kbps, a short
-  fade out) into assets/audio/kit/<role>-<variant>-<n>.mp3, n from 1, bit-exact
+  fade out, or the tail it names) into assets/audio/kit/<role>-<variant>-<n>.mp3, n from 1, bit-exact
   so a re-cut of an unchanged take changes no byte. Those files are COMMITTED, like
   assets/image/shell/: the build reads them and never runs ffmpeg. A file whose
   role, variant or take is gone from kit.json is removed.
@@ -68,6 +69,35 @@ const GAMES_DIR = path.join(ROOT, 'games');
 const RATE = 32000;
 const WINDOW = 0.05;              // the loudness window, seconds
 const FADE = 0.07;                // the fade out, at most
+
+/* THE TAIL. A take cut in the middle of its sound ends on a 70 ms fade, which
+   is an anti-click and nothing more: the ear still hears the sound stopped.
+   A take may instead END — `tail: "fade"` lets it die out over its last
+   `tailLength` seconds, `tail: "drop"` does the same while its pitch falls an
+   octave, a tape stopping. Both are rendered sample by sample by tailPcm,
+   which lab/sound-kit.html carries a copy of, so the page hears what is cut. */
+export const TAILS = ['fade', 'drop'];
+export const DROP_TO = 0.5;       // the rate a drop ends on: an octave down
+export function defaultTail(length) { return Math.round(Math.min(0.3, length * 0.4) * 1000) / 1000; }
+
+/* The cut with its tail, from mono PCM at `rate`. Before the tail the samples
+   are copied; across it the read head slows from 1 to DROP_TO (a drop only)
+   and the gain falls to silence on (1 - u)², which reads as a natural decay
+   where a straight line sounds like a fader. u is the progress through the
+   tail in SOURCE time, so a drop's tail lasts longer than it reads in the cut. */
+export function tailPcm(pcm, rate, tail, tailLength) {
+  const n = pcm.length, t0 = Math.max(0, n - Math.round(tailLength * rate)), span = Math.max(1, n - t0);
+  const out = [];
+  let p = 0;
+  while (p < n - 1) {
+    const i = Math.floor(p), f = p - i;
+    const s = pcm[i] * (1 - f) + pcm[i + 1] * f;
+    const u = p < t0 ? 0 : (p - t0) / span;
+    out.push(s * (1 - u) * (1 - u));
+    p += tail === 'drop' ? 1 - (1 - DROP_TO) * u : 1;
+  }
+  return Float32Array.from(out);
+}
 
 export async function readKit() {
   return JSON.parse(await readFile(KIT_JSON, 'utf8'));
@@ -139,7 +169,13 @@ export async function writeKit(next) {
           const start = Math.max(0, Math.round(Number(t.start) * 1000) / 1000 || 0);
           const length = Math.round(Number(t.length) * 1000) / 1000;
           if (!(length >= 0.02 && length <= 3)) throw new Error(`${where} #${i + 1}: a length of 0.02 to 3 s`);
-          return { file: t.file, start, length };
+          const out = { file: t.file, start, length };
+          if (t.tail) {
+            if (!TAILS.includes(t.tail)) throw new Error(`${where} #${i + 1}: a tail is ${TAILS.join(' or ')}`);
+            out.tail = t.tail;
+            out.tailLength = Math.min(length, Math.max(0.02, Math.round(Number(t.tailLength) * 1000) / 1000 || defaultTail(length)));
+          }
+          return out;
         })
       };
     }
@@ -152,8 +188,7 @@ export async function writeKit(next) {
 // One take per line, so a diff of kit.json reads as the decisions it holds.
 export function formatKit(kit) {
   return JSON.stringify(kit, null, 2)
-    .replace(/\{\n\s+"file": ("[^"]+"),\n\s+"start": ([\d.]+),\n\s+"length": ([\d.]+)\n\s+\}/g,
-      '{ "file": $1, "start": $2, "length": $3 }')
+    .replace(/\{\n\s+"file": [^{}]*?\n\s+\}/g, (m) => m.replace(/\n\s*/g, ' '))
     .replace(/"playable": \[\n([^\]]+)\]/, (m, list) => `"playable": [${list.trim().split(/,\s*/).join(', ')}]`) + '\n';
 }
 
@@ -212,9 +247,10 @@ export async function mapKeys(slug, list, { bump = true } = {}) {
   return { slug, applied, skipped, written: true, version };
 }
 
-function run(args, { capture = false } = {}) {
+function run(args, { capture = false, input = null } = {}) {
   return new Promise((resolve, reject) => {
     const p = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', ...args]);
+    if (input) p.stdin.end(input); else p.stdin.end();
     const out = [];
     let err = '';
     p.stdout.on('data', (b) => { if (capture) out.push(b); });
@@ -281,13 +317,21 @@ async function cutTake(kit, take, out) {
   const pcm = new Float32Array(raw.buffer, raw.byteOffset, raw.byteLength >> 2);
   const level = levelOf(pcm);
   const gain = gainFor(level, kit);
+  const encode = ['-ac', '1', '-ar', String(RATE), '-b:a', '64k',
+    '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', '-id3v2_version', '0', out];
+  if (take.tail) {
+    // Levelled on the cut as it reads, then the tail rendered here and handed back as raw PCM.
+    const tailed = tailPcm(pcm, RATE, take.tail, take.tailLength || defaultTail(take.length));
+    await run(['-y', '-f', 'f32le', '-ar', String(RATE), '-ac', '1', '-i', 'pipe:0',
+      '-af', `volume=${gain.toFixed(2)}dB`, ...encode],
+    { input: Buffer.from(tailed.buffer, tailed.byteOffset, tailed.byteLength) });
+    return { level, gain };
+  }
   const fade = Math.min(FADE, take.length * 0.3);
   const st = Math.max(0, take.length - fade);
   await run(['-y', ...seek,
     '-af', [...mix, `volume=${gain.toFixed(2)}dB`, `afade=t=out:st=${st.toFixed(3)}:d=${fade.toFixed(3)}`].join(','),
-    '-ac', '1', '-ar', String(RATE), '-b:a', '64k',
-    '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', '-id3v2_version', '0',
-    out]);
+    ...encode]);
   return { level, gain };
 }
 
@@ -301,7 +345,7 @@ export async function cutKit({ log = console.log } = {}) {
       keep.add(name);
       const t = v.takes[i];
       const { level, gain } = await cutTake(kit, t, path.join(KIT_DIR, name));
-      log(`  ${name.padEnd(26)} ${t.file} ${t.start || 0}+${t.length}s  ` +
+      log(`  ${name.padEnd(26)} ${t.file} ${t.start || 0}+${t.length}s${t.tail ? ' ' + t.tail + ' ' + t.tailLength + 's' : ''}  ` +
           `${level.rms.toFixed(1)} dB → ${gain >= 0 ? '+' : ''}${gain.toFixed(1)} dB`);
     }
   }

@@ -17,7 +17,7 @@
    served by the events bench (`make events` → /pop, `make lab` →
    /events/pop), and it loads the chosen game's own WEB BUILD in the frame —
    the motor's `Pop`, the game's SKIN and face, its painted backdrop — through
-   `window.__WEB__`, the same handle lab/game-events.html plays a game's
+   `window.__WEB__`, the same handle lab/game-events-message.html plays a game's
    callouts with.
 
    What it reads is the motor's own table, `Pop.styles`, so a style added to
@@ -220,7 +220,7 @@ let styles = {}, anchors = {}, style = null, mode = "callout", showAnchors = fal
 function web() { try { return frame.contentWindow && frame.contentWindow.__WEB__; } catch (e) { return null; } }
 
 /* The build with everything but the picture out of the way — the stack
-   lab/game-events.html uses: the overlay over the intro, the intro's painted
+   lab/game-events-message.html uses: the overlay over the intro, the intro's painted
    backdrop under the canvas, the menu and the round's controls hidden. */
 const BENCH_CSS = `
   #overlay { z-index:40; }

@@ -6,9 +6,11 @@
     node tools/lab/serve-events.mjs --port=9000
     make lab                                   → http://localhost:8095/events/
 
-  lab/game-events.html lists every callout, notification and cue a game fires,
-  and plays them INSIDE that game's own web build, loaded in an iframe next to
-  the list: the real motor, the real SKIN, the real samples. So it needs a
+  The bench is two pages over the same scan. lab/game-events-message.html (/)
+  lists every callout and notification a game fires; lab/game-events-sound.html
+  (/sound) every cue it plays, one card per clip. Both fire them INSIDE that
+  game's own web build, loaded in an iframe next to the list: the real motor,
+  the real SKIN, the real samples. So it needs a
   server for the two things a file:// page cannot do — read the sources back
   (tools/lab/scan-events.mjs) and serve a built game from an origin the page
   can script.
@@ -32,14 +34,15 @@
   sound kit the shell plays in every game; lab/sound-library.html (/library)
   and lab/overlay-pop.html (/pop), the motor's Pop styles fired one by one.
 
-  The bench's second version, lab/game-events-v2.html (/v2), adds what the
-  first cannot show: the MOMENT of the game an event belongs to. It records the
-  game being played (the canvas, a few seconds around every event), keeps each
-  capture in lab/events-clips/<slug>/ (ignored by git — playing again makes
-  them again), and loops it under the callout being judged. Its routes are
-  /api/offset, /api/clips, /api/clip, /api/clip-drop and /clips/…; it also
-  hands /api/apply a `keepEn` list — a callout kept in English on the French
-  screen (tools/lab/keep-english.mjs).
+  Both pages add what a flat ground cannot show: the MOMENT of the game an
+  event belongs to. They record the game being played (the canvas, a second on
+  each side of every event of their kind), keep each capture in
+  lab/events-clips/<slug>/ (ignored by git — playing again makes them again),
+  and loop it under the row being judged. Their routes are /api/offset,
+  /api/clips, /api/clip, /api/clip-drop and /clips/…; /icons/<slug>.png is the
+  game's thumb, which the sound page puts on a kit variant several games play.
+  The message page also hands /api/apply a `keepEn` list — a callout kept in
+  English on the French screen (tools/lab/keep-english.mjs).
 
   `make lab` runs this same script behind its proxy, under /events/
   (tools/lab/serve-lab.mjs), which is why the page addresses it with relative
@@ -58,8 +61,9 @@ import { createHash } from 'node:crypto';
 import { isMain, portArg, listen, json, notFound, readJson, sendFile, reloadHub, MIME } from '../lib/serve.mjs';
 
 const BUILD = path.join(ROOT, 'dist', 'web');
-const PAGE = path.join(ROOT, 'lab', 'game-events.html');
-const PAGE_V2 = path.join(ROOT, 'lab', 'game-events-v2.html');
+const PAGE = path.join(ROOT, 'lab', 'game-events-message.html');
+const PAGE_SOUND = path.join(ROOT, 'lab', 'game-events-sound.html');
+const ICONS = path.join(ROOT, 'assets', 'image', 'icon', 'thumb');
 const CLIPS = path.join(ROOT, 'lab', 'events-clips');
 const LIBRARY = path.join(ROOT, 'lab', 'sound-library.html');
 const KIT_PAGE = path.join(ROOT, 'lab', 'sound-kit.html');
@@ -317,8 +321,14 @@ export async function handle(req, res, p, url) {
 
   if (p === '/' || p === '/index.html') return page(res, PAGE);
 
-  // The second version: the same list, with the game's own moment looped under it.
-  if (p === '/v2') return page(res, PAGE_V2);
+  // The sound side: one card per clip, and the game's own moment looped under it.
+  if (p === '/sound') return page(res, PAGE_SOUND);
+
+  // A game's thumb, for the kit variants several games play.
+  if (p.startsWith('/icons/')) {
+    if (sendFile(res, path.join(ICONS, path.basename(p.slice('/icons/'.length))), [ICONS])) return;
+    return notFound(res, p);
+  }
 
   /* Where a line of the built game.<hash>.js sits in the SOURCE: the split
      build writes section 6 verbatim behind a "use strict" line, so one offset

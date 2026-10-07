@@ -187,6 +187,12 @@ var CARD_BY_SLUG = {
    never carry a detail the player reads, so 360px is already generous. */
 var DECOR = { w: 360, h: 360, q: 0.78 };
 
+/* THE PARTY'S HEADS: `<slug>-head-NN.png`, a kawaii head per hero adopted
+   out of a 2x2 sheet (`cut-objects.mjs --grid 2x2`). games/grudgeon walks
+   them across its dungeon map in place of a coloured dot, at ~50 design px,
+   so 160 covers a 3x phone; they ride in every build, the playable included. */
+var HEAD = { w: 160, h: 160, q: 0.84 };
+
 /* THE BEAD STYLES: `<slug>-ball-<colour>-NN.png`, adopted out of the six
    recoloured sheets with `cut-objects.mjs --grid 5x4 --adopt … --as ball-red`.
    These are the only cuts a game draws at a size it can state exactly, which
@@ -314,6 +320,7 @@ function profileFor(role, slug) {
   if (PROFILE[role]) return PROFILE[role];
   if (role.indexOf("card-") === 0) return CARD_BY_SLUG[slug] || CARDS;
   if (role.indexOf("decor") === 0) return DECOR;
+  if (/^head\d+$/.test(role)) return HEAD;
   if (role.indexOf("ball-") === 0) return BALL;
   if (/^brick-[a-z]+-\d+$/.test(role)) return BRICK;
   if (/^button-(on|off)-\d+$/.test(role)) return BUTTON;

@@ -99,15 +99,16 @@ store:
 	node tools/lab/serve-store.mjs
 
 # Every callout, notification and cue a game fires, listed off its own source
-# and played inside its own build, under two tabs: view and sound. Same reason
-# for a server as the composer — it reads the sources back and serves a built
-# game on a scriptable origin — plus one more: Apply writes the change back into
+# and played inside its own build, on two pages: / is the messages (callouts and
+# notices), /sound the cues, one card per clip. Same reason for a server as the
+# composer — it reads the sources back and serves a built game on a scriptable
+# origin — plus one more: Apply writes the change back into
 # games/<slug>/game.js (tools/lab/apply-events.mjs) and re-cuts a swapped clip.
 # A line signed off is checked into lab/events-review.json; a game whose every
 # line is checked is green in the picker.
-# /v2 is the same bench with the game's own MOMENT under each event: REC records
-# the game being played (lab/events-clips/, ignored by git), ↻ loops it under a
-# row, and EN keeps a callout in English on the French screen.
+# Both put the game's own MOMENT under each event: REC records the game being
+# played (lab/events-clips/, ignored by git) and ↻ loops it under a row; EN, on
+# the message page, keeps a callout in English on the French screen.
 # `node tools/lab/scan-events.mjs <slug>` is the same list as text, no browser.
 events:
 	node tools/lab/serve-events.mjs

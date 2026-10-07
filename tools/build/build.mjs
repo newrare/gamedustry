@@ -432,8 +432,15 @@ const WEB_ONLY_EAGLE = /^eagle-[a-z]+$/;
 /* ...and its LIGHTNING strikes the temple, the third biome: web-only too. */
 const WEB_ONLY_LIGHTNING = /^lightning\d+$/;
 
+/* games/grudgeon's YOKAI: twenty, four per band of the climb, four poses
+   each (`foe-<name>NN`). A playable is one dungeon of the first band, so it
+   only ever meets the night school's four; the other sixteen are web-only. */
+const WEB_ONLY_FOE = /^foe-[a-z]+\d+$/;
+const PLAYABLE_FOE = /^foe-(hanako|teketeke|jinmenken|akamanto)\d+$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
+  if (WEB_ONLY_FOE.test(role) && !PLAYABLE_FOE.test(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;
   if (WEB_ONLY_HOUSE.test(role)) return true;
   if (WEB_ONLY_CLOUD.test(role)) return true;
@@ -738,6 +745,15 @@ function webConfigJs(manifest) {
 
   A game that names nothing keeps the cut its own ASSETS holds on every
   target, which is the twelve others.
+
+  A game with ONE BED PER BIOME names a table instead, ASSETS key to file:
+
+    "web": { "music": { "music": "chainring-glacier.mp3",
+                        "musicNova": "chainring-nova.mp3", … } }
+
+  `music` replaces the embedded cut as above; every other key is ADDED to
+  ASSETS.sounds next to it, and a `music<Name>` key is a bed the motor decodes
+  only when a section names it as its `track` (Sound.load, packages/engine).
 */
 const MUSIC_DIR = 'assets/audio/music/embed';
 
@@ -749,25 +765,37 @@ const MUSIC_KEY = /(\bmusic"?\s*:\s*)"data:audio\/mpeg;base64,[A-Za-z0-9+/=]+"/;
    source, and the split build would then write — and the site would then
    carry — a second music file nothing ever fetches. */
 async function webMusic(configSrc, manifest) {
-  const name = manifest && manifest.web && manifest.web.music;
-  if (!name) return configSrc;
-  if (!/^[\w.-]+\.mp3$/.test(name)) {
-    throw new Error(`${manifest.slug}: web.music "${name}" must name an .mp3 of ${MUSIC_DIR}/`);
+  const spec = manifest && manifest.web && manifest.web.music;
+  if (!spec) return configSrc;
+  const table = typeof spec === 'string' ? { music: spec } : spec;
+  if (!table.music) {
+    throw new Error(`${manifest.slug}: web.music must name a "music" track, the one that replaces the embedded cut`);
   }
-  const file = path.posix.join(MUSIC_DIR, name);
-  let buf;
-  try {
-    buf = await readBin(file);
-  } catch {
-    throw new Error(
-      `${manifest.slug}: web.music names ${file}, which is not there. Cut it from the master:\n` +
-      `  ffmpeg -i assets/audio/music/${name} -ac 1 -ar 44100 -b:a 64k ${file}`);
+  const uris = {};
+  for (const [key, name] of Object.entries(table)) {
+    if (!/^music(?:[A-Z0-9]\w*)?$/.test(key)) {
+      throw new Error(`${manifest.slug}: web.music key "${key}" must be "music" or "music<Name>"`);
+    }
+    if (!/^[\w.-]+\.mp3$/.test(name)) {
+      throw new Error(`${manifest.slug}: web.music "${name}" must name an .mp3 of ${MUSIC_DIR}/`);
+    }
+    const file = path.posix.join(MUSIC_DIR, name);
+    let buf;
+    try {
+      buf = await readBin(file);
+    } catch {
+      throw new Error(
+        `${manifest.slug}: web.music names ${file}, which is not there. Cut it from the master:\n` +
+        `  ffmpeg -i assets/audio/music/${name} -ac 1 -ar 44100 -b:a 64k ${file}`);
+    }
+    uris[key] = `data:audio/mpeg;base64,${buf.toString('base64')}`;
   }
   if (!MUSIC_KEY.test(configSrc)) {
     throw new Error(`${manifest.slug}: web.music is set, but ASSETS.sounds has no embedded "music" entry to replace`);
   }
-  const uri = `data:audio/mpeg;base64,${buf.toString('base64')}`;
-  return configSrc.replace(MUSIC_KEY, (m, pre) => `${pre}"${uri}"`);
+  const extra = Object.keys(uris).filter(k => k !== 'music')
+    .map(k => `,\n      ${k}: "${uris[k]}"`).join('');
+  return configSrc.replace(MUSIC_KEY, (m, pre) => `${pre}"${uris.music}"${extra}`);
 }
 
 function webDress(html, menuCss, menuJs) {

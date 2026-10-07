@@ -40,10 +40,10 @@
     intro: { logo: null, demo: "tap", caption: "" },
     keyboard: true,
 
-    /* The round's notices dock over the foot of the frame: the top of the
-       machine carries the first gate's padlock, the one a player has to tap
-       at the very moment a notice would land on it. */
-    notify: { round: "bottom" },
+    /* The round's notices stay at the top, under the HUD: the foot of the
+       frame is the arrivals, and nothing may stand over the socket the
+       player is reading. The notice layer is pointer-transparent in a round,
+       so a padlock under a notice still takes its tap. */
 
     hud: { score: true, timer: true },
 
@@ -106,7 +106,8 @@
       perfect:    "Full power!",
       hintLock:   "Tap a lock to open its gate",
       hintVolt:   "Tap an arrival to move the socket under it",
-      hintSpill:  "It rolls behind the machine to the red socket, and costs a heart"
+      hintSpill:  "It rolls behind the machine to the red socket, and costs a heart",
+      hintFuse:   "Open gates and catch the electric marble to keep the combo"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -122,9 +123,10 @@
        shift — 60 s here, 3 to 10 minutes on the level map (web.levels.tune) —
        so the end of the shift is the hardest, whatever its length. */
     mix: {
-      /* THE MACHINE. Each biome of the level map is its own layout (section
-         6, LAYOUTS), from one switch to six; a round with no level — the
-         playable, a free round — plays this one (0 = the first biome). */
+      /* THE MACHINE. Each level of the map is its own layout (section 6,
+         LAYOUTS), from one switch to six; a round with no level — the
+         playable, a free round — plays the first machine of this biome
+         (0 = the first biome). */
       playableBiome: 0,
       hearts: 5,                     // marbles the shift may shatter
       rampSeconds: 60,
@@ -145,10 +147,22 @@
       electricScore: 150,            // x the combo multiplier
       electricJump: 5,               // what an electric on target adds to the combo
 
-      /* THE COMBO lives on the wheel hub: +1 per marble delivered, a jump for
-         an electric on target, broken by a shatter or a wasted electric. The
-         multiplier is its tier + 1; the tiers are reachable inside one shift. */
-      tiers: [12, 35, 80],
+      /* THE COMBO lives on the wheel hub, and only the PLAYER feeds it: a
+         gate opened is +1 per marble it releases (+1 for an empty one), an
+         electric on target is `electricJump`. A delivered marble pays points
+         and nothing else. The multiplier is its tier + 1.
+         THE FUSE keeps it: a ring round the hub, refilled whole by every
+         action that feeds the combo, burning down in `fuse[tier]` seconds —
+         but only while there is something to do (a gate locked, the
+         electric marble on its way to another arrival than the socket).
+         Burnt out, the combo drops to the start of the tier below; a
+         shatter, an overflow or a wasted electric still break it to 0. */
+      /* Benched with a human-paced pilot against the old +1-per-marble
+         combo: a player who answers within a second keeps ~95% of the old
+         points a second (the stage objectives are unchanged), one who takes
+         two seconds lets the fuse go out three to five times a shift. */
+      tiers: [8, 25, 60],
+      fuse: [4, 3, 2.2, 1.6],        // seconds the fuse burns, per tier
 
       /* THE LOCKS — the main verb. Gates are open; at random moments one
          locks, more often as the shift goes on, and more of them at once.
@@ -252,25 +266,39 @@
          the rails to the hub and the combo jumps; anywhere else it fizzles,
          the combo breaks and the lights go out for half a second.
 
-     THE MACHINE GROWS WITH THE CLIMB. Each biome of the level map (six
-     levels) is its own machine on its OWN SKELETON, built out of a small
-     library of track modules — zigzags, loops, corkscrews, a coil,
-     whirlpools that drain through their centre, glass tubes, dives that
-     take a line behind the others and bring it back through a pipe mouth,
-     and ferry gears that carry a marble round their rim from one line to
-     the next:
+     THE COMBO IS THE PLAYER'S TEMPO. Those two taps are the only things
+     that feed it — a gate opened sends one spark per released marble flying
+     to the hub, the electric's arc a jump — and the FUSE round the hub is
+     what keeps it: every feed relights it, and it burns while the machine
+     is waiting on the player. A player who answers fast holds the top tier;
+     one who lets the fuse go out drops a tier. The bigger the combo, the
+     louder the machine says so: the hub swells, the marbles leave trails,
+     then sparks, then arcs between them, the rails light up, the frame
+     glows in the tier's colour — and a big combo breaks in slow motion.
 
-       biome   switches  gates  arrivals   skeleton
-       1       1         2      2          the traverse: wheel high left, a loop and a coil
-       2       2         3      3          the cascade: a glass fall left, wheel low right
-       3       4         4      4          the staircase: a whirlpool, a coil, wheel off centre
-       4       5         5      5          the braid: lines that cross by diving, a tunnel
-       5       6         6      6          the chain: three switches along the top, a tree below
+     THE MACHINE CHANGES WITH EVERY LEVEL. Each of the thirty levels is its
+     own machine on its OWN SKELETON, built out of a library of track
+     modules — zigzags, loops, corkscrews, coils, whirlpools that drain
+     through their centre, glass tubes, dives that take a line behind the
+     others and bring it back through a pipe mouth, ferry gears that carry a
+     marble round their rim from one line to the next, and the moving ones:
+     striped ZEBRA tubes a marble flickers through, accordion HOSES that join
+     two modules that do not line up, JUMPS that throw it into a catcher,
+     STAIRCASES that ring a note at every ledge, WAVES and copper BOOSTERS.
+     The biome of the level map (six levels) sets the counts, which the pace
+     is tuned on, and the metal:
+
+       biome   levels   switches  gates  arrivals
+       1       1-6      1         2      2
+       2       7-12     2         3      3
+       3       13-18    4         4      4
+       4       19-24    5         5      5
+       5       25-30    6         6      6
 
      A layout is a GRAPH — the feed gear, the switches, the wheel, the ferries, the arrivals,
      the channels between them — and every rule reads the graph, never a
      count: the route lighting, the payoff arc, the lock scheduler, the tap
-     search and the pilots work the same on all five.
+     search and the pilots work the same on all thirty.
 
      Every machine is authored in its own 720 x 1280 space ("machine px") and
      fitted into the Layout by one uniform scale, so it never reaches under the
@@ -299,6 +327,9 @@
     // spins up to (1 + ZAP_SPIN) times its speed for ZAP_TIME seconds, lit
     // with lightning; the last ZAP_EASE seconds bring it back down.
     var ZAP_TIME = 3.2, ZAP_SPIN = 5, ZAP_EASE = 1.2;
+    // A BOOSTER shoots a marble on at BOOST_K times the top speed and lets
+    // no drag touch it for BOOST_TIME seconds of the machine's own time.
+    var BOOST_K = 1.5, BOOST_TIME = 0.7;
     var GUTTER_SPEED = 220;
     var BG_ALPHA = 0.34;
     var SPILL_ALPHA = 0.2;         // the spill network's lines and cogs: depth, never a route
@@ -356,15 +387,24 @@
 
     /* ===============================================================
        THE MODULE LIBRARY — a track is a list of points [x, y, depth,
-       glass, mouth]. Depth 1 is the front plane, below 0 the rail runs behind
-       the machine (smaller, dimmer, under every front rail); `glass` marks the
-       segment ending at a point as a glass tube; `mouth` marks a pipe mouth,
-       where a line dives or resurfaces.
+       skin, mouth]. Depth 1 is the front plane, below 0 the rail runs behind
+       the machine (smaller, dimmer, under every front rail); `skin` is what
+       the segment ending at a point is made of (SK below); `mouth` marks a
+       pipe mouth, where a line dives or resurfaces.
+
+       A skin other than the plain rail is never where a queue may stand: a
+       gate, its trapdoor and a wheel entry's queue sit on plain front rail.
        =============================================================== */
+    var SK_RAIL = 0,                // two chrome rails on their sleepers
+        SK_GLASS = 1,               // a glass tube: the marble is seen all the way
+        SK_ZEBRA = 2,               // a striped tube: seen through every other band
+        SK_HOSE = 3,                // a dark ribbed hose: hidden, the tube swells round it
+        SK_AIR = 4;                 // nothing under it: a jump's flight, a stair's ledges
     function Track(x, y) {
       this.p = [[x, y, 1, 0, 0]];
       this.z = 1; this.g = 0; this.m = 0; this.bowls = [];
-      this.mods = [];     // the loops and spirals, for the module prizes (CARD_FX)
+      this.mods = [];     // the loops and spirals (module prizes, CARD_FX), the landings, the notes, the boosters
+      this.props = [];    // what is drawn beside the line: catchers, ledges, booster coils
     }
     Track.prototype.last = function () { return this.p[this.p.length - 1]; };
     Track.prototype.put = function (x, y, z) {
@@ -443,6 +483,103 @@
       this.put(cx, cy + 14);
       return this.under();
     };
+    // A striped tube (zebra): opaque bands and glass windows by turns, so a
+    // marble flickers in and out of sight; an electric one glows through.
+    Track.prototype.zebra = function (on) { this.g = on ? SK_ZEBRA : SK_RAIL; return this; };
+    // The line's heading at its last point, as a unit vector (down when unknown).
+    Track.prototype.heading = function () {
+      var n = this.p.length, a = this.p[Math.max(0, n - 2)], b = this.p[n - 1], dx = b[0] - a[0], dy = b[1] - a[1];
+      var L = Math.sqrt(dx * dx + dy * dy);
+      return L ? [dx / L, dy / L] : [0, 1];
+    };
+    /* A HOSE (soufflet) to (x, y): a dark ribbed rubber hose that leaves along
+       the line's own heading and arrives heading `deg` (the way the marble
+       travels, 90 = straight down), a smooth curve between. It is the joint
+       between two modules that do not line up: the marble is hidden inside
+       and the hose swells where it passes. */
+    Track.prototype.hose = function (x, y, deg) {
+      var l = this.last(), x0 = l[0], y0 = l[1], h = this.heading(), a = (deg == null ? 90 : deg) * Math.PI / 180;
+      var D = Math.sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)), k = D * 0.42;
+      var c1x = x0 + h[0] * k, c1y = y0 + h[1] * k, c2x = x - Math.cos(a) * k, c2y = y - Math.sin(a) * k;
+      var n = Math.max(6, Math.round(D / 10)), g0 = this.g, i, s, u;
+      this.g = SK_HOSE;
+      for (i = 1; i <= n; i++) {
+        s = i / n; u = 1 - s;
+        this.put(u * u * u * x0 + 3 * u * u * s * c1x + 3 * u * s * s * c2x + s * s * s * x,
+                 u * u * u * y0 + 3 * u * u * s * c1y + 3 * u * s * s * c2y + s * s * s * y);
+      }
+      this.g = g0;
+      return this;
+    };
+    /* A JUMP (tremplin) to (x, y): the rail curls up into a kicker and stops;
+       the marble flies a parabola that leaves the lip at `deg` degrees above
+       the horizontal (35 unless told) and lands in a CATCHER at (x, y) — a
+       scoop with a high back wall — where the line goes on. Nothing is drawn
+       under the flight. Write the run before it downhill, so the marble
+       arrives with speed. */
+    Track.prototype.jump = function (x, y, deg) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dir = x >= x0 ? 1 : -1, RK = 64, i, f;
+      var lip = (deg || 35) * Math.PI / 180;
+      for (i = 1; i <= 6; i++) {
+        f = lip * i / 6;
+        this.put(x0 + dir * RK * Math.sin(f), y0 - RK * (1 - Math.cos(f)));
+      }
+      l = this.last();
+      this.props.push({ k: "kick", x: x0, y: y0, dir: dir, rk: RK, lip: lip });
+      var xl = l[0], yl = l[1], span = Math.abs(x - xl), n = Math.max(8, Math.round(span / 9)), s, g0 = this.g;
+      // the sag that makes the flight leave the lip along it
+      var h = ((y - yl) + Math.tan(lip) * span) / 4;
+      this.g = SK_AIR;
+      for (i = 1; i <= n; i++) { s = i / n; this.put(xl + (x - xl) * s, yl + (y - yl) * s - 4 * h * s * (1 - s)); }
+      this.g = g0;
+      this.props.push({ k: "catch", x: x, y: y, dir: dir });
+      this.mods.push({ kind: "land", x: x, y: y });
+      return this;
+    };
+    /* A STAIRCASE (escalier) to (x, y): `n` ledges, the marble rolls along
+       each and hops down onto the next, and every landing rings a note, a
+       scale down the stairs. The stairs need some width: a ledge is about
+       half a step across. */
+    Track.prototype.steps = function (x, y, n) {
+      var l = this.last(), x0 = l[0], y0 = l[1], dx = (x - x0) / n, dy = (y - y0) / n, dir = dx >= 0 ? 1 : -1;
+      var i, j, s, ax, ay, ex, ey, g0 = this.g, run = 0.5, HOP = 12;
+      this.g = SK_AIR;
+      for (i = 0; i < n; i++) {
+        ax = x0 + dx * i; ay = y0 + dy * i;
+        ex = ax + dx * run; ey = ay + 3;
+        this.put(ex, ey);
+        this.props.push({ k: "ledge", x0: ax - dir * (R + 6), x1: ex + dir * 6, y: ay + R + 1 });
+        for (j = 1; j <= 6; j++) {
+          s = j / 6;
+          this.put(ex + (ax + dx - ex) * s, ey + (ay + dy - ey) * s - 4 * HOP * s * (1 - s));
+        }
+        this.mods.push({ kind: "note", x: ax + dx, y: ay + dy, n: i });
+      }
+      this.props.push({ k: "ledge", x0: x - dir * (R + 6), x1: x + dir * (R + 10), y: y + R + 1 });
+      this.g = g0;
+      return this;
+    };
+    // A WAVE (bosses) to (x, y): `n` smooth humps `amp` high over the straight
+    // line, which the marble crawls up and runs down.
+    Track.prototype.wave = function (x, y, n, amp) {
+      var l = this.last(), x0 = l[0], y0 = l[1], m = n * 16, i, k;
+      for (i = 1; i <= m; i++) {
+        k = i / m;
+        this.put(x0 + (x - x0) * k, y0 + (y - y0) * k - amp * (1 - Math.cos(k * n * PI2)) / 2);
+      }
+      return this;
+    };
+    /* A BOOSTER to (x, y): a straight run through three copper coils. A
+       marble through the middle one is shot on at full speed, faster than
+       any slope gives it, and keeps it a moment. */
+    Track.prototype.boost = function (x, y) {
+      var l = this.last(), x0 = l[0], y0 = l[1], i;
+      for (i = 1; i <= 3; i++) this.props.push({ k: "coil", x: x0 + (x - x0) * i / 4, y: y0 + (y - y0) * i / 4,
+                                                  a: Math.atan2(y - y0, x - x0) });
+      this.put(x, y);
+      this.mods.push({ kind: "boost", x: (x0 + x) / 2, y: (y0 + y) / 2 });
+      return this;
+    };
     /* Everything from point `from` on runs BEHIND the machine, whatever
        depth the modules gave it — a coil's near half included. This is the
        spill network's plane: a line a lost marble rides, never one the
@@ -459,13 +596,19 @@
       for (i = 0; i < tr.p.length; i++) { q = tr.p[i]; o.push([660 - q[0], q[1], q[2], q[3], q[4]]); }
       var t2 = new Track(0, 0); t2.p = o;
       for (i = 0; i < tr.bowls.length; i++) t2.bowls.push({ cx: 660 - tr.bowls[i].cx, cy: tr.bowls[i].cy, r: tr.bowls[i].r });
-      for (i = 0; i < tr.mods.length; i++) t2.mods.push({ kind: tr.mods[i].kind, x: 660 - tr.mods[i].x, y: tr.mods[i].y });
+      for (i = 0; i < tr.mods.length; i++) t2.mods.push({ kind: tr.mods[i].kind, x: 660 - tr.mods[i].x, y: tr.mods[i].y, n: tr.mods[i].n });
+      for (i = 0; i < tr.props.length; i++) {
+        q = tr.props[i];
+        t2.props.push({ k: q.k, x: 660 - q.x, y: q.y, dir: -q.dir, x0: 660 - q.x0, x1: 660 - q.x1, a: Math.PI - q.a });
+      }
       return t2;
     }
     function T(x, y) { return new Track(x, y); }
 
     /* ===============================================================
-       THE FIVE MACHINES. Coordinates are machine px. `sw` are the switches
+       THE THIRTY MACHINES, one per level. BASE5 holds the first machine of
+       each biome (levels 1, 7, 13, 19, 25, the playable plays the first);
+       LAYOUTS lists all thirty in level order. Coordinates are machine px. `sw` are the switches
        (with the way each lies at the start), `wheel` the merge with its
        entries (incoming channel -> the angle it boards at) and its way out,
        `arr` the arrivals (their x), `ch` the channels —
@@ -480,8 +623,9 @@
        it passes under the front lines as it pleases.
 
        EVERY MACHINE IS ITS OWN SKELETON — where the wheel stands, which way
-       the marbles flow, how the switches chain — so a new biome is a new
-       place and not the last one with more floors. Every layout is checked
+       the marbles flow, how the switches chain — so a new level is a new
+       place and not the last one with more floors; a biome sets only the
+       counts (switches / gates / arrivals) and the metal. Every layout is checked
        by the bench (lab/gearball-modules.html, Machines): tap targets 165
        machine px apart, padlocks clear of the rails, queues and trapdoors
        on plain front rail, every queue drained to the sink, every switch a
@@ -508,7 +652,7 @@
        stretch of the machine no line crosses. ferPt(f, deg) is a point of
        its rim, which is how both lines are written to meet it. */
     function ferPt(f, deg) { var a = deg * Math.PI / 180; return [f.cx + f.r * Math.cos(a), f.cy + f.r * Math.sin(a)]; }
-    var LAYOUTS = [
+    var BASE5 = [
       /* 1 · WORKSHOP — THE TRAVERSE. One long line crosses the machine from
          the feed gear to a wheel standing high on the LEFT, boarding it from
          above; one switch under it sends a marble left, round a loop, or all
@@ -715,7 +859,7 @@
                   { ch: "S1L", at: [250, 422], cap: 4, p: [250, 240] },
                   { ch: "S2L", at: [85, 560], cap: 4, p: [80, 330] },
                   { ch: "wout", at: [360, 840], cap: 3, p: [520, 780] },
-                  { ch: "S3L", at: [250, 946], cap: 3, p: [130, 790] }],
+                  { ch: "S3L", at: [250, 946], cap: 3, p: [140, 795] }],
           chimes: [["top", 600, 245], ["S1R", 435, 500], ["S0R", 655, 400], ["S3R", 430, 915], ["S2R", 240, 540]],
           sink: [340, 990],
           back: {
@@ -731,6 +875,1129 @@
                    D("wheel:S1R", "east", [[500, 500], [600, 560], [700, 600]]),
                    D("wheel:S2R", "west", [[190, 520], [170, 520]])],
           cogs: [[660, 760, 44, 1], [610, 820, 22, -1], [255, 770, 24, 1], [420, 950, 30, 1]]
+        };
+      }
+    ];
+    var LAYOUTS = [
+      BASE5[0],                    // 1 · WORKSHOP — THE TRAVERSE
+      function () {
+        /* 2 · WORKSHOP — THE SWITCHBACK. The line runs the whole top of the
+           machine to the LEFT, where a ferry gear turns it round and lays it on a
+           coil; a wave carries it back right to a wheel standing on the RIGHT,
+           boarded from its left. The one switch is under the wheel: left, a
+           booster and the first jump; right, a corkscrew. */
+        var f0 = { cx: 115, cy: 260, r: 70, n: 10, from: -20, to: -250, out: "fo" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [560, 820, 0] },
+          wheel: { cx: 560, cy: 600, notches: 10, entries: { fo: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 170 }, { id: "a1", x: 625 }],
+          out: { S0: ["S0L", "S0R"] },
+          ch: {
+            top:  { to: "fer:0", tr: T(H0[0], H0[1]).to(600, 180).to(400, 205).to(i0[0], i0[1]) },
+            fo:   { to: "wheel", tr: T(o0[0], o0[1]).to(130, 380).coil(560, 36, 2).to(160, 585).wave(310, 590, 3, 20).to(490, 600) },
+            wout: { to: "S0", tr: T(560, 670).to(560, 820) },
+            S0L:  { to: "a0", tr: T(560, 820).to(470, 855).boost(330, 880).jump(190, 905, 30).to(175, 970).to(170, RAIL_END) },
+            S0R:  { to: "a1", tr: T(560, 820).to(610, 870).cork(625, 1010, 1.5, 14).to(625, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [420, 203], cap: 4, p: [420, 300] },
+                  { ch: "wout", at: [560, 800], cap: 3, p: [410, 720] }],
+          chimes: [["top", 520, 190], ["fo", 240, 585], ["S0L", 520, 836], ["S0R", 600, 860]],
+          sink: [360, 985],
+          back: {
+            trunk: { to: "sink", tr: T(600, 250).to(665, 330).to(670, 450).coil(650, 30, 2).to(640, 720).to(470, 900).to(360, 985) }
+          },
+          drains: [D("gate:0", "trunk", [[600, 250]]),
+                   D("wheel:fo", "sink", [[300, 650], [270, 760]], function (t) { return t.to(290, 860).loop(26, 1).to(360, 985); }),
+                   D("gate:1", "trunk", [[620, 700], [640, 720]])],
+          cogs: [[300, 420, 40, 1], [350, 460, 22, -1], [60, 760, 34, 1]]
+        };
+      },
+      function () {
+        /* 3 · WORKSHOP — THE FORK. The switch splits at once, high in the middle.
+           Left, a staircase rings down to the edge and a striped tube drops to a
+           wheel standing LOW on the left, whose way out loops into its arrival;
+           right, the line falls down the middle onto a ferry gear that carries it
+           over its top and down the right side to a corkscrew. */
+        var f0 = { cx: 440, cy: 680, r: 80, n: 10, from: -150, to: 30, out: "S0R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [380, 290, 0] },
+          wheel: { cx: 230, cy: 760, notches: 10, entries: { S0L: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 120 }, { id: "a1", x: 560 }],
+          out: { S0: ["S0L", "S0R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(470, 240).to(380, 290) },
+            S0L:  { to: "wheel", tr: T(380, 290).to(300, 315).steps(120, 420, 4).to(80, 470)
+                                       .zebra(1).to(70, 530).to(70, 600).zebra(0).to(90, 680).to(160, 760) },
+            wout: { to: "a0", tr: T(230, 830).to(240, 900).to(200, 960).loop(30, -1).to(130, 985).to(120, RAIL_END) },
+            S0R:  { to: "fer:0", tr: T(380, 290).to(440, 360).to(430, 480).to(390, 590).to(i0[0], i0[1]) },
+            S0R2: { to: "a1", tr: T(o0[0], o0[1]).to(540, 800).cork(560, 1000, 1.5, 14).to(560, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [540, 212], cap: 3, p: [560, 330] },
+                  { ch: "S0R", at: [430, 470], cap: 3, p: [300, 500] }],
+          chimes: [["top", 520, 222], ["S0R", 435, 420], ["S0R2", 530, 780], ["wout", 236, 880], ["S0L", 85, 660]],
+          sink: [400, 985],
+          back: {
+            east: { to: "sink", tr: T(630, 260).to(670, 380).coil(600, 28, 2).to(650, 760).to(560, 880).to(400, 985) }
+          },
+          drains: [D("gate:0", "east", [[630, 260]]),
+                   D("gate:1", "east", [[520, 380], [640, 420]]),
+                   D("wheel:S0L", "sink", [[40, 700], [50, 850]], function (t) { return t.to(150, 920).to(300, 940).to(400, 985); })],
+          cogs: [[620, 520, 44, 1], [575, 575, 22, -1], [330, 960, 30, 1]]
+        };
+      },
+      function () {
+        /* 4 · WORKSHOP — THE LEAP. The first thing a marble does here is fly:
+           the top line kicks it off a ski jump over the top left, a hose swings
+           it back right to a wheel standing in the middle. Under it the switch
+           sends it left onto a ferry gear that lifts it over to a loop down the
+           left edge, or right through a booster that shoots it into a hose. */
+        var f0 = { cx: 220, cy: 760, r: 75, n: 10, from: 20, to: -160, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [500, 730, 0] },
+          wheel: { cx: 500, cy: 490, notches: 10, entries: { top: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 75 }, { id: "a1", x: 625 }],
+          out: { S0: ["S0L", "S0R"] },
+          ch: {
+            top:  { to: "wheel", tr: T(H0[0], H0[1]).to(600, 180).to(480, 205).to(380, 225).jump(150, 260, 30)
+                                       .to(140, 330).hose(230, 440, 20).to(430, 490) },
+            wout: { to: "S0", tr: T(500, 560).to(500, 730) },
+            S0L:  { to: "fer:0", tr: T(500, 730).to(400, 760).to(i0[0], i0[1]) },
+            S0L2: { to: "a0", tr: T(o0[0], o0[1]).to(110, 790).to(95, 900).loop(32, -1).to(78, 950).to(75, RAIL_END) },
+            S0R:  { to: "a1", tr: T(500, 730).to(540, 790).boost(640, 830).hose(625, 960, 90).to(625, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [540, 193], cap: 3, p: [540, 300] },
+                  { ch: "wout", at: [500, 710], cap: 3, p: [350, 630] }],
+          chimes: [["top", 430, 215], ["top", 330, 465], ["S0L", 440, 748], ["S0L2", 102, 845]],
+          sink: [370, 985],
+          back: {
+            east: { to: "sink", tr: T(630, 240).to(670, 350).coil(600, 28, 2).to(560, 640).to(420, 700).to(330, 880).to(370, 985) }
+          },
+          drains: [D("gate:0", "east", [[630, 240]]),
+                   D("wheel:top", "sink", [[300, 560], [260, 620]], function (t) { return t.to(250, 870).loop(26, 1).to(310, 930).to(370, 985); }),
+                   D("gate:1", "east", [[540, 640], [560, 640]])],
+          cogs: [[80, 520, 40, 1], [130, 575, 20, -1], [470, 950, 30, 1]]
+        };
+      },
+      function () {
+        /* 5 · WORKSHOP — THE HAIRPIN. A striped tube runs the top to the left,
+           a hose turns the line back on itself and the switch splits it on the
+           left. Right, a wave carries it across to a wheel standing LOW on the
+           right, boarded from its right; left, a ferry gear lifts it over its top
+           and drops it down a corkscrew on the left edge. */
+        var f0 = { cx: 150, cy: 790, r: 70, n: 10, from: -10, to: -185, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [300, 450, 0] },
+          wheel: { cx: 540, cy: 790, notches: 10, entries: { S0R: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 80 }, { id: "a1", x: 560 }],
+          out: { S0: ["S0L", "S0R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 180).to(430, 212).zebra(1).to(200, 250).zebra(0).to(120, 280).to(95, 330)
+                                       .hose(200, 430, 0).to(300, 450) },
+            S0L:  { to: "fer:0", tr: T(300, 450).to(240, 520).to(225, 690).to(i0[0], i0[1]) },
+            S0L2: { to: "a0", tr: T(o0[0], o0[1]).cork(80, 1000, 1.5, 14).to(80, RAIL_END) },
+            S0R:  { to: "wheel", tr: T(300, 450).to(400, 480).wave(560, 515, 2, 20).to(615, 560).to(645, 650).to(645, 730).to(624, 790) },
+            wout: { to: "a1", tr: T(540, 860).to(555, 960).to(560, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [500, 199], cap: 3, p: [480, 320] },
+                  { ch: "S0L", at: [230, 600], cap: 3, p: [360, 640] }],
+          chimes: [["top", 560, 187], ["S0R", 345, 465], ["S0R", 645, 690], ["wout", 550, 920], ["S0L", 227, 650]],
+          sink: [330, 985],
+          back: {
+            east: { to: "sink", tr: T(630, 240).to(670, 340).coil(560, 26, 2).to(560, 640).to(450, 760).to(400, 900).to(330, 985) }
+          },
+          drains: [D("gate:0", "east", [[630, 240]]),
+                   D("gate:1", "sink", [[180, 600], [170, 700]], function (t) { return t.to(250, 880).loop(26, 1).to(300, 930).to(330, 985); }),
+                   D("wheel:S0R", "east", [[640, 500], [670, 520]])],
+          cogs: [[420, 330, 36, 1], [380, 365, 18, -1], [300, 1000, 32, 1]]
+        };
+      },
+      function () {
+        /* 6 · WORKSHOP — THE ROUNDABOUT. The whole frame in one round: a
+           staircase rings down the top, a hose turns the line back on itself and
+           a loop carries it right onto a ferry gear that takes it round like a
+           roundabout and lays it back LEFT, into a wheel standing on the left.
+           The switch under it: left down to the edge, or right through a booster
+           and off a jump across the bottom. */
+        var f0 = { cx: 590, cy: 560, r: 60, n: 9, from: -140, to: 90, out: "fo" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [170, 870, 0] },
+          wheel: { cx: 170, cy: 660, notches: 10, entries: { fo: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 85 }, { id: "a1", x: 520 }],
+          out: { S0: ["S0L", "S0R"] },
+          ch: {
+            top:  { to: "fer:0", tr: T(H0[0], H0[1]).to(600, 180).to(480, 205).steps(260, 285, 4).to(120, 310)
+                                       .hose(170, 430, 0).to(330, 450).loop(36, 1).to(500, 470).to(i0[0], i0[1]) },
+            fo:   { to: "wheel", tr: T(o0[0], o0[1]).to(450, 640).to(240, 660) },
+            wout: { to: "S0", tr: T(170, 730).to(170, 870) },
+            S0L:  { to: "a0", tr: T(170, 870).to(100, 925).to(85, 980).to(85, RAIL_END) },
+            S0R:  { to: "a1", tr: T(170, 870).to(260, 905).boost(390, 935).jump(510, 965, 30).to(520, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [540, 193], cap: 3, p: [520, 320] },
+                  { ch: "fo", at: [470, 638], cap: 3, p: [400, 760] }],
+          chimes: [["top", 570, 186], ["top", 250, 446], ["fo", 330, 652], ["S0R", 220, 890], ["S0L", 88, 960]],
+          sink: [300, 1000],
+          back: {
+            east: { to: "sink", tr: T(660, 230).to(680, 360).coil(500, 24, 2).to(670, 700).to(600, 800).to(420, 880).to(300, 1000) }
+          },
+          drains: [D("gate:0", "east", [[660, 230]]),
+                   D("gate:1", "east", [[630, 700], [670, 700]]),
+                   D("wheel:fo", "sink", [[380, 720], [330, 800]], function (t) { return t.to(300, 1000); })],
+          cogs: [[380, 570, 34, 1], [420, 545, 18, -1], [60, 400, 30, 1]]
+        };
+      },
+      BASE5[1],                    // 7 · GLASSWORKS — THE CASCADE
+      function () {
+        /* 8 · GLASSWORKS — THE SHUTTLE. The line runs left along a striped tube to
+           a switch high on the LEFT, then swings back right over a row of humps
+           and a booster to a second switch on the right, which sends it back left
+           into a wheel standing low in the middle, or down through a ferry gear. */
+        var f0 = { cx: 590, cy: 780, r: 60, n: 8, from: 140, to: -40, out: "S1R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [150, 330, 0], S1: [540, 590, 1] },
+          wheel: { cx: 330, cy: 790, notches: 10, entries: { S1L: -Math.PI / 2 }, out: "wout" },
+          arr: [{ id: "a0", x: 70 }, { id: "a1", x: 330 }, { id: "a2", x: 630 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 180).to(480, 222).zebra(1).to(260, 262).zebra(0).to(195, 292).to(150, 330) },
+            S0L:  { to: "a0", tr: T(150, 330).to(100, 390).to(70, 470).to(62, 640).glass(1).to(60, 760).loop(34, 1).to(110, 790)
+                                   .to(90, 880).to(70, 960).glass(0).to(70, RAIL_END) },
+            S0R:  { to: "S1", tr: T(150, 330).to(205, 395).to(250, 425).wave(430, 470, 3, 20).boost(520, 540).to(540, 590) },
+            S1L:  { to: "wheel", tr: T(540, 590).to(470, 620).to(400, 650).to(350, 680).to(330, 720) },
+            S1R:  { to: "fer:0", tr: T(540, 590).to(560, 650).to(520, 740).to(i0[0], i0[1]) },
+            S1R2: { to: "a2", tr: T(o0[0], o0[1]).to(650, 700).to(640, 760).coil(990, 26, 2).to(630, RAIL_END) },
+            wout: { to: "a1", tr: T(330, 860).to(330, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [520, 208], cap: 3, p: [540, 330] },
+                  { ch: "S0L", at: [64, 600], cap: 4, p: [190, 620] },
+                  { ch: "wout", at: [330, 1010], cap: 3, p: [200, 900] }],
+          chimes: [["top", 560, 194], ["S0R", 230, 412], ["S1L", 430, 638], ["S1R2", 646, 730], ["S0L", 85, 420]],
+          sink: [460, 985],
+          back: {
+            trunk: { to: "sink", tr: T(600, 250).to(660, 330).coil(520, 26, 2).to(620, 600).to(480, 700).to(470, 860).to(460, 985) }
+          },
+          drains: [D("gate:0", "trunk", [[560, 240], [600, 250]]),
+                   D("wheel:S1L", "trunk", [[400, 700], [470, 780]]),
+                   D("gate:1", "sink", [[150, 700], [230, 860]], function (t) { return t.to(300, 940).to(380, 960).to(460, 985); }),
+                   D("gate:2", "sink", [[380, 1020], [460, 985]])],
+          cogs: [[620, 470, 40, 1], [665, 520, 22, -1], [230, 960, 30, 1]]
+        };
+      },
+      function () {
+        /* 9 · GLASSWORKS — THE HOOK. The top line runs left past the wheel and
+           hooks back into it from the left, high on the right; a striped tube
+           drops out of it to the first switch. Left, a ferry gear lifts the marble
+           over to the far side, a hose turns it round and it JUMPS the gap to the
+           second switch; right, a corkscrew falls alone down the edge. */
+        var f0 = { cx: 220, cy: 600, r: 62, n: 8, from: 15, to: -195, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [470, 640, 0], S1: [340, 930, 1] },
+          wheel: { cx: 470, cy: 400, notches: 10, entries: { top: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 90 }, { id: "a1", x: 450 }, { id: "a2", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"] },
+          ch: {
+            top:  { to: "wheel", tr: T(H0[0], H0[1]).to(600, 182).to(420, 225).to(330, 250).to(290, 290).to(300, 350).to(340, 385).to(400, 400) },
+            wout: { to: "S0", tr: T(470, 470).zebra(1).to(472, 590).zebra(0).to(470, 640) },
+            S0L:  { to: "fer:0", tr: T(470, 640).to(400, 625).to(i0[0], i0[1]) },
+            S0L2: { to: "S1", tr: T(o0[0], o0[1]).to(135, 675).hose(110, 765, 30).to(200, 812).jump(330, 862).to(332, 900).to(340, 930) },
+            S0R:  { to: "a2", tr: T(470, 640).to(560, 670).to(610, 720).to(620, 790).cork(620, 1000, 2, 14).to(620, RAIL_END) },
+            S1L:  { to: "a0", tr: T(340, 930).to(250, 975).to(150, 1010).to(105, 1035).to(90, RAIL_END) },
+            S1R:  { to: "a1", tr: T(340, 930).to(400, 970).glass(1).to(440, 1020).glass(0).to(450, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [500, 206], cap: 3, p: [560, 300] },
+                  { ch: "S0L", at: [340, 622], cap: 3, p: [330, 500] },
+                  { ch: "S0R", at: [618, 770], cap: 3, p: [520, 830] }],
+          chimes: [["top", 560, 192], ["top", 292, 320], ["S0R", 590, 690], ["S0L2", 170, 800], ["S1R", 380, 958]],
+          sink: [535, 985],
+          back: {
+            east: { to: "sink", tr: T(640, 250).to(680, 330).coil(560, 26, 2).to(680, 700).to(660, 860).to(600, 940).to(535, 985) },
+            west: { to: "sink", tr: T(230, 420).to(160, 470).loop(28, -1).to(110, 560).to(80, 700).to(200, 880).to(400, 940).to(535, 985) }
+          },
+          drains: [D("gate:0", "east", [[600, 240], [640, 250]]),
+                   D("wheel:top", "west", [[260, 380], [230, 420]]),
+                   D("gate:1", "west", [[230, 520], [190, 470]]),
+                   D("gate:2", "east", [[650, 720], [670, 760]])],
+          cogs: [[180, 300, 40, 1], [130, 340, 22, -1], [560, 880, 30, 1]]
+        };
+      },
+      function () {
+        /* 10 · GLASSWORKS — THE STAIRWELL. The first switch stands high in the
+           middle: right, a STAIRCASE rings down to a striped tube along the edge;
+           left, a wheel on the left flank hands the marble through a glass drop to
+           a ferry gear, which carries it over to the second switch. From there the
+           long way home crawls back left over a row of humps. */
+        var f0 = { cx: 330, cy: 780, r: 60, n: 8, from: 180, to: 360, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [330, 330, 1], S1: [430, 880, 0] },
+          wheel: { cx: 190, cy: 620, notches: 10, entries: { S0L: -Math.PI / 2 }, out: "wout" },
+          arr: [{ id: "a0", x: 100 }, { id: "a1", x: 460 }, { id: "a2", x: 625 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 182).to(470, 224).to(380, 262).to(345, 300).to(330, 330) },
+            S0L:  { to: "wheel", tr: T(330, 330).to(250, 390).to(200, 450).to(190, 550) },
+            S0R:  { to: "a2", tr: T(330, 330).to(400, 380).steps(600, 500, 4).to(630, 540).to(645, 660).zebra(1).to(645, 880).zebra(0)
+                                   .coil(1020, 22, 2).to(625, RAIL_END) },
+            wout: { to: "fer:0", tr: T(190, 690).glass(1).to(205, 745).glass(0).to(i0[0], i0[1]) },
+            S0L2: { to: "S1", tr: T(o0[0], o0[1]).to(420, 830).to(430, 880) },
+            S1L:  { to: "a0", tr: T(430, 880).to(360, 920).to(310, 940).wave(150, 985, 3, 16).to(110, 1010).to(100, RAIL_END) },
+            S1R:  { to: "a1", tr: T(430, 880).to(470, 950).to(460, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [480, 221], cap: 4, p: [470, 110] },
+                  { ch: "S1L", at: [320, 936], cap: 3, p: [255, 852] },
+                  { ch: "S0R", at: [645, 650], cap: 3, p: [540, 700] }],
+          chimes: [["top", 560, 195], ["S0L", 215, 425], ["S0L2", 410, 815], ["S0R", 640, 600], ["S1R", 466, 1000]],
+          sink: [545, 985],
+          back: {
+            east: { to: "sink", tr: T(560, 260).to(680, 330).to(690, 450).coil(720, 24, 3).to(600, 860).to(545, 985) },
+            west: { to: "sink", tr: T(80, 420).to(60, 560).loop(26, 1).to(110, 760).to(200, 900).to(380, 1010).to(545, 985) }
+          },
+          drains: [D("gate:0", "east", [[520, 250], [560, 260]]),
+                   D("wheel:S0L", "west", [[160, 380], [80, 420]]),
+                   D("gate:1", "sink", [[380, 1000], [460, 1010], [545, 985]]),
+                   D("gate:2", "east", [[680, 700], [690, 760]])],
+          cogs: [[130, 230, 44, 1], [80, 280, 22, -1], [560, 400, 30, 1]]
+        };
+      },
+      function () {
+        /* 11 · GLASSWORKS — THE LONG WAY. One long run before any choice: a
+           striped tube along the top, a loop, a hose that turns the marble round
+           on the far left, a booster, and a JUMP across the machine to the first
+           switch. The right falls down a striped tube; the left splits again, into
+           a wheel low in the middle or a ferry gear that carries it round the
+           bottom left. */
+        var f0 = { cx: 120, cy: 830, r: 55, n: 8, from: -60, to: -240, out: "S1L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [510, 595, 0], S1: [230, 700, 1] },
+          wheel: { cx: 380, cy: 880, notches: 10, entries: { S1R: -Math.PI / 2 }, out: "wout" },
+          arr: [{ id: "a0", x: 70 }, { id: "a1", x: 380 }, { id: "a2", x: 630 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 182).to(470, 222).zebra(1).to(250, 262).zebra(0).to(210, 272).loop(36, -1)
+                                   .to(150, 290).hose(110, 400, 0).to(150, 410).boost(280, 445).to(330, 460).jump(510, 520).to(512, 565).to(510, 595) },
+            S0L:  { to: "S1", tr: T(510, 595).to(420, 630).to(320, 670).to(230, 700) },
+            S0R:  { to: "a2", tr: T(510, 595).to(580, 625).to(625, 690).to(632, 745).zebra(1).to(635, 960).zebra(0).to(630, RAIL_END) },
+            S1L:  { to: "fer:0", tr: T(230, 700).to(190, 730).to(i0[0], i0[1]) },
+            S1L2: { to: "a0", tr: T(o0[0], o0[1]).to(75, 940).to(70, RAIL_END) },
+            S1R:  { to: "wheel", tr: T(230, 700).to(290, 730).to(340, 760).to(375, 790).to(380, 810) },
+            wout: { to: "a1", tr: T(380, 950).to(380, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [500, 213], cap: 4, p: [430, 120] },
+                  { ch: "S1L2", at: [72, 1000], cap: 3, p: [180, 960] },
+                  { ch: "S0R", at: [618, 680], cap: 3, p: [520, 780] }],
+          chimes: [["top", 560, 195], ["top", 140, 410], ["S0L", 380, 646], ["S0R", 615, 700], ["S1R", 300, 736]],
+          sink: [510, 985],
+          back: {
+            east: { to: "sink", tr: T(560, 260).to(670, 320).coil(600, 24, 3).to(680, 760).to(580, 880).to(510, 985) },
+            west: { to: "sink", tr: T(250, 520).to(180, 600).loop(26, -1).to(120, 640).to(40, 720).to(160, 920).to(300, 1010).to(510, 985) }
+          },
+          drains: [D("gate:0", "east", [[530, 250], [560, 260]]),
+                   D("wheel:S1R", "west", [[260, 640], [250, 520]], function (t) { return t; }),
+                   D("gate:1", "sink", [[140, 1030], [300, 1040], [510, 985]]),
+                   D("gate:2", "east", [[660, 640], [670, 600]])],
+          cogs: [[560, 360, 46, 1], [610, 410, 22, -1], [260, 900, 30, 1]]
+        };
+      },
+      function () {
+        /* 12 · GLASSWORKS — THE WEAVE. The longest crossing: a striped tube runs
+           the whole top to a switch on the far LEFT, which drops the marble into
+           a whirlpool down the edge or sends it back right over a row of humps to
+           a wheel on the right flank. Out of it a staircase rings back left to the
+           second switch, which JUMPS left or rides a ferry gear over to the right. */
+        var f0 = { cx: 530, cy: 930, r: 55, n: 8, from: 180, to: 360, out: "S1R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [100, 380, 1], S1: [370, 830, 0] },
+          wheel: { cx: 560, cy: 620, notches: 12, entries: { S0R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 60 }, { id: "a1", x: 155 }, { id: "a2", x: 610 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 182).to(500, 212).zebra(1).to(260, 250).zebra(0).to(160, 270).to(110, 310).to(100, 380) },
+            S0L:  { to: "a0", tr: T(100, 380).to(70, 440).to(55, 560).to(58, 640).whirl(110, 640, 52, 14, 1.75, -1).to(105, 750).over()
+                                   .to(92, 780).glass(1).to(64, 1000).glass(0).to(60, RAIL_END) },
+            S0R:  { to: "wheel", tr: T(100, 380).to(160, 420).to(200, 440).wave(370, 480, 3, 18).to(420, 500).to(465, 535).to(485, 580).to(490, 620) },
+            wout: { to: "S1", tr: T(560, 690).to(555, 730).steps(420, 800, 3).to(390, 815).to(370, 830) },
+            S1L:  { to: "a1", tr: T(370, 830).to(320, 855).to(280, 872).jump(155, 945).to(153, 995).to(155, RAIL_END) },
+            S1R:  { to: "fer:0", tr: T(370, 830).to(420, 870).to(i0[0], i0[1]) },
+            S1R2: { to: "a2", tr: T(o0[0], o0[1]).to(605, 990).to(610, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [530, 203], cap: 3, p: [520, 320] },
+                  { ch: "S0L", at: [58, 520], cap: 3, p: [200, 560] },
+                  { ch: "S1R", at: [460, 915], cap: 3, p: [420, 1000] }],
+          chimes: [["top", 570, 190], ["S0R", 180, 430], ["S0R", 450, 520], ["wout", 562, 730], ["S0L", 64, 480]],
+          sink: [290, 985],
+          back: {
+            east: { to: "sink", tr: T(600, 260).to(680, 330).coil(560, 24, 2).to(690, 760).to(660, 860).to(500, 1000).to(380, 1030).to(290, 985) },
+            west: { to: "sink", tr: T(250, 560).to(300, 640).loop(28, 1).to(360, 700).to(300, 780).to(250, 900).to(290, 985) }
+          },
+          drains: [D("gate:0", "east", [[560, 250], [600, 260]]),
+                   D("wheel:S0R", "west", [[360, 540], [250, 560]]),
+                   D("gate:1", "west", [[140, 470], [250, 560]]),
+                   D("gate:2", "sink", [[400, 960], [340, 1010], [290, 985]])],
+          cogs: [[400, 360, 44, 1], [350, 330, 22, -1], [480, 1040, 26, 1]]
+        };
+      },
+      BASE5[2],                    // 13 · MAELSTROM — THE STAIRCASE
+      function () {
+        /* 14 · MAELSTROM — THE EDDY. The top line runs leftward over a wave, and
+           the switches TURN BACK: each left-hand switch sends a marble back right
+           into a wheel standing high on the right, fed from above and from the
+           left. The far left coils down the edge, the bottom left rides a ferry
+           gear over to the middle, the far right drops through a hose. */
+        var f0 = { cx: 290, cy: 880, r: 55, n: 8, from: 180, to: 360, out: "S2R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [300, 300, 0], S1: [150, 440, 1], S2: [150, 830, 0], S3: [520, 860, 0] },
+          wheel: { cx: 520, cy: 570, notches: 10, entries: { S0R: -Math.PI / 2, S1R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 70 }, { id: "a1", x: 330 }, { id: "a2", x: 480 }, { id: "a3", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(560, 186).to(470, 216).wave(340, 276, 2, 18).to(300, 300) },
+            S0L:  { to: "S1", tr: T(300, 300).to(230, 360).to(150, 440) },
+            S0R:  { to: "wheel", tr: T(300, 300).to(390, 340).to(470, 350).to(520, 370).to(520, 500) },
+            S1L:  { to: "S2", tr: T(150, 440).to(90, 500).to(70, 580).coil(780, 28, 2).to(110, 800).to(150, 830) },
+            S1R:  { to: "wheel", tr: T(150, 440).to(240, 500).to(330, 545).to(450, 570) },
+            wout: { to: "S3", tr: T(520, 640).to(520, 860) },
+            S2L:  { to: "a0", tr: T(150, 830).to(90, 900).to(70, 980).to(70, RAIL_END) },
+            S2R:  { to: "fer:0", tr: T(150, 830).to(200, 870).to(i0[0], i0[1]) },
+            S2R2: { to: "a1", tr: T(o0[0], o0[1]).to(340, 960).to(330, RAIL_END) },
+            S3L:  { to: "a2", tr: T(520, 860).to(480, 940).to(480, RAIL_END) },
+            S3R:  { to: "a3", tr: T(520, 860).to(570, 900).hose(620, 990, 90).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [480, 213], cap: 4, p: [430, 108] },
+                  { ch: "S0L", at: [170, 420], cap: 3, p: [50, 280] },
+                  { ch: "S1L", at: [73, 570], cap: 4, p: [260, 650] },
+                  { ch: "wout", at: [520, 840], cap: 3, p: [640, 740] }],
+          chimes: [["top", 560, 186], ["S0R", 470, 350], ["S1R", 330, 545], ["S2L", 85, 920], ["S3L", 490, 920]],
+          sink: [405, 990],
+          back: {
+            trunk: { to: "sink", tr: T(600, 260).to(665, 330).coil(600, 28, 3).to(640, 700).to(600, 820).to(480, 920).to(405, 990) },
+            spine: { to: "sink", tr: T(220, 560).to(240, 680).loop(30, 1).to(330, 780).to(380, 900).to(405, 990) }
+          },
+          drains: [D("gate:0", "trunk", [[600, 260]]),
+                   D("wheel:S0R", "trunk", [[560, 380], [640, 420]]),
+                   D("gate:1", "spine", [[260, 400], [220, 560]]),
+                   D("wheel:S1R", "spine", [[230, 540], [220, 560]]),
+                   D("gate:2", "spine", [[170, 540], [220, 560]]),
+                   D("gate:3", "trunk", [[580, 760], [620, 780]])],
+          cogs: [[650, 470, 44, 1], [600, 505, 22, -1], [230, 960, 30, 1], [400, 760, 26, -1]]
+        };
+      },
+      function () {
+        /* 15 · MAELSTROM — THE UNDERTOW. The feed drops straight down the right
+           edge and the machine is read right to left: a wave carries the marbles
+           across to a WHIRLPOOL in the middle, whose drain runs UNDER the line to
+           the wheel, standing low on the left. The right column coils down to a
+           ferry gear that lifts the far right over its own top. */
+        var f0 = { cx: 590, cy: 800, r: 55, n: 8, from: 180, to: 360, out: "S2R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [555, 345, 0], S1: [330, 390, 1], S2: [540, 570, 0], S3: [380, 870, 0] },
+          wheel: { cx: 230, cy: 720, notches: 8, entries: { S1L: Math.PI, S2L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 110 }, { id: "a1", x: 300 }, { id: "a2", x: 470 }, { id: "a3", x: 640 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(610, 200).to(555, 345) },
+            S0L:  { to: "S1", tr: T(555, 345).to(500, 350).wave(360, 380, 2, 16).to(330, 390) },
+            S0R:  { to: "S2", tr: T(555, 345).to(625, 380).coil(510, 28, 2).to(605, 535).to(540, 570) },
+            S1L:  { to: "wheel", tr: T(330, 390).to(290, 405).boost(180, 450).to(150, 460).loop(36, -1).to(90, 490).to(60, 570).to(60, 650)
+                                    .to(90, 700).to(160, 720) },
+            S1R:  { to: "S3", tr: T(330, 390).to(380, 440).to(390, 523).whirl(390, 550, 55, 14, 1.75, 1)
+                                    .to(392, 770).over().to(392, 810).to(380, 870) },
+            S2L:  { to: "wheel", tr: T(540, 570).to(500, 640).to(470, 720).to(300, 720) },
+            S2R:  { to: "fer:0", tr: T(540, 570).to(560, 650).to(540, 730).to(i0[0], i0[1]) },
+            S2R2: { to: "a3", tr: T(o0[0], o0[1]).to(645, 900).to(640, RAIL_END) },
+            wout: { to: "a0", tr: T(230, 790).to(230, 880).to(130, 930).coil(1040, 26, 2).to(110, RAIL_END) },
+            S3L:  { to: "a1", tr: T(380, 870).to(315, 940).zebra(1).to(300, 1050).zebra(0).to(300, RAIL_END) },
+            S3R:  { to: "a2", tr: T(380, 870).to(455, 940).zebra(1).to(470, 1050).zebra(0).to(470, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [582, 270], cap: 4, p: [420, 200] },
+                  { ch: "S1R", at: [388, 508], cap: 3, p: [250, 545] },
+                  { ch: "wout", at: [190, 900], cap: 3, p: [70, 800] },
+                  { ch: "S2R2", at: [643, 950], cap: 3, p: [550, 930] }],
+          chimes: [["top", 600, 210], ["S1L", 300, 401], ["S2L", 400, 720], ["S3R", 455, 935], ["S2R2", 645, 880]],
+          sink: [380, 990],
+          back: {
+            trunk: { to: "sink", tr: T(640, 250).to(680, 400).to(680, 600).loop(26, -1).to(560, 900).to(380, 990) },
+            spine: { to: "sink", tr: T(300, 450).to(330, 600).to(300, 780).loop(28, 1).to(360, 900).to(380, 990) }
+          },
+          drains: [D("gate:0", "trunk", [[640, 250]]),
+                   D("gate:1", "spine", [[330, 440], [300, 450]]),
+                   D("wheel:S1L", "spine", [[200, 420], [280, 420], [300, 450]]),
+                   D("wheel:S2L", "trunk", [[560, 620], [650, 640], [680, 600]]),
+                   D("gate:2", "sink", [[260, 900], [330, 960], [380, 990]]),
+                   D("gate:3", "trunk", [[600, 650], [680, 600]])],
+          cogs: [[160, 230, 40, 1], [110, 270, 22, -1], [520, 1000, 30, 1], [300, 820, 24, -1]]
+        };
+      },
+      function () {
+        /* 16 · MAELSTROM — THE SPRINGBOARD. The top line ends on a ski JUMP that throws
+           every marble into the middle of the machine. The left half rides a
+           ferry gear over its top to the far left, where one way corkscrews down
+           the edge and the other swings through a hose; the right half waves down
+           to a wheel standing low on the right, fed from above and from the left. */
+        var f0 = { cx: 200, cy: 380, r: 60, n: 8, from: 10, to: -200, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [350, 340, 0], S1: [110, 500, 1], S2: [560, 480, 0], S3: [160, 900, 0] },
+          wheel: { cx: 460, cy: 760, notches: 10, entries: { S2L: -Math.PI / 2, S1R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 70 }, { id: "a1", x: 270 }, { id: "a2", x: 470 }, { id: "a3", x: 640 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(560, 186).to(470, 215).jump(350, 262, 30).to(350, 340) },
+            S0L:  { to: "fer:0", tr: T(350, 340).to(300, 365).to(i0[0], i0[1]) },
+            S0L2: { to: "S1", tr: T(o0[0], o0[1]).to(110, 500) },
+            S0R:  { to: "S2", tr: T(350, 340).to(390, 360).wave(530, 460, 2, 16).to(560, 480) },
+            S1L:  { to: "S3", tr: T(110, 500).to(70, 560).to(65, 650).cork(70, 830, 2, 16).to(160, 900) },
+            S1R:  { to: "wheel", tr: T(110, 500).to(180, 535).hose(260, 630, 60).to(300, 700).to(390, 760) },
+            S2L:  { to: "wheel", tr: T(560, 480).to(480, 540).to(460, 600).to(460, 690) },
+            S2R:  { to: "a3", tr: T(560, 480).to(635, 550).to(640, 640).coil(800, 26, 2).to(640, 880).to(640, RAIL_END) },
+            wout: { to: "a2", tr: T(460, 830).to(470, 900).to(470, RAIL_END) },
+            S3L:  { to: "a0", tr: T(160, 900).to(80, 970).to(70, RAIL_END) },
+            S3R:  { to: "a1", tr: T(160, 900).to(250, 960).to(270, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [500, 205], cap: 4, p: [520, 100] },
+                  { ch: "S1L", at: [66, 625], cap: 3, p: [240, 740] },
+                  { ch: "S2R", at: [639, 620], cap: 3, p: [560, 650] },
+                  { ch: "wout", at: [470, 950], cap: 3, p: [350, 880] }],
+          chimes: [["top", 560, 186], ["S0R", 395, 362], ["S1R", 340, 727], ["S2R", 640, 920], ["S3R", 250, 960]],
+          sink: [370, 995],
+          back: {
+            trunk: { to: "sink", tr: T(610, 230).to(680, 330).coil(560, 26, 3).to(600, 640).to(560, 880).to(370, 995) },
+            spine: { to: "sink", tr: T(200, 560).to(250, 700).loop(28, 1).to(300, 860).to(370, 995) }
+          },
+          drains: [D("gate:0", "trunk", [[610, 230]]),
+                   D("gate:1", "spine", [[130, 540], [200, 560]]),
+                   D("wheel:S1R", "spine", [[240, 600], [200, 560]]),
+                   D("wheel:S2L", "trunk", [[560, 560], [620, 600]]),
+                   D("gate:2", "trunk", [[660, 560], [620, 600]]),
+                   D("gate:3", "sink", [[420, 900], [370, 995]])],
+          cogs: [[120, 230, 36, 1], [80, 260, 18, -1], [560, 1000, 28, 1], [330, 470, 30, -1]]
+        };
+      },
+      function () {
+        /* 17 · MAELSTROM — THE RIPTIDE. A chain: the four switches zigzag down
+           the machine and each lets ONE way off — the far right coils down a
+           striped tube, the far left down a corkscrew — or hands the marble on
+           across the frame. The marble steps down a staircase to a ferry gear in
+           the top corner, is shot back right by a booster, and the last two
+           switches meet in a wheel standing low on the left. */
+        var f0 = { cx: 160, cy: 320, r: 60, n: 8, from: 15, to: -200, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [520, 260, 1], S1: [120, 440, 0], S2: [420, 580, 1], S3: [540, 800, 0] },
+          wheel: { cx: 260, cy: 820, notches: 8, entries: { S2L: -Math.PI / 2, S3L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 60 }, { id: "a1", x: 250 }, { id: "a2", x: 450 }, { id: "a3", x: 640 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(520, 260) },
+            S0L:  { to: "fer:0", tr: T(520, 260).to(480, 268).steps(250, 328, 3).to(i0[0], i0[1]) },
+            S0L2: { to: "S1", tr: T(o0[0], o0[1]).to(120, 440) },
+            S0R:  { to: "a3", tr: T(520, 260).to(610, 320).to(640, 400).coil(560, 26, 2).to(640, 600)
+                                    .zebra(1).to(640, 960).zebra(0).to(640, RAIL_END) },
+            S1L:  { to: "a0", tr: T(120, 440).to(70, 500).to(65, 640).cork(62, 900, 2, 14).to(60, RAIL_END) },
+            S1R:  { to: "S2", tr: T(120, 440).to(240, 505).boost(380, 570).to(420, 580) },
+            S2L:  { to: "wheel", tr: T(420, 580).to(330, 620).to(275, 660).to(260, 750) },
+            S2R:  { to: "S3", tr: T(420, 580).to(510, 640).to(560, 720).to(540, 800) },
+            S3L:  { to: "wheel", tr: T(540, 800).to(450, 830).to(330, 820) },
+            S3R:  { to: "a2", tr: T(540, 800).to(590, 870).hose(470, 970, 120).to(452, 1010).to(450, RAIL_END) },
+            wout: { to: "a1", tr: T(260, 890).to(250, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [562, 225], cap: 3, p: [400, 130] },
+                  { ch: "S0R", at: [638, 395], cap: 4, p: [550, 440] },
+                  { ch: "S1L", at: [66, 610], cap: 4, p: [170, 640] },
+                  { ch: "S1R", at: [236, 503], cap: 3, p: [300, 380] }],
+          chimes: [["top", 590, 200], ["S1R", 170, 467], ["S2R", 540, 690], ["S3L", 420, 830], ["S0R", 640, 700]],
+          sink: [360, 990],
+          back: {
+            trunk: { to: "sink", tr: T(600, 300).to(680, 380).to(690, 600).loop(26, -1).to(560, 900).to(360, 990) },
+            spine: { to: "sink", tr: T(200, 560).to(150, 700).coil(900, 24, 2).to(250, 960).to(360, 990) }
+          },
+          drains: [D("gate:0", "trunk", [[600, 230], [600, 300]]),
+                   D("gate:1", "trunk", [[670, 330], [680, 380]]),
+                   D("gate:2", "spine", [[110, 500], [200, 560]]),
+                   D("gate:3", "spine", [[170, 470], [200, 560]]),
+                   D("wheel:S2L", "spine", [[380, 560], [300, 560], [200, 560]]),
+                   D("wheel:S3L", "trunk", [[620, 840], [600, 860]])],
+          cogs: [[120, 160, 30, 1], [400, 900, 30, -1], [470, 380, 34, 1], [500, 410, 16, -1]]
+        };
+      },
+      function () {
+        /* 18 · MAELSTROM — THE VORTEX. The first switch splits the machine in
+           two halves that never meet. The left falls through a whirlpool to a
+           switch that throws one way over a ski JUMP and lowers the other down a
+           hose; the right is a chain — a wave, a booster — whose two switches
+           both feed a wheel standing in the middle, whose way out rides a ferry
+           gear over its top. The top line loops before anything else. */
+        var f0 = { cx: 500, cy: 880, r: 55, n: 8, from: 180, to: 360, out: "wout2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [330, 265, 0], S1: [140, 660, 1], S2: [470, 400, 0], S3: [620, 500, 1] },
+          wheel: { cx: 440, cy: 670, notches: 10, entries: { S2L: -Math.PI / 2, S3L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 100 }, { id: "a1", x: 330 }, { id: "a2", x: 555 }, { id: "a3", x: 655 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(560, 186).to(470, 216).loop(40, -1).to(400, 240).to(330, 265) },
+            S0L:  { to: "S1", tr: T(330, 265).to(240, 300).to(150, 350).to(90, 410).to(70, 470).whirl(120, 470, 50, 14, 1.75, -1)
+                                    .to(120, 580).over().to(125, 610).to(140, 660) },
+            S0R:  { to: "S2", tr: T(330, 265).to(360, 285).wave(445, 380, 2, 14).to(470, 400) },
+            S1L:  { to: "a0", tr: T(140, 660).to(75, 730).to(65, 800).hose(100, 960, 90).to(100, RAIL_END) },
+            S1R:  { to: "a1", tr: T(140, 660).to(210, 705).to(270, 730).jump(360, 775, 30).to(350, 860).to(330, RAIL_END) },
+            S2L:  { to: "wheel", tr: T(470, 400).to(445, 450).to(440, 600) },
+            S2R:  { to: "S3", tr: T(470, 400).to(510, 420).boost(600, 470).to(620, 500) },
+            S3L:  { to: "wheel", tr: T(620, 500).to(580, 560).to(575, 630).to(510, 670) },
+            S3R:  { to: "a3", tr: T(620, 500).to(655, 560).to(652, 640).coil(820, 20, 2).to(655, RAIL_END) },
+            wout: { to: "fer:0", tr: T(440, 740).to(i0[0], i0[1]) },
+            wout2: { to: "a2", tr: T(o0[0], o0[1]).to(555, 960).to(555, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [500, 206], cap: 4, p: [600, 280] },
+                  { ch: "S0L", at: [85, 430], cap: 4, p: [240, 450] },
+                  { ch: "S1R", at: [265, 728], cap: 3, p: [330, 620] },
+                  { ch: "S1L", at: [66, 790], cap: 3, p: [190, 840] }],
+          chimes: [["top", 560, 186], ["S0L", 240, 300], ["S2L", 443, 520], ["S1R", 350, 900], ["S3L", 577, 600]],
+          sink: [200, 1000],
+          back: {
+            east: { to: "sink", tr: T(620, 230).to(690, 330).coil(560, 26, 3).to(690, 700).to(620, 760).to(400, 960).to(200, 1000) },
+            west: { to: "sink", tr: T(220, 520).to(250, 640).loop(28, 1).to(260, 800).to(230, 920).to(200, 1000) }
+          },
+          drains: [D("gate:0", "east", [[620, 230]]),
+                   D("gate:1", "west", [[160, 420], [220, 520]]),
+                   D("gate:2", "west", [[240, 690], [255, 700]]),
+                   D("gate:3", "sink", [[110, 800], [150, 920], [200, 1000]]),
+                   D("wheel:S2L", "west", [[380, 500], [300, 520], [220, 520]]),
+                   D("wheel:S3L", "east", [[640, 620], [690, 660]])],
+          cogs: [[130, 180, 34, 1], [90, 220, 18, -1], [270, 1010, 26, 1], [600, 380, 22, -1]]
+        };
+      },
+      BASE5[3],                    // 19 · DEPTHS — THE BRAID
+      function () {
+        /* 20 · DEPTHS — THE SIPHON. The wheel sinks to the bottom of the machine
+           and its way out falls straight into the middle arrival: two halves feed
+           it, a left one that drops switch by switch and a right one that dives
+           behind the machine and comes back through a hose. The far left rides a
+           ferry gear over its top. */
+        var f0 = { cx: 95, cy: 520, r: 55, n: 8, from: -50, to: -205, out: "S1L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [420, 250, 0], S1: [200, 400, 1], S2: [570, 420, 0], S3: [210, 640, 0], S4: [560, 830, 1] },
+          wheel: { cx: 340, cy: 820, notches: 10, entries: { S3R: Math.PI, S2L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 48 }, { id: "a1", x: 175 }, { id: "a2", x: 340 }, { id: "a3", x: 480 }, { id: "a4", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(420, 250) },
+            S0L:  { to: "S1", tr: T(420, 250).to(330, 300).to(200, 400) },
+            S0R:  { to: "S2", tr: T(420, 250).to(480, 290).zebra(1).to(545, 360).zebra(0).to(570, 420) },
+            S1L:  { to: "fer:0", tr: T(200, 400).to(i0[0], i0[1]) },
+            S1L2: { to: "a0", tr: T(o0[0], o0[1]).to(48, 660).coil(880, 24, 2).to(48, RAIL_END) },
+            S1R:  { to: "S3", tr: T(200, 400).to(250, 460).to(250, 560).to(210, 640) },
+            S2L:  { to: "wheel", tr: T(570, 420).to(510, 470).under().to(440, 540).over().to(430, 570).boost(470, 680)
+                                     .to(470, 750).to(445, 795).to(410, 820) },
+            S2R:  { to: "S4", tr: T(570, 420).to(640, 490).to(650, 600).hose(560, 760, 100).to(560, 830) },
+            S3L:  { to: "a1", tr: T(210, 640).to(160, 700).to(150, 900).to(175, RAIL_END) },
+            S3R:  { to: "wheel", tr: T(210, 640).to(240, 720).to(260, 790).to(270, 820) },
+            wout: { to: "a2", tr: T(340, 890).to(340, RAIL_END) },
+            S4L:  { to: "a3", tr: T(560, 830).to(495, 900).to(480, RAIL_END) },
+            S4R:  { to: "a4", tr: T(560, 830).to(620, 900).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [520, 214], cap: 4, p: [500, 100] },
+                  { ch: "S0L", at: [275, 342], cap: 4, p: [240, 225] },
+                  { ch: "S2R", at: [648, 580], cap: 4, p: [560, 610] },
+                  { ch: "wout", at: [340, 1040], cap: 3, p: [410, 960] },
+                  { ch: "S1R", at: [250, 540], cap: 3, p: [360, 480] }],
+          chimes: [["top", 560, 200], ["S0L", 330, 300], ["S1R", 250, 520], ["S2R", 645, 530], ["S4R", 620, 960]],
+          sink: [255, 990],
+          back: {
+            east: { to: "sink", tr: T(600, 300).to(690, 380).coil(700, 26, 3).to(660, 900).to(500, 1000).to(255, 990) },
+            west: { to: "sink", tr: T(300, 330).to(300, 500).loop(30, 1).to(330, 600).to(290, 900).to(255, 990) }
+          },
+          drains: [D("gate:0", "east", [[600, 250], [600, 300]]),
+                   D("gate:1", "west", [[300, 330]]),
+                   D("gate:2", "east", [[690, 560]]),
+                   D("gate:3", "sink", [[300, 1000], [255, 990]]),
+                   D("gate:4", "west", [[300, 560]]),
+                   D("wheel:S3R", "west", [[290, 700]]),
+                   D("wheel:S2L", "east", [[560, 700], [660, 800]])],
+          cogs: [[660, 1000, 36, 1], [130, 980, 30, -1], [120, 700, 40, 1]]
+        };
+      },
+      function () {
+        /* 21 · DEPTHS — THE HIGH WHEEL. The wheel hangs HIGH on the right, under
+           the feed gear, and both its lines come from the left: one straight off
+           the first switch, one back across the machine over humps and a booster.
+           Under it the left drops down a hose to a pair of switches whose far
+           branch tunnels behind the middle of the machine to the right. */
+        var f0 = { cx: 390, cy: 700, r: 58, n: 8, from: 10, to: -250, out: "S3L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [350, 250, 1], S1: [130, 420, 0], S2: [90, 650, 1], S3: [530, 680, 0], S4: [215, 840, 0] },
+          wheel: { cx: 530, cy: 470, notches: 10, entries: { S0R: -Math.PI / 2, S1R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 45 }, { id: "a1", x: 165 }, { id: "a2", x: 340 }, { id: "a3", x: 475 }, { id: "a4", x: 625 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(350, 250) },
+            S0L:  { to: "S1", tr: T(350, 250).to(250, 310).to(130, 420) },
+            S0R:  { to: "wheel", tr: T(350, 250).to(440, 285).to(510, 320).to(530, 400) },
+            S1L:  { to: "S2", tr: T(130, 420).to(75, 470).hose(50, 580, 95).to(90, 650) },
+            S1R:  { to: "wheel", tr: T(130, 420).to(170, 440).wave(270, 452, 2, 16).boost(370, 462).to(460, 470) },
+            wout: { to: "S3", tr: T(530, 540).to(530, 680) },
+            S2L:  { to: "a0", tr: T(90, 650).to(45, 720).to(45, RAIL_END) },
+            S2R:  { to: "S4", tr: T(90, 650).to(150, 720).to(200, 790).to(215, 840) },
+            S3L:  { to: "fer:0", tr: T(530, 680).to(i0[0], i0[1]) },
+            S3L2: { to: "a2", tr: T(o0[0], o0[1]).to(355, 780).cork(345, 880, 1, 16).to(340, RAIL_END) },
+            S3R:  { to: "a4", tr: T(530, 680).to(615, 740).zebra(1).to(645, 840).zebra(0).to(645, 980).to(625, RAIL_END) },
+            S4L:  { to: "a1", tr: T(215, 840).to(170, 900).to(165, RAIL_END) },
+            S4R:  { to: "a3", tr: T(215, 840).to(265, 890).under().to(330, 960).to(420, 985).over().to(462, 1015).to(475, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [470, 219], cap: 4, p: [470, 110] },
+                  { ch: "S0L", at: [230, 330], cap: 4, p: [170, 245] },
+                  { ch: "S2R", at: [195, 785], cap: 3, p: [280, 680] },
+                  { ch: "S3R", at: [645, 960], cap: 3, p: [580, 950] },
+                  { ch: "S3L2", at: [341, 1040], cap: 3, p: [260, 1000] }],
+          chimes: [["top", 530, 203], ["S0L", 300, 280], ["S0R", 470, 300], ["S2R", 150, 720], ["S3R", 645, 900]],
+          sink: [560, 1000],
+          back: {
+            east: { to: "sink", tr: T(600, 300).to(690, 380).coil(620, 26, 3).to(690, 760).to(600, 900).to(560, 1000) },
+            west: { to: "sink", tr: T(260, 330).to(250, 560).loop(30, 1).to(300, 640).to(280, 800).to(400, 900).to(560, 1000) }
+          },
+          drains: [D("gate:0", "east", [[600, 250], [600, 300]]),
+                   D("gate:1", "west", [[260, 330]]),
+                   D("gate:2", "west", [[250, 790], [280, 800]]),
+                   D("gate:3", "sink", [[600, 1000], [560, 1000]]),
+                   D("gate:4", "sink", [[420, 1040], [560, 1000]]),
+                   D("wheel:S0R", "east", [[620, 380], [690, 400]]),
+                   D("wheel:S1R", "west", [[330, 520], [250, 560]])],
+          cogs: [[300, 560, 40, 1], [660, 1000, 30, -1], [120, 300, 26, 1]]
+        };
+      },
+      function () {
+        /* 22 · DEPTHS — THE ANCHOR. The wheel hangs high in the middle and the
+           whole machine is slung under it: the first switch boards it from above
+           or walks a marble down a staircase to a second that boards it from the
+           right or drops it down the far side. Under the wheel, a jump to the
+           right and a ferry gear to the left open on four arrivals. */
+        var f0 = { cx: 125, cy: 600, r: 60, n: 8, from: 40, to: -200, out: "S2L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [440, 235, 0], S1: [640, 380, 1], S2: [320, 650, 0], S3: [120, 820, 1], S4: [420, 820, 0] },
+          wheel: { cx: 320, cy: 440, notches: 10, entries: { S0L: Math.PI, S1L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 45 }, { id: "a1", x: 185 }, { id: "a2", x: 335 }, { id: "a3", x: 485 }, { id: "a4", x: 640 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(440, 235) },
+            S0L:  { to: "wheel", tr: T(440, 235).to(380, 252).hose(200, 320, 150).to(150, 370).to(170, 420).to(250, 440) },
+            S0R:  { to: "S1", tr: T(440, 235).to(470, 250).steps(620, 340, 3).to(640, 380) },
+            S1L:  { to: "wheel", tr: T(640, 380).to(560, 410).to(480, 435).to(390, 440) },
+            S1R:  { to: "a4", tr: T(640, 380).to(648, 450).to(648, 620).coil(760, 20, 2).zebra(1).to(645, 960).zebra(0).to(640, RAIL_END) },
+            wout: { to: "S2", tr: T(320, 510).to(320, 650) },
+            S2L:  { to: "fer:0", tr: T(320, 650).to(i0[0], i0[1]) },
+            S2L2: { to: "S3", tr: T(o0[0], o0[1]).to(55, 690).to(70, 760).to(120, 820) },
+            S2R:  { to: "S4", tr: T(320, 650).to(350, 670).jump(470, 710).to(462, 770).to(420, 820) },
+            S3L:  { to: "a0", tr: T(120, 820).to(55, 890).to(45, RAIL_END) },
+            S3R:  { to: "a1", tr: T(120, 820).to(185, 890).to(185, RAIL_END) },
+            S4L:  { to: "a2", tr: T(420, 820).to(350, 890).to(335, RAIL_END) },
+            S4R:  { to: "a3", tr: T(420, 820).to(485, 890).to(485, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [520, 210], cap: 4, p: [550, 100] },
+                  { ch: "S1R", at: [648, 600], cap: 3, p: [575, 590] },
+                  { ch: "wout", at: [320, 640], cap: 2, p: [200, 520] },
+                  { ch: "S4R", at: [485, 1000], cap: 3, p: [555, 985] },
+                  { ch: "S3R", at: [185, 1000], cap: 3, p: [270, 930] }],
+          chimes: [["top", 560, 198], ["S0L", 160, 395], ["S1L", 520, 422], ["S4L", 350, 900], ["S3L", 55, 940]],
+          sink: [410, 1000],
+          back: {
+            east: { to: "sink", tr: T(560, 290).to(690, 360).coil(700, 24, 3).to(690, 860).to(600, 940).to(410, 1000) },
+            west: { to: "sink", tr: T(250, 540).to(240, 640).loop(28, 1).to(260, 760).to(300, 900).to(410, 1000) }
+          },
+          drains: [D("gate:0", "east", [[560, 260], [560, 290]]),
+                   D("gate:1", "east", [[690, 560]]),
+                   D("gate:2", "west", [[280, 600], [245, 620]]),
+                   D("gate:3", "sink", [[450, 1030], [410, 1000]]),
+                   D("gate:4", "sink", [[260, 1030], [410, 1000]]),
+                   D("wheel:S0L", "west", [[230, 480], [250, 540]]),
+                   D("wheel:S1L", "east", [[500, 470], [600, 520], [690, 560]])],
+          cogs: [[90, 260, 34, 1], [440, 580, 30, -1], [470, 620, 16, 1]]
+        };
+      },
+      function () {
+        /* 23 · DEPTHS — THE MINE SHAFT. A mine shaft in floors: the top runs
+           left over humps, the first floor back right through a booster to a
+           ferry gear that turns the marble round, the next left again over a jump,
+           the last right into a wheel low on the right. The far left falls the
+           whole height down a hose, and a whirlpool swallows the middle left. */
+        var f0 = { cx: 600, cy: 400, r: 55, n: 8, from: 200, to: 450, out: "S0R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [130, 280, 1], S1: [430, 500, 0], S2: [170, 650, 1], S3: [240, 860, 0], S4: [530, 900, 1] },
+          wheel: { cx: 530, cy: 720, notches: 10, entries: { S1R: -Math.PI / 2, S2R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 45 }, { id: "a1", x: 180 }, { id: "a2", x: 315 }, { id: "a3", x: 450 }, { id: "a4", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(480, 212).wave(220, 255, 3, 16).to(130, 280) },
+            S0L:  { to: "a0", tr: T(130, 280).to(75, 330).hose(45, 480, 90).to(45, RAIL_END) },
+            S0R:  { to: "fer:0", tr: T(130, 280).to(220, 322).boost(380, 352).to(i0[0], i0[1]) },
+            S0R2: { to: "S1", tr: T(o0[0], o0[1]).to(430, 500) },
+            S1L:  { to: "S2", tr: T(430, 500).to(330, 540).jump(210, 570).to(200, 620).to(170, 650) },
+            S1R:  { to: "wheel", tr: T(430, 500).to(490, 560).to(525, 600).to(530, 650) },
+            S2L:  { to: "S3", tr: T(170, 650).to(120, 700).whirl(150, 760, 46, 12, 1.5, -1).to(160, 820).over().to(200, 830).to(240, 860) },
+            S2R:  { to: "wheel", tr: T(170, 650).to(260, 690).to(460, 720) },
+            wout: { to: "S4", tr: T(530, 790).to(530, 900) },
+            S3L:  { to: "a1", tr: T(240, 860).to(180, 930).to(180, RAIL_END) },
+            S3R:  { to: "a2", tr: T(240, 860).to(310, 930).to(315, RAIL_END) },
+            S4L:  { to: "a3", tr: T(530, 900).to(460, 960).to(450, RAIL_END) },
+            S4R:  { to: "a4", tr: T(530, 900).to(610, 960).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [540, 200], cap: 3, p: [500, 100] },
+                  { ch: "S0L", at: [45, 900], cap: 4, p: [110, 980] },
+                  { ch: "S0R2", at: [460, 492], cap: 3, p: [600, 530] },
+                  { ch: "S3R", at: [315, 1000], cap: 3, p: [380, 990] },
+                  { ch: "S2R", at: [260, 690], cap: 2, p: [390, 780] }],
+          chimes: [["top", 560, 194], ["S0R", 180, 302], ["S2R", 300, 696], ["S1R", 505, 575], ["S3L", 180, 980]],
+          sink: [248, 1000],
+          back: {
+            east: { to: "sink", tr: T(560, 260).to(690, 300).coil(560, 24, 3).to(690, 860).to(560, 1030).to(400, 1050).to(248, 1000) },
+            west: { to: "sink", tr: T(300, 400).to(260, 460).loop(28, -1).to(300, 600).to(340, 800).to(250, 900).to(248, 1000) }
+          },
+          drains: [D("gate:0", "east", [[560, 240], [560, 260]]),
+                   D("gate:1", "west", [[90, 760], [200, 760], [340, 800]]),
+                   D("gate:2", "west", [[400, 470], [300, 400]]),
+                   D("gate:3", "sink", [[280, 1040], [248, 1000]]),
+                   D("gate:4", "west", [[300, 760], [340, 800]]),
+                   D("wheel:S1R", "east", [[620, 560], [690, 520]]),
+                   D("wheel:S2R", "west", [[330, 760], [340, 800]])],
+          cogs: [[300, 470, 30, 1], [640, 620, 34, -1], [100, 560, 22, 1]]
+        };
+      },
+      function () {
+        /* 24 · DEPTHS — THE CROSSCURRENT. A staircase brings the top down to a
+           wheel hanging on the left, boarded round a loop from the left and from
+           the right; under it a ferry gear carries the right half over, and the
+           last two switches throw their marbles ACROSS each other, a hose sweeping
+           over a tunnel. The far right winds down a corkscrew and a booster. */
+        var f0 = { cx: 470, cy: 700, r: 60, n: 8, from: 200, to: 400, out: "S2R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [340, 320, 0], S1: [560, 470, 1], S2: [230, 690, 0], S3: [100, 820, 1], S4: [470, 820, 0] },
+          wheel: { cx: 230, cy: 520, notches: 12, entries: { S0L: Math.PI, S1L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 45 }, { id: "a1", x: 175 }, { id: "a2", x: 315 }, { id: "a3", x: 495 }, { id: "a4", x: 630 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 185).to(490, 218).steps(355, 300, 3).to(340, 320) },
+            S0L:  { to: "wheel", tr: T(340, 320).to(250, 326).to(170, 336).loop(30, -1).to(120, 352).to(95, 410).to(110, 480).to(160, 520) },
+            S0R:  { to: "S1", tr: T(340, 320).to(420, 350).zebra(1).to(520, 420).zebra(0).to(560, 470) },
+            S1L:  { to: "wheel", tr: T(560, 470).to(470, 500).to(300, 520) },
+            S1R:  { to: "a4", tr: T(560, 470).to(635, 530).to(648, 650).cork(650, 790, 1.5, 14).boost(640, 930).to(630, RAIL_END) },
+            wout: { to: "S2", tr: T(230, 590).to(230, 690) },
+            S2L:  { to: "S3", tr: T(230, 690).to(100, 820) },
+            S2R:  { to: "fer:0", tr: T(230, 690).to(330, 700).to(i0[0], i0[1]) },
+            S2R2: { to: "S4", tr: T(o0[0], o0[1]).to(490, 780).to(470, 820) },
+            S3L:  { to: "a0", tr: T(100, 820).to(50, 880).to(45, RAIL_END) },
+            S3R:  { to: "a2", tr: T(100, 820).to(160, 850).hose(305, 950, 75).to(315, 990).to(315, RAIL_END) },
+            S4L:  { to: "a1", tr: T(470, 820).to(400, 860).under().to(220, 950).over().to(185, 990).to(175, RAIL_END) },
+            S4R:  { to: "a3", tr: T(470, 820).to(495, 880).to(495, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [530, 206], cap: 3, p: [500, 100] },
+                  { ch: "S1R", at: [648, 640], cap: 3, p: [570, 650] },
+                  { ch: "S2L", at: [130, 790], cap: 3, p: [60, 650] },
+                  { ch: "S4R", at: [495, 1000], cap: 3, p: [560, 990] },
+                  { ch: "S3L", at: [45, 1000], cap: 4, p: [110, 1000] }],
+          chimes: [["top", 560, 196], ["S0R", 390, 340], ["S1L", 400, 510], ["S3L", 50, 900], ["S4R", 495, 940]],
+          sink: [405, 1000],
+          back: {
+            east: { to: "sink", tr: T(600, 280).to(690, 340).coil(600, 24, 3).to(690, 860).to(560, 1040).to(405, 1000) },
+            west: { to: "sink", tr: T(60, 380).to(50, 450).loop(28, 1).to(120, 600).to(330, 780).to(380, 900).to(405, 1000) }
+          },
+          drains: [D("gate:0", "east", [[580, 240], [600, 280]]),
+                   D("gate:1", "east", [[690, 660]]),
+                   D("gate:2", "west", [[160, 720], [200, 690]]),
+                   D("gate:3", "sink", [[450, 1040], [405, 1000]]),
+                   D("gate:4", "west", [[60, 760], [120, 600]]),
+                   D("wheel:S0L", "west", [[60, 440]]),
+                   D("wheel:S1L", "east", [[420, 560], [600, 600], [690, 620]])],
+          cogs: [[420, 600, 30, 1], [600, 330, 24, -1], [330, 1020, 26, 1], [300, 420, 36, -1]]
+        };
+      },
+      BASE5[4],                    // 25 · CLOCKWORK — THE CHAIN
+      function () {
+        /* 26 · CLOCKWORK — THE LANDINGS. The line comes down the machine in
+           flights, left, right, left: a staircase from the feed gear, a booster
+           that throws the marble over a ski jump onto the second landing, a second
+           staircase back. Every landing is a switch that lets a marble off down the
+           side — a ferry gear and a zebra tube on the left, a corkscrew on the
+           right — and the wheel low in the middle catches the third flight. */
+        var f0 = { cx: 90, cy: 470, r: 52, n: 8, from: -40, to: -190, out: "S0L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [200, 330, 0], S1: [600, 505, 1], S2: [200, 640, 0], S3: [625, 690, 0], S4: [330, 900, 0], S5: [610, 990, 1] },
+          wheel: { cx: 400, cy: 740, notches: 8, entries: { S2R: Math.PI, S3L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 55 }, { id: "a1", x: 165 }, { id: "a2", x: 275 },
+                { id: "a3", x: 390 }, { id: "a4", x: 505 }, { id: "a5", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"], S5: ["S5L", "S5R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(590, 180).to(500, 208).steps(260, 300, 4).to(200, 330) },
+            S0L:  { to: "fer:0", tr: T(200, 330).to(150, 390).to(i0[0], i0[1]) },
+            S0L2: { to: "a0", tr: T(o0[0], o0[1]).to(30, 560).to(28, 720).zebra(1).to(30, 990).zebra(0).to(55, RAIL_END) },
+            S0R:  { to: "S1", tr: T(200, 330).to(280, 370).to(350, 390).boost(465, 422).jump(592, 458).to(600, 505) },
+            S1L:  { to: "S2", tr: T(600, 505).to(510, 515).to(430, 530).steps(260, 610, 3).to(200, 640) },
+            S1R:  { to: "S3", tr: T(600, 505).to(640, 565).to(640, 640).to(625, 690) },
+            S2L:  { to: "a1", tr: T(200, 640).to(185, 700).to(185, 1000).to(165, RAIL_END) },
+            S2R:  { to: "wheel", tr: T(200, 640).to(250, 710).to(290, 740).to(330, 740) },
+            S3L:  { to: "wheel", tr: T(625, 690).to(560, 735).to(470, 740) },
+            S3R:  { to: "S5", tr: T(625, 690).to(655, 740).to(660, 800).cork(655, 920, 1, 14).to(610, 990) },
+            wout: { to: "S4", tr: T(400, 810).to(390, 850).to(330, 900) },
+            S4L:  { to: "a2", tr: T(330, 900).to(285, 970).to(275, RAIL_END) },
+            S4R:  { to: "a3", tr: T(330, 900).to(380, 970).to(390, RAIL_END) },
+            S5L:  { to: "a4", tr: T(610, 990).to(530, 1030).to(505, RAIL_END) },
+            S5R:  { to: "a5", tr: T(610, 990).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [530, 200], cap: 3, p: [430, 310] },
+                  { ch: "S0R", at: [350, 390], cap: 3, p: [300, 480] },
+                  { ch: "S0L2", at: [28, 700], cap: 4, p: [100, 780] },
+                  { ch: "S1R", at: [625, 620], cap: 3, p: [470, 610] },
+                  { ch: "S2L", at: [185, 900], cap: 3, p: [100, 980] },
+                  { ch: "S3R", at: [660, 800], cap: 3, p: [530, 840] }],
+          chimes: [["top", 560, 190], ["S0R", 300, 376], ["S1R", 605, 515], ["S2R", 270, 728], ["S4L", 305, 940]],
+          sink: [330, 990],
+          back: {
+            east: { to: "sink", tr: T(640, 240).to(670, 320).coil(600, 18, 3).to(662, 760).to(560, 880).to(330, 990) },
+            west: { to: "sink", tr: T(250, 440).to(240, 520).loop(24, -1).to(225, 640).to(240, 780).to(280, 900).to(330, 990) }
+          },
+          drains: [D("gate:0", "east", [[640, 240]]),
+                   D("gate:1", "west", [[250, 440]]),
+                   D("gate:2", "west", [[110, 600], [225, 640]]),
+                   D("gate:3", "east", [[668, 560]]),
+                   D("gate:4", "west", [[240, 780]]),
+                   D("gate:5", "east", [[662, 760]]),
+                   D("wheel:S2R", "west", [[235, 720]]),
+                   D("wheel:S3L", "east", [[662, 720]])],
+          cogs: [[95, 235, 38, 1], [148, 286, 18, -1], [610, 380, 24, 1]]
+        };
+      },
+      function () {
+        /* 27 · CLOCKWORK — THE GANTRY. The wheel hangs HIGH in the middle,
+           boarded from both sides right under the feed: from the left after a wave
+           and a ski jump, from the right across from a second switch. Everything
+           else hangs beneath it — a tree of three switches down the middle, a ferry
+           gear and a hose down the right — so a marble that boards the wheel still
+           has two decisions to fall through. */
+        var f0 = { cx: 590, cy: 650, r: 55, n: 8, from: -20, to: 200, out: "S1R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [420, 220, 1], S1: [610, 420, 0], S2: [330, 620, 0], S3: [150, 760, 1], S4: [460, 780, 0], S5: [590, 960, 1] },
+          wheel: { cx: 330, cy: 420, notches: 10, entries: { S0L: Math.PI, S1L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 55 }, { id: "a1", x: 165 }, { id: "a2", x: 275 },
+                { id: "a3", x: 390 }, { id: "a4", x: 505 }, { id: "a5", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"], S5: ["S5L", "S5R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 180).to(545, 194).wave(440, 216, 2, 16).to(420, 220) },
+            S0L:  { to: "wheel", tr: T(420, 220).to(330, 245).to(260, 262).jump(112, 330).to(104, 380).to(150, 414).to(260, 420) },
+            S0R:  { to: "S1", tr: T(420, 220).to(480, 280).to(545, 345).to(610, 420) },
+            S1L:  { to: "wheel", tr: T(610, 420).to(480, 425).to(400, 420) },
+            S1R:  { to: "fer:0", tr: T(610, 420).to(650, 480).to(660, 560).to(i0[0], i0[1]) },
+            S1R2: { to: "S5", tr: T(o0[0], o0[1]).to(528, 730).hose(615, 870, 70).to(590, 960) },
+            wout: { to: "S2", tr: T(330, 490).to(330, 620) },
+            S2L:  { to: "S3", tr: T(330, 620).to(300, 640).steps(180, 720, 2).to(150, 760) },
+            S2R:  { to: "S4", tr: T(330, 620).to(400, 690).to(460, 780) },
+            S3L:  { to: "a0", tr: T(150, 760).to(90, 800).to(36, 870).cork(34, 1000, 1.5, 12).to(55, RAIL_END) },
+            S3R:  { to: "a1", tr: T(150, 760).to(190, 830).to(190, 990).to(165, RAIL_END) },
+            S4L:  { to: "a2", tr: T(460, 780).to(400, 860).to(310, 950).to(275, RAIL_END) },
+            S4R:  { to: "a3", tr: T(460, 780).to(465, 880).to(400, 980).to(390, RAIL_END) },
+            S5L:  { to: "a4", tr: T(590, 960).to(525, 1010).to(505, RAIL_END) },
+            S5R:  { to: "a5", tr: T(590, 960).to(620, 1010).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [548, 193], cap: 3, p: [590, 250] },
+                  { ch: "S0L", at: [300, 253], cap: 3, p: [250, 170] },
+                  { ch: "S1R", at: [655, 560], cap: 3, p: [500, 580] },
+                  { ch: "wout", at: [330, 610], cap: 3, p: [140, 520] },
+                  { ch: "S2R", at: [450, 765], cap: 3, p: [303, 836] },
+                  { ch: "S3R", at: [190, 960], cap: 3, p: [110, 930] }],
+          chimes: [["top", 560, 190], ["S0R", 510, 310], ["S1L", 450, 424], ["S4L", 360, 900], ["S2R", 365, 655]],
+          sink: [240, 1000],
+          back: {
+            east: { to: "sink", tr: T(660, 230).to(676, 320).coil(620, 18, 3).to(660, 740).loop(22, 1).to(560, 900).to(400, 960).to(240, 1000) },
+            west: { to: "sink", tr: T(120, 460).to(80, 560).to(95, 680).coil(820, 18, 2).to(150, 920).to(240, 1000) },
+            spine: { to: "sink", tr: T(330, 540).to(290, 620).to(250, 740).to(240, 880).to(240, 1000) }
+          },
+          drains: [D("gate:0", "east", [[660, 230]]),
+                   D("gate:1", "west", [[300, 300], [180, 380], [120, 460]]),
+                   D("gate:2", "east", [[676, 500]]),
+                   D("gate:3", "spine", [[330, 540]]),
+                   D("gate:4", "spine", [[275, 690]]),
+                   D("gate:5", "west", [[150, 920]]),
+                   D("wheel:S0L", "west", [[120, 460]]),
+                   D("wheel:S1L", "east", [[620, 470], [676, 520]])],
+          cogs: [[230, 640, 30, 1], [262, 604, 14, -1], [640, 860, 24, -1]]
+        };
+      },
+      function () {
+        /* 28 · CLOCKWORK — THE LIFT. The first switch stands on the right, and
+           its left way runs back across the whole machine down a staircase to the
+           far left. The wheel takes one line from each side; under it a big ferry
+           gear low on the left LIFTS the marble over its top and lays it on a hose
+           to the last switch, while the right edge drops through a booster. */
+        var f0 = { cx: 210, cy: 830, r: 66, n: 9, from: 20, to: -150, out: "S3L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [540, 300, 0], S1: [170, 430, 1], S2: [620, 470, 0], S3: [440, 800, 0], S4: [115, 965, 1], S5: [575, 970, 0] },
+          wheel: { cx: 420, cy: 620, notches: 10, entries: { S1R: Math.PI, S2L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 55 }, { id: "a1", x: 165 }, { id: "a2", x: 275 },
+                { id: "a3", x: 390 }, { id: "a4", x: 505 }, { id: "a5", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"], S5: ["S5L", "S5R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(605, 195).to(575, 250).to(540, 300) },
+            S0L:  { to: "S1", tr: T(540, 300).to(330, 360).steps(220, 415, 2).to(170, 430) },
+            S0R:  { to: "S2", tr: T(540, 300).to(590, 360).to(620, 470) },
+            S1L:  { to: "a0", tr: T(170, 430).to(110, 480).to(40, 560).to(38, 1000).to(55, RAIL_END) },
+            S1R:  { to: "wheel", tr: T(170, 430).to(250, 520).to(300, 590).to(350, 620) },
+            S2L:  { to: "wheel", tr: T(620, 470).to(560, 560).to(490, 620) },
+            S2R:  { to: "S5", tr: T(620, 470).to(660, 540).to(662, 640).boost(662, 780).to(650, 880).to(575, 970) },
+            wout: { to: "S3", tr: T(420, 690).to(440, 800) },
+            S3L:  { to: "fer:0", tr: T(440, 800).to(340, 845).to(i0[0], i0[1]) },
+            S3L2: { to: "S4", tr: T(o0[0], o0[1]).hose(105, 890, 90).to(115, 965) },
+            S3R:  { to: "a3", tr: T(440, 800).to(420, 870).coil(1000, 22, 2).to(390, RAIL_END) },
+            S4L:  { to: "a1", tr: T(115, 965).to(150, 1010).to(165, RAIL_END) },
+            S4R:  { to: "a2", tr: T(115, 965).to(260, 1000).to(275, RAIL_END) },
+            S5L:  { to: "a4", tr: T(575, 970).to(515, 1010).to(505, RAIL_END) },
+            S5R:  { to: "a5", tr: T(575, 970).to(615, 1010).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [578, 245], cap: 3, p: [420, 175] },
+                  { ch: "S0L", at: [340, 357], cap: 3, p: [250, 240] },
+                  { ch: "S1L", at: [40, 620], cap: 4, p: [100, 640] },
+                  { ch: "S2R", at: [662, 640], cap: 3, p: [590, 730] },
+                  { ch: "S3L", at: [330, 850], cap: 3, p: [300, 690] },
+                  { ch: "S0R", at: [605, 420], cap: 3, p: [420, 450] }],
+          chimes: [["top", 590, 222], ["S1R", 270, 550], ["S2L", 540, 575], ["S3R", 425, 870], ["S0R", 580, 345]],
+          sink: [330, 990],
+          back: {
+            east: { to: "sink", tr: T(620, 240).to(676, 320).to(676, 560).coil(760, 18, 2).to(620, 880).to(330, 990) },
+            west: { to: "sink", tr: T(250, 580).to(200, 640).loop(24, -1).to(150, 700).to(300, 900).to(330, 990) }
+          },
+          drains: [D("gate:0", "east", [[620, 240]]),
+                   D("gate:1", "west", [[360, 420], [290, 520], [250, 580]]),
+                   D("gate:2", "west", [[150, 560], [200, 640]]),
+                   D("gate:3", "east", [[676, 560]]),
+                   D("gate:4", "sink", [[380, 900], [330, 990]]),
+                   D("gate:5", "east", [[640, 300], [676, 330]]),
+                   D("wheel:S1R", "west", [[250, 580]]),
+                   D("wheel:S2L", "east", [[650, 520], [676, 540]])],
+          cogs: [[90, 250, 36, 1], [140, 300, 16, -1], [500, 880, 24, 1]]
+        };
+      },
+      function () {
+        /* 29 · CLOCKWORK — THE CROSSWORK. Two lines cross the machine in an X:
+           from the top-left switch one dives under the other's zebra tube and comes
+           up through a hose to a switch low on the right; from the top-right, the
+           other runs down to a switch low on the left. The wheel takes one from each
+           of them, so a marble seldom ends on the side it started; the outer edges
+           fall through a ferry gear and a whirlpool. */
+        var f0 = { cx: 85, cy: 500, r: 50, n: 8, from: -40, to: -190, out: "S1L2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [380, 260, 0], S1: [180, 360, 1], S2: [600, 460, 0], S3: [130, 700, 1], S4: [600, 740, 0], S5: [360, 975, 1] },
+          wheel: { cx: 360, cy: 800, notches: 10, entries: { S3R: Math.PI, S4L: 0 }, out: "wout" },
+          arr: [{ id: "a0", x: 55 }, { id: "a1", x: 165 }, { id: "a2", x: 275 },
+                { id: "a3", x: 390 }, { id: "a4", x: 505 }, { id: "a5", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"], S5: ["S5L", "S5R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 180).to(520, 200).steps(410, 252, 2).to(380, 260) },
+            S0L:  { to: "S1", tr: T(380, 260).to(280, 300).to(180, 360) },
+            S0R:  { to: "S2", tr: T(380, 260).wave(510, 320, 2, 16).to(600, 460) },
+            S1L:  { to: "fer:0", tr: T(180, 360).to(140, 410).to(i0[0], i0[1]) },
+            S1L2: { to: "a0", tr: T(o0[0], o0[1]).to(36, 580).to(36, 1000).to(55, RAIL_END) },
+            S1R:  { to: "S4", tr: T(180, 360).to(260, 440).to(320, 500).under().to(360, 620).over().to(380, 660).hose(520, 728, 10).to(600, 740) },
+            S2L:  { to: "S3", tr: T(600, 460).to(490, 480).to(430, 512).zebra(1).to(360, 560).to(250, 650).zebra(0).to(130, 700) },
+            S2R:  { to: "a5", tr: T(600, 460).to(650, 520).to(662, 585).whirl(615, 585, 47, 12, 1.5, 1).to(625, 650).over().to(660, 700).to(662, 1000).to(620, RAIL_END) },
+            S3L:  { to: "a1", tr: T(130, 700).to(105, 780).to(110, 1000).to(165, RAIL_END) },
+            S3R:  { to: "wheel", tr: T(130, 700).to(200, 760).to(290, 800) },
+            S4L:  { to: "wheel", tr: T(600, 740).to(530, 785).to(430, 800) },
+            S4R:  { to: "a4", tr: T(600, 740).to(615, 820).to(600, 1000).to(505, RAIL_END) },
+            wout: { to: "S5", tr: T(360, 870).to(360, 975) },
+            S5L:  { to: "a2", tr: T(360, 975).to(290, 1020).to(275, RAIL_END) },
+            S5R:  { to: "a3", tr: T(360, 975).to(385, 1020).to(390, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [535, 197], cap: 3, p: [580, 290] },
+                  { ch: "S0L", at: [240, 325], cap: 3, p: [150, 190] },
+                  { ch: "S1R", at: [260, 440], cap: 3, p: [220, 550] },
+                  { ch: "S2L", at: [490, 480], cap: 3, p: [480, 600] },
+                  { ch: "S3L", at: [108, 900], cap: 3, p: [210, 890] },
+                  { ch: "S4R", at: [612, 880], cap: 3, p: [510, 890] }],
+          chimes: [["top", 560, 190], ["S0R", 450, 295], ["S1R", 300, 480], ["S2L", 420, 520], ["S5L", 300, 1015]],
+          sink: [455, 990],
+          back: {
+            east: { to: "sink", tr: T(640, 240).to(676, 330).to(676, 640).coil(820, 18, 2).to(600, 920).to(455, 990) },
+            west: { to: "sink", tr: T(240, 420).to(200, 500).to(190, 620).loop(22, -1).to(200, 760).to(300, 900).to(455, 990) }
+          },
+          drains: [D("gate:0", "east", [[640, 240]]),
+                   D("gate:1", "west", [[280, 350], [240, 420]]),
+                   D("gate:2", "west", [[240, 420]]),
+                   D("gate:3", "east", [[676, 500]]),
+                   D("gate:4", "west", [[200, 760]]),
+                   D("gate:5", "east", [[676, 830]]),
+                   D("wheel:S3R", "west", [[195, 745]]),
+                   D("wheel:S4L", "east", [[650, 760], [676, 700]])],
+          cogs: [[380, 430, 34, 1], [416, 396, 16, -1], [60, 250, 28, 1]]
+        };
+      },
+      function () {
+        /* 30 · CLOCKWORK — THE GRAND CLOCK. The last machine. The first switch
+           stands at twelve and sends a marble round the dial either way: clockwise,
+           over a ski jump, down the booster on the right edge and over a ferry gear
+           onto a hose; counter-clockwise, down a staircase to a chain of three
+           switches on the left, two of which may drop it into the wheel — from above,
+           or through a loop. The wheel's way out falls straight through a coil to
+           an arrival of its own, and the chain ends on a second staircase. */
+        var f0 = { cx: 580, cy: 770, r: 55, n: 8, from: 20, to: -200, out: "S0R2" }, i0 = ferPt(f0, f0.from), o0 = ferPt(f0, f0.to);
+        return {
+          fer: [f0],
+          sw: { S0: [400, 240, 0], S1: [160, 380, 1], S2: [90, 600, 0], S3: [100, 790, 1], S4: [280, 940, 0], S5: [560, 960, 1] },
+          wheel: { cx: 400, cy: 680, notches: 12, entries: { S1R: -Math.PI / 2, S2R: Math.PI }, out: "wout" },
+          arr: [{ id: "a0", x: 55 }, { id: "a1", x: 165 }, { id: "a2", x: 275 },
+                { id: "a3", x: 390 }, { id: "a4", x: 505 }, { id: "a5", x: 620 }],
+          out: { S0: ["S0L", "S0R"], S1: ["S1L", "S1R"], S2: ["S2L", "S2R"], S3: ["S3L", "S3R"], S4: ["S4L", "S4R"], S5: ["S5L", "S5R"] },
+          ch: {
+            top:  { to: "S0", tr: T(H0[0], H0[1]).to(600, 178).to(530, 195).to(460, 215).to(400, 240) },
+            S0L:  { to: "S1", tr: T(400, 240).to(290, 280).steps(200, 340, 2).to(160, 380) },
+            S0R:  { to: "fer:0", tr: T(400, 240).to(450, 330).to(515, 395).jump(640, 465).to(650, 520).to(652, 600).boost(650, 720).to(i0[0], i0[1]) },
+            S0R2: { to: "S5", tr: T(o0[0], o0[1]).to(515, 820).hose(545, 900, 80).to(560, 960) },
+            S1L:  { to: "S2", tr: T(160, 380).to(105, 430).to(64, 480).cork(56, 560, 1, 12).to(90, 600) },
+            S1R:  { to: "wheel", tr: T(160, 380).to(260, 430).to(360, 460).to(400, 500).to(400, 610) },
+            S2L:  { to: "S3", tr: T(90, 600).to(55, 680).to(60, 750).to(100, 790) },
+            S2R:  { to: "wheel", tr: T(90, 600).to(165, 635).loop(28, 1).to(250, 668).to(330, 680) },
+            S3L:  { to: "a0", tr: T(100, 790).to(45, 850).to(30, 920).to(30, 1000).to(55, RAIL_END) },
+            S3R:  { to: "S4", tr: T(100, 790).steps(280, 940, 4) },
+            S4L:  { to: "a1", tr: T(280, 940).to(195, 1000).to(165, RAIL_END) },
+            S4R:  { to: "a2", tr: T(280, 940).to(292, 1010).to(275, RAIL_END) },
+            wout: { to: "a3", tr: T(400, 750).to(400, 880).coil(1000, 20, 2).to(390, RAIL_END) },
+            S5L:  { to: "a4", tr: T(560, 960).to(515, 1010).to(505, RAIL_END) },
+            S5R:  { to: "a5", tr: T(560, 960).to(610, 1010).to(620, RAIL_END) }
+          },
+          gates: [{ ch: "top", at: [530, 195], cap: 3, p: [590, 270] },
+                  { ch: "S0L", at: [295, 278], cap: 3, p: [220, 200] },
+                  { ch: "S0R", at: [652, 600], cap: 3, p: [520, 540] },
+                  { ch: "S1R", at: [310, 445], cap: 3, p: [250, 530] },
+                  { ch: "wout", at: [400, 860], cap: 3, p: [310, 772] },
+                  { ch: "S3L", at: [30, 940], cap: 3, p: [90, 975] }],
+          chimes: [["top", 560, 188], ["S1R", 220, 410], ["S2R", 200, 655], ["S0R2", 515, 815], ["S4L", 220, 980]],
+          sink: [340, 995],
+          back: {
+            east: { to: "sink", tr: T(640, 240).to(676, 330).to(676, 560).coil(800, 16, 2).to(600, 900).to(340, 995) },
+            west: { to: "sink", tr: T(330, 300).to(285, 410).to(250, 560).to(235, 700).loop(22, -1).to(240, 840).to(340, 995) }
+          },
+          drains: [D("gate:0", "east", [[640, 240]]),
+                   D("gate:1", "west", [[330, 300]]),
+                   D("gate:2", "east", [[676, 530]]),
+                   D("gate:3", "west", [[285, 420]]),
+                   D("gate:4", "sink", [[360, 880], [340, 995]]),
+                   D("gate:5", "west", [[130, 880], [240, 840]]),
+                   D("wheel:S1R", "west", [[275, 480]]),
+                   D("wheel:S2R", "west", [[240, 690]])],
+          cogs: [[110, 250, 30, 1], [148, 296, 14, -1], [545, 665, 22, 1]]
         };
       }
     ];
@@ -762,18 +2029,20 @@
       for (i = 0; i < ch.n; i++) { d = (ch.xs[i] - x) * (ch.xs[i] - x) + (ch.ys[i] - y) * (ch.ys[i] - y); if (d < bd) { bd = d; bi = i; } }
       return bi * DS;
     }
-    var LAY = [];                   // the built layouts, one per biome, made on first use
+    var LAY = [];                   // the built layouts, one per level, made on first use
     function layout(b) {
       if (LAY[b]) return LAY[b];
-      var src = LAYOUTS[b](), L = { b: b, CH: {}, sw: src.sw, wheel: src.wheel, arr: src.arr, out: src.out,
-                                     gates: src.gates, chimes: src.chimes, bowls: [], order: [] }, k, c, i;
+      var src = LAYOUTS[b](), L = { n: b, b: Math.floor(b / 6), CH: {}, sw: src.sw, wheel: src.wheel, arr: src.arr, out: src.out,
+                                     gates: src.gates, chimes: src.chimes, bowls: [], props: [], order: [] }, k, c, i;
       for (k in src.ch) if (src.ch.hasOwnProperty(k)) {
         c = src.ch[k];
         L.CH[k] = makeChannel(k, c.to, c.tr.p);
         for (i = 0; i < c.tr.bowls.length; i++) L.bowls.push(c.tr.bowls[i]);
         L.CH[k].mods = [];
         for (i = 0; i < c.tr.mods.length; i++)
-          L.CH[k].mods.push({ kind: c.tr.mods[i].kind, d: nearestD(L.CH[k], c.tr.mods[i].x, c.tr.mods[i].y) });
+          L.CH[k].mods.push({ kind: c.tr.mods[i].kind, n: c.tr.mods[i].n || 0,
+                              d: nearestD(L.CH[k], c.tr.mods[i].x, c.tr.mods[i].y) });
+        for (i = 0; i < c.tr.props.length; i++) L.props.push(c.tr.props[i]);
       }
       for (k in src.sw) if (src.sw.hasOwnProperty(k)) L.order.push(k);
       // the ferry gears, in radians, and the line that ends on each one
@@ -901,7 +2170,7 @@
       return { xs: xs, ys: ys, ls: ls, len: ls[ls.length - 1] };
     }
 
-    var tmpP = { x: 0, y: 0, z: 1, slope: 0 };
+    var tmpP = { x: 0, y: 0, z: 1, slope: 0, sk: 0 };
     function at(ch, d, o) {
       o = o || tmpP;
       var f = Math.max(0, Math.min(ch.n - 1.001, d / DS)), i = Math.floor(f), q = f - i;
@@ -909,6 +2178,7 @@
       o.y = ch.ys[i] + (ch.ys[i + 1] - ch.ys[i]) * q;
       o.z = ch.zs[i] + (ch.zs[i + 1] - ch.zs[i]) * q;
       o.slope = (ch.ys[i + 1] - ch.ys[i]) / DS;
+      o.sk = ch.gs[i + 1];
       return o;
     }
     function normalAt(ch, i) {
@@ -972,12 +2242,13 @@
     function font(px, weight) { return (weight || 800) + " " + (px / S).toFixed(1) + "px " + face; }
 
     /* ---------------- which machine ---------------------------------- */
-    /* Six levels a biome, five biomes: the stretches the level map names on
-       its own card (web.levels.bands). A round with no level — the playable,
-       a free round, the endless run — plays `mix.playableBiome`. */
-    function biome() {
-      if (!CONFIG.level) return clamp(M.playableBiome | 0, 0, LAYOUTS.length - 1);
-      return clamp(Math.floor((CONFIG.level - 1) / 6), 0, LAYOUTS.length - 1);
+    /* One machine a level, six levels a biome, five biomes: the stretches the
+       level map names on its own card (web.levels.bands). A round with no
+       level — the playable, a free round, the endless run — plays the first
+       machine of `mix.playableBiome`. */
+    function machine() {
+      if (!CONFIG.level) return clamp(M.playableBiome | 0, 0, LAYOUTS.length / 6 - 1) * 6;
+      return clamp(CONFIG.level - 1, 0, LAYOUTS.length - 1);
     }
 
     /* ---------------- state ------------------------------------------ */
@@ -987,10 +2258,16 @@
     var state = "play", t = 0, feedK = 0, feedTurn = 0, lockT = 0, electricIn = 0, arrival = "a0", path = null;
     var score = 0, combo = 0, bestCombo = 0, hearts = 5, heartsMax = 5, best = 0;
     var heartHit = 0, hubPop = 0, hubBreak = 0, hubZap = 0, zap = 0, overT = 0, ended = false;
-    // THE BLACKOUT: a broken combo cuts the machine's lights for half a second.
-    var BLACKOUT = 0.5, blackT = 0;
+    // THE BLACKOUT: a broken combo cuts the machine's lights, longer the bigger it was.
+    var BLACKOUT = 0.5, blackT = 0, blackLen = BLACKOUT;
+    /* THE FUSE (1 = lit whole), whether it burns this frame, the sparks
+       flying from a gate to the hub with the combo they carry, and the slow
+       motion a big break plays (seconds left of it). */
+    var fuse = 1, fuseBurn = false, fuseOutT = 0, comets = [], slowT = 0;
+    var SLOW_TIME = 0.6, SLOW_K = 0.22, COMET_TIME = 0.42;
     var flow = 0, screwSlot = 0, towerQ = [], revealT = -1;
     var stats = null, taught = null, chimeGap = 0, clickGap = 0, lastTick = 0, spaceTap = false;
+    var landGap = 0, noteGap = 0, boostGap = 0;      // the moving modules' sounds, never piled up
     var hints = [], hintT = 0;      // the lessons, one on screen at a time
 
     function lerp(a, b, k) { return a + (b - a) * k; }
@@ -1140,30 +2417,30 @@
       return k;
     }
     function deliver(m, id) {
-      var mc = boxes[id], e = m.e, pts, before;
+      var mc = boxes[id], e = m.e, pts;
       // Whatever an arrival swallows falls through it to the gutter and goes home.
       m.st = "drop"; m.vy = 0;
       m.e = false; m.spent = true;
       mc.led = (mc.led + 1) % 5; mc.sweep = 0.4;
       if (e && isSocket(id)) {
         stats.eOn++; stats.delivered++;
-        before = tier(combo);
-        combo += MOD.comboStep; if (combo > bestCombo) bestCombo = combo;
+        // the catch is an action: it relights the fuse now, and its arc
+        // brings the combo jump when it reaches the hub
+        feedFuse();
         pts = Math.round(M.electricScore * MOD.eScore * payK(m));
         score += pts;
         if (dnFlag && !m.clone) { dnFlag = false; score *= 2; Pop.show("record", { word: "Double!", sub: "x2" }); }
         HUD.setScore(score); HUD.punch(C.volt);
-        arcs.push({ t: 0, jump: M.electricJump, rev: false, path: L.pay[id], id: Math.random() });
+        arcs.push({ t: 0, jump: M.electricJump * MOD.comboStep, rev: false, path: L.pay[id], id: Math.random() });
         mc.kick = 0.7; mc.charge = 1;
         Fx.shake(7, 0.22); Fx.flash(C.volt, 0.16);
         spark(mc.x, RIM_Y + 20, C.volt, 30, 320);
         ring(mc.x, RIM_Y + 40, C.volt, 20, 180, 0.8, 5);
         ring(mc.x, RIM_Y + 40, C.voltHi, 10, 240, 0.6, 3);
-        Pop.show("bonus", { word: "Charged!", sub: "+" + pts, at: { x: toDX(mc.x), y: toDY(RIM_Y - 90) } });
+        Pop.show("bonus", { word: "Charged!", sub: "+" + pts, at: "top" });
         if (MOD.over) chargeT = MOD.over;
         // a charged socket deals the cards, once the arc has reached the hub
         if (!m.clone && !pendingPick && !held && charge() >= 1) { pendingPick = true; pickT = KC.pickDelay; }
-        if (tier(combo) > before) tierUp(true);
         return;
       }
       if (e) {
@@ -1173,7 +2450,7 @@
         if (m.clone) return;                           // a clone that misses just goes out
         if (seconds > 0) {
           seconds--; queue.unshift("e");
-          Pop.show("bonus", { word: "Second chance" });
+          Pop.show("bonus", { word: "Second chance", at: "top" });
           paintRun();
           return;
         }
@@ -1185,8 +2462,6 @@
         return;
       }
       stats.delivered++;
-      before = tier(combo);
-      combo += MOD.comboStep; if (combo > bestCombo) bestCombo = combo;
       pts = Math.round(M.classicScore * MOD.classicK * (m.gold ? 5 : 1) * payK(m));
       // a train: marbles landing in one arrival back to back
       if (MOD.train && rt - (mc.lastT || -9) < 0.5) mc.train = (mc.train || 0) + 1; else mc.train = 0;
@@ -1198,7 +2473,6 @@
       mc.kick = 0.3; hubPop = Math.max(hubPop, 0.2);
       spark(mc.x, RIM_Y + 4, m.gold ? C.gold2 : mc.col, m.gold ? 14 : 4, 180);
       Sound.clip("deliver", 0.26, mc.pitch * Rand.range(0.97, 1.04));
-      if (tier(combo) > before) tierUp();
     }
     // `quiet` when another callout already speaks on this frame: two Pops
     // fired together land on top of each other.
@@ -1222,7 +2496,7 @@
       if (combo >= 2 && shields > 0) {
         shields--;
         ring(L.wheel.cx, L.wheel.cy, C.calm, RIM, 200, 0.7, 5);
-        Pop.show("bonus", { word: "Shielded" });
+        Pop.show("bonus", { word: "Shielded", at: "top" });
         paintRun();
         return;
       }
@@ -1233,18 +2507,110 @@
         return;
       }
       if (combo >= 2) {
-        tc = TIERS_COL[tier(combo)];
-        for (i = 0; i < 12; i++) {
-          a = i / 12 * PI2 + Math.random() * 0.3; v = 160 + Math.random() * 160;
-          shards.push({ x: L.wheel.cx + Math.cos(a) * 44, y: L.wheel.cy + Math.sin(a) * 44, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60,
-                        a: a + Math.PI / 2, va: (Math.random() - 0.5) * 18, s: 6, t: 0, life: 0.7, color: tc });
-        }
-        hubBreak = 0.6;
-        blackT = BLACKOUT;
-        Sound.clip("blackout", 0.5, 1);
+        shatterHub(heat(), TIERS_COL[tier(combo)], true);
         if (!quiet && combo >= tierAt(0)) Pop.show("alert", { word: "Combo lost" });
       }
-      combo = 0;
+      combo = 0; fuse = 1;
+    }
+    /* The ring on the hub flies apart, as hard as the combo was big (k is
+       heat(), 0..1): more shards, a longer shake and — for an error, not
+       for a fuse burnt out — a blackout that lasts longer, and from the
+       second tier up the machine drops into slow motion for a beat. */
+    function shatterHub(k, tc, error) {
+      var i, a, v, n = Math.round(10 + 30 * k);
+      for (i = 0; i < n; i++) {
+        a = i / n * PI2 + Math.random() * 0.3; v = 160 + Math.random() * (160 + 260 * k);
+        shards.push({ x: L.wheel.cx + Math.cos(a) * 44, y: L.wheel.cy + Math.sin(a) * 44, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60,
+                      a: a + Math.PI / 2, va: (Math.random() - 0.5) * 18, s: 5 + 4 * k, t: 0, life: 0.7 + 0.5 * k, color: tc });
+      }
+      ring(L.wheel.cx, L.wheel.cy, tc, RIM, 220 + 380 * k, 0.6 + 0.5 * k, 4 + 6 * k);
+      hubBreak = 0.6;
+      if (error) {
+        blackLen = BLACKOUT * (0.7 + 1.1 * k); blackT = blackLen;
+        Sound.clip("blackout", 0.4 + 0.3 * k, 1 - 0.18 * k);
+      } else {
+        Sound.clip("blackout", 0.3, 1.25);
+      }
+      Fx.shake(5 + 13 * k, 0.2 + 0.3 * k);
+      if (k >= 0.4) { slowT = SLOW_TIME; Fx.flash(tc, 0.12 + 0.18 * k); }
+    }
+
+    /* ---------------- THE COMBO: what feeds it, the fuse that keeps it -- */
+    // How big the combo is, 0 at nothing and 1 at the top tier: what every
+    // effect that grows with the combo reads.
+    function heat() { return Math.min(1, combo / tierAt(M.tiers.length - 1)); }
+    function fuseSecs() { return M.fuse[Math.min(M.fuse.length - 1, tier(combo))]; }
+    // Every action that feeds the combo relights the fuse whole.
+    function feedFuse() { fuse = 1; fuseOutT = 0; }
+    /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
+       the combo grows when it lands, so the hub counts up in step with what
+       the player sees fly in. The fuse is relit at once, on the action. */
+    function comboSpark(x, y, n) {
+      feedFuse();
+      comets.push({ x: x, y: y, t: 0, n: n, dl: comets.length ? 0.03 : 0 });
+    }
+    // A spark lands: the combo grows by what it carried, on a rising note
+    // that climbs the scale toward the next tier.
+    var SCALE = [0, 2, 4, 5, 7, 9, 11, 12, 14];
+    function landSpark(c) {
+      var b = tier(combo), tr, lo, hi, step;
+      combo += c.n; if (combo > bestCombo) bestCombo = combo;
+      tr = tier(combo);
+      lo = tr ? tierAt(tr - 1) : 0; hi = tr < M.tiers.length ? tierAt(tr) : 0;
+      step = hi ? Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1)) : SCALE.length - 1;
+      hubPop = Math.max(hubPop, 0.25 + 0.2 * heat());
+      spark(L.wheel.cx, L.wheel.cy, TIERS_COL[tr], 6 + Math.round(10 * heat()), 200 + 120 * heat());
+      Sound.clip("chime", 0.22 + 0.14 * heat(), Math.pow(2, SCALE[step] / 12) * (tr >= 2 ? 1.25 : 1));
+      if (tr > b) tierUp();
+    }
+    // Is the machine waiting on the player? A gate locked, or the electric
+    // marble on a line that can no longer reach the socket.
+    function needsPlayer() {
+      var i, m, id, a, ok;
+      for (i = 0; i < gates.length; i++) if (gates[i].locked) return true;
+      for (i = 0; i < marbles.length; i++) {
+        m = marbles[i];
+        if (!m.e || m.clone || m.spent) continue;
+        id = m.st === "wheel" ? L.wheel.out : m.st === "ferry" ? m.fer.f.out
+           : (m.st === "track" || m.st === "wait" || m.st === "gate" || m.st === "fwait") && m.ch ? m.ch.id : null;
+        if (!id) continue;
+        ok = false;
+        for (a in boxes) if (boxes.hasOwnProperty(a) && isSocket(a) && L.reach[a][id]) ok = true;
+        if (!ok) return true;
+      }
+      return false;
+    }
+    /* The fuse burnt out: the combo drops to the start of the tier below
+       (a combo anchor holds the tier it is on), and the fuse is relit for
+       what is left. Below the first tier it simply goes out. */
+    function fuseOut() {
+      var tr = tier(combo), to = MOD.floor ? (tr ? tierAt(tr - 1) : 0) : (tr >= 2 ? tierAt(tr - 2) : 0), k = heat();
+      fuse = 1;
+      if (to >= combo) return;
+      shatterHub(k * 0.6, TIERS_COL[tr], false);
+      combo = to;
+      stats.fuseOuts++;
+      fuseOutT = 0.8;
+      if (tr) Pop.show("alert", { word: "Fuse out", sub: to ? Lang.t("Combo x") + to : "Combo lost" });
+    }
+    function tickCombo(dt) {
+      var i, c;
+      for (i = comets.length - 1; i >= 0; i--) {
+        c = comets[i];
+        if (c.dl > 0) { c.dl -= dt; continue; }
+        c.t += dt / COMET_TIME;
+        if (c.t >= 1) { comets.splice(i, 1); landSpark(c); }
+      }
+      fuseOutT = Math.max(0, fuseOutT - dt);
+      fuseBurn = state === "play" && combo > 0 && !comets.length && needsPlayer();
+      if (fuseBurn) {
+        fuse -= dt / fuseSecs();
+        if (fuse <= 0) fuseOut();
+      }
+      if (combo > 0 && !taught.fuse) {
+        taught.fuse = true;
+        hint("Keep the fuse lit", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass", hold: 3600 });
+      }
     }
     // A heart goes: the HUD, the cue, and the end of the shift on the last one.
     function loseHeart(n) {
@@ -1285,7 +2651,7 @@
     function catchLost(m) {
       if (nets <= 0) return false;
       nets--; queue.unshift(m.e ? "e" : m.gold ? "g" : m.k ? "k" : "c");
-      Pop.show("bonus", { word: "Caught" });
+      Pop.show("bonus", { word: "Caught", at: "top" });
       spark(H0[0], H0[1] - 10, C.calm, 12, 200);
       paintRun();
       return true;
@@ -1350,7 +2716,9 @@
     function unlock(g) {
       if (state !== "play" || !g || !g.locked) return false;
       g.locked = false; g.open = 0; g.pop = 0.4; stats.unlocks++;
-      if (g.q.length) { g.flush = true; g.flushT = 0; }
+      // the combo: one spark per marble the burst releases, one for an empty gate
+      if (g.q.length) { g.flush = true; g.flushT = 0; feedFuse(); }
+      else comboSpark(g.px, g.py, MOD.comboStep);
       spark(g.px, g.py, C.calm, 14, 260);
       ring(g.px, g.py, C.calm, 30, 180, 0.5, 4);
       Sound.clip("unlock", 0.42, 1 + g.q.length * 0.03);
@@ -1378,6 +2746,7 @@
       var gm = g.q.shift();
       gm.st = "track"; gm.gateOk = true; gm.v = v; gm.d = Math.max(gm.d, g.d - R) + 1;
       if (MOD.releaseTag) gm.tag = MOD.releaseTag;
+      return gm;
     }
 
     /* ===============================================================
@@ -1626,6 +2995,7 @@
     function tierAt(i) { return Math.max(1, Math.round(M.tiers[i] * (1 - MOD.tierCut))); }
     function addCombo(n) {
       var b = tier(combo);
+      feedFuse();
       combo += n; if (combo > bestCombo) bestCombo = combo;
       if (tier(combo) > b) tierUp();
     }
@@ -1838,7 +3208,7 @@
       if (c.dur !== 0) effects.push({ c: rec, left: typeof c.dur === "number" ? c.dur : null });
       recompute();
       remember(c.id); pickedIds.push(c.id);
-      Pop.show("bonus", { word: FAM_BY[c.fam].name, sub: durText(c) });
+      Pop.show("bonus", { word: FAM_BY[c.fam].name, sub: durText(c), at: "top" });
       Fx.flash(RARITY[c.r].color, 0.12);
       if (hearts <= 0 && state === "play") { state = "over"; overT = 1.0; }
       paintRun();
@@ -1938,7 +3308,7 @@
       for (i = 0; i < gates.length; i++) if (gates[i].locked) { unlock(gates[i]); any = true; }
       if (!any) { Notify.say("No gate is locked", { kind: "info", icon: "unlock", key: "gb-key" }); return; }
       keys--;
-      Pop.show("bonus", { word: "Master key" });
+      Pop.show("bonus", { word: "Master key", at: "top" });
       paintRun();
     }
 
@@ -2007,7 +3377,7 @@
     /* ---------------- the motor contract: reset ---------------------- */
     function reset() {
       var i, k, d, gc, gd, gp, ga, tl, g, ch, cd, p, nv;
-      L = layout(biome()); CH = L.CH;
+      L = layout(machine()); CH = L.CH;
       setBiome(L.b);
       fit(); readFont(); build();
       marbles = []; queue = []; parts = []; shards = []; rings = []; arcs = []; puffs = []; hints = []; hintT = 0;
@@ -2064,10 +3434,11 @@
       for (i = 0; i <= M.preview; i++) queue.push(i < M.preview ? plainKind() : "e");
       state = "play"; t = 0; feedK = 0.3; feedTurn = 0; lockT = M.lockFirst;
       score = 0; combo = 0; bestCombo = 0; heartsMax = M.hearts | 0; hearts = heartsMax; ended = false;
-      heartHit = 0; hubPop = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0;
+      heartHit = 0; hubPop = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0; blackLen = BLACKOUT;
+      fuse = 1; fuseBurn = false; fuseOutT = 0; comets = []; slowT = 0;
       flow = 0; screwSlot = 0; towerQ = []; revealT = 0.25; chimeGap = 0; clickGap = 0;
-      stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0 };
-      taught = { lock: false, volt: false, spill: false };
+      stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0, fuseOuts: 0 };
+      taught = { lock: false, volt: false, spill: false, fuse: false };
       best = Store.get("bestScore", 0) || 0;
       HUD.setScoreNow(0);
       showHearts();
@@ -2096,11 +3467,14 @@
       if (state === "play") tickCards(dt);
       if (held) return;                            // the cards were dealt this frame
       dt *= MOD.sim;                               // slow motion: the machine, not the clock
+      // a big break: the machine drops to SLOW_K of its pace and eases back
+      if (slowT > 0) { var sk = Math.min(1, slowT / SLOW_TIME * 1.6); slowT -= dt; dt *= 1 - (1 - SLOW_K) * sk; }
       heartHit = Math.max(0, heartHit - dt);
       hubPop = Math.max(0, hubPop - dt); hubBreak = Math.max(0, hubBreak - dt); hubZap = Math.max(0, hubZap - dt);
       blackT = Math.max(0, blackT - dt);
       zap = Math.max(0, zap - dt);
-      chimeGap -= dt; clickGap -= dt;
+      chimeGap -= dt; clickGap -= dt; landGap -= dt; noteGap -= dt; boostGap -= dt;
+      for (i = 0; i < L.props.length; i++) if (L.props[i].hit > 0) L.props[i].hit -= dt;
       // the lessons, one at a time: a notice never stacks on another hint
       hintT -= dt;
       if (hintT <= 0 && hints.length && state === "play") {
@@ -2131,6 +3505,7 @@
           // The arc reaches the hub: the combo jumps.
           b3 = tier(combo);
           combo += ar.jump; if (combo > bestCombo) bestCombo = combo;
+          feedFuse();
           hubZap = 1.2; hubPop = 0.7; zap = ZAP_TIME;
           spark(L.wheel.cx, L.wheel.cy, C.volt, 50, 420);
           spark(L.wheel.cx, L.wheel.cy, C.voltHi, 24, 260);
@@ -2151,6 +3526,7 @@
         }
         if (ar.t * ARC_SPEED > P.len + 700) arcs.splice(i, 1);
       }
+      tickCombo(dt);
       for (k in sw) if (sw.hasOwnProperty(k)) {
         s = sw[k];
         var target = branchAngle(k, s.dir), da = mod(target - s.ang + Math.PI, PI2) - Math.PI;
@@ -2218,7 +3594,10 @@
         if (g.locked && MOD.autoGate[i] && g.lockAge > 0.35) unlock(g);
         if (g.flush) {
           g.flushT -= dt;
-          if (g.flushT <= 0 && g.q.length) { releaseGate(g, M.flushV); g.flushT = M.flushGap / MOD.flush; }
+          if (g.flushT <= 0 && g.q.length) {
+            m = releaseGate(g, M.flushV); g.flushT = M.flushGap / MOD.flush;
+            comboSpark(m.x, m.y, MOD.comboStep);
+          }
           if (!g.q.length) g.flush = false;
         }
       }
@@ -2315,7 +3694,10 @@
        on its way through), the wheel, or a receptacle. */
     function roll(m, mdt) {
       var p = at(m.ch, m.d), i, c, gt, gstop, stop, s, rest;
-      m.v = Math.max(M.vMin, Math.min(M.vMax, m.v + (M.gravity * p.slope - M.friction) * mdt));
+      // in flight nothing drags; a boosted marble keeps its shot a moment
+      var fr = p.sk === SK_AIR || m.vb > 0 ? 0 : M.friction, top = m.vb > 0 ? M.vMax * BOOST_K : M.vMax;
+      if (m.vb > 0) m.vb -= mdt;
+      m.v = Math.max(M.vMin, Math.min(top, m.v + (M.gravity * p.slope - fr) * mdt));
       var d0 = m.d;
       m.d += m.v * mdt; m.rot += m.v * mdt / R;
       for (i = 0; i < chimes.length; i++) {
@@ -2325,6 +3707,7 @@
           if (chimeGap <= 0) { chimeGap = 0.32; Sound.clip("chime", 0.05, 0.85 + c.n * 0.09); }
         }
       }
+      if (m.ch.mods && m.ch.mods.length) moduleFx(m, d0);
       if ((MOD.loop || MOD.spiral) && m.ch.mods) modulePrize(m, d0);
       var ch = m.ch;
       gt = ch.gate;
@@ -2371,13 +3754,45 @@
     function modulePrize(m, d0) {
       var i, md, v, pts, mods = m.ch.mods;
       for (i = 0; i < mods.length; i++) {
-        md = mods[i]; v = md.kind === "loop" ? MOD.loop : MOD.spiral;
+        md = mods[i]; v = md.kind === "loop" ? MOD.loop : md.kind === "spiral" ? MOD.spiral : 0;
         if (!v || d0 >= md.d || m.d < md.d) continue;
         pts = Math.round(v * mult() * MOD.score);
         score += pts; HUD.setScore(score);
         popText(m.x, m.y - 30, Lang.t(md.kind === "loop" ? "Loop +" : "Spiral +") + pts, C.amber);
         spark(m.x, m.y, C.amber, 8, 200);
         if (chimeGap <= 0) { chimeGap = 0.2; Sound.clip("chime", 0.05, 1.2); }
+      }
+    }
+    /* What the moving modules do as a marble crosses their mark: a jump's
+       catcher takes the landing (a knock, the speed it loses), a stair rings
+       its note, a booster fires. */
+    function moduleFx(m, d0) {
+      var i, md, mods = m.ch.mods;
+      for (i = 0; i < mods.length; i++) {
+        md = mods[i];
+        if (d0 >= md.d || m.d < md.d) continue;
+        if (md.kind === "land") {
+          m.v *= 0.72;
+          spark(m.x, m.y + R, C.steelL, m.clone ? 2 : 5, 150, 90);
+          ring(m.x, m.y, C.steelL, R, 50, 0.3, 3);
+          if (landGap <= 0) { landGap = 0.08; Sound.clip("land", 0.32, Rand.range(0.92, 1.08)); }
+        } else if (md.kind === "note") {
+          spark(m.x, m.y + R, C.steelL, 2, 90, 60);
+          if (noteGap <= 0) { noteGap = 0.06; Sound.clip("chime", 0.07, 1.5 - md.n * 0.1); }
+        } else if (md.kind === "boost") {
+          m.vb = BOOST_TIME; m.v = M.vMax * BOOST_K;
+          fireCoils(m.ch, md.d);
+          spark(m.x, m.y, C.amber, 6, 220);
+          if (boostGap <= 0) { boostGap = 0.2; Sound.clip("boost", 0.22, Rand.range(0.95, 1.05)); }
+        }
+      }
+    }
+    // A booster's coils light up round the marble they shoot.
+    function fireCoils(ch, d) {
+      var p = at(ch, d, {}), i, q;
+      for (i = 0; i < L.props.length; i++) {
+        q = L.props[i];
+        if (q.k === "coil" && (q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) < 90 * 90) q.hit = 0.45;
       }
     }
     // Chain lightning: the head of a payoff arc zaps every marble it passes.
@@ -2521,7 +3936,7 @@
       if (built !== key) { built = key; buildCog(k); buildMarbles(k); feedCv = gearSprite(k, FEED.r, FEED.pockets); ferryCvs = {}; wheelN = 0; }
       if (!L) return;
       if (wheelN !== L.wheel.notches) { wheelN = L.wheel.notches; buildWheel(k, wheelN); }
-      if (builtRails !== key + "/" + L.b) { builtRails = key + "/" + L.b; buildRails(k); }
+      if (builtRails !== key + "/" + L.n) { builtRails = key + "/" + L.n; buildRails(k); }
     }
     // A radial glow, one per colour, drawn at any size with drawImage.
     function glow(col) {
@@ -2575,14 +3990,86 @@
     }
     function isBack(ch, i) { return ch.zs[i] < 0; }
     function isFront(ch, i) { return ch.zs[i] >= 0 && !ch.gs[i]; }
-    function isGlass(ch, i) { return ch.zs[i] >= 0 && !!ch.gs[i]; }
+    function isGlass(ch, i) { return ch.zs[i] >= 0 && ch.gs[i] === SK_GLASS; }
+    function isZebra(ch, i) { return ch.zs[i] >= 0 && ch.gs[i] === SK_ZEBRA; }
+    function isHose(ch, i) { return ch.zs[i] >= 0 && ch.gs[i] === SK_HOSE; }
+    // what is laid OVER the marbles: the glass sheen, the zebra's bands, the hose
+    function isOver(ch, i) { return ch.zs[i] >= 0 && ch.gs[i] >= SK_GLASS && ch.gs[i] <= SK_HOSE; }
+    /* A ZEBRA tube's opaque bands: ZEBRA_BAND px of paint every ZEBRA_P px
+       along the line, so each window between is wider than a marble. */
+    var ZEBRA_P = 58, ZEBRA_BAND = 24;
+    function zebraBand(ch, i) { return isZebra(ch, i) && (i * DS) % ZEBRA_P < ZEBRA_BAND; }
+    // A box grown to take in a point and its radius.
+    function grow(box, x, y, r) {
+      if (!box) return { x: x - r, y: y - r, w: r * 2, h: r * 2 };
+      var x1 = Math.max(box.x + box.w, x + r), y1 = Math.max(box.y + box.h, y + r);
+      box.x = Math.min(box.x, x - r); box.y = Math.min(box.y, y - r);
+      box.w = x1 - box.x; box.h = y1 - box.y;
+      return box;
+    }
     function eachCh(fn) { for (var id in CH) if (CH.hasOwnProperty(id)) fn(CH[id]); }
+    /* THE LIT RAILS, from the second tier of the combo: the front rails
+       drawn again in the tier's colour, at half resolution (it is a glow),
+       one cached layer per colour and per machine — `layers` is rebuilt
+       with the rails, so the cache goes with it. */
+    function isLit(ch, i) { return !ch.spill && ch.zs[i] >= 0; }
+    function litLayer(col) {
+      var lit = layers.lit || (layers.lit = {});
+      if (lit[col] !== undefined) return lit[col];
+      lit[col] = layer(boxOf(isLit, 30), S * view.dpr * 0.5, function (c) {
+        c.lineCap = "round"; c.lineJoin = "round";
+        c.strokeStyle = rgba(col, 0.16); c.lineWidth = 2 * R + 14;
+        eachCh(function (ch) { runs(c, ch, isLit, 0); });
+        c.strokeStyle = col; c.lineWidth = 4;
+        eachCh(function (ch) { runs(c, ch, isLit, -(R + 2)); runs(c, ch, isLit, R + 2); });
+      });
+      return lit[col];
+    }
+    function drawLitRails() {
+      var tr = tier(combo), Ll;
+      if (tr < 2 || state !== "play" || blackT > 0) return;
+      Ll = litLayer(TIERS_COL[tr]);
+      if (!Ll) return;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = (0.22 + 0.2 * heat()) * (0.75 + 0.25 * Math.sin(t * 5));
+      ctx.drawImage(Ll.cv, Ll.x, Ll.y, Ll.w, Ll.h);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    }
+    /* THE FRAME GLOW: the edges of the screen take the tier's colour, more
+       of it as the combo grows, breathing. One small cached picture per
+       colour, stretched over the frame: a single blit a frame. */
+    var edgeCvs = {};
+    function edgeGlow(col) {
+      if (edgeCvs[col]) return edgeCvs[col];
+      // a circle in a square, stretched over the frame: an ellipse that
+      // reaches every edge, not only the corners
+      var cv = canvasOf(64, 64), c = cv.getContext("2d"), g = c.createRadialGradient(32, 32, 18, 32, 32, 46);
+      g.addColorStop(0, rgba(col, 0)); g.addColorStop(0.4, rgba(col, 0.28)); g.addColorStop(1, rgba(col, 0.9));
+      c.fillStyle = g; c.fillRect(0, 0, 64, 64);
+      edgeCvs[col] = cv;
+      return cv;
+    }
+    function drawFrameGlow() {
+      var tr = tier(combo), k = heat();
+      if (!tr || state !== "play") return;
+      ctx.globalAlpha = (0.12 + 0.38 * k) * (0.8 + 0.2 * Math.sin(t * 3.2));
+      ctx.drawImage(edgeGlow(TIERS_COL[tr]), 0, 0, view.w, view.h);
+      ctx.globalAlpha = 1;
+    }
     function buildRails(k) {
       var fb = boxOf(function (ch, i) { return ch.zs[i] >= 0; }, 40);
       var j, bw;
       for (j = 0; j < L.bowls.length; j++) {
         bw = L.bowls[j];
         fb.x = Math.min(fb.x, bw.cx - bw.r - 30); fb.w = Math.max(fb.x + fb.w, bw.cx + bw.r + 30) - fb.x;
+      }
+      var ob = boxOf(isOver, 34);
+      for (j = 0; j < L.props.length; j++) {
+        bw = L.props[j];
+        if (bw.k === "coil") ob = grow(ob, bw.x, bw.y, R + 16);
+        else if (bw.k === "catch") fb = grow(fb, bw.x, bw.y, R + 60);
+        else if (bw.k === "kick") fb = grow(fb, bw.x, bw.y, bw.rk + 30);
+        else if (bw.k === "ledge") { fb = grow(fb, bw.x0, bw.y, 30); fb = grow(fb, bw.x1, bw.y, 30); }
       }
       layers = {
         // the spill network first and faint, so a dive of the front lines reads over it
@@ -2596,10 +4083,16 @@
           for (var b = 0; b < L.bowls.length; b++) paintBowl(c, L.bowls[b]);
           eachCh(function (ch) { railBed(c, ch, isFront); });
           eachCh(function (ch) { railPass(c, ch, isFront, 1); });
-          eachCh(function (ch) { tubeWalls(c, ch); });
+          eachCh(function (ch) { tubeWalls(c, ch, isGlass, 14); tubeWalls(c, ch, isZebra, 0); });
           eachCh(function (ch) { for (var i = 0; i < ch.mouths.length; i++) paintMouth(c, ch, ch.mouths[i]); });
+          for (var q = 0; q < L.props.length; q++) paintProp(c, L.props[q]);
         }),
-        glass: layer(boxOf(isGlass, 34), k, function (c) { eachCh(function (ch) { tubeSheen(c, ch); }); })
+        glass: layer(ob, k, function (c) {
+          eachCh(function (ch) { tubeSheen(c, ch, isGlass); });
+          eachCh(function (ch) { zebraBands(c, ch); });
+          eachCh(function (ch) { hoseBody(c, ch); });
+          for (var q = 0; q < L.props.length; q++) if (L.props[q].k === "coil") paintCoil(c, L.props[q]);
+        })
       };
       // the spill network's cogs, one sprite each at its own size
       layers.cogs = [];
@@ -2609,6 +4102,8 @@
           paintCog(c, bw, Math.max(8, Math.round(bw / 4)), bw > 40 ? 6 : 4, bw * 0.16);
         }));
       }
+      // the lit rails of the two top tiers, built now rather than mid-round
+      for (j = 2; j < TIERS_COL.length; j++) litLayer(TIERS_COL[j]);
     }
     // Stroke the runs of a channel that pass `keep`, each shifted along the
     // normal by `off` (scaled with the depth).
@@ -2651,18 +4146,19 @@
       }
       c.globalAlpha = 1;
     }
-    // A glass tube: two walls and a joint every few steps, on the front layer...
-    function tubeWalls(c, ch) {
+    // A glass tube (a zebra's too): two walls and a joint every `joint`
+    // steps (none at 0), on the front layer...
+    function tubeWalls(c, ch, keep, joint) {
       var i, nv;
       c.lineCap = "round"; c.lineJoin = "round";
-      c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, isGlass, 0);
-      c.strokeStyle = tca("#9678ff", .10); c.lineWidth = 2 * R + 8; runs(c, ch, isGlass, 0);
+      c.strokeStyle = tca("#0a051c", .5); c.lineWidth = 2 * R + 16; runs(c, ch, keep, 0);
+      c.strokeStyle = tca("#9678ff", .10); c.lineWidth = 2 * R + 8; runs(c, ch, keep, 0);
       c.strokeStyle = tc("#0b0720"); c.lineWidth = 5;
-      runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
+      runs(c, ch, keep, -(R + 5)); runs(c, ch, keep, R + 5);
       c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2;
-      runs(c, ch, isGlass, -(R + 5)); runs(c, ch, isGlass, R + 5);
-      for (i = 0; i < ch.n; i += 14) {
-        if (!isGlass(ch, i)) continue;
+      runs(c, ch, keep, -(R + 5)); runs(c, ch, keep, R + 5);
+      for (i = 0; joint && i < ch.n; i += joint) {
+        if (!keep(ch, i)) continue;
         nv = normalAt(ch, i);
         c.strokeStyle = tc("#0b0720"); c.lineWidth = 7;
         c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * (R + 8), ch.ys[i] - nv[1] * (R + 8));
@@ -2671,11 +4167,122 @@
       }
     }
     // ...and its sheen, over the marbles.
-    function tubeSheen(c, ch) {
+    function tubeSheen(c, ch, keep) {
       c.lineCap = "round"; c.lineJoin = "round";
-      c.strokeStyle = tca("#c8b4ff", .14); c.lineWidth = 2 * R + 6; runs(c, ch, isGlass, 0);
-      c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 2.4; runs(c, ch, isGlass, -(R - 3));
-      c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1.5; runs(c, ch, isGlass, R - 5);
+      c.strokeStyle = tca("#c8b4ff", .14); c.lineWidth = 2 * R + 6; runs(c, ch, keep, 0);
+      c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 2.4; runs(c, ch, keep, -(R - 3));
+      c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 1.5; runs(c, ch, keep, R - 5);
+    }
+    /* A zebra tube over the marbles: the windows get the glass sheen, the
+       bands are painted metal, wider than the walls, so a marble is cut off
+       at every one of them. */
+    function zebraBands(c, ch) {
+      tubeSheen(c, ch, isZebra);
+      c.lineCap = "butt"; c.lineJoin = "round";
+      c.strokeStyle = tc("#0b0720"); c.lineWidth = 2 * R + 16; runs(c, ch, zebraBand, 0);
+      c.strokeStyle = tc("#cfc6f5"); c.lineWidth = 2 * R + 10; runs(c, ch, zebraBand, 0);
+      c.strokeStyle = tca("#4a3b8e", .7); c.lineWidth = 5; runs(c, ch, zebraBand, R + 1);
+      c.strokeStyle = "rgba(255,255,255,.75)"; c.lineWidth = 2.5; runs(c, ch, zebraBand, -(R - 1));
+    }
+    /* A hose over the marbles: dark rubber, a rib every step (a lit fold
+       every other one), a dull sheen along its top and a clamp collar at
+       each end, where it meets the module it joins. */
+    function hoseBody(c, ch) {
+      var i, nv, w = R + 9;
+      c.lineCap = "round"; c.lineJoin = "round";
+      c.strokeStyle = "rgba(0,0,0,.4)"; c.lineWidth = 2 * R + 18; runs(c, ch, isHose, 0, 3, 5);
+      c.strokeStyle = tc("#140f2a"); c.lineWidth = 2 * R + 14; runs(c, ch, isHose, 0);
+      c.lineCap = "butt";
+      for (i = 0; i < ch.n; i++) {
+        if (!isHose(ch, i)) continue;
+        nv = normalAt(ch, i);
+        c.strokeStyle = i % 2 ? tc("#3b3268") : tc("#07050f"); c.lineWidth = i % 2 ? 2.6 : 1.6;
+        c.beginPath(); c.moveTo(ch.xs[i] - nv[0] * w, ch.ys[i] - nv[1] * w);
+        c.lineTo(ch.xs[i] + nv[0] * w, ch.ys[i] + nv[1] * w); c.stroke();
+      }
+      c.lineCap = "round";
+      c.strokeStyle = "rgba(255,255,255,.09)"; c.lineWidth = 4; runs(c, ch, isHose, -(R - 2));
+      for (i = 0; i < ch.n; i++) {
+        if (isHose(ch, i) && (i === 0 || !isHose(ch, i - 1) || i === ch.n - 1 || !isHose(ch, i + 1))) collar(c, ch, i);
+      }
+    }
+    // A clamp collar across a line at its point i.
+    function collar(c, ch, i) {
+      var nv = normalAt(ch, i), w = R + 12, x = ch.xs[i], y = ch.ys[i];
+      c.lineCap = "round";
+      c.strokeStyle = tc("#0b0720"); c.lineWidth = 11;
+      c.beginPath(); c.moveTo(x - nv[0] * w, y - nv[1] * w); c.lineTo(x + nv[0] * w, y + nv[1] * w); c.stroke();
+      c.strokeStyle = tc("#8b7fd0"); c.lineWidth = 7; c.stroke();
+      c.strokeStyle = tc("#ece8ff"); c.lineWidth = 2;
+      c.beginPath(); c.moveTo(x - nv[0] * (w - 2) - 1, y - nv[1] * (w - 2) - 1.5);
+      c.lineTo(x + nv[0] * (w - 2) - 1, y + nv[1] * (w - 2) - 1.5); c.stroke();
+    }
+    /* What stands beside a line on the front layer: a jump's CATCHER — a
+       scoop whose high back wall the marble lands against, open on the side
+       it comes from and at the bottom, where it leaves — and a stair's
+       LEDGE, a plate on a bracket. */
+    function paintProp(c, q) {
+      var x0, x1, a0 = -1.3, a1 = 0.7;
+      if (q.k === "catch") {
+        a0 = -1.75; a1 = 0.75;
+        c.save(); c.translate(q.x, q.y); c.scale(q.dir, 1);
+        c.lineCap = "round";
+        // the post it stands on, then the scoop's dark inside
+        c.beginPath(); c.moveTo(R + 10, 10); c.lineTo(R + 18, 52);
+        c.strokeStyle = tca("#140c33", .9); c.lineWidth = 8; c.stroke();
+        c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 4; c.stroke();
+        c.fillStyle = tca("#0a051c", .6);
+        c.beginPath(); c.arc(0, 0, R + 17, a0, a1); c.arc(0, 0, R + 1, a1, a0, true); c.closePath(); c.fill();
+        c.beginPath(); c.arc(0, 0, R + 9, a0, a1);
+        c.strokeStyle = "rgba(0,0,0,.55)"; c.lineWidth = 15; c.stroke();
+        c.strokeStyle = tc("#3d3079"); c.lineWidth = 11; c.stroke();
+        c.strokeStyle = tc("#b7abf0"); c.lineWidth = 5; c.stroke();
+        c.beginPath(); c.arc(0, 0, R + 5, a0 + 0.12, a1 - 0.12);
+        c.strokeStyle = tc("#f4f0ff"); c.lineWidth = 1.6; c.stroke();
+        // the lip flares out at the top, to take a marble that comes in high
+        c.beginPath(); c.moveTo(Math.cos(a0) * (R + 9), Math.sin(a0) * (R + 9));
+        c.quadraticCurveTo(Math.cos(a0) * (R + 14), Math.sin(a0) * (R + 14) - 6, Math.cos(a0) * (R + 9) - 12, Math.sin(a0) * (R + 9) - 14);
+        c.strokeStyle = "rgba(0,0,0,.55)"; c.lineWidth = 9; c.stroke();
+        c.strokeStyle = tc("#b7abf0"); c.lineWidth = 5; c.stroke();
+        c.restore();
+      } else if (q.k === "kick") {
+        // a jump's ramp: a steel wedge under the kicker's curl, the lip plated
+        c.save(); c.translate(q.x, q.y); c.scale(q.dir, 1);
+        var ex = q.rk * Math.sin(q.lip), ey = -q.rk * (1 - Math.cos(q.lip)), f;
+        c.beginPath(); c.moveTo(-10, R + 4);
+        for (f = 0; f <= 6; f++) c.lineTo(q.rk * Math.sin(q.lip * f / 6), -q.rk * (1 - Math.cos(q.lip * f / 6)) + R + 4);
+        c.lineTo(ex + 4, ey + R + 4); c.lineTo(ex + 4, R + 22); c.lineTo(-10, R + 22); c.closePath();
+        c.fillStyle = "rgba(0,0,0,.45)"; c.fill();
+        c.fillStyle = tca("#3d3079", .95); c.fill();
+        c.lineWidth = 2; c.strokeStyle = tc("#140c33"); c.stroke();
+        c.beginPath(); c.moveTo(ex + 4, ey + R + 4); c.lineTo(ex + 4, R + 22);
+        c.strokeStyle = tc("#b7abf0"); c.lineWidth = 3; c.stroke();
+        c.restore();
+      } else if (q.k === "ledge") {
+        x0 = Math.min(q.x0, q.x1); x1 = Math.max(q.x0, q.x1);
+        c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(x0 + 3, q.y + 4, x1 - x0, 12);
+        c.beginPath(); c.moveTo((x0 + x1) / 2, q.y + 10); c.lineTo((x0 + x1) / 2 - 10, q.y + 34);
+        c.strokeStyle = tc("#140c33"); c.lineWidth = 7; c.lineCap = "round"; c.stroke();
+        c.strokeStyle = tc("#4a3b8e"); c.lineWidth = 3.5; c.stroke();
+        c.fillStyle = tc("#140c33"); c.fillRect(x0 - 1, q.y - 1, x1 - x0 + 2, 13);
+        c.fillStyle = tc("#3d3079"); c.fillRect(x0, q.y, x1 - x0, 11);
+        c.fillStyle = tc("#b7abf0"); c.fillRect(x0, q.y, x1 - x0, 3);
+        c.fillStyle = tc("#f4f0ff"); c.fillRect(x0 + 2, q.y, x1 - x0 - 4, 1);
+      }
+    }
+    // A booster's coil: three turns of copper wire wound round the rail.
+    function paintCoil(c, q) {
+      var j, o;
+      c.save(); c.translate(q.x, q.y); c.rotate(q.a);
+      for (j = -1; j <= 1; j++) {
+        o = j * 6;
+        c.beginPath(); c.ellipse(o, 0, 4.5, R + 10, 0, 0, PI2);
+        c.strokeStyle = "rgba(20,8,0,.85)"; c.lineWidth = 5.5; c.stroke();
+        c.strokeStyle = "#c4733a"; c.lineWidth = 3.4; c.stroke();
+        c.beginPath(); c.ellipse(o, 0, 4.5, R + 10, 0, Math.PI * 1.05, Math.PI * 1.6);
+        c.strokeStyle = "#ffd6a0"; c.lineWidth = 1.2; c.stroke();
+      }
+      c.restore();
     }
     // A pipe mouth, where a line dives behind the machine or comes back.
     function paintMouth(c, ch, i) {
@@ -2878,6 +4485,30 @@
       ctx.beginPath();
       ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
       ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+    /* Over the hoses and the zebra's bands: a marble in a hose swells it, an
+       electric one glows through whatever covers it — it is the one the
+       player must never lose sight of — and a booster's coils flare as they
+       fire. */
+    function drawCovered() {
+      var i, m, sk, nv, q, a;
+      for (i = 0; i < marbles.length; i++) {
+        m = marbles[i];
+        if (m.st !== "track" && m.st !== "gate") continue;
+        sk = m.ch.gs[Math.min(m.ch.n - 1, Math.round(m.d / DS))];
+        if (sk !== SK_HOSE && sk !== SK_ZEBRA) continue;
+        if (sk === SK_HOSE) {
+          nv = normalAt(m.ch, Math.min(m.ch.n - 1, Math.round(m.d / DS))); a = Math.atan2(nv[1], nv[0]);
+          ctx.fillStyle = tc("#1d1638"); ctx.strokeStyle = tc("#3b3268"); ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.ellipse(m.x, m.y, R + 11, R + 3, a, 0, PI2); ctx.fill(); ctx.stroke();
+        }
+        if (m.e) drawGlow(C.volt, m.x, m.y, R + 20, 0.75 + 0.2 * Math.sin(t * 20 + m.rot));
+        else if (m.gold) drawGlow(C.gold2, m.x, m.y, R + 12, 0.45);
+      }
+      for (i = 0; i < L.props.length; i++) {
+        q = L.props[i];
+        if (q.k === "coil" && q.hit > 0) drawGlow(C.amber, q.x, q.y, R + 26, Math.min(1, q.hit * 2.4));
+      }
     }
     function drawMarble(m) {
       var sc = dsc(m.z) * (m.e ? 1.12 : 1), r = R * sc, x = m.x, y = m.y, box = (R * 2 + 12) * sc;
@@ -3113,6 +4744,7 @@
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(wheel.phase);
       ctx.drawImage(wheelCv, -half, -half, half * 2, half * 2);
       ctx.restore();
+      drawFuse(cx, cy, RIM + 9);
       drawHub(cx, cy);
     }
     // The combo on the hub: the count, and a ring filling toward the next tier.
@@ -3148,7 +4780,7 @@
         ctx.strokeStyle = C.voltHi; ctx.lineWidth = 2;
         for (i = 0; i < 4; i++) { a = Math.random() * PI2; bolt(cx, cy, cx + Math.cos(a) * (rr + 30), cy + Math.sin(a) * (rr + 30), 7, 5); }
       }
-      var pop = 1 + hubPop * 0.7;
+      var pop = (1 + hubPop * 0.7) * (1 + 0.25 * heat());
       ctx.save(); ctx.translate(cx, cy); ctx.scale(pop, pop);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.font = font(combo >= 100 ? 30 : 36, 900);
@@ -3158,13 +4790,96 @@
       ctx.fillText("x" + combo, 0, 2);
       ctx.restore();
     }
-    // Sparks orbiting the wheel, more and faster with each tier.
+    /* THE FUSE, round the rim of the wheel: the share of it still lit, a
+       flame going from gold to orange to red as it burns down, with the burning tip spitting
+       sparks while the machine waits on the player. Still and dim when
+       nothing waits; blinking in its last third; gone at a combo of 0. */
+    function drawFuse(cx, cy, r) {
+      if (combo <= 0 || state !== "play") return;
+      var k = Math.max(0, Math.min(1, fuse)), a0 = -Math.PI / 2, a1 = a0 + PI2 * k;
+      var col = k > 0.6 ? "#ffc23d" : k > 0.3 ? "#ff7a1f" : C.full;
+      var blink = fuseBurn && k < 0.34 ? 0.45 + 0.55 * (Math.sin(t * 22) > 0 ? 1 : 0) : 1;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2); ctx.stroke();
+      if (k <= 0.005) return;
+      ctx.globalAlpha = (fuseBurn ? 1 : 0.6) * blink;
+      ctx.strokeStyle = rgba(col, 0.35); ctx.lineWidth = 12;
+      ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+      ctx.strokeStyle = col; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (!fuseBurn) return;
+      var tx = cx + Math.cos(a1) * r, ty = cy + Math.sin(a1) * r;
+      drawGlow(col, tx, ty, 14 + 4 * Math.sin(t * 40), 0.9);
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(tx, ty, 2.6, 0, PI2); ctx.fill();
+      if (Math.random() < 0.5 && parts.length < PART_MAX) {
+        parts.push({ x: tx, y: ty, vx: (Math.random() - 0.5) * 140, vy: -40 - Math.random() * 90,
+                     life: 0.28, t: 0, color: Math.random() < 0.5 ? col : "#ffffff", s: 1.4 + Math.random() * 1.4 });
+      }
+    }
+    /* The sparks a gate sends to the hub, each carrying its share of the
+       combo: a bright head on an arc bowed up toward the hub, with a tail. */
+    function cometAt(c, u) {
+      var x1 = L.wheel.cx, y1 = L.wheel.cy, mx = (c.x + x1) / 2, my = Math.min(c.y, y1) - 90, v = 1 - u;
+      return [v * v * c.x + 2 * v * u * mx + u * u * x1, v * v * c.y + 2 * v * u * my + u * u * y1];
+    }
+    function drawComets() {
+      var i, j, c, u, p, col = TIERS_COL[Math.max(1, tier(combo))];
+      for (i = 0; i < comets.length; i++) {
+        c = comets[i];
+        if (c.dl > 0) continue;
+        u = c.t * c.t * (3 - 2 * c.t);
+        for (j = 5; j >= 0; j--) {
+          p = cometAt(c, Math.max(0, u - j * 0.045));
+          drawGlow(j ? col : "#ffffff", p[0], p[1], j ? 16 - j * 2 : 12, j ? 0.55 - j * 0.08 : 1);
+        }
+      }
+    }
+    /* What grows with the combo on the marbles themselves: a trail from the
+       first tier, sparks shed from the second, and from the third the
+       current jumping between marbles that roll close together. */
+    function drawHeat() {
+      var tr = tier(combo), col, i, j, m, n, g, p, a, b, dx, dy, bolts = 0;
+      if (!tr || state !== "play") return;
+      col = TIERS_COL[tr]; n = 2 + tr; g = 9 + 3 * tr;
+      for (i = 0; i < marbles.length; i++) {
+        m = marbles[i];
+        if (m.st !== "track" || m.z < 0 || !m.ch) continue;
+        for (j = 1; j <= n; j++) {
+          if (m.d - j * g < 0) break;
+          p = at(m.ch, m.d - j * g);
+          if (p.z < 0) break;
+          drawGlow(col, p.x, p.y, R * (1.25 - j * 0.12), 0.42 * (1 - j / (n + 1)));
+        }
+        if (tr >= 2 && Math.random() < 0.06 * tr && parts.length < PART_MAX) {
+          parts.push({ x: m.x, y: m.y, vx: (Math.random() - 0.5) * 120, vy: -30 - Math.random() * 110,
+                       life: 0.35, t: 0, color: Math.random() < 0.5 ? col : "#ffffff", s: 1.5 + Math.random() * 1.5 });
+        }
+      }
+      if (tr < 3) return;
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (i = 0; i < marbles.length && bolts < 5; i++) {
+        a = marbles[i];
+        if (a.st !== "track" || a.z < 0) continue;
+        for (j = i + 1; j < marbles.length && bolts < 5; j++) {
+          b = marbles[j];
+          if (b.st !== "track" || b.z < 0) continue;
+          dx = a.x - b.x; dy = a.y - b.y;
+          if (dx * dx + dy * dy > 95 * 95 || Math.random() > 0.35) continue;
+          ctx.strokeStyle = col; ctx.lineWidth = 3; bolt(a.x, a.y, b.x, b.y, 8, 5);
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.2; bolt(a.x, a.y, b.x, b.y, 6, 4);
+          bolts++;
+        }
+      }
+    }
+    // Sparks orbiting the wheel, more and faster as the combo grows.
     function drawOrbit() {
-      var tr = tier(combo), n = ORBIT_SPARKS[tr], col, i, j, a, rr, aj;
+      var tr = tier(combo), n = Math.max(ORBIT_SPARKS[tr], Math.round(20 * heat())), col, i, j, a, rr, aj;
       if (!n || state !== "play") return;
       col = TIERS_COL[tr];
       for (i = 0; i < n; i++) {
-        a = t * (1.4 + tr * 0.5) + i * PI2 / n; rr = RIM + 16 + 5 * Math.sin(t * 3 + i * 1.7);
+        a = t * (1.4 + tr * 0.5) + i * PI2 / n; rr = RIM + 26 + 5 * Math.sin(t * 3 + i * 1.7);
         for (j = 0; j < 3; j++) {
           aj = a - j * 0.09;
           ctx.globalAlpha = 1 - j * 0.33; ctx.fillStyle = j ? col : "#ffffff";
@@ -3625,6 +5340,7 @@
         if (m.z < 0 && (m.st === "track" || m.st === "gate")) drawMarble(m);
       }
       if (Enter.begin(MW / 2, 600, { rank: 1 })) { ctx.drawImage(Lf.cv, Lf.x, Lf.y, Lf.w, Lf.h); Enter.end(); }
+      drawLitRails();
       drawFerries();
       drawTierGlow();
       if (Enter.begin(L.wheel.cx, L.wheel.cy)) { drawWheel(); drawSurge(); Enter.end(); }
@@ -3632,21 +5348,25 @@
       drawSwitches();
       drawGates();
       drawArcs();
+      drawHeat();
       for (i = 0; i < marbles.length; i++) {
         m = marbles[i];
         if (m.z >= 0 && (m.st === "track" || m.st === "gate" || m.st === "wait" || m.st === "fwait" || m.st === "wheel" || m.st === "drop")) drawMarble(m);
       }
       if (Lg && Enter.begin(Lg.x + Lg.w / 2, Lg.y + Lg.h / 2, { rank: 1 })) { ctx.drawImage(Lg.cv, Lg.x, Lg.y, Lg.w, Lg.h); Enter.end(); }
+      if (Lg) drawCovered();
       drawReceivers();
       for (i = 0; i < marbles.length; i++) if (marbles[i].st === "gutter" || marbles[i].st === "towait") drawMarble(marbles[i]);
       if (Enter.begin(H0[0] + 40, H0[1] - 50)) { drawFeed(); Enter.end(); }
       drawOrbit();
+      drawComets();
       drawEffects();
       ctx.restore();
+      drawFrameGlow();
       /* The lights go out: dark at once, held, back in the last fifth — the
          HUD and the shell stay lit, the machine does not. */
       if (blackT > 0) {
-        var bk = blackT > BLACKOUT * 0.2 ? 1 : blackT / (BLACKOUT * 0.2);
+        var bk = blackT > blackLen * 0.2 ? 1 : blackT / (blackLen * 0.2);
         ctx.fillStyle = "rgba(2,1,8," + (0.86 * bk).toFixed(3) + ")";
         ctx.fillRect(0, 0, view.w, view.h);
       }
