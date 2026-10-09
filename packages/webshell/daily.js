@@ -89,7 +89,7 @@
       willXp: "De l’expérience", willCoins: "Des pièces", willTicket: "Un ticket", willGift: "Un cadeau",
       starTag: "×5",
       catchUp: "Rattraper",
-      catchNote: "Ce jour est passé sans être ouvert. Il se rattrape encore, jusqu’à une semaine plus tard.",
+      catchNote: "Ce jour est passé sans être ouvert. Tu peux encore le rattraper, jusqu’à une semaine plus tard.",
       catchTitle: "Jour manqué"
     }
   };

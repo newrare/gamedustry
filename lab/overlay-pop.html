@@ -270,7 +270,7 @@ function veil(msg) {
 function load(slug) {
   veil("loading " + slug + "…");
   try { localStorage.setItem("pop:game", slug); } catch (e) {}
-  frame.src = "build/" + slug + "/index.html";
+  frame.src = "build/" + slug + "/index.html?first=0";
 }
 
 /* The value half is drawn on the canvas by the frame pipeline, which is not

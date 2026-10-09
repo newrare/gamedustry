@@ -198,31 +198,31 @@
     fr: {
       coins: "Pièces", tickets: "Tickets", level: "Niveau", lvShort: "Nv {n}",
       stickersEntry: "Stickers",
-      album: "Stickers", shop: "Boutique", map: "Niveaux", home: "Accueil", scores: "Classement",
+      album: "Stickers", shop: "Boutique", map: "Stages", home: "Accueil", scores: "Classement",
       more: "Plus",
       notices: "Notifications", noticesNote: "Les plus récentes en premier",
-      justNow: "À l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
+      justNow: "A l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
       gotCoins: "+{n} pièces", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
-      gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau de joueur {n} atteint",
+      gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau {n} atteint",
       pickOne: "Choisis",
       bonusTitle: "Bonus trois étoiles",
-      boostMul: "Multiplier tes {k}", boostMore: "Un de plus", boostCost: "Voir une pub",
+      boostMul: "Multiplie tes {k}", boostMore: "Un de plus", boostCost: "Voir une pub",
       mulXp: "xp", mulCoins: "pièces", mulTicket: "tickets",
       adOfferBtn: "Voir une pub", adOfferGift: "Un cadeau",
-      adTitle: "Publicité", adNote: "Aucune régie n’est branchée — ceci est un substitut.",
+      adTitle: "Publicité", adNote: "Aucune régie n’est encore branchée — cette pub est factice.",
       adSkip: "Récupérer", adWait: "{n}",
       adEyebrow: "Récompense", adTapWait: "Récompense dans {n}",
       giftGot: "Ton cadeau", collect: "Récupérer",
       tapCollect: "Touche pour récupérer", tapPick: "Touche une boîte",
-      rarity1: "Commun", rarity2: "Rare", rarity3: "Épique", rarity4: "Légendaire",
+      rarity1: "Commun", rarity2: "Rare", rarity3: "Epique", rarity4: "Légendaire",
       wonBand: "Gagné en terminant {b}", wonClean: "Gagné par un sans-faute sur {b}",
-      wonAll: "Gagné en terminant les 30 niveaux", wonPerfect: "Gagné avec un 90/90 parfait",
+      wonAll: "Gagné en terminant les 30 stages", wonPerfect: "Gagné avec un 90/90 parfait",
       toBand: "Termine {b}", toClean: "Réussis un sans-faute sur {b}",
-      toAll: "Termine les 30 niveaux", toPerfect: "Obtiens un 90/90 parfait",
+      toAll: "Termine les 30 stages", toPerfect: "Obtiens un 90/90 parfait",
       awEyebrow: "Récompense de la carte",
-      awBand: "{b} terminé !", awClean: "Sans-faute sur {b} !",
-      awAll: "30 niveaux terminés !", awPerfect: "90/90 parfait !",
+      awBand: "{b}, c’est fait !", awClean: "Sans-faute sur {b} !",
+      awAll: "30 stages terminés !", awPerfect: "90/90 parfait !",
       boostXpOn: "Xp doublée", boostLeft: "Encore {n} parties", boostOne: "Encore une partie", boostDone: "Boost épuisé",
       close: "Fermer", back: "Retour"
     }
@@ -286,10 +286,14 @@
 
      XP IS NOT ON THAT RATE. It is deliberately the old, flat conversion: the
      level is what multiplies the coins, so paying xp by the level too would
-     make the climb feed itself and the curve underneath it (350 * l^1.3) would
+     make the climb feed itself and the curve underneath it (500 * l^1.5) would
      stop meaning anything. One run still moves the bar by the same amount at
      level 1 and at level 10 — what changes is what that run is worth in the
      wallet. */
+  /* `xpPer` and `ticketPrice` are never typed in a manifest: the builder
+     derives both from the game's reference round (tools/lib/economy.mjs), so a
+     ticket costs the same number of rounds and a round pays the same xp in
+     every game. The defaults only serve a build that skipped that step. */
   var POINTS_PER_COIN = opt("coinsPer", 1000);
   var POINTS_PER_XP = opt("xpPer", 100);
   var TICKET_PRICE = opt("ticketPrice", 250);
@@ -388,8 +392,12 @@
      thing this layer refuses (docs/META.md, section 9). Double coins on the
      next round that pays any, double xp on the next three. A price fixed on
      the ticket while what it pays grows with the level: the boost is a bet on
-     the player's own lever, worth more the further up the climb they are. */
-  var BOOST_PRICE = opt("boostPrice", TICKET_PRICE * 2);
+     the player's own lever, worth more the further up the climb they are.
+     A FIFTH OF A TICKET, which is four reference rounds of coins at level 3
+     (tools/lib/economy.mjs): it was two tickets while a ticket cost a few
+     rounds, and once the ticket was priced at twenty that made a boost forty
+     rounds of coins to double one. */
+  var BOOST_PRICE = opt("boostPrice", legible(TICKET_PRICE / 5));
   var BOOST_XP_ROUNDS = 3;
   /* THE MYSTERY GIFT is three tickets' worth of coins for the three-box
      ceremony, and what the boxes hold is rolled by `mysteryReward` below —
@@ -406,10 +414,13 @@
   /* The player's own climb. A round pays its coins in xp as well, so the bar
      moves on every run and not only on a level cleared — the map is what
      rewards mastery, this is what rewards playing. The curve is the one shape
-     that had to be chosen rather than derived: 350 * l^1.3 puts level 2 about
-     three rounds in and level 10 about forty, which is a season and not an
-     afternoon. */
-  function xpFor(l) { return Math.round(350 * Math.pow(l, 1.3)); }
+     that had to be chosen rather than derived: a reference round pays 100 xp
+     in every game (tools/lib/economy.mjs), and 500 * l^1.5 puts level 2 in
+     the first session and level 10 some seven hours of play in. It was
+     350 * l^1.3, which reached level 5 inside twenty minutes — and since the
+     level multiplies the coins, a climb that fast was the wallet running away
+     with it. tools/lab/sim-economy.mjs mirrors this line. */
+  function xpFor(l) { return Math.round(500 * Math.pow(l, 1.5)); }
 
   function rarityOf(i) {
     var s = STICKERS[i - 1];
@@ -797,11 +808,31 @@
      wording and tripling are each written once. */
   function reward(kind, n) { return { kind: kind, n: n }; }
 
+  /* EVERY AMOUNT A GIFT HANDS OVER IS READ IN THIS GAME'S OWN UNITS: coins as
+     a share of its ticket, xp as a share of the player's current level. They
+     used to be fixed sums — 90 to 500 coins, 110 to 500 xp — in thirteen games
+     whose tickets cost from 8 to 14 250 coins: one three-star box paid vipera's
+     player forty-six tickets and gearball's half of one, and an xp box was a
+     whole level at level 1. A share means the same box is worth the same in
+     every game and at every level. */
+  function giftCoins(lo, hi, g) {
+    return legible(TICKET_PRICE * (lo + Math.random() * (hi - lo)) * (g || 1));
+  }
+  function giftXp(lo, hi, g) {
+    var n = xpFor(playerLevel()) * (lo + Math.random() * (hi - lo)) * (g || 1);
+    return Math.max(5, Math.round(n / 5) * 5);
+  }
+
+  /* A plain box: a quarter of a ticket to three quarters, or 10 to 20 % of
+     the level; a rich one (the three-star bonus, a starred day): half a
+     ticket to one, or 20 to 35 % of the level. A ticket is one either way —
+     it is the thing the whole layer is priced against, and the box that pays
+     one is already the best box. tools/lab/sim-economy.mjs mirrors these. */
   function randomReward(rich) {
     var r = Math.random();
-    if (r < 0.34) return reward("coins", rich ? 240 + Math.floor(Math.random() * 260) : 90 + Math.floor(Math.random() * 130));
-    if (r < 0.58) return reward("xp", rich ? 260 + Math.floor(Math.random() * 240) : 110 + Math.floor(Math.random() * 120));
-    if (r < 0.82) return reward("ticket", rich ? 2 : 1);
+    if (r < 0.34) return reward("coins", rich ? giftCoins(0.5, 1) : giftCoins(0.25, 0.75));
+    if (r < 0.58) return reward("xp", rich ? giftXp(0.2, 0.35) : giftXp(0.1, 0.2));
+    if (r < 0.82) return reward("ticket", 1);
     return reward("sticker", roll());
   }
 
@@ -813,8 +844,8 @@
      figure: what is promised is the KIND, what is kept secret is the size. */
   function dayReward(kind, day, mult) {
     var g = (1 + (Math.max(1, day || 1) - 1) * 0.25) * (mult || 1);
-    if (kind === "coins")  return reward("coins",  Math.round((90 + Math.random() * 130) * g));
-    if (kind === "xp")     return reward("xp",     Math.round((110 + Math.random() * 120) * g));
+    if (kind === "coins")  return reward("coins",  giftCoins(0.25, 0.75, g));
+    if (kind === "xp")     return reward("xp",     giftXp(0.1, 0.2, g));
     if (kind === "ticket") return reward("ticket", Math.max(1, Math.round(g)));
     return randomReward(g > 2);
   }
@@ -854,14 +885,15 @@
   function xpWorth(n) { return n * POINTS_PER_XP / POINTS_PER_COIN * playerLevel(); }
   function dayValue(kind, day, mult) {
     var g = (1 + (Math.max(1, day || 1) - 1) * 0.25) * (mult || 1);
-    if (kind === "coins")  return 155 * g;
-    if (kind === "xp")     return xpWorth(165 * g);
+    var need = xpFor(playerLevel());
+    if (kind === "coins")  return 0.5 * TICKET_PRICE * g;
+    if (kind === "xp")     return xpWorth(0.15 * need * g);
     if (kind === "ticket") return Math.max(1, Math.round(g)) * TICKET_PRICE;
     /* A gift day: `randomReward` weighted by its own odds, times the ×5 of a
        starred day. */
     var rich = (mult || 1) > 1;
-    var v = 0.34 * (rich ? 370 : 155) + 0.24 * xpWorth(rich ? 380 : 165) +
-            0.24 * (rich ? 2 : 1) * TICKET_PRICE + 0.18 * TICKET_PRICE;
+    var v = 0.34 * (rich ? 0.75 : 0.5) * TICKET_PRICE + 0.24 * xpWorth((rich ? 0.275 : 0.15) * need) +
+            0.24 * TICKET_PRICE + 0.18 * TICKET_PRICE;
     return v * (mult || 1);
   }
   function catchUpPrice(kind, day, mult) {
@@ -2651,9 +2683,16 @@
     W.Sound.ui("reward", 0.85);
   }
 
-  /* THE THREE-STAR BONUS, HANDED OVER ON THE ROUND THAT EARNED IT. It used to
-     be the end screen's last beat, three screens' worth of reveal after the
-     third star lit; it is now the outro's (packages/webshell/levels.js), which
+  /* Whether THIS round was handed the bonus, which is what tells `offer` a
+     perfect round that has been paid from a perfect replay that has not — the
+     levels layer only opens the boxes on a level's first three stars. */
+  var bonusPaid = false;
+
+  /* THE THREE-STAR BONUS, HANDED OVER ON THE ROUND THAT EARNED IT — and once
+     per level: a perfect replay is not paid twice (levels.js, onResult).
+
+     It used to be the end screen's last beat, three screens' worth of reveal
+     after the third star lit; it is now the outro's (packages/webshell/levels.js), which
      means the boxes open over the world still crawling in slow motion and the
      end screen arrives with the prize already in the wallet.
 
@@ -2668,6 +2707,7 @@
      the score starts counting into it. */
   function bonus(done) {
     buildEnd();
+    bonusPaid = true;
     var handed = false;
     function once() {
       if (handed) return;
@@ -2689,10 +2729,13 @@
   /* The two offers, and they are the only place this layer asks for anything:
      a round that earned a star is offered a gift for an ad, and a round that
      earned nothing is left alone — a player who just failed is the last person
-     to sell to. A perfect round has already been paid, on the round itself
-     (see `bonus`), so the end screen asks it for nothing at all. */
+     to sell to. A perfect round that was paid on the round itself (see
+     `bonus`) is asked for nothing at all; a perfect REPLAY, which the bonus
+     skips, gets the same offer as one or two stars. */
   function offer(stars) {
-    if (stars >= 3) return;
+    var paid = bonusPaid;
+    bonusPaid = false;
+    if (stars >= 3 && paid) return;
     if (stars >= 1) {
       /* ONE CONTROL, AND IT SAYS THE WHOLE DEAL. It was a gold label beside a
          button — "A FREE GIFT" · WATCH AN AD — which reads as a claim followed

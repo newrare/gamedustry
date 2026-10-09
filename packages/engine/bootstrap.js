@@ -89,7 +89,9 @@
      LEFT / RIGHT (or A / D) mirror a lateral flick for a "swipe" game: the
      engine synthesizes the whole down/move/up gesture through Input.swipe, so
      the game reads the keyboard through the very same code path as a finger.
-     CONFIG.keyboard = false opts out of both. */
+     UP (or W) is an upward flick, for a swipe game that sets CONFIG.swipeUp:
+     opt-in, because a game that never reads a vertical flick would take it
+     for a tap. CONFIG.keyboard = false opts out of all of it. */
   function spaceIsATap() {
     if (CONFIG.keyboard === false) return false;
     var demo = CONFIG.intro.demo || "tap";
@@ -105,6 +107,7 @@
     function arrowDir(e) {
       if (e.code === "ArrowLeft"  || e.key === "ArrowLeft"  || e.key === "a" || e.key === "A" || e.keyCode === 37) return -1;
       if (e.code === "ArrowRight" || e.key === "ArrowRight" || e.key === "d" || e.key === "D" || e.keyCode === 39) return 1;
+      if (CONFIG.swipeUp && (e.code === "ArrowUp" || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.keyCode === 38)) return "up";
       return 0;
     }
     window.addEventListener("keydown", function (e) {

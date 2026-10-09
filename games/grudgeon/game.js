@@ -3966,6 +3966,20 @@
       return 1 + (foesDown - (bossDown ? 1 : 0) >= stage.m ? 1 : 0) + (fell ? 0 : 1);
     }
     function levelWon() { finish("lifted"); }
+    /* The objectives card (a tap on the level pill). The score levels keep
+       the layer's own bands; the way out and the master are a star each for
+       the objective, for m yokai on the way and for no hero fallen. */
+    function levelRules(n) {
+      var S = stage || stageOf(n);
+      if (S.obj !== "exit" && S.obj !== "boss") return null;
+      var met = S.obj === "exit" ? escaped : bossDown;
+      return [
+        { text: goalLine(S), stars: 1, done: met },
+        { text: Lang.t("Exorcise <b>{m}</b> yokai on the way").replace("{m}", S.m), stars: 1,
+          done: met && foesDown - (bossDown ? 1 : 0) >= S.m },
+        { text: Lang.t("No hero falls"), stars: 1, done: met && !fell }
+      ];
+    }
 
     /* The way out: walking into it ends the run, wherever the stars stand. */
     function takeExit(cell) {
@@ -3995,5 +4009,5 @@
 
     return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelProgress: levelProgress, levelTally: levelTally,
-             levelWon: levelWon };
+             levelRules: levelRules, levelWon: levelWon };
   })();

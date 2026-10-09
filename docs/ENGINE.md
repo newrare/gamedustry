@@ -111,8 +111,9 @@ a label or a status line in a bottom corner is the one thing they cover.
 `games/arcider` is what that cost: its shield rail ran down the left flank with
 the km/h readout at its foot, and both moved to the right, above MENU /
 OPTIONS. A game whose own layout owns the left corner moves the pill instead,
-from its SKIN — `games/slipdeck` sets `--lv-hud-bottom` because its five-card
-hand fills the foot of the frame. See [LEVELS.md](LEVELS.md).
+from its SKIN (`--lv-hud-bottom` / `--lv-hud-left`) — or stops its table above
+that row on the web, which is what `games/slipdeck` does since v1.4.0. See
+[LEVELS.md](LEVELS.md).
 
 ## Screen flow
 
@@ -169,7 +170,10 @@ Each fallback is wired for the mechanic it fits, read off `CONFIG.intro.demo`:
   `down` → `move` → `up` gesture from `Layout.cx/cy`, `dist` design px to the
   side (150 by default), so the game reads the keyboard through the very same
   handlers as a finger and never grows a second input path. Auto-repeat is
-  ignored: one press is one flick.
+  ignored: one press is one flick. UP (or W) is an upward flick,
+  `Input.swipe("up")`, for a game that sets `CONFIG.swipeUp = true`
+  (`games/triverse`, whose flick up is the jump) — opt-in, because a game that
+  never reads a vertical flick would take it for a tap.
 
 `CONFIG.keyboard = false` turns both off. Keys are consumed with
 `preventDefault()`, so they never scroll the host page nor re-click a focused

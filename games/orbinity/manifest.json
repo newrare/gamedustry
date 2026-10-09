@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -60,7 +60,7 @@
     "fr": {
       "tagline": "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
       "tags": [
-        "Tap rythmé",
+        "Tap précis",
         "Gravité coupée",
         "Chaîne de combos"
       ]
@@ -116,12 +116,12 @@
             "line": "Enchaîne les <b>orbites</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -169,7 +169,7 @@
           "Combo lost": "Combo perdu",
           "Combo x": "Combo x",
           "Cosmic!": "Cosmique !",
-          "Evolved": "Évolution",
+          "Evolved": "Evolution",
           "Final score": "Score final",
           "Install now": "Installer",
           "Keep the chain alive": "Garde la chaîne en vie",
@@ -202,7 +202,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> in one orbit run",
-        "fr": "Marque <b>{n}</b> en une série d’orbites"
+        "fr": "Marque <b>{n}</b> en une série d'orbites"
       },
       "tune": {
         "planet.start": [
@@ -233,8 +233,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 12,
-      "ticketPrice": 38,
       "awards": [
         1,
         2,

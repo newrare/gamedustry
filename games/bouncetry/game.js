@@ -2127,6 +2127,15 @@
        to end it) never plays on past it and reads "Under par" over a count
        of balls that went past par. On a level, the level layer's own finish
        plays over this: the world is slowed long before `endT` runs out. */
+    /* The objectives card (a tap on the level pill), one row a star of the
+       count above. */
+    function levelRules() {
+      var wall = Lang.t("Break <b>{p}%</b> of the wall");
+      return [wall.replace("{p}", Math.round(C.starOne * 100)),
+              wall.replace("{p}", Math.round(C.starTwo * 100)),
+              Lang.t("Clear the wall, or <b>{p}%</b> in <b>{b}</b> balls")
+                .replace("{p}", Math.round(C.starTwo * 100)).replace("{b}", par)];
+    }
     function parWin() {
       if (cleared || phase === "over") return;
       Sound.clip("clear", 0.9, 1.1);
@@ -2764,6 +2773,7 @@
        levels — see docs/LEVELS.md. */
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             levelWon: finish, levelTally: tally, applyLevel: applyLevel };
+             levelWon: finish, levelTally: tally, levelRules: levelRules,
+             applyLevel: applyLevel };
   })();
 

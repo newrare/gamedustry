@@ -302,6 +302,14 @@ var LIGHTNING = { w: 560, h: 720, q: 0.8 };
    of a row, so the box is that size on a 3x phone, like the banks' props. */
 var HAZARD = { w: 256, h: 256, q: 0.8 };
 
+/* slipdeck's jokers (`jokerNN`) and the marks of its special cards
+   (`markNN`). A joker is drawn ~240 design px across on the live card and
+   ~70 on the rail's medallions; a mark is a sticker ~125 px on the live card
+   and ~60 on a card of the hand. Boxed for a 3x phone at the medallion and a
+   2x one at the big card, which is where the bytes are worth spending. */
+var JOKER = { w: 256, h: 256, q: 0.8 };
+var MARK = { w: 160, h: 160, q: 0.8 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -333,6 +341,8 @@ function profileFor(role, slug) {
   if (role.indexOf("eagle-") === 0) return EAGLE;
   if (/^lightning\d+$/.test(role)) return LIGHTNING;
   if (/^(peak|trap-peak|trap-fire)\d+$/.test(role)) return HAZARD;
+  if (/^joker\d+$/.test(role)) return JOKER;
+  if (/^mark\d+$/.test(role)) return MARK;
   if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the

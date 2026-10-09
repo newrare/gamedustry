@@ -5,8 +5,8 @@ stretch of it per biome, per level band or per mode, and a quiet, slower window
 of the same track under the menus.
 
 `games/arcider` is the reference; `games/blight`, `games/bouncetry`,
-`games/echomaze`, `games/gearball`, `games/radiam`, `games/spinshock` and
-`games/vipera` followed.
+`games/echomaze`, `games/gearball`, `games/radiam`, `games/slipdeck`,
+`games/spinshock`, `games/triverse` and `games/vipera` followed.
 This document is the procedure for the other eight — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
@@ -318,7 +318,7 @@ SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
 | `arcider`    | 182.5 s    | 36.1 s       | **5 biomes + menu**                                                |
 | `blight`     | 179.1 s    | 36.0 s       | **5 map bands + menu**, one scene apiece                           |
 | `echomaze`   | 171.4 s    | 36.0 s       | **5 map bands + menu**, one hall apiece                            |
-| `slipdeck`   | 115.8 s    | 46.9 s       | none yet — the master is long enough                               |
+| `slipdeck`   | 148.8 s    | 32.0 s       | **5 map bands + menu**, one table apiece                           |
 | `marshmelt`  | 54.0 s     | 35.0 s       | none yet — enough for two, plus the menu                           |
 | `bouncetry`  | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
 | `chainring`  | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
@@ -328,7 +328,7 @@ SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
 | `radiam`     | 181.2 s    | 29.5 s       | **5 worlds + menu**, one hall apiece                               |
 | `spinshock`  | 182.0 s    | 23.0 s       | **5 bands + menu**, one dish apiece                                |
 | `stratideck` | 177.2 s    | 30.0 s       | **5 map bands + menu**, one camp apiece                            |
-| `triverse`   | 30.8 s     | 30.8 s       | needs a longer master first                                        |
+| `triverse`   | 174.7 s    | 31.1 s       | **5 biomes + menu**, one rule and one look apiece                  |
 | `vipera`     | 176.9 s    | 33.0 s       | **5 biomes + menu**, one ground apiece                             |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,

@@ -1793,6 +1793,14 @@
       return perfectRun() ? 3 : escaped ? 2 : 1;
     }
 
+    /* The objectives card (a tap on the level pill): the score band AND the
+       ladder above, one row a star. {n} is the band's score. */
+    function levelRules() {
+      return [null, Lang.t("Score <b>{n}</b> and escape the maze"),
+              shotPar === 1 ? Lang.t("Score <b>{n}</b> and escape in <b>1</b> pulse")
+                            : Lang.t("Score <b>{n}</b> and escape in <b>{p}</b> pulses").replace("{p}", shotPar)];
+    }
+
     function finish() {
       var stars = starsEarned();
       endRound({
@@ -2759,6 +2767,7 @@
        levels — see docs/LEVELS.md. */
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             applyLevel: applyLevel, levelWon: finish, levelStars: levelStars };
+             applyLevel: applyLevel, levelWon: finish, levelStars: levelStars,
+             levelRules: levelRules };
   })();
 

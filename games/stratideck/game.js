@@ -3411,11 +3411,21 @@
        `levelStars` stays as the floor it can never be promoted past — a lost
        battle is worth nothing. */
     function levelTally() { return tally(); }
+    /* The objectives card (a tap on the level pill): the three stars are
+       earned one by one, in any order — one star a row. */
+    function levelRules() {
+      var lost = outcome === false;
+      return [
+        { text: Lang.t("Take the enemy <b>flag</b>"), stars: 1, done: !lost && flagTaken },
+        { text: Lang.t("Win with <b>no wounds</b>"), stars: 1, done: !lost && !hurtCards.length && !refused.length },
+        { text: Lang.t("Take a <b>prisoner</b>"), stars: 1, done: !lost && captives.length > 0 }
+      ];
+    }
     function levelStars(stars) { return outcome === false ? 0 : stars; }
 
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally,
+             applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally, levelRules: levelRules,
              cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo,
              defense: defenseSim };
   })();

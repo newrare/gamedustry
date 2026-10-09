@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.6.1",
+  "version": "1.7.1",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -62,7 +62,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
+      "tagline": "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
       "tags": [
         "Tap rythmé",
         "Sur la musique",
@@ -78,7 +78,7 @@
       ]
     }
   },
-  "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring. On the web the climb crosses five worlds, each with its own rings and its own rule: rewind rings that throw the others back, sticky rings that hold the ball, dark rings that must not be tapped, gap rings the ball can slip through — and all four at once in the last.",
+  "description": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring. On the web the climb crosses five worlds, each with its own rings and its own rule: rewind rings that throw the others back, sticky rings that hold the ball, dark rings that must not be tapped, mixed rings whose dark parts the ball slips through untapped — and all four at once in the last.",
   "store": {
     "copy": {
       "en": {
@@ -120,12 +120,12 @@
             "line": "Rebond <b>infini</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -162,19 +162,21 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape en rythme, à l’instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>",
+        "tagline": "Tape en rythme, à l'instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>",
         "strings": {
           "Close": "Presque",
           "Combo": "Combo",
+          "Dark part": "Partie sombre",
+          "Dark part: don't tap. Bright part: tap": "Partie sombre : pas de tap. Partie claire : tape",
           "Dark ring": "Anneau sombre",
-          "Dodge the spikes": "Évite les piquants",
+          "Mixed ring": "Anneau mixte",
+          "Dodge the spikes": "Evite les piquants",
           "Don't tap: let the ball bounce off it": "Ne tape pas : laisse la bille rebondir",
           "Empty beat": "Temps mort",
           "Feel the beat": "Sens le rythme",
           "Final score": "Score final",
           "Full track": "Morceau complet",
           "Game over": "Partie terminée",
-          "Gap ring": "Anneau troué",
           "Get ready": "Prépare-toi",
           "Go!": "Go !",
           "Good": "Bien",
@@ -186,15 +188,15 @@
           "Perfect": "Parfait",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
+          "Rewind": "Inverse",
           "Rewind ring": "Anneau inverse",
           "Score": "Score",
           "Sticky ring": "Anneau collant",
           "Sudden death": "Mort subite",
-          "Tap it: the rings behind back off, then rush in": "Touché, les anneaux suivants reculent puis foncent",
+          "Tap it: the rings behind back off, then rush in": "Tape-le : les anneaux suivants reculent puis foncent",
           "Tap to play": "Tap pour jouer",
           "Tap when the ball lands, and again when it leaves": "Tape quand la bille arrive, puis quand elle repart",
           "The round lasts the whole song": "La partie dure tout le morceau",
-          "Through a gap, no tap. On a bar, tap": "Dans un trou, pas de tap. Sur un plein, tape",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !"
         }
@@ -236,7 +238,7 @@
         "fr": [
           "Néon",
           "Ambre",
-          "Éclipse",
+          "Eclipse",
           "Glacier",
           "Nova"
         ]
@@ -270,8 +272,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 35,
-      "ticketPrice": 315,
       "awards": [
         1,
         2,

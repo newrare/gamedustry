@@ -115,10 +115,15 @@ ______________________________________________________________________
   in, most likely. Still on the table: the hub going gold at 90/90 the way the
   map's roads already do, the only idea left that would SAY something.
 
-- [ ] MAIN — tune the new shop prices per game if the defaults read wrong
-  (`giftPrice`, `boostPrice`, `xpPack` in `web.meta`): they are derived from
-  `ticketPrice`, whose weight against a round's coins differs a lot between
-  games (vipera 8, pawko 14 250).
+- [ ] TUNE — **measure the five reference rounds that are estimates.** The
+  ticket price and the xp rate are derived from `web.meta.roundScore`
+  (`tools/lib/economy.mjs`, checked with `node tools/lab/sim-economy.mjs`),
+  and five games whose objective is not their score carry a figure read off
+  their code, not off play: arcider 1 000, triverse 1 600, vipera 600,
+  bouncetry 3 000, grudgeon 900. The best score per level `r` in
+  `prog:<slug>` is the measurement to replace them with. The shop prices
+  (`giftPrice`, `boostPrice`, `xpPack`) follow the ticket and want a look by
+  eye once the new economy has been played.
 
 - [ ] ART — **the painted instruments, in the playable and the motor.** On the
   web they reach every game through `CONFIG.shellArt` (gated on `web.meta`,
@@ -189,11 +194,12 @@ ______________________________________________________________________
 - [ ] CODE — **what a first launch shows.** The MECHANICS of the navigation
   are settled — one stack, one BACK, one ESCAPE, and where every screen leads
   ([docs/VIEWS.md](docs/VIEWS.md)) — so what is left is the CONTENT of the
-  first minute. A board that has never been played opens on level 0, which
-  opens the help card over the map
-  ([packages/webshell/levels.js](packages/webshell/levels.js)): that is the
-  whole onboarding, and it is one card of text in front of a player who has not
-  seen the game yet. Decide what is explained, when, and what stays hidden
+  first minute. The very first launch now skips the title, the village and
+  the map: it opens on level 1 and raises the help card over that round once
+  its entrance has landed
+  ([packages/webshell/menu.js](packages/webshell/menu.js), section 4c). That
+  is still the whole onboarding — one card of text over a board the player has
+  not touched yet. Decide what is explained, when, and what stays hidden
   until it exists — a wallet with nothing in it, a shop with nothing to sell, a
   collection with twenty silhouettes. Related: the leave card and the
   game-over buttons above.
@@ -318,11 +324,22 @@ ______________________________________________________________________
     band by hand before moving `play.foeHp` / `foeAtk`, `tune.play.foePower`
     (1.0 → 1.1) or `tune.play.partyLevel` (1 → 20)
 
-- [ ] CODE — **`slipdeck`, rebuild the gameplay from the ground up.** Not a
-  tuning pass: the loop is thin over a thirty-level ladder. Its seven tunables
-  are already in `CONFIG.play`, so a new loop has the knobs it needs. The
-  mechanic is a `prototype/` question first, and the port into
-  `games/<slug>/game.js` is the request that follows. **`gearball` is done**
+- [ ] MAIN — **`slipdeck` v1.3.0, play the new rules and judge them.** The
+  rebuild landed (2026-10-08), out of `lab/slipdeck.html`: no clock (the deck
+  is the clock, 32 cards in a playable, 52 on the levels), chips × mult
+  counted step by step, a pair floor, 20 jokers dealt in the stream onto a
+  rail of three, gold / glass / wild / lucky / cursed / veiled cards, and a
+  tip card the first time each idea lands. The climb brings them in one at a
+  time (`stageFor` in game.js) and every level has its own objective
+  (`GOALS`, read off the lab bench's line-reading pilot). Left: play the
+  climb by hand and move `GOALS` and `web.levels.tune`; the bench pilot dies
+  on ~45 % of the runs from level 19 up, a human should do better. Levels 1–6
+  still pay any pair, so a blind right-swipe still works there by design.
+  v1.4.0 redrew the table out of `lab/slipdeck-table.html` (ivory cards, the
+  painted jokers on an art card and as medallions, mark stickers, chevrons,
+  the hand fanned under its own chips × mult, the count on casino chips) and
+  fixed a joker that could land twice on the rail.
+  **`gearball` is done**
   (v2.0.0): the marble machine of `prototype/marble-mix.html` — locking gates,
   flip-flop switches, electric marbles steered to one arrival — replaced the
   closed gear loop.
@@ -405,7 +422,7 @@ ______________________________________________________________________
     v1.5.1 animates each one its own way (tunnel, hive, spiral, frost, warp).
     v1.6.0: a ring DESIGN per biome (tube, sprocket, chain, crown, ribbon,
     from `lab/chainring-rings.html`) and drops of glue as the sticky glyph.
-    v1.6.1: a dark ring left alone is a PERFECT step of the combo (a late
+    v1.7.0 (was 1.6.1, never committed): a dark ring left alone is a PERFECT step of the combo (a late
     tap in its window takes it back); a gap ring met on a bar is a real
     bounce — the flight is cut there and leaves inwards, and a tap on it is
     a PERFECT; a gap gone through untapped is a PERFECT too, the ring diving
@@ -414,7 +431,17 @@ ______________________________________________________________________
     from every ring on screen, enters `gapLead` (half a beat) ahead of the
     rings landing after it and never shares the screen with a rewind; the
     flight is PLANNED for it (`gapRate` is now a share of bounces) — check
-    the rate on the 19-24 band.
+    the rate on the 19-24 band. Special rings about doubled (`ruleRate`
+    0.4-0.6, `gapRate` 0.3-0.45, `steadyFor` 4 s, NOVA capped at
+    `ruleRateMax` 0.75, two dark rings may follow each other): 17-39% of
+    the rings of a biome, 46% on level 30, from 4-21% and 33%; raised again
+    (`ruleRate` 0.55-0.75, `gapRate` 0.45-0.65, `steadyFor` 3 s,
+    `ruleRateMax` 0.85): 22-56%, 57% on level 30. A rewind
+    tapped is a payoff of its own (`rewindFx`: shockwaves, rays, a REWIND
+    callout) and the rings it shoves glow while they go back out. The gap
+    ring is now a MIXED ring: its gaps are drawn as DARK parts (the dark
+    ring's own look: don't tap) between bright parts in the ring's colour
+    (tap), a sixth of the ring each — same gameplay, clearer read.
     Left: MAIN — check the ground with `?perf=1` on a phone; play the
     30 and judge the four looks and the rule rates (`ruleRate`, `gapRate`,
     `gapOpen`), tuned against a scripted bench pilot only; listen to the
@@ -422,8 +449,9 @@ ______________________________________________________________________
   - to finish or rethink: `spinshock`
   - to do: `orbinity`, `triverse`, `stratideck`, `pawko`,
     `marshmelt`
-  - `slipdeck` comes with its rebuild (above), `bouncetry` with its ghost
-    (below)
+  - `slipdeck` came with its rebuild (v1.3.0, above: `stageFor` brings a
+    joker family, a special card or a higher pair floor every few levels);
+    `bouncetry` comes with its ghost (below)
 
   **`radiam` is done and is the pattern to copy** (v1.1.0). Two tables in
   `CONFIG.ladder` and one `applyLevel` hook, the shape `games/arcider` first
@@ -447,9 +475,11 @@ ______________________________________________________________________
     `bouncetry`, `vipera` (v1.4.0: five biomes + menu off a new 177 s master),
     `chainring` (v1.4.0: five TRACKS, one per biome, stretches on the beat,
     the whole song on each biome's last level, menu cut from Glacier; left:
-    MAIN — play the five whole-track levels and judge their objective)
+    MAIN — play the five whole-track levels and judge their objective),
+    `slipdeck` (v1.5.0: five map bands + menu off a new 149 s master, one
+    felt per band)
   - to finish or rethink: `spinshock`, `marshmelt`
-  - to do: `orbinity`, `triverse`, `gearball`, `slipdeck`
+  - to do: `orbinity`, `triverse`, `gearball`
 
 - [ ] MAIN — **proofread and validate every text, all fifteen games.** Every
   word a player reads, EN and FR: the listing copy, the intro sentence, the HUD,
@@ -484,6 +514,67 @@ ______________________________________________________________________
   `CONFIG.music.menu`): the seams were placed on the RMS profile of
   `assets/audio/music/pawko.mp3` (body at 10 s, breaks at 45–55, 95–110 and
   130–135, end at 176) and never by ear.
+
+- [ ] MAIN — **`slipdeck` v1.6.0, play the joker gauge and the 32 jokers.**
+  Jokers are no longer dealt in the stream: a paid hand fills the joker gauge
+  by its strength (`GAUGE_GAIN`, `play.pickGauge` 4), a full gauge — and the
+  start of every run — deals a pick of two (three with Third option), and a
+  full rail asks which joker the new one replaces. Every joker has a rarity
+  (`PICK_WEIGHT`), and three families joined: FATE (Compass, Reshuffle, Pocket,
+  Rewind, Card counter, Called shot — tapped on the rail, once per hand), LUCK
+  (Lucky charm, Golden ticket, Hot hand, Third option, Re-deal) and RISK
+  (Greed); Smeared now makes Spade lover count ♣. The village has a `cards`
+  house: the codex of the jokers, by rarity, a joker had once taken. Left:
+
+  - **play it by hand**: `GOALS` were kept (a headless value-picking pilot
+    puts levels 4–19 within noise of the old medians, 20+ is all deaths and
+    noise), and nothing has checked how strong Called shot, Greed and the
+    Fate jokers are under a human;
+  - `lab/slipdeck.html` still deals jokers in the stream and knows none of
+    the new ones: its bench no longer describes the game.
+  - v1.6.1 added the POKER HANDS card (nine rows, five drawn cards each, the
+    kickers shaded, chips × mult, the pair floor, the hand being built lit),
+    opened from a button on the basics and count cards and by a tap on the
+    hand's line: read it on a phone, FR included.
+  - v1.6.2 staged the COUNT (THE COUNT in game.js): the name slams in, every
+    card and joker throws its value at the blue or red chip, which takes the
+    hit (a ×mult hardest: flash, hit-stop), the chips crash together and the
+    total counts up over a sunburst; ~2 s became ~4-5 s a hand, a tap
+    hurries it (×2.6). Judge the length over a whole run on a phone.
+  - v1.6.3: the total's sunburst runs to the edges of the frame, and every
+    joker on the rail wears what it would pay the hand the value line shows
+    (glowing while the live card leans toward KEEP).
+  - v1.6.4: a ×mult is an orange burst everywhere (rail, hand tags, the
+    throw), the red chip reads "13 ×2" and trembles before it flips, and an
+    "Add or multiply" card is told the first time a × joker is taken (Low
+    tide, Collector, Called shot, Greed: `xm` in JOKERS) and re-read from
+    the joker's card.
+  - v1.7.0 added THE POT (`play.pot`): a binned card's chips drop into a
+    stack under the bin gate, a paid full hand takes a share by strength
+    (`POT_SHARE`, 10 % a pair to 100 % a straight flush, as chips the mult
+    multiplies), a bust burns half, the last hand of the deck takes it all
+    (ALL IN). Seven jokers came with it: Croupier, Fireproof and Ante (Bin),
+    and the SEAT family from level 11 — Lucky seat, Keystone, Staircase,
+    Last word — which make the PLACE a card lands in matter. Left:
+    - the art landed in v1.7.1: `slipdeck-object-joker-three.png`, cut
+      `--grid 4x2`, joker33–39 = cuts 01–07 (cut 08, a second Keystone, is
+      spare);
+    - **the balance**: `GOALS` were not re-benched and the pot adds score on
+      every level; bench it, and judge `POT_SHARE` and the Seat numbers by
+      hand;
+    - `make test slipdeck` fails "the last one going resumes the round": the
+      round opens on the basics tip, which holds it (`Game.held`), so its
+      update never ticks under the probe — the test needs `?first=0`-style
+      tips off, or to close the tip first. It predates the pot.
+
+- [ ] MAIN — **`slipdeck`, listen to the six music windows and see the five
+  tables** (`CONFIG.bands`, `CONFIG.music.menu`): the seams sit on a 90 bpm
+  bar grid (first beat 0.055 s) read off the RMS profile of
+  `assets/audio/music/slipdeck.mp3` (body at 10.7 s, breakdown 74.7–95.4,
+  fade from 143.4), never checked by ear. Only four new felts for five bands:
+  band 1 keeps the original table, then green, blue, red, purple — two greens
+  in a row, and Meltdown (25–30) replays the whole 96–141 s finale that
+  Squeeze and Overdrive split.
 
 - [ ] MAIN — **`bouncetry`, listen to the six music windows** (`BIOMES[].music`,
   `CONFIG.music.menu`): the seams were placed on a 126 bpm bar grid read off

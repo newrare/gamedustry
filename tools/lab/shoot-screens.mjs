@@ -846,7 +846,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   /* `lang` is the web menu's own switch, and it reaches the end screen: left
      to the browser, a headless Chrome in a French locale writes REJOUER on
      the replay button of every screenshot. */
-  var url = "file://" + file + "?seed=" + seed + "&span=" + span
+  var url = "file://" + file + "?first=0&seed=" + seed + "&span=" + span
     + "&endless=" + SPAN._endless + "&lang=" + lang + (level ? "&level=" + level : "")
     + (aim.map ? "&map=1" : aim.village ? "&village=1"
       : aim.card != null ? "&card=" + aim.card + (aim.back ? "&back=1" : "")

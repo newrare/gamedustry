@@ -93,7 +93,7 @@
        too fast to read.                                                       */
     travelBeats: 6,        // beats a ring spends closing in, at the start...
     travelBeatsEnd: 4,     // ...and by the last second of the round
-    steadyFor: 5,          // seconds of unbroken one-beat pulse first, to set the tempo
+    steadyFor: 3,          // seconds of unbroken one-beat pulse first, to set the tempo
     breakAfter: 3,         // bounces up top before the ball is forced back down
     gapChance: 0.08,       // weight of a flight longer than one beat, after that...
     gapChanceEnd: 0.60,    // ...and at the end of the round
@@ -117,11 +117,13 @@
                  ring bursts: a tap when the ball lands, another when it leaves
          dark    must NOT be tapped: the ball bounces off it alone, which is
                  a PERFECT step of the combo, and a tap on it breaks the chain
-         gap     sweeps across the ball in mid-flight, on a beat the ball flies
-                 over, its gaps standing still: through a gap, no tap — a
-                 PERFECT, and the ring dives on to the centre and breaks
-                 there; on a bar, the ball bounces off it there — a tap on
-                 that bounce is a PERFECT too, and breaks it
+         gap     a MIXED ring, three dark parts between three bright ones,
+                 standing still: it sweeps across the ball in mid-flight, on a
+                 beat the ball flies over. A dark part is a dark ring's: no
+                 tap — a PERFECT, the ball goes through and the ring dives on
+                 to the centre and breaks there. A bright part is a ring's:
+                 the ball bounces off it, and a tap on that bounce is a
+                 PERFECT too, and breaks it
        The rules are taught in that order — first a ring that only lies to the
        eye, then one that adds a tap, then one that takes a tap away, then one
        that takes it away only sometimes — and NOVA brings them back two, then
@@ -200,13 +202,14 @@
        two roads out of a fork have to be the same world, and
        `web.levels.bands.from` in the manifest carries the very same list. */
     biomeFrom: [1, 7, 13, 19, 25],
-    ruleRate: [0.2, 0.36],   // share of landing rings that carry the rule, first..last level of a biome
-    gapRate: [0.12, 0.22],   // share of bounces whose next flight is planned for a gap ring, same
+    ruleRate: [0.55, 0.75],  // share of landing rings that carry the rule, first..last level of a biome
+    ruleRateMax: 0.85,       // ceiling once NOVA's several rules have been scaled up (applyLevel)
+    gapRate: [0.45, 0.65],   // share of bounces whose next flight is planned for a gap ring, same
     stickBeats: 2,           // beats the ball rides a sticky ring before it bursts
     stickRide: 0.7,          // radians it slides along the rim meanwhile
     rewindPush: 150,         // px a rewind tap shoves the rings behind it back out
     gapOpen: 0.6,            // share of gap rings that meet the ball on a gap
-    gapWidth: 0.34,          // half-width of a gap, in radians (the ball is ~0.13 at the rim)
+    gapWidth: 0.52,          // half-width of a dark part, in radians: a sixth of the ring, as wide as a bright one
     gapClear: 60,            // px a gap ring keeps from every other ring on screen, all its life
     gapLead: 0.5,            // beats a gap ring enters ahead of any ring landing after it
     gapDive: 0.6             // beats a gap ring the ball went through takes to the centre, speeding up
@@ -252,14 +255,14 @@
        the beds (BEDS false) and keeps its own track and its own grid. */
     var BEDS = !!ASSETS.sounds.musicNeon, SEC = null, FULL = false;
     // The kinds a tap must leave alone: the dark ring, and a gap ring that
-    // meets the ball on one of its gaps.
+    // meets the ball on one of its dark parts.
     function noTap(ring) { return ring.kind === "dark" || (ring.kind === "gap" && ring.open); }
     // What each kind says the first time it shows up in a round (Notify).
     var HINTS = {
       rewind: { word: "Rewind ring", sub: "Tap it: the rings behind back off, then rush in", icon: "info" },
       sticky: { word: "Sticky ring", sub: "Tap when the ball lands, and again when it leaves", icon: "hourglass" },
       dark:   { word: "Dark ring",   sub: "Don't tap: let the ball bounce off it", icon: "warn" },
-      gap:    { word: "Gap ring",    sub: "Through a gap, no tap. On a bar, tap", icon: "eye" }
+      gap:    { word: "Mixed ring",  sub: "Dark part: don't tap. Bright part: tap", icon: "eye" }
     };
     // Timing grades, tightest window first: higher tier = more points + juice.
     // `win` is how far off the beat the tap may be, **in beats** — a ring lands
@@ -288,7 +291,7 @@
     var lastStyle, sinceLow;              // bounce shape, and time since the last fall
     var score, combo, bestCombo, stats;
     var maxScore, idealCombo;   // running "perfect play" reference for the stars
-    var seen, lastKind;         // kinds already announced this round, the last landing ring's kind
+    var seen, lastKind, prevKind; // kinds already announced this round, the last two landing rings' kinds
     var lastFree;               // the ring last left alone (letAlone), while a late tap can still spoil it
     var gapAfter, gapBorn;      // the last gap ring's beat and birth: no ring landing later is born earlier
 
@@ -309,7 +312,7 @@
       shockwaves = []; rays = []; ballPop = 0; hitFx = 0; tAnim = 0;
       score = 0; combo = 0; bestCombo = 0;
       maxScore = 0; idealCombo = 0;
-      seen = {}; lastKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
+      seen = {}; lastKind = ""; prevKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
       HUD.setScoreNow(0);
       HUD.setLeft("x0", "Combo");
@@ -448,7 +451,7 @@
           var a1 = a0 + off;
           var qx = C.x + Math.cos(a1) * lim, qy = C.y + Math.sin(a1) * lim;
           var v = solve(px, py, qx, qy, T);
-          // Off a gap ring's bar the ball has to come away from it, inwards.
+          // Off a gap ring's bright part the ball has to come away from it, inwards.
           if (inward && v.vx * (px - C.x) + v.vy * (py - C.y) >= 0) continue;
           if (!fits(px, py, v, T, lim)) continue;
           var launch = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
@@ -531,8 +534,8 @@
 
     /* The kind of the next LANDING ring: a rule of the level, at its RATE —
        never inside the opening pulse (`steadyFor`, the round's own metronome),
-       never two sticky rings or two dark rings back to back. The gap ring is
-       not a landing ring and is dealt by addGap. */
+       never two sticky rings back to back nor three dark ones. The gap ring
+       is not a landing ring and is dealt with its flight (fitGap). */
     function pickKind(slot) {
       if (!RULES.length || held || Round.elapsed() < CONFIG.steadyFor) return "";
       var pool = [];
@@ -544,7 +547,12 @@
       if (k === "rewind") {
         for (i = 0; i < rings.length; i++) if (rings[i].kind === "gap" && leavesAt(rings[i]) >= slot) return "";
       }
-      return k === lastKind && k !== "rewind" ? "" : k;
+      // Two sticky rings back to back would ride the rim for four beats; two
+      // dark ones are two beats left alone, a third would leave the ball to
+      // bounce on its own for too long.
+      if (k === "sticky" && lastKind === "sticky") return "";
+      if (k === "dark" && lastKind === "dark" && prevKind === "dark") return "";
+      return k;
     }
 
     // The first ring of a kind in a round names its rule, once.
@@ -555,7 +563,7 @@
       Notify.say(h.word, { sub: h.sub, kind: "info", icon: h.icon, hold: 3200 });
     }
 
-    // `inward`: the flight leaves a gap ring's bar, not the rim (see below).
+    // `inward`: the flight leaves a gap ring's bright part, not the rim (see below).
     function addSeg(px, py, b0, inward) {
       var want = gapWanted();
       var f = (inward && planFlight(px, py, true, want, b0)) || planFlight(px, py, false, want, b0);
@@ -564,7 +572,7 @@
       var seg = { b0: b0, b1: b0 + f.beats, T: f.T, x0: px, y0: py,
                   vx: f.v.vx, vy: f.v.vy, x1: f.x1, y1: f.y1 };
       segs.push(seg);
-      /* A gap ring that meets the ball on a bar is a surface like any other:
+      /* A gap ring that meets the ball on a bright part is a surface like any other:
          the flight is cut where the bar crosses it, the ball bounces off it
          there, and that ring is the landing — the rim's is never dealt. */
       var gap = f.gap ? dealGap(f.gap) : null;
@@ -572,10 +580,11 @@
         var u = (gap.hit - b0) * period();
         seg.b1 = gap.hit; seg.T = u; seg.x1 = gap.x; seg.y1 = gap.y;
         seg.ring = gap; seg.color = gap.color; seg.bar = true;
-        lastA = Math.atan2(gap.y - C.y, gap.x - C.x); lastKind = "";
+        lastA = Math.atan2(gap.y - C.y, gap.x - C.x); prevKind = lastKind; lastKind = "";
         return seg;
       }
-      lastKind = pickKind(b0 + f.beats);
+      var kind = pickKind(b0 + f.beats);
+      prevKind = lastKind; lastKind = kind;
       seg.ring = spawnRing(seg.b1, lastKind);
       seg.color = seg.ring.color;
       if (lastKind === "sticky") addStick(seg);
@@ -601,15 +610,15 @@
       prevA = lastA; lastA = a1;
     }
 
-    /* A gap ring is dealt on a beat a long flight passes over, sized to the
-       ball's distance from the centre ON that beat: it sweeps in, crosses the
-       ball in mid-flight, and carries on to the centre. Its gaps stand still
-       — a turning gap could not be read off the ball's arc — and are laid so
-       that the ball meets either the middle of a gap (`open`: no tap, and the
-       ring shatters as a step of the combo) or the middle of a bar (the ball
-       bounces off it, see addSeg: tap it on the hit, and it breaks). A bar
-       stops on the ball, its edge on the ball's, like the rim; a gap carries
-       on to the centre. Returns the ring, or null when none was dealt. */
+    /* A gap ring — a MIXED ring, dark parts between bright ones — is dealt
+       on a beat a long flight passes over, sized to the ball's distance from
+       the centre ON that beat: it sweeps in and crosses the ball in
+       mid-flight. Its parts stand still — a turning part could not be read
+       off the ball's arc — and are laid so that the ball meets either the
+       middle of a dark part (`open`: no tap, a perfect, and the ring dives on
+       to break at the centre) or the middle of a bright one (the ball bounces
+       off it, see addSeg: tap it on the hit, a perfect, and it breaks). A
+       bright part stops on the ball, its edge on the ball's, like the rim. */
     // Is the next flight to carry a gap ring, and which kind? Null: no.
     function gapWanted() {
       if (RULES.indexOf("gap") < 0 || held || Round.elapsed() < CONFIG.steadyFor) return null;
@@ -652,7 +661,7 @@
     /* A ring's radius at beat `t` on its own schedule (a rewind kick aside: it
        is back to nothing before the landing), and the beat it leaves the
        screen: a gap ring the ball went through once its dive reaches the
-       centre, one met on a bar on its beat (struck or hidden, see passRing),
+       centre, one met on a bright part on its beat (struck or hidden, see passRing),
        any other a CLOSE window past its landing — or past the end of the
        ride it holds the ball for.
        The dive: from the ball, the ring carries on at its own speed and
@@ -697,16 +706,32 @@
        that is back to nothing half a beat before the landing (kickAt). It
        lies to the eye and never to the ear. */
     function rewind(src) {
-      var now = Beat.beats(), any = false;
+      var now = Beat.beats();
       for (var i = 0; i < rings.length; i++) {
         var r = rings[i], left = r.hit - now;
         if (r === src || r.struck || r.done || r.held || left < 1.2) continue;
         r.kicks.push({ t0: now, d: left - 0.5, a: CONFIG.rewindPush * Math.min(1, (left - 0.5) / 2.5) });
-        any = true;
+        r.kickCol = src.color;              // the shoved ring glows in it (drawRing)
       }
-      if (!any) return;
-      spawnShock(arenaR, src.color, 1.4);
-      Sound.clip("rewind", 0.6);
+      rewindFx(src);
+    }
+    /* A rewind tapped is Neon's big moment, dressed like a chain payoff:
+       stacked shockwaves out of the rim, rays and a double burst off the
+       ball, the frame in the ring's colour and its own callout — and every
+       ring it shoves back glows as it goes. Juice only: it pays what the tap
+       pays, so the objectives are untouched. */
+    function rewindFx(src) {
+      spawnShock(arenaR, "#ffffff", 2.2);
+      spawnShock(arenaR, src.color, 1.8);
+      spawnShock(Math.max(0, arenaR - 70), src.color, 1.3);
+      spawnRays(ball.x, ball.y, src.color, 14);
+      Fx.burst(ball.x, ball.y, { color: "#ffffff", count: 18, speed: 520, size: 6, life: 0.5 });
+      Fx.burst(ball.x, ball.y, { color: src.color, count: 26, speed: 460, size: 7, life: 0.6 });
+      Fx.flash(src.color, 0.3);
+      Fx.shake(14, 0.3);
+      Overlay.vignette(src.color, 1, 500);
+      Pop.show("combo", { word: "Rewind", enter: 200, hold: 380, exit: 220 });
+      Sound.clip("rewind", 0.85);
     }
     // Out fast, then back in on an accelerating curve that flattens onto the
     // ring's own speed just before it lands.
@@ -721,7 +746,7 @@
     }
 
     // A gap ring met on a gap does not stop on its beat: it dives on to the
-    // centre (radiusAt). One met on a bar stops there, the ball's surface.
+    // centre (radiusAt). One met on a bright part stops there, the ball's surface.
     function ringRadius(ring, now) {
       if (ring.held) return arenaR;
       return radiusAt(ring, now) + kickAt(ring, now);
@@ -911,7 +936,7 @@
         var gap = Math.abs(rings[i].hit - now);
         if (gap < bestGap) { bestGap = gap; best = rings[i]; }
       }
-      // A ring just left alone (a dark ring bounced off, a gap gone through)
+      // A ring just left alone (a dark ring bounced off, a dark part gone through)
       // was paid as a perfect: a tap still inside its window is a tap on it,
       // and takes that back.
       if (lastFree && now - lastFree.hit <= MAXWIN && now - lastFree.hit < bestGap) {
@@ -927,7 +952,7 @@
       if (bestGap <= MAXWIN) {
         var tier = TIERS[TIERS.length - 1];
         for (var t = 0; t < TIERS.length; t++) { if (bestGap <= TIERS[t].win) { tier = TIERS[t]; break; } }
-        // The bounce off a gap ring's bar is read, not timed: a tap on it is a perfect.
+        // The bounce off a gap ring's bright part is read, not timed: a tap on it is a perfect.
         if (best.kind === "gap") tier = TIERS[0];
         combo++;
         if (combo > bestCombo) bestCombo = combo;
@@ -955,7 +980,7 @@
       ring.struck = true; ring.spoiled = true;
       combo = 0; stats.miss++;
       HUD.setLeft("x0", "Combo");
-      Pop.show("score", { word: Lang.t(ring.kind === "dark" ? "Dark ring" : "Gap ring"), cls: "pop-miss", hold: 180,
+      Pop.show("score", { word: Lang.t(ring.kind === "dark" ? "Dark ring" : "Dark part"), cls: "pop-miss", hold: 180,
                           at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
       Fx.shake(6, 0.22);
       Sound.clip("dark", 0.6);
@@ -1002,7 +1027,7 @@
       Fx.shake(8, 0.2);
       Sound.clip("burst", 0.7);
     }
-    // A gap ring breaks: a bar where the ball strikes it, a dive at the centre.
+    // A gap ring breaks: a bright part where the ball strikes it, a dive at the centre.
     function shatter(ring, x, y) {
       Fx.burst(x, y, { color: ring.color, count: 12, speed: 380, size: 5, life: 0.45 });
       Fx.burst(x, y, { color: "#ffffff", count: 5, speed: 300, size: 4, life: 0.35 });
@@ -1565,15 +1590,32 @@
       }
     };
 
-    // A gap ring is its design clipped to three bars, the gaps standing still.
-    function gapClip(ring, r) {
-      var gw = CONFIG.gapWidth, j, a0, a1;
+    // A gap ring is drawn in two passes, each its design clipped to one set
+    // of parts: the three dark ones (centred on `phase`) or the three bright
+    // ones between them. Both stand still.
+    function gapClip(ring, r, dark) {
+      var gw = CONFIG.gapWidth, j, c, a0, a1;
       ctx.beginPath();
       for (j = 0; j < 3; j++) {
-        a0 = ring.phase + j * TAU / 3 + gw; a1 = ring.phase + (j + 1) * TAU / 3 - gw;
+        c = ring.phase + j * TAU / 3;
+        if (dark) { a0 = c - gw; a1 = c + gw; } else { a0 = c + gw; a1 = c + TAU / 3 - gw; }
         ctx.moveTo(C.x, C.y); ctx.arc(C.x, C.y, r + 80, a0, a1); ctx.closePath();
       }
       ctx.clip();
+    }
+    /* The two looks a ring body takes. Dark: no colour of its own, the
+       biome's design in black between two violet edges, and a cold halo
+       instead of the "hot" glow — it is never the part to tap. Bright: the
+       ring's own colour, its halo when a shockwave lights it. */
+    function paintDark(rr, s, draw) {
+      circ(rr, "#8b5cf6", 34, 0.2);
+      draw(rr, "#0b0814", s);
+      circ(rr - 11, "#c4a1ff", 2.5, 1);
+      circ(rr + 11, "#c4a1ff", 2.5, 1);
+    }
+    function paintBright(rr, col, s, pl, draw) {
+      if (pl > 0) circ(rr, col, 18 + pl * 16, Math.min(0.4, pl * 0.3));
+      draw(rr, col, s);
     }
 
     function drawRing(ring, rr, hot, now) {
@@ -1588,21 +1630,24 @@
       RA = ring.kind === "gap" && ring.done ? 0.5 + 0.5 * clamp(rr / Math.max(1, ring.land), 0, 1) : 1;
       ctx.save();
       ctx.lineJoin = "round";
-      if (ring.kind === "gap") gapClip(ring, rr);
+      // Shoved back by a rewind: a halo in the rewind ring's colour and a
+      // streak where it came from, for as long as the shove lasts.
+      var ko = ring.kicks.length && !ring.struck ? kickAt(ring, now) : 0;
+      if (ko > 1) {
+        var kk = Math.min(1, ko / CONFIG.rewindPush);
+        circ(rr, ring.kickCol || col, 20 + 22 * kk, 0.5 * kk);
+        circ(rr - ko * 0.45, ring.kickCol || col, 3, 0.45 * kk);
+      }
       if (ring.struck) {                    // scored, or spoiled: a ghost the ball still meets
         RA *= 0.35; s.hot = false; s.pl = 0;
         draw(rr, col, s);
+      } else if (ring.kind === "gap") {
+        ctx.save(); gapClip(ring, rr, true); paintDark(rr, s, draw); ctx.restore();
+        gapClip(ring, rr, false); paintBright(rr, col, s, pl, draw);
       } else if (ring.kind === "dark") {
-        // No colour of its own: the biome's design in black between two violet
-        // edges, and a cold halo instead of the "hot" glow — it is never the
-        // ring to tap.
-        circ(rr, "#8b5cf6", 34, 0.2);
-        draw(rr, "#0b0814", s);
-        circ(rr - 11, "#c4a1ff", 2.5, 1);
-        circ(rr + 11, "#c4a1ff", 2.5, 1);
+        paintDark(rr, s, draw);
       } else {
-        if (pl > 0) circ(rr, col, 18 + pl * 16, Math.min(0.4, pl * 0.3));
-        draw(rr, col, s);
+        paintBright(rr, col, s, pl, draw);
       }
       ctx.restore();
       ctx.globalAlpha = 1; RA = 1;
@@ -1797,7 +1842,7 @@
       GAPRATE = CONFIG.gapRate[0] + (CONFIG.gapRate[1] - CONFIG.gapRate[0]) * k;
       // Shared out between several rules, each one would come round less often
       // than it did alone: NOVA deals more of them in all.
-      if (RULES.length > 1) RATE *= 1.4;
+      if (RULES.length > 1) RATE = Math.min(CONFIG.ruleRateMax, RATE * 1.4);
       if (BEDS) bedFor(CONFIG.biomes.indexOf(BIO), step);
     }
 

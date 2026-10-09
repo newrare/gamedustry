@@ -48,11 +48,11 @@
   was composed. Neither half guesses the other.
 
   THE WORDS ARE THE PLAYER'S. Every door carries its role's own word under its
-  feet and every one of them is HIDDEN, because a village is meant to be read
-  as a place and six plates over six buildings turn it back into the list it
-  replaced. A switch in OPTIONS brings them all back at once (menu.js,
-  Settings.labels) — it is not a field of the composition, since a village
-  where three buildings were named and three were not is the worst of both.
+  feet and every one of them is SHOWN, so a player opening the place for the
+  first time is told what each building is. A switch in OPTIONS hides them all
+  at once (menu.js, Settings.labels) for the player who knows the place — it
+  is not a field of the composition, since a village where three buildings
+  were named and three were not is the worst of both.
 
   WITH ONE EXCEPTION, AND IT IS DECLARED: `always` takes the question away.
   That house pulses because the composer wanted a building that moves — a
@@ -247,7 +247,7 @@
 
   var box = null;              // #web-village
   var nodes = [];              // { spec, node, badge, word }
-  var labelsOn = false;        // the player's switch, off until OPTIONS says so
+  var labelsOn = true;         // the player's switch, on until OPTIONS says so
 
   function build() {
     box = el("div"); box.id = "web-village";
@@ -406,10 +406,10 @@
       body.appendChild(hit);
 
       /* THE WORD UNDER THE FEET, and it is the PLAYER'S switch rather than the
-         composer's. A village is meant to be read as a place, so the labels are
-         off by default and OPTIONS is where they come back (menu.js,
-         Settings.labels) — a player who cannot tell the shop from the forge
-         asks for them once and keeps them. Every door carries one, which is why
+         composer's. The labels are on by default, so a player new to the place
+         can tell the shop from the forge, and OPTIONS is where they go (menu.js,
+         Settings.labels) — a player who knows the village turns them off once
+         and keeps it that way. Every door carries one, which is why
          it is not a field of the composition: a village where three buildings
          were named and three were not is the worst of both. */
       word = el("div", "vg-label");

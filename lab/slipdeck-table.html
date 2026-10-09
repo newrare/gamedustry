@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — slipdeck table</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="slipdeck">
+<style>
+/* ===========================================================================
+   SLIPDECK TABLE — the look of the round: the cards and the screen they lie on.
+
+   v1.3.0 shipped the jokers with placeholder looks: a joker is a block of
+   text, a special card is a coloured band, the rail is three text tiles. The
+   painted pieces have since arrived — twenty joker illustrations and six
+   special-card marks, cut out of assets/image/master/slipdeck-object-{joker,
+   mark}.png into assets/image/object/ — and this page is where the screen is
+   redrawn around them.
+
+   Every element of the round is a field with a few looks, and the looks mix
+   field by field (button.html's model). The presets are whole proposals; the
+   big frame is the STATE and TARGET picked, and the small frames beside it
+   are the same settings on the other target and in the other states, so a
+   look is never judged on one screen. A click on a small frame brings it up.
+
+   Two decisions of the second round are built in rather than offered:
+     - the chip under the card is GONE. What keeping the card would make is
+       read on the HAND, which always shows its own name and chips x mult —
+       and, while the card is dragged toward KEEP, what it would become.
+     - the "draw" words (Flush draw, Straight draw, Hand open) are gone with
+       it: the slots already say where the hand stands.
+
+   Drawn on a canvas in the 720x1280 design space with the game's own rules:
+   no shadowBlur (a shadow is a dark shape, a glow is a few wider strokes),
+   every size floored at the house minimum (18 / 20 / 20 / 22 px). The big
+   card can be dragged, so a gate is judged lit as well as at rest. Nothing
+   here ships: the pick is ported into games/slipdeck/game.js by hand —
+   COPY SETTINGS is the record.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { min-height:100%; }
+body {
+  display:flex; gap:20px; padding:18px; align-items:flex-start;
+  background:#07100c; color:#e3efe8;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 320px; display:flex; flex-direction:column; gap:12px; }
+#panel h1 { font-size:20px; font-weight:900; }
+#panel .sub { color:#8bab9b; font-size:12px; font-weight:500; }
+.block { padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+.block h2 { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:#f5c451; margin-bottom:10px; }
+.row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:5px 0; }
+.row label { color:#bcd3c6; }
+select, button {
+  font:inherit; font-size:12px; color:#e3efe8; background:#10201a;
+  border:1px solid rgba(245,196,81,.3); border-radius:9px; padding:6px 9px;
+}
+select { min-width:160px; }
+button { cursor:pointer; color:#f5c451; background:rgba(245,196,81,.08); }
+button:hover { background:rgba(245,196,81,.18); }
+button.on { background:#f5c451; color:#1a1405; }
+.presets { display:flex; flex-wrap:wrap; gap:6px; }
+.note { margin-top:8px; font-size:12px; color:#9fb9ab; font-weight:500; min-height:3em; }
+#stage { flex:0 0 auto; position:sticky; top:18px; }
+#board { display:block; width:450px; height:800px; border-radius:20px; background:#050d0a;
+         box-shadow:0 24px 60px rgba(0,0,0,.6); touch-action:none; cursor:grab; }
+#stage .cap { margin-top:8px; color:#8bab9b; font-size:12px; text-align:center; }
+#thumbs { flex:1 1 auto; display:flex; flex-wrap:wrap; gap:14px; align-content:flex-start; min-width:0; }
+.th { cursor:pointer; text-align:center; }
+.th canvas { display:block; width:180px; height:320px; border-radius:12px; background:#050d0a;
+             box-shadow:0 10px 26px rgba(0,0,0,.5); outline:2px solid transparent; }
+.th:hover canvas { outline-color:rgba(245,196,81,.6); }
+.th span { display:block; margin-top:5px; font-size:11px; color:#8bab9b; }
+#copied { color:#3ddc97; font-size:12px; margin-left:8px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div>
+    <h1>Slipdeck — the table</h1>
+    <p class="sub">The cards and the round's screen, redrawn around the painted jokers and marks. Mix the fields, compare the presets, drag the big card toward a gate.</p>
+  </div>
+
+  <div class="block">
+    <h2>Presets</h2>
+    <div class="presets" id="presets"></div>
+    <p class="note" id="pnote"></p>
+  </div>
+
+  <div class="block">
+    <h2>The big frame</h2>
+    <div class="row"><label>State</label><select id="state"></select></div>
+    <div class="row"><label>Target</label><select id="target"><option value="playable">Playable (install bar)</option><option value="web">Web (corner, level pill)</option></select></div>
+    <div class="row"><label>Language</label><select id="lang"><option value="en">EN</option><option value="fr">FR</option></select></div>
+    <div class="row"><label>Painted scene</label><select id="scene"><option value="1">On</option><option value="0">Felt only</option></select></div>
+  </div>
+
+  <div class="block">
+    <h2>Fields</h2>
+    <div id="fields"></div>
+  </div>
+
+  <div class="block">
+    <button id="copy">Copy settings</button><span id="copied"></span>
+  </div>
+</div>
+
+<div id="stage"><canvas id="board"></canvas><div class="cap" id="cap"></div></div>
+<div id="thumbs"></div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   1. THE FIELDS — each a few looks, mixed freely.
+   =========================================================================== */
+var FIELDS = [
+  { k:"face",  lab:"Card face", opts:{
+      flat:"Flat (shipped)", gilded:"Gilded", ivory:"Ivory watermark",
+      neon:"Neon sign", holo:"Holo foil", pixel:"Pixel 8-bit", tile:"Mahjong tile",
+      crystal:"Gem crystal", comic:"Comic pop", rune:"Rune stone", minimal:"Swiss minimal" } },
+  { k:"joker", lab:"Joker card", opts:{ text:"Text (shipped)", art:"Art + plate", tarot:"Tarot arch" } },
+  { k:"rail",  lab:"Joker rail", opts:{ tiles:"Text tiles (shipped)", medal:"Medallions", mini:"Mini cards" } },
+  { k:"gates", lab:"Gates", opts:{
+      pillars:"Pillars (shipped)", edge:"Edge glow", buttons:"Round buttons",
+      stamp:"Stamp on the card", chevrons:"Chevrons", halves:"Split field" } },
+  { k:"mod",   lab:"Special card", opts:{ band:"Band (shipped)", sticker:"Mark sticker", stickerName:"Sticker + name" } },
+  { k:"value", lab:"Hand value", opts:{ header:"Header over the hand", badge:"Badge over the hand", under:"Under the hand" } },
+  { k:"tally", lab:"The count", opts:{ boxes:"Boxes (shipped)", chips:"Casino chips", line:"Score line" } },
+  { k:"hand",  lab:"Hand", opts:{ row:"Slots (shipped)", tray:"Gilded tray", fan:"Fan" } },
+  { k:"bins",  lab:"Bins", opts:{ pips:"Pips (shipped)", tokens:"Red tokens", cans:"Bin glyphs" } }
+];
+
+var PRESETS = [
+  { key:"A", name:"A · Shipped", note:"What v1.3.0 draws today, as the reference — less the chip under the card, gone for every preset.",
+    s:{ face:"flat", joker:"text", rail:"tiles", gates:"pillars", mod:"band", value:"under", tally:"boxes", hand:"row", bins:"pips" } },
+  { key:"B", name:"B · Gilded", note:"A casino table: gilded cards, the joker's art over a dark plate, the rail as medallions, the gates as a glow on the edges so the card can grow, the count on two chips, the hand in a tray that names its own worth.",
+    s:{ face:"gilded", joker:"art", rail:"medal", gates:"edge", mod:"sticker", value:"header", tally:"chips", hand:"tray", bins:"tokens" } },
+  { key:"C", name:"C · Arcane", note:"A tarot reading: rune-stone cards, jokers as tarot arches and mini cards, two round buttons that can also be tapped, the count as one score line, the hand fanned.",
+    s:{ face:"rune", joker:"tarot", rail:"mini", gates:"buttons", mod:"stickerName", value:"badge", tally:"line", hand:"fan", bins:"cans" } },
+  { key:"D", name:"D · Neon arcade", note:"Out of the card room: neon cards on the dark felt, a stamp on the card instead of gates, the count as one line, the bins as glyphs.",
+    s:{ face:"neon", joker:"art", rail:"medal", gates:"stamp", mod:"sticker", value:"header", tally:"line", hand:"tray", bins:"cans" } },
+  { key:"E", name:"E · Gem pop", note:"Suits as gems — sapphire, ruby, topaz, emerald — so a flush reads as one colour from across the room; chevrons for gates, the count on chips.",
+    s:{ face:"crystal", joker:"tarot", rail:"medal", gates:"chevrons", mod:"sticker", value:"badge", tally:"chips", hand:"tray", bins:"tokens" } }
+];
+
+var STATES = { deal:"A plain deal", joker:"A joker, rail full", special:"Special cards",
+               veiled:"A veiled card", tally:"The count", seer:"The Seer" };
+var TARGETS = { playable:"Playable", web:"Web" };
+
+var S = {}, VIEW = { state:"deal", target:"playable", lang:"en", scene:"1" };
+
+/* ===========================================================================
+   2. WORDS — EN, and the FR the manifest ships, for the overflow check.
+   =========================================================================== */
+var FR = {
+  "Lives":"Vies","Deck":"Paquet","Score":"Score","Bin":"Jeter","Keep":"Garder","Refuse":"Refuser","Take":"Prendre",
+  "Bins":"Défausses","Joker":"Joker","Install now":"Installer","Next":"Suivante","Bust":"Main morte","Out":"Sort",
+  "Mult":"Mult","Rule":"Règle","Grow":"Croissance","Survive":"Survie","Curse":"Malédiction",
+  "Gold":"Or","Glass":"Verre","Wild":"Caméléon","Lucky":"Chance","Cursed":"Maudite","Veiled":"Voilée",
+  "High card":"Carte haute","Pair":"Paire","Two pair":"Deux paires","Three of a kind":"Brelan","Straight":"Suite",
+  "Flush":"Couleur","Full house":"Full","Four of a kind":"Carré","Straight flush":"Quinte flush",
+  "Spade lover":"Fan de pique","Red tide":"Marée rouge","Even steven":"Tout pair","Royal court":"Cour royale","Jolly":"Jovial",
+  "Low tide":"Marée basse","Four fingers":"Quatre doigts","Smeared":"Barbouillé","Shortcut":"Raccourci","Low bar":"Barre basse",
+  "Golden bin":"Poubelle dorée","Deep chute":"Grande défausse","Recycler":"Recycleur","Ascetic":"Ascète","Collector":"Fidèle",
+  "Veteran":"Vétéran","Second chance":"Seconde chance","Spare heart":"Cœur de rechange","Exorcist":"Exorciste","Seer":"Voyant",
+  "+3 mult for every ♠ in the hand":"+3 mult par ♠ dans la main",
+  "+2 mult for every ♥ or ♦ in the hand":"+2 mult par ♥ ou ♦ dans la main",
+  "+30 chips for every J, Q or K":"+30 jetons par valet, dame ou roi",
+  "+15 chips for every card binned this hand":"+15 jetons par carte jetée pendant la main",
+  "+1 mult for every card binned; a bust resets it":"+1 mult par carte jetée ; une main morte le remet à zéro",
+  "Flushes and straights need one card less":"Couleurs et suites avec une carte de moins",
+  "A cursed card no longer busts: it gives +20 mult":"Une carte maudite ne tue plus la main : elle donne +20 mult",
+  "Shows the next card and lifts every veil":"Montre la carte suivante et lève tous les voiles",
+  "+8 mult if the hand holds a pair":"+8 mult si la main contient une paire"
+};
+function t(s) { return VIEW.lang === "fr" && FR[s] ? FR[s] : s; }
+
+/* Capitals, the house way (the motor's upper, packages/engine/engine.js). */
+function upper(str) {
+  var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "Æ":"AE", "Œ":"OE", "ß":"SS" };
+  var shouted = String(str == null ? "" : str).replace(
+    /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+  var out = "", i, c, k;
+  for (i = 0; i < shouted.length; i++) {
+    c = shouted.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
+
+/* ===========================================================================
+   3. THE PIECES — the game's data, and the painted art out of assets/.
+   =========================================================================== */
+var RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+var SUIT_RED = [false, true, true, false];
+var FAM_COL = { Mult:"#ff5a6e", Rule:"#7ee8ff", Bin:"#ff9a4a", Grow:"#3ddc97", Survive:"#ff7ad9", Curse:"#b98cff" };
+var MOD_COL = { gold:"#f5c451", glass:"#8fd8ff", wild:"#ff7ad9", lucky:"#42e8b0", curse:"#b98cff", veil:"#9aa8a0" };
+var MOD_NAME = { gold:"Gold", glass:"Glass", wild:"Wild", lucky:"Lucky", curse:"Cursed", veil:"Veiled" };
+var MARK_N = { gold:1, glass:2, wild:3, lucky:4, curse:5, veil:6 };
+var BIN_COL = "#ff4a5e", KEEP_COL = "#3ddc97", GOLD = "#f5c451", CYAN = "#7ee8c4";
+var CHIP_COL = "#2f6fc4", MULT_COL = "#c42f48";
+
+var JOKERS = [
+  ["spade","Spade lover","Mult","+3 mult for every ♠ in the hand"],
+  ["red","Red tide","Mult","+2 mult for every ♥ or ♦ in the hand"],
+  ["even","Even steven","Mult",""], ["court","Royal court","Mult","+30 chips for every J, Q or K"],
+  ["jolly","Jolly","Mult","+8 mult if the hand holds a pair"], ["low","Low tide","Mult",""],
+  ["four","Four fingers","Rule","Flushes and straights need one card less"], ["smear","Smeared","Rule",""],
+  ["shortcut","Shortcut","Rule",""], ["lowbar","Low bar","Rule",""],
+  ["goldbin","Golden bin","Bin","+15 chips for every card binned this hand"], ["deep","Deep chute","Bin",""],
+  ["recycler","Recycler","Bin",""], ["ascetic","Ascetic","Grow","+1 mult for every card binned; a bust resets it"],
+  ["collector","Collector","Grow",""], ["veteran","Veteran","Grow",""],
+  ["second","Second chance","Survive",""], ["heart","Spare heart","Survive",""],
+  ["exorcist","Exorcist","Curse","A cursed card no longer busts: it gives +20 mult"],
+  ["seer","Seer","Curse","Shows the next card and lifts every veil"]
+];
+var JK = {};
+JOKERS.forEach(function (j, i) { JK[j[0]] = { id:j[0], n:i + 1, name:j[1], fam:j[2], text:j[3] }; });
+
+var IMG = {};
+function load(key, src) {
+  var im = new Image();
+  im.onload = im.onerror = function () { redrawAll(); };
+  im.src = src; IMG[key] = im;
+}
+function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+for (var i = 1; i <= 20; i++) load("j" + i, "../assets/image/object/slipdeck-joker-" + pad2(i) + ".png");
+for (i = 1; i <= 6; i++) load("m" + i, "../assets/image/object/slipdeck-mark-" + pad2(i) + ".png");
+load("cardJack", "../assets/image/object/slipdeck-card-jack.png");
+load("cardQueen", "../assets/image/object/slipdeck-card-queen.png");
+load("cardKing", "../assets/image/object/slipdeck-card-king.png");
+load("scene", "../assets/image/embed/slipdeck-background-phone.webp");
+function ok(im) { return im && im.complete && im.naturalWidth; }
+function jokerImg(id) { return IMG["j" + JK[id].n]; }
+function markImg(k) { return IMG["m" + MARK_N[k]]; }
+
+/* ===========================================================================
+   4. THE SCORE OF A HAND — the game's evaluation, deterministic (glass holds,
+   lucky misses), with the jokers the states put on the rail.
+   =========================================================================== */
+var CAT_NAME = { high:"High card", pair:"Pair", twoPair:"Two pair", trips:"Three of a kind", straight:"Straight",
+                 flush:"Flush", fullHouse:"Full house", quads:"Four of a kind", straightFlush:"Straight flush" };
+var BASE = { high:[5,1], pair:[10,2], twoPair:[20,2], trips:[30,3], straight:[30,4],
+             flush:[35,4], fullHouse:[40,4], quads:[60,7], straightFlush:[100,8] };
+function evalHand(cards) {
+  var n = cards.length, rc = {}, sc = {}, wild = 0, i, k;
+  for (i = 0; i < n; i++) {
+    rc[cards[i].r] = (rc[cards[i].r] || 0) + 1;
+    if (cards[i].mod === "wild") wild++; else sc[cards[i].s] = (sc[cards[i].s] || 0) + 1;
+  }
+  var maxR = 0, pairs = 0, maxS = 0;
+  for (k in rc) { if (rc[k] > maxR) maxR = rc[k]; if (rc[k] === 2) pairs++; }
+  for (k in sc) if (sc[k] > maxS) maxS = sc[k];
+  var full = n >= 5, flush = full && maxS + wild >= 5, vals = [], straight = false;
+  for (k in rc) { vals.push(+k + 1); if (+k === 0) vals.push(14); }
+  vals.sort(function (a, b) { return a - b; });
+  if (full && maxR === 1) { var ch = 1; for (i = 1; i < vals.length; i++) { ch = vals[i] - vals[i - 1] === 1 ? ch + 1 : 1; if (ch >= 5) straight = true; } }
+  var cat = straight && flush ? "straightFlush" : maxR === 4 ? "quads" : maxR === 3 && pairs ? "fullHouse"
+          : flush ? "flush" : straight ? "straight" : maxR === 3 ? "trips" : pairs >= 2 ? "twoPair" : pairs ? "pair" : "high";
+  var all = cat === "straight" || cat === "flush" || cat === "straightFlush", scoring = [];
+  for (i = 0; i < n; i++) scoring.push(all || (cat !== "high" && rc[cards[i].r] >= 2));
+  return { cat:cat, maxR:maxR, scoring:scoring };
+}
+function has(rail, id) { for (var i = 0; i < rail.length; i++) if (rail[i].id === id) return rail[i]; return null; }
+function scoreHand(cards, rail, bins) {
+  var ev = evalHand(cards), i, c, out = { name:CAT_NAME[ev.cat], cat:ev.cat, bust:false, dim:ev.cat === "high" };
+  for (i = 0; i < cards.length; i++) if (cards[i].curse && !has(rail, "exorcist")) { out.bust = true; out.why = "Cursed"; }
+  if (cards.length >= 5 && ev.cat === "high") { out.bust = true; out.why = "High card"; }   // a full hand with nothing busts
+  var chips = BASE[ev.cat][0], mult = BASE[ev.cat][1];
+  for (i = 0; i < cards.length; i++) {
+    c = cards[i];
+    if (ev.scoring[i]) chips += c.r === 0 ? 11 : c.r >= 10 ? 10 : c.r + 1;
+    if (c.mod === "gold") chips += 40;
+    if (c.mod === "glass") mult *= 2;
+    if (c.curse) mult += 20;
+  }
+  for (i = 0; i < rail.length; i++) {
+    var id = rail[i].id;
+    if (id === "spade") mult += 3 * cards.filter(function (x) { return x.s === 0 || x.mod === "wild"; }).length;
+    if (id === "red") mult += 2 * cards.filter(function (x) { return SUIT_RED[x.s] || x.mod === "wild"; }).length;
+    if (id === "court") chips += 30 * cards.filter(function (x) { return x.r >= 10; }).length;
+    if (id === "jolly" && ev.maxR >= 2) mult += 8;
+    if (id === "ascetic") mult += rail[i].n || 0;
+    if (id === "goldbin") chips += 15 * (bins || 0);
+  }
+  out.chips = chips; out.mult = Math.max(1, mult);
+  return out;
+}
+
+/* ===========================================================================
+   5. THE CANVAS HELPERS
+   =========================================================================== */
+var DW = 720, DH = 1280, ctx = null;
+function font(sz, w, fam) {
+  return (w || 900) + " " + Math.round(sz) + "px " + (fam || "-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif");
+}
+var MONO = "ui-monospace,Menlo,Consolas,monospace", SERIF = "Georgia,\"Times New Roman\",serif";
+function rgba(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+}
+function rr(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function oct(w, h, k) {
+  ctx.beginPath();
+  ctx.moveTo(-w / 2 + k, -h / 2); ctx.lineTo(w / 2 - k, -h / 2); ctx.lineTo(w / 2, -h / 2 + k);
+  ctx.lineTo(w / 2, h / 2 - k); ctx.lineTo(w / 2 - k, h / 2); ctx.lineTo(-w / 2 + k, h / 2);
+  ctx.lineTo(-w / 2, h / 2 - k); ctx.lineTo(-w / 2, -h / 2 + k); ctx.closePath();
+}
+function wrap(txt, maxW) {
+  var words = String(txt).split(" "), lines = [], line = "";
+  for (var i = 0; i < words.length; i++) {
+    var s = line ? line + " " + words[i] : words[i];
+    if (line && ctx.measureText(s).width > maxW) { lines.push(line); line = words[i]; } else line = s;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function fitImg(im, cx, cy, w, h) {
+  if (!ok(im)) return;
+  var s = Math.min(w / im.naturalWidth, h / im.naturalHeight);
+  ctx.drawImage(im, cx - im.naturalWidth * s / 2, cy - im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s);
+}
+/* A soft shadow without shadowBlur: three widening dark shapes. */
+function shadowUnder(x, y, w, h, r, a) {
+  for (var i = 3; i >= 1; i--) {
+    rr(x - i * 3, y - i * 3 + 10, w + i * 6, h + i * 6, r + i * 3);
+    ctx.fillStyle = "rgba(0,0,0," + (a || 0.12) + ")"; ctx.fill();
+  }
+}
+/* A glow without shadowBlur: the current path stroked wide and faint, then tight. */
+function glowStroke(col, w) {
+  ctx.lineJoin = "round";
+  ctx.lineWidth = w * 4; ctx.strokeStyle = rgba(col, .12); ctx.stroke();
+  ctx.lineWidth = w * 2; ctx.strokeStyle = rgba(col, .3); ctx.stroke();
+  ctx.lineWidth = w; ctx.strokeStyle = col; ctx.stroke();
+}
+function glowText(txt, x, y, col, w) {
+  ctx.lineJoin = "round";
+  ctx.lineWidth = w * 3; ctx.strokeStyle = rgba(col, .18); ctx.strokeText(txt, x, y);
+  ctx.lineWidth = w * 1.4; ctx.strokeStyle = rgba(col, .45); ctx.strokeText(txt, x, y);
+  ctx.fillStyle = "#ffffff"; ctx.fillText(txt, x, y);
+}
+
+/* --- suits as paths (the game's) ------------------------------------------ */
+function heartInto(r, sy) {
+  ctx.moveTo(0, sy * r * 0.92);
+  ctx.bezierCurveTo(-r * 1.32, sy * -r * 0.18, -r * 0.60, sy * -r * 1.12, 0, sy * -r * 0.40);
+  ctx.bezierCurveTo(r * 0.60, sy * -r * 1.12, r * 1.32, sy * -r * 0.18, 0, sy * r * 0.92);
+  ctx.closePath();
+}
+function stemInto(r) {
+  ctx.moveTo(-r * 0.36, r * 0.98);
+  ctx.bezierCurveTo(-r * 0.11, r * 0.66, -r * 0.07, r * 0.34, -r * 0.06, r * 0.12);
+  ctx.lineTo(r * 0.06, r * 0.12);
+  ctx.bezierCurveTo(r * 0.07, r * 0.34, r * 0.11, r * 0.66, r * 0.36, r * 0.98);
+  ctx.closePath();
+}
+function pip(suit, s) {
+  var r = s / 2; ctx.beginPath();
+  if (suit === 2) { ctx.moveTo(0, -r); ctx.lineTo(r * .7, 0); ctx.lineTo(0, r); ctx.lineTo(-r * .7, 0); ctx.closePath(); }
+  else if (suit === 1) heartInto(r, 1);
+  else if (suit === 0) { heartInto(r, -1); stemInto(r); }
+  else {
+    ctx.moveTo(r * .4, -r * .46); ctx.arc(0, -r * .46, r * .4, 0, Math.PI * 2);
+    ctx.moveTo(-r * .04, r * .18); ctx.arc(-r * .44, r * .18, r * .4, 0, Math.PI * 2);
+    ctx.moveTo(r * .84, r * .18); ctx.arc(r * .44, r * .18, r * .4, 0, Math.PI * 2);
+    stemInto(r);
+  }
+}
+/* The suit — or a "?" when the card is veiled. Fills with the current style. */
+function suitMark(c, s) {
+  if (c.veil) { ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = font(s * .9); ctx.fillText("?", 0, 0); return; }
+  pip(c.s, s); ctx.fill();
+}
+var PIPS = [
+  [[0,0]], [[0,-1],[0,1]], [[0,-1],[0,0],[0,1]], [[-1,-1],[1,-1],[-1,1],[1,1]],
+  [[-1,-1],[1,-1],[0,0],[-1,1],[1,1]], [[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]],
+  [[-1,-1],[1,-1],[0,-.5],[-1,0],[1,0],[-1,1],[1,1]], [[-1,-1],[1,-1],[0,-.5],[-1,0],[1,0],[0,.5],[-1,1],[1,1]],
+  [[-1,-1],[1,-1],[-1,-.333],[1,-.333],[0,0],[-1,.333],[1,.333],[-1,1],[1,1]],
+  [[-1,-1],[1,-1],[0,-.667],[-1,-.333],[1,-.333],[-1,.333],[1,.333],[0,.667],[-1,1],[1,1]]
+];
+var COURT = { 10:"cardJack", 11:"cardQueen", 12:"cardKing" };
+
+/* A pixel suit: the pip drawn into a 14 px canvas once, then scaled up with
+   smoothing off — real pixels, not a filter. */
+var PIXEL = {};
+function pixelSuit(suit, col) {
+  var k = suit + col;
+  if (PIXEL[k]) return PIXEL[k];
+  var c = document.createElement("canvas"); c.width = c.height = 14;
+  var g = c.getContext("2d"), keep = ctx; ctx = g;
+  ctx.translate(7, 7.5); ctx.fillStyle = col; pip(suit, 13); ctx.fill();
+  var d = g.getImageData(0, 0, 14, 14);                       // hard alpha: no anti-aliasing
+  for (var i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0;
+  g.putImageData(d, 0, 0);
+  ctx = keep; PIXEL[k] = c; return c;
+}
+
+/* ===========================================================================
+   6. A PLAYING CARD — eleven faces, three ways to show a special card.
+   =========================================================================== */
+var TRAD = { flat:1, gilded:1, ivory:1 };
+var GEM = [["#3d7bff", "#0c1a4d"], ["#ff3b5c", "#4d0718"], ["#ffb02e", "#5a2a00"], ["#2fd987", "#063d24"]];
+var NEON = ["#3de0ff", "#ff3d8b", "#ffb13d", "#7dff5a"];
+
+function drawCard(c, x, y, w, h, rot, alpha, tint) {
+  if (c.joker) { drawJoker(c.joker, x, y, w, h, rot, alpha, tint); return; }
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  var modKey = c.curse ? "curse" : c.mod ? c.mod : c.veil ? "veil" : null;
+  var f = TRAD[S.face] ? faceTrad : FACES[S.face];
+  var shape = f(c, w, h, modKey);                             // returns how to trace the outline again
+  if (c.curse && !TRAD[S.face]) { shape(); ctx.fillStyle = "rgba(48,10,80,.5)"; ctx.fill(); }
+  drawMod(c, w, h, modKey, shape);
+  if (tint) { shape(); ctx.fillStyle = tint; ctx.fill(); }
+  ctx.restore();
+}
+
+/* --- the traditional three: flat (shipped), gilded, ivory ------------------ */
+function faceTrad(c, w, h, modKey) {
+  var r = w * .085, face = S.face, rim = modKey ? MOD_COL[modKey] : null;
+  var shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+  if (face !== "flat" && w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, .10);
+  shape();
+  if (c.curse) ctx.fillStyle = "#24152f";
+  else if (face === "flat") ctx.fillStyle = c.mod === "gold" ? "#fff1c2" : c.mod === "glass" ? "#e9f6ff" : c.mod === "lucky" ? "#ecfbe8" : "#f7f4ea";
+  else {
+    var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    g.addColorStop(0, c.mod === "gold" ? "#fff4cf" : face === "ivory" ? "#fbf7ec" : "#fffaf0");
+    g.addColorStop(1, face === "ivory" ? "#ece2c9" : "#efe4c8"); ctx.fillStyle = g;
+  }
+  ctx.fill();
+  if (face === "flat") { ctx.lineWidth = 3; ctx.strokeStyle = "rgba(10,30,20,.28)"; ctx.stroke(); }
+  else {
+    ctx.lineWidth = Math.max(2, w * .022); ctx.strokeStyle = rim || "#c9a24a"; ctx.stroke();
+    rr(-w / 2 + w * .045, -h / 2 + w * .045, w * .91, h - w * .09, r * .7);
+    ctx.lineWidth = Math.max(1, w * .007); ctx.strokeStyle = rgba(rim || "#c9a24a", .55); ctx.stroke();
+  }
+  var col = c.curse ? "#dcc2f7" : c.veil ? "#5f6a64" : SUIT_RED[c.s] ? "#d5263c" : "#1c2b24";
+  if (face === "ivory" && !c.veil && w > 150) { ctx.save(); ctx.globalAlpha *= .08; ctx.fillStyle = col; pip(c.s, w * .9); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle = col;
+  if (c.veil && c.r <= 9) { ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = font(w * .5); ctx.fillText("?", 0, 0); }
+  else if (c.r <= 9) {
+    var lay = PIPS[c.r], s = c.r === 0 ? w * .44 : w * .198;
+    for (var i = 0; i < lay.length; i++) {
+      ctx.save(); ctx.translate(lay[i][0] * w * .215, lay[i][1] * h * .30);
+      if (lay[i][1] > .001) ctx.rotate(Math.PI); pip(c.s, s); ctx.fill(); ctx.restore();
+    }
+  } else {
+    var iw = w * .6, ih = h * .62;
+    rr(-iw / 2, -ih / 2, iw, ih, w * .05); ctx.lineWidth = Math.max(2, w * .012); ctx.strokeStyle = rgba("#1c2b24", .35); ctx.stroke();
+    ctx.save(); rr(-iw / 2 + w * .03, -ih / 2 + w * .03, iw - w * .06, ih - w * .06, w * .035); ctx.clip();
+    fitImg(IMG[COURT[c.r]], 0, 0, iw - w * .06, ih - w * .06); ctx.restore();
+  }
+  corners(c, w, h, col, w * (face === "flat" ? .155 : .17), modKey && S.mod === "band");
+  return shape;
+}
+function corners(c, w, h, col, small, onlyOne, fam) {
+  var pd = w * .115;
+  ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (var q = 0; q < (onlyOne ? 1 : 2); q++) {
+    ctx.save(); if (q) ctx.rotate(Math.PI);
+    ctx.font = font(small, 900, fam); ctx.fillText(RANKS[c.r], -w / 2 + pd, -h / 2 + pd * .95);
+    ctx.translate(-w / 2 + pd, -h / 2 + pd * 2); ctx.fillStyle = col; suitMark(c, small * .8);
+    ctx.restore();
+  }
+}
+
+/* --- out of the card room -------------------------------------------------- */
+var FACES = {
+  /* A neon sign on a dark plate: the outline and the suit are tubes of light. */
+  neon: function (c, w, h) {
+    var r = w * .09, col = c.veil ? "#c8d4d0" : NEON[c.s], shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+    shape(); ctx.fillStyle = "#0b0a1a"; ctx.fill();
+    ctx.save(); shape(); ctx.clip();
+    ctx.strokeStyle = "rgba(120,140,255,.08)"; ctx.lineWidth = 1;
+    for (var gx = -w / 2; gx < w / 2; gx += w / 8) { ctx.beginPath(); ctx.moveTo(gx, -h / 2); ctx.lineTo(gx, h / 2); ctx.stroke(); }
+    for (var gy = -h / 2; gy < h / 2; gy += w / 8) { ctx.beginPath(); ctx.moveTo(-w / 2, gy); ctx.lineTo(w / 2, gy); ctx.stroke(); }
+    ctx.restore();
+    rr(-w / 2 + w * .05, -h / 2 + w * .05, w * .9, h - w * .1, r * .7); glowStroke(col, Math.max(2, w * .012));
+    ctx.save(); ctx.translate(0, h * .06);
+    if (c.veil) { ctx.font = font(w * .5); ctx.textAlign = "center"; ctx.textBaseline = "middle"; glowText("?", 0, 0, col, Math.max(2, w * .012)); }
+    else { pip(c.s, w * .46); glowStroke(col, Math.max(2, w * .016)); }
+    ctx.restore();
+    ctx.font = font(w * .2, 900); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    glowText(RANKS[c.r], -w / 2 + w * .1, -h / 2 + w * .17, col, Math.max(1.5, w * .01));
+    return shape;
+  },
+  /* Holographic foil: an iridescent sheen, dark ink, one big suit. */
+  holo: function (c, w, h) {
+    var r = w * .08, shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+    if (w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, .1);
+    shape();
+    var g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+    g.addColorStop(0, "#ffd6f4"); g.addColorStop(.25, "#c9f2ff"); g.addColorStop(.5, "#fff6c2");
+    g.addColorStop(.75, "#d8ccff"); g.addColorStop(1, "#c2ffe4"); ctx.fillStyle = g; ctx.fill();
+    ctx.save(); shape(); ctx.clip();
+    var s = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+    s.addColorStop(.3, "rgba(255,255,255,0)"); s.addColorStop(.5, "rgba(255,255,255,.65)"); s.addColorStop(.7, "rgba(255,255,255,0)");
+    ctx.rotate(-.5); ctx.fillStyle = s; ctx.fillRect(-w, -h, w * 2, h * 2); ctx.restore();
+    shape(); ctx.lineWidth = Math.max(2, w * .018); ctx.strokeStyle = "rgba(60,40,120,.45)"; ctx.stroke();
+    var ink = c.veil ? "#6b6f8a" : SUIT_RED[c.s] ? "#c4124a" : "#1a1d4a";
+    ctx.save(); ctx.translate(0, h * .05); ctx.fillStyle = ink; suitMark(c, w * .5);
+    ctx.lineWidth = Math.max(2, w * .012); ctx.strokeStyle = "rgba(255,255,255,.8)"; if (!c.veil) ctx.stroke(); ctx.restore();
+    ctx.fillStyle = ink; ctx.font = font(w * .24); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(RANKS[c.r], -w / 2 + w * .09, -h / 2 + w * .18);
+    return shape;
+  },
+  /* 8-bit: a stepped border, a monospace rank, a suit made of real pixels. */
+  pixel: function (c, w, h) {
+    var p = Math.max(3, Math.round(w / 30)), shape = function () {
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + p, -h / 2); ctx.lineTo(w / 2 - p, -h / 2); ctx.lineTo(w / 2 - p, -h / 2 + p); ctx.lineTo(w / 2, -h / 2 + p);
+      ctx.lineTo(w / 2, h / 2 - p); ctx.lineTo(w / 2 - p, h / 2 - p); ctx.lineTo(w / 2 - p, h / 2); ctx.lineTo(-w / 2 + p, h / 2);
+      ctx.lineTo(-w / 2 + p, h / 2 - p); ctx.lineTo(-w / 2, h / 2 - p); ctx.lineTo(-w / 2, -h / 2 + p); ctx.lineTo(-w / 2 + p, -h / 2 + p); ctx.closePath();
+    };
+    shape(); ctx.fillStyle = "#1b1b2b"; ctx.fill();
+    ctx.fillStyle = "#f4ecd6"; ctx.fillRect(-w / 2 + p * 2, -h / 2 + p * 2, w - p * 4, h - p * 4);
+    ctx.fillStyle = "#d9cfb4"; ctx.fillRect(-w / 2 + p * 2, h / 2 - p * 4, w - p * 4, p * 2);
+    var col = c.veil ? "#6a6a7a" : SUIT_RED[c.s] ? "#e0283e" : "#1b1b2b";
+    ctx.fillStyle = col; ctx.font = font(w * .22, 800, MONO); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(RANKS[c.r], -w / 2 + p * 3.4, -h / 2 + w * .17);
+    var big = Math.round(w * .5 / 14) * 14;
+    if (c.veil) { ctx.font = font(w * .5, 800, MONO); ctx.textAlign = "center"; ctx.fillText("?", 0, h * .06); }
+    else { ctx.imageSmoothingEnabled = false; ctx.drawImage(pixelSuit(c.s, col), -big / 2, h * .06 - big / 2, big, big); ctx.imageSmoothingEnabled = true; }
+    return shape;
+  },
+  /* A mahjong tile: thick ivory, the rank engraved, the suit a jade or red seal. */
+  tile: function (c, w, h) {
+    var r = w * .12, d = Math.max(4, w * .045), shape = function () { rr(-w / 2, -h / 2, w, h - d, r); };
+    rr(-w / 2, -h / 2 + d, w, h - d, r); ctx.fillStyle = c.curse ? "#2a1a38" : "#2f8f68"; ctx.fill();   // the tile's back, as its thickness
+    shape();
+    var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, "#fffdf6"); g.addColorStop(1, "#ece4cf");
+    ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = Math.max(1.5, w * .01); ctx.strokeStyle = "rgba(60,50,30,.35)"; ctx.stroke();
+    var col = c.veil ? "#7c7c74" : ["#1f4fa8", "#c41f2e", "#d0801a", "#1b7a4c"][c.s];
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = font(w * .46, 900, SERIF);
+    ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(RANKS[c.r], 2, -h * .1 + 3);
+    ctx.fillStyle = col; ctx.fillText(RANKS[c.r], 0, -h * .1);
+    ctx.save(); ctx.translate(0, h * .24); ctx.fillStyle = col; suitMark(c, w * .26); ctx.restore();
+    return shape;
+  },
+  /* A gem: cut corners, the suit's own stone — sapphire, ruby, topaz, emerald. */
+  crystal: function (c, w, h) {
+    var k = w * .16, gm = c.veil ? ["#9aa4b0", "#3a3f47"] : GEM[c.s], shape = function () { oct(w, h, k); };
+    if (w > 150) { ctx.save(); ctx.translate(0, 10); oct(w + 6, h + 6, k); ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fill(); ctx.restore(); }
+    shape();
+    var g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); g.addColorStop(0, gm[0]); g.addColorStop(1, gm[1]);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.save(); shape(); ctx.clip();                                 // the facets
+    ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.lineWidth = Math.max(1, w * .006);
+    var vs = [[-w / 2 + k, -h / 2], [w / 2 - k, -h / 2], [w / 2, -h / 2 + k], [w / 2, h / 2 - k], [w / 2 - k, h / 2], [-w / 2 + k, h / 2], [-w / 2, h / 2 - k], [-w / 2, -h / 2 + k]];
+    for (var i = 0; i < vs.length; i++) { ctx.beginPath(); ctx.moveTo(0, -h * .05); ctx.lineTo(vs[i][0], vs[i][1]); ctx.stroke(); }
+    ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(w * .1, -h / 2); ctx.lineTo(-w / 2, h * .1); ctx.fill();
+    ctx.restore();
+    shape(); ctx.lineWidth = Math.max(2, w * .016); ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.stroke();
+    ctx.fillStyle = "#ffffff"; ctx.font = font(w * .24); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(RANKS[c.r], 0, -h * .25);
+    ctx.save(); ctx.translate(0, h * .13); ctx.fillStyle = "rgba(255,255,255,.92)"; suitMark(c, w * .38); ctx.restore();
+    return shape;
+  },
+  /* Comic pop-art: yellow halftone, a thick ink outline, an offset shadow. */
+  comic: function (c, w, h) {
+    var r = w * .07, shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+    rr(-w / 2 + w * .04, -h / 2 + w * .05, w, h, r); ctx.fillStyle = "#111"; ctx.fill();
+    shape(); ctx.fillStyle = c.veil ? "#d9d9d9" : SUIT_RED[c.s] ? "#ffe14d" : "#7fe3ff"; ctx.fill();
+    ctx.save(); shape(); ctx.clip(); ctx.fillStyle = "rgba(0,0,0,.12)";
+    var st = Math.max(6, w / 18);
+    for (var yy = -h / 2; yy < h / 2; yy += st) for (var xx = -w / 2 + ((yy / st) % 2 ? st / 2 : 0); xx < w / 2; xx += st) {
+      ctx.beginPath(); ctx.arc(xx, yy, st * .22 * (1 + (yy + h / 2) / h), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    shape(); ctx.lineWidth = Math.max(3, w * .03); ctx.strokeStyle = "#111"; ctx.stroke();
+    var col = c.veil ? "#555" : SUIT_RED[c.s] ? "#e8202f" : "#111";
+    ctx.save(); ctx.translate(0, h * .1); ctx.fillStyle = col; suitMark(c, w * .55);
+    ctx.lineWidth = Math.max(3, w * .025); ctx.strokeStyle = "#111"; if (!c.veil) ctx.stroke(); ctx.restore();
+    ctx.font = font(w * .3); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.lineWidth = Math.max(3, w * .03); ctx.strokeStyle = "#111"; ctx.lineJoin = "round";
+    ctx.strokeText(RANKS[c.r], -w / 2 + w * .08, -h / 2 + w * .22); ctx.fillStyle = "#fff"; ctx.fillText(RANKS[c.r], -w / 2 + w * .08, -h / 2 + w * .22);
+    return shape;
+  },
+  /* A rune stone: grey speckled slab, the rank carved, the suit an ember. */
+  rune: function (c, w, h) {
+    var r = w * .14, shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+    if (w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, .12);
+    shape();
+    var g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); g.addColorStop(0, "#9aa0a6"); g.addColorStop(1, "#555a60");
+    ctx.fillStyle = g; ctx.fill();
+    ctx.save(); shape(); ctx.clip();
+    var sd = c.r * 13 + c.s * 7 + 3;
+    for (var i = 0; i < 40; i++) {
+      sd = (sd * 9301 + 49297) % 233280; var px = (sd / 233280 - .5) * w;
+      sd = (sd * 9301 + 49297) % 233280; var py = (sd / 233280 - .5) * h;
+      ctx.fillStyle = i % 2 ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.14)"; ctx.fillRect(px, py, w * .02, w * .02);
+    }
+    ctx.restore();
+    shape(); ctx.lineWidth = Math.max(2, w * .02); ctx.strokeStyle = "#3a3e42"; ctx.stroke();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = font(w * .3, 900, SERIF);
+    ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillText(RANKS[c.r], 1.5, -h * .24 + 2);
+    ctx.fillStyle = "#2b2e31"; ctx.fillText(RANKS[c.r], 0, -h * .24);
+    var col = c.veil ? "#c9d0d6" : SUIT_RED[c.s] ? "#ff6a2e" : "#5fd0ff";
+    ctx.save(); ctx.translate(0, h * .14);
+    if (c.veil) { ctx.fillStyle = col; suitMark(c, w * .4); }
+    else { pip(c.s, w * .4); glowStroke(col, Math.max(2, w * .014)); ctx.fillStyle = rgba(col, .35); ctx.fill(); }
+    ctx.restore();
+    return shape;
+  },
+  /* Swiss minimal: a huge rank, a colour block for the suit, nothing else. */
+  minimal: function (c, w, h) {
+    var r = w * .06, shape = function () { rr(-w / 2, -h / 2, w, h, r); };
+    if (w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, .08);
+    shape(); ctx.fillStyle = "#fbfbf8"; ctx.fill();
+    var col = c.veil ? "#8a8f94" : SUIT_RED[c.s] ? "#e8323c" : "#161a1f";
+    ctx.save(); shape(); ctx.clip(); ctx.fillStyle = col; ctx.fillRect(-w / 2, h / 2 - h * .26, w, h * .26); ctx.restore();
+    ctx.fillStyle = "#161a1f"; ctx.font = font(w * .46, 800); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText(RANKS[c.r], -w / 2 + w * .08, -h / 2 + w * .52);
+    ctx.save(); ctx.translate(w / 2 - w * .2, h / 2 - h * .13); ctx.fillStyle = "#fff"; suitMark(c, w * .22); ctx.restore();
+    return shape;
+  }
+};
+
+/* --- how a special card shows: a band, or the painted mark as a sticker ---- */
+function drawMod(c, w, h, modKey, shape) {
+  if (!modKey) return;
+  var rim = MOD_COL[modKey];
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (S.mod === "band") {
+    var bh = Math.max(28, h * .15);
+    ctx.save(); shape(); ctx.clip(); ctx.fillStyle = rim; ctx.fillRect(-w / 2, h / 2 - bh, w, bh); ctx.restore();
+    ctx.fillStyle = "#14201a"; ctx.font = font(Math.max(18, w * .11));
+    ctx.fillText(upper(t(MOD_NAME[modKey])), 0, h / 2 - bh / 2 + 1);
+    return;
+  }
+  var ms = w * (w > 150 ? .42 : .52);
+  ctx.save(); ctx.translate(w / 2 - ms * .32, -h / 2 + ms * .32); ctx.rotate(.18);
+  ctx.beginPath(); ctx.arc(0, 0, ms * .5, 0, Math.PI * 2); ctx.fillStyle = "rgba(10,14,12,.8)"; ctx.fill();
+  ctx.lineWidth = Math.max(2, w * .016); ctx.strokeStyle = rim; ctx.stroke();
+  fitImg(markImg(modKey), 0, 0, ms * .86, ms * .86);
+  ctx.restore();
+  if (S.mod === "stickerName") {
+    ctx.font = font(Math.max(18, w * .1));
+    var nm = upper(t(MOD_NAME[modKey])), tw = ctx.measureText(nm).width + 22, th = Math.max(26, w * .13);
+    rr(-tw / 2, h / 2 - th - w * .06, tw, th, th / 2); ctx.fillStyle = rim; ctx.fill();
+    ctx.fillStyle = "#14201a"; ctx.fillText(nm, 0, h / 2 - th / 2 - w * .06 + 1);
+  }
+}
+
+/* --- the joker card: text, art over a plate, or a tarot arch -------------- */
+function drawJoker(id, x, y, w, h, rot, alpha, tint) {
+  var J = JK[id], col = FAM_COL[J.fam], i, r = w * .085;
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  var big = w >= 200;
+  if (S.joker === "text" || !big) {
+    if (big) shadowUnder(-w / 2, -h / 2, w, h, r, .1);
+    rr(-w / 2, -h / 2, w, h, r); ctx.fillStyle = "#1d1638"; ctx.fill();
+    ctx.lineWidth = Math.max(3, w * .03); ctx.strokeStyle = col; ctx.stroke();
+    if (!big) fitImg(jokerImg(id), 0, 0, w * .8, h * .7);
+    else {
+      ctx.fillStyle = col; ctx.font = font(22); ctx.fillText(upper(t("Joker") + " · " + t(J.fam)), 0, -h / 2 + 46);
+      ctx.fillStyle = "#f4f1ff"; ctx.font = font(38);
+      var nl = wrap(upper(t(J.name)), w - 50);
+      for (i = 0; i < nl.length; i++) ctx.fillText(nl[i], 0, -h * .2 - (nl.length - 1) * 21 + i * 42);
+      ctx.fillStyle = "#ddd6f7"; ctx.font = font(26, 600);
+      var dl = wrap(t(J.text), w - 56);
+      for (i = 0; i < dl.length; i++) ctx.fillText(dl[i], 0, h * .08 + i * 34);
+    }
+  } else if (S.joker === "art") {
+    shadowUnder(-w / 2, -h / 2, w, h, r, .12);
+    rr(-w / 2, -h / 2, w, h, r);
+    var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    g.addColorStop(0, "#2a1f4e"); g.addColorStop(1, "#120d26"); ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = Math.max(3, w * .028); ctx.strokeStyle = col; ctx.stroke();
+    var gl = ctx.createRadialGradient(0, -h * .16, 10, 0, -h * .16, w * .55);
+    gl.addColorStop(0, rgba(col, .45)); gl.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = gl; ctx.fillRect(-w / 2, -h / 2, w, h * .7);
+    fitImg(jokerImg(id), 0, -h * .17, w * .78, h * .44);
+    ctx.fillStyle = col; ctx.font = font(20); ctx.fillText(upper(t(J.fam)), 0, -h / 2 + 30);
+    var py = h * .1;
+    rr(-w / 2 + 12, py, w - 24, h / 2 - py - 12, r * .7); ctx.fillStyle = "rgba(6,4,16,.72)"; ctx.fill();
+    ctx.fillStyle = "#ffffff"; ctx.font = font(32);
+    var n2 = wrap(upper(t(J.name)), w - 44);
+    for (i = 0; i < n2.length; i++) ctx.fillText(n2[i], 0, py + 32 + i * 36);
+    ctx.fillStyle = "#d9d2f4"; ctx.font = font(23, 600);
+    var d2 = wrap(t(J.text), w - 48), dy = py + 32 + n2.length * 36 + 8;
+    for (i = 0; i < d2.length; i++) ctx.fillText(d2[i], 0, dy + i * 29);
+  } else {
+    shadowUnder(-w / 2, -h / 2, w, h, r, .12);
+    rr(-w / 2, -h / 2, w, h, r);
+    var pg = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    pg.addColorStop(0, "#f6ecd2"); pg.addColorStop(1, "#e3d2a8"); ctx.fillStyle = pg; ctx.fill();
+    ctx.lineWidth = Math.max(3, w * .025); ctx.strokeStyle = "#b8893a"; ctx.stroke();
+    var aw = w * .78, ah = h * .5, ax = -aw / 2, ay = -h / 2 + w * .1;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay + ah); ctx.lineTo(ax, ay + aw / 2);
+    ctx.arc(0, ay + aw / 2, aw / 2, Math.PI, 0); ctx.lineTo(ax + aw, ay + ah); ctx.closePath();
+    var ag = ctx.createRadialGradient(0, ay + ah * .55, 10, 0, ay + ah * .55, aw * .7);
+    ag.addColorStop(0, rgba(col, .55)); ag.addColorStop(1, "#1b1330");
+    ctx.fillStyle = ag; ctx.fill();
+    ctx.lineWidth = Math.max(3, w * .02); ctx.strokeStyle = "#b8893a"; ctx.stroke();
+    ctx.save(); ctx.clip(); fitImg(jokerImg(id), 0, ay + ah * .56, aw * .9, ah * .8); ctx.restore();
+    var ry = ay + ah - 6, rh = 46, rw = w * .96;
+    ctx.beginPath();
+    ctx.moveTo(-rw / 2, ry); ctx.lineTo(rw / 2, ry); ctx.lineTo(rw / 2 - 16, ry + rh / 2); ctx.lineTo(rw / 2, ry + rh);
+    ctx.lineTo(-rw / 2, ry + rh); ctx.lineTo(-rw / 2 + 16, ry + rh / 2); ctx.closePath();
+    ctx.fillStyle = col; ctx.fill();
+    ctx.fillStyle = "#1a1405";
+    var sz = 26, nm = upper(t(J.name)); ctx.font = font(sz);
+    while (ctx.measureText(nm).width > rw - 50 && sz > 20) { sz--; ctx.font = font(sz); }
+    ctx.fillText(nm, 0, ry + rh / 2 + 1);
+    ctx.fillStyle = "#3a2a10"; ctx.font = font(22, 700);
+    var d3 = wrap(t(J.text), w - 46);
+    for (i = 0; i < d3.length; i++) ctx.fillText(d3[i], 0, ry + rh + 30 + i * 28);
+    ctx.font = font(18); var fw = ctx.measureText(upper(t(J.fam))).width + 24;
+    rr(-fw / 2, -h / 2 + 8, fw, 30, 15); ctx.fillStyle = "#1b1330"; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = col; ctx.stroke();
+    ctx.fillStyle = col; ctx.fillText(upper(t(J.fam)), 0, -h / 2 + 24);
+  }
+  if (tint) { rr(-w / 2, -h / 2, w, h, r); ctx.fillStyle = tint; ctx.fill(); }
+  ctx.restore();
+}
+
+/* ===========================================================================
+   7. THE STATES — what lies on the table.
+   =========================================================================== */
+function scene(st) {
+  var s = {
+    rail: [{ id:"spade" }, { id:"ascetic", n:3 }, { id:"four" }],
+    hand: [{ r:10, s:0 }, { r:10, s:3, mod:"gold" }, { r:6, s:1 }],
+    cur: { r:6, s:2 }, chute:1, next:null, tally:null, lit:-1
+  };
+  if (st === "joker") {
+    s.rail = [{ id:"spade" }, { id:"red" }, { id:"court" }];
+    s.hand = [{ r:11, s:1 }, { r:11, s:0 }, { r:3, s:2 }];
+    s.cur = { joker:"goldbin" }; s.chute = 0;
+  } else if (st === "special") {
+    s.rail = [{ id:"exorcist" }, { id:"jolly" }];
+    s.hand = [{ r:0, s:0 }, { r:4, s:0, mod:"wild" }, { r:8, s:0, mod:"glass" }, { r:2, s:0, mod:"lucky" }];
+    s.cur = { r:12, s:3, curse:true }; s.chute = 2;
+  } else if (st === "veiled") {
+    s.rail = [{ id:"court" }];
+    s.hand = [{ r:5, s:1 }, { r:5, s:3 }];
+    s.cur = { r:5, s:0, veil:true }; s.chute = 0;
+  } else if (st === "tally") {
+    s.rail = [{ id:"spade" }, { id:"jolly" }];
+    s.hand = [{ r:12, s:0 }, { r:12, s:1, mod:"glass" }, { r:4, s:2 }, { r:7, s:3, mod:"wild" }, { r:9, s:0 }];
+    s.cur = null; s.chute = 0; s.lit = 1;
+    var sc = scoreHand(s.hand, s.rail, 0); s.tally = { name:sc.name, chips:sc.chips, mult:sc.mult };
+  } else if (st === "seer") {
+    s.rail = [{ id:"seer" }, { id:"spade" }];
+    s.hand = [{ r:1, s:0 }, { r:2, s:0 }];
+    s.cur = { r:3, s:0 }; s.next = { r:4, s:2, mod:"gold" };
+  }
+  return s;
+}
+
+/* ===========================================================================
+   8. THE SCREEN — Layout, then each field.
+   =========================================================================== */
+var G = {}, V = null;      // V: the view being drawn (state, target), big or small
+function geo() {
+  var web = V.target === "web";
+  /* On the web the bottom row is the shell's: the level pill bottom-left, the
+     round's three controls bottom-right. The table stops above it, which
+     gives the pill its own corner back (no --lv-hud-bottom needed). */
+  G.top = 150; G.bottom = web ? 1186 : 1168; G.left = 26; G.right = 694; G.w = G.right - G.left; G.cx = 360;
+  var band = G.bottom - G.top, wide = S.gates === "edge" || S.gates === "stamp" || S.gates === "halves" || S.gates === "chevrons";
+  G.railH = S.rail === "tiles" ? 104 : S.rail === "medal" ? 120 : 150;
+  G.railY = G.top + 6;
+  G.cardH = Math.min(wide ? 480 : 450, band * (wide ? .44 : .42));
+  if (S.rail === "mini") G.cardH = Math.min(G.cardH, band * .39);
+  G.cardW = G.cardH * .715; G.cardCX = 360;
+  G.cardCY = G.railY + G.railH + 24 + G.cardH / 2;
+  G.slotGap = 13; G.slotW = Math.min(126, (G.w - 4 * 13) / 5); G.slotH = G.slotW * 1.4;
+  G.valueH = S.value === "under" ? 0 : 50;
+  G.slotY = (S.value === "under" ? G.bottom - 64 : G.bottom - 16) - G.slotH / 2;
+  G.valueY = S.value === "under" ? G.bottom - 26 : G.slotY - G.slotH / 2 - 30;
+  var handTop = S.value === "under" ? G.slotY - G.slotH / 2 : G.valueY - 26;
+  if (S.hand === "tray") handTop -= 10;
+  G.binsY = (G.cardCY + G.cardH / 2 + handTop) / 2 + 4;
+  G.gateW = 74; G.gateTop = G.cardCY - G.cardH / 2 - 12; G.gateBot = G.cardCY + G.cardH / 2 + 12;
+}
+function slotX(i) { var row = 5 * G.slotW + 4 * G.slotGap; return G.cx - row / 2 + G.slotW / 2 + i * (G.slotW + G.slotGap); }
+
+/* --- the HUD, mocked (the motor draws it in the DOM) ----------------------- */
+function drawHud() {
+  ctx.textBaseline = "middle";
+  rr(18, 18, 168, 92, 22); ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.fill();
+  ctx.textAlign = "left"; ctx.fillStyle = "rgba(255,190,200,.75)"; ctx.font = font(20); ctx.fillText(upper(t("Lives")), 36, 44);
+  ctx.fillStyle = "#ff9aad"; ctx.font = font(34); ctx.fillText("♥♥♥", 34, 82);
+  ctx.textAlign = "center"; ctx.fillStyle = "#ffffff"; ctx.font = font(78); ctx.fillText("1 240", 360, 62);
+  ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.font = font(20); ctx.fillText(upper(t("Score")), 360, 116);
+  rr(534, 18, 168, 92, 22); ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.fill();
+  ctx.textAlign = "right"; ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.font = font(20); ctx.fillText(upper(t("Deck")), 684, 44);
+  ctx.fillStyle = "#ffffff"; ctx.font = font(34); ctx.fillText("31", 684, 82);
+}
+function drawFrameExtras() {
+  ctx.textBaseline = "middle";
+  if (V.target === "playable") {
+    ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0, 1168, 720, 112);
+    rr(250, 1196, 220, 56, 28); ctx.fillStyle = "#f0b429"; ctx.fill();
+    ctx.fillStyle = "#241703"; ctx.textAlign = "center"; ctx.font = font(24);
+    ctx.fillText(upper(t("Install now")), 360, 1225);
+  } else {
+    var xs = [528, 598, 668];
+    for (var i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(xs[i], 1226, 26, 0, Math.PI * 2); ctx.fillStyle = "rgba(8,10,20,.7)"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.stroke(); }
+    rr(26, 1201, 236, 50, 14); ctx.fillStyle = "rgba(8,10,20,.72)"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.font = font(22); ctx.fillText("13  ☆☆☆", 42, 1226);
+    ctx.textAlign = "right"; ctx.fillText("1200", 248, 1226);
+  }
+}
+
+/* --- the rail -------------------------------------------------------------- */
+function railBox(i) { var w = (G.w - 24) / 3; return { x:G.left + i * (w + 12), w:w, cx:G.left + i * (w + 12) + w / 2 }; }
+function drawRail(rail, out) {
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (var i = 0; i < 3; i++) {
+    var b = railBox(i), inst = rail[i], y = G.railY, J = inst && JK[inst.id], col = J && FAM_COL[J.fam];
+    var gone = out && i === 0 && inst;                     // the one a kept joker pushes out
+    ctx.save(); if (gone) ctx.globalAlpha = .5;
+    if (S.rail === "tiles") {
+      rr(b.x, y, b.w, G.railH, 16);
+      if (!inst) { emptySlot(); ctx.fillStyle = "rgba(255,255,255,.3)"; ctx.font = font(20); ctx.fillText(upper(t("Joker")), b.cx, y + G.railH / 2); ctx.restore(); continue; }
+      ctx.fillStyle = "rgba(22,16,44,.92)"; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      ctx.fillStyle = col; ctx.font = font(18); ctx.fillText(upper(t(J.fam)), b.cx, y + 20);
+      ctx.fillStyle = "#f4f1ff"; ctx.font = font(22);
+      var nl = wrap(upper(t(J.name)), b.w - 16);
+      for (var q = 0; q < nl.length; q++) ctx.fillText(nl[q], b.cx, y + 58 - (nl.length - 1) * 12 + q * 25);
+      if (inst.n) { ctx.fillStyle = "#ff4a5e"; ctx.font = font(20); ctx.fillText("+" + inst.n + " mult", b.cx, y + G.railH - 16); }
+    } else if (S.rail === "medal") {
+      var R = 40, my = y + 44;
+      ctx.beginPath(); ctx.arc(b.cx, my, R, 0, Math.PI * 2);
+      if (!inst) { ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fill(); ctx.setLineDash([7, 7]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.stroke(); ctx.setLineDash([]); ctx.restore(); continue; }
+      var mg = ctx.createRadialGradient(b.cx, my - 10, 4, b.cx, my, R);
+      mg.addColorStop(0, rgba(col, .45)); mg.addColorStop(1, "#130f26");
+      ctx.fillStyle = mg; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.cx, my, R + 5, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = rgba("#f5c451", .6); ctx.stroke();
+      fitImg(jokerImg(inst.id), b.cx, my, R * 1.7, R * 1.7);
+      ctx.fillStyle = "#f4f1ff"; ctx.font = font(20);
+      var nm = wrap(upper(t(J.name)), b.w - 8);
+      ctx.fillText(nm[0] + (nm.length > 1 ? "…" : ""), b.cx, y + 104);
+      if (inst.n) badge(b.cx + R * .8, my - R * .8, "+" + inst.n, "#ff4a5e");
+    } else {
+      var cw = 96, ch = 134, cy = y + ch / 2 + 2;
+      if (!inst) { rr(b.cx - cw / 2, cy - ch / 2, cw, ch, 10); emptySlot(); ctx.restore(); continue; }
+      shadowUnder(b.cx - cw / 2, cy - ch / 2, cw, ch, 10, .1);
+      rr(b.cx - cw / 2, cy - ch / 2, cw, ch, 10);
+      var cg = ctx.createLinearGradient(0, cy - ch / 2, 0, cy + ch / 2); cg.addColorStop(0, "#2a1f4e"); cg.addColorStop(1, "#120d26");
+      ctx.fillStyle = cg; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      fitImg(jokerImg(inst.id), b.cx, cy - 8, cw * .86, ch * .66);
+      ctx.fillStyle = col; ctx.fillRect(b.cx - cw / 2 + 3, cy + ch / 2 - 26, cw - 6, 3);
+      ctx.fillStyle = "#f4f1ff"; ctx.font = font(18);
+      var mn = upper(t(J.name)); while (ctx.measureText(mn).width > b.w - 10 && mn.length > 3) mn = mn.slice(0, -2) + "…";
+      ctx.fillText(mn, b.cx, cy + ch / 2 - 12);
+      if (inst.n) badge(b.cx + cw / 2 - 4, cy - ch / 2 + 4, "+" + inst.n, "#ff4a5e");
+    }
+    ctx.restore();
+    if (gone) badge(b.cx, y + G.railH - 6, upper(t("Out")), BIN_COL);
+  }
+}
+function emptySlot() {
+  ctx.fillStyle = "rgba(255,255,255,.035)"; ctx.fill();
+  ctx.setLineDash([9, 9]); ctx.strokeStyle = "rgba(255,255,255,.15)"; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+}
+function badge(x, y, txt, col) {
+  ctx.font = font(20); var w = Math.max(34, ctx.measureText(txt).width + 16);
+  rr(x - w / 2, y - 15, w, 30, 15); ctx.fillStyle = col; ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, x, y + 1);
+}
+
+/* --- the gates — six ways to say "left bins, right keeps" ------------------- */
+function drawGates(cur, pull, dir, behind) {
+  var joker = cur && cur.joker, lb = t(joker ? "Refuse" : "Bin"), lk = t(joker ? "Take" : "Keep");
+  var lL = dir < 0 ? pull : 0, lR = dir > 0 ? pull : 0, my = (G.gateTop + G.gateBot) / 2;
+  if (behind) {                                    // what lies UNDER the card
+    if (S.gates === "halves") halves(lL, lR, lb, lk);
+    return;
+  }
+  if (S.gates === "pillars") { pillar(G.left, BIN_COL, lb, lL); pillar(G.right - G.gateW, KEEP_COL, lk, lR); }
+  else if (S.gates === "edge") { edge(0, BIN_COL, lb, lL, -1); edge(DW, KEEP_COL, lk, lR, 1); }
+  else if (S.gates === "buttons") {
+    roundBtn(G.left + 52, G.binsY, BIN_COL, lb, lL, "x");
+    roundBtn(G.right - 52, G.binsY, KEEP_COL, lk, lR, "v");
+  } else if (S.gates === "chevrons") {
+    chevrons(G.left + 40, my, -1, BIN_COL, lb, lL);
+    chevrons(G.right - 40, my, 1, KEEP_COL, lk, lR);
+  } else if (S.gates === "stamp") {
+    /* at rest: two small arrows by the card; dragged: a stamp on the card */
+    arrowHint(G.cardCX - G.cardW / 2 - 40, my, -1, BIN_COL, lb, 1 - lR);
+    arrowHint(G.cardCX + G.cardW / 2 + 40, my, 1, KEEP_COL, lk, 1 - lL);
+  }
+}
+function pillar(x, col, label, lit) {
+  rr(x, G.gateTop, G.gateW, G.gateBot - G.gateTop, 22);
+  ctx.fillStyle = rgba(col, .10 + lit * .3); ctx.fill();
+  ctx.lineWidth = 3 + lit * 4; ctx.strokeStyle = rgba(col, .42 + lit * .58); ctx.stroke();
+  ctx.save(); ctx.translate(x + G.gateW / 2, (G.gateTop + G.gateBot) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(col, .72 + lit * .28); ctx.font = font(30);
+  ctx.fillText(upper(label), 0, 0); ctx.restore();
+}
+function edge(x, col, label, lit, side) {
+  var w = 120, g = ctx.createLinearGradient(x, 0, x - side * w, 0);
+  g.addColorStop(0, rgba(col, .16 + lit * .5)); g.addColorStop(1, rgba(col, 0));
+  ctx.fillStyle = g; ctx.fillRect(side < 0 ? 0 : DW - w, G.gateTop - 30, w, G.gateBot - G.gateTop + 60);
+  ctx.fillStyle = rgba(col, .55 + lit * .45); ctx.fillRect(side < 0 ? 0 : DW - 6, G.gateTop, 6, G.gateBot - G.gateTop);
+  ctx.save(); ctx.translate(side < 0 ? 34 : DW - 34, (G.gateTop + G.gateBot) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(col, .6 + lit * .4); ctx.font = font(26);
+  ctx.fillText(upper(label), 0, 0); ctx.restore();
+}
+function roundBtn(x, y, col, label, lit, glyph) {
+  var R = 44;
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = rgba(col, .16 + lit * .5); ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.beginPath();
+  if (glyph === "x") { ctx.moveTo(x - 14, y - 14); ctx.lineTo(x + 14, y + 14); ctx.moveTo(x + 14, y - 14); ctx.lineTo(x - 14, y + 14); }
+  else { ctx.moveTo(x - 16, y + 1); ctx.lineTo(x - 4, y + 13); ctx.lineTo(x + 17, y - 12); }
+  ctx.stroke(); ctx.lineCap = "butt";
+  ctx.fillStyle = col; ctx.font = font(20); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(upper(label), x, y + R + 20);
+}
+function chevrons(x, y, side, col, label, lit) {
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  for (var i = 0; i < 3; i++) {
+    var cx = x + side * (i * 18 - 18), a = .25 + .25 * i + lit * .5;
+    ctx.beginPath(); ctx.moveTo(cx - side * 9, y - 24); ctx.lineTo(cx + side * 9, y); ctx.lineTo(cx - side * 9, y + 24);
+    ctx.lineWidth = 7; ctx.strokeStyle = rgba(col, Math.min(1, a)); ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+  ctx.fillStyle = rgba(col, .75 + lit * .25); ctx.font = font(20); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(upper(label), x, y + 50);
+}
+function arrowHint(x, y, side, col, label, a) {
+  ctx.save(); ctx.globalAlpha = Math.max(.15, a);
+  ctx.beginPath(); ctx.moveTo(x - side * 10, y - 20); ctx.lineTo(x + side * 10, y); ctx.lineTo(x - side * 10, y + 20);
+  ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 6; ctx.strokeStyle = col; ctx.stroke(); ctx.lineCap = "butt";
+  ctx.save(); ctx.translate(x, y + 70); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = col; ctx.font = font(20); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(upper(label), 0, 0);
+  ctx.restore(); ctx.restore();
+}
+function halves(lL, lR, lb, lk) {
+  var y0 = G.gateTop - 20, h = G.gateBot - G.gateTop + 40;
+  var gl = ctx.createLinearGradient(0, 0, 360, 0); gl.addColorStop(0, rgba(BIN_COL, .22 + lL * .4)); gl.addColorStop(1, rgba(BIN_COL, 0));
+  ctx.fillStyle = gl; ctx.fillRect(0, y0, 360, h);
+  var gr = ctx.createLinearGradient(720, 0, 360, 0); gr.addColorStop(0, rgba(KEEP_COL, .22 + lR * .4)); gr.addColorStop(1, rgba(KEEP_COL, 0));
+  ctx.fillStyle = gr; ctx.fillRect(360, y0, 360, h);
+  ctx.textBaseline = "middle"; ctx.font = font(24);
+  ctx.textAlign = "left"; ctx.fillStyle = rgba(BIN_COL, .7 + lL * .3); ctx.fillText(upper(lb), G.left + 4, y0 + 22);
+  ctx.textAlign = "right"; ctx.fillStyle = rgba(KEEP_COL, .7 + lR * .3); ctx.fillText(upper(lk), G.right - 4, y0 + 22);
+}
+/* The stamp, ON the card, once it leans a gate's way. */
+function stampOn(x, y, w, h, rot, dir, pull, label) {
+  if (S.gates !== "stamp" || !dir || pull < .05) return;
+  var col = dir > 0 ? KEEP_COL : BIN_COL;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.translate(dir > 0 ? -w * .2 : w * .2, -h * .3); ctx.rotate(dir > 0 ? -.3 : .3);
+  ctx.globalAlpha = Math.min(1, pull * 1.4);
+  ctx.font = font(44); var tw = ctx.measureText(upper(label)).width + 30;
+  rr(-tw / 2, -32, tw, 64, 10); ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = col; ctx.stroke();
+  ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(upper(label), 0, 2);
+  ctx.restore();
+}
+
+/* --- the bins ----------------------------------------------------------------- */
+function drawBins(n, cap) {
+  var y = G.binsY, i;
+  ctx.textBaseline = "middle";
+  if (S.bins === "pips") {
+    var total = cap * 30 + (cap - 1) * 10, x0 = G.cx - total / 2 + 46;
+    ctx.textAlign = "right"; ctx.font = font(22); ctx.fillStyle = "rgba(255,255,255,.42)"; ctx.fillText(upper(t("Bins")), x0 - 16, y);
+    for (i = 0; i < cap; i++) { rr(x0 + i * 40, y - 9, 30, 18, 6); ctx.fillStyle = i < n ? "#ff8a3c" : "rgba(255,255,255,.10)"; ctx.fill(); }
+  } else if (S.bins === "tokens") {
+    ctx.textAlign = "right"; ctx.font = font(22); ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.fillText(upper(t("Bins")), G.cx - 20, y);
+    for (i = 0; i < cap; i++) {
+      var tx = G.cx + 10 + i * 34;
+      ctx.beginPath(); ctx.arc(tx, y, 14, 0, Math.PI * 2); ctx.fillStyle = i < n ? "rgba(255,255,255,.08)" : "#d5263c"; ctx.fill();
+      ctx.lineWidth = 3; ctx.setLineDash(i < n ? [4, 4] : [5, 3]); ctx.strokeStyle = i < n ? "rgba(255,255,255,.25)" : "#ffd6dc"; ctx.stroke(); ctx.setLineDash([]);
+    }
+  } else {
+    for (i = 0; i < cap; i++) binGlyph(G.cx - (cap - 1) * 26 + i * 52, y, i < n);
+  }
+}
+function binGlyph(x, y, used) {
+  ctx.strokeStyle = used ? "rgba(255,255,255,.22)" : "#ff8a3c"; ctx.lineWidth = 3; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(x - 13, y - 10); ctx.lineTo(x + 13, y - 10); ctx.moveTo(x - 5, y - 15); ctx.lineTo(x + 5, y - 15);
+  ctx.moveTo(x - 10, y - 10); ctx.lineTo(x - 8, y + 15); ctx.lineTo(x + 8, y + 15); ctx.lineTo(x + 10, y - 10); ctx.stroke();
+  if (used) { ctx.beginPath(); ctx.moveTo(x - 15, y + 17); ctx.lineTo(x + 15, y - 17); ctx.stroke(); }
+}
+
+/* --- the hand, and what it is worth ----------------------------------------- */
+function drawHand(hand, lit, tally) {
+  var i;
+  if (S.hand === "tray") {
+    var top = S.value === "under" ? G.slotY - G.slotH / 2 - 16 : G.valueY - 26;
+    var bot = S.value === "under" ? G.bottom - 4 : G.slotY + G.slotH / 2 + 12;
+    rr(G.left - 6, top, G.w + 12, bot - top, 22); ctx.fillStyle = "rgba(4,16,11,.62)"; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = "rgba(245,196,81,.55)"; ctx.stroke();
+    rr(G.left, top + 6, G.w, bot - top - 12, 18); ctx.lineWidth = 1; ctx.strokeStyle = "rgba(245,196,81,.25)"; ctx.stroke();
+  }
+  for (i = 0; i < 5; i++) {
+    var p = slotPose(i);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+    rr(-G.slotW / 2, -G.slotH / 2, G.slotW, G.slotH, G.slotW * .085); emptySlot(); ctx.restore();
+  }
+  var ev = tally ? evalHand(hand) : null;
+  for (i = 0; i < hand.length; i++) {
+    var q = slotPose(i), dy = i === lit ? -18 : (ev && ev.scoring[i] ? -8 : 0);
+    drawCard(hand[i], q.x, q.y + dy, G.slotW, G.slotH, q.r, ev && !ev.scoring[i] ? .55 : 1, null);
+  }
+}
+function slotPose(i) {
+  if (S.hand !== "fan") return { x:slotX(i), y:G.slotY, r:0 };
+  var k = i - 2;
+  return { x:slotX(i), y:G.slotY + k * k * 7 - 4, r:k * .07 };
+}
+/* The worth of the hand as it stands — or, while the card leans toward KEEP,
+   what it would become (an arrow, and the new figures in their place). */
+function drawValue(now, next) {
+  var v = next || now, y = G.valueY, lean = !!next;
+  var name = v.bust ? t("Bust") : t(v.name), dim = !v.bust && v.dim;
+  var nameCol = v.bust ? BIN_COL : dim ? "rgba(255,255,255,.5)" : GOLD;
+  ctx.textBaseline = "middle";
+  if (S.value === "header") {
+    var x0 = G.left + 14;
+    ctx.textAlign = "left"; ctx.font = font(26); ctx.fillStyle = nameCol;
+    var nm = (lean ? "→ " : "") + upper(name); ctx.fillText(nm, x0, y);
+    if (!v.bust) figures(G.right - 14, y, v.chips, v.mult, "right", dim);
+  } else if (S.value === "badge") {
+    ctx.font = font(24); var nw = ctx.measureText((lean ? "→ " : "") + upper(name)).width;
+    var fw = v.bust ? 0 : figuresWidth(v.chips, v.mult), tw = nw + (fw ? fw + 24 : 0) + 40;
+    rr(G.cx - tw / 2, y - 26, tw, 52, 26); ctx.fillStyle = "rgba(6,12,10,.82)"; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = rgba(v.bust ? BIN_COL : GOLD, lean ? .9 : .5); ctx.stroke();
+    ctx.textAlign = "left"; ctx.fillStyle = nameCol; ctx.font = font(24);
+    ctx.fillText((lean ? "→ " : "") + upper(name), G.cx - tw / 2 + 20, y + 1);
+    if (fw) figures(G.cx + tw / 2 - 20, y, v.chips, v.mult, "right", dim);
+  } else {
+    ctx.font = font(26); var w1 = ctx.measureText((lean ? "→ " : "") + upper(name)).width, w2 = v.bust ? 0 : figuresWidth(v.chips, v.mult);
+    var x = G.cx - (w1 + (w2 ? w2 + 20 : 0)) / 2;
+    ctx.textAlign = "left"; ctx.fillStyle = nameCol; ctx.fillText((lean ? "→ " : "") + upper(name), x, y);
+    if (w2) figures(x + w1 + 20 + w2, y, v.chips, v.mult, "right", dim);
+  }
+}
+/* chips in a blue box, x, mult in a red one — the count's own colours */
+function figuresWidth(c, m) { ctx.font = font(24); return ctx.measureText(String(c)).width + ctx.measureText(String(m)).width + 24 + 24 + 30; }
+function figures(xr, y, c, m, align, dim) {
+  ctx.font = font(24); ctx.textBaseline = "middle"; ctx.textAlign = "center";
+  var mw = ctx.measureText(String(m)).width + 24, cw = ctx.measureText(String(c)).width + 24, x = xr;
+  ctx.globalAlpha *= dim ? .55 : 1;
+  rr(x - mw, y - 18, mw, 36, 10); ctx.fillStyle = MULT_COL; ctx.fill(); ctx.fillStyle = "#fff"; ctx.fillText(m, x - mw / 2, y + 1);
+  x -= mw + 30; ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillText("x", x + 15, y + 1);
+  rr(x - cw, y - 18, cw, 36, 10); ctx.fillStyle = CHIP_COL; ctx.fill(); ctx.fillStyle = "#fff"; ctx.fillText(c, x - cw / 2, y + 1);
+  ctx.globalAlpha /= dim ? .55 : 1;
+}
+
+/* --- the count: where the card stood -------------------------------------- */
+function drawTally(T) {
+  var y = G.cardCY + 20, cx = G.cx;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (S.tally === "boxes") {
+    ctx.fillStyle = GOLD; ctx.font = font(40); ctx.fillText(upper(t(T.name)), cx, y - 76);
+    rr(cx - 220, y - 34, 190, 70, 14); ctx.fillStyle = "#1f4f8c"; ctx.fill();
+    rr(cx + 30, y - 34, 190, 70, 14); ctx.fillStyle = "#8c1f33"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = font(44); ctx.fillText(T.chips, cx - 125, y + 2); ctx.fillText(T.mult, cx + 125, y + 2);
+    ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.font = font(36); ctx.fillText("x", cx, y + 2);
+  } else if (S.tally === "chips") {
+    ctx.fillStyle = GOLD; ctx.font = font(42); ctx.fillText(upper(t(T.name)), cx, y - 110);
+    casinoChip(cx - 120, y, "#2463b8", T.chips); casinoChip(cx + 120, y, "#b8243c", T.mult);
+    ctx.fillStyle = "#fff"; ctx.font = font(44); ctx.fillText("x", cx, y);
+  } else {
+    var w = G.w - 40;
+    rr(cx - w / 2, y - 44, w, 88, 44); ctx.fillStyle = "rgba(6,12,10,.85)"; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = rgba(GOLD, .6); ctx.stroke();
+    ctx.font = font(30); ctx.textAlign = "left"; ctx.fillStyle = GOLD; ctx.fillText(upper(t(T.name)), cx - w / 2 + 30, y);
+    ctx.textAlign = "right"; ctx.font = font(36);
+    var s1 = String(T.chips), s3 = " = " + (T.chips * T.mult), s2 = String(T.mult), x = cx + w / 2 - 30;
+    ctx.fillStyle = "#fff"; ctx.fillText(s3, x, y); x -= ctx.measureText(s3).width;
+    ctx.fillStyle = "#ff6d82"; ctx.fillText(s2, x, y); x -= ctx.measureText(s2).width;
+    ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fillText(" x ", x, y); x -= ctx.measureText(" x ").width;
+    ctx.fillStyle = "#6fb6ff"; ctx.fillText(s1, x, y);
+  }
+}
+function casinoChip(x, y, col, val) {
+  var R = 72, i;
+  ctx.beginPath(); ctx.arc(x, y + 6, R, 0, Math.PI * 2); ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
+  for (i = 0; i < 8; i++) {
+    var a = i * Math.PI / 4;
+    ctx.beginPath(); ctx.arc(x, y, R - 7, a - .14, a + .14); ctx.lineWidth = 12; ctx.strokeStyle = "#f4efe2"; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(x, y, R * .66, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fill();
+  ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#fff"; ctx.font = font(44); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(val, x, y + 1);
+}
+
+/* ===========================================================================
+   9. ONE FRAME — of any view, on any canvas.
+   =========================================================================== */
+var drag = { on:false, x0:0, dx:0 };
+function render(c2d, view, dx) {
+  ctx = c2d; V = view;
+  geo();
+  var sc = scene(V.state);
+  ctx.clearRect(0, 0, DW, DH);
+  if (VIEW.scene === "1" && ok(IMG.scene)) ctx.drawImage(IMG.scene, 0, 0, DW, DH);
+  else {
+    var g = ctx.createRadialGradient(360, 460, 40, 360, 460, 900);
+    g.addColorStop(0, "#17402f"); g.addColorStop(.56, "#0b2419"); g.addColorStop(1, "#040b08");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, DW, DH);
+  }
+  var pull = Math.min(1, Math.abs(dx) / 92), dir = dx < 0 ? -1 : dx > 0 ? 1 : 0;
+  var joker = sc.cur && sc.cur.joker;
+  drawHud();
+  if (!sc.tally) drawGates(sc.cur, pull, dir, true);
+  drawRail(sc.rail, joker && sc.rail.length >= 3);
+  if (!sc.tally) { drawGates(sc.cur, pull, dir, false); drawBins(sc.chute, 3); }
+  drawHand(sc.hand, sc.lit, !!sc.tally);
+  if (!sc.tally) {
+    var now = scoreHand(sc.hand, sc.rail, sc.chute), next = null;
+    if (dir > 0 && pull > .25 && sc.cur && !joker) {
+      next = sc.cur.veil ? { name:"?", chips:"?", mult:"?", dim:true } : scoreHand(sc.hand.concat([sc.cur]), sc.rail, sc.chute);
+    }
+    drawValue(now, next);
+  }
+  if (!sc.tally) {                                              // the shoe
+    for (var k = 2; k >= 1; k--) {
+      ctx.save(); ctx.translate(G.cardCX + k * 9, G.cardCY + k * 12); ctx.rotate(k * .024);
+      rr(-G.cardW / 2, -G.cardH / 2, G.cardW, G.cardH, G.cardW * .085);
+      ctx.globalAlpha = k === 2 ? .45 : .8; ctx.fillStyle = "#14402f"; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(245,196,81,.35)"; ctx.stroke(); ctx.restore();
+    }
+  }
+  if (sc.next) {
+    var nw = G.cardW * .34, nh = G.cardH * .34, nx = G.cardCX + G.cardW / 2 - nw * .2, ny = G.cardCY - G.cardH / 2 + nh * .3;
+    drawCard(sc.next, nx, ny, nw, nh, .12, 1, null);
+    ctx.fillStyle = FAM_COL.Curse; ctx.font = font(20); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(upper(t("Next")), nx, ny + nh / 2 + 18);
+  }
+  if (sc.cur) {
+    var tint = S.gates === "stamp" ? null : dx < -4 ? rgba(BIN_COL, .05 + pull * .17) : dx > 4 ? rgba(KEEP_COL, .05 + pull * .17) : null;
+    var cx = G.cardCX + dx, cy = G.cardCY - Math.abs(dx) * .06, rot = Math.max(-.42, Math.min(.42, dx / 620));
+    drawCard(sc.cur, cx, cy, G.cardW, G.cardH, rot, 1, tint);
+    stampOn(cx, cy, G.cardW, G.cardH, rot, dir, pull, t(dir > 0 ? (joker ? "Take" : "Keep") : (joker ? "Refuse" : "Bin")));
+  }
+  if (sc.tally) drawTally(sc.tally);
+  drawFrameExtras();
+}
+
+/* --- the big frame and the small ones -------------------------------------- */
+var big = document.getElementById("board"), bigCtx = big.getContext("2d"), thumbs = [];
+function sizeCanvas(cv, cssW, cssH) {
+  var dpr = Math.min(window.devicePixelRatio || 1, 2), c = cv.getContext("2d");
+  cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+  c.setTransform(cv.width / DW, 0, 0, cv.height / DH, 0, 0);
+}
+function draw() { render(bigCtx, { state:VIEW.state, target:VIEW.target }, drag.dx); }
+/* The other target in the same state, then every other state on this target. */
+function buildThumbs() {
+  var box = document.getElementById("thumbs"); box.innerHTML = ""; thumbs = [];
+  var other = VIEW.target === "web" ? "playable" : "web", list = [{ state:VIEW.state, target:other }];
+  for (var s in STATES) if (s !== VIEW.state) list.push({ state:s, target:VIEW.target });
+  list.forEach(function (v) {
+    var d = document.createElement("div"); d.className = "th";
+    var cv = document.createElement("canvas"); sizeCanvas(cv, 180, 320);
+    var cap = document.createElement("span"); cap.textContent = TARGETS[v.target] + " · " + STATES[v.state];
+    d.appendChild(cv); d.appendChild(cap); box.appendChild(d);
+    d.onclick = function () { VIEW.state = v.state; VIEW.target = v.target; sync(); save(); redrawAll(); };
+    thumbs.push({ cv:cv, v:v });
+  });
+}
+function redrawAll() {
+  if (!S.face) return;
+  buildThumbs();
+  thumbs.forEach(function (th) { render(th.cv.getContext("2d"), th.v, 0); });
+  draw();
+  document.getElementById("cap").textContent = TARGETS[VIEW.target] + " · " + STATES[VIEW.state] + " — drag the card";
+}
+
+/* ===========================================================================
+   10. THE PANEL
+   =========================================================================== */
+function buildPanel() {
+  var pr = document.getElementById("presets");
+  PRESETS.forEach(function (p) {
+    var b = document.createElement("button"); b.textContent = p.name; b.dataset.k = p.key;
+    b.onclick = function () { applyPreset(p.key); }; pr.appendChild(b);
+  });
+  var f = document.getElementById("fields");
+  FIELDS.forEach(function (fd) {
+    var row = document.createElement("div"); row.className = "row";
+    var opts = ""; for (var k in fd.opts) opts += '<option value="' + k + '">' + fd.opts[k] + "</option>";
+    row.innerHTML = "<label>" + fd.lab + '</label><select data-f="' + fd.k + '">' + opts + "</select>";
+    f.appendChild(row);
+  });
+  f.addEventListener("change", function (e) { var k = e.target.dataset.f; if (k) { S[k] = e.target.value; markPreset(); save(); redrawAll(); } });
+  var st = document.getElementById("state");
+  for (var s in STATES) st.innerHTML += '<option value="' + s + '">' + STATES[s] + "</option>";
+  ["state", "target", "lang", "scene"].forEach(function (id) {
+    document.getElementById(id).onchange = function (e) { VIEW[id] = e.target.value; save(); redrawAll(); };
+  });
+  document.getElementById("copy").onclick = function () {
+    var txt = JSON.stringify(S, null, 2);
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(
+      function () { document.getElementById("copied").textContent = "Copied"; },
+      function () { prompt("Settings", txt); });
+  };
+}
+function applyPreset(key) { applyPresetSilent(key); sync(); save(); redrawAll(); }
+function applyPresetSilent(key) {
+  var p = PRESETS.filter(function (x) { return x.key === key; })[0];
+  if (p) for (var k in p.s) S[k] = p.s[k];
+}
+function sync() {
+  document.querySelectorAll("#fields select").forEach(function (el) { el.value = S[el.dataset.f]; });
+  ["state", "target", "lang", "scene"].forEach(function (id) { document.getElementById(id).value = VIEW[id]; });
+  markPreset();
+}
+function markPreset() {
+  var hit = null;
+  PRESETS.forEach(function (p) {
+    var same = true; for (var k in p.s) if (p.s[k] !== S[k]) same = false;
+    if (same) hit = p;
+  });
+  document.querySelectorAll("#presets button").forEach(function (b) { b.classList.toggle("on", !!hit && b.dataset.k === hit.key); });
+  document.getElementById("pnote").textContent = hit ? hit.note : "A mix of its own.";
+}
+/* The hash is the state: a reload, or a link, comes back to the same table. */
+function save() {
+  var a = []; for (var k in S) a.push(k + "=" + S[k]);
+  for (var v in VIEW) a.push(v + "=" + VIEW[v]);
+  history.replaceState(null, "", "#" + a.join("&"));
+}
+function restore() {
+  applyPresetSilent("B");
+  location.hash.slice(1).split("&").forEach(function (kv) {
+    var p = kv.split("="); if (!p[1]) return;
+    if (p[0] === "preset") applyPresetSilent(p[1]);
+    else if (p[0] in VIEW) VIEW[p[0]] = p[1];
+    else if (FIELDS.some(function (f) { return f.k === p[0] && p[1] in f.opts; })) S[p[0]] = p[1];
+  });
+}
+
+/* --- drag the big card, to see a gate lit and the hand's worth move ------- */
+function px(e) { var r = big.getBoundingClientRect(); return (e.clientX - r.left) * DW / r.width; }
+big.addEventListener("pointerdown", function (e) { drag.on = true; drag.x0 = px(e); big.setPointerCapture(e.pointerId); });
+big.addEventListener("pointermove", function (e) { if (!drag.on) return; drag.dx = px(e) - drag.x0; draw(); });
+function release() {
+  if (!drag.on) return; drag.on = false;
+  (function spring() { drag.dx *= .7; if (Math.abs(drag.dx) < .5) drag.dx = 0; draw(); if (drag.dx) requestAnimationFrame(spring); })();
+}
+big.addEventListener("pointerup", release); big.addEventListener("pointercancel", release);
+
+sizeCanvas(big, 450, 800); buildPanel(); restore(); sync(); redrawAll();
+</script>
+</body>
+</html>

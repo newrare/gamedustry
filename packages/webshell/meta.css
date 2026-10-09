@@ -379,7 +379,7 @@
    THE SHOP
    ========================================================================= */
 
-#sh-body { display:flex; flex-direction:column; gap:16px; }
+#sh-body { display:flex; flex-direction:column; gap:12px; }
 /* the body is the sheet's scroller: nothing in it may be squeezed to fit */
 #sh-body > * { flex-shrink:0; }
 
@@ -396,8 +396,10 @@
    Every tile is one column — the piece on its own light, the name, the
    count, the price — and the price is pinned to the foot (`margin-top:auto`),
    so a row of two tiles lines its buttons up whether their names run to one
-   line or two. No sentence: it is read on the product card (album.js). */
-.sh-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+   line or two. No sentence: it is read on the product card (album.js).
+   The piece is sized so the missed day, the six tiles and the sale stand on
+   one screen with no scroll — the fullest shelf this shop ever shows. */
+.sh-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
 .sh-tile {
   --tone:var(--accent);
@@ -422,7 +424,7 @@
    thing on a tile, and it moves little: a shelf where six things bounce is a
    shelf nobody reads. */
 .sh-pic {
-  position:relative; width:92px; height:92px; flex:0 0 auto;
+  position:relative; width:80px; height:80px; flex:0 0 auto;
   display:flex; align-items:center; justify-content:center;
   color:var(--tone);
 }
@@ -432,7 +434,7 @@
   filter:blur(2px);
 }
 .sh-pic .sh-i {
-  position:relative; width:74px; height:74px;
+  position:relative; width:66px; height:66px;
   animation:sh-float 3.2s ease-in-out infinite;
   filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));
 }
@@ -541,9 +543,10 @@
 
 /* The missed day, full width over the grid: a day of the road rather than a
    product, with the road's own face on the left. */
-.sh-card.sh-catch { --tone:var(--accent); gap:20px; align-items:center; }
-.sh-catch .sh-pic { width:120px; height:120px; }
-.sh-catch .sh-pic > :not(.sh-glow) { position:relative; max-width:100px; max-height:100px; }
+.sh-card.sh-catch { --tone:var(--accent); gap:20px; align-items:center; padding:14px 22px; }
+.sh-catch .sh-pic { width:104px; height:104px; }
+.sh-catch .sh-pic > :not(.sh-glow) { position:relative; max-width:88px; max-height:88px; }
+.sh-catch .sh-body { gap:4px; }
 .sh-body {
   flex:1; min-width:0; align-self:stretch;
   display:flex; flex-direction:column; align-items:flex-start; gap:10px;
@@ -564,7 +567,7 @@
 /* THE SALE: the doubles are drawn IN the button, fanned one over the next
    with no frame, then what it sells and the macaron (album.js, section 5).
    Set apart from the shelf: it is not a seventh product. */
-.sh-sell { justify-content:flex-start; gap:20px; padding-left:calc(var(--h) * .3); margin-top:18px; }
+.sh-sell { justify-content:flex-start; gap:20px; padding-left:calc(var(--h) * .3); margin-top:4px; }
 .sh-dupes { display:flex; flex:0 0 auto; padding-left:26px; }
 .sh-sell > span:not(.sh-dupes):not(.btn-badge) { white-space:nowrap; }
 .sh-dup {

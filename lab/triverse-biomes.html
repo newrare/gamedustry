@@ -28,9 +28,9 @@
      - the three ROPE COLOURS. Cyan, pink and lime were the game's identity;
        a biome now deals its own three. The gems take the colour of their
        rope and the Prism gates the colour of the rope they let through, so
-       both follow. In the game this is more than `play.colors`: the SKIN's
-       `--p0/1/2`, the `pop-l0/1/2` callouts and the intro demo carry the rope
-       colours too, so a biome would write them on #frame at level start;
+       both follow. The game ships them since 1.4.0 (CONFIG.biomes), and
+       writes them as --rp0..2 at reset for the `pop-l0/1/2` callouts; the
+       intro demo keeps Neon's three, which is the playable's look;
      - the ARROW's shape. The chevron is the game today; the Arrows view lays
        seven shapes side by side on the selected ground, in the selected
        biome's three colours, leaning into a hop the way the game leans it.
@@ -91,7 +91,7 @@ body {
 }
 .check { display:flex; gap:8px; align-items:center; font-size:12px; color:#c9c9e0; margin-bottom:8px; cursor:pointer; }
 .seg { display:flex; gap:4px; margin-top:6px; }
-.seg button { flex:1; margin:0; background:#1d1d2e; color:#c9c9e0; }
+.seg button { flex:1; margin:0; padding:8px 4px; font-size:12px; background:#1d1d2e; color:#c9c9e0; }
 .seg button.on { background:#7ea6ff; color:#0b0b12; }
 button {
   width:100%; margin-top:6px; padding:8px 10px;
@@ -268,8 +268,12 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
     braids:  { label: "Braids", list: ["braid", "braid", "braid", "braid", "shift", "shift", "shift", "ribbon", "helix", "rails"] },
     coils:   { label: "Coils and loops", list: ["coil", "coil", "coil", "ribbon", "ribbon", "rails", "breath", "loop", "loop", "spring"] },
     helix:   { label: "Helix and breath", list: ["helix", "helix", "breath", "breath", "breath", "braid", "braid", "spring", "eight"] },
+    fresh:   { label: "The ten new figures (1.3.0)", list: ["plait", "scissors", "funnel", "lean", "zigzag", "pulse", "jog",
+               "tornado", "butterfly", "cascade"] },
     all:     { label: "Everything (the game today)", list: ["rails", "rails", "ribbon", "ribbon", "coil", "coil",
-               "braid", "braid", "braid", "breath", "breath", "helix", "shift", "shift", "shift", "loop", "loop", "eight", "spring"] }
+               "braid", "braid", "braid", "breath", "breath", "helix", "shift", "shift", "shift", "loop", "loop", "eight", "spring",
+               "plait", "plait", "scissors", "scissors", "funnel", "lean", "zigzag", "zigzag", "pulse", "pulse", "jog", "jog",
+               "tornado", "butterfly", "cascade"] }
   };
   const PARTICLES = { stars: "Stars and speed streaks", shards: "Prism shards and light beams",
                       grid: "Synthwave floor", bubbles: "Bubbles rising", snow: "Snow drifting",
@@ -292,27 +296,30 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
   const RULES = { none: "None", gate: "Colour gates", break: "Broken rope", comet: "Moving hazard",
                   heat: "Rope heat", all: "Rope heat, and every rule before" };
 
-  /* The rope triads. Neon keeps the game's own three; the others are picked
-     out of what is left once the hazards, the mega gem and the ground have
-     taken their hues: a blue and a white on Prism's green, ice, white and an
-     electric magenta for Storm, a mint / blue / orchid dusk for Comets, and cool ropes on Fusion's
-     warm ground, because every warm hue there belongs to a mine or a gem. */
+  /* The defaults ARE the game: CONFIG.biomes of games/triverse/game.js since
+     1.4.0 (the game knows "dot" and "ring" only — dashes, beads and links are
+     still the lab's). Each triad is picked out of what is left once the
+     hazards, the mega gem and the ground have taken their hues, and no two
+     biomes share one: cyan / pink / lime, blue / rose / white, mint /
+     periwinkle / magenta, sky / orchid / green, blue / warm white / mint —
+     cool ropes on Fusion's warm ground, since every warm hue there belongs to
+     a mine or a gem. Keep the two in step by hand. */
   const DEFAULTS = [
     { key: "neon",   name: "Neon",   levels: "1–6",   ground: ["#141a44", "#080b22", "#03040c"], glow: "#3ce0ff", glowA: 0,
       particles: "stars",  tint: "#ffffff", density: 1, ropes: ["#3ce0ff", "#ff5ad4", "#a6ff3d"],
-      material: "dots",   arrow: "trident", figures: "classic", rule: "none" },
+      material: "dots",   arrow: "chevron", figures: "classic", rule: "none" },
     { key: "prism",  name: "Prism",  levels: "7–12",  ground: ["#0b3a1a", "#05200e", "#020a05"], glow: "#3dff8a", glowA: 0,
       particles: "shards", tint: "#d8fff0", density: 1, ropes: ["#5a8cff", "#ff6fd8", "#f4fbff"],
-      material: "beads",  arrow: "trident", figures: "braids",  rule: "gate" },
+      material: "rings",  arrow: "trident", figures: "braids",  rule: "gate" },
     { key: "storm",  name: "Storm",  levels: "13–18", ground: ["#2a3442", "#121820", "#06080c"], glow: "#cfe3ff", glowA: 0,
-      particles: "rain",   tint: "#cfe3ff", density: 1, ropes: ["#7fe9ff", "#ff5ae0", "#ffffff"],
-      material: "dashes", arrow: "trident", figures: "coils",   rule: "break" },
+      particles: "rain",   tint: "#cfe3ff", density: 1, ropes: ["#4dffc3", "#8c9bff", "#ff4fe8"],
+      material: "dots",   arrow: "dart",    figures: "coils",   rule: "break" },
     { key: "comets", name: "Comets", levels: "19–24", ground: ["#1f1a2e", "#110e1c", "#05040a"], glow: "#ff9d7a", glowA: 0.24,
-      particles: "comets", tint: "#e8eeff", density: 1, ropes: ["#4dffc3", "#4f7bff", "#ff7ae6"],
-      material: "rings",  arrow: "trident", figures: "helix",   rule: "comet" },
+      particles: "comets", tint: "#e8eeff", density: 1, ropes: ["#5ab4ff", "#ff8ae8", "#7dff8a"],
+      material: "rings",  arrow: "jet",     figures: "helix",   rule: "comet" },
     { key: "fusion", name: "Fusion", levels: "25–30", ground: ["#2a1810", "#140b07", "#060302"], glow: "#ff6a1c", glowA: 0.18,
-      particles: "embers", tint: "#ffb347", density: 1, ropes: ["#4af0ff", "#fff1dc", "#7dff6a"],
-      material: "links",  arrow: "trident", figures: "all",     rule: "all" }
+      particles: "embers", tint: "#ffb347", density: 1, ropes: ["#5a7bff", "#fff1dc", "#6dff9e"],
+      material: "dots",   arrow: "prow",    figures: "all",     rule: "all" }
   ];
 
   /* ---- presets: a whole look for the five biomes at once ------------------
@@ -325,8 +332,8 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
      the Presets view prints what it says, biome by biome. */
   const LOOK = ["name", "ground", "glow", "glowA", "particles", "tint", "density", "ropes", "material"];
   const PRESETS = [
-    { key: "arcade", name: "Neon arcade", arrow: "trident",
-      note: "The game as it is, pushed five ways: the house look, one new idea per stretch.",
+    { key: "game", name: "In the game (1.4.0)", arrow: null,
+      note: "What games/triverse ships: one look per stretch, its own triad, sky and arrow.",
       biomes: DEFAULTS.map(b => { const o = {}; LOOK.forEach(k => { o[k] = clone(b[k]); }); return o; }) },
     { key: "space", name: "Deep space", arrow: "jet",
       note: "A ship crossing the cosmos: near-black skies, a nebula, an ion storm, a meteor field, a dying star.",
@@ -372,7 +379,9 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
       ] }
   ];
   // The five biomes a preset would give: the preset's look over the slots' rules and figures.
-  function presetBiomes(pr) { return BIOMES.map((b, i) => Object.assign(clone(b), clone(pr.biomes[i]), { arrow: pr.arrow })); }
+  // A preset with no `arrow` keeps each biome's own (the game's preset deals one per stretch).
+  function presetLook(pr, i) { const o = clone(pr.biomes[i]); o.arrow = pr.arrow || DEFAULTS[i].arrow; return o; }
+  function presetBiomes(pr) { return BIOMES.map((b, i) => Object.assign(clone(b), presetLook(pr, i))); }
 
   const STORE = "lab:triverse-biomes";
   const S = { view: "gallery", sel: 0, preset: -1, items: true, rule: true, particles: true, arrow: true, anim: true, speed: 780 };
@@ -512,9 +521,50 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
     const SHIFTS = [[1, 0, 2], [0, 2, 1], [2, 1, 0], [1, 2, 0], [2, 0, 1]];
     function pushRails(p0) { const len = R.range(190, 330); for (let i = 0; i < 3; i++) emitStraight(i, p0, p0 + len); genP = p0 + len; }
 
+    /* Half a braid: the two ropes on columns `a` and `a + 1` trade places over
+       half a period while the third holds its column. A sine leaves and lands
+       on the extremes of its swing, so both ends are flat and the swap chains
+       onto anything — several in a row, alternating pairs, are the plait. */
+    function swapPair(a, len) {
+      var ia = slotRope[a], ib = slotRope[a + 1], ic = slotRope[a === 0 ? 2 : 0],
+          center = (slotX(a) + slotX(a + 1)) * 0.5, amp = (slotX(a + 1) - slotX(a)) * 0.5;
+      emitSine(ia, genP, len * 2, 0.5, center, amp, -Math.PI / 2);   // column a -> a + 1
+      emitSine(ib, genP, len * 2, 0.5, center, amp,  Math.PI / 2);   // column a + 1 -> a
+      emitStraight(ic, genP, genP + len);
+      curX[ia] = slotX(a + 1); curX[ib] = slotX(a);
+      slotRope[a] = ib; slotRope[a + 1] = ia;
+      genP += len;
+    }
+
+    /* Ease the trio onto `xs` (one x per column), hold them there for `hold`,
+       and fan them back onto the grid in the same order: a figure made of three
+       lane changes nobody has to make. */
+    function holdAt(xs, hold) {
+      var i, len = 0;
+      for (i = 0; i < 3; i++) len = Math.max(len, Math.abs(xs[i] - curX[slotRope[i]]));
+      len = clamp(220 + len * 1.05, 260, 560);
+      for (i = 0; i < 3; i++) emitCurve(slotRope[i], genP, genP + len, xs[i]);
+      genP += len;
+      for (i = 0; i < 3; i++) emitStraight(slotRope[i], genP, genP + hold);
+      genP += hold;
+      ferryTo(slotRope.slice());
+    }
+
+    // One leg of an in-phase jink: every rope eases to its own `base` + `off`.
+    function jinkTo(base, off, len) {
+      var i;
+      for (i = 0; i < 3; i++) emitCurve(i, genP, genP + len, base[i] + off);
+      genP += len;
+    }
+    function holdAll(len) {
+      var i;
+      for (i = 0; i < 3; i++) emitStraight(i, genP, genP + len);
+      genP += len;
+    }
+
     function pushBand() {
       const p0 = genP;
-      let i, a, b, ia, ib, ic, center, amp, wl, n, ph, xs, len, off, mid, li, gapL, gapR, r, dir, spans, total, q;
+      let i, a, b, ia, ib, ic, center, amp, wl, n, ph, xs, len, off, mid, li, gapL, gapR, r, dir, spans, total, q, k, base, order, tag;
       if (!onGrid) { ferryHome(); return; }
       const kind = R.pick((FIGSETS[B().figures] || FIGSETS.all).list);
       if (kind === "rails") { pushRails(p0); return; }
@@ -542,15 +592,16 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
         emitStraight(ic, p0, p0 + wl * n);
         genP = p0 + wl * n; return;
       }
-      if (kind === "helix") {
-        center = L.cx + sway; amp = slotHalf() * 0.68; ph = [-TAU / 3, 0, TAU / 3];
+      if (kind === "helix" || kind === "tornado") {
+        center = L.cx + sway; amp = slotHalf() * (kind === "tornado" ? 0.5 : 0.68); ph = [-TAU / 3, 0, TAU / 3];
         xs = []; len = 0;
         for (i = 0; i < 3; i++) xs.push(center + amp * Math.sin(ph[i]));
         for (i = 0; i < 3; i++) len = Math.max(len, Math.abs(xs[i] - curX[slotRope[i]]));
         len = clamp(240 + len * 1.05, 270, 620);
         for (i = 0; i < 3; i++) emitCurve(slotRope[i], p0, p0 + len, xs[i]);
         genP = p0 + len;
-        wl = R.range(330, 450); n = R.int(1, 2);
+        if (kind === "tornado") { wl = R.range(190, 240); n = R.int(2, 3); }
+        else { wl = R.range(330, 450); n = R.int(1, 2); }
         for (i = 0; i < 3; i++) emitSine(slotRope[i], genP, wl, n, center, amp, ph[i]);
         genP += wl * n; onGrid = false; return;
       }
@@ -564,6 +615,136 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
         }
         genP = p0 + wl * n; return;
       }
+      if (kind === "plait") {
+        // THE PLAIT. A real three-strand braid: the left pair trades, then the
+        // right pair, then the left again — every rope passes over the middle
+        // in turn, which is how hair is braided.
+        a = R.chance(0.5) ? 0 : 1;
+        n = R.int(4, 6); len = R.range(170, 220);
+        for (i = 0; i < n; i++) { swapPair(a, len); a = 1 - a; }
+        return;
+      }
+
+      if (kind === "scissors") {
+        // THE SCISSORS. The two outer ropes swing right through the middle one
+        // and out past it, then come home: two blades crossing over a still
+        // pin. All three meet at one point on the way, a crossing the hazard
+        // rule keeps clear like any other; at the far end of the swing each
+        // blade stands half a column past the pin, well clear of it.
+        amp = slotHalf() * 0.75;
+        wl = R.range(440, 560);
+        emitSine(slotRope[0], p0, wl, 1, slotX(0) + amp, amp, -Math.PI / 2);
+        emitSine(slotRope[2], p0, wl, 1, slotX(2) - amp, amp,  Math.PI / 2);
+        emitStraight(slotRope[1], p0, p0 + wl);
+        genP = p0 + wl;
+        return;
+      }
+
+      if (kind === "funnel") {
+        // THE FUNNEL. The trio closes in on the middle until the lanes are as
+        // narrow as a hazard allows, runs that corridor, and opens back out.
+        center = L.cx + sway;
+        off = Math.max(T.hazardApart + 14, slotHalf() * 0.52);
+        holdAt([center - off, center, center + off], R.range(220, 380));
+        return;
+      }
+
+      if (kind === "lean") {
+        // THE LEAN. The trio packs itself against one side — the outer column
+        // there holds, the other two close in on it — leaving half the frame
+        // empty, then stands back up.
+        off = slotHalf() * 0.7;
+        if (R.chance(0.5)) holdAt([slotX(0), slotX(0) + off, slotX(0) + off * 2], R.range(200, 340));
+        else holdAt([slotX(2) - off * 2, slotX(2) - off, slotX(2)], R.range(200, 340));
+        return;
+      }
+
+      if (kind === "zigzag" || kind === "pulse") {
+        // In phase, like the ribbon, so the gap travels with the trio; the
+        // swing is capped by the walls the same way.
+        amp = Math.min(kind === "zigzag" ? 52 : 58, Math.min(wallRoom(slotX(0), -1), wallRoom(slotX(2), 1)));
+        if (amp < 22) { pushRails(p0); return; }
+        base = curX.slice();
+        if (kind === "zigzag") {
+          // THE ZIGZAG. A ribbon with corners: short eased legs, left, right,
+          // left, each one flat at both ends so the turn reads as a corner.
+          len = R.range(120, 160); n = R.int(2, 3);
+          jinkTo(base, amp, len * 0.6);
+          for (k = 0; k < n; k++) { jinkTo(base, -amp, len); jinkTo(base, amp, len); }
+          jinkTo(base, 0, len * 0.6);
+        } else {
+          // THE PULSE. Flat, then a beat — a kick to one side and back through
+          // the other, like a trace on a heart monitor. Two or three beats.
+          dir = R.chance(0.5) ? 1 : -1; n = R.int(2, 3);
+          for (k = 0; k < n; k++) {
+            holdAll(R.range(110, 170));
+            jinkTo(base, amp * dir, 80);
+            jinkTo(base, -amp * 0.55 * dir, 110);
+            jinkTo(base, 0, 80);
+          }
+        }
+        return;
+      }
+
+      if (kind === "jog") {
+        // THE JOG. The middle rope steps half a column aside, runs there, and
+        // steps back: for a moment the trio is two ropes close and one far.
+        li = slotRope[1];
+        off = slotX(1) + (R.chance(0.5) ? 1 : -1) * slotHalf() * 0.5;
+        len = R.range(220, 280); q = R.range(160, 280);
+        emitCurve(li, p0, p0 + len, off);
+        emitStraight(li, p0 + len, p0 + len + q);
+        emitCurve(li, p0 + len + q, p0 + len * 2 + q, slotX(1));
+        for (i = 0; i < 3; i++) if (i !== li) emitStraight(i, p0, p0 + len * 2 + q);
+        genP = p0 + len * 2 + q;
+        return;
+      }
+
+      if (kind === "butterfly") {
+        // THE BUTTERFLY. Both outer ropes curl in towards the middle at once,
+        // mirror images, one or two lobes each: two wings around a still body.
+        // Each wing is sized like a loop — it may come close to the body,
+        // never touch it — and the two never meet, since the body is between.
+        a = slotRope[0]; b = slotRope[2]; ic = slotRope[1];
+        r = Math.min(T.loopR, (Math.min(curX[ic] - curX[a], curX[b] - curX[ic]) - T.loopClear) * 0.5);
+        if (r < 44) { pushRails(p0); return; }
+        n = R.int(1, 2); spans = []; total = 0;
+        for (i = 0; i < n; i++) { q = r * R.range(1.9, 2.5); spans.push(q); total += q; }
+        emitStraight(ic, p0, p0 + total);
+        q = p0;
+        for (i = 0; i < n; i++) {
+          tag = i === n - 1 ? "Butterfly!" : null;
+          emitLoop(a, q, spans[i], r,  1, n, tag);
+          emitLoop(b, q, spans[i], r, -1, n, tag);
+          q += spans[i];
+        }
+        genP = p0 + total;
+        return;
+      }
+
+      if (kind === "cascade") {
+        // THE CASCADE. One curl per rope, in turn, across the trio: the outer
+        // rope curls in, the middle one curls the same way, the far one curls
+        // back — a wave of loops rolling across the lanes. One at a time, so
+        // each curl only ever has its two still neighbours to keep clear of.
+        order = R.chance(0.5) ? [0, 1, 2] : [2, 1, 0];
+        dir = order[0] === 0 ? 1 : -1;
+        r = Math.min(T.loopR, (slotHalf() - T.loopClear) * 0.5);
+        if (r < 44) { pushRails(p0); return; }
+        spans = []; total = 0;
+        for (k = 0; k < 3; k++) { q = r * R.range(1.9, 2.4); spans.push(q); total += q; }
+        q = p0;
+        for (k = 0; k < 3; k++) {
+          li = slotRope[order[k]];
+          if (q > p0) emitStraight(li, p0, q);
+          emitLoop(li, q, spans[k], r, k < 2 ? dir : -dir, 1, "Loop!");
+          if (q + spans[k] < p0 + total) emitStraight(li, q + spans[k], p0 + total);
+          q += spans[k];
+        }
+        genP = p0 + total;
+        return;
+      }
+
       li = kind === "loop" ? slotRope[R.int(0, 2)] : slotRope[1];
       gapL = wallRoom(curX[li], -1); gapR = wallRoom(curX[li], 1);
       for (i = 0; i < 3; i++) {
@@ -1322,7 +1503,7 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
       const el = document.createElement("div");
       el.className = "preset";
       el.innerHTML = "<h3></h3><div class=\"note\"></div><div class=\"row5\"></div>";
-      el.querySelector("h3").innerHTML = pr.name + "<em>" + ARROWS[pr.arrow].label + "</em>";
+      el.querySelector("h3").innerHTML = pr.name + "<em>" + (pr.arrow ? ARROWS[pr.arrow].label : "one arrow per biome") + "</em>";
       el.querySelector(".note").textContent = pr.note;
       const row = el.querySelector(".row5"), cells = [];
       pr.biomes.forEach(() => {
@@ -1355,7 +1536,7 @@ canvas.big { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,
     const pr = PRESETS[pi];
     BIOMES.forEach((b, i) => {
       if (onlySelected && i !== S.sel) return;
-      Object.assign(b, clone(pr.biomes[i]), { arrow: pr.arrow });
+      Object.assign(b, presetLook(pr, i));
       worlds[i] = makeWorld(i, seed * 101 + i * 7);
     });
     S.preset = onlySelected ? S.preset : pi;

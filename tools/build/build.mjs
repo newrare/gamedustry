@@ -76,6 +76,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { splitGameJs } from '../lib/parts.mjs';
+import { derivedRates } from '../lib/economy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);
@@ -163,12 +164,23 @@ async function manifestOf(unit) {
   if (per != null && per !== 100 && per !== 1000) {
     throw new Error(`${file}: web.meta.coinsPer is ${per} — it must be 100 or 1000`);
   }
+  /* The ticket price and the xp rate are DERIVED from the game's reference
+     round (tools/lib/economy.mjs) and injected by webConfigJs: a figure typed
+     in a manifest is the drift that rule exists to end. */
+  const meta = m.web && m.web.meta;
+  if (meta) {
+    for (const k of ['ticketPrice', 'xpPer']) {
+      if (meta[k] != null) {
+        throw new Error(`${file}: web.meta.${k} is derived (tools/lib/economy.mjs) — set web.meta.roundScore instead`);
+      }
+    }
+  }
   /* A double sold back for a ticket or more makes the machine pay for itself:
      every pull costs at least one ticket and hands over one sticker. The
      default is a share of the ticket (packages/webshell/meta.js, SELL). */
-  const sell = m.web && m.web.meta && m.web.meta.sell;
+  const sell = meta && meta.sell;
   if (sell) {
-    const price = m.web.meta.ticketPrice != null ? m.web.meta.ticketPrice : 250;
+    const price = derivedRates(m.web).ticketPrice;
     if (sell.some((v) => v >= price)) {
       throw new Error(`${file}: web.meta.sell ${JSON.stringify(sell)} — every price must stay under the ticket (${price})`);
     }
@@ -692,6 +704,12 @@ function slugJs(slug) {
    ~30 KB the page would carry and never read. The name, the age, the gender
    and the lore stay — those are what the barracks prints on a card's back. */
 function shippedWeb(web) {
+  /* THE ECONOMY'S TWO RATES, derived from the reference round and never
+     typed (tools/lib/economy.mjs). `roundScore` is only the input. */
+  if (web.meta) {
+    const { roundScore, ...meta } = web.meta;
+    web = { ...web, meta: { ...meta, ...derivedRates(web) } };
+  }
   const army = web.army;
   if (!army || !Array.isArray(army.cast)) return web;
   const cast = army.cast.map((c) => {

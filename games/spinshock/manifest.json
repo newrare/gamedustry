@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -59,9 +59,9 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
+      "tagline": "Toupie contre toupie. Tape pile à l'impact pour éjecter tes rivaux et relancer ta rotation.",
       "tags": [
-        "Tap rythmé",
+        "Tap précis",
         "5 biomes",
         "Physique"
       ]
@@ -110,19 +110,19 @@
           },
           {
             "kicker": "Onde de choc",
-            "line": "Explose les autres sur les <b>murs</b>"
+            "line": "Envoie tes rivaux dans les <b>murs</b>"
           },
           {
             "kicker": "Rotation",
             "line": "Conserve la <b>vitesse</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -159,7 +159,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Éjecte puis détruis les toupies rivales avec un <b class=\"w-tap\">TAP</b> pile à l’<b class=\"w-hit\">impact</b>",
+        "tagline": "Ejecte puis détruis les toupies rivales d'un <b class=\"w-tap\">tap</b> pile à l'<b class=\"w-hit\">impact</b>",
         "strings": {
           " shock": " choc",
           "% spin": "% de rotation",
@@ -179,11 +179,11 @@
           "OK": "OK",
           "Perfect": "Parfait",
           "Perfect hits": "Coups parfaits",
-          "Perfect taps only": "Taps parfaits seulement",
+          "Perfect taps only": "Que des taps parfaits",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
           "Score": "Score",
-          "Shock to recover": "Choque pour remonter",
+          "Shock to recover": "Un choc pour relancer",
           "Shockwaves": "Ondes de choc",
           "Spin": "Rotation",
           "Spin gone": "Plus de rotation",
@@ -208,7 +208,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> in the dish",
-        "fr": "Marque <b>{n}</b> dans l’arène"
+        "fr": "Marque <b>{n}</b> dans l'arène"
       },
       "tune": {
         "spawnEvery": [
@@ -248,8 +248,8 @@
           "Overcharge"
         ],
         "fr": [
-          "Étincelle",
-          "Isolées",
+          "Etincelle",
+          "Isolant",
           "Scission",
           "Masse",
           "Surcharge"
@@ -258,8 +258,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 30,
-      "ticketPrice": 225,
       "awards": [
         1,
         2,

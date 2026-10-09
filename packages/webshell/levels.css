@@ -462,9 +462,9 @@
 
    `--lv-hud-left` / `--lv-hud-bottom` are the two escapes, for the game whose
    own layout already owns that corner — a SKIN sets them and nothing else
-   moves. `games/slipdeck` is the one: its five-card hand fills the bottom of
-   the frame edge to edge and the hand's worth is written under it, so its pill
-   sits on the empty felt above the chute instead. Read the corner off a real
+   moves. No game sets them today: `games/slipdeck` did, for its five-card
+   hand at the foot of the frame, until its table learned to stop above the
+   bottom row on the web instead (WEB_FOOT in its game.js). Read the corner off a real
    frame before writing a number here (assets/image/screen/<slug>-NN.jpg is the
    web build, not the playable).
 
@@ -485,9 +485,20 @@
   min-width:236px; padding:8px 15px 9px; border-radius:16px;
   background:rgba(0,0,0,.46); border:2px solid var(--panel-line);
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
-  font-family:var(--web-font, inherit); pointer-events:none;
+  font-family:var(--web-font, inherit);
+  /* a tap on it opens the objectives card (levels.js, section 5b bis) */
+  pointer-events:auto; cursor:pointer; -webkit-tap-highlight-color:transparent;
 }
 #lv-hud[hidden] { display:none; }
+/* A door, so it answers a pointer the way the round's own controls in the
+   opposite corner do (motor.css, `.btn-icon:hover`): the edge takes the
+   accent. The "!" riding on the pill is a button of its own, so hovering it
+   leaves the pill's edge alone — a rule apart, so a WebView without `:has`
+   only loses that nuance. */
+@media (hover:hover) {
+  #lv-hud:hover { border-color:var(--accent); }
+  #lv-hud:has(.mt-round-log:hover) { border-color:var(--panel-line); }
+}
 #lv-hud .top { display:flex; align-items:center; gap:8px; }
 #lv-hud .n {
   font-size:25px; font-weight:var(--web-fw, 900); line-height:1;
@@ -526,6 +537,31 @@
   45%  { transform:scale(1.14); border-color:var(--gold); }
   100% { transform:scale(1);    border-color:var(--panel-line); }
 }
+
+/* THE OBJECTIVES CARD — what each star asks for, opened by a tap on the
+   pill (levels.js, section 5b bis). One row a star: the stars on the left in
+   a column wide enough for three, so the sentences line up, then the
+   sentence. A row already met is lit gold; the others stay drained. */
+.lv-goal-list {
+  list-style:none; margin:0; padding:0; align-self:stretch;
+  display:flex; flex-direction:column; gap:12px;
+}
+.lv-goal {
+  display:flex; align-items:center; gap:16px;
+  padding:14px 18px; border-radius:16px;
+  background:rgba(0,0,0,.32); border:2px solid var(--panel-line);
+}
+.lv-goal.done { border-color:color-mix(in srgb, var(--gold) 55%, var(--panel-line)); }
+.lv-goal .lv-stars { flex:0 0 102px; font-size:30px; }
+.lv-goal .lv-sti { width:30px; height:30px; }
+.lv-goal-list.solo .lv-stars { flex-basis:auto; }
+.lv-goal .tx {
+  flex:1 1 auto; font-size:24px; line-height:1.25; color:var(--text);
+  text-align:left;
+}
+.lv-goal .tx b { color:var(--accent); font-variant-numeric:tabular-nums; }
+.lv-goal.done .tx { color:var(--muted); }
+.lv-goal.done .tx b { color:var(--gold); }
 
 /* =========================================================================
    NINETY OF NINETY — the title screen says the game is finished

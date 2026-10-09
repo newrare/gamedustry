@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.11",
+  "version": "1.8.13",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -62,10 +62,10 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l’écho des balles.",
+      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l'écho des balles.",
       "tags": [
         "Mémorise et vise",
-        "Écholocation",
+        "Echolocation",
         "Une seule sortie"
       ]
     },
@@ -124,8 +124,8 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -162,7 +162,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
+        "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu'à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
         "strings": {
           " of ": " sur ",
           " pulse": " impulsion",
@@ -174,7 +174,7 @@
           "Door ": "Porte ",
           "Door forced": "Porte forcée",
           "Escaped the maze!": "Labyrinthe vaincu !",
-          "Escaped!": "Évadé !",
+          "Escaped!": "Evadé !",
           "Exit": "Sortie",
           "Exit sealed": "Sortie verrouillée",
           "False exit!": "Fausse sortie !",
@@ -186,7 +186,7 @@
           "Last pulse": "Dernière impulsion",
           "Lights out — fire!": "Noir complet — tire !",
           "Live fence": "Barrière active",
-          "One gap, and it moves": "Une seule ouverture, et elle bouge",
+          "One gap, and it moves": "Une seule ouverture, qui bouge",
           "One-way valve": "Valve à sens unique",
           "Open for good": "Ouverte pour de bon",
           "Out of pulses!": "Plus d'impulsions !",
@@ -203,7 +203,10 @@
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "Valves": "Valves",
-          "Walls": "Murs"
+          "Walls": "Murs",
+          "Score <b>{n}</b> and escape the maze": "Marque <b>{n}</b> points et sors du labyrinthe",
+          "Score <b>{n}</b> and escape in <b>{p}</b> pulses": "Marque <b>{n}</b> points et sors en <b>{p}</b> impulsions",
+          "Score <b>{n}</b> and escape in <b>1</b> pulse": "Marque <b>{n}</b> points et sors en <b>1</b> impulsion"
         }
       }
     },
@@ -268,8 +271,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 25,
-      "ticketPrice": 150,
       "awards": [
         1,
         2,

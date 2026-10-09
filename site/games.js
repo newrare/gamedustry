@@ -21,7 +21,7 @@ window.GAMES = [
     accent: ["#7ef9ff", "#ffb44f"],
     fr: {
       tagline: "Une machine à billes à faire tourner. Déverrouille les barrières avant qu’elles débordent et déplace la prise pour attraper la bille électrique.",
-      tags: ["Tap pour ouvrir", "Attrape l’étincelle", "Monte le combo"]
+      tags: ["Touche pour déverrouiller", "Attrape l’étincelle", "Monte le combo"]
     },
     en: {
       tagline: "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
@@ -29,51 +29,12 @@ window.GAMES = [
     }
   },
   {
-    slug: "chainring",
-    name: "Chainring",
-    accent: ["#4bf5ff", "#4263eb"],
-    fr: {
-      tagline: "Tape au rythme de la musique. La balle est hypnotique dans des anneaux infinis.",
-      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
-    },
-    en: {
-      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
-      tags: ["Rhythm tap", "On the beat", "Sudden death"]
-    }
-  },
-  {
-    slug: "spinshock",
-    name: "Spinshock",
-    accent: ["#40ecff", "#ff4fbe"],
-    fr: {
-      tagline: "Toupie -Vs- toupie. Tape pile à l’impact pour expulser tes rivaux et regagner de la vitesse de rotation.",
-      tags: ["Tap rythmé", "5 biomes", "Physique"]
-    },
-    en: {
-      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
-      tags: ["Timing tap", "5 biomes", "Physics"]
-    }
-  },
-  {
-    slug: "grudgeon",
-    name: "Grudgeon",
-    accent: ["#e2364b", "#9b8cff"],
-    fr: {
-      tagline: "Un dungeon crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
-      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
-    },
-    en: {
-      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
-      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
-    }
-  },
-  {
     slug: "bouncetry",
     name: "Bouncetry",
     accent: ["#ff3b57", "#2f86ff"],
     fr: {
-      tagline: "Un casse-briques avec une limite de billes. Vise, puis tape pour allumer les boutons et enfermer la bille avec les briques de couleur.",
-      tags: ["Tap piège", "Casse-briques", "Boutons switch"]
+      tagline: "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
+      tags: ["Tap pour piéger", "Casse-briques", "Interrupteurs"]
     },
     en: {
       tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
@@ -85,8 +46,8 @@ window.GAMES = [
     name: "Arcider",
     accent: ["#35e8ff", "#7a4dff"],
     fr: {
-      tagline: "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges ainsi que les adversaires pour accélérer. Trouves le meilleur compromis entre vitesse ou récupération.",
-      tags: ["Course", "Battle Royale", "Turbo"]
+      tagline: "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis ta voie : vitesse ou bouclier.",
+      tags: ["Appuie pour pencher", "Battle Royale", "1020 m"]
     },
     en: {
       tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
@@ -98,8 +59,8 @@ window.GAMES = [
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
     fr: {
-      tagline: "Un Bubble Shooter mais avec un vrai Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
-      tags: ["Vise rapidement", "Bubble", "Contamination"]
+      tagline: "Un Bubble Shooter magique avec un petit twist : sois plus rapide et plus malin que la contamination qui gagne les bulles.",
+      tags: ["Vise et tire", "Groupe par 3", "Contamination"]
     },
     en: {
       tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
@@ -111,8 +72,8 @@ window.GAMES = [
     name: "Echomaze",
     accent: ["#7ef9ff", "#4ade80"],
     fr: {
-      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l’écho des balles.",
-      tags: ["Mémorise et vise", "Écholocation", "Une seule sortie"]
+      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l'écho des balles.",
+      tags: ["Mémorise et vise", "Echolocation", "Une seule sortie"]
     },
     en: {
       tagline: "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
@@ -124,8 +85,8 @@ window.GAMES = [
     name: "Vipera",
     accent: ["#4dff9b", "#12b86a"],
     fr: {
-      tagline: "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
-      tags: ["Tap pour dévier", "Sans fin", "Armure"]
+      tagline: "Ondule comme un serpent : chaque tap inverse ta direction. Grandis et évite les pièges !",
+      tags: ["Tap pour dévier", "Sans fin", "Armure d'écailles"]
     },
     en: {
       tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
@@ -133,12 +94,51 @@ window.GAMES = [
     }
   },
   {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
+      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
+    },
+    en: {
+      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
+      tags: ["Swipe to sort", "Jokers", "Poker hands"]
+    }
+  },
+  {
+    slug: "triverse",
+    name: "Triverse",
+    accent: ["#3ce0ff", "#ff5ad4"],
+    fr: {
+      tagline: "Trois cordes de lumière. Swipe pour sauter de l'une à l'autre et éviter les pièges.",
+      tags: ["Swipe pour sauter", "Sans fin", "3 vies"]
+    },
+    en: {
+      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
+      tags: ["Swipe lanes", "Endless", "3 lives"]
+    }
+  },
+  {
+    slug: "chainring",
+    name: "Chainring",
+    accent: ["#4bf5ff", "#4263eb"],
+    fr: {
+      tagline: "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
+      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
+    },
+    en: {
+      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
+      tags: ["Rhythm tap", "On the beat", "Sudden death"]
+    }
+  },
+  {
     slug: "radiam",
     name: "Radiam",
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
-      tagline: "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
-      tags: ["Glisse un anneau", "Trois par rayon", "8 billes spéciales"]
+      tagline: "Aligne 3 couleurs pour marquer. Trouve le coup qui déclenche des explosions en chaîne !",
+      tags: ["Glisse un anneau", "Aligne trois billes", "8 billes spéciales"]
     },
     en: {
       tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
@@ -146,16 +146,16 @@ window.GAMES = [
     }
   },
   {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
+    slug: "spinshock",
+    name: "Spinshock",
+    accent: ["#40ecff", "#ff4fbe"],
     fr: {
-      tagline: "Enchaîne rapidement les meilleures mains de poker pour marquer un maximum de points.",
-      tags: ["Swipe pour trier", "Trois défausses", "Mains de poker"]
+      tagline: "Toupie contre toupie. Tape pile à l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      tags: ["Tap précis", "5 biomes", "Physique"]
     },
     en: {
-      tagline: "Chain the best poker hands as fast as you can to score as much as possible.",
-      tags: ["Swipe to sort", "Three discards", "Poker hands"]
+      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      tags: ["Timing tap", "5 biomes", "Physics"]
     }
   },
   {
@@ -163,7 +163,7 @@ window.GAMES = [
     name: "Marshmelt",
     accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
+      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
       tags: ["Tap pour sauter", "Sans fin", "Lave"]
     },
     en: {
@@ -177,7 +177,7 @@ window.GAMES = [
     accent: ["#7cf5ff", "#6d5cff"],
     fr: {
       tagline: "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
-      tags: ["Tap rythmé", "Gravité coupée", "Chaîne de combos"]
+      tags: ["Tap précis", "Gravité coupée", "Chaîne de combos"]
     },
     en: {
       tagline: "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
@@ -185,29 +185,29 @@ window.GAMES = [
     }
   },
   {
-    slug: "triverse",
-    name: "Triverse",
-    accent: ["#3ce0ff", "#ff5ad4"],
-    fr: {
-      tagline: "Trois routes lumineuses. Swipe pour sauter de l’une à l’autre afin d’éviter les pièges.",
-      tags: ["Swipe", "Sans fin", "3 vies"]
-    },
-    en: {
-      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
-      tags: ["Swipe lanes", "Endless", "3 lives"]
-    }
-  },
-  {
     slug: "stratideck",
     name: "Stratideck",
     accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
+      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat a un prix.",
       tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
     },
     en: {
       tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
       tags: ["Drag to strike", "Grade and tier", "Own your cards"]
+    }
+  },
+  {
+    slug: "grudgeon",
+    name: "Grudgeon",
+    accent: ["#e2364b", "#9b8cff"],
+    fr: {
+      tagline: "Un Dungeon Crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
+      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
+    },
+    en: {
+      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
+      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
     }
   },
   {

@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.5.21",
+  "version": "1.5.22",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -159,10 +159,10 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Aligne 3 couleurs pour gagner. Trouve le meilleur mouvement pour lancer des explosions consécutives !",
+      "tagline": "Aligne 3 couleurs pour marquer. Trouve le coup qui déclenche des explosions en chaîne !",
       "tags": [
         "Glisse un anneau",
-        "Trois par rayon",
+        "Aligne trois billes",
         "8 billes spéciales"
       ]
     },
@@ -205,7 +205,7 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Gear",
+            "kicker": "Engrenage",
             "line": "Tourne <b>3 anneaux</b>"
           },
           {
@@ -217,12 +217,12 @@
             "line": "Réaction en <b>chaîne</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -250,8 +250,8 @@
   },
   "android": {
     "appId": "com.newrare.radiam",
-    "versionName": "1.4.4",
-    "versionCode": 13,
+    "versionName": "1.4.5",
+    "versionCode": 14,
     "ads": {
       "rewarded": false,
       "interstitial": false
@@ -274,7 +274,7 @@
         "tagline": "<b class=\"w-turn\">Tourne</b> un ou plusieurs anneaux pour aligner <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>",
         "strings": {
           "  score": "  score",
-          " beads": " perles",
+          " beads": " billes",
           " rays": " rayons",
           "Bead Hug": "Câlin de bille",
           "Best": "Record",
@@ -286,7 +286,7 @@
           "Bright Idea": "Idée lumineuse",
           "Combo": "Combo",
           "Double ray": "Double rayon",
-          "Eclipsed!": "Éclipsé !",
+          "Eclipsed!": "Eclipsé !",
           "Final score": "Score final",
           "Frozen": "Gelé",
           "Full Hands": "Les bras pleins",
@@ -385,7 +385,6 @@
     },
     "meta": {
       "coinsPer": 1000,
-      "ticketPrice": 250,
       "awards": [
         1,
         2,

@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.24.2",
+  "version": "0.24.4",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -263,7 +263,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat te coûte quelque chose.",
+      "tagline": "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat a un prix.",
       "tags": [
         "Glisse pour attaquer",
         "Grade et rang",
@@ -313,7 +313,7 @@
             "line": "Le plus haut <b>grade</b> gagne"
           },
           {
-            "kicker": "Caché",
+            "kicker": "Face cachée",
             "line": "Découvre ce qui se <b>cache</b>"
           },
           {
@@ -321,12 +321,12 @@
             "line": "Le grade gagne, le <b>rang</b> tranche"
           },
           {
-            "kicker": "30 niveaux",
+            "kicker": "30 stages",
             "line": "Un camp qui <b>grandit</b>"
           },
           {
-            "kicker": "Ça coûte",
-            "line": "Blessé, ou fait <b>prisonnier</b>"
+            "kicker": "Tout se paie",
+            "line": "Blessé ou fait <b>prisonnier</b>"
           }
         ]
       }
@@ -363,19 +363,19 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b>, le plus haut <b class=\"w-rank\">grade</b> gagne",
+        "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">grade</b> gagne",
         "strings": {
           " streak": " d'affilée",
           "Army lost": "Armée perdue",
           "Best score": "Meilleur score",
           "Both fall": "Les deux tombent",
-          "Camp taken!": "Camp pris !",
+          "Camp taken!": "Camp conquis !",
           "Captain": "Capitaine",
           "Captive": "Prisonnier",
           "Captives": "Prisonniers",
           "Cards": "Cartes",
           "Colonel": "Colonel",
-          "Fight again": "Rejouer la bataille",
+          "Fight again": "Rejouer",
           "Final score": "Score final",
           "Flag": "Drapeau",
           "Flag captured!": "Drapeau capturé !",
@@ -387,22 +387,22 @@
           "Major": "Major",
           "Marshal": "Maréchal",
           "Out of reach": "Hors de portée",
-          "Overkill": "Trop fort",
+          "Overkill": "Gâchis",
           "Play the full game": "Jouer au jeu complet",
           "Precise!": "Précis !",
           "Sapper": "Sapeur",
           "Score": "Score",
-          "Scout": "Éclaireur",
+          "Scout": "Eclaireur",
           "Sergeant": "Sergent",
           "Slot locked": "Emplacement verrouillé",
-          "Unlocks at level": "Débloqué au niveau",
+          "Unlocks at level": "Débloqué au stage",
           "Spotted": "Repéré",
           "Spy": "Espion",
           "Still wounded": "Encore blessé",
           "The wounded are back": "Les blessés repartent",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "To battle": "À l'assaut",
+          "To battle": "A l'assaut",
           "Trap": "Piège",
           "Trap cleared": "Piège désamorcé",
           "Trap!": "Piège !",
@@ -411,12 +411,12 @@
           "card lost": "carte perdue",
           "Prison full": "Prison pleine",
           "walks free": "repart libre",
-          "holds": "tient",
+          "holds": "résiste",
           "Basic": "Basique",
           "Common": "Commun",
           "Uncommon": "Peu commun",
           "Rare": "Rare",
-          "Epic": "Épique",
+          "Epic": "Epique",
           "Legendary": "Légendaire",
           "Infirmary": "Infirmerie",
           "Prison": "Prison",
@@ -431,22 +431,22 @@
           "Lost": "Perdus",
           "Flag captured": "Drapeau pris",
           "No wounds": "Aucune blessure",
-          "Prisoner taken": "Prisonnier fait",
+          "Prisoner taken": "Prisonnier capturé",
           "Unscathed": "Indemne",
-          "Straw man": "Homme de paille",
+          "Straw man": "Epouvantail",
           "Wooden fence": "Barrière de bois",
           "Rock": "Rocher",
           "Forest": "Forêt",
           "Skull": "Crâne",
           "Book": "Livre",
           "Object": "Objet",
-          "Straw man!": "Homme de paille !",
+          "Straw man!": "Epouvantail !",
           "Fence!": "Barrière !",
           "Rock!": "Rocher !",
           "Lost in the forest": "Perdu en forêt",
-          "Stunned!": "Étourdi !",
+          "Stunned!": "Etourdi !",
           "Bewitched!": "Ensorcelé !",
-          "Straw man torn": "Homme de paille déchiré",
+          "Straw man torn": "Epouvantail déchiré",
           "Fence chopped": "Barrière abattue",
           "Rock smashed": "Rocher brisé",
           "Forest crossed": "Forêt traversée",
@@ -458,8 +458,8 @@
           "Only a major finds his way through": "Seul un major y trouve son chemin",
           "Only a colonel is not afraid of it": "Seul un colonel n'en a pas peur",
           "Only a general can never turn traitor": "Seul un général ne trahit jamais",
-          "Out of the battle": "Hors du combat",
-          "Stunned for the battle": "Étourdi pour la bataille",
+          "Out of the battle": "Hors de combat",
+          "Stunned for the battle": "Etourdi jusqu'à la fin",
           "The spell finds no one": "Le sort ne trouve personne",
           "An ally falls": "Un allié tombe",
           "Struck down by an ally": "Abattu par un allié",
@@ -477,18 +477,21 @@
           "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": "Tue le maréchal, quel que soit son rang. Contre toute autre carte, c'est la plus faible de toutes.",
           "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": "Ne combat pas une carte cachée : il la révèle et retourne sous le paquet.",
           "The only grade that clears a trap without being lost with it.": "Le seul grade qui désamorce un piège sans sauter avec lui.",
-          "The only grade that tears down the straw man.": "Le seul grade qui déchire l'homme de paille.",
+          "The only grade that tears down the straw man.": "Le seul grade qui déchire l'épouvantail.",
           "The only grade that chops down the wooden fence.": "Le seul grade qui abat la barrière de bois.",
           "The only grade that smashes the rock.": "Le seul grade qui brise le rocher.",
           "The only grade that crosses the forest without getting lost.": "Le seul grade qui traverse la forêt sans s'y perdre.",
           "The only grade that shatters the skull without being stunned.": "Le seul grade qui brise le crâne sans être étourdi.",
           "The only grade that burns the book without being bewitched.": "Le seul grade qui brûle le livre sans être ensorcelé.",
-          "The highest grade: no soldier outranks it, but the spy kills it.": "Le plus haut grade : aucun soldat ne le surpasse, mais l'espion le tue."
+          "The highest grade: no soldier outranks it, but the spy kills it.": "Le plus haut grade : aucun soldat ne le surpasse, mais l'espion le tue.",
+          "Take the enemy <b>flag</b>": "Prends le <b>drapeau</b> ennemi",
+          "Win with <b>no wounds</b>": "Gagne <b>sans blessure</b>",
+          "Take a <b>prisoner</b>": "Fais un <b>prisonnier</b>"
         },
         "helpRules": [
           "Chaque carte est un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le grade le plus haut gagne.",
-          "Grade égal ? Le meilleur <b>rang</b> l'emporte. Grade ET rang identiques : les deux tombent.",
-          "Gagner contre un meilleur rang <b>blesse</b> ta carte — elle saute un tour, puis part à l'infirmerie.",
+          "Grade égal ? Le meilleur <b>rang</b> l'emporte. Même grade et même rang : les deux tombent.",
+          "Vaincre un rang supérieur <b>blesse</b> ta carte : elle passe un tour, puis file à l'infirmerie.",
           "Battre une carte d'un rang inférieur au tien la laisse <b>debout</b> : une bataille gagnée te permet de faire un prisonnier.",
           "L'<b>espion</b> tue le maréchal, le <b>sapeur</b> désamorce un piège, l'<b>éclaireur</b> révèle et revient. Les rangs n'y changent rien."
         ]
@@ -513,7 +516,7 @@
       },
       "copy": {
         "en": "A star each: the <b>flag</b>, <b>no wounds</b>, a <b>prisoner</b>",
-        "fr": "Une étoile chacun : le <b>drapeau</b>, <b>aucune blessure</b>, un <b>prisonnier</b>"
+        "fr": "Une étoile par objectif : le <b>drapeau</b>, <b>aucune blessure</b>, un <b>prisonnier</b>"
       },
       "bands": {
         "from": [
@@ -567,8 +570,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 20,
-      "ticketPrice": 100,
       "awards": [
         1,
         4,
@@ -1177,11 +1178,11 @@
             },
             "win": {
               "en": "{leader} tracked Bernadette by the trail of half-eaten red banners. She was found asleep in a goblin's hammock, key intact, and walked home at her own pace, which is to say slowly.",
-              "fr": "{leader} a suivi Bernadette à la trace des bannières rouges à moitié mâchées. On l'a trouvée endormie dans le hamac d'un gobelin, clé intacte, et elle est rentrée à son rythme, c'est-à-dire lentement."
+              "fr": "{leader} a suivi Bernadette à la trace des bannières rouges à moitié mâchées. On l'a trouvée endormie dans le hamac d'un gobelin, clé intacte. Elle est rentrée à son rythme, c'est-à-dire lentement."
             },
             "lose": {
               "en": "The squad found the goat, but the goat had found a goblin with carrots first. Bernadette chose the carrots, and the squad had to pay the goblin a fine for trampling his vegetable patch.",
-              "fr": "L'escouade a bien trouvé la chèvre, mais la chèvre avait trouvé avant elle un gobelin plein de carottes. Bernadette a choisi les carottes, et il a fallu payer au gobelin une amende pour son potager piétiné."
+              "fr": "L'escouade a bien trouvé la chèvre, mais la chèvre avait trouvé avant elle un gobelin chargé de carottes. Bernadette a choisi les carottes. Il a fallu payer au gobelin une amende pour son potager piétiné."
             }
           },
           {
@@ -1207,19 +1208,19 @@
             ],
             "title": {
               "en": "Straw men at dawn",
-              "fr": "Hommes de paille à l'aube"
+              "fr": "Mannequins de paille à l'aube"
             },
             "brief": {
               "en": "The red camp has planted a row of straw men on the ridge so their army looks twice as big. A sergeant has knocked over more straw men in drill than anyone alive. Go and flatten the lot before breakfast.",
-              "fr": "Le camp rouge a planté une rangée d'hommes de paille sur la crête pour paraître deux fois plus nombreux. Un sergent en a renversé plus que quiconque à l'exercice. Allez tous les aplatir avant le petit-déjeuner."
+              "fr": "Le camp rouge a planté une rangée de mannequins de paille sur la crête pour paraître deux fois plus nombreux. Un sergent en a renversé plus que quiconque à l'exercice. Va tous les coucher avant le petit-déjeuner."
             },
             "win": {
               "en": "The squad of {leader} flattened every straw man on the ridge and sold the straw to a farmer on the way back. The red camp now looks exactly as small as it really is.",
-              "fr": "L'escouade de {leader} a aplati tous les hommes de paille de la crête et revendu la paille à un fermier au retour. Le camp rouge paraît désormais aussi petit qu'il l'est vraiment."
+              "fr": "L'escouade de {leader} a couché tous les mannequins de la crête et revendu la paille à un fermier au retour. Le camp rouge paraît désormais aussi petit qu'il l'est vraiment."
             },
             "lose": {
               "en": "One of the straw men turned out to be a very patient goblin. He kicked a shin, shouted for help, and the squad retreated limping, with straw in its boots and in its pride.",
-              "fr": "L'un des hommes de paille était en fait un gobelin très patient. Il a donné un coup de pied dans un tibia, crié à l'aide, et l'escouade a battu en retraite en boitant, de la paille plein les bottes."
+              "fr": "L'un des mannequins était en fait un gobelin très patient. Il a donné un coup de pied dans un tibia et crié à l'aide. L'escouade a battu en retraite en boitant, de la paille plein les bottes et l'orgueil froissé."
             }
           },
           {
@@ -1249,15 +1250,15 @@
             },
             "brief": {
               "en": "Our spies say a group of four or five figures has been prowling a few miles north of the camp. Nobody knows who they are. Send a scout to get close unseen and find out what is really going on up there.",
-              "fr": "Nos espions nous indiquent qu'un groupe de quatre ou cinq personnes rôde à quelques kilomètres au nord du camp. Personne ne sait qui ils sont. Il faut un éclaireur pour enquêter sur place sans être vu et voir ce qu'il en est réellement."
+              "fr": "Nos espions signalent quatre ou cinq silhouettes qui rôdent à quelques lieues au nord du camp. Personne ne sait qui elles sont. Envoie un éclaireur les approcher sans être vu pour découvrir ce qui se trame là-haut."
             },
             "win": {
               "en": "{leader} crept up on the prowlers and found five red cartographers arguing over which way was north. The squad copied their map, which was wrong, and learned a great deal from exactly how.",
-              "fr": "{leader} a surpris les rôdeurs : cinq cartographes rouges qui se disputaient pour savoir où était le nord. L'escouade a recopié leur carte, fausse, et appris beaucoup en voyant à quel point."
+              "fr": "{leader} a surpris les rôdeurs : cinq cartographes rouges qui se disputaient pour savoir où était le nord. L'escouade a recopié leur carte, qui est fausse. La façon dont elle se trompe en dit très long."
             },
             "lose": {
               "en": "The prowlers were a red patrol after all, and a bored one. They chased the squad of {leader} across three fields just for fun, and not everyone cleared the last hedge cleanly.",
-              "fr": "Les rôdeurs étaient bel et bien une patrouille rouge, et qui s'ennuyait. Elle a poursuivi l'escouade de {leader} à travers trois champs pour s'amuser, et tout le monde n'a pas franchi la dernière haie proprement."
+              "fr": "Les rôdeurs étaient bel et bien une patrouille rouge, qui s'ennuyait ferme. Elle a poursuivi l'escouade de {leader} à travers trois champs pour s'amuser. Tout le monde n'a pas franchi la dernière haie proprement."
             }
           },
           {
@@ -1290,11 +1291,11 @@
             },
             "win": {
               "en": "The cart reached Little Puddling without a single wet letter. The baker was so pleased with his pay that he thanked the escort in pies and coins, and {leader} signed the receipt for both.",
-              "fr": "La charrette est arrivée à Petit-Flaque sans une lettre mouillée. Le boulanger, ravi de sa paie, a remercié l'escorte en tartes et en pièces, et {leader} a signé le reçu pour les deux."
+              "fr": "La charrette est arrivée à Petit-Flaque sans une lettre mouillée. Ravi de sa paie, le boulanger a remercié l'escorte en tartes et en pièces. {leader} a signé le reçu pour les deux."
             },
             "lose": {
               "en": "A goblin disguised as a pothole flagged down the cart and demanded a toll. The escort of {leader} paid rather than argue with a pothole, and the camp has been asked never to mention it.",
-              "fr": "Un gobelin déguisé en nid-de-poule a arrêté la charrette pour réclamer un péage. L'escorte de {leader} a préféré payer plutôt que discuter avec un nid-de-poule, et le camp est prié de ne jamais en parler."
+              "fr": "Un gobelin déguisé en nid-de-poule a arrêté la charrette pour réclamer un péage. L'escorte de {leader} a préféré payer plutôt que discuter avec un nid-de-poule. Le camp est prié de ne jamais en parler."
             }
           },
           {
@@ -1324,7 +1325,7 @@
             },
             "brief": {
               "en": "Fizzle Wickett has left one of his bombs by our well again. His bombs never go off on time: this one could fizzle out tonight or bang next spring. Send a sapper, someone who knows a fuse from a shoelace.",
-              "fr": "Fizzle Wickett a encore laissé une de ses bombes près de notre puits. Ses bombes n'explosent jamais à l'heure : celle-ci peut s'éteindre ce soir ou sauter au printemps prochain. Envoyez un sapeur, quelqu'un qui distingue une mèche d'un lacet."
+              "fr": "Fizzle Wickett a encore laissé une de ses bombes près de notre puits. Ses bombes n'explosent jamais à l'heure : celle-ci peut s'éteindre ce soir ou sauter au printemps prochain. Envoie un sapeur, quelqu'un qui distingue une mèche d'un lacet."
             },
             "win": {
               "en": "{leader} unscrewed the bomb, emptied it and found it stuffed with coins Fizzle had been hiding from his own camp. The well is safe and the camp's purse is heavier.",
@@ -1361,7 +1362,7 @@
             },
             "brief": {
               "en": "A band of goblins is having a picnic in the meadow by the old oak, with a basket the size of a wagon. Our cooks swear there are berry pies in it. Go and watch them closely, and learn what goblins eat when nobody is looking.",
-              "fr": "Une bande de gobelins pique-nique dans le pré du vieux chêne, avec un panier gros comme une charrette. Nos cuisiniers jurent qu'il contient des tartes aux baies. Allez les observer de près et découvrez ce que mangent les gobelins quand personne ne regarde."
+              "fr": "Une bande de gobelins pique-nique dans le pré du vieux chêne, avec un panier gros comme une charrette. Nos cuisiniers jurent qu'il contient des tartes aux baies. Va les observer de près pour découvrir ce que mangent les gobelins quand personne ne regarde."
             },
             "win": {
               "en": "The squad watched the picnic from a bush for three hours and took careful notes: goblins eat the pie first and the basket after. {leader} brought back the notes and the last slice.",
@@ -1398,7 +1399,7 @@
             },
             "brief": {
               "en": "The cook needs a basket of golden mushrooms for the officers' stew, and they only grow at the edge of the red forest. Pick the golden ones, not the spotted ones. The cook was very firm about the spotted ones.",
-              "fr": "Le cuisinier a besoin d'un panier de champignons dorés pour le ragoût des officiers, et ils ne poussent qu'à l'orée de la forêt rouge. Les dorés, pas les tachetés. Le cuisinier a beaucoup insisté sur les tachetés."
+              "fr": "Le cuisinier a besoin d'un panier de champignons dorés pour le ragoût des officiers. Ils ne poussent qu'à l'orée de la forêt rouge. Les dorés, pas les tachetés. Le cuisinier a beaucoup insisté sur les tachetés."
             },
             "win": {
               "en": "{leader} brought back two full baskets. The first went into the stew, the second was sold to a passing merchant who called them the finest he had seen this side of the river.",
@@ -1436,7 +1437,7 @@
             },
             "brief": {
               "en": "Overnight the red camp moved its wooden fence fifty paces into our meadow, and claims it has always been there. A lieutenant can take a fence apart plank by plank without a sound. Put it back where it belongs.",
-              "fr": "Pendant la nuit, le camp rouge a déplacé sa clôture de bois de cinquante pas dans notre pré, et prétend qu'elle a toujours été là. Un lieutenant sait démonter une clôture planche par planche sans un bruit. Remettez-la à sa place."
+              "fr": "Pendant la nuit, le camp rouge a avancé sa clôture de bois de cinquante pas dans notre pré. Il prétend qu'elle a toujours été là. Un lieutenant sait démonter une clôture planche par planche sans un bruit. Remets-la à sa place."
             },
             "win": {
               "en": "The squad of {leader} took the fence apart plank by plank and rebuilt it fifty paces back, with ten planks to spare. The village carpenter bought the spares on the spot.",
@@ -1444,7 +1445,7 @@
             },
             "lose": {
               "en": "The squad of {leader} moved the fence back, then again when an imp moved it forward, and so on until dawn. At sunrise the bill for the broken planks was sent, naturally, to us.",
-              "fr": "L'escouade de {leader} a reculé la clôture, puis encore quand un diablotin l'a avancée, et ainsi de suite jusqu'à l'aube. Au lever du soleil, la facture des planches cassées nous a été envoyée, naturellement."
+              "fr": "L'escouade de {leader} a reculé la clôture, puis l'a reculée encore chaque fois qu'un diablotin l'avançait, jusqu'à l'aube. Au lever du soleil, la facture des planches cassées nous a été envoyée, naturellement."
             }
           },
           {
@@ -1473,11 +1474,11 @@
             },
             "brief": {
               "en": "Wayne Dering swears he has found a shortcut to the river that saves half a day. Wayne reads his maps upside down. Go with him, and check that the river is where he says it is before the army follows.",
-              "fr": "Wayne Dering jure avoir trouvé un raccourci vers la rivière qui fait gagner une demi-journée. Wayne lit ses cartes à l'envers. Accompagnez-le et vérifiez que la rivière est bien là où il le dit avant que l'armée ne suive."
+              "fr": "Wayne Dering jure avoir trouvé un raccourci vers la rivière qui fait gagner une demi-journée. Wayne lit ses cartes à l'envers. Accompagne-le et vérifie que la rivière est bien là où il le dit avant que l'armée ne suive."
             },
             "win": {
               "en": "The shortcut led to a completely different river, which turned out to be even closer. {leader} turned the map the right way up, redrew the road, and Wayne took all the credit.",
-              "fr": "Le raccourci menait à une tout autre rivière, qui s'est révélée encore plus proche. {leader} a remis la carte à l'endroit, redessiné la route, et Wayne s'est attribué tout le mérite."
+              "fr": "Le raccourci menait à une tout autre rivière, qui s'est révélée encore plus proche. {leader} a remis la carte à l'endroit et redessiné la route. Wayne s'est attribué tout le mérite."
             },
             "lose": {
               "en": "The shortcut went through a bramble patch, a bog and a goblin's garden, in that order. Wayne was delighted. Somebody twisted an ankle in the bog and everyone came back scratched.",
@@ -1511,7 +1512,7 @@
             },
             "brief": {
               "en": "Ima Lurker, the smallest spy of the red camp, sneaked into our mess tent and stole every silver spoon. The officers are eating soup with forks. It takes a spy to catch a spy: find her hiding place and bring the cutlery home.",
-              "fr": "Ima Lurker, la plus petite espionne du camp rouge, s'est glissée dans notre cantine et a volé toutes les cuillères en argent. Les officiers mangent la soupe à la fourchette. Il faut un espion pour attraper une espionne : trouvez sa cachette et rapportez les couverts."
+              "fr": "Ima Lurker, la plus petite espionne du camp rouge, s'est glissée dans notre cantine et a volé toutes les cuillères en argent. Les officiers mangent la soupe à la fourchette. Il faut un espion pour attraper une espionne : trouve sa cachette et rapporte les couverts."
             },
             "win": {
               "en": "{leader} found Ima's stash under a tree root: our spoons, three teapots and a sugar bowl nobody had missed. The silverware came home, and the rest was sold at the fair.",
@@ -1519,7 +1520,7 @@
             },
             "lose": {
               "en": "While the squad searched Ima's hiding place, Ima searched the squad's packs. Our soldiers came home without the spoons, and without the purse they had taken along to buy lunch.",
-              "fr": "Pendant que l'escouade fouillait la cachette d'Ima, Ima fouillait ses sacs. Nos soldats sont rentrés sans les cuillères, et sans la bourse emportée pour acheter le déjeuner."
+              "fr": "Pendant que l'escouade fouillait la cachette d'Ima, Ima fouillait ses sacs. Nos soldats sont rentrés sans les cuillères ni la bourse emportée pour payer le déjeuner."
             }
           },
           {
@@ -1548,7 +1549,7 @@
             },
             "brief": {
               "en": "A goblin named Grubnik has bet a purse of silver that nobody in blue can cross the Sloshy Swamp before sundown. The staff has accepted on your behalf. Please do not lose: the staff has also bet its lunch.",
-              "fr": "Un gobelin nommé Grubnik a parié une bourse d'argent qu'aucun soldat bleu ne traverserait le marais de Clapotis avant le coucher du soleil. L'état-major a accepté pour vous. Ne perdez pas : il a aussi parié son déjeuner."
+              "fr": "Un gobelin nommé Grubnik a parié une bourse d'argent qu'aucun soldat bleu ne traverserait le marais de Clapotis avant le coucher du soleil. L'état-major a accepté en ton nom. Ne perds pas : il a aussi parié son déjeuner."
             },
             "win": {
               "en": "{leader} crossed the swamp with an hour to spare by hopping from log to log, one of which was a sleeping crocodile. Grubnik paid up at once and asked for a rematch.",
@@ -1556,7 +1557,7 @@
             },
             "lose": {
               "en": "{leader} reached the far bank just as the sun touched the hills. Grubnik produced a sundial of his own making, an hour fast, and all the judges turned out to be goblins.",
-              "fr": "{leader} a atteint l'autre rive au moment où le soleil touchait les collines. Grubnik a sorti un cadran solaire de sa fabrication, en avance d'une heure, et tous les juges étaient des gobelins."
+              "fr": "{leader} a atteint l'autre rive au moment où le soleil touchait les collines. Grubnik a sorti un cadran solaire de sa fabrication, en avance d'une heure. Les juges, eux, étaient tous des gobelins."
             }
           },
           {
@@ -1586,7 +1587,7 @@
             },
             "brief": {
               "en": "The rope bridge over Gulp Gorge has been gnawed halfway through, and the red camp swears it was the squirrels. Our supplies cross there every week. A sapper should check every knot and rebuild what the squirrels left.",
-              "fr": "Le pont de cordes au-dessus de la gorge de Glouglou a été rongé à moitié, et le camp rouge jure que ce sont les écureuils. Nos vivres y passent chaque semaine. Un sapeur doit vérifier chaque nœud et refaire ce que les écureuils ont laissé."
+              "fr": "Le pont de cordes au-dessus de la gorge de Glouglou a été rongé à moitié. Le camp rouge jure que ce sont les écureuils. Nos vivres y passent chaque semaine. Un sapeur doit vérifier chaque nœud et refaire ce que les écureuils ont laissé."
             },
             "win": {
               "en": "The squad of {leader} rebuilt the bridge knot by knot and found the squirrels: two imps with pliers shaped like teeth. Everyone learned a great deal about knots, the imps included.",
@@ -1623,15 +1624,15 @@
             },
             "brief": {
               "en": "A goblin peddler sold our quartermaster a treasure map for a very reasonable price, which is suspicious. The cross is on a hill two valleys away. Go and dig. If it is a fake, at least bring the shovel back.",
-              "fr": "Un colporteur gobelin a vendu une carte au trésor à notre intendant pour un prix très raisonnable, ce qui est louche. La croix est sur une colline à deux vallées d'ici. Allez creuser. Si c'est un faux, rapportez au moins la pelle."
+              "fr": "Un colporteur gobelin a vendu une carte au trésor à notre intendant pour un prix très raisonnable, ce qui est louche. La croix est sur une colline à deux vallées d'ici. Va creuser. Si c'est un faux, rapporte au moins la pelle."
             },
             "win": {
               "en": "{leader} dug under the cross and found nothing, then dug where the cross would be if the map were upside down, and struck a little iron box. It held a golden ticket and no explanation.",
-              "fr": "{leader} a creusé sous la croix sans rien trouver, puis là où serait la croix si la carte était à l'envers, et a déterré une petite boîte en fer. Elle contenait un ticket doré, et aucune explication."
+              "fr": "{leader} a creusé sous la croix sans rien trouver. Puis là où serait la croix sur la carte à l'envers : la pelle a heurté une petite boîte en fer. Elle contenait un ticket doré, sans la moindre explication."
             },
             "lose": {
               "en": "The hill was already full of holes, each dug by someone holding the same map. The peddler stood at the top selling shovels, and {leader} had to buy one after the squad broke its own.",
-              "fr": "La colline était déjà criblée de trous, chacun creusé par quelqu'un qui tenait la même carte. Le colporteur vendait des pelles au sommet, et {leader} a dû en acheter une après que l'escouade a cassé la sienne."
+              "fr": "La colline était déjà criblée de trous, chacun creusé par quelqu'un qui tenait la même carte. Au sommet, le colporteur vendait des pelles. {leader} a dû en acheter une après que l'escouade a cassé la sienne."
             }
           },
           {
@@ -1661,7 +1662,7 @@
             },
             "brief": {
               "en": "A red supply convoy left this morning under Wendell Wrongway, who has never once arrived where he meant to go. It could be anywhere by now. Send a scout to pick up the wheel tracks, then relieve him of his cargo.",
-              "fr": "Un convoi de ravitaillement rouge est parti ce matin sous les ordres de Wendell Wrongway, qui n'est jamais arrivé là où il voulait aller. Il peut être n'importe où. Envoyez un éclaireur relever les traces de roues, puis soulagez-le de sa cargaison."
+              "fr": "Un convoi de ravitaillement rouge est parti ce matin sous les ordres de Wendell Wrongway, qui n'est jamais arrivé là où il voulait aller. Il peut être n'importe où à l'heure qu'il est. Envoie un éclaireur relever les traces de roues, puis soulager Wendell de sa cargaison."
             },
             "win": {
               "en": "The tracks went twice around the camp in a perfect circle. {leader} waited at the spot Wendell was bound to pass a third time and took the payroll chest without a fight.",
@@ -1669,7 +1670,7 @@
             },
             "lose": {
               "en": "For once Wendell went the right way, straight into the squad's hiding place. Both sides were so surprised that they collided, and ours came back with more dents than the convoy.",
-              "fr": "Pour une fois, Wendell a pris la bonne route, droit sur la cachette de l'escouade. Les deux camps ont été si surpris qu'ils se sont percutés, et les nôtres sont rentrés plus cabossés que le convoi."
+              "fr": "Pour une fois, Wendell a pris la bonne route, droit sur la cachette de l'escouade. Les deux camps ont été si surpris qu'ils se sont percutés. Les nôtres sont rentrés plus cabossés que le convoi."
             }
           },
           {
@@ -1703,15 +1704,15 @@
             },
             "brief": {
               "en": "Three red officers meet every week in the back room of the Crooked Cauldron to plan the next raid. The walls are thin and the ale is cheap. A spy at the next table could hear everything, and even order something.",
-              "fr": "Trois officiers rouges se retrouvent chaque semaine dans l'arrière-salle du Chaudron Tordu pour préparer le prochain raid. Les murs sont fins et la bière bon marché. Un espion à la table voisine entendrait tout, et pourrait même commander."
+              "fr": "Trois officiers rouges se retrouvent chaque semaine dans l'arrière-salle du Chaudron Tordu pour préparer le prochain raid. Les murs sont fins, la bière bon marché. Un espion à la table voisine entendrait tout. Il pourrait même commander à boire."
             },
             "win": {
               "en": "{leader} heard the whole plan, the officers' birthdays and a very good recipe for mushroom pie. The raid is off, and the squad won the tavern's darts contest on the way out.",
-              "fr": "{leader} a entendu tout le plan, les anniversaires des officiers et une excellente recette de tourte aux champignons. Le raid est annulé, et l'escouade a gagné le concours de fléchettes de la taverne en sortant."
+              "fr": "{leader} a entendu tout le plan, les anniversaires des officiers et une excellente recette de tourte aux champignons. Le raid est annulé. En sortant, l'escouade a même gagné le concours de fléchettes de la taverne."
             },
             "lose": {
               "en": "Our spy sneezed at the worst moment of the plan. The officers turned round, the whole tavern turned round, and a very long brawl followed, fought mostly with stools and pies.",
-              "fr": "Notre espion a éternué au pire moment du plan. Les officiers se sont retournés, la taverne entière aussi, et une très longue bagarre a suivi, menée surtout à coups de tabourets et de tartes."
+              "fr": "Notre espion a éternué au pire moment du plan. Les officiers se sont retournés, la taverne entière aussi. S'en est suivie une très longue bagarre, menée surtout à coups de tabourets et de tartes."
             }
           },
           {
@@ -1740,15 +1741,15 @@
             },
             "brief": {
               "en": "The mules carrying the outpost's winter blankets are stuck at the foot of Windy Pass, and a storm is rolling in. The muleteer refuses to go any further without an escort. Get them over the top before the snow does.",
-              "fr": "Les mules qui portent les couvertures d'hiver de l'avant-poste sont bloquées au pied du col Venteux, et un orage arrive. Le muletier refuse d'aller plus loin sans escorte. Faites-les passer avant la neige."
+              "fr": "Les mules qui portent les couvertures d'hiver de l'avant-poste sont bloquées au pied du col Venteux. La tempête menace. Le muletier refuse d'aller plus loin sans escorte. Fais-les passer avant la neige."
             },
             "win": {
               "en": "The squad of {leader} walked the mules over the pass in a blizzard, singing to keep them moving. The outpost paid a bonus for every blanket that arrived dry, and every one of them did.",
-              "fr": "L'escouade de {leader} a fait passer les mules en pleine tempête, en chantant pour qu'elles avancent. L'avant-poste a payé une prime pour chaque couverture arrivée sèche, et toutes l'étaient."
+              "fr": "L'escouade de {leader} a fait passer les mules en plein blizzard, en chantant pour qu'elles avancent. L'avant-poste a payé une prime pour chaque couverture arrivée sèche. Toutes l'étaient."
             },
             "lose": {
               "en": "Halfway up, the mules sat down in the snow and would not budge. {leader} ordered the squad to push, and pushing a sitting mule up a mountain is harder than it sounds, as somebody's back can confirm.",
-              "fr": "À mi-pente, les mules se sont assises dans la neige et n'ont plus bougé. {leader} a ordonné de pousser, et pousser une mule assise en haut d'une montagne est plus dur qu'il n'y paraît, comme en témoigne le dos de quelqu'un."
+              "fr": "A mi-pente, les mules se sont assises dans la neige et n'ont plus bougé. {leader} a ordonné de pousser. Pousser une mule assise jusqu'en haut d'une montagne est plus dur qu'il n'y paraît : le dos de quelqu'un peut en témoigner."
             }
           },
           {
@@ -1778,15 +1779,15 @@
             },
             "brief": {
               "en": "The red camp has rolled a heap of rocks across the King's Road, and the merchants are stuck on the far side. A captain can tell at a glance which rock holds up all the others. Clear the road and the merchants will be grateful.",
-              "fr": "Le camp rouge a fait rouler un tas de rochers sur la route du Roi, et les marchands sont coincés de l'autre côté. Un capitaine voit d'un coup d'œil quel rocher tient tous les autres. Dégagez la route et les marchands sauront se montrer reconnaissants."
+              "fr": "Le camp rouge a fait rouler un tas de rochers en travers de la route du Roi : les marchands sont coincés de l'autre côté. Un capitaine voit d'un coup d'œil quel rocher tient tous les autres. Dégage la route : les marchands sauront se montrer reconnaissants."
             },
             "win": {
               "en": "{leader} studied the heap for an hour, pulled out a single pebble, and the whole pile rolled politely into the ditch. The merchants passed a hat around and it came back full.",
-              "fr": "{leader} a étudié le tas pendant une heure, retiré un seul caillou, et toute la pile a roulé poliment dans le fossé. Les marchands ont fait passer un chapeau qui est revenu plein."
+              "fr": "{leader} a étudié le tas pendant une heure, puis retiré un seul caillou. Toute la pile a roulé poliment dans le fossé. Les marchands ont fait passer un chapeau qui est revenu plein."
             },
             "lose": {
               "en": "The squad pulled out the wrong rock first. The pile rearranged itself across the road, a little higher than before, and a soldier who was standing too close came back limping.",
-              "fr": "L'escouade a d'abord retiré le mauvais rocher. Le tas s'est réorganisé en travers de la route, un peu plus haut qu'avant, et un soldat qui se tenait trop près est rentré en boitant."
+              "fr": "L'escouade a d'abord retiré le mauvais rocher. Le tas s'est réorganisé en travers de la route, un peu plus haut qu'avant. Un soldat qui se tenait trop près est rentré en boitant."
             }
           },
           {
@@ -1815,7 +1816,7 @@
             },
             "brief": {
               "en": "Little Puddling holds its harvest festival tomorrow, and our spies say the red camp plans to crash it and steal the prize pumpkin. The mayor has asked for guards who can blend in. Wear something festive.",
-              "fr": "Petit-Flaque fête ses moissons demain, et nos espions disent que le camp rouge compte gâcher la fête et voler la citrouille primée. Le maire demande des gardes capables de passer inaperçus. Mettez quelque chose de festif."
+              "fr": "Petit-Flaque fête ses moissons demain. D'après nos espions, le camp rouge compte gâcher la fête pour voler la citrouille primée. Le maire demande des gardes capables de passer inaperçus. Tenue de fête exigée."
             },
             "win": {
               "en": "The imps arrived disguised as a dancing troupe and danced so badly they gave themselves away. The squad of {leader} chased them off, guarded the pumpkin and learned three new folk dances.",
@@ -1823,7 +1824,7 @@
             },
             "lose": {
               "en": "The squad of {leader} was so festive that nobody noticed the pumpkin rolling away down the hill. The mayor sent us the bill for a new one, and for the tent it rolled through.",
-              "fr": "L'escouade de {leader} était si festive que personne n'a vu la citrouille dévaler la colline. Le maire nous a envoyé la facture d'une nouvelle, et celle de la tente qu'elle a traversée."
+              "fr": "L'escouade de {leader} était si festive que personne n'a vu la citrouille dévaler la colline. Le maire nous a envoyé la facture d'une nouvelle, plus celle de la tente qu'elle a traversée."
             }
           },
           {
@@ -1861,7 +1862,7 @@
             },
             "lose": {
               "en": "Penny found the keyring at the same moment as the squad, and Penny is very attached to her keys. She swung them like a flail, and ours came home with a bump the shape of a key.",
-              "fr": "Penny a trouvé le trousseau au même instant que l'escouade, et Penny tient beaucoup à ses clés. Elle les a fait tournoyer comme un fléau, et les nôtres sont rentrés avec une bosse en forme de clé."
+              "fr": "Penny a trouvé le trousseau au même instant que l'escouade. Or Penny tient beaucoup à ses clés. Elle les a fait tournoyer comme un fléau : les nôtres sont rentrés avec une bosse en forme de clé."
             }
           },
           {
@@ -1894,7 +1895,7 @@
             },
             "brief": {
               "en": "Our envoy offered the goblin chief a cake shaped like a boot, which in goblin means you smell. Talks have stopped. Bring the chief a proper apology cake and try to explain without making things worse.",
-              "fr": "Notre émissaire a offert au chef gobelin un gâteau en forme de botte, ce qui en gobelin veut dire « tu sens mauvais ». Les pourparlers sont rompus. Apportez au chef un vrai gâteau d'excuse et expliquez-vous sans aggraver les choses."
+              "fr": "Notre émissaire a offert au chef gobelin un gâteau en forme de botte, ce qui en gobelin veut dire « tu sens mauvais ». Les pourparlers sont rompus. Apporte au chef un vrai gâteau d'excuse et tâche de t'expliquer sans envenimer les choses."
             },
             "win": {
               "en": "{leader} presented a cake shaped like a crown, which in goblin means you smell of roses. The chief wept, reopened the trade road and tipped the squad very generously.",
@@ -1902,7 +1903,7 @@
             },
             "lose": {
               "en": "The apology cake was shaped like a hat, which in goblin is a proposal of marriage. The chief has said yes to {leader}, and the camp is paying for the engagement party while the misunderstanding is cleared up.",
-              "fr": "Le gâteau d'excuse avait la forme d'un chapeau, ce qui en gobelin est une demande en mariage. Le chef a dit oui à {leader}, et le camp paie la fête de fiançailles le temps de dissiper le malentendu."
+              "fr": "Le gâteau d'excuse avait la forme d'un chapeau, ce qui en gobelin est une demande en mariage. Le chef a dit oui à {leader}. Le camp paie la fête de fiançailles le temps de dissiper le malentendu."
             }
           },
           {
@@ -1931,7 +1932,7 @@
             },
             "brief": {
               "en": "The old mill by the river has been haunted for a week: moans at night, flour flying, a white shape at the window. The millers refuse to go back. Spend the night there and find out what the ghost wants.",
-              "fr": "Le vieux moulin près de la rivière est hanté depuis une semaine : des gémissements la nuit, de la farine qui vole, une forme blanche à la fenêtre. Les meuniers refusent d'y retourner. Passez-y la nuit et découvrez ce que veut le fantôme."
+              "fr": "Le vieux moulin près de la rivière est hanté depuis une semaine : des gémissements la nuit, de la farine qui vole, une forme blanche à la fenêtre. Les meuniers refusent d'y retourner. Passe la nuit là-bas et découvre ce que veut le fantôme."
             },
             "win": {
               "en": "The ghost was two goblins under a flour sack, living in the mill because it was warm. The squad of {leader} caught them at midnight and learned more about ghost tricks than anyone should.",
@@ -1939,7 +1940,7 @@
             },
             "lose": {
               "en": "The ghost was two goblins under a flour sack, but nobody found that out until the millstone started turning in the dark. The squad tumbled down the flour chute and came back very white and rather bruised.",
-              "fr": "Le fantôme, c'étaient deux gobelins sous un sac de farine, mais personne ne l'a su avant que la meule ne se mette à tourner dans le noir. L'escouade a dégringolé dans la goulotte et est rentrée toute blanche et bien contusionnée."
+              "fr": "Le fantôme, c'étaient deux gobelins sous un sac de farine, mais personne ne l'a su avant que la meule ne se mette à tourner dans le noir. L'escouade a dégringolé par la goulotte à farine, pour rentrer toute blanche et bien contusionnée."
             }
           },
           {
@@ -1969,7 +1970,7 @@
             },
             "brief": {
               "en": "Tim Burr threw his axe at a red banner, missed, and it stuck in the oldest tree of the Tangle Wood, deep in red country. It was his grandfather's. A major has led columns through thicker woods than this and can bring it back unseen.",
-              "fr": "Tim Burr a lancé sa hache sur une bannière rouge, l'a ratée, et elle s'est plantée dans le plus vieil arbre du bois de l'Emmêle, en plein pays rouge. C'était celle de son grand-père. Un major, qui a mené des colonnes dans des bois plus touffus, saura la rapporter."
+              "fr": "Tim Burr a visé une bannière rouge avec sa hache et l'a ratée. La hache s'est plantée dans le plus vieil arbre du bois de l'Emmêle, en plein pays rouge. C'était celle de son grand-père. Un major, qui a mené des colonnes dans des bois plus touffus, saura la rapporter sans être vu."
             },
             "win": {
               "en": "{leader} led the squad through the wood by paths no goblin knew. The axe had split the old tree open, revealing the hollow where the imps kept their savings. Tim got his axe back, the camp got the savings.",
@@ -2017,11 +2018,11 @@
             },
             "win": {
               "en": "{leader} walked into the kitchen, tasted the deserter's soup and pronounced it excellent but too salty. Stung, our officer came home to prove otherwise, and now cooks for the whole squad.",
-              "fr": "{leader} a poussé la porte des cuisines, goûté la soupe du déserteur et l'a jugée excellente mais trop salée. Piqué au vif, notre officier est rentré au camp pour prouver le contraire, et cuisine désormais pour toute l'escouade."
+              "fr": "{leader} a poussé la porte des cuisines, goûté la soupe du déserteur et l'a jugée excellente mais trop salée. Piqué au vif, notre officier est rentré au camp pour prouver le contraire. Il cuisine désormais pour toute l'escouade."
             },
             "lose": {
               "en": "The goblin head chef challenged {leader} to a cook-off, and the squad burned the stew, the pot and part of the stove. Everyone came home singed and humbled, and the deserter stayed on for the next lesson.",
-              "fr": "Le chef gobelin a défié {leader} dans un concours de cuisine, et l'escouade a brûlé le ragoût, la marmite et un bout du fourneau. Tout le monde est rentré roussi et humilié, et le déserteur est resté pour le cours suivant."
+              "fr": "Le chef gobelin a défié {leader} dans un concours de cuisine. L'escouade a brûlé le ragoût, la marmite et un bout du fourneau. Tout le monde est rentré roussi et humilié. Le déserteur, lui, est resté pour le cours suivant."
             }
           },
           {
@@ -2059,7 +2060,7 @@
             },
             "win": {
               "en": "The squad of {leader} disarmed forty-one traps and stepped around the forty-second, which was a nest of very small, very loud birds. The depot's cashbox came home, with a ticket clipped to its lid.",
-              "fr": "L'escouade de {leader} a désamorcé quarante et un pièges et contourné le quarante-deuxième, un nid de tout petits oiseaux très bruyants. La caisse du dépôt est rentrée, avec un ticket agrafé au couvercle."
+              "fr": "L'escouade de {leader} a désamorcé quarante et un pièges, puis contourné le quarante-deuxième : un nid de tout petits oiseaux très bruyants. La caisse du dépôt est rentrée, avec un ticket agrafé au couvercle."
             },
             "lose": {
               "en": "Trap forty-two was a net, and it caught the soldier walking in front. The imps carried their catch off to their camp, very proud of it, while the rest of the squad could only watch from the ridge.",
@@ -2092,7 +2093,7 @@
             },
             "brief": {
               "en": "At the Crossroads of Bones the red camp keeps a shrine of painted skulls, and something on the altar glows green at night. A colonel has faced so many skull banners that nothing there will make one blink. Find out what is glowing and bring it back.",
-              "fr": "Au carrefour des Os, le camp rouge entretient un autel de crânes peints, et quelque chose y luit en vert la nuit. Un colonel a affronté tant d'étendards à tête de mort que rien là-bas ne le fera ciller. Découvrez ce qui brille et rapportez-le."
+              "fr": "Au carrefour des Os, le camp rouge entretient un autel de crânes peints. Quelque chose y luit en vert la nuit. Un colonel a affronté tant d'étendards à tête de mort que rien là-bas ne le fera ciller. Découvre ce qui brille et rapporte-le."
             },
             "win": {
               "en": "{leader} walked past the grinning skulls without a shiver and lifted the glowing thing off the altar: a little enamel charm shaped like a winking moon. Nobody knows what it does. It is very pretty.",
@@ -2100,7 +2101,7 @@
             },
             "lose": {
               "en": "The skulls were only painted gourds, but the imps behind the altar were real and had slingshots. {leader} sounded the retreat, and the squad left at a run, well bruised and without the charm.",
-              "fr": "Les crânes n'étaient que des courges peintes, mais les diablotins cachés derrière l'autel étaient bien réels, et armés de lance-pierres. {leader} a sonné la retraite, et l'escouade est partie en courant, couverte de bleus et sans le charme."
+              "fr": "Les crânes n'étaient que des courges peintes. Les diablotins cachés derrière l'autel, eux, étaient bien réels et armés de lance-pierres. {leader} a sonné la retraite : l'escouade est partie en courant, couverte de bleus et sans le charme."
             }
           },
           {
@@ -2138,15 +2139,15 @@
             },
             "brief": {
               "en": "The red quartermaster keeps his accounts in a padlocked book, chained to a desk in the supply tent. A general has opened more locked books than anyone in the army. Read this one, and find out where the red camp hides its money.",
-              "fr": "L'intendant rouge tient ses comptes dans un livre cadenassé, enchaîné à un bureau de la tente des vivres. Un général a ouvert plus de livres verrouillés que quiconque dans l'armée. Lisez celui-ci et découvrez où le camp rouge cache son argent."
+              "fr": "L'intendant rouge tient ses comptes dans un livre cadenassé, enchaîné à un bureau de la tente des vivres. Un général a ouvert plus de livres verrouillés que quiconque dans l'armée. Lis celui-ci et découvre où le camp rouge cache son argent."
             },
             "win": {
               "en": "{leader} opened the book with a hairpin and a sigh. The ledger led the squad to a chest buried under the latrines, where nobody ever looks, and a ticket was tucked inside as a bookmark.",
-              "fr": "{leader} a ouvert le livre avec une épingle à cheveux et un soupir. Le registre a mené l'escouade à un coffre enterré sous les latrines, où personne ne cherche jamais, et un ticket servait de marque-page."
+              "fr": "{leader} a ouvert le livre avec une épingle à cheveux et un soupir. Le registre a mené l'escouade à un coffre enterré sous les latrines, là où personne ne cherche jamais. Un ticket y servait de marque-page."
             },
             "lose": {
               "en": "The padlock was a decoy, and the real lock was on the tent flap, which rang a bell. The squad left in a hurry, one of them nursing an elbow, and dropped the camp's purse while climbing the fence.",
-              "fr": "Le cadenas était un leurre, et la vraie serrure était sur le rabat de la tente, qui a fait sonner une cloche. L'escouade a filé en vitesse, un coude en compote, et a perdu la bourse du camp en escaladant la palissade."
+              "fr": "Le cadenas était un leurre. La vraie serrure était sur le rabat de la tente, qui a fait sonner une cloche. L'escouade a filé en vitesse, un coude en compote, en perdant la bourse du camp dans l'escalade de la palissade."
             }
           },
           {
@@ -2183,7 +2184,7 @@
             },
             "brief": {
               "en": "Our scouts have found the red camp's prisoner pen, ringed by three wooden fences, one inside the other. At least one of our officers is held there. A lieutenant knows fences better than anyone: take them apart quietly and bring our people home.",
-              "fr": "Nos éclaireurs ont repéré l'enclos des prisonniers du camp rouge, entouré de trois clôtures de bois emboîtées. Au moins un de nos officiers y est retenu. Un lieutenant connaît les clôtures mieux que personne : démontez-les en silence et ramenez les nôtres."
+              "fr": "Nos éclaireurs ont repéré l'enclos des prisonniers du camp rouge, entouré de trois clôtures de bois emboîtées. Au moins un de nos officiers y est retenu. Un lieutenant connaît les clôtures mieux que personne : démonte-les en silence et ramène les nôtres."
             },
             "win": {
               "en": "The squad of {leader} slipped through the three fences by lifting one plank in each and putting it back behind them. The guards woke up to a pen with every fence intact and one prisoner fewer.",
@@ -2191,7 +2192,7 @@
             },
             "lose": {
               "en": "The third fence had just been painted. Whoever went through first stuck to it, and by the time the paint dried the guards were awake. The pen now holds one more of ours, slightly red.",
-              "fr": "La troisième clôture venait d'être repeinte. Le premier à passer y est resté collé, et le temps que la peinture sèche, les gardes étaient réveillés. L'enclos compte désormais un des nôtres de plus, un peu rouge."
+              "fr": "La troisième clôture venait d'être repeinte. Le premier à passer y est resté collé. Le temps que la peinture sèche, les gardes étaient réveillés. L'enclos compte désormais un des nôtres de plus, un peu rouge."
             }
           },
           {
@@ -2224,11 +2225,11 @@
             },
             "brief": {
               "en": "Every full moon a cart of silver leaves the red treasury for the front, drawn by two sleepy oxen and guarded by four even sleepier goblins. The full moon is tonight. You know what to do.",
-              "fr": "À chaque pleine lune, une charrette d'argent quitte le trésor rouge pour le front, tirée par deux bœufs somnolents et gardée par quatre gobelins plus somnolents encore. La pleine lune, c'est ce soir. Vous savez ce qu'il vous reste à faire."
+              "fr": "A chaque pleine lune, une charrette d'argent quitte le trésor rouge pour le front, tirée par deux bœufs somnolents et gardée par quatre gobelins plus somnolents encore. La pleine lune, c'est ce soir. Tu sais ce qu'il te reste à faire."
             },
             "win": {
               "en": "{leader} swapped the oxen for our own without waking anyone, and the cart rolled into the blue camp with its guards still snoring on top. They were sent home at dawn; the silver, and a ticket found under the seat, stayed.",
-              "fr": "{leader} a échangé les bœufs contre les nôtres sans réveiller personne, et la charrette est entrée au camp bleu avec ses gardes qui ronflaient dessus. On les a renvoyés à l'aube ; l'argent, et un ticket trouvé sous le siège, sont restés."
+              "fr": "{leader} a échangé les bœufs contre les nôtres sans réveiller personne. La charrette est entrée au camp bleu avec ses gardes qui ronflaient dessus. On les a renvoyés à l'aube ; l'argent est resté, avec un ticket trouvé sous le siège."
             },
             "lose": {
               "en": "The oxen were not sleepy, only thinking. When {leader} tried to lead them away they made up their minds at once and charged. Nothing serious, but hoof prints take a long time to fade.",
@@ -2269,15 +2270,15 @@
             },
             "brief": {
               "en": "Constance Faith has been chosen to meet the red envoys under a white flag at the Old Stump, and she insists on a small escort to show good faith. Keep her safe, keep her calm, and keep the goblins away from the refreshments.",
-              "fr": "Constance Faith a été désignée pour rencontrer les émissaires rouges sous drapeau blanc, à la Vieille Souche, et elle tient à une petite escorte par bonne foi. Protégez-la, gardez-la calme, et éloignez les gobelins du buffet."
+              "fr": "Constance Faith a été désignée pour rencontrer les émissaires rouges sous drapeau blanc, à la Vieille Souche. Elle tient à une petite escorte, par bonne foi. Protège-la, garde-la calme et éloigne les gobelins du buffet."
             },
             "win": {
               "en": "{leader} kept the peace at the buffet while Constance talked for six hours without stopping. The red envoys signed a trade deal just to be allowed to leave, and paid the first instalment on the spot.",
-              "fr": "{leader} a veillé au calme du buffet pendant que Constance parlait six heures d'affilée. Les émissaires rouges ont signé un accord commercial rien que pour pouvoir partir, et versé le premier acompte sur place."
+              "fr": "{leader} a veillé au calme du buffet pendant que Constance parlait six heures d'affilée. Les émissaires rouges ont signé un accord commercial rien que pour pouvoir partir. Ils ont versé le premier acompte sur place."
             },
             "lose": {
               "en": "The goblins brought a buffet of their own, and a food fight broke out over the last meringue. The escort shielded Constance with a tablecloth, one of ours took a teapot to the knee, and the camp paid for the crockery.",
-              "fr": "Les gobelins avaient apporté leur propre buffet, et une bataille de nourriture a éclaté pour la dernière meringue. L'escorte a protégé Constance avec une nappe, l'un des nôtres a pris une théière dans le genou, et le camp a payé la vaisselle."
+              "fr": "Les gobelins avaient apporté leur propre buffet. Une bataille de nourriture a éclaté pour la dernière meringue. L'escorte a protégé Constance avec une nappe, l'un des nôtres a pris une théière dans le genou. Le camp a payé la vaisselle."
             }
           },
           {
@@ -2311,15 +2312,15 @@
             },
             "brief": {
               "en": "A thick fog has settled on the Moanmoor, and a red patrol carrying its pay went in yesterday and never came out. Somewhere in there are lost goblins and their purse. A good scout can find a trail even where the eye sees nothing.",
-              "fr": "Un épais brouillard est tombé sur la lande des Soupirs, et une patrouille rouge qui transportait sa solde y est entrée hier sans en ressortir. Quelque part là-dedans, il y a des gobelins perdus et leur bourse. Un bon éclaireur trouve une piste même là où l'œil ne voit rien."
+              "fr": "Un épais brouillard est tombé sur la lande des Soupirs. Une patrouille rouge qui transportait sa solde y est entrée hier sans en ressortir. Quelque part là-dedans, il y a des gobelins perdus et leur bourse. Un bon éclaireur trouve une piste même là où l'œil ne voit rien."
             },
             "win": {
               "en": "{leader} followed the sound of goblins arguing about the way out and found them sitting on their purse. The squad offered to lead them out in exchange for it, and they took the deal gratefully.",
-              "fr": "{leader} a suivi le bruit de gobelins qui se disputaient sur la sortie et les a trouvés assis sur leur bourse. L'escouade a proposé de les guider dehors en échange de celle-ci, et ils ont accepté avec gratitude."
+              "fr": "{leader} a suivi le bruit de gobelins qui se disputaient sur la sortie et les a trouvés assis sur leur bourse. L'escouade leur a proposé de les guider dehors en échange de la bourse. Ils ont accepté avec gratitude."
             },
             "lose": {
               "en": "The fog was so thick that the squad walked out of it one soldier short. The missing one turned up a week later in a frog choir on the far side of the moor, and refuses to leave the baritones.",
-              "fr": "Le brouillard était si épais que l'escouade en est ressortie avec un soldat de moins. Le disparu a été retrouvé une semaine plus tard dans une chorale de grenouilles, de l'autre côté de la lande, et refuse de quitter les barytons."
+              "fr": "Le brouillard était si épais que l'escouade en est ressortie avec un soldat de moins. Le disparu a été retrouvé une semaine plus tard dans une chorale de grenouilles, de l'autre côté de la lande. Il refuse de quitter les barytons."
             }
           },
           {
@@ -2347,7 +2348,7 @@
             },
             "brief": {
               "en": "Fizzle Wickett is building something in a shed behind the red camp: bangs at odd hours, purple smoke, and once a flying chicken. Nobody knows whether it is a weapon or a hobby. Go and find out, and step lightly.",
-              "fr": "Fizzle Wickett construit quelque chose dans une cabane derrière le camp rouge : des détonations à des heures bizarres, une fumée violette, et une fois une poule volante. Personne ne sait si c'est une arme ou un passe-temps. Allez voir, et marchez doucement."
+              "fr": "Fizzle Wickett construit quelque chose dans une cabane derrière le camp rouge : des détonations à des heures bizarres, une fumée violette et, une fois, une poule volante. Personne ne sait si c'est une arme ou un passe-temps. Va voir, à pas de loup."
             },
             "win": {
               "en": "The shed was full of fireworks that go off whenever they please. {leader} brought back the only finished one: a little brass rocket that hums a tune and has not yet decided when to fly.",
@@ -2392,7 +2393,7 @@
             },
             "brief": {
               "en": "The red camp holds its masked ball on Saturday, and a red officer has sent word of wanting to change sides. This is a spy's work: wear a mask, dance a little, and slip out at midnight with our new friend.",
-              "fr": "Le camp rouge donne son bal masqué samedi, et un officier rouge nous a fait savoir qu'il veut changer de camp. C'est un travail d'espion : porter un masque, danser un peu et s'éclipser à minuit avec notre nouvel ami."
+              "fr": "Le camp rouge donne son bal masqué samedi. Un officier rouge nous a fait savoir qu'il veut changer de camp. C'est un travail d'espion : porter un masque, danser un peu et s'éclipser à minuit avec notre nouvel ami."
             },
             "win": {
               "en": "{leader} danced three waltzes with the wrong goblin, the fourth with the right one, and slipped out through the kitchens at midnight. Our new recruit changed into blue in the wagon, still humming the waltz.",
@@ -2400,7 +2401,7 @@
             },
             "lose": {
               "en": "The squad danced so well that the queen of the ball refused to let one of ours go. Every ball in the red camp now fights over that talent, and a postcard arrives from time to time.",
-              "fr": "L'escouade a si bien dansé que la reine du bal a refusé de laisser partir l'un des nôtres. Depuis, tous les bals du camp rouge se disputent ce talent, et une carte postale arrive de temps en temps."
+              "fr": "L'escouade a si bien dansé que la reine du bal a refusé de laisser partir l'un des nôtres. Depuis, tous les bals du camp rouge se disputent ce talent. Une carte postale arrive de temps en temps."
             }
           },
           {
@@ -2433,7 +2434,7 @@
             },
             "brief": {
               "en": "Goblins have stolen the bronze bell of Grumblecot's chapel and hung it in their watchtower, where they ring it whenever they are bored, which is always. The villagers cannot sleep. Bring the bell home.",
-              "fr": "Des gobelins ont volé la cloche de bronze de la chapelle de Grognebourg et l'ont pendue dans leur tour de guet, où ils la sonnent dès qu'ils s'ennuient, c'est-à-dire tout le temps. Les villageois ne dorment plus. Ramenez la cloche."
+              "fr": "Des gobelins ont volé la cloche de bronze de la chapelle de Grognebourg et l'ont pendue dans leur tour de guet, où ils la sonnent dès qu'ils s'ennuient, c'est-à-dire tout le temps. Les villageois ne dorment plus. Ramène la cloche."
             },
             "win": {
               "en": "The squad of {leader} stuffed the clapper with socks, lowered the bell on a rope and rolled it home through the night in total silence. Grumblecot slept for two days, then paid us handsomely.",
@@ -2441,7 +2442,7 @@
             },
             "lose": {
               "en": "Somebody forgot the socks. The bell rang all the way down the tower, the whole red camp woke up, and {leader} brought the squad home half deaf, well chased, rather battered and without the bell.",
-              "fr": "Quelqu'un avait oublié les chaussettes. La cloche a sonné tout le long de la tour, le camp rouge s'est réveillé en entier, et {leader} a ramené l'escouade à moitié sourde, bien cabossée et sans la cloche."
+              "fr": "Quelqu'un avait oublié les chaussettes. La cloche a sonné tout le long de la tour et le camp rouge s'est réveillé en entier. {leader} a ramené l'escouade à moitié sourde, pourchassée, cabossée et sans la cloche."
             }
           },
           {
@@ -2477,7 +2478,7 @@
             },
             "brief": {
               "en": "A blue patrol went into the Whispering Wood to cut a shortcut and has not been heard of since. The trees there are said to whisper wrong directions to anyone who listens. Go in, bring out whoever you find, and do not listen.",
-              "fr": "Une patrouille bleue est entrée dans le bois des Murmures pour tailler un raccourci, et on n'en a plus de nouvelles. On dit que les arbres y soufflent de mauvaises directions à qui les écoute. Entrez, ramenez qui vous trouverez, et n'écoutez pas."
+              "fr": "Une patrouille bleue est entrée dans le bois des Murmures pour tailler un raccourci. On n'en a plus de nouvelles. On dit que les arbres y soufflent de mauvaises directions à qui les écoute. Entre, ramène qui tu trouveras. Surtout, n'écoute pas."
             },
             "win": {
               "en": "{leader} stuffed everyone's ears with moss and marched in a straight line until the wood gave up. The squad found an officer of the lost patrol living in a tree house, glad of the company, who came home with them.",
@@ -2530,7 +2531,7 @@
             },
             "brief": {
               "en": "The red treasury sits in a tent guarded by a goblin who counts the coins every hour and gets a different total every time. A spy could slip in between two counts. Bring back the treasury, and anyone in there who fancies a change of job.",
-              "fr": "Le trésor rouge est gardé sous une tente par un gobelin qui compte les pièces toutes les heures, et trouve un total différent à chaque fois. Un espion pourrait se glisser entre deux comptages. Rapportez le trésor, et quiconque voudrait changer de métier."
+              "fr": "Le trésor rouge est gardé sous une tente par un gobelin qui compte les pièces toutes les heures et trouve un total différent à chaque fois. Un espion pourrait se glisser entre deux comptages. Rapporte le trésor. Ramène aussi quiconque, là-dedans, voudrait changer de métier."
             },
             "win": {
               "en": "{leader} used the lull between two counts to empty the chests. The treasury's officer, tired of totals that never matched, packed a bag and walked out with the squad.",
@@ -2538,7 +2539,7 @@
             },
             "lose": {
               "en": "The guard counted the squad along with the coins and came up with one too many. The alarm went up: one of ours was caught red-handed with a coin in each fist, and another sprained a wrist in the escape.",
-              "fr": "Le garde a compté l'escouade avec les pièces et en a trouvé un de trop. L'alarme a retenti : l'un des nôtres a été pris la main dans le sac, une pièce dans chaque poing, et un autre s'est foulé le poignet dans la fuite."
+              "fr": "Le garde a compté l'escouade avec les pièces et en a trouvé un de trop. L'alarme a retenti : l'un des nôtres a été pris la main dans le sac, une pièce dans chaque poing. Un autre s'est foulé le poignet dans la fuite."
             }
           },
           {
@@ -2575,7 +2576,7 @@
             },
             "win": {
               "en": "{leader} pulled the keystone, and the bridge sat down in the river with a long, tired sigh. The red army spent the morning staring at it. The keystone, carved with a strange rune, now sits in our camp.",
-              "fr": "{leader} a retiré la clé de voûte, et le pont s'est assis dans la rivière avec un long soupir fatigué. L'armée rouge a passé la matinée à le contempler. La clé de voûte, gravée d'une rune étrange, trône désormais au camp."
+              "fr": "{leader} a retiré la clé de voûte : le pont s'est assis dans la rivière avec un long soupir fatigué. L'armée rouge a passé la matinée à le contempler. La clé de voûte, gravée d'une rune étrange, trône désormais au camp."
             },
             "lose": {
               "en": "The bridge came down beautifully, a little earlier than {leader} had planned, with the squad still on it. Everyone swam back to our bank, but the river knocked them about on the way.",
@@ -2624,15 +2625,15 @@
             },
             "brief": {
               "en": "The red camp has built an outpost of piled rocks on Crag Hill and holds one of our officers inside. A captain knows rocks better than anyone: which will roll, which will hold, which will come down if you whistle. Take the outpost apart.",
-              "fr": "Le camp rouge a bâti un avant-poste de rochers empilés sur la colline du Rocher et y retient un de nos officiers. Un capitaine connaît les rochers mieux que quiconque : ceux qui roulent, ceux qui tiennent, ceux qui tombent si on siffle. Démontez l'avant-poste."
+              "fr": "Le camp rouge a bâti un avant-poste de rochers empilés sur la colline du Rocher et y retient un de nos officiers. Un capitaine connaît les rochers mieux que quiconque : ceux qui roulent, ceux qui tiennent, ceux qui tombent si on siffle. Démonte l'avant-poste."
             },
             "win": {
               "en": "The squad of {leader} whistled at the right rock. The walls rolled politely downhill, the goblins rolled after them, and our officer strolled out of the rubble with the outpost's pay chest under one arm.",
-              "fr": "L'escouade de {leader} a sifflé devant le bon rocher. Les murs ont roulé poliment en bas de la pente, les gobelins derrière eux, et notre officier est sorti des décombres avec le coffre de la solde sous le bras."
+              "fr": "L'escouade de {leader} a sifflé devant le bon rocher. Les murs ont roulé poliment en bas de la pente, les gobelins derrière eux. Notre officier est sorti des décombres avec le coffre de la solde sous le bras."
             },
             "lose": {
               "en": "The squad whistled at the wrong rock, and the outpost grew a brand new wall around it. One of ours was kept inside as a guest, and another came home with a bump the shape of a pebble.",
-              "fr": "L'escouade a sifflé devant le mauvais rocher, et l'avant-poste s'est doté d'un nouveau mur tout autour d'elle. L'un des nôtres a été retenu à l'intérieur comme invité, un autre est rentré avec une bosse en forme de caillou."
+              "fr": "L'escouade a sifflé devant le mauvais rocher : l'avant-poste s'est doté d'un nouveau mur tout autour d'elle. L'un des nôtres a été retenu à l'intérieur comme invité, un autre est rentré avec une bosse en forme de caillou."
             }
           },
           {
@@ -2665,11 +2666,11 @@
             },
             "win": {
               "en": "{leader} swapped the tube for an identical one holding a drawing of a duck. The real map showed every red camp in the region, and two curious tickets were rolled up inside it.",
-              "fr": "{leader} a échangé l'étui contre un identique contenant un dessin de canard. La vraie carte montrait tous les camps rouges de la région, et deux curieux tickets étaient roulés à l'intérieur."
+              "fr": "{leader} a échangé l'étui contre un identique contenant un dessin de canard. La vraie carte montrait tous les camps rouges de la région. Deux curieux tickets étaient roulés à l'intérieur."
             },
             "lose": {
               "en": "The general, it turns out, sleeps with one eye open and snores to hide it. His escort woke at the first shout, and {leader} had to fight back across the ford; the squad came home soaked and battered.",
-              "fr": "Il se trouve que le général dort d'un œil et ronfle pour le cacher. Son escorte s'est réveillée au premier cri, et {leader} a dû repasser le gué en se battant ; l'escouade est rentrée trempée et rossée."
+              "fr": "Il se trouve que le général dort d'un œil et ronfle pour le cacher. Son escorte s'est réveillée au premier cri. {leader} a dû repasser le gué en se battant ; l'escouade est rentrée trempée et rossée."
             }
           },
           {
@@ -2705,7 +2706,7 @@
             },
             "brief": {
               "en": "The goblin chief's daughter is getting married and, by a clerical error, the blue camp has been invited. Refusing would be an insult, attending could be a trap. Send a delegation with a present, good manners and strong stomachs.",
-              "fr": "La fille du chef gobelin se marie et, par une erreur de secrétariat, le camp bleu est invité. Refuser serait une insulte, y aller pourrait être un piège. Envoyez une délégation avec un cadeau, de bonnes manières et un estomac solide."
+              "fr": "La fille du chef gobelin se marie et, par une erreur de secrétariat, le camp bleu est invité. Refuser serait une insulte, y aller pourrait être un piège. Envoie une délégation avec un cadeau, de bonnes manières et un estomac solide."
             },
             "win": {
               "en": "The squad of {leader} ate the eel cake, danced the stomping dance and caught the bride's bouquet, a live toad in a tiny silver crown. The crown came home, along with the gifts the guests pressed on us.",
@@ -2713,7 +2714,7 @@
             },
             "lose": {
               "en": "The stomping dance lasted nine hours and flattened a good many blue toes. One of ours danced so well that the bride's cousin proposed on the spot, and the answer, to everyone's surprise, was yes.",
-              "fr": "La danse du piétinement a duré neuf heures et écrasé bon nombre d'orteils bleus. L'un des nôtres a si bien dansé que le cousin de la mariée l'a demandé en mariage sur-le-champ, et la réponse, à la surprise générale, a été oui."
+              "fr": "La danse du piétinement a duré neuf heures et écrasé bon nombre d'orteils bleus. L'un des nôtres a si bien dansé que le cousin de la mariée l'a demandé en mariage sur-le-champ. A la surprise générale, la réponse a été oui."
             }
           },
           {
@@ -2746,11 +2747,11 @@
             },
             "win": {
               "en": "{leader} solved the three riddles, picked six locks and found the seventh had never been closed. Inside, among a great many prize ribbons, lay a neat stack of the fair's golden tickets.",
-              "fr": "{leader} a résolu les trois énigmes, crocheté six serrures et découvert que la septième n'avait jamais été fermée. À l'intérieur, parmi une foule de rubans de concours, attendait une pile de tickets dorés de la foire."
+              "fr": "{leader} a résolu les trois énigmes, crocheté six serrures et découvert que la septième n'avait jamais été fermée. A l'intérieur, parmi une foule de rubans de concours, attendait une pile de tickets dorés de la foire."
             },
             "lose": {
               "en": "{leader} took so long over the third riddle that Tuesday ended, and the door shut on the squad halfway through. A very amused Penny let them out on Wednesday, stiff, sore and slightly squashed.",
-              "fr": "{leader} a tant séché sur la troisième énigme que le mardi s'est achevé, et la porte s'est refermée sur l'escouade à moitié passée. Une Penny très amusée les a libérés le mercredi, courbatus, endoloris et un peu aplatis."
+              "fr": "{leader} a tant séché sur la troisième énigme que le mardi s'est achevé. La porte s'est refermée sur l'escouade à moitié passée. Une Penny très amusée les a libérés le mercredi, courbatus, endoloris et un peu aplatis."
             }
           },
           {
@@ -2783,7 +2784,7 @@
             },
             "brief": {
               "en": "A red army of three hundred has been sighted on the western hills, standing very still for three days. Our staff suspects straw. Go and count how many of them are breathing, and find out where the real army has gone.",
-              "fr": "Une armée rouge de trois cents soldats a été aperçue sur les collines de l'ouest, immobile depuis trois jours. L'état-major soupçonne de la paille. Allez compter combien respirent, et découvrez où est passée la vraie armée."
+              "fr": "Une armée rouge de trois cents soldats a été aperçue sur les collines de l'ouest, immobile depuis trois jours. L'état-major soupçonne de la paille. Va compter combien respirent et découvre où est passée la vraie armée."
             },
             "win": {
               "en": "Two hundred and ninety-eight were straw, two were goblins asleep. {leader} woke them politely and traded their breakfast for the real army's marching orders, scribbled on the back of two raffle tickets.",
@@ -2791,7 +2792,7 @@
             },
             "lose": {
               "en": "Two hundred and ninety-nine were straw. The last one was the red general, waiting. One of ours was taken off to the real army to answer a great many questions, and another tumbled down the hill in the scramble.",
-              "fr": "Deux cent quatre-vingt-dix-neuf étaient en paille. Le dernier était le général rouge, qui attendait. L'un des nôtres a été emmené auprès de la vraie armée pour répondre à beaucoup de questions, et un autre a dégringolé de la colline dans la cohue."
+              "fr": "Deux cent quatre-vingt-dix-neuf étaient en paille. Le dernier était le général rouge, qui attendait. L'un des nôtres a été emmené auprès de la vraie armée pour répondre à beaucoup de questions. Un autre a dégringolé de la colline dans la cohue."
             }
           },
           {
@@ -2831,15 +2832,15 @@
             },
             "brief": {
               "en": "The snow has cut off our northern outpost, and they have run out of coats, firewood and patience. A sledge is loaded and waiting. Get it through the drifts, and keep an eye out for anyone stranded along the way.",
-              "fr": "La neige a coupé notre avant-poste du nord, qui manque de manteaux, de bois et de patience. Un traîneau chargé attend. Faites-le passer à travers les congères, et ouvrez l'œil pour quiconque serait bloqué en chemin."
+              "fr": "La neige a coupé notre avant-poste du nord, qui manque de manteaux, de bois et de patience. Un traîneau chargé attend. Fais-le passer à travers les congères et ouvre l'œil : quelqu'un pourrait être bloqué en chemin."
             },
             "win": {
               "en": "{leader} hauled the sledge through two days of drifts and found a hermit officer snowed into a hut, who had given up the war for knitting. The outpost paid for the coats, and the hermit enlisted for the scarves.",
-              "fr": "{leader} a tiré le traîneau pendant deux jours de congères et trouvé, bloqué par la neige dans une cabane, un officier ermite qui avait lâché la guerre pour le tricot. L'avant-poste a payé les manteaux, et l'ermite s'est engagé pour les écharpes."
+              "fr": "{leader} a tiré le traîneau pendant deux jours de congères et trouvé, bloqué par la neige dans une cabane, un officier ermite qui avait lâché la guerre pour le tricot. L'avant-poste a payé les manteaux. L'ermite, lui, s'est engagé pour les écharpes."
             },
             "lose": {
               "en": "The sledge found a frozen lake before {leader} did, and the squad found out by following the sledge. Everyone was fished out, but they came home frozen to the bone and sneezed for a week.",
-              "fr": "Le traîneau a trouvé un lac gelé avant {leader}, et l'escouade l'a appris en suivant le traîneau. Tout le monde a été repêché, mais ils sont rentrés gelés jusqu'aux os et ont éternué toute la semaine."
+              "fr": "Le traîneau a trouvé un lac gelé avant {leader} : l'escouade l'a appris en suivant le traîneau. Tout le monde a été repêché, mais chacun est rentré gelé jusqu'aux os et a éternué toute la semaine."
             }
           },
           {
@@ -2883,7 +2884,7 @@
             },
             "brief": {
               "en": "Wayne Dering led a patrol out on Monday, map in hand and upside down, and it is now Thursday. Postcards have arrived from three different valleys. Follow the postcards and bring back whoever is still with him.",
-              "fr": "Wayne Dering est parti lundi en patrouille, carte en main et à l'envers, et nous sommes jeudi. Des cartes postales sont arrivées de trois vallées différentes. Suivez les cartes postales et ramenez ceux qui sont encore avec lui."
+              "fr": "Wayne Dering est parti en patrouille lundi, carte en main, à l'envers évidemment. Nous sommes jeudi. Des cartes postales sont arrivées de trois vallées différentes. Suis les cartes postales et ramène ceux qui sont encore avec lui."
             },
             "win": {
               "en": "The squad of {leader} found Wayne in a fourth valley, selling his upside-down maps to a band of puzzled imps. They brought back Wayne, his last travelling companion and a satchel of imp coins.",
@@ -2891,7 +2892,7 @@
             },
             "lose": {
               "en": "Wayne insisted on leading the way home. One of the rescuers is now also sending postcards from a valley nobody can find, and another sprained an ankle reading one of them while walking.",
-              "fr": "Wayne a tenu à guider le retour. L'un des sauveteurs envoie désormais lui aussi des cartes postales d'une vallée introuvable, et un autre s'est foulé la cheville en en lisant une en marchant."
+              "fr": "Wayne a tenu à guider le retour. L'un des sauveteurs envoie désormais lui aussi des cartes postales d'une vallée introuvable. Un autre s'est foulé la cheville en en lisant une en marchant."
             }
           },
           {
@@ -2927,15 +2928,15 @@
             },
             "brief": {
               "en": "The red camp has kidnapped our cook, Old Marrow, for her pies, and the whole army is eating turnips. She is held in their kitchen tent and, our spies say, has already improved their soup. Bring her home before they get used to it.",
-              "fr": "Le camp rouge a enlevé notre cuisinière, la vieille Moelle, pour ses tartes, et toute l'armée mange des navets. Elle est retenue sous leur tente-cuisine et, d'après nos espions, a déjà amélioré leur soupe. Ramenez-la avant qu'ils ne s'y habituent."
+              "fr": "Le camp rouge a enlevé notre cuisinière, la vieille Moelle, pour ses tartes. Toute l'armée mange des navets. Elle est retenue sous leur tente-cuisine et, d'après nos espions, a déjà amélioré leur soupe. Ramène-la avant qu'ils ne s'y habituent."
             },
             "win": {
               "en": "{leader} smuggled Old Marrow out of the red kitchen inside a soup cauldron. She brought her lucky ladle, carved with a tiny dragon, and the purse the goblins had paid her for lessons.",
-              "fr": "{leader} a sorti la vieille Moelle de la cuisine rouge cachée dans un chaudron à soupe. Elle a emporté sa louche porte-bonheur, gravée d'un minuscule dragon, et la bourse que les gobelins lui avaient versée pour ses leçons."
+              "fr": "{leader} a sorti la vieille Moelle de la cuisine rouge cachée dans un chaudron à soupe. Elle a emporté sa louche porte-bonheur gravée d'un minuscule dragon et la bourse que les gobelins lui avaient versée pour ses leçons."
             },
             "lose": {
               "en": "Old Marrow refused to leave until the pies were out of the oven, and the pies took their time. The goblins came back for dinner: one of ours was put to peeling potatoes for good, and another burned a hand on a tray.",
-              "fr": "La vieille Moelle a refusé de partir avant que les tartes ne sortent du four, et les tartes ont pris leur temps. Les gobelins sont revenus dîner : l'un des nôtres a été mis aux épluchures pour de bon, un autre s'est brûlé la main sur une plaque."
+              "fr": "La vieille Moelle a refusé de partir avant que les tartes ne sortent du four. Les tartes ont pris leur temps. Les gobelins sont revenus dîner : l'un des nôtres a été mis aux épluchures pour de bon, un autre s'est brûlé la main sur une plaque."
             }
           },
           {
@@ -2968,15 +2969,15 @@
             },
             "brief": {
               "en": "The red camp's flag flies over their command tent beyond Skull Ridge, and whoever holds it holds the season. It is guarded day and night by their finest. We are sending our best, and we would very much like them back.",
-              "fr": "Le drapeau du camp rouge flotte sur leur tente de commandement, au-delà de la crête des Crânes, et qui le tient tient la saison. Leurs meilleurs soldats le gardent jour et nuit. Nous envoyons les nôtres, et nous aimerions beaucoup les revoir."
+              "fr": "Le drapeau du camp rouge flotte sur leur tente de commandement, au-delà de la crête des Crânes. Qui le détient tient la saison. Leurs meilleurs soldats le gardent jour et nuit. Nous envoyons les nôtres, que nous aimerions beaucoup revoir."
             },
             "win": {
               "en": "{leader} took the flag at the changing of the guard, when the old guard had gone and the new one was still pulling its boots on. The pole was hollow and full of gold, and a shining super ticket rolled out of its tip.",
-              "fr": "{leader} a pris le drapeau à la relève de la garde, quand l'ancienne était partie et que la nouvelle enfilait encore ses bottes. La hampe creuse était pleine d'or, et un super ticket étincelant est tombé de son extrémité."
+              "fr": "{leader} a pris le drapeau à la relève de la garde, quand l'ancienne était partie et que la nouvelle enfilait encore ses bottes. La hampe creuse était pleine d'or. Un super ticket étincelant est tombé de son extrémité."
             },
             "lose": {
               "en": "The flag was a decoy and the command tent a very large net. {leader} cut the squad out, but some of ours stayed tangled behind, and the red camp now asks an outrageous ransom that nobody means to pay.",
-              "fr": "Le drapeau était un leurre et la tente de commandement un immense filet. {leader} a taillé une sortie à l'escouade, mais certains des nôtres sont restés empêtrés, et le camp rouge réclame une rançon extravagante que personne ne compte payer."
+              "fr": "Le drapeau était un leurre et la tente de commandement un immense filet. {leader} a taillé une sortie à l'escouade, mais certains des nôtres sont restés empêtrés. Le camp rouge réclame une rançon extravagante que personne ne compte payer."
             }
           },
           {
@@ -3021,15 +3022,15 @@
             },
             "brief": {
               "en": "The red marshal writes to his officers every night, and the letters travel with a courier imp who stops at every inn. A spy who swapped the satchel could read the whole red war. Some of those letters, our staff believes, are full of complaints.",
-              "fr": "Le maréchal rouge écrit chaque soir à ses officiers, et les lettres voyagent avec un diablotin coursier qui s'arrête à chaque auberge. Un espion qui échangerait la sacoche pourrait lire toute la guerre rouge. Selon l'état-major, certaines lettres sont pleines de griefs."
+              "fr": "Le maréchal rouge écrit chaque soir à ses officiers. Les lettres voyagent avec un diablotin coursier qui s'arrête à chaque auberge. Un espion qui échangerait la sacoche pourrait lire toute la guerre rouge. Selon l'état-major, certaines lettres sont pleines de griefs."
             },
             "win": {
               "en": "{leader} swapped the satchel at the third inn. One letter came from a senior red officer begging for a transfer anywhere; our reply offered one, and the officer arrived at our gate with the regiment's cashbox as a welcome gift.",
-              "fr": "{leader} a échangé la sacoche à la troisième auberge. Une lettre venait d'un haut officier rouge qui suppliait qu'on le mute n'importe où ; notre réponse lui en a proposé une, et l'officier s'est présenté à notre porte avec la caisse du régiment en cadeau de bienvenue."
+              "fr": "{leader} a échangé la sacoche à la troisième auberge. Une lettre venait d'un haut officier rouge qui suppliait qu'on le mute n'importe où. Notre réponse lui offrait une place chez nous : l'officier s'est présenté à notre porte avec la caisse du régiment en cadeau de bienvenue."
             },
             "lose": {
               "en": "The courier imp was a light sleeper and a heavy puncher. The swap turned into a brawl across three inns; one of ours left in the mail coach and was never seen again, and others came home black and blue.",
-              "fr": "Le diablotin coursier avait le sommeil léger et le poing lourd. L'échange a tourné à la bagarre à travers trois auberges : l'un des nôtres est parti dans la diligence du courrier sans jamais revenir, et d'autres sont rentrés couverts de bleus."
+              "fr": "Le diablotin coursier avait le sommeil léger et le poing lourd. L'échange a tourné à la bagarre à travers trois auberges : l'un des nôtres est parti dans la diligence du courrier sans jamais revenir. D'autres sont rentrés couverts de bleus."
             }
           },
           {
@@ -3062,15 +3063,15 @@
             },
             "brief": {
               "en": "A dragon has been terrorising the southern villages, roaring at night and demanding tribute. Our scouts noticed that it has goblin feet, about twenty of them. Put an end to the dragon, whatever it turns out to be made of.",
-              "fr": "Un dragon terrorise les villages du sud, rugit la nuit et exige un tribut. Nos éclaireurs ont remarqué qu'il a des pieds de gobelin, une vingtaine. Mettez fin au dragon, quelle que soit la matière dont il est fait."
+              "fr": "Un dragon terrorise les villages du sud : il rugit la nuit et exige un tribut. Nos éclaireurs ont remarqué qu'il a des pieds de gobelin, une vingtaine. Mets fin au dragon, quelle que soit la matière dont il est fait."
             },
             "win": {
               "en": "The dragon was cloth and wicker over twenty goblins, and it fell apart when {leader} tickled its front legs. Inside lay the whole hoard of tribute and, on top of the hoard, a super ticket.",
-              "fr": "Le dragon était en toile et en osier, porté par vingt gobelins, et il s'est effondré quand {leader} a chatouillé ses pattes avant. À l'intérieur se trouvait tout le tribut et, posé dessus, un super ticket."
+              "fr": "Le dragon n'était que toile et osier, porté par vingt gobelins. Il s'est effondré quand {leader} a chatouillé ses pattes avant. A l'intérieur se trouvait tout le tribut et, posé dessus, un super ticket."
             },
             "lose": {
               "en": "The dragon was cloth and wicker, but its belly held a real furnace. {leader} ordered the retreat in scorched boots, and some of ours were so impressed that they joined the crew as puppeteers.",
-              "fr": "Le dragon était en toile et en osier, mais son ventre abritait une vraie chaudière. {leader} a ordonné la retraite, bottes roussies, et certains des nôtres ont été si impressionnés qu'ils ont rejoint la troupe comme marionnettistes."
+              "fr": "Le dragon était en toile et en osier, mais son ventre abritait une vraie chaudière. {leader} a ordonné la retraite, bottes roussies. Certains des nôtres ont été si impressionnés qu'ils ont rejoint la troupe comme marionnettistes."
             }
           },
           {
@@ -3115,7 +3116,7 @@
             },
             "brief": {
               "en": "Fizzle Wickett has buried the biggest bomb of his career under our camp and written to say it will go off soon. His bombs are never on time, so it could be any minute. Find it, and send the finest sappers we have.",
-              "fr": "Fizzle Wickett a enterré sous notre camp la plus grosse bombe de sa carrière, et nous a écrit qu'elle sauterait bientôt. Ses bombes ne sont jamais à l'heure, donc ce peut être à tout instant. Trouvez-la, et envoyez nos meilleurs sapeurs."
+              "fr": "Fizzle Wickett a enterré sous notre camp la plus grosse bombe de sa carrière. Il nous a écrit qu'elle sauterait bientôt. Ses bombes ne sont jamais à l'heure, donc ce peut être à tout instant. Envoie nos meilleurs sapeurs la trouver."
             },
             "win": {
               "en": "{leader} found the bomb under the mess tent and cut the right wire with a moment to spare. The next morning the red engineer who had built its casing came over, impressed, with a sack of red gold and a request to enlist.",
@@ -3123,7 +3124,7 @@
             },
             "lose": {
               "en": "The squad dug up a bomb, then a second, then a third, all decoys. The real one went off at teatime behind the wrong tent. The camp stands, but one of ours was blown clean over the red lines and kept there, and the diggers came back sooty and bruised.",
-              "fr": "L'escouade a déterré une bombe, puis une deuxième, puis une troisième, toutes des leurres. La vraie a sauté à l'heure du thé, derrière la mauvaise tente. Le camp tient debout, mais l'un des nôtres a été soufflé par-dessus les lignes rouges, où on le garde, et les autres sont rentrés couverts de suie et de bosses."
+              "fr": "L'escouade a déterré une bombe, puis une deuxième, puis une troisième, toutes des leurres. La vraie a sauté à l'heure du thé, derrière la mauvaise tente. Le camp tient debout, mais l'un des nôtres a été soufflé par-dessus les lignes rouges, où on le garde. Les autres sont rentrés couverts de suie et de bosses."
             }
           },
           {
@@ -3156,7 +3157,7 @@
             },
             "brief": {
               "en": "Every autumn the goblins hold the Grime Fair deep under the mountain, where everything is for sale, rare tickets and the red camp's pay included. The stakes are high and the dice are loaded. Send a squad with deep pockets and steady nerves.",
-              "fr": "Chaque automne, les gobelins tiennent la foire de la Crasse sous la montagne, où tout se vend, y compris des tickets rares et la solde du camp rouge. Les mises sont hautes et les dés pipés. Envoyez une escouade aux poches profondes et aux nerfs solides."
+              "fr": "Chaque automne, les gobelins tiennent la foire de la Crasse sous la montagne, où tout se vend, y compris des tickets rares et la solde du camp rouge. Les mises sont hautes et les dés pipés. Envoie une escouade aux poches profondes et aux nerfs solides."
             },
             "win": {
               "en": "{leader} beat the goblins at their own game with dice loaded the other way and broke the bank before midnight. The grand prize, a super ticket in a velvet box, came home with a sack of winnings.",
@@ -3164,7 +3165,7 @@
             },
             "lose": {
               "en": "The goblins' dice were loaded, and so were ours, the other way. {leader} lost track of which were which, and some of ours are now working off the debt as croupiers under the mountain.",
-              "fr": "Les dés des gobelins étaient pipés, les nôtres aussi, dans l'autre sens. {leader} a fini par ne plus savoir lesquels étaient lesquels, et certains des nôtres remboursent la dette comme croupiers sous la montagne."
+              "fr": "Les dés des gobelins étaient pipés. Les nôtres aussi, dans l'autre sens. {leader} a fini par ne plus savoir lesquels étaient lesquels. Certains des nôtres remboursent désormais la dette comme croupiers sous la montagne."
             }
           },
           {
@@ -3208,7 +3209,7 @@
             },
             "brief": {
               "en": "After a long season, the red marshal proposes a summit at Old Rock to end the war, or at least the part of it that happens at weekends. It may be a trap. It may be peace. Send an escort worthy of either.",
-              "fr": "Après une longue saison, le maréchal rouge propose un sommet au Vieux Rocher pour finir la guerre, ou du moins la partie qui a lieu le week-end. C'est peut-être un piège. C'est peut-être la paix. Envoyez une escorte digne des deux."
+              "fr": "Après une longue saison, le maréchal rouge propose un sommet au Vieux Rocher pour finir la guerre. Ou du moins la partie qui a lieu le week-end. C'est peut-être un piège. C'est peut-être la paix. Envoie une escorte digne des deux."
             },
             "win": {
               "en": "{leader} negotiated a weekend truce, a shared bakery and the return of every stolen spoon. As a token of good faith, a seasoned red officer was sent to serve in our camp, with the first payment of war damages.",
@@ -3216,7 +3217,7 @@
             },
             "lose": {
               "en": "The summit went well until someone brought up the spoons. Talks collapsed into a shoving match around the table; one of ours was kept as a hostage of goodwill, and others came home with bruised shins and pride.",
-              "fr": "Le sommet se passait bien jusqu'à ce que quelqu'un évoque les cuillères. Les pourparlers ont tourné à la bousculade autour de la table : l'un des nôtres a été gardé en otage de bonne volonté, et d'autres sont rentrés les tibias et l'amour-propre meurtris."
+              "fr": "Le sommet se passait bien jusqu'à ce que quelqu'un évoque les cuillères. Les pourparlers ont tourné à la bousculade autour de la table : l'un des nôtres a été gardé en otage de bonne volonté. D'autres sont rentrés les tibias et l'amour-propre meurtris."
             }
           }
         ]
@@ -3319,8 +3320,8 @@
           "post": "cmd",
           "name": {
             "en": "Postman",
-            "fr": "Postier",
-            "frF": "Postière"
+            "fr": "Vaguemestre",
+            "frF": "Vaguemestre"
           }
         },
         {
@@ -3388,8 +3389,8 @@
           "post": "drill",
           "name": {
             "en": "Horse master",
-            "fr": "Écuyer",
-            "frF": "Écuyère"
+            "fr": "Ecuyer",
+            "frF": "Ecuyère"
           }
         },
         {
@@ -3622,7 +3623,7 @@
             },
             "text": {
               "en": "Purses are lighter this morning, and nobody remembers being bumped into.",
-              "fr": "Les bourses sont plus légères ce matin, et personne ne se souvient d'avoir été bousculé."
+              "fr": "Les bourses sont plus légères ce matin. Personne ne se souvient d'avoir été bousculé."
             }
           },
           {
@@ -3681,7 +3682,7 @@
             },
             "title": {
               "en": "A prisoner escaped",
-              "fr": "Évasion"
+              "fr": "Une évasion"
             },
             "text": {
               "en": "{c} dug a tunnel with a soup spoon. The spoon has been found, the prisoner has not.",
@@ -3701,7 +3702,7 @@
             },
             "text": {
               "en": "They ate the cheese, the bread and a boot. The boot was the cheapest part.",
-              "fr": "Ils ont mangé le fromage, le pain et une botte. La botte était le moins cher."
+              "fr": "Ils ont mangé le fromage, le pain et une botte. La botte, c'était encore le moins cher."
             }
           },
           {
@@ -3712,7 +3713,7 @@
             },
             "title": {
               "en": "A storm flattened the tent",
-              "fr": "La tempête a couché la tente"
+              "fr": "La tempête a abattu la tente"
             },
             "text": {
               "en": "The recruiting tent is on the ground and its candidates went home. New faces will come with the next shelf.",
@@ -3732,7 +3733,7 @@
             },
             "text": {
               "en": "The dice came out after supper, and the camp's purse lost every round.",
-              "fr": "Les dés sont sortis après le souper, et la caisse du camp a perdu chaque partie."
+              "fr": "On a sorti les dés après le souper. La caisse du camp a perdu toutes les parties."
             }
           },
           {
@@ -3748,7 +3749,7 @@
             },
             "text": {
               "en": "The prisoners barricaded their cells and sang all night. Nobody will change sides for another day.",
-              "fr": "Les prisonniers ont barricadé leurs cellules et chanté toute la nuit. Personne ne changera de camp avant un jour de plus."
+              "fr": "Les prisonniers ont barricadé leurs cellules et chanté toute la nuit. Les ralliements attendront un jour de plus."
             }
           },
           {
@@ -3814,7 +3815,7 @@
             },
             "text": {
               "en": "He came with a ledger and a smile, and left with the smile and some of the coins.",
-              "fr": "Il est venu avec un registre et un sourire, et reparti avec le sourire et une partie des pièces."
+              "fr": "Il est arrivé avec un registre et un sourire. Il est reparti avec le sourire et une partie des pièces."
             }
           },
           {
@@ -3841,7 +3842,7 @@
             },
             "title": {
               "en": "A wrong turn",
-              "fr": "Une erreur de chemin"
+              "fr": "Fausse route"
             },
             "text": {
               "en": "The squad sent on {m} took the wrong valley. It will be back later than planned.",
@@ -3872,7 +3873,7 @@
             },
             "title": {
               "en": "The supply cart broke down",
-              "fr": "La charrette de vivres a cassé"
+              "fr": "La charrette de vivres a versé"
             },
             "text": {
               "en": "A wheel in a ditch, a load in the mud and a carter to pay twice.",
@@ -3978,7 +3979,7 @@
             },
             "text": {
               "en": "Roast, pies and music until late. Everybody in the infirmary got up for it and never went back to bed.",
-              "fr": "Rôti, tourtes et musique jusque tard. Tout le monde à l'infirmerie s'est levé pour l'occasion et n'est jamais retourné se coucher."
+              "fr": "Rôti, tourtes et musique jusque tard. Toute l'infirmerie s'est levée pour l'occasion et personne n'est retourné se coucher."
             },
             "w": 0.7
           },
@@ -3994,7 +3995,7 @@
             },
             "text": {
               "en": "One bowl of the cook's secret soup, and {c} walks out of the infirmary.",
-              "fr": "Un bol de la soupe secrète du cuisinier, et {c} quitte l'infirmerie sur ses deux jambes."
+              "fr": "Un bol de la soupe secrète du cuisinier : {c} quitte l'infirmerie sur ses deux jambes."
             }
           },
           {
@@ -4009,7 +4010,7 @@
             },
             "text": {
               "en": "{c} tasted the camp's bread and asks to change sides at once.",
-              "fr": "{c} a goûté au pain du camp et demande à changer de camp sur-le-champ."
+              "fr": "{c} a goûté à notre pain et demande à changer de camp sur-le-champ."
             }
           },
           {
@@ -4024,7 +4025,7 @@
             },
             "text": {
               "en": "An old soldier passing through spent the evening with {c}. By morning: a promotion.",
-              "fr": "Un vieux soldat de passage a passé la soirée à conseiller {c}. Au matin : une promotion."
+              "fr": "Un vieux soldat de passage a conseillé {c} toute la soirée. Au matin : une promotion."
             }
           },
           {
@@ -4119,7 +4120,7 @@
             },
             "text": {
               "en": "The scouts came back with news, and the mission board has been rewritten.",
-              "fr": "Les éclaireurs rapportent des nouvelles, et le tableau des missions a été réécrit."
+              "fr": "Les éclaireurs rapportent des nouvelles. Le tableau des missions a été réécrit."
             }
           },
           {
@@ -4177,7 +4178,7 @@
             },
             "title": {
               "en": "The village thanks you",
-              "fr": "Le village remercie"
+              "fr": "Le village te remercie"
             },
             "text": {
               "en": "The villagers pooled what they could to thank the camp for its protection.",
@@ -4197,7 +4198,7 @@
             },
             "text": {
               "en": "The camp's garden gave more than anyone could eat, and the surplus sold for two tickets.",
-              "fr": "Le potager du camp a donné plus que tout le monde ne pouvait manger, et le surplus s'est vendu contre deux tickets."
+              "fr": "Le potager du camp a donné plus que tout le monde ne pouvait manger. Le surplus s'est vendu contre deux tickets."
             },
             "w": 0.6
           },
@@ -4232,7 +4233,7 @@
           "desc": "skinny young man with messy black hair, an oversized dark-blue hood slipping over his eyes, patched plain cloak, holding one small rusty dagger backwards, tiptoeing pose with a nervous grin",
           "lore": {
             "en": "A kitchen boy who read too many spy novels. He hides behind curtains that are far too short and has never once been spotted — mostly because nobody ever looks at him.",
-            "fr": "Un commis de cuisine qui a lu trop de romans d'espionnage. Il se cache derrière des rideaux bien trop courts et n'a jamais été repéré — surtout parce que personne ne le regarde jamais."
+            "fr": "Un commis de cuisine qui a lu trop de romans d'espionnage. Il se cache derrière des rideaux bien trop courts et n'a jamais été repéré — il faut dire que personne ne le regarde jamais."
           }
         },
         {
@@ -4247,7 +4248,7 @@
           "desc": "slim young woman with a short auburn bob, a dark-blue scarf over the lower half of her face, simple navy leather outfit, two plain daggers, crouched on one knee and winking",
           "lore": {
             "en": "Mae learned to vanish in a crowded market by stealing apples. Now she steals battle plans, and still leaves an apple core where they used to be.",
-            "fr": "Mae a appris à disparaître dans la foule d'un marché en volant des pommes. Aujourd'hui elle vole des plans de bataille, et laisse toujours un trognon à leur place."
+            "fr": "Mae a appris à disparaître dans la foule d'un marché en volant des pommes. Aujourd'hui, elle vole des plans de bataille, mais laisse toujours un trognon de pomme à leur place."
           }
         },
         {
@@ -4262,7 +4263,7 @@
           "desc": "lean man with slicked-back hair and a thin curled moustache, long dark-blue coat with a high collar, black half-mask, a slender short sword, sidestepping sneakily",
           "lore": {
             "en": "A master of disguise who owns forty false moustaches and one real one. Nobody, not even Otto, remembers which one it is.",
-            "fr": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne, pas même Otto, ne se souvient laquelle."
+            "fr": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne ne sait plus laquelle, pas même Otto."
           }
         },
         {
@@ -4277,7 +4278,7 @@
           "desc": "athletic woman with a long black braid, hooded navy cloak with gold trim, fitted blue leather armour, two curved daggers, leaping forward with the cloak flaring",
           "lore": {
             "en": "Nova crosses enemy camps like smoke through a keyhole. Her reports are signed with a single gold thread, pulled from the cloak of whoever she just robbed.",
-            "fr": "Nova traverse les camps ennemis comme la fumée passe une serrure. Ses rapports sont signés d'un simple fil d'or, arraché à la cape de sa dernière victime."
+            "fr": "Nova se glisse dans les camps ennemis comme la fumée par un trou de serrure. Ses rapports sont signés d'un simple fil d'or, arraché à la cape de sa dernière victime."
           }
         },
         {
@@ -4292,7 +4293,7 @@
           "desc": "dashing man with grey temples and a sharp goatee, elegant black and navy leather coat with gold filigree, a gold-hilted rapier and a hidden wrist blade, bowing theatrically with a sly smile",
           "lore": {
             "en": "Once the king's pickpocket, now his most trusted blade. He has shaken the hand of every enemy Marshal — and counted his own rings afterwards.",
-            "fr": "Jadis pickpocket du roi, aujourd'hui sa lame la plus fidèle. Il a serré la main de tous les Maréchaux ennemis — et recompté ses bagues juste après."
+            "fr": "Jadis pickpocket du roi, aujourd'hui sa lame la plus fidèle. Il a serré la main de tous les maréchaux ennemis — et recompté ses bagues juste après."
           }
         },
         {
@@ -4307,7 +4308,7 @@
           "desc": "elegant silver-haired woman, hooded navy cloak lined with gold constellations, jewelled blue mask, legendary sapphire dagger glowing blue, two ghostly translucent afterimages of herself behind her",
           "lore": {
             "en": "No portrait of Shay Dough exists, which is why this one is priceless. Legend says three Marshals fell to the same whisper: hers.",
-            "fr": "Il n'existe aucun portrait de Shay Dough, et c'est pourquoi celui-ci n'a pas de prix. La légende dit que trois Maréchaux sont tombés sous le même murmure : le sien."
+            "fr": "Il n'existe aucun portrait de Shay Dough, d'où le prix inestimable de celui-ci. La légende veut que trois maréchaux soient tombés sous le même murmure : le sien."
           }
         },
         {
@@ -4337,7 +4338,7 @@
           "desc": "lanky young man with sandy hair, blue scarf, short bow on his back, holding a brass spyglass to one eye, balancing on one leg on a fence post",
           "lore": {
             "en": "His only job is to shout his own name. It took the army a whole week to understand he was warning them.",
-            "fr": "Son seul travail consiste à crier son propre nom. Il a fallu une semaine entière à l'armée pour comprendre qu'il la prévenait."
+            "fr": "Son seul travail : crier son propre nom. Il a fallu une semaine à l'armée pour comprendre que « Luke Out ! » voulait dire « attention ! »."
           }
         },
         {
@@ -4352,7 +4353,7 @@
           "desc": "sturdy woman with a red ponytail, blue feathered tricorn, rope coiled over her shoulder, a climbing hook on her belt, peering through a brass telescope",
           "lore": {
             "en": "Ella has never met a cliff she could not climb or a map she could not correct. She sleeps on the highest point of every camp, for the view.",
-            "fr": "Ella n'a jamais croisé de falaise qu'elle ne pouvait escalader, ni de carte qu'elle ne pouvait corriger. Elle dort sur le point le plus haut de chaque camp, pour la vue."
+            "fr": "Pas une falaise qu'Ella n'ait escaladée, pas une carte qu'elle n'ait corrigée. Elle dort toujours au point culminant du camp, pour la vue."
           }
         },
         {
@@ -4367,7 +4368,7 @@
           "desc": "tall dark-skinned woman with short curly hair, long blue ranger coat with gold trim, a long brass telescope, a hawk perched on her leather glove",
           "lore": {
             "en": "Wanda and her hawk Pip see everything within three valleys. Pip does the looking; Wanda takes the credit, and shares the sausages.",
-            "fr": "Wanda et son faucon Pip voient tout à trois vallées à la ronde. Pip regarde, Wanda prend le mérite et partage les saucisses."
+            "fr": "Wanda et son faucon Pip voient tout à trois vallées à la ronde. Pip ouvre l'œil, Wanda récolte les lauriers. Au moins, elle partage les saucisses."
           }
         },
         {
@@ -4412,7 +4413,7 @@
           "desc": "young woman with a soot-smudged face and singed brown pigtails, an oversized blue helmet, holding pliers in one hand and a smoking fuse she has not noticed in the other, wide-eyed",
           "lore": {
             "en": "Dinah defuses traps by asking them nicely first. It has worked once. Her eyebrows are still growing back.",
-            "fr": "Dinah désamorce les pièges en leur demandant gentiment d'abord. Ça a marché une fois. Ses sourcils sont encore en train de repousser."
+            "fr": "Dinah désamorce les pièges en commençant par leur demander gentiment. Une fois, ça a marché. Ses sourcils n'ont pas fini de repousser."
           }
         },
         {
@@ -4427,7 +4428,7 @@
           "desc": "stocky man with round spectacles, blue tricorn with brass goggles strapped on it, a huge backpack full of tools, carefully snipping a wire on a small round mine with pliers",
           "lore": {
             "en": "Justin carries a spare of everything, just in case. His backpack weighs more than he does, and it has saved the regiment eleven times.",
-            "fr": "Justin emporte un double de tout, au cas où. Son sac pèse plus lourd que lui, et il a sauvé le régiment onze fois."
+            "fr": "Justin emporte un double de tout, au cas où. Son sac pèse plus lourd que lui. Il a sauvé le régiment onze fois."
           }
         },
         {
@@ -4442,7 +4443,7 @@
           "desc": "strong woman with black hair tied up in a blue bandana, leather apron with many pouches, a pickaxe on her back, holding a defused round bomb up triumphantly",
           "lore": {
             "en": "Kay can hear a buried trap tick from twenty paces. She disarms it, keeps the powder, and uses it to light the regiment's birthday cakes.",
-            "fr": "Kay entend un piège enterré faire tic-tac à vingt pas. Elle le désamorce, garde la poudre et s'en sert pour allumer les gâteaux d'anniversaire du régiment."
+            "fr": "Kay entend un piège enterré faire tic-tac à vingt pas. Elle le désamorce, garde la poudre et s'en sert pour allumer les bougies d'anniversaire du régiment."
           }
         },
         {
@@ -4457,7 +4458,7 @@
           "desc": "brown-haired man in a blue tricorn with a white feather, heavy backpack with a lantern and rope, crouching over a mine with pliers in one hand and a bundle of dynamite in the other",
           "lore": {
             "en": "Sol has defused three hundred traps and built four hundred, for practice. He talks to every fuse he cuts, and none has ever answered back.",
-            "fr": "Sol a désamorcé trois cents pièges et en a fabriqué quatre cents, pour s'entraîner. Il parle à chaque mèche qu'il coupe, et aucune ne lui a jamais répondu."
+            "fr": "Sol a désamorcé trois cents pièges et en a fabriqué quatre cents, pour s'entraîner. Il parle à chaque mèche qu'il coupe. Aucune ne lui a encore répondu."
           }
         },
         {
@@ -4472,7 +4473,7 @@
           "desc": "mature woman with short grey-streaked hair and a small burn scar on her cheek, heavy blue and gold armoured apron, brass goggles, holding an ornate defusing kit and a mine-detecting rod",
           "lore": {
             "en": "Mina walks through minefields humming, and the minefields go quiet. The engineers swear that is not how it works. Mina swears it is.",
-            "fr": "Mina traverse les champs de mines en fredonnant, et les mines se taisent. Les ingénieurs jurent que ça ne marche pas comme ça. Mina jure que si."
+            "fr": "Quand Mina traverse un champ de mines en fredonnant, les mines se tiennent tranquilles. Les ingénieurs jurent que ça ne marche pas comme ça. Mina jure que si."
           }
         },
         {
@@ -4487,7 +4488,7 @@
           "desc": "old man with a huge white moustache and round cracked goggles, legendary golden armoured sapper suit with blue plates, cradling a glowing blue bomb like a pet, sparks dancing around him",
           "lore": {
             "en": "Gus has been blown up so many times that the bombs now respect him. At seventy-two he defuses traps with his eyes shut, and often does, during his nap.",
-            "fr": "Gus a sauté tant de fois que les bombes le respectent désormais. À soixante-douze ans, il désamorce les pièges les yeux fermés, et souvent pendant sa sieste."
+            "fr": "Gus a sauté tant de fois que les bombes le respectent désormais. A soixante-douze ans, il désamorce les pièges les yeux fermés. Souvent pendant sa sieste."
           }
         },
         {
@@ -4502,7 +4503,7 @@
           "desc": "round-faced young man in a blue tricorn too big for him, a wooden practice sword and a dented plain shield, marching with his knees high and an earnest grin",
           "lore": {
             "en": "Hugo believes everything he is told, except scarecrows. A scarecrow is a man made of straw, and Hugo does not believe in men made of straw.",
-            "fr": "Hugo croit tout ce qu'on lui dit, sauf aux épouvantails. Un épouvantail est un homme en paille, et Hugo ne croit pas aux hommes en paille."
+            "fr": "Hugo gobe tout ce qu'on lui raconte, sauf les épouvantails. Un épouvantail, c'est un homme de paille. Hugo ne croit pas aux hommes de paille."
           }
         },
         {
@@ -4517,7 +4518,7 @@
           "desc": "tall young woman with a blonde braid, blue tunic, a round shield with a gold lion, short sword raised, shouting a battle cry mid-stride",
           "lore": {
             "en": "Marcia marches in a straight line, whatever is in the way. Usually it is a straw man, and usually it loses.",
-            "fr": "Marcia marche en ligne droite, quoi qu'il y ait devant elle. En général, c'est un homme de paille, et en général il perd."
+            "fr": "Marcia marche en ligne droite, quoi qu'il y ait devant elle. En général, c'est un épouvantail. En général, il perd."
           }
         },
         {
@@ -4532,7 +4533,7 @@
           "desc": "broad-shouldered man with black hair under a blue tricorn, a halberd in one hand and a lion shield in the other, a torn straw dummy at his feet",
           "lore": {
             "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half — out of principle.",
-            "fr": "Hal a passé une nuit entière à surveiller un homme de paille en attendant qu'il bouge le premier. À l'aube, il l'a coupé en deux — par principe."
+            "fr": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. A l'aube, il l'a coupé en deux — par principe."
           }
         },
         {
@@ -4547,7 +4548,7 @@
           "desc": "cheerful blond man in a blue tricorn with a white feather, blue cape with a gold lion, a raised steel sword and a lion shield, big confident smile",
           "lore": {
             "en": "Frank Lee says exactly what he thinks, and what he thinks is \"charge\". His honesty is so complete that no decoy has ever fooled him.",
-            "fr": "Frank Lee dit exactement ce qu'il pense, et ce qu'il pense, c'est « chargez ». Son honnêteté est si totale qu'aucun leurre ne l'a jamais trompé."
+            "fr": "Frank Lee dit exactement ce qu'il pense. Et ce qu'il pense, c'est « chargez ». Il est si franc qu'aucun leurre ne l'a jamais trompé."
           }
         },
         {
@@ -4562,7 +4563,7 @@
           "desc": "muscular woman with cropped grey hair and a square jaw, polished blue and gold breastplate, a sergeant's baton and a sword, standing at attention and saluting",
           "lore": {
             "en": "Sergeant Sal Ute has shouted at three generations of recruits. They all complain, and they all come home.",
-            "fr": "Le sergent Sal Ute a hurlé sur trois générations de recrues. Elles s'en plaignent toutes, et elles rentrent toutes à la maison."
+            "fr": "La sergente Sal Ute a hurlé sur trois générations de recrues. Toutes s'en plaignent. Toutes rentrent chez elles en vie."
           }
         },
         {
@@ -4577,7 +4578,7 @@
           "desc": "burly old man with a huge white beard and an eyepatch, gleaming legendary golden armour with a blue lion cape, a giant greatsword planted in the ground, shredded straw dummies around his boots",
           "lore": {
             "en": "Fifty years a sergeant, and proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
-            "fr": "Cinquante ans sergent, et fier de n'avoir jamais été promu. Stan Firm a abattu plus d'hommes de paille qu'il n'y a de champs dans le royaume."
+            "fr": "Sergent depuis cinquante ans et fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume."
           }
         },
         {
@@ -4592,7 +4593,7 @@
           "desc": "skinny young man with messy black hair, plain blue tunic, a small hatchet, chopping at a wooden plank with a determined frown",
           "lore": {
             "en": "Tim was a woodcutter's son who joined up to escape the woodcutting. The army handed him an axe on the very first day.",
-            "fr": "Tim était fils de bûcheron et s'est engagé pour échapper au bois. L'armée lui a tendu une hache dès le premier jour."
+            "fr": "Fils de bûcheron, Tim s'est engagé pour ne plus jamais couper de bois. L'armée lui a tendu une hache dès le premier jour."
           }
         },
         {
@@ -4637,7 +4638,7 @@
           "desc": "grinning black-haired man in a blue tricorn with a white plume, blue lion cape, holding a heavy double-bitted axe high above his head",
           "lore": {
             "en": "Buck has never met a wooden wall he liked. He knocks politely on every barrier — once, with the axe.",
-            "fr": "Buck n'a jamais aimé un mur de bois. Il frappe poliment à chaque barrière — une fois, avec la hache."
+            "fr": "Buck n'a jamais croisé un mur de bois qui lui plaise. Il frappe poliment à chaque barrière — une fois, avec la hache."
           }
         },
         {
@@ -4652,7 +4653,7 @@
           "desc": "sturdy freckled woman with braided red hair, ornate blue and gold officer coat, a hand axe in each hand, wood chips swirling around her",
           "lore": {
             "en": "Hattie throws axes the way other officers throw orders: fast, straight, and at whatever is in the way. Wooden walls have learned to fear her whistle.",
-            "fr": "Hattie lance les haches comme d'autres officiers lancent des ordres : vite, droit, et sur tout ce qui gêne. Les murs de bois ont appris à craindre son sifflet."
+            "fr": "Hattie lance les haches comme d'autres officiers lancent des ordres : vite, droit et sur tout ce qui gêne. Les murs de bois ont appris à craindre son sifflet."
           }
         },
         {
@@ -4712,7 +4713,7 @@
           "desc": "rugged stubbled man with his blue coat sleeves rolled up, a heavy pickaxe raised overhead, rock shards flying",
           "lore": {
             "en": "Cliff has split boulders, cliffs and one very stubborn statue of a general. He keeps a pebble from each in his pockets, which is why he clinks.",
-            "fr": "Cliff a fendu des rochers, des falaises et une statue de général très têtue. Il garde un caillou de chacun dans ses poches, c'est pour ça qu'il tinte."
+            "fr": "Cliff a fendu des rochers, des falaises et une statue de général particulièrement têtue. Il garde un caillou de chacun dans ses poches, d'où ce cliquetis quand il marche."
           }
         },
         {
@@ -4727,7 +4728,7 @@
           "desc": "bald burly man with a thick beard, blue tricorn, broad chest in a blue coat with a lion cape, a giant pickaxe on his shoulder",
           "lore": {
             "en": "Rocco walks through rocks, not around them. The quartermaster gave up ordering him new pickaxes; now he orders new rocks, for practice.",
-            "fr": "Rocco passe à travers les rochers, pas autour. L'intendant a renoncé à lui commander des pioches ; il commande des rochers, pour l'entraînement."
+            "fr": "Rocco passe à travers les rochers, pas autour. L'intendant a renoncé à lui commander des pioches neuves. Désormais, il lui commande des rochers neufs, pour l'entraînement."
           }
         },
         {
@@ -4742,7 +4743,7 @@
           "desc": "tall weathered man squinting, grey stubble, long blue duster coat with gold trim, a pickaxe slung over his back like a rifle, chewing a piece of straw",
           "lore": {
             "en": "Flint Eastwood speaks four words a day and wastes none of them. The rocks hear \"move\", and somehow they do.",
-            "fr": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « bouge », et bizarrement, ils bougent."
+            "fr": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « bougez » et, allez savoir comment, ils bougent."
           }
         },
         {
@@ -4757,7 +4758,7 @@
           "desc": "tiny elderly woman with a white bun and round glasses, legendary golden captain's armour with a blue cape, a huge crystal-headed pickaxe twice her size glowing blue, a boulder cracked in half behind her",
           "lore": {
             "en": "Captain Gran Knight has broken mountains since before the war had a name. She is small, she is ancient, and no rock in the kingdom dares to stand in her way.",
-            "fr": "La capitaine Gran Knight brise des montagnes depuis avant que la guerre ait un nom. Elle est petite, elle est très vieille, et aucun rocher du royaume n'ose se mettre en travers de sa route."
+            "fr": "La capitaine Gran Knight brisait déjà des montagnes quand la guerre n'avait pas encore de nom. Elle est petite, elle est très vieille, mais aucun rocher du royaume n'ose lui barrer la route."
           }
         },
         {
@@ -4772,7 +4773,7 @@
           "desc": "confused young man with leaves in his hair, plain blue coat, holding a map upside down and a cheap brass compass",
           "lore": {
             "en": "Wayne holds his map upside down and still finds the way. The forest has never understood how, and neither has Wayne.",
-            "fr": "Wayne tient sa carte à l'envers et trouve quand même son chemin. La forêt n'a jamais compris comment, et Wayne non plus."
+            "fr": "Wayne tient sa carte à l'envers et trouve quand même son chemin. La forêt n'a jamais compris comment. Wayne non plus."
           }
         },
         {
@@ -4802,7 +4803,7 @@
           "desc": "fit man with an auburn beard, blue coat, a backpack stuffed with rolled maps, holding a big brass compass and pointing ahead",
           "lore": {
             "en": "Miles has walked every road of the kingdom and most of the ones that are not there. In a forest he is never lost; the forest is.",
-            "fr": "Miles a parcouru toutes les routes du royaume, et la plupart de celles qui n'existent pas. Dans une forêt, ce n'est jamais lui qui est perdu : c'est la forêt."
+            "fr": "Miles a parcouru toutes les routes du royaume et la plupart de celles qui n'existent pas. Dans une forêt, ce n'est jamais lui qui est perdu : c'est la forêt."
           }
         },
         {
@@ -4832,7 +4833,7 @@
           "desc": "elegant woman with long dark wavy hair, blue and gold major's coat with a compass-rose brooch, holding a golden compass, cape swirling as if in the wind",
           "lore": {
             "en": "Rosa Winds reads the sky, the moss and the ants, and the forest opens like a book. She has led armies through woods that were on no map.",
-            "fr": "Rosa Winds lit le ciel, la mousse et les fourmis, et la forêt s'ouvre comme un livre. Elle a guidé des armées dans des bois qui n'étaient sur aucune carte."
+            "fr": "Rosa Winds lit le ciel, la mousse et les fourmis : la forêt s'ouvre devant elle comme un livre. Elle a guidé des armées dans des bois qui n'étaient sur aucune carte."
           }
         },
         {
@@ -4847,7 +4848,7 @@
           "desc": "very old man with a white beard down to his belt, cloak of blue and gold embroidered with a star map, a legendary golden compass floating and glowing above his palm, a staff topped with a star",
           "lore": {
             "en": "Magnus North is said to have drawn the first map of the world, then walked it to check. At eighty-two, the forests still part before him out of respect.",
-            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. À quatre-vingt-deux ans, les forêts s'écartent encore devant lui par respect."
+            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. A quatre-vingt-deux ans, les forêts s'écartent encore devant lui par respect."
           }
         },
         {
@@ -4862,7 +4863,7 @@
           "desc": "scrappy young man with bandaged knuckles and a bruised cheek, blue coat with torn sleeves, fists raised in a boxing stance, grinning",
           "lore": {
             "en": "Knox has lost every fight he ever started, and started every fight he ever saw. He is not brave; he simply never learned to be afraid.",
-            "fr": "Knox a perdu toutes les bagarres qu'il a commencées, et commencé toutes celles qu'il a vues. Il n'est pas courageux : il n'a juste jamais appris à avoir peur."
+            "fr": "Knox a perdu toutes les bagarres qu'il a commencées et commencé toutes celles qu'il a vues. Il n'est pas courageux : il n'a simplement jamais appris à avoir peur."
           }
         },
         {
@@ -4937,7 +4938,7 @@
           "desc": "gigantic old man, bald with a braided white beard, legendary golden gauntlets glowing blue, blue lion cape, arms crossed, broken skulls at his feet",
           "lore": {
             "en": "Noah Fear has never been afraid of anything, dragons, ghosts and his mother-in-law included. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
-            "fr": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, ni de sa belle-mère. À soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
+            "fr": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, ni de sa belle-mère. A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
           }
         },
         {
@@ -4967,7 +4968,7 @@
           "desc": "young man with glasses and neatly parted hair, blue general's coat, a heavy book chained to his wrist, a ring of keys on his belt",
           "lore": {
             "en": "Keith guards the army's secret orders in a book chained to his wrist. He sleeps with it, eats with it, and once swam a river with it.",
-            "fr": "Keith garde les ordres secrets de l'armée dans un livre enchaîné à son poignet. Il dort avec, mange avec, et a même traversé une rivière à la nage avec."
+            "fr": "Keith garde les ordres secrets de l'armée dans un livre enchaîné à son poignet. Il dort avec, mange avec. Il a même traversé une rivière à la nage avec."
           }
         },
         {
@@ -4997,7 +4998,7 @@
           "desc": "woman with long curly red hair, blue tricorn with a white plume, sword raised, a padlocked golden book at her hip, confident smile",
           "lore": {
             "en": "Ruby Pledge's word is worth more than the royal treasury, and the treasury knows it. Enemy spies have tried every lie on her; she writes them all down and locks the book.",
-            "fr": "La parole de Ruby Pledge vaut plus que le trésor royal, et le trésor le sait. Les espions ennemis ont tout essayé ; elle note chaque mensonge et verrouille le livre."
+            "fr": "La parole de Ruby Pledge vaut plus que le trésor royal. Le trésor le sait. Les espions ennemis ont tout essayé ; elle note chaque mensonge et verrouille le livre."
           }
         },
         {
@@ -5012,7 +5013,7 @@
           "desc": "distinguished man with silver hair and a neat moustache, ornate blue and gold general's uniform with medals, a large book sealed with a gold padlock, his hand resting on it",
           "lore": {
             "en": "General Sterling True has never told a lie, not even to be polite. His locked book holds the kingdom's greatest secret, and he forgot the combination on purpose.",
-            "fr": "Le général Sterling True n'a jamais menti, même par politesse. Son livre verrouillé garde le plus grand secret du royaume, et il en a oublié la combinaison exprès."
+            "fr": "Le général Sterling True n'a jamais menti, même par politesse. Son livre verrouillé garde le plus grand secret du royaume. Il en a oublié la combinaison exprès."
           }
         },
         {
@@ -5027,7 +5028,7 @@
           "desc": "very old dignified woman with silver hair in a crown braid, legendary golden general's armour with a blue mantle, a glowing book floating beside her, bound by golden chains and a padlock",
           "lore": {
             "en": "Verity Bond has served five kings and betrayed none of them, not even the unbearable one. The book she guards is locked by her word alone, and it has never opened.",
-            "fr": "Verity Bond a servi cinq rois et n'en a trahi aucun, pas même l'insupportable. Le livre qu'elle garde n'est fermé que par sa parole, et il ne s'est jamais ouvert."
+            "fr": "Verity Bond a servi cinq rois et n'en a trahi aucun, pas même l'insupportable. Le livre qu'elle garde n'a pour serrure que sa parole. Il ne s'est jamais ouvert."
           }
         },
         {
@@ -5042,7 +5043,7 @@
           "desc": "very young man with an oversized golden crown slipping over his eyes, blue marshal's coat with sleeves too long, a wooden baton, puffing out his chest",
           "lore": {
             "en": "Kingsley was made Marshal because his grandmother was one. He is still growing into the crown, into the coat, and into the job.",
-            "fr": "Kingsley a été nommé Maréchal parce que sa grand-mère l'était. Il grandit encore pour remplir la couronne, le manteau et le poste."
+            "fr": "Kingsley a été nommé maréchal parce que sa grand-mère l'était. Il grandit encore pour remplir la couronne, le manteau et le poste."
           }
         },
         {
@@ -5057,7 +5058,7 @@
           "desc": "young woman with blonde curls and a small crown, blue marshal's coat with gold braid, a marshal's baton, hand on her hip in a commanding pose",
           "lore": {
             "en": "Regina gives orders so confidently that people obey before they notice she is not their officer. Sometimes she is not even in the army.",
-            "fr": "Regina donne des ordres avec une telle assurance qu'on obéit avant de remarquer qu'elle n'est pas notre officier. Parfois, elle n'est même pas dans l'armée."
+            "fr": "Regina donne des ordres avec une telle assurance que les soldats obéissent avant de remarquer qu'elle n'est pas leur officier. Parfois, elle n'est même pas dans l'armée."
           }
         },
         {
@@ -5087,7 +5088,7 @@
           "desc": "slender blond man with a small golden crown, white and blue marshal's coat with gold epaulettes, pointing forward with a golden baton, noble expression",
           "lore": {
             "en": "Marshal Victor Ious has won so many battles that he now loses the odd game of cards on purpose, to stay humble. It does not work.",
-            "fr": "Le maréchal Victor Ious a gagné tant de batailles qu'il perd exprès quelques parties de cartes pour rester humble. Ça ne marche pas."
+            "fr": "Le maréchal Victor Ious a gagné tant de batailles qu'il perd exprès quelques parties de cartes pour rester humble. Peine perdue."
           }
         },
         {
@@ -5177,7 +5178,7 @@
           "desc": "hooded imp whose red eyes glow in the shadow of a black and red hood, crimson face mask, twin serrated daggers, lunging from a crouch",
           "lore": {
             "en": "Hal O'Ween only works at night, and only on the darkest ones. He has slipped into three blue camps without leaving a footprint — or a pumpkin.",
-            "fr": "Hal O'Ween ne travaille que la nuit, et seulement les plus noires. Il s'est glissé dans trois camps bleus sans laisser une empreinte — ni une citrouille."
+            "fr": "Hal O'Ween ne travaille que la nuit — et seulement les plus noires. Il s'est glissé dans trois camps bleus sans laisser d'empreinte — ni de citrouille."
           }
         },
         {
@@ -5207,7 +5208,7 @@
           "desc": "ancient hunched imp with a long white beard, legendary black and gold cloak dissolving into smoke, a glowing crimson dagger, burning red eyes, ghostly shadow hands curling around him",
           "lore": {
             "en": "Mortimer Dread has been dead once and found it boring. The blue Marshals sleep with a candle lit, because his shadow is the one thing a crown cannot outrank.",
-            "fr": "Mortimer Dread est déjà mort une fois et a trouvé ça ennuyeux. Les Maréchaux bleus dorment avec une bougie allumée, car son ombre est la seule chose qu'une couronne ne commande pas."
+            "fr": "Mortimer Dread est déjà mort une fois et a trouvé ça ennuyeux. Les maréchaux bleus dorment avec une bougie allumée, car son ombre est la seule chose qu'une couronne ne commande pas."
           }
         },
         {
@@ -5237,7 +5238,7 @@
           "desc": "gangly goblin-like imp with huge ears, red hood, short bow on his back, standing on tiptoe on a dead stump with a hand shading his eyes",
           "lore": {
             "en": "Ogle's ears are even better than his eyes. He hears the blue army's boots a league away, and their snoring from two.",
-            "fr": "Les oreilles d'Ogle sont encore meilleures que ses yeux. Il entend les bottes de l'armée bleue à une lieue, et ses ronflements à deux."
+            "fr": "Les oreilles d'Ogle sont encore meilleures que ses yeux. Il entend les bottes de l'armée bleue à une lieue et ses ronflements à deux."
           }
         },
         {
@@ -5267,7 +5268,7 @@
           "desc": "imp with a huge red feather crest, red and gold light armour, drawing a jagged longbow, glowing red eyes taking aim",
           "lore": {
             "en": "Bo Stringer can put an arrow through a keyhole and read the letter on the other side. He never shoots first; he just looks, and that is worse.",
-            "fr": "Bo Stringer peut planter une flèche dans un trou de serrure et lire la lettre de l'autre côté. Il ne tire jamais le premier : il regarde, et c'est pire."
+            "fr": "Bo Stringer peut planter une flèche dans un trou de serrure et lire la lettre de l'autre côté. Il ne tire jamais le premier : il se contente de regarder. C'est pire."
           }
         },
         {
@@ -5282,7 +5283,7 @@
           "desc": "tall dark-elf woman with silver hair streaked red, a third red eye glowing on her forehead, ornate red and gold scout armour, holding a crystal spyglass",
           "lore": {
             "en": "Morgana Gaze painted a third eye on her forehead as a joke, and then it opened. Now nothing hidden stays hidden on any field she looks at.",
-            "fr": "Morgana Gaze s'est peint un troisième œil sur le front pour plaisanter, et il s'est ouvert. Désormais, rien de caché ne le reste sur un champ qu'elle regarde."
+            "fr": "Morgana Gaze s'est peint un troisième œil sur le front pour rire. Puis il s'est ouvert. Depuis, rien ne reste caché sur un champ de bataille qu'elle regarde."
           }
         },
         {
@@ -5297,7 +5298,7 @@
           "desc": "ancient imp elder with long white eyebrows, a legendary golden headdress set with a giant glowing red crystal eye, small floating eyeballs orbiting him, a golden telescope staff",
           "lore": {
             "en": "I.C. Everything has watched this war since before it started. He sees through fog, walls and lies, and he is terribly bored by all of it.",
-            "fr": "I.C. Everything observe cette guerre depuis avant qu'elle commence. Il voit à travers le brouillard, les murs et les mensonges, et tout cela l'ennuie terriblement."
+            "fr": "I.C. Everything observait déjà cette guerre avant qu'elle commence. Il voit à travers le brouillard, les murs et les mensonges. Tout cela l'ennuie à mourir."
           }
         },
         {
@@ -5312,7 +5313,7 @@
           "desc": "small imp with singed smoking hair, a dented red helmet, holding a sputtering tiny round bomb with a worried grin",
           "lore": {
             "en": "Fizzle's bombs never go off when they should, and always go off when they should not. The camp keeps him downwind.",
-            "fr": "Les bombes de Fizzle n'explosent jamais quand il faut, et toujours quand il ne faut pas. Le camp le garde sous le vent."
+            "fr": "Les bombes de Fizzle n'explosent jamais quand il faut et toujours quand il ne faut pas. Le camp le garde sous le vent."
           }
         },
         {
@@ -5387,7 +5388,7 @@
           "desc": "ancient imp with a huge white moustache and a monocle, legendary golden and crimson armour, sitting on a giant glowing red bomb like a throne, holding a lit fuse like a cigar",
           "lore": {
             "en": "Baron Von Kaboom has blown up more bridges than the kingdom ever built. At eighty-four he lights his pipe on his own fuses and has never once flinched.",
-            "fr": "Le baron Von Kaboom a fait sauter plus de ponts que le royaume n'en a construit. À quatre-vingt-quatre ans, il allume sa pipe sur ses propres mèches sans jamais sourciller."
+            "fr": "Le baron Von Kaboom a fait sauter plus de ponts que le royaume n'en a construit. A quatre-vingt-quatre ans, il allume sa pipe sur ses propres mèches sans jamais sourciller."
           }
         },
         {
@@ -5417,7 +5418,7 @@
           "desc": "sturdy imp woman with braided red hair, dented red breastplate, a notched sword, snarling fiercely",
           "lore": {
             "en": "Snarla has never understood a joke, a trick or a decoy. She sees a straw man, she sees an enemy, and the straw man loses.",
-            "fr": "Snarla n'a jamais compris une blague, une ruse ou un leurre. Elle voit un homme de paille, elle voit un ennemi, et l'homme de paille perd."
+            "fr": "Snarla n'a jamais compris une blague, une ruse ou un leurre. Elle voit un épouvantail, elle voit un ennemi. L'épouvantail perd."
           }
         },
         {
@@ -5432,7 +5433,7 @@
           "desc": "tough imp woman with spiky red hair, spiked red armour with barbed wire wrapped around her forearms, a sword and a spiked shield",
           "lore": {
             "en": "Barb Wire hugs her recruits once a year, and they all dread it. On the field she tears through straw men like paper.",
-            "fr": "Barb Wire serre ses recrues dans ses bras une fois par an, et toutes redoutent ce jour. Sur le terrain, elle déchire les hommes de paille comme du papier."
+            "fr": "Barb Wire serre ses recrues dans ses bras une fois par an. Toutes redoutent ce jour. Sur le terrain, elle déchire les épouvantails comme du papier."
           }
         },
         {
@@ -5462,7 +5463,7 @@
           "desc": "tall muscular imp woman with a grey buzz cut and a scar, ornate spiked red and gold sergeant's armour, a big serrated falchion, a whistle around her neck",
           "lore": {
             "en": "Ruth Less wakes the camp at four with a whistle and puts it to bed at midnight with a louder one. No straw man has ever survived her inspection.",
-            "fr": "Ruth Less réveille le camp à quatre heures d'un coup de sifflet et le couche à minuit d'un coup plus fort encore. Aucun homme de paille n'a survécu à son inspection."
+            "fr": "Ruth Less réveille le camp à quatre heures d'un coup de sifflet et le couche à minuit d'un coup plus fort encore. Aucun épouvantail n'a survécu à son inspection."
           }
         },
         {
@@ -5477,7 +5478,7 @@
           "desc": "huge old imp with a long white braided beard and small tusks, legendary gold and crimson armour, a giant flaming cleaver, burning straw dummies behind him",
           "lore": {
             "en": "Gore Don has trained every red soldier alive, and a few who are not. His bellow alone can flatten a field of straw men.",
-            "fr": "Gore Don a entraîné tous les soldats rouges vivants, et quelques-uns qui ne le sont plus. Son seul rugissement peut coucher un champ entier d'hommes de paille."
+            "fr": "Gore Don a entraîné tous les soldats rouges en vie. Et quelques-uns qui ne le sont plus. Son seul rugissement peut coucher un champ entier d'épouvantails."
           }
         },
         {
@@ -5492,7 +5493,7 @@
           "desc": "skinny imp with spiky blond hair and splinters in it, plain red tunic, a cracked hatchet, eager grin",
           "lore": {
             "en": "Hackett chops everything that looks wooden: fences, doors, and once the colonel's leg, which was wooden. They are no longer on speaking terms.",
-            "fr": "Hackett coupe tout ce qui ressemble à du bois : palissades, portes, et une fois la jambe du colonel, qui était en bois. Ils ne se parlent plus."
+            "fr": "Hackett coupe tout ce qui ressemble à du bois : palissades, portes et, une fois, la jambe du colonel, qui était en bois. Ils ne se parlent plus."
           }
         },
         {
@@ -5507,7 +5508,7 @@
           "desc": "imp woman with a messy blond ponytail, red tunic, dragging a notched battle axe behind her, smirking",
           "lore": {
             "en": "Axelle drags her axe everywhere, so the whole camp hears her coming. The blue fences hear it too, and shiver.",
-            "fr": "Axelle traîne sa hache partout, si bien que tout le camp l'entend arriver. Les palissades bleues l'entendent aussi, et frissonnent."
+            "fr": "Axelle traîne sa hache partout, si bien que tout le camp l'entend arriver. Les palissades bleues l'entendent aussi. Elles frissonnent."
           }
         },
         {
@@ -5537,7 +5538,7 @@
           "desc": "imp woman with spiky blond hair, red and gold plumed lieutenant's hat, fierce fanged grin, a heavy bearded axe raised and a round red shield",
           "lore": {
             "en": "Sally Splinters built a throne out of every fence she ever broke. It is terribly uncomfortable, and she sits on it every day.",
-            "fr": "Sally Splinters s'est construit un trône avec chaque palissade qu'elle a brisée. Il est affreusement inconfortable, et elle s'y assoit tous les jours."
+            "fr": "Sally Splinters s'est bâti un trône avec toutes les palissades qu'elle a brisées. Il est affreusement inconfortable. Elle s'y assoit tous les jours."
           }
         },
         {
@@ -5597,7 +5598,7 @@
           "desc": "dust-covered imp woman with a red bandana, red miner's coat, a pickaxe over her shoulder, grinning with a chipped fang",
           "lore": {
             "en": "Gerty Gravel eats pebbles to keep her teeth sharp. At least, that is what she tells the recruits, and they believe her.",
-            "fr": "Gerty Gravel mange des cailloux pour garder les dents pointues. C'est du moins ce qu'elle raconte aux recrues, et elles la croient."
+            "fr": "Gerty Gravel mange des cailloux pour garder les dents pointues. C'est du moins ce qu'elle raconte aux recrues. Elles la croient."
           }
         },
         {
@@ -5612,7 +5613,7 @@
           "desc": "hulking bald goblin-like imp with bare arms and red armour plates, a heavy iron pickaxe, cracking a boulder",
           "lore": {
             "en": "Rock Bottom has hit rocks so often he has become a bit like one: slow to move, hard to stop, and very difficult to lift.",
-            "fr": "Rock Bottom a tant frappé de rochers qu'il a fini par leur ressembler : lent à se mettre en route, dur à arrêter, et très difficile à soulever."
+            "fr": "Rock Bottom a tant frappé de rochers qu'il a fini par leur ressembler : lent à se mettre en route, dur à arrêter et très difficile à soulever."
           }
         },
         {
@@ -5642,7 +5643,7 @@
           "desc": "tall imp with black stone-like tattoos, ornate red and gold armour, a pickaxe with a glowing obsidian head, cracked rocks around him",
           "lore": {
             "en": "Obi Sidian's pickaxe was carved from a volcano's heart. It sings when it strikes, and rocks crumble just to make it stop.",
-            "fr": "La pioche d'Obi Sidian a été taillée dans le cœur d'un volcan. Elle chante quand elle frappe, et les rochers s'effritent rien que pour la faire taire."
+            "fr": "La pioche d'Obi Sidian a été taillée dans le cœur d'un volcan. Elle chante à chaque coup. Les rochers s'effritent rien que pour la faire taire."
           }
         },
         {
@@ -5672,7 +5673,7 @@
           "desc": "skinny imp tangled in a map, leaves in his hair, plain red coat, a cracked compass spinning wildly in his hand",
           "lore": {
             "en": "Wendell's compass points wherever he is not. He trusts it completely, and has visited the whole red country by accident.",
-            "fr": "La boussole de Wendell indique toujours là où il n'est pas. Il lui fait entièrement confiance, et a visité tout le pays rouge par accident."
+            "fr": "La boussole de Wendell indique toujours là où il n'est pas. Il lui fait une confiance aveugle et a visité tout le pays rouge par accident."
           }
         },
         {
@@ -5747,7 +5748,7 @@
           "desc": "ancient dark-elf woman with floor-length white hair, legendary golden crown shaped like compass points, crimson robes embroidered with maps, a giant glowing compass rose floating behind her",
           "lore": {
             "en": "Lady Longitude drew the borders of the red country with her own quill. Forests that are not on her maps are not allowed to exist, and many have quietly stopped.",
-            "fr": "Lady Longitude a tracé les frontières du pays rouge de sa propre plume. Les forêts absentes de ses cartes n'ont pas le droit d'exister, et beaucoup ont discrètement cessé."
+            "fr": "Lady Longitude a tracé les frontières du pays rouge de sa propre plume. Les forêts absentes de ses cartes n'ont pas le droit d'exister. Beaucoup ont discrètement cessé."
           }
         },
         {
@@ -5762,7 +5763,7 @@
           "desc": "scrawny imp with a black eye, red headband, oversized red boxing gloves, bouncing in a fighting stance",
           "lore": {
             "en": "Scrappy challenges anyone to a fight, including the wind. He has lost to the wind twice, but he says it cheated.",
-            "fr": "Scrappy provoque tout le monde en duel, y compris le vent. Il a perdu deux fois contre le vent, mais il affirme qu'il a triché."
+            "fr": "Scrappy provoque tout le monde en duel, y compris le vent. Le vent l'a battu deux fois, mais il a triché, d'après Scrappy."
           }
         },
         {
@@ -5777,7 +5778,7 @@
           "desc": "imp woman with white pigtails, torn red coat, spiked red knuckle-dusters, fanged grin, cracking a skull with one punch",
           "lore": {
             "en": "Brawla keeps a skull on her bedside table and says good morning to it. It has never said good morning back, and she finds that rude.",
-            "fr": "Brawla garde un crâne sur sa table de nuit et lui dit bonjour chaque matin. Il ne lui a jamais répondu, et elle trouve ça impoli."
+            "fr": "Brawla garde un crâne sur sa table de nuit et lui dit bonjour chaque matin. Il ne lui a jamais rendu son bonjour. Elle trouve ça impoli."
           }
         },
         {
@@ -5837,7 +5838,7 @@
           "desc": "gigantic ancient imp with a long white beard braided with small bones, legendary gold and crimson armour, colossal fiery gauntlets, a heap of broken skulls behind him",
           "lore": {
             "en": "Dread Naught fears nothing, because he is what everything else fears. At eighty-eight he still opens the Skull Gate with a single knock.",
-            "fr": "Dread Naught ne craint rien, car c'est lui que tout le reste craint. À quatre-vingt-huit ans, il ouvre encore la porte des Crânes d'un seul coup de poing."
+            "fr": "Dread Naught ne craint rien, car c'est lui que tout le reste craint. A quatre-vingt-huit ans, il ouvre encore la porte des Crânes d'un seul coup de poing."
           }
         },
         {
@@ -5852,7 +5853,7 @@
           "desc": "small imp girl in a red beret, carrying a huge padlocked book she can barely lift, keys jingling on her belt, determined pout",
           "lore": {
             "en": "Penny was given the camp's secret book to carry and has not put it down since. She does not know what is inside, and has decided that is what makes her loyal.",
-            "fr": "On a confié à Penny le livre secret du camp, et elle ne l'a plus lâché. Elle ignore ce qu'il contient, et a décidé que c'est ce qui la rend loyale."
+            "fr": "On a confié à Penny le livre secret du camp. Elle ne l'a plus lâché depuis. Elle ignore ce qu'il contient et a décidé que c'était le secret de sa loyauté."
           }
         },
         {
@@ -5897,7 +5898,7 @@
           "desc": "massive imp in heavy red and gold armour, ferocious grin, gauntleted fist raised, a huge padlocked tome chained to his back",
           "lore": {
             "en": "General Garth Sworn swore loyalty to the red crown with his fist on the book, and dented it. He has never broken his word, only the odd table.",
-            "fr": "Le général Garth Sworn a juré fidélité à la couronne rouge le poing sur le livre, et l'a cabossé. Il n'a jamais trahi sa parole, seulement quelques tables."
+            "fr": "Le général Garth Sworn a juré fidélité à la couronne rouge le poing sur le livre — et l'a cabossé. Il n'a jamais trahi sa parole, seulement quelques tables."
           }
         },
         {
@@ -5927,7 +5928,7 @@
           "desc": "ancient imp elder with a long white beard, legendary gold and crimson armour, a giant floating tome locked with glowing red chains and a golden skull-shaped padlock",
           "lore": {
             "en": "Ever Sworn has kept the red country's oldest secret for seventy years. He has forgotten his birthday, and his own name twice, but never a word he gave.",
-            "fr": "Ever Sworn garde le plus vieux secret du pays rouge depuis soixante-dix ans. Il a oublié son anniversaire, et deux fois son propre nom, mais jamais une parole donnée."
+            "fr": "Ever Sworn garde le plus vieux secret du pays rouge depuis soixante-dix ans. Il a oublié son anniversaire et deux fois son propre nom, mais jamais une parole donnée."
           }
         },
         {
@@ -5942,7 +5943,7 @@
           "desc": "tiny imp boy with a huge red crown sliding over his eyes, red cape dragging on the ground, a wooden sceptre, pouting",
           "lore": {
             "en": "Pip Squeak is next in line for the red throne, after forty-two cousins. He practises his royal wave on the pigeons.",
-            "fr": "Pip Squeak est l'héritier du trône rouge, juste après quarante-deux cousins. Il s'entraîne à faire le salut royal aux pigeons."
+            "fr": "Pip Squeak est héritier du trône rouge — en quarante-troisième position. Il s'entraîne à faire le salut royal aux pigeons."
           }
         },
         {
@@ -5957,7 +5958,7 @@
           "desc": "imp girl with red curls and a small spiky crown, red and gold gown over light armour, stamping her foot and pointing a sceptre",
           "lore": {
             "en": "Tiara gives an order, and if nobody obeys, she gives it again, louder. She has never needed a third time.",
-            "fr": "Tiara donne un ordre, et si personne n'obéit, elle le redonne, plus fort. Elle n'a jamais eu besoin d'une troisième fois."
+            "fr": "Tiara donne un ordre. Si personne n'obéit, elle le répète, plus fort. Elle n'a jamais eu besoin d'une troisième fois."
           }
         },
         {
@@ -5972,7 +5973,7 @@
           "desc": "tall imp noble with slicked black hair and a widow's peak, high-collared red and black cape, a spiky crown, sly fanged smile",
           "lore": {
             "en": "Count Less has so many titles he has lost count. He introduces himself for twenty minutes before every battle, which is, in fact, his strategy.",
-            "fr": "Count Less a tant de titres qu'il en a perdu le compte. Il se présente pendant vingt minutes avant chaque bataille, et c'est en réalité sa stratégie."
+            "fr": "Count Less a tant de titres qu'il en a perdu le compte. Avant chaque bataille, il décline ses titres pendant vingt minutes. C'est, en réalité, sa stratégie."
           }
         },
         {
@@ -5987,7 +5988,7 @@
           "desc": "old imp with a white beard and gold glasses, a tall red and gold crown-hat, red robes, red magic swirling from one hand, a ledger book in the other",
           "lore": {
             "en": "Mordred Monarch rules the camp with a spell in one hand and a ledger in the other. He knows the price of every soldier and the name of none.",
-            "fr": "Mordred Monarch dirige le camp avec un sort dans une main et un registre dans l'autre. Il connaît le prix de chaque soldat, et le nom d'aucun."
+            "fr": "Mordred Monarch dirige le camp avec un sort dans une main et un registre dans l'autre. Il connaît le prix de chaque soldat et le nom d'aucun."
           }
         },
         {
@@ -6002,7 +6003,7 @@
           "desc": "imposing dark-elf queen with long black hair streaked white, a tall jagged crimson crown set with rubies, red and gold ceremonial armour, bat-wing cape, a sceptre with a glowing gem",
           "lore": {
             "en": "Vexa Throne took the crown at a banquet and nobody remembers how. She rules with a smile so cold that the camp fires burn blue when she passes.",
-            "fr": "Vexa Throne a pris la couronne pendant un banquet, et personne ne se souvient comment. Elle règne avec un sourire si froid que les feux du camp bleuissent à son passage."
+            "fr": "Vexa Throne a pris la couronne pendant un banquet. Personne ne se souvient comment. Elle règne avec un sourire si froid que les feux du camp bleuissent à son passage."
           }
         },
         {
@@ -6017,7 +6018,7 @@
           "desc": "ancient towering imp emperor with a very long white beard, legendary colossal golden crown with a burning red gem, crimson and gold robes, a skull sceptre, red flames and bats swirling around him",
           "lore": {
             "en": "Rex Mortis has worn the red crown so long it has grown into his head. He is ninety, he is terrible, and he is the one card every blue spy dreams of reaching.",
-            "fr": "Rex Mortis porte la couronne rouge depuis si longtemps qu'elle a poussé dans sa tête. Il a quatre-vingt-dix ans, il est terrible, et c'est la seule carte que tout espion bleu rêve d'atteindre."
+            "fr": "Rex Mortis porte la couronne rouge depuis si longtemps qu'elle a poussé dans sa tête. Il a quatre-vingt-dix ans, il est terrible. C'est la carte que tous les espions bleus rêvent d'atteindre."
           }
         }
       ]

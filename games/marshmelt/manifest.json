@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -59,7 +59,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "L’ami marshmallow saute de rocher en rocher. Monte sans arrêt pour éviter de brûler.",
+      "tagline": "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
       "tags": [
         "Tap pour sauter",
         "Sans fin",
@@ -117,12 +117,12 @@
             "line": "Mode <b>réflexe</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -131,7 +131,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">TAP</b> en visant pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>",
+        "tagline": "<b class=\"w-tap\">Touche</b> là où tu vises pour propulser le <b class=\"w-mallow\">marshmallow</b> de rocher en rocher au-dessus de la <b class=\"w-lava\">lave</b>",
         "strings": {
           " rocks": " rochers",
           "Best": "Record",
@@ -196,8 +196,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 6,
-      "ticketPrice": 9,
       "awards": [
         1,
         2,

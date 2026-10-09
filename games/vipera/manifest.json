@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.7.8",
+  "version": "1.7.9",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -202,11 +202,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
+      "tagline": "Ondule comme un serpent : chaque tap inverse ta direction. Grandis et évite les pièges !",
       "tags": [
         "Tap pour dévier",
         "Sans fin",
-        "Armure"
+        "Armure d'écailles"
       ]
     },
     "en": {
@@ -249,7 +249,7 @@
         "lines": [
           {
             "kicker": "Tap",
-            "line": "Déplacement <b>reptilien</b>"
+            "line": "Ondule comme un <b>reptile</b>"
           },
           {
             "kicker": "Bonus",
@@ -260,12 +260,12 @@
             "line": "Attention aux <b>dangers</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -302,7 +302,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">TAP</b> pour faire virer la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour un maximum de bonus",
+        "tagline": "<b class=\"w-tap\">Touche</b> pour faire tourner la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour cumuler les bonus",
         "strings": {
           " blocks": " blocs",
           "Adder": "Aspic",
@@ -311,11 +311,11 @@
           "Best chain": "Meilleure chaîne",
           "Best score": "Meilleur score",
           "Bitten!": "Mordu !",
-          "Body lost": "Corps perdu",
+          "Body lost": "Corps tranché",
           "Chain x": "Chaîne x",
           "Deeper": "Plus profond",
           "Distance (m)": "Distance (m)",
-          "Evolved": "Évolution",
+          "Evolved": "Evolution",
           "Final score": "Score final",
           "Gold egg": "Œuf d'or",
           "Great run!": "Superbe partie !",
@@ -327,7 +327,7 @@
           "Mamba": "Mamba",
           "Play the full game": "Jouer au jeu complet",
           "Score": "Score",
-          "Slither again": "Ramper encore",
+          "Slither again": "Rampe encore",
           "Tap to play": "Tap pour jouer",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
@@ -396,8 +396,7 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 5,
-      "ticketPrice": 8,
+      "roundScore": 600,
       "awards": [
         1,
         2,

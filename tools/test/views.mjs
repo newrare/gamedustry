@@ -1150,7 +1150,7 @@ if (!fs.existsSync(path.join(dist, GAME, "index.html"))) {
   process.exit(1);
 }
 const { srv, port } = await serve(dist);
-const url = "http://127.0.0.1:" + port + "/" + GAME + "/index.html";
+const url = "http://127.0.0.1:" + port + "/" + GAME + "/index.html?first=0";
 console.log("serving " + url);
 
 const chrome = await launchChrome(tmpDir);

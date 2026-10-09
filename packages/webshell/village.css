@@ -241,11 +241,10 @@
 }
 .vg-badge[hidden] { display: none; }
 
-/* THE LABEL — the role's own word, under the feet. It is OFF by default and a
-   switch in OPTIONS is what brings it back (menu.js, Settings.labels): a
-   village is meant to be read as a place, and six plates over six buildings
-   turn it back into the list it replaced. A player who cannot tell the shop
-   from the forge asks for the words once and keeps them.
+/* THE LABEL — the role's own word, under the feet. It is ON by default, so a
+   player new to the village is told what each door is, and a switch in
+   OPTIONS hides it (menu.js, Settings.labels) for the player who knows the
+   place and wants it read as a picture rather than a list.
 
    Under the feet and not over the roof: a house is as tall as its cut and the
    roofs are all at different heights, so a word above one lands somewhere

@@ -22,9 +22,46 @@ are scaled to what it scores, and the coin rate is one of exactly two:
 `coinsPer` is **1000** for a climb whose first objective is 2 000 points or
 more (`radiam`, `pawko`) and **100** for every other game, so the coins of a
 round are always its score with the last three or two digits dropped, times the
-player's level — a sum a player does by eye. `ticketPrice` is set so that a
-ticket costs the same number of POINTS it did when the rates were free-form,
-and `xpPer` is untouched.
+player's level — a sum a player does by eye. **The ticket price and the xp
+rate are not written at all**: they are derived from one number, the game's
+reference round (below), so a ticket costs the same number of rounds and a
+round pays the same xp in every game.
+
+### One unit: the round
+
+Every game scores on its own scale, and the ticket price and the xp rate used
+to be typed per game to match. They drifted: a ticket cost about eight rounds
+of play on vipera and forty-five on chainring, a round paid 60 xp on pawko and
+1 200 on gearball, and the gifts, which paid fixed sums, handed vipera's player
+forty-six tickets out of one three-star box. Twenty minutes of play bought more
+tickets than the album could use, and a gift of tickets or coins meant nothing.
+
+So `tools/lib/economy.mjs` holds the rule and `tools/build/build.mjs` injects
+its result into `CONFIG.web.meta` — a manifest that types `ticketPrice` or
+`xpPer` is refused:
+
+| figure        | rule                                                                          |
+| ------------- | ----------------------------------------------------------------------------- |
+| `roundScore`  | a reference round: 1.5 × the objective a third of the way up the climb        |
+| `ticketPrice` | 20 reference rounds of coins at player level 3, `legible`                     |
+| `xpPer`       | so that a reference round pays 100 xp                                         |
+| the gifts     | coins as a share of the ticket, xp as a share of the player's current level   |
+| a level       | `500 · level^1.5` xp                                                          |
+| the bonus     | the three-star boxes open on a level's FIRST perfect round, never on a replay |
+
+A game whose objective is not its score — a distance, a count, a par — writes
+`web.meta.roundScore` itself. Five do, and their figure is read off the code
+rather than off play (arcider 1 000, triverse 1 600, vipera 600, bouncetry
+3 000, grudgeon 900): the best score each level records in `prog:<slug>` is the
+measurement that should replace it.
+
+`node tools/lab/sim-economy.mjs` is the check: it plays a modelled session in
+every game — one map level a round, 90 s a round, 30 % of levels three-starred
+the first time, no ad and no daily road — and prints the player level and the
+tickets held after 20 minutes and after two hours. On the rule above every game
+reads the same: level 2 and about four tickets at 20 minutes, level 6 and about
+twenty at two hours. It mirrors the formulas of `packages/webshell/meta.js`, so
+a change to one is a change to make on the other.
 
 ```
 title screen ──► LEVEL MAP ──► the round ──► end screen
@@ -47,7 +84,7 @@ in one row, this save and the climb together.
 | --------- | -------------------------------------------------------------------------------------- | ----------------------------------------- |
 | coins     | the round's score, converted AT the player's level — 14 800 pts → 14 coins, ×the level | buying tickets                            |
 | tickets   | bought, given by the daily strip, dropped by a player level-up                         | one draw at the machine, 1 to 5 at a time |
-| xp        | the same score on the flat rate, one hundred points an xp                              | the player's own level                    |
+| xp        | the same score on the flat rate, 100 xp a reference round                              | the player's own level                    |
 | stickers  | twelve off the map, eight out of the machine, doubles from both                        | the collection, and the shop's stock      |
 | the daily | the device's own date, and a run of seven                                              | a reason to open the game                 |
 
@@ -70,15 +107,17 @@ written **even at level 1** — that is the only place a player ever learns the
 lever is there.
 
 **XP is deliberately NOT on that rate.** It is the flat conversion of the same
-score, one hundred points an xp (`xpPer`), so one run moves the bar by the same
+score, a hundred xp a reference round (`xpPer`), so one run moves the bar by the same
 amount at level 1 and at level 10. A climb that also multiplied itself would
 run away from the curve underneath it, and the curve is what the whole payout
 now hangs off.
 
 **A player level hands out a ticket.** It is the one thing that stops a player
 who never buys one from staring at a machine they cannot use. The curve is
-`350 · level^1.3` — level 2 about three rounds in, level 10 about forty: a
-season, not an afternoon.
+`500 · level^1.5` — level 2 in the first session, level 10 some seven hours of
+play in: a season, not an afternoon. It was `350 · level^1.3`, which reached
+level 5 inside twenty minutes, and since the level multiplies the coins a climb
+that fast was the wallet running away with it.
 
 ### The xp of a round is read on the MAP, not where it is added
 
@@ -229,7 +268,7 @@ weighing changed.
 ### The super ticket
 
 **Fifteen ordinary tickets' worth of coins for one pull**
-(`web.meta.superPrice`, `ticketPrice * 15`, so 3 750), and **four numbers that
+(`web.meta.superPrice`, `ticketPrice * 15`, so 8 100 on radiam), and **four numbers that
 never move**:
 
 | tier          | super ticket |
@@ -539,16 +578,16 @@ Rarity is per sticker, in the manifest, and it drives two numbers:
 
 | rarity    | drop weight  | a double sells for     |
 | --------- | ------------ | ---------------------- |
-| common    | 60           | 25 % of a ticket (65)  |
-| rare      | 25           | 40 % of a ticket (100) |
-| epic      | 12           | 60 % of a ticket (150) |
-| legendary | *pinned* (3) | 90 % of a ticket (225) |
+| common    | 60           | 25 % of a ticket (135) |
+| rare      | 25           | 40 % of a ticket (215) |
+| epic      | 12           | 60 % of a ticket (325) |
+| legendary | *pinned* (3) | 90 % of a ticket (485) |
 
 They are **weights, not percentages**, so a game can add a fifth tier without
 redoing the other four. The legendary weight is the one exception: its tier's
 share is `bet * legendaryPer` (above), so 3 only ever splits that share between
 several legendaries. The figures in brackets are radiam's, whose ticket costs
-250: four common doubles buy one draw, and selling doubles is what keeps a dry
+540: four common doubles buy one draw, and selling doubles is what keeps a dry
 streak moving, never an income.
 
 **A double never sells for a ticket.** The sell prices are a SHARE of the game's
@@ -573,8 +612,8 @@ one can still be caught up:
 | super ticket   | one draw on the pinned odds                                   | 15 tickets (`superPrice`)                          |
 | mystery gift   | the three-box ceremony: 2–4 tickets, xp or a sticker          | 3 tickets (`giftPrice`)                            |
 | xp pack        | 250 xp (`xpPack`)                                             | 2 × what 250 xp pay in coins at the player's level |
-| double coins   | the next round that pays any coins pays twice                 | 2 tickets (`boostPrice`)                           |
-| double xp      | the next three rounds that pay any xp pay twice               | 2 tickets (`boostPrice`)                           |
+| double coins   | the next round that pays any coins pays twice                 | a fifth of a ticket (`boostPrice`)                 |
+| double xp      | the next three rounds that pay any xp pay twice               | a fifth of a ticket (`boostPrice`)                 |
 | **missed day** | exactly what that day of the road would have paid, ×5 starred | 60 % of the day's average worth                    |
 
 **The xp pack's price follows the level**, and it is the one price that
@@ -1080,7 +1119,8 @@ Then, in order: the xp, whatever the map now owes the collection (one card per
 sticker), and one offer:
 
 - **three stars** → nothing here: the gift was already handed over, on the
-  round itself (below).
+  round itself (below). A perfect REPLAY, which the bonus skips, gets the
+  one-or-two-star offer instead.
   The offer **arrives with the navigation** and not at the end of the transfer:
   `endRun` runs on the frame the motor lights the map, the replay and the arrow
   (see `watchEnd`), so the three ways out and the one reason to stay are offered
@@ -1110,6 +1150,11 @@ after the third star lit. They are now the **outro's** (see
 frame the slow motion had reached (every card over a round pauses it —
 `packages/webshell/view.js`, section 1b), the card reads BONUS THREE STARS, and the end screen arrives with the
 prize already in the wallet.
+
+**It is paid once per level**: on the first round that three-stars it
+(`firstPerfect`, read in `levels.js` before the round's stars are recorded).
+Paid on every perfect round, replaying an easy level for its boxes out-earned
+climbing the map.
 
 The wallet comes with it — a reward that flies has to have somewhere to fly to,
 and `flyReward` measures a *visible* chip and gives up without one — so the
@@ -1314,10 +1359,10 @@ WebP, ~975 KB of base64, and a playable has no collection to put them in.
 // games/<slug>/manifest.json — inside "web", after "levels"
 "meta": {
   "coinsPer": 1000,         // points per coin, PER PLAYER LEVEL — 100 or 1000 only
-  "xpPer": 100,             // points per xp, flat
-  "ticketPrice": 250,       // coins per draw
-  "superPrice": 3750,       // the super ticket — default: ticketPrice * 15
-  "sell": [65, 100, 150, 225], // a double, by rarity — default: 25/40/60/90 % of the ticket
+  "roundScore": 9050,       // optional: a reference round's score — default 1.5x the objective a third up
+                            // (ticketPrice and xpPer are derived from it, never written)
+  "superPrice": 8100,       // the super ticket — default: ticketPrice * 15
+  "sell": [135, 215, 325, 485], // a double, by rarity — default: 25/40/60/90 % of the ticket
   "superOdds": [20, 25, 30],// …its rare / epic / legendary, pinned; common takes the rest
   "awards": [1,2,3,4,5,6,7,8,9,10,20,17],   // the twelve milestones, in order
   "more": ["army"],         // optional: the band's fold, below
@@ -1331,15 +1376,15 @@ WebP, ~975 KB of base64, and a playable has no collection to put them in.
 `awards` exists because a sheet's reading order is the painter's: the game's
 logotype and its trophy piece are wherever they were drawn, and ninety of
 ninety should pay in one of *those* rather than in whatever landed in cell
-twelve. Leave it out and the first twelve are used in order. **The three rates are the one thing that is not a default**, because a point
+twelve. Leave it out and the first twelve are used in order. **The coin rate is the one thing that is not a default**, because a point
 is worth a different amount in each of the thirteen: vipera's climb tops out at
 650 and pawko's at 60 000, and a rate of 1000 over vipera would pay nothing
 at all. `coinsPer` is **1000**
 when `web.levels.objective.from` is 2 000 or more and **100** otherwise — a
 cleared level then always pays at least a couple of coins at level 1, and the
 conversion stays "drop the last digits", which is what the end screen shows.
-`ticketPrice` is what a ticket costs in points divided by that rate, and
-`xpPer` is read off the climb (a tenth of `objective.to` / 14). `superPrice`, `superOdds`, `sell`, `drop`,
+`ticketPrice` and `xpPer` are derived from the reference round ([One unit: the
+round](#one-unit-the-round)). `superPrice`, `superOdds`, `sell`, `drop`,
 `maxBet`, `luck` and `legendaryPer` all have
 defaults — a second game is the two required lines and nothing else, as long as
 **one legendary is left out of `awards`** (above).

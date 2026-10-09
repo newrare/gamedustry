@@ -1231,7 +1231,7 @@ function load(slug) {
   loadClips();
   if (REC.on) recLoad();
   localStorage.setItem("events:game", slug);
-  LANGS.forEach((lang) => { frames[lang].src = "build/" + slug + "/index.html?lang=" + lang; });
+  LANGS.forEach((lang) => { frames[lang].src = "build/" + slug + "/index.html?first=0&lang=" + lang; });
   fetch("api/events?game=" + encodeURIComponent(slug))
     .then((r) => r.json())
     .then((d) => { state.data = d; state.status[slug] = d.status; drawPicker(); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
@@ -1636,7 +1636,7 @@ function recLoad() {
   recDiscard();
   REC.W = REC.canvas = null;
   // force=1: every level of the map can be started, for this load only (levels.js).
-  recFrame.src = "build/" + state.slug + "/index.html?lang=en&force=1";
+  recFrame.src = "build/" + state.slug + "/index.html?first=0&lang=en&force=1";
   recLevels(0);
 }
 

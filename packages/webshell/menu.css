@@ -97,6 +97,11 @@
     linear-gradient(0deg,   rgba(0,0,0,.66) 0%, rgba(0,0,0,.24) 20%, rgba(0,0,0,0) 40%),
     rgba(0,0,0,.18);
 }
+/* THE FIRST LAUNCH NEVER SHOWS THE TITLE SCREEN: it goes straight into level 1
+   (menu.js, section 4c), and the class stays on until that round has left —
+   by which time the screen is at opacity 0, so taking it off fades nothing in
+   that the state did not ask for. */
+#screen-intro.web-first { visibility:hidden; }
 
 /* A gradient backdrop needs far less: it is dark and even by design, and the
    full wash would only flatten what the SKIN composed. */

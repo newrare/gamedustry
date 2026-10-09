@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.23",
+  "version": "1.10.26",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -66,11 +66,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges ainsi que les adversaires pour accélérer. Trouves le meilleur compromis entre vitesse ou récupération.",
+      "tagline": "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis ta voie : vitesse ou bouclier.",
       "tags": [
-        "Course",
+        "Appuie pour pencher",
         "Battle Royale",
-        "Turbo"
+        "1020 m"
       ]
     },
     "en": {
@@ -112,24 +112,24 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Course en Battle Royale",
-            "line": "Reste en <b>vie</b> pour gagner"
+            "kicker": "Course Battle Royale",
+            "line": "<b>Survis</b> et gagne"
           },
           {
             "kicker": "Choix",
-            "line": "<b>Vitesse</b> ou récupération"
+            "line": "Fonce ou <b>recharge</b> ton bouclier"
           },
           {
             "kicker": "Rétro",
-            "line": "Course <b>futuriste</b>"
+            "line": "Une course <b>futuriste</b>"
           },
           {
             "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -166,42 +166,45 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais détruire ton <b class=\"w-shield\">bouclier</b>",
+        "tagline": "Penche ton vaisseau <b class=\"w-press\">à gauche ou à droite</b> pour <b class=\"w-pass\">doubler</b> sans jamais briser ton <b class=\"w-shield\">bouclier</b>",
         "strings": {
           " in ": " dans ",
           " pilots left": " pilotes en lice",
           "Best score": "Meilleur score",
-          "Cut to ": "Couperet à ",
+          "Cut to ": "Qualif top ",
           "Distance (m)": "Distance (m)",
-          "Eliminated": "Éliminé",
-          "Final ": "Finale ",
-          "Final position": "Position finale",
+          "Eliminated": "Eliminé",
+          "Final ": "Finale à ",
+          "Final position": "Classement",
           "Final score": "Score final",
           "Finish · ": "Arrivée · ",
           "Finish · take the lead": "Arrivée · prends la tête",
           "Hull critical": "Bouclier critique",
           "Install now": "Installer",
           "km/h": "km/h",
-          "Leader": "Premier",
+          "Leader": "En tête",
           "ND": "e",
-          "Next cut · top ": "Prochain couperet · top ",
+          "Next cut · top ": "Prochaine qualif · top ",
           "On the podium!": "Sur le podium !",
-          "Places taken": "Places prises",
+          "Places taken": "Dépassements",
           "Play the full game": "Jouer au jeu complet",
           "Race again": "Relancer la course",
           "Race finished!": "Course terminée !",
-          "Race won!": "Course gagnée !",
+          "Race won!": "Victoire !",
           "RD": "e",
           "Score": "Score",
           "Shield": "Bouclier",
           "Shield down": "Bouclier détruit",
           "ST": "er",
-          "Take the charge line": "Prends la ligne de charge",
+          "Take the charge line": "Prends la voie de recharge",
           "Tap to race": "Tap pour foncer",
           "TH": "e",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "Top ": "Top "
+          "Top ": "Top ",
+          "Reach <b>{n} m</b>": "Atteins <b>{n} m</b>",
+          "Cross the <b>finish line</b>": "Franchis la <b>ligne d'arrivée</b>",
+          "Win the race in <b>first place</b>": "Termine la course <b>en tête</b>"
         }
       }
     },
@@ -353,8 +356,7 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 10,
-      "ticketPrice": 25,
+      "roundScore": 1000,
       "awards": [
         1,
         2,

@@ -164,9 +164,11 @@
        `dist` to the side, then up. This is how the desktop keyboard fallback
        (section 7) drives a swipe game — the gesture goes through the same
        down/move/up path as a finger, so a game never grows a second input
-       API for the arrow keys. dir is -1 (left) or +1 (right). */
+       API for the arrow keys. dir is -1 (left) or +1 (right), or "up" for an
+       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump). */
     function swipe(dir, dist) {
       var d = dist == null ? 150 : dist, x = Layout.cx, y = Layout.cy;
+      if (dir === "up") { at("down", x, y); at("move", x, y - d); at("up", x, y - d); return; }
       at("down", x, y);
       at("move", x + dir * d, y);
       at("up",   x + dir * d, y);

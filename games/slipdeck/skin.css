@@ -13,15 +13,9 @@
     /* the two gates, shared by the DOM intro and the canvas */
     --bin:#ff4a5e; --keep:#3ddc97;
 
-    /* THE LEVEL PILL DOES NOT FIT THIS GAME'S BOTTOM-LEFT CORNER.
-       In the web build the five-card hand runs edge to edge at the foot of the
-       frame — its first slot is x 26→149 down to y 1200 — and what the hand is
-       worth is written under it at y 1234. The shell's default corner is on
-       both. So the pill goes up onto the empty felt between the keep/bin chip
-       and the CHUTE row, which is the one band this table leaves clear on the
-       left. Web target only; a playable has no pill.
-       (packages/webshell/levels.css) */
-    --lv-hud-bottom:392px;
+    /* The level pill keeps the shell's own corner: on the web the table
+       stops above the bottom row (WEB_FOOT in game.js), so the pill and the
+       round's three controls have that row to themselves. */
   }
   html, body { background:radial-gradient(900px 860px at 50% 36%, #17402f 0%, #0b2419 56%, #040b08 100%); }
 
@@ -36,8 +30,8 @@
   #cta-bar { border-top:1px solid rgba(245,196,81,.18); }
   #hud-score { text-shadow:0 0 16px rgba(245,196,81,.5); }
   /* the lives pill, and its last-life state */
-  #hud-left .hud-pill { letter-spacing:2px; color:#ff9aad; }
-  #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+  #hud-right .hud-pill { letter-spacing:2px; color:#ff9aad; }
+  #hud-right .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
      The motor's "swipe" variant lends its flicking hand; the target becomes
@@ -134,3 +128,171 @@
     79%      { transform:translateX(-44px); opacity:0; }
     100%     { transform:translateX(-44px); opacity:0; }
   }
+
+  /* ---- the tips: a card the first time an idea lands on the table --------
+     The motor's CARD (.mt-card) on a veil over the held round (Game.held):
+     eyebrow, title, a few lines of rules, the tap line. A tap anywhere puts
+     it away, so the veil is the one layer of the round that takes a pointer.
+     The same card opens on a joker of the rail, in that joker's colour. */
+  .sd-tip {
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center; padding:0 44px;
+    background:radial-gradient(70% 55% at 50% 48%, rgba(8,32,22,.62), rgba(2,8,6,.88));
+    opacity:0; transition:opacity .22s ease; cursor:pointer;
+  }
+  .sd-tip.on { opacity:1; }
+  .sd-tip.off { opacity:0; pointer-events:none; }
+  .sd-tip .sd-tc { max-width:600px; transform:translateY(30px) scale(.94); transition:transform .3s cubic-bezier(.2,1.3,.4,1); }
+  .sd-tip.on .sd-tc { transform:none; }
+  .sd-tc .mt-h { font-size:44px; color:var(--tc, var(--accent)); }
+  .sd-tc .mt-body { gap:16px; }
+  /* The rules are prose, read in normal case: never in the web build's
+     display face (Bebas Neue has no lowercase, and its capitals would keep
+     the accents upper() takes off). */
+  .sd-tc .mt-body p {
+    margin:0; text-align:center; font-size:26px; line-height:1.38; font-weight:600;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    letter-spacing:0; text-transform:none; color:#e4f1ea;
+  }
+  @media (prefers-reduced-motion: reduce) { .sd-tip .sd-tc { transition:none; transform:none; } }
+
+  /* ---- the chart of the poker hands: nine rows, strongest on top ----------
+     Five small cards drawn on a canvas (the table's own inks), then the
+     hand's name and what it opens the count on, chips × mult in the
+     table's blue and red. Tighter than a tip card so the nine fit the frame
+     without a scroll; the row of the hand being built is lit in gold. */
+  .sd-tc.sd-chart { padding:30px 26px; gap:14px; }
+  .sd-tc.sd-chart .mt-h { font-size:40px; }
+  .sd-hands { display:flex; flex-direction:column; gap:6px; width:100%; }
+  .sd-hrow {
+    display:flex; align-items:center; gap:22px; padding:2px 14px; border-radius:16px;
+  }
+  .sd-hrow:nth-child(odd) { background:rgba(255,255,255,.035); }
+  .sd-hrow.now { background:rgba(245,196,81,.14); box-shadow:inset 0 0 0 2px rgba(245,196,81,.65); }
+  .sd-hrow canvas { flex:none; display:block; }
+  .sd-hname {
+    display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  .sd-hname b { font-size:24px; font-weight:900; line-height:1.1; color:#f5c451; letter-spacing:.5px; }
+  .sd-hrow.now .sd-hname b { color:#fff3cf; }
+  .sd-hfig { display:flex; align-items:center; gap:8px; font-size:22px; font-weight:900; color:rgba(255,255,255,.7); }
+  .sd-hfig i { font-style:normal; color:#fff; padding:2px 12px; border-radius:9px; min-width:26px; text-align:center; }
+  .sd-hfig i.c { background:#2f6fc4; }
+  .sd-hfig i.m { background:#c42f48; }
+  .sd-hfig.bust { color:#ff4a5e; letter-spacing:.5px; }
+  .sd-hname em { font-style:normal; font-size:20px; font-weight:700; color:#9fe8c6; }
+  /* the pot's share of each hand, after its chips × mult */
+  .sd-hfig .sd-hpot { margin-left:8px; font-size:20px; font-weight:700; color:#f5c451; }
+
+  /* ---- + or ×: the two ways a joker touches the red chip -----------------
+     The pill and the burst as the table draws them (a canvas), then what
+     each does to the same chip, then the word. */
+  .sd-xdemo { display:flex; flex-direction:column; gap:10px; width:100%; }
+  .sd-xrow {
+    display:flex; align-items:center; gap:16px; padding:6px 16px; border-radius:16px;
+    background:rgba(255,255,255,.045);
+  }
+  .sd-xrow canvas { flex:none; display:block; }
+  .sd-xrow .sd-hfig { flex:none; }
+  .sd-xrow em {
+    font-style:normal; font-size:22px; font-weight:700; line-height:1.25; color:#e4f1ea; text-align:left;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+
+  /* ---- a Fate joker's card: its actions under its rule --------------------
+     The status line says whether it is ready; the buttons are the motor's
+     own (.btn), the suits of the Compass set in their ink. */
+  .sd-tc .mt-body p.sd-status { color:#9fe8c6; font-weight:800; }
+  .sd-btns { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:6px; }
+  .sd-btns.many { gap:10px; }
+  .sd-btns .sd-suit { min-width:96px; font-size:40px; line-height:1; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .sd-btns .sd-suit.s1, .sd-btns .sd-suit.s2 { color:#ffb3bd; }
+
+  /* ---- the pick: two jokers (three with Third option), one taken ----------
+     The motor's CARD with no plate behind it, on the tips' veil: the eyebrow
+     says why, the title what to do, the jokers ARE the controls. The third
+     card wraps to a row of its own rather than shrinking the type. */
+  .sd-pick {
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center; padding:0 26px;
+    background:radial-gradient(70% 55% at 50% 48%, rgba(30,20,60,.6), rgba(4,3,12,.9));
+    opacity:0; transition:opacity .22s ease;
+  }
+  .sd-pick.on { opacity:1; }
+  .sd-pick.off { opacity:0; pointer-events:none; transition-duration:.3s; }
+  .sd-pick .sd-pc { gap:22px; }
+  .sd-pick:not(.sd-swap) .sd-pc { background:none; box-shadow:none; padding:0; }
+  .sd-pick:not(.sd-swap) .sd-pc::before { content:none; }
+  .sd-pick .mt-h { color:var(--gold, #f5c451); }
+  .sd-pick .mt-body { align-items:center; gap:18px; }
+  .sd-deal { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; }
+  .sd-take {
+    appearance:none; -webkit-appearance:none; border:0; padding:0; margin:0; background:none;
+    cursor:pointer; font:inherit; color:inherit;
+    transform:translateY(80px) scale(.7); opacity:0;
+    transition:transform .38s cubic-bezier(.2,1.35,.4,1), opacity .2s ease, filter .2s ease;
+  }
+  .sd-take + .sd-take { transition-delay:.08s; }
+  .sd-pick.on .sd-take { transform:none; opacity:1; }
+  .sd-take:hover, .sd-take:focus-visible { transform:translateY(-10px); outline:none; filter:brightness(1.12); }
+  .sd-pick.off .sd-take { transform:translateY(60px) scale(.8); opacity:0; transition-delay:0s; }
+  .sd-pick.off .sd-take.took { transform:translateY(-40px) scale(1.08); opacity:0; transition-duration:.32s; }
+
+  /* ---- a full rail: which joker goes ---------------------------------------
+     One row per joker on the rail, at reading size, and the refusal. */
+  .sd-newline { margin:0; font-size:30px; letter-spacing:1px; }
+  .sd-row {
+    appearance:none; -webkit-appearance:none; margin:0; font:inherit; color:inherit; cursor:pointer;
+    width:100%; display:flex; align-items:center; gap:16px; padding:12px 18px 12px 12px; text-align:left;
+    border-radius:18px; border:2px solid var(--c); background:rgba(10,8,24,.72);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .sd-row:hover, .sd-row:focus-visible { transform:translateX(6px); outline:none; filter:brightness(1.15); }
+  .sd-rart { flex:none; width:84px; height:84px; border-radius:50%; display:grid; place-items:center;
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 55%, transparent), #130f26 75%); }
+  .sd-rart img { width:74px; height:74px; object-fit:contain; }
+  .sd-rtx { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .sd-rtx b { font-size:30px; line-height:1; color:var(--c); font-weight:400; letter-spacing:1px; }
+  .sd-rtx i { font-style:normal; font-size:22px; line-height:1.22; font-weight:600; color:#e4ddfb;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+  /* ---- the joker card (jokerNode): the pick's and the collection's ---------
+     Authored at 300 x 420 and scaled as a whole by --sk. The frame is the
+     joker's RARITY, the glow and the family over it are its FAMILY. */
+  .sd-jbox { position:relative; flex:none; }
+  .sd-jc {
+    position:absolute; left:0; top:0; width:300px; height:420px; transform-origin:0 0;
+    transform:scale(var(--sk, 1));
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:48px 20px 56px;
+    border-radius:24px; overflow:hidden; text-align:center;
+    background:linear-gradient(180deg, #2a1f4e, #120d26);
+    border:5px solid var(--r);
+    box-shadow:0 0 0 2px rgba(0,0,0,.5), 0 18px 34px rgba(0,0,0,.55);
+    font-family:var(--web-font, "Arial Black"), "Arial Black", sans-serif;
+  }
+  .sd-jc.r-3, .sd-jc.r-4 { box-shadow:0 0 26px color-mix(in srgb, var(--r) 65%, transparent), 0 18px 34px rgba(0,0,0,.55); }
+  .sd-jglow { position:absolute; inset:0 0 40% 0; pointer-events:none;
+    background:radial-gradient(60% 55% at 50% 45%, color-mix(in srgb, var(--c) 45%, transparent), transparent 75%); }
+  .sd-jfam { position:absolute; top:14px; left:0; right:0; font-size:20px; letter-spacing:2px; color:var(--c); }
+  .sd-jart { position:relative; width:100%; height:132px; flex:none; display:grid; place-items:center; }
+  .sd-jart img { max-width:180px; max-height:132px; object-fit:contain; }
+  /* a joker whose painted piece is not cut yet wears its sign */
+  .sd-jsign {
+    font-size:110px; font-weight:900; line-height:1; color:var(--c);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  .sd-jc.ghost .sd-jsign { color:#fff; opacity:.16; }
+  .sd-jname { position:relative; font-size:36px; line-height:1; color:#ffffff; letter-spacing:1px;
+    text-shadow:0 2px 0 #0b0720; }
+  .sd-jtext { position:relative; font-size:22px; line-height:1.2; font-weight:600; color:#ddd6f6;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .sd-jrar { position:absolute; left:0; right:0; bottom:14px; display:flex; justify-content:center; }
+  .sd-jrar span { padding:5px 16px 4px; border-radius:999px; background:var(--r); color:#140f26;
+    font-size:20px; letter-spacing:2px; }
+  .sd-jnew { position:absolute; top:12px; right:-36px; transform:rotate(38deg); width:140px; text-align:center;
+    background:#3ddc97; color:#08231a; font-size:20px; letter-spacing:2px; padding:3px 0; }
+  .sd-jc.ghost { background:linear-gradient(180deg, #24203a, #14111f); }
+  .sd-jc.ghost .sd-jart img { filter:brightness(0) invert(1); opacity:.16; }
+  .sd-jc.ghost .sd-jglow { display:none; }
+  @media (prefers-reduced-motion: reduce) { .sd-take { transition:none; } }

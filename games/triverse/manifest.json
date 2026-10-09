@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.2.11",
+  "version": "1.7.3",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -57,13 +57,20 @@
     "void": "malus/phaser",
     "crash": "crash/explosion",
     "swipe": "move/scratch",
-    "loop": "combo/jinglehit"
+    "loop": "combo/jinglehit",
+    "jump": "toggle/phaserjump",
+    "fall": "hit/phaserdown",
+    "pad": "bounce/marimbaplink",
+    "magnet": "power/powerup04",
+    "ghost": "power/loopthruster",
+    "slow": "power/vibearpeggio",
+    "zap": "launch/laserlarge"
   },
   "copy": {
     "fr": {
-      "tagline": "Trois routes lumineuses. Swipe pour sauter de l’une à l’autre afin d’éviter les pièges.",
+      "tagline": "Trois cordes de lumière. Swipe pour sauter de l'une à l'autre et éviter les pièges.",
       "tags": [
-        "Swipe",
+        "Swipe pour sauter",
         "Sans fin",
         "3 vies"
       ]
@@ -115,16 +122,16 @@
             "line": "Anticipe la <b>suite</b>"
           },
           {
-            "kicker": "Loop",
-            "line": "Reste <b>focus</b>"
+            "kicker": "Boucle",
+            "line": "Reste <b>concentré</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -167,7 +174,20 @@
           " lives left": " vies restantes",
           "Best chain": "Meilleure chaîne",
           "Best score": "Meilleur score",
+          "Butterfly!": "Papillon !",
+          "Comets slide down the ropes": "Des comètes dévalent les cordes",
+          "A rope goes live: get off it": "Une corde s'électrifie : quitte-la",
           "Chain lost": "Chaîne perdue",
+          "Fell!": "Chute !",
+          "Ghost": "Fantôme",
+          "Ghost over": "Fin du fantôme",
+          "Magnet": "Aimant",
+          "Magnet over": "Fin de l'aimant",
+          "Slow down": "Ralenti",
+          "Springboards throw you onto the next rope": "Les tremplins te projettent sur la corde voisine",
+          "Start speed": "Vitesse de départ",
+          "Swipe up to jump the holes": "Swipe vers le haut pour sauter les trous",
+          "Swipe up to jump the lasers": "Swipe vers le haut pour sauter les lasers",
           "Chain x": "Chaîne x",
           "Crash!": "Crash !",
           "Crashed!": "Crash !",
@@ -190,17 +210,18 @@
           "Score": "Score",
           "Score x2": "Score x2",
           "Shield": "Bouclier",
-          "Shield down": "Bouclier tombé",
+          "Shield down": "Bouclier détruit",
           "Spiral!": "Spirale !",
           "Tap to play": "Tap pour jouer",
           "Threaded!": "Au millimètre !",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "x2 over": "x2 terminé"
+          "x2 over": "Fin du x2"
         }
       }
     },
     "font": "orbitron",
+    "music": "triverse.mp3",
     "levels": {
       "objective": {
         "from": 180,
@@ -244,8 +265,7 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 9,
-      "ticketPrice": 23,
+      "roundScore": 1600,
       "awards": [
         1,
         2,

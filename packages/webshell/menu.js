@@ -174,22 +174,22 @@
       scoresTitle: "Classement", optionsTitle: "Options", helpTitle: "Comment jouer",
       best: "Meilleur score", noScore: "Aucune partie jouée.",
       soonTitle: "Classements en ligne",
-      soonScores: "Ils arrivent dans une future mise à jour — tes scores face aux joueurs du monde entier.",
-      rankRecords: "Records", rankLevels: "Niveaux",
+      soonScores: "Prévus dans une prochaine mise à jour — tes scores face aux joueurs du monde entier.",
+      rankRecords: "Records", rankLevels: "Stages",
       rankPlayer: "Niveau", rankXpAll: "{n} xp au total", rankXpNext: "{n} xp avant le niveau {l}",
-      rankStars: "Étoiles", rankStickers: "Stickers", rankCleared: "Niveaux réussis",
+      rankStars: "Etoiles", rankStickers: "Stickers", rankCleared: "Stages réussis",
       rankSum: "Score cumulé", rankRounds: "{n} parties jouées", rankRound: "1 partie jouée",
-      rankLevel: "Niveau", rankBest: "Record", rankTries: "Essais",
+      rankLevel: "Stage", rankBest: "Record", rankTries: "Essais",
       rankTuto: "Comment jouer", rankTutoSeen: "Lu", rankTutoNew: "Pas encore lu",
       rankEndless: "Sans fin", rankEndlessLock: "★ {t} pour débloquer", rankEndlessOpen: "Débloqué",
-      rankTop: "Ton meilleur niveau",
+      rankTop: "Ton meilleur stage",
       music: "Musique", sfx: "Effets sonores", pops: "Messages de score", language: "Langue",
-      labels: "Nommer les bâtiments",
+      labels: "Noms des bâtiments",
       wipeData: "Effacer toutes les données du jeu",
-      wipeAsk: "Touchez à nouveau — progression, stickers et scores sont perdus",
+      wipeAsk: "Touche encore — progression, stickers et scores seront perdus",
       wipeDone: "Données du jeu effacées",
       controls: "Contrôles",
-      tap: "Taper", hold: "Maintenir", drag: "Glisser", swipe: "Balayer", aim: "Viser",
+      tap: "Tap", hold: "Maintenir", drag: "Glisser", swipe: "Swipe", aim: "Viser",
       close: "Fermer", again: "Rejouer", menu: "Menu",
       toMenu: "Retour au menu", toVillage: "Retour au village", resume: "Reprendre",
       leaveTitle: "Quitter ?",
@@ -276,15 +276,18 @@
 
   /* ── 1. settings ──────────────────────────────────────────────────────── */
 
-  /* Four switches and a language, in one Store key. The three about sound and
-     callouts default to ON — a player who never opens OPTIONS gets the game as
-     designed — and the stored object is only ever read through these accessors
-     so an old key missing a field cannot turn a feature off by accident.
+  /* Four switches and a language, in one Store key. All four default to ON —
+     a player who never opens OPTIONS gets the game as designed — and the
+     stored object is only ever read through these accessors so an old key
+     missing a field cannot turn a feature off by accident.
 
-     THE FOURTH IS THE ONE THAT DEFAULTS OFF. `labels` writes the role's word
-     under every building of a VILLAGE, and a village is meant to be read as a
-     place: six plates over six buildings turn it back into the list it
-     replaced. So it is asked for rather than given, and then it is kept. */
+     The fourth, `labels`, writes the role's word under every building of a
+     VILLAGE: a player opening the place for the first time is told what each
+     door is, and the one who knows it already turns the words off. It is
+     stored as `names` and not as `labels` because the old key held a `labels:
+     false` written for EVERY player who ever touched another switch (the whole
+     object is saved at once), back when the words defaulted off — reading it
+     would hide them from players who never asked. */
   var Settings = (function () {
     var KEY = "webSettings";
     var saved = W.Store.get(KEY, null) || {};
@@ -292,7 +295,7 @@
       music: saved.music !== false,
       sfx:   saved.sfx   !== false,
       pops:  saved.pops  !== false,
-      labels: saved.labels === true
+      labels: saved.names !== false
     };
     /* The motor holds the truth: these three calls are the whole integration,
        and they are no-ops on a playable because nothing there ever calls them.
@@ -310,7 +313,8 @@
     }
     function set(key, on) {
       val[key] = !!on;
-      W.Store.set(KEY, val);
+      W.Store.set(KEY, { music: val.music, sfx: val.sfx, pops: val.pops,
+                         names: val.labels });
       apply();
     }
     return { get: function (k) { return val[k]; }, set: set, apply: apply };
@@ -619,6 +623,91 @@
       front();
     }, SPLASH_MS);
   }
+
+  /* ── 4c. the first launch ─────────────────────────────────────────────── */
+
+  /* A PLAYER WHO HAS NEVER PLAYED IS DROPPED INTO THE GAME. The title screen,
+     the village and the map are places to come BACK to: on the very first
+     launch they are three screens of doors in front of a player who does not
+     know yet what any of them leads to. So the first arrival skips all three
+     and starts level 1 — a free round on a game with no levels — the round's
+     entrance plays as it always does, and once it has landed the Help card
+     opens over the frozen round: the game's sentence and the hand acting the
+     gesture out, read over the very board it is about. The tap that closes it
+     is the one that starts playing, and the score screen leads home like any
+     other round's.
+
+     "First" is the climb's own answer where there is one — no level ever
+     played and the lesson never opened (levels.js, `fresh`) — and a key of
+     this file's otherwise. Opening the card is what marks it: a player who
+     reloads after it has come back through the front door, one who leaves
+     before it ever opened was never shown it and is dropped in again. The
+     erase row of OPTIONS wipes both, so the launch after it is a first one.
+
+     The title screen is never seen, not even for the frame between its
+     arrival and the round's start: `web-first` hides it until the round has
+     left (menu.css).
+
+     `?first=0` turns it off for one load without touching the save: every
+     tool that drives a build on an empty storage — the views test, the events
+     bench, the screenshot batch — wants the screen it was written against. */
+  var FIRST_KEY = "help:" + (CONFIG.slug || "game");
+  var FIRST_HELP_MS = 600;     // the HUD's drop after the landing (motor.css, enter-go)
+  var firstRun = false;        // decided once, on mount
+  var firstOut = false;        // ...and its round has been started
+
+  function firstLaunch() {
+    try { if (/[?&#]first=0\b/.test(location.search + location.hash)) return false; } catch (e) {}
+    if (levelled()) return LV.fresh();
+    return !W.Store.get(FIRST_KEY);
+  }
+
+  function markFirst() {
+    if (levelled()) LV.helpSeen();
+    else W.Store.set(FIRST_KEY, 1);
+  }
+
+  /* Out of the state hook's own turn: starting a round from inside it would
+     run the hooks registered after this one with "intro" once the state is
+     already "playing". The title screen is hidden meanwhile, so the frame in
+     between shows the loading screen fading out and nothing else. */
+  function launchFirst() {
+    firstRun = false;
+    splashArmed = true;          // the front door was never shown: nothing to time
+    setTimeout(function () {
+      firstOut = true;
+      if (W.state() !== "intro" || VW.depth() || MD.any()) { uncloak(); return; }
+      if (levelled()) LV.play(1); else W.start();
+      unlockOnGesture();
+      if (!W.Enter.later(helpOverRound)) helpOverRound();
+    }, 0);
+  }
+
+  /* The landing, then the HUD's own drop, then the card — over a round that
+     is still the one this launch started. */
+  function helpOverRound() {
+    setTimeout(function () {
+      if (W.state() !== "playing" || (W.ending && W.ending()) || MD.any()) return;
+      markFirst();
+      openHelp();
+    }, FIRST_HELP_MS);
+  }
+
+  /* This round started without a gesture, so the audio context it made is
+     suspended (the browser refuses one before a touch). The first touch — the
+     one that closes the card — is where it may run, and iOS wants it unlocked
+     inside that very event. */
+  function unlockOnGesture() {
+    var go = function () {
+      W.Sound.unlock();
+      window.removeEventListener("pointerdown", go, true);
+      window.removeEventListener("keydown", go, true);
+    };
+    window.addEventListener("pointerdown", go, true);
+    window.addEventListener("keydown", go, true);
+  }
+
+  function uncloak() { $("screen-intro").classList.remove("web-first"); }
 
   var view, menu;
   var items = [];              // the menu entries, so a language change is a loop
@@ -961,6 +1050,7 @@
       }
       clearTimeout(timer);
       W.Store.set("bestScore", 0);
+      W.Store.del(FIRST_KEY);
       if (levelled()) LV.wipe();
       if (metaed()) MT.wipe();
       if (W.Game && W.Game.wipe) W.Game.wipe();   // what the game keeps itself (gearball's card collection)
@@ -1793,6 +1883,9 @@
     });
 
     buildIntro();
+    /* Asked once the climb is mounted, which is what `fresh` reads (4c). */
+    firstRun = firstLaunch();
+    if (firstRun) $("screen-intro").classList.add("web-first");
     dressBackground();
     buildControls();
     rewireEnd();
@@ -1813,6 +1906,9 @@
          or an end screen arriving closes every screen and every card that was
          open in front of it, in one call, whatever opened them. */
       VW.floor(state);
+      /* The first launch's round has left: the title screen may be seen again,
+         and this arrival is the one it fades in on (section 4c). */
+      if (firstOut && state !== "playing") { firstOut = false; uncloak(); }
       /* The way out belongs to a round; help and the switches belong
          everywhere but the title screen, and the view system decides that on
          its own (cornerSync). */
@@ -1825,16 +1921,20 @@
          ended (see rewireEnd). */
       if (state === "end") { labelEnd(); return; }
       if (state !== "intro") return;
-      armSplash();               // ...once, on the first one (section 4)
       toMenuBed();               // the menus' own quiet section of the track
       armMode(MODES[0]);         // ...and PLAY is the default mode again
+      if (firstRun) launchFirst();   // ...or straight into level 1 (section 4c)
+      else armSplash();          // ...once, on the first one (section 4)
       /* Ninety of ninety is reached on an end screen, so the golden veil is
          re-read on the way back rather than only at boot. */
       if (levelled()) LV.refreshVeil();
       W.clearWorld();
     });
     armMode(MODES[0]);
-    if (W.state() === "intro") { armSplash(); W.clearWorld(); }
+    if (W.state() === "intro") {
+      if (firstRun) launchFirst(); else armSplash();
+      W.clearWorld();
+    }
 
     /* The title is sized off the game's own face, so it can only be measured
        once that face is really there: a data-URI @font-face is decoded

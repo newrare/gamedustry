@@ -89,10 +89,11 @@
       objective: "Objective", missed: "Objective missed",
       scores: "Scores", almost: "Almost",
       threeStars: "Three stars!", cleared: "Level cleared!",
-      levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home"
+      levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home",
+      goals: "Objectives"
     },
     fr: {
-      level: "Niveau", locked: "Verrouillé", play: "Jouer", replay: "Rejouer",
+      level: "Stage", locked: "Verrouillé", play: "Jouer", replay: "Rejouer",
       never: "Jamais joué", notTaken: "Pas encore joué",
       notTakenTag: "non joué",
       gatedHere: "Verrouillé",
@@ -102,24 +103,25 @@
       gated: "Fermée", opened: "Ouverte", free: "Libre",
       roadPaid: "<em>★ {n}</em> demandées — tu en as <b>{have}</b>.",
       roadWants: "<b>★ {n}</b> pour déverrouiller — tu en as <b>{have}</b>, <b>il en manque {short}</b>.",
-      findHere: "Les étoiles les moins chères à rattraper :",
+      findHere: "Les étoiles les plus faciles à aller chercher :",
       playOn: "Les étoiles viendront en continuant.",
       takeRoad: "Passer par là",
       tutoBand: "Facultatif", tutoTag: "comment jouer",
-      tutoGoal: "Lance le tutoriel pour savoir comment jouer.",
-      tutoNote: "Le niveau 1 est ouvert dès le départ.",
+      tutoGoal: "Lance le tutoriel pour apprendre à jouer.",
+      tutoNote: "Le stage 1 est ouvert dès le départ.",
       tutoNoteSeen: "Lu · à rouvrir quand tu veux.",
       tutoPlay: "Comment jouer",
-      endless: "Sans fin", endlessSub: "Niveau 31 · la récompense d’un tableau parfait",
-      endlessGoal: "Tous les niveaux finis à <b>trois étoiles</b>. Il n’y a plus " +
+      endless: "Sans fin", endlessSub: "Stage 31 · la récompense d’un sans-faute",
+      endlessGoal: "Tous les stages finis à <b>trois étoiles</b>. Il n’y a plus " +
                    "rien à débloquer, alors la partie ne s’arrête plus.",
-      endlessNote: "Pas d’objectif, pas de chrono, pas de niveaux — <em>★ 90/90</em>.",
+      endlessNote: "Pas d’objectif, pas de chrono, pas de stages — <em>★ 90/90</em>.",
       endlessPlay: "Lancer la partie sans fin",
-      bands: ["Échauffement", "Pression", "Étau", "Surrégime", "Fusion"],
+      bands: ["Echauffement", "Pression", "Etau", "Surrégime", "Fusion"],
       objective: "Objectif", missed: "Objectif manqué",
       scores: "Scores", almost: "Presque",
-      threeStars: "Trois étoiles !", cleared: "Niveau réussi !",
-      levelsEntry: "Niveaux", map: "Carte", next: "Niveau suivant", home: "Accueil"
+      threeStars: "Trois étoiles !", cleared: "Stage réussi !",
+      levelsEntry: "Stages", map: "Carte", next: "Stage suivant", home: "Accueil",
+      goals: "Objectifs"
     }
   };
 
@@ -328,11 +330,18 @@
     var c = custom(n);
     return c && c.goal != null ? c.goal : goalOf(dOf(n));
   }
-  function goalText(n) {
+  function goalCopy(n) {
     var c = custom(n);
-    var copy = c && c.text ? c.text : (SPEC.copy && (SPEC.copy[LANG] || SPEC.copy.en)) || "Score <b>{n}</b>";
-    return fill(copy, { n: num(goalAt(n)) });
+    return c && c.text ? c.text : (SPEC.copy && (SPEC.copy[LANG] || SPEC.copy.en)) || "Score <b>{n}</b>";
   }
+  function goalText(n) { return fill(goalCopy(n), { n: num(goalAt(n)) }); }
+
+  /* The three bands, 1x, 1.5x and 2.2x the objective. `bandAt` is the
+     smallest whole value that reaches band i (0..2) — what the pill counts
+     toward and what the objectives card prints, so neither shows a number
+     one short of the star. */
+  var BANDS = [1, 1.5, 2.2];
+  function bandAt(g, i) { return Math.ceil(g * BANDS[i] - 1e-9); }
   function starsFor(n, value) {
     var g = goalAt(n);
     return value >= g * 2.2 ? 3 : value >= g * 1.5 ? 2 : value >= g ? 1 : 0;
@@ -702,8 +711,13 @@
                   grade: st === 3 ? "gold" : st ? "accent" : "" }];
     result.rows = rows.concat(result.rows || []).slice(0, 4);
 
+    /* THE THREE-STAR BONUS IS PAID ONCE PER LEVEL — read before `record`
+       writes this round's stars over the ones the level already had. It was
+       paid on every perfect round, and replaying an easy level for its boxes
+       out-earned climbing the map. */
+    var firstPerfect = st === 3 && starsOf(n) < 3;
     record(n, st, value, result.score);
-    last = { level: n, stars: st, cleared: st > 0 };
+    last = { level: n, stars: st, cleared: st > 0, firstPerfect: firstPerfect };
   }
 
   if (ON) W.onResult(onResult);
@@ -752,7 +766,75 @@
     hudStars = hudBox.querySelectorAll(".st s");
     hudGoal = hudBox.querySelector(".goal");
     hudFill = hudBox.querySelector(".bar u");
+    /* The pill is also a DOOR: a tap opens the card that says what each
+       star asks for. The round's "!" rides inside the pill and stops its own
+       click, so the two never answer the same tap. */
+    hudBox.setAttribute("role", "button");
+    hudBox.addEventListener("click", function (e) { e.stopPropagation(); openGoals(); });
     $("frame").appendChild(hudBox);
+  }
+
+  /* ── 5b bis. the objectives card ─────────────────────────────────────── */
+
+  /* WHAT EACH STAR ASKS FOR, one row a star: the star count in the shell's
+     own pieces, then the sentence. A level is three thresholds on one number
+     and the pill only shows the next one, so the card is where the whole
+     ladder is read — the round is paused under it, like under every card.
+
+     By default a row is the level's own objective sentence (the manifest's
+     `web.levels.copy`, or `Game.levelGoal`) filled with that band's value.
+     A game whose stars are NOT three score bands — a tally, a cap, a race —
+     says them itself with `Game.levelRules(n)`: three entries, each a
+     sentence (HTML, `{n}` is that band's threshold) or
+     `{ text, stars, done }`, where `stars` is how many stars the row draws
+     (1 for a star earned on its own, not on top of the one before) and
+     `done` whether it is already met. Without `done` a row is met once the
+     round wears that many stars. Already in the player's language. */
+  var goalsCard = null, ending = false;
+
+  function goalRows(n) {
+    var hook = W.Game && W.Game.levelRules ? W.Game.levelRules(n) : null;
+    var g = goalAt(n), copy = goalCopy(n), st = litStars < 0 ? 0 : litStars;
+    var rows = [];
+    for (var i = 0; i < 3; i++) {
+      var r = hook && hook[i] != null ? hook[i] : copy;
+      if (typeof r === "string") r = { text: r };
+      var k = r.stars || i + 1;
+      rows.push({
+        stars: k,
+        text: fill(r.text, { n: num(bandAt(g, i)) }),
+        done: r.done != null ? !!r.done : st >= i + 1
+      });
+    }
+    return rows;
+  }
+
+  function openGoals() {
+    var MD = window.__MODAL__;
+    var n = CONFIG.level;
+    if (!MD || goalsCard || ending || !n || W.state() !== "playing") return;
+    var rows = goalRows(n);
+    goalsCard = MD.open({
+      kind: "lv-goals", eyebrow: T.level + " " + n, title: T.goals,
+      fill: function (body) {
+        var ol = document.createElement("ol");
+        var solo = true;
+        for (var i = 0; i < rows.length; i++) if (rows[i].stars > 1) solo = false;
+        // one star a row: no column wide enough for three to keep aligned
+        ol.className = "lv-goal-list" + (solo ? " solo" : "");
+        for (i = 0; i < rows.length; i++) {
+          var li = document.createElement("li");
+          li.className = "lv-goal" + (rows[i].done ? " done" : "");
+          var stars = '<span class="lv-stars">';
+          for (var j = 0; j < rows[i].stars; j++) stars += starArt(rows[i].done);
+          li.innerHTML = stars + '</span><span class="tx"></span>';
+          li.querySelector(".tx").innerHTML = rows[i].text;
+          ol.appendChild(li);
+        }
+        body.appendChild(ol);
+      },
+      onClose: function () { goalsCard = null; }
+    });
   }
 
   /* The bar fills toward the NEXT star, not toward the last one: at two stars
@@ -768,11 +850,11 @@
       hudFill.style.width = (t / 3 * 100).toFixed(1) + "%";
       hudGoal.textContent = t + "/3";
     } else {
-      var lo = raw === 0 ? 0 : raw === 1 ? g : g * 1.5;
-      var hi = raw === 0 ? g : raw === 1 ? g * 1.5 : g * 2.2;
+      var lo = raw === 0 ? 0 : g * BANDS[raw - 1];
+      var hi = raw >= 3 ? g * BANDS[2] : g * BANDS[raw];
       var k = raw >= 3 ? 1 : Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
       hudFill.style.width = (k * 100).toFixed(1) + "%";
-      hudGoal.textContent = num(Math.round(raw >= 3 ? value : hi));
+      hudGoal.textContent = num(raw >= 3 ? Math.round(value) : bandAt(g, raw));
     }
     if (st === litStars) return;
     /* A star landing is a beat of its own: the pill punches, the star burns in
@@ -843,6 +925,8 @@
 
   function winRound(value) {
     won = true;
+    ending = true;
+    if (goalsCard) goalsCard.close();
     winBeat();
 
     // the world eases off straight away: that is the round stopping, not a word
@@ -951,6 +1035,8 @@
 
   function outro(result, done) {
     if (!ON || !CONFIG.level) { done(); return; }
+    ending = true;
+    if (goalsCard) goalsCard.close();
     var st = result.stars || 0;
 
     if (st >= 3) {
@@ -960,9 +1046,12 @@
       var wait = 0;
       if (!won) { won = true; winBeat(); slowTo(BONUS_RATE, WIN_RAMP); wait = WIN_ENTER; }
       else W.Loop.rate(BONUS_RATE);
-      var MT = meta();
+      /* The boxes open on the FIRST perfect round of a level only (see
+         onResult); a perfect replay keeps the slow motion and goes straight to
+         its end screen, where the ordinary offer is waiting. */
+      var MT = meta(), pay = !!(last && last.firstPerfect);
       setTimeout(function () {
-        if (MT && MT.bonus) MT.bonus(done);
+        if (pay && MT && MT.bonus) MT.bonus(done);
         else done();
       }, wait);
       return;
@@ -996,6 +1085,7 @@
   function roundStarted() {
     buildHud();
     won = false;
+    ending = false;
     litStars = -1;
     W.Loop.rate(1);
     if (!ON || !CONFIG.level) { hudBox.hidden = true; return; }
@@ -1926,6 +2016,14 @@
     playNext: function () { var n = nextLevel(); if (n) play(n); },
     topOpen: topOpen,
     playTop: function () { if (ON) play(topOpen()); },
+
+    /* THE FIRST LAUNCH, as the climb can tell it: no level ever played and
+       the lesson never opened. menu.js asks it once, at boot, and drops a
+       player who answers yes straight into level 1 (section 4c there) — the
+       help that card opens over the round is level 0's own, so it is marked
+       seen like a tap on that node would. */
+    fresh: function () { return ON && !tutoSeen() && virgin(); },
+    helpSeen: function () { if (ON) markTuto(); },
 
     /* ANY LEVEL, straight into its round — what the events bench's REC mode
        picks from (lab/game-events-sound.html). Still gated by `canPlay`, so it

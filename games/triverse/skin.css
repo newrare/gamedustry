@@ -134,9 +134,12 @@
   /* ---- comic callouts (Pop) -------------------------------------------------
      The catalogue lives in the motor; only the palettes are retuned here so a
      callout burns in the colour of the rope that earned it. */
-  .pop-score.pop-l0 { --fill:linear-gradient(180deg,#ffffff 0%,#3ce0ff 100%); --glow:rgba(60,224,255,.75); --ink:#02202e; }
-  .pop-score.pop-l1 { --fill:linear-gradient(180deg,#ffffff 0%,#ff5ad4 100%); --glow:rgba(255,90,212,.75); --ink:#2a0022; }
-  .pop-score.pop-l2 { --fill:linear-gradient(180deg,#ffffff 0%,#a6ff3d 100%); --glow:rgba(166,255,61,.75); --ink:#152a00; }
+  /* The ropes are the biome's, so the game writes them as --rp0..2 (fill),
+     --rg0..2 (glow) and --ri0..2 (ink) when a round resets; the fallbacks are
+     Neon's own three, which is all a playable ever rides. */
+  .pop-score.pop-l0 { --fill:linear-gradient(180deg,#ffffff 0%,var(--rp0,#3ce0ff) 100%); --glow:var(--rg0,rgba(60,224,255,.75)); --ink:var(--ri0,#02202e); }
+  .pop-score.pop-l1 { --fill:linear-gradient(180deg,#ffffff 0%,var(--rp1,#ff5ad4) 100%); --glow:var(--rg1,rgba(255,90,212,.75)); --ink:var(--ri1,#2a0022); }
+  .pop-score.pop-l2 { --fill:linear-gradient(180deg,#ffffff 0%,var(--rp2,#a6ff3d) 100%); --glow:var(--rg2,rgba(166,255,61,.75)); --ink:var(--ri2,#152a00); }
   /* the score malus, and the crash */
   .pop-alert.pop-drain { --fill:linear-gradient(180deg,#f3e2ff 0%,#a24bff 100%); --glow:rgba(162,75,255,.7); --ink:#1b0030; }
   .pop-combo { --chip:#02182e; --chip-line:#3ce0ff;

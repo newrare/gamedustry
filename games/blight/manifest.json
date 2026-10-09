@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.12",
+  "version": "1.9.13",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -61,10 +61,10 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Bubble Shooter mais avec un vrai Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
+      "tagline": "Un Bubble Shooter magique avec un petit twist : sois plus rapide et plus malin que la contamination qui gagne les bulles.",
       "tags": [
-        "Vise rapidement",
-        "Bubble",
+        "Vise et tire",
+        "Groupe par 3",
         "Contamination"
       ]
     },
@@ -107,24 +107,24 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Bubble Twist",
+            "kicker": "Bubble twist",
             "line": "Sois plus rapide que la <b>contamination</b>"
           },
           {
             "kicker": "Super",
-            "line": "L’arc-en-ciel est la <b>solution</b>"
+            "line": "L'arc-en-ciel <b>balaie tout</b>"
           },
           {
-            "kicker": "Obscure",
-            "line": "La contamination doit être <b>contenue</b>"
+            "kicker": "Ténèbres",
+            "line": "Fais <b>reculer</b> la contamination"
           },
           {
             "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -177,7 +177,7 @@
           "Next": "Suivant",
           "Overrun!": "Envahi !",
           "Play the full game": "Jouer au jeu complet",
-          "Popped": "Éclatées",
+          "Popped": "Eclatées",
           "Purified!": "Purifié !",
           "Replay the demo": "Rejouer la démo",
           "Rot": "Infection",
@@ -246,8 +246,6 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 15,
-      "ticketPrice": 60,
       "awards": [
         1,
         2,

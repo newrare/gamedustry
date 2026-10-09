@@ -3,36 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lab — swipe to sort</title>
+<title>Lab — slipdeck jokers</title>
 <meta name="lab-group" content="prototype">
 <meta name="lab-game" content="slipdeck">
 <style>
 /* ===========================================================================
-   SLIPDECK LAB — a prototype for a card-deck playable, not a shipped game.
+   SLIPDECK LAB — jokers, no clock. A prototype, not the shipped game.
 
    THE MECHANIC UNDER TEST
-   A shoe deals ONE card at a time to the middle of the screen. The player
-   swipes it:
-     - LEFT  -> the card is discarded and drops into the chute;
+   A counted deck deals ONE card at a time to the middle of the screen. The
+   player swipes it:
+     - LEFT  -> the card is binned;
      - RIGHT -> the card is kept and slides into the HAND at the bottom.
-   When the hand reaches its size it is scored as a poker hand: a pair or
-   better pays, HIGH CARD busts and costs a life. So "keep" is not free — a
-   fifth junk card burns the whole hand.
+   Every hand opens on an ANCHOR card the player did not choose. When the hand
+   is full it is scored as poker, Balatro-style: the category gives CHIPS and
+   MULT, every scoring card adds its chips, every joker on the rail adds its
+   own, and the hand pays chips x mult. High card busts and costs a life, and
+   so does a bare pair under the PAIR FLOOR.
 
-   And "discard" is not free either. Every discard pushes a pip into the CHUTE
-   meter, every keep pulls one back out; overflow the chute and the run pays a
-   life. That is the only thing stopping the player from waiting for a perfect
-   hand forever, and it is the number most likely to be wrong.
-
-   On top of it a per-card FUSE: the card has to be sorted before it burns out,
-   and the fuse gets shorter as the round runs.
-
-   WHY A LAB AND NOT THE GAME
-   Six numbers decide whether this is a game: the hand size, the fuse, how fast
-   the fuse shortens, the chute depth, how much the shoe cheats in the player's
-   favour, and the swipe distance. They are all sliders here. Nothing on this
-   page is motor code: when the feel is settled, only section 6 of the game
-   file gets written from it.
+   WHY THIS ROUND
+   The shipped build is won by swiping right without looking: the biased shoe
+   feeds whatever the hand already holds and a bare pair pays, so keeping
+   everything busts ~9% of the time. This page tries the fix and the variety
+   together:
+     - NO CLOCK and no fuse. The deck is the clock: 52 cards, and every bin is
+       a card no hand will get. A reflection game, not a reflex one.
+     - JOKERS come down the stream like any card. Right equips one onto a rail
+       of three, pushing the oldest out; left refuses it for free. They are
+       what makes the left swipe a decision about a BUILD.
+     - CURSED and VEILED cards punish a blind keep; ENHANCED ones (gold,
+       glass, wild, lucky) reward a reader.
+     - The BENCH plays hundreds of runs with an always-keep pilot and with a
+       pilot that reads the line, so whether thinking beats spamming is a
+       number on the page, not an argument.
 
    Canvas 2D, in the motor's 720x1280 design space, under the motor's rules:
    ES5-ish JS, no shadowBlur in a per-frame path, everything drawn with paths.
@@ -58,7 +61,7 @@ body{
 #stage .hint b{ color:#a8a5c4; font-weight:700; }
 
 /* --- the panel ----------------------------------------------------------- */
-#panel{ flex:1 1 auto; min-width:0; max-width:760px; }
+#panel{ flex:1 1 auto; min-width:0; max-width:820px; }
 #panel h1{ font-size:24px; font-weight:900; letter-spacing:.4px; }
 #panel .sub{ margin-top:8px; font-size:13px; line-height:1.6; color:#8a87a8; }
 
@@ -98,18 +101,29 @@ button{
 }
 button:hover{ background:rgba(255,191,90,.2); }
 button.plain{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16); color:#c9c6e4; }
+button.mini{ padding:4px 9px; font-size:11px; }
 #seedbox{
   font:inherit; font-size:12px; font-weight:700; width:110px; padding:9px 11px;
   border-radius:10px; background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.14); color:#e9e7f6;
 }
 
-#paytable{ width:100%; border-collapse:collapse; font-size:12px; }
-#paytable th{ text-align:left; font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:#6f6c8d; padding:0 10px 7px 0; font-weight:700; }
-#paytable td{ padding:4px 10px 4px 0; color:#c9c6e4; font-variant-numeric:tabular-nums; }
-#paytable td.n{ color:#ffbf5a; font-weight:800; }
-#paytable td.off{ color:#4d4a66; }
-#paytable tr.dead td{ color:#4d4a66; }
+table.t{ width:100%; border-collapse:collapse; font-size:12px; }
+table.t th{ text-align:left; font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:#6f6c8d; padding:0 10px 7px 0; font-weight:700; }
+table.t td{ padding:4px 10px 4px 0; color:#c9c6e4; font-variant-numeric:tabular-nums; vertical-align:top; }
+table.t td.n{ color:#ffbf5a; font-weight:800; }
+table.t td.c{ color:#4fa8ff; font-weight:800; }
+table.t td.m{ color:#ff4a5e; font-weight:800; }
+table.t td.off{ color:#4d4a66; }
+
+#rail-now{ font-size:12.5px; color:#9c99b8; margin-bottom:12px; }
+#rail-now b{ color:#e9e7f6; }
+#jokers td.fam{ font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+#jokers td.name{ font-weight:800; color:#e9e7f6; white-space:nowrap; }
+#jokers input{ accent-color:#ffbf5a; }
+#bench-out td.good{ color:#42e8b0; font-weight:800; }
+#bench-out td.bad{ color:#ff4a5e; font-weight:800; }
+#bench-note{ margin-top:10px; font-size:12px; color:#6f6c8d; line-height:1.5; }
 
 #notes p{ font-size:12.5px; line-height:1.65; color:#9c99b8; }
 #notes p + p{ margin-top:9px; }
@@ -118,8 +132,6 @@ button.plain{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
   color:#ffbf5a; background:rgba(255,191,90,.08); padding:1px 5px; border-radius:5px;
 }
-#notes ul{ margin:8px 0 0 18px; }
-#notes li{ font-size:12.5px; line-height:1.6; color:#9c99b8; margin-top:5px; }
 </style>
 </head>
 <body>
@@ -128,16 +140,17 @@ button.plain{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1
   <canvas id="board"></canvas>
   <div class="hint">
     <b>Drag the card</b> or press <b>&larr;</b> / <b>&rarr;</b> (A / D) to sort &nbsp;·&nbsp;
-    <b>R</b> new run &nbsp;·&nbsp; <b>P</b> pause
+    <b>R</b> new run
   </div>
 </div>
 
 <div id="panel">
-  <h1>Slipdeck — gameplay prototype</h1>
+  <h1>Slipdeck — jokers, no clock</h1>
   <p class="sub">
-    One card at a time. Swipe left to bin it, right to keep it. Fill the hand
-    and it is scored as poker: a pair or better pays, high card busts. Discards
-    fill the chute, keeps empty it, and every card burns on a fuse.
+    One card at a time from a counted deck. Swipe left to bin it, right to keep
+    it. A full hand scores chips × mult; high card, a pair under the floor or a
+    cursed card busts. Jokers come down the stream: keep one to put it on the
+    rail, bin it to refuse it. No timer — the deck is the clock.
   </p>
 
   <div class="block">
@@ -151,93 +164,73 @@ button.plain{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1
     <div id="toggles"></div>
     <div id="buttons">
       <button id="b-reset">New run</button>
-      <button id="b-pause" class="plain">Pause</button>
       <input id="seedbox" type="text" value="" spellcheck="false" aria-label="seed">
       <button id="b-goseed" class="plain">Load seed</button>
     </div>
   </div>
 
   <div class="block">
-    <h2>Paytable</h2>
-    <table id="paytable"></table>
+    <h2>Bench — does reading beat spamming?</h2>
+    <div id="buttons2" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button id="b-bench">Bench 300 runs</button>
+      <span style="font-size:12px;color:#6f6c8d">same knobs, same joker pool, seeds 1–300 (restarts your run)</span>
+    </div>
+    <table class="t" id="bench-out" style="margin-top:12px"></table>
+    <div id="bench-note">
+      <b>Always keep</b> swipes right on everything, jokers and curses included.
+      <b>Line reader</b> keeps what the hand can use (a held rank, a suit or
+      straight line), bins curses and dead cards, keeps anyway when the chute is
+      full, and takes every joker. A human should beat the reader; the reader
+      has to beat the spammer by a wide margin, or the swipe is not a decision.
+    </div>
+  </div>
+
+  <div class="block">
+    <h2>Jokers</h2>
+    <div id="rail-now"></div>
+    <table class="t" id="jokers"></table>
+  </div>
+
+  <div class="block">
+    <h2>Hands</h2>
+    <table class="t" id="paytable"></table>
   </div>
 
   <div class="block" id="notes">
     <h2>What to judge</h2>
     <p>
-      <b>Is the chute the right cost?</b> This is the whole design. With
-      <code>chute depth</code> high the player never has to keep a bad card and
-      the game is a slow, safe grind; at 2 they are shoved into junk hands every
-      few seconds. Watch the <b>keep %</b> counter — a run that settles around
-      <b>45–60%</b> means the player is really choosing. Pinned above 70% means
-      the chute is too tight, below 35% means it costs nothing.
+      <b>Is there still pressure without a clock?</b> The deck is the only
+      clock: 52 cards, and a bin is a card no hand will ever get. With the
+      anchor, a 5-card hand needs 4 keeps, so a deck pays at most ~12 hands —
+      watch <b>cards / hand</b>. Around 6 means the player is choosing; under
+      5 they are keeping everything.
     </p>
     <p>
-      <b>Does the hand size fit a playable?</b> Five cards is real poker but a
-      hand takes ~8&nbsp;s to fill, so a 30&nbsp;s round is three hands and one
-      bust ruins it. Drop to <b>3</b> and the payouts come every 4&nbsp;s — far
-      more playable-shaped, and the paytable switches with it. Judge on
-      <b>hands/min</b>, not on score.
+      <b>Does the pair floor kill the spam?</b> Run the bench at <code>pair
+      floor</code> any, then at J. Always-keep should collapse (deaths up,
+      paid hands down) while the line reader holds. If it does not, lower
+      <code>shoe bias</code>: the bias is what feeds a blind keeper.
     </p>
     <p>
-      <b>Does the shoe need to cheat?</b> <code>shoe bias</code> is the chance
-      that a deal is picked to keep the hand's line alive instead of coming off
-      the top. At 0 the run is honest and mostly junk; push it up until the
-      hands feel lucky rather than random. Ad players get 20&nbsp;seconds — they
-      are supposed to feel good, not tested.
+      <b>Are the jokers read?</b> A joker is a swipe like any card. Watch
+      whether you refuse some — <b>jokers refused</b> at zero means every joker
+      is simply good and the rail is a pile, not a build. The rule benders
+      (Four fingers, Smeared, Shortcut) and the bin family (Golden bin,
+      Ascetic, Recycler) are the ones that should change how you swipe; the
+      Give buttons put one on the rail to try it straight away.
     </p>
     <p>
-      <b>What a scripted pilot already found</b> (9 seeds, a pilot with a
-      tunable THINK time per card): the keep rate settles at <b>52-55%</b> at
-      every setting &mdash; but that reading was <b>wrong</b>, and the shipped build
-      caught it: the pilot treated a one-card hand as being on no line, so it
-      binned the first card of every hand on principle. Fix that and the keep
-      rate jumps to <b>76-90%</b>: at five cards, keeping is almost always
-      right, the bin gesture is nearly vestigial and the chute never bites.
-      Read any keep rate here with that in mind. The chute <b>never overflows for
-      a player who watches it</b> — it forces them to keep a card they did not
-      want first, which is the point — but a pilot that bins every unhelpful
-      card without looking is <b>dead in 21&nbsp;s on three overflows</b>, so the
-      pips have to be impossible to miss. Deepening it to 5 makes the game
-      <i>worse</i> (keep drops to 44%, hands fall by a third) because
-      binning freely burns the cards a hand needs. <b>3 is the floor and the
-      ceiling.</b>
+      <b>Does the tally carry the feel?</b> The hand is counted out step by
+      step — the category, each scoring card, each joker left to right — the
+      way Balatro does it. <code>tally step</code> at 0 pays in one lump: play
+      a few hands each way.
     </p>
     <p>
-      <b>The fuse is invisible until you are slow.</b> A pilot at 0.35 or
-      0.9&nbsp;s per card plays an identical run at 2.6, 3.6 or 4.6&nbsp;s of
-      fuse. But at <b>2.6&nbsp;s of thinking the 2.6&nbsp;s fuse kills the run in
-      8.6&nbsp;s</b> — three burnouts, nothing seen. At 3.6&nbsp;s the same
-      player survives the full 30&nbsp;s, and 4.6&nbsp;s buys nothing more.
-      That is why the fuse sits at 3.6: it costs a quick player nothing and
-      stops the deliberate one from being executed for thinking.
+      <b>Are curses fair?</b> A cursed card is drawn as one and busts any hand
+      it ends in (Exorcist turns it into +20 mult). A veiled card hides its
+      suit until it lands (Seer lifts it). Both exist to punish a keep made
+      without reading; neither should feel like a trap that could not be seen.
     </p>
-    <p>
-      <b>The real cost of five cards is tempo.</b> A hand needs five keeps, so
-      at a ~54% keep rate it eats ~9 cards. A deliberate player (0.9&nbsp;s per
-      card) completes <b>2.8 hands in a 30&nbsp;s run</b> — a payoff every
-      ~10&nbsp;s — against 5.6 for a machine-fast one. <code>shoe bias</code> is
-      the only knob that moves it: 0.45 gives 2.1 hands, <b>0.70 gives 2.8</b>,
-      0.90 gives 2.9, so 0.70 is the knee and the default. If two or three
-      payoffs per run is too thin for the campaign, the honest fix is a longer
-      <code>round</code>, not a tighter chute.
-    </p>
-    <p>
-      <b>Is the fuse pressure or noise?</b> Turn the <b>fuse</b> toggle off and
-      play a run untimed. If the game is better without it, the pressure belongs
-      in the round clock alone and the card should simply wait.
-    </p>
-    <ul>
-      <li><b>Bust</b> = the hand filled up with nothing better than high card.
-        It costs a life and clears the hand.</li>
-      <li><b>Chute overflow</b> = a discard with the meter already full. Costs a
-        life and empties the chute.</li>
-      <li>Every paying hand adds <code>time bonus</code> seconds to the clock,
-        so a good player extends their own run.</li>
-      <li>The <b>keep preview</b> under the card is the honesty knob: it tells
-        the player what the card would make. Turn it off to see whether the
-        hand is readable on its own.</li>
-    </ul>
   </div>
 </div>
 
@@ -266,31 +259,38 @@ function sizeBoard() {
 /* Fixed furniture of the screen, all in design px. The motor would hand these
    over as Layout; here they are spelled out so the proportions are visible. */
 var CARD = { w: 296, h: 414, cx: 360, cy: 566 };     // the live card, at rest
-var FUSE = { x: 212, y: 806, w: 296, h: 13 };        // the per-card timer
 var GATE = { top: 336, bot: 796, w: 84, pad: 10 };   // the two chutes, L and R
 var SLOT = { w: 112, h: 157, gap: 14, y: 1002 };     // the hand, at the bottom
+var RAIL = { y: 200, h: 118, pad: 44, gap: 12 };     // the joker rail, under the HUD
+var TALLY_Y = 846;                                   // chips x mult, while counting
 
 /* ===========================================================================
    2. KNOBS — everything this prototype exists to answer.
    =========================================================================== */
 
 var K = {
-  handSize:     5,      // cards that fill a hand before it is scored
-  cardTime:     3.6,    // seconds of fuse on a fresh card
-  rampPct:      10,     // % the fuse shortens every 10 s of play
-  roundSeconds: 30,     // clock of one run
-  timeBonus:    1,      // seconds a paying hand puts back on the clock
-  lives:        3,      // busts + overflows + burnouts the run survives
-  chuteDepth:   3,      // discards the chute holds before it overflows
-  shoeBias:     0.70,   // chance a deal is picked to keep the hand's line alive
-  swipeDist:    92,     // design px a drag must cross to commit
-  dealIn:       0.16    // seconds the next card takes to slide up
+  handSize:    5,      // cards that fill a hand before it is scored
+  deckSize:    52,     // cards in the run: the only clock there is
+  lives:       3,      // busts and chute overflows the run survives
+  chuteDepth:  3,      // discards allowed per hand; reset when a hand resolves
+  shoeBias:    0.5,    // chance a deal is picked to keep the hand's line alive
+  pairFloor:   11,     // lowest pair that pays, as a rank value (2..14, 11 = J)
+  jokerSlots:  3,      // jokers the rail holds; a new one pushes the oldest out
+  jokerRate:   0.08,   // chance a deal is a joker instead of a card
+  curseRate:   0.05,   // chance a dealt card is cursed
+  veilRate:    0.05,   // chance a dealt card hides its suit
+  enhanceRate: 0.10,   // chance a dealt card is gold, glass, wild or lucky
+  tallyStep:   0.22,   // seconds between two steps of the count; 0 pays at once
+  swipeDist:   92,     // design px a drag must cross to commit
+  dealIn:      0.16    // seconds the next card takes to slide up
 };
 
-var T = { preview: true, fuse: true, gates: true, endless: false };
+var T = { preview: true, gates: true, anchor: true };
 
 /* ===========================================================================
    3. SEEDED RANDOM — a run is only worth discussing if it can be replayed.
+   Only the run's own decisions draw from it: the juice uses Math.random, so a
+   shake or a burst never moves the deal.
    =========================================================================== */
 
 var seed = 1, rngState = 1;
@@ -310,70 +310,174 @@ function rgba(hex, a) {
 function ease(t) { return t < 0 ? 0 : t > 1 ? 1 : 1 - (1 - t) * (1 - t) * (1 - t); }
 
 /* ===========================================================================
-   4. CARDS AND THE SHOE
+   4. CARDS, MODIFIERS AND THE SHOE
 
-   A card is { r, s }: rank 0..12 as A,2..10,J,Q,K and suit 0..3 as
-   spade, heart, diamond, club. The shoe is a shuffled 52-card array dealt from
-   the top and rebuilt when it runs dry — with one twist, `shoeBias`, that lets
-   the deal reach a few cards down for one that keeps the hand alive.
+   A card is { r, s } — rank 0..12 as A,2..10,J,Q,K and suit 0..3 as spade,
+   heart, diamond, club — plus what the deal laid on it:
+     mod   "gold" | "glass" | "wild" | "lucky"   (an enhancement)
+     curse true    busts any hand it ends in
+     veil  true    the suit is hidden until the card is kept
+   A joker in the stream is { joker: id } and nothing else.
    =========================================================================== */
 
 var RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 var SUITS = ["♠", "♥", "♦", "♣"];
 var SUIT_RED = [false, true, true, false];
+var MODS = ["gold", "glass", "wild", "lucky"];
+var MOD_NAME = { gold: "Gold", glass: "Glass", wild: "Wild", lucky: "Lucky" };
+var MOD_TEXT = {
+  gold: "+40 chips", glass: "×2 mult, 1 in 4 shatters",
+  wild: "counts as every suit", lucky: "1 in 3: +10 mult"
+};
+var MOD_COL = { gold: "#f5c451", glass: "#8fd8ff", wild: "#ff7ad9", lucky: "#42e8b0" };
+var CURSE_COL = "#b98cff";
 
-var shoe = [];
+/* rank value: 2..10, J 11, Q 12, K 13, A 14 */
+function rvOf(r) { return r === 0 ? 14 : r + 1; }
+function rankName(v) { return v === 14 ? "A" : v === 13 ? "K" : v === 12 ? "Q" : v === 11 ? "J" : String(v); }
+/* chips a scoring card adds: its number, 10 for a face, 11 for an ace */
+function rankChips(r) { return r === 0 ? 11 : r >= 10 ? 10 : r + 1; }
+
+var shoe = [];            // what is left of the run's deck, top first
+var upcoming = null;      // the next deal, drawn one step ahead so Seer can show it
 
 function buildShoe() {
-  shoe = [];
-  for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) shoe.push({ r: r, s: s });
-  for (var i = shoe.length - 1; i > 0; i--) {     // Fisher-Yates on the seeded rng
-    var j = rint(i + 1), t = shoe[i]; shoe[i] = shoe[j]; shoe[j] = t;
+  var full = [], s, r, i, j, t;
+  while (full.length < K.deckSize) {
+    var one = [];
+    for (s = 0; s < 4; s++) for (r = 0; r < 13; r++) one.push({ r: r, s: s });
+    full = full.concat(one);
   }
+  for (i = full.length - 1; i > 0; i--) {         // Fisher-Yates on the seeded rng
+    j = rint(i + 1); t = full[i]; full[i] = full[j]; full[j] = t;
+  }
+  shoe = full.slice(0, K.deckSize);
 }
 
 /* Which line is this hand still on? A hand with no category yet is not
-   "nothing": it is a flush draw, or a straight draw, or a dead pile — and that
-   is the only thing the player needs to read to decide. */
+   "nothing": it is a flush draw, or a straight draw, or a dead pile. */
 function lineOf(cards) {
   var n = cards.length, i, lo = 99, hi = -1, sameSuit = true;
   if (n < 2) return "";                     /* one card is on every line */
   for (i = 0; i < n; i++) {
-    if (cards[i].s !== cards[0].s) sameSuit = false;
+    if (cards[i].mod !== "wild" && cards[0].mod !== "wild" && cards[i].s !== cards[0].s) sameSuit = false;
     if (cards[i].r < lo) lo = cards[i].r;
     if (cards[i].r > hi) hi = cards[i].r;
   }
   if (sameSuit && n < K.handSize) return "Flush draw";
+  var seen = {};
+  for (i = 0; i < n; i++) { if (seen[cards[i].r]) return ""; seen[cards[i].r] = 1; }
   if ((hi - lo) <= K.handSize - 1 && n < K.handSize) return "Straight draw";
   return "";
 }
 
-/* Would this card keep the hand on a line worth finishing? Three lines matter:
-   a rank already held (pairs and up), a shared suit (flush), and a tight rank
-   spread (straight). Anything else is a card the biased shoe skips over. */
+/* Would this card keep the hand on a line worth finishing? */
 function helps(card) {
   if (!hand.length) return true;
-  var i;
-  for (i = 0; i < hand.length; i++) if (hand[i].r === card.r) return true;
+  for (var i = 0; i < hand.length; i++) if (hand[i].r === card.r) return true;
   return lineOf(hand.concat([card])) !== "";
 }
 
-function deal() {
-  if (shoe.length < 8) buildShoe();
+/* One deal. A joker does not cost a deck card: it is laid on top of the
+   stream. A card does, and the bias may reach a few cards down for one that
+   keeps the hand alive. */
+function draw() {
+  if (!shoe.length) return null;
+  if (K.jokerRate > 0 && rnd() < K.jokerRate) {
+    var id = pickJoker();
+    if (id) return { joker: id };
+  }
   var idx = 0;
   if (K.shoeBias > 0 && rnd() < K.shoeBias) {
     var depth = Math.min(shoe.length, 10);
     for (var i = 0; i < depth; i++) { if (helps(shoe[i])) { idx = i; break; } }
   }
-  return shoe.splice(idx, 1)[0];
+  var c = shoe.splice(idx, 1)[0];
+  c = { r: c.r, s: c.s };
+  var roll = rnd();
+  if (roll < K.curseRate) c.curse = true;
+  else if (roll < K.curseRate + K.veilRate) c.veil = true;
+  else if (roll < K.curseRate + K.veilRate + K.enhanceRate) c.mod = MODS[rint(MODS.length)];
+  return c;
+}
+
+function cardsLeft() { return shoe.length + (upcoming && !upcoming.joker ? 1 : 0); }
+
+/* ===========================================================================
+   5. JOKERS
+
+   Each joker is data plus, where it scores, a function of the hand being
+   counted that returns its effect: { k: "chips" | "mult" | "xmult", v }.
+   Rule benders and survivors carry no score function — the code asks
+   has(id) at the one place they bend.
+   =========================================================================== */
+
+var FAM_COL = {
+  Mult: "#ff4a5e", Rule: "#7ef9ff", Bin: "#ff8a3c",
+  Grow: "#42e8b0", Survive: "#ff7ad9", Curse: "#b98cff"
+};
+
+function countWhere(cards, fn) { var n = 0; for (var i = 0; i < cards.length; i++) if (fn(cards[i])) n++; return n; }
+
+var JOKERS = [
+  { id: "spade", name: "Spade lover", fam: "Mult", text: "+3 mult for every ♠ in the hand",
+    score: function (h) { var n = countWhere(h.cards, function (c) { return c.s === 0 || c.mod === "wild"; }); return n ? { k: "mult", v: 3 * n } : null; } },
+  { id: "red", name: "Red tide", fam: "Mult", text: "+2 mult for every ♥ or ♦ in the hand",
+    score: function (h) { var n = countWhere(h.cards, function (c) { return SUIT_RED[c.s] || c.mod === "wild"; }); return n ? { k: "mult", v: 2 * n } : null; } },
+  { id: "even", name: "Even steven", fam: "Mult", text: "+4 mult for every 2, 4, 6, 8 or 10",
+    score: function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 1 && c.r <= 9 && c.r % 2 === 1; }); return n ? { k: "mult", v: 4 * n } : null; } },
+  { id: "court", name: "Royal court", fam: "Mult", text: "+30 chips for every J, Q or K",
+    score: function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 10; }); return n ? { k: "chips", v: 30 * n } : null; } },
+  { id: "jolly", name: "Jolly", fam: "Mult", text: "+8 mult if the hand holds a pair",
+    score: function (h) { return h.ev.maxR >= 2 ? { k: "mult", v: 8 } : null; } },
+  { id: "low", name: "Low tide", fam: "Mult", text: "×2 mult if no card is above 7 (aces are low)",
+    score: function (h) { return countWhere(h.cards, function (c) { return c.r > 6; }) === 0 ? { k: "xmult", v: 2 } : null; } },
+
+  { id: "four", name: "Four fingers", fam: "Rule", text: "Flushes and straights need one card less" },
+  { id: "smear", name: "Smeared", fam: "Rule", text: "♥ and ♦ are one suit, ♠ and ♣ are another" },
+  { id: "shortcut", name: "Shortcut", fam: "Rule", text: "Straights may skip one rank between cards" },
+  { id: "lowbar", name: "Low bar", fam: "Rule", text: "Any pair pays, whatever the pair floor" },
+
+  { id: "goldbin", name: "Golden bin", fam: "Bin", text: "+15 chips for every card binned this hand",
+    score: function (h) { return h.bins ? { k: "chips", v: 15 * h.bins } : null; } },
+  { id: "deep", name: "Deep chute", fam: "Bin", text: "+2 discards on every hand" },
+  { id: "recycler", name: "Recycler", fam: "Bin", text: "A binned card goes back under the deck" },
+
+  { id: "ascetic", name: "Ascetic", fam: "Grow", text: "+1 mult for every card binned; a bust resets it",
+    score: function (h, inst) { return inst.n ? { k: "mult", v: inst.n } : null; } },
+  { id: "collector", name: "Collector", fam: "Grow", text: "×1.5, ×2, ×2.5… for each hand of the same kind in a row",
+    score: function (h) { return h.streak > 1 ? { k: "xmult", v: 1 + 0.5 * (h.streak - 1) } : null; } },
+  { id: "veteran", name: "Veteran", fam: "Grow", text: "+1 mult for every hand paid this run",
+    score: function (h) { return hands ? { k: "mult", v: hands } : null; } },
+
+  { id: "second", name: "Second chance", fam: "Survive", text: "A bust breaks this joker instead of a life" },
+  { id: "heart", name: "Spare heart", fam: "Survive", text: "+1 life when taken, −2 mult on every hand",
+    score: function () { return { k: "mult", v: -2 }; } },
+
+  { id: "exorcist", name: "Exorcist", fam: "Curse", text: "A cursed card no longer busts: it gives +20 mult" },
+  { id: "seer", name: "Seer", fam: "Curse", text: "Shows the next card and lifts every veil" }
+];
+var JOKER_BY = {};
+for (var ji = 0; ji < JOKERS.length; ji++) { JOKERS[ji].on = true; JOKER_BY[JOKERS[ji].id] = JOKERS[ji]; }
+
+var rail = [];            // the equipped jokers, oldest first: { id, n }
+
+function has(id) { for (var i = 0; i < rail.length; i++) if (rail[i].id === id) return true; return false; }
+function chuteCap() { return K.chuteDepth + (has("deep") ? 2 : 0); }
+
+function pickJoker() {
+  var pool = [], i;
+  for (i = 0; i < JOKERS.length; i++) if (JOKERS[i].on && !has(JOKERS[i].id)) pool.push(JOKERS[i].id);
+  return pool.length ? pool[rint(pool.length)] : null;
 }
 
 /* ===========================================================================
-   5. HAND EVALUATION
+   6. HAND EVALUATION AND THE COUNT
 
-   One generic evaluator for every hand size: count ranks, count suits, look for
-   a run. The category order below is poker's, and the paytable per hand size
-   simply leaves out what that size cannot make.
+   evalHand names the category — bent by the rule jokers. scoreHand turns a
+   full hand into the list of steps the tally plays: the category's chips and
+   mult, every scoring card, every enhancement, every joker left to right.
+   Each step carries the running chips and mult, so the animation is a replay.
    =========================================================================== */
 
 var CAT_ORDER = {
@@ -385,132 +489,177 @@ var CAT_NAME = {
   straight: "Straight", flush: "Flush", fullHouse: "Full house",
   quads: "Four of a kind", straightFlush: "Straight flush"
 };
-
-/* Payouts. Bigger hands are rarer, so the same category pays more when it takes
-   more cards to make; a category a size cannot reach is simply absent. */
-var PAYOUT = {
-  3: { pair: 120, straight: 320, flush: 380, trips: 900, straightFlush: 1600 },
-  4: { pair: 100, twoPair: 300, trips: 450, straight: 560, flush: 680, quads: 2600, straightFlush: 3400 },
-  5: { pair: 100, twoPair: 250, trips: 400, straight: 620, flush: 820, fullHouse: 1250, quads: 2200, straightFlush: 4200 }
+/* chips, mult — Balatro's own base table */
+var BASE = {
+  high: [5, 1], pair: [10, 2], twoPair: [20, 2], trips: [30, 3], straight: [30, 4],
+  flush: [35, 4], fullHouse: [40, 4], quads: [60, 7], straightFlush: [100, 8]
 };
 var CAT_LIST = ["pair", "twoPair", "trips", "straight", "flush", "fullHouse", "quads", "straightFlush"];
 
 function numAsc(a, b) { return a - b; }
-function isRun(v) {
-  for (var i = 1; i < v.length; i++) if (v[i] !== v[i - 1] + 1) return false;
-  return true;
+function hasRun(vals, need, step) {
+  if (vals.length < need) return false;
+  var chain = 1;
+  for (var i = 1; i < vals.length; i++) {
+    var d = vals[i] - vals[i - 1];
+    chain = (d >= 1 && d <= step) ? chain + 1 : 1;
+    if (chain >= need) return true;
+  }
+  return need <= 1;
 }
 
 function evalHand(cards) {
-  var n = cards.length;
-  if (!n) return { cat: "high", name: "—", pay: 0 };
+  var n = cards.length, i, k;
+  var out = { cat: "high", name: "—", maxR: 0, pairRv: 0, scoring: [] };
+  if (!n) return out;
 
-  var rc = {}, sc = {}, i, k;
+  var smear = has("smear"), rc = {}, sc = {}, wild = 0;
   for (i = 0; i < n; i++) {
-    rc[cards[i].r] = (rc[cards[i].r] || 0) + 1;
-    sc[cards[i].s] = (sc[cards[i].s] || 0) + 1;
+    var c = cards[i];
+    rc[c.r] = (rc[c.r] || 0) + 1;
+    if (c.mod === "wild") wild++;
+    else { var key = smear ? (SUIT_RED[c.s] ? 1 : 0) : c.s; sc[key] = (sc[key] || 0) + 1; }
   }
-  var maxR = 0, pairs = 0, maxS = 0;
-  for (k in rc) { if (rc[k] > maxR) maxR = rc[k]; if (rc[k] === 2) pairs++; }
+  var maxR = 0, pairs = 0, maxS = 0, pairRv = 0;
+  for (k in rc) {
+    if (rc[k] > maxR) maxR = rc[k];
+    if (rc[k] === 2) { pairs++; pairRv = Math.max(pairRv, rvOf(+k)); }
+  }
   for (k in sc) if (sc[k] > maxS) maxS = sc[k];
 
-  var flush = (n >= 3 && maxS === n);
-  var straight = false;
-  if (n >= 3 && maxR === 1) {
-    var lowA = [], hiA = [];                 // the ace plays both ends of a run
-    for (i = 0; i < n; i++) { lowA.push(cards[i].r + 1); hiA.push(cards[i].r === 0 ? 14 : cards[i].r + 1); }
-    lowA.sort(numAsc); hiA.sort(numAsc);
-    straight = isRun(lowA) || isRun(hiA);
-  }
+  /* Four fingers asks one card less of a flush or a straight; the hand still
+     has to be full before either can be called. */
+  var need = has("four") ? Math.max(3, K.handSize - 1) : K.handSize;
+  var full = n >= K.handSize;
+  var flush = full && n >= 3 && (maxS + wild) >= need;
+  var vals = [];
+  for (k in rc) { vals.push(+k + 1); if (+k === 0) vals.push(14); }
+  vals.sort(numAsc);
+  var straight = full && n >= 3 && hasRun(vals, need, has("shortcut") ? 2 : 1);
 
   var cat = "high";
-  if (straight && flush)            cat = "straightFlush";
-  else if (maxR === 4)              cat = "quads";
+  if (straight && flush)             cat = "straightFlush";
+  else if (maxR === 4)               cat = "quads";
   else if (maxR === 3 && pairs >= 1) cat = "fullHouse";
-  else if (flush)                   cat = "flush";
-  else if (straight)                cat = "straight";
-  else if (maxR === 3)              cat = "trips";
-  else if (pairs >= 2)              cat = "twoPair";
-  else if (pairs === 1)             cat = "pair";
+  else if (flush)                    cat = "flush";
+  else if (straight)                 cat = "straight";
+  else if (maxR === 3)               cat = "trips";
+  else if (pairs >= 2)               cat = "twoPair";
+  else if (pairs === 1)              cat = "pair";
 
-  var table = PAYOUT[K.handSize] || PAYOUT[5];
-  return { cat: cat, name: CAT_NAME[cat], pay: table[cat] || 0 };
+  var all = cat === "straight" || cat === "flush" || cat === "straightFlush";
+  for (i = 0; i < n; i++) out.scoring.push(all || (cat !== "high" && rc[cards[i].r] >= 2));
+  out.cat = cat; out.name = CAT_NAME[cat]; out.maxR = maxR; out.pairRv = pairRv;
+  return out;
+}
+
+/* preview: no random draw (glass counts as holding, lucky as missing), so a
+   look at the pill never moves the seeded deal. */
+function scoreHand(cards, preview) {
+  var ev = evalHand(cards), i;
+  var res = { cat: ev.cat, name: ev.name, bust: false, why: "", steps: [],
+              chips: 0, mult: 0, total: 0, streak: 0 };
+
+  if (ev.cat === "high") { res.bust = true; res.why = "High card"; }
+  else if (ev.cat === "pair" && ev.pairRv < K.pairFloor && !has("lowbar")) {
+    res.bust = true; res.why = "Pair too low";
+  } else if (!has("exorcist")) {
+    for (i = 0; i < cards.length; i++) if (cards[i].curse) { res.bust = true; res.why = "Cursed"; }
+  }
+  if (res.bust) return res;
+
+  res.streak = ev.cat === lastCat ? catStreak + 1 : 1;
+  var chips = BASE[ev.cat][0], mult = BASE[ev.cat][1];
+  function step(who, idx, text, col) {
+    res.steps.push({ who: who, idx: idx, text: text, col: col, chips: chips, mult: Math.max(1, mult) });
+  }
+  function apply(who, idx, e) {
+    if (!e || !e.v) return;
+    if (e.k === "chips") { chips += e.v; step(who, idx, "+" + e.v, "#4fa8ff"); }
+    else if (e.k === "mult") { mult += e.v; step(who, idx, (e.v > 0 ? "+" : "") + e.v + " mult", "#ff4a5e"); }
+    else { mult *= e.v; step(who, idx, "×" + e.v + " mult", "#ff4a5e"); }
+  }
+  step("base", -1, ev.name, "#ffd166");
+
+  var h = { cards: cards, ev: ev, bins: binsThisHand, streak: res.streak };
+  for (i = 0; i < cards.length; i++) {
+    var c = cards[i];
+    if (ev.scoring[i]) apply("card", i, { k: "chips", v: rankChips(c.r) });
+    if (c.mod === "gold") apply("card", i, { k: "chips", v: 40 });
+    else if (c.mod === "lucky" && !preview && rnd() < 1 / 3) apply("card", i, { k: "mult", v: 10 });
+    else if (c.mod === "glass") {
+      if (!preview && rnd() < 0.25) step("card", i, "Shattered", "#8fd8ff");
+      else apply("card", i, { k: "xmult", v: 2 });
+    }
+    if (c.curse) apply("card", i, { k: "mult", v: 20 });     // only reached with Exorcist
+  }
+  for (i = 0; i < rail.length; i++) {
+    var J = JOKER_BY[rail[i].id];
+    if (J.score) apply("joker", i, J.score(h, rail[i]));
+  }
+
+  res.chips = chips; res.mult = Math.max(1, mult);
+  res.total = Math.round(res.chips * res.mult);
+  return res;
 }
 
 /* ===========================================================================
-   6. RUN STATE
+   7. RUN STATE
    =========================================================================== */
 
 var hand = [];            // the kept cards, left to right
-var cur = null;           // the live card: { card, x, y, rot, t, in }
-var flying = [];          // cards on their way out: { card, x, y, vx, vy, rot, spin, a }
-var landing = [];         // cards flying into a hand slot: { card, from, slot, t }
-var chute = 0;            // discards sitting in the chute
-var score = 0, combo = 0, bestCombo = 0, lives = 0;
-var timeLeft = 0, runT = 0;
-var kept = 0, binned = 0, hands = 0, busts = 0, burns = 0, overflows = 0;
-var bestPay = 0, bestName = "—";
-var paused = false, over = false, overWhy = "";
-var dealWait = 0;
+var cur = null;           // the live card: { card, x, y, rot, in }
+var flying = [];          // cards on their way out
+var landing = [];         // cards flying into a hand slot
+var tally = null;         // the count in progress: { res, i, t }
+var chute = 0, binsThisHand = 0;
+var score = 0, lives = 0, lastCat = "", catStreak = 0;
+var kept = 0, binned = 0, hands = 0, busts = 0, overflows = 0;
+var jokersTaken = 0, jokersRefused = 0, bestTotal = 0, bestName = "—";
+var over = false, overWhy = "", dealWait = 0;
+var headless = false;     // the bench: no animation, decisions applied at once
 
-/* juice */
+/* juice — Math.random only, never the seeded rng */
 var pops = [], parts = [], flash = 0, flashCol = "#ff4a5e", shake = 0;
-var handGlow = 0, chuteGlow = 0;
+var lit = { who: "", idx: -1, t: 0 };
 
 function resetRun() {
   buildShoe();
-  hand = []; cur = null; flying = []; landing = [];
-  chute = 0; score = 0; combo = 0; bestCombo = 0;
-  lives = K.lives;
-  timeLeft = K.roundSeconds; runT = 0;
-  kept = 0; binned = 0; hands = 0; busts = 0; burns = 0; overflows = 0;
-  bestPay = 0; bestName = "—";
-  over = false; overWhy = ""; dealWait = 0;
-  pops = []; parts = []; flash = 0; shake = 0; handGlow = 0; chuteGlow = 0;
-  document.getElementById("seedbox").value = seed;
-  nextCard();
+  upcoming = null;
+  hand = []; cur = null; flying = []; landing = []; tally = null; rail = [];
+  chute = 0; binsThisHand = 0;
+  score = 0; lives = K.lives; lastCat = ""; catStreak = 0;
+  kept = 0; binned = 0; hands = 0; busts = 0; overflows = 0;
+  jokersTaken = 0; jokersRefused = 0; bestTotal = 0; bestName = "—";
+  over = false; overWhy = ""; dealWait = 0.25;
+  pops = []; parts = []; flash = 0; shake = 0; lit.t = 0;
+  if (!headless) document.getElementById("seedbox").value = seed;
+  startHand();
+}
+
+/* Every hand opens on one card the player did not choose, off the top with no
+   bias and no modifier — the shipped game's anchor. */
+function startHand() {
+  if (!T.anchor || !shoe.length) return;
+  var c = shoe.shift();
+  c = { r: c.r, s: c.s };
+  hand.push(c);
+  if (!headless) landing.push({ card: c, fx: CARD.cx, fy: CARD.cy - CARD.h * 0.18, slot: 0, t: 0 });
 }
 
 function nextCard() {
-  cur = { card: deal(), x: 0, y: 0, rot: 0, t: 0, in: 0 };
-}
-
-/* The fuse shortens as the run goes on, but never below a floor a human can
-   still act inside. */
-function fuseNow() {
-  var f = K.cardTime * Math.pow(1 - K.rampPct / 100, runT / 10);
-  return Math.max(0.55, f);
-}
-
-/* Capitals, the house way: accents come off, and a lowercase run glued to a
-   digit (a unit, a multiplier) keeps its case. Every string in this repo is
-   written in normal case and the screens that shout ask for it here — the same
-   rule as the motor's `upper` (packages/engine, docs/ENGINE.md). */
-function upper(str) {
-  var FROM = "\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5\u00C7\u00C8\u00C9\u00CA\u00CB\u00CC\u00CD\u00CE\u00CF\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u0178";
-  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
-  var PAIR = { "\u00C6": "AE", "\u0152": "OE", "\u00DF": "SS" };
-  var shouted = String(str == null ? "" : str).replace(
-    /[a-z\u00DF-\u00F6\u00F8-\u00FF\u0153]+/g, function (run, at, whole) {
-      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
-      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
-      return run.toUpperCase();
-    });
-  var out = "", i, c, k;
-  for (i = 0; i < shouted.length; i++) {
-    c = shouted.charAt(i);
-    if (PAIR[c]) { out += PAIR[c]; continue; }
-    k = FROM.indexOf(c);
-    out += k < 0 ? c : TO.charAt(k);
-  }
-  return out;
+  if (!upcoming) upcoming = draw();
+  if (!upcoming) { endRun("Deck empty"); return; }
+  cur = { card: upcoming, x: 0, y: 0, rot: 0, in: headless ? 1 : 0 };
+  upcoming = draw();
 }
 
 function loseLife(why, col) {
   lives--;
-  combo = 0;
-  flash = 1; flashCol = col || "#ff4a5e"; shake = 12;
-  pop(why, col || "#ff4a5e", 360, 640, 46);
+  if (!headless) {
+    flash = 1; flashCol = col || "#ff4a5e"; shake = 12;
+    pop(why, col || "#ff4a5e", 360, 640, 46);
+  }
   if (lives <= 0) endRun(why);
 }
 
@@ -519,64 +668,91 @@ function endRun(why) { over = true; overWhy = why; cur = null; }
 /* --- the two decisions --------------------------------------------------- */
 
 function decide(dir) {                                   // -1 bin, +1 keep
-  if (!cur || over || cur.in < 1) return;
-  var c = cur.card, restX = CARD.cx + cur.x, restY = CARD.cy + cur.y;
+  if (!cur || over || cur.in < 1 || tally) return;
+  var c = cur.card, restX = CARD.cx + cur.x, restY = CARD.cy + cur.y, rot = cur.rot;
   cur = null;
   dealWait = 0.07;
 
+  if (c.joker) {
+    if (dir < 0) {
+      jokersRefused++;
+      if (!headless) flying.push({ card: c, x: restX, y: restY, vx: -1500, vy: -140, rot: rot, spin: -3.4, a: 1 });
+    } else equip(c.joker, restX, restY);
+    return;
+  }
+
   if (dir < 0) {
-    binned++;
-    flying.push({ card: c, x: restX, y: restY, vx: -1500, vy: -140, rot: -0.3, spin: -3.4, a: 1 });
-    chuteGlow = 1;
+    binned++; binsThisHand++;
+    for (var i = 0; i < rail.length; i++) if (rail[i].id === "ascetic") rail[i].n++;
+    if (has("recycler")) shoe.push({ r: c.r, s: c.s });
+    if (!headless) flying.push({ card: c, x: restX, y: restY, vx: -1500, vy: -140, rot: rot, spin: -3.4, a: 1 });
     chute++;
-    if (chute > K.chuteDepth) { chute = 0; overflows++; loseLife("Chute full", "#ff4a5e"); }
+    if (chute > chuteCap()) { chute = 0; overflows++; loseLife("Chute full", "#ff4a5e"); }
     return;
   }
 
   kept++;
-  if (chute > 0) chute--;
-  landing.push({ card: c, fx: restX, fy: restY, slot: hand.length, t: 0 });
+  c.veil = false;                                  // a kept card shows its suit
+  if (!headless) landing.push({ card: c, fx: restX, fy: restY, slot: hand.length, t: 0 });
   hand.push(c);
-  handGlow = 1;
   if (hand.length >= K.handSize) resolveHand();
 }
 
-function resolveHand() {
-  var ev = evalHand(hand), i;
-  if (ev.pay > 0) {
-    combo++;
-    if (combo > bestCombo) bestCombo = combo;
-    var gain = Math.round(ev.pay * (1 + 0.5 * (combo - 1)));
-    score += gain;
-    hands++;
-    if (ev.pay > bestPay) { bestPay = ev.pay; bestName = ev.name; }
-    timeLeft += K.timeBonus;
-    pop(ev.name, "#ffd166", 360, 690, 40);
-    pop("+" + gain, "#42e8b0", 360, 620, 56);
-    if (combo > 1) pop("x" + combo, "#7ef9ff", 360, 760, 34);
-    for (i = 0; i < 26; i++) burst(360, SLOT.y, "#ffd166");
-    shake = 7;
-  } else {
-    busts++;
-    loseLife("Bust", "#ff4a5e");
-  }
-  /* The kept cards leave the hand outwards, so the next hand starts clean. */
-  for (i = 0; i < hand.length; i++) {
-    flying.push({
-      card: hand[i], x: slotX(i), y: SLOT.y,
-      vx: (i - (hand.length - 1) / 2) * 240, vy: ev.pay > 0 ? -900 : 620,
-      rot: 0, spin: (rnd() - 0.5) * 6, a: 1
-    });
-  }
-  hand = [];
+function equip(id, x, y) {
+  jokersTaken++;
+  var out = null;
+  if (rail.length >= K.jokerSlots) out = rail.shift();
+  rail.push({ id: id, n: 0 });
+  if (id === "heart") lives++;
+  if (headless) return;
+  if (out) pop(JOKER_BY[out.id].name + " out", "#8a87a8", 360, RAIL.y + RAIL.h + 34, 26);
+  flying.push({ card: { joker: id }, x: x, y: y, vx: 0, vy: -1500, rot: 0, spin: 0, a: 1 });
+  var tx = railX(rail.length - 1);
+  pop(JOKER_BY[id].name, FAM_COL[JOKER_BY[id].fam], tx, RAIL.y + RAIL.h / 2, 30);
+  for (var i = 0; i < 16; i++) burst(tx, RAIL.y + RAIL.h / 2, FAM_COL[JOKER_BY[id].fam]);
 }
 
-function burnout() {
-  burns++;
-  var c = cur.card;
-  flying.push({ card: c, x: CARD.cx, y: CARD.cy, vx: 0, vy: 700, rot: 0, spin: 2.2, a: 1 });
-  cur = null; dealWait = 0.16;
-  loseLife("Too slow", "#ff8a3c");
+function resolveHand() {
+  var res = scoreHand(hand, false);
+  if (headless || K.tallyStep <= 0) { finishHand(res); return; }
+  tally = { res: res, i: -1, t: K.tallyStep };
+}
+
+function finishHand(res) {
+  var i;
+  if (res.bust) {
+    busts++; lastCat = ""; catStreak = 0;
+    for (i = 0; i < rail.length; i++) if (rail[i].id === "ascetic") rail[i].n = 0;
+    var saved = -1;
+    for (i = 0; i < rail.length; i++) if (rail[i].id === "second") saved = i;
+    if (saved >= 0) {
+      rail.splice(saved, 1);
+      if (!headless) { pop(res.why, "#ff4a5e", 360, 580, 40); pop("Second chance", "#ff7ad9", 360, 650, 46); shake = 8; }
+    } else loseLife(res.why, "#ff4a5e");
+  } else {
+    hands++;
+    score += res.total;
+    lastCat = res.cat; catStreak = res.streak;
+    if (res.total > bestTotal) { bestTotal = res.total; bestName = res.name; }
+    if (!headless) {
+      pop(res.name, "#ffd166", 360, 690, 40);
+      pop("+" + res.total, "#42e8b0", 360, 620, 64);
+      for (i = 0; i < 26; i++) burst(360, SLOT.y, "#ffd166");
+      shake = 7;
+    }
+  }
+  if (!headless) {
+    for (i = 0; i < hand.length; i++) {
+      flying.push({
+        card: hand[i], x: slotX(i), y: SLOT.y,
+        vx: (i - (hand.length - 1) / 2) * 240, vy: res.bust ? 620 : -900,
+        rot: 0, spin: (Math.random() - 0.5) * 6, a: 1
+      });
+    }
+  }
+  hand = []; chute = 0; binsThisHand = 0; tally = null;
+  dealWait = 0.2;
+  if (!over) startHand();
 }
 
 /* --- juice --------------------------------------------------------------- */
@@ -585,12 +761,13 @@ function pop(txt, col, x, y, size) {
   pops.push({ txt: txt, col: col, x: x, y: y, size: size || 40, t: 0, life: 0.95 });
 }
 function burst(x, y, col) {
-  var a = rnd() * PI2, sp = 180 + rnd() * 420;
-  parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 160, t: 0, life: 0.5 + rnd() * 0.4, col: col, r: 3 + rnd() * 4 });
+  var a = Math.random() * PI2, sp = 180 + Math.random() * 420;
+  parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 160, t: 0,
+               life: 0.5 + Math.random() * 0.4, col: col, r: 3 + Math.random() * 4 });
 }
 
 /* ===========================================================================
-   7. INPUT — a drag in design space, and the keyboard flick the motor rides on.
+   8. INPUT — a drag in design space, and the keyboard flick the motor rides on.
    =========================================================================== */
 
 var drag = { on: false, sx: 0, cx0: 0 };
@@ -601,7 +778,7 @@ function toDesign(e) {
 }
 
 board.addEventListener("pointerdown", function (e) {
-  if (over || paused || !cur || cur.in < 1) return;
+  if (over || !cur || cur.in < 1 || tally) return;
   board.setPointerCapture(e.pointerId);
   drag.on = true; drag.sx = toDesign(e).x; drag.cx0 = cur.x;
 });
@@ -621,30 +798,28 @@ board.addEventListener("pointerup", release);
 board.addEventListener("pointercancel", release);
 
 window.addEventListener("keydown", function (e) {
+  if (e.target && e.target.tagName === "INPUT" && e.target.type === "text") return;
   var k = e.key.toLowerCase();
   if (k === "arrowleft" || k === "a") { e.preventDefault(); flick(-1); }
   else if (k === "arrowright" || k === "d") { e.preventDefault(); flick(1); }
-  else if (k === "r") { resetRun(); }
-  else if (k === "p") { setPaused(!paused); }
+  else if (k === "r") { newSeed(); resetRun(); }
 });
 /* The keyboard does not teleport the card: it throws it, so the read is the
    same as a thumb flick. */
 function flick(dir) {
-  if (over) { resetRun(); return; }
-  if (paused || !cur || cur.in < 1) return;
+  if (over) { newSeed(); resetRun(); return; }
+  if (!cur || cur.in < 1 || tally) return;
   cur.x = dir * K.swipeDist * 1.05;
   cur.rot = clamp(cur.x / 620, -0.42, 0.42);
   decide(dir);
 }
 
 /* ===========================================================================
-   8. UPDATE
+   9. UPDATE — no clock: the only time on this page is animation.
    =========================================================================== */
 
 function update(dt) {
   var i;
-
-  /* juice keeps running even when the run is over, so the last beat lands */
   for (i = pops.length - 1; i >= 0; i--) {
     var p = pops[i]; p.t += dt; p.y -= dt * 62;
     if (p.t >= p.life) pops.splice(i, 1);
@@ -664,15 +839,26 @@ function update(dt) {
   }
   flash = Math.max(0, flash - dt * 3.2);
   shake = Math.max(0, shake - dt * 40);
-  handGlow = Math.max(0, handGlow - dt * 2.4);
-  chuteGlow = Math.max(0, chuteGlow - dt * 2.4);
+  lit.t = Math.max(0, lit.t - dt * 3);
 
-  if (paused || over) return;
+  if (over) return;
 
-  runT += dt;
-  if (!T.endless) {
-    timeLeft -= dt;
-    if (timeLeft <= 0) { timeLeft = 0; endRun("Time up"); return; }
+  if (tally) {
+    if (landing.length) return;                    // let the last card land first
+    tally.t += dt;
+    var steps = tally.res.steps;
+    var wait = tally.i < 0 ? 0.25 : tally.i >= steps.length - 1 ? 0.55 : K.tallyStep;
+    if (tally.res.bust) wait = 0.45;
+    if (tally.t >= wait) {
+      tally.t = 0;
+      tally.i++;
+      if (tally.res.bust || tally.i >= steps.length) { finishHand(tally.res); return; }
+      var s = steps[tally.i];
+      lit.who = s.who; lit.idx = s.idx; lit.t = 1;
+      var at = stepAt(s);
+      if (s.who !== "base") pop(s.text, s.col, at.x, at.y, 30);
+    }
+    return;
   }
 
   if (!cur) {
@@ -680,16 +866,7 @@ function update(dt) {
     if (dealWait <= 0) nextCard();
     return;
   }
-
-  if (cur.in < 1) {
-    cur.in = Math.min(1, cur.in + dt / Math.max(0.01, K.dealIn));
-    return;
-  }
-
-  if (T.fuse && !drag.on) {
-    cur.t += dt;
-    if (cur.t >= fuseNow()) { burnout(); return; }
-  }
+  if (cur.in < 1) { cur.in = Math.min(1, cur.in + dt / Math.max(0.01, K.dealIn)); return; }
   if (!drag.on) {                                  // spring back to the middle
     var k = Math.min(1, dt * 15);
     cur.x = lerp(cur.x, 0, k);
@@ -698,8 +875,14 @@ function update(dt) {
   }
 }
 
+function stepAt(s) {
+  if (s.who === "card") return { x: slotX(s.idx), y: SLOT.y - SLOT.h / 2 - 22 };
+  if (s.who === "joker") return { x: railX(s.idx), y: RAIL.y + RAIL.h + 30 };
+  return { x: 360, y: TALLY_Y - 60 };
+}
+
 /* ===========================================================================
-   9. RENDER
+   10. RENDER
    =========================================================================== */
 
 function f(size, weight) {
@@ -718,41 +901,94 @@ function slotX(i) {
   var n = K.handSize, total = n * SLOT.w + (n - 1) * SLOT.gap;
   return (DW - total) / 2 + i * (SLOT.w + SLOT.gap) + SLOT.w / 2;
 }
+function railW() { var n = K.jokerSlots; return (DW - 2 * RAIL.pad - (n - 1) * RAIL.gap) / n; }
+function railX(i) { return RAIL.pad + i * (railW() + RAIL.gap) + railW() / 2; }
+
+/* Words wrapped to a width, in the font already set on ctx. */
+function wrap(txt, maxW) {
+  var words = txt.split(" "), lines = [], line = "";
+  for (var i = 0; i < words.length; i++) {
+    var t = line ? line + " " + words[i] : words[i];
+    if (line && ctx.measureText(t).width > maxW) { lines.push(line); line = words[i]; }
+    else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/* Capitals, the house way: accents come off, and a lowercase run glued to a
+   digit (a unit, a multiplier) keeps its case — the motor's `upper`. */
+function upper(str) {
+  var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+  var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+  var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+  var shouted = String(str == null ? "" : str).replace(
+    /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+  var out = "", i, c, k;
+  for (i = 0; i < shouted.length; i++) {
+    c = shouted.charAt(i);
+    if (PAIR[c]) { out += PAIR[c]; continue; }
+    k = FROM.indexOf(c);
+    out += k < 0 ? c : TO.charAt(k);
+  }
+  return out;
+}
 
 /* --- one card face ------------------------------------------------------- */
 function drawCard(c, x, y, w, h, rot, alpha, tint) {
+  if (c.joker) { drawJoker(c.joker, x, y, w, h, rot, alpha, tint); return; }
   ctx.save();
   ctx.translate(x, y);
   if (rot) ctx.rotate(rot);
   ctx.globalAlpha = alpha == null ? 1 : alpha;
   var r = w * 0.085;
+  var hidden = c.veil && !has("seer");
 
+  var face = c.curse ? "#2a1838" : c.mod === "gold" ? "#fff1c2"
+           : c.mod === "glass" ? "#e6f5ff" : c.mod === "lucky" ? "#eafbe6" : "#f7f4ea";
   roundRect(-w / 2, -h / 2, w, h, r);
-  ctx.fillStyle = "#f7f4ea"; ctx.fill();
-  ctx.lineWidth = 3; ctx.strokeStyle = "rgba(20,14,40,.22)"; ctx.stroke();
+  ctx.fillStyle = face; ctx.fill();
+  var rim = c.curse ? CURSE_COL : c.mod ? MOD_COL[c.mod] : hidden ? "#8a87a8" : null;
+  ctx.lineWidth = rim ? Math.max(3, w * 0.025) : 3;
+  ctx.strokeStyle = rim || "rgba(20,14,40,.22)"; ctx.stroke();
 
-  var col = SUIT_RED[c.s] ? "#d5263c" : "#1c1830";
+  var col = c.curse ? "#d9bdf5" : hidden ? "#8a87a8" : SUIT_RED[c.s] ? "#d5263c" : "#1c1830";
+  var suit = hidden ? "?" : SUITS[c.s];
   var small = Math.round(w * 0.155), big = Math.round(w * 0.5);
+  var badge = c.curse ? "Cursed" : c.mod ? MOD_NAME[c.mod] : hidden ? "Veiled" : "";
 
   ctx.fillStyle = col;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.font = f(big, 700);
-  ctx.fillText(SUITS[c.s], 0, h * 0.02);
+  ctx.fillText(suit, 0, -h * 0.02);
 
-  /* the two corners, the second one upside down like a real card */
   var pad = w * 0.115;
-  ctx.textAlign = "center";
   ctx.font = f(small, 900);
   ctx.fillText(RANKS[c.r], -w / 2 + pad, -h / 2 + pad * 0.95);
   ctx.font = f(Math.round(small * 0.85), 700);
-  ctx.fillText(SUITS[c.s], -w / 2 + pad, -h / 2 + pad * 2.05);
-  ctx.save();
-  ctx.rotate(Math.PI);
-  ctx.font = f(small, 900);
-  ctx.fillText(RANKS[c.r], -w / 2 + pad, -h / 2 + pad * 0.95);
-  ctx.font = f(Math.round(small * 0.85), 700);
-  ctx.fillText(SUITS[c.s], -w / 2 + pad, -h / 2 + pad * 2.05);
-  ctx.restore();
+  ctx.fillText(suit, -w / 2 + pad, -h / 2 + pad * 2.05);
+  if (!badge) {                                    // the second corner, upside down
+    ctx.save();
+    ctx.rotate(Math.PI);
+    ctx.font = f(small, 900);
+    ctx.fillText(RANKS[c.r], -w / 2 + pad, -h / 2 + pad * 0.95);
+    ctx.font = f(Math.round(small * 0.85), 700);
+    ctx.fillText(suit, -w / 2 + pad, -h / 2 + pad * 2.05);
+    ctx.restore();
+  } else {                                         // the modifier, on a band at the foot
+    var bh = Math.max(26, h * 0.15);
+    ctx.save();
+    roundRect(-w / 2, -h / 2, w, h, r); ctx.clip();
+    ctx.fillStyle = rim; ctx.fillRect(-w / 2, h / 2 - bh, w, bh);
+    ctx.restore();
+    ctx.fillStyle = c.curse ? "#1a0f24" : "#1c1830";
+    ctx.font = f(Math.max(18, Math.round(w * 0.11)), 900);
+    ctx.fillText(upper(badge), 0, h / 2 - bh / 2 + 1);
+  }
 
   if (tint) {
     roundRect(-w / 2, -h / 2, w, h, r);
@@ -761,7 +997,40 @@ function drawCard(c, x, y, w, h, rot, alpha, tint) {
   ctx.restore();
 }
 
-/* --- the shoe, a stack of backs behind the live card --------------------- */
+/* --- a joker in the stream: a card of its own kind, readable at a glance -- */
+function drawJoker(id, x, y, w, h, rot, alpha, tint) {
+  var J = JOKER_BY[id], col = FAM_COL[J.fam];
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  var r = w * 0.085;
+  roundRect(-w / 2, -h / 2, w, h, r);
+  ctx.fillStyle = "#21173f"; ctx.fill();
+  ctx.lineWidth = Math.max(3, w * 0.03); ctx.strokeStyle = col; ctx.stroke();
+  roundRect(-w / 2 + w * 0.06, -h / 2 + w * 0.06, w * 0.88, h - w * 0.12, r * 0.7);
+  ctx.lineWidth = 2; ctx.strokeStyle = rgba(col, 0.35); ctx.stroke();
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (w >= 200) {
+    ctx.fillStyle = col; ctx.font = f(22, 900);
+    ctx.fillText(upper("Joker · " + J.fam), 0, -h / 2 + 46);
+    ctx.fillStyle = "#f4f1ff"; ctx.font = f(40, 900);
+    var nl = wrap(upper(J.name), w - 50), i;
+    var ny = -h * 0.2 - (nl.length - 1) * 22;
+    for (i = 0; i < nl.length; i++) ctx.fillText(nl[i], 0, ny + i * 44);
+    ctx.fillStyle = "#ddd6f7"; ctx.font = f(26, 600);
+    var dl = wrap(J.text, w - 56);
+    var dy = h * 0.1;
+    for (i = 0; i < dl.length; i++) ctx.fillText(dl[i], 0, dy + i * 34);
+  } else {
+    ctx.fillStyle = col; ctx.font = f(Math.max(20, Math.round(w * 0.2)), 900);
+    ctx.fillText("J", 0, 0);
+  }
+  if (tint) { roundRect(-w / 2, -h / 2, w, h, r); ctx.fillStyle = tint; ctx.fill(); }
+  ctx.restore();
+}
+
 function drawBack(x, y, w, h, rot, alpha) {
   ctx.save();
   ctx.translate(x, y); if (rot) ctx.rotate(rot);
@@ -789,51 +1058,81 @@ function drawHUD() {
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText(upper("Score"), 44, 74);
+  ctx.fillText(upper("Score"), 44, 64);
   ctx.fillStyle = "#f4f1ff"; ctx.font = f(50, 900);
-  ctx.fillText(String(score), 44, 126);
+  ctx.fillText(String(score), 44, 116);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText(upper(T.endless ? "Elapsed" : "Time"), 360, 74);
-  var tv = T.endless ? runT : timeLeft;
-  ctx.fillStyle = (!T.endless && timeLeft < 6) ? "#ff8a3c" : "#f4f1ff";
+  ctx.fillText(upper("Deck"), 360, 64);
+  var left = cardsLeft();
+  ctx.fillStyle = left <= 8 ? "#ff8a3c" : "#f4f1ff";
   ctx.font = f(50, 900);
-  ctx.fillText(tv.toFixed(1), 360, 126);
+  ctx.fillText(String(left), 360, 116);
 
   ctx.textAlign = "right";
   ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
-  ctx.fillText(upper("Lives"), 676, 74);
-  for (var i = 0; i < K.lives; i++) {
-    var x = 676 - i * 34, alive = (K.lives - i) <= lives;
-    ctx.beginPath(); ctx.arc(x - 9, 110, 11, 0, PI2);
-    ctx.fillStyle = alive ? "#ff4a5e" : "rgba(255,255,255,.12)";
+  ctx.fillText(upper("Lives"), 676, 64);
+  var shown = Math.max(K.lives, lives);
+  for (var i = 0; i < shown; i++) {
+    var x = 676 - i * 34;
+    ctx.beginPath(); ctx.arc(x - 9, 100, 11, 0, PI2);
+    ctx.fillStyle = (shown - i) <= lives ? "#ff4a5e" : "rgba(255,255,255,.12)";
     ctx.fill();
   }
 
-  /* the chute meter: what a discard costs */
+  /* the chute meter: discards left on this hand */
+  var cap = chuteCap();
   ctx.textAlign = "left";
-  ctx.fillStyle = "#6f6c8d"; ctx.font = f(17, 800);
-  ctx.fillText(upper("Chute"), 44, 176);
-  for (var j = 0; j < K.chuteDepth; j++) {
-    var px = 128 + j * 26, full = j < chute;
-    roundRect(px, 160, 18, 18, 5);
-    ctx.fillStyle = full
-      ? (chute >= K.chuteDepth ? "#ff4a5e" : "#ff8a3c")
-      : "rgba(255,255,255,.11)";
+  ctx.fillStyle = "#6f6c8d"; ctx.font = f(20, 800);
+  ctx.fillText(upper("Bins"), 44, 170);
+  for (var j = 0; j < cap; j++) {
+    var px = 112 + j * 28, full = j < chute;
+    roundRect(px, 152, 20, 20, 5);
+    ctx.fillStyle = full ? (chute >= cap ? "#ff4a5e" : "#ff8a3c") : "rgba(255,255,255,.11)";
     ctx.fill();
   }
-  if (chuteGlow > 0) {
-    ctx.globalAlpha = chuteGlow * 0.5;
-    roundRect(122, 154, K.chuteDepth * 26 + 12, 30, 9);
-    ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 2; ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  if (combo > 1) {
+  if (catStreak > 1) {
     ctx.textAlign = "right";
-    ctx.fillStyle = "#7ef9ff"; ctx.font = f(30, 900);
-    ctx.fillText(upper("x" + combo + " combo"), 676, 178);
+    ctx.fillStyle = "#7ef9ff"; ctx.font = f(22, 900);
+    ctx.fillText(upper(CAT_NAME[lastCat] + " x" + catStreak), 676, 170);
+  }
+}
+
+/* --- the rail: what the jokers are, left to right in the order they count -- */
+function drawRail() {
+  var w = railW(), i;
+  for (i = 0; i < K.jokerSlots; i++) {
+    var cx = railX(i), x = cx - w / 2, y = RAIL.y;
+    var inst = rail[i];
+    var hot = lit.t > 0 && lit.who === "joker" && lit.idx === i;
+    ctx.save();
+    if (hot) { ctx.translate(cx, y + RAIL.h / 2); ctx.scale(1 + lit.t * 0.08, 1 + lit.t * 0.08); ctx.translate(-cx, -(y + RAIL.h / 2)); }
+    roundRect(x, y, w, RAIL.h, 16);
+    if (!inst) {
+      ctx.fillStyle = "rgba(255,255,255,.03)"; ctx.fill();
+      ctx.setLineDash([8, 8]); ctx.strokeStyle = "rgba(255,255,255,.13)"; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#4d4a66"; ctx.font = f(20, 800);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(upper("Joker"), cx, y + RAIL.h / 2);
+      ctx.restore();
+      continue;
+    }
+    var J = JOKER_BY[inst.id], col = FAM_COL[J.fam];
+    ctx.fillStyle = hot ? rgba(col, 0.3) : "#21173f"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = col; ctx.font = f(18, 900);
+    ctx.fillText(upper(J.fam), cx, y + 22);
+    ctx.fillStyle = "#f4f1ff"; ctx.font = f(22, 900);
+    var nl = wrap(upper(J.name), w - 16);
+    var counter = inst.id === "ascetic" ? "+" + inst.n + " mult"
+                : inst.id === "veteran" ? "+" + hands + " mult"
+                : inst.id === "collector" && catStreak > 0 ? "x" + catStreak : "";
+    var ny = y + (counter ? 54 : 64) - (nl.length - 1) * 13;
+    for (var k = 0; k < nl.length; k++) ctx.fillText(nl[k], cx, ny + k * 26);
+    if (counter) { ctx.fillStyle = "#ff4a5e"; ctx.font = f(20, 900); ctx.fillText(counter, cx, y + RAIL.h - 18); }
+    ctx.restore();
   }
 }
 
@@ -841,66 +1140,78 @@ function drawGates() {
   if (!T.gates) return;
   var pull = cur ? clamp(Math.abs(cur.x) / K.swipeDist, 0, 1) : 0;
   var left = cur && cur.x < 0 ? pull : 0, right = cur && cur.x > 0 ? pull : 0;
-
-  drawGate(GATE.pad, "#ff4a5e", "Bin", left);
-  drawGate(DW - GATE.pad - GATE.w, "#42e8b0", "Keep", right);
+  var joker = cur && cur.card.joker;
+  drawGate(GATE.pad, "#ff4a5e", joker ? "Refuse" : "Bin", left);
+  drawGate(DW - GATE.pad - GATE.w, "#42e8b0", joker ? "Equip" : "Keep", right);
 }
-function drawGate(x, col, label, lit) {
+function drawGate(x, col, label, glow) {
   roundRect(x, GATE.top, GATE.w, GATE.bot - GATE.top, 22);
-  ctx.fillStyle = rgba(col, 0.05 + lit * 0.28); ctx.fill();
-  ctx.lineWidth = 2 + lit * 3;
-  ctx.strokeStyle = rgba(col, 0.2 + lit * 0.75); ctx.stroke();
-
+  ctx.fillStyle = rgba(col, 0.05 + glow * 0.28); ctx.fill();
+  ctx.lineWidth = 2 + glow * 3;
+  ctx.strokeStyle = rgba(col, 0.2 + glow * 0.75); ctx.stroke();
   ctx.save();
   ctx.translate(x + GATE.w / 2, (GATE.top + GATE.bot) / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = rgba(col, 0.42 + lit * 0.58);
+  ctx.fillStyle = rgba(col, 0.42 + glow * 0.58);
   ctx.font = f(30, 900);
   ctx.fillText(upper(label), 0, 0);
   ctx.restore();
 }
 
-function drawFuse() {
-  if (!T.fuse || !cur || cur.in < 1) return;
-  var frac = clamp(1 - cur.t / fuseNow(), 0, 1);
-  roundRect(FUSE.x, FUSE.y, FUSE.w, FUSE.h, FUSE.h / 2);
-  ctx.fillStyle = "rgba(255,255,255,.09)"; ctx.fill();
-  if (frac > 0) {
-    roundRect(FUSE.x, FUSE.y, FUSE.w * frac, FUSE.h, FUSE.h / 2);
-    ctx.fillStyle = frac > 0.45 ? "#42e8b0" : frac > 0.2 ? "#ffbf5a" : "#ff4a5e";
-    ctx.fill();
-  }
-}
-
 /* What the live card would do to the hand — the honesty knob. */
 function drawPreview() {
   if (!T.preview || !cur || cur.in < 1) return;
-  var next = hand.concat([cur.card]);
-  var ev = evalHand(next);
-  var full = next.length >= K.handSize;
-  var txt, col;
-  if (full) {
-    txt = ev.pay > 0 ? "Keep → " + ev.name : "Keep → bust";
-    col = ev.pay > 0 ? "#42e8b0" : "#ff4a5e";
-  } else if (ev.cat !== "high") {
-    txt = "Keep → " + ev.name; col = "#ffd166";
-  } else if (!hand.length) {
-    txt = "Keep → opens the hand"; col = "#7ef9ff";
+  var c = cur.card, txt, col;
+  if (c.joker) {
+    txt = rail.length >= K.jokerSlots ? "Keep → replaces " + JOKER_BY[rail[0].id].name : "Keep → equip";
+    col = FAM_COL[JOKER_BY[c.joker].fam];
+  } else if (c.veil && !has("seer")) {
+    txt = "Keep → ?"; col = "#8a87a8";
   } else {
-    var ln = lineOf(next);
-    txt = "Keep → " + (ln || "Dead card");
-    col = ln ? "#7ef9ff" : "#6f6c8d";
+    var next = hand.concat([c]);
+    if (next.length >= K.handSize) {
+      var res = scoreHand(next, true);
+      txt = res.bust ? "Keep → bust · " + res.why : "Keep → " + res.name + " · " + res.total;
+      col = res.bust ? "#ff4a5e" : "#42e8b0";
+    } else {
+      var ev = evalHand(next);
+      if (ev.cat !== "high") { txt = "Keep → " + ev.name; col = "#ffd166"; }
+      else { var ln = lineOf(next); txt = "Keep → " + (ln || "Dead card"); col = ln ? "#7ef9ff" : "#6f6c8d"; }
+    }
   }
-
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.font = f(26, 900);
-  var w = ctx.measureText(txt).width + 40;
-  roundRect(360 - w / 2, 838, w, 44, 22);
+  ctx.font = f(24, 900);
+  txt = upper(txt);
+  var w = Math.min(640, ctx.measureText(txt).width + 40);
+  roundRect(360 - w / 2, 824, w, 44, 22);
   ctx.fillStyle = rgba(col, 0.13); ctx.fill();
   ctx.strokeStyle = rgba(col, 0.45); ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = col;
-  ctx.fillText(upper(txt), 360, 861);
+  ctx.fillText(txt, 360, 847);
+}
+
+/* chips x mult while the hand is being counted */
+function drawTally() {
+  if (!tally) return;
+  var res = tally.res;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (res.bust) {
+    ctx.fillStyle = "#ff4a5e"; ctx.font = f(44, 900);
+    ctx.fillText(upper(res.why), 360, TALLY_Y);
+    return;
+  }
+  var s = tally.i >= 0 ? res.steps[Math.min(tally.i, res.steps.length - 1)] : null;
+  var chips = s ? s.chips : 0, mult = s ? s.mult : 0;
+  ctx.fillStyle = "#ffd166"; ctx.font = f(34, 900);
+  ctx.fillText(upper(res.name), 360, TALLY_Y - 62);
+  roundRect(140, TALLY_Y - 30, 190, 64, 14); ctx.fillStyle = "#1f4f8c"; ctx.fill();
+  roundRect(390, TALLY_Y - 30, 190, 64, 14); ctx.fillStyle = "#8c1f33"; ctx.fill();
+  ctx.fillStyle = "#f4f1ff"; ctx.font = f(40, 900);
+  ctx.fillText(String(chips), 235, TALLY_Y + 2);
+  ctx.fillText(String(Math.round(mult * 100) / 100), 485, TALLY_Y + 2);
+  ctx.fillStyle = "#8a87a8"; ctx.font = f(36, 900);
+  ctx.fillText("×", 360, TALLY_Y + 2);
 }
 
 function drawHand() {
@@ -913,50 +1224,61 @@ function drawHand() {
     ctx.strokeStyle = "rgba(255,255,255,.13)"; ctx.lineWidth = 2; ctx.stroke();
     ctx.setLineDash([]);
   }
+  var scoring = tally && !tally.res.bust ? evalHand(hand).scoring : null;
   for (i = 0; i < hand.length; i++) {
     var landingNow = false, j;
     for (j = 0; j < landing.length; j++) if (landing[j].slot === i) landingNow = true;
-    if (!landingNow) drawCard(hand[i], slotX(i), SLOT.y, SLOT.w, SLOT.h, 0, 1, null);
+    if (landingNow) continue;
+    var hot = lit.t > 0 && lit.who === "card" && lit.idx === i;
+    var dy = hot ? -18 * lit.t : (scoring && scoring[i] ? -8 : 0);
+    drawCard(hand[i], slotX(i), SLOT.y + dy, SLOT.w, SLOT.h, 0,
+             scoring && !scoring[i] ? 0.55 : 1, null);
   }
   for (i = 0; i < landing.length; i++) {
     var L = landing[i], t = ease(L.t), tx = slotX(L.slot);
-    drawCard(L.card,
-      lerp(L.fx, tx, t), lerp(L.fy, SLOT.y, t),
-      lerp(CARD.w, SLOT.w, t), lerp(CARD.h, SLOT.h, t),
-      lerp(0, 0, t), 1, null);
+    drawCard(L.card, lerp(L.fx, tx, t), lerp(L.fy, SLOT.y, t),
+             lerp(CARD.w, SLOT.w, t), lerp(CARD.h, SLOT.h, t), 0, 1, null);
   }
 
-  /* what the hand is worth so far */
   var ev = evalHand(hand);
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.font = f(28, 900);
+  ctx.font = f(26, 900);
   ctx.fillStyle = hand.length === 0 ? "#4d4a66"
                 : ev.cat !== "high" ? "#ffd166"
                 : lineOf(hand) ? "#7ef9ff" : "#8a87a8";
   var label = hand.length === 0 ? "Empty hand"
             : (ev.cat !== "high" ? ev.name : (lineOf(hand) || "Nothing yet"));
-  ctx.fillText(upper(label) + "   " + hand.length + "/" + K.handSize, 360, SLOT.y + SLOT.h / 2 + 44);
+  ctx.fillText(upper(label) + "   " + hand.length + "/" + K.handSize, 360, SLOT.y + SLOT.h / 2 + 36);
+}
+
+/* Seer: the next deal, face up under the hand. */
+function drawNext() {
+  if (!has("seer") || !upcoming) return;
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#b98cff"; ctx.font = f(22, 900);
+  ctx.fillText(upper("Next"), 300, 1206);
+  var c = upcoming.joker ? upcoming : { r: upcoming.r, s: upcoming.s, mod: upcoming.mod, curse: upcoming.curse };
+  drawCard(c, 360, 1206, 76, 106, 0, 1, null);
 }
 
 function render() {
   ctx.save();
-  if (shake > 0) ctx.translate((rnd() - 0.5) * shake, (rnd() - 0.5) * shake);
+  if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
 
   ctx.fillStyle = "#0a0714";
   ctx.fillRect(-40, -40, DW + 80, DH + 80);
-
-  /* a soft table felt behind the play area */
   var g = ctx.createRadialGradient(360, 600, 60, 360, 600, 620);
   g.addColorStop(0, "rgba(90,60,190,.20)");
   g.addColorStop(1, "rgba(90,60,190,0)");
   ctx.fillStyle = g; ctx.fillRect(0, 200, DW, 900);
 
   drawHUD();
+  drawRail();
   drawGates();
 
-  /* the shoe: two backs peeking behind the live card */
-  drawBack(CARD.cx + 16, CARD.cy + 22, CARD.w, CARD.h, 0.045, 0.5);
-  drawBack(CARD.cx + 8, CARD.cy + 11, CARD.w, CARD.h, 0.022, 0.75);
+  /* the shoe steps aside while a hand is counted: the tally reads over it */
+  if (!tally && cardsLeft() > 1) drawBack(CARD.cx + 16, CARD.cy + 22, CARD.w, CARD.h, 0.045, 0.5);
+  if (!tally && cardsLeft() > 0) drawBack(CARD.cx + 8, CARD.cy + 11, CARD.w, CARD.h, 0.022, 0.75);
 
   var i;
   for (i = 0; i < flying.length; i++) {
@@ -965,6 +1287,7 @@ function render() {
   }
 
   drawHand();
+  drawNext();
 
   if (cur) {
     var t = ease(cur.in);
@@ -977,8 +1300,8 @@ function render() {
     drawCard(cur.card, x, y, CARD.w * sc, CARD.h * sc, cur.rot, t, tint);
   }
 
-  drawFuse();
   drawPreview();
+  drawTally();
 
   for (i = 0; i < parts.length; i++) {
     var q = parts[i], a = 1 - q.t / q.life;
@@ -990,12 +1313,12 @@ function render() {
 
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (i = 0; i < pops.length; i++) {
-    var p = pops[i], k = p.t / p.life;
+    var p = pops[i], k = p.t / p.life, word = upper(p.txt);
     ctx.globalAlpha = k < 0.15 ? k / 0.15 : 1 - Math.max(0, (k - 0.6) / 0.4);
     ctx.font = f(Math.round(p.size * (1 + (1 - k) * 0.18)), 900);
     ctx.lineWidth = 8; ctx.strokeStyle = "rgba(8,5,18,.75)";
-    ctx.strokeText(p.txt, p.x, p.y);
-    ctx.fillStyle = p.col; ctx.fillText(upper(p.txt), p.x, p.y);
+    ctx.strokeText(word, p.x, p.y);
+    ctx.fillStyle = p.col; ctx.fillText(word, p.x, p.y);
   }
   ctx.globalAlpha = 1;
 
@@ -1005,81 +1328,138 @@ function render() {
   }
 
   if (over) drawEnd();
-  else if (paused) {
-    ctx.fillStyle = "rgba(6,4,14,.7)"; ctx.fillRect(0, 0, DW, DH);
-    ctx.fillStyle = "#f4f1ff"; ctx.font = f(56, 900);
-    ctx.fillText(upper("Paused"), 360, 640);
-  }
-
   ctx.restore();
 }
 
 function drawEnd() {
-  ctx.fillStyle = "rgba(6,4,14,.82)"; ctx.fillRect(0, 0, DW, DH);
+  ctx.fillStyle = "rgba(6,4,14,.84)"; ctx.fillRect(0, 0, DW, DH);
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ff8a3c"; ctx.font = f(34, 900);
-  ctx.fillText(upper(overWhy), 360, 470);
+  ctx.fillStyle = lives > 0 ? "#42e8b0" : "#ff8a3c"; ctx.font = f(34, 900);
+  ctx.fillText(upper(lives > 0 ? "Deck cleared" : overWhy), 360, 470);
   ctx.fillStyle = "#f4f1ff"; ctx.font = f(96, 900);
   ctx.fillText(String(score), 360, 560);
   ctx.fillStyle = "#8a87a8"; ctx.font = f(26, 800);
-  ctx.fillText(hands + " hands  ·  best " + bestName, 360, 640);
-  ctx.fillText("x" + bestCombo + " best combo  ·  " + busts + " busts", 360, 682);
+  ctx.fillText(hands + " hands paid  ·  " + busts + " busts", 360, 640);
+  ctx.fillText("Best " + bestName + " · " + bestTotal, 360, 682);
   ctx.fillStyle = "#ffbf5a"; ctx.font = f(28, 900);
   ctx.fillText(upper("Press R or ← → to replay"), 360, 780);
 }
 
 /* ===========================================================================
-   10. THE PANEL
+   11. THE BENCH — the same rules, played headless by two pilots.
+   =========================================================================== */
+
+var PILOTS = [
+  { lab: "Always keep", fn: function () { return true; } },
+  { lab: "Line reader", fn: function (c) {
+      if (c.joker) return true;
+      if (c.curse) return chute >= chuteCap();
+      if (chute >= chuteCap()) return true;
+      return helps(c);
+    } }
+];
+
+function benchRun(pilot) {
+  newSeedFixed(); resetRun();
+  var guard = 0;
+  while (!over && guard++ < 4000) {
+    if (!cur) { nextCard(); continue; }
+    decide(pilot.fn(cur.card) ? 1 : -1);
+  }
+  return { score: score, hands: hands, busts: busts, overflows: overflows,
+           died: lives <= 0, kept: kept, seen: kept + binned };
+}
+var benchSeed = 0;
+function newSeedFixed() { srand(benchSeed); }
+
+function bench() {
+  var N = 300, rows = [], p, i;
+  headless = true;
+  for (p = 0; p < PILOTS.length; p++) {
+    var a = { score: 0, hands: 0, busts: 0, overflows: 0, died: 0, kept: 0, seen: 0 };
+    for (i = 1; i <= N; i++) {
+      benchSeed = i;
+      var r = benchRun(PILOTS[p]);
+      a.score += r.score; a.hands += r.hands; a.busts += r.busts; a.overflows += r.overflows;
+      a.died += r.died ? 1 : 0; a.kept += r.kept; a.seen += r.seen;
+    }
+    rows.push({ lab: PILOTS[p].lab, score: a.score / N, hands: a.hands / N, busts: a.busts / N,
+                overflows: a.overflows / N, died: a.died / N, keep: a.seen ? a.kept / a.seen : 0 });
+  }
+  headless = false;
+  var html = "<tr><th>pilot</th><th>avg score</th><th>hands paid</th><th>busts</th><th>overflows</th><th>died</th><th>keep %</th></tr>";
+  var best = rows[0].score >= rows[1].score ? 0 : 1;
+  for (i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    html += "<tr><td>" + r.lab + '</td><td class="' + (i === best ? "good" : "bad") + '">' + Math.round(r.score) +
+            "</td><td>" + r.hands.toFixed(1) + "</td><td>" + r.busts.toFixed(2) +
+            "</td><td>" + r.overflows.toFixed(2) + "</td><td>" + Math.round(r.died * 100) + "%</td><td>" +
+            Math.round(r.keep * 100) + "%</td></tr>";
+  }
+  var ratio = rows[0].score > 0 ? rows[1].score / rows[0].score : 0;
+  html += '<tr><td colspan="7" style="padding-top:8px;color:#9c99b8">Reader / spammer: <b style="color:#ffbf5a">×' +
+          ratio.toFixed(2) + "</b></td></tr>";
+  document.getElementById("bench-out").innerHTML = html;
+  newSeed(); resetRun();
+}
+
+/* ===========================================================================
+   12. THE PANEL
    =========================================================================== */
 
 var KNOBS = [
+  { k: "deckSize", lab: "deck", min: 20, max: 104, step: 4, fix: 0, act: "run",
+    why: "Cards in the run. The deck is the only clock: every bin is a card no hand gets." },
   { k: "handSize", lab: "hand size", min: 3, max: 5, step: 1, fix: 0, act: "run",
-    why: "Cards that fill a hand. 3 pays every few seconds, 5 is real poker but slow." },
-  { k: "cardTime", lab: "fuse (s)", min: 1, max: 6, step: 0.1, fix: 1,
-    why: "Seconds to sort a fresh card before it burns and costs a life." },
-  { k: "rampPct", lab: "fuse ramp (%/10s)", min: 0, max: 30, step: 1, fix: 0,
-    why: "How much shorter the fuse gets every 10 s. 0 = flat difficulty." },
-  { k: "chuteDepth", lab: "chute depth", min: 1, max: 8, step: 1, fix: 0, act: "run",
-    why: "Discards held before the chute overflows. THE knob: it is the price of saying no." },
+    why: "Cards that fill a hand. The anchor is one of them." },
+  { k: "pairFloor", lab: "pair floor", min: 2, max: 14, step: 1, act: "",
+    fmt: function (v) { return v <= 2 ? "any pair" : rankName(v) + " or better"; },
+    why: "Lowest bare pair that pays; under it the hand busts. THE anti-spam knob." },
   { k: "shoeBias", lab: "shoe bias", min: 0, max: 1, step: 0.05, fix: 2,
-    why: "Chance a deal is picked to keep the hand's line alive instead of coming off the top." },
-  { k: "swipeDist", lab: "swipe distance", min: 40, max: 200, step: 4, fix: 0,
-    why: "Design px a drag must cross to commit. Too short and the card leaves by accident." },
-  { k: "roundSeconds", lab: "round (s)", min: 10, max: 90, step: 5, fix: 0, act: "run",
-    why: "Length of a run. A playable is 20-30 s." },
-  { k: "timeBonus", lab: "time bonus (s)", min: 0, max: 5, step: 0.5, fix: 1,
-    why: "Seconds a paying hand puts back on the clock, so a good player runs longer." },
+    why: "Chance a deal is picked to keep the hand's line alive. It feeds a blind keeper too." },
+  { k: "chuteDepth", lab: "bins per hand", min: 1, max: 8, step: 1, fix: 0,
+    why: "Discards allowed on one hand; one more costs a life. Reset when the hand resolves." },
   { k: "lives", lab: "lives", min: 1, max: 6, step: 1, fix: 0, act: "run",
-    why: "Busts, overflows and burnouts the run survives." },
+    why: "Busts and overflows the run survives." },
+  { k: "jokerSlots", lab: "joker slots", min: 1, max: 5, step: 1, fix: 0, act: "run",
+    why: "Jokers the rail holds. A new one pushes the oldest out." },
+  { k: "jokerRate", lab: "joker rate", min: 0, max: 0.3, step: 0.01, fix: 2,
+    why: "Chance a deal is a joker. A joker costs no deck card." },
+  { k: "curseRate", lab: "curse rate", min: 0, max: 0.25, step: 0.01, fix: 2,
+    why: "Chance a dealt card is cursed: it busts any hand it ends in." },
+  { k: "veilRate", lab: "veil rate", min: 0, max: 0.25, step: 0.01, fix: 2,
+    why: "Chance a dealt card hides its suit until it is kept." },
+  { k: "enhanceRate", lab: "enhance rate", min: 0, max: 0.4, step: 0.01, fix: 2,
+    why: "Chance a dealt card is gold (+40 chips), glass (×2, may shatter), wild or lucky." },
+  { k: "tallyStep", lab: "tally step (s)", min: 0, max: 0.5, step: 0.02, fix: 2,
+    why: "Seconds between two steps of the count. 0 pays the hand in one lump." },
+  { k: "swipeDist", lab: "swipe distance", min: 40, max: 200, step: 4, fix: 0,
+    why: "Design px a drag must cross to commit." },
   { k: "dealIn", lab: "deal-in (s)", min: 0.05, max: 0.5, step: 0.01, fix: 2,
-    why: "How long the next card takes to reach the middle. Dead time between decisions." }
+    why: "How long the next card takes to reach the middle." }
 ];
 
 var TOGGLES = [
   { k: "preview", lab: "keep preview" },
-  { k: "fuse", lab: "fuse" },
   { k: "gates", lab: "gates" },
-  { k: "endless", lab: "endless (no clock)", act: "run" }
+  { k: "anchor", lab: "anchor card", act: "run" }
 ];
 
 function pct(a, b) { return b ? Math.round(a / b * 100) + "%" : "—"; }
 
 var STATS = [
   { lab: "score", fn: function () { return score; } },
-  { lab: "hands", fn: function () { return hands; }, cls: "good" },
-  { lab: "hands / min", fn: function () { return runT > 1 ? (hands / runT * 60).toFixed(1) : "—"; }, cls: "good" },
-  { lab: "keep %", fn: function () { return pct(kept, kept + binned); },
-    cls: function () {
-      var r = (kept + binned) ? kept / (kept + binned) : 0.5;
-      return (r > 0.7 || r < 0.35) ? "bad" : "good";
-    } },
-  { lab: "best hand", fn: function () { return bestName; }, cls: "warm" },
-  { lab: "best combo", fn: function () { return "x" + bestCombo; }, cls: "warm" },
+  { lab: "hands paid", fn: function () { return hands; }, cls: "good" },
   { lab: "busts", fn: function () { return busts; }, cls: "bad" },
   { lab: "overflows", fn: function () { return overflows; }, cls: "bad" },
-  { lab: "burnouts", fn: function () { return burns; }, cls: "bad" },
-  { lab: "fuse now", fn: function () { return fuseNow().toFixed(2) + "s"; } },
-  { lab: "shoe left", fn: function () { return shoe.length; } },
+  { lab: "avg / hand", fn: function () { return hands ? Math.round(score / hands) : "—"; }, cls: "good" },
+  { lab: "cards / hand", fn: function () { var n = hands + busts; return n ? ((kept + binned) / n).toFixed(1) : "—"; } },
+  { lab: "keep %", fn: function () { return pct(kept, kept + binned); },
+    cls: function () { var r = (kept + binned) ? kept / (kept + binned) : 0.5; return (r > 0.75 || r < 0.35) ? "bad" : "good"; } },
+  { lab: "best hand", fn: function () { return bestTotal ? bestName + " " + bestTotal : "—"; }, cls: "warm" },
+  { lab: "jokers taken", fn: function () { return jokersTaken; }, cls: "warm" },
+  { lab: "jokers refused", fn: function () { return jokersRefused; }, cls: "warm" },
+  { lab: "deck left", fn: function () { return cardsLeft(); } },
   { lab: "seed", fn: function () { return seed; } }
 ];
 
@@ -1111,17 +1491,17 @@ function buildPanel() {
 
   for (i = 0; i < KNOBS.length; i++) wireKnob(KNOBS[i]);
   for (i = 0; i < TOGGLES.length; i++) wireToggle(TOGGLES[i]);
+  buildJokers();
   buildPaytable();
 }
 
 function wireKnob(n) {
   var el = document.getElementById("s-" + n.k), out = document.getElementById("v-" + n.k);
-  function show() { out.textContent = Number(K[n.k]).toFixed(n.fix); }
+  function show() { out.textContent = n.fmt ? n.fmt(K[n.k]) : Number(K[n.k]).toFixed(n.fix); }
   show();
   el.addEventListener("input", function () {
     K[n.k] = parseFloat(el.value);
     show();
-    if (n.k === "handSize") buildPaytable();
     if (n.act === "run") resetRun();
   });
 }
@@ -1133,31 +1513,62 @@ function wireToggle(t) {
   });
 }
 
-/* The paytable is a knob's consequence, so it is redrawn with the hand size. */
-function buildPaytable() {
-  var table = PAYOUT[K.handSize] || PAYOUT[5];
-  var html = "<tr><th>hand</th><th>pays</th></tr>";
-  for (var i = CAT_LIST.length - 1; i >= 0; i--) {
-    var c = CAT_LIST[i], v = table[c];
-    html += '<tr' + (v ? "" : ' class="dead"') + '><td>' + CAT_NAME[c] + "</td>" +
-            '<td class="' + (v ? "n" : "off") + '">' + (v ? v : "impossible") + "</td></tr>";
+/* The pool: which jokers the stream may deal, and a Give to try one now. */
+function buildJokers() {
+  var html = "<tr><th>pool</th><th>family</th><th>joker</th><th>what it does</th><th></th></tr>";
+  for (var i = 0; i < JOKERS.length; i++) {
+    var J = JOKERS[i];
+    html += '<tr><td><input type="checkbox" data-pool="' + J.id + '"' + (J.on ? " checked" : "") + '></td>' +
+            '<td class="fam" style="color:' + FAM_COL[J.fam] + '">' + J.fam + '</td>' +
+            '<td class="name">' + J.name + '</td><td>' + J.text + '</td>' +
+            '<td><button class="mini plain" data-give="' + J.id + '">Give</button></td></tr>';
   }
-  html += '<tr class="dead"><td>HIGH CARD</td><td class="off">bust — costs a life</td></tr>';
+  var tb = document.getElementById("jokers");
+  tb.innerHTML = html;
+  tb.addEventListener("change", function (e) {
+    var id = e.target.getAttribute("data-pool");
+    if (id) JOKER_BY[id].on = e.target.checked;
+  });
+  tb.addEventListener("click", function (e) {
+    var id = e.target.getAttribute("data-give");
+    if (id && !over && !has(id)) equip(id, CARD.cx, CARD.cy);
+  });
+}
+
+var railShown = null;
+function refreshRail() {
+  var s = "";
+  for (var i = 0; i < rail.length; i++) s += (i ? " · " : "") + JOKER_BY[rail[i].id].name;
+  if (s === railShown) return;
+  railShown = s;
+  document.getElementById("rail-now").innerHTML = "On the rail, counted left to right: <b>" + (s || "nothing yet") + "</b>";
+}
+
+function buildPaytable() {
+  var html = "<tr><th>hand</th><th>chips</th><th>mult</th></tr>";
+  for (var i = CAT_LIST.length - 1; i >= 0; i--) {
+    var c = CAT_LIST[i];
+    html += "<tr><td>" + CAT_NAME[c] + '</td><td class="c">' + BASE[c][0] + '</td><td class="m">' + BASE[c][1] + "</td></tr>";
+  }
+  html += '<tr><td colspan="3" style="padding-top:8px;color:#8a87a8">Plus each scoring card: its number, 10 for a face, 11 for an ace. ' +
+          'Then the enhancements, then the jokers left to right. Pays chips × mult. ' +
+          'High card, a pair under the floor or a cursed card busts and costs a life.</td></tr>';
+  var mods = "";
+  for (var m = 0; m < MODS.length; m++) mods += (m ? " · " : "") + '<b style="color:' + MOD_COL[MODS[m]] + '">' + MOD_NAME[MODS[m]] + "</b> " + MOD_TEXT[MODS[m]];
+  html += '<tr><td colspan="3" style="padding-top:6px;color:#8a87a8">' + mods + "</td></tr>";
   document.getElementById("paytable").innerHTML = html;
 }
 
-function setPaused(v) {
-  paused = v;
-  document.getElementById("b-pause").textContent = paused ? "Resume" : "Pause";
-}
+function newSeed() { srand(Math.floor(Math.random() * 4294967295)); }
 
-document.getElementById("b-reset").addEventListener("click", function () {
-  srand(Math.floor(Math.random() * 4294967295)); resetRun();
-});
-document.getElementById("b-pause").addEventListener("click", function () { setPaused(!paused); });
+document.getElementById("b-reset").addEventListener("click", function () { newSeed(); resetRun(); });
 document.getElementById("b-goseed").addEventListener("click", function () {
   var v = parseInt(document.getElementById("seedbox").value, 10);
   if (!isNaN(v)) { srand(v); resetRun(); }
+});
+document.getElementById("b-bench").addEventListener("click", function () {
+  var b = this; b.textContent = "Running…";
+  setTimeout(function () { bench(); b.textContent = "Bench 300 runs"; }, 20);
 });
 
 var statTick = 0;
@@ -1167,10 +1578,11 @@ function refreshStats() {
     el.lastChild.textContent = s.fn();
     el.className = "stat " + (typeof s.cls === "function" ? s.cls() : (s.cls || ""));
   }
+  refreshRail();
 }
 
 /* ===========================================================================
-   11. BOOT
+   13. BOOT
    =========================================================================== */
 
 var last = 0;
@@ -1187,7 +1599,7 @@ window.addEventListener("resize", sizeBoard);
 
 sizeBoard();
 buildPanel();
-srand(Math.floor(Math.random() * 4294967295));
+newSeed();
 resetRun();
 requestAnimationFrame(frame);
 </script>

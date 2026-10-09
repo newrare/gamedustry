@@ -508,12 +508,16 @@ What a view brings:
   and an end screen cannot give. The stars become the level's without a line
   changing in any `game.js`. **The round wears its three stars live**, in a pill in the
   **bottom-left corner** (never *in* the HUD, whose top band is the game's) —
-  mirroring MENU / OPTIONS in the opposite one. Neither corner takes a band out
+  mirroring MENU / OPTIONS in the opposite one, and **a tap on it opens the
+  OBJECTIVES card** — what each of the three stars asks for, the met ones lit
+  (`Game.levelRules(n)` words them for a game whose stars are not score
+  bands). Neither corner takes a band out
   of `Layout`: a game draws through them and anchors no instrument and no word
   there. A game whose own layout owns that corner moves the pill from its SKIN
-  with `--lv-hud-bottom` / `--lv-hud-left` (`games/slipdeck`, whose five-card
-  hand fills the foot of the frame) — and `games/arcider` moved its shield rail
-  and speedometer to the right flank instead. **The pill carries the round's
+  with `--lv-hud-bottom` / `--lv-hud-left` — or, better, stops its own table
+  above that row on the web (`games/slipdeck`, whose hand now stands above it:
+  `WEB_FOOT` in its game.js) — and `games/arcider` moved its shield rail and
+  speedometer to the right flank instead. **The pill carries the round's
   "!"** just to its right — the band's notification log, which is down over a
   round; its card pauses the round like every card over one — and a game
   whose launcher stands there sets `--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)`
@@ -647,8 +651,9 @@ What a view brings:
   tag that whispers. **Neither card closes itself and neither sells anything**:
   a tap anywhere puts it away, and the one control left is DRAW AGAIN wearing
   the ticket and what the pull costs — gone entirely when the wallet cannot pay
-  for it, since a control that cannot act is a wall. A perfect
-  round is offered three gift boxes ON THE ROUND ITSELF — the outro's slow
+  for it, since a control that cannot act is a wall. A level's FIRST perfect
+  round is offered three gift boxes ON THE ROUND ITSELF (a perfect replay gets
+  the one-or-two-star offer instead) — the outro's slow
   motion freezes under them, like every card over a round, so the end screen arrives with the prize
   already in the wallet — and then one ad to pay **×5** what was in the one it
   picked, offered on a button that NAMES WHAT IT MULTIPLIES and follows with
@@ -674,7 +679,12 @@ What a view brings:
   ranking, down on the title screen, and on the score screen only while a
   reward is flying into it. **All thirteen declare it**; a game is a sheet of
   twenty stickers and a manifest block, whose rates are scaled to what that
-  game scores. See [docs/META.md](docs/META.md).
+  game scores. **The unit is the round**: the ticket price and the xp rate are
+  never typed — `tools/build/build.mjs` derives them from the game's reference
+  round (`tools/lib/economy.mjs`, `web.meta.roundScore` where the objective is
+  not the score), every gift pays a share of the ticket or of the level, and
+  `node tools/lab/sim-economy.mjs` prints what a session earns in every game.
+  See [docs/META.md](docs/META.md).
 - **a game that declares `web.army` gets the BARRACKS on top of that** — the
   cards the player OWNS, and what a battle costs them. A round that deals a
   fresh random deck every time has nothing at stake; this makes the deck the
@@ -772,6 +782,18 @@ title screen and the map, and it is the place the player lives:
 title  ->  VILLAGE  ->  map  ->  round  ->  score  ->  VILLAGE
 ```
 
+**The very first launch skips the front of that chain.** A player who has
+never played — no level of the board played and the help never opened, or no
+help mark at all on a game with no levels — sees no title screen, no village
+and no map: the game opens straight on level 1 (a free round without levels),
+the round's entrance plays, and the HELP card opens over the frozen round once
+it has landed. Opening it is what marks the launch done, the score screen then
+leads home like any other round's, and OPTIONS' erase row makes the next launch
+a first one again (`packages/webshell/menu.js`, section 4c). **`?first=0`
+turns it off for one load** — every tool that drives a build on an empty
+storage (the views test, the events bench, `overlay-pop`, `shoot-screens`)
+passes it, and a new one must too.
+
 The title screen becomes a **SPLASH**: the logotype, the signature, two seconds
 of them, and then the village opens on its own — the stacked menu in front of a
 hub was the same list twice, read at speed by a player on their way somewhere
@@ -850,13 +872,13 @@ makes them read as six copies of one object. **The cheapest building is
 already painted with, carrying a halo, a badge and a door and drawing nothing.
 It is the one `art` that is not a role the game adopted.
 
-**The words are the player's, and they are off.** Every door wears its role's
-own name under its feet and every one of them is hidden, because a village is
-meant to be read as a place and six plates over six buildings turn it back into
-the list it replaced. One row in OPTIONS brings them all back at once
-(`Settings.labels`, persisted) — it is not a field of the composition, since a
-village where three buildings were named and three were not is the worst of
-both.
+**The words are the player's, and they are on.** Every door wears its role's
+own name under its feet and every one of them is shown, in every game, so a
+player opening the village for the first time is told what each building is.
+One row in OPTIONS hides them all at once (`Settings.labels`, persisted as
+`names` in `webSettings`, and only the player's own switch turns it off) — it
+is not a field of the composition, since a village where three buildings were
+named and three were not is the worst of both.
 
 **The scene is not a photograph: the light BREATHES.** `life.cycle` passes the
 hub through its own painted light, out into `warm`, back through it and out
@@ -1358,7 +1380,7 @@ nothing to compare it against, which is what it did until this panel existed.
 on the ground, and a cloud's feet are up in the sky. A house's word is the ROLE'S, taken from the shell's own
 strings and never typed, like the store card's punchline — and it is previewed
 rather than composed, since in the build the names are a row in OPTIONS the
-player turns on.
+player turns off.
 
 **Every slider is magnetic**, cut into segments at the round values — 10 design
 px for a position or a width, 5° for a turn, 0.05 for a ratio, a tenth of a
@@ -1692,7 +1714,8 @@ Frame & input (section 3):
   is what the desktop keyboard rides on: SPACE starts, replays and — for
   `tap` / `hold` games — taps at `Layout.cx/cy`; **← / → (or A / D) fire a whole
   left/right flick for `swipe` games**, so a swipe mechanic needs no keyboard
-  code of its own. Opt out with `CONFIG.keyboard = false`.
+  code of its own; ↑ (or W) fires an upward one when the game sets
+  `CONFIG.swipeUp` (triverse's jump). Opt out with `CONFIG.keyboard = false`.
 - `Loop.start/stop/pause/resume` — rAF loop with clamped `dt`. `Loop.rate(k)`
   is a time scale on the simulation only: the frame keeps rendering, `update`
   gets `k * dt`, and `start` resets it to 1. The web target's three-star finish

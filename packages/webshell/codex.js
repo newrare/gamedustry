@@ -75,7 +75,7 @@
     fr: {
       cards: "Cartes", title: "Cartes", f_all: "Toutes", f_had: "Débloquées", f_miss: "Verrouillées",
       none: "Aucune carte ici", prev: "Précédente", next: "Suivante",
-      lock: "Atteins le niveau {n} pour la débloquer", from: "Niveau {n}",
+      lock: "Atteins le stage {n} pour la débloquer", from: "Stage {n}",
       ghostSay: "Verrouillée"
     }
   };

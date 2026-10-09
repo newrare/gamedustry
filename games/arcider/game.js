@@ -4059,6 +4059,13 @@
       return Math.min(st, 1);
     }
 
+    /* What the objectives card (a tap on the level pill) prints for each
+       star: the same ladder as `levelStars`, worded. {n} is the distance. */
+    function levelRules() {
+      return [Lang.t("Reach <b>{n} m</b>"), Lang.t("Cross the <b>finish line</b>"),
+              Lang.t("Win the race in <b>first place</b>")];
+    }
+
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              /* `levelWon` is the PODIUM and not `die`: the last arch stands on
@@ -4066,7 +4073,7 @@
                 happen at the chequered flag with every cut behind it — which
                 is a race won, finish bonus included. The level layer writes
                 the title over it either way. */
-             levelProgress: levelProgress, levelStars: levelStars,
+             levelProgress: levelProgress, levelStars: levelStars, levelRules: levelRules,
              levelWon: win,
              applyLevel: applyLevel };
   })();

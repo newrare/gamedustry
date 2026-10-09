@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "2.6.9",
+  "version": "2.6.11",
   "tagline": "One tap switches the buttons on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
@@ -196,11 +196,11 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un casse-briques avec une limite de billes. Vise, puis tape pour allumer les boutons et enfermer la bille avec les briques de couleur.",
+      "tagline": "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
       "tags": [
-        "Tap piège",
+        "Tap pour piéger",
         "Casse-briques",
-        "Boutons switch"
+        "Interrupteurs"
       ]
     },
     "en": {
@@ -243,23 +243,23 @@
         "lines": [
           {
             "kicker": "Casse-briques",
-            "line": "Avec une limite de <b>billes</b>"
+            "line": "Des <b>billes</b> comptées"
           },
           {
-            "kicker": "Boutons switch",
-            "line": "Tape pour <b>piéger la bille</b>"
+            "kicker": "Interrupteurs",
+            "line": "Touche pour <b>piéger la bille</b>"
           },
           {
-            "kicker": "Aide",
+            "kicker": "Visée",
             "line": "Anticipe les <b>rebonds</b>"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Challenge",
-            "line": "Obtiens le <b>meilleur score</b>"
+            "kicker": "Défi",
+            "line": "Vise le <b>meilleur score</b>"
           }
         ]
       }
@@ -295,7 +295,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Un <b class=\"w-tap\">tap</b> allume les <b class=\"w-wall\">boutons</b> et enferme la bille avec les briques",
+        "tagline": "Un <b class=\"w-tap\">tap</b> allume les <b class=\"w-wall\">boutons</b> et enferme la bille entre les briques",
         "strings": {
           " balls": " billes",
           "Balls": "Billes",
@@ -315,16 +315,16 @@
           "Combo x4": "Combo x4",
           "Combo x5": "Combo x5",
           "Each colour has its price": "Chaque couleur a son prix",
-          "Every kind at once": "Toutes à la fois",
+          "Every kind at once": "Tous les verres à la fois",
           "Final score": "Score final",
           "Fireball": "Bille de feu",
-          "Hit it while the shield is down": "Frappe-la quand le bouclier tombe",
+          "Hit it while the shield is down": "Frappe-le quand son bouclier tombe",
           "Hot!": "Chaud !",
-          "Huge run!": "Énorme partie !",
+          "Huge run!": "Enorme partie !",
           "Install now": "Installer",
-          "It bursts into new glass": "Elle éclate en nouvelles briques",
-          "It grows new glass every second": "Elle fait pousser une brique chaque seconde",
-          "It jumps every three seconds": "Elle saute toutes les trois secondes",
+          "It bursts into new glass": "Il éclate en nouvelles briques",
+          "It grows new glass every second": "Il fait pousser une brique par seconde",
+          "It jumps every three seconds": "Il saute toutes les trois secondes",
           "Last ball": "Dernière bille",
           "Living glass": "Verre vivant",
           "Magnet": "Aimant",
@@ -340,7 +340,7 @@
           "Replay the demo": "Rejouer la démo",
           "Row blast": "Souffle de rangée",
           "Score": "Score",
-          "Seed glass": "Verre graine",
+          "Seed glass": "Verre fertile",
           "Shield glass": "Verre bouclier",
           "Smash!": "Fracas !",
           "Split glass": "Verre éclaté",
@@ -354,7 +354,9 @@
           "Under par!": "Sous le par !",
           "Wall": "Mur",
           "Wall broken": "Mur cassé",
-          "Warp glass": "Verre téléporteur"
+          "Warp glass": "Verre téléporteur",
+          "Break <b>{p}%</b> of the wall": "Casse <b>{p} %</b> du mur",
+          "Clear the wall, or <b>{p}%</b> in <b>{b}</b> balls": "Vide le mur ou casse <b>{p} %</b> en <b>{b}</b> billes"
         }
       }
     },
@@ -368,7 +370,7 @@
       },
       "copy": {
         "en": "Clear it, or <b>80%</b> in <b>{n}</b> balls",
-        "fr": "Vide-le, ou <b>80 %</b> en <b>{n}</b> billes"
+        "fr": "Vide le mur ou casse <b>80 %</b> en <b>{n}</b> billes"
       },
       "bands": {
         "from": [
@@ -410,8 +412,7 @@
     },
     "meta": {
       "coinsPer": 100,
-      "xpPer": 15,
-      "ticketPrice": 60,
+      "roundScore": 3000,
       "awards": [
         1,
         2,
